@@ -2967,7 +2967,7 @@ and customer address. Include units.',
   {
     'key'         => 'network_monitoring_system',
     'section'     => 'network_monitoring',
-    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
+    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
     'type'        => 'select',
     'select_enum' => [ '', qw(Torrus_Internal) ],
   },
