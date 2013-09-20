@@ -56,12 +56,7 @@ sub signups {
     push @where, "refnum = ".$opt{'refnum'};
   }
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   $self->scalar_sql(
     "SELECT COUNT(*) FROM cust_main $join WHERE ".join(' AND ', @where)
@@ -448,12 +443,7 @@ sub cust_bill_pkg_setup {
   # yuck, false laziness
   push @where, "cust_main.refnum = ". $opt{'refnum'} if $opt{'refnum'};
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
   FROM cust_bill_pkg
@@ -478,12 +468,7 @@ sub cust_bill_pkg_recur {
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   # subtract all usage from the line item regardless of date
   my $item_usage;
@@ -540,12 +525,7 @@ sub cust_bill_pkg_detail {
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   $agentnum ||= $opt{'agentnum'};
 
@@ -688,12 +668,8 @@ sub for_opts {
     if ( $opt{'refnum'} =~ /^(\d+)$/ ) {
       $sql .= " and refnum = $1 ";
     }
-    if ( $opt{'cust_classnum'} ) {
-      my $classnums = $opt{'cust_classnum'};
-      $classnums = [ $classnums ] if !ref($classnums);
-      @$classnums = grep /^\d+$/, @$classnums;
-      $sql .= ' and cust_main.classnum in('. join(',',@$classnums) .')'
-        if @$classnums;
+    if ( my $where = $self->with_cust_classnum(%opt) ) {
+      $sql .= " and $where";
     }
 
     $sql;
@@ -771,6 +747,19 @@ sub with_report_option {
   }
   $comparison;
 }
+
+sub with_cust_classnum {
+  my ($self, %opt) = @_;
+  if ( $opt{'cust_classnum'} ) {
+    my $classnums = $opt{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    return 'cust_main.classnum in('. join(',',@$classnums) .')'
+      if @$classnums;
+  }
+  '';
+}
+
 
 sub scalar_sql {
   my( $self, $sql ) = ( shift, shift );
