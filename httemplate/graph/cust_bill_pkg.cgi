@@ -97,10 +97,10 @@ if ( $cgi->param('class_mode') eq 'report' ) {
   $value_col = 'classnum';
 }
 
-my @classnums = grep /^\d+$/, $cgi->param($value_col);
+my @classnums = grep /^\d+$/, $cgi->param($class_param);
 my @classnames = map { if ( $_ ) {
                          my $class = qsearchs($class_table, {$value_col=>$_} );
-                         $class->classname;
+                         $class->$name_col;
                        } else {
                          '(empty class)';
                        }
@@ -110,8 +110,6 @@ my @classnames = map { if ( $_ ) {
 $bottom_link .= "$class_param=$_;" foreach @classnums;
 
 if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
-
-  $link .= ";$class_param=$_" foreach @classnums;
 
   $title .= ' '. join(', ', @classnames)
     unless scalar(@classnames) > scalar(qsearch($class_table,{'disabled'=>''}));
@@ -291,22 +289,22 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
     my $row_link = "$link;".
                    "agentnum=$row_agentnum;".
                    "distribute=$distribute;".
-                   "charges=$component";
+                   "charges=$component;";
     
     # package class filters
     if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
       push @row_params, $class_param => \@classnums;
-      $row_link .= ";$class_param=".$_ foreach @classnums;
+      $row_link .= "$class_param=$_;" foreach @classnums;
     }
 
     # refnum filters
     if ( $sel_part_referral ) {
       push @row_params, 'refnum' => $sel_part_referral->refnum;
-      $row_link .= ";refnum=".$sel_part_referral->refnum;
+      $row_link .= "refnum=;".$sel_part_referral->refnum;
     }
 
     # customer class filters
-    $row_link .= ";cust_classnum=$_" foreach @cust_classnums;
+    $row_link .= "cust_classnum=$_;" foreach @cust_classnums;
 
     push @items, 'cust_bill_pkg';
     push @labels, mt('[_1] - Subtotal', $agent->agent);
