@@ -88,7 +88,7 @@ sub table { 'svc_mailinglist'; }
 sub table_info {
   {
     'name' => 'Mailing list',
-    'display_weight' => 80,
+    'display_weight' => 31,
     'cancel_weight'  => 55,
     'fields' => {
       'username' => { 'label' => 'List address',

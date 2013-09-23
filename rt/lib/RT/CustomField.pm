@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -710,7 +710,7 @@ sub ValidateValuesClass {
     my $self = shift;
     my $class = shift;
 
-    return 1 if !defined $class || $class eq 'RT::CustomFieldValues';
+    return 1 if !$class || $class eq 'RT::CustomFieldValues';
     return 1 if grep $class eq $_, RT->Config->Get('CustomFieldValuesSources');
     return undef;
 }
@@ -1556,9 +1556,8 @@ sub _CanonicalizeValueDate {
     my $DateObj = RT::Date->new( $self->CurrentUser );
     $DateObj->Set( Format   => 'unknown',
                    Value    => $args->{'Content'},
-                   Timezone => 'UTC',
                  );
-    $args->{'Content'} = $DateObj->Date( Timezone => 'UTC' );
+    $args->{'Content'} = $DateObj->Date( Timezone => 'user' );
 }
 
 =head2 MatchPattern STRING
@@ -1666,14 +1665,13 @@ sub ValuesForObject {
     my $object = shift;
 
     my $values = RT::ObjectCustomFieldValues->new($self->CurrentUser);
-    unless ($self->CurrentUserHasRight('SeeCustomField')) {
+    unless ($self->id and $self->CurrentUserHasRight('SeeCustomField')) {
         # Return an empty object if they have no rights to see
+        $values->Limit( FIELD => "id", VALUE => 0, SUBCLAUSE => "ACL" );
         return ($values);
     }
-    
-    
+
     $values->LimitToCustomField($self->Id);
-    $values->LimitToEnabled();
     $values->LimitToObject($object);
 
     return ($values);
@@ -1690,6 +1688,7 @@ Examples:
     'RT::Queue-RT::Ticket-RT::Transaction' => "Ticket Transactions",    # loc
     'RT::User'                             => "Users",                  # loc
     'RT::Group'                            => "Groups",                 # loc
+    'RT::Queue'                            => "Queues",                 # loc
 
 This is a class method. 
 
@@ -2103,6 +2102,8 @@ sub _CoreAccessible {
         {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'text', default => ''},
         Repeated => 
         {read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => '0'},
+        ValuesClass => 
+        {read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
         BasedOn => 
         {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Description => 

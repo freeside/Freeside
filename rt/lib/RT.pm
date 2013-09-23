@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -83,11 +83,55 @@ RT - Request Tracker
 
 =head1 SYNOPSIS
 
-A fully featured request tracker package
+A fully featured request tracker package.
+
+This documentation describes the point-of-entry for RT's Perl API.  To learn
+more about what RT is and what it can do for you, visit
+L<https://bestpractical.com/rt>.
 
 =head1 DESCRIPTION
 
 =head2 INITIALIZATION
+
+If you're using RT's Perl libraries, you need to initialize RT before using any
+of the modules.
+
+You have the option of handling the timing of config loading and the actual
+init sequence yourself with:
+
+    use RT;
+    BEGIN {
+        RT->LoadConfig;
+        RT->Init;
+    }
+
+or you can let RT do it all:
+
+    use RT -init;
+
+This second method is particular useful when writing one-liners to interact with RT:
+
+    perl -MRT=-init -e '...'
+
+The first method is necessary if you need to delay or conditionalize
+initialization or if you want to fiddle with C<< RT->Config >> between loading
+the config files and initializing the RT environment.
+
+=cut
+
+{
+    my $DID_IMPORT_INIT;
+    sub import {
+        my $class  = shift;
+        my $action = shift || '';
+
+        if ($action eq "-init" and not $DID_IMPORT_INIT) {
+            $class->LoadConfig;
+            $class->Init;
+            $DID_IMPORT_INIT = 1;
+        }
+    }
+}
 
 =head2 LoadConfig
 
@@ -316,6 +360,16 @@ sub InitLogging {
     InitSignalHandlers(%arg);
 }
 
+{   # Work around bug in Log::Dispatch < 2.30, wherein the short forms
+    # of ->warn, ->err, and ->crit do not usefully propagate out, unlike
+    # ->warning, ->error, and ->critical
+    package Log::Dispatch;
+    no warnings 'redefine';
+    sub warn { shift->warning(@_) }
+    sub err  { shift->error(@_) }
+    sub crit { shift->critical(@_) }
+}
+
 sub InitSignalHandlers {
 
     my %arg = @_;
@@ -336,6 +390,11 @@ sub InitSignalHandlers {
             unshift @_, $RT::Logger, qw(level warning message);
             goto &Log::Dispatch::log;
         }
+        # Return value is used only by RT::Test to filter warnings from
+        # reaching the Test::NoWarnings catcher.  If Log::Dispatch::log() ever
+        # starts returning 'IGNORE', we'll need to switch to something more
+        # clever.  I don't expect that to happen.
+        return 'IGNORE';
     };
 
 #When we call die, trap it and log->crit with the value of the die.

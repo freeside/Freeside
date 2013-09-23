@@ -185,6 +185,10 @@ foreach my $INC ( @INC ) {
     };
     my $mod = $1;
     my $fullmod = "FS::part_event::Condition::$mod";
+    if ( $fullmod =~ /_(Mixin|Common)$/ ) {
+      #warn "skipping $1 class $fullmod\n";
+      next;
+    }
     eval "use $fullmod;";
     if ( $@ ) {
       die "error using $fullmod (skipping): $@\n" if $@;
@@ -220,8 +224,7 @@ sub conditions {
   my( $class, $eventtable ) = @_;
   (
     map  { $_ => $conditions{$_} }
-#    sort { $conditions{$a}->{'default_weight'}<=>$conditions{$b}->{'default_weight'} }
-#    sort by ?
+    sort {$conditions{$a}->{'description'} cmp $conditions{$b}->{'description'}}
     $class->all_conditionnames( $eventtable )
   );
 

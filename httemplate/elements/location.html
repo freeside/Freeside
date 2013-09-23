@@ -219,8 +219,7 @@ Example:
   </TD>
 </TR>
 % }
-% if ( $conf->config('tax_district_method') ) {
-%   if ( $opt{enable_district} ) {
+% if ( $opt{enable_district} and $conf->config('tax_district_method') ) {
   <TR>
     <TD ALIGN="right">Tax&nbsp;district</TD>
     <TD COLSPAN=8>
@@ -231,9 +230,8 @@ Example:
     <% '(automatic)' %>
     </TD>
   </TR>
-%   } else {
+% } else {
     <INPUT TYPE="hidden" ID="<%$pre%>" NAME="<%$pre%>district" VALUE="<% $object->district %>">
-%   }
 % }
 
 %# For address standardization:
@@ -246,6 +244,42 @@ Example:
 %# Placeholders
 <INPUT TYPE="hidden" NAME="<%$pre%>cachenum" VALUE="">
 <INPUT TYPE="hidden" NAME="<%$pre%>addr_clean" VALUE="">
+
+<SCRIPT TYPE="text/javascript">
+<&| /elements/onload.js &>
+  var clear_coords_ids = [
+    '<%$pre%>latitude',
+    '<%$pre%>longitude',
+    'enter_censustract',
+    '<%$pre%>district'
+  ];
+  function clear_coords() {
+    for (var i=0; i < clear_coords_ids.length; i++) {
+      var el = document.getElementById(clear_coords_ids[i]);
+      if ( el ) {
+        el.value = '';
+      }
+    }
+  }
+  var clear_coords_on_change = [
+    '<%$pre%>address1',
+    '<%$pre%>address2',
+    '<%$pre%>city',
+    '<%$pre%>state',
+    '<%$pre%>zip',
+    '<%$pre%>country'
+  ];
+  for (var i=0; i < clear_coords_on_change.length; i++) {
+    var el = document.getElementById(clear_coords_on_change[i]);
+    if ( el.addEventListener ) {
+      el.addEventListener('change', clear_coords);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_coords);
+    }
+  }
+</&>
+</SCRIPT>
+
 <%init>
 
 my %opt = @_;

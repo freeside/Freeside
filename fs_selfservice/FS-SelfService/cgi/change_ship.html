@@ -1,4 +1,3 @@
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
 <%= include('header', 'Edit service address') %>
 
 <%= if ( $error ) { 
@@ -6,7 +5,6 @@
 }  ''; %>
 
 <FORM NAME="OneTrueForm" ACTION="<%= $selfurl %>" METHOD=POST onSubmit="document.bottomform.submit.disabled=true;">
-<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_change_ship">
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 

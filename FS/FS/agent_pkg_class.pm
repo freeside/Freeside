@@ -1,8 +1,10 @@
 package FS::agent_pkg_class;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+#use FS::Record qw( qsearch qsearchs );
+use FS::agent;
+use FS::pkg_class;
 
 =head1 NAME
 
@@ -25,7 +27,7 @@ FS::agent_pkg_class - Object methods for agent_pkg_class records
 
 =head1 DESCRIPTION
 
-An FS::agent_pkg_class object represents an commission for a specific agent
+An FS::agent_pkg_class object represents a commission for a specific agent
 and package class.  FS::agent_pkg_class inherits from FS::Record.  The
 following fields are currently supported:
 
@@ -109,7 +111,7 @@ sub check {
 
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::agent>, L<FS::pkg_class>, L<FS::Record>.
 
 =cut
 

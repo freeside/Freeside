@@ -192,14 +192,30 @@ sub cancel_expired_pkgs {
 
   my @errors = ();
 
-  foreach my $cust_pkg ( @cancel_pkgs ) {
+  CUST_PKG: foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
-    my $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
+    my $error;
+
+    if ( $cust_pkg->change_to_pkgnum ) {
+
+      my $new_pkg = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
+      if ( !$new_pkg ) {
+        push @errors, 'can\'t change pkgnum '.$cust_pkg->pkgnum.' to pkgnum '.
+                      $cust_pkg->change_to_pkgnum.'; not expiring';
+        next CUST_PKG;
+      }
+      $error = $cust_pkg->change( 'cust_pkg'        => $new_pkg,
+                                  'unprotect_svcs'  => 1 );
+      $error = '' if ref $error eq 'FS::cust_pkg';
+
+    } else { # just cancel it
+       $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
                                            'reason_otaker' => $cpr->otaker,
                                            'time'          => $time,
                                          )
                                        : ()
                                  );
+    }
     push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
   }
 
@@ -951,6 +967,8 @@ sub _make_lines {
   my $unitsetup = 0;
   my @setup_discounts = ();
   my %setup_param = ( 'discounts' => \@setup_discounts );
+  my $setup_billed_currency = '';
+  my $setup_billed_amount = 0;
   if (     ! $options{recurring_only}
        and ! $options{cancel}
        and ( $options{'resetup'}
@@ -977,7 +995,13 @@ sub _make_lines {
         return "$@ running calc_setup for $cust_pkg\n"
           if $@;
 
-        $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+        $unitsetup = $cust_pkg->base_setup()
+                       || $setup; #XXX uuh
+
+        if ( $setup_param{'billed_currency'} ) {
+          $setup_billed_currency = delete $setup_param{'billed_currency'};
+          $setup_billed_amount   = delete $setup_param{'billed_amount'};
+        }
     }
 
     $cust_pkg->setfield('setup', $time)
@@ -997,6 +1021,8 @@ sub _make_lines {
   my $recur = 0;
   my $unitrecur = 0;
   my @recur_discounts = ();
+  my $recur_billed_currency = '';
+  my $recur_billed_amount = 0;
   my $sdate;
   if (     ! $cust_pkg->start_date
        and ( ! $cust_pkg->susp || $cust_pkg->option('suspend_bill',1)
@@ -1057,6 +1083,11 @@ sub _make_lines {
 
     #base_cancel???
     $unitrecur = $cust_pkg->base_recur( \$sdate ) || $recur; #XXX uuh, better
+
+    if ( $param{'billed_currency'} ) {
+      $recur_billed_currency = delete $param{'billed_currency'};
+      $recur_billed_amount   = delete $param{'billed_amount'};
+    }
 
     if ( $increment_next_bill ) {
 
@@ -1173,16 +1204,20 @@ sub _make_lines {
       push @details, @cust_pkg_detail;
 
       my $cust_bill_pkg = new FS::cust_bill_pkg {
-        'pkgnum'    => $cust_pkg->pkgnum,
-        'setup'     => $setup,
-        'unitsetup' => $unitsetup,
-        'recur'     => $recur,
-        'unitrecur' => $unitrecur,
-        'quantity'  => $cust_pkg->quantity,
-        'details'   => \@details,
-        'discounts' => [ @setup_discounts, @recur_discounts ],
-        'hidden'    => $part_pkg->hidden,
-        'freq'      => $part_pkg->freq,
+        'pkgnum'                => $cust_pkg->pkgnum,
+        'setup'                 => $setup,
+        'unitsetup'             => $unitsetup,
+        'setup_billed_currency' => $setup_billed_currency,
+        'setup_billed_amount'   => $setup_billed_amount,
+        'recur'                 => $recur,
+        'unitrecur'             => $unitrecur,
+        'recur_billed_currency' => $recur_billed_currency,
+        'recur_billed_amount'   => $recur_billed_amount,
+        'quantity'              => $cust_pkg->quantity,
+        'details'               => \@details,
+        'discounts'             => [ @setup_discounts, @recur_discounts ],
+        'hidden'                => $part_pkg->hidden,
+        'freq'                  => $part_pkg->freq,
       };
 
       if ( $part_pkg->option('prorate_defer_bill',1) 
@@ -1194,7 +1229,7 @@ sub _make_lines {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
         $cust_bill_pkg->edate( $time ) if $options{cancel};
-      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' ) {
+      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' )
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
         #$cust_bill_pkg->edate( $time ) if $options{cancel};
@@ -1352,6 +1387,8 @@ sub _handle_taxes {
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
+  my $location = $cust_pkg->tax_location;
+
   return if ( $self->payby eq 'COMP' ); #dubious
 
   if ( $conf->exists('enable_taxproducts')
@@ -1394,7 +1431,7 @@ sub _handle_taxes {
 
     }
 
-    my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
+    my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate; # grrr
     foreach my $key (keys %tax_cust_bill_pkg) {
       # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
       # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
@@ -1409,11 +1446,6 @@ sub _handle_taxes {
 
         # this is the tax identifier, not the taxname
         my $taxname = ref( $tax ). ' '. $tax->taxnum;
-        $taxname .= ' billpkgnum'. $cust_bill_pkg->billpkgnum;
-        # We need to create a separate $taxlisthash entry for each billpkgnum
-        # on the invoice, so that cust_bill_pkg_tax_location records will
-        # be linked correctly.
-
         # $taxlisthash: keys are "setup", "recur", and usage classes.
         # Values are arrayrefs, first the tax object (cust_main_county
         # or tax_rate) and then any cust_bill_pkg objects that the 
@@ -1433,7 +1465,7 @@ sub _handle_taxes {
           if $DEBUG > 2;
         next unless $tax_object->can('tax_on_tax');
 
-        foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
+        foreach my $tot ( $tax_object->tax_on_tax( $location ) ) {
           my $totname = ref( $tot ). ' '. $tot->taxnum;
 
           warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
@@ -1441,7 +1473,7 @@ sub _handle_taxes {
           next unless exists( $localtaxlisthash{ $totname } ); # only increase
                                                                # existing taxes
           warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
-          # we're calling taxline() right here?  wtf?
+          # calculate the tax amount that the tax_on_tax will apply to
           my $hashref_or_error = 
             $tax_object->taxline( $localtaxlisthash{$tax},
                                   'custnum'      => $self->custnum,
@@ -1450,6 +1482,7 @@ sub _handle_taxes {
           return $hashref_or_error
             unless ref($hashref_or_error);
           
+          # and append it to the list of taxable items
           $taxlisthash->{ $totname } ||= [ $tot ];
           push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
 
@@ -1465,7 +1498,6 @@ sub _handle_taxes {
     # because we need to record that fact.
 
     my @loc_keys = qw( district city county state country );
-    my $location = $cust_pkg->tax_location;
     my %taxhash = map { $_ => $location->$_ } @loc_keys;
 
     $taxhash{'taxclass'} = $part_pkg->taxclass;
@@ -1509,12 +1541,7 @@ sub _gather_taxes {
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  my $geocode;
-  if ( $cust_pkg->locationnum && $conf->exists('tax-pkg_address') ) {
-    $geocode = $cust_pkg->cust_location->geocode('cch');
-  } else {
-    $geocode = $self->geocode('cch');
-  }
+  my $geocode = $cust_pkg->tax_location->geocode('cch');
 
   my @taxes = ();
 

@@ -1,4 +1,3 @@
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
 <%= include('header', 'Create a ticket') %>
 
 <%=
@@ -10,7 +9,6 @@ if ( $ticket_id ) {
     Please fill in both the subject and message
     <br><br>
     <FORM ACTION="$selfurl" METHOD=POST>
-    <input type="hidden" name="session" value="$session_id">
     <input type="hidden" name="action" value="tktcreate">
     <table>
 	<tr>

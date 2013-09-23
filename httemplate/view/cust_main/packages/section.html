@@ -10,8 +10,10 @@
 % #$FS::cust_pkg::DEBUG = 2;
 %   foreach my $cust_pkg (@$packages) {
     <& .packagerow, $cust_pkg,
-        'cust_main' => $opt{'cust_main'},
-        'bgcolor'   => $opt{'bgcolor'},
+        ( map { $_ => $opt{$_} } qw(
+            cust_main bgcolor
+            no_links before_pkg_callback before_svc_callback after_svc_callback
+        )),
         %conf_opt
     &>
 %   }
@@ -34,6 +36,10 @@
     <& services.html, %iopt &>
   </TR>
 % $row++;
+% # show the change target, if there is one
+% if ( $cust_pkg->change_to_pkg ) {
+    <& .packagerow, $cust_pkg->change_to_pkg, %iopt, 'change_from' => 1 &>
+% }
 % # include supplemental packages if any
 % $iopt{'supplemental'} = ($iopt{'supplemental'} || 0) + 1;
 % foreach my $supp_pkg ($cust_pkg->supplemental_pkgs) {
@@ -71,6 +77,9 @@ my $pkg_attached = ( scalar(keys %change_custnum) == 1
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';  
 
 my %conf_opt = (
+  #for package.html
+  'invoice-unitprice'         => $conf->exists('invoice-unitprice'),
+
   #for services.html and status.html
   'cust_pkg-display_times'    => ($conf->exists('cust_pkg-display_times')
                                  || $curuser->option('cust_pkg-display_times')),
@@ -92,7 +101,6 @@ my %conf_opt = (
   'manage_link_text'          => scalar($conf->config('svc_broadband-manage_link_text')),
   'manage_link_loc'           => scalar($conf->config('svc_broadband-manage_link_loc')),
   'manage_link-new_window'    => $conf->exists('svc_broadband-manage_link-new_window'),
-  'maestro-status_test'       => $conf->exists('maestro-status_test'),
   'cust_pkg-large_pkg_size'   => scalar($conf->config('cust_pkg-large_pkg_size')),
 
 );

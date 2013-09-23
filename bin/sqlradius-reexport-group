@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+use FS::UID 'adminsuidsetup';
+use FS::Record qw( qsearch qsearchs );
+use FS::part_export;
+use FS::radius_group;
+
+my ($user, $exportnum, $group) = @ARGV;
+die "usage:
+sqlradius-reexport-group <username> <exportnum> <group>
+" unless $user and $exportnum and $group;
+
+
+my $dbh = adminsuidsetup($user) or die;
+$FS::UID::AutoCommit = 0;
+my $radius_group;
+if ( $group =~ /^\d+$/ ) {
+  $radius_group = FS::radius_group->by_key($group);
+} else {
+  $radius_group = qsearchs('radius_group',{'groupname' => $group});
+}
+die "no radius group $group" unless $radius_group;
+
+my $export = FS::part_export->by_key($exportnum)
+  or die "no export with exportnum '$exportnum'";
+
+my @attrs = qsearch('radius_attr', {groupnum => $radius_group->groupnum});
+foreach my $attr (@attrs) {
+  print $attr->attrname."\n";
+  my $error = $export->export_attr_insert($attr);
+  die $error if $error;
+}
+
+$dbh->commit;

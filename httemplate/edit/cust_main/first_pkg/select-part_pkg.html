@@ -111,7 +111,7 @@
 &>
 
 <SCRIPT TYPE="text/javascript">
-  pkgpart_svcpart_changed_too( document.CustomerForm.pkgpart_svcpart,
+  pkgpart_svcpart_changed_too( document.<% $opt{form_name} || 'CustomerForm' %>.pkgpart_svcpart,
                                <% $opt{saved_domsvc} %>
                              );
 </SCRIPT>

@@ -6,6 +6,7 @@ use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( dbh str2time_sql ); #qsearch qsearchs );
 use FS::part_export::sqlradius qw(sqlradius_connect);
+use NEXT;
 
 FS::UID->install_callback(sub { $conf = new FS::Conf });
 
@@ -88,7 +89,9 @@ sub export_username {
 
 sub radius_reply {
   my($self, $svc_broadband) = (shift, shift);
-  my %reply;
+  # start with attributes the service wants
+  my %reply = $self->NEXT::radius_reply($svc_broadband);
+  # add export-specific stuff
   if (  length($self->option('ip_addr_as',1)) 
     and length($svc_broadband->ip_addr) ) {
     $reply{$self->option('ip_addr_as')} = $svc_broadband->ip_addr;
@@ -98,8 +101,9 @@ sub radius_reply {
 
 sub radius_check {
   my($self, $svc_broadband) = (shift, shift);
+
+  my %check = $self->SUPER::radius_check($svc_broadband);
   my $password_attrib = $conf->config('radius-password') || 'Password';
-  my %check;
   if ( $self->option('mac_as_password') ) {
     $check{$password_attrib} = $self->export_username($svc_broadband);
   }

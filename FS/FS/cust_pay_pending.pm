@@ -124,12 +124,35 @@ Transaction recorded in database
 
 Additional status information.
 
+=item failure_status
+
+One of the standard failure status strings defined in 
+L<Business::OnlinePayment>: "expired", "nsf", "stolen", "pickup", 
+"blacklisted", "declined".  If the transaction status is not "declined", 
+this will be empty.
+
 =item gatewaynum
 
 L<FS::payment_gateway> id.
 
-=item paynum - 
+=item paynum
 
+Payment number (L<FS::cust_pay>) of the completed payment.
+
+=item invnum
+
+Invoice number (L<FS::cust_bill>) to try to apply this payment to.
+
+=item manual
+
+Flag for whether this is a "manual" payment (i.e. initiated through 
+self-service or the back-office web interface, rather than from an event
+or a payment batch).  "Manual" payments will cause the customer to be 
+sent a payment receipt rather than a statement.
+
+=item discount_term
+
+Number of months the customer tried to prepay for.
 
 =back
 
@@ -199,10 +222,14 @@ sub check {
     || $self->ut_text('status')
     #|| $self->ut_textn('statustext')
     || $self->ut_anything('statustext')
+    || $self->ut_textn('failure_status')
     #|| $self->ut_money('cust_balance')
     || $self->ut_hexn('session_id')
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_foreign_keyn('invnum', 'cust_bill', 'invnum')
+    || $self->ut_flag('manual')
+    || $self->ut_numbern('discount_term')
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
   ;
   return $error if $error;
@@ -296,10 +323,121 @@ sub insert_cust_pay {
 
 }
 
-=item decline [ STATUSTEXT ]
+=item approve OPTIONS
+
+Sets the status of this pending payment to "done" and creates a completed 
+payment (L<FS::cust_pay>).  This should be called when a realtime or 
+third-party payment has been approved.
+
+OPTIONS may include any of 'processor', 'payinfo', 'discount_term', 'auth',
+and 'order_number' to set those fields on the completed payment, as well as 
+'apply' to apply payments for this customer after inserting the new payment.
+
+=cut
+
+sub approve {
+  my $self = shift;
+  my %opt = @_;
+
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $cust_pay = FS::cust_pay->new({
+      'custnum'     => $self->custnum,
+      'invnum'      => $self->invnum,
+      'pkgnum'      => $self->pkgnum,
+      'paid'        => $self->paid,
+      '_date'       => '',
+      'payby'       => $self->payby,
+      'payinfo'     => $self->payinfo,
+      'gatewaynum'  => $self->gatewaynum,
+  });
+  foreach my $opt_field (qw(processor payinfo auth order_number))
+  {
+    $cust_pay->set($opt_field, $opt{$opt_field}) if exists $opt{$opt_field};
+  }
+
+  my %insert_opt = (
+    'manual'        => $self->manual,
+    'discount_term' => $self->discount_term,
+  );
+  my $error = $cust_pay->insert( %insert_opt );
+  if ( $error ) {
+    # try it again without invnum or discount
+    # (both of those can make payments fail to insert, and at this point
+    # the payment is a done deal and MUST be recorded)
+    $self->invnum('');
+    my $error2 = $cust_pay->insert('manual' => $self->manual);
+    if ( $error2 ) {
+      # attempt to void the payment?
+      # no, we'll just stop digging at this point.
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      my $e = "WARNING: payment captured but not recorded - error inserting ".
+              "payment (". ($opt{processor} || $self->payby) . 
+              ": $error2\n(previously tried insert with invnum#".$self->invnum.
+              ": $error)\npending payment saved as paypendingnum#".
+              $self->paypendingnum."\n\n";
+      warn $e;
+      return $e;
+    }
+  }
+  if ( my $jobnum = $self->jobnum ) {
+    my $placeholder = FS::queue->by_key($jobnum);
+    my $error;
+    if (!$placeholder) {
+      $error = "not found";
+    } else {
+      $error = $placeholder->delete;
+    }
+
+    if ($error) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      my $e  = "WARNING: payment captured but could not delete job $jobnum ".
+               "for paypendingnum #" . $self->paypendingnum . ": $error\n\n";
+      warn $e;
+      return $e;
+    }
+  }
+
+  if ( $opt{'paynum_ref'} ) {
+    ${ $opt{'paynum_ref'} } = $cust_pay->paynum;
+  }
+
+  $self->status('done');
+  $self->statustext('captured');
+  $self->paynum($cust_pay->paynum);
+  my $cpp_done_err = $self->replace;
+
+  if ( $cpp_done_err ) {
+
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    my $e = "WARNING: payment captured but could not update pending status ".
+            "for paypendingnum ".$self->paypendingnum.": $cpp_done_err \n\n";
+    warn $e;
+    return $e;
+
+  } else {
+
+    # commit at this stage--we don't want to roll back if applying 
+    # payments fails
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+    if ( $opt{'apply'} ) {
+      my $apply_error = $self->apply_payments_and_credits;
+      if ( $apply_error ) {
+        warn "WARNING: error applying payment: $apply_error\n\n";
+      }
+    }
+  }
+  '';
+}
+
+=item decline [ STATUSTEXT [ STATUS ] ]
 
 Sets the status of this pending payment to "done" (with statustext
-"declined (manual)" unless otherwise specified).
+"declined (manual)" unless otherwise specified).  The optional STATUS can be
+used to set the failure_status field.
 
 Currently only used when resolving pending payments manually.
 
@@ -308,11 +446,15 @@ Currently only used when resolving pending payments manually.
 sub decline {
   my $self = shift;
   my $statustext = shift || "declined (manual)";
+  my $failure_status = shift || '';
 
   #could send decline email too?  doesn't seem useful in manual resolution
+  # this is also used for thirdparty payment execution failures, but a decline
+  # email isn't useful there either, and will just confuse people.
 
   $self->status('done');
   $self->statustext($statustext);
+  $self->failure_status($failure_status);
   $self->replace;
 }
 

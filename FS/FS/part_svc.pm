@@ -65,6 +65,10 @@ empty for full access, "readonly" for read-only, "hidden" to hide it entirely
 right to change the password field, rather than just "Edit password".  Only
 relevant to svc_acct for now.
 
+=item has_router - Allow the service to have an L<FS::router> connected 
+through it.  Probably only relevant to svc_broadband, svc_acct, and svc_dsl
+for now.
+
 =back
 
 =head1 METHODS
@@ -394,11 +398,12 @@ sub check {
     $self->ut_numbern('svcpart')
     || $self->ut_text('svc')
     || $self->ut_alpha('svcdb')
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
-    || $self->ut_enum('preserve', [ '', 'Y' ] )
+    || $self->ut_flag('disabled')
+    || $self->ut_flag('preserve')
     || $self->ut_enum('selfservice_access', [ '', 'hidden', 'readonly' ] )
     || $self->ut_foreign_keyn('classnum', 'part_svc_class', 'classnum' )
-    || $self->ut_enum('restrict_edit_password', [ '', 'Y' ] )
+    || $self->ut_flag('restrict_edit_password')
+    || $self->ut_flag('has_router')
 ;
   return $error if $error;
 

@@ -1,0 +1,15 @@
+% if ( FS::Conf->new->exists('invoice-unitprice') or $curr_value > 1 ) {
+  <TR>
+    <TH ALIGN="right"><% mt('Quantity') |h %>
+    </TH>
+    <TD>
+      <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $curr_value |h %>">
+    </TD>
+  </TR>
+% } else {
+  <INPUT TYPE="hidden" NAME="quantity" VALUE="1">
+% }
+<%init>
+my %opt = @_;
+my $curr_value = $cgi->param('quantity') || $opt{'curr_value'} || 1;
+</%init>

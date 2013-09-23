@@ -37,6 +37,9 @@ tie our %locales, 'Tie::IxHash',
   'iw_IL', { name => 'Hebrew',         country => 'Israel', rtl=>1, },
 ;
 
+$_->{label} = $_->{name} . ' (' . $_->{country} . ')'
+  foreach values %locales;
+
 sub locales {
   keys %locales;
 }

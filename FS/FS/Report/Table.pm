@@ -56,12 +56,7 @@ sub signups {
     push @where, "refnum = ".$opt{'refnum'};
   }
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   $self->scalar_sql(
     "SELECT COUNT(*) FROM cust_main $join WHERE ".join(' AND ', @where)
@@ -325,16 +320,15 @@ sub _subtract_11mo {
 sub cust_pkg_setup_cost {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   my $where = '';
-  my $comparison = '';
-  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
-    if ( $1 == 0 ) {
-      $comparison = 'IS NULL';
-    }
-    else {
-      $comparison = "= $1";
-    }
-    $where = "AND part_pkg.classnum $comparison";
+
+  if ( $opt{'classnum'} ne '' ) {
+    my $classnums = $opt{'classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    $where .= ' AND COALESCE(part_pkg.classnum,0) IN ('. join(',', @$classnums).
+                                                    ')';
   }
+
   $agentnum ||= $opt{'agentnum'};
 
   my $total_sql = " SELECT SUM(part_pkg.setup_cost) ";
@@ -357,16 +351,15 @@ sub cust_pkg_setup_cost {
 sub cust_pkg_recur_cost {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   my $where = '';
-  my $comparison = '';
-  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
-    if ( $1 == 0 ) {
-      $comparison = 'IS NULL';
-    }
-    else {
-      $comparison = "= $1";
-    }
-    $where = " AND part_pkg.classnum $comparison";
+
+  if ( $opt{'classnum'} ne '' ) {
+    my $classnums = $opt{'classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    $where .= ' AND COALESCE(part_pkg.classnum,0) IN ('. join(',', @$classnums).
+                                                    ')';
   }
+
   $agentnum ||= $opt{'agentnum'};
   # duplication of in_time_period_and_agent
   # because we do it a little differently here
@@ -443,18 +436,14 @@ sub cust_bill_pkg_setup {
   my @where = (
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
   );
 
   # yuck, false laziness
   push @where, "cust_main.refnum = ". $opt{'refnum'} if $opt{'refnum'};
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
   FROM cust_bill_pkg
@@ -474,16 +463,12 @@ sub cust_bill_pkg_recur {
   my @where = (
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
   );
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   # subtract all usage from the line item regardless of date
   my $item_usage;
@@ -540,18 +525,14 @@ sub cust_bill_pkg_detail {
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
 
-  if ( $opt{'cust_classnum'} ) {
-    my $classnums = $opt{'cust_classnum'};
-    $classnums = [ $classnums ] if !ref($classnums);
-    @$classnums = grep /^\d+$/, @$classnums;
-    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
-  }
+  push @where, $self->with_cust_classnum(%opt);
 
   $agentnum ||= $opt{'agentnum'};
 
   push @where,
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_usageclass($opt{'usageclass'}),
+    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
     ;
 
   if ( $opt{'distribute'} ) {
@@ -589,6 +570,7 @@ sub cust_bill_pkg_detail {
 sub cust_bill_pkg_discount {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
+  #need to do this the new multi-classnum way if it gets re-enabled
   #my $where = '';
   #my $comparison = '';
   #if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
@@ -686,36 +668,28 @@ sub for_opts {
     if ( $opt{'refnum'} =~ /^(\d+)$/ ) {
       $sql .= " and refnum = $1 ";
     }
-    if ( $opt{'cust_classnum'} ) {
-      my $classnums = $opt{'cust_classnum'};
-      $classnums = [ $classnums ] if !ref($classnums);
-      @$classnums = grep /^\d+$/, @$classnums;
-      $sql .= ' and cust_main.classnum in('. join(',',@$classnums) .')'
-        if @$classnums;
+    if ( my $where = $self->with_cust_classnum(%opt) ) {
+      $sql .= " and $where";
     }
 
     $sql;
 }
 
 sub with_classnum {
-  my $self = shift;
-  my ($classnum, $use_override) = @_;
-  return '' unless $classnum =~ /^\d+$/;
-  my $comparison;
-  if ( $classnum == 0 ) {
-    $comparison = 'IS NULL';
-  }
-  else {
-    $comparison = "= $classnum";
-  }
+  my ($self, $classnum, $use_override) = @_;
+  return '' if $classnum eq '';
+
+  $classnum = [ $classnum ] if !ref($classnum);
+  @$classnum = grep /^\d+$/, @$classnum;
+  my $in = 'IN ('. join(',', @$classnum). ')';
+
   if ( $use_override ) {
-    return "(
-      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
-      override.classnum $comparison AND pkgpart_override IS NOT NULL
+    "(
+         ( COALESCE(part_pkg.classnum, 0) $in AND pkgpart_override IS NULL)
+      OR ( COALESCE(override.classnum, 0) $in AND pkgpart_override IS NOT NULL )
     )";
-  }
-  else {
-    return "part_pkg.classnum $comparison";
+  } else {
+    "COALESCE(part_pkg.classnum, 0) $in";
   }
 }
 
@@ -732,6 +706,60 @@ sub with_usageclass {
   }
   return "cust_bill_pkg_detail.classnum $comparison";
 }
+
+sub with_report_option {
+  my ($self, $num, $use_override) = @_;
+  # $num can be a single number, or a comma-delimited list of numbers,
+  # or an arrayref.  0 matches the empty set
+  # or the word 'multiple' for all packages with more than one report class
+  return '' if !defined($num);
+
+  $num = join(',', @$num) if ref($num);
+
+  # stringify the set of report options for each pkgpart
+  my $table = $use_override ? 'override' : 'part_pkg';
+  my $subselect = "
+    SELECT replace(optionname, 'report_option_', '') AS num
+      FROM part_pkg_option
+      WHERE optionname like 'report_option_%' 
+        AND part_pkg_option.pkgpart = $table.pkgpart
+      ORDER BY num";
+  
+  my $comparison;
+  if ( $num eq 'multiple' ) {
+    $comparison = "(SELECT COUNT(*) FROM ($subselect) AS x) > 1";
+  } else {
+
+    my @num = split(/\s*,\s*/, $num);
+
+    #$comparison = "(SELECT COALESCE(string_agg(num, ','), '') FROM ( #Pg 9-ism
+    $comparison = "(SELECT COALESCE(array_to_string(array_agg(num), ','), '')
+                      FROM ($subselect) AS x
+                   ) = '". join(',', grep $_, @num). "'";
+
+    $comparison = "( $comparison OR NOT EXISTS ($subselect) )"
+      if grep !$_, @num;
+
+  }
+  if ( $use_override ) {
+    # then also allow the non-override package to match
+    $comparison = "( $comparison OR " . $self->with_report_option($num) . ")";
+  }
+  $comparison;
+}
+
+sub with_cust_classnum {
+  my ($self, %opt) = @_;
+  if ( $opt{'cust_classnum'} ) {
+    my $classnums = $opt{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    return 'cust_main.classnum in('. join(',',@$classnums) .')'
+      if @$classnums;
+  }
+  '';
+}
+
 
 sub scalar_sql {
   my( $self, $sql ) = ( shift, shift );

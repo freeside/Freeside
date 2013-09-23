@@ -1,10 +1,19 @@
 <%doc>
 
+The rs_init_object javascript function defined by this include instantiates and
+returns a new object for XMLHTTP communication: on Microsoft browsers, an
+ActiveXObject ("Msxml2.XMLHTTP" or "Microsoft.XMLHTTP"), or on other browsers,
+an XMLHttpRequest object.
+
 Example:
 
-  include( '/elements/rs_init_object.html' );
+  <& /elements/rs_init_object.html &>
 
 </%doc>
+<%shared>
+my $initialized = 0; #won't work if component is "preloaded"... so don't do that
+</%shared>
+% if ( ! $initialized++ ) {
 <SCRIPT TYPE="text/javascript">
 
   function rs_init_object() {
@@ -27,3 +36,4 @@ Example:
   }
 
 </SCRIPT>
+% }

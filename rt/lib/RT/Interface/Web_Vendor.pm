@@ -254,7 +254,27 @@ sub ProcessTicketBasics {
         TimeLeft
         Type
         Queue
+        WillResolve
     );
+
+    # the UI for editing WillResolve through Ticket Basics should allow 
+    # setting it to null
+    if ( exists $ARGSRef->{'WillResolve_Date'} ) {
+      my $to_date = delete($ARGSRef->{'WillResolve_Date'});
+      my $DateObj = RT::Date->new($session{'CurrentUser'});
+      if ( $to_date ) {
+          $DateObj->Set(Format => 'unknown', Value => $to_date);
+          if ( $DateObj->Unix > time ) {
+            $ARGSRef->{'WillResolve'} = $DateObj->ISO;
+          } else {
+            warn "Ticket ".$TicketObj->Id.": WillResolve date '$to_date' not accepted.\n";
+            # and then don't set it in ARGSRef
+          }
+      } elsif ( $TicketObj and $TicketObj->WillResolveObj->Unix > 0 ) {
+          $DateObj->Set(Value => 0);
+          $ARGSRef->{'WillResolve'} = $DateObj->ISO;
+      }
+    }
 
     if ( $ARGSRef->{'Queue'} and ( $ARGSRef->{'Queue'} !~ /^(\d+)$/ ) ) {
         my $tempqueue = RT::Queue->new($RT::SystemUser);
@@ -327,6 +347,13 @@ sub ProcessTicketDates {
             Format => 'unknown',
             Value  => $ARGSRef->{ $field . '_Date' }
         );
+
+        if ( $field eq 'WillResolve'
+              and $DateObj->Unix > 0 
+              and $DateObj->Unix <= time ) {
+            push @results, "Can't set WillResolve date in the past.";
+            next;
+        }
 
         my $obj = $field . "Obj";
         if (    ( defined $DateObj->Unix )
@@ -552,6 +579,33 @@ sub ProcessUpdateMessage {
     }
     return @results;
 }
+
+sub default_FormatDate { $_[0]->AsString }
+
+sub ProcessColumnMapValue {
+    my $value = shift;
+    my %args = ( Arguments => [],
+                 Escape => 1,
+                 FormatDate => \&default_FormatDate,
+                 @_ );
+
+    if ( ref $value ) {
+        if ( ref $value eq 'RT::Date' ) {
+            return $args{FormatDate}->($value);
+        } elsif ( UNIVERSAL::isa( $value, 'CODE' ) ) {
+            my @tmp = $value->( @{ $args{'Arguments'} } );
+            return ProcessColumnMapValue( ( @tmp > 1 ? \@tmp : $tmp[0] ), %args );
+        } elsif ( UNIVERSAL::isa( $value, 'ARRAY' ) ) {
+            return join '', map ProcessColumnMapValue( $_, %args ), @$value;
+        } elsif ( UNIVERSAL::isa( $value, 'SCALAR' ) ) {
+            return $$value;
+        }
+    }
+
+    return $m->interp->apply_escapes( $value, 'h' ) if $args{'Escape'};
+    return $value;
+}
+
 
 1;
 

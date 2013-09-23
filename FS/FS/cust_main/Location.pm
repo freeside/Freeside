@@ -124,6 +124,11 @@ sub _upgrade_data {
   local $DEBUG = 0;
   my $error;
 
+  my $tax_prefix = 'bill_';
+  if ( FS::Conf->new->exists('tax-ship_address') ) {
+    $tax_prefix = 'ship_';
+  }
+
   # Step 0: set up contact classes and phone types
   my $service_contact_class = 
     qsearchs('contact_class', { classname => 'Service'})
@@ -157,19 +162,15 @@ sub _upgrade_data {
     my $bill_location = FS::cust_location->new(
       {
         custnum => $custnum,
-        map { $_ => $cust_main->get($_) } location_fields()
+        map { $_ => $cust_main->get($_) } location_fields(),
       }
     );
-    $error = $bill_location->insert;
-    die "error migrating billing address for customer $custnum: $error"
-      if $error;
-
-    $cust_main->set(bill_locationnum => $bill_location->locationnum);
+    $bill_location->set('censustract', ''); # properly goes with ship_location
+    my $ship_location = $bill_location; # until proven otherwise
 
     if ( $cust_main->get('ship_address1') ) {
       # detect duplicates
       my $same = 1;
-      my $ship_location;
       foreach (location_fields()) {
         if ( length($cust_main->get("ship_$_")) and
              $cust_main->get($_) ne $cust_main->get("ship_$_") ) {
@@ -177,21 +178,16 @@ sub _upgrade_data {
         }
       }
 
-      if ( $same ) {
-        $ship_location = $bill_location;
-      } else {
+      if ( !$same ) {
         $ship_location = FS::cust_location->new(
           {
             custnum => $custnum,
             map { $_ => $cust_main->get("ship_$_") } location_fields()
           }
         );
-        $error = $ship_location->insert;
-        die "error migrating service address for customer $custnum: $error"
-          if $error;
-      }
+      } # else it stays equal to $bill_location
 
-      $cust_main->set(ship_locationnum => $ship_location->locationnum);
+      $ship_location->set('censustract', $cust_main->get('censustract'));
 
       # Step 2: Extract shipping address contact fields into contact
       my %unlike = map { $_ => 1 }
@@ -207,6 +203,14 @@ sub _upgrade_data {
           'last'        => $cust_main->get('ship_last'),
           'first'       => $cust_main->get('ship_first'),
         });
+        if ( !$cust_main->get('ship_last') or !$cust_main->get('ship_first') )
+        {
+          warn "customer $custnum has no service contact name; substituting ".
+               "customer name\n";
+          $contact->set('last' => $cust_main->get('last'));
+          $contact->set('first' => $cust_main->get('first'));
+        }
+
         if ( $unlike{'company'} ) {
           # there's no contact.company field, but keep a record of it
           $contact->set(comment => 'Company: '.$cust_main->get('ship_company'));
@@ -233,9 +237,33 @@ sub _upgrade_data {
         $cust_main->set("ship_$_" => '') foreach qw(last first company);
       } #if %unlike
     } #if ship_address1
-    else {
-      $cust_main->set(ship_locationnum => $bill_location->locationnum);
+
+    # special case: should go with whichever location is used to calculate
+    # taxes, because that's the one it originally came from
+    if ( my $geocode = $cust_main->get('geocode') ) {
+      $bill_location->set('geocode' => '');
+      $ship_location->set('geocode' => '');
+
+      if ( $tax_prefix eq 'bill_' ) {
+        $bill_location->set('geocode', $geocode);
+      } elsif ( $tax_prefix eq 'ship_' ) {
+        $ship_location->set('geocode', $geocode);
+      }
     }
+
+    $error = $bill_location->insert;
+    die "error migrating billing address for customer $custnum: $error"
+      if $error;
+
+    $cust_main->set(bill_locationnum => $bill_location->locationnum);
+
+    if (!$ship_location->locationnum) {
+      $error = $ship_location->insert;
+      die "error migrating service address for customer $custnum: $error"
+        if $error;
+    }
+
+    $cust_main->set(ship_locationnum => $ship_location->locationnum);
 
     # Step 3: Wipe the migrated fields and update the cust_main
 

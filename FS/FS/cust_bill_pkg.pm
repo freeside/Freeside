@@ -434,7 +434,13 @@ sub check {
       || $self->ut_snumber('pkgnum')
       || $self->ut_number('invnum')
       || $self->ut_money('setup')
+      || $self->ut_moneyn('unitsetup')
+      || $self->ut_currencyn('setup_billed_currency')
+      || $self->ut_moneyn('setup_billed_amount')
       || $self->ut_money('recur')
+      || $self->ut_moneyn('unitrecur')
+      || $self->ut_currencyn('recur_billed_currency')
+      || $self->ut_moneyn('recur_billed_amount')
       || $self->ut_numbern('sdate')
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
@@ -949,8 +955,8 @@ Returns an SQL expression for the sum of payments applied to this item.
 
 sub paid_sql {
   my ($class, $start, $end, %opt) = @_;
-  my $s = $start ? "AND cust_bill_pay._date <= $start" : '';
-  my $e = $end   ? "AND cust_bill_pay._date >  $end"   : '';
+  my $s = $start ? "AND cust_pay._date <= $start" : '';
+  my $e = $end   ? "AND cust_pay._date >  $end"   : '';
   my $setuprecur = 
     $opt{setuprecur} =~ /^s/ ? 'setup' :
     $opt{setuprecur} =~ /^r/ ? 'recur' :
@@ -959,6 +965,7 @@ sub paid_sql {
 
   my $paid = "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
      FROM cust_bill_pay_pkg JOIN cust_bill_pay USING (billpaynum)
+                            JOIN cust_pay      USING (paynum)
      WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum
            $s $e $setuprecur )";
 
@@ -977,8 +984,8 @@ sub paid_sql {
 
 sub credited_sql {
   my ($class, $start, $end, %opt) = @_;
-  my $s = $start ? "AND cust_credit_bill._date <= $start" : '';
-  my $e = $end   ? "AND cust_credit_bill._date >  $end"   : '';
+  my $s = $start ? "AND cust_credit._date <= $start" : '';
+  my $e = $end   ? "AND cust_credit._date >  $end"   : '';
   my $setuprecur = 
     $opt{setuprecur} =~ /^s/ ? 'setup' :
     $opt{setuprecur} =~ /^r/ ? 'recur' :
@@ -987,6 +994,7 @@ sub credited_sql {
 
   my $credited = "( SELECT COALESCE(SUM(cust_credit_bill_pkg.amount),0)
      FROM cust_credit_bill_pkg JOIN cust_credit_bill USING (creditbillnum)
+                               JOIN cust_credit      USING (crednum)
      WHERE cust_credit_bill_pkg.billpkgnum = cust_bill_pkg.billpkgnum
            $s $e $setuprecur )";
 

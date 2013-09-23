@@ -3,7 +3,6 @@ td.package {
   vertical-align: top;
   border-width: 0;
   border-style: solid;
-  border-color: #bbbbff;
 }
 table.package {
   border: none;
@@ -24,7 +23,10 @@ table.usage {
 .row1 { background-color: #ffffff; }
 
 </STYLE>
-% my $s = 0;
+
+% unless ( $opt{no_links} ) {
+
+%   my $s = 0;
 
 % if ( $curuser->access_right('Qualify service') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -43,21 +45,33 @@ table.usage {
   <& one_time_charge_link.html, $cust_main &>
 % } 
 
+% if ( $curuser->access_right('Bulk move customer services') ) { 
+  <% $s++ ? ' | ' : '' %>
+
+  <& /elements/popup_link-cust_main.html,
+               'label'       => emt('Move services between packages'),
+               'action'      => "${p}edit/bulk-cust_svc-pkgnum.html",
+               'cust_main'   => $cust_main,
+               'actionlabel' => emt('Move services'),
+               'width'       => 968, #763,
+               'height'      => 575,
+  &>
+
+% } 
+
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A> (<% mt('preserves services') |h %>)
+  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A>
 % } 
 
 <BR><BR>
+
+% } # unless $opt{no_links}
 
 <TABLE>
   <TR>
     <TD ALIGN="left" VALIGN="top">
 
-% if ( @$packages ) {
-
-<% mt('Current packages') |h %> 
-% } 
 % if ( $cust_main->num_cancelled_pkgs ) {
 %     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
 %          || ( $conf->exists('hidecancelledpackages')
@@ -86,6 +100,9 @@ table.usage {
 % }
 
     </TD>
+
+%   unless ( $opt{no_links} ) {
+
     <TD ALIGN="right">
       <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>"><% mt('Package reports') |h %></A>
 % if ( $curuser->access_right('Qualify service') ) { 
@@ -97,6 +114,9 @@ table.usage {
       <% mt('Usage reports:') |h %> 
         <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>"><% mt('CDRs') |h %></A>
     </TD>
+
+%   } # unless $opt{no_links}
+
   </TR>
 
   <TR>
@@ -105,6 +125,7 @@ table.usage {
 <& locations.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
+    %opt,
  &>
 % }
 % else {
@@ -113,6 +134,7 @@ table.usage {
 <& packages/section.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
+    %opt,
  &>
 </TABLE>
 % }
@@ -176,11 +198,30 @@ sub get_packages {
   } );
   my $num_old_packages = scalar(@packages);
 
+  my %change_to_from; # target pkgnum => current cust_pkg, for future changes
+
   foreach my $cust_pkg ( @packages ) {
     my %hash = $cust_pkg->hash;
     my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
                    grep { /^part_pkg_/ } keys %hash;
     $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
+    if ( $cust_pkg->change_to_pkgnum ) {
+      $change_to_from{$cust_pkg->change_to_pkgnum} = $cust_pkg;
+    }
+  }
+
+  if ( keys %change_to_from ) {
+    my @not_future_packages;
+    foreach my $cust_pkg (@packages) {
+      if ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
+        my $change_from = $change_to_from{ $cust_pkg->pkgnum };
+        $cust_pkg->set('change_from_pkg', $change_from);
+        $change_from->set('change_to_pkg', $cust_pkg);
+      } else {
+        push @not_future_packages, $cust_pkg;
+      }
+    }
+    @packages = @not_future_packages;
   }
 
   unless ( $cgi->param('showoldpackages') ) {
@@ -202,6 +243,7 @@ sub get_packages {
   
   # don't include supplemental packages in this list; they'll be found from
   # their main packages
+  # (as will change-target packages)
   @packages = grep !$_->main_pkgnum, @packages;
 
   ( \@packages, $num_old_packages );

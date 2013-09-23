@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -501,19 +501,24 @@ sub _Set {
     # $ret is a Class::ReturnValue object. as such, in a boolean context, it's a bool
     # we want to change the standard "success" message
     if ($status) {
-        $msg =
-          $self->loc(
-            "[_1] changed from [_2] to [_3]",
-            $self->loc( $args{'Field'} ),
-            ( $old_val ? '"' . $old_val . '"' : $self->loc("(no value)") ),
-            '"' . $self->__Value( $args{'Field'}) . '"' 
-          );
-      } else {
-
-          $msg = $self->CurrentUser->loc_fuzzy($msg);
+        if ($self->SQLType( $args{'Field'}) =~ /text/) {
+            $msg = $self->loc(
+                "[_1] updated",
+                $self->loc( $args{'Field'} ),
+            );
+        } else {
+            $msg = $self->loc(
+                "[_1] changed from [_2] to [_3]",
+                $self->loc( $args{'Field'} ),
+                ( $old_val ? '"' . $old_val . '"' : $self->loc("(no value)") ),
+                '"' . $self->__Value( $args{'Field'}) . '"',
+            );
+        }
+    } else {
+        $msg = $self->CurrentUser->loc_fuzzy($msg);
     }
-    return wantarray ? ($status, $msg) : $ret;     
 
+    return wantarray ? ($status, $msg) : $ret;
 }
 
 
@@ -888,6 +893,8 @@ sub Update {
 
         $value =~ s/\r\n/\n/gs;
 
+        my $truncated_value = $self->TruncateValue($attribute, $value);
+
         # If Queue is 'General', we want to resolve the queue name for
         # the object.
 
@@ -902,8 +909,12 @@ sub Update {
                 my $name = $self->$object->Name;
                 next if $name eq $value || $name eq ($value || 0);
             };
-            next if $value eq $self->$attribute();
-            next if ($value || 0) eq $self->$attribute();
+
+            my $current = $self->$attribute();
+            # RT::Queue->Lifecycle returns a Lifecycle object instead of name
+            $current = eval { $current->Name } if ref $current;
+            next if $truncated_value eq $current;
+            next if ( $truncated_value || 0 ) eq $current;
         };
 
         $new_values{$attribute} = $value;
@@ -1418,7 +1429,7 @@ sub _AddLink {
 
 Delete a link. takes a paramhash of Base, Target and Type.
 Either Base or Target must be null. The null value will 
-be replaced with this ticket\'s id
+be replaced with this ticket's id
 
 =cut 
 
@@ -1633,29 +1644,37 @@ sub CustomFields {
     $cfs->SetContextObject( $self );
     # XXX handle multiple types properly
     $cfs->LimitToLookupType( $self->CustomFieldLookupType );
-    $cfs->LimitToGlobalOrObjectId(
-        $self->_LookupId( $self->CustomFieldLookupType )
-    );
+    $cfs->LimitToGlobalOrObjectId( $self->CustomFieldLookupId );
     $cfs->ApplySortOrder;
 
     return $cfs;
 }
 
-# TODO: This _only_ works for RT::Class classes. it doesn't work, for example,
-# for RT::IR classes.
+# TODO: This _only_ works for RT::Foo classes. it doesn't work, for
+# example, for RT::IR::Foo classes.
 
-sub _LookupId {
+sub CustomFieldLookupId {
     my $self = shift;
-    my $lookup = shift;
+    my $lookup = shift || $self->CustomFieldLookupType;
     my @classes = ($lookup =~ /RT::(\w+)-/g);
 
+    # Work on "RT::Queue", for instance
+    return $self->Id unless @classes;
+
     my $object = $self;
+    # Save a ->Load call by not calling ->FooObj->Id, just ->Foo
+    my $final = shift @classes;
     foreach my $class (reverse @classes) {
 	my $method = "${class}Obj";
 	$object = $object->$method;
     }
 
-    return $object->Id;
+    my $id = $object->$final;
+    unless (defined $id) {
+        my $method = "${final}Obj";
+        $id = $object->$method->Id;
+    }
+    return $id;
 }
 
 

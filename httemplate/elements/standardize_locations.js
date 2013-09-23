@@ -11,13 +11,13 @@ function form_address_info() {
 % if ( $billship ) {
   returnobj['same'] = cf.elements['same'].checked;
 % }
-% if ( $withfirm ) {
-% # not part of either address, really
-  returnobj['company'] = cf.elements['company'].value;
-% }
 % if ( $withcensus ) {
 % # "entered" censustract always goes with the ship_ address if there is one
-  returnobj['ship_censustract'] = cf.elements['enter_censustract'].value;
+%   if ( $billship ) {
+    returnobj['ship_censustract'] = cf.elements['enter_censustract'].value;
+%   } else { # there's only a package address, so it's just "censustract"
+    returnobj['censustract'] = cf.elements['enter_censustract'].value;
+%   }
 % }
 % for my $pre (@prefixes) {
   if ( <% $pre eq 'ship_' ? 1 : 0 %> && returnobj['same'] ) {
@@ -78,6 +78,7 @@ function standardize_locations() {
 % # censustract so that we don't ask the user to confirm it again.
 
   if ( !changed && <% $withcensus %> ) {
+%   if ( $billship ) {
     if ( address_info['same'] ) {
       cf.elements['bill_censustract'].value =
         address_info['bill_censustract'];
@@ -85,6 +86,10 @@ function standardize_locations() {
       cf.elements['ship_censustract'].value =
         address_info['ship_censustract'];
     }
+%   } else {
+      cf.elements['censustract'].value =
+        address_info['censustract'];
+%   }
   }
 
 % if ( $conf->config('address_standardize_method') ) {
@@ -176,6 +181,7 @@ function confirm_manual_address() {
 %# not much to do in this case, just confirm the censustract
 % if ( $withcensus ) {
   var cf = document.<% $formname %>;
+%   if ( $billship ) {
   if ( cf.elements['same'] && cf.elements['same'].checked ) {
     cf.elements['bill_censustract'].value =
       cf.elements['enter_censustract'].value;
@@ -183,6 +189,9 @@ function confirm_manual_address() {
     cf.elements['ship_censustract'].value =
       cf.elements['enter_censustract'].value;
   }
+%   } else {
+  cf.elements['censustract'].value = cf.elements['enter_censustract'].value;
+%   }
 % }
   post_standardization();
 }
@@ -198,7 +207,7 @@ function post_standardization() {
 
     var country_el = cf.elements['<% $taxpre %>country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
-    var geocode = cf.elements['bill_geocode'].value;
+    var geocode = cf.elements['<% $taxpre %>geocode'].value;
 
     if ( country == 'CA' || country == 'US' ) {
 
@@ -220,14 +229,14 @@ function post_standardization() {
 
     } else {
 
-      cf.elements['bill_geocode'].value = 'DEFAULT';
+      cf.elements['<% $taxpre %>geocode'].value = 'DEFAULT';
       <% $post_geocode %>;
 
     }
 
   } else {
 
-    cf.elements['bill_geocode'].value = '';
+    cf.elements['<% $taxpre %>geocode'].value = '';
     <% $post_geocode %>;
 
   }
@@ -252,7 +261,7 @@ function update_geocode() {
     cf.elements['<% $taxpre %>city'].value     = argsHash['city'];
     setselect(cf.elements['<% $taxpre %>state'], argsHash['state']);
     cf.elements['<% $taxpre %>zip'].value      = argsHash['zip'];
-    cf.elements['bill_geocode'].value  = argsHash['geocode'];
+    cf.elements['<% $taxpre %>geocode'].value  = argsHash['geocode'];
     <% $post_geocode %>;
 
   }
@@ -277,12 +286,13 @@ function setselect(el, value) {
 my %opt = @_;
 my $conf = new FS::Conf;
 
-my $withfirm = $opt{'with_firm'} ? 1 : 0;
 my $withcensus = $opt{'with_census'} ? 1 : 0;
 
 my @prefixes = '';
 my $billship = $opt{'billship'} ? 1 : 0; # whether to have bill_ and ship_ prefixes
 my $taxpre = '';
+# probably should just geocode both addresses, since either one could
+# be a package address in the future
 if ($billship) {
   @prefixes = qw(bill_ ship_);
   $taxpre = $conf->exists('tax-ship_address') ? 'ship_' : 'bill_';

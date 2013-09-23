@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -59,6 +59,7 @@ use RT::Dashboard;
 use RT::Interface::Web::Handler;
 use RT::Interface::Web;
 use File::Temp 'tempdir';
+use HTML::Scrubber;
 
 sub MailDashboards {
     my $self = shift;
@@ -248,6 +249,8 @@ SUMMARY
         }
     }
 
+    $content = ScrubContent($content);
+
     $RT::Logger->debug("Got ".length($content)." characters of output.");
 
     $content = HTML::RewriteAttributes::Links->rewrite(
@@ -393,7 +396,7 @@ sub BuildEmail {
                 Type         => $mimetype,
                 Encoding     => $encoding,
                 Disposition  => 'inline',
-                Name         => $filename,
+                Name         => RT::Interface::Email::EncodeToMIME( String => $filename ),
                 'Content-Id' => $cid_of{$uri},
             );
 
@@ -408,9 +411,9 @@ sub BuildEmail {
     );
 
     my $entity = MIME::Entity->build(
-        From    => $args{From},
-        To      => $args{To},
-        Subject => $args{Subject},
+        From    => Encode::encode_utf8($args{From}),
+        To      => Encode::encode_utf8($args{To}),
+        Subject => RT::Interface::Email::EncodeToMIME( String => $args{Subject} ),
         Type    => "multipart/mixed",
     );
 
@@ -459,6 +462,33 @@ sub BuildEmail {
         my $ret = $outbuf;
         $outbuf = '';
         return $ret;
+    }
+}
+
+{
+    my $scrubber;
+
+    sub _scrubber {
+        unless ($scrubber) {
+            $scrubber = HTML::Scrubber->new;
+            # Allow everything by default, except JS attributes ...
+            $scrubber->default(
+                1 => {
+                    '*' => 1,
+                    map { ("on$_" => 0) }
+                         qw(blur change click dblclick error focus keydown keypress keyup load
+                            mousedown mousemove mouseout mouseover mouseup reset select submit unload)
+                }
+            );
+            # ... and <script>s
+            $scrubber->deny('script');
+        }
+        return $scrubber;
+    }
+
+    sub ScrubContent {
+        my $content = shift;
+        return _scrubber->scrub($content);
     }
 }
 
@@ -560,8 +590,9 @@ sub GetResource {
 {
     package RT::Dashboard::FakeRequest;
     sub new { bless {}, shift }
-    sub header_out { shift }
-    sub headers_out { shift }
+    sub header_out { return undef }
+    sub headers_out { wantarray ? () : {} }
+    sub err_headers_out { wantarray ? () : {} }
     sub content_type {
         my $self = shift;
         $self->{content_type} = shift if @_;

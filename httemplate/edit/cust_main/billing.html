@@ -615,6 +615,23 @@ function toggle(obj) {
       <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="<% $cust_main->cdr_termination_percentage %>">
 % }
 
+%my @currencies = $conf->config('currencies');
+%if ( scalar(@currencies) ) {
+%  unshift @currencies, ''; #default
+%  my %currency_labels = map { $_ => "$_: ". code2currency($_) } @currencies;
+%  $currency_labels{''} =
+%    'Default: '. code2currency( $conf->config('currency') || 'USD' );
+
+    <& /elements/tr-select.html, 
+         'label'         => emt('Invoicing currency'),
+         'field'         => 'currency',
+         'options'       => \@currencies,
+         'labels'        => \%currency_labels,
+         'curr_value'    => $cust_main->currency,
+    &>
+% }
+
+
 %my @available_locales = $conf->config('available-locales');
 %if ( scalar(@available_locales) ) {
 %  push @available_locales, ''

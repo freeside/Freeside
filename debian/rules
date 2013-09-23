@@ -133,10 +133,11 @@ install-stamp: build-stamp
 	#hack the build dir out of Freeside too.  oh yeah, sucky.
 	perl -p -i -e "\
 	  s'${TMP}(-webui)?''g;\
-	" ${TMP}-webui/usr/share/freeside/handler.pl \
-	  ${TMP}/usr/share/perl5/FS/* \
-	  ${TMP}/usr/share/perl5/FS/*/* \
-	  ${TMP}/usr/bin/*
+	" ${TMP}-webui/usr/local/etc/freeside/handler.pl \
+	  ${TMP}-webui/etc/freeside/apache2/* \
+	  ${TMP}-lib/usr/share/perl5/FS/* \
+	  ${TMP}-lib/usr/share/perl5/FS/*/* \
+	  ${TMP}-lib/usr/bin/*
 
 	#rm -r $(FREESIDE_DOCUMENT_ROOT).*
 

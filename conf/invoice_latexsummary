@@ -21,16 +21,7 @@
 \textbf{\underline{Summary of New Charges}} & \\
 &\\
 [@--
-  #false laziness w/invoice_htmlsummary
-  foreach my $section (
-    grep {
-               $_->{tax_section} || !$_->{summarized}
-           and ! $_->{adjust_section}
-           and !($finance_section && $_->{'description'} eq $finance_section)
-           and $_->{'description'} !~ /^\d+ $/
-         }
-      @sections
-  ) {
+  foreach my $section (@summary_subtotals) {
     $OUT .= '\textbf{'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '}';
     $OUT .= '&\textbf{'. $section->{'subtotal'}. '}\\\\';
   }

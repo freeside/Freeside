@@ -1,0 +1,36 @@
+%if ( $error ) {
+%  errorpage($error); #also not super ideal
+%} else { #or this
+<% include('/elements/header.html', 'Exchange rates updated') %>
+<% include('/elements/footer.html') %>
+%}
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+
+my $to_currency = $conf->config('currency') || 'USD';
+
+my @currencies = sort { $a cmp $b } $conf->config('currencies');
+
+#in the best of all possible worlds, i would be a single database transaction
+# but here it isn't terribly important other than offending my sense of elegance
+my $error = '';
+foreach my $currency (@currencies) {
+
+  my %hash = ( 'from_currency' => $currency,
+               'to_currency'   => $to_currency,
+             );
+
+  my $currency_exchange = qsearchs('currency_exchange', \%hash)
+                         || new FS::currency_exchange   \%hash;
+
+  $currency_exchange->rate( $cgi->param("$currency-$to_currency") );
+
+  my $method = $currency_exchange->currencyratenum ? 'replace' : 'insert';
+  $error = $currency_exchange->$method() and last;
+}
+
+</%init>

@@ -115,14 +115,33 @@ my $args_callback = sub {
   push @args, 'options' => \%options;
 
   ###
+  #part_pkg_currency
+  ###
+
+  my %part_pkg_currency = (
+    map { $_ => scalar($cgi->param($_)) }
+      #grep /._[A-Z]{3}$/, #support other options
+      grep /^(setup|recur)_fee_[A-Z]{3}$/,
+        $cgi->param
+  );
+
+  push @args, 'part_pkg_currency' => \%part_pkg_currency;
+
+  ###
   #pkg_svc
   ###
 
   my @svcparts = map { $_->svcpart } qsearch('part_svc', {});
-  my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) } @svcparts;
-  my %hidden_svc = map { $_ => scalar($cgi->param("hidden$_")) } @svcparts;
+  my %pkg_svc    = map { $_ => scalar($cgi->param("pkg_svc$_"  )) } @svcparts;
+  my %hidden_svc = map { $_ => scalar($cgi->param("hidden$_"   )) } @svcparts;
+  my %bulk_skip  = map { $_ => ( $cgi->param("no_bulk_skip$_") eq 'Y'
+                                   ? '' : 'Y'
+                               )
+                                                                  } @svcparts;
 
-  push @args, 'pkg_svc' => \%pkg_svc, 'hidden_svc' => \%hidden_svc;
+  push @args, 'pkg_svc'    => \%pkg_svc,
+              'hidden_svc' => \%hidden_svc,
+              'bulk_skip'  => \%bulk_skip;
 
   ###
   # cust_pkg and custnum_ref (inserts only)

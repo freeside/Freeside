@@ -1,0 +1,93 @@
+<& elements/browse.html,
+     'title'              => 'Sales People',
+     'name_singular'      => 'sales person',
+     'menubar'            => ['Add a new sales person' => $p.'edit/sales.html'],
+     'query'              => { 'table' => 'sales' },
+     'count_query'        => 'SELECT COUNT(*) FROM sales',
+     'header'             => \@header,
+     'fields'             => \@fields,
+     'links'              => \@links,
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'agent_virt'         => 1,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Edit sales people');
+
+my $conf = new FS::Conf;
+
+#Sales people bring in business.<BR><BR>
+
+my @header = ( 'Sales person' );
+my @fields = ( 'salesperson' );
+my @links  = ( [$p.'edit/sales.html?', 'salesnum'] );
+
+if ( $curuser->access_right('Configuration') ) {
+  push @header, 'Agent';
+  push @fields, 'agent_name';
+  push @links,  [ $p.'edit/agent.cgi?', 'agentnum' ];
+}
+
+push @header, 'Master Customer';
+push @fields, sub {
+  my $sales = shift;
+  return '' unless $sales->sales_custnum;
+  include('/elements/small_custview.html',
+            $sales->sales_custnum,
+            scalar($conf->config('countrydefault')),
+            1, #show balance
+            $p.'view/cust_main.cgi',
+         );
+};
+push @links, '';
+
+push @header, 'Commissions';
+push @fields, sub {
+
+  my $sales = shift;
+
+  #started out as false laziness w/browse/agent.cgi
+  #  (which said surprising amount of false laziness w/ edit/process/agent.cgi)
+  # but this now returns an edit.html data structure that renders to a table
+  #  instead of HTML
+
+  my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
+
+  [
+    map {
+          my %sales_pkg_class = ( 'salesnum' => $sales->salesnum,
+                                  'classnum' => $_ ? $_->classnum : ''
+                                );
+          my $sales_pkg_class =
+            qsearchs( 'sales_pkg_class', \%sales_pkg_class )
+            || new FS::sales_pkg_class   \%sales_pkg_class;
+          #my $param = 'classnum'. $sales_pkg_class{classnum};
+
+          [
+            { align => 'left',
+              data  => encode_entities(
+                         $_ ? $_->classname : mt('(no package class)')
+                       ). ':&nbsp;',
+            },
+            { align => 'right',
+              data  => ($sales_pkg_class->commission_percent || 0). '%',
+            },
+            { align => 'left',
+              data  =>
+                $sales_pkg_class->commission_duration
+                  ? '&nbsp;for '. $sales_pkg_class->commission_duration. ' months'
+                  : ''
+            },
+          ];
+
+        }
+      ( '', @pkg_class )
+
+  ];
+
+};
+#push @links, '';
+
+</%init>

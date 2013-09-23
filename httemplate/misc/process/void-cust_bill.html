@@ -1,6 +1,6 @@
 %if ( $error ) {
 %  $cgi->param('error', $error);
-<% $cgi->redirect(popurl(1). "void-cust_bill.html?". $cgi->query_string ) %>
+<% $cgi->redirect(popurl(2). "void-cust_bill.html?". $cgi->query_string ) %>
 %} else {
 <& /elements/header-popup.html, 'Invoice voided' &>
 <SCRIPT TYPE="text/javascript">

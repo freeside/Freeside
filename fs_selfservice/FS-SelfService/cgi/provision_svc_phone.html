@@ -1,5 +1,4 @@
-<%= $url = "$selfurl?session=$session_id;action="; 
- $heading2 = $lnp ? "Port-In Number" : "Setup phone number";
+<%= $heading2 = $lnp ? "Port-In Number" : "Setup phone number";
  '';
 %>
 <%= include('header', $heading2) %>
@@ -15,8 +14,7 @@ if($error) {
 }
 %>
 
-<FORM name="OneTrueForm" action="<%= $url %>" METHOD="POST">
-<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<FORM name="OneTrueForm" action="<%= $selfurl %>" METHOD="POST">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_svc_phone">
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $svcpart %>">

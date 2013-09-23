@@ -1,18 +1,19 @@
-<& /elements/header-popup.html, mt("Change Package") &>
+<& /elements/header-popup.html, mt($title) &>
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
-
 <& /elements/error.html &>
 
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/change-cust_pkg.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 
+
+<FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
 <% ntable('#cccccc') %>
 
   <TR>
     <TH ALIGN="right"><% mt('Current package') |h %></TH>
     <TD COLSPAN=7>
-      <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
+      <FONT STYLE="background-color:#e8e8e8"><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %></FONT>
     </TD>
   </TR>
 
@@ -23,19 +24,66 @@
                'cust_main'  => $cust_main,
   &>
 
+  <& /elements/tr-input-pkg-quantity.html,
+               'curr_value' => $cust_pkg->quantity
+  &>
+
+</TABLE>
+<BR>
+
+
+<FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
+<% ntable('#cccccc') %>
+
+  <SCRIPT TYPE="text/javascript">
+    function delay_changed() {
+      var enable = document.OrderPkgForm.delay[1].checked;
+      document.getElementById('start_date_text').disabled = !enable;
+      document.getElementById('start_date_button').style.display = 
+        (enable ? '' : 'none');
+      document.getElementById('start_date_button_disabled').style.display =
+        (enable ? 'none' : '');
+    }
+    <&| /elements/onload.js &>
+      delay_changed();
+    </&>
+  </SCRIPT>
+  <TR>
+    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="0" \
+          <% !$cgi->param('delay') ? 'CHECKED' : '' %> \
+          onclick="delay_changed()"> Now </TD>
+    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="1" \
+          <% $cgi->param('delay')  ? 'CHECKED' : '' %> \
+          onclick="delay_changed()"> In the future
+      <& /elements/input-date-field.html, {
+          'name'  => 'start_date',
+          'value' => ($cgi->param('start_date') || $cust_main->next_bill_date),
+      } &>
+      <IMG SRC="<%$fsurl%>images/calendar-disabled.png" \
+            ID="start_date_button_disabled" STYLE="display:none">
+    </TD>
+  </TR>
+</TABLE>
+</BR>
+
+
+<FONT CLASS="fsinnerbox-title"><% mt('Location') |h %></FONT>
+<% ntable('#cccccc') %>
+
   <& /elements/tr-select-cust_location.html,
                'cgi'       => $cgi,
                'cust_main' => $cust_main,
   &>
 
 </TABLE>
+<BR>
+
 
 <& /elements/standardize_locations.html,
             'form'       => "OrderPkgForm",
             'callback'   => 'document.OrderPkgForm.submit();',
 &>
 
-<BR>
 <INPUT NAME    = "submitButton"
        TYPE    = "button"
        VALUE   = "<% mt("Change package") |h %>"
@@ -74,4 +122,15 @@ my $cust_main = $cust_pkg->cust_main
 
 my $part_pkg = $cust_pkg->part_pkg;
 
+my $title = "Change Package";
+
+# if there's already a package change ordered, preload it
+if ( $cust_pkg->change_to_pkgnum ) {
+  my $change_to = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
+  $cgi->param('delay', 1);
+  foreach(qw( start_date pkgpart locationnum quantity )) {
+    $cgi->param($_, $change_to->get($_));
+  }
+  $title = "Edit Scheduled Package Change";
+}
 </%init>

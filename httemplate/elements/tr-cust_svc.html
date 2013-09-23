@@ -15,20 +15,35 @@ Usage:
                 'manage_link'               => '', #for svc_broadband
                 'manage_link_text'          => '', #default 'Manage Device'
                 'manage_link_loc'           => '', #default 'bottom', or 'right'
-                'maestro-status_test'       => '',
             )
   %>
 
 </%doc>
 <TR>
-  <TD ALIGN="right" VALIGN="top"><% 
-FS::UI::Web::svc_link($m, $part_svc, $cust_svc)
-%></TD>
-  <TD STYLE="padding-bottom:0px"><B><% $cust_svc->agent_svcid ? $cust_svc->agent_svcid.': ' : '' %><%
-FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc)
-%></B></TD>
+  <TD ALIGN="right" VALIGN="top">
+%   if ( $opt{no_links} ) {
+      <% $part_svc->svc |h %>:
+%   } else {
+      <% FS::UI::Web::svc_link($m, $part_svc, $cust_svc) %>
+%   }
+  </TD>
+  <TD STYLE="padding-bottom:0px" VALIGN="top">
+%   if ( $opt{before_svc_callback} ) {
+      <% &{ $opt{before_svc_callback} }( $cust_svc ) %>
+%   }
+    <B><% $cust_svc->agent_svcid ? $cust_svc->agent_svcid.': ' : '' %>
+%   if ( $opt{no_links} ) {
+      <% ($cust_svc->label)[1] |h %>
+%   } else {
+      <% FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc) %>
+%   }
+    </B>
+%   if ( $opt{after_svc_callback} ) {
+      <% &{ $opt{after_svc_callback} }( $cust_svc ) %>
+%   }
+  </TD>
 <TD ALIGN="right"><% FS::UI::Web::svc_export_links($m, $part_svc, $cust_svc) %>
-%   if ( $manage_link and $opt{'manage_link_loc'} eq 'right' ) {
+%   if ( $manage_link and $opt{'manage_link_loc'} eq 'right' && ! $opt{no_links} ) {
       <A HREF="<% $manage_link %>" <% $manage_target %>><% $opt{'manage_link_text'} |h %></A>
 % }
 </TD>
@@ -45,10 +60,20 @@ $cust_svc->overlimit )
 </TR>
 % }
 <TR>
-% # first column: recharge link
+% # first column: (optional external balance and) recharge link
   <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px; padding-top:0px">
+% if ( $part_svc->svcdb eq 'svc_phone'
+%        && ! $opt{no_links}
+%    )
+% {
+%   my( $html, $hashref ) = $svc_x->export_getstatus;
+%   if ( length($hashref->{'Balance'}) ) { #quelle hack
+      <FONT SIZE="-1">Balance:&nbsp;<b><% $hashref->{'Balance'} %></b>&nbsp;</FONT>
+%   }
+% }
 % if ( $curuser->access_right('Recharge customer service') 
 %     && $part_svc->svcdb eq 'svc_acct'
+%     && ! $opt{no_links}
 %     && ( $svc_x->seconds ne '' 
 %       || $svc_x->upbytes ne ''
 %       || $svc_x->downbytes ne ''
@@ -60,21 +85,17 @@ $cust_svc->overlimit )
   </TD>
 % # second column: all other action links
   <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px; padding-top:0px">
-% if ( $part_svc->svcdb eq 'svc_broadband' ) {
+% if ( $part_svc->svcdb eq 'svc_broadband' && ! $opt{no_links} ) {
     <FONT SIZE="-2">(&nbsp;<%
       include('/elements/popup_link-ping.html',
               'ip' => $svc_x->ip_addr
       ) %>&nbsp;)</FONT>
-%   if ( $manage_link and $opt{'manage_link_loc'} eq 'bottom' ) {
+%   if ( $manage_link and $opt{'manage_link_loc'} eq 'bottom' && ! $opt{no_links} ) {
       <FONT SIZE="-2">(&nbsp;<A HREF="<% $manage_link %>" <% $manage_target %>><% $opt{'manage_link_text'} |h %></A>&nbsp;)</FONT>
 %   }
 % } #svc_broadband
-% if ( $curuser->access_right('Unprovision customer service') ) {
+% if ( $curuser->access_right('Unprovision customer service') && ! $opt{no_links} ) {
     <FONT SIZE="-2">(&nbsp;<% $svc_unprovision_link %>&nbsp;)</FONT>
-% }
-% if ( $part_svc->svcdb eq 'svc_pbx' && $opt{'maestro-status_test'} ) {
-    <FONT SIZE="-2">(&nbsp;<A HREF="<%$p%>misc/maestro-customer_status-test.html?<% $cust_pkg->custnum.'+'.$cust_svc->svcnum %>">Test maestro status</A>&nbsp;)
-    </FONT>
 % }
   </TD>
 </TR>

@@ -1,6 +1,11 @@
-% if ( $default ) {
-  <DIV STYLE="font-style: italic; font-size: small">
-% }
+% if ( $cust_pkg->change_from_pkg
+%      and $cust_pkg->change_from_pkg->locationnum == $cust_pkg->locationnum )
+% {
+% # don't show the location
+% } else {
+%   if ( $default ) {
+    <DIV STYLE="font-style: italic; font-size: small">
+%   }
 
     <% $loc->location_label( 'join_string'     => '<BR>',
                              'double_space'    => ' &nbsp; ',
@@ -22,23 +27,25 @@
         </FONT>
 %   }
 
-% if ( $default ) {
-  </DIV>
-% }
+%   if ( $default ) {
+    </DIV>
+%   }
 
-% if ( ! $cust_pkg->get('cancel')
+%   if ( ! $cust_pkg->get('cancel')
 %      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')
-%    )
-% {
+%     )
+%   {
   <BR>
   <FONT SIZE=-1>
-    (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
-%   if ( $cust_pkg->locationnum ) {
+%     unless ( $opt{no_links} or $opt{'change_from'} ) {
+      (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
+%     }
+%     if ( $cust_pkg->locationnum && ! $opt{no_links} ) {
         (&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
-%   }
+%     }
   </FONT>
-% } 
-
+%   } 
+% }
 <%init>
 
 my $conf = new FS::Conf;
@@ -63,6 +70,8 @@ sub pkg_change_location_link {
     'label'       => emt('Change location'),
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
+    'width'       => 960,
+    'height'      => 490,
   );
 }
 
@@ -72,7 +81,9 @@ sub edit_location_link {
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
     'label'       => emt('Edit location'),
     'actionlabel' => emt('Edit'),
-  );
+    'width'       => 700,
+    'height'      => 355,
+   );
 }
 
 </%init>

@@ -514,10 +514,10 @@ sub _fatal_or_null {
   }
 }
 
-=item tax_on_tax CUST_MAIN
+=item tax_on_tax CUST_LOCATION
 
 Returns a list of taxes which are candidates for taxing taxes for the
-given customer (see L<FS::cust_main>)
+given service location (see L<FS::cust_location>)
 
 =cut
 
@@ -525,13 +525,13 @@ given customer (see L<FS::cust_main>)
 sub tax_on_tax {
        #akshun
   my $self = shift;
-  my $cust_main = shift;
+  my $cust_location = shift;
 
   warn "looking up taxes on tax ". $self->taxnum. " for customer ".
-    $cust_main->custnum
+    $cust_location->custnum
     if $DEBUG;
 
-  my $geocode = $cust_main->geocode($self->data_vendor);
+  my $geocode = $cust_location->geocode($self->data_vendor);
 
   # CCH oddness in m2m
   my $dbh = dbh;
@@ -2120,8 +2120,7 @@ EOF
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_main>, L<FS::cust_bill>, schema.html from the base
-documentation.
+L<FS::Record>, L<FS::cust_location>, L<FS::cust_bill>
 
 =cut
 

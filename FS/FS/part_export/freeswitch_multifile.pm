@@ -26,6 +26,8 @@ tie my %options, 'Tie::IxHash',
   <user id="<% $phonenum %>">
     <params>
       <param name="password" value="<% $sip_password %>"/>
+      <param name="nibble_account" value="<% $phonenum %>"/>
+      <param name="nibble_rate" value="<% $nibble_rate %>"/>
     </params>
   </user>
 </domain>
@@ -60,7 +62,7 @@ sub _export_insert {
   my $svcnum = $svc_phone->svcnum;
 
   my $fh = new File::Temp(
-    TEMPLATE => "$tempdir/freeswitch.$svcnum.XXXXXXXX",
+    TEMPLATE => "freeswitch.$svcnum.XXXXXXXX",
     DIR      => $tempdir,
     #UNLINK   => 0,
   );
@@ -121,9 +123,14 @@ sub freeswitch_template_fillin {
              || $svc_phone->domain
              || '$${sip_profile}';
 
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+  my $nibble_rate = $cust_pkg ? $cust_pkg->part_pkg->option('nibble_rate')
+                              : '';
+
   #false lazinessish w/phone_shellcommands::_export_command
   my %hash = (
-    'domain' => $domain,
+    'domain'      => $domain,
+    'nibble_rate' => $nibble_rate,
     map { $_ => $svc_phone->getfield($_) } $svc_phone->fields
   );
 

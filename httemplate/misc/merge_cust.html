@@ -43,7 +43,7 @@ function do_submit_merge() {
                'curr_value'  => scalar($cgi->param('new_custnum')),
   &>
 
-% if ( $conf->exists('deletecustomers') ) {
+% if ( 0 ) { #we start supporting payment info merge again in some way
 
 %   if ( scalar($cust_main->ncancelled_pkgs) ) {
       <TR>
@@ -67,7 +67,7 @@ function do_submit_merge() {
              'value'       => 'Y',
              'curr_value'  => scalar($cgi->param('merge')),
         &>
-        Merge invoices, payments/credits, notes, tickets and delete this customer.
+        Merge invoices, payments/credits, notes, tickets and delete<!-- ^Warchive --> this customer.
       </TD>
     </TR>
 % }

@@ -1,9 +1,9 @@
 package FS::cust_pkg;
-
-use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common );
+
+use strict;
 use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
@@ -34,7 +34,7 @@ use FS::reason;
 use FS::cust_pkg_discount;
 use FS::discount;
 use FS::UI::Web;
-use Data::Dumper;
+use FS::sales;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -210,6 +210,11 @@ The pkgnum of the package that this package is supplemental to, if any.
 The package link (L<FS::part_pkg_link>) that defines this supplemental
 package, if it is one.
 
+=item change_to_pkgnum
+
+The pkgnum of the package this one will be "changed to" in the future
+(on its expiration date).
+
 =back
 
 Note: setup, last_bill, bill, adjourn, susp, expire, cancel and change_date
@@ -255,7 +260,8 @@ The following options are available:
 
 =item change
 
-If set true, supresses any referral credit to a referring customer.
+If set true, supresses actions that should only be taken for new package
+orders.  (Currently this includes: intro periods when delay_setup is on.)
 
 =item options
 
@@ -288,6 +294,7 @@ sub insert {
 
   my $part_pkg = $self->part_pkg;
 
+  # if the package def says to start only on the first of the month:
   if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
     my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
     $mon += 1 unless $mday == 1;
@@ -295,6 +302,8 @@ sub insert {
     $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
   }
 
+  # set up any automatic expire/adjourn/contract_end timers
+  # based on the start date
   foreach my $action ( qw(expire adjourn contract_end) ) {
     my $months = $part_pkg->option("${action}_months",1);
     if($months and !$self->$action) {
@@ -303,12 +312,16 @@ sub insert {
     }
   }
 
-  my $free_days = $part_pkg->option('free_days',1);
-  if ( $free_days && $part_pkg->option('delay_setup',1) ) { #&& !$self->start_date
-    my ($mday,$mon,$year) = (localtime(time) )[3,4,5];
-    #my $start_date = ($self->start_date || timelocal(0,0,0,$mday,$mon,$year)) + 86400 * $free_days;
-    my $start_date = timelocal(0,0,0,$mday,$mon,$year) + 86400 * $free_days;
-    $self->start_date($start_date);
+  # if this package has "free days" and delayed setup fee, tehn 
+  # set start date that many days in the future.
+  # (this should have been set in the UI, but enforce it here)
+  if (    ! $options{'change'}
+       && ( my $free_days = $part_pkg->option('free_days',1) )
+       && $part_pkg->option('delay_setup',1)
+       #&& ! $self->start_date
+     )
+  {
+    $self->start_date( $part_pkg->default_start_date );
   }
 
   $self->order_date(time);
@@ -344,15 +357,6 @@ sub insert {
       return $error;
     }
   }
-
-  #if ( $self->reg_code ) {
-  #  my $reg_code = qsearchs('reg_code', { 'code' => $self->reg_code } );
-  #  $error = $reg_code->delete;
-  #  if ( $error ) {
-  #    $dbh->rollback if $oldAutoCommit;
-  #    return $error;
-  #  }
-  #}
 
   my $conf = new FS::Conf;
 
@@ -576,9 +580,12 @@ sub replace {
 
   }
 
-  my $error = $new->SUPER::replace($old,
-                                   $options->{options} ? $options->{options} : ()
-                                  );
+  my $error =  $new->export_pkg_change($old)
+            || $new->SUPER::replace( $old,
+                                     $options->{options}
+                                       ? $options->{options}
+                                       : ()
+                                   );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -624,6 +631,8 @@ sub check {
     || $self->ut_numbern('pkgpart')
     || $self->ut_foreign_keyn('contactnum',  'contact',       'contactnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
+    || $self->ut_numbern('quantity')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
@@ -640,6 +649,7 @@ sub check {
     || $self->ut_enum('setup_show_zero', [ '', 'Y', 'N', ])
     || $self->ut_foreign_keyn('main_pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_foreign_keyn('pkglinknum', 'part_pkg_link', 'pkglinknum')
+    || $self->ut_foreign_keyn('change_to_pkgnum', 'cust_pkg', 'pkgnum')
   ;
   return $error if $error;
 
@@ -861,10 +871,19 @@ sub cancel {
   } #unless $date
 
   my %hash = $self->hash;
-  $date ? ($hash{'expire'} = $date) : ($hash{'cancel'} = $cancel_time);
+  if ( $date ) {
+    $hash{'expire'} = $date;
+  } else {
+    $hash{'cancel'} = $cancel_time;
+  }
   $hash{'change_custnum'} = $options{'change_custnum'};
+
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
+  if ( $self->change_to_pkgnum ) {
+    my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
+    $error ||= $change_to->cancel || $change_to->delete;
+  }
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -1433,10 +1452,8 @@ field).
 
 Can be set true to adjust the next bill date forward by
 the amount of time the account was inactive.  This was set true by default
-since 1.4.2 and 1.5.0pre6; however, starting with 1.7.0 this needs to be
-explicitly requested.  Price plans for which this makes sense (anniversary-date
-based than prorate or subscription) could have an option to enable this
-behaviour?
+in the past (from 1.4.2 and 1.5.0pre6 through 1.7.0), but now needs to be
+explicitly requested with this option or in the price plan.
 
 =back
 
@@ -1717,15 +1734,32 @@ New pkgpart (see L<FS::part_pkg>).
 
 New refnum (see L<FS::part_referral>).
 
+=item quantity
+
+New quantity; if unspecified, the new package will have the same quantity
+as the old.
+
+=item cust_pkg
+
+"New" (existing) FS::cust_pkg object.  The package's services and other 
+attributes will be transferred to this package.
+
 =item keep_dates
 
 Set to true to transfer billing dates (start_date, setup, last_bill, bill, 
 susp, adjourn, cancel, expire, and contract_end) to the new package.
 
+=item unprotect_svcs
+
+Normally, change() will rollback and return an error if some services 
+can't be transferred (also see the I<cust_pkg-change_svcpart> config option).
+If unprotect_svcs is true, this method will transfer as many services as 
+it can and then unconditionally cancel the old package.
+
 =back
 
-At least one of locationnum, cust_location, pkgpart, refnum must be specified 
-(otherwise, what's the point?)
+At least one of locationnum, cust_location, pkgpart, refnum, cust_main, or
+cust_pkg must be specified (otherwise, what's the point?)
 
 Returns either the new FS::cust_pkg object or a scalar error.
 
@@ -1739,9 +1773,6 @@ For example:
 sub change {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
-
-#  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum) = @_;
-#    
 
   my $conf = new FS::Conf;
 
@@ -1763,10 +1794,6 @@ sub change {
 
   my $time = time;
 
-  #$hash{$_} = $self->$_() foreach qw( last_bill bill );
-    
-  #$hash{$_} = $self->$_() foreach qw( setup );
-
   $hash{'setup'} = $time if $self->setup;
 
   $hash{'change_date'} = $time;
@@ -1780,6 +1807,12 @@ sub change {
       return "inserting cust_location (transaction rolled back): $error";
     }
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
+  }
+
+  if ( $opt->{'cust_pkg'} ) {
+    # treat changing to a package with a different pkgpart as a 
+    # pkgpart change (because it is)
+    $opt->{'pkgpart'} = $opt->{'cust_pkg'}->pkgpart;
   }
 
   # whether to override pkgpart checking on the new package
@@ -1808,6 +1841,7 @@ sub change {
       $hash{$date} = $self->getfield($date);
     }
   }
+
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
   $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
@@ -1833,16 +1867,31 @@ sub change {
 
   $hash{'contactnum'} = $opt->{'contactnum'} if $opt->{'contactnum'};
 
-  # Create the new package.
-  my $cust_pkg = new FS::cust_pkg {
-    custnum        => $custnum,
-    pkgpart        => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
-    refnum         => ( $opt->{'refnum'}      || $self->refnum       ),
-    locationnum    => ( $opt->{'locationnum'}                        ),
-    %hash,
-  };
-  $error = $cust_pkg->insert( 'change' => 1,
-                              'allow_pkgpart' => $same_pkgpart );
+  my $cust_pkg;
+  if ( $opt->{'cust_pkg'} ) {
+    # The target package already exists; update it to show that it was 
+    # changed from this package.
+    $cust_pkg = $opt->{'cust_pkg'};
+
+    foreach ( qw( pkgnum pkgpart locationnum ) ) {
+      $cust_pkg->set("change_$_", $self->get($_));
+    }
+    $cust_pkg->set('change_date', $time);
+    $error = $cust_pkg->replace;
+
+  } else {
+    # Create the new package.
+    $cust_pkg = new FS::cust_pkg {
+      custnum     => $custnum,
+      locationnum => $opt->{'locationnum'},
+      ( map {  $_ => ( $opt->{$_} || $self->$_() )  }
+          qw( pkgpart quantity refnum salesnum )
+      ),
+      %hash,
+    };
+    $error = $cust_pkg->insert( 'change' => 1,
+                                'allow_pkgpart' => $same_pkgpart );
+  }
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -1867,7 +1916,11 @@ sub change {
     }
   }
 
-  if ($error > 0) {
+  # We set unprotect_svcs when executing a "future package change".  It's 
+  # not a user-interactive operation, so returning an error means the 
+  # package change will just fail.  Rather than have that happen, we'll 
+  # let leftover services be deleted.
+  if ($error > 0 and !$opt->{'unprotect_svcs'}) {
     # Transfers were successful, but we still had services left on the old
     # package.  We can't change the package under this circumstances, so abort.
     $dbh->rollback if $oldAutoCommit;
@@ -1917,56 +1970,73 @@ sub change {
     }
   }
 
-  # Order any supplemental packages.
-  my $part_pkg = $cust_pkg->part_pkg;
-  my @old_supp_pkgs = $self->supplemental_pkgs;
-  my @new_supp_pkgs;
-  foreach my $link ($part_pkg->supp_part_pkg_link) {
-    my $old;
-    foreach (@old_supp_pkgs) {
-      if ($_->pkgpart == $link->dst_pkgpart) {
-        $old = $_;
-        $_->pkgpart(0); # so that it can't match more than once
-      }
-      last if $old;
-    }
-    # false laziness with FS::cust_main::Packages::order_pkg
-    my $new = FS::cust_pkg->new({
-        pkgpart       => $link->dst_pkgpart,
-        pkglinknum    => $link->pkglinknum,
-        custnum       => $custnum,
-        main_pkgnum   => $cust_pkg->pkgnum,
-        locationnum   => $cust_pkg->locationnum,
-        start_date    => $cust_pkg->start_date,
-        order_date    => $cust_pkg->order_date,
-        expire        => $cust_pkg->expire,
-        adjourn       => $cust_pkg->adjourn,
-        contract_end  => $cust_pkg->contract_end,
-        refnum        => $cust_pkg->refnum,
-        discountnum   => $cust_pkg->discountnum,
-        waive_setup   => $cust_pkg->waive_setup,
-    });
-    if ( $old and $opt->{'keep_dates'} ) {
-      foreach (qw(setup bill last_bill)) {
-        $new->set($_, $old->get($_));
-      }
-    }
-    $error = $new->insert( allow_pkgpart => $same_pkgpart );
-    # transfer services
-    if ( $old ) {
-      $error ||= $old->transfer($new);
-    }
-    if ( $error and $error > 0 ) {
-      # no reason why this should ever fail, but still...
-      $error = "Unable to transfer all services from supplemental package ".
-        $old->pkgnum;
-    }
+  # transfer (copy) invoice details
+  foreach my $detail ($self->cust_pkg_detail) {
+    my $new_detail = FS::cust_pkg_detail->new({ $detail->hash });
+    $new_detail->set('pkgdetailnum', '');
+    $new_detail->set('pkgnum', $cust_pkg->pkgnum);
+    $error = $new_detail->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "Error transferring package notes: $error";
     }
-    push @new_supp_pkgs, $new;
   }
+  
+  my @new_supp_pkgs;
+
+  if ( !$opt->{'cust_pkg'} ) {
+    # Order any supplemental packages.
+    my $part_pkg = $cust_pkg->part_pkg;
+    my @old_supp_pkgs = $self->supplemental_pkgs;
+    foreach my $link ($part_pkg->supp_part_pkg_link) {
+      my $old;
+      foreach (@old_supp_pkgs) {
+        if ($_->pkgpart == $link->dst_pkgpart) {
+          $old = $_;
+          $_->pkgpart(0); # so that it can't match more than once
+        }
+        last if $old;
+      }
+      # false laziness with FS::cust_main::Packages::order_pkg
+      my $new = FS::cust_pkg->new({
+          pkgpart       => $link->dst_pkgpart,
+          pkglinknum    => $link->pkglinknum,
+          custnum       => $custnum,
+          main_pkgnum   => $cust_pkg->pkgnum,
+          locationnum   => $cust_pkg->locationnum,
+          start_date    => $cust_pkg->start_date,
+          order_date    => $cust_pkg->order_date,
+          expire        => $cust_pkg->expire,
+          adjourn       => $cust_pkg->adjourn,
+          contract_end  => $cust_pkg->contract_end,
+          refnum        => $cust_pkg->refnum,
+          discountnum   => $cust_pkg->discountnum,
+          waive_setup   => $cust_pkg->waive_setup,
+      });
+      if ( $old and $opt->{'keep_dates'} ) {
+        foreach (qw(setup bill last_bill)) {
+          $new->set($_, $old->get($_));
+        }
+      }
+      $error = $new->insert( allow_pkgpart => $same_pkgpart );
+      # transfer services
+      if ( $old ) {
+        $error ||= $old->transfer($new);
+      }
+      if ( $error and $error > 0 ) {
+        # no reason why this should ever fail, but still...
+        $error = "Unable to transfer all services from supplemental package ".
+          $old->pkgnum;
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+      push @new_supp_pkgs, $new;
+    }
+  } # if !$opt->{'cust_pkg'}
+    # because if there is one, then supplemental packages would already
+    # have been created for it.
 
   #Good to go, cancel old package.  Notify 'cancel' of whether to credit 
   #remaining time.
@@ -1974,6 +2044,11 @@ sub change {
   #outstanding usage) if we are keeping dates (i.e. location changing), 
   #because the new package will be billed for the same date range.
   #Supplemental packages are also canceled here.
+
+  # during scheduled changes, avoid canceling the package we just
+  # changed to (duh)
+  $self->set('change_to_pkgnum' => '');
+
   $error = $self->cancel(
     quiet          => 1, 
     unused_credit  => $unused_credit,
@@ -2002,9 +2077,158 @@ sub change {
 
 }
 
+=item change_later OPTION => VALUE...
+
+Schedule a package change for a later date.  This actually orders the new
+package immediately, but sets its start date for a future date, and sets
+the current package to expire on the same date.
+
+If the package is already scheduled for a change, this can be called with 
+'start_date' to change the scheduled date, or with pkgpart and/or 
+locationnum to modify the package change.  To cancel the scheduled change 
+entirely, see C<abort_change>.
+
+Options include:
+
+=over 4
+
+=item start_date
+
+The date for the package change.  Required, and must be in the future.
+
+=item pkgpart
+
+=item locationnum
+
+=item quantity
+
+The pkgpart. locationnum, and quantity of the new package, with the same 
+meaning as in C<change>.
+
+=back
+
+=cut
+
+sub change_later {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_main = $self->cust_main;
+
+  my $date = delete $opt->{'start_date'} or return 'start_date required';
+ 
+  if ( $date <= time ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "start_date $date is in the past";
+  }
+
+  my $error;
+
+  if ( $self->change_to_pkgnum ) {
+    my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
+    my $new_pkgpart = $opt->{'pkgpart'}
+        if $opt->{'pkgpart'} and $opt->{'pkgpart'} != $change_to->pkgpart;
+    my $new_locationnum = $opt->{'locationnum'}
+        if $opt->{'locationnum'} and $opt->{'locationnum'} != $change_to->locationnum;
+    my $new_quantity = $opt->{'quantity'}
+        if $opt->{'quantity'} and $opt->{'quantity'} != $change_to->quantity;
+    if ( $new_pkgpart or $new_locationnum or $new_quantity ) {
+      # it hasn't been billed yet, so in principle we could just edit
+      # it in place (w/o a package change), but that's bad form.
+      # So change the package according to the new options...
+      my $err_or_pkg = $change_to->change(%$opt);
+      if ( ref $err_or_pkg ) {
+        # Then set that package up for a future start.
+        $self->set('change_to_pkgnum', $err_or_pkg->pkgnum);
+        $self->set('expire', $date); # in case it's different
+        $err_or_pkg->set('start_date', $date);
+        $err_or_pkg->set('change_date', '');
+        $err_or_pkg->set('change_pkgnum', '');
+
+        $error = $self->replace       ||
+                 $err_or_pkg->replace ||
+                 $change_to->cancel   ||
+                 $change_to->delete;
+      } else {
+        $error = $err_or_pkg;
+      }
+    } else { # change the start date only.
+      $self->set('expire', $date);
+      $change_to->set('start_date', $date);
+      $error = $self->replace || $change_to->replace;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    } else {
+      $dbh->commit if $oldAutoCommit;
+      return '';
+    }
+  } # if $self->change_to_pkgnum
+
+  my $new_pkgpart = $opt->{'pkgpart'}
+      if $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart;
+  my $new_locationnum = $opt->{'locationnum'}
+      if $opt->{'locationnum'} and $opt->{'locationnum'} != $self->locationnum;
+  my $new_quantity = $opt->{'quantity'}
+      if $opt->{'quantity'} and $opt->{'quantity'} != $self->quantity;
+
+  return '' unless $new_pkgpart or $new_locationnum or $new_quantity; # wouldn't do anything
+
+  # allow $opt->{'locationnum'} = '' to specifically set it to null
+  # (i.e. customer default location)
+  $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
+
+  my $new = FS::cust_pkg->new( {
+    custnum     => $self->custnum,
+    locationnum => $opt->{'locationnum'},
+    start_date  => $date,
+    map   {  $_ => ( $opt->{$_} || $self->$_() )  }
+      qw( pkgpart quantity refnum salesnum )
+  } );
+  $error = $new->insert('change' => 1, 
+                        'allow_pkgpart' => ($new_pkgpart ? 0 : 1));
+  if ( !$error ) {
+    $self->set('change_to_pkgnum', $new->pkgnum);
+    $self->set('expire', $date);
+    $error = $self->replace;
+  }
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+  } else {
+    $dbh->commit if $oldAutoCommit;
+  }
+
+  $error;
+}
+
+=item abort_change
+
+Cancels a future package change scheduled by C<change_later>.
+
+=cut
+
+sub abort_change {
+  my $self = shift;
+  my $pkgnum = $self->change_to_pkgnum;
+  my $change_to = FS::cust_pkg->by_key($pkgnum) if $pkgnum;
+  my $error;
+  if ( $change_to ) {
+    $error = $change_to->cancel || $change_to->delete;
+    return $error if $error;
+  }
+  $self->set('change_to_pkgnum', '');
+  $self->set('expire', '');
+  $self->replace;
+}
+
 =item set_quantity QUANTITY
 
-Change the package's quantity field.  This is the one package property
+Change the package's quantity field.  This is one of the few package properties
 that can safely be changed without canceling and reordering the package
 (because it doesn't affect tax eligibility).  Returns an error or an 
 empty string.
@@ -2014,14 +2238,29 @@ empty string.
 sub set_quantity {
   my $self = shift;
   $self = $self->replace_old; # just to make sure
-  my $qty = shift;
-  ($qty =~ /^\d+$/ and $qty > 0) or return "bad package quantity $qty";
-  $self->set('quantity' => $qty);
+  $self->quantity(shift);
+  $self->replace;
+}
+
+=item set_salesnum SALESNUM
+
+Change the package's salesnum (sales person) field.  This is one of the few
+package properties that can safely be changed without canceling and reordering
+the package (because it doesn't affect tax eligibility).  Returns an error or
+an empty string.
+
+=cut
+
+sub set_salesnum {
+  my $self = shift;
+  $self = $self->replace_old; # just to make sure
+  $self->salesnum(shift);
   $self->replace;
 }
 
 use Storable 'thaw';
 use MIME::Base64;
+use Data::Dumper;
 sub process_bulk_cust_pkg {
   my $job = shift;
   my $param = thaw(decode_base64(shift));
@@ -2186,6 +2425,18 @@ sub calc_recur {
   $self->part_pkg->calc_recur($self, @_);
 }
 
+=item base_setup
+
+Calls the I<base_setup> of the FS::part_pkg object associated with this billing
+item.
+
+=cut
+
+sub base_setup {
+  my $self = shift;
+  $self->part_pkg->base_setup($self, @_);
+}
+
 =item base_recur
 
 Calls the I<base_recur> of the FS::part_pkg object associated with this billing
@@ -2338,6 +2589,26 @@ sub num_cust_event {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item part_pkg_currency_option OPTIONNAME
+
+Returns a two item list consisting of the currency of this customer, if any,
+and a value for the provided option.  If the customer has a currency, the value
+is the option value the given name and the currency (see
+L<FS::part_pkg_currency>).  Otherwise, if the customer has no currency, is the
+regular option value for the given name (see L<FS::part_pkg_option>).
+
+=cut
+
+sub part_pkg_currency_option {
+  my( $self, $optionname ) = @_;
+  my $part_pkg = $self->part_pkg;
+  if ( my $currency = $self->cust_main->currency ) {
+    ($currency, $part_pkg->part_pkg_currency_option($currency, $optionname) );
+  } else {
+    ('', $part_pkg->option($optionname) );
+  }
+}
+
 =item cust_svc [ SVCPART ] (old, deprecated usage)
 
 =item cust_svc [ OPTION => VALUE ... ] (current usage)
@@ -2433,11 +2704,13 @@ sub _sort_cust_svc {
   my $sort =
     sub ($$) { my ($a, $b) = @_; $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] };
 
+  my %pkg_svc = map { $_->svcpart => $_ }
+                qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+
   map  { $_->[0] }
   sort $sort
   map {
-        my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $self->pkgpart,
-                                             'svcpart' => $_->svcpart     } );
+        my $pkg_svc = $pkg_svc{ $_->svcpart } || '';
         [ $_,
           $pkg_svc ? $pkg_svc->primary_svc : '',
           $pkg_svc ? $pkg_svc->quantity : 0,
@@ -3191,6 +3464,46 @@ sub transfer {
   return $remaining;
 }
 
+=item grab_svcnums SVCNUM, SVCNUM ...
+
+Change the pkgnum for the provided services to this packages.  If there is an
+error, returns the error, otherwise returns false.
+
+=cut
+
+sub grab_svcnums {
+  my $self = shift;
+  my @svcnum = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svcnum (@svcnum) {
+    my $cust_svc = qsearchs('cust_svc', { svcnum=>$svcnum } ) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "unknown svcnum $svcnum";
+    };
+    $cust_svc->pkgnum( $self->pkgnum );
+    my $error = $cust_svc->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 =item reexport
 
 This method is deprecated.  See the I<depend_jobnum> option to the insert and
@@ -3198,6 +3511,8 @@ order_pkgs methods in FS::cust_main for a better way to defer provisioning.
 
 =cut
 
+#looks like this is still used by the order_pkg and change_pkg methods in
+# ClientAPI/MyAccount, need to look into those before removing
 sub reexport {
   my $self = shift;
 
@@ -3221,6 +3536,39 @@ sub reexport {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item export_pkg_change OLD_CUST_PKG
+
+Calls the "pkg_change" export action for all services attached to this package.
+
+=cut
+
+sub export_pkg_change {
+  my( $self, $old )  = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svc_x ( map $_->svc_x, $self->cust_svc ) {
+    my $error = $svc_x->export('pkg_change', $self, $old);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
   }
 
@@ -3818,6 +4166,25 @@ sub search {
   if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
     push @where,
       "cust_main.agentnum = $1";
+  }
+
+  ##
+  # parse customer sales person
+  ##
+
+  if ( $params->{'cust_main_salesnum'} =~ /^(\d+)$/ ) {
+    push @where, ($1 > 0) ? "cust_main.salesnum = $1"
+                          : 'cust_main.salesnum IS NULL';
+  }
+
+
+  ##
+  # parse sales person
+  ##
+
+  if ( $params->{'salesnum'} =~ /^(\d+)$/ ) {
+    push @where, ($1 > 0) ? "cust_pkg.salesnum = $1"
+                          : 'cust_pkg.salesnum IS NULL';
   }
 
   ##

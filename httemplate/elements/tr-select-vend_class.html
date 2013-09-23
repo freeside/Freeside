@@ -1,0 +1,27 @@
+% if ( 0 ) { # scalar(@{ $opt{'vend_class'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'classnum' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Vendor class' %></TD>
+    <TD>
+      <% include( '/elements/select-vend_class.html',
+                    'curr_value' => $classnum,
+                    %opt
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+my $classnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'vend_class'} ||= [ qsearch( 'vend_class', { disabled=>'' } ) ];
+
+</%init>

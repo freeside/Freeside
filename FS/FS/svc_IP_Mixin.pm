@@ -3,6 +3,7 @@ package FS::svc_IP_Mixin;
 use strict;
 use base 'FS::IP_Mixin';
 use FS::Record qw(qsearchs qsearch);
+use NEXT;
 
 =item addr_block
 
@@ -118,6 +119,95 @@ sub _is_used {
   } else {
     join(' ', $class->table, $svc->svcnum, '(unlinked service)');
   }
+}
+
+=item attached_router
+
+Returns the L<FS::router> attached via this service (as opposed to the one
+this service is connected through), that is, a router whose "svcnum" field
+equals this service's primary key.
+
+If the 'router_routernum' pseudo-field is set, returns that router instead.
+
+=cut
+
+sub attached_router {
+  my $self = shift;
+  if ( length($self->get('router_routernum') )) {
+    return FS::router->by_key($self->router_routernum);
+  } else {
+    qsearchs('router', { 'svcnum' => $self->svcnum });
+  }
+}
+
+=item attached_block
+
+Returns the address block (L<FS::addr_block>) assigned to the attached_router,
+if there is one.
+
+If the 'router_blocknum' pseudo-field is set, returns that block instead.
+
+=cut
+
+sub attached_block {
+  my $self = shift;
+  if ( length($self->get('router_blocknum')) ) {
+    return FS::addr_block->by_key($self->router_blocknum);
+  } else {
+    my $router = $self->attached_router or return '';
+    my ($block) = $router->addr_block;
+    return $block || '';
+  }
+}
+
+=item radius_check
+
+Returns nothing.
+
+=cut
+
+sub radius_check { }
+
+=item radius_reply
+
+Returns RADIUS reply items that are relevant across all exports and 
+necessary for the IP address configuration of the service.  Currently, that
+means "Framed-Route" if there's an attached router.
+
+=cut
+
+sub radius_reply {
+  my $self = shift;
+  my %reply;
+  my ($block) = $self->attached_block;
+  if ( $block ) {
+    # block routed over dynamic IP: "192.168.100.0/29 0.0.0.0 1"
+    # or
+    # block routed over fixed IP: "192.168.100.0/29 192.168.100.1 1"
+    # (the "1" at the end is the route metric)
+    $reply{'Framed-Route'} =
+    $block->cidr . ' ' .
+    ($self->ip_addr || '0.0.0.0') . ' 1';
+  }
+  %reply;
+}
+
+sub replace_check {
+  my ($new, $old) = @_;
+  # this modifies $old, not $new, which is a slight abuse of replace_check,
+  # but there's no way to ensure that replace_old gets called...
+  #
+  # ensure that router_routernum and router_blocknum are set to their
+  # current values, so that exports remember the service's attached router 
+  # and block even after they've been replaced
+  my $router = $old->attached_router;
+  my $block = $old->attached_block;
+  $old->set('router_routernum', $router ? $router->routernum : 0);
+  $old->set('router_blocknum', $block ? $block->blocknum : 0);
+  my $err_or_ref = $new->NEXT::replace_check($old) || '';
+  # because NEXT::replace_check($old) ends up trying to AUTOLOAD replace_check
+  # which is dumb, but easily worked around
+  ref($err_or_ref) ? '' : $err_or_ref;
 }
 
 1;

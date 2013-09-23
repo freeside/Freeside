@@ -1,0 +1,34 @@
+<& elements/edit.html,
+     'name_singular' => 'sales person',
+     'table'         => 'sales',
+     'fields'        => [ 'salesperson',
+                          { field=>'agentnum', type=>'select-agent', disable_empty=>1, },
+                          { field=>'sales_custnum', type=>'search-cust_main', },
+                          { field=>'disabled', type=>'checkbox', value=>'Y', },
+                        ],
+     'labels'        => { 'salesnum'      => 'Sales Person',
+                          'salesperson'   => 'Name',
+                          'agentnum'      => 'Agent',
+                          'sales_custnum' => 'Master customer',
+                          'disabled'      => 'Disabled',
+                        },
+     'viewall_dir'   => 'browse',
+     'agent_virt'    => 1,
+     'html_bottom'   => sub {
+                              my $sales = shift;
+
+                              '<BR>'.
+                              include('/elements/table-commissions.html',
+                                        'source_obj'    => $sales,
+                                        'link_table'    => 'sales_pkg_class',
+                                        #'target_table' => 'pkg_class',
+                                        'show_duration' => 1,
+                                     );
+                            },
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit sales people');
+
+</%init>

@@ -68,7 +68,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid package classification.  If
+Checks all fields to make sure this is a valid classification.  If
 there is an error, returns the error, otherwise returns false.  Called by the
 insert and replace methods.
 

@@ -76,20 +76,16 @@ Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit nu
 
 =cut
 
+#this prevents encrypting empty values on insert?
 sub paycvv {
   my($self,$paycvv) = @_;
-  # This is only allowed in cust_main... Even then it really shouldn't be stored...
-  if ($self->table eq 'cust_main') {
-    if ( defined($paycvv) ) {
-      $self->setfield('paycvv', $paycvv); # This is okay since we are the 'setter'
-    } else {
-      $paycvv = $self->getfield('paycvv'); # This is okay since we are the 'getter'
-      return $paycvv;
-    }
+  # This is only allowed in cust_payby (formerly cust_main)
+  #  It shouldn't be stored longer than necessary to run the first transaction
+  if ( defined($paycvv) ) {
+    $self->setfield('paycvv', $paycvv);
   } else {
-#    warn "This doesn't work for other tables besides cust_main
-    '';
-  } 
+    $self->getfield('paycvv');
+  }
 }
 
 =item paymask
@@ -127,7 +123,7 @@ sub mask_payinfo {
   my $payinfo = scalar(@_) ? shift : $self->payinfo;
 
   # Check to see if it's encrypted...
-  if ( $self->is_encrypted($payinfo) ) {
+  if ( ref($self) && $self->is_encrypted($payinfo) ) {
     return 'N/A';
   } elsif ( $payinfo =~ /^99\d{14}$/ || $payinfo eq 'N/A' ) { #token
     return 'N/A (tokenized)'; #?
@@ -288,6 +284,33 @@ sub payinfo_used {
   ;
 
   return 0;
+}
+
+=item display_status
+
+For transactions that have both 'status' and 'failure_status', shows the
+status in a single, display-friendly string.
+
+=cut
+
+sub display_status {
+  my $self = shift;
+  my %status = (
+    'done'        => 'Approved',
+    'expired'     => 'Card Expired',
+    'stolen'      => 'Lost/Stolen',
+    'pickup'      => 'Pick Up Card',
+    'nsf'         => 'Insufficient Funds',
+    'inactive'    => 'Inactive Account',
+    'blacklisted' => 'Blacklisted',
+    'declined'    => 'Declined',
+    'approved'    => 'Approved',
+  );
+  if ( $self->failure_status ) {
+    return $status{$self->failure_status};
+  } else {
+    return $status{$self->status};
+  }
 }
 
 =back

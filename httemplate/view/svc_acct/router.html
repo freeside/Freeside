@@ -1,0 +1,14 @@
+<%args>
+$svc_acct
+</%args>
+% if ( my $router = qsearchs('router', { svcnum => $svc_acct->svcnum }) ) {
+<& /view/elements/tr.html,
+  label => 'Attached router',
+  value => $router->routername
+&>
+% my $block = qsearchs('addr_block', { routernum => $router->routernum });
+<& /view/elements/tr.html,
+  label => 'Attached address block',
+  value => ($block ? $block->cidr : '<i>(none)</i>')
+&>
+% }

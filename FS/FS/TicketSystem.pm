@@ -209,7 +209,7 @@ sub _upgrade_data {
   while (my $item = $search->Next) {
     my ($c, $a, $t) = map {lc $item->$_->Name} 
       ('ScripConditionObj', 'ScripActionObj', 'TemplateObj');
-    if ( exists $scrip{$c}{$a}{$t} and $item->Creator == 1 ) {
+    if ( exists $scrip{$c}{$a} and $item->Creator == 1 ) {
       warn "Deleting duplicate scrip $c $a [$t]\n";
       my ($val, $msg) = $item->Delete;
       warn "error deleting scrip: $msg\n" if !$val;
@@ -220,7 +220,7 @@ sub _upgrade_data {
       warn "error deleting scrip: $msg\n" if !$val;
     }
     else {
-      $scrip{$c}{$a}{$t} = $item->id;
+      $scrip{$c}{$a} = $item->id;
     }
   }
   my $Scrip = RT::Scrip->new($CurrentUser);
@@ -228,30 +228,42 @@ sub _upgrade_data {
     my $desc = $s->{'Description'};
     my ($c, $a, $t) = map lc,
       @{ $s }{'ScripCondition', 'ScripAction', 'Template'};
-    # skip existing scrips
-    next if ( exists($scrip{$c}{$a}{$t}) );
-    if ( !exists($condition{$c}) ) {
-      warn "ScripCondition '$c' not found.\n";
-      next;
+
+    if ( exists($scrip{$c}{$a}) ) {
+      $Scrip->Load( $scrip{$c}{$a} );
+    } else { # need to create it
+
+      if ( !exists($condition{$c}) ) {
+        warn "ScripCondition '$c' not found.\n";
+        next;
+      }
+      if ( !exists($action{$a}) ) {
+        warn "ScripAction '$a' not found.\n";
+        next;
+      }
+      if ( !exists($template{$t}) ) {
+        warn "Template '$t' not found.\n";
+        next;
+      }
+      my %new_param = (
+        ScripCondition => $condition{$c}->[0],
+        ScripAction => $action{$a}->[0],
+        Template => $template{$t}->[0],
+        Queue => 0,
+        Description => $desc,
+      );
+      warn "Creating scrip: $c $a [$t]\n";
+      my ($val, $msg) = $Scrip->Create(%new_param);
+      die $msg if !$val;
+
+    } #if $scrip{...}
+    # set the Immutable attribute on them if needed
+    if ( !$Scrip->FirstAttribute('Immutable') ) {
+      my ($val, $msg) =
+        $Scrip->SetAttribute(Name => 'Immutable', Content => '1');
+      die $msg if !$val;
     }
-    if ( !exists($action{$a}) ) {
-      warn "ScripAction '$a' not found.\n";
-      next;
-    }
-    if ( !exists($template{$t}) ) {
-      warn "Template '$t' not found.\n";
-      next;
-    }
-    my %new_param = (
-      ScripCondition => $condition{$c}->[0],
-      ScripAction => $action{$a}->[0],
-      Template => $template{$t}->[0],
-      Queue => 0,
-      Description => $desc,
-    );
-    warn "Creating scrip: $c $a [$t]\n";
-    my ($val, $msg) = $Scrip->Create(%new_param);
-    die $msg if !$val;
+
   } #foreach (@Scrips)
 
   # one-time fix: accumulator fields (support time, etc.) that had values 
@@ -318,6 +330,17 @@ sub _upgrade_data {
       warn "Create transaction not found for ticket $tid.\n";
     }
   }
+
+  #Pg-specific 
+  my $cve_2013_3373_sql = q(
+    UPDATE Tickets SET Subject = REPLACE(Subject,E'\n','')
+  );
+  #need this for mysql
+  #UPDATE Tickets SET Subject = REPLACE(Subject,'\n','');
+
+  my $cve_2013_3373_sth = $dbh->prepare( $cve_2013_3373_sql)
+    or die $dbh->errstr;
+  $cve_2013_3373_sth->execute or die $cve_2013_3373_sth->errstr;
 
   return;
 }

@@ -141,38 +141,35 @@
 </TABLE>
 <BR>
 
-<FONT CLASS="fsinnerbox-title"><% mt('Commissions') |h %></FONT>
-<TABLE CLASS="fsinnerbox">
+<& /elements/table-commissions.html,
+     'source_obj'   => $agent,
+     'link_table'   => 'agent_pkg_class',
+     #'target_table' => 'pkg_class',
+&>
+<BR>
 
-% #surprising amount of false laziness w/ edit/process/agent.cgi
-% my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
-% foreach my $pkg_class ( '', @pkg_class ) {
-%   my %agent_pkg_class = ( 'agentnum' => $agent->agentnum,
-%                           'classnum' => $pkg_class ? $pkg_class->classnum : ''
-%                         );
-%   my $agent_pkg_class =
-%     qsearchs( 'agent_pkg_class', \%agent_pkg_class )
-%     || new FS::agent_pkg_class   \%agent_pkg_class;
-%   my $param = 'classnum'. $agent_pkg_class{classnum};
+% if ( $conf->config('currencies') ) {
 
-    <TR>
-      <TD><INPUT TYPE      = "text"
-                 NAME      = "<% $param %>"
-                 VALUE     = "<% $cgi->param($param) || $agent_pkg_class->commission_percent |h %>"
-                 SIZE      = 6
-                 MAXLENGTH = 7
-          >%
-      </TD>
-      <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>
-      </TD>
-    </TR>
+    <FONT CLASS="fsinnerbox-title"><% mt('Currencies') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
+      <TR>
+        <TD>
+          <& /elements/checkboxes-table-name.html,
+               'link_table' => 'agent_currency',
+               'name_col'   => 'currency',
+               'names_list' => [ map [ $_, {label=>"$_: ".code2currency($_)} ],
+                                   $conf->config('currencies')
+                               ],
+          &>
+        </TD>
+      </TR>
+    </TABLE>
 
 % }
 
-</TABLE>
-
-
 <BR>
+
+
 <INPUT TYPE="submit" VALUE="<% $agent->agentnum ? "Apply changes" : "Add agent" %>">
 
 </FORM>

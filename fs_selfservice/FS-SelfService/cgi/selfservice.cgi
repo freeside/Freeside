@@ -1,10 +1,11 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -w
 
 use strict;
 use vars qw($DEBUG $cgi $session_id $form_max $template_dir);
 use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
+use CGI::Cookie;
 use Text::Template;
 use HTML::Entities;
 use Date::Format;
@@ -20,6 +21,7 @@ use FS::SelfService qw(
   myaccount_passwd list_invoices create_ticket get_ticket did_report
   adjust_ticket_priority
   mason_comp port_graph
+  start_thirdparty finish_thirdparty
 );
 
 $template_dir = '.';
@@ -29,49 +31,85 @@ $DEBUG = 0;
 $form_max = 255;
 
 $cgi = new CGI;
+my %cookies = CGI::Cookie->fetch;
 
-unless ( defined $cgi->param('session') ) {
+my $login_rv;
+
+if ( exists($cookies{'session'}) ) {
+
+  $session_id = $cookies{'session'}->value;
+
+  if ( $session_id eq 'login' ) {
+    # then we've just come back from the login page
+
+    $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i;
+    my $username = $1;
+
+    $cgi->param('domain') =~ /^\s*([\w\-\.]{0,$form_max})\s*$/;
+    my $domain = $1;
+
+    $cgi->param('password') =~ /^(.{0,$form_max})$/;
+    my $password = $1;
+
+    if ( $username and $domain and $password ) {
+
+      # authenticate
+      $login_rv = login(
+        'username' => $username,
+        'domain'   => $domain,
+        'password' => $password,
+      );
+      $session_id = $login_rv->{'session_id'};
+
+    } elsif ( $username or $domain or $password ) {
+      
+      my $error = 'Illegal '; #XXX localization...
+      my $count = 0;
+      if ( !$username ) {
+        $error .= 'username';
+        $count++;
+      }
+      if ( !$domain )  {
+        $error .= ', ' if $count;
+        $error .= 'domain';
+        $count++;
+      }
+      if ( !$password ) {
+        $error .= ', ' if $count;
+        $error .= 'and ' if $count > 1;
+        $error .= 'password';
+        $count++;
+      }
+      $error .= '.';
+      $login_rv = {
+        'username'  => $username,
+        'domain'    => $domain,
+        'password'  => $password,
+        'error'     => $error,
+      };
+      $session_id = undef; # attempt login again
+
+    } # else there was no input, so show no error message
+  } # else session_id ne 'login'
+
+} else {
+  # there is no session cookie
+  $login_rv = {};
+}
+
+if ( !$session_id ) {
+  # XXX why are we getting agentnum from a CGI param? surely it should 
+  # be some kind of configuration option.
+  #
+  # show the login page
+  $session_id = 'login'; # set state
   my $login_info = login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
 
-  do_template('login', $login_info );
+  do_template('login', { %$login_rv, %$login_info });
   exit;
 }
 
-if ( $cgi->param('session') eq 'login' ) {
-
-  $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i
-    or die "illegal username";
-  my $username = $1;
-
-  $cgi->param('domain') =~ /^\s*([\w\-\.]{0,$form_max})\s*$/
-    or die "illegal domain";
-  my $domain = $1;
-
-  $cgi->param('password') =~ /^(.{0,$form_max})$/
-    or die "illegal password";
-  my $password = $1;
-
-  my $rv = login(
-    'username' => $username,
-    'domain'   => $domain,
-    'password' => $password,
-  );
-  if ( $rv->{error} ) {
-    my $login_info = login_info( 'agentnum' => $cgi->param('agentnum') );
-    do_template('login', {
-      'error'    => $rv->{error},
-      'username' => $username,
-      'domain'   => $domain,
-      %$login_info,
-    } );
-    exit;
-  } else {
-    $cgi->param('session' => $rv->{session_id} );
-    $cgi->param('action'  => 'myaccount' );
-  }
-}
-
-$session_id = $cgi->param('session');
+# at this point $session_id is a real session
 
 #order|pw_list XXX ???
 my @actions = ( qw(
@@ -87,6 +125,8 @@ my @actions = ( qw(
   make_term_payment
   make_thirdparty_payment
   post_thirdparty_payment
+  finish_thirdparty_payment
+  cancel_thirdparty_payment
   payment_results
   ach_payment_results
   recharge_prepay
@@ -120,10 +160,15 @@ my @actions = ( qw(
   customer_suspend_pkg
   process_suspend_pkg
 ));
- 
-$cgi->param('action') =~ ( '^(' . join('|', @actions) . ')$' )
-  or die "unknown action ". $cgi->param('action');
-my $action = $1;
+
+my $action = 'myaccount'; # sensible default
+if ( $cgi->param('action') =~ /^(\w+)$/ ) {
+  if (grep {$_ eq $1} @actions) {
+    $action = $1;
+  } else {
+    warn "WARNING: unrecognized action '$1'\n";
+  }
+}
 
 warn "calling $action sub\n"
   if $DEBUG;
@@ -136,6 +181,7 @@ warn Dumper($result) if $DEBUG;
 if ( $result->{error} && ( $result->{error} eq "Can't resume session"
   || $result->{error} eq "Expired session") ) { #ick
 
+  $session_id = 'login';
   my $login_info = login_info();
   do_template('login', $login_info);
   exit;
@@ -663,7 +709,13 @@ sub ach_payment_results {
 }
 
 sub make_thirdparty_payment {
-  payment_info('session_id' => $session_id);
+  my $payment_info = payment_info('session_id' => $session_id);
+  $cgi->param('payby_method') =~ /^(CC|ECHECK|PAYPAL)$/
+    or die "illegal payby method";
+  $payment_info->{'payby_method'} = $1;
+  $payment_info->{'error'} = $cgi->param('error');
+
+  $payment_info;
 }
 
 sub post_thirdparty_payment {
@@ -673,15 +725,30 @@ sub post_thirdparty_payment {
   $cgi->param('amount') =~ /^(\d+(\.\d*)?)$/
     or die "illegal amount";
   my $amount = $1;
-  # realtime_collect() returns the result from FS::cust_main->realtime_collect
-  # which returns realtime_bop()
-  # which returns a hashref of popup_url, collectitems, and reference
-  my $result = realtime_collect( 
+  my $result = start_thirdparty(
     'session_id' => $session_id,
     'method' => $method, 
     'amount' => $amount,
   );
+  if ( $result->{error} ) {
+    $cgi->param('action', 'make_thirdparty_payment');
+    $cgi->param('error', $result->{error});
+    print $cgi->redirect( $cgi->self_url );
+    exit;
+  }
+
   $result;
+}
+
+sub finish_thirdparty_payment {
+  my %param = $cgi->Vars;
+  finish_thirdparty( 'session_id' => $session_id, %param );
+  # result contains either 'error' => error message, or the payment details
+}
+
+sub cancel_thirdparty_payment {
+  $action = 'make_thirdparty_payment';
+  finish_thirdparty( 'session_id' => $session_id, '_cancel' => 1 );
 }
 
 sub make_term_payment {
@@ -933,54 +1000,63 @@ sub do_template {
   $cgi->delete_all();
   $fill_in->{'selfurl'} = $cgi->self_url;
   $fill_in->{'cgi'} = \$cgi;
+  $fill_in->{'error'} = $cgi->param('error') if $cgi->param('error');
 
-  my $access_info = $session_id
+  my $access_info = ($session_id and $session_id ne 'login')
                       ? access_info( 'session_id' => $session_id )
                       : {};
   $fill_in->{$_} = $access_info->{$_} foreach keys %$access_info;
 
-  
-    if($result && ref($result) && $result->{'format'} && $result->{'content'}
-	&& $result->{'format'} eq 'csv') {
-    	print $cgi->header('-expires' => 'now',
-    		'-Content-Type' => 'text/csv',
-    		'-Content-Disposition' => "attachment;filename=output.csv",
-    		),
-    	    $result->{'content'};
-    }
-    elsif($result && ref($result) && $result->{'format'} && $result->{'content'}
-    	 && $result->{'format'} eq 'xls') {
-	print $cgi->header('-expires' => 'now',
-		    '-Content-Type' => 'application/vnd.ms-excel',
-		    '-Content-Disposition' => "attachment;filename=output.xls",
-		    '-Content-Length' => length($result->{'content'}),
-		    ),
-		    $result->{'content'};
-    }
-    elsif($result && ref($result) && $result->{'format'} && $result->{'content'}
-    	 && $result->{'format'} eq 'png') {
-	print $cgi->header('-expires' => 'now',
-		    '-Content-Type' => 'image/png',
-		    ),
-		    $result->{'content'};
-    }
-    else {
-	my $source = "$template_dir/$name.html";
-        my $template = new Text::Template( TYPE       => 'FILE',
-					 SOURCE     => $source,
-					 DELIMITERS => [ '<%=', '%>' ],
-					 UNTAINT    => 1,
-				       )
-	or die $Text::Template::ERROR;
+  # update the user's authentication
+  my $timeout = $access_info->{'timeout'} || '60';
+  my $cookie = CGI::Cookie->new('-name'     => 'session',
+                                '-value'    => $session_id,
+                                '-expires'  => '+'.$timeout,
+                                #'-secure'   => 1, # would be a good idea...
+                               );
+  if ( $name eq 'logout' ) {
+    $cookie->expires(0);
+  }
 
-	my $data = $template->fill_in( 
-	    PACKAGE => 'FS::SelfService::_selfservicecgi',
-	    HASH    => $fill_in,
-	  ) || "Error processing template $source"; # at least print _something_
-	  print $cgi->header( '-expires' => 'now' );
-	  print $data;
+  if ( $fill_in->{'format'} ) {
+    # then override content-type, and return $fill_in->{'content'} instead
+    # of filling in a template
+    if ( $fill_in->{'format'} eq 'csv') {
+      print $cgi->header('-expires' => 'now',
+        '-Content-Type' => 'text/csv',
+        '-Content-Disposition' => "attachment;filename=output.csv",
+      );
+    } elsif ( $fill_in->{'format'} eq 'xls' ) {
+      print $cgi->header('-expires' => 'now',
+        '-Content-Type' => 'application/vnd.ms-excel',
+        '-Content-Disposition' => "attachment;filename=output.xls",
+        '-Content-Length' => length($fill_in->{'content'}),
+      );
+    } elsif ( $fill_in->{'format'} eq 'png' ) {
+      print $cgi->header('-expires' => 'now',
+        '-Content-Type' => 'image/png',
+      );
     }
- }
+    print $fill_in->{'content'};
+  } else { # the usual case
+    my $source = "$template_dir/$name.html";
+    my $template = new Text::Template(
+      TYPE       => 'FILE',
+      SOURCE     => $source,
+      DELIMITERS => [ '<%=', '%>' ],
+      UNTAINT    => 1,
+    )
+      or die $Text::Template::ERROR;
+
+    my $data = $template->fill_in( 
+      PACKAGE => 'FS::SelfService::_selfservicecgi',
+      HASH    => $fill_in,
+    ) || "Error processing template $source"; # at least print _something_
+    print $cgi->header( '-cookie' => $cookie,
+                        '-expires' => 'now' );
+    print $data;
+  }
+}
 
 #*FS::SelfService::_selfservicecgi::include = \&Text::Template::fill_in_file;
 
@@ -1011,4 +1087,4 @@ sub include {
 
 }
 
-1;
+

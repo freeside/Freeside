@@ -32,18 +32,8 @@
         </tr>
         <tr><td colspan=2><br></td></tr>
         <%= 
-          my ($last) = grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section) and $_->{'description'} !~ /^\d+ $/ } reverse @sections;
-          
-          #false laziness w/invoice_latexsummary
-          foreach my $section (
-            grep {
-                       $_->{tax_section} || !$_->{summarized}
-                   and ! $_->{adjust_section}
-                   and !($finance_section && $_->{'description'} eq $finance_section)
-                   and $_->{'description'} !~ /^\d+ $/
-                 }
-               @sections
-          ) {
+          my $last = $summary_subtotals[-1];
+          foreach my $section (@summary_subtotals) {
             $OUT .= '<tr><td><b>'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '</b></td>';
             my $celltype = ($last == $section) ? 'th' : 'td';
             $OUT .= qq(<$celltype align="right"><b>). $section->{'subtotal'}. "</b></$celltype></tr>";

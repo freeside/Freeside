@@ -38,10 +38,13 @@ upload(%opt);
 use FS::Cron::set_lata_have_usage qw(set_lata_have_usage);
 set_lata_have_usage(%opt);
 
-# Send alerts about upcoming credit card expiration.
-use FS::Cron::alert_expiration qw(alert_expiration);
+# we used to send alerts about upcoming credit card expiration here
 my $conf = new FS::Conf;
-alert_expiration(%opt) if($conf->exists('alert_expiration'));
+if($conf->exists('alert_expiration')) {
+  warn "WARNING: the alert_expiration option is obsolete.  If you ran 
+  freeside-upgrade, it should have configured credit card expiration alerts 
+  as billing events.\n";
+}
 
 #what to do about the below when using -m?  that is the question.
 
@@ -76,6 +79,10 @@ unlink <${deldir}.CGItemp*>;
 #you can skip this just by not having the config
 use FS::Cron::backup qw(backup);
 backup();
+
+#except we'd rather not start cleanup jobs until the backup is done
+use FS::Cron::cleanup qw(cleanup);
+cleanup();
 
 $log->info('finish');
 

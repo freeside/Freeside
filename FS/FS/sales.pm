@@ -1,18 +1,12 @@
 package FS::sales;
+use base qw( FS::Agent_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use base qw( FS::Record );
-use Business::CreditCard 0.28;
-use FS::Record qw( dbh qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
+use FS::agent;
 use FS::cust_main;
-use FS::cust_pkg;
-use FS::agent_type;
-use FS::reg_code;
-use FS::TicketSystem;
-#use FS::Conf;
-
-@ISA = qw( FS::m2m_Common FS::Record );
+use FS::cust_bill_pkg;
+use FS::cust_credit;
 
 =head1 NAME
 
@@ -35,7 +29,7 @@ FS::sales - Object methods for sales records
 
 =head1 DESCRIPTION
 
-An FS::sales object represents an example.  FS::sales inherits from
+An FS::sales object represents a sales person.  FS::sales inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
@@ -61,7 +55,8 @@ disabled
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new sales person.  To add the sales person to the database, see
+L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -100,7 +95,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid sales person.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -114,23 +109,85 @@ sub check {
 
   my $error = 
     $self->ut_numbern('salesnum')
-    || $self->ut_numbern('agentnum')
+    || $self->ut_text('salesperson')
+    || $self->ut_foreign_key('agentnum', 'agent', 'agentnum')
+    || $self->ut_foreign_keyn('sales_custnum', 'cust_main', 'custnum')
+    || $self->ut_enum('disabled', [ '', 'Y' ])
   ;
   return $error if $error;
 
-  if ( $self->dbdef_table->column('disabled') ) {
-    $error = $self->ut_enum('disabled', [ '', 'Y' ] );
-    return $error if $error;
+  $self->SUPER::check;
+}
+
+=item sales_cust_main
+
+Returns the FS::cust_main object (see L<FS::cust_main>), if any, for this
+sales person.
+
+=cut
+
+sub sales_cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->sales_custnum } );
+}
+
+sub cust_bill_pkg {
+  my( $self, $sdate, $edate, %search ) = @_;
+
+  my $cmp_salesnum = delete $search{'cust_main_sales'}
+                       ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
+                       : ' cust_pkg.salesnum ';
+
+  my $classnum_sql = '';
+  if ( exists( $search{'classnum'}  ) ) {
+    my $classnum = $search{'classnum'};
+    $classnum_sql = " AND part_pkg.classnum ". ( $classnum ? " = $classnum "
+                                                           : ' IS NULL '     );
   }
 
-  $self->SUPER::check;
+  qsearch({ 'table'     => 'cust_bill_pkg',
+            'addl_from' => ' LEFT JOIN cust_bill USING ( invnum ) '.
+                           ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
+                           ' LEFT JOIN part_pkg  USING ( pkgpart ) '.
+                           ' LEFT JOIN cust_main ON ( cust_pkg.custnum = cust_main.custnum )',
+            'extra_sql' => ( keys %{ $search{'hashref'} }
+                               ? ' AND ' : 'WHERE '
+                           ).
+                           "     cust_bill._date >= $sdate ".
+                           " AND cust_bill._date  < $edate ".
+                           " AND $cmp_salesnum = ". $self->salesnum.
+                           $classnum_sql,
+            #%search,
+         });
+}
+
+sub cust_credit {
+  my( $self, $sdate, $edate, %search ) = @_;
+
+  $search{'hashref'}->{'commission_salesnum'} = $self->salesnum;
+
+  my $classnum_sql = '';
+  if ( exists($search{'commission_classnum'}) ) {
+    my $classnum = delete($search{'commission_classnum'});
+    $classnum_sql = " AND part_pkg.classnum ". ( $classnum ? " = $classnum"
+                                                           : " IS NULL "    );
+
+    $search{'addl_from'} .=
+      ' LEFT JOIN cust_pkg ON ( commission_pkgnum = cust_pkg.pkgnum ) '.
+      ' LEFT JOIN part_pkg USING ( pkgpart ) ';
+  }
+
+  qsearch({ 'table'     => 'cust_credit',
+            'extra_sql' => " AND cust_credit._date >= $sdate ".
+                           " AND cust_credit._date  < $edate ".
+                           $classnum_sql,
+            %search,
+         });
 }
 
 =back
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 

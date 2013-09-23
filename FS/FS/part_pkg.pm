@@ -5,7 +5,8 @@ use strict;
 use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
-use Time::Local qw( timelocal_nocheck );
+use DateTime;
+use Time::Local qw( timelocal timelocal_nocheck ); # eventually replace with DateTime
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -25,6 +26,7 @@ use FS::part_pkg_link;
 use FS::part_pkg_discount;
 use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
+use FS::part_pkg_currency;
 
 $DEBUG = 0;
 $setup_hack = 0;
@@ -115,6 +117,8 @@ If this record is not obsolete, will be null.
 ancestor of this record.  If this record is not a successor to another 
 part_pkg, will be equal to pkgpart.
 
+=item delay_start - Number of days to delay package start, by default
+
 =back
 
 =head1 METHODS
@@ -176,6 +180,9 @@ records will be inserted.
 
 If I<options> is set to a hashref of options, appropriate FS::part_pkg_option
 records will be inserted.
+
+If I<part_pkg_currency> is set to a hashref of options (with the keys as
+option_CURRENCY), appropriate FS::part_pkg::currency records will be inserted.
 
 =cut
 
@@ -245,6 +252,23 @@ sub insert {
                   'hashref'      => { 'usage_class' => $usage_class },
                   'params'       => \@overrides,
                 );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  warn "  inserting part_pkg_currency records" if $DEBUG;
+  my %part_pkg_currency = %{ $options{'part_pkg_currency'} || {} };
+  foreach my $key ( keys %part_pkg_currency ) {
+    $key =~ /^(.+)_([A-Z]{3})$/ or next;
+    my $part_pkg_currency = new FS::part_pkg_currency {
+      'pkgpart'     => $self->pkgpart,
+      'optionname'  => $1,
+      'currency'    => $2,
+      'optionvalue' => $part_pkg_currency{$key},
+    };
+    my $error = $part_pkg_currency->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -344,13 +368,18 @@ and I<options>
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
 values, the appropriate FS::pkg_svc records will be replaced.  I<hidden_svc>
 can be set to a hashref of svcparts and flag values ('Y' or '') to set the 
-'hidden' field in these records.
+'hidden' field in these records.  I<bulk_skip> can be set to a hashref of
+svcparts and flag values ('Y' or '') to set the 'bulk_skip' field in those
+records.
 
 If I<primary_svc> is set to the svcpart of the primary service, the appropriate
 FS::pkg_svc record will be updated.
 
 If I<options> is set to a hashref, the appropriate FS::part_pkg_option records
 will be replaced.
+
+If I<part_pkg_currency> is set to a hashref of options (with the keys as
+option_CURRENCY), appropriate FS::part_pkg::currency records will be replaced.
 
 =cut
 
@@ -447,13 +476,43 @@ sub replace {
     }
   }
 
+  #trivial nit: not the most efficient to delete and reinsert
+  warn "  deleting old part_pkg_currency records" if $DEBUG;
+  foreach my $part_pkg_currency ( $old->part_pkg_currency ) {
+    my $error = $part_pkg_currency->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error deleting part_pkg_currency record: $error";
+    }
+  }
+
+  warn "  inserting new part_pkg_currency records" if $DEBUG;
+  my %part_pkg_currency = %{ $options->{'part_pkg_currency'} || {} };
+  foreach my $key ( keys %part_pkg_currency ) {
+    $key =~ /^(.+)_([A-Z]{3})$/ or next;
+    my $part_pkg_currency = new FS::part_pkg_currency {
+      'pkgpart'     => $new->pkgpart,
+      'optionname'  => $1,
+      'currency'    => $2,
+      'optionvalue' => $part_pkg_currency{$key},
+    };
+    my $error = $part_pkg_currency->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error inserting part_pkg_currency record: $error";
+    }
+  }
+
+
   warn "  replacing pkg_svc records" if $DEBUG;
   my $pkg_svc = $options->{'pkg_svc'};
   my $hidden_svc = $options->{'hidden_svc'} || {};
+  my $bulk_skip  = $options->{'bulk_skip'} || {};
   if ( $pkg_svc ) { # if it wasn't passed, don't change existing pkg_svcs
     foreach my $part_svc ( qsearch('part_svc', {} ) ) {
-      my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
-      my $hidden = $hidden_svc->{$part_svc->svcpart} || '';
+      my $quantity  = $pkg_svc->{$part_svc->svcpart} || 0;
+      my $hidden    = $hidden_svc->{$part_svc->svcpart} || '';
+      my $bulk_skip = $bulk_skip->{$part_svc->svcpart} || '';
       my $primary_svc =
         ( defined($options->{'primary_svc'}) && $options->{'primary_svc'}
           && $options->{'primary_svc'} == $part_svc->svcpart
@@ -469,16 +528,19 @@ sub replace {
       my $old_quantity = 0;
       my $old_primary_svc = '';
       my $old_hidden = '';
+      my $old_bulk_skip = '';
       if ( $old_pkg_svc ) {
         $old_quantity = $old_pkg_svc->quantity;
         $old_primary_svc = $old_pkg_svc->primary_svc 
           if $old_pkg_svc->dbdef_table->column('primary_svc'); # is this needed?
         $old_hidden = $old_pkg_svc->hidden;
+        $old_bulk_skip = $old_pkg_svc->old_bulk_skip;
       }
    
-      next unless $old_quantity != $quantity || 
-                  $old_primary_svc ne $primary_svc ||
-                  $old_hidden ne $hidden;
+      next unless $old_quantity    != $quantity
+               || $old_primary_svc ne $primary_svc
+               || $old_hidden      ne $hidden
+               || $old_bulk_skip   ne $bulk_skip;
     
       my $new_pkg_svc = new FS::pkg_svc( {
         'pkgsvcnum'   => ( $old_pkg_svc ? $old_pkg_svc->pkgsvcnum : '' ),
@@ -487,6 +549,7 @@ sub replace {
         'quantity'    => $quantity, 
         'primary_svc' => $primary_svc,
         'hidden'      => $hidden,
+        'bulk_skip'   => $bulk_skip,
       } );
       my $error = $old_pkg_svc
                     ? $new_pkg_svc->replace($old_pkg_svc)
@@ -630,6 +693,7 @@ sub check {
        )
     || $self->ut_numbern('fcc_ds0s')
     || $self->ut_numbern('fcc_voip_class')
+    || $self->ut_numbern('delay_start')
     || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
     || $self->SUPER::check
@@ -1020,9 +1084,25 @@ sub is_free {
   }
 }
 
+# whether the plan allows discounts to be applied to this package
 sub can_discount { 0; }
-
+ 
+# whether the plan allows changing the start date
 sub can_start_date { 1; }
+  
+# the delay start date if present
+sub delay_start_date {
+  my $self = shift;
+
+  my $delay = $self->delay_start or return '';
+
+  # avoid timelocal silliness  
+  my $dt = DateTime->today(time_zone => 'local');
+  $dt->add(days => $delay);
+  $dt->epoch;
+}
+
+sub can_currency_exchange { 0; }
 
 sub freqs_href {
   # moved to FS::Misc to make this accessible to other packages
@@ -1081,6 +1161,9 @@ sub add_freq {
   if ( $freq =~ /^\d+$/ ) {
     $mon += $freq;
     until ( $mon < 12 ) { $mon -= 12; $year++; }
+
+    $mday = 28 if $mday > 28 && FS::Conf->new->exists('anniversary-rollback');
+
   } elsif ( $freq =~ /^(\d+)w$/ ) {
     my $weeks = $1;
     $mday += $weeks * 7;
@@ -1186,6 +1269,55 @@ sub option {
         "not found in options or plandata!\n"
     unless $ornull;
   '';
+}
+
+=item part_pkg_currency [ CURRENCY ]
+
+Returns all currency options as FS::part_pkg_currency objects (see
+L<FS::part_pkg_currency>), or, if a currency is specified, only return the
+objects for that currency.
+
+=cut
+
+sub part_pkg_currency {
+  my $self = shift;
+  my %hash = ( 'pkgpart' => $self->pkgpart );
+  $hash{'currency'} = shift if @_;
+  qsearch('part_pkg_currency', \%hash );
+}
+
+=item part_pkg_currency_options CURRENCY
+
+Returns a list of option names and values from FS::part_pkg_currency for the
+specified currency.
+
+=cut
+
+sub part_pkg_currency_options {
+  my $self = shift;
+  map { $_->optionname => $_->optionvalue } $self->part_pkg_currency(shift);
+}
+
+=item part_pkg_currency_option CURRENCY OPTIONNAME
+
+Returns the option value for the given name and currency.
+
+=cut
+
+sub part_pkg_currency_option {
+  my( $self, $currency, $optionname ) = @_; 
+  my $part_pkg_currency =
+    qsearchs('part_pkg_currency', { 'pkgpart'    => $self->pkgpart,
+                                    'currency'   => $currency,
+                                    'optionname' => $optionname,
+                                  }
+            )#;
+  #fatal if not found?  that works for our use cases from
+  #part_pkg/currency_fixed, but isn't how we would typically/expect the method
+  #to behave.  have to catch it there if we change it here...
+    or die "Unknown price for ". $self->pkg_comment. " in $currency\n";
+
+  $part_pkg_currency->optionvalue;
 }
 
 =item bill_part_pkg_link

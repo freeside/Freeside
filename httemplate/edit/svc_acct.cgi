@@ -345,6 +345,35 @@
 % } 
 
 </TR>
+
+% if ( $part_svc->has_router ) {
+<& /elements/hidden.html,
+    field => 'router_routernum',
+    curr_value => $svc_acct->router_routernum
+&>
+<& /elements/tr-input-text.html,
+    label => 'Attached router name',
+    field => 'router_routername',
+    size  => 32,
+    curr_value => $svc_acct->router_routername
+&>
+<& /elements/tr-select-table.html,
+    label         => 'Attached address block',
+    field         => 'router_blocknum',
+    table         => 'addr_block',
+    hashref       => { 'routernum' => '0' },
+    extra_sql     => ($svc_acct->router_routernum ?
+                        ' OR routernum = '.$svc_acct->router_routernum : ''),
+    agent_virt    => 1,
+    agent_null    => 1,
+    name_col      => 'cidr',
+    order_by      => 'ORDER BY ip_gateway, ip_netmask',
+    empty_label   => '(none)',
+    disable_empty => 0,
+    curr_value    => $svc_acct->router_blocknum
+&>
+% }
+
 % foreach my $field ($svc_acct->virtual_fields) { 
 % # If the flag is X, it won't even show up in $svc_acct->virtual_fields. 
 % if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) { 
@@ -523,6 +552,23 @@ if ( $export_google ) {
       $cgi->param('error', $error->{'message'});
     }
   } #if $error
+}
+
+if ( $part_svc->has_router ) { # duplicates the one in elements/svc_Common
+  if ( $svcnum ) {
+    my $router = qsearchs('router', {svcnum => $svc_acct->svcnum});
+    if ( $router ) {
+      $svc_acct->set("router_$_", $router->get($_))
+        foreach ('routername', 'routernum');
+      my ($block) = $router->addr_block;
+      $svc_acct->set('router_blocknum', $block->blocknum) if ( $block );
+    }
+  }
+  foreach (qw(router_routername router_routernum router_blocknum)) {
+    if ( $cgi->param($_) =~ /^(\w+)$/ ) {
+      $svc_acct->set($_, $1);
+    }
+  }
 }
 
 </%init>

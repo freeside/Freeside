@@ -1,0 +1,20 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p. "search/vend_bill.html") %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+#untaint vendbillnum
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal vendbillnum";
+my $vendbillnum = $1;
+
+my $vend_bill = qsearchs('vend_bill',{'vendbillnum'=>$vendbillnum});
+
+my $error = $vend_bill->delete;
+
+</%init>

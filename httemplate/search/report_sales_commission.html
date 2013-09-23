@@ -1,0 +1,44 @@
+<% include('/elements/header.html', 'Sales person commission report' ) %>
+
+<FORM ACTION="sales_commission.html">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<& /elements/tr-select-agent.html,
+     'onchange'      => 'agent_changed(this)',
+&>
+
+<SCRIPT TYPE="text/javascript">
+
+  function agent_changed(what) {
+    salesnum_agentnum_changed(what);
+  }
+
+  <&| /elements/onload.js &>
+  agent_changed(document.getElementById('agentnum'))
+  </&>
+
+</SCRIPT>
+
+<& /elements/tr-select-sales.html &>
+
+<& /elements/tr-checkbox.html,
+     'label' => 'Customer sales person if there is no package sales person',
+     'field' => 'cust_main_sales',
+     'value' => 'Y',
+&>
+
+<& /elements/tr-input-beginning_ending.html &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

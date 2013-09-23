@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -82,8 +82,9 @@
     &>
         <table><tr><td>
             <form action="<%RT->Config->Get('WebPath')%>/Ticket/Display.html" name="UpdateReminders" id="UpdateReminders" method="post">
-                <& /Ticket/Elements/Reminders, Ticket => $Ticket, ShowCompleted => 0 &>
+% if ( $m->comp("/Ticket/Elements/Reminders", Ticket => $Ticket, ShowCompleted => 0) ) {
                 <div align="right"><input type="submit" class="button" value="<&|/l&>Save</&>" /></div>
+% }
             </form>
         </td></tr></table>
     </&>

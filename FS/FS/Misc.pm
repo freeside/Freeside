@@ -171,8 +171,15 @@ sub send_email {
 
   }
 
+  my $from = $options{from};
+  $from =~ s/^\s*//; $from =~ s/\s*$//;
+  if ( $from =~ /^(.*)\s*<(.*@.*)>$/ ) {
+    # a common idiom
+    $from = $2;
+  }
+
   my $domain;
-  if ( $options{'from'} =~ /\@([\w\.\-]+)/ ) {
+  if ( $from =~ /\@([\w\.\-]+)/ ) {
     $domain = $1;
   } else {
     warn 'no domain found in invoice from address '. $options{'from'}.
@@ -247,7 +254,7 @@ sub send_email {
   push @to, $options{bcc} if defined($options{bcc});
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
-                              from      => $options{from},
+                              from      => $from,
                               to        => \@to }) };
 
   my $error = '';
@@ -410,6 +417,20 @@ will die on any error and can be used in the job queue.
 sub process_send_email {
   my %message = @_;
   my $error = send_email(generate_email(%message));
+  die "$error\n" if $error;
+  '';
+}
+
+=item process_send_generated_email OPTION => VALUE ...
+
+Takes arguments as per send_email() and sends the message.  This 
+will die on any error and can be used in the job queue.
+
+=cut
+
+sub process_send_generated_email {
+  my %args = @_;
+  my $error = send_email(%args);
   die "$error\n" if $error;
   '';
 }

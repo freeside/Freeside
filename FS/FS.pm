@@ -97,8 +97,6 @@ L<FS::access_usergroup> - Employee group membership
 
 L<FS::access_groupagent> - Group reseller access
 
-L<FS::access_groupsales> - Group sales access
-
 L<FS::access_right> - Access rights
 
 L<FS::svc_acct_pop> - POP (Point of Presence, not Post
@@ -210,6 +208,10 @@ L<FS::svc_cert> - Certificate service class
 
 L<FS::svc_dish> - Dish network service class
 
+L<FS::svc_cable> - Cable service class
+
+L<FS::cable_model> - Cable-model model class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items
@@ -234,6 +236,10 @@ L<FS::pkg_class> - Package class class
 L<FS::part_pkg> - Package definition class
 
 L<FS::part_pkg_msgcat> - Package definition localization class
+
+L<FS::part_pkg_currency> - Package definition local currency prices
+
+L<FS::currency_exchange> - Currency exchange rates
 
 L<FS::part_pkg_link> - Package definition link class
 
@@ -272,7 +278,11 @@ L<FS::usage_class> - Usage class class
 
 L<FS::sales> - Sales person class
 
+L<FS::sales_pkg_class> - Sales person package class commission class
+
 L<FS::agent> - Agent (reseller) class
+
+L<FS::agent_currency> - Agent (reseller) currency class
 
 L<FS::agent_pkg_class> - Agent (reseller) package class commission class
 
@@ -329,6 +339,8 @@ L<FS::cust_main::Billing> - Customer billing class
 L<FS::cust_main::Billing_Realtime> - Customer real-time billing class
 
 L<FS::cust_main::Packages> - Customer packages class
+
+L<FS::cust_payby> - Customer payment information class
 
 L<FS::cust_location> - Customer location class
 

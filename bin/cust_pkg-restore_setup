@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_s $opt_e $opt_r $opt_u $opt_c );
+use Getopt::Std;
+use Date::Parse qw(str2time);
+use Date::Format;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_pkg;
+use FS::h_cust_pkg;
+
+getopts('s:e:ruc');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+my $sdate = $opt_s ? str2time($opt_s) : 0;
+my $edate = $opt_e ? str2time($opt_e) + 86399 #not strictly correct on time zone boundary days, but good enough for this purpose
+                   : 2147397248;
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $fuzz = 2;
+
+my $changed = 0;
+
+foreach my $cust_pkg (
+  qsearch({ table       => 'cust_pkg',
+            hashref     => { 
+                             setup          => '',
+                           },
+         })
+) {
+
+  #XXX only canceled packages?
+  #XXX only suspended packages?
+
+  my $h_cust_pkg =
+    qsearchs({ table       => 'h_cust_pkg',
+               hashref     => { 
+                                pkgnum         => $cust_pkg->pkgnum,
+                                history_action => 'replace_old',
+                                setup          => { op=>'!=', value=>'' },
+                                ($opt_u ? ('susp' => { op=>'!=', value=>'' })
+                                        : ()
+                                ),
+                                ($opt_c ? ('cancel' => { op=>'!=', value=>'' })
+                                        : ()
+                                ),
+                              },
+               extra_sql   => ' AND history_date >= ? AND history_date <= ? ',
+               extra_param => [ [$sdate,'int'], [$edate,'int'] ],
+               order_by    => 'ORDER BY history_date DESC LIMIT 1',
+            })
+    or next;
+
+  $changed++;
+
+  #if ( $opt_r ) {
+    print "restoring setup for pkgnum ". $cust_pkg->pkgnum.
+          " (custnum ". $cust_pkg->custnum.
+          ") to ". time2str('%D', $h_cust_pkg->setup). "\n";
+  #}
+
+  $cust_pkg->set('setup', $h_cust_pkg->setup);
+  my $error = $cust_pkg->replace;
+  die $error if $error;
+
+}
+
+if ( $opt_r ) {
+  $dbh->rollback or die $dbh->errstr; #if $oldAutoCommit;
+} else {
+  $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+}
+
+print "changed $changed packages\n";
+
+sub usage {
+  die "usage: cust_pkg-restore_setup [ -s history_start ] [ -e history_end ] [-r ]  employee_username\n";
+}
+
+=head1 NAME
+
+cust_pkg-restore_setup
+
+=head1 SYNOPSIS
+
+  cust_pkg-restore_setup -d date -u history_username [ -r ] employee_username
+
+=head1 DESCRIPTION
+
+Command-line tool to restore removed setup dates.
+
+-s: Start date of time period to restore changes from
+
+-e: End date of time period to restore changes from
+
+-u: sUspended packages only
+
+-c: Cancelled packages only
+
+-r: dRy run
+
+employee_username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::part_pkg>
+
+=cut
+
+1;
+

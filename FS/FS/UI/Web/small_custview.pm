@@ -31,7 +31,7 @@ sub small_custview {
 
   my $html = '<DIV ID="fs_small_custview" CLASS="small_custview">';
   
-  $html = qq!View <A HREF="$url?! . $cust_main->custnum . '">'
+  $html = qq!<A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
 
   $html .= 'Customer #<B>'. $cust_main->display_custnum. '</B></A>'.

@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,7 +51,7 @@
 
 =head1 NAME
 
-  RT::Group - RT\'s group object
+  RT::Group - RT's group object
 
 =head1 SYNOPSIS
 
@@ -529,8 +529,9 @@ sub _ValidateUserDefinedName {
 
     my $dupcheck = RT::Group->new(RT->SystemUser);
     $dupcheck->LoadUserDefinedGroup($value);
-    return (0, $self->loc("Group name '[_1]' is already in use", $value))
-        if $dupcheck->id;
+    if ( $dupcheck->id && ( !$self->id || $self->id != $dupcheck->id ) ) {
+        return ( 0, $self->loc( "Group name '[_1]' is already in use", $value ) );
+    }
     return 1;
 }
 

@@ -16,6 +16,7 @@ use Date::Format qw( time2str );
 use HTML::Entities qw( decode_entities encode_entities ) ;
 use HTML::FormatText;
 use HTML::TreeBuilder;
+use Encode;
 
 use File::Temp;
 use IPC::Run qw(run);
@@ -410,6 +411,10 @@ sub prepare {
 #    @cust_msg = ('cust_msg' => $cust_msg);
 #  }
 
+  my $text_body = encode('UTF-8',
+                  HTML::FormatText->new(leftmargin => 0, rightmargin => 70)
+                      ->format( HTML::TreeBuilder->new_from_content($body) )
+                  );
   (
     'custnum' => $cust_main->custnum,
     'msgnum'  => $self->msgnum,
@@ -418,8 +423,7 @@ sub prepare {
     'bcc'  => $self->bcc_addr || undef,
     'subject'   => $subject,
     'html_body' => $body,
-    'text_body' => HTML::FormatText->new(leftmargin => 0, rightmargin => 70
-                    )->format( HTML::TreeBuilder->new_from_content($body) ),
+    'text_body' => $text_body
   );
 
 }
@@ -728,6 +732,64 @@ sub _upgrade_data {
         $conf->delete($subject, $agentnum) if $subject;
       }
     }
+
+    if ( $conf->exists('alert_expiration', $agentnum) ) {
+      my $msgnum = $conf->exists('alerter_msgnum', $agentnum);
+      my $template = FS::msg_template->by_key($msgnum) if $msgnum;
+      if (!$template) {
+        warn "template for alerter_msgnum $msgnum not found\n";
+        next;
+      }
+      # this is now a set of billing events
+      foreach my $days (30, 15, 5) {
+        my $event = FS::part_event->new({
+            'agentnum'    => $agentnum,
+            'event'       => "Card expiration warning - $days days",
+            'eventtable'  => 'cust_main',
+            'check_freq'  => '1d',
+            'action'      => 'notice',
+            'disabled'    => 'Y', #initialize first
+        });
+        my $error = $event->insert( 'msgnum' => $msgnum );
+        if ($error) {
+          warn "error creating expiration alert event:\n$error\n\n";
+          next;
+        }
+        # make it work like before:
+        # only send each warning once before the card expires,
+        # only warn active customers,
+        # only warn customers with CARD/DCRD,
+        # only warn customers who get email invoices
+        my %conds = (
+          'once_every'          => { 'run_delay' => '30d' },
+          'cust_paydate_within' => { 'within' => $days.'d' },
+          'cust_status'         => { 'status' => { 'active' => 1 } },
+          'payby'               => { 'payby'  => { 'CARD' => 1,
+                                                   'DCRD' => 1, }
+                                   },
+          'message_email'       => {},
+        );
+        foreach (keys %conds) {
+          my $condition = FS::part_event_condition->new({
+              'conditionname' => $_,
+              'eventpart'     => $event->eventpart,
+          });
+          $error = $condition->insert( %{ $conds{$_} });
+          if ( $error ) {
+            warn "error creating expiration alert event:\n$error\n\n";
+            next;
+          }
+        }
+        $error = $event->initialize;
+        if ( $error ) {
+          warn "expiration alert event was created, but not initialized:\n$error\n\n";
+        }
+      } # foreach $days
+      $conf->delete('alerter_msgnum', $agentnum);
+      $conf->delete('alert_expiration', $agentnum);
+
+    } # if alerter_msgnum
+
   }
   foreach my $msg_template ( qsearch('msg_template', {}) ) {
     if ( $msg_template->subject || $msg_template->body ) {

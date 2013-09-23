@@ -10,10 +10,12 @@
 %     my $row = 1;
 %     foreach my $cell ( @$col_data ) {
 %       my $el = $xml_prefix . $col . $row; # PartIA_Af1, PartIA_Af2...
+%       if ( $cell->[0] > 0 ) {
   <<% $el %>><% $cell->[0] %><<% "/$el" %>>
-%       if ( $percentages ) {
-%         $el = $xml_percent . $col . $row; # Part_p_IA_Af1, ...
+%         if ( $percentages ) {
+%           $el = $xml_percent . $col . $row; # Part_p_IA_Af1, ...
   <<% $el %>><% $cell->[1] %><<% "/$el" %>>
+%         }
 %       }
 %       $row++;
 %     } # foreach $cell
@@ -57,9 +59,11 @@
     </TD>
 %   for (my $col = 0; $col < scalar(@download_option); $col++) {
     <TD>
+%     if ( $data[$col][$row][0] > 0 ) {
       <% $data[$col][$row][0] %>
-%     if ( $percentages ) {
+%       if ( $percentages ) {
       <BR><% $data[$col][$row][1] %>
+%       }
 %     }
     </TD>
 %   } # for $col
@@ -139,7 +143,7 @@ for ( my $row = 0; $row < scalar @upload_option; $row++ ) {
     my $count = FS::Record->scalar_sql($this_count_query);
     my $residential = FS::Record->scalar_sql($this_count_query . $is_residential);
 
-    my $percent = sprintf('%.2f', $count ? 100 * $residential / $count : 0);
+    my $percent = sprintf('%.3f', $count ? 100 * $residential / $count : 0);
     $data[$col][$row] = [ $count, $percent ];
 
     $total_count += $count;
@@ -149,10 +153,10 @@ for ( my $row = 0; $row < scalar @upload_option; $row++ ) {
 }
 
 my $total_percentage =
-  sprintf("%.2f", $total_count ? 100*$total_residential/$total_count : 0);
+  sprintf("%.3f", $total_count ? 100*$total_residential/$total_count : 0);
 
 my $above_200_percentage =
-  sprintf("%.2f", $total_count ? 100*$above_200/$total_count : 0);
+  sprintf("%.3f", $total_count ? 100*$above_200/$total_count : 0);
 
 my @summary_row = (
   $total_count,

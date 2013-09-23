@@ -1,0 +1,19 @@
+<& elements/edit.html,
+     'table'         => 'cdr_carrier',
+     'name_singular' => 'carrier',
+     'fields'        => [
+       { field=>'carriername',  type=>'text', size=>20 },
+       { field=>'disabled', type=>'checkbox', value=>'Y' },
+     ],
+     'labels'        => { 'carrierid'   => 'Carrier',
+                          'carriername' => 'Carrier',
+                          'disabled'    => 'Disabled',
+                        },
+     'viewall_dir' => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

@@ -1,0 +1,36 @@
+#!/usr/bin/perl -w
+
+use strict;
+use DBIx::Profile;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch );
+use FS::svc_phone;
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup($user);
+
+#my $pkgnum = shift or die &usage;
+#my $svcpart = shift or die &usage;
+
+my @svc_phone = qsearch( {
+  'table'   => 'svc_phone',
+  'hashref' => { 'phonenum' => { op=>'LIKE', value=>'3125%', } },
+});
+
+my $num = 0;
+
+foreach my $svc_phone ( @svc_phone ) {
+  my $error = $svc_phone->delete;
+  die $error if $error;
+  #last if $num++ > 54;
+}
+
+
+print "\n";
+print $dbh->sprintProfile;
+
+sub usage {
+  die "Usage:\n svc_phone-bulk_delete user\n";
+}
+
+1;

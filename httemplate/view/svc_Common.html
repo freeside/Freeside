@@ -25,6 +25,17 @@ if ( UNIVERSAL::can("FS::$table", 'table_info') ) {
                    }
                keys %$fields;
   $opt{'labels'} = \%labels;
+
+  #transform FS::svc_* table_info's structure into one svc_Common.html likes
+  delete $fields->{svcnum};
+  $opt{'fields'} = [ map { ref $fields->{$_}
+                             ? { field => $_,
+                                 %{ $fields->{$_} }
+                               }
+                             : $_
+                          } keys %$fields
+                   ];
+
 }
 
 </%init>
