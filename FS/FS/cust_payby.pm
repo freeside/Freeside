@@ -6,6 +6,7 @@ use FS::UID;
 use FS::Record qw( qsearchs ); #qsearch;
 use FS::payby;
 use FS::cust_main;
+use Business::CreditCard qw( validate cardtype );
 
 use vars qw( $conf @encrypted_fields
              $ignore_expired_card $ignore_banned_card

@@ -263,7 +263,7 @@ tie my %detail_formats, 'Tie::IxHash',
                           'type' => 'checkbox',
                         },
 
-    'usage_mandate' => { 'name' => 'Always put usage details in separate section',
+    'usage_mandate' => { 'name' => 'Always put usage details in separate section.  The section is defined in the next option.',
                           'type' => 'checkbox',
                        },
     #eofalse
@@ -340,7 +340,7 @@ tie my %detail_formats, 'Tie::IxHash',
                        411_rewrite
                        output_format 
                        selfservice_format selfservice_inbound_format
-                       usage_mandate summarize_usage usage_section 
+                       usage_mandate usage_section summarize_usage 
                        usage_nozero bill_every_call bill_inactive_svcs
                        count_available_phones suspend_bill 
                      )

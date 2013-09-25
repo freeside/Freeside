@@ -50,19 +50,19 @@ any delimiter and linked from the elements in @data.
 <% $csv->string %>
 %
 %   my @bottom_total = ();
+%   my $row = 0;
 %   foreach ( @items ) {
 %
 %     my $col = 0;
-%     my $total = 0;
-%     $csv->combine(
-%       shift( @row_labels ),
-%       map { $total += $_; $bottom_total[$col++] += $_; sprintf($sprintf, $_); }
-%         ( @{ shift( @data ) } ),
-%       ( $opt{'nototal'} ? () : sprintf($sprintf, $total) ),
-%     );
-%     unless ( $opt{'nototal'} ) { 
-%       $bottom_total[$col++] += $total; 
-%     } 
+%     my @row = map { sprintf($sprintf, $_) } @{ shift(@data) };
+%     my $total = sum(@row);
+%     push @row, sprintf($sprintf, $total) unless $opt{'nototal'};
+%     unless ($opt{'no_graph'}[$row]) {
+%       foreach (@row) {
+%         $bottom_total[$col++] += $_;
+%       }
+%     }
+%     $csv->combine(shift(@row_labels), @row);
 <% $csv->string %>
 %
 %   }
@@ -92,35 +92,35 @@ any delimiter and linked from the elements in @data.
 %
 %   my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
 %
-%   my($r,$c) = (0,0);
+%   my($row,$col) = (0,0);
 %
 %   foreach ('', @col_labels, ($opt{'nototal'} ? () : 'Total') ) {
 %     my $header = $_;
-%     $worksheet->write($r, $c++, $header)
+%     $worksheet->write($row, $col++, $header)
 %   }
 %
 %   my @bottom_total = ();
 %   foreach ( @items ) {
-%     $r++;
-%     $c = 0;
+%     $row++;
+%     $col = 0;
 %     my $total = 0;
-%     $worksheet->write( $r, $c++, shift( @row_labels ) );
+%     $worksheet->write( $row, $col++, shift( @row_labels ) );
 %     foreach ( @{ shift( @data ) } ) {
 %       $total += $_;
-%       $bottom_total[$c-1] += $_;
-%       $worksheet->write($r, $c++,  sprintf($sprintf, $_) );
+%       $bottom_total[$col-1] += $_ unless $opt{no_graph}[$row];
+%       $worksheet->write($row, $col++,  sprintf($sprintf, $_) );
 %     }
-%     unless ( $opt{'nototal'} ) { 
-%       $bottom_total[$c-1] += $total; 
-%       $worksheet->write($r, $c++,  sprintf($sprintf, $total) );
+%     if ( !$opt{'nototal'} ) {
+%       $bottom_total[$col-1] += $total unless $opt{no_graph}[$row]; 
+%       $worksheet->write($row, $col++,  sprintf($sprintf, $total) );
 %     } 
 %   }
 % 
-%   $c = 0;
+%   $col = 0;
 %   if ( $opt{'bottom_total'} ) {
-%     $r++;
-%     $worksheet->write($r, $c++, 'Total');
-%     $worksheet->write($r, $c++, sprintf($sprintf, $_)) foreach @bottom_total;
+%     $row++;
+%     $worksheet->write($row, $col++, 'Total');
+%     $worksheet->write($row, $col++, sprintf($sprintf, $_)) foreach @bottom_total;
 %   } 
 %   
 %   $workbook->close();# or die "Error creating .xls file: $!";
@@ -207,7 +207,7 @@ any delimiter and linked from the elements in @data.
             Download full results<BR>
             as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
             as <A HREF="<% "$myself;_type=csv" %>">CSV file</A></P>
-% } 
+% }
 %
 </P>
 %# indexed by item, then by entry (the element indices of @{$data[$i]}).
@@ -227,6 +227,7 @@ any delimiter and linked from the elements in @data.
 
 % # i for item, e for entry
 % my $i = 1;
+% my @bottom_total = map {0} @col_labels;
 % foreach my $row ( @items ) {
 % #make a style
 %   my $color = shift @{ $opt{'colors'} };
@@ -243,11 +244,13 @@ any delimiter and linked from the elements in @data.
 %   if ( ! $opt{'nototal'} ) {
 %     push @$data_row, sum(@$data_row);
 %   }
+%   my $e = 0;
 %   foreach ( @$data_row ) {
 %     my $entry = $_;
 %     $entry = $money_char . sprintf($sprintf, $entry);
 %     $entry = $link_prefix . shift(@$links) . "\">$entry</A>" if $link_prefix;
 %     push @{$cell[$i]}, $entry;
+%     $bottom_total[$e++] += $_ unless $opt{no_graph}[$i-1];
 %   }
 %   $i++;
 % }
@@ -260,7 +263,7 @@ any delimiter and linked from the elements in @data.
 %   $link_prefix = '<A CLASS="cell" HREF="'.$link_prefix if $link_prefix;
 %   $cell[$i] = [ emt('Total') ];
 %   for (my $e = 0; $e < $num_entries + 1; $e++) {
-%     my $entry = sum(map { $_->[$e] } @data);
+%     my $entry = $bottom_total[$e];
 %     $entry = $money_char . sprintf($sprintf, $entry);
 %     $entry = $link_prefix . shift(@$links) . "\">$entry</A>" if $link_prefix;
 %     push @{$cell[$i]}, $entry;

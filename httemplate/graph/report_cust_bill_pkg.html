@@ -119,10 +119,10 @@ window.onload = class_mode_changed;
         </TD>
 
         <TD>
-          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_aggregate" VALUE="aggregate" CHECKED>
+          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_aggregate" VALUE="aggregate" onchange="enable_agent_totals(this)" CHECKED>
           <% emt('Aggregate') %>
           <BR>
-          <INPUT TYPE="radio" NAME="class_agg_break" VALUE="breakdown">
+          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_breakdown" VALUE="breakdown" onchange="enable_agent_totals(this)">
           <% emt('Breakdown') %>
         </TD>
 

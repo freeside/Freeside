@@ -5,7 +5,8 @@ use strict;
 use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
-use Time::Local qw( timelocal timelocal_nocheck );
+use DateTime;
+use Time::Local qw( timelocal timelocal_nocheck ); # eventually replace with DateTime
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -1094,10 +1095,11 @@ sub delay_start_date {
   my $self = shift;
 
   my $delay = $self->delay_start or return '';
-    
-  my ($mday,$mon,$year) = (localtime(time))[3,4,5];
-  timelocal(0,0,0,$mday,$mon,$year) + 86400 * $delay;
 
+  # avoid timelocal silliness  
+  my $dt = DateTime->today(time_zone => 'local');
+  $dt->add(days => $delay);
+  $dt->epoch;
 }
 
 sub can_currency_exchange { 0; }
