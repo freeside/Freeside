@@ -422,6 +422,25 @@ sub display_invnum {
   }
 }
 
+=item previous_bill
+
+Returns the customer's last invoice before this one.
+
+=cut
+
+sub previous_bill {
+  my $self = shift;
+  if ( !$self->get('previous_bill') ) {
+    $self->set('previous_bill', qsearchs({
+          'table'     => 'cust_bill',
+          'hashref'   => { 'custnum'  => $self->custnum,
+                           '_date'    => { op=>'<', value=>$self->_date } },
+          'order_by'  => 'ORDER BY _date DESC LIMIT 1',
+    }) );
+  }
+  $self->get('previous_bill');
+}
+
 =item previous
 
 Returns a list consisting of the total previous balance for this customer, 
@@ -3109,12 +3128,25 @@ sub _items_credits {
 
   my @b;
   #credits
-  foreach ( $self->cust_credited ) {
+  my @objects;
+  if ( $self->conf->exists('previous_balance-payments_since') ) {
+    my $date = 0;
+    $date = $self->previous_bill->_date if $self->previous_bill;
+    @objects = qsearch('cust_credit', {
+        'custnum' => $self->custnum,
+        '_date'   => {op => '>=', value => $date},
+      });
+      # hard to do this in the qsearch...
+    @objects = grep { $_->_date < $self->_date } @objects;
+  } else {
+    @objects = $self->cust_credited;
+  }
 
-    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
+  foreach my $obj ( @objects ) {
+    my $cust_credit = $obj->isa('FS::cust_credit') ? $obj : $obj->cust_credit;
 
-    my $reason = substr($_->cust_credit->reason, 0, $trim_len);
-    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    my $reason = substr($cust_credit->reason, 0, $trim_len);
+    $reason .= '...' if length($reason) < length($cust_credit->reason);
     $reason = " ($reason) " if $reason;
 
     push @b, {
@@ -3122,8 +3154,8 @@ sub _items_credits {
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
       'description' => $self->mt('Credit applied').' '.
-                       time2str($date_format,$_->cust_credit->_date). $reason,
-      'amount'      => sprintf("%.2f",$_->amount),
+                       time2str($date_format,$obj->_date). $reason,
+      'amount'      => sprintf("%.2f",$obj->amount),
     };
   }
 
@@ -3135,21 +3167,31 @@ sub _items_payments {
   my $self = shift;
 
   my @b;
-  #get & print payments
-  foreach ( $self->cust_bill_pay ) {
+  my $detailed = $self->conf->exists('invoice_payment_details');
+  my @objects;
+  if ( $self->conf->exists('previous_balance-payments_since') ) {
+    my $date = 0;
+    $date = $self->previous_bill->_date if $self->previous_bill;
+    @objects = qsearch('cust_pay', {
+        'custnum' => $self->custnum,
+        '_date'   => {op => '>=', value => $date},
+      });
+    @objects = grep { $_->_date < $self->_date } @objects;
+  } else {
+    @objects = $self->cust_bill_pay;
+  }
 
-    #something more elaborate if $_->amount ne ->cust_pay->paid ?
-
+  foreach my $obj (@objects) {
+    my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
     my $desc = $self->mt('Payment received').' '.
-               time2str($date_format,$_->cust_pay->_date );
-    $desc   .= $self->mt(' via ' . $_->cust_pay->payby_payinfo_pretty)
-      if ( $self->conf->exists('invoice_payment_details') );
- 
+               time2str($date_format, $cust_pay->_date );
+    $desc .= $self->mt(' via ' . $cust_pay->payby_payinfo_pretty)
+      if $detailed;
+
     push @b, {
       'description' => $desc,
-      'amount'      => sprintf("%.2f", $_->amount )
+      'amount'      => sprintf("%.2f", $obj->amount )
     };
-
   }
 
   @b;

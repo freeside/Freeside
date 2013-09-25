@@ -608,23 +608,12 @@ sub print_generic {
   # summary formats
   $invoice_data{'last_bill'} = {};
 
-  # returns the last unpaid bill, not the last bill
-  #my $last_bill = $pr_cust_bill[-1];
-
   if ( $self->custnum && $self->invnum ) {
 
-    # THIS returns the customer's last bill before  this one
-    my $last_bill = qsearchs({
-        'table'   => 'cust_bill',
-        'hashref' => { 'custnum' => $self->custnum,
-                       'invnum'  => { op => '<', value => $self->invnum },
-                     },
-        'order_by'  => ' ORDER BY invnum DESC LIMIT 1'
-    });
-    if ( $last_bill ) {
+    if ( $self->previous_bill ) {
+      my $last_bill = $self->previous_bill;
       $invoice_data{'last_bill'} = {
         '_date'     => $last_bill->_date, #unformatted
-        # all we need for now
       };
       my (@payments, @credits);
       # for formats that itemize previous payments
@@ -1167,7 +1156,7 @@ sub print_generic {
         $adjust_section->{'pretotal'} = $self->mt('New charges total').' '.
           $other_money_char.  sprintf('%.2f', $self->charged );
       } 
-    }else{
+    } else {
       push @total_items, $total;
     }
     push @buf,['','-----------'];
