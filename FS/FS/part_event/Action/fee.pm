@@ -32,7 +32,48 @@ sub _calc_fee {
     if ( $balance >= 0 ) {
       return 0;
     } elsif ( (-1 * $balance) < $self->option('charge') ) {
-      return -1 * $balance;
+      my $total = -1 * $balance;
+      # if it's tax exempt, then we're done
+      # XXX we also bail out if you're using external tax tables, because
+      # they're definitely NOT linear and we haven't yet had a reason to 
+      # make that case work.
+      return $total if $self->option('setuptax') eq 'Y'
+                    or FS::Conf->new->exists('enable_taxproducts');
+
+      # estimate tax rate
+      # false laziness with xmlhttp-calculate_taxes, cust_main::Billing, etc.
+      # XXX not accurate with monthly exemptions
+      my $cust_main = $cust_object->cust_main;
+      my $taxlisthash = {};
+      my $charge = FS::cust_bill_pkg->new({
+          setup => $total,
+          recur => 0,
+          details => []
+      });
+      my $part_pkg = FS::part_pkg->new({
+          taxclass => $self->option('taxclass')
+      });
+      my $error = $cust_main->_handle_taxes(
+        FS::part_pkg->new({ taxclass => ($self->option('taxclass') || '') }),
+        $taxlisthash,
+        $charge,
+        FS::cust_pkg->new({custnum => $cust_main->custnum}),
+      );
+      if ( $error ) {
+        warn "error estimating taxes for breakage charge: custnum ".$cust_main->custnum."\n";
+        return $total;
+      }
+      # $taxlisthash: tax identifier => [ cust_main_county, cust_bill_pkg... ]
+      my $total_rate = 0;
+      my @taxes = map { $_->[0] } values %$taxlisthash;
+      foreach (@taxes) {
+        $total_rate += $_->tax;
+      }
+      return $total if $total_rate == 0; # no taxes apply
+
+      my $total_cents = $total * 100;
+      my $charge_cents = sprintf('%.0f', $total_cents * 100/(100 + $total_rate));
+      return ($charge_cents / 100);
     }
   }
 
