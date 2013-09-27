@@ -211,7 +211,6 @@ sub CustomerResolver {
 sub CustomerInfo {
   my $self = shift;
   $self = $self->CustomerResolver;
-  my $rec;
   my $rec = $self->_FreesideGetRecord() if $self;
   if (!$rec) {
     # AsStringLong will report an error;
