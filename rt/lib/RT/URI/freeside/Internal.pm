@@ -152,6 +152,9 @@ sub AsStringLong {
   if ( $table eq 'cust_main' ) {
 
     my $rec = $self->_FreesideGetRecord();
+    if (!$rec) {
+      return '<I>Customer #'.$self->{'fspkey'}.' (not found)</I>';
+    }
     return '<A HREF="' . $self->HREF . '">' .
                         small_custview( $rec->{'_object'},
                            scalar(FS::Conf->new->config('countrydefault')),
@@ -192,21 +195,38 @@ sub CustomerResolver {
   }
   elsif ( $self->{fstable} eq 'cust_svc' ) {
     my $rec = $self->_FreesideGetRecord();
-    return if !$rec;
-    my $cust_pkg = $rec->{'_object'}->cust_pkg;
-    if ( $cust_pkg ) {
-      my $URI = RT::URI->new($self->CurrentUser);
-      $URI->FromURI('freeside://freeside/cust_main/'.$cust_pkg->custnum);
-      return $URI->Resolver;
+    if ($rec) {
+      my $cust_pkg = $rec->{'_object'}->cust_pkg;
+      if ( $cust_pkg ) {
+        my $URI = RT::URI->new($self->CurrentUser);
+        $URI->FromURI('freeside://freeside/cust_main/'.$cust_pkg->custnum);
+        return $URI->Resolver;
+      }
     }
+    return;
   }
   return;
 }
 
 sub CustomerInfo {
   my $self = shift;
-  $self = $self->CustomerResolver or return;
-  my $rec = $self->_FreesideGetRecord() or return;
+  $self = $self->CustomerResolver;
+  my $rec;
+  my $rec = $self->_FreesideGetRecord() if $self;
+  if (!$rec) {
+    # AsStringLong will report an error;
+    # here, just avoid breaking things
+    my $error = {
+      AgentName     => '',
+      CustomerClass => '',
+      CustomerTags  => [],
+      Referral      => '',
+      InvoiceEmail  => '',
+      BillingType   => '',
+    };
+    return $error;
+  }
+
   my $cust_main = delete $rec->{_object};
   my $agent = $cust_main->agent;
   my $class = $cust_main->cust_class;

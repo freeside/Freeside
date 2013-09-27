@@ -43,10 +43,12 @@ while (my $link = $customers->Next) {
   } elsif ( $uri =~ /cust_svc\/(\d+)/ ) {
     my $svc = $link->TargetURI->Resolver;
     my $cust = $svc->CustomerResolver;
-    my $custnum = $cust->{fspkey};
-    $cust_main{$custnum} ||= $cust;
-    $cust_svc{$custnum} ||= [];
-    push @{$cust_svc{$custnum}}, $svc;
+    if ( $cust ) {
+      my $custnum = $cust->{fspkey};
+      $cust_main{$custnum} ||= $cust if $cust;
+      $cust_svc{$custnum} ||= [];
+      push @{$cust_svc{$custnum}}, $svc if $svc;
+    }
   }
 }
 @custnums = sort { $a <=> $b } keys %cust_main;
