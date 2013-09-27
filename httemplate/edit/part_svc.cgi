@@ -337,9 +337,9 @@ Self-service access:
 %            qq!<TEXTAREA NAME="${layer}__${field}">!. encode_entities($value).
 %            '</TEXTAREA>';
 %
-%        } elsif ( $def->{type} =~ /select-(.*?).html/ ) {
+%        } elsif ( $def->{type} =~ /select-(.*?)(.html)?$/ && $1 ne 'hardware' ) {
 %
-%          $html .= include("/elements/".$def->{type},
+%          $html .= include("/elements/select-$1.html",
 %                             'curr_value'   => $value,
 %                             'element_name' => "${layer}__${field}",
 %                             'element_etc'  => $disabled,
