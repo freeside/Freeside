@@ -1,0 +1,296 @@
+<& elements/edit.html,
+    'body_etc'          => $body_etc,
+    'name_singular'     => 'invoice configuration',
+    'table'             => 'invoice_conf',
+    'viewall_dir'       => 'browse',
+    'fields'            => \@fields,
+    'labels'            => \%labels,
+    'new_callback'      => \&new_callback,
+    'edit_callback'     => \&edit_callback,
+    'error_callback'    => \&error_callback,
+    'html_init'         => \&html_init,
+    'html_table_bottom' => \&html_table_bottom,
+    'html_bottom'       => '</DIV>', # close tablebreak-tabs
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+# ???
+die "access denied"
+  unless $curuser->access_right([ 'Edit templates', 'Edit global templates' ]);
+
+my $body_etc = '';
+$body_etc = q!onload="document.getElementById('locale').onchange()"!
+  if $cgi->param('locale') eq 'new';
+
+my $modenum = $cgi->param('modenum');
+my $mode = $modenum ? qsearchs('invoice_mode', { modenum => $modenum }) : '';
+
+my %textarea = (type => 'textarea', rows => 10, cols => 40);
+my @fields = (
+      { field => 'modenum', type => 'hidden' },
+      { field => 'agentnum',
+        type  => 'select-agent',
+      },
+      { field => 'modename',  size=>60, },
+      { type  => 'tablebreak-tabs',
+        include_opt_callback => \&menubar_opt_callback,
+      },
+      { field => 'locale', type => 'hidden' },
+      { field => 'notice_name',   size=>60, },
+      { field => 'subject',       size=>60, },
+      { field => 'lpr',           size=>60, },
+
+      { type  => 'columnstart', aligned => 1 },
+      { type  => 'title', value => '<BR>' },
+      map ( { +{ type => 'justtitle', value => $_ } }
+        'Notes',
+        'Footer',
+        'Summary header',
+        'Return address',
+        'Coupon',
+        'Small footer',
+        'Top margin',
+        'Header separation',
+        'Address separation',
+        'Text height',
+        'Coupon height',
+        'Footer separation',
+      ),
+
+      { type  => 'columnnext' },
+      { type  => 'title', value => 'LaTeX' },
+      { field => 'latexnotes',          %textarea },
+      { field => 'latexfooter',         %textarea },
+      { field => 'latexsummary',        %textarea },
+      { field => 'latexreturnaddress',  %textarea },
+      { field => 'latexcoupon',         %textarea },
+      { field => 'latexsmallfooter',    %textarea },
+      { field => 'latextopmargin',                size => 16 },
+      { field => 'latexheadsep',                  size => 16 },
+      { field => 'latexaddresssep',               size => 16 },
+      { field => 'latextextheight',               size => 16 },
+      { field => 'latexextracouponspace',         size => 16 },
+      { field => 'latexcouponfootsep',            size => 16 },
+      # are these still used?
+      #{ field => 'latexcouponamountenclosedsep',  size => 16 },
+      #{ field => 'latexverticalreturnaddress',    type => 'checkbox' },
+      #{ field => 'latexcouponaddcompanytoaddress',type => 'checkbox' },
+      # logo -- implement if someone really needs it...
+
+      { type  => 'columnnext' },
+      { type  => 'title', value => 'HTML' },
+      { field => 'htmlnotes',           %textarea }, #htmlarea?
+      { field => 'htmlfooter',          %textarea },
+      { field => 'htmlsummary',         %textarea },
+      { field => 'htmlreturnaddress',   %textarea },
+      # logo
+
+      { type  => 'columnend' },
+);
+
+my %labels = (
+  'confnum'             => 'Configuration',
+  'locale'              => 'Locale',
+  'agentnum'            => 'Agent',
+  'modename'            => 'Mode name',
+  'notice_name'         => 'Notice name',
+  'subject'             => 'Email Subject: header',
+  'lpr'                 => 'Alternate lpr command',
+
+  map { $_ => '' } (qw(
+    latexnotes
+    latexfooter
+    latexsummary
+    latexreturnaddress
+    latexcoupon
+    latexsmallfooter
+    latextopmargin
+    latexheadsep
+    latexaddresssep
+    latextextheight
+    latexextracouponspace
+    latexcouponfootsep
+    htmlnotes
+    htmlfooter
+    htmlsummary
+    htmlreturnaddress
+    logo_png
+    logo_eps
+  ) ),
+
+); 
+
+sub get_invoice_mode { # because we can't quite use agent_virt here
+  my $modenum = shift;
+  qsearchs({
+    'table'     => 'invoice_mode',
+    'hashref'   => { 'modenum' => $modenum },
+    'extra_sql' => ' AND '.
+      $FS::CurrentUser::CurrentUser->agentnums_sql(
+        'null_right' => 'Edit global templates',
+        'viewall_right' => 'Edit global templates' ),
+  });
+};
+
+sub error_callback {
+  my ($cgi, $object) = @_;
+  foreach (qw(modename agentnum)) {
+    $object->set($_, $cgi->param($_));
+  }
+  if ($object->confnum) {
+    return edit_callback(@_);
+  } else {
+    return new_callback(@_);
+  }
+}
+
+sub new_callback {
+  my ($cgi, $object, $fields_arrayref, $opt_hashref) = @_;
+  my $modenum;
+  if ( $cgi->param('locale') =~ /^(\w+)$/ ) {
+    $object->set('locale' => $1);
+  }
+
+  if ( $cgi->param('modenum') =~ /^(\d+)$/ ) {
+    $modenum = $1; # we're adding a locale to an existing mode
+    $object->set('modenum' => $modenum);
+    my $invoice_mode = get_invoice_mode($modenum)
+      or die "invoice mode $modenum not found";
+
+    $object->set('modename', $invoice_mode->modename);
+    $object->set('agentnum', $invoice_mode->agentnum);
+
+    # also, need to select a locale
+    # make a list of available locales
+    my %existing_locales = map { $_->locale }
+                          qsearch('invoice_conf', { modenum => $modenum });
+
+    my @locales = grep { !exists($existing_locales{$_}) } 
+                         FS::Conf->new->config('available-locales');
+    my %labels;
+    foreach (@locales) {
+      my %info = FS::Locales->locale_info($_);
+      $labels{$_} = $info{'label'};
+    }
+    unshift @locales, 'new';
+    $labels{'new'} = 'Select language';
+
+    # insert a field def
+    my $i = 0;
+    $i++ until ( $fields_arrayref->[$i]->{'field'} eq 'locale' );
+    my $locale_field = $fields_arrayref->[$i];
+
+    my $onchange_locale = "document.getElementById('submit').disabled = 
+    (this.options[this.selectedIndex].value == 'new');";
+
+    %$locale_field = (
+      field   => 'locale',
+      type    => 'select',
+      options => \@locales,
+      labels  => \%labels,
+      curr_value  => 'new',
+      onchange    => $onchange_locale,
+    );
+
+  } # otherwise it's a completely new mode, so the locale is default
+
+}
+
+sub edit_callback {
+  # massive false laziness with msg_template UI
+  my ($cgi, $object, $fields_arrayref, $opt_hashref) = @_;
+
+  # a little different here in that we treat the content object
+  # as "primary" (this is edit/invoice_conf.html, etc.)
+  # so all we need from the invoice_mode is its name
+  # (and agent identity)
+  my $modenum = $object->modenum;
+  my $invoice_mode = get_invoice_mode($modenum)
+    or die "invoice mode $modenum not found";
+  $object->set('modename', $invoice_mode->modename);
+  $object->set('agentnum', $invoice_mode->agentnum);
+
+}
+
+sub menubar_opt_callback {
+  my $object = shift;
+  my $modenum = $object->modenum or return; 
+  my (@tabs, @options, %labels);
+  my $display_new = 0;
+  my $selected = '';
+  foreach my $l ('', FS::Conf->new->config('available-locales')) {
+    my $invoice_conf =
+      qsearchs('invoice_conf', { modenum => $modenum, locale => $l });
+    if ( $invoice_conf ) {
+      my %info = FS::Locales->locale_info($l) if $l;
+      my $label = $info{'label'} || mt('Default');
+      push @tabs, $label, $invoice_conf->confnum;
+      $selected = $label if $object->locale eq $l;
+    }
+    else {
+      $display_new = 1; # there is at least one unused locale left
+    }
+  }
+  push @tabs, mt('New'), "modenum=$modenum;locale=new" if $display_new;
+  $selected = mt('New') if $object->locale eq 'new';
+  $selected ||= mt('Default');
+  (
+    'url_base' => $cgi->url() . '?',
+    'selected' => $selected,
+    'tabs'     => \@tabs
+  );
+}
+
+sub html_init {
+q!
+<STYLE>
+.fstabcontainer th { vertical-align: middle; text-align: center }
+</STYLE>
+!
+}
+
+sub html_table_bottom {
+  my $object = shift;
+  my $locale = '';
+  my $modenum = '';
+
+  if ($object->locale =~ /^(\w+)$/) {
+    $locale = $1;
+  }
+  if ($object->modenum =~ /^(\d+)$/) {
+    $modenum = $1;
+  }
+  my $html;
+  my $show_delete = 1;
+  # don't allow the default locale to be removed unless it's the last one
+  # in the mode
+  $show_delete = 0 if (
+    $locale eq 'new' or
+    $modenum eq '' or
+    ($locale eq '' and
+     FS::invoice_conf->count("modenum = $modenum and locale is not null") > 0
+    )
+  );
+
+  if ( $show_delete ) {    
+    # set up a delete link
+    my $confnum = $object->confnum;
+    my $url = $p."misc/delete-invoice_conf.html?$confnum";
+    my $link = qq!<A HREF="javascript:areyousure('$url','Really delete this configuration?')">! .
+      'Delete this configuration' .
+      '</A>';
+    $html = qq!<TR><TD></TD>
+      <TD STYLE="font-style: italic; font-size: small">$link</TD></TR>
+      <SCRIPT TYPE="text/javascript">
+      function areyousure(url, message) {
+          if (confirm(message)) window.location.href = url;
+      }
+      </SCRIPT>
+      !;
+  }
+  $html;
+}
+
+</%init>

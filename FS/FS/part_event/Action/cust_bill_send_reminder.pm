@@ -11,9 +11,13 @@ sub eventtable_hashref {
 
 sub option_fields {
   (
+    'modenum' => {  label => 'Invoice mode',
+                    type  => 'select-invoice_mode',
+                 },
+    # totally unnecessary, since the invoice mode can set notice_name and lpr,
+    # but for compatibility...
     'notice_name' => 'Reminder name',
-    #'notes'      => { 'label' => 'Reminder notes' }, 
-    #include standard notes?  no/prepend/append
+    #'notes'      => { 'label' => 'Reminder notes' },  # invoice mode does this
     'lpr'         => 'Optional alternate print command',
   );
 }
@@ -23,9 +27,7 @@ sub default_weight { 50; }
 sub do_action {
   my( $self, $cust_bill ) = @_;
 
-  #my $cust_main = $self->cust_main($cust_bill);
-  #my $cust_main = $cust_bill->cust_main;
-
+  $cust_bill->set('mode' => $self->option('modenum'));
   $cust_bill->send({
     'notice_name' => $self->option('notice_name'),
     'lpr'         => $self->option('lpr'),
