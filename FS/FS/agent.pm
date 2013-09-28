@@ -354,6 +354,23 @@ sub payment_gateway {
   $payment_gateway;
 }
 
+=item invoice_modes
+
+Returns all L<FS::invoice_mode> objects that are valid for this agent (i.e.
+those with this agentnum or null agentnum).
+
+=cut
+
+sub invoice_modes {
+  my $self = shift;
+  qsearch( {
+      table     => 'invoice_mode',
+      hashref   => { agentnum => $self->agentnum },
+      extra_sql => ' OR agentnum IS NULL',
+      order_by  => ' ORDER BY modename',
+  } );
+}
+
 =item num_prospect_cust_main
 
 Returns the number of prospects (customers with no packages ever ordered) for

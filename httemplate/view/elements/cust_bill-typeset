@@ -6,7 +6,7 @@ die "access denied"
 
 my $type = shift;
 
-my( $invnum, $template, $notice_name );
+my( $invnum, $mode, $template, $notice_name );
 my($query) = $cgi->keywords;
 if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) { #probably not necessary anymore?
   $template = $2;
@@ -16,7 +16,8 @@ if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) { #probably not necessary anymore?
   $invnum = $cgi->param('invnum');
   $invnum =~ s/\.pdf//i; #probably not necessary anymore
   $template = $cgi->param('template');
-  $notice_name = ( $cgi->param('notice_name') || 'Invoice' );
+  $notice_name = $cgi->param('notice_name');
+  $mode = $cgi->param('mode');
 }
 
 my $conf = new FS::Conf;
@@ -35,6 +36,8 @@ my $cust_bill = qsearchs({
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
 die "Invoice #$invnum not found!" unless $cust_bill;
+
+$cust_bill->set(mode => $mode);
 
 my $method = "print_$type";
 

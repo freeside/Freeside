@@ -1,0 +1,70 @@
+<& elements/browse.html,
+  'title'         => 'Invoice modes',
+  'name_singular' => 'configuration',
+  'menubar'       => \@menubar,
+  'query'         => {
+                      'select'    => $select,
+                      'table'     => 'invoice_conf',
+                      'addl_from' => ' JOIN invoice_mode USING (modenum)',
+                      'extra_sql' => ' WHERE '.$curuser->agentnums_sql(
+                        'table'       => 'invoice_mode',
+                        'null_right'  => ['Edit global templates'],
+                      ),
+                      'order_by'  => q( ORDER BY modename asc, COALESCE(locale,'') asc),
+                     },
+  'count_query'   => 'SELECT COUNT(*) FROM invoice_conf JOIN invoice_mode USING (modenum)',
+  'header'        => [ 'Name', 'Agent', 'Locale', 'Overrides', ],
+  'fields'        => [  $modename,
+                        $agent,
+                        $locale_label,
+                        $overrides,
+                     ],
+  'align'         => 'llcl',
+  'links'         => [ '', '', $link ],
+  'disable_maxselect' => 1,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View templates', 'View global templates',
+                                  'Edit templates', 'Edit global templates', ]);
+
+my @overrides = grep {$_ ne 'modenum' and $_ ne 'confnum'} FS::invoice_conf->fields;                                 
+my $select = join(',', 'modename', 'agentnum', 'confnum', 'invoice_conf.*');
+
+my @menubar = ();
+if ( $curuser->access_right(['Edit templates', 'Edit global templates']) ) {
+  push @menubar, 'Add a new invoice mode' => $p.'edit/invoice_conf.html';
+}
+
+my $locale_style = 'font-size:0.8em; padding:3px; background-color:';
+
+my $last_modenum = 0;
+my $modename = sub {
+  return '' if $_[0]->modenum == $last_modenum;
+  $_[0]->modename;
+};
+
+my $agent = sub {
+  return '' if $_[0]->modenum == $last_modenum;
+  $last_modenum = $_[0]->modenum;
+  $_[0]->agentnum ? FS::agent->by_key($_[0]->agentnum)->agent : '(global)';
+};
+
+my $locale_label = sub {
+  my $l = $_[0]->locale;
+  $l ? +{ FS::Locales->locale_info($l) }->{'label'} : '(default)';
+};
+
+my $overrides = sub {
+  my $invoice_conf = shift;
+  [ map { [ { data => $_ } ] }
+    grep { length $invoice_conf->get($_) }
+    @overrides
+  ],
+};
+
+my $link = [ $p.'edit/invoice_conf.html?', 'confnum' ];
+</%init>

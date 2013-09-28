@@ -1,6 +1,81 @@
+<%doc>
+<table>
+  <& /elements/columnstart.html &>
+    <tr> ... </tr>
+    <tr> ... </tr>
+  <& /elements/columnnext.html &>
+    ...
+  <& /elements/columnend.html &>
+</table>
+
+Pass 'aligned' => 1 to have corresponding rows in the columns line up.
+</%doc>
+% my $id = sprintf('table%08d', rand(100000000));
 <TR>
   <TD CLASS="background" COLSPAN=99>
-    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 id="<%$id%>">
       <TR>
         <TD VALIGN="top">
           <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+% if ( $aligned ) {
+%# Instead of changing all the tr-* elements to sometimes output table
+%# cells without wrapping them in a row, we're just going to completely
+%# rebuild the table on the client side.
+<script type="text/javascript">
+<&| onload.js &>
+  var table = document.getElementById('<%$id%>'); // has one row, always
+  var rows = []; // row contents, each containing 
+  var n_rows = []; // rows in each subtable
+  var n_cols = []; // cols in each subtable
+  var total_rows = 0; // max(n_rows)
+  for(var i=0; i < table.rows[0].cells.length; i++) {
+    // these are cells created by columnstart/columnnext
+    // each contains a table, and nothing else
+    var subtable = table.rows[0].cells[i].children[0];
+    n_rows[i] = subtable.rows.length;
+    if ( total_rows < n_rows[i] ) {
+      total_rows = n_rows[i];
+    }
+    n_cols[i] = 0;
+    var subrows = []; // the rows of this table
+    for(var j=0; j < n_rows[i]; j++) {
+      // these are the actual tr-* rows within the table, and 
+      // can contain multiple cells
+      subrows[j] = [];
+      var tr = subtable.rows[j];
+      if ( n_cols[i] < tr.cells.length ) {
+        n_cols[i] = tr.cells.length;
+      }
+      for(var k=0; k < tr.cells.length; k++) {
+        subrows[j][k] = tr.cells[k];
+      }
+    } // for(j)
+    rows[i] = subrows;
+  } // for(i)
+  var new_table = document.createElement('TABLE');
+  for (var j = 0; j < total_rows; j++) {
+    var tr = document.createElement('TR');
+    for (var i = 0; i < rows.length; i++) { // subtables
+      var k = 0; // subrow position
+      if ( j < n_rows[i] ) { // then subtable i has this row
+        for (k = 0; k < rows[i][j].length; k++) { // cells
+          tr.appendChild(rows[i][j][k]);
+        }
+      } // else k is just 0
+      if ( k < n_cols[i] ) { // then we need a spacer
+        var spacer = document.createElement('TD');
+        spacer.setAttribute('colspan', n_cols[i] - k);
+        tr.appendChild(spacer);
+      }
+    } // for(i); subtables
+    // tr is complete
+    new_table.appendChild(tr);
+  } // for(j); rows
+  table.parentNode.insertBefore( new_table, table );
+  table.parentNode.removeChild(table);
+</&>
+</script>
+% } # if $aligned
+<%args>
+$aligned => 0
+</%args>

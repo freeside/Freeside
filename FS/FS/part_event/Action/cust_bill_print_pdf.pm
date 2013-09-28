@@ -9,6 +9,14 @@ sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }
 
+sub option_fields {
+  (
+    'modenum' => {  label => 'Invoice mode',
+                    type  => 'select-invoice_mode'
+                 },
+  );
+}
+
 sub default_weight { 51; }
 
 sub do_action {
@@ -20,6 +28,7 @@ sub do_action {
   my $opt = { $self->options };
   $opt->{'notice_name'} ||= 'Invoice';
 
+  $cust_bill->set('mode' => $self->option('modenum'));
   $cust_bill->batch_invoice($opt);
 }
 

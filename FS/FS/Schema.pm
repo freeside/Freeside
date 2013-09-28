@@ -4208,6 +4208,51 @@ sub tables_hashref {
       'index'       => [ [ 'derivenum', ], ],
     },
 
+    'invoice_mode' => {
+      'columns' => [
+        'modenum',      'serial', '', '', '', '',
+        'agentnum',        'int', 'NULL', '', '', '',
+        'modename',    'varchar', '', 32, '', '',
+      ],
+      'primary_key' => 'modenum',
+      'unique'      => [ ],
+      'index'       => [ ],
+    },
+
+    'invoice_conf' => {
+      'columns' => [
+        'confnum',              'serial',   '', '', '', '',
+        'modenum',              'int',      '', '', '', '',
+        'locale',               'varchar',  'NULL', 16, '', '',
+        'notice_name',          'varchar',  'NULL', 64, '', '',
+        'subject',              'varchar',  'NULL', 64, '', '',
+        'htmlnotes',            'text',     'NULL', '', '', '',
+        'htmlfooter',           'text',     'NULL', '', '', '',
+        'htmlsummary',          'text',     'NULL', '', '', '',
+        'htmlreturnaddress',    'text',     'NULL', '', '', '',
+        'latexnotes',           'text',     'NULL', '', '', '',
+        'latexfooter',          'text',     'NULL', '', '', '',
+        'latexsummary',         'text',     'NULL', '', '', '',
+        'latexcoupon',          'text',     'NULL', '', '', '',
+        'latexsmallfooter',     'text',     'NULL', '', '', '',
+        'latexreturnaddress',   'text',     'NULL', '', '', '',
+        'latextopmargin',       'varchar',  'NULL', 16, '', '',
+        'latexheadsep',         'varchar',  'NULL', 16, '', '',
+        'latexaddresssep',      'varchar',  'NULL', 16, '', '',
+        'latextextheight',      'varchar',  'NULL', 16, '', '',
+        'latexextracouponspace','varchar',  'NULL', 16, '', '',
+        'latexcouponfootsep',   'varchar',  'NULL', 16, '', '',
+        'latexcouponamountenclosedsep', 'varchar',  'NULL', 16, '', '',
+        'latexcoupontoaddresssep',      'varchar',  'NULL', 16, '', '',
+        'latexverticalreturnaddress',      'char',  'NULL',  1, '', '',
+        'latexcouponaddcompanytoaddress',  'char',  'NULL',  1, '', '',
+        'logo_png',             'blob',     'NULL', '', '', '',
+        'logo_eps',             'blob',     'NULL', '', '', '',
+        'lpr',                  'varchar',  'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'confnum',
+      'unique' => [ [ 'modenum', 'locale' ] ],
+    },
 
     # name type nullability length default local
 

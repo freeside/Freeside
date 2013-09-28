@@ -95,10 +95,10 @@ close TEST;
 # add them to MANIFEST
 ###
 
-#system('cvs edit FS/MANIFEST');
-
 open(MANIFEST,">>FS/MANIFEST") or die $!;
 print MANIFEST "FS/$table.pm\n",
                "t/$table.t\n";
 close MANIFEST;
+
+system("git add FS/FS/$table.pm FS/t/$table.t");
 
