@@ -197,6 +197,10 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       [ $fsurl. 'search/report_svc_phone_usage.html',
         'Total usage (minutes, and amount billed) for the specified time period, per phone number.',
       ];
+    $report_svc{"${name} by state"} =
+      [ $fsurl. 'search/phone_state.html',
+        'Current or historical phone services broken down by state.',
+      ];
 
   }
 
