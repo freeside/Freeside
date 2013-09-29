@@ -86,6 +86,10 @@ for(my $i = 0; $i < scalar(@tables); $i++) {
   # join to the preceding table if there is one, and filter out 
   # deleted records
   if ( $i > 0 ) {
+    # special case to make pre-3.x data work; remove this later
+    if ( $table eq 'cust_main' ) {
+      $last_table = 'h_cust_pkg';
+    }
     $addl_from .= "
       LEFT JOIN ( $h_table $inside ) AS $h_table
         ON ($h_table.$pkey = $last_table.$pkey)";
@@ -109,7 +113,9 @@ push @where, $curuser->agentnums_sql(
 );
 my $where = " WHERE ".join(' AND ', map "($_)", @where);
 
-my $group_field = 'h_cust_location.state';
+# for pre-3.x data
+my $group_field = 'COALESCE(h_cust_location.state, h_cust_main.ship_state, h_cust_main.state)';
+
 my @select = (
   "$group_field AS state",
   'count(DISTINCT h_svc_phone.svcnum) AS num_svcnums',
