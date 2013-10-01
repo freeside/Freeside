@@ -113,6 +113,10 @@ my $rt_session;
 
 sub delete {
   my $self = shift;
+
+  my $cust_pkg = $self->cust_pkg;
+  my $custnum = $cust_pkg->custnum if $cust_pkg;
+
   my $error = $self->SUPER::delete;
   return $error if $error;
 
@@ -126,7 +130,15 @@ sub delete {
     $links->Limit(FIELD => 'Target', 
                   VALUE => 'freeside://freeside/cust_svc/'.$svcnum);
     while ( my $l = $links->Next ) {
-      my ($val, $msg) = $l->Delete;
+      my ($val, $msg);
+      if ( $custnum ) {
+        # re-link to point to the customer instead
+        ($val, $msg) =
+          $l->SetTarget('freeside://freeside/cust_main/'.$custnum);
+      } else {
+        # unlinked service
+        ($val, $msg) = $l->Delete;
+      }
       # can't do anything useful on error
       warn "error unlinking ticket $svcnum: $msg\n" if !$val;
     }
