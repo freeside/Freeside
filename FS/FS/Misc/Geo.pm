@@ -10,6 +10,7 @@ use HTML::TokeParser;
 use URI::Escape 3.31;
 use Data::Dumper;
 use FS::Conf;
+use Locale::Country;
 
 FS::UID->install_callback( sub {
   $conf = new FS::Conf;
@@ -408,6 +409,52 @@ sub standardize_ezlocate {
   }
 
   \%result;
+}
+
+sub standardize_tomtom {
+  # post-2013 TomTom API
+  # much better, but incompatible with ezlocate
+  my $self = shift;
+  my $location = shift;
+  my $class = 'Geo::TomTom::Geocoding';
+  eval "use $class";
+  die $@ if $@;
+
+  my $key = $conf->config('tomtom-userid')
+    or die "no tomtom-userid configured\n";
+
+  my $country = code2country($location->{country});
+  my $result = $class->query(
+    key => $key,
+    T   => $location->{address1},
+    L   => $location->{city},
+    AA  => $location->{state},
+    PC  => $location->{zip},
+    CC  => country2code($country, LOCALE_CODE_ALPHA_3),
+  );
+  unless ( $result->is_success ) {
+    die "TomTom geocoding error: ".$result->message."\n";
+  }
+  my ($match) = $result->locations;
+  if (!$match) {
+    die "Location not found.\n";
+  }
+  warn "tomtom returned match:\n".Dumper($match) if $DEBUG > 1;
+  my $tract = join('.', $match->{censusTract} =~ /(....)(..)/);
+  return +{
+    address1    => join(' ', $match->{houseNumber}, $match->{street}),
+    address2    => $location->{address2}, # XXX still need a solution to this
+    city        => $match->{city},
+    state       => $match->{state},
+    country     => country2code($match->{country}, LOCALE_CODE_ALPHA_2),
+    zip         => ($match->{standardPostalCode} || $match->{postcode}),
+    latitude    => $match->{latitude},
+    longitude   => $match->{longitude},
+    censustract => $match->{censusStateCode}.
+                   $match->{censusFipsCountyCode}.
+                   $tract,
+    addr_clean  => 'Y',
+  };
 }
 
 =back
