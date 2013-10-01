@@ -4421,6 +4421,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'confnum',
       'unique' => [ [ 'modenum', 'locale' ] ],
+      'index'  => [ ],
     },
 
     # name type nullability length default local
