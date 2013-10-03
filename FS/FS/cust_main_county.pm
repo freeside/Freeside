@@ -244,7 +244,7 @@ are inserted.
 In addition to calculating the tax for the line items, this will calculate
 any appropriate tax exemptions and attach them to the line items.
 
-Options may include 'custnum' and 'invoice_date' in case the cust_bill_pkg
+Options may include 'custnum' and 'invoice_time' in case the cust_bill_pkg
 objects belong to an invoice that hasn't been inserted yet.
 
 Options may include 'exemptions', an arrayref of L<FS::cust_tax_exempt_pkg>
@@ -276,7 +276,7 @@ sub taxline {
 
   my $cust_bill = $taxables->[0]->cust_bill;
   my $custnum   = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
-  my $invoice_date = $cust_bill ? $cust_bill->_date : $opt{'invoice_date'};
+  my $invoice_time = $cust_bill ? $cust_bill->_date : $opt{'invoice_time'};
   my $cust_main = FS::cust_main->by_key($custnum) if $custnum > 0;
   if (!$cust_main) {
     # better way to handle this?  should we just assume that it's taxable?
@@ -364,22 +364,36 @@ sub taxline {
   
     if ( $self->exempt_amount && $self->exempt_amount > 0 
       and $taxable_charged > 0 ) {
-      #my ($mon,$year) = (localtime($cust_bill_pkg->sdate) )[4,5];
-      my ($mon,$year) =
-        (localtime( $cust_bill_pkg->sdate || $invoice_date ) )[4,5];
-      $mon++;
-      $year += 1900;
-      my $freq = $cust_bill_pkg->freq;
-      unless ($freq) {
-        $freq = $part_pkg->freq || 1;  # less trustworthy fallback
+      # If the billing period extends across multiple calendar months, 
+      # there may be several months of exemption available.
+      my $sdate = $cust_bill_pkg->sdate || $invoice_time;
+      my $start_month = (localtime($sdate))[4] + 1;
+      my $start_year  = (localtime($sdate))[5] + 1900;
+      my $edate = $cust_bill_pkg->edate || $invoice_time;
+      my $end_month   = (localtime($edate))[4] + 1;
+      my $end_year    = (localtime($edate))[5] + 1900;
+
+      # If the partial last month + partial first month <= one month,
+      # don't use the exemption in the last month
+      # (unless the last month is also the first month, e.g. one-time
+      # charges)
+      if ( (localtime($sdate))[3] >= (localtime($edate))[3]
+           and ($start_month != $end_month or $start_year != $end_year)
+      ) { 
+        $end_month--;
+        if ( $end_month == 0 ) {
+          $end_year--;
+          $end_month = 12;
+        }
       }
-      if ( $freq !~ /(\d+)$/ ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "daily/weekly package definitions not (yet?)".
-               " compatible with monthly tax exemptions";
-      }
-      my $taxable_per_month =
-        sprintf("%.2f", $taxable_charged / $freq );
+
+      # number of months of exemption available
+      my $freq = ($end_month - $start_month) +
+                 ($end_year  - $start_year) * 12 +
+                 1;
+
+      # divide equally among all of them
+      my $permonth = sprintf('%.2f', $taxable_charged / $freq);
 
       #call the whole thing off if this customer has any old
       #exemption records...
@@ -392,9 +406,15 @@ sub taxline {
           'run bin/fs-migrate-cust_tax_exempt?';
       }
 
-      foreach my $which_month ( 1 .. $freq ) {
-  
-        #maintain the new exemption table now
+      my ($mon, $year) = ($start_month, $start_year);
+      while ($taxable_charged > 0.005 and 
+             ($year < $end_year or
+               ($year == $end_year and $mon <= $end_month)
+             )
+      ) {
+ 
+        # find the sum of the exemption used by this customer, for this tax,
+        # in this month
         my $sql = "
           SELECT SUM(amount)
             FROM cust_tax_exempt_pkg
@@ -408,7 +428,7 @@ sub taxline {
         ";
         my $sth = dbh->prepare($sql) or do {
           $dbh->rollback if $oldAutoCommit;
-          return "fatal: can't lookup exising exemption: ". dbh->errstr;
+          return "fatal: can't lookup existing exemption: ". dbh->errstr;
         };
         $sth->execute(
           $custnum,
@@ -417,10 +437,11 @@ sub taxline {
           $mon,
         ) or do {
           $dbh->rollback if $oldAutoCommit;
-          return "fatal: can't lookup exising exemption: ". dbh->errstr;
+          return "fatal: can't lookup existing exemption: ". dbh->errstr;
         };
         my $existing_exemption = $sth->fetchrow_arrayref->[0] || 0;
 
+        # add any exemption we're already using for another line item
         foreach ( grep { $_->taxnum == $self->taxnum &&
                          $_->exempt_monthly eq 'Y'   &&
                          $_->month  == $mon          &&
@@ -430,13 +451,15 @@ sub taxline {
         {
           $existing_exemption += $_->amount;
         }
-        
+
         my $remaining_exemption =
           $self->exempt_amount - $existing_exemption;
         if ( $remaining_exemption > 0 ) {
-          my $addl = $remaining_exemption > $taxable_per_month
-            ? $taxable_per_month
+          my $addl = $remaining_exemption > $permonth
+            ? $permonth
             : $remaining_exemption;
+          $addl = $taxable_charged if $addl > $taxable_charged;
+
           push @new_exemptions, FS::cust_tax_exempt_pkg->new({
               amount          => sprintf('%.2f', $addl),
               exempt_monthly  => 'Y',
@@ -445,7 +468,6 @@ sub taxline {
             });
           $taxable_charged -= $addl;
         }
-        last if $taxable_charged < 0.005;
         # if they're using multiple months of exemption for a multi-month
         # package, then record the exemptions in separate months
         $mon++;
@@ -454,7 +476,7 @@ sub taxline {
           $year++;
         }
 
-      } #foreach $which_month
+      }
     } # if exempt_amount
 
     $_->taxnum($self->taxnum) foreach @new_exemptions;
