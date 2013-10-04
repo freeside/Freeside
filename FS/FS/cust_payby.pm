@@ -7,9 +7,11 @@ use FS::Record qw( qsearchs ); #qsearch;
 use FS::payby;
 use FS::cust_main;
 use Business::CreditCard qw( validate cardtype );
+use FS::Msgcat qw( gettext );
 
 use vars qw( $conf @encrypted_fields
              $ignore_expired_card $ignore_banned_card
+             $ignore_invalid_card
            );
 
 @encrypted_fields = ('payinfo', 'paycvv');
@@ -17,10 +19,12 @@ sub nohistory_fields { ('payinfo', 'paycvv'); }
 
 $ignore_expired_card = 0;
 $ignore_banned_card = 0;
+$ignore_invalid_card = 0;
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
   #yes, need it for stuff below (prolly should be cached)
+  $ignore_invalid_card = $conf->exists('allow_invalid_cards');
 };
 
 =head1 NAME
@@ -197,7 +201,8 @@ sub check {
   # Need some kind of global flag to accept invalid cards, for testing
   # on scrubbed data.
   #XXX if ( !$import && $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
-  if ( $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
+  if ( !$ignore_invalid_card && 
+    $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -269,7 +274,8 @@ sub check {
       $self->payissue('');
     }
 
-  } elsif ( $check_payinfo && $self->payby =~ /^(CHEK|DCHK)$/ ) {
+  } elsif ( !$ignore_invalid_card && 
+    $check_payinfo && $self->payby =~ /^(CHEK|DCHK)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@\.]//g;
