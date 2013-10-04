@@ -4212,7 +4212,7 @@ and customer address. Include units.',
   {
     'key'         => 'tomtom-userid',
     'section'     => 'UI',
-    'description' => 'TomTom geocoding service API key.  See <a href="http://www.tomtom.com/">the TomTom website</a> to obtain a key.',
+    'description' => 'TomTom geocoding service API key.  See <a href="http://www.tomtom.com/">the TomTom website</a> to obtain a key.  This is recommended for addresses in the United States only.',
     'type'        => 'text',
   },
 
