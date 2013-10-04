@@ -229,18 +229,25 @@ sub cust_header {
     'Cust#'                    => 'custnum',
     'Name'                     => 'contact',
     'Company'                  => 'company',
+
+    # obsolete but might still be referenced in configuration
     '(bill) Customer'          => 'name',
     '(service) Customer'       => 'ship_name',
     '(bill) Name'              => 'contact',
     '(service) Name'           => 'ship_contact',
     '(bill) Company'           => 'company',
     '(service) Company'        => 'ship_company',
+    '(bill) Day phone'         => 'daytime',
+    '(bill) Night phone'       => 'night',
+    '(bill) Fax number'        => 'fax',
+ 
+    'Customer'                 => 'name',
     'Address 1'                => 'bill_address1',
     'Address 2'                => 'bill_address2',
     'City'                     => 'bill_city',
     'State'                    => 'bill_state',
     'Zip'                      => 'bill_zip',
-    'Country'                  => 'country_full',
+    'Country'                  => 'bill_country_full',
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
     'Fax number'               => 'fax',
@@ -249,19 +256,13 @@ sub cust_header {
     '(bill) City'              => 'bill_city',
     '(bill) State'             => 'bill_state',
     '(bill) Zip'               => 'bill_zip',
-    '(bill) Country'           => 'country_full',
-    '(bill) Day phone'         => 'daytime', # XXX should use msgcat, but how?
-    '(bill) Night phone'       => 'night',   # XXX should use msgcat, but how?
-    '(bill) Fax number'        => 'fax',
+    '(bill) Country'           => 'bill_country_full',
     '(service) Address 1'      => 'ship_address1',
     '(service) Address 2'      => 'ship_address2',
     '(service) City'           => 'ship_city',
     '(service) State'          => 'ship_state',
     '(service) Zip'            => 'ship_zip',
     '(service) Country'        => 'ship_country_full',
-    '(service) Day phone'      => 'ship_daytime', # XXX should use msgcat, how?
-    '(service) Night phone'    => 'ship_night',   # XXX should use msgcat, how?
-    '(service) Fax number'     => 'ship_fax',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
     'Payment Type'             => 'payby',
     'Current Balance'          => 'current_balance',
@@ -348,8 +349,10 @@ sub cust_sql_fields {
       }
     }
   }
-  
-  push @fields, 'payby' if grep { $_ eq 'payby'} @cust_fields;
+
+  foreach my $field (qw(daytime night fax payby)) {
+    push @fields, $field if (grep { $_ eq $field } @cust_fields);
+  }
   push @fields, 'agent_custid';
 
   my @extra_fields = ();
