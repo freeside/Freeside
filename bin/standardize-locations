@@ -1,0 +1,25 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID 'adminsuidsetup';
+use FS::Conf;
+use FS::queue;
+
+my $user = shift or die "usage:\n  standardize-locations user";
+adminsuidsetup($user);
+my $conf = FS::Conf->new;
+my $method = $conf->config('address_standardize_method')
+  or die "No address standardization method configured.\n";
+if ($method eq 'usps') {
+  # we're not supposed to do this
+  # (allow it anyway with a warning?)
+  die "USPS standardization does not allow batch processing.\n";
+}
+my $job = FS::queue->new({
+  job => 'FS::cust_location::process_standardize'
+});
+my $error = $job->insert('_JOB');
+die $error if $error;
+print "Address standardization job scheduled.\n";
+
+1;
