@@ -4061,6 +4061,16 @@ sub ship_contact_firstlast {
 #  code2country($self->country);
 #}
 
+sub bill_country_full {
+  my $self = shift;
+  code2country($self->bill_location->country);
+}
+
+sub ship_country_full {
+  my $self = shift;
+  code2country($self->ship_location->country);
+}
+
 =item county_state_county [ PREFIX ]
 
 Returns a string consisting of just the county, state and country.
