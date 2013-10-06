@@ -154,9 +154,10 @@
 
 % } else { 
 
-   <& /elements/tr-select-part_referral.html,
-                'curr_value' => $refnum
-   &>
+  <& /elements/tr-select-part_referral.html,
+                'curr_value' => $refnum,
+                'label'      => "<B>${r}".emt('Advertising source')."</B>"
+  &>
 % } 
 
 
