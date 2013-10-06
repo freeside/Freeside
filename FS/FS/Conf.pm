@@ -4050,7 +4050,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'multiple'    => 1,
     'select_hash' => [ 
-      #'address1' => 'Billing address',
+      'address' => 'Billing or service address',
     ],
   },
 

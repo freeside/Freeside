@@ -610,14 +610,24 @@ sub search {
   ##
   # address
   ##
-  if ( $params->{'address'} =~ /\S/ ) {
-    my $address = dbh->quote('%'. lc($params->{'address'}). '%');
-    push @where, "EXISTS(
-      SELECT 1 FROM cust_location 
-      WHERE cust_location.custnum = cust_main.custnum
-        AND (LOWER(cust_location.address1) LIKE $address OR
-             LOWER(cust_location.address2) LIKE $address)
-    )";
+  if ( $params->{'address'} ) {
+    # allow this to be an arrayref
+    my @values = ($params->{'address'});
+    @values = @{$values[0]} if ref($values[0]);
+    my @orwhere;
+    foreach (grep /\S/, @values) {
+      my $address = dbh->quote('%'. lc($_). '%');
+      push @orwhere,
+        "LOWER(cust_location.address1) LIKE $address",
+        "LOWER(cust_location.address2) LIKE $address";
+    }
+    if (@orwhere) {
+      push @where, "EXISTS(
+        SELECT 1 FROM cust_location 
+        WHERE cust_location.custnum = cust_main.custnum
+          AND (".join(' OR ',@orwhere).")
+        )";
+    }
   }
 
   ##

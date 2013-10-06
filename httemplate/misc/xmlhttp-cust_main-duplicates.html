@@ -50,7 +50,9 @@ my $conf = new FS::Conf;
 
 my $sub = $cgi->param('sub');
 my $hashref = decode_json($cgi->param('arg'));
-my @cust_main = qsearch('cust_main', $hashref);
+my $search = FS::cust_main->search($hashref);
+#warn Dumper($search);
+my @cust_main = qsearch( $search );
 
 my $set_to_customer = <<EOF;
   var custnum_array = document.getElementsByName('dup_custnum');

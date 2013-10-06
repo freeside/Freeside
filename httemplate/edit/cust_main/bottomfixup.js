@@ -10,16 +10,19 @@ my @fixups = ('copy_payby_fields', 'standardize_locations');
 push @fixups, 'confirm_censustract'
     if $conf->exists('cust_main-require_censustract');
 
-# currently doesn't work; disable to avoid problems
-#push @fixups, 'check_unique'
-#    if $conf->exists('cust_main-check_unique') and !$opt{'custnum'};
+my $uniqueness = $conf->config('cust_main-check_unique');
+push @fixups, 'check_unique'
+    if $uniqueness and !$opt{'custnum'};
 
 push @fixups, 'do_submit'; # always last
 </%init>
-
 var fixups = <% encode_json(\@fixups) %>;
 var fixup_position;
 var running = false;
+
+<&| /elements/onload.js &>
+submit_abort();
+</&>
 
 %# state machine to deal with all the asynchronous stuff we're doing
 %# call this after each fixup on success:
@@ -132,10 +135,14 @@ function set_censustract(tract, year) {
 }
 
 function check_unique() {
-  var search_hash = new Object;
-% foreach ($conf->config('cust_main-check_unique')) {
-  search_hash['<% $_ %>'] = document.CustomerForm.elements['<% $_ %>'].value;
+  var search_hash = {};
+% if ($uniqueness eq 'address') {
+  search_hash['address'] = [
+    document.CustomerForm.elements['bill_address1'].value,
+    document.CustomerForm.elements['ship_address1'].value
+  ];
 % }
+%# no other options yet
 
 %# supported in IE8+, Firefox 3.5+, WebKit, Opera 10.5+
   duplicates_form(JSON.stringify(search_hash), confirm_unique);
