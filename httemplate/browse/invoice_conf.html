@@ -19,7 +19,7 @@
                         $locale_label,
                         $overrides,
                      ],
-  'align'         => 'llcl',
+  'align'         => 'llcll',
   'links'         => [ '', '', $link ],
   'disable_maxselect' => 1,
 &>
@@ -55,7 +55,8 @@ my $agent = sub {
 
 my $locale_label = sub {
   my $l = $_[0]->locale;
-  $l ? +{ FS::Locales->locale_info($l) }->{'label'} : '(default)';
+  ($l ? +{ FS::Locales->locale_info($l) }->{'label'} : 'default') . 
+    '<br><font size="-1">('.mt('edit').')</font>'
 };
 
 my $overrides = sub {
