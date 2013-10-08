@@ -2070,7 +2070,6 @@ sub _ProcessUpdateMessageRecipients {
     if (grep $_ eq 'Requestor' || $_ eq 'Requestors', @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
         push @txn_squelch, map $_->address, Email::Address->parse( $message_args->{Requestor} );
         push @txn_squelch, $args{TicketObj}->Requestors->MemberEmailAddresses;
-
     }
 
     push @txn_squelch, @{$args{ARGSRef}{SquelchMailTo}} if $args{ARGSRef}{SquelchMailTo};
@@ -2091,6 +2090,39 @@ sub _ProcessUpdateMessageRecipients {
         }
     }
 }
+
+sub ProcessAttachments {
+    my %args = (
+        ARGSRef => {},
+        @_
+    );
+
+    my $ARGSRef = $args{ARGSRef} || {};
+    # deal with deleting uploaded attachments
+    foreach my $key ( keys %$ARGSRef ) {
+        if ( $key =~ m/^DeleteAttach-(.+)$/ ) {
+            delete $session{'Attachments'}{$1};
+        }
+        $session{'Attachments'} = { %{ $session{'Attachments'} || {} } };
+    }
+
+    # store the uploaded attachment in session
+    if ( defined $ARGSRef->{'Attach'} && length $ARGSRef->{'Attach'} )
+    {    # attachment?
+        my $attachment = MakeMIMEEntity( AttachmentFieldName => 'Attach' );
+
+        my $file_path = Encode::decode_utf8("$ARGSRef->{'Attach'}");
+        $session{'Attachments'} =
+          { %{ $session{'Attachments'} || {} }, $file_path => $attachment, };
+    }
+
+    # delete temporary storage entry to make WebUI clean
+    unless ( keys %{ $session{'Attachments'} } and $ARGSRef->{'UpdateAttach'} )
+    {
+        delete $session{'Attachments'};
+    }
+}
+
 
 =head2 MakeMIMEEntity PARAMHASH
 
@@ -2174,37 +2206,6 @@ sub MakeMIMEEntity {
 
 }
 
-sub ProcessAttachments {
-    my %args = (
-        ARGSRef => {},
-        @_
-    );
-
-    my $ARGSRef = $args{ARGSRef} || {};
-    # deal with deleting uploaded attachments
-    foreach my $key ( keys %$ARGSRef ) {
-        if ( $key =~ m/^DeleteAttach-(.+)$/ ) {
-            delete $session{'Attachments'}{$1};
-        }
-        $session{'Attachments'} = { %{ $session{'Attachments'} || {} } };
-    }
-
-    # store the uploaded attachment in session
-    if ( defined $ARGSRef->{'Attach'} && length $ARGSRef->{'Attach'} )
-    {    # attachment?
-        my $attachment = MakeMIMEEntity( AttachmentFieldName => 'Attach' );
-
-        my $file_path = Encode::decode_utf8("$ARGSRef->{'Attach'}");
-        $session{'Attachments'} =
-          { %{ $session{'Attachments'} || {} }, $file_path => $attachment, };
-    }
-
-    # delete temporary storage entry to make WebUI clean
-    unless ( keys %{ $session{'Attachments'} } and $ARGSRef->{'UpdateAttach'} )
-    {
-        delete $session{'Attachments'};
-    }
-}
 
 
 =head2 ParseDateToISO
