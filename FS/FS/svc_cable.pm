@@ -84,7 +84,7 @@ sub table_info {
                                               $p ? $p->provider : '';
                                             },
                      },
-    #XXX "Circuit ID/Order number"
+    'ordernum'    => 'Order number', #XXX "Circuit ID/Order number"
     'modelnum'    => { label             => 'Model',
                        type              => 'select-cable_model',
                        disable_inventory => 1,
@@ -143,6 +143,7 @@ sub check {
   my $error = 
        $self->ut_numbern('svcnum')
     || $self->ut_foreign_key('providernum', 'cable_provider', 'providernum')
+    || $self->ut_alphan('ordernum')
     || $self->ut_foreign_key('modelnum', 'cable_model', 'modelnum')
     || $self->ut_alpha('serialnum')
     || $self->ut_mac_addr('mac_addr')
