@@ -344,6 +344,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cable_model;
   use FS::invoice_mode;
   use FS::invoice_conf;
+  use FS::cable_provider;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
