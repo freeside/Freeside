@@ -4273,7 +4273,7 @@ sub tables_hashref {
       'columns' => [
         'svcnum',        'int',     '',      '', '', '', 
         'providernum',   'int', 'NULL',      '', '', '',
-        # XXX "Circuit ID/Order number"
+        'ordernum',  'varchar', 'NULL', $char_d, '', '',
         'modelnum',      'int', 'NULL',      '', '', '',
         'serialnum', 'varchar', 'NULL', $char_d, '', '',
         'mac_addr',  'varchar', 'NULL',      12, '', '', 
