@@ -646,3 +646,5 @@ FS/h_svc_cable.pm
 t/h_svc_cable.t
 FS/cable_model.pm
 t/cable_model.t
+FS/cable_provider.pm
+t/cable_provider.t

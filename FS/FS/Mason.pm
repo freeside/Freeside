@@ -317,6 +317,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::log_context;
   use FS::svc_cable;
   use FS::cable_model;
+  use FS::cable_provider;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
