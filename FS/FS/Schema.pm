@@ -3701,6 +3701,8 @@ sub tables_hashref {
     'svc_cable' => {
       'columns' => [
         'svcnum',        'int',     '',      '', '', '', 
+        'providernum',   'int', 'NULL',      '', '', '',
+        # XXX "Circuit ID/Order number"
         'modelnum',      'int', 'NULL',      '', '', '',
         'serialnum', 'varchar', 'NULL', $char_d, '', '',
         'mac_addr',  'varchar', 'NULL',      12, '', '', 
@@ -3718,6 +3720,17 @@ sub tables_hashref {
       ],
       'primary_key' => 'modelnum',
       'unique' => [ [ 'model_name' ], ],
+      'index'  => [],
+    },
+
+    'cable_provider' => {
+      'columns' => [
+        'providernum', 'serial',     '',      '', '', '',
+        'provider',   'varchar',     '', $char_d, '', '',
+        'disabled',      'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'providernum',
+      'unique' => [ [ 'provider' ], ],
       'index'  => [],
     },
 

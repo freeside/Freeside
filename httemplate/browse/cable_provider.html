@@ -1,0 +1,32 @@
+<& elements/browse.html,
+     'title'              => 'Cable providers',
+     'html_init'          => $html_init,
+     'name'               => 'providers',
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'query'              => { 'table'     => 'cable_provider',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY provider',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init =
+  qq!<A HREF="${p}edit/cable_provider.html"><I>Add a provider</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM cable_provider';
+
+my $link = [ $p.'edit/cable_provider.html?', 'providernum' ];
+
+my $header = [ 'Provider' ];
+my $fields = [ 'provider' ];
+my $links  = [ $link ];
+
+</%init>

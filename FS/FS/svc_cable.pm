@@ -4,6 +4,7 @@ use base qw( FS::svc_Common ); #qw( FS::device_Common FS::svc_Common );
 use strict;
 use Tie::IxHash;
 use FS::Record qw( qsearchs ); # qw( qsearch qsearchs );
+use FS::cable_provider;
 use FS::cable_model;
 
 =head1 NAME
@@ -72,24 +73,35 @@ sub search_sql {
 sub table_info {
 
   tie my %fields, 'Tie::IxHash',
-    'svcnum'     => 'Service',
-    'modelnum'   => { label             => 'Model',
-                      type              => 'select-cable_model',
-                      disable_inventory => 1,
-                      disable_select    => 1,
-                      value_callback    => sub {
-                                             my $svc = shift;
-                                             $svc->cable_model->model_name;
-                                           },
-                    },
-    'serialnum'  => 'Serial number',
-    'mac_addr'   => { label          => 'MAC address',
-                      type           => 'input-mac_addr',
-                      value_callback => sub {
-                                          my $svc = shift;
-                                          join(':', $svc->mac_addr =~ /../g);
-                                        },
-                    },
+    'svcnum'      => 'Service',
+    'providernum' => { label             => 'Provider',
+                       type              => 'select-cable_provider',
+                       disable_inventory => 1,
+                       disable_select    => 1,
+                       value_callback    => sub {
+                                              my $svc = shift;
+                                              my $p = $svc->cable_provider;
+                                              $p ? $p->provider : '';
+                                            },
+                     },
+    #XXX "Circuit ID/Order number"
+    'modelnum'    => { label             => 'Model',
+                       type              => 'select-cable_model',
+                       disable_inventory => 1,
+                       disable_select    => 1,
+                       value_callback    => sub {
+                                              my $svc = shift;
+                                              $svc->cable_model->model_name;
+                                            },
+                     },
+    'serialnum'   => 'Serial number',
+    'mac_addr'    => { label          => 'MAC address',
+                       type           => 'input-mac_addr',
+                       value_callback => sub {
+                                           my $svc = shift;
+                                           join(':', $svc->mac_addr =~ /../g);
+                                         },
+                     },    'svcnum'     => 'Service',
   ;
 
   {
@@ -130,6 +142,7 @@ sub check {
 
   my $error = 
        $self->ut_numbern('svcnum')
+    || $self->ut_foreign_key('providernum', 'cable_provider', 'providernum')
     || $self->ut_foreign_key('modelnum', 'cable_model', 'modelnum')
     || $self->ut_alpha('serialnum')
     || $self->ut_mac_addr('mac_addr')
@@ -137,6 +150,17 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+ 
+=item cable_provider
+
+Returns the cable_provider object for this record.
+
+=cut
+
+sub cable_provider {
+  my $self = shift;
+  qsearchs('cable_provider', { 'providernum'=>$self->providernum } );
 }
 
 =item cable_model
