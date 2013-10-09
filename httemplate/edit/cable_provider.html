@@ -1,0 +1,20 @@
+<& elements/edit.html,
+     'name_singular' => 'Provider',
+     'table'         => 'cable_provider',
+     'fields'        => [
+                          'provider',
+                          { field=>'disabled', type=>'checkbox', value=>'Y', },
+                        ],
+     'labels'        => {
+                          'providernum' => 'Provider',
+                          'provider'    => 'Provider',
+                          'disabled'    => 'Disabled',
+                        },
+     'viewall_dir'   => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
