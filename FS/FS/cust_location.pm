@@ -10,6 +10,8 @@ use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
+use FS::GeocodeCache;
+use Date::Format qw( time2str );
 
 $import = 0;
 
@@ -677,6 +679,13 @@ sub process_censustract_update {
   return;
 }
 
+=item process_set_coord
+
+Queueable function to find and fill in coordinates for all locations that 
+lack them.  Because this uses the Google Maps API, it's internally rate
+limited and must run in a single process.
+
+=cut
 
 sub process_set_coord {
   my $job = shift;
@@ -714,6 +723,67 @@ sub process_set_coord {
     die "failed to update ".$n-$i." locations\n";
   }
   return;
+}
+
+=item process_standardize [ LOCATIONNUMS ]
+
+Performs address standardization on locations with unclean addresses,
+using whatever method you have configured.  If the standardize_* method 
+returns a I<clean> address match, the location will be updated.  This is 
+always an in-place update (because the physical location is the same, 
+and is just being referred to by a more accurate name).
+
+Disabled locations will be skipped, as nobody cares.
+
+If any LOCATIONNUMS are provided, only those locations will be updated.
+
+=cut
+
+sub process_standardize {
+  my $job = shift;
+  my @others = qsearch('queue', {
+      'status'  => 'locked',
+      'job'     => $job->job,
+      'jobnum'  => {op=>'!=', value=>$job->jobnum},
+  });
+  return if @others;
+  my @locationnums = grep /^\d+$/, @_;
+  my $where = "AND locationnum IN(".join(',',@locationnums).")"
+    if scalar(@locationnums);
+  my @locations = qsearch({
+      table     => 'cust_location',
+      hashref   => { addr_clean => '', disabled => '' },
+      extra_sql => $where,
+  });
+  my $n_todo = scalar(@locations);
+  my $n_done = 0;
+
+  # special: log this
+  my $log;
+  eval "use Text::CSV";
+  open $log, '>', "$FS::UID::cache_dir/process_standardize-" . 
+                  time2str('%Y%m%d',time) .
+                  ".csv";
+  my $csv = Text::CSV->new({binary => 1, eol => "\n"});
+
+  foreach my $cust_location (@locations) {
+    $job->update_statustext( int(100 * $n_done/$n_todo) . ",$n_done / $n_todo locations" ) if $job;
+    my $result = FS::GeocodeCache->standardize($cust_location);
+    if ( $result->{addr_clean} and !$result->{error} ) {
+      my @cols = ($cust_location->locationnum);
+      foreach (keys %$result) {
+        push @cols, $cust_location->get($_), $result->{$_};
+        $cust_location->set($_, $result->{$_});
+      }
+      # bypass immutable field restrictions
+      my $error = $cust_location->FS::Record::replace;
+      warn "location ".$cust_location->locationnum.": $error\n" if $error;
+      $csv->print($log, \@cols);
+    }
+    $n_done++;
+    dbh->commit; # so that we can resume if interrupted
+  }
+  close $log;
 }
 
 =head1 BUGS

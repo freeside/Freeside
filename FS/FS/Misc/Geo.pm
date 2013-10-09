@@ -10,6 +10,7 @@ use HTML::TokeParser;
 use URI::Escape 3.31;
 use Data::Dumper;
 use FS::Conf;
+use Locale::Country;
 
 FS::UID->install_callback( sub {
   $conf = new FS::Conf;
@@ -409,6 +410,155 @@ sub standardize_ezlocate {
 
   \%result;
 }
+
+sub standardize_tomtom {
+  # post-2013 TomTom API
+  # much better, but incompatible with ezlocate
+  my $self = shift;
+  my $location = shift;
+  my $class = 'Geo::TomTom::Geocoding';
+  eval "use $class";
+  die $@ if $@;
+
+  my $key = $conf->config('tomtom-userid')
+    or die "no tomtom-userid configured\n";
+
+  my $country = code2country($location->{country});
+  my ($address1, $address2) = ($location->{address1}, $location->{address2});
+  # try to fix some cases of the address fields being switched
+  if ( $address2 =~ /^\d/ and $address1 !~ /^\d/ ) {
+    $address2 = $address1;
+    $address1 = $location->{address2};
+  }
+  my $result = $class->query(
+    key => $key,
+    T   => $address1,
+    L   => $location->{city},
+    AA  => $location->{state},
+    PC  => $location->{zip},
+    CC  => country2code($country, LOCALE_CODE_ALPHA_3),
+  );
+  unless ( $result->is_success ) {
+    die "TomTom geocoding error: ".$result->message."\n";
+  }
+  my ($match) = $result->locations;
+  if (!$match) {
+    die "Location not found.\n";
+  }
+  my $type = $match->{type};
+  warn "tomtom returned $type match\n" if $DEBUG;
+  warn Dumper($match) if $DEBUG > 1;
+  my $tract = '';
+  if ( defined $match->{censusTract} ) {
+    $tract = $match->{censusStateCode}. $match->{censusFipsCountyCode}.
+             join('.', $match->{censusTract} =~ /(....)(..)/);
+  }
+  # match levels below "intersection" should not be considered clean
+  my $clean = ($type eq 'addresspoint'  ||
+               $type eq 'poi'           ||
+               $type eq 'house'         ||
+               $type eq 'intersection'
+              ) ? 'Y' : '';
+
+  $address2 = normalize_address2($address2, $location->{country});
+
+  $address1 = '';
+  $address1 = $match->{houseNumber} . ' ' if length($match->{houseNumber});
+  $address1 .= $match->{street} if $match->{street};
+
+  return +{
+    address1    => $address1,
+    address2    => $address2,
+    city        => $match->{city},
+    state       => $location->{state},    # this will never change
+    country     => $location->{country},  # ditto
+    zip         => ($match->{standardPostalCode} || $match->{postcode}),
+    latitude    => $match->{latitude},
+    longitude   => $match->{longitude},
+    censustract => $tract,
+    addr_clean  => $clean,
+  };
+}
+
+=iten normalize_address2 STRING, COUNTRY
+
+Given an 'address2' STRING, normalize it for COUNTRY postal standards.
+Currently only works for US and CA.
+
+=cut
+
+# XXX really ought to be a separate module
+my %address2_forms = (
+  # Postal Addressing Standards, Appendix C
+  # (plus correction of "hanger" to "hangar")
+  US => {qw(
+    APARTMENT     APT
+    BASEMENT      BSMT
+    BUILDING      BLDG
+    DEPARTMENT    DEPT
+    FLOOR         FL
+    FRONT         FRNT
+    HANGAR        HNGR
+    HANGER        HNGR
+    KEY           KEY
+    LOBBY         LBBY
+    LOT           LOT
+    LOWER         LOWR
+    OFFICE        OFC
+    PENTHOUSE     PH
+    PIER          PIER
+    REAR          REAR
+    ROOM          RM
+    SIDE          SIDE
+    SLIP          SLIP
+    SPACE         SPC
+    STOP          STOP
+    SUITE         STE
+    TRAILER       TRLR
+    UNIT          UNIT
+    UPPER         UPPR
+  )},
+  # Canada Post Addressing Guidelines 4.3
+  CA => {qw(
+    APARTMENT     APT
+    APPARTEMENT   APP
+    BUREAU        BUREAU
+    SUITE         SUITE
+    UNIT          UNIT
+    UNITÉ         UNITÉ
+  )},
+);
+ 
+sub normalize_address2 {
+  # Some things seen in the address2 field:
+  # Whitespace
+  # The complete address (with address1 containing part of the company name, 
+  # or an ATTN or DBA line, or P.O. Box, or department name, or building/suite
+  # number, etc.)
+  my ($addr2, $country) = @_;
+  $addr2 = uc($addr2);
+  if ( exists($address2_forms{$country}) ) {
+    my $dict = $address2_forms{$country};
+    # protect this
+    $addr2 =~ s/#\s*(\d)/NUMBER$1/; # /g?
+    my @words;
+    # remove all punctuation and spaces
+    foreach my $w (split(/\W+/, $addr2)) {
+      if ( exists($dict->{$w}) ) {
+        push @words, $dict->{$w};
+      } else {
+        push @words, $w;
+      }
+    }
+    my $result = join(' ', @words);
+    # correct spacing of pound sign + number
+    $result =~ s/NUMBER(\d)/# $1/;
+    warn "normalizing '$addr2' to '$result'\n" if $DEBUG > 1;
+    $addr2 = $result;
+  }
+  $addr2;
+}
+
 
 =back
 

@@ -3038,13 +3038,8 @@ Checks to see if the string is encrypted and returns true or false (1/0) to indi
 
 sub is_encrypted {
   my ($self, $value) = @_;
-  # Possible Bug - Some work may be required here....
-
-  if ($value =~ /^M/ && length($value) > 80) {
-    return 1;
-  } else {
-    return 0;
-  }
+  # could be more precise about it, but this will do for now
+  $value =~ /^M/ && length($value) > 80;
 }
 
 =item decrypt($value)

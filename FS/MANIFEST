@@ -720,3 +720,9 @@ FS/svc_alarm.pm
 t/svc_alarm.t
 FS/cable_model.pm
 t/cable_model.t
+FS/invoice_mode.pm
+t/invoice_mode.t
+FS/invoice_conf.pm
+t/invoice_conf.t
+FS/cable_provider.pm
+t/cable_provider.t

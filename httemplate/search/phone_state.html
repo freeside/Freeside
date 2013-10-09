@@ -1,0 +1,167 @@
+<& elements/search.html,
+  'title'       => $title,
+  'name'        => 'states',
+  'query'       => $query,
+  'count_query' => $count_query,
+  'count_addl'  => $count_addl,
+  'header'      => [ 'State', # if we add more group fields, change this
+                     'Count',
+                     'Phone numbers'
+                   ],
+  'fields'      => [ 'state',
+                     'num_svcnums',
+                     $detail_sub
+                   ],
+  'html_init'   => include('.head', $time),
+&>
+<%def .head>
+% my $time = shift;
+<FORM STYLE="display:inline" ACTION=<% $cgi->url %> METHOD="GET">
+Active phone services as of <& /elements/input-date-field.html, {
+  'name'    => 'date',
+  'value'   => $time,
+  'format'  => FS::Conf->new->config('date_format') || '%m/%d/%Y'
+} &>
+<INPUT TYPE="hidden" NAME="order_by" VALUE="<% $cgi->param('order_by') %>">
+<INPUT TYPE="submit" VALUE="Refresh">
+</FORM>
+<BR>
+<BR>
+</%def>
+<%init>
+# svc_phone-specific for now; may change later
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Services: Phone numbers');
+my $title = 'Phone services by state';
+
+my $time = time;
+if ( $cgi->param('date') ) {
+  $time = parse_datetime($cgi->param('date'));
+  $title .= time2str(' (%b %o, %Y)', $time);
+}
+
+my @tables = qw(svc_phone cust_svc cust_pkg cust_location cust_main);
+my @pkeys =  qw(svcnum    svcnum   pkgnum   locationnum   custnum);
+my @h_tables = map "h_$_", @tables;
+
+my $addl_from = '';
+my @where;
+
+for(my $i = 0; $i < scalar(@tables); $i++) {
+  my $last_table = $h_tables[$i-1];
+  my $pkey = $pkeys[$i];
+  my $table = $tables[$i];
+  my $h_table = $h_tables[$i];
+  # alias the preceding table, and join to a subquery that finds the most 
+  # recent change to $table.$pkey before $time
+  my $alias = $h_table;
+  my $inside = '';
+  if ( $i > 0 ) {
+    $alias = "t$i";
+    $inside = " AS $alias";
+  }
+  $inside .= "
+      JOIN 
+        (SELECT $pkey AS num, MAX(history_date) AS history_date
+                FROM $h_table 
+                WHERE history_date <= $time AND 
+                      history_action IN ('insert', 'replace_new') 
+                GROUP BY $pkey
+        ) AS mostrecent_$table
+        ON ($alias.$pkey = mostrecent_$table.num AND
+            $alias.history_date = mostrecent_$table.history_date AND
+            $alias.history_action IN ('insert', 'replace_new')
+        )
+      LEFT JOIN
+        (SELECT $pkey AS num, MAX(history_date) AS history_date, 1 AS deleted
+                FROM $h_table
+                WHERE history_date <= $time AND
+                      history_action = 'delete'
+                GROUP BY $pkey
+        ) AS deleted_$table
+        ON (mostrecent_$table.num = deleted_$table.num AND
+            mostrecent_$table.history_date < deleted_$table.history_date
+        )
+";
+  # join to the preceding table if there is one, and filter out 
+  # deleted records
+  if ( $i > 0 ) {
+    # special case to make pre-3.x data work; remove this later
+    if ( $table eq 'cust_main' ) {
+      $last_table = 'h_cust_pkg';
+    }
+    $addl_from .= "
+      LEFT JOIN ( $h_table $inside ) AS $h_table
+        ON ($h_table.$pkey = $last_table.$pkey)";
+    push @where, "$h_table.deleted IS NULL";
+  } else {
+    $addl_from .= $inside;
+    push @where, "deleted_$table.deleted IS NULL";
+  }
+}
+
+# so that we know which services are still active
+$addl_from .= "
+  LEFT JOIN svc_phone ON (h_svc_phone.svcnum = svc_phone.svcnum AND
+                          h_svc_phone.phonenum = svc_phone.phonenum)";
+
+#warn "\n\nJOIN EXPRESSION:\n$addl_from\n\n";
+
+push @where, $curuser->agentnums_sql(
+  'table' => 'h_cust_main',
+  'null_right' => 'View/link unlinked services'
+);
+my $where = " WHERE ".join(' AND ', map "($_)", @where);
+
+# for pre-3.x data
+my $group_field = 'COALESCE(h_cust_location.state, h_cust_main.ship_state, h_cust_main.state)';
+
+my @select = (
+  "$group_field AS state",
+  'count(DISTINCT h_svc_phone.svcnum) AS num_svcnums',
+  # don't DISTINCT these (it reorders them)
+  "array_to_string(array_agg(h_svc_phone.phonenum), ',') AS all_phonenums",
+  "array_to_string(array_agg(h_svc_phone.svcnum), ',') AS all_svcnums",
+  "array_to_string(array_agg(svc_phone.svcnum), ',') AS active_svcnums",
+);
+
+my $query = {
+  'select'    => join(',', @select),
+  'table'     => 'h_svc_phone',
+  'addl_from' => $addl_from,
+  'extra_sql' => " $where GROUP BY $group_field",
+};
+
+# DISTINCT on these because of cross-producting effects when a cust_pkg 
+# record (usually) was replaced more than once within one second.
+my $count_query =
+  "SELECT COUNT(DISTINCT $group_field), COUNT(DISTINCT h_svc_phone.svcnum) ".
+  "FROM h_svc_phone $addl_from $where";  
+my $count_addl = [ '%d phone services' ];
+
+my $detail_sub = sub {
+  my $rec = shift;
+  warn Dumper $rec;
+  my @svcnums = split(',', $rec->all_svcnums);
+  my @phonenums = split(',', $rec->all_phonenums);
+  # identifies services that still exist with the same svcnum+phonenum
+  my %active = map { $_ => 1 } split(',', $rec->active_svcnums);
+  # make a single column of phonenums
+  my @return;
+  my %seen;
+  while (my $svcnum = shift @svcnums) {
+    my $phonenum = shift @phonenums;
+    next if $seen{$svcnum};
+    $seen{$svcnum} = 1;
+    my $link = $active{$svcnum} ?
+                $p.'view/svc_phone.cgi?'.$svcnum :
+                '';
+    push @return, [ { data => $phonenum,
+                      link => $link,
+                      data_style => ($active{$svcnum} ? '' : 'i')
+                     } ];
+  }
+  \@return;
+};
+
+</%init>

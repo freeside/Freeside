@@ -342,6 +342,21 @@ sub _upgrade_data {
     or die $dbh->errstr;
   $cve_2013_3373_sth->execute or die $cve_2013_3373_sth->errstr;
 
+  # Remove dangling customer links, if any
+  my %target_pkey = ('cust_main' => 'custnum', 'cust_svc' => 'svcnum');
+  for my $table (keys %target_pkey) {
+    my $pkey = $target_pkey{$table};
+    my $rows = $dbh->do(
+      "DELETE FROM links WHERE id IN(".
+        "SELECT links.id FROM links LEFT JOIN $table ON (links.target = ".
+        "'freeside://freeside/$table/' || $table.$pkey) ".
+        "WHERE links.target like 'freeside://freeside/$table/%' ".
+        "AND $table.$pkey IS NULL".
+      ")"
+    ) or die $dbh->errstr;
+    warn "Removed $rows dangling ticket-$table links\n" if $rows > 0;
+  }
+
   return;
 }
 

@@ -104,10 +104,33 @@
 % my $br = 0;
 % if ( $cust_bill->num_cust_event ) { $br++;
 <A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>">( <% mt('View invoice events') |h %> )</A> 
-% } 
+% }
 
 % if ( $cust_bill->num_cust_bill_event ) { $br++;
 <A HREF="<%$p%>search/cust_bill_event.cgi?invnum=<% $cust_bill->invnum %>">( <% mt('View deprecated, old-style invoice events') |h %> )</A> 
+% }
+
+% my @modes = grep {! $_->disabled} 
+%   $cust_bill->cust_main->agent->invoice_modes;
+% if ( @modes ) {
+( <% mt('View as:') %>
+<FORM STYLE="display:inline" ACTION="<% $cgi->url %>" METHOD="GET">
+<INPUT NAME="invnum" VALUE="<% $invnum %>" TYPE="hidden">
+<& /elements/select-table.html,
+  table       => 'invoice_mode',
+  field       => 'mode',
+  curr_value  => scalar($cgi->param('mode')),
+  records     => \@modes,
+  name_col    => 'modename',
+  onchange    => 'change_invoice_mode',
+  empty_label => '(default)',
+&> )
+<SCRIPT TYPE="text/javascript">
+function change_invoice_mode(obj) {
+  obj.form.submit();
+}
+</SCRIPT>
+% $br++;
 % }
 
 <% $br ? '<BR><BR>' : '' %>
@@ -126,7 +149,9 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('View invoices');
 
-my( $invnum, $template, $notice_name );
+my $conf = FS::Conf->new;
+
+my( $invnum, $mode, $template, $notice_name );
 my($query) = $cgi->keywords;
 if ( $query =~ /^((.+)-)?(\d+)$/ ) {
   $template = $2;
@@ -136,9 +161,8 @@ if ( $query =~ /^((.+)-)?(\d+)$/ ) {
   $invnum = $cgi->param('invnum');
   $template = $cgi->param('template');
   $notice_name = $cgi->param('notice_name');
+  $mode = $cgi->param('mode');
 }
-
-my $conf = new FS::Conf;
 
 my %opt = (
   'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
@@ -163,10 +187,13 @@ my $cust_bill = qsearchs({
 });
 die "Invoice #$invnum not found!" unless $cust_bill;
 
+$cust_bill->set('mode' => $mode);
+
 my $custnum = $cust_bill->custnum;
 my $display_custnum = $cust_bill->cust_main->display_custnum;
 
 my $link = "invnum=$invnum";
+$link .= ';mode=' . $mode if $mode;
 $link .= ';template='. uri_escape($template) if $template;
 $link .= ';notice_name='. $notice_name if $notice_name;
 

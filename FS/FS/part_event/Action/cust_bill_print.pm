@@ -9,6 +9,14 @@ sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }
 
+sub option_fields {
+  (
+    'modenum' => {  label => 'Invoice mode',
+                    type  => 'select-invoice_mode',
+                 },
+  );
+}
+
 sub default_weight { 51; }
 
 sub do_action {
@@ -17,6 +25,7 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
+  $cust_bill->set('mode' => $self->option('modenum'));
   $cust_bill->print;
 }
 

@@ -131,9 +131,12 @@ linked to a customer.
 
 sub country_full {
   my $self = shift;
-  $self->cust_linked
-    ? FS::cust_main::country_full($self)
-    : $self->cust_unlinked_msg;
+  if ( $self->locationnum ) {  # cust_pkg has this
+    my $location = FS::cust_location->by_key($self->locationnum);
+    $location ? $location->country_full : '';
+  } elsif ( $self->cust_linked ) {
+    $self->cust_main->bill_country_full;
+  }
 }
 
 =item invoicing_list_emailonly

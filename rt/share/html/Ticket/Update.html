@@ -290,6 +290,7 @@ if ( $ARGS{'SubmitTicket'} ) {
 
     my %squelched = ProcessTransactionSquelching( \%ARGS );
     $ARGS{'SquelchMailTo'} = [keys %squelched] if keys %squelched;
+warn @{ $ARGS{'SquelchMailTo'} } if $ARGS{'SquelchMailTo'};
 
     my $CFs = $TicketObj->TransactionCustomFields;
     my $ValidCFs = $m->comp(
@@ -311,6 +312,7 @@ if ( $ARGS{'SubmitTicket'} ) {
     );
     $checks_failure = 1 unless $status;
 }
+warn @{ $ARGS{'SquelchMailTo'} } if $ARGS{'SquelchMailTo'};
 
 # check email addresses for RT's
 {

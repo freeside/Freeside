@@ -1,0 +1,19 @@
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right(['Edit templates', 'Edit global templates']);
+
+my ($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ or die "bad confnum";
+my $invoice_conf = FS::invoice_conf->by_key($1)
+  or die "couldn't find invoice_conf #$1";
+if ( !$curuser->access_right('Edit global templates') ) {
+  my $agentnum = FS::invoice_mode->by_key($invoice_conf->modenum)->agentnum;
+  die "access denied"
+    unless $curuser->agentnums_href->{$agentnum};
+}
+
+my $error = $invoice_conf->delete; # may also delete the invoice_mode
+my $url = $p.'browse/invoice_conf.html';
+</%init>
+<% $cgi->redirect($url) %>

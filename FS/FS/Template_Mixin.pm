@@ -18,6 +18,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( generate_ps generate_pdf );
 use FS::pkg_category;
 use FS::pkg_class;
+use FS::invoice_mode;
 use FS::L10N;
 
 $DEBUG = 0;
@@ -30,12 +31,51 @@ FS::UID->install_callback( sub {
   $date_format_long = $conf->config('date_format_long') || '%b %o, %Y';
 } );
 
-=item print_text HASHREF | [ TIME [ , TEMPLATE [ , OPTION => VALUE ... ] ] ]
+=item conf [ MODE ]
+
+Returns a configuration handle (L<FS::Conf>) set to the customer's locale.
+
+If the "mode" pseudo-field is set on the object, the configuration handle
+will be an L<FS::invoice_conf> for that invoice mode (and the customer's
+locale).
+
+=cut
+
+sub conf {
+  my $self = shift;
+  my $mode = $self->get('mode');
+  if ($self->{_conf} and !defined($mode)) {
+    return $self->{_conf};
+  }
+
+  my $cust_main = $self->cust_main;
+  my $locale = $cust_main ? $cust_main->locale : '';
+  my $conf;
+  if ( $mode ) {
+    if ( ref $mode and $mode->isa('FS::invoice_mode') ) {
+      $mode = $mode->modenum;
+    } elsif ( $mode =~ /\D/ ) {
+      die "invalid invoice mode $mode";
+    }
+    $conf = qsearchs('invoice_conf', { modenum => $mode, locale => $locale });
+    if (!$conf) {
+      $conf = qsearchs('invoice_conf', { modenum => $mode, locale => '' });
+      # it doesn't have a locale, but system conf still might
+      $conf->set('locale' => $locale) if $conf;
+    }
+  }
+  # if $mode is unspecified, or if there is no invoice_conf matching this mode
+  # and locale, then use the system config only (but with the locale)
+  $conf ||= FS::Conf->new({ 'locale' => $locale });
+  # cache it
+  return $self->{_conf} = $conf;
+}
+
+=item print_text OPTIONS
 
 Returns an text invoice, as a list of lines.
 
-Options can be passed as a hashref (recommended) or as a list of time, template
-and then any key/value pairs for any other options.
+Options can be passed as a hash.
 
 I<time>, if specified, is used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
@@ -50,25 +90,19 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 sub print_text {
   my $self = shift;
-  my( $today, $template, %opt );
+  my %params;
   if ( ref($_[0]) ) {
-    %opt = %{ shift() };
-    $today = delete($opt{'time'}) || '';
-    $template = delete($opt{template}) || '';
+    %params = %{ shift() };
   } else {
-    ( $today, $template, %opt ) = @_;
+    %params = @_;
   }
 
-  my %params = ( 'format' => 'template' );
-  $params{'time'} = $today if $today;
-  $params{'template'} = $template if $template;
-  $params{$_} = $opt{$_} 
-    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name );
+  $params{'format'} = 'template'; # for some reason
 
   $self->print_generic( %params );
 }
 
-=item print_latex HASHREF | [ TIME [ , TEMPLATE [ , OPTION => VALUE ... ] ] ]
+=item print_latex HASHREF
 
 Internal method - returns a filename of a filled-in LaTeX template for this
 invoice (Note: add ".tex" to get the actual filename), and a filename of
@@ -76,15 +110,16 @@ an associated logo (with the .eps extension included).
 
 See print_ps and print_pdf for methods that return PostScript and PDF output.
 
-Options can be passed as a hashref (recommended) or as a list of time, template
-and then any key/value pairs for any other options.
+Options can be passed as a hash.
 
 I<time>, if specified, is used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-I<template>, if specified, is the name of a suffix for alternate invoices.
+I<template>, if specified, is the name of a suffix for alternate invoices.  
+This is strongly deprecated; see L<FS::invoice_conf> for the right way to
+customize invoice templates for different purposes.
 
 I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
@@ -92,22 +127,20 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 sub print_latex {
   my $self = shift;
-  my $conf = $self->conf;
-  my( $today, $template, %opt );
+  my %params;
+
   if ( ref($_[0]) ) {
-    %opt = %{ shift() };
-    $today = delete($opt{'time'}) || '';
-    $template = delete($opt{template}) || '';
+    %params = %{ shift() };
   } else {
-    ( $today, $template, %opt ) = @_;
+    %params = @_;
   }
 
-  my %params = ( 'format' => 'latex' );
-  $params{'time'} = $today if $today;
-  $params{'template'} = $template if $template;
-  $params{$_} = $opt{$_} 
-    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name no_date no_number );
+  $params{'format'} = 'latex';
+  my $conf = $self->conf;
 
+  # this needs to go away
+  my $template = $params{'template'};
+  # and this especially
   $template ||= $self->_agent_template
     if $self->can('_agent_template');
 
@@ -191,7 +224,8 @@ Non optional options include
 
 Optional options include
 
-template - a value used as a suffix for a configuration template
+template - a value used as a suffix for a configuration template.  Please 
+don't use this.
 
 time - a value used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
@@ -214,6 +248,7 @@ locale - override customer's locale
 sub print_generic {
   my( $self, %params ) = @_;
   my $conf = $self->conf;
+
   my $today = $params{today} ? $params{today} : time;
   warn "$me print_generic called on $self with suffix $params{template}\n"
     if $DEBUG;
@@ -227,6 +262,8 @@ sub print_generic {
     unless $cust_main->payname
         && $cust_main->payby !~ /^(CARD|DCRD|CHEK|DCHK)$/;
 
+  my $locale = $params{'locale'} || $cust_main->locale;
+
   my %delimiters = ( 'latex'    => [ '[@--', '--@]' ],
                      'html'     => [ '<%=', '%>' ],
                      'template' => [ '{', '}' ],
@@ -235,11 +272,18 @@ sub print_generic {
   warn "$me print_generic creating template\n"
     if $DEBUG > 1;
 
+  # set the notice name here, and nowhere else.
+  my $notice_name =  $params{notice_name}
+                  || $conf->config('notice_name')
+                  || $self->notice_name;
+
   #create the template
   my $template = $params{template} ? $params{template} : $self->_agent_template;
   my $templatefile = $self->template_conf. $format;
   $templatefile .= "_$template"
     if length($template) && $conf->exists($templatefile."_$template");
+
+  # the base template
   my @invoice_template = map "$_\n", $conf->config($templatefile)
     or die "cannot load config data $templatefile";
 
@@ -380,6 +424,7 @@ sub print_generic {
 
   # generate template variables
   my $returnaddress;
+
   if (
          defined( $conf->config_orbase( "invoice_${format}returnaddress",
                                         $template
@@ -457,7 +502,7 @@ sub print_generic {
     'today'           => time2str($date_format_long, $today),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
-    'notice_name'     => ($params{'notice_name'} || $self->notice_name),#escape_function?
+    'notice_name'     => $notice_name, # escape?
     'current_charges' => sprintf("%.2f", $self->charged),
     'duedate'         => $self->due_date2str($rdate_format), #date_format?
 
@@ -499,7 +544,7 @@ sub print_generic {
   );
  
   #localization
-  my $lh = FS::L10N->get_handle( $params{'locale'} || $cust_main->locale );
+  my $lh = FS::L10N->get_handle( $locale );
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
   my %info = FS::Locales->locale_info($cust_main->locale || 'en_US');
   # eval to avoid death for unimplemented languages
@@ -608,23 +653,12 @@ sub print_generic {
   # summary formats
   $invoice_data{'last_bill'} = {};
 
-  # returns the last unpaid bill, not the last bill
-  #my $last_bill = $pr_cust_bill[-1];
-
   if ( $self->custnum && $self->invnum ) {
 
-    # THIS returns the customer's last bill before  this one
-    my $last_bill = qsearchs({
-        'table'   => 'cust_bill',
-        'hashref' => { 'custnum' => $self->custnum,
-                       'invnum'  => { op => '<', value => $self->invnum },
-                     },
-        'order_by'  => ' ORDER BY invnum DESC LIMIT 1'
-    });
-    if ( $last_bill ) {
+    if ( $self->previous_bill ) {
+      my $last_bill = $self->previous_bill;
       $invoice_data{'last_bill'} = {
         '_date'     => $last_bill->_date, #unformatted
-        # all we need for now
       };
       my (@payments, @credits);
       # for formats that itemize previous payments
@@ -766,6 +800,7 @@ sub print_generic {
   my $taxtotal = 0;
   my $tax_section = { 'description' => $self->mt('Taxes, Surcharges, and Fees'),
                       'subtotal'    => $taxtotal,   # adjusted below
+                      'tax_section' => 1,
                     };
   my $tax_weight = _pkg_category($tax_section->{description})
                         ? _pkg_category($tax_section->{description})->weight
@@ -951,9 +986,6 @@ sub print_generic {
   }
 
   foreach my $section (@sections, @$late_sections) {
-
-    warn "$me adding section \n". Dumper($section)
-      if $DEBUG > 1;
 
     # begin some normalization
     $section->{'subtotal'} = $section->{'amount'}
@@ -1167,7 +1199,7 @@ sub print_generic {
         $adjust_section->{'pretotal'} = $self->mt('New charges total').' '.
           $other_money_char.  sprintf('%.2f', $self->charged );
       } 
-    }else{
+    } else {
       push @total_items, $total;
     }
     push @buf,['','-----------'];
@@ -1554,12 +1586,9 @@ sub print_html {
   my %params;
   if ( ref($_[0]) ) {
     %params = %{ shift() }; 
-  }else{
-    $params{'time'} = shift;
-    $params{'template'} = shift;
-    $params{'cid'} = shift;
+  } else {
+    %params = @_;
   }
-
   $params{'format'} = 'html';
   
   $self->print_generic( %params );

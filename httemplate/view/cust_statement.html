@@ -35,10 +35,10 @@
 
 % if ( $conf->exists('invoice_html') ) { 
 
-  <% join('', $cust_statement->print_html('', $templatename) ) %>
+  <% join('', $cust_statement->print_html('template' => $templatename) ) %>
 % } else { 
 
-  <PRE><% join('', $cust_statement->print_text('', $templatename) ) %></PRE>
+  <PRE><% join('', $cust_statement->print_text('template' => $templatename) ) %></PRE>
 % } 
 
 <% include('/elements/footer.html') %>

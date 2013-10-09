@@ -49,7 +49,7 @@ sub condition {
 }
 
 sub pkg_age_age {
-  my( $self, $cust_pkg, %opt );
+  my( $self, $cust_pkg, %opt ) = @_;
   $self->option_age_from('age', $opt{'time'} );
 }
 

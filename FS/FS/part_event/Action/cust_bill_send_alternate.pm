@@ -11,6 +11,8 @@ sub eventtable_hashref {
 
 sub option_fields {
   (
+    'modenum'      => { label    => 'Invoice mode',
+                        type     => 'select-invoice_mode' },
     'templatename' => { label    => 'Template',
                         type     => 'select-invoice_template',
                       },
@@ -25,7 +27,8 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
-  $cust_bill->send( $self->option('templatename') );
+  $cust_bill->set('mode' => $self->option('modenum'));
+  $cust_bill->send({'template' => $self->option('templatename')});
 }
 
 1;

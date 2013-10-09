@@ -80,7 +80,7 @@ FS::cust_bill - Object methods for cust_bill records
   $tax_amount = $record->tax;
 
   @lines = $cust_bill->print_text;
-  @lines = $cust_bill->print_text $time;
+  @lines = $cust_bill->print_text('time' => $time);
 
 =head1 DESCRIPTION
 
@@ -153,7 +153,13 @@ Invoices are normally created by calling the bill method of a customer object
 =cut
 
 sub table { 'cust_bill'; }
-sub notice_name { 'Invoice'; }
+
+# should be the ONLY occurrence of "Invoice" in invoice rendering code.
+# (except email_subject and invnum_date_pretty)
+sub notice_name {
+  my $self = shift;
+  $self->conf->config('notice_name') || 'Invoice'
+}
 
 sub cust_linked { $_[0]->cust_main_custnum; } 
 sub cust_unlinked_msg {
@@ -420,6 +426,25 @@ sub display_invnum {
   } else {
     return $self->invnum;
   }
+}
+
+=item previous_bill
+
+Returns the customer's last invoice before this one.
+
+=cut
+
+sub previous_bill {
+  my $self = shift;
+  if ( !$self->get('previous_bill') ) {
+    $self->set('previous_bill', qsearchs({
+          'table'     => 'cust_bill',
+          'hashref'   => { 'custnum'  => $self->custnum,
+                           '_date'    => { op=>'<', value=>$self->_date } },
+          'order_by'  => 'ORDER BY _date DESC LIMIT 1',
+    }) );
+  }
+  $self->get('previous_bill');
 }
 
 =item previous
@@ -1024,7 +1049,7 @@ Options:
 
 sender address, required
 
-=item tempate
+=item template
 
 alternate template name, optional
 
@@ -1058,15 +1083,10 @@ sub generate_email {
 
   my %return = (
     'from'      => $args{'from'},
-    'subject'   => (($args{'subject'}) ? $args{'subject'} : 'Invoice'),
+    'subject'   => ($args{'subject'} || $self->email_subject),
   );
 
-  my %opt = (
-    'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
-    'template'      => $args{'template'},
-    'notice_name'   => ( $args{'notice_name'} || 'Invoice' ),
-    'no_coupon'     => $args{'no_coupon'},
-  );
+  $args{'unsquelch_cdr'} = $conf->exists('voip-cdr_email');
 
   my $cust_main = $self->cust_main;
 
@@ -1108,7 +1128,7 @@ sub generate_email {
       if ( ref($args{'print_text'}) eq 'ARRAY' ) {
         $data = $args{'print_text'};
       } else {
-        $data = [ $self->print_text(\%opt) ];
+        $data = [ $self->print_text(\%args) ];
       }
 
     }
@@ -1165,10 +1185,10 @@ sub generate_email {
           'Filename'   => 'barcode.png',
           'Content-ID' => "<$barcode_content_id>",
         ;
-        $opt{'barcode_cid'} = $barcode_content_id;
+        $args{'barcode_cid'} = $barcode_content_id;
       }
 
-      $htmldata = $self->print_html({ 'cid'=>$content_id, %opt });
+      $htmldata = $self->print_html({ 'cid'=>$content_id, %args });
     }
 
     $alternative->attach(
@@ -1230,7 +1250,7 @@ sub generate_email {
 
       $related->add_part($image) if $image;
 
-      my $pdf = build MIME::Entity $self->mimebuild_pdf(\%opt);
+      my $pdf = build MIME::Entity $self->mimebuild_pdf(\%args);
 
       $return{'mimeparts'} = [ $related, $pdf, @otherparts ];
 
@@ -1262,7 +1282,7 @@ sub generate_email {
 
       #mime parts arguments a la MIME::Entity->build().
       $return{'mimeparts'} = [
-        { $self->mimebuild_pdf(\%opt) }
+        { $self->mimebuild_pdf(\%args) }
       ];
     }
   
@@ -1282,7 +1302,7 @@ sub generate_email {
       if ( ref($args{'print_text'}) eq 'ARRAY' ) {
         $return{'body'} = $args{'print_text'};
       } else {
-        $return{'body'} = [ $self->print_text(\%opt) ];
+        $return{'body'} = [ $self->print_text(\%args) ];
       }
 
     }
@@ -1311,105 +1331,48 @@ sub mimebuild_pdf {
   );
 }
 
-=item send HASHREF | [ TEMPLATE [ , AGENTNUM [ , INVOICE_FROM [ , AMOUNT ] ] ] ]
+=item send HASHREF
 
 Sends this invoice to the destinations configured for this customer: sends
 email, prints and/or faxes.  See L<FS::cust_main_invoice>.
 
-Options can be passed as a hashref (recommended) or as a list of up to 
-four values for templatename, agentnum, invoice_from and amount.
+Options can be passed as a hashref.  Positional parameters are no longer
+allowed.
 
-I<template>, if specified, is the name of a suffix for alternate invoices.
+I<template>: a suffix for alternate invoices
 
-I<agentnum>, if specified, means that this invoice will only be sent for customers
-of the specified agent or agent(s).  AGENTNUM can be a scalar agentnum (for a
-single agent) or an arrayref of agentnums.
+I<agentnum>: obsolete, now does nothing.
 
-I<invoice_from>, if specified, overrides the default email invoice From: address.
+I<invoice_from> overrides the default email invoice From: address.
 
-I<amount>, if specified, only sends the invoice if the total amount owed on this
-invoice and all older invoices is greater than the specified amount.
+I<amount>: obsolete, does nothing
 
-I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+I<notice_name> overrides "Invoice" as the name of the sent document 
+(templates from 10/2009 or newer required).
 
-I<lpr>, if specified, is passed to 
+I<lpr> overrides the system 'lpr' option as the command to print a document
+from standard input.
 
 =cut
 
-sub queueable_send {
-  my %opt = @_;
-
-  my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
-    or die "invalid invoice number: " . $opt{invnum};
-
-  my @args = ( $opt{template}, $opt{agentnum} );
-  push @args, $opt{invoice_from}
-    if exists($opt{invoice_from}) && $opt{invoice_from};
-
-  my $error = $self->send( @args );
-  die $error if $error;
-
-}
-
 sub send {
   my $self = shift;
+  my $opt = ref($_[0]) ? $_[0] : +{ @_ };
   my $conf = $self->conf;
-
-  my( $template, $invoice_from, $notice_name );
-  my $agentnums = '';
-  my $balance_over = 0;
-  my $lpr = '';
-
-  if ( ref($_[0]) ) {
-    my $opt = shift;
-    $template = $opt->{'template'} || '';
-    if ( $agentnums = $opt->{'agentnum'} ) {
-      $agentnums = [ $agentnums ] unless ref($agentnums);
-    }
-    $invoice_from = $opt->{'invoice_from'};
-    $balance_over = $opt->{'balance_over'} if $opt->{'balance_over'};
-    $notice_name = $opt->{'notice_name'};
-    $lpr = $opt->{'lpr'}
-  } else {
-    $template = scalar(@_) ? shift : '';
-    if ( scalar(@_) && $_[0]  ) {
-      $agentnums = ref($_[0]) ? shift : [ shift ];
-    }
-    $invoice_from = shift if scalar(@_);
-    $balance_over = shift if scalar(@_) && $_[0] !~ /^\s*$/;
-  }
 
   my $cust_main = $self->cust_main;
 
-  return 'N/A' unless ! $agentnums
-                   or grep { $_ == $cust_main->agentnum } @$agentnums;
-
-  return ''
-    unless $cust_main->total_owed_date($self->_date) > $balance_over;
-
-  $invoice_from ||= $self->_agent_invoice_from ||    #XXX should go away
-                    $conf->config('invoice_from', $cust_main->agentnum );
-
-  my %opt = (
-    'template'     => $template,
-    'invoice_from' => $invoice_from,
-    'notice_name'  => ( $notice_name || 'Invoice' ),
-  );
-
   my @invoicing_list = $cust_main->invoicing_list;
 
-  #$self->email_invoice(\%opt)
-  $self->email(\%opt)
+  $self->email($opt)
     if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list )
     && ! $self->invoice_noemail;
 
-  $opt{'lpr'} = $lpr;
-  #$self->print_invoice(\%opt)
-  $self->print(\%opt)
+  $self->print($opt)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
 
   #this has never been used post-$ORIGINAL_ISP afaik
-  $self->fax_invoice(\%opt)
+  $self->fax_invoice($opt)
     if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
   '';
@@ -1418,16 +1381,17 @@ sub send {
 
 =item email HASHREF | [ TEMPLATE [ , INVOICE_FROM ] ] 
 
-Emails this invoice.
+Sends this invoice to the customer's email destination(s).
 
-Options can be passed as a hashref (recommended) or as a list of up to 
-two values for templatename and invoice_from.
+Options must be passed as a hashref.  Positional parameters are no longer
+allowed.
 
 I<template>, if specified, is the name of a suffix for alternate invoices.
 
-I<invoice_from>, if specified, overrides the default email invoice From: address.
+I<invoice_from>, if specified, overrides the default email invoice From: 
+address.
 
-I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+I<notice_name> is the name of the sent document.
 
 =cut
 
@@ -1437,38 +1401,30 @@ sub queueable_email {
   my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
     or die "invalid invoice number: " . $opt{invnum};
 
-  my %args = ( 'template' => $opt{template} );
-  $args{$_} = $opt{$_}
-    foreach grep { exists($opt{$_}) && $opt{$_} }
-              qw( invoice_from notice_name no_coupon );
+  my %args = map {$_ => $opt{$_}} 
+             grep { $opt{$_} }
+              qw( invoice_from notice_name no_coupon template );
 
   my $error = $self->email( \%args );
   die $error if $error;
 
 }
 
-#sub email_invoice {
 sub email {
   my $self = shift;
   return if $self->hide;
   my $conf = $self->conf;
-
-  my( $template, $invoice_from, $notice_name, $no_coupon );
-  if ( ref($_[0]) ) {
-    my $opt = shift;
-    $template = $opt->{'template'} || '';
-    $invoice_from = $opt->{'invoice_from'};
-    $notice_name = $opt->{'notice_name'} || 'Invoice';
-    $no_coupon = $opt->{'no_coupon'} || 0;
-  } else {
-    $template = scalar(@_) ? shift : '';
-    $invoice_from = shift if scalar(@_);
-    $notice_name = 'Invoice';
-    $no_coupon = 0;
+  my $opt = shift;
+  if ($opt and !ref($opt)) {
+    die "FS::cust_bill::email called with positional parameters";
   }
 
-  $invoice_from ||= $self->_agent_invoice_from ||    #XXX should go away
-                    $conf->config('invoice_from', $self->cust_main->agentnum );
+  my $template = $opt->{template};
+  my $from = delete $opt->{invoice_from};
+
+  # this is where we set the From: address
+  $from ||= $self->_agent_invoice_from ||    #XXX should go away
+            $conf->config('invoice_from', $self->cust_main->agentnum );
 
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } 
                             $self->cust_main->invoicing_list;
@@ -1478,20 +1434,19 @@ sub email {
       die 'No recipients for customer #'. $self->custnum;
     } else {
       #default: better to notify this person than silence
-      @invoicing_list = ($invoice_from);
+      @invoicing_list = ($from);
     }
   }
 
+  # this is where we set the Subject:
   my $subject = $self->email_subject($template);
 
   my $error = send_email(
     $self->generate_email(
-      'from'        => $invoice_from,
+      'from'        => $from,
       'to'          => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
       'subject'     => $subject,
-      'template'    => $template,
-      'notice_name' => $notice_name,
-      'no_coupon'   => $no_coupon,
+      %$opt, # template, etc.
     )
   );
   die "can't email invoice: $error\n" if $error;
@@ -1518,12 +1473,12 @@ sub email_subject {
   eval qq("$subject");
 }
 
-=item lpr_data HASHREF | [ TEMPLATE ]
+=item lpr_data HASHREF
 
 Returns the postscript or plaintext for this invoice as an arrayref.
 
-Options can be passed as a hashref (recommended) or as a single optional value
-for template.
+Options must be passed as a hashref.  Positional parameters are no longer 
+allowed.
 
 I<template>, if specified, is the name of a suffix for alternate invoices.
 
@@ -1534,31 +1489,21 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 sub lpr_data {
   my $self = shift;
   my $conf = $self->conf;
-  my( $template, $notice_name );
-  if ( ref($_[0]) ) {
-    my $opt = shift;
-    $template = $opt->{'template'} || '';
-    $notice_name = $opt->{'notice_name'} || 'Invoice';
-  } else {
-    $template = scalar(@_) ? shift : '';
-    $notice_name = 'Invoice';
+  my $opt = shift;
+  if ($opt and !ref($opt)) {
+    # nobody does this anyway
+    die "FS::cust_bill::lpr_data called with positional parameters";
   }
 
-  my %opt = (
-    'template'    => $template,
-    'notice_name' => $notice_name,
-  );
-
   my $method = $conf->exists('invoice_latex') ? 'print_ps' : 'print_text';
-  [ $self->$method( \%opt ) ];
+  [ $self->$method( $opt ) ];
 }
 
-=item print HASHREF | [ TEMPLATE ]
+=item print HASHREF
 
 Prints this invoice.
 
-Options can be passed as a hashref (recommended) or as a single optional
-value for template.
+Options must be passed as a hashref.
 
 I<template>, if specified, is the name of a suffix for alternate invoices.
 
@@ -1566,48 +1511,34 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 =cut
 
-#sub print_invoice {
 sub print {
   my $self = shift;
   return if $self->hide;
   my $conf = $self->conf;
-
-  my( $template, $notice_name, $lpr );
-  if ( ref($_[0]) ) {
-    my $opt = shift;
-    $template = $opt->{'template'} || '';
-    $notice_name = $opt->{'notice_name'} || 'Invoice';
-    $lpr = $opt->{'lpr'}
-  } else {
-    $template = scalar(@_) ? shift : '';
-    $notice_name = 'Invoice';
-    $lpr = '';
+  my $opt = shift;
+  if ($opt and !ref($opt)) {
+    die "FS::cust_bill::print called with positional parameters";
   }
 
-  my %opt = (
-    'template'    => $template,
-    'notice_name' => $notice_name,
-  );
-
+  my $lpr = delete $opt->{lpr};
   if($conf->exists('invoice_print_pdf')) {
     # Add the invoice to the current batch.
-    $self->batch_invoice(\%opt);
+    $self->batch_invoice($opt);
   }
   else {
     do_print(
-      $self->lpr_data(\%opt),
+      $self->lpr_data($opt),
       'agentnum' => $self->cust_main->agentnum,
       'lpr'      => $lpr,
     );
   }
 }
 
-=item fax_invoice HASHREF | [ TEMPLATE ] 
+=item fax_invoice HASHREF
 
 Faxes this invoice.
 
-Options can be passed as a hashref (recommended) or as a single optional
-value for template.
+Options must be passed as a hashref.
 
 I<template>, if specified, is the name of a suffix for alternate invoices.
 
@@ -1619,15 +1550,9 @@ sub fax_invoice {
   my $self = shift;
   return if $self->hide;
   my $conf = $self->conf;
-
-  my( $template, $notice_name );
-  if ( ref($_[0]) ) {
-    my $opt = shift;
-    $template = $opt->{'template'} || '';
-    $notice_name = $opt->{'notice_name'} || 'Invoice';
-  } else {
-    $template = scalar(@_) ? shift : '';
-    $notice_name = 'Invoice';
+  my $opt = shift;
+  if ($opt and !ref($opt)) {
+    die "FS::cust_bill::fax_invoice called with positional parameters";
   }
 
   die 'FAX invoice destination not (yet?) supported with plain text invoices.'
@@ -1636,12 +1561,7 @@ sub fax_invoice {
   my $dialstring = $self->cust_main->getfield('fax');
   #Check $dialstring?
 
-  my %opt = (
-    'template'    => $template,
-    'notice_name' => $notice_name,
-  );
-
-  my $error = send_fax( 'docdata'    => $self->lpr_data(\%opt),
+  my $error = send_fax( 'docdata'    => $self->lpr_data($opt),
                         'dialstring' => $dialstring,
                       );
   die $error if $error;
@@ -1728,29 +1648,6 @@ sub spool_invoice {
     'format'       => $conf->config('cust_bill-spoolformat'),
     'agent_spools' => $conf->exists('cust_bill-spoolagent'),
   );
-}
-
-=item send_if_newest [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
-
-Like B<send>, but only sends the invoice if it is the newest open invoice for
-this customer.
-
-=cut
-
-sub send_if_newest {
-  my $self = shift;
-
-  return ''
-    if scalar(
-               grep { $_->owed > 0 } 
-                    qsearch('cust_bill', {
-                      'custnum' => $self->custnum,
-                      #'_date'   => { op=>'>', value=>$self->_date },
-                      'invnum'  => { op=>'>', value=>$self->invnum },
-                    } )
-             );
-    
-  $self->send(@_);
 }
 
 =item send_csv OPTION => VALUE, ...
@@ -3109,12 +3006,25 @@ sub _items_credits {
 
   my @b;
   #credits
-  foreach ( $self->cust_credited ) {
+  my @objects;
+  if ( $self->conf->exists('previous_balance-payments_since') ) {
+    my $date = 0;
+    $date = $self->previous_bill->_date if $self->previous_bill;
+    @objects = qsearch('cust_credit', {
+        'custnum' => $self->custnum,
+        '_date'   => {op => '>=', value => $date},
+      });
+      # hard to do this in the qsearch...
+    @objects = grep { $_->_date < $self->_date } @objects;
+  } else {
+    @objects = $self->cust_credited;
+  }
 
-    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
+  foreach my $obj ( @objects ) {
+    my $cust_credit = $obj->isa('FS::cust_credit') ? $obj : $obj->cust_credit;
 
-    my $reason = substr($_->cust_credit->reason, 0, $trim_len);
-    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    my $reason = substr($cust_credit->reason, 0, $trim_len);
+    $reason .= '...' if length($reason) < length($cust_credit->reason);
     $reason = " ($reason) " if $reason;
 
     push @b, {
@@ -3122,8 +3032,8 @@ sub _items_credits {
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
       'description' => $self->mt('Credit applied').' '.
-                       time2str($date_format,$_->cust_credit->_date). $reason,
-      'amount'      => sprintf("%.2f",$_->amount),
+                       time2str($date_format,$obj->_date). $reason,
+      'amount'      => sprintf("%.2f",$obj->amount),
     };
   }
 
@@ -3135,21 +3045,31 @@ sub _items_payments {
   my $self = shift;
 
   my @b;
-  #get & print payments
-  foreach ( $self->cust_bill_pay ) {
+  my $detailed = $self->conf->exists('invoice_payment_details');
+  my @objects;
+  if ( $self->conf->exists('previous_balance-payments_since') ) {
+    my $date = 0;
+    $date = $self->previous_bill->_date if $self->previous_bill;
+    @objects = qsearch('cust_pay', {
+        'custnum' => $self->custnum,
+        '_date'   => {op => '>=', value => $date},
+      });
+    @objects = grep { $_->_date < $self->_date } @objects;
+  } else {
+    @objects = $self->cust_bill_pay;
+  }
 
-    #something more elaborate if $_->amount ne ->cust_pay->paid ?
-
+  foreach my $obj (@objects) {
+    my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
     my $desc = $self->mt('Payment received').' '.
-               time2str($date_format,$_->cust_pay->_date );
-    $desc   .= $self->mt(' via ' . $_->cust_pay->payby_payinfo_pretty)
-      if ( $self->conf->exists('invoice_payment_details') );
- 
+               time2str($date_format, $cust_pay->_date );
+    $desc .= $self->mt(' via ' . $cust_pay->payby_payinfo_pretty)
+      if $detailed;
+
     push @b, {
       'description' => $desc,
-      'amount'      => sprintf("%.2f", $_->amount )
+      'amount'      => sprintf("%.2f", $obj->amount )
     };
-
   }
 
   @b;

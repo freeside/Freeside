@@ -197,6 +197,10 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       [ $fsurl. 'search/report_svc_phone_usage.html',
         'Total usage (minutes, and amount billed) for the specified time period, per phone number.',
       ];
+    $report_svc{"${name} by state"} =
+      [ $fsurl. 'search/phone_state.html',
+        'Current or historical phone services broken down by state.',
+      ];
 
   }
 
@@ -517,6 +521,7 @@ tie my %config_radius, 'Tie::IxHash',
 ;
 
 tie my %config_cable, 'Tie::IxHash',
+  'Cable providers' => [ $fsurl.'browse/cable_provider.html', '' ],
   'Cable modem models' => [ $fsurl.'browse/cable_model.html', '' ],
 ;
 
@@ -600,6 +605,7 @@ $config_billing{'Billing events'} = [ $fsurl.'browse/part_event.html', 'Billing 
     || $curuser->access_right('Edit global billing events');
 if ( $curuser->access_right('Configuration') ) {
   #$config_billing{'Invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
+  $config_billing{'Invoice configurations'}      = [ $fsurl.'browse/invoice_conf.html', 'Adjust invoice settings for special-purpose notices' ];
   $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'separator'} = ''; #its a separator!
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];

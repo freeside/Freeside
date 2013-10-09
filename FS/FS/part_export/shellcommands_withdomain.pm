@@ -141,7 +141,32 @@ The following variables are available for interpolation (prefixed with
   <LI><code>$shell</code>
   <LI><code>$quota</code>
   <LI><code>@radius_groups</code>
-  <LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.
+  <LI><code>$reasonnum (when suspending)</code>
+  <LI><code>$reasontext (when suspending)</code>
+  <LI><code>$reasontypenum (when suspending)</code>
+  <LI><code>$reasontypetext (when suspending)</code>
+  <LI><code>$pkgnum</code>
+  <LI><code>$custnum</code>
+  <LI>All other fields in <b>svc_acct</b> are also available.
+  <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker, agent_custid, locale.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
+</UL>
+For the package changed command only, the following fields are also available:
+<UL>
+  <LI>$old_pkgnum and $new_pkgnum
+  <LI>$old_pkgpart and $new_pkgpart
+  <LI>$old_agent_pkgid and $new_agent_pkgid
+  <LI>$old_order_date and $new_order_date
+  <LI>$old_start_date and $new_start_date
+  <LI>$old_setup and $new_setup
+  <LI>$old_bill and $new_bill
+  <LI>$old_last_bill and $new_last_bill
+  <LI>$old_susp and $new_susp
+  <LI>$old_adjourn and $new_adjourn
+  <LI>$old_resume and $new_resume
+  <LI>$old_cancel and $new_cancel
+  <LI>$old_unancel and $new_unancel
+  <LI>$old_expire and $new_expire
+  <LI>$old_contract_end and $new_contract_end
 </UL>
 END
 );

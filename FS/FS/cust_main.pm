@@ -17,6 +17,7 @@ use vars qw( $DEBUG $me $conf
              @encrypted_fields
              $import
              $ignore_expired_card $ignore_banned_card $ignore_illegal_zip
+             $ignore_invalid_card
              $skip_fuzzyfiles
              @paytypes
            );
@@ -89,6 +90,7 @@ $me = '[FS::cust_main]';
 $import = 0;
 $ignore_expired_card = 0;
 $ignore_banned_card = 0;
+$ignore_invalid_card = 0;
 
 $skip_fuzzyfiles = 0;
 
@@ -102,6 +104,7 @@ sub nohistory_fields { ('payinfo', 'paycvv'); }
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
   #yes, need it for stuff below (prolly should be cached)
+  $ignore_invalid_card = $conf->exists('allow_invalid_cards');
 };
 
 sub _cache {
@@ -1826,7 +1829,8 @@ sub check {
 
   # Need some kind of global flag to accept invalid cards, for testing
   # on scrubbed data.
-  if ( !$import && $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
+  if ( !$import && !$ignore_invalid_card && $check_payinfo && 
+    $self->payby =~ /^(CARD|DCRD)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -1898,7 +1902,8 @@ sub check {
       $self->payissue('');
     }
 
-  } elsif ( $check_payinfo && $self->payby =~ /^(CHEK|DCHK)$/ ) {
+  } elsif ( !$ignore_invalid_card && $check_payinfo && 
+    $self->payby =~ /^(CHEK|DCHK)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@\.]//g;
@@ -4071,6 +4076,16 @@ sub ship_contact_firstlast {
 #  code2country($self->country);
 #}
 
+sub bill_country_full {
+  my $self = shift;
+  code2country($self->bill_location->country);
+}
+
+sub ship_country_full {
+  my $self = shift;
+  code2country($self->ship_location->country);
+}
+
 =item county_state_county [ PREFIX ]
 
 Returns a string consisting of just the county, state and country.
@@ -4910,9 +4925,9 @@ sub queueable_print {
   my %opt = @_;
 
   my $self = qsearchs('cust_main', { 'custnum' => $opt{custnum} } )
-    or die "invalid customer number: " . $opt{custvnum};
+    or die "invalid customer number: " . $opt{custnum};
 
-  my $error = $self->print( $opt{template} );
+  my $error = $self->print( { 'template' => $opt{template} } );
   die $error if $error;
 }
 
@@ -5145,7 +5160,7 @@ sub _upgrade_data { #class method
 
     };
 
-    FS::upgrade_journal->set_done('cust_main__trimspaces');
+    FS::upgrade_journal->set_done('cust_main__cust_payby');
   }
 
   $class->_upgrade_otaker(%opts);

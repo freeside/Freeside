@@ -18,6 +18,9 @@ sub eventtable_hashref {
 
 sub option_fields {
   (
+    'modenum' => {  label => 'Invoice mode',
+                    type  => 'select-invoice_mode',
+                 },
     'if_newest_templatename' => { label    => 'Template',
                                   type     => 'select-invoice_template',
                                 },
@@ -29,10 +32,17 @@ sub default_weight { 50; }
 sub do_action {
   my( $self, $cust_bill ) = @_;
 
-  #my $cust_main = $self->cust_main($cust_bill);
-  my $cust_main = $cust_bill->cust_main;
-
-  $cust_bill->send( $self->option('templatename') );
+  my $invnum = $cust_bill->invnum;
+  my $custnum = $cust_bill->custnum;
+  return '' if scalar(
+    grep { $_->owed > 0 }
+      qsearch('cust_bill', {
+          'custnum' => $custnum,
+          'invnum'  => { op=>'>', value=>$invnum },
+        })
+    );
+  $cust_bill->set('mode' => $self->option('modenum'));
+  $cust_bill->send( 'template' => $self->option('templatename') );
 }
 
 1;

@@ -13,6 +13,10 @@ my $invnum      = $cgi->param('invnum');
 my $template    = $cgi->param('template');
 my $notice_name = $cgi->param('notice_name') if $cgi->param('notice_name');
 my $method      = $cgi->param('method');
+my $mode;
+if ( $cgi->param('mode') =~ /^(\d+)$/ ) {
+  $mode = $1;
+}
 
 $method .= '_invoice' if $method eq 'fax'; #!
 
@@ -21,6 +25,7 @@ die "unknown method $method" unless $method{$method};
 my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Can't find invoice!\n" unless $cust_bill;
 
+$cust_bill->set('mode' => $mode) if $mode;
 $cust_bill->$method({ 'template'    => $template,
                       'notice_name' => $notice_name,
                    }); 

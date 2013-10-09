@@ -49,8 +49,7 @@ The following variables are available for interpolation (prefixed with <code>new
   <LI><code>$uid</code> - of catchall account
   <LI><code>$gid</code> - of catchall account
   <LI><code>$dir</code> - home directory of catchall account
-  <LI>All other fields in
-    <a href="../docs/schema.html#svc_domain">svc_domain</a> are also available.
+  <LI>All other fields in <b>svc_domain</b> are also available.
 </UL>
 END
 );

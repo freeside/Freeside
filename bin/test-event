@@ -34,7 +34,10 @@ print "\n";
 
 my @conditions = $part_event->part_event_condition;
 foreach my $condition ( @conditions ) {
-  my $sat = $condition->condition( $object, 'cust_event' => $cust_event );
+  my $sat = $condition->condition( $object,
+                                   'cust_event' => $cust_event,
+                                   'time' => time,
+                                 );
 
   my $sql = $condition->condition_sql();
   
