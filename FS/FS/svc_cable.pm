@@ -142,7 +142,7 @@ sub check {
 
   my $error = 
        $self->ut_numbern('svcnum')
-    || $self->ut_foreign_key('providernum', 'cable_provider', 'providernum')
+    || $self->ut_foreign_keyn('providernum', 'cable_provider', 'providernum')
     || $self->ut_alphan('ordernum')
     || $self->ut_foreign_key('modelnum', 'cable_model', 'modelnum')
     || $self->ut_alpha('serialnum')
