@@ -1953,14 +1953,33 @@ sub ProcessUpdateMessage {
         CurrentUser    => $args{'TicketObj'}->CurrentUser,
     );
 
-    # If, after stripping the signature, we have no message, move the
-    # UpdateTimeWorked into adjusted TimeWorked, so that a later
-    # ProcessBasics can deal -- then bail out.
+    my %txn_customfields;
+
+    foreach my $key ( keys %{ $args{ARGSRef} } ) {
+      if ( $key =~ /^(?:Object-RT::Transaction--)?CustomField-(\d+)/ ) {
+        next if $key =~ /(TimeUnits|Magic)$/;
+        $txn_customfields{$key} = $args{ARGSRef}->{$key};
+      }
+    }
+
+    # If, after stripping the signature, we have no message, create a 
+    # Touch transaction if necessary
     if (    not $args{ARGSRef}->{'UpdateAttachments'}
         and not length $args{ARGSRef}->{'UpdateContent'} )
     {
-        if ( $args{ARGSRef}->{'UpdateTimeWorked'} ) {
-            $args{ARGSRef}->{TimeWorked} = $args{TicketObj}->TimeWorked + delete $args{ARGSRef}->{'UpdateTimeWorked'};
+        #if ( $args{ARGSRef}->{'UpdateTimeWorked'} ) {
+        #      $args{ARGSRef}->{TimeWorked} = $args{TicketObj}->TimeWorked +
+        #          delete $args{ARGSRef}->{'UpdateTimeWorked'};
+        #  }
+
+        my $timetaken = $args{ARGSRef}->{'UpdateTimeWorked'};
+        if ( $timetaken or grep {length $_} values %txn_customfields ) {
+            my ( $Transaction, $Description, $Object ) =
+                $args{TicketObj}->Touch( 
+                  CustomFields => \%txn_customfields,
+                  TimeTaken => $timetaken
+                );
+            return $Description;
         }
         return;
     }
@@ -2004,14 +2023,6 @@ sub ProcessUpdateMessage {
             ref $args{ARGSRef}->{'AttachTickets'}
             ? @{ $args{ARGSRef}->{'AttachTickets'} }
             : ( $args{ARGSRef}->{'AttachTickets'} ) );
-    }
-
-    my %txn_customfields;
-
-    foreach my $key ( keys %{ $args{ARGSRef} } ) {
-      if ( $key =~ /^(?:Object-RT::Transaction--)?CustomField-(\d+)/ ) {
-        $txn_customfields{$key} = $args{ARGSRef}->{$key};
-      }
     }
 
     my %message_args = (
