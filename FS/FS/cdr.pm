@@ -92,6 +92,8 @@ following fields are currently supported:
 
 =item dst_ip_addr - Destination IP address (same)
 
+=item dst_term - Terminating destination number (if different from dst)
+
 =item startdate - Start of call (UNIX-style integer timestamp)
 
 =item answerdate - Answer time of call (UNIX-style integer timestamp)
@@ -194,6 +196,7 @@ sub table_info {
         #'lastdata'              => '',
         'src_ip_addr'           => 'Source IP',
         'dst_ip_addr'           => 'Dest. IP',
+        'dst_term'              => 'Termination dest.',
         'startdate'             => 'Start date',
         'answerdate'            => 'Answer date',
         'enddate'               => 'End date',

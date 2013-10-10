@@ -3406,6 +3406,10 @@ sub tables_hashref {
         'src_ip_addr', 'varchar',  'NULL',  15,    '', '',
         'dst_ip_addr', 'varchar',  'NULL',  15,    '', '',
 
+        #currently only u4:
+        # terminating number (as opposed to dialed destination)
+        'dst_term',    'varchar',  '', $char_d, \"''", '',
+
         #these don't seem to be logged by most of the SQL cdr_* modules
         #except tds under sql-illegal names, so;
         # ... don't rely on them for rating?
@@ -3515,7 +3519,7 @@ sub tables_hashref {
                    [ 'sessionnum' ], [ 'subscriber' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ], [ 'cdrbatchnum' ],
-                   [ 'src_ip_addr' ], [ 'dst_ip_addr' ],
+                   [ 'src_ip_addr' ], [ 'dst_ip_addr' ], [ 'dst_term' ],
                  ],
     },
 

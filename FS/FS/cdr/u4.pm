@@ -6,6 +6,25 @@ use FS::cdr qw(_cdr_date_parser_maker);
 
 @ISA = qw(FS::cdr);
 
+# About the ANI/DNIS/*Number columns:
+# For inbound calls, ANI appears to be the true source number.
+# Usually ANI = TermNumber in that case.  (Case 1a.)
+# In a few inbound CDRs, ANI = OrigNumber, the BillToNumber is also 
+# the DialedNumber and DNIS (and always an 800 number), and the TermNumber 
+# is a different number.  (Case 2; rare.)
+#
+# For outbound calls, DNIS is always empty.  The TermNumber appears to
+# be the true destination.  The DialedNumber may be empty (Case 1b), or
+# equal the TermNumber (Case 3), or be a different number (Case 4; this 
+# probably shows routing to a different destination).
+#
+# How we are handling them:
+# Case 1a (inbound): src = ANI, dst = BillToNumber
+# Case 1b (outbound): src = BillToNumber, dst = ANI
+# Case 2: src = ANI, dst = DialedNumber, dst_term = TermNumber
+# Case 3: src = BillToNumber, dst = DialedNumber
+# Case 4: src = BillToNumber, dst = DialedNumber, dst_term = TermNumber
+
 %info = (
   'name'          => 'U4',
   'weight'        => 490,
@@ -81,24 +100,48 @@ use FS::cdr qw(_cdr_date_parser_maker);
     '',               #CallIndicator  #calltype?
     '',               #ReportIndicator
     sub {             #ANI
-      # it appears that it's the "other" number, not necessarily ANI.
+      # For inbound calls, this is the source.
+      # For outbound calls it's sometimes the destination but TermNumber 
+      # is more reliable.
       my ($cdr, $number) = @_;
-      if ( $cdr->direction eq 'O' ) {
-        $cdr->set('dst', $number);
-      } elsif ( $cdr->direction eq 'I' ) {
+      if ( $cdr->direction eq 'I' ) {
         $cdr->set('src', $number);
       }
     },
     '',               #DNIS
     '',               #PIN
     '',               #OrigNumber
-    '',               #TermNumber
-    '',               #DialedNumber
+    sub {             #TermNumber
+      # For outbound calls, this is the terminal destination (after call 
+      # routing).  It's sometimes also the dialed destination (Case 1b and 3).
+      my ($cdr, $number) = @_;
+      if ( $cdr->direction eq 'O' ) {
+        $cdr->set('dst_term', $number);
+        $cdr->set('dst', $number); # change this later if Case 4
+      }
+    },
+    sub {             #DialedNumber
+      my ($cdr, $number) = @_;
+      # For outbound calls, this is the destination before any call routing,
+      # and should be used for billing.  Except when it's null; then use 
+      # the TermNumber.
+      if ( $cdr->direction eq 'O' and $number =~ /\d/ ) {
+        # Case 4
+        $cdr->set('dst', $number);
+      }
+    },
+
     '',               #DisplayNumber
     '',               #RecordSource
     '',               #LECInfoDigits
     ('') x 13,
   ],
 );
+
+# Case 1a (inbound): src = ANI, dst = BillToNumber
+# Case 1b (outbound): src = BillToNumber, dst = TermNumber
+# Case 2: src = ANI, dst = DialedNumber, dst_term = TermNumber
+# Case 3: src = BillToNumber, dst = TermNumber
+# Case 4: src = BillToNumber, dst = DialedNumber, dst_term = TermNumber
 
 1;
