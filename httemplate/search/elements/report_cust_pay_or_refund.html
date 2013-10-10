@@ -23,7 +23,7 @@ Examples:
 
   <TR>
     <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1"><% mt('Search options') |h %></FONT>
+      <FONT SIZE="+1"><% mt('Payment search options') |h %></FONT>
     </TH>
   </TR>
 
@@ -61,16 +61,10 @@ Examples:
     </TD>
   </TR>
 
-  <& /elements/tr-select-agent.html,
-                 'curr_value'    => scalar($cgi->param('agentnum')),
-                 'label'         => emt('for agent: '),
-                 'disable_empty' => 0,
-  &>
-
   <& /elements/tr-select-user.html &>
 
   <TR>
-    <TD ALIGN="right" VALIGN="center"><% mt('Payment') |h %></TD>
+    <TD ALIGN="right" VALIGN="center"><% mt(ucfirst($name_singular). ' date') |h %></TD>
     <TD>
       <TABLE>
         <& /elements/tr-input-beginning_ending.html,
@@ -100,15 +94,55 @@ Examples:
                 'field' => 'paid',
   &>
 
+
+</TABLE>
+<BR>
+
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH CLASS="background" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1"><% mt('Customer search options') |h %></FONT>
+    </TH>
+  </TR>
+
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar($cgi->param('agentnum')),
+                 'label'         => emt('Agent'),
+                 'disable_empty' => 0,
+  &>
+
+  <& /elements/tr-select-cust_class.html,
+       'label'        => emt('Customer class'),
+       'field'        => 'cust_classnum',
+       'multiple'     => 1,
+       'pre_options'  => [ '' => emt('(none)') ],
+       'all_selected' => 1,
+  &>
+
+</TABLE>
+
 % if ( $table eq 'cust_pay' ) { 
+
+  <BR>
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH CLASS="background" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1"><% mt('Display options') |h %></FONT>
+    </TH>
+  </TR>
+
   <& /elements/tr-checkbox.html,
                 'label' => emt('Include tax names'),
                 'field' => 'tax_names',
                 'value' => 1,
   &>
-% }
 
 </TABLE>
+
+% }
 
 <BR>
 <INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
