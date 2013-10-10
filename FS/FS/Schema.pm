@@ -1996,6 +1996,7 @@ sub tables_hashref {
         'custnum',  'int',    '',   '', '', '', 
         '_date',        @date_type, '', '', 
         'refund',       @money_type, '', '', 
+        'currency',       'char', 'NULL',       3, '', '',
         'otaker',       'varchar',   'NULL',   32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',
         'reason',       'varchar',   '',   $char_d, '', '', 
