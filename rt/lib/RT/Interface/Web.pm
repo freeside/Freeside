@@ -1930,6 +1930,9 @@ is true.
 
 =cut
 
+# change from stock: if txn custom fields are set but there's no content
+# or attachment, create a Touch txn instead of doing nothing
+
 sub ProcessUpdateMessage {
 
     my %args = (
