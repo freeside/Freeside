@@ -156,8 +156,8 @@ my %search_hash = ();
 $search_hash{'query'} = $cgi->keywords;
 
 #scalars
-for (qw( agentnum cust_main_salesnum salesnum custnum magic status custom
-         cust_fields pkgbatch
+for (qw( agentnum cust_status cust_main_salesnum salesnum custnum magic status
+         custom cust_fields pkgbatch
     )) 
 {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));

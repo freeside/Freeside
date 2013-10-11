@@ -4179,6 +4179,14 @@ sub search {
   }
 
   ##
+  # parse cust_status
+  ##
+
+  if ( $params->{'cust_status'} =~ /^([a-z]+)$/ ) {
+    push @where, FS::cust_main->cust_status_sql . " = '$1' ";
+  }
+
+  ##
   # parse customer sales person
   ##
 

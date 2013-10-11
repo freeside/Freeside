@@ -13,12 +13,17 @@
     </TR>
 
 % unless ( $custnum ) {
-    <% include( '/elements/tr-select-agent.html',
+
+    <& /elements/tr-select-agent.html,
                    'curr_value'    => scalar( $cgi->param('agentnum') ),
                    'disable_empty' => 0,
                    'onchange'      => 'agent_changed(this)',
-               )
-    %>
+    &>
+
+    <& /elements/tr-select-cust_main-status.html,
+         'label' => 'Customer status',
+         'field' => 'cust_status',
+    &>
 
     <SCRIPT TYPE="text/javascript">
 
@@ -55,6 +60,7 @@
     &>
 
     <% include( '/elements/tr-select-cust_pkg-status.html',
+                  'label'    => 'Package status',
                   'onchange' => 'status_changed(this);',
               )
     %>
