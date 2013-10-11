@@ -4,15 +4,53 @@
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
-<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
 % unless ( $custnum ) {
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left">
+        <FONT SIZE="+1">Customer search options</FONT>
+      </TH>
+    </TR>
+
   <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar( $cgi->param('agentnum') ),
-                 'label'         => emt('Invoices for agent: '),
+                 'label'         => emt('Agent'),
                  'disable_empty' => 0,
   &>
+
+  <& /elements/tr-select-cust_class.html,
+      label         => mt('Customer Class'),
+      field         => 'cust_classnum',
+      multiple      => 1,
+     'pre_options'  => [ '' => emt('(none)') ],
+     'all_selected' => 1,
+  &>
+
+%   if ( $cust_main ) {
+    <INPUT TYPE="hidden" NAME="payby" VALUE="<% $cust_main->payby %>">
+%   } else {
+    <& /elements/tr-select-payby.html,
+                  label   => emt('Payment method:'),
+                  payby_type   => 'cust',
+                  multiple     => 1,
+                  all_selected => 1,
+    &>
 % }
+
+  </TABLE>
+  <BR>
+
+% }
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left">
+        <FONT SIZE="+1">Invoice search options</FONT>
+      </TH>
+    </TR>
 
   <& /elements/tr-input-beginning_ending.html &>
 
@@ -25,17 +63,6 @@
                 label   => emt('Owed'),
                 field   => 'owed',
   &>
-
-% if ( $cust_main ) {
-  <INPUT TYPE="hidden" NAME="payby" VALUE="<% $cust_main->payby %>">
-% } else {
-  <& /elements/tr-select-payby.html,
-                label   => emt('Payment method:'),
-                payby_type   => 'cust',
-                multiple     => 1,
-                all_selected => 1,
-  &>
-% }
 
 % if ( $conf->exists('cust_bill-enable_promised_date') ) {
   <TR>
@@ -53,6 +80,18 @@
   </TR>
 % }
 
+</TABLE>
+<BR>
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH CLASS="background" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Display options</FONT>
+    </TH>
+  </TR>
+
+
 <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD><% mt('Show only open invoices') |h %></TD>
@@ -64,7 +103,6 @@
     <TD><% mt('Show only the single most recent invoice per-customer') |h %></TD>
   </TR>
 % }
-
 
 </TABLE>
 
