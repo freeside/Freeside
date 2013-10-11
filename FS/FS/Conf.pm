@@ -934,7 +934,19 @@ sub reason_type_options {
     'type'        => 'text',
     'per_agent'   => 1,
   },
-  
+
+  {
+    'key'         => 'billco-account_num',
+    'section'     => 'billing',
+    'description' => 'The data to place in the "Transaction Account No" / "TRACCTNUM" field.',
+    'type'        => 'select',
+    'select_hash' => [
+                       'invnum-date' => 'Invoice number - Date (default)',
+                       'display_custnum'  => 'Customer number',
+                     ],
+    'per_agent'   => 1,
+  },
+
   {
     'key'         => 'next-bill-ignore-time',
     'section'     => 'billing',
