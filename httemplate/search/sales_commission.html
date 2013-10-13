@@ -1,17 +1,22 @@
+% if ( $salesnum ) {
+<% $cgi->redirect($sales_link->[0] . $salesnum) %>
+% } else {
 <& elements/search.html,
      'title'         => $title,
      'name_singular' => 'sales person',
-#     'redirect'      => sub { #my( $sales, $cgi ) = @);
-#                              $saleslink;
-#                            },
-     'header'        => [ 'Sales person', 'Sales', 'Commission', ],
-     'fields'        => [ 'salesperson', $sales_sub, $commission_sub, ],
-     'links'         => [ '', $sales_link, $commission_link ],
-     'align'         => 'lrr',
-     'query'         => { 'table' => 'sales', },
-     'count_query'   => 'SELECT COUNT(*) FROM sales',
+     'header'        => [ 'Sales person', 'One-Time Sales', 'Recurring Sales', 'Commission', ],
+     'fields'        => [ 'salesperson',
+                          $sales_sub_maker->('setup'),
+                          $sales_sub_maker->('recur'),
+                          $commission_sub,
+                        ],
+     'links'         => [ '', $sales_link, $sales_link, $commission_link ],
+     'align'         => 'lrrr',
+     'query'         => \%query,
+     'count_query'   => $count_query,
      'disableable'   => 1,
 &>
+% }
 <%init>
 
 die "access denied"
@@ -24,6 +29,14 @@ my $money_char = $conf->config('money_char') || '$';
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
 
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my %query = ( 'table' => 'sales' );
+my $count_query = "SELECT COUNT(*) FROM sales";
+
+my $salesnum;
+if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
+  $salesnum = $1;
+}
 
 my $title = 'Sales person commission';
 $title .= ': '. time2str($date_format, $beginning). ' to '.
@@ -40,19 +53,22 @@ my $sales_link = [ 'sales_pkg_class.html?'.
                    'salesnum'
                  ];
 
-my $sales_sub = sub {
-  my $sales = shift;
+my $sales_sub_maker = sub {
+  my $field = shift;
+  sub {
+    my $sales = shift;
 
-  #efficiency improvement: ask the db for a sum instead of all the records
-  my $total_recur = 0;
-  my @cust_bill_pkg = $sales->cust_bill_pkg(
-    $beginning,
-    $ending,
-    'cust_main_sales' => $cust_main_sales,
-  );
-  $total_recur += $_->recur foreach @cust_bill_pkg;
+    #efficiency improvement: ask the db for a sum instead of all the records
+    my $total = 0;
+    my @cust_bill_pkg = $sales->cust_bill_pkg(
+      $beginning,
+      $ending,
+      'cust_main_sales' => $cust_main_sales,
+    );
+    $total += $_->get($field) foreach @cust_bill_pkg;
 
-  $money_char. sprintf('%.2f', $total_recur);
+    $money_char. sprintf('%.2f', $total);
+  };
 };
 
 my $commission_sub = sub {
