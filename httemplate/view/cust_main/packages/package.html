@@ -21,17 +21,21 @@
       <TD COLSPAN=2>
         <FONT SIZE=-1>
 
-%         unless ( $cust_pkg->get('cancel') || $opt{no_links} ) {
+%         if ( $part_pkg->freq eq '0' and !$opt{no_links} ) {
+%           # One-time charge.  Nothing you can do with this, unless:
+%           if ( $curuser->access_right('Modify one-time charge') ) {
+                (&nbsp;<%onetime_change_link($cust_pkg)%>&nbsp;)
+                <BR>
+%           }
 %
+%         } elsif ( !$cust_pkg->get('cancel') and !$opt{no_links} ) {
+%           
 %           if ( $change_from ) {
 %             # This is the target package for a future change.
 %             # Nothing you can do with it besides modify/cancel the 
 %             # future change, and that's on the current package.
-%           } elsif ( $supplemental or $part_pkg->freq eq '0' ) {
-%             # Supplemental packages can't be changed independently.
-%             # One-time charges don't need to be changed.
-%             # For both of those, we only show "Edit dates", "Add comments",
-%             # and "Add invoice details".
+%           } elsif ( $supplemental ) {
+%             # Show only "Add comments" and "Add invoice details".
 %             if ( $curuser->access_right('Edit customer package dates') ) {
                 (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
 %             }
@@ -325,6 +329,19 @@ sub pkg_change_link {
     'cust_pkg'    => $cust_pkg,
     'width'       => 960,
     'height'      => 490,
+  );
+}
+
+sub onetime_change_link {
+  my $cust_pkg = shift;
+  my $pkgnum = $cust_pkg->pkgnum;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p. "edit/quick-charge.html?change_pkgnum=$pkgnum",
+    'label'       => emt('Modify one-time charge'),
+    'actionlabel' => emt('Modify'),
+    'cust_pkg'    => $cust_pkg,
+    'width'       => 690,
+    'height'      => 380,
   );
 }
 

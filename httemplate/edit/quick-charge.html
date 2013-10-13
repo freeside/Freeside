@@ -104,6 +104,49 @@ function bill_now_changed (what) {
 
 <TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
+% if ( $cust_pkg ) {
+
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $cust_pkg->pkgnum %>">
+<& /elements/tr-fixed.html,
+  label => 'Amount',
+  field => 'amount',
+  value => $money_char . sprintf('%.2f',$part_pkg->option('setup_fee')),
+&>
+
+%   if ( $conf->exists('invoice-unitprice') ) {
+<& /elements/tr-fixed.html,
+  label => 'Quantity',
+  field => 'quantity',
+  value => $cust_pkg->quantity
+&>
+%   }
+
+<& /elements/tr-select-pkg_class.html, 'curr_value' => $classnum  &>
+
+% # crudely estimate whether any agent commission credits might exist
+%   my @events = grep { $_->part_event->action =~ /credit/ }
+%                $cust_pkg->cust_event;
+%   if ( scalar @events ) {
+<TR><TD></TD>
+  <TD><INPUT TYPE="checkbox" NAME="adjust_commission" VALUE="Y" CHECKED>
+<% emt('Adjust commission credits if necessary') %>
+</TD>
+</TR>
+%   }
+
+% #display the future or past charge date, but don't allow changes
+% # XXX we probably _could_ let as-yet unbilled charges be rescheduled, but
+% # there's no compelling need yet
+%   if ( $cust_pkg->setup or $cust_pkg->start_date ) {
+%     my $label = $cust_pkg->setup ? emt('Billed on') : emt('Will be billed');
+%     my $field = $cust_pkg->setup ? 'setup' : 'start_date';
+      <& /elements/tr-fixed-date.html,
+        label => $label,
+        value => $cust_pkg->get($field)
+      &>
+%   } # else we don't show anything here
+% } else { # new one-time charge
+
 <TR>
   <TD ALIGN="right"><% mt('Amount') |h %> </TD>
   <TD>
@@ -117,7 +160,7 @@ function bill_now_changed (what) {
   </TD>
 </TR>
 
-% if ( $conf->exists('invoice-unitprice') ) {
+%   if ( $conf->exists('invoice-unitprice') ) {
     <TR>
       <TD ALIGN="right"><% mt('Quantity') |h %> </TD>
       <TD>
@@ -128,9 +171,9 @@ function bill_now_changed (what) {
                onKeyPress = "return enable_quick_charge(event)">
       </TD>
     </TR>
-% }
+%   }
 
-<& /elements/tr-select-pkg_class.html, 'curr_value' => $cgi->param('classnum')  &>
+<& /elements/tr-select-pkg_class.html, 'curr_value' => $classnum  &>
 
 <TR>
   <TD ALIGN="right"><% mt('Invoice now') |h %></TD>
@@ -206,6 +249,8 @@ function bill_now_changed (what) {
 
 <& /elements/tr-select-taxoverride.html, 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override')  &>
 
+% } # if !$cust_pkg
+
 <TR>
   <TD ALIGN="right"><% mt('Description') |h %> </TD>
   <TD>
@@ -226,11 +271,7 @@ function bill_now_changed (what) {
 </TR>
 
 % my $row = 0;
-%   if ( $cgi->param('error') || $cgi->param('magic') ) {
-%     my $param = $cgi->Vars;
-%
-% for ( $row = 0; exists($param->{"description$row"}); $row++ ) { 
-
+% foreach (@description) {
     <TR>
       <TD></TD>
       <TD>
@@ -238,21 +279,25 @@ function bill_now_changed (what) {
                NAME       = "description<% $row %>"
                SIZE       = "60"
                MAXLENGTH  = "65"
-               VALUE      = "<% $param->{"description$row"} |h %>"
+               VALUE      = "<% $_ |h %>"
                rownum     = "<% $row %>"
                onKeyPress = "return enable_quick_charge(event)"
                onKeyUp    = "return possiblyAddRow(event)"
         >
       </TD>
     </TR>
-% } 
+% $row++;
 % } 
 
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% mt('Add one-time charge') |h %>" <% $cgi->param('error') ? '' :' DISABLED' %>>
+% my $label = $cust_pkg
+%             ? emt('Modify one-time charge')
+%             : emt('Add one-time charge');
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% $label %>" \
+<% ($cgi->param('error') || $cust_pkg) ? '' :' DISABLED' %>>
 
 </FORM>
 
@@ -329,9 +374,25 @@ my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 my $money_char = $conf->config('money_char') || '$';
 
-$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
-my $custnum = $1;
-my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } ); #XXX agent-virt
+my ($cust_main, $cust_pkg);
+if ( $cgi->param('change_pkgnum') ) {
+  # change an existing one-time charge
+  die "access denied"
+    unless $curuser->access_right('Modify one-time charge');
+
+  $cgi->param('change_pkgnum') =~ /^(\d+)$/ or die "illegal pkgnum";
+  $cust_pkg = FS::cust_pkg->by_key($1) or die "pkgnum $1 not found";
+  $cust_main = $cust_pkg->cust_main;
+} else {
+  $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+  $cust_main = FS::cust_main->by_key($1) or die "custnum $1 not found";
+}
+
+my $custnum = $cust_main->custnum;
+# agent-virt
+if (!exists($curuser->agentnums_href->{$cust_main->agentnum})) {
+  die "custnum $custnum not found";
+}
 
 my $format = "%m/%d/%Y %T %z (%Z)"; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = $cust_main->next_bill_date;
@@ -358,6 +419,31 @@ if ( $cust_main->invoice_terms ) {
   $default_terms = emt("Default ([_1])",
             ($conf->config('invoice_default_terms') || emt('Payable upon receipt'))
                       );
+}
+
+my @description;
+my %param = $cgi->Vars;
+for (my $i = 0; exists($param{"description$i"}); $i++) {
+  push @description, $param{"description$i"};
+}
+
+my $classnum;
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  $classnum = $1;
+}
+
+my $part_pkg;
+
+if ( $cust_pkg ) { # set defaults
+  $part_pkg = $cust_pkg->part_pkg;
+  $pkg ||= $part_pkg->pkg;
+  $classnum ||= $part_pkg->classnum;
+  if (!@description) {
+    for (my $i = 0; $i < ($part_pkg->option('additional_count',1) || 0); $i++) 
+    {
+      push @description, $part_pkg->option("additional_info$i",1);
+    }
+  }
 }
 
 </%init>
