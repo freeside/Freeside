@@ -1539,6 +1539,17 @@ sub cust_bill_pkg_recur {
   $cust_bill_pkg->recur;
 }
 
+=item unit_setup CUST_PKG
+
+Returns the setup fee for one unit of the package.
+
+=cut
+
+sub unit_setup {
+  my ($self, $cust_pkg) = @_;
+  $self->option('setup_fee') || 0;
+}
+
 =item format OPTION DATA
 
 Returns data formatted according to the function 'format' described
