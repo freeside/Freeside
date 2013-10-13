@@ -1243,13 +1243,14 @@ sub merge {
   }
 
   tie my %financial_tables, 'Tie::IxHash',
-    'cust_bill'      => 'invoices',
-    'cust_bill_void' => 'voided invoices',
-    'cust_statement' => 'statements',
-    'cust_credit'    => 'credits',
-    'cust_pay'       => 'payments',
-    'cust_pay_void'  => 'voided payments',
-    'cust_refund'    => 'refunds',
+    'cust_bill'         => 'invoices',
+    'cust_bill_void'    => 'voided invoices',
+    'cust_statement'    => 'statements',
+    'cust_credit'       => 'credits',
+    'cust_credit_void'  => 'voided credits',
+    'cust_pay'          => 'payments',
+    'cust_pay_void'     => 'voided payments',
+    'cust_refund'       => 'refunds',
   ;
    
   foreach my $table ( keys %financial_tables ) {
@@ -3730,6 +3731,19 @@ sub cust_credit_pkgnum {
                               'pkgnum'  => $pkgnum,
                             }
     );
+}
+
+=item cust_credit_void
+
+Returns all voided credits (see L<FS::cust_credit_void>) for this customer.
+
+=cut
+
+sub cust_credit_void {
+  my $self = shift;
+  map { $_ }
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit_void', { 'custnum' => $self->custnum } )
 }
 
 =item cust_pay

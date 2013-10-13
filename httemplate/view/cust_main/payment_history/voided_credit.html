@@ -1,0 +1,25 @@
+<DEL><% emt("Credit by [_1]", $cust_credit_void->otaker, $reason ) %>\
+<% $reason |h %></DEL>
+<I>
+<% emt("voided [_1]", time2str($date_format, $cust_credit_void->void_date) )%>
+% my $void_user = $cust_credit_void->void_access_user;
+% if ($void_user) {
+<% emt('by [_1]', $void_user->username) %>
+% }
+<% $void_reason |h %>
+</I>
+<%init>
+
+my( $cust_credit_void, %opt ) = @_;
+
+my $date_format = $opt{'date_format'} || '%m/%d/%Y';
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+#my $unvoid = ''; # not yet available
+my $reason = $cust_credit_void->reason;
+$reason = " ($reason)" if $reason;
+
+my $void_reason = $cust_credit_void->void_reason;
+$void_reason = " ($void_reason)" if $void_reason;
+</%init>

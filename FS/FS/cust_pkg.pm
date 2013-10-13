@@ -35,6 +35,8 @@ use FS::cust_pkg_discount;
 use FS::discount;
 use FS::UI::Web;
 use FS::sales;
+# for modify_charge
+use FS::cust_credit;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -2256,7 +2258,127 @@ sub set_salesnum {
   $self = $self->replace_old; # just to make sure
   $self->salesnum(shift);
   $self->replace;
+  # XXX this should probably reassign any credit that's already been given
 }
+
+=item modify_charge OPTIONS
+
+Change the properties of a one-time charge.  Currently the only properties
+that can be changed this way are those that have no impact on billing 
+calculations:
+- pkg: the package description
+- classnum: the package class
+- additional: arrayref of additional invoice details to add to this package
+
+If you pass 'adjust_commission' => 1, and the classnum changes, and there are
+commission credits linked to this charge, they will be recalculated.
+
+=cut
+
+sub modify_charge {
+  my $self = shift;
+  my %opt = @_;
+  my $part_pkg = $self->part_pkg;
+  my $pkgnum = $self->pkgnum;
+
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  return "Can't use modify_charge except on one-time charges"
+    unless $part_pkg->freq eq '0';
+
+  if ( length($opt{'pkg'}) and $part_pkg->pkg ne $opt{'pkg'} ) {
+    $part_pkg->set('pkg', $opt{'pkg'});
+  }
+
+  my %pkg_opt = $part_pkg->options;
+  if ( ref($opt{'additional'}) ) {
+    delete $pkg_opt{$_} foreach grep /^additional/, keys %pkg_opt;
+    my $i;
+    for ( $i = 0; exists($opt{'additional'}->[$i]); $i++ ) {
+      $pkg_opt{ "additional_info$i" } = $opt{'additional'}->[$i];
+    }
+    $pkg_opt{'additional_count'} = $i if $i > 0;
+  }
+
+  my $old_classnum;
+  if ( exists($opt{'classnum'}) and $part_pkg->classnum ne $opt{'classnum'} ) {
+    # remember it
+    $old_classnum = $part_pkg->classnum;
+    $part_pkg->set('classnum', $opt{'classnum'});
+  }
+
+  my $error = $part_pkg->replace( options => \%pkg_opt );
+  return $error if $error;
+
+  if (defined $old_classnum) {
+    # fix invoice grouping records
+    my $old_catname = $old_classnum
+                      ? FS::pkg_class->by_key($old_classnum)->categoryname
+                      : '';
+    my $new_catname = $opt{'classnum'}
+                      ? $part_pkg->pkg_class->categoryname
+                      : '';
+    if ( $old_catname ne $new_catname ) {
+      foreach my $cust_bill_pkg ($self->cust_bill_pkg) {
+        # (there should only be one...)
+        my @display = qsearch( 'cust_bill_pkg_display', {
+            'billpkgnum'  => $cust_bill_pkg->billpkgnum,
+            'section'     => $old_catname,
+        });
+        foreach (@display) {
+          $_->set('section', $new_catname);
+          $error = $_->replace;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+        }
+      } # foreach $cust_bill_pkg
+    }
+
+    if ( $opt{'adjust_commission'} ) {
+      # fix commission credits...tricky.
+      foreach my $cust_event ($self->cust_event) {
+        my $part_event = $cust_event->part_event;
+        foreach my $table (qw(sales agent)) {
+          my $class =
+            "FS::part_event::Action::Mixin::credit_${table}_pkg_class";
+          my $credit = qsearchs('cust_credit', {
+              'eventnum' => $cust_event->eventnum,
+          });
+          if ( $part_event->isa($class) ) {
+            # Yes, this results in current commission rates being applied 
+            # retroactively to a one-time charge.  For accounting purposes 
+            # there ought to be some kind of time limit on doing this.
+            my $amount = $part_event->_calc_credit($self);
+            if ( $credit and $credit->amount ne $amount ) {
+              # Void the old credit.
+              $error = $credit->void('Package class changed');
+              if ( $error ) {
+                $dbh->rollback if $oldAutoCommit;
+                return "$error (adjusting commission credit)";
+              }
+            }
+            # redo the event action to recreate the credit.
+            local $@ = '';
+            eval { $part_event->do_action( $self, $cust_event ) };
+            if ( $@ ) {
+              $dbh->rollback if $oldAutoCommit;
+              return $@;
+            }
+          } # if $part_event->isa($class)
+        } # foreach $table
+      } # foreach $cust_event
+    } # if $opt{'adjust_commission'}
+  } # if defined $old_classnum
+
+  $dbh->commit if $oldAutoCommit;
+  '';
+}
+
+
 
 use Storable 'thaw';
 use MIME::Base64;
