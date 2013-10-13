@@ -146,6 +146,7 @@ sub cust_bill_pkg {
   }
 
   qsearch({ 'table'     => 'cust_bill_pkg',
+            'select'    => 'cust_bill_pkg.*',
             'addl_from' => ' LEFT JOIN cust_bill USING ( invnum ) '.
                            ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
                            ' LEFT JOIN part_pkg  USING ( pkgpart ) '.

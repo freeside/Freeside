@@ -1,10 +1,16 @@
 <& elements/search.html,
      'title'         => $title,
      'name_singular' => 'package class',
-     'header'        => [ 'Package class', 'Sales', 'Commission', ],
-     'fields'        => [ 'classname', $sales_sub, $commission_sub, ],
-     'links'         => [ '', $sales_link, $commission_link ],
-     'align'         => 'lrr',
+     'header'        => [ 'Package class',
+                          'One-Time Sales',
+                          'Recurring Sales',
+                          'Commission', ],
+     'fields'        => [ 'classname',
+                          $sales_sub_maker->('setup'),
+                          $sales_sub_maker->('recur'),
+                          $commission_sub, ],
+     'links'         => [ '', '', '', $commission_link ],
+     'align'         => 'lrrr',
      'query'         => { 'table'   => 'sales_pkg_class',
                           'hashref' => { 'salesnum' => $salesnum },
                         },
@@ -45,20 +51,23 @@ my $sales_link = [ 'cust_bill_pkg.cgi?'.
                    'classnum'
                  ];
 
-my $sales_sub = sub {
-  my $sales_pkg_class = shift;
+my $sales_sub_maker = sub {
+  my $field = shift;
+  sub {
+    my $sales_pkg_class = shift;
 
-  #efficiency improvement: ask the db for a sum instead of all the records
-  my $total_recur = 0;
-  my @cust_bill_pkg = $sales->cust_bill_pkg(
-    $beginning,
-    $ending,
-    'cust_main_sales' => $cust_main_sales,
-    'classnum'        => $sales_pkg_class->classnum,
-  );
-  $total_recur += $_->recur foreach @cust_bill_pkg;
+    #efficiency improvement: ask the db for a sum instead of all the records
+    my $total = 0;
+    my @cust_bill_pkg = $sales->cust_bill_pkg(
+      $beginning,
+      $ending,
+      'cust_main_sales' => $cust_main_sales,
+      'classnum'        => $sales_pkg_class->classnum,
+    );
+    $total += $_->get($field) foreach @cust_bill_pkg;
 
-  $money_char. sprintf('%.2f', $total_recur);
+    $money_char. sprintf('%.2f', $total);
+  };
 };
 
 my $commission_sub = sub {
