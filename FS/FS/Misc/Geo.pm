@@ -6,6 +6,7 @@ use vars qw( $DEBUG @EXPORT_OK );
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common qw( GET POST );
+use HTTP::Cookies;
 use HTML::TokeParser;
 use URI::Escape 3.31;
 use Data::Dumper;
@@ -41,13 +42,13 @@ sub get_censustract {
   my $return = {};
   my $error = '';
 
-  my $ua = new LWP::UserAgent;
+  my $ua = new LWP::UserAgent('cookie_jar' => HTTP::Cookies->new);
   my $res = $ua->request( GET( $url ) );
 
   warn $res->as_string
     if $DEBUG > 1;
 
-  unless ($res->code  eq '200') {
+  if (!$res->is_success) {
 
     $error = $res->message;
 
@@ -67,7 +68,7 @@ sub get_censustract {
       last if $viewstate && $eventvalidation;
     }
 
-    unless ($viewstate && $eventvalidation ) {
+    if (!$viewstate or !$eventvalidation ) {
 
       $error = "either no __VIEWSTATE or __EVENTVALIDATION found";
 
@@ -79,6 +80,7 @@ sub get_censustract {
       my @ffiec_args = (
         __VIEWSTATE => $viewstate,
         __EVENTVALIDATION => $eventvalidation,
+        __VIEWSTATEENCRYPTED => '',
         ddlbYear    => $year,
         txtAddress  => $location->{address1},
         txtCity     => $location->{city},  
