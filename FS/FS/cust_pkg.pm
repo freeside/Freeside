@@ -48,9 +48,7 @@ use FS::svc_forward;
 # for sending cancel emails in sub cancel
 use FS::Conf;
 
-our ($disable_agentcheck, $DEBUG, $me) = (undef, 0, '[FS::cust_pkg]');
-
-$disable_agentcheck = 0;
+our ($disable_agentcheck, $DEBUG, $me) = (0, 0, '[FS::cust_pkg]');
 
 sub _cache {
   my $self = shift;
