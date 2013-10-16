@@ -4,7 +4,6 @@ use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::m2m_Common FS::option_Common );
 
 use strict;
-use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
 use List::Util qw(min max);
@@ -49,8 +48,7 @@ use FS::svc_forward;
 # for sending cancel emails in sub cancel
 use FS::Conf;
 
-$DEBUG = 0;
-$me = '[FS::cust_pkg]';
+our ($disable_agentcheck, $DEBUG, $me) = (undef, 0, '[FS::cust_pkg]');
 
 $disable_agentcheck = 0;
 
@@ -318,6 +316,7 @@ sub insert {
   # set start date that many days in the future.
   # (this should have been set in the UI, but enforce it here)
   if (    ! $options{'change'}
+       && ! $options{'import'}
        && ( my $free_days = $part_pkg->option('free_days',1) )
        && $part_pkg->option('delay_setup',1)
        #&& ! $self->start_date
@@ -326,7 +325,8 @@ sub insert {
     $self->start_date( $part_pkg->default_start_date );
   }
 
-  $self->order_date(time);
+  # set order date unless it was specified as part of an import
+  $self->order_date(time) unless $options{'import'} && $self->order_date;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -392,7 +392,7 @@ sub insert {
                );
   }
 
-  if ($conf->config('welcome_letter') && $self->cust_main->num_pkgs == 1) {
+  if (! $options{'import'} && $conf->config('welcome_letter') && $self->cust_main->num_pkgs == 1) {
     my $queue = new FS::queue {
       'job'     => 'FS::cust_main::queueable_print',
     };
