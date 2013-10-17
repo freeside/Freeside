@@ -131,35 +131,78 @@ sub sales_cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->sales_custnum } );
 }
 
-sub cust_bill_pkg {
+=item cust_bill_pkg START END OPTIONS
+
+Returns the package line items (see L<FS::cust_bill_pkg>) for which this 
+sales person could receive commission.
+
+START and END are an optional date range to limit the results.
+
+OPTIONS may contain:
+- I<cust_main_sales>: if this is a true value, sales of packages that have no
+package sales person will be included if this is their customer sales person.
+- I<classnum>: limit to this package classnum.
+- I<paid>: limit to sales that have no unpaid balance.
+
+=cut
+
+sub cust_bill_pkg_search {
   my( $self, $sdate, $edate, %search ) = @_;
 
   my $cmp_salesnum = delete $search{'cust_main_sales'}
                        ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
                        : ' cust_pkg.salesnum ';
 
+  my $salesnum = $self->salesnum;
+  die "bad salesnum" unless $salesnum =~ /^(\d+)$/;
+  my @where = ( "$cmp_salesnum    = $salesnum",
+                "sales_pkg_class.salesnum = $salesnum"
+              );
+  push @where, "cust_bill._date >= $sdate" if $sdate;
+  push @where, "cust_bill._date  < $edate" if $edate;
+
   my $classnum_sql = '';
   if ( exists( $search{'classnum'}  ) ) {
-    my $classnum = $search{'classnum'};
-    $classnum_sql = " AND part_pkg.classnum ". ( $classnum ? " = $classnum "
-                                                           : ' IS NULL '     );
+    my $classnum = $search{'classnum'} || '';
+    die "bad classnum" unless $classnum =~ /^(\d*)$/;
+
+    push @where,
+      "part_pkg.classnum ". ( $classnum ? " = $classnum " : ' IS NULL ' );
   }
 
-  qsearch({ 'table'     => 'cust_bill_pkg',
-            'select'    => 'cust_bill_pkg.*',
-            'addl_from' => ' LEFT JOIN cust_bill USING ( invnum ) '.
-                           ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
-                           ' LEFT JOIN part_pkg  USING ( pkgpart ) '.
-                           ' LEFT JOIN cust_main ON ( cust_pkg.custnum = cust_main.custnum )',
-            'extra_sql' => ( keys %{ $search{'hashref'} }
-                               ? ' AND ' : 'WHERE '
-                           ).
-                           "     cust_bill._date >= $sdate ".
-                           " AND cust_bill._date  < $edate ".
-                           " AND $cmp_salesnum = ". $self->salesnum.
-                           $classnum_sql,
-            #%search,
-         });
+  # sales_pkg_class number-of-months limit, grr
+  # (we should be able to just check for the cust_event record from the 
+  # commission credit, but the report is supposed to act as a check on that)
+  #
+  # Pg-specific, of course
+  my $setup_date = 'TO_TIMESTAMP( cust_pkg.setup )';
+  my $interval = "(sales_pkg_class.commission_duration || ' months')::interval";
+  my $charge_date = 'TO_TIMESTAMP( cust_bill._date )';
+  push @where, "CASE WHEN sales_pkg_class.commission_duration IS NOT NULL ".
+               "THEN $charge_date < $setup_date + $interval ".
+               "ELSE TRUE END";
+
+  if ( $search{'paid'} ) {
+    push @where, FS::cust_bill_pkg->owed_sql . ' <= 0.005';
+  }
+
+  my $extra_sql = "WHERE ".join(' AND ', map {"( $_ )"} @where);
+
+  { 'table'     => 'cust_bill_pkg',
+    'select'    => 'cust_bill_pkg.*',
+    'addl_from' => ' LEFT JOIN cust_bill USING ( invnum ) '.
+                   ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
+                   ' LEFT JOIN part_pkg  USING ( pkgpart ) '.
+                   ' LEFT JOIN cust_main ON ( cust_pkg.custnum = cust_main.custnum )'.
+                   ' JOIN sales_pkg_class ON ( '.
+                   ' COALESCE( sales_pkg_class.classnum, 0) = COALESCE( part_pkg.classnum, 0) )',
+    'extra_sql' => $extra_sql,
+ };
+}
+
+sub cust_bill_pkg {
+  my $self = shift;
+  qsearch( $self->cust_bill_pkg_search(@_) )
 }
 
 sub cust_credit {
