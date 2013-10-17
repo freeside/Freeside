@@ -1,7 +1,6 @@
 package FS::cust_main::Packages;
 
 use strict;
-use vars qw( $DEBUG $me );
 use List::Util qw( min );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
@@ -10,8 +9,7 @@ use FS::cust_svc;
 use FS::contact;       # for attach_pkgs
 use FS::cust_location; #
 
-$DEBUG = 0;
-$me = '[FS::cust_main::Packages]';
+our ($DEBUG, $me) = (0, '[FS::cust_main::Packages]');
 
 =head1 NAME
 
@@ -89,7 +87,7 @@ sub order_pkg {
     if exists($opt->{'depend_jobnum'}) && $opt->{'depend_jobnum'};
 
   my %insert_params = map { $opt->{$_} ? ( $_ => $opt->{$_} ) : () }
-                          qw( ticket_subject ticket_queue allow_pkgpart );
+                          qw( ticket_subject ticket_queue allow_pkgpart import );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -228,7 +226,8 @@ Services can be new, in which case they are inserted, or existing unaudited
 services, in which case they are linked to the newly-created package.
 
 Currently available options are: I<depend_jobnum>, I<noexport>, I<seconds_ref>,
-I<upbytes_ref>, I<downbytes_ref>, and I<totalbytes_ref>.
+I<upbytes_ref>, I<downbytes_ref>, I<totalbytes_ref>, I<allow_pkgpart>, and
+I<import>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
@@ -244,6 +243,8 @@ reexported.)
 If I<seconds_ref>, I<upbytes_ref>, I<downbytes_ref>, or I<totalbytes_ref> is
 provided, the scalars (provided by references) will be incremented by the
 values of the prepaid card.`
+
+I<allow_pkgpart> and I<import> are flags passed to L<FS::cust_pkg>->insert.
 
 =cut
 
@@ -277,7 +278,7 @@ sub order_pkgs {
       'cust_pkg'     => $cust_pkg,
       'svcs'         => $cust_pkgs->{$cust_pkg},
       map { $_ => $options{$_} }
-        qw( seconds_ref upbytes_ref downbytes_ref totalbytes_ref depend_jobnum )
+        qw( seconds_ref upbytes_ref downbytes_ref totalbytes_ref depend_jobnum allow_pkgpart import )
     );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
