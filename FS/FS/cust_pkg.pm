@@ -4283,6 +4283,24 @@ boolean; if true, returns only packages with more than 0 FCC phone lines.
 Limit to packages with a service location in the specified state and country.
 For FCC 477 reporting, mostly.
 
+=item location_cust
+
+Limit to packages whose service location is the same as the customer's 
+default service location.
+
+=item location_nocust
+
+Limit to packages whose service location is not the customer's default 
+service location.
+
+=item location_census
+
+Limit to packages whose service location has a census tract.
+
+=item location_nocensus
+
+Limit to packages whose service location doesn't have a census tract.
+
 =back
 
 =cut
@@ -4512,6 +4530,18 @@ sub search {
       # XXX post-2.3 only--before that, state/country may be in cust_main
       push @where, "cust_location.$_ = '$1'";
     }
+  }
+
+  ###
+  # location_* flags
+  ###
+  if ( $params->{location_cust} xor $params->{location_nocust} ) {
+    my $op = $params->{location_cust} ? '=' : '!=';
+    push @where, "cust_location.locationnum $op cust_main.ship_locationnum";
+  }
+  if ( $params->{location_census} xor $params->{location_nocensus} ) {
+    my $op = $params->{location_census} ? "IS NOT NULL" : "IS NULL";
+    push @where, "cust_location.censustract $op";
   }
 
   ###
