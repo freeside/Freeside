@@ -8,11 +8,7 @@
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left">
-        <FONT SIZE="+1">Customer search options</FONT>
-      </TH>
-    </TR>
+    <& /elements/tr-title.html, value => mt('Customer search options') &>
 
     <& /elements/tr-select-agent.html,
                    'curr_value'    => scalar( $cgi->param('agentnum') ),
@@ -56,11 +52,7 @@
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left">
-        <FONT SIZE="+1">Package search options</FONT>
-      </TH>
-    </TR>
+    <& /elements/tr-title.html, value => mt('Package search options') &>
 
     <& /elements/tr-select-sales.html,
                   'label'         => 'Package sales person',
@@ -70,11 +62,10 @@
                   'disable_empty' => 1,
     &>
 
-    <% include( '/elements/tr-select-cust_pkg-status.html',
+    <& /elements/tr-select-cust_pkg-status.html,
                   'label'    => 'Package status',
                   'onchange' => 'status_changed(this);',
-              )
-    %>
+    &>
 
     <SCRIPT TYPE="text/javascript">
   
@@ -120,23 +111,21 @@
 
     </SCRIPT>
 
-    <% include( '/elements/tr-select-pkg_class.html',
+    <& /elements/tr-select-pkg_class.html,
                    'pre_options' => [ '0' => 'all' ],
                    'empty_label' => '(empty class)',
-               )
-    %>
+    &>
 
 %   if ( scalar( qsearch( 'part_pkg_report_option', { 'disabled' => '' } ) ) ) {
 
-    <% include( '/elements/tr-select-table.html',
+    <& /elements/tr-select-table.html,
                    'label'        => 'Report classes',
                    'table'        => 'part_pkg_report_option',
                    'name_col'     => 'name',
                    'hashref'      => { 'disabled' => '' },
                    'element_name' => 'report_option',
                    'multiple'     => 'multiple',
-               )
-    %>
+    &>
 
 %   }
     <TR>
@@ -189,24 +178,33 @@
 
     </SCRIPT>
 
-    <% include( '/elements/tr-checkbox.html',
+    <& /elements/tr-checkbox.html,
                 'label' => 'Custom packages',
                 'field' => 'custom',
                 'value' => 1,
                 'onchange' => 'custom_changed(this);',
-              )
-    %> 
+    &> 
 
-    <% include( '/elements/tr-selectmultiple-part_pkg.html' ) %> 
+    <& /elements/tr-selectmultiple-part_pkg.html &> 
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
-    </TR>
+    <& /elements/tr-title.html, value => mt('Location search options') &>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
-    </TR>
-    <% include( '/elements/tr-select-cust-fields.html' ) %>
+%   my @location_options = qw(cust nocust census nocensus);
+    <& /elements/tr-checkbox-multiple.html,
+                'label'   => 'Where package location:',
+                'field'   => 'loc',
+                'options' => \@location_options,
+                'labels'  => { 'cust'     => "is the customer's default location",
+                               'nocust'   => "is not the customer's default location",
+                               'census'   => "has a census tract",
+                               'nocensus' => "does not have a census tract",
+                             },
+                'value'   => { map { $_ => 1 } @location_options },
+    &>
+
+    <& /elements/tr-title.html, value => mt('Display options') &>
+
+    <& /elements/tr-select-cust-fields.html &>
     
   </TABLE>
 
