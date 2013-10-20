@@ -155,9 +155,15 @@ unless ( driver_name =~ /^mysql/i ) {
 }
 
 if ( $opt_c ) {
+
   @statements =
     grep { $_ !~ /^ *ALTER +TABLE +(h_)?cdr /i }
          @statements;
+
+  @statements =
+    grep { $_ !~ /^ *CREATE +INDEX +(h_)?cdr\d+ /i }
+         @statements;
+
 }
 
 if ( $DRY_RUN ) {
