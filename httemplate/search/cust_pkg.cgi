@@ -175,6 +175,10 @@ for my $param (qw( censustract censustract2 )) {
     if grep { $_ eq $param } $cgi->param;
 }
 
+#location flags (checkboxes)
+my @loc = grep /^\w+$/, $cgi->param('loc');
+$search_hash{"location_$_"} = 1 foreach @loc;
+
 my $report_option = $cgi->param('report_option');
 $search_hash{report_option} = $report_option if $report_option;
 

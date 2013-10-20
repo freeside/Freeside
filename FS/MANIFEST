@@ -726,3 +726,5 @@ FS/invoice_conf.pm
 t/invoice_conf.t
 FS/cable_provider.pm
 t/cable_provider.t
+FS/cust_credit_void.pm
+t/cust_credit_void.t

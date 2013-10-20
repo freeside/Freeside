@@ -27,6 +27,7 @@ FS::Report::Table::Daily - Tables of report data, indexed daily
     'end_day'     => 27,
     #opt
     'agentnum'    => 54
+    'cust_classnum' => [ 1,2,4 ],
     'params'      => [ [ 'paramsfor', 'item_one' ], [ 'item', 'two' ] ], # ...
     'remove_empty' => 1, #collapse empty rows, default 0
     'item_labels' => [ ], #useful with remove_empty
@@ -54,6 +55,8 @@ sub data {
   my $emonth = $self->{'end_month'};
   my $eyear = $self->{'end_year'};
   my $agentnum = $self->{'agentnum'};
+  my $cust_classnum = $self->{'cust_classnum'} || [];
+  $cust_classnum = [ $cust_classnum ] if !ref($cust_classnum);
 
   my %data;
 
@@ -83,6 +86,7 @@ sub data {
     for ( $i = 0; $i < scalar(@items); $i++ ) {
 	  my $item = $items[$i];
 	  my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
+          push @param, 'cust_classnum' => $cust_classnum if @$cust_classnum;
 	  my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
 	  push @{$data{data}->[$col++]}, $value;
     }

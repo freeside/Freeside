@@ -1018,6 +1018,37 @@ sub tables_hashref {
                  ],
     },
 
+    'cust_credit_void' => {
+      'columns' => [
+        'crednum',  'serial',     '', '', '', '', 
+        'custnum',     'int',     '', '', '', '', 
+        '_date',  @date_type,             '', '', 
+        'amount',@money_type,             '', '', 
+        'currency',   'char', 'NULL',  3, '', '',
+        'otaker',  'varchar', 'NULL', 32, '', '', 
+        'usernum',     'int', 'NULL', '', '', '',
+        'reason',     'text', 'NULL', '', '', '', 
+        'reasonnum',   'int', 'NULL', '', '', '', 
+        'addlinfo',   'text', 'NULL', '', '', '',
+        'closed',     'char', 'NULL',  1, '', '', 
+        'pkgnum',      'int', 'NULL', '', '','',
+        'eventnum',    'int', 'NULL', '', '','',
+        'commission_agentnum', 'int', 'NULL', '', '', '',
+        'commission_salesnum', 'int', 'NULL', '', '', '',
+        'commission_pkgnum',   'int', 'NULL', '', '', '',
+        #void fields
+        'void_date',  @date_type,                  '', '', 
+        'void_reason', 'varchar', 'NULL', $char_d, '', '', 
+        'void_usernum',    'int', 'NULL',      '', '', '',
+      ],
+      'primary_key' => 'crednum',
+      'unique' => [],
+      'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'],
+                   [ 'commission_salesnum' ],
+                 ],
+    },
+
+
     'cust_credit_bill' => {
       'columns' => [
         'creditbillnum', 'serial', '', '', '', '', 

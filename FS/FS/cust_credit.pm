@@ -21,6 +21,7 @@ use FS::reason;
 use FS::cust_event;
 use FS::agent;
 use FS::sales;
+use FS::cust_credit_void;
 
 $me = '[ FS::cust_credit ]';
 $DEBUG = 0;
@@ -203,6 +204,8 @@ the void method instead to leave a record of the deleted credit.
 # very similar to FS::cust_pay::delete
 sub delete {
   my $self = shift;
+  my %opt = @_;
+
   return "Can't delete closed credit" if $self->closed =~ /^Y/i;
 
   local $SIG{HUP} = 'IGNORE';
@@ -238,7 +241,7 @@ sub delete {
     return $error;
   }
 
-  if ( $conf->config('deletecredits') ne '' ) {
+  if ( !$opt{void} and $conf->config('deletecredits') ne '' ) {
 
     my $cust_main = $self->cust_main;
 
@@ -334,6 +337,53 @@ sub check {
   $self->_date(time) unless $self->_date;
 
   $self->SUPER::check;
+}
+
+=item void [ REASON ]
+
+Voids this credit: deletes the credit and all associated applications and 
+adds a record of the voided credit to the cust_credit_void table.
+
+=cut
+
+# yes, false laziness with cust_pay and cust_bill
+# but frankly I don't have time to fix it now
+
+sub void {
+  my $self = shift;
+  my $reason = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_credit_void = new FS::cust_credit_void ( {
+      map { $_ => $self->get($_) } $self->fields
+    } );
+  $cust_credit_void->set('void_reason', $reason);
+  my $error = $cust_credit_void->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $self->delete(void => 1); # suppress deletecredits warning
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item cust_credit_refund

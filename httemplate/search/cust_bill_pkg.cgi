@@ -283,24 +283,7 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
 
-# salesnum
-if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
-
-  my $salesnum = $1;
-
-  my $cmp_salesnum = $cgi->param('cust_main_sales')
-                       ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
-                       : ' cust_pkg.salesnum ';
-
-  push @where, "$cmp_salesnum = $salesnum";
-
-  #because currently we're called from sales_pkg_class.html for a specific
-  # class (or empty class) but not for all classes
-  #will have to do something to distinguish if someone wants the sales report
-  # (report_cust_bill_pkg.html) to have a sales person dropdown
-  $cgi->param('classnum', 0) unless $cgi->param('classnum');
-}
-
+# salesnum--see below
 # refnum
 if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.refnum = $1";
@@ -703,6 +686,28 @@ if ( $cgi->param('credit') ) {
 }
 
 push @select, 'cust_main.custnum', FS::UI::Web::cust_sql_fields();
+
+#salesnum
+if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
+
+  my $salesnum = $1;
+  my $sales = FS::sales->by_key($salesnum)
+    or die "salesnum $salesnum not found";
+
+  my $subsearch = $sales->cust_bill_pkg_search('', '',
+    'cust_main_sales' => ($cgi->param('cust_main_sales') ? 1 : 0),
+    'paid'            => ($cgi->param('paid') ? 1 : 0),
+    'classnum'        => scalar($cgi->param('classnum'))
+  );
+  $join_pkg .= " JOIN sales_pkg_class ON ( COALESCE(sales_pkg_class.classnum, 0) = COALESCE( part_pkg.classnum, 0) )";
+
+  my $extra_sql = $subsearch->{extra_sql};
+  $extra_sql =~ s/^WHERE//;
+  push @where, $extra_sql;
+
+  $cgi->param('classnum', 0) unless $cgi->param('classnum');
+}
+
 
 my $where = join(' AND ', @where);
 $where &&= "WHERE $where";

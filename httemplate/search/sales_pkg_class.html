@@ -1,10 +1,16 @@
 <& elements/search.html,
      'title'         => $title,
      'name_singular' => 'package class',
-     'header'        => [ 'Package class', 'Sales', 'Commission', ],
-     'fields'        => [ 'classname', $sales_sub, $commission_sub, ],
-     'links'         => [ '', $sales_link, $commission_link ],
-     'align'         => 'lrr',
+     'header'        => [ 'Package class',
+                          'One-Time Sales',
+                          'Recurring Sales',
+                          'Commission', ],
+     'fields'        => [ 'classname',
+                          $sales_sub_maker->('setup'),
+                          $sales_sub_maker->('recur'),
+                          $commission_sub, ],
+     'links'         => [ '', $sales_link, $sales_link, $commission_link ],
+     'align'         => 'lrrr',
      'query'         => { 'table'   => 'sales_pkg_class',
                           'hashref' => { 'salesnum' => $salesnum },
                         },
@@ -34,6 +40,9 @@ $title .= ': '. time2str($date_format, $beginning). ' to '.
   if $beginning;
 
 my $cust_main_sales = $cgi->param('cust_main_sales') eq 'Y' ? 'Y' : '';
+my $paid = $cgi->param('paid') ? 1 : 0;
+
+$title .= " - paid sales only" if $paid;
 
 my $sales_link = [ 'cust_bill_pkg.cgi?'.
                      "begin=$beginning;".
@@ -45,20 +54,22 @@ my $sales_link = [ 'cust_bill_pkg.cgi?'.
                    'classnum'
                  ];
 
-my $sales_sub = sub {
-  my $sales_pkg_class = shift;
-
-  #efficiency improvement: ask the db for a sum instead of all the records
-  my $total_recur = 0;
-  my @cust_bill_pkg = $sales->cust_bill_pkg(
-    $beginning,
-    $ending,
-    'cust_main_sales' => $cust_main_sales,
-    'classnum'        => $sales_pkg_class->classnum,
-  );
-  $total_recur += $_->recur foreach @cust_bill_pkg;
-
-  $money_char. sprintf('%.2f', $total_recur);
+my $sales_sub_maker = sub {
+  my $field = shift;
+  sub {
+    my $sales_pkg_class = shift;
+    # could be even more efficient but this is pretty good
+    my $search = $sales->cust_bill_pkg_search(
+      $beginning,
+      $ending,
+      'cust_main_sales' => $cust_main_sales,
+      'classnum'        => $sales_pkg_class->classnum,
+      'paid'            => $paid,
+    );
+    $search->{'select'} = "SUM(cust_bill_pkg.$field) AS total";
+    my $result = qsearchs($search);
+    $money_char. sprintf('%.2f', $result ? $result->get('total') : 0);
+  };
 };
 
 my $commission_sub = sub {
@@ -75,6 +86,15 @@ my $commission_sub = sub {
 
   $money_char. sprintf('%.2f', $total_credit);
 };
+
+my $sales_link = [ 'cust_bill_pkg.cgi?'.
+                    "begin=$beginning;".
+                    "end=$ending;".
+                    "cust_main_sales=$cust_main_sales;".
+                    "salesnum=$salesnum;".
+                    "classnum=",
+                   'classnum'
+                 ];
 
 my $commission_link = [ 'cust_credit.html?'.
                           "begin=$beginning;".
