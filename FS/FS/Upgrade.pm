@@ -132,6 +132,9 @@ sub upgrade {
   local $FS::UID::AutoCommit = 0;
   local $FS::UID::AutoCommit = 0;
 
+  local $FS::cust_pkg::upgrade = 1; #go away after setup+start dates cleaned up for old customers
+
+
   foreach my $table ( keys %$data ) {
 
     my $class = "FS::$table";

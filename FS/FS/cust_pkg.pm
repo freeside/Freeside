@@ -4,7 +4,7 @@ use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::m2m_Common FS::option_Common );
 
 use strict;
-use vars qw($disable_agentcheck $DEBUG $me);
+use vars qw( $disable_agentcheck $DEBUG $me $upgrade );
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
 use List::Util qw(min max);
@@ -53,6 +53,8 @@ $DEBUG = 0;
 $me = '[FS::cust_pkg]';
 
 $disable_agentcheck = 0;
+
+$upgrade = 0; #go away after setup+start dates cleaned up for old customers
 
 sub _cache {
   my $self = shift;
@@ -656,7 +658,7 @@ sub check {
   return $error if $error;
 
   return "A package with both start date (future start) and setup date (already started) will never bill"
-    if $self->start_date && $self->setup;
+    if $self->start_date && $self->setup && ! $upgrade;
 
   return "A future unsuspend date can only be set for a package with a suspend date"
     if $self->resume and !$self->susp and !$self->adjourn;
