@@ -4078,9 +4078,9 @@ and customer address. Include units.',
   {
     'key'         => 'census_year',
     'section'     => 'UI',
-    'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 for Year 2010 Census tract codes.  A selection of 2011 or 2010 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
+    'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 or 2013 for Year 2010 Census tract codes.  A selection of 2011 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
     'type'        => 'select',
-    'select_enum' => [ qw( 2012 2011 2010 ) ],
+    'select_enum' => [ qw( 2013 2012 2011 ) ],
   },
 
   {
