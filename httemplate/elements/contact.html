@@ -31,7 +31,7 @@
 %           'phonetypenum' => $1,
 %         });
 %         if ( $contact_phone ) {
-%           $value = $contact_phone->phonenum;
+%           $value = $contact_phone->phonenum_pretty;
 %           $value .= 'x'.$contact_phone->extension
 %             if $contact_phone->extension;
 %           $value = '+'. $contact_phone->countrycode. " $value"
