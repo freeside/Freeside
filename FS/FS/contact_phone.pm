@@ -124,14 +124,16 @@ sub check {
   ;
   return $error if $error;
 
+  #strip non-digits, UI should format numbers per countrycode
+  (my $phonenum = $self->phonenum ) =~ s/\D//g;
+  $self->phonenum($phonenum);
+
   $self->SUPER::check;
 }
 
 =back
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 
