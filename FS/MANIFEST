@@ -1,6 +1,5 @@
 Changes
 MANIFEST
-MANIFEST.SKIP
 Makefile.PL
 bin/freeside-addoutsource
 bin/freeside-addoutsourceuser
