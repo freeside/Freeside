@@ -131,6 +131,29 @@ sub check {
   $self->SUPER::check;
 }
 
+sub phonenum_pretty {
+  my $self = shift;
+
+  #until/unless we have the upgrade strip all whitespace
+  (my $phonenum = $self->phonenum ) =~ s/\D//g;
+
+  if ( $self->countrycode == 1 ) {
+
+    $phonenum =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
+      or return $self->phonenum; #wtf?
+
+    $phonenum = "($1) $2-$3";
+    $phonenum .= " x$4" if $4;
+    return $phonenum;
+
+  } else {
+    warn "don't know how to format phone numbers for country +". $self->countrycode;
+    #also, the UI doesn't have a good way for you to enter them yet or parse a countrycode from the number
+    return $self->phonenum;
+  }
+
+}
+
 =back
 
 =head1 BUGS
