@@ -90,6 +90,13 @@ sub check {
     $self->ut_numbern('towernum')
     || $self->ut_text('towername')
     || $self->ut_enum('disabled', [ '', 'Y' ])
+    || $self->ut_coordn('latitude')
+    || $self->ut_coordn('longitude')
+    || $self->ut_enum('coord_auto', [ '', 'Y' ])
+    || $self->ut_floatn('altitude')
+    || $self->ut_floatn('height')
+    || $self->ut_floatn('veg_height')
+    || $self->ut_alphan('color')
   ;
   return $error if $error;
 
