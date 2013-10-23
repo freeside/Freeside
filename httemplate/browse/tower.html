@@ -8,18 +8,22 @@
                  'count_query' => 'SELECT COUNT(*) FROM tower',
                  'disableable' => 1,
                  'disabled_statuspos' => 1,
-                 'header'      => [ 'Name', 'Sectors', 'Coordinates'],
+                 'header'      => [ 'Name', 'Location', 'Sectors', ],
                  'fields'      => [ $tower_sub,
-                                    $sector_sub,
                                     $coord_sub,
+                                    $sector_sub,
                                   ],
                  'links'       => [ ],
+                 'cell_style'    => [ $tagdesc_style ],
              )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+#false laziness w/ browse/part_tag.html
+my $tagdesc_style = sub { 'background-color:#'.shift->color };
 
 my $num_svc_links = sub {
   my ($query_string, $sectors) = @_;
@@ -57,7 +61,12 @@ my $coord_sub = sub {
 
   [
     [
-      { 'data' => "Latitude: " . $tower->latitude . "<br>Longitude: " . $tower->longitude, },
+      { 'data' => "Latitude: ".              $tower->latitude.
+                  "<br>Longitude: ".         $tower->longitude.
+                  "<br>Altitude: ".          $tower->altitude.
+                  "<br>Height: ".            $tower->height.
+                  "<br>Veg. height: ". $tower->veg_height,
+      },
       { 'data' => $coords, 'link' => "Coordinates", },
     ],
   ]
@@ -70,7 +79,7 @@ my $tower_sub = sub {
   );
   [ #rows
     [
-      { 'data' => $tower->towername, },
+      { 'data' => $tower->towername. '&nbsp;', },
       { 'data' => ' (edit) ', size => '-1', 
         'link' => $p.'edit/tower.html?' . $tower->towernum },
     ],
@@ -89,7 +98,7 @@ my $sector_sub = sub {
       my $sectornum = $sector->sectornum;
       [
         {
-          'data' => $sector->sectorname,
+          'data' => $sector->sectorname. '&nbsp;',
           'link' => ( $sector->ip_addr ? 'http://'. $sector->ip_addr : '' ),
         },
         

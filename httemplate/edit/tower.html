@@ -4,24 +4,32 @@
      viewall_dir   => 'browse',
      fields        => [ 'towername',
                         { field=>'disabled', type=>'checkbox', value=>'Y', },
-                        { field             => 'default_ip_addr',
+                        { field=>'color',    type=>'pickcolor' },
+                        { field               => 'default_ip_addr',
                           curr_value_callback => $default_ip_addr_callback },
+                        'latitude',
+                        'longitude',
+                        'altitude',
+                        'height',
+                        'veg_height',
                         { field             => 'sectornum',
                           type              => 'tower_sector',
                           o2m_table         => 'tower_sector',
                           m2_label          => 'Sector',
                           m2_error_callback => $m2_error_callback,
                         },
-                        'latitude',
-                        'longitude',
                       ],
-     labels        => { 'towernum'  => 'Tower',
-                        'towername' => 'Name',
-                        'sectornum' => 'Sector',
-                        'disabled'  => 'Disabled',
+     labels        => { 'towernum'        => 'Tower',
+                        'towername'       => 'Name',
+                        'sectornum'       => 'Sector',
+                        'disabled'        => 'Disabled',
                         'default_ip_addr' => 'Tower IP address',
-                        'latitude' => 'Latitude',
-                        'longitude' => 'Longitude',
+                        'latitude'        => 'Latitude',
+                        'longitude'       => 'Longitude',
+                        'altitude'        => 'Altitude',
+                        'height'          => 'Height',
+                        'veg_height'      => 'Vegetation height',
+                        'color'           => 'Color',
                       },
 &>
 <%init>
@@ -29,7 +37,7 @@
 my $m2_error_callback = sub { # reconstruct the list
   my ($cgi, $object) = @_;
 
-  my @fields = qw(sectorname ip_addr);
+  my @fields = qw( sectorname ip_addr height freq_mhz direction width range );
   map {
     my $k = $_;
     new FS::tower_sector {

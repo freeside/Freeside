@@ -3103,14 +3103,17 @@ sub tables_hashref {
 
     'tower' => {
       'columns' => [
-        'towernum',   'serial',     '',      '', '', '',
-        #'agentnum',      'int', 'NULL',      '', '', '',
-        'towername', 'varchar',     '', $char_d, '', '',
-        'disabled',     'char', 'NULL',       1, '', '',
-        'latitude', 'decimal', 'NULL',   '10,7', '', '', 
-        'longitude','decimal', 'NULL',   '10,7', '', '', 
-        'altitude', 'decimal', 'NULL',       '', '', '', 
-        'coord_auto',  'char', 'NULL',        1, '', '',
+        'towernum',    'serial',     '',      '', '', '',
+        #'agentnum',       'int', 'NULL',      '', '', '',
+        'towername',  'varchar',     '', $char_d, '', '',
+        'disabled',      'char', 'NULL',       1, '', '',
+        'latitude',   'decimal', 'NULL',  '10,7', '', '', 
+        'longitude',  'decimal', 'NULL',  '10,7', '', '', 
+        'coord_auto',    'char', 'NULL',       1, '', '',
+        'altitude',   'decimal', 'NULL',      '', '', '', 
+        'height',     'decimal', 'NULL',      '', '', '', 
+        'veg_height', 'decimal', 'NULL',      '', '', '', 
+        'color',      'varchar', 'NULL',       6, '', '',
       ],
       'primary_key' => 'towernum',
       'unique'      => [ [ 'towername' ] ], # , 'agentnum' ] ],
@@ -3123,6 +3126,12 @@ sub tables_hashref {
         'towernum',       'int',     '',      '', '', '',
         'sectorname', 'varchar',     '', $char_d, '', '',
         'ip_addr',    'varchar', 'NULL',      15, '', '',
+        'height',     'decimal', 'NULL',      '', '', '', 
+        'freq_mhz',       'int', 'NULL',      '', '', '',
+        'direction',      'int', 'NULL',      '', '', '',
+        'width',          'int', 'NULL',      '', '', '',
+        #downtilt etc? rfpath has profile files for devices/antennas you upload?
+        'range',      'decimal', 'NULL',      '', '', '',  #?
       ],
       'primary_key' => 'sectornum',
       'unique'      => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],

@@ -108,6 +108,11 @@ sub check {
     || $self->ut_number('towernum', 'tower', 'towernum')
     || $self->ut_text('sectorname')
     || $self->ut_textn('ip_addr')
+    || $self->ut_floatn('height')
+    || $self->ut_numbern('freq_mhz')
+    || $self->ut_numbern('direction')
+    || $self->ut_numbern('width')
+    || $self->ut_floatn('range')
   ;
   return $error if $error;
 
