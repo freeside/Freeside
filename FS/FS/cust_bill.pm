@@ -5393,7 +5393,8 @@ sub _items_payments {
     my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
     my $desc = $self->mt('Payment received').' '.
                time2str($date_format, $cust_pay->_date );
-    $desc .= $self->mt(' via ' . $cust_pay->payby_payinfo_pretty)
+    $desc .= $self->mt(' via ') .
+             $cust_pay->payby_payinfo_pretty( $self->cust_main->locale )
       if $detailed;
 
     push @b, {

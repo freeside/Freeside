@@ -234,7 +234,7 @@ sub payinfo_check {
 
 }
 
-=item payby_payinfo_pretty
+=item payby_payinfo_pretty [ LOCALE ]
 
 Returns payment method and information (suitably masked, if applicable) as
 a human-readable string, such as:
@@ -249,20 +249,23 @@ or
 
 sub payby_payinfo_pretty {
   my $self = shift;
+  my $locale = shift;
+  my $lh = FS::L10N->get_handle($locale);
   if ( $self->payby eq 'CARD' ) {
-    'Card #'. $self->paymask;
+    $lh->maketext('Card #') . $self->paymask;
   } elsif ( $self->payby eq 'CHEK' ) {
-    'E-check acct#'. $self->payinfo;
+    $lh->maketext('E-check acct#') . $self->payinfo;
   } elsif ( $self->payby eq 'BILL' ) {
-    'Check #'. $self->payinfo;
+    $lh->maketext('Check #') . $self->payinfo;
   } elsif ( $self->payby eq 'PREP' ) {
-    'Prepaid card #'. $self->payinfo;
+    $lh->maketext('Prepaid card #') . $self->payinfo;
   } elsif ( $self->payby eq 'CASH' ) {
-    'Cash '. $self->payinfo;
+    $lh->maketext('Cash') . ' ' . $self->payinfo;
   } elsif ( $self->payby eq 'WEST' ) {
-    'Western Union'; #. $self->payinfo;
+    # does Western Union localize their name?
+    $lh->maketext('Western Union');
   } elsif ( $self->payby eq 'MCRD' ) {
-    'Manual credit card'; #. $self->payinfo;
+    $lh->maketext('Manual credit card');
   } else {
     $self->payby. ' '. $self->payinfo;
   }
