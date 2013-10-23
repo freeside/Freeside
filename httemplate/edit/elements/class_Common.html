@@ -30,7 +30,13 @@ unless ( $opt{'nocat'} ) {
 
 my $fields = [   'classname',
         (scalar(@category)
-          ? { field=>'categorynum', type=>'select-table', 'empty_label'=>'(none)', 'table'=>$category_table, 'name_col'=>'categoryname' }
+          ? { field       => 'categorynum',
+              type        => 'select-table',
+              table       => $category_table,
+              hashref     => { 'disabled' => '' },
+              name_col    => 'categoryname',
+              empty_label => '(none)',
+            }
           : { field=>'categorynum', type=>'hidden' }
         ),
         { field=>'disabled', type=>'checkbox', value=>'Y', },
