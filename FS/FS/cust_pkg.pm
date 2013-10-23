@@ -292,35 +292,36 @@ sub insert {
 
   my $part_pkg = $self->part_pkg;
 
-  # if the package def says to start only on the first of the month:
-  if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
-    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
-    $mon += 1 unless $mday == 1;
-    until ( $mon < 12 ) { $mon -= 12; $year++; }
-    $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
-  }
-
-  # set up any automatic expire/adjourn/contract_end timers
-  # based on the start date
-  foreach my $action ( qw(expire adjourn contract_end) ) {
-    my $months = $part_pkg->option("${action}_months",1);
-    if($months and !$self->$action) {
-      my $start = $self->start_date || $self->setup || time;
-      $self->$action( $part_pkg->add_freq($start, $months) );
+  if (! $options{'import'}) {
+    # if the package def says to start only on the first of the month:
+    if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
+      my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
+      $mon += 1 unless $mday == 1;
+      until ( $mon < 12 ) { $mon -= 12; $year++; }
+      $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
     }
-  }
 
-  # if this package has "free days" and delayed setup fee, tehn 
-  # set start date that many days in the future.
-  # (this should have been set in the UI, but enforce it here)
-  if (    ! $options{'change'}
-       && ! $options{'import'}
-       && ( my $free_days = $part_pkg->option('free_days',1) )
-       && $part_pkg->option('delay_setup',1)
-       #&& ! $self->start_date
-     )
-  {
-    $self->start_date( $part_pkg->default_start_date );
+    # set up any automatic expire/adjourn/contract_end timers
+    # based on the start date
+    foreach my $action ( qw(expire adjourn contract_end) ) {
+      my $months = $part_pkg->option("${action}_months",1);
+      if($months and !$self->$action) {
+        my $start = $self->start_date || $self->setup || time;
+        $self->$action( $part_pkg->add_freq($start, $months) );
+      }
+    }
+
+    # if this package has "free days" and delayed setup fee, tehn 
+    # set start date that many days in the future.
+    # (this should have been set in the UI, but enforce it here)
+    if (    ! $options{'change'}
+         && ( my $free_days = $part_pkg->option('free_days',1) )
+         && $part_pkg->option('delay_setup',1)
+         #&& ! $self->start_date
+       )
+    {
+      $self->start_date( $part_pkg->default_start_date );
+    }
   }
 
   # set order date unless it was specified as part of an import
@@ -360,7 +361,7 @@ sub insert {
 
   my $conf = new FS::Conf;
 
-  if ( $conf->config('ticket_system') && $options{ticket_subject} ) {
+  if ( ! $options{'import'} && $conf->config('ticket_system') && $options{ticket_subject} ) {
 
     #this init stuff is still inefficient, but at least its limited to 
     # the small number (any?) folks using ticket emailing on pkg order
