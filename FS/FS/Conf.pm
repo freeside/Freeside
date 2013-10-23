@@ -5238,7 +5238,7 @@ and customer address. Include units.',
   {
     'key'         => 'svc_phone-did-summary',
     'section'     => 'invoicing',
-    'description' => 'Enable DID activity summary on invoices, showing # DIDs activated/deactivated/ported-in/ported-out and total minutes usage, covering period since last invoice.',
+    'description' => 'Experimental feature to enable DID activity summary on invoices, showing # DIDs activated/deactivated/ported-in/ported-out and total minutes usage, covering period since last invoice.',
     'type'        => 'checkbox',
   },
 
