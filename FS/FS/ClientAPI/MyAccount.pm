@@ -1026,7 +1026,7 @@ sub validate_payment {
 
   { 
     'cust_main'      => $cust_main, #XXX or just custnum??
-    'amount'         => $amount,
+    'amount'         => sprintf('%.2f', $amount),
     'payby'          => $payby,
     'payinfo'        => $payinfo,
     'paymask'        => $cust_main->mask_payinfo( $payby, $payinfo ),
