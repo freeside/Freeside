@@ -1,0 +1,34 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Discount classes',
+                 'html_init'   => $html_init,
+                 'name'        => 'discount classes',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 1,
+                 'query'       => { 'table'     => 'discount_class',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY classnum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  'Discount classes define reporing classifications for discounts.<BR><BR>'.
+  qq!<A HREF="${p}edit/discount_class.html"><I>Add a discount class</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM discount_class';
+
+my $link = [ $p.'edit/discount_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Class' ];
+my $fields = [ 'classnum', 'classname' ];
+my $links  = [ $link, $link ];
+
+</%init>
