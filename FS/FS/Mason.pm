@@ -357,6 +357,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::invoice_conf;
   use FS::cable_provider;
   use FS::cust_credit_void;
+  use FS::discount_class;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

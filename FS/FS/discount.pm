@@ -1,8 +1,9 @@
 package FS::discount;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::discount_class;
 
 =head1 NAME
 
@@ -130,6 +131,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('discountnum')
+    || $self->ut_foreign_keyn('classnum', 'discount_class', 'classnum')
     || $self->ut_textn('name')
     || $self->ut_money('amount')
     || $self->ut_float('percent') #actually decimal, but this will do
@@ -140,16 +142,19 @@ sub check {
   ;
   return $error if $error;
 
-  #discourage non-integer months for package discounts
-  if ($self->discountnum) {
-    my $sql =
-      "SELECT count(*) FROM part_pkg_discount WHERE part_pkg_discount.discountnum = ".
-      $self->discountnum;
-
-    my $count = $self->scalar_sql($sql); 
-    return "months must be integers greater than 1"
-      if ( $count && ($self->ut_number('months') || $self->months < 2) );
-  }
+#causes "months must be integers greater than 1" errors when you go back and
+# try to edit an existing discount (because the months format as NN.000)
+#not worth whatever reason it came in with "prepayment discounts rt#5318" for
+#  #discourage non-integer months for package discounts
+#  if ($self->discountnum) {
+#    my $sql =
+#      "SELECT count(*) FROM part_pkg_discount WHERE part_pkg_discount.discountnum = ".
+#      $self->discountnum;
+#
+#    my $count = $self->scalar_sql($sql); 
+#    return "months must be integers greater than 1"
+#      if ( $count && ($self->ut_number('months') || $self->months < 2) );
+#  }
     
   $self->SUPER::check;
 }
@@ -194,6 +199,18 @@ sub description {
 
   $desc;
 }
+
+sub classname {
+  my $self = shift;
+  my $discount_class = $self->discount_class;
+  $discount_class ? $discount_class->classname : '(none)';
+}
+
+sub discount_class {
+  my $self = shift;
+  qsearchs('discount_class', { 'classnum' => $self->classnum });
+}
+
 
 =back
 

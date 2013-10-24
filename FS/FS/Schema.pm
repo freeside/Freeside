@@ -2008,6 +2008,7 @@ sub tables_hashref {
       'columns' => [
         'discountnum', 'serial',     '',      '', '', '',
         #'agentnum',       'int', 'NULL',      '', '', '', 
+        'classnum',       'int', 'NULL',      '', '', '',
         'name',       'varchar', 'NULL', $char_d, '', '',
         'amount',   @money_type,                  '', '', 
         'percent',    'decimal',     '',   '7,4', '', '',
@@ -2019,6 +2020,18 @@ sub tables_hashref {
       'primary_key' => 'discountnum',
       'unique' => [],
       'index'  => [], # [ 'agentnum' ], ],
+    },
+
+    'discount_class' => {
+      'columns' => [
+        'classnum',    'serial',   '',      '', '', '', 
+        'classname',   'varchar',  '', $char_d, '', '', 
+        #'categorynum', 'int',  'NULL',      '', '', '', 
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
     },
 
     'cust_refund' => {

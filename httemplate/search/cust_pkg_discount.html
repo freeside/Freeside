@@ -6,6 +6,7 @@
                   #'redirect'    => $link,
                   'header'      => [ 'Status',
                                      'Discount',
+                                     'Class',
                                      'Months used',
                                      'Employee',
                                      'Package',
@@ -16,6 +17,7 @@
                   'fields'      => [
                                      sub { ucfirst( shift->status ) },
                                      sub { shift->discount->description },
+                                     sub { shift->discount->classname },
                                      sub { my $m = shift->months_used;
                                            $m =~ /\./ ? sprintf('%.2f',$m) : $m;
                                          },
@@ -29,12 +31,14 @@
                                      '',
                                      '',
                                      '',
+                                     '',
                                      ( map { $_ ne 'Cust. Status' ? $clink : ''}
                                            FS::UI::Web::cust_header()
                                      ),
                                    ],
-                  'align'       => 'clrll'. FS::UI::Web::cust_aligns(),
+                  'align'       => 'clcrll'. FS::UI::Web::cust_aligns(),
                   'color'       => [ 
+                                     '',
                                      '',
                                      '',
                                      '',
@@ -43,6 +47,7 @@
                                      FS::UI::Web::cust_colors(),
                                    ],
                  'style'        => [ 
+                                     '',
                                      '',
                                      '',
                                      '',
@@ -76,6 +81,47 @@ if ( $cgi->param('status') eq 'active' ) {
                       AND  cust_pkg_discount.disabled = 'Y'       )
                  OR ( months IS NOT NULL AND months_used >= months )
                ";     #XXX also end date
+}
+
+#classnum
+#false laziness w/cust_pkg.pm::search
+if ( grep { $_ eq 'classnum' } $cgi->param ) {
+
+#  my @classnum = ();
+#  if ( ref($params->{'classnum'}) ) {
+#
+#    if ( ref($params->{'classnum'}) eq 'HASH' ) {
+#      @classnum = grep $params->{'classnum'}{$_}, keys %{ $params->{'classnum'} };
+#    } elsif ( ref($params->{'classnum'}) eq 'ARRAY' ) {
+#      @classnum = @{ $params->{'classnum'} };
+#    } else {
+#      die 'unhandled classnum ref '. $params->{'classnum'};
+#    }
+#
+#
+#  } elsif ( $params->{'classnum'} =~ /^(\d*)$/ && $1 ne '0' ) {
+#    @classnum = ( $1 );
+#  }
+#
+#  if ( @classnum ) {
+
+   if ( $cgi->param('classnum') =~ /^(\d*)$/ && $1 ne '0' ) {
+    my @classnum = ( $1 );
+
+    my @c_where = ();
+    my @nums = grep $_, @classnum;
+    push @c_where, 'discount.classnum IN ('. join(',',@nums). ')' if @nums;
+    my $null = scalar( grep { $_ eq '' } @classnum );
+    push @c_where, 'discount.classnum IS NULL' if $null;
+
+    if ( scalar(@c_where) == 1 ) {
+      push @where, @c_where;
+    } elsif ( @c_where ) {
+      push @where, ' ( '. join(' OR ', @c_where). ' ) ';
+    }
+
+  }
+
 }
 
 #usernum
