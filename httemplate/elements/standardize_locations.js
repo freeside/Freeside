@@ -202,23 +202,32 @@ function post_standardization() {
 
   var cf = document.<% $formname %>;
 
-  if ( new String(cf.elements['<% $taxpre %>zip'].value).length < 10 )
+  var prefix = '<% $taxpre %>';
+  // fix edge case with cust_main
+  if ( cf.elements['same']
+    && cf.elements['same'].checked
+    && prefix == 'ship_' ) {
+
+    prefix = 'bill_';
+  }
+
+  if ( new String(cf.elements[prefix + 'zip'].value).length < 10 )
   {
 
-    var country_el = cf.elements['<% $taxpre %>country'];
+    var country_el = cf.elements[prefix + 'country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
-    var geocode = cf.elements['<% $taxpre %>geocode'].value;
+    var geocode = cf.elements[prefix + 'geocode'].value;
 
     if ( country == 'CA' || country == 'US' ) {
 
-      var state_el = cf.elements['<% $taxpre %>state'];
+      var state_el = cf.elements[prefix + 'state'];
       var state = state_el.options[ state_el.selectedIndex ].value;
 
       var url = "<% $p %>/misc/choose_tax_location.html" +
                   "?data_vendor=cch-zip" + 
-                  ";city="     + cf.elements['<% $taxpre %>city'].value +
+                  ";city="     + cf.elements[prefix + 'city'].value +
                   ";state="    + state + 
-                  ";zip="      + cf.elements['<% $taxpre %>zip'].value +
+                  ";zip="      + cf.elements[prefix + 'zip'].value +
                   ";country="  + country +
                   ";geocode="  + geocode +
                   ";formname=" + '<% $formname %>' +
@@ -229,14 +238,14 @@ function post_standardization() {
 
     } else {
 
-      cf.elements['<% $taxpre %>geocode'].value = 'DEFAULT';
+      cf.elements[prefix + 'geocode'].value = 'DEFAULT';
       <% $post_geocode %>;
 
     }
 
   } else {
 
-    cf.elements['<% $taxpre %>geocode'].value = '';
+    cf.elements[prefix + 'geocode'].value = '';
     <% $post_geocode %>;
 
   }
@@ -255,13 +264,19 @@ function update_geocode() {
   set_geocode = function (what) {
 
     var cf = document.<% $formname %>;
+    var prefix = '<% $taxpre %>';
+    if ( cf.elements['same']
+      && cf.elements['same'].checked
+      && prefix == 'ship_' ) {
+      prefix = 'bill_';
+    }
 
     //alert(what.options[what.selectedIndex].value);
     var argsHash = eval('(' + what.options[what.selectedIndex].value + ')');
-    cf.elements['<% $taxpre %>city'].value     = argsHash['city'];
-    setselect(cf.elements['<% $taxpre %>state'], argsHash['state']);
-    cf.elements['<% $taxpre %>zip'].value      = argsHash['zip'];
-    cf.elements['<% $taxpre %>geocode'].value  = argsHash['geocode'];
+    cf.elements[prefix + 'city'].value     = argsHash['city'];
+    setselect(cf.elements[prefix + 'state'], argsHash['state']);
+    cf.elements[prefix + 'zip'].value      = argsHash['zip'];
+    cf.elements[prefix + 'geocode'].value  = argsHash['geocode'];
     <% $post_geocode %>;
 
   }
