@@ -324,7 +324,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -r ] [ c ] [ -s ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -r ] [ -c ] [ -s ] [ -q | -v ]
 
 =head1 DESCRIPTION
 
