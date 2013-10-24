@@ -7,6 +7,7 @@
                  'header'      => [
                    #'#',
                    'Discount',
+                   'Class',
                    'Amount',
                    'Months',
                    'Package',
@@ -17,6 +18,7 @@
                  'fields'      => [
                    #'billpkgdiscountnum',
                    sub { $_[0]->cust_pkg_discount->discount->description },
+                   sub { $_[0]->cust_pkg_discount->discount->classname },
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
                    sub { my $m = shift->months;
                          $m =~ /\./ ? sprintf('%.2f', $m) : $m;
@@ -27,6 +29,7 @@
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
+                   '',
                    '',
                    'amount',
                    'months',
@@ -40,6 +43,7 @@
                    '',
                    '',
                    '',
+                   '',
                    $ilink,
                    $ilink,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
@@ -47,9 +51,10 @@
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'lrrlrr'.FS::UI::Web::cust_aligns(),
+                 'align' => 'lcrrlrr'.FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               #'',
+                              '',
                               '',
                               '',
                               '',
@@ -60,6 +65,7 @@
                             ],
                  'style' => [ 
                               #'',
+                              '',
                               '',
                               '',
                               '',
@@ -98,7 +104,51 @@ if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
   push @where, "cust_pkg_discount.usernum = $1";
 }
 
-# #classnum
+# (discount) classnum
+my $join_discount = '';
+#false laziness w/cust_pkg_discount.html and cust_pkg.pm::search
+if ( grep { $_ eq 'discount_classnum' } $cgi->param ) {
+
+#  my @classnum = ();
+#  if ( ref($params->{'discount_classnum'}) ) {
+#
+#    if ( ref($params->{'discount_classnum'}) eq 'HASH' ) {
+#      @classnum = grep $params->{'discount_classnum'}{$_}, keys %{ $params->{'discount_classnum'} };
+#    } elsif ( ref($params->{'discount_classnum'}) eq 'ARRAY' ) {
+#      @classnum = @{ $params->{'discount_classnum'} };
+#    } else {
+#      die 'unhandled discount_classnum ref '. $params->{'discount_classnum'};
+#    }
+#
+#
+#  } elsif ( $params->{'discount_classnum'} =~ /^(\d*)$/ && $1 ne '0' ) {
+#    @classnum = ( $1 );
+#  }
+#
+#  if ( @classnum ) {
+
+   if ( $cgi->param('discount_classnum') =~ /^(\d*)$/ && $1 ne '0' ) {
+    my @classnum = ( $1 );
+
+    $join_discount = 'LEFT JOIN discount USING (discountnum)';
+
+    my @c_where = ();
+    my @nums = grep $_, @classnum;
+    push @c_where, 'discount.classnum IN ('. join(',',@nums). ')' if @nums;
+    my $null = scalar( grep { $_ eq '' } @classnum );
+    push @c_where, 'discount.classnum IS NULL' if $null;
+
+    if ( scalar(@c_where) == 1 ) {
+      push @where, @c_where;
+    } elsif ( @c_where ) {
+      push @where, ' ( '. join(' OR ', @c_where). ' ) ';
+    }
+
+  }
+
+}
+
+# #(package) classnum
 # # not specified: all classes
 # # 0: empty class
 # # N: classnum
@@ -121,7 +171,7 @@ if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
 #   }
 # }
 
-my $count_query = "SELECT COUNT(*), SUM(amount)";
+my $count_query = "SELECT COUNT(*), SUM(cust_bill_pkg_discount.amount)";
 
 my $join_cust_pkg_discount =
   'LEFT JOIN cust_pkg_discount USING (pkgdiscountnum)';
@@ -137,11 +187,11 @@ my $join_pkg =
   #LEFT JOIN part_pkg AS override
   #  ON pkgpart_override = override.pkgpart ';
 
+my $join = "$join_cust_pkg_discount $join_discount $join_pkg $join_cust";
+
 my $where = ' WHERE '. join(' AND ', @where);
 
-$count_query .=
-  " FROM cust_bill_pkg_discount $join_cust_pkg_discount $join_pkg $join_cust ".
-  $where;
+$count_query .= " FROM cust_bill_pkg_discount $join $where";
 
 my @select = (
                'cust_bill_pkg_discount.*',
@@ -155,7 +205,7 @@ push @select, 'cust_main.custnum',
 
 my $query = {
   'table'     => 'cust_bill_pkg_discount',
-  'addl_from' => "$join_cust_pkg_discount $join_pkg $join_cust",
+  'addl_from' => $join,
   'hashref'   => {},
   'select'    => join(', ', @select ),
   'extra_sql' => $where,

@@ -3,6 +3,7 @@
                  'table'  => 'discount',
                  'fields' => [
                                'name',
+                               { field => 'classnum', type => 'select-discount_class' },
                                { field => 'disabled', type => 'checkbox', value=>'Y', },
                                # a weird kind of false laziness
                                # w/elements/tr-select-discount.html
@@ -27,6 +28,7 @@
                  'labels' => { 
                                'discountnum' => 'Discount #',
                                'name'        => 'Name&nbsp;',
+                               'classnum'    => 'Class',
                                'disabled'    => 'Disabled&nbsp;',
                                '_type'       => 'Type&nbsp;',
                                'amount'      => 'Amount&nbsp;',

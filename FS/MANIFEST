@@ -705,3 +705,5 @@ FS/cable_provider.pm
 t/cable_provider.t
 FS/cust_credit_void.pm
 t/cust_credit_void.t
+FS/discount_class.pm
+t/discount_class.t
