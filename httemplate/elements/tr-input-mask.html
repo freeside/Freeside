@@ -37,7 +37,10 @@ t.onkeydown = function(e) {
 };
 container.onkeyup = function(e) {
   if ( container.previous ) {
-    setTimeout(function() {container.previous.focus();}, 10);
+    setTimeout(function() {
+      container.previous.value = container.value;
+      container.previous.focus();
+    }, 10);
   }
   return true;
 }
