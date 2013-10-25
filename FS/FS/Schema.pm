@@ -3804,6 +3804,7 @@ sub tables_hashref {
         'last',               'varchar', 'NULL', $char_d, '', '', 
         'first',              'varchar', 'NULL', $char_d, '', '', 
         'user_custnum',           'int', 'NULL',      '', '', '',
+        'report_salesnum',        'int', 'NULL',      '', '', '',
         'disabled',              'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'usernum',

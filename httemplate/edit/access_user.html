@@ -7,17 +7,19 @@
                                'last',
                                'first',
                                { field=>'user_custnum', type=>'search-cust_main', },
+                               { field=>'report_salesnum', type=>'select-sales', empty_label=>'all', },
                                { field=>'disabled', type=>'checkbox', value=>'Y' },
                              ],
                  'labels' => { 
-                               'usernum'      => 'User number',
-                               'username'     => 'Username',
-                               '_password'    => 'Password',
-                               '_password2'   => 'Re-enter Password',
-                               'last'         => 'Last name',
-                               'first'        => 'First name',
-                               'user_custnum' => 'Customer (optional)',
-                               'disabled'     => 'Disable employee',
+                               'usernum'         => 'User number',
+                               'username'        => 'Username',
+                               '_password'       => 'Password',
+                               '_password2'      => 'Re-enter Password',
+                               'last'            => 'Last name',
+                               'first'           => 'First name',
+                               'user_custnum'    => 'Customer (optional)',
+                               'report_salesnum' => 'Limit commission report to sales person',
+                               'disabled'        => 'Disable employee',
                              },
                  'edit_callback' => \&edit_callback,
                  'field_callback'=> \&field_callback,
@@ -68,8 +70,8 @@ my $check_user_custnum_search = <<END;
 END
 
 sub edit_callback {
-  my ($c, $o, $f, $opt) = @_;
-  $o->set('_password', '');
+  my ($cgi, $access_user, $fields_listref, $opt_hashref) = @_;
+  $access_user->_password('');
 }
 
 sub field_callback {
