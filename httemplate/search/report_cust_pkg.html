@@ -190,6 +190,9 @@
     <& /elements/tr-title.html, value => mt('Location search options') &>
 
 %   my @location_options = qw(cust nocust census nocensus);
+%   if ( $conf->exists('enable_taxproducts') ) {
+%     push @location_options, 'geocode', 'nogeocode';
+%   }
     <& /elements/tr-checkbox-multiple.html,
                 'label'   => 'Where package location:',
                 'field'   => 'loc',
@@ -198,6 +201,8 @@
                                'nocust'   => "is not the customer's default location",
                                'census'   => "has a census tract",
                                'nocensus' => "does not have a census tract",
+                               'nogeocode'=> 'has an implicit tax location',
+                               'geocode'  => 'has a hardcoded tax location',
                              },
                 'value'   => { map { $_ => 1 } @location_options },
     &>
@@ -274,4 +279,5 @@ my %checkbox = (
   'cancel'    => 1,
 );
 
+my $conf = FS::Conf->new;
 </%once>
