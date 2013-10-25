@@ -101,14 +101,17 @@
 
                    my $columndef = $part_svc->part_svc_column($f->{'field'});
                    my $flag = $columndef->columnflag;
-                   if ( $flag eq 'F' ) {
+
+                   if ( $flag eq 'F' ) { #fixed
                      $f->{'type'} = length($columndef->columnvalue)
                                       ? 'fixed'
                                       : 'hidden';
                      $f->{'value'} = $columndef->columnvalue;
-                   } elsif ( $flag eq 'A' ) {
+
+                   } elsif ( $flag eq 'A' ) { #auto assign from inventory
                      $f->{'type'} = 'hidden';
-                   } elsif ( $flag eq 'M' ) {
+
+                   } elsif ( $flag eq 'M' ) { #manually assign from inventory
                      $f->{'type'} = 'select-inventory_item';
                      $f->{'empty_label'} = 'Select inventory item';
                      $f->{'extra_sql'} = 'WHERE ( svcnum IS NULL ' .
@@ -116,11 +119,13 @@
                         ')';
                      $f->{'classnum'} = $columndef->columnvalue;
                      $f->{'disable_empty'} = $object->svcnum ? 1 : 0;
-                   } elsif ( $flag eq 'H' ) {
+
+                   } elsif ( $flag eq 'H' ) { #hardware
                      $f->{'type'}        = 'select-hardware_type';
                      $f->{'hashref'}     = {
                                             'classnum'=>$columndef->columnvalue
                                            };
+
                    } elsif ( $flag eq 'S' ) { #selectable choice
                      $f->{type}    = 'select';
                      $f->{options} = [ split( /\s*,\s*/,
