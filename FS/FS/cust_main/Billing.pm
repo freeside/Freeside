@@ -356,6 +356,11 @@ sub bill {
   my $time = $options{'time'} || time;
   my $invoice_time = $options{'invoice_time'} || $time;
 
+  my $cmp_time = ( $conf->exists('next-bill-ignore-time')
+                     ? day_end( $time )
+                     : $time
+                 );
+
   $options{'not_pkgpart'} ||= {};
   $options{'not_pkgpart'} = { map { $_ => 1 }
                                   split(/\s*,\s*/, $options{'not_pkgpart'})
@@ -443,7 +448,7 @@ sub bill {
 
       my $next_bill = $cust_pkg->getfield('bill') || 0;
       my $error;
-      while ( $next_bill <= $time ) {
+      while ( $next_bill <= $cmp_time ) {
         $error =
           $self->_make_lines( 'part_pkg'            => $part_pkg,
                               'cust_pkg'            => $cust_pkg,
