@@ -23,6 +23,7 @@
 
 
 </TABLE></TD></TR></TABLE>
+<BR>
 
 <& /elements/table-tickets.html, object => $cust_svc &>
 
