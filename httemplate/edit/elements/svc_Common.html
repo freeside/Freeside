@@ -121,6 +121,11 @@
                      $f->{'hashref'}     = {
                                             'classnum'=>$columndef->columnvalue
                                            };
+                   } elsif ( $flag eq 'S' ) { #selectable choice
+                     $f->{type}    = 'select';
+                     $f->{options} = [ split( /\s*,\s*/,
+                                                $columndef->columnvalue)
+                                     ];
                    }
 
                    if (    $f->{'type'} eq 'select-svc_pbx'
