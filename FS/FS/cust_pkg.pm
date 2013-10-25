@@ -4243,21 +4243,29 @@ For FCC 477 reporting, mostly.
 
 =item location_cust
 
-Limit to packages whose service location is the same as the customer's 
+Limit to packages whose service locations are the same as the customer's 
 default service location.
 
 =item location_nocust
 
-Limit to packages whose service location is not the customer's default 
+Limit to packages whose service locations are not the customer's default 
 service location.
 
 =item location_census
 
-Limit to packages whose service location has a census tract.
+Limit to packages whose service locations have census tracts.
 
 =item location_nocensus
 
-Limit to packages whose service location doesn't have a census tract.
+Limit to packages whose service locations do not have a census tract.
+
+=item location_geocode
+
+Limit to packages whose locations have geocodes.
+
+=item location_geocode
+
+Limit to packages whose locations do not have geocodes.
 
 =back
 
@@ -4500,6 +4508,10 @@ sub search {
   if ( $params->{location_census} xor $params->{location_nocensus} ) {
     my $op = $params->{location_census} ? "IS NOT NULL" : "IS NULL";
     push @where, "cust_location.censustract $op";
+  }
+  if ( $params->{location_geocode} xor $params->{location_nogeocode} ) {
+    my $op = $params->{location_geocode} ? "IS NOT NULL" : "IS NULL";
+    push @where, "cust_location.geocode $op";
   }
 
   ###

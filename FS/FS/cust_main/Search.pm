@@ -668,22 +668,6 @@ sub search {
     unless $params->{'cancelled_pkgs'};
 
   ##
-  # parse without census tract checkbox
-  ##
-
-  push @where, "(ship_location.censustract = '' or ship_location.censustract is null)"
-    if $params->{'no_censustract'};
-
-  ##
-  # parse with hardcoded tax location checkbox
-  ##
-
-  my $tax_prefix = FS::Conf->new->exists('tax-ship_location') ? 'ship_' 
-                                                              : 'bill_';
-  push @where, "${tax_prefix}location.geocode is not null"
-    if $params->{'with_geocode'};
-
-  ##
   # "with email address(es)" checkbox
   ##
 
@@ -950,19 +934,6 @@ sub search {
 
   }
 
-  if ( $params->{'with_geocode'} ) {
-
-    unshift @extra_headers, 'Tax location override', 'Calculated tax location';
-    unshift @extra_fields, sub { my $c = shift; $c->get('geocode'); },
-                           sub { my $c = shift;
-                                 $c->set('geocode', '');
-                                 $c->geocode('cch'); #XXX only cch right now
-                               };
-    push @select, 'geocode';
-    push @select, 'zip' unless grep { $_ eq 'zip' } @select;
-    push @select, 'ship_zip' unless grep { $_ eq 'ship_zip' } @select;
-  }
-
   my $select = join(', ', @select);
 
   my $sql_query = {
@@ -976,7 +947,7 @@ sub search {
     'extra_headers' => \@extra_headers,
     'extra_fields'  => \@extra_fields,
   };
-  warn Data::Dumper::Dumper($sql_query);
+  #warn Data::Dumper::Dumper($sql_query);
   $sql_query;
 
 }

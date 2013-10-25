@@ -172,20 +172,6 @@
     &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Without census tract') |h %></TD>
-        <TD><INPUT TYPE="checkbox" NAME="no_censustract"></TD>
-    </TR>
-
-%   if ( $conf->exists('enable_taxproducts') ) {
-
-      <TR>
-        <TD ALIGN="right" VALIGN="center"><% mt('With hardcoded tax location') |h %></TD>
-          <TD><INPUT TYPE="checkbox" NAME="with_geocode"></TD>
-      </TR>
-
-%   }
-
-    <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('With email address(es)') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="with_email"></TD>
     </TR>
