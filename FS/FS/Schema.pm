@@ -3688,13 +3688,14 @@ sub tables_hashref {
 
     'access_user' => {
       'columns' => [
-        'usernum',   'serial',  '',      '', '', '',
-        'username',  'varchar', '', $char_d, '', '',
-        '_password', 'varchar', '', $char_d, '', '',
-        'last',      'varchar', '', $char_d, '', '', 
-        'first',     'varchar', '', $char_d, '', '', 
-        'user_custnum',  'int', 'NULL',  '', '', '',
-        'disabled',     'char', 'NULL',   1, '', '', 
+        'usernum',            'serial',      '',      '', '', '',
+        'username',           'varchar',     '', $char_d, '', '',
+        '_password',          'varchar',     '', $char_d, '', '',
+        'last',               'varchar',     '', $char_d, '', '', 
+        'first',              'varchar',     '', $char_d, '', '', 
+        'user_custnum',           'int', 'NULL',      '', '', '',
+        'report_salesnum',        'int', 'NULL',      '', '', '',
+        'disabled',              'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'usernum',
       'unique' => [ [ 'username' ] ],
