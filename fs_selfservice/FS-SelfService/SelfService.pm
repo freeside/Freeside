@@ -86,6 +86,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'reset_passwd'              => 'MyAccount/reset_passwd',
   'check_reset_passwd'        => 'MyAccount/check_reset_passwd',
   'process_reset_passwd'      => 'MyAccount/process_reset_passwd',
+  'list_tickets'              => 'MyAccount/list_tickets',
   'create_ticket'             => 'MyAccount/create_ticket',
   'get_ticket'                => 'MyAccount/get_ticket',
   'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
@@ -109,6 +110,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
+
+  'start_thirdparty'          => 'MyAccount/start_thirdparty',
+  'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
 );
 @EXPORT_OK = (
   keys(%autoload),

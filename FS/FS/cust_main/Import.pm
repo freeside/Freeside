@@ -152,7 +152,7 @@ sub batch_import {
     @fields = qw( agent_custid refnum
                   last first address1 address2 city state zip country
                   daytime night
-                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_last ship_first ship_address1 ship_address2
                   ship_city ship_state ship_zip ship_country
                   payinfo paycvv paydate
                   invoicing_list

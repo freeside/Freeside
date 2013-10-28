@@ -184,6 +184,8 @@ sub refill {
 
 L<FS::Record>
 
+L<FS::Cursor> is an eventual replacement for this.
+
 =cut
 
 1;

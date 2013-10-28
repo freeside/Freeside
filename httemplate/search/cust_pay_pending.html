@@ -28,6 +28,9 @@ my $edit_pending =
 my $status_sub = sub {
   my $pending = shift;
   my $return = $pending->status;
+  if ( $pending->failure_status ) {
+    $return = $pending->display_status;
+  }
   my $action = $statusaction{$pending->status};
   return $return unless $action && $edit_pending;
   my $link = include('/elements/popup_link.html',

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -209,15 +209,26 @@ sub SetMIMEEntityToEncoding {
     # do the same for parts first of all
     SetMIMEEntityToEncoding( $_, $enc, $preserve_words ) foreach $entity->parts;
 
-    my $charset = _FindOrGuessCharset($entity) or return;
+    my $head = $entity->head;
+
+    my $charset = _FindOrGuessCharset($entity);
+    if ( $charset ) {
+        unless( Encode::find_encoding($charset) ) {
+            $RT::Logger->warning("Encoding '$charset' is not supported");
+            $charset = undef;
+        }
+    }
+    unless ( $charset ) {
+        $head->replace( "X-RT-Original-Content-Type" => $head->mime_attr('Content-Type') );
+        $head->mime_attr('Content-Type' => 'application/octet-stream');
+        return;
+    }
 
     SetMIMEHeadToEncoding(
-	$entity->head,
+	$head,
 	_FindOrGuessCharset($entity, 1) => $enc,
 	$preserve_words
     );
-
-    my $head = $entity->head;
 
     # If this is a textual entity, we'd need to preserve its original encoding
     $head->replace( "X-RT-Original-Encoding" => $charset )
@@ -293,18 +304,30 @@ sub DecodeMIMEWordsToEncoding {
         $str = MIME::Field::ParamVal->parse($str)->stringify;
     }
 
+    # Pre-parse by removing all whitespace between encoded words
+    my $encoded_word = qr/
+                 =\?            # =?
+                 ([^?]+?)       # charset
+                 (?:\*[^?]+)?   # optional '*language'
+                 \?             # ?
+                 ([QqBb])       # encoding
+                 \?             # ?
+                 ([^?]+)        # encoded string
+                 \?=            # ?=
+                 /x;
+    $str =~ s/($encoded_word)\s+(?=$encoded_word)/$1/g;
+
+    # Also merge quoted-printable sections together, in case multiple
+    # octets of a single encoded character were split between chunks.
+    # Though not valid according to RFC 2047, this has been seen in the
+    # wild.
+    1 while $str =~ s/(=\?[^?]+\?[Qq]\?)([^?]+)\?=\1([^?]+)\?=/$1$2$3?=/i;
+
     # XXX TODO: use decode('MIME-Header', ...) and Encode::Alias to replace our
     # custom MIME word decoding and charset canonicalization.  We can't do this
     # until we parse before decode, instead of the other way around.
     my @list = $str =~ m/(.*?)          # prefix
-                         =\?            # =?
-                         ([^?]+?)       # charset
-                         (?:\*[^?]+)?   # optional '*language'
-                         \?             # ?
-                         ([QqBb])       # encoding
-                         \?             # ?
-                         ([^?]+)        # encoded string
-                         \?=            # ?=
+                         $encoded_word
                          ([^=]*)        # trailing
                         /xgcs;
 
@@ -336,7 +359,14 @@ sub DecodeMIMEWordsToEncoding {
 
             # now we have got a decoded subject, try to convert into the encoding
             if ( $charset ne $to_charset || $charset =~ /^utf-?8(?:-strict)?$/i ) {
-                Encode::from_to( $enc_str, $charset, $to_charset );
+                if ( Encode::find_encoding($charset) ) {
+                    Encode::from_to( $enc_str, $charset, $to_charset );
+                } else {
+                    $RT::Logger->warning("Charset '$charset' is not supported");
+                    $enc_str =~ s/[^[:print:]]/\357\277\275/g;
+                    Encode::from_to( $enc_str, 'UTF-8', $to_charset )
+                        unless $to_charset eq 'utf-8';
+                }
             }
 
             # XXX TODO: RT doesn't currently do the right thing with mime-encoded headers

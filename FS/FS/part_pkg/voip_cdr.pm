@@ -31,6 +31,11 @@ tie my %rating_method, 'Tie::IxHash',
   'single_price' => 'A single price per minute for all calls.',
 ;
 
+tie my %rounding, 'Tie::IxHash',
+  '2' => 'Two decimal places (cent)',
+  '4' => 'Four decimal places (100th of a cent)',
+;
+
 #tie my %cdr_location, 'Tie::IxHash',
 #  'internal' => 'Internal: CDR records imported into the internal CDR table',
 #  'external' => 'External: CDR records queried directly from an external '.
@@ -91,6 +96,11 @@ tie my %detail_formats, 'Tie::IxHash',
                          'type' => 'radio',
                          'options' => \%rating_method,
                        },
+
+    'rounding' => { 'name' => 'Rounding for destination prefix rating',
+                    'type' => 'select',
+                    'select_options' => \%rounding,
+                  },
 
     'ratenum'   => { 'name' => 'Rate plan',
                      'type' => 'select',
@@ -253,7 +263,7 @@ tie my %detail_formats, 'Tie::IxHash',
                           'type' => 'checkbox',
                         },
 
-    'usage_mandate' => { 'name' => 'Always put usage details in separate section',
+    'usage_mandate' => { 'name' => 'Always put usage details in separate section.  The section is defined in the next option.',
                           'type' => 'checkbox',
                        },
     #eofalse
@@ -304,7 +314,7 @@ tie my %detail_formats, 'Tie::IxHash',
                        FS::part_pkg::prorate_Mixin::fieldorder,
                     qw(
                        cdr_svc_method
-                       rating_method ratenum intrastate_ratenum 
+                       rating_method rounding ratenum intrastate_ratenum 
                        calls_included
                        min_charge min_included sec_granularity
                        ignore_unrateable
@@ -330,12 +340,12 @@ tie my %detail_formats, 'Tie::IxHash',
                        411_rewrite
                        output_format 
                        selfservice_format selfservice_inbound_format
-                       usage_mandate summarize_usage usage_section
-                       bill_every_call bill_inactive_svcs
+                       usage_mandate usage_section summarize_usage 
+                       usage_nozero bill_every_call bill_inactive_svcs
                        count_available_phones suspend_bill 
                      )
                   ],
-  'weight' => 40,
+  'weight' => 41,
 );
 
 sub price_info {
@@ -352,7 +362,7 @@ sub calc_recur {
   my $charges = 0;
 
   $charges += $self->calc_usage(@_);
-  $charges += $self->calc_recur_Common(@_);
+  $charges += ($cust_pkg->quantity || 1) * $self->calc_recur_Common(@_);
 
   $charges;
 
@@ -421,6 +431,11 @@ sub calc_usage {
     }
     else {
       $svc_x = $cust_svc->svc_x;
+    }
+
+    unless ( $svc_x ) {
+      my $h = $self->option('bill_inactive_svcs',1) ? 'h_' : '';
+      warn "WARNING: no $h$svc_table for svcnum ". $cust_svc->svcnum. "\n";
     }
 
     my %options = (

@@ -6,35 +6,38 @@ Example:
             'field'      => 'fieldname',
             'curr_value' => $curr_value,
             'height'     => 800,
+            'config'     => { extraPlugins => 'blockprotect' },
          );
 
 </%doc>
 
 % #init
-<SCRIPT TYPE="text/javascript" src="<% $p %>elements/fckeditor/fckeditor.js">
+<SCRIPT TYPE="text/javascript" src="<% $p %>elements/ckeditor/ckeditor.js">
 </SCRIPT>
 
 % #editor
+<textarea name="<% $opt{'field'} %>"><% $opt{'curr_value'} |h %></textarea>
+
 <SCRIPT TYPE="text/javascript">
 
-  var oFCKeditor = new FCKeditor('<% $opt{'field'} %>');
-  oFCKeditor.Value = <% $opt{'curr_value'} |js_string %>;
-
-  oFCKeditor.BasePath = '<% $p %>elements/fckeditor/';
-  oFCKeditor.Config['SkinPath'] = '<% $p %>elements/fckeditor/editor/skins/silver/';
-% if ( $opt{'width'} ) {
-    oFCKeditor.Width = '<% $opt{'width'} %>';
-% }
-  oFCKeditor.Height = '<% $opt{'height'} || 420 %>';
-  oFCKeditor.Config['StartupFocus'] = true;
-  oFCKeditor.Config['EnterMode'] = 'br';
-
-  oFCKeditor.Create();
+  CKEDITOR.replace('<% $opt{'field'} %>',
+                   <% encode_json($config) %>
+  );
 
 </SCRIPT>
 
 <%init>
 
 my %opt = @_;
+my $config = {
+  'height'              => ($opt{height} || 420),
+  'startupFocus'        => JSON::true,
+  'skin'                => 'kama',
+  'toolbarCanCollapse'  => JSON::true,
+  'basePath'            => $p.'elements/ckeditor/',
+  'enterMode'           => 2,
+  %{ $opt{config} || {} },
+};
+$config->{width} = $opt{width} if defined($opt{width});
 
 </%init>

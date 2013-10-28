@@ -5,6 +5,12 @@
               'process_m2m'      => { 'link_table'   => 'access_groupagent',
                                       'target_table' => 'access_group',
                                     },
+              'process_m2name'   => {
+                      'link_table'  => 'agent_currency',
+                      'name_col'    => 'currency',
+                      'names_list'  => [ $conf->config('currencies') ],
+                      'param_style' => 'link_table.value checkboxes',
+              },
               'edit_ext'         => 'cgi',
               'noerror_callback' => $process_agent_pkg_class,
           )
@@ -14,7 +20,9 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-if ( FS::Conf->new->exists('disable_acl_changes') ) {
+my $conf = new FS::Conf;
+
+if ( $conf->exists('disable_acl_changes') ) {
   errorpage('ACL changes disabled in public demo.');
   die "shouldn't be reached";
 }

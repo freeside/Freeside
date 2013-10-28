@@ -23,7 +23,7 @@ sub eventtable_hashref {
 
 sub option_fields {
   (
-    'within'  =>  { 'label'   => 'Expiration date within',
+    'within'  =>  { 'label'   => 'Credit card will expire within',
                     'type'    => 'freq',
                   },
   );
@@ -32,14 +32,17 @@ sub option_fields {
 sub condition {
   my( $self, $cust_main, %opt ) = @_;
   my $expire_time = $cust_main->paydate_epoch or return 0;
-  $opt{'time'} >= $self->option_age_from('within', $expire_time);
+  $opt{'time'} >= $self->option_age_from('within', $expire_time) and
+  $opt{'time'} <  $expire_time;
 }
 
 sub condition_sql {
   my ($self, $table, %opt) = @_;
   my $expire_time = FS::cust_main->paydate_epoch_sql or return 'true';
-  $opt{'time'} . ' >= ' .  
-    $self->condition_sql_option_age_from('within', $expire_time);
+  ' ( '. $opt{'time'} . ' >= ' .  
+    $self->condition_sql_option_age_from('within', $expire_time) .
+    ' AND ' . $opt{'time'} . ' < ' . $expire_time . ' ) ';
+
 }
 
 1;

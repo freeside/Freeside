@@ -30,10 +30,10 @@
                                   sub {
                                     sprintf('%.02f', $_[0]->amount)
                                   },
-                                  'status',
+                                  sub { $_[0]->display_status },
                                   'error_message',
                                 ],
-	      'align'       => 'rrrlllcrll',
+	      'align'       => 'rrrlllcrlll',
 	      'links'       => [ '',
 	                         ["${p}view/cust_bill.cgi?", 'invnum'],
 	                         (["${p}view/cust_main.cgi?", 'custnum']) x 2,

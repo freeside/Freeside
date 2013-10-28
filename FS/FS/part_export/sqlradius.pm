@@ -9,6 +9,7 @@ use FS::part_export;
 use FS::svc_acct;
 use FS::export_svc;
 use Carp qw( cluck );
+use NEXT;
 
 @ISA = qw(FS::part_export);
 @EXPORT_OK = qw( sqlradius_connect );
@@ -133,12 +134,14 @@ sub export_username { # override for other svcdb
 
 sub radius_reply { #override for other svcdb
   my($self, $svc_acct) = (shift, shift);
-  $svc_acct->radius_reply;
+  my %every = $svc_acct->EVERY::radius_reply;
+  map { @$_ } values %every;
 }
 
 sub radius_check { #override for other svcdb
   my($self, $svc_acct) = (shift, shift);
-  $svc_acct->radius_check;
+  my %every = $svc_acct->EVERY::radius_check;
+  map { @$_ } values %every;
 }
 
 sub _export_insert {
@@ -194,8 +197,8 @@ sub _export_replace {
 
   foreach my $table (qw(reply check)) {
     my $method = "radius_$table";
-    my %new = $new->$method();
-    my %old = $old->$method();
+    my %new = $self->$method($new);
+    my %old = $self->$method($old);
     if ( grep { !exists $old{$_} #new attributes
                 || $new{$_} ne $old{$_} #changed
               } keys %new

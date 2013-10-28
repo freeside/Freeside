@@ -12,7 +12,6 @@ my $can_set_priority =
 if ( $can_set_priority ) {
 
   $OUT .= qq!<FORM ACTION="$selfurl" METHOD="POST">! .
-          qq!<INPUT TYPE="hidden" NAME="session" VALUE="$session_id">! .
           qq!<INPUT TYPE="hidden" NAME="action" VALUE="ticket_priority">!;
 }
 $date_format ||= '%Y-%m-%d';

@@ -10,6 +10,7 @@
                    emt('Description'),
                    @post_desc_header,
                    @peritem_desc,
+                   @currency_desc,
                    emt('Invoice'),
                    emt('Date'),
                    emt('Paid'),
@@ -32,6 +33,7 @@
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
                    @peritem_sub,
+                   @currency_sub,
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    sub { sprintf($money_char.'%.2f', shift->get('pay_amount')) },
@@ -44,6 +46,7 @@
                    '',
                    @post_desc_null,
                    @peritem,
+                   @currency,
                    'invnum',
                    '_date',
                    #'pay_amount',
@@ -55,6 +58,7 @@
                    '',
                    @post_desc_null,
                    @peritem_null,
+                   @currency_null,
                    $ilink,
                    $ilink,
                    $pay_link,
@@ -68,6 +72,7 @@
                             'rl'.
                             $post_desc_align.
                             $peritem_align.
+                            $currency_align.
                             'rcrr'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
@@ -76,6 +81,7 @@
                               '',
                               @post_desc_null,
                               @peritem_null,
+                              @currency_null,
                               '',
                               '',
                               '',
@@ -88,6 +94,7 @@
                               '',
                               @post_desc_null,
                               @peritem_null,
+                              @currency_null,
                               '',
                               '',
                               '',
@@ -123,6 +130,10 @@ Filtering parameters:
 - cust_classnum: Filter on customer class.
 
 - classnum: Filter on package class.
+
+- report_optionnum: Filter on package report class.  Can be a single report
+  class number or a comma-separated list (where 0 is "no report class"), or the
+  word "multiple".
 
 - use_override: Apply "classnum" and "taxclass" filtering based on the 
   override (bundle) pkgpart, rather than always using the true pkgpart.
@@ -196,6 +207,23 @@ my @total_desc = ( $money_char.'%.2f total' ); # sprintf strings
 my @peritem = ( 'setup', 'recur' );
 my @peritem_desc = ( 'Setup charge', 'Recurring charge' );
 
+my @currency_desc = ();
+my @currency_sub = ();
+my @currency = ();
+if ( $conf->config('currencies') ) {
+  @currency_desc = ( 'Setup billed', 'Recurring billed' );
+  @currency_sub = (
+    map {
+      my $what = $_;
+      sub { my $currency = $_[0]->get($what.'_billed_currency') or return '';
+            $currency. ' '. currency_symbol($currency, SYM_HTML).
+              $_[0]->get($what.'_billed_amount');
+          };
+    } qw( setup recur )
+  );
+  @currency = ( 'setup_billed_amount', 'recur_billed_amount' ); #for sorting
+}
+
 my @pkgnum_header = ();
 my @pkgnum = ();
 my @pkgnum_null;
@@ -222,7 +250,7 @@ if ( $conf->exists('enable_taxclasses') ) {
 
 # valid in both the tax and non-tax cases
 my $join_cust = 
-  " LEFT JOIN cust_bill USING (invnum)".
+  " LEFT JOIN cust_bill ON (cust_bill_pkg.invnum = cust_bill.invnum)".
   # use cust_pkg.locationnum if it exists
   FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
@@ -253,6 +281,24 @@ if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
 # agentnum
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
+}
+
+# salesnum
+if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
+
+  my $salesnum = $1;
+
+  my $cmp_salesnum = $cgi->param('cust_main_sales')
+                       ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
+                       : ' cust_pkg.salesnum ';
+
+  push @where, "$cmp_salesnum = $salesnum";
+
+  #because currently we're called from sales_pkg_class.html for a specific
+  # class (or empty class) but not for all classes
+  #will have to do something to distinguish if someone wants the sales report
+  # (report_cust_bill_pkg.html) to have a sales person dropdown
+  $cgi->param('classnum', 0) unless $cgi->param('classnum');
 }
 
 # refnum
@@ -303,8 +349,23 @@ if ( $cgi->param('nottax') ) {
   # not specified: all classes
   # 0: empty class
   # N: classnum
-  if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
-    push @where, "COALESCE($part_pkg.classnum, 0) = $1";
+  if ( grep { $_ eq 'classnum' } $cgi->param ) {
+    my @classnums = grep /^\d+$/, $cgi->param('classnum');
+    push @where, "COALESCE($part_pkg.classnum, 0) IN ( ".
+                     join(',', @classnums ).
+                 ' )'
+      if @classnums;
+  }
+
+  if ( grep { $_ eq 'report_optionnum' } $cgi->param ) {
+    my @nums = grep /^\w+$/, $cgi->param('report_optionnum');
+    my $num = join(',', @nums);
+    push @where, # code reuse FTW
+      FS::Report::Table->with_report_option( $num, $cgi->param('use_override'));
+  }
+
+  if ( $cgi->param('report_optionnum') =~ /^(\w+)$/ ) {
+    ;
   }
 
   # taxclass
@@ -671,6 +732,10 @@ my @peritem_sub = map {
 } @peritem;
 my @peritem_null = map { '' } @peritem; # placeholders
 my $peritem_align = 'r' x scalar(@peritem);
+
+@currency_desc = map {emt($_)} @currency_desc;
+my @currency_null = map { '' } @currency; # placeholders
+my $currency_align = 'r' x scalar(@currency);
 
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -132,7 +132,7 @@
 % }
 
 % if ( $has_right_adminusers ) {
-    <a class="modify-user" href="<% RT->Config->Get('WebPath')."/Admin/Users/Modify.html?id=".$requestor->id %>">Modify this user</a>
+    <a class="modify-user" href="<% RT->Config->Get('WebPath')."/Admin/Users/Modify.html?id=".$requestor->id %>"><&|/l&>Modify this user</&></a>
 % }
 
 %# end of individual requestor details <div>

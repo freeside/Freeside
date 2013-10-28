@@ -9,7 +9,6 @@ use vars qw( $DEBUG $me $conf @encrypted_fields
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::Misc qw( send_email );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::CurrentUser;
 use FS::payby;
@@ -22,6 +21,7 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_pay_void;
 use FS::upgrade_journal;
+use FS::Cursor;
 
 $DEBUG = 0;
 
@@ -190,6 +190,15 @@ after this payment is made.
 A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
 'payment_receipt_email' configuration option is set.
+
+About the "manual" flag: Normally, if the 'payment_receipt' config option 
+is set, and the customer has an invoice email address, inserting a payment
+causes a I<statement> to be emailed to the customer.  If the payment is 
+considered "manual" (or if the customer has no invoices), then it will 
+instead send a I<payment receipt>.  "manual" should be true whenever a 
+payment is created directly from the web interface, from a user-initiated
+realtime payment, or from a third-party payment via self-service.  It should
+be I<false> when creating a payment from a billing event or from a batch.
 
 =cut
 
@@ -459,38 +468,6 @@ sub delete {
     return $error;
   }
 
-  if (    $conf->exists('deletepayments')
-       && $conf->config('deletepayments') ne '' ) {
-
-    my $cust_main = $self->cust_main;
-
-    my $error = send_email(
-      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
-                                 #invoice_from??? well as good as any
-      'to'      => $conf->config('deletepayments'),
-      'subject' => 'FREESIDE NOTIFICATION: Payment deleted',
-      'body'    => [
-        "This is an automatic message from your Freeside installation\n",
-        "informing you that the following payment has been deleted:\n",
-        "\n",
-        'paynum: '. $self->paynum. "\n",
-        'custnum: '. $self->custnum.
-          " (". $cust_main->last. ", ". $cust_main->first. ")\n",
-        'paid: $'. sprintf("%.2f", $self->paid). "\n",
-        'date: '. time2str("%a %b %e %T %Y", $self->_date). "\n",
-        'payby: '. $self->payby. "\n",
-        'payinfo: '. $self->paymask. "\n",
-        'paybatch: '. $self->paybatch. "\n",
-      ],
-    );
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't send payment deletion notification: $error";
-    }
-
-  }
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -625,11 +602,18 @@ sub send_receipt {
   {
     my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
     if ( $msgnum ) {
-      my $msg_template = FS::msg_template->by_key($msgnum);
-      $error = $msg_template->send(
-        'cust_main'   => $cust_main,
-        'object'      => $self,
-        'from_config' => 'payment_receipt_from',
+
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert(
+         FS::msg_template->by_key($msgnum)->prepare(
+          'cust_main'   => $cust_main,
+          'object'      => $self,
+          'from_config' => 'payment_receipt_from',
+        )
       );
 
     } elsif ( $conf->exists('payment_receipt_email') ) {
@@ -668,7 +652,12 @@ sub send_receipt {
         #setup date, other things?
       }
 
-      $error = send_email(
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_generated_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert(
         'from'    => $conf->config('invoice_from', $cust_main->agentnum),
                                    #invoice_from??? well as good as any
         'to'      => \@invoicing_list,
@@ -685,8 +674,9 @@ sub send_receipt {
   } elsif ( ! $cust_main->invoice_noemail ) { #not manual
 
     my $queue = new FS::queue {
-       'paynum' => $self->paynum,
-       'job'    => 'FS::cust_bill::queueable_email',
+       'job'     => 'FS::cust_bill::queueable_email',
+       'paynum'  => $self->paynum,
+       'custnum' => $cust_main->custnum,
     };
 
     $error = $queue->insert(
@@ -698,7 +688,7 @@ sub send_receipt {
 
   }
   
-    warn "send_receipt: $error\n" if $error;
+  warn "send_receipt: $error\n" if $error;
 }
 
 =item cust_bill_pay
@@ -1014,11 +1004,11 @@ sub _upgrade_data {  #class method
   ###
   # migrate batchnums from the misused 'paybatch' field to 'batchnum'
   ###
-  my @cust_pay = qsearch( {
-      'table'     => 'cust_pay',
-      'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
+  my $search = FS::Cursor->new( {
+    'table'     => 'cust_pay',
+    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
   } );
-  foreach my $cust_pay (@cust_pay) {
+  while (my $cust_pay = $search->fetch) {
     $cust_pay->set('batchnum' => $cust_pay->paybatch);
     $cust_pay->set('paybatch' => '');
     my $error = $cust_pay->replace;
@@ -1037,14 +1027,14 @@ sub _upgrade_data {  #class method
     foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
       my $and_batchnum_is_null =
         ( $table =~ /^cust_pay/ ? ' AND batchnum IS NULL' : '' );
-      foreach my $object ( qsearch({
-            table     => $table,
-            extra_sql => "WHERE payby IN('CARD','CHEK') ".
-                         "AND (paybatch IS NOT NULL ".
-                         "OR (paybatch IS NULL AND auth IS NULL
-                         $and_batchnum_is_null ) )",
-          }) )
-      {
+      my $search = FS::Cursor->new({
+        table     => $table,
+        extra_sql => "WHERE payby IN('CARD','CHEK') ".
+                     "AND (paybatch IS NOT NULL ".
+                     "OR (paybatch IS NULL AND auth IS NULL
+                     $and_batchnum_is_null ) )",
+      });
+      while ( my $object = $search->fetch ) {
         if ( $object->paybatch eq '' ) {
           # repair for a previous upgrade that didn't save 'auth'
           my $pkey = $object->primary_key;

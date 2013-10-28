@@ -5,6 +5,7 @@ use Carp;
 use IO::File;
 use File::Basename;
 use MIME::Base64;
+use Locale::Currency;
 use FS::ConfItem;
 use FS::ConfDefaults;
 use FS::Conf_compat17;
@@ -778,8 +779,8 @@ sub reason_type_options {
 
   {
     'key'         => 'alert_expiration',
-    'section'     => 'notification',
-    'description' => 'Enable alerts about billing method expiration (i.e. expiring credit cards).',
+    'section'     => 'deprecated',
+    'description' => 'Enable alerts about credit card expiration.  This is obsolete and no longer works.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -794,7 +795,7 @@ sub reason_type_options {
   
   {
     'key'         => 'alerter_msgnum',
-    'section'     => 'notification',
+    'section'     => 'deprecated',
     'description' => 'Template to use for credit card expiration alerts.',
     %msg_template_options,
   },
@@ -862,6 +863,13 @@ sub reason_type_options {
     'key'         => 'cust_main-select-prorate_day',
     'section'     => 'billing',
     'description' => 'When used with prorate or anniversary packages, allows the selection of the prorate day of month, on a per-customer basis',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'anniversary-rollback',
+    'section'     => 'billing',
+    'description' => 'When billing an anniversary package ordered after the 28th, roll the anniversary date back to the 28th instead of forward into the following month.',
     'type'        => 'checkbox',
   },
 
@@ -999,9 +1007,22 @@ sub reason_type_options {
   {
     'key'         => 'currency',
     'section'     => 'billing',
-    'description' => 'Currency',
+    'description' => 'Main accounting currency',
     'type'        => 'select',
     'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ) ],
+  },
+
+  {
+    'key'         => 'currencies',
+    'section'     => 'billing',
+    'description' => 'Additional accepted currencies',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub { 
+                           map { $_ => code2currency($_) } all_currency_codes();
+			 },
+    'sort_sub'    => sub ($$) { $_[0] cmp $_[1]; },
+    'option_sub'  => sub { code2currency(shift); },
   },
 
   {
@@ -1045,24 +1066,10 @@ sub reason_type_options {
   },
 
   {
-    'key'         => 'deletecustomers',
-    'section'     => 'UI',
-    'description' => 'Enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that the customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'deleteinvoices',
     'section'     => 'UI',
-    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would apply a credit against the invoice instead.',  #invoice voiding?
+    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would void or apply a credit against the invoice instead.',
     'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'deletepayments',
-    'section'     => 'billing',
-    'description' => 'Enable deletion of unclosed payments.  Really, with voids this is pretty much not recommended in any situation anymore.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
-    'type'        => [qw( checkbox text )],
   },
 
   {
@@ -1521,16 +1528,24 @@ and customer address. Include units.',
   },
 
   { 
-    'key'         => 'invoice_include_aging',
-    'section'     => 'invoicing',
-    'description' => 'Show an aging line after the prior balance section.  Only valud when invoice_sections is enabled.',
-    'type'        => 'checkbox',
-  },
-
-  { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  { 
+    'key'         => 'invoice_include_aging',
+    'section'     => 'invoicing',
+    'description' => 'Show an aging line after the prior balance section.  Only valid when invoice_sections is enabled.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'invoice_sections_by_location',
+    'section'     => 'invoicing',
+    'description' => 'Divide invoice into sections according to service location.  Currently, this overrides sectioning by package category.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -2265,6 +2280,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-timeout',
+    'section'     => 'self-service',
+    'description' => 'Timeout for the self-service login cookie, in seconds.  Defaults to 1 hour.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'backend-realtime',
     'section'     => 'billing',
     'description' => 'Run billing for backend signups immediately.',
@@ -2483,6 +2505,12 @@ and customer address. Include units.',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD PPAL COMP) ],
+  },
+  {
+    'key'         => 'banned-pay-pad',
+    'section'     => 'billing',
+    'description' => 'Optional padding for banned pay tables. If you already have entries, don\'t enable as your old entries won\'t work.',
+    'type'        => 'text',
   },
 
   {
@@ -2945,7 +2973,7 @@ and customer address. Include units.',
   {
     'key'         => 'network_monitoring_system',
     'section'     => 'network_monitoring',
-    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
+    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
     'type'        => 'select',
     'select_enum' => [ '', qw(Torrus_Internal) ],
   },
@@ -3407,13 +3435,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'echeck-nonus',
-    'section'     => 'billing',
-    'description' => 'Disable ABA-format account checking for Electronic Check payment info',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'echeck-country',
     'section'     => 'billing',
     'description' => 'Format electronic check information for the specified country.',
@@ -3686,7 +3707,7 @@ and customer address. Include units.',
   {
     'key'         => 'batchconfig-eft_canada',
     'section'     => 'billing',
-    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.',
+    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.  If you are using separate per-agent batches (batch-spoolagent), you must set this option separately for each agent, as the global setting will be ignored.',
     'type'        => 'textarea',
     'per_agent'   => 1,
   },
@@ -3838,6 +3859,13 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Set the "fuzziness" of fuzzy searching (see the String::Approx manpage for details).  Defaults to 10%',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'enable_fuzzy_on_exact',
+    'section'     => 'UI',
+    'description' => 'Enable approximate customer searching even when an exact match is found.',
+    'type'        => 'checkbox',
   },
 
   { 'key'         => 'pkg_referral',
@@ -4113,6 +4141,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'previous_balance-section',
+    'section'     => 'invoicing',
+    'description' => 'Show previous invoice balances in a separate invoice section.  Does not require invoice_sections to be enabled.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'previous_balance-summary_only',
     'section'     => 'invoicing',
     'description' => 'Only show a single line summarizing the total previous balance rather than one line per invoice.',
@@ -4338,6 +4373,13 @@ and customer address. Include units.',
     'key'         => 'order_pkg-no_start_date',
     'section'     => 'UI',
     'description' => 'Don\'t set a default start date for new packages.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'part_pkg-delay_start',
+    'section'     => '',
+    'description' => 'Enabled "delayed start" option for packages.',
     'type'        => 'checkbox',
   },
 
@@ -4647,6 +4689,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ng_selfservice-menu',
+    'section'     => 'self-service',
+    'description' => 'Custom menu for the next-generation self-service interface.  Each line is in the format "link Label", for example "main.php Home".  Sub-menu items are listed on subsequent lines.  Blank lines terminate the submenu.', #more docs/examples would be helpful
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'signup-no_company',
     'section'     => 'self-service',
     'description' => "Don't display a field for company name on signup.",
@@ -4850,6 +4899,13 @@ and customer address. Include units.',
     'section'     => '',
     'description' => 'Time to sleep between attempts to find new jobs to process in the queue.  Defaults to 10.  Installations doing real-time CDR processing for prepaid may want to set it lower.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'queue-no_history',
+    'section'     => '',
+    'description' => "Don't recreate the h_queue and h_queue_arg tables on upgrades.  This can save disk space for large installs, especially when using prepaid or multi-process billing.  After turning this option on, drop the h_queue and h_queue_arg tables, run freeside-dbdef-create and restart Apache and Freeside.",
+    'type'        => 'checkbox',
   },
 
   {
@@ -5078,13 +5134,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'maestro-status_test',
-    'section'     => 'UI',
-    'description' => 'Display a link to the maestro status test page on the customer view page',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'cust_main-custom_link',
     'section'     => 'UI',
     'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The customer number will be appended, or you can insert "$custnum" to have it inserted elsewhere.  "$agentnum" will be replaced with the agent number, and "$usernum" will be replaced with the employee number.',
@@ -5234,13 +5283,6 @@ and customer address. Include units.',
     'description' => 'Which module to use for customer status display.  The "Classic" module (the default) considers accounts with cancelled recurring packages but un-cancelled one-time charges Inactive.  The "Recurring" module considers those customers Cancelled.  Similarly for customers with suspended recurring packages but one-time charges.', #other differences?
     'type'        => 'select',
     'select_enum' => [ 'Classic', 'Recurring' ],
-  },
-
-  {
-    'key'         => 'cust_main-print_statement_link',
-    'section'     => 'UI',
-    'description' => 'Show a link to download a current statement for the customer.',
-    'type'        => 'checkbox',
   },
 
   { 

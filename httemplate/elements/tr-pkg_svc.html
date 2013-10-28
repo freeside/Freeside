@@ -7,12 +7,15 @@
 %foreach my $part_svc ( @part_svc ) {
 %  my $svcpart = $part_svc->svcpart;
 %  my $pkg_svc = $pkg_svc{$svcpart}
-%             || new FS::pkg_svc ( {
-%                                   'pkgpart'     => $pkgpart,
-%                                   'svcpart'     => $svcpart,
-%                                   'quantity'    => 0,
-%                                   'primary_svc' => '',
-%                                   'hidden'      => '',
+%              ||= qsearchs('pkg_svc', { 'pkgpart' => $pkgpart,
+%                                        'svcpart' => $svcpart } )
+%              || new FS::pkg_svc ( {
+%                                     'pkgpart'     => $pkgpart,
+%                                     'svcpart'     => $svcpart,
+%                                     'quantity'    => 0,
+%                                     'primary_svc' => '',
+%                                     'hidden'      => '',
+%                                     'bulk_skip'   => '',
 %                                } );
 %  if ( $cgi->param('error') ) {
 %    my $primary_svc = ( $pkg_svc->primary_svc =~ /^Y/i );
@@ -23,13 +26,24 @@
 %      if ! $primary_svc && $pkg_svc_primary == $svcpart;
 %  }
 %
-%  push @fixups, "pkg_svc$svcpart";
-%
 %  my $quan = 0;
 %  if ( $cgi->param("pkg_svc$svcpart") =~ /^\s*(\d+)\s*$/ ) {
 %    $quan = $1;
 %  } elsif ( $pkg_svc->quantity ) {
 %    $quan = $pkg_svc->quantity;
+%  }
+%
+%  my $hidden = '';
+%  if ( grep { $_ eq "hidden_svc$svcpart" } $cgi->param ) {
+%    $hidden = $cgi->param("hidden_svc$svcpart");
+%  } else {
+%    $hidden = $pkg_svc->hidden;
+%  }
+%  my $bulk_skip = '';
+%  if ( grep { $_ eq "no_bulk_skip$svcpart" } $cgi->param ) {
+%    $bulk_skip = $cgi->param("no_bulk_skip$svcpart") eq 'Y' ? '' : 'Y';
+%  } else {
+%    $bulk_skip = $pkg_svc->bulk_skip;
 %  }
 %
 %  my @exports = $pkg_svc->part_svc->part_export;
@@ -39,7 +53,7 @@
 
   <TR>
     <TD>
-      <INPUT TYPE="text" NAME="pkg_svc<% $svcpart %>" SIZE=7 MAXLENGTH=6 VALUE="<% $quan %>">
+      <INPUT TYPE="text" NAME="pkg_svc<% $svcpart %>" SIZE=4 MAXLENGTH=6 VALUE="<% $quan %>">
     </TD>
    
     <TD ALIGN="center">
@@ -50,9 +64,14 @@
       <A HREF="part_svc.cgi?<% $part_svc->svcpart %>"><% $part_svc->svc %></A>      <% $part_svc->disabled =~ /^Y/i ? ' (DISABLED' : '' %>
     </TD>
 
-    <TD>
-      <INPUT TYPE="checkbox" NAME="hidden<% $svcpart %>" VALUE="Y"<% $pkg_svc->hidden =~ /^Y/i ? ' CHECKED' : ''%>>
+    <TD ALIGN="center">
+      <INPUT TYPE="checkbox" NAME="hidden<% $svcpart %>" VALUE="Y"<% $hidden =~ /^Y/i ? ' CHECKED' : ''%>>
     </TD>
+
+    <TD ALIGN="center">
+      <INPUT TYPE="checkbox" NAME="no_bulk_skip<% $svcpart %>" VALUE="Y"<% $bulk_skip =~ /^Y/i ? '' : ' CHECKED' %>>
+    </TD>
+
   </TR>
 % foreach ( 1 .. $columns-1 ) {
 %       if ( $count == int( $_ * scalar(@part_svc) / $columns ) ) { 
@@ -102,10 +121,12 @@ my %opt = @_;
 my $cgi = $opt{'cgi'};
 
 my $thead =  "\n\n". ntable('#cccccc', 2).
-             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
-             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-2>Primary</FONT></TH>'.
+             '<TR>'.
+             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
+             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'.
              '<TH BGCOLOR="#dcdcdc">Service</TH>'.
-             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide</FONT></TH>'.
+             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide<BR>from<BR>Invoices</FONT></TH>'.
+             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Bulk<BR>Charge</FONT></TH>'.
              '</TR>';
 
 my $part_pkg = $opt{'object'};
@@ -124,7 +145,6 @@ my @part_svc = qsearch('part_svc', {}, '', $where);
 #my %pkg_svc = map { $_->svcpart => $_ } $q_part_pkg->pkg_svc;
 my %pkg_svc = map { $_->svcpart => $_ } $part_pkg->pkg_svc('disable_linked'=>1);
 
-my @fixups = ();
 my $count = 0;
 my $columns = 3;
 

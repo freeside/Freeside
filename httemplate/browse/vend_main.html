@@ -1,0 +1,36 @@
+<& elements/browse.html,
+     'title'              => 'Vendors',
+     'html_init'          => $html_init,
+     'name'               => 'vendors',
+     'disableable'        => 1,
+     'disabled_statuspos' => 2,
+     'query'              => { 'table'     => 'vend_main',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY vendname',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init =
+  #'Vendors.<BR><BR>'.
+  qq!<A HREF="${p}edit/vend_main.html"><I>Add a vendor</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM vend_main';
+
+my $link = [ $p.'edit/vend_main.html?', 'vendnum' ];
+my $clink = [ $p.'edit/vend_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Vendor', 'Class', ];
+my $fields = [ 'vendnum', 'vendname',
+               sub { shift->vend_class->classname; }
+             ];
+my $links  = [ $link, $link, $clink ];
+
+</%init>                                                                        

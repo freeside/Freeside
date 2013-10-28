@@ -41,7 +41,7 @@ my %search_hash = ();
 
 #scalars
 my @scalars = qw (
-  agentnum status address zip paydate_year paydate_month invoice_terms
+  agentnum salesnum status address zip paydate_year paydate_month invoice_terms
   no_censustract with_geocode with_email POST no_POST
   custbatch usernum
   cancelled_pkgs
@@ -51,7 +51,7 @@ my @scalars = qw (
 
 for my $param ( @scalars ) {
   $search_hash{$param} = scalar( $cgi->param($param) )
-    if $cgi->param($param);
+    if length($cgi->param($param));
 }
 
 #lists

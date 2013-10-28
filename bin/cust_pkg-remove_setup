@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearchs );
+use FS::cust_pkg;
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+my $pkgnum = shift or &usage;
+
+my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } )
+  or die "unknown pkgnum $pkgnum\n";
+
+$cust_pkg->setup('');
+my $error = $cust_pkg->replace;
+
+die $error if $error;
+
+sub usage {
+  die "usage: cust_pkg-remove_setup employee_username pkgnum\n";
+}
+
+1;
+

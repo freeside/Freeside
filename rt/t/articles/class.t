@@ -1,9 +1,8 @@
-#!/usr/bin/perl
 
 use strict;
 use warnings;
 
-use RT::Test tests => 24;
+use RT::Test tests => undef;
 
 use_ok 'RT::Articles';
 use_ok 'RT::Classes';
@@ -18,14 +17,21 @@ my ($id, $msg) = $cl->Create(Name => 'Test-'.$$, Description => 'A test class');
 
 ok ($id, $msg);
 
+ok( $cl->SetName( 'test-' . $$ ), 'rename to lower cased version' );
+ok( $cl->SetName( 'Test-' . $$ ), 'rename back' );
+
 # no duplicate class names should be allowed
-($id, $msg) = $cl->Create(Name => 'Test-'.$$, Description => 'A test class');
+($id, $msg) = RT::Class->new($root)->Create(Name => 'Test-'.$$, Description => 'A test class');
+
+ok (!$id, $msg);
+
+($id, $msg) = RT::Class->new($root)->Create(Name => 'test-'.$$, Description => 'A test class');
 
 ok (!$id, $msg);
 
 #class name should be required
 
-($id, $msg) = $cl->Create(Name => '', Description => 'A test class');
+($id, $msg) = RT::Class->new($root)->Create(Name => '', Description => 'A test class');
 
 ok (!$id, $msg);
 
@@ -74,3 +80,6 @@ $m->submit();
 $m->content_like(qr/Description changed from.*no value.*to .*Test Description/,'description changed');
 $m->form_number(3);
 is($m->current_form->find_input('Include-Name')->value,undef,'Disabled Including Names for this Class');
+
+undef $m;
+done_testing();

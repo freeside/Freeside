@@ -157,6 +157,9 @@ that field.
           'multiple'    => $def->{'multiple'},
           'disable_empty' => 1,
           'curr_value'  => $value,
+          # these can be switched between multiple and singular,
+          # so put the complete curr_value in an attribute
+          'element_etc' => 'default="'.encode_entities($value).'"',
       &>
 %     } else {
 %       my (@options, %labels);
@@ -180,8 +183,8 @@ that field.
           'curr_value'  => $value,
       &>
 %     }
-%   } elsif ( $def->{'type'} =~ /select-(.*?).html/ ) {
-      <& '/elements/'.$def->{'type'},
+%   } elsif ( $def->{'type'} =~ /^select-(.*?)(.html)?$/ && $1 ne 'hardware' ) {
+      <& "/elements/select-$1.html",
           'field'       => $name,
           'id'          => $name.'_select',
           'multiple'    => $def->{'multiple'},
@@ -204,15 +207,20 @@ that field.
              NAME="<%$name%>"
              ID="<%$name%>" 
              VALUE="<%$value%>">
-%     # inventory class selection
+%     my $mode = 'inventory';
+%     my $multiple = 1;
+%     if ( $def->{'type'} eq 'select-hardware' ) {
+%       $mode = 'hardware';
+%       $multiple = 0;
+%     }
       <& /elements/select-table.html,
           'field'       => $name.'_classnum',
           'id'          => $name.'_select',
-          'table'       => 'inventory_class',
+          'table'       => $mode.'_class',
           'name_col'    => 'classname',
           'curr_value'  => $value,
-          'empty_label' => 'Select inventory class',
-          'multiple'    => 1,
+          'empty_label' => "Select $mode class",
+          'multiple'    => $multiple,
       &>
 %   }
     </TD>
@@ -237,6 +245,19 @@ that field.
     <TD>
       <INPUT TYPE="checkbox" NAME="restrict_edit_password" VALUE="Y" \
       <% $part_svc->restrict_edit_password ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+% }
+% # special case: services with attached routers (false laziness...)
+% if ( $svcdb eq 'svc_acct' or $svcdb eq 'svc_broadband' or $svcdb eq 'svc_dsl' ) {
+%   push @fields, 'has_router';
+  <TR>
+    <TD COLSPAN=3 ALIGN="right">
+      <% emt('This service has an attached router') %>
+    </TD>
+    <TD>
+      <INPUT TYPE="checkbox" NAME="has_router" VALUE="Y" \
+      <% $part_svc->has_router ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 % }

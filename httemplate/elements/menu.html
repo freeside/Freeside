@@ -207,10 +207,10 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
-    $report_svc{"Advanced $lcsname reports"} = 
-        [ $fsurl."search/report_$svcdb.html", '' ]
-      if $svcdb =~ /^svc_(acct|broadband|hardware|phone)$/
-      && $curuser->access_right("Services: $name: Advanced search");
+  $report_svc{"Advanced $lcsname reports"} = 
+      [ $fsurl."search/report_$svcdb.html", '' ]
+    if $svcdb =~ /^svc_(acct|broadband|hardware|phone)$/
+    && $curuser->access_right("Services: $name: Advanced search");
 
   if ( $svcdb eq 'svc_phone' ) {
 
@@ -339,7 +339,8 @@ tie my %report_sales, 'Tie::IxHash',
   'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
   'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
   'Sales with Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
-  'Sales with Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
+  'Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
+  'Sales Person Commissions' => [ $fsurl.'search/report_sales_commission.html' ],
 ;
 
 tie my %report_financial, 'Tie::IxHash';
@@ -358,6 +359,9 @@ if( $curuser->access_right('Financial reports') ) {
   $report_financial{'Tax Liability (vendor tax data)'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor tax data)' ]
     if $taxproducts;
 
+  # most sites don't need this but there isn't really a config to enable it
+  $report_financial{'E911 Fee Summary'} = [ $fsurl.'search/report_e911.html', 'E911 fee summary' ];
+
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
 } elsif($curuser->access_right('Receivables report')) {
@@ -365,6 +369,10 @@ if( $curuser->access_right('Financial reports') ) {
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
 
 } # else $report_financial contains nothing.
+
+tie my %report_payable, 'Tie::IxHash',
+  'Payables' => [ $fsurl. 'search/report_vend_bill.html' ],
+;
 
 tie my %report_logs, 'Tie::IxHash';
   $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
@@ -402,9 +410,12 @@ $report_menu{'Employees'}      =  [ \%report_employees, 'Employee reports'  ]
   if keys %report_employees;
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
-$report_menu{'Financial'}      = [ \%report_financial, 'Financial reports' ]
+$report_menu{'Financial (Receivables)'} = [ \%report_financial, 'Financial reports (Receivables)' ]
   if $curuser->access_right('Financial reports') 
   or $curuser->access_right('Receivables report');
+$report_menu{'Financial (Payables)'} = [ \%report_payable, 'Financial reports (Payables)' ]
+  if $curuser->access_right('Financial reports');
+
 $report_menu{'Logs'}           = [ \%report_logs, 'System and email logs' ]
   if (keys %report_logs); # empty if the user has no rights to it
 $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
@@ -497,11 +508,16 @@ tie my %config_broadband, 'Tie::IxHash',
 tie my %config_phone, 'Tie::IxHash',
   'View/Edit phone device types' => [ $fsurl.'browse/part_device.html', 'Phone device types' ],
   'View/Edit bulk DID vendors' => [ $fsurl.'browse/did_vendor.html', 'Bulk DID vendors' ],
+  'View/Edit Carriers' => [ $fsurl.'browse/cdr_carrier.html', 'Carriers' ],
 ;
 
 tie my %config_radius, 'Tie::IxHash',
   'RADIUS Groups' => [ $fsurl.'browse/radius_group.html', 'Manage RADIUS groups' ],
   'RADIUS Clients' => [ $fsurl.'browse/nas.html', 'Manage RADIUS clients' ],
+;
+
+tie my %config_cable, 'Tie::IxHash',
+  'Cable modem models' => [ $fsurl.'browse/cable_model.html', '' ],
 ;
 
 tie my %config_export_svc, 'Tie::IxHash', ();
@@ -517,6 +533,8 @@ $config_export_svc{'Wireless broadband'} = [ \%config_broadband, ''    ]
 $config_export_svc{'Phone'}  = [ \%config_phone, ''    ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'RADIUS'} = [ \%config_radius, '' ]
+  if $curuser->access_right('Configuration');
+$config_export_svc{'Cable'} = [ \%config_cable, '' ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
   if $curuser->access_right('Configuration');
@@ -562,7 +580,7 @@ tie my %config_agent, 'Tie::IxHash',
 ;
 
 tie my %config_sales, 'Tie::IxHash',
-  'Sales'      => [ $fsurl.'browse/sales.cgi', 'Sales bring in new business.' ],
+  'Sales People' => [ $fsurl.'browse/sales.html', 'Sales people bring in new business.' ],
 ;
 
 tie my %config_billing_rates, 'Tie::IxHash',
@@ -583,8 +601,10 @@ $config_billing{'Billing events'} = [ $fsurl.'browse/part_event.html', 'Billing 
 if ( $curuser->access_right('Configuration') ) {
   #$config_billing{'Invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
   $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
+  $config_billing{'separator'} = ''; #its a separator!
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
   $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+  $config_billing{'separator2'} = ''; #its a separator!
 
   my $config_taxes_name = 'Locales and tax rates'.
                           ( $conf->exists('enable_taxproducts')
@@ -596,6 +616,12 @@ if ( $curuser->access_right('Configuration') ) {
      if $conf->exists('enable_taxproducts');
   $config_billing{'Tax classes'} = [ $fsurl. 'browse/part_pkg_taxclass.html', 'Tax classes' ];
 
+  if ( $conf->config('currencies') ) {
+    $config_billing{'separator3'} = ''; #its a separator!
+    $config_billing{'Exchange rates'} = [ $fsurl.'edit/currency_exchange.html', 'Currency exchange rates' ];
+  }
+
+  $config_billing{'separator4'} = ''; #its a separator!
   $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
   $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons.' ];
 }
@@ -669,22 +695,38 @@ if ( $curuser->access_right('Configuration' ) ) {
   %config_menu = (
     'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
     'separator'     => '', #its a separator!
-    'Employees'     => [ \%config_employees, '' ],
-    'Resellers'     => [ \%config_agent, '' ],
-    'Sales People'  => [ \%config_sales, '' ],
-    'separator2'    => '', #its a separator!
-    'Customers'     => [ \%config_cust, '' ],
-    #or this? 'Customers and Contacts' => [ \%config_cust, '' ],
+    'Companies'     => [ \%config_agent, '' ],
   );
 }
+
+$config_menu{'Sales People'}  = [ \%config_sales, '' ]
+  if $curuser->access_right('Edit sales people');
+
+if ( $curuser->access_right('Configuration' ) ) {
+  $config_menu{'Employees'}  = [ \%config_employees, '' ];
+  $config_menu{'separator2'} = ''; #its a separator!
+  $config_menu{'Customers'}  = [ \%config_cust, '' ];
+    #or this? 'Customers and Contacts'
+}
+
 $config_menu{'Packages'} = [ \%config_pkg, '' ]
   if    $curuser->access_right('Configuration' )
      || $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
 
-if ( $curuser->access_right('Configuration' ) ) {
+if ( $curuser->access_right('Configuration') ) {
   $config_menu{'Services'} = [ \%config_export_svc, '' ];
   $config_menu{separator3} = '';
+}
+
+tie my %config_vendor, 'Tie::IxHash',
+  'Vendor classes' => [ $fsurl.'browse/vend_class.html', '' ],
+  'Vendors'        => [ $fsurl.'browse/vend_main.html', '' ],
+;
+
+if ( $curuser->access_right('Configuration') ) {
+  $config_menu{'Vendors'} = [ \%config_vendor, '' ];
+  $config_menu{separator4} = '';
 }
 
 $config_menu{'Billing'} = [ \%config_billing, '' ]

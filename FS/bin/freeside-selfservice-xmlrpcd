@@ -28,6 +28,7 @@ use FS::UID qw( adminsuidsetup forksuidsetup dbh );
 use FS::Conf;
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
+use FS::TicketSystem;
 
 #freeside
 my $FREESIDE_LOG = "%%%FREESIDE_LOG%%%";
@@ -194,6 +195,9 @@ sub server_do_fork {
 
         #freeside db connection, etc.
         forksuidsetup($user);
+
+        #why isn't this needed ala freeside-selfservice-server??
+        #FS::TicketSystem->init();
 
         return;
     }

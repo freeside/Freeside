@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -76,7 +76,7 @@ $m->callback( %ARGS, URL => \$URL );
 $m->callback( %ARGS, CallbackName => 'BeforeSessionDelete' );
 
 if (keys %session) {
-    tied(%session)->delete;
+    RT::Interface::Web::InstantiateNewSession();
     $session{'CurrentUser'} = RT::CurrentUser->new;
 }
 

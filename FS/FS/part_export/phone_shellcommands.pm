@@ -52,6 +52,7 @@ old_ for replace operations):
   <LI><code>$pin</code> - Personal identification number
   <LI><code>$cust_name</code> - Customer name (quoted for the shell)
   <LI><code>$pkgnum</code> - Internal package number
+  <LI><code>$custnum</code> - Internal customer number
   <LI><code>$mac_addr</code> - MAC address (Device MAC address insert and delete commands only)
 </UL>
 END
@@ -107,6 +108,7 @@ sub _export_command {
   }
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
   my $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+  my $custnum = $cust_pkg ? $cust_pkg->custnum : '';
   my $cust_name = $cust_pkg ? $cust_pkg->cust_main->name : '';
   $cust_name = shell_quote $cust_name;
   my $sip_password = shell_quote $svc_phone->sip_password;
@@ -133,8 +135,10 @@ sub _export_replace {
 
   my $old_cust_pkg = $old->cust_svc->cust_pkg;
   my $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
+  my $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
   my $cust_pkg = $new->cust_svc->cust_pkg;
   my $new_pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+  my $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
   my $new_cust_name = $cust_pkg ? $cust_pkg->cust_main->name : '';
   $new_cust_name = shell_quote $new_cust_name;
   #done setting variables for the command

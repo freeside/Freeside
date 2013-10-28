@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -162,10 +162,10 @@ my $COLUMN_MAP = {
             my @res = (
                 \'<a href="',
                 $uri .'?'. $m->comp("/Elements/QueryString", %pass, MoveCustomFieldUp => $id ),
-                \'">', loc('[Up]'), \'</a>',
+                \'">', loc('~[Up~]'), \'</a>',
                 \' <a href="',
                 $uri .'?'. $m->comp("/Elements/QueryString", %pass, MoveCustomFieldDown => $id ),
-                \'">', loc('[Down]'), \'</a>'
+                \'">', loc('~[Down~]'), \'</a>'
             );
 
             return @res;

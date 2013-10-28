@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -257,12 +257,13 @@ my $render_attachment = sub {
         }
 
         my $filename =  length $name ? $name : loc('(untitled)');
+        my $efilename = $m->interp->apply_escapes( $filename, 'h' );
         $m->out('<img'
               . ' alt="'
-              . $filename
+              . $efilename
               . '"' 
               . ' title="'
-              . $filename
+              . $efilename
               . '"' 
               . ' src="'
               . $AttachPath . '/'

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -111,7 +111,7 @@ if ($Class =~ /::/) { # older passed in value
     $Class =~ s/:/_/g;
 }
 
-$m->out('<table class="' .
+$m->out('<table cellspacing="0" class="' .
 	($Collection->isa('RT::Tickets') ? 'ticket-list' : 'collection') . ' collection-as-table">');
 
 if ( $ShowHeader ) {

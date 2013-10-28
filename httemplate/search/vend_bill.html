@@ -1,0 +1,59 @@
+<& elements/search.html,
+     'title'       => 'Payables',
+     'name'        => 'payables',
+     'menubar'     => [ 'Add a payable' => '../edit/vend_bill.html', ],
+     'html_init'   => $html_init,
+     'query'       => $query,
+     'count_query' => $count_query,
+     'count_addl'  => [ '$%.2f total', ],
+     'header'      => [ 'Date',
+                        'Payment date',
+                        'Vendor',
+                        'Class',
+                        'Amount',
+                        '',
+                      ],
+     'fields'      => [
+                        sub { time2str('%D', shift->_date) },
+                        sub { time2str('%D', shift->payment_date) },
+                        sub { shift->vend_main->vendname },
+                        sub { shift->vend_main->vend_class->classname },
+                        'charged',
+                        sub { '<A HREF="javascript:areyousure('.
+                               shift->vendbillnum.
+                              ')">delete</A>';
+                            },
+                      ],
+
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %search = ();
+
+# begin/end/beginning/ending
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '_date');
+$search{'_date'} = [ $beginning, $ending ];
+
+($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, 'payment_date');
+$search{'payment_date'} = [ $beginning, $ending ];
+
+$search{'classnum'} = $cgi->param('classnum');
+
+my $query = FS::vend_bill->search( \%search );
+my $count_query = delete( $query->{'count_query'} );
+
+my $html_init .= <<"END";
+<SCRIPT TYPE="text/javascript">
+  function areyousure(vendbillnum) {
+    if ( confirm('Are you sure you want to delete this payable?') )
+      window.location.href="${p}misc/delete-vend_bill.html?" + vendbillnum;
+    
+  }
+</SCRIPT>
+END
+
+</%init>
+

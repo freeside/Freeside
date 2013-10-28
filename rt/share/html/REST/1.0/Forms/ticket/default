@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -167,7 +167,7 @@ else {
             elsif (lc $k eq 'text') {
                 $text = delete $data{$k};
             }
-            elsif ( lc $k ne 'id' ) {
+            elsif ( $k !~ /^(?:id|requestors)$/i ) {
                 $e = 1;
                 push @$o, $k;
                 push(@comments, "# $k: Unknown field");
@@ -188,7 +188,8 @@ else {
                 MIME::Entity->build(
                     From => $session{CurrentUser}->EmailAddress,
                     Subject => $v{Subject},
-                    Data => $text
+                    Data => $text,
+                    'X-RT-Interface' => 'REST',
                 );
         }
 
@@ -375,11 +376,18 @@ else {
             else {
                 my $vals = $ticket->CustomFieldValues($cf->id);
 
-                if ( $cf->SingleValue ) {
+                if ( !defined $val || !length $val ) {
+                    while ( my $val = $vals->Next ) {
+                        ($n, $s) = $ticket->DeleteCustomFieldValue(
+                            Field => $cf, ValueId => $val->id,
+                        );
+                        $s =~ s/^# // if defined $s;
+                    }
+                }
+                elsif ( $cf->SingleValue ) {
                     my $old = $vals->Next;
                     if ( $old ) {
                         if ( $val ne $old->Content ) {
-                            $old->Delete;
                             ($n, $s) = $ticket->AddCustomFieldValue(
                                  Field => $cf, Value => $val );
                             $s =~ s/^# // if defined $s;
@@ -433,7 +441,7 @@ else {
                             $new{$c}--;
                         }
                         else {
-                            $v->Delete();
+                            $ticket->DeleteCustomFieldValue( Field => $cf, ValueId => $v->id );
                         }
                     }
                     for ( @new ) {

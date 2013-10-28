@@ -31,15 +31,26 @@ if ( $conf->exists('showpasswords') ) {
 
 push @fields, qw( pin phone_name forwarddst email );
 
+push @fields, { field => 'sms_carrierid', 
+                #type=>'cdr_carrier',
+                value_callback => sub {
+                  $_[0]->sms_carriername,
+                },
+              },
+              'sms_account',
+              'max_simultaneous',
+;
+
 if ( $conf->exists('svc_phone-lnp') ) {
-push @fields, 'lnp_status',
-	    'lnp_reject_reason',
-	    { field => 'portable', type => 'checkbox', },
-	    'lrn',
-	    { field => 'lnp_desired_due_date', type => 'date', },
-	    { field => 'lnp_due_date', type => 'date', },
-	    'lnp_other_provider',
-	    'lnp_other_provider_account';
+  push @fields, 'lnp_status',
+                'lnp_reject_reason',
+                { field => 'portable', type => 'checkbox', },
+                'lrn',
+                { field => 'lnp_desired_due_date', type => 'date', },
+                { field => 'lnp_due_date', type => 'date', },
+                'lnp_other_provider',
+                'lnp_other_provider_account',
+  ;
 }
 
 my $html_foot = sub {
@@ -67,10 +78,13 @@ my $html_foot = sub {
   ###
   # Devices
   ###
+  #remove this when svc_phone isa device_Common, as elements/svc_Common will display it
   my $devices = include('/view/elements/svc_devices.html',
                           'svc_x' => $svc_phone,
                           'table' => 'phone_device',
                        );
+
+  my $status = include('/view/elements/svc_export_status.html', $svc_phone );
 
   ##
   # CDR links
@@ -125,6 +139,7 @@ my $html_foot = sub {
 
   $e911.
   $devices.
+  $status.
   join(' | ', @links ). '<BR>'.
   join(' | ', @ilinks). '<BR>';
 

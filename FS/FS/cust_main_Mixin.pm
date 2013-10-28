@@ -539,6 +539,7 @@ sub process_email_search_result {
   die "error loading FS::$table: $@\n" if $@;
 
   my $error = "FS::$table"->email_search_result( $param );
+  dbh->commit; # save failed jobs before rethrowing the error
   die $error if $error;
 
 }

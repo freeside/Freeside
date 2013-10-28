@@ -507,8 +507,13 @@ sub realtime_bop {
         (exists($options{'paytype'}) && $options{'paytype'})
           ? uc($options{'paytype'})
           : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
-      $content{account_name} = $self->getfield('first'). ' '.
-                               $self->getfield('last');
+
+      if ( $content{account_type} =~ /BUSINESS/i && $self->company ) {
+        $content{account_name} = $self->company;
+      } else {
+        $content{account_name} = $self->getfield('first'). ' '.
+                                 $self->getfield('last');
+      }
 
       $content{customer_org} = $self->company ? 'B' : 'I';
       $content{state_id}       = exists($options{'stateid'})
@@ -1005,8 +1010,9 @@ sub _realtime_bop_result {
 
   } else {
 
-    my $perror = $payment_gateway->gateway_module. " error: ".
-      $transaction->error_message;
+    my $perror = $transaction->error_message;
+    #$payment_gateway->gateway_module. " error: ".
+    # removed for conciseness
 
     my $jobnum = $cust_pay_pending->jobnum;
     if ( $jobnum ) {
@@ -1104,7 +1110,11 @@ sub _realtime_bop_result {
     }
 
     $cust_pay_pending->status('done');
-    $cust_pay_pending->statustext("declined: $perror");
+    $cust_pay_pending->statustext($perror);
+    #'declined:': no, that's failure_status
+    if ( $transaction->can('failure_status') ) {
+      $cust_pay_pending->failure_status( $transaction->failure_status );
+    }
     my $cpp_done_err = $cust_pay_pending->replace;
     if ( $cpp_done_err ) {
       my $e = "WARNING: $options{method} declined but pending payment not ".

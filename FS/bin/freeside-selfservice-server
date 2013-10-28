@@ -16,6 +16,7 @@ use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_SessionCache;
 use FS::Record qw( qsearch qsearchs );
+use FS::TicketSystem;
 
 use FS::Conf;
 use FS::cust_svc;
@@ -157,12 +158,10 @@ while (1) {
       warn "child $pid spawned\n" if $Debug;
     } else { #kid time
 
-      ##get new db handle
       $FS::UID::dbh->{InactiveDestroy} = 1;
       forksuidsetup($user);
 
-      #get db handle
-      #adminsuidsetup($user);
+      FS::TicketSystem->init();
 
       my $type = $packet->{_packet};
       warn "calling $type handler\n" if $Debug; 

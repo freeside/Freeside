@@ -15,13 +15,14 @@
                              'msgname'   => 'Template name',
                              'from_addr' => 'From: ',
                              'bcc_addr'  => 'Bcc: ',
-                             'locale'    => 'Language',
+                             'locale'    => 'Locale',
                              'subject'   => 'Subject: ',
                              'body'      => 'Message body',
                            },
      'edit_callback'    => \&edit_callback,
      'error_callback'   => \&edit_callback,
      'html_bottom'      => '</DIV>',
+     'html_table_bottom'=> \&html_table_bottom,
      'html_foot'        => ( $no_submit ? '' : "</TD>$sidebar</TR></TABLE>" ),
      'no_submit'        => $no_submit,
 &>
@@ -66,7 +67,8 @@ if ( $curuser->access_right('Edit global templates')
       { field => 'subject',   size=>60, },
       { field => 'body',
         type  => 'htmlarea',
-        width => 763
+        width => 763,
+        config=> { extraPlugins => 'blockprotect' },
       },
   ;
 } else { #readonly
@@ -120,11 +122,12 @@ sub edit_callback {
 
     # make a list of available locales
     my $content_locales = $object->content_locales;
-    my @locales = grep { !exists($content_locales->{$_}) } FS::Locales->locales;
+    my @locales = grep { !exists($content_locales->{$_}) } 
+                         FS::Conf->new->config('available-locales');
     my %labels;
     foreach (@locales) {
       my %info = FS::Locales->locale_info($_);
-      $labels{$_} = $info{'name'}; # ignoring country for now
+      $labels{$_} = $info{'label'};
     }
     unshift @locales, 'new';
     $labels{'new'} = 'Select language';
@@ -145,7 +148,7 @@ sub edit_callback {
       curr_value  => 'new',
       onchange    => $onchange_locale,
     );
-  } # else it's already set up correctly
+  }
 }
 
 sub menubar_opt_callback {
@@ -159,10 +162,10 @@ sub menubar_opt_callback {
   foreach my $l (FS::Locales->locales) {
     if ( exists $object->content_locales->{$l} ) {
       my %info = FS::Locales->locale_info($l);
-      push @tabs,
-           $info{'name'},
+      push @tabs, 
+           $info{'label'},
            ';locale='.$l;
-      $selected = $info{'name'} if $object->locale eq $l;
+      $selected = $info{'label'} if $object->locale eq $l;
     }
     else {
       $display_new = 1; # there is at least one unused locale left
@@ -326,9 +329,14 @@ my $widget = new HTML::Widgets::SelectLayers(
 my $sidebar = '
 <SCRIPT TYPE="text/javascript">
 function insertHtml(what) {
-  var oEditor = FCKeditorAPI.GetInstance("body");
-  oEditor.InsertHtml(what);
+  var oEditor = CKEDITOR.instances["body"];
+  oEditor.insertHtml(what);
 };
+
+function areyousure(url, message) {
+  if (confirm(message))
+    window.location.href = url;
+}
 </SCRIPT>
 <TD valign="top"><FORM name="dummy">
 Substitutions: '
@@ -339,5 +347,23 @@ Substitutions: '
 <BR>{ time2str("%D", time) } = '.time2str("%D", time).'
 </FONT></TD>
 ';
+
+sub html_table_bottom {
+  my $object = shift;
+  $cgi->param('locale') =~ /^(\w+)$/;
+  my $locale = $1;
+  my $html;
+  if ( $locale and $locale ne 'new' ) {
+    # set up a delete link
+    my $msgnum = $object->msgnum;
+    my $url = $p."misc/delete-template_content.html?msgnum=$msgnum;locale=$1";
+    my $link = qq!<A HREF="javascript:areyousure('$url','Really delete this template?')">! .
+      'Delete this template' .
+      '</A>';
+    $html = qq!<TR><TD></TD>
+      <TD STYLE="font-style: italic; font-size: small">$link</TD></TR>!;
+  }
+  $html;
+}
 
 </%init>

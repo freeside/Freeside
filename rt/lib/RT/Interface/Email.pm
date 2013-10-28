@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -149,6 +149,9 @@ sub CheckForSuspiciousSender {
 
     my ( $From, $junk ) = ParseSenderAddressFromHead($head);
 
+    # If unparseable (non-ASCII), $From can come back undef
+    return undef if not defined $From;
+
     if (   ( $From =~ /^mailer-daemon\@/i )
         or ( $From =~ /^postmaster\@/i )
         or ( $From eq "" ))
@@ -222,8 +225,8 @@ add 'In-Reply-To' field to the error that points to this message.
 
 =item Attach - optional text that attached to the error as 'message/rfc822' part.
 
-=item LogLevel - log level under which we should write explanation message into the
-log, by default we log it as critical.
+=item LogLevel - log level under which we should write the subject and
+explanation message into the log, by default we log it as critical.
 
 =back
 
@@ -244,7 +247,7 @@ sub MailError {
 
     $RT::Logger->log(
         level   => $args{'LogLevel'},
-        message => $args{'Explanation'}
+        message => "$args{Subject}: $args{'Explanation'}",
     ) if $args{'LogLevel'};
 
     # the colons are necessary to make ->build include non-standard headers
@@ -1059,7 +1062,7 @@ sub CreateUser {
 
 Takes a hash containing QueueObj, Head and CurrentUser objects.
 Returns a list of all email addresses in the To and Cc
-headers b<except> the current Queue\'s email addresses, the CurrentUser\'s
+headers b<except> the current Queue's email addresses, the CurrentUser's
 email address  and anything that the configuration sub RT::IsRTAddress matches.
 
 =cut
@@ -1101,23 +1104,34 @@ sub IgnoreCcAddress {
 
 =head2 ParseSenderAddressFromHead HEAD
 
-Takes a MIME::Header object. Returns a tuple: (user@host, friendly name)
-of the From (evaluated in order of Reply-To:, From:, Sender)
+Takes a MIME::Header object. Returns (user@host, friendly name, errors)
+where the first two values are the From (evaluated in order of
+Reply-To:, From:, Sender).
+
+A list of error messages may be returned even when a Sender value is
+found, since it could be a parse error for another (checked earlier)
+sender field. In this case, the errors aren't fatal, but may be useful
+to investigate the parse failure.
 
 =cut
 
 sub ParseSenderAddressFromHead {
     my $head = shift;
+    my @sender_headers = ('Reply-To', 'From', 'Sender');
+    my @errors;  # Accumulate any errors
 
     #Figure out who's sending this message.
-    foreach my $header ('Reply-To', 'From', 'Sender') {
+    foreach my $header ( @sender_headers ) {
         my $addr_line = $head->get($header) || next;
         my ($addr, $name) = ParseAddressFromHeader( $addr_line );
         # only return if the address is not empty
-        return ($addr, $name) if $addr;
+        return ($addr, $name, @errors) if $addr;
+
+        chomp $addr_line;
+        push @errors, "$header: $addr_line";
     }
 
-    return (undef, undef);
+    return (undef, undef, @errors);
 }
 
 =head2 ParseErrorsToAddressFromHead HEAD
@@ -1445,6 +1459,7 @@ sub Gateway {
     }
     @mail_plugins = grep !$skip_plugin{"$_"}, @mail_plugins;
     $parser->_DecodeBodies;
+    $parser->RescueOutlook;
     $parser->_PostProcessNewEntity;
 
     my $head = $Message->head;
@@ -1475,6 +1490,10 @@ sub Gateway {
     # }}}
 
     $args{'ticket'} ||= ExtractTicketId( $Message );
+
+    # ExtractTicketId may have been overridden, and edited the Subject
+    my $NewSubject = $Message->head->get('Subject');
+    chomp $NewSubject;
 
     $SystemTicket = RT::Ticket->new( RT->SystemUser );
     $SystemTicket->Load( $args{'ticket'} ) if ( $args{'ticket'} ) ;
@@ -1560,9 +1579,11 @@ sub Gateway {
             );
         }
 
+        $head->replace('X-RT-Interface' => 'Email');
+
         my ( $id, $Transaction, $ErrStr ) = $Ticket->Create(
             Queue     => $SystemQueueObj->Id,
-            Subject   => $Subject,
+            Subject   => $NewSubject,
             Requestor => \@Requestors,
             Cc        => \@Cc,
             MIMEObj   => $Message
@@ -1615,7 +1636,7 @@ sub Gateway {
                 #Warn the sender that we couldn't actually submit the comment.
                 MailError(
                     To          => $ErrorsTo,
-                    Subject     => "Message not recorded: $Subject",
+                    Subject     => "Message not recorded ($method): $Subject",
                     Explanation => $msg,
                     MIMEObj     => $Message
                 );

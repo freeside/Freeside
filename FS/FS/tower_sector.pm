@@ -2,8 +2,9 @@ package FS::tower_sector;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearchs ); # qsearch );
+use FS::Record qw( qsearch qsearchs );
 use FS::tower;
+use FS::svc_broadband;
 
 =head1 NAME
 
@@ -26,8 +27,8 @@ FS::tower_sector - Object methods for tower_sector records
 
 =head1 DESCRIPTION
 
-An FS::tower_sector object represents an example.  FS::tower_sector inherits from
-FS::Record.  The following fields are currently supported:
+An FS::tower_sector object represents an tower sector.  FS::tower_sector
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -56,14 +57,12 @@ ip_addr
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new sector.  To add the sector to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
-
-# the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'tower_sector'; }
 
@@ -72,37 +71,34 @@ sub table { 'tower_sector'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  #not the most efficient, not not awful, and its not like deleting a sector
+  # with customers is a common operation
+  return "Can't delete a sector with customers" if $self->svc_broadband;
+
+  $self->SUPER::delete;
+}
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-=cut
-
-# the replace method can be inherited from FS::Record
-
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid sector.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
 =cut
-
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
 
 sub check {
   my $self = shift;
@@ -143,6 +139,17 @@ sub description {
   else {
     $self->tower->towername. ' sector '. $self->sectorname
   }
+}
+
+=item svc_broadband
+
+Returns the services on this tower sector.
+
+=cut
+
+sub svc_broadband {
+  my $self = shift;
+  qsearch('svc_broadband', { 'sectornum' => $self->sectornum });
 }
 
 =back

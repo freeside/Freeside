@@ -1,0 +1,169 @@
+<%doc>
+
+Example:
+
+  <& /elements/tr-select-sales.html',
+
+    #recommended to keep things "sticky" on errors
+    'curr_value'    => $curr_value,
+
+    ##
+    # optional
+    ##
+
+    'label'         => 'Sales Person',
+    'empty_label'   => 'Select sales person', #override default 
+    'disable_empty' => 0, #on byd efault, pass 0 to disable
+    'field'         => 'salesnum', #HTML element name and ID
+
+  &>
+
+</%doc>
+% if ( scalar(@sales) == 0 || $opt{'fixed'} ) { 
+
+  <INPUT TYPE  = "hidden"
+         NAME  = "<% $field %>"
+         ID    = "<% $id %>"
+         VALUE = "<% $salesnum %>"
+  >
+
+%   if ( scalar(@sales) > 0 ) {
+      <TR>
+%       if ( $opt{'th'} ) {
+          <TH ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TH>
+%       } else {
+          <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+%       }
+        <TD BGCOLOR="#dddddd" <% $colspan %>>
+%         my $sales = qsearchs('sales', { 'salesnum' => $salesnum });
+          <% $sales ? $sales->salesperson : '(none)' |h %>
+        </TD>
+      </TR>
+
+%   } else { # YUCK.  empty row so we don't throw g_row in edit.html off :/
+      <TR>
+      </TR>
+%   }
+%
+% } else { 
+
+  <TR>
+%   if ( $opt{'th'} ) {
+      <TH ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TH>
+%   } else {
+      <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+%   }
+    <TD <% $colspan %>>
+      <& /elements/select-sales.html,
+                     'curr_value' => $salesnum,
+                     'sales'     => \@sales,
+                     %opt,
+      &>
+    </TD>
+  </TR>
+
+% } 
+
+<& /elements/xmlhttp.html,
+              'url'  => $p.'misc/sales.cgi',
+              'subs' => [ 'get_sales' ],
+&>
+<SCRIPT TYPE="text/javascript">
+
+% # false laziness w/ elements/tr-select-cust-part_pkg.html
+
+  function <% $field %>_opt(what, value, text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function <% $field %>_agentnum_changed(what) {
+    what.form.<% $field %>.disabled = 'disabled'; //disable sales dropdown
+
+    if ( what.type == 'hidden' ) { 
+      agentnum = what.value;
+    } else {
+      agentnum = what.options[what.selectedIndex].value;
+    }
+
+    function update_<% $field %>(sales) {
+
+      if ( what.form.<% $field %>.type == 'hidden' ) {
+        what.form.<% $field %>.disabled = ''; //re-enable sales dropdown
+        return;
+      }
+
+      // save the current salesnum
+      var salesnum = what.form.<% $field %>.value;
+
+      // blank the current sales people
+      for ( var i = what.form.<% $field %>.length; i>= 0; i-- )
+        what.form.<% $field %>.options[i] = null;
+
+      // add the new sales people
+
+%     my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();
+%     while ( @pre_options ) { 
+%       my $pre_opt   = shift(@pre_options);
+%       my $pre_label = shift(@pre_options);
+%       #my $selected =  ( $salesnum eq $pre_opt );
+        <% $field %>_opt( what.form.<% $field %>,
+                          <% $pre_opt   |js_string %>,
+                          <% $pre_label |js_string %>
+                        );
+%     }
+
+%     unless ( $opt{'disable_empty'} ) {
+        <% $field %>_opt( what.form.<% $field %>,
+                          '',
+                          <% $opt{'empty_label'} || '(none)' |js_string %>
+                        );
+%     }
+
+      var salesArray = eval('(' + sales + ')' );
+      for ( var s = 0; s < salesArray.length; s=s+2 ) {
+        //surely this should be some kind of JSON structure
+        var salesLabel  = salesArray[s+1];
+        <% $field %>_opt( what.form.<% $field %>, salesArray[s], salesLabel );
+      }
+
+      what.form.<% $field %>.disabled = ''; //re-enable sales dropdown
+
+      //restore salesnum if possible
+      what.form.<% $field %>.value = salesnum;
+
+    }
+
+    get_sales( agentnum,
+               update_<% $field %>
+             );
+  }
+
+  <&| /elements/onload.js &>
+    <% $field %>_agentnum_changed(document.getElementById('agentnum'));
+  </&>
+
+</SCRIPT>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my %opt = @_;
+my $salesnum = $opt{'curr_value'} || $opt{'value'};
+my $field = $opt{'element_name'} || $opt{'field'} || 'salesnum';
+my $id = $opt{'id'} || $opt{'field'} || 'salesnum';
+
+my $hashref = { disabled => '' };
+$hashref->{agentnum} = $opt{agentnum} if $opt{agentnum};
+
+my @sales = qsearch({ 'table'     => 'sales',
+                      'hashref'   => $hashref,
+                      'extra_sql' => ' AND '. $curuser->agentnums_sql,
+                      'order_by'  => 'ORDER BY salesperson',
+                   });
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+</%init>

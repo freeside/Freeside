@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -53,6 +53,7 @@
 <option value="LastUpdated"><&|/l&>Last Updated</&></option>
 <option value="Starts"><&|/l&>Starts</&></option>
 <option value="Due"><&|/l&>Due</&></option>
+<option value="WillResolve"><&|/l&>Will Resolve</&></option>
 <option value="Updated"><&|/l&>Updated</&></option>
 </select>
 <%ARGS>

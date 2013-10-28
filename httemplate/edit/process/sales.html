@@ -1,0 +1,42 @@
+<& elements/process.html,
+     'table'            => 'sales',
+     'viewall_dir'      => 'browse',
+     'agent_virt'       => 1,
+     'noerror_callback' => $process_sales_pkg_class,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit sales people');
+
+#false laziness w/process/agent.cgi
+my $process_sales_pkg_class = sub {
+  my( $cgi, $sales ) = @_;
+
+  #surprising amount of false laziness w/ edit/agent.cgi
+  my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
+  foreach my $pkg_class ( '', @pkg_class ) {
+    my %sales_pkg_class = ( 'salesnum' => $sales->salesnum,
+                            'classnum' => $pkg_class ? $pkg_class->classnum : ''
+                          );
+    my $sales_pkg_class =
+      qsearchs( 'sales_pkg_class', \%sales_pkg_class )
+      || new FS::sales_pkg_class   \%sales_pkg_class;
+
+    my $param = 'classnum'. $sales_pkg_class{classnum};
+
+    $sales_pkg_class->commission_percent( $cgi->param($param) );
+    $sales_pkg_class->commission_duration( $cgi->param($param.'_duration') );
+
+    my $method = $sales_pkg_class->salespkgclassnum ? 'replace' : 'insert';
+
+    my $error = $sales_pkg_class->$method;
+    die $error if $error; #XXX push this down into sales.pm w/better/transactional error handling
+
+  }
+
+};
+
+
+</%init>
+

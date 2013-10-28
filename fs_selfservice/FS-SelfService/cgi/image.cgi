@@ -8,10 +8,18 @@ use FS::SelfService qw( skin_info );
 my $cgi = new CGI;
 
 my($query) = $cgi->keywords;
-$query =~ /^(\w+)$/ or '' =~ /^()$/;
-my $name = $1;
+my( $name, $agentnum ) = ( '', '' );
+if ( $query =~ /^(\w+)$/ ) {
+  $name = $1;
+} else {
+  $cgi->param('name') =~ /^(\w+)$/ or '' =~ /^()$/;
+  $name = $1;
+  if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+    $agentnum = $1;
+  }
+}
 
-my $info = skin_info();
+my $info = skin_info( agentnum=>$agentnum );
 
 print $cgi->header( '-type'    => 'image/png', #for now
                     #'-expires' => 'now',

@@ -2,7 +2,11 @@
 
 <FORM ACTION="cust_bill_pkg.cgi" METHOD="GET">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<TR>
+  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
+</TR>
 
 <% include('/elements/tr-select-from_to.html' ) %>
 
@@ -17,12 +21,33 @@ function enable_agent_totals(obj) {
   obj.form.agent_totals.disabled = !(
     obj.form.agentnum.value == '' && (
       obj.form.refnum.value == ''   ||
-      obj.form.classnum.value == 0  ||
+      document.getElementById('class_agg_break_breakdown').checked ||
       obj.form.use_setup.value == 1 ||
       obj.form.use_usage.value == 1
     )
   );
 }
+
+function class_mode_changed() {
+  var options = document.getElementsByName('class_mode');
+  var mode;
+  for(var i=0; i < options.length; i++) {
+    if (options[i].checked) {
+      mode = options[i].value;
+    }
+  }
+    
+  var div_pkg = document.getElementById('pkg_class');
+  var div_report = document.getElementById('report_class');
+  if (mode == 'pkg') {
+    div_pkg.style.display = '';
+    div_report.style.display = 'none';
+  } else if (mode == 'report') {
+    div_pkg.style.display = 'none';
+    div_report.style.display = '';
+  }
+}
+window.onload = class_mode_changed;
 </SCRIPT>
 
 <& /elements/tr-select-agent.html,
@@ -49,13 +74,72 @@ function enable_agent_totals(obj) {
   'onchange'      => 'enable_agent_totals'
 &>
 
-<& /elements/tr-select-pkg_class.html,
-  'field'       => 'classnum',
-  'pre_options' => [ 'all'  => 'all (aggregate)',
-                        '0' => 'all (breakdown)' ],
-  'empty_label' => '(empty class)',
-  'onchange'    => 'enable_agent_totals',
-&>
+<TR>
+
+  <TD>
+    <INPUT TYPE="radio" NAME="class_mode" VALUE="pkg" onchange="class_mode_changed('pkg')" CHECKED>
+    <% emt('Package class') %>
+    <BR>
+    <INPUT TYPE="radio" NAME="class_mode" VALUE="report" onchange="class_mode_changed('report')">
+    <% emt('Report class') %>
+  </TD>
+
+  <TD>
+    <TABLE>
+      <TR>
+
+        <TD>
+          <DIV ID="pkg_class">
+          <& /elements/select-pkg_class.html,
+            'field'         => 'classnum',
+            'multiple'      => 1,
+            'all_selected'  => 1,
+            'pre_options'   => [ #'all'  => 'all (aggregate)',
+                                #   ''  => 'all (breakdown)',
+                                  '0'  => '(empty class)' ],
+            'disable_empty' => 1,
+            'onchange'      => 'enable_agent_totals',
+          &>
+          </DIV>
+          <DIV ID="report_class" STYLE="display: none">
+          <& /elements/select-table.html,
+            'field'         => 'report_optionnum',
+            'table'         => 'part_pkg_report_option',
+            'name_col'      => 'name',
+            'value_col'     => 'num',
+            'multiple'      => 1,
+            'all_selected'  => 1,
+            'pre_options'   => [ #'all' => 'all (aggregate)',
+                               #   '' => 'all (breakdown)', 
+                                 '0'  => '(empty class)' ],
+            'disable_empty' => 1,
+            'onchange'      => 'enable_agent_totals',
+          &>
+          </DIV>
+        </TD>
+
+        <TD>
+          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_aggregate" VALUE="aggregate" onchange="enable_agent_totals(this)" CHECKED>
+          <% emt('Aggregate') %>
+          <BR>
+          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_breakdown" VALUE="breakdown" onchange="enable_agent_totals(this)">
+          <% emt('Breakdown') %>
+        </TD>
+
+      </TR>
+    </TABLE>
+  </TD>
+
+</TR>
+
+
+<TR>
+  <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+</TR>
+
+<TR>
+  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
+</TR>
 
 <!--
 <TR>

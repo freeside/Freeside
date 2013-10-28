@@ -27,6 +27,8 @@ tie my %options, 'Tie::IxHash',
   <user id="<% $phonenum %>">
     <params>
       <param name="password" value="<% $sip_password %>"/>
+      <param name="nibble_account" value="<% $phonenum %>"/>
+      <param name="nibble_rate" value="<% $nibble_rate %>"/>
     </params>
   </user>
 </domain>
@@ -134,8 +136,13 @@ sub freeswitch_template_fillin {
     DELIMITERS => [ '<%', '%>' ],
   );
 
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+  my $nibble_rate = $cust_pkg ? $cust_pkg->part_pkg->option('nibble_rate')
+                              : '';
+
   #false lazinessish w/phone_shellcommands::_export_command
   my %hash = (
+    'nibble_rate' => $nibble_rate,
     map { $_ => $svc_phone->getfield($_) } $svc_phone->fields
   );
 

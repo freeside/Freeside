@@ -1,0 +1,49 @@
+<& /elements/header-popup.html, "Change Sales Person" &>
+<& /elements/error.html &>
+
+<FORM ACTION="<% $p %>edit/process/cust_pkg_salesnum.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+<& /elements/table-grid.html, 'bgcolor' => '#cccccc', 'cellpadding' => 2 &>
+
+  <TR>
+    <TH ALIGN="right">Current package&nbsp;</TH>
+    <TD CLASS="grid">
+      <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
+    </TD>
+  </TR>
+
+<& /elements/tr-select-sales.html,
+    #'field'       => 'salesnum',
+    'curr_value'  => $cust_pkg->salesnum,
+    'th'          => 1,
+&>
+
+</TABLE>
+
+<BR>
+<INPUT NAME="submit" TYPE="submit" VALUE="Change">
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+#some false laziness w/misc/change_pkg.cgi
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Change customer package');
+
+my $pkgnum = scalar($cgi->param('pkgnum'));
+$pkgnum =~ /^(\d+)$/ or die "illegal pkgnum $pkgnum";
+$pkgnum = $1;
+
+my $cust_pkg = FS::cust_pkg->by_key($pkgnum) or die "unknown pkgnum $pkgnum";
+
+my $part_pkg = $cust_pkg->part_pkg;
+
+</%init>

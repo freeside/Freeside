@@ -86,10 +86,10 @@ sub upgrade_config {
 
   # if there's a USPS tools login, assume that's the standardization method
   # you want to use
-  if ( length($conf->config('usps_webtools-userid')) > 0 and
-       !$conf->exists('address_standardize_method') ) {
-    $conf->set('address_standardize_method', 'usps');
-  }
+  $conf->set('address_standardize_method', 'usps')
+    if $conf->exists('usps_webtools-userid')
+    && length($conf->config('usps_webtools-userid')) > 0
+    && ! $conf->exists('address_standardize_method');
 
 }
 
@@ -174,6 +174,9 @@ sub upgrade {
   local($FS::cust_main::ignore_illegal_zip) = 1;
   local($FS::cust_main::ignore_banned_card) = 1;
   local($FS::cust_main::skip_fuzzyfiles) = 1;
+
+  local($FS::cust_payby::ignore_expired_card) = 1;
+  local($FS::cust_payby::ignore_banned_card) = 1;
 
   # decrypt inadvertantly-encrypted payinfo where payby != CARD,DCRD,CHEK,DCHK
   # kind of a weird spot for this, but it's better than duplicating

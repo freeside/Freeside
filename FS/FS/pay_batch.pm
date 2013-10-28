@@ -735,7 +735,8 @@ sub import_from_gateway {
           $total += $cust_pay_batch->paid;
         }
         else {
-          $error = $cust_pay_batch->decline($item->error_message);
+          $error = $cust_pay_batch->decline($item->error_message,
+                                            $item->failure_status);
         }
 
         if ( $error ) {        
@@ -946,7 +947,7 @@ sub export_batch {
 
   my $info = $export_info{$format} or die "Format not found: '$format'\n";
 
-  &{$info->{'init'}}($conf) if exists($info->{'init'});
+  &{$info->{'init'}}($conf, $self->agentnum) if exists($info->{'init'});
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;

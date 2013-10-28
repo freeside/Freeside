@@ -156,7 +156,9 @@ Setting <b><% $key %></b>
 %     }
 
 %     my %options = &{$config_item->options_sub};
-%     my @options = sort { $a <=> $b } keys %options;
+%     my @options = keys %options;
+%     my $sortsub = $config_item->sort_sub || sub { $a <=> $b };
+%     @options = sort $sortsub @options;
 %     my %saw;
 %     foreach my $value ( @options ) {
 %       local($^W)=0; next if $saw{$value}++;

@@ -1,11 +1,10 @@
-#!/usr/bin/perl -w
 
 use strict;
 use warnings;
 
 use Test::Deep;
 use File::Spec;
-use Test::More tests => 7;
+use Test::More tests => 7 + 1; # plus one for warnings check
 use RT::Test ();
 BEGIN {
     my $shredder_utils = RT::Test::get_relocatable_file('utils.pl',

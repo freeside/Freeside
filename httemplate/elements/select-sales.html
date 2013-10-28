@@ -1,0 +1,19 @@
+<& /elements/select-table.html,
+                 'table'         => 'sales',
+                 'name_col'      => 'salesperson',
+                 'value'         => $salesnum || '',
+                 'agent_virt'    => 1,
+                 'empty_label'   => emt('(none)'),
+                 'hashref'       => { 'disabled' => '' },
+                 'order_by'      => ' ORDER BY salesperson',
+                 %opt,
+&>
+<%init>
+
+my %opt = @_;
+my $salesnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'records'} = delete $opt{'sales'}
+  if $opt{'sales'};
+
+</%init>

@@ -1,0 +1,27 @@
+<& elements/edit.html,
+     'name_singular' => 'Vendor',
+     'table'         => 'vend_main',
+     'fields'        => [
+                          'vendname',
+                          { field=>'disabled', type=>'checkbox', value=>'Y', },
+                          { field         => 'classnum',
+                            type          => 'select-table',
+                            table         => 'vend_class',
+                            disable_empty => 1,
+                            name_col      => 'classname',
+                          },
+                        ],
+     'labels'        => {
+                          'vendnum'  => 'Vendor number',
+                          'vendname' => 'Vendor',
+                          'classnum' => 'Class',
+                          'disabled' => 'Disabled',
+                        },
+     'viewall_dir'   => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

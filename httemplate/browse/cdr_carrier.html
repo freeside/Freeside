@@ -1,0 +1,22 @@
+<& elements/browse.html,
+     'title'              => 'Carriers',
+     'name_singular'      => 'carrier',
+     'menubar'            => [ 'Add a new carrier' =>
+                                 $p.'edit/cdr_carrier.html',
+                             ],
+     'query'              => { 'table' => 'cdr_carrier', },
+     'count_query'        => 'SELECT COUNT(*) FROM cdr_carrier',
+     'header'             => [ 'Carrier', ],
+     'fields'             => [ 'carriername', ],
+     'links'              => [ $link, ],
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ "${p}edit/cdr_carrier.html?", 'carrierid' ];
+
+</%init>

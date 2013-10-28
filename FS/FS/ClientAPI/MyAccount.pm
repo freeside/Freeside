@@ -133,6 +133,36 @@ sub skin_info {
       'logo' => scalar($conf->config_binary('logo.png', $agentnum )),
       ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
         qw( head body_header body_footer company_address ) ),
+      'menu' => join("\n", $conf->config("ng_selfservice-menu", $agentnum ) ) ||
+                'main.php Home
+
+                 services.php Services
+                 services.php My Services
+                 services_new.php Order a new service
+
+                 personal.php Profile
+                 personal.php Personal Information
+                 password.php Change Password
+
+                 payment.php Payments
+                 payment_cc.php Credit Card Payment
+                 payment_ach.php Electronic Check Payment
+                 payment_paypal.php PayPal Payment
+                 payment_webpay.php Webpay Payments
+
+                 usage.php Usage
+                 usage_data.php Data usage
+                 usage_cdr.php Call usage
+
+                 tickets.php Help Desk
+                 tickets.php Open Tickets
+                 tickets_resolved.php Resolved Tickets
+                 ticket_create.php Create a new ticket
+
+                 docs.php FAQs
+
+                 logout.php Logout
+                ',
     };
 
     _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent);
@@ -349,6 +379,8 @@ sub access_info {
       $conf->exists('ticket_system-selfservice_edit_subject') && 
       $cust_main->edit_subject;
 
+  $info->{'timeout'} = $conf->config('selfservice-timeout') || 3600;
+
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
@@ -365,58 +397,29 @@ sub customer_info {
   my %return;
 
   my $conf = new FS::Conf;
-  if ($conf->exists('cust_main-require_address2')) {
-    $return{'require_address2'} = '1';
-  }else{
-    $return{'require_address2'} = '';
-  }
+  $return{'require_address2'} = $conf->exists('cust_main-require_address2');
 
-  if ( $FS::TicketSystem::system ) {
-    warn "$me customer_info: initializing ticket system\n" if $DEBUG;
-    FS::TicketSystem->init();
-  }
+#  if ( $FS::TicketSystem::system ) {
+#    warn "$me customer_info: initializing ticket system\n" if $DEBUG;
+#    FS::TicketSystem->init();
+#  }
  
   if ( $custnum ) { #customer record
 
+    %return = ( %return, %{ customer_info_short($p) } );
+
+    #redundant with customer_info_short, but we need it for several things below
     my $search = { 'custnum' => $custnum };
     $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
-    $return{display_custnum} = $cust_main->display_custnum;
+    my $list_tickets = list_tickets($p);
+    $return{'tickets'} = $list_tickets->{'tickets'};
 
-    if ( $session->{'pkgnum'} ) { 
-      $return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
-      #next_bill_date from cust_pkg?
+    if ( $session->{'pkgnum'} ) {
+      #XXX open invoices in the pkg-balances case
     } else {
-      $return{balance} = $cust_main->balance;
-      $return{next_bill_date} = $cust_main->next_bill_date;
-      $return{next_bill_date_pretty} =
-        $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
-                                : '(none)';
-    }
-
-    my @tickets = $cust_main->tickets;
-    # unavoidable false laziness w/ httemplate/view/cust_main/tickets.html
-    if ( $FS::TicketSystem::system && FS::TicketSystem->selfservice_priority ) {
-      my $dir = $conf->exists('ticket_system-priority_reverse') ? -1 : 1;
-      $return{tickets} = [ 
-        sort { 
-          (
-            ($a->{'_selfservice_priority'} eq '') <=>
-            ($b->{'_selfservice_priority'} eq '')
-          ) ||
-          ( $dir * 
-            ($b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'}) 
-          )
-        } @tickets
-      ];
-    }
-    else {
-      $return{tickets} = \@tickets;
-    }
-
-    unless ( $session->{'pkgnum'} ) {
       my @open = map {
                        {
                          invnum => $_->invnum,
@@ -434,45 +437,23 @@ sub customer_info {
         time2str('%m/%d/%Y', $return{'last_invoice_date'} );
     }
 
-    $return{countrydefault} = scalar($conf->config('countrydefault'));
-
+    #customer_info_short always has nobalance on..
     $return{small_custview} =
       small_custview( $cust_main,
                       $return{countrydefault},
                       ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
                     );
 
-    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
-
     $return{has_ship_address} = $cust_main->has_ship_address;
     $return{status} = $cust_main->status;
     $return{statuscolor} = $cust_main->statuscolor;
 
-    for (@cust_main_editable_fields) {
-      $return{$_} = $cust_main->get($_);
-    }
-
-    for (@location_editable_fields) {
-      $return{$_} = $cust_main->bill_location->get($_);
-      $return{'ship_'.$_} = $cust_main->ship_location->get($_);
-    }
-    $return{has_ship_address} = $cust_main->has_ship_address;
     # compatibility: some places in selfservice use this to determine
     # if there's a ship address
     if ( $return{has_ship_address} ) {
       $return{ship_last}  = $cust_main->last;
       $return{ship_first} = $cust_main->first;
     }
-
-    if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-      $return{payinfo} = $cust_main->paymask;
-      @return{'month', 'year'} = $cust_main->paydate_monthyear;
-    }
-
-    $return{'invoicing_list'} =
-      join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
-    $return{'postal_invoicing'} =
-      0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
 
     if (scalar($conf->config('support_packages'))) {
       my @support_services = ();
@@ -498,12 +479,6 @@ sub customer_info {
     if ( $conf->config('prepayment_discounts-credit_type') ) {
       #need to eval?
       $return{discount_terms_hash} = { $cust_main->discount_terms_hash };
-    }
-
-    if ( $session->{'svcnum'} ) {
-      my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $session->{'svcnum'} });
-      $return{'svc_label'} = ($cust_svc->label)[1] if $cust_svc;
-      $return{'svcnum'} = $session->{'svcnum'};
     }
 
   } elsif ( $session->{'svcnum'} ) { #no customer record
@@ -544,6 +519,17 @@ sub customer_info_short {
 
     $return{display_custnum} = $cust_main->display_custnum;
 
+    if ( $session->{'pkgnum'} ) { 
+      $return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
+      #next_bill_date from cust_pkg?
+    } else {
+      $return{balance} = $cust_main->balance;
+      $return{next_bill_date} = $cust_main->next_bill_date;
+      $return{next_bill_date_pretty} =
+        $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
+                                : '(none)';
+    }
+
     $return{countrydefault} = scalar($conf->config('countrydefault'));
 
     $return{small_custview} =
@@ -571,10 +557,11 @@ sub customer_info_short {
       @return{'month', 'year'} = $cust_main->paydate_monthyear;
     }
     
+    my @invoicing_list = $cust_main->invoicing_list;
     $return{'invoicing_list'} =
-      join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
-    #$return{'postal_invoicing'} =
-    #  0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
+      join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
+    $return{'postal_invoicing'} =
+      0 < ( grep { $_ eq 'POST' } @invoicing_list );
 
     if ( $session->{'svcnum'} ) {
       my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $session->{'svcnum'} });
@@ -845,7 +832,7 @@ sub payment_info {
 
       'save_unchecked' => $conf->exists('selfservice-save_unchecked'),
 
-      'credit_card_surcharge_percentage' => $conf->config('credit-card-surcharge-percentage'),
+      'credit_card_surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
     };
 
   }
@@ -1267,6 +1254,50 @@ sub realtime_collect {
   return { 'error' => '', amount => $amount, %$error };
 }
 
+sub start_thirdparty {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+  my $custnum = $session->{'custnum'};
+  my $cust_main = FS::cust_main->by_key($custnum);
+  
+  my $amount = $p->{'amount'}
+    or return { error => 'no amount' };
+
+  my $result = $cust_main->create_payment(
+    'method'      => $p->{'method'},
+    'amount'      => $p->{'amount'},
+    'pkgnum'      => $session->{'pkgnum'},
+    'session_id'  => $p->{'session_id'},
+  );
+  
+  if ( ref($result) ) { # hashref or error
+    return $result;
+  } else {
+    return { error => $result };
+  }
+}
+
+sub finish_thirdparty {
+  my $p = shift;
+  my $session_id = delete $p->{'session_id'};
+  my $session = _cache->get($session_id)
+    or return { 'error' => "Can't resume session" };
+  my $custnum = $session->{'custnum'};
+  my $cust_main = FS::cust_main->by_key($custnum);
+
+  if ( $p->{_cancel} ) {
+    # customer backed out of making a payment
+    return $cust_main->cancel_payment( $session_id );
+  }
+  my $result = $cust_main->execute_payment( $session_id, %$p );
+  if ( ref($result) ) {
+    return $result;
+  } else {
+    return { error => $result };
+  }
+}
+
 sub process_payment_order_pkg {
   my $p = shift;
 
@@ -1585,8 +1616,9 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
-                            pkg_label => $_->pkg_locale,
-                            status => $_->status,
+                            pkg_label   => $_->pkg_locale,
+                            status      => $_->status,
+                            statuscolor => $_->statuscolor,
                             part_svc =>
                               [ map { $_->hashref }
                                   grep { $_->selfservice_access ne 'hidden' }
@@ -1622,6 +1654,7 @@ sub list_pkgs {
                   ],
     'small_custview' =>
       small_custview( $cust_main, $conf->config('countrydefault') ),
+    'date_format' => $conf->config('date_format') || '%m/%d/%Y',
   };
 
 }
@@ -2926,13 +2959,59 @@ sub process_reset_passwd {
 
 }
 
+sub list_tickets {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my @tickets = ();
+  if ( $session->{'pkgnum'} ) { 
+
+    #tickets for specific service with pkg-balances on
+    my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
+                                          'pkgnum'  => $session->{'pkgnum'} })
+                     or return { 'error' => 'unknown package' };
+    foreach my $cust_svc ( $cust_pkg->cust_svc ) {
+      push @tickets, $cust_svc->tickets( $p->{status} );
+    }
+
+  } else {
+
+    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+      or return { 'error' => "unknown custnum $custnum" };
+
+    @tickets = $cust_main->tickets( $p->{status} );
+  }
+
+  # unavoidable false laziness w/ httemplate/view/cust_main/tickets.html
+  if ( $FS::TicketSystem::system && FS::TicketSystem->selfservice_priority ) {
+    my $conf = new FS::Conf;
+    my $dir = $conf->exists('ticket_system-priority_reverse') ? -1 : 1;
+    +{ tickets => [ 
+         sort { 
+           (
+             ($a->{'_selfservice_priority'} eq '') <=>
+             ($b->{'_selfservice_priority'} eq '')
+           ) ||
+           ( $dir * 
+             ($b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'})
+           )
+         } @tickets
+       ]
+    };
+  } else {
+    +{ tickets => \@tickets };
+  }
+
+}
+
 sub create_ticket {
   my $p = shift;
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
-  FS::TicketSystem->init();
+#  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
+#  FS::TicketSystem->init();
 
   my $conf = new FS::Conf;
   my $queue = $p->{'queue'}
@@ -3047,10 +3126,10 @@ sub get_ticket {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  warn "$me get_ticket: initializing ticket system\n" if $DEBUG;
-  FS::TicketSystem->init();
-  return { 'error' => 'get_ticket configuration error' }
-    if $FS::TicketSystem::system ne 'RT_Internal';
+#  warn "$me get_ticket: initializing ticket system\n" if $DEBUG;
+#  FS::TicketSystem->init();
+#  return { 'error' => 'get_ticket configuration error' }
+#    if $FS::TicketSystem::system ne 'RT_Internal';
 
   # check existence and ownership as part of this
   warn "$me get_ticket: fetching ticket\n" if $DEBUG;
@@ -3122,8 +3201,8 @@ sub adjust_ticket_priority {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  warn "$me adjust_ticket_priority: initializing ticket system\n" if $DEBUG;
-  FS::TicketSystem->init;
+#  warn "$me adjust_ticket_priority: initializing ticket system\n" if $DEBUG;
+#  FS::TicketSystem->init;
   my $ss_priority = FS::TicketSystem->selfservice_priority;
 
   return { 'error' => 'adjust_ticket_priority configuration error' }

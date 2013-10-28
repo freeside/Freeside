@@ -75,7 +75,7 @@ push @fields,
         $state_pkgcount{$state} += $row->quantity;
         $row->quantity;
       },
-  sub { my $row = shift; sprintf "%.2f", $row->residential },
+  sub { my $row = shift; sprintf "%.3f", $row->residential },
 ;
 
 my %search_hash = ();

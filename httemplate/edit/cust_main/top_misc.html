@@ -20,7 +20,9 @@
        <% $cust_main->residential_commercial eq 'Commercial' ? 'CHECKED' : '' %>
   ></TD>
 </TR>
+
 <SCRIPT TYPE="text/javascript">
+
   function rescom_changed(what) {
     if ( what.checked == (what.value == 'Commercial' ) ) {
       document.getElementById('company_row').style.display = '';
@@ -33,11 +35,16 @@
     }
   }
 
+
   var ship_locked_agents = <% encode_json(\%ship_locked_agents) %>;
   var ship_fields = ['address1', 'city', 'state', 'zip', 'country', 
     'latitude', 'longitude', 'district'];
+
   function agent_changed(what) {
     var agentnum = what.value;
+
+%   # unlock/lock service location
+
     var f = what.form;
     if ( ship_locked_agents[agentnum] ) {
 %     # For this agent, the service location (except address2)
@@ -65,10 +72,15 @@
       f['same'].disabled = false;
     }
     samechanged(f['same']);
+
+%   # update sales dropdown
+    salesnum_agentnum_changed(what);
+
   }
-  window.onload = function() {
-    agent_changed(document.getElementById('agentnum'));
-  }
+
+  <&| /elements/onload.js &>
+  agent_changed(document.getElementById('agentnum'))
+  </&>
  
 </SCRIPT>
 
@@ -127,6 +139,11 @@
 <& /elements/tr-select-cust_class.html,
              'curr_value'  => $cust_main->classnum,
              'label'       => emt("Class"),
+&>
+
+%#sales person
+<& /elements/tr-select-sales.html,
+     'curr_value' => $cust_main->salesnum,
 &>
 
 %# referral (advertising source)

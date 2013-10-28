@@ -1,18 +1,17 @@
 package FS::agent;
+use base qw( FS::m2m_Common FS::m2name_Common FS::Record );
 
 use strict;
 use vars qw( @ISA );
-#use Crypt::YAPassGen;
 use Business::CreditCard 0.28;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::agent_type;
+use FS::agent_currency;
 use FS::reg_code;
 use FS::TicketSystem;
 use FS::Conf;
-
-@ISA = qw( FS::m2m_Common FS::Record );
 
 =head1 NAME
 
@@ -177,6 +176,31 @@ sub agent_cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->agent_custnum } );
 }
 
+=item agent_currency
+
+Returns the FS::agent_currency objects (see L<FS::agent_currency>), if any, for
+this agent.
+
+=cut
+
+sub agent_currency {
+  my $self = shift;
+  qsearch('agent_currency', { 'agentnum' => $self->agentnum } );
+}
+
+=item agent_currency_hashref
+
+Returns a hash references of supported additional currencies for this agent.
+
+=cut
+
+sub agent_currency_hashref {
+  my $self = shift;
+  +{ map { $_->currency => 1 }
+       $self->agent_currency
+   };
+}
+
 =item pkgpart_hashref
 
 Returns a hash reference.  The keys of the hash are pkgparts.  The value is
@@ -206,7 +230,8 @@ sub ticketing_queue {
 
 Returns a payment gateway object (see L<FS::payment_gateway>) for this agent.
 
-Currently available options are I<nofatal>, I<invnum>, I<method>, and I<payinfo>.
+Currently available options are I<nofatal>, I<invnum>, I<method>, 
+I<payinfo>, and I<thirdparty>.
 
 If I<nofatal> is set, and no gateway is available, then the empty string
 will be returned instead of throwing a fatal exception.
@@ -221,10 +246,34 @@ as well.  Presently only 'CC', 'ECHECK', and 'PAYPAL' methods are meaningful.
 When the I<method> is 'CC' then the card number in I<payinfo> can direct
 this routine to route to a gateway suited for that type of card.
 
+If I<thirdparty> is set, the defined self-service payment gateway will 
+be returned.
+
 =cut
 
 sub payment_gateway {
   my ( $self, %options ) = @_;
+  
+  my $conf = new FS::Conf;
+
+  if ( $options{thirdparty} ) {
+    # still a kludge, but it gets the job done
+    # and the 'cardtype' semantics don't really apply to thirdparty
+    # gateways because we have to choose a gateway without ever 
+    # seeing the card number
+    my $gatewaynum =
+      $conf->config('selfservice-payment_gateway', $self->agentnum);
+    my $gateway = FS::payment_gateway->by_key($gatewaynum)
+      if $gatewaynum;
+
+    if ( $gateway ) {
+      return $gateway;
+    } elsif ( $options{'nofatal'} ) {
+      return '';
+    } else {
+      die "no third-party gateway configured\n";
+    }
+  }
 
   my $taxclass = '';
   if ( $options{invnum} ) {
@@ -252,8 +301,6 @@ sub payment_gateway {
       $cardtype = cardtype($options{payinfo});
     } elsif ( $options{method} eq 'ECHECK' ) {
       $cardtype = 'ACH';
-    } elsif ( $options{method} eq 'PAYPAL' ) {
-      $cardtype = 'PayPal';
     } else {
       $cardtype = $options{method}
     }
@@ -274,7 +321,6 @@ sub payment_gateway {
                                            taxclass => '',              } );
 
   my $payment_gateway;
-  my $conf = new FS::Conf;
   if ( $override ) { #use a payment gateway override
 
     $payment_gateway = $override->payment_gateway;
@@ -580,6 +626,21 @@ sub num_prepay_credit {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item num_sales
+
+Returns the number of non-disabled sales people for this agent.
+
+=cut
+
+sub num_sales {
+  my $self = shift;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM sales WHERE agentnum = ?
+                                  AND ( disabled = '' OR disabled IS NULL )"
+  ) or die dbh->errstr;
+  $sth->execute($self->agentnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
 
 =back
 

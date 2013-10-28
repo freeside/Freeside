@@ -21,6 +21,7 @@
                                       : ''; #?
                      &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
                    }
+
                  },
 
                  'edit_callback' => sub {
@@ -43,6 +44,27 @@
                                       : ''; #?
                      &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
                    }
+
+                   if ( $part_svc->has_router ) {
+                     my $router = qsearchs('router', {svcnum => $svc_x->svcnum});
+                     if ( $router ) {
+                       $svc_x->set("router_$_", $router->get($_))
+                         foreach ('routername', 'routernum');
+                       my ($block) = $router->addr_block; # one-to-one for now
+                       if ( $block ) {
+                         $svc_x->set('router_blocknum', $block->blocknum);
+                         # silly, but necessary...make the currently 
+                         # assigned block appear on the list
+                         my ($field) = grep {ref($_) and 
+                                             $_->{field} eq 'router_blocknum'}
+                                         @$fields;
+                         $field->{extra_sql} = 
+                           ' OR routernum = '.$router->routernum;
+                         $field->{curr_value} = $block->blocknum;
+                       }
+                     }
+                   }
+
                  },
 
                  'new_hashref_callback' => sub {
@@ -72,7 +94,6 @@
                    }
 
                    $svc_x->set_default_and_fixed;
-
                  },
 
                  'field_callback' => sub {
@@ -125,20 +146,21 @@
                  },
 
                  'html_init' => sub {
+                   my $html;
                    my $cust_main;
                    if ( $pkgnum ) {
                      my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
                      $cust_main = $cust_pkg->cust_main if $cust_pkg;
-                   }
-                   $cust_main
-                     ? include( '/elements/small_custview.html',
+                     if ( $cust_main ) {
+                        $html = include( '/elements/small_custview.html',
                                 $cust_main,
                                 '',
                                 1,
                                 popurl(2). "view/cust_main.cgi"
-                              ). '<BR>'
-                     : '';
-
+                              ). '<BR>';
+                     }
+                   }
+                   $html;
                  },
 
                  'html_table_bottom' => sub {
@@ -200,6 +222,28 @@ sub label_fixup {
     $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\s*$/;
   }
 
+  if ( $part_svc->has_router ) {
+    # these will be set up as pseudo-fields in the new_ and edit_ callbacks
+    push @{ $opt->{'fields'} }, (
+      { field => 'router_routernum',   type => 'hidden' },
+      { field => 'router_routername',  type => 'text', size => 32 },
+      # router address block selection
+      # (one-to-one for now)
+      { field => 'router_blocknum',
+        type  => 'select-table',
+        table       => 'addr_block',
+        hashref     => { 'routernum' => '0' },
+        agent_virt  => 1,
+        agent_null  => 1,
+        name_col    => 'cidr',
+        order_by    => 'ORDER BY ip_gateway, ip_netmask',
+        empty_label => '(none)',
+        disable_empty => 0,
+      },
+    );
+    $labels->{router_routername}  = 'Attached router name';
+    $labels->{router_blocknum}    = 'Attached address block';
+  }
 }
 
 </%once>

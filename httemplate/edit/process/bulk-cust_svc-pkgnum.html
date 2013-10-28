@@ -1,0 +1,39 @@
+% if ($error) {
+%   #$cgi->param('error', $error);
+%   #$cgi->redirect(popurl(3). 'misc/detach_pkg.html?'. $cgi->query_string );
+%   #XXX actually redirect back and display the error instead
+%   errorpage_popup($error);
+% } else {
+
+    <% header(emt("Services moved")) %>
+      <SCRIPT TYPE="text/javascript">
+        window.top.location.reload();
+      </SCRIPT>
+    </BODY>
+    </HTML>
+
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Bulk move customer services');
+
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'illegal pkgnum';
+my $pkgnum = $1;
+
+my $cust_pkg = qsearchs({
+  'table'     => 'cust_pkg',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'pkgnum' => $pkgnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+}) or die 'unknown pkgnum';
+
+my @svcnum = ();
+foreach my $param (grep /^svcnum\d+$/, $cgi->param) {
+  $param =~ /^svcnum(\d+)$/ or die "guru meditation #309";
+  push @svcnum, $1 if $cgi->param($param);
+}
+
+my $error = $cust_pkg->grab_svcnums(@svcnum);
+
+</%init>

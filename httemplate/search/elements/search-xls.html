@@ -32,7 +32,10 @@ my $XLS = new IO::Scalar \$data;
 my $workbook = $format->{class}->new($XLS)
   or die "Error opening Excel file: $!";
 
-my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
+my $title = $opt{'title'};
+$title =~ s/[\[\]\:\*\?\/\/]//g;
+$title = substr($title, 0, 31);
+my $worksheet = $workbook->add_worksheet($title);
 
 $worksheet->protect();
 

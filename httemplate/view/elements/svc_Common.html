@@ -70,12 +70,14 @@ function areyousure(href) {
 %       my $hack_strict_refs = \&{ $f->{'value_callback'} };
 %       $value = &$hack_strict_refs($svc_x);
 %     } else {
-%       $value = exists($f->{'value'}) ? $f->{'value'} : $svc_x->$field;
+%       $value = exists($f->{'value'})
+%                  ? $f->{'value'}
+%                  : encode_entities($svc_x->$field);
 %     }
 %   } else {
 %     $field = $f;
 %     $type = 'text';
-%     $value = $svc_x->$field;
+%     $value = encode_entities($svc_x->$field);
 %   }
 %
 %   my $columndef = $part_svc->part_svc_column($field);
@@ -118,6 +120,11 @@ function areyousure(href) {
 </TABLE></TD></TR></TABLE>
 
 <BR>
+
+<& svc_devices.html,
+     'svc_x' => $svc_x,
+     'table' => $svc_x->device_table,
+&>
 
 % if ( defined($opt{'html_foot'}) ) {
 
@@ -205,6 +212,20 @@ if ($pkgnum) {
 } else {
   $cust_pkg = '';
   $custnum = '';
+}
+
+# attached routers
+if ( my $router = qsearchs('router', { svcnum => $svc_x->svcnum }) ) {
+  push @$fields, qw(router_routername router_block);
+  $labels->{'router_routername'} = 'Attached router';
+  $labels->{'router_block'} = 'Attached address block';
+  $svc_x->set('router_routername', $router->routername);
+  my $block = qsearchs('addr_block', { routernum => $router->routernum });
+  if ( $block ) {
+    $svc_x->set('router_block', $block->cidr);
+  } else {
+    $svc_x->set('router_block', '<i>(none)</i>');
+  }
 }
 
 &{ $opt{'svc_callback'} }( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, \%opt ) 
