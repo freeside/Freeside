@@ -137,8 +137,8 @@ Filtering parameters:
 
 - taxnum: Limit to items whose tax definition matches this taxnum.
   With "nottax" that means items that are subject to that tax;
-  with "istax" it's the tax charges themselves.  Can be a comma-separated
-  list to include multiple taxes.
+  with "istax" it's the tax charges themselves.  Can be specified 
+  more than once to include multiple taxes.
 
 - country, state, county, city: Limit to items whose tax location 
   matches these fields.  If "nottax" it's the tax location of the package;
@@ -309,7 +309,7 @@ if ( $cgi->param('nottax') ) {
   # 0: empty class
   # N: classnum
   if ( grep { $_ eq 'classnum' } $cgi->param ) {
-    my @classnums = grep /^\d*$/, $cgi->param('classnum');
+    my @classnums = grep /^\d+$/, $cgi->param('classnum');
     push @where, "COALESCE($part_pkg.classnum, 0) IN ( ".
                      join(',', @classnums ).
                  ' )'
@@ -349,8 +349,11 @@ if ( $cgi->param('nottax') ) {
   # we don't handle exempt_monthly here
   
   if ( $cgi->param('taxname') ) { # specific taxname
-      push @tax_where, "COALESCE(cust_main_county.taxname, 'Tax') = ".
+      push @tax_where, 'cust_main_county.taxname = '.
                         dbh->quote($cgi->param('taxname'));
+  } elsif ( $cgi->param('taxnameNULL') ) {
+      push @tax_where, 'cust_main_county.taxname IS NULL OR '.
+                       'cust_main_county.taxname = \'Tax\'';
   }
 
   # country:state:county:city:district (may be repeated)
@@ -378,8 +381,12 @@ if ( $cgi->param('nottax') ) {
   }
 
   # specific taxnums
-  if ( $cgi->param('taxnum') =~ /^([\d,]+)$/) {
-    push @tax_where, "cust_main_county.taxnum IN ($1)";
+  if ( $cgi->param('taxnum') ) {
+    my $taxnum_in = join(',', 
+      grep /^\d+$/, $cgi->param('taxnum')
+    );
+    push @tax_where, "cust_main_county.taxnum IN ($taxnum_in)"
+      if $taxnum_in;
   }
 
   # If we're showing exempt items, we need to find those with 
@@ -409,16 +416,22 @@ if ( $cgi->param('nottax') ) {
     USING (billpkgnum)";
   }
  
-  # process tax restrictions
-  unshift @tax_where,
-    'cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum',
-    'cust_main_county.tax > 0';
+  if ( @tax_where or $cgi->param('taxable') or $cgi->param('out') ) { 
+    # process tax restrictions
+    unshift @tax_where,
+      'cust_main_county.tax > 0';
 
-  my $tax_sub = "SELECT 1
+    my $tax_sub = "SELECT invnum, cust_bill_pkg_tax_location.pkgnum
     FROM cust_bill_pkg_tax_location
     JOIN cust_bill_pkg AS tax_item USING (billpkgnum)
     JOIN cust_main_county USING (taxnum)
-    WHERE ". join(' AND ', @tax_where);
+    WHERE ". join(' AND ', @tax_where).
+    " GROUP BY invnum, cust_bill_pkg_tax_location.pkgnum";
+
+    $join_pkg .= " LEFT JOIN ($tax_sub) AS item_tax
+    ON (item_tax.invnum = cust_bill_pkg.invnum AND
+        item_tax.pkgnum = cust_bill_pkg.pkgnum)";
+  }
 
   # now do something with that
   if ( @exempt_where ) {
@@ -435,17 +448,23 @@ if ( $cgi->param('nottax') ) {
     my $taxable = 'cust_bill_pkg.setup + cust_bill_pkg.recur '.
                   '- COALESCE(item_exempt.exempt_amount, 0)';
 
+    push @where,    'item_tax.invnum IS NOT NULL';
     push @select,   "($taxable) AS taxable_amount";
-    push @where,    "EXISTS($tax_sub)";
     push @peritem,  'taxable_amount';
     push @peritem_desc, 'Taxable';
     push @total,    "SUM($taxable)";
     push @total_desc, "$money_char%.2f taxable";
 
+  } elsif ( $cgi->param('out') ) {
+  
+    push @where,    'item_tax.invnum IS NULL',
+                    'item_exempt.billpkgnum IS NULL';
+
   } elsif ( @tax_where ) {
 
     # union of taxable + all exempt_ cases
-    push @where, "(EXISTS($tax_sub) OR item_exempt.billpkgnum IS NOT NULL)";
+    push @where,
+      '(item_tax.invnum IS NOT NULL OR item_exempt.billpkgnum IS NOT NULL)';
 
   }
 
@@ -512,21 +531,6 @@ if ( $cgi->param('nottax') ) {
     # don't double-count the components of consolidated taxes
     $total[0] = 'COUNT(DISTINCT cust_bill_pkg.billpkgnum)';
     $total[1] = 'SUM(cust_bill_pkg_tax_location.amount)';
-
-    # package classnum
-    if ( grep { $_ eq 'classnum' } $cgi->param ) {
-      my @classnums = grep /^\d*$/, $cgi->param('classnum');
-      $join_pkg .= '
-        JOIN cust_pkg AS taxed_pkg 
-          ON (cust_bill_pkg_tax_location.pkgnum = taxed_pkg.pkgnum)
-        JOIN part_pkg AS taxed_part_pkg
-          ON (taxed_pkg.pkgpart = taxed_part_pkg.pkgpart)
-      ';
-      push @where, "COALESCE(taxed_part_pkg.classnum, 0) IN ( ".
-                       join(',', @classnums ).
-                   ' )'
-        if @classnums;
-    }
   }
 
   # taxclass
@@ -544,8 +548,25 @@ if ( $cgi->param('nottax') ) {
   }
 
   # specific taxnums
-  if ( $cgi->param('taxnum') =~ /^([\d,]+)$/) {
-    push @where, "cust_main_county.taxnum IN ($1)";
+  if ( $cgi->param('taxnum') ) {
+    my $taxnum_in = join(',', 
+      grep /^\d+$/, $cgi->param('taxnum')
+    );
+    push @where, "cust_main_county.taxnum IN ($taxnum_in)"
+      if $taxnum_in;
+  }
+
+  # report group (itemdesc)
+  if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
+    my ( $group_op, $group_value ) = ( $1, $2 );
+    if ( $group_op eq '=' ) {
+      #push @where, 'itemdesc LIKE '. dbh->quote($group_value.'%');
+      push @where, 'itemdesc = '. dbh->quote($group_value);
+    } elsif ( $group_op eq '!=' ) {
+      push @where, '( itemdesc != '. dbh->quote($group_value) .' OR itemdesc IS NULL )';
+    } else {
+      die "guru meditation #00de: group_op $group_op\n";
+    }
   }
 
   # itemdesc, for some reason
