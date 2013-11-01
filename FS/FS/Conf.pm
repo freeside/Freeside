@@ -3855,6 +3855,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'fuzzy-method',
+    'section'     => 'UI',
+    'description' => 'What underlying strategy should be used for fuzzy searches? Defaults to "String::Approx".',
+    'type'        => 'select',
+    'select_enum' => ['String::Approx', 'PG levenschtein', 'pg_trgm'],
+  },
+
+  {
     'key'         => 'fuzzy-fuzziness',
     'section'     => 'UI',
     'description' => 'Set the "fuzziness" of fuzzy searching (see the String::Approx manpage for details).  Defaults to 10%',
