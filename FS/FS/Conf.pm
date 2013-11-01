@@ -2518,6 +2518,12 @@ and customer address. Include units.',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD PPAL COMP) ],
   },
+  {
+    'key'         => 'banned-pay-pad',
+    'section'     => 'billing',
+    'description' => 'Optional padding for banned pay tables. If you already have entries, don\'t enable as your old entries won\'t work.',
+    'type'        => 'text',
+  },
 
   {
     'key'         => 'payby-default',
@@ -3858,6 +3864,14 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Disable fuzzy searching.  Speeds up searching for large sites, but only shows exact matches.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'fuzzy-method',
+    'section'     => 'UI',
+    'description' => 'What underlying strategy should be used for fuzzy searches? Defaults to "String::Approx".',
+    'type'        => 'select',
+    'select_enum' => ['String::Approx', 'PG levenschtein', 'pg_trgm'],
   },
 
   {
