@@ -433,15 +433,30 @@ sub smart_search {
             'first'  => $first }, #
           %fuzopts
         );
-      }
+        push @cust_main, FS::cust_main::Search->fuzzy_search(
+          { 'contact.last'   => $last,    #fuzzy hashref
+            'contact.first'  => $first }, #
+          %fuzopts
+        );
+     }
       foreach my $field ( 'first', 'last', 'company' ) {
-        push @cust_main,
-          FS::cust_main::Search->fuzzy_search( { $field => $value }, %fuzopts );
+        push @cust_main, FS::cust_main::Search->fuzzy_search(
+          { $field => $value },
+          %fuzopts
+        );
+      }
+      foreach my $field ( 'first', 'last' ) {
+        push @cust_main, FS::cust_main::Search->fuzzy_search(
+          { "contact.$field" => $value },
+          %fuzopts
+        );
       }
       if ( $conf->exists('address1-search') ) {
         push @cust_main,
           FS::cust_main::Search->fuzzy_search(
-            { 'cust_location.address1' => $value }, %fuzopts );
+            { 'cust_location.address1' => $value },
+            %fuzopts
+        );
       }
 
     }
