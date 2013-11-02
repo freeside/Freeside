@@ -1,8 +1,9 @@
 package FS::contact_phone;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::contact;
 
 =head1 NAME
 
@@ -25,8 +26,8 @@ FS::contact_phone - Object methods for contact_phone records
 
 =head1 DESCRIPTION
 
-An FS::contact_phone object represents an example.  FS::contact_phone inherits from
-FS::Record.  The following fields are currently supported:
+An FS::contact_phone object represents a contatct's phone number.
+FS::contact_phone inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -63,14 +64,13 @@ extension
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new phone number.  To add the phone number to the database, see
+L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
-
-# the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'contact_phone'; }
 
@@ -79,37 +79,22 @@ sub table { 'contact_phone'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-=cut
-
-# the replace method can be inherited from FS::Record
-
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid phone number.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
 =cut
-
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
 
 sub check {
   my $self = shift;
@@ -154,13 +139,18 @@ sub phonenum_pretty {
 
 }
 
+sub contact {
+  my $self = shift;
+  qsearchs( 'contact', { 'contactnum' => $self->contactnum } );
+}
+
 =back
 
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::contact>, L<FS::Record>
 
 =cut
 

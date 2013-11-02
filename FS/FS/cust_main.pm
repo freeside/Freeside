@@ -1696,13 +1696,25 @@ sub queue_fuzzyfiles_update {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  foreach my $field ( 'first', 'last', 'company' ) {
+    my $queue = new FS::queue { 
+      'job' => 'FS::cust_main::Search::append_fuzzyfiles_fuzzyfield'
+    };
+    my @args = "cust_main.$field", $self->get($field);
+    my $error = $queue->insert( @args );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
   my @locations = $self->bill_location;
   push @locations, $self->ship_location if $self->has_ship_address;
   foreach my $location (@locations) {
     my $queue = new FS::queue { 
-      'job' => 'FS::cust_main::Search::append_fuzzyfiles'
+      'job' => 'FS::cust_main::Search::append_fuzzyfiles_fuzzyfield'
     };
-    my @args = map $location->get($_), @FS::cust_main::Search::fuzzyfields;
+    my @args = 'cust_location.address1', $location->address1;
     my $error = $queue->insert( @args );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
