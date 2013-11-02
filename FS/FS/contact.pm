@@ -1,7 +1,7 @@
 package FS::contact;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::prospect_main;
 use FS::cust_main;
@@ -153,6 +153,16 @@ sub insert {
 
   }
 
+  #unless ( $import || $skip_fuzzyfiles ) {
+    #warn "  queueing fuzzyfiles update\n"
+    #  if $DEBUG > 1;
+    $error = $self->queue_fuzzyfiles_update;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "updating fuzzy search cache: $error";
+    }
+  #}
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -277,6 +287,16 @@ sub replace {
 
   }
 
+  #unless ( $import || $skip_fuzzyfiles ) {
+    #warn "  queueing fuzzyfiles update\n"
+    #  if $DEBUG > 1;
+    $error = $self->queue_fuzzyfiles_update;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "updating fuzzy search cache: $error";
+    }
+  #}
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -304,6 +324,44 @@ sub _parse_phonestring {
     'phonenum'    => $value,
     'extension'   => $extension,
   );
+}
+
+=item queue_fuzzyfiles_update
+
+Used by insert & replace to update the fuzzy search cache
+
+=cut
+
+use FS::cust_main::Search;
+sub queue_fuzzyfiles_update {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $field ( 'first', 'last' ) {
+    my $queue = new FS::queue { 
+      'job' => 'FS::cust_main::Search::append_fuzzyfiles_fuzzyfield'
+    };
+    my @args = "contact.$field", $self->get($field);
+    my $error = $queue->insert( @args );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =item check
@@ -379,6 +437,11 @@ sub contact_phone {
 sub contact_email {
   my $self = shift;
   qsearch('contact_email', { 'contactnum' => $self->contactnum } );
+}
+
+sub cust_main {
+  my $self = shift;
+  qsearchs('cust_main', { 'custnum' => $self->custnum  } );
 }
 
 =back
