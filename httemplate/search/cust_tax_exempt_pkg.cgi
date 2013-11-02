@@ -101,7 +101,7 @@ my $join = "
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View customer tax exemptions');
 
-my @where = ("exempt_monthly = 'Y'");
+my @where = ( "exempt_monthly = 'Y'" );
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 if ( $beginning || $ending ) {
@@ -118,28 +118,7 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   push @where,  "cust_main.custnum = $1";
 }
 
-if ( $cgi->param('out') ) {
-  # wtf? how would you ever get exemptions on a non-taxable package location?
-
-  push @where, "
-    0 = (
-      SELECT COUNT(*) FROM cust_main_county AS county_out
-      WHERE (    county_out.county  = cust_main.county
-              OR ( county_out.county IS NULL AND cust_main.county  =  '' )
-              OR ( county_out.county  =  ''  AND cust_main.county IS NULL)
-              OR ( county_out.county IS NULL AND cust_main.county IS NULL)
-            )
-        AND (    county_out.state   = cust_main.state
-              OR ( county_out.state  IS NULL AND cust_main.state  =  ''  )
-              OR ( county_out.state   =  ''  AND cust_main.state IS NULL )
-              OR ( county_out.state  IS NULL AND cust_main.state IS NULL )
-            )
-        AND county_out.country = cust_main.country
-        AND county_out.tax > 0
-    )
-  ";
-
-} elsif ( $cgi->param('country' ) ) {
+if ( $cgi->param('country' ) ) {
 
   my $county  = dbh->quote( $cgi->param('county')  );
   my $state   = dbh->quote( $cgi->param('state')   );
@@ -150,11 +129,19 @@ if ( $cgi->param('out') ) {
   push @where, 'taxclass = '. dbh->quote( $cgi->param('taxclass') )
     if $cgi->param('taxclass');
 
-} elsif ( $cgi->param('taxnum') ) {
+}
 
-  my $taxnum_in = join(',', grep /^\d+$/, $cgi->param('taxnum') );
-  push @where, "taxnum IN ($taxnum_in)" if $taxnum_in;
+if ( $cgi->param('taxnum') ) {
 
+  my @taxnums = grep /^\d+$/, map { split(',', $_) } $cgi->param('taxnum');
+  if ( $cgi->param('taxnum') =~ /^([\d,]+)$/) {
+    push @where, "cust_tax_exempt_pkg.taxnum IN ($1)";
+  }
+
+}
+
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  push @where, "COALESCE(part_pkg.classnum,0) = $1";
 }
 
 my $where = scalar(@where) ? 'WHERE '.join(' AND ', @where) : '';
