@@ -12,7 +12,7 @@ use File::Slurp qw( slurp );
 use File::CounterFile;
 use Text::CSV_XS;
 use DBI qw(:sql_types);
-use DBIx::DBSchema 0.42; #for foreign keys
+use DBIx::DBSchema 0.43; #0.43 for foreign keys
 use Locale::Country;
 use Locale::Currency;
 use NetAddr::IP; # for validation

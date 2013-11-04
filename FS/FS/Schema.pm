@@ -3,7 +3,7 @@ package FS::Schema;
 use vars qw(@ISA @EXPORT_OK $DEBUG $setup_hack %dbdef_cache);
 use subs qw(reload_dbdef);
 use Exporter;
-use DBIx::DBSchema 0.42; #0.42 for foreign keys
+use DBIx::DBSchema 0.43; #0.43 for foreign keys
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::Index;
