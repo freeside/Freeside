@@ -1,22 +1,18 @@
 package FS::Record;
+use base qw( Exporter );
 
 use strict;
-use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
+use vars qw( $AUTOLOAD
              %virtual_fields_cache
-             $conf $conf_encryption $money_char $lat_lower $lon_upper
-             $me
-             $nowarn_identical $nowarn_classload
-             $no_update_diff $no_check_foreign
-             @encrypt_payby
+             $money_char $lat_lower $lon_upper
            );
-use Exporter;
 use Carp qw(carp cluck croak confess);
 use Scalar::Util qw( blessed );
 use File::Slurp qw( slurp );
 use File::CounterFile;
 use Text::CSV_XS;
 use DBI qw(:sql_types);
-use DBIx::DBSchema 0.38;
+use DBIx::DBSchema 0.42; #for foreign keys
 use Locale::Country;
 use Locale::Currency;
 use NetAddr::IP; # for validation
@@ -31,32 +27,31 @@ use FS::part_virtual_field;
 
 use Tie::IxHash;
 
-@ISA = qw(Exporter);
-
-@encrypt_payby = qw( CARD DCRD CHEK DCHK );
+our @encrypt_payby = qw( CARD DCRD CHEK DCHK );
 
 #export dbdef for now... everything else expects to find it here
-@EXPORT_OK = qw(
+our @EXPORT_OK = qw(
   dbh fields hfields qsearch qsearchs dbdef jsearch
   str2time_sql str2time_sql_closing regexp_sql not_regexp_sql concat_sql
   midnight_sql
 );
 
-$DEBUG = 0;
-$me = '[FS::Record]';
+our $DEBUG = 0;
+our $me = '[FS::Record]';
 
-$nowarn_identical = 0;
-$nowarn_classload = 0;
-$no_update_diff = 0;
-$no_check_foreign = 0;
+our $nowarn_identical = 0;
+our $nowarn_classload = 0;
+our $no_update_diff = 0;
+
+our $no_check_foreign = 1; #well, not inefficiently in perl by default anymore
 
 my $rsa_module;
 my $rsa_loaded;
 my $rsa_encrypt;
 my $rsa_decrypt;
 
-$conf = '';
-$conf_encryption = '';
+our $conf = '';
+our $conf_encryption = '';
 FS::UID->install_callback( sub {
 
   eval "use FS::Conf;";
