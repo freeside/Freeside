@@ -447,6 +447,12 @@ sub standardize_tomtom {
   my ($address1, $address2) = ($location->{address1}, $location->{address2});
   my $subloc = '';
 
+  # trim whitespace
+  $address1 =~ s/^\s+//;
+  $address1 =~ s/\s+$//;
+  $address2 =~ s/^\s+//;
+  $address2 =~ s/\s+$//;
+
   # try to fix some cases of the address fields being switched
   if ( $address2 =~ /^\d/ and $address1 !~ /^\d/ ) {
     $address2 = $address1;
@@ -487,8 +493,8 @@ sub standardize_tomtom {
     }
   }
 
-  if (!$match) {
-    die "Location not found.\n";
+  if ( !$match or !$clean ) { # partial matches are not useful
+    die "Address not found\n";
   }
   my $tract = '';
   if ( defined $match->{censusTract} ) {
@@ -642,6 +648,7 @@ sub subloc_address2 {
     warn "normalizing '$addr2' to '$result'\n" if $DEBUG > 1;
     $addr2 = $result;
   }
+  $addr2 = '' if $addr2 eq $subloc; # if it was entered redundantly
   ($subloc, $addr2);
 }
 
