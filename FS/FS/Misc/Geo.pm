@@ -414,13 +414,30 @@ sub standardize_ezlocate {
   \%result;
 }
 
+sub _tomtom_query { # helper method for the below
+  my %args = @_;
+  my $result = Geo::TomTom::Geocoding->query(%args);
+  die "TomTom geocoding error: ".$result->message."\n"
+    unless ( $result->is_success );
+  my ($match) = $result->locations;
+  my $type = $match->{type};
+  # match levels below "intersection" should not be considered clean
+  my $clean = ($type eq 'addresspoint'  ||
+               $type eq 'poi'           ||
+               $type eq 'house'         ||
+               $type eq 'intersection'
+              ) ? 'Y' : '';
+  warn "tomtom returned $type match\n" if $DEBUG;
+  warn Dumper($match) if $DEBUG > 1;
+  ($match, $clean);
+}
+
 sub standardize_tomtom {
   # post-2013 TomTom API
   # much better, but incompatible with ezlocate
   my $self = shift;
   my $location = shift;
-  my $class = 'Geo::TomTom::Geocoding';
-  eval "use $class";
+  eval "use Geo::TomTom::Geocoding; use Geo::StreetAddress::US";
   die $@ if $@;
 
   my $key = $conf->config('tomtom-userid')
@@ -428,12 +445,25 @@ sub standardize_tomtom {
 
   my $country = code2country($location->{country});
   my ($address1, $address2) = ($location->{address1}, $location->{address2});
+  my $subloc = '';
+
+  # trim whitespace
+  $address1 =~ s/^\s+//;
+  $address1 =~ s/\s+$//;
+  $address2 =~ s/^\s+//;
+  $address2 =~ s/\s+$//;
+
   # try to fix some cases of the address fields being switched
   if ( $address2 =~ /^\d/ and $address1 !~ /^\d/ ) {
     $address2 = $address1;
     $address1 = $location->{address2};
   }
-  my $result = $class->query(
+  # parse sublocation part (unit/suite/apartment...) and clean up 
+  # non-sublocation address2
+  ($subloc, $address2) =
+    subloc_address2($address1, $address2, $location->{country});
+  # ask TomTom to standardize address1:
+  my %args = (
     key => $key,
     T   => $address1,
     L   => $location->{city},
@@ -441,40 +471,48 @@ sub standardize_tomtom {
     PC  => $location->{zip},
     CC  => country2code($country, LOCALE_CODE_ALPHA_3),
   );
-  unless ( $result->is_success ) {
-    die "TomTom geocoding error: ".$result->message."\n";
+
+  my ($match, $clean) = _tomtom_query(%args);
+
+  if (!$match or !$clean) {
+    # Then try cleaning up the input; TomTom is picky about junk in the 
+    # address.  Any of these can still be a clean match.
+    my $h = Geo::StreetAddress::US->parse_location($address1);
+    # First conservatively:
+    if ( $h->{sec_unit_type} ) {
+      my $strip = '\s+' . $h->{sec_unit_type};
+      $strip .= '\s*' . $h->{sec_unit_num} if $h->{sec_unit_num};
+      $strip .= '$';
+      $args{T} =~ s/$strip//;
+      ($match, $clean) = _tomtom_query(%args);
+    }
+    if ( !$match or !$clean ) {
+      # Then more aggressively:
+      $args{T} = uc( join(' ', @$h{'number', 'street', 'type'}) );
+      ($match, $clean) = _tomtom_query(%args);
+    }
   }
-  my ($match) = $result->locations;
-  if (!$match) {
-    die "Location not found.\n";
+
+  if ( !$match or !$clean ) { # partial matches are not useful
+    die "Address not found\n";
   }
-  my $type = $match->{type};
-  warn "tomtom returned $type match\n" if $DEBUG;
-  warn Dumper($match) if $DEBUG > 1;
   my $tract = '';
   if ( defined $match->{censusTract} ) {
     $tract = $match->{censusStateCode}. $match->{censusFipsCountyCode}.
              join('.', $match->{censusTract} =~ /(....)(..)/);
   }
-  # match levels below "intersection" should not be considered clean
-  my $clean = ($type eq 'addresspoint'  ||
-               $type eq 'poi'           ||
-               $type eq 'house'         ||
-               $type eq 'intersection'
-              ) ? 'Y' : '';
-
-  $address2 = normalize_address2($address2, $location->{country});
-
   $address1 = '';
   $address1 = $match->{houseNumber} . ' ' if length($match->{houseNumber});
   $address1 .= $match->{street} if $match->{street};
+  $address1 .= ' '.$subloc if $subloc;
+  $address1 = uc($address1); # USPS standards
 
   return +{
     address1    => $address1,
     address2    => $address2,
-    city        => $match->{city},
-    state       => $location->{state},    # this will never change
-    country     => $location->{country},  # ditto
+    city        => uc($match->{city}),
+    state       => uc($location->{state}),
+    country     => uc($location->{country}),
     zip         => ($match->{standardPostalCode} || $match->{postcode}),
     latitude    => $match->{latitude},
     longitude   => $match->{longitude},
@@ -483,15 +521,16 @@ sub standardize_tomtom {
   };
 }
 
-=iten normalize_address2 STRING, COUNTRY
+=iten subloc_address2 ADDRESS1, ADDRESS2, COUNTRY
 
-Given an 'address2' STRING, normalize it for COUNTRY postal standards.
-Currently only works for US and CA.
+Given 'address1' and 'address2' strings, extract the sublocation part 
+(from either one) and return it.  If the sublocation was found in ADDRESS1,
+also return ADDRESS2 (cleaned up for postal standards) as it's assumed to
+contain something relevant.
 
 =cut
 
-# XXX really ought to be a separate module
-my %address2_forms = (
+my %subloc_forms = (
   # Postal Addressing Standards, Appendix C
   # (plus correction of "hanger" to "hangar")
   US => {qw(
@@ -532,26 +571,76 @@ my %address2_forms = (
   )},
 );
  
-sub normalize_address2 {
+sub subloc_address2 {
   # Some things seen in the address2 field:
   # Whitespace
   # The complete address (with address1 containing part of the company name, 
   # or an ATTN or DBA line, or P.O. Box, or department name, or building/suite
   # number, etc.)
-  my ($addr2, $country) = @_;
-  $addr2 = uc($addr2);
-  if ( exists($address2_forms{$country}) ) {
-    my $dict = $address2_forms{$country};
-    # protect this
-    $addr2 =~ s/#\s*(\d)/NUMBER$1/; # /g?
-    my @words;
-    # remove all punctuation and spaces
-    foreach my $w (split(/\W+/, $addr2)) {
-      if ( exists($dict->{$w}) ) {
-        push @words, $dict->{$w};
-      } else {
-        push @words, $w;
-      }
+
+  # try to parse sublocation parts from address1; if they are present we'll
+  # append them back to address1 after standardizing
+  my $subloc = '';
+  my ($addr1, $addr2, $country) = map uc, @_;
+  my $dict = $subloc_forms{$country} or return('', $addr2);
+  
+  my $found_in = 0; # which address is the sublocation
+  my $h;
+  foreach my $string (
+    # patterns to try to parse
+    $addr1,
+    "$addr1 Nullcity, CA"
+  ) {
+    $h = Geo::StreetAddress::US->parse_location($addr1);
+    last if exists($h->{sec_unit_type});
+  }
+  if (exists($h->{sec_unit_type})) {
+    $found_in = 1
+  } else {
+    foreach my $string (
+      # more patterns
+      $addr2,
+      "$addr1, $addr2",
+      "$addr1, $addr2 Nullcity, CA"
+    ) {
+      $h = Geo::StreetAddress::US->parse_location("$addr1, $addr2");
+      last if exists($h->{sec_unit_type});
+    }
+    if (exists($h->{sec_unit_type})) {
+      $found_in = 2;
+    }
+  }
+  if ( $found_in ) {
+    $subloc = $h->{sec_unit_type};
+    # special case: do not combine P.O. box sublocs with address1
+    if ( $h->{sec_unit_type} =~ /^P *O *BOX/i ) {
+      if ( $found_in == 2 ) {
+        $addr2 = "PO BOX ".$h->{sec_unit_num};
+      } # else it's in addr1, and leave it alone
+      return ('', $addr2);
+    } elsif ( exists($dict->{$subloc}) ) {
+      # substitute the official abbreviation
+      $subloc = $dict->{$subloc};
+    }
+    $subloc .= ' ' . $h->{sec_unit_num} if length($h->{sec_unit_num});
+  } # otherwise $subloc = ''
+
+  if ( $found_in == 2 ) {
+    # address2 should be fully combined into address1
+    return ($subloc, '');
+  }
+  # else address2 is not the canonical sublocation, but do our best to 
+  # clean it up
+  #
+  # protect this
+  $addr2 =~ s/#\s*(\d)/NUMBER$1/; # /g?
+  my @words;
+  # remove all punctuation and spaces
+  foreach my $w (split(/\W+/, $addr2)) {
+    if ( exists($dict->{$w}) ) {
+      push @words, $dict->{$w};
+    } else {
+      push @words, $w;
     }
     my $result = join(' ', @words);
     # correct spacing of pound sign + number
@@ -559,13 +648,13 @@ sub normalize_address2 {
     warn "normalizing '$addr2' to '$result'\n" if $DEBUG > 1;
     $addr2 = $result;
   }
-  $addr2;
+  $addr2 = '' if $addr2 eq $subloc; # if it was entered redundantly
+  ($subloc, $addr2);
 }
 
 
 =back
 
 =cut
-
 
 1;

@@ -19,11 +19,36 @@ Confirm address standardization
 % }
 % for my $pre (@prefixes) {
 %   my $name = $pre eq 'bill_' ? 'billing' : 'service';
-%   if ( $new{$pre.'addr_clean'} ) {
+%   if ( $new{$pre.'error'} ) {
+  <TR>
+    <TH>Entered <%$name%> address</TH>
+  </TR>
+%     if ( $old{$pre.'company'} ) {
+  <TR>
+    <TD><% $old{$pre.'company'} %></TD>
+  </TR>
+%     }
+  <TR>
+    <TD><% $old{$pre.'address1'} %></TD>
+    <TD ROWSPAN=3><FONT COLOR="#ff0000"><B><% $new{$pre.'error'} %></B></FONT></TD>
+  </TR>
+  <TR>
+    <TD><% $old{$pre.'address2'} %></TD>
+  </TR>
+  <TR>
+    <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
+  </TR>
+%   } else { # not an error
   <TR>
     <TH>Entered <%$name%> address</TH>
     <TH>Standardized <%$name%> address</TH>
   </TR>
+%   if ( !$new{$pre.'addr_clean'} ) {
+  <TR>
+    <TD></TD>
+    <TH STYLE="font-size:smaller;color:#ff0000">(unverified)</TH>
+  </TR>
+%   }
   <TR>
 %     if ( $old{$pre.'company'} ) {
   <TR>
@@ -44,27 +69,7 @@ Confirm address standardization
     <TD><% $new{$pre.'city'} %>, <% $new{$pre.'state'} %>  <% $new{$pre.'zip'} %></TD>
   </TR>
 
-%   } # if addr_clean
-%     elsif ( $new{$pre.'error'} ) {
-  <TR>
-    <TH>Entered <%$name%> address</TH>
-  </TR>
-%     if ( $old{$pre.'company'} ) {
-  <TR>
-    <TD><% $old{$pre.'company'} %></TD>
-  </TR>
-%     }
-  <TR>
-    <TD><% $old{$pre.'address1'} %></TD>
-    <TD ROWSPAN=3><FONT COLOR="#ff0000"><B><% $new{$pre.'error'} %></B></FONT></TD>
-  </TR>
-  <TR>
-    <TD><% $old{$pre.'address2'} %></TD>
-  </TR>
-  <TR>
-    <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
-  </TR>
-%   } #if error
+%   } # if error
 % } # for $pre
 
 %# only do this part if address standardization provided a censustract
@@ -88,7 +93,7 @@ Confirm address standardization
   </TR>
 % } #if censustract
 
-% if ( $new{bill_error} or $new{ship_error} ) {
+% if ( grep {$new{$_.'error'}} @prefixes ) {
   <TR>
     <TD ALIGN="center">
     <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address();">
@@ -99,8 +104,7 @@ Confirm address standardization
       <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
     </BUTTON></TD>
   </TR>
-% }
-% else {
+% } else {
   <TR>
     <TD ALIGN="center">
     <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address();">
