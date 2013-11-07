@@ -48,7 +48,7 @@ use FS::svc_forward;
 # for sending cancel emails in sub cancel
 use FS::Conf;
 
-our ($disable_agentcheck, $DEBUG, $me) = (0, 0, '[FS::cust_pkg]');
+our ($disable_agentcheck, $DEBUG, $me, $import) = (0, 0, '[FS::cust_pkg]', 0);
 
 sub _cache {
   my $self = shift;
@@ -292,7 +292,7 @@ sub insert {
 
   my $part_pkg = $self->part_pkg;
 
-  if (! $options{'import'}) {
+  if (! $import) {
     # if the package def says to start only on the first of the month:
     if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
       my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
@@ -325,7 +325,7 @@ sub insert {
   }
 
   # set order date unless it was specified as part of an import
-  $self->order_date(time) unless $options{'import'} && $self->order_date;
+  $self->order_date(time) unless $import && $self->order_date;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -361,7 +361,7 @@ sub insert {
 
   my $conf = new FS::Conf;
 
-  if ( ! $options{'import'} && $conf->config('ticket_system') && $options{ticket_subject} ) {
+  if ( ! $import && $conf->config('ticket_system') && $options{ticket_subject} ) {
 
     #this init stuff is still inefficient, but at least its limited to 
     # the small number (any?) folks using ticket emailing on pkg order
@@ -391,7 +391,7 @@ sub insert {
                );
   }
 
-  if (! $options{'import'} && $conf->config('welcome_letter') && $self->cust_main->num_pkgs == 1) {
+  if (! $import && $conf->config('welcome_letter') && $self->cust_main->num_pkgs == 1) {
     my $queue = new FS::queue {
       'job'     => 'FS::cust_main::queueable_print',
     };
