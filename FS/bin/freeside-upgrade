@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw($opt_d $opt_s $opt_q $opt_v $opt_r);
-use vars qw($DEBUG $DRY_RUN);
+use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c );
+use vars qw( $DEBUG $DRY_RUN );
 use Getopt::Std;
 use DBIx::DBSchema 0.31; #0.39
 use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);
@@ -17,7 +17,7 @@ my $start = time;
 
 die "Not running uid freeside!" unless checkeuid();
 
-getopts("dqrs");
+getopts("dqrcs");
 
 $DEBUG = !$opt_q;
 #$DEBUG = $opt_v;
@@ -152,6 +152,18 @@ unless ( driver_name =~ /^mysql/i ) {
   @statements =
     grep { $_ !~ /^ *ALTER +TABLE +h_queue +ALTER +COLUMN +job +TYPE +varchar\(512\) *$/i }
          @statements;
+}
+
+if ( $opt_c ) {
+
+  @statements =
+    grep { $_ !~ /^ *ALTER +TABLE +(h_)?cdr /i }
+         @statements;
+
+  @statements =
+    grep { $_ !~ /^ *CREATE +INDEX +(h_)?cdr\d+ /i }
+         @statements;
+
 }
 
 if ( $DRY_RUN ) {
@@ -312,7 +324,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -r ] [ -s ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -r ] [ -c ] [ -s ] [ -q | -v ]
 
 =head1 DESCRIPTION
 
@@ -336,6 +348,8 @@ Also performs other upgrade functions:
 
   [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
           databases may be inaccessible.
+
+  [ -c ]: Skip cdr and h_cdr updates.
 
   [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
           current default.

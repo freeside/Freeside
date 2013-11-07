@@ -165,7 +165,10 @@ sub _upgrade_data {
         map { $_ => $cust_main->get($_) } location_fields(),
       }
     );
-    $bill_location->set('censustract', ''); # properly goes with ship_location
+    $bill_location->set('censustract', '');
+    $bill_location->set('censusyear', '');
+     # properly goes with ship_location; if they're the same, will be set
+     # on ship_location before inserting either one
     my $ship_location = $bill_location; # until proven otherwise
 
     if ( $cust_main->get('ship_address1') ) {
@@ -186,8 +189,6 @@ sub _upgrade_data {
           }
         );
       } # else it stays equal to $bill_location
-
-      $ship_location->set('censustract', $cust_main->get('censustract'));
 
       # Step 2: Extract shipping address contact fields into contact
       my %unlike = map { $_ => 1 }
@@ -251,6 +252,11 @@ sub _upgrade_data {
       }
     }
 
+    # this always goes with the ship_location (whether it's the same as
+    # bill_location or not)
+    $ship_location->set('censustract', $cust_main->get('censustract'));
+    $ship_location->set('censusyear',  $cust_main->get('censusyear'));
+
     $error = $bill_location->insert;
     die "error migrating billing address for customer $custnum: $error"
       if $error;
@@ -286,6 +292,38 @@ sub _upgrade_data {
     }
 
   } #foreach $cust_main
+
+  # repair an error in earlier upgrades
+  if (!FS::upgrade_journal->is_done('cust_location_censustract_repair')
+       and FS::Conf->new->exists('cust_main-require_censustract') ) {
+
+    foreach my $cust_location (
+      qsearch('cust_location', { 'censustract' => '' })
+    ) {
+      my $custnum = $cust_location->custnum;
+      next if !$custnum; # avoid doing this for prospect locations
+      my $address1 = $cust_location->address1;
+      # find the last history record that had that address
+      my $last_h = qsearchs({
+          table     => 'h_cust_main',
+          extra_sql => " WHERE custnum = $custnum AND address1 = ".
+                        dbh->quote($address1) .
+                        " AND censustract IS NOT NULL",
+          order_by  => " ORDER BY history_date DESC LIMIT 1",
+      });
+      if (!$last_h) {
+        # this is normal; just means it never had a census tract before
+        next;
+      }
+      $cust_location->set('censustract' => $last_h->get('censustract'));
+      $cust_location->set('censusyear'  => $last_h->get('censusyear'));
+      my $error = $cust_location->replace;
+      warn "Error setting census tract for customer #$custnum:\n  $error\n"
+        if $error;
+    } # foreach $cust_location
+    FS::upgrade_journal->set_done('cust_location_censustract_repair');
+  }
+
 }
 
 =back

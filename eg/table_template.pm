@@ -108,7 +108,7 @@ The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::Record>
 
 =cut
 

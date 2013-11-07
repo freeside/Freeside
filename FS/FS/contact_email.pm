@@ -1,8 +1,9 @@
 package FS::contact_email;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::contact;
 
 =head1 NAME
 
@@ -25,8 +26,9 @@ FS::contact_email - Object methods for contact_email records
 
 =head1 DESCRIPTION
 
-An FS::contact_email object represents an example.  FS::contact_email inherits from
-FS::Record.  The following fields are currently supported:
+An FS::contact_email object represents a contact's email address.
+FS::contact_email inherits from FS::Record.  The following fields are currently
+supported:
 
 =over 4
 
@@ -51,14 +53,13 @@ emailaddress
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new contact email address.  To add the email address to the database,
+see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
-
-# the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'contact_email'; }
 
@@ -67,37 +68,22 @@ sub table { 'contact_email'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-=cut
-
-# the replace method can be inherited from FS::Record
-
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid email address.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
 =cut
-
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
 
 sub check {
   my $self = shift;
@@ -105,22 +91,39 @@ sub check {
   my $error = 
     $self->ut_numbern('contactemailnum')
     || $self->ut_number('contactnum')
-    || $self->ut_text('emailaddress')
   ;
   return $error if $error;
 
+  #technically \w and also ! # $ % & ' * + - / = ? ^ _ ` { | } ~
+  # and even more technically need to deal with i18n addreesses soon
+  #  (maybe the UI can convert them for us ala punycode.js)
+  # but for now in practice have not encountered anything outside \w . - & + '
+  #  and even & and ' are super rare and probably have scarier "pass to shell"
+  #   implications than worth being pedantic about accepting
+  #    (we always String::ShellQuote quote them, but once passed...)
+  #                              SO: \w . - +
+  if ( $self->emailaddress =~ /^\s*([\w\.\-\+]+)\@(([\w\.\-]+\.)+\w+)\s*$/ ) {
+    my($user, $domain) = ($1, $2);
+    $self->emailaddress("$1\@$2");
+  } else {
+    return gettext("illegal_email_invoice_address"). ': '. $self->emailaddress;
+  }
+
   $self->SUPER::check;
+}
+
+sub contact {
+  my $self = shift;
+  qsearchs( 'contact', { 'contactnum' => $self->contactnum } );
 }
 
 =back
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
-
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::contact>, L<FS::Record>
 
 =cut
 

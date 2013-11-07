@@ -4,29 +4,46 @@
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-<& /elements/tr-select-agent.html,
-     'onchange'      => 'agent_changed(this)',
-&>
+% if ( $curuser->report_salesnum ) {
 
-<SCRIPT TYPE="text/javascript">
+    <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $curuser->report_sales->agentnum %>">
+    <INPUT TYPE="hidden" NAME="salesnum" VALUE="<% $curuser->report_salesnum %>">
 
-  function agent_changed(what) {
-    salesnum_agentnum_changed(what);
-  }
+% } else {
 
-  <&| /elements/onload.js &>
-  agent_changed(document.getElementById('agentnum'))
-  </&>
+    <& /elements/tr-select-agent.html,
+         'onchange'      => 'agent_changed(this)',
+    &>
 
-</SCRIPT>
+    <SCRIPT TYPE="text/javascript">
 
-<& /elements/tr-select-sales.html &>
+      function agent_changed(what) {
+        salesnum_agentnum_changed(what);
+      }
+
+      <&| /elements/onload.js &>
+      agent_changed(document.getElementById('agentnum'))
+      </&>
+
+    </SCRIPT>
+
+    <& /elements/tr-select-sales.html,
+        'empty_label' => 'all',
+    &>
+
+% }
 
 <& /elements/tr-checkbox.html,
-     'label' => 'Customer sales person if there is no package sales person',
-     'field' => 'cust_main_sales',
-     'value' => 'Y',
+    'label' => 'Customer sales person if there is no package sales person',
+    'field' => 'cust_main_sales',
+    'value' => 'Y',
 &>
+
+<& /elements/tr-checkbox.html,
+    'label' => 'Show paid sales only',
+    'field' => 'paid',
+    'value' => 'Y',
+&> 
 
 <& /elements/tr-input-beginning_ending.html &>
 
@@ -38,7 +55,8 @@
 <% include('/elements/footer.html') %>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Financial reports');
 
 </%init>

@@ -36,6 +36,8 @@ my $count_query = "SELECT COUNT(*) FROM sales";
 my $salesnum;
 if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
   $salesnum = $1;
+} else {
+  $cgi->delete('salesnum');
 }
 
 my $title = 'Sales person commission';
@@ -43,13 +45,14 @@ $title .= ': '. time2str($date_format, $beginning). ' to '.
                 time2str($date_format, $ending)
   if $beginning;
 
+my $paid = $cgi->param('paid') ? 1 : 0;
+$title .= ' - paid sales only' if $paid;
+
 my $cust_main_sales = $cgi->param('cust_main_sales') eq 'Y' ? 'Y' : '';
 
 my $sales_link = [ 'sales_pkg_class.html?'.
-                     "begin=$beginning;".
-                     "end=$ending;".
-                     "cust_main_sales=$cust_main_sales;".
-                     "salesnum=",
+                   # pass all of our parameters along
+                   $cgi->query_string. ';salesnum=',
                    'salesnum'
                  ];
 
@@ -64,6 +67,7 @@ my $sales_sub_maker = sub {
       $beginning,
       $ending,
       'cust_main_sales' => $cust_main_sales,
+      'paid' => $paid,
     );
     $total += $_->get($field) foreach @cust_bill_pkg;
 

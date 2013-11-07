@@ -4,12 +4,11 @@
 
 <TABLE>
 
-<% include( '/elements/tr-input-beginning_ending.html',
+<& /elements/tr-input-beginning_ending.html,
                 'datesrequired' => 1,
-                'from' => time2str('%m/%d/%Y',$from),
-                'to' => time2str('%m/%d/%Y',time),
-            ) 
-%>
+                'from' => $from,
+                'to' => time,
+&>
 
 <% include('/elements/tr-select-agent.html',
              'label'         => 'For agent: ',

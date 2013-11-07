@@ -7,7 +7,7 @@
 
 <TR>
   <TD ALIGN="right">From date: </TD>
-  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>beginning" ID="<% $opt{prefix} %>beginning_text" VALUE="<% $from %>" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>beginning_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>beginning_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
+  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>beginning" ID="<% $opt{prefix} %>beginning_text" VALUE="<% $from ? time2str($date_format, $from) : '' %>" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>beginning_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>beginning_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "<% $opt{prefix} %>beginning_text",
@@ -26,7 +26,7 @@
 % }
 
   <TD ALIGN="right">To date: </TD>
-  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>ending" ID="<% $opt{prefix} %>ending_text" VALUE="<% $to %>" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>ending_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>ending_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
+  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>ending" ID="<% $opt{prefix} %>ending_text" VALUE="<% $to ? time2str($date_format, $to) : '' %>" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>ending_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>ending_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "<% $opt{prefix} %>ending_text",

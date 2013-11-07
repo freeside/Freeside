@@ -5,6 +5,7 @@
 % }
 <& /elements/tr-input-text.html, id => $id, @_ &>
 <script type="text/javascript">
+<&| /elements/onload.js &>
 MaskedInput({
   elm: document.getElementById('<%$id%>'),
   format: '<% $opt{format} %>',
@@ -12,7 +13,41 @@ MaskedInput({
   <% $opt{typeon}  ? "typeon:  '$opt{typeon}',"  : '' %>
 });
 document.getElementById('<%$id%>').value = <% $value |js_string %>;
+% if ( $clipboard_hack ) {
+var t = document.getElementById('<% $id %>');
+var container = document.getElementById('<%$id%>_clipboard');
+var KeyHandlerDown = t.onkeydown
+t.onkeydown = function(e) {
+  // intercept ctrl-c and ctrl-x
+  // and cmd-c and cmd-x on mac
+  // when text is selected
+  if ( ( e.ctrlKey || e.metaKey ) ) {
+    // do the dance
+    var separators = /[\\/:-]/g;
+    var s = t.value.substr(t.selectionStart, t.selectionEnd);
+    if ( s ) {
+      container.value = s.replace(separators, '');
+      container.previous = t;
+      container.focus();
+      container.select();
+      return true;
+    }
+  }
+  return KeyHandlerDown.call(t, e);
+};
+container.onkeyup = function(e) {
+  if ( container.previous ) {
+    setTimeout(function() {
+      container.previous.value = container.value;
+      container.previous.focus();
+    }, 10);
+  }
+  return true;
+}
+% } # clipboard hack
+</&>
 </script>
+<textarea id="<%$id%>_clipboard" style="opacity:0"></textarea>
 <%shared>
 my $init = 0;
 </%shared>
@@ -21,6 +56,8 @@ my %opt = @_;
 # must have a DOM id
 my $id = $opt{id} || sprintf('input%04d',int(rand(10000)));
 my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value} || '';
+
+my $clipboard_hack = $FS::CurrentUser::CurrentUser->option('enable_mask_clipboard_hack');
 </%init>
 <%doc>
 Set up a text input field with input masking.

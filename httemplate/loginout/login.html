@@ -14,7 +14,7 @@
              
 %#  <FORM METHOD="POST" ACTION="<%$url_string%>loginout/login">
   <FORM METHOD="POST" ACTION="/login">
-    <INPUT TYPE="hidden" NAME="destination" VALUE="<% $r->prev->uri %>">
+    <INPUT TYPE="hidden" NAME="destination" VALUE="<% $r->prev->unparsed_uri %>">
 
     <TABLE CELLSPACING=0 CELLPADDING=4 BGCOLOR="#cccccc">
       <TR>
