@@ -301,6 +301,7 @@ sub _upgrade_data {
       qsearch('cust_location', { 'censustract' => '' })
     ) {
       my $custnum = $cust_location->custnum;
+      next if !$custnum; # avoid doing this for prospect locations
       my $address1 = $cust_location->address1;
       # find the last history record that had that address
       my $last_h = qsearchs({
