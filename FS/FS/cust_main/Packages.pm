@@ -87,7 +87,7 @@ sub order_pkg {
     if exists($opt->{'depend_jobnum'}) && $opt->{'depend_jobnum'};
 
   my %insert_params = map { $opt->{$_} ? ( $_ => $opt->{$_} ) : () }
-                          qw( ticket_subject ticket_queue allow_pkgpart import );
+                          qw( ticket_subject ticket_queue allow_pkgpart );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -226,8 +226,7 @@ Services can be new, in which case they are inserted, or existing unaudited
 services, in which case they are linked to the newly-created package.
 
 Currently available options are: I<depend_jobnum>, I<noexport>, I<seconds_ref>,
-I<upbytes_ref>, I<downbytes_ref>, I<totalbytes_ref>, I<allow_pkgpart>, and
-I<import>.
+I<upbytes_ref>, I<downbytes_ref>, I<totalbytes_ref>, and I<allow_pkgpart>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
@@ -244,7 +243,7 @@ If I<seconds_ref>, I<upbytes_ref>, I<downbytes_ref>, or I<totalbytes_ref> is
 provided, the scalars (provided by references) will be incremented by the
 values of the prepaid card.`
 
-I<allow_pkgpart> and I<import> are flags passed to L<FS::cust_pkg>->insert.
+I<allow_pkgpart> is passed to L<FS::cust_pkg>->insert.
 
 =cut
 
@@ -278,7 +277,7 @@ sub order_pkgs {
       'cust_pkg'     => $cust_pkg,
       'svcs'         => $cust_pkgs->{$cust_pkg},
       map { $_ => $options{$_} }
-        qw( seconds_ref upbytes_ref downbytes_ref totalbytes_ref depend_jobnum allow_pkgpart import )
+        qw( seconds_ref upbytes_ref downbytes_ref totalbytes_ref depend_jobnum allow_pkgpart )
     );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
