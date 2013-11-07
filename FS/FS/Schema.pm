@@ -204,7 +204,7 @@ sub dbdef_dist {
 
     my %h_indices = ();
 
-    unless ( $table eq 'cust_event' ) { #others?
+    unless ( $table eq 'cust_event' || $table eq 'cdr' ) { #others?
 
       my %indices = $tableobj->indices;
     
