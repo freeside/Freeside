@@ -2801,13 +2801,16 @@ sub myaccount_passwd {
   } )
     or return { 'error' => "Service not found" };
 
-  if ( exists($p->{'old_password'}) ) {
-    return { 'error' => "Incorrect password." }
-      unless $svc_acct->check_password($p->{'old_password'});
-  }
+  my $error = '';
+
+  my $conf = new FS::Conf;
+  $error = 'Password too short.'
+    if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
+  $error = 'Password too long.'
+    if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
 
   $svc_acct->set_password($p->{'new_password'});
-  my $error = $svc_acct->replace();
+  $error ||= $svc_acct->replace();
 
   my($label, $value) = $svc_acct->cust_svc->label;
 
