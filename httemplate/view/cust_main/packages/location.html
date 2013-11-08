@@ -1,35 +1,49 @@
 % if ( $cust_pkg->change_from_pkg
-%      and $cust_pkg->change_from_pkg->locationnum == $cust_pkg->locationnum )
+%      and $cust_pkg->change_from_pkg->locationnum == $cust_pkg->locationnum)
 % {
 % # don't show the location
 % } else {
-%   if ( $default ) {
-    <DIV STYLE="font-style: italic; font-size: small">
-%   }
+%   if ( !$conf->exists('cust_pkg-group_by_location') ) {
+%     if ( $default ) {
+        <DIV STYLE="font-style: italic; font-size: small">
+%     }
 
-    <% $loc->location_label( 'join_string'     => '<BR>',
-                             'double_space'    => ' &nbsp; ',
-                             'escape_function' => \&encode_entities,
-                             'countrydefault'  => $countrydefault,
-                           )
-    %>
+      <% $loc->location_label( 'join_string'     => '<BR>',
+                               'double_space'    => ' &nbsp; ',
+                               'escape_function' => \&encode_entities,
+                               'countrydefault'  => $countrydefault,
+                             )
+      %>
 
-%   if ( $loc->latitude && $loc->longitude ) {
-        <BR>
-        <FONT SIZE=-1>
-        <% $loc->latitude %>, <% $loc->longitude %>
-        <& /elements/coord-links.html,
-             $loc->latitude,
-             $loc->longitude,
-             $opt{'cust_main'}->name_short. ': '. $opt{'part_pkg'}->pkg,
-             $opt{'cust_main'}->agentnum,
-        &>
-        </FONT>
-%   }
+%     if ( $loc->latitude && $loc->longitude ) {
+          <BR>
+          <FONT SIZE=-1>
+          <% $loc->latitude %>, <% $loc->longitude %>
+          <& /elements/coord-links.html,
+               $loc->latitude,
+               $loc->longitude,
+               $opt{'cust_main'}->name_short. ': '. $opt{'part_pkg'}->pkg,
+               $opt{'cust_main'}->agentnum,
+          &>
+          </FONT>
+%     }
+%     if ( $loc->censustract ) {
+         <BR>
+         <FONT SIZE=-1>
+         <% $loc->censustract %> (<% $loc->censusyear %> census)
+         </FONT>
+%     } elsif ( $conf->exists('cust_main-require_censustract') ) {
+          <BR>
+          <FONT SIZE=-1 COLOR="#ee3300">
+          <% emt('Census tract unknown') %>
+          </FONT>
+%     }
 
-%   if ( $default ) {
-    </DIV>
-%   }
+%     if ( $default ) {
+      </DIV>
+%     }
+%   } # all of this is hidden if packages are grouped by location, because
+%     # it's in the top banner
 
 %   if ( ! $cust_pkg->get('cancel')
 %      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')
@@ -41,11 +55,13 @@
       (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
 %     }
 %     if ( $cust_pkg->locationnum && ! $opt{no_links} ) {
-        (&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
+        (&nbsp;<%pkg_edit_location_link($cust_pkg->locationnum)%>&nbsp;)
 %     }
   </FONT>
 %   } 
-% }
+% } # if the package is a scheduled future package change without location
+%   # change, then don't show any of this at all.  It's all implied by the
+%   # preceding package.
 <%init>
 
 my $conf = new FS::Conf;
@@ -75,7 +91,7 @@ sub pkg_change_location_link {
   );
 }
 
-sub edit_location_link {
+sub pkg_edit_location_link {
   my $locationnum = shift;
   include( '/elements/popup_link.html',
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",

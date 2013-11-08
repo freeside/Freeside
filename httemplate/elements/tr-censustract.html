@@ -1,0 +1,23 @@
+% if ($censustract) {
+<TR>
+  <TD ALIGN="right"><% mt('Census tract') |h %></TD>
+  <TD COLSPAN=5>
+    <SPAN STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $censustract |h %></SPAN>
+    &nbsp;<% $censusyear |h %>
+  </TD>
+</TR>
+% }
+<%init>
+
+my $location = shift;
+my $conf = FS::Conf->new;
+my ($censustract, $censusyear);
+if ($location->censustract) {
+  $censustract = $location->censustract;
+  $censusyear = '('. ($location->censusyear || mt('unknown year')) . ')';
+} elsif ($conf->exists('cust_main-require_censustract')) {
+  $censustract = mt('unknown');
+  $censusyear = '';
+}
+
+</%init>

@@ -1,14 +1,29 @@
 <STYLE>
-span.loclabel {
+div.loclabel {
+  display: inline-block;
   padding-left: 4px; 
   padding-right: 4px; 
   background-color: #cccccc;
-  border: 1px solid black
+  border: 1px solid black;
+  border-bottom: 0px;
+  border-radius: 4px 4px 0 0; 
+}
+div.disabled {
+  font-style: italic;
+  color: #808080;
 }
 table.location {
   width: 100%;
   padding: 1px;
   border-spacing: 0px;
+}
+.location-head th {
+  padding-bottom: 0px; 
+  padding-left: 0px; 
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+  text-align: left;
+  width: 100%;
 }
 </STYLE>
 % foreach my $locationnum (@sorted) {
@@ -16,25 +31,30 @@ table.location {
 %   my $loc = $locations{$locationnum};
 %   next if $loc->disabled and scalar(@$packages) == 0;
 <TABLE CLASS="grid location">
-<TR><TH COLSPAN=3 ALIGN="left" VALIGN="bottom" 
-STYLE="padding-bottom: 0px; 
-  padding-left: 0px; 
-  border-bottom-style: solid;
-  border-bottom-color: black;
-  border-bottom-width: 1px;">
-<SPAN CLASS="loclabel">
-%   if ( $loc->disabled ) {
-<FONT COLOR="#808080"><I>
+<TR CLASS="location-head">
+<TH COLSPAN=5>
+<DIV CLASS="<% $loc->disabled ? 'loclabel disabled' : 'loclabel' %>">
+<% $loc->location_label %>
+%   if ( $loc->censustract ) {
+        <BR>
+        <FONT SIZE=-1>
+        <% $loc->censustract %> (<% $loc->censusyear %> census)
+        </FONT>
+%   } elsif ( $conf->exists('cust_main-require_censustract') ) {
+        <BR>
+        <FONT SIZE=-1 COLOR="#ee3300">
+        <% emt('Census tract unknown') %>
+        </FONT>
 %   }
-<% $loc->location_label %></SPAN>
-<SPAN STYLE="float:right;">
+</DIV>
+<DIV STYLE="display: inline; float:right;">
 % if ( $locationnum && !$loc->disabled && ! $opt{no_links} ) {
 <% edit_location_link($locationnum) %>
 % }
 % if ( $locationnum && !$loc->disabled && !$active{$locationnum} && ! $opt{no_links} ) {
 &nbsp;<% disable_location_link($locationnum) %>
 % }
-</SPAN></TH></TR>
+</DIV></TH></TR>
 %   if (@$packages) {
       <& packages/section.html,
            'packages'  => $packages,
@@ -48,6 +68,7 @@ STYLE="padding-bottom: 0px;
 my %opt = @_;
 my $cust_main = $opt{'cust_main'};
 my $all_packages = $opt{'packages'};
+my $conf = FS::Conf->new;
 
 my %locations = map { $_->locationnum => $_ } qsearch({
     'table'     => 'cust_location',
