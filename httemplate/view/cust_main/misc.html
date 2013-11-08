@@ -171,17 +171,6 @@
 
 % }
 
-% if ( $conf->exists('cust_main-require_censustract') ) {
-
-  <TR>
-    <TD ALIGN="right">
-      <% mt('Census tract ([_1])', $cust_main->ship_location->censusyear) |h %>
-    </TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->ship_location->censustract  %></TD>
-  </TR>
-
-% }
-
 % if ( $cust_main->district ) {
 
   <TR>
