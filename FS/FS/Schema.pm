@@ -3461,7 +3461,7 @@ sub tables_hashref {
 
         #currently only u4:
         # terminating number (as opposed to dialed destination)
-        'dst_term',    'varchar',  '', $char_d, \"''", '',
+        'dst_term',    'varchar',  'NULL', $char_d, \"''", '',
 
         #these don't seem to be logged by most of the SQL cdr_* modules
         #except tds under sql-illegal names, so;
