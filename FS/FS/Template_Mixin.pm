@@ -581,11 +581,14 @@ sub print_generic {
   my $countrydefault = $conf->config('countrydefault') || 'US';
   foreach ( qw( address1 address2 city state zip country fax) ){
     my $method = 'ship_'.$_;
-    $invoice_data{"ship_$_"} = _latex_escape($cust_main->$method);
+    $invoice_data{"ship_$_"} = $escape_function->($cust_main->$method);
   }
-  foreach ( qw( contact company ) ) { #compatibility
-    $invoice_data{"ship_$_"} = _latex_escape($cust_main->$_);
+  if ( length($cust_main->ship_company) ) {
+    $invoice_data{'ship_company'} = $escape_function->($cust_main->ship_company);
+  } else {
+    $invoice_data{'ship_company'} = $escape_function->($cust_main->company);
   }
+  $invoice_data{'ship_contact'} = $escape_function->($cust_main->contact);
   $invoice_data{'ship_country'} = ''
     if ( $invoice_data{'ship_country'} eq $countrydefault );
   

@@ -1696,7 +1696,7 @@ sub queue_fuzzyfiles_update {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  foreach my $field ( 'first', 'last', 'company' ) {
+  foreach my $field ( 'first', 'last', 'company', 'ship_company' ) {
     my $queue = new FS::queue { 
       'job' => 'FS::cust_main::Search::append_fuzzyfiles_fuzzyfield'
     };
@@ -1758,6 +1758,7 @@ sub check {
     || $self->ut_snumbern('spouse_birthdate')
     || $self->ut_snumbern('anniversary_date')
     || $self->ut_textn('company')
+    || $self->ut_textn('ship_company')
     || $self->ut_anything('comments')
     || $self->ut_numbern('referral_custnum')
     || $self->ut_textn('stateid')
@@ -1774,11 +1775,13 @@ sub check {
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
 
-  my $company = $self->company;
-  $company =~ s/^\s+//; 
-  $company =~ s/\s+$//; 
-  $company =~ s/\s+/ /g;
-  $self->company($company);
+  foreach (qw(company ship_company)) {
+    my $company = $self->get($_);
+    $company =~ s/^\s+//; 
+    $company =~ s/\s+$//; 
+    $company =~ s/\s+/ /g;
+    $self->set($_, $company);
+  }
 
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
