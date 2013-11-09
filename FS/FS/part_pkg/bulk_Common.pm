@@ -100,10 +100,13 @@ sub calc_recur {
     }
   }
 
-  sprintf('%.2f', $self->base_recur($cust_pkg, $sdate) + $total_svc_charge );
-}
+  my $charge = $self->base_recur($cust_pkg, $sdate) + $total_svc_charge;
 
-sub can_discount { 0; }
+  $param->{'override_charges'} = $total_svc_charge / $self->freq;
+  my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+
+  sprintf('%.2f', $charge - $discount );
+}
 
 sub hide_svc_detail { 1; }
 
