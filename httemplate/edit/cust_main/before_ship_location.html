@@ -1,0 +1,13 @@
+% if ( length($cust_main->ship_company) or
+%      $conf->exists('show_ship_company') ) {
+  <& /elements/tr-input-text.html,
+      label       => mt('Company'),
+      field       => 'ship_company',
+      curr_value  => $cust_main->ship_company,
+      colspan     => 6,
+  &>
+% }
+<%init>
+my $cust_main = shift;
+my $conf = FS::Conf->new;
+</%init>
