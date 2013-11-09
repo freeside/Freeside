@@ -2,9 +2,12 @@ package FS::svc_phone;
 
 use strict;
 use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
-use vars qw( $DEBUG $me @pw_set $conf $phone_name_max );
+use vars qw( $DEBUG $me @pw_set $conf $phone_name_max
+             $passwordmin $passwordmax
+           );
 use Data::Dumper;
 use Scalar::Util qw( blessed );
+use List::Util qw( min );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::Msgcat qw(gettext);
@@ -25,6 +28,8 @@ $DEBUG = 0;
 $FS::UID::callback{'FS::svc_acct'} = sub { 
   $conf = new FS::Conf;
   $phone_name_max = $conf->config('svc_phone-phone_name-max_length');
+  $passwordmin = $conf->config('sip_passwordmin') || 0;
+  $passwordmax = $conf->config('sip_passwordmax') || 80;
 };
 
 =head1 NAME
@@ -512,10 +517,17 @@ sub check {
     }
   }
 
-  unless ( length($self->sip_password) ) { # option for this?
+  if ( length($self->sip_password) ) {
+
+    return "SIP password must be longer than $passwordmin characters"
+      if length($self->sip_password) < $passwordmin;
+    return "SIP password must be shorter than $passwordmax characters"
+      if length($self->sip_password) > $passwordmax;
+
+  } else { # option for this?
 
     $self->sip_password(
-      join('', map $pw_set[ int(rand $#pw_set) ], (0..16) )
+      join('', map $pw_set[ int(rand $#pw_set) ], (1..min($passwordmax,16)) )
     );
 
   }
