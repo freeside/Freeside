@@ -1724,6 +1724,21 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'sip_passwordmin',
+    'section'     => 'telephony',
+    'description' => 'Minimum SIP password length (default 6)',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'sip_passwordmax',
+    'section'     => 'telephony',
+    'description' => 'Maximum SIP password length (default 8) (don\'t set this over 12 if you need to import or export crypt() passwords)',
+    'type'        => 'text',
+  },
+
+
+  {
     'key'         => 'password-noampersand',
     'section'     => 'password',
     'description' => 'Disallow ampersands in passwords',
