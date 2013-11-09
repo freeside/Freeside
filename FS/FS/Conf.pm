@@ -2055,6 +2055,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'show_ship_company',
+    'section'     => 'UI',
+    'description' => 'Turns on display/collection of a "service company name" field for customers.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'show_ss',
     'section'     => 'UI',
     'description' => 'Turns on display/collection of social security numbers in the web interface.  Sometimes required by electronic check (ACH) processors.',

@@ -73,6 +73,7 @@
     ><% mt('same as billing address') |h %>
     <DIV CLASS="fsinnerbox">
       <TABLE ID="table_ship_location" WIDTH="100%">
+      <& cust_main/before_ship_location.html, $cust_main &>
       <& /elements/location.html,
           object => $cust_main->ship_location,
           prefix => 'ship_',

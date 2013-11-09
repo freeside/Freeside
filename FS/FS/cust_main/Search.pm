@@ -21,6 +21,7 @@ $me = '[FS::cust_main::Search]';
 
 @fuzzyfields = (
   'cust_main.first', 'cust_main.last', 'cust_main.company', 
+  'cust_main.ship_company', # if you're using it
   'cust_location.address1',
   'contact.first',   'contact.last',
 );
@@ -321,6 +322,7 @@ sub smart_search {
     $sql .= " (    LOWER(cust_main.first)         = $q_value
                 OR LOWER(cust_main.last)          = $q_value
                 OR LOWER(cust_main.company)       = $q_value
+                OR LOWER(cust_main.ship_company)  = $q_value
             ";
 
     #address1 (yes, it's a kludge)
@@ -358,6 +360,7 @@ sub smart_search {
 
       my @hashrefs = (
         { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
+        { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
       );
 
       if ( $first && $last ) {
@@ -439,7 +442,7 @@ sub smart_search {
           %fuzopts
         );
      }
-      foreach my $field ( 'first', 'last', 'company' ) {
+      foreach my $field ( 'first', 'last', 'company', 'ship_company' ) {
         push @cust_main, FS::cust_main::Search->fuzzy_search(
           { $field => $value },
           %fuzopts
@@ -1193,6 +1196,7 @@ sub append_fuzzyfiles {
   #foreach my $fuzzy (@fuzzyfields) {
   foreach my $fuzzy ( 'cust_main.first', 'cust_main.last', 'cust_main.company', 
                       'cust_location.address1',
+                      'cust_main.ship_company',
                     ) {
 
     append_fuzzyfiles_fuzzyfield($fuzzy, shift);

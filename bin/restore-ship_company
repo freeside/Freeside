@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+use FS::UID 'adminsuidsetup';
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::cust_main;
+my $user = shift or die "Usage: 
+  restore-ship_company username [ max-age ]
+";
+adminsuidsetup($user);
+
+$FS::UID::AutoCommit = 1;
+local $FS::cust_main::import = 1;
+
+my $days = shift || 30;
+my $time = time - (86400*$days); # by default, only restore within the last
+                                 # 30 days
+foreach my $cust_main (qsearch('cust_main', { ship_company => '' })) {
+  my $custnum = $cust_main->custnum;
+  my $last_h = qsearchs({
+      table     => 'h_cust_main',
+      extra_sql => " WHERE custnum = $custnum".
+                   " AND ship_company IS NOT NULL".
+                   " AND history_date >= $time",
+      order_by  => " ORDER BY history_date DESC LIMIT 1",
+  });
+  next if !$last_h;
+  print "$custnum\t".$last_h->ship_company."\n";
+  $cust_main->set('ship_company' => $last_h->ship_company);
+  my $error = $cust_main->replace;
+  warn "Error setting service company for customer #$custnum:\n  $error\n"
+    if $error;
+}
