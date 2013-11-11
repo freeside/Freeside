@@ -4766,6 +4766,17 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'svc_phone-radius-password',
+    'section'     => 'telephony',
+    'description' => 'Password when exporting svc_phone records to RADIUS',
+    'type'        => 'select',
+    'select_hash' => [
+      '' => 'Use default from svc_phone-radius-default_password config',
+      'countrycode_phonenum' => 'Phone number (with country code)',
+    ],
+  },
+
+  {
     'key'         => 'svc_phone-radius-default_password',
     'section'     => 'telephony',
     'description' => 'Default password when exporting svc_phone records to RADIUS',

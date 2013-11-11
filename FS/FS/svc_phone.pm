@@ -652,7 +652,13 @@ sub radius_check {
 
   my $conf = new FS::Conf;
 
-  $check{'User-Password'} = $conf->config('svc_phone-radius-default_password');
+  my $password;
+  if ( $conf->config('svc_phone-radius-password') eq 'countrycode_phonenum' ) {
+    $password = $self->countrycode. $self->phonenum;
+  } else {
+    $password = $conf->config('svc_phone-radius-default_password');
+  }
+  $check{'User-Password'} = $password;
 
   %check;
 }
