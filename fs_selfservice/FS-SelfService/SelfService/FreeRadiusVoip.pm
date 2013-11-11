@@ -1,8 +1,13 @@
 #Add this to the modules section of radiusd.conf
 # perl {
 #   #path to this module
-#   module=/usr/local/share/perl/5.8.8/FS/SelfService/FreeRadiusVoip.pm
+#   # deb 6 example
+#   #module=/usr/local/share/perl/5.10.1/FS/SelfService/FreeRadiusVoip.pm
+#   # deb 7 example
+#   module=/usr/local/share/perl/5.14.2/FS/SelfService/FreeRadiusVoip.pm
+#
 #   func_authorize = authorize;
+#
 # }
 #
 #In the Authorize section 
@@ -11,9 +16,9 @@
 #
 # #N/A# Add a line containing 'perl' to the Accounting section. 
 # 
-# and on debian systems, add this to /etc/init.d/freeradius, with the
+# and on debian 6 systems, add this to /etc/init.d/freeradius, with the
 # correct path (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=416266)
-#               LD_PRELOAD=/usr/lib/libperl.so.5.8.8
+#               LD_PRELOAD=/usr/lib/libperl.so.5.10
 #               export LD_PRELOAD
 
 BEGIN { $FS::SelfService::skip_uid_check = 1; } 
@@ -44,8 +49,12 @@ sub authorize {
   if ( $response->{'error'} ) {
     $RAD_REPLY{'Reply-Message'} = $response->{'error'};
     return RLM_MODULE_REJECT;
-  } else {
+  } elsif ( $response->{'seconds'} ) {
     $RAD_REPLY{'Session-Timeout'} = $response->{'seconds'};
+    return RLM_MODULE_OK;
+  } else {
+    # if the called number is free, put 1 in the Termination-Action attribute
+    $RAD_REPLY{'Termination-Action'} = 1;
     return RLM_MODULE_OK;
   }
 
