@@ -47,7 +47,7 @@ sub price_info {
 
 #some false laziness-ish w/agent.pm...  not a lot
 sub calc_recur {
-  my($self, $cust_pkg, $sdate, $details ) = @_;
+  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';
