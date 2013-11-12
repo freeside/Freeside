@@ -1970,14 +1970,15 @@ sub print_csv {
 
   my $time = $opt{'time'} || time;
 
+  my $tracctnum = ''; #leaking out from billco-specific sections :/
   if ( $format eq 'billco' ) {
 
     my $account_num =
       $self->conf->config('billco-account_num', $cust_main->agentnum);
 
-    my $tracctnum = $account_num eq 'display_custnum'
-                      ? $cust_main->display_custnum
-                      : $opt{'tracctnum'};
+    $tracctnum = $account_num eq 'display_custnum'
+                   ? $cust_main->display_custnum
+                   : $opt{'tracctnum'};
 
     my $taxtotal = 0;
     $taxtotal += $_->{'amount'} foreach $self->_items_tax;
@@ -2232,7 +2233,7 @@ sub print_csv {
       $csv->combine(
         '',                     #  1 | N/A-Leave Empty            CHAR   2
         '',                     #  2 | N/A-Leave Empty            CHAR  15
-        $opt{'tracctnum'},      #  3 | Account Number             CHAR  15
+        $tracctnum,             #  3 | Account Number             CHAR  15
         $self->invnum,          #  4 | Invoice Number             CHAR  15
         $lineseq++,             #  5 | Line Sequence (sort order) NUM    6
         $item->{'description'}, #  6 | Transaction Detail         CHAR 100
