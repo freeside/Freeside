@@ -16,6 +16,9 @@ use FS::cust_bill;
 # 3 is even more information including possibly sensitive data
 $DEBUG = 0;
 
+#@encrypted_fields = ('payinfo');
+sub nohistory_fields { ('payinfo'); }
+
 =head1 NAME
 
 FS::cust_pay_batch - Object methods for batch cards

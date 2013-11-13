@@ -16,6 +16,8 @@ use FS::cust_pay;
 use FS::cust_pkg;
 
 @encrypted_fields = ('payinfo');
+sub nohistory_fields { ('payinfo'); }
+
 $otaker_upgrade_kludge = 0;
 
 =head1 NAME
