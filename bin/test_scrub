@@ -3,6 +3,7 @@
 #This drops anything from the database that could cause live things to happen.
 #You'd want to do this on a test copy of your live database but NEVER on the
 #live database itself.
+die "remove this line to run -- NEVER ON A LIVE DATABASE";
 
 #-all exports (all records in part_export, part_export_option export_svc)
 #-all non-POST invoice destinations (cust_main_invoice)
@@ -41,6 +42,17 @@ foreach my $table (qw(
 my $dsth = dbh->prepare("DELETE FROM cust_main_invoice WHERE dest != 'POST'")
   or die dbh->errstr;
 $dsth->execute or die $dsth->errstr;
+
+foreach my $table (qw( cust_main
+                       cust_pay_pending cust_pay cust_pay_void cust_pay_batch
+                       cust_refund
+)) {
+  my $ccsth = dbh->prepare("
+    UPDATE $table SET payinfo = '4111111111111111'
+      WHERE payby = 'CARD' OR payby = 'DCRD'
+  ") or die dbh->errstr;
+  $ccsth->execute or die $ccsth->errstr;
+}
 
 my $sth = dbh->prepare("UPDATE part_event SET disabled = 'Y'");
 $sth->execute or die $sth->errstr;
