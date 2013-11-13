@@ -37,6 +37,7 @@ FS::UID->install_callback( sub {
 } );
 
 @encrypted_fields = ('payinfo');
+sub nohistory_fields { ('payinfo'); }
 
 =head1 NAME
 

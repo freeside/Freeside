@@ -12,6 +12,7 @@ use FS::cust_pay;
 @ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
 @encrypted_fields = ('payinfo');
+sub nohistory_fields { ('payinfo'); }
 
 =head1 NAME
 

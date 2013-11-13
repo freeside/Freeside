@@ -14,6 +14,7 @@ use FS::cust_pay_refund;
 use FS::cust_main;
 
 @encrypted_fields = ('payinfo');
+sub nohistory_fields { ('payinfo'); }
 
 =head1 NAME
 
