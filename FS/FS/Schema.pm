@@ -4154,7 +4154,7 @@ sub tables_hashref {
         'statustext', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'upgradenum',
-      'unique' => [ [ 'upgradenum' ] ],
+      'unique' => [],
       'index' => [ [ 'upgrade' ] ],
     },
 
