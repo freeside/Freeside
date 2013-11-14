@@ -30,16 +30,23 @@ my $cust_location = new FS::cust_location {
   map { $_ => scalar($cgi->param($_)) } FS::cust_main->location_fields
 };
 
+#false laziness w/process/cust_main.cgi
+my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
+push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
+push @invoicing_list, 'FAX' if $cgi->param('invoicing_list_FAX');
+$cgi->param('invoicing_list', join(',', @invoicing_list) );
+
 my $cust_main = new FS::cust_main {
   ( map { ( $_, scalar($cgi->param($_)) ) } fields('cust_main') ),
   ( map { ( "ship_$_", '' ) } FS::cust_main->location_fields ),
-  'bill_location' => $cust_location,
-  'ship_location' => $cust_location,
+  'bill_location'  => $cust_location,
+  'ship_location'  => $cust_location,
 };
 
 my $pkg_or_error = $cust_pkg->change( {
-  'keep_dates' => 1,
-  'cust_main'  => $cust_main,
+  'keep_dates'            => 1,
+  'cust_main'             => $cust_main,
+  'cust_main_insert_args' => [ {}, \@invoicing_list ],
 } );
 
 my $error = ref($pkg_or_error) ? '' : $pkg_or_error;

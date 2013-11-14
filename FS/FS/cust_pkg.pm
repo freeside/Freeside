@@ -1860,7 +1860,7 @@ sub change {
   if ( $opt->{cust_main} ) {
     my $cust_main = $opt->{cust_main};
     unless ( $cust_main->custnum ) { 
-      my $error = $cust_main->insert;
+      my $error = $cust_main->insert( @{ $opt->{cust_main_insert_args}||[] } );
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "inserting cust_main (transaction rolled back): $error";
