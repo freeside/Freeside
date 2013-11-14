@@ -527,7 +527,7 @@ Example:
 %     if ( $f->{curr_value_callback} ) {
 %       $curr_value = &{ $f->{curr_value_callback} }( $cgi, $object, $field ),
 %     } else {
-%       $curr_value = $object->$field();
+%       $curr_value = $object->$field() if defined $field;
 %     }
 %     $curr_value = &{ $opt{'value_callback'} }( $f->{'field'}, $curr_value )
 %       if $opt{'value_callback'} && $mode ne 'error';
