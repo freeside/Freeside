@@ -2389,7 +2389,7 @@ sub tables_hashref {
       'index'        => [ [ 'billpaynum' ], [ 'billpkgnum' ], ],
       'foreign_keys' => [
                           { columns    => [ 'billpaynum' ],
-                            table      => 'cust_bill_pay_batch',
+                            table      => 'cust_bill_pay',
                           },
                           { columns    => [ 'billpkgnum' ],
                             table      => 'cust_bill_pkg',
