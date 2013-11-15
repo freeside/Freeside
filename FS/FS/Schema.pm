@@ -1138,9 +1138,10 @@ sub tables_hashref {
                           { columns    => [ 'invnum' ],
                             table      => 'cust_bill_void',
                           },
-                          { columns    => [ 'pkgnum' ],
-                            table      => 'cust_pkg',
-                          },
+                          #pkgnum 0 and -1 are used for special things
+                          #{ columns    => [ 'pkgnum' ],
+                          #  table      => 'cust_pkg',
+                          #},
                           { columns    => [ 'pkgpart_override' ],
                             table      => 'part_pkg',
                             references => [ 'pkgpart' ],
