@@ -84,6 +84,13 @@ if ( dbdef->table('areacode') and
   }
 }
 
+if ( dbdef->table('upgrade_journal') ) {
+  push @bugfix, "SELECT SETVAL( 'upgrade_journal_upgradenum_seq',
+                                ( SELECT MAX(upgradenum) FROM upgrade_journal )
+                              )
+                ";
+}
+
 if ( $DRY_RUN ) {
   print
     join(";\n", @bugfix ). ";\n";
