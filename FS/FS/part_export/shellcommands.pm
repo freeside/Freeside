@@ -267,17 +267,19 @@ sub export_pkg_change {
 
   my @fields = qw( pkgnum pkgpart agent_pkgid ); #others?
   my @date_fields = qw( order_date start_date setup bill last_bill susp adjourn
-                        resume cancel uncancel expore contract_end );
+                        resume cancel uncancel expire contract_end );
 
   no strict 'vars';
   {
     no strict 'refs';
     foreach (@fields) {
-      ${"old_$_"} = $old_cust_pkg->getfield($_);
+      ${"old_$_"} = $old_cust_pkg ? $old_cust_pkg->getfield($_) : '';
       ${"new_$_"} = $new_cust_pkg->getfield($_);
     }
     foreach (@date_fields) {
-      ${"old_$_"} = time2str('%Y-%m-%d', $old_cust_pkg->getfield($_));
+      ${"old_$_"} = $old_cust_pkg
+                      ? time2str('%Y-%m-%d', $old_cust_pkg->getfield($_))
+                      : '';
       ${"new_$_"} = time2str('%Y-%m-%d', $new_cust_pkg->getfield($_));
     }
   }
