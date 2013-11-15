@@ -1,0 +1,45 @@
+  <TR>
+    <TD ALIGN="right" VALIGN="top"><% mt('Phones') %></TD>
+    <TD COLSPAN=6>
+
+      <TABLE CELLSPACING=0 CELLPADDING=0>
+        <TR>
+          <TD>
+            <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+            <BR><FONT SIZE=-1><% $daytime_label %></FONT>
+          </TD>
+          <TD>&nbsp;</TD>
+          <TD>
+            <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+            <BR><FONT SIZE=-1><% $night_label %></FONT>
+          </TD>
+          <TD>&nbsp;</TD>
+          <TD>
+            <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+            <BR><FONT SIZE=-1><% $mobile_label %></FONT>
+          </TD>
+        </TR>
+      </TABLE>
+    </TD>
+  </TR>
+<%init>
+
+my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
+                      ? 'Day'
+                      : FS::Msgcat::_gettext('daytime');
+my $night_label   = FS::Msgcat::_gettext('night') =~/^(night)?$/
+                      ? 'Night'
+                      : FS::Msgcat::_gettext('night') || 'Night';
+my $mobile_label = FS::Msgcat::_gettext('mobile') =~/^(mobile)?$/
+                      ? 'Mobile'
+                      : FS::Msgcat::_gettext('mobile') || 'Mobile';
+
+my %opt = @_;
+
+my $pre       = $opt{'prefix'};
+my $cust_main = $opt{'cust_main'};
+my $onchange  = $opt{'onchange'};
+my $disabled  = $opt{'disabled'};
+my $style     = $opt{'style'};
+
+</%init>

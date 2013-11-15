@@ -50,9 +50,26 @@
     </TD>
   </TR>
 
+%  if ( $conf->config_bool('cust_main-require_phone') ) {
+%    #XXX should be sticky on errors
+%    my $ph_cust_main = FS::cust_main->new({});
+%    foreach my $contact_phone ( $cust_contact->contact_phone ) {
+%      my $t = $contact_phone->typename;
+%      #countrycodes?  interface doesn't parse/take em yet
+%      $ph_cust_main->daytime( $contact_phone->phonenum ) if $t eq 'Work';
+%      $ph_cust_main->night(   $contact_phone->phonenum ) if $t eq 'Home';
+%      $ph_cust_main->mobile(  $contact_phone->phonenum ) if $t eq 'Mobile';
+%      $ph_cust_main->fax(     $contact_phone->phonenum ) if $t eq 'Fax';
+%    }
+
+     <& /elements/tr-cust_main-phones.html,
+          'cust_main'    => $ph_cust_main,
+     &>
+%  }
+
 </TABLE>
 
-%#XXX payment info
+%#payment info
 %#XXX should be sticky on errors...
 <& /edit/cust_main/billing.html, FS::cust_main->new({}),
                                  invoicing_list => [],

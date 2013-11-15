@@ -94,30 +94,13 @@
 </%def>
 
 <%def phones>
-  <TR>
-    <TD ALIGN="right" VALIGN="top"><% mt('Phones') %></TD>
-    <TD COLSPAN=6>
-
-      <TABLE CELLSPACING=0 CELLPADDING=0>
-        <TR>
-          <TD>
-            <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-            <BR><FONT SIZE=-1><% $daytime_label %></FONT>
-          </TD>
-          <TD>&nbsp;</TD>
-          <TD>
-            <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-            <BR><FONT SIZE=-1><% $night_label %></FONT>
-          </TD>
-          <TD>&nbsp;</TD>
-          <TD>
-            <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-            <BR><FONT SIZE=-1><% $mobile_label %></FONT>
-          </TD>
-        </TR>
-      </TABLE>
-    </TD>
-  </TR>
+  <& /elements/tr-cust_main-phones.html,
+       'prefix'       => $pre,
+       'cust_main'    => $cust_main,
+       'onchange'     => $onchange,
+       'disabled'     => $disabled,
+       'style'        => $style,
+  &>
 </%def>
 
 <%def fax>
@@ -136,9 +119,7 @@ my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 </%once>
 <%shared>
 
-my( %opt, $cust_main, $pre, $onchange, $disabled, @style, $style,
-    $daytime_label, $night_label, $mobile_label,
-  );
+my( %opt, $cust_main, $pre, $onchange, $disabled, @style, $style );
 
 </%shared>
 <%init>
@@ -175,16 +156,6 @@ $cust_main->set('stateid_state', $cust_main->state )
 $opt{geocode} ||= $cust_main->get('geocode');
 
 $opt{censustract} ||= $cust_main->censustract;
-
-$daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
-                   ? 'Day'
-                   : FS::Msgcat::_gettext('daytime');
-$night_label   = FS::Msgcat::_gettext('night') =~/^(night)?$/
-                   ? 'Night'
-                   : FS::Msgcat::_gettext('night') || 'Night';
-$mobile_label = FS::Msgcat::_gettext('mobile') =~/^(mobile)?$/
-                   ? 'Mobile'
-                   : FS::Msgcat::_gettext('mobile') || 'Mobile';
 
 my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
                   ? 'Driver&rsquo;s License'

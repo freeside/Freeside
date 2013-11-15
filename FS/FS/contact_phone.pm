@@ -4,6 +4,7 @@ use base qw( FS::Record );
 use strict;
 use FS::Record qw( qsearch qsearchs );
 use FS::contact;
+use FS::phone_type;
 
 =head1 NAME
 
@@ -142,6 +143,16 @@ sub phonenum_pretty {
 sub contact {
   my $self = shift;
   qsearchs( 'contact', { 'contactnum' => $self->contactnum } );
+}
+
+sub phone_type {
+  my $self = shift;
+  qsearchs('phone_type', { 'phonetypenum' => $self->phonetypenum } );
+}
+
+sub typename {
+  my $self = shift;
+  $self->phone_type->typename;
 }
 
 =back
