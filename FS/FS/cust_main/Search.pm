@@ -358,28 +358,30 @@ sub smart_search {
 
       #substring
 
-      my @hashrefs = (
+      my @company_hashrefs = (
         { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
         { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
       );
 
+      my @hashrefs = ();
+
       if ( $first && $last ) {
 
-        push @hashrefs,
+        @hashrefs = (
           { 'first'        => { op=>'ILIKE', value=>"%$first%" },
             'last'         => { op=>'ILIKE', value=>"%$last%" },
           },
-        ;
+        );
 
       } else {
 
-        push @hashrefs,
+        @hashrefs = (
           { 'first'        => { op=>'ILIKE', value=>"%$value%" }, },
           { 'last'         => { op=>'ILIKE', value=>"%$value%" }, },
-        ;
+        );
       }
 
-      foreach my $hashref ( @hashrefs ) {
+      foreach my $hashref ( @company_hashrefs, @hashrefs ) {
 
         push @cust_main, qsearch( {
           'table'     => 'cust_main',
@@ -405,8 +407,6 @@ sub smart_search {
 
       #contact substring
 
-      shift @hashrefs; #no company column in contact table
-     
       foreach my $hashref ( @hashrefs ) {
 
         push @cust_main,
