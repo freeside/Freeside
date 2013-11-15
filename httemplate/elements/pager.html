@@ -1,13 +1,8 @@
-% my %opt = @_;
-% my $pager = '';
-%
 % if ( $opt{'total'} != $opt{'num_rows'} && $opt{'maxrecords'} ) {
 %
 %   unless ( $opt{'offset'} == 0 ) {
 %     $cgi->param('offset', $opt{'offset'} - $opt{'maxrecords'});
-
       <A HREF="<% $cgi->self_url %>"><B><FONT SIZE="+1">Previous</FONT></B></A>
-
 %   }
 %
 %   my $page = 0;
@@ -47,9 +42,17 @@
 %
 %   unless ( $opt{'offset'} + $opt{'maxrecords'} > $opt{'total'} ) {
 %     $cgi->param('offset', $opt{'offset'} + $opt{'maxrecords'});
-
       <A HREF="<% $cgi->self_url %>"><B><FONT SIZE="+1">Next</FONT></B></A>
-%
 %   }
 %
+%   $cgi->param('offset', $orig_offset); #so future $self_url invocations don't advance a page
+%
 % }
+<%init>
+
+my %opt = @_;
+
+my $orig_offset = $opt{'offset'};
+
+</%init>
+
