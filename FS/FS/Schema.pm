@@ -3,7 +3,7 @@ package FS::Schema;
 use vars qw(@ISA @EXPORT_OK $DEBUG $setup_hack %dbdef_cache);
 use subs qw(reload_dbdef);
 use Exporter;
-use DBIx::DBSchema 0.43; #0.43 for foreign keys
+use DBIx::DBSchema 0.44; #for foreign keys with MATCH / ON DELETE/UPDATE
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::Index;
@@ -3954,6 +3954,7 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'jobnum' ],
                             table      => 'queue',
+                            on_delete  => 'CASCADE',
                           },
                         ],
     },
@@ -3974,6 +3975,7 @@ sub tables_hashref {
                           { columns    => [ 'depend_jobnum' ],
                             table      => 'queue',
                             references => [ 'jobnum' ],
+                            on_delete  => 'CASCADE',
                           },
                         ],
     },

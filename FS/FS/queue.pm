@@ -193,20 +193,6 @@ deleted as well
 sub delete {
   my $self = shift;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my @del = qsearch( 'queue_arg', { 'jobnum' => $self->jobnum } );
-  push @del, qsearch( 'queue_depend', { 'depend_jobnum' => $self->jobnum } );
-
   my $reportname = '';
   if ( $self->status =~/^done/ ) {
     my $dropstring = rooturl(). '/misc/queued_report\?report=';
@@ -216,20 +202,7 @@ sub delete {
   }
 
   my $error = $self->SUPER::delete;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  foreach my $del ( @del ) {
-    $error = $del->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return $error if $error;
   
   unlink $reportname if $reportname;
 
