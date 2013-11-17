@@ -6,7 +6,7 @@ use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              $conf $conf_encryption $money_char $lat_lower $lon_upper
              $me
              $nowarn_identical $nowarn_classload
-             $no_update_diff $no_check_foreign
+             $no_update_diff $no_history $no_check_foreign
              @encrypt_payby
            );
 use Exporter;
@@ -48,6 +48,7 @@ $me = '[FS::Record]';
 $nowarn_identical = 0;
 $nowarn_classload = 0;
 $no_update_diff = 0;
+$no_history = 0;
 $no_check_foreign = 0;
 
 my $rsa_module;
