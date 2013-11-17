@@ -5,14 +5,15 @@
               'query'         => { 'table' => 'msg_template', },
               'count_query'   => 'SELECT COUNT(*) FROM msg_template',
               'disableable'   => 1,
-              'disabled_statuspos' => 2,
+              'disabled_statuspos' => (scalar(@locales) + 3),
               'agent_virt'         => 1,
               'agent_null_right'   => ['View global templates','Edit global templates'],
               'agent_pos'          => 1,
-              'header'     => [ 'Name', '', map '', @locales ],
-              'fields'     => [ 'msgname', @locales ],
-              'links'      => [ $link, @locale_links ],
-              'cell_style' => [ '', '', map $locale_style, @locales ],
+              'header'      => [ 'Name', '', map ('', @locales), '' ],
+              'fields'      => [ 'msgname', @locales, $disable_link_label ],
+              'links'       => [ $link, @locale_links, '' ],
+              'link_onclicks' => [ '', map('', @locale_links), $disable_link ],
+              'cell_style'    => [ '', '', map ($locale_style, @locales), $locale_style ],
           )
 %>
 <%init>
@@ -30,7 +31,7 @@ if ( $curuser->access_right(['Edit templates', 'Edit global templates']) ) {
 
 my $link = [ "${p}edit/msg_template.html?msgnum=", 'msgnum' ];
 
-my $locale_style = 'font-size:0.8em; padding:3px; background-color:';
+my $locale_style = 'font-size:0.8em; padding:3px';
 
 my (@locales, @locale_links);
 foreach my $l ( FS::Locales->locales ) {
@@ -44,6 +45,20 @@ foreach my $l ( FS::Locales->locales ) {
     [ "${p}edit/msg_template.html?locale=$l;msgnum=", 'msgnum' ];
   };
 }
-    
+
+my $disable_link = sub {
+  my $template = shift;
+  include('/elements/popup_link_onclick.html',
+    action      => $p.'misc/disable-msg_template.cgi?msgnum=' .
+                     $template->msgnum .
+                     ($template->disabled ? ';enable=1' : ''),
+    actionlabel => 'Disable lemplate',
+  );
+};
+
+my $disable_link_label = sub {
+  my $template = shift;
+  $template->disabled ? '(enable)' : '(disable)' ;
+};
 
 </%init>
