@@ -757,7 +757,7 @@ sub with_cust_classnum {
     return 'cust_main.classnum in('. join(',',@$classnums) .')'
       if @$classnums;
   }
-  '';
+  ();
 }
 
 

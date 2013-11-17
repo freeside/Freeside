@@ -904,7 +904,7 @@ sub rate_prefix {
       #${$opt{region_group_included_min}} -= $minutes 
       #    if $region_group && $rate_detail->region_group;
 
-      if ( $included_min->{$regionnum}{$ratetimenum} > $minutes ) {
+      if ( $included_min->{$regionnum}{$ratetimenum} >= $minutes ) {
         $charge_sec = 0;
         $included_min->{$regionnum}{$ratetimenum} -= $minutes;
       } else {
