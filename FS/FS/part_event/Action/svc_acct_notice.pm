@@ -18,6 +18,7 @@ sub option_fields {
                   'type'     => 'select-table',
                   'table'    => 'msg_template',
                   'name_col' => 'msgname',
+                  'hashref'  => { disabled => '' },
                   'disable_empty' => 1,
                 },
   );
