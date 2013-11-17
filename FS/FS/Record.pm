@@ -42,6 +42,7 @@ our $me = '[FS::Record]';
 our $nowarn_identical = 0;
 our $nowarn_classload = 0;
 our $no_update_diff = 0;
+our $no_history = 0;
 
 our $no_check_foreign = 1; #well, not inefficiently in perl by default anymore
 
