@@ -12,6 +12,7 @@ use FS::Record qw(qsearch);
 use FS::queue;
 use FS::queue_depend;
 use FS::Log;
+use FS::Cron::expire_user_pref qw( expire_user_pref );
 
 # no autoloading for non-FS classes...
 use Net::SSH 0.07;
@@ -66,6 +67,7 @@ while (1) {
   if ( $kids >= $max_kids ) {
     warn "WARNING: maximum $kids children reached\n" unless $warnkids++;
     &reap_kids;
+    expire_user_pref() unless $warnkids % 10;
     sleep 1; #waiting for signals is cheap
     next;
   }
@@ -131,6 +133,7 @@ while (1) {
       undef $FS::UID::dbh;
       next;
     };
+    expire_user_pref();
     sleep $sleep_time;
     next;
   }

@@ -203,6 +203,7 @@ my $prospectnum = '';
 my $locationnum = '';
 my $same = '';
 
+$m->comp('/elements/handle_uri_query', 'secure'=>1);
 
 if ( $cgi->param('error') ) {
 

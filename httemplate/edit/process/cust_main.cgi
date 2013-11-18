@@ -1,7 +1,7 @@
 % if ( $error ) {
 %   $cgi->param('error', $error);
-%
-<% $cgi->redirect(popurl(2). "cust_main.cgi?". $cgi->query_string ) %>
+%   my $query = $m->scomp('/elements/create_uri_query', 'secure'=>1);
+<% $cgi->redirect(popurl(2). "cust_main.cgi?$query" ) %>
 %
 % } else { 
 %
