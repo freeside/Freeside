@@ -1,8 +1,20 @@
 <%init>
+
+my %opt = @_;
+
 if ( $cgi->param('redirect') ) {
   my $session = $cgi->param('redirect');
+
   my $pref = $FS::CurrentUser::CurrentUser->option("redirect$session");
   die "unknown redirect session $session\n" unless length($pref);
   $cgi = new CGI($pref);
+
+  foreach my $param (grep /pay(info\d?|cvv)$/, $cgi->param) {
+    my $value = $cgi->param($param);
+    next unless length($value);
+    my $decrypted = FS::Record->decrypt( $value );
+    $cgi->param($param, $decrypted);
+  }
+
 }
 </%init>
