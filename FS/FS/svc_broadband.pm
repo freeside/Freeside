@@ -3,6 +3,7 @@ use base qw(
   FS::svc_Radius_Mixin
   FS::svc_Tower_Mixin
   FS::svc_IP_Mixin 
+  FS::svc_MAC_Mixin
   FS::svc_Common
   );
 
@@ -262,7 +263,7 @@ sub smart_search {
 
 =item label
 
-Returns the IP address.
+Returns the IP address, MAC address and description.
 
 =cut
 
@@ -417,22 +418,6 @@ sub _check_duplicate {
   }
 
   '';
-}
-
-=item mac_addr_formatted CASE DELIMITER
-
-Format the MAC address (for use by exports).  If CASE starts with "l"
-(for "lowercase"), it's returned in lowercase.  DELIMITER is inserted
-between octets.
-
-=cut
-
-sub mac_addr_formatted {
-  my $self = shift;
-  my ($case, $delim) = @_;
-  my $addr = $self->mac_addr;
-  $addr = lc($addr) if $case =~ /^l/i;
-  join( $delim || '', $addr =~ /../g );
 }
 
 #class method
