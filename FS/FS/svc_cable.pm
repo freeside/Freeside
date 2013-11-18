@@ -1,5 +1,7 @@
 package FS::svc_cable;
-use base qw( FS::svc_Common ); #qw( FS::device_Common FS::svc_Common );
+use base qw( FS::svc_MAC_Mixin
+             FS::svc_Common
+           ); #FS::device_Common
 
 use strict;
 use Tie::IxHash;
@@ -113,6 +115,22 @@ sub table_info {
     'display_weight'  => 54,
     'cancel_weight'   => 70, #?  no deps, so
   };
+}
+
+=item label
+
+Returns the MAC address and serial number.
+
+=cut
+
+sub label {
+  my $self = shift;
+  my @label = ();
+  push @label, 'MAC:'. $self->mac_addr_pretty
+    if $self->mac_addr;
+  push @label, 'Serial#:'. $self->serialnum
+    if $self->serialnum;
+  return join(', ', @label);
 }
 
 =item insert

@@ -1,9 +1,14 @@
 package FS::svc_broadband;
+use base qw(
+  FS::svc_Radius_Mixin
+  FS::svc_Tower_Mixin
+  FS::svc_MAC_Mixin
+  FS::svc_Common
+  );
 
 use strict;
 use vars qw(@ISA $conf);
 
-use base qw(FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common);
 { no warnings 'redefine'; use NetAddr::IP; }
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::svc_Common;
@@ -307,7 +312,7 @@ sub search_sql {
 
 =item label
 
-Returns the IP address.
+Returns the IP address, MAC address and description.
 
 =cut
 
@@ -630,22 +635,6 @@ sub allowed_routers {
 
 =back
 
-
-=item mac_addr_formatted CASE DELIMITER
-
-Format the MAC address (for use by exports).  If CASE starts with "l"
-(for "lowercase"), it's returned in lowercase.  DELIMITER is inserted
-between octets.
-
-=cut
-
-sub mac_addr_formatted {
-  my $self = shift;
-  my ($case, $delim) = @_;
-  my $addr = $self->mac_addr;
-  $addr = lc($addr) if $case =~ /^l/i;
-  join( $delim || '', $addr =~ /../g );
-}
 
 #class method
 sub _upgrade_data {
