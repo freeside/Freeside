@@ -236,7 +236,7 @@ tie my %rights, 'Tie::IxHash',
   # customer voiding rights..
   ###
   'Customer payment void rights' => [
-    { rightname=>'Credit card void', desc=>'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway.' }, #aka. cc-void 
+    { rightname=>'Credit card void', desc=>'Enable local-only voiding of credit card payments in addition to refunds against the payment gateway.' }, #aka. cc-void 
     { rightname=>'Echeck void', desc=>'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway.' }, #aka. echeck-void
     'Void payments',
     { rightname=>'Unvoid payments', desc=>'Enable unvoiding of voided payments' }, #aka. unvoid 
