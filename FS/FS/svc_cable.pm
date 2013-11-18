@@ -128,7 +128,7 @@ sub label {
   my @label = ();
   push @label, 'MAC:'. $self->mac_addr_pretty
     if $self->mac_addr;
-  push @label, 'Serial#:'. $self->serialnum
+  push @label, 'Serial#'. $self->serialnum
     if $self->serialnum;
   return join(', ', @label);
 }
