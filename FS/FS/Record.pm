@@ -1154,7 +1154,7 @@ sub insert {
 
 
   my $h_sth;
-  if ( defined dbdef->table('h_'. $table) ) {
+  if ( defined( dbdef->table('h_'. $table) ) && ! $no_history ) {
     my $h_statement = $self->_h_statement('insert');
     warn "[debug]$me $h_statement\n" if $DEBUG > 2;
     $h_sth = dbh->prepare($h_statement) or do {
@@ -2924,7 +2924,7 @@ You should generally not have to worry about calling this, as the system handles
 
 sub encrypt {
   my ($self, $value) = @_;
-  my $encrypted;
+  my $encrypted = $value;
 
   if ($conf->exists('encryption')) {
     if ($self->is_encrypted($value)) {

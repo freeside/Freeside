@@ -241,6 +241,8 @@ my %svc_dsl = ();
 my $prospectnum = '';
 my $locationnum = '';
 
+$m->comp('/elements/handle_uri_query', 'secure'=>1);
+
 if ( $cgi->param('error') ) {
 
   $cust_main = new FS::cust_main ( {
