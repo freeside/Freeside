@@ -49,8 +49,9 @@
                    @currency,
                    'invnum',
                    '_date',
-                   #'pay_amount',
-                   #'credit_amount',
+                   '', #'pay_amount',
+                   '', #'credit_amount',
+                   FS::UI::Web::cust_sort_fields(),
                  ],
                  'links'       => [
                    @pkgnum_null,

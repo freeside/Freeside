@@ -323,6 +323,14 @@ sub cust_header {
   @cust_header;
 }
 
+sub cust_sort_fields {
+  cust_header(@_);
+  #inefficientish, but tiny lists and only run once per page
+
+  map { $_ eq 'custnum' ? 'custnum' : '' } @cust_fields;
+
+}
+
 =item cust_sql_fields [ CUST_FIELDS_VALUE ]
 
 Returns a list of fields for the SELECT portion of an SQL query.
