@@ -808,67 +808,90 @@ sub update_svc {
          "$RadAcctId ($UserName\@$Realm for ${AcctSessionTime}s"
       if $DEBUG;
 
-    $UserName = lc($UserName) unless $conf->exists('username-uppercase');
+    my $fs_username = $UserName;
+
+    $fs_username = lc($fs_username) unless $conf->exists('username-uppercase');
 
     #my %search = ( 'username' => $UserName );
 
+    my $status = '';
+    my $errinfo = "for RADIUS detail RadAcctID $RadAcctId ".
+                  "(UserName $UserName, Realm $Realm)";
+
     my $extra_sql = '';
-    if ( ref($self) =~ /withdomain/ ) { #well...
-      $extra_sql = " AND '$Realm' = ( SELECT domain FROM svc_domain
+    if ( ref($self) =~ /withdomain/ ) { #well, should be a callback to that 
+                                        #module or something
+      my $domain;
+      if ( $Realm ) {
+        $domain = $Realm;
+      } elsif ( $fs_username =~ /\@/ ) {
+        ($fs_username, $domain) = split('@', $fs_username);
+      } else {
+        warn 'WARNING: nothing Realm column and no @realm in UserName column '.
+             "$errinfo -- skipping\n" if $DEBUG;
+        $status = 'skipped (no realm)';
+      }
+
+      $extra_sql = " AND '$domain' = ( SELECT domain FROM svc_domain
                           WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
     }
 
     my $oldAutoCommit = $FS::UID::AutoCommit; # can't undo side effects, but at
     local $FS::UID::AutoCommit = 0;           # least we can avoid over counting
 
-    my $status = 'skipped';
-    my $errinfo = "for RADIUS detail RadAcctID $RadAcctId ".
-                  "(UserName $UserName, Realm $Realm)";
+    unless ( $status ) {
 
-    if (    $self->option('process_single_realm')
-         && $self->option('realm') ne $Realm )
-    {
-      warn "WARNING: wrong realm $errinfo - skipping\n" if $DEBUG;
-    } else {
-      my @svc_acct =
-        grep { qsearch( 'export_svc', { 'exportnum' => $self->exportnum,
-                                        'svcpart'   => $_->cust_svc->svcpart, } )
-             }
-        qsearch( 'svc_acct',
-                   { 'username' => $UserName },
-                   '',
-                   $extra_sql
-                 );
+      $status = 'skipped';
 
-      if ( !@svc_acct ) {
-        warn "WARNING: no svc_acct record found $errinfo - skipping\n";
-      } elsif ( scalar(@svc_acct) > 1 ) {
-        warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
+      if (    $self->option('process_single_realm')
+           && $self->option('realm') ne $Realm )
+      {
+        warn "WARNING: wrong realm $errinfo - skipping\n" if $DEBUG;
       } else {
+        my @svc_acct =
+          grep { qsearch( 'export_svc', { 'exportnum' => $self->exportnum,
+                                          'svcpart'   => $_->cust_svc->svcpart,
+                                        }
+                        )
+               }
+          qsearch( 'svc_acct',
+                     { 'username' => $fs_username },
+                     '',
+                     $extra_sql
+                   );
 
-        my $svc_acct = $svc_acct[0];
-        warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
-
-        $svc_acct->last_login($AcctStartTime);
-        $svc_acct->last_logout($AcctStopTime);
-
-        my $session_time = $AcctStopTime;
-        $session_time = $AcctStartTime if $self->option('ignore_long_sessions');
-
-        my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
-        if ( $cust_pkg && $session_time < (    $cust_pkg->last_bill
-                                            || $cust_pkg->setup     )  ) {
-          $status = 'skipped (too old)';
+        if ( !@svc_acct ) {
+          warn "WARNING: no svc_acct record found $errinfo - skipping\n";
+        } elsif ( scalar(@svc_acct) > 1 ) {
+          warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
         } else {
-          my @st;
-          push @st, _try_decrement($svc_acct, 'seconds',    $AcctSessionTime);
-          push @st, _try_decrement($svc_acct, 'upbytes',    $AcctInputOctets);
-          push @st, _try_decrement($svc_acct, 'downbytes',  $AcctOutputOctets);
-          push @st, _try_decrement($svc_acct, 'totalbytes', $AcctInputOctets
-                                                          + $AcctOutputOctets);
-          $status=join(' ', @st);
+
+          my $svc_acct = $svc_acct[0];
+          warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
+
+          $svc_acct->last_login($AcctStartTime);
+          $svc_acct->last_logout($AcctStopTime);
+
+          my $session_time = $AcctStopTime;
+          $session_time = $AcctStartTime
+            if $self->option('ignore_long_sessions');
+
+          my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+          if ( $cust_pkg && $session_time < (    $cust_pkg->last_bill
+                                              || $cust_pkg->setup     )  ) {
+            $status = 'skipped (too old)';
+          } else {
+            my @st;
+            push @st, _try_decrement($svc_acct,'seconds',    $AcctSessionTime);
+            push @st, _try_decrement($svc_acct,'upbytes',    $AcctInputOctets);
+            push @st, _try_decrement($svc_acct,'downbytes',  $AcctOutputOctets);
+            push @st, _try_decrement($svc_acct,'totalbytes', $AcctInputOctets
+                                                           + $AcctOutputOctets);
+            $status=join(' ', @st);
+          }
         }
       }
+
     }
 
     warn "setting FreesideStatus to $status $errinfo\n" if $DEBUG; 
