@@ -823,7 +823,7 @@ sub update_svc {
 
     $fs_username = lc($fs_username) unless $conf->exists('username-uppercase');
 
-    #my %search = ( 'username' => $UserName );
+    #my %search = ( 'username' => $fs_username );
 
     my $status = '';
     my $errinfo = "for RADIUS detail RadAcctID $RadAcctId ".
