@@ -24,11 +24,13 @@ BEGIN {
     foreach my $f (@location_fields) {
       *{"FS::cust_main::Location::$f"} = sub {
         carp "WARNING: tried to set cust_main.$f with accessor" if (@_ > 1);
-        shift->bill_location->$f
+        my $l = shift->bill_location;
+        $l ? $l->$f : '';
       };
       *{"FS::cust_main::Location::ship_$f"} = sub {
         carp "WARNING: tried to set cust_main.ship_$f with accessor" if (@_ > 1);
-        shift->ship_location->$f
+        my $l = shift->ship_location;
+        $l ? $l->$f : '';
       };
     }
     $init++;

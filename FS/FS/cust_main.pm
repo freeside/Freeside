@@ -411,7 +411,9 @@ sub insert {
     my $loc = delete $self->hashref->{$l};
     # XXX if we're moving a prospect's locations, do that here
     if ( !$loc ) {
-      return "$l not set";
+      #return "$l not set";
+      #location-less customer records are now permitted
+      next;
     }
     
     if ( !$loc->locationnum ) {
@@ -461,7 +463,7 @@ sub insert {
   foreach my $l (qw(bill_location ship_location)) {
     warn "  setting $l.custnum\n"
       if $DEBUG > 1;
-    my $loc = $self->$l;
+    my $loc = $self->$l or next;
     unless ( $loc->custnum ) {
       $loc->set(custnum => $self->custnum);
       $error ||= $loc->replace;
@@ -1674,8 +1676,9 @@ sub queue_fuzzyfiles_update {
     }
   }
 
-  my @locations = $self->bill_location;
-  push @locations, $self->ship_location if $self->has_ship_address;
+  my @locations = ();
+  push @locations, $self->bill_location if $self->bill_locationnum;
+  push @locations, $self->ship_location if @locations && $self->has_ship_address;
   foreach my $location (@locations) {
     my $queue = new FS::queue { 
       'job' => 'FS::cust_main::Search::append_fuzzyfiles_fuzzyfield'
@@ -1712,8 +1715,8 @@ sub check {
     || $self->ut_number('agentnum')
     || $self->ut_textn('agent_custid')
     || $self->ut_number('refnum')
-    || $self->ut_foreign_key('bill_locationnum', 'cust_location','locationnum')
-    || $self->ut_foreign_key('ship_locationnum', 'cust_location','locationnum')
+    || $self->ut_foreign_keyn('bill_locationnum', 'cust_location','locationnum')
+    || $self->ut_foreign_keyn('ship_locationnum', 'cust_location','locationnum')
     || $self->ut_foreign_keyn('classnum', 'cust_class', 'classnum')
     || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
     || $self->ut_textn('custbatch')

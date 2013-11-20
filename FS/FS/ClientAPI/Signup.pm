@@ -24,7 +24,7 @@ use FS::reg_code;
 use FS::payby;
 use FS::banned_pay;
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::ClientAPI::Signup]';
 
 sub clear_cache {
@@ -841,6 +841,160 @@ sub new_customer {
          " signup-duplicate_cc-warn_hours (proceeding anyway): $error"
       if $error;
   }
+
+  my %return = ( 'error'          => '',
+                 'signup_service' => $svc_x,
+                 'custnum'        => $cust_main->custnum,
+               );
+
+  if ( $svc[0] ) {
+
+    $return{'svcnum'} = $svc[0]->svcnum;
+
+    if ( $svc_x eq 'svc_acct' ) {
+      $return{$_} = $svc[0]->$_() for qw( username _password );
+    } elsif ( $svc_x eq 'svc_phone' ) {
+      $return{$_} = $svc[0]->$_() for qw(countrycode phonenum sip_password pin);
+    } elsif ( $svc_x eq 'svc_pbx' ) {
+      #$return{$_} = $svc[0]->$_() for qw( ) #nothing yet
+     } else {
+      return {'error' => "configuration error: unknown signup service $svc_x"};
+      #die "unknown signup service $svc_x";
+      # return an error that's visible to someone somewhere
+    }
+
+  }
+
+  return \%return;
+
+}
+
+#false laziness w/ above
+# fresh restart to support "free account" portals with 3.x/4.x-style
+#  addressless accounts
+sub new_customer_minimal {
+  my $packet = shift;
+
+  my $conf = new FS::Conf;
+  my $svc_x = $conf->config('signup_server-service') || 'svc_acct';
+
+  if ( $svc_x eq 'svc_acct' ) {
+  
+    #things that aren't necessary in base class, but are for signup server
+      #return "Passwords don't match"
+      #  if $hashref->{'_password'} ne $hashref->{'_password2'}
+    return { 'error' => gettext('empty_password') }
+      unless length($packet->{'_password'});
+    # a bit inefficient for large numbers of pops
+    return { 'error' => gettext('no_access_number_selected') }
+      unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
+
+  }
+  elsif ( $svc_x eq 'svc_pbx' ) {
+    #possibly some validation will be needed
+  }
+
+  my $agentnum;
+  if ( exists $packet->{'session_id'} ) {
+    my $cache = new FS::ClientAPI_SessionCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    my $session = $cache->get($packet->{'session_id'});
+    if ( $session ) {
+      $agentnum = $session->{'agentnum'};
+    } else {
+      return { 'error' => "Can't resume session" }; #better error message
+    }
+  } else {
+    $agentnum = $packet->{agentnum}
+                || $conf->config('signup_server-default_agentnum');
+  }
+
+  #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
+  # common that are still here and library them.
+
+  my $cust_main = new FS::cust_main ( {
+      #'custnum'          => '',
+      'agentnum'      => $agentnum,
+      'refnum'        => $packet->{refnum}
+                         || $conf->config('signup_server-default_refnum'),
+      'payby'         => 'BILL',
+
+      map { $_ => $packet->{$_} } qw(
+        last first ss company 
+        daytime night fax
+      ),
+
+  } );
+
+  my @invoicing_list = $packet->{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
+                         : ();
+
+  $packet->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
+  my $pkgpart = $1;
+  return { 'error' => 'Please select a package' } unless $pkgpart; #msgcat
+
+  my $part_pkg =
+    qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
+      or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
+  my $svcpart = $part_pkg->svcpart($svc_x);
+
+  my $cust_pkg = new FS::cust_pkg ( {
+    #later#'custnum' => $custnum,
+    'pkgpart'    => $packet->{'pkgpart'},
+  } );
+  #my $error = $cust_pkg->check;
+  #return { 'error' => $error } if $error;
+
+  #should be all auto-magic and shit
+  my @svc = ();
+  if ( $svc_x eq 'svc_acct' ) {
+
+    my $svc = new FS::svc_acct {
+      'svcpart'   => $svcpart,
+      map { $_ => $packet->{$_} }
+        qw( username _password sec_phrase popnum domsvc ),
+    };
+
+    push @svc, $svc;
+
+  } elsif ( $svc_x eq 'svc_phone' ) {
+
+    push @svc, new FS::svc_phone ( {
+      'svcpart' => $svcpart,
+       map { $_ => $packet->{$_} }
+         qw( countrycode phonenum sip_password pin ),
+    } );
+
+  } elsif ( $svc_x eq 'svc_pbx' ) {
+
+    push @svc, new FS::svc_pbx ( {
+        'svcpart' => $svcpart,
+        map { $_ => $packet->{$_} } 
+          qw( id title ),
+        } );
+  
+  } else {
+    die "unknown signup service $svc_x";
+  }
+
+  foreach my $svc ( @svc ) {
+    my $y = $svc->setdefault; # arguably should be in new method
+    return { 'error' => $y } if $y && !ref($y);
+    #$error = $svc->check;
+    #return { 'error' => $error } if $error;
+  }
+
+  use Tie::RefHash;
+  tie my %hash, 'Tie::RefHash';
+  %hash = ( $cust_pkg => \@svc );
+  #msgcat
+  my $error = $cust_main->insert(
+    \%hash,
+    \@invoicing_list,
+  );
+  return { 'error' => $error } if $error;
 
   my %return = ( 'error'          => '',
                  'signup_service' => $svc_x,

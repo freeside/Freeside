@@ -49,7 +49,9 @@
   </TR>
 %   }
 % }
-% # now the actual address
+
+
+% if ( $location ) { # now the actual address
 <TR>
   <TD ALIGN="right"><% mt('Address') |h %></TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->address1 |h %></TD>
@@ -92,6 +94,8 @@
   &>
 % }
 <& /elements/tr-censustract.html, $location &>
+
+% }
   
 % if ( $this eq 'bill' ) {
 %   # billing contact phone numbers
