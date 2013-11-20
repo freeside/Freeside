@@ -23,6 +23,11 @@ sub passwd {
                                          'domsvc'    => $svc_domain->svcnum, }
                          );
   return { error => 'User not found.' } unless $svc_acct;
+
+  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+  return { error => "Can't change password for a suspended service" }
+    if $cust_pkg && $cust_pkg->status eq 'suspended';
+
   return { error => 'Incorrect password.' }
     unless $svc_acct->check_password($old_password);
 
