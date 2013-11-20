@@ -9,10 +9,14 @@ foreach my $pkg (
            || scalar(@{$_->{cust_svc}})
          } @cust_pkg
     ) {
+
   my $susp = $pkg->{'susp'} || '';
-  my @pkg_actions = ( [ 'customer_change_pkg' => 'change' ] );
-  push @pkg_actions, [ 'process_suspend_pkg' => 'suspend' ] 
-    if $self_suspend_reason and !$susp;
+  my @pkg_actions = ();
+  if ( ! $susp ) {
+    push @pkg_actions, [ 'customer_change_pkg' => 'change' ];
+    push @pkg_actions, [ 'process_suspend_pkg' => 'suspend' ] 
+      if $self_suspend_reason;
+  }
 
   my $bgcolor = $susp ? '"#ff9900"' : '"#8888ff"';
   $OUT .= #'<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#ffffff">'.

@@ -2316,6 +2316,11 @@ sub change_pkg {
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $p->{pkgnum} } )
     or return { 'error' => "unknown package $p->{pkgnum}" };
 
+  #if someone does need self-service package change of suspended packages,
+  # figure out how to be more discriminating
+  return { error=>"Can't change a suspended package", pkgnum=>$cust_pkg->pkgnum}
+    if $cust_pkg->status eq 'suspended';
+
   my @newpkg;
   my $error = FS::cust_pkg::order( $custnum,
                                    [$p->{pkgpart}],
