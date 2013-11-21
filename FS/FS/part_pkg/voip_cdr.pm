@@ -611,9 +611,12 @@ sub calc_units {
   my($self, $cust_pkg ) = @_;
   my $count = 0;
   if ( $self->option('count_available_phones', 1)) {
-    map { $count += ( $_->quantity || 0 ) }
-      grep { $_->part_svc->svcdb eq 'svc_phone' }
-      $cust_pkg->part_pkg->pkg_svc;
+    foreach my $pkg_svc ($cust_pkg->part_pkg->pkg_svc) {
+      if ($pkg_svc->part_svc->svcdb eq 'svc_phone') { # svc_pbx?
+        $count += $pkg_svc->quantity || 0;
+      }
+    }
+    $count *= $cust_pkg->quantity;
   } else {
     $count = 
       scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);

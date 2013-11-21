@@ -399,6 +399,7 @@ sub is_free {
 
 #  This equates svc_phone records; perhaps svc_phone should have a field
 #  to indicate it represents a line
+#  #XXX no count_available_phones?
 sub calc_units {    
   my($self, $cust_pkg ) = @_;
   my $count = 
