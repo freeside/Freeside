@@ -1653,6 +1653,8 @@ use FS::cust_main::Search;
 sub queue_fuzzyfiles_update {
   my $self = shift;
 
+  return unless ($conf->config('fuzzy-method') eq 'String::Approx');
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
