@@ -4,6 +4,7 @@ use strict;
 use vars qw( $DEBUG $me );
 use Data::Dumper;
 use Tie::RefHash;
+use Digest::SHA qw(sha512_hex);
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(popurl);
@@ -996,9 +997,19 @@ sub new_customer_minimal {
   );
   return { 'error' => $error } if $error;
 
+  my $session = { 'custnum' => $cust_main->custnum };
+
+  my $session_id;
+  do {
+    $session_id = sha1_hex(time(). {}. rand(). $$)
+  } until ( ! defined _myaccount_cache->get($session_id) ); #just in case
+
+  _cache->set( $session_id, $session, '1 hour' ); # 1 hour?
+
   my %return = ( 'error'          => '',
                  'signup_service' => $svc_x,
                  'custnum'        => $cust_main->custnum,
+                 'session_id'     => $session_id,
                );
 
   if ( $svc[0] ) {
@@ -1021,6 +1032,13 @@ sub new_customer_minimal {
 
   return \%return;
 
+}
+
+use vars qw( $myaccount_cache );
+sub _myaccount_cache {
+  $myaccount_cache ||= new FS::ClientAPI_SessionCache( {
+                         'namespace' => 'FS::ClientAPI::MyAccount',
+                       } );
 }
 
 sub capture_payment {
