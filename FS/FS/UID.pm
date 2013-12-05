@@ -173,13 +173,18 @@ sub callback_setup {
 }
 
 sub myconnect {
-  my $handle = DBI->connect( getsecrets(), { 'AutoCommit'         => 0,
-                                             'ChopBlanks'         => 1,
-                                             'ShowErrorStatement' => 1,
-                                             'pg_enable_utf8'     => 1,
-                                             #'mysql_enable_utf8'  => 1,
-                                           }
-                           )
+  my $options = shift || {};
+  unless (ref $options) {
+      # Handle being passed a username
+      $options = { user => $options };
+  }
+  my $handle = DBI->connect( getsecrets($options), 
+    { 'AutoCommit'         => 0,
+      'ChopBlanks'         => 1,
+      'ShowErrorStatement' => 1,
+      'pg_enable_utf8'     => 1,
+      #'mysql_enable_utf8'  => 1,
+    })
     or die "DBI->connect error: $DBI::errstr\n";
 
   if ( $schema ) {
@@ -314,10 +319,20 @@ the `/usr/local/etc/freeside/secrets' file.
 =cut
 
 sub getsecrets {
+  my $options = shift || { };
 
-  ($datasrc, $db_user, $db_pass, $schema) = 
-    map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/secrets")
-      or die "Can't get secrets: $conf_dir/secrets: $!\n";
+  $options->{'ServerName'} ||= 'main';
+
+  my $secrets = Config::General->new("$conf_dir/secrets")
+    or die "Can't get secrets: $conf_dir/secrets: $!\n";
+
+  die "Could not find a $options->{'ServerName'} configuration. Is secrets file not in Config::General format?"
+    unless {$secrets->getall}->{'server'}->{$options->{'ServerName'}};
+
+  ($datasrc, $db_user, $db_pass, $schema) = map {
+    {$secrets->getall}->{'server'}->{$options->{'ServerName'}}->{$_}}
+    qw/DSN Username Password Schema/;
+
   undef $driver_name;
 
   ($datasrc, $db_user, $db_pass);
