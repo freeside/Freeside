@@ -949,6 +949,31 @@ sub search {
     }
   }
 
+  # pkg_classnum
+  if ( $params->{'pkg_classnum'} ) {
+    my @pkg_classnums = ref( $params->{'pkg_classnum'} ) ?
+                          @{ $params->{'pkg_classnum'} } :
+                             $params->{'pkg_classnum'};
+    @pkg_classnums = grep /^(\d+)$/, @pkg_classnums;
+
+    if ( @pkg_classnums ) {
+
+      my @pkg_where;
+      if ( $params->{'all_pkg_classnums'} ) {
+        push @pkg_where, "part_pkg.classnum = $_" foreach @pkg_classnums;
+      } else {
+        push @pkg_where,
+          'part_pkg.classnum IN('. join(',', @pkg_classnums).')';
+      }
+      foreach (@pkg_where) {
+        push @where, "EXISTS(".
+          "SELECT 1 FROM cust_pkg JOIN part_pkg USING (pkgpart) WHERE ".
+          "cust_pkg.custnum = cust_main.custnum AND ".
+          $_ . ' AND ' . FS::cust_pkg->active_sql .
+        ')';
+      }
+    }
+  }
 
   ##
   # setup queries, subs, etc. for the search
