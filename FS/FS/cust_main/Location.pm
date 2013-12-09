@@ -158,7 +158,11 @@ sub _upgrade_data {
     }
   }
 
-  foreach my $cust_main (qsearch('cust_main', { bill_locationnum => '' })) {
+  foreach my $cust_main (qsearch('cust_main', {
+                           bill_locationnum => '',
+                           address1         => { op=>'!=', value=>'' },
+                        }))
+  {
     # Step 1: extract billing and service addresses into cust_location
     my $custnum = $cust_main->custnum;
     my $bill_location = FS::cust_location->new(
