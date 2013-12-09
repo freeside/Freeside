@@ -133,7 +133,7 @@ my $enddate = _cdr_date_parser_maker('enddate');
     '',                 # termmem (same?)
     '',                 # fintkgrp
     'charged_party',    # billnum (empty for "normal" calls)
-    '',                 # acctcd
+    'accountcode',      # acctcd
     '',                 # swid
     '',                 # orig_bill_file_id
     '',                 # orig_trunk_group_name
