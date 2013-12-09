@@ -1087,63 +1087,114 @@ sub fuzzy_search {
   my $self = shift;
   my $fuzzy = shift;
   # sensible defaults, then merge in any passed options
+
   my %fuzopts = (
-    'table'     => 'cust_main',
-    'addl_from' => '',
-    'extra_sql' => '',
-    'hashref'   => {},
+    'table'         => 'cust_main',
+    'addl_from'     => '',
+    'extra_sql'     => '',
+    'order_by'      => undef,
+    'extra_param'   => [],
+    'hashref'       => {},
     @_
   );
 
-  my @cust_main = ();
 
-  my @fuzzy_mod = 'i';
-  my $conf = new FS::Conf;
-  my $fuzziness = $conf->config('fuzzy-fuzziness');
-  push @fuzzy_mod, $fuzziness if $fuzziness;
+  # PG levenschtein matching
+  if ($conf->config('fuzzy-method') eq 'PG levenschtein') {
+    foreach my $field ( keys %$fuzzy ) {
+      my $joins = {};
+      if ( $field =~ /^cust_location/  and !$joins->{'cust_location'}) {
+        $fuzopts{'addl_from'} .= ' JOIN cust_location USING (custnum) ';
+				$joins->{'cust_location'} = 1;
+      }
+      elsif ( $field =~ /^contact/ and !$joins->{'contact'} ) {
+        $fuzopts{'addl_from'} .= ' JOIN contact USING (custnum) ';
+				$joins->{'contact'} = 1;
+      }
 
-  check_and_rebuild_fuzzyfiles();
-  foreach my $field ( keys %$fuzzy ) {
-
-    my $all = $self->all_X($field);
-    next unless scalar(@$all);
-
-    my %match = ();
-    $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, \@fuzzy_mod, @$all ) );
-    next if !keys(%match);
-
-    my $in_matches = 'IN (' .
-                     join(',', map { dbh->quote($_) } keys %match) .
-                     ')';
-
-    my $extra_sql = $fuzopts{extra_sql};
-    if ($extra_sql =~ /^\s*where /i or keys %{ $fuzopts{hashref} }) {
-      $extra_sql .= ' AND ';
-    } else {
-      $extra_sql .= 'WHERE ';
-    }
-    $extra_sql .= "$field $in_matches";
-
-    my $addl_from = $fuzopts{addl_from};
-    if ( $field =~ /^cust_location\./ ) {
-      $addl_from .= ' JOIN cust_location USING (custnum)';
-    } elsif ( $field =~ /^contact\./ ) {
-      $addl_from .= ' JOIN contact USING (custnum)';
+      $fuzopts{'extra_sql'} .= ' AND ' if length($fuzopts{'extra_sql'});
+      $fuzopts{'extra_sql'} .= " levenshtein(lower($field), lower(?)) < $fuzziness ";
+      push @{$fuzopts{'extra_param'}}, $fuzzy->{$field};
     }
 
-    push @cust_main, qsearch({
-      %fuzopts,
-      'addl_from' => $addl_from,
-      'extra_sql' => $extra_sql,
+    return qsearch({
+			%fuzopts,
+			debug => 1,
     });
-  }
 
-  # we want the components of $fuzzy ANDed, not ORed, but still don't want dupes
-  my %saw = ();
-  @cust_main = grep { ++$saw{$_->custnum} == scalar(keys %$fuzzy) } @cust_main;
+  }	# pg_trgm 
+  elsif ($conf->config('fuzzy-method') eq 'pg_trgm') {
 
-  @cust_main;
+	  if ($fuzziness) {
+			dbh->do("SELECT set_limit(?)", {}, $fuzziness);
+		}
+    my $joins = {};
+    foreach my $field ( keys %$fuzzy ) {
+      if ( $field =~ /^cust_location/  and !$joins->{'cust_location'}) {
+        $fuzopts{'addl_from'} .= ' JOIN cust_location USING (custnum) ';
+				$joins->{'cust_location'} = 1;
+      }
+      elsif ( $field =~ /^contact/ and !$joins->{'contact'} ) {
+        $fuzopts{'addl_from'} .= ' JOIN contact USING (custnum) ';
+				$joins->{'contact'} = 1;
+      }
 
+			$fuzopts{'extra_sql'} .= " AND $field % ? ";
+      push @{$fuzopts{'extra_param'}}, $fuzzy->{$field};
+    }
+
+    return qsearch({
+      %fuzopts,
+    });
+  } # The old String::Approx method
+  else {
+    my @cust_main = ();
+
+    my @fuzzy_mod = 'i';
+    push @fuzzy_mod, $fuzziness if $fuzziness;
+
+    check_and_rebuild_fuzzyfiles();
+    foreach my $field ( keys %$fuzzy ) {
+
+      my $all = $self->all_X($field);
+      next unless scalar(@$all);
+
+      my %match = ();
+      $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, \@fuzzy_mod, @$all ) );
+      next if !keys(%match);
+
+      my $in_matches = 'IN (' .
+                      join(',', map { dbh->quote($_) } keys %match) .
+                      ')';
+
+      my $extra_sql = $fuzopts{extra_sql};
+      if ($extra_sql =~ /^\s*where /i or keys %{ $fuzopts{hashref} }) {
+        $extra_sql .= ' AND ';
+      } else {
+        $extra_sql .= 'WHERE ';
+      }
+      $extra_sql .= "$field $in_matches";
+
+      my $addl_from = $fuzopts{addl_from};
+      if ( $field =~ /^cust_location\./ ) {
+        $addl_from .= ' JOIN cust_location USING (custnum)';
+      } elsif ( $field =~ /^contact\./ ) {
+        $addl_from .= ' JOIN contact USING (custnum)';
+      }
+
+      push @cust_main, qsearch({
+      	%fuzopts,
+      	'addl_from' => $addl_from,
+      	'extra_sql' => $extra_sql,
+      });
+    }
+
+    # we want the components of $fuzzy ANDed, not ORed, but still don't want dupes
+    my %saw = ();
+    @cust_main = grep { ++$saw{$_->custnum} == scalar(keys %$fuzzy) } @cust_main;
+
+    return @cust_main;
+  } 
 }
 
 =back
