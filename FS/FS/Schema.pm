@@ -4205,17 +4205,54 @@ sub tables_hashref {
     'svc_alarm' => {
       'columns' => [
         'svcnum',          'int',      '',      '', '', '', 
-        'alarm_system', 'varchar',     '', $char_d, '', '', # dropdowns?
-        'alarm_type',   'varchar',     '', $char_d, '', '', #
+        'alarmsystemnum',  'int',      '',      '', '', '',
+        'alarmtypenum',    'int',      '',      '', '', '',
+        'alarmstationnum', 'int',      '',      '', '', '',
         'acctnum',      'varchar',     '', $char_d, '', '',
         '_password',    'varchar',     '', $char_d, '', '',
         'location',     'varchar', 'NULL', $char_d, '', '',
-        #cs
-        #rep
+        #installer (rep)
       ],
       'primary_key' => 'svcnum',
-      'unique' => [], #system/type/acctnum??
+      'unique' => [],
       'index'  => [],
+    },
+
+    'alarm_system' => { #vendors
+      'columns' => [
+        'alarmsystemnum',  'serial',     '',      '', '', '',
+        'agentnum',           'int', 'NULL',      '', '', '',
+        'systemname',     'varchar',     '', $char_d, '', '',
+        'disabled',          'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'alarmsystemnum',
+      'unique'      => [ ['agentnum', 'systemname'] ],
+      'index'       => [ ['agentnum'], ['disabled'] ],
+    },
+
+    'alarm_type' => { #inputs and outputs
+      'columns' => [
+        'alarmtypenum', 'serial',     '',      '', '', '',
+        'agentnum',        'int', 'NULL',      '', '', '',
+        'inputs',          'int',     '', '', '', '',
+        'outputs',         'int',     '', '', '', '',
+        'disabled',       'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'alarmtypenum',
+      'unique'      => [ ['agentnum', 'inputs', 'outputs'] ],
+      'index'       => [ ['agentnum'], ['disabled'] ],
+    },
+
+    'alarm_station' => { #central station (where the alarm reports to)
+      'columns' => [
+        'alarmstationnum', 'serial',     '',      '', '', '',
+        'agentnum',           'int', 'NULL',      '', '', '',
+        'stationname',    'varchar',     '', $char_d, '', '',
+        'disabled',          'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'alarmstationnum',
+      'unique'      => [ ['agentnum', 'stationname'], ],
+      'index'       => [ ['agentnum'], ['disabled'] ],
     },
 
     'svc_cable' => {
