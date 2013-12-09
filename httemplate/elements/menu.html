@@ -767,8 +767,8 @@ my $wiki = 'http://www.freeside.biz/mediawiki/index.php';
 my $doc_link = $conf->config('support-key')
                  ? "$wiki/Supported:Documentation"
                  : $curuser->access_right('Configuration')
-                   ? "$wiki/Freeside:2.1:Documentation"
-                   : "$wiki/Freeside:2.1:Documentation:User";
+                   ? "$wiki/Freeside:4:Documentation"
+                   : "$wiki/Freeside:2.1:Documentation:User"; #no page for other versions yet :/
 
 eval "use RT;"
   if $conf->config('ticket_system') eq 'RT_Internal';
