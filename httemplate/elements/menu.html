@@ -525,6 +525,12 @@ tie my %config_cable, 'Tie::IxHash',
   'Cable modem models' => [ $fsurl.'browse/cable_model.html', '' ],
 ;
 
+tie my %config_alarm, 'Tie::IxHash',
+  'Alarm system vendors'   => [ $fsurl.'browse/alarm_system.html', '' ],
+  'Alarm system types'     => [ $fsurl.'browse/alarm_type.html', '' ],
+  'Alarm central stations' => [ $fsurl.'browse/alarm_station.html', '' ],
+;
+
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
@@ -541,6 +547,8 @@ $config_export_svc{'RADIUS'} = [ \%config_radius, '' ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'Cable'} = [ \%config_cable, '' ]
   if $curuser->access_right('Configuration');
+$config_export_svc{'Alarm'} = [ \%config_alarm, '' ]
+  if $curuser->access_right(['Alarm configuration', 'Alarm global configuration']);
 $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
   if $curuser->access_right('Configuration');
 
@@ -824,16 +832,19 @@ $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
 $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
   if keys %tools_menu;
 $menu{'Configuration'} = [ \%config_menu, 'Configuration and setup' ]
-  if $curuser->access_right('Configuration')
-  || $curuser->access_right('Edit package definitions')
-  || $curuser->access_right('Edit global package definitions')
-  || $curuser->access_right('Edit billing events')
-  || $curuser->access_right('Edit global billing events')
-  || $curuser->access_right('Dialup configuration')
-  || $curuser->access_right('Wireless broadband configuration')
-  || $curuser->access_right('Phone configuration')
-  || $curuser->access_right('Edit advertising sources')
-  || $curuser->access_right('Edit global advertising sources');
+  if $curuser->access_right([ 'Configuration',
+                              'Edit package definitions',
+                              'Edit global package definitions',
+                              'Edit billing events',
+                              'Edit global billing events',
+                              'Dialup configuration',
+                              'Wireless broadband configuration',
+                              'Phone configuration',
+                              'Alarm configuration',
+                              'Alarm global configuration',
+                              'Edit advertising sources',
+                              'Edit global advertising sources',
+                           ]);
 $menu{'Help'} = [ \%help_menu, '' ];
 
 

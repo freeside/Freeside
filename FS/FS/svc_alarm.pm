@@ -2,7 +2,11 @@ package FS::svc_alarm;
 
 use strict;
 use base qw( FS::svc_Common );
-use FS::Record; # qw( qsearch qsearchs );
+use Tie::IxHash;
+use FS::Record qw( qsearchs ); # qw( qsearch qsearchs );
+use FS::alarm_system;
+use FS::alarm_type;
+use FS::alarm_station;
 
 =head1 NAME
 
@@ -34,9 +38,11 @@ The following fields are currently supported:
 
 =item svcnum - Primary key
 
-=item alarm_system - Alarm System
+=item alarmsystemnum - Alarm System Vendor (see L<FS::alarm_system>)
 
-=item alarm_type = Alarm Type
+=item alarmtypenum - Alarm System Type (inputs/outputs) (see L<FS::alarm_type>)
+
+=item alarmstationnum - Alarm central station (see L<FS::alarm_station>)
 
 =item acctnum - Account number
 
@@ -63,25 +69,50 @@ sub table_info {
                #'disable_select' => 1,
                'disable_inventory' => 1,
              );
+
+  tie my %fields, 'Tie::IxHash',
+    'svcnum'    => { label => 'Service' },
+    'acctnum'         => { label => 'Account #', %opts },
+    '_password'       => { label => 'Password' , %opts },
+    'location'        => { label => 'Location',  %opts },
+    'alarmsystemnum'  => { label => 'Alarm System Vendor',
+                           type  => 'select-alarm_system',
+                           disable_inventory => 1,
+                           value_callback    => sub {
+                             shift->alarm_system->systemname
+                           },
+                         },
+    'alarmtypenum'    => { label => 'Alarm System Type',
+                           type  => 'select-alarm_type',
+                           disable_inventory => 1,
+                           value_callback    => sub {
+                             shift->alarm_type->typename
+                           },
+                         },
+    'alarmstationnum' => { label => 'Alarm Central Station',
+                           type  => 'select-alarm_station',
+                           disable_inventory => 1,
+                           value_callback    => sub {
+                             shift->alarm_station->stationname
+                           },
+                         },
+  ;
+
   {
     'name'           => 'Alarm service',
     'sorts'          => 'acctnum',
     'display_weight' => 80,
     'cancel_weight'  => 85,
-    'fields' => {
-      'svcnum'    => { label => 'Service' },
-      'alarm_system'   => { label => 'Alarm System', %opts },
-      'alarm_type'   => { label => 'Alarm Type', %opts },
-      'acctnum'   => { label => 'Account #', %opts },
-      '_password' => { label => 'Password', %opts },
-      'location'  => { label => 'Location', %opts },
-    },
+    'fields'         => \%fields,
+
   };
 }
 
 sub label {
   my $self = shift;
-  $self->acctnum;
+  $self->acctnum . '@'. $self->alarm_station->stationname. #?
+    ' ('. $self->alarm_system->systemname. ' '. $self->alarm_type->typename. ')'
+  ;
 }
 
 sub search_sql {
@@ -103,8 +134,6 @@ Delete this record from the database.
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-# the replace method can be inherited from FS::Record
-
 =item check
 
 Checks all fields to make sure this is a valid service.  If there is
@@ -122,13 +151,20 @@ sub check {
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_text('acctnum')
-    || $self->ut_numbern('installdate')
-    || $self->ut_anything('note')
+    || $self->ut_alphan('_password')
+    || $self->ut_textn('location')
+    || $self->ut_foreign_key('alarmsystemnum',  'alarm_system',  'systemnum')
+    || $self->ut_foreign_key('alarmtypenum',    'alarm_type',    'typenum')
+    || $self->ut_foreign_key('alarmstationnum', 'alarm_station', 'stationnum')
   ;
   return $error if $error;
 
   $self->SUPER::check;
 }
+
+sub alarm_system  { qsearchs('alarm_system', {systemnum =>shift->systemnum } ) }
+sub alarm_type    { qsearchs('alarm_type',   {typenum   =>shift->systemnum } ) }
+sub alarm_station { qsearchs('alarm_station',{stationnum=>shift->stationnum} ) }
 
 =back
 
