@@ -1,0 +1,36 @@
+<& elements/browse.html,
+     'title'              => 'Alarm system vendors',
+     'html_init'          => $html_init,
+     'name_singular'      => 'vendor',
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'agent_virt'         => 1,
+     'agent_null_right'   => 'Alarm global configuration',
+     'agent_pos'          => 1,
+     'query'              => { 'table'     => 'alarm_system',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY systemname',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Alarm configuration')
+      || $FS::CurrentUser::CurrentUser->access_right('Alarm global configuration');
+
+my $html_init =
+  qq!<A HREF="${p}edit/alarm_system.html"><I>Add an alarm system vendor</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM alarm_system';
+
+my $link = [ $p.'edit/alarm_system.html?', 'alarmsystemnum' ];
+
+my $header = [ 'Vendor' ];
+my $fields = [ 'systemname' ];
+my $links  = [ $link ];
+
+</%init>

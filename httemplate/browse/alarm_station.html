@@ -1,0 +1,37 @@
+<& elements/browse.html,
+     'title'              => 'Alarm central stations',
+     'html_init'          => $html_init,
+     'name_singlar'       => 'central station',
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'agent_virt'         => 1,
+     'agent_null_right'   => 'Alarm global configuration',
+     'agent_pos'          => 1,
+     'query'              => { 'table'     => 'alarm_station',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY stationname',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Alarm configuration')
+      || $FS::CurrentUser::CurrentUser->access_right('Alarm global configuration');
+
+
+my $html_init =
+  qq!<A HREF="${p}edit/alarm_station.html"><I>Add an alarm central station</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM alarm_station';
+
+my $link = [ $p.'edit/alarm_station.html?', 'alarmstationnum' ];
+
+my $header = [ 'Central station' ];
+my $fields = [ 'stationname' ];
+my $links  = [ $link ];
+
+</%init>

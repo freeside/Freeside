@@ -1,0 +1,11 @@
+<& elements/process.html,
+     'table'       => 'alarm_station',
+     'viewall_dir' => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Alarm configuration')
+      || $FS::CurrentUser::CurrentUser->access_right('Alarm global configuration');
+
+</%init>

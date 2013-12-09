@@ -1,0 +1,8 @@
+<% include( '/elements/select-table.html',
+    'table'       => 'alarm_type',
+    'name_col'    => 'typename',
+    'order_by'    => 'ORDER BY inputs, outputs',
+    'empty_label' => 'Select type',
+    @_,
+   )
+%>

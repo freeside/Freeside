@@ -1,0 +1,23 @@
+<& elements/edit.html,
+     'table'            => 'alarm_station',
+     'name_singular'    => 'central station',
+     'agent_virt'       => 1,
+     'agent_null_right' => 'Alarm global configuration',
+     'fields'           => [
+       { field=>'stationname',  type=>'text',     size=>20 },
+       { field=>'disabled',     type=>'checkbox', value=>'Y' },
+     ],
+     'labels'           => { 'alarmstationnum' => 'Central Station',
+                             'agentnum'        => 'Agent',
+                             'stationname'     => 'Central Station',
+                             'disabled'        => 'Disabled',
+                           },
+     'viewall_dir'      => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Alarm configuration')
+      || $FS::CurrentUser::CurrentUser->access_right('Alarm global configuration');
+
+</%init>
