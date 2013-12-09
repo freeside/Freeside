@@ -707,7 +707,11 @@ $menu{'Configuration'} = [ \%config_menu, 'Configuration and setup' ]
   || $curuser->access_right('Broadband configuration')
   || $curuser->access_right('Phone configuration')
   || $curuser->access_right('Edit advertising sources')
-  || $curuser->access_right('Edit global advertising sources');
+  || $curuser->access_right('Edit global advertising sources')
+  || $curuser->access_right('View templates')
+  || $curuser->access_right('View global templates')
+  || $curuser->access_right('Edit templates')
+  || $curuser->access_right('Edit global templates');
 $menu{'Help'} = [ \%help_menu, '' ];
 
 
