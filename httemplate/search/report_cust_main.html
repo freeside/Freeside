@@ -119,6 +119,23 @@
         </TD>
       </TR>
 
+      <TR>
+        <TD ALIGN="right">With package of class</TD>
+        <TD>
+            <& /elements/select-pkg_class.html,
+                          'field'       => 'pkg_classnum',
+                          'multiple'    => 1,
+            &>
+          <DIV STYLE="display:inline-block; vertical-align:baseline">
+            <INPUT TYPE="radio" NAME="all_pkg_classnums" VALUE="0" CHECKED>
+              Any of these
+            <BR>
+            <INPUT TYPE="radio" NAME="all_pkg_classnums" VALUE="1">
+              All of these
+          </DIV>
+        </TD>
+      </TR>
+
     <& /elements/tr-select-payby.html,
                   'payby_type'   => 'cust',
                   'multiple'     => 1,
