@@ -239,7 +239,7 @@ Class method which returns an SQL fragment to search for the given string.
 sub search_sql {
   my( $class, $string ) = @_;
 
-  my $conf = new FS::Conf;
+  #my $conf = new FS::Conf;
 
   if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
     $string =~ s/\W//g;
@@ -464,7 +464,11 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  my $conf = new FS::Conf;
+  #my $conf = new FS::Conf;
+
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
 
   my $phonenum = $self->phonenum;
   my $phonenum_check_method;
@@ -546,8 +550,9 @@ sub check {
     return "SIP password must be shorter than $passwordmax characters"
       if length($self->sip_password) > $passwordmax;
 
-  } else { # option for this?
+  } elsif ( $part_svc->part_svc_column('sip_password')->columnflag ne 'F' ) {
 
+    # option for this?
     $self->sip_password(
       join('', map $pw_set[ int(rand $#pw_set) ], (1..min($passwordmax,16)) )
     );
@@ -648,7 +653,7 @@ sub radius_check {
   my $self = shift;
   my %check = ();
 
-  my $conf = new FS::Conf;
+  #my $conf = new FS::Conf;
 
   my $password;
   if ( $conf->config('svc_phone-radius-password') eq 'countrycode_phonenum' ) {
