@@ -61,6 +61,11 @@ tie my %detail_formats, 'Tie::IxHash',
   FS::cdr::invoice_formats()
 ;
 
+tie my %accountcode_tollfree_field, 'Tie::IxHash',
+  'dst' => 'Destination (dst)',
+  'src' => 'Source (src)',
+;
+
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
   'shortname' => 'VoIP/telco CDR rating (standard)',
@@ -211,6 +216,12 @@ tie my %detail_formats, 'Tie::IxHash',
       'empty_label'   => '',
     },
 
+    'accountcode_tollfree_field' => {
+      'name'           => 'When using an alternate rate plan for toll-free accountcodes, the CDR field to use in rating calculations',
+      'type'           => 'select',
+      'select_options' => \%accountcode_tollfree_field,
+    },
+
     'skip_dst_length_less' => { 'name' => 'Do not charge for CDRs where the destination is less than this many digits:',
                               },
 
@@ -330,7 +341,7 @@ tie my %detail_formats, 'Tie::IxHash',
                        skip_dcontext skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
-                       accountcode_tollfree_ratenum
+                       accountcode_tollfree_ratenum accountcode_tollfree_field
                        skip_dst_length_less
                        noskip_dst_length_accountcode_tollfree
                        skip_lastapp
