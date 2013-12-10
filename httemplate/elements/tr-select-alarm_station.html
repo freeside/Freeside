@@ -1,12 +1,9 @@
-% #if ( scalar(@domains) < 2 ) {
-% #} else {
-  <TR>
-    <TD ALIGN="right"><% $opt{'label'} || 'Central Station' %></TD>
-    <TD>
-      <% include( '/elements/select-alarm_station.html', %opt) %>
-    </TD>
-   </TR>
-% #}
-<%init>
-  my %opt = @_;
-</%init>
+<& /elements/tr-select-table.html,
+     label       => 'Central Station',
+     table       => 'alarm_station',
+     #name_col    => 'stationname',
+     add_inline  => 1,
+     add_fields  => [ 'stationname' ],
+     add_right   => [ 'Alarm configuration', 'Alarm global configuration' ],
+     @_,
+&>

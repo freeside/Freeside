@@ -1,8 +1,9 @@
-<% include( '/elements/select-table.html',
+<& /elements/select-table.html,
     'table'       => 'alarm_type',
     'name_col'    => 'typename',
     'order_by'    => 'ORDER BY inputs, outputs',
     'empty_label' => 'Select type',
+    'agent_virt'  => 1,
+    'agent_null'  => 1,
     @_,
-   )
-%>
+&>
