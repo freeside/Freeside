@@ -25,12 +25,13 @@ $DEBUG = 0;
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::svc_acct'} = sub { 
+FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $phone_name_max = $conf->config('svc_phone-phone_name-max_length');
   $passwordmin = $conf->config('sip_passwordmin') || 0;
   $passwordmax = $conf->config('sip_passwordmax') || 80;
-};
+}
+);
 
 =head1 NAME
 
