@@ -680,8 +680,19 @@ sub rate_prefix {
   # (or calling station id for toll free calls)
   ###
 
+  my $eff_ratenum = $self->is_tollfree('accountcode')
+    ? $part_pkg->option_cacheable('accountcode_tollfree_ratenum')
+    : '';
+
   my( $to_or_from, $column );
-  if ( $self->is_tollfree && ! $part_pkg->option_cacheable('disable_tollfree') )
+  if(
+        ( $self->is_tollfree
+           && ! $part_pkg->option_cacheable('disable_tollfree')
+        )
+     or ( $eff_ratenum
+           && $part_pkg->option_cacheable('accountcode_tollfree_field') eq 'src'
+        )
+    )
   { #tollfree call
     $to_or_from = 'from';
     $column = 'src';
@@ -701,10 +712,6 @@ sub rate_prefix {
   my $pretty_dst = "+$countrycode $number";
   #asterisks here causes inserting the detail to barf, so:
   $pretty_dst =~ s/\*//g;
-
-  my $eff_ratenum = $self->is_tollfree('accountcode')
-    ? $part_pkg->option_cacheable('accountcode_tollfree_ratenum')
-    : '';
 
   my $ratename = '';
   my $intrastate_ratenum = $part_pkg->option_cacheable('intrastate_ratenum');
