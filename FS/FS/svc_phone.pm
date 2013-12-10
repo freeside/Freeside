@@ -451,7 +451,11 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  my $conf = new FS::Conf;
+  #my $conf = new FS::Conf;
+
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
 
   my $phonenum = $self->phonenum;
   my $phonenum_check_method;
@@ -525,8 +529,9 @@ sub check {
     return "SIP password must be shorter than $passwordmax characters"
       if length($self->sip_password) > $passwordmax;
 
-  } else { # option for this?
+  } elsif ( $part_svc->part_svc_column('sip_password')->columnflag ne 'F' ) {
 
+    # option for this?
     $self->sip_password(
       join('', map $pw_set[ int(rand $#pw_set) ], (1..min($passwordmax,16)) )
     );
@@ -627,7 +632,7 @@ sub radius_check {
   my $self = shift;
   my %check = ();
 
-  my $conf = new FS::Conf;
+  #my $conf = new FS::Conf;
 
   $check{'User-Password'} = $conf->config('svc_phone-radius-default_password');
 
