@@ -1,7 +1,8 @@
-<% include( '/elements/select-table.html',
+<& /elements/select-table.html,
     'table'       => 'alarm_station',
     'name_col'    => 'stationname',
     'empty_label' => 'Select central station',
+    'agent_virt'  => 1,
+    'agent_null'  => 1,
     @_,
-   )
-%>
+&>

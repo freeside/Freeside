@@ -99,12 +99,15 @@ sub table_info {
   ;
 
   {
-    'name'           => 'Alarm service',
-    'sorts'          => 'acctnum',
-    'display_weight' => 80,
-    'cancel_weight'  => 85,
-    'fields'         => \%fields,
-
+    'name'                => 'Alarm service',
+    'sorts'               => 'acctnum',
+    'display_weight'      => 80,
+    'cancel_weight'       => 85,
+    'fields'              => \%fields,
+    'addl_process_fields' => [qw( alarmsystemnum_systemname
+                                  alarmtypenum_inputs alarmtypenum_outputs
+                                  alarmstationnum_stationname
+                             )],
   };
 }
 
@@ -134,6 +137,50 @@ Delete this record from the database.
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+=cut
+
+sub preinsert_hook_first  { shift->_inline_add(@_); }
+sub prereplace_hook_first { shift->_inline_add(@_); }
+
+sub _inline_add {
+  my $self = shift;
+
+  my $agentnum = $self->cust_svc->cust_pkg->cust_main->agentnum;
+
+  if ( $self->alarmsystemnum == -1 ) {
+    my $alarm_system = new FS::alarm_system {
+      'agentnum'   => $agentnum,
+      'systemname' => $self->alarmsystemnum_systemname,
+    };
+    my $error = $alarm_system->insert;
+    return $error if $error;
+    $self->alarmsystemnum($alarm_system->alarmsystemnum);
+  }
+
+  if ( $self->alarmtypenum == -1 ) {
+    my $alarm_type = new FS::alarm_type {
+      'agentnum' => $agentnum,
+      'inputs'   => $self->alarmtypenum_inputs,
+      'outputs'  => $self->alarmtypenum_outputs,
+    };
+    my $error = $alarm_type->insert;
+    return $error if $error;
+    $self->alarmtypenum($alarm_type->alarmtypenum);
+  }
+
+  if ( $self->alarmstationnum == -1 ) {
+    my $alarm_station = new FS::alarm_station {
+      'agentnum'    => $agentnum,
+      'stationname' => $self->alarmstationnum_stationname,
+    };
+    my $error = $alarm_station->insert;
+    return $error if $error;
+    $self->alarmstationnum($alarm_station->alarmstationnum)
+  }
+
+  '';
+}
+
 =item check
 
 Checks all fields to make sure this is a valid service.  If there is
@@ -162,9 +209,15 @@ sub check {
   $self->SUPER::check;
 }
 
-sub alarm_system  { qsearchs('alarm_system', {systemnum =>shift->systemnum } ) }
-sub alarm_type    { qsearchs('alarm_type',   {typenum   =>shift->systemnum } ) }
-sub alarm_station { qsearchs('alarm_station',{stationnum=>shift->stationnum} ) }
+sub alarm_system  {
+  qsearchs('alarm_system',  { alarmsystemnum  => shift->alarmsystemnum  } );
+}
+sub alarm_type    {
+  qsearchs('alarm_type',    { alarmtypenum    => shift->alarmtypenum    } );
+}
+sub alarm_station {
+  qsearchs('alarm_station', { alarmstationnum => shift->alarmstationnum } );
+}
 
 =back
 

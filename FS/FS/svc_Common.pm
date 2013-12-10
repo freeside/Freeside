@@ -335,6 +335,7 @@ sub preinsert_hook_first { ''; }
 sub _check_duplcate { ''; }
 sub preinsert_hook { ''; }
 sub table_dupcheck_fields { (); }
+sub prereplace_hook { ''; }
 sub predelete_hook { ''; }
 sub predelete_hook_first { ''; }
 
@@ -472,15 +473,10 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->set_auto_inventory($old);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  #redundant, but so any duplicate fields are maniuplated as appropriate
-  # (svc_phone.phonenum)
-  $error = $new->check;
+  my $error =  $new->prereplace_hook_first($old)
+            || $new->set_auto_inventory($old)
+            || $new->check; #redundant, but so any duplicate fields are
+                            #maniuplated as appropriate (svc_phone.phonenum)
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

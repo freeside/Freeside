@@ -1,3 +1,16 @@
+<%doc>
+
+Example:
+
+  <& /elements/tr-select-table,
+
+       'add_inline' => 0, #enable "on the fly" adding
+ 
+       #options passed to tr-td-label.html and select-$table.html (or
+       #select-table.html if that does not exist)
+  &>
+
+</%doc>
 % unless ( $opt{'js_only'} ) {
 
     <% include('tr-td-label.html', @_ ) %>
@@ -5,16 +18,88 @@
       <TD <% $style %>>
 % }
 
-        <% include( '/elements/select-table.html', %opt ) %>
+% my $element = '/elements/select-'.$opt{table}.'.html';
+% if ( $m->interp->comp_exists($element) ) {
+        <& $element, %opt &>
+% } else {
+        <& /elements/select-table.html, %opt &>
+% }
 
 % unless ( $opt{'js_only'} ) {
       </TD>
     </TR>
 % }
+
+% if ( $opt{'add_inline'} ) {
+
+%   foreach my $add_field ( @{ $opt{'add_fields'} } ) {
+%     my $label = scalar(@{ $opt{'add_fields'} }) > 1
+%                   ? $add_field : $opt{'label'};
+
+      <& /elements/tr-input-text.html,
+           'label'   => "New $label",
+           'field'   => $field."_$add_field",
+           'id'      => $field."_$add_field",
+           'colspan' => $opt{'colspan'},
+      &>
+
+%   }
+
+
+%   unless ( $opt{'html_only'} ) {
+
+      <SCRIPT TYPE="text/javascript">
+
+%       my $ge = 'document.getElementById';
+
+        function <% $field %>_changed(what) {
+
+          var value = what.options[what.selectedIndex].value;
+
+          var display = 'none';
+          var visibility = 'hidden';
+          if ( value == '-1' && ! what.disabled ) {
+            display = '';
+            visibility = '';
+          }
+
+%         foreach my $add_field ( @{ $opt{'add_fields'} } ) {
+%           my $ge_f = "$ge('${field}_$add_field";
+            <% $ge_f %>_label0').style.display    = display;
+            <% $ge_f %>_label0').style.visibility = visibility;
+            <% $ge_f %>_input0').style.display    = display;
+            <% $ge_f %>_input0').style.visibility = visibility;
+%         }
+
+        }
+
+        <% $field %>_changed(<% $ge %>('<% $field %>'));
+
+      </SCRIPT>
+
+%   }
+
+% }
+
 <%init>
 
 my( %opt ) = @_;
 
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $field = '';
+if ( $opt{'add_inline'} && $curuser->access_right($opt{'add_right'}) ) {
+
+  push @{ $opt{'post_options'} }, '-1' => 'Add new '. lc($opt{'label'});
+
+  $field = $opt{'field'} || dbdef->table($opt{'table'})->primary_key;
+
+  my $onchange = ( $opt{'onchange'} ? delete($opt{'onchange'}).';' : '' ).
+                 $field.'_changed(this);';
+  $opt{'onchange'} = $onchange;
+
+}
 
 </%init>
