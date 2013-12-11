@@ -200,12 +200,21 @@ sub check_ip_addr {
   return '' if $addr eq '';
   my $na = $self->NetAddr
     or return "Can't parse address '$addr'";
+  # if there's a chosen address block, check that the address is in it
   if ( my $block = $self->addr_block ) {
     if ( !$block->NetAddr->contains($na) ) {
       return "Address $addr not in block ".$block->cidr;
     }
   }
-  # this returns '' if the address is in use by $self.
+  # if the address is in any designated ranges, check that they don't 
+  # disallow use
+  foreach my $range (FS::addr_range->any_contains($addr)) {
+    if ( !$range->allow_use ) {
+      return "Address $addr is in ".$range->desc." range ".$range->as_string;
+    }
+  }
+  # check that nobody else is sitting on the address
+  # (this returns '' if the address is in use by $self)
   if ( my $dup = $self->is_used($self->ip_addr) ) {
     return "Address $addr in use by $dup";
   }
