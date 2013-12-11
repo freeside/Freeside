@@ -361,6 +361,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::alarm_system;
   use FS::alarm_type;
   use FS::alarm_station;
+  use FS::addr_range;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

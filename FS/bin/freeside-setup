@@ -37,50 +37,7 @@ getsecrets();
 #needs to match FS::Record
 my($dbdef_file) = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
 
-###
-
 my $username_len = 32;
-
-#print "\n\n", <<END, ":";
-#Freeside tracks the RADIUS User-Name, check attribute Password and
-#reply attribute Framed-IP-Address for each user.  You can specify additional
-#check and reply attributes (or you can add them later with the
-#fs-radius-add-check and fs-radius-add-reply programs).
-#
-#First enter any additional RADIUS check attributes you need to track for each 
-#user, separated by whitespace.
-#END
-#my @check_attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
-#                         split(" ",&getvalue);
-#
-#print "\n\n", <<END, ":";
-#Now enter any additional reply attributes you need to track for each user,
-#separated by whitespace.
-#END
-#my @attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
-#                   split(" ",&getvalue);
-#
-#print "\n\n", <<END, ":";
-#Do you wish to enable the tracking of a second, separate shipping/service
-#address?
-#END
-#my $ship = &_yesno;
-#
-#sub getvalue {
-#  my($x)=scalar(<STDIN>);
-#  chop $x;
-#  $x;
-#}
-#
-#sub _yesno {
-#  print " [y/N]:";
-#  my $x = scalar(<STDIN>);
-#  $x =~ /^y/i;
-#}
-
-#my @check_attributes = (); #add later
-#my @attributes = (); #add later
-#my $ship = $opt_s;
 
 ###
 # create a dbdef object from the old data structure

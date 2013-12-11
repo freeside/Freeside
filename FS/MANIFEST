@@ -735,3 +735,5 @@ FS/alarm_type.pm
 t/alarm_type.t
 FS/alarm_station.pm
 t/alarm_station.t
+FS/addr_range.pm
+t/addr_range.t

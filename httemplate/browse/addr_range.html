@@ -1,0 +1,66 @@
+<& elements/browse.html,
+  'title'         => 'Address Ranges',
+  'name_singular' => 'address range',
+  'html_init'     => $html_init,
+  'html_foot'     => $html_foot,
+  'query'         => { 'table'     => 'addr_range',
+                       'order_by'  => $order_by,
+                     },
+  'count_query'   => "SELECT count(*) from addr_range",
+  'header'        => [ 'From',
+                       '', # the dash
+                       'To',
+                       'Status',
+                       # would be nice to show whether any addresses in the 
+                       # range are assigned, but that's ugly
+                     ],
+  'fields'        => [ 'start',
+                       sub { '&ndash;' },
+                       'end',
+                       'desc',
+                     ],
+  'links'         => [
+                       [ '#' ],
+                       '',
+                       [ '#' ],
+                     ],
+  'link_onclicks' => [ $edit_link,
+                       '',
+                       $edit_link,
+                       '',
+                     ],
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
+# addr_ranges are ALWAYS global, else there will be chaos
+
+my $order_by = "ORDER BY inet(start)"; # Pg-ism
+# though we could also make the field itself inet-type...
+# this would simplify a lot of things.
+
+my $html_init = include('/elements/error.html');
+
+my $edit_link = sub {
+  my $addr_range = shift;
+  include('/elements/popup_link_onclick.html',
+    action      => $p.'edit/addr_range.html?rangenum='.
+                   $addr_range->rangenum,
+    actionlabel => 'Edit address range',
+    width       => 650,
+    height      => 420,
+  );
+};
+
+my $add_link = include('/elements/popup_link_onclick.html',
+    action      => $p.'edit/addr_range.html',
+    actionlabel => 'Edit address range',
+    width       => 650,
+    height      => 420,
+);
+
+my $html_foot = qq!<A HREF="#" onclick="$add_link">
+<I>Add a new address range</I></A>!;
+
+</%init>

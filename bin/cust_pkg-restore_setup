@@ -23,7 +23,7 @@ my $oldAutoCommit = $FS::UID::AutoCommit;
 local $FS::UID::AutoCommit = 0;
 my $dbh = dbh;
 
-my $fuzz = 2;
+#my $fuzz = 2;
 
 my $changed = 0;
 
@@ -35,14 +35,10 @@ foreach my $cust_pkg (
          })
 ) {
 
-  #XXX only canceled packages?
-  #XXX only suspended packages?
-
   my $h_cust_pkg =
     qsearchs({ table       => 'h_cust_pkg',
                hashref     => { 
                                 pkgnum         => $cust_pkg->pkgnum,
-                                history_action => 'replace_old',
                                 setup          => { op=>'!=', value=>'' },
                                 ($opt_u ? ('susp' => { op=>'!=', value=>'' })
                                         : ()
@@ -51,7 +47,8 @@ foreach my $cust_pkg (
                                         : ()
                                 ),
                               },
-               extra_sql   => ' AND history_date >= ? AND history_date <= ? ',
+               extra_sql   => " AND history_action IN ('insert','replace_old')".
+                              ' AND history_date >= ? AND history_date <= ? ',
                extra_param => [ [$sdate,'int'], [$edate,'int'] ],
                order_by    => 'ORDER BY history_date DESC LIMIT 1',
             })
@@ -60,14 +57,20 @@ foreach my $cust_pkg (
   $changed++;
 
   #if ( $opt_r ) {
-    print "restoring setup for pkgnum ". $cust_pkg->pkgnum.
-          " (custnum ". $cust_pkg->custnum.
-          ") to ". time2str('%D', $h_cust_pkg->setup). "\n";
+    #print "restoring setup for pkgnum ". $cust_pkg->pkgnum.
+    #      " (custnum ". $cust_pkg->custnum.
+    #      ") to ". time2str('%D', $h_cust_pkg->setup). "\n";
+    print $cust_pkg->pkgnum. ','.
+          time2str('%D', $h_cust_pkg->setup). ','.
+          $cust_pkg->custnum. ','.
+          '"'. $cust_pkg->cust_main->name. '"'. "\n";
   #}
 
-  $cust_pkg->set('setup', $h_cust_pkg->setup);
-  my $error = $cust_pkg->replace;
-  die $error if $error;
+  #don't actually do it yet ...
+  #$cust_pkg->set('setup', $h_cust_pkg->setup);
+  #my $error = $cust_pkg->replace;
+  ##die $error if $error;
+  #warn "error changing pkgnum ". $cust_pkg->pkgnum.': '. $error."\n";
 
 }
 

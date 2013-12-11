@@ -679,8 +679,8 @@ my $conf = new FS::Conf;
 my $payby_default = $conf->config('payby-default');
 
 my @payby = grep /\w/, $conf->config('payby');
-#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
-@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+#@payby = (qw( CARD DCRD CHEK DCHK BILL CASH WEST COMP ))
+@payby = (qw( CARD DCRD CHEK DCHK BILL CASH COMP ))
   unless @payby;
 
 my $show_term = '';

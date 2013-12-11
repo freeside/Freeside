@@ -1,0 +1,27 @@
+<& elements/edit.html,
+  'name_singular' => 'address range',
+  'popup'  => 1,
+  'table'  => 'addr_range',
+  'labels' => { 'start'   => 'From',
+                'end'     => 'To',
+                'status'  => 'Status',
+                'rangenum'=> 'Range',
+              },  
+  'fields' => [ 'start',
+                'end',
+                { field => 'status',
+                  type  => 'select',
+                  labels  => \%FS::addr_range::status_desc,
+                  options => [ sort { $a cmp $b } 
+                               keys(%FS::addr_range::status_desc) ],
+                  disable_empty => 1,
+                },
+              ],
+  'delete_url' => $p.'misc/delete-addr_range.html',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
+
+</%init>

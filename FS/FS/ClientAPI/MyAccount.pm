@@ -7,6 +7,7 @@ use subs qw( _cache _provision );
 use IO::Scalar;
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
+use Digest::SHA qw(sha512_hex);
 use Date::Format;
 use Time::Duration;
 use Time::Local qw(timelocal_nocheck);
@@ -278,7 +279,7 @@ sub login {
 
   my $session_id;
   do {
-    $session_id = md5_hex(md5_hex(time(). {}. rand(). $$))
+    $session_id = sha512_hex(time(). {}. rand(). $$)
   } until ( ! defined _cache->get($session_id) ); #just in case
 
   my $timeout = $conf->config('selfservice-session_timeout') || '1 hour';
@@ -2896,7 +2897,7 @@ sub reset_passwd {
 
   my $reset_session_id;
   do {
-    $reset_session_id = md5_hex(md5_hex(time(). {}. rand(). $$))
+    $reset_session_id = sha512_hex(time(). {}. rand(). $$)
   } until ( ! defined _cache->get("reset_passwd_$reset_session_id") ); #just in case
 
   _cache->set( "reset_passwd_$reset_session_id", $reset_session, $timeout );

@@ -57,7 +57,7 @@ sub _export_insert {
   my ($self, $svc_phone) = @_;
   my @login = $self->login;
 
-  my $location = $svc_phone->cust_location
+  my $location = $svc_phone->cust_location_or_main
     or return 'no e911 location defined for this phone service';
 
   warn "$me validating address for svcnum ".$svc_phone->svcnum."\n"

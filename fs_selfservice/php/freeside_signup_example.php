@@ -34,7 +34,7 @@ if ( ! $error ) {
 
     $custnum = $response['custnum'];
 
-    error_log("[new_customer] signup up with custnum $custnum");
+    error_log("[new_customer] new signup with custnum $custnum");
 
 } else {
 
