@@ -219,11 +219,6 @@ sub desc {
   $status_desc{ $self->status };
 }
 
-sub allow_auto {
-  my $self = shift;
-  $status_allow_auto{ $self->status };
-}
-
 sub allow_use {
   my $self = shift;
   $status_allow_use{ $self->status };
@@ -250,7 +245,7 @@ sub any_contains {
 L<NetAddr::IP> objects have netmasks.  When using them to represent 
 range endpoints, be sure to set the netmask to I<zero> so that math on 
 the address doesn't stop at the subnet boundary.  (The default is /32, 
-which doesn't work very well.  Address ranges ignore subnet boundaries.
+which doesn't work very well.  Address ranges ignore subnet boundaries.)
 
 =head1 BUGS
 
