@@ -256,7 +256,17 @@ sub next_free_addr {
   # just do a linear search of the block
   my $freeaddr = $selfaddr->network + 1;
   while ( $freeaddr < $selfaddr->broadcast ) {
-    return $freeaddr unless $used{ $freeaddr->addr };
+    # also make sure it's not blocked from assignment by an address range
+    if ( !$used{$freeaddr->addr } ) {
+      my ($range) = grep { !$_->allow_use }
+                  FS::addr_range->any_contains($freeaddr);
+      if ( !$range ) {
+        # then we've found a free address
+        return $freeaddr;
+      }
+      # otherwise, skip to the end of the range
+      $freeaddr = NetAddr::IP->new($range->end, $self->ip_netmask);
+    }
     $freeaddr++;
   }
   return;
