@@ -707,5 +707,11 @@ FS/cust_credit_void.pm
 t/cust_credit_void.t
 FS/discount_class.pm
 t/discount_class.t
+FS/alarm_system.pm
+t/alarm_system.t
+FS/alarm_type.pm
+t/alarm_type.t
+FS/alarm_station.pm
+t/alarm_station.t
 FS/addr_range.pm
 t/addr_range.t
