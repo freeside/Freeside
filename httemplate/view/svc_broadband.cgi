@@ -1,8 +1,9 @@
 <& elements/svc_Common.html,
-  table   => 'svc_broadband',
-  labels  => \%labels,
-  fields  => \@fields,
+  table        => 'svc_broadband',
+  labels       => \%labels,
+  fields       => \@fields,
   svc_callback => \&svc_callback,
+  radius_usage => 1,
 &>
 <%init>
 

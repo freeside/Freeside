@@ -9,7 +9,7 @@
 %   qsearch( 'part_export', { 'exporttype' => 'sqlradius' } ),
 %   qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } )
 % ) {
-%   %user2svc_acct = ();
+%   %user2svc = ();
 %
 %   my $efields = tie my %efields, 'Tie::IxHash', %fields;
 %   delete $efields{'framedipaddress'} if $part_export->option('hide_ip');
@@ -54,7 +54,7 @@
 %            'session_status'  => $status,
 %            'starttime_start' => $starttime_beginning,
 %            'starttime_end'   => $starttime_ending,
-%            'svc_acct'        => $cgi_svc_acct,
+%            'svc'             => $cgi_svc,
 %            'ip'              => $ip,
 %            'prefix'          => $prefix, 
 %            'summarize'       => $summarize,
@@ -132,9 +132,10 @@ if ( $cgi->param('starttime_ending')
   $starttime_ending = parse_datetime($1); # + 86399;
 }
 
-my $cgi_svc_acct = '';
+my $cgi_svc = '';
 if ( $cgi->param('svcnum') =~ /^(\d+)$/ ) {
-  $cgi_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $1 } );
+  $cgi_svc =  qsearchs( 'svc_acct',      { 'svcnum' => $1 } )
+           || qsearchs( 'svc_broadband', { 'svcnum' => $1 } );
 } elsif ( $cgi->param('username') =~ /^([^@]+)\@([^@]+)$/ ) {
   my %search = { 'username' => $1 };
   my $svc_domain = qsearchs('svc_domain', { 'domain' => $2 } );
@@ -143,10 +144,10 @@ if ( $cgi->param('svcnum') =~ /^(\d+)$/ ) {
   } else {
     delete $search{'username'};
   }
-  $cgi_svc_acct = qsearchs( 'svc_acct', \%search )
+  $cgi_svc = qsearchs( 'svc_acct', \%search )
     if keys %search;
 } elsif ( $cgi->param('username') =~ /^(.+)$/ ) {
-  $cgi_svc_acct = qsearchs( 'svc_acct', { 'username' => $1 } );
+  $cgi_svc = qsearchs( 'svc_acct', { 'username' => $1 } );
 }
 
 my $ip = '';
@@ -167,55 +168,85 @@ if ( $prefix =~ /^(\d+)$/ ) {
 # field formatting subroutines
 ###
 
-my %user2svc_acct = ();
+my %user2svc = ();
 my $user_format = sub {
   my ( $user, $session, $part_export ) = @_;
 
-  my $svc_acct = '';
-  if ( exists $user2svc_acct{$user} ) {
-    $svc_acct = $user2svc_acct{$user};
+  my $svc = '';
+  if ( exists $user2svc{$user} ) {
+    $svc = $user2svc{$user};
   } else {
-    my %search = ();
-    if ( $part_export->exporttype eq 'sqlradius_withdomain' ) {
-      my $domain;
-      if ( $user =~ /^([^@]+)\@([^@]+)$/ ) {
-       $search{'username'} = $1;
-       $domain = $2;
-     } else {
-       $search{'username'} = $user;
-       $domain = $session->{'realm'};
-     }
-     my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
-     if ( $svc_domain ) {
-       $search{'domsvc'} = $svc_domain->svcnum;
-     } else {
-       delete $search{'username'};
-     }
-    } elsif ( $part_export->exporttype eq 'sqlradius' ) {
-      $search{'username'} = $user;
-    } else {
-      die 'unknown export type '. $part_export->exporttype.
-          " for $part_export\n";
-    }
-    if ( keys %search ) {
-      my @svc_acct =
+
+    if ( $part_export->exporttype eq 'broadband_sqlradius' ) {
+
+      ( my $mac = $user ) =~ s/[^0-9a-f]//ig;
+
+      my @svc_broadband =
         grep { qsearchs( 'export_svc', {
                  'exportnum' => $part_export->exportnum,
                  'svcpart'   => $_->cust_svc->svcpart,
                } )
-             } qsearch( 'svc_acct', \%search );
-      if ( @svc_acct ) {
-        warn 'multiple svc_acct records for user $user found; '.
+             } qsearch( 'svc_broadband', {
+                          mac_addr => { op=>'ILIKE', value=>$mac }
+                      });
+
+      if ( @svc_broadband ) {
+        warn 'multiple svc_broadband records for user $user found; '.
              'using first arbitrarily'
-          if scalar(@svc_acct) > 1;
-        $user2svc_acct{$user} = $svc_acct = shift @svc_acct;
+          if scalar(@svc_broadband) > 1;
+        $user2svc{$user} = $svc = shift @svc_broadband;
       }
-    } 
+
+    } else {
+
+      my %search = ();
+      if ( $part_export->exporttype eq 'sqlradius_withdomain' ) {
+        my $domain;
+        if ( $user =~ /^([^@]+)\@([^@]+)$/ ) {
+         $search{'username'} = $1;
+         $domain = $2;
+       } else {
+         $search{'username'} = $user;
+         $domain = $session->{'realm'};
+       }
+       my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
+       if ( $svc_domain ) {
+         $search{'domsvc'} = $svc_domain->svcnum;
+       } else {
+         delete $search{'username'};
+       }
+      } elsif ( $part_export->exporttype eq 'sqlradius' ) {
+        $search{'username'} = $user;
+      } else {
+        die 'unknown export type '. $part_export->exporttype.
+            " for $part_export\n";
+      }
+      if ( keys %search ) {
+        my @svc_acct =
+          grep { qsearchs( 'export_svc', {
+                   'exportnum' => $part_export->exportnum,
+                   'svcpart'   => $_->cust_svc->svcpart,
+                 } )
+               } qsearch( 'svc_acct', \%search );
+        if ( @svc_acct ) {
+          warn 'multiple svc_acct records for user $user found; '.
+               'using first arbitrarily'
+            if scalar(@svc_acct) > 1;
+          $user2svc{$user} = $svc = shift @svc_acct;
+        }
+      } 
+
+    }
+
   }
 
-  if ( $svc_acct ) { 
-    my $svcnum = $svc_acct->svcnum;
-    qq(<A HREF="${p}view/svc_acct.cgi?$svcnum"><B>$user</B></A>);
+  if ( $svc ) { 
+
+    #i should use svc_link, but that's expensive per-user
+    my $svcnum = $svc->svcnum;
+    my $table = $svc->table;
+    qq(<A HREF="${p}view/$table.cgi?$svcnum"><B>$user</B></A>);
+
   } else {
     "<B>$user</B>";
   }
@@ -224,9 +255,9 @@ my $user_format = sub {
 
 my $customer_format = sub {
   my( $unused, $session ) = @_;
-  return '&nbsp;' unless exists $user2svc_acct{$session->{'username'}};
-  my $svc_acct = $user2svc_acct{$session->{'username'}};
-  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+  return '&nbsp;' unless exists $user2svc{$session->{'username'}};
+  my $svc = $user2svc{$session->{'username'}};
+  my $cust_pkg = $svc->cust_svc->cust_pkg;
   return '&nbsp;' unless $cust_pkg;
   my $cust_main = $cust_pkg->cust_main;
 
