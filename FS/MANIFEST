@@ -707,3 +707,5 @@ FS/cust_credit_void.pm
 t/cust_credit_void.t
 FS/discount_class.pm
 t/discount_class.t
+FS/addr_range.pm
+t/addr_range.t

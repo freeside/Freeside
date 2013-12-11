@@ -1,0 +1,22 @@
+<& elements/process.html,
+  'table'           => 'addr_range',
+  'popup_reload'    => 'Address range changed',
+  'precheck_callback' => sub {
+    my ($cgi) = @_;
+    my $start = NetAddr::IP->new($cgi->param('start'), 0)
+      or return 'Illegal or empty (IP address) start: '.$cgi->param('start');
+    if ( length($cgi->param('end')) ) {
+      my $end = NetAddr::IP->new($cgi->param('end'), 0)
+        or return 'Illegal or empty (IP address) end: '.$cgi->param('end');
+      if ( $end < $start ) {
+        ($start, $end) = ($end, $start);
+        $cgi->param('end', $end->addr);
+        $cgi->param('start', $start->addr);
+      }
+      $cgi->param('length', $end - $start + 1);
+    } else {
+      $cgi->param('length', 1);
+    }
+    '';
+  },
+&>

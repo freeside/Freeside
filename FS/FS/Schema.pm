@@ -2988,6 +2988,18 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    'addr_range' => {
+      'columns' => [
+        'rangenum', 'serial', '', '', '', '',
+        'start',    'varchar', '', 15, '', '',
+        'length',   'int', '', '', '', '',
+        'status',   'varchar', 'NULL', 32, '', '',
+      ],
+      'primary_key' => 'rangenum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
     'svc_broadband' => {
       'columns' => [
         'svcnum',                  'int',     '',        '', '', '', 

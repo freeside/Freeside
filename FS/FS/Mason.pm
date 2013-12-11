@@ -347,6 +347,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cable_provider;
   use FS::cust_credit_void;
   use FS::discount_class;
+  use FS::addr_range;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

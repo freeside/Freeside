@@ -108,6 +108,9 @@ Example:
     # overrides default popurl(1)."process/$table.html"
     'post_url' => popurl(1).'process/something', 
 
+    # optional link to delete this object; primary key will be appended
+    'delete_url' => $p.'misc/delete-something.html?',
+
     #we're in a popup (no title/menu/searchboxes)
     'popup' => 1,
 
@@ -207,6 +210,7 @@ Example:
 %       "View all $items" => $viewall_url,
 %     );
 %   }
+
 
   <% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
                 $title,
@@ -765,6 +769,23 @@ Example:
                               : "Add ". ($opt{'name'} || $opt{'name_singular'})
                          %>"
       >
+%     if ( $opt{'delete_url'} and $object->get($pkey) ) {
+%       my $delete_msg = 'Delete this '.
+%          ($opt{'name_singular'} || $opt{'name'});
+%       my $delete_url = $opt{'delete_url'};
+%       $delete_url .= '?' unless $delete_url =~ /\?/;
+%       $delete_url .= $object->get($pkey);
+        <SCRIPT TYPE="text/javascript">
+        function confirm_delete() {
+          if(confirm(<% $delete_msg . '?' |js_string %>)) {
+            window.location.href = <% $delete_url |js_string %>;
+          }
+        }
+        </SCRIPT>
+        <INPUT TYPE     = "button"
+               VALUE    = "<% $delete_msg |h %>"
+               onclick  = "confirm_delete()">
+%     }
 %   }
 
   </FORM>

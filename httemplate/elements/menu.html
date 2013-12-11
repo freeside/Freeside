@@ -501,6 +501,10 @@ tie my %config_broadband, 'Tie::IxHash',
   'Routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
   'Address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
 ;
+if ( $curuser->access_right('Broadband global configuration') ) {
+  $config_broadband{'Address ranges'} = 
+                      [ $fsurl.'browse/addr_range.html', 'Designate special address ranges' ];
+}
 
 tie my %config_phone, 'Tie::IxHash',
   'View/Edit phone device types' => [ $fsurl.'browse/part_device.html', 'Phone device types' ],

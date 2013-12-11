@@ -1,0 +1,21 @@
+% if ( $error ) {
+<& /elements/errorpage-popup.html, $error &>
+% } else {
+<& /elements/header-popup.html, "Address range deleted" &>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+</BODY>
+</HTML>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
+
+my ($rangenum) = $cgi->keywords;
+$rangenum =~ /^\d+$/ or die "bad rangenum '$rangenum'";
+my $addr_range = FS::addr_range->by_key($rangenum);
+die "unknown rangenum $rangenum" unless $addr_range;
+my $error = $addr_range->delete;
+</%init>
