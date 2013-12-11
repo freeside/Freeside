@@ -23,8 +23,8 @@
 % } 
 
 
-<& svc_acct/radius_usage.html,
-              'svc_acct' => $svc_acct,
+<& elements/svc_radius_usage.html,
+              'svc'      => $svc_acct,
               'part_svc' => $part_svc,
               'cust_pkg' => $cust_pkg,
               %gopt,

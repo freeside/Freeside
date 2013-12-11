@@ -667,7 +667,7 @@ sub usage_sessions {
     $opt = shift;
     $start    = $opt->{stoptime_start};
     $end      = $opt->{stoptime_end};
-    $svc_acct = $opt->{svc_acct};
+    $svc_acct = $opt->{svc} || $opt->{svc_acct};
     $ip       = $opt->{ip};
     $prefix   = $opt->{prefix};
     $summarize   = $opt->{summarize};

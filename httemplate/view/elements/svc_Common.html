@@ -50,6 +50,14 @@ function areyousure(href) {
 
 % } 
 
+% if ( $opt{radius_usage} ) {
+    <& svc_radius_usage.html,
+              'svc'      => $svc_x,
+              'part_svc' => $part_svc,
+              'cust_pkg' => $cust_pkg,
+    &>
+% }
+
 <% mt('Service #') |h %><B><% $svcnum %></B>
 % if ( $custnum ) {
 %   my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
