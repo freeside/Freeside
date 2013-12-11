@@ -336,6 +336,7 @@ sub _check_duplcate { ''; }
 sub preinsert_hook { ''; }
 sub table_dupcheck_fields { (); }
 sub prereplace_hook { ''; }
+sub prereplace_hook_first { ''; }
 sub predelete_hook { ''; }
 sub predelete_hook_first { ''; }
 
