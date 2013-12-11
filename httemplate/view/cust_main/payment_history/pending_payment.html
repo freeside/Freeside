@@ -3,10 +3,6 @@
 
 my( $cust_pay_pending, %opt ) = @_;
 
-my $conf = new FS::Conf;
-
-my $curuser = $FS::CurrentUser::CurrentUser;
-
 my ($payby, $payinfo) = translate_payinfo($cust_pay_pending);
 my $target = "$payby$payinfo";
 $payby = translate_payby($payby,$payinfo);
