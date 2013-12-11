@@ -358,6 +358,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::cable_provider;
   use FS::cust_credit_void;
   use FS::discount_class;
+  use FS::alarm_system;
+  use FS::alarm_type;
+  use FS::alarm_station;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
