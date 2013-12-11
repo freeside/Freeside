@@ -5,8 +5,6 @@
 
 my( $cust_refund, %opt ) = @_;
 
-my $curuser = $FS::CurrentUser::CurrentUser;
-
 my $payby = $cust_refund->payby;
 my $payinfo = $payby eq 'CARD'
                 ? $cust_refund->paymask
@@ -34,8 +32,9 @@ $delete = areyousure_link("${p}misc/delete-cust_refund.cgi?".$cust_refund->refun
                            emt('Delete this refund from the database completely - not recommended'),
                            emt('delete')
                           ) 
-    if ( $cust_refund->closed !~ /^Y/i && $opt{'deleterefunds'} 
-                                && $curuser->access_right('Delete refund') );
+  if $cust_refund->closed !~ /^Y/i
+  && $opt{'deleterefunds'} 
+  && $opt{'Delete refund'};
 
 </%init>
 

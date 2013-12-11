@@ -14,8 +14,6 @@ my( $cust_credit_void, %opt ) = @_;
 
 my $date_format = $opt{'date_format'} || '%m/%d/%Y';
 
-my $curuser = $FS::CurrentUser::CurrentUser;
-
 #my $unvoid = ''; # not yet available
 my $reason = $cust_credit_void->reason;
 $reason = " ($reason)" if $reason;

@@ -3,10 +3,6 @@
 
 my( $cust_bill, %opt ) = @_;
 
-my $conf = new FS::Conf;
-
-my $curuser = $FS::CurrentUser::CurrentUser;
-
 my $invoice = emt("Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed);
 
 my $under = '';
@@ -22,12 +18,12 @@ if ( $cust_bill->owed > 0 ) {
 
 my $invnum = $cust_bill->invnum;
 
-my $link = $curuser->access_right('View invoices')
+my $link = $opt{'View invoices'}
              ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
              : '';
 
 my $void = '';
-if ( $cust_bill->closed !~ /^Y/i && $curuser->access_right('Void invoices') ) {
+if ( $cust_bill->closed !~ /^Y/i && $opt{'Void invoices'} ) {
   $void =
     ' ('. include('/elements/popup_link.html',
                     'label'     => emt('void'),
@@ -44,15 +40,13 @@ $delete = areyousure_link("${p}misc/delete-cust_bill.html?$invnum",
                             emt('Delete this invoice from the database completely'),
                             emt('delete')
                         )
-    if ( $opt{'deleteinvoices'} && $curuser->access_right('Delete invoices') );
+    if ( $opt{'deleteinvoices'} && $opt{'Delete invoices'} );
 
 my $events = '';
-#1.9
 if ( $cust_bill->num_cust_event
-     && (    $curuser->access_right('Billing event reports')
-          || $curuser->access_right('View customer billing events')
-        )
-   ) {
+     && ($opt{'Billing event reports'} || $opt{'View customer billing events'})
+   )
+{
   $under .=
     qq!<BR><A HREF="${p}search/cust_event.html?invnum=$invnum">( !.
       emt('View invoice events').' )</A>';

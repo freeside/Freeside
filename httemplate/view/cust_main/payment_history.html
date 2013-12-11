@@ -396,12 +396,34 @@ my %status = (
 my @history = ();
 
 my %opt = (
+
+  #config
   ( map { $_ => scalar($conf->config($_)) }
         qw( card_refund-days date_format )
   ),
   ( map { $_ => $conf->exists($_) } 
-        qw( deleteinvoices deletepayments deleterefunds pkg-balances )
-  )
+        qw( deleteinvoices deletepayments deleterefunds pkg-balances
+            cust_credit_bill_pkg-manual cust_bill_pay_pkg-manual
+          )
+  ),
+  'money_char             ' => $money_char,
+
+  #rights
+  ( map { $_ => $curuser->access_right($_) }
+      (
+        'View invoices', 'Void invoices', 'Unvoid invoices', 'Delete invoices',
+        'Apply payment', 'Refund credit card payment', 'Refund Echeck payment',
+        'Credit card void', 'Echeck void', 'Void payments', 'Unvoid payments',
+        'Delete payment', 'Unapply payment',
+        'Apply credit', 'Delete Credit', 'Unapply credit',
+        'Delete refund',
+        'Billing event reports', 'View customer billing events',
+      )
+  ),
+
+  #customer information
+  'total_owed'              => $cust_main->total_owed,
+  'total_unapplied_refunds' => $cust_main->total_unapplied_refunds,
 );
 
 $opt{'date_format'} ||= '%m/%d/%Y';
