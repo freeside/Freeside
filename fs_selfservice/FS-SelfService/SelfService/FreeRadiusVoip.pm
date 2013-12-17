@@ -51,6 +51,7 @@ sub authorize {
     return RLM_MODULE_REJECT;
   } elsif ( $response->{'seconds'} ) {
     $RAD_REPLY{'Session-Timeout'} = $response->{'seconds'};
+    $RAD_REPLY{'Termination-Action'} = 0;
     return RLM_MODULE_OK;
   } else {
     # if the called number is free, put 1 in the Termination-Action attribute
