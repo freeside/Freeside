@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::router;
+use FS::addr_range;
 use FS::svc_broadband;
 use FS::Conf;
 use FS::IP_Mixin;
