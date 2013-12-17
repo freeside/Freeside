@@ -4,6 +4,7 @@ use strict;
 use NetAddr::IP;
 use FS::addr_block;
 use FS::router;
+use FS::addr_range;
 use FS::Record qw(qsearch);
 use FS::Conf;
 # careful about importing anything here--it will end up in a LOT of 
