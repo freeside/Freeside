@@ -652,6 +652,57 @@ sub subloc_address2 {
   ($subloc, $addr2);
 }
 
+sub standardize_melissa {
+  my $class = shift;
+  my $location = shift;
+
+  local $@;
+  eval "use Geo::Melissa::WebSmart";
+  die $@ if $@;
+
+  my $id = $conf->config('melissa-userid')
+    or die "no melissa-userid configured\n";
+  my $geocode = $conf->exists('melissa-enable_geocoding') ? 1 : 0;
+
+  my $request = {
+    id      => $id,
+    a1      => $location->{address1},
+    a2      => $location->{address2},
+    city    => $location->{city},
+    state   => $location->{state},
+    ctry    => $location->{country},
+    zip     => $location->{zip},
+    geocode => $geocode,
+  };
+  my $result = Geo::Melissa::WebSmart->query($request);
+  if ( $result->code =~ /AS01/ ) { # always present on success
+    my $addr = $result->address;
+    warn Dumper $addr if $DEBUG > 1;
+    my $out = {
+      address1    => $addr->{Address1},
+      address2    => $addr->{Address2},
+      city        => $addr->{City}->{Name},
+      state       => $addr->{State}->{Abbreviation},
+      country     => $addr->{Country}->{Abbreviation},
+      zip         => $addr->{Zip},
+      latitude    => $addr->{Latitude},
+      longitude   => $addr->{Longitude},
+      addr_clean  => 'Y',
+    };
+    if ( $addr->{Census}->{Tract} ) {
+      my $censustract = $addr->{County}->{Fips} . $addr->{Census}->{Tract};
+      # insert decimal point two digits from the end
+      $censustract =~ s/(\d\d)$/\.$1/;
+      $out->{censustract} = $censustract;
+      $out->{censusyear} = $conf->config('census_year');
+    }
+    # we could do a lot more nuanced reporting of the warning/status codes,
+    # but the UI doesn't support that yet.
+    return $out;
+  } else {
+    die $result->status_message;
+  }
+}
 
 =back
 
