@@ -48,7 +48,7 @@ if ( $balance > 0 ) { #XXXFIXME "enable selfservice prepay features" flag or som
                 }
   }
 
-  if ( exists( $payby_mode{PREP} ) ) {
+  if ( exists( $payby_mode{PREPAY} ) ) {
     push @menu, { title  => 'Recharge my account with a prepaid card',
                   url    => 'recharge_prepay',
                   indent => 2,
