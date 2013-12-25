@@ -146,8 +146,8 @@ my $view =
 my $refund = '';
 my $refund_days = $opt{'card_refund-days'} || 120;
 my $refund_right = '';
-$refund_right = 'Refund credit card payment' if $payby eq 'CARD';
-$refund_right = 'Refund Echeck payment'      if $payby eq 'CHEK';
+$refund_right = 'Refund credit card payment' if $cust_pay->payby eq 'CARD';
+$refund_right = 'Refund Echeck payment'      if $cust_pay->payby eq 'CHEK';
 if (    $cust_pay->closed !~ /^Y/i
      && $cust_pay->payby =~ /^(CARD|CHEK)$/
      && time-$cust_pay->_date < $refund_days*86400
