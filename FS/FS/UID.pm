@@ -16,9 +16,11 @@ use IO::File;
 use FS::CurrentUser;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
-                getotaker dbh datasrc getsecrets driver_name myconnect
-                use_confcompat);
+@EXPORT_OK = qw( checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
+                 preuser_setup
+                 getotaker dbh datasrc getsecrets driver_name myconnect
+                 use_confcompat
+               );
 
 $DEBUG = 0;
 $me = '[FS::UID]';
@@ -148,6 +150,84 @@ sub forksuidsetup {
 
   $dbh;
 }
+
+# start of backported functions from HEAD/4.x only used in development w/
+#  a new style AuthCookie setup
+sub preuser_setup {
+  $dbh->disconnect if $dbh;
+  env_setup();
+  db_setup();
+  callback_setup();
+  $dbh;
+}
+
+sub env_setup {
+
+  $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/bin';
+  $ENV{'SHELL'} = '/bin/sh';
+  $ENV{'IFS'} = " \t\n";
+  $ENV{'CDPATH'} = '';
+  $ENV{'ENV'} = '';
+  $ENV{'BASH_ENV'} = '';
+
+}
+
+sub db_setup {
+  my $olduser = shift;
+
+  croak "Not running uid freeside (\$>=$>, \$<=$<)\n" unless checkeuid();
+
+  warn "$me forksuidsetup connecting to database\n" if $DEBUG;
+  if ( $FS::CurrentUser::upgrade_hack && $olduser ) {
+    $dbh = &myconnect($olduser);
+  } else {
+    $dbh = &myconnect();
+  }
+  warn "$me forksuidsetup connected to database with handle $dbh\n" if $DEBUG;
+
+  warn "$me forksuidsetup loading schema\n" if $DEBUG;
+  use FS::Schema qw(reload_dbdef dbdef);
+  reload_dbdef("$conf_dir/dbdef.$datasrc")
+    unless $FS::Schema::setup_hack;
+
+  warn "$me forksuidsetup deciding upon config system to use\n" if $DEBUG;
+
+  if ( ! $FS::Schema::setup_hack && dbdef->table('conf') ) {
+
+    my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    my $confcount = $sth->fetchrow_arrayref->[0];
+  
+    if ($confcount) {
+      $use_confcompat = 0;
+    }else{
+      die "NO CONFIGURATION RECORDS FOUND";
+    }
+
+  } else {
+    die "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
+  }
+
+
+}
+# end of backported functions from HEAD/4.x only used in development
+
+sub callback_setup {
+
+  unless ( $callback_hack ) {
+    warn "$me calling callbacks\n" if $DEBUG;
+    foreach ( keys %callback ) {
+      &{$callback{$_}};
+      # breaks multi-database installs # delete $callback{$_}; #run once
+    }
+
+    &{$_} foreach @callback;
+  } else {
+    warn "$me skipping callbacks (callback_hack set)\n" if $DEBUG;
+  }
+
+}
+
 
 sub myconnect {
   my $handle = DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
