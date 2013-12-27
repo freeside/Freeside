@@ -41,6 +41,7 @@ tie our %locales, 'Tie::IxHash',
   'fr_HT', { name => 'French',         country => 'Haiti', },
   'ht_HT', { name => 'Haitian Creole', country => 'Haiti', },
   'iw_IL', { name => 'Hebrew',         country => 'Israel', rtl=>1, },
+  'es_AR', { name => 'Spanish',        country => 'Argentina', },
 ;
 
 $_->{label} = $_->{name} . ' (' . $_->{country} . ')'
