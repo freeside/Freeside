@@ -133,11 +133,6 @@ if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
 
 #eslaf
 
-my $hue = 0;
-#my $hue_increment = 170;
-#my $hue_increment = 145;
-my $hue_increment = 125;
-
 my @items  = ();
 my @params = ();
 my @labels = ();
@@ -165,14 +160,15 @@ elsif ( $use_usage == 2 ) {
 # If per-agent totals are enabled, they go under the Agent level.
 # There aren't any other kinds of subtotals.
 
-foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
+my $anum = 0;
+foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->agents ) {
 
-  my $col_scheme = Color::Scheme->new
-                     ->from_hue($hue) #->from_hex($agent->color)
-                     ->scheme('analogic')
-                   ;
-  my @recur_colors = ();
-  my @onetime_colors = ();
+  my @agent_colors = map { my $col = $cgi->param("agent$anum-color$_");
+                           $col =~ s/^#//;
+                           $col;
+                         }
+                       (0 .. 5);
+  my @colorbuf = ();
 
   ### fixup the color handling for package classes...
   ### and usage
@@ -219,11 +215,8 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         $rowlink .= "$class_param=$_;" foreach @classnums;
         push @links, $rowlink;
 
-        @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
-          unless @recur_colors;
-        @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
-          unless @onetime_colors;
-        push @colors, shift @recur_colors;
+        @colorbuf = @agent_colors unless @colorbuf;
+        push @colors, shift @colorbuf;
         push @no_graph, 0;
 
       } #foreach $component
@@ -260,11 +253,8 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
                        "distribute=$distribute;".
                        "use_override=$use_override;charges=$component;";
 
-          @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
-            unless @recur_colors;
-          @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
-            unless @onetime_colors;
-          push @colors, shift @recur_colors;
+          @colorbuf = @agent_colors unless @colorbuf;
+          push @colors, shift @colorbuf;
           push @no_graph, 0;
 
         } #foreach $component
@@ -314,7 +304,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
     push @no_graph, 1;
   }
 
-  $hue += $hue_increment;
+  $anum++;
 
 }
 

@@ -441,6 +441,7 @@ sub agents {
     'table'     => 'agent',
     'hashref'   => { disabled=>'' },
     'extra_sql' => ' AND '. $self->agentnums_sql(@_),
+    'order_by'  => 'ORDER BY agent',
   });
 }
 

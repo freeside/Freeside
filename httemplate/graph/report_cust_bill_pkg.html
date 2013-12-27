@@ -1,4 +1,11 @@
-<% include('/elements/header.html', 'Sales Report' ) %>
+<& /elements/header.html,
+     { title => 'Sales Report',
+       head  => '
+  <SCRIPT TYPE="text/javascript"  SRC="'. $p. 'elements/jquery.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript"  SRC="'. $p. 'elements/spectrum.js"></SCRIPT>
+  <LINK   REL="stylesheet"       HREF="'. $p. 'elements/spectrum.css" />',
+     }
+&>
 
 <FORM ACTION="cust_bill_pkg.cgi" METHOD="GET">
 
@@ -16,6 +23,24 @@
 </TR>
 
 <SCRIPT TYPE="text/javascript">
+
+function agent_changed(obj) {
+
+  if ( obj.value == '' ) { //breakdown, one color list per agent needed
+    document.getElementById('agent0-label').style.display = '';
+%   for ( 1 .. $#agents ) {
+      document.getElementById('agent<% $_ %>-colors').style.display = '';
+%   }
+  } else { //aggregate, only one color list needed
+    document.getElementById('agent0-label').style.display = 'none';
+%   for ( 1 .. $#agents ) {
+      document.getElementById('agent<% $_ %>-colors').style.display = 'none';
+%   }
+  } 
+
+  enable_agent_totals(obj);
+}
+
 function enable_agent_totals(obj) {
 %# enable it iff we are breaking down by agent AND something else
   obj.form.agent_totals.disabled = !(
@@ -56,7 +81,7 @@ window.onload = class_mode_changed;
   'disable_empty' => 0,
   'pre_options'   => [ 'all' => 'all (aggregate)' ],
   'empty_label'   => 'all (breakdown)',
-  'onchange'      => 'enable_agent_totals',
+  'onchange'      => 'agent_changed',
 &>
 
 <& /elements/tr-select-cust_class.html,
@@ -159,6 +184,64 @@ window.onload = class_mode_changed;
 % }
 
 <TR>
+  <TD ALIGN="right">Colors</TD>
+  <TD>
+%   my @names = ();
+%
+%   #no particular long-term attachment to this, just trying to replicate
+%   # historical behavior so people's graphs don't change color suddenly in 3.x
+%   my $hue = 0;
+%   my $hue_increment = 125;
+
+      <TABLE>
+%       my $anum = 0;
+%       foreach my $agent ( @agents ) {
+          <TR <% $anum ? 'STYLE="display:none"' : '' %>
+              ID="agent<%$anum%>-colors"
+          >
+            <TD <% $anum ? '' :'STYLE="display:none"' %>
+                ID="agent<%$anum%>-label"
+            >
+              <% $agent->agent |h %>
+            </TD>
+            <TD>
+%            my $col_scheme = Color::Scheme->new
+%                               ->from_hue($hue) #->from_hex($agent->color)
+%                               ->scheme('analogic')
+%                             ;
+%
+%            my $cnum = 0;
+%            my @colors = ($col_scheme->colors)[ 0,4,8,1,5,9 ];#again some some random historical shite
+%            for (@colors) {
+%              my $name = "agent$anum-color$cnum";
+%              push @names, $name;
+%              $cnum++;
+               <INPUT TYPE  = "color"
+                      NAME  = "<% $name %>"
+                      ID    = "<% $name %>"
+                      VALUE = "#<%$_%>"
+               >
+%            }
+            </TD>
+          </TR>
+%         $anum++;
+%         $hue += $hue_increment;
+%       }
+     </TABLE>
+  </TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+  $(document).ready(function() {
+%   foreach my $name (@names) {
+      $("#<% $name %>").spectrum({
+        clickoutFiresChange: true
+      });
+%   }
+  });
+</SCRIPT>
+
+<TR>
   <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="agent_totals" VALUE="1" DISABLED="1"></TD>
   <TD>Show per-agent subtotals</TD>
 </TR>
@@ -188,5 +271,7 @@ window.onload = class_mode_changed;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my @agents = $FS::CurrentUser::CurrentUser->agents;
 
 </%init>
