@@ -1,15 +1,21 @@
 package FS::TemplateItem_Mixin;
 
 use strict;
-use vars qw( $DEBUG $me ); # but NOT $conf
+use vars qw( $DEBUG $me $conf $date_format );
 use Carp;
+use Date::Format;
 use FS::UID;
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::Conf;
 use FS::part_pkg;
 use FS::cust_pkg;
 
 $DEBUG = 0;
 $me = '[FS::TemplateItem_Mixin]';
+FS::UID->install_callback( sub { 
+  $conf = new FS::Conf;
+  $date_format      = $conf->config('date_format')      || '%x'; #/YY
+} );
 
 =item cust_pkg
 
@@ -61,6 +67,51 @@ sub desc {
     $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
     $desc;
   }
+}
+
+=item time_period_pretty PART_PKG, AGENTNUM
+
+Returns a formatted time period for this line item.
+
+=cut
+
+sub time_period_pretty {
+  my( $self, $part_pkg, $agentnum ) = @_;
+
+  #more efficient to look some of this conf stuff up outside the
+  # invoice/template display loop we're called from
+  # (Template_Mixin::_invoice_cust_bill_pkg) and pass them in as options
+
+  return '' if $conf->exists('disable_line_item_date_ranges')
+            || $part_pkg->option('disable_line_item_date_ranges',1)
+            || ! $self->sdate
+            || ! $self->edate;
+
+  my $date_style = '';
+  $date_style = $conf->config( 'cust_bill-line_item-date_style-non_monhtly',
+                               $agentnum
+                             )
+    if $part_pkg && $part_pkg->freq !~ /^1m?$/;
+  $date_style ||= $conf->config( 'cust_bill-line_item-date_style',
+                                  $agentnum
+                               );
+
+  my $time_period;
+  if ( defined($date_style) && $date_style eq 'month_of' ) {
+    $time_period = time2str('The month of %B', $self->sdate);
+  } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
+    my $desc = $conf->config( 'cust_bill-line_item-date_description',
+                               $agentnum
+                            );
+    $desc .= ' ' unless $desc =~ /\s$/;
+    $time_period = $desc. time2str('%B', $self->sdate);
+  } else {
+    $time_period =      time2str($date_format, $self->sdate).
+                 " - ". time2str($date_format, $self->edate);
+  }
+
+  " ($time_period)";
+
 }
 
 =item details [ OPTION => VALUE ... ]

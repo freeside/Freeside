@@ -15,6 +15,7 @@ use Locale::Country;
 use Cwd;
 use FS::UID;
 use FS::Record qw( qsearch qsearchs );
+use FS::Conf;
 use FS::Misc qw( generate_ps generate_pdf );
 use FS::pkg_category;
 use FS::pkg_class;
@@ -2485,6 +2486,7 @@ sub _items_cust_bill_pkg {
           if $DEBUG > 1;
  
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
+        my $part_pkg = $cust_pkg->part_pkg;
 
         # which pkgpart to show for display purposes?
         my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
@@ -2493,7 +2495,7 @@ sub _items_cust_bill_pkg {
         # things with them
         my %item_dates = ();
         %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate')
-          unless $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1);
+          unless $part_pkg->option('disable_line_item_date_ranges',1);
 
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
@@ -2510,6 +2512,14 @@ sub _items_cust_bill_pkg {
             if $cust_bill_pkg->recur != 0
             || $discount_show_always
             || $cust_bill_pkg->recur_show_zero;
+
+          $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
+                                                              $self->agentnum )
+            if $part_pkg->is_prepaid #for prepaid, "display the validity period
+                                     # triggered by the recurring charge freq
+                                     # (RT#26274)
+            && $cust_bill_pkg->recur == 0
+            && ! $cust_bill_pkg->recur_show_zero;
 
           my @d = ();
           my $svc_label;
@@ -2581,37 +2591,8 @@ sub _items_cust_bill_pkg {
 
           my $part_pkg = $cust_pkg->part_pkg;
 
-          #pry be a bit more efficient to look some of this conf stuff up
-          # outside the loop
-          unless (
-            $conf->exists('disable_line_item_date_ranges')
-              || $part_pkg->option('disable_line_item_date_ranges',1)
-              || ! $cust_bill_pkg->sdate
-              || ! $cust_bill_pkg->edate
-          ) {
-            my $time_period;
-            my $date_style = '';
-            $date_style = $conf->config( 'cust_bill-line_item-date_style-non_monhtly',
-                                         $self->agentnum
-                                       )
-              if $part_pkg && $part_pkg->freq !~ /^1m?$/;
-            $date_style ||= $conf->config( 'cust_bill-line_item-date_style',
-                                            $self->agentnum
-                                         );
-            if ( defined($date_style) && $date_style eq 'month_of' ) {
-              $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
-            } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
-              my $desc = $conf->config( 'cust_bill-line_item-date_description',
-                                         $self->agentnum
-                                      );
-              $desc .= ' ' unless $desc =~ /\s$/;
-              $time_period = $desc. time2str('%B', $cust_bill_pkg->sdate);
-            } else {
-              $time_period =      time2str($date_format, $cust_bill_pkg->sdate).
-                           " - ". time2str($date_format, $cust_bill_pkg->edate);
-            }
-            $description .= " ($time_period)";
-          }
+          $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
+                                                              $self->agentnum );
 
           my @d = ();
           my @seconds = (); # for display of usage info
