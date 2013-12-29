@@ -3890,7 +3890,7 @@ sub tables_hashref {
       'index'        => [],
       'foreign_keys' => [
                           { columns    => [ 'svcnum' ],
-                            table      => 'svc_broadband',#no?  could be _acct?
+                            table      => 'svc_broadband',#no? could be _acct?
                                                           #remove or cust_svc?
                           },
                         ],
