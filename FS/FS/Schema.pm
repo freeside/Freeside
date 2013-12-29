@@ -1206,7 +1206,10 @@ sub tables_hashref {
         'first',     'varchar',     '', $char_d, '', '', 
         'title',     'varchar', 'NULL', $char_d, '', '', #eg Head Bottle Washer
         'comment',   'varchar', 'NULL',     255, '', '', 
-        'disabled',     'char', 'NULL',       1, '', '', 
+        'selfservice_access',    'char', 'NULL',       1, '', '',
+        '_password',          'varchar', 'NULL', $char_d, '', '',
+        '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
+        'disabled',              'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'contactnum',
       'unique'      => [],
