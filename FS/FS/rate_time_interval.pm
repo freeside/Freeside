@@ -1,8 +1,7 @@
 package FS::rate_time_interval;
+use base qw(FS::Record);
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 use List::Util 'first';
 
 =head1 NAME
@@ -135,13 +134,6 @@ sub check {
 =item rate_time
 
 Returns the L<FS::rate_time> comprising this interval.
-
-=cut
-
-sub rate_time {
-  my $self = shift;
-  FS::rate_time->by_key($self->ratetimenum);
-}
 
 =item description
 

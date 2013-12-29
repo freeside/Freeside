@@ -1,13 +1,7 @@
 package FS::cust_credit_refund;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::cust_main_Mixin;
-use FS::cust_credit;
-use FS::cust_refund;
-
-@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 
@@ -126,12 +120,10 @@ sub check {
   return "amount must be > 0" if $self->amount <= 0;
 
   return "unknown cust_credit.crednum: ". $self->crednum
-    unless my $cust_credit =
-      qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
+    unless my $cust_credit = $self->cust_credit;
 
   return "Unknown refund"
-    unless my $cust_refund =
-      qsearchs( 'cust_refund', { 'refundnum' => $self->refundnum } );
+    unless my $cust_refund = $self->cust_refund;
 
   $self->_date(time) unless $self->_date;
 
@@ -148,23 +140,9 @@ sub check {
 
 Returns the refund (see L<FS::cust_refund>)
 
-=cut
-
-sub cust_refund {
-  my $self = shift;
-  qsearchs( 'cust_refund', { 'refundnum' => $self->refundnum } );
-}
-
 =item cust_credit
 
 Returns the credit (see L<FS::cust_credit>)
-
-=cut
-
-sub cust_credit {
-  my $self = shift;
-  qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
-}
 
 =back
 

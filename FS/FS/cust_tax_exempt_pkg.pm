@@ -1,18 +1,11 @@
 package FS::cust_tax_exempt_pkg;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_main_Mixin;
-use FS::cust_bill_pkg;
-use FS::cust_main_county;
-use FS::cust_credit_bill_pkg;
 use FS::UID qw(dbh);
 use FS::upgrade_journal;
 
 # some kind of common ancestor with cust_bill_pkg_tax_location would make sense
-
-@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 
@@ -182,11 +175,6 @@ Returns the associated tax definition if it still exists in the database.
 Otherwise returns false.
 
 =cut
-
-sub cust_main_county {
-  my $self = shift;
-  qsearchs( 'cust_main_county', { 'taxnum', $self->taxnum } );
-}
 
 sub _upgrade_data {
   my $class = shift;

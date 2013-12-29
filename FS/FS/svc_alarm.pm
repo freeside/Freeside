@@ -1,9 +1,8 @@
 package FS::svc_alarm;
+use base qw( FS::svc_Common );
 
 use strict;
-use base qw( FS::svc_Common );
 use Tie::IxHash;
-use FS::Record qw( qsearchs ); # qw( qsearch qsearchs );
 use FS::alarm_system;
 use FS::alarm_type;
 use FS::alarm_station;
@@ -207,16 +206,6 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
-}
-
-sub alarm_system  {
-  qsearchs('alarm_system',  { alarmsystemnum  => shift->alarmsystemnum  } );
-}
-sub alarm_type    {
-  qsearchs('alarm_type',    { alarmtypenum    => shift->alarmtypenum    } );
-}
-sub alarm_station {
-  qsearchs('alarm_station', { alarmstationnum => shift->alarmstationnum } );
 }
 
 =back

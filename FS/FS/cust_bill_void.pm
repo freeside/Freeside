@@ -3,7 +3,6 @@ use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record 
 
 use strict;
 use FS::Record qw( qsearch qsearchs dbh fields );
-use FS::cust_main;
 use FS::cust_statement;
 use FS::access_user;
 use FS::cust_bill_pkg_void;
@@ -247,13 +246,6 @@ sub void_access_user {
 }
 
 =item cust_main
-
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs('cust_main', { 'custnum' => $self->custnum } );
-}
 
 =item cust_bill_pkg
 

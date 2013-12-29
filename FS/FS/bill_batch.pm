@@ -1,16 +1,13 @@
 package FS::bill_batch;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA $me $DEBUG );
+use vars qw( $me $DEBUG );
 use CAM::PDF;
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::agent;
-use FS::cust_bill_batch;
 
-@ISA = qw( FS::Record );
 $me = '[ FS::bill_batch ]';
-$DEBUG=0;
+$DEBUG = 0;
 
 sub table { 'bill_batch' }
 
@@ -61,8 +58,7 @@ sub print_pdf {
   my $self = shift;
   my $job = shift;
   $job->update_statustext(0) if $job;
-  my @invoices = sort { $a->invnum <=> $b->invnum }
-                 qsearch('cust_bill_batch', { batchnum => $self->batchnum });
+  my @invoices = sort { $a->invnum <=> $b->invnum } $self->cust_bill_batch;
   return "No invoices in batch ".$self->batchnum.'.' if !@invoices;
 
   my $pdf_out;
@@ -117,13 +113,6 @@ sub check {
 =item agent
 
 Returns the agent (see L<FS::agent>) for this invoice batch.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
-}
 
 =back
 

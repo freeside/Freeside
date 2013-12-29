@@ -1,11 +1,9 @@
 package FS::cust_bill_pkg_tax_rate_location;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
-use FS::cust_bill_pkg;
 use FS::cust_pkg;
-use FS::tax_rate_location;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 
@@ -128,25 +126,9 @@ sub check {
 
 Returns the associated cust_bill_pkg object
 
-=cut
-
-sub cust_bill_pkg {
-  my $self = shift;
-  qsearchs( 'cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum }  );
-}
-
 =item tax_rate_location
 
 Returns the associated tax_rate_location object
-
-=cut
-
-sub tax_rate_location {
-  my $self = shift;
-  qsearchs( 'tax_rate_location',
-            { 'taxratelocationnum' => $self->taxratelocationnum }
-  );
-}
 
 =item desc
 

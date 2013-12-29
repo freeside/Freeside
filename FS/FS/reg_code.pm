@@ -1,12 +1,9 @@
 package FS::reg_code;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw(qsearch dbh);
-use FS::agent;
+use FS::Record qw( dbh ); # qsearch qsearchs dbh );
 use FS::reg_code_pkg;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -197,14 +194,6 @@ sub part_pkg {
 =item reg_code_pkg
 
 Returns all FS::reg_code_pkg records for this registration code.
-
-=cut
-
-sub reg_code_pkg {
-  my $self = shift;
-  qsearch('reg_code_pkg', { 'codenum' => $self->codenum } );
-}
-
 
 =back
 

@@ -1,9 +1,7 @@
 package FS::vend_main;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearchs ); # qsearch qsearchs );
-use FS::vend_class;
 
 =head1 NAME
 
@@ -102,13 +100,6 @@ sub check {
 }
 
 =item vend_class
-
-=cut
-
-sub vend_class {
-  my $self = shift;
-  qsearchs('vend_class', { 'classnum' => $self->classnum } );
-}
 
 =back
 

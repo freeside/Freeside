@@ -1,7 +1,7 @@
 package FS::svc_phone;
+use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
 
 use strict;
-use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
 use vars qw( $DEBUG $me @pw_set $conf $phone_name_max
              $passwordmin $passwordmax
            );
@@ -13,7 +13,6 @@ use FS::Record qw( qsearch qsearchs dbh );
 use FS::PagedSearch qw( psearch );
 use FS::Msgcat qw(gettext);
 use FS::part_svc;
-use FS::phone_device;
 use FS::svc_pbx;
 use FS::svc_domain;
 use FS::cust_location;
@@ -695,11 +694,6 @@ sub sms_carriername {
 Returns any FS::phone_device records associated with this service.
 
 =cut
-
-sub phone_device {
-  my $self = shift;
-  qsearch('phone_device', { 'svcnum' => $self->svcnum } );
-}
 
 #override location_Mixin version cause we want to try the cust_pkg location
 #in between us and cust_main

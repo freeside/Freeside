@@ -1,10 +1,9 @@
 package FS::svc_mailinglist;
+use base qw( FS::svc_Domain_Mixin FS::svc_Common );
 
 use strict;
-use base qw( FS::svc_Domain_Mixin FS::svc_Common );
 use Scalar::Util qw( blessed );
-use FS::Record qw( qsearchs dbh ); # qsearch );
-use FS::svc_domain;
+use FS::Record qw( dbh ); # qsearch qsearchs dbh );
 use FS::mailinglist;
 
 =head1 NAME
@@ -289,13 +288,6 @@ sub check {
 }
 
 =item mailinglist
-
-=cut
-
-sub mailinglist {
-  my $self = shift;
-  qsearchs('mailinglist', { 'listnum' => $self->listnum } );
-}
 
 =item listname
 

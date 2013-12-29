@@ -1,13 +1,11 @@
 package FS::domain_record;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA $noserial_hack $DEBUG $me );
+use vars qw( $noserial_hack $DEBUG $me );
 use FS::Conf;
 use FS::Record qw( qsearchs dbh ); #qsearch
-use FS::svc_domain;
 use FS::svc_www;
-
-@ISA = qw(FS::Record);
 
 $DEBUG = 0;
 $me = '[FS::domain_record]';
@@ -369,13 +367,6 @@ sub increment_serial {
 =item svc_domain
 
 Returns the domain (see L<FS::svc_domain>) for this record.
-
-=cut
-
-sub svc_domain {
-  my $self = shift;
-  qsearchs('svc_domain', { svcnum => $self->svcnum } );
-}
 
 =item zone
 

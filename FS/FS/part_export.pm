@@ -1,16 +1,15 @@
 package FS::part_export;
+use base qw( FS::option_Common FS::m2m_Common );
 
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG %exports );
 use Exporter;
 use Tie::IxHash;
-use base qw( FS::option_Common FS::m2m_Common );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
 use FS::part_export_option;
 use FS::part_export_machine;
 use FS::svc_export_machine;
-use FS::export_svc;
 
 #for export modules, though they should probably just use it themselves
 use FS::queue;
@@ -449,23 +448,9 @@ sub part_export_machine {
 
 Returns a list of associated FS::export_svc records.
 
-=cut
-
-sub export_svc {
-  my $self = shift;
-  qsearch('export_svc', { 'exportnum' => $self->exportnum } );
-}
-
 =item export_device
 
 Returns a list of associated FS::export_device records.
-
-=cut
-
-sub export_device {
-  my $self = shift;
-  qsearch('export_device', { 'exportnum' => $self->exportnum } );
-}
 
 =item part_export_option
 

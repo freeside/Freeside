@@ -1,15 +1,9 @@
 package FS::cust_bill_pay;
+use base qw( FS::cust_main_Mixin FS::cust_bill_ApplicationCommon );
 
 use strict;
-use vars qw( @ISA $conf );
-use FS::Record qw( qsearchs );
-use FS::cust_main_Mixin;
-use FS::cust_bill_ApplicationCommon;
-use FS::cust_bill;
-use FS::cust_pay;
-use FS::cust_pkg;
-
-@ISA = qw( FS::cust_main_Mixin FS::cust_bill_ApplicationCommon );
+use vars qw( $conf );
+use FS::UID;
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -142,13 +136,6 @@ sub check {
 =item cust_pay 
 
 Returns the payment (see L<FS::cust_pay>)
-
-=cut
-
-sub cust_pay {
-  my $self = shift;
-  qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
-}
 
 =item send_receipt HASHREF | OPTION => VALUE ...
 

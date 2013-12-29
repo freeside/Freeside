@@ -1,11 +1,8 @@
 package FS::cgp_rule;
+use base qw( FS::o2m_Common FS::Record );
 
 use strict;
-use base qw( FS::o2m_Common FS::Record );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::cust_svc;
-use FS::cgp_rule_condition;
-use FS::cgp_rule_action;
+use FS::Record qw( dbh );
 
 =head1 NAME
 
@@ -80,36 +77,36 @@ otherwise returns false.
 
 =cut
 
-sub insert {
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->SUPER::insert(@_);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  #conditions and actions not in yet
-  #$error = $self->svc_export;
-  #if ( $error ) {
-  #  $dbh->rollback if $oldAutoCommit;
-  #  return $error;
-  #}
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
-}
+#  sub insert {
+#    my $self = shift;
+#  
+#    local $SIG{HUP} = 'IGNORE';
+#    local $SIG{INT} = 'IGNORE';
+#    local $SIG{QUIT} = 'IGNORE';
+#    local $SIG{TERM} = 'IGNORE';
+#    local $SIG{TSTP} = 'IGNORE';
+#    local $SIG{PIPE} = 'IGNORE';
+#  
+#    my $oldAutoCommit = $FS::UID::AutoCommit;
+#    local $FS::UID::AutoCommit = 0;
+#    my $dbh = dbh;
+#  
+#    my $error = $self->SUPER::insert(@_);
+#    if ( $error ) {
+#      $dbh->rollback if $oldAutoCommit;
+#      return $error;
+#    }
+#  
+#    #conditions and actions not in yet
+#    #$error = $self->svc_export;
+#    #if ( $error ) {
+#    #  $dbh->rollback if $oldAutoCommit;
+#    #  return $error;
+#    #}
+#  
+#    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+#    '';
+#  }
 
 =item delete
 
@@ -291,36 +288,10 @@ sub clone {
 
 =item cust_svc
 
-=cut
-
-sub cust_svc {
-  my $self = shift;
-  qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
-}
-
 =item cgp_rule_condition
 
 Returns the conditions associated with this rule, as FS::cgp_rule_condition
 objects.
-
-=cut
-
-sub cgp_rule_condition {
-  my $self = shift;
-  qsearch('cgp_rule_condition', { 'rulenum' => $self->rulenum } );
-}
-
-=item cgp_rule_action
-
-Returns the actions associated with this rule, as FS::cgp_rule_action
-objects.
-
-=cut
-
-sub cgp_rule_action {
-  my $self = shift;
-  qsearch('cgp_rule_action', { 'rulenum' => $self->rulenum } );
-}
 
 =item arrayref
 

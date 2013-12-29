@@ -1,11 +1,9 @@
 package FS::router;
+use base qw( FS::m2m_Common FS::Record );
 
 use strict;
-use vars qw( @ISA );
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::addr_block;
-
-@ISA = qw( FS::Record FS::m2m_Common );
 
 =head1 NAME
 
@@ -209,11 +207,6 @@ is enabled.
 
 =cut
 
-sub addr_block {
-  my $self = shift;
-  return qsearch('addr_block', { routernum => $self->routernum });
-}
-
 sub auto_addr_block {
   my $self = shift;
   return () if $self->manual_addr;
@@ -226,13 +219,6 @@ sub auto_addr_block {
 Returns a list of FS::part_svc_router objects associated with this 
 object.  This is unlikely to be useful for any purpose other than retrieving 
 the associated FS::part_svc objects.  See below.
-
-=cut
-
-sub part_svc_router {
-  my $self = shift;
-  return qsearch('part_svc_router', { routernum => $self->routernum });
-}
 
 =item part_svc
 
@@ -250,24 +236,11 @@ sub part_svc {
 
 Returns the agent associated with this router, if any.
 
-=cut
-
-sub agent {
-  qsearchs('agent', { 'agentnum' => shift->agentnum });
-}
-
 =item cust_svc
 
 Returns the cust_svc associated with this router, if any.  This should be
 the service that I<provides connectivity to the router>, not any service 
 connected I<through> the router.
-
-=cut
-
-sub cust_svc {
-  my $svcnum = shift->svcnum or return undef;
-  FS::cust_svc->by_key($svcnum);
-}
 
 =back
 

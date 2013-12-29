@@ -1,13 +1,9 @@
 package FS::export_svc;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::part_export;
-use FS::part_svc;
+use FS::Record qw( dbh qsearch ); #qsearchs );
 use FS::svc_export_machine;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -319,23 +315,9 @@ sub check {
 
 Returns the FS::part_export object (see L<FS::part_export>).
 
-=cut
-
-sub part_export {
-  my $self = shift;
-  qsearchs( 'part_export', { 'exportnum' => $self->exportnum } );
-}
-
 =item part_svc
 
 Returns the FS::part_svc object (see L<FS::part_svc>).
-
-=cut
-
-sub part_svc {
-  my $self = shift;
-  qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
-}
 
 =item svc_export_machine
 

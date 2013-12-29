@@ -1,12 +1,7 @@
 package FS::part_svc_router;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw(qsearchs);
-use FS::router;
-use FS::part_svc;
-
-@ISA = qw(FS::Record);
 
 sub table { 'part_svc_router'; }
 
@@ -18,16 +13,6 @@ sub check {
     || $self->ut_foreign_key('routernum', 'router', 'routernum');
   return $error if $error;
   ''; #no error
-}
-
-sub router {
-  my $self = shift;
-  return qsearchs('router', { routernum => $self->routernum });
-}
-
-sub part_svc {
-  my $self = shift;
-  return qsearchs('part_svc', { svcpart => $self->svcpart });
 }
 
 1;

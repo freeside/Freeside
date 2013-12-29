@@ -1,10 +1,8 @@
 package FS::part_export_machine;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( dbh qsearch ); #qsearchs );
-use FS::part_export;
-use FS::svc_export_machine;
+use FS::Record qw( dbh ); #qsearch qsearchs );
 
 =head1 NAME
 
@@ -133,13 +131,6 @@ sub check {
 }
 
 =item svc_export_machine
-
-=cut
-
-sub svc_export_machine {
-  my $self = shift;
-  qsearch( 'svc_export_machine', { 'machinenum' => $self->machinenum } );
-}
 
 =back
 

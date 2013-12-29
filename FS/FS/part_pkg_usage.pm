@@ -1,8 +1,7 @@
 package FS::part_pkg_usage;
+use base qw( FS::m2m_Common FS::Record );
 
 use strict;
-use base qw( FS::m2m_Common FS::Record );
-use FS::Record qw( qsearch qsearchs );
 use Scalar::Util qw(blessed);
 
 =head1 NAME
@@ -138,10 +137,7 @@ pool.
 sub classnums {
   my $self = shift;
   if (!$self->get('classnums')) {
-    my $classnums = [
-      map { $_->classnum }
-      qsearch('part_pkg_usage_class', { 'pkgusagepart' => $self->pkgusagepart })
-    ];
+    my $classnums = [ map { $_->classnum } $self->part_pkg_usage_class ];
     $self->set('classnums', $classnums);
   }
   @{ $self->get('classnums') };

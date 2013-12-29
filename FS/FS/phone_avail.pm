@@ -1,14 +1,12 @@
 package FS::phone_avail;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA $DEBUG $me );
+use vars qw( $DEBUG $me );
+use FS::Misc::DateTime qw( parse_datetime );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
-use FS::Misc::DateTime qw( parse_datetime );
 use FS::msa;
-use Data::Dumper;
-
-@ISA = qw(FS::cust_main_Mixin FS::Record);
 
 $me = '[FS::phone_avail]';
 $DEBUG = 0;
@@ -176,23 +174,7 @@ sub cust_svc {
 
 =item part_export
 
-=cut
-
-sub part_export {
-  my $self = shift;
-  return '' unless $self->exportnum;
-  qsearchs('part_export', { 'exportnum' => $self->exportnum });
-}
-
 =item lata 
-
-=cut
-
-sub lata {
-  my $self = shift;
-  return '' unless $self->latanum;
-  qsearchs('lata', { 'latanum' => $self->latanum });
-}
 
 =item msa2msanum
 

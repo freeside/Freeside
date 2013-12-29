@@ -1,10 +1,7 @@
 package FS::part_pkg_discount;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::discount;
-use FS::part_pkg;
 
 =head1 NAME
 
@@ -107,13 +104,6 @@ sub check {
 =item discount
 
 Returns the discount associated with this part_pkg_discount.
-
-=cut
-
-sub discount {
-  my $self = shift;
-  qsearchs('discount', { 'discountnum' => $self->discountnum });
-}
 
 =back
 

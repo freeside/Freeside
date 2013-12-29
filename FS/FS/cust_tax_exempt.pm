@@ -1,13 +1,7 @@
 package FS::cust_tax_exempt;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_main_Mixin;
-use FS::cust_main;
-use FS::cust_main_county;
-
-@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 
@@ -127,13 +121,6 @@ sub check {
 =item cust_main_county
 
 Returns the FS::cust_main_county object associated with this tax exemption.
-
-=cut
-
-sub cust_main_county {
-  my $self = shift;
-  qsearchs( 'cust_main_county', { 'taxnum' => $self->taxnum } );
-}
 
 =back
 

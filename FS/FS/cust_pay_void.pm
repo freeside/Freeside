@@ -1,8 +1,8 @@
 package FS::cust_pay_void; 
-
-use strict;
 use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
              FS::Record );
+
+use strict;
 use vars qw( @encrypted_fields $otaker_upgrade_kludge );
 use Business::CreditCard;
 use FS::Record qw(qsearch qsearchs dbh fields);
@@ -12,7 +12,6 @@ use FS::cust_pay;
 #use FS::cust_bill;
 #use FS::cust_bill_pay;
 #use FS::cust_pay_refund;
-#use FS::cust_main;
 use FS::cust_pkg;
 
 @encrypted_fields = ('payinfo');
@@ -206,13 +205,6 @@ sub check {
 =item cust_main
 
 Returns the parent customer object (see L<FS::cust_main>).
-
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-}
 
 =item void_access_user
 

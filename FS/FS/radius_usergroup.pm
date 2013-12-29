@@ -1,12 +1,10 @@
 package FS::radius_usergroup;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
 use FS::svc_acct;
 use FS::radius_group;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -126,11 +124,6 @@ sub svc_acct {
 Returns the RADIUS group associated with this record (see L<FS::radius_group>).
 
 =cut
-
-sub radius_group {
-  my $self = shift;
-  qsearchs('radius_group', { 'groupnum'  => $self->groupnum } );
-}
 
 sub _upgrade_data {  #class method
   my ($class, %opts) = @_;

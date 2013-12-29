@@ -1,8 +1,7 @@
 package FS::hardware_type;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
@@ -114,13 +113,6 @@ sub check {
 =item hardware_class
 
 Returns the L<FS::hardware_class> associated with this device.
-
-=cut
-
-sub hardware_class {
-  my $self = shift;
-  return qsearchs('hardware_class', { 'classnum' => $self->classnum });
-}
 
 =item description
 

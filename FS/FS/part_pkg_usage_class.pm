@@ -1,8 +1,7 @@
 package FS::part_pkg_usage_class;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 

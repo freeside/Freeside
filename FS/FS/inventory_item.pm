@@ -1,13 +1,7 @@
 package FS::inventory_item;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( dbh qsearch qsearchs );
-use FS::cust_main_Mixin;
-use FS::inventory_class;
-use FS::cust_svc;
-
-@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 
@@ -123,24 +117,9 @@ sub check {
 Returns the customer service associated with this inventory item, if the
 item has been used (see L<FS::cust_svc>).
 
-=cut
-
-sub cust_svc {
-  my $self = shift;
-  return '' unless $self->svcnum;
-  qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
-}
-
 =item agent 
 
 Returns the associated agent for this event, if any, as an FS::agent object.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs('agent', { 'agentnum' => $self->agentnum } );
-}
 
 =back
 

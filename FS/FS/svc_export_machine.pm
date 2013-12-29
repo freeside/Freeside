@@ -1,11 +1,9 @@
 package FS::svc_export_machine;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearchs ); #qsearch );
 use FS::cust_svc;
 use FS::part_export;
-use FS::part_export_machine;
 
 sub _svc_child_partfields { ('exportnum') };
 
@@ -106,13 +104,6 @@ sub check {
 }
 
 =item part_export_machine
-
-=cut
-
-sub part_export_machine {
-  my $self = shift;
-  qsearchs('part_export_machine', { 'machinenum' => $self->machinenum } );
-}
 
 =back
 

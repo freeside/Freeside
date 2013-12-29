@@ -1,13 +1,8 @@
 package FS::cust_bill_pay_pkg;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA );
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_bill_pay;
-use FS::cust_bill_pkg;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -171,23 +166,9 @@ sub check {
 Returns the FS::cust_bill_pay object (payment application to the overall
 invoice).
 
-=cut
-
-sub cust_bill_pay {
-  my $self = shift;
-  qsearchs('cust_bill_pay', { 'billpaynum' => $self->billpaynum } );
-}
-
 =item cust_bill_pkg
 
 Returns the FS::cust_bill_pkg object (line item to which payment is applied).
-
-=cut
-
-sub cust_bill_pkg {
-  my $self = shift;
-  qsearchs('cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum } );
-}
 
 =item send_receipt
 

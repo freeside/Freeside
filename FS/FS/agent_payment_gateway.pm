@@ -1,11 +1,7 @@
 package FS::agent_payment_gateway;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::payment_gateway;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -116,13 +112,6 @@ sub check {
 }
 
 =item payment_gateway
-
-=cut
-
-sub payment_gateway {
-  my $self = shift;
-  qsearchs('payment_gateway', { 'gatewaynum' => $self->gatewaynum } );
-}
 
 =back
 

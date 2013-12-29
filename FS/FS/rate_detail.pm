@@ -1,14 +1,13 @@
 package FS::rate_detail;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA $DEBUG $me );
+use vars qw( $DEBUG $me );
+use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::rate;
 use FS::rate_region;
 use FS::rate_time;
-use Tie::IxHash;
-
-@ISA = qw(FS::Record);
 
 $DEBUG = 0;
 $me = '[FS::rate_detail]';
@@ -146,13 +145,6 @@ sub check {
 
 Returns the parent call plan (see L<FS::rate>) associated with this call plan
 rate.
-
-=cut
-
-sub rate {
-  my $self = shift;
-  qsearchs('rate', { 'ratenum' => $self->ratenum } );
-}
 
 =item orig_region 
 

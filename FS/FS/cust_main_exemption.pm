@@ -1,10 +1,8 @@
 package FS::cust_main_exemption;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
-use FS::cust_main;
 
 =head1 NAME
 

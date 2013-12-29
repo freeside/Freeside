@@ -1,12 +1,9 @@
 package FS::mailinglistmember;
+use base qw(FS::Record);
 
 use strict;
-use base qw( FS::Record );
 use Scalar::Util qw( blessed );
-use FS::Record qw( dbh qsearchs ); # qsearch );
-use FS::mailinglist;
-use FS::svc_acct;
-use FS::contact_email;
+use FS::Record qw( dbh ); # qsearch qsearchs dbh );
 
 =head1 NAME
 
@@ -202,13 +199,6 @@ sub check {
 }
 
 =item mailinglist
-
-=cut
-
-sub mailinglist {
-  my $self = shift;
-  qsearchs('mailinglist', { 'listnum' => $self->listnum } );
-}
 
 =item email_address
 

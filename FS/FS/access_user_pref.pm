@@ -1,10 +1,7 @@
 package FS::access_user_pref;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 

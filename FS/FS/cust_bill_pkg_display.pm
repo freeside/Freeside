@@ -1,10 +1,7 @@
 package FS::cust_bill_pkg_display;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -146,17 +143,9 @@ sub check {
 Returns the associated cust_bill_pkg (see L<FS::cust_bill_pkg>) for this
 line item display object.
 
-=cut
-
-sub cust_bill_pkg {
-  my $self = shift;
-  qsearchs( 'cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum } ) ;
-}
-
 =back
 
 =head1 BUGS
-
 
 =head1 SEE ALSO
 

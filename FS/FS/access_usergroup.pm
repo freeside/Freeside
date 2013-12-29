@@ -1,12 +1,7 @@
 package FS::access_usergroup;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::access_user;
-use FS::access_group;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -113,21 +108,7 @@ sub check {
 
 =item access_user
 
-=cut
-
-sub access_user {
-  my $self = shift;
-  qsearchs( 'access_user', { 'usernum' => $self->usernum } );
-}
-
 =item access_group
-
-=cut
-
-sub access_group {
-  my $self = shift;
-  qsearchs( 'access_group', { 'groupnum' => $self->groupnum } );
-}
 
 =back
 

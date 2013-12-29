@@ -1,9 +1,8 @@
 package FS::export_nas;
+use base qw( FS::Record );
 
 use strict;
 use vars qw($noexport_hack);
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 
 $noexport_hack = '';
 
@@ -123,16 +122,6 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
-}
-
-sub part_export {
-  my $self = shift;
-  qsearchs('part_export', { 'exportnum' => $self->exportnum });
-}
-
-sub nas {
-  my $self = shift;
-  qsearchs('nas', { 'nasnum' => $self->nasnum });
 }
 
 =back

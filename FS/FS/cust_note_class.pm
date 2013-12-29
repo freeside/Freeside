@@ -1,8 +1,7 @@
 package FS::cust_note_class;
+use base qw( FS::class_Common );
 
 use strict;
-use base qw( FS::class_Common );
-use FS::cust_main_note;
 
 =head1 NAME
 

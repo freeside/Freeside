@@ -33,11 +33,6 @@ sub otaker {
   }
 }
 
-sub access_user {
-  my $self = shift;
-  qsearchs('access_user', { 'usernum' => $self->usernum } );
-}
-
 sub _upgrade_otaker {
   my $class = shift;
   my $table = $class->table;

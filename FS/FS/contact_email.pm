@@ -2,8 +2,6 @@ package FS::contact_email;
 use base qw( FS::Record );
 
 use strict;
-use FS::Record qw( qsearch qsearchs );
-use FS::contact;
 
 =head1 NAME
 
@@ -110,11 +108,6 @@ sub check {
   }
 
   $self->SUPER::check;
-}
-
-sub contact {
-  my $self = shift;
-  qsearchs( 'contact', { 'contactnum' => $self->contactnum } );
 }
 
 =back

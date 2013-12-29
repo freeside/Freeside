@@ -1,9 +1,11 @@
 package FS::radius_attr;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 use vars qw( $noexport_hack );
+use FS::Record qw( qsearch ); #qsearchs );
+
+$noexport_hack = 0;
 
 =head1 NAME
 
@@ -173,13 +175,6 @@ sub check {
 =item radius_group
 
 Returns the L<FS::radius_group> object to which this attribute applies.
-
-=cut
-
-sub radius_group {
-  my $self = shift;
-  qsearchs('radius_group', { 'groupnum' => $self->groupnum });
-}
 
 =back
 

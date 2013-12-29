@@ -1,12 +1,10 @@
 package FS::acct_snarf;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
 use Tie::IxHash;
 use FS::Record qw( qsearchs );
 use FS::cust_svc;
-
-@ISA = qw( FS::Record );
 
 =head1 NAME
 

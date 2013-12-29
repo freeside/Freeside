@@ -1,8 +1,8 @@
 package FS::qual;
+use base qw( FS::option_Common );
 
 use strict;
-use base qw( FS::option_Common );
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw(dbh);
 
 =head1 NAME
 
@@ -102,7 +102,7 @@ sub insert {
 
   my @qual_option = ();
   if ( $self->exportnum ) {
-    my $export = qsearchs( 'part_export', { 'exportnum' => $self->exportnum } )
+    my $export = $self->part_export
       or die 'Invalid exportnum';
 
     my $qres = $export->qual($self);
@@ -176,27 +176,6 @@ sub check {
   $self->SUPER::check;
 }
 
-sub part_export {
-    my $self = shift;
-    if ( $self->exportnum ) {
-	return qsearchs('part_export', { exportnum => $self->exportnum } )
-		or die 'invalid exportnum';
-    }
-    '';
-}
-
-sub cust_location {
-  my $self = shift;
-  return '' unless $self->locationnum;
-  qsearchs('cust_location', { 'locationnum' => $self->locationnum } );
-}
-
-sub cust_main {
-  my $self = shift;
-  return '' unless $self->custnum;
-  qsearchs('cust_main', { 'custnum' => $self->custnum } );
-}
-
 sub location_hash {
   my $self = shift;
 
@@ -221,17 +200,12 @@ sub location_hash {
 sub cust_or_prospect {
     my $self = shift;
     if ( $self->locationnum ) {
-	my $l = qsearchs( 'cust_location', 
-		    { 'locationnum' => $self->locationnum });
-	return qsearchs('cust_main',{ 'custnum' => $l->custnum })
-	    if $l->custnum;
-	return qsearchs('prospect_main',{ 'prospectnum' => $l->prospectnum })
-	    if $l->prospectnum;
+	my $l = $self->cust_location;
+	return $l->cust_main     if $l->custnum;
+	return $l->prospect_main if $l->prospectnum;
     }
-    return qsearchs('cust_main', { 'custnum' => $self->custnum }) 
-	if $self->custnum;
-    return qsearchs('prospect_main', { 'prospectnum' => $self->prospectnum })
-	if $self->prospectnum;
+    return $self->cust_main     if $self->custnum;
+    return $self->cust_prospect if $self->prospectnum;
     '';
 }
 

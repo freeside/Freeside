@@ -1,8 +1,7 @@
 package FS::cdr_cust_pkg_usage;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
@@ -101,16 +100,6 @@ Returns the L<FS::cust_pkg_usage> object that this usage allocation came from.
 =item cdr
 
 Returns the L<FS::cdr> object that the usage was applied to.
-
-=cut
-
-sub cust_pkg_usage {
-  FS::cust_pkg_usage->by_key($_[0]->pkgusagenum);
-}
-
-sub cdr {
-  FS::cdr->by_key($_[0]->acctid);
-}
 
 =back
 

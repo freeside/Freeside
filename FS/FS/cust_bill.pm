@@ -15,7 +15,6 @@ use GD::Barcode;
 use FS::UID qw( datasrc );
 use FS::Misc qw( send_email send_fax do_print );
 use FS::Record qw( qsearch qsearchs dbh );
-use FS::cust_main;
 use FS::cust_statement;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
@@ -25,12 +24,10 @@ use FS::cust_pay;
 use FS::cust_pkg;
 use FS::cust_credit_bill;
 use FS::pay_batch;
-use FS::cust_pay_batch;
 use FS::cust_bill_event;
 use FS::cust_event;
 use FS::part_pkg;
 use FS::cust_bill_pay;
-use FS::cust_bill_pay_batch;
 use FS::part_bill_event;
 use FS::payby;
 use FS::bill_batch;
@@ -492,7 +489,9 @@ sub cust_bill_pkg {
   qsearch(
     { 'table'    => 'cust_bill_pkg',
       'hashref'  => { 'invnum' => $self->invnum },
-      'order_by' => 'ORDER BY billpkgnum',
+      'order_by' => 'ORDER BY billpkgnum', #important?  otherwise we could use
+                                           # the AUTLOADED FK search.  or should
+                                           # that default to ORDER by the pkey?
     }
   );
 }
@@ -634,13 +633,6 @@ sub num_cust_event {
 
 Returns the customer (see L<FS::cust_main>) for this invoice.
 
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-}
-
 =item cust_suspend_if_balance_over AMOUNT
 
 Suspends the customer associated with this invoice if the total amount owed on
@@ -699,16 +691,6 @@ sub cust_pay {
   #sort { $a->_date <=> $b->_date }
   #  qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
   #;
-}
-
-sub cust_pay_batch {
-  my $self = shift;
-  qsearch('cust_pay_batch', { 'invnum' => $self->invnum } );
-}
-
-sub cust_bill_pay_batch {
-  my $self = shift;
-  qsearch('cust_bill_pay_batch', { 'invnum' => $self->invnum } );
 }
 
 =item cust_bill_pay

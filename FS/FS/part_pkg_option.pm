@@ -1,11 +1,9 @@
 package FS::part_pkg_option;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( dbh ); # qw( qsearch qsearchs dbh );
 use FS::part_pkg;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 

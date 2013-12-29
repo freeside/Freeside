@@ -1,11 +1,8 @@
 package FS::part_export_option;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::part_export;
-
-@ISA = qw(FS::Record);
+use FS::Record qw( qsearchs ); #qw( qsearch qsearchs );
 
 =head1 NAME
 

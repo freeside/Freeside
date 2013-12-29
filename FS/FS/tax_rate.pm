@@ -1,7 +1,8 @@
 package FS::tax_rate;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA $DEBUG $me
+use vars qw( $DEBUG $me
              %tax_unittypes %tax_maxtypes %tax_basetypes %tax_authorities
              %tax_passtypes %GetInfoType $keep_cch_files );
 use Date::Parse;
@@ -11,6 +12,7 @@ use Storable qw( thaw nfreeze );
 use IO::File;
 use File::Temp;
 use Text::CSV_XS;
+use URI::Escape;
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Response;
@@ -28,10 +30,6 @@ use FS::part_pkg_taxrate;
 use FS::part_pkg_taxproduct;
 use FS::cust_main;
 use FS::Misc qw( csv_from_fixed );
-
-use URI::Escape;
-
-@ISA = qw( FS::Record );
 
 $DEBUG = 0;
 $me = '[FS::tax_rate]';

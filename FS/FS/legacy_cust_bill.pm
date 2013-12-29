@@ -1,9 +1,7 @@
 package FS::legacy_cust_bill;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_main;
 
 =head1 NAME
 
@@ -143,13 +141,6 @@ sub check {
 =item cust_main
 
 Returns the customer (see L<FS::cust_main>) for this invoice.
-
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-}
 
 =back
 

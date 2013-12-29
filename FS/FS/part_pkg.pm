@@ -16,15 +16,12 @@ use FS::cust_pkg;
 use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg_option;
-use FS::pkg_class;
-use FS::agent;
 use FS::part_pkg_msgcat;
 use FS::part_pkg_taxrate;
 use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
 use FS::part_pkg_link;
 use FS::part_pkg_discount;
-use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
 use FS::part_pkg_currency;
 
@@ -844,17 +841,6 @@ sub custom_comment {
 Returns the package class, as an FS::pkg_class object, or the empty string
 if there is no package class.
 
-=cut
-
-sub pkg_class {
-  my $self = shift;
-  if ( $self->classnum ) {
-    qsearchs('pkg_class', { 'classnum' => $self->classnum } );
-  } else {
-    return '';
-  }
-}
-
 =item addon_pkg_class
 
 Returns the add-on package class, as an FS::pkg_class object, or the empty
@@ -920,13 +906,6 @@ sub addon_classname {
 
 Returns the associated agent for this event, if any, as an FS::agent object.
 
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs('agent', { 'agentnum' => $self->agentnum } );
-}
-
 =item pkg_svc [ HASHREF | OPTION => VALUE ]
 
 Returns all FS::pkg_svc objects (see L<FS::pkg_svc>) for this package
@@ -944,11 +923,6 @@ Returns all FS::type_pkgs objects (see L<FS::type_pkgs>) for this package
 definition.
 
 =cut
-
-sub type_pkgs {
-  my $self = shift;
-  qsearch('type_pkgs', { 'pkgpart' => $self->pkgpart } );
-}
 
 sub pkg_svc {
   my $self = shift;
@@ -1205,13 +1179,6 @@ sub plandata {
 Returns all vendor/external package ids as FS::part_pkg_vendor objects (see
 L<FS::part_pkg_vendor>).
 
-=cut
-
-sub part_pkg_vendor {
-  my $self = shift;
-  qsearch('part_pkg_vendor', { 'pkgpart' => $self->pkgpart } );
-}
-
 =item vendor_pkg_ids
 
 Returns a list of vendor/external package ids by exportnum
@@ -1227,13 +1194,6 @@ sub vendor_pkg_ids {
 
 Returns all options as FS::part_pkg_option objects (see
 L<FS::part_pkg_option>).
-
-=cut
-
-sub part_pkg_option {
-  my $self = shift;
-  qsearch('part_pkg_option', { 'pkgpart' => $self->pkgpart } );
-}
 
 =item options 
 
@@ -1553,24 +1513,10 @@ sub part_pkg_taxrate {
 Returns the package to discount m2m records (see L<FS::part_pkg_discount>)
 for this package.
 
-=cut
-
-sub part_pkg_discount {
-  my $self = shift;
-  qsearch('part_pkg_discount', { 'pkgpart' => $self->pkgpart });
-}
-
 =item part_pkg_usage
 
 Returns the voice usage pools (see L<FS::part_pkg_usage>) defined for 
 this package.
-
-=cut
-
-sub part_pkg_usage {
-  my $self = shift;
-  qsearch('part_pkg_usage', { 'pkgpart' => $self->pkgpart });
-}
 
 =item _rebless
 

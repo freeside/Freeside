@@ -2,9 +2,6 @@ package FS::sales_pkg_class;
 use base qw( FS::Record );
 
 use strict;
-use FS::Record qw( qsearchs ); # qsearch qsearchs );
-use FS::sales;
-use FS::pkg_class;
 
 =head1 NAME
 
@@ -108,11 +105,6 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
-}
-
-sub pkg_class {
-  my $self = shift;
-  qsearchs('pkg_class', { 'classnum' => $self->classnum });
 }
 
 sub classname {

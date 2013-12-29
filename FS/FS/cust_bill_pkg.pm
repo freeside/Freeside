@@ -8,7 +8,6 @@ use List::Util qw( sum min );
 use Text::CSV_XS;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
-use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
 use FS::cust_bill_pkg_discount;
@@ -510,13 +509,6 @@ sub regularize_details {
 =item cust_bill
 
 Returns the invoice (see L<FS::cust_bill>) for this invoice line item.
-
-=cut
-
-sub cust_bill {
-  my $self = shift;
-  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-}
 
 =item previous_cust_bill_pkg
 

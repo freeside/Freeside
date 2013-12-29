@@ -1,8 +1,8 @@
 package FS::cust_credit_void; 
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
-use FS::Record qw(qsearch qsearchs dbh fields);
+use FS::Record qw(qsearchs); # qsearch qsearchs);
 use FS::CurrentUser;
 use FS::access_user;
 use FS::cust_credit;
@@ -99,13 +99,6 @@ sub check {
 =item cust_main
 
 Returns the parent customer object (see L<FS::cust_main>).
-
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-}
 
 =item void_access_user
 

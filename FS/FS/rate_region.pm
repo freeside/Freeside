@@ -1,12 +1,10 @@
 package FS::rate_region;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::rate_prefix;
 use FS::rate_detail;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 

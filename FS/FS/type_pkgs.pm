@@ -1,12 +1,7 @@
 package FS::type_pkgs;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearchs );
-use FS::agent_type;
-use FS::part_pkg;
-
-@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -95,23 +90,9 @@ sub check {
 
 Returns the FS::part_pkg object associated with this record.
 
-=cut
-
-sub part_pkg {
-  my $self = shift;
-  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
-}
-
 =item agent_type
 
 Returns the FS::agent_type object associated with this record.
-
-=cut
-
-sub agent_type {
-  my $self = shift;
-  qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
-}
 
 =cut
 

@@ -1,12 +1,7 @@
 package FS::access_groupagent;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::agent;
-use FS::access_group;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -114,23 +109,9 @@ sub check {
 
 Returns the associated FS::agent object.
 
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs('agent', { 'agentnum' => $self->agentnum } );
-}
-
 =item access_group
 
 Returns the associated FS::access_group object.
-
-=cut
-
-sub access_group {
-  my $self = shift;
-  qsearchs('access_group', { 'groupnum' => $self->groupnum } );
-}
 
 =back
 

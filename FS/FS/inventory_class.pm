@@ -1,10 +1,8 @@
 package FS::inventory_class;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( dbh qsearch qsearchs );
-
-@ISA = qw(FS::Record);
+use FS::Record qw( dbh ); # qsearch qsearchs dbh );
 
 =head1 NAME
 

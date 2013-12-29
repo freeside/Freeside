@@ -1,10 +1,7 @@
 package FS::tower_sector;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::tower;
-use FS::svc_broadband;
 
 =head1 NAME
 
@@ -123,13 +120,6 @@ sub check {
 
 Returns the tower for this sector, as an FS::tower object (see L<FS::tower>).
 
-=cut
-
-sub tower {
-  my $self = shift;
-  qsearchs('tower', { 'towernum'=>$self->towernum } );
-}
-
 =item description
 
 Returns a description for this sector including tower name.
@@ -149,13 +139,6 @@ sub description {
 =item svc_broadband
 
 Returns the services on this tower sector.
-
-=cut
-
-sub svc_broadband {
-  my $self = shift;
-  qsearch('svc_broadband', { 'sectornum' => $self->sectornum });
-}
 
 =back
 

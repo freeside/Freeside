@@ -1,9 +1,8 @@
 package FS::access_group;
+use base qw( FS::m2m_Common FS::m2name_Common FS::Record );
 
 use strict;
-use base qw(FS::m2m_Common FS::m2name_Common FS::Record);
 use FS::Record qw( qsearch qsearchs );
-use FS::access_groupagent;
 use FS::access_right;
 
 =head1 NAME
@@ -107,13 +106,6 @@ sub check {
 =item access_groupagent
 
 Returns all associated FS::access_groupagent records.
-
-=cut
-
-sub access_groupagent {
-  my $self = shift;
-  qsearch('access_groupagent', { 'groupnum' => $self->groupnum } );
-}
 
 =item access_rights
 

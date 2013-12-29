@@ -1,6 +1,4 @@
 package FS::svc_acct;
-
-use strict;
 use base qw( FS::svc_Domain_Mixin
              FS::svc_CGP_Mixin
              FS::svc_CGPRule_Mixin
@@ -8,6 +6,8 @@ use base qw( FS::svc_Domain_Mixin
              FS::svc_Tower_Mixin
              FS::svc_IP_Mixin
              FS::svc_Common );
+
+use strict;
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
@@ -55,7 +55,6 @@ use FS::part_export;
 use FS::svc_forward;
 use FS::svc_www;
 use FS::cdr;
-use FS::acct_snarf;
 use FS::tower_sector;
 
 $DEBUG = 0;
@@ -1903,14 +1902,6 @@ Returns an array of FS::acct_snarf records associated with the account.
 =cut
 
 # unused as originally intended, but now by Communigate Pro "RPOP"
-sub acct_snarf {
-  my $self = shift;
-  qsearch({
-    'table'    => 'acct_snarf',
-    'hashref'  => { 'svcnum' => $self->svcnum },
-    #'order_by' => 'ORDER BY priority ASC',
-  });
-}
 
 =item cgp_rpop_hashref
 

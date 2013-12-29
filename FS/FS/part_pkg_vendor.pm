@@ -1,8 +1,7 @@
 package FS::part_pkg_vendor;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
@@ -121,12 +120,6 @@ sub check {
 =item part_export
 
 Returns the L<FS::part_export> associated with this vendor/external package id.
-
-=cut
-sub part_export {
-    my $self = shift;
-    qsearchs( 'part_export', { 'exportnum' => $self->exportnum } );
-}
 
 =back
 

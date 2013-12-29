@@ -1,17 +1,15 @@
 package FS::cust_bill_pkg_tax_location;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use List::Util qw(sum min);
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_bill_pkg;
 use FS::cust_pkg;
-use FS::cust_location;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 use FS::cust_main_county;
 use FS::Log;
-
-use List::Util qw(sum min);
 
 =head1 NAME
 
@@ -138,13 +136,6 @@ sub check {
 
 Returns the associated cust_bill_pkg object (i.e. the tax charge).
 
-=cut
-
-sub cust_bill_pkg {
-  my $self = shift;
-  qsearchs( 'cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum }  );
-}
-
 =item taxable_cust_bill_pkg
 
 Returns the cust_bill_pkg object for the I<taxable> charge.
@@ -152,13 +143,6 @@ Returns the cust_bill_pkg object for the I<taxable> charge.
 =item cust_location
 
 Returns the associated cust_location object
-
-=cut
-
-sub cust_location {
-  my $self = shift;
-  qsearchs( 'cust_location', { 'locationnum' => $self->locationnum }  );
-}
 
 =item desc
 
@@ -243,7 +227,7 @@ sub upgrade_taxable_billpkgnum {
   # FS::cust_bill_pkg.
 
   my ($class, %opt) = @_;
-  my $dbh = FS::UID::dbh();
+  my $dbh = dbh;
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $log = FS::Log->new('upgrade_taxable_billpkgnum');

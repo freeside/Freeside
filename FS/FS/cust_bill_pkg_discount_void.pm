@@ -1,10 +1,7 @@
 package FS::cust_bill_pkg_discount_void;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record; # qw( qsearch qsearchs );
-use FS::cust_bill_pkg_void;
-use FS::cust_pkg_discount;
 
 =head1 NAME
 

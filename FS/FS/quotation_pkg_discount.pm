@@ -1,8 +1,7 @@
 package FS::quotation_pkg_discount;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 

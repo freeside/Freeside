@@ -1,7 +1,8 @@
 package FS::cust_main_county;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf
+use vars qw( @EXPORT_OK $conf
              @cust_main_county %cust_main_county $countyflag ); # $cityflag );
 use Exporter;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -12,7 +13,6 @@ use FS::part_pkg;
 use FS::cust_tax_exempt;
 use FS::cust_tax_exempt_pkg;
 
-@ISA = qw( FS::Record );
 @EXPORT_OK = qw( regionselector );
 
 @cust_main_county = ();

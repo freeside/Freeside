@@ -2,13 +2,7 @@ package FS::contact;
 use base qw( FS::Record );
 
 use strict;
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::prospect_main;
-use FS::cust_main;
-use FS::contact_class;
-use FS::cust_location;
-use FS::contact_phone;
-use FS::contact_email;
+use FS::Record qw( qsearchs dbh ); # qw( qsearch qsearchs dbh );
 
 =head1 NAME
 
@@ -411,37 +405,10 @@ sub line {
   $data;
 }
 
-sub cust_location {
-  my $self = shift;
-  return '' unless $self->locationnum;
-  qsearchs('cust_location', { 'locationnum' => $self->locationnum } );
-}
-
-sub contact_class {
-  my $self = shift;
-  return '' unless $self->classnum;
-  qsearchs('contact_class', { 'classnum' => $self->classnum } );
-}
-
 sub contact_classname {
   my $self = shift;
   my $contact_class = $self->contact_class or return '';
   $contact_class->classname;
-}
-
-sub contact_phone {
-  my $self = shift;
-  qsearch('contact_phone', { 'contactnum' => $self->contactnum } );
-}
-
-sub contact_email {
-  my $self = shift;
-  qsearch('contact_email', { 'contactnum' => $self->contactnum } );
-}
-
-sub cust_main {
-  my $self = shift;
-  qsearchs('cust_main', { 'custnum' => $self->custnum  } );
 }
 
 =back

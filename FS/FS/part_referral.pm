@@ -1,9 +1,9 @@
 package FS::part_referral;
+use base qw(FS::Record);
 
 use strict;
 use vars qw( @ISA $setup_hack );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::agent;
+use FS::Record qw( dbh qsearch ); #qsearchs );
 
 @ISA = qw( FS::Record );
 $setup_hack = 0;
@@ -114,13 +114,6 @@ sub check {
 =item agent 
 
 Returns the associated agent for this referral, if any, as an FS::agent object.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs('agent', { 'agentnum' => $self->agentnum } );
-}
 
 =back
 

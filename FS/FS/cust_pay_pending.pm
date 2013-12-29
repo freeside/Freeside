@@ -1,15 +1,10 @@
 package FS::cust_pay_pending;
+use base qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA  @encrypted_fields );
-use FS::Record qw( qsearch qsearchs dbh ); #dbh for _upgrade_data
-use FS::payinfo_transaction_Mixin;
-use FS::cust_main_Mixin;
-use FS::cust_main;
-use FS::cust_pkg;
+use vars qw( @encrypted_fields );
+use FS::Record qw( qsearchs dbh ); #dbh for _upgrade_data
 use FS::cust_pay;
-
-@ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
 @encrypted_fields = ('payinfo');
 sub nohistory_fields { ('payinfo'); }
@@ -259,12 +254,6 @@ sub check {
 Returns the associated L<FS::cust_main> record if any.  Otherwise returns false.
 
 =cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs('cust_main', { custnum => $self->custnum } );
-}
-
 
 #these two are kind-of false laziness w/cust_main::realtime_bop
 #(currently only used when resolving pending payments manually)

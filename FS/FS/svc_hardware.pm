@@ -1,10 +1,9 @@
 package FS::svc_hardware;
+use base qw( FS::svc_Common );
 
 use strict;
-use base qw( FS::svc_Common );
 use vars qw( $conf );
-use FS::Record qw( qsearch qsearchs );
-use FS::hardware_type;
+use FS::Record qw( qsearchs ); #qsearch qsearchs );
 use FS::hardware_status;
 use FS::Conf;
 
@@ -199,13 +198,6 @@ sub check {
 =item hardware_type
 
 Returns the L<FS::hardware_type> object associated with this installation.
-
-=cut
-
-sub hardware_type {
-  my $self = shift;
-  return qsearchs('hardware_type', { 'typenum' => $self->typenum });
-}
 
 =item status_label
 

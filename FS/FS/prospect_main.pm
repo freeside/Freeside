@@ -1,14 +1,11 @@
 package FS::prospect_main;
+use base qw( FS::Quotable_Mixin FS::o2m_Common FS::Record );
 
 use strict;
-use base qw( FS::Quotable_Mixin FS::o2m_Common FS::Record );
 use vars qw( $DEBUG @location_fields );
 use Scalar::Util qw( blessed );
-use FS::Record qw( dbh qsearch qsearchs );
-use FS::agent;
+use FS::Record qw( dbh qsearch ); # qsearchs );
 use FS::cust_location;
-use FS::contact;
-use FS::qual;
 
 $DEBUG = 0;
 
@@ -275,13 +272,6 @@ sub name {
 
 Returns the contacts (see L<FS::contact>) associated with this prospect.
 
-=cut
-
-sub contact {
-  my $self = shift;
-  qsearch( 'contact', { 'prospectnum' => $self->prospectnum } );
-}
-
 =item cust_location
 
 Returns the locations (see L<FS::cust_location>) associated with this prospect.
@@ -298,23 +288,9 @@ sub cust_location {
 
 Returns the qualifications (see L<FS::qual>) associated with this prospect.
 
-=cut
-
-sub qual {
-  my $self = shift;
-  qsearch( 'qual', { 'prospectnum' => $self->prospectnum } );
-}
-
 =item agent
 
 Returns the agent (see L<FS::agent>) for this customer.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
-}
 
 =item search HASHREF
 

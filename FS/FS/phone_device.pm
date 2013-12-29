@@ -1,11 +1,9 @@
 package FS::phone_device;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use Scalar::Util qw( blessed );
-use FS::Record qw( dbh qsearchs ); # qsearch );
-use FS::part_device;
-use FS::svc_phone;
+use FS::Record qw( dbh ); # qsearch qsearchs dbh );
 
 =head1 NAME
 
@@ -208,24 +206,10 @@ sub check {
 Returns the device type record (see L<FS::part_device>) associated with this
 customer device.
 
-=cut
-
-sub part_device {
-  my $self = shift;
-  qsearchs( 'part_device', { 'devicepart' => $self->devicepart } );
-}
-
 =item svc_phone
 
 Returns the phone number (see L<FS::svc_phone>) associated with this customer
 device.
-
-=cut
-
-sub svc_phone {
-  my $self = shift;
-  qsearchs( 'svc_phone', { 'svcnum' => $self->svcnum } );
-}
 
 =item export HOOK [ EXPORT_ARGS ]
 

@@ -1,11 +1,9 @@
 package FS::vend_bill;
+use base qw(FS::Record);
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( dbh qsearch qsearchs );
-use FS::vend_main;
+use FS::Record qw( dbh ); # qsearch qsearchs );
 use FS::vend_pay;
-use FS::vend_bill_pay;
 
 =head1 NAME
 
@@ -169,21 +167,7 @@ sub check {
 
 =item vend_main
 
-=cut
-
-sub vend_main {
-  my $self = shift;
-  qsearchs('vend_main', { 'vendnum', $self->vendnum });
-}
-
 =item vend_bill_pay
-
-=cut
-
-sub vend_bill_pay {
-  my $self = shift;
-  qsearch('vend_bill_pay', { 'vendbillnum', $self->vendbillnum });
-}
 
 =item search
 

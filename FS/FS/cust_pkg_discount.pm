@@ -1,9 +1,8 @@
 package FS::cust_pkg_discount;
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
-use FS::Record qw( dbh qsearchs ); # qsearch );
-use FS::cust_pkg;
+use FS::Record qw( dbh ); # qsearch qsearchs dbh );
 use FS::discount;
 
 =head1 NAME
@@ -184,23 +183,9 @@ sub check {
 
 Returns the customer package (see L<FS::cust_pkg>).
 
-=cut
-
-sub cust_pkg {
-  my $self = shift;
-  qsearchs('cust_pkg', { 'pkgnum' => $self->pkgnum } );
-}
-
 =item discount
 
 Returns the discount (see L<FS::discount>).
-
-=cut
-
-sub discount {
-  my $self = shift;
-  qsearchs('discount', { 'discountnum' => $self->discountnum } );
-}
 
 =item increment_months_used MONTHS
 

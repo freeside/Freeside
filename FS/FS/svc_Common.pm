@@ -1,14 +1,14 @@
 package FS::svc_Common;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA $noexport_hack $DEBUG $me
+use vars qw( $noexport_hack $DEBUG $me
              $overlimit_missing_cust_svc_nonfatal_kludge );
 use Carp qw( cluck carp croak confess ); #specify cluck have to specify them all
 use Scalar::Util qw( blessed );
 use Lingua::EN::Inflect qw( PL_N );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
-use FS::cust_main_Mixin;
 use FS::cust_svc;
 use FS::part_svc;
 use FS::queue;
@@ -16,8 +16,6 @@ use FS::cust_main;
 use FS::inventory_item;
 use FS::inventory_class;
 use FS::NetworkMonitoringSystem;
-
-@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $me = '[FS::svc_Common]';
 $DEBUG = 0;
@@ -30,9 +28,8 @@ FS::svc_Common - Object method for all svc_ records
 
 =head1 SYNOPSIS
 
-use FS::svc_Common;
-
-@ISA = qw( FS::svc_Common );
+package svc_myservice;
+use base qw( FS::svc_Common );
 
 =head1 DESCRIPTION
 
@@ -1009,13 +1006,6 @@ sub release_router {
 
 Returns the cust_svc record associated with this svc_ record, as a FS::cust_svc
 object (see L<FS::cust_svc>).
-
-=cut
-
-sub cust_svc {
-  my $self = shift;
-  qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
-}
 
 =item suspend
 

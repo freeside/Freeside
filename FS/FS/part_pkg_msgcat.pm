@@ -1,10 +1,8 @@
 package FS::part_pkg_msgcat;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Locales;
-#use FS::Record qw( qsearch qsearchs );
-use FS::part_pkg;
 
 =head1 NAME
 

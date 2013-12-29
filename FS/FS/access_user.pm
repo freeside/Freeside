@@ -1,14 +1,12 @@
 package FS::access_user;
+use base qw( FS::m2m_Common FS::option_Common ); 
 
 use strict;
-use base qw( FS::m2m_Common FS::option_Common ); 
 use vars qw( $DEBUG $me $conf );
 use FS::UID;
 use FS::Auth;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
-use FS::access_user_pref;
-use FS::access_usergroup;
 use FS::agent;
 use FS::cust_main;
 use FS::sales;
@@ -264,29 +262,6 @@ sub report_sales {
 
 Returns links to the the groups this user is a part of, as FS::access_usergroup
 objects (see L<FS::access_usergroup>).
-
-=cut
-
-sub access_usergroup {
-  my $self = shift;
-  qsearch( 'access_usergroup', { 'usernum' => $self->usernum } );
-}
-
-#=item access_groups
-#
-#=cut
-#
-#sub access_groups {
-#
-#}
-#
-#=item access_groupnames
-#
-#=cut
-#
-#sub access_groupnames {
-#
-#}
 
 =item agentnums 
 

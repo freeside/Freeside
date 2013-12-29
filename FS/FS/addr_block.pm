@@ -1,18 +1,14 @@
 package FS::addr_block;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearchs qsearch dbh );
-use FS::router;
-use FS::addr_range;
-use FS::svc_broadband;
-use FS::Conf;
-use FS::IP_Mixin;
-use NetAddr::IP;
 use Carp qw( carp );
 use List::Util qw( first );
-
-@ISA = qw( FS::Record );
+use NetAddr::IP;
+use FS::Conf;
+use FS::Record qw( qsearch dbh ); #qsearchs
+use FS::IP_Mixin;
+use FS::addr_range;
 
 =head1 NAME
 
@@ -184,24 +180,10 @@ sub check {
 Returns the FS::router object corresponding to this object.  If the 
 block is unassigned, returns undef.
 
-=cut
-
-sub router {
-  my $self = shift;
-  return qsearchs('router', { routernum => $self->routernum });
-}
-
 =item svc_broadband
 
 Returns a list of FS::svc_broadband objects associated
 with this object.
-
-=cut
-
-sub svc_broadband {
-  my $self = shift;
-  return qsearch('svc_broadband', { blocknum => $self->blocknum });
-}
 
 =item NetAddr
 
@@ -392,12 +374,6 @@ To be implemented.
 =item agent
 
 Returns the agent (see L<FS::agent>) for this address block, if one exists.
-
-=cut
-
-sub agent {
-  qsearchs('agent', { 'agentnum' => shift->agentnum } );
-}
 
 =item label
 

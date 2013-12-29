@@ -1,14 +1,14 @@
 package FS::svc_dsl;
+use base qw(FS::svc_Common);
 
 use strict;
-use vars qw( @ISA $conf $DEBUG $me );
+use vars qw( $conf $DEBUG $me );
+use FS::UID;
 use FS::Record qw( qsearch qsearchs );
 use FS::svc_Common;
-use FS::dsl_device;
 use FS::dsl_note;
 use FS::qual;
 
-@ISA = qw( FS::svc_Common );
 $DEBUG = 0;
 $me = '[FS::svc_dsl]';
 
@@ -295,11 +295,6 @@ Returns the MAC addresses associated with this DSL service, as FS::dsl_device
 objects.
 
 =cut
-
-sub dsl_device {
-  my $self = shift;
-  qsearch('dsl_device', { 'svcnum' => $self->svcnum });
-}
 
 sub predelete_hook_first {
     my $self = shift;

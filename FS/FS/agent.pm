@@ -7,9 +7,8 @@ use Business::CreditCard 0.28;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
-use FS::agent_type;
-use FS::agent_currency;
 use FS::reg_code;
+use FS::agent_payment_gateway;
 use FS::TicketSystem;
 use FS::Conf;
 
@@ -157,13 +156,6 @@ sub check {
 
 Returns the FS::agent_type object (see L<FS::agent_type>) for this agent.
 
-=cut
-
-sub agent_type {
-  my $self = shift;
-  qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
-}
-
 =item agent_cust_main
 
 Returns the FS::cust_main object (see L<FS::cust_main>), if any, for this
@@ -180,13 +172,6 @@ sub agent_cust_main {
 
 Returns the FS::agent_currency objects (see L<FS::agent_currency>), if any, for
 this agent.
-
-=cut
-
-sub agent_currency {
-  my $self = shift;
-  qsearch('agent_currency', { 'agentnum' => $self->agentnum } );
-}
 
 =item agent_currency_hashref
 

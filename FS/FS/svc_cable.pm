@@ -5,9 +5,6 @@ use base qw( FS::svc_MAC_Mixin
 
 use strict;
 use Tie::IxHash;
-use FS::Record qw( qsearchs ); # qw( qsearch qsearchs );
-use FS::cable_provider;
-use FS::cable_model;
 
 =head1 NAME
 
@@ -175,23 +172,9 @@ sub check {
 
 Returns the cable_provider object for this record.
 
-=cut
-
-sub cable_provider {
-  my $self = shift;
-  qsearchs('cable_provider', { 'providernum'=>$self->providernum } );
-}
-
 =item cable_model
 
 Returns the cable_model object for this record.
-
-=cut
-
-sub cable_model {
-  my $self = shift;
-  qsearchs('cable_model', { 'modelnum'=>$self->modelnum } );
-}
 
 =back
 

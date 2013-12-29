@@ -1,21 +1,19 @@
 package FS::pay_batch;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA $DEBUG %import_info %export_info $conf );
+use vars qw( $DEBUG %import_info %export_info $conf );
+use Scalar::Util qw(blessed);
+use IO::Scalar;
+use List::Util qw(sum);
 use Time::Local;
 use Text::CSV_XS;
+use Date::Parse qw(str2time);
+use Business::CreditCard qw(cardtype);
+use FS::Misc qw(send_email); # for error notification
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::Conf;
 use FS::cust_pay;
-use FS::agent;
-use Date::Parse qw(str2time);
-use Business::CreditCard qw(cardtype);
-use Scalar::Util 'blessed';
-use IO::Scalar;
-use FS::Misc qw(send_email); # for error notification
-use List::Util qw(sum);
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -147,21 +145,9 @@ sub check {
 
 Returns the L<FS::agent> object for this batch.
 
-=cut
-
-sub agent {
-  qsearchs('agent', { 'agentnum' => $_[0]->agentnum });
-}
-
 =item cust_pay_batch
 
 Returns all L<FS::cust_pay_batch> objects for this batch.
-
-=cut
-
-sub cust_pay_batch {
-  qsearch('cust_pay_batch', { 'batchnum' => $_[0]->batchnum });
-}
 
 =item rebalance
 

@@ -1,10 +1,10 @@
 package FS::tower;
+use base qw( FS::o2m_Common FS::Record );
 
 use strict;
-use base qw( FS::o2m_Common FS::Record );
+use List::Util qw( max );
 use FS::Record qw( qsearch qsearchs );
 use FS::tower_sector;
-use List::Util qw( max );
 
 =head1 NAME
 

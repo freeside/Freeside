@@ -1,12 +1,11 @@
 package FS::cust_bill_batch;
+use base qw( FS::option_Common );
 
 use strict;
-use vars qw( @ISA $me $DEBUG );
-use FS::Record qw( qsearch qsearchs dbh );
+use vars qw( $me $DEBUG );
 
-@ISA = qw( FS::option_Common );
 $me = '[ FS::cust_bill_batch ]';
-$DEBUG=0;
+$DEBUG = 0;
 
 sub table { 'cust_bill_batch' }
 
@@ -38,23 +37,9 @@ following fields are currently supported:
 
 Returns the C<FS::bill_batch> object.
 
-=cut
-
-sub bill_batch { 
-  my $self = shift;
-  FS::bill_batch->by_key($self->batchnum);
-}
-
 =item cust_bill
 
 Returns the C<FS::cust_bill> object.
-
-=cut
-
-sub cust_bill {
-  my $self = shift;
-  FS::cust_bill->by_key($self->invnum);
-}
 
 =back
 

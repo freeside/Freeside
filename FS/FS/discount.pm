@@ -2,8 +2,6 @@ package FS::discount;
 use base qw( FS::Record );
 
 use strict;
-use FS::Record qw( qsearch qsearchs );
-use FS::discount_class;
 
 =head1 NAME
 
@@ -205,12 +203,6 @@ sub classname {
   my $discount_class = $self->discount_class;
   $discount_class ? $discount_class->classname : '(none)';
 }
-
-sub discount_class {
-  my $self = shift;
-  qsearchs('discount_class', { 'classnum' => $self->classnum });
-}
-
 
 =back
 

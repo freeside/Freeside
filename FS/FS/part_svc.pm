@@ -1,7 +1,8 @@
 package FS::part_svc;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( $DEBUG );
 use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::Schema qw( dbdef );
@@ -10,8 +11,6 @@ use FS::part_export;
 use FS::export_svc;
 use FS::cust_svc;
 use FS::part_svc_class;
-
-@ISA = qw(FS::Record);
 
 $DEBUG = 0;
 

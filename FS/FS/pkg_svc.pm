@@ -1,12 +1,7 @@
 package FS::pkg_svc;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearchs );
-use FS::part_pkg;
-use FS::part_svc;
-
-@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -130,23 +125,9 @@ sub check {
 
 Returns the FS::part_pkg object (see L<FS::part_pkg>).
 
-=cut
-
-sub part_pkg {
-  my $self = shift;
-  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
-}
-
 =item part_svc
 
 Returns the FS::part_svc object (see L<FS::part_svc>).
-
-=cut
-
-sub part_svc {
-  my $self = shift;
-  qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
-}
 
 =back
 

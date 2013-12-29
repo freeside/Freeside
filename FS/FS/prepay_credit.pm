@@ -1,11 +1,9 @@
 package FS::prepay_credit;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA $DEBUG $me );
+use vars qw( $DEBUG $me );
 use FS::Record qw(qsearchs dbh);
-use FS::agent;
-
-@ISA = qw(FS::Record);
 
 $DEBUG = 0;
 $me = '[FS::prepay_credit]';
@@ -125,13 +123,6 @@ sub check {
 =item agent
 
 Returns the agent (see L<FS::agent>) for this prepaid card, if any.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs('agent', { 'agentnum' => $self->agentnum } );
-}
 
 =back
 

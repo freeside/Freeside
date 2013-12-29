@@ -1,8 +1,7 @@
 package FS::cust_class;
+use base qw( FS::class_Common );
 
 use strict;
-use base qw( FS::class_Common );
-use FS::cust_main;
 use FS::cust_category;
 
 =head1 NAME

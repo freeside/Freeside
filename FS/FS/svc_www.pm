@@ -1,7 +1,8 @@
 package FS::svc_www;
+use base qw(FS::svc_Common);
 
 use strict;
-use vars qw(@ISA $conf $apacheip);
+use vars qw($conf $apacheip);
 #use FS::Record qw( qsearch qsearchs );
 use FS::Record qw( qsearchs dbh );
 use FS::svc_Common;
@@ -9,8 +10,6 @@ use FS::cust_svc;
 use FS::domain_record;
 use FS::svc_acct;
 use FS::svc_domain;
-
-@ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_www'} = sub { 
@@ -251,13 +250,6 @@ sub check {
 
 Returns the FS::domain_record record for this web virtual host's zone (see
 L<FS::domain_record>).
-
-=cut
-
-sub domain_record {
-  my $self = shift;
-  qsearchs('domain_record', { 'recnum' => $self->recnum } );
-}
 
 =item svc_acct
 

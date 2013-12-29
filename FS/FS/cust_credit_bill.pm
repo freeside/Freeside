@@ -1,15 +1,9 @@
 package FS::cust_credit_bill;
+use base qw( FS::cust_main_Mixin FS::cust_bill_ApplicationCommon );
 
 use strict;
-use vars qw( @ISA $conf );
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_main_Mixin;
-use FS::cust_bill_ApplicationCommon;
-use FS::cust_bill;
-use FS::cust_credit;
-use FS::cust_pkg;
-
-@ISA = qw( FS::cust_main_Mixin FS::cust_bill_ApplicationCommon );
+use vars qw( $conf );
+use FS::UID;
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -142,13 +136,6 @@ sub check {
 =item sub cust_credit
 
 Returns the credit (see L<FS::cust_credit>)
-
-=cut
-
-sub cust_credit {
-  my $self = shift;
-  qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
-}
 
 =back
 

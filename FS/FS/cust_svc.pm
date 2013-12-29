@@ -1,12 +1,12 @@
 package FS::cust_svc;
+use base qw( FS::cust_main_Mixin FS::option_Common ); #FS::Record );
 
 use strict;
-use vars qw( @ISA $DEBUG $me $ignore_quantity $conf $ticket_system );
+use vars qw( $DEBUG $me $ignore_quantity $conf $ticket_system );
 use Carp;
 #use Scalar::Util qw( blessed );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh str2time_sql );
-use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
@@ -18,7 +18,6 @@ use FS::UI::Web;
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
 
-@ISA = qw( FS::cust_main_Mixin FS::option_Common ); #FS::Record );
 
 $DEBUG = 0;
 $me = '[cust_svc]';
@@ -408,13 +407,6 @@ sub part_svc {
 
 Returns the package this service belongs to, as a FS::cust_pkg object (see
 L<FS::cust_pkg>).
-
-=cut
-
-sub cust_pkg {
-  my $self = shift;
-  qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
-}
 
 =item pkg_svc
 

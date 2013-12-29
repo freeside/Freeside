@@ -1,10 +1,7 @@
 package FS::cust_tax_adjustment;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_main;
-use FS::cust_bill_pkg;
 
 =head1 NAME
 
@@ -128,11 +125,6 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
-}
-
-sub cust_bill_pkg {
-  my $self = shift;
-  qsearchs('cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum } );
 }
 
 =back

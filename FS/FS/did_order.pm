@@ -1,7 +1,7 @@
 package FS::did_order;
+use base qw( FS::o2m_Common FS::Record );
 
 use strict;
-use base qw( FS::o2m_Common FS::Record );
 use FS::Record qw( qsearch qsearchs dbh );
 
 =head1 NAME
@@ -253,13 +253,6 @@ sub check {
 =item did_order_item
 
 Returns the did_order_items (see L<FS::did_order_item>) associated with this bulk DID order.
-
-=cut
-
-sub did_order_item {
-  my $self = shift;
-  qsearch( 'did_order_item', { 'ordernum' => $self->ordernum } );
-}
 
 =item cust_main
 

@@ -1,9 +1,9 @@
 package FS::cust_pkg_reason;
+use base qw( FS::otaker_Mixin FS::Record );
 
 use strict;
 use vars qw( $ignore_empty_action );
-use base qw( FS::otaker_Mixin FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch ); #qsearchs );
 use FS::upgrade_journal;
 
 $ignore_empty_action = 0;
@@ -116,13 +116,6 @@ sub check {
 =item reason
 
 Returns the reason (see L<FS::reason>) associated with this cust_pkg_reason.
-
-=cut
-
-sub reason {
-  my $self = shift;
-  qsearchs( 'reason', { 'reasonnum' => $self->reasonnum } );
-}
 
 =item reasontext
 

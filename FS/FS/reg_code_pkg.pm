@@ -1,12 +1,7 @@
 package FS::reg_code_pkg;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw(qsearchs);
-use FS::reg_code;
-use FS::part_pkg;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -114,13 +109,6 @@ sub check {
 =item part_pkg
 
 Returns the package definition (see L<FS::part_pkg>)
-
-=cut
-
-sub part_pkg {
-  my $self = shift;
-  qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart } );
-}
 
 =back
 

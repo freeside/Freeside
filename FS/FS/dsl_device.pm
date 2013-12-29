@@ -1,9 +1,7 @@
 package FS::dsl_device;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::svc_dsl;
 
 =head1 NAME
 
@@ -115,15 +113,8 @@ sub check {
 
 =item svc_dsl
 
-Returns the phone number (see L<FS::svc_dsl>) associated with this customer
+Returns the DSL (see L<FS::svc_dsl>) associated with this customer
 device.
-
-=cut
-
-sub svc_phone {
-  my $self = shift;
-  qsearchs( 'svc_dsl', { 'svcnum' => $self->svcnum } );
-}
 
 =back
 

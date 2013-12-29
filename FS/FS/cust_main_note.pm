@@ -1,10 +1,9 @@
 package FS::cust_main_note;
+use base qw( FS::otaker_Mixin FS::Record );
 
 use strict;
-use base qw( FS::otaker_Mixin FS::Record );
 use Carp;
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_note_class;
+use FS::Record qw( qsearchs ); #qw( qsearch qsearchs );
 
 =head1 NAME
 
@@ -123,17 +122,6 @@ sub check {
 
 Returns the customer note class, as an FS::cust_note_class object, or the empty
 string if there is no note class.
-
-=cut
-
-sub cust_note_class {
-  my $self = shift;
-  if ( $self->classnum ) {
-    qsearchs('cust_note_class', { 'classnum' => $self->classnum } );
-  } else {
-    return '';
-  } 
-}
 
 =item classname 
 

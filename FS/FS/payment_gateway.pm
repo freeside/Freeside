@@ -1,12 +1,10 @@
 package FS::payment_gateway;
+use base qw( FS::option_Common );
 
 use strict;
-use vars qw( @ISA $me $DEBUG );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::option_Common;
-use FS::agent_payment_gateway;
+use vars qw( $me $DEBUG );
+use FS::Record qw( qsearch dbh ); #qw( qsearch qsearchs dbh );
 
-@ISA = qw( FS::option_Common );
 $me = '[ FS::payment_gateway ]';
 $DEBUG=0;
 
@@ -170,13 +168,6 @@ sub check {
 =item agent_payment_gateway
 
 Returns any agent overrides for this payment gateway.
-
-=cut
-
-sub agent_payment_gateway {
-  my $self = shift;
-  qsearch('agent_payment_gateway', { 'gatewaynum' => $self->gatewaynum } );
-}
 
 =item disable
 

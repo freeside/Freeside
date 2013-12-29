@@ -1,10 +1,7 @@
 package FS::export_device;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::part_export;
-use FS::part_device;
 
 =head1 NAME
 
@@ -103,23 +100,9 @@ sub check {
 
 Returns the FS::part_export object (see L<FS::part_export>).
 
-=cut
-
-sub part_export {
-  my $self = shift;
-  qsearchs( 'part_export', { 'exportnum' => $self->exportnum } );
-}
-
 =item part_device
 
 Returns the FS::part_device object (see L<FS::part_device>).
-
-=cut
-
-sub part_device {
-  my $self = shift;
-  qsearchs( 'part_device', { 'svcpart' => $self->devicepart } );
-}
 
 =back
 

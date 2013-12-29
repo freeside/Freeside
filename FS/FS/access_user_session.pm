@@ -1,9 +1,7 @@
 package FS::access_user_session;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearchs ); # qsearch );
-use FS::access_user;
 
 =head1 NAME
 
@@ -113,13 +111,6 @@ sub check {
 =item access_user
 
 Returns the employee (see L<FS::access_user>) for this session.
-
-=cut
-
-sub access_user {
-  my $self = shift;
-  qsearchs('access_user', { 'usernum' => $self->usernum });
-}
 
 =item touch_last_date
 

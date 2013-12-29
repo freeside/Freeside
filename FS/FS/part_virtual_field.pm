@@ -1,12 +1,9 @@
 package FS::part_virtual_field;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record;
-use FS::Schema qw( dbdef );
 use CGI qw(escapeHTML);
-
-@ISA = qw( FS::Record );
+use FS::Schema qw( dbdef );
 
 =head1 NAME
 

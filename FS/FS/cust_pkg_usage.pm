@@ -1,10 +1,8 @@
 package FS::cust_pkg_usage;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::cust_pkg;
-use FS::part_pkg_usage;
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch ); #qsearchs );
 
 =head1 NAME
 
@@ -138,18 +136,6 @@ Return the L<FS::cust_pkg> linked to this record.
 =item part_pkg_usage
 
 Return the L<FS::part_pkg_usage> linked to this record.
-
-=cut
-
-sub cust_pkg {
-  my $self = shift;
-  FS::cust_pkg->by_key($self->pkgnum);
-}
-
-sub part_pkg_usage {
-  my $self = shift;
-  FS::part_pkg_usage->by_key($self->pkgusagepart);
-}
 
 =back
 

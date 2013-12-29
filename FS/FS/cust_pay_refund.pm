@@ -1,13 +1,9 @@
 package FS::cust_pay_refund;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA ); #$conf );
 use FS::Record qw( qsearchs ); # qsearch );
 use FS::cust_main;
-use FS::cust_pay;
-use FS::cust_refund;
-
-@ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
 #FS::UID->install_callback( sub { 
@@ -152,23 +148,9 @@ sub check {
 
 Returns the payment (see L<FS::cust_pay>)
 
-=cut
-
-sub cust_pay {
-  my $self = shift;
-  qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
-}
-
 =item cust_refund
 
 Returns the refund (see L<FS::cust_refund>)
-
-=cut
-
-sub cust_refund {
-  my $self = shift;
-  qsearchs( 'cust_refund', { 'refundnum' => $self->refundnum } );
-}
 
 =back
 

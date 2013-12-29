@@ -1,12 +1,9 @@
 package FS::quotation;
-use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record );
+use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record
+           );
 
 use strict;
-use FS::Record qw( qsearch qsearchs );
 use FS::CurrentUser;
-use FS::cust_main;
-use FS::prospect_main;
-use FS::quotation_pkg;
 
 =head1 NAME
 
@@ -122,29 +119,14 @@ sub check {
 
 =item prospect_main
 
-=cut
-
-sub prospect_main {
-  my $self = shift;
-  qsearchs('prospect_main', { 'prospectnum' => $self->prospectnum } );
-}
-
 =item cust_main
-
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs('cust_main', { 'custnum' => $self->custnum } );
-}
 
 =item cust_bill_pkg
 
 =cut
 
 sub cust_bill_pkg { #actually quotation_pkg objects
-  my $self = shift;
-  qsearch('quotation_pkg', { quotationnum=>$self->quotationnum });
+  shift->quotation_pkg(@_);
 }
 
 =item total_setup

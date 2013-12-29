@@ -1,11 +1,10 @@
 package FS::rate;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( $DEBUG );
 use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::rate_detail;
-
-@ISA = qw(FS::Record);
 
 $DEBUG = 0;
 
@@ -381,14 +380,6 @@ sub dest_detail {
 =item rate_detail
 
 Returns all region-specific details  (see L<FS::rate_detail>) for this rate.
-
-=cut
-
-sub rate_detail {
-  my $self = shift;
-  qsearch( 'rate_detail', { 'ratenum' => $self->ratenum } );
-}
-
 
 =back
 

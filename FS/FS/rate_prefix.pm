@@ -1,12 +1,9 @@
 package FS::rate_prefix;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::rate_region;
+use FS::Record qw( dbh ); #qw( qsearch qsearchs dbh );
 use FS::lata;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -121,13 +118,6 @@ sub check {
 =item rate_region
 
 Returns the rate region (see L<FS::rate_region>) for this prefix.
-
-=cut
-
-sub rate_region {
-  my $self = shift;
-  qsearchs('rate_region', { 'regionnum' => $self->regionnum } );
-}
 
 =back
 

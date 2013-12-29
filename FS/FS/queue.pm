@@ -1,7 +1,8 @@
 package FS::queue;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG $conf $jobnums);
+use vars qw( @EXPORT_OK $DEBUG $conf $jobnums);
 use Exporter;
 use MIME::Base64;
 use Storable qw( nfreeze thaw );
@@ -11,10 +12,8 @@ use FS::Record qw( qsearch qsearchs dbh );
 #use FS::queue;
 use FS::queue_arg;
 use FS::queue_depend;
-use FS::cust_svc;
 use FS::CGI qw(rooturl);
 
-@ISA = qw(FS::Record);
 @EXPORT_OK = qw( joblisting );
 
 $DEBUG = 0;
@@ -268,24 +267,10 @@ sub args {
 
 Returns the FS::cust_svc object associated with this job, if any.
 
-=cut
-
-sub cust_svc {
-  my $self = shift;
-  qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
-}
-
 =item queue_depend
 
 Returns the FS::queue_depend objects associated with this job, if any.
 (Dependancies that must complete before this job can be run).
-
-=cut
-
-sub queue_depend {
-  my $self = shift;
-  qsearch('queue_depend', { 'jobnum' => $self->jobnum } );
-}
 
 =item depend_insert OTHER_JOBNUM
 

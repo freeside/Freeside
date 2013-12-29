@@ -1,15 +1,11 @@
 package FS::cust_pay_batch;
+use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( $DEBUG );
 use Carp qw( confess );
 use Business::CreditCard 0.28;
 use FS::Record qw(dbh qsearch qsearchs);
-use FS::payinfo_Mixin;
-use FS::cust_main;
-use FS::cust_bill;
-
-@ISA = qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -205,13 +201,6 @@ sub check {
 Returns the customer (see L<FS::cust_main>) for this batched credit card
 payment.
 
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-}
-
 =item expmmyy
 
 Returns the credit card expiration date in MMYY format.  If this is a 
@@ -235,11 +224,6 @@ sub expmmyy {
 Returns the payment batch this payment belongs to (L<FS::pay_batch).
 
 =cut
-
-sub pay_batch {
-  my $self = shift;
-  FS::pay_batch->by_key($self->batchnum);
-}
 
 #you know what, screw this in the new world of events.  we should be able to
 #get the event defs to retry (remove once.pm condition, add every.pm) without

@@ -9,7 +9,6 @@ use FS::Conf;
 use FS::part_event_option;
 use FS::part_event_condition;
 use FS::cust_event;
-use FS::agent;
 
 $DEBUG = 0;
 
@@ -169,13 +168,6 @@ sub _rebless {
 Returns the conditions associated with this event, as FS::part_event_condition
 objects (see L<FS::part_event_condition>)
 
-=cut
-
-sub part_event_condition {
-  my $self = shift;
-  qsearch( 'part_event_condition', { 'eventpart' => $self->eventpart } );
-}
-
 =item new_cust_event OBJECT, [ OPTION => VALUE ]
 
 Creates a new customer event (see L<FS::cust_event>) for the provided object.
@@ -222,13 +214,6 @@ sub reasontext { confess "part_event->reasontext deprecated"; }
 =item agent 
 
 Returns the associated agent for this event, if any, as an FS::agent object.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  qsearchs('agent', { 'agentnum' => $self->agentnum } );
-}
 
 =item templatename
 

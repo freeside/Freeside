@@ -1,15 +1,11 @@
 package FS::cust_main_invoice;
+use base qw( FS::Record );
 
 use strict;
-use vars qw(@ISA);
-use Exporter;
 use FS::Record qw( qsearchs );
 use FS::Conf;
-use FS::cust_main;
 use FS::svc_acct;
 use FS::Msgcat qw(gettext);
-
-@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -104,9 +100,6 @@ sub check {
   ;
   return $error if $error;
 
-  return "Unknown customer"
-    unless qsearchs('cust_main',{ 'custnum' => $self->custnum });
-
   $self->SUPER::check;
 }
 
@@ -166,13 +159,6 @@ sub address {
 =item cust_main
 
 Returns the parent customer object (see L<FS::cust_main>).
-
-=cut
-
-sub cust_main {
-  my $self = shift;
-  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-}
 
 =back
 

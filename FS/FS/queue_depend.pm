@@ -1,11 +1,7 @@
 package FS::queue_depend;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
-use FS::queue;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 

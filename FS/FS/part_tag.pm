@@ -1,8 +1,8 @@
 package FS::part_tag;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch ); #qsearchs );
 
 =head1 NAME
 

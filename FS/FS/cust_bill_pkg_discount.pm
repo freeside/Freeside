@@ -1,10 +1,7 @@
 package FS::cust_bill_pkg_discount;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use base qw( FS::cust_main_Mixin FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_bill_pkg;
-use FS::cust_pkg_discount;
 
 =head1 NAME
 
@@ -125,24 +122,9 @@ sub check {
 
 Returns the associated line item (see L<FS::cust_bill_pkg>).
 
-=cut
-
-sub cust_bill_pkg {
-  my $self = shift;
-  qsearchs( 'cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum } ) ;
-}
-
 =item cust_pkg_discount
 
 Returns the associated customer discount (see L<FS::cust_pkg_discount>).
-
-=cut
-
-sub cust_pkg_discount {
-  my $self = shift;
-  qsearchs( 'cust_pkg_discount', { 'pkgdiscountnum' => $self->pkgdiscountnum });
-}
-
 
 =back
 
