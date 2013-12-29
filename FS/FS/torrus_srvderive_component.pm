@@ -1,9 +1,7 @@
 package FS::torrus_srvderive_component;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
-use FS::torrus_srvderive;
 
 =head1 NAME
 
@@ -112,11 +110,6 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
-}
-
-sub torrus_srvderive {
-  my $self = shift;
-  qsearchs('torrus_srvderive', { 'derivenum' => $self->derivenum } );
 }
 
 =back

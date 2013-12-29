@@ -1,8 +1,8 @@
 package FS::invoice_mode;
+use base qw(FS::Record);
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); #qsearch qsearchs );
 use FS::invoice_conf;
 
 =head1 NAME
@@ -137,13 +137,6 @@ sub invoice_conf {
 =item agent
 
 Returns the agent associated with this invoice mode, if any.
-
-=cut
-
-sub agent {
-  my $self = shift;
-  $self->agentnum ? FS::agent->by_key($self->agentnum) : '';
-}
 
 =back
 
