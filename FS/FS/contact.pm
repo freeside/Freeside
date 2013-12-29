@@ -3,6 +3,7 @@ use base qw( FS::Record );
 
 use strict;
 use FS::Record qw( qsearchs dbh ); # qw( qsearch qsearchs dbh );
+use FS::contact_phone;
 
 =head1 NAME
 
