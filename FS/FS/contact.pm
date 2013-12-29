@@ -68,6 +68,16 @@ title
 
 comment
 
+=item selfservice_access
+
+empty or Y
+
+=item _password
+
+=item _password_encoding
+
+empty or bcrypt
+
 =item disabled
 
 disabled
@@ -388,6 +398,9 @@ sub check {
     || $self->ut_namen('first')
     || $self->ut_textn('title')
     || $self->ut_textn('comment')
+    || $self->ut_enum('selfservice_access', [ '', 'Y' ])
+    || $self->ut_textn('_password')
+    || $self->ut_enum('_password_encoding', [ '', 'bcrypt'])
     || $self->ut_enum('disabled', [ '', 'Y' ])
   ;
   return $error if $error;
