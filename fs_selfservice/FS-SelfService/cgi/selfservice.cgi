@@ -32,99 +32,6 @@ $DEBUG = 0;
 $form_max = 255;
 
 $cgi = new CGI;
-my %cookies = CGI::Cookie->fetch;
-
-my $login_rv;
-
-if ( exists($cookies{'session'}) ) {
-
-  $session_id = $cookies{'session'}->value;
-
-  if ( $session_id eq 'login' ) {
-    # then we've just come back from the login page
-
-    $cgi->param('password') =~ /^(.{0,$form_max})$/;
-    my $password = $1;
-
-    if ( $cgi->param('email') =~ /^\s*([a-z0-9_\-\.\@]{1,$form_max})\s*$/i ) {
-
-      my $email = $1;
-      $login_rv = login(
-        'email'    => $email,
-        'password' => $password
-      );
-      $session_id = $login_rv->{'session_id'};
-
-    } else {
-
-      $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i;
-      my $username = $1;
-
-      $cgi->param('domain') =~ /^\s*([\w\-\.]{0,$form_max})\s*$/;
-      my $domain = $1;
-
-      if ( $username and $domain and $password ) {
-
-        # authenticate
-        $login_rv = login(
-          'username' => $username,
-          'domain'   => $domain,
-          'password' => $password,
-        );
-        $session_id = $login_rv->{'session_id'};
-
-      } elsif ( $username or $domain or $password ) {
-      
-        my $error = 'Illegal '; #XXX localization...
-        my $count = 0;
-        if ( !$username ) {
-          $error .= 'username';
-          $count++;
-        }
-        if ( !$domain )  {
-          $error .= ', ' if $count;
-          $error .= 'domain';
-          $count++;
-        }
-        if ( !$password ) {
-          $error .= ', ' if $count;
-          $error .= 'and ' if $count > 1;
-          $error .= 'password';
-          $count++;
-        }
-        $error .= '.';
-        $login_rv = {
-          'username'  => $username,
-          'domain'    => $domain,
-          'password'  => $password,
-          'error'     => $error,
-        };
-        $session_id = undef; # attempt login again
-
-      }
-
-    } # else there was no input, so show no error message
-
-  } # else session_id ne 'login'
-
-} else {
-  # there is no session cookie
-  $login_rv = {};
-}
-
-if ( !$session_id ) {
-  # XXX why are we getting agentnum from a CGI param? surely it should 
-  # be some kind of configuration option.
-  #
-  # show the login page
-  $session_id = 'login'; # set state
-  my $login_info = login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
-
-  do_template('login', { %$login_rv, %$login_info });
-  exit;
-}
-
-# at this point $session_id is a real session
 
 #order|pw_list XXX ???
 my @actions = ( qw(
@@ -172,13 +79,18 @@ my @actions = ( qw(
   real_port_graph
   change_password
   process_change_password
+  customer_suspend_pkg
+  process_suspend_pkg
+));
+
+my @nologin_actions = (qw(
   forgot_password
   do_forgot_password
   process_forgot_password
   do_process_forgot_password
-  customer_suspend_pkg
-  process_suspend_pkg
 ));
+push @actions, @nologin_actions;
+my %nologin_actions = map { $_=>1 } @nologin_actions;
 
 my $action = 'myaccount'; # sensible default
 if ( $cgi->param('action') =~ /^(\w+)$/ ) {
@@ -187,6 +99,104 @@ if ( $cgi->param('action') =~ /^(\w+)$/ ) {
   } else {
     warn "WARNING: unrecognized action '$1'\n";
   }
+}
+
+unless ( $nologin_actions{$action} ) {
+
+  my %cookies = CGI::Cookie->fetch;
+
+  my $login_rv;
+
+  if ( exists($cookies{'session'}) ) {
+
+    $session_id = $cookies{'session'}->value;
+
+    if ( $session_id eq 'login' ) {
+      # then we've just come back from the login page
+
+      $cgi->param('password') =~ /^(.{0,$form_max})$/;
+      my $password = $1;
+
+      if ( $cgi->param('email') =~ /^\s*([a-z0-9_\-\.\@]{1,$form_max})\s*$/i ) {
+
+        my $email = $1;
+        $login_rv = login(
+          'email'    => $email,
+          'password' => $password
+        );
+        $session_id = $login_rv->{'session_id'};
+
+      } else {
+
+        $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i;
+        my $username = $1;
+
+        $cgi->param('domain') =~ /^\s*([\w\-\.]{0,$form_max})\s*$/;
+        my $domain = $1;
+
+        if ( $username and $domain and $password ) {
+
+          # authenticate
+          $login_rv = login(
+            'username' => $username,
+            'domain'   => $domain,
+            'password' => $password,
+          );
+          $session_id = $login_rv->{'session_id'};
+
+        } elsif ( $username or $domain or $password ) {
+        
+          my $error = 'Illegal '; #XXX localization...
+          my $count = 0;
+          if ( !$username ) {
+            $error .= 'username';
+            $count++;
+          }
+          if ( !$domain )  {
+            $error .= ', ' if $count;
+            $error .= 'domain';
+            $count++;
+          }
+          if ( !$password ) {
+            $error .= ', ' if $count;
+            $error .= 'and ' if $count > 1;
+            $error .= 'password';
+            $count++;
+          }
+          $error .= '.';
+          $login_rv = {
+            'username'  => $username,
+            'domain'    => $domain,
+            'password'  => $password,
+            'error'     => $error,
+          };
+          $session_id = undef; # attempt login again
+
+        }
+
+      } # else there was no input, so show no error message
+
+    } # else session_id ne 'login'
+
+  } else {
+    # there is no session cookie
+    $login_rv = {};
+  }
+
+  if ( !$session_id ) {
+    # XXX why are we getting agentnum from a CGI param? surely it should 
+    # be some kind of configuration option.
+    #
+    # show the login page
+    $session_id = 'login'; # set state
+    my $login_info = login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
+
+    do_template('login', { %$login_rv, %$login_info });
+    exit;
+  }
+
+  # at this point $session_id is a real session
+
 }
 
 warn "calling $action sub\n"
@@ -1011,13 +1021,13 @@ sub process_change_password {
 }
 
 sub forgot_password {
-  login_info( 'agentnum' => scalar($cgi->param('agentnum')) ); #skin_info
+  login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
 }
 
 sub do_forgot_password {
   reset_passwd(
     map { $_ => scalar($cgi->param($_)) }
-      qw( email username domain )
+      qw( agentnum email username domain )
   );
 }
 

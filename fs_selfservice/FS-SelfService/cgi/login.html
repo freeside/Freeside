@@ -9,7 +9,8 @@
 <FONT SIZE=5>Login</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 
-<FORM ACTION="<%= $self_url %>" METHOD=POST>
+<%= $selfurl =~ s/\?.*//; ''; %>
+<FORM ACTION="<%= $selfurl %>" METHOD=POST>
 <INPUT TYPE="hidden" NAME="action" VALUE="myaccount">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
 
@@ -65,7 +66,7 @@ if ( $phone_login ) {
 
     <B>OR</B><BR><BR>
     
-    <FORM ACTION="$self_url" METHOD=POST>
+    <FORM ACTION="$selfurl" METHOD=POST>
     <TABLE BGCOLOR="$box_bgcolor" BORDER=0 CELLSPACING=2 CELLPADDING=0>
     <TR>
       <TH ALIGN="right">Phone number </TH>

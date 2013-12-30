@@ -471,8 +471,6 @@ sub by_selfservice_email {
                    " AND ( disabled IS NULL OR disabled = '' )",
   }) or return '';
 
-warn $contact_email;
-
   $contact_email->contact;
 
 }
