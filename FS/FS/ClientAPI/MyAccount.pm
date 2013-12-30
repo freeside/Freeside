@@ -2841,6 +2841,16 @@ sub myaccount_passwd {
   $svc_acct->set_password($p->{'new_password'});
   $error ||= $svc_acct->replace();
 
+  #regular pw change in self-service should change contact pw too, otherwise its
+  #way too confusing.  hell its confusing they're separate at all, but alas.
+  #need to support the "ISP provides email that's used as a contact email" case
+  #as well as we can.
+  my $contact = FS::contact->by_selfservice_email($svc_acct->email);
+  if ( $contact && $contact->custnum == $custnum ) {
+    #svc_acct was successful but this one returns an error?  "shouldn't happen"
+    $error ||= $contact->change_password($p->{'new_password'});
+  }
+
   my($label, $value) = $svc_acct->cust_svc->label;
 
   return { 'error' => $error,
@@ -2850,7 +2860,6 @@ sub myaccount_passwd {
 
 }
 
-#regular pw change in self-service should change contact pw too, otherwise its way too confusing.  hell its confusing they're separate at all, but alas.  need to support the "ISP provides email that's used as a contact email" case as well as we can.
 #  sub contact_passwd {
 #    my $p = shift;
 #    my($context, $session, $custnum) = _custoragent_session_custnum($p);
