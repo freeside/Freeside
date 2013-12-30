@@ -2,8 +2,11 @@ package FS::contact;
 use base qw( FS::Record );
 
 use strict;
+use Scalar::Util qw( blessed );
 use FS::Record qw( qsearchs dbh ); # qw( qsearch qsearchs dbh );
 use FS::contact_phone;
+use FS::contact_email;
+use FS::queue;
 
 =head1 NAME
 
@@ -168,6 +171,14 @@ sub insert {
     }
   #}
 
+  if ( $self->selfservice_access ) {
+    my $error = $self->send_reset_email( queue=>1 );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -225,6 +236,12 @@ returns the error, otherwise returns false.
 sub replace {
   my $self = shift;
 
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $self->replace_old;
+
+  $self->$_( $self->$_ || $old->$_ ) for qw( _password _password_encoding );
+
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
@@ -235,7 +252,7 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::replace(@_);
+  my $error = $self->SUPER::replace($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -264,7 +281,7 @@ sub replace {
     }
   }
 
-  if ( defined($self->get('emailaddress')) ) {
+  if ( defined($self->hashref->{'emailaddress'}) ) {
 
     #ineffecient but whatever, how many email addresses can there be?
 
@@ -301,6 +318,19 @@ sub replace {
       return "updating fuzzy search cache: $error";
     }
   #}
+
+  if (    ( $old->selfservice_access eq '' && $self->selfservice_access
+              && ! $self->_password
+          )
+       || $self->_resend()
+     )
+  {
+    my $error = $self->send_reset_email( queue=>1 );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -383,6 +413,11 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  if ( $self->selfservice_access eq 'R' ) {
+    $self->selfservice_access('Y');
+    $self->_resend('Y');
+  }
+
   my $error = 
     $self->ut_numbern('contactnum')
     || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
@@ -423,6 +458,155 @@ sub contact_classname {
   my $self = shift;
   my $contact_class = $self->contact_class or return '';
   $contact_class->classname;
+}
+
+sub by_selfservice_email {
+  my($class, $email) = @_;
+
+  my $contact_email = qsearchs({
+    'table'     => 'contact_email',
+    'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
+    'hashref'   => { 'emailaddress' => $email, },
+    'extra_sql' => " AND selfservice_access = 'Y' ".
+                   " AND ( disabled IS NULL OR disabled = '' )",
+  }) or return '';
+
+warn $contact_email;
+
+  $contact_email->contact;
+
+}
+
+#these three functions are very much false laziness w/FS/FS/Auth/internal.pm
+# and should maybe be libraried in some way for other password needs
+
+use Crypt::Eksblowfish::Bcrypt qw( bcrypt_hash en_base64 de_base64);
+
+sub authenticate_password {
+  my($self, $check_password) = @_;
+
+  if ( $self->_password_encoding eq 'bcrypt' ) {
+
+    my( $cost, $salt, $hash ) = split(',', $self->_password);
+
+    my $check_hash = en_base64( bcrypt_hash( { key_nul => 1,
+                                               cost    => $cost,
+                                               salt    => de_base64($salt),
+                                             },
+                                             $check_password
+                                           )
+                              );
+
+    $hash eq $check_hash;
+
+  } else { 
+
+    return 0 if $self->_password eq '';
+
+    $self->_password eq $check_password;
+
+  }
+
+}
+
+sub change_password {
+  my($self, $new_password) = @_;
+
+  $self->change_password_fields( $new_password );
+
+  $self->replace;
+
+}
+
+sub change_password_fields {
+  my($self, $new_password) = @_;
+
+  $self->_password_encoding('bcrypt');
+
+  my $cost = 8;
+
+  my $salt = pack( 'C*', map int(rand(256)), 1..16 );
+
+  my $hash = bcrypt_hash( { key_nul => 1,
+                            cost    => $cost,
+                            salt    => $salt,
+                          },
+                          $new_password,
+                        );
+
+  $self->_password(
+    join(',', $cost, en_base64($salt), en_base64($hash) )
+  );
+
+}
+
+# end of false laziness w/FS/FS/Auth/internal.pm
+
+
+#false laziness w/ClientAPI/MyAccount/reset_passwd
+use Digest::SHA qw(sha512_hex);
+use FS::Conf;
+use FS::ClientAPI_SessionCache;
+sub send_reset_email {
+  my( $self, %opt ) = @_;
+
+  my @contact_email = $self->contact_email or return '';
+
+  my $reset_session = {
+    'contactnum' => $self->contactnum,
+    'svcnum'     => $opt{'svcnum'},
+  };
+
+  my $timeout = '24 hours'; #?
+
+  my $reset_session_id;
+  do {
+    $reset_session_id = sha512_hex(time(). {}. rand(). $$)
+  } until ( ! defined $self->myaccount_cache->get("reset_passwd_$reset_session_id") );
+    #just in case
+
+  $self->myaccount_cache->set( "reset_passwd_$reset_session_id", $reset_session, $timeout );
+
+  #email it
+
+  my $conf = new FS::Conf;
+
+  my $cust_main = $self->cust_main
+    or die "no customer"; #reset a password for a prospect contact?  someday
+
+  my $msgnum = $conf->config('selfservice-password_reset_msgnum', $cust_main->agentnum);
+  #die "selfservice-password_reset_msgnum unset" unless $msgnum;
+  return { 'error' => "selfservice-password_reset_msgnum unset" } unless $msgnum;
+  my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
+  my %msg_template = (
+    'to'            => join(',', map $_->emailaddress, @contact_email ),
+    'cust_main'     => $cust_main,
+    'object'        => $self,
+    'substitutions' => { 'session_id' => $reset_session_id }
+  );
+
+  if ( $opt{'queue'} ) { #or should queueing just be the default?
+
+    my $queue = new FS::queue {
+      'job'     => 'FS::Misc::process_send_email',
+      'custnum' => $cust_main->custnum,
+    };
+    $queue->insert( $msg_template->prepare( %msg_template ) );
+
+  } else {
+
+    $msg_template->send( %msg_template );
+
+  }
+
+}
+
+use vars qw( $myaccount_cache );
+sub myaccount_cache {
+  #my $class = shift;
+  $myaccount_cache ||= new FS::ClientAPI_SessionCache( {
+                         'namespace' => 'FS::ClientAPI::MyAccount',
+                       } );
 }
 
 =back

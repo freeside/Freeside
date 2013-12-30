@@ -12,7 +12,9 @@
 %>
 <%init>
 
-my @contact_fields = qw( classnum first last title comment emailaddress );
+my @contact_fields = qw(
+  classnum first last title comment emailaddress selfservice_access
+);
 foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
   push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
 }

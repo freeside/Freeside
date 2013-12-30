@@ -4,7 +4,7 @@
      'post_url'        => popurl(1). 'process/cust_main-contacts.html',
      'no_pkey_display' => 1,
      'labels'          => {
-                            'contactnum'  => 'Contact',
+                            'contactnum'  => ' ', #'Contact',
                             #'locationnum' => '&nbsp;',
                           },
      'fields'          => [
@@ -13,7 +13,7 @@
          'colspan'           => 6,
          'm2m_method'        => 'cust_contact',
          'm2m_dstcol'        => 'contactnum',   
-         'm2_label'          => 'Contact',
+         'm2_label'          => ' ', #'Contact',
          'm2_error_callback' => $m2_error_callback,
        },
      ],
