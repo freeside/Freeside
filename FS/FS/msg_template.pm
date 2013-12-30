@@ -558,6 +558,9 @@ sub substitutions {
       [ company_phonenum  => sub {
           $conf->config('company_phonenum', shift->agentnum)
         } ],
+      [ selfservice_server_base_url => sub { 
+          $conf->config('selfservice_server-base_url') #, shift->agentnum) 
+        } ],
     ],
     # next_bill_date
     'cust_pkg'  => [qw( 
@@ -700,6 +703,10 @@ sub agent {
 sub _upgrade_data {
   my ($self, %opts) = @_;
 
+  ###
+  # First move any historical templates in config to real message templates
+  ###
+
   my @fixes = (
     [ 'alerter_msgnum',  'alerter_template',   '',               '', '' ],
     [ 'cancel_msgnum',   'cancelmessage',      'cancelsubject',  '', '' ],
@@ -791,6 +798,11 @@ sub _upgrade_data {
     } # if alerter_msgnum
 
   }
+
+  ###
+  # Move subject and body from msg_template to template_content
+  ###
+
   foreach my $msg_template ( qsearch('msg_template', {}) ) {
     if ( $msg_template->subject || $msg_template->body ) {
       # create new default content
@@ -814,6 +826,35 @@ sub _upgrade_data {
       die $error if $error;
     }
   }
+
+  ###
+  # Add new-style default templates if missing
+  ###
+  $self->_populate_initial_data;
+
+}
+
+sub _populate_initial_data { #class method
+  #my($class, %opts) = @_;
+  #my $class = shift;
+
+  eval "use FS::msg_template::InitialData;";
+  die $@ if $@;
+
+  my $initial_data = FS::msg_template::InitialData->_initial_data;
+
+  foreach my $hash ( @$initial_data ) {
+
+    next if $hash->{_conf} && $conf->config( $hash->{_conf} );
+
+    my $msg_template = new FS::msg_template($hash);
+    my $error = $msg_template->insert( @{ $hash->{_insert_args} || [] } );
+    die $error if $error;
+
+    $conf->set( $hash->{_conf}, $msg_template->msgnum ) if $hash->{_conf};
+  
+  }
+
 }
 
 sub eviscerate {

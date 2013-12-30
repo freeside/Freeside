@@ -22,6 +22,7 @@ use FS::SelfService qw(
   adjust_ticket_priority
   mason_comp port_graph
   start_thirdparty finish_thirdparty
+  reset_passwd check_reset_passwd process_reset_passwd
 );
 
 $template_dir = '.';
@@ -42,54 +43,68 @@ if ( exists($cookies{'session'}) ) {
   if ( $session_id eq 'login' ) {
     # then we've just come back from the login page
 
-    $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i;
-    my $username = $1;
-
-    $cgi->param('domain') =~ /^\s*([\w\-\.]{0,$form_max})\s*$/;
-    my $domain = $1;
-
     $cgi->param('password') =~ /^(.{0,$form_max})$/;
     my $password = $1;
 
-    if ( $username and $domain and $password ) {
+    if ( $cgi->param('email') =~ /^\s*([a-z0-9_\-\.\@]{1,$form_max})\s*$/i ) {
 
-      # authenticate
+      my $email = $1;
       $login_rv = login(
-        'username' => $username,
-        'domain'   => $domain,
-        'password' => $password,
+        'email'    => $email,
+        'password' => $password
       );
       $session_id = $login_rv->{'session_id'};
 
-    } elsif ( $username or $domain or $password ) {
+    } else {
+
+      $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i;
+      my $username = $1;
+
+      $cgi->param('domain') =~ /^\s*([\w\-\.]{0,$form_max})\s*$/;
+      my $domain = $1;
+
+      if ( $username and $domain and $password ) {
+
+        # authenticate
+        $login_rv = login(
+          'username' => $username,
+          'domain'   => $domain,
+          'password' => $password,
+        );
+        $session_id = $login_rv->{'session_id'};
+
+      } elsif ( $username or $domain or $password ) {
       
-      my $error = 'Illegal '; #XXX localization...
-      my $count = 0;
-      if ( !$username ) {
-        $error .= 'username';
-        $count++;
+        my $error = 'Illegal '; #XXX localization...
+        my $count = 0;
+        if ( !$username ) {
+          $error .= 'username';
+          $count++;
+        }
+        if ( !$domain )  {
+          $error .= ', ' if $count;
+          $error .= 'domain';
+          $count++;
+        }
+        if ( !$password ) {
+          $error .= ', ' if $count;
+          $error .= 'and ' if $count > 1;
+          $error .= 'password';
+          $count++;
+        }
+        $error .= '.';
+        $login_rv = {
+          'username'  => $username,
+          'domain'    => $domain,
+          'password'  => $password,
+          'error'     => $error,
+        };
+        $session_id = undef; # attempt login again
+
       }
-      if ( !$domain )  {
-        $error .= ', ' if $count;
-        $error .= 'domain';
-        $count++;
-      }
-      if ( !$password ) {
-        $error .= ', ' if $count;
-        $error .= 'and ' if $count > 1;
-        $error .= 'password';
-        $count++;
-      }
-      $error .= '.';
-      $login_rv = {
-        'username'  => $username,
-        'domain'    => $domain,
-        'password'  => $password,
-        'error'     => $error,
-      };
-      $session_id = undef; # attempt login again
 
     } # else there was no input, so show no error message
+
   } # else session_id ne 'login'
 
 } else {
@@ -157,6 +172,10 @@ my @actions = ( qw(
   real_port_graph
   change_password
   process_change_password
+  forgot_password
+  do_forgot_password
+  process_forgot_password
+  do_process_forgot_password
   customer_suspend_pkg
   process_suspend_pkg
 ));
@@ -989,6 +1008,31 @@ sub process_change_password {
 
  }
 
+}
+
+sub forgot_password {
+  login_info( 'agentnum' => scalar($cgi->param('agentnum')) ); #skin_info
+}
+
+sub do_forgot_password {
+  reset_passwd(
+    map { $_ => scalar($cgi->param($_)) }
+      qw( email username domain )
+  );
+}
+
+sub process_forgot_password {
+  check_reset_passwd(
+    map { $_ => scalar($cgi->param($_)) }
+      qw( session_id )
+  );
+}
+
+sub do_process_forgot_password {
+  process_reset_passwd(
+    map { $_ => scalar($cgi->param($_)) }
+      qw( session_id new_password new_password2 )
+  );
 }
 
 #--

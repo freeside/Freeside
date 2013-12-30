@@ -1,31 +1,56 @@
 <BR>
 <FONT CLASS="fsinnerbox-title">Contacts</FONT>
 <A HREF="<%$p%>edit/cust_main-contacts.html?<% $cust_main->custnum %>">Edit contacts</A>
-<TABLE CLASS="fsinnerbox">
+
+<& /elements/table-grid.html &>
+% my $bgcolor1 = '#eeeeee';
+%     my $bgcolor2 = '#ffffff';
+%     my $bgcolor = $bgcolor2;
+<TR>
+  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Type</TH>
+  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Contact</TH>
+  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Email</TH>
+  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Self-service</TH>
+% foreach my $phone_type (@phone_type) {
+    <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc"><% $phone_type->typename |h %> phone</TD>
+% }
+</TR>
+
 %   foreach my $contact ( @contacts ) {
-%     #XXX maybe this should be a table with alternating colors instead
       <TR>
-        <TD ALIGN="right"><% $contact->contact_classname %> Contact</TD>
-        <TD BGCOLOR="#FFFFFF"><% $contact->line %></TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $contact->contact_classname |h %></TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $contact->line |h %></TD>
 
 %       my @contact_email = $contact->contact_email;
-%       if (@contact_email) {
-          <TD ALIGN="right">&nbsp;&nbsp;&nbsp;Email</TD>
-          <TD BGCOLOR="#FFFFFF"><% join(', ', map $_->emailaddress, @contact_email) %></TD>
-%       }
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% join(', ', map $_->emailaddress, @contact_email) %></TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+%         if ( $contact->selfservice_access ) {
+            Enabled
+%#            <FONT SIZE="-1"><A HREF="XXX">disable</A>
+%#                            <A HREF="XXX">re-email</A></FONT>
+%         } else {
+            Disabled
+%#            <FONT SIZE="-1"><A HREF="XXX">enable</A></FONT>
+%        }
+       </TD>
 
 %       foreach my $phone_type (@phone_type) {
 %         my $contact_phone =
 %           qsearchs('contact_phone', {
 %                      'contactnum'   => $contact->contactnum,
 %                      'phonetypenum' => $phone_type->phonetypenum,
-%                   })
-%           or next;
-          <TD ALIGN="right">&nbsp;&nbsp;&nbsp;<% $phone_type->typename %> phone</TD>
-          <TD BGCOLOR="#FFFFFF"><% $contact_phone->phonenum_pretty |h %></TD>
+%                   });
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $contact_phone ? $contact_phone->phonenum_pretty : '' |h %></TD>
 %       }
 
       </TR>
+
+%     if ( $bgcolor eq $bgcolor1 ) {
+%        $bgcolor = $bgcolor2;
+%      } else {
+%        $bgcolor = $bgcolor1;
+%      }
 %   }
 </TABLE>
 <%once>

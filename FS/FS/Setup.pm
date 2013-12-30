@@ -400,6 +400,9 @@ sub initial_data {
     #phone types
     'phone_type' => [],
 
+    #message templates
+    'msg_template' => [],
+
   ;
 
   \%hash;

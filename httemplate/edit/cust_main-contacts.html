@@ -3,7 +3,7 @@
      'table'           => 'cust_main',
      'post_url'       => popurl(1). 'process/cust_main-contacts.html',
      'labels'          => { 'custnum'     => ' ', #XXX supress this line entirely, its being redundant
-                            'contactnum'  => 'Contact',
+                            'contactnum'  => ' ', #'Contact',
                             #'locationnum' => '&nbsp;',
                           },
      'fields'          => [
@@ -12,7 +12,7 @@
          'colspan'           => 6,
          'm2m_method'        => 'cust_contact',
          'm2m_dstcol'        => 'contactnum',   
-         'm2_label'          => 'Contact',
+         'm2_label'          => ' ', #'Contact',
          'm2_error_callback' => $m2_error_callback,
        },
      ],

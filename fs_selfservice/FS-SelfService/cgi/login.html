@@ -15,25 +15,26 @@
 
 <TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=2 CELLPADDING=0>
 
-<TR>
-  <TH ALIGN="right">Username </TH>
-  <TD>
-    <INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"><%= $single_domain ? '@'.$single_domain : '' %>
-  </TD>
-</TR>
-
 <%=
 if ( $single_domain ) {
 
-  $OUT .= qq(<INPUT TYPE="hidden" NAME="domain" VALUE="$single_domain">);
+  $OUT .= qq(
+    <TR>
+      <TH ALIGN="right">Username </TH>
+      <TD>
+        <INPUT TYPE="text" NAME="username" VALUE="$username">\@$single_domain
+      </TD>
+    </TR>
+    <INPUT TYPE="hidden" NAME="domain" VALUE="$single_domain">
+  );
 
 } else {
 
   $OUT .= qq(
     <TR>
-      <TH ALIGN="right">Domain </TH>
+      <TH ALIGN="right">Email address </TH>
       <TD>
-        <INPUT TYPE="text" NAME="domain" VALUE="$domain">
+        <INPUT TYPE="text" NAME="email" VALUE="$email">
       </TD>
     </TR>
   );

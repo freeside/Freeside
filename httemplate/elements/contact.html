@@ -45,14 +45,30 @@
 %       }
 
         <TD>
-          <INPUT TYPE  = "text"
-                 NAME  = "<%$name%>_<%$field%>"
-                 ID    = "<%$id%>_<%$field%>"
-                 SIZE  = "<% $size{$field} || 15 %>"
-                 VALUE = "<% scalar($cgi->param($name."_$field"))
-                             || $value |h %>"
-                 <% $onchange %>
-          ><BR>
+%         if ( $field eq 'selfservice_access' ) {
+            <SELECT NAME = "<%$name%>_<%$field%>"
+                    ID   = "<%$id%>_<%$field%>"
+            >
+              <OPTION VALUE="">Disabled
+%             if ( $value || $self_base_url ) {
+                <OPTION VALUE="Y" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
+%               if ( $value eq 'Y' && $self_base_url ) {
+                  <OPTION VALUE="R">Re-email
+%               }
+%             }
+            </SELECT>
+
+%         } else {
+            <INPUT TYPE  = "text"
+                   NAME  = "<%$name%>_<%$field%>"
+                   ID    = "<%$id%>_<%$field%>"
+                   SIZE  = "<% $size{$field} || 14 %>"
+                   VALUE = "<% scalar($cgi->param($name."_$field"))
+                               || $value |h %>"
+                   <% $onchange %>
+            >
+%         }
+          <BR>
           <FONT SIZE="-1"><% $label{$field} %></FONT>
         </TD>
 %     }
@@ -63,6 +79,9 @@
 <%init>
 
 my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $self_base_url = $conf->config('selfservice_server-base_url');
 
 my $name = $opt{'element_name'} || $opt{'field'} || 'contactnum';
 my $id = $opt{'id'} || 'contactnum';
@@ -90,10 +109,11 @@ if ( $curr_value ) {
 my %size = ( 'title' => 12 );
 
 tie my %label, 'Tie::IxHash',
-  'first'        => 'First name',
-  'last'         => 'Last name',
-  'title'        => 'Title/Position',
-  'emailaddress' => 'Email',
+  'first'              => 'First name',
+  'last'               => 'Last name',
+  'title'              => 'Title/Position',
+  'emailaddress'       => 'Email',
+  'selfservice_access' => 'Self-service'
 ;
 
 my $first = 0;
