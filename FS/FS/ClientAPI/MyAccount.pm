@@ -96,6 +96,7 @@ sub skin_info {
   } elsif ( defined($p->{'agentnum'}) and $p->{'agentnum'} =~ /^(\d+)$/ ) {
     $agentnum = $1;
   }
+  $p->{'agentnum'} = $agentnum;
 
   my $conf = new FS::Conf;
 
@@ -203,7 +204,7 @@ sub login {
               && (my $contact = FS::contact->by_selfservice_email($p->{email}))
           )
   {
-    return { error => 'Incorrect password.' }
+    return { error => 'Incorrect contact password.' }
       unless $contact->authenticate_password($p->{'password'});
 
     $session->{'custnum'} = $contact->custnum;
@@ -2913,9 +2914,11 @@ sub myaccount_passwd {
 sub reset_passwd {
   my $p = shift;
 
+  my $info = skin_info($p);
+
   my $conf = new FS::Conf;
   my $verification = $conf->config('selfservice-password_reset_verification')
-    or return { 'error' => 'Password resets disabled' };
+    or return { %$info, 'error' => 'Password resets disabled' };
 
   my $contact = '';
   my $svc_acct = '';
@@ -2946,21 +2949,21 @@ sub reset_passwd {
       
     }
 
-    return { 'error' => 'Email address not found' }
+    return { %$info, 'error' => 'Email address not found' }
       unless $contact || $svc_acct;
 
   } elsif ( $p->{'username'} ) { #old style, looks in svc_acct only
 
     my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
-      or return { 'error' => 'Account not found' };
+      or return { %$info, 'error' => 'Account not found' };
 
     $svc_acct = qsearchs('svc_acct', { 'username' => $p->{'username'},
                                        'domsvc'   => $svc_domain->svcnum  }
                         )
-      or return { 'error' => 'Account not found' };
+      or return { %$info, 'error' => 'Account not found' };
 
     my $cust_pkg = $svc_acct->cust_svc->cust_pkg
-      or return { 'error' => 'Account not found' };
+      or return { %$info, 'error' => 'Account not found' };
 
     $cust_main = $cust_pkg->cust_main;
 
@@ -2994,7 +2997,7 @@ sub reset_passwd {
   foreach my $verify ( split(',', $verification) ) {
 
     &{ $verify{$verify} }( $p, $cust_main )
-      or return { 'error' => 'Account not found' };
+      or return { %$info, 'error' => 'Account not found' };
 
   }
 
@@ -3007,7 +3010,7 @@ sub reset_passwd {
                           );
 
     if ( $error ) {
-      return { 'error' => $error }; #????
+      return { %$info, 'error' => $error }; #????
     }
 
   } elsif ( $svc_acct ) {
@@ -3015,7 +3018,8 @@ sub reset_passwd {
     #create a unique session
 
     my $reset_session = {
-      'svcnum' => $svc_acct->svcnum,
+      'svcnum'   => $svc_acct->svcnum,
+      'agentnum' =>
     };
 
     my $timeout = '1 hour'; #?
@@ -3033,7 +3037,7 @@ sub reset_passwd {
     my $msgnum = $conf->config('selfservice-password_reset_msgnum',
                                $cust_main->agentnum);
     #die "selfservice-password_reset_msgnum unset" unless $msgnum;
-    return { 'error' => "selfservice-password_reset_msgnum unset" }
+    return { %$info, 'error' => "selfservice-password_reset_msgnum unset" }
       unless $msgnum;
     my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
     my $error = $msg_template->send( 'cust_main'     => $cust_main,
@@ -3043,12 +3047,12 @@ sub reset_passwd {
                                      }
                                    );
     if ( $error ) {
-      return { 'error' => $error }; #????
+      return { %$info, 'error' => $error }; #????
     }
 
   }
 
-  return { 'error' => '' };
+  return { %$info, 'error' => '' };
 }
 
 sub check_reset_passwd {
@@ -3068,7 +3072,11 @@ sub check_reset_passwd {
     my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
       or return { 'error' => "Service not found" };
 
-    return { 'error'      => '',
+    $p->{'agentnum'} = $svc_acct->cust_svc->cust_pkg->cust_main->agentnum;
+    my $info = skin_info($p);
+
+    return { %$info,
+             'error'      => '',
              'session_id' => $p->{'session_id'},
              'username'   => $svc_acct->username,
            };
@@ -3083,7 +3091,11 @@ sub check_reset_passwd {
     my @contact_email = $contact->contact_email;
     return { 'error' => 'No contact email' } unless @contact_email;
 
-    return { 'error'      => '',
+    $p->{'agentnum'} = $contact->cust_main->agentnum;
+    my $info = skin_info($p);
+
+    return { %$info,
+             'error'      => '',
              'session_id' => $p->{'session_id'},
              'email'      => $contact_email[0]->email, #the first?
            };
@@ -3103,26 +3115,49 @@ sub process_reset_passwd {
   my $verification = $conf->config('selfservice-password_reset_verification')
     or return { 'error' => 'Password resets disabled' };
 
-  return { 'error' => "New passwords don't match." }
-    if $p->{'new_password'} ne $p->{'new_password2'};
-
-  return { 'error' => 'Enter new password' }
-    unless length($p->{'new_password'});
-
   my $reset_session = _cache->get('reset_passwd_'. $p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
+  my $info = '';
+
+  my $svc_acct = '';
   if ( $reset_session->{'svcnum'} ) {
 
     my $svcnum = $reset_session->{'svcnum'};
 
-    my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
+    $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
       or return { 'error' => "Service not found" };
+
+    $p->{'agentnum'} ||= $svc_acct->cust_svc->cust_pkg->cust_main->agentnum;
+    $info ||= skin_info($p);
+
+  }
+
+  my $contact = '';
+  if ( $reset_session->{'contactnum'} ) {
+
+    my $contactnum = $reset_session->{'contactnum'};
+
+    $contact = qsearchs('contact', { 'contactnum' => $contactnum } )
+      or return { 'error' => "Contact not found" };
+
+    $p->{'agentnum'} ||= $contact->cust_main->agentnum;
+    $info ||= skin_info($p);
+
+  }
+
+  return { %$info, 'error' => "New passwords don't match." }
+    if $p->{'new_password'} ne $p->{'new_password2'};
+
+  return { %$info, 'error' => 'Enter new password' }
+    unless length($p->{'new_password'});
+
+  if ( $svc_acct ) {
 
     $svc_acct->set_password($p->{'new_password'});
     my $error = $svc_acct->replace();
 
-    return { 'error' => $error } if $error;
+    return { %$info, 'error' => $error } if $error;
 
     #my($label, $value) = $svc_acct->cust_svc->label;
     #return { 'error' => $error,
@@ -3132,23 +3167,18 @@ sub process_reset_passwd {
 
   }
 
-  if ( $reset_session->{'contactnum'} ) {
-
-    my $contactnum = $reset_session->{'contactnum'};
-
-    my $contact = qsearchs('contact', { 'contactnum' => $contactnum } )
-      or return { 'error' => "Contact not found" };
+  if ( $contact ) {
 
     my $error = $contact->change_password($p->{'new_password'});
 
-    return { 'error' => $error }; # if $error;
+    return { %$info, 'error' => $error }; # if $error;
 
   }
 
   #password changed ,so remove session, don't want it reused
   _cache->remove($p->{'session_id'});
 
-  return { 'error' => '' };
+  return { %$info, 'error' => '' };
 
 }
 
