@@ -979,6 +979,9 @@ sub AUTOLOAD {
   my($field)=$AUTOLOAD;
   $field =~ s/.*://;
 
+  confess "errant AUTOLOAD $field for $self (arg $value)"
+    unless blessed($self) && $self->can('setfield');
+
   #$fk_method_cache{$self->table} ||= fk_methods($self->table);
   if ( exists($fk_method_cache{$self->table}->{$field}) ) {
 
@@ -1006,12 +1009,8 @@ sub AUTOLOAD {
   }
 
   if ( defined($value) ) {
-    confess "errant AUTOLOAD $field for $self (arg $value)"
-      unless blessed($self) && $self->can('setfield');
     $self->setfield($field,$value);
   } else {
-    confess "errant AUTOLOAD $field for $self (no args)"
-      unless blessed($self) && $self->can('getfield');
     $self->getfield($field);
   }    
 }
