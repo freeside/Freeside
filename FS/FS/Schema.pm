@@ -1739,7 +1739,8 @@ sub tables_hashref {
         'emailaddress',   'varchar', '', $char_d, '', '',
       ],
       'primary_key'  => 'contactemailnum',
-      'unique'       => [ [ 'contactnum', 'emailaddress' ], ],
+      #'unique'       => [ [ 'contactnum', 'emailaddress' ], ],
+      'unique'       => [ [ 'emailaddress' ], ],
       'index'        => [],
       'foreign_keys' => [
                           { columns    => [ 'contactnum' ],
