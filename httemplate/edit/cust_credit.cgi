@@ -19,7 +19,7 @@
 
   <TR>
     <TD ALIGN="right"><% mt('Amount') |h %></TD>
-    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="amount" VALUE="<% $amount |h %>" SIZE=8 MAXLENGTH=9></TD>
+    <TD BGCOLOR="#ffffff"><% $money_char |h %><INPUT TYPE="text" NAME="amount" VALUE="<% $amount |h %>" SIZE=8 MAXLENGTH=9></TD>
   </TR>
 
 <& /elements/tr-select-reason.html,
@@ -66,6 +66,8 @@
 <%init>
 
 my $conf = new FS::Conf;
+
+my $money_char  = $conf->config('money_char')  || '$';
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 die "access denied"
