@@ -1,5 +1,4 @@
-<% $credit %>
-<% "$reason$desc$apply$delete$unapply" %>
+<% $credit. ' '. $reason. $desc. $change_pkg. $apply. $delete. $unapply %>
 <%init>
 
 my( $cust_credit, %opt ) = @_;
@@ -113,7 +112,20 @@ if (    scalar(@cust_credit_bill)   == 0
     $desc .= '<BR>';
   }
 }
-#
+
+my $change_pkg = '';
+if ( $apply && $opt{'pkg-balances'} && $cust_credit->pkgnum ) {
+  $change_pkg =
+  ' ('. include('/elements/popup_link.html',
+                  'label'       => emt('change package'),
+                  'action'      => "${p}edit/cust_credit-pkgnum.html?crednum=".
+                                    $cust_credit->crednum,
+                  'actionlabel' => emt('Change credit package'),
+                  'width'       => 763,
+               ).
+   ')';
+}
+
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_credit.cgi?".$cust_credit->crednum,
                             emt('Are you sure you want to delete this credit?'),

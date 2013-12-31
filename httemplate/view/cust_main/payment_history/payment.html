@@ -1,5 +1,6 @@
-<% $payment %>
-<% "$info$desc$view$apply$refund$void$delete$unapply" %>
+<% $payment. ' '.  $info. $desc.
+   $view. $change_pkg. $apply. $refund. $void. $delete. $unapply
+%>
 <%init>
 
 my( $cust_pay, %opt ) = @_;
@@ -142,6 +143,19 @@ my $view =
                   'actionlabel' => emt('Payment Receipt'),
                ).
    ')';
+
+my $change_pkg = '';
+if ( $apply && $opt{'pkg-balances'} && $cust_pay->pkgnum ) {
+  $change_pkg =
+  ' ('. include('/elements/popup_link.html',
+                  'label'       => emt('change package'),
+                  'action'      => "${p}edit/cust_pay-pkgnum.html?paynum=".
+                                    $cust_pay->paynum,
+                  'actionlabel' => emt('Change payment package'),
+                  'width'       => 763,
+               ).
+   ')';
+}
 
 my $refund = '';
 my $refund_days = $opt{'card_refund-days'} || 120;

@@ -1,0 +1,35 @@
+%if ($error) {
+%  $cgi->param('error', $error);
+<% $cgi->redirect(popurl(2). 'cust_credit-pkgnum.html?'. $cgi->query_string ) %>
+%} else {
+<% header(emt('Credit package changed')) %>
+    <SCRIPT TYPE="text/javascript">
+      window.top.location.reload();
+    </SCRIPT>
+
+    </BODY></HTML>
+%}
+<%init>
+
+my $conf = FS::Conf->new;
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Apply credit'); #own ACL?
+
+$cgi->param('crednum') =~ /^(\d+)$/
+  or die "Illegal crednum: ". $cgi->param('crednum');
+my $crednum = $1;
+
+my $cust_credit = qsearchs({
+  'select'    => 'cust_credit.*',
+  'table'     => 'cust_credit',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { crednum => scalar($cgi->param('crednum')), },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+})
+  or die 'unknown credit';
+
+$cust_credit->pkgnum( $cgi->param('pkgnum') );
+my $error = $cust_credit->replace;
+
+</%init>
