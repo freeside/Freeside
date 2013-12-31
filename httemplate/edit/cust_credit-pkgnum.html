@@ -1,0 +1,69 @@
+<& /elements/header-popup.html, mt('Change credit package') &>
+
+<& /elements/error.html &>
+
+<FORM NAME="credit_popup" ACTION="<% popurl(1) %>process/cust_credit-pkgnum.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="crednum" VALUE="<% $cust_credit->crednum %>">
+
+<% ntable("#cccccc", 2) %>
+
+  <TR>
+    <TD ALIGN="right"><% mt('Date') |h %></TD>
+    <TD BGCOLOR="#eeeeee"><% time2str($date_format, $cust_credit->_date) |h %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right"><% mt('Amount') |h %></TD>
+    <TD BGCOLOR="#eeeeee">
+      <% $money_char. $cust_credit->amount %>
+    </TD>
+  </TR>
+
+% if ( $cust_credit->addlinfo ) {
+    <TR>
+      <TD ALIGN="right"><% mt('Additional info') |h %></TD>
+      <TD BGCOLOR="#eeeeee">
+        <% $cust_credit->addlinfo |h %>
+      </TD>
+    </TR>
+% }
+
+% if ( $conf->exists('pkg-balances') ) {
+%   $cgi->param('pkgnum', $cust_credit->pkgnum);
+    <& /elements/tr-select-cust_pkg-balances.html,
+                 'custnum' => $cust_credit->custnum,
+                 'cgi'     => $cgi
+    &>
+% } else {
+  <INPUT TYPE="hidden" NAME="pkgnum" VALUE="">
+% }
+
+</TABLE>
+
+<BR>
+
+<CENTER><INPUT TYPE="submit" ID="confirm_credit_button" VALUE="<% mt('Change credit package') |h %>"></CENTER>
+
+</FORM>
+</BODY>
+</HTML>
+<%init>
+
+my $conf = new FS::Conf;
+
+my $money_char  = $conf->config('money_char')  || '$';
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Apply credit'); #own ACL?
+
+my $cust_credit = qsearchs({
+  'select'    => 'cust_credit.*',
+  'table'     => 'cust_credit',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { crednum => scalar($cgi->param('crednum')), },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+})
+  or die 'unknown credit';
+
+</%init>

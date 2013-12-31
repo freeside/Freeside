@@ -1,0 +1,93 @@
+<& /elements/header-popup.html, 'Change payment package' &>
+
+<& /elements/error.html &>
+
+<FORM NAME="PaymentForm" ACTION="<% popurl(1) %>process/cust_pay-pkgnum.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="paynum" VALUE="<% $cust_pay->paynum %>">
+
+<BR>
+
+<% mt('Payment') |h %> 
+<% ntable("#cccccc", 2) %>
+
+<TR>
+  <TD ALIGN="right"><% mt('Date') |h %></TD>
+  <TD COLSPAN=2 BGCOLOR="#eeeeee"><% time2str($date_format.' %r',$cust_pay->_date) |h %>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><% mt('Amount') |h %></TD>
+  <TD COLSPAN=2 BGCOLOR="#eeeeee">
+   <% $money_char. $cust_pay->paid %>
+   <% mt('by') |h %>
+   <B><% mt(FS::payby->payname($cust_pay->payby)) |h %></B></TD>
+</TR>
+
+% if ( $cust_pay->payby eq 'BILL' ) { 
+  <TR>
+    <TD ALIGN="right"><% mt('Check #') |h %></TD>
+    <TD COLSPAN=2><% $cust_pay->payinfo |h %></TD>
+  </TR>
+% } elsif ( $cust_pay->payby eq 'CASH' and $conf->exists('require_cash_deposit_info') ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Bank') |h %></TD>
+    <TD COLSPAN=3><% $cust_pay->bank |h %></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Check #') |h %></TD>
+    <TD COLSPAN=2><% $cust_pay->payinfo |h %></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Teller #') |h %></TD>
+    <TD COLSPAN=2><% $cust_pay->teller |h %></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Depositor') |h %></TD>
+    <TD COLSPAN=3><% $cust_pay->depositor |h %></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Account #') |h %></TD>
+    <TD COLSPAN=2><% $cust_pay->account |h %></TD>
+  </TR>
+% }
+
+% if ( $conf->exists('pkg-balances') ) {
+%   $cgi->param('pkgnum', $cust_pay->pkgnum);
+    <& /elements/tr-select-cust_pkg-balances.html,
+                 'custnum' => $cust_pay->custnum,
+                 'cgi'     => $cgi,
+    &>
+% } else {
+  <INPUT TYPE="hidden" NAME="pkgnum" VALUE="">
+% }
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Change payment package') |h %>">
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+my $conf = new FS::Conf;
+
+my $money_char  = $conf->config('money_char')  || '$';
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Apply payment'); #own ACL?
+
+my $cust_pay = qsearchs({
+  'select'    => 'cust_pay.*',
+  'table'     => 'cust_pay',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { paynum => scalar($cgi->param('paynum')), },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+})
+  or die 'unknown payment';
+
+</%init>
