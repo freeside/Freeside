@@ -12,7 +12,7 @@
                'action'      => "${p}edit/cust_pay.cgi?popup=1;payby=BILL",
                'cust_main'   => $cust_main,
                'actionlabel' => emt('Enter check payment'),
-               'width'       => 392,
+               'width'       => ( $opt{'pkg-balances'} ? 763 : 392),
                'height'      => 392,
   &>
 % } 
@@ -24,7 +24,7 @@
                'action'      => "${p}edit/cust_pay.cgi?popup=1;payby=CASH",
                'cust_main'   => $cust_main,
                'actionlabel' => emt('Enter cash payment'),
-               'width'       => 392,
+               'width'       => ( $opt{'pkg-balances'} ? 763 : 392),
                'height'      => 392,
   &>
 % } 
@@ -70,7 +70,7 @@
                'action'      => "${p}edit/cust_credit.cgi",
                'cust_main'   => $cust_main,
                'actionlabel' => emt('Enter credit'),
-               'width'       => 616, #make room for reasons #540 default
+               'width'       => ( $opt{'pkg-balances'} ? 763 : 616),
   &>
 % }
 % if ( $curuser->access_right('Credit line items') ) { 
