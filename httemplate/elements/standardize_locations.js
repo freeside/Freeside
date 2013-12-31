@@ -157,9 +157,17 @@ function replace_address() {
   var clean = newaddr['<% $pre %>addr_clean'] == 'Y';
   var error = newaddr['<% $pre %>error'];
   if ( clean ) {
-%   foreach my $field (qw(address1 address2 city state zip addr_clean censustract)) {
+%   foreach my $field (qw(address1 address2 city state zip addr_clean )) {
     cf.elements['<% $pre %><% $field %>'].value = newaddr['<% $pre %><% $field %>'];
 %   } #foreach $field
+
+%   # special case: allow manually setting the census tract, whether 
+%   # standardization returned one or not
+    if ( cf.elements['old_censustract'].value != cf.elements['enter_censustract'].value
+         && cf.elements['enter_censustract'].value.length > 0 ) {
+      cf.elements['<% $pre %>censustract'].value = cf.elements['enter_censustract'].value;
+    }
+
 
     if ( cf.elements['<% $pre %>coord_auto'].value ) {
       cf.elements['<% $pre %>latitude'].value  = newaddr['<% $pre %>latitude'];
