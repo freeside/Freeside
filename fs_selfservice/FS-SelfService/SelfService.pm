@@ -1467,7 +1467,7 @@ END
   foreach my $state ( sort keys %{ $cust_main_county{$param->{'selected_country'}} } ) {
     my $text = $state || '(n/a)';
     my $selected = $state eq $param->{'selected_state'} ? 'SELECTED' : '';
-    $state_html .= "\n<OPTION $selected VALUE=$state>$text</OPTION>"
+    $state_html .= "\n<OPTION $selected VALUE=\"$state\">$text</OPTION>"
   }
   $state_html .= '</SELECT>';
 
@@ -1487,7 +1487,7 @@ END
       my $selected = $country eq $param->{'selected_country'}
                        ? ' SELECTED'
                        : '';
-      $country_html .= "\n<OPTION$selected>$country</OPTION>"
+      $country_html .= "\n<OPTION $selected>$country</OPTION>"
     }
     $country_html .= '</SELECT>';
   } else {
