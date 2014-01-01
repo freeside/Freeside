@@ -35,7 +35,7 @@ if ( $cgi->param('locationnum') == -1 ) {
   my $cust_location = FS::cust_location->new({
     'custnum' => $cust_pkg->custnum,
     map { $_ => scalar($cgi->param($_)) }
-        qw( address1 address2 city county state zip country )
+        FS::cust_main->location_fields
   });
   $change{'cust_location'} = $cust_location;
 }

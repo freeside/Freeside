@@ -61,7 +61,11 @@ warn $cgi->param('q') if $DEBUG;
 my $q = decode_json($cgi->param('q'))
   or die "bad argument '".$cgi->param('q')."'";
 
-my $pre = $q->{'same'} ? 'bill_' : 'ship_';
+my $pre = '';
+if ($q->{billship}) {
+  # this still isn't quite correct
+  $pre = $q->{'same'} ? 'bill_' : 'ship_';
+}
 my %location = (
   map { $_ => $q->{$pre.$_} }
     qw( company address1 address2 city state zip country latitude longitude )

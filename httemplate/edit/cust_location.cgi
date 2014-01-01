@@ -19,6 +19,7 @@ ACTION="<% $p %>edit/process/cust_location.cgi" METHOD=POST>
             'form'          => 'EditLocationForm',
             'callback'      => 'document.EditLocationForm.submit();',
             'with_census'   => 1,
+            'with_census_functions' => 1,
 &>
 </TABLE>
 
