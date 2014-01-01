@@ -80,8 +80,10 @@
 
 
 <& /elements/standardize_locations.html,
-            'form'       => "OrderPkgForm",
-            'callback'   => 'document.OrderPkgForm.submit();',
+            'form'        => "OrderPkgForm",
+            'with_census' => 1,
+            'with_census_functions' => 1,
+            'callback'   => 'document.OrderPkgForm.submit()',
 &>
 
 <INPUT NAME    = "submitButton"

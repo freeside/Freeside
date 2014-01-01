@@ -176,8 +176,9 @@
 
   <& /elements/standardize_locations.html,
                 'form'        => "OrderPkgForm",
-                'callback'    => 'document.OrderPkgForm.submit();',
+                'callback'    => 'document.OrderPkgForm.submit()',
                 'with_census' => 1,
+                'with_census_functions' => 1,
   &>
 
 % }

@@ -161,14 +161,6 @@ function replace_address() {
     cf.elements['<% $pre %><% $field %>'].value = newaddr['<% $pre %><% $field %>'];
 %   } #foreach $field
 
-%   # special case: allow manually setting the census tract, whether 
-%   # standardization returned one or not
-    if ( cf.elements['old_censustract'].value != cf.elements['enter_censustract'].value
-         && cf.elements['enter_censustract'].value.length > 0 ) {
-      cf.elements['<% $pre %>censustract'].value = cf.elements['enter_censustract'].value;
-    }
-
-
     if ( cf.elements['<% $pre %>coord_auto'].value ) {
       cf.elements['<% $pre %>latitude'].value  = newaddr['<% $pre %>latitude'];
       cf.elements['<% $pre %>longitude'].value = newaddr['<% $pre %>longitude'];
@@ -304,6 +296,45 @@ function setselect(el, value) {
   }
 
 }
+
+% if ($census_functions) { # do not use this in cust_main
+function confirm_censustract() {
+%   if ( FS::Conf->new->exists('cust_main-require_censustract') ) {
+  var form = document.<% $formname %>;
+  // this is the existing/confirmed censustract, not the manually entered one
+  if ( form.elements['censustract'].value == '' ||
+       form.elements['censustract'].value != 
+          form.elements['enter_censustract'].value ) {
+    var address_info = form_address_info();
+    address_info['latitude']  = form.elements['latitude'].value;
+    address_info['longitude'] = form.elements['longitude'].value;
+    OLpostAJAX(
+        '<%$p%>/misc/confirm-censustract.html',
+        'q=' + encodeURIComponent(JSON.stringify(address_info)),
+        function() {
+          overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
+            AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
+            576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
+            TEXTSIZE, 3 );
+        },
+        0);
+  } else {
+    <% $post_censustract %>;
+  }
+%   } else { # skip this step
+  <% $post_censustract %>;
+%   }
+}
+
+function set_censustract(tract, year) {
+  var form = document.<% $formname %>;
+  form.elements['censustract'].value = tract;
+  form.elements['censusyear'].value = year;
+  <% $post_censustract %>;
+}
+
+% } # $census_functions
+
 <%init>
 
 my %opt = @_;
@@ -323,5 +354,12 @@ if ($billship) {
 
 my $formname =  $opt{form} || 'CustomerForm';
 my $post_geocode = $opt{callback} || 'post_geocode();';
+my $post_censustract;
+
+my $census_functions = $opt{'with_census_functions'} ? 1 : 0;
+if ( $census_functions ) {
+  $post_censustract = $post_geocode;
+  $post_geocode = 'confirm_censustract()';
+}
 
 </%init>
