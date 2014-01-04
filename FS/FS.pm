@@ -214,6 +214,14 @@ L<FS::cable_model> - Cable-modem model class
 
 L<FS::cable_provider> - Cable provider class
 
+L<FS::svc_alarm> - Alarm service class
+
+L<FS::alarm_system> - Alarm system class
+
+L<FS::alarm_type> - Alarm type (inputs and outputs) class
+
+L<FS::alarm_station> - Alarm central station class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items
