@@ -105,7 +105,7 @@ unless ( $nologin_actions{$action} ) {
 
   my %cookies = CGI::Cookie->fetch;
 
-  my $login_rv;
+  my $login_rv = {};
 
   if ( exists($cookies{'session'}) ) {
 
@@ -178,10 +178,7 @@ unless ( $nologin_actions{$action} ) {
 
     } # else session_id ne 'login'
 
-  } else {
-    # there is no session cookie
-    $login_rv = {};
-  }
+  } # else there is no session cookie
 
   if ( !$session_id ) {
     # XXX why are we getting agentnum from a CGI param? surely it should 
