@@ -362,6 +362,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::alarm_type;
   use FS::alarm_station;
   use FS::addr_range;
+  use FS::svc_conferencing;
+  use FS::conferencing_type;
+  use FS::conferencing_quality;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
