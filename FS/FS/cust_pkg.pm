@@ -2750,12 +2750,12 @@ the results.
 sub cust_svc {
   my $self = shift;
   cluck "cust_pkg->cust_svc called" if $DEBUG > 2;
-  $self->_sort_cust_svc( $self->cust_svc_unsorted_arrayref );
+  $self->_sort_cust_svc( $self->cust_svc_unsorted_arrayref(@_) );
 }
 
 sub cust_svc_unsorted {
   my $self = shift;
-  @{ $self->cust_svc_unsorted_arrayref };
+  @{ $self->cust_svc_unsorted_arrayref(@_) };
 }
 
 sub cust_svc_unsorted_arrayref {
