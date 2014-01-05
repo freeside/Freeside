@@ -1,0 +1,32 @@
+<& elements/browse.html,
+     'title'              => 'Conferencing quality levels',
+     'html_init'          => $html_init,
+     'name_singular'      => 'quality',
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'query'              => { 'table'     => 'conferencing_quality',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY qualityid',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init =
+  qq!<A HREF="${p}edit/conferencing_quality.html"><I>Add a conferencing quality</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM conferencing_quality';
+
+my $link = [ $p.'edit/conferencing_quality.html?', 'confqualitynum' ];
+
+my $header = [ 'ID', 'Quality' ];
+my $fields = [ 'qualityid', 'qualityname' ];
+my $links  = [ $link, $link ];
+
+</%init>

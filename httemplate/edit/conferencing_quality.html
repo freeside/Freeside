@@ -1,0 +1,21 @@
+<& elements/edit.html,
+     'table'            => 'conferencing_quality',
+     'name_singular'    => 'quality',
+     'fields'           => [
+                             { field=>'qualityid',   type=>'text', size=>4 },
+                             { field=>'qualityname', type=>'text', },
+                             { field=>'disabled', type=>'checkbox', value=>'Y'},
+                           ],
+     'labels'           => { 'confqualitynum' => 'Type',
+                             'qualityid'      => 'ID',
+                             'qualityname'    => 'Name',
+                             'disabled'       => 'Disabled',
+                           },
+     'viewall_dir'      => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

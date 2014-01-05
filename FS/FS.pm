@@ -222,6 +222,12 @@ L<FS::alarm_type> - Alarm type (inputs and outputs) class
 
 L<FS::alarm_station> - Alarm central station class
 
+L<FS::svc_conferencing> - Conferencing service class
+
+L<FS::conferencing_type> - Conferencing type class
+
+L<FS::conferencing_quality> - Conferencing quality class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items

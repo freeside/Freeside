@@ -6055,6 +6055,61 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'svc_conferencing' => {
+      'columns' => [
+        'svcnum',            'int',     '',      '', '', '',
+        'conf_id',           'int', 'NULL',      '', '', '', #"system assigned"
+        'conf_name',     'varchar',     '', $char_d, '', '',
+        'conf_password', 'varchar',     '', $char_d, '', '',
+        'access_code',   'varchar',     '',      16, '', '',
+        'duration',          'int',     '',      '', '', '',
+        'participants',      'int',     '',      '', '', '',
+        'conftypenum',       'int',     '',      '', '', '',
+        'confqualitynum',    'int',     '',      '', '', '',
+        'opt_recording',    'char', 'NULL',       1, '', '',
+        'opt_sip',          'char', 'NULL',       1, '', '',
+        'opt_phone',        'char', 'NULL',       1, '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns => [ 'svcnum' ],
+                            table   => 'cust_svc',
+                          },
+                          { columns => [ 'conftypenum' ],
+                            table   => 'conferencing_type',
+                          },
+                          { columns => [ 'confqualitynum' ],
+                            table   => 'conferencing_quality',
+                          },
+                        ],
+    },
+
+    'conferencing_type' => {
+      'columns' => [
+        'conftypenum',  'int',     '',      '', '', '',
+        'typeid'      , 'int',     '',      '', '', '',
+        'typename', 'varchar',     '', $char_d, '', '',
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'conftypenum',
+      'unique'      => [ [ 'typeid', 'disabled' ], [ 'typename', 'disabled' ] ],
+      'index'       => [],
+    },
+
+    'conferencing_quality' => {
+      'columns' => [
+        'confqualitynum',  'int',     '',      '', '', '',
+        'qualityid'      , 'int',     '',      '', '', '',
+        'qualityname', 'varchar',     '', $char_d, '', '',
+        'disabled',       'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'confqualitynum',
+      'unique'      => [ [ 'qualityid', 'disabled' ], [ 'qualityname', 'disabled' ] ],
+      'index'       => [],
+    },
+
     'vend_main' => {
       'columns' => [
         'vendnum',   'serial',     '',      '', '', '',

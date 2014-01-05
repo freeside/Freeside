@@ -1,0 +1,10 @@
+<& elements/process.html,
+     'table'       => 'conferencing_quality',
+     'viewall_dir' => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

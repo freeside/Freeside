@@ -1,0 +1,21 @@
+<& elements/edit.html,
+     'table'            => 'conferencing_type',
+     'name_singular'    => 'type',
+     'fields'           => [
+                             { field=>'typeid',   type=>'text', size=>4 },
+                             { field=>'typename', type=>'text', },
+                             { field=>'disabled', type=>'checkbox', value=>'Y'},
+                           ],
+     'labels'           => { 'conftypenum' => 'Type',
+                             'typeid'      => 'ID',
+                             'typename'    => 'Name',
+                             'disabled'    => 'Disabled',
+                           },
+     'viewall_dir'      => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

@@ -1,0 +1,74 @@
+<% $opt{'prefix'} %><INPUT TYPE  = "text"
+                           NAME  = "<% $opt{field} %>"
+                           ID    = "<% $opt{id} %>"
+                           VALUE = "<% $value |h %>"
+                           <% $size %>
+                           <% $maxlength %>
+                           <% $style %>
+                           <% $opt{autocomplete} ? 'autocomplete="off"' : '' %>
+                           <% $opt{disabled} %>
+                           <% $onchange %>
+                    ><SELECT NAME = "<% $opt{field} %>_units"
+                           ID    = "<% $opt{id} %>_units"
+                           onChange = "<% $opt{field} %>_units_changed(this)"
+                    >
+                    <OPTION VALUE="1">minutes</OPTION>
+                    <OPTION SELECTED VALUE="60">hours</OPTION>
+                    </SELECT><% $opt{'postfix'} %>
+<SCRIPT TYPE="text/javascript">
+  function <% $opt{field} %>_units_changed(what) {
+    var units = what.options[what.selectedIndex].value;
+    if ( units == 60 ) { // changed from minutes to hours, so /60
+
+      var value = what.form.<% $opt{field} %>.value;
+      value = value / 60;
+      what.form.<% $opt{field} %>.value = value;
+
+    } else if ( units == 1 ) { // changed from hours to minutes, so *60
+
+      var value = what.form.<% $opt{field} %>.value;
+      value = Math.round(value * 60);
+      what.form.<% $opt{field} %>.value = value;
+
+    }
+  }
+</SCRIPT>
+<%init>
+
+my %opt = @_;
+
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+$value = $value / 60;
+
+my $onchange = $opt{'onchange'}
+                 ? join(' ', map $_.'="'. $opt{'onchange'}. '(this)"',
+                                 qw( onChange onKeyDown onKeyUp onKeyPress )
+                       )
+                 : '';
+
+$opt{'size'} ||= 4;
+my $size = 'SIZE="'. $opt{'size'}. '"';
+
+$opt{'maxlength'} ||= 3;
+my $maxlength = 'MAXLENGTH="'. $opt{'maxlength'}. '"';
+
+$opt{'disabled'} = &{ $opt{'disabled'} }( \%opt )
+  if ref($opt{'disabled'}) eq 'CODE';
+$opt{'disabled'} = 'DISABLED'
+  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
+
+my @style = ref($opt{'style'})
+              ? @{ $opt{'style'} }
+              : $opt{'style'}
+                ? ( $opt{'style'} )
+                : ();
+
+push @style, 'text-align: '. $opt{'text-align'}
+  if $opt{'text-align'};
+
+push @style, 'background-color: #dddddd'
+  if $opt{'disabled'} && ! $opt{'nodarken_disabled'};
+
+my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
+
+</%init>

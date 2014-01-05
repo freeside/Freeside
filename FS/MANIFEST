@@ -737,3 +737,9 @@ FS/alarm_station.pm
 t/alarm_station.t
 FS/addr_range.pm
 t/addr_range.t
+FS/svc_conferencing.pm
+t/svc_conferencing.t
+FS/conferencing_type.pm
+t/conferencing_type.t
+FS/conferencing_quality.pm
+t/conferencing_quality.t

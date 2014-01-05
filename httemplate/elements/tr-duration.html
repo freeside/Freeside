@@ -1,0 +1,30 @@
+<%doc>
+
+Example:
+
+  <& /elements/tr-duration.html,
+       'label' => 'Do or do not',
+       'field' => 'field_name',
+       'value' => 'Y',
+  &>
+
+</%doc>
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD <% $style %>>
+    <% include('duration.html', @_) %>
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>

@@ -1,0 +1,32 @@
+<& elements/browse.html,
+     'title'              => 'Conferencing types',
+     'html_init'          => $html_init,
+     'name_singular'      => 'type',
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'query'              => { 'table'     => 'conferencing_type',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY typeid',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init =
+  qq!<A HREF="${p}edit/conferencing_type.html"><I>Add a conferencing type</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM conferencing_type';
+
+my $link = [ $p.'edit/conferencing_type.html?', 'conftypenum' ];
+
+my $header = [ 'ID', 'Type' ];
+my $fields = [ 'typeid', 'typename' ];
+my $links  = [ $link, $link ];
+
+</%init>
