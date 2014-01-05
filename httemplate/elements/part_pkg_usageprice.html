@@ -1,0 +1,137 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE STYLE="display:inline">
+    <TR>
+
+%     ###
+%     # price
+%     ###
+      <TD>
+        <TABLE STYLE="display:inline">
+          <TR>
+            <TD>Price</TD>
+            <TD><% $money_char %><INPUT
+              TYPE  = "text"
+              NAME  = "<%$name%>_price"
+              ID    = "<%$id%>_price"
+              VALUE = "<% scalar($cgi->param($name.'_price'))
+                            || $part_pkg_usageprice->price
+                       %>"
+              <% $onchange %>
+            ></TD>
+          </TR>
+
+% #XXX lots more work for multi-currency...  maybe larger UI changes :/
+%         foreach my $currency ( () ) {
+%         #foreach my $currency ( sort $conf->config('currencies') ) {
+            <TR>
+              <TD><% $currency %></TD>
+              <TD><% currency_symbol($currency, SYM_HTML) %><INPUT
+                TYPE  = "text"
+                NAME  = "<%$name%>_price_<%$currency%>"
+                ID    = "<%$id%>_price_<%$currency%>"
+                VALUE = "<% scalar($cgi->param($name.'_price_'.$currency))
+                              || $part_pkg_usageprice->price #XXX
+                         %>"
+                <% $onchange %>
+              ></TD>
+            </TR>
+%         }
+
+        </TABLE>
+      </TD>
+
+%     ###
+%     # action
+%     ###
+      <TD>
+        <SELECT NAME = "<%$name%>_action"
+                ID   = "<%$id%>_action"
+                <% $onchange %>
+        >
+          <OPTION VALUE="increment">Increment
+%#no set yet          <OPTION VALUE="set" <% ($cgi->param($name.'_action') || $part_pkg_usageprice->action) eq 'set' ? 'SELECTED' : '' %>>Set
+        </SELECT>
+      </TD>
+
+%     ###
+%     # target
+%     ###
+      <TD>
+        <SELECT NAME = "<%$name%>_target"
+                ID   = "<%$id%>_target"
+                <% $onchange %>
+        >
+%       foreach my $target (keys %targets) {
+          <OPTION VALUE="<% $target %>"
+                  <% ($cgi->param($name.'_target') || $part_pkg_usageprice->target) eq $target ? 'SELECTED' : '' %>
+          ><% $targets{$target}->{label} %>
+%       }
+      </TD>
+
+%     ###
+%     # amount
+%     ###
+      <TD>
+        <INPUT TYPE = "text"
+               NAME = "<%$name%>_amount"
+               ID   = "<%$id%>_amount"
+               SIZE = 5
+               VALUE = "<% scalar($cgi->param($name.'_amount'))
+                             || $part_pkg_usageprice->amount
+                        %>"
+               <% $onchange %>
+        >
+      </TD>
+
+    </TR>
+  </TABLE>
+
+% }
+<%init>
+
+tie my %targets, 'Tie::IxHash', # once?
+  #'svc_acct.totalbytes' => { label => 'Megabytes',
+  #                           mult  => 1048576,
+  #                         },
+  'svc_acct.totalbytes' => { label => 'Gigabytes',
+                             mult  => 1073741824,
+                           },
+  'svc_acct.seconds' => { label => 'Hours',
+                          mult  => 3600,
+                        },
+  'svc_conferencing.participants' => { label => 'Conference Participants',
+                                       mult  => 1,
+                                     },
+#this will take more work: set action, not increment..
+#  and then value comes from a select, not a text field
+#  'svc_conferencing.confqualitynum' => { label => 'Conference Quality',
+#                                        },
+;
+
+my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'usagepricepart';
+my $id = $opt{'id'} || 'usagepricepart';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $part_pkg_usageprice = $curr_value
+  ? qsearchs('part_pkg_usageprice', { 'usagepricepart' => $curr_value } )
+  : new FS::part_pkg_usageprice {};
+
+</%init>

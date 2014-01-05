@@ -2928,7 +2928,7 @@ sub tables_hashref {
                         ],
     },
 
-   'part_pkg' => {
+    'part_pkg' => {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
         'pkg',           'varchar',   '',   $char_d, '', '', 
@@ -3034,6 +3034,26 @@ sub tables_hashref {
       'primary_key' => 'currencyratenum',
       'unique'      => [ [ 'from_currency', 'to_currency' ] ],
       'index'       => [],
+    },
+
+    'part_pkg_usageprice' => {
+      'columns' => [
+        'usagepricepart', 'serial',      '',      '', '', '',
+        'pkgpart',           'int',      '',      '', '', '',
+        'price',          @money_type,                '', '', 
+        'currency',         'char',  'NULL',       3, '', '',
+        'action',        'varchar',      '', $char_d, '', '',
+        'target',        'varchar',      '', $char_d, '', '',
+        'amount',        'varchar',      '', $char_d, '', '',
+      ],
+      'primary_key'  => 'usagepricepart',
+      'unique'       => [ [ 'pkgpart', 'currency', 'target' ] ],
+      'index'        => [ [ 'pkgpart' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'pkgpart' ],
+                            table      => 'part_pkg',
+                          },
+                        ],
     },
 
     'part_pkg_link' => {

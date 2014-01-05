@@ -269,6 +269,10 @@ my @process_o2m = (
     'table'  => 'part_pkg_msgcat',
     'fields' => [qw( locale pkg )],
   },
+  {
+    'table'  => 'part_pkg_usageprice',
+    'fields' => [qw( price currency action target amount )],
+  }
 );
 
 </%init>

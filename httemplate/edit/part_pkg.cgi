@@ -59,6 +59,7 @@
                          }
                        $conf->config('currencies')
                    ),
+                   'usagepricepart'   => ' ',
                    'discountnum'      => 'Offer discounts for longer terms',
                    'bill_dst_pkgpart' => 'Include line item(s) from package',
                    'svc_dst_pkgpart'  => 'Include services of package',
@@ -244,6 +245,16 @@
 
 
                    { type => 'columnend' },
+
+                   { type     => 'tablebreak-tr-title',
+                     value    => 'Usage pricing add-ons', #better name?  just 'Usage pricing' ?  there's also CDR usage pricing, RADIUS usage pricing, etc :/
+                   },
+                   { 'field'     => 'usagepricepart',
+                     'type'      => 'part_pkg_usageprice',
+                     'o2m_table' => 'part_pkg_usageprice',
+                     'm2_label'  => ' ',
+                     'm2_error_callback' => $usageprice_error_callback,
+                   },
 
                    { 'type'  => $report_option ? 'tablebreak-tr-title'
                                                : 'hidden',
@@ -676,6 +687,28 @@ my $discount_error_callback = sub {
           new FS::part_pkg_discount {
             'pkgpart'     => $object->pkgpart,
             'discountnum' => $discountnum,
+          };
+        } else {
+          ();
+        }
+      }
+  $cgi->param;
+};
+
+my $usageprice_error_callback = sub {
+  my( $cgi, $object ) = @_;
+  map {
+        if ( /^usagepricepart(\d+)_price$/
+               && $cgi->param("usagepricepart$1_price") )
+        {
+          new FS::part_pkg_usageprice {
+            'usagepricepart' => $cgi->param("usagepricepart$1"),
+            'pkgpart'        => $object->pkgpart,
+            'price'          => scalar($cgi->param("usagepricepart$1_price")),
+            #'currency
+            'action'         => scalar($cgi->param("usagepricepart$1_action")),
+            'target'         => scalar($cgi->param("usagepricepart$1_target")),
+            'amount'         => scalar($cgi->param("usagepricepart$1_amount")),
           };
         } else {
           ();
