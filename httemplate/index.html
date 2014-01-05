@@ -17,11 +17,13 @@
 %    #"SELECT DISTINCT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
 %    "SELECT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
 %       WHERE ( history_action = 'insert' OR history_action = 'replace_new' ) 
-%         AND history_user = ?
+%         AND ( history_usernum = ? OR history_user = ? )
 %       ORDER BY history_date desc" # LIMIT 10
 %    ) or die dbh->errstr;
 %
-%  $sth->execute( $FS::CurrentUser::CurrentUser->username ) or die $sth->errstr;
+%  my $curuser = $FS::CurrentUser::CurrentUser;
+%
+%  $sth->execute( $curuser->usernum, $curuser->username ) or die $sth->errstr;
 %
 %  my %saw = ();
 %  my @custnums = grep { !$saw{$_}++ } map $_->[0], @{ $sth->fetchall_arrayref };
