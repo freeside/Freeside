@@ -228,6 +228,8 @@ L<FS::conferencing_type> - Conferencing type class
 
 L<FS::conferencing_quality> - Conferencing quality class
 
+L<FS::svc_video> - Video (IPTV/video-on-demand) service class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items

@@ -365,6 +365,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::svc_conferencing;
   use FS::conferencing_type;
   use FS::conferencing_quality;
+  use FS::svc_video;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

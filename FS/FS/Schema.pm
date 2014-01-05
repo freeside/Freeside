@@ -6110,6 +6110,23 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    'svc_video' => {
+      'columns' => [
+        'svcnum',            'int', '', '', '', '',
+        'smartcard_num', 'varchar', '', 16, '', '',
+        'mac_addr',      'varchar', '', 12, '', '', 
+        'duration',          'int', '', '', '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [], # [ 'smartcard_num' ], [ 'mac_addr' ], ],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns => [ 'svcnum' ],
+                            table   => 'cust_svc',
+                          },
+                        ],
+    },
+
     'vend_main' => {
       'columns' => [
         'vendnum',   'serial',     '',      '', '', '',
