@@ -54,6 +54,7 @@ old_ for replace operations):
   <LI><code>$pkgnum</code> - Internal package number
   <LI><code>$custnum</code> - Internal customer number
   <LI><code>$mac_addr</code> - MAC address (Device MAC address insert and delete commands only)
+  <LI><code>$devicename</code> - Device type (Device type insert and delete commands only)
 </UL>
 END
 );
@@ -83,14 +84,16 @@ sub _export_unsuspend {
 sub export_device_insert {
   my( $self, $svc_phone, $phone_device ) = @_;
   $self->_export_command('mac_insert', $svc_phone,
-                           'mac_addr'=>$phone_device->mac_addr
+                           mac_addr   => $phone_device->mac_addr,
+                           devicename => $phone_device->part_device->devicename,
                         );
 }
 
 sub export_device_delete {
   my( $self, $svc_phone, $phone_device ) = @_;
   $self->_export_command('mac_delete', $svc_phone,
-                           'mac_addr'=>$phone_device->mac_addr
+                           mac_addr   => $phone_device->mac_addr,
+                           devicename => $phone_device->part_device->devicename,
                         );
 }
 
