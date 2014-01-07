@@ -333,6 +333,7 @@ sub sort_packages {
     return 0  if !$a_num_cust_svc && !$b_num_cust_svc;
     return -1 if  $a_num_cust_svc && !$b_num_cust_svc;
     return 1  if !$a_num_cust_svc &&  $b_num_cust_svc;
+    return 0 if $a_num_cust_svc + $b_num_cust_svc > 20; #for perf, just give up
     my @a_cust_svc = $a->cust_svc_unsorted;
     my @b_cust_svc = $b->cust_svc_unsorted;
     return 0  if !scalar(@a_cust_svc) && !scalar(@b_cust_svc);
