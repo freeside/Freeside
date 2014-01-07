@@ -1414,7 +1414,7 @@ sub email {
   my $self = shift;
   return if $self->hide;
   my $conf = $self->conf;
-  my $opt = shift;
+  my $opt = shift || {};
   if ($opt and !ref($opt)) {
     die "FS::cust_bill::email called with positional parameters";
   }
@@ -1489,7 +1489,7 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 sub lpr_data {
   my $self = shift;
   my $conf = $self->conf;
-  my $opt = shift;
+  my $opt = shift || {};
   if ($opt and !ref($opt)) {
     # nobody does this anyway
     die "FS::cust_bill::lpr_data called with positional parameters";
@@ -1515,7 +1515,7 @@ sub print {
   my $self = shift;
   return if $self->hide;
   my $conf = $self->conf;
-  my $opt = shift;
+  my $opt = shift || {};
   if ($opt and !ref($opt)) {
     die "FS::cust_bill::print called with positional parameters";
   }
@@ -1550,7 +1550,7 @@ sub fax_invoice {
   my $self = shift;
   return if $self->hide;
   my $conf = $self->conf;
-  my $opt = shift;
+  my $opt = shift || {};
   if ($opt and !ref($opt)) {
     die "FS::cust_bill::fax_invoice called with positional parameters";
   }

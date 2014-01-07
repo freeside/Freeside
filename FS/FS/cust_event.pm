@@ -487,9 +487,15 @@ sub re_X {
     my $cust_X = $cust_event->cust_X; # cust_bill
     next unless $cust_X->can($method);
 
-    $cust_X->$method( $cust_event->part_event->templatename
-                      || $cust_X->agent_template
-                    );
+    my $part_event = $cust_event->part_event;
+    my $template = $part_event->templatename
+                   || $cust_X->agent_template;
+    my $modenum = $part_event->option('modenum') || '';
+    my $invoice_from = $part_event->option('agent_invoice_from') || '';
+    $cust_X->set('mode' => $modenum);
+    $cust_X->$method( { template      => $template,
+                        modenum       => $modenum,
+                        invoice_from  => $invoice_from } );
 
     if ( $job ) { #progressbar foo
       $num++;
