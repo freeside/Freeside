@@ -2705,13 +2705,29 @@ sub num_cust_event {
 
 =item cust_svc [ OPTION => VALUE ... ] (current usage)
 
+=item cust_svc_unsorted [ OPTION => VALUE ... ] 
+
 Returns the services for this package, as FS::cust_svc objects (see
 L<FS::cust_svc>).  Available options are svcpart and svcdb.  If either is
 spcififed, returns only the matching services.
 
+As an optimization, use the cust_svc_unsorted version if you are not displaying
+the results.
+
 =cut
 
 sub cust_svc {
+  my $self = shift;
+  cluck "cust_pkg->cust_svc called" if $DEBUG > 2;
+  $self->_sort_cust_svc( $self->cust_svc_unsorted_arrayref(@_) );
+}
+
+sub cust_svc_unsorted {
+  my $self = shift;
+  @{ $self->cust_svc_unsorted_arrayref(@_) };
+}
+
+sub cust_svc_unsorted_arrayref {
   my $self = shift;
 
   return () unless $self->num_cust_svc(@_);
@@ -2737,13 +2753,7 @@ sub cust_svc {
     $search{extra_sql} = ' AND svcdb = '. dbh->quote( $opt{'svcdb'} );
   }
 
-  cluck "cust_pkg->cust_svc called" if $DEBUG > 2;
-
-  #if ( $self->{'_svcnum'} ) {
-  #  values %{ $self->{'_svcnum'}->cache };
-  #} else {
-    $self->_sort_cust_svc( [ qsearch(\%search) ] );
-  #}
+  [ qsearch(\%search) ];
 
 }
 
