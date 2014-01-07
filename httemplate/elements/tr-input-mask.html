@@ -18,6 +18,10 @@ var t = document.getElementById('<% $id %>');
 var container = document.getElementById('<%$id%>_clipboard');
 var KeyHandlerDown = t.onkeydown
 t.onkeydown = function(e) {
+  if (typeof(e) == 'undefined') {
+    // ie8 hack
+    e = event;
+  }
   // intercept ctrl-c and ctrl-x
   // and cmd-c and cmd-x on mac
   // when text is selected
@@ -38,7 +42,7 @@ t.onkeydown = function(e) {
 container.onkeyup = function(e) {
   if ( container.previous ) {
     setTimeout(function() {
-      container.previous.value = container.value;
+      //container.previous.value = container.value;
       container.previous.focus();
     }, 10);
   }
@@ -47,7 +51,7 @@ container.onkeyup = function(e) {
 % } # clipboard hack
 </&>
 </script>
-<textarea id="<%$id%>_clipboard" style="opacity:0"></textarea>
+<input type="text" id="<%$id%>_clipboard" style="position:absolute; pointer-events: none; z-index: -1; opacity:0">
 <%shared>
 my $init = 0;
 </%shared>
