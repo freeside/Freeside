@@ -123,7 +123,7 @@ Creates a new credit.  To add the credit to the database, see L<"insert">.
 =cut
 
 sub table { 'cust_credit'; }
-sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_linked { $_[0]->cust_main_custnum || $_[0]->custnum } 
 sub cust_unlinked_msg {
   my $self = shift;
   "WARNING: can't find cust_main.custnum ". $self->custnum.

@@ -169,7 +169,7 @@ Creates a new payment.  To add the payment to the databse, see L<"insert">.
 =cut
 
 sub table { 'cust_pay'; }
-sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_linked { $_[0]->cust_main_custnum || $_[0]->custnum; } 
 sub cust_unlinked_msg {
   my $self = shift;
   "WARNING: can't find cust_main.custnum ". $self->custnum.

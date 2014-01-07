@@ -83,7 +83,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_bill_event'; }
 
-sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_linked { $_[0]->cust_main_custnum || $_[0]->custnum } 
 sub cust_unlinked_msg {
   my $self = shift;
   "WARNING: can't find cust_main.custnum ". $self->custnum.
