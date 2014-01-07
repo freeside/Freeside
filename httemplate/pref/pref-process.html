@@ -82,7 +82,7 @@ if ( !$error and ($FS::TicketSystem::system || '') eq 'RT_Internal' ) {
   FS::TicketSystem->init;
   my $UserObj = FS::TicketSystem->session('')->{'CurrentUser'}->UserObj;
   # Bypass RT ModifySelf ACL
-  $UserObj->CurrentUser( RT::SystemUser );
+  $UserObj->CurrentUser( $RT::SystemUser );
   if ( $UserObj->Lang ne $locale ) {
     my ($val, $msg) = $UserObj->SetLang($locale);
     $error = $msg if !$val;
