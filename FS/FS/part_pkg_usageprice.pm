@@ -2,6 +2,7 @@ package FS::part_pkg_usageprice;
 use base qw( FS::Record );
 
 use strict;
+use Tie::IxHash;
 #use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
@@ -118,6 +119,38 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item targets
+
+Returns a hash reference.  Keys are possible values for the "target" field.
+Values are hash references with "label" and "multiplier" keys.
+
+=cut
+
+sub targets {
+
+  tie my %targets, 'Tie::IxHash', # once?
+    #'svc_acct.totalbytes' => { label      => 'Megabytes',
+    #                           multiplier => 1048576,
+    #                         },
+    'svc_acct.totalbytes' => { label      => 'Gigabytes',
+                               multiplier => 1073741824,
+                             },
+    'svc_acct.seconds' => { label      => 'Hours',
+                            multiplier => 3600,
+                          },
+    'svc_conferencing.participants' => { label     => 'Conference Participants',
+                                         multiplier=> 1,
+                                       },
+  #this will take more work: set action, not increment..
+  #  and then value comes from a select, not a text field
+  #  'svc_conferencing.confqualitynum' => { label => 'Conference Quality',
+  #                                        },
+  ;
+
+  \%targets;
+
 }
 
 =back

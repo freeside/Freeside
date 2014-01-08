@@ -264,6 +264,21 @@ if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
   };
 }
 
+my $targets = FS::part_pkg_usageprice->targets;
+foreach my $amount_param ( grep /^usagepricepart(\d+)_amount$/, $cgi->param ) {
+  $amount_param =~ /^usagepricepart(\d+)_amount$/ or die 'unpossible';
+  my $num = $1;
+  my $amount = $cgi->param($amount_param);
+  if ( ! $amount && ! $cgi->param("usagepricepart${num}_price") ) {
+    #don't add empty rows just because the dropdowns have a value
+    $cgi->param("usagepricepart${num}_$_", '') for qw( currency action target );
+    next;
+  } 
+  my $target = $cgi->param("usagepricepart${num}_target");
+  $amount *= $targets->{$target}{multiplier} if $targets->{$target}{multiplier};
+  $cgi->param($amount_param, $amount);
+}
+
 my @process_o2m = (
   {
     'table'  => 'part_pkg_msgcat',
@@ -272,6 +287,7 @@ my @process_o2m = (
   {
     'table'  => 'part_pkg_usageprice',
     'fields' => [qw( price currency action target amount )],
+
   }
 );
 

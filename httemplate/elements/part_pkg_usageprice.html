@@ -64,24 +64,27 @@
                 ID   = "<%$id%>_target"
                 <% $onchange %>
         >
-%       foreach my $target (keys %targets) {
+%       foreach my $target (keys %$targets) {
           <OPTION VALUE="<% $target %>"
                   <% ($cgi->param($name.'_target') || $part_pkg_usageprice->target) eq $target ? 'SELECTED' : '' %>
-          ><% $targets{$target}->{label} %>
+          ><% $targets->{$target}->{label} %>
 %       }
       </TD>
 
 %     ###
 %     # amount
 %     ###
+%     my $amount =
+%       scalar($cgi->param($name.'_amount'))
+%         || ( $part_pkg_usageprice->amount
+%               / ($targets->{$part_pkg_usageprice->target}{multiplier} || 1) );
+%     $amount = '' unless $amount > 0;
       <TD>
         <INPUT TYPE = "text"
                NAME = "<%$name%>_amount"
                ID   = "<%$id%>_amount"
                SIZE = 5
-               VALUE = "<% scalar($cgi->param($name.'_amount'))
-                             || $part_pkg_usageprice->amount
-                        %>"
+               VALUE = "<% $amount %>"
                <% $onchange %>
         >
       </TD>
@@ -92,24 +95,7 @@
 % }
 <%init>
 
-tie my %targets, 'Tie::IxHash', # once?
-  #'svc_acct.totalbytes' => { label => 'Megabytes',
-  #                           mult  => 1048576,
-  #                         },
-  'svc_acct.totalbytes' => { label => 'Gigabytes',
-                             mult  => 1073741824,
-                           },
-  'svc_acct.seconds' => { label => 'Hours',
-                          mult  => 3600,
-                        },
-  'svc_conferencing.participants' => { label => 'Conference Participants',
-                                       mult  => 1,
-                                     },
-#this will take more work: set action, not increment..
-#  and then value comes from a select, not a text field
-#  'svc_conferencing.confqualitynum' => { label => 'Conference Quality',
-#                                        },
-;
+my $targets = FS::part_pkg_usageprice->targets;
 
 my( %opt ) = @_;
 

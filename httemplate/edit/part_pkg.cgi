@@ -806,13 +806,15 @@ my $javascript = <<'END';
 
       var plan = what.options[what.selectedIndex].value;
 
-      var term_table = document.getElementById('TableNumber7') // XXX NOT ROBUST
+      var term_table = document.getElementById('TableNumber8') // XXX NOT ROBUST
       if ( plan == 'flat' || plan == 'prorate' || plan == 'subscription' ) {
         //term_table.disabled = false;
-        term_table.style.visibility = '';
+        //term_table.style.visibility = '';
+        term_table.style.display = '';
       } else {
         //term_table.disabled = true;
-        term_table.style.visibility = 'hidden';
+        //term_table.style.visibility = 'hidden';
+        term_table.style.display = 'none';
       }
 
       var currency_regex = /^(setup|recur)_fee_[A-Z]{3}$/;
