@@ -555,13 +555,18 @@ sub translate_payinfo {
     my $payby = $object->payby;
     my $payinfo = $object->payinfo;
 
-    my $conf = new FS::Conf;
-
     if ( $payby eq 'CARD' ) {
         $payinfo = $object->paymask;
     } elsif ( $payby eq 'CHEK' ) {
+        #false laziness w/payinfo_Mixin::payby_payinfo_pretty, should use that
         my( $account, $aba ) = split('@', $object->paymask );
-        $payinfo = emt("ABA [_1], Acct #[_2]",$aba,$account);
+        if ( $aba =~ /^(\d{5})\.(\d{3})$/ ) { #blame canada
+          my($branch, $routing) = ($1, $2);
+          $payinfo = emt("Routing [_1], Branch [_2], Acct [_3]",
+                         $routing, $branch, $account);
+        } else {
+          $payinfo = emt("Routing [_1], Acct [_2]", $aba, $account);
+        }
     }
 
     ($payby,$payinfo);
