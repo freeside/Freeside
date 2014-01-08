@@ -743,3 +743,7 @@ FS/conferencing_type.pm
 t/conferencing_type.t
 FS/conferencing_quality.pm
 t/conferencing_quality.t
+FS/svc_video.pm
+t/svc_video.t
+FS/part_pkg_usageprice.pm
+t/part_pkg_usageprice.t
