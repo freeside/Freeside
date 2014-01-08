@@ -246,7 +246,18 @@ sub payby_payinfo_pretty {
   if ( $self->payby eq 'CARD' ) {
     $lh->maketext('Card #') . $self->paymask;
   } elsif ( $self->payby eq 'CHEK' ) {
-    $lh->maketext('E-check acct#') . $self->payinfo;
+
+    #false laziness w/view/cust_main/payment_history.html::translate_payinfo
+    my( $account, $aba ) = split('@', $self->paymask );
+
+    if ( $aba =~ /^(\d{5})\.(\d{3})$/ ) { #blame canada
+      my($branch, $routing) = ($1, $2);
+      $lh->maketext("Routing [_1], Branch [_2], Acct [_3]",
+                     $routing, $branch, $account);
+    } else {
+      $lh->maketext("Routing [_1], Acct [_2]", $aba, $account);
+    }
+
   } elsif ( $self->payby eq 'BILL' ) {
     $lh->maketext('Check #') . $self->payinfo;
   } elsif ( $self->payby eq 'PREP' ) {
