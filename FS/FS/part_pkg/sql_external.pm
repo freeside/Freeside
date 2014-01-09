@@ -44,7 +44,7 @@ use DBI;
 
 sub price_info {
     my $self = shift;
-    my $str = $self->SUPER::price_info;
+    my $str = $self->SUPER::price_info(@_);
     $str .= " plus per-service charges" if $str;
     $str;
 }

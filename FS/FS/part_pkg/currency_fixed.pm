@@ -33,7 +33,7 @@ use FS::currency_exchange;
 
 sub price_info {
     my $self = shift;
-    my $str = $self->SUPER::price_info;
+    my $str = $self->SUPER::price_info(@_);
     $str .= " (or local currency pricing)" if $str;
     $str;
 }
@@ -92,5 +92,7 @@ sub calc_recur {
 sub is_free { 0; }
 
 sub can_currency_exchange { 1; }
+
+sub can_usageprice { 0; }
 
 1;

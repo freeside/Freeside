@@ -1,12 +1,10 @@
 package FS::part_pkg::prorate;
+use base qw( FS::part_pkg::flat );
 
 use strict;
-use vars qw(@ISA %info);
+use vars qw(%info);
 use Time::Local qw(timelocal);
 #use FS::Record qw(qsearch qsearchs);
-use FS::part_pkg::flat;
-
-@ISA = qw(FS::part_pkg::flat);
 
 %info = (
   'name' => 'First partial month pro-rated, then flat-rate (selectable billing day)',
@@ -44,9 +42,14 @@ use FS::part_pkg::flat;
 
 sub calc_recur {
   my $self = shift;
+  #my($cust_pkg, $sdate, $details, $param ) = @_;
   my $cust_pkg = $_[0];
 
   my $charge = $self->calc_prorate(@_, $self->cutoff_day($cust_pkg));
+
+  $charge += $self->usageprice_recur(@_);
+  $cust_pkg->apply_usageprice(); #$sdate for prorating?
+
   my $discount = $self->calc_discount(@_);
 
   sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );

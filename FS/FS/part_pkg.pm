@@ -837,8 +837,8 @@ sub custom_comment {
   my $price_info = $self->price_info(@_);
   ( $self->custom ? '(CUSTOM) ' : '' ).
     $self->comment.
-    ( ( ($self->custom || $self->comment) && $price_info ) ? ' - ' : '' ).
-    $price_info;
+    ( ($self->custom || $self->comment) ? ' - ' : '' ).
+    ($price_info || 'No charge');
 }
 
 =item pkg_class
@@ -1068,6 +1068,10 @@ sub can_discount { 0; }
  
 # whether the plan allows changing the start date
 sub can_start_date { 1; }
+
+# whether the plan supports part_pkg_usageprice add-ons (a specific kind of
+#  pre-selectable usage pricing, there's others this doesn't refer to)
+sub can_usageprice { 0; }
   
 # the delay start date if present
 sub delay_start_date {

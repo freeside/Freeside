@@ -233,7 +233,7 @@
 %      my $pkgnum = $_->pkgnum;
 %      my $part_pkg = $_->part_pkg;
 %
-%      my $pkg_comment = $part_pkg->pkg_comment(nopkgpart => 1);
+%      my $pkg_comment = $part_pkg->pkg_comment( cust_pkg=>$_, nopkgpart=>1 );
 %      my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
 %                   ? ''
 %                   : ';show=packages';

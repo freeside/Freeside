@@ -31,7 +31,7 @@ $DEBUG = 1;
 
 sub price_info {
     my $self = shift;
-    my $str = $self->SUPER::price_info;
+    my $str = $self->SUPER::price_info(@_);
     $str .= " plus usage" if $str;
     $str;
 }

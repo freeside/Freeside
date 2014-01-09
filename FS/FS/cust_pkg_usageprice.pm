@@ -103,13 +103,84 @@ sub check {
   $self->SUPER::check;
 }
 
+=item price
+
+Returns the price for this customer usage pricing add-on (quantity of this
+record multiplied by price of the associated FS::part_pkg_usageprice record)
+
+=cut
+
+sub price {
+  my $self = shift;
+  sprintf('%.2f', $self->quantity * $self->part_pkg_usageprice->price);
+}
+
+=item apply
+
+Applies this customer usage pricing add-on.  (Mulitplies quantity of this record
+by part_pkg_usageprice.amount, and applies to to any services of this package
+matching part_pkg_usageprice.target)
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub apply {
+  my $self = shift;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = '';
+
+  my $part_pkg_usageprice = $self->part_pkg_usageprice;
+
+  my $amount = $self->quantity * $part_pkg_usageprice->amount;
+
+  my $target = $part_pkg_usageprice->target;
+
+  #these are ongoing counters that count down, so increment them
+  if ( $target =~ /^svc_acct.(\w+)$/ ) {
+
+    my $method = "increment_$1";
+
+    foreach my $cust_svc ( $self->cust_pkg->cust_svc(svcdb=>'svc_acct') ) {
+      $error ||= $cust_svc->svc_x->$method( $amount );
+    }
+
+  #this is a maximum number, not a counter, so we want to take our number
+  # and add it to the default for the service
+  } elsif ( $target eq 'svc_conferencing.participants' ) {
+
+    foreach my $cust_svc ($self->cust_pkg->cust_svc(svcdb=>'svc_conferencing')){
+      my $svc_conferencing = $cust_svc->svc_x;
+      my $base_amount = $cust_svc->part_svc->part_svc_column('participants')->columnvalue || 0; #assuming.. D?  F would get overridden  :/
+      $svc_acct->participants( $base_amount + $amount );
+      $error ||= $svc_acct->replace;
+    }
+
+  #this has no multiplication involved, its just a set only
+  #} elsif ( $target eq 'svc_conferencing.confqualitynum' ) {
+
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+  } else {
+    $dbh->commit if $oldAutoCommit;
+  }
+  return $error;
+
+}
+
 =back
 
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::Record>
+L<FS::part_pkg_usageprice>, L<FS::cust_pkg>, L<FS::Record>
 
 =cut
 

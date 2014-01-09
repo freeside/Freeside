@@ -336,13 +336,6 @@ sub insert {
   # set order date unless it was specified as part of an import
   $self->order_date(time) unless $import && $self->order_date;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -443,13 +436,6 @@ hide cancelled packages.
 
 sub delete {
   my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -560,13 +546,6 @@ sub replace {
   #some logic for bill, susp, cancel?
 
   local($disable_agentcheck) = 1 if $old->pkgpart == $new->pkgpart;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -801,13 +780,6 @@ sub cancel {
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
     if $DEBUG;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1004,13 +976,6 @@ sub uncancel {
   # Transaction-alize
   ##
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE'; 
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE'; 
-  local $SIG{PIPE} = 'IGNORE'; 
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1165,13 +1130,6 @@ sub unexpire {
   my( $self, %options ) = @_;
   my $error;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1247,13 +1205,6 @@ sub suspend {
   if ( $self->main_pkgnum and !$options{'from_main'} ) {
     return $self->main_pkg->suspend(%options);
   }
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -1491,13 +1442,6 @@ sub unsuspend {
     return $self->main_pkg->unsuspend(%opt);
   }
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1674,13 +1618,6 @@ sub unadjourn {
   my( $self, %options ) = @_;
   my $error;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1798,13 +1735,6 @@ sub change {
   my $conf = new FS::Conf;
 
   # Transactionize this whole mess
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE'; 
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE'; 
-  local $SIG{PIPE} = 'IGNORE'; 
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -2431,13 +2361,6 @@ sub process_bulk_cust_pkg {
   #my $keep_dates = $param->{'keep_dates'} || 0;
   my $keep_dates = 1; # there is no good reason to turn this off
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -2673,13 +2596,6 @@ If there is an error, returns the error, otherwise returns false.
 
 sub set_cust_pkg_detail {
   my( $self, $detailtype, @details ) = @_;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -3168,7 +3084,7 @@ Returns a label for this package.  (Currently "pkgnum: pkg - comment" or
 
 sub pkg_label {
   my $self = shift;
-  my $label = $self->part_pkg->pkg_comment( 'nopkgpart' => 1 );
+  my $label = $self->part_pkg->pkg_comment( cust_pkg=>$self, nopkgpart=>1 );
   $label = $self->pkgnum. ": $label"
     if $FS::CurrentUser::CurrentUser->option('show_pkgnum');
   $label;
@@ -3634,13 +3550,6 @@ sub grab_svcnums {
   my $self = shift;
   my @svcnum = @_;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -3675,13 +3584,6 @@ order_pkgs methods in FS::cust_main for a better way to defer provisioning.
 sub reexport {
   my $self = shift;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -3711,13 +3613,6 @@ Calls the "pkg_change" export action for all services attached to this package.
 
 sub export_pkg_change {
   my( $self, $old )  = ( shift, shift );
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -3890,6 +3785,34 @@ sub recharge {
   }
 }
 
+=item apply_usageprice 
+
+=cut
+
+sub apply_usageprice {
+  my $self = shift;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = '';
+
+  foreach my $cust_pkg_usageprice ( $self->cust_pkg_usageprice ) {
+    $error ||= $cust_pkg_usageprice->apply;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    die "error applying part_pkg_usageprice add-ons, pkgnum ". $self->pkgnum.
+        ": $error\n";
+  } else {
+    $dbh->commit if $oldAutoCommit;
+  }
+
+
+}
+
 =item cust_pkg_discount
 
 =item cust_pkg_discount_active
@@ -3930,16 +3853,10 @@ sub apply_usage {
   my $pkgnum = $self->pkgnum;
   my $custnum = $self->custnum;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE'; 
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE'; 
-  local $SIG{PIPE} = 'IGNORE'; 
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
   my $order = FS::Conf->new->config('cdr-minutes_priority');
 
   my $is_classnum;
@@ -4921,13 +4838,6 @@ sub order {
   my $conf = new FS::Conf;
 
   # Transactionize this whole mess
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE'; 
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE'; 
-  local $SIG{PIPE} = 'IGNORE'; 
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -5067,13 +4977,6 @@ sub bulk_change {
   my ($pkgparts, $remove_pkgnum, $return_cust_pkg) = @_;
 
   # Transactionize this whole mess
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE'; 
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE'; 
-  local $SIG{PIPE} = 'IGNORE'; 
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;

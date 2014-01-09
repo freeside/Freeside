@@ -1,16 +1,13 @@
 package FS::part_pkg::agent;
+#use base qw(FS::part_pkg::recur_Common);
+use base qw(FS::part_pkg::prorate);
 
 use strict;
-use vars qw(@ISA $DEBUG $me %info);
+use vars qw($DEBUG $me %info);
 use Date::Format;
 use FS::Record qw( qsearch );
 use FS::agent;
 use FS::cust_main;
-
-#use FS::part_pkg::recur_Common;;
-#@ISA = qw(FS::part_pkg::recur_Common);
-use FS::part_pkg::prorate;
-@ISA = qw(FS::part_pkg::prorate);
 
 $DEBUG = 0;
 
@@ -160,13 +157,11 @@ sub calc_recur {
 
 sub can_discount { 0; }
 
-sub hide_svc_detail {
-  1;
-}
+sub hide_svc_detail { 1; }
 
-sub is_free {
-  0;
-}
+sub is_free { 0; }
+
+sub can_usageprice { 0; }
 
 1;
 

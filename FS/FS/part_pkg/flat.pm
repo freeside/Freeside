@@ -98,12 +98,16 @@ tie my %contract_years, 'Tie::IxHash', (
 
 sub price_info {
     my $self = shift;
+    my %opt = @_;
     my $conf = new FS::Conf;
     my $money_char = $conf->config('money_char') || '$';
-    my $setup = $self->option('setup_fee') || 0;
-    my $recur = $self->option('recur_fee', 1) || 0;
+    my $setup = $opt{cust_pkg} ? $self->base_setup( $opt{cust_pkg} )
+                               : ($self->option('setup_fee') || 0);
+    my $recur = $opt{cust_pkg} ? $self->base_recur( $opt{cust_pkg} )
+                               : ($self->option('recur_fee', 1) || 0);
+    $recur += $self->usageprice_recur( $opt{cust_pkg} ) if $opt{cust_pkg};
     my $str = '';
-    $str = $money_char . $setup . ($recur ? ' setup ' : ' one-time') if $setup;
+    $str = $money_char . $setup . ($recur ? ' setup' : ' one-time') if $setup;
     $str .= ', ' if ($setup && $recur);
     $str .= $money_char. $recur. '/'. $self->freq_pretty if $recur;
     $str;
@@ -160,6 +164,9 @@ sub calc_recur {
     $charge *= $param->{freq_override} if $param->{freq_override};
   }
 
+  $charge += $self->usageprice_recur($cust_pkg, $sdate);
+  $cust_pkg->apply_usageprice(); #$sdate for prorating?
+
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
 
   sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
@@ -188,6 +195,15 @@ sub base_recur_permonth {
   return 0 unless $self->freq =~ /^\d+$/ && $self->freq > 0;
 
   sprintf('%.2f', $self->base_recur($cust_pkg) / $self->freq );
+}
+
+sub usageprice_recur {
+  my($self, $cust_pkg, $sdate) = @_;
+
+  my $recur = 0;
+  $recur += $_->price foreach $cust_pkg->cust_pkg_usageprice;
+
+  sprintf('%.2f', $recur);
 }
 
 sub calc_cancel {
@@ -256,6 +272,8 @@ sub is_prepaid { 0; } #no, we're postpaid
 sub can_start_date { ! shift->option('start_1st', 1) }
 
 sub can_discount { 1; }
+
+sub can_usageprice { 1; }
 
 sub recur_temporality {
   my $self = shift;

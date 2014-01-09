@@ -12,7 +12,9 @@
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 
 <BR><BR>
-<% "Delay automatic suspension of " .$part_pkg->pkg_comment %>
+<% "Delay automatic suspension of ".
+     $part_pkg->pkg_comment( cust_pkg=>$cust_pkg )
+%>
 <% ntable("#cccccc", 2) %>
 
 <TR>

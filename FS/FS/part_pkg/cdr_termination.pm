@@ -1,7 +1,7 @@
 package FS::part_pkg::cdr_termination;
+use base qw( FS::part_pkg::recur_Common );
 
 use strict;
-use base qw( FS::part_pkg::recur_Common );
 use vars qw( $DEBUG %info );
 use Tie::IxHash;
 use FS::Record qw( qsearch ); #qsearchs );
@@ -187,8 +187,8 @@ sub calc_recur {
   $charges;
 }
 
-sub is_free {
-  0;
-}
+sub is_free { 0; }
+
+sub can_usageprice { 0; }
 
 1;

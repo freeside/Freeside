@@ -416,14 +416,16 @@ sub pkg_status_row_changed {
   my $old = $cust_pkg->old_cust_pkg;
   if ( $old ) {
     my $part_pkg = $old->part_pkg;
-    $html .= pkg_status_row_colspan( $cust_pkg, 
-                                     emt("Changed from [_1]: [_2]",
-                                            $cust_pkg->change_pkgnum,
-                                            $part_pkg->pkg_comment(nopartpkg => 1) ),
-                                     '',
-                                     'size'    => '-1',
-                                     'align'   => 'right',
-                                   );
+    $html .= pkg_status_row_colspan(
+      $cust_pkg, 
+      emt("Changed from [_1]: [_2]",
+             $cust_pkg->change_pkgnum,
+             $part_pkg->pkg_comment(cust_pkg=>$old, nopartpkg=>1)
+         ),
+      '',
+      'size'    => '-1',
+      'align'   => 'right',
+    );
   }
 
   $html;
