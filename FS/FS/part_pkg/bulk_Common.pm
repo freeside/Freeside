@@ -36,7 +36,7 @@ sub price_info {
     my $svc_recur_fee = $self->option('svc_recur_fee');
     my $conf = new FS::Conf;
     my $money_char = $conf->config('money_char') || '$';
-    $str .= " , bulk" if $str;
+    $str .= ", bulk " if $str;
     $str .= ": $money_char" . $svc_setup_fee . " one-time per service" 
 	if $svc_setup_fee;
     $str .= ", " if ($svc_setup_fee && $svc_recur_fee);
