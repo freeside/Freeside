@@ -254,6 +254,12 @@ setting I<refnum> to an array reference of refnums or a hash reference with
 refnums as keys.  If no I<refnum> is defined, a default FS::pkg_referral
 record will be created corresponding to cust_main.refnum.
 
+If the additional field I<cust_pkg_usageprice> is defined, it will be treated
+as an arrayref of FS::cust_pkg_usageprice objects, which will be inserted.
+(Note that this field cannot be set with a usual ->cust_pkg_usageprice method.
+It can be set as part of the hash when creating the object, or with the B<set>
+method.)
+
 The following options are available:
 
 =over 4
@@ -266,10 +272,6 @@ orders.  (Currently this includes: intro periods when delay_setup is on.)
 =item options
 
 cust_pkg_option records will be created
-
-=item cust_pkg_usageprice
-
-Array reference of cust_pkg_usageprice objects, will be inserted
 
 =item ticket_subject
 
