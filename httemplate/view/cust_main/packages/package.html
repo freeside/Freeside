@@ -13,7 +13,7 @@
         ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
 %       my $custom_comment = $part_pkg->custom_comment();
         <% $custom_comment ? ' - ' : '' %>
-        <% $part_pkg->custom_comment |h %>
+        <% $custom_comment |h %>
       </TD>
     </TR>
 
