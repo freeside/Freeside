@@ -30,6 +30,7 @@ use FS::reg_code;
 use FS::part_svc;
 use FS::cust_pkg_reason;
 use FS::reason;
+use FS::cust_pkg_usageprice;
 use FS::cust_pkg_discount;
 use FS::discount;
 use FS::UI::Web;
@@ -1969,6 +1970,22 @@ sub change {
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "Error transferring usage pools: $error";
+      }
+    }
+  }
+
+  # transfer usage pricing add-ons, if we're not changing pkgpart
+  if ( $same_pkgpart ) {
+    foreach my $old_cust_pkg_usageprice ($self->cust_pkg_usageprice) {
+      my $new_cust_pkg_usageprice = new FS::cust_pkg_usageprice {
+        'pkgnum'         => $cust_pkg->pkgnum,
+        'usagepricepart' => $old_cust_pkg_usageprice->usagepricepart,
+        'quantity'       => $old_cust_pkg_usageprice->quantity,
+      };
+      $error = $new_cust_pkg_usageprice->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error transferring usage pricing add-on: $error";
       }
     }
   }
