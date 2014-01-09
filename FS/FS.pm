@@ -257,6 +257,8 @@ L<FS::part_pkg_msgcat> - Package definition localization class
 
 L<FS::part_pkg_usageprice> - Package definition usage pricing add-on class
 
+L<FS::cust_pkg_usageprice> - Customer package usage pricing add-on class
+
 L<FS::part_pkg_currency> - Package definition local currency prices
 
 L<FS::currency_exchange> - Currency exchange rates

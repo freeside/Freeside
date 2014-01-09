@@ -3056,6 +3056,26 @@ sub tables_hashref {
                         ],
     },
 
+    'cust_pkg_usageprice' => {
+      'columns' => [
+        'usagepricenum', 'serial',      '',      '', '', '',
+        'pkgnum',           'int',      '',      '', '', '',
+        'usagepricepart',   'int',      '',      '', '', '',
+        'quantity',         'int',      '',      '', '', '',
+      ],
+      'primary_key'  => 'usagepricenum',
+      'unique'       => [ [ 'pkgnum', 'usagepricepart' ] ],
+      'index'        => [ [ 'pkgnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'pkgnum' ],
+                            table      => 'cust_pkg',
+                          },
+                          { columns    => [ 'usagepricepart' ],
+                            table      => 'part_pkg_usageprice',
+                          },
+                        ],
+    },
+
     'part_pkg_link' => {
       'columns' => [
         'pkglinknum',  'serial',   '',      '', '', '',

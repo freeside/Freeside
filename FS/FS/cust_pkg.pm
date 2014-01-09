@@ -267,6 +267,10 @@ orders.  (Currently this includes: intro periods when delay_setup is on.)
 
 cust_pkg_option records will be created
 
+=item cust_pkg_usageprice
+
+Array reference of cust_pkg_usageprice objects, will be inserted
+
 =item ticket_subject
 
 a ticket will be added to this customer with this subject
@@ -352,6 +356,17 @@ sub insert {
                       'target_table' => 'part_referral',
                       'params'       => $self->refnum,
                     );
+
+  if ( $self->hashref->{cust_pkg_usageprice} ) {
+    for my $cust_pkg_usageprice ( @{ $self->hashref->{cust_pkg_usageprice} } ) {
+      $cust_pkg_usageprice->pkgnum( $self->pkgnum );
+      my $error = $cust_pkg_usageprice->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
 
   if ( $self->discountnum ) {
     my $error = $self->insert_discount();

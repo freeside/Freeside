@@ -133,6 +133,21 @@ my %hash = (
 );
 $hash{'custnum'} = $cust_main->custnum if $cust_main;
 
+my @cust_pkg_usageprice = ();
+foreach my $quantity_param ( grep ( $cgi->param($_) && $cgi->param($_) > 0 ),
+                               grep /^usagepricenum(\d+)_quantity$/,
+                                 $cgi->param
+                           )
+{
+  $quantity_param =~ /^usagepricenum(\d+)_quantity$/ or die 'unpossible';
+  my $num = $1;
+  push @cust_pkg_usageprice, new FS::cust_pkg_usageprice {
+    usagepricepart => scalar($cgi->param("usagepricenum${num}_usagepricepart")),
+    quantity       => scalar($cgi->param($quantity_param)),
+  };
+}
+$hash{cust_pkg_usageprice} = \@cust_pkg_usageprice;
+
 if ( $quotationnum ) {
 
   $quotation_pkg = new FS::quotation_pkg \%hash;

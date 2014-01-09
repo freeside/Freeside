@@ -121,8 +121,21 @@ sub check {
   $self->SUPER::check;
 }
 
+=item target_info
+
+Returns a hash reference of information about the target of this object.
+Keys are "label" and "multiplier".
+
+=cut
+
+sub target_info {
+  my $self = shift;
+  $self->targets->{$self->target};
+}
+
 =item targets
 
+(Class method)
 Returns a hash reference.  Keys are possible values for the "target" field.
 Values are hash references with "label" and "multiplier" keys.
 

@@ -1,0 +1,72 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <INPUT TYPE  = "hidden"
+         NAME  = "<%$name%>_usagepricepart"
+         ID    = "<%$id%>_usagepricepart"
+         VALUE = "<% $part_pkg_usageprice->usagepricepart %>"
+  >
+
+  <TABLE STYLE="display:inline">
+    <TR>
+
+%     ###
+%     # action
+%     ###
+      <TD>
+%       # maybe we should be a quantity entry instead of a select?  even more
+%       #  javascript auto-calculation need to display a subtotal & total
+        <SELECT NAME = "<%$name%>_quantity"
+                ID   = "<%$id%>_quantity"
+                <% $onchange %>
+        >
+%         my $info = $part_pkg_usageprice->target_info;
+%         my $amount = $part_pkg_usageprice->amount / ($info->{multiplier}||1);
+          <OPTION VALUE="">Additional <% $info->{label} %>
+%         for (1..100) { #100?  arbitrary.
+            <OPTION VALUE="<% $_ %>"><%
+              $money_char. sprintf('%.2f', $_ * $part_pkg_usageprice->price ).
+              ' '.
+              'for'. #( $part_pkg_usageprice->action eq 'increment' ? 'per' : 'for' ).
+              ' '.
+              ( $_ * $amount ). ' '. $info->{label}
+            %>
+%         }
+        </SELECT>
+      </TD>
+
+    </TR>
+  </TABLE>
+
+% }
+<%init>
+
+#my $targets = FS::part_pkg_usageprice->targets;
+
+my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'usagepricenum';
+my $id = $opt{'id'} || $opt{'field'} || 'usagepricenum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $cust_pkg_usageprice = $curr_value
+  ? qsearchs('cust_pkg_usageprice', { 'usagepricenum' => $curr_value } )
+  : new FS::cust_pkg_usageprice { 'usagepricepart' => $opt{usagepricepart} };
+
+my $part_pkg_usageprice = $cust_pkg_usageprice->part_pkg_usageprice;
+
+</%init>

@@ -278,9 +278,8 @@ push @fields, sub {
       ),
     ],
     (
-      map { my $amount = $_->amount
-              / (FS::part_pkg_usageprice->targets->{$_->target}{multiplier}||1);
-            my $label = FS::part_pkg_usageprice->targets->{$_->target}{label};
+      map { my $amount = $_->amount / ($_->target_info->{multiplier} || 1);
+            my $label = $_->target_info->{label};
             [
               { data    => "Plus&nbsp;$money_char". $_->price. '&nbsp;'.
                            ( $_->action eq 'increment' ? 'per' : 'for' ).

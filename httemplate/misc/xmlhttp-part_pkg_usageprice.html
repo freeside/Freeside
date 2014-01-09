@@ -1,0 +1,24 @@
+<% encode_json( \@return ) %>\
+<%init>
+
+my( $pkgpart ) = $cgi->param('arg');
+
+#could worry about agent-virting this so you can't see the add-on pricing of
+# other agents, but not a real-world big worry
+
+my $part_pkg = qsearchs( 'part_pkg', { pkgpart=>$pkgpart } );
+
+my $num = 0;
+
+my @return = map { 
+                   my @inc = ('/elements/cust_pkg_usageprice.html',
+                                'usagepricepart' => $_->usagepricepart,
+                             );
+
+                   ( include(@inc, field=>'usagepricenum'.$num, html_only=>1 ),
+                     include(@inc, field=>'usagepricenum'.$num++, js_only=>1 ),
+                   );
+                 }
+               $part_pkg->part_pkg_usageprice;
+
+</%init>
