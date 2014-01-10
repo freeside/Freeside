@@ -287,7 +287,9 @@ my $join_pkg =
   LEFT JOIN part_pkg      USING (pkgpart)';
 
 my $part_pkg = 'part_pkg';
-if ( $cgi->param('use_override') ) { #"Separate sub-packages from parents"
+# "Separate sub-packages from parents"
+my $use_override = $cgi->param('use_override') ? 1 : 0;
+if ( $use_override ) {
   # still need the real part_pkg for tax applicability, 
   # so alias this one
   $join_pkg .= " LEFT JOIN part_pkg AS override ON (
@@ -318,14 +320,16 @@ if ( $cgi->param('nottax') ) {
   }
 
   if ( grep { $_ eq 'report_optionnum' } $cgi->param ) {
-    my @nums = grep /^\w+$/, $cgi->param('report_optionnum');
-    my $num = join(',', @nums);
+    my $num = join(',', grep /^[\d,]+$/, $cgi->param('report_optionnum'));
+    my $not_num = join(',', grep /^[\d,]+$/, $cgi->param('not_report_optionnum'));
+    my $all = $cgi->param('all_report_options') ? 1 : 0;
     push @where, # code reuse FTW
-      FS::Report::Table->with_report_option( $num, $cgi->param('use_override'));
-  }
-
-  if ( $cgi->param('report_optionnum') =~ /^(\w+)$/ ) {
-    ;
+      FS::Report::Table->with_report_option(
+        report_optionnum      => $num,
+        not_report_optionnum  => $not_num,
+        use_override          => $use_override,
+        all_report_options    => $all,
+      );
   }
 
   # taxclass
