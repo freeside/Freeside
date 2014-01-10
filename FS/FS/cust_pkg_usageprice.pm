@@ -2,7 +2,7 @@ package FS::cust_pkg_usageprice;
 use base qw( FS::Record );
 
 use strict;
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh ); # qsearch qsearchs );
 
 =head1 NAME
 
@@ -156,8 +156,8 @@ sub apply {
     foreach my $cust_svc ($self->cust_pkg->cust_svc(svcdb=>'svc_conferencing')){
       my $svc_conferencing = $cust_svc->svc_x;
       my $base_amount = $cust_svc->part_svc->part_svc_column('participants')->columnvalue || 0; #assuming.. D?  F would get overridden  :/
-      $svc_acct->participants( $base_amount + $amount );
-      $error ||= $svc_acct->replace;
+      $svc_conferencing->participants( $base_amount + $amount );
+      $error ||= $svc_conferencing->replace;
     }
 
   #this has no multiplication involved, its just a set only
