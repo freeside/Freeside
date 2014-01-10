@@ -436,7 +436,7 @@ sub cust_bill_pkg_setup {
   my @where = (
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
-    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
   );
 
@@ -463,7 +463,7 @@ sub cust_bill_pkg_recur {
   my @where = (
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
-    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
   );
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
@@ -532,7 +532,7 @@ sub cust_bill_pkg_detail {
   push @where,
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_usageclass($opt{'usageclass'}),
-    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
     ;
 
   if ( $opt{'distribute'} ) {
@@ -708,44 +708,71 @@ sub with_usageclass {
 }
 
 sub with_report_option {
-  my ($self, $num, $use_override) = @_;
-  # $num can be a single number, or a comma-delimited list of numbers,
-  # or an arrayref.  0 matches the empty set
-  # or the word 'multiple' for all packages with more than one report class
-  return '' if !defined($num);
+  my ($self, %opt) = @_;
+  # %opt can contain:
+  # - report_optionnum: a comma-separated list of numbers.  Zero means to 
+  #   include packages with _no_ report classes.
+  # - not_report_optionnum: a comma-separated list.  Packages that have 
+  #   any of these report options will be excluded from the result.
+  #   Zero does nothing.
+  # - use_override: also matches line items that are add-ons to a package
+  #   matching the report class.
+  # - all_report_options: returns only packages that have ALL of the
+  #   report classes listed in $num.  Otherwise, will return packages that 
+  #   have ANY of those classes.
 
-  $num = join(',', @$num) if ref($num);
+  my @num = ref($opt{'report_optionnum'})
+                  ? @{ $opt{'report_optionnum'} }
+                  : split(/\s*,\s*/, $opt{'report_optionnum'});
+  my @not_num = ref($opt{'not_report_optionnum'})
+                      ? @{ $opt{'not_report_optionnum'} }
+                      : split(/\s*,\s*/, $opt{'not_report_optionnum'});
+  my $null;
+  $null = 1 if ( grep {$_ == 0} @num );
+  @num = grep {$_ > 0} @num;
+  @not_num = grep {$_ > 0} @not_num;
 
-  # stringify the set of report options for each pkgpart
-  my $table = $use_override ? 'override' : 'part_pkg';
-  my $subselect = "
-    SELECT replace(optionname, 'report_option_', '') AS num
-      FROM part_pkg_option
-      WHERE optionname like 'report_option_%' 
-        AND part_pkg_option.pkgpart = $table.pkgpart
-      ORDER BY num";
-  
-  my $comparison;
-  if ( $num eq 'multiple' ) {
-    $comparison = "(SELECT COUNT(*) FROM ($subselect) AS x) > 1";
-  } else {
-
-    my @num = split(/\s*,\s*/, $num);
-
-    #$comparison = "(SELECT COALESCE(string_agg(num, ','), '') FROM ( #Pg 9-ism
-    $comparison = "(SELECT COALESCE(array_to_string(array_agg(num), ','), '')
-                      FROM ($subselect) AS x
-                   ) = '". join(',', grep $_, @num). "'";
-
-    $comparison = "( $comparison OR NOT EXISTS ($subselect) )"
-      if grep !$_, @num;
-
+  # brute force
+  my $table = $opt{'use_override'} ? 'override' : 'part_pkg';
+  my $op = ' OR ';
+  if ( $opt{'all_report_options'} ) {
+    if ( @num and $null ) {
+      return 'false'; # mutually exclusive criteria, so just bail out
+    }
+    $op = ' AND ';
   }
-  if ( $use_override ) {
-    # then also allow the non-override package to match
-    $comparison = "( $comparison OR " . $self->with_report_option($num) . ")";
+  my @where_num = map {
+    "EXISTS(SELECT 1 FROM part_pkg_option ".
+    "WHERE optionname = 'report_option_$_' ".
+    "AND part_pkg_option.pkgpart = $table.pkgpart)"
+  } @num;
+  if ( $null ) {
+    push @where_num, "NOT EXISTS(SELECT 1 FROM part_pkg_option ".
+                     "WHERE optionname LIKE 'report_option_%' ".
+                     "AND part_pkg_option.pkgpart = $table.pkgpart)";
   }
-  $comparison;
+  my @where_not_num = map {
+    "NOT EXISTS(SELECT 1 FROM part_pkg_option ".
+    "WHERE optionname = 'report_option_$_' ".
+    "AND part_pkg_option.pkgpart = $table.pkgpart)"
+  } @not_num;
+
+  my @where;
+  if (@where_num) {
+    push @where, '( '.join($op, @where_num).' )';
+  }
+  if (@where_not_num) {
+    push @where, '( '.join(' AND ', @where_not_num).' )';
+  }
+
+  return @where;
+  # this messes up totals
+  #if ( $opt{'use_override'} ) {
+  #  # then also allow the non-override package to match
+  #  delete $opt{'use_override'};
+  #  $comparison = "( $comparison OR " . $self->with_report_option(%opt) . ")";
+  #}
+
 }
 
 sub with_cust_classnum {

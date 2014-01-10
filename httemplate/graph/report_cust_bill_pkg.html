@@ -64,12 +64,15 @@ function class_mode_changed() {
     
   var div_pkg = document.getElementById('pkg_class');
   var div_report = document.getElementById('report_class');
+  var span_exact = document.getElementById('exact_match');
   if (mode == 'pkg') {
     div_pkg.style.display = '';
     div_report.style.display = 'none';
+    span_exact.style.display = 'none';
   } else if (mode == 'report') {
     div_pkg.style.display = 'none';
     div_report.style.display = '';
+    span_exact.style.display = '';
   }
 }
 window.onload = class_mode_changed;
@@ -149,6 +152,11 @@ window.onload = class_mode_changed;
           <BR>
           <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_breakdown" VALUE="breakdown" onchange="enable_agent_totals(this)">
           <% emt('Breakdown') %>
+          <BR>
+          <SPAN ID="exact_match" style="display:none">
+          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_exact" VALUE="exact" onchange="enable_agent_totals(this)">
+          <% emt('Exact match') %>
+          </SPAN>
         </TD>
 
       </TR>
