@@ -84,13 +84,19 @@ $bottom_link .= "cust_classnum=$_;" foreach @cust_classnums;
 #started out as false lazinessish w/FS::cust_pkg::search_sql (previously search/cust_pkg.cgi), but not much left the sane now after #24776
 
 my ($class_table, $name_col, $value_col, $class_param);
+my $all_report_options;
 
 if ( $cgi->param('class_mode') eq 'report' ) {
   $class_param = 'report_optionnum'; # CGI param name, also used in the report engine
   $class_table = 'part_pkg_report_option'; # table containing classes
   $name_col = 'name'; # the column of that table containing the label
   $value_col = 'num'; # the column containing the class number
-} else {
+  # in 'exact' mode we want to run the query in ALL mode.
+  # in 'breakdown' mode want to run the query in ALL mode but using the 
+  # power set of the classes selected.
+  $all_report_options = 1
+    unless $cgi->param('class_agg_break') eq 'aggregate';
+} else { # class_mode eq 'pkg'
   $class_param = 'classnum';
   $class_table = 'pkg_class';
   $name_col = 'classname';
@@ -106,10 +112,12 @@ my @classnames = map { if ( $_ ) {
                        }
                      }
                    @classnums;
+my @not_classnums;
 
 $bottom_link .= "$class_param=$_;" foreach @classnums;
 
-if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
+if ( $cgi->param('class_agg_break') eq 'aggregate' or
+     $cgi->param('class_agg_break') eq 'exact' ) {
 
   $title .= ' '. join(', ', @classnames)
     unless scalar(@classnames) > scalar(qsearch($class_table,{'disabled'=>''}));
@@ -117,15 +125,28 @@ if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
 
 } elsif ( $cgi->param('class_agg_break') eq 'breakdown' ) {
 
-  if ( $cgi->param('mode') eq 'report' ) {
-    # In theory, a package can belong to any subset of the report classes,
-    # so the report groups should be all the _subsets_, but for now we're
-    # handling the simple case where each package belongs to one report
-    # class. Packages with multiple classes will go into one bin at the
-    # end.
-    push @classnames, '(multiple classes)';
-    push @classnums, 'multiple';
+  if ( $cgi->param('class_mode') eq 'report' ) {
+    # The new way:
+    # Actually break down all subsets of the (selected) report classes.
+    my $powerset = sub {
+      my @set = [];
+      foreach my $x (@_) {
+        @set = map { $_, [ @$_, $x ] } @set;
+      }
+      @set;
+    };
+    @classnums = $powerset->(@classnums);
+    @classnames = $powerset->(@classnames);
+    # this is pairwise complementary to @classnums, because math
+    @not_classnums = reverse(@classnums);
+warn Dumper(\@classnums, \@classnames, \@not_classnums);
+    # remove the null set
+    shift @classnums;
+    shift @classnames;
+    shift @not_classnums;
   }
+  # else it's 'pkg', i.e. part_pkg.classnum, which is singular on pkgpart
+  # and much simpler
 
 } else {
   die "guru meditation #434";
@@ -185,7 +206,10 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
                         'distribute'           => $distribute,
                       );
 
-    if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
+    if ( $cgi->param('class_agg_break') eq 'aggregate' or
+         $cgi->param('class_agg_break') eq 'exact' ) {
+      # the only difference between 'aggregate' and 'exact' is whether
+      # we pass the 'all_report_options' flag.
 
       foreach my $component ( @components ) {
 
@@ -198,14 +222,16 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
 
         my $row_agentnum = $all_agent || $agent->agentnum;
         my $row_refnum = $all_part_referral || $part_referral->refnum;
-        push @params, [
+        my @row_params = (
                         @base_params,
                         $class_param => \@classnums,
                         ($all_agent ? () : ('agentnum' => $row_agentnum) ),
                         ($all_part_referral ? () : ('refnum' => $row_refnum) ),
-                        'charges'              => $component,
-                      ];
+                        'charges'               => $component,
+        );
 
+        # XXX this is very silly.  we should cache it server-side and 
+        # just put a cache identifier in the link
         my $rowlink = "$link;".
                       ($all_agent ? '' : "agentnum=$row_agentnum;").
                       ($all_part_referral ? '' : "refnum=$row_refnum;").
@@ -213,6 +239,11 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
                       "distribute=$distribute;".
                       "use_override=$use_override;charges=$component;";
         $rowlink .= "$class_param=$_;" foreach @classnums;
+        if ( $all_report_options ) {
+          push @row_params, 'all_report_options', 1;
+          $rowlink .= 'all_report_options=1';
+        }
+        push @params, \@row_params;
         push @links, $rowlink;
 
         @colorbuf = @agent_colors unless @colorbuf;
@@ -223,9 +254,12 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
 
     } elsif ( $cgi->param('class_agg_break') eq 'breakdown' ) {
 
+      # if we're working with report options, @classnums here contains 
+      # arrays of multiple classnums
       for (my $i = 0; $i < scalar @classnums; $i++) {
-        my $row_classnum = $classnums[$i];
-        my $row_classname = $classnames[$i];
+        my $row_classnum = join(',', @{ $classnums[$i] });
+        my $row_classname = join(', ', @{ $classnames[$i] });
+        my $not_row_classnum = join(',', @{ $not_classnums[$i] });
         foreach my $component ( @components ) {
 
           push @items, 'cust_bill_pkg';
@@ -237,21 +271,30 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
 
           my $row_agentnum = $all_agent || $agent->agentnum;
           my $row_refnum = $all_part_referral || $part_referral->refnum;
-          push @params, [
+          my @row_params = (
                           @base_params,
                           $class_param => $row_classnum,
                           ($all_agent ? () : ('agentnum' => $row_agentnum) ),
                           ($all_part_referral ? () : ('refnum' => $row_refnum)),
                           'charges'              => $component,
-                        ];
-
-          push @links, "$link;".
+          );
+          my $row_link = "$link;".
                        ($all_agent ? '' : "agentnum=$row_agentnum;").
                        ($all_part_referral ? '' : "refnum=$row_refnum;").
                        (join('',map {"cust_classnum=$_;"} @cust_classnums)).
                        "$class_param=$row_classnum;".
                        "distribute=$distribute;".
                        "use_override=$use_override;charges=$component;";
+          if ( $class_param eq 'report_optionnum' ) {
+            push @row_params,
+                          'all_report_options' => 1,
+                          'not_report_optionnum' => $not_row_classnum,
+            ;
+            $row_link .= "all_report_options=1;".
+                         "not_report_optionnum=$not_row_classnum;";
+          }
+          push @params, \@row_params;
+          push @links, $row_link;
 
           @colorbuf = @agent_colors unless @colorbuf;
           push @colors, shift @colorbuf;
