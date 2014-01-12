@@ -77,7 +77,7 @@ sub _export_insert {
     }
 
     my $uuid = $self->indosoft_command( 'editEmployee',
-      'mode'        => 'create'
+      'mode'        => 'create',
       'tenant_uuid' => $svc_x->svc_pbx->id,
       'username'    => $svc_x->username,
       'password'    => $svc_x->_password,
