@@ -1,5 +1,8 @@
 package FS::svc_phone;
-use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
+use base qw( FS::svc_Domain_Mixin FS::svc_PBX_Mixin 
+             FS::location_Mixin
+             FS::svc_Common
+           );
 
 use strict;
 use vars qw( $DEBUG $me @pw_set $conf $phone_name_max

@@ -1,11 +1,11 @@
 package FS::svc_acct;
-use base qw( FS::svc_Domain_Mixin
-             FS::svc_CGP_Mixin
-             FS::svc_CGPRule_Mixin
+use base qw( FS::svc_Domain_Mixin FS::svc_PBX_Mixin
+             FS::svc_CGP_Mixin FS::svc_CGPRule_Mixin
              FS::svc_Radius_Mixin
              FS::svc_Tower_Mixin
              FS::svc_IP_Mixin
-             FS::svc_Common );
+             FS::svc_Common
+           );
 
 use strict;
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
