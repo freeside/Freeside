@@ -103,7 +103,7 @@ if ( $cgi->param('class_mode') eq 'report' ) {
   $value_col = 'classnum';
 }
 
-my @classnums = grep /^\d+$/, $cgi->param($class_param);
+my @classnums = sort {$a <=> $b} grep /^\d+$/, $cgi->param($class_param);
 my @classnames = map { if ( $_ ) {
                          my $class = qsearchs($class_table, {$value_col=>$_} );
                          $class->$name_col;
@@ -128,22 +128,24 @@ if ( $cgi->param('class_agg_break') eq 'aggregate' or
   if ( $cgi->param('class_mode') eq 'report' ) {
     # The new way:
     # Actually break down all subsets of the (selected) report classes.
-    my $powerset = sub {
-      my @set = [];
-      foreach my $x (@_) {
-        @set = map { $_, [ @$_, $x ] } @set;
+    my @subsets = FS::part_pkg_report_option->subsets(@classnums);
+    warn "SUBSETS:\n".Dumper(\@subsets)."\n\n";
+    my @classnum_space = @classnums;
+    @classnums = @classnames = ();
+    while(@subsets) {
+      my $these = shift @subsets;
+      # applied topology!
+      my $not_these = [ @classnum_space ];
+      my $i = 0;
+      foreach (@$these) {
+        $i++ until $not_these->[$i] == $_;
+        splice($not_these, $i, 1);
       }
-      @set;
-    };
-    @classnums = $powerset->(@classnums);
-    @classnames = $powerset->(@classnames);
-    # this is pairwise complementary to @classnums, because math
-    @not_classnums = reverse(@classnums);
-warn Dumper(\@classnums, \@classnames, \@not_classnums);
-    # remove the null set
-    shift @classnums;
-    shift @classnames;
-    shift @not_classnums;
+      push @classnums, $these;
+      push @not_classnums, $not_these;
+      push @classnames, shift @subsets;
+    } #while subsets
+    warn "COMPLEMENTS:\n".Dumper(\@not_classnums)."\n\n";
   }
   # else it's 'pkg', i.e. part_pkg.classnum, which is singular on pkgpart
   # and much simpler
