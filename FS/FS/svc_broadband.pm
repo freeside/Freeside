@@ -633,9 +633,6 @@ sub allowed_routers {
   }
 }
 
-=back
-
-
 #class method
 sub _upgrade_data {
   my $class = shift;
