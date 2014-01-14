@@ -129,7 +129,6 @@ if ( $cgi->param('class_agg_break') eq 'aggregate' or
     # The new way:
     # Actually break down all subsets of the (selected) report classes.
     my @subsets = FS::part_pkg_report_option->subsets(@classnums);
-    warn "SUBSETS:\n".Dumper(\@subsets)."\n\n";
     my @classnum_space = @classnums;
     @classnums = @classnames = ();
     while(@subsets) {
@@ -145,7 +144,6 @@ if ( $cgi->param('class_agg_break') eq 'aggregate' or
       push @not_classnums, $not_these;
       push @classnames, shift @subsets;
     } #while subsets
-    warn "COMPLEMENTS:\n".Dumper(\@not_classnums)."\n\n";
   }
   # else it's 'pkg', i.e. part_pkg.classnum, which is singular on pkgpart
   # and much simpler
