@@ -208,6 +208,11 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
         or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
       cardtype($payinfo) eq $cgi->param('CARD_type')
         or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
+
+      $error ||= 'CVV2 is required'
+        if ! $cgi->param('paycvv')
+        && $init_data->{require_cvv};
+
     }
 
     if ($init_data->{emailinvoiceonly} && (length $cgi->param('invoicing_list') < 1)) {

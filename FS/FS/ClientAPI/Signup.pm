@@ -174,6 +174,7 @@ sub signup_info {
       'card_types'         => card_types(),
       'paytypes'           => [ @FS::cust_main::paytypes ],
       'cvv_enabled'        => 1,
+      'require_cvv'        => $conf->exists('signup-require_cvv'),
       'stateid_enabled'    => $conf->exists('show_stateid'),
       'paystate_enabled'   => $conf->exists('show_bankstate'),
       'ship_enabled'       => 1,
@@ -630,6 +631,11 @@ sub new_customer {
     $cust_main->payby('BILL')   # MCRD better?
       if $gw && $gw->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
   }
+
+  return { 'error' => "CVV2 is required" }
+    if $cust_main->payby =~ /^(CARD|DCRD)$/
+    && ! $cust_main->paycvv
+    && $conf->exists('signup-require_cvv');
 
   $cust_main->payinfo($cust_main->daytime)
     if $cust_main->payby eq 'LECB' && ! $cust_main->payinfo;

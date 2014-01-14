@@ -196,7 +196,8 @@ else {
 
     if ( $cvv_enabled ) {
       foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
-        $payby{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>!;
+        my $cvv_r = $require_cvv ? '<font color="#ff0000">*</font> ' : '';
+        $payby{$payby} .= qq!<TR><TD ALIGN="right">${cvv_r}CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
     if ( $paystate_enabled ) {
@@ -226,7 +227,8 @@ else {
 
     if ( $cvv_enabled ) {
       foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
-        $paybychecked{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4></TD></TR>!;
+        my $cvv_r = $require_cvv ? '<font color="#ff0000">*</font> ' : '';
+        $paybychecked{$payby} .= qq!<TR><TD ALIGN="right">${cvv_r}CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
     if ( $paystate_enabled ) {
