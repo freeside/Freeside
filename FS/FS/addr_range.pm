@@ -149,7 +149,10 @@ sub end {
       $self->set('start', $end);
       ($end, $start) = ($start, $end);
     }
-    $self->set('length', $end - $start + 1);
+    # bigints are PROBABLY not needed here...but if someone wants to exclude
+    # all the address space not assigned to them, for example, that could be
+    # a pretty large part of IPv4.
+    $self->set('length', $end->bigint - $start->bigint + 1);
     return $end->addr;
   }
   my $end = $start + $self->get('length') - 1;
@@ -165,13 +168,13 @@ Checks whether IPADDR (a dotted-quad IPv4 address) is within the range.
 sub contains {
   my $self = shift;
   my $addr = shift;
-  $addr = NetAddr::IP->new($addr, 0)
-    unless ref($addr) and UNIVERSAL::isa($addr, 'NetAddr::IP');
+  $addr = NetAddr::IP->new($addr, 0);
   return 0 unless $addr;
 
   my $start = NetAddr::IP->new($self->start, 0);
 
-  return ($addr >= $start and $addr - $start < $self->length) ? 1 : 0;
+  return ($addr >= $start and $addr->bigint - $start->bigint < $self->length) 
+          ? 1 : 0;
 } 
 
 =item as_string
@@ -242,10 +245,14 @@ sub any_contains {
 
 =head1 DEVELOPER NOTE
 
-L<NetAddr::IP> objects have netmasks.  When using them to represent 
-range endpoints, be sure to set the netmask to I<zero> so that math on 
-the address doesn't stop at the subnet boundary.  (The default is /32, 
-which doesn't work very well.  Address ranges ignore subnet boundaries.)
+L<NetAddr::IP> objects have netmasks.  They also have overloaded operators
+for addition and subtraction, but those have range limitations when comparing
+addresses.  (An IPv4 address is effectively a uint32; the difference
+between two IPv4 addresses is the same range, but signed.)  Therefore,
+the distance between two addresses should be calculated using the 
+C<bigint> method ($addr2->bigint - $addr1->bigint), which returns the 
+address as a L<Math::BigInt> object, and also conveniently discards the 
+netmask.
 
 =head1 BUGS
 
