@@ -242,7 +242,7 @@ sub next_free_addr {
     # also make sure it's not blocked from assignment by an address range
     if ( !$used{$freeaddr->addr } ) {
       my ($range) = grep { !$_->allow_use }
-                  FS::addr_range->any_contains($freeaddr);
+                  FS::addr_range->any_contains($freeaddr->addr);
       if ( !$range ) {
         # then we've found a free address
         return $freeaddr;
