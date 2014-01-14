@@ -2,7 +2,7 @@ package FS::part_pkg_report_option;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 
 =head1 NAME
 
@@ -107,6 +107,48 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item subsets OPTIONNUM, ...
+
+Given a list of report_option numbers, determines all combinations of those
+numbers that exist on actual package definitions.  For each such combination,
+returns an arrayref of report_option numbers, followed by an arrayref of
+corresponding report class names.  This is used for a search optimization.
+
+=cut
+
+# probably doesn't belong here, but there's not a better place for it
+# and optimizations are, by nature, hackish
+
+sub subsets {
+  my ($self, @nums) = @_;
+  my @optionnames = map { "'report_option_$_'" } @nums;
+  my $where = "WHERE optionname IN(".join(',',@optionnames).")"
+    if @nums;
+  my $subselect =
+    "SELECT pkgpart, replace(optionname, 'report_option_', '')::int AS num ".
+    "FROM part_pkg_option $where ".
+    "ORDER BY pkgpart, num";
+  my $select =
+    "SELECT DISTINCT array_to_string(array_agg(num), ','), ".
+    "array_to_string(array_agg(name), ',') ".
+    "FROM ($subselect) AS x JOIN part_pkg_report_option USING (num) ".
+    "GROUP BY pkgpart";
+  my $dbh = dbh;
+  my $sth = $dbh->prepare($select)
+    or die $dbh->errstr; # seriously, this should never happen
+  $sth->execute
+    or die $sth->errstr;
+  # return the first (only) column
+  map { [ split(',',$_->[0]) ],
+        [ split(',',$_->[1]) ] } @{ $sth->fetchall_arrayref };
 }
 
 =back
