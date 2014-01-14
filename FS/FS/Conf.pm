@@ -2663,6 +2663,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'signup-require_cvv',
+    'section'     => 'self-service',
+    'description' => 'Require CVV for credit card signup.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'manual_process-pkgpart',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
