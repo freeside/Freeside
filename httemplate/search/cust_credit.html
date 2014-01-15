@@ -97,6 +97,10 @@ if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $title = $agent->agent. " $title";
 }
 
+if ( $cgi->param('credbatch') =~ /^([\w\-\/\.\:]+)$/ ) {
+  push @search, "cust_credit.credbatch = '$1'";
+}
+
 # commission_salesnum
 if ( $cgi->param('commission_salesnum') =~ /^(\d+)$/ ) {
   push @search, "commission_salesnum = $1";

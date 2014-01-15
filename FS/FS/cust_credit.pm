@@ -1112,6 +1112,58 @@ sub credit_lineitems {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4
+
+=item process_batch_import
+
+=cut
+
+use List::Util qw( min );
+use FS::cust_bill;
+use FS::cust_credit_bill;
+sub process_batch_import {
+  my $job = shift;
+
+  my $opt = { 'table'   => 'cust_credit',
+              'params'  => [ 'credbatch' ],
+              'formats' => { 'simple' =>
+                               [ 'custnum', 'amount', 'reasonnum', 'invnum' ],
+                           },
+              'default_csv' => 1,
+              'postinsert_callback' => sub {
+                my $cust_credit = shift; #my ($cust_credit, $param ) = @_;
+
+                if ( $cust_credit->invnum ) {
+
+                  my $cust_bill = qsearchs('cust_bill', { invnum=>$cust_credit->invnum } );
+                  my $amount = min( $cust_credit->credited, $cust_bill->owed );
+    
+                  my $cust_credit_bill = new FS::cust_credit_bill ( {
+                    'crednum' => $cust_credit->crednum,
+                    'invnum'  => $cust_bill->invnum,
+                    'amount'  => $amount,
+                  } );
+                  my $error = $cust_credit_bill->insert;
+                  return '' unless $error;
+
+                }
+
+                #apply_payments_and_credits ?
+                $cust_credit->cust_main->apply_credits;
+
+                return '';
+
+              },
+            };
+
+  FS::Record::process_batch_import( $job, $opt, @_ );
+
+}
+
+=back
+
 =head1 BUGS
 
 The delete method.  The replace method.
