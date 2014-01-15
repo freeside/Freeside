@@ -96,6 +96,10 @@ if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $title = $agent->agent. " $title";
 }
 
+if ( $cgi->param('credbatch') =~ /^([\w\-\/\.\:]+)$/ ) {
+  push @search, "cust_credit.credbatch = '$1'";
+}
+
 if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @search, "refnum = $1";
   my $part_referral = qsearchs('part_referral', { 'refnum' => $1 } );
