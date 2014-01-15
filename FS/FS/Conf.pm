@@ -826,7 +826,7 @@ sub reason_type_options {
   {
     'key'         => 'credit-card-surcharge-percentage',
     'section'     => 'billing',
-    'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total. WARNING: this is usually prohibited by merchant account / other agreements and/or law, but is currently lawful in AU and UK.',
+    'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
     'type'        => 'text',
   },
 
