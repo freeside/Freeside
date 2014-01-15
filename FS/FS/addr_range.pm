@@ -149,10 +149,10 @@ sub end {
       $self->set('start', $end);
       ($end, $start) = ($start, $end);
     }
-    # bigints are PROBABLY not needed here...but if someone wants to exclude
-    # all the address space not assigned to them, for example, that could be
-    # a pretty large part of IPv4.
-    $self->set('length', $end->bigint - $start->bigint + 1);
+    # fails if $end - $start > 2^31
+    # so don't do that
+    # (fixed in NetAddr::IP 4.050 but we can't rely on that, apparently)
+    $self->set('length', $end - $start + 1);
     return $end->addr;
   }
   my $end = $start + $self->get('length') - 1;
@@ -173,7 +173,7 @@ sub contains {
 
   my $start = NetAddr::IP->new($self->start, 0);
 
-  return ($addr >= $start and $addr->bigint - $start->bigint < $self->length) 
+  return ($addr >= $start and $addr < ( $start + $self->length) )
           ? 1 : 0;
 } 
 
@@ -186,7 +186,7 @@ Returns a readable string showing the address range.
 sub as_string {
   my $self = shift;
   my $start = NetAddr::IP->new($self->start, 0);
-  my $end   = $start + $self->length;
+  my $end   = $start + $self->length - 1;
 
   if ( $self->length == 1 ) {
     # then just the address
@@ -248,11 +248,10 @@ sub any_contains {
 L<NetAddr::IP> objects have netmasks.  They also have overloaded operators
 for addition and subtraction, but those have range limitations when comparing
 addresses.  (An IPv4 address is effectively a uint32; the difference
-between two IPv4 addresses is the same range, but signed.)  Therefore,
-the distance between two addresses should be calculated using the 
-C<bigint> method ($addr2->bigint - $addr1->bigint), which returns the 
-address as a L<Math::BigInt> object, and also conveniently discards the 
-netmask.
+between two IPv4 addresses is the same range, but signed.)  In later versions
+of the library the C<bigint> method can be used as a workaround, but 
+otherwise it's not safe to subtract two addresses that might differ in the
+first bit of the first octet.
 
 =head1 BUGS
 
