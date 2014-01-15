@@ -395,9 +395,10 @@ $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
 tie my %tools_importing, 'Tie::IxHash',
   'Customers' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
   'Customer packages' => [ $fsurl.'misc/cust_pkg-import.html', '' ],
-  'Customer comments from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
-  'One-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
-  'Payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
+  'Customer comments' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
+  'One-time charges' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
+  'Payments' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
+  'Credits' => [ $fsurl.'misc/cust_credit-import.html', '' ],
   'Phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'misc/cdr-import.html', '' ],
 ;
