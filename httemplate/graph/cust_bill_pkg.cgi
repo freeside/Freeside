@@ -138,7 +138,7 @@ if ( $cgi->param('class_agg_break') eq 'aggregate' or
       my $i = 0;
       foreach (@$these) {
         $i++ until $not_these->[$i] == $_;
-        splice($not_these, $i, 1);
+        splice(@$not_these, $i, 1);
       }
       push @classnums, $these;
       push @not_classnums, $not_these;
