@@ -820,10 +820,13 @@ sub tables_hashref {
         'closed',    'char', 'NULL', 1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'eventnum', 'int', 'NULL', '', '', '', #triggering event for commission
+        'credbatch',    'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'crednum',
       'unique' => [],
-      'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'] ],
+      'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'],
+                   ['credbatch'],
+                 ],
     },
 
     'cust_credit_bill' => {
