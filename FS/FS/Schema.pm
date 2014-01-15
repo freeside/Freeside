@@ -973,11 +973,12 @@ sub tables_hashref {
         'commission_agentnum', 'int', 'NULL', '', '', '', #
         'commission_salesnum', 'int', 'NULL', '', '', '', #
         'commission_pkgnum',   'int', 'NULL', '', '', '', #
+        'credbatch',    'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'crednum',
       'unique' => [],
       'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'],
-                   [ 'commission_salesnum' ],
+                   ['commission_salesnum'], ['credbatch'],
                  ],
     },
 
