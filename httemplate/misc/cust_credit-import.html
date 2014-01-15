@@ -1,0 +1,79 @@
+<& /elements/header.html, 'Batch Credit Import' &>
+
+Import a file containing credits.
+<BR><BR>
+
+<& /elements/form-file_upload.html,
+     'name'      => 'CreditImportForm',
+     'action'    => 'process/cust_credit-import.cgi',
+     'num_files' => 1,
+     'fields'    => [ 'format', 'credbatch' ],
+     'message'   => 'Credit import successful',
+     'url'       => $p."search/cust_credit.html?credbatch=$credbatch",
+     'onsubmit'  => "document.CreditImportForm.submitButton.disabled=true;",
+&>
+
+
+<% &ntable("#cccccc", 2) %>
+
+  <INPUT TYPE="hidden" NAME="credbatch" VALUE="<% $credbatch %>"%>
+
+  <!--
+  <TR>
+    <TH ALIGN="right">Format</TH>
+    <TD>
+      <SELECT NAME="format">
+        <OPTION VALUE="simple">Simple
+      </SELECT>
+    </TD>
+  </TR>
+  -->
+  <INPUT TYPE="hidden" NAME="format" VALUE="simple">
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
+             VALUE   = "Import file"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+<BR>
+
+Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  The file should have a .CSV or .XLS extension.
+<BR><BR>
+
+    <b>Default</b> format has the following field order: <i>custnum, amount, reasonnum, invnum</i><br>
+<BR><BR>
+
+Field information:
+<ul>
+  <li><i>custnum</i>: Customer number
+  <li><i>amount</i>:
+  <li><i>reasonnum</i>: <A HREF="<%$p%>browse/reason.html?class=R">Credit reason</A>
+  <li><i>invnum</i>: Invoice number
+</ul>
+<BR><BR>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+my $credbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+
+</%init>
