@@ -26,12 +26,8 @@ ACTION="<% $p %>edit/process/cust_location.cgi" METHOD=POST>
 <BR>
 <SCRIPT TYPE="text/javascript">
 function go() {
-% if ( FS::Conf->new->config('address_standardize_method') ) {
-  standardize_locations();
-% } else {
   confirm('Modify this service location?') &&
-    document.EditLocationForm.submit();
-% }
+    standardize_locations();
 }
 
 function submit_abort() {
