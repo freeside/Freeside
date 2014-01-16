@@ -99,6 +99,7 @@ my %session_callbacks = (
     my %args = @$argsref;
     $args{part_pkg} = \@part_pkg;
     $args{first_svc} = \@first_svc;
+    $args{no_comment} = 1;
     @$argsref = ( %args );
     return ''; #no error
 

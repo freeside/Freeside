@@ -784,6 +784,11 @@ sub custom_comment {
     $price_info;
 }
 
+sub pkg_price_info {
+  my $self = shift;
+  $self->pkg. ' - '. ($self->price_info || 'No charge');
+}
+
 =item pkg_class
 
 Returns the package class, as an FS::pkg_class object, or the empty string
