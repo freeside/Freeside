@@ -734,11 +734,14 @@ $config_menu{'Network Monitoring'} = [ \%config_nms, '' ]
   if $curuser->access_right('Configure network monitoring')
   && $conf->config('network_monitoring_system') eq 'Torrus_Internal';
 
-if (   $curuser->access_right('Configuration' )
-     || $curuser->access_right('Edit advertising sources')
-     || $curuser->access_right('Edit global advertising sources')
+if ( $curuser->access_right([ 'Configuration',
+                              'View templates',
+                              'View global templates',
+                              'Edit templates',
+                              'Edit global templates',
+                           ])
    ) {
-  $config_menu{separator9} = '';
+  $config_menu{separator9} = '' if keys %config_menu;
   $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ];
 }
 
