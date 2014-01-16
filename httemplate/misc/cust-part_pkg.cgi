@@ -31,6 +31,14 @@ my $default_start_date = $conf->exists('order_pkg-no_start_date')
                            ? ''
                            : $cust_main->next_bill_date;
 
+#num_billing_pkgs may be slightly better (will allow you to fill in a start
+# date in the weird edge case where you're using sync_next_bill and
+# prorate_defer_bill in flat.pm and there's one-time charges hanging around
+# for this customer but no active ones)
+#but we don't have an easy method for that, and definitely don't want to pull
+# all package objects
+my $num_ncancelled_pkgs = $cust_main ? $cust_main->num_ncancelled_pkgs : 0;
+
 my @return = map  {
                     my $start_date = $_->delay_start_date
                                    || $default_start_date;
@@ -39,7 +47,9 @@ my @return = map  {
                     ( $_->pkgpart,
                       $_->pkg_comment,
                       $_->can_discount,
-                      $_->can_start_date,
+                      $_->can_start_date(
+                        num_ncancelled_pkgs => $num_ncancelled_pkgs,
+                      ),
                       $start_date,
                     )
                   }

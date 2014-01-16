@@ -245,7 +245,15 @@ sub is_free_options {
 
 sub is_prepaid { 0; } #no, we're postpaid
 
-sub can_start_date { ! shift->option('start_1st', 1) }
+sub can_start_date {
+  my $self = shift;
+  my %opt = @_;
+
+  ! $self->option('start_1st', 1) && (   ! $self->option('sync_bill_date',1)
+                                      || ! $self->option('prorate_defer_bill',1)
+                                      || ! $opt{'num_ncancelled_pkgs'}
+                                     ); 
+}
 
 sub can_discount { 1; }
 
