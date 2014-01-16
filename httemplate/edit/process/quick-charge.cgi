@@ -2,7 +2,7 @@
 %   $cgi->param('error', $error );
 <% $cgi->redirect($p.'quick-charge.html?'. $cgi->query_string) %>
 % } else {
-<% header(emt("One-time charge added")) %>
+<% header(emt($message)) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
@@ -34,7 +34,10 @@ my $cust_main = FS::cust_main->by_key($custnum)
 exists($curuser->agentnums_href->{$cust_main->agentnum})
   or die "access denied";
 
+my $message;
+
 if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
+  $message = "One-time charge changed";
   my $pkgnum = $1;
   die "access denied"
     unless $curuser->access_right('Modify one-time charge');
@@ -45,14 +48,31 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
   my $part_pkg = $cust_pkg->part_pkg;
   die "pkgnum $pkgnum is not a one-time charge" unless $part_pkg->freq eq '0';
 
+  my ($amount, $quantity, $start_date);
+  if ( $cgi->param('amount') =~ /^\s*(\d*(\.\d{1,2})*)\s*$/ ) {
+    $amount = sprintf('%.2f', $1);
+  }
+  if ( $cgi->param('quantity') =~ /^\s*(\d*)\s*$/ ) {
+    $quantity = $1 || 1;
+  }
+  if ( $cgi->param('start_date') ) {
+    $start_date = parse_datetime($cgi->param('start_date'));
+  } else {
+    $start_date = time;
+  }
+
   $error = $cust_pkg->modify_charge(
       'pkg'               => scalar($cgi->param('pkg')),
       'classnum'          => scalar($cgi->param('classnum')),
       'additional'        => \@description,
       'adjust_commission' => ($cgi->param('adjust_commission') ? 1 : 0),
+      'amount'            => $amount,
+      'quantity'          => $quantity,
+      'start_date'        => $start_date,
   );
 
 } else {
+  $message = "One-time charge added";
   # the usual case: new one-time charge
   $param->{"amount"} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
     or $error .= "Illegal amount " . $param->{"amount"} . "  ";

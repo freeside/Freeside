@@ -107,14 +107,19 @@ function bill_now_changed (what) {
 % if ( $cust_pkg ) {
 
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $cust_pkg->pkgnum %>">
-<& /elements/tr-fixed.html,
+% my $field = '/elements/tr-input-text.html';
+% # don't allow changing these after the fact
+% $field = '/elements/tr-fixed.html' if $billed;
+<& $field,
   label => 'Amount',
   field => 'amount',
-  value => $money_char . sprintf('%.2f',$part_pkg->option('setup_fee')),
-&>
+  value => sprintf('%.2f',$part_pkg->option('setup_fee')),
+  size  => 8,
+  prefix  => $money_char,
+&> 
 
 %   if ( $conf->exists('invoice-unitprice') ) {
-<& /elements/tr-fixed.html,
+<& $field,
   label => 'Quantity',
   field => 'quantity',
   value => $cust_pkg->quantity
@@ -137,14 +142,22 @@ function bill_now_changed (what) {
 % #display the future or past charge date, but don't allow changes
 % # XXX we probably _could_ let as-yet unbilled charges be rescheduled, but
 % # there's no compelling need yet
-%   if ( $cust_pkg->setup or $cust_pkg->start_date ) {
-%     my $label = $cust_pkg->setup ? emt('Billed on') : emt('Will be billed');
-%     my $field = $cust_pkg->setup ? 'setup' : 'start_date';
+%   if ( $billed ) {
       <& /elements/tr-fixed-date.html,
-        label => $label,
-        value => $cust_pkg->get($field)
+        label => emt('Billed on'),
+        value => $cust_pkg->get('setup')
       &>
-%   } # else we don't show anything here
+%   } else {
+      <& /elements/tr-input-date-field.html,
+        {
+          name    => 'start_date',
+          label   => emt('Will be billed'),
+          value   => $cust_pkg->get('start_date'),
+          format  => $date_format,
+          noinit  => 1,
+        }
+      &>
+%   }
 % } else { # new one-time charge
 
 <TR>
@@ -445,5 +458,7 @@ if ( $cust_pkg ) { # set defaults
     }
   }
 }
+
+my $billed = $cust_pkg->get('setup') ? 1 : 0;
 
 </%init>
