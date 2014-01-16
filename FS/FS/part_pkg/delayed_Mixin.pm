@@ -51,7 +51,10 @@ sub calc_remain {
   return $self->NEXT::calc_remain($cust_pkg, %options);
 }
 
-sub can_start_date { ! shift->option('delay_setup', 1) }
+sub can_start_date {
+  my $self = shift;
+  ! $self->option('delay_setup', 1) && $self->NEXT::can_start_date(@_);
+}
 
 sub default_start_date {
   my $self = shift;
