@@ -2228,12 +2228,16 @@ sub set_salesnum {
 
 =item modify_charge OPTIONS
 
-Change the properties of a one-time charge.  Currently the only properties
-that can be changed this way are those that have no impact on billing 
-calculations:
+Change the properties of a one-time charge.  The following properties can
+be changed this way:
 - pkg: the package description
 - classnum: the package class
 - additional: arrayref of additional invoice details to add to this package
+
+and, I<if the charge has not yet been billed>:
+- start_date: the date when it will be billed
+- amount: the setup fee to be charged
+- quantity: the multiplier for the setup fee
 
 If you pass 'adjust_commission' => 1, and the classnum changes, and there are
 commission credits linked to this charge, they will be recalculated.
@@ -2268,14 +2272,51 @@ sub modify_charge {
   }
 
   my $old_classnum;
-  if ( exists($opt{'classnum'}) and $part_pkg->classnum ne $opt{'classnum'} ) {
+  if ( exists($opt{'classnum'}) and $part_pkg->classnum ne $opt{'classnum'} )
+  {
     # remember it
     $old_classnum = $part_pkg->classnum;
     $part_pkg->set('classnum', $opt{'classnum'});
   }
 
+  if ( !$self->get('setup') ) {
+    # not yet billed, so allow amount and quantity
+    if ( exists($opt{'quantity'})
+          and $opt{'quantity'} != $self->quantity
+          and $opt{'quantity'} > 0 ) {
+        
+      $self->set('quantity', $opt{'quantity'});
+    }
+    if ( exists($opt{'start_date'})
+          and $opt{'start_date'} != $self->start_date ) {
+
+      $self->set('start_date', $opt{'start_date'});
+    }
+    if ($self->modified) { # for quantity or start_date change
+      my $error = $self->replace;
+      return $error if $error;
+    }
+
+    if ( exists($opt{'amount'}) 
+          and $part_pkg->option('setup_fee') != $opt{'amount'}
+          and $opt{'amount'} > 0 ) {
+
+      $pkg_opt{'setup_fee'} = $opt{'amount'};
+      # standard for one-time charges is to set comment = (formatted) amount
+      # update it to avoid confusion
+      my $conf = FS::Conf->new;
+      $part_pkg->set('comment', 
+        ($conf->config('money_char') || '$') .
+        sprintf('%.2f', $opt{'amount'})
+      );
+    }
+  } # else simply ignore them; the UI shouldn't allow editing the fields
+
   my $error = $part_pkg->replace( options => \%pkg_opt );
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   if (defined $old_classnum) {
     # fix invoice grouping records

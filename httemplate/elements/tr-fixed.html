@@ -13,6 +13,7 @@ my %opt = @_;
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
 my $value = $opt{'formatted_value'} || $opt{'curr_value'} || $opt{'value'};
+$value = $opt{'prefix'} . $value if defined($opt{'prefix'});
 
 unless ( $opt{'noescape'} ) {
   #compatibility with select-table and friends
