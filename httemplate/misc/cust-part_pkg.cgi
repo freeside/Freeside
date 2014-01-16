@@ -27,7 +27,7 @@ my $conf = new FS::Conf;
 
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-my $default_start_date = $conf->exists('order_pkg-no_start-date')
+my $default_start_date = $conf->exists('order_pkg-no_start_date')
                            ? ''
                            : $cust_main->next_bill_date;
 
