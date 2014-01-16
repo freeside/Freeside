@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs );
 use FS::upgrade_journal;
+use FS::access_group;
 
 @ISA = qw(FS::Record);
 
