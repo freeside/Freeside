@@ -7,7 +7,7 @@
 <INPUT TYPE="hidden" NAME="method" VALUE="<% $method %>">
 
 <BR><BR>
-<% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment(cust_pkg=>$cust_pkg) %>
+<% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment(cust_pkg=>$cust_pkg) ) %>
 <% ntable("#cccccc", 2) %>
 
 % my $date_init = 0;
