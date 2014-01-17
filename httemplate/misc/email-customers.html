@@ -95,15 +95,10 @@ function toggle(obj) {
 
 </SCRIPT>
 Template: 
-    <% include('/elements/select-table.html',
-                  'label'         => 'Template:',
-                  'table'         => 'msg_template',
-                  'hashref'       => { disabled => '' },
-                  'name_col'      => 'msgname',
-                  'empty_label'   => '(none)',
-                  'onchange'      => 'toggle(this)',
-              )
-    %><BR>
+    <& /elements/select-msg_template.html,
+         onchange => 'toggle(this)',
+    &>
+    <BR>
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%" id="table_no_template">
     <& /elements/tr-td-label.html, 'label' => 'From:' &>
       <TD><& /elements/input-text.html,
