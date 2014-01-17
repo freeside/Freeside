@@ -69,7 +69,7 @@ my $status_sub = sub {
   my $cust_event = shift;
 
   my $status = $cust_event->status;
-  $status .= ': '.$cust_event->statustext
+  $status .= ': '. encode_entities($cust_event->statustext)
     if $cust_event->statustext;
 
   my $part_event = $cust_event->part_event;
