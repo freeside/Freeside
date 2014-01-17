@@ -1971,7 +1971,7 @@ sub print_csv {
 
     my $pmt_cr_applied = 0;
     $pmt_cr_applied += $_->{'amount'}
-      foreach ( $self->_items_payments, $self->_items_credits ) ;
+      foreach ( $self->_items_payments(%opt), $self->_items_credits(%opt) ) ;
 
     my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
 
@@ -2998,14 +2998,22 @@ sub _items_credits {
   #credits
   my @objects;
   if ( $self->conf->exists('previous_balance-payments_since') ) {
-    my $date = 0;
-    $date = $self->previous_bill->_date if $self->previous_bill;
-    @objects = qsearch('cust_credit', {
-        'custnum' => $self->custnum,
-        '_date'   => {op => '>=', value => $date},
+    if ( $opt{'template'} eq 'statement' ) {
+      # then the current bill is a "statement" (i.e. an invoice sent as
+      # a payment receipt)
+      # and in that case we want to see payments on or after THIS invoice
+      @objects = qsearch('cust_credit', {
+          'custnum' => $self->custnum,
+          '_date'   => {op => '>=', value => $self->_date},
       });
-      # hard to do this in the qsearch...
-    @objects = grep { $_->_date < $self->_date } @objects;
+    } else {
+      my $date = 0;
+      $date = $self->previous_bill->_date if $self->previous_bill;
+      @objects = qsearch('cust_credit', {
+          'custnum' => $self->custnum,
+          '_date'   => {op => '>=', value => $date},
+      });
+    }
   } else {
     @objects = $self->cust_credited;
   }
@@ -3033,18 +3041,32 @@ sub _items_credits {
 
 sub _items_payments {
   my $self = shift;
+  my %opt = @_;
 
   my @b;
   my $detailed = $self->conf->exists('invoice_payment_details');
   my @objects;
   if ( $self->conf->exists('previous_balance-payments_since') ) {
-    my $date = 0;
-    $date = $self->previous_bill->_date if $self->previous_bill;
-    @objects = qsearch('cust_pay', {
+    # then show payments dated on/after the previous bill...
+    if ( $opt{'template'} eq 'statement' ) {
+      # then the current bill is a "statement" (i.e. an invoice sent as
+      # a payment receipt)
+      # and in that case we want to see payments on or after THIS invoice
+      @objects = qsearch('cust_pay', {
+          'custnum' => $self->custnum,
+          '_date'   => {op => '>=', value => $self->_date},
+      });
+    } else {
+      # the normal case: payments on or after the previous invoice
+      my $date = 0;
+      $date = $self->previous_bill->_date if $self->previous_bill;
+      @objects = qsearch('cust_pay', {
         'custnum' => $self->custnum,
         '_date'   => {op => '>=', value => $date},
       });
-    @objects = grep { $_->_date < $self->_date } @objects;
+      # and before the current bill...
+      @objects = grep { $_->_date < $self->_date } @objects;
+    }
   } else {
     @objects = $self->cust_bill_pay;
   }
