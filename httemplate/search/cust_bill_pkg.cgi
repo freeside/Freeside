@@ -20,12 +20,10 @@
                  'fields'      => [
                    @pkgnum,
                    sub { $_[0]->pkgnum > 0
-                           # possibly use override.pkg but i think this correct
                            ? $_[0]->get('pkgpart')
                            : ''
                        },
                    sub { $_[0]->pkgnum > 0
-                           # possibly use override.pkg but i think this correct
                            ? $_[0]->get('pkg')     
                            : $_[0]->get('itemdesc')
                        },
@@ -246,7 +244,6 @@ if ( $conf->exists('enable_taxclasses') ) {
   push @post_desc, 'taxclass';
   push @post_desc_null, '';
   $post_desc_align .= 'l';
-  push @select, 'part_pkg.taxclass'; # or should this use override?
 }
 
 # valid in both the tax and non-tax cases
@@ -321,7 +318,8 @@ if ( $use_override ) {
   )";
   $part_pkg = 'override';
 }
-push @select, 'part_pkg.pkgpart', 'part_pkg.pkg'; # or should this use override?
+push @select, "$part_pkg.pkgpart", "$part_pkg.pkg";
+push @select, "$part_pkg.taxclass" if $conf->exists('enable_taxclasses');
 
 # the non-tax case
 if ( $cgi->param('nottax') ) {
