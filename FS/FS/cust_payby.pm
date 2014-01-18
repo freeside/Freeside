@@ -382,9 +382,17 @@ sub check {
   ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
-    $self->payname =~ /^([\w \,\.\-\'\&]+)$/
-      or return gettext('illegal_name'). " payname: ". $self->payname;
-    $self->payname($1);
+
+    if ( $self->payby =~ /^(CHEK|DCHK)$/ ) {
+      $self->payname =~ /^([\w \,\.\-\']*)$/
+        or return gettext('illegal_name'). " payname: ". $self->payname;
+      $self->payname($1);
+    } else {
+      $self->payname =~ /^([\w \,\.\-\'\&]*)$/
+        or return gettext('illegal_name'). " payname: ". $self->payname;
+      $self->payname($1);
+    }
+
   }
 
   ###
