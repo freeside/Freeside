@@ -446,6 +446,7 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
 }
 
 my $part_pkg;
+my $billed = 0;
 
 if ( $cust_pkg ) { # set defaults
   $part_pkg = $cust_pkg->part_pkg;
@@ -457,8 +458,7 @@ if ( $cust_pkg ) { # set defaults
       push @description, $part_pkg->option("additional_info$i",1);
     }
   }
+  $billed = $cust_pkg->get('setup') ? 1 : 0;
 }
-
-my $billed = $cust_pkg->get('setup') ? 1 : 0;
 
 </%init>
