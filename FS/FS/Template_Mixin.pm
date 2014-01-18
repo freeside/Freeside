@@ -1223,7 +1223,9 @@ sub print_generic {
     
       # credits
       my $credittotal = 0;
-      foreach my $credit ( $self->_items_credits('trim_len'=>60) ) {
+      foreach my $credit (
+        $self->_items_credits( 'template' => $template, 'trim_len' => 60 )
+      ) {
 
         my $total;
         $total->{'total_item'} = &$escape_function($credit->{'description'});
@@ -1249,13 +1251,17 @@ sub print_generic {
       $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
 
       #credits (again)
-      foreach my $credit ( $self->_items_credits('trim_len'=>32) ) {
+      foreach my $credit (
+        $self->_items_credits( 'template' => $template, 'trim_len'=>32 )
+      ) {
         push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
       }
 
       # payments
       my $paymenttotal = 0;
-      foreach my $payment ( $self->_items_payments ) {
+      foreach my $payment (
+        $self->_items_payments( 'template' => $template )
+      ) {
         my $total = {};
         $total->{'total_item'} = &$escape_function($payment->{'description'});
         $paymenttotal += $payment->{'amount'};

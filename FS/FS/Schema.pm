@@ -988,7 +988,7 @@ sub tables_hashref {
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'duration', 'int', 'NULL', '',  0, '',
-        'phonenum', 'varchar', 'NULL', 25, '', '',
+        'phonenum', 'varchar', 'NULL', 255, '', '', # has to hold a service label
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
@@ -1163,7 +1163,7 @@ sub tables_hashref {
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'duration', 'int', 'NULL', '',  0, '',
-        'phonenum', 'varchar', 'NULL', 25, '', '',
+        'phonenum', 'varchar', 'NULL', 255, '', '',
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
