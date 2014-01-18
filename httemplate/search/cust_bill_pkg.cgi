@@ -436,12 +436,12 @@ if ( $cgi->param('nottax') ) {
 
     $join_pkg .= " LEFT JOIN ($exempt_sub) AS item_exempt
     USING (billpkgnum)";
-  }
  
-  # process tax restrictions
-  unshift @tax_where,
-    'cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum',
-    'cust_main_county.tax > 0';
+    # process tax restrictions
+    unshift @tax_where,
+      'cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum',
+      'cust_main_county.tax > 0';
+  }
 
   my $tax_sub = "SELECT 1
     FROM cust_bill_pkg_tax_location
