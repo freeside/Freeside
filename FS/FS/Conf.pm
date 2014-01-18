@@ -5434,7 +5434,6 @@ and customer address. Include units.',
     'multiple'    => 1,
     'options_sub' => sub { 
       map { $_ => FS::Locales->description($_) }
-      grep { $_ ne 'en_US' } 
       FS::Locales->locales;
     },
     'option_sub'  => sub { FS::Locales->description(shift) },
