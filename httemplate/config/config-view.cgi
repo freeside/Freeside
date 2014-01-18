@@ -34,11 +34,11 @@ invoice language options:
 <form action="<% $cgi->self_url %>" method="GET" style="display:inline;">
 <& /elements/select.html,
     'field' => 'locale',
-    'options' => [ '', @locales ],
+    'options' => [ '', grep { $_ ne 'en_US'} @locales ],
     'labels'  => { map { 
         my %info = FS::Locales->locale_info($_);
         $_ => "$info{name} ($info{country})"
-    } @locales },
+    } grep { $_ ne 'en_US' } @locales },
     'curr_value' => $locale,
     'id' => 'select-locale',
     'onchange' => 'changeLocale'
