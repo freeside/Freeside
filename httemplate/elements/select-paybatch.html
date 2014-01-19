@@ -1,0 +1,46 @@
+<SELECT NAME="<% $opt{field} || 'paybatch' %>">
+
+  <OPTION VALUE="">any/none</OPTION>
+
+% foreach my $p (@paybatch) {
+%   my( $paybatch, $date ) = @$p;
+%   #my @components = split('-', $paybatch);
+%   my $pretty_date = time2str($date_format, $date);
+%   my $pretty = "$pretty_date: $paybatch";
+
+    <OPTION VALUE="<% $paybatch |h %>"><% $pretty |h %></OPTION>
+
+% }
+
+</SELECT>
+<%init>
+
+use Date::Parse qw(str2time); #i should be in Mason.pm
+
+my %opt = @_;
+#my $paybatch = $opt{'curr_value'}; # || $opt{'value'} necessary?
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my $sth = dbh->prepare('SELECT DISTINCT paybatch FROM cust_pay
+                          WHERE paybatch IS NOT NULL')
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+
+my @paybatch = #map $_->[0],
+                 sort { $a->[1] <=> $b->[1] }
+                   map { my $date = '';
+                         if ( /^\w+\-(\d+)\-/ ) {
+                           $date = $1;
+                         } elsif ( /^\w+\-([\d\/]+)\-([\d\:]+)\-/ ) {
+                           $date = str2time("$1 $2");
+                         #} else {
+                         #  warn "unparsable: $_\n";
+                         }
+                         [ $_, $date ];
+                       }
+                     grep ! /^webui-/, #don't actually want the single entries
+                       map $_->[0], @{ $sth->fetchall_arrayref };
+
+</%init>
