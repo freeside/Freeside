@@ -715,3 +715,5 @@ FS/alarm_station.pm
 t/alarm_station.t
 FS/addr_range.pm
 t/addr_range.t
+FS/pbx_extension.pm
+t/pbx_extension.t

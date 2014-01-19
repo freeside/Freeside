@@ -351,6 +351,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::alarm_type;
   use FS::alarm_station;
   use FS::addr_range;
+  use FS::pbx_extension;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
