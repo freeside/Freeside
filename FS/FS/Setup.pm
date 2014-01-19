@@ -413,6 +413,7 @@ sub populate_access {
 
   use FS::AccessRight;
   use FS::access_right;
+  use FS::access_groupagent;
 
   foreach my $rightname ( FS::AccessRight->default_superuser_rights ) {
     my $access_right = new FS::access_right {
