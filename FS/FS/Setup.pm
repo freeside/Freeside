@@ -1,19 +1,32 @@
 package FS::Setup;
+use base qw( Exporter );
 
 use strict;
-use vars qw( @ISA @EXPORT_OK );
-use Exporter;
+use vars qw( ISA @EXPORT_OK );
 #use Tie::DxHash;
 use Tie::IxHash;
 use Crypt::OpenSSL::RSA;
 use FS::UID qw( dbh driver_name );
-use FS::Record;
+#use FS::Record;
 
 use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;
 $FS::svc_domain::whois_hack = 1;
 
-@ISA = qw( Exporter );
+#populate_locales
+use Locale::Country;
+use Locale::SubCountry 1.42;
+use FS::cust_main_county;
+
+#populate_access
+use FS::AccessRight;
+use FS::access_right;
+use FS::access_groupagent;
+
+#populate_msgcat
+use FS::Record qw(qsearch);
+use FS::msgcat;
+
 @EXPORT_OK = qw( create_initial_data enable_encryption );
 
 =head1 NAME
@@ -93,9 +106,6 @@ sub populate_numbering {
 
 sub populate_locales {
 
-  use Locale::Country;
-  use FS::cust_main_county;
-
   #cust_main_county
   foreach my $country ( sort map uc($_), all_country_codes ) {
     _add_country($country);
@@ -126,8 +136,6 @@ sub populate_addl_locales {
 }
 
 sub _add_country {
-
-  use Locale::SubCountry 1.42;
 
   my( $country ) = shift;
 
@@ -411,10 +419,6 @@ sub initial_data {
 
 sub populate_access {
 
-  use FS::AccessRight;
-  use FS::access_right;
-  use FS::access_groupagent;
-
   foreach my $rightname ( FS::AccessRight->default_superuser_rights ) {
     my $access_right = new FS::access_right {
       'righttype'   => 'FS::access_group',
@@ -437,9 +441,6 @@ sub populate_access {
 }
 
 sub populate_msgcat {
-
-  use FS::Record qw(qsearch);
-  use FS::msgcat;
 
   foreach my $del_msgcat ( qsearch('msgcat', {}) ) {
     my $error = $del_msgcat->delete;
