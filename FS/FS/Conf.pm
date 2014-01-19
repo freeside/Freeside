@@ -1733,7 +1733,7 @@ and customer address. Include units.',
   {
     'key'         => 'sip_passwordmax',
     'section'     => 'telephony',
-    'description' => 'Maximum SIP password length (default 8) (don\'t set this over 12 if you need to import or export crypt() passwords)',
+    'description' => 'Maximum SIP password length (default 80)',
     'type'        => 'text',
   },
 
