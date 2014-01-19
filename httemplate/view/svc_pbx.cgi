@@ -1,6 +1,6 @@
 <% include('elements/svc_Common.html',
              'table'     => 'svc_pbx',
-             'edit_url'  => $p."edit/svc_Common.html?svcdb=svc_pbx;svcnum=",
+             'edit_url'  => $p.'edit/svc_pbx.html?',
              'labels'    => \%labels,
              'html_foot' => $html_foot,
           )
@@ -19,6 +19,48 @@ my $html_foot = sub {
   my $svc_pbx = shift;
 
   ##
+  # Extensions
+  ##
+
+  my @pbx_extension = sort { $a->extension cmp $b->extension }
+                        $svc_pbx->pbx_extension;
+
+  my $extensions = '';
+  if ( @pbx_extension ) {
+
+    $extensions .= '<FONT CLASS="fsinnerbox-title">Extensions</FONT>'.
+                   include('/elements/table-grid.html');
+    my $bgcolor1 = '#eeeeee';
+    my $bgcolor2 = '#ffffff';
+    my $bgcolor = '';
+
+    #$extensions .= '
+    #  <TR>
+    #    <TH CLASS="grid" BGCOLOR="#cccccc">Ext</TH>
+    #    <TH CLASS="grid" BGCOLOR="#cccccc">Name</TH>
+    #  </TR>
+    #';
+
+    foreach my $pbx_extension ( @pbx_extension ) {
+      if ( $bgcolor eq $bgcolor1 ) {
+        $bgcolor = $bgcolor2;
+      } else {
+        $bgcolor = $bgcolor1;
+      }
+
+      $extensions .= qq(
+        <TR>
+          <TD CLASS="grid" BGCOLOR="$bgcolor">). $pbx_extension->extension. qq(
+          <TD CLASS="grid" BGCOLOR="$bgcolor">). $pbx_extension->phone_name. qq(
+        </TR>
+      );
+      
+    }
+
+    $extensions .= '</TABLE><BR>';
+  }
+
+  ##
   # CDR links
   ##
 
@@ -29,7 +71,7 @@ my $html_foot = sub {
 
   #matching as per package def cdr_svc_method
   my $cust_pkg = $svc_pbx->cust_svc->cust_pkg;
-  return '' unless $cust_pkg;
+  return $extensions unless $cust_pkg;
 
   my @voip_pkgs =
     grep { $_->plan eq 'voip_cdr' } $cust_pkg->part_pkg->self_and_bill_linked;
@@ -43,7 +85,7 @@ my $html_foot = sub {
 
   my $cdr_svc_method = ( $voip_pkg && $voip_pkg->option('cdr_svc_method') )
                        || 'svc_phone.phonenum';
-  return '' unless $cdr_svc_method =~ /^svc_pbx\.(.*)$/;
+  return $extensions unless $cdr_svc_method =~ /^svc_pbx\.(.*)$/;
   my $field = $1;
 
   my $search;
@@ -55,7 +97,7 @@ my $html_foot = sub {
     $search = 'svcnum='. $svc_pbx->svcnum;
   } else {
     warn "unknown cdr_svc_method svc_pbx.$field";
-    return '';
+    return $extensions
   }
 
   my @links = map {
@@ -67,6 +109,7 @@ my $html_foot = sub {
   # concatenate & return
   ###
 
+  $extensions.
   join(' | ', @links ). '<BR>';
 
 };

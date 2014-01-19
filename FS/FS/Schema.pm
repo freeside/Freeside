@@ -5657,6 +5657,25 @@ sub tables_hashref {
                         ],
     },
 
+    'pbx_extension' => {
+      'columns' => [
+        'extensionnum',  'serial',     '',      '', '', '',
+        'svcnum',           'int',     '',      '', '', '',
+        'extension',    'varchar',     '', $char_d, '', '',
+        'pin',          'varchar', 'NULL', $char_d, '', '',
+        'sip_password', 'varchar', 'NULL', $char_d, '', '',
+        'phone_name',   'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key'  => 'extensionnum',
+      'unique'       => [ [ 'svcnum', 'extension' ] ],
+      'index'        => [ [ 'svcnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'svcnum' ],
+                            table      => 'svc_pbx',
+                          },
+                        ],
+    },
+
     'svc_mailinglist' => { #svc_group?
       'columns' => [
         'svcnum',            'int',     '',            '', '', '', 

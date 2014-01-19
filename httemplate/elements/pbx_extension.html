@@ -1,0 +1,113 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE STYLE="display:inline">
+    <TR>
+
+%     ###
+%     # extension
+%     ###
+      <TD>
+        <INPUT
+              TYPE  = "text"
+              NAME  = "<%$name%>_extension"
+              ID    = "<%$id%>_extension"
+              VALUE = "<% scalar($cgi->param($name.'_extension'))
+                            || $pbx_extension->extension
+                       %>"
+              SIZE  = 5
+              MAXLENGTH = 6
+              <% $onchange %>
+            >
+        <BR>
+        <FONT SIZE="-1">Extension</FONT>
+      </TD>
+
+%     ###
+%     # pin
+%     ###
+      <TD>
+        <INPUT
+              TYPE  = "text"
+              NAME  = "<%$name%>_pin"
+              ID    = "<%$id%>_pin"
+              VALUE = "<% scalar($cgi->param($name.'_pin'))
+                            || $pbx_extension->pin
+                       %>"
+              SIZE  = 7
+              MAXLENGTH = 6
+              <% $onchange %>
+            >
+        <BR>
+        <FONT SIZE="-1">PIN</FONT>
+      </TD>
+
+%     ###
+%     # sip_password
+%     ###
+      <TD>
+        <INPUT
+              TYPE  = "text"
+              NAME  = "<%$name%>_sip_password"
+              ID    = "<%$id%>_sip_password"
+              VALUE = "<% scalar($cgi->param($name.'_sip_password'))
+                            || $pbx_extension->sip_password
+                       %>"
+              SIZE      = <% $passwordmax == 80 ? 20 : $passwordmax + 2 %>
+              MAXLENGTH = <% $passwordmax + 2 %>
+              <% $onchange %>
+            >
+        <BR>
+        <FONT SIZE="-1">SIP Password</FONT>
+      </TD>
+
+%     ###
+%     # phone_name
+%     ###
+      <TD>
+        <INPUT
+              TYPE  = "text"
+              NAME  = "<%$name%>_phone_name"
+              ID    = "<%$id%>_phone_name"
+              VALUE = "<% scalar($cgi->param($name.'_phone_name'))
+                            || $pbx_extension->phone_name
+                       %>"
+              SIZE      = 20
+              MAXLENGTH = 80
+              <% $onchange %>
+            >
+        <BR>
+        <FONT SIZE="-1">Name</FONT>
+      </TD>
+
+    </TR>
+  </TABLE>
+
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $passwordmax = $conf->config('sip_passwordmax') || 80;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'extensionnum';
+my $id = $opt{'id'} || 'extensionnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $pbx_extension = $curr_value
+  ? qsearchs('pbx_extension', { 'extensionnum' => $curr_value } )
+  : new FS::pbx_extension {};
+
+</%init>
