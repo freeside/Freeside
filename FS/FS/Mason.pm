@@ -368,6 +368,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::svc_video;
   use FS::part_pkg_usageprice;
   use FS::cust_pkg_usageprice;
+  use FS::pbx_extension;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

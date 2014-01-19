@@ -749,3 +749,5 @@ FS/part_pkg_usageprice.pm
 t/part_pkg_usageprice.t
 FS/cust_pkg_usageprice.pm
 t/cust_pkg_usageprice.t
+FS/pbx_extension.pm
+t/pbx_extension.t
