@@ -1,0 +1,52 @@
+<& elements/svc_Common.html,
+     'table'          => 'svc_pbx',
+
+     'end_callback' => sub {
+       my( $cgi, $svc_pbx, $fields, $opt ) = @_;
+       $opt->{labels}{extensionnum} = ' ';
+       push @$fields,
+         { type  => 'tablebreak-tr-title',
+           value => 'Extensions',
+         },
+         {
+           field     => 'extensionnum',
+           type      => 'pbx_extension',
+           o2m_table => 'pbx_extension',
+           m2_label  => ' ',
+           m2_error_callback => $m2_error_callback,
+         },
+       ;
+
+     },
+
+&>
+<%init>
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #process_o2m fields in process/svc_pbx.html
+  my @fields = qw( extension pin sip_password phone_name );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^extensionnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("extensionnum$num$_"), @gfields ) {
+            my $x = new FS::pbx_extension {
+              'extensionnum' => scalar($cgi->param("extensionnum$num")),
+              map { $_ => scalar($cgi->param("extensionnum${num}_$_")) } @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
+
+</%init>

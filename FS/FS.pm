@@ -202,6 +202,8 @@ L<FS::svc_external> - Externally tracked service class.
 
 L<FS::svc_pbx> - PBX service class
 
+L<FS::pbx_extension> - PBX extension class
+
 L<FS::svc_cert> - Certificate service class
 
 L<FS::svc_dish> - Dish network service class

@@ -1,5 +1,5 @@
 package FS::svc_pbx;
-use base qw( FS::svc_External_Common );
+use base qw( FS::o2m_Common FS::svc_External_Common );
 
 use strict;
 use Tie::IxHash;
