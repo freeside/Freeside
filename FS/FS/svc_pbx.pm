@@ -9,6 +9,7 @@ use FS::Conf;
 use FS::cust_svc;
 use FS::svc_phone;
 use FS::svc_acct;
+use FS::pbx_extension;
 
 =head1 NAME
 
@@ -376,6 +377,11 @@ sub get_cdrs {
   my $self = shift;
   my $psearch = $self->psearch_cdrs($_);
   qsearch ( $psearch->{query} )
+}
+
+sub pbx_extension {
+  my $self = shift;
+  qsearch('pbx_extension', { svcnum=>$self->svcnum });
 }
 
 =back
