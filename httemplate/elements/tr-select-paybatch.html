@@ -1,0 +1,13 @@
+<TR>
+  <TD ALIGN="right"><% $opt{'paybatch'} || 'Payment entry batch: ' %></TD>
+  <TD>
+    <% include( '/elements/select-paybatch.html', 'curr_value' => $selected_paybatch, %opt ) %>
+  </TD>
+</TR>
+<%init>
+
+my( %opt ) = @_;
+#my $conf = new FS::Conf;
+my $selected_paybatch = $opt{'curr_value'}; # || $opt{'value'} necessary?
+
+</%init>

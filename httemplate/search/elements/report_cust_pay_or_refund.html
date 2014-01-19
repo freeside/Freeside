@@ -89,6 +89,16 @@ Examples:
     </TR>
 % }
 
+% if ( $table eq 'cust_pay' ) {
+
+% # payment batch
+% #  <& /elements/tr-select-batchnum.html &>
+
+% #payment "entry" batch (should probably just all become the same thing)
+  <& /elements/tr-select-paybatch.html &>
+
+% }
+
   <& /elements/tr-input-lessthan_greaterthan.html,
                 'label' => emt('Amount'),
                 'field' => 'paid',

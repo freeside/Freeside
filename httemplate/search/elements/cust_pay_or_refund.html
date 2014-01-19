@@ -440,8 +440,6 @@ if ( $cgi->param('magic') ) {
     $cgi->param('paybatch') =~ /^([\w\/\:\-\.]+)$/
       or die "illegal paybatch: ". $cgi->param('paybatch');
 
-    push @search, "paybatch = '$1'";
-
     $orderby = "LOWER(company || ' ' || last || ' ' || first )";
 
   } elsif ( $cgi->param('magic') eq 'batchnum' ) {
@@ -455,6 +453,10 @@ if ( $cgi->param('magic') ) {
 
   } else {
     die "unknown search magic: ". $cgi->param('magic');
+  }
+
+  if ( $cgi->param('paybatch') =~ /^([\w\/\:\-\.]+)$/ ) {
+    push @search, "paybatch = '$1'";
   }
 
   #unapplied payment/refund
