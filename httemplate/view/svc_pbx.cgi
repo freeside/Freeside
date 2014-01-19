@@ -41,7 +41,7 @@ my $html_foot = sub {
   }
   my $voip_pkg = @voip_pkgs[0];
 
-  my $cdr_svc_method = $voip_pkg->option('cdr_svc_method')
+  my $cdr_svc_method = ( $voip_pkg && $voip_pkg->option('cdr_svc_method') )
                        || 'svc_phone.phonenum';
   return '' unless $cdr_svc_method =~ /^svc_pbx\.(.*)$/;
   my $field = $1;
