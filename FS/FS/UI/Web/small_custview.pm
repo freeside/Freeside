@@ -62,11 +62,18 @@ sub small_custview {
     encode_entities($cust_main->first). '<BR>';
 
   $html .= encode_entities($cust_main->company). '<BR>' if $cust_main->company;
-  $html .= encode_entities($cust_main->address1). '<BR>';
-  $html .= encode_entities($cust_main->address2). '<BR>' if $cust_main->address2;
-  $html .= encode_entities($cust_main->city). ', '. $cust_main->state. '  '. $cust_main->zip. '<BR>';
-  $html .= $cust_main->country. '<BR>'
-    if $cust_main->country && $cust_main->country ne $countrydefault;
+
+  if ( $cust_main->bill_locationnum ) {
+
+    $html .= encode_entities($cust_main->address1). '<BR>';
+    $html .= encode_entities($cust_main->address2). '<BR>'
+      if $cust_main->address2;
+    $html .= encode_entities($cust_main->city). ', '. $cust_main->state. '  '.
+             $cust_main->zip. '<BR>';
+    $html .= $cust_main->country. '<BR>'
+      if $cust_main->country && $cust_main->country ne $countrydefault;
+
+  }
 
   $html .= '</TD></TR><TR><TD></TD><TD BGCOLOR="#ffffff">';
   if ( $cust_main->daytime && $cust_main->night ) {
@@ -83,23 +90,27 @@ sub small_custview {
 
   $html .= '</TD></TR></TABLE></TD>';
 
-  my $ship = $cust_main->ship_location;
+  if ( $cust_main->ship_locationnum ) {
 
-  $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
-    '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">';
-  $html .= join('<BR>', 
-    map encode_entities($_), grep $_,
-      $cust_main->contact,
-      $cust_main->company,
-      $ship->address1,
-      $ship->address2,
-      ($ship->city . ', ' . $ship->state . '  ' . $ship->zip),
-      ($ship->country eq $countrydefault ? '' : $ship->country ),
-  );
+    my $ship = $cust_main->ship_location;
 
-  # ship phone numbers no longer exist...
+    $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
+      '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">';
+    $html .= join('<BR>', 
+      map encode_entities($_), grep $_,
+        $cust_main->contact,
+        $cust_main->company,
+        $ship->address1,
+        $ship->address2,
+        ($ship->city . ', ' . $ship->state . '  ' . $ship->zip),
+        ($ship->country eq $countrydefault ? '' : $ship->country ),
+    );
 
-  $html .= '</TD></TR></TABLE></TD>';
+    # ship phone numbers no longer exist...
+
+    $html .= '</TD></TR></TABLE></TD>';
+
+  }
 
   $html .= '</TR></TABLE>';
 
