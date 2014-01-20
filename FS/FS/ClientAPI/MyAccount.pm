@@ -555,7 +555,9 @@ sub customer_info_short {
                       1, ##nobalance
                     );
 
-    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
+warn    $return{first}  = $cust_main->first;
+warn    $return{'last'} = $cust_main->get('last');
+    $return{name}   = $cust_main->first. ' '. $cust_main->get('last');
 
     $return{payby} = $cust_main->payby;
 
@@ -565,8 +567,10 @@ sub customer_info_short {
     }
     #maybe a little more expensive, but it should be cached by now
     for (@location_editable_fields) {
-      $return{$_} = $cust_main->bill_location->get($_);
-      $return{'ship_'.$_} = $cust_main->ship_location->get($_);
+      $return{$_} = $cust_main->bill_location->get($_)
+        if $cust_main->bill_locationnum;
+      $return{'ship_'.$_} = $cust_main->ship_location->get($_)
+        if $cust_main->ship_locationnum;
     }
  
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {

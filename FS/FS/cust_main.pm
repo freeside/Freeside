@@ -350,6 +350,9 @@ created and inserted.
 
 If I<prospectnum> is set, moves contacts and locations from that prospect.
 
+If I<contact> is set to an arrayref of FS::contact objects, inserts those
+new contacts with this new customer.
+
 =cut
 
 sub insert {
@@ -534,6 +537,21 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+    }
+
+  }
+
+  my $contact = delete $options{'contact'};
+  if ( $contact ) {
+
+    foreach my $c ( @$contact ) {
+      $c->custnum($self->custnum);
+      my $error = $c->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
     }
 
   }
