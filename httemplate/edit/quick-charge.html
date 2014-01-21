@@ -459,6 +459,6 @@ if ( $cust_pkg ) { # set defaults
   }
 }
 
-my $billed = $cust_pkg->get('setup') ? 1 : 0;
+my $billed = ($cust_pkg and $cust_pkg->get('setup')) ? 1 : 0;
 
 </%init>
