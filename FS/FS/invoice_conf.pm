@@ -57,38 +57,9 @@ and supports the FS::Conf interface.  The following fields are supported:
 
 =item latexreturnaddress - return address (LaTeX)
 
-=item latexcoupon - payment coupon section (LaTeX)
-
 =item latexsmallfooter - footer for pages after the first (LaTeX)
 
-=item latextopmargin - top margin
-
-=item latexheadsep - distance from bottom of header to top of body
-
-=item latexaddresssep - distance from top of body to customer address
-
-=item latextextheight - maximum height of invoice body text
-
-=item latexextracouponspace - additional footer space to allow for coupon
-
-=item latexcouponfootsep - distance from bottom of coupon content to top
-of page footer
-
-=item latexcouponamountenclosedsep - distance from coupon balance line to
-"Amount Enclosed" box
-
-=item latexcoupontoaddresssep - distance from "Amount Enclosed" box to 
-coupon mailing address
-
-=item latexverticalreturnaddress - 'Y' to place the return address below 
-the company logo rather than beside it
-
-=item latexcouponaddcompanytoaddress - 'Y' to add the company name to the 
-address on the payment coupon
-
-=item logo_png - company logo, as a PNG, for HTML invoices
-
-=item logo_eps - company logo, as an EPS, for LaTeX invoices
+=item with_latexcoupon - 'Y' to print the payment coupon (LaTeX)
 
 =item lpr - command to print the invoice (passed on stdin as a PDF)
 
@@ -108,6 +79,12 @@ L<"insert">.
 # the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'invoice_conf'; }
+
+# fields (prefixed with 'with_') that turn on certain conf variables 
+# (set them to their conf values, rather than to null)
+my %flags = (
+  latexcoupon => 1
+);
 
 =item insert
 
@@ -198,8 +175,10 @@ sub check {
 
   my $error = 
     $self->ut_numbern('confnum')
+    # core properties
     || $self->ut_number('modenum')
     || $self->ut_textn('locale')
+    # direct overrides of conf variables
     || $self->ut_anything('notice_name')
     || $self->ut_anything('subject')
     || $self->ut_anything('htmlnotes')
@@ -209,21 +188,10 @@ sub check {
     || $self->ut_anything('latexnotes')
     || $self->ut_anything('latexfooter')
     || $self->ut_anything('latexsummary')
-    || $self->ut_anything('latexcoupon')
     || $self->ut_anything('latexsmallfooter')
     || $self->ut_anything('latexreturnaddress')
-    || $self->ut_textn('latextopmargin')
-    || $self->ut_textn('latexheadsep')
-    || $self->ut_textn('latexaddresssep')
-    || $self->ut_textn('latextextheight')
-    || $self->ut_textn('latexextracouponspace')
-    || $self->ut_textn('latexcouponfootsep')
-    || $self->ut_textn('latexcouponamountenclosedsep')
-    || $self->ut_textn('latexcoupontoaddresssep')
-    || $self->ut_flag('latexverticalreturnaddress')
-    || $self->ut_flag('latexcouponaddcompanytoaddress')
-    || $self->ut_anything('logo_png')
-    || $self->ut_anything('logo_eps')
+    # flags
+    || $self->ut_flag('with_latexcoupon')
   ;
   return $error if $error;
 
@@ -242,6 +210,13 @@ sub _config {
   my $colname = $key;
   if ( $key =~ /^invoice_(.*)$/ ) {
     $colname = $1;
+  }
+  if ( $flags{$colname} and !$self->get("with_$colname") ) {
+    # then a flag field is defined, and the flag is off, so act as though
+    # the config entry doesn't exist
+    # (currently only used for "latexcoupon", to allow invoice modes
+    # where the coupon is not printed)
+    return undef;
   }
   if ( length($self->get($colname)) ) {
     return FS::conf->new({ 'name'   => $key,
