@@ -49,14 +49,8 @@ my @fields = (
         'Footer',
         'Summary header',
         'Return address',
-        'Coupon',
         'Small footer',
-        'Top margin',
-        'Header separation',
-        'Address separation',
-        'Text height',
-        'Coupon height',
-        'Footer separation',
+        'Enable coupon',
       ),
 
       { type  => 'columnnext' },
@@ -65,19 +59,8 @@ my @fields = (
       { field => 'latexfooter',         %textarea },
       { field => 'latexsummary',        %textarea },
       { field => 'latexreturnaddress',  %textarea },
-      { field => 'latexcoupon',         %textarea },
       { field => 'latexsmallfooter',    %textarea },
-      { field => 'latextopmargin',                size => 16 },
-      { field => 'latexheadsep',                  size => 16 },
-      { field => 'latexaddresssep',               size => 16 },
-      { field => 'latextextheight',               size => 16 },
-      { field => 'latexextracouponspace',         size => 16 },
-      { field => 'latexcouponfootsep',            size => 16 },
-      # are these still used?
-      #{ field => 'latexcouponamountenclosedsep',  size => 16 },
-      #{ field => 'latexverticalreturnaddress',    type => 'checkbox' },
-      #{ field => 'latexcouponaddcompanytoaddress',type => 'checkbox' },
-      # logo -- implement if someone really needs it...
+      { field => 'with_latexcoupon', type => 'checkbox', value => 'Y' },
 
       { type  => 'columnnext' },
       { type  => 'title', value => 'HTML' },
@@ -104,20 +87,12 @@ my %labels = (
     latexfooter
     latexsummary
     latexreturnaddress
-    latexcoupon
+    with_latexcoupon
     latexsmallfooter
-    latextopmargin
-    latexheadsep
-    latexaddresssep
-    latextextheight
-    latexextracouponspace
-    latexcouponfootsep
     htmlnotes
     htmlfooter
     htmlsummary
     htmlreturnaddress
-    logo_png
-    logo_eps
   ) ),
 
 ); 
@@ -211,7 +186,6 @@ sub edit_callback {
     or die "invoice mode $modenum not found";
   $object->set('modename', $invoice_mode->modename);
   $object->set('agentnum', $invoice_mode->agentnum);
-
 }
 
 sub menubar_opt_callback {
