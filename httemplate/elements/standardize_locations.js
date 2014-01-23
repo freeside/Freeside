@@ -11,26 +11,14 @@ function form_address_info() {
 % if ( $billship ) {
   returnobj['same'] = cf.elements['same'].checked;
 % }
-% if ( $withcensus ) {
-% # "entered" censustract always goes with the ship_ address if there is one
-%   if ( $billship ) {
-    returnobj['ship_censustract'] = cf.elements['enter_censustract'].value;
-%   } else { # there's only a package address, so it's just "censustract"
-    returnobj['censustract'] = cf.elements['enter_censustract'].value;
-%   }
-% }
 % for my $pre (@prefixes) {
-  if ( <% $pre eq 'ship_' ? 1 : 0 %> && returnobj['same'] ) {
-%   # special case: don't include any ship_ fields, and move the entered
-%   # censustract over to bill_.
-    returnobj['bill_censustract'] = returnobj['ship_censustract'];
-    delete returnobj['ship_censustract'];
-  } else {
 %   # normal case
 %   for my $field (qw(address1 address2 city state zip country)) {
     returnobj['<% $pre %><% $field %>'] = cf.elements['<% $pre %><% $field %>'].value;
 %   } #for $field
-  } // if returnobj['same']
+%   if ( $withcensus ) {
+    returnobj['<% $pre %>censustract'] = cf.elements['<% $pre %>enter_censustract'].value;
+%   }
 % } #foreach $pre
 
   return returnobj;
@@ -181,18 +169,11 @@ function confirm_manual_address() {
 %# not much to do in this case, just confirm the censustract
 % if ( $withcensus ) {
   var cf = document.<% $formname %>;
-%   if ( $billship ) {
-  if ( cf.elements['same'] && cf.elements['same'].checked ) {
-    cf.elements['bill_censustract'].value =
-      cf.elements['enter_censustract'].value;
-  } else {
-    cf.elements['ship_censustract'].value =
-      cf.elements['enter_censustract'].value;
-  }
-%   } else {
-  cf.elements['censustract'].value = cf.elements['enter_censustract'].value;
+%   foreach my $pre (@prefixes) {
+  cf.elements['<% $pre %>censustract'].value =
+    cf.elements['<% $pre %>enter_censustract'].value;
 %   }
-% }
+% } # $withcensus
   post_standardization();
 }
 

@@ -6,6 +6,9 @@ Census tract error
 Confirm census tract
 % }
 </B><BR>
+<% $location{address1} %> <% $location{address2} %><BR>
+<% $location{city} %>, <% $location{state} %> <% $location{zip} %><BR>
+<BR>
 % my $querystring = "census_year=$year&latitude=".$cache->get('latitude').'&longitude='.$cache->get('longitude');
 <A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
    TARGET="_blank">Map service module location</A><BR>
@@ -29,13 +32,14 @@ Confirm census tract
   <TR>
     <TD ALIGN="center">
       <BUTTON TYPE="button"
-              onclick="set_censustract('<% $old_tract %>', '<% $year %>')">
+              onclick="set_censustract('<% $old_tract %>', '<% $year %>', '<% $pre %>')">
       <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract
       </BUTTON>
     </TD>
+%   if ( !$error ) {
     <TD ALIGN="center">
       <BUTTON TYPE="button"
-              onclick="set_censustract('<% $new_tract %>', '<% $year %>')">
+              onclick="set_censustract('<% $new_tract %>', '<% $year %>', '<% $pre %>')">
       <IMG SRC="<%$p%>images/tick.png" ALT=""> Use calculated census tract
       </BUTTON>
     </TD>
@@ -47,6 +51,14 @@ Confirm census tract
       </BUTTON>
     </TD>
   </TR>
+%   } else { # don't show a button to use the calculated value
+    <TD COLSPAN=1 ALIGN="center">
+      <BUTTON TYPE="button" onclick="submit_abort()">
+      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+      </BUTTON>
+    </TD>
+  </TR>
+%   }
 </TABLE></CENTER>
 <%init>
 
@@ -61,11 +73,7 @@ warn $cgi->param('q') if $DEBUG;
 my $q = decode_json($cgi->param('q'))
   or die "bad argument '".$cgi->param('q')."'";
 
-my $pre = '';
-if ($q->{billship}) {
-  # this still isn't quite correct
-  $pre = $q->{'same'} ? 'bill_' : 'ship_';
-}
+my $pre = $q->{prefix} || '';
 my %location = (
   map { $_ => $q->{$pre.$_} }
     qw( company address1 address2 city state zip country latitude longitude )
