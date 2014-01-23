@@ -134,7 +134,7 @@ my %hash = (
 $hash{'custnum'} = $cust_main->custnum if $cust_main;
 
 my @cust_pkg_usageprice = ();
-foreach my $quantity_param ( grep ( $cgi->param($_) && $cgi->param($_) > 0 ),
+foreach my $quantity_param ( grep { $cgi->param($_) && $cgi->param($_) > 0 }
                                grep /^usagepricenum(\d+)_quantity$/,
                                  $cgi->param
                            )
