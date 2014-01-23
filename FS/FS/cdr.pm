@@ -1657,9 +1657,15 @@ my %import_options = (
           keys %cdr_info
     },
 
-  'format_row_callbacks' => { map { $_ => $cdr_info{$_}->{'row_callback'}; }
-                                  keys %cdr_info
-                            },
+  'format_row_callbacks' =>
+    { map { $_ => $cdr_info{$_}->{'row_callback'}; }
+          keys %cdr_info
+    },
+
+  'format_parser_opts' =>
+    { map { $_ => $cdr_info{$_}->{'parser_opt'}; }
+          keys %cdr_info
+    },
 );
 
 sub _import_options {

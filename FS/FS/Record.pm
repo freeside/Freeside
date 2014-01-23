@@ -1755,7 +1755,7 @@ sub batch_import {
 
   my( $type, $header, $sep_char,
       $fixedlength_format, $xml_format, $asn_format,
-      $row_callback, @fields );
+      $parser_opt, $row_callback, @fields );
 
   my $postinsert_callback = '';
   $postinsert_callback = $param->{'postinsert_callback'}
@@ -1787,6 +1787,11 @@ sub batch_import {
       $param->{'format_fixedlength_formats'}
         ? $param->{'format_fixedlength_formats'}{ $param->{'format'} }
         : '';
+
+    $parser_opt =
+      $param->{'format_parser_opts'}
+        ? $param->{'format_parser_opts'}{ $param->{'format'} }
+        : {};
 
     $xml_format =
       $param->{'format_xml_formats'}
@@ -1842,18 +1847,17 @@ sub batch_import {
 
     if ( $type eq 'csv' ) {
 
-      my %attr = ( 'binary' => 1, );
-      $attr{sep_char} = $sep_char if $sep_char;
-      $parser = new Text::CSV_XS \%attr;
+      $parser_opt->{'binary'} = 1;
+      $parser_opt->{'sep_char'} = $sep_char if $sep_char;
+      $parser = Text::CSV_XS->new($parser_opt);
 
     } elsif ( $type eq 'fixedlength' ) {
 
       eval "use Parse::FixedLength;";
       die $@ if $@;
-      $parser = Parse::FixedLength->new($fixedlength_format);
+      $parser = Parse::FixedLength->new($fixedlength_format, $parser_opt);
 
-    }
-    else {
+    } else {
       die "Unknown file type $type\n";
     }
 
