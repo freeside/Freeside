@@ -213,7 +213,8 @@ Example:
   <TD ALIGN="right">Census&nbsp;tract</TD>
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
-           NAME="enter_censustract" 
+           ID="<% $pre %>enter_censustract" 
+           NAME="<% $pre %>enter_censustract" 
            VALUE="<% $object->censustract |h %>">
     <% '(automatic)' %>
   </TD>
@@ -250,7 +251,8 @@ Example:
   var clear_coords_ids = [
     '<%$pre%>latitude',
     '<%$pre%>longitude',
-    'enter_censustract',
+    '<%$pre%>enter_censustract',
+    '<%$pre%>censustract',
     '<%$pre%>district'
   ];
   function clear_coords() {
