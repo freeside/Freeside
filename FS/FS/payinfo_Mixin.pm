@@ -169,6 +169,13 @@ sub mask_payinfo {
              substr($account,(length($account)-2)).
              ( length($aba) ? "@".$aba : '');
 
+    } elsif ($payby eq 'EDI') {
+      # EDI.
+      # These numbers have been seen anywhere from 8 to 30 digits, and 
+      # possibly more.  Lacking any better idea I'm going to mask all but
+      # the last 4 digits.
+      return 'x' x (length($payinfo) - 4) . substr($payinfo, -4);
+
     } else { # Tie up loose ends
       return $payinfo;
     }
@@ -277,6 +284,8 @@ sub payby_payinfo_pretty {
     $lh->maketext('Western Union');
   } elsif ( $self->payby eq 'MCRD' ) {
     $lh->maketext('Manual credit card');
+  } elsif ( $self->payby eq 'EDI' ) {
+    $lh->maketext('EDI') . ' ' . $self->paymask;
   } else {
     $self->payby. ' '. $self->payinfo;
   }
