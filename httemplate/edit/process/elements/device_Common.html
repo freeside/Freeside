@@ -1,0 +1,27 @@
+<& process.html,
+     'redirect' => sub {
+       my( $cgi, $X_device ) = @_;
+       popurl(3)."view/$svc_table.cgi?".
+         'svcnum='. $X_device->svcnum.
+         ';devicenum=';
+     },
+     %opt,
+&>
+<%init>
+
+my %opt = @_;
+
+warn my $table = $opt{table};
+( my $svc_table = $table ) =~ s/_device//;
+$svc_table = "svc_$svc_table";
+
+if($cgi->param('sel_mac_addr') && !$cgi->param('mac_addr')) {
+    $cgi->param('mac_addr',$cgi->param('sel_mac_addr'));
+}
+
+# :/  needs agent-virt so you can't futz with arbitrary devices
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+</%init>

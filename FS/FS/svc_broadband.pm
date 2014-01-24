@@ -3,7 +3,7 @@ use base qw(
   FS::svc_Radius_Mixin
   FS::svc_Tower_Mixin
   FS::svc_IP_Mixin 
-  FS::svc_MAC_Mixin
+  FS::MAC_Mixin
   FS::svc_Common
   );
 

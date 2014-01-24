@@ -206,6 +206,8 @@ L<FS::svc_pbx> - PBX service class
 
 L<FS::pbx_extension> - PBX extension class
 
+L<FS::pbx_device> - PBX device class
+
 L<FS::svc_cert> - Certificate service class
 
 L<FS::svc_dish> - Dish network service class

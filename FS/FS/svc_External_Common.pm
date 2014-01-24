@@ -8,28 +8,12 @@ use FS::svc_Common;
 
 =head1 NAME
 
-FS::svc_external - Object methods for svc_external records
+FS::svc_External_Common - Base class for svc_X classes which track external databases
 
 =head1 SYNOPSIS
 
-  use FS::svc_external;
-
-  $record = new FS::svc_external \%hash;
-  $record = new FS::svc_external { 'column' => 'value' };
-
-  $error = $record->insert;
-
-  $error = $new_record->replace($old_record);
-
-  $error = $record->delete;
-
-  $error = $record->check;
-
-  $error = $record->suspend;
-
-  $error = $record->unsuspend;
-
-  $error = $record->cancel;
+  package FS::svc_newservice;
+  use base qw( FS::svc_External_Common );
 
 =head1 DESCRIPTION
 

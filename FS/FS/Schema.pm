@@ -5676,6 +5676,45 @@ sub tables_hashref {
                         ],
     },
 
+    'pbx_device' => {
+      'columns' => [
+        'devicenum', 'serial',     '', '', '', '',
+        'devicepart',   'int',     '', '', '', '',
+        'svcnum',       'int',     '', '', '', '', 
+        'mac_addr', 'varchar', 'NULL', 12, '', '', 
+      ],
+      'primary_key'  => 'devicenum',
+      'unique'       => [ [ 'mac_addr' ], ],
+      'index'        => [ [ 'devicepart' ], [ 'svcnum' ], ],
+      'foreign_keys' => [
+                          { columns    => [ 'devicepart' ],
+                            table      => 'part_device',
+                          },
+                          { columns    => [ 'svcnum' ],
+                            table      => 'svc_pbx',
+                          },
+                        ],
+    },
+
+    'extension_device' => {
+      'columns' => [
+        'extensiondevicenum', 'serial', '', '', '', '',
+        'extensionnum',          'int', '', '', '', '',
+        'devicenum',             'int', '', '', '', '',
+      ],
+      'primary_key'  => 'extensiondevicenum',
+      'unique'       => [ [ 'extensionnum', 'devicenum' ] ],
+      'index'        => [],#both?  which way do we need to query?
+      'foreign_keys' => [
+                          { columns  => [ 'extensionnum' ],
+                            table    => 'pbx_extension',
+                          },
+                          { columns  => [ 'devicenum' ],
+                            table    => 'pbx_device',
+                          },
+                        ],
+    },
+
     'svc_mailinglist' => { #svc_group?
       'columns' => [
         'svcnum',            'int',     '',            '', '', '', 

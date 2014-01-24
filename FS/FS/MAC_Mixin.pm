@@ -1,4 +1,4 @@
-package FS::svc_MAC_Mixin;
+package FS::MAC_Mixin;
 
 use strict;
 #use FS::Record qw(qsearch);

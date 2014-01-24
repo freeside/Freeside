@@ -1,5 +1,5 @@
 package FS::svc_cable;
-use base qw( FS::svc_MAC_Mixin
+use base qw( FS::MAC_Mixin
              FS::svc_Common
            ); #FS::device_Common
 

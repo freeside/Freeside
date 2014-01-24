@@ -369,6 +369,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_pkg_usageprice;
   use FS::cust_pkg_usageprice;
   use FS::pbx_extension;
+  use FS::pbx_device;
+  use FS::extension_device;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

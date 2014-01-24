@@ -1,5 +1,5 @@
 package FS::phone_device;
-use base qw( FS::Record );
+use base qw( FS::MAC_Mixin FS::Record );
 
 use strict;
 use Scalar::Util qw( blessed );

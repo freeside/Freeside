@@ -751,3 +751,7 @@ FS/cust_pkg_usageprice.pm
 t/cust_pkg_usageprice.t
 FS/pbx_extension.pm
 t/pbx_extension.t
+FS/pbx_device.pm
+t/pbx_device.t
+FS/extension_device.pm
+t/extension_device.t

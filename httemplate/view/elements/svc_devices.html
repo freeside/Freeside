@@ -15,7 +15,7 @@
 %if ( @devices || $num_part_device || $table eq 'dsl_device' ) {
 %  my $svcnum = $svc_x->svcnum;
 
-   Devices
+   <FONT CLASS="fsinnerbox-title">Devices</FONT>
    (<A HREF="<%$p%>edit/<%$table%>.html?svcnum=<%$svcnum%>">Add device</A>)
    <BR>
 
@@ -30,7 +30,7 @@
 
      <& /elements/table-grid.html &>
        <TR>
-%        if ( $table eq 'phone_device' || $table eq 'cable_device' ) {
+%        if ( $table ne 'dsl_device' ) { # ( $table eq 'phone_device' || $table eq 'cable_device' || $table eq 'pbx_device' ) {
            <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
 %        }
          <TH CLASS="grid" BGCOLOR="#cccccc">MAC Addr</TH>
@@ -62,7 +62,7 @@
 %         if ( $table eq 'phone_device' || $svc_x->isa('FS::device_Common') ) {
             <% $td %><% $device->part_device->devicename |h %></TD>
 %         }
-          <% $td %><% $device->mac_addr %></TD>
+          <% $td %><% $device->mac_addr_pretty %></TD>
           <% $td %><% $export_links %></TD>
           <% $td %>(
 %           unless ( $opt{'no_edit'} ) {
@@ -85,7 +85,7 @@ my $table = $opt{'table'}; #part_device, dsl_device
 my $svc_x = $opt{'svc_x'};
 
 my $num_part_device = 0;
-if ( $table eq 'phone_device' || $table eq 'cable_device' ) {
+if ( $table ne 'dsl_device' ) { # ( $table eq 'phone_device' || $table eq 'cable_device' || $table eq 'pbx_device' ) {
   my $sth = dbh->prepare("SELECT COUNT(*) FROM part_device")
                             #WHERE disabled = '' OR disabled IS NULL;");
     or die dbh->errstr;

@@ -1,5 +1,5 @@
 package FS::svc_video;
-use base qw( FS::svc_MAC_Mixin FS::svc_Common );
+use base qw( FS::MAC_Mixin FS::svc_Common );
 
 use strict;
 use Tie::IxHash;
