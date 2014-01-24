@@ -254,12 +254,17 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
 
     } elsif ( $cgi->param('class_agg_break') eq 'breakdown' ) {
 
-      # if we're working with report options, @classnums here contains 
-      # arrays of multiple classnums
       for (my $i = 0; $i < scalar @classnums; $i++) {
-        my $row_classnum = join(',', @{ $classnums[$i] });
-        my $row_classname = join(', ', @{ $classnames[$i] });
-        my $not_row_classnum = join(',', @{ $not_classnums[$i] });
+        my $row_classnum = $classnums[$i];
+        my $row_classname = $classnames[$i];
+        my $not_row_classnum = '';
+        if ( $class_param eq 'report_optionnum' ) {
+          # if we're working with report options, @classnums here contains 
+          # arrays of multiple classnums
+          $row_classnum = join(',', @$row_classnum);
+          $row_classname = join(', ', @$row_classname);
+          $not_row_classnum = join(',', @{ $not_classnums[$i] });
+        }
         foreach my $component ( @components ) {
 
           push @items, 'cust_bill_pkg';

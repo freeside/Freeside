@@ -7,7 +7,7 @@ my $company_longitude = $conf->config('company_longitude');
 
 my @fixups = ('copy_payby_fields', 'standardize_locations');
 
-push @fixups, 'confirm_censustract'
+push @fixups, 'confirm_censustract_bill', 'confirm_censustract_ship'
     if $conf->exists('cust_main-require_censustract');
 
 my $uniqueness = $conf->config('cust_main-check_unique');
@@ -101,14 +101,17 @@ function copyelement(from, to) {
 }
 
 % # the value in pre+'censustract' is the confirmed censustract; if it's set,
-% # do nothing here
-function confirm_censustract() {
+% # and the user hasn't changed it manually, skip this
+function confirm_censustract(pre) {
   var cf = document.CustomerForm;
-  var pre = cf.elements['same'].checked ? 'bill_' : 'ship_';
-  if ( cf.elements[pre+'censustract'].value == '' ) {
+  if ( cf.elements[pre+'censustract'].value == '' ||
+         cf.elements[pre+'enter_censustract'].value != 
+         cf.elements[pre+'censustract'].value )
+  {
     var address_info = form_address_info();
     address_info[pre+'latitude']  = cf.elements[pre+'latitude'].value;
     address_info[pre+'longitude'] = cf.elements[pre+'longitude'].value;
+    address_info['prefix'] = pre;
     OLpostAJAX(
         '<%$p%>/misc/confirm-censustract.html',
         'q=' + encodeURIComponent(JSON.stringify(address_info)),
@@ -121,14 +124,22 @@ function confirm_censustract() {
         0);
   } else submit_continue();
 }
+function confirm_censustract_bill() {
+  confirm_censustract('bill_');
+}
+
+function confirm_censustract_ship() {
+  var cf = document.CustomerForm;
+  if ( cf.elements['same'].checked ) {
+    submit_continue();
+  } else {
+    confirm_censustract('ship_');
+  }
+}
 
 %# called from confirm-censustract.html
-function set_censustract(tract, year) {
+function set_censustract(tract, year, pre) {
   var cf = document.CustomerForm;
-  var pre = 'ship_';
-  if ( cf.elements['same'].checked ) {
-    pre = 'bill_';
-  }
   cf.elements[pre + 'censustract'].value = tract;
   cf.elements[pre + 'censusyear'].value = year;
   submit_continue();
