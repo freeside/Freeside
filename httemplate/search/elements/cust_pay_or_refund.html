@@ -167,7 +167,7 @@ push @links, '', '';
 push @fields, 'payby_payinfo_pretty',
               sub { sprintf('$%.2f', shift->$amount_field() ) },
 ;
-push @link_onclicks, $sub_receipt, '',
+push @link_onclicks, $sub_receipt, '';
 push @sort_fields, '', $amount_field;
 
 if ( $unapplied ) {
