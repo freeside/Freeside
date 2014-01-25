@@ -1,3 +1,22 @@
+<%doc>
+
+Example:
+
+  <& /elements/tr-input_date-field,
+       {
+          'name'  => 'field_name',
+          'value' => $current_value,
+          'label' => 'Label',
+
+          #optional
+          'format'      => '%m/%d/%Y', #overrides date_format config
+          'usedatetime' => 1, #use DateTime->strftime to format the date
+                              # instead of Date::Format->time2str
+          'noinit'      => 1,          #first one on the page is enough
+       },
+  &>
+
+</%doc>
 % unless ( $noinit ) {
 <LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
