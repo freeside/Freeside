@@ -7,7 +7,7 @@ Import a file containing credits.
      'name'      => 'CreditImportForm',
      'action'    => 'process/cust_credit-import.cgi',
      'num_files' => 1,
-     'fields'    => [ 'format', 'credbatch' ],
+     'fields'    => [ 'format', '_date', 'credbatch' ],
      'message'   => 'Credit import successful',
      'url'       => $p."search/cust_credit.html?credbatch=$credbatch",
      'onsubmit'  => "document.CreditImportForm.submitButton.disabled=true;",
@@ -17,6 +17,13 @@ Import a file containing credits.
 <% &ntable("#cccccc", 2) %>
 
   <INPUT TYPE="hidden" NAME="credbatch" VALUE="<% $credbatch %>"%>
+
+  <& /elements/tr-input-date-field.html, {
+       'name'  => '_date',
+       #'value' => '',
+       'label' => 'Date',
+     }
+  &>
 
   <!--
   <TR>

@@ -1118,7 +1118,7 @@ sub process_batch_import {
   my $job = shift;
 
   my $opt = { 'table'   => 'cust_credit',
-              'params'  => [ 'credbatch' ],
+              'params'  => [ '_date', 'credbatch' ],
               'formats' => { 'simple' =>
                                [ 'custnum', 'amount', 'reasonnum', 'invnum' ],
                            },
