@@ -1,4 +1,4 @@
-<% include("/elements/header.html",'Batch Payment Import') %>
+<& /elements/header.html, 'Batch Payment Import' &>
 
 Import a CSV file containing customer payments.
 <BR><BR>
@@ -7,12 +7,18 @@ Import a CSV file containing customer payments.
 
 <% &ntable("#cccccc", 2) %>
 
-<% include('/elements/tr-select-agent.html',
-              #'curr_value' => '', #$agentnum,
-              'label'       => "<B>Agent</B>",
-              'empty_label' => 'Select agent',
-           )
-%>
+<& /elements/tr-select-agent.html,
+     #'curr_value' => '', #$agentnum,
+     'label'       => "<B>Agent</B>",
+     'empty_label' => 'Select agent',
+&>
+
+<& /elements/tr-input-date-field.html, {
+     'name'  => '_date',
+     #'value' => '',
+     'label' => 'Date',
+   }
+&>
 
 <TR>
   <TH ALIGN="right">Format</TH>
@@ -59,4 +65,4 @@ Field information:
 
 <BR>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>

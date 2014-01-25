@@ -9,8 +9,10 @@ my $paybatch = time2str('webbatch-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 my $error = defined($fh)
   ? FS::cust_pay::batch_import( {
       'filehandle' => $fh,
-      'agentnum'   => scalar($cgi->param('agentnum')),
       'format'     => scalar($cgi->param('format')),
+
+      'agentnum'   => scalar($cgi->param('agentnum')),
+      '_date'      => scalar($cgi->param('_date')),
       'paybatch'   => $paybatch,
     } )
   : 'No file';
