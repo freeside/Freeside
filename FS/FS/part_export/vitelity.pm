@@ -39,6 +39,7 @@ END
 
 sub rebless { shift; }
 
+sub can_get_dids { 1; }
 sub get_dids_can_tollfree { 1; };
 
 sub get_dids {

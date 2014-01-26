@@ -680,6 +680,7 @@ sub info {
 }
 
 #default fallbacks... FS::part_export::DID_Common ?
+sub can_get_dids { 0; }
 sub get_dids_can_tollfree { 0; }
 sub get_dids_can_manual   { 0; }
 sub get_dids_can_edit     { 0; } #don't use without can_manual, otherwise the

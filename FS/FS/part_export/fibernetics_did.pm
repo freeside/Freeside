@@ -27,6 +27,7 @@ tie my %options, 'Tie::IxHash',
 
 sub rebless { shift; }
 
+sub can_get_dids { 1; }
 sub get_dids_can_tollfree { 0; };
 sub get_dids_can_manual   { 1; };
 sub get_dids_can_edit     { 1; };

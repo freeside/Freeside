@@ -22,6 +22,8 @@ tie my %options, 'Tie::IxHash',
 
 sub rebless { shift; }
 
+sub can_get_dids { 1; }
+
 sub get_dids {
   my $self = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;

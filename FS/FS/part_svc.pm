@@ -480,7 +480,7 @@ are capable of returing available DID (phone number) information.
 
 sub part_export_did {
   my $self = shift;
-  grep $_->can('get_dids'), $self->part_export;
+  grep $_->can_get_dids, $self->part_export;
 }
 
 =item part_export_dsl_pull

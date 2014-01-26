@@ -44,6 +44,8 @@ sub did_cache {
   return $CACHE->get($self->exportnum) || $self->reload_cache;
 }
  
+sub can_get_dids { 1; }
+
 sub get_dids {
   my $self = shift;
   my %opt = @_;

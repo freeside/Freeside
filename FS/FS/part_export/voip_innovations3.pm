@@ -49,13 +49,13 @@ sub vi_command {
     die $@;
   }
 
-  my $gp = Net::VoIP_Innovations->new(
+  my $vi = Net::VoIP_Innovations->new(
     'login'    => $self->option('login'),
     'password' => $self->option('password'),
     #'debug'    => $debug,
   );
 
-  $gp->$command(@args);
+  $vi->$command(@args);
 }
 
 
@@ -67,6 +67,8 @@ sub _export_insert {
   #we want to provision and catch errors now, not queue
 
   unless ( $self->option('no_provision_did') ) {
+
+    return "can't yet provision to VoIP Innovations v3 API"; #XXX
 
     ###
     # reserveDID
@@ -106,31 +108,29 @@ sub _export_insert {
   }
 
   ###
-  # 911Insert
+  # insert911
   ###
 
   if ( $self->option('e911') ) {
 
     my %location_hash = $svc_phone->location_hash;
     my( $zip, $plus4 ) = split('-', $location_hash->{zip});
-    my $e = $self->vi_command('911Insert',
+    my $resp = $self->vi_command('insert911',
       'did'        => $svc_phone->phonenum,
-      'Address1'   => $location_hash{address1},
-      'Address2'   => $location_hash{address2},
-      'City'       => $location_hash{city},
-      'State'      => $location_hash{state},
-      'ZipCode'    => $zip,
-      'PlusFour'   => $plus4,
-      'CallerName' =>
+      'address1'   => $location_hash{address1},
+      'address2'   => $location_hash{address2},
+      'city'       => $location_hash{city},
+      'state'      => $location_hash{state},
+      'zip'        => $zip,
+      'plusFour'   => $plus4,
+      'callerName' =>
         $svc_phone->phone_name
           || $svc_phone->cust_svc->cust_pkg->cust_main->contact_firstlast,
     );
 
-    my $edid = $e->{did};
-
-    if ( $edid->{'statuscode'} != 100 ) {
-      return "Error running VoIP Innovations 911Insert: ".
-             $edid->{'statuscode'}. ': '. $edid->{'status'};
+    if ( $resp->{'responseCode'} != 100 ) {
+      return "Error running VoIP Innovations insert911: ".
+             $resp->{'responseCode'}. ': '. $resp->{'responseMessage'};
     }
 
   }
@@ -149,26 +149,24 @@ sub _export_replace {
 
   if ( $self->option('e911') ) {
 
-    my %location_hash = $svc_phone->location_hash;
+    my %location_hash = $new->location_hash;
     my( $zip, $plus4 ) = split('-', $location_hash->{zip});
-    my $e = $self->vi_command('911Update',
+    my $resp = $self->vi_command('update911',
       'did'        => $svc_phone->phonenum,
-      'Address1'   => $location_hash{address1},
-      'Address2'   => $location_hash{address2},
-      'City'       => $location_hash{city},
-      'State'      => $location_hash{state},
-      'ZipCode'    => $zip,
-      'PlusFour'   => $plus4,
-      'CallerName' =>
+      'address1'   => $location_hash{address1},
+      'address2'   => $location_hash{address2},
+      'city'       => $location_hash{city},
+      'state'      => $location_hash{state},
+      'zip'        => $zip,
+      'plusFour'   => $plus4,
+      'callerName' =>
         $svc_phone->phone_name
           || $svc_phone->cust_svc->cust_pkg->cust_main->contact_firstlast,
     );
 
-    my $edid = $e->{did};
-
-    if ( $edid->{'statuscode'} != 100 ) {
-      return "Error running VoIP Innovations 911Update: ".
-             $edid->{'statuscode'}. ': '. $edid->{'status'};
+    if ( $resp->{'responseCode'} != 100 ) {
+      return "Error running VoIP Innovations update911: ".
+             $resp->{'responseCode'}. ': '. $resp->{'responseMessage'};
     }
 
   }
@@ -179,24 +177,48 @@ sub _export_replace {
 sub _export_delete {
   my( $self, $svc_phone ) = (shift, shift);
 
-  return '' if $self->option('dry_run')
-            || $self->option('no_provision_did');
+  return '' if $self->option('dry_run');
 
-  #probably okay to queue the deletion...?
-  #but hell, let's do it inline anyway, who wants phone numbers hanging around
+  ###
+  # releaseDID
+  ###
 
-  my $r = $self->vi_command('releaseDID',
-    'did'           => $svc_phone->phonenum,
-  );
+  unless ( $self->option('no_provision_did') ) {
 
-  my $rdid = $r->{did};
+    return "can't yet provision to VoIP Innovations v3 API"; #XXX
 
-  if ( $rdid->{'statuscode'} != 100 ) {
-    return "Error running VoIP Innovations releaseDID: ".
-           $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+    #probably okay to queue the deletion...?
+    #but hell, let's do it inline anyway, who wants phone numbers hanging around
+
+    my $r = $self->vi_command('releaseDID',
+      'did'           => $svc_phone->phonenum,
+    );
+
+    my $rdid = $r->{did};
+
+    if ( $rdid->{'statuscode'} != 100 ) {
+      return "Error running VoIP Innovations releaseDID: ".
+             $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+    }
+
   }
 
-  #delete e911 information?  assuming release clears all that
+  ###
+  # remove911
+  ###
+
+  if ( $self->option('e911') ) {
+
+    my $resp = $self->vi_command('remove911',
+      'did'        => $svc_phone->phonenum,
+    );
+
+    if ( $resp->{'responseCode'} != 100 ) {
+      return "Error running VoIP Innovations remove911: ".
+             $resp->{'responseCode'}. ': '. $resp->{'responseMessage'};
+    }
+
+  }
 
   '';
 }
