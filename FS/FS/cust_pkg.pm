@@ -3541,6 +3541,7 @@ sub transfer {
     }
   }
 
+  my $error;
   foreach my $cust_svc ($self->cust_svc) {
     my $svcnum = $cust_svc->svcnum;
     if($target{$cust_svc->svcpart} > 0
@@ -3548,8 +3549,7 @@ sub transfer {
       $target{$cust_svc->svcpart}--;
       my $new = new FS::cust_svc { $cust_svc->hash };
       $new->pkgnum($dest_pkgnum);
-      my $error = $new->replace($cust_svc);
-      return "svcnum $svcnum: $error" if $error;
+      $error = $new->replace($cust_svc);
     } elsif ( exists $opt{'change_svcpart'} && $opt{'change_svcpart'} ) {
       if ( $DEBUG ) {
         warn "looking for alternates for svcpart ". $cust_svc->svcpart. "\n";
@@ -3569,13 +3569,16 @@ sub transfer {
         my $new = new FS::cust_svc { $cust_svc->hash };
         $new->svcpart($change_svcpart);
         $new->pkgnum($dest_pkgnum);
-        my $error = $new->replace($cust_svc);
-        return "svcnum $svcnum: $error" if $error;
+        $error = $new->replace($cust_svc);
       } else {
         $remaining++;
       }
     } else {
       $remaining++
+    }
+    if ( $error ) {
+      my @label = $cust_svc->label;
+      return "service $label[1]: $error";
     }
   }
   return $remaining;
