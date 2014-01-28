@@ -126,7 +126,8 @@
                                             'classnum'=>$columndef->columnvalue
                                            };
 
-                   } elsif ( $flag eq 'S' ) { #selectable choice
+                   } elsif ( $flag eq 'S' #selectable choice
+                               && $f->{type} !~ /^select-svc(-domain|_pbx)$/ ) {
                      $f->{type}    = 'select';
                      $f->{options} = [ split( /\s*,\s*/,
                                                 $columndef->columnvalue)
