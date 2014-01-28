@@ -1659,6 +1659,7 @@ sub send_csv {
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
   mkdir $spooldir, 0700 unless -d $spooldir;
 
+  # don't localize dates here, they're a defined format
   my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', time);
   my $file = "$spooldir/$tracctnum.csv";
   
@@ -2252,7 +2253,7 @@ sub print_csv {
             ? time2str("%x", $cust_bill_pkg->sdate)
             : '' ),
           ($cust_bill_pkg->edate 
-            ?time2str("%x", $cust_bill_pkg->edate)
+            ? time2str("%x", $cust_bill_pkg->edate)
             : '' ),
         );
   
@@ -2966,7 +2967,7 @@ sub _items_previous {
   foreach ( @pr_cust_bill ) {
     my $date = $conf->exists('invoice_show_prior_due_date')
                ? 'due '. $_->due_date2str($date_format)
-               : time2str($date_format, $_->_date);
+               : $self->time2str_local($date_format, $_->_date);
     push @b, {
       'description' => $self->mt('Previous Balance, Invoice #'). $_->invnum. " ($date)",
       #'pkgpart'     => 'N/A',
@@ -3030,7 +3031,7 @@ sub _items_credits {
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
       'description' => $self->mt('Credit applied').' '.
-                       time2str($date_format,$obj->_date). $reason,
+                       $self->time2str_local($date_format,$obj->_date). $reason,
       'amount'      => sprintf("%.2f",$obj->amount),
     };
   }
@@ -3074,7 +3075,7 @@ sub _items_payments {
   foreach my $obj (@objects) {
     my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
     my $desc = $self->mt('Payment received').' '.
-               time2str($date_format, $cust_pay->_date );
+               $self->time2str_local($date_format, $cust_pay->_date );
     $desc .= $self->mt(' via ') .
              $cust_pay->payby_payinfo_pretty( $self->cust_main->locale )
       if $detailed;

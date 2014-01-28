@@ -498,9 +498,9 @@ sub print_generic {
     '_date'           => ( $params{'no_date'} ? '' : $self->_date ),
     'date'            => ( $params{'no_date'}
                              ? ''
-                             : time2str($date_format, $self->_date)
+                             : $self->time2str_local($date_format, $self->_date)
                          ),
-    'today'           => time2str($date_format_long, $today),
+    'today'           => $self->time2str_local($date_format_long, $today),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
     'notice_name'     => $notice_name, # escape?
@@ -545,15 +545,9 @@ sub print_generic {
   );
  
   #localization
-  my $lh = FS::L10N->get_handle( $locale );
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
-  my %info = FS::Locales->locale_info($cust_main->locale || 'en_US');
-  # eval to avoid death for unimplemented languages
-  my $dh = eval { Date::Language->new($info{'name'}) } ||
-           Date::Language->new(); # fall back to English
   # prototype here to silence warnings
-  $invoice_data{'time2str'} = sub ($;$$) { $dh->time2str(@_) };
-  # eventually use this date handle everywhere in here, too
+  $invoice_data{'time2str'} = sub ($;$$) { $self->time2str_local(@_) };
 
   my $min_sdate = 999999999999;
   my $max_edate = 0;
@@ -566,8 +560,9 @@ sub print_generic {
   }
 
   $invoice_data{'bill_period'} = '';
-  $invoice_data{'bill_period'} = time2str('%e %h', $min_sdate) 
-    . " to " . time2str('%e %h', $max_edate)
+  $invoice_data{'bill_period'} = $self->time2str_local('%e %h', $min_sdate) 
+                                 . " to " .
+                                 $self->time2str_local('%e %h', $max_edate)
     if ($max_edate != 0 && $min_sdate != 999999999999);
 
   $invoice_data{finance_section} = '';
@@ -1721,7 +1716,7 @@ sub due_date {
 
 sub due_date2str {
   my $self = shift;
-  $self->due_date ? time2str(shift, $self->due_date) : '';
+  $self->due_date ? $self->time2str_local(shift, $self->due_date) : '';
 }
 
 sub balance_due_msg {
@@ -1743,7 +1738,7 @@ sub balance_due_date {
   my $duedate = '';
   if (    $conf->exists('invoice_default_terms') 
        && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
-    $duedate = time2str($rdate_format, $self->_date + ($1*86400) );
+    $duedate = $self->time2str_local($rdate_format, $self->_date + ($1*86400) );
   }
   $duedate;
 }
@@ -1761,7 +1756,7 @@ Returns a string with the date, for example: "3/20/2008"
 
 sub _date_pretty {
   my $self = shift;
-  time2str($date_format, $self->_date);
+  $self->time2str_local($date_format, $self->_date);
 }
 
 =item _items_sections OPTIONS
@@ -2761,8 +2756,8 @@ sub _items_cust_bill_pkg {
         if ( $cust_bill_pkg->recur != 0 ) {
           push @b, {
             'description' => "$desc (".
-                             time2str($date_format, $cust_bill_pkg->sdate). ' - '.
-                             time2str($date_format, $cust_bill_pkg->edate). ')',
+                             $self->time2str_local($date_format, $cust_bill_pkg->sdate). ' - '.
+                             $self->time2str_local($date_format, $cust_bill_pkg->edate). ')',
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
           };
         }

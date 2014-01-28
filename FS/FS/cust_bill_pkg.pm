@@ -510,6 +510,21 @@ sub regularize_details {
 
 Returns the invoice (see L<FS::cust_bill>) for this invoice line item.
 
+=item cust_main
+
+Returns the customer (L<FS::cust_main> object) for this line item.
+
+=cut
+
+sub cust_main {
+  # required for cust_main_Mixin equivalence
+  # and use cust_bill instead of cust_pkg because this might not have a 
+  # cust_pkg
+  my $self = shift;
+  my $cust_bill = $self->cust_bill or return '';
+  $cust_bill->cust_main;
+}
+
 =item previous_cust_bill_pkg
 
 Returns the previous cust_bill_pkg for this package, if any.

@@ -582,6 +582,28 @@ sub mt {
   return $lh->maketext(@_);
 }
 
+=item time2str_local FORMAT, TIME
+
+Localizes a date (see L<Date::Language>) for the customer's locale.
+
+=cut
+
+sub time2str_local {
+  # renamed so that we don't have to change every single reference to 
+  # time2str everywhere
+  my $self = shift;
+  if (!exists($self->{_dh})) {
+    my $cust_main = $self->cust_main;
+    my $locale = $cust_main->locale  if $cust_main;
+    $locale ||= 'en_US';
+    my %info = FS::Locales->locale_info($locale);
+    my $dh = eval { Date::Language->new($info{'name'}) } ||
+             Date::Language->new(); # fall back to English
+    $self->{_dh} = $dh;
+  }
+  $self->{_dh}->time2str(@_);
+}
+
 =back
 
 =head1 BUGS
