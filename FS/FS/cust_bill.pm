@@ -1745,6 +1745,7 @@ sub send_csv {
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
   mkdir $spooldir, 0700 unless -d $spooldir;
 
+  # don't localize dates here, they're a defined format
   my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', time);
   my $file = "$spooldir/$tracctnum.csv";
   
@@ -2146,7 +2147,7 @@ sub print_csv {
             ? time2str("%x", $cust_bill_pkg->sdate)
             : '' ),
           ($cust_bill_pkg->edate 
-            ?time2str("%x", $cust_bill_pkg->edate)
+            ? time2str("%x", $cust_bill_pkg->edate)
             : '' ),
         );
   
@@ -2746,8 +2747,8 @@ sub print_generic {
     #invoice info
     'invnum'          => $self->invnum,
     '_date'           => $self->_date,
-    'date'            => time2str($date_format, $self->_date),
-    'today'           => time2str($date_format_long, $today),
+    'date'            => $self->time2str_local($date_format, $self->_date),
+    'today'           => $self->time2str_local($date_format_long, $today),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
     'notice_name'     => ($params{'notice_name'} || 'Invoice'),#escape_function?
@@ -2790,16 +2791,10 @@ sub print_generic {
 
   );
  
-  #localization
-  my $lh = FS::L10N->get_handle( $params{'locale'} || $cust_main->locale );
+  #localization (see FS::cust_main_Mixin)
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
-  my %info = FS::Locales->locale_info($cust_main->locale || 'en_US');
-  # eval to avoid death for unimplemented languages
-  my $dh = eval { Date::Language->new($info{'name'}) } ||
-           Date::Language->new(); # fall back to English
   # prototype here to silence warnings
-  $invoice_data{'time2str'} = sub ($;$$) { $dh->time2str(@_) };
-  # eventually use this date handle everywhere in here, too
+  $invoice_data{'time2str'} = sub ($;$$) { $self->time2str_local(@_) };
 
   my $min_sdate = 999999999999;
   my $max_edate = 0;
@@ -2812,8 +2807,9 @@ sub print_generic {
   }
 
   $invoice_data{'bill_period'} = '';
-  $invoice_data{'bill_period'} = time2str('%e %h', $min_sdate) 
-    . " to " . time2str('%e %h', $max_edate)
+  $invoice_data{'bill_period'} = $self->time2str_local('%e %h', $min_sdate) 
+                                 . " to " .
+                                 $self->time2str_local('%e %h', $max_edate)
     if ($max_edate != 0 && $min_sdate != 999999999999);
 
   $invoice_data{finance_section} = '';
@@ -3828,7 +3824,7 @@ sub due_date {
 
 sub due_date2str {
   my $self = shift;
-  $self->due_date ? time2str(shift, $self->due_date) : '';
+  $self->due_date ? $self->time2str_local(shift, $self->due_date) : '';
 }
 
 sub balance_due_msg {
@@ -3850,7 +3846,7 @@ sub balance_due_date {
   my $duedate = '';
   if (    $conf->exists('invoice_default_terms') 
        && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
-    $duedate = time2str($rdate_format, $self->_date + ($1*86400) );
+    $duedate = $self->time2str_local($rdate_format, $self->_date + ($1*86400) );
   }
   $duedate;
 }
@@ -3880,7 +3876,7 @@ Returns a string with the date, for example: "3/20/2008"
 
 sub _date_pretty {
   my $self = shift;
-  time2str($date_format, $self->_date);
+  $self->time2str_local($date_format, $self->_date);
 }
 
 =item _items_sections LATE SUMMARYPAGE ESCAPE EXTRA_SECTIONS FORMAT
@@ -4823,7 +4819,7 @@ sub _items_previous {
   foreach ( @pr_cust_bill ) {
     my $date = $conf->exists('invoice_show_prior_due_date')
                ? 'due '. $_->due_date2str($date_format)
-               : time2str($date_format, $_->_date);
+               : $self->time2str_local($date_format, $_->_date);
     push @b, {
       'description' => $self->mt('Previous Balance, Invoice #'). $_->invnum. " ($date)",
       #'pkgpart'     => 'N/A',
@@ -5139,16 +5135,16 @@ sub _items_cust_bill_pkg {
                                             $cust_main->agentnum
                                           );
             if ( defined($date_style) && $date_style eq 'month_of' ) {
-              $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
+              $time_period = $self->time2str_local('The month of %B', $cust_bill_pkg->sdate);
             } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
               my $desc = $conf->config( 'cust_bill-line_item-date_description',
                                          $cust_main->agentnum
                                       );
               $desc .= ' ' unless $desc =~ /\s$/;
-              $time_period = $desc. time2str('%B', $cust_bill_pkg->sdate);
+              $time_period = $desc. $self->time2str_local('%B', $cust_bill_pkg->sdate);
             } else {
-              $time_period =      time2str($date_format, $cust_bill_pkg->sdate).
-                           " - ". time2str($date_format, $cust_bill_pkg->edate);
+              $time_period =      $self->time2str_local($date_format, $cust_bill_pkg->sdate).
+                           " - ". $self->time2str_local($date_format, $cust_bill_pkg->edate);
             }
             $description .= " ($time_period)";
           }
@@ -5301,8 +5297,8 @@ sub _items_cust_bill_pkg {
         if ( $cust_bill_pkg->recur != 0 ) {
           push @b, {
             'description' => "$desc (".
-                             time2str($date_format, $cust_bill_pkg->sdate). ' - '.
-                             time2str($date_format, $cust_bill_pkg->edate). ')',
+                             $self->time2str_local($date_format, $cust_bill_pkg->sdate). ' - '.
+                             $self->time2str_local($date_format, $cust_bill_pkg->edate). ')',
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
           };
         }
@@ -5376,7 +5372,7 @@ sub _items_credits {
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
       'description' => $self->mt('Credit applied').' '.
-                       time2str($date_format,$obj->_date). $reason,
+                       $self->time2str_local($date_format,$obj->_date). $reason,
       'amount'      => sprintf("%.2f",$obj->amount),
     };
   }
@@ -5420,7 +5416,7 @@ sub _items_payments {
   foreach my $obj (@objects) {
     my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
     my $desc = $self->mt('Payment received').' '.
-               time2str($date_format, $cust_pay->_date );
+               $self->time2str_local($date_format, $cust_pay->_date );
     $desc .= $self->mt(' via ') .
              $cust_pay->payby_payinfo_pretty( $self->cust_main->locale )
       if $detailed;
