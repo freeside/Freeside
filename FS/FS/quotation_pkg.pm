@@ -201,6 +201,18 @@ sub cust_bill_pkg_display {
 
 }
 
+=item cust_main
+
+Returns the customer (L<FS::cust_main> object).
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
+  $quotation->cust_main;
+}
+
 =back
 
 =head1 BUGS
