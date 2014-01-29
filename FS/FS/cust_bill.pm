@@ -5135,7 +5135,9 @@ sub _items_cust_bill_pkg {
                                             $cust_main->agentnum
                                           );
             if ( defined($date_style) && $date_style eq 'month_of' ) {
-              $time_period = $self->time2str_local('The month of %B', $cust_bill_pkg->sdate);
+              $time_period = $self->mt('The month of [_1]',
+                               $self->time2str_local('%B', $cust_bill_pkg->sdate)
+                             );
             } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
               my $desc = $conf->config( 'cust_bill-line_item-date_description',
                                          $cust_main->agentnum
