@@ -213,7 +213,7 @@ sub check {
   $self->ut_numbern('taxnum')
     || $self->ut_text('geocode')
     || $self->ut_textn('data_vendor')
-    || $self->ut_textn('location')
+    || $self->ut_cch_textn('location')
     || $self->ut_foreign_key('taxclassnum', 'tax_class', 'taxclassnum')
     || $self->ut_snumbern('effective_date')
     || $self->ut_float('tax')
@@ -227,7 +227,7 @@ sub check {
     || $self->ut_floatn('excessfee')
     || $self->ut_floatn('feemax')
     || $self->ut_numbern('maxtype')
-    || $self->ut_textn('taxname')
+    || $self->ut_cch_textn('taxname')
     || $self->ut_numbern('taxauth')
     || $self->ut_numbern('basetype')
     || $self->ut_numbern('passtype')
@@ -240,6 +240,18 @@ sub check {
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->SUPER::check
     ;
+
+}
+
+#ut_text / ut_textn w/ ` added cause now that's in the data
+sub ut_cch_textn {
+  my($self,$field)=@_;
+  $self->getfield($field)
+    =~ /^([\wô \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>\`]*)$/
+      or return gettext('illegal_or_empty_text'). " $field: ".
+                 $self->getfield($field);
+  $self->setfield($field,$1);
+  '';
 
 }
 
