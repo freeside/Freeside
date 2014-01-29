@@ -100,7 +100,7 @@ sub time_period_pretty {
   if ( defined($date_style) && $date_style eq 'month_of' ) {
     # (now watch, someone's going to make us do Chinese)
     $time_period = $self->mt('The month of [_1]',
-                      $self->time2str_local('The month of %B', $self->sdate)
+                      $self->time2str_local('%B', $self->sdate)
                    );
   } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
     my $desc = $conf->config( 'cust_bill-line_item-date_description',
