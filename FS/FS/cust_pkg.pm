@@ -3578,7 +3578,7 @@ sub transfer {
     }
     if ( $error ) {
       my @label = $cust_svc->label;
-      return "service $label[1]: $error";
+      return "$label[0] $label[1]: $error";
     }
   }
   return $remaining;
