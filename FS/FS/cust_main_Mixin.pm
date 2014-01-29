@@ -7,6 +7,7 @@ use FS::UID qw(dbh);
 use FS::cust_main;
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email generate_email );
+use HTML::Entities;
 
 $DEBUG = 0;
 $me = '[FS::cust_main_Mixin]';
@@ -578,9 +579,20 @@ sub mt {
   return $lh->maketext(@_);
 }
 
-=item time2str_local FORMAT, TIME
+=item time2str_local FORMAT, TIME[, ESCAPE]
 
 Localizes a date (see L<Date::Language>) for the customer's locale.
+
+FORMAT can be a L<Date::Format> string, or one of these special words:
+
+- "short": the value of the "date_format" config setting for the customer's 
+  locale, defaulting to "%x".
+- "rdate": the same as "short" except that the default has a four-digit year.
+- "long": the value of the "date_format_long" config setting for the 
+  customer's locale, defaulting to "%b %o, %Y".
+
+ESCAPE, if specified, is one of "latex" or "html", and will escape non-ASCII
+characters and convert spaces to nonbreaking spaces.
 
 =cut
 
@@ -588,6 +600,10 @@ sub time2str_local {
   # renamed so that we don't have to change every single reference to 
   # time2str everywhere
   my $self = shift;
+  my ($format, $time, $escape) = @_;
+  return '' unless $time > 0; # work around time2str's traditional stupidity
+
+  $self->{_date_format} ||= {};
   if (!exists($self->{_dh})) {
     my $cust_main = $self->cust_main;
     my $locale = $cust_main->locale  if $cust_main;
@@ -597,7 +613,31 @@ sub time2str_local {
              Date::Language->new(); # fall back to English
     $self->{_dh} = $dh;
   }
-  $self->{_dh}->time2str(@_);
+
+  if ($format eq 'short') {
+    $format = $self->{_date_format}->{short}
+            ||= $self->conf->config('date_format') || '%x';
+  } elsif ($format eq 'rdate') {
+    $format = $self->{_date_format}->{rdate}
+            ||= $self->conf->config('date_format') || '%m/%d/%Y';
+  } elsif ($format eq 'long') {
+    $format = $self->{_date_format}->{long}
+            ||= $self->conf->config('date_format_long') || '%b %o, %Y';
+  }
+
+  # actually render the date
+  my $string = $self->{_dh}->time2str($format, $time);
+
+  if ($escape) {
+    if ($escape eq 'html') {
+      $string = encode_entities($string);
+      $string =~ s/ +/&nbsp;/g;
+    } elsif ($escape eq 'latex') { # just do nbsp's here
+      $string =~ s/ +/~/g;
+    }
+  }
+  
+  $string;
 }
 
 =back

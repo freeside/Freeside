@@ -991,6 +991,7 @@ my @cdr_formats = (
                        '%d/%m/%Y' => 'DD/MM/YYYY',
 		       '%Y/%m/%d' => 'YYYY/MM/DD',
                      ],
+    'per_locale'  => 1,
   },
 
   {
@@ -1002,6 +1003,7 @@ my @cdr_formats = (
                        '%b %o, %Y' => 'Mon DDth, YYYY',
                        '%e %b %Y'  => 'DD Mon YYYY',
                      ],
+    'per_locale'  => 1,
   },
 
   {
