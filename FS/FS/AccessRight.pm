@@ -311,7 +311,7 @@ tie my %rights, 'Tie::IxHash',
     'Usage: Call Detail Records (CDRs)',
     'Usage: Unrateable CDRs',
     'Usage: Time worked',
-    { rightname=>'Employees: Commission Report', global=>1 },
+    #gone in 4.x as a distinct ACL (for now?) { rightname=>'Employees: Commission Report', global=>1 },
     { rightname=>'Employees: Audit Report', global=>1 },
 
     #{ rightname => 'List customers of all agents', global=>1 },
