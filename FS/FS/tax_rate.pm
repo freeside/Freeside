@@ -227,7 +227,7 @@ sub check {
     || $self->ut_floatn('excessfee')
     || $self->ut_floatn('feemax')
     || $self->ut_numbern('maxtype')
-    || $self->ut_cch_textn('taxname')
+    || $self->ut_textn('taxname')
     || $self->ut_numbern('taxauth')
     || $self->ut_numbern('basetype')
     || $self->ut_numbern('passtype')
