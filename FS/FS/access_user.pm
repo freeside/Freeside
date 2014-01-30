@@ -2,7 +2,7 @@ package FS::access_user;
 use base qw( FS::m2m_Common FS::option_Common ); 
 
 use strict;
-use vars qw( $DEBUG $me $conf );
+use vars qw( $DEBUG $me );
 use FS::UID;
 use FS::Auth;
 use FS::Conf;
@@ -456,7 +456,7 @@ sub default_customer_view {
   my $self = shift;
 
   $self->option('default_customer_view')
-    || $conf->config('cust_main-default_view')
+    || FS::Conf->new->config('cust_main-default_view')
     || 'basics'; #s/jumbo/basics/ starting with 3.0
 
 }
@@ -491,7 +491,7 @@ sub spreadsheet_format {
 
   my $f =  $override
         || $self->option('spreadsheet_format') 
-        || $conf->config('spreadsheet_format')
+        || FS::Conf->new->config('spreadsheet_format')
         || 'XLS';
 
   $formats{$f};
