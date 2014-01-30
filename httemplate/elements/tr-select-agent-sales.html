@@ -1,0 +1,47 @@
+<%doc>
+
+Example:
+
+  <& /elements/tr-select-agent-sales.html,
+       'agent_empty_label'   => '(any)', #defaults to "all"
+       'sales_disable_empty' => 1,       #defaults with empty enabled
+  &>
+
+</%doc>
+% if ( $curuser->report_salesnum ) {
+
+    <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $curuser->report_sales->agentnum %>">
+    <INPUT TYPE="hidden" NAME="salesnum" VALUE="<% $curuser->report_salesnum %>">
+
+% } else {
+
+    <& /elements/tr-select-agent.html,
+         'onchange'      => 'agent_changed(this)',
+         'empty_label'   => $opt{agent_empty_label},
+    &>
+
+    <SCRIPT TYPE="text/javascript">
+
+      function agent_changed(what) {
+        salesnum_agentnum_changed(what);
+      }
+
+      <&| /elements/onload.js &>
+      agent_changed(document.getElementById('agentnum'))
+      </&>
+
+    </SCRIPT>
+
+    <& /elements/tr-select-sales.html,
+        'empty_label'   => 'all',
+        'disable_empty' => $opt{sales_disable_empty},
+    &>
+
+% }
+<%init>
+
+my %opt = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+</%init>

@@ -1,0 +1,206 @@
+%# still not a good way to do rows grouped by some field in a search.html 
+%# report
+% if ( $type eq 'xls' ) {
+<% $data %>\
+% } else {
+<& /elements/header.html, $title &>
+<P ALIGN="right" CLASS="noprint">
+Download full results<BR>
+as <A HREF="<% $cgi->self_url %>;_type=xls">Excel spreadsheet</A></P>
+<BR>
+<STYLE TYPE="text/css">
+td.cust_head {
+  border-left: none;
+  border-right: none;
+  padding-top: 0.5em;
+  font-weight: bold;
+  background-color: #ffffff;
+}
+td.money { text-align: right; }
+td.money:before { content: '<% $money_char %>'; }
+.row0 { background-color: #eeeeee; }
+.row1 { background-color: #ffffff; }
+</STYLE>
+<& /elements/table-grid.html &>
+  <TR STYLE="background-color: #cccccc">
+    <TH CLASS="grid">Package</TH>
+    <TH CLASS="grid">Sales</TH>
+    <TH CLASS="grid">Percentage</TH>
+    <TH CLASS="grid">Commission</TH>
+  </TR>
+% my ($custnum, $sales, $commission, $row, $bgcolor) = (0, 0, 0, 0);
+% foreach my $cust_pkg ( @cust_pkg ) {
+%   if ( $custnum ne $cust_pkg->custnum ) {
+%     # start of a new customer section
+%     my $cust_main = $cust_pkg->cust_main;
+%     $bgcolor = 0;
+  <TR>
+    <TD COLSPAN=4 CLASS="cust_head">
+      <A HREF="<%$p%>view/cust_main.cgi?<%$cust_main->custnum%>"><% $cust_main->display_custnum %>: <% $cust_main->name |h %></A>
+    </TD>
+  </TR>
+%   }
+  <TR CLASS="row<% $bgcolor %>">
+    <TD CLASS="grid"><% $cust_pkg->pkg_label %></TD>
+    <TD CLASS="money"><% sprintf('%.2f', $cust_pkg->sum_charged) %></TD>
+    <TD ALIGN="right"><% $cust_pkg->percent %>%</TD>
+    <TD CLASS="money"><% sprintf('%.2f',
+                      $cust_pkg->sum_charged * $cust_pkg->percent / 100) %></TD>
+  </TR>
+%   $sales += $cust_pkg->sum_charged;
+%   $commission += $cust_pkg->sum_charged * $cust_pkg->percent / 100;
+%   $row++;
+%   $bgcolor = 1-$bgcolor;
+%   $custnum = $cust_pkg->custnum;
+% }
+  <TR STYLE="background-color: #f5f6be">
+    <TD CLASS="grid">
+      <% emt('[quant,_1,package] with commission', $row) %>
+    </TD>
+    <TD CLASS="money"><% sprintf('%.2f', $sales) %></TD>
+    <TD></TD>
+    <TD CLASS="money"><% sprintf('%.2f', $commission) %></TD>
+  </TR>
+</TABLE>
+<& /elements/footer.html &>
+% }
+<%init>
+
+#pretty bad false laziness w/agent_commission.html, lots of s/agent/sales/ :/
+
+die "access denied" 
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my ($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
+
+$cgi->param('salesnum') =~ /^(\d+)$/ or die "No sales person selected"; #better error handling of this case (or, better javascript that doesn't let you submit)
+my $salesnum = $1;
+my $sales = FS::sales->by_key($salesnum);
+
+my $title = $sales->salesperson . ' commissions';
+
+my $sum_charged =
+  '(SELECT SUM(setup + recur) FROM cust_bill_pkg JOIN cust_bill USING (invnum)'.
+    'WHERE cust_bill_pkg.pkgnum = cust_pkg.pkgnum AND '.
+    "cust_bill._date >= $begin AND cust_bill._date < $end)";
+
+my @select = (
+  'cust_pkg.*',
+  'sales_pkg_class.commission_percent AS percent',
+  "$sum_charged AS sum_charged",
+);
+
+my $query = {
+  'table'       => 'cust_pkg',
+  'select'      => join(',', @select),
+  'addl_from'   => '
+     JOIN cust_main  USING (custnum)
+     JOIN part_pkg   USING (pkgpart)
+     JOIN sales_pkg_class ON (
+       COALESCE(cust_pkg.salesnum,cust_main.salesnum) = sales_pkg_class.salesnum
+       AND
+       ( sales_pkg_class.classnum = part_pkg.classnum
+         OR (sales_pkg_class IS NULL AND part_pkg.classnum IS NULL)
+       )
+     )
+  ',
+  'extra_sql'   => "
+    WHERE COALESCE(cust_pkg.salesnum,cust_main.salesnum) = $salesnum
+      AND sales_pkg_class.commission_percent > 0
+      AND $sum_charged > 0
+  ",
+  'order_by'    => 'ORDER BY cust_pkg.custnum ASC',
+};
+
+my @cust_pkg = qsearch($query);
+
+my $money_char = FS::Conf->new->config('money_char') || '$';
+
+my $data = '';
+my $type = $cgi->param('_type');
+if ( $type eq 'xls') {
+  # some false laziness with the above...
+  my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format;
+  my $filename = 'sales_commission_pkg' . $format->{extension}; 
+  http_header('Content-Type' => $format->{mime_type});
+  http_header('Content-Disposition' => qq!attachment;filename="$filename"!);
+  my $XLS = IO::Scalar->new(\$data);
+  my $workbook = $format->{class}->new($XLS);
+  my $worksheet = $workbook->add_worksheet(substr($title, 0, 31));
+
+  my $cust_head_format = $workbook->add_format(
+    bold      => 1,
+    underline => 1,
+    text_wrap => 0,
+    bg_color  => 'white',
+  );
+
+  my $col_head_format = $workbook->add_format(
+    bold      => 1,
+    align     => 'center',
+    bg_color  => 'silver'
+  );
+
+  my @format;
+  foreach (0, 1) {
+    my %bg = (bg_color => $_ ? 'white' : 'silver');
+    $format[$_] = {
+      'text'    => $workbook->add_format(%bg),
+      'money'   => $workbook->add_format(%bg, num_format => $money_char.'#0.00'),
+      'percent' => $workbook->add_format(%bg, num_format => '0.00%'),
+    };
+  }
+  my $total_format = $workbook->add_format(
+    bg_color    => 'yellow',
+    num_format  => $money_char.'#0.00',
+    top         => 1
+  );
+
+  my ($r, $c) = (0, 0);
+  foreach (qw(Package Sales Percentage Commission)) {
+    $worksheet->write($r, $c++, $_, $col_head_format);
+  }
+  $r++;
+
+  my ($custnum, $sales, $commission, $row, $bgcolor) = (0, 0, 0, 0);
+  my $label_length = 0;
+  foreach my $cust_pkg ( @cust_pkg ) {
+    if ( $custnum ne $cust_pkg->custnum ) {
+      # start of a new customer section
+      my $cust_main = $cust_pkg->cust_main;
+      my $label = $cust_main->custnum . ': '. $cust_main->name;
+      $bgcolor = 0;
+      $worksheet->set_row($r, 20);
+      $worksheet->merge_range($r, 0, $r, 3, $label, $cust_head_format);
+      $r++;
+    }
+    $c = 0;
+    my $percent = $cust_pkg->percent / 100;
+    $worksheet->write($r, $c++, $cust_pkg->pkg_label, $format[$bgcolor]{text});
+    $worksheet->write($r, $c++, $cust_pkg->sum_charged, $format[$bgcolor]{money});
+    $worksheet->write($r, $c++, $percent, $format[$bgcolor]{percent});
+    $worksheet->write($r, $c++, ($cust_pkg->sum_charged * $percent),
+                                $format[$bgcolor]{money});
+
+    $label_length = max($label_length, length($cust_pkg->pkg_label));
+    $sales += $cust_pkg->sum_charged;
+    $commission += $cust_pkg->sum_charged * $cust_pkg->percent / 100;
+    $row++;
+    $bgcolor = 1-$bgcolor;
+    $custnum = $cust_pkg->custnum;
+    $r++;
+  }
+
+  $c = 0;
+  $label_length = max($label_length, 20);
+  $worksheet->set_column($c, $c, $label_length);
+  $worksheet->write($r, $c++, mt('[quant,_1,package] with commission', $row),
+                                  $total_format);
+  $worksheet->set_column($c, $c + 2, 11);
+  $worksheet->write($r, $c++, $sales, $total_format);
+  $worksheet->write($r, $c++, '', $total_format);
+  $worksheet->write($r, $c++, $commission, $total_format);
+
+  $workbook->close;
+}
+</%init>
