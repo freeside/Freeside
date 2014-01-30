@@ -1247,7 +1247,7 @@ sub append_fuzzyfiles_fuzzyfield {
   my ($field, $table) = reverse split('\.', $fuzzyfield);
   $table ||= 'cust_main';
 
-  return unless length($value);
+  return unless defined($value) && length($value);
 
   open(CACHE, '>>:encoding(UTF-8)', "$dir/$table.$field" )
     or die "can't open $dir/$table.$field: $!";
