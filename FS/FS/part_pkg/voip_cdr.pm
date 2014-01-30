@@ -893,7 +893,8 @@ sub calc_usage {
   } # $cust_svc
 
   unshift @$details, { format => 'C',
-                       detail => FS::cdr::invoice_header($output_format),
+                       detail => 
+                         $cust_pkg->mt(FS::cdr::invoice_header($output_format))
                      }
     if @$details && $rating_method ne 'upstream';
 
