@@ -52,7 +52,13 @@ Returns a hash of information about a locale.
 
 sub locale_info {
   my($class, $locale) = @_;
-  %{ $locales{$locale} };
+  if (!$locale) {
+    return ();
+  } elsif (exists $locales{$locale}) {
+    return %{ $locales{$locale} };
+  } else {
+    die "unsupported locale '$locale'\n";
+  }
 }
 
 =item description LOCALE
