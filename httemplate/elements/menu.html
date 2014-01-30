@@ -298,13 +298,6 @@ tie my %report_ticketing, 'Tie::IxHash',
   'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html?NewQuery=1', 'List tickets by any criteria' ],
 ;
 
-tie my %report_employees, 'Tie::IxHash';
-$report_employees{'Employee Commission Report'} = [ $fsurl.'search/report_employee_commission.html', '' ]
-  if $curuser->access_right('Employees: Commission Report');
-$report_employees{'Employee Audit Report'} = [ $fsurl.'search/report_employee_audit.html', 'Employee audit report' ]
-  if $curuser->access_right('Employees: Audit Report');
-;
-
 tie my %report_bill_event, 'Tie::IxHash',
   'All billing events' => [ $fsurl.'search/report_cust_event.html', 'All billing events for a date range' ],
   'Billing event errors' => [ $fsurl.'search/report_cust_event.html?failed=1', 'Failed credit cards, processor or printer problems, etc.' ],
@@ -343,18 +336,23 @@ tie my %report_sales, 'Tie::IxHash',
   'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
   'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
   'Sales with Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
-  'Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
-  'Sales Person Commissions' => [ $fsurl.'search/report_sales_commission.html' ],
-  'Sales Person Commission per package' => [ $fsurl.'search/report_sales_commission_pkg.html' ],
+;
+
+tie my %report_commissions, 'Tie::IxHash',
+  'Agent' => [ $fsurl.'search/report_agent_commission.html' ],
+  'Sales Person' => [ $fsurl.'search/report_sales_commission.html' ],
+  'Sales Person per package' => [ $fsurl.'search/report_sales_commission_pkg.html' ],
+  'Employee' => [ $fsurl.'search/report_employee_commission.html', '' ]
 ;
 
 tie my %report_financial, 'Tie::IxHash';
 if( $curuser->access_right('Financial reports') ) {
 
   %report_financial = (
-    'Sales' => [ \%report_sales, 'Sales reports', ],
-    'Credits' => [ \%report_credits, 'Credit reports', ],
-    'Refunds' => [ \%report_refunds, 'Refund reports', ],
+    'Sales'       => [ \%report_sales, 'Sales reports', ],
+    'Commissions' => [ \%report_commissions, 'Commission reports', ],
+    'Credits'     => [ \%report_credits, 'Credit reports', ],
+    'Refunds'     => [ \%report_refunds, 'Refund reports', ],
   );
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
@@ -380,10 +378,14 @@ tie my %report_payable, 'Tie::IxHash',
 ;
 
 tie my %report_logs, 'Tie::IxHash';
-  $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
+$report_logs{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
+  if $curuser->access_right('Billing event reports');
+$report_logs{'Employee activity'} = [ $fsurl.'search/report_employee_audit.html', '' ]
+  if $curuser->access_right('Employees: Audit Report');
+$report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
   if $curuser->access_right('View system logs')
   || $curuser->access_right('Configuration');
-  $report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ]
+$report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ]
   if $curuser->access_right('View email logs')
   || $curuser->access_right('Configuration');
 
@@ -411,10 +413,6 @@ $report_menu{'Usage'}          =  [ \%report_rating,    'Usage reports'  ]
 $report_menu{'Tickets'}        = [ \%report_ticketing, 'Ticket reports' ]
   if $conf->config('ticket_system')
   ;#&& FS::TicketSystem->access_right(\%session, 'Something');
-$report_menu{'Employees'}      =  [ \%report_employees, 'Employee reports'  ]
-  if keys %report_employees;
-$report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
-  if $curuser->access_right('Billing event reports');
 $report_menu{'Financial (Receivables)'} = [ \%report_financial, 'Financial reports (Receivables)' ]
   if $curuser->access_right('Financial reports') 
   or $curuser->access_right('Receivables report');
