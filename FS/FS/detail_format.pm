@@ -5,7 +5,8 @@ use vars qw( $DEBUG );
 use FS::Conf;
 use FS::cdr;
 use FS::cust_bill_pkg_detail;
-use Date::Format qw(time2str);
+use FS::L10N;
+use Date::Language;
 use Text::CSV_XS;
 
 my $me = '[FS::detail_format]';
@@ -44,6 +45,9 @@ OPTIONS may contain:
   rated_price, rated_seconds, rated_minutes, and svcnum.  This can be 
   changed with the C<inbound> method.
 
+- locale: a locale string to use for static text and date formats.  This
+  is optional.
+
 =cut
 
 sub new {
@@ -58,11 +62,21 @@ sub new {
   die "$me error loading $class: $@" if $@;
   my %opt = @_;
 
-  my $self = { conf => FS::Conf->new,
+  my $locale = $opt{'locale'} || '';
+  my $conf = FS::Conf->new(locale => $locale);
+  $locale ||= $conf->config('locale') || 'en_US';
+
+  my %locale_info = FS::Locales->locale_info($locale);
+  my $language_name = $locale_info{'name'};
+
+  my $self = { conf => FS::Conf->new(locale => $locale),
                csv  => Text::CSV_XS->new,
                inbound  => ($opt{'inbound'} ? 1 : 0),
                buffer   => ($opt{'buffer'} || []),
-             }; 
+               _lh      => FS::L10N->get_handle($locale),
+               _dh      => eval { Date::Language->new($language_name) } ||
+                           Date::Language->new()
+             };
   bless $self, $class;
 }
 
@@ -139,7 +153,7 @@ sub header {
   my $self = shift;
 
   FS::cust_bill_pkg_detail->new(
-    { 'format' => 'C', 'detail' => $self->header_detail }
+    { 'format' => 'C', 'detail' => $self->mt($self->header_detail) }
   )
 }
 
@@ -226,6 +240,18 @@ sub date_format {
 sub money_char {
   my $self = shift;
   $self->{money_char} ||= ($self->conf->config('money_char') || '$');
+}
+
+# localization methods
+
+sub time2str_local {
+  my $self = shift;
+  $self->{_dh}->time2str(@_);
+}
+
+sub mt {
+  my $self = shift;
+  $self->{_lh}->maketext(@_);
 }
 
 #imitate previous behavior for now

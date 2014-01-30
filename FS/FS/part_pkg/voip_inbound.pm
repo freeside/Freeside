@@ -218,7 +218,11 @@ sub calc_usage {
   my $output_format = $self->option('output_format', 1) || 'default';
 
   my $formatter = 
-    FS::detail_format->new($output_format, buffer => $details, inbound => 1);
+    FS::detail_format->new($output_format,
+      buffer => $details,
+      inbound => 1,
+      locale => $cust_pkg->cust_main->locale
+    );
 
   my $granularity   = length($self->option('sec_granularity'))
                         ? $self->option('sec_granularity')

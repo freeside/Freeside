@@ -2,7 +2,6 @@ package FS::detail_format::basic;
 
 use strict;
 use base qw(FS::detail_format);
-use Date::Format qw(time2str);
 
 sub name { 'Basic' }
 
@@ -12,7 +11,7 @@ sub columns {
   my $self = shift;
   my $cdr = shift;
   (
-    time2str('%d %b - %I:%M %p', $cdr->startdate),
+    $self->time2str_local('%d %b - %I:%M %p', $cdr->startdate),
     $cdr->dst,
     $self->duration($cdr),
     $self->price($cdr),

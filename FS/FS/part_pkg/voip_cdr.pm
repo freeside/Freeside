@@ -418,7 +418,10 @@ sub calc_usage {
 
   my $usage_showzero    = $self->option('usage_showzero', 1);
 
-  my $formatter = FS::detail_format->new($output_format, buffer => $details);
+  my $formatter = FS::detail_format->new($output_format,
+    buffer => $details,
+    locale => $cust_pkg->cust_main->locale
+  );
 
   my $use_duration = $self->option('use_duration');
 
