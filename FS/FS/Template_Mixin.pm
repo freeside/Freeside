@@ -2,7 +2,7 @@ package FS::Template_Mixin;
 
 use strict;
 use vars qw( $DEBUG $me
-             $money_char $date_format $rdate_format $date_format_long );
+             $money_char );
              # but NOT $conf
 use vars qw( $invoice_lines @buf ); #yuck
 use List::Util qw(sum);
@@ -27,9 +27,6 @@ $me = '[FS::Template_Mixin]';
 FS::UID->install_callback( sub { 
   my $conf = new FS::Conf; #global
   $money_char       = $conf->config('money_char')       || '$';  
-  $date_format      = $conf->config('date_format')      || '%x'; #/YY
-  $rdate_format     = $conf->config('date_format')      || '%m/%d/%Y';  #/YYYY
-  $date_format_long = $conf->config('date_format_long') || '%b %o, %Y';
 } );
 
 =item conf [ MODE ]
@@ -406,14 +403,6 @@ sub print_generic {
   my $escape_function_nonbsp = ($format eq 'html')
                                  ? \&_html_escape : $escape_function;
 
-  my %date_formats = ( 'latex'    => $date_format_long,
-                       'html'     => $date_format_long,
-                       'template' => '%s',
-                     );
-  $date_formats{'html'} =~ s/ /&nbsp;/g;
-
-  my $date_format = $date_formats{$format};
-
   my %newline_tokens = (  'latex'     => '\\\\',
                           'html'      => '<br>',
                           'template'  => "\n",
@@ -498,14 +487,14 @@ sub print_generic {
     '_date'           => ( $params{'no_date'} ? '' : $self->_date ),
     'date'            => ( $params{'no_date'}
                              ? ''
-                             : $self->time2str_local($date_format, $self->_date)
+                             : $self->time2str_local('long', $self->_date, $format)
                          ),
-    'today'           => $self->time2str_local($date_format_long, $today),
+    'today'           => $self->time2str_local('long', $today, $format),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
     'notice_name'     => $notice_name, # escape?
     'current_charges' => sprintf("%.2f", $self->charged),
-    'duedate'         => $self->due_date2str($rdate_format), #date_format?
+    'duedate'         => $self->due_date2str('rdate'), #date_format?
 
     #customer info
     'custnum'         => $cust_main->display_custnum,
@@ -547,7 +536,7 @@ sub print_generic {
   #localization
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
   # prototype here to silence warnings
-  $invoice_data{'time2str'} = sub ($;$$) { $self->time2str_local(@_) };
+  $invoice_data{'time2str'} = sub ($;$$) { $self->time2str_local(@_, $format) };
 
   my $min_sdate = 999999999999;
   my $max_edate = 0;
@@ -560,9 +549,10 @@ sub print_generic {
   }
 
   $invoice_data{'bill_period'} = '';
-  $invoice_data{'bill_period'} = $self->time2str_local('%e %h', $min_sdate) 
-                                 . " to " .
-                                 $self->time2str_local('%e %h', $max_edate)
+  $invoice_data{'bill_period'} =
+      $self->time2str_local('%e %h', $min_sdate, $format) 
+      . " to " .
+      $self->time2str_local('%e %h', $max_edate, $format)
     if ($max_edate != 0 && $min_sdate != 999999999999);
 
   $invoice_data{finance_section} = '';
@@ -670,7 +660,7 @@ sub print_generic {
         next if $cust_pay->_date > $self->_date;
         push @payments, {
             '_date'       => $cust_pay->_date,
-            'date'        => time2str($date_format, $cust_pay->_date),
+            'date'        => $self->time2str_local('long', $cust_pay->_date, $format),
             'payinfo'     => $cust_pay->payby_payinfo_pretty,
             'amount'      => sprintf('%.2f', $cust_pay->paid),
         };
@@ -685,7 +675,7 @@ sub print_generic {
         next if $cust_credit->_date > $self->_date;
         push @credits, {
             '_date'       => $cust_credit->_date,
-            'date'        => time2str($date_format, $cust_credit->_date),
+            'date'        => $self->time2str_local('long', $cust_credit->_date, $format),
             'creditreason'=> $cust_credit->reason,
             'amount'      => sprintf('%.2f', $cust_credit->amount),
         };
@@ -1725,7 +1715,7 @@ sub balance_due_msg {
   return $msg unless $self->terms;
   if ( $self->due_date ) {
     $msg .= ' - ' . $self->mt('Please pay by'). ' '.
-      $self->due_date2str($date_format);
+      $self->due_date2str('short');
   } elsif ( $self->terms ) {
     $msg .= ' - '. $self->terms;
   }
@@ -1738,7 +1728,7 @@ sub balance_due_date {
   my $duedate = '';
   if (    $conf->exists('invoice_default_terms') 
        && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
-    $duedate = $self->time2str_local($rdate_format, $self->_date + ($1*86400) );
+    $duedate = $self->time2str_local('rdate', $self->_date + ($1*86400) );
   }
   $duedate;
 }
@@ -1756,7 +1746,7 @@ Returns a string with the date, for example: "3/20/2008"
 
 sub _date_pretty {
   my $self = shift;
-  $self->time2str_local($date_format, $self->_date);
+  $self->time2str_local('short', $self->_date);
 }
 
 =item _items_sections OPTIONS
@@ -2756,8 +2746,8 @@ sub _items_cust_bill_pkg {
         if ( $cust_bill_pkg->recur != 0 ) {
           push @b, {
             'description' => "$desc (".
-                             $self->time2str_local($date_format, $cust_bill_pkg->sdate). ' - '.
-                             $self->time2str_local($date_format, $cust_bill_pkg->edate). ')',
+                             $self->time2str_local('short', $cust_bill_pkg->sdate). ' - '.
+                             $self->time2str_local('short', $cust_bill_pkg->edate). ')',
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
           };
         }

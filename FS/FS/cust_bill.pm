@@ -2,7 +2,7 @@ package FS::cust_bill;
 use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( $DEBUG $me $date_format );
+use vars qw( $DEBUG $me );
              # but NOT $conf
 use Fcntl qw(:flock); #for spool_csv
 use Cwd;
@@ -47,7 +47,6 @@ $me = '[FS::cust_bill]';
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
   my $conf = new FS::Conf; #global
-  $date_format      = $conf->config('date_format')      || '%x'; #/YY
 } );
 
 =head1 NAME
@@ -1984,7 +1983,7 @@ sub print_csv {
     my $taxtotal = 0;
     $taxtotal += $_->{'amount'} foreach $self->_items_tax;
 
-    my $duedate = $self->due_date2str('%m/%d/%Y'); #date_format?
+    my $duedate = $self->due_date2str('%m/%d/%Y'); # hardcoded, NOT date_format
 
     my( $previous_balance, @unused ) = $self->previous; #previous balance
 
@@ -2984,8 +2983,8 @@ sub _items_previous {
   my @b = ();
   foreach ( @pr_cust_bill ) {
     my $date = $conf->exists('invoice_show_prior_due_date')
-               ? 'due '. $_->due_date2str($date_format)
-               : $self->time2str_local($date_format, $_->_date);
+               ? 'due '. $_->due_date2str('short')
+               : $self->time2str_local('short', $_->_date);
     push @b, {
       'description' => $self->mt('Previous Balance, Invoice #'). $_->invnum. " ($date)",
       #'pkgpart'     => 'N/A',
@@ -3049,7 +3048,7 @@ sub _items_credits {
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
       'description' => $self->mt('Credit applied').' '.
-                       $self->time2str_local($date_format,$obj->_date). $reason,
+                       $self->time2str_local('short', $obj->_date). $reason,
       'amount'      => sprintf("%.2f",$obj->amount),
     };
   }
@@ -3093,7 +3092,7 @@ sub _items_payments {
   foreach my $obj (@objects) {
     my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
     my $desc = $self->mt('Payment received').' '.
-               $self->time2str_local($date_format, $cust_pay->_date );
+               $self->time2str_local('short', $cust_pay->_date );
     $desc .= $self->mt(' via ') .
              $cust_pay->payby_payinfo_pretty( $self->cust_main->locale )
       if $detailed;

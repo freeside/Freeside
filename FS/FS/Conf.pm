@@ -1047,6 +1047,7 @@ sub reason_type_options {
                        '%d/%m/%Y' => 'DD/MM/YYYY',
 		       '%Y/%m/%d' => 'YYYY/MM/DD',
                      ],
+    'per_locale'  => 1,
   },
 
   {
@@ -1061,6 +1062,7 @@ sub reason_type_options {
                        '%d/%m/%Y'  => 'DD/MM/YYYY',
 		       '%Y/%m/%d'  => 'YYYY/MM/DD',
                      ],
+    'per_locale'  => 1,
   },
 
   {
