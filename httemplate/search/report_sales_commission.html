@@ -4,34 +4,7 @@
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-% if ( $curuser->report_salesnum ) {
-
-    <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $curuser->report_sales->agentnum %>">
-    <INPUT TYPE="hidden" NAME="salesnum" VALUE="<% $curuser->report_salesnum %>">
-
-% } else {
-
-    <& /elements/tr-select-agent.html,
-         'onchange'      => 'agent_changed(this)',
-    &>
-
-    <SCRIPT TYPE="text/javascript">
-
-      function agent_changed(what) {
-        salesnum_agentnum_changed(what);
-      }
-
-      <&| /elements/onload.js &>
-      agent_changed(document.getElementById('agentnum'))
-      </&>
-
-    </SCRIPT>
-
-    <& /elements/tr-select-sales.html,
-        'empty_label' => 'all',
-    &>
-
-% }
+<& /elements/tr-select-agent-sales.html &>
 
 <& /elements/tr-checkbox.html,
     'label' => 'Customer sales person if there is no package sales person',
@@ -55,8 +28,7 @@
 <% include('/elements/footer.html') %>
 <%init>
 
-my $curuser = $FS::CurrentUser::CurrentUser;
-
-die "access denied" unless $curuser->access_right('Financial reports');
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 </%init>
