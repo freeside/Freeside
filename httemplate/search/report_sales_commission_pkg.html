@@ -1,0 +1,25 @@
+<& /elements/header.html, 'Sales commission report per package' &>
+
+<FORM ACTION="sales_commission_pkg.html">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<& /elements/tr-select-agent-sales.html,
+     'agent_empty_label'   => '(any)',
+     'sales_disable_empty' => 1,
+&>
+
+<& /elements/tr-input-beginning_ending.html &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>
