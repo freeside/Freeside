@@ -5053,6 +5053,9 @@ sub queued_bill {
   my $cust_main = qsearchs( 'cust_main', { custnum => $args{'custnum'} } );
   warn 'bill_and_collect custnum#'. $cust_main->custnum. "\n";#log custnum w/pid
 
+  #without this errors don't get rolled back
+  $args{'fatal'} = 1; # runs from job queue, will be caught
+
   $cust_main->bill_and_collect( %args );
 }
 
