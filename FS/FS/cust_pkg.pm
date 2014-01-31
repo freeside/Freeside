@@ -334,7 +334,9 @@ sub insert {
   }
 
   # set order date unless it was specified as part of an import
-  $self->order_date(time) unless $import && $self->order_date;
+  # or this was previously a different package
+  $self->order_date(time) unless ($import && $self->order_date)
+                              or $self->change_pkgnum;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -1792,6 +1794,9 @@ sub change {
       $hash{$date} = $self->getfield($date);
     }
   }
+  # always keep this date, regardless of anything
+  # (the date of the package change is in a different field)
+  $hash{'order_date'} = $self->getfield('order_date');
 
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
