@@ -2,7 +2,7 @@ package FS::cust_location;
 use base qw( FS::geocode_Mixin FS::Record );
 
 use strict;
-use vars qw( $import );
+use vars qw( $import $DEBUG );
 use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
@@ -13,7 +13,11 @@ use FS::cust_main_county;
 use FS::GeocodeCache;
 use Date::Format qw( time2str );
 
+use Data::Dumper;
+
 $import = 0;
+
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -120,17 +124,9 @@ address1, address2, city, county, state, zip, country, location_number,
 location_type, location_kind.  Disabled locations will be found only if this
 location is set to disabled.
 
-If 'coord_auto' is null, and latitude and longitude are not null, then 
-latitude and longitude are also essential fields.
-
-All other fields are considered "non-essential".  If a non-essential field is
-empty in this location, it will be ignored in determining whether an existing
-location matches.
-
-If a non-essential field is non-empty in this location, existing locations 
-that contain a different non-empty value for that field will not match.  An 
-existing location in which the field is I<empty> will match, but will be 
-updated in-place with the value of that field.
+All other fields are considered "non-essential" and will be ignored in 
+finding a matching location.  If the existing location doesn't match 
+in these fields, it will be updated in-place to match.
 
 Returns an error string if inserting or updating a location failed.
 
@@ -141,14 +137,17 @@ It is unfortunately hard to determine if this created a new location or not.
 sub find_or_insert {
   my $self = shift;
 
+  warn "find_or_insert:\n".Dumper($self) if $DEBUG;
+
   my @essential = (qw(custnum address1 address2 city county state zip country
     location_number location_type location_kind disabled));
 
-  if ( !$self->coord_auto and $self->latitude and $self->longitude ) {
-    push @essential, qw(latitude longitude);
-    # but NOT coord_auto; if the latitude and longitude match the geocoded
-    # values then that's good enough
-  }
+  # I don't think this is necessary
+  #if ( !$self->coord_auto and $self->latitude and $self->longitude ) {
+  #  push @essential, qw(latitude longitude);
+  #  # but NOT coord_auto; if the latitude and longitude match the geocoded
+  #  # values then that's good enough
+  #}
 
   # put nonempty, nonessential fields/values into this hash
   my %nonempty = map { $_ => $self->get($_) }
@@ -159,28 +158,20 @@ sub find_or_insert {
   my %hash = map { $_ => $self->get($_) } @essential;
   my @matches = qsearch('cust_location', \%hash);
 
-  # consider candidate locations
-  MATCH: foreach my $old (@matches) {
-    my $reject = 0;
+  # we no longer reject matches for having different values in nonessential
+  # fields; we just alter the record to match
+  if ( @matches ) {
+    my $old = $matches[0];
+    warn "found existing location #".$old->locationnum."\n" if $DEBUG;
     foreach my $field (keys %nonempty) {
-      my $old_value = $old->get($field);
-      if ( length($old_value) > 0 ) {
-        if ( $field eq 'latitude' or $field eq 'longitude' ) {
-          # special case, because these are decimals
-          if ( abs($old_value - $nonempty{$field}) > 0.000001 ) {
-            $reject = 1;
-          }
-        } elsif ( $old_value ne $nonempty{$field} ) {
-          $reject = 1;
-        }
-      } else {
-        # it's empty in $old, has a value in $self
+      if ($old->get($field) ne $nonempty{$field}) {
+        warn "altering $field to match requested location" if $DEBUG;
         $old->set($field, $nonempty{$field});
       }
-      next MATCH if $reject;
     } # foreach $field
 
     if ( $old->modified ) {
+      warn "updating non-essential fields\n" if $DEBUG;
       my $error = $old->replace;
       return $error if $error;
     }
@@ -192,6 +183,7 @@ sub find_or_insert {
   }
 
   # didn't find a match
+  warn "not found; inserting new location\n" if $DEBUG;
   return $self->insert;
 }
 
@@ -407,6 +399,8 @@ location.  Returns nothing on success, an error message on error.
 sub move_to {
   my $old = shift;
   my $new = shift;
+  
+  warn "move_to:\nFROM:".Dumper($old)."\nTO:".Dumper($new) if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -429,6 +423,11 @@ sub move_to {
       $dbh->rollback if $oldAutoCommit;
       return "Error creating location: $error";
     }
+  } elsif ( $new->locationnum == $old->locationnum ) {
+    # then they're the same location; the normal result of doing a minor
+    # location edit
+    $dbh->commit if $oldAutoCommit;
+    return '';
   }
 
   # find all packages that have the old location as their service address,
@@ -440,6 +439,10 @@ sub move_to {
       'main_pkgnum' => '',
     });
   foreach my $cust_pkg (@pkgs) {
+    # don't move one-time charges that have already been charged
+    next if $cust_pkg->part_pkg->freq eq '0'
+            and ($cust_pkg->setup || 0) > 0;
+
     $error = $cust_pkg->change(
       'locationnum' => $new->locationnum,
       'keep_dates'  => 1
