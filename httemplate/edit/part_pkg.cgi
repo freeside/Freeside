@@ -48,6 +48,7 @@
                    'recur_cost'       => 'Recur cost',
                    'pay_weight'       => 'Payment weight',
                    'credit_weight'    => 'Credit weight',
+                   'agent_pkgpartid'  => 'External ID',
                    'agentnum'         => 'Agent',
                    'setup_fee'        => 'Setup fee',
                    'setup_show_zero'  => 'Show zero setup',
