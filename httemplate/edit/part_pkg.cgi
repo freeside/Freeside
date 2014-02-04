@@ -224,12 +224,6 @@
                        },
                      },
 
-                     { type  => 'tablebreak-tr-title',
-                       value => 'Line-item revenue recogition', #better name?
-                     },
-                     { field=>'pay_weight',    type=>'text', size=>6 },
-                     { field=>'credit_weight', type=>'text', size=>6 },
-
                      ( $conf->exists('cust_pkg-show_fcc_voice_grade_equivalent')
                        ? ( 
                            { type  => 'tablebreak-tr-title',
@@ -243,6 +237,16 @@
                         : ()
                      ),
 
+                     { type  => 'tablebreak-tr-title',
+                       value => 'External Links', #better name?
+                     },
+                     { field=>'agent_pkgpartid', type=>'text', size=>21 },
+
+                     { type  => 'tablebreak-tr-title',
+                       value => 'Line-item revenue recogition', #better name?
+                     },
+                     { field=>'pay_weight',    type=>'text', size=>6 },
+                     { field=>'credit_weight', type=>'text', size=>6 },
 
                    { type => 'columnend' },
 

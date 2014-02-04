@@ -2958,11 +2958,12 @@ sub tables_hashref {
         'successor',     'int',     'NULL', '', '', '',
         'family_pkgpart','int',     'NULL', '', '', '',
         'delay_start',   'int',     'NULL', '', '', '',
+        'agent_pkgpartid', 'varchar', 'NULL', 20, '', '',
       ],
       'primary_key'  => 'pkgpart',
       'unique'       => [],
       'index'        => [ [ 'promo_code' ], [ 'disabled' ], [ 'classnum' ],
-                          [ 'agentnum' ], ['no_auto'],
+                          [ 'agentnum' ], ['no_auto'], ['agent_pkgpartid'],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'classnum' ],
