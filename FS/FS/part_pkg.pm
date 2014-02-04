@@ -636,6 +636,7 @@ sub check {
     || $self->ut_numbern('delay_start')
     || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
+    || $self->ut_alphan('agent_pkgpartid')
     || $self->SUPER::check
   ;
   return $error if $error;
