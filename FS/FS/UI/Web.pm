@@ -357,6 +357,11 @@ sub cust_sql_fields {
       }
     }
   }
+  foreach my $pre ('bill_','ship_') {
+    if ( grep { $_ eq $pre.'country_full' } @cust_fields ) {
+      push @location_fields, $pre.'locationnum';
+    }
+  }
 
   foreach my $field (qw(daytime night fax payby)) {
     push @fields, $field if (grep { $_ eq $field } @cust_fields);
