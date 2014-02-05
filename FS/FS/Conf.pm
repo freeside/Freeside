@@ -1531,8 +1531,11 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
     'type'        => 'select',
-    'select_enum' => [ '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 9', 'Net 10', 'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 30', 'Net 45', 'Net 60', 'Net 90' ],
-  },
+    'select_enum' => [ 
+      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 9', 'Net 10', 
+      'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
+      'Net 60', 'Net 90'
+    ], },
 
   { 
     'key'         => 'invoice_show_prior_due_date',
