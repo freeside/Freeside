@@ -1151,6 +1151,8 @@ sub calltypename {
 
 =cut
 
+# in the future, load this dynamically from detail_format classes
+
 my %export_names = (
   'simple'  => {
     'name'           => 'Simple',
@@ -1168,6 +1170,10 @@ my %export_names = (
   'basic' => {
     'name'           => 'Basic',
     'invoice_header' => "Date/Time,Called Number,Min/Sec,Price",
+  },
+  'basic_upstream_dst_regionname' => {
+    'name'           => 'Basic with upstream destination name',
+    'invoice_header' => "Date/Time,Called Number,Destination,Min/Sec,Price",
   },
   'default' => {
     'name'           => 'Default',
