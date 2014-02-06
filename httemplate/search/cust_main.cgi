@@ -393,6 +393,7 @@ if ( $cgi->param('browse')
 
   push @qual, FS::cust_main->cancel_sql   if $cgi->param('cancelled');
   push @qual, FS::cust_main->prospect_sql if $cgi->param('prospect');
+  push @qual, FS::cust_main->ordered_sql  if $cgi->param('ordered');
   push @qual, FS::cust_main->active_sql   if $cgi->param('active');
   push @qual, FS::cust_main->inactive_sql if $cgi->param('inactive');
   push @qual, FS::cust_main->susp_sql     if $cgi->param('suspended');
