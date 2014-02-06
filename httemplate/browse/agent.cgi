@@ -182,6 +182,26 @@ inactive
 
             <TR>
               <TH ALIGN="right" WIDTH="40%">
+                <FONT COLOR="#009999">
+                  <% my $num_ordered = $agent->num_ordered_cust_main %>&nbsp;
+                </FONT>
+              </TH>
+
+              <TD>
+% if ( $num_ordered ) { 
+
+                  <A HREF="<% $cust_main_link %>&ordered=1">
+% } 
+ordered
+% if ($num_ordered ) { 
+</A>
+% } 
+
+              <TD>
+            </TR>
+
+            <TR>
+              <TH ALIGN="right" WIDTH="40%">
                 <FONT COLOR="#00CC00">
                   <% my $num_active = $agent->num_active_cust_main %>&nbsp;
                 </FONT>
@@ -264,6 +284,11 @@ inactive
 % } 
 
               </TD>
+            </TR>
+
+            <!--ordered-->
+            <TR>
+              <TD>&nbsp;</TD>
             </TR>
 
             <TR>
