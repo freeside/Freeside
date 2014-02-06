@@ -936,7 +936,7 @@ sub print_generic {
       my $detail = {
         ref             => $line_item->{'pkgnum'},
         pkgpart         => $line_item->{'pkgpart'},
-        quantity        => 1,
+        #quantity        => 1, # not really correct
         section         => $previous_section, # which might be $default_section
         description     => &$escape_function($line_item->{'description'}),
         ext_description => [ map { &$escape_function($_) } 
@@ -2576,7 +2576,8 @@ sub _items_cust_bill_pkg {
 
           my $is_summary = $display->summary;
           my $description = $desc;
-          if ( $type eq 'U' and ($is_summary or $cust_bill_pkg->hidden) ) {
+          if ( $type eq 'U' and defined($r) ) {
+            # don't just show the same description as the recur line
             $description = $self->mt('Usage charges');
           }
 
@@ -2596,10 +2597,19 @@ sub _items_cust_bill_pkg {
           push @dates, $prev->sdate if $prev;
           push @dates, undef if !$prev;
 
+          # show service labels, unless...
+                    # the package is set not to display them
           unless ( $part_pkg->hide_svc_detail
+                    # or this is a tax-like line item
                 || $cust_bill_pkg->itemdesc
+                    # or this is a hidden (bundled) line item
                 || $cust_bill_pkg->hidden
+                    # or this is a usage summary line
                 || $is_summary && $type && $type eq 'U'
+                    # or this is a usage line and there's a recurring line
+                    # for the package in the same section (which will 
+                    # have service labels already)
+                || ($type eq 'U' and defined($r))
               )
           {
 
@@ -2647,7 +2657,7 @@ sub _items_cust_bill_pkg {
               }
             } #if svc_acct-usage_seconds
 
-          }
+          } # if we are showing service labels
 
           unless ( $is_summary ) {
             warn "$me _items_cust_bill_pkg adding details\n"
@@ -2673,14 +2683,14 @@ sub _items_cust_bill_pkg {
             $amount = $cust_bill_pkg->usage;
           }
   
-          my $unit_amount =
-            ( $cust_bill_pkg->unitrecur > 0 ) ? $cust_bill_pkg->unitrecur
-                                              : $amount;
-
           if ( !$type || $type eq 'R' ) {
 
             warn "$me _items_cust_bill_pkg adding recur\n"
               if $DEBUG > 1;
+
+            my $unit_amount =
+              ( $cust_bill_pkg->unitrecur > 0 ) ? $cust_bill_pkg->unitrecur
+                                                : $amount;
 
             if ( $cust_bill_pkg->hidden ) {
               $r->{amount}      += $amount;
@@ -2712,7 +2722,6 @@ sub _items_cust_bill_pkg {
               # line for the bundle, add this package's total amount and
               # usage details to it
               $u->{amount}      += $amount;
-              $u->{unit_amount} += $unit_amount,
               push @{ $u->{ext_description} }, @d;
             } elsif ( $amount ) {
               # create a new usage line
@@ -2722,8 +2731,6 @@ sub _items_cust_bill_pkg {
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
-                unit_amount     => $unit_amount,
-                quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,
               };
@@ -2764,8 +2771,11 @@ sub _items_cust_bill_pkg {
   foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
     if ( $_  ) {
       $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+        if exists($_->{amount});
       $_->{amount}      =~ s/^\-0\.00$/0.00/;
-      $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+      $_->{unit_amount} = sprintf('%.2f', $_->{unit_amount})
+        if exists($_->{unit_amount});
+
       push @b, { %$_ }
         if $_->{amount} != 0
         || $discount_show_always
