@@ -19,8 +19,13 @@ tie my %options, 'Tie::IxHash',
   'no_did_provision' => { label=>'Disable DID provisioning',
                        type=>'checkbox',
                      },
-  'dry_run'       => { label=>"Test mode - don't actually provision",
-                       type=>'checkbox',
+#not particularly useful unless we can_get_dids
+#  'dry_run'       => { label=>"Test mode - don't actually provision",
+#                       type=>'checkbox',
+#                     },
+  'sandbox'       => { label=>'Communicatino with the VoIP Innovations sandbox'.
+                              ' instead of the live server',
+                       type => 'checkbox',
                      },
 ;
 
@@ -52,7 +57,7 @@ sub vi_command {
   my $vi = Net::VoIP_Innovations->new(
     'login'    => $self->option('login'),
     'password' => $self->option('password'),
-    #'debug'    => $debug,
+    'sandbox'  => $self->option('sandbox'),
   );
 
   $vi->$command(@args);
