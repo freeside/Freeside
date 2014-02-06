@@ -7,7 +7,7 @@ use Date::Format;
 #use FS::Conf;
 
 $name = 'NACHA';
-
+my $i;
 $DEBUG = 0;
 
 %import_info = (
@@ -79,7 +79,7 @@ $DEBUG = 0;
     '1'.                      #Format code
     $dest_name.               #Immediate Destination Name / 23 char bank name
     $company.                 #Immediate Origin Name / 23 char company name
-    $refcode.                 #Reference Code (internal/optional)
+    $refcode. "\n".           #Reference Code (internal/optional)
 
     ###
     # Batch Header Record
@@ -110,7 +110,7 @@ $DEBUG = 0;
     (' 'x3).                 #Settlement Date / Reserved
     '1'.                     #Originator Status Code
     substr($dest, 0, 8).     #Originating Financial Institution
-    $batchnum                #Batch Number ("number batches sequentially")
+    $batchnum. "\n"          #Batch Number ("number batches sequentially")
 
   },
 
@@ -118,6 +118,10 @@ $DEBUG = 0;
     my( $cust_pay_batch, $pay_batch, $batchcount, $batchtotal ) = @_;
 
     my ($account, $aba) = split('@', $cust_pay_batch->payinfo);
+
+    $conf->config('batchconfig-nacha-destination') =~ /^\s*(\d{9})\s*$/
+      or die 'illegal NACHA Destination';
+    my $dest = $1;
 
     # "Total of all positions 4-11 on each 6 record"
     $entry_hash += substr($aba,0,8); 
@@ -130,7 +134,8 @@ $DEBUG = 0;
     my $transaction_code = ( $cust_main->paytype =~ /savings/i ? '37' : '27' );
 
     my $cust_name = substr($cust_main->name. (' 'x22), 0, 22);
-
+    $i++;
+    my $tracenum = $dest. substr(('0'x7). $i, -6);
     #non-PPD transactions?  future
 
     warn "building PPD Record\n" if $DEBUG;
@@ -148,8 +153,9 @@ $DEBUG = 0;
     $cust_name.                       #Individual name (22-char)
     '  '.                             #2 char "company internal use if desired"
     '0'.                              #Addenda Record Indicator
-    (' 'x15)                          #15 digit "bank will assign trace number"
-                                      # (00000?)
+#    (' 'x15).                         #15 digit "bank will assign trace number"
+     $tracenum.
+    "\n"                              # (00000?)
   },
 
   'footer' => sub {
@@ -185,7 +191,7 @@ $DEBUG = 0;
     (' 'x19).                     #Message Authentication Code (19 char blank)
     (' 'x6).                      #Federal Reserve Use (6 char blank)
     substr($dest, 0, 8).          #Originating Financial Institution
-    $batchnum.                    #Batch Number ("number batches sequentially")
+    $batchnum. "\n".              #Batch Number ("number batches sequentially")
 
     ###
     # File Control Record
