@@ -1847,6 +1847,9 @@ sub batch_import {
   my $file    = $param->{file};
   my $params  = $param->{params} || {};
 
+  my $custnum_prefix = $conf->config('cust_main-custnum-display_prefix');
+  my $custnum_length = $conf->config('cust_main-custnum-display_length') || 8;
+
   my( $type, $header, $sep_char,
       $fixedlength_format, $xml_format, $asn_format,
       $parser_opt, $row_callback, @fields );
@@ -2129,6 +2132,11 @@ sub batch_import {
         $hash{$field} = $value if defined($value) && length($value);
       }
 
+    }
+
+    if ( $custnum_prefix && $hash{custnum} =~ /^$custnum_prefix(0*([1-9]\d*))$/
+                         && length($1) == $custnum_length ) {
+      $hash{custnum} = $2;
     }
 
     #my $table   = $param->{table};

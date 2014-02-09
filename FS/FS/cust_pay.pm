@@ -1100,6 +1100,9 @@ sub batch_import {
   $_date = parse_datetime($_date) if $_date && $_date =~ /\D/;
   my $paybatch = $param->{'paybatch'};
 
+  my $custnum_prefix = $conf->config('cust_main-custnum-display_prefix');
+  my $custnum_length = $conf->config('cust_main-custnum-display_length') || 8;
+
   # here is the agent virtualization
   my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
 
@@ -1184,6 +1187,11 @@ sub batch_import {
       }
 
       $cust_pay{$field} = shift @columns; 
+    }
+
+    if ( $custnum_prefix && $cust_pay{custnum} =~ /^$custnum_prefix(0*([1-9]\d*))$/
+                         && length($1) == $custnum_length ) {
+      $cust_pay{custnum} = $2;
     }
 
     my $cust_pay = new FS::cust_pay( \%cust_pay );
