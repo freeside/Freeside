@@ -1,0 +1,175 @@
+#!/usr/bin/perl
+
+#false laziness w/other cdr-*.import scripts, especially the other MySQL ones
+# -mysql (asterisk
+# -opensips
+# -a2billing
+# -voipnow
+
+use strict;
+use Date::Parse 'str2time';
+use Date::Format 'time2str';
+use FS::UID qw(adminsuidsetup dbh);
+use FS::cdr;
+use DBI;
+use Getopt::Std;
+
+my %opt;
+getopts('H:U:P:D:T:s:e:c:', \%opt);
+my $user = shift or die &usage;
+
+my $dsn = 'dbi:mysql';
+$dsn .= ":database=$opt{D}" if $opt{D};
+$dsn .= ":host=$opt{H}" if $opt{H};
+
+my $mysql = DBI->connect($dsn, $opt{U}, $opt{P}) 
+  or die $DBI::errstr;
+
+my ($start, $end) = ('', '');
+if ( $opt{s} ) {
+  $start = str2time($opt{s}) or die "can't parse start date $opt{s}\n";
+  $start = time2str('%Y-%m-%d', $start);
+}
+if ( $opt{e} ) {
+  $end = str2time($opt{e}) or die "can't parse end date $opt{e}\n";
+  $end = time2str('%Y-%m-%d', $end);
+}
+
+adminsuidsetup $user;
+
+# check for existence of freesidestatus
+my $table = 'calls'; # $opt{T} || 'calls';
+my $status = $mysql->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
+if( ! @$status ) {
+  print "Adding freesidestatus column...\n";
+  $mysql->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
+    or die $mysql->errstr;
+}
+else {
+  print "freesidestatus column present\n";
+}
+
+my @cols = (qw( 
+  id_call id_client ip_number caller_id called_number call-start call_end
+  route_type id_tariff cost duration tariff_prefix client_type id_route pdd
+  costR1 costR2 costR3 costD id_reseller tariffdesc id_cc ratio client_pdd
+  orig_call_id term_call_id id_callback_call id_cn dialing_plan_prefix
+  call_rate effective_duration dtmf call-data tariff_data id_dial_plan
+));
+
+#effective_duration/billsec appears from the documentation to be post-minimum time and granularity, calculated on the switch (see p4-5).  would probably have weired effects if we then tried to do the same in freeside.
+
+#so, probably either set the switch minimal_time and resolution to 1 sec and do the minimum and granularity calculation in freeside, OR, the other way around, if client prefers to set minimal_time and resolution in the switch, then the freeside rating should be no minimum, no (1 second) granularity
+
+#(if you're rating and not just passing through cost->upstream_price)
+
+#id_call             - cdrid
+#id_client           - (w/client_type) charged_party
+#ip_number           - src_ip_addr
+#caller_id           - src (or clid?)
+#called_number       - dst
+#call_start          - startdate
+#call_end            - enddate
+#route_type          - channel
+#id_tariff           - upstream_rateplanid
+#cost                - upstream_price
+#duration            - duration
+#tariff_prefix
+#client_type         - (w/id_client) charged_party
+#id_route
+#pdd
+#costR1
+#costR2
+#costR3
+#costD
+#id_reseller
+#tariffdesc          - upstream_dst_regionname
+#id_cc               - uniqueid
+#ratio
+#client_pdd
+#orig_call_id        - clid or is this src?
+#term_call_id        - need this?
+#id_callback_call
+#id_cn
+#dialing_plan_prefix
+#call_rate           - upstream_rate?
+#effective_duration  - billsec
+#dtmf                - lastdata
+#call_data           - disposition
+
+# (these last two appear to be undocumented)
+#tariff_data        -
+#id_dial_plan
+
+my $sql = 'SELECT '.join(',', @cols). " FROM $table ".
+  ' WHERE freesidestatus IS NULL' .
+  ($start && " AND call_start >= '$start'") .
+  ($end   && " AND call_start <  '$end'") ;
+
+my $sth = $mysql->prepare($sql);
+$sth->execute;
+print "Importing ".$sth->rows." records...\n";
+
+my $cdr_batch = new FS::cdr_batch({ 
+    'cdrbatch' => 'mysql-import-'. time2str('%Y/%m/%d-%T',time),
+  });
+my $error = $cdr_batch->insert;
+die $error if $error;
+my $cdrbatchnum = $cdr_batch->cdrbatchnum;
+my $imported = 0;
+
+my $row;
+while ( $row = $sth->fetchrow_hashref ) {
+
+  my $cdr = FS::cdr->new({
+      cdrid                   => $row->{id_call},
+      charged_party           => sprintf('%.2d', $row->{client_type}).
+                                 $row->{id_client},
+      src_ip_addr             => $row->{ip_number},
+      src                     => $row->{caller_id},
+      dst                     => $row->{called_number},
+      startdate               => str2time($row->{call_start}),
+      enddate                 => str2time($row->{call_end}),
+      channel                 => $row->{route_type},
+      upstream_rateplanid     => $row->{id_tariff},
+      upstream_price          => $row->{cost},
+      duration                => $row->{duration},
+      upstream_dst_regionname => $row->{tariffdesc},
+      uniqueid                => $row->{id_cc},
+      orig_call_id            => $row->{clid},
+      billsec                 => $row->{effective_duration},
+      lastdata                => $row->{dtmf},
+      disposition             => $row->{call_data},
+
+      cdrbatchnum   => $cdrbatchnum,
+    }
+  );
+  $cdr->cdrtypenum($opt{c}) if $opt{c};
+  
+  #print $row->{id_call},"\n" if $opt{v};
+  my $error = $cdr->insert;
+  if ($error) {
+    #die $row->{id_call} . ": failed import: $error\n";
+    print $row->{id_call} . ": failed import: $error\n";
+  } else {
+    $imported++;
+
+    my $updated = $mysql->do(
+      "UPDATE $table SET freesidestatus = 'done' WHERE id_call = ?",
+      undef,
+      $row->{'id_call'}
+    );
+    #$updates += $updated;
+    die "failed to set status: ".$mysql->errstr."\n" unless $updated;
+  }
+
+}
+print "Done.\n";
+print "Imported $imported CDRs.\n" if $imported;
+$mysql->disconnect;
+
+sub usage {
+  "Usage: \n  cdr-voipswitch.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\t[ -s start ] [ -e end ] [ -c cdrtypenum ] \n\tfreesideuser\n";
+}
+
+
