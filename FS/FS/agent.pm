@@ -430,14 +430,15 @@ sub num_ordered_cust_main {
   shift->num_sql(FS::cust_main->ordered_sql);
 }
 
-=item active_cust_main
+=item ordered_cust_main
 
-Returns the active customers for this agent, as cust_main objects.
+Returns the ordered customers for this agent (customers with packages ordered,
+but not yet billed), as cust_main objects.
 
 =cut
 
-sub active_cust_main {
-  shift->cust_main_sql(FS::cust_main->active_sql);
+sub ordered_cust_main {
+  shift->cust_main_sql(FS::cust_main->ordered_sql);
 }
 
 
