@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearchs);
+use FS::cdr;
+
+sub usage {
+  "usage:
+  translate-insert-cdr-headers <user> <locale>
+";
+}
+
+my $user = shift or die usage();
+adminsuidsetup($user);
+my $locale = shift or die usage();
+
+$FS::UID::AutoCommit = 1;
+
+my %formats = FS::cdr::invoice_formats();
+my @strings = map { FS::cdr::invoice_header($_) } keys %formats;
+foreach my $string (@strings) {
+  print "$string ... ";
+  if ( qsearchs('msgcat', {
+      locale    => $locale,
+      msgcode   => $string,
+  }) ) {
+    print "already exists.\n";
+  } else {
+    my $newmsgcat = FS::msgcat->new(
+      {
+        locale     => $locale,
+        msgcode    => $string,
+        msg        => $string,
+      });
+    my $error = $newmsgcat->insert;
+    print (($error || "inserted."). "\n");
+  }
+}
