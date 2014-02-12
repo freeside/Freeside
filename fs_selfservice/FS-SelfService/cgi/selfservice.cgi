@@ -101,8 +101,6 @@ if ( $cgi->param('action') =~ /^(\w+)$/ ) {
   }
 }
 
-warn $action;
-
 unless ( $nologin_actions{$action} ) {
 
   my %cookies = CGI::Cookie->fetch;
@@ -1061,7 +1059,7 @@ sub do_template {
   $fill_in->{$_} = $access_info->{$_} foreach keys %$access_info;
 
   # update the user's authentication
-  my $timeout = $access_info->{'timeout'} || '60';
+  my $timeout = $access_info->{'timeout'} || '3600';
   my $cookie = CGI::Cookie->new('-name'     => 'session',
                                 '-value'    => $session_id,
                                 '-expires'  => '+'.$timeout.'s',
