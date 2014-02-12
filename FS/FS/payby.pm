@@ -127,8 +127,8 @@ tie %hash, 'Tie::IxHash',
   },
   'EDI' => {
     tinyname  => 'EDI',
-    shortname => 'Electronic Debit',
-    longname  => 'Electronic Debit',
+    shortname => 'Electronic Debit (EDI)',
+    longname  => 'Electronic Debit (EDI)',
     cust_main => '', #not a customer type
   },
   'WIRE' => {
