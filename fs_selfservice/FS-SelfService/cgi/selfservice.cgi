@@ -101,6 +101,8 @@ if ( $cgi->param('action') =~ /^(\w+)$/ ) {
   }
 }
 
+warn $action;
+
 unless ( $nologin_actions{$action} ) {
 
   my %cookies = CGI::Cookie->fetch;
@@ -1062,7 +1064,7 @@ sub do_template {
   my $timeout = $access_info->{'timeout'} || '60';
   my $cookie = CGI::Cookie->new('-name'     => 'session',
                                 '-value'    => $session_id,
-                                '-expires'  => '+'.$timeout,
+                                '-expires'  => '+'.$timeout.'s',
                                 #'-secure'   => 1, # would be a good idea...
                                );
   if ( $name eq 'logout' ) {
