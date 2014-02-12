@@ -48,7 +48,7 @@ sub part_pkg {
 
 }
 
-=item desc
+=item desc LOCALE
 
 Returns a description for this line item.  For typical line items, this is the
 I<pkg> field of the corresponding B<FS::part_pkg> object (see L<FS::part_pkg>).
