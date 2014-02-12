@@ -3,6 +3,10 @@
   /* font-family: Verdana, Arial, Helvetica, sans-serif; */
 }
 
+pre {
+  font-family: monospace;
+}
+
 A:link IMG, A:visited { border-style: none }
 /* A:focus {text-decoration: underline } */
 
