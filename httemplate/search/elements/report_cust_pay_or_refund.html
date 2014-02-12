@@ -30,19 +30,28 @@ Examples:
   <TR>
     <TD ALIGN="right"><% ucfirst(PL($name_singular)) %> of type: </TD>
     <TD>
-      <SELECT NAME="payby" SIZE=10 MULTIPLE>
+      <SELECT NAME="payby" SIZE=16 MULTIPLE>
+
 %#        <OPTION VALUE=""><% mt('all') |h %></OPTION>
 %#        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
+
         <OPTION VALUE="CARD-VisaMC" SELECTED><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
         <OPTION VALUE="CARD-Amex" SELECTED><% mt('credit card (American Express)') |h %></OPTION>
         <OPTION VALUE="CARD-Discover" SELECTED><% mt('credit card (Discover)') |h %></OPTION>
         <OPTION VALUE="CARD-Maestro" SELECTED><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
         <OPTION VALUE="CARD-Tokenized" SELECTED><% mt('credit card (Tokenized)') |h %></OPTION>
+
         <OPTION VALUE="CHEK" SELECTED><% mt('electronic check / ACH') |h %></OPTION>
         <OPTION VALUE="BILL" SELECTED><% mt('check') |h %></OPTION>
-        <OPTION VALUE="PREP" SELECTED><% mt('prepaid card') |h %></OPTION>
         <OPTION VALUE="CASH" SELECTED><% mt('cash') |h %></OPTION>
+        <OPTION VALUE="PPAL" SELECTED><% mt('Paypal') |h %></OPTION>
+        <OPTION VALUE="APPL" SELECTED><% mt('Apple Store') |h %></OPTION>
+        <OPTION VALUE="ANRD" SELECTED><% mt('Android Market') |h %></OPTION>
+
+        <OPTION VALUE="PREP" SELECTED><% mt('prepaid card') |h %></OPTION>
+        <OPTION VALUE="WIRE" SELECTED><% mt('wire transfer') |h %></OPTION>
         <OPTION VALUE="WEST" SELECTED><% mt('Western Union') |h %></OPTION>
+        <OPTION VALUE="EDI" SELECTED><% mt('Electronic Debit (EDI)') |h %></OPTION>
         <OPTION VALUE="MCRD" SELECTED><% mt('manual credit card') |h %></OPTION>
       </SELECT>
     </TD>

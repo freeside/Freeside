@@ -271,7 +271,7 @@ if ( $cgi->param('magic') ) {
       foreach my $payby ( $cgi->param('payby') ) {
 
         $payby =~
-          /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro|Tokenized))?$/
+          /^(CARD|CHEK|BILL|CASH|PPAL|APPL|ANRD|PREP|WIRE|WEST|EDI|MCRD)(-(VisaMC|Amex|Discover|Maestro|Tokenized))?$/
             or die "illegal payby $payby";
 
         my $payby_search = "$table.payby = '$1'";
