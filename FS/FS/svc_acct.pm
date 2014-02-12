@@ -2369,60 +2369,6 @@ sub seconds_since {
   $self->cust_svc->seconds_since(@_);
 }
 
-=item seconds_since_sqlradacct TIMESTAMP_START TIMESTAMP_END
-
-Returns the numbers of seconds this account has been online between
-TIMESTAMP_START (inclusive) and TIMESTAMP_END (exclusive), according to an
-external SQL radacct table, specified via sqlradius export.  Sessions which
-started in the specified range but are still open are counted from session
-start to the end of the range (unless they are over 1 day old, in which case
-they are presumed missing their stop record and not counted).  Also, sessions
-which end in the range but started earlier are counted from the start of the
-range to session end.  Finally, sessions which start before the range but end
-after are counted for the entire range.
-
-TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
-L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
-functions.
-
-=cut
-
-#note: POD here, implementation in FS::cust_svc
-sub seconds_since_sqlradacct {
-  my $self = shift;
-  $self->cust_svc->seconds_since_sqlradacct(@_);
-}
-
-=item attribute_since_sqlradacct TIMESTAMP_START TIMESTAMP_END ATTRIBUTE
-
-Returns the sum of the given attribute for all accounts (see L<FS::svc_acct>)
-in this package for sessions ending between TIMESTAMP_START (inclusive) and
-TIMESTAMP_END (exclusive).
-
-TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
-L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
-functions.
-
-=cut
-
-#note: POD here, implementation in FS::cust_svc
-sub attribute_since_sqlradacct {
-  my $self = shift;
-  $self->cust_svc->attribute_since_sqlradacct(@_);
-}
-
-=item get_session_history TIMESTAMP_START TIMESTAMP_END
-
-Returns an array of hash references of this customers login history for the
-given time range.  (document this better)
-
-=cut
-
-sub get_session_history {
-  my $self = shift;
-  $self->cust_svc->get_session_history(@_);
-}
-
 =item last_login_text 
 
 Returns text describing the time of last login.
