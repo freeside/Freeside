@@ -135,10 +135,10 @@ function change_invoice_mode(obj) {
 
 <% $br ? '<BR><BR>' : '' %>
 
-% if ( $conf->exists('invoice_html') ) { 
+% if ( $conf->exists('invoice_html') && ! $cgi->param('plaintext') ) { 
   <% join('', $cust_bill->print_html(\%opt) ) %>
 % } else { 
-  <PRE><% join('', $cust_bill->print_text(\%opt) ) %></PRE>
+  <PRE><% join('', $cust_bill->print_text(\%opt) ) |h %></PRE>
 % } 
 
 <& /elements/footer.html &>
