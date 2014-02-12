@@ -1059,10 +1059,10 @@ sub do_template {
   $fill_in->{$_} = $access_info->{$_} foreach keys %$access_info;
 
   # update the user's authentication
-  my $timeout = $access_info->{'timeout'} || '60';
+  my $timeout = $access_info->{'timeout'} || '3600';
   my $cookie = CGI::Cookie->new('-name'     => 'session',
                                 '-value'    => $session_id,
-                                '-expires'  => '+'.$timeout,
+                                '-expires'  => '+'.$timeout.'s',
                                 #'-secure'   => 1, # would be a good idea...
                                );
   if ( $name eq 'logout' ) {
