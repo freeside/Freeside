@@ -268,7 +268,8 @@ The following options are available:
 =item change
 
 If set true, supresses actions that should only be taken for new package
-orders.  (Currently this includes: intro periods when delay_setup is on.)
+orders.  (Currently this includes: intro periods when delay_setup is on,
+auto-adding a 1st start date, auto-adding expiration/adjourn/contract_end dates)
 
 =item options
 
@@ -301,7 +302,8 @@ sub insert {
 
   my $part_pkg = $self->part_pkg;
 
-  if (! $import) {
+  if ( ! $import && ! $options{'change'} ) {
+
     # if the package def says to start only on the first of the month:
     if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
       my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
@@ -320,11 +322,11 @@ sub insert {
       }
     }
 
-    # if this package has "free days" and delayed setup fee, tehn 
+    # if this package has "free days" and delayed setup fee, then 
     # set start date that many days in the future.
     # (this should have been set in the UI, but enforce it here)
     if (    ! $options{'change'}
-         && ( my $free_days = $part_pkg->option('free_days',1) )
+         && $part_pkg->option('free_days', 1)
          && $part_pkg->option('delay_setup',1)
          #&& ! $self->start_date
        )
