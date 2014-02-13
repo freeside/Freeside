@@ -50,11 +50,11 @@ else {
 }
 
 my @cols = (qw( 
-  id_call id_client ip_number caller_id called_number call-start call_end
+  id_call id_client ip_number caller_id called_number call_start call_end
   route_type id_tariff cost duration tariff_prefix client_type id_route pdd
   costR1 costR2 costR3 costD id_reseller tariffdesc id_cc ratio client_pdd
   orig_call_id term_call_id id_callback_call id_cn dialing_plan_prefix
-  call_rate effective_duration dtmf call-data tariff_data id_dial_plan
+  call_rate effective_duration dtmf call_data tariff_data id_dial_plan
 ));
 
 #effective_duration/billsec appears from the documentation to be post-minimum time and granularity, calculated on the switch (see p4-5).  would probably have weired effects if we then tried to do the same in freeside.
@@ -121,7 +121,7 @@ my $imported = 0;
 my $row;
 while ( $row = $sth->fetchrow_hashref ) {
 
-  my $cdr = FS::cdr->new({
+  my $cdr = FS::cdr->new(
       cdrid                   => $row->{id_call},
       charged_party           => sprintf('%.2d', $row->{client_type}).
                                  $row->{id_client},
