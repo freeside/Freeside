@@ -121,7 +121,7 @@ my $imported = 0;
 my $row;
 while ( $row = $sth->fetchrow_hashref ) {
 
-  my $cdr = FS::cdr->new(
+  my $cdr = FS::cdr->new({
       cdrid                   => $row->{id_call},
       charged_party           => sprintf('%.2d', $row->{client_type}).
                                  $row->{id_client},
