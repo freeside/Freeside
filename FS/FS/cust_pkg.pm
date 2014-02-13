@@ -265,7 +265,8 @@ The following options are available:
 =item change
 
 If set true, supresses actions that should only be taken for new package
-orders.  (Currently this includes: intro periods when delay_setup is on.)
+orders.  (Currently this includes: intro periods when delay_setup is on,
+auto-adding a 1st start date, auto-adding expiration/adjourn/contract_end dates)
 
 =item options
 
@@ -298,37 +299,42 @@ sub insert {
 
   my $part_pkg = $self->part_pkg;
 
-  # if the package def says to start only on the first of the month:
-  if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
-    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
-    $mon += 1 unless $mday == 1;
-    until ( $mon < 12 ) { $mon -= 12; $year++; }
-    $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
-  }
+  if ( ! $options{'change'} ) {
 
-  # set up any automatic expire/adjourn/contract_end timers
-  # based on the start date
-  foreach my $action ( qw(expire adjourn contract_end) ) {
-    my $months = $part_pkg->option("${action}_months",1);
-    if($months and !$self->$action) {
-      my $start = $self->start_date || $self->setup || time;
-      $self->$action( $part_pkg->add_freq($start, $months) );
+    # if the package def says to start only on the first of the month:
+    if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
+      my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
+      $mon += 1 unless $mday == 1;
+      until ( $mon < 12 ) { $mon -= 12; $year++; }
+      $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
     }
+
+    # set up any automatic expire/adjourn/contract_end timers
+    # based on the start date
+    foreach my $action ( qw(expire adjourn contract_end) ) {
+      my $months = $part_pkg->option("${action}_months",1);
+      if($months and !$self->$action) {
+        my $start = $self->start_date || $self->setup || time;
+        $self->$action( $part_pkg->add_freq($start, $months) );
+      }
+    }
+
+    # if this package has "free days" and delayed setup fee, then
+    # set start date that many days in the future.
+    # (this should have been set in the UI, but enforce it here)
+    if (    ! $options{'change'}
+         && $part_pkg->option('free_days',1)
+         && $part_pkg->option('delay_setup',1)
+         #&& ! $self->start_date
+       )
+    {
+      $self->start_date( $part_pkg->default_start_date );
+    }
+
   }
 
-  # if this package has "free days" and delayed setup fee, tehn 
-  # set start date that many days in the future.
-  # (this should have been set in the UI, but enforce it here)
-  if (    ! $options{'change'}
-       && ( my $free_days = $part_pkg->option('free_days',1) )
-       && $part_pkg->option('delay_setup',1)
-       #&& ! $self->start_date
-     )
-  {
-    $self->start_date( $part_pkg->default_start_date );
-  }
-
-  $self->order_date(time);
+  # set order date unless this was previously a different package
+  $self->order_date(time) unless $self->change_pkgnum;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1845,6 +1851,9 @@ sub change {
       $hash{$date} = $self->getfield($date);
     }
   }
+  # always keep this date, regardless of anything
+  # (the date of the package change is in a different field)
+  $hash{'order_date'} = $self->getfield('order_date');
 
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
