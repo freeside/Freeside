@@ -559,8 +559,23 @@ function toggle(obj) {
   obj.form.credit_limit.disabled = obj.checked;
 }
         </SCRIPT>
-        <INPUT TYPE="text" NAME="credit_limit" VALUE=<% sprintf('"%.2f"', $cust_main->credit_limit) %><% length($cust_main->credit_limit) ? '' : ' DISABLED' %>>
-        <INPUT TYPE="checkbox" NAME="no_credit_limit" VALUE=1 onclick="toggle(this)"<% length($cust_main->credit_limit) ? '' : ' CHECKED'%>> <% mt('Unlimited') |h %> 
+        <INPUT TYPE  = "text"
+               NAME  = "credit_limit"
+               VALUE = "<% sprintf('%.2f', $cust_main->credit_limit) %>"
+               <% length($cust_main->credit_limit) ? '' : ' DISABLED' %>
+        >
+%       my $default_credit_limit = $conf->config('default_credit_limit');
+        <INPUT TYPE  = "checkbox"
+               NAME  = "no_credit_limit"
+               VALUE = 1
+               onClick="toggle(this)"
+               <% length($cust_main->credit_limit) ? '' : ' CHECKED'%>
+        > <% $default_credit_limit
+               ? "Default ($money_char". sprintf("%.2f", $default_credit_limit).
+                 ")"
+               : mt('Unlimited')
+            |h
+          %> 
       </TD>
     </TR>
 
@@ -660,6 +675,8 @@ my @invoicing_list = @{ $options{'invoicing_list'} };
 my $payinfo = $options{'payinfo'};
 my $conf = new FS::Conf;
 my $payby_default = $conf->config('payby-default');
+
+my $money_char = $conf->config('money_char') || '$';
 
 my @payby = grep /\w/, $conf->config('payby');
 #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
