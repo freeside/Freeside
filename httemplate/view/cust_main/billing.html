@@ -266,9 +266,13 @@
 <TR>
   <TD ALIGN="right"><% mt('Credit limit') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% length($cust_main->credit_limit) ? 
-        $money_char.sprintf("%.2f", $cust_main->credit_limit) :
-        emt('Unlimited') %>
+%   my $default_credit_limit = $conf->config('default_credit_limit');
+    <% length($cust_main->credit_limit)
+         ? $money_char. sprintf("%.2f", $cust_main->credit_limit)
+         : $default_credit_limit
+           ? "Default ($money_char". sprintf("%.2f", $default_credit_limit). ")"
+           : emt('Unlimited')
+    %>
   </TD>
 </TR>
 
