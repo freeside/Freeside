@@ -200,8 +200,15 @@
                      { type  => 'tablebreak-tr-title',
                        value => 'Cost tracking', #better name?
                      },
-                     { field=>'setup_cost', type=>'money', },
-                     { field=>'recur_cost', type=>'money', },
+
+                     ( $curuser->access_right('Edit package definition costs')
+                       ? ( { field=>'setup_cost', type=>'money', },
+                           { field=>'recur_cost', type=>'money', },
+                         )
+                       : ( { field=>'setup_cost', type=>'fixed', },
+                           { field=>'recur_cost', type=>'fixed', },
+                         )
+                     ),
 
                      ( $conf->exists('part_pkg-delay_start')
                        ? ( { type  => 'tablebreak-tr-title',
