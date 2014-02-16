@@ -1623,32 +1623,6 @@ sub tables_hashref {
                         ],
     },
 
-    'cust_recon' => {  # (some sort of not-well understood thing for OnPac)
-      'columns' => [
-        'reconid',      'serial',  '',          '', '', '', 
-        'recondate',    @date_type,                 '', '', 
-        'custnum',      'int'   ,  '',          '', '', '', 
-        'agentnum',     'int',     '',          '', '', '', 
-        'last',         'varchar', '',     $char_d, '', '', 
-        'first',        'varchar', '',     $char_d, '', '', 
-        'address1',     'varchar', '',     $char_d, '', '', 
-        'address2',     'varchar', 'NULL', $char_d, '', '', 
-        'city',         'varchar', '',     $char_d, '', '', 
-        'state',        'varchar', 'NULL', $char_d, '', '', 
-        'zip',          'varchar', 'NULL',      10, '', '', 
-        'pkg',          'varchar', 'NULL', $char_d, '', '', 
-        'adjourn',      @date_type,                 '', '',
-        'status',       'varchar', 'NULL',      10, '', '', 
-        'agent_custid', 'varchar',  '',    $char_d, '', '',
-        'agent_pkg',    'varchar', 'NULL', $char_d, '', '', 
-        'agent_adjourn', @date_type,                '', '',
-        'comments',     'text',    'NULL',      '', '', '', 
-      ],
-      'primary_key' => 'reconid',
-      'unique' => [],
-      'index' => [],
-    },
-
     'contact_class' => {
       'columns' => [
         'classnum',    'serial',   '',      '', '', '', 
@@ -4959,8 +4933,10 @@ sub tables_hashref {
         'lastapp',     'varchar',  '', $char_d, \"''", '', 
         'lastdata',    'varchar',  '',     255, \"''", '', 
 
-        #currently only opensips
+        #currently only opensips & voipswitch
         'src_ip_addr', 'varchar',  'NULL',  15,    '', '',
+
+        #currently only opensips
         'dst_ip_addr', 'varchar',  'NULL',  15,    '', '',
 
         #currently only u4:
@@ -5029,6 +5005,10 @@ sub tables_hashref {
         'charged_party_imsi',  'varchar', 'NULL', $char_d, '', '',
 
         'upstream_price',      'decimal', 'NULL',  '10,5', '', '', 
+
+        #currently only voipswitch
+        #'upstream_rate',      'decimal', 'NULL',  '10,5', '', '', 
+
         'upstream_src_regionname', 'varchar', 'NULL', $char_d, '', '',
         'upstream_dst_regionname', 'varchar', 'NULL', $char_d, '', '',
 
