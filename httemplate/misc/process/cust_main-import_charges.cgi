@@ -14,7 +14,7 @@ my $fh = $cgi->upload('csvfile');
 #warn $fh;
 
 my $error = defined($fh)
-  ? FS::cust_main::batch_charge( {
+  ? FS::cust_main::Import_Charges::batch_charge( {
       filehandle => $fh,
       'agentnum' => scalar($cgi->param('agentnum')),
       'format'   => scalar($cgi->param('format')),

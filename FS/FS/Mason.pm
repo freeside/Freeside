@@ -165,6 +165,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::h_cust_main;
   use FS::cust_main::Search qw(smart_search);
   use FS::cust_main::Import;
+  use FS::cust_main::Import_Charges;
   use FS::cust_main_county;
   use FS::cust_location;
   use FS::cust_pay;
@@ -371,6 +372,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::pbx_extension;
   use FS::pbx_device;
   use FS::extension_device;
+  use FS::cust_main_credit_limit;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
