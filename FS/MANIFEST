@@ -73,6 +73,7 @@ FS/cust_main/Billing.pm
 FS/cust_main/Billing_Discount.pm
 FS/cust_main/Billing_Realtime.pm
 FS/cust_main/Import.pm
+FS/cust_main/Import_Charges.pm
 FS/cust_main/Packages.pm
 FS/cust_main/Search.pm
 FS/cust_main_Mixin.pm
@@ -455,8 +456,6 @@ FS/tax_rate_location.pm
 t/tax_rate_location.t
 FS/cust_bill_pkg_tax_rate_location.pm
 t/cust_bill_pkg_tax_rate_location.t
-FS/cust_recon.pm
-t/cust_recon.t
 FS/part_pkg_report_option.pm
 t/part_pkg_report_option.t
 FS/cust_main_exemption.pm
@@ -755,3 +754,5 @@ FS/pbx_device.pm
 t/pbx_device.t
 FS/extension_device.pm
 t/extension_device.t
+FS/cust_main_credit_limit.pm
+t/cust_main_credit_limit.t
