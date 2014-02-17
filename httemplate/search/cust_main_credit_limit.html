@@ -1,0 +1,63 @@
+<& elements/search.html,
+     'title'         => 'Credit limit incidents',
+     'name_singular' => 'incident',
+     'query'         => { table     => 'cust_main_credit_limit',
+                          hashref   => \%hash,
+                          extra_sql => " AND $dates_sql ",
+                          order_by  => 'ORDER BY _date ASC',
+                        },
+     'count_query'   => "SELECT COUNT(*) FROM cust_main_credit_limit",
+     'header'        => [ 'Date',
+
+                          #XXX should use cust_fields etc.
+                          '#',
+                          'Customer',
+
+                          'Amount',
+                          'Limit',
+                        ],
+     'fields'        => [ sub { time2str($date_format, shift->_date); },
+
+                          #XXX should use cust_fields etc.
+                          sub { shift->cust_main->display_custnum },
+                          sub { shift->cust_main->name },
+
+                          sub { $money_char. shift->amount },
+                          sub { $money_char. shift->credit_limit },
+                        ],
+
+     'links'         => [ '',
+
+                          #XXX should use cust_fields etc.
+                          $cust_link,
+                          $cust_link,
+
+                          '',
+                          '',
+                        ],
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+my $conf = new FS::Conf;
+
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my $money_char = $conf->config('money_char') || '$';
+
+my $cust_link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my ($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
+my $dates_sql = "_date >= $begin AND _date < $end";
+
+my $count_query= "SELECT COUNT(*) FROM cust_main_credit_limit WHERE $dates_sql";
+
+my %hash = ();
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $hash{custnum} = $1;
+  $count_query .= " AND custnum = $1";
+}
+
+</%init>

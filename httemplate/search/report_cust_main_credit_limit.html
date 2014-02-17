@@ -1,0 +1,24 @@
+<& /elements/header.html, 'Credit limit incidents' &>
+
+<FORM ACTION="cust_main_credit_limit.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<& /elements/tr-search-cust_main.html, 'label' => 'Customer' &>
+
+<TR><TD></TD><TD><FONT SIZE="-1">(leave blank for all customers)</FONT></TD></TR>
+
+<& /elements/tr-input-beginning_ending.html &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+</%init>
