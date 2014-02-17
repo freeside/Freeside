@@ -85,6 +85,8 @@ FS/cust_bill_pay.pm
 FS/cust_pay_batch.pm
 FS/cust_pay_refund.pm
 FS/cust_pkg.pm
+FS/cust_pkg/Import.pm
+FS/cust_pkg/Search.pm
 FS/cust_refund.pm
 FS/cust_credit_refund.pm
 FS/cust_svc.pm
