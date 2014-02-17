@@ -1,11 +1,7 @@
 <& elements/search.html,
      'title'         => 'Credit limit incidents',
      'name_singular' => 'incident',
-     'query'         => { table     => 'cust_main_credit_limit',
-                          hashref   => \%hash,
-                          extra_sql => " AND $dates_sql ",
-                          order_by  => 'ORDER BY _date ASC',
-                        },
+     'query'         => $query,
      'count_query'   => "SELECT COUNT(*) FROM cust_main_credit_limit",
      'header'        => [ 'Date',
 
@@ -59,5 +55,12 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $hash{custnum} = $1;
   $count_query .= " AND custnum = $1";
 }
+
+my $query = {
+  table     => 'cust_main_credit_limit',
+  hashref   => \%hash,
+  extra_sql => ( keys(%hash) ? ' AND ' : ' WHERE ' ). $dates_sql,
+  order_by  => 'ORDER BY _date ASC',
+};
 
 </%init>
