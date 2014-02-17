@@ -37,7 +37,7 @@ our %svcnum = ();   # phonenum => svcnum
 our %pkgnum = ();   # phonenum => pkgnum
 our %cust_pkg = (); # pkgnum   => cust_pkg (NOT phonenum => cust_pkg!)
 our %pkgpart = ();  # phonenum => pkgpart
-our %part_pkg = (); # phonenum => part_pkg
+our %part_pkg = (); # pkgpart  => part_pkg
 
 #some false laziness w/freeside-cdrrewrited
 
@@ -127,10 +127,12 @@ while (1) {
 
     } 
 
-    #unless ( $part_pkg{$pkgpart{$number}} ) {
-    #}
-
-    #XXX if $part_pkg->option('min_included') then we can't prerate this CDR
+    if ( $part_pkg{ $pkgpart{$number} }->option('min_included') ) {
+      #then we can't prerate this CDR
+      #some sort of warning?
+      # (sucks if you're depending on credit limit fraud warnings)
+      next;
+    }
     
     my $error = $cdr->rate(
       'part_pkg' => $part_pkg{ $pkgpart{$number} },
@@ -141,6 +143,21 @@ while (1) {
       #XXX ???
       warn $error;
       sleep 30;
+    } else {
+
+      #this could get expensive on a per-call basis
+      # trigger in a separate process with less frequency?
+      
+      my $cust_main = $cust_pkg{ $pkgnum{$number} }->cust_main;
+
+      my $error = $cust_main->check_credit_limit;
+      if ( $error ) {
+        #"should never happen" normally, but as a daemon, better to survive
+        # e.g. database going away and coming back and resume doing our thing
+        warn $error;
+        sleep 30;
+      }
+
     }
 
     last if sigterm() || sigint();

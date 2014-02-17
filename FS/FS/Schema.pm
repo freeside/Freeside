@@ -1879,6 +1879,26 @@ sub tables_hashref {
                         ],
     },
 
+    'cust_main_credit_limit' => {
+      'columns' => [
+        'creditlimitnum',   'serial', '', '', '', '',
+        'custnum',             'int', '', '', '', '', 
+        '_date',          @date_type,         '', '', 
+        'amount',       @money_typen,         '', '',
+        #'amount_currency', 'char', 'NULL',  3, '', '',
+        'credit_limit', @money_typen,         '', '',
+        #'credit_limit_currency', 'char', 'NULL',  3, '', '',
+      ],
+      'primary_key'  => 'creditlimitnum',
+      'unique'       => [],
+      'index'        => [ ['custnum'], ],
+      'foreign_keys' => [
+                          { columns    => [ 'custnum' ],
+                            table      => 'cust_main',
+                          },
+                        ],
+    },
+
     'cust_main_note' => {
       'columns' => [
         'notenum',  'serial',  '',     '', '', '', 

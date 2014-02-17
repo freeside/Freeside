@@ -273,6 +273,9 @@
            ? "Default ($money_char". sprintf("%.2f", $default_credit_limit). ")"
            : emt('Unlimited')
     %>
+%   if ( $cust_main->num_cust_main_credit_limit ) {
+      <A HREF="<% $p %>search/cust_main_credit_limit.html?custnum=<% $cust_main->custnum %>">(incidents)</A>
+%   }
   </TD>
 </TR>
 

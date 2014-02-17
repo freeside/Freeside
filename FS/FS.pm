@@ -376,6 +376,8 @@ L<FS::cust_main_Mixin> - Mixin class for records that contain fields from cust_m
 
 L<FS::cust_main_invoice> - Invoice destination class
 
+L<FS::cust_main_credit_limit> - Customer credit limit events class
+
 L<FS::cust_class> - Customer classification class
 
 L<FS::cust_category> - Customer category class
