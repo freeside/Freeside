@@ -376,10 +376,12 @@ if( $curuser->access_right('Financial reports') ) {
 } # else $report_financial contains nothing.
 
 tie my %report_logs, 'Tie::IxHash';
-  $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
+$report_logs{'Credit limit incidents'} = [ $fsurl.'search/report_cust_main_credit_limit.html', '' ]
+  if $curuser->access_right('List rating data');
+$report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
   if $curuser->access_right('View system logs')
   || $curuser->access_right('Configuration');
-  $report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ]
+$report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ]
   if $curuser->access_right('View email logs')
   || $curuser->access_right('Configuration');
 
