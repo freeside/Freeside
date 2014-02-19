@@ -2,7 +2,7 @@ package FS::part_pkg_taxproduct;
 
 use strict;
 use vars qw( @ISA $delete_kludge );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch dbh );
 
 @ISA = qw(FS::Record);
 $delete_kludge = 0;
@@ -123,11 +123,85 @@ sub check {
   $self->SUPER::check;
 }
 
+=item part_pkg_taxrate GEOCODE
+
+Returns the L<FS::part_pkg_taxrate> records (tax definitions) that can apply 
+to this tax product category in the location identified by GEOCODE.
+
+=cut
+
+# actually only returns one arbitrary record for each taxclassnum, making 
+# it useful only for retrieving the taxclassnums
+
+sub part_pkg_taxrate {
+  my $self = shift;
+  my $data_vendor = $self->data_vendor; # because duh
+  my $geocode = shift;
+
+  my $dbh = dbh;
+
+  # CCH oddness in m2m
+  my $extra_sql .= "AND part_pkg_taxrate.data_vendor = '$data_vendor' ".
+                   "AND (".
+    join(' OR ', map{ 'geocode = '. $dbh->quote(substr($geocode, 0, $_)) }
+                 qw(10 5 2)
+        ).
+    ')';
+  # much more CCH oddness in m2m -- this is kludgy
+  my $tpnums = join(',',
+    map { $_->taxproductnum }
+    $self->expand_cch_taxproduct
+  );
+  $extra_sql .= "AND taxproductnum IN($tpnums)";
+
+  my $addl_from = 'LEFT JOIN part_pkg_taxproduct USING ( taxproductnum )';
+  my $order_by = 'ORDER BY taxclassnum, length(geocode) desc, length(taxproduct) desc';
+  my $select   = 'DISTINCT ON(taxclassnum) *, taxproduct';
+
+  # should qsearch preface columns with the table to facilitate joins?
+  qsearch( { 'table'     => 'part_pkg_taxrate',
+             'select'    => $select,
+             'hashref'   => { 'taxable' => 'Y' },
+             'addl_from' => $addl_from,
+             'extra_sql' => $extra_sql,
+             'order_by'  => $order_by,
+         } );
+}
+
+=item expand_cch_taxproduct
+
+Returns the full set of part_pkg_taxproduct records that are "implied" by 
+this one.
+
+=cut
+
+sub expand_cch_taxproduct {
+  my $self = shift;
+  my $class = shift;
+
+  my ($a,$b,$c,$d) = split ':', $self->taxproduct;
+  $a = '' unless $a; $b = '' unless $b; $c = '' unless $c; $d = '' unless $d;
+  my $taxproducts = join(',',
+    "'${a}:${b}:${c}:${d}'",
+    "'${a}:${b}:${c}:'",
+    "'${a}:${b}::${d}'",
+    "'${a}:${b}::'"
+  );
+  qsearch( {
+      'table'     => 'part_pkg_taxproduct',
+      'hashref'   => { 'data_vendor'=>'cch' },
+      'extra_sql' => "AND taxproduct IN($taxproducts)",
+  } );
+}
+
+
 =back
 
 =cut
 
 =head1 BUGS
+
+Confusingly named.  It has nothing to do with part_pkg.
 
 =head1 SEE ALSO
 

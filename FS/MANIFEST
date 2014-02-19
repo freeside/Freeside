@@ -758,3 +758,11 @@ FS/extension_device.pm
 t/extension_device.t
 FS/cust_main_credit_limit.pm
 t/cust_main_credit_limit.t
+FS/cust_event_fee.pm
+t/cust_event_fee.t
+FS/part_fee.pm
+t/part_fee.t
+FS/cust_bill_pkg_fee.pm
+t/cust_bill_pkg_fee.t
+FS/part_fee_msgcat.pm
+t/part_fee_msgcat.t

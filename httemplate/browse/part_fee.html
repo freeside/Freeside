@@ -1,0 +1,67 @@
+<& elements/browse.html,
+  'title'         => 'Fee definitions',
+  'name_singular' => 'fee definition',
+  'query'         => $query,
+  'count_query'   => $count_query,
+  'header'        => [  '#',
+                        'Description',
+                        'Comment',
+                        'Class',
+                        'Amount',
+                        'Tax status',
+                     ],
+  'fields'        => [  'feepart',
+                        'itemdesc',
+                        'comment',
+                        'classname',
+                        $sub_amount,
+                        $sub_tax,
+                     ],
+  disableable     => 1,
+  disabled_statuspos => 3,
+  agent_pos       => 6,
+  agent_virt      => 1,
+  agent_null_right=> 'Edit global fee definitions',
+  links           => [  '',
+                        $link,
+                        $link,
+                     ],
+  align           => 'cllccc',
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $acl_edit = $curuser->access_right('Edit fee definitions');
+my $acl_edit_global = $curuser->access_right('Edit global fee definitions');
+die "access denied"
+  unless $acl_edit or $acl_edit_global;
+
+my $query = {
+  'select'    => 'part_fee.*,'.
+                 '(select classname from pkg_class '.
+                 'where pkg_class.classnum = part_fee.classnum) AS classname',
+  'table'     => 'part_fee',  
+};
+my $count_query = "SELECT COUNT(*) FROM part_fee";
+
+my $sub_amount = sub {
+  my $obj = shift;
+  my $string = $obj->explanation;
+  $string =~ s/\n/<br>/sg;
+  $string;
+};
+
+my $sub_tax = sub {
+  my $obj = shift;
+  if ( $obj->taxable ) {
+    return $obj->taxclass || 'taxable';
+  } elsif ( $obj->taxproductnum ) {
+    return join('<br>', 
+      split(/\s*:\s*/, $obj->part_pkg_taxproduct->description)
+    );
+  } else {
+    return 'exempt';
+  }
+};
+
+my $link = [ $p.'edit/part_fee.html?', 'feepart' ];
+</%init>

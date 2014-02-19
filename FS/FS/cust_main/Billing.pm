@@ -21,6 +21,7 @@ use FS::cust_bill_pkg_tax_rate_location;
 use FS::part_event;
 use FS::part_event_condition;
 use FS::pkg_category;
+use FS::cust_event_fee;
 use FS::Log;
 
 # 1 is mostly method/subroutine entry and options
@@ -538,6 +539,75 @@ sub bill {
            #.Dumper(\@cust_bill_pkg)."\n"
       if $DEBUG > 2;
 
+    ###
+    # process fees
+    ###
+
+    my @pending_event_fees = FS::cust_event_fee->by_cust($self->custnum,
+      hashref => { 'billpkgnum' => '' }
+    );
+    warn "$me found pending fee events:\n".Dumper(\@pending_event_fees)."\n"
+      if @pending_event_fees;
+
+    my @fee_items;
+    foreach my $event_fee (@pending_event_fees) {
+      my $object = $event_fee->cust_event->cust_X;
+      my $cust_bill;
+      if ( $object->isa('FS::cust_main') ) {
+        # Not the real cust_bill object that will be inserted--in particular
+        # there are no taxes yet.  If you want to charge a fee on the total 
+        # invoice amount including taxes, you have to put the fee on the next
+        # invoice.
+        $cust_bill = FS::cust_bill->new({
+            'custnum'       => $self->custnum,
+            'cust_bill_pkg' => \@cust_bill_pkg,
+            'charged'       => ${ $total_setup{$pass} } +
+                               ${ $total_recur{$pass} },
+        });
+      } elsif ( $object->isa('FS::cust_bill') ) {
+        # simple case: applying the fee to a previous invoice (late fee, 
+        # etc.)
+        $cust_bill = $object;
+      }
+      my $part_fee = $event_fee->part_fee;
+      # if the fee def belongs to a different agent, don't charge the fee.
+      # event conditions should prevent this, but just in case they don't,
+      # skip the fee.
+      if ( $part_fee->agentnum and $part_fee->agentnum != $self->agentnum ) {
+        warn "tried to charge fee#".$part_fee->feepart .
+             " on customer#".$self->custnum." from a different agent.\n";
+        next;
+      }
+      # also skip if it's disabled
+      next if $part_fee->disabled eq 'Y';
+      # calculate the fee
+      my $fee_item = $event_fee->part_fee->lineitem($cust_bill);
+      # link this so that we can clear the marker on inserting the line item
+      $fee_item->set('cust_event_fee', $event_fee);
+      push @fee_items, $fee_item;
+    }
+    foreach my $fee_item (@fee_items) {
+
+      push @cust_bill_pkg, $fee_item;
+      ${ $total_setup{$pass} } += $fee_item->setup;
+      ${ $total_recur{$pass} } += $fee_item->recur;
+
+      my $part_fee = $fee_item->part_fee;
+      my $fee_location = $self->ship_location; # I think?
+
+      my $error = $self->_handle_taxes(
+        $part_fee,
+        $taxlisthash{$pass},
+        $fee_item,
+        $fee_location,
+        $options{invoice_time},
+        {} # no options
+      );
+      return $error if $error;
+
+    }
+
+    # XXX implementation of fees is supposed to make this go away...
     if ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
            !$conf->exists('postal_invoice-recurring_only')
        )
@@ -633,14 +703,12 @@ sub bill {
 
     my @cust_bill = $self->cust_bill;
     my $balance = $self->balance;
-    my $previous_balance = scalar(@cust_bill)
-                             ? ( $cust_bill[$#cust_bill]->billing_balance || 0 )
-                             : 0;
-
-    $previous_balance += $cust_bill[$#cust_bill]->charged
-      if scalar(@cust_bill);
-    #my $balance_adjustments =
-    #  sprintf('%.2f', $balance - $prior_prior_balance - $prior_charged);
+    my $previous_bill = $cust_bill[-1] if @cust_bill;
+    my $previous_balance = 0;
+    if ( $previous_bill ) {
+      $previous_balance = $previous_bill->billing_balance 
+                        + $previous_bill->charged;
+    }
 
     warn "creating the new invoice\n" if $DEBUG;
     #create the new invoice
@@ -935,6 +1003,7 @@ sub _make_lines {
 
   my $part_pkg = $params{part_pkg} or die "no part_pkg specified";
   my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
+  my $cust_location = $cust_pkg->tax_location;
   my $precommit_hooks = $params{precommit_hooks} or die "no precommit_hooks specified";
   my $cust_bill_pkgs = $params{line_items} or die "no line buffer specified";
   my $total_setup = $params{setup} or die "no setup accumulator specified";
@@ -1250,18 +1319,15 @@ sub _make_lines {
       # handle taxes
       ###
 
-      #unless ( $discount_show_always ) { # oh, for god's sake
       my $error = $self->_handle_taxes(
         $part_pkg,
         $taxlisthash,
         $cust_bill_pkg,
-        $cust_pkg,
+        $cust_location,
         $options{invoice_time},
-        $real_pkgpart,
         \%options # I have serious objections to this
       );
       return $error if $error;
-      #}
 
       $cust_bill_pkg->set_display(
         part_pkg     => $part_pkg,
@@ -1357,12 +1423,12 @@ sub _transfer_balance {
   return @transfers;
 }
 
-=item _handle_taxes PART_PKG TAXLISTHASH CUST_BILL_PKG CUST_PKG TIME PKGPART [ OPTIONS ]
+=item _handle_taxes PART_ITEM TAXLISTHASH CUST_BILL_PKG CUST_LOCATION TIME [ OPTIONS ]
 
 This is _handle_taxes.  It's called once for each cust_bill_pkg generated
-from _make_lines, along with the part_pkg, cust_pkg, invoice time, the 
-non-overridden pkgpart, a flag indicating whether the package is being
-canceled, and a partridge in a pear tree.
+from _make_lines, along with the part_pkg (or part_fee), cust_location,
+invoice time, a flag indicating whether the package is being canceled, and a 
+partridge in a pear tree.
 
 The most important argument is 'taxlisthash'.  This is shared across the 
 entire invoice.  It looks like this:
@@ -1382,23 +1448,20 @@ happen until calculate_taxes, though.
 
 sub _handle_taxes {
   my $self = shift;
-  my $part_pkg = shift;
+  my $part_item = shift;
   my $taxlisthash = shift;
   my $cust_bill_pkg = shift;
-  my $cust_pkg = shift;
+  my $location = shift;
   my $invoice_time = shift;
-  my $real_pkgpart = shift;
   my $options = shift;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  my $location = $cust_pkg->tax_location;
-
   return if ( $self->payby eq 'COMP' ); #dubious
 
   if ( $conf->exists('enable_taxproducts')
-       && ( scalar($part_pkg->part_pkg_taxoverride)
-            || $part_pkg->has_taxproduct
+       && ( scalar($part_item->part_pkg_taxoverride)
+            || $part_item->has_taxproduct
           )
      )
     {
@@ -1423,13 +1486,13 @@ sub _handle_taxes {
     if ( !$exempt ) {
 
       foreach my $class (@classes) {
-        my $err_or_ref = $self->_gather_taxes( $part_pkg, $class, $cust_pkg );
+        my $err_or_ref = $self->_gather_taxes($part_item, $class, $location);
         return $err_or_ref unless ref($err_or_ref);
         $taxes{$class} = $err_or_ref;
       }
 
       unless (exists $taxes{''}) {
-        my $err_or_ref = $self->_gather_taxes( $part_pkg, '', $cust_pkg );
+        my $err_or_ref = $self->_gather_taxes($part_item, '', $location);
         return $err_or_ref unless ref($err_or_ref);
         $taxes{''} = $err_or_ref;
       }
@@ -1505,7 +1568,7 @@ sub _handle_taxes {
     my @loc_keys = qw( district city county state country );
     my %taxhash = map { $_ => $location->$_ } @loc_keys;
 
-    $taxhash{'taxclass'} = $part_pkg->taxclass;
+    $taxhash{'taxclass'} = $part_item->taxclass;
 
     warn "taxhash:\n". Dumper(\%taxhash) if $DEBUG > 2;
 
@@ -1538,44 +1601,28 @@ sub _handle_taxes {
   '';
 }
 
+=item _gather_taxes PART_ITEM CLASS CUST_LOCATION
+
+Internal method used with vendor-provided tax tables.  PART_ITEM is a part_pkg
+or part_fee (which will define the tax eligibility of the product), CLASS is
+'setup', 'recur', null, or a C<usage_class> number, and CUST_LOCATION is the 
+location where the service was provided (or billed, depending on 
+configuration).  Returns an arrayref of L<FS::tax_rate> objects that 
+can apply to this line item.
+
+=cut
+
 sub _gather_taxes {
   my $self = shift;
-  my $part_pkg = shift;
+  my $part_item = shift;
   my $class = shift;
-  my $cust_pkg = shift;
+  my $location = shift;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  my $geocode = $cust_pkg->tax_location->geocode('cch');
+  my $geocode = $location->geocode('cch');
 
-  my @taxes = ();
-
-  my @taxclassnums = map { $_->taxclassnum }
-                     $part_pkg->part_pkg_taxoverride($class);
-
-  unless (@taxclassnums) {
-    @taxclassnums = map { $_->taxclassnum }
-                    grep { $_->taxable eq 'Y' }
-                    $part_pkg->part_pkg_taxrate('cch', $geocode, $class);
-  }
-  warn "Found taxclassnum values of ". join(',', @taxclassnums)
-    if $DEBUG;
-
-  my $extra_sql =
-    "AND (".
-    join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
-
-  @taxes = qsearch({ 'table' => 'tax_rate',
-                     'hashref' => { 'geocode' => $geocode, },
-                     'extra_sql' => $extra_sql,
-                  })
-    if scalar(@taxclassnums);
-
-  warn "Found taxes ".
-       join(',', map{ ref($_). " ". $_->get($_->primary_key) } @taxes). "\n" 
-   if $DEBUG;
-
-  [ @taxes ];
+  [ $part_item->tax_rates('cch', $geocode, $class) ]
 
 }
 
@@ -2424,6 +2471,7 @@ sub apply_payments {
         _handle_taxes
           (vendor-only) _gather_taxes
       _omit_zero_value_bundles
+      _handle_taxes (for fees)
       calculate_taxes
 
     apply_payments_and_credits

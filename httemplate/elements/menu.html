@@ -584,6 +584,10 @@ if ( $curuser->access_right('Configuration') ) {
   $config_pkg{'Package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting only.' ];
   #eo package grouping sub-menu
 
+  if ( $curuser->access_right([ 'Edit fee definitions',
+                                'Edit global fee definitions' ]) ) {
+    $config_pkg{'Fees'} = [ $fsurl.'browse/part_fee.html', '' ];
+  }
   $config_pkg{'Discounts'} = [ $fsurl.'browse/discount.html', '' ];
   $config_pkg{'Discount classes'} = [ $fsurl.'browse/discount_class.html', '' ];
   $config_pkg{'Cancel/Suspend Reasons'} = [ \%config_pkg_reason, '' ];

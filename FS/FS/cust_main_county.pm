@@ -316,6 +316,11 @@ sub taxline {
 
     my $cust_pkg  = $cust_bill_pkg->cust_pkg;
     my $part_pkg  = $cust_bill_pkg->part_pkg;
+    my $part_fee  = $cust_bill_pkg->part_fee;
+
+    my $locationnum = $cust_pkg
+                      ? $cust_pkg->locationnum
+                      : $cust_main->bill_locationnum;
 
     my @new_exemptions;
     my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur
@@ -341,8 +346,13 @@ sub taxline {
 
     }
 
-    if ( ($part_pkg->setuptax eq 'Y' or $self->setuptax eq 'Y')
-        and $cust_bill_pkg->setup > 0 and $taxable_charged > 0 ) {
+    my $setup_exempt = ( ($part_fee and not $part_fee->taxable)
+                      or ($part_pkg and $part_pkg->setuptax)
+                      or $self->setuptax );
+
+    if ( $setup_exempt
+        and $cust_bill_pkg->setup > 0
+        and $taxable_charged > 0 ) {
 
       push @new_exemptions, FS::cust_tax_exempt_pkg->new({
           amount => $cust_bill_pkg->setup,
@@ -351,8 +361,14 @@ sub taxline {
       $taxable_charged -= $cust_bill_pkg->setup;
 
     }
-    if ( ($part_pkg->recurtax eq 'Y' or $self->recurtax eq 'Y')
-        and $cust_bill_pkg->recur > 0 and $taxable_charged > 0 ) {
+
+    my $recur_exempt = ( ($part_fee and not $part_fee->taxable)
+                      or ($part_pkg and $part_pkg->recurtax)
+                      or $self->recurtax );
+
+    if ( $recur_exempt
+        and $cust_bill_pkg->recur > 0
+        and $taxable_charged > 0 ) {
 
       push @new_exemptions, FS::cust_tax_exempt_pkg->new({
           amount => $cust_bill_pkg->recur,
@@ -494,7 +510,7 @@ sub taxline {
         'taxtype'     => ref($self),
         'cents'       => $this_tax_cents,
         'pkgnum'      => $cust_bill_pkg->pkgnum,
-        'locationnum' => $cust_bill_pkg->cust_pkg->tax_locationnum,
+        'locationnum' => $locationnum,
         'taxable_cust_bill_pkg' => $cust_bill_pkg,
         'tax_cust_bill_pkg'     => $tax_item,
     });
