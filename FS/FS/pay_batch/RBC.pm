@@ -93,6 +93,15 @@ $name = 'RBC';
   row => sub {
     my ($cust_pay_batch, $pay_batch) = @_;
     my ($account, $aba) = split('@', $cust_pay_batch->payinfo);
+    my($bankno, $branch);
+    if ( $aba =~ /^0(\d{3})(\d{5})$/ ) { # standard format for Canadian bank ID
+      ($bankno, $branch) = ( $1, $2 );
+    } elsif ( $aba =~ /^(\d{5})\.(\d{3})$/ ) { #how we store branches
+      ($branch, $bankno) = ( $1, $2 );
+    } else {
+      die "invalid branch/routing number '$aba'\n";
+    }
+
     $i++;
     sprintf("%06u", $i).
     'D'.
@@ -101,8 +110,9 @@ $name = 'RBC';
     ' '.
     sprintf("%-19s", $cust_pay_batch->paybatchnum).
     '00'.
-    sprintf("%09u", $aba).
-    sprintf("%-18s", $account).
+    sprintf("%04u", $bankno).
+    sprintf("%05u", $branch).
+    sprintf("%-18u", $account).
     ' '.
     sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
@@ -129,7 +139,7 @@ $name = 'RBC';
     'Z'.
     'TRL'.
     sprintf("%10s", $client_num).
-    ' ' x 20 .
+    '0' x 20 .
     sprintf("%06u", $batchcount).
     sprintf("%014.0f", $batchtotal*100).
     '00' .
