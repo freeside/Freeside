@@ -62,15 +62,7 @@ if ( $sub eq 'calculate_taxes' ) {
 
       push @cust_bill_pkg, $cust_bill_pkg;
 
-      my $part_pkg = $cust_bill_pkg->part_pkg;
-      $cust_main->_handle_taxes( $part_pkg,
-                                 $taxlisthash,
-                                 $cust_bill_pkg,
-                                 $cust_bill_pkg->cust_pkg,
-                                 $cust_bill_pkg->cust_bill->_date,
-                                 $cust_bill_pkg->cust_pkg->pkgpart,
-                               );
-
+      $cust_main->_handle_taxes( $taxlisthash, $cust_bill_pkg );
     }
 
     if ( @cust_bill_pkg ) {
@@ -89,7 +81,10 @@ if ( $sub eq 'calculate_taxes' ) {
       foreach my $taxline ( @$listref_or_error ) {
         my $amount = $taxline->setup;
         my $desc = $taxline->desc;
-        foreach my $location ( @{$taxline->cust_bill_pkg_tax_location}, @{$taxline->cust_bill_pkg_tax_rate_location} ) {
+        foreach my $location (
+          @{$taxline->get('cust_bill_pkg_tax_location')},
+          @{$taxline->get('cust_bill_pkg_tax_rate_location')} )
+        {
           my $taxlocnum = $location->locationnum || '';
           my $taxratelocnum = $location->taxratelocationnum || '';
           $location->cust_bill_pkg_desc($taxline->desc); #ugh @ that kludge

@@ -269,7 +269,8 @@ my @cust_bill_pkg = qsearch({
   'select'    => 'cust_bill_pkg.*',
   'table'     => 'cust_bill_pkg',
   'addl_from' => 'LEFT JOIN cust_bill USING (invnum)',
-  'extra_sql' => "WHERE custnum = $custnum AND pkgnum != 0",
+  'extra_sql' => "WHERE custnum = $custnum ".
+                 "AND (pkgnum != 0 or feepart IS NOT NULL)",
   'order_by'  => 'ORDER BY invnum ASC, billpkgnum ASC',
 });
 

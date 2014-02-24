@@ -968,6 +968,31 @@ sub tax_locationnum {
   }
 }
 
+sub tax_location {
+  my $self = shift;
+  FS::cust_location->by_key($self->tax_locationnum);
+}
+
+=item part_X
+
+Returns the L<FS::part_pkg> or L<FS::part_fee> object that defines this
+charge.  If called on a tax line, returns nothing.
+
+=cut
+
+sub part_X {
+  my $self = shift;
+  if ( $self->override_pkgpart ) {
+    return FS::part_pkg->by_key($self->override_pkgpart);
+  } elsif ( $self->pkgnum ) {
+    return $self->cust_pkg->part_pkg;
+  } elsif ( $self->feepart ) {
+    return $self->part_fee;
+  } else {
+    return;
+  }
+}
+
 =back
 
 =head1 CLASS METHODS

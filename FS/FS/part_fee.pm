@@ -126,6 +126,8 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  $self->set('amount', 0) unless $self->amount;
+
   my $error = 
     $self->ut_numbern('feepart')
     || $self->ut_textn('comment')
@@ -219,11 +221,17 @@ representing the invoice line item for the fee, with linked
 L<FS::cust_bill_pkg_fee> record(s) allocating the fee to the invoice or 
 its line items, as appropriate.
 
+If the fee is going to be charged on the upcoming invoice (credit card 
+processing fees, postal invoice fees), INVOICE should be an uninserted
+L<FS::cust_bill> object where the 'cust_bill_pkg' property is an arrayref
+of the non-fee line items that will appear on the invoice.
+
 =cut
 
 sub lineitem {
   my $self = shift;
   my $cust_bill = shift;
+  my $cust_main = $cust_bill->cust_main;
 
   my $amount = 0 + $self->get('amount');
   my $total_base;  # sum of base line items
@@ -273,14 +281,15 @@ sub lineitem {
 
   my $maximum = $self->maximum;
   if ( $self->limit_credit ) {
-    my $balance = $cust_bill->cust_main;
+    my $balance = $cust_bill->cust_main->balance;
     if ( $balance >= 0 ) {
-      $maximum = 0;
+      warn "Credit balance is zero, so fee is zero" if $DEBUG;
+      return; # don't bother doing estimated tax, etc.
     } elsif ( -1 * $balance < $maximum ) {
       $maximum = -1 * $balance;
     }
   }
-  if ( $maximum ne '' and $amount > $maximum ) {
+  if ( $maximum ne '' ) {
     warn "Applying maximum fee\n" if $DEBUG;
     $amount = $maximum;
   }
@@ -296,8 +305,35 @@ sub lineitem {
       setup       => 0,
       recur       => 0,
   });
+
+  if ( $maximum and $self->taxable ) {
+    warn "Estimating taxes on fee.\n";
+    # then we need to estimate tax to respect the maximum
+    # XXX currently doesn't work with external (tax_rate) taxes
+    # or batch taxes, obviously
+    my $taxlisthash = {};
+    my $error = $cust_main->_handle_taxes(
+      $taxlisthash,
+      $cust_bill_pkg,
+      location => $cust_main->ship_location
+    );
+    my $total_rate = 0;
+    # $taxlisthash: tax identifier => [ cust_main_county, cust_bill_pkg... ]
+    my @taxes = map { $_->[0] } values %$taxlisthash;
+    foreach (@taxes) {
+      $total_rate += $_->tax;
+    }
+    if ($total_rate > 0) {
+      my $max_cents = $maximum * 100;
+      my $charge_cents = sprintf('%0.f', $max_cents * 100/(100 + $total_rate));
+      $maximum = sprintf('%.2f', $charge_cents / 100.00);
+      $amount = $maximum if $amount > $maximum;
+    }
+  } # if $maximum and $self->taxable
+
+  # set the amount that we'll charge
   $cust_bill_pkg->set( $self->setuprecur, $amount );
-  
+
   if ( $self->classnum ) {
     my $pkg_category = $self->pkg_class->pkg_category;
     $cust_bill_pkg->set('section' => $pkg_category->categoryname)
