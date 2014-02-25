@@ -134,13 +134,7 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-
-  my $error = $self->SUPER::delete;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-  
+ 
   my $pkey = $self->primary_key;
   #my $option_table = $self->option_table;
 
@@ -152,6 +146,12 @@ sub delete {
     }
   }
 
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+ 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';

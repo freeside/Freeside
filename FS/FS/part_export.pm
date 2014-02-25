@@ -161,6 +161,10 @@ sub delete {
     'link_table'    => 'export_nas',
     'target_table'  => 'nas',
     'params'        => [],
+  ) || $self->process_m2m(
+    'link_table'    => 'export_svc',
+    'target_table'  => 'part_svc',
+    'params'        => [],
   ) || $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
