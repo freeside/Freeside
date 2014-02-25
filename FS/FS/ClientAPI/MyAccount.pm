@@ -555,8 +555,8 @@ sub customer_info_short {
                       1, ##nobalance
                     );
 
-warn    $return{first}  = $cust_main->first;
-warn    $return{'last'} = $cust_main->get('last');
+    $return{first}  = $cust_main->first;
+    $return{'last'} = $cust_main->get('last');
     $return{name}   = $cust_main->first. ' '. $cust_main->get('last');
 
     $return{payby} = $cust_main->payby;
