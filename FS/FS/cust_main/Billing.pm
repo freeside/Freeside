@@ -545,17 +545,24 @@ sub bill {
       hashref => { 'billpkgnum' => '' }
     );
     warn "$me found pending fee events:\n".Dumper(\@pending_event_fees)."\n"
-      if @pending_event_fees;
+      if @pending_event_fees and $DEBUG > 1;
 
-    # whether to generate an invoice
+    # determine whether to generate an invoice
     my $generate_bill = scalar(@cust_bill_pkg) > 0;
+
+    foreach my $event_fee (@pending_event_fees) {
+      $generate_bill = 1 unless $event_fee->nextbill;
+    }
+    
+    # don't create an invoice with no line items, or where the only line 
+    # items are fees that are supposed to be held until the next invoice
+    next if !$generate_bill;
 
     # calculate fees...
     my @fee_items;
     foreach my $event_fee (@pending_event_fees) {
       my $object = $event_fee->cust_event->cust_X;
       my $part_fee = $event_fee->part_fee;
-
       my $cust_bill;
       if ( $object->isa('FS::cust_main') ) {
         # Not the real cust_bill object that will be inserted--in particular
@@ -589,13 +596,8 @@ sub bill {
       $fee_item->set('cust_event_fee', $event_fee);
       push @fee_items, $fee_item;
 
-      $generate_bill = 1 unless $part_fee->nextbill;
     }
     
-    # don't create an invoice with no line items, or where the only line 
-    # items are fees that are supposed to be held until the next invoice
-    next if !$generate_bill;
-
     # add fees to the invoice
     foreach my $fee_item (@fee_items) {
 

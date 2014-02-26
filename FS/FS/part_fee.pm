@@ -5,7 +5,7 @@ use base qw( FS::o2m_Common FS::Record );
 use vars qw( $DEBUG );
 use FS::Record qw( qsearch qsearchs );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -53,9 +53,6 @@ the invoice
 =item taxable - 'Y' if this fee should be considered a taxable sale.  
 Currently, taxable fees will be treated like they exist at the customer's
 default service location.
-
-=item nextbill - 'Y' if this fee should be delayed until the customer is 
-billed for a package.
 
 =item taxclass - the tax class the fee belongs to, as a string, for the 
 internal tax system
@@ -138,7 +135,6 @@ sub check {
     || $self->ut_flag('disabled')
     || $self->ut_foreign_keyn('classnum', 'pkg_class', 'classnum')
     || $self->ut_flag('taxable')
-    || $self->ut_flag('nextbill')
     || $self->ut_textn('taxclass')
     || $self->ut_numbern('taxproductnum')
     || $self->ut_floatn('pay_weight')
@@ -294,7 +290,7 @@ sub lineitem {
       $maximum = -1 * $balance;
     }
   }
-  if ( $maximum ne '' ) {
+  if ( $maximum ne '' and $amount > $maximum ) {
     warn "Applying maximum fee\n" if $DEBUG;
     $amount = $maximum;
   }
@@ -312,7 +308,7 @@ sub lineitem {
   });
 
   if ( $maximum and $self->taxable ) {
-    warn "Estimating taxes on fee.\n";
+    warn "Estimating taxes on fee.\n" if $DEBUG;
     # then we need to estimate tax to respect the maximum
     # XXX currently doesn't work with external (tax_rate) taxes
     # or batch taxes, obviously
@@ -331,6 +327,7 @@ sub lineitem {
     if ($total_rate > 0) {
       my $max_cents = $maximum * 100;
       my $charge_cents = sprintf('%0.f', $max_cents * 100/(100 + $total_rate));
+      # the actual maximum that we can charge...
       $maximum = sprintf('%.2f', $charge_cents / 100.00);
       $amount = $maximum if $amount > $maximum;
     }
