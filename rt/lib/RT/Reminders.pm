@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -122,7 +122,7 @@ sub Add {
         return ( 0, $self->loc( "Failed to load ticket [_1]", $self->Ticket ) );
     }
 
-    if ( $ticket->Status eq 'deleted' ) {
+    if ( lc $ticket->Status eq 'deleted' ) {
         return ( 0, $self->loc("Can't link to a deleted ticket") );
     }
 
@@ -134,6 +134,7 @@ sub Add {
         RefersTo => $self->Ticket,
         Type => 'reminder',
         Queue => $self->TicketObj->Queue,
+        Status => $self->TicketObj->QueueObj->Lifecycle->ReminderStatusOnOpen,
     );
     $self->TicketObj->_NewTransaction(
         Type => 'AddReminder',

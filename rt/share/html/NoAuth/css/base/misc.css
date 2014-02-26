@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -111,3 +111,7 @@ fieldset.cfedit {
     font-family: arial,helvetica,sans-serif !important;
 }
 
+textarea.messagebox, #cke_Content, #cke_UpdateContent {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}

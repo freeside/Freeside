@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -114,6 +114,7 @@ sub Connect {
     $self->SUPER::Connect(
         User => RT->Config->Get('DatabaseUser'),
         Password => RT->Config->Get('DatabasePassword'),
+        DisconnectHandleOnDestroy => 1,
         %args,
     );
 
@@ -161,7 +162,6 @@ sub BuildDSN {
         Port       => $db_port,
         Driver     => $db_type,
         RequireSSL => RT->Config->Get('DatabaseRequireSSL'),
-        DisconnectHandleOnDestroy => 1,
     );
     if ( $db_type eq 'Oracle' && $db_host ) {
         $args{'SID'} = delete $args{'Database'};
@@ -360,6 +360,9 @@ sub CreateDatabase {
     }
     elsif ( $db_type eq 'Pg' ) {
         $status = $dbh->do("CREATE DATABASE $db_name WITH ENCODING='UNICODE' TEMPLATE template0");
+    }
+    elsif ( $db_type eq 'mysql' ) {
+        $status = $dbh->do("CREATE DATABASE $db_name DEFAULT CHARACTER SET utf8");
     }
     else {
         $status = $dbh->do("CREATE DATABASE $db_name");
@@ -872,7 +875,9 @@ sub InsertData {
             }
 
             if ( $item->{'BasedOn'} ) {
-                if ( $item->{'LookupType'} ) {
+                if ( $item->{'BasedOn'} =~ /^\d+$/) {
+                    # Already have an ID -- should be fine
+                } elsif ( $item->{'LookupType'} ) {
                     my $basedon = RT::CustomField->new($RT::SystemUser);
                     my ($ok, $msg ) = $basedon->LoadByCols( Name => $item->{'BasedOn'},
                                                             LookupType => $item->{'LookupType'} );
@@ -1201,6 +1206,32 @@ sub _LogSQLStatement {
 
     require HTML::Mason::Exceptions;
     push @{$self->{'StatementLog'}} , ([Time::HiRes::time(), $statement, [@bind], $duration, HTML::Mason::Exception->new->as_string]);
+}
+
+
+sub _TableNames {
+    my $self = shift;
+    my $dbh = shift || $self->dbh;
+
+    {
+        local $@;
+        if (
+            $dbh->{Driver}->{Name} eq 'Pg'
+            && $dbh->{'pg_server_version'} >= 90200
+            && !eval { DBD::Pg->VERSION('2.19.3'); 1 }
+        ) {
+            die "You're using PostgreSQL 9.2 or newer. You have to upgrade DBD::Pg module to 2.19.3 or newer: $@";
+        }
+    }
+
+    my @res;
+
+    my $sth = $dbh->table_info( '', undef, undef, "'TABLE'");
+    while ( my $table = $sth->fetchrow_hashref ) {
+        push @res, $table->{TABLE_NAME} || $table->{table_name};
+    }
+
+    return @res;
 }
 
 __PACKAGE__->FinalizeDatabaseType;

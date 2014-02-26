@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -83,13 +83,15 @@ $| = 1; # unbuffer all output.
 
 my %args = (
     dba => '@DB_DBA@',
+    package => 'RT',
 );
 GetOptions(
     \%args,
     'action=s',
     'force', 'debug',
-    'dba=s', 'dba-password=s', 'prompt-for-dba-password',
+    'dba=s', 'dba-password=s', 'prompt-for-dba-password', 'package=s',
     'datafile=s', 'datadir=s', 'skip-create', 'root-password-file=s',
+    'upgrade-from=s', 'upgrade-to=s',
     'help|h',
 );
 
@@ -164,6 +166,7 @@ foreach my $key(qw(Type Host Name User Password)) {
 
 my $db_type = RT->Config->Get('DatabaseType') || '';
 my $db_host = RT->Config->Get('DatabaseHost') || '';
+my $db_port = RT->Config->Get('DatabasePort') || '';
 my $db_name = RT->Config->Get('DatabaseName') || '';
 my $db_user = RT->Config->Get('DatabaseUser') || '';
 my $db_pass = RT->Config->Get('DatabasePassword') || '';
@@ -191,8 +194,11 @@ if ($args{'skip-create'}) {
     }
 }
 
+my $version_word_regex = join '|', RT::Handle->version_words;
+my $version_dir = qr/^\d+\.\d+\.\d+(?:$version_word_regex)?\d*$/;
+
 print "Working with:\n"
-    ."Type:\t$db_type\nHost:\t$db_host\nName:\t$db_name\n"
+    ."Type:\t$db_type\nHost:\t$db_host\nPort:\t$db_port\nName:\t$db_name\n"
     ."User:\t$db_user\nDBA:\t$dba_user" . ($args{'skip-create'} ? ' (No DBA)' : '') . "\n";
 
 foreach my $action ( @actions ) {
@@ -220,7 +226,7 @@ sub action_drop {
     unless ( $args{'force'} ) {
         print <<END;
 
-About to drop $db_type database $db_name on $db_host.
+About to drop $db_type database $db_name on $db_host (port '$db_port').
 WARNING: This will erase all data in $db_name.
 
 END
@@ -308,18 +314,17 @@ sub action_upgrade {
     return (0, "Couldn't read dir '$base_dir' with upgrade data")
         unless -d $base_dir || -r _;
 
-    my $version_word_regex = join '|', RT::Handle->version_words;
     my $upgrading_from = undef;
     do {
         if ( defined $upgrading_from ) {
             print "Doesn't match #.#.#: ";
         } else {
-            print "Enter RT version you're upgrading from: ";
+            print "Enter $args{package} version you're upgrading from: ";
         }
-        $upgrading_from = scalar <STDIN>;
+        $upgrading_from = $args{'upgrade-from'} || scalar <STDIN>;
         chomp $upgrading_from;
         $upgrading_from =~ s/\s+//g;
-    } while $upgrading_from !~ /^\d+\.\d+\.\d+(?:$version_word_regex)?\d*$/;
+    } while $upgrading_from !~ /$version_dir/;
 
     my $upgrading_to = $RT::VERSION;
     return (0, "The current version $upgrading_to is lower than $upgrading_from")
@@ -347,14 +352,14 @@ sub action_upgrade {
             if ( defined $custom_upgrading_to ) {
                 print "Doesn't match #.#.#: ";
             } else {
-                print "\nEnter RT version if you want to stop upgrade at some point,\n";
+                print "\nEnter $args{package} version if you want to stop upgrade at some point,\n";
                 print "  or leave it blank if you want apply above upgrades: ";
             }
-            $custom_upgrading_to = scalar <STDIN>;
+            $custom_upgrading_to = $args{'upgrade-to'} || scalar <STDIN>;
             chomp $custom_upgrading_to;
             $custom_upgrading_to =~ s/\s+//g;
             last unless $custom_upgrading_to;
-        } while $custom_upgrading_to !~ /^\d+\.\d+\.\d+(?:$version_word_regex)?\d*$/;
+        } while $custom_upgrading_to !~ /$version_dir/;
 
         if ( $custom_upgrading_to ) {
             return (
@@ -410,8 +415,11 @@ sub get_versions_from_to {
     my ($base_dir, $from, $to) = @_;
 
     opendir( my $dh, $base_dir ) or die "couldn't open dir: $!";
-    my @versions = grep -d "$base_dir/$_" && /\d+\.\d+\.\d+/, readdir $dh;
+    my @versions = grep -d "$base_dir/$_" && /$version_dir/, readdir $dh;
     closedir $dh;
+
+    die "\nERROR: No upgrade data found in '$base_dir'!  Perhaps you specified the wrong --datadir?\n"
+        unless @versions;
 
     return
         grep defined $to ? RT::Handle::cmp_version($_, $to) <= 0 : 1,
@@ -429,7 +437,7 @@ sub error {
 sub get_dba_password {
     print "In order to create or update your RT database,"
         . " this script needs to connect to your "
-        . " $db_type instance on $db_host as $dba_user\n";
+        . " $db_type instance on $db_host (port '$db_port') as $dba_user\n";
     print "Please specify that user's database password below. If the user has no database\n";
     print "password, just press return.\n\n";
     print "Password: ";
@@ -587,5 +595,15 @@ administrator privileges
 
 for 'init' and 'insert': rather than using the default administrative password
 for RT's "root" user, use the password in this file.
+
+=item upgrade-from
+
+for 'upgrade': specifies the version to upgrade from, and do not prompt
+for it if it appears to be a valid version.
+
+=item upgrade-to
+
+for 'upgrade': specifies the version to upgrade to, and do not prompt
+for it if it appears to be a valid version.
 
 =back

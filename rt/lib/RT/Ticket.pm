@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -642,7 +642,7 @@ sub Create {
                 }
             }
 
-            if ( $obj && $obj->Status eq 'deleted' ) {
+            if ( $obj && lc $obj->Status eq 'deleted' ) {
                 push @non_fatal_errors,
                   $self->loc("Linking. Can't link to a deleted ticket");
                 next;
@@ -2681,7 +2681,7 @@ sub AddLink {
     }
 
     return ( 0, "Can't link to a deleted ticket" )
-      if $other_ticket && $other_ticket->Status eq 'deleted';
+      if $other_ticket && lc $other_ticket->Status eq 'deleted';
 
     return $self->_AddLink(%args);
 }

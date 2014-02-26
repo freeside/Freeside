@@ -1,41 +1,40 @@
-#!/usr/bin/perl
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -44,78 +43,27 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
+
+use strict;
+use warnings;
+use utf8;
+
+package RT::I18N::fr;
+use base 'RT::I18N';
+
 use strict;
 use warnings;
 
-# fix lib paths, some may be relative
-BEGIN {
-    require File::Spec;
-    my @libs = ("/opt/rt3/lib", "/opt/rt3/local/lib");
-    my $bin_path;
-
-    for my $lib (@libs) {
-        unless ( File::Spec->file_name_is_absolute($lib) ) {
-            unless ($bin_path) {
-                if ( File::Spec->file_name_is_absolute(__FILE__) ) {
-                    $bin_path = ( File::Spec->splitpath(__FILE__) )[1];
-                }
-                else {
-                    require FindBin;
-                    no warnings "once";
-                    $bin_path = $FindBin::Bin;
-                }
-            }
-            $lib = File::Spec->catfile( $bin_path, File::Spec->updir, $lib );
-        }
-        unshift @INC, $lib;
-    }
+sub numf {
+	my ($handle, $num) = @_[0,1];
+	my $fr_num = $handle->SUPER::numf($num);
+	# French prefer to print 1000 as 1 000 rather than 1,000
+	$fr_num =~ tr<.,><, >;
+	return $fr_num;
 }
 
-use Getopt::Long;
-my %opt;
-GetOptions( \%opt, 'help|h', );
+RT::Base->_ImportOverlays();
 
-my $session_id = shift;
-
-if ( $opt{help} || !$session_id ) {
-    require Pod::Usage;
-    Pod::Usage::pod2usage({ verbose => 2 });
-    exit;
-}
-
-require RT;
-RT::LoadConfig();
-RT::Init();
-
-require RT::Interface::Web::Session;
-my %session;
-
-tie %session, 'RT::Interface::Web::Session', $session_id;
-unless ( $session{'_session_id'} eq $session_id ) {
-    print STDERR "Couldn't load session $session_id\n";
-    exit 1;
-}
-
-use Data::Dumper;
-print "Content of session $session_id: ". Dumper( \%session);
-
-__END__
-
-=head1 NAME
-
-rt-session-viewer - show the content of a user's session
-
-=head1 SYNOPSIS
-
-    # show the content of a session
-    rt-session-viewer 2c21c8a2909c14eff12975dd2cc7b9a3
-
-=head1 DESCRIPTION
-
-This script deserializes and print content of a session identified
-by <session id>. May be useful for developers and for troubleshooting
-problems.
-
-=cut
+1;

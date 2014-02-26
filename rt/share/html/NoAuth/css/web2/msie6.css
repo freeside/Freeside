@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,8 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+@import "../base/msie6.css";
+
 .topaction .select-queue {
     margin-top: 0;
 }
@@ -94,3 +96,6 @@ div#page-navigation {
     background-image: url(<%RT->Config->Get('WebPath')%>/NoAuth/css/images/arrows-grey.gif);
 }
 
+.ticket-transaction div.metadata span.actions {
+    right: 1.1em;
+}

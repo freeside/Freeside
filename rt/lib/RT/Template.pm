@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -256,7 +256,7 @@ sub Create {
         $args{'Queue'} = $QueueObj->Id;
     }
 
-    my $result = $self->SUPER::Create(
+    my ( $result, $msg ) = $self->SUPER::Create(
         Content     => $args{'Content'},
         Queue       => $args{'Queue'},
         Description => $args{'Description'},
@@ -264,7 +264,11 @@ sub Create {
         Type        => $args{'Type'},
     );
 
-    return ($result);
+    if ( wantarray ) {
+        return ( $result, $msg );
+    } else {
+        return ( $result );
+    }
 
 }
 

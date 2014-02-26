@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -273,7 +273,7 @@ function textToHTML(value) {
                 .replace(/\n/g,   "\n<br />");
 };
 
-function ReplaceAllTextareas(encoded) {
+function ReplaceAllTextareas() {
     var sAgent = navigator.userAgent.toLowerCase();
     if (!CKEDITOR.env.isCompatible ||
         sAgent.indexOf('iphone') != -1 ||
@@ -288,23 +288,12 @@ function ReplaceAllTextareas(encoded) {
         var textArea = allTextAreas[i];
         if (jQuery(textArea).hasClass("messagebox")) {
             // Turn the original plain text content into HTML
-            if (encoded == 0) {
+            var type = jQuery("#"+textArea.name+"Type");
+            if (type.val() != "text/html")
                 textArea.value = textToHTML(textArea.value);
-            }
-            // For this javascript
-            var CKeditorEncoded = document.createElement('input');
-            CKeditorEncoded.setAttribute('type', 'hidden');
-            CKeditorEncoded.setAttribute('name', 'CKeditorEncoded');
-            CKeditorEncoded.setAttribute('value', '1');
-            textArea.parentNode.appendChild(CKeditorEncoded);
 
-            // For fckeditor
-            var typeField = document.createElement('input');
-            typeField.setAttribute('type', 'hidden');
-            typeField.setAttribute('name', textArea.name + 'Type');
-            typeField.setAttribute('value', 'text/html');
-            textArea.parentNode.appendChild(typeField);
-
+            // Set the type
+            type.val("text/html");
 
             CKEDITOR.replace(textArea.name,{width:'100%',height:<% RT->Config->Get('MessageBoxRichTextHeight') |n,j%>});
             CKEDITOR.basePath = <%RT->Config->Get('WebPath')|n,j%>+"/NoAuth/RichText/";
@@ -336,6 +325,16 @@ function update_addprincipal_title(title) {
 
 // when a value is selected from the autocompleter
 function addprincipal_onselect(ev, ui) {
+
+    // if principal link exists, we shall go there instead
+    var principal_link = jQuery(ev.target).closest('form').find('ul.ui-tabs-nav a[href="#acl-' + ui.item.id + '"]:first');
+    if (principal_link.size()) {
+        jQuery(this).val('').blur();
+        update_addprincipal_title( '' ); // reset title to blank for #acl-AddPrincipal
+        principal_link.click();
+        return false;
+    }
+
     // pass the item's value along as the title since the input's value
     // isn't actually updated yet
     toggle_addprincipal_validity(this, true, ui.item.value);

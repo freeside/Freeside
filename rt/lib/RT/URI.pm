@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -199,6 +199,8 @@ sub _GetResolver {
     if ($resolver) {
         $self->{'resolver'} = $resolver;
     } else {
+        RT->Logger->warning("Failed to create new resolver object for scheme '$scheme': $@")
+            if $@ !~ m{Can't locate RT/URI/\Q$scheme\E};
         $self->{'resolver'} = RT::URI::base->new($self->CurrentUser); 
     }
 

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -76,12 +76,12 @@ my %actions = (
 my @types = (
     {
         name   => "httpurl",
-        regex  => qr/$RE{URI}{HTTP}{-keep}{-scheme => 'https?'}(?:#\S+)?/,
+        regex  => qr/$RE{URI}{HTTP}{-keep}{-scheme => 'https?'}(?:#[^\s<]+)?(?<![.?!,;:])/,
         action => "url",
     },
     {
         name   => "httpurl_overwrite",
-        regex  => qr/$RE{URI}{HTTP}{-keep}{-scheme => 'https?'}(?:#\S+)?/,
+        regex  => qr/$RE{URI}{HTTP}{-keep}{-scheme => 'https?'}(?:#[^\s<]+)?(?<![.?!,;:])/,
         action => "url_overwrite",
     },
 );
