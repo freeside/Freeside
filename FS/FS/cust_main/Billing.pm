@@ -533,8 +533,6 @@ sub bill {
 
     my @cust_bill_pkg = _omit_zero_value_bundles(@{ $cust_bill_pkg{$pass} });
 
-    next unless @cust_bill_pkg; #don't create an invoice w/o line items
-
     warn "$me billing pass $pass\n"
            #.Dumper(\@cust_bill_pkg)."\n"
       if $DEBUG > 2;
@@ -549,9 +547,15 @@ sub bill {
     warn "$me found pending fee events:\n".Dumper(\@pending_event_fees)."\n"
       if @pending_event_fees;
 
+    # whether to generate an invoice
+    my $generate_bill = scalar(@cust_bill_pkg) > 0;
+
+    # calculate fees...
     my @fee_items;
     foreach my $event_fee (@pending_event_fees) {
       my $object = $event_fee->cust_event->cust_X;
+      my $part_fee = $event_fee->part_fee;
+
       my $cust_bill;
       if ( $object->isa('FS::cust_main') ) {
         # Not the real cust_bill object that will be inserted--in particular
@@ -569,7 +573,6 @@ sub bill {
         # etc.)
         $cust_bill = $object;
       }
-      my $part_fee = $event_fee->part_fee;
       # if the fee def belongs to a different agent, don't charge the fee.
       # event conditions should prevent this, but just in case they don't,
       # skip the fee.
@@ -585,7 +588,15 @@ sub bill {
       # link this so that we can clear the marker on inserting the line item
       $fee_item->set('cust_event_fee', $event_fee);
       push @fee_items, $fee_item;
+
+      $generate_bill = 1 unless $part_fee->nextbill;
     }
+    
+    # don't create an invoice with no line items, or where the only line 
+    # items are fees that are supposed to be held until the next invoice
+    next if !$generate_bill;
+
+    # add fees to the invoice
     foreach my $fee_item (@fee_items) {
 
       push @cust_bill_pkg, $fee_item;

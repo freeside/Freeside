@@ -20,6 +20,7 @@
     'minimum'       => 'Minimum fee',
     'maximum'       => 'Maximum fee',
     'limit_credit'  => 'Limit to customer credit balance',
+    'nextbill'      => 'Hold until the customer\'s next invoice',
     %locale_labels
   },
   'fields'        => \@fields,
@@ -82,6 +83,11 @@ my @fields = (
   },
 
   { field   => 'disabled',
+    type    => 'checkbox',
+    value   => 'Y',
+  },
+
+  { field   => 'nextbill',
     type    => 'checkbox',
     value   => 'Y',
   },

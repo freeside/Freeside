@@ -3148,6 +3148,7 @@ sub tables_hashref {
         'limit_credit',  'char',    'NULL',  1, '', '',
         'setuprecur',    'char',     '',     5, '', '',
         'taxable',       'char',    'NULL',  1, '', '',
+        'nextbill',      'char',    'NULL',  1, '', '',
       ],
       'primary_key'  => 'feepart',
       'unique'       => [],

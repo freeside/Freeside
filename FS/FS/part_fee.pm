@@ -54,6 +54,9 @@ the invoice
 Currently, taxable fees will be treated like they exist at the customer's
 default service location.
 
+=item nextbill - 'Y' if this fee should be delayed until the customer is 
+billed for a package.
+
 =item taxclass - the tax class the fee belongs to, as a string, for the 
 internal tax system
 
@@ -127,6 +130,7 @@ sub check {
   my $self = shift;
 
   $self->set('amount', 0) unless $self->amount;
+  $self->set('percent', 0) unless $self->percent;
 
   my $error = 
     $self->ut_numbern('feepart')
@@ -134,14 +138,15 @@ sub check {
     || $self->ut_flag('disabled')
     || $self->ut_foreign_keyn('classnum', 'pkg_class', 'classnum')
     || $self->ut_flag('taxable')
+    || $self->ut_flag('nextbill')
     || $self->ut_textn('taxclass')
     || $self->ut_numbern('taxproductnum')
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
     || $self->ut_agentnum_acl('agentnum',
                               [ 'Edit global package definitions' ])
-    || $self->ut_moneyn('amount')
-    || $self->ut_floatn('percent')
+    || $self->ut_money('amount')
+    || $self->ut_float('percent')
     || $self->ut_moneyn('minimum')
     || $self->ut_moneyn('maximum')
     || $self->ut_flag('limit_credit')
