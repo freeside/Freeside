@@ -33,7 +33,12 @@ my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 my %query = ( 'table' => 'sales' );
 my $count_query = "SELECT COUNT(*) FROM sales";
 
-my $salesnum;
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $query{hashref}->{agentnum} = $1;
+  $count_query .= " WHERE agentnum = $1";
+}
+
+my $salesnum = '';
 if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
   $salesnum = $1;
 } else {
