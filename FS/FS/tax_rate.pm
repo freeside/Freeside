@@ -371,7 +371,7 @@ sub passtype_name {
   $tax_passtypes{$self->passtype};
 }
 
-=item taxline TAXABLES, [ OPTIONSHASH ]
+=item taxline TAXABLES
 
 Returns a listref of a name and an amount of tax calculated for the list
 of packages/amounts referenced by TAXABLES.  If an error occurs, a message
@@ -381,13 +381,13 @@ is returned as a scalar.
 
 sub taxline {
   my $self = shift;
+  # this used to accept a hash of options but none of them did anything
+  # so it's been removed.
 
   my $taxables;
-  my %opt = ();
 
   if (ref($_[0]) eq 'ARRAY') {
     $taxables = shift;
-    %opt = @_;
   }else{
     $taxables = [ @_ ];
     #exemptions would be broken in this case

@@ -373,6 +373,10 @@ if ( -e $addl_handler_use_file ) {
   use FS::pbx_device;
   use FS::extension_device;
   use FS::cust_main_credit_limit;
+  use FS::cust_event_fee;
+  use FS::part_fee;
+  use FS::cust_bill_pkg_fee;
+  use FS::part_fee_msgcat;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

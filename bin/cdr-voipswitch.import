@@ -122,7 +122,7 @@ my $row;
 while ( $row = $sth->fetchrow_hashref ) {
 
   my $ip = $row->{ip_number};
-  if ( $ip =~ /^([\d\.]+)\/([\d\.]*)$/ ) {
+  if ( $ip =~ /^([\d\.]+)\/([\d\.]*)/ ) {
     $ip = $1;
     #$nat_ip = $2;
   }
@@ -144,7 +144,7 @@ while ( $row = $sth->fetchrow_hashref ) {
       uniqueid                => $row->{id_cc},
       orig_call_id            => $row->{clid},
       billsec                 => $row->{effective_duration},
-      lastdata                => $row->{dtmf},
+      #lastdata                => $row->{dtmf},
       disposition             => $row->{call_data},
 
       cdrbatchnum   => $cdrbatchnum,

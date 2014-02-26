@@ -35,6 +35,25 @@
     </TD>
     <& services.html, %iopt &>
   </TR>
+% # insert hidden predecessors to this package, if any
+% # and a rolldown button to show them
+% # (we'll make it do something later)
+% if ( $cust_pkg->get('changed_from_pkg') ) {
+  <TR CLASS="row<% $row % 2 %>">
+    <TD COLSPAN=4>
+    <BUTTON CLASS="rolldown_button"
+            ID="rolldown_<% $cust_pkg->change_pkgnum %>">
+      History &#x2b07;
+    </BUTTON>
+% # the hidden block here has ID="cust_pkgX" where X is the first pkgnum
+% # it contains.
+    <& hidden.html, $cust_pkg->get('changed_from_pkg'),
+       %iopt,
+       'next_pkg' => $cust_pkg,
+    &>
+    </TD>
+  </TR>
+% }
 % $row++;
 % # show the change target, if there is one
 % if ( $cust_pkg->change_to_pkg ) {

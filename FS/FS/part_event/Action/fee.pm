@@ -1,5 +1,7 @@
 package FS::part_event::Action::fee;
 
+# DEPRECATED; will most likely be removed in 4.x
+
 use strict;
 use base qw( FS::part_event::Action );
 
@@ -53,11 +55,9 @@ sub _calc_fee {
       my $part_pkg = FS::part_pkg->new({
           taxclass => $self->option('taxclass')
       });
-      my $error = $cust_main->_handle_taxes(
-        FS::part_pkg->new({ taxclass => ($self->option('taxclass') || '') }),
-        $taxlisthash,
-        $charge,
-        FS::cust_pkg->new({custnum => $cust_main->custnum}),
+      my $error = $cust_main->_handle_taxes( $taxlisthash, $charge,
+        location  => $cust_main->ship_location,
+        part_item => $part_pkg,
       );
       if ( $error ) {
         warn "error estimating taxes for breakage charge: custnum ".$cust_main->custnum."\n";

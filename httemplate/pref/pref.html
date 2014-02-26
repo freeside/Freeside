@@ -78,6 +78,22 @@ Interface
     </TD>
   </TR>
 
+  <TR>
+    <TH ALIGN="right">Hide package changes: </TH>
+    <TD>
+    <& /elements/select.html,
+      field   => 'hide_package_changes',
+      options => [ '', 'location', 'all' ],
+      labels  => { ''         => 'never',
+                   'location' => 'location changes',
+                   'all'      => 'all package changes',
+                 },
+      curr_value => ($cgi->param('hide_package_changes') 
+                      || $curuser->option('hide_package_changes')),
+    &>
+    </TD>
+  </TR>
+
 % my $history_order = $curuser->option('history_order') || 'oldest';
   <TR>
     <TH ALIGN="right">Customer history sort order: </TH>

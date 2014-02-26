@@ -1,0 +1,55 @@
+% if (!$iopt{noframe}) {
+%   # then start the block here, and assign a suitable ID (cust_pkgX_block)
+<TABLE CLASS="hiddenrows" STYLE="display: none" ID="<% $id %>_block">
+% }
+  <TR ID="<% $id %>">
+    <TD>
+      <A NAME="<% $id %>"/>
+      <% $pkgnum %>
+    </TD>
+    <TD>
+%     if ( $pkgpart_change and $location_change ) {
+      Package type and location change
+%     } elsif ( $pkgpart_change ) {
+      Package type change
+%     } elsif ( $location_change ) {
+      Location change
+%     } # or else what?
+      <B><% time2str('%b %o, %Y', $cust_pkg->get('cancel')) %></B>
+    </TD><TD>
+%     if ( $pkgpart_change ) {
+      from <B><% $part_pkg->pkg |h %></B></A> - <% $part_pkg->custom_comment |h %>
+%     }
+%     if ( $pkgpart_change and $location_change ) {
+      <BR>
+%     }
+%     if ( $location_change ) {
+      from <I><% $cust_pkg->location_label %></I>
+%     }
+    </TD>
+  </TR>
+% if ( $cust_pkg->get('changed_from_pkg') ) {
+<& hidden.html, $cust_pkg->get('changed_from_pkg'),
+                %iopt,
+                'next_pkg' => $cust_pkg,
+                'noframe' => 1
+&>
+% }
+% if ( !$iopt{noframe} ) {
+</TABLE>
+% }
+<%init>
+my $cust_pkg = shift;
+my $part_pkg = $cust_pkg->part_pkg;
+my %iopt = @_;
+my $next = delete($iopt{'next_pkg'});
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $pkgnum = $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '';
+
+my $id = "cust_pkg".$cust_pkg->pkgnum;
+
+my $pkgpart_change = ($next->pkgpart != $cust_pkg->pkgpart);
+my $location_change = ($next->locationnum != $cust_pkg->locationnum);
+my $both_change = $pkgpart_change && $location_change;
+
+</%init>

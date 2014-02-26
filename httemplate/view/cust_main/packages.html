@@ -22,8 +22,62 @@ table.usage {
 .row0 { background-color: #eeeeee; }
 .row1 { background-color: #ffffff; }
 
-</STYLE>
+table.hiddenrows {
+  width: 80%;
+  margin-left: 100px;
+  border: 1px solid #7E0079;
+  background-color: #cccccc;
+}
 
+.hiddenrows td {
+  text-align: center;
+}
+
+.rolldown_button {
+  min-width: 80px;
+  margin-left: 100px;
+  min-height: 20px;
+  background-color: #efefef;
+  border: 1px solid #7e0079;
+  z-index: 1;
+  text-align: center;
+}
+</STYLE>
+% # activate rolldown buttons for hidden package blocks
+<SCRIPT TYPE="text/javascript">
+function toggle_rolldown() {
+  var up_arrow = <% decode_entities('&#x2b06') |js_string %>;
+  var dn_arrow = <% decode_entities('&#x2b07') |js_string %>;
+  var pkgnum = this.id.replace('rolldown_', '');
+  var hidden = document.getElementById('cust_pkg'+pkgnum+'_block');
+  if (hidden.style.display == 'none') {
+    hidden.style.display = '';
+    this.textContent = this.textContent.replace(dn_arrow, up_arrow);
+  } else {
+    hidden.style.display = 'none';
+    this.textContent = this.textContent.replace(up_arrow, dn_arrow);
+  }
+}
+<&| /elements/onload.js &>
+var el;
+% if ( $cgi->param('fragment') =~ /^cust_pkg(\d+)$/ ) {
+% # IE-specific hack, but also unhide the row if it's in a hidden block
+el = document.getElementById('cust_pkg<% $1 %>');
+% }
+var all_buttons = document.getElementsByClassName('rolldown_button');
+for (var i = 0; i < all_buttons.length; i++) {
+  all_buttons[i].onclick = toggle_rolldown;
+  var block_id = all_buttons[i].id.replace('rolldown_', '');
+  if ( el && document.getElementById('cust_pkg'+block_id+'_block')
+                     .contains(el)
+     ) {
+    // then toggle it now
+    all_buttons[i].click();
+  }
+}
+if ( el ) el.scrollIntoView(true);
+</&>
+</SCRIPT>
 % unless ( $opt{no_links} ) {
 
 %   my $s = 0;
@@ -124,7 +178,7 @@ table.usage {
 % if ( $conf->exists('cust_pkg-group_by_location') ) {
 <& locations.html,
     'cust_main'     => $cust_main,
-    'packages'      => $packages,
+    'packages'      => \@packages,
     %opt,
  &>
 % }
@@ -133,7 +187,7 @@ table.usage {
 <& /elements/table-grid.html &>
 <& packages/section.html,
     'cust_main'     => $cust_main,
-    'packages'      => $packages,
+    'packages'      => \@packages,
     %opt,
  &>
 </TABLE>
@@ -141,15 +195,6 @@ table.usage {
     </TD>
   </TR>
 
-% if ( $cgi->param('fragment') =~ /^cust_pkg(\d+)$/ ) {
-  <SCRIPT>
-    // IE-specific hack.  other browsers listen to #fragments
-    // is this even working?  or is the #target redirection just working cause
-    // we set the URL params differently?
-    var el = document.getElementById( 'cust_pkg<% $1 %>' );
-    if ( el ) el.scrollIntoView(true);
-  </SCRIPT>
-% }
 </TABLE>
 <%init>
 
@@ -159,94 +204,113 @@ my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my( $packages, $num_old_packages ) = get_packages($cust_main, $conf);
-
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
-#subroutines
 
-sub get_packages {
-  my $cust_main = shift or return undef;
-  my $conf = shift;
+my $hide_changed = $curuser->option('hide_package_changes');
 
-  my $method;
-  if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
-     || ( $conf->exists('hidecancelledpackages')
-           && ! $cgi->param('showcancelledpackages') )
-     )
-  {
-    $method = 'ncancelled_pkgs';
-  } else {
-    $method = 'all_pkgs';
-  }
-
-  my $cust_pkg_fields =
-    join(', ', map { "cust_pkg.$_ AS $_"          } fields('cust_pkg') );
-
-  my $part_pkg_fields =
-    join(', ', map { "part_pkg.$_ AS part_pkg_$_" } fields('part_pkg') );
-
-  my $group_by =
-    join(', ', map "cust_pkg.$_", fields('cust_pkg') ). ', '.
-    join(', ', map "part_pkg.$_", fields('part_pkg') );
-
-  my $num_svcs = '( SELECT COUNT(*) FROM cust_svc '.
-                 '    WHERE cust_svc.pkgnum = cust_pkg.pkgnum ) AS num_svcs';
-
-  my @packages = $cust_main->$method( {
-    'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
-    'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
-  } );
-  my $num_old_packages = scalar(@packages);
-
-  my %change_to_from; # target pkgnum => current cust_pkg, for future changes
-
-  foreach my $cust_pkg ( @packages ) {
-    my %hash = $cust_pkg->hash;
-    my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
-                   grep { /^part_pkg_/ } keys %hash;
-    $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
-    if ( $cust_pkg->change_to_pkgnum ) {
-      $change_to_from{$cust_pkg->change_to_pkgnum} = $cust_pkg;
-    }
-  }
-
-  if ( keys %change_to_from ) {
-    my @not_future_packages;
-    foreach my $cust_pkg (@packages) {
-      if ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
-        my $change_from = $change_to_from{ $cust_pkg->pkgnum };
-        $cust_pkg->set('change_from_pkg', $change_from);
-        $change_from->set('change_to_pkg', $cust_pkg);
-      } else {
-        push @not_future_packages, $cust_pkg;
-      }
-    }
-    @packages = @not_future_packages;
-  }
-
-  unless ( $cgi->param('showoldpackages') ) {
-    my $years = $conf->config('cust_main-packages-years') || 2;
-    my $then = time - $years * 31556926; #60*60*24*365.2422 is close enough
-
-    my %hide = ( 'cancelled'       => 'cancel',
-                 'one-time charge' => 'setup',
-               );
-  
-    @packages =
-      grep { !exists($hide{$_->status}) or $_->get($hide{$_->status}) > $then
-             or $_->num_svcs #don't hide packages w/services
-           }
-           @packages;
-  }
-
-  $num_old_packages -= scalar(@packages);
-  
-  # don't include supplemental packages in this list; they'll be found from
-  # their main packages
-  # (as will change-target packages)
-  @packages = grep !$_->main_pkgnum, @packages;
-
-  ( \@packages, $num_old_packages );
+my $hide_cancelled = 0;
+if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
+   || ( $conf->exists('hidecancelledpackages')
+         && ! $cgi->param('showcancelledpackages') )
+   )
+{
+  $hide_cancelled = 1;
 }
+
+my $cust_pkg_fields =
+  join(', ', map { "cust_pkg.$_ AS $_"          } fields('cust_pkg') );
+
+my $part_pkg_fields =
+  join(', ', map { "part_pkg.$_ AS part_pkg_$_" } fields('part_pkg') );
+
+my $group_by =
+  join(', ', map "cust_pkg.$_", fields('cust_pkg') ). ', '.
+  join(', ', map "part_pkg.$_", fields('part_pkg') );
+
+my $num_svcs = '( SELECT COUNT(*) FROM cust_svc '.
+               '    WHERE cust_svc.pkgnum = cust_pkg.pkgnum ) AS num_svcs';
+
+# don't exclude cancelled packages at this stage
+my @packages = $cust_main->all_pkgs( {
+  'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
+  'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
+} );
+
+my %change_to_from; # target pkgnum => current cust_pkg, for future changes
+my %changed_from; # old pkgnum => new cust_pkg, for past changes
+
+foreach my $cust_pkg ( @packages ) {
+  my %hash = $cust_pkg->hash;
+  my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
+                 grep { /^part_pkg_/ } keys %hash;
+  $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
+  if ( $cust_pkg->change_to_pkgnum ) {
+    $change_to_from{$cust_pkg->change_to_pkgnum} = $cust_pkg;
+  }
+  if ( $cust_pkg->change_pkgnum ) {
+    $changed_from{$cust_pkg->change_pkgnum} = $cust_pkg;
+  }
+}
+
+# filter out hidden package changes
+if ( keys %change_to_from or keys %changed_from ) {
+  my @displayable_packages;
+  foreach my $cust_pkg (@packages) {
+    if ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
+      # $cust_pkg is an ordered, not-yet-active package change target
+      my $change_from = $change_to_from{ $cust_pkg->pkgnum };
+      $cust_pkg->set('change_from_pkg', $change_from);
+      $change_from->set('change_to_pkg', $cust_pkg);
+    } elsif ( exists( $changed_from{$cust_pkg->pkgnum} ) ) {
+      # $cust_pkg is a canceled package changed into another packge
+      my $changed_to = $changed_from{$cust_pkg->pkgnum};
+      if ( ( $hide_changed eq 'all' ) or
+           ( $hide_changed eq 'location' 
+              and $changed_to->pkgpart  == $cust_pkg->pkgpart
+              and $changed_to->refnum   == $cust_pkg->refnum
+              and $changed_to->quantity == $cust_pkg->quantity )
+      ) {
+        # then we're hiding it
+        $cust_pkg->set('changed_to_pkg', $changed_to);
+        $changed_to->set('changed_from_pkg', $cust_pkg);
+      } else { # show it anyway
+        push @displayable_packages, $cust_pkg;
+      }
+    } else {
+      push @displayable_packages, $cust_pkg;
+    }
+  }
+  @packages = @displayable_packages;
+}
+
+# filter all cancelled packages if the user wants
+if ( $hide_cancelled ) {
+  @packages = grep { !$_->get('cancel') } @packages;
+}
+
+# filter out 'old' packages
+my $num_old_packages = scalar(@packages);
+
+unless ( $cgi->param('showoldpackages') ) {
+  my $years = $conf->config('cust_main-packages-years') || 2;
+  my $then = time - $years * 31556926; #60*60*24*365.2422 is close enough
+
+  my %hide = ( 'cancelled'       => 'cancel',
+               'one-time charge' => 'setup',
+             );
+
+  @packages =
+    grep { !exists($hide{$_->status}) or $_->get($hide{$_->status}) > $then
+           or $_->num_svcs #don't hide packages w/services
+         }
+         @packages;
+}
+
+$num_old_packages -= scalar(@packages);
+
+# don't include supplemental packages in this list; they'll be found from
+# their main packages
+# (as will change-target packages)
+@packages = grep !$_->main_pkgnum, @packages;
 
 </%init>

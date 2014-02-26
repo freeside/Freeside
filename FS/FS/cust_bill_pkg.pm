@@ -11,6 +11,7 @@ use FS::cust_pkg;
 use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
 use FS::cust_bill_pkg_discount;
+use FS::cust_bill_pkg_fee;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 use FS::cust_tax_exempt_pkg;
@@ -46,8 +47,8 @@ FS::cust_bill_pkg - Object methods for cust_bill_pkg records
 =head1 DESCRIPTION
 
 An FS::cust_bill_pkg object represents an invoice line item.
-FS::cust_bill_pkg inherits from FS::Record.  The following fields are currently
-supported:
+FS::cust_bill_pkg inherits from FS::Record.  The following fields are
+currently supported:
 
 =over 4
 
@@ -220,8 +221,7 @@ sub insert {
         # XXX if we ever do tax-on-tax for these, this will have to change
         # since pkgnum will be zero
         $link->set('pkgnum', $taxable_cust_bill_pkg->pkgnum);
-        $link->set('locationnum', 
-          $taxable_cust_bill_pkg->cust_pkg->tax_locationnum);
+        $link->set('locationnum', $taxable_cust_bill_pkg->tax_locationnum);
         $link->set('taxable_cust_bill_pkg', '');
       }
 
@@ -253,6 +253,52 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting cust_bill_pkg_tax_rate_location: $error";
       }
+    }
+  }
+
+  my $fee_links = $self->get('cust_bill_pkg_fee');
+  if ( $fee_links ) {
+    foreach my $link ( @$fee_links ) {
+      # very similar to cust_bill_pkg_tax_location, for obvious reasons
+      next if $link->billpkgfeenum; # don't try to double-insert
+
+      my $target = $link->get('cust_bill_pkg'); # the line item of the fee
+      my $base = $link->get('base_cust_bill_pkg'); # line item it was based on
+
+      if ( $target and $target->billpkgnum ) {
+        $link->set('billpkgnum', $target->billpkgnum);
+        # base_invnum => null indicates that the fee is based on its own
+        # invoice
+        $link->set('base_invnum', $target->invnum) unless $link->base_invnum;
+        $link->set('cust_bill_pkg', '');
+      }
+
+      if ( $base and $base->billpkgnum ) {
+        $link->set('base_billpkgnum', $base->billpkgnum);
+        $link->set('base_cust_bill_pkg', '');
+      } elsif ( $base ) {
+        # it's based on a line item that's not yet inserted
+        my $link_array = $base->get('cust_bill_pkg_fee') || [];
+        push @$link_array, $link;
+        $base->set('cust_bill_pkg_fee' => $link_array);
+        next; # don't insert the link yet
+      }
+
+      $error = $link->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting cust_bill_pkg_fee: $error";
+      }
+    } # foreach my $link
+  }
+
+  my $cust_event_fee = $self->get('cust_event_fee');
+  if ( $cust_event_fee ) {
+    $cust_event_fee->set('billpkgnum' => $self->billpkgnum);
+    $error = $cust_event_fee->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error updating cust_event_fee: $error";
     }
   }
 
@@ -903,6 +949,50 @@ sub credited {
   $self->scalar_sql('SELECT '. $self->credited_sql(@_).' FROM cust_bill_pkg WHERE billpkgnum = ?', $self->billpkgnum);
 }
 
+=item tax_locationnum
+
+Returns the L<FS::cust_location> number that this line item is in for tax
+purposes.  For package sales, it's the package tax location; for fees, 
+it's the customer's default service location.
+
+=cut
+
+sub tax_locationnum {
+  my $self = shift;
+  if ( $self->pkgnum ) { # normal sales
+    return $self->cust_pkg->tax_locationnum;
+  } elsif ( $self->feepart ) { # fees
+    return $self->cust_bill->cust_main->ship_locationnum;
+  } else { # taxes
+    return '';
+  }
+}
+
+sub tax_location {
+  my $self = shift;
+  FS::cust_location->by_key($self->tax_locationnum);
+}
+
+=item part_X
+
+Returns the L<FS::part_pkg> or L<FS::part_fee> object that defines this
+charge.  If called on a tax line, returns nothing.
+
+=cut
+
+sub part_X {
+  my $self = shift;
+  if ( $self->override_pkgpart ) {
+    return FS::part_pkg->by_key($self->override_pkgpart);
+  } elsif ( $self->pkgnum ) {
+    return $self->cust_pkg->part_pkg;
+  } elsif ( $self->feepart ) {
+    return $self->part_fee;
+  } else {
+    return;
+  }
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -926,9 +1016,10 @@ sub usage_sql { $usage_sql }
 # this makes owed_sql, etc. much more concise
 sub charged_sql {
   my ($class, $start, $end, %opt) = @_;
+  my $setuprecur = $opt{setuprecur} || '';
   my $charged = 
-    $opt{setuprecur} =~ /^s/ ? 'cust_bill_pkg.setup' :
-    $opt{setuprecur} =~ /^r/ ? 'cust_bill_pkg.recur' :
+    $setuprecur =~ /^s/ ? 'cust_bill_pkg.setup' :
+    $setuprecur =~ /^r/ ? 'cust_bill_pkg.recur' :
     'cust_bill_pkg.setup + cust_bill_pkg.recur';
 
   if ($opt{no_usage} and $charged =~ /recur/) { 
@@ -964,10 +1055,9 @@ sub paid_sql {
   my ($class, $start, $end, %opt) = @_;
   my $s = $start ? "AND cust_pay._date <= $start" : '';
   my $e = $end   ? "AND cust_pay._date >  $end"   : '';
-  my $setuprecur = 
-    $opt{setuprecur} =~ /^s/ ? 'setup' :
-    $opt{setuprecur} =~ /^r/ ? 'recur' :
-    '';
+  my $setuprecur = $opt{setuprecur} || '';
+  $setuprecur = 'setup' if $setuprecur =~ /^s/;
+  $setuprecur = 'recur' if $setuprecur =~ /^r/;
   $setuprecur &&= "AND setuprecur = '$setuprecur'";
 
   my $paid = "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
@@ -993,10 +1083,9 @@ sub credited_sql {
   my ($class, $start, $end, %opt) = @_;
   my $s = $start ? "AND cust_credit._date <= $start" : '';
   my $e = $end   ? "AND cust_credit._date >  $end"   : '';
-  my $setuprecur = 
-    $opt{setuprecur} =~ /^s/ ? 'setup' :
-    $opt{setuprecur} =~ /^r/ ? 'recur' :
-    '';
+  my $setuprecur = $opt{setuprecur} || '';
+  $setuprecur = 'setup' if $setuprecur =~ /^s/;
+  $setuprecur = 'recur' if $setuprecur =~ /^r/;
   $setuprecur &&= "AND setuprecur = '$setuprecur'";
 
   my $credited = "( SELECT COALESCE(SUM(cust_credit_bill_pkg.amount),0)

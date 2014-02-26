@@ -15,11 +15,11 @@
 
 foreach my $table (qw(
   part_export_option
-  payment_gateway
   payment_gateway_option
+  payment_gateway
   agent_payment_gateway
-  queue
   queue_arg
+  queue
   cust_pay_batch
 )) {
   print "DELETE FROM $table;\n";
