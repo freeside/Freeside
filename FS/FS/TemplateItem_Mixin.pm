@@ -62,7 +62,9 @@ sub desc {
 
   if ( $self->pkgnum > 0 ) {
     $self->itemdesc || $self->part_pkg->pkg_locale($locale);
-  } else {
+  } elsif ( $self->feepart ) {
+    $self->part_fee->itemdesc_locale($locale);
+  } else { # by the process of elimination it must be a tax
     my $desc = $self->itemdesc || 'Tax';
     $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
     $desc;

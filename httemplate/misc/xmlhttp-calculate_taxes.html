@@ -62,14 +62,7 @@ if ( $sub eq 'calculate_taxes' ) {
 
     my $taxlisthash = {};
     foreach my $cust_bill_pkg (values %cust_bill_pkg) {
-      my $part_pkg = $cust_bill_pkg->part_pkg;
-      $cust_main->_handle_taxes( $part_pkg,
-                                 $taxlisthash,
-                                 $cust_bill_pkg,
-                                 $cust_bill_pkg->cust_pkg,
-                                 $cust_bill_pkg->cust_bill->_date,
-                                 $cust_bill_pkg->cust_pkg->pkgpart,
-                               );
+      $cust_main->_handle_taxes( $taxlisthash, $cust_bill_pkg );
     }
     my $listref_or_error = 
       $cust_main->calculate_taxes( [ values %cust_bill_pkg ], $taxlisthash, [ values %cust_bill_pkg ]->[0]->cust_bill->_date );

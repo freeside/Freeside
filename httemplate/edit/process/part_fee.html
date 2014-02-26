@@ -1,0 +1,20 @@
+<& elements/process.html,
+  'debug'             => 1,
+  'table'             => 'part_fee',
+  'agent_virt'        => 1,
+  'agent_null_right'  => 'Edit global fee definitions',
+  'viewall_dir'       => 'browse',
+  'process_o2m'       => {
+                            'table'   => 'part_fee_msgcat',
+                            'fields'  => [ 'locale', 'itemdesc' ],
+                         },
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $acl_edit = $curuser->access_right('Edit fee definitions');
+my $acl_edit_global = $curuser->access_right('Edit global fee definitions');
+die "access denied"
+  unless $acl_edit or $acl_edit_global;
+
+</%init>

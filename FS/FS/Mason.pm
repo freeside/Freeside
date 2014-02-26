@@ -352,6 +352,10 @@ if ( -e $addl_handler_use_file ) {
   use FS::alarm_station;
   use FS::addr_range;
   use FS::pbx_extension;
+  use FS::cust_event_fee;
+  use FS::part_fee;
+  use FS::cust_bill_pkg_fee;
+  use FS::part_fee_msgcat;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

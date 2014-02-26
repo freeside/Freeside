@@ -1,0 +1,141 @@
+<& elements/edit.html,
+  'name_singular' => 'fee definition',
+  'table'         => 'part_fee',
+  'labels'        => {
+    'feepart'       => 'Fee definition',
+    'itemdesc'      => 'Description',
+    'comment'       => 'Comment (customer-hidden)',
+    'classnum'      => 'Package class',
+    'taxable'       => 'This fee is taxable',
+    'disabled'      => 'Disable this fee',
+    'taxclass'      => 'Tax class name',
+    'taxproductnum' => 'Tax product',
+    'pay_weight'    => 'Payment weight',
+    'credit_weight' => 'Credit weight',
+    'agentnum'      => 'Agent',
+    'amount'        => 'Flat fee amount',
+    'percent'       => 'Percentage of invoice amount',
+    'basis'         => 'Based on',
+    'setuprecur'    => 'Report this fee as',
+    'minimum'       => 'Minimum fee',
+    'maximum'       => 'Maximum fee',
+    'limit_credit'  => 'Limit to customer credit balance',
+    %locale_labels
+  },
+  'fields'        => \@fields,
+  'edit_callback'   => $edit_callback,
+  'error_callback'  => $error_callback,
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $acl_edit = $curuser->access_right('Edit fee definitions');
+my $acl_edit_global = $curuser->access_right('Edit global fee definitions');
+die "access denied"
+  unless $acl_edit or $acl_edit_global;
+
+my $conf = FS::Conf->new;
+my @tax_fields;
+if ( $conf->exists('enable_taxproducts') ) {
+  @tax_fields = (
+    { field => 'taxproductnum', type => 'select-taxproduct' }
+  );
+} else {
+  @tax_fields = (
+    { field => 'taxable', type => 'checkbox', value => 'Y' },
+  );
+  push (
+    { field => 'taxclass', type => 'select-taxclass' },
+  ) if $conf->exists('enable_taxclasses');
+}
+
+my $default_locale = $conf->config('locale') || 'en_US';
+my @locales = grep {$_ ne $default_locale} $conf->config('available-locales');
+# duplicates edit/part_pkg.cgi, yuck
+my $n = 0;
+my (@locale_fields, %locale_labels);
+foreach (@locales) {
+  push @locale_fields,
+    { field => 'feepartmsgnum'. $n,               type => 'hidden' },
+    { field => 'feepartmsgnum'. $n. '_locale',    type => 'hidden' },
+    { field => 'feepartmsgnum'. $n. '_itemdesc',  type => 'text', size => 40 },
+  ;
+  $locale_labels{ 'feepartmsgnum'.$n.'_itemdesc' } =
+    'Description&mdash;' . FS::Locales->description($_);
+  $n++;
+}
+
+my @fields = (
+
+  { field   => 'itemdesc',  type    => 'text', size    => 40, },
+  @locale_fields,
+
+  { field   => 'comment',   type    => 'text', size    => 40, },
+
+  { field   => 'agentnum',
+    type    => 'select-agent',
+    disable_empty => !$acl_edit_global,
+    empty_label   => '(global)',
+  },
+
+  { field   => 'classnum',
+    type    => 'select-pkg_class',
+  },
+
+  { field   => 'disabled',
+    type    => 'checkbox',
+    value   => 'Y',
+  },
+
+  { field   => 'setuprecur',
+    type    => 'select',
+    options => [ 'setup', 'recur' ],
+    labels  => { 'setup'  => 'a setup fee',
+                 'recur'  => 'a recurring charge' },
+  },
+
+  { type => 'justtitle', value => 'Fee calculation' },
+  { field   => 'amount',  type    => 'money', },
+  { field   => 'percent', type    => 'percentage', },
+
+  { field   => 'basis',
+    type    => 'select',
+    options => [ 'charged', 'owed' ],
+    labels  => { 'charged' => 'amount charged',
+                 'owed'    => 'balance due', },
+  },
+
+  { field   => 'minimum', type    => 'money', },
+  { field   => 'maximum', type    => 'money', },
+  { field   => 'limit_credit',
+    type    => 'checkbox',
+    value   => 'Y' },
+
+  { type => 'justtitle', value => 'Taxation' },
+
+  @tax_fields,
+);
+
+my $edit_callback = sub {
+  my ($cgi, $obj, $fields, $opt) = @_;
+  my %existing_locales;
+  if ( $obj->feepart ) {
+    %existing_locales = map { $_->locale => $_ } $obj->part_fee_msgcat;
+  }
+  my $n = 0;
+  foreach (@locales) {
+    $obj->set('feepartmsgnum'.$n.'_locale', $_);
+    # load the existing itemdescs
+    if ( my $msgcat = $existing_locales{$_} ) {
+      $obj->set('feepartmsgnum'.$n, $msgcat->feepartmsgnum);
+      $obj->set('feepartmsgnum'.$n.'_itemdesc', $msgcat->itemdesc);
+    } 
+    # then override that with the CGI param if there is one
+    if ( my $itemdesc = $cgi->param('feepartmsgnum'.$n.'_itemdesc') ) {
+      $obj->set('feepartmsgnum'.$n.'_itemdesc', $itemdesc);
+    }
+    $n++;
+  }
+};
+
+my $error_callback = $edit_callback;
+</%init>

@@ -130,9 +130,9 @@ Filtering parameters:
 - use_override: Apply "classnum" and "taxclass" filtering based on the 
   override (bundle) pkgpart, rather than always using the true pkgpart.
 
-- nottax: Limit to items that are not taxes (pkgnum > 0).
+- nottax: Limit to items that are not taxes (pkgnum > 0 or feepart > 0).
 
-- istax: Limit to items that are taxes (pkgnum == 0).
+- istax: Limit to items that are taxes (pkgnum == 0 and feepart = null).
 
 - taxnum: Limit to items whose tax definition matches this taxnum.
   With "nottax" that means items that are subject to that tax;
@@ -281,7 +281,8 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
 # we want the package and its definition if available
 my $join_pkg = 
 ' LEFT JOIN cust_pkg      USING (pkgnum) 
-  LEFT JOIN part_pkg      USING (pkgpart)';
+  LEFT JOIN part_pkg      USING (pkgpart)
+  LEFT JOIN part_fee      USING (feepart)';
 
 my $part_pkg = 'part_pkg';
 # "Separate sub-packages from parents"
@@ -295,12 +296,16 @@ if ( $use_override ) {
   $part_pkg = 'override';
 }
 push @select, "$part_pkg.pkgpart", "$part_pkg.pkg";
-push @select, "$part_pkg.taxclass" if $conf->exists('enable_taxclasses');
+push @select, "COALESCE($part_pkg.taxclass, part_fee.taxclass) AS taxclass"
+  if $conf->exists('enable_taxclasses');
 
 # the non-tax case
 if ( $cgi->param('nottax') ) {
 
-  push @where, 'cust_bill_pkg.pkgnum > 0';
+  push @select, "part_fee.itemdesc";
+
+  push @where,
+    '(cust_bill_pkg.pkgnum > 0 OR cust_bill_pkg.feepart IS NOT NULL)';
 
   my @tax_where; # will go into a subquery
   my @exempt_where; # will also go into a subquery
@@ -311,7 +316,7 @@ if ( $cgi->param('nottax') ) {
   # N: classnum
   if ( grep { $_ eq 'classnum' } $cgi->param ) {
     my @classnums = grep /^\d+$/, $cgi->param('classnum');
-    push @where, "COALESCE($part_pkg.classnum, 0) IN ( ".
+    push @where, "COALESCE(part_fee.classnum, $part_pkg.classnum, 0) IN ( ".
                      join(',', @classnums ).
                  ' )'
       if @classnums;
@@ -336,7 +341,7 @@ if ( $cgi->param('nottax') ) {
     # effective taxclass, not the real one
     push @tax_where, 'cust_main_county.taxclass IS NULL'
   } elsif ( $cgi->param('taxclass') ) {
-    push @tax_where, "$part_pkg.taxclass IN (" .
+    push @tax_where, "COALESCE(part_fee.taxclass, $part_pkg.taxclass) IN (" .
                  join(', ', map {dbh->quote($_)} $cgi->param('taxclass') ).
                  ')';
   }
@@ -678,7 +683,7 @@ if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
     'paid'            => ($cgi->param('paid') ? 1 : 0),
     'classnum'        => scalar($cgi->param('classnum'))
   );
-  $join_pkg .= " JOIN sales_pkg_class ON ( COALESCE(sales_pkg_class.classnum, 0) = COALESCE( part_pkg.classnum, 0) )";
+  $join_pkg .= " JOIN sales_pkg_class ON ( COALESCE(sales_pkg_class.classnum, 0) = COALESCE( part_fee.classnum, part_pkg.classnum, 0) )";
 
   my $extra_sql = $subsearch->{extra_sql};
   $extra_sql =~ s/^WHERE//;
