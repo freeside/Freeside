@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $DEBUG $me $ignore_quantity );
 use Carp;
 #use Scalar::Util qw( blessed );
+use List::Util qw( max );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh str2time_sql );
 use FS::cust_pkg;
@@ -319,15 +320,26 @@ sub check {
   return "Unknown svcpart" unless $part_svc;
 
   if ( $self->pkgnum && ! $ignore_quantity ) {
-    my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
-    return "Unknown pkgnum" unless $cust_pkg;
-    ($part_svc) = grep { $_->svcpart == $self->svcpart } $cust_pkg->part_svc;
-    return "No svcpart ". $self->svcpart.
-           " services in pkgpart ". $cust_pkg->pkgpart
-      unless $part_svc || $ignore_quantity;
-    return "Already ". $part_svc->get('num_cust_svc'). " ". $part_svc->svc.
+
+    #slightly inefficient since ->pkg_svc will also look it up, but fixing
+    # a much larger perf problem and have bigger fish to fry
+    my $cust_pkg = $self->cust_pkg;
+
+    my $pkg_svc = $self->pkg_svc
+      or return "No svcpart ". $self->svcpart.
+                " services in pkgpart ". $cust_pkg->pkgpart;
+
+    my $num_cust_svc = $cust_pkg->num_cust_svc( $self->svcpart );
+
+    #false laziness w/cust_pkg->part_svc
+    my $num_avail = max( 0, ($cust_pkg->quantity || 1) * $pkg_svc->quantity
+                            - $num_cust_svc
+                       );
+
+    return "Already $num_cust_svc ". $pkg_svc->part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if !$ignore_quantity && $part_svc->get('num_avail') <= 0 ;
+      if $num_avail <= 0;
+
   }
 
   $self->SUPER::check;
