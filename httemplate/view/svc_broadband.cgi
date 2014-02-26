@@ -26,15 +26,15 @@ $labels{'coordinates'} = 'Latitude/Longitude';
 
 my @fields = (
   'description',
-  { field => 'routernum', value => \&router },
+  { field => 'routernum', value_callback => \&router },
   'speed_down',
   'speed_up',
-  { field => 'ip_addr', value => \&ip_addr },
-  { field => 'sectornum', value => \&sectornum },
-  { field => 'mac_addr', value => \&mac_addr },
+  { field => 'ip_addr', value_callback => \&ip_addr },
+  { field => 'sectornum', value_callback => \&sectornum },
+  { field => 'mac_addr', value_callback => \&mac_addr },
   #'latitude',
   #'longitude',
-  { field => 'coordinates', value => \&coordinates },
+  { field => 'coordinates', value_callback => \&coordinates },
   'altitude',
   'vlan_profile',
   'authkey',
@@ -42,7 +42,7 @@ my @fields = (
 );
 
 push @fields,
-  { field => 'usergroup', value => \&usergroup }
+  { field => 'usergroup', value_callback => \&usergroup }
   if $conf->exists('svc_broadband-radius');
 
 sub router {
