@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -50,7 +50,7 @@ package RT;
 use warnings;
 use strict;
 
-our $VERSION = '4.0.13';
+our $VERSION = '4.0.19';
 
 
 

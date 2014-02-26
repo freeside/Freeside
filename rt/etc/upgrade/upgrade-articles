@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,10 +64,8 @@ my $db_type = RT->Config->Get('DatabaseType');
 
 my $dbh = $RT::Handle->dbh;
 
-my $sth = $dbh->table_info( '', undef, undef, "'TABLE'");
 my $found_fm_tables;
-while ( my $table = $sth->fetchrow_hashref ) {
-    my $name = $table->{TABLE_NAME} || $table->{'table_name'}; # Oracle's table_info affected by NAME_lc
+foreach my $name ( $RT::Handle->_TableNames ) {
     next unless $name =~ /^fm_/i;
     $found_fm_tables->{lc $name}++;
 }
@@ -159,6 +157,7 @@ sub copy_tables {
     use RT::CustomFields;
     my $cfs = RT::CustomFields->new(RT->SystemUser);
     $cfs->Limit( FIELD => 'LookupType', VALUE => 'RT::FM::Class-RT::FM::Article' );
+    $cfs->{'find_disabled_rows'} = 1;
     while ( my $cf = $cfs->Next ) {
         my ($ret, $msg) = $cf->__Set( Field => 'LookupType', Value => 'RT::Class-RT::Article' );
         warn "Update Custom Field LookupType for CF.".$cf->Id." $msg";
@@ -169,6 +168,7 @@ sub copy_tables {
     use RT::ObjectCustomFieldValues;
     my $ocfvs = RT::ObjectCustomFieldValues->new(RT->System);
     $ocfvs->Limit( FIELD => 'ObjectType', VALUE => 'RT::FM::Article' );
+    $ocfvs->{'find_expired_rows'} = 1;
     while ( my $ocfv = $ocfvs->Next ) {
         my ($ret, $msg) = $ocfv->__Set( Field => 'ObjectType', Value => 'RT::Article' );
         warn "Updated CF ".$ocfv->__Value('CustomField')." Value for Article ".$ocfv->__Value('ObjectId');

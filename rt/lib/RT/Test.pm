@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,6 +51,7 @@ package RT::Test;
 use strict;
 use warnings;
 
+BEGIN { $^W = 1 };
 
 use base 'Test::More';
 
@@ -925,7 +926,7 @@ sub set_rights {
     $acl->Limit( FIELD => 'RightName', OPERATOR => '!=', VALUE => 'SuperUser' );
     while ( my $ace = $acl->Next ) {
         my $obj = $ace->PrincipalObj->Object;
-        if ( $obj->isa('RT::Group') && $obj->Type eq 'UserEquiv' && $obj->Instance == RT->Nobody->id ) {
+        if ( $obj->isa('RT::Group') && ($obj->Type||'') eq 'UserEquiv' && $obj->Instance == RT->Nobody->id ) {
             next;
         }
         $ace->Delete;
@@ -1502,9 +1503,7 @@ sub stop_server {
     my $in_end = shift;
     return unless @SERVERS;
 
-    my $sig = 'TERM';
-    $sig = 'INT' if $ENV{'RT_TEST_WEB_HANDLER'} eq "plack";
-    kill $sig, @SERVERS;
+    kill 'TERM', @SERVERS;
     foreach my $pid (@SERVERS) {
         if ($ENV{RT_TEST_WEB_HANDLER} =~ /^apache/) {
             sleep 1 while kill 0, $pid;

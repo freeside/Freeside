@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -382,7 +382,7 @@ sub AddAttachments {
 
 =head2 AddAttachment $attachment
 
-Takes one attachment object of L<RT::Attachmment> class and attaches it to the message
+Takes one attachment object of L<RT::Attachment> class and attaches it to the message
 we're building.
 
 =cut
@@ -397,14 +397,15 @@ sub AddAttachment {
               and $attach->TransactionObj->CurrentUserCanSee;
 
     # ->attach expects just the disposition type; extract it if we have the header
+    # or default to "attachment"
     my $disp = ($attach->GetHeader('Content-Disposition') || '')
-                    =~ /^\s*(inline|attachment)/i ? $1 : undef;
+                    =~ /^\s*(inline|attachment)/i ? $1 : "attachment";
 
     $MIMEObj->attach(
         Type        => $attach->ContentType,
         Charset     => $attach->OriginalEncoding,
         Data        => $attach->OriginalContent,
-        Disposition => $disp, # a false value defaults to inline in MIME::Entity
+        Disposition => $disp,
         Filename    => $self->MIMEEncodeString( $attach->Filename ),
         'RT-Attachment:' => $self->TicketObj->Id . "/"
             . $self->TransactionObj->Id . "/"
@@ -975,7 +976,7 @@ sub SetSubject {
 
     $subject =~ s/(\r\n|\n|\s)/ /g;
 
-    $self->SetHeader( 'Subject', $subject );
+    $self->SetHeader( 'Subject', Encode::encode_utf8( $subject ) );
 
 }
 
@@ -989,11 +990,14 @@ sub SetSubjectToken {
     my $self = shift;
 
     my $head = $self->TemplateObj->MIMEObj->head;
-    $head->replace(
-        Subject => RT::Interface::Email::AddSubjectTag(
-            Encode::decode_utf8( $head->get('Subject') ),
-            $self->TicketObj,
-        ),
+    $self->SetHeader(
+        Subject =>
+            Encode::encode_utf8(
+                RT::Interface::Email::AddSubjectTag(
+                    Encode::decode_utf8( $head->get('Subject') ),
+                    $self->TicketObj,
+                ),
+            ),
     );
 }
 

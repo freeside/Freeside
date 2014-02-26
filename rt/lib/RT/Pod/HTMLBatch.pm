@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -84,7 +84,7 @@ sub classify {
         my %page = @_;
         local $_ = $page{name};
         return 1 if /^(README|UPGRADING)/;
-        return 1 if $_ eq "RT_Config";
+        return 1 if /^RT\w*?_Config$/;
         return 1 if $_ eq "web_deployment";
         return 1 if $page{infile} =~ m{^configure(\.ac)?$};
         return 0;
@@ -174,6 +174,11 @@ sub write_contents_file {
 
 sub esc {
     Pod::Simple::HTMLBatch::esc(@_);
+}
+
+sub found {
+    my ($self, $module) = @_;
+    return grep { $_->[0] eq $module } @{$self->_contents};
 }
 
 1;

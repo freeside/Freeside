@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -78,6 +78,7 @@ sub Table { 'Principals'}
 
 sub _Init {
     my $self = shift;
+    $self->{'with_disabled_column'} = 1;
     return ( $self->SUPER::_Init(@_) );
 }
 

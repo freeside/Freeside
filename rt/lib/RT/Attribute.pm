@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -148,7 +148,7 @@ sub Create {
 		  @_);
 
     if ($args{Object} and UNIVERSAL::can($args{Object}, 'Id')) {
-	    $args{ObjectType} = ref($args{Object});
+	    $args{ObjectType} = $args{Object}->isa("RT::CurrentUser") ? "RT::User" : ref($args{Object});
 	    $args{ObjectId} = $args{Object}->Id;
     } else {
         return(0, $self->loc("Required parameter '[_1]' not specified", 'Object'));

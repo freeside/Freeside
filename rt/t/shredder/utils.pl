@@ -8,8 +8,14 @@ require RT::Test;
 
 BEGIN {
 ### after:     push @INC, qw(@RT_LIB_PATH@);
+
+    use RT;
+    RT->LoadConfig;
+    RT->InitPluginPaths;
+    RT->InitClasses;
 }
-use RT::Shredder;
+
+require RT::Shredder;
 
 =head1 DESCRIPTION
 
@@ -282,8 +288,7 @@ sub dump_sqlite
     my $old_fhkn = $dbh->{'FetchHashKeyName'};
     $dbh->{'FetchHashKeyName'} = 'NAME_lc';
 
-    my $sth = $dbh->table_info( '', '%', '%', 'TABLE' ) || die $DBI::err;
-    my @tables = keys %{$sth->fetchall_hashref( 'table_name' )};
+    my @tables = $RT::Handle->_TableNames( $dbh );
 
     my $res = {};
     foreach my $t( @tables ) {

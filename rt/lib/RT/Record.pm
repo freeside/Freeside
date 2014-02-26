@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -730,9 +730,20 @@ sub _Accessible  {
 
 }
 
-=head2 _EncodeLOB BODY MIME_TYPE
+=head2 _EncodeLOB BODY MIME_TYPE FILENAME
 
-Takes a potentially large attachment. Returns (ContentEncoding, EncodedBody) based on system configuration and selected database
+Takes a potentially large attachment. Returns (ContentEncoding,
+EncodedBody, MimeType, Filename) based on system configuration and
+selected database.  Returns a custom (short) text/plain message if
+DropLongAttachments causes an attachment to not be stored.
+
+Encodes your data as base64 or Quoted-Printable as needed based on your
+Databases's restrictions and the UTF-8ness of the data being passed in.  Since
+we are storing in columns marked UTF8, we must ensure that binary data is
+encoded on databases which are strict.
+
+This function expects to receive an octet string in order to properly
+evaluate and encode it.  It will return an octet string.
 
 =cut
 
@@ -760,7 +771,7 @@ sub _EncodeLOB {
             $MaxSize = $MaxSize * 3 / 4;
         # Some databases (postgres) can't handle non-utf8 data
         } elsif (    !$RT::Handle->BinarySafeBLOBs
-                  && $MIMEType !~ /text\/plain/gi
+                  && $Body =~ /\P{ASCII}/
                   && !Encode::is_utf8( $Body, 1 ) ) {
               $ContentEncoding = 'quoted-printable';
         }
@@ -784,7 +795,7 @@ sub _EncodeLOB {
                                    . length($Body));
                 $RT::Logger->info( "It started: " . substr( $Body, 0, 60 ) );
                 $Filename .= ".txt" if $Filename;
-                return ("none", "Large attachment dropped", "plain/text", $Filename );
+                return ("none", "Large attachment dropped", "text/plain", $Filename );
             }
         }
 
@@ -805,6 +816,27 @@ sub _EncodeLOB {
 
 }
 
+=head2 _DecodeLOB
+
+Unpacks data stored in the database, which may be base64 or QP encoded
+because of our need to store binary and badly encoded data in columns
+marked as UTF-8.  Databases such as PostgreSQL and Oracle care that you
+are feeding them invalid UTF-8 and will refuse the content.  This
+function handles unpacking the encoded data.
+
+It returns textual data as a UTF-8 string which has been processed by Encode's
+PERLQQ filter which will replace the invalid bytes with \x{HH} so you can see
+the invalid byte but won't run into problems treating the data as UTF-8 later.
+
+This is similar to how we filter all data coming in via the web UI in
+RT::Interface::Web::DecodeARGS. This filter should only end up being
+applied to old data from less UTF-8-safe versions of RT.
+
+Important Note - This function expects an octet string and returns a
+character string for non-binary data.
+
+=cut
+
 sub _DecodeLOB {
     my $self            = shift;
     my $ContentType     = shift || '';
@@ -821,7 +853,7 @@ sub _DecodeLOB {
         return ( $self->loc( "Unknown ContentEncoding [_1]", $ContentEncoding ) );
     }
     if ( RT::I18N::IsTextualContentType($ContentType) ) {
-       $Content = Encode::decode_utf8($Content) unless Encode::is_utf8($Content);
+       $Content = Encode::decode('UTF-8',$Content,Encode::FB_PERLQQ) unless Encode::is_utf8($Content);
     }
         return ($Content);
 }
@@ -1372,7 +1404,7 @@ sub _AddLink {
 
     if ( $args{'Base'} and $args{'Target'} ) {
         $RT::Logger->debug( "$self tried to create a link. both base and target were specified" );
-        return ( 0, $self->loc("Can't specifiy both base and target") );
+        return ( 0, $self->loc("Can't specify both base and target") );
     }
     elsif ( $args{'Base'} ) {
         $args{'Target'} = $self->URI();
@@ -1450,7 +1482,7 @@ sub _DeleteLink {
 
     if ( $args{'Base'} and $args{'Target'} ) {
         $RT::Logger->debug("$self ->_DeleteLink. got both Base and Target");
-        return ( 0, $self->loc("Can't specifiy both base and target") );
+        return ( 0, $self->loc("Can't specify both base and target") );
     }
     elsif ( $args{'Base'} ) {
         $args{'Target'} = $self->URI();
@@ -1686,7 +1718,7 @@ Returns the path RT uses to figure out which custom fields apply to this object.
 
 sub CustomFieldLookupType {
     my $self = shift;
-    return ref($self);
+    return ref($self) || $self;
 }
 
 
@@ -1789,7 +1821,7 @@ sub _AddCustomFieldValue {
             my $is_the_same = 1;
             if ( defined $args{'Value'} ) {
                 $is_the_same = 0 unless defined $old_content
-                    && lc $old_content eq lc $args{'Value'};
+                    && $old_content eq $args{'Value'};
             } else {
                 $is_the_same = 0 if defined $old_content;
             }

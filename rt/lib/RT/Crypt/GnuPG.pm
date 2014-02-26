@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -2160,7 +2160,10 @@ sub GetKeysInfo {
     }
     $RT::Logger->debug( $res{'status'} ) if $res{'status'};
     $RT::Logger->warning( $res{'stderr'} ) if $res{'stderr'};
-    $RT::Logger->error( $res{'logger'} ) if $res{'logger'} && $?;
+    if ( $res{'logger'} && $? ) {
+        $RT::Logger->error( $res{'logger'} );
+        $RT::Logger->error( 'The above error may result from an unconfigured RT/GPG installation. See perldoc etc/RT_Config.pm for information about configuring or disabling GPG support for RT' );
+    }
     if ( $@ || $? ) {
         $res{'message'} = $@? $@: "gpg exitted with error code ". ($? >> 8);
         return %res;

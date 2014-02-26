@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -388,6 +388,7 @@ sub DecodeMIMEWordsToEncoding {
             $enc_str = qq{"$enc_str"}
                 if $enc_str =~ /[,;]/
                 and $enc_str !~ /^".*"$/
+                and $prefix !~ /"$/ and $trailing !~ /^"/
                 and (!$field || $field =~ /^(?:To$|From$|B?Cc$|Content-)/i);
 
             $str .= $prefix . $enc_str . $trailing;
