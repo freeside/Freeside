@@ -717,3 +717,12 @@ FS/addr_range.pm
 t/addr_range.t
 FS/pbx_extension.pm
 t/pbx_extension.t
+FS/cust_event_fee.pm
+t/cust_event_fee.t
+FS/part_fee.pm
+t/part_fee.t
+FS/cust_bill_pkg_fee.pm
+t/cust_bill_pkg_fee.t
+FS/part_fee_msgcat.pm
+t/part_fee_msgcat.t
+

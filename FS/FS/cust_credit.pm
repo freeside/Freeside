@@ -919,14 +919,9 @@ sub credit_lineitems {
 
     # recalculate taxes with new amounts
     $taxlisthash{$invnum} ||= {};
-    my $part_pkg = $cust_bill_pkg->part_pkg;
-    $cust_main->_handle_taxes( $part_pkg,
-                               $taxlisthash{$invnum},
-                               $cust_bill_pkg,
-                               $cust_bill_pkg->cust_pkg,
-                               $cust_bill_pkg->cust_bill->_date, #invoice time
-                               $cust_bill_pkg->cust_pkg->pkgpart,
-                             );
+    my $part_pkg = $cust_bill_pkg->part_pkg
+      if $cust_bill_pkg->pkgpart_override;
+    $cust_main->_handle_taxes( $taxlisthash{$invnum}, $cust_bill_pkg );
   }
 
   ###
@@ -1022,12 +1017,12 @@ sub credit_lineitems {
 
       # we still have to deal with the possibility that the tax links don't
       # cover the whole amount of tax because of an incomplete upgrade...
-      if ($amount > 0) {
+      if ($amount > 0.005) {
         $cust_credit_bill{$invnum} += $amount;
         push @{ $cust_credit_bill_pkg{$invnum} },
           new FS::cust_credit_bill_pkg {
             'billpkgnum' => $tax_item->billpkgnum,
-            'amount'     => $amount,
+            'amount'     => sprintf('%.2f', $amount),
             'setuprecur' => 'setup',
           };
 

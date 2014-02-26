@@ -1377,74 +1377,40 @@ sub taxproduct_description {
   $part_pkg_taxproduct ? $part_pkg_taxproduct->description : '';
 }
 
-=item part_pkg_taxrate DATA_PROVIDER, GEOCODE, [ CLASS ]
 
-Returns the package to taxrate m2m records for this package in the location
-specified by GEOCODE (see L<FS::part_pkg_taxrate>) and usage class CLASS.
-CLASS may be one of 'setup', 'recur', or one of the usage classes numbers
-(see L<FS::usage_class>).
+=item tax_rates DATA_PROVIDER, GEOCODE, [ CLASS ]
+
+Returns the tax table entries (L<FS::tax_rate> objects) that apply to this
+package in the location specified by GEOCODE, for usage class CLASS (one of
+'setup', 'recur', null, or a C<usage_class> number).
 
 =cut
 
-sub _expand_cch_taxproductnum {
+sub tax_rates {
   my $self = shift;
-  my $class = shift;
-  my $part_pkg_taxproduct = $self->taxproduct($class);
-
-  my ($a,$b,$c,$d) = ( $part_pkg_taxproduct
-                         ? ( split ':', $part_pkg_taxproduct->taxproduct )
-                         : ()
-                     );
-  $a = '' unless $a; $b = '' unless $b; $c = '' unless $c; $d = '' unless $d;
-  my $extra_sql = "AND ( taxproduct = '$a:$b:$c:$d'
-                      OR taxproduct = '$a:$b:$c:'
-                      OR taxproduct = '$a:$b:".":$d'
-                      OR taxproduct = '$a:$b:".":' )";
-  map { $_->taxproductnum } qsearch( { 'table'     => 'part_pkg_taxproduct',
-                                       'hashref'   => { 'data_vendor'=>'cch' },
-                                       'extra_sql' => $extra_sql,
-                                   } );
-                                     
-}
-
-sub part_pkg_taxrate {
-  my $self = shift;
-  my ($data_vendor, $geocode, $class) = @_;
-
-  my $dbh = dbh;
-  my $extra_sql = 'WHERE part_pkg_taxproduct.data_vendor = '.
-                  dbh->quote($data_vendor);
-  
-  # CCH oddness in m2m
-  $extra_sql .= ' AND ('.
-    join(' OR ', map{ 'geocode = '. $dbh->quote(substr($geocode, 0, $_)) }
-                 qw(10 5 2)
-        ).
-    ')';
-  # much more CCH oddness in m2m -- this is kludgy
-  my @tpnums = $self->_expand_cch_taxproductnum($class);
-  if (scalar(@tpnums)) {
-    $extra_sql .= ' AND ('.
-                            join(' OR ', map{ "taxproductnum = $_" } @tpnums ).
-                       ')';
-  } else {
-    $extra_sql .= ' AND ( 0 = 1 )';
+  my ($vendor, $geocode, $class) = @_;
+  my @taxclassnums = map { $_->taxclassnum } 
+                     $self->part_pkg_taxoverride($class);
+  if (!@taxclassnums) {
+    my $part_pkg_taxproduct = $self->taxproduct($class);
+    @taxclassnums = map { $_->taxclassnum }
+                    grep { $_->taxable eq 'Y' } # why do we need this?
+                    $part_pkg_taxproduct->part_pkg_taxrate($geocode);
   }
+  return unless @taxclassnums;
 
-  my $addl_from = 'LEFT JOIN part_pkg_taxproduct USING ( taxproductnum )';
-  my $order_by = 'ORDER BY taxclassnum, length(geocode) desc, length(taxproduct) desc';
-  my $select   = 'DISTINCT ON(taxclassnum) *, taxproduct';
+  warn "Found taxclassnum values of ". join(',', @taxclassnums) ."\n"
+      if $DEBUG;
+  my $extra_sql = "AND taxclassnum IN (". join(',', @taxclassnums) . ")";
+  my @taxes = qsearch({ 'table'     => 'tax_rate',
+                        'hashref'   => { 'geocode'     => $geocode,
+                                         'data_vendor' => $vendor },
+                        'extra_sql' => $extra_sql,
+                      });
+  warn "Found taxes ". join(',', map {$_->taxnum} @taxes) ."\n"
+      if $DEBUG;
 
-  # should qsearch preface columns with the table to facilitate joins?
-  qsearch( { 'table'     => 'part_pkg_taxrate',
-             'select'    => $select,
-             'hashref'   => { # 'data_vendor'   => $data_vendor,
-                              # 'taxproductnum' => $self->taxproductnum,
-                            },
-             'addl_from' => $addl_from,
-             'extra_sql' => $extra_sql,
-             'order_by'  => $order_by,
-         } );
+  return @taxes;
 }
 
 =item part_pkg_discount

@@ -761,6 +761,19 @@ sub tables_hashref {
                  ],
     },
 
+    'cust_event_fee' => {
+      'columns' => [
+        'eventfeenum', 'serial', '', '', '', '',
+        'eventnum',       'int', '', '', '', '',
+        'billpkgnum',     'int', 'NULL', '', '', '',
+        'feepart',        'int', '', '', '', '',
+        'nextbill',      'char', 'NULL',  1, '', '',
+      ],
+      'primary_key'  => 'eventfeenum', # I'd rather just use eventnum
+      'unique' => [ [ 'billpkgnum' ], [ 'eventnum' ] ], # one-to-one link
+      'index'  => [ [ 'feepart' ] ],
+    },
+
     'cust_bill_pkg' => {
       'columns' => [
         'billpkgnum',        'serial',     '',      '', '', '', 
@@ -779,6 +792,7 @@ sub tables_hashref {
         'unitsetup',           @money_typen,            '', '', 
         'unitrecur',           @money_typen,            '', '', 
         'hidden',              'char', 'NULL',       1, '', '',
+        'feepart',              'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
@@ -808,7 +822,7 @@ sub tables_hashref {
 
     'cust_bill_pkg_display' => {
       'columns' => [
-        'billpkgdisplaynum', 'serial', '', '', '', '', 
+        'billpkgdisplaynum', 'serial', '', '', '', '',
         'billpkgnum', 'int', '', '', '', '', 
         'section',  'varchar', 'NULL', $char_d, '', '', 
         #'unitsetup', @money_typen, '', '',     #override the linked real one?
@@ -820,6 +834,22 @@ sub tables_hashref {
       'primary_key' => 'billpkgdisplaynum',
       'unique' => [],
       'index' => [ ['billpkgnum'], ],
+    },
+
+    'cust_bill_pkg_fee' => {
+      'columns' => [
+        'billpkgfeenum',    'serial', '', '', '', '',
+        'billpkgnum',          'int', '', '', '', '',
+        'base_invnum',       'int', '', '', '', '',
+        'base_billpkgnum',   'int', 'NULL', '', '', '',
+        'amount',        @money_type,         '', '',
+      ],
+      'primary_key' => 'billpkgfeenum',
+      'unique'      => [],
+      'index'       => [ ['billpkgnum'],
+                         ['base_invnum'],
+                         ['base_billpkgnum'],
+                       ],
     },
 
     'cust_bill_pkg_tax_location' => {
@@ -1374,11 +1404,6 @@ sub tables_hashref {
       'primary_key'  => 'creditlimitnum',
       'unique'       => [],
       'index'        => [ ['custnum'], ],
-      'foreign_keys' => [
-                          { columns    => [ 'custnum' ],
-                            table      => 'cust_main',
-                          },
-                        ],
     },
 
     'cust_main_note' => {
@@ -2129,6 +2154,47 @@ sub tables_hashref {
       'unique'      => [ [ 'pkgpart', 'locale' ] ],
       'index'       => [],
     },
+
+    'part_fee' => {
+      'columns' => [
+        'feepart',       'serial',    '',   '', '', '',
+        'itemdesc',      'varchar',   '',   $char_d,   '', '',
+        'comment',       'varchar', 'NULL', 2*$char_d, '', '',
+        'disabled',      'char',    'NULL',  1, '', '',
+        'classnum',      'int',     'NULL', '', '', '',
+        'taxclass',      'varchar', 'NULL', $char_d, '', '',
+        'taxproductnum', 'int',     'NULL', '', '', '',
+        'pay_weight',    'real',    'NULL', '', '', '',
+        'credit_weight', 'real',    'NULL', '', '', '',
+        'agentnum',      'int',     'NULL', '', '', '',
+        'amount',   @money_type,                '', '', 
+        'percent',     'decimal',    '', '7,4', '', '',
+        'basis',         'varchar',  '',    16, '', '',
+        'minimum',    @money_typen,             '', '',
+        'maximum',    @money_typen,             '', '',
+        'limit_credit',  'char',    'NULL',  1, '', '',
+        'setuprecur',    'char',     '',     5, '', '',
+        'taxable',       'char',    'NULL',  1, '', '',
+      ],
+      'primary_key'  => 'feepart',
+      'unique'       => [],
+      'index'        => [ [ 'disabled' ], [ 'classnum' ], [ 'agentnum' ]
+                        ],
+    },
+
+    'part_fee_msgcat' => {
+      'columns' => [
+        'feepartmsgnum',  'serial',     '',        '', '', '',
+        'feepart',           'int',     '',        '', '', '',
+        'locale',        'varchar',     '',        16, '', '',
+        'itemdesc',      'varchar',     '',   $char_d, '', '', #longer/no limit?
+        'comment',       'varchar', 'NULL', 2*$char_d, '', '', #longer/no limit?
+      ],
+      'primary_key'  => 'feepartmsgnum',
+      'unique'       => [ [ 'feepart', 'locale' ] ],
+      'index'        => [],
+    },
+
 
     'part_pkg_link' => {
       'columns' => [
