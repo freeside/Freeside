@@ -37,7 +37,8 @@ my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $default_start_date = $conf->exists('order_pkg-no_start_date')
                            ? ''
-                           : $cust_main->next_bill_date;
+                           : $cust_main ? $cust_main->next_bill_date
+                                        : '';
 
 #num_billing_pkgs may be slightly better (will allow you to fill in a start
 # date in the weird edge case where you're using sync_next_bill and
