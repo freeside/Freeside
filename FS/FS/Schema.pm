@@ -943,6 +943,7 @@ sub tables_hashref {
         'eventnum',       'int', '', '', '', '',
         'billpkgnum',     'int', 'NULL', '', '', '',
         'feepart',        'int', '', '', '', '',
+        'nextbill',      'char', 'NULL',  1, '', '',
       ],
       'primary_key'  => 'eventfeenum', # I'd rather just use eventnum
       'unique' => [ [ 'billpkgnum' ], [ 'eventnum' ] ], # one-to-one link

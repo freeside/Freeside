@@ -26,8 +26,8 @@ FS::cust_bill_pkg_fee - Object methods for cust_bill_pkg_fee records
 =head1 DESCRIPTION
 
 An FS::cust_bill_pkg_fee object records the origin of a fee.  
-.  FS::cust_bill_pkg_fee inherits from
-FS::Record.  The following fields are currently supported:
+FS::cust_bill_pkg_fee inherits from FS::Record.  The following fields 
+are currently supported:
 
 =over 4
 
@@ -70,8 +70,8 @@ sub check {
   my $error = 
     $self->ut_numbern('billpkgfeenum')
     || $self->ut_number('billpkgnum')
-    || $self->ut_foreign_key('origin_invnum', 'cust_bill', 'invnum')
-    || $self->ut_foreign_keyn('origin_billpkgnum', 'cust_bill_pkg', 'billpkgnum')
+    || $self->ut_foreign_key('base_invnum', 'cust_bill', 'invnum')
+    || $self->ut_foreign_keyn('base_billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_money('amount')
   ;
   return $error if $error;

@@ -5,7 +5,7 @@ use base qw( FS::o2m_Common FS::Record );
 use vars qw( $DEBUG );
 use FS::Record qw( qsearch qsearchs );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -127,6 +127,7 @@ sub check {
   my $self = shift;
 
   $self->set('amount', 0) unless $self->amount;
+  $self->set('percent', 0) unless $self->percent;
 
   my $error = 
     $self->ut_numbern('feepart')
@@ -140,8 +141,8 @@ sub check {
     || $self->ut_floatn('credit_weight')
     || $self->ut_agentnum_acl('agentnum',
                               [ 'Edit global package definitions' ])
-    || $self->ut_moneyn('amount')
-    || $self->ut_floatn('percent')
+    || $self->ut_money('amount')
+    || $self->ut_float('percent')
     || $self->ut_moneyn('minimum')
     || $self->ut_moneyn('maximum')
     || $self->ut_flag('limit_credit')
@@ -289,7 +290,7 @@ sub lineitem {
       $maximum = -1 * $balance;
     }
   }
-  if ( $maximum ne '' ) {
+  if ( $maximum ne '' and $amount > $maximum ) {
     warn "Applying maximum fee\n" if $DEBUG;
     $amount = $maximum;
   }
@@ -307,7 +308,7 @@ sub lineitem {
   });
 
   if ( $maximum and $self->taxable ) {
-    warn "Estimating taxes on fee.\n";
+    warn "Estimating taxes on fee.\n" if $DEBUG;
     # then we need to estimate tax to respect the maximum
     # XXX currently doesn't work with external (tax_rate) taxes
     # or batch taxes, obviously
@@ -326,6 +327,7 @@ sub lineitem {
     if ($total_rate > 0) {
       my $max_cents = $maximum * 100;
       my $charge_cents = sprintf('%0.f', $max_cents * 100/(100 + $total_rate));
+      # the actual maximum that we can charge...
       $maximum = sprintf('%.2f', $charge_cents / 100.00);
       $amount = $maximum if $amount > $maximum;
     }

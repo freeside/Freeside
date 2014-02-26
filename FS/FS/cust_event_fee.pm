@@ -45,6 +45,9 @@ time billing runs for the customer.
 
 =item feepart - key of the fee definition (L<FS::part_fee>).
 
+=item nextbill - 'Y' if the fee should be charged on the customer's next
+bill, rather than causing a bill to be produced immediately.
+
 =back
 
 =head1 METHODS
@@ -93,6 +96,7 @@ sub check {
     || $self->ut_foreign_key('eventnum', 'cust_event', 'eventnum')
     || $self->ut_foreign_keyn('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_foreign_key('feepart', 'part_fee', 'feepart')
+    || $self->ut_flag('nextbill')
   ;
   return $error if $error;
 
