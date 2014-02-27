@@ -171,11 +171,16 @@ sub insert {
         'amount'           => sprintf('%.2f', 0-$amount),
       };
 
-      my $error = $cust_tax_exempt_pkg->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error inserting cust_tax_exempt_pkg: $error";
+      if ( $cust_tax_exempt_pkg->cust_main_county ) {
+
+        my $error = $cust_tax_exempt_pkg->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "error inserting cust_tax_exempt_pkg: $error";
+        }
+
       }
+
     } #foreach $exemption
   }
 
