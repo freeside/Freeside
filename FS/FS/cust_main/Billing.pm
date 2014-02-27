@@ -564,7 +564,7 @@ sub bill {
       my $object = $event_fee->cust_event->cust_X;
       my $part_fee = $event_fee->part_fee;
       my $cust_bill;
-      if ( $object->isa('FS::cust_main') ) {
+      if ( $object->isa('FS::cust_main') or $object->isa('FS::cust_pkg') ) {
         # Not the real cust_bill object that will be inserted--in particular
         # there are no taxes yet.  If you want to charge a fee on the total 
         # invoice amount including taxes, you have to put the fee on the next
@@ -575,6 +575,15 @@ sub bill {
             'charged'       => ${ $total_setup{$pass} } +
                                ${ $total_recur{$pass} },
         });
+
+        # If this is a package event, only apply the fee to line items 
+        # from that package.
+        if ($object->isa('FS::cust_pkg')) {
+          $cust_bill->set('cust_bill_pkg', 
+            [ grep  { $_->pkgnum == $object->pkgnum } @cust_bill_pkg ]
+          );
+        }
+
       } elsif ( $object->isa('FS::cust_bill') ) {
         # simple case: applying the fee to a previous invoice (late fee, 
         # etc.)
@@ -591,7 +600,7 @@ sub bill {
       # also skip if it's disabled
       next if $part_fee->disabled eq 'Y';
       # calculate the fee
-      my $fee_item = $event_fee->part_fee->lineitem($cust_bill);
+      my $fee_item = $part_fee->lineitem($cust_bill) or next;
       # link this so that we can clear the marker on inserting the line item
       $fee_item->set('cust_event_fee', $event_fee);
       push @fee_items, $fee_item;

@@ -4,10 +4,19 @@
   'agent_virt'        => 1,
   'agent_null_right'  => 'Edit global fee definitions',
   'viewall_dir'       => 'browse',
-  'process_o2m'       => {
-                            'table'   => 'part_fee_msgcat',
-                            'fields'  => [ 'locale', 'itemdesc' ],
-                         },
+  'process_o2m'       => [ 
+                           {
+                              'table'   => 'part_fee_msgcat',
+                              'fields'  => [ 'locale', 'itemdesc' ],
+                           },
+                           {
+                              'table'   => 'part_fee_usage',
+                              'fields'  => [ 'classnum', 
+                                             'amount',
+                                             'percent'
+                                           ],
+                           },
+                         ],
 &>
 <%init>
 

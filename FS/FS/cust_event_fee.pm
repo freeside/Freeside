@@ -112,7 +112,8 @@ sub check {
 =item by_cust CUSTNUM[, PARAMS]
 
 Finds all cust_event_fee records belonging to the customer CUSTNUM.  Currently
-fee events can be cust_main or cust_bill events; this will return both.
+fee events can be cust_main, cust_pkg, or cust_bill events; this will return 
+all of them.
 
 PARAMS can be additional params to pass to qsearch; this really only works
 for 'hashref' and 'order_by'.
@@ -144,6 +145,15 @@ sub by_cust {
                  'JOIN cust_bill ON (cust_event.tablenum = cust_bill.invnum)',
     extra_sql => "$where eventtable = 'cust_bill' ".
                  "AND cust_bill.custnum = $custnum",
+    %params
+  }),
+  qsearch({
+    table     => 'cust_event_fee',
+    addl_from => 'JOIN cust_event USING (eventnum) ' .
+                 'JOIN part_event USING (eventpart) ' .
+                 'JOIN cust_pkg ON (cust_event.tablenum = cust_pkg.pkgnum)',
+    extra_sql => "$where eventtable = 'cust_pkg' ".
+                 "AND cust_pkg.custnum = $custnum",
     %params
   })
 }

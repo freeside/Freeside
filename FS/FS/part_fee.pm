@@ -146,21 +146,18 @@ sub check {
     || $self->ut_moneyn('minimum')
     || $self->ut_moneyn('maximum')
     || $self->ut_flag('limit_credit')
-    || $self->ut_enum('basis', [ '', 'charged', 'owed' ])
+    || $self->ut_enum('basis', [ 'charged', 'owed', 'usage' ])
     || $self->ut_enum('setuprecur', [ 'setup', 'recur' ])
   ;
   return $error if $error;
 
-  return "For a percentage fee, the basis must be set"
-    if $self->get('percent') > 0 and $self->get('basis') eq '';
-
-  if ( ! $self->get('percent') and ! $self->get('limit_credit') ) {
-    # then it makes no sense to apply minimum/maximum
-    $self->set('minimum', '');
-    $self->set('maximum', '');
-  }
   if ( $self->get('limit_credit') ) {
     $self->set('maximum', '');
+  }
+
+  if ( $self->get('basis') eq 'usage' ) {
+    # to avoid confusion, don't also allow charging a percentage
+    $self->set('percent', 0);
   }
 
   $self->SUPER::check;
@@ -178,7 +175,7 @@ sub explanation {
   my $money_char = FS::Conf->new->config('money_char') || '$';
   my $money = $money_char . '%.2f';
   my $percent = '%.1f%%';
-  my $string;
+  my $string = '';
   if ( $self->amount > 0 ) {
     $string = sprintf($money, $self->amount);
   }
@@ -193,7 +190,14 @@ sub explanation {
     } elsif ( $self->basis('owed') ) {
       $string .= 'unpaid invoice balance';
     }
+  } elsif ( $self->basis eq 'usage' ) {
+    if ( $string ) {
+      $string .= " plus \n";
+    }
+    # append per-class descriptions
+    $string .= join("\n", map { $_->explanation } $self->part_fee_usage);
   }
+
   if ( $self->minimum or $self->maximum or $self->limit_credit ) {
     $string .= "\nbut";
     if ( $self->minimum ) {
@@ -244,36 +248,67 @@ sub lineitem {
   warn "Calculating fee: ".$self->itemdesc." on ".
     ($cust_bill->invnum ? "invoice #".$cust_bill->invnum : "current invoice").
     "\n" if $DEBUG;
-  if ( $self->percent > 0 and $self->basis ne '' ) {
-    warn $self->percent . "% of amount ".$self->basis.")\n"
-      if $DEBUG;
+  my $basis = $self->basis;
 
-    # $total_base: the total charged/owed on the invoice
-    # %item_base: billpkgnum => fraction of base amount
-    if ( $cust_bill->invnum ) {
-      my $basis = $self->basis;
+  # $total_base: the total charged/owed on the invoice
+  # %item_base: billpkgnum => fraction of base amount
+  if ( $cust_bill->invnum ) {
+
+    # calculate the fee on an already-inserted past invoice.  This may have 
+    # payments or credits, so if basis = owed, we need to consider those.
+    @items = $cust_bill->cust_bill_pkg;
+    if ( $basis ne 'usage' ) {
+
       $total_base = $cust_bill->$basis; # "charged", "owed"
-
-      # calculate the fee on an already-inserted past invoice.  This may have 
-      # payments or credits, so if basis = owed, we need to consider those.
       my $basis_sql = $basis.'_sql';
       my $sql = 'SELECT ' . FS::cust_bill_pkg->$basis_sql .
                 ' FROM cust_bill_pkg WHERE billpkgnum = ?';
-      @items = $cust_bill->cust_bill_pkg;
       @item_base = map { FS::Record->scalar_sql($sql, $_->billpkgnum) }
                     @items;
-    } else {
-      # the fee applies to _this_ invoice.  It has no payments or credits, so
-      # "charged" and "owed" basis are both just the invoice amount, and 
-      # the line item amounts (setup + recur)
+    }
+  } else {
+    # the fee applies to _this_ invoice.  It has no payments or credits, so
+    # "charged" and "owed" basis are both just the invoice amount, and 
+    # the line item amounts (setup + recur)
+    @items = @{ $cust_bill->get('cust_bill_pkg') };
+    if ( $basis ne 'usage' ) {
       $total_base = $cust_bill->charged;
-      @items = @{ $cust_bill->get('cust_bill_pkg') };
       @item_base = map { $_->setup + $_->recur }
                     @items;
     }
-
-    $amount += $total_base * $self->percent / 100;
   }
+
+  if ( $basis eq 'usage' ) {
+
+    my %part_fee_usage = map { $_->classnum => $_ } $self->part_fee_usage;
+
+    foreach my $item (@items) { # cust_bill_pkg objects
+      my $usage_fee = 0;
+      $item->regularize_details;
+      my $details;
+      if ( $item->billpkgnum ) {
+        $details = [
+          qsearch('cust_bill_pkg_detail', { billpkgnum => $item->billpkgnum })
+        ];
+      } else {
+        $details = $item->get('details') || [];
+      }
+      foreach my $d (@$details) {
+        # if there's a usage fee defined for this class...
+        next if $d->amount eq '' # not a real usage detail
+             or $d->amount == 0  # zero charge, probably shouldn't charge fee
+        ;
+        my $p = $part_fee_usage{$d->classnum} or next;
+        $usage_fee += ($d->amount * $p->percent / 100)
+                    + $p->amount;
+        # we'd create detail records here if we were doing that
+      }
+      # bypass @item_base entirely
+      push @item_fee, $usage_fee;
+      $amount += $usage_fee;
+    }
+
+  } # if $basis eq 'usage'
 
   if ( $self->minimum ne '' and $amount < $self->minimum ) {
     warn "Applying mininum fee\n" if $DEBUG;
@@ -365,25 +400,25 @@ sub lineitem {
         }
       }
     }
-    # and add them to the cust_bill_pkg
+  }
+  if ( @item_fee ) {
+    # add allocation records to the cust_bill_pkg
     for (my $i = 0; $i < scalar(@items); $i++) {
       if ( $item_fee[$i] > 0 ) {
         push @cust_bill_pkg_fee, FS::cust_bill_pkg_fee->new({
             cust_bill_pkg   => $cust_bill_pkg,
-            base_invnum     => $cust_bill->invnum,
+            base_invnum     => $cust_bill->invnum, # may be null
             amount          => $item_fee[$i],
             base_cust_bill_pkg => $items[$i], # late resolve
         });
       }
     }
-  } else { # if !@item_base
+  } else { # if !@item_fee
     # then this isn't a proportional fee, so it just applies to the 
     # entire invoice.
-    # (if it's the current invoice, $cust_bill->invnum is null and that 
-    # will be fixed later)
     push @cust_bill_pkg_fee, FS::cust_bill_pkg_fee->new({
         cust_bill_pkg   => $cust_bill_pkg,
-        base_invnum     => $cust_bill->invnum,
+        base_invnum     => $cust_bill->invnum, # may be null
         amount          => $amount,
     });
   }
