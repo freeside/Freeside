@@ -61,14 +61,19 @@ sub desc {
   my( $self, $locale ) = @_;
 
   if ( $self->pkgnum > 0 ) {
-    $self->itemdesc || $self->part_pkg->pkg_locale($locale);
+    return $self->itemdesc if $self->itemdesc;
+    my $part_pkg = $self->part_pkg or return 'UNKNOWN';
+    return $part_pkg->pkg_locale($locale);
+
   } elsif ( $self->feepart ) {
-    $self->part_fee->itemdesc_locale($locale);
+    return $self->part_fee->itemdesc_locale($locale);
+
   } else { # by the process of elimination it must be a tax
     my $desc = $self->itemdesc || 'Tax';
     $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
-    $desc;
+    return $desc;
   }
+
 }
 
 =item time_period_pretty PART_PKG, AGENTNUM
