@@ -726,3 +726,5 @@ t/cust_bill_pkg_fee.t
 FS/part_fee_msgcat.pm
 t/part_fee_msgcat.t
 
+FS/part_fee_usage.pm
+t/part_fee_usage.t

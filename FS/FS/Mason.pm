@@ -356,6 +356,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_fee;
   use FS::cust_bill_pkg_fee;
   use FS::part_fee_msgcat;
+  use FS::part_fee_usage;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

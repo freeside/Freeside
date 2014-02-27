@@ -2195,6 +2195,18 @@ sub tables_hashref {
       'index'        => [],
     },
 
+    'part_fee_usage' => {
+      'columns' => [
+        'feepartusagenum','serial',     '',        '', '', '',
+        'feepart',           'int',     '',        '', '', '',
+        'classnum',          'int',     '',        '', '', '',
+        'amount',   @money_type,                '', '',
+        'percent',     'decimal',    '', '7,4', '', '',
+      ],
+      'primary_key'  => 'feepartusagenum',
+      'unique'       => [ [ 'feepart', 'classnum' ] ],
+      'index'        => [],
+    },
 
     'part_pkg_link' => {
       'columns' => [
