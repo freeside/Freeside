@@ -41,8 +41,11 @@
     'classname',
     sub { # report_option
       my $cust_bill_pkg = shift;
-      my $pkgpart = $cust_bill_pkg->pkgpart_override
-                 || $cust_bill_pkg->cust_pkg->pkgpart;
+      my $pkgpart = $cust_bill_pkg->pkgpart_override;
+      unless ( $pkgpart ) {
+        my $cust_pkg = $cust_bill_pkg->cust_pkg or return '';
+        $pkgpart = $cust_pkg->pkgpart;
+      }
       if ( !exists($report_classes{$pkgpart}) ) {
         my $part_pkg = FS::part_pkg->by_key($pkgpart);
         my %opts = $part_pkg->options;
