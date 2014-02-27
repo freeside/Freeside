@@ -131,9 +131,10 @@ function areyousure(href, message) {
 % 
 % my $email_link = ($cust_main->invoicing_list_emailonly) && 
 %   include('/elements/email-link.html',
-%            'table' => 'cust_main', 
-%            'search_hash' => { 'custnum' => $custnum },
-%            'label' => 'Email a notice to this customer',
+%            'table'               => 'cust_main', 
+%            'search_hash'         => { 'custnum' => $custnum },
+%            'agent_virt_agentnum' => $cust_main->agentnum,
+%            'label'               => 'Email a notice to this customer',
 % );
 % if ( $email_link and $br ) {
  | 
