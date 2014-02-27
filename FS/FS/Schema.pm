@@ -3201,7 +3201,7 @@ sub tables_hashref {
                             table      => 'part_fee',
                           },
                           { columns    => [ 'classnum' ],
-                            table      => 'pkg_class',
+                            table      => 'usage_class',
                           },
                         ],
     },
