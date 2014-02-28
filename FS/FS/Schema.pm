@@ -4449,9 +4449,9 @@ sub tables_hashref {
       'unique'       => [ [ 'blocknum', 'routernum' ] ],
       'index'        => [],
       'foreign_keys' => [
-                          { columns    => [ 'routernum' ],
-                            table      => 'router',
-                          },
+                          #{ columns    => [ 'routernum' ],
+                          #   table      => 'router',
+                          #},
                           { columns    => [ 'agentnum' ],
                             table      => 'agent',
                           },
