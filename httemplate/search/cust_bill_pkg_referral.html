@@ -133,7 +133,9 @@ my $agentnums_sql =
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
 my @where = ( $agentnums_sql,
-              'cust_bill_pkg.pkgnum != 0', # exclude taxes
+              # exclude taxes
+              '(cust_bill_pkg.pkgnum != 0 OR '.
+                'cust_bill_pkg.feepart IS NOT NULL)',
               "cust_bill._date >= $beginning",
               "cust_bill._date <= $ending",
             );
@@ -187,11 +189,13 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
 
   if ( $use_override ) {
     push @where, "(
-      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
-      override.classnum $comparison AND pkgpart_override IS NOT NULL
+      (part_pkg.classnum $comparison AND pkgpart_override IS NULL) OR
+      (override.classnum $comparison AND pkgpart_override IS NOT NULL) OR
+      (part_fee.classnum $comparison AND feepart IS NOT NULL)
     )";
   } else {
-    push @where, "part_pkg.classnum $comparison";
+    push @where, 
+    "(part_pkg.classnum $comparison) OR (part_fee.classnum $comparison)";
   }
 }
 
@@ -231,15 +235,19 @@ $join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
                 LEFT JOIN part_pkg USING ( pkgpart )
                 LEFT JOIN part_pkg AS override
                   ON pkgpart_override = override.pkgpart 
+                LEFT JOIN part_fee USING ( feepart )
                 LEFT JOIN pkg_class ON '; #...
 
 if ( $use_override ) {
   # join to whichever pkgpart is appropriate
   $join_pkg .= '
       ( pkgpart_override IS NULL     AND part_pkg.classnum = pkg_class.classnum )
-   OR ( pkgpart_override IS NOT NULL AND override.classnum = pkg_class.classnum )';
+   OR ( pkgpart_override IS NOT NULL AND override.classnum = pkg_class.classnum )
+   OR ( feepart IS NOT NULL AND part_fee.classnum = pkg_class.classnum )';
 } else {
-  $join_pkg .= 'part_pkg.classnum = pkg_class.classnum';
+  $join_pkg .= '
+      ( part_pkg.classnum = pkg_class.classnum )
+   OR ( part_fee.classnum = pkg_class.classnum )';
 }
 
 my $where = ' WHERE '. join(' AND ', @where);
@@ -261,7 +269,7 @@ my $last_pay_sql = "SELECT MAX(_date)
   FROM cust_bill_pay JOIN cust_bill_pay_pkg USING (billpaynum)
   WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum";
 
-push @select, 'part_pkg.pkg',
+push @select, 'COALESCE(part_pkg.pkg, part_fee.itemdesc) AS pkg',
               'part_pkg.freq',
               'cust_main.custnum',
               'cust_main.first',

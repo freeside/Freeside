@@ -341,7 +341,8 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $where .= ' AND cust_main.agentnum = '. $agent->agentnum;
 }
 
-my $nottax = 'cust_bill_pkg.pkgnum != 0';
+my $nottax = 
+  '(cust_bill_pkg.pkgnum != 0 OR cust_bill_pkg.feepart IS NOT NULL)';
 
 # one query for each column of the report
 # plus separate queries for the totals row
