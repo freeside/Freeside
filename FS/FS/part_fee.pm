@@ -265,6 +265,8 @@ sub lineitem {
                 ' FROM cust_bill_pkg WHERE billpkgnum = ?';
       @item_base = map { FS::Record->scalar_sql($sql, $_->billpkgnum) }
                     @items;
+
+      $amount += $total_base * $self->percent / 100;
     }
   } else {
     # the fee applies to _this_ invoice.  It has no payments or credits, so
@@ -275,6 +277,8 @@ sub lineitem {
       $total_base = $cust_bill->charged;
       @item_base = map { $_->setup + $_->recur }
                     @items;
+
+      $amount += $total_base * $self->percent / 100;
     }
   }
 
