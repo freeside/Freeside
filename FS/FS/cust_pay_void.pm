@@ -133,12 +133,16 @@ sub unvoid {
     map { $_ => $self->get($_) } fields('cust_pay')
   } );
   my $error = $cust_pay->insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
+
+  my $cust_pay_pending =
+    qsearchs('cust_pay_pending', { void_paynum => $self->paynum });
+  if ( $cust_pay_pending ) {
+    $cust_pay_pending->set('paynum', $cust_pay->paynum);
+    $cust_pay_pending->set('void_paynum', '');
+    $error ||= $cust_pay_pending->replace;
   }
 
-  $error = $self->delete;
+  $error ||= $self->delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
