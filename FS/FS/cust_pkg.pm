@@ -4617,12 +4617,18 @@ sub search {
   );
 
   if( exists($params->{'active'} ) ) {
-    # This overrides all the other date-related fields
+    # This overrides all the other date-related fields, and includes packages
+    # that were active at some time during the interval.  It excludes:
+    # - packages that were set up after the end of the interval
+    # - packages that were canceled before the start of the interval
+    # - packages that were suspended before the start of the interval
+    #   and are still suspended now
     my($beginning, $ending) = @{$params->{'active'}};
     push @where,
       "cust_pkg.setup IS NOT NULL",
       "cust_pkg.setup <= $ending",
       "(cust_pkg.cancel IS NULL OR cust_pkg.cancel >= $beginning )",
+      "(cust_pkg.susp   IS NULL OR cust_pkg.susp   >= $beginning )",
       "NOT (".FS::cust_pkg->onetime_sql . ")";
   }
   else {

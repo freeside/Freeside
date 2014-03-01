@@ -29,6 +29,13 @@
         'records'       => \@states,
     &>
 
+    <& /elements/tr-input-date-field.html, {
+        'label'         => 'As of date',
+        'name'          => 'date',
+        'value'         => '',
+        'format'        => '%m/%d/%Y'
+    } &>
+
     <% include( '/elements/tr-select-pkg_class.html',
                    'multiple'       => 1,
                    'empty_label' => '(empty class)',

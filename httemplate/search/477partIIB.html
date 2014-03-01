@@ -46,28 +46,29 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('List packages');
 
+my %opt = @_;
 my %search_hash = ();
 
 $search_hash{'agentnum'} = $cgi->param('agentnum');
 $search_hash{'state'}    = $cgi->param('state');
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
-$search_hash{'status'}   = 'active';
+$search_hash{'active'}   = [ $opt{date}, $opt{date} ];
 
 my @row_option;
 foreach ($cgi->param('part2b_row_option')) {
   push @row_option, (/^\d+$/ ? $_ : undef);
 }
 
-my $is_residential = "AND COALESCE(cust_main.company, '') = ''";
+my $is_residential = " AND COALESCE(cust_main.company, '') = ''";
 my $has_report_option = sub {
   map {
     defined($row_option[$_]) ?
-    "AND EXISTS(
+    " AND EXISTS(
       SELECT 1 FROM part_pkg_option 
       WHERE part_pkg_option.pkgpart = part_pkg.pkgpart
       AND optionname = 'report_option_" . $row_option[$_]."'
       AND optionvalue = '1'
-    )" : 'AND FALSE'
+    )" : ' AND FALSE'
   } @_
 };
 

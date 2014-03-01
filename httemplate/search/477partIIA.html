@@ -40,25 +40,25 @@
 </TABLE>
 % } #XML/HTML
 <%init>
-
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
   unless $curuser->access_right('List packages');
 
+my %opt = @_;
 my %search_hash = ();
 
 $search_hash{'agentnum'} = $cgi->param('agentnum');
 $search_hash{'state'}    = $cgi->param('state');
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
-$search_hash{'status'}   = 'active';
+$search_hash{'active'}   = [ $opt{date}, $opt{date} ];
 
 my @row_option;
 foreach ($cgi->param('part2a_row_option')) {
   push @row_option, (/^\d+$/ ? $_ : undef);
 }
 
-my $is_residential = "AND COALESCE(cust_main.company, '') = ''";
+my $is_residential = " AND COALESCE(cust_main.company, '') = ''";
 my $has_report_option = sub {
   map {
     defined($row_option[$_]) ?
