@@ -4,11 +4,8 @@
 % # and finally, display the thing
 % ### 
 %
-% foreach my $part_export (
-%   #grep $_->can('usage_sessions'), qsearch( 'part_export' )
-%   qsearch( 'part_export', { 'exporttype' => 'sqlradius' } ),
-%   qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } )
-% ) {
+% foreach my $part_export ( @part_export ) {
+%
 %   %user2svc = ();
 %
 %   my $efields = tie my %efields, 'Tie::IxHash', %fields;
@@ -27,10 +24,12 @@
 %                            },
 %     );
 %   }
-%
-%
 
-    <% $part_export->exporttype %> to <% $part_export->machine %><BR>
+    <FONT CLASS="fsinnerbox-title">
+      <% $part_export->exportname || $part_export->exporttype |h %>
+      <% $part_export->machine ? ' to '. $part_export->machine : '' |h %>
+    </FONT><BR>
+
     <% include( '/elements/table-grid.html' ) %>
 %   my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
@@ -148,6 +147,23 @@ if ( $cgi->param('svcnum') =~ /^(\d+)$/ ) {
     if keys %search;
 } elsif ( $cgi->param('username') =~ /^(.+)$/ ) {
   $cgi_svc = qsearchs( 'svc_acct', { 'username' => $1 } );
+}
+
+my @part_export = ();
+if ( $cgi_svc ) {
+  my $part_svc = $cgi_svc->cust_svc->part_svc;
+  @part_export = (
+    $part_svc->part_export('sqlradius'),
+    $part_svc->part_export('sqlradius_withdomain'),
+    $part_svc->part_export('broadband_sqlradius'),
+  );
+} else {
+  @part_export = (
+    #grep $_->can('usage_sessions'), qsearch( 'part_export' )
+    qsearch( 'part_export', { 'exporttype' => 'sqlradius' } ),
+    qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } ),
+    qsearch( 'part_export', { 'exporttype' => 'broadband_sqlradius' } ),
+  );
 }
 
 my $ip = '';
