@@ -84,7 +84,6 @@ my %search_hash;
 for ( qw(agentnum state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
-$search_hash{'status'} = 'active';
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 
@@ -113,6 +112,13 @@ if ( $technology eq 'Symmetric xDSL' or $technology eq 'Other Wireline' ) {
 }
 # whether to show residential percentages in each cell of the matrix
 my $percentages = ($technology eq 'Terrestrial Mobile Wireless');
+
+# as of date
+# FCC 477 instructions: "Only count connections that are in service."
+# So we count packages that were in active status as of the specified date,
+# not over any sort of range.
+$search_hash{'active'} = [ $opt{date}, $opt{date} ];
+warn Dumper \%search_hash;
 
 my $query = FS::cust_pkg->search(\%search_hash);
 my $count_query = $query->{'count_query'};

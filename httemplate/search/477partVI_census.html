@@ -81,9 +81,11 @@ push @fields,
 my %search_hash = ();
 my @sql_query = ();
   
-for ( qw(agentnum magic state) ) {
+for ( qw(agentnum state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+
+$search_hash{'active'}  = [ $opt{date}, $opt{date} ];
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ]
   if grep { $_ eq 'classnum' } $cgi->param;
@@ -115,12 +117,11 @@ foreach my $row ( @row_option ) {
           ($report_option ? ( 'report_option' => $report_option ) : () ),
         }
       );
+warn Dumper($sql_query) if $rowcount==1 and $columncount==3;
       my $extracolumns = "$rowcount AS upload, $columncount AS download, $tech_code as technology_code";
       my $percent = "CASE WHEN count(*) > 0 THEN 100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) ELSE cast(0 as numeric) END AS residential";
       $sql_query->{select} = "count(*) AS quantity, $extracolumns, cust_location.censustract, $percent";
-      $sql_query->{order_by} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
-        or die "couldn't parse order_by";
-      $sql_query->{order_by} = "$1 GROUP BY cust_location.censustract $3";
+      $sql_query->{order_by} = " GROUP BY cust_location.censustract ";
       push @sql_query, $sql_query;
     }
     $columncount++;
