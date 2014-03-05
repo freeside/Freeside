@@ -5,7 +5,7 @@
        'count_query' => $count_query,
        'header' => [ 
                      'Date',
-                     'Template',
+                     'Type',
                      'Destination',
                      'Status',
                      '', #error
@@ -15,7 +15,9 @@
                        my $date = $_[0]->_date;
                        $date ? time2str('%Y-%m-%d %T',$_[0]->_date) : '' 
                      },
-                     'msgname',
+                     sub {
+                       ucfirst($_[0]->msgtype) || $_[0]->msgname
+                     },
                      sub {
                        join('<BR>', split(/,\s*/, $_[0]->env_to) )
                      },
@@ -31,9 +33,11 @@
                     '',
                     '',
                   ],
-       'color' => [ ('') x 3, 
-                     $statuscolor,
-                     $statuscolor,
+       'color' => [ '',
+                    $typecolor,
+                    '',
+                    $statuscolor,
+                    $statuscolor,
                   ],
        'html_init' => $html_init,
        'really_disable_download' => 1,
@@ -50,6 +54,9 @@ my $title = 'Outgoing Message Log';
 my @where;
 if ( $cgi->param('status') =~ /^(\w+)$/ ) {
   push @where, "status = '$1'";
+}
+if ( $cgi->param('msgtype') =~ /^(\w+)$/ ) {
+  push @where, "msgtype = '$1'";
 }
 my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
 push @where, "(_date >= $beginning AND _date <= $ending)";
@@ -79,16 +86,22 @@ my $sub_popup_link = sub {
   include('/elements/popup_link_onclick.html',
     'action'      => $p. 'view/cust_msg.html?' . $custmsgnum,
     'actionlabel' => 'Message detail',
-    'width'       => 600,
-    'height'      => 500,
+    'width'       => 680,
+    'height'      => 550,
   );
 };
 
 my %color = (
   'failed'   => 'FF0000',
   'sent'     => '',
+
+  'invoice'  => '00CC00',
+  'receipt'  => '0000CC',
+  'admin'    => 'CC0000',
+  ''         => '000000',
 );
 my $statuscolor = sub { $color{$_[0]->status} };
+my $typecolor = sub { $color{$_[0]->msgtype} };
 
 my $html_init = qq!<FORM ACTION="$p/search/cust_msg.html" METHOD="GET">
 <TABLE cellspacing="10">!.
@@ -109,6 +122,17 @@ include('/elements/select.html',
   'labels' => { ''        => '(any)', 
                 'failed'  => 'failed',
                 'sent'    => 'sent', },
+) .
+'</TD><TD> Type '.
+include('/elements/select.html',
+  'field' => 'msgtype',
+  'curr_value' => $cgi->param('msgtype') || '',
+  'options' => [ '', 'invoice', 'receipt', 'admin' ],
+  'labels'  => { ''         => '(any)',
+                 'invoice'  => 'Invoices',
+                 'receipt'  => 'Receipts',
+                 'admin'    => 'Admin notices',
+               },
 ) .
 '</TD>
 <TD><INPUT type="submit" value="Search"></TD></TR>
