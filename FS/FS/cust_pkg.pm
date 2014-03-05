@@ -935,6 +935,8 @@ sub cancel {
         'to'      => \@invoicing_list,
         'subject' => ( $conf->config('cancelsubject') || 'Cancellation Notice' ),
         'body'    => [ map "$_\n", $conf->config('cancelmessage') ],
+        'custnum' => $self->custnum,
+        'msgtype' => '', #admin?
       );
     }
     #should this do something on errors?
@@ -1376,6 +1378,8 @@ sub suspend {
           'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
           ( map { "Service : $_\n" } @labels ),
         ],
+        'custnum' => $self->custnum,
+        'msgtype' => 'admin'
       );
 
       if ( $error ) {
@@ -1629,6 +1633,8 @@ sub unsuspend {
           : ''
         ),
       ],
+      'custnum' => $self->custnum,
+      'msgtype' => 'admin',
     );
 
     if ( $error ) {
