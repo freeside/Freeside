@@ -5606,6 +5606,27 @@ and customer address. Include units.',
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'api_shared_secret',
+    'section'     => 'API',
+    'description' => 'Shared secret for back-office API authentication',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'xmlrpc_api',
+    'section'     => 'API',
+    'description' => 'Enable the back-office API XML-RPC server (on port 8008).',
+    'type'        => 'checkbox',
+  },
+
+#  {
+#    'key'         => 'jsonrpc_api',
+#    'section'     => 'API',
+#    'description' => 'Enable the back-office API JSON-RPC server (on port 8081).',
+#    'type'        => 'checkbox',
+#  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

@@ -2,12 +2,14 @@
 
 use FS::Daemon::Preforking qw( freeside_init1 freeside_init2 daemon_run );
 
-use XMLRPC::Transport::HTTP; #SOAP::Transport::HTTP;
-use XMLRPC::Lite; # for XMLRPC::Serializer
+use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer
+                     #and XMLRPC::Transport::HTTP
 
 use FS::Conf;
-use FS::ClientAPI qw( load_clientapi_modules );
-use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
+
+##use FS::ClientAPI qw( load_clientapi_modules );
+##use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
+use FS::API;
 
 #freeside xmlrpc.cgi
 my %typelookup = (
@@ -16,23 +18,25 @@ my %typelookup = (
   string   => [40, sub {1}, 'as_string'],
 );
 
-use constant ME => 'selfservice-xmlrpcd';
+use constant ME => 'xmlrpcd';
 
 #
 
 freeside_init1(ME);
 
-load_clientapi_modules;
+#load_clientapi_modules;
 
 freeside_init2(ME);
 
-FS::ClientAPI::Signup::clear_cache();
+#FS::ClientAPI::Signup::clear_cache();
 
 my $conf = new FS::Conf;
-die "not running; selfservice-xmlrpc conf option is off\n"
-  unless $conf->exists('selfservice-xmlrpc');
+die "not running; xmlrpc_api conf option is off\n"
+  unless $conf->exists('xmlrpc_api');
+die "not running; api_shared_secret conf option is not set\n"
+  unless $conf->config('api_shared_secret');
 
-daemon_run( 'port' => 8080, 'handle_request' =>
+daemon_run( 'port' => 8008, 'handle_request' =>
   sub {
     my $request = shift;
 
@@ -41,7 +45,7 @@ daemon_run( 'port' => 8080, 'handle_request' =>
     #my $soap = SOAP::Transport::HTTP::Server
     my $soap = XMLRPC::Transport::HTTP::Server
                -> new
-               -> dispatch_to('FS::ClientAPI_XMLRPC')
+               -> dispatch_to('FS::API')
                -> serializer($serializer);
 
     $soap->request($request);

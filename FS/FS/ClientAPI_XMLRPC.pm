@@ -30,7 +30,7 @@ L<FS::SelfService::XMLRPC>, L<FS::SelfService>
 use strict;
 
 use vars qw($DEBUG $AUTOLOAD);
-use XMLRPC::Lite; # for XMLRPC::Data
+use FS::XMLRPC_Lite; #XMLRPC::Lite, for XMLRPC::Data
 use FS::ClientAPI;
 
 $DEBUG = 0;
@@ -187,18 +187,5 @@ sub ss2clientapi {
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
   };
 }
-
-
-#XXX submit patch to SOAP::Lite
-
-use XMLRPC::Transport::HTTP;
-
-package XMLRPC::Transport::HTTP::Server;
-
-@XMLRPC::Transport::HTTP::Server::ISA = qw(SOAP::Transport::HTTP::Server);
-
-sub initialize; *initialize = \&XMLRPC::Server::initialize;
-sub make_fault; *make_fault = \&XMLRPC::Transport::HTTP::CGI::make_fault;
-sub make_response; *make_response = \&XMLRPC::Transport::HTTP::CGI::make_response;
 
 1;
