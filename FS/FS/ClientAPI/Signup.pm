@@ -532,7 +532,7 @@ sub new_customer {
                          || $conf->config('signup_server-default_refnum'),
 
       ( map { $_ => $template_cust->$_ } qw( 
-              last first company daytime night fax 
+              last first company daytime night fax mobile
             )
       ),
 
@@ -563,7 +563,8 @@ sub new_customer {
 
       map { $_ => $packet->{$_} } qw(
         last first ss company 
-        daytime night fax stateid stateid_state
+        daytime night fax mobile
+        stateid stateid_state
         payby
         payinfo paycvv paydate payname paystate paytype
         paystart_month paystart_year payissue
@@ -930,7 +931,7 @@ sub new_customer_minimal {
 
       map { $_ => $packet->{$_} } qw(
         last first ss company 
-        daytime night fax
+        daytime night fax mobile
       ),
 
   } );
