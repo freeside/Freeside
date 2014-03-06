@@ -213,12 +213,82 @@ sub insert_refund_phonenum {
 
 #---
 
-
-
 # "2 way syncing" ?  start with non-sync pulling info here, then if necessary
 # figure out how to trigger something when those things change
 
 # long-term: package changes?
+
+=item new_customer
+
+=cut
+
+#certainly false laziness w/ClientAPI::Signup new_customer/new_customer_minimal
+# but approaching this from a clean start / back-office perspective
+#  i.e. no package/service, no immediate credit card run, etc.
+
+sub new_customer {
+  my( $class, %opt ) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  #default agentnum like signup_server-default_agentnum?
+ 
+  #same for refnum like signup_server-default_refnum
+
+  my $cust_main = new FS::cust_main ( {
+      'agentnum'      => $agentnum,
+      'refnum'        => $opt{refnum}
+                         || $conf->config('signup_server-default_refnum'),
+      'payby'         => 'BILL',
+
+      map { $_ => $opt{$_} } qw(
+        agentnum refnum agent_custid
+        last first company 
+        daytime night fax mobile
+        payby payinfo paydate paycvv payname
+      ),
+
+  } );
+
+  my @invoicing_list = $opt{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
+                         : ();
+  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+
+  my ($bill_hash, $ship_hash);
+  foreach my $f (FS::cust_main->location_fields) {
+    # avoid having to change this in front-end code
+    $bill_hash->{$f} = $opt{"bill_$f"} || $opt{$f};
+    $ship_hash->{$f} = $opt{"ship_$f"};
+  }
+
+  my $bill_location = FS::cust_location->new($bill_hash);
+  my $ship_location;
+  # we don't have an equivalent of the "same" checkbox in selfservice^Wthis API
+  # so is there a ship address, and if so, is it different from the billing 
+  # address?
+  if ( length($ship_hash->{address1}) > 0 and
+          grep { $bill_hash->{$_} ne $ship_hash->{$_} } keys(%$ship_hash)
+         ) {
+
+    $ship_location = FS::cust_location->new( $ship_hash );
+  
+  } else {
+    $ship_location = $bill_location;
+  }
+
+  $cust_main->set('bill_location' => $bill_location);
+  $cust_main->set('ship_location' => $ship_location);
+
+  $error = $cust_main->insert( {}, \@invoicing_list );
+  return { 'error'   => $error } if $error;
+  
+  return { 'error'   => '',
+           'custnum' => $cust_main->custnum,
+         };
+
+}
 
 =item customer_info
 
@@ -277,7 +347,6 @@ sub customer_info {
   return \%return;
 
 }
-
 
 #I also monitor for changes to the additional locations that are applied to
 # packages, and would like for those to be exportable as well.  basically the
