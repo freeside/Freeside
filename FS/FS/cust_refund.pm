@@ -2,15 +2,22 @@ package FS::cust_refund;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
-             FS::Record );
-use vars qw( @encrypted_fields );
+             FS::reason_Mixin FS::Record );
+use vars qw( @encrypted_fields $me $DEBUG $ignore_empty_reasonnum );
 use Business::CreditCard;
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh dbdef );
 use FS::CurrentUser;
 use FS::cust_credit;
 use FS::cust_credit_refund;
 use FS::cust_pay_refund;
 use FS::cust_main;
+use FS::reason_type;
+use FS::reason;
+
+$me = '[ FS::cust_refund ]';
+$DEBUG = 0;
+
+$ignore_empty_reasonnum = 0;
 
 @encrypted_fields = ('payinfo');
 sub nohistory_fields { ('payinfo'); }
@@ -56,7 +63,11 @@ Amount of the refund
 
 =item reason
 
-Reason for the refund
+Text stating the reason for the refund ( deprecated )
+
+=item reasonnum
+
+Reason (see L<FS::reason>)
 
 =item _date
 
@@ -119,7 +130,7 @@ amount of the refund will be created.  In both cases, custnum is optional.
 =cut
 
 sub insert {
-  my $self = shift;
+  my ($self, %options) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -131,6 +142,20 @@ sub insert {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  unless ($self->reasonnum) {
+    my $result = $self->reason( $self->getfield('reason'),
+                                exists($options{ 'reason_type' })
+                                  ? ('reason_type' => $options{ 'reason_type' })
+                                  : (),
+                              );
+    unless($result) {
+      $dbh->rollback if $oldAutoCommit;
+      return "failed to set reason for $me"; #: ". $dbh->errstr;
+    }
+  }
+
+  $self->setfield('reason', '');
 
   if ( $self->crednum ) {
     my $cust_credit = qsearchs('cust_credit', { 'crednum' => $self->crednum } )
@@ -274,11 +299,15 @@ sub check {
     || $self->ut_numbern('custnum')
     || $self->ut_money('refund')
     || $self->ut_alphan('otaker')
-    || $self->ut_text('reason')
+    || $self->ut_textn('reason')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
     || $self->ut_enum('closed', [ '', 'Y' ])
   ;
+  return $error if $error;
+
+  my $method = $ignore_empty_reasonnum ? 'ut_foreign_keyn' : 'ut_foreign_key';
+  $error = $self->$method('reasonnum', 'reason', 'reasonnum');
   return $error if $error;
 
   return "refund must be > 0 " if $self->refund <= 0;
@@ -380,6 +409,7 @@ sub unapplied_sql {
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
+  $class->_upgrade_reasonnum(%opts);
   $class->_upgrade_otaker(%opts);
 }
 
