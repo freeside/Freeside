@@ -243,7 +243,7 @@ sub new_customer {
       'payby'         => 'BILL',
 
       map { $_ => $opt{$_} } qw(
-        agentnum refnum agent_custid
+        agentnum refnum agent_custid referral_custnum
         last first company 
         daytime night fax mobile
         payby payinfo paydate paycvv payname
