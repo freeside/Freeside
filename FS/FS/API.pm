@@ -41,12 +41,63 @@ Enter cash refund.
 
 #---
 
-
-
 # "2 way syncing" ?  start with non-sync pulling info here, then if necessary
 # figure out how to trigger something when those things change
 
 # long-term: package changes?
+
+
+=item new_customer
+
+=cut
+
+#certainly false laziness w/ClientAPI::Signup new_customer/new_customer_minimal
+# but approaching this from a clean start / back-office perspective
+#  i.e. no package/service, no immediate credit card run, etc.
+
+sub new_customer {
+  my( $class, %opt ) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  #default agentnum like signup_server-default_agentnum?
+ 
+  #same for refnum like signup_server-default_refnum
+
+  my $cust_main = new FS::cust_main ( {
+      'agentnum'      => $agentnum,
+      'refnum'        => $opt{refnum}
+                         || $conf->config('signup_server-default_refnum'),
+      'payby'         => 'BILL',
+
+      map { $_ => $opt{$_} } qw(
+        agentnum refnum agent_custid
+        last first company 
+        address1 address2 city county state zip country
+        latitude longitude
+        geocode censustract censusyear
+        ship_address1 ship_address2 ship_city ship_county ship_state ship_zip ship_country
+        ship_latitude ship_longitude
+        daytime night fax mobile
+        payby payinfo paydate paycvv payname
+      ),
+
+  } );
+
+  my @invoicing_list = $opt{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
+                         : ();
+  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+
+  $error = $cust_main->insert( {}, \@invoicing_list );
+  return { 'error'   => $error } if $error;
+  
+  return { 'error'   => '',
+           'custnum' => $cust_main->custnum,
+         };
+
+}
 
 =item customer_info
 
