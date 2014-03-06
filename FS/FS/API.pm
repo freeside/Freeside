@@ -3,6 +3,9 @@ package FS::API;
 use FS::Conf;
 use FS::Record qw( qsearchs );
 use FS::cust_main;
+use FS::cust_pay;
+use FS::cust_credit;
+use FS::cust_refund;
 
 =head1 NAME
 
@@ -31,12 +34,181 @@ in plaintext.
 
 =over 4
 
-# needs to be able to:
-Enter cash payment
-Enter credit
-Enter cash refund.
+=item insert_payment
 
-# would like to be able to pass the phone number ( from svc_phone ) to the API for this query.
+Example:
+
+  my $result = FS::API->insert_payment(
+    'secret'  => 'sharingiscaring',
+    'custnum' => 181318,
+    'payby'   => 'CASH',
+    'paid'    => '54.32',
+
+    #optional
+    '_date'   => 1397977200, #UNIX timestamp
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    #payment was inserted
+    print "paynum ". $result->{'paynum'};
+  }
+
+=cut
+
+#enter cash payment
+sub insert_payment {
+  my($class, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  #less "raw" than this?  we are the backoffice API, and aren't worried
+  # about version migration ala cust_main/cust_location here
+  my $cust_pay = new FS::cust_pay { %opt };
+  my $error = $cust_pay->insert( 'manual'=>1 );
+  return { 'error'  => $error,
+           'paynum' => $cust_pay->paynum,
+         };
+}
+
+# pass the phone number ( from svc_phone ) 
+sub insert_payment_phonenum {
+  my($class, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  $class->_by_phonenum('insert_payment', %opt);
+
+}
+
+sub _by_phonenum {
+  my($class, $method, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  my $phonenum = delete $opt{'phonenum'};
+
+  my $svc_phone = qsearchs('svc_phone', { 'phonenum' => $phonenum } )
+    or return { 'error' => 'Unknown phonenum' };
+
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg
+    or return { 'error' => 'Unlinked phonenum' };
+
+  $opt{'custnum'} = $cust_pkg->custnum;
+
+  $class->$method(%opt);
+
+}
+
+=item insert_credit
+
+Example:
+
+  my $result = FS::API->insert_credit(
+    'secret'  => 'sharingiscaring',
+    'custnum' => 181318,
+    'amount'  => '54.32',
+
+    #optional
+    '_date'   => 1397977200, #UNIX timestamp
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    #credit was inserted
+    print "crednum ". $result->{'crednum'};
+  }
+
+=cut
+
+#Enter credit
+sub insert_credit {
+  my($class, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  $opt{'reasonnum'} ||= $conf->config('api_credit_reason');
+
+  #less "raw" than this?  we are the backoffice API, and aren't worried
+  # about version migration ala cust_main/cust_location here
+  my $cust_credit = new FS::cust_credit { %opt };
+  my $error = $cust_credit->insert;
+  return { 'error'  => $error,
+           'crednum' => $cust_credit->crednum,
+         };
+}
+
+# pass the phone number ( from svc_phone ) 
+sub insert_credit_phonenum {
+  my($class, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  $class->_by_phonenum('insert_credit', %opt);
+
+}
+
+=item insert_refund
+
+Example:
+
+  my $result = FS::API->insert_refund(
+    'secret'  => 'sharingiscaring',
+    'custnum' => 181318,
+    'payby'   => 'CASH',
+    'refund'  => '54.32',
+
+    #optional
+    '_date'   => 1397977200, #UNIX timestamp
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    #refund was inserted
+    print "refundnum ". $result->{'crednum'};
+  }
+
+=cut
+
+#Enter cash refund.
+sub insert_refund {
+  my($class, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  # when github pull request #24 is merged,
+  #  will have to change over to default reasonnum like credit
+  # but until then, this will do
+  $opt{'reason'} ||= 'API refund';
+
+  #less "raw" than this?  we are the backoffice API, and aren't worried
+  # about version migration ala cust_main/cust_location here
+  my $cust_refund = new FS::cust_refund { %opt };
+  my $error = $cust_refund->insert;
+  return { 'error'     => $error,
+           'refundnum' => $cust_refund->refundnum,
+         };
+}
+
+# pass the phone number ( from svc_phone ) 
+sub insert_refund_phonenum {
+  my($class, %opt) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  $class->_by_phonenum('insert_refund', %opt);
+
+}
 
 #---
 
