@@ -106,14 +106,17 @@
     <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
 % }
 
-  <TR>
-    <TD ALIGN="right">Reason</TD>
-    <TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="<% $reason %>"></TD>
-  </TR>
+<& /elements/tr-select-reason.html,
+              'field'          => 'reasonnum',
+              'reason_class'   => 'F',
+              'control_button' => "document.getElementById('confirm_refund_button')",
+              'cgi'            => $cgi,
+&>
+
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="Post refund">
+<INPUT TYPE="submit" ID="confirm_refund_button" VALUE="<% mt('Post refund') |h %>" DISABLED>
 
 </FORM>
 

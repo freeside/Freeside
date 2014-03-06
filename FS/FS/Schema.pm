@@ -2853,7 +2853,8 @@ sub tables_hashref {
         'currency',       'char', 'NULL',       3, '', '',
         'otaker',       'varchar',   'NULL',   32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',
-        'reason',       'varchar',   '',   $char_d, '', '', 
+        'reason',       'varchar',   'NULL',   $char_d, '', '', 
+        'reasonnum',   'int', 'NULL', '', '', '',
         'payby',        'char',   '',     4, '', '', # CARD/BILL/COMP, should
                                                      # be index into payby
                                                      # table eventually
@@ -2876,6 +2877,9 @@ sub tables_hashref {
                           },
                           { columns    => [ 'usernum' ],
                             table      => 'access_user',
+                          },
+                          { columns    => [ 'reasonnum' ],
+                            table      => 'reason',
                           },
                           { columns    => [ 'gatewaynum' ],
                             table      => 'payment_gateway',
