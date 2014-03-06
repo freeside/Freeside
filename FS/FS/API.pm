@@ -275,6 +275,19 @@ sub customer_info {
   $return{$_} = $cust_main->get($_)
     foreach @cust_main_editable_fields;
 
+  for (@location_editable_fields) {
+    $return{$_} = $cust_main->bill_location->get($_)
+      if $cust_main->bill_locationnum;
+    $return{'ship_'.$_} = $cust_main->ship_location->get($_)
+      if $cust_main->ship_locationnum;
+  }
+
+  my @invoicing_list = $cust_main->invoicing_list;
+  $return{'invoicing_list'} =
+    join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
+  $return{'postal_invoicing'} =
+    0 < ( grep { $_ eq 'POST' } @invoicing_list );
+
   return \%return;
 
 }
