@@ -212,28 +212,8 @@ sub insert_refund_phonenum {
 
 #---
 
-#Customer data
-# pull customer info 
-# The fields needed are:
-#
-# cust_main.custnum
-# cust_main.first
-# cust_main.last
-# cust_main.company
-# cust_main.address1
-# cust_main.address2
-# cust_main.city
-# cust_main.state
-# cust_main.zip
-# cust_main.daytime
-# cust_main.night
-# cust_main_invoice.dest
-#
-# at minimum
+#generally, the more useful data from the cust_main record the better.
 
-#Customer balances
-
-#Advertising sources?
 
 # "2 way syncing" ?  start with non-sync pulling info here, then if necessary
 # figure out how to trigger something when those things change
@@ -271,6 +251,8 @@ sub customer_info {
     'display_custnum' => $cust_main->display_custnum,
     'name'            => $cust_main->first. ' '. $cust_main->get('last'),
     'balance'         => $cust_main->balance,
+    'status'          => $cust_main->status,
+    'statuscolor'     => $cust_main->statuscolor,
   );
 
   $return{$_} = $cust_main->get($_)
@@ -292,6 +274,27 @@ sub customer_info {
   return \%return;
 
 }
+
+#I also monitor for changes to the additional locations that are applied to
+# packages, and would like for those to be exportable as well.  basically the
+# location data passed with the custnum.
+sub location_info {
+  my( $class, %opt ) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  my @cust_location = qsearch('cust_location', { 'custnum' => $opt{custnum} });
+
+  my %return = (
+    'error'           => '',
+    'locations'       => [ @cust_location ],
+  );
+
+  return \%return;
+}
+
+#Advertising sources?
 
 =back
 
