@@ -6,7 +6,6 @@ use FS::part_export;
 use FS::Record qw(qsearch qsearchs);
 use FS::Conf;
 use FS::msg_template;
-use FS::Misc qw(send_email);
 
 @ISA = qw(FS::part_export);
 

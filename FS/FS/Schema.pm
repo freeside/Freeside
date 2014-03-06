@@ -6013,7 +6013,7 @@ sub tables_hashref {
     'cust_msg' => {
       'columns' => [
         'custmsgnum', 'serial',     '',     '', '', '',
-        'custnum',       'int',     '',     '', '', '',
+        'custnum',       'int', 'NULL',     '', '', '',
         'msgnum',        'int', 'NULL',     '', '', '',
         '_date',    @date_type,                 '', '',
         'env_from',  'varchar', 'NULL',    255, '', '',
@@ -6022,6 +6022,7 @@ sub tables_hashref {
         'body',         'blob', 'NULL',     '', '', '',
         'error',     'varchar', 'NULL',    255, '', '',
         'status',    'varchar',     '',$char_d, '', '',
+        'msgtype',   'varchar', 'NULL',     16, '', '',
       ],
       'primary_key'  => 'custmsgnum',
       'unique'       => [ ],
