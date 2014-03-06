@@ -72,7 +72,7 @@ sub new_customer {
       'payby'         => 'BILL',
 
       map { $_ => $opt{$_} } qw(
-        agentnum refnum agent_custid
+        agentnum refnum agent_custid referral_custnum
         last first company 
         address1 address2 city county state zip country
         latitude longitude
