@@ -270,6 +270,7 @@ sub customer_info {
     'error'           => '',
     'display_custnum' => $cust_main->display_custnum,
     'name'            => $cust_main->first. ' '. $cust_main->get('last'),
+    'balance'         => $cust_main->balance,
   );
 
   $return{$_} = $cust_main->get($_)
