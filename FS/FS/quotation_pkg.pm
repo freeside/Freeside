@@ -2,6 +2,8 @@ package FS::quotation_pkg;
 use base qw( FS::TemplateItem_Mixin FS::Record );
 
 use strict;
+use FS::Record qw( qsearchs ); #qsearch
+use FS::part_pkg;
 use FS::quotation_pkg_discount; #so its loaded when TemplateItem_Mixin needs it
 
 =head1 NAME
@@ -124,6 +126,13 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+#it looks redundant with a v4.x+ auto-generated method, but need to override
+# FS::TemplateItem_Mixin's version
+sub part_pkg {
+  my $self = shift;
+  qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
 sub desc {

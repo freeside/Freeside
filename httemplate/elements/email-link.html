@@ -1,9 +1,10 @@
 % if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
-<A HREF="<%$p%>misc/email-customers.html?table=<%$table%>&<%$query%>"><%$label%></A>
+<A HREF="<%$p%>misc/email-customers.html?table=<%$table%>&agent_virt_agentnum=<%$agent_virt_agentnum%>&<%$query%>"><%$label%></A>
 % }
 <%init>
 my %opt = @_;
 my $table = $opt{'table'};
+my $agent_virt_agentnum = $opt{'agent_virt_agentnum'};
 my $search_hash = $opt{'search_hash'};
 die "'table' required" if !$table;
 die "'search_hash' required" if !$search_hash;

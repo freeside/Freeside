@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -51,11 +51,13 @@ $ChartStyle => 'bars'
 $Description => undef
 </%args>
 <%init>
+$m->callback( ARGSRef => \%ARGS, CallbackName => 'Initial' );
+
 $ARGS{Query} ||= 'id > 0';
 
 # FIXME: should be factored with RT::Report::Tickets::Label :(
 my $PrimaryGroupByLabel;
-if ( $PrimaryGroupBy =~ /^(?:CF|CustomField)\.{(.*)}$/ ) {
+if ( $PrimaryGroupBy =~ /^(?:CF|CustomField)\.\{(.*)\}$/ ) {
     my $cf = $1;
     if ( $cf =~ /\D/ ) {
         $PrimaryGroupByLabel = loc( "custom field '[_1]'", $cf );
@@ -97,8 +99,8 @@ my %query;
     );
 
     for(@session_fields) {
-        $query{$_} = $current->{$_} unless defined $query{$_};
         $query{$_} = $DECODED_ARGS->{$_} unless defined $query{$_};
+        $query{$_} = $current->{$_} unless defined $query{$_};
     }
 
     if ($DECODED_ARGS->{'SavedSearchLoadSubmit'}) {
@@ -111,11 +113,17 @@ my %query;
 
 }
 
+$m->callback( ARGSRef => \%ARGS, QueryArgsRef => \%query );
 </%init>
 <& /Elements/Header, Title => $title &>
 <& /Elements/Tabs, QueryArgs => \%query &>
 <& /Elements/ListActions, actions => \@actions &>
+
+% $m->callback( ARGSRef => \%ARGS, CallbackName => 'BeforeChart' );
+
 <& /Search/Elements/Chart, %ARGS &>
+
+% $m->callback( ARGSRef => \%ARGS, CallbackName => 'AfterChart' );
 
 <div class="chart-meta">
 <div class="chart-type">

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -110,7 +110,7 @@ sub SmartParseMIMEEntityFromScalar {
             # accommodate this by pausing and retrying.
             last
               if ( $fh, $temp_file ) =
-              eval { File::Temp::tempfile( undef, UNLINK => 0 ) };
+              eval { File::Temp::tempfile( UNLINK => 0 ) };
             sleep 1;
         }
         if ($fh) {
@@ -546,8 +546,36 @@ sub ParseEmailAddress {
         @addresses = Email::Address->parse($address_string);
     }
 
+    $self->CleanupAddresses(@addresses);
+
     return @addresses;
 
+}
+
+=head2 CleanupAddresses ARRAY
+
+Massages an array of L<Email::Address> objects to make their email addresses
+more palatable.
+
+Currently this strips off surrounding single quotes around C<< ->address >> and
+B<< modifies the L<Email::Address> objects in-place >>.
+
+Returns the list of objects for convienence in C<map>/C<grep> chains.
+
+=cut
+
+sub CleanupAddresses {
+    my $self = shift;
+
+    for my $addr (@_) {
+        next unless defined $addr;
+        # Outlook sometimes sends addresses surrounded by single quotes;
+        # clean them all up
+        if ((my $email = $addr->address) =~ s/^'(.+)'$/$1/) {
+            $addr->address($email);
+        }
+    }
+    return @_;
 }
 
 =head2 RescueOutlook 

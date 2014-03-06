@@ -943,6 +943,7 @@ sub tables_hashref {
         'eventnum',       'int', '', '', '', '',
         'billpkgnum',     'int', 'NULL', '', '', '',
         'feepart',        'int', '', '', '', '',
+        'nextbill',      'char', 'NULL',  1, '', '',
       ],
       'primary_key'  => 'eventfeenum', # I'd rather just use eventnum
       'unique' => [ [ 'billpkgnum' ], [ 'eventnum' ] ], # one-to-one link
@@ -2234,6 +2235,7 @@ sub tables_hashref {
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
         'paynum',       'int',     'NULL',  '', '', '',
+        'void_paynum',  'int',     'NULL',  '', '', '',
         'jobnum',    'bigint',     'NULL',  '', '', '', 
         'invnum',       'int',     'NULL',  '', '', '',
         'manual',       'char',    'NULL',   1, '', '',
@@ -2255,6 +2257,10 @@ sub tables_hashref {
                           },
                           { columns    => [ 'paynum' ],
                             table      => 'cust_pay',
+                          },
+                          { columns    => [ 'void_paynum' ],
+                            table      => 'cust_pay_void',
+                            references => [ 'paynum' ],
                           },
                           { columns    => [ 'jobnum' ],
                             table      => 'queue',
@@ -3188,6 +3194,26 @@ sub tables_hashref {
                         ],
     },
 
+    'part_fee_usage' => {
+      'columns' => [
+        'feepartusagenum','serial',     '',        '', '', '',
+        'feepart',           'int',     '',        '', '', '',
+        'classnum',          'int',     '',        '', '', '',
+        'amount',   @money_type,                '', '',
+        'percent',     'decimal',    '', '7,4', '', '',
+      ],
+      'primary_key'  => 'feepartusagenum',
+      'unique'       => [ [ 'feepart', 'classnum' ] ],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'feepart' ],
+                            table      => 'part_fee',
+                          },
+                          { columns    => [ 'classnum' ],
+                            table      => 'usage_class',
+                          },
+                        ],
+    },
 
     'part_pkg_link' => {
       'columns' => [
@@ -4427,9 +4453,9 @@ sub tables_hashref {
       'unique'       => [ [ 'blocknum', 'routernum' ] ],
       'index'        => [],
       'foreign_keys' => [
-                          { columns    => [ 'routernum' ],
-                            table      => 'router',
-                          },
+                          #{ columns    => [ 'routernum' ],
+                          #   table      => 'router',
+                          #},
                           { columns    => [ 'agentnum' ],
                             table      => 'agent',
                           },
@@ -5991,7 +6017,7 @@ sub tables_hashref {
     'cust_msg' => {
       'columns' => [
         'custmsgnum', 'serial',     '',     '', '', '',
-        'custnum',       'int',     '',     '', '', '',
+        'custnum',       'int', 'NULL',     '', '', '',
         'msgnum',        'int', 'NULL',     '', '', '',
         '_date',    @date_type,                 '', '',
         'env_from',  'varchar', 'NULL',    255, '', '',
@@ -6000,6 +6026,7 @@ sub tables_hashref {
         'body',         'blob', 'NULL',     '', '', '',
         'error',     'varchar', 'NULL',    255, '', '',
         'status',    'varchar',     '',$char_d, '', '',
+        'msgtype',   'varchar', 'NULL',     16, '', '',
       ],
       'primary_key'  => 'custmsgnum',
       'unique'       => [ ],

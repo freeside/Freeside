@@ -45,6 +45,9 @@ time billing runs for the customer.
 
 =item feepart - key of the fee definition (L<FS::part_fee>).
 
+=item nextbill - 'Y' if the fee should be charged on the customer's next
+bill, rather than causing a bill to be produced immediately.
+
 =back
 
 =head1 METHODS
@@ -93,6 +96,7 @@ sub check {
     || $self->ut_foreign_key('eventnum', 'cust_event', 'eventnum')
     || $self->ut_foreign_keyn('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_foreign_key('feepart', 'part_fee', 'feepart')
+    || $self->ut_flag('nextbill')
   ;
   return $error if $error;
 
@@ -108,7 +112,8 @@ sub check {
 =item by_cust CUSTNUM[, PARAMS]
 
 Finds all cust_event_fee records belonging to the customer CUSTNUM.  Currently
-fee events can be cust_main or cust_bill events; this will return both.
+fee events can be cust_main, cust_pkg, or cust_bill events; this will return 
+all of them.
 
 PARAMS can be additional params to pass to qsearch; this really only works
 for 'hashref' and 'order_by'.
@@ -140,6 +145,15 @@ sub by_cust {
                  'JOIN cust_bill ON (cust_event.tablenum = cust_bill.invnum)',
     extra_sql => "$where eventtable = 'cust_bill' ".
                  "AND cust_bill.custnum = $custnum",
+    %params
+  }),
+  qsearch({
+    table     => 'cust_event_fee',
+    addl_from => 'JOIN cust_event USING (eventnum) ' .
+                 'JOIN part_event USING (eventpart) ' .
+                 'JOIN cust_pkg ON (cust_event.tablenum = cust_pkg.pkgnum)',
+    extra_sql => "$where eventtable = 'cust_pkg' ".
+                 "AND cust_pkg.custnum = $custnum",
     %params
   })
 }

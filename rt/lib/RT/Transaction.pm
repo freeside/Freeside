@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -368,24 +368,9 @@ sub Content {
     }
 
     if ( $args{'Quote'} ) {
+        $content = $self->ApplyQuoteWrap(content => $content,
+                                         cols    => $args{'Wrap'} );
 
-        # What's the longest line like?
-        my $max = 0;
-        foreach ( split ( /\n/, $content ) ) {
-            $max = length if length > $max;
-        }
-
-        if ( $max > $args{'Wrap'}+6 ) { # 76 ) {
-            require Text::Wrapper;
-            my $wrapper = Text::Wrapper->new(
-                columns    => $args{'Wrap'},
-                body_start => ( $max > 70 * 3 ? '   ' : '' ),
-                par_start  => ''
-            );
-            $content = $wrapper->wrap($content);
-        }
-
-        $content =~ s/^/> /gm;
         $content = $self->QuoteHeader . "\n$content\n\n";
     }
 
@@ -403,6 +388,84 @@ localized "On <date> <user name> wrote:\n".
 sub QuoteHeader {
     my $self = shift;
     return $self->loc("On [_1], [_2] wrote:", $self->CreatedAsString, $self->CreatorObj->Name);
+}
+
+=head2 ApplyQuoteWrap PARAMHASH
+
+Wrapper to calculate wrap criteria and apply quote wrapping if needed.
+
+=cut
+
+sub ApplyQuoteWrap {
+    my $self = shift;
+    my %args = @_;
+    my $content = $args{content};
+
+    # What's the longest line like?
+    my $max = 0;
+    foreach ( split ( /\n/, $args{content} ) ) {
+        $max = length if length > $max;
+    }
+
+    if ( $max > 76 ) {
+        require Text::Quoted;
+        require Text::Wrapper;
+
+        my $structure = Text::Quoted::extract($args{content});
+        $content = $self->QuoteWrap(content_ref => $structure,
+                                    cols        => $args{cols},
+                                    max         => $max );
+    }
+
+    $content =~ s/^/> /gm;  # use regex since string might be multi-line
+    return $content;
+}
+
+=head2 QuoteWrap PARAMHASH
+
+Wrap the contents of transactions based on Wrap settings, maintaining
+the quote character from the original.
+
+=cut
+
+sub QuoteWrap {
+    my $self = shift;
+    my %args = @_;
+    my $ref = $args{content_ref};
+    my $final_string;
+
+    if ( ref $ref eq 'ARRAY' ){
+        foreach my $array (@$ref){
+            $final_string .= $self->QuoteWrap(content_ref => $array,
+                                              cols        => $args{cols},
+                                              max         => $args{max} );
+        }
+    }
+    elsif ( ref $ref eq 'HASH' ){
+        return $ref->{quoter} . "\n" if $ref->{empty}; # Blank line
+
+        my $col = $args{cols} - (length $ref->{quoter});
+        my $wrapper = Text::Wrapper->new( columns => $col );
+
+        # Wrap on individual lines to honor incoming line breaks
+        # Otherwise deliberate separate lines (like a list or a sig)
+        # all get combined incorrectly into single paragraphs.
+
+        my @lines = split /\n/, $ref->{text};
+        my $wrap = join '', map { $wrapper->wrap($_) } @lines;
+        my $quoter = $ref->{quoter};
+
+        # Only add the space if actually quoting
+        $quoter .= ' ' if length $quoter;
+        $wrap =~ s/^/$quoter/mg;  # use regex since string might be multi-line
+
+        return $wrap;
+    }
+    else{
+        $RT::Logger->warning("Can't apply quoting with $ref");
+        return;
+    }
+    return $final_string;
 }
 
 
@@ -725,8 +788,9 @@ sub BriefDescription {
         my $self = shift;
         my $field = $self->loc('CustomField');
 
+        my $cf;
         if ( $self->Field ) {
-            my $cf = RT::CustomField->new( $self->CurrentUser );
+            $cf = RT::CustomField->new( $self->CurrentUser );
             $cf->SetContextObject( $self->Object );
             $cf->Load( $self->Field );
             $field = $cf->Name();
@@ -735,6 +799,44 @@ sub BriefDescription {
 
         my $new = $self->NewValue;
         my $old = $self->OldValue;
+
+        if ( $cf ) {
+
+            if ( $cf->Type eq 'DateTime' ) {
+                if ($old) {
+                    my $date = RT::Date->new( $self->CurrentUser );
+                    $date->Set( Format => 'ISO', Value => $old );
+                    $old = $date->AsString;
+                }
+
+                if ($new) {
+                    my $date = RT::Date->new( $self->CurrentUser );
+                    $date->Set( Format => 'ISO', Value => $new );
+                    $new = $date->AsString;
+                }
+            }
+            elsif ( $cf->Type eq 'Date' ) {
+                if ($old) {
+                    my $date = RT::Date->new( $self->CurrentUser );
+                    $date->Set(
+                        Format   => 'unknown',
+                        Value    => $old,
+                        Timezone => 'UTC',
+                    );
+                    $old = $date->AsString( Time => 0, Timezone => 'UTC' );
+                }
+
+                if ($new) {
+                    my $date = RT::Date->new( $self->CurrentUser );
+                    $date->Set(
+                        Format   => 'unknown',
+                        Value    => $new,
+                        Timezone => 'UTC',
+                    );
+                    $new = $date->AsString( Time => 0, Timezone => 'UTC' );
+                }
+            }
+        }
 
         if ( !defined($old) || $old eq '' ) {
             return $self->loc("[_1] [_2] added", $field, $new);
@@ -938,7 +1040,8 @@ sub BriefDescription {
         else {
             return $self->loc( "[_1] changed from [_2] to [_3]",
                                $self->loc($self->Field),
-                               ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")) , "'". $self->NewValue."'" );
+                               ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")),
+                               ($self->NewValue? "'".$self->NewValue ."'" : $self->loc("(no value)")));
         }
     },
     PurgeTransaction => sub {

@@ -1,16 +1,16 @@
 <& elements/browse.html,
-  'title'         => 'Fee definitions',
-  'name_singular' => 'fee definition',
-  'query'         => $query,
-  'count_query'   => $count_query,
-  'header'        => [  '#',
+  title           => 'Fee definitions',
+  name_singular   => 'fee definition',
+  query           => $query,
+  count_query     => $count_query,
+  header          => [  '#',
                         'Description',
                         'Comment',
                         'Class',
                         'Amount',
                         'Tax status',
                      ],
-  'fields'        => [  'feepart',
+  fields          => [  'feepart',
                         'itemdesc',
                         'comment',
                         'classname',
@@ -27,6 +27,7 @@
                         $link,
                      ],
   align           => 'cllccc',
+  menubar         => \@menubar,
 &>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -64,4 +65,7 @@ my $sub_tax = sub {
 };
 
 my $link = [ $p.'edit/part_fee.html?', 'feepart' ];
+
+my @menubar = ( 'Add a new fee definition',
+                $p.'edit/part_fee.html' );
 </%init>

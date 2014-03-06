@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -86,9 +86,13 @@ sub _Init  {
     $self->SUPER::_Init( 'Handle' => $RT::Handle);
 }
 
+sub _Handle { return $RT::Handle }
+
 sub CleanSlate {
     my $self = shift;
     $self->{'_sql_aliases'} = {};
+    delete $self->{'handled_disabled_column'};
+    delete $self->{'find_disabled_rows'};
     return $self->SUPER::CleanSlate(@_);
 }
 

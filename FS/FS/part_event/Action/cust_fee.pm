@@ -9,6 +9,8 @@ sub eventtable_hashref {
     { 'cust_main' => 1 };
 }
 
+sub hold_until_bill { 1 }
+
 # Otherwise identical to cust_bill_fee.  We only have a separate event 
 # because it behaves differently as an invoice event than as a customer
 # event, and needs a different description.

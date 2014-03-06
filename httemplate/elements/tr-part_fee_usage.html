@@ -1,0 +1,29 @@
+% my $n = 0;
+% foreach my $class (@classes) {
+%   my $pre = "feepartusagenum$n";
+%   my $x = $part_fee_usage{$class->classnum} || FS::part_fee_usage->new({});
+<tr>
+  <td align="right">
+    <input type="hidden" name="<%$pre%>" value="<% $x->partfeeusagenum %>">
+    <input type="hidden" name="<%$pre%>_classnum" value="<% $class->classnum %>">
+    <% $class->classname %>:</td>
+  <td>
+    <%$money_char%><input size=4 name="<%$pre%>_amount" \
+    value="<% sprintf("%.2f", $x->amount) %>">
+  </td>
+  <td>per call<b> + </b></td>
+  <td>
+    <input size=4 name="<%$pre%>_percent" \
+    value="<% sprintf("%.1f", $x->percent) %>">%
+  </td>
+</tr>
+%   $n++;
+% }
+<%init>
+my %opt = @_;
+my $value = $opt{'curr_value'} || $opt{'value'};
+# values is an arrayref of part_fee_usage objects
+my %part_fee_usage = map { $_->classnum => $_ } @$value;
+my @classes = qsearch('usage_class', { disabled => '' });
+my $money_char = FS::Conf->new->config('money_char') || '$';
+</%init>

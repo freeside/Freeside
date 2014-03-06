@@ -1,0 +1,58 @@
+#!/usr/bin/perl
+
+use FS::Daemon::Preforking qw( freeside_init1 freeside_init2 daemon_run );
+
+use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer
+                     #and XMLRPC::Transport::HTTP
+
+use FS::Conf;
+
+##use FS::ClientAPI qw( load_clientapi_modules );
+##use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
+use FS::API;
+
+#freeside xmlrpc.cgi
+my %typelookup = (
+#not utf-8 safe#  base64 => [10, sub {$_[0] =~ /[^\x09\x0a\x0d\x20-\x7f]/}, 'as_base64'],
+  dateTime => [35, sub {$_[0] =~ /^\d{8}T\d\d:\d\d:\d\d$/}, 'as_dateTime'],
+  string   => [40, sub {1}, 'as_string'],
+);
+
+use constant ME => 'xmlrpcd';
+
+#
+
+freeside_init1(ME);
+
+#load_clientapi_modules;
+
+freeside_init2(ME);
+
+#FS::ClientAPI::Signup::clear_cache();
+
+my $conf = new FS::Conf;
+die "not running; xmlrpc_api conf option is off\n"
+  unless $conf->exists('xmlrpc_api');
+die "not running; api_shared_secret conf option is not set\n"
+  unless $conf->config('api_shared_secret');
+
+daemon_run( 'port' => 8008, 'handle_request' =>
+  sub {
+    my $request = shift;
+
+    my $serializer = new XMLRPC::Serializer(typelookup => \%typelookup);
+
+    #my $soap = SOAP::Transport::HTTP::Server
+    my $soap = XMLRPC::Transport::HTTP::Server
+               -> new
+               -> dispatch_to('FS::API')
+               -> serializer($serializer);
+
+    $soap->request($request);
+    $soap->handle;
+
+    return $soap->response;
+  }
+);
+
+1;

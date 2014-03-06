@@ -33,13 +33,14 @@ my %search_hash = ();
 my @sql_query = ();
 my @count_query = ();
   
-for ( qw(agentnum magic state) ) {
+for ( qw(agentnum state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 $search_hash{report_option} = $cgi->param('part5_report_option')
   if $cgi->param('part5_report_option');
+$search_hash{'active'}   = [ $opt{date}, $opt{date} ];
 
 my $sql_query = FS::cust_pkg->search( { %search_hash,
                                         'fcc_line'    => 1,

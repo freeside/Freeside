@@ -5,7 +5,7 @@ use base qw( FS::o2m_Common FS::Record );
 use vars qw( $DEBUG );
 use FS::Record qw( qsearch qsearchs );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -126,6 +126,9 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  $self->set('amount', 0) unless $self->amount;
+  $self->set('percent', 0) unless $self->percent;
+
   my $error = 
     $self->ut_numbern('feepart')
     || $self->ut_textn('comment')
@@ -138,26 +141,23 @@ sub check {
     || $self->ut_floatn('credit_weight')
     || $self->ut_agentnum_acl('agentnum',
                               [ 'Edit global package definitions' ])
-    || $self->ut_moneyn('amount')
-    || $self->ut_floatn('percent')
+    || $self->ut_money('amount')
+    || $self->ut_float('percent')
     || $self->ut_moneyn('minimum')
     || $self->ut_moneyn('maximum')
     || $self->ut_flag('limit_credit')
-    || $self->ut_enum('basis', [ '', 'charged', 'owed' ])
+    || $self->ut_enum('basis', [ 'charged', 'owed', 'usage' ])
     || $self->ut_enum('setuprecur', [ 'setup', 'recur' ])
   ;
   return $error if $error;
 
-  return "For a percentage fee, the basis must be set"
-    if $self->get('percent') > 0 and $self->get('basis') eq '';
-
-  if ( ! $self->get('percent') and ! $self->get('limit_credit') ) {
-    # then it makes no sense to apply minimum/maximum
-    $self->set('minimum', '');
-    $self->set('maximum', '');
-  }
   if ( $self->get('limit_credit') ) {
     $self->set('maximum', '');
+  }
+
+  if ( $self->get('basis') eq 'usage' ) {
+    # to avoid confusion, don't also allow charging a percentage
+    $self->set('percent', 0);
   }
 
   $self->SUPER::check;
@@ -175,7 +175,7 @@ sub explanation {
   my $money_char = FS::Conf->new->config('money_char') || '$';
   my $money = $money_char . '%.2f';
   my $percent = '%.1f%%';
-  my $string;
+  my $string = '';
   if ( $self->amount > 0 ) {
     $string = sprintf($money, $self->amount);
   }
@@ -190,7 +190,14 @@ sub explanation {
     } elsif ( $self->basis('owed') ) {
       $string .= 'unpaid invoice balance';
     }
+  } elsif ( $self->basis eq 'usage' ) {
+    if ( $string ) {
+      $string .= " plus \n";
+    }
+    # append per-class descriptions
+    $string .= join("\n", map { $_->explanation } $self->part_fee_usage);
   }
+
   if ( $self->minimum or $self->maximum or $self->limit_credit ) {
     $string .= "\nbut";
     if ( $self->minimum ) {
@@ -219,11 +226,17 @@ representing the invoice line item for the fee, with linked
 L<FS::cust_bill_pkg_fee> record(s) allocating the fee to the invoice or 
 its line items, as appropriate.
 
+If the fee is going to be charged on the upcoming invoice (credit card 
+processing fees, postal invoice fees), INVOICE should be an uninserted
+L<FS::cust_bill> object where the 'cust_bill_pkg' property is an arrayref
+of the non-fee line items that will appear on the invoice.
+
 =cut
 
 sub lineitem {
   my $self = shift;
   my $cust_bill = shift;
+  my $cust_main = $cust_bill->cust_main;
 
   my $amount = 0 + $self->get('amount');
   my $total_base;  # sum of base line items
@@ -235,36 +248,71 @@ sub lineitem {
   warn "Calculating fee: ".$self->itemdesc." on ".
     ($cust_bill->invnum ? "invoice #".$cust_bill->invnum : "current invoice").
     "\n" if $DEBUG;
-  if ( $self->percent > 0 and $self->basis ne '' ) {
-    warn $self->percent . "% of amount ".$self->basis.")\n"
-      if $DEBUG;
+  my $basis = $self->basis;
 
-    # $total_base: the total charged/owed on the invoice
-    # %item_base: billpkgnum => fraction of base amount
-    if ( $cust_bill->invnum ) {
-      my $basis = $self->basis;
+  # $total_base: the total charged/owed on the invoice
+  # %item_base: billpkgnum => fraction of base amount
+  if ( $cust_bill->invnum ) {
+
+    # calculate the fee on an already-inserted past invoice.  This may have 
+    # payments or credits, so if basis = owed, we need to consider those.
+    @items = $cust_bill->cust_bill_pkg;
+    if ( $basis ne 'usage' ) {
+
       $total_base = $cust_bill->$basis; # "charged", "owed"
-
-      # calculate the fee on an already-inserted past invoice.  This may have 
-      # payments or credits, so if basis = owed, we need to consider those.
       my $basis_sql = $basis.'_sql';
       my $sql = 'SELECT ' . FS::cust_bill_pkg->$basis_sql .
                 ' FROM cust_bill_pkg WHERE billpkgnum = ?';
-      @items = $cust_bill->cust_bill_pkg;
       @item_base = map { FS::Record->scalar_sql($sql, $_->billpkgnum) }
                     @items;
-    } else {
-      # the fee applies to _this_ invoice.  It has no payments or credits, so
-      # "charged" and "owed" basis are both just the invoice amount, and 
-      # the line item amounts (setup + recur)
+
+      $amount += $total_base * $self->percent / 100;
+    }
+  } else {
+    # the fee applies to _this_ invoice.  It has no payments or credits, so
+    # "charged" and "owed" basis are both just the invoice amount, and 
+    # the line item amounts (setup + recur)
+    @items = @{ $cust_bill->get('cust_bill_pkg') };
+    if ( $basis ne 'usage' ) {
       $total_base = $cust_bill->charged;
-      @items = @{ $cust_bill->get('cust_bill_pkg') };
       @item_base = map { $_->setup + $_->recur }
                     @items;
+
+      $amount += $total_base * $self->percent / 100;
+    }
+  }
+
+  if ( $basis eq 'usage' ) {
+
+    my %part_fee_usage = map { $_->classnum => $_ } $self->part_fee_usage;
+
+    foreach my $item (@items) { # cust_bill_pkg objects
+      my $usage_fee = 0;
+      $item->regularize_details;
+      my $details;
+      if ( $item->billpkgnum ) {
+        $details = [
+          qsearch('cust_bill_pkg_detail', { billpkgnum => $item->billpkgnum })
+        ];
+      } else {
+        $details = $item->get('details') || [];
+      }
+      foreach my $d (@$details) {
+        # if there's a usage fee defined for this class...
+        next if $d->amount eq '' # not a real usage detail
+             or $d->amount == 0  # zero charge, probably shouldn't charge fee
+        ;
+        my $p = $part_fee_usage{$d->classnum} or next;
+        $usage_fee += ($d->amount * $p->percent / 100)
+                    + $p->amount;
+        # we'd create detail records here if we were doing that
+      }
+      # bypass @item_base entirely
+      push @item_fee, $usage_fee;
+      $amount += $usage_fee;
     }
 
-    $amount += $total_base * $self->percent / 100;
-  }
+  } # if $basis eq 'usage'
 
   if ( $self->minimum ne '' and $amount < $self->minimum ) {
     warn "Applying mininum fee\n" if $DEBUG;
@@ -273,9 +321,10 @@ sub lineitem {
 
   my $maximum = $self->maximum;
   if ( $self->limit_credit ) {
-    my $balance = $cust_bill->cust_main;
+    my $balance = $cust_bill->cust_main->balance;
     if ( $balance >= 0 ) {
-      $maximum = 0;
+      warn "Credit balance is zero, so fee is zero" if $DEBUG;
+      return; # don't bother doing estimated tax, etc.
     } elsif ( -1 * $balance < $maximum ) {
       $maximum = -1 * $balance;
     }
@@ -296,8 +345,36 @@ sub lineitem {
       setup       => 0,
       recur       => 0,
   });
+
+  if ( $maximum and $self->taxable ) {
+    warn "Estimating taxes on fee.\n" if $DEBUG;
+    # then we need to estimate tax to respect the maximum
+    # XXX currently doesn't work with external (tax_rate) taxes
+    # or batch taxes, obviously
+    my $taxlisthash = {};
+    my $error = $cust_main->_handle_taxes(
+      $taxlisthash,
+      $cust_bill_pkg,
+      location => $cust_main->ship_location
+    );
+    my $total_rate = 0;
+    # $taxlisthash: tax identifier => [ cust_main_county, cust_bill_pkg... ]
+    my @taxes = map { $_->[0] } values %$taxlisthash;
+    foreach (@taxes) {
+      $total_rate += $_->tax;
+    }
+    if ($total_rate > 0) {
+      my $max_cents = $maximum * 100;
+      my $charge_cents = sprintf('%0.f', $max_cents * 100/(100 + $total_rate));
+      # the actual maximum that we can charge...
+      $maximum = sprintf('%.2f', $charge_cents / 100.00);
+      $amount = $maximum if $amount > $maximum;
+    }
+  } # if $maximum and $self->taxable
+
+  # set the amount that we'll charge
   $cust_bill_pkg->set( $self->setuprecur, $amount );
-  
+
   if ( $self->classnum ) {
     my $pkg_category = $self->pkg_class->pkg_category;
     $cust_bill_pkg->set('section' => $pkg_category->categoryname)
@@ -327,25 +404,25 @@ sub lineitem {
         }
       }
     }
-    # and add them to the cust_bill_pkg
+  }
+  if ( @item_fee ) {
+    # add allocation records to the cust_bill_pkg
     for (my $i = 0; $i < scalar(@items); $i++) {
       if ( $item_fee[$i] > 0 ) {
         push @cust_bill_pkg_fee, FS::cust_bill_pkg_fee->new({
             cust_bill_pkg   => $cust_bill_pkg,
-            base_invnum     => $cust_bill->invnum,
+            base_invnum     => $cust_bill->invnum, # may be null
             amount          => $item_fee[$i],
             base_cust_bill_pkg => $items[$i], # late resolve
         });
       }
     }
-  } else { # if !@item_base
+  } else { # if !@item_fee
     # then this isn't a proportional fee, so it just applies to the 
     # entire invoice.
-    # (if it's the current invoice, $cust_bill->invnum is null and that 
-    # will be fixed later)
     push @cust_bill_pkg_fee, FS::cust_bill_pkg_fee->new({
         cust_bill_pkg   => $cust_bill_pkg,
-        base_invnum     => $cust_bill->invnum,
+        base_invnum     => $cust_bill->invnum, # may be null
         amount          => $amount,
     });
   }

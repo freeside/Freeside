@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,7 +51,7 @@ package RT::CustomField;
 use strict;
 use warnings;
 
-
+use Scalar::Util 'blessed';
 
 use base 'RT::Record';
 
@@ -1111,11 +1111,6 @@ sub SetRenderType {
                                 $self->FriendlyType));
     }
 
-    # XXX: Remove this restriction once we support lists and cascaded selects
-    if ( $self->BasedOnObj->id and $type =~ /List/ ) {
-        return (0, $self->loc("We can't currently render as a List when basing categories on another custom field.  Please use another render type."));
-    }
-
     return $self->_Set( Field => 'RenderType', Value => $type, @_ );
 }
 
@@ -1193,7 +1188,7 @@ Returns an array of LookupTypes available
 
 sub LookupTypes {
     my $self = shift;
-    return keys %FRIENDLY_OBJECT_TYPES;
+    return sort keys %FRIENDLY_OBJECT_TYPES;
 }
 
 my @FriendlyObjectTypes = (
@@ -1222,14 +1217,57 @@ sub FriendlyLookupType {
     return ( $self->loc( $FriendlyObjectTypes[$#types], @types ) );
 }
 
+=head1 RecordClassFromLookupType
+
+Returns the type of Object referred to by ObjectCustomFields' ObjectId column
+
+Optionally takes a LookupType to use instead of using the value on the loaded
+record.  In this case, the method may be called on the class instead of an
+object.
+
+=cut
+
 sub RecordClassFromLookupType {
     my $self = shift;
-    my ($class) = ($self->LookupType =~ /^([^-]+)/);
+    my $type = shift || $self->LookupType;
+    my ($class) = ($type =~ /^([^-]+)/);
     unless ( $class ) {
-        $RT::Logger->error(
-            "Custom Field #". $self->id 
-            ." has incorrect LookupType '". $self->LookupType ."'"
-        );
+        if (blessed($self) and $self->LookupType eq $type) {
+            $RT::Logger->error(
+                "Custom Field #". $self->id
+                ." has incorrect LookupType '$type'"
+            );
+        } else {
+            RT->Logger->error("Invalid LookupType passed as argument: $type");
+        }
+        return undef;
+    }
+    return $class;
+}
+
+=head1 ObjectTypeFromLookupType
+
+Returns the ObjectType used in ObjectCustomFieldValues rows for this CF
+
+Optionally takes a LookupType to use instead of using the value on the loaded
+record.  In this case, the method may be called on the class instead of an
+object.
+
+=cut
+
+sub ObjectTypeFromLookupType {
+    my $self = shift;
+    my $type = shift || $self->LookupType;
+    my ($class) = ($type =~ /([^-]+)$/);
+    unless ( $class ) {
+        if (blessed($self) and $self->LookupType eq $type) {
+            $RT::Logger->error(
+                "Custom Field #". $self->id
+                ." has incorrect LookupType '$type'"
+            );
+        } else {
+            RT->Logger->error("Invalid LookupType passed as argument: $type");
+        }
         return undef;
     }
     return $class;

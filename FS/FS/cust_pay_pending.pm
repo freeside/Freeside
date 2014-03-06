@@ -135,6 +135,10 @@ L<FS::payment_gateway> id.
 
 Payment number (L<FS::cust_pay>) of the completed payment.
 
+=item void_paynum
+
+Payment number of the payment if it's been voided.
+
 =item invnum
 
 Invoice number (L<FS::cust_bill>) to try to apply this payment to.
@@ -224,6 +228,7 @@ sub check {
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_foreign_keyn('invnum', 'cust_bill', 'invnum')
+    || $self->ut_foreign_keyn('void_paynum', 'cust_pay_void', 'paynum' )
     || $self->ut_flag('manual')
     || $self->ut_numbern('discount_term')
     || $self->payinfo_check() #payby/payinfo/paymask/paydate

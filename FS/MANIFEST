@@ -24,6 +24,7 @@ bin/freeside-sqlradius-reset
 bin/freeside-sqlradius-seconds
 bin/freeside-torrus-srvderive
 FS.pm
+FS/API.pm
 FS/AccessRight.pm
 FS/AuthCookieHandler.pm
 FS/AuthCookieHandler24.pm
@@ -46,6 +47,7 @@ FS/Cron/backup.pm
 FS/Cron/bill.pm
 FS/Cron/vacuum.pm
 FS/Daemon.pm
+FS/Daemon/Preforking.pm
 FS/Misc.pm
 FS/Record.pm
 FS/Report.pm
@@ -766,3 +768,5 @@ FS/cust_bill_pkg_fee.pm
 t/cust_bill_pkg_fee.t
 FS/part_fee_msgcat.pm
 t/part_fee_msgcat.t
+FS/part_fee_usage.pm
+FS/part_fee_usage.t

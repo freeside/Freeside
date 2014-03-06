@@ -103,13 +103,13 @@ Template:
     <& /elements/tr-td-label.html, 'label' => 'From:' &>
       <TD><& /elements/input-text.html,
               'field' => 'from_name',
-              'value' => $conf->config('company_name'), #?
+              'value' => $conf->config('company_name', $agent_virt_agentnum), #?
               'size'  => 20,
           &>&nbsp;&lt;\
           <& /elements/input-text.html,
               'field' => 'from_addr',
               'type'  => 'email', # HTML5, woot
-              'value' => $conf->config('invoice_from'),
+              'value' => $conf->config('invoice_from', $agent_virt_agentnum),
               'size'  => 20,
           &>&gt;</TD>
  
@@ -154,7 +154,10 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
 
 my $conf = FS::Conf->new;
+
 my $table = $cgi->param('table') or die "'table' required";
+my $agent_virt_agentnum = $cgi->param('agent_virt_agentnum') || '';
+
 my %search;
 if ( $cgi->param('search') ) {
   %search = %{ thaw(decode_base64($cgi->param('search'))) };

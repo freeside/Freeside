@@ -49,18 +49,22 @@
 <& "477part${part}.html",
     'tech_code' => $tech,
     'url' => $url,
-    'type' => $type
+    'type' => $type,
+    'date' => $date,
 &>
 %         if ( $type eq 'xml' ) {
 </<% 'Part_IA_'. chr(65 + $tech) %>>
 %         }
 %       }
-%     } else {
+%     } else { # not part IA
 %       if ( $type eq 'xml' ) {
 <<% 'Part_'. $part %>>
 %       }
 %       my $url = &{$url_mangler}($part);
-<& "477part${part}.html", 'url' => $url &>
+<& "477part${part}.html",
+    'url' => $url,
+    'date' => $date,
+&>
 %       if ( $type eq 'xml' ) {
 </<% 'Part_'. $part %>>
 %       }
@@ -79,6 +83,9 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
   unless $curuser->access_right('List packages');
+
+my $date = $cgi->param('date') ? parse_datetime($cgi->param('date'))
+                               : time;
 
 my $state = uc($cgi->param('state'));
 $state =~ /^[A-Z]{2}$/ or die "illegal state: $state";

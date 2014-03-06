@@ -2920,6 +2920,7 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Suspend reason when customers suspend their own packages. Set to nothing to disallow self-suspension.',
     'type'        => 'select-sub',
+    #false laziness w/api_credit_reason
     'options_sub' => sub { require FS::Record;
                            require FS::reason;
                            my $type = qsearchs('reason_type', 
@@ -5604,6 +5605,52 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Default customer credit limit',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'api_shared_secret',
+    'section'     => 'API',
+    'description' => 'Shared secret for back-office API authentication',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'xmlrpc_api',
+    'section'     => 'API',
+    'description' => 'Enable the back-office API XML-RPC server (on port 8008).',
+    'type'        => 'checkbox',
+  },
+
+#  {
+#    'key'         => 'jsonrpc_api',
+#    'section'     => 'API',
+#    'description' => 'Enable the back-office API JSON-RPC server (on port 8081).',
+#    'type'        => 'checkbox',
+#  },
+
+  {
+    'key'         => 'api_credit_reason',
+    'section'     => 'API',
+    'description' => 'Default reason for back-office API credits',
+    'type'        => 'select-sub',
+    #false laziness w/api_credit_reason
+    'options_sub' => sub { require FS::Record;
+                           require FS::reason;
+                           my $type = qsearchs('reason_type', 
+                             { class => 'R' }) 
+                              or return ();
+			   map { $_->reasonnum => $_->reason }
+                               FS::Record::qsearch('reason', 
+                                 { reason_type => $type->typenum } 
+                               );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::reason;
+			   my $reason = FS::Record::qsearchs(
+			     'reason', { 'reasonnum' => shift }
+			   );
+                           $reason ? $reason->reason : '';
+			 },
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

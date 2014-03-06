@@ -14,7 +14,6 @@
     'credit_weight' => 'Credit weight',
     'agentnum'      => 'Agent',
     'amount'        => 'Flat fee amount',
-    'percent'       => 'Percentage of invoice amount',
     'basis'         => 'Based on',
     'setuprecur'    => 'Report this fee as',
     'minimum'       => 'Minimum fee',
@@ -55,14 +54,27 @@ my $n = 0;
 my (@locale_fields, %locale_labels);
 foreach (@locales) {
   push @locale_fields,
-    { field => 'feepartmsgnum'. $n,               type => 'hidden' },
-    { field => 'feepartmsgnum'. $n. '_locale',    type => 'hidden' },
+    { field => 'feepartmsgnum'. $n,            type => 'hidden' },
+    { field => 'feepartmsgnum'. $n. '_locale', type => 'hidden', value => $_ },
     { field => 'feepartmsgnum'. $n. '_itemdesc',  type => 'text', size => 40 },
   ;
   $locale_labels{ 'feepartmsgnum'.$n.'_itemdesc' } =
     'Description&mdash;' . FS::Locales->description($_);
   $n++;
 }
+
+$n = 0;
+my %layer_fields = (
+  'charged' => [
+    'percent' => { label => 'Fraction of invoice total', type    => 'percentage', },
+  ],
+  'owed' => [
+    'percent' => { label => 'Fraction of balance', type    => 'percentage', },
+  ],
+  'usage' => [
+    'usage'   => { type => 'part_fee_usage' }
+  ],
+);
 
 my @fields = (
 
@@ -95,15 +107,23 @@ my @fields = (
 
   { type => 'justtitle', value => 'Fee calculation' },
   { field   => 'amount',  type    => 'money', },
-  { field   => 'percent', type    => 'percentage', },
 
   { field   => 'basis',
-    type    => 'select',
-    options => [ 'charged', 'owed' ],
-    labels  => { 'charged' => 'amount charged',
-                 'owed'    => 'balance due', },
+    type    => 'selectlayers',
+    options => [ 'charged', 'owed', 'usage' ],
+    labels  => { 'charged'  => 'amount charged',
+                 'owed'     => 'balance due',
+                 'usage'    => 'usage charges' },
+    layer_fields => \%layer_fields,
+    layer_values_callback => sub {
+      my ($cgi, $obj) = @_;
+      {
+        'charged' => { percent => $obj->percent },
+        'owed'    => { percent => $obj->percent },
+        'usage'   => { usage => [ $obj->part_fee_usage ] },
+      }
+    },
   },
-
   { field   => 'minimum', type    => 'money', },
   { field   => 'maximum', type    => 'money', },
   { field   => 'limit_credit',

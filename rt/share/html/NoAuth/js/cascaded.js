@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,50 +45,98 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-function filter_cascade (id, val) {
+function filter_cascade (id, vals) {
+    var element = document.getElementById(id);
+    if (!element) { return };
+
+    if ( element.tagName == 'SELECT' ) {
+        return filter_cascade_select.apply(this, arguments);
+    }
+    else {
+        if ( !( vals instanceof Array ) ) {
+            vals = [vals];
+        }
+
+        if ( arguments.length == 3 && (vals.length == 0 || (vals.length == 1 && vals[0] == '')) ) {
+            // no category, and the category is from a hierchical cf;
+            // leave it empty
+            jQuery(element).find('div').hide();
+        }
+        else {
+            jQuery(element).find('div').hide().find('input').attr('disabled', 'disabled');
+            jQuery(element).find('div[name=]').show().find('input').attr('disabled', '');
+            jQuery(element).find('div.none').show().find('input').attr('disabled','');
+            for ( var j = 0; j < vals.length; j++ ) {
+                jQuery(element).find('div[name^=' + vals[j] + ']').show().find('input').attr('disabled', '');
+            }
+        }
+    }
+}
+
+function filter_cascade_select (id, vals) {
     var select = document.getElementById(id);
     var complete_select = document.getElementById(id + "-Complete" );
+    if ( !( vals instanceof Array ) ) {
+        vals = [vals];
+    }
 
     if (!select) { return };
     var i;
     var children = select.childNodes;
 
     if ( complete_select ) {
-        while (select.hasChildNodes()){
-            select.removeChild(select.firstChild);
-        }
+        jQuery(select).children().remove();
 
         var complete_children = complete_select.childNodes;
 
-        if ( val == '' && arguments.length == 3 ) {
-            // no category, and the category is from a hierchical cf;
-            // leave this set of options empty
-        } else if ( val == '' ) {
-            // no category, let's clone all node
-            for (i in complete_children) {
-                if ( complete_children[i].cloneNode ) {
-                    new_option = complete_children[i].cloneNode(true);
-                    select.appendChild(new_option);
-                }
+        var cloned_labels = {};
+        var cloned_empty_label;
+        for ( var j = 0; j < vals.length; j++ ) {
+            var val = vals[j];
+            if ( val == '' && arguments.length == 3 ) {
+                // no category, and the category is from a hierchical cf;
+                // leave this set of options empty
+            } else if ( val == '' ) {
+                // no category, let's clone all node
+                jQuery(select).append(jQuery(complete_children).clone());
+                break;
             }
-        }
-        else {
-            for (i in complete_children) {
-                if (!complete_children[i].label ||
-                      (complete_children[i].hasAttribute &&
-                            !complete_children[i].hasAttribute('label') ) ||
-                        complete_children[i].label.substr(0, val.length) == val ) {
-                    if ( complete_children[i].cloneNode ) {
-                        new_option = complete_children[i].cloneNode(true);
-                        select.appendChild(new_option);
+            else {
+                var labels_to_clone = {};
+                for (i = 0; i < complete_children.length; i++) {
+                    if (!complete_children[i].label ||
+                          (complete_children[i].hasAttribute &&
+                                !complete_children[i].hasAttribute('label') ) ) {
+                        if ( cloned_empty_label ) {
+                            continue;
+                        }
                     }
+                    else if ( complete_children[i].label.substr(0, val.length) == val ) {
+                        if ( cloned_labels[complete_children[i].label] ) {
+                            continue;
+                        }
+                        labels_to_clone[complete_children[i].label] = true;
+                    }
+                    else {
+                        continue;
+                    }
+
+                    jQuery(select).append(jQuery(complete_children[i]).clone());
+                }
+
+                if ( !cloned_empty_label )
+                    cloned_empty_label = true;
+
+                for ( label in labels_to_clone ) {
+                    if ( !cloned_labels[label] )
+                        cloned_labels[label] = true;
                 }
             }
         }
     }
     else {
 // for back compatibility
-        for (i in children) {
+        for (i = 0; i < children.length; i++) {
             if (!children[i].label) { continue };
             if ( val == '' && arguments.length == 3 ) {
                 hide(children[i]);

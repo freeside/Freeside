@@ -267,7 +267,7 @@ sub send_email {
   }
 
   # Logging
-  if ( $conf->exists('log_sent_mail') and $options{'custnum'} ) {
+  if ( $conf->exists('log_sent_mail') ) {
     my $cust_msg = FS::cust_msg->new({
         'env_from'  => $options{'from'},
         'env_to'    => join(', ', @to),
@@ -278,6 +278,7 @@ sub send_email {
         'custnum'   => $options{'custnum'},
         'msgnum'    => $options{'msgnum'},
         'status'    => ($error ? 'failed' : 'sent'),
+        'msgtype'   => $options{'msgtype'},
     });
     $cust_msg->insert; # ignore errors
   }
@@ -337,7 +338,7 @@ sub generate_email {
 
   my $me = '[FS::Misc::generate_email]';
 
-  my @fields = qw(from to bcc subject custnum msgnum);
+  my @fields = qw(from to bcc subject custnum msgnum msgtype);
   my %return;
   @return{@fields} = @args{@fields};
 

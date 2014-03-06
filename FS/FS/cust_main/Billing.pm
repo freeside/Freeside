@@ -533,8 +533,6 @@ sub bill {
 
     my @cust_bill_pkg = _omit_zero_value_bundles(@{ $cust_bill_pkg{$pass} });
 
-    next unless @cust_bill_pkg; #don't create an invoice w/o line items
-
     warn "$me billing pass $pass\n"
            #.Dumper(\@cust_bill_pkg)."\n"
       if $DEBUG > 2;
@@ -547,13 +545,26 @@ sub bill {
       hashref => { 'billpkgnum' => '' }
     );
     warn "$me found pending fee events:\n".Dumper(\@pending_event_fees)."\n"
-      if @pending_event_fees;
+      if @pending_event_fees and $DEBUG > 1;
 
+    # determine whether to generate an invoice
+    my $generate_bill = scalar(@cust_bill_pkg) > 0;
+
+    foreach my $event_fee (@pending_event_fees) {
+      $generate_bill = 1 unless $event_fee->nextbill;
+    }
+    
+    # don't create an invoice with no line items, or where the only line 
+    # items are fees that are supposed to be held until the next invoice
+    next if !$generate_bill;
+
+    # calculate fees...
     my @fee_items;
     foreach my $event_fee (@pending_event_fees) {
       my $object = $event_fee->cust_event->cust_X;
+      my $part_fee = $event_fee->part_fee;
       my $cust_bill;
-      if ( $object->isa('FS::cust_main') ) {
+      if ( $object->isa('FS::cust_main') or $object->isa('FS::cust_pkg') ) {
         # Not the real cust_bill object that will be inserted--in particular
         # there are no taxes yet.  If you want to charge a fee on the total 
         # invoice amount including taxes, you have to put the fee on the next
@@ -564,12 +575,20 @@ sub bill {
             'charged'       => ${ $total_setup{$pass} } +
                                ${ $total_recur{$pass} },
         });
+
+        # If this is a package event, only apply the fee to line items 
+        # from that package.
+        if ($object->isa('FS::cust_pkg')) {
+          $cust_bill->set('cust_bill_pkg', 
+            [ grep  { $_->pkgnum == $object->pkgnum } @cust_bill_pkg ]
+          );
+        }
+
       } elsif ( $object->isa('FS::cust_bill') ) {
         # simple case: applying the fee to a previous invoice (late fee, 
         # etc.)
         $cust_bill = $object;
       }
-      my $part_fee = $event_fee->part_fee;
       # if the fee def belongs to a different agent, don't charge the fee.
       # event conditions should prevent this, but just in case they don't,
       # skip the fee.
@@ -581,11 +600,14 @@ sub bill {
       # also skip if it's disabled
       next if $part_fee->disabled eq 'Y';
       # calculate the fee
-      my $fee_item = $event_fee->part_fee->lineitem($cust_bill);
+      my $fee_item = $part_fee->lineitem($cust_bill) or next;
       # link this so that we can clear the marker on inserting the line item
       $fee_item->set('cust_event_fee', $event_fee);
       push @fee_items, $fee_item;
+
     }
+    
+    # add fees to the invoice
     foreach my $fee_item (@fee_items) {
 
       push @cust_bill_pkg, $fee_item;
@@ -596,12 +618,9 @@ sub bill {
       my $fee_location = $self->ship_location; # I think?
 
       my $error = $self->_handle_taxes(
-        $part_fee,
         $taxlisthash{$pass},
         $fee_item,
-        $fee_location,
-        $options{invoice_time},
-        {} # no options
+        location => $fee_location
       );
       return $error if $error;
 
@@ -1319,14 +1338,7 @@ sub _make_lines {
       # handle taxes
       ###
 
-      my $error = $self->_handle_taxes(
-        $part_pkg,
-        $taxlisthash,
-        $cust_bill_pkg,
-        $cust_location,
-        $options{invoice_time},
-        \%options # I have serious objections to this
-      );
+      my $error = $self->_handle_taxes( $taxlisthash, $cust_bill_pkg );
       return $error if $error;
 
       $cust_bill_pkg->set_display(
@@ -1423,15 +1435,13 @@ sub _transfer_balance {
   return @transfers;
 }
 
-=item _handle_taxes PART_ITEM TAXLISTHASH CUST_BILL_PKG CUST_LOCATION TIME [ OPTIONS ]
+=item handle_taxes TAXLISTHASH CUST_BILL_PKG [ OPTIONS ]
 
 This is _handle_taxes.  It's called once for each cust_bill_pkg generated
-from _make_lines, along with the part_pkg (or part_fee), cust_location,
-invoice time, a flag indicating whether the package is being canceled, and a 
-partridge in a pear tree.
+from _make_lines.
 
-The most important argument is 'taxlisthash'.  This is shared across the 
-entire invoice.  It looks like this:
+TAXLISTHASH is a hashref shared across the entire invoice.  It looks like 
+this:
 {
   'cust_main_county 1001' => [ [FS::cust_main_county], ... ],
   'cust_main_county 1002' => [ [FS::cust_main_county], ... ],
@@ -1444,16 +1454,27 @@ That "..." is a list of FS::cust_bill_pkg objects that will be fed to
 the 'taxline' method to calculate the amount of the tax.  This doesn't
 happen until calculate_taxes, though.
 
+OPTIONS may include:
+- part_item: a part_pkg or part_fee object to be used as the package/fee 
+  definition.
+- location: a cust_location to be used as the billing location.
+
+If not supplied, part_item will be inferred from the pkgnum or feepart of the
+cust_bill_pkg, and location from the pkgnum (or, for fees, the invnum and 
+the customer's default service location).
+
 =cut
 
 sub _handle_taxes {
   my $self = shift;
-  my $part_item = shift;
   my $taxlisthash = shift;
   my $cust_bill_pkg = shift;
-  my $location = shift;
-  my $invoice_time = shift;
-  my $options = shift;
+  my %options = @_;
+
+  # at this point I realize that we have enough information to infer all this
+  # stuff, instead of passing around giant honking argument lists
+  my $location = $options{location} || $cust_bill_pkg->tax_location;
+  my $part_item = $options{part_item} || $cust_bill_pkg->part_X;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
@@ -1473,9 +1494,8 @@ sub _handle_taxes {
     my @classes;
     #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
     push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
-    # debatable
-    push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
-    push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
+    push @classes, 'setup' if $cust_bill_pkg->setup;
+    push @classes, 'recur' if $cust_bill_pkg->recur;
 
     my $exempt = $conf->exists('cust_class-tax_exempt')
                    ? ( $self->cust_class ? $self->cust_class->tax : '' )
@@ -1543,10 +1563,7 @@ sub _handle_taxes {
           warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
           # calculate the tax amount that the tax_on_tax will apply to
           my $hashref_or_error = 
-            $tax_object->taxline( $localtaxlisthash{$tax},
-                                  'custnum'      => $self->custnum,
-                                  'invoice_time' => $invoice_time,
-                                );
+            $tax_object->taxline( $localtaxlisthash{$tax} );
           return $hashref_or_error
             unless ref($hashref_or_error);
           

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -172,7 +172,6 @@ padding-bottom: 1em;
 }
 
 .chart.image {
-    margin-top: -1em;
     padding-right: 2em;
     float: left;
     clear: both;
@@ -186,6 +185,8 @@ padding-bottom: 1em;
 .chart-wrapper .collection-as-table {
     width: auto;
     font-size: 1em;
+    /* Firefox needs this to let the table flow below the chart on narrow screens */
+    clear: right;
 }
 
 .chart-wrapper .collection-as-table th.collection-as-table {

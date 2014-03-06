@@ -185,7 +185,7 @@ $DEBUG = 0;
                                   #                    200 mixed debits&credits)
     sprintf('%06d', $batchcount). #Entry / Addenda Count
     $entry_hash.
-    sprintf('%012d', $batchtotal * 100). #Debit total
+    sprintf('%012.0f', $batchtotal * 100). #Debit total
     '000000000000'.               #Credit total
     $origin.                      #Company Identification (Immediate Origin)
     (' 'x19).                     #Message Authentication Code (19 char blank)
@@ -202,7 +202,7 @@ $DEBUG = 0;
     sprintf('%06d', $batchcount + 4).    #num of physical blocks on the file..?
     sprintf('%08d', $batchcount).        #total # of entry detail and addenda
     $entry_hash.
-    sprintf('%012d', $batchtotal * 100). #Debit total
+    sprintf('%012.0f', $batchtotal * 100). #Debit total
     '000000000000'.                      #Credit total
     ( ' 'x39 )                           #Reserved / blank
 

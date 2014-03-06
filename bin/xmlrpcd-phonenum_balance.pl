@@ -8,7 +8,7 @@ my $uri = new URI 'http://localhost:8080/';
 
 my $server = new Frontier::Client ( 'url' => $uri );
 
-my $result = $server->call('phonenum_balance', 'phonenum' => '9567566022', );
+my $result = $server->call('FS.ClientAPI_XMLRPC.phonenum_balance', 'phonenum' => '9567566022', );
 
 #die $result->{'error'} if $result->{'error'};
 

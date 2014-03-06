@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my $uri = new URI 'http://localhost:8008/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $result = $server->call(
+  'FS.API.location_info',
+    'secret'  => 'sharingiscaring',
+    'custnum' => 181318,
+);
+
+#die $result->{'error'} if $result->{'error'};
+
+print Dumper($result);
+
+1;
