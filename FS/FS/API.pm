@@ -213,7 +213,6 @@ sub insert_refund_phonenum {
 
 #---
 
-#generally, the more useful data from the cust_main record the better.
 
 
 # "2 way syncing" ?  start with non-sync pulling info here, then if necessary
@@ -272,9 +271,13 @@ sub customer_info {
   $return{'postal_invoicing'} =
     0 < ( grep { $_ eq 'POST' } @invoicing_list );
 
+  #generally, the more useful data from the cust_main record the better.
+  # well, tell me what you want
+
   return \%return;
 
 }
+
 
 #I also monitor for changes to the additional locations that are applied to
 # packages, and would like for those to be exportable as well.  basically the
@@ -289,7 +292,7 @@ sub location_info {
 
   my %return = (
     'error'           => '',
-    'locations'       => [ @cust_location ],
+    'locations'       => [ map $_->hashref, @cust_location ],
   );
 
   return \%return;
