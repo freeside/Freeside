@@ -101,7 +101,16 @@ sub customer_info {
   );
 
   $return{$_} = $cust_main->get($_)
-    foreach @cust_main_editable_fields;
+    foreach ( @cust_main_editable_fields,
+              @location_editable_fields,
+              map "ship_$_", @location_editable_fields,
+            );
+
+  my @invoicing_list = $cust_main->invoicing_list;
+  $return{'invoicing_list'} =
+    join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
+  $return{'postal_invoicing'} =
+    0 < ( grep { $_ eq 'POST' } @invoicing_list );
 
   return \%return;
 
