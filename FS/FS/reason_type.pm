@@ -10,9 +10,6 @@ our %class_name = (
   'C' => 'cancel',
   'R' => 'credit',
   'S' => 'suspend',
-  'U' => 'activate', #uncancel/unsuspend
-  'W' => 'renewal',
-  'T' => 'term change',
   'F' => 'refund',
 );
 
@@ -20,9 +17,6 @@ our %class_purpose = (
   'C' => 'explain why a customer package was cancelled',
   'R' => 'explain why a customer was credited',
   'S' => 'explain why a customer package was suspended',
-  'U' => 'explain why a customer package was unsuspended/uncanceled/activated',
-  'W' => 'explain why a customer package was renewed',
-  'T' => 'explain why a customer package term was changed',
   'F' => 'explain why a customer was refunded',
 );
 
