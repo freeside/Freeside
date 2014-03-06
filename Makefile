@@ -79,6 +79,7 @@ INSTALLGROUP = root
 #edit the stuff below to have the daemons start
 
 QUEUED_USER=fs_queue
+API_USER = fs_api
 
 SELFSERVICE_USER = fs_selfservice
 #never run on the same machine in production!!!
@@ -215,6 +216,9 @@ perl-modules:
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
 	" blib/lib/FS/cust_main/*.pm blib/lib/FS/cust_pkg/*.pm;\
 	perl -p -i -e "\
+	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
+	" blib/lib/FS/Daemon/*.pm;\
+	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
 	  s|%%%FREESIDE_LOCK%%%|${FREESIDE_LOCK}|g;\
@@ -254,6 +258,7 @@ install-init:
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 	perl -p -i -e "\
 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
