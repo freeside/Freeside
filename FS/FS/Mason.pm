@@ -78,8 +78,6 @@ if ( -e $addl_handler_use_file ) {
   use HTML::FormatText;
   use HTML::Defang;
   use JSON::XS;
-#  use XMLRPC::Transport::HTTP;
-#  use XMLRPC::Lite; # for XMLRPC::Serializer
   use MIME::Base64;
   use IO::Handle;
   use IO::File;
@@ -215,7 +213,6 @@ if ( -e $addl_handler_use_file ) {
   use FS::usage_class;
   use FS::payment_gateway;
   use FS::agent_payment_gateway;
-  use FS::XMLRPC;
   use FS::payby;
   use FS::cdr;
   use FS::cdr_batch;
