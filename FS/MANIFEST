@@ -25,6 +25,7 @@ bin/freeside-sqlradius-reset
 bin/freeside-sqlradius-seconds
 bin/freeside-torrus-srvderive
 FS.pm
+FS/API.pm
 FS/AccessRight.pm
 FS/CGI.pm
 FS/InitHandler.pm
@@ -43,6 +44,7 @@ FS/Cron/backup.pm
 FS/Cron/bill.pm
 FS/Cron/vacuum.pm
 FS/Daemon.pm
+FS/Daemon/Preforking.pm
 FS/Maestro.pm
 FS/Misc.pm
 FS/Record.pm

@@ -16,6 +16,7 @@
 ### END INIT INFO
 
 QUEUED_USER=%%%QUEUED_USER%%%
+API_USER=%%%API_USER%%%
 
 SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
 SELFSERVICE_MACHINES="%%%SELFSERVICE_MACHINES%%%"
@@ -31,6 +32,25 @@ export PATH
 case "$1" in
   start)
         # Start daemons.
+
+        for MACHINE in $SELFSERVICE_MACHINES; do
+          echo -n "Starting freeside-selfservice-server to $MACHINE: "
+          freeside-selfservice-server $SELFSERVICE_USER $MACHINE
+          echo "done."
+        done
+
+        echo -n "Starting freeside-selfservice-xmlrpcd: "
+        freeside-selfservice-xmlrpcd $SELFSERVICE_USER
+        echo "done."
+
+        echo -n "Starting freeside-xmlrpcd: "
+        freeside-xmlrpcd $API_USER
+        echo "done."
+
+#        echo -n "Starting freeside-jsonrpcd: "
+#        freeside-jsonrpcd $API_USER
+#        echo "done."
+
         echo -n "Starting freeside-queued: "
         #perl -MDBIx::Profile /usr/local/bin/freeside-queued $QUEUED_USER
         freeside-queued $QUEUED_USER
@@ -56,16 +76,6 @@ case "$1" in
 
         echo -n "Starting freeside-cdrrated: "
         freeside-cdrrated $QUEUED_USER
-        echo "done."
-
-        for MACHINE in $SELFSERVICE_MACHINES; do
-          echo -n "Starting freeside-selfservice-server to $MACHINE: "
-          freeside-selfservice-server $SELFSERVICE_USER $MACHINE
-          echo "done."
-        done
-
-        echo -n "Starting freeside-selfservice-xmlrpcd: "
-        freeside-selfservice-xmlrpcd $SELFSERVICE_USER
         echo "done."
 
         if [ -e /usr/local/bin/torrus ]; then
@@ -122,6 +132,30 @@ case "$1" in
           echo "done."
         fi
 
+        if [ -e /var/run/freeside/torrus-srvderive.pid ]; then
+          echo -n "Stopping freeside-torrus-srvderive: "
+          kill `cat /var/run/freeside/torrus-srvderive.pid`
+          echo "done."
+        fi
+
+        if [ -e /var/run/torrus/collector.main_?.pid ]; then
+          echo -n "Stopping torrus collector: "
+          kill `cat /var/run/torrus/collector.main_?.pid`
+          echo "done."
+        fi
+
+        if [ -e /var/run/freeside/xmlrpcd.pid ]; then
+          echo -n "Stopping freeside-xmlrpcd: "
+          kill `cat /var/run/freeside/xmlrpcd.pid`
+          echo "done."
+        fi
+
+#        if [ -e /var/run/freeside/jsonrpcd.pid ]; then
+#          echo -n "Stopping freeside-jsonrpcd: "
+#          kill `cat /var/run/freeside/jsonrpcd.pid`
+#          echo "done."
+#        fi
+
         if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid ]
         then
           echo -n "Stopping (old) freeside-selfservice-server: "
@@ -143,18 +177,6 @@ case "$1" in
         if [ -e /var/run/freeside/selfservice-xmlrpcd.pid ]; then
           echo -n "Stopping freeside-selfservice-xmlrpcd: "
           kill `cat /var/run/freeside/selfservice-xmlrpcd.pid`
-          echo "done."
-        fi
-
-        if [ -e /var/run/freeside/torrus-srvderive.pid ]; then
-          echo -n "Stopping freeside-torrus-srvderive: "
-          kill `cat /var/run/freeside/torrus-srvderive.pid`
-          echo "done."
-        fi
-
-        if [ -e /var/run/torrus/collector.main_?.pid ]; then
-          echo -n "Stopping torrus collector: "
-          kill `cat /var/run/torrus/collector.main_?.pid`
           echo "done."
         fi
 
