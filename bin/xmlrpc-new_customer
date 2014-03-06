@@ -17,8 +17,8 @@ my $result = $server->call('FS.API.new_customer',
     #customer informaiton
     'agentnum'         => 1,
     'refnum'           => 1, #advertising source
-    'agent_custid'     => '323',
-    'referral_custnum' => 43,
+    'agent_custid'     => '', #'323',
+    'referral_custnum' => 1,
 
     'first'            => 'Tofu',
     'last'             => 'Beast',
