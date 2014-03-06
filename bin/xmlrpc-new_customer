@@ -1,0 +1,62 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my( $username, $password ) = ( @ARGV );
+
+my $uri = new URI 'http://localhost:8008/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $result = $server->call('FS.API.new_customer',
+    #API shared secret
+    'secret'         => 'sharingiscaring',
+
+    #customer informaiton
+    'agentnum'       => 1,
+    'refnum'         => 1, #advertising source
+    'agent_custid'   => '323',
+
+    'first'          => 'Tofu',
+    'last'           => 'Beast',
+    'company'        => 'Bank of Soymerica',
+
+    #address
+    'address1'       => '1234 Soybean Ln.',
+    'city'           => 'Tofutown',
+    'county'         => '',
+    'state'          => 'CA',
+    'zip'            => '54321',
+    'country'        => 'US',
+    'latitude'       => '',
+    'longitude'      => '',
+    'geocode'        => '',
+    'censustract'    => '',
+    'censusyear'     => '',
+
+    #phones
+    'daytime'        => '555 444 3211',
+    'night'          => '',
+    'fax'            => '',
+    'mobile'         => '123 466 3332',
+
+    #invoicing info
+    'invoicing_list'   => 'tofu@example.com', #comma-separated email addresses
+    'postal_invoicing' => 1,
+
+    #billing information
+    'payby'          => 'CARD', # DCRD, CHEK, DCHK, BILL, etc.
+    'payinfo'        => '4111111111111111', #card number / acctno@routing / PO#
+    'paydate'        => '11/2019', #card expiration
+    'paycvv'         => '123',     #card CVV/security code
+    'payname'        => 'Thomas Beast', #"Exact name on card" if different
+);
+
+die $result->{'error'} if $result->{'error'};
+
+my $custnum = $result->{'custnum'};
+warn "added new customer w/custnum $custnum\n";
+
+1;
