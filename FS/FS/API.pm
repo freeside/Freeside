@@ -1,8 +1,9 @@
 package FS::API;
 
 use FS::Conf;
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
+use FS::cust_location;
 use FS::cust_pay;
 use FS::cust_credit;
 use FS::cust_refund;
