@@ -6,9 +6,6 @@ use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer
                      #and XMLRPC::Transport::HTTP
 
 use FS::Conf;
-
-##use FS::ClientAPI qw( load_clientapi_modules );
-##use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
 use FS::API;
 
 #freeside xmlrpc.cgi
@@ -19,16 +16,8 @@ my %typelookup = (
 );
 
 use constant ME => 'xmlrpcd';
-
-#
-
 freeside_init1(ME);
-
-#load_clientapi_modules;
-
 freeside_init2(ME);
-
-#FS::ClientAPI::Signup::clear_cache();
 
 my $conf = new FS::Conf;
 die "not running; xmlrpc_api conf option is off\n"
