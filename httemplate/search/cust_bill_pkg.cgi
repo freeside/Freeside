@@ -22,10 +22,7 @@
                            ? $_[0]->get('pkgpart')
                            : ''
                        },
-                   sub { $_[0]->pkgnum > 0
-                           ? $_[0]->get('pkg')     
-                           : $_[0]->get('itemdesc')
-                       },
+                   'itemdesc', # is part_pkg.pkg if applicable
                    @post_desc,
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
@@ -222,6 +219,9 @@ if ( $conf->exists('enable_taxclasses') ) {
   $post_desc_align .= 'l';
 }
 
+# used in several places
+my $itemdesc = 'COALESCE(part_fee.itemdesc, part_pkg.pkg, cust_bill_pkg.itemdesc)';
+
 # valid in both the tax and non-tax cases
 my $join_cust = 
   " LEFT JOIN cust_bill ON (cust_bill_pkg.invnum = cust_bill.invnum)".
@@ -302,7 +302,7 @@ push @select, "COALESCE($part_pkg.taxclass, part_fee.taxclass) AS taxclass"
 # the non-tax case
 if ( $cgi->param('nottax') ) {
 
-  push @select, "part_fee.itemdesc";
+  push @select, $itemdesc;
 
   push @where,
     '(cust_bill_pkg.pkgnum > 0 OR cust_bill_pkg.feepart IS NOT NULL)';
@@ -504,14 +504,16 @@ if ( $cgi->param('nottax') ) {
   push @where, 'cust_bill_pkg.pkgnum = 0';
 
   # tax location when using tax_rate_location
-  if ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+  if ( $cgi->param('vendortax') ) {
 
     $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
                  ' LEFT JOIN tax_rate_location USING ( taxratelocationnum )';
-    push @where, FS::tax_rate_location->location_sql(
-                   map { $_ => (scalar($cgi->param($_)) || '') }
-                     qw( district city county state locationtaxid )
-                 );
+    foreach (qw( state county city locationtaxid)) {
+      if ( scalar($cgi->param($_)) ) {
+        my $place = dbh->quote( $cgi->param($_) );
+        push @where, "tax_rate_location.$_ = $place";
+      }
+    }
 
     $total[1] = 'SUM(
       COALESCE(cust_bill_pkg_tax_rate_location.amount, 
@@ -577,12 +579,12 @@ if ( $cgi->param('nottax') ) {
     }
   }
 
-  # itemdesc, for some reason
+  # itemdesc, for breakdown from the vendor tax report
   if ( $cgi->param('itemdesc') ) {
     if ( $cgi->param('itemdesc') eq 'Tax' ) {
-      push @where, "(itemdesc='Tax' OR itemdesc is null)";
+      push @where, "($itemdesc = 'Tax' OR $itemdesc is null)";
     } else {
-      push @where, 'itemdesc='. dbh->quote($cgi->param('itemdesc'));
+      push @where, "$itemdesc = ". dbh->quote($cgi->param('itemdesc'));
     }
   }
 

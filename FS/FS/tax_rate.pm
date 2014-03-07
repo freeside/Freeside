@@ -1828,6 +1828,12 @@ sub browse_queries {
 =item queue_liability_report PARAMS
 
 Launches a tax liability report.
+
+PARAMS needs to be a base64-encoded Storable hash containing:
+- beginning: the start date, as a I<user-readable string> (not a timestamp).
+- end: the end date of the report, likewise.
+- agentnum: the agent to limit the report to, if any.
+
 =cut
 
 sub queue_liability_report {
@@ -1851,8 +1857,12 @@ sub queue_liability_report {
 
 =item generate_liability_report PARAMS
 
-Generates a tax liability report.  Provide a hash including desired
-agentnum, beginning, and ending
+Generates a tax liability report.  PARAMS must include:
+
+- beginning, as a timestamp
+- ending, as a timestamp
+- p: the Freeside root URL, for generating links
+- agentnum (optional)
 
 =cut
 
@@ -1914,11 +1924,16 @@ sub generate_liability_report {
   my %taxes = ();
   my %basetaxes = ();
   my $calculated = 0;
+
+  # get all distinct tuples of (tax name, state, county, city, locationtaxid)
+  # for taxes that have been charged
+  # (state, county, city are from tax_rate_location, not from customer data)
   my @tax_and_location = qsearch({ table     => 'cust_bill_pkg',
                                    select    => $select,
                                    hashref   => { pkgpart => 0 },
                                    addl_from => $addl_from,
                                    extra_sql => $where,
+                                   debug     => 1,
                                 });
   $count = scalar(@tax_and_location);
   foreach my $t ( @tax_and_location ) {
@@ -1942,15 +1957,17 @@ sub generate_liability_report {
       $taxes{$label}->{'url_param'} =
         join(';', map { "$_=". uri_escape($t->$_) } @params);
 
-      my $payby_itemdesc_loc = 
-        "    payby != 'COMP' ".
-        "AND ( itemdesc = ? OR ? = '' AND itemdesc IS NULL ) ".
+      my $itemdesc_loc = 
+      # "    payby != 'COMP' ". # breaks the entire report under 4.x
+      #                         # and unnecessary since COMP accounts don't
+      #                         # get taxes calculated in the first place
+        "    ( itemdesc = ? OR ? = '' AND itemdesc IS NULL ) ".
         "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
                                                          @taxparams
                                                    );
 
       my $taxwhere =
-        "FROM cust_bill_pkg $addl_from $where AND $payby_itemdesc_loc";
+        "FROM cust_bill_pkg $addl_from $where AND $itemdesc_loc";
 
       my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
@@ -1961,7 +1978,7 @@ sub generate_liability_report {
       my $creditfrom =
        "JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum)";
       my $creditwhere =
-        "FROM cust_bill_pkg $addl_from $creditfrom $where AND $payby_itemdesc_loc";
+        "FROM cust_bill_pkg $addl_from $creditfrom $where AND $itemdesc_loc";
 
       $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
              " $creditwhere AND cust_bill_pkg.pkgnum = 0";
@@ -2025,7 +2042,8 @@ sub generate_liability_report {
   my $dateagentlink = "begin=$args{beginning};end=$args{ending}";
   $dateagentlink .= ';agentnum='. $args{agentnum}
     if length($agentname);
-  my $baselink   = $args{p}. "search/cust_bill_pkg.cgi?$dateagentlink";
+  my $baselink   = $args{p}. "search/cust_bill_pkg.cgi?vendortax=1;" .
+                             $dateagentlink;
   my $creditlink = $args{p}. "search/cust_credit_bill_pkg.html?$dateagentlink";
 
   print $report <<EOF;
