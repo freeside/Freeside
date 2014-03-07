@@ -42,7 +42,8 @@ if ( $conf->exists('enable_taxproducts') ) {
   @tax_fields = (
     { field => 'taxable', type => 'checkbox', value => 'Y' },
   );
-  push (
+  push @tax_fields,
+  (
     { field => 'taxclass', type => 'select-taxclass' },
   ) if $conf->exists('enable_taxclasses');
 }
