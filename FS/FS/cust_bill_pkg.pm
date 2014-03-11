@@ -982,8 +982,8 @@ charge.  If called on a tax line, returns nothing.
 
 sub part_X {
   my $self = shift;
-  if ( $self->override_pkgpart ) {
-    return FS::part_pkg->by_key($self->override_pkgpart);
+  if ( $self->pkgpart_override ) {
+    return FS::part_pkg->by_key($self->pkgpart_override);
   } elsif ( $self->pkgnum ) {
     return $self->cust_pkg->part_pkg;
   } elsif ( $self->feepart ) {
