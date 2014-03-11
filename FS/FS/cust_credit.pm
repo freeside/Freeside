@@ -22,6 +22,7 @@ use FS::cust_event;
 use FS::agent;
 use FS::sales;
 use FS::cust_credit_void;
+use FS::cust_bill_pkg;
 use FS::upgrade_journal;
 
 $me = '[ FS::cust_credit ]';
@@ -793,7 +794,6 @@ Example:
 =cut
 
 #maybe i should just be an insert with extra args instead of a class method
-use FS::cust_bill_pkg;
 sub credit_lineitems {
   my( $class, %arg ) = @_;
   my $curuser = $FS::CurrentUser::CurrentUser;
@@ -919,9 +919,10 @@ sub credit_lineitems {
 
     # recalculate taxes with new amounts
     $taxlisthash{$invnum} ||= {};
-    my $part_pkg = $cust_bill_pkg->part_pkg
-      if $cust_bill_pkg->pkgpart_override;
-    $cust_main->_handle_taxes( $taxlisthash{$invnum}, $cust_bill_pkg );
+    if ( $cust_bill_pkg->pkgnum or $cust_bill_pkg->feepart ) {
+      $cust_main->_handle_taxes( $taxlisthash{$invnum}, $cust_bill_pkg );
+    } # otherwise the item itself is a tax, and assume the caller knows
+      # what they're doing
   }
 
   ###
