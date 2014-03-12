@@ -1119,6 +1119,7 @@ sub generate_email {
     $alternative->attach(
       'Type'        => 'text/plain',
       'Encoding'    => 'quoted-printable',
+      'Charset'     => 'UTF-8',
       #'Encoding'    => '7bit',
       'Data'        => $data,
       'Disposition' => 'inline',
