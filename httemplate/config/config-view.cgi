@@ -415,10 +415,11 @@ my @config_items = grep { !defined($locale) or $_->per_locale }
 my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
 my %deleteable = map { $_ => 1 } @deleteable;
 
-my @sections = qw(
-  required billing invoicing notification UI API self-service ticketing
-  network_monitoring username password session shell BIND telephony
-), '', 'deprecated';
+my @sections = (qw(
+    required billing invoicing notification UI API self-service ticketing
+    network_monitoring username password session shell BIND telephony
+  ), '', 'deprecated'
+);
 
 my %section_items = ();
 foreach my $section (@sections) {
