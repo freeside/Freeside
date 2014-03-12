@@ -70,7 +70,7 @@ sub new {
   my $language_name = $locale_info{'name'};
 
   my $self = { conf => FS::Conf->new(locale => $locale),
-               csv  => Text::CSV_XS->new,
+               csv  => Text::CSV_XS->new({ binary => 1 }),
                inbound  => ($opt{'inbound'} ? 1 : 0),
                buffer   => ($opt{'buffer'} || []),
                _lh      => FS::L10N->get_handle($locale),
