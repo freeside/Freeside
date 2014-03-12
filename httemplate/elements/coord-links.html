@@ -35,10 +35,12 @@ $m->interp->apply_escapes($js_name, 'js_string');
 $js_name =~ s/^'//;
 $js_name =~ s/'$//;
 
+my @origin;
 my $origin;
 #for directions link
 if ( $agentnum =~ /^\d+$/ ) {
-  $origin = FS::Conf->new->config('company_address', $agentnum);
+  @origin = FS::Conf->new->config('company_address', $agentnum);
+  $origin = join (/,/,@origin);
   $origin = uri_escape($origin);
 }
 </%init>
