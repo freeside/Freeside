@@ -97,7 +97,7 @@ $DEBUG = 1;
 
 sub rebless { shift; }
 
-sub _field_prefix { 'admin'; }
+sub _field_prefix { 'cf_admin'; }
 
 sub _req_router_fields {
   map {
