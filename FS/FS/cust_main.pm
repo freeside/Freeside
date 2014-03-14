@@ -1756,6 +1756,8 @@ sub check {
     || $self->ut_name('first')
     || $self->ut_snumbern('signupdate')
     || $self->ut_snumbern('birthdate')
+    || $self->ut_namen('spouse_last')
+    || $self->ut_namen('spouse_first')
     || $self->ut_snumbern('spouse_birthdate')
     || $self->ut_snumbern('anniversary_date')
     || $self->ut_textn('company')

@@ -91,6 +91,11 @@ sub upgrade_config {
     && length($conf->config('usps_webtools-userid')) > 0
     && ! $conf->exists('address_standardize_method');
 
+  # this option has been renamed/expanded
+  if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
+    $conf->touch('cust_main-enable_spouse');
+    $conf->delete('cust_main-enable_spouse_birthdate');
+  }
 }
 
 sub upgrade_overlimit_groups {

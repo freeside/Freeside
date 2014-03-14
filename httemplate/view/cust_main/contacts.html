@@ -27,6 +27,16 @@
                               : $cust_main->masked('ss') || '&nbsp;' %></TD>
 %   }
   </TR>
+%   if ( $conf->exists('cust_main-enable_spouse') and
+%        ($cust_main->spouse_last or $cust_main->spouse_first) ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Spouse') |h %></TD>
+    <TD COLSPAN=5 BGCOLOR="#ffffff">
+      <% join(', ', grep $_, 
+                    $cust_main->spouse_last, $cust_main->spouse_first) %>
+    </TD>
+  </TR>
+% }
 %   if ( $conf->exists('cust-email-high-visibility') ) {
   <TR>
     <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>

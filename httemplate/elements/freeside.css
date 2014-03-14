@@ -282,3 +282,17 @@ table.inv { border: none }
 th.inv { border: none }
 td.inv { border: none }
 
+td.label {
+  text-align: right;
+}
+
+.required {
+  font-weight: bold;
+}
+
+.required::before {
+  content: "* ";
+  color: #ff0000;
+}
+
+

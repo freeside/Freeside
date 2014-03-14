@@ -1,36 +1,40 @@
 <%def .namepart>
 % my ($field, $value, $label, $extra) = @_;
-<TD>
+<DIV STYLE="display: inline-block">
   <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
   <BR><FONT SIZE=-1><% mt($label) %></FONT>
-</TD>
+</DIV>
 </%def>
 
 <TR>
-  <TH VALIGN="top" ALIGN="right"><%$r%><% mt('Contact name') |h %></TH>
-  <TD COLSPAN=6>
-    <TABLE CELLSPACING=0 CELLPADDING=0>
-      <TR>
-        <& .namepart, 'last', $cust_main->last, 'Last' &>
-        <TD VALIGN="top"> , </TD>
+  <TD CLASS="required label"><% mt('Contact name') |h %></TD>
+  <TD COLSPAN=6 STYLE="vertical-align:top">
+        <& .namepart, 'last', $cust_main->last, 'Last', ',' &>
         <& .namepart, 'first', $cust_main->first, 'First' &>
 % if ( $conf->exists('show_ss') ) {
-        <TD>&nbsp;</TD>
+        &nbsp;
         <& .namepart, 'ss', $ss, 'SS#', "SIZE=11" &>
 % } else  {
         <INPUT TYPE="hidden" NAME="ss" VALUE="<% $ss %>">
 % }
-      </TR>
-    </TABLE>
   </TD>
 </TR>
+% if ( $conf->exists('cust_main-enable_spouse') ) {
+<TR ID="spouse_row">
+  <TD CLASS="label"><% mt('Spouse\'s name') |h %></TD>
+  <TD COLSPAN=6>
+        <& .namepart, 'spouse_last', $cust_main->spouse_last, 'Last', ',' &>
+        <& .namepart, 'spouse_first', $cust_main->spouse_first, 'First' &>
+  </TD>
+</TR>
+% }
 
 % if ( $conf->exists('cust-email-high-visibility') ) {
 <TR>
-  <TD ALIGN="right">
+  <TD ALIGN="right" CLASS="
     <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum)
-        ? $r
-        : '' %>Email address(es)
+        ? 'required label'
+        : 'label' %>">Email address(es)
   </TD>
   <TD BGCOLOR="#FFFF00">
     <INPUT TYPE="text" NAME="invoicing_list" 
@@ -42,7 +46,6 @@
 my $cust_main = shift;
 my $agentnum = $cust_main->agentnum if $cust_main->custnum;
 my $conf = FS::Conf->new;
-my $r = '<font color="#ff0000">*</font>&nbsp;';
 my $ss;
 
 if ( $cgi->param('error') or $conf->exists('unmask_ss') ) {
