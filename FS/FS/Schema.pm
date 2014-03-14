@@ -466,7 +466,7 @@ sub tables_hashref {
   my $char_d = 80; #default maxlength for text fields
 
   #my(@date_type)  = ( 'timestamp', '', ''     );
-  my @date_type  = ( 'int', 'NULL', ''     );
+  my @date_type = ( 'int', 'NULL', ''     );
   my @perl_type = ( 'text', 'NULL', ''  ); 
   my @money_type = ( 'decimal',   '', '10,2' );
   my @money_typen = ( 'decimal',   'NULL', '10,2' );
@@ -1521,8 +1521,10 @@ sub tables_hashref {
         'stateid_state', 'varchar', 'NULL', $char_d, '', '', 
         'national_id', 'varchar', 'NULL', $char_d, '', '',
         'birthdate' ,@date_type, '', '', 
-        'spouse_birthdate' ,@date_type, '', '', 
-        'anniversary_date' ,@date_type, '', '', 
+        'spouse_last',  'varchar', 'NULL', 2*$char_d, '', '',
+        'spouse_first', 'varchar', 'NULL', $char_d, '', '',
+        'spouse_birthdate', @date_type, '', '', 
+        'anniversary_date', @date_type, '', '', 
         'signupdate',@date_type, '', '', 
         'dundate',   @date_type, '', '', 
         'company',  'varchar', 'NULL', $char_d, '', '', 

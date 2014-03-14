@@ -3854,9 +3854,9 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_main-enable_spouse_birthdate',
+    'key'         => 'cust_main-enable_spouse',
     'section'     => 'UI',
-    'description' => 'Enable tracking of a spouse birth date with each customer record',
+    'description' => 'Enable tracking of a spouse\'s name and date of birth with each customer record',
     'type'        => 'checkbox',
   },
 
