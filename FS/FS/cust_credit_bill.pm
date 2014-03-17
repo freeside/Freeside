@@ -131,7 +131,7 @@ sub check {
   $self->_date(time) unless $self->_date;
 
   return "Cannot apply more than remaining value of credit"
-    unless $self->amount <= $self->cust_credit->credited;
+    unless $self->amount < $self->cust_credit->credited;
 
   return "Cannot apply more than remaining value of invoice"
     unless $self->amount <= $self->cust_bill->owed;
