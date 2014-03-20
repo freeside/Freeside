@@ -146,9 +146,13 @@ sub subsets {
     or die $dbh->errstr; # seriously, this should never happen
   $sth->execute
     or die $sth->errstr;
-  # return the first (only) column
-  map { [ split(',',$_->[0]) ],
-        [ split(',',$_->[1]) ] } @{ $sth->fetchall_arrayref };
+  # return a pair of entries for the null set (conventionally we use zero
+  # for that)
+  ( [ 0 ], [ '(empty class)' ],
+  # followed by the first two columns: report class numbers and names
+    map { [ split(',',$_->[0]) ],
+          [ split(',',$_->[1]) ] } @{ $sth->fetchall_arrayref }
+  );
 }
 
 =back
