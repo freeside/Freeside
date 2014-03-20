@@ -371,8 +371,25 @@ sub check {
     my $cust_pkg = $self->cust_pkg;
 
     my $pkg_svc = $self->pkg_svc
-      or return "No svcpart ". $self->svcpart.
-                " services in pkgpart ". $cust_pkg->pkgpart;
+                    || new FS::pkg_svc { 'svcpart'  => $self->svcpart,
+                                         'pkgpart'  => $cust_pkg->pkgpart,
+                                         'quantity' => 0,
+                                       };
+
+    #service add-ons, kinda false laziness/reimplementation of part_pkg->pkg_svc
+    foreach my $part_pkg_link ( $cust_pkg->part_pkg->svc_part_pkg_link ) {
+      my $addon_pkg_svc = qsearchs('pkg_svc', {
+                            pkgpart => $part_pkg_link->dst_pkgpart,
+                            svcpart => $self->svcpart,
+                          });
+      $pkg_svc->quantity( $pkg_svc->quantity + $addon_pkg_svc->quantity )
+        if $addon_pkg_svc;
+    }
+
+   #better error message?  UI shouldn't get here
+   return "No svcpart ". $self->svcpart.
+          " services in pkgpart ". $cust_pkg->pkgpart
+     unless $pkg_svc->quantity > 0;
 
     my $num_cust_svc = $cust_pkg->num_cust_svc( $self->svcpart );
 
@@ -381,6 +398,7 @@ sub check {
                             - $num_cust_svc
                        );
 
+   #better error message?  again, UI shouldn't get here
     return "Already $num_cust_svc ". $pkg_svc->part_svc->svc.
            " services for pkgnum ". $self->pkgnum
       if $num_avail <= 0;
