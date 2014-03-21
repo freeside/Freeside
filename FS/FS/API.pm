@@ -1,8 +1,9 @@
 package FS::API;
 
 use FS::Conf;
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
+use FS::cust_location;
 
 =head1 NAME
 
@@ -40,33 +41,63 @@ Enter cash refund.
 
 #---
 
-#Customer data
-# pull customer info 
-# The fields needed are:
-#
-# cust_main.custnum
-# cust_main.first
-# cust_main.last
-# cust_main.company
-# cust_main.address1
-# cust_main.address2
-# cust_main.city
-# cust_main.state
-# cust_main.zip
-# cust_main.daytime
-# cust_main.night
-# cust_main_invoice.dest
-#
-# at minimum
-
-#Customer balances
-
-#Advertising sources?
-
 # "2 way syncing" ?  start with non-sync pulling info here, then if necessary
 # figure out how to trigger something when those things change
 
 # long-term: package changes?
+
+
+=item new_customer
+
+=cut
+
+#certainly false laziness w/ClientAPI::Signup new_customer/new_customer_minimal
+# but approaching this from a clean start / back-office perspective
+#  i.e. no package/service, no immediate credit card run, etc.
+
+sub new_customer {
+  my( $class, %opt ) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  #default agentnum like signup_server-default_agentnum?
+ 
+  #same for refnum like signup_server-default_refnum
+
+  my $cust_main = new FS::cust_main ( {
+      'agentnum'      => $agentnum,
+      'refnum'        => $opt{refnum}
+                         || $conf->config('signup_server-default_refnum'),
+      'payby'         => 'BILL',
+
+      map { $_ => $opt{$_} } qw(
+        agentnum refnum agent_custid referral_custnum
+        last first company 
+        address1 address2 city county state zip country
+        latitude longitude
+        geocode censustract censusyear
+        ship_address1 ship_address2 ship_city ship_county ship_state ship_zip ship_country
+        ship_latitude ship_longitude
+        daytime night fax mobile
+        payby payinfo paydate paycvv payname
+      ),
+
+  } );
+
+  my @invoicing_list = $opt{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
+                         : ();
+  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+
+  $error = $cust_main->insert( {}, \@invoicing_list );
+  return { 'error'   => $error } if $error;
+  
+  return { 'error'   => '',
+           'custnum' => $cust_main->custnum,
+         };
+
+}
 
 =item customer_info
 
@@ -98,14 +129,50 @@ sub customer_info {
     'error'           => '',
     'display_custnum' => $cust_main->display_custnum,
     'name'            => $cust_main->first. ' '. $cust_main->get('last'),
+    'balance'         => $cust_main->balance,
+    'status'          => $cust_main->status,
+    'statuscolor'     => $cust_main->statuscolor,
   );
 
   $return{$_} = $cust_main->get($_)
-    foreach @cust_main_editable_fields;
+    foreach ( @cust_main_editable_fields,
+              @location_editable_fields,
+              map "ship_$_", @location_editable_fields,
+            );
+
+  my @invoicing_list = $cust_main->invoicing_list;
+  $return{'invoicing_list'} =
+    join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
+  $return{'postal_invoicing'} =
+    0 < ( grep { $_ eq 'POST' } @invoicing_list );
+
+  #generally, the more useful data from the cust_main record the better.
+  # well, tell me what you want
 
   return \%return;
 
 }
+
+#I also monitor for changes to the additional locations that are applied to
+# packages, and would like for those to be exportable as well.  basically the
+# location data passed with the custnum.
+sub location_info {
+  my( $class, %opt ) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  my @cust_location = qsearch('cust_location', { 'custnum' => $opt{custnum} });
+
+  my %return = (
+    'error'           => '',
+    'locations'       => [ map $_->hashref, @cust_location ],
+  );
+
+  return \%return;
+}
+
+#Advertising sources?
 
 =back
 
