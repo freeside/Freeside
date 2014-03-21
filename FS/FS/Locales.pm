@@ -29,6 +29,7 @@ Returns a list of the available locales.
 
 tie our %locales, 'Tie::IxHash',
   'en_US', { name => 'English',        country => 'United States', },
+  'en_AU', { name => 'English',        country => 'Australia', },
   'en_CA', { name => 'English',        country => 'Canada', },
   'fr_CA', { name => 'French',         country => 'Canada', },
   'fr_FR', { name => 'French',         country => 'France', },
