@@ -469,7 +469,7 @@ sub access_right {
     unless ( grep !exists($self->{_ACLcache}{$_}), @$rightname ) {
       warn "$me ACL cache hit for ". join(', ', @$rightname). "\n"
         if $DEBUG;
-      return grep $self->{_ACLcache}{$_}, @$rightname
+      return scalar( grep $self->{_ACLcache}{$_}, @$rightname );
     }
 
     warn "$me ACL cache miss for ". join(', ', @$rightname). "\n"
