@@ -157,12 +157,36 @@ sub recur {
   my $self = shift;
   return '0.00' if $self->{'_NO_RECUR_KLUDGE'};
   my $part_pkg = $self->part_pkg;
-  my $recur = $part_pkg->can('base_recur') ? $part_pkg->base_recur
+  my $recur = $part_pkg->can('base_recur') ? $part_pkg->base_recur($self)
                                            : $part_pkg->option('recur_fee');
   #XXX discounts
   $recur *= $self->quantity if $self->quantity;
   sprintf('%.2f', $recur);
 }
+
+=item part_pkg_currency_option OPTIONNAME
+
+Returns a two item list consisting of the currency of this quotation's customer
+or prospect, if any, and a value for the provided option.  If the customer or
+prospect has a currency, the value is the option value the given name and the
+currency (see L<FS::part_pkg_currency>).  Otherwise, if the customer or
+prospect has no currency, is the regular option value for the given name (see
+L<FS::part_pkg_option>).
+
+=cut
+
+#false laziness w/cust_pkg->part_pkg_currency_option
+sub part_pkg_currency_option {
+  my( $self, $optionname ) = @_;
+  my $part_pkg = $self->part_pkg;
+  my $prospect_or_customer = $self->cust_main || $self->prospect_main;
+  if ( my $currency = $prospect_or_customer->currency ) {
+    ($currency, $part_pkg->part_pkg_currency_option($currency, $optionname) );
+  } else {
+    ('', $part_pkg->option($optionname) );
+  }
+}
+
 
 =item cust_bill_pkg_display [ type => TYPE ]
 
@@ -211,6 +235,18 @@ sub cust_main {
   my $self = shift;
   my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
   $quotation->cust_main;
+}
+
+=item prospect_main
+
+Returns the prospect (L<FS::prospect_main> object).
+
+=cut
+
+sub prospect_main {
+  my $self = shift;
+  my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
+  $quotation->prospect_main;
 }
 
 =back
