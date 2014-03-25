@@ -15,17 +15,16 @@ Example:
 
 </%doc>
 
-<% include( '/elements/select-table.html',
-              'table'          => 'part_pkg',
-              'agent_virt'     => 1,
-              'agent_null'     => 1,
-              'name_col'       => 'pkg',
-              'empty_label'    => 'Select package', #should this be the default?
-              'label_callback' => sub { shift->pkg_comment },
-              'hashref'        => \%hash,
-              %opt,
-          )
-%>
+<& /elements/select-table.html,
+     'table'          => 'part_pkg',
+     'agent_virt'     => 1,
+     'agent_null'     => 1,
+     'name_col'       => 'pkg',
+     'empty_label'    => 'Select package', #should this be the default?
+     'label_callback' => $opt{'label_callback'} || sub { shift->pkg_comment },
+     'hashref'        => \%hash,
+     %opt,
+&>
 <%init>
  
 my( %opt ) = @_;

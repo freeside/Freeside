@@ -772,6 +772,16 @@ sub pkg_comment {
   $pre. $self->pkg. ( $custom_comment ? " - $custom_comment" : '' );
 }
 
+#without price info (so without hitting the DB again)
+sub pkg_comment_only {
+  my $self = shift;
+  my %opt = @_;
+
+  my $pre = $opt{nopkgpart} ? '' : $self->pkgpart. ': ';
+  my $comment = $self->comment;
+  $pre. $self->pkg. ( $comment ? " - $comment" : '' );
+}
+
 sub price_info { # safety, in case a part_pkg hasn't defined price_info
     '';
 }
@@ -1205,6 +1215,8 @@ will be suppressed.
 
 sub option {
   my( $self, $opt, $ornull ) = @_;
+  cluck "$self -> option: searching for $opt"
+    if $DEBUG;
   my $part_pkg_option =
     qsearchs('part_pkg_option', {
       pkgpart    => $self->pkgpart,
