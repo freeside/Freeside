@@ -655,6 +655,8 @@ sub send_receipt {
         'company_name' => $conf->config('company_name', $cust_main->agentnum),
       );
 
+      $fill_in{'invnum'} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
+
       if ( $opt->{'cust_pkg'} ) {
         $fill_in{'pkg'} = $opt->{'cust_pkg'}->part_pkg->pkg;
         #setup date, other things?
