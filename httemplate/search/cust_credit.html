@@ -63,8 +63,8 @@ push @fields, sub { time2str('%b %d %Y', shift->_date ) },
               'reason',
               \&FS::UI::Web::cust_fields,
               ;
-push @sort_fields, '_date', 'otaker', 'reason';
-$align .= 'rll'.FS::UI::Web::cust_aligns(),
+push @sort_fields, '_date', 'otaker', 'reason', FS::UI::Web::cust_sort_fields();
+$align .= 'rll'.FS::UI::Web::cust_aligns();
 push @links,  '',
               '',
               '',
