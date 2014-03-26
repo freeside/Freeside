@@ -49,6 +49,9 @@ sub new {
   # the class of record object to return
   $self->{class} = "FS::".($q->{table} || 'Record');
 
+  # save for later, so forked children will not destroy me when they exit
+  $self->{pid} = $$;
+
   $self->{id} = sprintf('cursor%08x', refaddr($self));
   my $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
 
@@ -101,6 +104,7 @@ sub refill {
 
 sub DESTROY {
   my $self = shift;
+  return unless $self->{pid} eq $$;
   dbh->do('CLOSE '. $self->{id}) or die dbh->errstr; # clean-up the cursor in Pg
 }
 
@@ -113,6 +117,12 @@ Replace all uses of qsearch with this.
 =head1 BUGS
 
 Doesn't support MySQL.
+
+The cursor will close prematurely if any code issues a rollback/commit. If
+you need protection against this use qsearch or fork and get a new dbh
+handle.
+Normally this issue will represent itself this message.
+ERROR: cursor "cursorXXXXXXX" does not exist.
 
 =head1 SEE ALSO
 
