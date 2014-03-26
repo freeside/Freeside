@@ -2,12 +2,11 @@ package FS::Cursor;
 
 use strict;
 use vars qw($DEBUG $buffer);
-use base qw( Exporter );
-use FS::Record qw(qsearch dbdef dbh);
-use Data::Dumper;
+use FS::Record qw(dbh);
 use Scalar::Util qw(refaddr);
 
 $DEBUG = 0;
+
 # this might become a parameter at some point, but right now, you can
 # "local $FS::Cursor::buffer = X;"
 $buffer = 200;
@@ -53,9 +52,8 @@ sub new {
   $self->{id} = sprintf('cursor%08x', refaddr($self));
   my $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
 
-  my $dbh = dbh;
-  my $sth = $dbh->prepare($statement)
-    or die $dbh->errstr;
+  my $sth = dbh->prepare($statement)
+    or die dbh->errstr;
   my $bind = 0;
   foreach my $value ( @{ $q->{value} } ) {
     my $bind_type = shift @{ $q->{bind_type} };
@@ -64,7 +62,7 @@ sub new {
 
   $sth->execute or die $sth->errstr;
 
-  $self->{fetch} = $dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
+  $self->{fetch} = dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
 
   $self;
 }
@@ -99,6 +97,11 @@ sub refill {
   my $result = $self->{fetch}->fetchall_arrayref( {} );
   $self->{buffer} = $result;
   scalar @$result;
+}
+
+sub DESTROY {
+  my $self = shift;
+  dbh->do('CLOSE '. $self->{id}) or die dbh->errstr; # clean-up the cursor in Pg
 }
 
 =back
