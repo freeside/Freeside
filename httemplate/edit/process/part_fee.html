@@ -17,6 +17,7 @@
                                            ],
                            },
                          ],
+  'precheck_callback'=> \&precheck,
 &>
 <%init>
 
@@ -25,5 +26,14 @@ my $acl_edit = $curuser->access_right('Edit fee definitions');
 my $acl_edit_global = $curuser->access_right('Edit global fee definitions');
 die "access denied"
   unless $acl_edit or $acl_edit_global;
+
+sub precheck {
+  my $cgi = shift;
+  if ( $cgi->param('basis') =~ /^(\w+)$/ ) {
+    my $basis = $1;
+    $cgi->param('percent', $cgi->param($basis.'_percent') );
+  }
+  ''; #no error
+}
 
 </%init>
