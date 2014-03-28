@@ -241,6 +241,8 @@ sub _upgrade_data { # class method
     'Bulk change customer packages' => 'Bulk move customer services',
     'Configuration' => 'Edit sales people',
     'Configuration' => 'Alarm global configuration',
+    'Edit global package definitions' => 'Edit package definition costs',
+    'Configuration' => 'Edit global fee definitions',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {
