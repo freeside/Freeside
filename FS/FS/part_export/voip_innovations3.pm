@@ -16,7 +16,7 @@ tie my %options, 'Tie::IxHash',
   'e911'          => { label=>'Provision E911 data',
                        type=>'checkbox',
                      },
-  'no_did_provision' => { label=>'Disable DID provisioning',
+  'no_provision_did' => { label=>'Disable DID provisioning',
                        type=>'checkbox',
                      },
 #not particularly useful unless we can_get_dids
