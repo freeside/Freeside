@@ -329,6 +329,10 @@ An array ref of specific packages (objects) to attempt billing, instead trying a
 
 A hashref of pkgparts to exclude from this billing run (can also be specified as a comma-separated scalar).
 
+=item no_prepaid
+
+Do not bill prepaid packages.  Used by freeside-daily.
+
 =item invoice_time
 
 Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
@@ -442,21 +446,23 @@ sub bill {
 
     next if $options{'not_pkgpart'}->{$cust_pkg->pkgpart};
 
+    my $part_pkg = $cust_pkg->part_pkg;
+
+    next if $options{'no_prepaid'} && $part_pkg->is_prepaid;
+
     warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG;
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
       unless defined($cust_pkg->bill);
  
-    #my $part_pkg = $cust_pkg->part_pkg;
-
     my $real_pkgpart = $cust_pkg->pkgpart;
     my %hash = $cust_pkg->hash;
 
     # we could implement this bit as FS::part_pkg::has_hidden, but we already
     # suffer from performance issues
     $options{has_hidden} = 0;
-    my @part_pkg = $cust_pkg->part_pkg->self_and_bill_linked;
+    my @part_pkg = $part_pkg->self_and_bill_linked;
     $options{has_hidden} = 1 if ($part_pkg[1] && $part_pkg[1]->hidden);
  
     # if this package was changed from another package,
