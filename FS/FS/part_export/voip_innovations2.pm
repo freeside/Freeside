@@ -16,6 +16,9 @@ tie my %options, 'Tie::IxHash',
   'e911'          => { label=>'Provision E911 data',
                        type=>'checkbox',
                      },
+  'no_provision_did' => { label=>'Disable DID provisioning',
+                          type=>'checkbox',
+                        },
   'dry_run'       => { label=>"Test mode - don't actually provision",
                        type=>'checkbox',
                      },
@@ -35,7 +38,10 @@ END
 
 sub rebless { shift; }
 
-sub can_get_dids { 1; }
+sub can_get_dids {
+  my $self = shift;
+  ! $self->option('no_provision_did');
+}
 
 sub get_dids {
   my $self = shift;
@@ -284,39 +290,43 @@ sub _export_insert {
 
   #we want to provision and catch errors now, not queue
 
-  ###
-  # reserveDID
-  ###
+  unless ( $self->option('no_provision_did') ) {
 
-  my $r = $self->gp_command('reserveDID',
-    'did'           => $svc_phone->phonenum,
-    'minutes'       => 1,
-    'endpointgroup' => $self->option('endpointgroup'),
-  );
+    ###
+    # reserveDID
+    ###
 
-  my $rdid = $r->{did};
+    my $r = $self->gp_command('reserveDID',
+      'did'           => $svc_phone->phonenum,
+      'minutes'       => 1,
+      'endpointgroup' => $self->option('endpointgroup'),
+    );
 
-  if ( $rdid->{'statuscode'} != 100 ) {
-    return "Error running VoIP Innovations reserveDID: ".
-           $rdid->{'statuscode'}. ': '. $rdid->{'status'};
-  }
+    my $rdid = $r->{did};
 
-  ###
-  # assignDID
-  ###
+    if ( $rdid->{'statuscode'} != 100 ) {
+      return "Error running VoIP Innovations reserveDID: ".
+             $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+    }
 
-  my $a = $self->gp_command('assignDID',
-    'did'           => $svc_phone->phonenum,
-    'endpointgroup' => $self->option('endpointgroup'),
-    #'rewrite'
-    #'cnam'
-  );
+    ###
+    # assignDID
+    ###
 
-  my $adid = $a->{did};
+    my $a = $self->gp_command('assignDID',
+      'did'           => $svc_phone->phonenum,
+      'endpointgroup' => $self->option('endpointgroup'),
+      #'rewrite'
+      #'cnam'
+    );
 
-  if ( $adid->{'statuscode'} != 100 ) {
-    return "Error running VoIP Innovations assignDID: ".
-           $adid->{'statuscode'}. ': '. $adid->{'status'};
+    my $adid = $a->{did};
+
+    if ( $adid->{'statuscode'} != 100 ) {
+      return "Error running VoIP Innovations assignDID: ".
+             $adid->{'statuscode'}. ': '. $adid->{'status'};
+    }
+
   }
 
   ###
@@ -398,18 +408,25 @@ sub _export_delete {
   #probably okay to queue the deletion...?
   #but hell, let's do it inline anyway, who wants phone numbers hanging around
 
-  my $r = $self->gp_command('releaseDID',
-    'did'           => $svc_phone->phonenum,
-  );
+  unless ( $self->option('no_provision_did') ) {
 
-  my $rdid = $r->{did};
+    my $r = $self->gp_command('releaseDID',
+      'did'           => $svc_phone->phonenum,
+    );
 
-  if ( $rdid->{'statuscode'} != 100 ) {
-    return "Error running VoIP Innovations releaseDID: ".
-           $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+    my $rdid = $r->{did};
+
+    if ( $rdid->{'statuscode'} != 100 ) {
+      return "Error running VoIP Innovations releaseDID: ".
+             $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+    }
+
   }
 
   #delete e911 information?  assuming release clears all that
+  #if ( $self->option('e911') ) {
+  #  # but need to handle the no_provision_did case
+  #}
 
   '';
 }
