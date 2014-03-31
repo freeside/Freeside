@@ -2314,14 +2314,27 @@ sub modify_charge {
   }
 
   my %pkg_opt = $part_pkg->options;
-  if ( ref($opt{'additional'}) ) {
-    delete $pkg_opt{$_} foreach grep /^additional/, keys %pkg_opt;
-    my $i;
-    for ( $i = 0; exists($opt{'additional'}->[$i]); $i++ ) {
-      $pkg_opt{ "additional_info$i" } = $opt{'additional'}->[$i];
-    }
-    $pkg_opt{'additional_count'} = $i if $i > 0;
+  my $pkg_opt_modified = 0;
+
+  $opt{'additional'} ||= [];
+  my $i;
+  my @old_additional;
+  foreach (grep /^additional/, keys %pkg_opt) {
+    ($i) = ($_ =~ /^additional_info(\d+)$/);
+    $old_additional[$i] = $pkg_opt{$_} if $i;
+    delete $pkg_opt{$_};
   }
+
+  for ( $i = 0; exists($opt{'additional'}->[$i]); $i++ ) {
+    $pkg_opt{ "additional_info$i" } = $opt{'additional'}->[$i];
+    if (!exists($old_additional[$i])
+        or $old_additional[$i] ne $opt{'additional'}->[$i])
+    {
+      $pkg_opt_modified = 1;
+    }
+  }
+  $pkg_opt_modified = 1 if (scalar(@old_additional) - 1) != $i;
+  $pkg_opt{'additional_count'} = $i if $i > 0;
 
   my $old_classnum;
   if ( exists($opt{'classnum'}) and $part_pkg->classnum ne $opt{'classnum'} )
@@ -2344,32 +2357,46 @@ sub modify_charge {
 
       $self->set('start_date', $opt{'start_date'});
     }
-    if ($self->modified) { # for quantity or start_date change
-      my $error = $self->replace;
-      return $error if $error;
-    }
 
     if ( exists($opt{'amount'}) 
           and $part_pkg->option('setup_fee') != $opt{'amount'}
           and $opt{'amount'} > 0 ) {
 
       $pkg_opt{'setup_fee'} = $opt{'amount'};
-      # standard for one-time charges is to set comment = (formatted) amount
-      # update it to avoid confusion
-      my $conf = FS::Conf->new;
-      $part_pkg->set('comment', 
-        ($conf->config('money_char') || '$') .
-        sprintf('%.2f', $opt{'amount'})
-      );
+      $pkg_opt_modified = 1;
+
     }
   } # else simply ignore them; the UI shouldn't allow editing the fields
 
-  my $error = $part_pkg->replace( options => \%pkg_opt );
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
+  my $error;
+  if ( $part_pkg->modified or $pkg_opt_modified ) {
+    # can we safely modify the package def?
+    # Yes, if it's not available for purchase, and this is the only instance
+    # of it.
+    if ( $part_pkg->disabled
+         and FS::cust_pkg->count('pkgpart = '.$part_pkg->pkgpart) == 1
+         and FS::quotation_pkg->count('pkgpart = '.$part_pkg->pkgpart) == 0
+       ) {
+      $error = $part_pkg->replace( options => \%pkg_opt );
+    } else {
+      # clone it
+      $part_pkg = $part_pkg->clone;
+      $part_pkg->set('disabled' => 'Y');
+      $error = $part_pkg->insert( options => \%pkg_opt );
+      # and associate this as yet-unbilled package to the new package def
+      $self->set('pkgpart' => $part_pkg->pkgpart);
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
+  if ($self->modified) { # for quantity or start_date change, or if we had
+                         # to clone the existing package def
+    my $error = $self->replace;
+    return $error if $error;
+  }
   if (defined $old_classnum) {
     # fix invoice grouping records
     my $old_catname = $old_classnum
