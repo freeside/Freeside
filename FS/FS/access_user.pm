@@ -11,6 +11,7 @@ use FS::access_usergroup;
 use FS::agent;
 use FS::cust_main;
 use FS::sales;
+use FS::sched_item;
 
 $DEBUG = 0;
 $me = '[FS::access_user]';
@@ -579,6 +580,11 @@ sub is_system_user {
     fs_bootstrap
     fs_selfserv
 ) );
+}
+
+sub sched_item {
+  my $self = shift;
+  qsearch( 'sched_item', { 'usernum' => $self->usernum } );
 }
 
 =back

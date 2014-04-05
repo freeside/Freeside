@@ -49,6 +49,12 @@ my $groups_sub = sub {
 
 };
 
+my $installer_sub = sub {
+  my $access_user = shift;
+  my @sched_item = $access_user->sched_item or return '';
+  $sched_item[0]->disabled ? '(disabled)' : 'Installer';
+};
+
 my $cust_sub = sub {
   my $access_user = shift;
   $access_user->user_custnum ? $access_user->user_cust_main->name : '';
@@ -59,10 +65,12 @@ my $count_query = 'SELECT COUNT(*) FROM access_user';
 
 my $link = [ $p.'edit/access_user.html?', 'usernum' ];
 
-my @header = ( '#',       'Username', 'Full name', 'Groups',    'Customer' );
-my @fields = ( 'usernum', 'username', 'name',      $groups_sub, $cust_sub, );
-my $align = 'rllll';
-my @links = ( $link, $link, $link, '', $cust_link );
+my @header = (
+  'Username', 'Full name', 'Groups',    'Installer',    'Customer' );
+my @fields = (
+  'username', 'name',      $groups_sub, $installer_sub, $cust_sub, );
+my $align = 'lllcl';
+my @links = ( $link, $link, $link, '', '', $cust_link );
 
 #if ( FS::Conf->new->config('ticket_system') ) {
 #  push @header, 'Ticketing';

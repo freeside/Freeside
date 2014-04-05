@@ -11,6 +11,7 @@
                                     'target_table' => 'access_group',
                                   },
                  'precheck_callback'=> \&precheck_callback,
+                 'noerror_callback' => \&noerror_callback,
              )
 %>
 %   }
@@ -33,4 +34,37 @@ sub precheck_callback {
   }
   return '';
 }
+
+sub noerror_callback {
+  my( $cgi, $access_user ) = @_;
+
+  #handle installer checkbox
+  my @sched_item = $access_user->sched_item;
+  my $sched_item = $sched_item[0];
+  if ( $cgi->param('sched_item_enabled') ) {
+
+    if ( ! $sched_item ) {
+      my $sched_item = new FS::sched_item {
+        'usernum' => $access_user->usernum,
+      };
+      my $error = $sched_item->insert;
+      die $error if $error; #wtf?  shouldn't happen
+    } elsif ( $sched_item->disabled ) {
+      $sched_item->disabled('');
+      my $error = $sched_item->replace;
+      die $error if $error; #wtf?  shouldn't happen
+    }
+
+  } elsif ( ! $cgi->param('sched_item_enabled')
+              && $sched_item
+              && ! $sched_item->disabled
+          )
+  {
+    $sched_item->disabled('Y');
+    my $error = $sched_item->replace;
+    die $error if $error; #wtf?  shouldn't happen
+  }
+
+}
+
 </%init>

@@ -1,0 +1,18 @@
+<& elements/browse.html,
+     'title'         => 'Installers', #PL($sched_item_class->classname),
+     'name_singular' => 'installer', #$sched_item_class->classname
+     'query'         => { 'table' => 'sched_item' },
+     'count_query'   => 'SELECT COUNT(*) FROM sched_item',
+     'header'        => [ 'Installer', ], #$sched_item_class->classname
+     'fields'        => [ 'name' ],
+     #'links'         => [ $link, ],
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+&>
+<%init>
+
+#XXX more specific AccessRight for scheduling
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
