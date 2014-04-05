@@ -1,11 +1,17 @@
 <& elements/browse.html,
-     'title'         => 'Installers', #PL($sched_item_class->classname),
+     'title'         => 'Installer schedules', #$sched_item_class->classname. ' schedules',
      'name_singular' => 'installer', #$sched_item_class->classname
      'query'         => { 'table' => 'sched_item' },
      'count_query'   => 'SELECT COUNT(*) FROM sched_item',
-     'header'        => [ 'Installer', ], #$sched_item_class->classname
-     'fields'        => [ 'name' ],
-     #'links'         => [ $link, ],
+     'header'        => [ 'Installer', #$sched_item_class->classname
+                          @dow,
+                          'Overrides',
+                        ],
+     'fields'        => [ 'name',
+                          ( map dow_factory($_), (0..6) ),
+                          $override_sub,
+                        ],
+     'links'         => [ $link, ],
      'disableable'        => 1,
      'disabled_statuspos' => 1,
 &>
@@ -14,5 +20,63 @@
 #XXX more specific AccessRight for scheduling
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ $p.'edit/sched_item.html?', 'itemnum' ];
+
+my @dow = qw( Sunday Monday Tuesday Wednesday Thursday Friday Saturday );
+
+sub dow_factory {
+  my $wday = shift;
+
+  return sub {
+     my $sched_item = shift;
+
+     my @sched_avail = qsearch({
+                         'table'   => 'sched_avail',
+                         'hashref' => {
+                           'itemnum'       => $sched_item->itemnum,
+                           'wday'          => $wday, #thanks, closure
+                           'override_date' => '',
+                         },
+                         'order_by' => 'ORDER BY stime',
+                       });
+
+    return 'Not available' unless @sched_avail;
+
+    #data
+    # align bgcolor colspan rowspan style valign width
+    # link onclick size data_style   
+
+    [
+      map {
+            [ { data=> $_->stime_pretty },
+              { data=> '-', },
+              { data=> $_->etime_pretty },
+            ];
+          }
+        @sched_avail
+    ];
+
+  };
+
+}
+
+my $override_sub = sub {
+  my $sched_item = shift;
+
+   my @sched_avail = qsearch({
+                       'table'   => 'sched_avail',
+                       'hashref' => {
+                         'itemnum'       => $sched_item->itemnum,
+                         'override_date' => { op=>'!=', value=>'' },
+                       },
+                       'order_by' => 'ORDER BY override_date, stime',
+                     });
+
+  return 'None' unless @sched_avail;
+
+  #XXX print each override date (and day of week)
+
+};
 
 </%init>

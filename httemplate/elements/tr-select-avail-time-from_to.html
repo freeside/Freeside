@@ -1,0 +1,58 @@
+% unless ( $opt{'js_only'} ) {
+
+    <& tr-td-label.html, %opt &>
+
+      <TD <% $colspan %> <% $style %>>
+% }
+    <& checkbox.html,
+         %opt,
+         prefix     => '',
+         value      => 'Y',
+         curr_value => $curr_value,
+         onchange   => $opt{field}. '_changed',
+    &>
+
+    <& select-time-from_to.html,
+         %opt,
+         disabled => ($curr_value eq 'Y' ? '' : 'DISABLED' )
+    &>
+
+% unless ( $opt{'js_only'} ) {
+      </TD>
+    </TR>
+% }
+% unless ( $opt{'html_only'} || $opt{'js_only'} ) {
+    <SCRIPT TYPE="text/javascript">
+% }
+% unless ( $opt{'html_only'} ) {
+      function <% $opt{field} %>_changed(what) {
+
+        <% $opt{'onchange'} %>
+
+        var stime_el = what.form.<% $opt{field} %>_stime;
+        var etime_el = what.form.<% $opt{field} %>_etime;
+
+        if ( what.checked ) {
+          stime_el.disabled = false;
+          etime_el.disabled = false;
+        } else {
+          stime_el.disabled = true;
+          etime_el.disabled = true;
+        }
+
+      }  
+% }
+% unless ( $opt{'html_only'} || $opt{'js_only'} ) {
+    </SCRIPT>
+% }
+<%init>
+
+my %opt = @_;
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+my $curr_value = $cgi->param($opt{'field'}); #wtf?
+
+</%init>
