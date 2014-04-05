@@ -5479,6 +5479,44 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'sched_item' => {
+      'columns' => [
+        'itemnum',   'serial',      '', '', '', '', 
+        'usernum',      'int',  'NULL', '', '', '', 
+        #'itemname', 'varchar', $char_d, '', '', '',
+        'disabled',    'char',  'NULL',  1, '', '', 
+      ],
+      'primary_key'  => 'itemnum',
+      'unique'       => [ [ 'usernum' ] ],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'usernum' ],
+                            table      => 'access_user',
+                          },
+                        ],
+    },
+
+    #'sched_item_class'
+
+    'sched_avail' => {
+      'columns' => [
+        'availnum',      'serial', '', '', '', '', 
+        'itemnum',          'int', '', '', '', '',
+        'wday',             'int', '', '', '', '',
+        'stime',            'int', '', '', '', '',
+        'etime',            'int', '', '', '', '',
+        'override_date',    @date_type,    '', '',
+      ],
+      'primary_key'  => 'availnum',
+      'unique'       => [],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'itemnum' ],
+                            table      => 'sched_item',
+                          },
+                        ],
+    },
+
     'svc_phone' => {
       'columns' => [
         'svcnum',                         'int',     '',      '', '', '', 

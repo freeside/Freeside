@@ -770,3 +770,7 @@ FS/part_fee_msgcat.pm
 t/part_fee_msgcat.t
 FS/part_fee_usage.pm
 FS/part_fee_usage.t
+FS/sched_item.pm
+t/sched_item.t
+FS/sched_avail.pm
+t/sched_avail.t

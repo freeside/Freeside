@@ -99,6 +99,10 @@ L<FS::access_groupagent> - Group reseller access
 
 L<FS::access_right> - Access rights
 
+L<FS::sched_item> - Installers / schedulable resources
+
+L<FS::sched_avail> - Installer/resource availability
+
 L<FS::svc_acct_pop> - POP (Point of Presence, not Post
 Office Protocol) class
 
