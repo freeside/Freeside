@@ -196,7 +196,7 @@ Example:
   &>
 
 </%doc>
-
+%
 % unless ( $opt{embed} ) {
 %
 %   my $title = $opt{action}. ' '. ( $opt{name} || $opt{'name_singular'} );
@@ -213,14 +213,13 @@ Example:
 %       "View all $items" => $viewall_url,
 %     );
 %   }
-
-
-  <% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
+%
+<% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
                 $title,
                 include( '/elements/menubar.html', @menubar ),
                 $opt{'body_etc'},
              )
-  %>
+%>
 
   <% defined($opt{'html_init'}) 
         ? ( ref($opt{'html_init'})
