@@ -2,7 +2,8 @@ package FS::sched_item;
 use base qw( FS::Record );
 
 use strict;
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh ); # qsearch qsearchs );
+use FS::sched_avail;
 
 =head1 NAME
 
@@ -107,6 +108,43 @@ sub name {
   my $self = shift;
   my $access_user = $self->access_user;
   $access_user ? $access_user->name : $self->itemname;
+}
+
+=item replace_sched_avail SCHED_AVAIL, ...
+
+Replaces the existing availability schedule with the list of passed-in
+FS::sched_avail objects
+
+=cut
+
+sub replace_sched_avail {
+  my( $self, @new_sched_avail ) = @_;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $old_sched_avail ( $self->sched_avail ) {
+    my $error = $old_sched_avail->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $new_sched_avail ( @new_sched_avail ) {
+    $new_sched_avail->itemnum( $self->itemnum );
+    my $error = $new_sched_avail->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =back
