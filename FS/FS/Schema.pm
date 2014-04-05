@@ -1865,7 +1865,7 @@ sub tables_hashref {
         'manual_flag',        'char', 'NULL',  1, '', '', 
         'no_auto',            'char', 'NULL',  1, '', '', 
         'quantity',            'int', 'NULL', '', '', '',
-        'agent_pkgid',         'int', 'NULL', '', '', '',
+        'agent_pkgid',     'varchar', 'NULL', $char_d, '', '',
         'waive_setup',        'char', 'NULL',  1, '', '', 
         'recur_show_zero',    'char', 'NULL',  1, '', '',
         'setup_show_zero',    'char', 'NULL',  1, '', '',

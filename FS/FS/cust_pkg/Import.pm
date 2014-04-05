@@ -106,6 +106,7 @@ my %formatfields = (
   'svc_acct'     => [qw( username _password domsvc )],
   'svc_phone'    => [qw( countrycode phonenum sip_password pin )],
   'svc_external' => [qw( id title )],
+  'location'     => [qw( address1 address2 city state zip country )],
 );
 
 sub _formatfields {
@@ -115,11 +116,31 @@ sub _formatfields {
 my %import_options = (
   'table'         => 'cust_pkg',
 
+  'preinsert_callback'  => sub {
+    my($record, $param) = @_;
+    my @location_params = grep /^location\./, keys %$param;
+    if (@location_params) {
+      my $cust_location = FS::cust_location->new({
+          'custnum' => $record->custnum,
+      });
+      foreach my $p (@location_params) {
+        $p =~ /^location.(\w+)$/;
+        $cust_location->set($1, $param->{$p});
+      }
+
+warn Dumper $cust_location; # XXX
+      my $error = $cust_location->find_or_insert; # this avoids duplicates
+      return "error creating location: $error" if $error;
+      $record->set('locationnum', $cust_location->locationnum);
+    }
+    '';
+  },
+
   'postinsert_callback' => sub {
     my( $record, $param ) = @_;
 
     my $formatfields = _formatfields;
-    foreach my $svc_x ( grep { $_ ne 'default' } keys %$formatfields ) {
+    foreach my $svc_x ( grep /^svc/, keys %$formatfields ) {
 
       my $ff = $formatfields->{$svc_x};
 

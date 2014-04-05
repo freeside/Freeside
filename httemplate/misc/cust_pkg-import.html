@@ -36,6 +36,9 @@ Import a file containing package records.
         <OPTION VALUE="svc_phone-agent_custid">Phone service with agent_custid
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external-agent_custid">External service with agent_custid
+        <OPTION VALUE="location">Location
+        <OPTION VALUE="location-agent_custid">Location with agent_custid
+        <OPTION VALUE="location-agent_custid-agent_pkgid">Location with agent_custid and agent_pkgid
       </SELECT>
     </TD>
   </TR>
@@ -88,6 +91,27 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <b>External service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>
 <BR><BR>
 
+<b>Location</b> format has the following field order: <i>custnum<%$req%>,
+pkgpart<%$req%>, discountnum,
+start_date, setup, bill, last_bill, susp, adjourn, cancel, expire,
+address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$req%>
+</i>
+<BR><BR>
+
+<b>Location with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>,
+pkgpart<%$req%>, discountnum,
+start_date, setup, bill, last_bill, susp, adjourn, cancel, expire,
+address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$req%>
+</i>
+<BR><BR>
+
+<b>Location with agent_custid and agent_pkgid</b> format has the following field order: <i>agent_custid<%$req%>, agent_pkgid,
+pkgpart<%$req%>, discountnum,
+start_date, setup, bill, last_bill, susp, adjourn, cancel, expire,
+address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$req%>
+</i>
+<BR><BR>
+
 <%$req%> Required fields
 <BR><BR>
 
@@ -98,6 +122,8 @@ Field information:
   <li><i>custnum</i>: This specifies an existing customer by custnum.
 
   <li><i>agent_custid</i>: This specifies an existing customer record by agent_custid.
+
+  <li><i>agent_pkgid</i>: This specifies an existing customer record by agent_custid.
 
   <li><i>pkgpart</i>: Package definition.  Configuration -&gt; Packages -&gt; Package definitions
 
@@ -128,6 +154,18 @@ Field information:
   <li><i>id</i>: External service id, integer
 
   <li><i>title</i>: External service identifier, text
+
+  <li><i>address1</i>: Service address, number and street, text
+
+  <li><i>address2</i>: Service address, suite/unit/building identifier, text
+
+  <li><i>city</i>: Service address, name of city, text
+
+  <li><i>state</i>: Service address, state/province, abbreviated
+
+  <li><i>zip</i>: Service address, postal code
+
+  <li><i>country</i>: Service address, country, 2-letter code
 
 </ul>
 
