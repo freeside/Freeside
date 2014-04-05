@@ -1,0 +1,49 @@
+<& elements/edit.html,
+     'name_singular'   => 'Installer schedule', #$sched_item_class->classname. ' schedule',
+     'table'           => 'sched_item',
+     'viewall_dir'     => 'browse',
+     'no_pkey_display' => 1,
+     'labels'          => { 'name' => 'Name',
+                            map { ( "sched_avail$_" => $dow[$_] ) } (0..6),
+                          },
+     'fields'          => [
+                            { 'field' => 'name',
+                              'type'  => 'fixed',
+                            },
+                            ( map dow_factory($_), (0..6) ),
+                          ],
+     'edit_callback'   => $edit_callback,
+&>
+<%init>
+
+#XXX more specific AccessRight for scheduling
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @dow = qw( Sunday Monday Tuesday Wednesday Thursday Friday Saturday );
+
+sub dow_factory {
+  my $wday  = shift;
+
+  { 'field'     => 'sched_avail'. $wday,
+    'type'      => 'select-avail-time-from_to',
+    'prefix'    => 'sched_avail'. $wday. '_',
+  };
+
+}
+
+my $edit_callback = sub {
+  my( $cgi, $sched_item, $fields_listref, $opt_hashref ) = @_;
+  foreach my $sched_avail ( $sched_item->sched_avail ) {
+    if ( $sched_avail->override_date ) {
+      #XXX handle
+    } else {
+      my $param = 'sched_avail'. $sched_avail->wday;
+      $cgi->param($param, 'Y');
+      $cgi->param($param.'_stime', $sched_avail->stime);
+      $cgi->param($param.'_etime', $sched_avail->etime);
+    }
+  }
+};
+
+</%init>

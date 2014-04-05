@@ -1,0 +1,49 @@
+% unless ( $opt{'js_only'} ) {
+    <SELECT NAME="<% $opt{'field'} %>" SIZE="1" <%$disabled%> <%$onchange%> >
+%     for ( my $t = 0; $t <=1440; $t += $increment ) {
+        <OPTION VALUE="<% $t %>"
+                <%    ( $curr_value eq '' && $t == $selected_default )
+                   || $curr_value == $t
+                     ? 'SELECTED' : ''
+                %>
+        ><% pretty_time($t) %>
+%     }
+    </SELECT>
+% }
+<%init>
+
+my %opt = @_;
+my $increment = $opt{increment} || 30;
+my $selected_default = $opt{selected_default};
+my $disabled = $opt{'disabled'} || '';
+
+my $curr_value = $opt{curr_value};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"' unless $onchange =~ /^onChange=/i;
+}
+
+sub pretty_time {
+  my $t = shift;
+
+  return 'Midnight' if $t == 0 || $t == 1440;
+  return 'Noon'     if $t == 720;
+
+  my $h = int( $t / 60 );
+  my $m = $t % 60;
+
+  my $ap = 'AM';
+  if    ( $h == 0 || $h == 24 ) { $h = 12; }
+  elsif ( $h == 12 )           { $ap = 'PM'; }
+  elsif ( $h > 12 )            { $ap = 'PM'; $h -= 12; }
+
+  sprintf('%02d:%02d'." $ap", $h, $m);
+
+}
+
+</%init>

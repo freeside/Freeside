@@ -111,6 +111,40 @@ sub check {
   $self->SUPER::check;
 }
 
+=item stime_pretty
+
+=item etime_pretty
+
+=cut
+
+sub stime_pretty { shift->_time_pretty('stime', @_); }
+sub etime_pretty { shift->_time_pretty('etime', @_); }
+
+sub _time_pretty {
+  my( $self, $field ) = @_;
+
+  pretty_time( $self->$field() );
+}
+
+#helper sub
+sub pretty_time {
+  my $t = shift;
+
+  return 'Midnight' if $t == 0 || $t == 1440;
+  return 'Noon'     if $t == 720;
+
+  my $h = int( $t / 60 );
+  my $m = $t % 60;
+
+  my $ap = 'AM';
+  if    ( $h == 0 || $h == 24 ) { $h = 12; }
+  elsif ( $h == 12 )           { $ap = 'PM'; }
+  elsif ( $h > 12 )            { $ap = 'PM'; $h -= 12; }
+
+  sprintf('%02d:%02d'." $ap", $h, $m);
+
+}
+
 =back
 
 =head1 BUGS
