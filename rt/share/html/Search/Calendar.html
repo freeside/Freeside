@@ -17,8 +17,26 @@ $OrigYear => undef
 <& /Elements/Header, Title => $title &>
 <& /Elements/Tabs &>
 
+% my $title;
+% if ( $WeekMonth ) {
+%   if ( $date->month == $end->month ) {
+%     $title = $rtdate->GetMonth( $date->month -1 ). ' '.
+%              $date->day. '-'. $end->day. ', '. $date->year;
+%   } elsif ( $date->year == $end->year ) {
+%     $title =
+%       $rtdate->GetMonth( $date->month -1 ). ' '. $date->day. ' - '.
+%       $rtdate->GetMonth( $end->month  -1 ). ' '. $end->day.  ', '. $end->year;
+%   } else {
+%     $title =
+%       $rtdate->GetMonth( $date->month -1 ). ' '.$date->day. ', '. $date->year.
+%       ' - '.
+%       $rtdate->GetMonth( $end->month  -1 ). ' '.$end->day.  ', '. $end->year;
+%   }
+% } else {
+%   $title = $rtdate->GetMonth($Month) . " $Year" 
+% }
 <&| /Widgets/TitleBox,
-     title => loc('Calendar for ') . $rtdate->GetMonth($Month) . " $Year" ,
+     title => loc('Calendar for '). $title,
      title_class=> 'inverse',
      color => "#993333" &>
 
@@ -70,22 +88,23 @@ $OrigYear => undef
 % }
 % while ($date <= $end) {
 %
-%   my $offmonth = $date->month != ($Month + 1);
+%   my $offmonth = !$WeekDay && $date->month != ($Month + 1);
 %   my $is_today     = (DateTime->compare($today,     $date) == 0);
 %   my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
 %   my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
 
-    <td class="<% ($offmonth && !$WeekDay) ? 'offmonth'
-                    : $is_today     ? 'today'
-                    : $is_yesterday ? 'yesterday'
-                    : $is_aweekago  ? 'aweekago'
-                    : ''
+    <td class="<%   $offmonth     ? 'offmonth'
+                  : $is_today     ? 'today'
+                  : $is_yesterday ? 'yesterday'
+                  : $is_aweekago  ? 'aweekago'
+                  : ''
                %>"
     >
-      <div class="<% $is_today ? 'todays'
-                       : ($offmonth && !$WeekDay) ? 'offmonth'
-                       :'' %>calendardate"
-      ><% ( $WeekDay ? $rtdate->GetMonth($date->month). ' ' : '' ).
+      <div class="<%   $is_today ? 'todays'
+                     : $offmonth ? 'offmonth'
+                     : ''
+                  %>calendardate"
+      ><% ( $WeekDay ? $rtdate->GetMonth($date->month-1). ' ' : '' ).
           $date->day
        %></div>
 
@@ -218,10 +237,10 @@ my $today = DateTime->today;
 my $yesterday = $today->clone->subtract( days=>1 );
 my $aweekago  = $today->clone->subtract( days=>7 );
 
-my( $date, $end);
+my( $date, $end );
 if ( $WeekDay ) {
-  $date = DateTime->new( year=>$WeekYear, month=>$WeekMonth, day=>$WeekDay );
-  $end  = LastDayOfWeek( $WeekYear, $WeekMonth, $WeekDay, $endday_of_week );
+  $date = DateTime->new( year=>$WeekYear, month=>$WeekMonth+1, day=>$WeekDay );
+  $end  = LastDayOfWeek( $WeekYear, $WeekMonth+1, $WeekDay, $endday_of_week );
 } else {
   $date = FirstDay($Year, $Month + 1, $startday_of_week );
   $end  = LastDay ($Year, $Month + 1, $endday_of_week );
@@ -281,7 +300,7 @@ my %Tickets = RTx::Calendar::FindTickets($session{'CurrentUser'}, $TempQuery, \@
   $QueryString => undef
 </%args>
   <td class="controls">
-    <a href="<%$RT::WebPath%>/Search/Calendar.html?WeekDay=<% $date->day %>&WeekMonth=<% $date->month %>&WeekYear=<% $date->year %>&OrigMonth=<% $Month %>&OrigYear=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-expand.gif"></a>
+    <a href="<%$RT::WebPath%>/Search/Calendar.html?WeekDay=<% $date->day %>&WeekMonth=<% $date->month -1 %>&WeekYear=<% $date->year %>&OrigMonth=<% $Month %>&OrigYear=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-expand.gif"></a>
   </td>
 </%def>
 
