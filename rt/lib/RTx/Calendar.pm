@@ -5,7 +5,7 @@ use base qw( Exporter );
 use DateTime;
 use DateTime::Set;
 
-our $VERSION = "0.14";
+our $VERSION = "0.17";
 
 RT->AddStyleSheets('calendar.css')
     if RT->can('AddStyleSheets');
@@ -154,9 +154,8 @@ number based so that you can give those feeds to other people.
 
 If you upgrade from 0.02, see next part before.
 
-You need to install those three modules :
+You need to install those two modules :
 
-  * Date::ICal
   * Data::ICal
   * DateTime::Set
 
