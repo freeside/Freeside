@@ -7,6 +7,11 @@ $Order => undef
 $OrderBy => undef
 $RowsPerPage => undef
 $NewQuery => 0
+$WeekDay => undef
+$WeekMonth => undef
+$WeekYear => undef
+$OrigMonth => undef
+$OrigYear => undef
 </%args>
 
 <& /Elements/Header, Title => $title &>
@@ -17,34 +22,39 @@ $NewQuery => 0
      title_class=> 'inverse',
      color => "#993333" &>
 
-<table width="100%">
-<tr>
-<td align="left">
-% my ($PMonth, $PYear) = ($Month - 1, $Year);
+% my($PMonth, $PYear, $NMonth, $NYear);
+% unless ( $WeekDay ) {
+
+    <table width="100%">
+      <tr>
+        <td align="left">
+% ($PMonth, $PYear) = ($Month - 1, $Year);
 % if ($PMonth < 0) {
 %    $PYear--;
 %    $PMonth = 11;
 % }
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">«<%$rtdate->GetMonth($PMonth)%></a>
-</td>
-<th align="center">
-  <font size="+1"><% $rtdate->GetMonth($Month). " $Year" %></font>
-</th>
-<td align="right">
-% my ($NMonth, $NYear) = ($Month + 1, $Year);
+          <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">«<%$rtdate->GetMonth($PMonth)%></a>
+        </td>
+        <th align="center">
+          <font size="+1"><% $rtdate->GetMonth($Month). " $Year" %></font>
+        </th>
+        <td align="right">
+% ($NMonth, $NYear) = ($Month + 1, $Year);
 % if ($NMonth > 11) {
 %    $NYear++;
 %    $NMonth = 0;
 % }
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>»</a>
-</td>
-</tr>
-</table>
+          <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>»</a>
+        </td>
+      </tr>
+    </table>
+% }
 
 <table class="rtxcalendar">
 
 <thead>
 <tr>
+<td class="controls"></td>
 % for ( @{$week{$weekstart}} ) {
 <th width="14%"><%$rtdate->GetWeekday($_)%></th>
 % }
@@ -53,6 +63,11 @@ $NewQuery => 0
 
 <tbody>
 <tr>
+% if ( $WeekDay ) {
+  <& td_week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
+% } else {
+  <& td_week_expand, date=>$date, Month=>$Month, Year=>$Year, QueryString=>$QueryString &>
+% }
 % while ($date <= $end) {
 %
 %   my $offmonth = $date->month != ($Month + 1);
@@ -60,7 +75,7 @@ $NewQuery => 0
 %   my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
 %   my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
 
-    <td class="<% $offmonth ? 'offmonth'
+    <td class="<% ($offmonth && !$WeekDay) ? 'offmonth'
                     : $is_today     ? 'today'
                     : $is_yesterday ? 'yesterday'
                     : $is_aweekago  ? 'aweekago'
@@ -68,9 +83,11 @@ $NewQuery => 0
                %>"
     >
       <div class="<% $is_today ? 'todays'
-                       : $offmonth ? 'offmonth'
+                       : ($offmonth && !$WeekDay) ? 'offmonth'
                        :'' %>calendardate"
-      ><%$date->day%></div>
+      ><% ( $WeekDay ? $rtdate->GetMonth($date->month). ' ' : '' ).
+          $date->day
+       %></div>
 
 %     my $sp = 3;
 %     for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
@@ -83,47 +100,61 @@ $NewQuery => 0
 
 %   $date = $set->next($date);
 %   if ( $date->day_of_week == $startday_of_week ) {
-      </tr><tr>
+      </tr>
+%     if ( $date <= $end ) {
+        <tr>
+%         if ( $WeekDay ) {
+            <& td_week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
+%         } else {
+            <& td_week_expand, date=>$date, Month=>$Month, Year=>$Year, QueryString=>$QueryString &>
+%         }
+%     }
 %   }
 
 % }
-</tr>
 </tbody>
 </table>
 
-<table width="100%">
-<tr>
-<td align="left">
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">«<%$rtdate->GetMonth($PMonth)%></a>
-</td>
+% unless ( $WeekDay ) {
 
-<td valign="top" align="center">
-<form action="<%$RT::WebPath%>/Search/Calendar.html?<%$QueryString%>" method="post">
+    <table width="100%">
+      <tr>
+        <td align="left">
+          <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">«<%$rtdate->GetMonth($PMonth)%></a>
+        </td>
 
-<select name="Month">
-% for (0..11) {
-<option value="<%$_%>" <% $_ == $Month ? 'selected' : ''%> ><%$rtdate->GetMonth($_)%></option>
-% }
-</select>
-% my $year = (localtime)[5] + 1900;
-<select name="Year">
-% for ( ($year-5) .. ($year+5)) {
-<option value="<%$_%>" <% $_ == $Year ? 'selected' : ''%>><%$_%></option>
-% }
-</select>
+        <td valign="top" align="center">
+          <form action="<%$RT::WebPath%>/Search/Calendar.html?<%$QueryString%>" method="post">
+
+            <select name="Month">
+%             for (0..11) {
+                <option value="<%$_%>" <% $_ == $Month ? 'selected' : ''%> ><%$rtdate->GetMonth($_)%></option>
+%             }
+            </select>
+
+%           my $year = (localtime)[5] + 1900;
+            <select name="Year">
+%             for ( ($year-5) .. ($year+5)) {
+                <option value="<%$_%>" <% $_ == $Year ? 'selected' : ''%>><%$_%></option>
+%             }
+            </select>
 
 %# <& /Elements/Submit&>
-<input type="submit" value="<% loc('Submit') %>" class="button" />
+            <input type="submit" value="<% loc('Submit') %>" class="button" />
 
-</form>
-</td>
+          </form>
+        </td>
 
-<td align="right">
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>»</a>
-</td>
-</tr>
-</table>
+        <td align="right">
+          <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>»</a>
+        </td>
+      </tr>
+  </table>
 
+% }
+
+% #XXX an option to turn off "Calendar Preferences and Help" for embedded
+% # (and weekly?) use
 <table width="100%">
 <tr>
 
@@ -166,7 +197,7 @@ my %legend = (
 
 </%ONCE>
 <%INIT>
-use RTx::Calendar qw(FirstDay LastDay);
+use RTx::Calendar qw(FirstDay LastDay LastDayOfWeek);
 
 my $title = loc("Calendar");
 
@@ -186,8 +217,15 @@ my $endday_of_week   = ${$week{$weekstart}}[-1] || 7;
 my $today = DateTime->today;
 my $yesterday = $today->clone->subtract( days=>1 );
 my $aweekago  = $today->clone->subtract( days=>7 );
-my $date = FirstDay($Year, $Month + 1, $startday_of_week );
-my $end  = LastDay ($Year, $Month + 1, $endday_of_week );
+
+my( $date, $end);
+if ( $WeekDay ) {
+  $date = DateTime->new( year=>$WeekYear, month=>$WeekMonth, day=>$WeekDay );
+  $end  = LastDayOfWeek( $WeekYear, $WeekMonth, $WeekDay, $endday_of_week );
+} else {
+  $date = FirstDay($Year, $Month + 1, $startday_of_week );
+  $end  = LastDay ($Year, $Month + 1, $endday_of_week );
+}
 
 # use this to loop over days until $end
 my $set = DateTime::Set->from_recurrence(
@@ -235,3 +273,26 @@ $TempQuery .= RTx::Calendar::DatesClauses(\@Dates, $date->strftime("%F"), $end->
 my %Tickets = RTx::Calendar::FindTickets($session{'CurrentUser'}, $TempQuery, \@Dates, $date->strftime("%F"), $end->strftime("%F"));
 
 </%INIT>
+<%def td_week_expand>
+<%args>
+  $date  => undef
+  $Month => undef
+  $Year  => undef
+  $QueryString => undef
+</%args>
+  <td class="controls">
+    <a href="<%$RT::WebPath%>/Search/Calendar.html?WeekDay=<% $date->day %>&WeekMonth=<% $date->month %>&WeekYear=<% $date->year %>&OrigMonth=<% $Month %>&OrigYear=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-expand.gif"></a>
+  </td>
+</%def>
+
+<%def td_week_collapse>
+<%args>
+  $date  => undef
+  $Month => undef
+  $Year  => undef
+  $QueryString => undef
+</%args>
+  <td class="controls">
+    <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<% $Month %>&Year=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-collapse.gif"></a>
+  </td>
+</%def>
