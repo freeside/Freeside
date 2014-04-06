@@ -10,7 +10,7 @@ our $VERSION = "0.17";
 RT->AddStyleSheets('calendar.css')
     if RT->can('AddStyleSheets');
 
-our @EXPORT_OK = qw( FirstDay LastDay );
+our @EXPORT_OK = qw( FirstDay LastDay LastDayOfWeek );
 
 sub FirstDay {
     my ($year, $month, $matchday) = @_;
@@ -35,6 +35,19 @@ sub LastDay {
 
     $day = $set->next($day) while $day->day_of_week != $matchday;
     $day;
+}
+
+sub LastDayOfWeek {
+    my ($year, $month, $day, $matchday) = @_;
+    my $set = DateTime::Set->from_recurrence(
+	next => sub { $_[0]->truncate( to => 'day' )->add( days => 1 ) }
+    );
+
+    my $day = DateTime->new( year => $year, month => $month, day => $day );
+
+    $day = $set->next($day) while $day->day_of_week != $matchday;
+    $day;
+
 }
 
 # we can't use RT::Date::Date because it uses gmtime
