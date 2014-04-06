@@ -3,7 +3,6 @@
 use Data::ICal;
 use Data::ICal::Entry::Todo;
 use Data::ICal::Entry::Event;
-use Date::ICal;
 
 $RT::ICalTicketType   ||= "Data::ICal::Entry::Todo";
 $RT::ICalReminderType ||= "Data::ICal::Entry::Event";
@@ -109,12 +108,13 @@ sub add_event {
     return unless defined $Reminder->RefersTo->First;
     my $Ticket  = $Reminder->RefersTo->First->TargetObj;
 
+    my $now = RT::Date->new( $session{'CurrentUser'} ); $now->SetToNow;
     my %event = (
 	summary => $Reminder->Subject ? $Reminder->Subject : '',
 	url        => "${RT::WebURL}/Ticket/Display.html?id=" . $Ticket->id,
-	uid        => Date::ICal->new( epoch => time() )->ical() . "-" . $Reminder->Id . "@" . $uid,
+	uid        => $now->iCal . "-" . $Reminder->Id . "@" . $uid,
 	categories => $Ticket->QueueObj->Name,
-	dtstart     => Date::ICal->new( epoch => $Reminder->DueObj->Unix )->ical,
+	dtstart     => $Reminder->DueObj->iCal,
     );
 
     my $event = $RT::ICalReminderType->new();
@@ -126,15 +126,16 @@ sub add_event {
 sub add_todo {
     my ($Ticket, $uid) = @_;
 
+    my $now = RT::Date->new( $session{'CurrentUser'} ); $now->SetToNow;
     my %vtodo = (
 	summary    => $Ticket->Subject ? $Ticket->Subject : '',
-	dtstart    => Date::ICal->new( epoch => $Ticket->CreatedObj->Unix )->ical,
+	dtstart    => $Ticket->CreatedObj->iCal,
 	url        => "${RT::WebURL}/Ticket/Display.html?id=" . $Ticket->id,
-	uid        => Date::ICal->new( epoch => time() )->ical() . "-" . $Ticket->Id . "@" . $uid,
+	uid        => $now->iCal . "-" . $Ticket->Id . "@" . $uid,
 	categories => $Ticket->QueueObj->Name,
     );
 
-    $vtodo{due} = Date::ICal->new( epoch => $Ticket->DueObj->Unix )->ical,
+    $vtodo{due} = $Ticket->DueObj->iCal,
         if $Ticket->DueObj;
 
     if ($Ticket->OwnerObj->Id != $RT::Nobody->Id and $Ticket->OwnerObj->EmailAddress) {

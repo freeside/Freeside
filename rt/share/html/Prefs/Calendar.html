@@ -92,7 +92,7 @@ href="<%$RT::WebPath . '/Search/Build.html'%>">the Query Builder</a>
 </&>
 
 <%INIT>
-use Digest::SHA 'sha1_base64';
+use Digest::SHA;
 use RT::SavedSearches;
 
 my $title = loc("Calendar Prefs");
@@ -111,7 +111,7 @@ if ($HiddenField && $HiddenField eq 'Private') {
 }
 
 if (defined $ChangeURL) {
-  my @args = $object->SetAttribute(Name => 'ICalURL', Content => sha1_base64(time));
+  my @args = $object->SetAttribute(Name => 'ICalURL', Content => Digest::SHA::sha1_base64(time));
 } elsif (defined $ResetURL) {
   my @args = $object->DeleteAttribute('ICalURL');
 }
