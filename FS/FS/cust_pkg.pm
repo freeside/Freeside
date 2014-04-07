@@ -649,7 +649,7 @@ sub check {
     || $self->ut_numbern('dundate')
     || $self->ut_enum('no_auto', [ '', 'Y' ])
     || $self->ut_enum('waive_setup', [ '', 'Y' ])
-    || $self->ut_numbern('agent_pkgid')
+    || $self->ut_textn('agent_pkgid')
     || $self->ut_enum('recur_show_zero', [ '', 'Y', 'N', ])
     || $self->ut_enum('setup_show_zero', [ '', 'Y', 'N', ])
     || $self->ut_foreign_keyn('main_pkgnum', 'cust_pkg', 'pkgnum')
