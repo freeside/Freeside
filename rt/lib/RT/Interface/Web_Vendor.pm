@@ -284,6 +284,14 @@ sub ProcessTicketBasics {
         }
     }
 
+    # RT core _will_ allow Set transactions that change these 
+    # fields to empty strings, but internally change the values 
+    # to zero.  This is sloppy and causes some problems.
+    foreach my $field (qw(TimeWorked TimeEstimated TimeLeft)) {
+      $ARGSRef->{$field} =~ s/\s//g;
+      $ARGSRef->{$field} ||= 0;
+    }
+
     my @results = UpdateRecordObject(
         AttributesRef => \@attribs,
         Object        => $TicketObj,
