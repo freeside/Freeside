@@ -357,6 +357,16 @@ sub _upgrade_data {
     warn "Removed $rows dangling ticket-$table links\n" if $rows > 0;
   }
 
+  # Fix ticket transactions on the Time* fields where the NewValue (or
+  # OldValue, though this is not known to happen) is an empty string
+  foreach (qw(newvalue oldvalue)) {
+    my $rows = $dbh->do(
+      "UPDATE transactions SET $_ = '0' WHERE objecttype='RT::Ticket' AND ".
+      "field IN ('TimeWorked', 'TimeEstimated', 'TimeLeft') AND $_ = ''"
+    ) or die $dbh->errstr;
+    warn "Fixed $rows transactions with empty time values\n" if $rows > 0;
+  }
+
   return;
 }
 
