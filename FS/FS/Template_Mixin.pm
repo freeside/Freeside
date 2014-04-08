@@ -485,9 +485,14 @@ sub print_generic {
     'quotationnum'    => $self->quotationnum,
     'no_date'         => $params{'no_date'},
     '_date'           => ( $params{'no_date'} ? '' : $self->_date ),
+      # workaround for inconsistent behavior in the early plain text 
+      # templates; see RT#28271
     'date'            => ( $params{'no_date'}
                              ? ''
-                             : $self->time2str_local('long', $self->_date, $format)
+                             : ($format eq 'template'
+                               ? $self->_date
+                               : $self->time2str_local('long', $self->_date, $format)
+                               )
                          ),
     'today'           => $self->time2str_local('long', $today, $format),
     'terms'           => $self->terms,
