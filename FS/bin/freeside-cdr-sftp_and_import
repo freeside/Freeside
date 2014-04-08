@@ -161,7 +161,11 @@ foreach my $filename ( @$ls ) {
 ###
 
 sub usage {
-  "Usage: \n  cdr.import user format servername\n";
+  "Usage:
+  cdr.sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
+    [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
+    [ -a ] [ -g ] [ -s ] [ -c cdrtypenum ] user format [sftpuser@]servername
+  ";
 }
 
 use vars qw( $sftp $ftp );
