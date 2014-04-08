@@ -72,7 +72,7 @@ $OrigYear => undef
 
 <thead>
 <tr>
-<td class="controls"></td>
+<td class="labels" colspan=<% $WeekDay ? 2 : 1 %>></td>
 % for ( @{$week{$weekstart}} ) {
 <th width="14%"><%$rtdate->GetWeekday($_)%></th>
 % }
@@ -81,54 +81,136 @@ $OrigYear => undef
 
 <tbody>
 <tr>
+
 % if ( $WeekDay ) {
-  <& td_week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
+  <td class="controls" rowspan=<% $rowspan+1 %> valign="middle">
+    <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
+  </td>
+  </td>
 % } else {
   <& td_week_expand, date=>$date, Month=>$Month, Year=>$Year, QueryString=>$QueryString &>
 % }
-% while ($date <= $end) {
+
+% if ( $WeekDay ) {
+
+    <td class="labels"></td>
+
+%   $date = $start;
+%   while ($date <= $end) {
 %
-%   my $offmonth = !$WeekDay && $date->month != ($Month + 1);
-%   my $is_today     = (DateTime->compare($today,     $date) == 0);
-%   my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
-%   my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+%     my $is_today     = (DateTime->compare($today,     $date) == 0);
+%     my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%     my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
 
-    <td class="<%   $offmonth     ? 'offmonth'
-                  : $is_today     ? 'today'
-                  : $is_yesterday ? 'yesterday'
-                  : $is_aweekago  ? 'aweekago'
-                  : ''
-               %>"
-    >
-      <div class="<%   $is_today ? 'todays'
-                     : $offmonth ? 'offmonth'
-                     : ''
-                  %>calendardate"
-      ><% ( $WeekDay ? $rtdate->GetMonth($date->month-1). ' ' : '' ).
-          $date->day
-       %></div>
+      <td class="<%   $is_today     ? 'today'
+                    : $is_yesterday ? 'yesterday'
+                    : $is_aweekago  ? 'aweekago'
+                    : ''
+                 %>"
+      >
+        <div class="<%   $is_today ? 'todays'
+                       : ''
+                    %>calendardate"
+        ><% $rtdate->GetMonth($date->month-1). ' '. $date->day %></div>
 
-%     my $sp = 3;
-%     for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
-%       $sp--;
-        <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+      </td>
+
+%     $date = $set->next($date);
+%     if ( $date->day_of_week == $startday_of_week ) {
+        </tr>
+%       if ( $date <= $end ) { #a second week? not going to work for week view yet
+          <tr>
+              <td class="controls" rowspan=<% $rowspan + 1 %> valign="middle">
+                <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
+              </td>
+%       }
 %     }
-      <% ($sp>0) ? '<BR>'x$sp : '' |n %>
 
-    </td>
+%   } #while ($date <= $end)
 
-%   $date = $set->next($date);
-%   if ( $date->day_of_week == $startday_of_week ) {
-      </tr>
-%     if ( $date <= $end ) {
-        <tr>
-%         if ( $WeekDay ) {
-            <& td_week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
-%         } else {
-            <& td_week_expand, date=>$date, Month=>$Month, Year=>$Year, QueryString=>$QueryString &>
+%   foreach my $row ( @week_rows ) {
+
+      <& td_time, $row &>
+
+%     $date = $start;
+%     while ($date <= $end) {
+%
+%       my $is_today     = (DateTime->compare($today,     $date) == 0);
+%       my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%       my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+
+        <td class="<%   $is_today     ? 'today'
+                      : $is_yesterday ? 'yesterday'
+                      : $is_aweekago  ? 'aweekago'
+                      : ''
+                   %>"
+        >
+
+% #XXX display these in a time aware fashion
+%#%       my $sp = 3;
+%#%       for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+%#%         $sp--;
+%#          <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+%#%       }
+%#        <% ($sp>0) ? '<BR>'x$sp : '' |n %>
+
+        </td>
+
+%       $date = $set->next($date);
+%       if ( $date->day_of_week == $startday_of_week ) {
+          </tr>
+%         if ( $date <= $end ) { #a second week? not going to work for week view yet
+            <tr>
+              <td class="controls" rowspan=<% $rowspan + 1 %> valign="middle">
+                  <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString &>
+                </td>
 %         }
+%       }
+
+%     } #while ($date <= $end)
+%   } #foreach my $row ( @week_rows )
+
+% } else {
+
+%   while ($date <= $end) {
+%
+%     my $offmonth = !$WeekDay && $date->month != ($Month + 1);
+%     my $is_today     = (DateTime->compare($today,     $date) == 0);
+%     my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%     my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+
+      <td class="<%   $offmonth     ? 'offmonth'
+                    : $is_today     ? 'today'
+                    : $is_yesterday ? 'yesterday'
+                    : $is_aweekago  ? 'aweekago'
+                    : ''
+                 %>"
+      >
+        <div class="<%   $is_today ? 'todays'
+                       : $offmonth ? 'offmonth'
+                       : ''
+                    %>calendardate"
+        ><% $date->day %></div>
+
+%       my $sp = 3;
+%       for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+%         $sp--;
+          <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+%       }
+        <% ($sp>0) ? '<BR>'x$sp : '' |n %>
+
+      </td>
+
+%     $date = $set->next($date);
+%     if ( $date->day_of_week == $startday_of_week ) {
+        </tr>
+%       if ( $date <= $end ) {
+          <tr>
+            <& td_week_expand, date=>$date, Month=>$Month, Year=>$Year, QueryString=>$QueryString &>
+%       }
 %     }
-%   }
+
+%   } #while ($date <= $end)
 
 % }
 </tbody>
@@ -214,6 +296,16 @@ my %legend = (
   'starts_due'  => ['Starts','Due'],
 );
 
+my $stime    = 480;  #8am
+my $etime    = 1080; #6pm
+my $timestep = 30;  #1/2h
+#my $timestep = 120;  #2h
+my $rowspan = ($etime-$stime) / $timestep;
+
+my $wt = $stime;
+my @week_rows = ();
+while ( $wt < $etime ) { push @week_rows, $wt; $wt+=$timestep }
+
 </%ONCE>
 <%INIT>
 use RTx::Calendar qw(FirstDay LastDay LastDayOfWeek);
@@ -224,6 +316,9 @@ my @DateTypes = qw/Created Starts Started Due LastUpdated Resolved/;
 
 my $rtdate = RT::Date->new($session{'CurrentUser'});
 
+my $time_zone = $session{'CurrentUser'}->UserObj->Timezone
+                  || RT->Config->Get('Timezone');
+
 my $weekstart = 'Sunday'; #RT::SiteConfig?  user pref?
 my %week = (
   'Saturday' => [6,0..5],
@@ -233,18 +328,23 @@ my %week = (
 my $startday_of_week = ${$week{$weekstart}}[0]  || 7;
 my $endday_of_week   = ${$week{$weekstart}}[-1] || 7;
 
-my $today = DateTime->today;
+my $today = DateTime->today( time_zone=>$time_zone );
 my $yesterday = $today->clone->subtract( days=>1 );
 my $aweekago  = $today->clone->subtract( days=>7 );
 
-my( $date, $end );
+my( $start, $end );
 if ( $WeekDay ) {
-  $date = DateTime->new( year=>$WeekYear, month=>$WeekMonth+1, day=>$WeekDay );
+  $start = DateTime->new( year      => $WeekYear,
+                          month     => $WeekMonth+1,
+                          day       => $WeekDay,
+                          time_zone => $time_zone,
+                        );
   $end  = LastDayOfWeek( $WeekYear, $WeekMonth+1, $WeekDay, $endday_of_week );
 } else {
-  $date = FirstDay($Year, $Month + 1, $startday_of_week );
-  $end  = LastDay ($Year, $Month + 1, $endday_of_week );
+  $start = FirstDay($Year, $Month + 1, $startday_of_week );
+  $end   = LastDay ($Year, $Month + 1, $endday_of_week );
 }
+my $date = $start;
 
 # use this to loop over days until $end
 my $set = DateTime::Set->from_recurrence(
@@ -304,14 +404,36 @@ my %Tickets = RTx::Calendar::FindTickets($session{'CurrentUser'}, $TempQuery, \@
   </td>
 </%def>
 
-<%def td_week_collapse>
+<%def week_collapse>
 <%args>
   $date  => undef
   $Month => undef
   $Year  => undef
   $QueryString => undef
 </%args>
-  <td class="controls">
-    <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<% $Month %>&Year=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-collapse.gif"></a>
-  </td>
+    <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<% $Month %>&Year=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-collapse.gif" STYLE="height:384px;width:11px"></a>
+</%def>
+
+<%def td_time>
+% my( $min ) = shift;
+    <td class="labels"><% pretty_time($min) |n %></td>
+<%init>
+sub pretty_time {
+  my $t = shift;
+
+  return 'Midnight' if $t == 0 || $t == 1440;
+  return 'Noon'     if $t == 720;
+
+  my $h = int( $t / 60 );
+  my $m = $t % 60;
+
+  my $ap = 'AM';
+  if    ( $h == 0 || $h == 24 ) { $h = 12; }
+  elsif ( $h == 12 )           { $ap = 'PM'; }
+  elsif ( $h > 12 )            { $ap = 'PM'; $h -= 12; }
+
+  sprintf('%02d:%02d&nbsp;'.$ap, $h, $m);
+
+}
+</%init>
 </%def>
