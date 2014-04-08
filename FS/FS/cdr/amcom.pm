@@ -30,7 +30,7 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
       my ($cdr, $date) = @_;
       $date =~ /^(\d{2})(\d{2})(\d{4})$/
         or die "unparseable date: $date";
-      ($tmp_mday, $tmp_mon, $tmp_year) = ($1, $2-1, $3);
+      ($tmp_mday, $tmp_mon, $tmp_year) = ($1, $2, $3);
     },
     sub {         # 7. Start Time (HHMMSS)
       my ($cdr, $time) = @_;
