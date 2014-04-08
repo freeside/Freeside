@@ -84,9 +84,19 @@ table.rtxcalendar td.controls {
     border-top: 1px solid #eeeeee;
     border-left: 1px solid #eeeeee;
     border-bottom: 1px solid #eeeeee;
+    border-right: 1px solid #eeeeee;
+    vertical-align: middle;
 }
 
 table.rtxcalendar td.controls:hover {
     background-color: #CFDEFF;
+}
+
+table.rtxcalendar td.labels {
+    background: #eeeeee;
+    width: 1%;
+    border-top: 1px solid #eeeeee;
+    border-left: 1px solid #eeeeee;
+    border-bottom: 1px solid #eeeeee;
 }
 
