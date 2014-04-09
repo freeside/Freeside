@@ -302,7 +302,7 @@ push @select, "COALESCE($part_pkg.taxclass, part_fee.taxclass) AS taxclass"
 # the non-tax case
 if ( $cgi->param('nottax') ) {
 
-  push @select, $itemdesc;
+  push @select, "($itemdesc) AS itemdesc";
 
   push @where,
     '(cust_bill_pkg.pkgnum > 0 OR cust_bill_pkg.feepart IS NOT NULL)';
