@@ -1,0 +1,11 @@
+<TR>
+  <TD ALIGN="right"><% $opt{'label'} || 'Ticketing queue' %></TD>
+  <TD>
+    <% include( '/elements/select-ticketing_queueid.html', %opt ) %>
+  </TD>
+</TR>
+<%init>
+
+my %opt = @_;
+
+</%init>
