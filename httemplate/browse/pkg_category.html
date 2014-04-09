@@ -9,9 +9,9 @@
                                     'order_by' => 'ORDER BY categorynum',
                                   },
                  'count_query' => $count_query,
-                 'header'      => [ '#', 'Category', 'Weight', 'Condense' ],
-                 'fields'      => [ 'categorynum', 'categoryname', 'weight', 'condense' ],
-                 'links'       => [ $link, $link, $link, $link ],
+                 'header'      => [ 'Category', 'Weight', 'Ticketing', 'Condense' ],
+                 'fields'      => [ 'categoryname', 'weight', 'ticketing_queue', 'condense' ],
+                 'links'       => [ $link, '', '', '', ]
              )
 %>
 
