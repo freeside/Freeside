@@ -5049,11 +5049,12 @@ sub tables_hashref {
 
     'pkg_category' => {
       'columns' => [
-        'categorynum',   'serial',  '', '', '', '', 
-        'categoryname',  'varchar', '', $char_d, '', '', 
-        'weight',         'int', 'NULL',  '', '', '',
-        'condense',      'char', 'NULL',   1, '', '', 
-        'disabled',      'char', 'NULL',   1, '', '', 
+        'categorynum',        'serial',     '',      '', '', '', 
+        'categoryname',      'varchar',     '', $char_d, '', '', 
+        'weight',                'int', 'NULL',      '', '', '',
+        'ticketing_queueid',     'int', 'NULL',      '', '', '', 
+        'condense',             'char', 'NULL',       1, '', '', 
+        'disabled',             'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'categorynum',
       'unique' => [],

@@ -1,9 +1,9 @@
 package FS::pkg_category;
+use base qw( FS::category_Common );
 
 use strict;
-use base qw( FS::category_Common );
 use vars qw( @ISA $me $DEBUG );
-use FS::Record qw( qsearch dbh );
+use FS::Record qw( qsearch );
 use FS::pkg_class;
 use FS::part_pkg;
 
@@ -49,6 +49,15 @@ Text name of this package category
 
 Weight
 
+=item ticketing_queueid
+
+Ticketing Queue
+
+=item condense
+
+Condense flag for invoice display, empty or 'Y'
+
+
 =item disabled
 
 Disabled flag, empty or 'Y'
@@ -92,13 +101,34 @@ replace methods.
 
 =cut
 
+sub check {
+  my $self = shift;
+
+  $self->ut_enum('condense', [ '', 'Y' ])
+    || $self->ut_snumbern('ticketing_queueid')
+    || $self->SUPER::check;
+}
+
+=item ticketing_queue
+
+Returns the queue name corresponding with the id from the I<ticketing_queueid>
+field, or the empty string.
+
+=cut
+
+sub ticketing_queue {
+  my $self = shift;
+  return 'Agent-specific queue' if $self->ticketing_queueid == -1;
+  return '' unless $self->ticketing_queueid;
+  FS::TicketSystem->queue($self->ticketing_queueid);
+}
+
 # _ upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
 
 sub _upgrade_data {
   my ($class, %opts) = @_;
-  my $dbh = dbh;
 
   warn "$me upgrading $class\n" if $DEBUG;
 
