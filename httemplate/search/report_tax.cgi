@@ -308,12 +308,19 @@ my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg ";
 
 my $with_pkgclass = $cgi->param('show_pkgclasses');
 
-# either or both of these can be used to link cust_bill_pkg to cust_main_county
-my $pkg_tax = "SELECT SUM(amount) as tax_amount, invnum, taxnum, ".
-  "cust_bill_pkg_tax_location.pkgnum ".
+# Either or both of these can be used to link cust_bill_pkg to 
+# cust_main_county. This one links a taxed line item (billpkgnum) to a tax rate
+# (taxnum), and gives the amount of tax charged on that line item under that
+# rate (as tax_amount).
+my $pkg_tax = "SELECT SUM(amount) as tax_amount, taxnum, ".
+  "taxable_billpkgnum AS billpkgnum ".
   "FROM cust_bill_pkg_tax_location JOIN cust_bill_pkg USING (billpkgnum) ".
-  "GROUP BY billpkgnum, invnum, taxnum, cust_bill_pkg_tax_location.pkgnum";
+  "GROUP BY taxable_billpkgnum, taxnum";
 
+# This one links a tax-exempted line item (billpkgnum) to a tax rate (taxnum),
+# and gives the amount of the tax exemption.  EXEMPT_WHERE should be replaced 
+# with a real WHERE clause to further limit the tax exemptions that will be
+# included.
 my $pkg_tax_exempt = "SELECT SUM(amount) AS exempt_charged, billpkgnum, taxnum ".
   "FROM cust_tax_exempt_pkg EXEMPT_WHERE GROUP BY billpkgnum, taxnum";
 
@@ -390,7 +397,7 @@ $sql{taxable} = "$select
   SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
   FROM cust_main_county
   JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
-  JOIN cust_bill_pkg USING (invnum, pkgnum)
+  JOIN cust_bill_pkg USING (billpkgnum)
   LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
     ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
         AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
@@ -400,17 +407,22 @@ $sql{taxable} = "$select
 # under any tax.  exempt_charged is the sum of all exemptions for a 
 # particular billpkgnum + taxnum; we take the taxnum that has the 
 # smallest sum of exemptions and subtract that from the charged amount.
+# 
+# (This isn't an exact result, since line items can be taxable under 
+# one tax and not another.  Under 4.x the tax report is designed to 
+# consider only one variety of tax at a time, which should solve this.)
+
 $all_sql{taxable} = "$select_all
   SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(min_exempt, 0))
   FROM cust_bill_pkg
   JOIN (
-    SELECT invnum, pkgnum, MIN(exempt_charged) AS min_exempt
+    SELECT billpkgnum, MIN(exempt_charged) AS min_exempt
     FROM ($pkg_tax) AS pkg_tax
-    JOIN cust_bill_pkg USING (invnum, pkgnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
     LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
-    GROUP BY invnum, pkgnum
+    GROUP BY billpkgnum
   ) AS pkg_is_taxable 
-  USING (invnum, pkgnum)
+  USING (billpkgnum)
   $join_cust_pkg $where AND $nottax $group_all";
 
 $sql{taxable} =~ s/EXEMPT_WHERE//; # unrestricted
@@ -492,7 +504,7 @@ if ( $with_pkgclass ) {
 $all_sql{out_sales} = 
   "$select_all SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
   FROM (cust_bill_pkg $join_cust_pkg)
-  LEFT JOIN ($pkg_tax) AS pkg_tax USING (invnum, pkgnum)
+  LEFT JOIN ($pkg_tax) AS pkg_tax USING (billpkgnum)
   LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum)
   $where AND $nottax
   AND pkg_tax.taxnum IS NULL AND pkg_tax_exempt.taxnum IS NULL
