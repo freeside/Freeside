@@ -230,12 +230,19 @@ my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg ";
 
 # all queries MUST be linked to both cust_bill and cust_main_county
 
-# either or both of these can be used to link cust_bill_pkg to cust_main_county
-my $pkg_tax = "SELECT SUM(amount) as tax_amount, invnum, taxnum, ".
-  "cust_bill_pkg_tax_location.pkgnum ".
+# Either or both of these can be used to link cust_bill_pkg to 
+# cust_main_county. This one links a taxed line item (billpkgnum) to a tax rate
+# (taxnum), and gives the amount of tax charged on that line item under that
+# rate (as tax_amount).
+my $pkg_tax = "SELECT SUM(amount) as tax_amount, taxnum, ".
+  "taxable_billpkgnum AS billpkgnum ".
   "FROM cust_bill_pkg_tax_location JOIN cust_bill_pkg USING (billpkgnum) ".
-  "GROUP BY billpkgnum, invnum, taxnum, cust_bill_pkg_tax_location.pkgnum";
+  "GROUP BY taxable_billpkgnum, taxnum";
 
+# This one links a tax-exempted line item (billpkgnum) to a tax rate (taxnum),
+# and gives the amount of the tax exemption.  EXEMPT_WHERE should be replaced 
+# with a real WHERE clause to further limit the tax exemptions that will be
+# included.
 my $pkg_tax_exempt = "SELECT SUM(amount) AS exempt_charged, billpkgnum, taxnum ".
   "FROM cust_tax_exempt_pkg EXEMPT_WHERE GROUP BY billpkgnum, taxnum";
 
@@ -324,7 +331,7 @@ $sql{taxable} = "$select
   SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
   FROM cust_main_county
   JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
-  JOIN cust_bill_pkg USING (invnum, pkgnum)
+  JOIN cust_bill_pkg USING (billpkgnum)
   LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
     ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
         AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
@@ -335,7 +342,7 @@ $all_sql{taxable} = "$select_all
   SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
   FROM cust_main_county
   JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
-  JOIN cust_bill_pkg USING (invnum, pkgnum)
+  JOIN cust_bill_pkg USING (billpkgnum)
   LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
     ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
         AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
