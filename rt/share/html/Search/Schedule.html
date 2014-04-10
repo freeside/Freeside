@@ -1,0 +1,9 @@
+<& /Elements/Header, Title => 'Schedule' &>
+
+<& /Search/Calendar.html,
+     @_,
+     Embed          => 'Schedule.html',
+     DayDisplay     => 'Schedule',
+     DayDisplayArgs => [ username => $ARGS{username} ],
+&>
+

@@ -1,0 +1,12 @@
+<%args>
+$Date      => undef
+$Tickets   => undef
+$DateTypes => undef
+@username  => ()
+</%args>
+% foreach my $username ( @username ) {
+<span class="calendarright"><% $username %>---sparkline--*</span><br>
+% }
+<%init>
+
+</%init>
