@@ -118,11 +118,14 @@ foreach (@col_conds) {
     if ( $row == 0 ) {
       $col_data[$row] = $count; # the raw count
     } else {
+      # the rows that are percentages of the raw count
       if ( $col_data[0] == 0 ) {
-        $col_data[$row] = ''; # show nothing in this row, then
+        # 0 out of 0 is not 0%, but supposedly this works
+        $col_data[$row] = '0.000';
       } else {
-        $col_data[$row] = sprintf('%.3f', 100 * $count / $col_data[0]) . '%';
+        $col_data[$row] = sprintf('%.3f', 100 * $count / $col_data[0]);
       }
+      $col_data[$row] .= '%' unless $cgi->param('_type') eq 'xml';
     } #if $row == 0
     $row++;
   }
