@@ -2,11 +2,9 @@
 %   my @cols = qw(a b c d);
 %   for ( my $row = 0; $row < scalar(@rows); $row++ ) {
 %     for my $col (0..3) {
-%       if ( exists($data[$col][$row]) and $data[$col][$row] > 0 ) {
 <PartII_<% $row + 1 %><% $cols[$col] %>>\
-<% $data[$col][$row] %>\
+<% $data[$col][$row] || 0 %>\
 </PartII_<% $row + 1 %><% $cols[$col] %>>
-%       }
 %     } #for $col
 %   } #for $row
 % } else { # HTML mode

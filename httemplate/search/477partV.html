@@ -1,5 +1,5 @@
 % if ( $cgi->param('_type') =~ /^xml$/ ) {
-<zip_code>
+<zip_codes>
 % }
 <& elements/search.html,
                   'html_init'         => $html_init,
@@ -18,7 +18,7 @@
               
 &>
 % if ( $cgi->param('_type') =~ /^xml$/ ) {
-</zip_code>
+</zip_codes>
 % }
 <%init>
 

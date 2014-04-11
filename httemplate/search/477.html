@@ -1,4 +1,7 @@
 % if ( $type eq 'xml' ) {
+% $filename = "fcc_477_$state" . '_' . time2str('%Y%m%d', $date) . '.xml';
+% http_header('Content-Type' => 'application/XML' ); # So saith RFC 4180
+% http_header('Content-Disposition' => 'attachment;filename="'.$filename.'"');
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <Form_477_submission xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://specialreports.fcc.gov/wcb/Form477/XMLSchema-instance/form_477_upload_Schema.xsd" >
 % } else { #html
@@ -64,6 +67,7 @@
 <& "477part${part}.html",
     'url' => $url,
     'date' => $date,
+    'filename' => $filename,
 &>
 %       if ( $type eq 'xml' ) {
 </<% 'Part_'. $part %>>
@@ -92,7 +96,7 @@ $state =~ /^[A-Z]{2}$/ or die "illegal state: $state";
 
 my %part = map { $_ => 1 } grep { /^\w+$/ } $cgi->param('part');
 my $type = $cgi->param('_type') || 'html';
-my $xlsname = '477report';
+my $filename;
 my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi,1);
 
 # save upload and download mappings
