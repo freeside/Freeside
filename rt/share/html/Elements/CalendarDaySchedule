@@ -5,8 +5,28 @@ $DateTypes => undef
 @username  => ()
 </%args>
 % foreach my $username ( @username ) {
-<span class="calendarright"><% $username %>---sparkline--*</span><br>
+%   my $mapname = "$username-$date";
+<span class="calendarright"><% $username %><img src="<%$RT::WebPath%>/Schedule/UserBar?Username=<%$username%>;Date=<%$date%>" useMap="#<%$mapname%>"><span><br>
+<MAP name="<%$mapname%>">
+%# false laziness w/Schedule/UserBar
+%#XXX block out unavailable times
+%#alas.  abstractions break, freeside-specific stuff to get availability
+%# move availability to RT side?  make it all callback/pluggable?
+%
+%#XXX block out / show / color code existing appointments
+%
+<AREA onmouseover="overlib('XX miles away<BR>more info')"
+      onmouseout="nd(); return true;"
+      shape = "rect"
+      coords="0,0,59,11"
+      href="test_href"
+%#    alt=
+%#    title=
+>
+</MAP>
 % }
 <%init>
+
+my( $date, $time ) = split('T', $Date);
 
 </%init>

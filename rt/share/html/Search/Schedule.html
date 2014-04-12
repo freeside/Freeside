@@ -1,5 +1,10 @@
 <& /Elements/Header, Title => 'Schedule' &>
 
+%#init_overlib.html
+%foreach my $file (@files) {
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/<%$file%>.js"></SCRIPT>
+%}
+
 <& /Search/Calendar.html,
      @_,
      Embed          => 'Schedule.html',
@@ -7,3 +12,10 @@
      DayDisplayArgs => [ username => $ARGS{username} ],
 &>
 
+<%init>
+my @files = ();
+#if ( ! $initialized ) {
+  push @files, map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
+  push @files, map { "${_}contentmws" } qw( iframe ajax );
+#%}
+</%init>
