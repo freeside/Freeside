@@ -82,7 +82,7 @@ $DayDisplay => undef
 <tr>
 <td class="labels" colspan=<% $WeekDay ? 2 : 1 %>></td>
 % for ( @{$week{$weekstart}} ) {
-<th width="14%" colspan=<% $WeekDay ? $slots : 1 %>><%$rtdate->GetWeekday($_)%></th>
+<th colspan=<% $WeekDay ? $slots : 1 %>><%$rtdate->GetWeekday($_)%></th>
 % }
 </tr>
 </thead>
