@@ -1,21 +1,22 @@
-<%args>
-$Month => (localtime)[4]
-$Year => (localtime)[5] + 1900
-$Query => undef
-$Format => undef
-$Order => undef
-$OrderBy => undef
+<%ARGS>
+$Month       => (localtime)[4]
+$Year        => (localtime)[5] + 1900
+$Query       => undef
+$Format      => undef
+$Order       => undef
+$OrderBy     => undef
 $RowsPerPage => undef
-$NewQuery => 0
-$WeekDay => undef
-$WeekMonth => undef
-$WeekYear => undef
-$OrigMonth => undef
-$OrigYear => undef
-$Embed => undef
-$DayDisplay => undef
-@DayDisplayArgs => ()
-</%args>
+$NewQuery    => 0
+$WeekDay     => undef
+$WeekMonth   => undef
+$WeekYear    => undef
+$OrigMonth   => undef
+$OrigYear    => undef
+$Embed       => undef
+$Display     => undef
+@DisplayArgs => ()
+$slots       => $default_slots
+</%ARGS>
 
 % my $title;
 % if ( $WeekMonth ) {
@@ -91,7 +92,7 @@ $DayDisplay => undef
 <tr>
 
 % if ( $WeekDay ) {
-  <td class="controls" rowspan=<% $rowspan+1 %> valign="middle">
+  <td class="controls" rowspan=<% $rowspan+2 %> valign="middle">
     <& week_collapse, date=>$start, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
   </td>
   </td>
@@ -130,7 +131,7 @@ $DayDisplay => undef
         </tr>
 %       if ( $date <= $end ) { #a second week? not going to work for week view yet
           <tr>
-              <td class="controls" rowspan=<% $rowspan + 1 %> valign="middle">
+              <td class="controls" rowspan=<% $rowspan + 2 %> valign="middle">
                 <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
               </td>
 %       }
@@ -138,115 +139,87 @@ $DayDisplay => undef
 
 %   } #while ($date <= $end)
 
-%   my $sday = 0;
-%   my @slots = ( [], [], [], [], [], [], [] );
+    </tr>
+
+    <tr>
+%     #slot header callback
+%     if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
+%
+%       my $el = "/Elements/CalendarSlotHeader$1";
+        <td class="labels"></td>
+%       for (0..6) {
+          <& $el, Date      => $date,
+                  DateTypes => \%DateTypes,
+                  slots     => $slots,
+                  @DisplayArgs,
+          &>
+%       }
+%     }
+    </tr>
+
 %   foreach my $row ( @week_rows ) {
 
       <tr>
       <& td_time, $row &>
 
 %     $date = $start;
-%     $sday = 0;
+%     my $sday = 0;
 %     while ($date <= $end) {
 %
 %       my $is_today     = (DateTime->compare($today,     $date) == 0);
 %       my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
 %       my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
 
-%#        <td colspan=<%$slots%>
-%#            class="<%   $is_today     ? 'today'
-%#                      : $is_yesterday ? 'yesterday'
-%#                      : $is_aweekago  ? 'aweekago'
-%#                      : ''
-%#                   %>"
-%#        >
+%     #slot callback
+%     if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
+%       my $el = "/Elements/CalendarSlot$1";
+        <& $el, Date      => $date,
+                DateTypes => \%DateTypes,
+                Tickets   => $Tickets{$date->strftime("%F")} || [],
+                slots     => $slots,
+                sday      => $sday,
+                tod_row   => $row,
+                timestep  => $timestep,
+                @DisplayArgs,
+        &>
+%     } else {
 
-% #XXX display these in a time aware fashion
-%#%       my $sp = 3;
-%#%       for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
-%#%         $sp--;
-%#          <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
-%#%       }
-%#        <% ($sp>0) ? '<BR>'x$sp : '' |n %>
-
-%       for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+%       #just display the normal events for this day?
+        <td class="weekly" colspan="<%$slots%>">
+%         for my $Ticket ( @{ $Tickets{$date->strftime("%F")} } ) {
+%           my %dt =
+%             map { $_=>1 }
+%             grep {
+%               my $meth = $_.'Obj';
 %
-%         #XXX off by 1h on daylight savings boundaries... two sundays a year
-%         my $starts = ($t->StartsObj->Unix - $t->StartsObj->SetToMidnight(Timezone=>'user'))/60;
+%               #XXX off by 1h on daylight savings boundaries.. 2 sundays a year
+%               my $tod = (   $Ticket->$meth->Unix
+%                           - $Ticket->$meth->SetToMidnight(Timezone=>'user')
+%                         ) / 60;
 %
-%         if ( $starts >= $row && $starts < ($row + $timestep) ) {
-%           #then we're a new entry, find a slot for us
-%           my $s = 0;
-%           while ( ref($slots[$sday]->[$s]) ) { $s++ }
-%           $slots[$sday]->[$s] = [ $t->Id, $t ];
+%               RTx::Calendar::LocalDate($Ticket->$meth->Unix) eq $date->strftime('%F') #today
+%                 && $tod >= $row && $tod < ($row+$timestep); #and in timeslot
+%             } keys %DateTypes;
+%           next unless keys %dt;
+            <& /Elements/CalendarEvent,
+                 Object    => $Ticket,
+                 Date      => $date,
+                 DateTypes => \%dt
+            &>
+%           unless ( $Ticket eq ${ $Tickets{$date->strftime("%F")} }[-1] ) { #hmm, no.. not with "next unless $dt" :/
+              <BR>
+%           }
 %         }
-%
-%         #XXX also off by 1h on daylight savings boundaries
-%         my $due = $t->DueObj->Unix - $t->DueObj->SetToMidnight;
-%
-%         if ( $due <= $row && $due > ($row + $timestep ) ) {
-%           #then find our slot and remove us
-%           @{ $slots[$sday] } =
-%             map { (!ref($_) || $_->[0] != $t->Id) ? $_ : '' }
-%               @{ $slots[$sday] };
-%         }
-%
-%       }
-%
-%       pop @{ $slots[$sday] } while @{ $slots[$sday] } && !ref($slots[$sday]->[-1]);
-%
-%       #now display:
-%
-%       if ( scalar(@{$slots[$sday]}) > $slots ) {
-%         #overflow situation, eek... could be handled better, how?
+        </td>
 
-          <td colspan=<%$slots%>
-              class="weekly
-                     <%   $is_today     ? 'today'
-                        : $is_yesterday ? 'yesterday'
-                        : $is_aweekago  ? 'aweekago'
-                        : ''
-                     %>"
-          >MULTIPLE
-          </td>
-
-%       } else {
-%
-%         foreach my $slot ( @{ $slots[$sday] } ) {
-%           my( $id, $ticket ) = @$slot;
-
-            <td class="weekly
-                       <%   $is_today     ? 'today'
-                          : $is_yesterday ? 'yesterday'
-                          : $is_aweekago  ? 'aweekago'
-                          : ''
-                       %>"
-            ><% $id %>
-            </td>
-
-%         }
-%
-%         if ( scalar(@{$slots[$sday]}) < $slots ) {
-
-            <td colspan=<% $slots - scalar(@{$slots[$sday]}) %>
-                class="weekly
-                       <%   $is_today     ? 'today'
-                          : $is_yesterday ? 'yesterday'
-                          : $is_aweekago  ? 'aweekago'
-                          : ''
-                       %>"
-            >
-            </td>
-%         }
-%
-%       }
+%     }
 
 %       $date = $set->next($date);
 %       if ( $date->day_of_week == $startday_of_week ) {
           </tr>
 %         if ( $date <= $end ) { #a second week? not going to work for week view yet
             <tr>
-              <td class="controls" rowspan=<% $rowspan + 1 %> valign="middle">
+              <td class="controls" rowspan=<% $rowspan + 2 %> valign="middle">
                   <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
                 </td>
 %         }
@@ -254,6 +227,7 @@ $DayDisplay => undef
 %
 %       $sday++;
 %     } #while ($date <= $end)
+      </tr>
 %   } #foreach my $row ( @week_rows )
 %
 % } else {
@@ -280,13 +254,13 @@ $DayDisplay => undef
                     %>calendardate"
         ><% $date->day %></div>
 
-%       if ( defined($DayDisplay) && $DayDisplay =~ /^(\w+)$/ ) {
+%       if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
 %
 %         my $el = "/Elements/CalendarDay$1";
           <& $el, Tickets   => $Tickets{$date->strftime("%F")},
                   Date      => $date,
                   DateTypes => \%DateTypes,
-                  @DayDisplayArgs,
+                  @DisplayArgs,
           &>
 %
 %       } else {
@@ -407,7 +381,7 @@ $etime = 1080 unless $etime =~ /^\d+$/; #6pm
 my $timestep =  RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
 my $rowspan = ($etime-$stime) / $timestep;
 
-my $slots = RT->Config->Get('CalendarWeeklySlots') || 5;
+my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;
 
 my $wt = $stime;
 my @week_rows = ();
@@ -417,7 +391,7 @@ while ( $wt < $etime ) { push @week_rows, $wt; $wt+=$timestep }
 <%INIT>
 use RTx::Calendar qw(FirstDay LastDay LastDayOfWeek);
 
-$Embed =~ /^[\w\.]+$/ or die 'xss';
+$Embed =~ /^[\w\.]*$/ or die 'xss';
 
 my $title = loc("Calendar");
 
@@ -469,14 +443,14 @@ if ($Query) {
         Order   => $Order,
         OrderBy => $OrderBy,
         Rows    => $RowsPerPage,
-        @DayDisplayArgs,
+        @DisplayArgs,
       );
 } else {
   $QueryString =
       $m->comp(
         '/Elements/QueryString',
         NewQuery => 1,
-        @DayDisplayArgs,
+        @DisplayArgs,
       );
 }
 

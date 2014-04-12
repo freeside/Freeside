@@ -1,0 +1,90 @@
+<%ARGS>
+  @Tickets  => ()
+  $slots    => $default_slots,
+  $sday     => undef,
+  $tod_row  => undef,
+  $timestep => $default_timestep,
+</%ARGS>
+<%SHARED>
+my @slots = ( [], [], [], [], [], [], [] );
+</%SHARED>
+% warn $sday;
+%       #for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+%       for my $t (@Tickets) {
+%
+%         #XXX off by 1h on daylight savings boundaries... 2 sundays a year
+%         my $starts = ($t->StartsObj->Unix - $t->StartsObj->SetToMidnight(Timezone=>'user'))/60;
+%
+%         if ( $starts >= $tod_row && $starts < ($tod_row + $timestep) ) {
+%           #then we're a new entry, find a slot for us
+%           my $s = 0;
+%           while ( ref($slots[$sday]->[$s]) ) { $s++ }
+%           $slots[$sday]->[$s] = [ $t->Id, $t ];
+%         }
+%
+%         #XXX also off by 1h on daylight savings boundaries
+%         my $due = $t->DueObj->Unix - $t->DueObj->SetToMidnight;
+%
+%         if ( $due <= $tod_row && $due > ($tod_row + $timestep ) ) {
+%           #then find our slot and remove us
+%           @{ $slots[$sday] } =
+%             map { (!ref($_) || $_->[0] != $t->Id) ? $_ : '' }
+%               @{ $slots[$sday] };
+%         }
+%
+%       }
+%
+%       pop @{ $slots[$sday] } while @{ $slots[$sday] } && !ref($slots[$sday]->[-1]);
+%
+%       #now display:
+%
+%       if ( scalar(@{$slots[$sday]}) > $slots ) {
+%         #overflow situation, eek... could be handled better, how?
+
+          <td colspan=<%$slots%>
+              class="weekly
+%#                     <%   $is_today     ? 'today'
+%#                        : $is_yesterday ? 'yesterday'
+%#                        : $is_aweekago  ? 'aweekago'
+%#                        : ''
+%#                     %>
+                         "
+          >MULTIPLE
+          </td>
+
+%       } else {
+%
+%         foreach my $slot ( @{ $slots[$sday] } ) {
+%           my( $id, $ticket ) = @$slot;
+
+            <td class="weekly
+%#                       <%   $is_today     ? 'today'
+%#                          : $is_yesterday ? 'yesterday'
+%#                          : $is_aweekago  ? 'aweekago'
+%#                          : ''
+%#                       %>
+                           "
+            ><% $id %>
+            </td>
+
+%         }
+%
+%         if ( scalar(@{$slots[$sday]}) < $slots ) {
+
+            <td colspan=<% $slots - scalar(@{$slots[$sday]}) %>
+                class="weekly
+%#                       <%   $is_today     ? 'today'
+%#                          : $is_yesterday ? 'yesterday'
+%#                          : $is_aweekago  ? 'aweekago'
+%#                          : ''
+%#                       %>
+                           "
+            >
+            </td>
+%         }
+%
+%       }
+<%ONCE>
+my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;
+my $default_timestep = RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
+</%ONCE>

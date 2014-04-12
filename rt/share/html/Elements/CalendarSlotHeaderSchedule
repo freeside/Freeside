@@ -1,0 +1,17 @@
+<%ARGS>
+$Date      => undef
+$Tickets   => undef
+$DateTypes => undef
+@username  => ()
+$slots     => $default_slots
+</%ARGS>
+% foreach my $username ( @username ) {
+    <td align="center"><% $username %></td>
+% }
+% if ( scalar(@username) < $slots ) {
+    <td colspan=<% $slots - scalar(@username) %>
+    </td>
+% }
+<%ONCE>
+my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;
+</%ONCE>
