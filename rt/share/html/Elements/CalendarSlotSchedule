@@ -1,92 +1,45 @@
 <%ARGS>
-  $Date     => undef,
+  $Date     => undef
   @Tickets  => ()
-  $slots    => $default_slots,
-  $sday     => undef,
-  $tod_row  => undef,
-  $timestep => $default_timestep,
+  $slots    => $default_slots
+  $sday     => undef
+  $tod_row  => undef
+  $timestep => $default_timestep
   @username => ()
 </%ARGS>
-<%SHARED>
-my @slots = ( [], [], [], [], [], [], [] );
-</%SHARED>
-%       #for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+% foreach my $username ( @username ) {
+
+    <td class="weekly
+%#               <%   $is_today     ? 'today'
+%#                  : $is_yesterday ? 'yesterday'
+%#                  : $is_aweekago  ? 'aweekago'
+%#                  : ''
+%#               %>
+                   "
+    >
 %       for my $t (@Tickets) {
+%         next unless $t->OwnerObj->Name eq $username;
+%
+%         next unless RTx::Calendar::LocalDate($t->StartsObj->Unix)
+%                     eq $Date->strftime('%F'); #today
 %
 %         my($sm, $sh) = ($t->StartsObj->Localtime('user'))[1,2];
 %         my $starts = $sh*60 + $sm;
 %
-%         if ( RTx::Calendar::LocalDate($t->StartsObj->Unix) eq $Date->strftime('%F') #today
-%                && $starts >= $tod_row && $starts < ($tod_row + $timestep) ) {
-%           #then we're a new entry, find a slot for us
-%           my $s = 0;
-%           while ( ref($slots[$sday]->[$s]) ) { $s++ }
-%           $slots[$sday]->[$s] = [ $t->Id, $t ];
-%         }
-%
 %         my($dm, $dh) = ($t->DueObj->Localtime('user'))[1,2];
 %         my $due = $dh*60 + $dm;
 %
-%         if ( RTx::Calendar::LocalDate($t->DueObj->Unix) eq $Date->strftime('%F') #today
-%                && $due <= $tod_row && $due > ($tod_row + $timestep ) ) {
-%           #then find our slot and remove us
-%           @{ $slots[$sday] } =
-%             map { (!ref($_) || $_->[0] != $t->Id) ? $_ : '' }
-%               @{ $slots[$sday] };
-%         }
+%         next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
 %
+%         warn $starts. ' = '. ($tod_row+$timestep);
+%         if ( $starts >= $tod_row ) {
+            <% $t->Id %>
+%         } else {
+            cont<% $t->Id %>...
+%         }
 %       }
-%
-%       pop @{ $slots[$sday] } while @{ $slots[$sday] } && !ref($slots[$sday]->[-1]);
-%
-%       #now display:
-%
-%       if ( scalar(@{$slots[$sday]}) > $slots ) {
-%         #overflow situation, eek... could be handled better, how?
-
-          <td colspan=<%$slots%>
-              class="weekly
-%#                     <%   $is_today     ? 'today'
-%#                        : $is_yesterday ? 'yesterday'
-%#                        : $is_aweekago  ? 'aweekago'
-%#                        : ''
-%#                     %>
-                         "
-          >MULTIPLE
-          </td>
-
-%       } else {
-%
-%         foreach my $slot ( @{ $slots[$sday] } ) {
-%           my( $id, $ticket ) = @$slot;
-
-            <td class="weekly
-%#                       <%   $is_today     ? 'today'
-%#                          : $is_yesterday ? 'yesterday'
-%#                          : $is_aweekago  ? 'aweekago'
-%#                          : ''
-%#                       %>
-                           "
-            ><% $id %>
-            </td>
-
-%         }
-%
-%         if ( scalar(@{$slots[$sday]}) < $slots ) {
-
-            <td colspan=<% $slots - scalar(@{$slots[$sday]}) %>
-                class="weekly
-%#                       <%   $is_today     ? 'today'
-%#                          : $is_yesterday ? 'yesterday'
-%#                          : $is_aweekago  ? 'aweekago'
-%#                          : ''
-%#                       %>
-                           "
-            >
-            </td>
-%         }
-%
-%       }
+    </td>
+% }
 <%ONCE>
 my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;
 my $default_timestep = RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
