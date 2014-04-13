@@ -25,6 +25,12 @@ color:#505050;
   width:100%;
 }
 
+.pastoffmonthcalendardate {
+  text-align: right;
+  background-color: #e0e0e0;
+  width:100%;
+}
+
 .todayscalendardate {
   text-align: right;
   background-color: #fc6; /*#fad163*/
@@ -71,6 +77,16 @@ table.rtxcalendar td.weekly {
 
 table.rtxcalendar td.offmonth {
     background: #f8f8f8;
+    color: #aaa;
+}
+
+table.rtxcalendar td.past {
+    background: #e8e8e8;
+    color: #aaa;
+}
+
+table.rtxcalendar td.pastoffmonth {
+    background: #e0e0e0;
     color: #aaa;
 }
 

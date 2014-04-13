@@ -1,10 +1,14 @@
 <%args>
 $Date        => undef
+$today       => undef
 $Tickets     => undef
 $DateTypes   => undef
 @username    => ()
 $CurrentUser => undef
 </%args>
+%if ( DateTime->compare( $Date, $today ) == -1 ) {#flag to show the past anyway?
+% #the past already happened...
+%} else {
 % foreach my $username ( @username ) {
 %   my $mapname = "$username-$date";
 %   my $img = "$RT::WebPath/Schedule/UserBar?Username=$username;Date=$date";
@@ -19,10 +23,8 @@ $CurrentUser => undef
 
 %   my %schedule = UserDaySchedule( CurrentUser => $CurrentUser,
 %                                   username    => $username,
-%                                   'date'      => $Date->strftime('%F'),
+%                                   'date'      => $date, #$Date->strftime('%F'),
 %                                 );
-
-%   #XXX block out unavailable times
 %
 %   #block out / show / color code existing appointments
 %   foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
@@ -30,19 +32,47 @@ $CurrentUser => undef
 %     my $s = int(($starts-$stime)/10);
 %     my $e = int(($due-$stime)/10)-1;
       <AREA
-         onmouseover = "overlib('<%$id%>: XX miles away<BR>more info', BGCOLOR, '#000000', FGCOLOR, '#<%$col%>')"
+         onmouseover = "overlib('<%$id%>: XX miles away<BR>more info', WRAP, BGCOLOR, '#000000', FGCOLOR, '#<%$col%>')"
          onmouseout  = "nd(); return true;"
          shape       = "rect"
-         coords      = "<%$s%>,0,<%$e%>,<%$height-1%>"
+         coords      = "<%$s%>,0,<%$e%>,<%$height%>"
+%#         href        = "test_href"
+%#         alt         =
+%#         title       =
+      >
+%   }
+%
+%   #white out available times
+%   foreach my $avail ( @{ $schedule{'avail'} } ) {
+%     my( $start, $end ) = @$avail;
+%     
+%     my $s = $start >= $stime ? int(($start-$stime)/10) : 0;
+%     my $e = int(($end-$stime)/10)-1;
+      <AREA
+         onmouseover = "overlib('Available', WRAP, BGCOLOR, '#000000', FGCOLOR, '#FFFFFF')"
+         onmouseout  = "nd(); return true;"
+         shape       = "rect"
+         coords      = "<%$s%>,0,<%$e%>,<%$height%>"
+%# XXX link to book - if the appointment we want can fit
 %#         href        = "test_href"
 %#         alt         =
 %#         title       =
       >
 %   }
 
+      <AREA 
+         onmouseover = "overlib('Not available', WRAP, BGCOLOR, '#000000', FGCOLOR, '#666666', TEXTCOLOR, '#FFFFFF' )"
+         onmouseout  = "nd(); return true;"
+         shape       = "default"
+%#         href        = "test_href"
+%#         alt         =
+%#         title       =
+      >
+
     </MAP>
 
 % }
+%}
 <%once>
 
 my $stime    = RT->Config->Get('CalendarWeeklyStartMin');
@@ -58,6 +88,7 @@ my $height = 12; #Schedule/UserBar
 
 use RTx::Schedule qw( UserDaySchedule );
 
-my( $date, $time ) = split('T', $Date);
+#my( $date, $time ) = split('T', $Date);
+my $date = $Date->strftime('%F');
 
 </%init>
