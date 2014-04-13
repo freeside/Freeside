@@ -7,6 +7,9 @@
 
 <& /Search/Calendar.html,
      @_,
+     Query       => "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
+                     AND ( Type = 'reminder' OR 'Type' = 'ticket' )",
+                    #XXX and we have the magic custom field
      slots       => scalar( @{ $ARGS{username} } ),
      Embed       => 'Schedule.html',
      Display     => 'Schedule',
