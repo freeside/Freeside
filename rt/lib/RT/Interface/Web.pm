@@ -1246,6 +1246,10 @@ sub ValidateWebConfig {
                          ."otherwise your internal links may be broken.");
     }
 
+    return; #next warning flooding our logs, doesn't seem applicable to our use
+            # (SCRIPT_NAME is the full path, WebPath is just the beginning)
+            #in vanilla RT does something eat the local part of SCRIPT_NAME 1st?
+
     # Unfortunately, there is no reliable way to get the _path_ that was
     # requested at the proxy level; simply disable this warning if we're
     # proxied and there's a mismatch.
