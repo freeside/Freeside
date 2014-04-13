@@ -79,52 +79,54 @@ $slots       => $default_slots
 
 <table class="rtxcalendar">
 
-<thead>
-<tr>
-<td class="labels" colspan=<% $WeekDay ? 2 : 1 %>></td>
-% for ( @{$week{$weekstart}} ) {
-<th colspan=<% $WeekDay ? $slots : 1 %>><%$rtdate->GetWeekday($_)%></th>
+  <thead>
+
+% unless ( $WeekDay ) {
+
+    <tr>
+      <td class="labels" colspan=<% $WeekDay ? 2 : 1 %>></td>
+%     for ( @{$week{$weekstart}} ) {
+        <th colspan=<% $WeekDay ? $slots : 1 %>><%$rtdate->GetWeekday($_)%></th>
+%     }
+    </tr>
+  </thead>
+  <tbody>
+
 % }
-</tr>
-</thead>
 
-<tbody>
 <tr>
 
-% if ( $WeekDay ) {
-  <td class="controls" rowspan=<% $rowspan+2 %> valign="middle">
-    <& week_collapse, date=>$start, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
-  </td>
-  </td>
-% } else {
+% unless ( $WeekDay ) {
   <& td_week_expand, date=>$start, Month=>$Month, Year=>$Year, QueryString=>$QueryString, Embed=>$Embed, &>
 % }
 
 % if ( $WeekDay ) {
 
-    <td class="labels"></td>
+    <td class="labels" colspan=2></td>
 
 %   my $date = $start;
+%   my $sday = 0;
 %   while ($date <= $end) {
 %
 %     my $is_today     = (DateTime->compare($today,     $date) == 0);
 %     my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
 %     my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
 
-      <td colspan=<%$slots%>
-          class="weekly
-                 <%   $is_today     ? 'today'
-                    : $is_yesterday ? 'yesterday'
-                    : $is_aweekago  ? 'aweekago'
-                    : ''
-                 %>"
-      >
-        <div class="<%   $is_today ? 'todays'
-                       : ''
-                    %>calendardate"
-        ><% $rtdate->GetMonth($date->month-1). ' '. $date->day %></div>
-
-      </td>
+      <th colspan=<%$slots%>
+          class="labels"
+%#                 <%   $is_today     ? 'today'
+%#                    : $is_yesterday ? 'yesterday'
+%#                    : $is_aweekago  ? 'aweekago'
+%#                    : ''
+%#                 %>"
+%#        <div class="<%   $is_today ? 'todays'
+%#                       : ''
+%#                    %>calendardate"
+      ><% $rtdate->GetWeekday( $week{$weekstart}->[$sday++] ). ' '.
+          $rtdate->GetMonth($date->month-1). ' '.
+          $date->day
+       %>
+      </th>
 
 %     $date = $set->next($date);
 %     if ( $date->day_of_week == $startday_of_week ) {
@@ -141,7 +143,15 @@ $slots       => $default_slots
 
     </tr>
 
+        </thead>
+        <tbody>
+
     <tr>
+
+  <td class="controls" rowspan=<% $rowspan+1 %> valign="middle">
+    <& week_collapse, date=>$start, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
+  </td>
+
 %     #slot header callback
 %     if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
 %
@@ -192,10 +202,8 @@ $slots       => $default_slots
 %             grep {
 %               my $meth = $_.'Obj';
 %
-%               #XXX off by 1h on daylight savings boundaries.. 2 sundays a year
-%               my $tod = (   $Ticket->$meth->Unix
-%                           - $Ticket->$meth->SetToMidnight(Timezone=>'user')
-%                         ) / 60;
+%               my($m, $h) = ($Ticket->$meth->Localtime('user'))[1,2];
+%               my $tod = $h*60 + $m;
 %
 %               RTx::Calendar::LocalDate($Ticket->$meth->Unix) eq $date->strftime('%F') #today
 %                 && $tod >= $row && $tod < ($row+$timestep); #and in timeslot
