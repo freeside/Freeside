@@ -7,7 +7,8 @@
 
 <& /Search/Calendar.html,
      @_,
-     Embed          => 'Schedule.html',
+     slots       => scalar( @{ $ARGS{username} } ),
+     Embed       => 'Schedule.html',
      Display     => 'Schedule',
      DisplayArgs => [ username => $ARGS{username} ],
 &>

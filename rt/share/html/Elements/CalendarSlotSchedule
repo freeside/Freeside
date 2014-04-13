@@ -1,31 +1,34 @@
 <%ARGS>
+  $Date     => undef,
   @Tickets  => ()
   $slots    => $default_slots,
   $sday     => undef,
   $tod_row  => undef,
   $timestep => $default_timestep,
+  @username => ()
 </%ARGS>
 <%SHARED>
 my @slots = ( [], [], [], [], [], [], [] );
 </%SHARED>
-% warn $sday;
 %       #for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
 %       for my $t (@Tickets) {
 %
-%         #XXX off by 1h on daylight savings boundaries... 2 sundays a year
-%         my $starts = ($t->StartsObj->Unix - $t->StartsObj->SetToMidnight(Timezone=>'user'))/60;
+%         my($sm, $sh) = ($t->StartsObj->Localtime('user'))[1,2];
+%         my $starts = $sh*60 + $sm;
 %
-%         if ( $starts >= $tod_row && $starts < ($tod_row + $timestep) ) {
+%         if ( RTx::Calendar::LocalDate($t->StartsObj->Unix) eq $Date->strftime('%F') #today
+%                && $starts >= $tod_row && $starts < ($tod_row + $timestep) ) {
 %           #then we're a new entry, find a slot for us
 %           my $s = 0;
 %           while ( ref($slots[$sday]->[$s]) ) { $s++ }
 %           $slots[$sday]->[$s] = [ $t->Id, $t ];
 %         }
 %
-%         #XXX also off by 1h on daylight savings boundaries
-%         my $due = $t->DueObj->Unix - $t->DueObj->SetToMidnight;
+%         my($dm, $dh) = ($t->DueObj->Localtime('user'))[1,2];
+%         my $due = $dh*60 + $dm;
 %
-%         if ( $due <= $tod_row && $due > ($tod_row + $timestep ) ) {
+%         if ( RTx::Calendar::LocalDate($t->DueObj->Unix) eq $Date->strftime('%F') #today
+%                && $due <= $tod_row && $due > ($tod_row + $timestep ) ) {
 %           #then find our slot and remove us
 %           @{ $slots[$sday] } =
 %             map { (!ref($_) || $_->[0] != $t->Id) ? $_ : '' }
