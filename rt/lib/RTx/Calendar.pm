@@ -10,7 +10,8 @@ our $VERSION = "0.17";
 RT->AddStyleSheets('calendar.css')
     if RT->can('AddStyleSheets');
 
-our @EXPORT_OK = qw( FirstDay LastDay LastDayOfWeek );
+our @EXPORT_OK = qw( FirstDay LastDay LastDayOfWeek DatesClauses LocalDate
+                     SearchDefaultCalendar FindTickets );
 
 sub FirstDay {
     my ($year, $month, $matchday) = @_;
@@ -43,10 +44,10 @@ sub LastDayOfWeek {
 	next => sub { $_[0]->truncate( to => 'day' )->add( days => 1 ) }
     );
 
-    my $day = DateTime->new( year => $year, month => $month, day => $day );
+    my $dt = DateTime->new( year => $year, month => $month, day => $day );
 
-    $day = $set->next($day) while $day->day_of_week != $matchday;
-    $day;
+    $dt = $set->next($dt) while $dt->day_of_week != $matchday;
+    $dt;
 
 }
 

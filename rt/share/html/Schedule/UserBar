@@ -1,6 +1,7 @@
 <%perl>
 
 use GD;
+use RTx::Schedule qw( UserDaySchedule );
 
 my $im = new GD::Image($width, $height) or die;
 
@@ -10,11 +11,21 @@ my $black = $im->colorAllocate(0,0,0);
 # Put a black frame around the picture
 $im->rectangle(0,0,$width-1,$height-1,$black);
 
-#XXX block out unavailable times
-#alas.  abstractions break, freeside-specific stuff to get availability
-# move availability to RT side?  make it all callback/pluggable?
+my %schedule = UserDaySchedule( CurrentUser => $session{CurrentUser},
+                                username    => $Username,
+                                'date'      => $Date,
+                              );
 
-#XXX block out / show / color code existing appointments
+#XXX block out unavailable times
+
+#block out / show / color code existing appointments
+foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
+
+  my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
+  my $color = $im->colorAllocate( unpack 'C*', pack 'H*', $col );
+  $im->filledRectangle( int(($starts-$stime)/10), 1, int(($due-$stime)/10)-1, $height-2, $color );
+
+}
 
 $r->content_type('image/png');
 $m->clear_buffer;
@@ -33,7 +44,7 @@ $stime = 480 unless $stime =~ /^\d+$/; #8am
 my $etime    = RT->Config->Get('CalendarWeeklyEndMin');
 $etime = 1080 unless $etime =~ /^\d+$/; #6pm
 
-my $width = ( $etime - $stime ) / 10;
-my $height = 12;
+my $width = int( ( $etime - $stime ) / 10 );
+my $height = 12; #Elements/CalendarDaySchedule
 
 </%once>

@@ -205,7 +205,7 @@ $slots       => $default_slots
 %               my($m, $h) = ($Ticket->$meth->Localtime('user'))[1,2];
 %               my $tod = $h*60 + $m;
 %
-%               RTx::Calendar::LocalDate($Ticket->$meth->Unix) eq $date->strftime('%F') #today
+%               LocalDate($Ticket->$meth->Unix) eq $date->strftime('%F') #today
 %                 && $tod >= $row && $tod < ($row+$timestep); #and in timeslot
 %             } keys %DateTypes;
 %           next unless keys %dt;
@@ -265,9 +265,10 @@ $slots       => $default_slots
 %       if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
 %
 %         my $el = "/Elements/CalendarDay$1";
-          <& $el, Tickets   => $Tickets{$date->strftime("%F")},
-                  Date      => $date,
-                  DateTypes => \%DateTypes,
+          <& $el, CurrentUser => $session{CurrentUser},
+                  Tickets     => $Tickets{$date->strftime("%F")},
+                  Date        => $date,
+                  DateTypes   => \%DateTypes,
                   @DisplayArgs,
           &>
 %
@@ -397,7 +398,8 @@ while ( $wt < $etime ) { push @week_rows, $wt; $wt+=$timestep }
 
 </%ONCE>
 <%INIT>
-use RTx::Calendar qw(FirstDay LastDay LastDayOfWeek);
+use RTx::Calendar qw( FirstDay LastDay LastDayOfWeek DatesClauses LocalDate
+                      SearchDefaultCalendar FindTickets );
 
 $Embed =~ /^[\w\.]*$/ or die 'xss';
 
@@ -468,7 +470,7 @@ my $TempQuery = "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
  AND ( Owner = '" . $session{CurrentUser}->Id ."' OR Owner = 'Nobody'  )
  AND ( Type = 'reminder' OR 'Type' = 'ticket' )";
 
-if ( my $Search = RTx::Calendar::SearchDefaultCalendar($session{CurrentUser}) ) {
+if ( my $Search = SearchDefaultCalendar($session{CurrentUser}) ) {
   $TempFormat = $Search->SubValue('Format');
   $TempQuery = $Search->SubValue('Query');
 }
@@ -483,11 +485,11 @@ my @Dates = grep { $TempFormat =~ m/__${_}(Relative)?__/ } @DateTypes;
 # used to display or not a date in Element/CalendarEvent
 my %DateTypes = map { $_ => 1 } @Dates;
 
-$TempQuery .= RTx::Calendar::DatesClauses(\@Dates, $start->strftime("%F"), $end->strftime("%F"));
+$TempQuery .= DatesClauses(\@Dates, $start->strftime("%F"), $end->strftime("%F"));
 
 # print STDERR ("-" x 30), "\n", $TempQuery, "\n";
 
-my %Tickets = RTx::Calendar::FindTickets($session{'CurrentUser'}, $TempQuery, \@Dates, $start->strftime("%F"), $end->strftime("%F"));
+my %Tickets = FindTickets($session{'CurrentUser'}, $TempQuery, \@Dates, $start->strftime("%F"), $end->strftime("%F"));
 
 </%INIT>
 <%def td_week_expand>

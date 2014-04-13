@@ -8,39 +8,47 @@
   @username => ()
 </%ARGS>
 % foreach my $username ( @username ) {
+%
+%   my %schedule = UserDaySchedule( username => $username,
+%                                   'date'   => $Date->strftime('%F'),
+%                                   Tickets  => \@Tickets,
+%                                 );
+%
+%   my $bgcolor = 'ffffff';
+%   my $content = '';
+%
+%   #XXX block out unavailable times
+%
+%   #block out / show / color code existing appointments
+%       foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
+%
+%         my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
+%
+%         next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
+%
+%         if ( $starts >= $tod_row ) {
+%           $bgcolor = $col;
+%           $content .= ($content?', ':''). $id; #XXX more
+%         } else {
+%           $bgcolor = $col;
+%         }
+%       }
 
-    <td class="weekly
+    <td style="background:#<%$bgcolor%>" class="weekly
 %#               <%   $is_today     ? 'today'
 %#                  : $is_yesterday ? 'yesterday'
 %#                  : $is_aweekago  ? 'aweekago'
 %#                  : ''
 %#               %>
                    "
-    >
-%       for my $t (@Tickets) {
-%         next unless $t->OwnerObj->Name eq $username;
-%
-%         next unless RTx::Calendar::LocalDate($t->StartsObj->Unix)
-%                     eq $Date->strftime('%F'); #today
-%
-%         my($sm, $sh) = ($t->StartsObj->Localtime('user'))[1,2];
-%         my $starts = $sh*60 + $sm;
-%
-%         my($dm, $dh) = ($t->DueObj->Localtime('user'))[1,2];
-%         my $due = $dh*60 + $dm;
-%
-%         next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
-%
-%         warn $starts. ' = '. ($tod_row+$timestep);
-%         if ( $starts >= $tod_row ) {
-            <% $t->Id %>
-%         } else {
-            cont<% $t->Id %>...
-%         }
-%       }
-    </td>
+    ><% $content %></td>
 % }
 <%ONCE>
 my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;
 my $default_timestep = RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
 </%ONCE>
+<%INIT>
+
+use RTx::Schedule qw( UserDaySchedule );
+
+</%INIT>
