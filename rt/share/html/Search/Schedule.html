@@ -12,6 +12,7 @@
                     #XXX and we have the magic custom field
      slots       => scalar( @{ $ARGS{username} } ),
      Embed       => 'Schedule.html',
+     DimPast     => 1,
      Display     => 'Schedule',
      DisplayArgs => [ username => $ARGS{username} ],
 &>

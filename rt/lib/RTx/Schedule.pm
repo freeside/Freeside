@@ -3,6 +3,9 @@ use base qw( Exporter );
 
 use strict;
 use RTx::Calendar qw( FindTickets LocalDate );
+use FS::Record qw( qsearch qsearchs );
+use FS::access_user;
+use FS::sched_avail;
 
 our $VERSION = '0.01';
 
@@ -45,15 +48,38 @@ sub UserDaySchedule {
     $Tickets = $t{ $date };
   }
 
-  #XXX block out unavailable times
+  #block out unavailable times
   #alas.  abstractions break, freeside-specific stuff to get availability
   # move availability to RT side?  make it all callback/pluggable?
+
+  use Date::Parse qw( str2time );
+  #my $wday = (localtime(str2time($date)))[6];
+
+  my $access_user = qsearchs('access_user', { 'username'=>$username })#disabled?
+    or die "unknown user $username";
+
+  my @sched_item = $access_user->sched_item #disabled?
+    or die "$username not an installer";
+  my $sched_item = $sched_item[0];
+
+  my @sched_avail = qsearch('sched_avail', {
+                               itemnum       => $sched_item->itemnum,
+                               override_date => 99, #XXX override date via $date
+                           });
+  @sched_avail    = qsearch('sched_avail', {
+                               itemnum       => $sched_item->itemnum,
+                               wday          => (localtime(str2time($date)))[6],
+                               override_date => '',
+                           })
+    unless @sched_avail;
 
   return (
 
     #avail/unavailable times
-    'avail'     => {
-    },
+    'avail'     => [
+                     map [ $_->stime, $_->etime ],
+                       @sched_avail
+                   ],
 
     #block out / show / color code existing appointments
     'scheduled' => {
@@ -63,11 +89,17 @@ sub UserDaySchedule {
             my($sm, $sh) = ($_->StartsObj->Localtime('user'))[1,2];
             my $starts = $sh*60 + $sm;
 
-            my($dm, $dh) = ($_->DueObj->Localtime('user'))[1,2];
-            my $due = $dh*60 + $dm;
+            my $due;
+            if ( LocalDate($_->DueObj->Unix) eq $date ) { #same day, use it
+              my($dm, $dh) = ($_->DueObj->Localtime('user'))[1,2];
+              $due = $dh*60 + $dm;
+            } else {
+              $due = 1439;#not today, we don't handle multi-day appointments, so
+            }
+            
 
             #XXX color code existing appointments by... city?  proximity?  etc.
-            my $col = '99ff99'; #green
+            my $col = '99ff99'; #green for now
 
             $_->Id => [ $starts, $due, $col, $_ ];
           }

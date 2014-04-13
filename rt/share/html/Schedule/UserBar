@@ -6,17 +6,29 @@ use RTx::Schedule qw( UserDaySchedule );
 my $im = new GD::Image($width, $height) or die;
 
 my $white = $im->colorAllocate(255,255,255);
-my $black = $im->colorAllocate(0,0,0); 
 
-# Put a black frame around the picture
+my $black = $im->colorAllocate(0,0,0); 
 $im->rectangle(0,0,$width-1,$height-1,$black);
+
+my $darkgray = $im->colorAllocate(102, 102, 102);
+$im->filledRectangle(0, 1, $width-1, $height-2, $darkgray);
 
 my %schedule = UserDaySchedule( CurrentUser => $session{CurrentUser},
                                 username    => $Username,
                                 'date'      => $Date,
                               );
 
-#XXX block out unavailable times
+#white out available times
+foreach my $avail ( @{ $schedule{'avail'} } ) {
+  my( $start, $end ) = @$avail;
+  
+  $im->filledRectangle( $start >= $stime ? int(($start-$stime)/10) : 0,
+                        1,
+                        int(($end-$stime)/10)-1,
+                        $height-2,
+                        $white,
+                      );
+}
 
 #block out / show / color code existing appointments
 foreach my $id ( keys %{ $schedule{'scheduled'} } ) {

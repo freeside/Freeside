@@ -16,6 +16,7 @@ $Embed       => undef
 $Display     => undef
 @DisplayArgs => ()
 $slots       => $default_slots
+$DimPast     => 0
 </%ARGS>
 
 % my $title;
@@ -247,18 +248,19 @@ $slots       => $default_slots
 %     my $is_today     = (DateTime->compare($today,     $date) == 0);
 %     my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
 %     my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+%
+%     my $past = $DimPast && DateTime->compare($today,  $date) == 1;
 
       <td
-          class="<%   $offmonth     ? 'offmonth'
-                    : $is_today     ? 'today'
-                    : $is_yesterday ? 'yesterday'
-                    : $is_aweekago  ? 'aweekago'
+          class="<% $past ? 'past' : '' %><% $offmonth ? 'offmonth' : '' %><%
+                      $is_today     ? ' today'
+                    : $is_yesterday ? ' yesterday'
+                    : $is_aweekago  ? ' aweekago'
                     : ''
                  %>"
       >
         <div class="<%   $is_today ? 'todays'
-                       : $offmonth ? 'offmonth'
-                       : ''
+                       : ( $past ? 'past' : ''). ($offmonth ? 'offmonth' : '' )
                     %>calendardate"
         ><% $date->day %></div>
 
@@ -268,6 +270,7 @@ $slots       => $default_slots
           <& $el, CurrentUser => $session{CurrentUser},
                   Tickets     => $Tickets{$date->strftime("%F")},
                   Date        => $date,
+                  today       => $today,
                   DateTypes   => \%DateTypes,
                   @DisplayArgs,
           &>

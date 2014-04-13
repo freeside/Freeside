@@ -14,33 +14,37 @@
 %                                   Tickets  => \@Tickets,
 %                                 );
 %
-%   my $bgcolor = 'ffffff';
+%   my $bgcolor = '666666;border-color:#555555';
 %   my $content = '';
 %
-%   #XXX block out unavailable times
+%   #white out available times
+%   foreach my $avail ( @{ $schedule{'avail'} } ) {
+%     my( $start, $end ) = @$avail;
+%     next if $start >= ($tod_row+$timestep) || $end <= $tod_row;
+%     $bgcolor = 'FFFFFF';
+%   }
 %
 %   #block out / show / color code existing appointments
-%       foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
+%   foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
 %
-%         my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
+%     my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
 %
-%         next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
+%     next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
 %
-%         if ( $starts >= $tod_row ) {
-%           $bgcolor = $col;
-%           $content .= ($content?', ':''). $id; #XXX more
-%         } else {
-%           $bgcolor = $col;
-%         }
-%       }
+%     if ( $starts >= $tod_row ) {
+%       $bgcolor = $col;
+%       $content .= ($content?', ':''). $id; #XXX more
+%     } else {
+%       $bgcolor = $col;
+%     }
+%   }
 
-    <td style="background:#<%$bgcolor%>" class="weekly
+    <td style="background:#<%$bgcolor%>" class="weekly"
 %#               <%   $is_today     ? 'today'
 %#                  : $is_yesterday ? 'yesterday'
 %#                  : $is_aweekago  ? 'aweekago'
 %#                  : ''
-%#               %>
-                   "
+%#               %>"
     ><% $content %></td>
 % }
 <%ONCE>
