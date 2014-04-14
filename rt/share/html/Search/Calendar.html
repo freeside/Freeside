@@ -516,7 +516,7 @@ my %Tickets = FindTickets($session{'CurrentUser'}, $TempQuery, \@Dates, $start->
   $QueryString => undef
   $Embed => undef
 </%args>
-    <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<% $Month %>&Year=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-collapse.gif" STYLE="height:384px;width:11px"></a>
+    <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<% $Month %>&Year=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-collapse.gif" STYLE="height:384px;width:11px;border:none"></a>
 </%def>
 
 <%def td_time>
