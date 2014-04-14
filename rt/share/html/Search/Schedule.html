@@ -61,6 +61,9 @@
      Display     => 'Schedule',
      DisplayArgs => [ username  => $ARGS{username},
                       LengthMin => $LengthMin,
+                      #oops, more freeside abstraction-leaking
+                      custnum   => $ARGS{custnum},
+                      pkgnum    => $ARGS{pkgnum},
                     ],
 &>
 
@@ -77,7 +80,7 @@ my @files = ();
   push @files, map { "${_}contentmws" } qw( iframe ajax );
 #%}
 
-my $LengthMin = 180; #XXX $ARGS{LengthMin};, passed in
+( my $LengthMin = $ARGS{LengthMin} ) =~ /^\d+$/ or die 'non-numeric LengthMin';
 
 my $cells = int($LengthMin / $timestep);
 $cells++ if $LengthMin % $timestep;

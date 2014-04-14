@@ -7,6 +7,8 @@
   $timestep  => $default_timestep
   @username  => ()
   $LengthMin => $default_timestep
+  $custnum   => undef
+  $pkgnum    => undef
 </%ARGS>
 % foreach my $username ( @username ) {
 %
@@ -17,43 +19,80 @@
 %
 %   my $bgcolor = '666666;border-color:#555555';
 %   my $content = '';
-%   my $onmouse = 0;
+%   my $selectable = 0;
 %
 %   #white out available times
 %   foreach my $avail ( @{ $schedule{'avail'} } ) {
 %     my( $start, $end ) = @$avail;
 %     next if $start >= ($tod_row+$timestep) || $end <= $tod_row;
 %     $bgcolor = 'FFFFFF';
-%     $onmouse = 1
+%     $selectable = 1
 %       if $LengthMin <= $end - $tod_row  #the slot is long enough
 %       && ! grep { $_ > $tod_row && $LengthMin > $_ - $tod_row }
 %              map $_->[0], values %{ $schedule{'scheduled'} };
 %   }
 %
 %   #block out / show / color code existing appointments
+%   #my %line = ();
 %   foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
 %
 %     my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
 %
-%     next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
+%     next if $starts >= ($tod_row+$timestep) || $due <= $tod_row;
 %
 %     $bgcolor = $col;
-%     $onmouse = 0;
+%     $selectable = 0;
 %
 %     if ( $starts >= $tod_row ) { #first row
-%       $content .= ($content?', ':''). $id; #XXX more
+%       $content .= ($content?', ':''). $id.
+%                   ': '. FS::sched_avail::pretty_time($starts). '-'.
+%                         FS::sched_avail::pretty_time($due);
+%                   #'install for custname XX miles away'; #XXX placeholder/more
+%     #} else {
+%     #  $content .= ($content?', ':''). $id;
 %     }
 %   }
 
-    <td style="background:#<%$bgcolor%>" class="weekly"
+    <td style="background:#<%$bgcolor%>"
+        class="<% $selectable ? 'weeklyselectable' : 'weekly' %>"
 %#               <%   $is_today     ? 'today'
 %#                  : $is_yesterday ? 'yesterday'
 %#                  : $is_aweekago  ? 'aweekago'
 %#                  : ''
 %#               %>"
-%     if ( $onmouse ) {
-        onmouseover="boxon(this);"
-        onmouseout ="boxoff(this);"
+%     if ( $selectable ) {
+%
+%       #XXX for now, construct a ticket creation URL
+%       # eventually, do much the same, but say "appointment made", show time
+%       # and date, have # options to do things with it? etc.
+%       # then redir back to customer/appointment view i guess
+%
+%       #abstraction is leaking like a sieve... linking back to freeside cust
+%       # (XXX and eventually, package)
+%       my $cust_main = qsearchs('cust_main', { custnum=>$custnum } )
+%         or die "unknown custnum $custnum";
+%       my $Queue = $cust_main->agent->ticketing_queueid || 1; # || $default_queueid;#XXX really, pick pkg_category queue
+%       my $member = "freeside://freeside/cust_main/$custnum";
+%
+%warn       my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
+%warn       my $Due    = int(($tod_row+$LengthMin)/60). ':'.
+%                    sprintf('%02d',($tod_row+$LengthMin)%60). ':00';
+%
+%       my $url = $RT::WebPath. '/Ticket/Display.html?id=new'.
+%                 "&Queue=$Queue".
+%                 "&Owner=$username".
+%                 '&Starts='. $Date->strftime('%F').'%20'. $Starts.
+%                 '&Due='.    $Date->strftime('%F').'%20'. $Due.
+%                 '&new-MemberOf='. $member; #XXX uri_escape?
+%                 #'&Requestors='. #XXX Freeside customer requestor(s) (package?
+
+        onmouseover = "boxon(this);"
+        onmouseout  = "boxoff(this);"
+        title       = "<% 'Make appointment for '.
+                            FS::sched_avail::pretty_time($tod_row). '-'.
+                            FS::sched_avail::pretty_time($tod_row+$LengthMin)
+                      %>"
+        onclick     = "window.location.href = '<% $url %>'"
 %     }
     ><% $content %></td>
 % }
@@ -64,5 +103,10 @@ my $default_timestep = RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
 <%INIT>
 
 use RTx::Schedule qw( UserDaySchedule );
+use FS::sched_avail; #just for pretty_time
+
+#what happened?  alas.  for constructing the ticket creation links
+use FS::Record qw( qsearchs );
+use FS::cust_main;
 
 </%INIT>
