@@ -1,11 +1,12 @@
 <%ARGS>
-  $Date     => undef
-  @Tickets  => ()
-  $slots    => $default_slots
-  $sday     => undef
-  $tod_row  => undef
-  $timestep => $default_timestep
-  @username => ()
+  $Date      => undef
+  @Tickets   => ()
+  $slots     => $default_slots
+  $sday      => undef
+  $tod_row   => undef
+  $timestep  => $default_timestep
+  @username  => ()
+  $LengthMin => $default_timestep
 </%ARGS>
 % foreach my $username ( @username ) {
 %
@@ -16,12 +17,17 @@
 %
 %   my $bgcolor = '666666;border-color:#555555';
 %   my $content = '';
+%   my $onmouse = 0;
 %
 %   #white out available times
 %   foreach my $avail ( @{ $schedule{'avail'} } ) {
 %     my( $start, $end ) = @$avail;
 %     next if $start >= ($tod_row+$timestep) || $end <= $tod_row;
 %     $bgcolor = 'FFFFFF';
+%     $onmouse = 1
+%       if $LengthMin <= $end - $tod_row  #the slot is long enough
+%       && ! grep { $_ > $tod_row && $LengthMin > $_ - $tod_row }
+%              map $_->[0], values %{ $schedule{'scheduled'} };
 %   }
 %
 %   #block out / show / color code existing appointments
@@ -31,11 +37,11 @@
 %
 %     next if $starts >= ($tod_row+$timestep) || $due < $tod_row;
 %
-%     if ( $starts >= $tod_row ) {
-%       $bgcolor = $col;
+%     $bgcolor = $col;
+%     $onmouse = 0;
+%
+%     if ( $starts >= $tod_row ) { #first row
 %       $content .= ($content?', ':''). $id; #XXX more
-%     } else {
-%       $bgcolor = $col;
 %     }
 %   }
 
@@ -45,6 +51,10 @@
 %#                  : $is_aweekago  ? 'aweekago'
 %#                  : ''
 %#               %>"
+%     if ( $onmouse ) {
+        onmouseover="boxon(this);"
+        onmouseout ="boxoff(this);"
+%     }
     ><% $content %></td>
 % }
 <%ONCE>
