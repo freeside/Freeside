@@ -75,6 +75,14 @@ table.rtxcalendar td.weekly {
     width: auto;
 }
 
+table.rtxcalendar td.weeklyselectable {
+    width: auto;
+}
+
+table.rtxcalendar td.weeklyselectable:hover {
+    cursor: pointer;
+}
+
 table.rtxcalendar td.offmonth {
     background: #f8f8f8;
     color: #aaa;
