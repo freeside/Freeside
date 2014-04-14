@@ -265,6 +265,16 @@ function areyousure(href, message) {
 
 % }
 
+% if ( $view eq 'appointments' || $view eq 'jumbo' ) {
+
+% if ( $conf->config('ticket_system')
+%        && $curuser->access_right('View appointments') ) { 
+  <& cust_main/appointments.html, $cust_main &>
+% } 
+  <BR><BR>
+
+% }
+
 % if ( $view eq 'jumbo' ) { #XXX enable me && $curuser->access_right('View customer packages') { 
 
   <A NAME="cust_pkg"><FONT SIZE="+2"><% mt('Packages') |h %></FONT></A><BR>
@@ -341,12 +351,15 @@ $title = mt("Customer:")." ".$title;
 
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',
-       emt('Basics')       => 'basics',
-       emt('Notes')        => 'notes', #notes and files?
+       emt('Basics')           => 'basics',
+       emt('Notes')            => 'notes', #notes and files?
 ;
-$views{emt('Tickets')}     =  'tickets'
-                               if $conf->config('ticket_system');
-$views{emt('Packages')}    =  'packages';
+if ( $conf->config('ticket_system') ) {
+  $views{emt('Tickets')}       =  'tickets';
+  $views{emt('Appointments')}  =  'appointments'
+    if $curuser->access_right('View appointments');
+}
+$views{emt('Packages')}        =  'packages';
 $views{emt('Payment History')} =  'payment_history'
                                unless $conf->config('payby-default' eq 'HIDE');
 $views{emt('Change History')}  =  'change_history'
