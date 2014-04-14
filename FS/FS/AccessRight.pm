@@ -152,6 +152,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit customer package comments', #NEW
     'Qualify service', #NEW
     'Waive setup fee', #NEW
+    'View appointments', #NEWNEW
+    'Make appointment',
   ],
   
   ###
