@@ -32,7 +32,7 @@ $CurrentUser => undef
 %     my $s = int(($starts-$stime)/10);
 %     my $e = int(($due-$stime)/10)-1;
       <AREA
-         onmouseover = "overlib('<%$id%>: XX miles away<BR>more info', WRAP, BGCOLOR, '#000000', FGCOLOR, '#<%$col%>')"
+         onmouseover = "overlib('<%$id%>: <% FS::sched_avail::pretty_time($starts). '-'. FS::sched_avail::pretty_time($due) %><BR>XX miles away<BR>more info', WRAP, BGCOLOR, '#000000', FGCOLOR, '#<%$col%>')"
          onmouseout  = "nd(); return true;"
          shape       = "rect"
          coords      = "<%$s%>,0,<%$e%>,<%$height%>"
@@ -87,6 +87,7 @@ my $height = 12; #Schedule/UserBar
 <%init>
 
 use RTx::Schedule qw( UserDaySchedule );
+use FS::sched_avail; #just for pretty_time
 
 #my( $date, $time ) = split('T', $Date);
 my $date = $Date->strftime('%F');

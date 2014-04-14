@@ -99,7 +99,8 @@ sub UserDaySchedule {
             
 
             #XXX color code existing appointments by... city?  proximity?  etc.
-            my $col = '99ff99'; #green for now
+            #my $col = '99ff99'; #green for now
+            my $col = 'a097ed'; #any of green/red/yellow-like would be confusing as a placeholder color, so.. blue-ish/purple
 
             $_->Id => [ $starts, $due, $col, $_ ];
           }
