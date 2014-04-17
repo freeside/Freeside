@@ -38,6 +38,24 @@ $title = "$agentname $title" if $agentname;
 my $link = $p.'search/cust_main.html?';
 $link .= "agentnum=$agentnum;" if $agentnum;
 
+my %global_params;
+# cust_classnum
+my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+if (@classnums) {
+  $global_params{'cust_classnum'} = [ @classnums ];
+  # classnum here, not cust_classnum, for cust_main.html
+  $link .= "classnum=$_;" foreach @classnums;
+}
+# pkg_classnum
+@classnums = grep /^\d+$/, $cgi->param('pkg_classnum');
+if (@classnums) {
+  $global_params{'pkg_classnum'} = [ @classnums ];
+  $link .= "pkg_classnum=$_;" foreach @classnums;
+  $link .= 'any_pkg_status=1;';
+  # because we report any customer that had the package at any time, not
+  # only those for whom it's still active
+}
+
 my $bottom_link = $link;
 
 my @referral;
@@ -68,7 +86,8 @@ my $hue_increment = 75;
 my @signup_colors;
 
 foreach my $referral (@referral) {
-  my %params = ('refnum' => $referral->refnum) unless $all_referral;
+  my %params = %global_params;
+  $params{'refnum'} = $referral->refnum unless $all_referral;
 
   push @items, 'signups';
   push @labels, ( $all_referral ? 'Signups' : $referral->referral );
