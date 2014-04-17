@@ -11,17 +11,29 @@
 <& /elements/tr-select-from_to.html &>
 
 <& /elements/tr-select-agent.html,
-             'curr_value'    => scalar($cgi->param('agentnum')),
-             'label'         => 'For agent: ',
-             'disable_empty' => 0,
+  'curr_value'    => scalar($cgi->param('agentnum')),
+  'label'         => 'For agent: ',
+  'disable_empty' => 0,
 &>
 
 <& /elements/tr-select-part_referral.html,
-             'curr_value'    => scalar($cgi->param('refnum')),
-             'label'         => 'Advertising source: ',
-             'disable_empty' => 0,
-             'pre_options'   => [ 'all' => 'all (aggregate)' ],
-             'empty_label'   => 'all (breakdown)',
+  'curr_value'    => scalar($cgi->param('refnum')),
+  'label'         => 'Advertising source: ',
+  'disable_empty' => 0,
+  'pre_options'   => [ 'all' => 'all (aggregate)' ],
+  'empty_label'   => 'all (breakdown)',
+&>
+
+<& /elements/tr-select-cust_class.html,
+  'field'         => 'cust_classnum',
+  'label'         => 'Customer class ',
+  'multiple'      => 1,
+&>
+
+<& /elements/tr-select-pkg_class.html,
+  'field'         => 'pkg_classnum',
+  'label'         => 'With package of class ',
+  'multiple'      => 1,
 &>
 
 <TR>

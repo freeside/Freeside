@@ -32,9 +32,14 @@ options in %opt.
 
 =over 4
 
-=item signups: The number of customers signed up.  Options are "refnum" 
-(limit by advertising source) and "indirect" (boolean, tells us to limit 
-to customers that have a referral_custnum that matches the advertising source).
+=item signups: The number of customers signed up.  Options are:
+
+- cust_classnum: limit to this customer class
+- pkg_classnum: limit to customers with a package of this class.  If this is
+  an arrayref, it's an ANY match.
+- refnum: limit to this advertising source
+- indirect: boolean; limit to customers that have a referral_custnum that
+  matches the advertising source
 
 =cut
 
@@ -57,6 +62,19 @@ sub signups {
   }
 
   push @where, $self->with_cust_classnum(%opt);
+  if ( $opt{'pkg_classnum'} ) {
+    my $classnum = $opt{'pkg_classnum'};
+    $classnum = [ $classnum ] unless ref $classnum;
+    @$classnum = grep /^\d+$/, @$classnum;
+    if (@$classnum) {
+      my $in = 'IN ('. join(',', @$classnum). ')';
+      push @where,
+        "EXISTS(SELECT 1 FROM cust_pkg JOIN part_pkg USING (pkgpart) ".
+               "WHERE cust_pkg.custnum = cust_main.custnum ".
+               "AND part_pkg.classnum $in".
+               ")";
+    }
+  }
 
   $self->scalar_sql(
     "SELECT COUNT(*) FROM cust_main $join WHERE ".join(' AND ', @where)

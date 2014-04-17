@@ -950,6 +950,8 @@ sub search {
   }
 
   # pkg_classnum
+  #   all_pkg_classnums
+  #   any_pkg_status
   if ( $params->{'pkg_classnum'} ) {
     my @pkg_classnums = ref( $params->{'pkg_classnum'} ) ?
                           @{ $params->{'pkg_classnum'} } :
@@ -966,11 +968,13 @@ sub search {
           'part_pkg.classnum IN('. join(',', @pkg_classnums).')';
       }
       foreach (@pkg_where) {
-        push @where, "EXISTS(".
+        my $select_pkg = 
           "SELECT 1 FROM cust_pkg JOIN part_pkg USING (pkgpart) WHERE ".
-          "cust_pkg.custnum = cust_main.custnum AND ".
-          $_ . ' AND ' . FS::cust_pkg->active_sql .
-        ')';
+          "cust_pkg.custnum = cust_main.custnum AND $_ ";
+        if ( not $params->{'any_pkg_status'} ) {
+          $select_pkg .= 'AND '.FS::cust_pkg->active_sql;
+        }
+        push @where, "EXISTS($select_pkg)";
       }
     }
   }
