@@ -271,8 +271,27 @@ sub payment_gateway {
     # seeing the card number
     my $gatewaynum =
       $conf->config('selfservice-payment_gateway', $self->agentnum);
-    my $gateway = FS::payment_gateway->by_key($gatewaynum)
-      if $gatewaynum;
+    my $gateway;
+    $gateway = FS::payment_gateway->by_key($gatewaynum) if $gatewaynum;
+    return $gateway if $gateway;
+
+    # a little less kludgey than the above, and allows PayPal to coexist 
+    # with credit card gateways
+    my $is_paypal = { op => '!=', value => 'PayPal' };
+    if ( uc($options{method}) eq 'PAYPAL' ) {
+      $is_paypal = 'PayPal';
+    }
+
+    $gateway = qsearchs({
+        table     => 'payment_gateway',
+        addl_from => ' JOIN agent_payment_gateway USING (gatewaynum) ',
+        hashref   => {
+          gateway_namespace => 'Business::OnlineThirdPartyPayment',
+          gateway_module    => $is_paypal,
+          disabled          => '',
+        },
+        extra_sql => ' AND agentnum = '.$self->agentnum,
+    });
 
     if ( $gateway ) {
       return $gateway;
