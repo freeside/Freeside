@@ -17,7 +17,8 @@
 %                        $_->balance,
 %                        $_->ucfirst_status,
 %                        $_->statuscolor,
-%                        scalar($_->open_cust_bill)
+%                        scalar($_->open_cust_bill),
+%                        $_->display_custnum,
 %                      ],
 %                    @cust_main
 %                ];
@@ -66,7 +67,8 @@ sub findbycustnum {
     $c->balance,
     $c->ucfirst_status,
     $c->statuscolor,
-    scalar($c->open_cust_bill)
+    scalar($c->open_cust_bill),
+    $c->display_custnum,
   ];
 }
 
@@ -94,6 +96,7 @@ sub findbycustnum_or_agent_custid {
           $_->ucfirst_status,
           $_->statuscolor,
           scalar($_->open_cust_bill),
+          $_->display_custnum,
         ],
 
       qsearch({
