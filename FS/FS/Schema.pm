@@ -2232,7 +2232,7 @@ sub tables_hashref {
 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'status',       'varchar',     '', $char_d, '', '', 
-        'session_id',   'varchar', 'NULL', $char_d, '', '', #only need 32
+        'session_id',   'varchar', 'NULL', 1024, '', '', # SHA-512-hex
         'statustext',   'text',    'NULL',  '', '', '', 
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
