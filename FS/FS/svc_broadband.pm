@@ -2,10 +2,11 @@ package FS::svc_broadband;
 use base qw(
   FS::svc_Radius_Mixin
   FS::svc_Tower_Mixin
+  FS::svc_Torrus_Mixin
   FS::svc_IP_Mixin 
   FS::svc_MAC_Mixin
   FS::svc_Common
-  );
+);
 
 use strict;
 use vars qw($conf);
@@ -144,6 +145,7 @@ sub table_info {
                              type              => 'search-svc_broadband',
                              disable_inventory => 1,
                            },
+      'serviceid' => 'Torrus serviceid', #but is should be hidden
     },
   };
 }
@@ -363,6 +365,7 @@ sub check {
     || $self->ut_snumbern('rssi')
     || $self->ut_numbern('suid')
     || $self->ut_foreign_keyn('shared_svcnum', 'svc_broadband', 'svcnum')
+    || $self->ut_textn('serviceid') #too lenient?
   ;
   return $error if $error;
 

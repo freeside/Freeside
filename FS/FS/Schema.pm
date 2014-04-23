@@ -3130,6 +3130,7 @@ sub tables_hashref {
         'rssi',                    'int', 'NULL',        '', '', '',
         'suid',                    'int', 'NULL',        '', '', '',
         'shared_svcnum',           'int', 'NULL',        '', '', '',
+        'serviceid',           'varchar', 'NULL',        64, '', '',#srvexport/reportfields
       ],
       'primary_key' => 'svcnum',
       'unique'      => [ [ 'ip_addr' ], [ 'mac_addr' ] ],
