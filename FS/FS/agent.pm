@@ -46,27 +46,49 @@ from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item agentnum - primary key (assigned automatically for new agents)
+=item agentnum
 
-=item agent - Text name of this agent
+primary key (assigned automatically for new agents)
 
-=item typenum - Agent type (see L<FS::agent_type>)
+=item agent
 
-=item ticketing_queueid - Ticketing Queue
+Text name of this agent
 
-=item invoice_template - Invoice template name
+=item typenum
 
-=item agent_custnum - Optional agent customer (see L<FS::cust_main>)
+Agent type (see L<FS::agent_type>)
 
-=item disabled - Disabled flag, empty or 'Y'
+=item ticketing_queueid
 
-=item prog - Deprecated (never used)
+Ticketing Queue
 
-=item freq - Deprecated (never used)
+=item invoice_template
 
-=item username - (Deprecated) Username for the Agent interface
+Invoice template name
 
-=item _password - (Deprecated) Password for the Agent interface
+=item agent_custnum
+
+Optional agent customer (see L<FS::cust_main>)
+
+=item disabled
+
+Disabled flag, empty or 'Y'
+
+=item prog
+
+Deprecated (never used)
+
+=item freq
+
+Deprecated (never used)
+
+=item username
+
+(Deprecated) Username for the Agent interface
+
+=item _password
+
+(Deprecated) Password for the Agent interface
 
 =back
 
@@ -127,6 +149,7 @@ sub check {
       || $self->ut_textn('prog')
       || $self->ut_textn('invoice_template')
       || $self->ut_foreign_keyn('agent_custnum', 'cust_main', 'custnum' )
+      || $self->ut_numbern('ticketing_queueid')
   ;
   return $error if $error;
 
@@ -200,7 +223,7 @@ field, or the empty string.
 sub ticketing_queue {
   my $self = shift;
   FS::TicketSystem->queue($self->ticketing_queueid);
-};
+}
 
 =item payment_gateway [ OPTION => VALUE, ... ]
 
