@@ -2661,7 +2661,7 @@ and customer address. Include units.',
   {
     'key'         => 'cvv-save',
     'section'     => 'billing',
-    'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
+    'description' => 'NOT RECOMMENDED.  Saves CVV2 information after the initial transaction for the selected credit card types.  Enabling this option is almost certainly in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
     'type'        => 'selectmultiple',
     'select_enum' => \@card_types,
   },
@@ -2670,6 +2670,13 @@ and customer address. Include units.',
     'key'         => 'signup-require_cvv',
     'section'     => 'self-service',
     'description' => 'Require CVV for credit card signup.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-require_cvv',
+    'section'     => 'self-service',
+    'description' => 'Require CVV for credit card self-service payments.',
     'type'        => 'checkbox',
   },
 
