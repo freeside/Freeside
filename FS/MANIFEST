@@ -774,3 +774,4 @@ FS/sched_item.pm
 t/sched_item.t
 FS/sched_avail.pm
 t/sched_avail.t
+FS/svc_Torrus_Mixin.pm
