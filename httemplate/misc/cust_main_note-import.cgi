@@ -49,7 +49,7 @@
       if ( customerArray.length == 0 )  {
         custnum_obj.value = 'Not found';
         custnum_obj.style.color = '#ff0000';
-      } else if ( customerArray.length == 5 ) {
+      } else if ( customerArray.length >= 5 ) {
 	    var name = customerArray[1];
         opt(customer_select,custnum,name,'#000000');
         customer_select.selectedIndex = customer_select.length - 1;
