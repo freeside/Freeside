@@ -416,12 +416,17 @@ sub void {
   } );
   $cust_pay_void->reason(shift) if scalar(@_);
   my $error = $cust_pay_void->insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
+
+  my $cust_pay_pending =
+    qsearchs('cust_pay_pending', { paynum => $self->paynum });
+  if ( $cust_pay_pending ) {
+    $cust_pay_pending->set('void_paynum', $self->paynum);
+    $cust_pay_pending->set('paynum', '');
+    $error ||= $cust_pay_pending->replace;
   }
 
-  $error = $self->delete;
+  $error ||= $self->delete;
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

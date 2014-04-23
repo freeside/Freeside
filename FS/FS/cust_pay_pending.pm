@@ -133,6 +133,10 @@ L<FS::payment_gateway> id.
 
 Payment number (L<FS::cust_pay>) of the completed payment.
 
+=item void_paynum
+
+Payment number of the payment if it's been voided.
+
 =item invnum
 
 Invoice number (L<FS::cust_bill>) to try to apply this payment to.
@@ -221,6 +225,7 @@ sub check {
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_foreign_keyn('invnum', 'cust_bill', 'invnum')
+    || $self->ut_foreign_keyn('void_paynum', 'cust_pay_void', 'paynum' )
     || $self->ut_flag('manual')
     || $self->ut_numbern('discount_term')
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
@@ -457,6 +462,20 @@ sub _upgrade_data {  #class method
     "DELETE FROM cust_pay_pending WHERE status = 'new' AND _date < ".(time-600);
 
   my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+  # For cust_pay_pending records linked to voided payments, move the paynum
+  # to void_paynum.
+  $sql =
+    "UPDATE cust_pay_pending SET void_paynum = paynum, paynum = NULL 
+    WHERE paynum IS NOT NULL AND void_paynum IS NULL AND EXISTS(
+      SELECT 1 FROM cust_pay_void
+      WHERE cust_pay_void.paynum = cust_pay_pending.paynum
+    ) AND NOT EXISTS(
+      SELECT 1 FROM cust_pay
+      WHERE cust_pay.paynum = cust_pay_pending.paynum
+    )";
+  $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
 
 }

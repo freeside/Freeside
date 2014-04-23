@@ -1645,6 +1645,7 @@ sub tables_hashref {
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
         'paynum',       'int',     'NULL',  '', '', '',
+        'void_paynum',  'int',     'NULL',  '', '', '',
         'jobnum',    'bigint',     'NULL',  '', '', '', 
         'invnum',       'int',     'NULL',  '', '', '',
         'manual',       'char',    'NULL',   1, '', '',
