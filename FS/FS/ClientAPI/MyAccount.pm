@@ -839,6 +839,9 @@ sub payment_info {
 
       'card_types' => card_types(),
 
+      'withcvv'     => $conf->exists('selfservice-require_cvv'), #or enable optional cvv?
+      'require_cvv' => $conf->exists('selfservice-require_cvv'),
+
       'paytypes' => [ @FS::cust_main::paytypes ],
 
       'paybys' => [ $conf->config('signup_server-payby') ],
@@ -1015,6 +1018,8 @@ sub validate_payment {
           or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
         $paycvv = $1;
       }
+    } elsif ( $conf->exists('selfservice-require_cvv') ) { #and you weren't using a card on file?
+      return { 'error' => 'CVV2 is required' };
     }
   
   } else {
