@@ -108,12 +108,6 @@ sub DESTROY {
   dbh->do('CLOSE '. $self->{id}) or die dbh->errstr; # clean-up the cursor in Pg
 }
 
-sub DESTROY {
-  my $self = shift;
-  my $statement = "CLOSE ".$self->{id};
-  dbh->do($statement);
-}  
-
 =back
 
 =head1 TO DO
