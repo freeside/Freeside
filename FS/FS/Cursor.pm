@@ -57,7 +57,7 @@ sub new {
 
   my $sth = dbh->prepare($statement)
     or die dbh->errstr;
-  my $bind = 0;
+  my $bind = 1;
   foreach my $value ( @{ $q->{value} } ) {
     my $bind_type = shift @{ $q->{bind_type} };
     $sth->bind_param($bind++, $value, $bind_type );
@@ -107,6 +107,12 @@ sub DESTROY {
   return unless $self->{pid} eq $$;
   dbh->do('CLOSE '. $self->{id}) or die dbh->errstr; # clean-up the cursor in Pg
 }
+
+sub DESTROY {
+  my $self = shift;
+  my $statement = "CLOSE ".$self->{id};
+  dbh->do($statement);
+}  
 
 =back
 
