@@ -2,7 +2,9 @@ package FS::cust_location;
 use base qw( FS::geocode_Mixin FS::Record );
 
 use strict;
-use vars qw( $import $DEBUG );
+use vars qw( $import $DEBUG $conf $label_prefix );
+use Data::Dumper;
+use Date::Format qw( time2str );
 use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
@@ -11,13 +13,15 @@ use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
 use FS::GeocodeCache;
-use Date::Format qw( time2str );
-
-use Data::Dumper;
 
 $import = 0;
 
 $DEBUG = 0;
+
+FS::UID->install_callback( sub {
+  $conf = FS::Conf->new;
+  $label_prefix = $conf->config('cust_location-label_prefix') || '';
+});
 
 =head1 NAME
 
@@ -196,7 +200,6 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
-  my $conf = new FS::Conf;
 
   if ( $self->censustract ) {
     $self->set('censusyear' => $conf->config('census_year') || 2012);
@@ -253,7 +256,6 @@ and replace methods.
 
 sub check {
   my $self = shift;
-  my $conf = new FS::Conf;
 
   return '' if $self->disabled; # so that disabling locations never fails
 
@@ -343,7 +345,7 @@ Synonym for location_label
 
 sub line {
   my $self = shift;
-  $self->location_label;
+  $self->location_label(@_);
 }
 
 =item has_ship_address
@@ -549,20 +551,19 @@ string (based on the cust_location-label_prefix config option).
 =cut
 
 sub location_label {
-  my $self = shift;
-  my %opt = @_;
-  my $conf = new FS::Conf;
-  my $prefix = '';
-  my $format = $conf->config('cust_location-label_prefix') || '';
-  my $cust_or_prospect;
-  if ( $self->custnum ) {
-    $cust_or_prospect = FS::cust_main->by_key($self->custnum);
-  }
-  elsif ( $self->prospectnum ) {
-    $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
+  my( $self, %opt ) = @_;
+
+  my $cust_or_prospect = $opt{cust_main} || $opt{prospect_main};
+  unless ( $cust_or_prospect ) {
+    if ( $self->custnum ) {
+      $cust_or_prospect = FS::cust_main->by_key($self->custnum);
+    } elsif ( $self->prospectnum ) {
+      $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
+    }
   }
 
-  if ( $format eq 'CoStAg' ) {
+  my $prefix = '';
+  if ( $label_prefix eq 'CoStAg' ) {
     my $agent = $conf->config('cust_main-custnum-display_prefix',
                   $cust_or_prospect->agentnum)
                 || $cust_or_prospect->agent->agent;
@@ -574,10 +575,11 @@ sub location_label {
         sprintf('%05d', $self->locationnum)
     ) );
   }
-  elsif ( $self->custnum and 
-          $self->locationnum == $cust_or_prospect->ship_locationnum ) {
+  elsif (    ( $opt{'cust_main'} || $self->custnum )
+          && $self->locationnum == $cust_or_prospect->ship_locationnum ) {
     $prefix = 'Default service location';
   }
+
   $prefix .= ($opt{join_string} ||  ': ') if $prefix;
   $prefix . $self->SUPER::location_label(%opt);
 }
@@ -669,7 +671,6 @@ sub process_censustract_update {
     qsearchs( 'cust_location', { locationnum => $locationnum })
       or die "locationnum '$locationnum' not found!\n";
 
-  my $conf = FS::Conf->new;
   my $new_year = $conf->config('census_year') or return;
   my $loc = FS::GeocodeCache->new( $cust_location->location_hash );
   $loc->set_censustract;
