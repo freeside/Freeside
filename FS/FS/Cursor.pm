@@ -56,7 +56,7 @@ sub new {
   my $dbh = dbh;
   my $sth = $dbh->prepare($statement)
     or die $dbh->errstr;
-  my $bind = 0;
+  my $bind = 1;
   foreach my $value ( @{ $q->{value} } ) {
     my $bind_type = shift @{ $q->{bind_type} };
     $sth->bind_param($bind++, $value, $bind_type );
@@ -100,6 +100,12 @@ sub refill {
   $self->{buffer} = $result;
   scalar @$result;
 }
+
+sub DESTROY {
+  my $self = shift;
+  my $statement = "CLOSE ".$self->{id};
+  dbh->do($statement);
+}  
 
 =back
 

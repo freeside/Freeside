@@ -4,6 +4,7 @@ use strict;
 use vars qw( $DEBUG $me @location_fields );
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh);
+use FS::Cursor;
 use FS::cust_location;
 
 use Carp qw(carp);
@@ -135,6 +136,7 @@ sub _upgrade_data {
     || new FS::contact_class { classname => 'Service'};
 
   if ( !$service_contact_class->classnum ) {
+    warn "Creating service contact class.\n";
     $error = $service_contact_class->insert;
     die "error creating contact class for Service: $error" if $error;
   }
@@ -156,7 +158,9 @@ sub _upgrade_data {
     }
   }
 
-  foreach my $cust_main (qsearch('cust_main', { bill_locationnum => '' })) {
+  warn "Migrating customer locations.\n";
+  my $search = FS::Cursor->new('cust_main', { bill_locationnum => '' });
+  while (my $cust_main = $search->fetch) {
     # Step 1: extract billing and service addresses into cust_location
     my $custnum = $cust_main->custnum;
     my $bill_location = FS::cust_location->new(
@@ -281,9 +285,9 @@ sub _upgrade_data {
       if $error;
 
     # Step 4: set packages at the "default service location" to ship_location
-    foreach my $cust_pkg (
-      qsearch('cust_pkg', { custnum => $custnum, locationnum => '' })  
-    ) {
+    my $pkg_search =
+      FS::Cursor->new('cust_pkg', { custnum => $custnum, locationnum => '' });
+    while (my $cust_pkg = $pkg_search->fetch) {
       # not a location change
       $cust_pkg->set('locationnum', $cust_main->ship_locationnum);
       $error = $cust_pkg->replace;
@@ -291,7 +295,7 @@ sub _upgrade_data {
         if $error;
     }
 
-  } #foreach $cust_main
+  } #while (my $cust_main...)
 
   # repair an error in earlier upgrades
   if (!FS::upgrade_journal->is_done('cust_location_censustract_repair')
