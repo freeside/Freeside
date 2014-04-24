@@ -199,7 +199,10 @@ Example:
 %       next if $cust_main && $cust_main->ship_locationnum == $loc->locationnum;
         <OPTION VALUE="<% $loc->locationnum %>"
                 <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
-        ><% $loc->line |h %>
+        ><% $loc->line( cust_main      => $cust_main,
+                        countrydefault => $countrydefault,
+                      )
+         |h %>
 %     }
 %     if ( $addnew ) {
         <OPTION VALUE="-1"
