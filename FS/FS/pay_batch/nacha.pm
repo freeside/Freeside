@@ -148,7 +148,7 @@ $DEBUG = 0;
     $transaction_code.                #Transaction Code
     $aba.                             #Receiving DFI Identification, check digit
     substr($account.(' 'x17), 0, 17). #DFI Account number (Left justify)
-    sprintf('%010d', $cust_pay_batch->amount * 100). #Amount
+    sprintf('%010.0f', $cust_pay_batch->amount * 100). #Amount
     $cust_identifier.                 #Individual Identification Number, 15 char
     $cust_name.                       #Individual name (22-char)
     '  '.                             #2 char "company internal use if desired"

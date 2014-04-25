@@ -151,6 +151,15 @@ sub by_cust {
     table     => 'cust_event_fee',
     addl_from => 'JOIN cust_event USING (eventnum) ' .
                  'JOIN part_event USING (eventpart) ' .
+                 'JOIN cust_pay_batch ON (cust_event.tablenum = cust_pay_batch.paybatchnum)',
+    extra_sql => "$where eventtable = 'cust_pay_batch' ".
+                 "AND cust_pay_batch.custnum = $custnum",
+    %params
+  }),
+  qsearch({
+    table     => 'cust_event_fee',
+    addl_from => 'JOIN cust_event USING (eventnum) ' .
+                 'JOIN part_event USING (eventpart) ' .
                  'JOIN cust_pkg ON (cust_event.tablenum = cust_pkg.pkgnum)',
     extra_sql => "$where eventtable = 'cust_pkg' ".
                  "AND cust_pkg.custnum = $custnum",

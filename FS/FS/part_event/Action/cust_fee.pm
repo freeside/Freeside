@@ -6,7 +6,8 @@ use base qw( FS::part_event::Action::Mixin::fee );
 sub description { 'Charge a fee based on the customer\'s current invoice'; }
 
 sub eventtable_hashref {
-    { 'cust_main' => 1 };
+    { 'cust_main'       => 1,
+      'cust_pay_batch'  => 1 };
 }
 
 sub hold_until_bill { 1 }
