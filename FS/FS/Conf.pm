@@ -2677,7 +2677,7 @@ and customer address. Include units.',
   {
     'key'         => 'selfservice-require_cvv',
     'section'     => 'self-service',
-    'description' => 'Require CVV for credit card self-service payments.',
+    'description' => 'Require CVV for credit card self-service payments, except for cards on-file.',
     'type'        => 'checkbox',
   },
 
