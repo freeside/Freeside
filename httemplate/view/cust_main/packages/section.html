@@ -79,6 +79,7 @@ my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 my %conf_opt = (
   #for package.html
   'invoice-unitprice'         => $conf->exists('invoice-unitprice'),
+  'show_pkgnum'               => $curuser->option('show_pkgnum'),
 
   #for services.html and status.html
   'cust_pkg-display_times'    => ($conf->exists('cust_pkg-display_times')
@@ -94,6 +95,10 @@ my %conf_opt = (
   'countrydefault'            => $countrydefault,
   'statedefault'              => ( scalar($conf->config('statedefault'))
                                   || ($countrydefault eq 'US' ? 'CA' : '') ),
+  'cust_pkg-group_by_location'=> $conf->exists('cust_pkg-group_by_location'),
+  'cust_main-require_censustract'=> $conf->exists('cust_main-require_censustract'),
+  'company_address'           => [ $conf->config('company_address', $opt{cust_main}->agentnum ) ],
+  
   #for services.html
   'svc_external-skip_manual'  => $conf->exists('svc_external-skip_manual'),
   'legacy_link'               => $conf->exists('legacy_link'),

@@ -3,7 +3,7 @@
 % {
 % # don't show the location
 % } else {
-%   if ( !$conf->exists('cust_pkg-group_by_location') ) {
+%   if ( !$opt{'cust_pkg-group_by_location'} ) {
 %     if ( $default ) {
         <DIV STYLE="font-style: italic; font-size: small">
 %     }
@@ -12,6 +12,7 @@
                                'double_space'    => ' &nbsp; ',
                                'escape_function' => \&encode_entities,
                                'countrydefault'  => $countrydefault,
+                               'cust_main'       => $opt{'cust_main'},
                              )
       %>
 
@@ -19,11 +20,13 @@
           <BR>
           <FONT SIZE=-1>
           <% $loc->latitude %>, <% $loc->longitude %>
-          <& /elements/coord-links.html,
-               $loc->latitude,
-               $loc->longitude,
-               $opt{'cust_main'}->name_short. ': '. $opt{'part_pkg'}->pkg,
-               $opt{'cust_main'}->agentnum,
+          <& /elements/coord-links.html, {
+               'latitude'        => $loc->latitude,
+               'longitude'       => $loc->longitude,
+               'name'            => $opt{'cust_main'}->name_short.
+                                      ': '. $opt{'part_pkg'}->pkg,
+               'company_address' => $opt{'company_address'},
+             }
           &>
           </FONT>
 %     }
@@ -32,7 +35,7 @@
          <FONT SIZE=-1>
          <% $loc->censustract %> (<% $loc->censusyear %> census)
          </FONT>
-%     } elsif ( $conf->exists('cust_main-require_censustract') ) {
+%     } elsif ( $opt{'cust_main-require_censustract'} ) {
           <BR>
           <FONT SIZE=-1 COLOR="#ee3300">
           <% emt('Census tract unknown') %>
@@ -64,7 +67,6 @@
 %   # preceding package.
 <%init>
 
-my $conf = new FS::Conf;
 my %opt = @_;
 
 my $cust_pkg       = $opt{'cust_pkg'};

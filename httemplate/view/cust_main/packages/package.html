@@ -10,7 +10,7 @@
         %>
         <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
            ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
-        ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
+        ><% $opt{show_pkgnum} ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
 %       my $custom_comment = $part_pkg->custom_comment();
         <% $custom_comment ? ' - ' : '' %>
         <% $custom_comment |h %>
@@ -72,10 +72,10 @@
               <% $br ? '<BR>' : '' %>
 %           } 
 
-%           if ( $cust_pkg->num_cust_event
-%                && (    $curuser->access_right('Billing event reports')
+%           if (    (    $curuser->access_right('Billing event reports')
 %                     || $curuser->access_right('View customer billing events')
 %                   )
+%                && $cust_pkg->num_cust_event
 %              ) {
               (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
 %           }
