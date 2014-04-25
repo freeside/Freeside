@@ -23,7 +23,17 @@
 
 <%init>
 
-my ($latitude, $longitude, $name, $agentnum) = @_;
+my %opt = ();
+my ($latitude, $longitude, $name, $agentnum);
+if ( ref($_[0]) ) {
+  %opt = %{ $_[0] };
+  $latitude  = $opt{latitude};
+  $longitude = $opt{longitude};
+  $name      = $opt{name};
+  $agentnum  = $opt{agentnum};
+} else {
+  ($latitude, $longitude, $name, $agentnum) = @_;
+}
 
 my $query = 'name='. uri_escape_utf8($name).
             ';lat='. $latitude.
@@ -35,12 +45,10 @@ $m->interp->apply_escapes($js_name, 'js_string');
 $js_name =~ s/^'//;
 $js_name =~ s/'$//;
 
-my @origin;
-my $origin;
 #for directions link
-if ( $agentnum =~ /^\d+$/ ) {
-  @origin = FS::Conf->new->config('company_address', $agentnum);
-  $origin = join (/,/,@origin);
-  $origin = uri_escape($origin);
-}
+my @origin = $opt{company_address}
+               ? @{ $opt{company_address} }
+               : FS::Conf->new->config('company_address', $agentnum);
+my $origin = uri_escape(join(',', @origin));
+
 </%init>
