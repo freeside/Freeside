@@ -993,10 +993,14 @@ sub validate_payment {
    
     $payinfo = $p->{'payinfo'};
 
+    my $onfile = 0;
+
     #more intelligent matching will be needed here if you change
     #card_masking_method and don't remove existing paymasks
-    $payinfo = $cust_main->payinfo
-      if $cust_main->paymask eq $payinfo;
+    if ( $cust_main->paymask eq $payinfo ) {
+      $payinfo = $cust_main->payinfo;
+      $onfile = 1;
+    }
 
     $payinfo =~ s/\D//g;
     $payinfo =~ /^(\d{13,16}|\d{8,9})$/
@@ -1018,7 +1022,7 @@ sub validate_payment {
           or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
         $paycvv = $1;
       }
-    } elsif ( $conf->exists('selfservice-require_cvv') ) { #and you weren't using a card on file?
+    } elsif ( !$onfile && $conf->exists('selfservice-require_cvv') ) {
       return { 'error' => 'CVV2 is required' };
     }
   
