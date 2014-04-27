@@ -19,11 +19,11 @@ Valid parameters are
 
 =item magic
 
-active, inactive, suspended, cancel (or cancelled)
+on hold, active, inactive (or one-time charge), suspended, cancel (or cancelled)
 
 =item status
 
-active, inactive, suspended, one-time charge, inactive, cancel (or cancelled)
+on hold, active, inactive (or one-time charge), suspended, cancel (or cancelled)
 
 =item custom
 
@@ -190,6 +190,12 @@ sub search {
             || $params->{'status'} =~ /^(one-time charge|inactive)/ ) {
 
     push @where, FS::cust_pkg->inactive_sql();
+
+  } elsif (    $params->{'magic'}  =~ /^on[ _]hold$/
+            || $params->{'status'} =~ /^on[ _]hold$/ ) {
+
+    push @where, FS::cust_pkg->on_hold_sql();
+
 
   } elsif (    $params->{'magic'}  eq 'suspended'
             || $params->{'status'} eq 'suspended'  ) {

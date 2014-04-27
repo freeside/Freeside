@@ -128,7 +128,14 @@ $select = "
   ( $count_cust_pkg
       AND ( cancel IS NULL OR cancel = 0 )
       AND susp IS NOT NULL AND susp != 0
+      AND setup IS NOT NULL AND setup != 0
   ) AS num_suspended,
+
+  ( $count_cust_pkg
+      AND ( cancel IS NULL OR cancel = 0 )
+      AND susp IS NOT NULL AND susp != 0
+      AND ( setup IS NULL OR setup = 0 )
+  ) AS num_on_hold,
 
   ( $count_cust_pkg
       AND cancel IS NOT NULL AND cancel != 0
@@ -382,6 +389,7 @@ if ( $acl_edit_global ) {
 #if ( $cgi->param('active') ) {
   push @header, 'Customer<BR>packages';
   my %col = (
+    'on hold'         => '7E0079', #purple!
     'not yet billed'  => '009999', #teal? cyan?
     'active'          => '00CC00',
     'suspended'       => 'FF9900',
@@ -397,10 +405,11 @@ if ( $acl_edit_global ) {
                               my $label = $_;
                               if ( $magic eq 'active' && $part_pkg->freq == 0 ) {
                                 $magic = 'inactive';
-                                #$label = 'one-time charge',
-                                $label = 'charge',
+                                #$label = 'one-time charge';
+                                $label = 'charge';
                               }
                               $label= 'not yet billed' if $magic eq 'not_yet_billed';
+                              $label= 'on hold' if $magic eq 'on_hold';
                           
                               [
                                 {
@@ -425,7 +434,7 @@ if ( $acl_edit_global ) {
                                             ),
                                 },
                               ],
-                            } (qw( not_yet_billed active suspended cancelled ))
+                            } (qw( on_hold not_yet_billed active suspended cancelled ))
                           ),
                       ($acl_config ? 
                         [ {}, 
