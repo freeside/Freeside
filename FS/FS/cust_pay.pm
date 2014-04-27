@@ -644,6 +644,9 @@ sub send_receipt {
     my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
     if ( $msgnum ) {
 
+      my %substitutions = ();
+      $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
+
       my $queue = new FS::queue {
         'job'     => 'FS::Misc::process_send_email',
         'paynum'  => $self->paynum,
@@ -651,9 +654,10 @@ sub send_receipt {
       };
       $error = $queue->insert(
         FS::msg_template->by_key($msgnum)->prepare(
-          'cust_main'   => $cust_main,
-          'object'      => $self,
-          'from_config' => 'payment_receipt_from',
+          'cust_main'     => $cust_main,
+          'object'        => $self,
+          'from_config'   => 'payment_receipt_from',
+          'substitutions' => \%substitutions,
         ),
         'msgtype' => 'receipt', # override msg_template's default
       );

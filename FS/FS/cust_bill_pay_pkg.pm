@@ -102,7 +102,11 @@ sub insert {
 
   #payment receipt
   my $conf = new FS::Conf;
-  my $trigger = $conf->config('payment_receipt-trigger') || 'cust_pay';
+  my $trigger =
+    $conf->config('payment_receipt-trigger',
+                    $self->cust_bill_pay->cust_bill->cust_main->agentnum,
+                 )
+    || 'cust_pay';
   if ( $trigger eq 'cust_bill_pay_pkg' ) {
     my $error = $self->send_receipt(
       'manual'    => $options{'manual'},
