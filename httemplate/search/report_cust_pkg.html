@@ -260,7 +260,8 @@ my @date_fields = keys %label;
 #false laziness w/cust_pkg.cgi
 my %disable = (
   'all'             => {},
-  'not yet billed'  => { 'setup'=>1, 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'on hold'         => { 'setup'=>1, 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'expire'=>1, 'cancel'=>1, 'dundate'=> 1, },
+  'not yet billed'  => { 'setup'=>1, 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, 'dundate'=>1, },
   'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, 'contract_end'=>1, 'dundate'=>1, },
   'active'          => { 'susp'=>1, 'cancel'=>1 },
   'suspended'       => { 'cancel'=>1, 'dundate'=>1, },

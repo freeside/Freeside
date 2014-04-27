@@ -110,10 +110,6 @@ my $error = '';
 my %hash = (
     'pkgpart'              => $pkgpart,
     'quantity'             => $quantity,
-    'start_date'           => ( scalar($cgi->param('start_date'))
-                                  ? parse_datetime($cgi->param('start_date'))
-                                  : ''
-                              ),
     'salesnum'             => $salesnum,
     'refnum'               => $refnum,
     'contactnum'           => $contactnum,
@@ -132,6 +128,14 @@ my %hash = (
      'waive_setup'         => ( $cgi->param('waive_setup') eq 'Y' ? 'Y' : '' ),
 );
 $hash{'custnum'} = $cust_main->custnum if $cust_main;
+
+if ( $cgi->param('start') eq 'on_hold' ) {
+  $hash{'susp'} = 'now';
+} elsif ( $cgi->param('start') eq 'on_date' ) {
+  $hash{'start_date'} = scalar($cgi->param('start_date'))
+                          ? parse_datetime($cgi->param('start_date'))
+                          : '';
+}
 
 if ( $quotationnum ) {
 

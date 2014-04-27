@@ -343,6 +343,8 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  $self->susp( $self->order_date ) if $self->susp eq 'now';
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1576,7 +1578,9 @@ sub unsuspend {
     && ! $self->option('suspend_bill',1)
     && (    ! $self->part_pkg->option('suspend_bill',1)
          || $self->option('no_suspend_bill',1)
-       );
+       )
+    && $hash{'order_date'} != $hash{'susp'}
+  ;
 
   $hash{'susp'} = '';
   $hash{'adjourn'} = '' if $hash{'adjourn'} and $hash{'adjourn'} < time;
@@ -3107,6 +3111,8 @@ Returns a short status string for this package, currently:
 
 =over 4
 
+=item on hold
+
 =item not yet billed
 
 =item one-time charge
@@ -3127,6 +3133,7 @@ sub status {
   my $freq = length($self->freq) ? $self->freq : $self->part_pkg->freq;
 
   return 'cancelled' if $self->get('cancel');
+  return 'on hold' if $self->susp && ! $self->setup;
   return 'suspended' if $self->susp;
   return 'not yet billed' unless $self->setup;
   return 'one-time charge' if $freq =~ /^(0|$)/;
@@ -3153,6 +3160,7 @@ Class method that returns the list of possible status strings for packages
 =cut
 
 tie my %statuscolor, 'Tie::IxHash', 
+  'on hold'         => '7E0079', #purple!
   'not yet billed'  => '009999', #teal? cyan?
   'one-time charge' => '000000',
   'active'          => '00CC00',
@@ -4215,6 +4223,21 @@ sub inactive_sql { "
   AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
 "; }
 
+=item on_hold_sql
+
+Returns an SQL expression identifying on-hold packages.
+
+=cut
+
+sub on_hold_sql {
+  #$_[0]->recurring_sql(). ' AND '.
+  "
+        ( cust_pkg.cancel IS     NULL  OR cust_pkg.cancel  = 0 )
+    AND   cust_pkg.susp   IS NOT NULL AND cust_pkg.susp   != 0
+    AND ( cust_pkg.setup  IS     NULL  OR cust_pkg.setup   = 0 )
+  ";
+}
+
 =item susp_sql
 =item suspended_sql
 
@@ -4228,6 +4251,7 @@ sub susp_sql {
   "
         ( cust_pkg.cancel IS     NULL  OR cust_pkg.cancel = 0 )
     AND   cust_pkg.susp   IS NOT NULL AND cust_pkg.susp  != 0
+    AND   cust_pkg.setup  IS NOT NULL AND cust_pkg.setup != 0
   ";
 }
 
@@ -4253,6 +4277,7 @@ Returns an SQL expression to give the package status as a string.
 sub status_sql {
 "CASE
   WHEN cust_pkg.cancel IS NOT NULL THEN 'cancelled'
+  WHEN ( cust_pkg.susp IS NOT NULL AND cust_pkg.setup IS NULL ) THEN 'on hold'
   WHEN cust_pkg.susp IS NOT NULL THEN 'suspended'
   WHEN cust_pkg.setup IS NULL THEN 'not yet billed'
   WHEN ".onetime_sql()." THEN 'one-time charge'
@@ -4273,11 +4298,11 @@ Valid parameters are
 
 =item magic
 
-active, inactive, suspended, cancel (or cancelled)
+on hold, active, inactive (or one-time charge), suspended, cancel (or cancelled)
 
 =item status
 
-active, inactive, suspended, one-time charge, inactive, cancel (or cancelled)
+on hold, active, inactive (or one-time charge), suspended, cancel (or cancelled)
 
 =item custom
 
@@ -4444,6 +4469,12 @@ sub search {
             || $params->{'status'} =~ /^(one-time charge|inactive)/ ) {
 
     push @where, FS::cust_pkg->inactive_sql();
+
+  } elsif (    $params->{'magic'}  =~ /^on[ _]hold$/
+            || $params->{'status'} =~ /^on[ _]hold$/ ) {
+
+    push @where, FS::cust_pkg->on_hold_sql();
+
 
   } elsif (    $params->{'magic'}  eq 'suspended'
             || $params->{'status'} eq 'suspended'  ) {

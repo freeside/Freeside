@@ -59,8 +59,6 @@
           'name'  => 'start_date',
           'value' => ($cgi->param('start_date') || $cust_main->next_bill_date),
       } &>
-      <IMG SRC="<%$fsurl%>images/calendar-disabled.png" \
-            ID="start_date_button_disabled" STYLE="display:none">
     </TD>
   </TR>
 </TABLE>
