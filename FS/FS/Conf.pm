@@ -5222,6 +5222,33 @@ and customer address. Include units.',
     },
   },
 
+  #false laziness w/above options_sub and option_sub
+  {
+    'key'         => 'cust_location-exports',
+    'section'     => '',
+    'description' => 'Export(s) to call on cust_location insert, modification and deletion.',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub {
+      require FS::Record;
+      require FS::part_export;
+      my @part_export =
+        map { qsearch( 'part_export', {exporttype => $_ } ) }
+          keys %{FS::part_export::export_info('cust_location')};
+      map { $_->exportnum => $_->exporttype.' to '.$_->machine } @part_export;
+    },
+    'option_sub'  => sub {
+      require FS::Record;
+      require FS::part_export;
+      my $part_export = FS::Record::qsearchs(
+        'part_export', { 'exportnum' => shift }
+      );
+      $part_export
+        ? $part_export->exporttype.' to '.$part_export->machine
+        : '';
+    },
+  },
+
   {
     'key'         => 'cust_tag-location',
     'section'     => 'UI',

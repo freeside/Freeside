@@ -91,9 +91,7 @@ sub _export_command {
 
   return unless $self->option("${action}_data");
 
-  my $cust_main = $svc_x->table eq 'cust_main'
-                    ? $svc_x
-                    : $svc_x->cust_svc->cust_pkg->cust_main;
+  my $cust_main = $svc_x->cust_main or return;
 
   $self->http_queue( $svc_x->svcnum,
     $self->option('method'),
@@ -115,9 +113,7 @@ sub _export_replace {
 
   return unless $self->option('replace_data');
 
-  my $new_cust_main = $new->table eq 'cust_main'
-                        ? $new
-                        : $new->cust_svc->cust_pkg->cust_main;
+  my $new_cust_main = $new->cust_main or return;
   my $cust_main = $new_cust_main; #so folks can use $new_cust_main or $cust_main
 
   $self->http_queue( $new->svcnum,

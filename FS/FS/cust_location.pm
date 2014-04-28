@@ -12,6 +12,7 @@ use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
+use FS::part_export;
 use FS::GeocodeCache;
 
 $import = 0;
@@ -205,19 +206,49 @@ sub insert {
     $self->set('censusyear' => $conf->config('census_year') || 2012);
   }
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error = $self->SUPER::insert(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   #false laziness with cust_main, will go away eventually
-  if ( !$import and !$error and $conf->config('tax_district_method') ) {
+  if ( !$import and $conf->config('tax_district_method') ) {
 
     my $queue = new FS::queue {
       'job' => 'FS::geocode_Mixin::process_district_update'
     };
     $error = $queue->insert( ref($self), $self->locationnum );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
 
   }
 
-  $error || '';
+  # cust_location exports
+  #my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_location-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_insert($self); #, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 =item delete
@@ -242,7 +273,35 @@ sub replace {
     }
   }
 
-  $self->SUPER::replace($old);
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  # cust_location exports
+  #my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_location-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_replace($self, $old); #, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 
@@ -596,6 +655,16 @@ sub county_state_country {
   $label = $self->state.", $label" if $self->state;
   $label = $self->county." County, $label" if $self->county;
   $label;
+}
+
+=item cust_main
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  return '' unless $self->custnum;
+  qsearchs('cust_main', { 'custnum' => $self->custnum } );
 }
 
 =back
