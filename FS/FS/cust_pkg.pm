@@ -3416,7 +3416,16 @@ Returns the L<FS::cust_location> object for tax_locationnum.
 
 sub tax_location {
   my $self = shift;
-  FS::cust_location->by_key( $self->tax_locationnum )
+  my $conf = FS::Conf->new;
+  if ( $conf->exists('tax-pkg_address') and $self->locationnum ) {
+    return FS::cust_location->by_key($self->locationnum);
+  }
+  elsif ( $conf->exists('tax-ship_address') ) {
+    return $self->cust_main->ship_location;
+  }
+  else {
+    return $self->cust_main->bill_location;
+  }
 }
 
 =item seconds_since TIMESTAMP
