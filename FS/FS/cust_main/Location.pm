@@ -124,6 +124,8 @@ sub location_fields { @location_fields }
 
 sub _upgrade_data {
   my $class = shift;
+  my %opt = @_;
+
   eval "use FS::contact;
         use FS::contact_class;
         use FS::contact_phone;
@@ -165,13 +167,19 @@ sub _upgrade_data {
   my $num_jobs = FS::queue->count('job = \'FS::cust_main::Location::process_upgrade_location\' and status != \'failed\'');
   if ( $num_to_upgrade > 0 ) {
     warn "Need to migrate $num_to_upgrade customer locations.\n";
-    if ( $num_jobs > 0 ) {
-      warn "Upgrade already queued.\n";
-    } else {
-      warn "Scheduling upgrade.\n";
-      my $job = FS::queue->new({ job => 'FS::cust_main::Location::process_upgrade_location' });
-      $job->insert;
+
+    if ( $opt{queue} ) {
+      if ( $num_jobs > 0 ) {
+        warn "Upgrade already queued.\n";
+      } else {
+        warn "Scheduling upgrade.\n";
+        my $job = FS::queue->new({ job => 'FS::cust_main::Location::process_upgrade_location' });
+        $job->insert;
+      }
+    } else { #do it now
+      process_upgrade_location();
     }
+
   }
   # repair an error in earlier upgrades
   if (!FS::upgrade_journal->is_done('cust_location_censustract_repair')
