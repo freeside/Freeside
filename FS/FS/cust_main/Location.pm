@@ -70,7 +70,11 @@ Returns an L<FS::cust_location> object for the customer's billing address.
 sub bill_location {
   my $self = shift;
   $self->hashref->{bill_location} 
-    ||= FS::cust_location->by_key($self->bill_locationnum);
+    ||= FS::cust_location->by_key($self->bill_locationnum)
+    # degraded mode--let the system keep running during upgrades
+    ||  FS::cust_location->new({
+        map { $_ => $self->get($_) } @location_fields
+      })
 }
 
 =item ship_location
@@ -82,7 +86,11 @@ Returns an L<FS::cust_location> object for the customer's service address.
 sub ship_location {
   my $self = shift;
   $self->hashref->{ship_location}
-    ||= FS::cust_location->by_key($self->ship_locationnum);
+    ||= FS::cust_location->by_key($self->ship_locationnum)
+    ||  FS::cust_location->new({
+        map { $_ => $self->get('ship_'.$_) || $self->get($_) } @location_fields
+      })
+
 }
 
 =item location TYPE
@@ -118,6 +126,8 @@ sub location_fields { @location_fields }
 
 sub _upgrade_data {
   my $class = shift;
+  my %opt = @_;
+
   eval "use FS::contact;
         use FS::contact_class;
         use FS::contact_phone;
@@ -126,11 +136,6 @@ sub _upgrade_data {
   local $FS::cust_location::import = 1;
   local $DEBUG = 0;
   my $error;
-
-  my $tax_prefix = 'bill_';
-  if ( FS::Conf->new->exists('tax-ship_address') ) {
-    $tax_prefix = 'ship_';
-  }
 
   # Step 0: set up contact classes and phone types
   my $service_contact_class = 
@@ -160,147 +165,24 @@ sub _upgrade_data {
     }
   }
 
-  warn "Migrating customer locations.\n";
-  my $search = FS::Cursor->new('cust_main',
-                        { bill_locationnum  => '',
-                          address1          => { op=>'!=', value=>'' }
-                        });
-  while (my $cust_main = $search->fetch) {
-    # Step 1: extract billing and service addresses into cust_location
-    my $custnum = $cust_main->custnum;
-    my $bill_location = FS::cust_location->new(
-      {
-        custnum => $custnum,
-        map { $_ => $cust_main->get($_) } location_fields(),
+  my $num_to_upgrade = FS::cust_main->count('bill_locationnum is null or ship_locationnum is null');
+  my $num_jobs = FS::queue->count('job = \'FS::cust_main::Location::process_upgrade_location\' and status != \'failed\'');
+  if ( $num_to_upgrade > 0 ) {
+    warn "Need to migrate $num_to_upgrade customer locations.\n";
+
+    if ( $opt{queue} ) {
+      if ( $num_jobs > 0 ) {
+        warn "Upgrade already queued.\n";
+      } else {
+        warn "Scheduling upgrade.\n";
+        my $job = FS::queue->new({ job => 'FS::cust_main::Location::process_upgrade_location' });
+        $job->insert;
       }
-    );
-    $bill_location->set('censustract', '');
-    $bill_location->set('censusyear', '');
-     # properly goes with ship_location; if they're the same, will be set
-     # on ship_location before inserting either one
-    my $ship_location = $bill_location; # until proven otherwise
-
-    if ( $cust_main->get('ship_address1') ) {
-      # detect duplicates
-      my $same = 1;
-      foreach (location_fields()) {
-        if ( length($cust_main->get("ship_$_")) and
-             $cust_main->get($_) ne $cust_main->get("ship_$_") ) {
-          $same = 0;
-        }
-      }
-
-      if ( !$same ) {
-        $ship_location = FS::cust_location->new(
-          {
-            custnum => $custnum,
-            map { $_ => $cust_main->get("ship_$_") } location_fields()
-          }
-        );
-      } # else it stays equal to $bill_location
-
-      # Step 2: Extract shipping address contact fields into contact
-      my %unlike = map { $_ => 1 }
-        grep { $cust_main->get($_) ne $cust_main->get("ship_$_") }
-        qw( last first company daytime night fax mobile );
-
-      if ( %unlike ) {
-        # then there IS a service contact
-        my $contact = FS::contact->new({
-          'custnum'     => $custnum,
-          'classnum'    => $service_contact_class->classnum,
-          'locationnum' => $ship_location->locationnum,
-          'last'        => $cust_main->get('ship_last'),
-          'first'       => $cust_main->get('ship_first'),
-        });
-        if ( !$cust_main->get('ship_last') or !$cust_main->get('ship_first') )
-        {
-          warn "customer $custnum has no service contact name; substituting ".
-               "customer name\n";
-          $contact->set('last' => $cust_main->get('last'));
-          $contact->set('first' => $cust_main->get('first'));
-        }
-
-        if ( $unlike{'company'} ) {
-          # there's no contact.company field, but keep a record of it
-          $contact->set(comment => 'Company: '.$cust_main->get('ship_company'));
-        }
-        $error = $contact->insert;
-        die "error migrating service contact for customer $custnum: $error"
-          if $error;
-
-        foreach ( grep { $unlike{$_} } qw( daytime night fax mobile ) ) {
-          my $phone = $cust_main->get("ship_$_");
-          next if !$phone;
-          my $contact_phone = FS::contact_phone->new({
-            'contactnum'    => $contact->contactnum,
-            'phonetypenum'  => $phone_type{$_}->phonetypenum,
-            FS::contact::_parse_phonestring( $phone )
-          });
-          $error = $contact_phone->insert;
-          # die "whose responsible this"
-          die "error migrating service contact phone for customer $custnum: $error"
-            if $error;
-          $cust_main->set("ship_$_" => '');
-        }
-
-        $cust_main->set("ship_$_" => '') foreach qw(last first company);
-      } #if %unlike
-    } #if ship_address1
-
-    # special case: should go with whichever location is used to calculate
-    # taxes, because that's the one it originally came from
-    if ( my $geocode = $cust_main->get('geocode') ) {
-      $bill_location->set('geocode' => '');
-      $ship_location->set('geocode' => '');
-
-      if ( $tax_prefix eq 'bill_' ) {
-        $bill_location->set('geocode', $geocode);
-      } elsif ( $tax_prefix eq 'ship_' ) {
-        $ship_location->set('geocode', $geocode);
-      }
+    } else { #do it now
+      process_upgrade_location();
     }
 
-    # this always goes with the ship_location (whether it's the same as
-    # bill_location or not)
-    $ship_location->set('censustract', $cust_main->get('censustract'));
-    $ship_location->set('censusyear',  $cust_main->get('censusyear'));
-
-    $error = $bill_location->insert;
-    die "error migrating billing address for customer $custnum: $error"
-      if $error;
-
-    $cust_main->set(bill_locationnum => $bill_location->locationnum);
-
-    if (!$ship_location->locationnum) {
-      $error = $ship_location->insert;
-      die "error migrating service address for customer $custnum: $error"
-        if $error;
-    }
-
-    $cust_main->set(ship_locationnum => $ship_location->locationnum);
-
-    # Step 3: Wipe the migrated fields and update the cust_main
-
-    $cust_main->set("ship_$_" => '') foreach location_fields();
-    $cust_main->set($_ => '') foreach location_fields();
-
-    $error = $cust_main->replace;
-    die "error migrating addresses for customer $custnum: $error"
-      if $error;
-
-    # Step 4: set packages at the "default service location" to ship_location
-    my $pkg_search =
-      FS::Cursor->new('cust_pkg', { custnum => $custnum, locationnum => '' });
-    while (my $cust_pkg = $pkg_search->fetch) {
-      # not a location change
-      $cust_pkg->set('locationnum', $cust_main->ship_locationnum);
-      $error = $cust_pkg->replace;
-      die "error migrating package ".$cust_pkg->pkgnum.": $error"
-        if $error;
-    }
-
-  } #while (my $cust_main...)
+  }
 
   # repair an error in earlier upgrades
   if (!FS::upgrade_journal->is_done('cust_location_censustract_repair')
@@ -332,8 +214,197 @@ sub _upgrade_data {
     } # foreach $cust_location
     FS::upgrade_journal->set_done('cust_location_censustract_repair');
   }
+}
+
+sub process_upgrade_location {
+  my $class = shift;
+
+  my $dbh = dbh;
+  local $FS::cust_location::import = 1;
+  local $FS::UID::AutoCommit = 0;
+
+  my $tax_prefix = 'bill_';
+  if ( FS::Conf->new->exists('tax-ship_address') ) {
+    $tax_prefix = 'ship_';
+  }
+
+  # load some records that were created during the initial upgrade
+  my $service_contact_class = 
+    qsearchs('contact_class', { classname => 'Service'});
+
+  my %phone_type = (
+    daytime => 'Work',
+    night   => 'Home',
+    mobile  => 'Mobile',
+    fax     => 'Fax'
+  );
+  foreach (keys %phone_type) {
+    $phone_type{$_} = qsearchs('phone_type', { typename => $phone_type{$_}});
+  }
+
+  my %opt = (
+    tax_prefix            => $tax_prefix,
+    service_contact_class => $service_contact_class,
+    phone_type            => \%phone_type,
+  );
+
+  my $search = FS::Cursor->new('cust_main',
+                        { bill_locationnum => '',
+                          address1         => { op=>'!=', value=>'' }
+                        });
+  while (my $cust_main = $search->fetch) {
+    my $error = $cust_main->upgrade_location(%opt);
+    if ( $error ) {
+      warn "cust#".$cust_main->custnum.": $error\n";
+      $dbh->rollback;
+    } else {
+      # commit as we go
+      $dbh->commit;
+    }
+  }
+}
+
+sub upgrade_location { # instance method
+  my $cust_main = shift;
+  my %opt = @_;
+  my $error;
+
+  # Step 1: extract billing and service addresses into cust_location
+  my $custnum = $cust_main->custnum;
+  my $bill_location = FS::cust_location->new(
+    {
+      custnum => $custnum,
+      map { $_ => $cust_main->get($_) } location_fields(),
+    }
+  );
+  $bill_location->set('censustract', '');
+  $bill_location->set('censusyear', '');
+   # properly goes with ship_location; if they're the same, will be set
+   # on ship_location before inserting either one
+  my $ship_location = $bill_location; # until proven otherwise
+
+  if ( $cust_main->get('ship_address1') ) {
+    # detect duplicates
+    my $same = 1;
+    foreach (location_fields()) {
+      if ( length($cust_main->get("ship_$_")) and
+           $cust_main->get($_) ne $cust_main->get("ship_$_") ) {
+        $same = 0;
+      }
+    }
+
+    if ( !$same ) {
+      $ship_location = FS::cust_location->new(
+        {
+          custnum => $custnum,
+          map { $_ => $cust_main->get("ship_$_") } location_fields()
+        }
+      );
+    } # else it stays equal to $bill_location
+
+    # Step 2: Extract shipping address contact fields into contact
+    my %unlike = map { $_ => 1 }
+      grep { $cust_main->get($_) ne $cust_main->get("ship_$_") }
+      qw( last first company daytime night fax mobile );
+
+    if ( %unlike ) {
+      # then there IS a service contact
+      my $contact = FS::contact->new({
+        'custnum'     => $custnum,
+        'classnum'    => $opt{service_contact_class}->classnum,
+        'locationnum' => $ship_location->locationnum,
+        'last'        => $cust_main->get('ship_last'),
+        'first'       => $cust_main->get('ship_first'),
+      });
+      if ( !$cust_main->get('ship_last') or !$cust_main->get('ship_first') )
+      {
+        warn "customer $custnum has no service contact name; substituting ".
+             "customer name\n";
+        $contact->set('last' => $cust_main->get('last'));
+        $contact->set('first' => $cust_main->get('first'));
+      }
+
+      if ( $unlike{'company'} ) {
+        # there's no contact.company field, but keep a record of it
+        $contact->set(comment => 'Company: '.$cust_main->get('ship_company'));
+      }
+      $error = $contact->insert;
+      return "error migrating service contact for customer $custnum: $error"
+        if $error;
+
+      foreach ( grep { $unlike{$_} } qw( daytime night fax mobile ) ) {
+        my $phone = $cust_main->get("ship_$_");
+        next if !$phone;
+        my $contact_phone = FS::contact_phone->new({
+          'contactnum'    => $contact->contactnum,
+          'phonetypenum'  => $opt{phone_type}->{$_}->phonetypenum,
+          FS::contact::_parse_phonestring( $phone )
+        });
+        $error = $contact_phone->insert;
+        return "error migrating service contact phone for customer $custnum: $error"
+          if $error;
+        $cust_main->set("ship_$_" => '');
+      }
+
+      $cust_main->set("ship_$_" => '') foreach qw(last first company);
+    } #if %unlike
+  } #if ship_address1
+
+  # special case: should go with whichever location is used to calculate
+  # taxes, because that's the one it originally came from
+  if ( my $geocode = $cust_main->get('geocode') ) {
+    $bill_location->set('geocode' => '');
+    $ship_location->set('geocode' => '');
+
+    if ( $opt{tax_prefix} eq 'bill_' ) {
+      $bill_location->set('geocode', $geocode);
+    } elsif ( $opt{tax_prefix} eq 'ship_' ) {
+      $ship_location->set('geocode', $geocode);
+    }
+  }
+
+  # this always goes with the ship_location (whether it's the same as
+  # bill_location or not)
+  $ship_location->set('censustract', $cust_main->get('censustract'));
+  $ship_location->set('censusyear',  $cust_main->get('censusyear'));
+
+  $error = $bill_location->insert;
+  return "error migrating billing address for customer $custnum: $error"
+    if $error;
+
+  $cust_main->set(bill_locationnum => $bill_location->locationnum);
+
+  if (!$ship_location->locationnum) {
+    $error = $ship_location->insert;
+    return "error migrating service address for customer $custnum: $error"
+      if $error;
+  }
+
+  $cust_main->set(ship_locationnum => $ship_location->locationnum);
+
+  # Step 3: Wipe the migrated fields and update the cust_main
+
+  $cust_main->set("ship_$_" => '') foreach location_fields();
+  $cust_main->set($_ => '') foreach location_fields();
+
+  $error = $cust_main->replace;
+  return "error migrating addresses for customer $custnum: $error"
+    if $error;
+
+  # Step 4: set packages at the "default service location" to ship_location
+  my $pkg_search =
+    FS::Cursor->new('cust_pkg', { custnum => $custnum, locationnum => '' });
+  while (my $cust_pkg = $pkg_search->fetch) {
+    # not a location change
+    $cust_pkg->set('locationnum', $cust_main->ship_locationnum);
+    $error = $cust_pkg->replace;
+    return "error migrating package ".$cust_pkg->pkgnum.": $error"
+      if $error;
+  }
+  '';
 
 }
+
 
 =back
 

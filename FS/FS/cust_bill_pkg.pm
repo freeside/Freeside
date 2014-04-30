@@ -970,7 +970,13 @@ sub tax_locationnum {
 
 sub tax_location {
   my $self = shift;
-  FS::cust_location->by_key($self->tax_locationnum);
+  if ( $self->pkgnum ) { # normal sales
+    return $self->cust_pkg->tax_location;
+  } elsif ( $self->feepart ) { # fees
+    return $self->cust_bill->cust_main->ship_location;
+  } else { # taxes
+    return;
+  }
 }
 
 =item part_X
@@ -1576,6 +1582,14 @@ sub _upgrade_data {
   });
   # call it kind of like a class method, not that it matters much
   $job->insert($class, 's' => str2time('2012-01-01'));
+  # if there's a customer location upgrade queued also, wait for it to 
+  # finish
+  my $location_job = qsearchs('queue', {
+      job => 'FS::cust_main::Location::process_upgrade_location'
+    });
+  if ( $location_job ) {
+    $job->depend_insert($location_job->jobnum);
+  }
   # Then mark the upgrade as done, so that we don't queue the job twice
   # and somehow run two of them concurrently.
   FS::upgrade_journal->set_done($upgrade);

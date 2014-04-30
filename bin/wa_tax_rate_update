@@ -15,9 +15,13 @@ and relies on a heinous screen-scraping of the interactive search tool.
 This script just updates the cust_main_county records that already exist
 with the latest quarterly tax rates.
 
-The only option it accepts is "-c" to operate on a specific tax class 
-(named after the -c).  If this isn't included it will operate on records
-with null tax class.
+Options:
+
+-c <taxclass>: operate only on records with the named tax class.  If not 
+specified, this operates on records with null tax class.
+
+-t <taxname>: operate only on records with that tax name.  If not specified,
+it operates on records where the tax name is either null or 'Tax'.
 
 =cut
 
@@ -31,7 +35,7 @@ use File::Slurp qw(read_file write_file);
 use Text::CSV;
 use Getopt::Std;
 
-getopts('c:');
+getopts('c:t:');
 my $user = shift or die usage();
 
 # download the update file
@@ -68,6 +72,7 @@ adminsuidsetup($user) or die "bad username '$user'\n";
 $FS::UID::AutoCommit = 0;
 
 $opt_c ||= ''; # taxclass
+$opt_t ||= ''; # taxname
 my $total_changed = 0;
 my $total_skipped = 0;
 while ( !$csv->eof ) {
@@ -82,7 +87,17 @@ while ( !$csv->eof ) {
       state     => 'WA', # this is specific to WA
       district  => $district,
       taxclass  => $opt_c,
+      taxname   => $opt_t,
   });
+  if ($opt_t eq '') {
+    push @rates, qsearch('cust_main_county', {
+      country   => 'US',
+      state     => 'WA', # this is specific to WA
+      district  => $district,
+      taxclass  => $opt_c,
+      taxname   => 'Tax'
+    });
+  }
   foreach my $rate (@rates) {
     if ( $rate->tax == $tax ) {
       $skipped++;
@@ -103,6 +118,6 @@ dbh->commit;
 
 sub usage {
   "usage:
-  wa_tax_rate_update [ -c taxclass ] user
+  wa_tax_rate_update [ -c taxclass ] [ -t taxname ] user
 ";
 }

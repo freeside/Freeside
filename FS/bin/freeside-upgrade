@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c );
+use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c $opt_j );
 use vars qw( $DEBUG $DRY_RUN );
 use Getopt::Std;
 use DBIx::DBSchema 0.31; #0.39
@@ -17,7 +17,7 @@ my $start = time;
 
 die "Not running uid freeside!" unless checkeuid();
 
-getopts("dqrcs");
+getopts("dqrcsj");
 
 $DEBUG = !$opt_q;
 #$DEBUG = $opt_v;
@@ -29,6 +29,14 @@ $FS::CurrentUser::upgrade_hack = 1;
 $FS::UID::callback_hack = 1;
 my $dbh = adminsuidsetup($user);
 $FS::UID::callback_hack = 0;
+
+# pass command line opts through to upgrade* routines
+my %upgrade_opts = (
+  quiet   => $opt_q,
+  verbose => $opt_v,
+  queue   => $opt_j,
+  # others?
+);
 
 if ( driver_name =~ /^mysql/i ) { #until 0.39 is required above
   eval "use DBIx::DBSchema 0.39;";
@@ -102,7 +110,7 @@ if ( $DRY_RUN ) {
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
 
-  upgrade_schema();
+  upgrade_schema(%upgrade_opts);
 
   dbdef_create($dbh, $dbdef_file);
   delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
@@ -286,7 +294,7 @@ foreach my $cfst ( @cfst ) {
 }
 warn "Custom fields data upgrade completed";
 
-upgrade_config()
+upgrade_config(%upgrade_opts)
   unless $DRY_RUN || $opt_s;
 
 $dbh->commit or die $dbh->errstr;
@@ -294,7 +302,7 @@ $dbh->commit or die $dbh->errstr;
 warn "Config updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
-upgrade()
+upgrade(%upgrade_opts)
   unless $DRY_RUN || $opt_s;
 
 $dbh->commit or die $dbh->errstr;
@@ -302,7 +310,7 @@ $dbh->commit or die $dbh->errstr;
 warn "Table updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
-upgrade_sqlradius()
+upgrade_sqlradius(%upgrade_opts)
   unless $DRY_RUN || $opt_s || $opt_r;
 
 warn "SQL RADIUS updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
@@ -363,6 +371,11 @@ Also performs other upgrade functions:
 
   [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
           changes will be replicated from the Pg/slony master.
+
+  [ -j ]: Run certain upgrades asychronously from the job queue.  Currently 
+          used only for the 2.x -> 3.x cust_location upgrade.  This may cause
+          odd behavior before the upgrade is complete, so it's recommended 
+          only for very large cust_main tables that take too long to upgrade.
 
 =head1 SEE ALSO
 
