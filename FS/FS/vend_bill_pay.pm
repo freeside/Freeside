@@ -83,6 +83,12 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   #magically auto-deleting for the simple case
   foreach my $vend_pay ( $self->vend_pay ) {
     my $error = $vend_pay->delete;
@@ -90,12 +96,6 @@ sub delete {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-  }
-
-  my $error = $self->SUPER::delete;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
