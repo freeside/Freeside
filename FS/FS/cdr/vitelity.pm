@@ -15,6 +15,10 @@ use FS::cdr qw(_cdr_date_parser_maker);
     _cdr_date_parser_maker('startdate'),
     'src',
     'dst',
+    sub { my($cdr, $field) = @_;
+          $cdr->set(duration => $field);
+          $cdr->set(billsec  => $field);
+        },
     'duration',
     'clid',
     'disposition',
