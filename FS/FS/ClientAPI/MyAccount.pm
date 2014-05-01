@@ -1816,6 +1816,7 @@ sub list_svcs {
                     'inbound' => ( $_ eq 'inbound' ? 1 : 0 ),
                     'begin'   => ($cust_pkg->last_bill || 0),
                     'nonzero' => 1,
+                    'disable_charged_party' => 1,
                   );
                   $hash{$_} = $sum_cdr->hashref;
                 }
@@ -2099,7 +2100,12 @@ sub _list_cdr_usage {
   # we have to return the results all at once...
   my($svc_phone, $begin, $end, %opt) = @_;
   map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
-    $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, %opt );
+    $svc_phone->get_cdrs(
+      'begin'=>$begin,
+      'end'=>$end,
+      'disable_charged_party' => 1,
+      %opt
+    );
 }
 
 sub list_cdr_usage {

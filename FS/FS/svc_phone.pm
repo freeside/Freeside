@@ -730,8 +730,8 @@ Accepts the following options:
 
 =item status => "" (or "processing-tiered", "done"): Return only CDRs with that processing status.
 
-=item inbound => 1: Return CDRs for inbound calls.  With "status", will filter 
-on inbound processing status.
+=item inbound => 1: Return CDRs for inbound calls (that is, those that match
+on 'dst').  With "status", will filter on inbound processing status.
 
 =item default_prefix => "XXX": Also accept the phone number of the service prepended 
 with the chosen prefix.
@@ -742,7 +742,9 @@ with the chosen prefix.
 
 =item calltypenum: Only return CDRs with this call type.
 
-=item disable_src => 1: Only match on "charged_party", not "src".
+=item disable_src => 1: Only match on 'charged_party', not 'src'.
+
+=item disable_charged_party => 1: Only match on 'src', not 'charged_party'.
 
 =item nonzero: Only return CDRs where duration > 0.
 
@@ -782,8 +784,8 @@ sub psearch_cdrs {
 
   } else {
 
-    @fields = ( 'charged_party' );
-    push @fields, 'src' if !$options{'disable_src'};
+    push @fields, 'charged_party' unless $options{'disable_charged_party'};
+    push @fields, 'src' unless $options{'disable_src'};
     $hash{'freesidestatus'} = $options{'status'}
       if exists($options{'status'});
   }
