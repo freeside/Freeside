@@ -2117,6 +2117,7 @@ sub list_cdr_usage {
 
 sub _usage_details {
   my($callback, $p, %opt) = @_;
+  my $conf = FS::Conf->new;
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
@@ -2135,7 +2136,6 @@ sub _usage_details {
   my %callback_opt;
   my $header = [];
   if ( $svcdb eq 'svc_phone' ) {
-    my $conf = FS::Conf->new;
     my $format = '';
     if ( $p->{inbound} ) {
       $format = $cust_pkg->part_pkg->option('selfservice_inbound_format') 
@@ -2168,6 +2168,14 @@ sub _usage_details {
   my (@usage) = &$callback($svc_x, $p->{beginning}, $p->{ending}, 
     %callback_opt
   );
+
+  if ( $conf->exists('selfservice-hide_cdr_price') ) {
+    # ugly kludge, I know
+    my ($delete_col) = grep { $header->[$_] eq 'Price' } (0..scalar(@$header));
+    if (defined $delete_col) {
+      delete($_->[$delete_col]) foreach ($header, @usage);
+    }
+  }
 
   #kinda false laziness with FS::cust_main::bill, but perhaps
   #we should really change this bit to DateTime and DateTime::Duration
