@@ -438,8 +438,8 @@ sub disable_if_unused {
 
   my $self = shift;
   my $locationnum = $self->locationnum;
-  return '' if FS::cust_main->count('bill_locationnum = '.$locationnum)
-            or FS::cust_main->count('ship_locationnum = '.$locationnum)
+  return '' if FS::cust_main->count('bill_locationnum = '.$locationnum.' OR
+                                     ship_locationnum = '.$locationnum)
             or FS::contact->count(      'locationnum  = '.$locationnum)
             or FS::cust_pkg->count('cancel IS NULL AND 
                                          locationnum  = '.$locationnum)
