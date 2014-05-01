@@ -1617,6 +1617,7 @@ sub tables_hashref {
                           [ 'referral_custnum' ],
                           [ 'payby' ], [ 'paydate' ],
                           [ 'archived' ],
+                          ['bill_locationnum'],['ship_locationnum'],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
