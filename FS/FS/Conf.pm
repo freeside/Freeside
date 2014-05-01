@@ -5581,6 +5581,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-hide_cdr_price',
+    'section'     => 'self-service',
+    'description' => 'Don\'t show the "Price" column on CDRs in self-service.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'logout-timeout',
     'section'     => 'UI',
     'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
