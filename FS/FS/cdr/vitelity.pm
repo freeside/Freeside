@@ -19,7 +19,6 @@ use FS::cdr qw(_cdr_date_parser_maker);
           $cdr->set(duration => $field);
           $cdr->set(billsec  => $field);
         },
-    'duration',
     'clid',
     'disposition',
     'upstream_price',
