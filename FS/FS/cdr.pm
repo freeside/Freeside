@@ -999,6 +999,8 @@ sub rate_upstream_simple {
     sprintf('%.3f', $self->upstream_price),
     $opt{'svcnum'},
     'rated_classnum' => $self->calltypenum,
+    'rated_seconds'  => $self->billsec,
+    # others? upstream_*_regionname => rated_regionname is possible
   );
 }
 
