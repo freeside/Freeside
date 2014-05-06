@@ -246,12 +246,12 @@ sub get_packages {
   # (as will change-target packages)
   @packages = grep !$_->main_pkgnum, @packages;
 
-  ( \@packages, $num_old_packages );
-}
+  foreach my $cust_pkg ( @packages ) {
+    $cust_pkg->{'_cust_pkg_discount_active'} =
+     [ $cust_pkg->cust_pkg_discount_active ];
+  }
 
-foreach my $cust_pkg ( @packages ) {
-  $cust_pkg->{'_cust_pkg_discount_active'} =
-   [ $cust_pkg->cust_pkg_discount_active ];
+  ( \@packages, $num_old_packages );
 }
 
 </%init>
