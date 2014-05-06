@@ -11,7 +11,33 @@
         <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
            ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
         ><% $opt{show_pkgnum} ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
-%       my $custom_comment = $part_pkg->custom_comment('cust_pkg'=>$cust_pkg);
+%
+%       my $custom_comment;
+%       if ( 0 && FS::part_pkg::flat->can('price_info') eq $part_pkg->can('price_info') ) {
+%         #perf hack / disabled in 4.x (feature pricing / cust_pkg_usageprice incompatible, well, harder)
+%
+%         $part_pkg->{"_$_"} = $part_pkg->option($_) || 0
+%           foreach grep !defined($part_pkg->{"_$_"} ), qw(setup_fee recur_fee);
+%           
+%         my $str = '';
+%         $str = $opt{money_char} . $part_pkg->{_setup_fee}.
+%                ($part_pkg->{_recur_fee} ? ' setup' : ' one-time')
+%           if $part_pkg->{_setup_fee};
+%         $str .= ', ' if $part_pkg->{_setup_fee} && $part_pkg->{_recur_fee};
+%         $str .= $opt{money_char}. $part_pkg->{_recur_fee}.
+%                 '/'. $part_pkg->freq_pretty
+%           if $part_pkg->{_recur_fee};
+%         $str;
+%
+%         $custom_comment = 
+%           ( $part_pkg->custom ? '(CUSTOM) ' : '' ).
+%           $part_pkg->comment.
+%           ( ($part_pkg->custom || $part_pkg->comment) ? ' - ' : '' ).
+%           ($str || 'No charge');
+%
+%       } else {
+%         $custom_comment = $part_pkg->custom_comment('cust_pkg'=>$cust_pkg);
+%       }
         <% $custom_comment ? ' - ' : '' %>
         <% $custom_comment |h %>
       </TD>
