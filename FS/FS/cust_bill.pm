@@ -651,47 +651,6 @@ sub cust_suspend_if_balance_over {
   }
 }
 
-=item cust_credit
-
-Depreciated.  See the cust_credited method.
-
- #Returns a list consisting of the total previous credited (see
- #L<FS::cust_credit>) and unapplied for this customer, followed by the previous
- #outstanding credits (FS::cust_credit objects).
-
-=cut
-
-sub cust_credit {
-  use Carp;
-  croak "FS::cust_bill->cust_credit depreciated; see ".
-        "FS::cust_bill->cust_credit_bill";
-  #my $self = shift;
-  #my $total = 0;
-  #my @cust_credit = sort { $a->_date <=> $b->_date }
-  #  grep { $_->credited != 0 && $_->_date < $self->_date }
-  #    qsearch('cust_credit', { 'custnum' => $self->custnum } )
-  #;
-  #foreach (@cust_credit) { $total += $_->credited; }
-  #$total, @cust_credit;
-}
-
-=item cust_pay
-
-Depreciated.  See the cust_bill_pay method.
-
-#Returns all payments (see L<FS::cust_pay>) for this invoice.
-
-=cut
-
-sub cust_pay {
-  use Carp;
-  croak "FS::cust_bill->cust_pay depreciated; see FS::cust_bill->cust_bill_pay";
-  #my $self = shift;
-  #sort { $a->_date <=> $b->_date }
-  #  qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
-  #;
-}
-
 =item cust_bill_pay
 
 Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice.
