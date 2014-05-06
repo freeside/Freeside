@@ -1539,6 +1539,28 @@ sub unit_setup {
   $self->option('setup_fee') || 0;
 }
 
+=item setup_margin
+
+unit_setup minus setup_cost
+
+=cut
+
+sub setup_margin {
+  my $self = shift;
+  $self->unit_setup(@_) - $self->setup_cost;
+}
+
+=item recur_margin_permonth
+
+base_recur_permonth minus recur_cost_permonth
+
+=cut
+
+sub recur_margin_permonth {
+  my $self = shift;
+  $self->base_recur_permonth(@_) - $self->recur_cost_permonth(@_);
+}
+
 =item format OPTION DATA
 
 Returns data formatted according to the function 'format' described
