@@ -1003,6 +1003,7 @@ sub search {
 
   my @select = (
                  'cust_main.custnum',
+                 'cust_main.salesnum',
                  # there's a good chance that we'll need these
                  'cust_main.bill_locationnum',
                  'cust_main.ship_locationnum',
