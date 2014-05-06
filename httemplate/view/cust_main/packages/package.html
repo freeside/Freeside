@@ -49,7 +49,7 @@
 %
 %             if ( $curuser->access_right('Discount customer package')
 %                  && $part_pkg->can_discount
-%                  && ! scalar($cust_pkg->cust_pkg_discount_active)
+%                  && ! scalar( @{ $cust_pkg->{_cust_pkg_discount_active} } )
 %                  && ! scalar($cust_pkg->part_pkg->part_pkg_discount)
 %                )
 %             {

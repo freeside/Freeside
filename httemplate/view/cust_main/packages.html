@@ -313,4 +313,9 @@ $num_old_packages -= scalar(@packages);
 # (as will change-target packages)
 @packages = grep !$_->main_pkgnum, @packages;
 
+foreach my $cust_pkg ( @packages ) {
+  $cust_pkg->{'_cust_pkg_discount_active'} =
+   [ $cust_pkg->cust_pkg_discount_active ];
+}
+
 </%init>
