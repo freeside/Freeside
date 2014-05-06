@@ -492,7 +492,7 @@ sub pkg_status_row_discount {
 
   my $html;
 
-  foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
+  foreach my $cust_pkg_discount (@{ $cust_pkg->{_cust_pkg_discount_active} }) {
 
     my $discount = $cust_pkg_discount->discount;
 
