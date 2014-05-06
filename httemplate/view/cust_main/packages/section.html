@@ -107,6 +107,7 @@ my %conf_opt = (
   'manage_link_loc'           => scalar($conf->config('svc_broadband-manage_link_loc')),
   'manage_link-new_window'    => $conf->exists('svc_broadband-manage_link-new_window'),
   'cust_pkg-large_pkg_size'   => scalar($conf->config('cust_pkg-large_pkg_size')),
+  'cust_pkg-hide_discontinued-part_svc' => $conf->exists('cust_pkg-hide_discontinued-part_svc'),
 
 );
 

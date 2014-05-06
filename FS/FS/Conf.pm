@@ -3456,6 +3456,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_pkg-hide_discontinued-part_svc',
+    'section'     => 'UI',
+    'description' => "In customer view, hide provisioned services which are no longer available in the package definition.  Not normally used except for very specific situations as it hides still-provisioned services.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_acct-edit_uid',
     'section'     => 'shell',
     'description' => 'Allow UID editing.',

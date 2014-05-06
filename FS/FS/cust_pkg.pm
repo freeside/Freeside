@@ -2996,17 +2996,35 @@ following extra fields:
 
 =over 4
 
-=item num_cust_svc  (count)
+=item num_cust_svc
 
-=item num_avail     (quantity - count)
+(count)
 
-=item cust_pkg_svc (services) - array reference containing the provisioned services, as cust_svc objects
+=item num_avail
+
+(quantity - count)
+
+=item cust_pkg_svc
+
+(services) - array reference containing the provisioned services, as cust_svc objects
 
 =back
 
-Accepts one option: summarize_size.  If specified and non-zero, will omit the
-extra cust_pkg_svc option for objects where num_cust_svc is this size or
-greater.
+Accepts two options:
+
+=over 4
+
+=item summarize_size
+
+If true, will omit the extra cust_pkg_svc option for objects where num_cust_svc
+is this size or greater.
+
+=item hide_discontinued
+
+If true, will omit looking for services that are no longer avaialble in the
+package definition.
+
+=back
 
 =cut
 
@@ -3035,16 +3053,18 @@ sub part_svc {
     $part_svc;
   } $self->part_pkg->pkg_svc;
 
-  #extras
-  push @part_svc, map {
-    my $part_svc = $_;
-    my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
-    $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #speak no evail
-    $part_svc->{'Hash'}{'num_avail'}    = 0; #0-$num_cust_svc ?
-    $part_svc->{'Hash'}{'cust_pkg_svc'} =
-      $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
-    $part_svc;
-  } $self->extra_part_svc;
+  unless ( $opt{hide_discontinued} ) {
+    #extras
+    push @part_svc, map {
+      my $part_svc = $_;
+      my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
+      $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #speak no evail
+      $part_svc->{'Hash'}{'num_avail'}    = 0; #0-$num_cust_svc ?
+      $part_svc->{'Hash'}{'cust_pkg_svc'} =
+        $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
+      $part_svc;
+    } $self->extra_part_svc;
+  }
 
   @part_svc;
 
