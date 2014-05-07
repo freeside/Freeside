@@ -5701,6 +5701,13 @@ and customer address. Include units.',
 			 },
   },
 
+  {
+    'key'         => 'part_pkg-term_discounts',
+    'section'     => 'billing',
+    'description' => 'Enable the term discounts feature.  Recommended to keep turned off unless actually using - not well optimized for large installations.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
