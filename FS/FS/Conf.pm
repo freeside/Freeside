@@ -2869,6 +2869,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-password_change_oldpass',
+    'section'     => 'self-service',
+    'description' => 'Require old password to be entered again for password changes (in addition to being logged in), at the API level.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'selfservice-hide_invoices-taxclass',
     'section'     => 'self-service',
     'description' => 'Hide invoices with only this package tax class from self-service and supress sending (emailing, printing, faxing) them.  Typically set to something like "Previous balance" and used when importing legacy invoices into legacy_cust_bill.',
