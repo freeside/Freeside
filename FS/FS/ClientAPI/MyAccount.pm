@@ -2860,6 +2860,13 @@ sub myaccount_passwd {
   my $error = '';
 
   my $conf = new FS::Conf;
+
+  return { 'error' => 'Incorrect current password.' }
+    if  ( exists($p->{'old_password'})
+          || $conf->exists('selfservice-password_change_oldpass')
+        )
+    && ! $svc_acct->check_password($p->{'old_password'});
+
   $error = 'Password too short.'
     if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
   $error = 'Password too long.'
