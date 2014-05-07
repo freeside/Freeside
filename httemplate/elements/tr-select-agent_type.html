@@ -1,8 +1,8 @@
-%#% if ( scalar(@agent_types) == 1 ) { 
-%#
-%#  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'typenum' %>" VALUE="<% $agent_types[0]->typenum %>">
-%#
-%#% } else { 
+% if ( scalar(@agent_types) == 1 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'typenum' %>" VALUE="<% $agent_types[0]->typenum %>">
+
+% } else { 
 
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Agent Type' %></TD>
@@ -15,7 +15,7 @@
     </TD>
   </TR>
 
-%#% } 
+% } 
 
 <%init>
 

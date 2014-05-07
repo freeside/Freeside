@@ -50,8 +50,7 @@ my $precheck_callback = sub {
   }
   return "At least one agent type must be specified."
     unless scalar(@agents)
-           || ( $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ )
-           || ( !$cgi->param('pkgpart') && $conf->exists('agent-defaultpkg') )
+           #wtf? || ( $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ )
            || $cgi->param('disabled')
            || $cgi->param('agentnum');
 
@@ -232,18 +231,16 @@ foreach my $override_class ($cgi->param) {
 
 my $conf = new FS::Conf;
 
-if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
-  my @agents = ();
-  foreach ($cgi->param('agent_type')) {
-    /^(\d+)$/;
-    push @agents, $1 if $1;
-  }
-  push @process_m2m, {
-    'link_table'   => 'type_pkgs',
-    'target_table' => 'agent_type',
-    'params'       => \@agents,
-  };
+my @agents = ();
+foreach ($cgi->param('agent_type')) {
+  /^(\d+)$/;
+  push @agents, $1 if $1;
 }
+push @process_m2m, {
+  'link_table'   => 'type_pkgs',
+  'target_table' => 'agent_type',
+  'params'       => \@agents,
+};
 
 my @process_o2m = (
   {
