@@ -218,23 +218,6 @@ sub insert {
     }
   }
 
-  my $conf = new FS::Conf;
-  if ( $conf->exists('agent_defaultpkg') ) {
-    warn "  agent_defaultpkg set; allowing all agents to purchase package"
-      if $DEBUG;
-    foreach my $agent_type ( qsearch('agent_type', {} ) ) {
-      my $type_pkgs = new FS::type_pkgs({
-        'typenum' => $agent_type->typenum,
-        'pkgpart' => $self->pkgpart,
-      });
-      my $error = $type_pkgs->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-    }
-  }
-
   warn "  inserting part_pkg_taxoverride records" if $DEBUG;
   my %overrides = %{ $options{'tax_overrides'} || {} };
   foreach my $usage_class ( keys %overrides ) {
