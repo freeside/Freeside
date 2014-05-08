@@ -135,6 +135,10 @@ function areyousure(href, message) {
 % }
 <% $email_link || '' %>
 
+% if ( $curuser->access_right('Order customer package') && $conf->exists('cust_main-enable_order_package') ) {
+  | <& /elements/order_pkg_link.html, 'cust_main'=>$cust_main &>
+% }
+
 % if ( $conf->config('cust_main-external_links') ) {
     <% $br++ ? ' | ' : '' %>
 %   my @links = split(/\n/, $conf->config('cust_main-external_links'));
