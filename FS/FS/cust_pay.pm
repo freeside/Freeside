@@ -1100,12 +1100,14 @@ sub process_upgrade_paybatch {
     foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
       my $and_batchnum_is_null =
         ( $table =~ /^cust_pay/ ? ' AND batchnum IS NULL' : '' );
+      my $pkey = ($table =~ /^cust_pay/ ? 'paynum' : 'refundnum');
       my $search = FS::Cursor->new({
         table     => $table,
         extra_sql => "WHERE payby IN('CARD','CHEK') ".
                      "AND (paybatch IS NOT NULL ".
                      "OR (paybatch IS NULL AND auth IS NULL
-                     $and_batchnum_is_null ) )",
+                     $and_batchnum_is_null ) )
+                     ORDER BY $pkey DESC"
       });
       while ( my $object = $search->fetch ) {
         if ( $object->paybatch eq '' ) {
