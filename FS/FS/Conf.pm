@@ -3896,6 +3896,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-enable_order_package',
+    'section'     => 'UI',
+    'description' => 'Display order new package on the basic tab',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-edit_calling_list_exempt',
     'section'     => 'UI',
     'description' => 'Display the "calling_list_exempt" checkbox on customer edit.',
