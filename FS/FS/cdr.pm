@@ -911,7 +911,7 @@ sub rate_prefix {
         $charge_sec -= ($included_min->{$regionnum}{$ratetimenum} * 60);
         $included_min->{$regionnum}{$ratetimenum} = 0;
       }
-    } elsif ( ${ $opt{'plan_included_min'} } > 0 ) {
+    } elsif ( $opt{plan_included_min} && ${ $opt{plan_included_min} } > 0 ) {
       # The package definition has included minutes, but only for in-group
       # rate details.  Decrement them if this is an in-group call.
       if ( $rate_detail->region_group ) {
