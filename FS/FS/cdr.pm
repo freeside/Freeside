@@ -896,8 +896,8 @@ sub rate_prefix {
       # The rate detail itself has included minutes.  We MUST have a place
       # to track them.
       my $included_min = $opt{'detail_included_min_hashref'}
-        or die "unable to rate CDR: rate detail has included minutes, but ".
-               "no detail_included_min_hashref provided.\n";
+        or return "unable to rate CDR: rate detail has included minutes, but ".
+                  "no detail_included_min_hashref provided.\n";
 
       # by default, set the included minutes for this region/time to
       # what's in the rate_detail
