@@ -33,11 +33,12 @@ if ( @cdrtypenums ) {
   $extra_sql .= ' AND cdrtypenum IN ('. join(',', @cdrtypenums ). ')';
 }
 
-our %svcnum = ();   # phonenum => svcnum
-our %pkgnum = ();   # phonenum => pkgnum
-our %cust_pkg = (); # pkgnum   => cust_pkg (NOT phonenum => cust_pkg!)
-our %pkgpart = ();  # phonenum => pkgpart
-our %part_pkg = (); # pkgpart  => part_pkg
+#our %svcnum = ();   # phonenum => svcnum
+our %svc_phone = (); # phonenum => svc_phone
+our %pkgnum = ();    # phonenum => pkgnum
+our %cust_pkg = ();  # pkgnum   => cust_pkg (NOT phonenum => cust_pkg!)
+our %pkgpart = ();   # phonenum => pkgpart
+our %part_pkg = ();  # pkgpart  => part_pkg
 
 #some false laziness w/freeside-cdrrewrited
 
@@ -76,7 +77,7 @@ while (1) {
         if $prefix eq substr($number, 0, length($prefix));
     }
 
-    unless ( $svcnum{$number} ) {
+    unless ( $svc_phone{$number} ) {
       #only phone number matching supported right now
       my $svc_phone = qsearchs('svc_phone', { 'phonenum' => $number } );
       unless ( $svc_phone ) {
@@ -84,9 +85,13 @@ while (1) {
         next;
       }
 
-      $svcnum{$number} = $svc_phone->svcnum;
+      $svc_phone{$number} = $svc_phone;
 
-      my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+    }
+
+    unless ( $pkgnum{$number} ) {
+
+      my $cust_pkg = $svc_phone{$number}->cust_svc->cust_pkg;
       unless ( $cust_pkg ) {
         #XXX unlinked svc_phone?
         # warn and also set freesideratestatus or somesuch?
@@ -95,6 +100,10 @@ while (1) {
 
       $pkgnum{$number} = $cust_pkg->pkgnum;
       $cust_pkg{$cust_pkg->pkgnum} ||= $cust_pkg;
+
+    }
+
+    unless ( $pkgpart{$number} ) {
 
       #get the package, search through the part_pkg and linked for a voip_cdr def w/matching cdrtypenum (or no use_cdrtypenum)
       my @part_pkg =
@@ -109,7 +118,7 @@ while (1) {
                     )
 
              }
-          $cust_pkg->part_pkg->self_and_bill_linked;
+          $cust_pkg{ $pkgnum{$number} }->part_pkg->self_and_bill_linked;
 
       if ( ! @part_pkg ) {
         #XXX no package for this CDR
@@ -137,7 +146,7 @@ while (1) {
     my $error = $cdr->rate(
       'part_pkg' => $part_pkg{ $pkgpart{$number} },
       'cust_pkg' => $cust_pkg{ $pkgnum{$number} },
-      'svcnum'   => $svcnum{$number},
+      'svcnum'   => $svc_phone{$number}->svcnum,
     );
     if ( $error ) {
       #XXX ???
