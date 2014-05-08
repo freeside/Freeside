@@ -149,9 +149,8 @@ while (1) {
       'svcnum'   => $svc_phone{$number}->svcnum,
     );
     if ( $error ) {
-      #XXX ???
-      warn $error;
-      sleep 30;
+      warn "Can't prerate CDR ". $cdr->acctid. ' to '. $cdr->dst. ": $error";
+      #could be an included minutes CDR, so don't sleep 30;
     } else {
 
       #this could get expensive on a per-call basis
