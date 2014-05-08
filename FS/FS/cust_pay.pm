@@ -933,7 +933,7 @@ sub unapplied_sql {
 use FS::h_cust_pay;
 
 sub _upgrade_data {  #class method
-  my ($class, %opts) = @_;
+  my ($class, %opt) = @_;
 
   warn "$me upgrading $class\n" if $DEBUG;
 
@@ -1047,8 +1047,32 @@ sub _upgrade_data {  #class method
   ###
 
   delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
-  $class->_upgrade_otaker(%opts);
+  $class->_upgrade_otaker(%opt);
   $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
+
+  # if we do this anywhere else, it should become an FS::Upgrade method
+  my $num_to_upgrade = $class->count('paybatch is not null');
+  my $num_jobs = FS::queue->count('job = \'FS::cust_pay::process_upgrade_paybatch\' and status != \'failed\'');
+  if ( $num_to_upgrade > 0 ) {
+    warn "Need to migrate paybatch field in $num_to_upgrade payments.\n";
+    if ( $opt{queue} ) {
+      if ( $num_jobs > 0 ) {
+        warn "Upgrade already queued.\n";
+      } else {
+        warn "Scheduling upgrade.\n";
+        my $job = FS::queue->new({ job => 'FS::cust_pay::process_upgrade_paybatch' });
+        $job->insert;
+      }
+    } else {
+      process_upgrade_paybatch();
+    }
+  }
+}
+
+sub process_upgrade_paybatch {
+  my $dbh = dbh;
+  local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
+  local $FS::UID::AutoCommit = 1;
 
   ###
   # migrate batchnums from the misused 'paybatch' field to 'batchnum'
