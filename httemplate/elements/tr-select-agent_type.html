@@ -22,6 +22,6 @@
 my %opt = @_;
 my $typenum = $opt{'curr_value'} || $opt{'value'};
 
-delete $opt{'agent_types'} if $opt{'agent_types'}; #?
+my @agent_types = qsearch('agent_type', {});
 
 </%init>
