@@ -2291,12 +2291,28 @@ sub _items_fee {
       }
     } # otherwise include them all in the main section
     # XXX what to do when sectioning by location?
+    
+    my @ext_desc;
+    my %base_invnums; # invnum => invoice date
+    foreach ($cust_bill_pkg->cust_bill_pkg_fee) {
+      if ($_->base_invnum) {
+        my $base_bill = FS::cust_bill->by_key($_->base_invnum);
+        my $base_date = $self->time2str_local('short', $base_bill->_date)
+          if $base_bill;
+        $base_invnums{$_->base_invnum} = $base_date || '';
+      }
+    }
+    foreach (sort keys(%base_invnums)) {
+      next if $_ == $self->invnum;
+      push @ext_desc,
+        $self->mt('from invoice \\#[_1] on [_2]', $_, $base_invnums{$_});
+    }
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
         description => $part_fee->itemdesc_locale($self->cust_main->locale),
+        ext_description => \@ext_desc
         # sdate/edate?
-        # ext_description referencing the base_invnum?
       };
   }
   @items;

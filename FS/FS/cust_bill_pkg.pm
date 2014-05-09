@@ -906,6 +906,18 @@ sub cust_tax_exempt_pkg {
   $self->{Hash}->{cust_tax_exempt_pkg} ||= [];
 }
 
+=item cust_bill_pkg_fee
+
+Returns the list of associated cust_bill_pkg_fee objects, if this is 
+a fee-type item.
+
+=cut
+
+sub cust_bill_pkg_fee {
+  my $self = shift;
+  qsearch('cust_bill_pkg_fee', { billpkgnum => $self->billpkgnum });
+}
+
 =item cust_bill_pkg_tax_Xlocation
 
 Returns the list of associated cust_bill_pkg_tax_location and/or
