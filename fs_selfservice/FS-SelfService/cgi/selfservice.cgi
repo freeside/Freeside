@@ -181,9 +181,6 @@ unless ( $nologin_actions{$action} ) {
   } # else there is no session cookie
 
   if ( !$session_id ) {
-    # XXX why are we getting agentnum from a CGI param? surely it should 
-    # be some kind of configuration option.
-    #
     # show the login page
     $session_id = 'login'; # set state
     my $login_info = login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
@@ -208,7 +205,7 @@ if ( $result->{error} && ( $result->{error} eq "Can't resume session"
   || $result->{error} eq "Expired session") ) { #ick
 
   $session_id = 'login';
-  my $login_info = login_info();
+  my $login_info = login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
   do_template('login', $login_info);
   exit;
 }
