@@ -11,6 +11,7 @@ use FS::cust_location;
 use FS::contact_phone;
 use FS::contact_email;
 use FS::queue;
+use FS::cust_pkg;
 
 =head1 NAME
 
@@ -210,6 +211,15 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  foreach my $cust_pkg ( $self->cust_pkg ) {
+    $cust_pkg->contactnum('');
+    my $error = $cust_pkg->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   foreach my $object ( $self->contact_phone, $self->contact_email ) {
     my $error = $object->delete;
@@ -490,6 +500,12 @@ sub cust_main {
   my $self = shift;
   qsearchs('cust_main', { 'custnum' => $self->custnum  } );
 }
+
+sub cust_pkg {
+  my $self = shift;
+  qsearch('cust_pkg', { 'contactnum' => $self->contactnum  } );
+}
+
 
 sub by_selfservice_email {
   my($class, $email) = @_;
