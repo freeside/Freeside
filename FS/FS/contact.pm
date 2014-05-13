@@ -207,6 +207,15 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  foreach my $cust_pkg ( $self->cust_pkg ) {
+    $cust_pkg->contactnum('');
+    my $error = $cust_pkg->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   foreach my $object ( $self->contact_phone, $self->contact_email ) {
     my $error = $object->delete;
     if ( $error ) {
