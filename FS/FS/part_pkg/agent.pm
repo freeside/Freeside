@@ -102,11 +102,15 @@ sub calc_recur {
           if $DEBUG;
 
         my $pkg_details = $cust_main->name_short. ': '; #name?
+
+        my $part_pkg = $cust_pkg->part_pkg;
+
         # + something to identify package... primary service probably
+        # no... package def for now
+        $pkg_details .= $part_pkg->pkg. ': ';
 
         my $pkg_charge = 0;
 
-        my $part_pkg = $cust_pkg->part_pkg;
         #option to not fallback? via options above
         my $pkg_setup_fee  =
           $part_pkg->setup_cost || $part_pkg->option('setup_fee');
