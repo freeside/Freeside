@@ -741,8 +741,7 @@ if ( $curuser->access_right('Configuration' ) ) {
 }
 
 $config_menu{'Billing'} = [ \%config_billing, '' ]
-  if $curuser->access_right('Edit billing events')
-  || $curuser->access_right('Edit global billing events');
+  if keys %config_billing;
 $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
   if $conf->config('ticket_system')
   && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');
