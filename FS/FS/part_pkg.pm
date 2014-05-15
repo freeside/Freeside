@@ -10,6 +10,7 @@ use Time::Local qw( timelocal timelocal_nocheck ); # eventually replace with Dat
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
+use FS::Cursor; # for upgrade
 use FS::pkg_svc;
 use FS::part_svc;
 use FS::cust_pkg;
@@ -1611,16 +1612,20 @@ sub _upgrade_data { # class method
     $part_pkg->replace;
 
   }
+  # the rest can be done asynchronously
+}
 
+sub queueable_upgrade {
   # now upgrade to the explicit custom flag
 
-  @part_pkg = qsearch({
+  my $search = FS::Cursor->new({
     'table'     => 'part_pkg',
     'hashref'   => { disabled => 'Y', custom => '' },
     'extra_sql' => "AND comment LIKE '(CUSTOM) %'",
   });
+  my $dbh = dbh;
 
-  foreach my $part_pkg (@part_pkg) {
+  while (my $part_pkg = $search->fetch) {
     my $new = new FS::part_pkg { $part_pkg->hash };
     $new->custom('Y');
     my $comment = $part_pkg->comment;
@@ -1637,15 +1642,25 @@ sub _upgrade_data { # class method
                                'primary_svc' => $primary,
                                'options'     => $options,
                              );
-    die $error if $error;
+    if ($error) {
+      warn "pkgpart#".$part_pkg->pkgpart.": $error\n";
+      $dbh->rollback;
+    } else {
+      $dbh->commit;
+    }
   }
 
   # set family_pkgpart on any packages that don't have it
-  @part_pkg = qsearch('part_pkg', { 'family_pkgpart' => '' });
-  foreach my $part_pkg (@part_pkg) {
+  $search = FS::Cursor->new('part_pkg', { 'family_pkgpart' => '' });
+  while (my $part_pkg = $search->fetch) {
     $part_pkg->set('family_pkgpart' => $part_pkg->pkgpart);
     my $error = $part_pkg->SUPER::replace;
-    die $error if $error;
+    if ($error) {
+      warn "pkgpart#".$part_pkg->pkgpart.": $error\n";
+      $dbh->rollback;
+    } else {
+      $dbh->commit;
+    }
   }
 
   my @part_pkg_option = qsearch('part_pkg_option',
@@ -1756,7 +1771,7 @@ sub _upgrade_data { # class method
       }
     } # $bad_upgrade exists
     else { # do the original upgrade, but correctly this time
-      @part_pkg = qsearch('part_pkg', {
+      my @part_pkg = qsearch('part_pkg', {
           fcc_ds0s        => { op => '>', value => 0 },
           fcc_voip_class  => ''
       });
