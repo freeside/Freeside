@@ -884,7 +884,15 @@ my $html_bottom = sub {
                    ? ' CHECKED'
                    : ''
                  ). '>';
-  
+
+      } elsif ( $href->{$field}{'type'} eq 'select-rate' ) {
+
+        $html .= include('/elements/select-rate.html',
+                           map { $_ => $href->{$field}{$_} }
+                             grep { $_ !~ /^(name|type)$/ }
+                               keys %{ $href->{$field} }
+                        );
+
       } elsif ( $href->{$field}{'type'} =~ /^select/ ) {
   
         $html .= '<SELECT';

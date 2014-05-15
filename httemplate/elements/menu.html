@@ -603,15 +603,19 @@ tie my %config_sales, 'Tie::IxHash',
   'Sales People' => [ $fsurl.'browse/sales.html', 'Sales people bring in new business.' ],
 ;
 
-tie my %config_billing_rates, 'Tie::IxHash',
-  'Rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
-  'Regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
-  'Usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation.' ],
-  'Time periods' => [ $fsurl.'browse/rate_time.html', 'Time periods define days and hours for rate plans' ],
-  'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ], #"Edit with Excel" ?
-  'separator'     => '', #its a separator!
-  'Tiering plans' => [ $fsurl.'browse/rate_tier.html', 'Rating tiers' ],
-;
+tie my %config_billing_rates, 'Tie::IxHash';
+$config_billing_rates{'Rate plans'} = [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ]
+  if $curuser->access_right('Edit CDR rates')
+  #|| $curuser->access_right('Edit global CDR rates')
+  || $curuser->access_right('Configuration');
+if ( $curuser->access_right('Configuration') ) {
+  $config_billing_rates{'Regions and prefixes'} = [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ];
+  $config_billing_rates{'Usage classes'} = [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation.' ];
+  $config_billing_rates{'Time periods'} = [ $fsurl.'browse/rate_time.html', 'Time periods define days and hours for rate plans' ];
+  $config_billing_rates{'Edit rates with Excel'} = [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ]; #"Edit with Excel" ?
+  $config_billing_rates{'separator'} = ''; #its a separator!
+  $config_billing_rates{'Tiering plans'} = [ $fsurl.'browse/rate_tier.html', 'Rating tiers' ];
+}
 
 tie my %config_billing, 'Tie::IxHash';
 #  'Payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
@@ -623,7 +627,11 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'Invoice configurations'}      = [ $fsurl.'browse/invoice_conf.html', 'Adjust invoice settings for special-purpose notices' ];
   $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
-  $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+}
+$config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ]
+  if keys %config_billing_rates;
+
+if ( $curuser->access_right('Configuration') ) {
 
   my $config_taxes_name = 'Locales and tax rates'.
                           ( $conf->exists('enable_taxproducts')

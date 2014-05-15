@@ -357,6 +357,9 @@ tie my %rights, 'Tie::IxHash',
 
     'Bulk edit package definitions',
 
+    'Edit CDR rates',
+    #{ rightname=>'Edit global CDR rates', global=>1, },
+
     'Edit fee definitions',
     { rightname=>'Edit global fee definitions', global=>1 },
 
