@@ -4750,12 +4750,18 @@ sub tables_hashref {
 
     'rate' => {
       'columns' => [
-        'ratenum',  'serial', '', '', '', '', 
-        'ratename', 'varchar', '', $char_d, '', '', 
+        'ratenum',   'serial',     '',      '', '', '', 
+        'ratename', 'varchar',     '', $char_d, '', '', 
+        'agentnum',     'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'ratenum',
       'unique'      => [],
       'index'       => [],
+      'foreign_keys' => [
+                          { columns    => [ 'agentnum' ],
+                            table      => 'agent',
+                          },
+                        ],
     },
 
     'rate_detail' => {
