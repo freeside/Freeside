@@ -1944,7 +1944,7 @@ sub tables_hashref {
       'columns' => [
         'pkgusagenum', 'serial', '', '', '', '',
         'pkgnum',         'int', '', '', '', '',
-        'minutes',        'int', '', '', '', '',
+        'minutes',        'double precision', '', '', '', '',
         'pkgusagepart',   'int', '', '', '', '',
       ],
       'primary_key' => 'pkgusagenum',
@@ -1957,7 +1957,7 @@ sub tables_hashref {
         'cdrusagenum', 'bigserial', '', '', '', '',
         'acctid',      'bigint',    '', '', '', '',
         'pkgusagenum', 'int',       '', '', '', '',
-        'minutes',     'int',       '', '', '', '',
+        'minutes',     'double precision',       '', '', '', '',
       ],
       'primary_key' => 'cdrusagenum',
       'unique' => [],
@@ -3285,7 +3285,7 @@ sub tables_hashref {
       'columns' => [
         'pkgusagepart', 'serial',   '', '', '', '',
         'pkgpart',  'int',      '', '', '', '',
-        'minutes',  'int',      '', '', '', '',
+        'minutes',  'double precision',      '', '', '', '',
         'priority', 'int',  'NULL', '', '', '',
         'shared',   'char', 'NULL',  1, '', '',
         'rollover', 'char', 'NULL',  1, '', '',

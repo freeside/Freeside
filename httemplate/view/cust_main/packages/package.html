@@ -283,7 +283,7 @@
 %     $trstyle = ' CLASS="shared"' if $part->shared;
     <TR<%$trstyle%>>
       <TD ALIGN="right"><% $part->description %>: </TD>
-      <TD <%$color%> ALIGN="right"><% $usage->minutes %></TD>
+      <TD <%$color%> ALIGN="right"><% sprintf('%.1f', $usage->minutes) %></TD>
       <TD <%$color%>> / </TD>
       <TD <%$color%>><% $part->minutes %></TD>
 %     if ( $part->shared ) {

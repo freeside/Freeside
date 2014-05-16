@@ -1720,7 +1720,7 @@ sub list_svcs {
     my $tag = $part->description . ($part->shared ? 1 : 0);
     my $row = $usage_pools{$tag} 
           ||= [ $part->description, 0, 0, $part->shared ? 1 : 0 ];
-    $row->[1] += $_->minutes; # minutes remaining
+    $row->[1] += sprintf('%.1f', $_->minutes); # minutes remaining
     $row->[2] += $part->minutes; # minutes total
   }
 
