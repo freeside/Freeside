@@ -86,7 +86,7 @@ sub check {
     $self->ut_numbern('cdrusagenum')
     || $self->ut_foreign_key('acctid', 'cdr', 'acctid')
     || $self->ut_foreign_key('pkgusagenum', 'cust_pkg_usage', 'pkgusagenum')
-    || $self->ut_number('minutes')
+    || $self->ut_float('minutes')
   ;
   return $error if $error;
 

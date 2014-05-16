@@ -4015,7 +4015,7 @@ sub apply_usage {
         minutes     => min($cust_pkg_usage->minutes, $minutes),
     });
     $cust_pkg_usage->set('minutes',
-      sprintf('%.0f', $cust_pkg_usage->minutes - $cdr_cust_pkg_usage->minutes)
+      $cust_pkg_usage->minutes - $cdr_cust_pkg_usage->minutes
     );
     $error = $cust_pkg_usage->replace || $cdr_cust_pkg_usage->insert;
     $minutes -= $cdr_cust_pkg_usage->minutes;
