@@ -245,6 +245,7 @@ sub _upgrade_data { # class method
     'Services: Accounts' => 'Services: Video',
     'Edit global package definitions' => 'Edit package definition costs',
     'Add on-the-fly credit reason' => 'Add on-the-fly refund reason',
+    'Configuration' => 'Edit global fee definitions',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

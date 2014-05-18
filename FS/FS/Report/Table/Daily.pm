@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Report::Table;
 use FS::Conf;
-use Time::Local qw( timelocal );
+use Time::Local qw( timelocal timelocal_nocheck ); # eventually replace with DateTime
 use Date::Format qw( time2str );
 
 @ISA = qw( FS::Report::Table );
@@ -69,12 +69,15 @@ sub data {
   #warn "daily range $sdate $edate\n";
 
   # XXX: use date_format config for the labels since we have day in the labels now?
-  # XXX: leap seconds / DST 
   while ( $sdate < $edate ) {
     push @{$data{label}}, time2str($date_format, $sdate);
 
     my $speriod = $sdate;
-    $sdate += 86400;
+
+    #ala part_pkg->add_freq, to deal with local DST.  DateTime also a good idea
+    my ($mday,$mon,$year) = (localtime($sdate) )[3,4,5];
+    $sdate = timelocal_nocheck(0,0,0,$mday+1,$mon,$year);
+
     my $eperiod = $sdate;
 
     push @{$data{speriod}}, $speriod;

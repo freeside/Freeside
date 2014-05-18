@@ -1,12 +1,6 @@
 <% include( 'elements/browse.html',
               'title'       => 'Rate plans',
-              'menubar'     => [ 'Regions and Prefixes' =>
-                                   $p.'browse/rate_region.html',
-                                 'Time Periods' =>
-                                   $p.'browse/rate_time.html',
-                                 'CDR Types' =>
-                                   $p.'edit/cdr_type.cgi',
-                               ],
+              'menubar'     => \@menubar,
               'html_init'   => $html_init,
               'name'        => 'rate plans',
               'query'       => { 'table'     => 'rate',
@@ -17,6 +11,9 @@
               'header'      => [ '#',       'Rate plan', 'Rates'    ],
               'fields'      => [ 'ratenum', 'ratename',  $rates_sub ],
               'links'       => [ $link,     $link,       ''         ],
+              'agent_virt'  => 1,
+              'agent_pos'   => 1,
+              'agent_null_right' => 'Configuration', #'Edit global CDR rates',
               'really_disable_download' => 1
           )
 %>
@@ -63,7 +60,20 @@ my $link = [ $p.'edit/rate.cgi?ratenum=', 'ratenum' ];
 </%once>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Edit CDR rates')
+  #||     $curuser->access_right('Edit global CDR rates')
+  ||     $curuser->access_right('Configuration');
+
+my @menubar;
+if ( $curuser->access_right('Configuration') ) { #, 'Edit global CDR rates') ) {
+  push @menubar,
+    'Regions and Prefixes' => $p.'browse/rate_region.html',
+    'Time Periods'         => $p.'browse/rate_time.html',
+    'CDR Types'            => $p.'edit/cdr_type.cgi',
+  ;
+}
 
 </%init>

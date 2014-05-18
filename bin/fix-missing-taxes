@@ -1,0 +1,151 @@
+#!/usr/bin/perl
+
+=head1 fix-missing-taxes
+
+Usage:
+  fix-missing-taxes <user> <start date>
+
+This script fixes CCH taxes that were calculated incorrectly due to a bug 
+in bundled package behavior in March 2014.  For all invoices since the start
+date, it recalculates taxes on all the non-tax items, generates credits for
+taxes that were originally overcharged, and creates new invoices for taxes
+that were undercharged.
+
+=cut
+
+use FS::UID qw(adminsuidsetup dbh);
+use FS::cust_bill;
+use FS::Record qw(qsearch);
+use List::Util 'sum';
+use DateTime::Format::Natural;
+
+use strict;
+
+my $usage = "usage: fix-missing-taxes <user> <start date>\n" ;
+my $user = shift or die $usage;
+adminsuidsetup($user);
+
+$FS::UID::AutoCommit = 0;
+
+my $parser = DateTime::Format::Natural->new;
+my $dt = $parser->parse_datetime(shift);
+die $usage unless $parser->success;
+
+my $date_filter = { _date => { op => '>=', value => $dt->epoch } };
+my @bills = qsearch('cust_bill', $date_filter);
+
+warn "Examining ".scalar(@bills)." invoices...\n";
+
+my %new_tax_items; # custnum => [ new taxes to charge ]
+my %cust_credits; # custnum => { tax billpkgnum => credit amount }
+
+foreach my $cust_bill (@bills) {
+  my $cust_main = $cust_bill->cust_main;
+  my $custnum = $cust_main->custnum;
+  my %taxlisthash;
+  my %old_tax;
+  my @nontax_items;
+
+  foreach my $item ($cust_bill->cust_bill_pkg) {
+    if ( $item->pkgnum == 0 ) {
+      $old_tax{ $item->itemdesc } = $item;
+    } else {
+      $cust_main->_handle_taxes( \%taxlisthash, $item );
+      push @nontax_items, $item;
+    }
+  }
+  my $tax_lines = $cust_main->calculate_taxes(
+    \@nontax_items,
+    \%taxlisthash,
+    $cust_bill->_date
+  );
+
+  my %new_tax = map { $_->itemdesc, $_ } @$tax_lines;
+  my %all = (%old_tax, %new_tax);
+  foreach my $taxname (keys(%all)) {
+    my $delta = sprintf('%.2f',
+                  ($new_tax{$taxname} ? $new_tax{$taxname}->setup : 0) -
+                  ($old_tax{$taxname} ? $old_tax{$taxname}->setup : 0)
+                );
+    if ( $delta >= 0.01 ) {
+      # create a tax adjustment
+      $new_tax_items{$custnum} ||= [];
+      my $item = $new_tax{$taxname};
+      foreach (@{ $item->cust_bill_pkg_tax_rate_location }) {
+        $_->set('amount',
+          sprintf('%.2f', $_->get('amount') * $delta / $item->get('setup'))
+        );
+      }
+      $item->set('setup', $delta);
+      push @{ $new_tax_items{$custnum} }, $new_tax{$taxname};
+    } elsif ( $delta <= -0.01 ) {
+      my $old_tax_item = $old_tax{$taxname};
+      $cust_credits{$custnum} ||= {};
+      $cust_credits{$custnum}{ $old_tax_item->billpkgnum } = -1 * $delta;
+    }
+  }
+}
+
+my $num_bills = 0;
+my $amt_billed = 0;
+# create new invoices for those that need them
+foreach my $custnum (keys %new_tax_items) {
+  my $cust_main = FS::cust_main->by_key($custnum);
+  my @cust_bill = $cust_main->cust_bill;
+  my $balance = $cust_main->balance;
+  my $previous_bill = $cust_bill[-1] if @cust_bill;
+  my $previous_balance = 0;
+  if ( $previous_bill ) {
+    $previous_balance = $previous_bill->billing_balance
+                      + $previous_bill->charged;
+  }
+
+  my $lines = $new_tax_items{$custnum};
+  my $total = sum( map { $_->setup } @$lines);
+  my $new_bill = FS::cust_bill->new({
+      'custnum'           => $custnum,
+      '_date'             => $^T,
+      'charged'           => sprintf('%.2f', $total),
+      'billing_balance'   => $balance,
+      'previous_balance'  => $previous_balance,
+      'cust_bill_pkg'     => $lines,
+  });
+  my $error = $new_bill->insert;
+  die "error billing cust#$custnum\n" if $error;
+  $num_bills++;
+  $amt_billed += $total;
+}
+print "Created $num_bills bills for a total of \$$amt_billed.\n";
+
+my $credit_reason = FS::reason->new_or_existing( 
+  reason  => 'Sales tax correction',
+  class   => 'R',
+  type    => 'Credit',
+);
+
+my $num_credits = 0;
+my $amt_credited = 0;
+# create credits for those that need them
+foreach my $custnum (keys %cust_credits) {
+  my $cust_main = FS::cust_main->by_key($custnum);
+  my $lines = $cust_credits{$custnum};
+  my @billpkgnums = keys %$lines;
+  my @amounts = values %$lines;
+  my $total = sprintf('%.2f', sum(@amounts));
+  next if $total < 0.01;
+  my $error = FS::cust_credit->credit_lineitems(
+    'custnum'     => $custnum,
+    'billpkgnums' => \@billpkgnums,
+    'setuprecurs' => [ map {'setup'} @billpkgnums ],
+    'amounts'     => \@amounts,,
+    'apply'       => 1,
+    'amount'      => $total,
+    'reasonnum'   => $credit_reason->reasonnum,
+  );
+  die "error crediting cust#$custnum\n" if $error;
+  $num_credits++;
+  $amt_credited += $total;
+}
+print "Created $num_credits credits for a total of \$$amt_credited.\n";
+
+dbh->commit;

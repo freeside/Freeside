@@ -154,6 +154,7 @@ sub send_email {
   
       unshift @mimeparts, { 
         'Type'        => ( $options{'content-type'} || 'text/plain' ),
+        'Charset'     => 'UTF-8',
         'Data'        => $options{'body'},
         'Encoding'    => ( $options{'content-type'} ? '-SUGGEST' : '7bit' ),
         'Disposition' => 'inline',
@@ -165,6 +166,7 @@ sub send_email {
         'Type'     => ( $options{'content-type'} || 'text/plain' ),
         'Data'     => $options{'body'},
         'Encoding' => ( $options{'content-type'} ? '-SUGGEST' : '7bit' ),
+        'Charset'  => 'UTF-8',
       );
 
     }
@@ -363,6 +365,7 @@ sub generate_email {
   $alternative->attach(
     'Type'        => 'text/plain',
     'Encoding'    => 'quoted-printable',
+    'Charset'     => 'UTF-8',
     #'Encoding'    => '7bit',
     'Data'        => $data,
     'Disposition' => 'inline',

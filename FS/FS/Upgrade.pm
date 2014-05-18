@@ -8,6 +8,7 @@ use File::Slurp;
 use FS::UID qw( dbh driver_name );
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch str2time_sql);
+use FS::queue;
 use FS::upgrade_journal;
 
 use FS::svc_domain;
@@ -91,6 +92,11 @@ sub upgrade_config {
     && length($conf->config('usps_webtools-userid')) > 0
     && ! $conf->exists('address_standardize_method');
 
+  # this option has been renamed/expanded
+  if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
+    $conf->touch('cust_main-enable_spouse');
+    $conf->delete('cust_main-enable_spouse_birthdate');
+  }
 }
 
 sub upgrade_overlimit_groups {
@@ -147,6 +153,26 @@ sub upgrade {
       my $start = time;
 
       $class->_upgrade_data(%opt);
+
+      # New interface for async upgrades: a class can declare a 
+      # "queueable_upgrade" method, which will run as part of the normal 
+      # upgrade, but if the -j option is passed, will instead be run from 
+      # the job queue.
+      if ( $class->can('queueable_upgrade') ) {
+        my $jobname = $class . '::queueable_upgrade';
+        my $num_jobs = FS::queue->count("job = '$jobname' and status != 'failed'");
+        if ($num_jobs > 0) {
+          warn "$class upgrade already scheduled.\n";
+        } else {
+          if ( $opt{'queue'} ) {
+            warn "Scheduling $class upgrade.\n";
+            my $job = FS::queue->new({ job => $jobname });
+            $job->insert($class, %opt);
+          } else {
+            $class->queueable_upgrade(%opt);
+          }
+        } #$num_jobs == 0
+      }
 
       if ( $oldAutoCommit ) {
         warn "  committing\n";

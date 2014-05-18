@@ -2,9 +2,8 @@
 
 use FS::Daemon::Preforking qw( freeside_init1 freeside_init2 daemon_run );
 
-use XMLRPC::Transport::HTTP; #SOAP::Transport::HTTP;
-use XMLRPC::Lite; # for XMLRPC::Serializer
-
+use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer
+                     #and XMLRPC::Transport::HTTP
 use FS::Conf;
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
@@ -17,8 +16,6 @@ my %typelookup = (
 );
 
 use constant ME => 'selfservice-xmlrpcd';
-
-#
 
 freeside_init1(ME);
 

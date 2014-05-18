@@ -1,26 +1,48 @@
-<% include('/elements/header.html', 'Customer Signup Summary' ) %>
+<& /elements/header.html, 'Customer Signup Summary' &>
 
 <FORM ACTION="cust_signup.html" METHOD="GET">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-<% include('/elements/tr-select-from_to.html' ) %>
+<TR>
+  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
+</TR>
 
-<% include('/elements/tr-select-agent.html',
-             'curr_value'    => scalar($cgi->param('agentnum')),
-             'label'         => 'For agent: ',
-             'disable_empty' => 0,
-          )
-%>
+<& /elements/tr-select-from_to.html &>
 
-<% include('/elements/tr-select-part_referral.html',
-             'curr_value'    => scalar($cgi->param('refnum')),
-             'label'         => 'Advertising source: ',
-             'disable_empty' => 0,
-             'pre_options'   => [ 'all' => 'all (aggregate)' ],
-             'empty_label'   => 'all (breakdown)',
-          )
-%>
+<& /elements/tr-select-agent.html,
+  'curr_value'    => scalar($cgi->param('agentnum')),
+  'label'         => 'For agent: ',
+  'disable_empty' => 0,
+&>
+
+<& /elements/tr-select-part_referral.html,
+  'curr_value'    => scalar($cgi->param('refnum')),
+  'label'         => 'Advertising source: ',
+  'disable_empty' => 0,
+  'pre_options'   => [ 'all' => 'all (aggregate)' ],
+  'empty_label'   => 'all (breakdown)',
+&>
+
+<& /elements/tr-select-cust_class.html,
+  'field'         => 'cust_classnum',
+  'label'         => 'Customer class ',
+  'multiple'      => 1,
+&>
+
+<& /elements/tr-select-pkg_class.html,
+  'field'         => 'pkg_classnum',
+  'label'         => 'With package of class ',
+  'multiple'      => 1,
+&>
+
+<TR>
+  <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+</TR>
+
+<TR>
+  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
+</TR>
 
 <& /elements/tr-td-label.html, label => 'Show customer referrals' &>
 <TD>
@@ -33,7 +55,7 @@
 <BR><INPUT TYPE="submit" VALUE="Display">
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 #XXX use a different ACL for package churn?

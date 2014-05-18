@@ -25,10 +25,26 @@ color:#505050;
   width:100%;
 }
 
+.pastoffmonthcalendardate {
+  text-align: right;
+  background-color: #e0e0e0;
+  width:100%;
+}
+
 .todayscalendardate {
   text-align: right;
   background-color: #fc6; /*#fad163*/
   width:100%;
+}
+
+.calendardate {
+  text-align: right;
+  width:100%;
+}
+
+.calendarright {
+  text-align: right;
+  float: right;
 }
 
 table.rtxcalendar {
@@ -55,8 +71,30 @@ table.rtxcalendar tbody th {
     font-weight: normal;
 }
 
+table.rtxcalendar td.weekly {
+    width: auto;
+}
+
+table.rtxcalendar td.weeklyselectable {
+    width: auto;
+}
+
+table.rtxcalendar td.weeklyselectable:hover {
+    cursor: pointer;
+}
+
 table.rtxcalendar td.offmonth {
     background: #f8f8f8;
+    color: #aaa;
+}
+
+table.rtxcalendar td.past {
+    background: #e8e8e8;
+    color: #aaa;
+}
+
+table.rtxcalendar td.pastoffmonth {
+    background: #e0e0e0;
     color: #aaa;
 }
 
@@ -71,5 +109,27 @@ table.rtxcalendar td.yesterday {
 
 table.rtxcalendar td.aweekago {
     border-bottom: none;
+}
+
+table.rtxcalendar td.controls {
+    background: #eeeeee;
+    width: 1%;
+    border-top: 1px solid #eeeeee;
+    border-left: 1px solid #eeeeee;
+    border-bottom: 1px solid #eeeeee;
+    border-right: 1px solid #eeeeee;
+    vertical-align: middle;
+}
+
+table.rtxcalendar td.controls:hover {
+    background-color: #CFDEFF;
+}
+
+table.rtxcalendar td.labels {
+    background: #eeeeee;
+    width: 1%;
+    border-top: 1px solid #eeeeee;
+    border-left: 1px solid #eeeeee;
+    border-bottom: 1px solid #eeeeee;
 }
 

@@ -41,7 +41,7 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
 
   dbh->{'private_profile'} = {};
 
-  s/(<\/BODY>[\s\n]*<\/HTML>[\s\n]*)$/$profile$1/i;
+  s/(<\/BODY>[\s\n]*<\/HTML>[\s\n]*)/$profile$1/i;
 }
 
 </%filter>

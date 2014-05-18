@@ -42,7 +42,8 @@ if ( $conf->exists('enable_taxproducts') ) {
   @tax_fields = (
     { field => 'taxable', type => 'checkbox', value => 'Y' },
   );
-  push (
+  push @tax_fields,
+  (
     { field => 'taxclass', type => 'select-taxclass' },
   ) if $conf->exists('enable_taxclasses');
 }
@@ -66,10 +67,10 @@ foreach (@locales) {
 $n = 0;
 my %layer_fields = (
   'charged' => [
-    'percent' => { label => 'Fraction of invoice total', type    => 'percentage', },
+    'charged_percent' => { label => 'Fraction of invoice total', type    => 'percentage', },
   ],
   'owed' => [
-    'percent' => { label => 'Fraction of balance', type    => 'percentage', },
+    'owed_percent' => { label => 'Fraction of balance', type    => 'percentage', },
   ],
   'usage' => [
     'usage'   => { type => 'part_fee_usage' }
@@ -105,7 +106,7 @@ my @fields = (
                  'recur'  => 'a recurring charge' },
   },
 
-  { type => 'justtitle', value => 'Fee calculation' },
+  { type => 'tablebreak-tr-title', value => 'Fee calculation' },
   { field   => 'amount',  type    => 'money', },
 
   { field   => 'basis',
@@ -118,8 +119,8 @@ my @fields = (
     layer_values_callback => sub {
       my ($cgi, $obj) = @_;
       {
-        'charged' => { percent => $obj->percent },
-        'owed'    => { percent => $obj->percent },
+        'charged' => { charged_percent => $obj->percent },
+        'owed'    => { owed_percent => $obj->percent },
         'usage'   => { usage => [ $obj->part_fee_usage ] },
       }
     },
@@ -130,7 +131,7 @@ my @fields = (
     type    => 'checkbox',
     value   => 'Y' },
 
-  { type => 'justtitle', value => 'Taxation' },
+  { type => 'tablebreak-tr-title', value => 'Taxation' },
 
   @tax_fields,
 );

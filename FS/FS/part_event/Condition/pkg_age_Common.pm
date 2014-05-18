@@ -13,6 +13,7 @@ tie our %dates, 'Tie::IxHash',
   'expire'       => 'Expiration date',
   'cancel'       => 'Cancellation date',
   'contract_end' => 'Contract end date',
+  'orig_setup'   => 'Original setup date',
 ;
 
 sub eventtable_hashref {
@@ -42,7 +43,16 @@ sub condition {
 
   my $age = $self->pkg_age_age( $cust_pkg, %opt );
 
-  my $pkg_date = $cust_pkg->get( $self->option('field') );
+  my $field = $self->option('field');
+  if ( $field =~ /^orig_(\w+)$/ ) {
+    # then find the package's oldest ancestor and compare to that
+    $field = $1;
+    while ($cust_pkg->change_pkgnum) {
+      $cust_pkg = $cust_pkg->old_cust_pkg;
+    }
+  }
+
+  my $pkg_date = $cust_pkg->get( $field );
 
   $pkg_date && $self->pkg_age_compare( $pkg_date, $age );
 
@@ -64,8 +74,13 @@ sub condition_sql {
   #amazingly, this is actually faster 
   my $sql = '( CASE';
   foreach ( keys %dates ) {
-    $sql .= " WHEN $field = '$_' THEN ".
-            "  (cust_pkg.$_ IS NOT NULL AND cust_pkg.$_ $op $age)";
+    $sql .= " WHEN $field = '$_' THEN ";
+    # don't even try to handle orig_setup in here.  it's not worth it.
+    if ($_ =~ /^orig_/) {
+      $sql .= 'TRUE';
+    } else {
+      $sql .= "  (cust_pkg.$_ IS NOT NULL AND cust_pkg.$_ $op $age)";
+    }
   }
   $sql .= ' END )';
   return $sql;

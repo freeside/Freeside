@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::o2m_Common FS::Record );
 use vars qw( $DEBUG );
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_bill_pkg_display;
 
 $DEBUG = 0;
 
@@ -375,11 +376,19 @@ sub lineitem {
   # set the amount that we'll charge
   $cust_bill_pkg->set( $self->setuprecur, $amount );
 
+  # create display record
+  my $categoryname = '';
   if ( $self->classnum ) {
     my $pkg_category = $self->pkg_class->pkg_category;
-    $cust_bill_pkg->set('section' => $pkg_category->categoryname)
-      if $pkg_category;
+    $categoryname = $pkg_category->categoryname if $pkg_category;
   }
+  my $displaytype = ($self->setuprecur eq 'setup') ? 'S' : 'R';
+  my $display = FS::cust_bill_pkg_display->new({
+      type    => $displaytype,
+      section => $categoryname,
+      # post_total? summary? who the hell knows?
+  });
+  $cust_bill_pkg->set('display', [ $display ]);
 
   # if this is a percentage fee and has line item fractions,
   # adjust them to be proportional and to add up correctly.
@@ -482,6 +491,19 @@ sub tax_rates {
   if $DEBUG;
 
   return @taxes;
+}
+
+=item categoryname 
+
+Returns the package category name, or the empty string if there is no package
+category.
+
+=cut
+
+sub categoryname {
+  my $self = shift;
+  my $pkg_class = $self->pkg_class;
+  $pkg_class ? $pkg_class->categoryname : '';
 }
 
 sub part_pkg_taxoverride {} # we don't do overrides here

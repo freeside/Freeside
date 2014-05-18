@@ -839,6 +839,9 @@ sub payment_info {
 
       'card_types' => card_types(),
 
+      'withcvv'     => $conf->exists('selfservice-require_cvv'), #or enable optional cvv?
+      'require_cvv' => $conf->exists('selfservice-require_cvv'),
+
       'paytypes' => [ @FS::cust_main::paytypes ],
 
       'paybys' => [ $conf->config('signup_server-payby') ],
@@ -990,10 +993,14 @@ sub validate_payment {
    
     $payinfo = $p->{'payinfo'};
 
+    my $onfile = 0;
+
     #more intelligent matching will be needed here if you change
     #card_masking_method and don't remove existing paymasks
-    $payinfo = $cust_main->payinfo
-      if $cust_main->paymask eq $payinfo;
+    if ( $cust_main->paymask eq $payinfo ) {
+      $payinfo = $cust_main->payinfo;
+      $onfile = 1;
+    }
 
     $payinfo =~ s/\D//g;
     $payinfo =~ /^(\d{13,16}|\d{8,9})$/
@@ -1015,6 +1022,8 @@ sub validate_payment {
           or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
         $paycvv = $1;
       }
+    } elsif ( !$onfile && $conf->exists('selfservice-require_cvv') ) {
+      return { 'error' => 'CVV2 is required' };
     }
   
   } else {
@@ -1715,7 +1724,7 @@ sub list_svcs {
     my $tag = $part->description . ($part->shared ? 1 : 0);
     my $row = $usage_pools{$tag} 
           ||= [ $part->description, 0, 0, $part->shared ? 1 : 0 ];
-    $row->[1] += $_->minutes; # minutes remaining
+    $row->[1] += sprintf('%.1f', $_->minutes); # minutes remaining
     $row->[2] += $part->minutes; # minutes total
   }
 
@@ -1811,6 +1820,7 @@ sub list_svcs {
                     'inbound' => ( $_ eq 'inbound' ? 1 : 0 ),
                     'begin'   => ($cust_pkg->last_bill || 0),
                     'nonzero' => 1,
+                    'disable_charged_party' => 1,
                   );
                   $hash{$_} = $sum_cdr->hashref;
                 }
@@ -2094,7 +2104,12 @@ sub _list_cdr_usage {
   # we have to return the results all at once...
   my($svc_phone, $begin, $end, %opt) = @_;
   map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
-    $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, %opt );
+    $svc_phone->get_cdrs(
+      'begin'=>$begin,
+      'end'=>$end,
+      'disable_charged_party' => 1,
+      %opt
+    );
 }
 
 sub list_cdr_usage {
@@ -2106,6 +2121,7 @@ sub list_cdr_usage {
 
 sub _usage_details {
   my($callback, $p, %opt) = @_;
+  my $conf = FS::Conf->new;
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
@@ -2124,7 +2140,6 @@ sub _usage_details {
   my %callback_opt;
   my $header = [];
   if ( $svcdb eq 'svc_phone' ) {
-    my $conf = FS::Conf->new;
     my $format = '';
     if ( $p->{inbound} ) {
       $format = $cust_pkg->part_pkg->option('selfservice_inbound_format') 
@@ -2157,6 +2172,14 @@ sub _usage_details {
   my (@usage) = &$callback($svc_x, $p->{beginning}, $p->{ending}, 
     %callback_opt
   );
+
+  if ( $conf->exists('selfservice-hide_cdr_price') ) {
+    # ugly kludge, I know
+    my ($delete_col) = grep { $header->[$_] eq 'Price' } (0..scalar(@$header));
+    if (defined $delete_col) {
+      delete($_->[$delete_col]) foreach ($header, @usage);
+    }
+  }
 
   #kinda false laziness with FS::cust_main::bill, but perhaps
   #we should really change this bit to DateTime and DateTime::Duration
@@ -2837,6 +2860,13 @@ sub myaccount_passwd {
   my $error = '';
 
   my $conf = new FS::Conf;
+
+  return { 'error' => 'Incorrect current password.' }
+    if  ( exists($p->{'old_password'})
+          || $conf->exists('selfservice-password_change_oldpass')
+        )
+    && ! $svc_acct->check_password($p->{'old_password'});
+
   $error = 'Password too short.'
     if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
   $error = 'Password too long.'

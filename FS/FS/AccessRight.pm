@@ -151,6 +151,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit customer package comments', #NEW
     'Qualify service', #NEW
     'Waive setup fee', #NEW
+    'View appointments', #NEWNEW
+    'Make appointment',
   ],
   
   ###
@@ -356,6 +358,9 @@ tie my %rights, 'Tie::IxHash',
     'Edit package definition costs',
 
     'Bulk edit package definitions',
+
+    'Edit CDR rates',
+    #{ rightname=>'Edit global CDR rates', global=>1, },
 
     'Edit fee definitions',
     { rightname=>'Edit global fee definitions', global=>1 },

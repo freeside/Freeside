@@ -2,7 +2,9 @@ package FS::cust_location;
 use base qw( FS::geocode_Mixin FS::Record );
 
 use strict;
-use vars qw( $import $DEBUG );
+use vars qw( $import $DEBUG $conf $label_prefix );
+use Data::Dumper;
+use Date::Format qw( time2str );
 use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
@@ -10,14 +12,17 @@ use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
+use FS::part_export;
 use FS::GeocodeCache;
-use Date::Format qw( time2str );
-
-use Data::Dumper;
 
 $import = 0;
 
 $DEBUG = 0;
+
+FS::UID->install_callback( sub {
+  $conf = FS::Conf->new;
+  $label_prefix = $conf->config('cust_location-label_prefix') || '';
+});
 
 =head1 NAME
 
@@ -196,25 +201,54 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
-  my $conf = new FS::Conf;
 
   if ( $self->censustract ) {
     $self->set('censusyear' => $conf->config('census_year') || 2012);
   }
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error = $self->SUPER::insert(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   #false laziness with cust_main, will go away eventually
-  if ( !$import and !$error and $conf->config('tax_district_method') ) {
+  if ( !$import and $conf->config('tax_district_method') ) {
 
     my $queue = new FS::queue {
       'job' => 'FS::geocode_Mixin::process_district_update'
     };
     $error = $queue->insert( ref($self), $self->locationnum );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
 
   }
 
-  $error || '';
+  # cust_location exports
+  #my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_location-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_insert($self); #, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 =item delete
@@ -239,7 +273,35 @@ sub replace {
     }
   }
 
-  $self->SUPER::replace($old);
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  # cust_location exports
+  #my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_location-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_replace($self, $old); #, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 
@@ -253,7 +315,6 @@ and replace methods.
 
 sub check {
   my $self = shift;
-  my $conf = new FS::Conf;
 
   return '' if $self->disabled; # so that disabling locations never fails
 
@@ -343,7 +404,7 @@ Synonym for location_label
 
 sub line {
   my $self = shift;
-  $self->location_label;
+  $self->location_label(@_);
 }
 
 =item has_ship_address
@@ -377,8 +438,8 @@ sub disable_if_unused {
 
   my $self = shift;
   my $locationnum = $self->locationnum;
-  return '' if FS::cust_main->count('bill_locationnum = '.$locationnum)
-            or FS::cust_main->count('ship_locationnum = '.$locationnum)
+  return '' if FS::cust_main->count('bill_locationnum = '.$locationnum.' OR
+                                     ship_locationnum = '.$locationnum)
             or FS::contact->count(      'locationnum  = '.$locationnum)
             or FS::cust_pkg->count('cancel IS NULL AND 
                                          locationnum  = '.$locationnum)
@@ -549,20 +610,19 @@ string (based on the cust_location-label_prefix config option).
 =cut
 
 sub location_label {
-  my $self = shift;
-  my %opt = @_;
-  my $conf = new FS::Conf;
-  my $prefix = '';
-  my $format = $conf->config('cust_location-label_prefix') || '';
-  my $cust_or_prospect;
-  if ( $self->custnum ) {
-    $cust_or_prospect = FS::cust_main->by_key($self->custnum);
-  }
-  elsif ( $self->prospectnum ) {
-    $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
+  my( $self, %opt ) = @_;
+
+  my $cust_or_prospect = $opt{cust_main} || $opt{prospect_main};
+  unless ( $cust_or_prospect ) {
+    if ( $self->custnum ) {
+      $cust_or_prospect = FS::cust_main->by_key($self->custnum);
+    } elsif ( $self->prospectnum ) {
+      $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
+    }
   }
 
-  if ( $format eq 'CoStAg' ) {
+  my $prefix = '';
+  if ( $label_prefix eq 'CoStAg' ) {
     my $agent = $conf->config('cust_main-custnum-display_prefix',
                   $cust_or_prospect->agentnum)
                 || $cust_or_prospect->agent->agent;
@@ -574,10 +634,11 @@ sub location_label {
         sprintf('%05d', $self->locationnum)
     ) );
   }
-  elsif ( $self->custnum and 
-          $self->locationnum == $cust_or_prospect->ship_locationnum ) {
+  elsif (    ( $opt{'cust_main'} || $self->custnum )
+          && $self->locationnum == $cust_or_prospect->ship_locationnum ) {
     $prefix = 'Default service location';
   }
+
   $prefix .= ($opt{join_string} ||  ': ') if $prefix;
   $prefix . $self->SUPER::location_label(%opt);
 }
@@ -669,7 +730,6 @@ sub process_censustract_update {
     qsearchs( 'cust_location', { locationnum => $locationnum })
       or die "locationnum '$locationnum' not found!\n";
 
-  my $conf = FS::Conf->new;
   my $new_year = $conf->config('census_year') or return;
   my $loc = FS::GeocodeCache->new( $cust_location->location_hash );
   $loc->set_censustract;

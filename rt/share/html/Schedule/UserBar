@@ -1,0 +1,62 @@
+<%perl>
+
+use GD;
+use RTx::Schedule qw( UserDaySchedule );
+
+my $im = new GD::Image($width, $height) or die;
+
+my $white = $im->colorAllocate(255,255,255);
+
+my $black = $im->colorAllocate(0,0,0); 
+$im->rectangle(0,0,$width-1,$height-1,$black);
+
+my $darkgray = $im->colorAllocate(102, 102, 102);
+$im->filledRectangle(0, 1, $width-1, $height-2, $darkgray);
+
+my %schedule = UserDaySchedule( CurrentUser => $session{CurrentUser},
+                                username    => $Username,
+                                'date'      => $Date,
+                              );
+
+#white out available times
+foreach my $avail ( @{ $schedule{'avail'} } ) {
+  my( $start, $end ) = @$avail;
+  
+  $im->filledRectangle( $start >= $stime ? int(($start-$stime)/10) : 0,
+                        1,
+                        int(($end-$stime)/10)-1,
+                        $height-2,
+                        $white,
+                      );
+}
+
+#block out / show / color code existing appointments
+foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
+
+  my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
+  my $color = $im->colorAllocate( unpack 'C*', pack 'H*', $col );
+  $im->filledRectangle( int(($starts-$stime)/10), 1, int(($due-$stime)/10)-1, $height-2, $color );
+
+}
+
+$r->content_type('image/png');
+$m->clear_buffer;
+$m->out($im->png);
+$m->abort;
+
+</%perl>
+<%args>
+$Username => undef
+$Date     => undef
+</%args>
+<%once>
+
+my $stime    = RT->Config->Get('CalendarWeeklyStartMin');
+$stime = 480 unless $stime =~ /^\d+$/; #8am
+my $etime    = RT->Config->Get('CalendarWeeklyEndMin');
+$etime = 1080 unless $etime =~ /^\d+$/; #6pm
+
+my $width = int( ( $etime - $stime ) / 10 );
+my $height = 12; #Elements/CalendarDaySchedule
+
+</%once>

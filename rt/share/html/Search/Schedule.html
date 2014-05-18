@@ -1,0 +1,88 @@
+<& /Elements/Header, Title => 'Schedule' &>
+
+%#init_overlib.html
+%foreach my $file (@files) {
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/<%$file%>.js"></SCRIPT>
+%}
+
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/jquery.js"></SCRIPT>
+
+<SCRIPT TYPE="text/javascript">
+
+  function boxon(what) {
+    var $this = $(what);
+    for ( var c=0; c < <%$cells%>; c++) {
+
+      $this.css('background-color', '#ffffdd');
+      if ( c == 0 ) {
+        $this.css('border-top', '1px double black');
+        $this.css('border-left', '1px double black');
+        $this.css('border-right', '1px solid black');
+      } else if ( c == <%$cells-1%> ) {
+        $this.css('border-left', '1px double black');
+        $this.css('border-right', '1px solid black');
+        $this.css('border-bottom', '1px solid black');
+      } else {
+        $this.css('border-left', '1px double black');
+        $this.css('border-right', '1px solid black');
+      }
+
+      var rownum = $this.parent().prevAll('tr').length;
+      var colnum = $this.prevAll('td').length;
+      $this = $this.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
+    }
+  }
+
+  function boxoff(what) {
+    var $this = $(what);
+    for ( var c=0; c < <%$cells%>; c++) {
+
+      //$this.css('background-color', '');
+      //$this.css('border', ''); //IE8 woes, removes cell borders
+      $this.removeAttr('style'); //slightly "flashy" on cell changes under IE8
+                                 //but at least it doesn't remove cell borders
+
+      var rownum = $this.parent().prevAll('tr').length;
+      var colnum = $this.prevAll('td').length;
+      $this = $this.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
+    }
+  }
+
+</SCRIPT>
+
+<& /Search/Calendar.html,
+     @_,
+     Query       => "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
+                     AND ( Type = 'reminder' OR 'Type' = 'ticket' )",
+                    #XXX and we have the magic custom field
+     slots       => scalar( @{ $ARGS{username} } ),
+     Embed       => 'Schedule.html',
+     DimPast     => 1,
+     Display     => 'Schedule',
+     DisplayArgs => [ username  => $ARGS{username},
+                      LengthMin => $LengthMin,
+                      #oops, more freeside abstraction-leaking
+                      custnum   => $ARGS{custnum},
+                      pkgnum    => $ARGS{pkgnum},
+                    ],
+&>
+
+<%ONCE>
+
+my $timestep =  RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
+
+</%ONCE>
+<%init>
+
+my @files = ();
+#if ( ! $initialized ) {
+  push @files, map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
+  push @files, map { "${_}contentmws" } qw( iframe ajax );
+#%}
+
+( my $LengthMin = $ARGS{LengthMin} ) =~ /^\d+$/ or die 'non-numeric LengthMin';
+
+my $cells = int($LengthMin / $timestep);
+$cells++ if $LengthMin % $timestep;
+
+</%init>

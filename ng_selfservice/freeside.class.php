@@ -59,6 +59,8 @@ class FreesideSelfService  {
         )));
         $file = file_get_contents($this->URL, false, $context);
         $response = xmlrpc_decode($file);
+        // uncomment to trace everything
+        //error_log(print_r($response, true));
         if (xmlrpc_is_fault($response)) {
             trigger_error("[FreesideSelfService] XML-RPC communication error: $response[faultString] ($response[faultCode])");
         } else {

@@ -253,7 +253,6 @@ B<where_conditions_sql>.
 
 sub join_conditions_sql {
   my ( $class, $eventtable ) = @_;
-  my %conditions = $class->conditions( $eventtable );
 
   join(' ',
     map {
@@ -262,7 +261,8 @@ sub join_conditions_sql {
           "       AND cond_$_.conditionname = ". dbh->quote($_).
           "     )";
         }
-        keys %conditions
+      map $_->[0], $class->_where_conditions( $eventtable ) #, %options )
+
   );
 
 }
@@ -280,27 +280,38 @@ as passed to freeside-daily), as a UNIX timestamp.
 sub where_conditions_sql {
   my ( $class, $eventtable, %options ) = @_;
 
+  join(' AND ',
+         map { my $conditionname = $_->[0];
+               my $sql = $_->[1];
+               "( cond_$conditionname.conditionname IS NULL OR $sql )";
+             }
+           $class->_where_conditions( $eventtable, %options )
+      );
+}
+
+sub _where_conditions {
+  my ( $class, $eventtable, %options ) = @_;
+
   my $time = $options{'time'};
 
   my %conditions = $class->conditions( $eventtable );
 
-  my $where = join(' AND ',
+  grep { $_->[1] !~ /^\s*true\s*$/i
+         || $conditions{ $_->[0] }->{order_sql}
+       }
     map {
           my $conditionname = $_;
           my $coderef = $conditions{$conditionname}->{condition_sql};
+          #die "$coderef is not a CODEREF" unless ref($coderef) eq 'CODE';
           my $sql = &$coderef( $eventtable, 'time'        => $time,
                                             'driver_name' => driver_name(),
                              );
-          die "$coderef is not a CODEREF" unless ref($coderef) eq 'CODE';
-          "( cond_$conditionname.conditionname IS NULL OR $sql )";
+          [ $_, $sql ];
         }
-        grep { my $cond = $_;
-               ! grep { $_ eq $cond } @SKIP_CONDITION_SQL
-             }
-             keys %conditions
-  );
-
-  $where;
+      grep { my $cond = $_;
+             ! grep { $_ eq $cond } @SKIP_CONDITION_SQL
+           }
+        keys %conditions;
 }
 
 =item order_conditions_sql [ EVENTTABLE ]

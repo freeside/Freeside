@@ -116,7 +116,7 @@ sub check {
   my $error = 
     $self->ut_numbern('pkgusagepart')
     || $self->ut_foreign_key('pkgpart', 'part_pkg', 'pkgpart')
-    || $self->ut_number('minutes')
+    || $self->ut_float('minutes')
     || $self->ut_numbern('priority')
     || $self->ut_flag('shared')
     || $self->ut_flag('rollover')

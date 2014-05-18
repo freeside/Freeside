@@ -196,7 +196,7 @@ Example:
   &>
 
 </%doc>
-
+%
 % unless ( $opt{embed} ) {
 %
 %   my $title = $opt{action}. ' '. ( $opt{name} || $opt{'name_singular'} );
@@ -213,14 +213,13 @@ Example:
 %       "View all $items" => $viewall_url,
 %     );
 %   }
-
-
-  <% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
+%
+<% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
                 $title,
                 include( '/elements/menubar.html', @menubar ),
                 $opt{'body_etc'},
              )
-  %>
+%>
 
   <% defined($opt{'html_init'}) 
         ? ( ref($opt{'html_init'})
@@ -324,6 +323,12 @@ Example:
 %     #umm.  for select-agent_types at least
 %     'disabled'      => $f->{'disabled'},
 %     'fixed'         => $f->{'fixed'},
+%
+%     #umm.  for select-agent_types at least
+%     'label_callback'=> $f->{'label_callback'},
+%
+%     #for select-ticketing_queueid at least
+%     'post_options'  => $f->{'post_options'},
 %
 %     #any?
 %     'colspan'       => $f->{'colspan'},

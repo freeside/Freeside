@@ -27,11 +27,13 @@
     if ( what.checked == (what.value == 'Commercial' ) ) {
       document.getElementById('company_row').style.display = '';
       document.getElementById('contacts_div').style.display = '';
+      document.getElementById('spouse_row').style.display = 'none';
     } else {
       if ( document.getElementById('company').value.length == 0 ) {
         document.getElementById('company_row').style.display = 'none';
       }
       document.getElementById('contacts_div').style.display = 'none';
+      document.getElementById('spouse_row').style.display = '';
     }
   }
 

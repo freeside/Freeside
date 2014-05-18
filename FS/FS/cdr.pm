@@ -577,25 +577,19 @@ sub parse_number {
 
 Rates this CDR according and sets the status to 'rated'.
 
-Available options are: part_pkg, svcnum, single_price_included_minutes, region_group, region_group_included_minutes.
+Available options are: part_pkg, svcnum, plan_included_min,
+detail_included_min_hashref.
 
 part_pkg is required.
 
 If svcnum is specified, will also associate this CDR with the specified svcnum.
 
-single_price_included_minutes is requried for single_price price plans
-(otherwise unused/ignored).  It should be set to a scalar reference of the
-number of included minutes and will be decremented by the rated minutes of this
+plan_included_min should be set to a scalar reference of the number of 
+included minutes and will be decremented by the rated minutes of this
 CDR.
 
-region_group_included_minutes is required for prefix price plans which have
-included minutes (otherwise unused/ignored).  It should be set to a scalar
-reference of the number of included minutes and will be decremented by the
-rated minutes of this CDR.
-
-region_group_included_minutes_hashref is required for prefix price plans which
-have included minues (otherwise unused/ignored).  It should be set to an empty
-hashref at the start of a month's rating and then preserved across CDRs.
+detail_included_min_hashref should be set to an empty hashref at the 
+start of a month's rating and then preserved across CDRs.
 
 =cut
 
@@ -897,19 +891,18 @@ sub rate_prefix {
     $seconds += $charge_sec;
 
     if ( $rate_detail->min_included ) {
-      # the old, kind of deprecated way to do this
-      my $included_min = $opt{'region_group_included_min_hashref'} || {};
+      # the old, kind of deprecated way to do this:
+      # 
+      # The rate detail itself has included minutes.  We MUST have a place
+      # to track them.
+      my $included_min = $opt{'detail_included_min_hashref'}
+        or return "unable to rate CDR: rate detail has included minutes, but ".
+                  "no detail_included_min_hashref provided.\n";
 
       # by default, set the included minutes for this region/time to
       # what's in the rate_detail
       $included_min->{$regionnum}{$ratetimenum} = $rate_detail->min_included
         unless exists $included_min->{$regionnum}{$ratetimenum};
-
-      # the way that doesn't work
-      #my $region_group = ($part_pkg->option_cacheable('min_included') || 0) > 0;
-
-      #${$opt{region_group_included_min}} -= $minutes 
-      #    if $region_group && $rate_detail->region_group;
 
       if ( $included_min->{$regionnum}{$ratetimenum} >= $minutes ) {
         $charge_sec = 0;
@@ -917,6 +910,18 @@ sub rate_prefix {
       } else {
         $charge_sec -= ($included_min->{$regionnum}{$ratetimenum} * 60);
         $included_min->{$regionnum}{$ratetimenum} = 0;
+      }
+    } elsif ( $opt{plan_included_min} && ${ $opt{plan_included_min} } > 0 ) {
+      # The package definition has included minutes, but only for in-group
+      # rate details.  Decrement them if this is an in-group call.
+      if ( $rate_detail->region_group ) {
+        if ( ${ $opt{'plan_included_min'} } >= $minutes ) {
+          $charge_sec = 0;
+          ${ $opt{'plan_included_min'} } -= $minutes;
+        } else {
+          $charge_sec -= (${ $opt{'plan_included_min'} } * 60);
+          ${ $opt{'plan_included_min'} } = 0;
+        }
       }
     } else {
       # the new way!
@@ -994,6 +999,8 @@ sub rate_upstream_simple {
     sprintf('%.3f', $self->upstream_price),
     $opt{'svcnum'},
     'rated_classnum' => $self->calltypenum,
+    'rated_seconds'  => $self->billsec,
+    # others? upstream_*_regionname => rated_regionname is possible
   );
 }
 
@@ -1020,12 +1027,12 @@ sub rate_single_price {
 
   my $charge_min = $minutes;
 
-  ${$opt{single_price_included_min}} -= $minutes;
-  if ( ${$opt{single_price_included_min}} > 0 ) {
+  ${$opt{plan_included_min}} -= $minutes;
+  if ( ${$opt{plan_included_min}} > 0 ) {
     $charge_min = 0;
   } else {
-     $charge_min = 0 - ${$opt{single_price_included_min}};
-     ${$opt{single_price_included_min}} = 0;
+     $charge_min = 0 - ${$opt{plan_included_min}};
+     ${$opt{plan_included_min}} = 0;
   }
 
   my $charge =

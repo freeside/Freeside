@@ -2497,8 +2497,10 @@ sub ut_text {
   #warn "msgcat ". \&msgcat. "\n";
   #warn "notexist ". \&notexist. "\n";
   #warn "AUTOLOAD ". \&AUTOLOAD. "\n";
+  # \p{Word} = alphanumerics, marks (diacritics), and connectors
+  # see perldoc perluniprops
   $self->getfield($field)
-    =~ /^([\wô \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>$money_char]+)$/
+    =~ /^([\p{Word} \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>$money_char]+)$/
       or return gettext('illegal_or_empty_text'). " $field: ".
                  $self->getfield($field);
   $self->setfield($field,$1);
@@ -2872,7 +2874,7 @@ May not be null.
 sub ut_name {
   my( $self, $field ) = @_;
 #  warn "ut_name allowed alphanumerics: +(sort grep /\w/, map { chr() } 0..255), "\n";
-  $self->getfield($field) =~ /^([\w \,\.\-\']+)$/
+  $self->getfield($field) =~ /^([\p{Word} \,\.\-\']+)$/
     or return gettext('illegal_name'). " $field: ". $self->getfield($field);
   my $name = $1;
   $name =~ s/^\s+//; 
@@ -3331,6 +3333,8 @@ sub _quote {
   my $column_obj = dbdef->table($table)->column($column);
   my $column_type = $column_obj->type;
   my $nullable = $column_obj->null;
+
+  utf8::upgrade($value);
 
   warn "  $table.$column: $value ($column_type".
        ( $nullable ? ' NULL' : ' NOT NULL' ).

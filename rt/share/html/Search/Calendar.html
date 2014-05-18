@@ -1,128 +1,347 @@
-<%args>
-$Month => (localtime)[4]
-$Year => (localtime)[5] + 1900
-$Query => undef
-$Format => undef
-$Order => undef
-$OrderBy => undef
+<%ARGS>
+$Month       => (localtime)[4]
+$Year        => (localtime)[5] + 1900
+$Query       => undef
+$Format      => undef
+$Order       => undef
+$OrderBy     => undef
 $RowsPerPage => undef
-$NewQuery => 0
-</%args>
+$NewQuery    => 0
+$WeekDay     => undef
+$WeekMonth   => undef
+$WeekYear    => undef
+$OrigMonth   => undef
+$OrigYear    => undef
+$Embed       => undef
+$Display     => undef
+@DisplayArgs => ()
+$slots       => $default_slots
+$DimPast     => 0
+</%ARGS>
+
+% my $title;
+% if ( $WeekMonth ) {
+%   if ( $start->month == $end->month ) {
+%     $title = $rtdate->GetMonth( $start->month -1 ). ' '.
+%              $start->day. '-'. $end->day. ', '. $start->year;
+%   } elsif ( $start->year == $end->year ) {
+%     $title =
+%       $rtdate->GetMonth( $start->month -1 ). ' '. $start->day. ' - '.
+%       $rtdate->GetMonth( $end->month  -1 ). ' '. $end->day.  ', '. $end->year;
+%   } else {
+%     $title =
+%       $rtdate->GetMonth( $start->month -1 ).' '.$start->day.', '.$start->year.
+%       ' - '.
+%       $rtdate->GetMonth( $end->month  -1 ). ' '.$end->day.  ', '. $end->year;
+%   }
+% } else {
+%   $title = $rtdate->GetMonth($Month) . " $Year" 
+% }
+
+% unless ( $Embed ) {
 
 <& /Elements/Header, Title => $title &>
 <& /Elements/Tabs &>
 
+% }
+
 <&| /Widgets/TitleBox,
-     title => loc('Calendar for ') . $rtdate->GetMonth($Month) . " $Year" ,
+     title => loc('Calendar for '). $title,
      title_class=> 'inverse',
      color => "#993333" &>
 
-<table width="100%">
-<tr>
-<td align="left">
-% my ($PMonth, $PYear) = ($Month - 1, $Year);
+% my($PMonth, $PYear, $NMonth, $NYear);
+% unless ( $WeekDay ) {
+
+    <table width="100%">
+      <tr>
+        <td align="left">
+% ($PMonth, $PYear) = ($Month - 1, $Year);
 % if ($PMonth < 0) {
 %    $PYear--;
 %    $PMonth = 11;
 % }
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">�<%$rtdate->GetMonth($PMonth)%></a>
-</td>
-<th align="center">
-  <font size="+1"><% $rtdate->GetMonth($Month). " $Year" %></font>
-</th>
-<td align="right">
-% my ($NMonth, $NYear) = ($Month + 1, $Year);
+          <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">�<%$rtdate->GetMonth($PMonth)%></a>
+        </td>
+        <th align="center">
+          <font size="+1"><% $rtdate->GetMonth($Month). " $Year" %></font>
+        </th>
+        <td align="right">
+% ($NMonth, $NYear) = ($Month + 1, $Year);
 % if ($NMonth > 11) {
 %    $NYear++;
 %    $NMonth = 0;
 % }
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>�</a>
-</td>
-</tr>
-</table>
+          <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>�</a>
+        </td>
+      </tr>
+    </table>
+% }
 
 <table class="rtxcalendar">
 
-<thead>
-<tr>
-% for ( @{$week{$weekstart}} ) {
-<th width="14%"><%$rtdate->GetWeekday($_)%></th>
-% }
-</tr>
-</thead>
+  <thead>
 
-<tbody>
-<tr>
-% while ($date <= $end) {
-%
-%   my $offmonth = $date->month != ($Month + 1);
-%   my $is_today     = (DateTime->compare($today,     $date) == 0);
-%   my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
-%   my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+% unless ( $WeekDay ) {
 
-    <td class="<% $offmonth ? 'offmonth'
-                    : $is_today     ? 'today'
-                    : $is_yesterday ? 'yesterday'
-                    : $is_aweekago  ? 'aweekago'
-                    : ''
-               %>"
-    >
-      <div class="<% $is_today ? 'todays'
-                       : $offmonth ? 'offmonth'
-                       :'' %>calendardate"
-      ><%$date->day%></div>
-
-%     my $sp = 3;
-%     for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
-%       $sp--;
-        <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+    <tr>
+      <td class="labels" colspan=<% $WeekDay ? 2 : 1 %>></td>
+%     for ( @{$week{$weekstart}} ) {
+        <th colspan=<% $WeekDay ? $slots : 1 %>><%$rtdate->GetWeekday($_)%></th>
 %     }
-      <% ($sp>0) ? '<BR>'x$sp : '' |n %>
-
-    </td>
-
-%   $date = $set->next($date);
-%   if ( $date->day_of_week == $startday_of_week ) {
-      </tr><tr>
-%   }
+    </tr>
+  </thead>
+  <tbody>
 
 % }
-</tr>
+
+<tr>
+
+% unless ( $WeekDay ) {
+  <& td_week_expand, date=>$start, Month=>$Month, Year=>$Year, QueryString=>$QueryString, Embed=>$Embed, &>
+% }
+
+% if ( $WeekDay ) {
+
+    <td class="labels" colspan=2></td>
+
+%   my $date = $start;
+%   my $sday = 0;
+%   while ($date <= $end) {
+%
+%     my $is_today     = (DateTime->compare($today,     $date) == 0);
+%     my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%     my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+
+      <th colspan=<%$slots%>
+          class="labels"
+%#                 <%   $is_today     ? 'today'
+%#                    : $is_yesterday ? 'yesterday'
+%#                    : $is_aweekago  ? 'aweekago'
+%#                    : ''
+%#                 %>"
+%#        <div class="<%   $is_today ? 'todays'
+%#                       : ''
+%#                    %>calendardate"
+      ><% $rtdate->GetWeekday( $week{$weekstart}->[$sday++] ). ' '.
+          $rtdate->GetMonth($date->month-1). ' '.
+          $date->day
+       %>
+      </th>
+
+%     $date = $set->next($date);
+%     if ( $date->day_of_week == $startday_of_week ) {
+        </tr>
+%       if ( $date <= $end ) { #a second week? not going to work for week view yet
+          <tr>
+              <td class="controls" rowspan=<% $rowspan + 2 %> valign="middle">
+                <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
+              </td>
+%       }
+%     }
+
+%   } #while ($date <= $end)
+
+    </tr>
+
+        </thead>
+        <tbody>
+
+    <tr>
+
+  <td class="controls" rowspan=<% $rowspan+1 %> valign="middle">
+    <& week_collapse, date=>$start, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
+  </td>
+
+%     #slot header callback
+%     if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
+%
+%       my $el = "/Elements/CalendarSlotHeader$1";
+        <td class="labels"></td>
+%       for (0..6) {
+          <& $el, Date      => $date,
+                  DateTypes => \%DateTypes,
+                  slots     => $slots,
+                  @DisplayArgs,
+          &>
+%       }
+%     }
+    </tr>
+
+%   foreach my $row ( @week_rows ) {
+
+      <tr>
+      <& td_time, $row &>
+
+%     $date = $start;
+%     my $sday = 0;
+%     while ($date <= $end) {
+%
+%       my $is_today     = (DateTime->compare($today,     $date) == 0);
+%       my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%       my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+
+%     #slot callback
+%     if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
+%       my $el = "/Elements/CalendarSlot$1";
+        <& $el, Date      => $date,
+                DateTypes => \%DateTypes,
+                Tickets   => $Tickets{$date->strftime("%F")} || [],
+                slots     => $slots,
+                sday      => $sday,
+                tod_row   => $row,
+                timestep  => $timestep,
+                @DisplayArgs,
+        &>
+%     } else {
+
+%       #just display the normal events for this day?
+        <td class="weekly" colspan="<%$slots%>">
+%         for my $Ticket ( @{ $Tickets{$date->strftime("%F")} } ) {
+%           my %dt =
+%             map { $_=>1 }
+%             grep {
+%               my $meth = $_.'Obj';
+%
+%               my($m, $h) = ($Ticket->$meth->Localtime('user'))[1,2];
+%               my $tod = $h*60 + $m;
+%
+%               LocalDate($Ticket->$meth->Unix) eq $date->strftime('%F') #today
+%                 && $tod >= $row && $tod < ($row+$timestep); #and in timeslot
+%             } keys %DateTypes;
+%           next unless keys %dt;
+            <& /Elements/CalendarEvent,
+                 Object    => $Ticket,
+                 Date      => $date,
+                 DateTypes => \%dt
+            &>
+%           unless ( $Ticket eq ${ $Tickets{$date->strftime("%F")} }[-1] ) { #hmm, no.. not with "next unless $dt" :/
+              <BR>
+%           }
+%         }
+        </td>
+
+%     }
+
+%       $date = $set->next($date);
+%       if ( $date->day_of_week == $startday_of_week ) {
+          </tr>
+%         if ( $date <= $end ) { #a second week? not going to work for week view yet
+            <tr>
+              <td class="controls" rowspan=<% $rowspan + 2 %> valign="middle">
+                  <& week_collapse, date=>$date, Month=>$OrigMonth, Year=>$OrigYear, QueryString=>$QueryString, Embed=>$Embed, &>
+                </td>
+%         }
+%       }
+%
+%       $sday++;
+%     } #while ($date <= $end)
+      </tr>
+%   } #foreach my $row ( @week_rows )
+%
+% } else {
+%
+%   my $date = $start;
+%   while ($date <= $end) {
+%
+%     my $offmonth = !$WeekDay && $date->month != ($Month + 1);
+%     my $is_today     = (DateTime->compare($today,     $date) == 0);
+%     my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%     my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+%
+%     my $past = $DimPast && DateTime->compare($today,  $date) == 1;
+
+      <td
+          class="<% $past ? 'past' : '' %><% $offmonth ? 'offmonth' : '' %><%
+                      $is_today     ? ' today'
+                    : $is_yesterday ? ' yesterday'
+                    : $is_aweekago  ? ' aweekago'
+                    : ''
+                 %>"
+      >
+        <div class="<%   $is_today ? 'todays'
+                       : ( $past ? 'past' : ''). ($offmonth ? 'offmonth' : '' )
+                    %>calendardate"
+        ><% $date->day %></div>
+
+%       if ( defined($Display) && $Display =~ /^(\w+)$/ ) {
+%
+%         my $el = "/Elements/CalendarDay$1";
+          <& $el, CurrentUser => $session{CurrentUser},
+                  Tickets     => $Tickets{$date->strftime("%F")},
+                  Date        => $date,
+                  today       => $today,
+                  DateTypes   => \%DateTypes,
+                  @DisplayArgs,
+          &>
+%
+%       } else {
+%
+%         my $sp = 3;
+%         for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+%           $sp--;
+            <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+%         }
+          <% ($sp>0) ? '<BR>'x$sp : '' |n %>
+%
+%       }
+
+      </td>
+
+%     $date = $set->next($date);
+%     if ( $date->day_of_week == $startday_of_week ) {
+        </tr>
+%       if ( $date <= $end ) {
+          <tr>
+            <& td_week_expand, date=>$date, Month=>$Month, Year=>$Year, QueryString=>$QueryString, Embed=>$Embed, &>
+%       }
+%     }
+
+%   } #while ($date <= $end)
+
+% }
 </tbody>
 </table>
 
-<table width="100%">
-<tr>
-<td align="left">
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">�<%$rtdate->GetMonth($PMonth)%></a>
-</td>
+% unless ( $WeekDay ) {
 
-<td valign="top" align="center">
-<form action="<%$RT::WebPath%>/Search/Calendar.html?<%$QueryString%>" method="post">
+    <table width="100%">
+      <tr>
+        <td align="left">
+          <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">�<%$rtdate->GetMonth($PMonth)%></a>
+        </td>
 
-<select name="Month">
-% for (0..11) {
-<option value="<%$_%>" <% $_ == $Month ? 'selected' : ''%> ><%$rtdate->GetMonth($_)%></option>
-% }
-</select>
-% my $year = (localtime)[5] + 1900;
-<select name="Year">
-% for ( ($year-5) .. ($year+5)) {
-<option value="<%$_%>" <% $_ == $Year ? 'selected' : ''%>><%$_%></option>
-% }
-</select>
+        <td valign="top" align="center">
+          <form action="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?<%$QueryString%>" method="post">
+
+            <select name="Month">
+%             for (0..11) {
+                <option value="<%$_%>" <% $_ == $Month ? 'selected' : ''%> ><%$rtdate->GetMonth($_)%></option>
+%             }
+            </select>
+
+%           my $year = (localtime)[5] + 1900;
+            <select name="Year">
+%             for ( ($year-5) .. ($year+5)) {
+                <option value="<%$_%>" <% $_ == $Year ? 'selected' : ''%>><%$_%></option>
+%             }
+            </select>
 
 %# <& /Elements/Submit&>
-<input type="submit" value="<% loc('Submit') %>" class="button" />
+            <input type="submit" value="<% loc('Submit') %>" class="button" />
 
-</form>
-</td>
+          </form>
+        </td>
 
-<td align="right">
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>�</a>
-</td>
-</tr>
-</table>
+        <td align="right">
+          <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>�</a>
+        </td>
+      </tr>
+  </table>
+
+% }
+
+% unless ( $Embed ) {
 
 <table width="100%">
 <tr>
@@ -149,6 +368,8 @@ $NewQuery => 0
 
 </table>
 
+% }
+
 </&>
 
 <%ONCE>
@@ -164,15 +385,35 @@ my %legend = (
   'starts_due'  => ['Starts','Due'],
 );
 
+my $stime    = RT->Config->Get('CalendarWeeklyStartMin');
+$stime = 480 unless $stime =~ /^\d+$/; #8am
+my $etime    = RT->Config->Get('CalendarWeeklyEndMin');
+$etime = 1080 unless $etime =~ /^\d+$/; #6pm
+
+my $timestep =  RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
+my $rowspan = ($etime-$stime) / $timestep;
+
+my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;
+
+my $wt = $stime;
+my @week_rows = ();
+while ( $wt < $etime ) { push @week_rows, $wt; $wt+=$timestep }
+
 </%ONCE>
 <%INIT>
-use RTx::Calendar qw(FirstDay LastDay);
+use RTx::Calendar qw( FirstDay LastDay LastDayOfWeek DatesClauses LocalDate
+                      SearchDefaultCalendar FindTickets );
+
+$Embed =~ /^[\w\.]*$/ or die 'xss';
 
 my $title = loc("Calendar");
 
 my @DateTypes = qw/Created Starts Started Due LastUpdated Resolved/;
 
 my $rtdate = RT::Date->new($session{'CurrentUser'});
+
+my $time_zone = $session{'CurrentUser'}->UserObj->Timezone
+                  || RT->Config->Get('Timezone');
 
 my $weekstart = 'Sunday'; #RT::SiteConfig?  user pref?
 my %week = (
@@ -183,29 +424,48 @@ my %week = (
 my $startday_of_week = ${$week{$weekstart}}[0]  || 7;
 my $endday_of_week   = ${$week{$weekstart}}[-1] || 7;
 
-my $today = DateTime->today;
+my $today = DateTime->today( time_zone=>$time_zone );
 my $yesterday = $today->clone->subtract( days=>1 );
 my $aweekago  = $today->clone->subtract( days=>7 );
-my $date = FirstDay($Year, $Month + 1, $startday_of_week );
-my $end  = LastDay ($Year, $Month + 1, $endday_of_week );
+
+my( $start, $end );
+if ( $WeekDay ) {
+  $start = DateTime->new( year      => $WeekYear,
+                          month     => $WeekMonth+1,
+                          day       => $WeekDay,
+                          time_zone => $time_zone,
+                        );
+  $end  = LastDayOfWeek( $WeekYear, $WeekMonth+1, $WeekDay, $endday_of_week );
+} else {
+  $start = FirstDay($Year, $Month + 1, $startday_of_week );
+  $end   = LastDay ($Year, $Month + 1, $endday_of_week );
+}
 
 # use this to loop over days until $end
 my $set = DateTime::Set->from_recurrence(
     next => sub { $_[0]->truncate( to => 'day' )->add( days => 1 ) }
 );
 
-my $QueryString =
+my $QueryString;
+if ($Query) {
+  $QueryString =
       $m->comp(
         '/Elements/QueryString',
         Query   => $Query,
         Format  => $Format,
         Order   => $Order,
         OrderBy => $OrderBy,
-        Rows    => $RowsPerPage
-      )
-      if ($Query);
-
-$QueryString ||= 'NewQuery=1';
+        Rows    => $RowsPerPage,
+        @DisplayArgs,
+      );
+} else {
+  $QueryString =
+      $m->comp(
+        '/Elements/QueryString',
+        NewQuery => 1,
+        @DisplayArgs,
+      );
+}
 
 # Default Query and Format
 my $TempFormat = "__Starts__ __Due__";
@@ -213,7 +473,7 @@ my $TempQuery = "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
  AND ( Owner = '" . $session{CurrentUser}->Id ."' OR Owner = 'Nobody'  )
  AND ( Type = 'reminder' OR 'Type' = 'ticket' )";
 
-if ( my $Search = RTx::Calendar::SearchDefaultCalendar($session{CurrentUser}) ) {
+if ( my $Search = SearchDefaultCalendar($session{CurrentUser}) ) {
   $TempFormat = $Search->SubValue('Format');
   $TempQuery = $Search->SubValue('Query');
 }
@@ -228,10 +488,57 @@ my @Dates = grep { $TempFormat =~ m/__${_}(Relative)?__/ } @DateTypes;
 # used to display or not a date in Element/CalendarEvent
 my %DateTypes = map { $_ => 1 } @Dates;
 
-$TempQuery .= RTx::Calendar::DatesClauses(\@Dates, $date->strftime("%F"), $end->strftime("%F"));
+$TempQuery .= DatesClauses(\@Dates, $start->strftime("%F"), $end->strftime("%F"));
 
 # print STDERR ("-" x 30), "\n", $TempQuery, "\n";
 
-my %Tickets = RTx::Calendar::FindTickets($session{'CurrentUser'}, $TempQuery, \@Dates, $date->strftime("%F"), $end->strftime("%F"));
+my %Tickets = FindTickets($session{'CurrentUser'}, $TempQuery, \@Dates, $start->strftime("%F"), $end->strftime("%F"));
 
 </%INIT>
+<%def td_week_expand>
+<%args>
+  $date  => undef
+  $Month => undef
+  $Year  => undef
+  $QueryString => undef
+  $Embed => undef
+</%args>
+  <td class="controls">
+    <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?WeekDay=<% $date->day %>&WeekMonth=<% $date->month -1 %>&WeekYear=<% $date->year %>&OrigMonth=<% $Month %>&OrigYear=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-expand.gif"></a>
+  </td>
+</%def>
+
+<%def week_collapse>
+<%args>
+  $date  => undef
+  $Month => undef
+  $Year  => undef
+  $QueryString => undef
+  $Embed => undef
+</%args>
+    <a href="<%$RT::WebPath%>/Search/<%$Embed||'Calendar.html'%>?Month=<% $Month %>&Year=<% $Year %>&<%$QueryString%>"><img src="<%$RT::WebPath%>/NoAuth/images/week-collapse.gif" STYLE="height:384px;width:11px;border:none"></a>
+</%def>
+
+<%def td_time>
+% my( $min ) = shift;
+    <td class="labels"><% pretty_time($min) |n %></td>
+<%init>
+sub pretty_time {
+  my $t = shift;
+
+  return 'Midnight' if $t == 0 || $t == 1440;
+  return 'Noon'     if $t == 720;
+
+  my $h = int( $t / 60 );
+  my $m = $t % 60;
+
+  my $ap = 'AM';
+  if    ( $h == 0 || $h == 24 ) { $h = 12; }
+  elsif ( $h == 12 )           { $ap = 'PM'; }
+  elsif ( $h > 12 )            { $ap = 'PM'; $h -= 12; }
+
+  sprintf('%02d:%02d&nbsp;'.$ap, $h, $m);
+
+}
+</%init>
+</%def>

@@ -205,28 +205,37 @@ sub cust_bill_pkg {
   qsearch( $self->cust_bill_pkg_search(@_) )
 }
 
-sub cust_credit {
+sub cust_credit_search {
   my( $self, $sdate, $edate, %search ) = @_;
 
   $search{'hashref'}->{'commission_salesnum'} = $self->salesnum;
 
+  my @where = ();
+  push @where, "cust_credit._date >= $sdate" if $sdate;
+  push @where, "cust_credit._date  < $edate" if $edate;
+
   my $classnum_sql = '';
   if ( exists($search{'commission_classnum'}) ) {
     my $classnum = delete($search{'commission_classnum'});
-    $classnum_sql = " AND part_pkg.classnum ". ( $classnum ? " = $classnum"
-                                                           : " IS NULL "    );
+    push @where, 'part_pkg.classnum '. ( $classnum ? " = $classnum"
+                                                   : " IS NULL "    );
 
     $search{'addl_from'} .=
       ' LEFT JOIN cust_pkg ON ( commission_pkgnum = cust_pkg.pkgnum ) '.
       ' LEFT JOIN part_pkg USING ( pkgpart ) ';
   }
 
-  qsearch({ 'table'     => 'cust_credit',
-            'extra_sql' => " AND cust_credit._date >= $sdate ".
-                           " AND cust_credit._date  < $edate ".
-                           $classnum_sql,
-            %search,
-         });
+  my $extra_sql = "AND ".join(' AND ', map {"( $_ )"} @where);
+
+  { 'table'     => 'cust_credit',
+    'extra_sql' => $extra_sql,
+    %search,
+  };
+}
+
+sub cust_credit {
+  my $self = shift;
+  qsearch( $self->cust_credit_search(@_) )
 }
 
 =back

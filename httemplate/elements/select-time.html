@@ -1,0 +1,31 @@
+% unless ( $opt{'js_only'} ) {
+    <SELECT NAME="<% $opt{'field'} %>" SIZE="1" <%$disabled%> <%$onchange%> >
+%     for ( my $t = 0; $t <=1440; $t += $increment ) {
+        <OPTION VALUE="<% $t %>"
+                <%    ( $curr_value eq '' && $t == $selected_default )
+                   || $curr_value == $t
+                     ? 'SELECTED' : ''
+                %>
+        ><% FS::sched_avail::pretty_time($t) %>
+%     }
+    </SELECT>
+% }
+<%init>
+
+my %opt = @_;
+my $increment = $opt{increment} || 30;
+my $selected_default = $opt{selected_default};
+my $disabled = $opt{'disabled'} || '';
+
+my $curr_value = $opt{curr_value};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"' unless $onchange =~ /^onChange=/i;
+}
+
+</%init>

@@ -1,0 +1,123 @@
+#!/usr/bin/perl
+
+=head1 NAME
+
+wa_tax_rate_update
+
+=head1 DESCRIPTION
+
+Tool to update city/district sales tax rates in I<cust_main_county> from 
+the Washington State Department of Revenue website.
+
+This does not handle address standardization or geocoding addresses to 
+Washington tax district codes.  That logic is still in FS::Misc::Geo,
+and relies on a heinous screen-scraping of the interactive search tool.
+This script just updates the cust_main_county records that already exist
+with the latest quarterly tax rates.
+
+Options:
+
+-c <taxclass>: operate only on records with the named tax class.  If not 
+specified, this operates on records with null tax class.
+
+-t <taxname>: operate only on records with that tax name.  If not specified,
+it operates on records where the tax name is either null or 'Tax'.
+
+=cut
+
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::cust_main_county;
+use FS::UID qw(adminsuidsetup);
+use DateTime;
+use LWP::UserAgent;
+use File::Temp 'tempdir';
+use File::Slurp qw(read_file write_file);
+use Text::CSV;
+use Getopt::Std;
+
+getopts('c:t:');
+my $user = shift or die usage();
+
+# download the update file
+my $now = DateTime->now;
+my $yr = $now->year;
+my $qt = $now->quarter;
+my $file = "Rates${yr}Q${qt}.zip";
+my $url = 'http://dor.wa.gov/downloads/Add_Data/'.$file;
+my $dir = tempdir();
+chdir($dir);
+my $ua = LWP::UserAgent->new;
+warn "Downloading $url...\n";
+my $response = $ua->get($url);
+if ( ! $response->is_success ) {
+  die $response->status_line;
+}
+write_file($file, $response->decoded_content);
+
+# parse it
+system('unzip', $file);
+$file =~ s/\.zip$/.csv/;
+if (! -f $file) {
+  die "$file not found in zip archive.\n";
+}
+open my $fh, '<', $file
+  or die "couldn't open $file: $!\n";
+my $csv = Text::CSV->new;
+my $header = $csv->getline($fh);
+$csv->column_names(@$header);
+# columns we care about are headed 'Code' and 'Rate'
+
+# connect to the DB
+adminsuidsetup($user) or die "bad username '$user'\n";
+$FS::UID::AutoCommit = 0;
+
+$opt_c ||= ''; # taxclass
+$opt_t ||= ''; # taxname
+my $total_changed = 0;
+my $total_skipped = 0;
+while ( !$csv->eof ) {
+  my $line = $csv->getline_hr($fh);
+  my $district = $line->{Code} or next;
+  my $tax = sprintf('%.1f', $line->{Rate} * 100);
+  my $changed = 0;
+  my $skipped = 0;
+  # find all rates in WA
+  my @rates = qsearch('cust_main_county', {
+      country   => 'US',
+      state     => 'WA', # this is specific to WA
+      district  => $district,
+      taxclass  => $opt_c,
+      taxname   => $opt_t,
+  });
+  if ($opt_t eq '') {
+    push @rates, qsearch('cust_main_county', {
+      country   => 'US',
+      state     => 'WA', # this is specific to WA
+      district  => $district,
+      taxclass  => $opt_c,
+      taxname   => 'Tax'
+    });
+  }
+  foreach my $rate (@rates) {
+    if ( $rate->tax == $tax ) {
+      $skipped++;
+    } else {
+      $rate->set('tax', $tax);
+      my $error = $rate->replace;
+      die "error updating district $district: $error\n" if $error;
+      $changed++;
+    }
+  }
+  print "$district: updated $changed, skipped $skipped\n"
+    if $changed or $skipped;
+  $total_changed += $changed;
+  $total_skipped += $skipped;
+}
+print "Updated $total_changed tax rates.\nSkipped $total_skipped unchanged rates.\n";
+dbh->commit;
+
+sub usage {
+  "usage:
+  wa_tax_rate_update [ -c taxclass ] [ -t taxname ] user
+";
+}

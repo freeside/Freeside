@@ -16,7 +16,6 @@
 foreach my $table (qw(
   part_export_option
   payment_gateway_option
-  payment_gateway
   agent_payment_gateway
   queue_arg
   queue
@@ -25,6 +24,11 @@ foreach my $table (qw(
   print "DELETE FROM $table;\n";
   print "DELETE FROM h_$table;\n";
 }
+
+# don't break foreign keys in cust_pay_*, just scrub fields that could be
+# used to access the gateway
+print "UPDATE payment_gateway SET gateway_module = 'Test', disabled = 'Y', gateway_username = NULL, gateway_password = 'NULL';\n";
+print "DELETE FROM h_payment_gateway;\n";
 
 foreach my $table (qw(
   part_export
@@ -38,6 +42,7 @@ print "DELETE FROM cust_main_invoice WHERE dest != 'POST';\n";
 foreach my $item (qw(
   business-onlinepayment
   business-onlinepayment-ach
+  smtpmachine
 )) {
   print "DELETE FROM conf WHERE name = '$item';\n";
   print "DELETE FROM h_conf WHERE name = '$item';\n";

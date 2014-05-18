@@ -1,9 +1,10 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c );
+use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c $opt_j $opt_a );
 use vars qw( $DEBUG $DRY_RUN );
 use Getopt::Std;
+use DBD::Pg qw(:async); #for -a
 use DBIx::DBSchema 0.31; #0.39
 use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);
 use FS::CurrentUser;
@@ -17,7 +18,7 @@ my $start = time;
 
 die "Not running uid freeside!" unless checkeuid();
 
-getopts("dqrcs");
+getopts("dqrcsja");
 
 $DEBUG = !$opt_q;
 #$DEBUG = $opt_v;
@@ -29,6 +30,14 @@ $FS::CurrentUser::upgrade_hack = 1;
 $FS::UID::callback_hack = 1;
 my $dbh = adminsuidsetup($user);
 $FS::UID::callback_hack = 0;
+
+# pass command line opts through to upgrade* routines
+my %upgrade_opts = (
+  quiet   => $opt_q,
+  verbose => $opt_v,
+  queue   => $opt_j,
+  # others?
+);
 
 if ( driver_name =~ /^mysql/i ) { #until 0.39 is required above
   eval "use DBIx::DBSchema 0.39;";
@@ -102,7 +111,7 @@ if ( $DRY_RUN ) {
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
 
-  upgrade_schema();
+  upgrade_schema(%upgrade_opts);
 
   dbdef_create($dbh, $dbdef_file);
   delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
@@ -178,10 +187,43 @@ if ( $DRY_RUN ) {
     join(";\n", @statements ). ";\n";
   exit;
 } else {
+
+  my @clones = ();
   foreach my $statement ( @statements ) {
-    warn "$statement\n";
-    $dbh->do( $statement )
-      or die "Error: ". $dbh->errstr. "\n executing: $statement";
+
+    if ( $opt_a ) {
+
+      my $clone = '';
+      until ( $clone = $dbh->clone ) {
+        sleep 60; #too many database connections?  wait and retry
+      }
+      until ( $clone->do( $statement, {pg_async=>PG_ASYNC} ) ) {
+        sleep 60; #too many ... running queries?  wait and retry
+      }
+      warn "$statement\n";
+      push @clones, $clone;
+
+    } else {
+      warn "$statement\n";
+      $dbh->do( $statement )
+        or die "Error: ". $dbh->errstr. "\n executing: $statement";
+    }
+
+  }
+
+  warn "Waiting for all schema changes to complete\n" if @clones; # && $DEBUG;
+  while ( @clones ) {
+    my @newclones = ();
+    foreach my $clone ( @clones ) {
+      if ( $clone->pg_ready ) {
+        $clone->pg_result or die $clone->errstr;
+        $clone->commit    or die $clone->errstr;
+      } else {
+        push @newclones, $clone;
+      }
+    }
+    @clones = @newclones;
+    sleep 30 if @clones;
   }
 
 #  warn "Pre-schema change upgrades completed in ". (time-$start). " seconds\n"; # if $DEBUG;
@@ -286,7 +328,7 @@ foreach my $cfst ( @cfst ) {
 }
 warn "Custom fields data upgrade completed";
 
-upgrade_config()
+upgrade_config(%upgrade_opts)
   unless $DRY_RUN || $opt_s;
 
 $dbh->commit or die $dbh->errstr;
@@ -294,7 +336,7 @@ $dbh->commit or die $dbh->errstr;
 warn "Config updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
-upgrade()
+upgrade(%upgrade_opts)
   unless $DRY_RUN || $opt_s;
 
 $dbh->commit or die $dbh->errstr;
@@ -302,7 +344,7 @@ $dbh->commit or die $dbh->errstr;
 warn "Table updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
-upgrade_sqlradius()
+upgrade_sqlradius(%upgrade_opts)
   unless $DRY_RUN || $opt_s || $opt_r;
 
 warn "SQL RADIUS updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
@@ -322,7 +364,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-upgrade [ -d ] [ -r ] [ -s ] [ -q | -v ] user\n"; 
+  die "Usage:\n  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -c ] [ -s ] [ -j ] [ -a ] user\n"; 
 }
 
 =head1 NAME
@@ -331,7 +373,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -r ] [ -c ] [ -s ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -c ] [ -s ] [ -j ] [ -a ]
 
 =head1 DESCRIPTION
 
@@ -353,16 +395,27 @@ Also performs other upgrade functions:
 
   [ -q ]: Run quietly.  This may become the default at some point.
 
+  [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
+          current default.
+
+  [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
+
   [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
           databases may be inaccessible.
 
   [ -c ]: Skip cdr and h_cdr updates.
 
-  [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
-          current default.
-
-  [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
           changes will be replicated from the Pg/slony master.
+
+  [ -j ]: Run certain upgrades asychronously from the job queue.  Currently 
+          used only for the 2.x -> 3.x cust_location, cust_pay and part_pkg
+          upgrades.  This may cause odd behavior before the upgrade is
+          complete, so it's recommended only for very large cust_main, cust_pay
+          and/or part_pkg tables that take too long to upgrade.
+
+  [ -a ]: Run schema changes in parallel (Pg only).  DBIx::DBSchema minimum 
+          version 0.41 recommended.  Recommended only for large databases and
+          powerful database servers, to reduce upgrade time.
 
 =head1 SEE ALSO
 

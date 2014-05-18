@@ -48,7 +48,7 @@ $sth->execute
 if ($sth->fetchrow_arrayref->[0]) {
   push @$header, 'Category';
   push @$fields, 'categoryname';
-  push @$links,  $link;
+  push @$links,  [ $p.'edit/pkg_category.html?', 'categorynum' ]
 }
 
 </%init>

@@ -72,30 +72,33 @@ Example:
 
   function update_customer(searchrow, customerArray) {
       
+      var display_custnum_obj = document.getElementById('display_custnum'+searchrow);
       var custnum_obj = document.getElementById('custnum'+searchrow);
       var customer = document.getElementById('customer'+searchrow);
       var customer_select = document.getElementById('cust_select'+searchrow);
 
-      custnum_obj.disabled = false;
-      custnum_obj.style.backgroundColor = '#ffffff';
+      display_custnum_obj.disabled = false;
+      display_custnum_obj.style.backgroundColor = '#ffffff';
       customer.disabled = false;
       customer.style.backgroundColor = '#ffffff';
 
       if ( customerArray.length == 0 ) {
 
-          custnum_obj.value = 'Not found';
+          custnum_obj.value = '';
+          display_custnum_obj.value = 'Not found';
           customer.value = 'Not found';
-          custnum_obj.style.color = '#ff0000';
+          display_custnum_obj.style.color = '#ff0000';
           customer.style.color = '#ff0000';
 
           customer.style.display = '';
           customer_select.style.display = 'none';
           return false;
 
-      } else if ( customerArray.length == 6 ) {
+      } else if ( customerArray.length >= 6 ) {
 
           custnum_obj.value = customerArray[0];
-          custnum_obj.style.color = '#000000';
+          display_custnum_obj.value = customerArray[6];
+          display_custnum_obj.style.color = '#000000';
           customer.value = customerArray[1];
 
           update_balance_text(searchrow, customerArray[2]);
@@ -139,7 +142,6 @@ Example:
     customer.style.display = '';
     customer_select.style.display = 'none';
     
-    var custnum_obj = document.getElementById('custnum'+searchrow);
     update_balance_text(searchrow, '');
     update_status_text(searchrow, '');
     update_status_color(searchrow, '#000000');
@@ -164,11 +166,12 @@ Example:
 
     this.style.color = '#000000'
 
-    var custnum_obj = this;
+    var display_custnum_obj = this;
     var searchrow = this.getAttribute('rownum');
-    var custnum = this.value;
+    var custnum_obj = document.getElementById('custnum'+searchrow);
+    var display_custnum = this.value;
 
-    if ( custnum == 'searching...' || custnum == 'Not found' || custnum == '' )
+    if ( display_custnum == 'searching...' || display_custnum == 'Not found' || display_custnum == '' )
       return;
 
     if ( this.getAttribute('magic') == 'nosearch' ) {
@@ -241,7 +244,7 @@ Example:
 
     }
 
-    custnum_search(custnum, search_custnum_update );
+    custnum_search(display_custnum, search_custnum_update );
 
   }
 
@@ -266,7 +269,7 @@ Example:
     var invnum = document.getElementById('invnum'+searchrow);
     invnum.value = '';
 
-    var custnum_obj = document.getElementById('custnum'+searchrow);
+    var custnum_obj = document.getElementById('display_custnum'+searchrow);
     custnum_obj.value = 'searching...';
     custnum_obj.disabled = true;
     custnum_obj.style.color = '#000000';
@@ -329,6 +332,7 @@ Example:
     var customer = this.options[this.selectedIndex].text;
 
     var searchrow = this.getAttribute('rownum');
+    var display_custnum_obj = document.getElementById('display_custnum'+searchrow);
     var custnum_obj = document.getElementById('custnum'+searchrow);
     var customer_obj = document.getElementById('customer'+searchrow);
     var balance_obj = document.getElementById('balance'+searchrow);
@@ -338,6 +342,7 @@ Example:
 
     } else if ( custnum_balance_status == 'cancel' ) {
 
+      display_custnum_obj.value = '';
       custnum_obj.value = '';
       custnum_obj.style.color = '#000000';
 
@@ -421,16 +426,22 @@ Example:
 
       <TD>
         <INPUT TYPE      = "text"
-               NAME      = "custnum<% $row %>"
-               ID        = "custnum<% $row %>"
+               NAME      = "display_custnum<% $row %>"
+               ID        = "display_custnum<% $row %>"
                SIZE      = 8
                MAXLENGTH = 12
                STYLE     = "text-align:right;"
+               VALUE     = "<% $param->{"display_custnum$row"} %>"
+               rownum    = "<% $row %>"
+        >
+        <INPUT TYPE      = "hidden"
+               NAME      = "custnum<% $row %>"
+               ID        = "custnum<% $row %>"
                VALUE     = "<% $param->{"custnum$row"} %>"
                rownum    = "<% $row %>"
         >
         <SCRIPT TYPE="text/javascript">
-          var custnum_input<% $row %> = document.getElementById("custnum<% $row %>");
+          var custnum_input<% $row %> = document.getElementById("display_custnum<% $row %>");
           custnum_input<% $row %>.onfocus = clearhint_custnum;
           custnum_input<% $row %>.onchange = <% $opt{prefix} %>search_custnum;
         </SCRIPT>
@@ -629,15 +640,22 @@ Example:
 
     var custnum_cell = document.createElement('TD');
 
+      var display_custnum_input = document.createElement('INPUT');
+      display_custnum_input.setAttribute('name', 'display_custnum'+<% $opt{prefix} %>rownum);
+      display_custnum_input.setAttribute('id',   'display_custnum'+<% $opt{prefix} %>rownum);
+      display_custnum_input.style.textAlign = 'right';
+      display_custnum_input.setAttribute('size', 8);
+      display_custnum_input.setAttribute('maxlength', 12);
+      display_custnum_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      display_custnum_input.onfocus = clearhint_custnum;
+      display_custnum_input.onchange = <% $opt{prefix} %>search_custnum;
+      custnum_cell.appendChild(display_custnum_input);
+
       var custnum_input = document.createElement('INPUT');
+      custnum_input.type = 'hidden';
       custnum_input.setAttribute('name', 'custnum'+<% $opt{prefix} %>rownum);
       custnum_input.setAttribute('id',   'custnum'+<% $opt{prefix} %>rownum);
-      custnum_input.style.textAlign = 'right';
-      custnum_input.setAttribute('size', 8);
-      custnum_input.setAttribute('maxlength', 12);
       custnum_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
-      custnum_input.onfocus = clearhint_custnum;
-      custnum_input.onchange = <% $opt{prefix} %>search_custnum;
       custnum_cell.appendChild(custnum_input);
 
     row.appendChild(custnum_cell);

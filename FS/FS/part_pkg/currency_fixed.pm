@@ -54,9 +54,10 @@ sub calc_setup {
 
 use FS::Conf;
 sub calc_currency_option {
-  my($self, $optionname, $cust_pkg, $sdate, $details, $param) = @_;
+  my($self, $optionname, $cust_or_quotation_pkg, $sdate, $details, $param) = @_;
 
-  my($currency, $amount) = $cust_pkg->part_pkg_currency_option($optionname);
+  my($currency, $amount) =
+    $cust_or_quotation_pkg->part_pkg_currency_option($optionname);
   return sprintf('%.2f', $amount ) unless $currency;
 
   $param->{'billed_currency'} = $currency;
@@ -73,9 +74,10 @@ sub calc_currency_option {
 }
 
 sub base_recur {
-  my( $self, $cust_pkg, $sdate, $details, $param ) = @_;
-  $param ||= {};
-  $self->calc_currency_option('recur_fee', $cust_pkg, $sdate, $details, $param);
+  my( $self, $cust_or_quotation_pkg, $sdate, $details, $param ) = @_;
+  $self->calc_currency_option(
+    'recur_fee', $cust_or_quotation_pkg, $sdate, $details, $param || {}
+  );
 }
 
 sub can_discount { 0; } #can't discount yet (percentage would work, but amount?)

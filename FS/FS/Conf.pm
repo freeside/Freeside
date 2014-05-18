@@ -1532,7 +1532,7 @@ and customer address. Include units.',
     'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
     'type'        => 'select',
     'select_enum' => [ 
-      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 9', 'Net 10', 
+      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 5', 'Net 9', 'Net 10', 'Net 14', 
       'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
       'Net 60', 'Net 90'
     ], },
@@ -2662,7 +2662,7 @@ and customer address. Include units.',
   {
     'key'         => 'cvv-save',
     'section'     => 'billing',
-    'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
+    'description' => 'NOT RECOMMENDED.  Saves CVV2 information after the initial transaction for the selected credit card types.  Enabling this option is almost certainly in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
     'type'        => 'selectmultiple',
     'select_enum' => \@card_types,
   },
@@ -2671,6 +2671,13 @@ and customer address. Include units.',
     'key'         => 'signup-require_cvv',
     'section'     => 'self-service',
     'description' => 'Require CVV for credit card signup.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-require_cvv',
+    'section'     => 'self-service',
+    'description' => 'Require CVV for credit card self-service payments, except for cards on-file.',
     'type'        => 'checkbox',
   },
 
@@ -2859,6 +2866,13 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Template to use for password reset emails.',
     %msg_template_options,
+  },
+
+  {
+    'key'         => 'selfservice-password_change_oldpass',
+    'section'     => 'self-service',
+    'description' => 'Require old password to be entered again for password changes (in addition to being logged in), at the API level.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -3449,6 +3463,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_pkg-hide_discontinued-part_svc',
+    'section'     => 'UI',
+    'description' => "In customer view, hide provisioned services which are no longer available in the package definition.  Not normally used except for very specific situations as it hides still-provisioned services.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_acct-edit_uid',
     'section'     => 'shell',
     'description' => 'Allow UID editing.',
@@ -3854,9 +3875,9 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_main-enable_spouse_birthdate',
+    'key'         => 'cust_main-enable_spouse',
     'section'     => 'UI',
-    'description' => 'Enable tracking of a spouse birth date with each customer record',
+    'description' => 'Enable tracking of a spouse\'s name and date of birth with each customer record',
     'type'        => 'checkbox',
   },
 
@@ -3864,6 +3885,13 @@ and customer address. Include units.',
     'key'         => 'cust_main-enable_anniversary_date',
     'section'     => 'UI',
     'description' => 'Enable tracking of an anniversary date with each customer record',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-enable_order_package',
+    'section'     => 'UI',
+    'description' => 'Display order new package on the basic tab',
     'type'        => 'checkbox',
   },
 
@@ -5208,6 +5236,33 @@ and customer address. Include units.',
     },
   },
 
+  #false laziness w/above options_sub and option_sub
+  {
+    'key'         => 'cust_location-exports',
+    'section'     => '',
+    'description' => 'Export(s) to call on cust_location insert, modification and deletion.',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub {
+      require FS::Record;
+      require FS::part_export;
+      my @part_export =
+        map { qsearch( 'part_export', {exporttype => $_ } ) }
+          keys %{FS::part_export::export_info('cust_location')};
+      map { $_->exportnum => $_->exporttype.' to '.$_->machine } @part_export;
+    },
+    'option_sub'  => sub {
+      require FS::Record;
+      require FS::part_export;
+      my $part_export = FS::Record::qsearchs(
+        'part_export', { 'exportnum' => shift }
+      );
+      $part_export
+        ? $part_export->exporttype.' to '.$part_export->machine
+        : '';
+    },
+  },
+
   {
     'key'         => 'cust_tag-location',
     'section'     => 'UI',
@@ -5547,6 +5602,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-hide_cdr_price',
+    'section'     => 'self-service',
+    'description' => 'Don\'t show the "Price" column on CDRs in self-service.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'logout-timeout',
     'section'     => 'UI',
     'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
@@ -5651,6 +5713,13 @@ and customer address. Include units.',
 			   );
                            $reason ? $reason->reason : '';
 			 },
+  },
+
+  {
+    'key'         => 'part_pkg-term_discounts',
+    'section'     => 'billing',
+    'description' => 'Enable the term discounts feature.  Recommended to keep turned off unless actually using - not well optimized for large installations.',
+    'type'        => 'checkbox',
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

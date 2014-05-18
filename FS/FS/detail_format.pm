@@ -34,19 +34,19 @@ a subclass.
 
 OPTIONS may contain:
 
-- buffer: an arrayref to store details into.  This may avoid the need for 
-  a large copy operation at the end of processing.  However, since 
-  summary formats will produce nothing until the end of processing, 
-  C<finish> must be called after all CDRs have been appended.
+- buffer: an arrayref to store details into.  This may avoid the need for a
+large copy operation at the end of processing.  However, since summary formats
+will produce nothing until the end of processing, C<finish> must be called
+after all CDRs have been appended.
 
-- inbound: a flag telling the formatter to format CDRs for display to 
-  the receiving party, rather than the originator.  In this case, the 
-  L<FS::cdr_termination> object will be fetched and its values used for
-  rated_price, rated_seconds, rated_minutes, and svcnum.  This can be 
-  changed with the C<inbound> method.
+- inbound: a flag telling the formatter to format CDRs for display to the
+receiving party, rather than the originator.  In this case, the
+L<FS::cdr_termination> object will be fetched and its values used for
+rated_price, rated_seconds, rated_minutes, and svcnum.  This can be changed
+with the C<inbound> method.
 
-- locale: a locale string to use for static text and date formats.  This
-  is optional.
+- locale: a locale string to use for static text and date formats.  This is
+optional.
 
 =cut
 
@@ -70,7 +70,7 @@ sub new {
   my $language_name = $locale_info{'name'};
 
   my $self = { conf => FS::Conf->new(locale => $locale),
-               csv  => Text::CSV_XS->new,
+               csv  => Text::CSV_XS->new({ binary => 1 }),
                inbound  => ($opt{'inbound'} ? 1 : 0),
                buffer   => ($opt{'buffer'} || []),
                _lh      => FS::L10N->get_handle($locale),
@@ -83,6 +83,8 @@ sub new {
 =back
 
 =head1 METHODS
+
+=over 4
 
 =item inbound VALUE
 
@@ -163,12 +165,21 @@ Takes a single CDR and returns an invoice detail to describe it.
 
 By default, this maps the following fields from the CDR:
 
-rated_price       => amount
-rated_classnum    => classnum
-rated_seconds     => duration
-rated_regionname  => regionname
-accountcode       => accountcode
-startdate         => startdate
+=over 4
+
+=item rated_price       => amount
+
+=item rated_classnum    => classnum
+
+=item rated_seconds     => duration
+
+=item rated_regionname  => regionname
+
+=item accountcode       => accountcode
+
+=item startdate         => startdate
+
+=back
 
 It then calls C<columns> on the CDR to obtain a list of detail
 columns, formats them as a CSV string, and stores that in the 

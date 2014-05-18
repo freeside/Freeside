@@ -100,6 +100,7 @@ sub bill {
           'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
           'not_pkgpart'  => $opt{'g'}, #$not_pkgpart,
           'one_recur'    => $opt{'o'},
+          'no_prepaid'   => 1,
       );
 
       if ( $opt{'m'} ) {

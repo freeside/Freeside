@@ -1,7 +1,10 @@
 <?
 if ( $payment_results['error'] ) {
   // an error at this stage isn't meaningful to the user
+  // but make sure it's logged
+  error_log("[start_thirdparty] $error");
   $error = 'Internal error communicating with payment processor.';
+  include('error.php');
 } elseif ( isset($payment_results['url']) ) {
   $url = $payment_results['url'];
 ?>

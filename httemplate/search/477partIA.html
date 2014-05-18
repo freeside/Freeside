@@ -118,7 +118,6 @@ my $percentages = ($technology eq 'Terrestrial Mobile Wireless');
 # So we count packages that were in active status as of the specified date,
 # not over any sort of range.
 $search_hash{'active'} = [ $opt{date}, $opt{date} ];
-warn Dumper \%search_hash;
 
 my $query = FS::cust_pkg->search(\%search_hash);
 my $count_query = $query->{'count_query'};

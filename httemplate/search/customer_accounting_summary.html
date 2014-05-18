@@ -87,7 +87,7 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 <style type="text/css">
 .report * {
   background-color: #f8f8f8;
-  border: 1px solid black;
+  border: 1px solid #999999;
   padding: 2px;
 }
 .report td {
@@ -156,7 +156,6 @@ if ( $cgi->param('setuprecur') ) {
 }
 my @labels = ();
 my @cross_params = ();
-my @custnames = ();
 
 my $status = $cgi->param('status');
 die "invalid status" unless $status =~ /^\w+|$/;
@@ -171,12 +170,9 @@ $search_hash{'classnum'} = [ $cgi->param('cust_classnum') ]
   if grep { $_ eq 'cust_classnum' } $cgi->param;
 
 my $query = FS::cust_main::Search->search(\%search_hash);
-my @custs = qsearch($query);
+my @cust_main = qsearch($query);
 
-foreach my $cust_main ( @custs ) {
-
-  push @custnames, $cust_main->name;
-
+foreach my $cust_main (@cust_main) {
   push @cross_params, [ ('custnum' => $cust_main->custnum) ];
 }
 
@@ -209,7 +205,7 @@ my @cells; # arrayrefs of cell info
 # header row
 $rows[0] = {};
 $cells[0] = [
-  { header => 1, rowspan => 2, colspan => ($setuprecur ? 2 : 1) },
+  { header => 1, rowspan => 2, colspan => ($setuprecur ? 4 : 3) },
   ($setuprecur ? '' : ()),
   map {
     { header => 1, colspan => 2, value => time2str('%b %Y', $_) },
@@ -229,7 +225,7 @@ $cells[1] = [ '',
 
 # use PDL; # ha ha, I just might.
 my $row = 0;
-foreach my $name (@custnames) { # correspond to cross_params
+foreach my $cust_main (@cust_main) { # correspond to cross_params
   my $skip = 1; # skip the customer iff ALL of their values are zero
   for my $subrow (0..($setuprecur ? 1 : 0)) { # the setup/recur axis
     push @rows, { class => $subrow ? 'shaded' : '' };
@@ -237,9 +233,19 @@ foreach my $name (@custnames) { # correspond to cross_params
     if ( $subrow == 0 ) {
       # customer name
       push @thisrow,
-        { value => $name,
-          header => 1,
-          rowspan => ($setuprecur ? 2 : 1) };
+        { value   => $cust_main->name,
+          header  => 1,
+          rowspan => ($setuprecur ? 2 : 1),
+        },
+        { value   => $cust_main->state, #cust_main->bill_location->state,
+          header  => 1,
+          rowspan => ($setuprecur ? 2 : 1),
+        },
+        { value => $cust_main->salesnum ? $cust_main->sales->salesperson : '',
+          header  => 1,
+          rowspan => ($setuprecur ? 2 : 1),
+        },
+      ;
     } else {
       push @thisrow, '';
     }
@@ -278,6 +284,7 @@ for my $subrow (0..($setuprecur ? 1 : 0)) {
     push @thisrow,
       { value => mt('Total'),
         header => 1,
+        colspan => 3,
         rowspan => ($setuprecur ? 2 : 1), };
   } else {
     push @thisrow, '';

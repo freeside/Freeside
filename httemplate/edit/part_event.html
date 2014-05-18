@@ -1,4 +1,4 @@
-<% include( 'elements/edit.html',
+<& elements/edit.html,
               'name'   => 'Billing event definition',
               'table'  => 'part_event',
               'fields' => [
@@ -82,8 +82,7 @@
 
               'agent_virt'       => 1,
               'agent_null_right' => 'Edit global billing events',
-          )
-%>
+&>
 <SCRIPT TYPE="text/javascript">
 
   window.onload = function () { eventtable_changed(document.getElementById('eventtable')) };

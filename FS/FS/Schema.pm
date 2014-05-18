@@ -466,7 +466,7 @@ sub tables_hashref {
   my $char_d = 80; #default maxlength for text fields
 
   #my(@date_type)  = ( 'timestamp', '', ''     );
-  my @date_type  = ( 'int', 'NULL', ''     );
+  my @date_type = ( 'int', 'NULL', ''     );
   my @perl_type = ( 'text', 'NULL', ''  ); 
   my @money_type = ( 'decimal',   '', '10,2' );
   my @money_typen = ( 'decimal',   'NULL', '10,2' );
@@ -1521,8 +1521,10 @@ sub tables_hashref {
         'stateid_state', 'varchar', 'NULL', $char_d, '', '', 
         'national_id', 'varchar', 'NULL', $char_d, '', '',
         'birthdate' ,@date_type, '', '', 
-        'spouse_birthdate' ,@date_type, '', '', 
-        'anniversary_date' ,@date_type, '', '', 
+        'spouse_last',  'varchar', 'NULL', 2*$char_d, '', '',
+        'spouse_first', 'varchar', 'NULL', $char_d, '', '',
+        'spouse_birthdate', @date_type, '', '', 
+        'anniversary_date', @date_type, '', '', 
         'signupdate',@date_type, '', '', 
         'dundate',   @date_type, '', '', 
         'company',  'varchar', 'NULL', $char_d, '', '', 
@@ -1615,6 +1617,8 @@ sub tables_hashref {
                           [ 'referral_custnum' ],
                           [ 'payby' ], [ 'paydate' ],
                           [ 'archived' ],
+                          [ 'ship_locationnum' ],
+                          [ 'bill_locationnum' ],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
@@ -2230,7 +2234,7 @@ sub tables_hashref {
 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'status',       'varchar',     '', $char_d, '', '', 
-        'session_id',   'varchar', 'NULL', $char_d, '', '', #only need 32
+        'session_id',   'varchar', 'NULL', 1024, '', '', # SHA-512-hex
         'statustext',   'text',    'NULL',  '', '', '', 
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
@@ -2571,7 +2575,7 @@ sub tables_hashref {
         'manual_flag',        'char', 'NULL',  1, '', '', 
         'no_auto',            'char', 'NULL',  1, '', '', 
         'quantity',            'int', 'NULL', '', '', '',
-        'agent_pkgid',         'int', 'NULL', '', '', '',
+        'agent_pkgid',     'varchar', 'NULL', $char_d, '', '',
         'waive_setup',        'char', 'NULL',  1, '', '', 
         'recur_show_zero',    'char', 'NULL',  1, '', '',
         'setup_show_zero',    'char', 'NULL',  1, '', '',
@@ -2731,7 +2735,7 @@ sub tables_hashref {
       'columns' => [
         'pkgusagenum', 'serial', '', '', '', '',
         'pkgnum',         'int', '', '', '', '',
-        'minutes',        'int', '', '', '', '',
+        'minutes',        'double precision', '', '', '', '',
         'pkgusagepart',   'int', '', '', '', '',
       ],
       'primary_key'  => 'pkgusagenum',
@@ -2752,7 +2756,7 @@ sub tables_hashref {
         'cdrusagenum', 'bigserial', '', '', '', '',
         'acctid',      'bigint',    '', '', '', '',
         'pkgusagenum', 'int',       '', '', '', '',
-        'minutes',     'int',       '', '', '', '',
+        'minutes',     'double precision',       '', '', '', '',
       ],
       'primary_key'  => 'cdrusagenum',
       'unique'       => [],
@@ -4498,6 +4502,7 @@ sub tables_hashref {
         'rssi',                    'int', 'NULL',        '', '', '',
         'suid',                    'int', 'NULL',        '', '', '',
         'shared_svcnum',           'int', 'NULL',        '', '', '',
+        'serviceid',           'varchar', 'NULL',        64, '', '',#srvexport/reportfields
       ],
       'primary_key'  => 'svcnum',
       'unique'       => [ [ 'ip_addr' ], [ 'mac_addr' ] ],
@@ -4708,7 +4713,7 @@ sub tables_hashref {
       'columns' => [
         'pkgusagepart', 'serial',   '', '', '', '',
         'pkgpart',  'int',      '', '', '', '',
-        'minutes',  'int',      '', '', '', '',
+        'minutes',  'double precision',      '', '', '', '',
         'priority', 'int',  'NULL', '', '', '',
         'shared',   'char', 'NULL',  1, '', '',
         'rollover', 'char', 'NULL',  1, '', '',
@@ -4745,12 +4750,18 @@ sub tables_hashref {
 
     'rate' => {
       'columns' => [
-        'ratenum',  'serial', '', '', '', '', 
-        'ratename', 'varchar', '', $char_d, '', '', 
+        'ratenum',   'serial',     '',      '', '', '', 
+        'ratename', 'varchar',     '', $char_d, '', '', 
+        'agentnum',     'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'ratenum',
       'unique'      => [],
       'index'       => [],
+      'foreign_keys' => [
+                          { columns    => [ 'agentnum' ],
+                            table      => 'agent',
+                          },
+                        ],
     },
 
     'rate_detail' => {
@@ -5047,11 +5058,12 @@ sub tables_hashref {
 
     'pkg_category' => {
       'columns' => [
-        'categorynum',   'serial',  '', '', '', '', 
-        'categoryname',  'varchar', '', $char_d, '', '', 
-        'weight',         'int', 'NULL',  '', '', '',
-        'condense',      'char', 'NULL',   1, '', '', 
-        'disabled',      'char', 'NULL',   1, '', '', 
+        'categorynum',        'serial',     '',      '', '', '', 
+        'categoryname',      'varchar',     '', $char_d, '', '', 
+        'weight',                'int', 'NULL',      '', '', '',
+        'ticketing_queueid',     'int', 'NULL',      '', '', '', 
+        'condense',             'char', 'NULL',       1, '', '', 
+        'disabled',             'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'categorynum',
       'unique' => [],
@@ -5475,6 +5487,44 @@ sub tables_hashref {
       'primary_key' => 'rightnum',
       'unique' => [ [ 'righttype', 'rightobjnum', 'rightname' ] ],
       'index'  => [],
+    },
+
+    'sched_item' => {
+      'columns' => [
+        'itemnum',   'serial',      '', '', '', '', 
+        'usernum',      'int',  'NULL', '', '', '', 
+        #'itemname', 'varchar', $char_d, '', '', '',
+        'disabled',    'char',  'NULL',  1, '', '', 
+      ],
+      'primary_key'  => 'itemnum',
+      'unique'       => [ [ 'usernum' ] ],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'usernum' ],
+                            table      => 'access_user',
+                          },
+                        ],
+    },
+
+    #'sched_item_class'
+
+    'sched_avail' => {
+      'columns' => [
+        'availnum',      'serial', '', '', '', '', 
+        'itemnum',          'int', '', '', '', '',
+        'wday',             'int', '', '', '', '',
+        'stime',            'int', '', '', '', '',
+        'etime',            'int', '', '', '', '',
+        'override_date',    @date_type,    '', '',
+      ],
+      'primary_key'  => 'availnum',
+      'unique'       => [],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'itemnum' ],
+                            table      => 'sched_item',
+                          },
+                        ],
     },
 
     'svc_phone' => {

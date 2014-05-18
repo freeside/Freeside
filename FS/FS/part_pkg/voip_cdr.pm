@@ -12,7 +12,7 @@ use FS::cdr;
 use FS::detail_format;
 #use FS::rate;
 #use FS::rate_prefix;
-#use FS::rate_detail;
+#use FS::rate_detail; #for ::granularities
 
 $DEBUG = 0;
 
@@ -108,19 +108,13 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                   },
 
     'ratenum'   => { 'name' => 'Rate plan',
-                     'type' => 'select',
-                     'select_table' => 'rate',
-                     'select_key'   => 'ratenum',
-                     'select_label' => 'ratename',
+                     'type' => 'select-rate',
                    },
                    
     'intrastate_ratenum'   => { 'name' => 'Optional alternate intrastate rate plan',
-                     'type' => 'select',
-                     'select_table' => 'rate',
-                     'select_key'   => 'ratenum',
-                     'select_label' => 'ratename',
+                     'type' => 'select-rate',
                      'disable_empty' => 0,
-                     'empty_label'   => '',
+                     'empty_label'   => ' ',
                    },
 
     'calls_included' => { 'name' => 'Number of calls included at no usage charge', },
@@ -402,13 +396,15 @@ sub calc_usage {
 
   my $charges = 0;
 
-  my $included_min = $self->option('min_included', 1) || 0; #single price rating
+  my $included_min = $self->option('min_included', 1) || 0;
+    #single price rating
+    #or region group
+
   my $included_calls = $self->option('calls_included', 1) || 0;
 
   my $cdr_svc_method    = $self->option('cdr_svc_method',1)||'svc_phone.phonenum';
   my $rating_method     = $self->option('rating_method') || 'prefix';
-  my $region_group_included_min = $self->option('min_included',1) || 0;
-  my %region_group_included_min = ();
+  my %detail_included_min = ();
 
   my $output_format     = $self->option('output_format', 'Hush!')
                           || ( $rating_method eq 'upstream_simple'
@@ -470,6 +466,7 @@ sub calc_usage {
     #my @invoice_details_sort;
 
     #first rate any outstanding CDRs not yet rated
+    # XXX eventually use an FS::Cursor for this
     my $cdr_search = $svc_x->psearch_cdrs(%options);
     $cdr_search->limit(1000);
     $cdr_search->increment(0); # because we're changing their status as we go
@@ -479,9 +476,8 @@ sub calc_usage {
         'part_pkg'                          => $self,
         'cust_pkg'                          => $cust_pkg,
         'svcnum'                            => $svc_x->svcnum,
-        'single_price_included_min'         => \$included_min,
-        'region_group_included_min'         => \$region_group_included_min,
-        'region_group_included_min_hashref' => \%region_group_included_min,
+        'plan_included_min'                 => \$included_min,
+        'detail_included_min_hashref'       => \%detail_included_min,
       );
       die $error if $error; #??
 

@@ -30,6 +30,7 @@
       taxclass  => 'Tax class',
       pkgclass  => 'Package class',
       city      => 'City',
+      district  => 'District',
     },
   &>
 </TABLE>
@@ -63,6 +64,9 @@ if ( FS::pkg_class->count() > 0 ) {
 }
 if ( FS::cust_main_county->count("city is not null and city != ''") > 0 ) {
   push @breakdown, 'city';
+}
+if ( FS::cust_main_county->count("district is not null") > 0 ) {
+  push @breakdown, 'district';
 }
 
 </%init>

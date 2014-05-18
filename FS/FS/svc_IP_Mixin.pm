@@ -96,7 +96,12 @@ sub _used_addresses {
   my %hash = ( $ip_field => { op => '!=', value => '' } );
   #$hash{'blocknum'} = $block->blocknum if $block;
   $hash{'svcnum'} = { op => '!=', value => $exclude->svcnum } if ref $exclude;
-  map { $_->NetAddr->addr } qsearch($class->table, \%hash);
+  map { my $na = $_->NetAddr; $na ? $na->addr : () }
+    qsearch({
+        table     => $class->table,
+        hashref   => \%hash,
+        extra_sql => " AND $ip_field != '0e0'",
+    });
 }
 
 sub _is_used {

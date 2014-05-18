@@ -32,9 +32,11 @@ my $header = $args{'header'};
 my $rows   = $args{'rows'};
 my %opt    = %{ $args{'opt'} };
 
+my $filename = $opt{'filename'} ||
+                ($opt{'name'} || PL($opt{'name_singular'}) . 'xml');
+
 http_header('Content-Type' => 'application/XML' ); # So saith RFC 4180
-http_header('Content-Disposition' => 
-  'attachment;filename="'.($opt{'name'} || PL($opt{'name_singular'}) ).'.xml"');
+http_header('Content-Disposition' => 'attachment;filename="'.$filename.'"');
 
 unless ( $opt{'fields'} ) {
   foreach my $i ( 0 .. ( $#{ @$rows[0] } ) ) {

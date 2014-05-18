@@ -1,0 +1,32 @@
+%if ( $error ) {
+%  $cgi->param('error', $error );
+<% $cgi->redirect(popurl(2). "sched_item.html?". $cgi->query_string ) %>
+%} else {
+<% $cgi->redirect(popurl(3). "browse/sched_item.html") %>
+%}
+<%init>
+
+#XXX more specific AccessRight for scheduling
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $itemnum = $cgi->param('itemnum');
+
+my $sched_item = qsearchs('sched_item', { 'itemnum' => $itemnum })
+  or die "unknown itemnum $itemnum";
+
+my @sched_avail = ();
+foreach my $wday (0..6) {
+  if ( $cgi->param("sched_avail$wday") eq 'Y' ) {
+    push @sched_avail, new FS::sched_avail {
+      'itemnum' => $itemnum,
+      'wday'    => $wday,
+      'stime'   => $cgi->param("sched_avail$wday".'_stime'),
+      'etime'   => $cgi->param("sched_avail$wday".'_etime'),
+    };
+  }
+}
+
+my $error = $sched_item->replace_sched_avail(@sched_avail);
+
+</%init>

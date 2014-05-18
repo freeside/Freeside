@@ -1,0 +1,33 @@
+<SELECT NAME="ticketing_queueid">
+
+  <OPTION VALUE="" <% ! $opt{curr_value} ? 'SELECTED' : '' %>><% $opt{empty_label} %>
+
+% foreach my $queueid ( sort { $a <=> $b } keys %queues ) {
+    <OPTION VALUE="<% $queueid %>" <% $opt{curr_value} == $queueid ? ' SELECTED' : '' %>><% $queueid %>: <% $queues{$queueid} %>
+% } 
+
+% while ( @post_options ) { 
+%   my $post_opt   = shift(@post_options);
+%   my $post_label = shift(@post_options);
+%   my $selected = ( $opt{curr_value} eq $post_opt );
+    <OPTION VALUE="<% $post_opt %>"
+            <% $selected ? 'SELECTED' : '' %>
+    ><% $post_label %>
+% } 
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+my $conf = new FS::Conf;
+
+my %queues = ();
+if ( $conf->config('ticket_system') ) {
+   %queues = FS::TicketSystem->queues();
+}
+
+my @post_options  = $opt{post_options}  ? @{ $opt{post_options} } : ();
+
+</%init>

@@ -485,9 +485,14 @@ sub print_generic {
     'quotationnum'    => $self->quotationnum,
     'no_date'         => $params{'no_date'},
     '_date'           => ( $params{'no_date'} ? '' : $self->_date ),
+      # workaround for inconsistent behavior in the early plain text 
+      # templates; see RT#28271
     'date'            => ( $params{'no_date'}
                              ? ''
-                             : $self->time2str_local('long', $self->_date, $format)
+                             : ($format eq 'template'
+                               ? $self->_date
+                               : $self->time2str_local('long', $self->_date, $format)
+                               )
                          ),
     'today'           => $self->time2str_local('long', $today, $format),
     'terms'           => $self->terms,
@@ -1017,7 +1022,8 @@ sub print_generic {
     warn "$me   searching for line items\n"
       if $DEBUG > 1;
 
-    foreach my $line_item ( $self->_items_pkg(%options) ) {
+    foreach my $line_item ( $self->_items_pkg(%options),
+                            $self->_items_fee(%options) ) {
 
       warn "$me     adding line item $line_item\n"
         if $DEBUG > 1;
@@ -1860,10 +1866,13 @@ sub _items_sections {
 
         my $section = $display->section;
         my $type    = $display->type;
-        $section = undef unless $opt{by_category};
+        # Set $section = undef if we're sectioning by location and this
+        # line item _has_ a location (i.e. isn't a fee).
+        $section = undef if $locationnum;
 
+        # set this flag if the section is not tax-only
         $not_tax{$locationnum}{$section} = 1
-          unless $cust_bill_pkg->pkgnum == 0;
+          if $cust_bill_pkg->pkgnum  or $cust_bill_pkg->feepart;
 
         # there's actually a very important piece of logic buried in here:
         # incrementing $late_subtotal{$section} CREATES 
@@ -1899,7 +1908,9 @@ sub _items_sections {
         } else { # it's a pre-total (normal) section
 
           # skip tax items unless they're explicitly included in a section
-          next if $cust_bill_pkg->pkgnum == 0 && ! $section;
+          next if $cust_bill_pkg->pkgnum == 0 and
+                  ! $cust_bill_pkg->feepart   and
+                  ! $section;
 
           if (! $type || $type eq 'S') {
             $subtotal{$locationnum}{$section} += $cust_bill_pkg->setup
@@ -2255,6 +2266,58 @@ sub _items_nontax {
   grep { $_->pkgnum } $self->cust_bill_pkg;
 }
 
+sub _items_fee {
+  my $self = shift;
+  my %options = @_;
+  my @cust_bill_pkg = grep { $_->feepart } $self->cust_bill_pkg;
+  my @items;
+  foreach my $cust_bill_pkg (@cust_bill_pkg) {
+    # cache this, so we don't look it up again in every section
+    my $part_fee = $cust_bill_pkg->get('part_fee')
+       || $cust_bill_pkg->part_fee;
+    $cust_bill_pkg->set('part_fee', $part_fee);
+    if (!$part_fee) {
+      #die "fee definition not found for line item #".$cust_bill_pkg->billpkgnum."\n"; # might make more sense
+      warn "fee definition not found for line item #".$cust_bill_pkg->billpkgnum."\n";
+      next;
+    }
+    if ( exists($options{section}) and exists($options{section}{category}) )
+    {
+      my $categoryname = $options{section}{category};
+      # then filter for items that have that section
+      if ( $part_fee->categoryname ne $categoryname ) {
+        warn "skipping fee '".$part_fee->itemdesc."'--not in section $categoryname\n" if $DEBUG;
+        next;
+      }
+    } # otherwise include them all in the main section
+    # XXX what to do when sectioning by location?
+    
+    my @ext_desc;
+    my %base_invnums; # invnum => invoice date
+    foreach ($cust_bill_pkg->cust_bill_pkg_fee) {
+      if ($_->base_invnum) {
+        my $base_bill = FS::cust_bill->by_key($_->base_invnum);
+        my $base_date = $self->time2str_local('short', $base_bill->_date)
+          if $base_bill;
+        $base_invnums{$_->base_invnum} = $base_date || '';
+      }
+    }
+    foreach (sort keys(%base_invnums)) {
+      next if $_ == $self->invnum;
+      push @ext_desc,
+        $self->mt('from invoice \\#[_1] on [_2]', $_, $base_invnums{$_});
+    }
+    push @items,
+      { feepart     => $cust_bill_pkg->feepart,
+        amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
+        description => $part_fee->itemdesc_locale($self->cust_main->locale),
+        ext_description => \@ext_desc
+        # sdate/edate?
+      };
+  }
+  @items;
+}
+
 sub _items_pkg {
   my $self = shift;
   my %options = @_;
@@ -2310,7 +2373,8 @@ sub _taxsort {
 
 sub _items_tax {
   my $self = shift;
-  my @cust_bill_pkg = sort _taxsort grep { ! $_->pkgnum } $self->cust_bill_pkg;
+  my @cust_bill_pkg = sort _taxsort grep { ! $_->pkgnum and ! $_->feepart } 
+    $self->cust_bill_pkg;
   my @items = $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
 
   if ( $self->conf->exists('always_show_tax') ) {
@@ -2401,7 +2465,7 @@ sub _items_cust_bill_pkg {
     if ( $locationnum ) {
       # this is a location section; skip packages that aren't at this
       # service location.
-      next if $cust_bill_pkg->pkgnum == 0;
+      next if $cust_bill_pkg->pkgnum == 0; # skips fees...
       next if $self->cust_pkg_hash->{ $cust_bill_pkg->pkgnum }->locationnum 
               != $locationnum;
     }
