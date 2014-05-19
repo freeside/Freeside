@@ -188,7 +188,7 @@ sub usage {
   "Usage:
   aradial-sftp_and_import [ -m method ] [ -a ] [ -b ]
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
-    user format [sftpuser@]servername
+    user [sftpuser@]servername
   ";
 }
 
@@ -229,7 +229,7 @@ freeside-aradial-sftp_and_import - Download Aradial "CDR" (really RADIUS detail)
 
   aradial-sftp_and_import [ -m method ] [ -a ] [ -b ]
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
-    user format [sftpuser@]servername dbi_datasrc dbi_username dbi_pass
+    user [sftpuser@]servername dbi_datasrc dbi_username dbi_pass
 
 =head1 DESCRIPTION
 
@@ -252,8 +252,6 @@ or FTP and then import them into the database.
     be passed as the 'debug' argument to the transport method
 
 user: freeside username
-
-format: CDR format name
 
 [sftpuser@]servername: remote server
 (or ftpuser:ftppass@servername)
