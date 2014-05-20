@@ -976,6 +976,8 @@ my $html_bottom = sub {
       } elsif ( $href->{$field}{'type'} eq 'select-rate' ) {
 
         $html .= include('/elements/select-rate.html',
+                           'field'      => $layer.'__'.$field,
+                           'curr_value' => $options{$field},
                            map { $_ => $href->{$field}{$_} }
                              grep { $_ !~ /^(name|type)$/ }
                                keys %{ $href->{$field} }
