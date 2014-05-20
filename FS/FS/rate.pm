@@ -3,7 +3,6 @@ package FS::rate;
 use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Record qw( qsearch qsearchs dbh fields );
-#use FS::agent; #causes a weird dep loop in freeside-cdrrated, only needed for v3-style manual FK-checking, so, probably not bother
 use FS::rate_detail;
 
 @ISA = qw(FS::Record);

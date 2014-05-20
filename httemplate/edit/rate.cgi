@@ -5,7 +5,7 @@
 
 <% include('/elements/progress-init.html',
               'OneTrueForm',
-              [ 'rate', 'preserve_rate_detail' ], # 'rate', 'min_', 'sec_' ],
+              [ 'rate', 'agentnum', 'preserve_rate_detail' ], # 'rate', 'min_', 'sec_' ],
               'process/rate.cgi',
               $p.'browse/rate.cgi',
            )
