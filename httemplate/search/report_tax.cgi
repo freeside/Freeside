@@ -324,7 +324,7 @@ my $pkg_tax = "SELECT SUM(amount) as tax_amount, taxnum, ".
 my $pkg_tax_exempt = "SELECT SUM(amount) AS exempt_charged, billpkgnum, taxnum ".
   "FROM cust_tax_exempt_pkg EXEMPT_WHERE GROUP BY billpkgnum, taxnum";
 
-my $where = "WHERE _date >= $beginning AND _date <= $ending ";
+my $where = "WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending ";
 # SELECT/GROUP clauses for first-level queries
 # classnum is a placeholder; they all go in one class in this case.
 my $select = "SELECT NULL AS classnum, cust_main_county.taxnum, ";
@@ -470,9 +470,18 @@ $all_sql{tax} = "$select_all SUM(cust_bill_pkg.setup)
 # ($creditfrom includes join of taxable item to part_pkg if with_pkgclass
 # is on)
 my $creditfrom = $taxfrom .
-   ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)';
+  ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)' .
+  ' JOIN cust_credit_bill     USING (creditbillnum)';
 my $creditwhere = $where . 
-   ' AND billpkgtaxratelocationnum IS NULL';
+  ' AND billpkgtaxratelocationnum IS NULL';
+my $creditwhere_all = $where;
+
+# if the credit_date option is set to application date, change
+# $creditwhere accordingly
+if ( $cgi->param('credit_date') eq 'cust_credit_bill' ) {
+  $creditwhere     =~ s/cust_bill._date/cust_credit_bill._date/g;
+  $creditwhere_all =~ s/cust_bill._date/cust_credit_bill._date/g;
+}
 
 $sql{credit} = "$select SUM(cust_credit_bill_pkg.amount)
                 $creditfrom
@@ -483,9 +492,10 @@ $all_sql{credit} = "$select_all SUM(cust_credit_bill_pkg.amount)
                 FROM cust_credit_bill_pkg
                 JOIN cust_bill_pkg USING (billpkgnum)
                 $join_cust
-                $where AND $istax
+                JOIN cust_credit_bill USING (creditbillnum)
+                $creditwhere_all AND $istax
                 $group_all";
-
+warn "\n\n$all_sql{credit}\n\n";
 if ( $with_pkgclass ) {
   # the slightly more complicated version, with lots of joins that are 
   # unnecessary if you're not breaking down by package class
@@ -496,7 +506,7 @@ if ( $with_pkgclass ) {
 
   $all_sql{credit} = "$select_all SUM(cust_credit_bill_pkg.amount)
                       $creditfrom
-                      $creditwhere AND $istax
+                      $creditwhere_all AND $istax
                       $group_all";
 }
 
@@ -795,6 +805,13 @@ $dateagentlink .= ';agentnum='. $cgi->param('agentnum')
   if length($agentname);
 my $baselink   = $p. "search/cust_bill_pkg.cgi?$dateagentlink";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
-my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1";
+
+my $creditlink = $baselink . ";credit=1";
+if ( $cgi->param('credit_date') eq 'cust_credit_bill' ) {
+  $creditlink =~ s/begin/credit_begin/;
+  $creditlink =~ s/end/credit_end/;
+}
+warn $creditlink;
+
 
 </%init>

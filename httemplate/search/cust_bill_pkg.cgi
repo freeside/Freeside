@@ -241,8 +241,7 @@ if ( $cgi->param('distribute') == 1 ) {
   push @where, "sdate <= $ending",
                "edate >  $beginning",
   ;
-}
-else {
+} else {
   push @where, "cust_bill._date >= $beginning",
                "cust_bill._date <= $ending";
 }
@@ -602,6 +601,12 @@ push @select, "($pay_sub) AS pay_amount";
 # credit
 if ( $cgi->param('credit') ) {
 
+  my $credit_where;
+
+  my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'credit');
+  $credit_where = "WHERE cust_credit_bill._date >= $cr_begin " .
+                  "AND cust_credit_bill._date <= $cr_end";
+
   my $credit_sub;
 
   if ( $cgi->param('istax') ) {
@@ -615,6 +620,7 @@ if ( $cgi->param('credit') ) {
       JOIN cust_credit USING (crednum)
       LEFT JOIN reason USING (reasonnum)
       LEFT JOIN access_user USING (usernum)
+    $credit_where
     GROUP BY billpkgnum, billpkgtaxlocationnum, reason.reason, 
       access_user.username";
 
@@ -645,6 +651,7 @@ if ( $cgi->param('credit') ) {
       JOIN cust_credit USING (crednum)
       LEFT JOIN reason USING (reasonnum)
       LEFT JOIN access_user USING (usernum)
+    $credit_where
     GROUP BY billpkgnum, reason.reason, access_user.username";
     $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit USING (billpkgnum)";
   }
