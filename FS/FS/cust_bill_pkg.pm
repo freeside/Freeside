@@ -1485,7 +1485,9 @@ sub upgrade_tax_location {
       my $i = 0;
       my $nlinks = scalar(@tax_links);
       if ( $nlinks ) {
-        while (int($cents_remaining) > 0) {
+        # ensure that it really is an integer
+        $cents_remaining = sprintf('%.0f', $cents_remaining);
+        while ($cents_remaining > 0) {
           $tax_links[$i % $nlinks]->{cents} += 1;
           $cents_remaining--;
           $i++;
