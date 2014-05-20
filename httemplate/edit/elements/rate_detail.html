@@ -204,10 +204,10 @@ if ( $ratenum ) {
                 )";
     }
     @rows = qsearch({ table     => 'rate_region',
-                      hashref   => { },
+                      hashref   => {},
                       extra_sql => $where,
                     });
-    die "no region found" if !@rows;
+    #die "no region found" if !@rows;
 
     unshift @header, 'Region', 'Prefix(es)';
     unshift @hlinks, '', '';
