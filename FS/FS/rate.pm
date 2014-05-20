@@ -395,6 +395,16 @@ sub rate_detail {
   qsearch( 'rate_detail', { 'ratenum' => $self->ratenum } );
 }
 
+=item agent
+
+=cut
+
+sub agent {
+  my $self = shift;
+  eval "use FS::agent";
+  die $@ if $@;
+  qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
+}
 
 =back
 
