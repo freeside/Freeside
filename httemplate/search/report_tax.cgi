@@ -176,6 +176,12 @@ if ( $cgi->param('taxname') =~ /^([\w ]+)$/ ) {
   die "taxname required";
 }
 
+if ( $cgi->param('credit_date') eq 'cust_credit_bill' ) {
+  $params{credit_date} = 'cust_credit_bill';
+} else {
+  $params{credit_date} = 'cust_bill';
+}
+
 warn "PARAMS:\n".Dumper(\%params)."\n\n" if $DEBUG;
 
 my $report = FS::Report::Tax->report_internal(%params);
@@ -192,6 +198,11 @@ my $saleslink  = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1";
 my $taxlink    = $p. "search/cust_bill_pkg.cgi?$dateagentlink;istax=1";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
 my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
+
+if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
+  $creditlink =~ s/begin/credit_begin/;
+  $creditlink =~ s/end/credit_end/;
+}
 
 my %pkgclass_name = map { $_->classnum, $_->classname } qsearch('pkg_class');
 $pkgclass_name{''} = 'Unclassified';

@@ -33,6 +33,16 @@
       district  => 'District',
     },
   &>
+  <TR>
+    <TD></TD>
+    <TD>Deduct credited tax if it was 
+      <SELECT NAME="credit_date">
+        <OPTION VALUE="cust_bill" SELECTED>invoiced in this period</OPTION>
+        <OPTION VALUE="cust_credit_bill">credited in this period</OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+
 </TABLE>
 
 <BR><INPUT TYPE="submit" VALUE="Get Report">
