@@ -1,0 +1,102 @@
+<& /elements/header.html, mt($title, @title_arg) &>
+
+<FORM ACTION="cust_bill_void.html" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+% unless ( $custnum ) {
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left">
+        <FONT SIZE="+1">Customer search options</FONT>
+      </TH>
+    </TR>
+
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => emt('Agent'),
+                 'disable_empty' => 0,
+  &>
+
+  <& /elements/tr-select-cust_class.html,
+      label         => mt('Customer Class'),
+      field         => 'cust_classnum',
+      multiple      => 1,
+     'pre_options'  => [ '' => emt('(none)') ],
+     'all_selected' => 1,
+  &>
+
+%   if ( $cust_main ) {
+    <INPUT TYPE="hidden" NAME="payby" VALUE="<% $cust_main->payby %>">
+%   } else {
+    <& /elements/tr-select-payby.html,
+                  label   => emt('Payment method:'),
+                  payby_type   => 'cust',
+                  multiple     => 1,
+                  all_selected => 1,
+    &>
+% }
+
+  </TABLE>
+  <BR>
+
+% }
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left">
+        <FONT SIZE="+1">Invoice search options</FONT>
+      </TH>
+    </TR>
+
+  <& /elements/tr-input-beginning_ending.html &>
+
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                label   => emt('Charged'),
+                field   => 'charged',
+  &>
+
+  <& /elements/tablebreak-tr-title.html,
+      value => 'Void circumstances'
+  &>
+  <& /elements/tr-select-user.html,
+      field => 'void_usernum',
+      label => 'Voided by: ',
+  &>
+  <& /elements/tr-input-beginning_ending.html, prefix => 'void_' &>
+
+  </TABLE>
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List invoices');
+
+my $conf = new FS::Conf;
+
+my $title = 'Voided Invoice Report';
+#false laziness w/report_cust_pkg.html
+my @title_arg = ();
+
+my $custnum = '';
+my $cust_main = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title .= ': [_1]';
+  push @title_arg, $cust_main->name;
+}
+
+</%init>
