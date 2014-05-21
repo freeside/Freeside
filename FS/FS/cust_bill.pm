@@ -3317,6 +3317,22 @@ flag, return net invoices only
 
 =item newest_percust
 
+=item custnum
+
+Return only invoices belonging to that customer.
+
+=item cust_classnum
+
+Limit to that customer class (single value or arrayref).
+
+=item payby
+
+Limit to customers with that payment method (single value or arrayref).
+
+=item refnum
+
+Limit to customers with that advertising source.
+
 =back
 
 Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
@@ -3366,6 +3382,14 @@ sub search_sql_where {
                     ' )';
     }
 
+  }
+
+  #payby
+  if ( $param->{payby} ) {
+    my $payby = $param->{payby};
+    $payby = [ $payby ] unless ref $payby;
+    my $payby_in = join(',', map {dbh->quote($_)} @$payby);
+    push @search, "cust_main.payby IN($payby_in)" if length($payby_in);
   }
 
   #_date

@@ -132,6 +132,9 @@ tie my %report_invoices, 'Tie::IxHash',
   'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
   'separator'     => '',
   'Line items'    => [ $fsurl. 'search/report_cust_bill_pkg.html', 'Individual line item detail' ],
+  'separator'     => '',
+  'Voided invoices' => [ $fsurl.'search/report_cust_bill_void.html', 'Search for voided invoices' ],
+
 ;
 
 tie my %report_discounts, 'Tie::IxHash',
