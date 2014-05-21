@@ -26,6 +26,8 @@ use FS::cust_bill_pkg_tax_location_void;
 use FS::cust_bill_pkg_tax_rate_location_void;
 use FS::cust_tax_exempt_pkg_void;
 
+use FS::Cursor;
+
 $DEBUG = 0;
 $me = '[FS::cust_bill_pkg]';
 
@@ -1158,8 +1160,7 @@ sub upgrade_tax_location {
   ' WHERE cust_bill_pkg.invnum = cust_bill.invnum'.
   ' AND exempt_monthly IS NULL';
 
-  my @invnums = map { $_->invnum } qsearch({
-      select => 'cust_bill.invnum',
+  my $search = FS::Cursor->new({
       table => 'cust_bill',
       hashref => {},
       extra_sql => "WHERE NOT EXISTS($sub_has_tax_link) ".
@@ -1167,11 +1168,12 @@ sub upgrade_tax_location {
                     $date_where,
   });
 
-  print "Processing ".scalar(@invnums)." invoices...\n";
+#print "Processing ".scalar(@invnums)." invoices...\n";
 
   my $committed;
   INVOICE:
-  foreach my $invnum (@invnums) {
+  while (my $cust_bill = $search->fetch) {
+    my $invnum = $cust_bill->invnum;
     $committed = 0;
     print STDERR "Invoice #$invnum\n";
     my $pre = '';
