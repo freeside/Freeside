@@ -20,7 +20,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 							#globalCallID_callManagerId
 					      'clid',	#globalCallID_callId	
 					     skip(1),	#origLegCallIdentifier	
-                 			 'startdate',	#dateTimeOrigination
+                 			 'calldate',	#dateTimeOrigination
 					     skip(3),   #origNodeId	
 							#origSpan
 							#origIpAddr	
