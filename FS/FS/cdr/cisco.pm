@@ -4,7 +4,7 @@ use strict;
 use base qw( FS::cdr );
 use vars qw( %info );
 use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
-use Date:Parse;
+use Date::Parse;
 
 %info = (
   'name'          => 'Cisco Unified Call Manager',
