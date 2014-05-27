@@ -54,16 +54,6 @@ sub authen_ses_key {
     return undef;
   }
 
-  my $new_sessionkey;
-  unless ( $new_sessionkey = FS::Auth->verify_user( $curuser, $sessionkey ) ) {
-    warn "bad verify_user $sessionkey from ". $r->connection->remote_ip. "\n";
-    return undef;
-  }
-  if ($new_sessionkey ne $sessionkey && $new_sessionkey ne 1) {
-    FS::CurrentUser->new_session($new_sessionkey);
-    Apache2::AuthCookie->send_cookie($r, $new_sessionkey);
-  }
-
   $curuser->username;
 }
 
