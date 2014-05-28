@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::cdr );
 use vars qw( %info );
 use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
+use Date::Parse;
 
 %info = (
   'name'          => 'Cisco Unified Call Manager',
@@ -20,7 +21,11 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 							#globalCallID_callManagerId
 					      'clid',	#globalCallID_callId	
 					     skip(1),	#origLegCallIdentifier	
-                 			 'startdate',	#dateTimeOrigination
+                sub { my ($cdr, $calldate) = @_;
+                        $cdr->set('startdate', $calldate);
+                        $calldate = str2time($calldate);
+                        $cdr->set('calldate', $calldate);
+                                                  },    #dateTimeOrigination
 					     skip(3),   #origNodeId	
 							#origSpan
 							#origIpAddr	

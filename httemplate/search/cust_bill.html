@@ -84,6 +84,20 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     'extra_sql' => $where,
   };
 
+  if ( FS::Record->scalar_sql($count_query) == 0 ) {
+
+    # check for a voided invoice
+    $count_query =~ s/cust_bill/cust_bill_void/g;
+    if ( FS::Record->scalar_sql($count_query) > 0 ) {
+      # Redirect to the void search.
+      my $url = $cgi->self_url;
+      $url =~ s(search/cust_bill)(search/cust_bill_void);
+      $m->clear_buffer;
+      $m->print($cgi->redirect($url));
+      $m->abort;
+    }
+  }
+
 } else {
 
   #some false laziness w/cust_bill::re_X
@@ -156,15 +170,13 @@ if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
     }
   }
 
-  my $payby_sql = '';
-  $payby_sql = ' AND (' . 
-    join(' OR ', map { "cust_main.payby = '$_'" } $cgi->param('payby') ) . 
-    ')' 
-    if $cgi->param('payby');
+  #payby
+  if ($cgi->param('payby')) {
+    $search{payby} = [ $cgi->param('payby') ];
+  }
 
-  my $extra_sql = ' WHERE '.
-    FS::cust_bill->search_sql_where( \%search ).
-    $payby_sql;
+  my $extra_sql = FS::cust_bill->search_sql_where( \%search );
+  $extra_sql = "WHERE $extra_sql" if $extra_sql;
 
   unless ( $count_query ) {
     $count_query = 'SELECT COUNT(*), '. join(', ',

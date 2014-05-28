@@ -42,13 +42,10 @@ sub check_credit_limit {
 
   #false laziness  w/svc_phone->sum_cdrs / psearch_cdrs
   my $sum = qsearchs( {
-    'select'  => 'SUM(rated_price) AS rated_price',
-    'table'   => 'cdr',
-    'hashref' => { 'status' => 'rated',
-                   'svcnum' => { op    => 'IN',
-                                 value => '('. join(',',@svcnum). ')',
-                               },
-                 },
+    'select'    => 'SUM(rated_price) AS rated_price',
+    'table'     => 'cdr',
+    'hashref'   => { 'status' => 'rated', },
+    'extra_sql' => ' AND svcnum IN ('. join(',',@svcnum). ') ',
   } );
 
   return '' unless $sum->rated_price > $credit_limit;
