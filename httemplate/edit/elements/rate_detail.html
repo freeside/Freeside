@@ -53,7 +53,7 @@ with row headers showing the region name and prefixes.
       <TR><TD><% edit_link($detail) %><% $money_char.$detail->min_charge %>
               <% $detail->sec_granularity ? ' / minute':' / call' %>
 %             if ( $detail->min_cost ) {
-                (<% $money_char.$detail->min_charge %> cost)
+                (<% $money_char.$detail->min_cost %> cost)
 %             }
       <% $edit_hint %></A>
       </TD></TR>
