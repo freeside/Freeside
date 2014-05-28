@@ -2,7 +2,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). "rate_region.cgi?". $cgi->query_string ) %>
 %} elsif ( $action eq 'Add' ) {
-<% $cgi->redirect(popurl(2). "rate_region.cgi?$regionnum") %>
+<% $cgi->redirect(popurl(2). "rate_region.cgi?regionnum=$regionnum") %>
 %} else { 
 <% $cgi->redirect(popurl(3). "browse/rate_region.html") %>
 %}

@@ -52,6 +52,9 @@ with row headers showing the region name and prefixes.
       <TABLE CLASS="inv" STYLE="border:none">
       <TR><TD><% edit_link($detail) %><% $money_char.$detail->min_charge %>
               <% $detail->sec_granularity ? ' / minute':' / call' %>
+%             if ( $detail->min_cost ) {
+                (<% $money_char.$detail->min_charge %> cost)
+%             }
       <% $edit_hint %></A>
       </TD></TR>
       <% granularity_detail($detail) %>
@@ -92,7 +95,7 @@ sub edit_link {
   include( '/elements/popup_link_onclick.html',
              'action'      => "${p}edit/rate_detail.html?$ratedetailnum",
              'actionlabel' => 'Edit rate',
-             'height'      => 420,
+             'height'      => 460,
              #default# 'width'       => 540,
              #default# 'color'       => '#333399',
          ) . '">'
@@ -110,7 +113,7 @@ sub add_link {
                                  ($rate_time ? $rate_time->ratetimenum : '').
                                ";cdrtypenum=$cdrtypenum",
              'actionlabel' => 'Add rate',
-             'height'      => 420,
+             'height'      => 460,
              ).'">'.small('(add)').'</A>'
 }
 
@@ -157,7 +160,11 @@ sub conn_charge_detail {
   #return '' unless $rate_detail->conn_charge > 0 || $rate_detail->conn_sec;
     '<TR><TD>'.
     small( $money_char. $rate_detail->conn_charge.
-      ' for '.$conn_secs{$rate_detail->conn_sec}
+             ( $rate_detail->conn_cost
+                 ? ' ('. $money_char.$rate_detail->conn_cost. ' cost)'
+                 : ''
+             ).
+           ' for '. $conn_secs{$rate_detail->conn_sec}
     ).
     '</TD></TR>'
   }

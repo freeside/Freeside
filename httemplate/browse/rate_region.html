@@ -96,8 +96,9 @@ sub _rate_detail_factory {
   my( $rate, $field ) = @_;
   return sub {
     my $rate_detail = $rate->dest_detail(shift)
-                      || new FS::rate_region { 'min_included'    => 0,
+                      || new FS::rate_detail { 'min_included'    => 0,
                                                'min_charge'      => 0,
+                                               'min_cost'        => 0,
                                                'sec_granularity' => 0,
                                              };
     my $value = $rate_detail->$field();
