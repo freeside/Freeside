@@ -129,7 +129,10 @@ sub check {
 
     #|| $self->ut_money('min_charge')
     #good enough for now...
+    || $self->ut_floatn('conn_charge')
+    || $self->ut_floatn('conn_cost')
     || $self->ut_float('min_charge')
+    || $self->ut_floatn('min_cost')
 
     || $self->ut_number('sec_granularity')
 
