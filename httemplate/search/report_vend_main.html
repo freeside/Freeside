@@ -1,0 +1,48 @@
+<& /elements/header.html, mt('Payables summary by vendor') &>
+
+<FORM ACTION="vend_main.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+        <TD ALIGN="right" VALIGN="center"><% mt('Date') |h %></TD>
+        <TD>
+          <TABLE>
+              <& /elements/tr-input-beginning_ending.html,
+                        prefix   => '_date',
+                        layout   => 'horiz',
+              &>
+          </TABLE>
+        </TD>
+    </TR>
+
+    <TR>
+        <TD ALIGN="right" VALIGN="center"><% mt('Payment date') |h %></TD>
+        <TD>
+          <TABLE>
+              <& /elements/tr-input-beginning_ending.html,
+                        prefix   => 'payment_date',
+                        layout   => 'horiz',
+              &>
+          </TABLE>
+        </TD>
+    </TR>
+
+    <& /elements/tr-select-vend_class.html,
+    &>
+
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
+

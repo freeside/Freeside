@@ -377,7 +377,8 @@ if( $curuser->access_right('Financial reports') ) {
 } # else $report_financial contains nothing.
 
 tie my %report_payable, 'Tie::IxHash',
-  'Payables' => [ $fsurl. 'search/report_vend_bill.html' ],
+  'Payables summary' => [ $fsurl. 'search/report_vend_main.html', 'Payables summary by vendor' ],
+  'Payables detail' => [ $fsurl. 'search/report_vend_bill.html' ],
 ;
 
 tie my %report_logs, 'Tie::IxHash';

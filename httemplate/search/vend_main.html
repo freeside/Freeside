@@ -1,0 +1,40 @@
+<& elements/search.html,
+     'title'       => 'Payables summary by vendor',
+     'name'        => 'vendors',
+     'query'       => $query,
+     'count_query' => $count_query,
+     'count_addl'  => [ '$%.2f total', ],
+     'header'      => [
+                        'Vendor',
+                        'Class',
+                        'Amount',
+                        '',
+                      ],
+     'fields'      => [
+                        sub { shift->vendname },
+                        sub { shift->vend_class->classname },
+                        'sum_charged',
+                      ],
+
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %search = ();
+
+# begin/end/beginning/ending
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '_date');
+$search{'_date'} = [ $beginning, $ending ];
+
+($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, 'payment_date');
+$search{'payment_date'} = [ $beginning, $ending ];
+
+$search{'classnum'} = $cgi->param('classnum');
+
+my $query = FS::vend_main->search( \%search );
+my $count_query = delete( $query->{'count_query'} );
+
+</%init>
+
