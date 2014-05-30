@@ -2,6 +2,9 @@
     table       => 'tower',
     viewall_dir => 'browse',
     process_o2m => { 'table'  => 'tower_sector',
-                     'fields' => [qw( sectorname ip_addr height freq_mhz direction width range )],
+                     'fields' => [qw(
+                       sectorname ip_addr height freq_mhz direction width
+                       sector_range
+                     )],
                    },
 &>

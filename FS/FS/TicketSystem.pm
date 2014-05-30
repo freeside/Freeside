@@ -331,16 +331,24 @@ sub _upgrade_data {
     }
   }
 
-  #Pg-specific 
-  my $cve_2013_3373_sql = q(
-    UPDATE Tickets SET Subject = REPLACE(Subject,E'\n','')
-  );
-  #need this for mysql
-  #UPDATE Tickets SET Subject = REPLACE(Subject,'\n','');
-
-  my $cve_2013_3373_sth = $dbh->prepare( $cve_2013_3373_sql)
-    or die $dbh->errstr;
-  $cve_2013_3373_sth->execute or die $cve_2013_3373_sth->errstr;
+  my $cve_2013_3373_sql = '';
+  if ( driver_name =~ /^Pg/i ) {
+    $cve_2013_3373_sql = q(
+      UPDATE Tickets SET Subject = REPLACE(Subject,E'\n','')
+    );
+  } elsif ( driver_name =~ /^mysql/i ) {
+    $cve_2013_3373_sql = q(
+      UPDATE Tickets SET Subject = REPLACE(Subject,'\n','');
+    );
+  } else {
+    warn "WARNING: Don't know how to update RT Ticket Subjects for your database driver for CVE-2013-3373";
+  }
+  if ( $cve_2013_3373_sql ) {
+    my $cve_2013_3373_sth = $dbh->prepare($cve_2013_3373_sql)
+      or die $dbh->errstr;
+    $cve_2013_3373_sth->execute
+      or die $cve_2013_3373_sth->errstr;
+  }
 
   # Remove dangling customer links, if any
   my %target_pkey = ('cust_main' => 'custnum', 'cust_svc' => 'svcnum');

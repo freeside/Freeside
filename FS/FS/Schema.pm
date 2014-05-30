@@ -4548,16 +4548,16 @@ sub tables_hashref {
 
     'tower_sector' => {
       'columns' => [
-        'sectornum',   'serial',     '',      '', '', '',
-        'towernum',       'int',     '',      '', '', '',
-        'sectorname', 'varchar',     '', $char_d, '', '',
-        'ip_addr',    'varchar', 'NULL',      15, '', '',
-        'height',     'decimal', 'NULL',      '', '', '', 
-        'freq_mhz',       'int', 'NULL',      '', '', '',
-        'direction',      'int', 'NULL',      '', '', '',
-        'width',          'int', 'NULL',      '', '', '',
+        'sectornum',     'serial',     '',      '', '', '',
+        'towernum',         'int',     '',      '', '', '',
+        'sectorname',   'varchar',     '', $char_d, '', '',
+        'ip_addr',      'varchar', 'NULL',      15, '', '',
+        'height',       'decimal', 'NULL',      '', '', '', 
+        'freq_mhz',         'int', 'NULL',      '', '', '',
+        'direction',        'int', 'NULL',      '', '', '',
+        'width',            'int', 'NULL',      '', '', '',
         #downtilt etc? rfpath has profile files for devices/antennas you upload?
-        'range',      'decimal', 'NULL',      '', '', '',  #?
+        'sector_range', 'decimal', 'NULL',      '', '', '',  #?
       ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
