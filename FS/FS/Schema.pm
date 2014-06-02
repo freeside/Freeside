@@ -4548,16 +4548,16 @@ sub tables_hashref {
 
     'tower_sector' => {
       'columns' => [
-        'sectornum',   'serial',     '',      '', '', '',
-        'towernum',       'int',     '',      '', '', '',
-        'sectorname', 'varchar',     '', $char_d, '', '',
-        'ip_addr',    'varchar', 'NULL',      15, '', '',
-        'height',     'decimal', 'NULL',      '', '', '', 
-        'freq_mhz',       'int', 'NULL',      '', '', '',
-        'direction',      'int', 'NULL',      '', '', '',
-        'width',          'int', 'NULL',      '', '', '',
+        'sectornum',     'serial',     '',      '', '', '',
+        'towernum',         'int',     '',      '', '', '',
+        'sectorname',   'varchar',     '', $char_d, '', '',
+        'ip_addr',      'varchar', 'NULL',      15, '', '',
+        'height',       'decimal', 'NULL',      '', '', '', 
+        'freq_mhz',         'int', 'NULL',      '', '', '',
+        'direction',        'int', 'NULL',      '', '', '',
+        'width',            'int', 'NULL',      '', '', '',
         #downtilt etc? rfpath has profile files for devices/antennas you upload?
-        'range',      'decimal', 'NULL',      '', '', '',  #?
+        'sector_range', 'decimal', 'NULL',      '', '', '',  #?
       ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
@@ -4772,13 +4772,15 @@ sub tables_hashref {
         'dest_regionnum',  'int',     '',     '',      '', '', 
         'min_included',    'int',     '',     '',      '', '', 
         'conn_charge',     'decimal', '', '10,4', '0.0000', '',
+        'conn_cost',       'decimal', '', '10,4', '0.0000', '',
         'conn_sec',        'int',     '',     '',      '0', '',
         'min_charge',      'decimal', '', '10,5',       '', '',
+        'min_cost',        'decimal', '', '10,5','0.00000', '',
         'sec_granularity', 'int',     '',     '',       '', '', 
         'ratetimenum',     'int', 'NULL',     '',       '', '',
         'classnum',        'int', 'NULL',     '',       '', '', 
         'cdrtypenum',      'int', 'NULL',     '',       '', '',
-        'region_group', 'char', 'NULL',        1,       '', '', 
+        'region_group',   'char', 'NULL',      1,       '', '', 
       ],
       'primary_key'  => 'ratedetailnum',
       'unique'       => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],

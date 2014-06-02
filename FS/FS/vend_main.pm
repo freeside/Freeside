@@ -101,6 +101,66 @@ sub check {
 
 =item vend_class
 
+=item search
+
+=cut
+
+sub search {
+  my ($class, $param) = @_;
+
+  my @where = ();
+  my $addl_from = '';
+
+  #_date
+  if ( $param->{_date} ) {
+    my($beginning, $ending) = @{$param->{_date}};
+
+    push @where, "vend_bill._date >= $beginning",
+                 "vend_bill._date <  $ending";
+  }
+
+  #payment_date
+  if ( $param->{payment_date} ) {
+    my($beginning, $ending) = @{$param->{payment_date}};
+
+    push @where, "vend_pay._date >= $beginning",
+                 "vend_pay._date <  $ending";
+  }
+
+  if ( $param->{'classnum'} =~ /^(\d+)$/ ) {
+    push @where, "vend_main.classnum = $1";
+  }
+
+  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+
+  my $group_by = ' GROUP BY vend_main.vendnum ';
+
+  my $addl_from_vend_bill = ' LEFT JOIN vend_bill_pay USING (vendbillnum) '.
+                            ' LEFT JOIN vend_pay      USING (vendpaynum)  ';
+
+  $addl_from .= " LEFT JOIN vend_bill USING ( vendnum ) $addl_from_vend_bill";
+
+  #simplistic, but how we are for now
+
+  my $count_query = "
+    SELECT COUNT(*),
+           ( SELECT SUM(charged) from vend_bill $addl_from_vend_bill $extra_sql
+           ) AS sum_charged
+      FROM vend_main "; #XXX classnum, sum_charged > 0
+
+  +{
+    'table'         => 'vend_main',
+    'select'        => 'vend_main.*, sum(vend_bill.charged) as sum_charged',
+    'addl_from'     => $addl_from,
+    'hashref'       => {},
+    'extra_sql'     => "$extra_sql $group_by",
+    'order_by'      => 'ORDER BY sum_charged desc',
+    'count_query'   => $count_query,
+    #'extra_headers' => \@extra_headers,
+    #'extra_fields'  => \@extra_fields,
+  };
+}
+
 =back
 
 =head1 BUGS
