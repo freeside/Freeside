@@ -98,6 +98,7 @@ if ( -e $addl_handler_use_file ) {
 
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
+  use Net::MAC::Vendor;
   use Net::Ping;
   use Net::Ping::External;
   #if CPAN #7815 ever gets fixed# if ( $Net::Ping::External::VERSION <= 0.12 )

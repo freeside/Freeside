@@ -32,7 +32,7 @@ my @fields = (
   'speed_up',
   { field => 'ip_addr', value_callback => \&ip_addr },
   { field => 'sectornum', value_callback => \&sectornum },
-  { field => 'mac_addr', value_callback => \&mac_addr },
+  { field => 'mac_addr', type=>'mac_addr', value_callback => \&mac_addr },
   #'latitude',
   #'longitude',
   { field => 'coordinates', value_callback => \&coordinates },
@@ -78,7 +78,7 @@ sub ip_addr {
 
 sub mac_addr {
   my $svc = shift;
-  join(':', $svc->mac_addr =~ /../g);
+  $svc->mac_addr_formatted('U',':');
 }
 
 sub usergroup {
