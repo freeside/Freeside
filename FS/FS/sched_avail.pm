@@ -3,7 +3,7 @@ use base qw( FS::Record );
 
 use strict;
 #use FS::Record qw( qsearch qsearchs );
-use FS::sched_avail;
+use FS::sched_item;
 
 =head1 NAME
 
@@ -101,7 +101,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('availnum')
-    || $self->ut_foreign_key('itemnum', 'sched_avail', 'itemnum')
+    || $self->ut_foreign_key('itemnum', 'sched_item', 'itemnum')
     || $self->ut_number('wday')
     || $self->ut_number('stime')
     || $self->ut_number('etime')
