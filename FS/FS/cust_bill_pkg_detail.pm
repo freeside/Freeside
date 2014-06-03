@@ -86,26 +86,14 @@ sub table { 'cust_bill_pkg_detail'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-# the replace method can be inherited from FS::Record
 
 =item check
 
@@ -145,6 +133,7 @@ sub check {
     || $self->ut_text('detail')
     || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum')
     || $self->$phonenum_check_method('phonenum')
+    || $self->ut_numbern('startdate')
     || $self->SUPER::check
     ;
 
@@ -237,6 +226,18 @@ sub formatted {
   ;
 }
 
+=item cust_bill_pkg
+
+Returns the L<FS::cust_bill_pkg> object (the invoice line item) that
+this detail belongs to.
+
+=cut
+
+sub cust_bill_pkg {
+  my $self = shift;
+  my $billpkgnum = $self->billpkgnum or return '';
+  FS::cust_bill_pkg->by_key($billpkgnum);
+}
 
 # Used by FS::Upgrade to migrate to a new database schema
 sub _upgrade_schema { # class method

@@ -1051,6 +1051,7 @@ sub print_generic {
       $detail->{'edate'} = $line_item->{'edate'};
       $detail->{'seconds'} = $line_item->{'seconds'};
       $detail->{'svc_label'} = $line_item->{'svc_label'};
+      $detail->{'usage_item'} = $line_item->{'usage_item'};
   
       push @detail_items, $detail;
       push @buf, ( [ $detail->{'description'},
@@ -1389,6 +1390,37 @@ sub print_generic {
     push @summary_subtotals, $s;
   }
   $invoice_data{summary_subtotals} = \@summary_subtotals;
+
+  # usage subtotals
+  if ( $conf->exists('usage_class_summary')
+       and $self->can('_items_usage_class_summary') ) {
+    my @usage_subtotals = $self->_items_usage_class_summary(escape => $escape_function);
+    if ( @usage_subtotals ) {
+      unshift @sections, $usage_subtotals[0]->{section};
+      unshift @detail_items, @usage_subtotals;
+    }
+  }
+
+  # invoice history "section" (not really a section)
+  # not to be included in any subtotals, completely independent of 
+  # everything...
+  if ( $conf->exists('previous_invoice_history') ) {
+    my %history;
+    my %monthorder;
+    foreach my $cust_bill ( $cust_main->cust_bill ) {
+      # XXX hardcoded format, and currently only 'charged'; add other fields
+      # if they become necessary
+      my $date = $self->time2str_local('%b %Y', $cust_bill->_date);
+      $history{$date} ||= 0;
+      $history{$date} += $cust_bill->charged;
+      # just so we have a numeric sort key
+      $monthorder{$date} ||= $cust_bill->_date;
+    }
+    my @sorted_months = sort { $monthorder{$a} <=> $monthorder{$b} }
+                        keys %history;
+    my @sorted_amounts = map { sprintf('%.2f', $history{$_}) } @sorted_months;
+    $invoice_data{monthly_history} = [ \@sorted_months, \@sorted_amounts ];
+  }
 
   # debugging hook: call this with 'diag' => 1 to just get a hash of 
   # the invoice variables
@@ -2494,6 +2526,9 @@ sub _items_cust_bill_pkg {
       @cust_bill_pkg_display = grep { !$_->summary }
                                 @cust_bill_pkg_display;
     }
+
+    my $classname = ''; # package class name, will fill in later
+
     foreach my $display (@cust_bill_pkg_display) {
 
       warn "$me _items_cust_bill_pkg considering cust_bill_pkg_display ".
@@ -2554,6 +2589,9 @@ sub _items_cust_bill_pkg {
         %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate')
           unless $part_pkg->option('disable_line_item_date_ranges',1);
 
+        # not normally used, but pass this to the template anyway
+        $classname = $part_pkg->classname;
+
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
                   || $cust_bill_pkg->setup_show_zero
@@ -2580,16 +2618,20 @@ sub _items_cust_bill_pkg {
 
           my @d = ();
           my $svc_label;
+
+          # always pass the svc_label through to the template, even if 
+          # not displaying it as an ext_description
+          my @svc_labels = map &{$escape_function}($_),
+                      $cust_pkg->h_labels_short($self->_date, undef, 'I');
+
+          $svc_label = $svc_labels[0];
+
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->hidden )
           {
 
-            my @svc_labels = map &{$escape_function}($_),
-                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
             push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
-            $svc_label = $svc_labels[0];
-
             my $lnum = $cust_main ? $cust_main->ship_locationnum
                                   : $self->prospect_main->locationnum;
             # show the location label if it's not the customer's default
@@ -2663,6 +2705,10 @@ sub _items_cust_bill_pkg {
           push @dates, $prev->sdate if $prev;
           push @dates, undef if !$prev;
 
+          my @svc_labels = map &{$escape_function}($_),
+                      $cust_pkg->h_labels_short(@dates, 'I');
+          $svc_label = $svc_labels[0];
+
           # show service labels, unless...
                     # the package is set not to display them
           unless ( $part_pkg->hide_svc_detail
@@ -2682,12 +2728,8 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg adding service details\n"
               if $DEBUG > 1;
 
-            my @svc_labels = map &{$escape_function}($_),
-                        $cust_pkg->h_labels_short(@dates, 'I');
             push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
-            $svc_label = $svc_labels[0];
-
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
 
@@ -2796,6 +2838,7 @@ sub _items_cust_bill_pkg {
                 pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
+                usage_item      => 1,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 %item_dates,
                 ext_description => \@d,

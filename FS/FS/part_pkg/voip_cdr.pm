@@ -465,6 +465,15 @@ sub calc_usage {
 
     #my @invoice_details_sort;
 
+    # for tagging invoice details
+    my $phonenum;
+    if ( $svc_table eq 'svc_phone' ) {
+      $phonenum = $svc_x->phonenum;
+    } elsif ( $svc_table eq 'svc_pbx' ) {
+      $phonenum = $svc_x->title;
+    }
+    $formatter->phonenum($phonenum);
+
     #first rate any outstanding CDRs not yet rated
     # XXX eventually use an FS::Cursor for this
     my $cdr_search = $svc_x->psearch_cdrs(%options);

@@ -715,7 +715,9 @@ sub generate_ps {
 
   _pslatex($file);
 
-  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
+  my $papersize = $conf->config('papersize') || 'letter';
+
+  system('dvips', '-q', '-t', $papersize, "$file.dvi", '-o', "$file.ps" ) == 0
     or die "dvips failed";
 
   open(POSTSCRIPT, "<$file.ps")
@@ -770,8 +772,10 @@ sub generate_pdf {
   my $sfile = shell_quote $file;
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
+  my $papersize = $conf->config('papersize') || 'letter';
+
   system(
-    "dvips -q -t letter -f $sfile.dvi ".
+    "dvips -q -f $sfile.dvi -t $papersize ".
     "| gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$sfile.pdf ".
     "     -c save pop -"
   ) == 0
