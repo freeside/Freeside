@@ -338,7 +338,7 @@ sub check {
   #check the foreign keys even?
   #do we want to outright *reject* the CDR?
   my $error =
-       $self->ut_numbern('acctid')
+       $self->ut_numbern('acctid');
 
   #add a config option to turn these back on if someone needs 'em
   #
@@ -350,7 +350,7 @@ sub check {
   #
   #  # Telstra =1, Optus = 2, RSL COM = 3
   #  || $self->ut_foreign_keyn('carrierid', 'cdr_carrier', 'carrierid' )
-  ;
+
   return $error if $error;
 
   $self->SUPER::check;
@@ -1209,6 +1209,10 @@ my %export_names = (
   'sum_duration_prefix' => {
     'name'           => 'Summary, one line per destination prefix',
     'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
+  },
+  'sum_count_class' => {
+    'name'           => 'Summary, one line per usage class',
+    'invoice_header' => 'Caller,Class,Calls,Price',
   },
 );
 

@@ -2919,6 +2919,49 @@ sub _items_svc_phone_sections {
 
 }
 
+=sub _items_usage_class_summary OPTIONS
+
+Returns a list of detail items summarizing the usage charges on this 
+invoice.  Each one will have 'amount', 'description' (the usage charge name),
+and 'usage_classnum'.
+
+OPTIONS can include 'escape' (a function to escape the descriptions).
+
+=cut
+
+sub _items_usage_class_summary {
+  my $self = shift;
+  my %opt = @_;
+
+  my $escape = $opt{escape} || sub { $_[0] };
+  my $invnum = $self->invnum;
+  my @classes = qsearch({
+      'table'     => 'usage_class',
+      'select'    => 'classnum, classname, SUM(amount) AS amount',
+      'addl_from' => ' LEFT JOIN cust_bill_pkg_detail USING (classnum)' .
+                     ' LEFT JOIN cust_bill_pkg USING (billpkgnum)',
+      'extra_sql' => " WHERE cust_bill_pkg.invnum = $invnum".
+                     ' GROUP BY classnum, classname, weight'.
+                     ' HAVING (usage_class.disabled IS NULL OR SUM(amount) > 0)'.
+                     ' ORDER BY weight ASC',
+  });
+  my @l;
+  my $section = {
+    description   => &{$escape}($self->mt('Usage Summary')),
+    no_subtotal   => 1,
+    usage_section => 1,
+  };
+  foreach my $class (@classes) {
+    push @l, {
+      'description'     => &{$escape}($class->classname),
+      'amount'          => sprintf('%.2f', $class->amount),
+      'usage_classnum'  => $class->classnum,
+      'section'         => $section,
+    };
+  }
+  return @l;
+}
+
 sub _items_previous {
   my $self = shift;
   my $conf = $self->conf;

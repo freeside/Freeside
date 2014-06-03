@@ -1008,7 +1008,7 @@ sub tables_hashref {
 
     'cust_bill_pkg_detail' => {
       'columns' => [
-        'detailnum', 'serial', '', '', '', '', 
+        'detailnum', 'serial', '', '', '', '',
         'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
         'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
         'invnum',  'int', 'NULL', '', '', '',           # deprecated

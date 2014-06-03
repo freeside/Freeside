@@ -1060,6 +1060,7 @@ sub reason_type_options {
                        '%m/%d/%Y' => 'MM/DD/YYYY',
                        '%d/%m/%Y' => 'DD/MM/YYYY',
 		       '%Y/%m/%d' => 'YYYY/MM/DD',
+                       '%e %b %Y' => 'DD Mon YYYY',
                      ],
     'per_locale'  => 1,
   },
@@ -1576,6 +1577,13 @@ and customer address. Include units.',
   #  'per_agent'   => 1,
   #},
 
+  {
+    'key'         => 'usage_class_summary',
+    'section'     => 'invoicing',
+    'description' => 'Summarize total usage by usage class in a separate section.',
+    'type'        => 'checkbox',
+  },
+
   { 
     'key'         => 'usage_class_as_a_section',
     'section'     => 'invoicing',
@@ -1688,6 +1696,14 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Raw printer commands added to the end of postscript print jobs (evaluated as a double-quoted perl string - backslash escapes are available)',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'papersize',
+    'section'     => 'billing',
+    'description' => 'Invoice paper size.  Default is "letter" (U.S. standard).  The LaTeX template must be configured to match this size.',
+    'type'        => 'select',
+    'select_enum' => [ qw(letter a4) ],
   },
 
   {
@@ -4242,6 +4258,16 @@ and customer address. Include units.',
     'key'         => 'previous_balance-payments_since',
     'section'     => 'invoicing',
     'description' => 'Instead of showing payments (and credits) applied to the invoice, show those received since the previous invoice date.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'previous_invoice_history',
+    'section'     => 'invoicing',
+    'description' => 'Show a month-by-month history of the customer\'s '.
+                     'billing amounts.  This requires template '.
+                     'modification and is currently not supported on the '.
+                     'stock template.',
     'type'        => 'checkbox',
   },
 
