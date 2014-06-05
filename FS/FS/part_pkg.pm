@@ -1475,12 +1475,19 @@ sub tax_rates {
                      $self->part_pkg_taxoverride($class);
   if (!@taxclassnums) {
     my $part_pkg_taxproduct = $self->taxproduct($class);
+    # If this isn't defined, then the class has no taxproduct designation,
+    # so return no tax rates.
+    return () if !$part_pkg_taxproduct;
+
+    # convert the taxproduct to the tax classes that might apply to it in 
+    # $geocode
     @taxclassnums = map { $_->taxclassnum }
                     grep { $_->taxable eq 'Y' } # why do we need this?
                     $part_pkg_taxproduct->part_pkg_taxrate($geocode);
   }
   return unless @taxclassnums;
 
+  # then look up the actual tax_rate entries
   warn "Found taxclassnum values of ". join(',', @taxclassnums) ."\n"
       if $DEBUG;
   my $extra_sql = "AND taxclassnum IN (". join(',', @taxclassnums) . ")";
