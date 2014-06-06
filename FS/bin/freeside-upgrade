@@ -100,11 +100,12 @@ if ( dbdef->table('upgrade_journal') ) {
                      ( SELECT MAX(upgradenum) FROM upgrade_journal )
                    )
     ";
-  } elsif ( driver_name =~ /^mysql/i ) {
-    push @bugfix, "
-       ALTER TABLE upgrade_journal AUTO_INCREMENT =
-                   ( ( SELECT MAX(upgradenum) FROM upgrade_journal ) + 1 )
-    ";
+  #MySQL can't do this in a statement so have to do it manually
+  #} elsif ( driver_name =~ /^mysql/i ) {
+  #  push @bugfix, "
+  #     ALTER TABLE upgrade_journal AUTO_INCREMENT =
+  #                 ( ( SELECT MAX(upgradenum) FROM upgrade_journal ) + 1 )
+  #  ";
   }
 }
 
