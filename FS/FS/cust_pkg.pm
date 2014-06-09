@@ -2799,7 +2799,7 @@ sub cust_svc_unsorted {
 sub cust_svc_unsorted_arrayref {
   my $self = shift;
 
-  return () unless $self->num_cust_svc(@_);
+  return [] unless $self->num_cust_svc(@_);
 
   my %opt = ();
   if ( @_ && $_[0] =~ /^\d+/ ) {
