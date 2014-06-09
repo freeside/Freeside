@@ -2295,7 +2295,26 @@ separate quantities, for some reason).
 
 sub _items_nontax {
   my $self = shift;
-  grep { $_->pkgnum } $self->cust_bill_pkg;
+  # The order of these is important.  Bundled line items will be merged into
+  # the most recent non-hidden item, so it needs to be the one with:
+  # - the same pkgnum
+  # - the same start date
+  # - no pkgpart_override
+  #
+  # So: sort by pkgnum,
+  # then by sdate
+  # then sort the base line item before any overrides
+  # then sort hidden before non-hidden add-ons
+  # then sort by override pkgpart (for consistency)
+  sort { $a->pkgnum <=> $b->pkgnum        or
+         $a->sdate  <=> $b->sdate         or
+         ($a->pkgpart_override ? 0 : -1)  or
+         ($b->pkgpart_override ? 0 : 1)   or
+         $b->hidden cmp $a->hidden        or
+         $a->pkgpart_override <=> $b->pkgpart_override
+       }
+  # and of course exclude taxes and fees
+  grep { $_->pkgnum > 0 } $self->cust_bill_pkg;
 }
 
 sub _items_fee {
