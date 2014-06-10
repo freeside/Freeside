@@ -50,13 +50,26 @@ tie my %temporalities, 'Tie::IxHash',
                          'select_options' => { FS::cdr::invoice_formats() },
                          'default'        => 'simple2', #with source
                        },
+
+    'usage_section' => { 'name' => 'Section in which to place separate usage charges',
+                       },
+
+    'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
+                          'type' => 'checkbox',
+                        },
+
+    'usage_mandate' => { 'name' => 'Always put usage details in separate section',
+                          'type' => 'checkbox',
+                       },
     #eofalse
 
   },
 
   'fieldorder' => [ qw( recur_temporality recur_method cutoff_day ),
                     FS::part_pkg::prorate_Mixin::fieldorder, 
-                    qw( output_format ),
+                    qw(
+                       output_format usage_section summarize_usage usage_mandate
+                    ),
                   ],
 
   'weight' => 53,
