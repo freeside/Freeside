@@ -43,7 +43,7 @@ $me = '[FS::part_pkg::agent]';
 
   'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
 
-  'weight' => 51,
+  'weight' => 52,
 
 );
 
