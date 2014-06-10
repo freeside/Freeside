@@ -1049,6 +1049,31 @@ sub rate_single_price {
 
 }
 
+=item rate_cost
+
+Rates an already-rated CDR according to the cost fields from the rate plan.
+
+Returns the amount.
+
+=cut
+
+sub rate_cost {
+  my $self = shift;
+
+  return 0 unless $self->rated_ratedetailnum;
+
+  my $rate_detail =
+    qsearchs('rate_detail', { 'ratedetailnum' => $self->rated_ratedetailnum } );
+
+  return $rate_detail->min_cost if $self->rated_granularity == 0;
+
+  my $minutes = $self->rated_seconds / 60;
+  my $charge = $rate_detail->conn_cost + $minutes * $rate_detail->min_cost;
+
+  sprintf('%.2f', $charge + .00001 );
+
+}
+
 =item cdr_termination [ TERMPART ]
 
 =cut
