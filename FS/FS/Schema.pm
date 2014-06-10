@@ -6455,7 +6455,8 @@ sub tables_hashref {
       'columns' => [
         'vendbillnum',    'serial',     '',      '', '', '', 
         'vendnum',           'int',     '',      '', '', '', 
-        '_date',        @date_type,                  '', '', 
+        #'_date',        @date_type,                  '', '', 
+        '_date',     'int', '', '',                   '', '', 
         'charged',     @money_type,                  '', '', 
       ],
       'primary_key'  => 'vendbillnum',
@@ -6472,7 +6473,8 @@ sub tables_hashref {
       'columns' => [
         'vendpaynum',   'serial',    '',       '', '', '',
         'vendnum',         'int',    '',       '', '', '', 
-        '_date',     @date_type,                   '', '', 
+        #'_date',     @date_type,                   '', '', 
+        '_date',     'int', '', '',                   '', '', 
         'paid',      @money_type,                  '', '', 
       ],
       'primary_key'  => 'vendpaynum',
