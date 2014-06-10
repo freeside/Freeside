@@ -16,6 +16,11 @@ $DEBUG = 0;
 
 $me = '[FS::part_pkg::agent_cdr]';
 
+tie my %temporalities, 'Tie::IxHash',
+  'upcoming'  => "Upcoming (future)",
+  'preceding' => "Preceding (past)",
+;
+
 %info = (
   'name'      => 'Wholesale CDR cost billing, for master customers of an agent.',
   'shortname' => 'Whilesale CDR cost billing for agent.',
@@ -43,18 +48,7 @@ $me = '[FS::part_pkg::agent_cdr]';
     'output_format' => { 'name' => 'CDR invoice display format',
                          'type' => 'select',
                          'select_options' => { FS::cdr::invoice_formats() },
-                         'default'        => 'simple2', #XXX test
-                       },
-
-    'usage_section' => { 'name' => 'Section in which to place separate usage charges',
-                       },
-
-    'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
-                          'type' => 'checkbox',
-                        },
-
-    'usage_mandate' => { 'name' => 'Always put usage details in separate section',
-                          'type' => 'checkbox',
+                         'default'        => 'simple2', #with source
                        },
     #eofalse
 
@@ -62,9 +56,7 @@ $me = '[FS::part_pkg::agent_cdr]';
 
   'fieldorder' => [ qw( recur_temporality recur_method cutoff_day ),
                     FS::part_pkg::prorate_Mixin::fieldorder, 
-                    qw(
-                       output_format usage_section summarize_usage usage_mandate
-                    )
+                    qw( output_format ),
                   ],
 
   'weight' => 53,
@@ -72,7 +64,7 @@ $me = '[FS::part_pkg::agent_cdr]';
 );
 
 sub calc_recur {
-  my $self, $cust_pkg, $sdate, $details, $param ) = @_;
+  my( $self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   #my $last_bill = $cust_pkg->last_bill;
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
@@ -82,6 +74,8 @@ sub calc_recur {
     && ( $last_bill eq '' || $last_bill == 0 );
 
   my $charges = 0;
+
+  my $output_format = $self->option('output_format', 'Hush!') || 'simple2';
 
   #CDR calculations
 
