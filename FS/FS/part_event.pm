@@ -285,7 +285,9 @@ sub targets {
   }
 
   # this is the 'event' side
-  my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+  my $join = FS::part_event_condition->join_conditions_sql( $eventtable,
+    'time' => $time
+  );
   my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
     'time' => $time
   );

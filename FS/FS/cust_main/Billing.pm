@@ -1765,7 +1765,8 @@ sub retry_realtime {
 
   #a little false laziness w/due_cust_event (not too bad, really)
 
-  my $join = FS::part_event_condition->join_conditions_sql;
+  # I guess this is always as of now?
+  my $join = FS::part_event_condition->join_conditions_sql('', 'time' => time);
   my $order = FS::part_event_condition->order_conditions_sql;
   my $mine = 
   '( '
@@ -2078,7 +2079,8 @@ sub due_cust_event {
 
       #some false laziness w/Cron::bill bill_where
 
-      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable);
+      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable,
+        'time' => $opt{'time'});
       my $where = FS::part_event_condition->where_conditions_sql($eventtable,
         'time'=>$opt{'time'},
       );
@@ -2117,7 +2119,8 @@ sub due_cust_event {
       my $pkey = $object->primary_key;
       $cross_where = "$eventtable.$pkey = ". $object->$pkey();
 
-      my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+      my $join = FS::part_event_condition->join_conditions_sql( $eventtable,
+        'time' => $opt{'time'});
       my $extra_sql =
         FS::part_event_condition->where_conditions_sql( $eventtable,
                                                         'time'=>$opt{'time'}

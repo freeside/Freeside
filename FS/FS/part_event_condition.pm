@@ -243,16 +243,17 @@ sub all_conditionnames {
        keys %conditions
 }
 
-=item join_conditions_sql [ EVENTTABLE ]
+=item join_conditions_sql [ EVENTTABLE [, OPTIONS ] ]
 
 Returns an SQL fragment selecting joining all condition options for an event as
 tables titled "cond_I<conditionname>".  Typically used in conjunction with
-B<where_conditions_sql>.
+B<where_conditions_sql>.  OPTIONS should include 'time', the time to use
+in testing event conditions.
 
 =cut
 
 sub join_conditions_sql {
-  my ( $class, $eventtable ) = @_;
+  my ( $class, $eventtable, %options ) = @_;
 
   join(' ',
     map {
@@ -261,7 +262,7 @@ sub join_conditions_sql {
           "       AND cond_$_.conditionname = ". dbh->quote($_).
           "     )";
         }
-      map $_->[0], $class->_where_conditions( $eventtable ) #, %options )
+      map $_->[0], $class->_where_conditions( $eventtable, %options )
 
   );
 
