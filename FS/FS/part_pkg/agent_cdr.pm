@@ -189,7 +189,8 @@ sub calc_recur {
 
   #eo CDR calculations
 
-  $charges += ($cust_pkg->quantity || 1) * $self->calc_recur_Common(@_);
+  $charges += ($cust_pkg->quantity || 1)
+                * $self->calc_recur_Common($cust_pkg, $sdate, $details, $param);
 
   $charges;
 }
