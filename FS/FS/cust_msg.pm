@@ -3,6 +3,7 @@ package FS::cust_msg;
 use strict;
 use base qw( FS::cust_main_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use MIME::Parser;
 use vars qw( @statuses );
 
 =head1 NAME
@@ -147,6 +148,36 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item entity
+
+Returns the complete message as a L<MIME::Entity>.
+
+=item parts
+
+Returns a list of the MIME parts contained in the message, as L<MIME::Entity>
+objects.
+
+=cut
+
+sub entity {
+  my $self = shift;
+  if ( !exists($self->{entity}) ) {
+    my $parser = MIME::Parser->new;
+    my $output_dir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/mimeparts";
+    mkdir($output_dir) unless -d $output_dir;
+    $parser->output_under($output_dir);
+    $self->{entity} =
+      $parser->parse_data( $self->header . "\n" . $self->body );
+  }
+  $self->{entity};
+}
+
+sub parts {
+  my $self = shift;
+  # return only the parts with bodies, not the multipart containers
+  grep { $_->bodyhandle } $self->entity->parts_DFS;
 }
 
 =back
