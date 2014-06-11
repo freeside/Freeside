@@ -188,7 +188,7 @@ my $count_query = 'SELECT COUNT(*) FROM part_event WHERE '.
                     'viewall_right' => 'None',
                   );
 
-my $join_conditions  = FS::part_event_condition->join_conditions_sql;
+my $join_conditions  = FS::part_event_condition->join_conditions_sql('', 'time' => time);
 my $order_conditions = FS::part_event_condition->order_conditions_sql;
 
 </%init>
