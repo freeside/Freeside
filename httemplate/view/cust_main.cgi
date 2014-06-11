@@ -185,79 +185,14 @@ function areyousure(href, message) {
 
 % if ( $view eq 'notes' || $view eq 'jumbo' ) {
 
-%if ( $cust_main->comments =~ /[^\s\n\r]/ ) {
-<BR><% mt('Comments') |h %> 
-<% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
-<TR>
-  <TD BGCOLOR="#ffffff">
-    <PRE><% encode_entities($cust_main->comments) %></PRE>
-  </TD>
-</TR>
-</TABLE></TABLE>
-<BR><BR>
-% }
-<A NAME="notes">
-% my $notecount = scalar($cust_main->notes(0));
-% if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
-
-%   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
-      <BR>
-      <A NAME="cust_main_note"><FONT SIZE="+2"><% mt('Notes') |h %></FONT></A><BR>
-%   }
-
-%   if ( $curuser->access_right('Add customer note') &&
-%        ! $conf->exists('cust_main-disable_notes')
-%      ) {
-
-  <& /elements/popup_link-cust_main.html,
-                'label'       => emt('Add customer note'),
-                'action'      => $p. 'edit/cust_main_note.cgi',
-                'actionlabel' => emt('Enter customer note'),
-                'cust_main'   => $cust_main,
-                'width'       => 616,
-                'height'      => 538, #575
-  &>
-
-%   }
-
-<BR>
-
-<& cust_main/notes.html, 'custnum' => $cust_main->custnum &>
-
-% }
-<BR>
-
-% if(! $conf->config('disable_cust_attachment') 
-%  and $curuser->access_right('Add attachment')) {
-<& /elements/popup_link-cust_main.html,
-              'label'       => emt('Attach file'),
-              'action'      => $p.'edit/cust_main_attach.cgi',
-              'actionlabel' => emt('Upload file'),
-              'cust_main'   => $cust_main,
-              'width'       => 480,
-              'height'      => 296,
-&>
-% }
-% if( $curuser->access_right('View attachments') ) {
-<& cust_main/attachments.html, 'custnum' => $cust_main->custnum &>
-%   if ($cgi->param('show_deleted')) {
-<A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
-           ($view ? ";show=$view" : '') . '#notes' 
-           %>"><I>(<% mt('Show active attachments') |h %>)</I></A>
-%   }
-% elsif($curuser->access_right('View deleted attachments')) {
-<A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
-           ($view ? ";show=$view" : '') . ';show_deleted=1#notes'
-           %>"><I>(<% mt('Show deleted attachments') |h %>)</I></A>
-%   }
-% }
-<BR>
+<& cust_main/notes.html, 'cust_main' => $cust_main &>
 
 % }
 
 % if ( $view eq 'jumbo' ) {
     <BR>
 % }
+
 <BR>
 
 % if ( $view eq 'tickets' || $view eq 'jumbo' ) {
@@ -339,6 +274,7 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
   $query =~ /^(\d+)$/;
   $custnum = $1;
+  $cgi->param('custnum', $1);
 }
 
 my $cust_main = qsearchs( {

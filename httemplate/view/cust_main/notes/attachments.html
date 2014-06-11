@@ -113,10 +113,8 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied" if !$curuser->access_right('View attachments');
 my(%opt) = @_;
 
-my $custnum = $opt{'custnum'};
-
-my $cust_main = qsearchs('cust_main', {'custnum' => $custnum} );
-die "Customer not found!" unless $cust_main;
+my $cust_main = $opt{'cust_main'};
+my $custnum = $cust_main->custnum;
 
 my (@attachments) = qsearch('cust_attachment', {'custnum' => $custnum});
 
