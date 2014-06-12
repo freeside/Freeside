@@ -45,7 +45,7 @@ use Date::Parse;
   'accountcode', # Accountcode
      'uniqueid', # call ID
         skip(5), # continuation
-   'dstchannel', # Party2Device
+   'disposition',# Party2Device
         skip(9)  # AuthValid
                  # User Charged
                  # call Charge
