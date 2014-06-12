@@ -30,7 +30,7 @@ use Date::Parse;
                   },    #DateTime
 	'billsec',	#duration
 	'src',          #caller    
-	slip(1),	#status
+	skip(1),	#status
 	'upstream_price',#sellprice
 	skip(1),	#fromregion
 	'upstream_src_regionname',		#fromarea
