@@ -217,7 +217,9 @@ sub process_upgrade_location {
   my $class = shift;
 
   my $dbh = dbh;
+  local $FS::cust_main::import = 1;
   local $FS::cust_location::import = 1;
+  local $FS::contact::skip_fuzzyfiles = 1;
   local $FS::UID::AutoCommit = 0;
 
   my $tax_prefix = 'bill_';
