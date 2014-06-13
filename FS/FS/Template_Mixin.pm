@@ -1028,36 +1028,46 @@ sub print_generic {
       warn "$me     adding line item $line_item\n"
         if $DEBUG > 1;
 
-      my $detail = {
-        ext_description => [],
-      };
-      $detail->{'ref'} = $line_item->{'pkgnum'};
-      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
-      $detail->{'quantity'} = $line_item->{'quantity'};
-      $detail->{'section'} = $section;
-      $detail->{'description'} = &$escape_function($line_item->{'description'});
-      if ( exists $line_item->{'ext_description'} ) {
-        @{$detail->{'ext_description'}} = @{$line_item->{'ext_description'}};
-      }
-      $detail->{'amount'} = ( $old_latex ? '' : $money_char ).
-                              $line_item->{'amount'};
-      if ( exists $line_item->{'unit_amount'} ) {
-        $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
-                                   $line_item->{'unit_amount'};
-      }
-      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+      # this is silly
+      #my $detail = {
+      #  ext_description => [],
+      #};
+      #$detail->{'ref'} = $line_item->{'pkgnum'};
+      #$detail->{'pkgpart'} = $line_item->{'pkgpart'};
+      #$detail->{'quantity'} = $line_item->{'quantity'};
+      #$detail->{'section'} = $section;
+      #$detail->{'description'} = &$escape_function($line_item->{'description'});
+      #if ( exists $line_item->{'ext_description'} ) {
+      #  @{$detail->{'ext_description'}} = @{$line_item->{'ext_description'}};
+      #}
+      #$detail->{'amount'} = ( $old_latex ? '' : $money_char ).
+      #                        $line_item->{'amount'};
+      #if ( exists $line_item->{'unit_amount'} ) {
+      #  $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
+      #                             $line_item->{'unit_amount'};
+      #}
+      #$detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
 
-      $detail->{'sdate'} = $line_item->{'sdate'};
-      $detail->{'edate'} = $line_item->{'edate'};
-      $detail->{'seconds'} = $line_item->{'seconds'};
-      $detail->{'svc_label'} = $line_item->{'svc_label'};
-      $detail->{'usage_item'} = $line_item->{'usage_item'};
-  
-      push @detail_items, $detail;
-      push @buf, ( [ $detail->{'description'},
+      #$detail->{'sdate'} = $line_item->{'sdate'};
+      #$detail->{'edate'} = $line_item->{'edate'};
+      #$detail->{'seconds'} = $line_item->{'seconds'};
+      #$detail->{'svc_label'} = $line_item->{'svc_label'};
+      #$detail->{'usage_item'} = $line_item->{'usage_item'};
+      $line_item->{'ref'} = $line_item->{'pkgnum'};
+      $line_item->{'product_code'} = $line_item->{'pkgpart'} || 'N/A'; # mt()?
+      $line_item->{'section'} = $section;
+      $line_item->{'description'} = &$escape_function($line_item->{'description'});
+      if (!$old_latex) { # dubious; templates should provide this
+        $line_item->{'amount'} = $money_char.$line_item->{'amount'};
+        $line_item->{'unit_amount'} = $money_char.$line_item->{'unit_amount'};
+      }
+      $line_item->{'ext_description'} ||= [];
+ 
+      push @detail_items, $line_item;
+      push @buf, ( [ $line_item->{'description'},
                      $money_char. sprintf("%10.2f", $line_item->{'amount'}),
                    ],
-                   map { [ " ". $_, '' ] } @{$detail->{'ext_description'}},
+                   map { [ " ". $_, '' ] } @{$line_item->{'ext_description'}},
                  );
     }
 
@@ -1421,6 +1431,17 @@ sub print_generic {
     my @sorted_amounts = map { sprintf('%.2f', $history{$_}) } @sorted_months;
     $invoice_data{monthly_history} = [ \@sorted_months, \@sorted_amounts ];
   }
+
+  # service locations: another option for template customization
+  my %location_info;
+  foreach my $item (@detail_items) {
+    if ( $item->{locationnum} ) {
+      $location_info{ $item->{locationnum} } ||= {
+        FS::cust_location->by_key( $item->{locationnum} )->location_hash
+      };
+    }
+  }
+  $invoice_data{location_info} = \%location_info;
 
   # debugging hook: call this with 'diag' => 1 to just get a hash of 
   # the invoice variables
@@ -2683,6 +2704,7 @@ sub _items_cust_bill_pkg {
               quantity        => $cust_bill_pkg->quantity,
               ext_description => \@d,
               svc_label       => ($svc_label || ''),
+              locationnum     => $cust_pkg->locationnum, # sure, why not?
             };
           };
 
@@ -2835,6 +2857,7 @@ sub _items_cust_bill_pkg {
                 %item_dates,
                 ext_description => \@d,
                 svc_label       => ($svc_label || ''),
+                locationnum     => $cust_pkg->locationnum,
               };
               $r->{'seconds'} = \@seconds if grep {defined $_} @seconds;
             }
@@ -2861,6 +2884,7 @@ sub _items_cust_bill_pkg {
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 %item_dates,
                 ext_description => \@d,
+                locationnum     => $cust_pkg->locationnum,
               };
             } # else this has no usage, so don't create a usage section
           }
