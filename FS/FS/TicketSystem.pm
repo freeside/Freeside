@@ -61,7 +61,11 @@ sub _upgrade_schema {
             %{ $columns{$tablename}->{$colname} }
           };
         $col->table_obj($table);
-        push @sql, $col->sql_add_column($dbh);
+        my ($alter, $postalter) = $col->sql_add_column($dbh);
+        foreach (@$alter) {
+          push @sql, "ALTER TABLE $tablename $_;";
+        }
+        push @sql, @$postalter;
       }
     } #foreach $colname
   } #foreach $tablename
@@ -355,12 +359,14 @@ sub _upgrade_data {
   for my $table (keys %target_pkey) {
     my $pkey = $target_pkey{$table};
     my $rows = $dbh->do(
-      "DELETE FROM links WHERE id IN(".
-        "SELECT links.id FROM links LEFT JOIN $table ON (links.target = ".
-        "'freeside://freeside/$table/' || $table.$pkey) ".
-        "WHERE links.target like 'freeside://freeside/$table/%' ".
-        "AND $table.$pkey IS NULL".
-      ")"
+      "DELETE FROM Links WHERE id IN(
+        SELECT id FROM (
+          SELECT Links.id FROM Links LEFT JOIN $table ON (Links.Target = 
+          'freeside://freeside/$table/' || $table.$pkey)
+          WHERE Links.Target like 'freeside://freeside/$table/%'
+          AND $table.$pkey IS NULL
+        ) AS x
+      )"
     ) or die $dbh->errstr;
     warn "Removed $rows dangling ticket-$table links\n" if $rows > 0;
   }
@@ -369,8 +375,8 @@ sub _upgrade_data {
   # OldValue, though this is not known to happen) is an empty string
   foreach (qw(newvalue oldvalue)) {
     my $rows = $dbh->do(
-      "UPDATE transactions SET $_ = '0' WHERE objecttype='RT::Ticket' AND ".
-      "field IN ('TimeWorked', 'TimeEstimated', 'TimeLeft') AND $_ = ''"
+      "UPDATE Transactions SET $_ = '0' WHERE ObjectType='RT::Ticket' AND ".
+      "Field IN ('TimeWorked', 'TimeEstimated', 'TimeLeft') AND $_ = ''"
     ) or die $dbh->errstr;
     warn "Fixed $rows transactions with empty time values\n" if $rows > 0;
   }
