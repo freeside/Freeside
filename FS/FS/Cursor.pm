@@ -77,13 +77,13 @@ sub new {
   }
 
   $sth->execute or die $sth->errstr;
-  # in mysql, make sure we're not holding any locks on the tables mentioned
-  # in the query; in Pg this will do nothing.
-  $dbh->commit;
 
   if ( driver_name() eq 'Pg' ) {
     $self->{fetch} = $dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
   } elsif ( driver_name() eq 'mysql' ) {
+    # make sure we're not holding any locks on the tables mentioned
+    # in the query
+    $dbh->commit if driver_name() eq 'mysql';
     $self->{fetch} = $dbh->prepare("SELECT * FROM $self->{id} ORDER BY rownum LIMIT ?, $buffer");
   }
 
