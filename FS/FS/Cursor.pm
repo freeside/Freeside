@@ -3,7 +3,7 @@ package FS::Cursor;
 use strict;
 use vars qw($DEBUG $buffer);
 use FS::Record;
-use FS::UID qw(myconnect);
+use FS::UID qw(myconnect driver_name);
 use Scalar::Util qw(refaddr);
 
 $DEBUG = 2;
@@ -46,6 +46,7 @@ sub new {
     class => 'FS::' . ($q->{table} || 'Record'),
     buffer => [],
     dbh   => $dbh,
+    position => 0, # for mysql
   };
   bless $self, $class;
 
@@ -56,7 +57,16 @@ sub new {
   $self->{pid} = $$;
 
   $self->{id} = sprintf('cursor%08x', refaddr($self));
-  my $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
+
+  my $statement;
+  if ( driver_name() eq 'Pg' ) {
+    $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
+  } elsif ( driver_name() eq 'mysql' ) {
+    # build a cursor from scratch
+    $statement = "CREATE TEMPORARY TABLE $self->{id} 
+      (rownum INT AUTO_INCREMENT, PRIMARY KEY (rownum))
+      $q->{statement}";
+  }
 
   my $sth = $dbh->prepare($statement)
     or die $dbh->errstr;
@@ -67,8 +77,15 @@ sub new {
   }
 
   $sth->execute or die $sth->errstr;
+  # in mysql, make sure we're not holding any locks on the tables mentioned
+  # in the query; in Pg this will do nothing.
+  $dbh->commit;
 
-  $self->{fetch} = $dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
+  if ( driver_name() eq 'Pg' ) {
+    $self->{fetch} = $dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
+  } elsif ( driver_name() eq 'mysql' ) {
+    $self->{fetch} = $dbh->prepare("SELECT * FROM $self->{id} ORDER BY rownum LIMIT ?, $buffer");
+  }
 
   $self;
 }
@@ -99,17 +116,24 @@ sub fetch {
 sub refill {
   my $self = shift;
   my $sth = $self->{fetch};
+  $sth->bind_param(1, $self->{position}) if driver_name() eq 'mysql';
   $sth->execute or die $sth->errstr;
   my $result = $self->{fetch}->fetchall_arrayref( {} );
   $self->{buffer} = $result;
+  $self->{position} += $sth->rows;
   scalar @$result;
 }
 
 sub DESTROY {
   my $self = shift;
   return unless $self->{pid} eq $$;
-  $self->{dbh}->do('CLOSE '. $self->{id})
-    or die $self->{dbh}->errstr; # clean-up the cursor in Pg
+  if ( driver_name() eq 'Pg' ) {
+    $self->{dbh}->do('CLOSE '. $self->{id})
+      or die $self->{dbh}->errstr; # clean-up the cursor in Pg
+  } elsif ( driver_name() eq 'mysql' ) {
+    # nothing; the temporary table will evaporate when the 
+    # session closes.
+  }
   $self->{dbh}->rollback;
   $self->{dbh}->disconnect;
 }
@@ -122,7 +146,8 @@ Replace all uses of qsearch with this.
 
 =head1 BUGS
 
-Doesn't support MySQL.
+MySQL doesn't support cursors in interactive sessions, only in stored 
+procedures, so we implement our own.  This has not been extensively tested.
 
 The cursor will close prematurely if any code issues a rollback/commit. If
 you need protection against this use qsearch or fork and get a new dbh
