@@ -3263,8 +3263,8 @@ sub create_ticket {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-#  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
-#  FS::TicketSystem->init();
+  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
+  FS::TicketSystem->init();
 
   my $conf = new FS::Conf;
   my $queue = $p->{'queue'}
