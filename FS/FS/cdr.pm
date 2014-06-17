@@ -1519,8 +1519,8 @@ as keys (for use with batch_import) and "pretty" format names as values.
 
 my %cdr_info;
 foreach my $INC ( @INC ) {
-  warn "globbing $INC/FS/cdr/*.pm\n" if $DEBUG;
-  foreach my $file ( glob("$INC/FS/cdr/*.pm") ) {
+  warn "globbing $INC/FS/cdr/[a-z]*.pm\n" if $DEBUG;
+  foreach my $file ( glob("$INC/FS/cdr/[a-z]*.pm") ) {
     warn "attempting to load CDR format info from $file\n" if $DEBUG;
     $file =~ /\/(\w+)\.pm$/ or do {
       warn "unrecognized file in $INC/FS/cdr/: $file\n";
