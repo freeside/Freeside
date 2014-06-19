@@ -2400,7 +2400,9 @@ sub invoice_barcode {
 =item invnum_date_pretty
 
 Returns a string with the invoice number and date, for example:
-"Invoice #54 (3/20/2008)"
+"Invoice #54 (3/20/2008)".
+
+Intended for back-end context, with regard to translation and date formatting.
 
 =cut
 
@@ -2409,7 +2411,9 @@ Returns a string with the invoice number and date, for example:
 # instead of backoffice configured date format)
 sub invnum_date_pretty {
   my $self = shift;
-  $self->mt('Invoice #'). $self->invnum. ' ('. $self->_date_pretty_unlocalized. ')';
+  #$self->mt('Invoice #').
+  'Invoice #'. #XXX should be translated ala web UI user (not invoice customer)
+    $self->invnum. ' ('. $self->_date_pretty_unlocalized. ')';
 }
 
 #sub _items_extra_usage_sections {

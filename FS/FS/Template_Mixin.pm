@@ -1821,7 +1821,7 @@ configured for the back-office.  Use _date_pretty for end-customer display use.
 
 sub _date_pretty_unlocalized {
   my $self = shift;
-  $self->time2str($date_format, $self->_date);
+  time2str($date_format, $self->_date);
 }
 
 =item _items_sections OPTIONS
