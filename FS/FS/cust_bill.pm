@@ -41,11 +41,6 @@ use FS::L10N;
 $DEBUG = 0;
 $me = '[FS::cust_bill]';
 
-#ask FS::UID to run this stuff for us later
-FS::UID->install_callback( sub { 
-  my $conf = new FS::Conf; #global
-} );
-
 =head1 NAME
 
 FS::cust_bill - Object methods for cust_bill records
@@ -416,8 +411,8 @@ cust_bill-default_agent_invid is set and it has a value, invnum otherwise.
 
 sub display_invnum {
   my $self = shift;
-  my $conf = $self->conf;
-  if ( $conf->exists('cust_bill-default_agent_invid') && $self->agent_invid ){
+  if ( $self->agent_invid
+         && FS::Conf->new->exists('cust_bill-default_agent_invid') ) {
     return $self->agent_invid;
   } else {
     return $self->invnum;
