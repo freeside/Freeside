@@ -2404,9 +2404,12 @@ Returns a string with the invoice number and date, for example:
 
 =cut
 
+#note: this uses _date_pretty_unlocalized because _date_pretty is too expensive
+# for backend use (and also does the wrong thing, localizing for end customer
+# instead of backoffice configured date format)
 sub invnum_date_pretty {
   my $self = shift;
-  $self->mt('Invoice #'). $self->invnum. ' ('. $self->_date_pretty. ')';
+  $self->mt('Invoice #'). $self->invnum. ' ('. $self->_date_pretty_unlocalized. ')';
 }
 
 #sub _items_extra_usage_sections {

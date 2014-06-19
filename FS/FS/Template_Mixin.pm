@@ -2,7 +2,9 @@ package FS::Template_Mixin;
 
 use strict;
 use vars qw( $DEBUG $me
-             $money_char );
+             $money_char
+             $date_format
+           );
              # but NOT $conf
 use vars qw( $invoice_lines @buf ); #yuck
 use List::Util qw(sum);
@@ -26,7 +28,8 @@ $DEBUG = 0;
 $me = '[FS::Template_Mixin]';
 FS::UID->install_callback( sub { 
   my $conf = new FS::Conf; #global
-  $money_char       = $conf->config('money_char')       || '$';  
+  $money_char  = $conf->config('money_char')  || '$';  
+  $date_format = $conf->config('date_format') || '%x'; #/YY
 } );
 
 =item conf [ MODE ]
@@ -1799,13 +1802,26 @@ sub credit_balance_msg {
 
 =item _date_pretty
 
-Returns a string with the date, for example: "3/20/2008"
+Returns a string with the date, for example: "3/20/2008", localized for the
+customer.  Use _date_pretty_unlocalized for non-end-customer display use.
 
 =cut
 
 sub _date_pretty {
   my $self = shift;
   $self->time2str_local('short', $self->_date);
+}
+
+=item _date_pretty_unlocalized
+
+Returns a string with the date, for example: "3/20/2008", in the format
+configured for the back-office.  Use _date_pretty for end-customer display use.
+
+=cut
+
+sub _date_pretty_unlocalized {
+  my $self = shift;
+  $self->time2str($date_format, $self->_date);
 }
 
 =item _items_sections OPTIONS
