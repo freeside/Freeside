@@ -29,7 +29,7 @@ use Date::Parse;
 					     skip(3),   #origNodeId	
 							#origSpan
 							#origIpAddr	
-					       'src',	#callingPartyNumber	
+           				       'src',	#callingPartyNumber	
 					    skip(20),	#callingPartyUnicodeLoginUserID	
 							#origCause_location	
 							#origCause_value	
@@ -50,7 +50,10 @@ use Date::Parse;
 							#destNodeId	
 							#destSpan	
 							#destIpAddr	
-					      'dst',	#originalCalledPartyNumber	
+		sub { my ($cdr, $dst) = @_;
+		$dst =~ s/\#//;
+		$cdr->set('dst', $dst);			      
+						},	#originalCalledPartyNumber	
 					   skip(17),	#finalCalledPartyNumber	
 							#finalCalledPartyUnicodeLoginUserID
 							#destCause_location	
@@ -77,7 +80,7 @@ use Date::Parse;
 							#finalCalledPartyNumberPartition
 							#lastRedirectDnPartition
 				       'billsec',	#duration
-					skip(48),	#origDeviceName
+					skip(22),	#origDeviceName
 							#destDeviceName
 							#origCallTerminationOnBehalfOf
 							#destCallTerminationOnBehalfOf
@@ -99,8 +102,12 @@ use Date::Parse;
 							#origMediaCap_Bandwidth
 							#destMediaCap_Bandwidth	
 							#authorizationCodeValue
-							#outpulsedCallingPartyNumber
-							#outpulsedCalledPartyNumber
+					sub { my ($cdr, $number) = @_;
+						if ($number){
+						$cdr->set('src',$number);
+						}
+						},	#outpulsedCallingPartyNumber
+					      skip(23), #outpulsedCalledPartyNumber
 							#origIpv4v6Addr	
 							#destIpv4v6Addr	
 							#origVideoCap_Codec_Channel2
