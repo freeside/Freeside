@@ -3182,7 +3182,7 @@ Class method that returns the list of possible status strings for packages
 tie my %statuscolor, 'Tie::IxHash', 
   'on hold'         => '7E0079', #purple!
   'not yet billed'  => '009999', #teal? cyan?
-  'one-time charge' => '000000',
+  'one-time charge' => '0000CC', #blue  #'000000',
   'active'          => '00CC00',
   'suspended'       => 'FF9900',
   'cancelled'       => 'FF0000',
@@ -3193,6 +3193,11 @@ sub statuses {
   #grep { $_ !~ /^(not yet billed)$/ } #this is a dumb status anyway
   #                                    # mayble split btw one-time vs. recur
     keys %statuscolor;
+}
+
+sub statuscolors {
+  #my $self = shift;
+  \%statuscolor;
 }
 
 =item statuscolor

@@ -62,10 +62,16 @@ full offerings (via their type).<BR><BR>
 
       <TR>
 
+%       ##
+%       # agentnum
+%       ##
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>"><% $agent->agentnum %></A>
         </TD>
 
+%       ##
+%       # disabled
+%       ##
 %       if ( ! $cgi->param('showdisabled') ) { 
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="center">
             <% $agent->disabled ? '<FONT COLOR="#FF0000"><B>DISABLED</B></FONT>'
@@ -74,14 +80,23 @@ full offerings (via their type).<BR><BR>
           </TD>
 %       } 
 
+%       ##
+%       # agent
+%       ##
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>"><% $agent->agent %></A>
         </TD>
 
+%       ##
+%       # type
+%       ##
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <A HREF="<%$p%>edit/agent_type.cgi?<% $agent->typenum %>"><% $agent->agent_type->atype %></A>
         </TD>
 
+%       ##
+%       # master customer
+%       ##
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
 %         if ( $agent->agent_custnum ) {
             <& /elements/small_custview.html,
@@ -92,6 +107,10 @@ full offerings (via their type).<BR><BR>
             &>
 %         }
         </TD>
+
+%       ##
+%       # commissions
+%       ##
 
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 
@@ -120,6 +139,9 @@ full offerings (via their type).<BR><BR>
 
         </TD>
 
+%       ##
+%       # access groups
+%       ##
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 %         foreach my $access_group (
 %           map $_->access_group,
@@ -129,235 +151,126 @@ full offerings (via their type).<BR><BR>
 %         }
         </TD>
 
+%       ##
+%       # invoice template
+%       ##
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <% $agent->invoice_template || '(Default)' %>
         </TD>
 
-        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" VALIGN="bottom">
-          <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#7e0079">
-                  <% my $num_prospect = $agent->num_prospect_cust_main %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_prospect ) { 
-
-                  <A HREF="<% $cust_main_link %>&prospect=1">
-% } 
-prospects
-% if ($num_prospect ) { 
-</A>
-% } 
-
-              <TD>
-            </TR>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#0000CC">
-                  <% my $num_inactive = $agent->num_inactive_cust_main %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_inactive ) { 
-
-                  <A HREF="<% $cust_main_link %>&inactive=1">
-% } 
-inactive
-% if ( $num_inactive ) { 
-</A>
-% } 
-
-              </TD>
-            </TR>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#009999">
-                  <% my $num_ordered = $agent->num_ordered_cust_main %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_ordered ) { 
-
-                  <A HREF="<% $cust_main_link %>&ordered=1">
-% } 
-ordered
-% if ($num_ordered ) { 
-</A>
-% } 
-
-              <TD>
-            </TR>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#00CC00">
-                  <% my $num_active = $agent->num_active_cust_main %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_active ) { 
-
-                  <A HREF="<% $cust_main_link %>&active=1">
-% } 
-active
-% if ( $num_active ) { 
-</A>
-% } 
-
-              </TD>
-            </TR>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#FF9900">
-                  <% my $num_susp = $agent->num_susp_cust_main %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_susp ) { 
-
-                  <A HREF="<% $cust_main_link %>&suspended=1">
-% } 
-suspended
-% if ( $num_susp ) { 
-</A>
-% } 
-
-              </TD>
-            </TR>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#FF0000">
-                  <% my $num_cancel = $agent->num_cancel_cust_main %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_cancel ) { 
-
-                  <A HREF="<% $cust_main_link %>&showcancelledcustomers=1&cancelled=1">
-% } 
-cancelled
-% if ( $num_cancel ) { 
-</A>
-% } 
-
-              </TD>
-            </TR>
-
-          </TABLE>
-        </TD>
+%       ##
+%       # customers
+%       ##
 
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" VALIGN="bottom">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
 
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#0000CC">
-                  <% my $num_inactive_pkg = $agent->num_inactive_cust_pkg %>&nbsp;
-                </FONT>
-              </TH>
+%           my @cust_status =
+%             qw( prospect inactive ordered active suspended cancelled );
+%           my %method = ( 'suspended' => 'susp',
+%                          'cancelled' => 'cancel'
+%                        );
+%           my %PL = ( 'prospect' => 'prospects', );
+%           my %link = ( 'cancelled' => 'showcancelledcustomers=1&cancelled' );
+%           my $statuscolor = FS::cust_main->statuscolors;
+%
+%           foreach my $status ( @cust_status ) {
+%             my $meth = exists($method{$status}) ? $method{$status} : $status;
+%             $meth = 'num_'. $meth. '_cust_main';
+%             my $link = exists($link{$status}) ? $link{$status} : $status;
 
-              <TD>
-% if ( $num_inactive_pkg ) { 
+              <TR>
+%               my $num = 0;
+%               unless ( $disable_counts ) {
+                  <TH ALIGN="right" WIDTH="40%">
+                    <FONT COLOR="#<% $statuscolor->{$status} %>">
+                      <% $num = $agent->$meth() %>&nbsp;
+                    </FONT>
+                  </TH>
+%               }
+                <TD>
+% if ( $num || $disable_counts ) { 
+%                 
 
-                  <A HREF="<% $cust_pkg_link %>&magic=inactive">
+                  <A HREF="<% $cust_main_link. "&$link=1" %>">
 % } 
-inactive
-% if ( $num_inactive_pkg ) { 
+<% exists($PL{$status}) ? $PL{$status} : $status %>
+% if ($num || $disable_counts ) {
 </A>
 % } 
 
-              </TD>
-            </TR>
-
-            <!--ordered-->
-            <TR>
-              <TD>&nbsp;</TD>
-            </TR>
-
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#00CC00">
-                  <% my $num_active_pkg = $agent->num_active_cust_pkg %>&nbsp;
-                </FONT>
-              </TH>
-
               <TD>
-% if ( $num_active_pkg ) { 
-
-                  <A HREF="<% $cust_pkg_link %>&magic=active">
-% } 
-active
-% if ( $num_active_pkg ) { 
-</A>
-% } 
-
-              </TD>
             </TR>
 
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#FF9900">
-                  <% my $num_susp_pkg = $agent->num_susp_cust_pkg %>&nbsp;
-                </FONT>
-
-              </TH>
-              <TD>
-% if ( $num_susp_pkg ) { 
-
-                  <A HREF="<% $cust_pkg_link %>&magic=suspended">
-% } 
-suspended
-% if ( $num_susp_pkg ) { 
-</A>
-% } 
-
-              </TD>
-            </TR>
-            
-            <TR>
-              <TH ALIGN="right" WIDTH="40%">
-                <FONT COLOR="#FF0000">
-                  <% my $num_cancel_pkg = $agent->num_cancel_cust_pkg %>&nbsp;
-                </FONT>
-              </TH>
-
-              <TD>
-% if ( $num_cancel_pkg ) { 
-
-                  <A HREF="<% $cust_pkg_link %>&magic=cancelled">
-% } 
-cancelled
-% if ( $num_cancel_pkg ) { 
-</A>
-% } 
-
-              </TD>
-            </TR>
+%           }
 
           </TABLE>
         </TD>
 
+%       ##
+%       # customer packages
+%       ##
+
+        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" VALIGN="bottom">
+          <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+
+%           #my @pkg_status = FS::cust_pkg->statuses;
+%           my @pkg_status = ( 'on hold', 'one-time charge', 'not yet billed',
+%                              qw( active suspended cancelled ) );
+%           my %method = ( 'one-time charge' => 'inactive',
+%                          'suspended'       => 'susp',
+%                          'cancelled'       => 'cancel',
+%                        );
+%           my $statuscolor = FS::cust_pkg->statuscolors;
+%
+%           foreach my $status ( @pkg_status ) {
+%             my $magic = exists($method{$status}) ? $method{$status} : $status;
+%             $magic =~ s/ /_/g;
+%             my $meth = 'num_'. $magic. '_cust_pkg';
+%             ( my $label = $status ) =~ s/ /&nbsp;/g;
+
+              <TR>
+%               my $num = 0;
+%               unless ( $disable_counts ) {
+                  <TH ALIGN="right" WIDTH="40%">
+                    <FONT COLOR="#<% $statuscolor->{$status} %>">
+                      <% $num = $agent->$meth() %>&nbsp;
+                    </FONT>
+                  </TH>
+%               }
+
+              <TD>
+% if ( $num || $disable_counts ) { 
+
+                  <A HREF="<% $cust_pkg_link %>&magic=<% $magic %>">
+% } 
+<% $label %>
+% if ( $num || $disable_counts ) { 
+</A>
+% } 
+
+              </TD>
+            </TR>
+
+%           }
+
+          </TABLE>
+        </TD>
+
+%       ##
+%       # reports
+%       ##
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <A HREF="<% $p %>graph/report_cust_pkg.html?agentnum=<% $agent->agentnum %>">Package&nbsp;Churn</A>
           <BR><A HREF="<% $p %>search/report_cust_pay.html?agentnum=<% $agent->agentnum %>">Payments</A>
           <BR><A HREF="<% $p %>search/report_cust_credit.html?agentnum=<% $agent->agentnum %>">Credits</A>
           <BR><A HREF="<% $p %>search/report_receivables.cgi?agentnum=<% $agent->agentnum %>">A/R&nbsp;Aging</A>
           <!--<BR><A HREF="<% $p %>search/money_time.cgi?agentnum=<% $agent->agentnum %>">Sales/Credits/Receipts</A>-->
-
         </TD>
+
+%       ##
+%       # registration codes
+%       ##
 
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <% my $num_reg_code = $agent->num_reg_code %>
@@ -373,6 +286,10 @@ Unused
           <BR><A HREF="<%$p%>edit/reg_code.cgi?agentnum=<% $agent->agentnum %>">Generate codes</A>
         </TD>
 
+%       ##
+%       # prepaid cards
+%       ##
+
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <% my $num_prepay_credit = $agent->num_prepay_credit %>
 % if ( $num_prepay_credit ) { 
@@ -386,19 +303,22 @@ Unused
 
           <BR><A HREF="<%$p%>edit/prepay_credit.cgi?agentnum=<% $agent->agentnum %>">Generate cards</A>
         </TD>
+
+%       ##
+%       # ticketing
+%       ##
 % if ( $conf->config('ticket_system') ) { 
-
-
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 % if ( $agent->ticketing_queueid ) { 
-
               Queue: <% $agent->ticketing_queueid %>: <% $agent->ticketing_queue %><BR>
 % } 
-
           </TD>
 % } 
 
 
+%       ##
+%       # payment gateway overrides
+%       ##
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
 % foreach my $override (
@@ -424,6 +344,10 @@ Unused
             </TR>
           </TABLE>
         </TD>
+
+%       ##
+%       # configuration overrides
+%       ##
 
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
@@ -474,5 +398,6 @@ if ( $cgi->param('showdisabled')
 }
 
 my $conf = new FS::Conf;
+my $disable_counts = $conf->exists('agent-disable_counts');
 
 </%init>
