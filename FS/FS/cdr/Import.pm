@@ -120,7 +120,7 @@ sub dbi_import {
       my $updated = $dbi->do(
         "UPDATE $table SET freesidestatus = 'done' WHERE $pkey = ?",
         undef,
-        $row->{'$pkey'}
+        $row->{$pkey}
       );
       #$updates += $updated;
       die "failed to set status: ".$dbi->errstr."\n" unless $updated;
