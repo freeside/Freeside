@@ -44,7 +44,7 @@ sub check_credit_limit {
   my $sum = qsearchs( {
     'select'    => 'SUM(rated_price) AS rated_price',
     'table'     => 'cdr',
-    'hashref'   => { 'status' => 'rated', },
+    'hashref'   => { 'freesidestatus' => 'rated', },
     'extra_sql' => ' AND svcnum IN ('. join(',',@svcnum). ') ',
   } );
 
