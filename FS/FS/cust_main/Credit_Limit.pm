@@ -44,8 +44,9 @@ sub check_credit_limit {
   my $sum = qsearchs( {
     'select'    => 'SUM(rated_price) AS rated_price',
     'table'     => 'cdr',
-    'hashref'   => { 'freesidestatus' => 'rated', },
-    'extra_sql' => ' AND svcnum IN ('. join(',',@svcnum). ') ',
+    #'hashref'   => { 'freesidestatus' => 'rated', },
+    'extra_sql' => " WHERE freesidestatus = 'rated' ".
+                   ' AND svcnum IN ('. join(',',@svcnum). ') ',
   } );
 
   return '' unless $sum->rated_price > $credit_limit;
