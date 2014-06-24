@@ -2589,6 +2589,13 @@ sub tables_hashref {
                           ['last_bill'], ['susp'], ['adjourn'], ['cancel'],
                           ['expire'], ['contract_end'], ['change_date'],
                           ['no_auto'],
+                          #['contactnum'],
+                          ['salesnum'],
+                          #['uncancel_pkgnum'],
+                          #['change_pkgnum'], ['change_locationnum'],
+                          #['change_custnum'],
+                          ['main_pkgnum'],
+                          #['pkglinknum'], ['change_to_pkgnum'],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
