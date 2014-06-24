@@ -37,6 +37,31 @@ in plaintext.
 
 =item insert_payment
 
+Adds a new payment to a customers account. Takes a hash reference as parameter with the following keys:
+
+=over 5
+
+=item secret
+
+API Secret
+
+=item custnum
+
+Customer number
+
+=item payby
+
+Payment type
+
+=item paid
+
+Amount paid
+
+=item _date
+
+
+Option date for payment
+
 Example:
 
   my $result = FS::API->insert_payment(
@@ -55,6 +80,8 @@ Example:
     #payment was inserted
     print "paynum ". $result->{'paynum'};
   }
+
+=back
 
 =cut
 
@@ -107,6 +134,26 @@ sub _by_phonenum {
 
 =item insert_credit
 
+Adds a a credit to a customers account. Takes a hash reference as parameter with the following keys
+
+=over 
+
+=item secret
+
+API Secret
+
+=item custnum
+
+customer number
+
+=item amount
+
+Amount of the credit
+
+=item _date
+
+The date the credit will be posted
+
 Example:
 
   my $result = FS::API->insert_credit(
@@ -124,6 +171,8 @@ Example:
     #credit was inserted
     print "crednum ". $result->{'crednum'};
   }
+
+=back
 
 =cut
 
@@ -157,6 +206,8 @@ sub insert_credit_phonenum {
 }
 
 =item insert_refund
+
+Adds a a credit to a customers account. Takes a hash reference as parameter with the following keys: custnum,payby,refund
 
 Example:
 
@@ -219,6 +270,133 @@ sub insert_refund_phonenum {
 # long-term: package changes?
 
 =item new_customer
+
+Creates a new customer. Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item secret
+
+API Secret
+
+=item first
+
+first name (required)
+
+=item last
+
+last name (required)
+
+=item ss
+
+(not typically collected; mostly used for ACH transactions)
+
+=item company
+
+Company name
+
+=item address1 (required)
+
+Address line one
+
+=item city (required)
+
+City
+
+=item county
+
+County
+
+=item state (required)
+
+State
+
+=item zip (required)
+
+Zip or postal code
+
+=item country
+
+2 Digit Country Code
+
+=item latitude
+
+latitude
+
+=item Longitude
+
+longitude
+
+=item geocode
+
+Currently used for third party tax vendor lookups
+
+=item censustract
+
+Used for determining FCC 477 reporting
+
+=item censusyear
+
+Used for determining FCC 477 reporting
+
+=item daytime
+
+Daytime phone number
+
+=item night
+
+Evening phone number
+
+=item fax
+
+Fax number
+
+=item mobile
+
+Mobile number
+
+=item invoicing_list
+
+comma-separated list of email addresses for email invoices. The special value 'POST' is used to designate postal invoicing (it may be specified alone or in addition to email addresses),
+postal_invoicing
+Set to 1 to enable postal invoicing
+
+=item payby
+
+CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
+
+=item payinfo
+
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pin" for PREPAY, purchase order number for BILL
+
+=item paycvv
+
+Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
+
+=item paydate
+
+Expiration date for CARD/DCRD
+
+=item payname
+
+Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
+
+=item referral_custnum
+
+referring customer number
+
+=item agentnum
+
+Agent number
+
+=item agent_custid
+
+Agent specific customer number
+
+=item referral_custnum
+
+Referring customer number
+
 
 =cut
 
@@ -290,7 +468,11 @@ sub new_customer {
 
 }
 
+=back 
+
 =item customer_info
+
+Returns general customer information. Takes a hash reference as parameter with the following keys: custnum and API secret 
 
 =cut
 
@@ -348,9 +530,19 @@ sub customer_info {
 
 }
 
+
+=item location_info
+
+Returns location specific information for the customer. Takes a hash reference as parameter with the following keys: custnum,secret
+
+=back
+
+=cut
+
 #I also monitor for changes to the additional locations that are applied to
 # packages, and would like for those to be exportable as well.  basically the
 # location data passed with the custnum.
+
 sub location_info {
   my( $class, %opt ) = @_;
   my $conf = new FS::Conf;
@@ -369,6 +561,5 @@ sub location_info {
 
 #Advertising sources?
 
-=back
 
 1;
