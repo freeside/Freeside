@@ -530,6 +530,8 @@ L<FS::SelfService> - Self-service API
 
 L<FS::SelfService::XMLRPC> - Self-service XML-RPC API
 
+L<FS::API> - Backoffice XML-RPC API
+
 =head2 User Interface classes
 
 L<FS::UI::Web> - Web user-interface class
