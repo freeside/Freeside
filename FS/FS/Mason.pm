@@ -360,6 +360,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_fee_usage;
   use FS::sched_item;
   use FS::sched_avail;
+  use FS::export_batch;
+  use FS::export_batch_item;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -3956,6 +3956,8 @@ sub tables_hashref {
         'sms_carrierid',                  'int', 'NULL',      '', '', '',
         'sms_account',                'varchar', 'NULL', $char_d, '', '',
         'max_simultaneous',               'int', 'NULL',      '', '', '',
+        'e911_class',                    'char', 'NULL',       1, '', '',
+        'e911_type',                     'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'svcnum',
       'unique' => [ [ 'sms_carrierid', 'sms_account'] ],
@@ -4541,6 +4543,49 @@ sub tables_hashref {
       'primary_key' => 'confnum',
       'unique' => [ [ 'modenum', 'locale' ] ],
       'index'  => [ ],
+    },
+
+    'export_batch' => {
+      'columns' => [
+        'batchnum',    'serial',     '',      '', '', '',
+        'exportnum',      'int',     '',      '', '', '',
+        '_date',          'int',     '',      '', '', '',
+        'status',     'varchar', 'NULL',      32, '', '',
+        'statustext', 'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key'  => 'batchnum',
+      'unique'       => [],
+      'index'        => [ [ 'exportnum' ], [ 'status' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'exportnum' ],
+                            table      => 'part_export',
+                            references => [ 'exportnum' ]
+                          },
+                        ],
+    },
+
+    'export_batch_item' => {
+      'columns' => [
+        'itemnum',     'serial',     '',      '', '', '',
+        'batchnum',       'int',     '',      '', '', '',
+        'svcnum',         'int',     '',      '', '', '',
+        'action',     'varchar',     32,      '', '', '',
+        'data',          'text', 'NULL',      '', '', '',
+        'frozen',        'char', 'NULL',       1, '', '',
+      ],
+      'primary_key'  => 'itemnum',
+      'unique'       => [],
+      'index'        => [ [ 'batchnum' ], [ 'svcnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'batchnum' ],
+                            table      => 'export_batch',
+                            references => [ 'batchnum' ]
+                          },
+                          { columns    => [ 'svcnum' ],
+                            table      => 'cust_svc',
+                            references => [ 'svcnum' ]
+                          },
+                        ],
     },
 
     # name type nullability length default local

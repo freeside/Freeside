@@ -483,6 +483,11 @@ sub contact_class {
   qsearchs('contact_class', { 'classnum' => $self->classnum } );
 }
 
+sub firstlast {
+  my $self = shift;
+  $self->first . ' ' . $self->last;
+}
+
 sub contact_classname {
   my $self = shift;
   my $contact_class = $self->contact_class or return '';

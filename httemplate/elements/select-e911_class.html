@@ -1,0 +1,6 @@
+% my $classes = FS::svc_phone->e911_classes;
+<& select.html,
+  options => [ keys(%$classes) ],
+  labels  => $classes,
+  @_
+&>
