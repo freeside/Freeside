@@ -91,6 +91,16 @@ my $begin_callback = sub {
                   );
                 },
               },
+              { field   => 'e911_class',
+                type    => 'select',
+                options => [ keys(%{ FS::svc_phone->e911_classes }) ],
+                labels  => FS::svc_phone->e911_classes,
+              },
+              { field   => 'e911_type',
+                type    => 'select',
+                options => [ keys(%{ FS::svc_phone->e911_types }) ],
+                labels  => FS::svc_phone->e911_types,
+              },
               { field => 'custnum', type=> 'hidden' }, #for new cust_locations
     ;
   }

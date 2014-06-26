@@ -153,7 +153,8 @@ sub put {
     local $@;
     my $connection = eval { $self->connect };
     return $@ if $@;
-    $connection->put($localname, $remotename) or return $connection->error;
+    $connection->put($localname, $remotename);
+    return $connection->error || '';
   } elsif ( $self->protocol eq 'email' ) {
 
     my $to = join('@', $self->username, $self->hostname);
@@ -199,13 +200,15 @@ sub connect {
     eval "use Net::SFTP::Foreign;";
     die $@ if $@;
     my %args = (
-      port      => $self->port,
       user      => $self->username,
-      password  => $self->password,
-      more      => ($DEBUG ? '-v' : ''),
       timeout   => 30,
-      autodie   => 1, #we're doing this anyway
+      autodie   => 0, #we're doing this anyway
     );
+    # Net::SFTP::Foreign does not deal well with args that are defined
+    # but empty
+    $args{port} = $self->port if $self->port and $self->port != 22;
+    $args{password} = $self->password if length($self->password) > 0;
+    $args{more} = '-v' if $DEBUG;
     my $sftp = Net::SFTP::Foreign->new($self->hostname, %args);
     $sftp->setcwd($self->path);
     return $sftp;

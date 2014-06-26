@@ -796,3 +796,7 @@ t/sched_item.t
 FS/sched_avail.pm
 t/sched_avail.t
 FS/svc_Torrus_Mixin.pm
+FS/export_batch.pm
+t/export_batch.t
+FS/export_batch_item.pm
+t/export_batch_item.t

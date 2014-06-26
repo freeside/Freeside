@@ -62,9 +62,13 @@ use FS::Cron::rt_tasks qw(rt_daily);
 rt_daily(%opt);
 
 #does nothing unless batch-gateway-* configs are set
-use FS::Cron::pay_batch qw(batch_submit batch_receive);
-batch_submit(%opt);
-batch_receive(%opt);
+use FS::Cron::pay_batch qw(pay_batch_submit pay_batch_receive);
+pay_batch_submit(%opt);
+pay_batch_receive(%opt);
+
+#does nothing unless there are batch-style exports with batches
+use FS::Cron::export_batch qw(export_batch_submit);
+export_batch_submit(%opt);
 
 #you can skip this by not having the config
 use FS::Cron::agent_email qw(agent_email);
