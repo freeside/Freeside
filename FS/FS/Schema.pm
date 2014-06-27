@@ -6616,7 +6616,7 @@ sub tables_hashref {
         'itemnum',     'serial',     '',      '', '', '',
         'batchnum',       'int',     '',      '', '', '',
         'svcnum',         'int',     '',      '', '', '',
-        'action',     'varchar',     32,      '', '', '',
+        'action',     'varchar',     '',      32, '', '',
         'data',          'text', 'NULL',      '', '', '',
         'frozen',        'char', 'NULL',       1, '', '',
       ],
