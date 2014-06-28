@@ -5,11 +5,12 @@ use Date::Parse 'str2time';
 use FS::cdr::Import;
 
 FS::cdr::Import->dbi_import(
-  'dbd'         => 'Sybase',
-  'database'    => 'TEL_DATA',
-  'table'       => 'BILLING',
-  'primary_key' => 'BILLING_ID',
-  'column_map'  => { #freeside => IVR
+  'dbd'          => 'Sybase',
+  'database'     => 'TEL_DATA',
+  'table'        => 'BILLING',
+  'primary_key'  => 'BILLING_ID',
+  'status_table' => 'FREESIDE_BILLING',
+  'column_map'   => { #freeside => IVR
     'cdrid'             => 'BILLING_ID', #Primary key
     #'' => 'CALL_SESSION_ID', # Call Session Id (unique per call session – GUID)
     'uniqueid'          => 'CALL_ID', #

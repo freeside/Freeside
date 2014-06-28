@@ -74,11 +74,19 @@ sub dbi_import {
   #  else {
   #    print "freesidestatus column present\n";
   #  }
+  # or if using a status_table:
+  #      CREATE TABLE FREESIDE_BILLING (
+  #        BILLING_ID BIGINT,
+  #        FREESIDESTATUS VARCHAR(32)
+  #      )
 
   #my @cols = values %{ $args{column_map} };
-  my $sql = "SELECT * FROM $table ". # join(',', @cols). " FROM $table ".
+  my $sql = "SELECT * FROM $table "; # join(',', @cols). " FROM $table ".
+  $sql .=  'LEFT JOIN '. $args{status_table}.
+           ' USING ( '. $args{primary_key}. ' )'
+    if $args{status_table};
+  $sql .= ' WHERE freesidestatus IS NULL ';
 
-            ' WHERE freesidestatus IS NULL ';
   #$sql .= ' LIMIT '. $opt{L} if $opt{L};
   my $sth = $dbi->prepare($sql);
   $sth->execute or die $sth->errstr. " executing $sql";
@@ -111,19 +119,33 @@ sub dbi_import {
 
     #print $row->{$pkey},"\n" if $opt{v};
     my $error = $cdr->insert;
+
     if ($error) {
+
       #die $row->{$pkey} . ": failed import: $error\n";
       print $row->{$pkey} . ": failed import: $error\n";
+
     } else {
+
       $imported++;
 
-      my $updated = $dbi->do(
-        "UPDATE $table SET freesidestatus = 'done' WHERE $pkey = ?",
-        undef,
-        $row->{$pkey}
-      );
+      my $st_sql;
+      if ( $args{status_table} ) {
+
+        $st_sql = 
+          'INSERT INTO '. $args{status_table}. " ( $pkey, freesidestatus ) ".
+            " VALUES ( ?, 'done' )";
+
+      } else {
+
+        $st_sql = "UPDATE $table SET freesidestatus = 'done' WHERE $pkey = ?";
+
+      }
+
+      my $updated = $dbi->do($st_sql, undef, $row->{$pkey} );
       #$updates += $updated;
       die "failed to set status: ".$dbi->errstr."\n" unless $updated;
+
     }
 
     if ( $opt{L} && $imported >= $opt{L} ) {
