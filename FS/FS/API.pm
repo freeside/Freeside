@@ -28,7 +28,7 @@ integration with other back-office systems.
 If accessing this API remotely with XML-RPC or JSON-RPC, be careful to block
 the port by default, only allow access from back-office servers with the same
 security precations as the Freeside server, and encrypt the communication
-channel (for exampple, with an SSH tunnel or VPN) rather than accessing it
+channel (for example, with an SSH tunnel or VPN) rather than accessing it
 in plaintext.
 
 =head1 METHODS
