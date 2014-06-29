@@ -825,9 +825,10 @@ sub rate_prefix {
   # We don't round _anything_ (except granularizing) 
   # until the final $charge = sprintf("%.2f"...).
 
-  my $seconds_left = $part_pkg->option_cacheable('use_duration')
-                       ? $self->duration
-                       : $self->billsec;
+  my $rated_seconds = $part_pkg->option_cacheable('use_duration')
+                        ? $self->duration
+                        : $self->billsec;
+  my $seconds_left = $rated_seconds;
 
   #no, do this later so it respects (group) included minutes
   #  # charge for the first (conn_sec) seconds
@@ -835,7 +836,7 @@ sub rate_prefix {
   #  $seconds_left -= $seconds; 
   #  $weektime     += $seconds;
   #  my $charge = $rate_detail->conn_charge; 
-  my $seconds = 0;
+  #my $seconds = 0;
   my $charge = 0;
   my $connection_charged = 0;
 
@@ -893,7 +894,7 @@ sub rate_prefix {
       $seconds_left = 0;
     }
 
-    $seconds += $charge_sec;
+    #$seconds += $charge_sec;
 
     if ( $rate_detail->min_included ) {
       # the old, kind of deprecated way to do this:
@@ -987,7 +988,7 @@ sub rate_prefix {
     $opt{'svcnum'},
     'rated_pretty_dst'    => $pretty_dst,
     'rated_regionname'    => $rate_region->regionname,
-    'rated_seconds'       => $seconds,
+    'rated_seconds'       => $rated_seconds, #$seconds,
     'rated_granularity'   => $rate_detail->sec_granularity, #$granularity
     'rated_ratedetailnum' => $rate_detail->ratedetailnum,
     'rated_classnum'      => $rate_detail->classnum, #rated_ratedetailnum?
@@ -1255,7 +1256,7 @@ sub export_formats {
   my $conf = new FS::Conf;
   my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-  # call duration in the largest units that accurately reflect the  granularity
+  # call duration in the largest units that accurately reflect the granularity
   my $duration_sub = sub {
     my($cdr, %opt) = @_;
     my $sec = $opt{seconds} || $cdr->billsec;
