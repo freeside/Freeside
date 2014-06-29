@@ -5769,6 +5769,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_hash' => [ ''   => 'NANPA (US/Canada)',
                        'AU' => 'Australia',
+                       'NZ' => 'New Zealand',
                      ],
   },
 
