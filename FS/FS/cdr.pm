@@ -368,7 +368,12 @@ to inspect other field.
 sub is_tollfree {
   my $self = shift;
   my $field = scalar(@_) ? shift : 'dst';
-  ( $self->$field() =~ /^(\+?1)?8(8|([02-7])\3)/ ) ? 1 : 0;
+  my $country = $conf->config('tollfree-country');
+  if ( $country eq 'AU' ) { 
+    ( $self->$field() =~ /^(\+?64)?(800|508)/ ) ? 1 : 0;
+  } else { #NANPA (US/Canaada)
+    ( $self->$field() =~ /^(\+?1)?8(8|([02-7])\3)/ ) ? 1 : 0;
+  }
 }
 
 =item set_charged_party

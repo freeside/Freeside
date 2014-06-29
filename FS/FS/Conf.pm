@@ -5762,6 +5762,16 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'tollfree-country',
+    'section'     => 'telephony',
+    'description' => 'Country / region for toll-free recognition',
+    'type'        => 'select',
+    'select_hash' => [ ''   => 'NANPA (US/Canada)',
+                       'AU' => 'Australia',
+                     ],
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
