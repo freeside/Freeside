@@ -4041,7 +4041,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'prepaynum',
       'unique'       => [ ['identifier'] ],
-      'index'        => [],
+      'index'        => [ ['agentnum'] ],
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
                             table      => 'agent',
