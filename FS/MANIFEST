@@ -123,6 +123,10 @@ FS/part_export/http.pm
 FS/part_export/infostreet.pm
 FS/part_export/ldap.pm
 FS/part_export/null.pm
+FS/part_export/phone_shellcommands.pm
+FS/part_export/phone_sqlopensips.pm
+FS/part_export/phone_sql.pm
+FS/part_export/phone_sqlradius.pm
 FS/part_export/radiator.pm
 FS/part_export/router.pm
 FS/part_export/shellcommands.pm
