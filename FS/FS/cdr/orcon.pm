@@ -17,7 +17,16 @@ use FS::cdr;
         'accountcode',  #account number
         skip(2),        #username
                         #service id
-        'calldate',     #date
+        sub { my ($cdr, $calldate) = @_;
+         	$cdr->set('calldate', $calldate);
+
+                $calldate =~ /^(\d{2})\/(\d{2})\/(\d{4})\s*(\d{2}):(\d{2}):(\d{2})$/
+                               or die "unparseable date: $calldate";
+                my $tmp_date = "$2/$1/$3 $4:$5:$6";
+
+                $tmp_date = str2time($tmp_date);
+                $cdr->set('startdate', $tmp_date);
+                  },    #date
         skip(1),        #tariff region
         'src',          #originating number
         'dst',          #terminating number
