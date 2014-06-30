@@ -83,7 +83,7 @@ sub dbi_import {
   #my @cols = values %{ $args{column_map} };
   my $sql = "SELECT * FROM $table "; # join(',', @cols). " FROM $table ".
   $sql .=  'LEFT JOIN '. $args{status_table}.
-           ' USING ( '. $args{primary_key}. ' )'
+           " ON ( $table.$pkey = ". $args{status_table}. ".$pkey )"
     if $args{status_table};
   $sql .= ' WHERE freesidestatus IS NULL ';
 
