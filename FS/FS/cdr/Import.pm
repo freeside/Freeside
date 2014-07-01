@@ -81,7 +81,7 @@ sub dbi_import {
   #      )
 
   #my @cols = values %{ $args{column_map} };
-  my $sql = "SELECT * FROM $table "; # join(',', @cols). " FROM $table ".
+  my $sql = "SELECT $table.* FROM $table "; # join(',', @cols). " FROM $table ".
   $sql .=  'LEFT JOIN '. $args{status_table}.
            " ON ( $table.$pkey = ". $args{status_table}. ".$pkey )"
     if $args{status_table};
@@ -117,8 +117,7 @@ sub dbi_import {
 
     $cdr->cdrtypenum($opt{c}) if $opt{c};
 
-    my $pkey_value = $args{status_table} ? $row->{"$table.$pkey"}
-                                         : $row->{$pkey};
+    my $pkey_value = $row->{$pkey};
 
     #print "$pkey_value\n" if $opt{v};
     my $error = $cdr->insert;
