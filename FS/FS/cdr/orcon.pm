@@ -23,7 +23,7 @@ use Date::Parse;
 
                 $calldate =~ /^(\d{4})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2}):(\d{2})$/
                                or die "unparseable date: $calldate";
-                my $tmp_date = "$2/$1/$3 $4:$5:$6";
+                my $tmp_date = "$2/$3/$1 $4:$5:$6";
 
                 $tmp_date = str2time($tmp_date);
                 $cdr->set('startdate', $tmp_date);
