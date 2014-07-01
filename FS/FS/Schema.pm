@@ -4755,6 +4755,18 @@ sub tables_hashref {
                         ],
     },
 
+    'part_pkg_fcc_option' => {
+      'columns' => [
+        'num',        'serial', '', '', '', '',
+        'fccoptionname', 'varchar', '', $char_d, '', '',
+        'pkgpart',       'int', '', '', '', '',
+        'optionvalue',   'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'num',
+      'unique'      => [ [ 'fccoptionname', 'pkgpart' ] ],
+      'index'       => [],
+    },
+
     'rate' => {
       'columns' => [
         'ratenum',   'serial',     '',      '', '', '', 

@@ -804,3 +804,5 @@ FS/export_batch.pm
 t/export_batch.t
 FS/export_batch_item.pm
 t/export_batch_item.t
+FS/part_pkg_fcc_option.pm
+t/part_pkg_fcc_option.t

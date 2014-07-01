@@ -381,6 +381,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::sched_avail;
   use FS::export_batch;
   use FS::export_batch_item;
+  use FS::part_pkg_fcc_option;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
