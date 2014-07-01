@@ -117,13 +117,16 @@ sub dbi_import {
 
     $cdr->cdrtypenum($opt{c}) if $opt{c};
 
-    #print $row->{$pkey},"\n" if $opt{v};
+    my $pkey_value = $args{status_table} ? $row->{"$table.$pkey"}
+                                         : $row->{$pkey};
+
+    #print "$pkey_value\n" if $opt{v};
     my $error = $cdr->insert;
 
     if ($error) {
 
-      #die $row->{$pkey} . ": failed import: $error\n";
-      print $row->{$pkey} . ": failed import: $error\n";
+      #die "$pkey_value: failed import: $error\n";
+      print "$pkey_value: failed import: $error\n";
 
     } else {
 
@@ -142,7 +145,7 @@ sub dbi_import {
 
       }
 
-      my $updated = $dbi->do($st_sql, undef, $row->{$pkey} );
+      my $updated = $dbi->do($st_sql, undef, $pkey_value );
       #$updates += $updated;
       die "failed to set status: ".$dbi->errstr."\n" unless $updated;
 
