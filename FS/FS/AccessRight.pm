@@ -438,7 +438,7 @@ sub default_superuser_rights {
     'Edit usage',
     'Credit card void',
     'Echeck void',
-    'Edit customer package dates',
+    'Void invoices',#people are overusing this when credits are more appropriate
   );
 
   no warnings 'uninitialized';
