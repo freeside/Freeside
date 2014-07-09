@@ -355,7 +355,6 @@ sub process {
     # ignore items that have no data to add to the batch
     next if $item->action eq 'suspend' or $item->action eq 'unsuspend';
     
-    my $svcnum = $item->svcnum;
     my $data = $item->data;
     %hash = %{ $item_format->parse($data) };
     my $phonenum = $hash{npa} . $hash{calling_number};

@@ -4551,7 +4551,7 @@ sub tables_hashref {
         'exportnum',      'int',     '',      '', '', '',
         '_date',          'int',     '',      '', '', '',
         'status',     'varchar', 'NULL',      32, '', '',
-        'statustext', 'varchar', 'NULL', $char_d, '', '',
+        'statustext',    'text', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'batchnum',
       'unique'       => [],
@@ -4580,10 +4580,6 @@ sub tables_hashref {
                           { columns    => [ 'batchnum' ],
                             table      => 'export_batch',
                             references => [ 'batchnum' ]
-                          },
-                          { columns    => [ 'svcnum' ],
-                            table      => 'cust_svc',
-                            references => [ 'svcnum' ]
                           },
                         ],
     },
