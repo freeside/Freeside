@@ -6640,10 +6640,6 @@ sub tables_hashref {
                             table      => 'export_batch',
                             references => [ 'batchnum' ]
                           },
-                          { columns    => [ 'svcnum' ],
-                            table      => 'cust_svc',
-                            references => [ 'svcnum' ]
-                          },
                         ],
     },
 

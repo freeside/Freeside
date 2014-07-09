@@ -104,7 +104,6 @@ sub check {
     || $self->ut_number('batchnum')
     || $self->ut_foreign_key('batchnum', 'export_batch', 'batchnum')
     || $self->ut_number('svcnum')
-    || $self->ut_foreign_key('svcnum', 'cust_svc', 'svcnum')
     || $self->ut_enum('action',
       [ qw(insert delete replace suspend unsuspend relocate) ]
     )
