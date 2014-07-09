@@ -6610,7 +6610,7 @@ sub tables_hashref {
         'exportnum',      'int',     '',      '', '', '',
         '_date',          'int',     '',      '', '', '',
         'status',     'varchar', 'NULL',      32, '', '',
-        'statustext', 'varchar', 'NULL', $char_d, '', '',
+        'statustext',    'text', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'batchnum',
       'unique'       => [],
