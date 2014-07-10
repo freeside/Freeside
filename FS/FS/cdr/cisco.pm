@@ -73,11 +73,11 @@ use Date::Parse;
 							#destRSVPVideoStat
 					'answerdate',	#dateTimeConnect	
 		   			   'enddate',	#dateTimeDisconnect
-					skip(6),	#lastRedirectDn	
+					skip(3),	#lastRedirectDn	
 							#pkid
 							#originalCalledPartyNumberPartition	
-							#callingPartyNumberPartition	
-							#finalCalledPartyNumberPartition
+				   'accountcode',	#callingPartyNumberPartition	
+					 skip(2),	#finalCalledPartyNumberPartition
 							#lastRedirectDnPartition
 				       'billsec',	#duration
 					skip(22),	#origDeviceName
