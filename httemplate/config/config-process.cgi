@@ -116,7 +116,7 @@ if ( $conf->exists('disable_settings_changes') ) {
   }
 }
 
-$FS::Conf::DEBUG = 1;
+#$FS::Conf::DEBUG = 1;
 my @config_items = grep { $_->key != ~/^invoice_(html|latex|template)/ }
                         $conf->config_items;
 my %confitems = map { $_->key => $_ } $conf->config_items;
