@@ -147,7 +147,6 @@ FS/part_pkg/bulk_Common.pm
 FS/part_pkg/bulk.pm
 FS/part_pkg/bulk_simple.pm
 FS/part_pkg/cdr_termination.pm
-FS/part_pkg/currency_fixed.pm
 FS/part_pkg/delayed_Mixin.pm
 FS/part_pkg/discount_Mixin.pm
 FS/part_pkg/flat_delayed.pm
