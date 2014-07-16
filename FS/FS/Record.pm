@@ -367,6 +367,9 @@ sub qsearch {
   my @bind_type = ();
   my $dbh = dbh;
   foreach my $stable ( @stable ) {
+
+    carp '->qsearch on cust_main called' if $stable eq 'cust_main' && $DEBUG;
+
     #stop altering the caller's hashref
     my $record      = { %{ shift(@record) || {} } };#and be liberal in receipt
     my $select      = shift @select;
@@ -994,6 +997,8 @@ sub AUTOLOAD {
     eval "use FS::$table";
     die $@ if $@;
 
+    carp '->cust_main called' if $table eq 'cust_main' && $DEBUG;
+
     my $pkey_value = $self->$column();
     my %search = ( $foreign_column => $pkey_value );
 
@@ -1120,6 +1125,13 @@ methods, speak up.
 sub hashref {
   my($self) = @_;
   $self->{'Hash'};
+}
+
+#fallback
+sub API_getinfo {
+  my $self = shift;
+  +{ ( map { $_=>$self->$_ } $self->fields ),
+   };
 }
 
 =item modified

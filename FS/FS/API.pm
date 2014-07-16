@@ -476,19 +476,6 @@ Returns general customer information. Takes a hash reference as parameter with t
 
 =cut
 
-#some false laziness w/ClientAPI::Myaccount customer_info/customer_info_short
-
-use vars qw( @cust_main_editable_fields @location_editable_fields );
-@cust_main_editable_fields = qw(
-  first last company daytime night fax mobile
-);
-#  locale
-#  payby payinfo payname paystart_month paystart_year payissue payip
-#  ss paytype paystate stateid stateid_state
-@location_editable_fields = qw(
-  address1 address2 city county state zip country
-);
-
 sub customer_info {
   my( $class, %opt ) = @_;
   my $conf = new FS::Conf;
@@ -498,38 +485,9 @@ sub customer_info {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
     or return { 'error' => 'Unknown custnum' };
 
-  my %return = (
-    'error'           => '',
-    'display_custnum' => $cust_main->display_custnum,
-    'name'            => $cust_main->first. ' '. $cust_main->get('last'),
-    'balance'         => $cust_main->balance,
-    'status'          => $cust_main->status,
-    'statuscolor'     => $cust_main->statuscolor,
-  );
-
-  $return{$_} = $cust_main->get($_)
-    foreach @cust_main_editable_fields;
-
-  for (@location_editable_fields) {
-    $return{$_} = $cust_main->bill_location->get($_)
-      if $cust_main->bill_locationnum;
-    $return{'ship_'.$_} = $cust_main->ship_location->get($_)
-      if $cust_main->ship_locationnum;
-  }
-
-  my @invoicing_list = $cust_main->invoicing_list;
-  $return{'invoicing_list'} =
-    join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
-  $return{'postal_invoicing'} =
-    0 < ( grep { $_ eq 'POST' } @invoicing_list );
-
-  #generally, the more useful data from the cust_main record the better.
-  # well, tell me what you want
-
-  return \%return;
+  $cust_main->API_getinfo;
 
 }
-
 
 =item location_info
 

@@ -1,0 +1,28 @@
+<% encode_rest($return) %>\
+<%init>
+
+rest_auth($cgi);
+
+my( $invnum, $command ) = split('/', rest_uri_remain($r, $m) );
+
+my $cust_bill = qsearchs('cust_bill', { 'invnum'=>$invnum } )
+  or die "unknown invnum $invnum";
+
+my $return = [];
+
+if ( $command eq '' ) {
+
+  my @fields = fields('cust_bill');
+  $return = +{ map { $_=>$cust_bill->$_ } @fields };
+
+} elsif ( $command eq 'cust_bill_pkg' ) {
+
+  my @fields = fields('cust_bill_pkg');
+  $return = [ map { my $cust_bill_pkg = $_;
+                    +{ map { $_=>$cust_bill_pkg->$_ } @fields };
+                  }
+                $cust_bill->cust_bill_pkg
+            ];
+}
+
+</%init>

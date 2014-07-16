@@ -3243,6 +3243,14 @@ sub re_X {
 
 }
 
+sub API_getinfo {
+  my $self = shift;
+  +{ ( map { $_=>$self->$_ } $self->fields ),
+     'owed' => $self->owed,
+     #XXX last payment applied date
+   };
+}
+
 =back
 
 =head1 CLASS METHODS

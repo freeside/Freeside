@@ -138,6 +138,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::UI::Web qw(svc_url);
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
+  use FS::UI::REST qw( rest_auth rest_uri_remain encode_rest );
   use FS::Msgcat qw(gettext geterror);
   use FS::Misc qw( send_email send_fax ocr_image
                    states_hash counties cities state_label

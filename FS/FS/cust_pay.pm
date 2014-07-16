@@ -892,6 +892,13 @@ sub unapplied_sql {
 
 }
 
+sub API_getinfo {
+ my $self = shift;
+ my @fields = grep { $_ ne 'payinfo' } $self->fields;
+ +{ ( map { $_=>$self->$_ } @fields ),
+  };
+}
+
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.

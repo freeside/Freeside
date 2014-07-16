@@ -904,6 +904,13 @@ sub tickets {
   (@tickets);
 }
 
+sub API_getinfo {
+  my $self = shift;
+  my $svc_x = $self->svc_x;
+ +{ ( map { $_=>$self->$_ } $self->fields ),
+    ( map { $svc_x=>$svc_x->$_ } $svc_x->fields ),
+  };
+}
 
 =back
 

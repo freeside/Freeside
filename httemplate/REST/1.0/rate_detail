@@ -1,0 +1,35 @@
+<% encode_rest( \@rate_detail ) %>\
+<%init>
+
+rest_auth($cgi);
+
+my $extra_sql = '';
+if ( $cgi->param('countrycode') =~ /^\+?(\d+)$/ ) {
+  my $countrycode = $1;
+  $extra_sql = "
+    WHERE EXISTS ( SELECT 1 rate_region
+                     WHERE rate_detail.dest_regionnum = rate_region.regionnum
+                       AND countrycode = '$countrycode'
+  ";
+}
+
+my @detail_fields = fields('rate_detail');
+my @region_fields = fields('rate_region');
+
+my @rate_detail =
+  map {
+    my $rate_detail = $_;
+    my $rate_region = $rate_detail->dest_region;
+
+    +{
+      ( map { $_ => $rate_detail->$_ } @detail_fields ),
+      ( map { $_ => $rate_region->$_ } @region_fields ),
+     };
+
+  } qsearch({
+      'table'   => 'rate_detail',
+      'hashref' => {},
+      extra_sql => $extra_sql,
+    });
+
+</%init>

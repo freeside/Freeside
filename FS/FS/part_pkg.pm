@@ -1,5 +1,7 @@
 package FS::part_pkg;
-use base qw( FS::m2m_Common FS::o2m_Common FS::option_Common );
+use base qw( FS::part_pkg::API
+             FS::m2m_Common FS::o2m_Common FS::option_Common
+           );
 
 use strict;
 use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
@@ -2017,8 +2019,8 @@ sub _pkgs_sql {
 #false laziness w/part_export & cdr
 my %info;
 foreach my $INC ( @INC ) {
-  warn "globbing $INC/FS/part_pkg/*.pm\n" if $DEBUG;
-  foreach my $file ( glob("$INC/FS/part_pkg/*.pm") ) {
+  warn "globbing $INC/FS/part_pkg/[a-z]*.pm\n" if $DEBUG;
+  foreach my $file ( glob("$INC/FS/part_pkg/[a-z]*.pm") ) {
     warn "attempting to load plan info from $file\n" if $DEBUG;
     $file =~ /\/(\w+)\.pm$/ or do {
       warn "unrecognized file in $INC/FS/part_pkg/: $file\n";
