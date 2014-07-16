@@ -7,7 +7,7 @@ my $extra_sql = '';
 if ( $cgi->param('countrycode') =~ /^\+?(\d+)$/ ) {
   my $countrycode = $1;
   $extra_sql = "
-    WHERE EXISTS ( SELECT 1 rate_region
+    WHERE EXISTS ( SELECT 1 FROM rate_region
                      WHERE rate_detail.dest_regionnum = rate_region.regionnum
                        AND countrycode = '$countrycode'
   ";
