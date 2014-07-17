@@ -9,7 +9,7 @@ use vars qw( $DEBUG $me $conf @encrypted_fields
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::UID qw( getotaker );
+use FS::UID qw( getotaker driver_name );
 use FS::Misc qw( send_email );
 use FS::Misc::DateTime qw( parse_datetime ); #for batch_import
 use FS::Record qw( dbh qsearch qsearchs );
@@ -1077,9 +1077,10 @@ sub process_upgrade_paybatch {
   ###
   # migrate batchnums from the misused 'paybatch' field to 'batchnum'
   ###
+  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
   my $search = FS::Cursor->new( {
     'table'     => 'cust_pay',
-    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CONCAT(pay_batch.batchnum) ',
+    'addl_from' => " JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS $text) ",
   } );
   while (my $cust_pay = $search->fetch) {
     $cust_pay->set('batchnum' => $cust_pay->paybatch);
