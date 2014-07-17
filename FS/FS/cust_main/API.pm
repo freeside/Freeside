@@ -1,6 +1,11 @@
 package FS::cust_main::API;
 
 use strict;
+use FS::Conf;
+
+=item API_getinfo FIELD => VALUE, ...
+
+=cut
 
 #some false laziness w/ClientAPI::Myaccount customer_info/customer_info_short
 
@@ -57,6 +62,95 @@ sub API_getinfo {
   # well, tell me what you want
 
   return \%return;
+
+}
+
+
+#or maybe all docs go in FS::API ?  argh
+
+=item API_insert
+
+Class method (constructor).
+
+Example:
+
+  use FS::cust_main;
+  FS::cust_main->API_insert(
+    'agentnum' => 1,
+    'refnum'   => 1,
+    'first'    => 'Harvey',
+    'last'     => 'Black',
+    'address1' => '5354 Pink Rabbit Lane',
+    'city'     => 'Farscape',
+    'state'    => 'CA',
+    'zip'      => '54144',
+
+    'invoicing_list' => 'harvey2@example.com',
+  );
+
+=cut
+
+#certainly false laziness w/ClientAPI::Signup new_customer/new_customer_minimal
+# but approaching this from a clean start / back-office perspective
+#  i.e. no package/service, no immediate credit card run, etc.
+
+sub API_insert {
+  my( $class, %opt ) = @_;
+
+  my $conf = new FS::Conf;
+
+  #default agentnum like signup_server-default_agentnum?
+ 
+  #same for refnum like signup_server-default_refnum?
+
+  my $cust_main = new FS::cust_main ( { # $class->new( {
+      'payby'         => 'BILL',
+
+      map { $_ => $opt{$_} } qw(
+        agentnum refnum agent_custid referral_custnum
+        last first company 
+        daytime night fax mobile
+        payby payinfo paydate paycvv payname
+      ),
+
+  } );
+
+  my @invoicing_list = $opt{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
+                         : ();
+  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+
+  my ($bill_hash, $ship_hash);
+  foreach my $f (FS::cust_main->location_fields) {
+    # avoid having to change this in front-end code
+    $bill_hash->{$f} = $opt{"bill_$f"} || $opt{$f};
+    $ship_hash->{$f} = $opt{"ship_$f"};
+  }
+
+  my $bill_location = FS::cust_location->new($bill_hash);
+  my $ship_location;
+  # we don't have an equivalent of the "same" checkbox in selfservice^Wthis API
+  # so is there a ship address, and if so, is it different from the billing 
+  # address?
+  if ( length($ship_hash->{address1}) > 0 and
+          grep { $bill_hash->{$_} ne $ship_hash->{$_} } keys(%$ship_hash)
+         ) {
+
+    $ship_location = FS::cust_location->new( $ship_hash );
+  
+  } else {
+    $ship_location = $bill_location;
+  }
+
+  $cust_main->set('bill_location' => $bill_location);
+  $cust_main->set('ship_location' => $ship_location);
+
+  my $error = $cust_main->insert( {}, \@invoicing_list );
+  return { 'error'   => $error } if $error;
+  
+  return { 'error'   => '',
+           'custnum' => $cust_main->custnum,
+         };
 
 }
 

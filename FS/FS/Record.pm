@@ -1127,11 +1127,25 @@ sub hashref {
   $self->{'Hash'};
 }
 
-#fallback
+#fallbacks/generics
+
 sub API_getinfo {
   my $self = shift;
   +{ ( map { $_=>$self->$_ } $self->fields ),
    };
+}
+
+sub API_insert {
+  my( $class, %opt ) = @_;
+  my $table = $class->table;
+  my $self = $class->new( { map { $_ => $opt{$_} } fields($table) } );
+  my $error = $self->insert;
+  return +{ 'error' => $error } if $error;
+  my $pkey = $self->pkey;
+  return +{ 'error'       => '',
+            'primary_key' => $pkey,
+            $pkey         => $self->$pkey,
+          };
 }
 
 =item modified
