@@ -1079,7 +1079,7 @@ sub process_upgrade_paybatch {
   ###
   my $search = FS::Cursor->new( {
     'table'     => 'cust_pay',
-    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
+    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CONCAT(pay_batch.batchnum) ',
   } );
   while (my $cust_pay = $search->fetch) {
     $cust_pay->set('batchnum' => $cust_pay->paybatch);
