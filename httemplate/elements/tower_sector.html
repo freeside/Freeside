@@ -51,13 +51,13 @@ if ( $curr_value ) {
 my %size = ( 'title' => 12 );
 
 tie my %label, 'Tie::IxHash',
-  'sectorname' => 'Name',
-  'ip_addr'    => 'IP Address',
-  'height'     => 'Height',
-  'freq_mhz'   => 'Freq. (MHz)',
-  'direction'  => 'Direction', # or a button to set these to 0 for omni
-  'width'      => 'Width',     #
-  'range'      => 'Range',
+  'sectorname'   => 'Name',
+  'ip_addr'      => 'IP Address',
+  'height'       => 'Height',
+  'freq_mhz'     => 'Freq. (MHz)',
+  'direction'    => 'Direction', # or a button to set these to 0 for omni
+  'width'        => 'Width',     #
+  'sector_range' => 'Range',
 ;
 
 my @fields = keys %label;

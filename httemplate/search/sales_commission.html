@@ -66,17 +66,20 @@ my $sales_sub_maker = sub {
   sub {
     my $sales = shift;
 
-    #efficiency improvement: ask the db for a sum instead of all the records
-    my $total = 0;
-    my @cust_bill_pkg = $sales->cust_bill_pkg(
+    my $search = $sales->cust_bill_pkg_search(
       $beginning,
       $ending,
       'cust_main_sales' => $cust_main_sales,
       'paid' => $paid,
     );
-    $total += $_->get($field) foreach @cust_bill_pkg;
+    die 'cust_bill_pkg_search hashref not yet handled' if $search->{hashref};
 
-    $money_char. sprintf('%.2f', $total);
+    my $total = FS::Record->scalar_sql(
+      "SELECT SUM(cust_bill_pkg.$field) FROM cust_bill_pkg ". #$search->{table}
+      $search->{addl_from}. ' '. $search->{extra_sql}
+    );
+
+    return $money_char. sprintf('%.2f', $total);
   };
 };
 
@@ -84,11 +87,21 @@ my $commission_sub = sub {
   my $sales = shift;
 
   #efficiency improvement: ask the db for a sum instead of all the records
-  my $total_credit = 0;
-  my @cust_credit  = $sales->cust_credit( $beginning, $ending );
-  $total_credit += $_->amount foreach @cust_credit;
+  #my $total_credit = 0;
+  #my @cust_credit  = $sales->cust_credit( $beginning, $ending );
+  #$total_credit += $_->amount foreach @cust_credit;
 
-  $money_char. sprintf('%.2f', $total_credit);
+  my $search = $sales->cust_credit_search( $beginning, $ending );
+
+  my $sql =
+    "SELECT SUM(cust_credit.amount) FROM cust_credit ". #$search->{table}
+    $search->{addl_from}. ' '.
+    ' WHERE commission_salesnum = ? '. #$search->{hashref}
+    $search->{extra_sql};
+
+  my $total = FS::Record->scalar_sql($sql, $sales->salesnum);
+
+  $money_char. sprintf('%.2f', $total);
 };
 
 my $commission_link = [ 'cust_credit.html?'.

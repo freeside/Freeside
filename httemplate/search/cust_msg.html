@@ -1,6 +1,6 @@
 <& 'elements/search.html',
        'title' => $title,
-       'name'  => 'messages',
+       'name_singular'  => 'message',
        'query' => $query,
        'count_query' => $count_query,
        'header' => [ 
@@ -24,6 +24,12 @@
                      'status',
                      sub { encode_entities($_[0]->error) },
                   ],
+       'sort_fields' => [ '_date',
+                          'msgtype',
+                          'env_to',
+                          'status',
+                          'error',
+                        ],
        'align' => 'rllcl',
        'links' => [ ],
        'link_onclicks' => [ 
@@ -41,6 +47,7 @@
                   ],
        'html_init' => $html_init,
        'really_disable_download' => 1,
+       @_
 &>
 <%init>
 #hmm...
@@ -57,6 +64,9 @@ if ( $cgi->param('status') =~ /^(\w+)$/ ) {
 }
 if ( $cgi->param('msgtype') =~ /^(\w+)$/ ) {
   push @where, "msgtype = '$1'";
+}
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  push @where, "custnum = $1";
 }
 my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
 push @where, "(_date >= $beginning AND _date <= $ending)";

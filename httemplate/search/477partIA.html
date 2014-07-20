@@ -80,12 +80,16 @@ die "access denied"
 
 my %opt = @_;
 my %search_hash;
-  
+
 for ( qw(agentnum state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
-}
+} # note that separation by state is no longer required after July 2014
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
+
+my $info = FS::part_pkg_fcc_option->info;
+
+
 
 # arrays of report_option_ numbers, running parallel to 
 # the download and upload speed arrays

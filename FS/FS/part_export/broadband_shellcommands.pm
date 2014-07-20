@@ -37,8 +37,8 @@ tie my %options, 'Tie::IxHash',
   'notes'   => <<'END'
 Run remote commands via SSH, for broadband services.
 <BR><BR>
-All fields in svc_broadband are available for interpolation (prefixed with
-<code>new_</code> or <code>old_</code> for replace operations).
+All fields in svc_broadband are available for interpolation, as well as pkgnum, locationnum and custnum (prefixed with <code>new_</code> or <code>old_</code>
+for replace operations).
 END
 );
 
@@ -80,6 +80,11 @@ sub _export_command {
   $mac_addr = uc $mac_addr
     if $self->option('uppercase_mac');
 
+  my $cust_pkg = $svc_broadband->cust_svc->cust_pkg;
+  $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+  $locationnum = $cust_pkg ? $cust_pkg->locationnum : '';
+  $custnum = $cust_pkg ? $cust_pkg->custnum : '';
+
   #done setting variables for the command
 
   $self->shellcommands_queue( $svc_broadband->svcnum,
@@ -105,6 +110,15 @@ sub _export_replace {
     $old_mac_addr = uc $old_mac_addr;
     $new_mac_addr = uc $new_mac_addr;
   }
+
+  my $old_cust_pkg = $old->cust_svc->cust_pkg;
+  my $new_cust_pkg = $new->cust_svc->cust_pkg;
+  $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
+  $old_locationnum = $old_cust_pkg ? $old_cust_pkg->locationnum : '';
+  $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
+  $new_pkgnum = $new_cust_pkg ? $new_cust_pkg->pkgnum : '';
+  $new_locationnum = $new_cust_pkg ? $new_cust_pkg->locationnum : '';
+  $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
 
   #done setting variables for the command
 

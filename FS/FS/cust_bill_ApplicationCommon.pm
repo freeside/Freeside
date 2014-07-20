@@ -503,6 +503,8 @@ sub cust_bill {
 Returns a string representing the invoice (see L<FS::cust_bill>), for example:
 "applied to Invoice #54 (3/20/2008)"
 
+Intended for back-end context, with regard to translation and date formatting.
+
 =cut
 
 sub applied_to_invoice {

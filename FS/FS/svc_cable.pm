@@ -98,7 +98,7 @@ sub table_info {
                        type           => 'input-mac_addr',
                        value_callback => sub {
                                            my $svc = shift;
-                                           join(':', $svc->mac_addr =~ /../g);
+                                           $svc->mac_addr_formatted('U',':');
                                          },
                      },
   ;

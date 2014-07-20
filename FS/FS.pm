@@ -338,9 +338,9 @@ L<FS::cust_pkg_option> - Customer package option class
 
 L<FS::cust_pkg_detail> - Customer package details class
 
-L<FS:;cust_pkg_discount> - Customer package discount class
+L<FS::cust_pkg_discount> - Customer package discount class
 
-L<FS:;cust_bill_pkg_discount> - Customer package discount line item application class
+L<FS::cust_bill_pkg_discount> - Customer package discount line item application class
 
 L<FS::discount> - Discount class
 
@@ -530,6 +530,8 @@ L<FS::SelfService> - Self-service API
 
 L<FS::SelfService::XMLRPC> - Self-service XML-RPC API
 
+L<FS::API> - Backoffice XML-RPC API
+
 =head2 User Interface classes
 
 L<FS::UI::Web> - Web user-interface class
@@ -590,21 +592,21 @@ http://www.perl.com/doc/FMTEYEWTK/easy_objects.html might help you out.
 Freeside is a billing and administration package for wired and wireless ISPs,
 VoIP, hosting, service and content providers and other online businesses.
 
-The Freeside home page is at <http://www.sisd.com/freeside>.
+The Freeside home page is at <http://freeside.biz/>.
 
-The main documentation is at <http://www.sisd.com/mediawiki>.
+The main documentation is at <http://freeside.biz/mediawiki>.
 
 =head1 SUPPORT
 
 A mailing list for users is available.  Send a blank message to
-<freeside-users-subscribe@sisd.com> to subscribe.
+<freeside-users-subscribe@freeside.biz> to subscribe.
 
 A mailing list for developers is available.  It is intended to be lower volume
 and higher SNR than the users list.  Send a blank message to
-<freeside-devel-subscribe@sisd.com> to subscribe.
+<freeside-devel-subscribe@freeside.biz> to subscribe.
 
-Commercial support is available; see
-<http://www.sisd.com/freeside/commercial.html>.
+Commercial products and services are available; see
+<http://freeside.biz/freeside/products.html> and <http://freeside.biz/freeside/services.html>.
 
 =head1 AUTHORS
 
@@ -640,7 +642,7 @@ See httemplate/docs/credits.html
 
 =head1 SEE ALSO
 
-perl(1), main Freeside documentation at <http://www.sisd.com/mediawiki/>
+perl(1), main Freeside documentation at <http://freeside.biz/mediawiki/>
 
 =head1 BUGS
 

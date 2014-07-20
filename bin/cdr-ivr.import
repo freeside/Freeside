@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+
+use strict;
+use Date::Parse 'str2time';
+use FS::cdr::Import;
+
+FS::cdr::Import->dbi_import(
+  'dbd'          => 'Sybase',
+  'database'     => 'TEL_DATA',
+  'table'        => 'BILLING',
+  'primary_key'  => 'BILLING_ID',
+  'status_table' => 'FREESIDE_BILLING',
+  'column_map'   => { #freeside => IVR
+    'cdrid'             => 'BILLING_ID', #Primary key
+    #'' => 'CALL_SESSION_ID', # Call Session Id (unique per call session – GUID)
+    'uniqueid'          => 'CALL_ID', #
+    #'' => 'ENTRY_TYPE', #
+    'accountcode'       => 'ACCOUNT_ID', #
+    #'' => 'ACCOUNT', #
+    #'' => 'ACCOUNT_GROUP', #
+    'startdate'         => sub { str2time(shift->{'START_DATE_TIME'}); },
+    'answerdate'        => sub { str2time(shift->{'CONNECT_DATE_TIME'}); },
+    'enddate'           => sub { str2time(shift->{'DISCONNECT_DATE_TIME'}); },
+    #'' => 'PARENT_ACCOUNT_ID', #
+    #'' => 'PARENT_ACCOUNT', #
+    #'' => 'LOGIN_NAME', #
+    #varchars not ints 'upstream_rateid' => 'RATE_SCHEDULE', #
+    #varchars not ints 'upstream_rateplanid' => 'RATE_PLAN', #
+    'channel' => 'NODE', #
+    #'' => 'NODE_TYPE', #
+    #'' => 'ORIGIN', #
+    #'dst'               => sub { $_[0]->{COUNTRY_CODE}. $_[0]->{NPA}.
+    #                             $_[0]->{NXX}. $_[0]->{LOCAL_NUMBER};
+    #                           },
+    'description'       => 'DESCRIPTION', # or upstream_dst_regionname ?
+    #'' => 'DETAIL', #
+    #'' => 'PER_CALL_CHARGE', #
+    #'' => 'PER_MINUTE_CHARGE', #
+    #'' => 'PER_CALL_SURCHARGE', #
+    #'' => 'PER_MINUTE_SURCHARGE', #
+    'duration'          => 'ACTUAL_DURATION', #
+    'billsec'           => sub { int( shift->{'QUANTITY'} * 60 + .49 ); }, #
+    'upstream_price'    => 'AMOUNT', #
+    #'' => 'PACKAGED_BALANCE_INDEX', #
+    'upstream_currency' => 'CURRENCY', #
+    #'' => 'CONVERSION_RATE', #
+    'lastapp'           => 'MODULE_NAME', #
+    'src'               => 'ANI', # 'clid' => 'ANI', #
+    'dst'               => 'DNIS',
+    #'' => 'SALES_GROUP', #
+    #'' => 'TAX_GROUP', #
+    'userfield'         => 'USER_1', #
+    #'' => 'USER_2', #
+    #'' => 'USER_3', #
+    #'' => 'USER_4', #
+    #'' => 'USER_5', #
+    #'' => 'USER_6', #
+    #'' => 'USER_7', #
+    #'' => 'USER_8', #
+    #'' => 'USER_9', #
+    #'' => 'USER_10', #
+    #'' => 'INFO_DIGITS', # VARCHAR(3) Info digits from the inbound leg, if applicable
+    #'' => 'RATE_INTERVAL', # TINYINT Rate interval used to bill the call (default: 60 seconds) ... create a new "upstream_granularity" field if we need this
+    #'' => 'DISCONNECT_CHARGE', # DECIMAL(15,4) The disconnect charge billed for the call
+    #'' => 'BILLING_DELAY', # SMALLINT Billing delay associated with the call
+    #'' => 'GRACE_PERIOD', # SMALLINT Grace period associated with the call
+    #'' => 'ACCOUNT_TYPE', # Account type from ACCOUNT_TYPES table
+  },
+);
+
+1;

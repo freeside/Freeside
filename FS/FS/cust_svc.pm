@@ -322,14 +322,24 @@ sub replace {
     my $error = $new->svc_x->export('pkg_change', $new->cust_pkg,
                                                   $old->cust_pkg,
                                    );
+
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error if $error;
     }
-  }
+  } # if pkgnum is changing
 
   #my $error = $new->SUPER::replace($old, @_);
   my $error = $new->SUPER::replace($old);
+
+  #trigger a relocate export on location changes
+  if ( $new->cust_pkg->locationnum != $old->cust_pkg->locationnum ) {
+    $error ||= $new->svc_x->export('relocate',
+                                   $new->cust_pkg->cust_location,
+                                   $old->cust_pkg->cust_location,
+                                  );
+  }
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error if $error;
@@ -894,6 +904,13 @@ sub tickets {
   (@tickets);
 }
 
+sub API_getinfo {
+  my $self = shift;
+  my $svc_x = $self->svc_x;
+ +{ ( map { $_=>$self->$_ } $self->fields ),
+    ( map { $svc_x=>$svc_x->$_ } $svc_x->fields ),
+  };
+}
 
 =back
 

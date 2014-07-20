@@ -1,143 +1,91 @@
-% if ( scalar(@notes) ) {
-
-<SCRIPT TYPE="text/javascript">
-
-    function display_notes_classnum(classnum){
-	document.getElementById('notes_'+classnum).style.display = 'block';
-	document.getElementById('notes_tablink_'+classnum).style.fontWeight = 'bold';
-
-	var divs = document.getElementsByTagName("div");
-	var i;
-	for(i=0; i < divs.length; i++){
-	    var d = divs[i];
-	    if(d.id.length > 6 && d.id.substring(0,6) == 'notes_') {
-		if(divs[i].id != 'notes_'+classnum) {
-		    divs[i].style.display = 'none';
-		}
-	    }
-	}
-	
-	var as = document.getElementsByTagName("a");
-	for(i=0; i < as.length; i++){
-	    var a = as[i];
-	    if(a.id.length > 14 && a.id.substring(0,14) == 'notes_tablink_') {
-		if(as[i].id != 'notes_tablink_'+classnum) {
-		    as[i].style.fontWeight = 'normal';
-		}
-	    }
-	}
-    }
-
-</SCRIPT>
-
-  <& /elements/init_overlib.html &>
-
-% my $bgcolor1 = '#eeeeee';
-% my $bgcolor2 = '#ffffff';
-% my $bgcolor = '';
-% my $last_classnum = -1;
-% my $skipheader = 0;
-% my %classes = ();
-%
-% foreach my $note (@notes) {
-%
-%   if ( $bgcolor eq $bgcolor1 ) {
-%     $bgcolor = $bgcolor2;
-%   } else {
-%     $bgcolor = $bgcolor1;
-%   }
-%
-%   my $pop = popurl(3);
-%   my $notenum = $note->notenum;
-%   my $onclick = include( '/elements/popup_link_onclick.html',
-%                            'action'      => popurl(2).
-%                                             'edit/cust_main_note.cgi'.
-%                                             "?custnum=$custnum".
-%                                             ";notenum=$notenum",
-%                            'actionlabel' => emt('Edit customer note'),
-%                            'width'       => 616,
-%                            'height'      => 538, #575
-%                            'frame'       => 'top',
-%                        );
-%   my $clickjs = qq!onclick="$onclick"!;
-%
-%   my $edit = '';
-%   if ($curuser->access_right('Edit customer note') ) {
-%     my $delete_url = $fsurl.'misc/delete-note.html?'.$notenum;
-%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(!.emt('edit').')</A>'.
-%             qq! <A HREF="$delete_url" !.
-%             qq! onclick="return confirm('Delete this note?')">!.
-%             '('.emt('delete').')</A>';
-%   }
-%
-% if ( $last_classnum != $note->classnum && !$skipheader ) {
-% my $tmp_classnum = $note->classnum ? $note->classnum : 0;
-% $classes{$tmp_classnum} = $note->classname ne '' ? $note->classname 
-%						     : emt('Other');
-% if ( $last_classnum != -1 ) {
-    </TABLE>
-  </DIV>
-% }
-% my $display = ($tmp_classnum == 0 || !$conf->exists('note-classes') 
-%				    || $conf->config('note-classes') < 2) 
-%							    ? 'block' : 'none';
-	<DIV 	id="notes_<% $tmp_classnum %>"
-		style="display:<% $display %>"
-	>
-	<& /elements/table-grid.html &>
-	<TR>
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
-%   if ( $conf->exists('cust_main_note-display_times') ) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Time') |h %></TH>
-%   }
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Person') |h %></TH>
-%   if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Class') |h %></TH>
-%   }
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Note') |h %></TH>
-%   if ($curuser->access_right('Edit customer note') ) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
-%   }
-	</TR>
-% $skipheader = (!$conf->exists('note-classes') || $conf->config('note-classes') < 2);
-% $last_classnum = $note->classnum;
+% # Customer comments
+% if ( $cust_main->comments =~ /[^\s\n\r]/ ) {
+<BR><% mt('Comments') |h %>
+<% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
+<TR>
+  <TD BGCOLOR="#ffffff">
+    <PRE><% encode_entities($cust_main->comments) %></PRE>
+  </TD>
+</TR>
+</TABLE></TABLE>
+<BR><BR>
 % }
 
-    <TR>
-      <% note_datestr($note,$conf,$bgcolor) %>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<% $note->usernum ? $note->access_user->name : $note->otaker %>
-      </TD>
-% if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-	<% $note->classname %>   
-      </TD>
+% # Notes, if any
+<A NAME="notes">
+% my $notecount = scalar($cust_main->notes(0));
+% if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
+
+%   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
+<P>
+  <A NAME="cust_main_note"><FONT SIZE="+2"><% mt('Notes') |h %></FONT></A>
+</P>
+
+%   }
+
+%   if ( $curuser->access_right('Add customer note') &&
+%        ! $conf->exists('cust_main-disable_notes')
+%      ) {
+
+  <& /elements/popup_link-cust_main.html,
+                'label'       => emt('Add customer note'),
+                'action'      => $p. 'edit/cust_main_note.cgi',
+                'actionlabel' => emt('Enter customer note'),
+                'cust_main'   => $cust_main,
+                'width'       => 616,
+                'height'      => 538, #575
+  &>
+
+%   }
+<BR>
+
+% # actually display notes
+<& notes/notes.html, 'cust_main' => $cust_main &>
+<BR>
+% } # end of notes
+
+% # Attachments
+% # XXX at some point move all of this into notes/attachments.html
+% if( $curuser->access_right('View attachments') ) {
+% # List attachments
+<& notes/attachments.html, 'cust_main' => $cust_main &>
+% # "Attach file" link
+% if(! $conf->config('disable_cust_attachment')
+%  and $curuser->access_right('Add attachment')) {
+<& /elements/popup_link-cust_main.html,
+              'label'       => emt('Attach file'),
+              'action'      => $p.'edit/cust_main_attach.cgi',
+              'actionlabel' => emt('Upload file'),
+              'cust_main'   => $cust_main,
+              'width'       => 480,
+              'height'      => 296,
+&>
 % }
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        <% $note->comments | defang %>
-      </TD>
-% if($edit) {
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $edit %></TD>
-% }
-    </TR>
 
-% } #end display notes
-
-</TABLE>
-</DIV>
-
-% if ( $conf->exists('note-classes') && $conf->config('note-classes') == 2 ) {
-% 	my($classnum,$classname);
-<% mt('Show notes of class:') |h %> &nbsp; 
-% 	foreach my $classnum ( sort { $b <=> $a } (keys %classes) ) {
-	    <A	id="notes_tablink_<% $classnum %>"
-		HREF="javascript:display_notes_classnum(<% $classnum %>)"
-		style="font-weight: <% $classnum == 0 ? 'bold' : 'normal' %>"
-	    ><% $classes{$classnum} %></A>
-% 	}
-    <BR>
+%   if ($cgi->param('show_deleted')) {
+<A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
+           ($view ? ";show=$view" : '') . '#notes' 
+           %>"><I>(<% mt('Show active attachments') |h %>)</I></A>
+%   } elsif($curuser->access_right('View deleted attachments')) {
+<A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
+           ($view ? ";show=$view" : '') . ';show_deleted=1#notes'
+           %>"><I>(<% mt('Show deleted attachments') |h %>)</I></A>
+%   }
 % }
 
+<BR>
+% if ( $curuser->access_right('View email logs')
+%      and FS::cust_msg->count("custnum = $custnum")) {
+<BR>
+%   if (!$cgi->param('order_by')) {
+%     my $order_by = '_date';
+%     $order_by .= ' DESC' if $curuser->option('history_order') eq 'newest';
+%     $cgi->param('order_by', $order_by);
+%   }
+<& /search/cust_msg.html,
+  nohtmlheader  => 1,
+  html_init     => mt('Mail sent to this customer: '),
+&>
 % }
 <%init>
 
@@ -148,23 +96,9 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 my(%opt) = @_;
 
-my $custnum = $opt{'custnum'};
+my $cust_main = $opt{'cust_main'};
+my $custnum = $cust_main->custnum;
 
-my $cust_main = qsearchs('cust_main', {'custnum' => $custnum} );
-die "Customer not found!" unless $cust_main;
-
-my (@notes) = $cust_main->notes($conf->exists('note-classes') && $conf->config('note-classes') == 2);
-
-#subroutines
-
-sub note_datestr {
-  my($note, $conf, $bgcolor) = @_ or return '';
-  my $td = qq{<TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">};
-  my $format = "$td%b&nbsp;%o,&nbsp;%Y</TD>";
-  $format .= "$td%l:%M%P</TD>"
-    if $conf->exists('cust_main_note-display_times');
-  ( my $strip = time2str($format, $note->_date) ) =~ s/ (\d)/$1/g;
-  $strip;
-}
+my $view =  $cgi->param('show') || $curuser->default_customer_view;
 
 </%init>

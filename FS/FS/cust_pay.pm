@@ -11,6 +11,7 @@ use Business::CreditCard;
 use Text::Template;
 use FS::Misc::DateTime qw( parse_datetime ); #for batch_import
 use FS::Record qw( dbh qsearch qsearchs );
+use FS::UID qw( driver_name );
 use FS::CurrentUser;
 use FS::payby;
 use FS::cust_main_Mixin;
@@ -892,6 +893,13 @@ sub unapplied_sql {
 
 }
 
+sub API_getinfo {
+ my $self = shift;
+ my @fields = grep { $_ ne 'payinfo' } $self->fields;
+ +{ ( map { $_=>$self->$_ } @fields ),
+  };
+}
+
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
@@ -899,7 +907,7 @@ sub unapplied_sql {
 use FS::h_cust_pay;
 
 sub _upgrade_data {  #class method
-  my ($class, %opts) = @_;
+  my ($class, %opt) = @_;
 
   warn "$me upgrading $class\n" if $DEBUG;
 
@@ -1013,15 +1021,40 @@ sub _upgrade_data {  #class method
   ###
 
   delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
-  $class->_upgrade_otaker(%opts);
+  $class->_upgrade_otaker(%opt);
   $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
+
+  # if we do this anywhere else, it should become an FS::Upgrade method
+  my $num_to_upgrade = $class->count('paybatch is not null');
+  my $num_jobs = FS::queue->count('job = \'FS::cust_pay::process_upgrade_paybatch\' and status != \'failed\'');
+  if ( $num_to_upgrade > 0 ) {
+    warn "Need to migrate paybatch field in $num_to_upgrade payments.\n";
+    if ( $opt{queue} ) {
+      if ( $num_jobs > 0 ) {
+        warn "Upgrade already queued.\n";
+      } else {
+        warn "Scheduling upgrade.\n";
+        my $job = FS::queue->new({ job => 'FS::cust_pay::process_upgrade_paybatch' });
+        $job->insert;
+      }
+    } else {
+      process_upgrade_paybatch();
+    }
+  }
+}
+
+sub process_upgrade_paybatch {
+  my $dbh = dbh;
+  local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
+  local $FS::UID::AutoCommit = 1;
 
   ###
   # migrate batchnums from the misused 'paybatch' field to 'batchnum'
   ###
+  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
   my $search = FS::Cursor->new( {
     'table'     => 'cust_pay',
-    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
+    'addl_from' => " JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS $text) ",
   } );
   while (my $cust_pay = $search->fetch) {
     $cust_pay->set('batchnum' => $cust_pay->paybatch);
@@ -1042,12 +1075,14 @@ sub _upgrade_data {  #class method
     foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
       my $and_batchnum_is_null =
         ( $table =~ /^cust_pay/ ? ' AND batchnum IS NULL' : '' );
+      my $pkey = ($table =~ /^cust_pay/ ? 'paynum' : 'refundnum');
       my $search = FS::Cursor->new({
         table     => $table,
         extra_sql => "WHERE payby IN('CARD','CHEK') ".
                      "AND (paybatch IS NOT NULL ".
                      "OR (paybatch IS NULL AND auth IS NULL
-                     $and_batchnum_is_null ) )",
+                     $and_batchnum_is_null ) )
+                     ORDER BY $pkey DESC"
       });
       while ( my $object = $search->fetch ) {
         if ( $object->paybatch eq '' ) {

@@ -109,7 +109,7 @@ sub check {
     || $self->ut_numbern('freq_mhz')
     || $self->ut_numbern('direction')
     || $self->ut_numbern('width')
-    || $self->ut_floatn('range')
+    || $self->ut_floatn('sector_range')
   ;
   return $error if $error;
 

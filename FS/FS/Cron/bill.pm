@@ -210,6 +210,8 @@ sub bill_where {
   my $conf = new FS::Conf;
   my $billtime = $conf->exists('next-bill-ignore-time') ? day_end($time) : $time;
 
+  # corresponds to perl checks in FS::cust_main::Billing sub bill
+  #  ("bill setup" and "bill recurring fee")
   # select * from cust_main where
   my $where_pkg = <<"END";
     EXISTS(
@@ -218,7 +220,7 @@ sub bill_where {
           AND ( cancel IS NULL OR cancel = 0 )
           AND (    ( ( cust_pkg.setup IS NULL OR cust_pkg.setup =  0 )
                      AND ( start_date IS NULL OR start_date = 0
-                           OR ( start_date IS NOT NULL AND start_date <= $^T )
+                           OR ( start_date IS NOT NULL AND start_date <= $billtime )
                          )
                    )
                 OR ( freq != '0' AND ( bill IS NULL OR bill  <= $billtime ) )
@@ -234,7 +236,8 @@ END
     my $eventtable = $_;
 
     # joins and where clauses to test event conditions
-    my $join  = FS::part_event_condition->join_conditions_sql(  $eventtable );
+    my $join  = FS::part_event_condition->join_conditions_sql(  $eventtable,
+                                                                'time'=>$time );
     my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
                                                                 'time'=>$time,
                                                               );

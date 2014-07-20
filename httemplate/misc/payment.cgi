@@ -20,10 +20,12 @@
        'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
   &>
 
-  <& /elements/tr-select-discount_term.html,
-       'custnum'   => $custnum,
-       'amount_id' => 'amount',
-  &>
+% if ( $conf->exists('part_pkg-term_discounts') ) {
+    <& /elements/tr-select-discount_term.html,
+         'custnum'   => $custnum,
+         'amount_id' => 'amount',
+    &>
+% }
 
 % if ( $payby eq 'CARD' ) {
 %

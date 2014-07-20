@@ -117,7 +117,7 @@ sub check {
   my $error = 
     $self->ut_numbern('pkgusagenum')
     || $self->ut_foreign_key('pkgnum', 'cust_pkg', 'pkgnum')
-    || $self->ut_numbern('minutes')
+    || $self->ut_floatn('minutes')
     || $self->ut_foreign_key('pkgusagepart', 'part_pkg_usage', 'pkgusagepart')
   ;
   return $error if $error;

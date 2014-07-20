@@ -50,8 +50,7 @@ my $precheck_callback = sub {
   }
   return "At least one agent type must be specified."
     unless scalar(@agents)
-           || ( $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ )
-           || ( !$cgi->param('pkgpart') && $conf->exists('agent-defaultpkg') )
+           #wtf? || ( $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ )
            || $cgi->param('disabled')
            || $cgi->param('agentnum');
 
@@ -126,6 +125,14 @@ my $args_callback = sub {
   );
 
   push @args, 'part_pkg_currency' => \%part_pkg_currency;
+
+  ###
+  # fcc options
+  ###
+  my $fcc_options_string = $cgi->param('fcc_options_string');
+  if ($fcc_options_string) {
+    push @args, 'fcc_options' => decode_json($fcc_options_string);
+  }
 
   ###
   #pkg_svc
@@ -251,18 +258,16 @@ foreach my $override_class ($cgi->param) {
 
 my $conf = new FS::Conf;
 
-if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
-  my @agents = ();
-  foreach ($cgi->param('agent_type')) {
-    /^(\d+)$/;
-    push @agents, $1 if $1;
-  }
-  push @process_m2m, {
-    'link_table'   => 'type_pkgs',
-    'target_table' => 'agent_type',
-    'params'       => \@agents,
-  };
+my @agents = ();
+foreach ($cgi->param('agent_type')) {
+  /^(\d+)$/;
+  push @agents, $1 if $1;
 }
+push @process_m2m, {
+  'link_table'   => 'type_pkgs',
+  'target_table' => 'agent_type',
+  'params'       => \@agents,
+};
 
 my $targets = FS::part_pkg_usageprice->targets;
 foreach my $amount_param ( grep /^usagepricepart(\d+)_amount$/, $cgi->param ) {

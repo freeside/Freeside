@@ -630,6 +630,7 @@ sub bill {
         $taxlisthash{$pass},
         $fee_item,
         location => $fee_location
+        # probably not right to pass cancel => 1 for fees
       );
       return $error if $error;
 
@@ -1353,7 +1354,8 @@ sub _make_lines {
       # handle taxes
       ###
 
-      my $error = $self->_handle_taxes( $taxlisthash, $cust_bill_pkg );
+      my $error = $self->_handle_taxes( $taxlisthash, $cust_bill_pkg,
+        cancel => $options{cancel} );
       return $error if $error;
 
       $cust_bill_pkg->set_display(
@@ -1473,6 +1475,8 @@ OPTIONS may include:
 - part_item: a part_pkg or part_fee object to be used as the package/fee 
   definition.
 - location: a cust_location to be used as the billing location.
+- cancel: true if this package is being billed on cancellation.  This 
+  allows tax to be calculated on usage charges only.
 
 If not supplied, part_item will be inferred from the pkgnum or feepart of the
 cust_bill_pkg, and location from the pkgnum (or, for fees, the invnum and 
@@ -1507,10 +1511,9 @@ sub _handle_taxes {
     my %taxes = ();
 
     my @classes;
-    #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
     push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
-    push @classes, 'setup' if $cust_bill_pkg->setup;
-    push @classes, 'recur' if $cust_bill_pkg->recur;
+    push @classes, 'setup' if $cust_bill_pkg->setup and !$options{cancel};
+    push @classes, 'recur' if $cust_bill_pkg->recur and !$options{cancel};
 
     my $exempt = $conf->exists('cust_class-tax_exempt')
                    ? ( $self->cust_class ? $self->cust_class->tax : '' )
@@ -1784,7 +1787,8 @@ sub retry_realtime {
 
   #a little false laziness w/due_cust_event (not too bad, really)
 
-  my $join = FS::part_event_condition->join_conditions_sql;
+  # I guess this is always as of now?
+  my $join = FS::part_event_condition->join_conditions_sql('', 'time' => time);
   my $order = FS::part_event_condition->order_conditions_sql;
   my $mine = 
   '( '
@@ -2097,7 +2101,8 @@ sub due_cust_event {
 
       #some false laziness w/Cron::bill bill_where
 
-      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable);
+      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable,
+        'time' => $opt{'time'});
       my $where = FS::part_event_condition->where_conditions_sql($eventtable,
         'time'=>$opt{'time'},
       );
@@ -2136,7 +2141,8 @@ sub due_cust_event {
       my $pkey = $object->primary_key;
       $cross_where = "$eventtable.$pkey = ". $object->$pkey();
 
-      my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+      my $join = FS::part_event_condition->join_conditions_sql( $eventtable,
+        'time' => $opt{'time'});
       my $extra_sql =
         FS::part_event_condition->where_conditions_sql( $eventtable,
                                                         'time'=>$opt{'time'}

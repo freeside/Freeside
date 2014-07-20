@@ -99,12 +99,12 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =  $self->SUPER::delete(@_)
-            || $self->process_m2m(
+  my $error =  $self->process_m2m(
                                    'link_table'   => 'radius_usergroup',
                                    'target_table' => 'radius_group',
                                    'params'       => [],
-                                 );
+                                 )
+            || $self->SUPER::delete;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;

@@ -5,7 +5,7 @@
 
 <% include('/elements/progress-init.html',
               'OneTrueForm',
-              [ 'rate', 'preserve_rate_detail' ], # 'rate', 'min_', 'sec_' ],
+              [ 'rate', 'agentnum', 'preserve_rate_detail' ], # 'rate', 'min_', 'sec_' ],
               'process/rate.cgi',
               $p.'browse/rate.cgi',
            )
@@ -13,9 +13,19 @@
 <FORM NAME="OneTrueForm">
 <INPUT TYPE="hidden" NAME="ratenum" VALUE="<% $rate->ratenum %>">
 
-Rate plan
-<INPUT TYPE="text" NAME="ratename" SIZE=32 VALUE="<% $rate->ratename %>">
-<BR><BR>
+<TABLE CLASS="fsinnerbox">
+
+<& /elements/tr-select-agent.html,
+     disable_empty => ! $FS::CurrentUser::CurrentUser->access_right('Configuration'), #, 'Edit global CDR rates'
+     empty_label   => '(global)',
+&>
+
+<TR>
+  <TD>Rate plan</TD>
+  <TD><INPUT TYPE="text" NAME="ratename" SIZE=32 VALUE="<% $rate->ratename %>"></TD>
+</TR>
+</TABLE>
+<BR>
 
 <INPUT TYPE="hidden" NAME="preserve_rate_detail" VALUE="1">
 

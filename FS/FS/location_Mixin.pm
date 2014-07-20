@@ -36,7 +36,7 @@ Returns the label of the location object (see L<FS::cust_location>).
 
 sub location_label {
   my $self = shift;
-  my $object = $self->cust_location_or_main;
+  my $object = $self->cust_location_or_main or return '';
   $object->location_label(@_);
 }
 

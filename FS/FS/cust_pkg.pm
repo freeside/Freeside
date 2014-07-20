@@ -1,5 +1,5 @@
 package FS::cust_pkg;
-use base qw( FS::cust_pkg::Search
+use base qw( FS::cust_pkg::Search FS::cust_pkg::API
              FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common
@@ -2799,7 +2799,7 @@ sub cust_svc_unsorted {
 sub cust_svc_unsorted_arrayref {
   my $self = shift;
 
-  return () unless $self->num_cust_svc(@_);
+  return [] unless $self->num_cust_svc(@_);
 
   my %opt = ();
   if ( @_ && $_[0] =~ /^\d+/ ) {
@@ -2977,17 +2977,35 @@ following extra fields:
 
 =over 4
 
-=item num_cust_svc  (count)
+=item num_cust_svc
 
-=item num_avail     (quantity - count)
+(count)
 
-=item cust_pkg_svc (services) - array reference containing the provisioned services, as cust_svc objects
+=item num_avail
+
+(quantity - count)
+
+=item cust_pkg_svc
+
+(services) - array reference containing the provisioned services, as cust_svc objects
 
 =back
 
-Accepts one option: summarize_size.  If specified and non-zero, will omit the
-extra cust_pkg_svc option for objects where num_cust_svc is this size or
-greater.
+Accepts two options:
+
+=over 4
+
+=item summarize_size
+
+If true, will omit the extra cust_pkg_svc option for objects where num_cust_svc
+is this size or greater.
+
+=item hide_discontinued
+
+If true, will omit looking for services that are no longer avaialble in the
+package definition.
+
+=back
 
 =cut
 
@@ -3016,16 +3034,18 @@ sub part_svc {
     $part_svc;
   } $self->part_pkg->pkg_svc;
 
-  #extras
-  push @part_svc, map {
-    my $part_svc = $_;
-    my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
-    $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #speak no evail
-    $part_svc->{'Hash'}{'num_avail'}    = 0; #0-$num_cust_svc ?
-    $part_svc->{'Hash'}{'cust_pkg_svc'} =
-      $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
-    $part_svc;
-  } $self->extra_part_svc;
+  unless ( $opt{hide_discontinued} ) {
+    #extras
+    push @part_svc, map {
+      my $part_svc = $_;
+      my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
+      $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #speak no evail
+      $part_svc->{'Hash'}{'num_avail'}    = 0; #0-$num_cust_svc ?
+      $part_svc->{'Hash'}{'cust_pkg_svc'} =
+        $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
+      $part_svc;
+    } $self->extra_part_svc;
+  }
 
   @part_svc;
 
@@ -3143,7 +3163,7 @@ Class method that returns the list of possible status strings for packages
 tie my %statuscolor, 'Tie::IxHash', 
   'on hold'         => '7E0079', #purple!
   'not yet billed'  => '009999', #teal? cyan?
-  'one-time charge' => '000000',
+  'one-time charge' => '0000CC', #blue  #'000000',
   'active'          => '00CC00',
   'suspended'       => 'FF9900',
   'cancelled'       => 'FF0000',
@@ -3154,6 +3174,11 @@ sub statuses {
   #grep { $_ !~ /^(not yet billed)$/ } #this is a dumb status anyway
   #                                    # mayble split btw one-time vs. recur
     keys %statuscolor;
+}
+
+sub statuscolors {
+  #my $self = shift;
+  \%statuscolor;
 }
 
 =item statuscolor
@@ -3995,7 +4020,7 @@ sub apply_usage {
         minutes     => min($cust_pkg_usage->minutes, $minutes),
     });
     $cust_pkg_usage->set('minutes',
-      sprintf('%.0f', $cust_pkg_usage->minutes - $cdr_cust_pkg_usage->minutes)
+      $cust_pkg_usage->minutes - $cdr_cust_pkg_usage->minutes
     );
     $error = $cust_pkg_usage->replace || $cdr_cust_pkg_usage->insert;
     $minutes -= $cdr_cust_pkg_usage->minutes;

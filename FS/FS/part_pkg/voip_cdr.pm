@@ -12,7 +12,7 @@ use FS::cdr;
 use FS::detail_format;
 #use FS::rate;
 #use FS::rate_prefix;
-#use FS::rate_detail;
+#use FS::rate_detail; #for ::granularities
 
 $DEBUG = 0;
 
@@ -108,19 +108,13 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                   },
 
     'ratenum'   => { 'name' => 'Rate plan',
-                     'type' => 'select',
-                     'select_table' => 'rate',
-                     'select_key'   => 'ratenum',
-                     'select_label' => 'ratename',
+                     'type' => 'select-rate',
                    },
                    
     'intrastate_ratenum'   => { 'name' => 'Optional alternate intrastate rate plan',
-                     'type' => 'select',
-                     'select_table' => 'rate',
-                     'select_key'   => 'ratenum',
-                     'select_label' => 'ratename',
+                     'type' => 'select-rate',
                      'disable_empty' => 0,
-                     'empty_label'   => '',
+                     'empty_label'   => ' ',
                    },
 
     'calls_included' => { 'name' => 'Number of calls included at no usage charge', },
@@ -470,6 +464,15 @@ sub calc_usage {
     }
 
     #my @invoice_details_sort;
+
+    # for tagging invoice details
+    my $phonenum;
+    if ( $svc_table eq 'svc_phone' ) {
+      $phonenum = $svc_x->phonenum;
+    } elsif ( $svc_table eq 'svc_pbx' ) {
+      $phonenum = $svc_x->title;
+    }
+    $formatter->phonenum($phonenum);
 
     #first rate any outstanding CDRs not yet rated
     # XXX eventually use an FS::Cursor for this

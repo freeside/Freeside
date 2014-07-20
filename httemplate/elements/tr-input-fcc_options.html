@@ -1,0 +1,25 @@
+<TR>
+  <TH COLSPAN=2>
+    <& hidden.html, 'id' => $id, @_ &>
+%#    <& input-text.html, 'id' => $id, @_ &>
+%# XXX debugging
+    <FONT SIZE="+1"><BUTTON TYPE="button" onclick="show_fcc_options()">
+      FCC Form 477 information
+    </BUTTON></FONT>
+% # show some kind of useful summary of the FCC options here
+  </TH>
+</TR>
+<SCRIPT TYPE="text/javascript">
+function show_fcc_options() {
+  <& popup_link_onclick.html,
+  'action'      => $fsurl.'misc/part_pkg_fcc_options.html?id=' . $id,
+  'actionlabel' => 'FCC Form 477 options',
+  'width'       => 760,
+  'height'      => 600,
+  &>
+}
+</SCRIPT>
+<%init>
+my %opt = @_;
+my $id = $opt{id} || $opt{field};
+</%init>

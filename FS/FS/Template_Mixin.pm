@@ -2,7 +2,9 @@ package FS::Template_Mixin;
 
 use strict;
 use vars qw( $DEBUG $me
-             $money_char );
+             $money_char
+             $date_format
+           );
              # but NOT $conf
 use vars qw( $invoice_lines @buf ); #yuck
 use List::Util qw(sum);
@@ -26,7 +28,8 @@ $DEBUG = 0;
 $me = '[FS::Template_Mixin]';
 FS::UID->install_callback( sub { 
   my $conf = new FS::Conf; #global
-  $money_char       = $conf->config('money_char')       || '$';  
+  $money_char  = $conf->config('money_char')  || '$';  
+  $date_format = $conf->config('date_format') || '%x'; #/YY
 } );
 
 =item conf [ MODE ]
@@ -1028,35 +1031,46 @@ sub print_generic {
       warn "$me     adding line item $line_item\n"
         if $DEBUG > 1;
 
-      my $detail = {
-        ext_description => [],
-      };
-      $detail->{'ref'} = $line_item->{'pkgnum'};
-      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
-      $detail->{'quantity'} = $line_item->{'quantity'};
-      $detail->{'section'} = $section;
-      $detail->{'description'} = &$escape_function($line_item->{'description'});
-      if ( exists $line_item->{'ext_description'} ) {
-        @{$detail->{'ext_description'}} = @{$line_item->{'ext_description'}};
-      }
-      $detail->{'amount'} = ( $old_latex ? '' : $money_char ).
-                              $line_item->{'amount'};
-      if ( exists $line_item->{'unit_amount'} ) {
-        $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
-                                   $line_item->{'unit_amount'};
-      }
-      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+      # this is silly
+      #my $detail = {
+      #  ext_description => [],
+      #};
+      #$detail->{'ref'} = $line_item->{'pkgnum'};
+      #$detail->{'pkgpart'} = $line_item->{'pkgpart'};
+      #$detail->{'quantity'} = $line_item->{'quantity'};
+      #$detail->{'section'} = $section;
+      #$detail->{'description'} = &$escape_function($line_item->{'description'});
+      #if ( exists $line_item->{'ext_description'} ) {
+      #  @{$detail->{'ext_description'}} = @{$line_item->{'ext_description'}};
+      #}
+      #$detail->{'amount'} = ( $old_latex ? '' : $money_char ).
+      #                        $line_item->{'amount'};
+      #if ( exists $line_item->{'unit_amount'} ) {
+      #  $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
+      #                             $line_item->{'unit_amount'};
+      #}
+      #$detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
 
-      $detail->{'sdate'} = $line_item->{'sdate'};
-      $detail->{'edate'} = $line_item->{'edate'};
-      $detail->{'seconds'} = $line_item->{'seconds'};
-      $detail->{'svc_label'} = $line_item->{'svc_label'};
-  
-      push @detail_items, $detail;
-      push @buf, ( [ $detail->{'description'},
+      #$detail->{'sdate'} = $line_item->{'sdate'};
+      #$detail->{'edate'} = $line_item->{'edate'};
+      #$detail->{'seconds'} = $line_item->{'seconds'};
+      #$detail->{'svc_label'} = $line_item->{'svc_label'};
+      #$detail->{'usage_item'} = $line_item->{'usage_item'};
+      $line_item->{'ref'} = $line_item->{'pkgnum'};
+      $line_item->{'product_code'} = $line_item->{'pkgpart'} || 'N/A'; # mt()?
+      $line_item->{'section'} = $section;
+      $line_item->{'description'} = &$escape_function($line_item->{'description'});
+      if (!$old_latex) { # dubious; templates should provide this
+        $line_item->{'amount'} = $money_char.$line_item->{'amount'};
+        $line_item->{'unit_amount'} = $money_char.$line_item->{'unit_amount'};
+      }
+      $line_item->{'ext_description'} ||= [];
+ 
+      push @detail_items, $line_item;
+      push @buf, ( [ $line_item->{'description'},
                      $money_char. sprintf("%10.2f", $line_item->{'amount'}),
                    ],
-                   map { [ " ". $_, '' ] } @{$detail->{'ext_description'}},
+                   map { [ " ". $_, '' ] } @{$line_item->{'ext_description'}},
                  );
     }
 
@@ -1389,6 +1403,48 @@ sub print_generic {
     push @summary_subtotals, $s;
   }
   $invoice_data{summary_subtotals} = \@summary_subtotals;
+
+  # usage subtotals
+  if ( $conf->exists('usage_class_summary')
+       and $self->can('_items_usage_class_summary') ) {
+    my @usage_subtotals = $self->_items_usage_class_summary(escape => $escape_function);
+    if ( @usage_subtotals ) {
+      unshift @sections, $usage_subtotals[0]->{section};
+      unshift @detail_items, @usage_subtotals;
+    }
+  }
+
+  # invoice history "section" (not really a section)
+  # not to be included in any subtotals, completely independent of 
+  # everything...
+  if ( $conf->exists('previous_invoice_history') ) {
+    my %history;
+    my %monthorder;
+    foreach my $cust_bill ( $cust_main->cust_bill ) {
+      # XXX hardcoded format, and currently only 'charged'; add other fields
+      # if they become necessary
+      my $date = $self->time2str_local('%b %Y', $cust_bill->_date);
+      $history{$date} ||= 0;
+      $history{$date} += $cust_bill->charged;
+      # just so we have a numeric sort key
+      $monthorder{$date} ||= $cust_bill->_date;
+    }
+    my @sorted_months = sort { $monthorder{$a} <=> $monthorder{$b} }
+                        keys %history;
+    my @sorted_amounts = map { sprintf('%.2f', $history{$_}) } @sorted_months;
+    $invoice_data{monthly_history} = [ \@sorted_months, \@sorted_amounts ];
+  }
+
+  # service locations: another option for template customization
+  my %location_info;
+  foreach my $item (@detail_items) {
+    if ( $item->{locationnum} ) {
+      $location_info{ $item->{locationnum} } ||= {
+        FS::cust_location->by_key( $item->{locationnum} )->location_hash
+      };
+    }
+  }
+  $invoice_data{location_info} = \%location_info;
 
   # debugging hook: call this with 'diag' => 1 to just get a hash of 
   # the invoice variables
@@ -1746,13 +1802,26 @@ sub credit_balance_msg {
 
 =item _date_pretty
 
-Returns a string with the date, for example: "3/20/2008"
+Returns a string with the date, for example: "3/20/2008", localized for the
+customer.  Use _date_pretty_unlocalized for non-end-customer display use.
 
 =cut
 
 sub _date_pretty {
   my $self = shift;
   $self->time2str_local('short', $self->_date);
+}
+
+=item _date_pretty_unlocalized
+
+Returns a string with the date, for example: "3/20/2008", in the format
+configured for the back-office.  Use _date_pretty for end-customer display use.
+
+=cut
+
+sub _date_pretty_unlocalized {
+  my $self = shift;
+  time2str($date_format, $self->_date);
 }
 
 =item _items_sections OPTIONS
@@ -2263,7 +2332,26 @@ separate quantities, for some reason).
 
 sub _items_nontax {
   my $self = shift;
-  grep { $_->pkgnum } $self->cust_bill_pkg;
+  # The order of these is important.  Bundled line items will be merged into
+  # the most recent non-hidden item, so it needs to be the one with:
+  # - the same pkgnum
+  # - the same start date
+  # - no pkgpart_override
+  #
+  # So: sort by pkgnum,
+  # then by sdate
+  # then sort the base line item before any overrides
+  # then sort hidden before non-hidden add-ons
+  # then sort by override pkgpart (for consistency)
+  sort { $a->pkgnum <=> $b->pkgnum        or
+         $a->sdate  <=> $b->sdate         or
+         ($a->pkgpart_override ? 0 : -1)  or
+         ($b->pkgpart_override ? 0 : 1)   or
+         $b->hidden cmp $a->hidden        or
+         $a->pkgpart_override <=> $b->pkgpart_override
+       }
+  # and of course exclude taxes and fees
+  grep { $_->pkgnum > 0 } $self->cust_bill_pkg;
 }
 
 sub _items_fee {
@@ -2291,12 +2379,28 @@ sub _items_fee {
       }
     } # otherwise include them all in the main section
     # XXX what to do when sectioning by location?
+    
+    my @ext_desc;
+    my %base_invnums; # invnum => invoice date
+    foreach ($cust_bill_pkg->cust_bill_pkg_fee) {
+      if ($_->base_invnum) {
+        my $base_bill = FS::cust_bill->by_key($_->base_invnum);
+        my $base_date = $self->time2str_local('short', $base_bill->_date)
+          if $base_bill;
+        $base_invnums{$_->base_invnum} = $base_date || '';
+      }
+    }
+    foreach (sort keys(%base_invnums)) {
+      next if $_ == $self->invnum;
+      push @ext_desc,
+        $self->mt('from invoice \\#[_1] on [_2]', $_, $base_invnums{$_});
+    }
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
         description => $part_fee->itemdesc_locale($self->cust_main->locale),
+        ext_description => \@ext_desc
         # sdate/edate?
-        # ext_description referencing the base_invnum?
       };
   }
   @items;
@@ -2478,6 +2582,9 @@ sub _items_cust_bill_pkg {
       @cust_bill_pkg_display = grep { !$_->summary }
                                 @cust_bill_pkg_display;
     }
+
+    my $classname = ''; # package class name, will fill in later
+
     foreach my $display (@cust_bill_pkg_display) {
 
       warn "$me _items_cust_bill_pkg considering cust_bill_pkg_display ".
@@ -2538,6 +2645,9 @@ sub _items_cust_bill_pkg {
         %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate')
           unless $part_pkg->option('disable_line_item_date_ranges',1);
 
+        # not normally used, but pass this to the template anyway
+        $classname = $part_pkg->classname;
+
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
                   || $cust_bill_pkg->setup_show_zero
@@ -2564,16 +2674,20 @@ sub _items_cust_bill_pkg {
 
           my @d = ();
           my $svc_label;
+
+          # always pass the svc_label through to the template, even if 
+          # not displaying it as an ext_description
+          my @svc_labels = map &{$escape_function}($_),
+                      $cust_pkg->h_labels_short($self->_date, undef, 'I');
+
+          $svc_label = $svc_labels[0];
+
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->hidden )
           {
 
-            my @svc_labels = map &{$escape_function}($_),
-                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
             push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
-            $svc_label = $svc_labels[0];
-
             my $lnum = $cust_main ? $cust_main->ship_locationnum
                                   : $self->prospect_main->locationnum;
             # show the location label if it's not the customer's default
@@ -2606,6 +2720,7 @@ sub _items_cust_bill_pkg {
               quantity        => $cust_bill_pkg->quantity,
               ext_description => \@d,
               svc_label       => ($svc_label || ''),
+              locationnum     => $cust_pkg->locationnum, # sure, why not?
             };
           };
 
@@ -2647,6 +2762,10 @@ sub _items_cust_bill_pkg {
           push @dates, $prev->sdate if $prev;
           push @dates, undef if !$prev;
 
+          my @svc_labels = map &{$escape_function}($_),
+                      $cust_pkg->h_labels_short(@dates, 'I');
+          $svc_label = $svc_labels[0];
+
           # show service labels, unless...
                     # the package is set not to display them
           unless ( $part_pkg->hide_svc_detail
@@ -2666,12 +2785,8 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg adding service details\n"
               if $DEBUG > 1;
 
-            my @svc_labels = map &{$escape_function}($_),
-                        $cust_pkg->h_labels_short(@dates, 'I');
             push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
-            $svc_label = $svc_labels[0];
-
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
 
@@ -2758,6 +2873,7 @@ sub _items_cust_bill_pkg {
                 %item_dates,
                 ext_description => \@d,
                 svc_label       => ($svc_label || ''),
+                locationnum     => $cust_pkg->locationnum,
               };
               $r->{'seconds'} = \@seconds if grep {defined $_} @seconds;
             }
@@ -2780,9 +2896,11 @@ sub _items_cust_bill_pkg {
                 pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
+                usage_item      => 1,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 %item_dates,
                 ext_description => \@d,
+                locationnum     => $cust_pkg->locationnum,
               };
             } # else this has no usage, so don't create a usage section
           }

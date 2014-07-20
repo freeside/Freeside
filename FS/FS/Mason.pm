@@ -98,6 +98,7 @@ if ( -e $addl_handler_use_file ) {
 
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
+  use Net::MAC::Vendor;
   use Net::Ping;
   use Net::Ping::External;
   #if CPAN #7815 ever gets fixed# if ( $Net::Ping::External::VERSION <= 0.12 )
@@ -137,6 +138,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::UI::Web qw(svc_url);
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
+  use FS::UI::REST qw( rest_auth rest_uri_remain encode_rest );
   use FS::Msgcat qw(gettext geterror);
   use FS::Misc qw( send_email send_fax ocr_image
                    states_hash counties cities state_label
@@ -378,6 +380,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_fee_usage;
   use FS::sched_item;
   use FS::sched_avail;
+  use FS::export_batch;
+  use FS::export_batch_item;
+  use FS::part_pkg_fcc_option;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

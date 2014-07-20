@@ -359,6 +359,9 @@ tie my %rights, 'Tie::IxHash',
 
     'Bulk edit package definitions',
 
+    'Edit CDR rates',
+    #{ rightname=>'Edit global CDR rates', global=>1, },
+
     'Edit fee definitions',
     { rightname=>'Edit global fee definitions', global=>1 },
 
@@ -435,7 +438,7 @@ sub default_superuser_rights {
     'Edit usage',
     'Credit card void',
     'Echeck void',
-    'Edit customer package dates',
+    'Void invoices',#people are overusing this when credits are more appropriate
   );
 
   no warnings 'uninitialized';

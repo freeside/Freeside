@@ -81,7 +81,7 @@ sub get_dids {
                         })
            ];
 
-  } elsif ( $opt{'state'} ) { #return aracodes
+  } elsif ( $opt{'state'} ) { #return areacodes
 
     $hash{state} = $opt{state};
 
@@ -94,7 +94,15 @@ sub get_dids {
            ];
 
   } else { 
-    die "FS::part_export::internal_diddb::get_dids called without options\n";
+
+    #die "FS::part_export::internal_diddb::get_dids called without options\n";
+    return [ map { $_->npa. '-'. $_->nxx. '-'. $_->station }
+                 qsearch({ 'table'    => 'phone_avail',
+                           'hashref'  => \%hash,
+                           'order_by' => 'ORDER BY station',
+                        })
+           ];
+
   }
 
 }

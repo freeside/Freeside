@@ -1724,7 +1724,7 @@ sub list_svcs {
     my $tag = $part->description . ($part->shared ? 1 : 0);
     my $row = $usage_pools{$tag} 
           ||= [ $part->description, 0, 0, $part->shared ? 1 : 0 ];
-    $row->[1] += $_->minutes; # minutes remaining
+    $row->[1] += sprintf('%.1f', $_->minutes); # minutes remaining
     $row->[2] += $part->minutes; # minutes total
   }
 
@@ -2860,6 +2860,13 @@ sub myaccount_passwd {
   my $error = '';
 
   my $conf = new FS::Conf;
+
+  return { 'error' => 'Incorrect current password.' }
+    if  ( exists($p->{'old_password'})
+          || $conf->exists('selfservice-password_change_oldpass')
+        )
+    && ! $svc_acct->check_password($p->{'old_password'});
+
   $error = 'Password too short.'
     if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
   $error = 'Password too long.'
@@ -3256,8 +3263,8 @@ sub create_ticket {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-#  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
-#  FS::TicketSystem->init();
+  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
+  FS::TicketSystem->init();
 
   my $conf = new FS::Conf;
   my $queue = $p->{'queue'}

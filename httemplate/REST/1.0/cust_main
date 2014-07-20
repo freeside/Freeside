@@ -1,0 +1,150 @@
+<% encode_rest($return) %>\
+<%init>
+
+rest_auth($cgi);
+
+my( $custnum, $command ) = split('/', rest_uri_remain($r, $m), 2 );
+
+if ( $r->method eq 'GET' ) {
+
+  my $return = [];
+
+  if ( $custnum ) {
+
+    my $cust_main = qsearchs('cust_main', { 'custnum'=>$custnum } )
+      or die "unknown custnum $custnum";
+
+    if ( $command eq '' ) {
+
+      $return = $cust_main->API_getinfo;
+
+    } elsif ( $command =~ /^(cust_(pkg|attachment|bill|pay))$/ ) {
+
+      my $method = $1;
+
+      $return = [ map $_->API_getinfo, $cust_main->$method ];
+
+    } elsif ( $command eq 'part_pkg' ) {
+
+      my %pkgpart = map { $_->pkgpart => 1 } $cust_main->cust_pkg;
+
+      $return = [ map $_->API_getinfo,
+                    map qsearchs('part_pkg', { 'pkgpart'=>$_ }),
+                      keys %pkgpart;
+                ];
+
+    }
+
+  } else { #list
+
+    my %hash = ( map { $_ => scalar($cgi->param($_)) }
+                   qw( agentnum salesnum refnum classnum usernum
+                       referral_custnum
+                     )
+               );
+ 
+    my $extra_sql = '';
+    if ( $cgi->param('cust_main_invoice_dest') ) {
+      my $dest = dbh->quote(scalar($cgi->param('cust_main_invoice_dest')));
+      $extra_sql = "
+        WHERE EXISTS ( SELECT 1 FROM cust_main_invoice
+                         WHERE cust_main.custnum = cust_main_invoice.custnum
+                           AND dest = $dest
+                     )
+      ";
+    } elsif ( $cgi->param('cust_main_invoice_dest_substring') ) {
+      my $dest = dbh->quote('%'. scalar($cgi->param('cust_main_invoice_dest_substring')). '%');
+      $extra_sql = "
+        WHERE EXISTS ( SELECT 1 FROM cust_main_invoice
+                         WHERE cust_main.custnum = cust_main_invoice.custnum
+                           AND dest ILIKE $dest
+                     )
+      ";
+    }
+
+    my @cust_main = qsearch({
+      'table'     => 'cust_main',
+      'hashref'   =>  \%hash,
+      'extra_sql' => $extra_sql;
+    });
+
+    $return = [ map $_->API_getinfo, @cust_main ];
+
+  }
+
+} elsif ( $r->method eq 'POST' ) { #create new
+
+  if ( !$custnum && $command eq '' ) {
+
+    my @param = grep { $_ ne 'secret' } $cgi->param;
+
+    $return = FS::cust_main->API_insert(
+      map { $_ => scalar($cgi->param($_)) } @param
+        #qw(
+        #  agentnum refnum agent_custid referral_custnum
+        #  last first company daytime night fax mobile
+        #  invoicing_list postal_invoicing
+        #  payby payinfo paydate paycvv payname
+
+        #  address1 address2 city county state zip country
+        #  ship_company ship_address1 ship_address2 ship_city ship_county
+        #    ship_state ship_zip ship_country
+        #)
+    );
+
+    if ( $return->{error} ) {
+      #XXX RESTful error handline
+      die $return->{error};
+    } elsif ( $return->{custnum} ) {
+      # Return a 201 Status code and the newly created id
+      my $custnum = $return->{custnum};
+      #$r->headers_out('Location' => );
+      #$m->abort(201);
+      $m->redirect( $r->uri."/$custnum", 201);
+    } else {
+      #XXX RESTful exception handling (cust_main->API_insert didn't even behave like we expect!?)
+      die 'guru meditation #159';
+    }
+
+  } elsif ( $custnum && $command eq 'cust_pkg' ) {
+
+    #XXX this needs to order a package, not just insert a record :/
+
+  # #XXX does this need to do anything special?  what's a "wallet payment"?
+  # } elsif ( $custnum && $command eq 'cust_pay' ) {
+
+  } elsif ( $custnum && $command =~ /^(cust_(attachment|pay))$/ ) {
+
+    my $table = $1;
+    my $class = 'FS::'.$table;
+
+    my @param = grep { $_ ne 'secret' } $cgi->param;
+
+    my $return =
+      $class->API_insert( 'custnum' => $custnum, 
+                          map { $_ => scalar($cgi->param($_)) } @param
+                        );
+
+    my $pkey = FS::Record->dbdef_table->$table->primary_key;
+
+    if ( $return->{error} ) {
+      #XXX RESTful error handline
+      die $return->{error};
+    } elsif ( $return->{$pkey} ) {
+      # Return a 201 Status code and the newly created id
+      my $pkey_value = $return->{$pkey};
+      #$r->headers_out('Location' => );
+      #$m->abort(201);
+      $m->redirect( $r->uri."/$pkey_value", 201);
+    } else {
+      #XXX RESTful exception handling (cust_main->API_insert didn't even behave like we expect!?)
+      die 'guru meditation #160';
+    }
+
+  }
+
+} elsif ( $r->method eq 'PUT' ) { #modify
+
+}
+
+</%init>

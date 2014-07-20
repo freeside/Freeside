@@ -4,8 +4,11 @@ use base qw( FS::Report );
 use strict;
 use vars qw( @upload @download @technology @part2aoption @part2boption
              %states
+             $DEBUG
            );
 use FS::Record qw( dbh );
+
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -201,10 +204,142 @@ sub statenum2state {
   $states{$num};
 }
 
-#sub statenum2abbr {
-#  my $num = shift;
-#  $states{$num} =~ /\((\w\w)\)$/ or return '';
-#  $1;
-#}
+sub join_optionnames {
+  join(' ', map { join_optionname($_) } @_);
+}
+
+sub join_optionname {
+  # Returns a FROM phrase to join a specific option into the query (via 
+  # part_pkg).  The option value will appear as a field with the same name
+  # as the option.
+  my $name = shift;
+  "LEFT JOIN (SELECT pkgpart, optionvalue AS $name FROM part_pkg_fcc_option".
+    " WHERE fccoptionname = '$name') AS t_$name".
+    " ON (part_pkg.pkgpart = t_$name.pkgpart)";
+}
+
+sub active_on {
+  # Returns a condition to limit packages to those that were setup before a 
+  # certain date, and not canceled before that date.
+  #
+  # (Strictly speaking this should also exclude suspended packages but 
+  # "suspended as of some past date" is a complicated query.)
+  my $date = shift;
+  "cust_pkg.setup <= $date AND ".
+  "(cust_pkg.cancel IS NULL OR cust_pkg.cancel > $date)";
+}
+
+sub is_fixed_broadband {
+  "is_broadband = '1' AND technology::integer IN(".join(',',
+    10, 11, 12, 20, 30, 40, 41, 42, 50, 60, 70, 90, 0
+  ).")";
+}
+
+=item part6 OPTIONS
+
+Returns Part 6 of the 2014 FCC 477 data, as an arrayref of arrayrefs.
+OPTIONS may contain "date" => a timestamp to run the report as of that
+date.
+
+=cut
+
+sub part6 {
+  my $class = shift;
+  my %opt = shift;
+  my $date = $opt{date} || time;
+
+  my @select = (
+    'cust_location.censustract',
+    'technology',
+    'broadband_downstream',
+    'broadband_upstream',
+    'COUNT(*)',
+    'COUNT(is_consumer)',
+  );
+  my $from =
+    'cust_pkg
+      JOIN cust_location USING (locationnum)
+      JOIN part_pkg USING (pkgpart) '.
+      join_optionnames(qw(
+        is_broadband technology 
+        broadband_downstream broadband_upstream
+        is_consumer
+        ))
+  ;
+  my @where = (
+    active_on($date),
+    is_fixed_broadband()
+  );
+  my $group_by = 'cust_location.censustract, technology, '.
+                   'broadband_downstream, broadband_upstream ';
+  my $order_by = $group_by;
+
+  my $statement = "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
+
+  warn $statement if $DEBUG;
+  dbh->selectall_arrayref($statement);
+}
+
+=item part9 OPTIONS
+
+Returns Part 9 of the 2014 FCC 477 data, as above.
+
+=cut
+
+sub part9 {
+  my $class = shift;
+  my %opt = shift;
+  my $date = $opt{date} || time;
+
+  my @select = (
+    "cust_location.state",
+    "SUM(COALESCE(phone_vges::int,0))",
+    "SUM(COALESCE(phone_circuits::int,0))",
+    "SUM(COALESCE(phone_lines::int,0))",
+    "SUM(CASE WHEN is_broadband = '1' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer = '1' AND is_longdistance IS NULL THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer = '1' AND is_longdistance = '1' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance IS NULL THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance = '1' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN phone_localloop = 'owned' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN phone_localloop = 'leased' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN phone_localloop = 'resale' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN media = 'Fiber' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN media = 'Cable Modem' THEN phone_lines::int ELSE 0 END)",
+    "SUM(CASE WHEN media = 'Fixed Wireless' THEN phone_lines::int ELSE 0 END)",
+  );
+  my $from =
+    'cust_pkg
+      JOIN cust_location USING (locationnum)
+      JOIN part_pkg USING (pkgpart) '.
+      join_optionnames(qw(
+        is_phone is_broadband media
+        phone_vges phone_circuits phone_lines
+        is_consumer is_longdistance phone_localloop 
+        ))
+  ;
+  my @where = (
+    active_on($date),
+    "is_phone::int = 1",
+  );
+  my $group_by = 'cust_location.state';
+  my $order_by = $group_by;
+
+  my $statement = "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
+
+  warn $statement if $DEBUG;
+  dbh->selectall_arrayref($statement);
+}
+
 
 1;
