@@ -80,7 +80,7 @@ use Date::Parse;
 					 skip(2),	#finalCalledPartyNumberPartition
 							#lastRedirectDnPartition
 				       'billsec',	#duration
-					skip(22),	#origDeviceName
+					skip(23),	#origDeviceName
 							#destDeviceName
 							#origCallTerminationOnBehalfOf
 							#destCallTerminationOnBehalfOf
@@ -102,11 +102,7 @@ use Date::Parse;
 							#origMediaCap_Bandwidth
 							#destMediaCap_Bandwidth	
 							#authorizationCodeValue
-					sub { my ($cdr, $number) = @_;
-						if ($number){
-						$cdr->set('src',$number);
-						}
-						},	#outpulsedCallingPartyNumber
+					        	#outpulsedCallingPartyNumber
 					      skip(23), #outpulsedCalledPartyNumber
 							#origIpv4v6Addr	
 							#destIpv4v6Addr	
@@ -135,7 +131,6 @@ use Date::Parse;
   ],
 
 );
-
 
 
 
