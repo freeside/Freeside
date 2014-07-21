@@ -1,7 +1,7 @@
 % if ( $cgi->param('_type') =~ /^xml$/ ) {
 <zip_codes>
 % }
-<& elements/search.html,
+<& /search/elements/search.html,
                   'html_init'         => $html_init,
                   'name'              => 'zip code',
                   'query'             => $sql_query,

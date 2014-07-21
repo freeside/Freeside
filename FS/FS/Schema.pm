@@ -6643,6 +6643,20 @@ sub tables_hashref {
                         ],
     },
 
+    # lookup table for states, similar to msa and lata
+    'state' => {
+      'columns' => [
+        'statenum', 'int',  '', '', '', '', 
+        'country',  'char', '',  2, '', '',
+        'state',    'char', '', $char_d, '', '', 
+        'fips',     'char', '',  3, '', '',
+      ],
+      'primary_key' => 'statenum',
+      'unique' => [ [ 'country', 'state' ], ],
+      'index' => [],
+    },
+
+
     # name type nullability length default local
 
     #'new_table' => {

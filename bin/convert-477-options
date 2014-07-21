@@ -6,11 +6,11 @@ use FS::Record qw(qsearch qsearchs dbh);
 use FS::part_pkg_report_option;
 use Text::CSV;
 
-adminsuidsetup($user) or die "invalid user '$user'";
-$FS::UID::AutoCommit = 1;
-$FS::Record::nowarn_classload = 1;
+if (!$user) {
+  print "
+Usage: bin/convert-477-options <username>
 
-print "This script will convert your per-package FCC 477 report options
+This script will convert your per-package FCC 477 report options
 from the classic style (part IA, IB, IIA...) to the 2014 style.
 This is an approximate conversion, and you should review the 
 resulting package settings for accuracy.  In particular:
@@ -19,11 +19,17 @@ resulting package settings for accuracy.  In particular:
   - Broadband technologies for ADSL and cable modem will be set
     to 'other ADSL' and 'other cable modem'.  You should set 
     them to the specific ADSL or cable encapsulation in use.
-  - The 'consumer grade' vs. 'business grade' classification 
-    was introduced in 2014 and will not be set.
-
-Configuring packages...
+  - All packages will be set to 'business grade'.  The 'consumer grade'
+    category did not exist in previous versions of the report.
 ";
+  exit(1);
+}
+
+adminsuidsetup($user) or die "invalid user '$user'";
+$FS::UID::AutoCommit = 1;
+$FS::Record::nowarn_classload = 1;
+
+print "Configuring packages...\n";
 
 my @min_download_speed = ( 0.2, 0.768, 1.5, 3, 6, 10, 25, 100 );
 my @min_upload_speed = ( 0.1, @min_download_speed );
@@ -74,7 +80,9 @@ sub report_option_to_fcc_option {
             technology    => $technology[$1]);
   } elsif ($formkey =~ /^part2a_row_option_(\d+)/) {
     #local phone options
-    return (split(':', $phone_option[$1]));
+    return (media => 'Copper', # sensible default
+            split(':', $phone_option[$1])
+           );
   } elsif ($formkey =~ /^part2b_row_option_(\d+)/) {
     #VoIP options (are all media types)
     return (split(':', $voip_option[$1]));
@@ -86,7 +94,7 @@ sub report_option_to_fcc_option {
 
 for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
   my $pkgpart = $part_pkg->pkgpart;
-  print "#$pkgpart\n";
+  #print "#$pkgpart\n";
   my %report_opts = $part_pkg->options;
   my @fcc_opts;
   foreach my $optionname (keys(%report_opts)) {
@@ -113,12 +121,12 @@ for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
   }
 
   my %fcc_opts = @fcc_opts;
-  print map {"\t$_\t".$fcc_opts{$_}."\n"} keys %fcc_opts;
+  #print map {"\t$_\t".$fcc_opts{$_}."\n"} keys %fcc_opts;
   my $error = $part_pkg->process_fcc_options(\%fcc_opts);
   if ( $error ) {
     die "$error\n";
   }
-  print "\n";
+  #print "\n";
 }
 
 print "Finished.\n";
