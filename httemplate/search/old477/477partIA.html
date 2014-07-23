@@ -87,10 +87,6 @@ for ( qw(agentnum state) ) {
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 
-my $info = FS::part_pkg_fcc_option->info;
-
-
-
 # arrays of report_option_ numbers, running parallel to 
 # the download and upload speed arrays
 my @download_option = $cgi->param('part1_column_option');

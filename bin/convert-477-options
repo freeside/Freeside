@@ -60,36 +60,43 @@ my @voip_option = (
   'media:Other'
 );
 
-my %num_to_formkey = map { $_->formvalue => $_->formkey }
-                      qsearch('fcc477map', {});
+my %num_to_formkey; # o2m
+foreach ( qsearch('fcc477map', {}) ) {
+  push @{ $num_to_formkey{$_->formvalue} ||= [] }, $_->formkey;
+}
 
 sub report_option_to_fcc_option {
   my $report_option_num = shift;
-  my $formkey = $num_to_formkey{$report_option_num}
+  my $formkeys = $num_to_formkey{$report_option_num}
     or return;
-  if      ($formkey =~ /^part1_column_option_(\d+)/) {
-    #download speed
-    return (broadband_downstream => $min_download_speed[$1]);
-  } elsif ($formkey =~ /^part1_row_option_(\d+)/) {
-    #upload speed
-    return (broadband_upstream   => $min_upload_speed[$1]);
-  } elsif ($formkey =~ /^part1_technology_option_(\d+)/) {
-    #broadband tech
-    return (is_broadband  => 1,
-            media         => $media_type[$1],
-            technology    => $technology[$1]);
-  } elsif ($formkey =~ /^part2a_row_option_(\d+)/) {
-    #local phone options
-    return (media => 'Copper', # sensible default
-            split(':', $phone_option[$1])
-           );
-  } elsif ($formkey =~ /^part2b_row_option_(\d+)/) {
-    #VoIP options (are all media types)
-    return (split(':', $voip_option[$1]));
-  } else {
-    warn "can't parse option with formkey '$formkey'\n";
-    return;
+  my @return;
+  foreach my $formkey (@$formkeys) {
+    if      ($formkey =~ /^part1_column_option_(\d+)/) {
+      #download speed
+      push @return, (broadband_downstream => $min_download_speed[$1]);
+    } elsif ($formkey =~ /^part1_row_option_(\d+)/) {
+      #upload speed
+      push @return, (broadband_upstream   => $min_upload_speed[$1]);
+    } elsif ($formkey =~ /^part1_technology_option_(\d+)/) {
+      #broadband tech
+      push @return, 
+             (is_broadband  => 1,
+              media         => $media_type[$1],
+              technology    => $technology[$1]);
+    } elsif ($formkey =~ /^part2a_row_option_(\d+)/) {
+      #local phone options
+      push @return,
+             (media => 'Copper', # sensible default
+              split(':', $phone_option[$1])
+             );
+    } elsif ($formkey =~ /^part2b_row_option_(\d+)/) {
+      #VoIP options (are all media types)
+      push @return, (split(':', $voip_option[$1]));
+    } else {
+      warn "can't parse option with formkey '$formkey'\n";
+    }
   }
+  @return;
 }
 
 for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
