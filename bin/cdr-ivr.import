@@ -45,8 +45,8 @@ FS::cdr::Import->dbi_import(
     #'' => 'CONVERSION_RATE', #
     'lastapp'           => 'MODULE_NAME', #
     'src'               => 'ANI', # 'clid' => 'ANI', #
-    'dst'               => sub { $_[0]->{'DNIS'} =~ /^011/
-                                   ? $_[0]->{'DNIS'}
+    'dst'               => sub { $_[0]->{'COUNTRY_CODE'} !~ /^1/
+                                   ? "011". $_[0]->{'DETAIL'}
                                    : $_[0]->{'DETAIL'};
                                },
     #'' => 'SALES_GROUP', #
