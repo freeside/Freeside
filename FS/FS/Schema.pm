@@ -200,7 +200,7 @@ sub dbdef_dist {
     grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
-           && ( ! /^queue(_arg)?$/ || ! $opt->{'queue-no_history'} )
+           && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -4173,6 +4173,21 @@ sub tables_hashref {
                             on_delete  => 'CASCADE',
                           },
                         ],
+    },
+
+    'queue_stat' => {
+      'columns' => [
+        'statnum', 'bigserial',     '',  '', '', '',
+        'jobnum',     'bigint',     '',  '', '', '',
+        'job',       'varchar',     '', 512, '', '', 
+        'custnum',       'int', 'NULL',  '', '', '',
+        'insert_date', @date_type, '', '',
+        'start_date',  @date_type, '', '', 
+        'end_date',    @date_type, '', '', 
+      ],
+      'primary_key'  => 'statnum',
+      'unique'       => [], #[ ['jobnum'] ],
+      'index'        => [],
     },
 
     'export_svc' => {
