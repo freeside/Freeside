@@ -810,3 +810,5 @@ FS/state.pm
 t/state.t
 FS/state.pm
 t/state.t
+FS/queue_stat.pm
+t/queue_stat.t
