@@ -2901,6 +2901,21 @@ sub tables_hashref {
       'index'       => [ [ 'jobnum' ], [ 'depend_jobnum' ] ],
     },
 
+    'queue_stat' => {
+      'columns' => [
+        'statnum', 'bigserial',     '',  '', '', '',
+        'jobnum',     'bigint',     '',  '', '', '',
+        'job',       'varchar',     '', 512, '', '', 
+        'custnum',       'int', 'NULL',  '', '', '',
+        'insert_date', @date_type, '', '',
+        'start_date',  @date_type, '', '', 
+        'end_date',    @date_type, '', '', 
+      ],
+      'primary_key'  => 'statnum',
+      'unique'       => [], #[ ['jobnum'] ],
+      'index'        => [],
+    },
+
     'export_svc' => {
       'columns' => [
         'exportsvcnum' => 'serial', '', '', '', '', 
