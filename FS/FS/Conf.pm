@@ -1114,7 +1114,7 @@ sub reason_type_options {
   {
     'key'         => 'unapplycredits',
     'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to nable "unapplication" of unclosed credits.',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed credits.',
     'type'        => 'checkbox',
   },
 
