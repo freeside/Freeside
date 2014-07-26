@@ -39,24 +39,27 @@ my $extra_sql =
   " AND optionvalue = '1' ".
   " AND ( susp   IS NULL OR susp   = 0)".
   " AND ( cancel IS NULL OR cancel = 0)".
-  " AND 0 < ( 
-      SELECT COUNT(*) FROM svc_phone LEFT JOIN cust_svc USING (svcnum)
+  " AND EXISTS ( 
+      SELECT 1 FROM svc_phone LEFT JOIN cust_svc USING (svcnum)
         WHERE cust_pkg.pkgnum = cust_svc.pkgnum
-          AND 0 < ( SELECT COUNT(*) FROM cdr
-                      WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
-                        AND (    charged_party = svc_phone.phonenum
-                              OR charged_party = svc_phone.countrycode
-                                                 || svc_phone.phonenum
-                              OR src = svc_phone.phonenum
-                              OR src = svc_phone.countrycode
-                                       || svc_phone.phonenum
-                            )
-                  )
+          AND EXISTS ( SELECT 1 FROM cdr
+                         WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
+                           AND (    charged_party = svc_phone.phonenum
+                                 OR charged_party = svc_phone.countrycode
+                                                    || svc_phone.phonenum
+                                 OR src = svc_phone.phonenum
+                                 OR src = svc_phone.countrycode
+                                          || svc_phone.phonenum
+                               )
+                         LIMIT 1
+                     )
+        LIMIT 1
     )
-    AND 0 = (
-      SELECT COUNT(*) FROM queue
+    AND NOT EXISTS (
+      SELECT 1 FROM queue
         WHERE queue.job = 'FS::cust_main::queued_bill'
           AND queue.custnum = cust_pkg.custnum
+        LIMIT 1
     )
     
   ";
