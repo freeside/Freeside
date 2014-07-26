@@ -383,6 +383,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::export_batch;
   use FS::export_batch_item;
   use FS::part_pkg_fcc_option;
+  use FS::state;
+  use FS::state;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -790,7 +790,7 @@ sub propagate {
 =item process_fcc_options HASHREF
 
 Sets the FCC options on this package definition to the values specified
-in HASHREF.  Names are as in L<FS::part_pkg_fcc_option/info>.
+in HASHREF.
 
 =cut
 
@@ -807,6 +807,7 @@ sub process_fcc_options {
   my %existing_num = map { $_->fccoptionname => $_->num }
                      qsearch('part_pkg_fcc_option', { pkgpart => $pkgpart });
 
+  local $FS::Record::nowarn_identical = 1;
   # set up params for process_o2m
   my $i = 0;
   my $params = {};

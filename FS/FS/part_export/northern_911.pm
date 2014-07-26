@@ -52,6 +52,7 @@ sub export_insert {
 
   my %location_hash = $svc_phone->location_hash;
   $location_hash{address1} =~ /^(\w+) +(.*)$/;
+
   my %customer = (
     'PHONE_NUMBER'        => $svc_phone->phonenum,
     'STREET_NUMBER'       => $1,
@@ -61,6 +62,31 @@ sub export_insert {
     'POSTAL_CODE_ZIP'     => $location_hash{zip},
     'OTHER_ADDRESS_INFO'  => $location_hash{address2},
   );
+  my $phone_name = $svc_phone->phone_name;
+  if ( $phone_name ) {
+    # could be a personal name or a business...
+    if ( $svc_phone->e911_class and
+        grep { $_ eq $svc_phone->e911_class }
+         ( 2, 4, 5, 6, 7, 0, 'A', 'D', 'E', 'K')
+       )
+    {
+      # one of the "Business" classes, Centrex, a payphone, or 
+      # VoIP Enterprise class
+      $customer{'LAST_NAME'} = $phone_name;
+    } else {
+      # assume residential, and try (inaccurately) to make a first/last
+      # name out of it.
+      @customer{'FIRST_NAME', 'LAST_NAME'} = split(' ', $phone_name, 2);
+    }
+  } else {
+    my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
+    if ($cust_main->company) {
+      $customer{'LAST_NAME'} = $cust_main->company;
+    } else {
+      $customer{'LAST_NAME'} = $cust_main->last;
+      $customer{'FIRST_NAME'} = $cust_main->first;
+    }
+  }
 
   if ($self->option('debug')) {
     warn "\nAddorUpdateCustomer:\n".Dumper(\%customer)."\n\n";

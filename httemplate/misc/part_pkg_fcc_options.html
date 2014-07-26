@@ -90,8 +90,8 @@
     <& .checkbox, 'is_voip' &>
     <LABEL FOR="is_voip">This package provides VoIP telephone service</LABEL>
     <FIELDSET ID="voip">
-      <LABEL FOR="voip_ott">Do you also provide last-mile connectivity?</LABEL>
-      <& .checkbox, 'voip_ott' &>
+      <& .checkbox, 'voip_lastmile' &>
+      <LABEL FOR="voip_lastmile">Do you also provide last-mile connectivity?</LABEL>
     </FIELDSET>
   </P>
   <DIV WIDTH="100%" STYLE="text-align:center">
@@ -103,8 +103,8 @@
 // this form is invoked as a popup; the current values of the parent 
 // object are in the form field ID passed as the 'id' param
 
-var parent_id = window.parent.document.getElementById('<% $parent_id %>');
-var curr_values = JSON.parse(window.parent_id.value);
+var parent_input = window.parent.document.getElementById('<% $parent_id %>');
+var curr_values = JSON.parse(window.parent_input.value);
 var form = document.forms['fcc_option_form'];
 var media_types = <% encode_json($media_types) %>
 var technology_labels = <% encode_json($technology_labels) %>
@@ -129,6 +129,9 @@ function save_changes() {
   var form = document.forms['fcc_option_form'];
   var data = {};
   for (var i = 0; i < form.elements.length; i++) {
+    if (form.elements[i].type == 'submit')
+      continue;
+
     // quick and dirty test for whether the element is displayed
     if (form.elements[i].clientHeight > 0) {
       if (form.elements[i].type == 'checkbox') {
@@ -140,7 +143,9 @@ function save_changes() {
       }
     }
   }
-  parent_id.value = JSON.stringify(data);
+  parent_input.value = JSON.stringify(data);
+  // update the display
+  parent.show_fcc_options();
   parent.cClick(); //overlib
 }
 

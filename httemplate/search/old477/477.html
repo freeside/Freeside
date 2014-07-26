@@ -1,0 +1,135 @@
+% if ( $type eq 'xml' ) {
+% $filename = "fcc_477_$state" . '_' . time2str('%Y%m%d', $date) . '.xml';
+% http_header('Content-Type' => 'application/XML' ); # So saith RFC 4180
+% http_header('Content-Disposition' => 'attachment;filename="'.$filename.'"');
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Form_477_submission xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://specialreports.fcc.gov/wcb/Form477/XMLSchema-instance/form_477_upload_Schema.xsd" >
+% } else { #html
+<& /elements/header.html, "FCC Form 477 Results - $state" &>
+%# XXX when we stop supporting IE8, add this to freeside.css using :nth-child
+%# selectors, and remove it from everywhere else
+<STYLE TYPE="text/css">
+.grid TH { background-color: #cccccc; padding: 0px 3px 2px; text-align: right }
+.row0 TD { background-color: #eeeeee; padding: 0px 3px 2px; text-align: right }
+.row1 TD { background-color: #ffffff; padding: 0px 3px 2px; text-align: right }
+</STYLE>
+
+<TABLE WIDTH="100%">
+  <TR>
+    <TD></TD>
+    <TD ALIGN="right" CLASS="noprint">
+      Download full results<BR>
+%   $cgi->param('_type', 'xml');
+      as <A HREF="<% $cgi->self_url %>">XML file</A><BR>
+
+%   $cgi->param('_type', 'html-print');
+      as <A HREF="<% $cgi->self_url %>">printable copy</A>
+
+    </TD>
+%   $cgi->param('_type', $type );
+  </TR>
+</TABLE>
+% } #html
+% foreach my $part ( @parts ) {
+%   if ( $part{$part} ) {
+%
+%     if ( $part eq 'V' ) {
+%       next unless ( $part{'IIA'} || $part{'IIB'} );
+%     }
+%
+%     if ( $part eq 'VI_census' ) {
+%       next unless $part{'IA'};
+%     }
+%
+%     my @reports = ();
+%     if ( $part eq 'IA' ) {
+%       for ( my $tech = 0; $tech < scalar(@technology_option); $tech++ ) {
+%         next unless $technology_option[$tech];
+%         my $url = &{$url_mangler}($part);
+%         if ( $type eq 'xml' ) {
+<<% 'Part_IA_'. chr(65 + $tech) %>>
+%         }
+<& "477part${part}.html",
+    'tech_code' => $tech,
+    'url' => $url,
+    'type' => $type,
+    'date' => $date,
+&>
+%         if ( $type eq 'xml' ) {
+</<% 'Part_IA_'. chr(65 + $tech) %>>
+%         }
+%       }
+%     } else { # not part IA
+%       if ( $type eq 'xml' ) {
+<<% 'Part_'. $part %>>
+%       }
+%       my $url = &{$url_mangler}($part);
+<& "477part${part}.html",
+    'url' => $url,
+    'date' => $date,
+    'filename' => $filename,
+&>
+%       if ( $type eq 'xml' ) {
+</<% 'Part_'. $part %>>
+%       }
+%     }
+%   }
+% }
+%
+% if ( $type eq 'xml' ) {
+</Form_477_submission>
+% } else {
+<& /elements/footer.html &>
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my $date = $cgi->param('date') ? parse_datetime($cgi->param('date'))
+                               : time;
+
+my $state = uc($cgi->param('state'));
+$state =~ /^[A-Z]{2}$/ or die "illegal state: $state";
+
+my %part = map { $_ => 1 } grep { /^\w+$/ } $cgi->param('part');
+my $type = $cgi->param('_type') || 'html';
+my $filename;
+my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi,1);
+
+# save upload and download mappings
+my @download = $cgi->param('part1_column_option');
+my @upload = $cgi->param('part1_row_option');
+for(my $i=0; $i < scalar(@download); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part1_column_option_$i",$download[$i]);
+}
+for(my $i=0; $i < scalar(@upload); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part1_row_option_$i",$upload[$i]);
+}
+
+my @part2a_row_option = $cgi->param('part2a_row_option');
+for(my $i=0; $i < scalar(@part2a_row_option); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part2a_row_option_$i",$part2a_row_option[$i]);
+}
+
+my @part2b_row_option = $cgi->param('part2b_row_option');
+for(my $i=0; $i < scalar(@part2b_row_option); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part2b_row_option_$i",$part2b_row_option[$i]);
+}
+
+my $part5_report_option = $cgi->param('part5_report_option');
+if ( $part5_report_option ) {
+  FS::Report::FCC_477::save_fcc477map('part5_report_option', $part5_report_option);
+}
+
+my $url_mangler = sub {
+  my $part = shift;
+  my $url = $cgi->url('-path_info' => 1, '-full' => 1);
+  $url =~ s/477\./477part$part./;
+  $url;
+};
+my @parts = qw( IA IIA IIB IV V VI_census );
+
+</%init>

@@ -81,6 +81,7 @@ Documentation.
 );
 
 #from the select at http://www.ffiec.gov/census/default.aspx
+#though this is now in the database, also
 %states = (
   '01' => 'ALABAMA (AL)',
   '02' => 'ALASKA (AK)',
@@ -204,8 +205,20 @@ sub statenum2state {
   $states{$num};
 }
 
+=head1 THE "NEW" REPORT (October 2014 and later)
+
+=head2 METHODS
+
+=over 4
+
+=cut
+
 sub join_optionnames {
   join(' ', map { join_optionname($_) } @_);
+}
+
+sub join_optionnames_int {
+  join(' ', map { join_optionname_int($_) } @_);
 }
 
 sub join_optionname {
@@ -214,6 +227,17 @@ sub join_optionname {
   # as the option.
   my $name = shift;
   "LEFT JOIN (SELECT pkgpart, optionvalue AS $name FROM part_pkg_fcc_option".
+    " WHERE fccoptionname = '$name') AS t_$name".
+    " ON (part_pkg.pkgpart = t_$name.pkgpart)";
+}
+
+sub join_optionname_int {
+  # Returns a FROM phrase to join a specific option into the query (via 
+  # part_pkg) and cast it to integer..  Note this does not convert nulls
+  # to zero.
+  my $name = shift;
+  "LEFT JOIN (SELECT pkgpart, CAST(optionvalue AS int) AS $name
+   FROM part_pkg_fcc_option".
     " WHERE fccoptionname = '$name') AS t_$name".
     " ON (part_pkg.pkgpart = t_$name.pkgpart)";
 }
@@ -230,7 +254,7 @@ sub active_on {
 }
 
 sub is_fixed_broadband {
-  "is_broadband = '1' AND technology::integer IN(".join(',',
+  "is_broadband::int = 1 AND technology::int IN(".join(',',
     10, 11, 12, 20, 30, 40, 41, 42, 50, 60, 70, 90, 0
   ).")";
 }
@@ -238,8 +262,19 @@ sub is_fixed_broadband {
 =item part6 OPTIONS
 
 Returns Part 6 of the 2014 FCC 477 data, as an arrayref of arrayrefs.
-OPTIONS may contain "date" => a timestamp to run the report as of that
-date.
+OPTIONS may contain:
+- date: a timestamp value to count active packages as of that date
+- agentnum: limit to customers of that agent
+
+Part 6 is the broadband subscription detail report.  Columns of the 
+report are:
+- census tract
+- technology code
+- downstream speed
+- upstream speed
+(the above columns form a key)
+- number of subscriptions
+- number of consumer-grade subscriptions
 
 =cut
 
@@ -247,6 +282,7 @@ sub part6 {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
 
   my @select = (
     'cust_location.censustract',
@@ -258,18 +294,20 @@ sub part6 {
   );
   my $from =
     'cust_pkg
-      JOIN cust_location USING (locationnum)
+      JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
       JOIN part_pkg USING (pkgpart) '.
-      join_optionnames(qw(
+      join_optionnames_int(qw(
         is_broadband technology 
-        broadband_downstream broadband_upstream
         is_consumer
-        ))
+        )).
+      join_optionnames(qw(broadband_downstream broadband_upstream))
   ;
   my @where = (
     active_on($date),
     is_fixed_broadband()
   );
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
   my $group_by = 'cust_location.censustract, technology, '.
                    'broadband_downstream, broadband_upstream ';
   my $order_by = $group_by;
@@ -287,7 +325,24 @@ sub part6 {
 
 =item part9 OPTIONS
 
-Returns Part 9 of the 2014 FCC 477 data, as above.
+Returns Part 9 of the 2014 FCC 477 data.  Part 9 is the Local Exchange 
+Telephone Subscription report.  Columns are:
+
+- state FIPS code (key)
+- wholesale switched voice lines
+- wholesale unswitched local loops
+- end-user total lines
+- end-user lines sold in a package with broadband
+- consumer-grade lines where you are not the long-distance carrier
+- consumer-grade lines where the carrier IS the long-distance carrier
+- business-grade lines where you are not the long-distance carrier
+- business-grade lines where the carrier IS the long-distance carrier
+- end-user lines where you own the local loop facility
+- end-user lines where you lease an unswitched local loop from a LEC
+- end-user lines resold from another carrier
+- end-user lines provided over fiber to the premises
+- end-user lines provided over coaxial
+- end-user lines provided over fixed wireless
 
 =cut
 
@@ -295,39 +350,44 @@ sub part9 {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
 
   my @select = (
-    "cust_location.state",
-    "SUM(COALESCE(phone_vges::int,0))",
-    "SUM(COALESCE(phone_circuits::int,0))",
-    "SUM(COALESCE(phone_lines::int,0))",
-    "SUM(CASE WHEN is_broadband = '1' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer = '1' AND is_longdistance IS NULL THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer = '1' AND is_longdistance = '1' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance IS NULL THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance = '1' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN phone_localloop = 'owned' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN phone_localloop = 'leased' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN phone_localloop = 'resale' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN media = 'Fiber' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN media = 'Cable Modem' THEN phone_lines::int ELSE 0 END)",
-    "SUM(CASE WHEN media = 'Fixed Wireless' THEN phone_lines::int ELSE 0 END)",
+    "state.fips",
+    "SUM(phone_vges)",
+    "SUM(phone_circuits)",
+    "SUM(phone_lines)",
+    "SUM(CASE WHEN is_broadband = 1 THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer = 1 AND is_longdistance IS NULL THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer = 1 AND is_longdistance = 1 THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance IS NULL THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance = 1 THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN phone_localloop = 'owned' THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN phone_localloop = 'leased' THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN phone_localloop = 'resale' THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN media = 'Fiber' THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN media = 'Cable Modem' THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN media = 'Fixed Wireless' THEN phone_lines ELSE 0 END)",
   );
   my $from =
     'cust_pkg
-      JOIN cust_location USING (locationnum)
+      JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+      JOIN state USING (country, state)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
       JOIN part_pkg USING (pkgpart) '.
-      join_optionnames(qw(
-        is_phone is_broadband media
+      join_optionnames_int(qw(
+        is_phone is_broadband
         phone_vges phone_circuits phone_lines
-        is_consumer is_longdistance phone_localloop 
-        ))
+        is_consumer is_longdistance
+        )).
+      join_optionnames('media', 'phone_localloop')
   ;
   my @where = (
     active_on($date),
-    "is_phone::int = 1",
+    "is_phone = 1",
   );
-  my $group_by = 'cust_location.state';
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
+  my $group_by = 'state.fips';
   my $order_by = $group_by;
 
   my $statement = "SELECT ".join(', ', @select) . "
@@ -341,5 +401,106 @@ sub part9 {
   dbh->selectall_arrayref($statement);
 }
 
+sub part10 {
+  my $class = shift;
+  my %opt = shift;
+  my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
+
+  my @select = (
+    "state.fips",
+    # OTT, OTT + consumer
+    "SUM(CASE WHEN (voip_lastmile IS NULL) THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile IS NULL AND is_consumer = 1) THEN 1 ELSE 0 END)",
+    # non-OTT: total, consumer, broadband bundle, media types
+    "SUM(CASE WHEN (voip_lastmile = 1) THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND is_consumer = 1) THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND is_broadband = 1) THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Copper') THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Cable Modem') THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Fiber') THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Fixed Wireless') THEN 1 ELSE 0 END)",
+    "SUM(CASE WHEN (voip_lastmile = 1 AND media NOT IN('Copper', 'Fiber', 'Cable Modem', 'Fixed Wireless') ) THEN 1 ELSE 0 END)",
+  );
+
+  my $from =
+    'cust_pkg
+      JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+      JOIN state USING (country, state)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+      JOIN part_pkg USING (pkgpart) '.
+      join_optionnames_int(
+        qw( is_voip is_broadband is_consumer voip_lastmile)
+      ).
+      join_optionnames('media')
+  ;
+  my @where = (
+    active_on($date),
+    "is_voip = 1",
+  );
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
+  my $group_by = 'state.fips';
+  my $order_by = $group_by;
+
+  my $statement = "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
+
+  warn $statement if $DEBUG;
+  dbh->selectall_arrayref($statement);
+}
+
+=item part11 OPTIONS
+
+Returns part 11 (voice subscription detail), as above.
+
+=cut
+
+sub part11 {
+  my $class = shift;
+  my %opt = shift;
+  my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
+
+  my @select = (
+    'cust_location.censustract',
+    # VoIP indicator (0 for non-VoIP, 1 for VoIP)
+    'COALESCE(is_voip, 0)',
+    # number of lines/subscriptions
+    'SUM(CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END)',
+    # consumer grade lines/subscriptions
+    'SUM(CASE WHEN is_consumer = 1 THEN ( CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END) ELSE 0 END)'
+  );
+
+  my $from = 'cust_pkg
+    JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+    JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+    JOIN part_pkg USING (pkgpart) '.
+    join_optionnames_int(qw(
+      is_phone is_voip is_consumer phone_lines
+      ))
+  ;
+
+  my @where = (
+    active_on($date),
+    "(is_voip = 1 OR is_phone = 1)",
+  );
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
+  my $group_by = 'cust_location.censustract, COALESCE(is_voip, 0)';
+  my $order_by = $group_by;
+
+  my $statement = "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
+
+  warn $statement if $DEBUG;
+  dbh->selectall_arrayref($statement);
+}
 
 1;

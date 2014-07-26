@@ -806,3 +806,7 @@ FS/export_batch_item.pm
 t/export_batch_item.t
 FS/part_pkg_fcc_option.pm
 t/part_pkg_fcc_option.t
+FS/state.pm
+t/state.t
+FS/state.pm
+t/state.t
