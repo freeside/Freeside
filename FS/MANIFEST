@@ -762,3 +762,5 @@ FS/export_batch.pm
 t/export_batch.t
 FS/export_batch_item.pm
 t/export_batch_item.t
+FS/queue_stat.pm
+t/queue_stat.t

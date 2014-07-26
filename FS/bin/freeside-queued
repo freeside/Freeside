@@ -11,6 +11,7 @@ use FS::Conf;
 use FS::Record qw(qsearch);
 use FS::queue;
 use FS::queue_depend;
+use FS::queue_stat;
 use FS::Log;
 use FS::Cron::expire_user_pref qw( expire_user_pref );
 
@@ -140,6 +141,8 @@ while (1) {
 
   foreach my $job ( @jobs ) {
 
+    my $start_date = time;
+
     $log->debug('locking queue job', object => $job);
 
     my %hash = $job->hash;
@@ -234,6 +237,20 @@ while (1) {
       } else {
         $ljob->delete;
         dbh->commit; # for the job itself
+      }
+
+      if ( $ljob->job eq 'FS::cust_main::queued_bill' ) {
+        my $queue_stat = new FS::queue_stat {
+          'jobnum'      => $ljob->jobnum,
+          'job'         => $ljob->job,
+          'custnum'     => $ljob->custnum,
+          'insert_date' => $ljob->_date,
+          'start_date'  => $start_date,
+          'end_date'    => time,
+        };
+        my $error = $queue_stat->insert;
+        die $error if $error;
+        dbh->commit; #for the stat
       }
 
       if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
