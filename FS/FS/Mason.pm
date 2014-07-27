@@ -85,6 +85,7 @@ if ( -e $addl_handler_use_file ) {
   use IO::File;
   use IO::Scalar;
   use IO::String;
+  use File::Slurp qw( slurp );
   #not actually using this yet anyway...# use IPC::Run3 0.036;
   use Net::Whois::Raw qw(whois);
   if ( $] < 5.006 ) {
@@ -362,6 +363,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::sched_avail;
   use FS::export_batch;
   use FS::export_batch_item;
+  use FS::queue_stat;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
