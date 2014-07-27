@@ -11,6 +11,9 @@ tie %options, 'Tie::IxHash',
                 options =>[qw(POST)],
                 default =>'POST' },
   'url'    => { label   => 'URL', default => 'http://', },
+  'ssl_no_verify' => { label => 'Skip SSL certificate validation',
+                       type  => 'checkbox',
+                     },
   'insert_data' => {
     label   => 'Insert data',
     type    => 'textarea',
@@ -94,6 +97,7 @@ sub _export_command {
   my $cust_main = $svc_x->cust_main or return;
 
   $self->http_queue( $svc_x->svcnum,
+    ( $self->option('ssl_no_verify') ? 'ssl_no_verify' : '' ),
     $self->option('method'),
     $self->option('url'),
     $self->option('success_regexp'),
@@ -117,6 +121,7 @@ sub _export_replace {
   my $cust_main = $new_cust_main; #so folks can use $new_cust_main or $cust_main
 
   $self->http_queue( $new->svcnum,
+    ( $self->option('ssl_no_verify') ? 'ssl_no_verify' : '' ),
     $self->option('method'),
     $self->option('url'),
     $self->option('success_regexp'),
@@ -139,6 +144,7 @@ sub http_queue {
 }
 
 sub http {
+  my $ssl_no_verify = ( $_[0] eq 'ssl_no_verify' || $_[0] eq '' ) ? shift : '';
   my($method, $url, $success_regexp, @data) = @_;
 
   $method = lc($method);
@@ -148,7 +154,9 @@ sub http {
   eval "use HTTP::Request::Common;";
   die "using HTTP::Request::Common: $@" if $@;
 
-  my $ua = LWP::UserAgent->new;
+  my @lwp_opts = ();
+  push @lwp_opts, 'ssl_opts'=>{ 'verify_hostname'=>0 } if $ssl_no_verify;
+  my $ua = LWP::UserAgent->new(@lwp_opts);
 
   #my $response = $ua->$method(
   #  $url, \%data,
