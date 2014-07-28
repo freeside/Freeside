@@ -630,18 +630,6 @@ sub print_generic {
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
 
-  #these are used on the summary page only
-
-    # the customer's current balance as shown on the invoice before this one
-    $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
-
-    # the change in balance from that invoice to this one
-    $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
-
-    # the sum of amount owed on all previous invoices
-    # ($pr_total is used elsewhere but not as $previous_balance)
-    $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
-
   # the sum of amount owed on all invoices
   # (this is used in the summary & on the payment coupon)
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
@@ -652,8 +640,67 @@ sub print_generic {
 
   if ( $self->custnum && $self->invnum ) {
 
-    if ( $self->previous_bill ) {
-      my $last_bill = $self->previous_bill;
+    my $last_bill = $self->previous_bill;
+    if ( $last_bill ) {
+
+      # "balance_date_range" unfortunately is unsuitable for this, since it
+      # cares about application dates.  We want to know the sum of all 
+      # _top-level transactions_ dated before the last invoice.
+      my @sql = (
+        'SELECT SUM(charged) FROM cust_bill WHERE _date <= ? AND custnum = ?',
+        'SELECT -1*SUM(amount) FROM cust_credit WHERE _date <= ? AND custnum = ?',
+        'SELECT -1*SUM(paid) FROM cust_pay  WHERE _date <= ? AND custnum = ?',
+        'SELECT SUM(refund) FROM cust_refund WHERE _date <= ? AND custnum = ?',
+      );
+
+      # the customer's current balance immediately after generating the last 
+      # bill
+
+      my $last_bill_balance = $last_bill->charged;
+      foreach (@sql) {
+        #warn "$_\n";
+        my $delta = FS::Record->scalar_sql(
+          $_,
+          $last_bill->_date - 1,
+          $self->custnum,
+        );
+        #warn "$delta\n";
+        $last_bill_balance += $delta;
+      }
+
+      warn sprintf("LAST BILL: INVNUM %d, DATE %s, BALANCE %.2f\n\n",
+        $last_bill->invnum,
+        $self->time2str_local('%D', $last_bill->_date),
+        $last_bill_balance
+      ) if $DEBUG > 0;
+      # ("true_previous_balance" is a terrible name, but at least it's no
+      # longer stored in the database)
+      $invoice_data{'true_previous_balance'} = $last_bill_balance;
+
+      # the change in balance from immediately after that invoice
+      # to immediately before this one
+      my $before_this_bill_balance = 0;
+      foreach (@sql) {
+        #warn "$_\n";
+        my $delta = FS::Record->scalar_sql(
+          $_,
+          $self->_date - 1,
+          $self->custnum,
+        );
+        #warn "$delta\n";
+        $before_this_bill_balance += $delta;
+      }
+      $invoice_data{'balance_adjustments'} =
+        sprintf("%.2f", $last_bill_balance - $before_this_bill_balance);
+
+      warn sprintf("BALANCE ADJUSTMENTS: %.2f\n\n",
+                   $invoice_data{'balance_adjustments'}
+      ) if $DEBUG > 0;
+
+      # the sum of amount owed on all previous invoices
+      # ($pr_total is used elsewhere but not as $previous_balance)
+      $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
+
       $invoice_data{'last_bill'} = {
         '_date'     => $last_bill->_date, #unformatted
       };
@@ -690,9 +737,15 @@ sub print_generic {
       }
       $invoice_data{'previous_payments'} = \@payments;
       $invoice_data{'previous_credits'}  = \@credits;
+    } else {
+      # there is no $last_bill
+      $invoice_data{'true_previous_balance'} =
+      $invoice_data{'balance_adjustments'}   =
+      $invoice_data{'previous_balance'}      = '0.00';
+      $invoice_data{'previous_payments'} = [];
+      $invoice_data{'previous_credits'} = [];
     }
-
-  }
+  } # if this is an invoice
 
   my $summarypage = '';
   if ( $conf->exists('invoice_usesummary', $agentnum) ) {
