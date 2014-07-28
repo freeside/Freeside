@@ -100,23 +100,19 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =back
 
-Customer info at invoice generation time
+Deprecated fields
 
 =over 4
 
-=item billing_balance - the customer's balance at the time the invoice was 
-generated (not including charges on this invoice)
+=item billing_balance - the customer's balance immediately before generating
+this invoice.  DEPRECATED.  Use the L<FS::cust_main/balance_date> method 
+to determine the customer's balance at a specific time.
 
-=item previous_balance - the billing_balance of this customer's previous 
-invoice plus the charges on that invoice
+=item previous_balance - the customer's balance immediately after generating
+the invoice before this one.  DEPRECATED.
 
-=back
-
-Deprecated
-
-=over 4
-
-=item printed - deprecated
+=item printed - formerly used to track the number of times an invoice had 
+been printed; no longer used.
 
 =back
 

@@ -2839,13 +2839,19 @@ UNIX timestamps; see L<perlfunc/"time">).  Also see L<Time::Local> and
 L<Date::Parse> for conversion functions.  The empty string can be passed
 to disable that time constraint completely.
 
-Available options are:
+Accepts the same options as L<balance_date_sql>:
 
 =over 4
 
 =item unapplied_date
 
 set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting, probably a bad idea for event triggering)
+
+=item cutoff
+
+An absolute cutoff time.  Payments, credits, and refunds I<applied> after this 
+time will be ignored.  Note that START_TIME and END_TIME only limit the date 
+range for invoices and I<unapplied> payments, credits, and refunds.
 
 =back
 
