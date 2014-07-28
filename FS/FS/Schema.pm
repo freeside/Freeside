@@ -662,6 +662,7 @@ sub tables_hashref {
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
 
         #customer balance info at invoice generation time
+        #(deprecated)
         'previous_balance',   @money_typen, '', '',  #eventually not nullable
         'billing_balance',    @money_typen, '', '',  #eventually not nullable
 
