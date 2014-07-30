@@ -78,7 +78,6 @@ if ( $agentnum ) {
 
 my $subquery = "$select $from $where
 GROUP BY cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity";
-warn $subquery;
 # This has one row for each E911 line item that has any payments applied.
 # Fields are the billpkgnum of the item (currently unused), the number of
 # E911 charges, and the total amount paid (always > 0).
