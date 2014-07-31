@@ -727,6 +727,30 @@ sub search {
   }
 
   ##
+  # county
+  ##
+  if ( $params->{'county'} =~ /\S/ ) {
+    my $county = dbh->quote($params->{'county'});
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.county = $county
+    )";
+  }
+
+  ##
+  # state
+  ##
+  if ( $params->{'state'} =~ /\S/ ) {
+    my $state = dbh->quote($params->{'state'});
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.state = $state
+    )";
+  }
+
+  ##
   # zipcode
   ##
   if ( $params->{'zip'} =~ /\S/ ) {
@@ -735,6 +759,18 @@ sub search {
       SELECT 1 FROM cust_location
       WHERE cust_location.custnum = cust_main.custnum
         AND cust_location.zip LIKE $zip
+    )";
+  }
+
+  ##
+  # country
+  ##
+  if ( $params->{'country'} =~ /^(\w\w)$/ ) {
+    my $country = uc($1);
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.country = '$country'
     )";
   }
 
