@@ -548,7 +548,7 @@ sub states_hash {
 
   #it could throw a fatal "Invalid country code" error (for example "AX")
   my $subcountry = eval { new Locale::SubCountry($country) }
-    or return ( '', '(n/a)' );
+    or return (); # ( '', '(n/a)' );
 
   #"i see your schwartz is as big as mine!"
   map  { ( $_->[0] => $_->[1] ) }
