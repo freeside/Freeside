@@ -1,0 +1,87 @@
+<& elements/edit.html,
+    'name_singular' => 'deployment zone',
+    'table'         => 'deploy_zone',
+    'post_url'      => popurl(1).'process/deploy_zone-fixed.html',
+    'labels'        => {
+        'description'     => 'Description',
+        'agentnum'        => 'Agent',
+        'dbaname'         => 'Business name (if different from agent)',
+        'technology'      => 'Technology',
+        'adv_speed_up'    => 'Upstream',
+        'adv_speed_down'  => 'Downstream',
+        'cir_speed_up'    => 'Upstream',
+        'cir_speed_down'  => 'Downstream',
+        'is_consumer'     => 'Consumer/mass market',
+        'is_business'     => 'Business/government',
+        'blocknum'        => '',
+    },
+    'fields'        => [
+        { field         => 'zonetype',
+          type          => 'hidden',
+          value         => 'B'
+        },
+        { field         => 'servicetype',
+          type          => 'hidden',
+          value         => 'broadband'
+        },
+        'description',
+        { field         => 'agentnum',
+          type          => 'select-agent',
+          disable_empty => 1,
+          viewall_right => 'Edit FCC report configuration for all agents',
+        },
+        'dbaname',
+        { field         => 'technology',
+          type          => 'select',
+          options       => [ keys(%$technology_labels) ],
+          labels        => $technology_labels,
+        },
+        { field         => 'is_consumer', type => 'checkbox', value=>'Y' },
+        { field         => 'is_business', type => 'checkbox', value=>'Y' },
+        { type => 'tablebreak-tr-title',
+          value => 'Advertised maximum speed (Mbps)' },
+        'adv_speed_down',
+        'adv_speed_up',
+        { type => 'tablebreak-tr-title',
+          value => 'Contractually guaranteed speed (Mbps)' },
+        'cir_speed_down',
+        'cir_speed_up',
+
+        { type => 'tablebreak-tr-title', value => 'Census blocks'},
+        { field => 'blocknum',
+          type              => 'deploy_zone_block',
+          o2m_table         => 'deploy_zone_block',
+          m2_label          => ' ',
+          m2_error_callback => $m2_error_callback,
+        },
+    ],
+
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right([
+    'Edit FCC report configuration',
+    'Edit FCC report configuration for all agents',
+  ]);
+
+my $technology_labels = FS::part_pkg_fcc_option->technology_labels;
+
+my $m2_error_callback = sub {
+  my ($cgi, $deploy_zone) = @_;
+  my @blocknums = grep {
+    /^blocknum\d+/ and length($cgi->param($_.'_censusblock'))
+  } $cgi->param;
+
+  map {
+    my $k = $_;
+    FS::deploy_zone_block->new({
+      blocknum    => scalar($cgi->param($k)),
+      zonenum     => $deploy_zone->zonenum,
+      censusblock => scalar($cgi->param($k.'_censusblock')),
+      censusyear  => scalar($cgi->param($k.'_censusyear')),
+    })
+  } @blocknums;
+};
+
+</%init>

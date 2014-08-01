@@ -812,3 +812,9 @@ FS/state.pm
 t/state.t
 FS/queue_stat.pm
 t/queue_stat.t
+FS/deploy_zone.pm
+t/deploy_zone.t
+FS/deploy_zone_block.pm
+t/deploy_zone_block.t
+FS/deploy_zone_vertex.pm
+t/deploy_zone_vertex.t

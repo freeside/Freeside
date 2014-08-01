@@ -112,31 +112,31 @@ tie our %media_types, 'Tie::IxHash', (
   'Other'           => [ 90, 0 ],
 );
 
-our %technology_labels = (
-      10 => 'Other ADSL',
-      11 => 'ADSL2',
-      12 => 'VDSL',
-      20 => 'SDSL',
-      30 => 'Other Copper Wireline',
-      40 => 'Other Cable Modem',
-      41 => 'Cable - DOCSIS 1, 1.1, 2.0',
-      42 => 'Cable - DOCSIS 3.0',
-      50 => 'Fiber',
-      60 => 'Satellite',
-      70 => 'Terrestrial Fixed Wireless',
-      # mobile wireless
-      80 => 'Mobile - WCDMA/UMTS/HSPA',
-      81 => 'Mobile - HSPA+',
-      82 => 'Mobile - EVDO/EVDO Rev A',
-      83 => 'Mobile - LTE',
-      84 => 'Mobile - WiMAX',
-      85 => 'Mobile - CDMA',
-      86 => 'Mobile - GSM',
-      87 => 'Mobile - Analog',
-      88 => 'Other Mobile',
+tie our %technology_labels, 'Tie::IxHash',  (
+  10 => 'Other ADSL',
+  11 => 'ADSL2',
+  12 => 'VDSL',
+  20 => 'SDSL',
+  30 => 'Other Copper Wireline',
+  40 => 'Other Cable Modem',
+  41 => 'Cable - DOCSIS 1, 1.1, 2.0',
+  42 => 'Cable - DOCSIS 3.0',
+  50 => 'Fiber',
+  60 => 'Satellite',
+  70 => 'Terrestrial Fixed Wireless',
+  # mobile wireless
+  80 => 'Mobile - WCDMA/UMTS/HSPA',
+  81 => 'Mobile - HSPA+',
+  82 => 'Mobile - EVDO/EVDO Rev A',
+  83 => 'Mobile - LTE',
+  84 => 'Mobile - WiMAX',
+  85 => 'Mobile - CDMA',
+  86 => 'Mobile - GSM',
+  87 => 'Mobile - Analog',
+  88 => 'Other Mobile',
 
-      90 => 'Electric Power Line',
-      0  => 'Other'
+  90 => 'Electric Power Line',
+  0  => 'Other'
 );
 
 sub media_types {
@@ -144,7 +144,7 @@ sub media_types {
 }
 
 sub technology_labels {
-  +{ %technology_labels };
+  Storable::dclone(\%technology_labels);
 }
 
 =head1 BUGS

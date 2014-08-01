@@ -165,8 +165,6 @@ sub save_fcc477map {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  # lame (should be normal FS::Record access)
-
   my $sql = "delete from fcc477map where formkey = ?";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute($key) or do {
@@ -204,6 +202,8 @@ sub statenum2state {
   my $num = shift;
   $states{$num};
 }
+### everything above this point is unmaintained ###
+
 
 =head1 THE "NEW" REPORT (October 2014 and later)
 
@@ -259,15 +259,14 @@ sub is_fixed_broadband {
   ).")";
 }
 
-=item part6 OPTIONS
+=item report_fixed_broadband OPTIONS
 
-Returns Part 6 of the 2014 FCC 477 data, as an arrayref of arrayrefs.
-OPTIONS may contain:
+Returns the Fixed Broadband Subscription report (section 5.4), as an arrayref
+of an arrayrefs.  OPTIONS may contain:
 - date: a timestamp value to count active packages as of that date
 - agentnum: limit to customers of that agent
 
-Part 6 is the broadband subscription detail report.  Columns of the 
-report are:
+Columns of this report are:
 - census tract
 - technology code
 - downstream speed
@@ -278,7 +277,7 @@ report are:
 
 =cut
 
-sub part6 {
+sub report_fixed_broadband {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -323,10 +322,67 @@ sub part6 {
   dbh->selectall_arrayref($statement);
 }
 
-=item part9 OPTIONS
+=item report_fixed_voice OPTIONS
 
-Returns Part 9 of the 2014 FCC 477 data.  Part 9 is the Local Exchange 
-Telephone Subscription report.  Columns are:
+Returns the Fixed Voice Subscription Detail report (section 5.5).  OPTIONS
+are as above.  Columns are:
+
+- census tract
+- service type (0 for non-VoIP, 1 for VoIP)
+(the above columns form a key)
+- VGE lines/VoIP subscriptions in service
+- consumer grade VGE lines/VoIP subscriptions
+
+=cut
+
+sub report_fixed_voice {
+  my $class = shift;
+  my %opt = shift;
+  my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
+
+  my @select = (
+    'cust_location.censustract',
+    # VoIP indicator (0 for non-VoIP, 1 for VoIP)
+    'COALESCE(is_voip, 0)',
+    # number of lines/subscriptions
+    'SUM(CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END)',
+    # consumer grade lines/subscriptions
+    'SUM(CASE WHEN is_consumer = 1 THEN ( CASE WHEN is_voip = 1 THEN voip_sessions ELSE phone_lines END) ELSE 0 END)'
+  );
+
+  my $from = 'cust_pkg
+    JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+    JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+    JOIN part_pkg USING (pkgpart) '.
+    join_optionnames_int(qw(
+      is_phone is_voip is_consumer phone_lines voip_sessions
+      ))
+  ;
+
+  my @where = (
+    active_on($date),
+    "(is_voip = 1 OR is_phone = 1)",
+  );
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
+  my $group_by = 'cust_location.censustract, COALESCE(is_voip, 0)';
+  my $order_by = $group_by;
+
+  my $statement = "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
+
+  warn $statement if $DEBUG;
+  dbh->selectall_arrayref($statement);
+}
+
+=item report_local_phone OPTIONS
+
+Returns the Local Exchange Telephone Subscription report (section 5.6).  
+OPTIONS are as above.  Each row is data for one state.  Columns are:
 
 - state FIPS code (key)
 - wholesale switched voice lines
@@ -346,7 +402,7 @@ Telephone Subscription report.  Columns are:
 
 =cut
 
-sub part9 {
+sub report_local_phone {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -358,10 +414,10 @@ sub part9 {
     "SUM(phone_circuits)",
     "SUM(phone_lines)",
     "SUM(CASE WHEN is_broadband = 1 THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer = 1 AND is_longdistance IS NULL THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer = 1 AND is_longdistance = 1 THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance IS NULL THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer IS NULL AND is_longdistance = 1 THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer = 1 AND phone_longdistance IS NULL THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer = 1 AND phone_longdistance = 1 THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer IS NULL AND phone_longdistance IS NULL THEN phone_lines ELSE 0 END)",
+    "SUM(CASE WHEN is_consumer IS NULL AND phone_longdistance = 1 THEN phone_lines ELSE 0 END)",
     "SUM(CASE WHEN phone_localloop = 'owned' THEN phone_lines ELSE 0 END)",
     "SUM(CASE WHEN phone_localloop = 'leased' THEN phone_lines ELSE 0 END)",
     "SUM(CASE WHEN phone_localloop = 'resale' THEN phone_lines ELSE 0 END)",
@@ -378,7 +434,7 @@ sub part9 {
       join_optionnames_int(qw(
         is_phone is_broadband
         phone_vges phone_circuits phone_lines
-        is_consumer is_longdistance
+        is_consumer phone_longdistance
         )).
       join_optionnames('media', 'phone_localloop')
   ;
@@ -401,7 +457,26 @@ sub part9 {
   dbh->selectall_arrayref($statement);
 }
 
-sub part10 {
+=item report_voip OPTIONS
+
+Returns the Interconnected VoIP Subscription report (section 5.7).  
+OPTIONS are as above.  Columns are:
+
+- state FIPS code (key)
+- OTT subscriptions (non-last-mile)
+- OTT subscriptions sold to consumers
+- last-mile subscriptions
+- last-mile subscriptions sold to consumers
+- last-mile subscriptions bundled with broadband Internet
+- last-mile subscriptions over copper pairs
+- last-mile subscriptions over coaxial
+- last-mile subscriptions over fiber
+- last-mile subscriptions over fixed wireless
+- last-mile subscriptions over other media
+
+=cut
+
+sub report_voip {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -453,54 +528,5 @@ sub part10 {
   dbh->selectall_arrayref($statement);
 }
 
-=item part11 OPTIONS
-
-Returns part 11 (voice subscription detail), as above.
-
-=cut
-
-sub part11 {
-  my $class = shift;
-  my %opt = shift;
-  my $date = $opt{date} || time;
-  my $agentnum = $opt{agentnum};
-
-  my @select = (
-    'cust_location.censustract',
-    # VoIP indicator (0 for non-VoIP, 1 for VoIP)
-    'COALESCE(is_voip, 0)',
-    # number of lines/subscriptions
-    'SUM(CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END)',
-    # consumer grade lines/subscriptions
-    'SUM(CASE WHEN is_consumer = 1 THEN ( CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END) ELSE 0 END)'
-  );
-
-  my $from = 'cust_pkg
-    JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
-    JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
-    JOIN part_pkg USING (pkgpart) '.
-    join_optionnames_int(qw(
-      is_phone is_voip is_consumer phone_lines
-      ))
-  ;
-
-  my @where = (
-    active_on($date),
-    "(is_voip = 1 OR is_phone = 1)",
-  );
-  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
-  my $group_by = 'cust_location.censustract, COALESCE(is_voip, 0)';
-  my $order_by = $group_by;
-
-  my $statement = "SELECT ".join(', ', @select) . "
-  FROM $from
-  WHERE ".join(' AND ', @where)."
-  GROUP BY $group_by
-  ORDER BY $order_by
-  ";
-
-  warn $statement if $DEBUG;
-  dbh->selectall_arrayref($statement);
-}
 
 1;

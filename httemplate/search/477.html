@@ -36,20 +36,19 @@ a.download {
   float: right;
 }
 </STYLE>
-% foreach my $partnum (@partnums) {
-%   $cgi->param('parts', $partnum);
+% foreach my $partname (@partnames) {
+%   $cgi->param('parts', $partname);
 %   $cgi->param('type', 'csv');
 <table class="fcc477part">
   <caption>
-    <span class="parttitle">Part <% $partnum %></span>
+    <span class="parttitle"><% $parttitle{$partname} %></span>
     <a class="download" href="<% $cgi->self_url %>">Download</a>
   </caption>
-%   my $header = ".header$partnum";
-%   my $data = $parts{$partnum};
+%   my $header = ".header_$partname";
+%   my $data = $parts{$partname};
   <thead>
     <& $header &>
   </thead>
-%   #XXX column headings
 %   foreach my $row (@$data) {
   <tr>
 %     foreach my $item (@$row) {
@@ -58,7 +57,7 @@ a.download {
   </tr>
 %   }
 </table>
-% } # foreach $partnum
+% } # foreach $partname
 <& /elements/footer.html &>
 <%init>
 die "access denied"
@@ -80,10 +79,10 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentnum = $1;
 }
 my $date = parse_datetime($cgi->param('date')) || time;
-my @partnums = grep /^\d+$/, $cgi->param('parts');
-foreach my $partnum (@partnums) {
-  my $method = "part$partnum";
-  $parts{$partnum} ||= FS::Report::FCC_477->$method(
+my @partnames = grep /^\w+$/, $cgi->param('parts');
+foreach my $partname (@partnames) {
+  my $method = "report_$partname";
+  $parts{$partname} ||= FS::Report::FCC_477->$method(
     date      => $date,
     agentnum  => $agentnum
   );
@@ -93,11 +92,11 @@ $m->cache->set($session, \%parts, '1h');
 my $title = 'FCC Form 477 Data - ' . time2str('%b %o, %Y', $date);
 
 if ( $cgi->param('type') eq 'csv' ) {
-  my $partnum = $partnums[0]; # ignore any beyond the first
-  my $data = $parts{$partnum};
+  my $partname = $partnames[0]; # ignore any beyond the first
+  my $data = $parts{$partname};
   my $csv = Text::CSV_XS->new({ eol => "\r\n" }); # i think
 
-  my $filename = time2str('%Y-%m-%d', $date) . '-part' . $partnum . '.csv';
+  my $filename = time2str('%Y-%m-%d', $date) . '-'. $partname . '.csv';
   http_header('Content-Type' => 'text/csv');
   http_header('Content-Disposition' => qq(attachment;filename="$filename"));
 
@@ -111,7 +110,7 @@ if ( $cgi->param('type') eq 'csv' ) {
 }
 
 </%init>
-<%def .header6>
+<%def .header_fixed_broadband>
   <TR CLASS="head">
     <TD ROWSPAN=2>Census Tract</TD>
     <TD ROWSPAN=2>Technology</TD>
@@ -125,30 +124,18 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Consumer</TD>
   </TR>
 </%def>
-<%def .header7>
+<%def .header_fixed_voice>
   <TR CLASS="head">
-    <TD ROWSPAN=2>State</TD>
-    <TD COLSPAN=2>Speed (Mbps)</TD>
-    <TD COLSPAN=2>Subscriptions</TD>
+    <TD ROWSPAN=2>Census Tract</TD>
+    <TD ROWSPAN=2>VoIP?</TD>
+    <TD COLSPAN=2>Lines/Subscriptions</TD>
   </TR>
   <TR CLASS="subhead">
-    <TD>Down</TD>
-    <TD>Up</TD>
     <TD>Total</TD>
     <TD>Consumer</TD>
   </TR>
 </%def>
-<%def .header8>
-  <TR CLASS="head">
-    <TD ROWSPAN=2>State</TD>
-    <TD COLSPAN=2>Subscriptions</TD>
-  </TR>
-  <TR CLASS="subhead">
-    <TD>Total</TD>
-    <TD>Direct</TD>
-  </TR>
-</%def>
-<%def .header9>
+<%def .header_local_phone>
   <TR CLASS="head">
     <TD ROWSPAN=3>State</TD>
     <TD COLSPAN=2>Wholesale</TD>
@@ -183,7 +170,7 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Wireless</TD>
   </TR>
 </%def>
-<%def .header10>
+<%def .header_voip>
   <TR CLASS="head">
     <TD ROWSPAN=2>State</TD>
     <TD COLSPAN=2>VoIP OTT</TD>
@@ -206,14 +193,29 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Other</TD>
   </TR>
 </%def>
-<%def .header11>
+<%def .header_mobile_broadband>
+%# unimplemented
   <TR CLASS="head">
-    <TD ROWSPAN=2>Census Tract</TD>
-    <TD ROWSPAN=2>VoIP?</TD>
-    <TD COLSPAN=2>Lines/Subscriptions</TD>
+    <TD ROWSPAN=2>State</TD>
+    <TD COLSPAN=2>Speed (Mbps)</TD>
+    <TD COLSPAN=2>Subscriptions</TD>
   </TR>
   <TR CLASS="subhead">
+    <TD>Down</TD>
+    <TD>Up</TD>
     <TD>Total</TD>
     <TD>Consumer</TD>
   </TR>
 </%def>
+<%def .header_mobile_voice>
+%# unimplemented
+  <TR CLASS="head">
+    <TD ROWSPAN=2>State</TD>
+    <TD COLSPAN=2>Subscriptions</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Total</TD>
+    <TD>Direct</TD>
+  </TR>
+</%def>
+

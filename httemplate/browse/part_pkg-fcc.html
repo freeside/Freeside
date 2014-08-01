@@ -1,0 +1,215 @@
+<& elements/browse.html,
+  'title'                 => 'Package Definitions - FCC Options',
+  'menubar'               => \@menubar,
+  'html_init'             => $html_init,
+  'html_form'             => $html_form,
+  'html_posttotal'        => $html_posttotal,
+  'name'                  => 'package definitions',
+  'disableable'           => 1,
+  'disabled_statuspos'    => 4,
+  'agent_virt'            => 1,
+  'agent_null_right'      => [ $edit, $edit_global ],
+  'agent_null_right_link' => $edit_global,
+  'agent_pos'             => 6,
+  'query'                 =>
+                            { 'select'    => $select,
+                              'table'     => 'part_pkg',
+                              'addl_from' => $addl_from,
+                              'hashref'   => \%hash,
+                              'extra_sql' => $extra_sql,
+                              'order_by'  => "ORDER BY $orderby"
+                            },
+  'count_query'           => $count_query,
+  'header'                => \@header,
+  'fields'                => \@fields,
+  'links'                 => \@links,
+  'align'                 => $align,
+  'link_field'            => 'pkgpart',
+  'html_foot'             => $html_foot,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $edit        = 'Edit package definitions';
+my $edit_global = 'Edit global package definitions';
+my $acl_edit        = $curuser->access_right($edit);
+my $acl_edit_global = $curuser->access_right($edit_global);
+
+die "access denied"
+  unless $acl_edit || $acl_edit_global;
+
+my $conf = new FS::Conf;
+
+my $orderby = 'pkgpart';
+my %hash = ();
+my $extra_count = '';
+
+my @where = ();
+
+# only ever show recurring packages here
+$hash{'freq'} = { op=>'!=', value=>'0' };
+$extra_count = " freq != '0' ";
+
+# filter by classnum
+my $classnum = '';
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  $classnum = $1;
+  push @where, $classnum ? "classnum =  $classnum"
+                         : "classnum IS NULL";
+}
+$cgi->delete('classnum');
+
+# filter by agent permissions
+push @where, FS::part_pkg->curuser_pkgs_sql
+  unless $acl_edit_global;
+
+my $extra_sql = scalar(@where)
+                ? ( scalar(keys %hash) ? ' AND ' : ' WHERE ' ).
+                  join( 'AND ', @where)
+                : '';
+
+# pull option values into the select
+my @optionnames = ( qw(
+  media
+  is_consumer
+  is_broadband technology broadband_upstream broadband_downstream
+  is_phone phone_wholesale phone_vges phone_circuits 
+  phone_lines phone_longdistance phone_localloop
+  is_voip voip_lastmile voip_sessions
+) );
+
+my $select = join(',',
+  'part_pkg.*',
+  '(SELECT classname FROM pkg_class WHERE pkg_class.classnum = part_pkg.classnum) AS classname', # grr, disableable...
+  @optionnames
+);
+
+my $addl_from = 
+  FS::Report::FCC_477::join_optionnames(@optionnames);
+
+#restore this so pagination works
+$cgi->param('classnum', $classnum) if length($classnum);
+
+#should hide this if there aren't any classes
+my $html_posttotal =
+  "<BR>( show class: ".
+  include('/elements/select-pkg_class.html',
+            #'curr_value'    => $classnum,
+            'value'         => $classnum, #insist on 0 :/
+            'onchange'      => 'filter_change()',
+            'pre_options'   => [ '-1' => 'all',
+                                 '0'  => '(none)', ],
+            'disable_empty' => 1,
+         ).
+  ' )';
+
+my $link = [ $p.'edit/part_pkg.cgi?', 'pkgpart' ];
+
+my @header = ( '#', 'Package', 'Comment' );
+my @fields = ( 'pkgpart', 'pkg', 'comment' ,);
+my $align = 'rll';
+my @links = ( $link, $link, '', );
+
+unless ( length($classnum) ) {
+  push @header, 'Class';
+  push @fields, 'classname';
+  $align .= 'l';
+}
+
+# still include the report_option classes, to help with migration
+# but not other plan options
+
+my %report_optionname_name = map { 'report_option_'.$_->num, $_->name }
+  qsearch('part_pkg_report_option', { disabled => '' });
+
+push @header, 'Report classes';
+
+push @fields, 
+              sub {
+                    my $part_pkg = shift;
+                    my %options = $part_pkg->options;
+                    # gather any options that are really report options,
+                    # convert them to their user-friendly names,
+                    # and sort them (I think?)
+                    my @report_options =
+                      sort { $a cmp $b }
+                      map { $report_optionname_name{$_} }
+                      grep { $options{$_}
+                             and exists($report_optionname_name{$_}) }
+                      keys %options;
+
+                    my @rows;
+                    foreach (@report_options) {
+                      push @rows, [
+                        { 'data'  => $_,
+                          'align' => 'center',
+                          'colspan' => 2
+                        }
+                      ];
+                    } # foreach @report_options
+                    \@rows;
+                  };
+
+$align .= 'cr';
+
+# --------
+# now the FCC option part
+# --------
+
+my @pkgparts;
+push @header, 'FCC report parameters';
+push @fields, sub {
+  my $part_pkg = shift;
+  my %hash = $part_pkg->fcc_options;
+  include('/elements/input-fcc_options.html',
+            id          => 'pkgpart'.$part_pkg->pkgpart,
+            curr_value  => encode_json(\%hash),
+            html_only   => 1
+  );
+};
+$align .= 'l';
+
+my $count_extra_sql = $extra_sql;
+$count_extra_sql =~ s/^\s*AND /WHERE /i;
+$extra_count = ( $count_extra_sql ? ' AND ' : ' WHERE ' ). $extra_count
+  if $extra_count;
+my $count_query = "SELECT COUNT(*) FROM part_pkg $count_extra_sql $extra_count";
+
+my $html_init = 
+  include('/elements/init_overlib.html') .
+  include('/elements/input-fcc_options.html', js_only => 1) .
+  include('.style');
+
+my $html_form = '';
+my $html_foot = '';
+# insert a checkbox column
+unshift @header, '';
+unshift @fields, sub {
+  '<INPUT TYPE="checkbox" NAME="pkgpart" VALUE=' . $_[0]->pkgpart .'>';
+};
+unshift @links, '';
+$align = 'c'.$align;
+
+
+$html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD="POST">!;
+$html_foot = qq!
+  <INPUT TYPE="submit" VALUE="Save changes">
+  </FORM>!;
+
+my @menubar =
+  ( 'Package definitions' => $p.'browse/part_pkg.cgi' );
+
+</%init>
+<%def .style>
+<style>
+  ul.fcc_options {
+    text-align: left;
+  }
+  ul.fcc_options li {
+  }
+  button.edit_fcc_options {
+    float: right;
+  }
+</style>
+</%def>

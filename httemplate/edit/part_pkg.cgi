@@ -232,23 +232,26 @@
                        },
                      },
 
-                     { type  => 'tablebreak-tr-title',
-                       value => 'FCC Form 477 information',
-                     },
-                     { field => 'fcc_options_string',
-                       type  => 'input-fcc_options',
-                       curr_value_callback => sub {
-                         my ($cgi, $part_pkg, $fref) = @_;
-                         if ( $cgi->param('fcc_options_string') ) {
-                           # error redirect
-                           return $cgi->param('fcc_options_string');
-                         }
-                         my %hash;
-                         %hash = $part_pkg->fcc_options 
-                           if ($part_pkg->pkgpart);
-                         return encode_json(\%hash);
+                     ($fcc_opts ? (
+                       { type  => 'tablebreak-tr-title',
+                         value => 'FCC Form 477 information',
                        },
-                     },
+                       { field => 'fcc_options_string',
+                         type  => 'input-fcc_options',
+                         curr_value_callback => sub {
+                           my ($cgi, $part_pkg, $fref) = @_;
+                           if ( $cgi->param('fcc_options_string') ) {
+                             # error redirect
+                             return $cgi->param('fcc_options_string');
+                           }
+                           my %hash;
+                           %hash = $part_pkg->fcc_options 
+                             if ($part_pkg->pkgpart);
+                           return encode_json(\%hash);
+                         },
+                       },
+                       ) : ()
+                     ),
 
                      { type  => 'tablebreak-tr-title',
                        value => 'External Links', #better name?
@@ -404,6 +407,8 @@ my $agent_clone_extra_sql =
 
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
+
+my $fcc_opts = $conf->exists('part_pkg-show_fcc_options');
 
 my @locales = grep { ! /^en_/i } $conf->config('available-locales'); #should filter from the default locale lang instead of en_
 my %locale_labels =  map {

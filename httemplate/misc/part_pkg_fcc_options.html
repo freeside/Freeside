@@ -90,6 +90,8 @@
     <& .checkbox, 'is_voip' &>
     <LABEL FOR="is_voip">This package provides VoIP telephone service</LABEL>
     <FIELDSET ID="voip">
+      <LABEL FOR="voip_sessions">Number of simultaneous calls possible</LABEL>
+      <INPUT NAME="voip_sessions" ID="voip_sessions">
       <& .checkbox, 'voip_lastmile' &>
       <LABEL FOR="voip_lastmile">Do you also provide last-mile connectivity?</LABEL>
     </FIELDSET>
@@ -145,7 +147,7 @@ function save_changes() {
   }
   parent_input.value = JSON.stringify(data);
   // update the display
-  parent.show_fcc_options();
+  parent.show_fcc_options(parent_input.id);
   parent.cClick(); //overlib
 }
 
@@ -177,6 +179,11 @@ function enable_fieldset(fieldset_id) {
     function () {
       form.elements['phone0'].disabled = (this.value == 1);
       form.elements['phone1'].disabled = (this.value == '');
+    }
+  );
+  addEventListener(form.elements['is_phone'], 'change', 
+    function() {
+      form.elements['phone_wholesale'].dispatchEvent( new Event('change') );
     }
   );
 

@@ -1,0 +1,72 @@
+<& /elements/header.html, 'Deployment zones' &>
+<& /elements/menubar.html,
+  'Add a new fixed broadband zone' => $p.'edit/deploy_zone-fixed.html',
+  'Add a new mobile zone'          => $p.'edit/deploy_zone-mobile.html',
+&>
+<P><FONT SIZE="+1"><B>Fixed Broadband Zones</B></FONT></P>
+<& elements/browse.html,
+  name_singular   => 'zone',
+  query           => { table      => 'deploy_zone',
+                       hashref    => { zonetype => 'B' },
+                     },
+  count_query     => "SELECT COUNT(*) FROM deploy_zone WHERE zonetype = 'B'",
+  agent_virt      => 1,
+  header          => [  '#',
+                        'Description',
+                        'Technology',
+                        'Market',
+                        'Advertised Mbps',
+                        'Contractual Mbps',
+                        'Census blocks',
+                     ],
+  fields          => [  'zonenum',
+                        'description',
+                        sub { my $self = shift;
+                              $tech_label->{$self->technology} },
+                        sub { my $self = shift;
+                              join( ' / ',
+                                $self->is_consumer ? 'consumer' : (),
+                                $self->is_business ? 'business' : ()
+                              )
+                            },
+                        sub { my $self = shift;
+                              join( ' / ', grep $_,
+                                $self->adv_speed_down,
+                                $self->adv_speed_up
+                              )
+                            },
+                        sub { my $self = shift;
+                              join( ' / ', grep $_,
+                                $self->cir_speed_down,
+                                $self->cir_speed_up
+                              )
+                            },
+                        sub { my $self = shift;
+                              FS::deploy_zone_block->count('zonenum = '.$self->zonenum)
+                            },
+                     ],
+  sort_fields     => [ 'zonenum',
+                       'description',
+                       'technology',
+                       'is_consumer is not null, is_business is not null',
+                       'adv_speed_down, adv_speed_up',
+                       'cir_speed_down, cir_speed_up',
+                     ],
+  links           => [  '', $link_fixed, ],
+  align           => 'clllllr',
+  nohtmlheader    => 1,
+  disable_maxselect => 1,
+  disable_total     => 1,
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $acl_edit = $curuser->access_right('Edit FCC report configuration');
+my $acl_edit_global = $curuser->access_right('Edit FCC report configuration for all agents');
+die "access denied"
+  unless $acl_edit or $acl_edit_global;
+
+my $link_fixed = [ $p.'edit/deploy_zone-fixed.html?', 'zonenum' ];
+my $link_mobile= [ $p.'edit/deploy_zone-mobile.html', 'zonenum' ];
+
+my $tech_label = FS::part_pkg_fcc_option->technology_labels;
+</%init>
