@@ -97,6 +97,14 @@ type of service is sold.
 'Y' if this service is sold to business or institutional use.  Not mutually
 exclusive with is_consumer.
 
+=item active_date
+
+The date this zone became active.
+
+=item expire_date
+
+The date this zone became inactive, if any.
+
 =back
 
 =head1 METHODS
@@ -183,8 +191,19 @@ sub check {
     || $self->ut_decimaln('cir_speed_down', 3)
     || $self->ut_flag('is_consumer')
     || $self->ut_flag('is_business')
+    || $self->ut_numbern('active_date')
+    || $self->ut_numbern('expire_date')
   ;
   return $error if $error;
+
+  foreach(qw(adv_speed_down adv_speed_up cir_speed_down cir_speed_up)) {
+    if (!$self->get($_)) {
+      $self->set($_, 0);
+    }
+  }
+  if (!$self->get('active_date')) {
+    $self->set('active_date', time);
+  }
 
   $self->SUPER::check;
 }

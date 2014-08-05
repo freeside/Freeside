@@ -41,7 +41,7 @@ a.download {
 %   $cgi->param('type', 'csv');
 <table class="fcc477part">
   <caption>
-    <span class="parttitle"><% $parttitle{$partname} %></span>
+    <span class="parttitle"><% $part_titles->{$partname} %></span>
     <a class="download" href="<% $cgi->self_url %>">Download</a>
   </caption>
 %   my $header = ".header_$partname";
@@ -81,8 +81,7 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/ ) {
 my $date = parse_datetime($cgi->param('date')) || time;
 my @partnames = grep /^\w+$/, $cgi->param('parts');
 foreach my $partname (@partnames) {
-  my $method = "report_$partname";
-  $parts{$partname} ||= FS::Report::FCC_477->$method(
+  $parts{$partname} ||= FS::Report::FCC_477->report( $partname,
     date      => $date,
     agentnum  => $agentnum
   );
@@ -109,8 +108,27 @@ if ( $cgi->param('type') eq 'csv' ) {
   $m->abort;
 }
 
+my $part_titles = FS::Report::FCC_477->parts;
+
 </%init>
-<%def .header_fixed_broadband>
+<%def .header_fbd>
+  <TR CLASS="head">
+    <TD ROWSPAN=2>Census Block</TD>
+    <TD ROWSPAN=2>DBA Name</TD>
+    <TD ROWSPAN=2>Technology</TD>
+    <TD ROWSPAN=2>Consumer?</TD>
+    <TD COLSPAN=2>Advertised Speed (Mbps)</TD>
+    <TD ROWSPAN=2>Business?</TD>
+    <TD COLSPAN=2>Contractual Speed (Mbps)</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Down</TD>
+    <TD>Up</TD>
+    <TD>Down</TD>
+    <TD>Up</TD>
+  </TR>
+</%def>
+<%def .header_fbs>
   <TR CLASS="head">
     <TD ROWSPAN=2>Census Tract</TD>
     <TD ROWSPAN=2>Technology</TD>
@@ -124,7 +142,7 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Consumer</TD>
   </TR>
 </%def>
-<%def .header_fixed_voice>
+<%def .header_fvs>
   <TR CLASS="head">
     <TD ROWSPAN=2>Census Tract</TD>
     <TD ROWSPAN=2>VoIP?</TD>
@@ -135,7 +153,7 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Consumer</TD>
   </TR>
 </%def>
-<%def .header_local_phone>
+<%def .header_lts>
   <TR CLASS="head">
     <TD ROWSPAN=3>State</TD>
     <TD COLSPAN=2>Wholesale</TD>
@@ -193,7 +211,7 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Other</TD>
   </TR>
 </%def>
-<%def .header_mobile_broadband>
+<%def .header_mbs>
 %# unimplemented
   <TR CLASS="head">
     <TD ROWSPAN=2>State</TD>
@@ -207,7 +225,7 @@ if ( $cgi->param('type') eq 'csv' ) {
     <TD>Consumer</TD>
   </TR>
 </%def>
-<%def .header_mobile_voice>
+<%def .header_mvs>
 %# unimplemented
   <TR CLASS="head">
     <TD ROWSPAN=2>State</TD>

@@ -8,6 +8,9 @@ use vars qw( @upload @download @technology @part2aoption @part2boption
            );
 use FS::Record qw( dbh );
 
+use Tie::IxHash;
+use Storable;
+
 $DEBUG = 1;
 
 =head1 NAME
@@ -213,6 +216,8 @@ sub statenum2state {
 
 =cut
 
+# functions for internal use
+
 sub join_optionnames {
   join(' ', map { join_optionname($_) } @_);
 }
@@ -259,25 +264,69 @@ sub is_fixed_broadband {
   ).")";
 }
 
-=item report_fixed_broadband OPTIONS
+=item report SECTION, OPTIONS
 
-Returns the Fixed Broadband Subscription report (section 5.4), as an arrayref
-of an arrayrefs.  OPTIONS may contain:
-- date: a timestamp value to count active packages as of that date
-- agentnum: limit to customers of that agent
-
-Columns of this report are:
-- census tract
-- technology code
-- downstream speed
-- upstream speed
-(the above columns form a key)
-- number of subscriptions
-- number of consumer-grade subscriptions
+Returns the report section SECTION (see the C<parts> method for section 
+name strings) as an arrayref of arrayrefs.  OPTIONS may contain "date"
+(a timestamp value to run the report as of this date) and "agentnum"
+(to limit to a single agent).
 
 =cut
 
-sub report_fixed_broadband {
+sub report {
+  my $class = shift;
+  my $section = shift;
+  my %opt = @_;
+
+  my $method = $section.'_sql';
+  die "Report section '$section' is not implemented\n"
+    unless $class->can($method);
+  my $statement = $class->$method(%opt);
+
+  my $sth = dbh->prepare($statement);
+  $sth->execute or die $sth->errstr;
+  $sth->fetchall_arrayref;
+}
+
+sub fbd_sql {
+  my $class = shift;
+  my %opt = shift;
+  my $date = $opt{date} || time;
+  warn $date;
+  my $agentnum = $opt{agentnum};
+
+  my @select = (
+    'censusblock',
+    'COALESCE(dbaname, agent.agent)',
+    'technology',
+    'CASE WHEN is_consumer IS NOT NULL THEN 1 ELSE 0 END',
+    'adv_speed_down',
+    'adv_speed_up',
+    'CASE WHEN is_business IS NOT NULL THEN 1 ELSE 0 END',
+    'cir_speed_down',
+    'cir_speed_up',
+  );
+  my $from =
+    'deploy_zone_block
+    JOIN deploy_zone USING (zonenum)
+    JOIN agent USING (agentnum)';
+  my @where = (
+    "zonetype = 'B'",
+    "active_date  < $date",
+    "(expire_date > $date OR expire_date IS NULL)",
+  );
+  push @where, "agentnum = $agentnum" if $agentnum;
+
+  my $order_by = 'censusblock, dbaname, technology, is_consumer, is_business';
+
+  "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  ORDER BY $order_by
+  ";
+}
+
+sub fbs_sql {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -311,31 +360,16 @@ sub report_fixed_broadband {
                    'broadband_downstream, broadband_upstream ';
   my $order_by = $group_by;
 
-  my $statement = "SELECT ".join(', ', @select) . "
+  "SELECT ".join(', ', @select) . "
   FROM $from
   WHERE ".join(' AND ', @where)."
   GROUP BY $group_by
   ORDER BY $order_by
   ";
 
-  warn $statement if $DEBUG;
-  dbh->selectall_arrayref($statement);
 }
 
-=item report_fixed_voice OPTIONS
-
-Returns the Fixed Voice Subscription Detail report (section 5.5).  OPTIONS
-are as above.  Columns are:
-
-- census tract
-- service type (0 for non-VoIP, 1 for VoIP)
-(the above columns form a key)
-- VGE lines/VoIP subscriptions in service
-- consumer grade VGE lines/VoIP subscriptions
-
-=cut
-
-sub report_fixed_voice {
+sub fvs_sql {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -368,41 +402,16 @@ sub report_fixed_voice {
   my $group_by = 'cust_location.censustract, COALESCE(is_voip, 0)';
   my $order_by = $group_by;
 
-  my $statement = "SELECT ".join(', ', @select) . "
+  "SELECT ".join(', ', @select) . "
   FROM $from
   WHERE ".join(' AND ', @where)."
   GROUP BY $group_by
   ORDER BY $order_by
   ";
 
-  warn $statement if $DEBUG;
-  dbh->selectall_arrayref($statement);
 }
 
-=item report_local_phone OPTIONS
-
-Returns the Local Exchange Telephone Subscription report (section 5.6).  
-OPTIONS are as above.  Each row is data for one state.  Columns are:
-
-- state FIPS code (key)
-- wholesale switched voice lines
-- wholesale unswitched local loops
-- end-user total lines
-- end-user lines sold in a package with broadband
-- consumer-grade lines where you are not the long-distance carrier
-- consumer-grade lines where the carrier IS the long-distance carrier
-- business-grade lines where you are not the long-distance carrier
-- business-grade lines where the carrier IS the long-distance carrier
-- end-user lines where you own the local loop facility
-- end-user lines where you lease an unswitched local loop from a LEC
-- end-user lines resold from another carrier
-- end-user lines provided over fiber to the premises
-- end-user lines provided over coaxial
-- end-user lines provided over fixed wireless
-
-=cut
-
-sub report_local_phone {
+sub lts_sql {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -446,37 +455,15 @@ sub report_local_phone {
   my $group_by = 'state.fips';
   my $order_by = $group_by;
 
-  my $statement = "SELECT ".join(', ', @select) . "
+  "SELECT ".join(', ', @select) . "
   FROM $from
   WHERE ".join(' AND ', @where)."
   GROUP BY $group_by
   ORDER BY $order_by
   ";
-
-  warn $statement if $DEBUG;
-  dbh->selectall_arrayref($statement);
 }
 
-=item report_voip OPTIONS
-
-Returns the Interconnected VoIP Subscription report (section 5.7).  
-OPTIONS are as above.  Columns are:
-
-- state FIPS code (key)
-- OTT subscriptions (non-last-mile)
-- OTT subscriptions sold to consumers
-- last-mile subscriptions
-- last-mile subscriptions sold to consumers
-- last-mile subscriptions bundled with broadband Internet
-- last-mile subscriptions over copper pairs
-- last-mile subscriptions over coaxial
-- last-mile subscriptions over fiber
-- last-mile subscriptions over fixed wireless
-- last-mile subscriptions over other media
-
-=cut
-
-sub report_voip {
+sub voip_sql {
   my $class = shift;
   my %opt = shift;
   my $date = $opt{date} || time;
@@ -517,16 +504,37 @@ sub report_voip {
   my $group_by = 'state.fips';
   my $order_by = $group_by;
 
-  my $statement = "SELECT ".join(', ', @select) . "
+  "SELECT ".join(', ', @select) . "
   FROM $from
   WHERE ".join(' AND ', @where)."
   GROUP BY $group_by
   ORDER BY $order_by
   ";
 
-  warn $statement if $DEBUG;
-  dbh->selectall_arrayref($statement);
 }
 
+=item parts
+
+Returns a Tie::IxHash reference of the internal short names used for the 
+report sections ('fbd', 'mbs', etc.) to the full names.
+
+=cut
+
+tie our %parts, 'Tie::IxHash', (
+  fbd   => 'Fixed Broadband Deployment',
+  fbs   => 'Fixed Broadband Subscription',
+  fvs   => 'Fixed Voice Subscription',
+  lts   => 'Local Exchange Telephone Subscription',
+  voip  => 'Interconnected VoIP Subscription',
+  mbd   => 'Mobile Broadband Deployment',
+  mbsa  => 'Mobile Broadband Service Availability',
+  mbs   => 'Mobile Broadband Subscription',
+  mvd   => 'Mobile Voice Deployment',
+  mvs   => 'Mobile Voice Subscription',
+);
+
+sub parts {
+  Storable::dclone(\%parts);
+}
 
 1;

@@ -338,7 +338,7 @@ sub insert {
 
   if ( $options{fcc_options} ) {
     warn "  updating fcc options " if $DEBUG;
-    $self->process_fcc_options( $options{fcc_options} );
+    $self->set_fcc_options( $options{fcc_options} );
   }
 
   warn "  committing transaction" if $DEBUG and $oldAutoCommit;
@@ -624,7 +624,7 @@ sub replace {
 
   if ( $options->{fcc_options} ) {
     warn "  updating fcc options " if $DEBUG;
-    $new->process_fcc_options( $options->{fcc_options} );
+    $new->set_fcc_options( $options->{fcc_options} );
   }
 
   warn "  committing transaction" if $DEBUG and $oldAutoCommit;
@@ -787,14 +787,14 @@ sub propagate {
   join("\n", @error);
 }
 
-=item process_fcc_options HASHREF
+=item set_fcc_options HASHREF
 
 Sets the FCC options on this package definition to the values specified
 in HASHREF.
 
 =cut
 
-sub process_fcc_options {
+sub set_fcc_options {
   my $self = shift;
   my $pkgpart = $self->pkgpart;
   my $options;

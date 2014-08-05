@@ -14,6 +14,7 @@
         'is_consumer'     => 'Consumer/mass market',
         'is_business'     => 'Business/government',
         'blocknum'        => '',
+        'active_date'     => 'Active since',
     },
     'fields'        => [
         { field         => 'zonetype',
@@ -25,6 +26,10 @@
           value         => 'broadband'
         },
         'description',
+        { field         => 'active_date',
+          type          => 'fixed-date',
+          value         => time,
+        },
         { field         => 'agentnum',
           type          => 'select-agent',
           disable_empty => 1,

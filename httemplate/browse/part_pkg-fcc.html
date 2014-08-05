@@ -3,14 +3,13 @@
   'menubar'               => \@menubar,
   'html_init'             => $html_init,
   'html_form'             => $html_form,
-  'html_posttotal'        => $html_posttotal,
   'name'                  => 'package definitions',
   'disableable'           => 1,
   'disabled_statuspos'    => 4,
   'agent_virt'            => 1,
   'agent_null_right'      => [ $edit, $edit_global ],
   'agent_null_right_link' => $edit_global,
-  'agent_pos'             => 6,
+  'agent_pos'             => 3,
   'query'                 =>
                             { 'select'    => $select,
                               'table'     => 'part_pkg',
@@ -38,6 +37,14 @@ my $acl_edit_global = $curuser->access_right($edit_global);
 
 die "access denied"
   unless $acl_edit || $acl_edit_global;
+
+if ( $cgi->param('redirect') ) {
+  my $session = $cgi->param('redirect');
+  my $pref = $curuser->option("redirect$session");
+  die "unknown redirect session $session\n" unless length($pref);
+  $cgi = new CGI($pref);
+  $cgi->param('redirect', $session);
+}
 
 my $conf = new FS::Conf;
 
@@ -88,21 +95,7 @@ my $select = join(',',
 my $addl_from = 
   FS::Report::FCC_477::join_optionnames(@optionnames);
 
-#restore this so pagination works
 $cgi->param('classnum', $classnum) if length($classnum);
-
-#should hide this if there aren't any classes
-my $html_posttotal =
-  "<BR>( show class: ".
-  include('/elements/select-pkg_class.html',
-            #'curr_value'    => $classnum,
-            'value'         => $classnum, #insist on 0 :/
-            'onchange'      => 'filter_change()',
-            'pre_options'   => [ '-1' => 'all',
-                                 '0'  => '(none)', ],
-            'disable_empty' => 1,
-         ).
-  ' )';
 
 my $link = [ $p.'edit/part_pkg.cgi?', 'pkgpart' ];
 
@@ -176,24 +169,42 @@ $extra_count = ( $count_extra_sql ? ' AND ' : ' WHERE ' ). $extra_count
   if $extra_count;
 my $count_query = "SELECT COUNT(*) FROM part_pkg $count_extra_sql $extra_count";
 
+# in case of error redirect
+if ( $cgi->param('redirect') ) {
+  push @header, '';
+  push @fields, sub {
+    my $part_pkg = shift;
+    my $pkgpart = $part_pkg->pkgpart;
+    '<B><FONT COLOR="#ffffff">' . $cgi->param("error$pkgpart") || '' . '</FONT></B>'
+  };
+  $align .= 'l';
+}
+
 my $html_init = 
   include('/elements/init_overlib.html') .
   include('/elements/input-fcc_options.html', js_only => 1) .
   include('.style');
 
-my $html_form = '';
-my $html_foot = '';
-# insert a checkbox column
-unshift @header, '';
-unshift @fields, sub {
-  '<INPUT TYPE="checkbox" NAME="pkgpart" VALUE=' . $_[0]->pkgpart .'>';
-};
-unshift @links, '';
-$align = 'c'.$align;
+my $html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD="POST">
+  ( show class: !.
+  include('/elements/select-pkg_class.html',
+            #'curr_value'    => $classnum,
+            'value'         => $classnum, #insist on 0 :/
+            'onchange'      => 'filter_change()',
+            'pre_options'   => [ '-1' => 'all',
+                                 '0'  => '(none)', ],
+            'disable_empty' => 1,
+         ).
+  ' )
+  <BR><BR>' .
+  qq!<SCRIPT TYPE="text/javascript">
+  function filter_change() {
+    window.location = '! . $cgi->self_url . qq!?classnum='
+      + document.getElementById('classnum').value;
+  }
+  </SCRIPT>!;
 
-
-$html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD="POST">!;
-$html_foot = qq!
+my $html_foot = qq!
   <INPUT TYPE="submit" VALUE="Save changes">
   </FORM>!;
 
