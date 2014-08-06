@@ -89,6 +89,10 @@ if (defined($PreferredKey) and (not $UserObj->FirstAttribute('PreferredKey')
 }
 
 if ( $Update ) {
+  my $fsconf = eval { FS::Conf->new };
+  if ( $fsconf && $fsconf->exists('disable_acl_changes') ) {
+    push @results, loc("Preference changes disabled in public demo.");
+  } else {
     $preferences ||= {};
     $m->comp( '/Widgets/BulkProcess', Meta => {
                 map { $_ => RT->Config->Meta($_) } RT->Config->Options
@@ -101,6 +105,7 @@ if ( $Update ) {
 
     my ($ok, $msg) = $UserObj->SetPreferences( $RT::System, $preferences );
     push @results, $ok ? loc("Preferences saved.") : $msg;
+  }
 }
 </%INIT>
 <%ARGS>
