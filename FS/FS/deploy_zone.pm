@@ -65,10 +65,6 @@ The FCC technology code for the type of service available.
 
 For mobile service zones, the FCC code for the RF band.
 
-=item servicetype
-
-"broadband" or "voice"
-
 =item adv_speed_up
 
 For broadband, the advertised upstream bandwidth in the zone.  If multiple
@@ -96,6 +92,14 @@ type of service is sold.
 
 'Y' if this service is sold to business or institutional use.  Not mutually
 exclusive with is_consumer.
+
+=item is_broadband
+
+'Y' if this service includes broadband Internet.
+
+=item is_voice
+
+'Y' if this service includes voice communication.
 
 =item active_date
 
@@ -180,25 +184,30 @@ sub check {
     || $self->ut_textn('description')
     || $self->ut_number('agentnum')
     || $self->ut_foreign_key('agentnum', 'agent', 'agentnum')
-    || $self->ut_alphan('dbaname')
+    || $self->ut_textn('dbaname')
     || $self->ut_enum('zonetype', [ 'B', 'P' ])
     || $self->ut_number('technology')
     || $self->ut_numbern('spectrum')
-    || $self->ut_enum('servicetype', [ 'broadband', 'voice' ])
     || $self->ut_decimaln('adv_speed_up', 3)
     || $self->ut_decimaln('adv_speed_down', 3)
     || $self->ut_decimaln('cir_speed_up', 3)
     || $self->ut_decimaln('cir_speed_down', 3)
     || $self->ut_flag('is_consumer')
     || $self->ut_flag('is_business')
+    || $self->ut_flag('is_broadband')
+    || $self->ut_flag('is_voice')
     || $self->ut_numbern('active_date')
     || $self->ut_numbern('expire_date')
   ;
   return $error if $error;
 
   foreach(qw(adv_speed_down adv_speed_up cir_speed_down cir_speed_up)) {
-    if (!$self->get($_)) {
-      $self->set($_, 0);
+    if ($self->get('is_broadband')) {
+      if (!$self->get($_)) {
+        $self->set($_, 0);
+      }
+    } else {
+      $self->set($_, '');
     }
   }
   if (!$self->get('active_date')) {
@@ -226,7 +235,35 @@ sub element_table {
   }
 }
 
-=back
+=item deploy_zone_block
+
+Returns the census block records in this zone, in order by census block
+number.  Only appropriate to block-type zones.
+
+=item deploy_zone_vertex
+
+Returns the vertex records for this zone, in order by sequence number.  Only
+appropriate to polygon-type zones.
+
+=cut
+
+sub deploy_zone_block {
+  my $self = shift;
+  qsearch({
+      table     => 'deploy_zone_block',
+      hashref   => { zonenum => $self->zonenum },
+      order_by  => ' ORDER BY censusblock',
+  });
+}
+
+sub deploy_zone_vertex {
+  my $self = shift;
+  qsearch({
+      table     => 'deploy_zone_vertex',
+      hashref   => { zonenum => $self->zonenum },
+      order_by  => ' ORDER BY vertexnum',
+  });
+}
 
 =head1 BUGS
 

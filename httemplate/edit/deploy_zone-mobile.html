@@ -1,29 +1,24 @@
 <& elements/edit.html,
     'name_singular' => 'deployment zone',
     'table'         => 'deploy_zone',
-    'post_url'      => popurl(1).'process/deploy_zone-fixed.html',
+    'post_url'      => popurl(1).'process/deploy_zone-mobile.html',
     'labels'        => {
         'description'     => 'Description',
         'agentnum'        => 'Agent',
         'dbaname'         => 'Business name (if different from agent)',
         'technology'      => 'Technology',
+        'spectrum'        => 'Spectrum',
+        'is_broadband',   => 'Broadband Internet',
         'adv_speed_up'    => 'Upstream',
         'adv_speed_down'  => 'Downstream',
-        'cir_speed_up'    => 'Upstream',
-        'cir_speed_down'  => 'Downstream',
-        'is_consumer'     => 'Consumer/mass market',
-        'is_business'     => 'Business/government',
-        'blocknum'        => '',
+        'is_voice',       => 'Voice',
+        'vertexnum'       => '',
         'active_date'     => 'Active since',
     },
     'fields'        => [
         { field         => 'zonetype',
           type          => 'hidden',
-          value         => 'B'
-        },
-        { field         => 'is_broadband',
-          type          => 'hidden',
-          value         => 'Y',
+          value         => 'P'
         },
         'description',
         { field         => 'active_date',
@@ -38,24 +33,24 @@
         'dbaname',
         { field         => 'technology',
           type          => 'select',
-          options       => [ map { @$_ } values(%$media_types) ],
+          options       => $media_types->{'Mobile Wireless'},
           labels        => $technology_labels,
         },
-        { field         => 'is_consumer', type => 'checkbox', value=>'Y' },
-        { field         => 'is_business', type => 'checkbox', value=>'Y' },
+        { field         => 'spectrum',
+          type          => 'select',
+          options       => [ keys %$spectrum_labels ],
+          labels        => $spectrum_labels,
+        },
+        { field         => 'is_broadband', type => 'checkbox', value=>'Y' },
+        { field         => 'is_voice', type => 'checkbox', value=>'Y' },
         { type => 'tablebreak-tr-title',
-          value => 'Advertised maximum speed (Mbps)' },
+          value => 'Advertised minimum speed (Mbps)' },
         'adv_speed_down',
         'adv_speed_up',
-        { type => 'tablebreak-tr-title',
-          value => 'Contractually guaranteed speed (Mbps)' },
-        'cir_speed_down',
-        'cir_speed_up',
-
-        { type => 'tablebreak-tr-title', value => 'Census blocks'},
-        { field => 'blocknum',
-          type              => 'deploy_zone_block',
-          o2m_table         => 'deploy_zone_block',
+        { type => 'tablebreak-tr-title', value => 'Footprint'},
+        { field => 'vertexnum',
+          type              => 'deploy_zone_vertex',
+          o2m_table         => 'deploy_zone_vertex',
           m2_label          => ' ',
           m2_error_callback => $m2_error_callback,
         },
@@ -71,25 +66,25 @@ die "access denied"
   ]);
 
 my $technology_labels = FS::part_pkg_fcc_option->technology_labels;
+my $spectrum_labels = FS::part_pkg_fcc_option->spectrum_labels;
 my $media_types = FS::part_pkg_fcc_option->media_types;
-delete $media_types->{'Mobile Wireless'}; # cause this is the fixed zone page
 
 my $m2_error_callback = sub {
   my ($cgi, $deploy_zone) = @_;
-  my @blocknums = grep {
-    /^blocknum\d+/ and length($cgi->param($_.'_censusblock'))
+  my @vertexnums = sort { $a <=> $b } grep {
+    /^vertexnum\d+/ and length($cgi->param($_.'_latitude'))
   } $cgi->param;
 
-  sort { $a->censusblock <=> $b->censusblock }
   map {
     my $k = $_;
-    FS::deploy_zone_block->new({
-      blocknum    => scalar($cgi->param($k)),
+    my $s = 0;
+    FS::deploy_zone_vertex->new({
+      vertexnum   => scalar($cgi->param($k)),
       zonenum     => $deploy_zone->zonenum,
-      censusblock => scalar($cgi->param($k.'_censusblock')),
-      censusyear  => scalar($cgi->param($k.'_censusyear')),
+      latitude    => scalar($cgi->param($k.'_latitude')),
+      longitude   => scalar($cgi->param($k.'_longitude')),
     })
-  } @blocknums;
+  } @vertexnums;
 };
 
 </%init>

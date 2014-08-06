@@ -92,8 +92,17 @@
     <FIELDSET ID="voip">
       <LABEL FOR="voip_sessions">Number of simultaneous calls possible</LABEL>
       <INPUT NAME="voip_sessions" ID="voip_sessions">
+      <BR>
       <& .checkbox, 'voip_lastmile' &>
       <LABEL FOR="voip_lastmile">Do you also provide last-mile connectivity?</LABEL>
+    </FIELDSET>
+  </P>
+  <P>
+    <& .checkbox, 'is_mobile' &>
+    <LABEL FOR="is_mobile">This package provides mobile telephone service</LABEL>
+    <FIELDSET ID="mobile">
+      <LABEL FOR="mobile_direct">Do you bill the customer directly?</LABEL>
+      <& .checkbox, 'mobile_direct' &>
     </FIELDSET>
   </P>
   <DIV WIDTH="100%" STYLE="text-align:center">
@@ -168,7 +177,7 @@ function enable_fieldset(fieldset_id) {
   // set up all event handlers
   addEventListener(form, 'submit', save_changes);
 
-  var sections = [ 'broadband', 'phone', 'voip' ];
+  var sections = [ 'broadband', 'phone', 'voip', 'mobile' ];
   for(var i = 0; i < sections.length; i++) {
     var toggle = form.elements['is_'+sections[i]];
     addEventListener(toggle, 'change', enable_fieldset(sections[i]));

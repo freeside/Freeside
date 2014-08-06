@@ -139,12 +139,33 @@ tie our %technology_labels, 'Tie::IxHash',  (
   0  => 'Other'
 );
 
+tie our %spectrum_labels, 'Tie::IxHash', (
+  90 => '700 MHz Band',
+  91 => 'Cellular Band',
+  92 => 'Specialized Mobile Radio (SMR) Band',
+  93 => 'Advanced Wireless Services (AWS) 1 Band',
+  94 => 'Broadband Personal Communications Service (PCS) Band',
+  95 => 'Wireless Communications Service (WCS) Band',
+  96 => 'Broadband Radio Service/Educational Broadband Service Band',
+  97 => 'Satellite (e.g. L-band, Big LEO, Little LEO)',
+  98 => 'Unlicensed (including broadcast television “white spaces”) Bands',
+  99 => '600 MHz',
+  100 => 'H Block',
+  101 => 'Advanced Wireless Services (AWS) 3 Band',
+  102 => 'Advanced Wireless Services (AWS) 4 Band',
+  103 => 'Other',
+);
+
 sub media_types {
   Storable::dclone(\%media_types);
 }
 
 sub technology_labels {
   Storable::dclone(\%technology_labels);
+}
+
+sub spectrum_labels {
+  Storable::dclone(\%spectrum_labels);
 }
 
 =head1 BUGS

@@ -11,7 +11,7 @@ use FS::Record qw( dbh );
 use Tie::IxHash;
 use Storable;
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -259,9 +259,11 @@ sub active_on {
 }
 
 sub is_fixed_broadband {
-  "is_broadband::int = 1 AND technology::int IN(".join(',',
-    10, 11, 12, 20, 30, 40, 41, 42, 50, 60, 70, 90, 0
-  ).")";
+  "is_broadband::int = 1 AND technology::int IN( 10, 11, 12, 20, 30, 40, 41, 42, 50, 60, 70, 90, 0 )"
+}
+
+sub is_mobile_broadband {
+  "is_broadband::int = 1 AND technology::int IN( 80, 81, 82, 83, 84, 85, 86, 87, 88)"
 }
 
 =item report SECTION, OPTIONS
@@ -290,7 +292,7 @@ sub report {
 
 sub fbd_sql {
   my $class = shift;
-  my %opt = shift;
+  my %opt = @_;
   my $date = $opt{date} || time;
   warn $date;
   my $agentnum = $opt{agentnum};
@@ -328,7 +330,7 @@ sub fbd_sql {
 
 sub fbs_sql {
   my $class = shift;
-  my %opt = shift;
+  my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
 
@@ -371,7 +373,7 @@ sub fbs_sql {
 
 sub fvs_sql {
   my $class = shift;
-  my %opt = shift;
+  my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
 
@@ -413,7 +415,7 @@ sub fvs_sql {
 
 sub lts_sql {
   my $class = shift;
-  my %opt = shift;
+  my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
 
@@ -465,7 +467,7 @@ sub lts_sql {
 
 sub voip_sql {
   my $class = shift;
-  my %opt = shift;
+  my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
 
@@ -510,7 +512,82 @@ sub voip_sql {
   GROUP BY $group_by
   ORDER BY $order_by
   ";
+}
 
+sub mbs_sql {
+  my $class = shift;
+  my %opt = @_;
+  my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
+
+  my @select = (
+    'state.fips',
+    'broadband_downstream',
+    'broadband_upstream',
+    'COUNT(*)',
+    'COUNT(is_consumer)',
+  );
+  my $from =
+    'cust_pkg
+      JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+      JOIN state USING (country, state)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+      JOIN part_pkg USING (pkgpart) '.
+      join_optionnames_int(qw(
+        is_broadband technology
+        is_consumer
+        )).
+      join_optionnames(qw(broadband_downstream broadband_upstream))
+  ;
+  my @where = (
+    active_on($date),
+    is_mobile_broadband()
+  );
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
+  my $group_by = 'state.fips, broadband_downstream, broadband_upstream ';
+  my $order_by = $group_by;
+
+  "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
+}
+
+sub mvs_sql {
+  my $class = shift;
+  my %opt = @_;
+  my $date = $opt{date} || time;
+  my $agentnum = $opt{agentnum};
+
+  my @select = (
+    'state.fips',
+    'COUNT(*)',
+    'COUNT(mobile_direct)',
+  );
+  my $from =
+    'cust_pkg
+      JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
+      JOIN state USING (country, state)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+      JOIN part_pkg USING (pkgpart) '.
+      join_optionnames_int(qw( is_mobile mobile_direct) )
+  ;
+  my @where = (
+    active_on($date),
+    'is_mobile = 1'
+  );
+  push @where, "cust_main.agentnum = $agentnum" if $agentnum;
+  my $group_by = 'state.fips';
+  my $order_by = $group_by;
+
+  "SELECT ".join(', ', @select) . "
+  FROM $from
+  WHERE ".join(' AND ', @where)."
+  GROUP BY $group_by
+  ORDER BY $order_by
+  ";
 }
 
 =item parts

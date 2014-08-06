@@ -1,0 +1,45 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+  Latitude&nbsp;
+  <INPUT TYPE  = "text"
+         NAME  = "<%$name%>_latitude"
+         ID    = "<%$id%>_latitude"
+         VALUE = "<% scalar($cgi->param($name.'_latitude'))
+                      || $deploy_zone_vertex->latitude
+                 %>"
+         SIZE  = 18
+         <% $onchange %>
+  >
+  &nbsp;
+  Longitude&nbsp;
+  <INPUT TYPE  = "text"
+         NAME  = "<%$name%>_longitude"
+         ID    = "<%$id%>_longitude"
+         VALUE = "<% scalar($cgi->param($name.'_longitude'))
+                      || $deploy_zone_vertex->longitude
+                 %>"
+         SIZE  = 18
+         <% $onchange %>
+  >
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'vertexnum';
+my $id = $opt{'id'} || 'vertexnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = $opt{'onchange'};
+if ( $onchange ) {
+  $onchange =~ s/\(what\);/(this);/;
+  $onchange = 'onchange="'.$onchange.'"';
+}
+
+my $deploy_zone_vertex = $curr_value
+  ? FS::deploy_zone_vertex->by_key($curr_value)
+  : FS::deploy_zone_vertex->new;
+
+</%init>

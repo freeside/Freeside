@@ -47,10 +47,6 @@ Latitude, as a decimal; positive values are north of the Equator.
 
 Longitude, as a decimal; positive values are east of Greenwich.
 
-=item sequence
-
-The ordinal position of this vertex, starting with zero.
-
 =back
 
 =head1 METHODS
@@ -104,7 +100,6 @@ sub check {
     || $self->ut_number('zonenum')
     || $self->ut_coord('latitude')
     || $self->ut_coord('longitude')
-    || $self->ut_number('sequence')
   ;
   return $error if $error;
 

@@ -48,9 +48,9 @@
   sort_fields     => [ 'zonenum',
                        'description',
                        'technology',
-                       'is_consumer is not null, is_business is not null',
-                       'adv_speed_down, adv_speed_up',
-                       'cir_speed_down, cir_speed_up',
+                       '(is_consumer is not null, is_business is not null)',
+                       '(adv_speed_down, adv_speed_up)',
+                       '(cir_speed_down, cir_speed_up)',
                      ],
   links           => [  '', $link_fixed, ],
   align           => 'clllllr',
@@ -58,6 +58,59 @@
   disable_maxselect => 1,
   disable_total     => 1,
 &>
+<P><FONT SIZE="+1"><B>Mobile Zones</B></FONT></P>
+<& elements/browse.html,
+  name_singular   => 'zone',
+  query           => { table      => 'deploy_zone',
+                       hashref    => { zonetype => 'P' },
+                     },
+  count_query     => "SELECT COUNT(*) FROM deploy_zone WHERE zonetype = 'P'",
+  agent_virt      => 1,
+  header          => [  '#',
+                        'Description',
+                        'Technology',
+                        'Spectrum',
+                        'Service Type',
+                        'Advertised Mbps',
+                        'Vertices', # number of vertices? not so useful
+                     ],
+  fields          => [  'zonenum',
+                        'description',
+                        sub { my $self = shift;
+                              $tech_label->{$self->technology} },
+                        sub { my $self = shift;
+                              $spec_label->{$self->spectrum} },
+                        sub { my $self = shift;
+                              join( ' / ',
+                                $self->is_voice ? 'voice' : (),
+                                $self->is_broadband ? 'broadband' : (),
+                              )
+                            },
+                        sub { my $self = shift;
+                              join( ' / ', grep $_,
+                                $self->adv_speed_down,
+                                $self->adv_speed_up
+                              )
+                            },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                            },
+                     ],
+  sort_fields     => [ 'zonenum',
+                       'description',
+                       'technology',
+                       'spectrum',
+                       '(is_voice is not null, is_broadband is not null)',
+                       '(adv_speed_down, adv_speed_up)',
+                     ],
+  links           => [  '', $link_mobile, ],
+  align           => 'clllllr',
+  nohtmlheader    => 1,
+  disable_maxselect => 1,
+  disable_total     => 1,
+&>
+
+<& /elements/footer.html &>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $acl_edit = $curuser->access_right('Edit FCC report configuration');
@@ -66,7 +119,8 @@ die "access denied"
   unless $acl_edit or $acl_edit_global;
 
 my $link_fixed = [ $p.'edit/deploy_zone-fixed.html?', 'zonenum' ];
-my $link_mobile= [ $p.'edit/deploy_zone-mobile.html', 'zonenum' ];
+my $link_mobile= [ $p.'edit/deploy_zone-mobile.html?', 'zonenum' ];
 
 my $tech_label = FS::part_pkg_fcc_option->technology_labels;
+my $spec_label = FS::part_pkg_fcc_option->spectrum_labels;
 </%init>
