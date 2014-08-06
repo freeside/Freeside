@@ -387,6 +387,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::state;
   use FS::state;
   use FS::queue_stat;
+  use FS::deploy_zone;
+  use FS::deploy_zone_block;
+  use FS::deploy_zone_vertex;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

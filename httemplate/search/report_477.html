@@ -4,7 +4,14 @@
 %   $m->abort;
 % }
 <& /elements/header.html, 'FCC Form 477 Report' &>
-
+% if ( $curuser->access_right('Edit FCC report configuration') ) {
+<FONT SIZE="+1"><STRONG>Preparation</STRONG></FONT>
+<UL>
+  <LI> <A HREF="<% $p %>browse/part_pkg-fcc.html">Configure packages</A> for FCC reporting categories.</LI>
+  <LI> <A HREF="<% $p %>browse/deploy_zone.html">Enter deployment zones</A> for broadband Internet or mobile phone.</LI>
+</UL>
+% }
+  
 <FORM ACTION="477.html" METHOD="GET">
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
@@ -30,15 +37,8 @@
     <& /elements/tr-checkbox-multiple.html,
       'label'   => 'Enable parts',
       'field'   => 'parts',
-      'labels'  => {
-        6   => 'Part 6 (Fixed Broadband Subscription)',
-        #7   => 'Part 7 (Mobile Wireless Broadband Subscription),
-        #8   => 'Part 8 (Mobile Local Telephone Subscription),
-        9   => 'Part 9 (Local Exchange Telephone Subscription)',
-        10  => 'Part 10 (Interconnected VoIP Subscription)',
-        11  => 'Part 11 (Voice Telephone Subscription Detail)',
-      },
-      options => [ 6, 9, 10, 11 ],
+      'labels'  => $part_titles,
+      'options' => [ keys %$part_titles ]
     &>
   </TABLE>
 
@@ -50,8 +50,12 @@
 <& /elements/footer.html &>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+  unless $curuser->access_right('List packages');
 
 my $conf = FS::Conf->new;
+
+my $part_titles = FS::Report::FCC_477->parts;
+
 </%init>

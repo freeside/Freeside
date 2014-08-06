@@ -1,34 +1,32 @@
-<STYLE>
-  ul.fcc_options {
-    font-weight: normal;
-    text-align: left;
-    padding: 0em 1em 0em 2em;
-  }
-</STYLE>
-<TR>
-  <TH COLSPAN=2>
-    <& hidden.html, 'id' => $id, @_ &>
+% unless ($opt{js_only}) {
+<& hidden.html, 'field' => $id, @_ &>
 %#    <& input-text.html, 'id' => $id, @_ &> # XXX debugging
-    <UL ID="<%$id%>_display_fcc_options" CLASS="fcc_options">
-    </UL>
-    <BUTTON TYPE="button" onclick="edit_fcc_options()">
-      Edit
-    </BUTTON>
-% # show some kind of useful summary of the FCC options here
-  </TH>
-</TR>
+<UL ID="<%$id%>_display_fcc_options" CLASS="fcc_options">
+</UL>
+<button type="button" class="edit_fcc_button" data-target="<% $id %>">
+  Edit
+</button>
+% }
+% unless ($opt{html_only}) {
+%   my $popup = $fsurl.'misc/part_pkg_fcc_options.html?id=';
+%   my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
 <SCRIPT TYPE="text/javascript">
 function edit_fcc_options() {
-  <& popup_link_onclick.html,
-  'action'      => $fsurl.'misc/part_pkg_fcc_options.html?id=' . $id,
-  'actionlabel' => 'FCC Form 477 options',
-  'width'       => 760,
-  'height'      => 600,
-  &>
+  var id = this.dataset['target'];
+  overlib(
+    OLiframeContent( '<% $popup %>' + id,
+      760, 600, '<% $popup_name %>', 0, 'auto' ),
+    CAPTION, 'FCC Form 477 options', 
+    STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0,
+    DRAGGABLE, CLOSECLICK,
+    BGCOLOR, '#333399', CGCOLOR, '#333399',
+    CLOSETEXT, 'Close'
+  );
 }
+
 var technology_labels = <% encode_json(FS::part_pkg_fcc_option->technology_labels) %>;
-function show_fcc_options() {
-  var curr_values = JSON.parse(document.getElementById('<% $id %>').value);
+function show_fcc_options(id) {
+  var curr_values = JSON.parse(document.getElementById(id).value);
   // hardcoded for the same reasons as misc/part_pkg_fcc_options
   var out = '';
   var tech = curr_values['technology'];
@@ -41,9 +39,9 @@ function show_fcc_options() {
   }
   var media = String.toLowerCase(curr_values['media'] || 'unknown media');
   if ( curr_values['is_consumer'] ) {
-    out += '<li><strong>Consumer-grade</strong></li>>';
+    out += '<li><strong>Consumer-grade</strong> service</li>';
   } else {
-    out += '<li><strong>Business-grade</strong></li>';
+    out += '<li><strong>Business-grade</strong> service</li>';
   }
   if ( curr_values['is_broadband'] ) {
     out += '<li>Broadband via <strong>' + tech + '</strong>'
@@ -82,20 +80,28 @@ function show_fcc_options() {
   } // is_phone
   if ( curr_values['is_voip'] ) {
     out += '<li><strong>VoIP</strong> telephone service</li>';
-    if ( curr_values['voip_ott'] ) {
-      out += '<li>Using a <strong>separate</strong> last-mile connection</li>';
-    } else {
+    out += '<li><strong>' + curr_values['voip_sessions'] + 
+           '</strong> sessions allowed</li>';
+    if ( curr_values['voip_lastmile'] ) {
       out += '<li><strong>Including</strong> last-mile connection</li>';
+    } else {
+      out += '<li>Using a <strong>separate</strong> last-mile connection</li>';
     }
   } // is_voip
 
-  var out_ul = document.getElementById('<% $id %>_display_fcc_options');
+  var out_ul = document.getElementById(id + '_display_fcc_options');
   out_ul.innerHTML = out;
 }
 <&| onload.js &>
-  show_fcc_options();
+  var edit_fcc_buttons = document.getElementsByClassName('edit_fcc_button');
+  for(var i = 0; i < edit_fcc_buttons.length; i++) {
+    var button = edit_fcc_buttons[i];
+    show_fcc_options( button.dataset['target'] );
+    button.addEventListener('click', edit_fcc_options);
+  }
 </&>
 </SCRIPT>
+% }
 <%init>
 my %opt = @_;
 my $id = $opt{id} || $opt{field};

@@ -6672,6 +6672,77 @@ sub tables_hashref {
       'index' => [],
     },
 
+    # eventually link to tower/sector?
+    'deploy_zone' => {
+      'columns' => [
+        'zonenum',        'serial',  '',     '',      '', '',
+        'description',    'char',    'NULL', $char_d, '', '',
+        'agentnum',       'int',     '',     '',      '', '',
+        'dbaname',        'char',    'NULL', $char_d, '', '',
+        'zonetype',       'char',    '',     1,       '', '',
+        'technology',     'int',     '',     '',      '', '',
+        'spectrum',       'int',     'NULL', '',      '', '',
+        'adv_speed_up',   'decimal', '',     '10,3', '0', '',
+        'adv_speed_down', 'decimal', '',     '10,3', '0', '',
+        'cir_speed_up',   'decimal', '',     '10,3', '0', '',
+        'cir_speed_down', 'decimal', '',     '10,3', '0', '',
+        'is_broadband',   'char',    'NULL', 1,       '', '',
+        'is_voice',       'char',    'NULL', 1,       '', '',
+        'is_consumer',    'char',    'NULL', 1,       '', '',
+        'is_business',    'char',    'NULL', 1,       '', '',
+        'active_date',    @date_type,                 '', '',
+        'expire_date',    @date_type,                 '', '',
+      ],
+      'primary_key' => 'zonenum',
+      'unique' => [],
+      'index'  => [ [ 'agentnum' ] ],
+      'foreign_keys' => [
+                          { columns     => [ 'agentnum' ],
+                            table       => 'agent',
+                            references  => [ 'agentnum' ],
+                          },
+                        ],
+    },
+
+    'deploy_zone_block' => {
+      'columns' => [
+        'blocknum',       'serial',  '',     '',      '', '',
+        'zonenum',        'int',     '',     '',      '', '',
+        'censusblock',    'char',    '',     15,      '', '',
+        'censusyear',     'char',    '',      4,      '', '',
+      ],
+      'primary_key' => 'blocknum',
+      'unique' => [],
+      'index'  => [ [ 'zonenum' ] ],
+      'foreign_keys' => [
+                          { columns     => [ 'zonenum' ],
+                            table       => 'deploy_zone',
+                            references  => [ 'zonenum' ],
+                          },
+                        ],
+    },
+
+    'deploy_zone_vertex' => {
+      'columns' => [
+        'vertexnum',      'serial',  '',     '',      '', '',
+        'zonenum',        'int',     '',     '',      '', '',
+        'latitude',       'decimal', '',     '10,7',  '', '', 
+        'longitude',      'decimal', '',     '10,7',  '', '', 
+      ],
+      'primary_key' => 'vertexnum',
+      'unique' => [ ],
+      'index'  => [ ],
+      'foreign_keys' => [
+                          { columns     => [ 'zonenum' ],
+                            table       => 'deploy_zone',
+                            references  => [ 'zonenum' ],
+                          },
+                        ],
+    },
+
+
+
+
 
     # name type nullability length default local
 

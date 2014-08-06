@@ -121,7 +121,7 @@ for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
     if ($part_pkg->fcc_voip_class) {
       # there's no such thing as a VoIP DS0 equivalent, but this is
       # what we used the field for
-      push @fcc_opts, 'voip_lines' => $part_pkg->fcc_ds0s;
+      push @fcc_opts, 'voip_sessions' => $part_pkg->fcc_ds0s;
     } else {
       push @fcc_opts, 'phone_lines' => $part_pkg->fcc_ds0s, 'is_phone' => 1;
     }

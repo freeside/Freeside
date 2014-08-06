@@ -112,31 +112,48 @@ tie our %media_types, 'Tie::IxHash', (
   'Other'           => [ 90, 0 ],
 );
 
-our %technology_labels = (
-      10 => 'Other ADSL',
-      11 => 'ADSL2',
-      12 => 'VDSL',
-      20 => 'SDSL',
-      30 => 'Other Copper Wireline',
-      40 => 'Other Cable Modem',
-      41 => 'Cable - DOCSIS 1, 1.1, 2.0',
-      42 => 'Cable - DOCSIS 3.0',
-      50 => 'Fiber',
-      60 => 'Satellite',
-      70 => 'Terrestrial Fixed Wireless',
-      # mobile wireless
-      80 => 'Mobile - WCDMA/UMTS/HSPA',
-      81 => 'Mobile - HSPA+',
-      82 => 'Mobile - EVDO/EVDO Rev A',
-      83 => 'Mobile - LTE',
-      84 => 'Mobile - WiMAX',
-      85 => 'Mobile - CDMA',
-      86 => 'Mobile - GSM',
-      87 => 'Mobile - Analog',
-      88 => 'Other Mobile',
+tie our %technology_labels, 'Tie::IxHash',  (
+  10 => 'Other ADSL',
+  11 => 'ADSL2',
+  12 => 'VDSL',
+  20 => 'SDSL',
+  30 => 'Other Copper Wireline',
+  40 => 'Other Cable Modem',
+  41 => 'Cable - DOCSIS 1, 1.1, 2.0',
+  42 => 'Cable - DOCSIS 3.0',
+  50 => 'Fiber',
+  60 => 'Satellite',
+  70 => 'Terrestrial Fixed Wireless',
+  # mobile wireless
+  80 => 'Mobile - WCDMA/UMTS/HSPA',
+  81 => 'Mobile - HSPA+',
+  82 => 'Mobile - EVDO/EVDO Rev A',
+  83 => 'Mobile - LTE',
+  84 => 'Mobile - WiMAX',
+  85 => 'Mobile - CDMA',
+  86 => 'Mobile - GSM',
+  87 => 'Mobile - Analog',
+  88 => 'Other Mobile',
 
-      90 => 'Electric Power Line',
-      0  => 'Other'
+  90 => 'Electric Power Line',
+  0  => 'Other'
+);
+
+tie our %spectrum_labels, 'Tie::IxHash', (
+  90 => '700 MHz Band',
+  91 => 'Cellular Band',
+  92 => 'Specialized Mobile Radio (SMR) Band',
+  93 => 'Advanced Wireless Services (AWS) 1 Band',
+  94 => 'Broadband Personal Communications Service (PCS) Band',
+  95 => 'Wireless Communications Service (WCS) Band',
+  96 => 'Broadband Radio Service/Educational Broadband Service Band',
+  97 => 'Satellite (e.g. L-band, Big LEO, Little LEO)',
+  98 => 'Unlicensed (including broadcast television “white spaces”) Bands',
+  99 => '600 MHz',
+  100 => 'H Block',
+  101 => 'Advanced Wireless Services (AWS) 3 Band',
+  102 => 'Advanced Wireless Services (AWS) 4 Band',
+  103 => 'Other',
 );
 
 sub media_types {
@@ -144,7 +161,11 @@ sub media_types {
 }
 
 sub technology_labels {
-  +{ %technology_labels };
+  Storable::dclone(\%technology_labels);
+}
+
+sub spectrum_labels {
+  Storable::dclone(\%spectrum_labels);
 }
 
 =head1 BUGS
