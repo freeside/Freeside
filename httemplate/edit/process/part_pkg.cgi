@@ -114,6 +114,14 @@ my $args_callback = sub {
   push @args, 'options' => \%options;
 
   ###
+  # fcc options
+  ###
+  my $fcc_options_string = $cgi->param('fcc_options_string');
+  if ($fcc_options_string) {
+    push @args, 'fcc_options' => decode_json($fcc_options_string);
+  }
+
+  ###
   #pkg_svc
   ###
 

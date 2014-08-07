@@ -258,8 +258,8 @@ $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi
 $report_packages{'Suspension summary'} = [ $fsurl.'search/cust_pkg_susp.html', 'Show suspension activity', ]
   if $curuser->access_right('Summarize packages');
 $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
-$report_packages{'FCC Form 477 packages'} =  [ $fsurl.'search/report_477.html', 'Summarize packages by census tract for particular types' ]
-  if $conf->exists('cust_main-require_censustract');
+$report_packages{'FCC Form 477'} =  [ $fsurl.'search/report_477.html' ]
+  if $conf->exists('part_pkg-show_fcc_options');
 $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
 
 tie my %report_inventory, 'Tie::IxHash',

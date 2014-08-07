@@ -3465,13 +3465,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_pkg-show_fcc_voice_grade_equivalent',
-    'section'     => 'UI',
-    'description' => "Show fields on package definitions for FCC Form 477 classification",
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'cust_pkg-large_pkg_size',
     'section'     => 'UI',
     'description' => "In customer view, summarize packages with more than this many services.  Set to zero to never summarize packages.",
@@ -3482,6 +3475,13 @@ and customer address. Include units.',
     'key'         => 'cust_pkg-hide_discontinued-part_svc',
     'section'     => 'UI',
     'description' => "In customer view, hide provisioned services which are no longer available in the package definition.  Not normally used except for very specific situations as it hides still-provisioned services.",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'part_pkg-show_fcc_options',
+    'section'     => 'UI',
+    'description' => "Show fields on package definitions for FCC Form 477 classification",
     'type'        => 'checkbox',
   },
 
@@ -5757,6 +5757,13 @@ and customer address. Include units.',
                        'AU' => 'Australia',
                        'NZ' => 'New Zealand',
                      ],
+  },
+
+  {
+    'key'         => 'old_fcc_report',
+    'section'     => '',
+    'description' => 'Use the old (pre-2014) FCC Form 477 report format.',
+    'type'        => 'checkbox',
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

@@ -357,6 +357,9 @@ tie my %rights, 'Tie::IxHash',
 
     'Bulk edit package definitions',
 
+    'Edit FCC report configuration',
+    { rightname => 'Edit FCC report configuration for all agents', global=>1 },
+
     'Edit CDR rates',
     #{ rightname=>'Edit global CDR rates', global=>1, },
 

@@ -1,135 +1,239 @@
-% if ( $type eq 'xml' ) {
-% $filename = "fcc_477_$state" . '_' . time2str('%Y%m%d', $date) . '.xml';
-% http_header('Content-Type' => 'application/XML' ); # So saith RFC 4180
-% http_header('Content-Disposition' => 'attachment;filename="'.$filename.'"');
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<Form_477_submission xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://specialreports.fcc.gov/wcb/Form477/XMLSchema-instance/form_477_upload_Schema.xsd" >
-% } else { #html
-<& /elements/header.html, "FCC Form 477 Results - $state" &>
-%# XXX when we stop supporting IE8, add this to freeside.css using :nth-child
-%# selectors, and remove it from everywhere else
+<& /elements/header.html, $title &>
 <STYLE TYPE="text/css">
-.grid TH { background-color: #cccccc; padding: 0px 3px 2px; text-align: right }
-.row0 TD { background-color: #eeeeee; padding: 0px 3px 2px; text-align: right }
-.row1 TD { background-color: #ffffff; padding: 0px 3px 2px; text-align: right }
+table.fcc477part {
+  border-collapse: collapse;
+  border: 1px #777 solid;
+  margin-bottom: 20px;
+}
+table.fcc477part td {
+  padding: 0px 4px;
+  border-left: 1px #777 solid;
+  border-right: 1px #777 solid;
+}
+table.fcc477part tbody td {
+  text-align: right;
+}
+table.fcc477part thead tr.head {
+  text-align: center;
+  vertical-align: top;
+  font-weight: bold;
+  border-top: 1px #777 solid;
+  border-bottom: 1px #777 solid;
+}
+table.fcc477part thead tr.subhead {
+  text-align: center;
+  font-weight: bold;
+  font-size: small;
+  border-top: 1px #777 solid;
+  border-bottom: 1px #777 solid;
+}
+.parttitle {
+  font-weight: bold;
+  font-size: large;
+  float: left;
+}
+a.download {
+  float: right;
+}
 </STYLE>
-
-<TABLE WIDTH="100%">
-  <TR>
-    <TD></TD>
-    <TD ALIGN="right" CLASS="noprint">
-      Download full results<BR>
-%   $cgi->param('_type', 'xml');
-      as <A HREF="<% $cgi->self_url %>">XML file</A><BR>
-
-%   $cgi->param('_type', 'html-print');
-      as <A HREF="<% $cgi->self_url %>">printable copy</A>
-
-    </TD>
-%   $cgi->param('_type', $type );
-  </TR>
-</TABLE>
-% } #html
-% foreach my $part ( @parts ) {
-%   if ( $part{$part} ) {
-%
-%     if ( $part eq 'V' ) {
-%       next unless ( $part{'IIA'} || $part{'IIB'} );
+% foreach my $partname (@partnames) {
+%   $cgi->param('parts', $partname);
+%   $cgi->param('type', 'csv');
+<table class="fcc477part">
+  <caption>
+    <span class="parttitle"><% $part_titles->{$partname} %></span>
+    <a class="download" href="<% $cgi->self_url %>">Download</a>
+  </caption>
+%   my $header = ".header_$partname";
+%   my $data = $parts{$partname};
+  <thead>
+    <& $header &>
+  </thead>
+%   foreach my $row (@$data) {
+  <tr>
+%     foreach my $item (@$row) {
+    <td><% $item %></td>
 %     }
-%
-%     if ( $part eq 'VI_census' ) {
-%       next unless $part{'IA'};
-%     }
-%
-%     my @reports = ();
-%     if ( $part eq 'IA' ) {
-%       for ( my $tech = 0; $tech < scalar(@technology_option); $tech++ ) {
-%         next unless $technology_option[$tech];
-%         my $url = &{$url_mangler}($part);
-%         if ( $type eq 'xml' ) {
-<<% 'Part_IA_'. chr(65 + $tech) %>>
-%         }
-<& "477part${part}.html",
-    'tech_code' => $tech,
-    'url' => $url,
-    'type' => $type,
-    'date' => $date,
-&>
-%         if ( $type eq 'xml' ) {
-</<% 'Part_IA_'. chr(65 + $tech) %>>
-%         }
-%       }
-%     } else { # not part IA
-%       if ( $type eq 'xml' ) {
-<<% 'Part_'. $part %>>
-%       }
-%       my $url = &{$url_mangler}($part);
-<& "477part${part}.html",
-    'url' => $url,
-    'date' => $date,
-    'filename' => $filename,
-&>
-%       if ( $type eq 'xml' ) {
-</<% 'Part_'. $part %>>
-%       }
-%     }
+  </tr>
 %   }
-% }
-%
-% if ( $type eq 'xml' ) {
-</Form_477_submission>
-% } else {
+</table>
+% } # foreach $partname
 <& /elements/footer.html &>
-% }
 <%init>
-
-my $curuser = $FS::CurrentUser::CurrentUser;
-
 die "access denied"
-  unless $curuser->access_right('List packages');
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
 
-my $date = $cgi->param('date') ? parse_datetime($cgi->param('date'))
-                               : time;
-
-my $state = uc($cgi->param('state'));
-$state =~ /^[A-Z]{2}$/ or die "illegal state: $state";
-
-my %part = map { $_ => 1 } grep { /^\w+$/ } $cgi->param('part');
-my $type = $cgi->param('_type') || 'html';
-my $filename;
-my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi,1);
-
-# save upload and download mappings
-my @download = $cgi->param('part1_column_option');
-my @upload = $cgi->param('part1_row_option');
-for(my $i=0; $i < scalar(@download); $i++) {
-    &FS::Report::FCC_477::save_fcc477map("part1_column_option_$i",$download[$i]);
-}
-for(my $i=0; $i < scalar(@upload); $i++) {
-    &FS::Report::FCC_477::save_fcc477map("part1_row_option_$i",$upload[$i]);
+my %parts;
+# load from cache if possible
+my $session;
+if ( $cgi->param('session') =~ /^(\d+)$/ ) {
+  $session = $1;
+  %parts = %{ $m->cache->get($session) };
+} else {
+  $session = sprintf('%010d%06d', time, int(rand(1000000)));
+  $cgi->param('session', $session);
 }
 
-my @part2a_row_option = $cgi->param('part2a_row_option');
-for(my $i=0; $i < scalar(@part2a_row_option); $i++) {
-    &FS::Report::FCC_477::save_fcc477map("part2a_row_option_$i",$part2a_row_option[$i]);
+my $agentnum;
+if ($cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+}
+my $date = parse_datetime($cgi->param('date')) || time;
+my @partnames = grep /^\w+$/, $cgi->param('parts');
+foreach my $partname (@partnames) {
+  $parts{$partname} ||= FS::Report::FCC_477->report( $partname,
+    date      => $date,
+    agentnum  => $agentnum
+  );
+}
+$m->cache->set($session, \%parts, '1h');
+
+my $title = 'FCC Form 477 Data - ' . time2str('%b %o, %Y', $date);
+
+if ( $cgi->param('type') eq 'csv' ) {
+  my $partname = $partnames[0]; # ignore any beyond the first
+  my $data = $parts{$partname};
+  my $csv = Text::CSV_XS->new({ eol => "\r\n" }); # i think
+
+  my $filename = time2str('%Y-%m-%d', $date) . '-'. $partname . '.csv';
+  http_header('Content-Type' => 'text/csv');
+  http_header('Content-Disposition' => qq(attachment;filename="$filename"));
+
+  $m->clear_buffer;
+
+  foreach my $row (@$data) {
+    $csv->combine(@$row);
+    $m->print($csv->string);
+  }
+  $m->abort;
 }
 
-my @part2b_row_option = $cgi->param('part2b_row_option');
-for(my $i=0; $i < scalar(@part2b_row_option); $i++) {
-    &FS::Report::FCC_477::save_fcc477map("part2b_row_option_$i",$part2b_row_option[$i]);
-}
-
-my $part5_report_option = $cgi->param('part5_report_option');
-if ( $part5_report_option ) {
-  FS::Report::FCC_477::save_fcc477map('part5_report_option', $part5_report_option);
-}
-
-my $url_mangler = sub {
-  my $part = shift;
-  my $url = $cgi->url('-path_info' => 1, '-full' => 1);
-  $url =~ s/477\./477part$part./;
-  $url;
-};
-my @parts = qw( IA IIA IIB IV V VI_census );
+my $part_titles = FS::Report::FCC_477->parts;
 
 </%init>
+<%def .header_fbd>
+  <TR CLASS="head">
+    <TD ROWSPAN=2>Census Block</TD>
+    <TD ROWSPAN=2>DBA Name</TD>
+    <TD ROWSPAN=2>Technology</TD>
+    <TD ROWSPAN=2>Consumer?</TD>
+    <TD COLSPAN=2>Advertised Speed (Mbps)</TD>
+    <TD ROWSPAN=2>Business?</TD>
+    <TD COLSPAN=2>Contractual Speed (Mbps)</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Down</TD>
+    <TD>Up</TD>
+    <TD>Down</TD>
+    <TD>Up</TD>
+  </TR>
+</%def>
+<%def .header_fbs>
+  <TR CLASS="head">
+    <TD ROWSPAN=2>Census Tract</TD>
+    <TD ROWSPAN=2>Technology</TD>
+    <TD COLSPAN=2>Speed (Mbps)</TD>
+    <TD COLSPAN=2>Subscriptions</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Down</TD>
+    <TD>Up</TD>
+    <TD>Total</TD>
+    <TD>Consumer</TD>
+  </TR>
+</%def>
+<%def .header_fvs>
+  <TR CLASS="head">
+    <TD ROWSPAN=2>Census Tract</TD>
+    <TD ROWSPAN=2>VoIP?</TD>
+    <TD COLSPAN=2>Lines/Subscriptions</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Total</TD>
+    <TD>Consumer</TD>
+  </TR>
+</%def>
+<%def .header_lts>
+  <TR CLASS="head">
+    <TD ROWSPAN=3>State</TD>
+    <TD COLSPAN=2>Wholesale</TD>
+    <TD COLSPAN=12>End User Lines</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD ROWSPAN=2>VGEs</TD>
+    <TD ROWSPAN=2>UNE-Ls</TD>
+
+    <TD ROWSPAN=2>Total</TD>
+    <TD ROWSPAN=2>With Broadband</TD>
+    <TD COLSPAN=2>Consumer</TD>
+    <TD COLSPAN=2>Business</TD>
+
+    <TD COLSPAN=3>Local Loop</TD>
+
+    <TD COLSPAN=3>Special Media</TD>
+  </TR>
+
+  <TR CLASS="subhead">
+    <TD> </TD>
+    <TD>+LD</TD>
+    <TD> </TD>
+    <TD>+LD</TD>
+
+    <TD>Owned</TD>
+    <TD>UNE-L</TD>
+    <TD>Resale</TD>
+
+    <TD>Fiber</TD>
+    <TD>Coaxial</TD>
+    <TD>Wireless</TD>
+  </TR>
+</%def>
+<%def .header_voip>
+  <TR CLASS="head">
+    <TD ROWSPAN=2>State</TD>
+    <TD COLSPAN=2>VoIP OTT</TD>
+    <TD COLSPAN=8>VoIP Non-OTT</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD ROWSPAN=2>Total</TD>
+    <TD ROWSPAN=2>Consumer</TD>
+
+    <TD ROWSPAN=2>Total</TD>
+    <TD ROWSPAN=2>Consumer</TD>
+    <TD ROWSPAN=2>Bundled</TD>
+    <TD COLSPAN=5>Media Type</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Copper</TD>
+    <TD>Fiber</TD>
+    <TD>Coaxial</TD>
+    <TD>Wireless</TD>
+    <TD>Other</TD>
+  </TR>
+</%def>
+<%def .header_mbs>
+%# unimplemented
+  <TR CLASS="head">
+    <TD ROWSPAN=2>State</TD>
+    <TD COLSPAN=2>Speed (Mbps)</TD>
+    <TD COLSPAN=2>Subscriptions</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Down</TD>
+    <TD>Up</TD>
+    <TD>Total</TD>
+    <TD>Consumer</TD>
+  </TR>
+</%def>
+<%def .header_mvs>
+%# unimplemented
+  <TR CLASS="head">
+    <TD ROWSPAN=2>State</TD>
+    <TD COLSPAN=2>Subscriptions</TD>
+  </TR>
+  <TR CLASS="subhead">
+    <TD>Total</TD>
+    <TD>Direct</TD>
+  </TR>
+</%def>
+

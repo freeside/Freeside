@@ -1,0 +1,47 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+  Block 
+  <INPUT TYPE  = "text"
+         NAME  = "<%$name%>_censusblock"
+         ID    = "<%$id%>_censusblock"
+         VALUE = "<% scalar($cgi->param($name.'_censusblock'))
+                      || $deploy_zone_block->censusblock
+                 %>"
+         SIZE  = 17
+         MAXLENGTH = 15
+         <% $onchange %>
+  >
+  &nbsp;
+  Year
+  <INPUT TYPE  = "text"
+         NAME  = "<%$name%>_censusyear" 
+         ID    = "<%$id%>_censusyear"
+         VALUE = "<% scalar($cgi->param($name.'_censusyear'))
+                      || $deploy_zone_block->censusyear
+                  %>"
+         SIZE  = 5
+         MAXLENGTH = 4
+         <% $onchange %>
+  >
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'blocknum';
+my $id = $opt{'id'} || 'blocknum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = $opt{'onchange'};
+if ( $onchange ) {
+  $onchange =~ s/\(what\);/(this);/;
+  $onchange = 'onchange="'.$onchange.'"';
+}
+
+my $deploy_zone_block = $curr_value
+  ? FS::deploy_zone_block->by_key($curr_value)
+  : FS::deploy_zone_block->new;
+
+</%init>

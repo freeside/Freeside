@@ -363,7 +363,12 @@ if ( -e $addl_handler_use_file ) {
   use FS::sched_avail;
   use FS::export_batch;
   use FS::export_batch_item;
+  use FS::part_pkg_fcc_option;
+  use FS::state;
   use FS::queue_stat;
+  use FS::deploy_zone;
+  use FS::deploy_zone_block;
+  use FS::deploy_zone_vertex;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

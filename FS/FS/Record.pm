@@ -125,6 +125,8 @@ FS::Record - Database record objects
     $error = $record->ut_floatn('column');
     $error = $record->ut_number('column');
     $error = $record->ut_numbern('column');
+    $error = $record->ut_decimal('column');
+    $error = $record->ut_decimaln('column');
     $error = $record->ut_snumber('column');
     $error = $record->ut_snumbern('column');
     $error = $record->ut_money('column');
@@ -2309,6 +2311,35 @@ sub ut_numbern {
   $self->getfield($field) =~ /^\s*(\d*)\s*$/
     or return "Illegal (numeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
+  '';
+}
+
+=item ut_decimal COLUMN[, DIGITS]
+
+Check/untaint decimal numbers (up to DIGITS decimal places.  If there is an 
+error, returns the error, otherwise returns false.
+
+=item ut_decimaln COLUMN[, DIGITS]
+
+Check/untaint decimal numbers.  May be null.  If there is an error, returns
+the error, otherwise returns false.
+
+=cut
+
+sub ut_decimal {
+  my($self, $field, $digits) = @_;
+  $digits ||= '';
+  $self->getfield($field) =~ /^\s*(\d+(\.\d{0,$digits})?)\s*$/
+    or return "Illegal or empty (decimal) $field: ".$self->getfield($field);
+  $self->setfield($field, $1);
+  '';
+}
+
+sub ut_decimaln {
+  my($self, $field, $digits) = @_;
+  $self->getfield($field) =~ /^\s*(\d*(\.\d{0,$digits})?)\s*$/
+    or return "Illegal (decimal) $field: ".$self->getfield($field);
+  $self->setfield($field, $1);
   '';
 }
 

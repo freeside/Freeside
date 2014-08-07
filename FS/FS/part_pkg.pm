@@ -17,6 +17,7 @@ use FS::cust_pkg;
 use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg_option;
+use FS::part_pkg_fcc_option;
 use FS::pkg_class;
 use FS::agent;
 use FS::part_pkg_msgcat;
@@ -303,6 +304,11 @@ sub insert {
       }
   }
 
+  if ( $options{fcc_options} ) {
+    warn "  updating fcc options " if $DEBUG;
+    $self->set_fcc_options( $options{fcc_options} );
+  }
+
   warn "  committing transaction" if $DEBUG and $oldAutoCommit;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -545,6 +551,11 @@ sub replace {
     }
   }
 
+  if ( $options->{fcc_options} ) {
+    warn "  updating fcc options " if $DEBUG;
+    $new->set_fcc_options( $options->{fcc_options} );
+  }
+
   warn "  committing transaction" if $DEBUG and $oldAutoCommit;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -703,6 +714,44 @@ sub propagate {
       if $error;
   }
   join("\n", @error);
+}
+
+=item set_fcc_options HASHREF
+
+Sets the FCC options on this package definition to the values specified
+in HASHREF.
+
+=cut
+
+sub set_fcc_options {
+  my $self = shift;
+  my $pkgpart = $self->pkgpart;
+  my $options;
+  if (ref $_[0]) {
+    $options = shift;
+  } else {
+    $options = { @_ };
+  }
+
+  my %existing_num = map { $_->fccoptionname => $_->num }
+                     qsearch('part_pkg_fcc_option', { pkgpart => $pkgpart });
+
+  local $FS::Record::nowarn_identical = 1;
+  # set up params for process_o2m
+  my $i = 0;
+  my $params = {};
+  foreach my $name (keys %$options ) {
+    $params->{ "num$i" } = $existing_num{$name} || '';
+    $params->{ "num$i".'_fccoptionname' } = $name;
+    $params->{ "num$i".'_optionvalue'   } = $options->{$name};
+    $i++;
+  }
+
+  $self->process_o2m(
+    table   => 'part_pkg_fcc_option',
+    fields  => [qw( fccoptionname optionvalue )],
+    params  => $params,
+  );
 }
 
 =item pkg_locale LOCALE
@@ -1214,6 +1263,35 @@ sub option {
         "not found in options or plandata!\n"
     unless $ornull;
   '';
+}
+
+=item fcc_option OPTIONNAME
+
+Returns the FCC 477 report option value for the given name, or the empty 
+string.
+
+=cut
+
+sub fcc_option {
+  my ($self, $name) = @_;
+  my $part_pkg_fcc_option =
+    qsearchs('part_pkg_fcc_option', {
+        pkgpart => $self->pkgpart,
+        fccoptionname => $name,
+    });
+  $part_pkg_fcc_option ? $part_pkg_fcc_option->optionvalue : '';
+}
+
+=item fcc_options
+
+Returns all FCC 477 report options for this package, as a hash-like list.
+
+=cut
+
+sub fcc_options {
+  my $self = shift;
+  map { $_->fccoptionname => $_->optionvalue }
+    qsearch('part_pkg_fcc_option', { pkgpart => $self->pkgpart });
 }
 
 =item bill_part_pkg_link
