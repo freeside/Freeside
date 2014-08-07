@@ -6,6 +6,7 @@ use strict;
 use Getopt::Std;
 use Text::CSV_XS;
 use DBI;
+use Net::SFTP::Foreign;
 #use FS::UID qw( adminsuidsetup datasrc );
 
 our %aradial2db = (
@@ -44,7 +45,7 @@ my $user = shift or die &usage;
 
 # %%%FREESIDE_CACHE%%% & hardcoded datasrc
 #my $cachedir = '%%%FREESIDE_CACHE%%%/cache.'. datasrc. '/cdrs';
-my $cachedir = '%%%FREESIDE_CACHE%%%/cache.DBI:Pg:dbname=freeside/cdrs';
+my $cachedir = '/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cdrs';
 mkdir $cachedir unless -d $cachedir;
 
 my $servername = shift or die &usage;
