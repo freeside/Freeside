@@ -129,7 +129,7 @@ for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
 
   my %fcc_opts = @fcc_opts;
   #print map {"\t$_\t".$fcc_opts{$_}."\n"} keys %fcc_opts;
-  my $error = $part_pkg->process_fcc_options(\%fcc_opts);
+  my $error = $part_pkg->set_fcc_options(\%fcc_opts);
   if ( $error ) {
     die "$error\n";
   }

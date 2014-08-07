@@ -247,6 +247,17 @@ sub join_optionname_int {
     " ON (part_pkg.pkgpart = t_$name.pkgpart)";
 }
 
+sub dbaname {
+  # Returns an sql expression for the DBA name
+  "COALESCE( deploy_zone.dbaname,
+     (SELECT value FROM conf WHERE conf.name = 'company_name'
+                             AND (conf.agentnum = deploy_zone.agentnum
+                                  OR conf.agentnum IS NULL)
+                             ORDER BY conf.agentnum IS NOT NULL DESC
+                             LIMIT 1)
+     ) AS dbaname"
+}
+
 sub active_on {
   # Returns a condition to limit packages to those that were setup before a 
   # certain date, and not canceled before that date.
@@ -299,7 +310,7 @@ sub fbd_sql {
 
   my @select = (
     'censusblock',
-    'COALESCE(dbaname, agent.agent)',
+    dbaname(),
     'technology',
     'CASE WHEN is_consumer IS NOT NULL THEN 1 ELSE 0 END',
     'adv_speed_down',
@@ -319,7 +330,7 @@ sub fbd_sql {
   );
   push @where, "agentnum = $agentnum" if $agentnum;
 
-  my $order_by = 'censusblock, dbaname, technology, is_consumer, is_business';
+  my $order_by = 'censusblock, agentnum, technology, is_consumer, is_business';
 
   "SELECT ".join(', ', @select) . "
   FROM $from
