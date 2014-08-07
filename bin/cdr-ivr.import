@@ -33,7 +33,6 @@ FS::cdr::Import->dbi_import(
     #                             $_[0]->{NXX}. $_[0]->{LOCAL_NUMBER};
     #                           },
     'description'       => 'DESCRIPTION', # or upstream_dst_regionname ?
-    #'' => 'DETAIL', #
     #'' => 'PER_CALL_CHARGE', #
     #'' => 'PER_MINUTE_CHARGE', #
     #'' => 'PER_CALL_SURCHARGE', #
@@ -46,7 +45,10 @@ FS::cdr::Import->dbi_import(
     #'' => 'CONVERSION_RATE', #
     'lastapp'           => 'MODULE_NAME', #
     'src'               => 'ANI', # 'clid' => 'ANI', #
-    'dst'               => 'DNIS',
+    'dst'               => sub { $_[0]->{'DNIS'} =~ /^011/
+                                   ? $_[0]->{'DNIS'}
+                                   : $_[0]->{'DETAIL'};
+                               },
     #'' => 'SALES_GROUP', #
     #'' => 'TAX_GROUP', #
     'userfield'         => 'USER_1', #
