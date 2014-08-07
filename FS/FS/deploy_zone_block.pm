@@ -111,6 +111,10 @@ sub check {
   ;
   return $error if $error;
 
+  if ($self->get('censusblock') !~ /^(\d{15})$/) {
+    return "Illegal census block number (must be 15 digits)";
+  }
+
   $self->SUPER::check;
 }
 

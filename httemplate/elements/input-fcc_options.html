@@ -88,6 +88,12 @@ function show_fcc_options(id) {
       out += '<li>Using a <strong>separate</strong> last-mile connection</li>';
     }
   } // is_voip
+  if ( curr_values['is_mobile'] ) {
+    out += '<li><strong>Mobile</strong> telephone service</li>';
+    if ( curr_values['mobile_direct'] ) {
+      out += '<li>Billed <strong>directly to the user</strong></li>';
+    }
+  } // is_mobile
 
   var out_ul = document.getElementById(id + '_display_fcc_options');
   out_ul.innerHTML = out;

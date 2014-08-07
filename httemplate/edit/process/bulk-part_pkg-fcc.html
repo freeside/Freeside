@@ -21,8 +21,9 @@
 % }
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
-die "access denied"
-  unless $curuser->access_right('Bulk edit package definitions');
+my $edit_acl = $curuser->access_right('Edit FCC report configuration');
+my $global_edit_acl = $curuser->access_right('Edit FCC report configuration for all agents');
+die "access denied" unless $edit_acl or $global_edit_acl;
 
 # non-atomic; report errors but allow successful changes to go through
 # not that I even know how you'd get an error doing this
