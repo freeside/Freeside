@@ -6,7 +6,7 @@ use strict;
 use Getopt::Std;
 use Text::CSV_XS;
 use DBI;
-use FS::UID qw( adminsuidsetup datasrc );
+#use FS::UID qw( adminsuidsetup datasrc );
 
 our %aradial2db = (
   #'Date' => '',
@@ -40,10 +40,11 @@ getopts('m:abr:dP:v:');
 my %options = ();
 
 my $user = shift or die &usage;
-adminsuidsetup $user;
+#adminsuidsetup $user;
 
-# %%%FREESIDE_CACHE%%%
-my $cachedir = '%%%FREESIDE_CACHE%%%/cache.'. datasrc. '/cdrs';
+# %%%FREESIDE_CACHE%%% & hardcoded datasrc
+#my $cachedir = '%%%FREESIDE_CACHE%%%/cache.'. datasrc. '/cdrs';
+my $cachedir = '%%%FREESIDE_CACHE%%%/cache.DBI:Pg:dbname=freeside/cdrs';
 mkdir $cachedir unless -d $cachedir;
 
 my $servername = shift or die &usage;
@@ -188,7 +189,7 @@ sub usage {
   "Usage:
   aradial-sftp_and_import [ -m method ] [ -a ] [ -b ]
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
-    user [sftpuser@]servername
+    user [sftpuser@]servername dbi_datasrc dbi_username dbi_pass
   ";
 }
 
