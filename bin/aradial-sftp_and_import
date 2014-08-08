@@ -1,34 +1,55 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 #i'm kinda like freeside-cdr-sftp_and_import... some parts should be libraried
 
 use strict;
 use Getopt::Std;
+use Date::Format;
 use Text::CSV_XS;
 use DBI;
 use Net::SFTP::Foreign;
 #use FS::UID qw( adminsuidsetup datasrc );
 
+#adjusted these for what we're actually seeing in the real log files
 our %aradial2db = (
   #'Date' => '',
-  'NASIP' => 'NASIPAddress',
+  #'NASIP' => 'NASIPAddress',
+  'NASID' => 'NASIPAddress',
   'AcctSessionId' => 'AcctSessionId',
   'Port' => 'NasPortId',
   #'Status-Type' => 'Acct-Status-Type',
-  'UserID' => 'UserName',
-  'Authentic' => 'AccdtAuthentic',
+  #'UserID' => 'UserName',
+  'User ID' => 'UserName',
+  'Authentic' => 'AcctAuthentic',
   'Service-Type' => 'ServiceType',
   'FramedProtocol' => 'FramedProtocol',
   #'FramedCompression' => '', #not handled, needed?  unlikely
   'FramedAddress' => 'FramedIPAddress',
   'Acct-Delay-Time' => 'AcctStartDelay', #?
   'Session-Time' => 'AcctSessionTime',
-  #'Input-Gigawords' => '',
+  #'Input-Gigawords' => '', #XXX handle lots of data
   'Input-Octets' => 'AcctInputOctets',
-  #'Output-Gigawords' => '',
+  #'Output-Gigawords' => '', #XXX handle lots of data
   'Output-Octets' => 'AcctOutputOctets',
   'NAS-Port-Type' => 'NASPortType',
   'Acct-Terminate-Cause' => 'AcctTerminateCause',
+);
+
+#http://www.iana.org/assignments/radius-types/radius-types.xhtml#radius-types-10
+our %status_type = (
+   1 => 'Start',
+   2 => 'Stop',
+   3 => 'Interim-Update',
+  #4-6,'Unassigned',
+   7 => 'Accounting-On',
+   8 => 'Accounting-Off',
+   9 => 'Tunnel-Start',
+  10 => 'Tunnel-Stop',
+  11 => 'Tunnel-Reject',
+  12 => 'Tunnel-Link-Start',
+  13 => 'Tunnel-Link-Stop',
+  14 => 'Tunnel-Link-Reject',
+  15 => 'Failed',
 );
 
 ###
@@ -114,8 +135,6 @@ foreach my $filename ( @$ls ) {
 
   warn "Processing $filename\n" if $opt_v;
  
-  my $file_timestamp = $filename.'-'.time2str('%Y-%m-%d', time);
-
   open my $fh, "$cachedir/$filename" or die "$cachedir/$filename: $!";
   my $header = $csv->getline($fh);
 
@@ -131,7 +150,10 @@ foreach my $filename ( @$ls ) {
     my @keys = keys %dbhash;
     my @values = map $dbhash{$_}, @keys;
 
-    if ( $hash{'Acct-Status-Type'} eq 'Start' ) {
+    $hash{'Status-Type'} = $status_type{ $hash{'Status-Type'} }
+      if exists $status_type{ $hash{'Status-Type'} };
+
+    if ( $hash{'Status-Type'} eq 'Start' ) {
 
       $dbhash{'AcctStartTime'} = $hash{'Date'};
 
@@ -140,7 +162,7 @@ foreach my $filename ( @$ls ) {
       my $sth = $dbh->prepare($sql) or die $dbh->errstr;
       $sth->execute(@values) or die $sth->errstr;
 
-    } elsif ( $hash{'Acct-Status-Type'} eq 'Stop' ) {
+    } elsif ( $hash{'Status-Type'} eq 'Stop' ) {
 
       my $AcctSessionId = delete($dbhash{AcctSessionId});
       $dbhash{'AcctStopTime'} = $hash{'Date'};
@@ -150,17 +172,18 @@ foreach my $filename ( @$ls ) {
       my $sth = $dbh->prepare($sql) or die $dbh->errstr;
       $sth->execute(@values, $AcctSessionId) or die $sth->errstr;
 
-    } elsif ( $hash{'Acct-Status-Type'} eq 'Interim' ) {
+    } elsif ( $hash{'Status-Type'} eq 'Interim' ) {
       #not handled, but stop should capture the usage.  unless session are
       # normally super-long, extending across month boundaries, or we need
       # real-time-ish data usage detail, it isn't a big deal
     } else {
-      die 'Unknown Acct-Status-Type '. $hash{'Acct-Status-Type'}. "\n";
+      warn 'Unknown Status-Type '. $hash{'Status-Type'}. "; skipping\n";
     }
 
   }
   
   if ( $opt_d ) {
+    my $file_timestamp = $filename.'-'.time2str('%Y-%m-%d', time);
     if ( $opt_m eq 'ftp') {
       my $ftp = ftp();
       $ftp->rename($filename, "$opt_d/$file_timestamp")
