@@ -6,7 +6,7 @@ use strict;
 use Getopt::Std;
 use Date::Format;
 use Text::CSV_XS;
-use DBI;
+use DBI qw( :sql_types );
 use Net::SFTP::Foreign;
 #use FS::UID qw( adminsuidsetup datasrc );
 
@@ -33,6 +33,14 @@ our %aradial2db = (
   'Output-Octets' => 'AcctOutputOctets',
   'NAS-Port-Type' => 'NASPortType',
   'Acct-Terminate-Cause' => 'AcctTerminateCause',
+);
+
+our %bind_type = (
+  'AcctInputOctets'  => SQL_INTEGER,
+  'AcctOutputOctets' => SQL_INTEGER,
+  'AcctSessionTime'  => SQL_INTEGER,
+  'AcctStartDelay'   => SQL_INTEGER,
+  'AcctStopDelay'    => SQL_INTEGER,
 );
 
 #http://www.iana.org/assignments/radius-types/radius-types.xhtml#radius-types-10
@@ -148,29 +156,28 @@ foreach my $filename ( @$ls ) {
                      keys %hash;
 
     my @keys = keys %dbhash;
-    my @values = map $dbhash{$_}, @keys;
 
     $hash{'Status-Type'} = $status_type{ $hash{'Status-Type'} }
       if exists $status_type{ $hash{'Status-Type'} };
 
+    my $sql;
+    my @extra_values = ();
     if ( $hash{'Status-Type'} eq 'Start' ) {
 
       $dbhash{'AcctStartTime'} = $hash{'Date'};
 
-      my $sql = 'INSERT INTO radacct ( ', join(',', @keys).
-                ' ) VALUES ( '. map( ' ? ', @values ). ' )';
-      my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-      $sth->execute(@values) or die $sth->errstr;
+      $sql = 'INSERT INTO radacct ( ', join(',', @keys).
+             ' ) VALUES ( '. map( ' ? ', @keys ). ' )';
 
     } elsif ( $hash{'Status-Type'} eq 'Stop' ) {
 
       my $AcctSessionId = delete($dbhash{AcctSessionId});
       $dbhash{'AcctStopTime'} = $hash{'Date'};
 
-      my $sql = 'UPDATE radacct '. join(' , ', map "SET $_ = ?", @keys ).
-                ' WHERE AcctSessionId = ? ';
-      my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-      $sth->execute(@values, $AcctSessionId) or die $sth->errstr;
+      push @extra_values, $AcctSessionId;
+
+      $sql = 'UPDATE radacct SET '. join(',', map "$_ = ?", @keys ).
+             ' WHERE AcctSessionId = ? ';
 
     } elsif ( $hash{'Status-Type'} eq 'Interim' ) {
       #not handled, but stop should capture the usage.  unless session are
@@ -178,7 +185,22 @@ foreach my $filename ( @$ls ) {
       # real-time-ish data usage detail, it isn't a big deal
     } else {
       warn 'Unknown Status-Type '. $hash{'Status-Type'}. "; skipping\n";
+      next;
     }
+
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+
+    my $p_num = 1;
+    foreach my $value ( map $dbhash{$_}, @keys ) {
+      my $key = shift @keys;
+      my $type = exists($bind_type{$key}) ? $bind_type{$key} : SQL_VARCHAR;
+      $sth->bind_param($p_num++, $value, $type);
+    }
+    foreach my $value ( @extra_values ) {
+      $sth->bind_param($p_num++, $value);
+    }
+
+    $sth->execute or die $sth->errstr;
 
   }
   
