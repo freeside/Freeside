@@ -85,7 +85,7 @@ elsif($opt_m eq 'sftp') {
   $ls_sftp->setcwd($opt_r) or die "can't chdir to $opt_r\n"
     if $opt_r;
 
-  $ls = $ls_sftp->ls('.', wanted => qr/^$.*\.$/i,
+  $ls = $ls_sftp->ls('.', no_wanted  => qr/^\.+$/,
                           names_only => 1 );
 }
 else {
