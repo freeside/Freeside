@@ -113,6 +113,18 @@ If you need to continue using the old Form 477 report, turn on the
 'old_fcc_report' configuration option.
 ";
   }
+
+  # boolean invoice_sections_by_location option is now
+  # invoice_sections_method = 'location'
+  my @invoice_sections_confs =
+    qsearch('conf', { 'name' => { op=>'LIKE', value=>'%sections_by_location' } });
+  foreach my $c (@invoice_sections_confs) {
+    $c->name =~ /^(\w+)sections_by_location$/;
+    $conf->delete($c->name);
+    my $newname = $1.'sections_method';
+    $conf->set($newname, 'location');
+  }
+
 }
 
 sub upgrade_overlimit_groups {

@@ -1561,11 +1561,19 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'invoice_sections_by_location',
+    'key'         => 'invoice_sections_method',
     'section'     => 'invoicing',
-    'description' => 'Divide invoice into sections according to service location.  Currently, this overrides sectioning by package category.',
-    'type'        => 'checkbox',
-    'per_agent'   => 1,
+    'description' => 'How to group line items on multi-section invoices.',
+    'type'        => 'select',
+    'select_enum' => [ qw(category location) ],
+  },
+
+  {
+    'key'         => 'summary_subtotals_method',
+    'section'     => 'invoicing',
+    'description' => 'How to group line items when calculating summary subtotals.  By default, it will be the same method used for grouping invoice sections.',
+    'type'        => 'select',
+    'select_enum' => [ qw(category location) ],
   },
 
   #quotations seem broken-ish with sections ATM?
