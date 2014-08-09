@@ -10,7 +10,7 @@
                  'agent_virt'            => 1,
                  'agent_null_right'      => [ $edit, $edit_global ],
                  'agent_null_right_link' => $edit_global,
-                 'agent_pos'             => 6,
+                 'agent_pos'             => 7, #5?
                  'query'                 => { 'select'    => $select,
                                               'table'     => 'part_pkg',
                                               'hashref'   => \%hash,
@@ -338,6 +338,51 @@ push @fields, sub {
 #      : ''
 #    ).
 #    $part_pkg->freq_pretty; #.'<BR>'
+};
+
+push @header, 'Cost&nbsp;tracking';
+$align .= 'r'; #?
+push @fields, sub {
+  my $part_pkg = shift;
+  #(my $plan = $plan_labels{$part_pkg->plan} ) =~ s/ /&nbsp;/g;
+  my $is_recur = ( $part_pkg->freq ne '0' );
+
+  [
+    [
+      { data => '&nbsp;', # $plan,
+        align=>'center',
+        colspan=>2,
+      },
+    ],
+    [
+      { data =>$money_char.
+               sprintf('%.2f ', $part_pkg->setup_cost ),
+        align=>'right'
+      },
+      { data => ( $is_recur ? '&nbsp;setup' : '&nbsp;one-time' ),
+        align=>'left',
+      },
+    ],
+    [
+      { data=>(
+          $is_recur
+            ? $money_char. sprintf('%.2f', $part_pkg->recur_cost)
+            : '(no&nbsp;recurring)' #$part_pkg->freq_pretty
+        ),
+        align=> ( $is_recur ? 'right' : 'center' ),
+        colspan=> ( $is_recur ? 1 : 2 ),
+      },
+      ( $is_recur
+        ?  { data => ( $is_recur
+                         ? '&nbsp;'. $part_pkg->freq_pretty
+                         : ''
+                     ),
+             align=>'left',
+           }
+        : ()
+      ),
+    ],
+  ];
 };
 
 ###
