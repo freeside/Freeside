@@ -29,7 +29,7 @@ use FS::part_pkg_discount;
 use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
 
-$DEBUG = 1;
+$DEBUG = 0;
 $setup_hack = 0;
 $skip_pkg_svc_hack = 0;
 
