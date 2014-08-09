@@ -153,6 +153,7 @@ tie my %rights, 'Tie::IxHash',
     'Waive setup fee', #NEW
     'View appointments', #NEWNEW
     'Make appointment',
+    'View package definition costs', #NEWNEW
   ],
   
   ###
