@@ -2718,7 +2718,7 @@ sub set_cust_pkg_detail {
 
 =item cust_event
 
-Returns the new-style customer billing events (see L<FS::cust_event>) for this invoice.
+Returns the customer billing events (see L<FS::cust_event>) for this invoice.
 
 =cut
 
@@ -2735,19 +2735,41 @@ sub cust_event {
 
 =item num_cust_event
 
-Returns the number of new-style customer billing events (see L<FS::cust_event>) for this invoice.
+Returns the number of customer billing events (see L<FS::cust_event>) for this package.
 
 =cut
 
 #false laziness w/cust_bill.pm
 sub num_cust_event {
   my $self = shift;
-  my $sql =
-    "SELECT COUNT(*) FROM cust_event JOIN part_event USING ( eventpart ) ".
-    "  WHERE tablenum = ? AND eventtable = 'cust_pkg'";
+  my $sql = "SELECT COUNT(*) ". $self->_from_cust_event_where;
+  $self->_prep_ex($sql, $self->pkgnum)->fetchrow_arrayref->[0];
+}
+
+=item exists_cust_event
+
+Returns true if there are customer billing events (see L<FS::cust_event>) for this package.  More efficient than using num_cust_event.
+
+=cut
+
+sub exists_cust_event {
+  my $self = shift;
+  my $sql = "SELECT 1 ". $self->_from_cust_event_where. " LIMIT 1";
+  my $row = $self->_prep_ex($sql, $self->pkgnum)->fetchrow_arrayref;
+  $row ? $row->[0] : '';
+}
+
+sub _from_cust_event_where {
+  #my $self = shift;
+  " FROM cust_event JOIN part_event USING ( eventpart ) ".
+  "  WHERE tablenum = ? AND eventtable = 'cust_pkg' ";
+}
+
+sub _prep_ex {
+  my( $self, $sql, @args ) = @_;
   my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
-  $sth->execute($self->pkgnum) or die $sth->errstr. " executing $sql";
-  $sth->fetchrow_arrayref->[0];
+  $sth->execute(@args)         or die $sth->errstr. " executing $sql";
+  $sth;
 }
 
 =item part_pkg_currency_option OPTIONNAME

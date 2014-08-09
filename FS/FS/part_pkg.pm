@@ -31,7 +31,7 @@ use FS::part_pkg_discount;
 use FS::part_pkg_vendor;
 use FS::part_pkg_currency;
 
-$DEBUG = 0;
+$DEBUG = 1;
 $setup_hack = 0;
 $skip_pkg_svc_hack = 0;
 
@@ -1288,6 +1288,12 @@ will be suppressed.
 
 sub option {
   my( $self, $opt, $ornull ) = @_;
+
+  #cache: was pulled up in the original part_pkg query
+  if ( $opt =~ /^(setup|recur)_fee$/ && defined($self->hashref->{"_$opt"}) ) {
+    return $self->hashref->{"_$opt"};
+  }
+
   cluck "$self -> option: searching for $opt"
     if $DEBUG;
   my $part_pkg_option =
@@ -1296,12 +1302,14 @@ sub option {
       optionname => $opt,
   } );
   return $part_pkg_option->optionvalue if $part_pkg_option;
+
   my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                      split("\n", $self->get('plandata') );
   return $plandata{$opt} if exists $plandata{$opt};
   cluck "WARNING: (pkgpart ". $self->pkgpart. ") Package def option $opt ".
         "not found in options or plandata!\n"
     unless $ornull;
+
   '';
 }
 
