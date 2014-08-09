@@ -243,6 +243,7 @@ sub _upgrade_data { # class method
     'Configuration' => 'Alarm global configuration',
     'Edit global package definitions' => 'Edit package definition costs',
     'Configuration' => 'Edit global fee definitions',
+    'Edit package definition costs' => 'View package definition costs',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {
