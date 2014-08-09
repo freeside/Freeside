@@ -11,8 +11,8 @@
 %   foreach my $cust_pkg (@$packages) {
     <& .packagerow, $cust_pkg,
         ( map { $_ => $opt{$_} } qw(
-            cust_main bgcolor
-            no_links before_pkg_callback before_svc_callback after_svc_callback
+            cust_main bgcolor no_links cust_location_cache
+            before_pkg_callback before_svc_callback after_svc_callback
         )),
         %conf_opt
     &>
@@ -80,6 +80,7 @@ my %conf_opt = (
   #for package.html
   'invoice-unitprice'         => $conf->exists('invoice-unitprice'),
   'show_pkgnum'               => $curuser->option('show_pkgnum'),
+  'part_pkg-term_discounts'   => $conf->exists('part_pkg-term_discounts'),
 
   #for services.html and status.html
   'cust_pkg-display_times'    => ($conf->exists('cust_pkg-display_times')

@@ -121,23 +121,18 @@ table.usage {
 
   <TR>
     <TD COLSPAN=2>
-% if ( $conf->exists('cust_pkg-group_by_location') ) {
-<& locations.html,
-    'cust_main'     => $cust_main,
-    'packages'      => $packages,
-    %opt,
- &>
-% }
-% else {
-% # in this format, put all packages in one section
-<& /elements/table-grid.html &>
-<& packages/section.html,
-    'cust_main'     => $cust_main,
-    'packages'      => $packages,
-    %opt,
- &>
-</TABLE>
-% }
+
+%     $opt{cust_main} = $cust_main;
+%     $opt{packages}  = $packages;
+%     $opt{cust_location_cache} = {};
+%     if ( $conf->exists('cust_pkg-group_by_location') ) {
+        <& locations.html, %opt &>
+%     } else { # in this format, put all packages in one section
+        <& /elements/table-grid.html &>
+        <& packages/section.html, %opt &>
+        </TABLE>
+%     }
+
     </TD>
   </TR>
 
@@ -183,7 +178,10 @@ sub get_packages {
     join(', ', map { "cust_pkg.$_ AS $_"          } fields('cust_pkg') );
 
   my $part_pkg_fields =
-    join(', ', map { "part_pkg.$_ AS part_pkg_$_" } fields('part_pkg') );
+  join(', ', ( map { "part_pkg.$_ AS part_pkg_$_" } fields('part_pkg') ),
+             'setup_option.optionvalue AS part_pkg__setup_fee',
+             'recur_option.optionvalue AS part_pkg__recur_fee',
+      );
 
   my $group_by =
     join(', ', map "cust_pkg.$_", fields('cust_pkg') ). ', '.
@@ -194,7 +192,15 @@ sub get_packages {
 
   my @packages = $cust_main->$method( {
     'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
-    'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
+    'addl_from' => qq{
+      LEFT JOIN part_pkg USING ( pkgpart )
+      LEFT JOIN part_pkg_option AS setup_option
+        ON (     cust_pkg.pkgpart = setup_option.pkgpart
+             AND setup_option.optionname = 'setup_fee' )
+      LEFT JOIN part_pkg_option AS recur_option
+        ON (     cust_pkg.pkgpart = recur_option.pkgpart
+             AND recur_option.optionname = 'recur_fee' )
+    },
   } );
   my $num_old_packages = scalar(@packages);
 
