@@ -439,7 +439,7 @@ sub customer_info {
     or return { 'error' => 'Unknown custnum' };
 
   $cust_main->API_getinfo;
-:
+}
 
 =item location_info
 
