@@ -2,7 +2,7 @@ package FS::cust_main_Mixin;
 
 use strict;
 use vars qw( $DEBUG $me );
-use Carp qw( confess );
+use Carp qw( confess carp cluck );
 use FS::UID qw(dbh);
 use FS::cust_main;
 use FS::Record qw( qsearch qsearchs );
@@ -38,6 +38,7 @@ sub cust_linked { $_[0]->custnum; }
 
 sub cust_main { 
   my $self = shift;
+  cluck ref($self). '->cust_main called' if $DEBUG;
   $self->cust_linked ? qsearchs('cust_main', {custnum => $self->custnum}) : '';
 }
 
