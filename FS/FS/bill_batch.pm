@@ -65,6 +65,8 @@ sub print_pdf {
                  qsearch('cust_bill_batch', { batchnum => $self->batchnum });
   return "No invoices in batch ".$self->batchnum.'.' if !@invoices;
 
+  my $duplex = FS::Conf->exists('invoice_print_pdf-duplex');
+
   my $pdf_out;
   my $num = 0;
   foreach my $invoice (@invoices) {
@@ -76,6 +78,13 @@ sub print_pdf {
     }
     else {
       $pdf_out = CAM::PDF->new($part);
+    }
+    if ( $duplex ) {
+      my $n = $pdf_out->numPages;
+      if ( $n % 2 == 1 ) {
+        # then insert a blank page so we end on an even number
+        $pdf_out->duplicatePage($n, 1);
+      }
     }
     if($job) {
       # update progressbar

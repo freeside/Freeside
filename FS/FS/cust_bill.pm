@@ -1565,6 +1565,8 @@ sub fax_invoice {
 Place this invoice into the open batch (see C<FS::bill_batch>).  If there 
 isn't an open batch, one will be created.
 
+HASHREF may contain any options to be passed to C<print_pdf>.
+
 =cut
 
 sub batch_invoice {
