@@ -107,7 +107,8 @@ sub bill_and_collect {
   my( $self, %options ) = @_;
 
   my $log = FS::Log->new('bill_and_collect');
-  $log->debug('start', object => $self, agentnum => $self->agentnum);
+  my %logopt = (object => $self);
+  $log->debug('start', %logopt);
 
   my $error;
 
@@ -123,6 +124,7 @@ sub bill_and_collect {
                     );
 
   $job->update_statustext('0,cleaning expired packages') if $job;
+  $log->debug('canceling expired packages', %logopt);
   $error = $self->cancel_expired_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
@@ -131,6 +133,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $log->debug('suspending adjourned packages', %logopt);
   $error = $self->suspend_adjourned_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
@@ -139,6 +142,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $log->debug('unsuspending resumed packages', %logopt);
   $error = $self->unsuspend_resumed_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error resuming custnum ".$self->custnum. ": $error";
@@ -148,6 +152,7 @@ sub bill_and_collect {
   }
 
   $job->update_statustext('20,billing packages') if $job;
+  $log->debug('billing packages', %logopt);
   $error = $self->bill( %options );
   if ( $error ) {
     $error = "Error billing custnum ". $self->custnum. ": $error";
@@ -157,6 +162,7 @@ sub bill_and_collect {
   }
 
   $job->update_statustext('50,applying payments and credits') if $job;
+  $log->debug('applying payments and credits', %logopt);
   $error = $self->apply_payments_and_credits;
   if ( $error ) {
     $error = "Error applying custnum ". $self->custnum. ": $error";
@@ -165,10 +171,11 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $job->update_statustext('70,running collection events') if $job;
   unless ( $conf->exists('cancelled_cust-noevents')
            && ! $self->num_ncancelled_pkgs
   ) {
+    $job->update_statustext('70,running collection events') if $job;
+    $log->debug('running collection events', %logopt);
     $error = $self->collect( %options );
     if ( $error ) {
       $error = "Error collecting custnum ". $self->custnum. ": $error";
@@ -177,8 +184,9 @@ sub bill_and_collect {
       else                                                   { warn   $error; }
     }
   }
+
   $job->update_statustext('100,finished') if $job;
-  $log->debug('finish', object => $self, agentnum => $self->agentnum);
+  $log->debug('finish', %logopt);
 
   '';
 
