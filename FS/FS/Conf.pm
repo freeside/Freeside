@@ -1527,6 +1527,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'invoice_print_pdf-duplex',
+    'section'     => 'invoicing',
+    'description' => 'Insert blank pages so that spooled invoices are each an even number of pages.  Use this for double-sided printing.',
+    'type'        => 'checkbox',
+  },
+
   { 
     'key'         => 'invoice_default_terms',
     'section'     => 'invoicing',
