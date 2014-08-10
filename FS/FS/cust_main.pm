@@ -3777,9 +3777,17 @@ Returns all the payments (see L<FS::cust_pay>) for this customer.
 
 sub cust_pay {
   my $self = shift;
-  return $self->num_cust_pay unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_pay', { 'custnum' => $self->custnum } )
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  return $self->num_cust_pay unless wantarray || keys %$opt;
+
+  $opt->{'table'} = 'cust_pay';
+  $opt->{'hashref'}{'custnum'} = $self->custnum;
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->_date <=> $b->_date }
+      qsearch($opt);
+
 }
 
 =item num_cust_pay
@@ -3795,6 +3803,22 @@ sub num_cust_pay {
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute($self->custnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
+}
+
+=item unapplied_cust_pay
+
+Returns all the unapplied payments (see L<FS::cust_pay>) for this customer.
+
+=cut
+
+sub unapplied_cust_pay {
+  my $self = shift;
+
+  $self->cust_pay(
+    'extra_sql' => ' AND '. FS::cust_pay->unapplied_sql. ' > 0',
+    #@_
+  );
+
 }
 
 =item cust_pay_pkgnum
