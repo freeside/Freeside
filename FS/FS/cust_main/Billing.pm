@@ -106,7 +106,7 @@ options of those methods are also available.
 sub bill_and_collect {
   my( $self, %options ) = @_;
 
-  my $log = FS::Log->new('bill_and_collect');
+  my $log = FS::Log->new('FS::cust_main::Billing::bill_and_collect');
   my %logopt = (object => $self);
   $log->debug('start', %logopt);
 
@@ -379,7 +379,10 @@ sub bill {
   return '' if $self->payby eq 'COMP';
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+  my $log = FS::Log->new('FS::cust_main::Billing::bill');
+  my %logopt = (object => $self);
 
+  $log->debug('start', %logopt);
   warn "$me bill customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -408,11 +411,13 @@ sub bill {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  $log->debug('acquiring lock', %logopt);
   warn "$me acquiring lock on customer ". $self->custnum. "\n"
     if $DEBUG;
 
   $self->select_for_update; #mutex
 
+  $log->debug('running pre-bill events', %logopt);
   warn "$me running pre-bill events for customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -428,6 +433,7 @@ sub bill {
     return $error;
   }
 
+  $log->debug('done running pre-bill events', %logopt);
   warn "$me done running pre-bill events for customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -458,6 +464,7 @@ sub bill {
 
     next if $options{'no_prepaid'} && $part_pkg->is_prepaid;
 
+    $log->debug('bill package '. $cust_pkg->pkgnum, %logopt);
     warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG;
 
     #? to avoid use of uninitialized value errors... ?
@@ -749,6 +756,7 @@ sub bill {
         ? ( $previous_bill->billing_balance + $previous_bill->charged )
         : 0;
 
+    $log->debug('creating the new invoice', %logopt);
     warn "creating the new invoice\n" if $DEBUG;
     #create the new invoice
     my $cust_bill = new FS::cust_bill ( {
