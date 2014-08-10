@@ -730,14 +730,16 @@ sub bill {
 
     my $charged = sprintf('%.2f', ${ $total_setup{$pass} } + ${ $total_recur{$pass} } );
 
-    my @cust_bill = $self->cust_bill;
     my $balance = $self->balance;
-    my $previous_bill = $cust_bill[-1] if @cust_bill;
-    my $previous_balance = 0;
-    if ( $previous_bill ) {
-      $previous_balance = $previous_bill->billing_balance 
-                        + $previous_bill->charged;
-    }
+
+    my $previous_bill = qsearchs({ 'table'     => 'cust_bill',
+                                   'hashref'   => { custnum=>$self->custnum },
+                                   'extra_sql' => 'ORDER BY _date DESC LIMIT 1',
+                                });
+    my $previous_balance =
+      $previous_bill
+        ? ( $previous_bill->billing_balance + $previous_bill->charged )
+        : 0;
 
     warn "creating the new invoice\n" if $DEBUG;
     #create the new invoice
@@ -2407,13 +2409,9 @@ sub apply_payments {
 
   #return 0 unless
 
-  my @payments = sort { $b->_date <=> $a->_date }
-                 grep { $_->unapplied > 0 }
-                 $self->cust_pay;
+  my @payments = $self->unapplied_cust_pay;
 
-  my @invoices = sort { $a->_date <=> $b->_date}
-                 grep { $_->owed > 0 }
-                 $self->cust_bill;
+  my @invoices = $self->open_cust_bill;
 
   if ( $conf->exists('pkg-balances') ) {
     # limit @payments to those w/ a pkgnum grepped from $self
