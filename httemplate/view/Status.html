@@ -142,7 +142,7 @@ if ( _is_running('cdrd') ) {
         AND calldate > '$24ago'
   });
   $status{'CDR Processing'} = [
-    { 'title' => 'Unprocessed CDRs',
+    { 'title' => 'Unprocessed CDRs (last 24 hours)',
       'value' => $cdrs,
     },
   ];
