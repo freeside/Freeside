@@ -173,7 +173,7 @@ sub _upgrade_data {  # class method
   foreach ( keys %class_name ) {
     unless (scalar(qsearch('reason_type', { 'class' => $_ }))) {
       my $object  = $self->new( {'class' => $_,
-                                 'type' => ucfirst($class_name{$_}),
+                                 'type' => ucfirst($class_name{$_}). ' Reason',
                               } );
       my $error   = $object->insert();
       die "error inserting $self into database: $error\n"
