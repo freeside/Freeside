@@ -1,0 +1,90 @@
+<& elements/edit.html,
+    'name_singular' => 'deployment zone',
+    'table'         => 'deploy_zone',
+    'post_url'      => popurl(1).'process/deploy_zone-mobile.html',
+    'labels'        => {
+        'description'     => 'Description',
+        'agentnum'        => 'Agent',
+        'dbaname'         => 'Business name (if different from agent)',
+        'technology'      => 'Technology',
+        'spectrum'        => 'Spectrum',
+        'is_broadband',   => 'Broadband Internet',
+        'adv_speed_up'    => 'Upstream',
+        'adv_speed_down'  => 'Downstream',
+        'is_voice',       => 'Voice',
+        'vertexnum'       => '',
+        'active_date'     => 'Active since',
+    },
+    'fields'        => [
+        { field         => 'zonetype',
+          type          => 'hidden',
+          value         => 'P'
+        },
+        'description',
+        { field         => 'active_date',
+          type          => 'fixed-date',
+          value         => time,
+        },
+        { field         => 'agentnum',
+          type          => 'select-agent',
+          disable_empty => 1,
+          viewall_right => 'Edit FCC report configuration for all agents',
+        },
+        'dbaname',
+        { field         => 'technology',
+          type          => 'select',
+          options       => $media_types->{'Mobile Wireless'},
+          labels        => $technology_labels,
+        },
+        { field         => 'spectrum',
+          type          => 'select',
+          options       => [ keys %$spectrum_labels ],
+          labels        => $spectrum_labels,
+        },
+        { field         => 'is_broadband', type => 'checkbox', value=>'Y' },
+        { field         => 'is_voice', type => 'checkbox', value=>'Y' },
+        { type => 'tablebreak-tr-title',
+          value => 'Advertised minimum speed (Mbps)' },
+        'adv_speed_down',
+        'adv_speed_up',
+        { type => 'tablebreak-tr-title', value => 'Footprint'},
+        { field => 'vertexnum',
+          type              => 'deploy_zone_vertex',
+          o2m_table         => 'deploy_zone_vertex',
+          m2_label          => ' ',
+          m2_error_callback => $m2_error_callback,
+        },
+    ],
+
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right([
+    'Edit FCC report configuration',
+    'Edit FCC report configuration for all agents',
+  ]);
+
+my $technology_labels = FS::part_pkg_fcc_option->technology_labels;
+my $spectrum_labels = FS::part_pkg_fcc_option->spectrum_labels;
+my $media_types = FS::part_pkg_fcc_option->media_types;
+
+my $m2_error_callback = sub {
+  my ($cgi, $deploy_zone) = @_;
+  my @vertexnums = sort { $a <=> $b } grep {
+    /^vertexnum\d+/ and length($cgi->param($_.'_latitude'))
+  } $cgi->param;
+
+  map {
+    my $k = $_;
+    my $s = 0;
+    FS::deploy_zone_vertex->new({
+      vertexnum   => scalar($cgi->param($k)),
+      zonenum     => $deploy_zone->zonenum,
+      latitude    => scalar($cgi->param($k.'_latitude')),
+      longitude   => scalar($cgi->param($k.'_longitude')),
+    })
+  } @vertexnums;
+};
+
+</%init>

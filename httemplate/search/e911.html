@@ -14,7 +14,11 @@ table.grid TD { font-weight: bold;
     <TD><% $row->{quantity} || 0 %></TD>
   </TR>
   <TR>
-    <TD>Total fees collected: </TD>
+    <TD>Total fees charged: </TD>
+    <TD><% $money_char.sprintf('%.2f', $row->{charged_amount}) %></TD>
+  </TD>
+  <TR>
+    <TD>Fee payments collected: </TD>
     <TD><% $money_char.sprintf('%.2f', $row->{paid_amount}) %></TD>
   </TR>
   <TR>
@@ -53,18 +57,19 @@ my $agentnum = $1;
 # bazillion scalar_sql queries.  Use a properly grouped aggregate query.
 
 my $select = 'SELECT cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity, '.
-'SUM(cust_bill_pay_pkg.amount) AS paid_amount';
+'cust_bill_pkg.setup, SUM(cust_bill_pay_pkg.amount) AS paid_amount';
 
 my $from = 'FROM cust_pkg
   JOIN cust_bill_pkg      USING (pkgnum)
   JOIN cust_bill          USING (invnum)
-  JOIN cust_bill_pay_pkg  USING (billpkgnum)
-  JOIN cust_bill_pay      USING (billpaynum)
+  LEFT JOIN cust_bill_pay_pkg  USING (billpkgnum)
+  LEFT JOIN cust_bill_pay      USING (billpaynum)
 ';
 # going by payment application date here, which should be
 # max(invoice date, payment date)
 my $where = "WHERE cust_pkg.pkgpart = $pkgpart
-AND cust_bill_pay._date >= $begin AND cust_bill_pay._date < $end";
+AND ( (cust_bill_pay._date >= $begin AND cust_bill_pay._date < $end)
+      OR cust_bill_pay.paynum IS NULL )";
 
 if ( $agentnum ) {
   $from .= '  JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)';
@@ -78,8 +83,8 @@ GROUP BY cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity";
 # E911 charges, and the total amount paid (always > 0).
 
 # now sum those rows.
-my $sql = "SELECT SUM(quantity) AS quantity, SUM(paid_amount) AS paid_amount
-FROM ($subquery) AS paid_fees"; # no grouping
+my $sql = "SELECT SUM(quantity) AS quantity, SUM(setup) AS charged_amount,
+SUM(paid_amount) AS paid_amount FROM ($subquery) AS paid_fees"; # no grouping
 
 my $sth = dbh->prepare($sql);
 $sth->execute;

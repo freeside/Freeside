@@ -1,0 +1,221 @@
+<& /elements/header-popup.html &>
+
+<STYLE>
+  fieldset {
+    border: 1px solid #7e0079;
+    border-radius: 8px;
+    background-color: #fff;
+  }
+  fieldset.inv {
+    border: none;
+  }
+  fieldset:disabled {
+    display: none;
+  } 
+</STYLE>
+
+<%def .checkbox>
+% my $field = shift;
+% my $extra = shift || '';
+<INPUT TYPE="checkbox" NAME="<% $field %>" ID="<% $field %>" VALUE="1" <%$extra%>>
+</%def>
+
+<FORM NAME="fcc_option_form">
+% # The option structure is hardcoded.  The FCC rules changed enough from 
+% # the original 477 report to the 2013 revision that any data-driven 
+% # mechanism for expressing the original rules would likely fail to 
+% # accommodate the new ones.  Therefore, we assume that whatever the FCC
+% # does NEXT will also require a rewrite of this form, and we'll deal with
+% # that when it arrives.
+  <P>
+    <LABEL FOR="media">Media type</LABEL>
+    <SELECT NAME="media" ID="media">
+      <OPTION VALUE=""></OPTION>
+% foreach (keys(%$media_types)) {
+      <OPTION VALUE="<% $_ %>"><% $_ %></OPTION>
+% }
+    </SELECT>
+  </P>
+  <P>
+    <& .checkbox, 'is_consumer' &>
+    <LABEL FOR="is_consumer">This is a consumer-grade package</LABEL>
+  </P>
+  <P>
+    <& .checkbox, 'is_broadband' &>
+    <LABEL FOR="is_broadband">This package provides broadband service</LABEL>
+    <FIELDSET ID="broadband">
+      <LABEL FOR="technology">Technology of transmission</LABEL>
+      <SELECT NAME="technology" ID="technology"> </SELECT>
+      <BR>
+      <LABEL FOR="broadband_downstream">Downstream speed (Mbps)</LABEL>
+      <INPUT NAME="broadband_downstream" ID="broadband_downstream">
+      <BR>
+      <LABEL FOR="broadband_upstream">Upstream speed (Mbps)</LABEL>
+      <INPUT NAME="broadband_upstream" ID="broadband_upstream">
+    </FIELDSET>
+  </P>
+  <P>
+    <& .checkbox, 'is_phone' &>
+    <LABEL FOR="is_phone">This package provides local telephone service</LABEL>
+    <FIELDSET ID="phone">
+      <LABEL FOR="phone_wholesale">Marketed as</LABEL>
+      <SELECT NAME="phone_wholesale" ID="phone_wholesale">
+        <OPTION VALUE="">end user</OPTION>
+        <OPTION VALUE="1">wholesale</OPTION>
+      </SELECT>
+      <FIELDSET CLASS="inv" ID="phone0" DISABLED="1">
+        <LABEL FOR="phone_lines">Number of voice-grade equivalents</LABEL>
+        <INPUT NAME="phone_lines" ID="phone_lines">
+        <BR>
+        <LABEL FOR="phone_longdistance">Are you the presubscribed long-distance carrier?</LABEL>
+        <& .checkbox, 'phone_longdistance' &>
+        <BR>
+        <LABEL FOR="phone_localloop">Local loop arrangement</LABEL>
+        <SELECT NAME="phone_localloop" ID="phone_localloop">
+          <OPTION VALUE="owned">You own the local loop</OPTION>
+          <OPTION VALUE="leased">You lease UNE-L from another carrier</OPTION>
+          <OPTION VALUE="resale">You resell another carrier's service</OPTION>
+        </SELECT>
+      </FIELDSET>
+      <FIELDSET CLASS="inv" ID="phone1" DISABLED="1">
+        <LABEL FOR="phone_vges">Number of voice-grade equivalents (if any)</LABEL>
+        <INPUT NAME="phone_vges" ID="phone_vges">
+        <BR>
+        <LABEL FOR="phone_circuits">Number of unswitched circuits (if any)</LABEL>
+        <INPUT NAME="phone_circuits" ID="phone_circuits">
+      </FIELDSET>
+    </FIELDSET>
+  </P>
+  <P>
+    <& .checkbox, 'is_voip' &>
+    <LABEL FOR="is_voip">This package provides VoIP telephone service</LABEL>
+    <FIELDSET ID="voip">
+      <LABEL FOR="voip_sessions">Number of simultaneous calls possible</LABEL>
+      <INPUT NAME="voip_sessions" ID="voip_sessions">
+      <BR>
+      <& .checkbox, 'voip_lastmile' &>
+      <LABEL FOR="voip_lastmile">Do you also provide last-mile connectivity?</LABEL>
+    </FIELDSET>
+  </P>
+  <P>
+    <& .checkbox, 'is_mobile' &>
+    <LABEL FOR="is_mobile">This package provides mobile telephone service</LABEL>
+    <FIELDSET ID="mobile">
+      <LABEL FOR="mobile_direct">Do you bill the customer directly?</LABEL>
+      <& .checkbox, 'mobile_direct' &>
+    </FIELDSET>
+  </P>
+  <DIV WIDTH="100%" STYLE="text-align:center">
+    <INPUT TYPE="submit" VALUE="Save changes">
+  </DIV>
+</FORM>
+
+<SCRIPT TYPE="text/javascript">
+// this form is invoked as a popup; the current values of the parent 
+// object are in the form field ID passed as the 'id' param
+
+var parent_input = window.parent.document.getElementById('<% $parent_id %>');
+var curr_values = JSON.parse(window.parent_input.value);
+var form = document.forms['fcc_option_form'];
+var media_types = <% encode_json($media_types) %>
+var technology_labels = <% encode_json($technology_labels) %>
+
+function set_tech_options() {
+  var form = document.forms['fcc_option_form'];
+  var curr_type = form.elements['media'].value;
+  var technology_obj = form.elements['technology'];
+  technology_obj.options.length = 0;
+  if (media_types[curr_type]) {
+    for( var i = 0; i < media_types[curr_type].length; i++ ) {
+      var value = media_types[curr_type][i];
+      var o = document.createElement('OPTION');
+      o.text = technology_labels[value]
+      o.value = value;
+      technology_obj.add(o);
+    }
+  }
+}
+  
+function save_changes() {
+  var form = document.forms['fcc_option_form'];
+  var data = {};
+  for (var i = 0; i < form.elements.length; i++) {
+    if (form.elements[i].type == 'submit')
+      continue;
+
+    // quick and dirty test for whether the element is displayed
+    if (form.elements[i].clientHeight > 0) {
+      if (form.elements[i].type == 'checkbox') {
+        if (form.elements[i].checked) {
+          data[ form.elements[i].name ] = 1;
+        }
+      } else {
+        data[ form.elements[i].name ] = form.elements[i].value;
+      }
+    }
+  }
+  parent_input.value = JSON.stringify(data);
+  // update the display
+  parent.show_fcc_options(parent_input.id);
+  parent.cClick(); //overlib
+}
+
+function enable_fieldset(fieldset_id) {
+  var fieldset = document.getElementById(fieldset_id);
+  return function () { fieldset.disabled = !this.checked; };
+}
+
+<&| /elements/onload.js &>
+  function addEventListener(target, action, listener) {
+    if (target.addEventListener) {
+      target.addEventListener(action, listener);
+    } else if (target.attachEvent) { // IE 8 fails at everything
+      target.attachEvent('on'+action, listener);
+    }
+  }
+
+  // set up all event handlers
+  addEventListener(form, 'submit', save_changes);
+
+  var sections = [ 'broadband', 'phone', 'voip', 'mobile' ];
+  for(var i = 0; i < sections.length; i++) {
+    var toggle = form.elements['is_'+sections[i]];
+    addEventListener(toggle, 'change', enable_fieldset(sections[i]));
+  }
+
+  addEventListener(form.elements['media'], 'change', set_tech_options);
+  addEventListener(form.elements['phone_wholesale'], 'change',
+    function () {
+      form.elements['phone0'].disabled = (this.value == 1);
+      form.elements['phone1'].disabled = (this.value == '');
+    }
+  );
+  addEventListener(form.elements['is_phone'], 'change', 
+    function() {
+      form.elements['phone_wholesale'].dispatchEvent( new Event('change') );
+    }
+  );
+
+  // load data from the parent form and trigger handlers
+  for(var i = 0; i < form.elements.length; i++) {
+    var input_obj = form.elements[i];
+    if (input_obj.type == 'submit') {
+      //nothing
+    } else if (input_obj.type == 'checkbox') {
+      input_obj.checked = (curr_values[input_obj.name] > 0);
+    } else {
+      input_obj.value = curr_values[input_obj.name] || '';
+    }
+    input_obj.dispatchEvent( new Event('change') );
+  }
+
+</&>
+
+</SCRIPT>
+<& /elements/footer.html &>
+<%init>
+my $media_types = FS::part_pkg_fcc_option->media_types;
+my $technology_labels = FS::part_pkg_fcc_option->technology_labels;
+
+my $parent_id = $cgi->param('id');
+</%init>

@@ -618,6 +618,28 @@ sub num_cancel_cust_pkg {
   shift->num_pkg_sql(FS::cust_pkg->cancel_sql);
 }
 
+=item num_on_hold_cust_pkg
+
+Returns the number of inactive customer packages (one-time packages otherwise
+unsuspended/uncancelled) for this agent.
+
+=cut
+
+sub num_on_hold_cust_pkg {
+  shift->num_pkg_sql(FS::cust_pkg->on_hold_sql);
+}
+
+=item num_not_yet_billed_cust_pkg
+
+Returns the number of inactive customer packages (one-time packages otherwise
+unsuspended/uncancelled) for this agent.
+
+=cut
+
+sub num_not_yet_billed_cust_pkg {
+  shift->num_pkg_sql(FS::cust_pkg->not_yet_billed_sql);
+}
+
 =item generate_reg_codes NUM PKGPART_ARRAYREF
 
 Generates the specified number of registration codes, allowing purchase of the

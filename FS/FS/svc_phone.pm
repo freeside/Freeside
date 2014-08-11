@@ -11,6 +11,7 @@ use vars qw( $DEBUG $me @pw_set $conf $phone_name_max
 use Data::Dumper;
 use Scalar::Util qw( blessed );
 use List::Util qw( min );
+use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::PagedSearch qw( psearch );
@@ -127,6 +128,14 @@ Account number of other provider. See lnp_other_provider.
 See lnp_status. If lnp_status is portin-reject or portout-reject, this is an
 optional reject reason.
 
+=item e911_class
+
+Class of Service for E911 service (per the NENA 2.1 standard).
+
+=item e911_type
+
+Type of Service for E911 service.
+
 =back
 
 =head1 METHODS
@@ -224,6 +233,18 @@ sub table_info {
 			{	label => 'LNP Other Provider Account #', 
 				%dis2 
 			},
+        'e911_class' => {
+                                label => 'E911 Service Class',
+                                type  => 'select-e911_class',
+                                disable_inventory => 1,
+                                multiple => 1,
+                        },
+        'e911_type' => {
+                                label => 'E911 Service Type',
+                                type  => 'select-e911_type',
+                                disable_inventory => 1,
+                                multiple => 1,
+                        },
     },
   };
 }
@@ -431,10 +452,19 @@ sub replace {
 	);
 
   my $error = $new->SUPER::replace($old, %options);
+
+  # if this changed the e911 location, notify exports
+  if ($new->locationnum ne $old->locationnum) {
+    my $new_location = $new->cust_location_or_main;
+    my $old_location = $new->cust_location_or_main;
+    $error ||= $new->export('relocate', $new_location, $old_location);
+  }
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error if $error;
   }
+
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -559,6 +589,13 @@ sub check {
       join('', map $pw_set[ int(rand $#pw_set) ], (1..min($passwordmax,16)) )
     );
 
+  }
+
+  if ($self->e911_class and !exists(e911_classes()->{$self->e911_class})) {
+    return "undefined e911 class '".$self->e911_class."'";
+  }
+  if ($self->e911_type and !exists(e911_types()->{$self->e911_type})) {
+    return "undefined e911 type '".$self->e911_type."'";
   }
 
   $self->SUPER::check;
@@ -707,6 +744,26 @@ sub cust_location_or_main {
   return $self->cust_location if $self->locationnum;
   my $cust_pkg = $self->cust_svc->cust_pkg;
   $cust_pkg ? $cust_pkg->cust_location_or_main : '';
+}
+
+=item phone_name_or_cust
+
+Returns the C<phone_name> field if it has a value, or the package contact
+name if there is one, or the customer contact name.
+
+=cut
+
+sub phone_name_or_cust {
+  my $self = shift;
+  if ( $self->phone_name ) {
+    return $self->phone_name;
+  }
+  my $cust_pkg = $self->cust_svc->cust_pkg or return '';
+  if ( $cust_pkg->contactnum ) {
+    return $cust_pkg->contact->firstlast;
+  } else {
+    return $cust_pkg->cust_main->name_short;
+  }
 }
 
 =item psearch_cdrs OPTIONS
@@ -865,6 +922,67 @@ sub sum_cdrs {
   # hack
   $psearch->{query}->{'extra_sql'} =~ s/ ORDER BY.*$//;
   qsearchs ( $psearch->{query} );
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item e911_classes
+
+Returns a hashref of allowed values and descriptions for the C<e911_class>
+field.
+
+=item e911_types
+
+Returns a hashref of allowed values and descriptions for the C<e911_type>
+field.
+
+=cut
+
+sub e911_classes {
+  tie my %x, 'Tie::IxHash', (
+    1 => 'Residence',
+    2 => 'Business',
+    3 => 'Residence PBX',
+    4 => 'Business PBX',
+    5 => 'Centrex',
+    6 => 'Coin 1 Way out',
+    7 => 'Coin 2 Way',
+    8 => 'Mobile',
+    9 => 'Residence OPX',
+    0 => 'Business OPX',
+    A => 'Customer Operated Coin Telephone',
+    #B => not available
+    G => 'Wireless Phase I',
+    H => 'Wireless Phase II',
+    I => 'Wireless Phase II with Phase I information',
+    V => 'VoIP Services Default',
+    C => 'VoIP Residence',
+    D => 'VoIP Business',
+    E => 'VoIP Coin/Pay Phone',
+    F => 'VoIP Wireless',
+    J => 'VoIP Nomadic',
+    K => 'VoIP Enterprise Services',
+    T => 'Telematics',
+  );
+  \%x;
+}
+
+sub e911_types {
+  tie my %x, 'Tie::IxHash', (
+    0 => 'Not FX nor Non-Published',
+    1 => 'FX in 911 serving area',
+    2 => 'FX outside 911 serving area',
+    3 => 'Non-Published',
+    4 => 'Non-Published FX in serving area',
+    5 => 'Non-Published FX outside serving area',
+    6 => 'Local Ported Number',
+    7 => 'Interim Ported Number',
+  );
+  \%x;
 }
 
 =back

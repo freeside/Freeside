@@ -43,10 +43,42 @@
       <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
       <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
     </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('County') |h %></TD>
+      <TD>
+        <& /elements/select-county.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+    
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('State') |h %></TD>
+      <TD>
+        <& /elements/select-state.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
     
     <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TD>
       <TD><INPUT TYPE="text" NAME="zip" SIZE=12></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Country') |h %></TD>
+      <TD>
+        <& /elements/select-country.html,
+             disable_empty       => 0,
+             state_disable_empty => 0,
+             state_empty_label   => '(all)',
+        &>
+      </TD>
     </TR>
 
     <TR>

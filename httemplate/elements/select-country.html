@@ -2,7 +2,7 @@
 
 Example:
 
-  include( '/elements/select-country.html',
+  <& /elements/select-country.html,
     #recommended
     country    => $current_country,
 
@@ -14,9 +14,15 @@ Example:
     empty_label   => 'all', #label for empty option
     disable_stateupdate => 0, #bool - disabled update of the select-state.html
     style         => [ 'attribute:value', 'another:value' ],
-  );
+
+    state_disable_empty => 1, #defaults to 1, disable the state empty option
+    state_empty_label   => 'all', #label for state empty option
+  &>
 
 </%doc>
+% #maybe this makes more sense in select-state.html?
+% # (county update is in select-county... and we wouldn't have to pass "state_"
+% #  options)
 % unless ( $opt{'disable_stateupdate'} ) {
 
   <% include('/elements/xmlhttp.html',
@@ -45,10 +51,14 @@ Example:
   
         // add the new states
         var statesArray = eval('(' + states + ')' );
+%       unless ( $opt{'disable_empty'} ) {
+          statesArray.unshift('', '');
+%       }
+
         for ( var s = 0; s < statesArray.length; s=s+2 ) {
             var stateLabel = statesArray[s+1];
             if ( stateLabel == "" )
-                stateLabel = '(n/a)';
+                stateLabel = <% $opt{state_empty_label} || '(n/a)' |js_string %>;
             opt(what.form.<% $pre %>state, statesArray[s], stateLabel);
         }
   

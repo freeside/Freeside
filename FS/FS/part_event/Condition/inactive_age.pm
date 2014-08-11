@@ -57,20 +57,24 @@ sub condition_sql {
   # will evaluate to zero if there isn't one
   my @sql;
   for my $t (qw(cust_pay cust_credit cust_refund)) {
-    push @sql,
-      "NOT EXISTS( SELECT 1 FROM $t ".
-      "WHERE $t.custnum = cust_main.custnum AND $t._date >= $age".
-      ")";
+    push @sql, "
+      NOT EXISTS( SELECT 1 FROM $t
+                    WHERE $t.custnum = cust_main.custnum AND $t._date >= $age
+                    LIMIT 1
+                )
+    ";
   }
   #cust_bill
-  push @sql,
-    "NOT EXISTS( ".
-    "SELECT 1 FROM cust_bill JOIN cust_bill_pkg USING (invnum) ".
-    "JOIN cust_pkg USING (pkgnum) JOIN part_pkg USING (pkgpart) ".
-    "WHERE cust_bill.custnum = cust_main.custnum ".
-    "AND cust_bill._date >= $age ".
-    "AND COALESCE(part_pkg.classnum, -1) != $ignore_pkgclass ".
-    ")";
+  push @sql, "
+    NOT EXISTS(
+                SELECT 1 FROM cust_bill JOIN cust_bill_pkg USING (invnum)
+                      JOIN cust_pkg USING (pkgnum) JOIN part_pkg USING (pkgpart)
+                  WHERE cust_bill.custnum = cust_main.custnum
+                    AND cust_bill._date >= $age
+                    AND COALESCE(part_pkg.classnum, -1) != $ignore_pkgclass
+                  LIMIT 1
+              )
+  ";
   join(' AND ', @sql);
 }
 

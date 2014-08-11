@@ -29,7 +29,11 @@ sub condition_sql {
   my( $class, $table, %opt ) = @_;
   my $today = (localtime($opt{'time'}))[3];
   my $day = $class->condition_sql_option('day');
-  "$today = ANY( string_to_array($day, ',')::integer[] )"
+  if ($opt{'driver_name'} eq 'Pg') {
+    "$today = ANY( string_to_array($day, ',')::integer[] )";
+  } elsif ( $opt{'driver_name'} eq 'mysql' ) {
+    "find_in_set($today, $day) > 0";
+  }
 }
 
 1;

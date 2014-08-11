@@ -128,20 +128,21 @@ sub time_period_pretty {
 
 Returns an array of detail information for the invoice line item.
 
-Currently available options are: I<format>, I<escape_function> and
-I<format_function>.
+Options may include:
 
-If I<format> is set to html or latex then the array members are improved
-for tabular appearance in those environments if possible.
+I<format>: set to 'html' or 'latex' to have the detail lines formatted for 
+inclusion in an HTML table (wrapped in <tr> and <td> elements) or LaTeX table
+(delimited with & and \\ operators).
 
-If I<escape_function> is set then the array members are processed by this
+I<escape_function>: if present, then the array elements are processed by this
 function before being returned.
 
-I<format_function> overrides the normal HTML or LaTeX function for returning
-formatted CDRs.  It can be set to a subroutine which returns an empty list
-to skip usage detail:
+I<format_function>: overrides the normal HTML or LaTeX function for returning
+formatted CDRs.
 
-  'format_function' => sub { () },
+I<no_usage>: excludes call detail records.  The method will still return
+some special-case records like prorate details, and manually created package 
+details.
 
 =cut
 

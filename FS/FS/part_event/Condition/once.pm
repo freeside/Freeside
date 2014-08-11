@@ -43,11 +43,12 @@ sub condition_sql {
 
   my %tablenum = %{ FS::part_event->eventtable_pkey_sql };
 
-  "0 = ( SELECT COUNT(*) FROM cust_event
-           WHERE cust_event.eventpart = part_event.eventpart
-             AND cust_event.tablenum = $tablenum{$table}
-             AND status != 'failed'
-       )
+  "NOT EXISTS ( SELECT 1 FROM cust_event
+                  WHERE cust_event.eventpart = part_event.eventpart
+                    AND cust_event.tablenum = $tablenum{$table}
+                    AND status != 'failed'
+                  LIMIT 1
+              )
   ";
 
 }

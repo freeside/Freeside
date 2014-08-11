@@ -94,10 +94,19 @@ if ( dbdef->table('areacode') and
 }
 
 if ( dbdef->table('upgrade_journal') ) {
-  push @bugfix, "SELECT SETVAL( 'upgrade_journal_upgradenum_seq',
-                                ( SELECT MAX(upgradenum) FROM upgrade_journal )
-                              )
-                ";
+  if ( driver_name =~ /^Pg/i ) {
+    push @bugfix, "
+      SELECT SETVAL( 'upgrade_journal_upgradenum_seq',
+                     ( SELECT MAX(upgradenum) FROM upgrade_journal )
+                   )
+    ";
+  #MySQL can't do this in a statement so have to do it manually
+  #} elsif ( driver_name =~ /^mysql/i ) {
+  #  push @bugfix, "
+  #     ALTER TABLE upgrade_journal AUTO_INCREMENT =
+  #                 ( ( SELECT MAX(upgradenum) FROM upgrade_journal ) + 1 )
+  #  ";
+  }
 }
 
 if ( $DRY_RUN ) {

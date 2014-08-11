@@ -2,11 +2,14 @@ package FS::contact;
 use base qw( FS::Record );
 
 use strict;
+use vars qw( $skip_fuzzyfiles );
 use Scalar::Util qw( blessed );
 use FS::Record qw( qsearchs dbh ); # qw( qsearch qsearchs dbh );
 use FS::contact_phone;
 use FS::contact_email;
 use FS::queue;
+
+$skip_fuzzyfiles = 0;
 
 =head1 NAME
 
@@ -161,7 +164,7 @@ sub insert {
 
   }
 
-  #unless ( $import || $skip_fuzzyfiles ) {
+  unless ( $skip_fuzzyfiles ) { #unless ( $import || $skip_fuzzyfiles ) {
     #warn "  queueing fuzzyfiles update\n"
     #  if $DEBUG > 1;
     $error = $self->queue_fuzzyfiles_update;
@@ -169,7 +172,7 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return "updating fuzzy search cache: $error";
     }
-  #}
+  }
 
   if ( $self->selfservice_access ) {
     my $error = $self->send_reset_email( queue=>1 );
@@ -318,7 +321,7 @@ sub replace {
 
   }
 
-  #unless ( $import || $skip_fuzzyfiles ) {
+  unless ( $skip_fuzzyfiles ) { #unless ( $import || $skip_fuzzyfiles ) {
     #warn "  queueing fuzzyfiles update\n"
     #  if $DEBUG > 1;
     $error = $self->queue_fuzzyfiles_update;
@@ -326,7 +329,7 @@ sub replace {
       $dbh->rollback if $oldAutoCommit;
       return "updating fuzzy search cache: $error";
     }
-  #}
+  }
 
   if (    ( $old->selfservice_access eq '' && $self->selfservice_access
               && ! $self->_password
@@ -461,6 +464,11 @@ sub line {
   $data .= ' ('. $self->comment. ')'
     if $self->comment;
   $data;
+}
+
+sub firstlast {
+  my $self = shift;
+  $self->first . ' ' . $self->last;
 }
 
 sub contact_classname {

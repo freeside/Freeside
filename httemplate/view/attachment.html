@@ -1,15 +1,26 @@
 <%init>
+$FS::CurrentUser::CurrentUser->access_right('Download attachment')
+  or die 'access denied';
+
 my ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 my $attachnum = $1 or die 'Invalid attachment number';
-$FS::CurrentUser::CurrentUser->access_right('Download attachment') or die 'access denied';
-
-my $attach = qsearchs('cust_attachment', { attachnum => $attachnum }) or die "Attachment not found: $attachnum";
+my $attach = qsearchs('cust_attachment', { attachnum => $attachnum })
+  or die "Attachment not found: $attachnum";
 die 'access denied' if $attach->disabled;
 
 $r->subprocess_env('no-gzip' => 1); # disable mod_deflate
+
 $m->clear_buffer;
+
 $r->content_type($attach->mime_type || 'text/plain');
-$r->headers_out->add('Content-Disposition' => 'attachment;filename=' . $attach->filename);
+
+my $filename = $attach->filename;
+$filename =~ s/"/'/g; #no idea how to encode " ... \" ?  "" ?  can't?
+$r->headers_out->add(
+  'Content-Disposition' => qq(attachment;filename="$filename")
+);
+
 $m->print($attach->body);
+
 </%init>

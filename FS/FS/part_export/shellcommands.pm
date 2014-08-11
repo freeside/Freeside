@@ -208,6 +208,7 @@ old_ for replace operations):
   <LI><code>$reasontypenum (when suspending)</code>
   <LI><code>$reasontypetext (when suspending)</code>
   <LI><code>$pkgnum</code>
+  <LI><code>$locationnum</code>
   <LI><code>$custnum</code>
   <LI>All other fields in <b>svc_acct</b> are also available.
   <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker, agent_custid, locale.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
@@ -382,6 +383,7 @@ sub _export_command {
   }
 
   $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+  $locationnum = $cust_pkg ? $cust_pkg->locationnum : '';
   $custnum = $cust_pkg ? $cust_pkg->custnum : '';
 
   my $stdin_string = eval(qq("$stdin"));
@@ -491,8 +493,10 @@ sub _export_replace {
   $new_agent_custid = $new_cust_main ? $new_cust_main->agent_custid : '';
   $new_locale = $new_cust_main ? $new_cust_main->locale : '';
   $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
+  $old_locationnum = $old_cust_pkg ? $old_cust_pkg->locationnum : '';
   $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
   $new_pkgnum = $new_cust_pkg ? $new_cust_pkg->pkgnum : '';
+  $new_locationnum = $new_cust_pkg ? $new_cust_pkg->locationnum : '';
   $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
 
   my $stdin_string = eval(qq("$stdin"));

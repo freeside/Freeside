@@ -1,5 +1,5 @@
 package FS::cust_pkg;
-use base qw( FS::cust_pkg::Search
+use base qw( FS::cust_pkg::Search FS::cust_pkg::API
              FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common
@@ -2718,7 +2718,7 @@ sub set_cust_pkg_detail {
 
 =item cust_event
 
-Returns the new-style customer billing events (see L<FS::cust_event>) for this invoice.
+Returns the customer billing events (see L<FS::cust_event>) for this invoice.
 
 =cut
 
@@ -2735,19 +2735,41 @@ sub cust_event {
 
 =item num_cust_event
 
-Returns the number of new-style customer billing events (see L<FS::cust_event>) for this invoice.
+Returns the number of customer billing events (see L<FS::cust_event>) for this package.
 
 =cut
 
 #false laziness w/cust_bill.pm
 sub num_cust_event {
   my $self = shift;
-  my $sql =
-    "SELECT COUNT(*) FROM cust_event JOIN part_event USING ( eventpart ) ".
-    "  WHERE tablenum = ? AND eventtable = 'cust_pkg'";
+  my $sql = "SELECT COUNT(*) ". $self->_from_cust_event_where;
+  $self->_prep_ex($sql, $self->pkgnum)->fetchrow_arrayref->[0];
+}
+
+=item exists_cust_event
+
+Returns true if there are customer billing events (see L<FS::cust_event>) for this package.  More efficient than using num_cust_event.
+
+=cut
+
+sub exists_cust_event {
+  my $self = shift;
+  my $sql = "SELECT 1 ". $self->_from_cust_event_where. " LIMIT 1";
+  my $row = $self->_prep_ex($sql, $self->pkgnum)->fetchrow_arrayref;
+  $row ? $row->[0] : '';
+}
+
+sub _from_cust_event_where {
+  #my $self = shift;
+  " FROM cust_event JOIN part_event USING ( eventpart ) ".
+  "  WHERE tablenum = ? AND eventtable = 'cust_pkg' ";
+}
+
+sub _prep_ex {
+  my( $self, $sql, @args ) = @_;
   my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
-  $sth->execute($self->pkgnum) or die $sth->errstr. " executing $sql";
-  $sth->fetchrow_arrayref->[0];
+  $sth->execute(@args)         or die $sth->errstr. " executing $sql";
+  $sth;
 }
 
 =item part_pkg_currency_option OPTIONNAME
@@ -2799,7 +2821,7 @@ sub cust_svc_unsorted {
 sub cust_svc_unsorted_arrayref {
   my $self = shift;
 
-  return () unless $self->num_cust_svc(@_);
+  return [] unless $self->num_cust_svc(@_);
 
   my %opt = ();
   if ( @_ && $_[0] =~ /^\d+/ ) {
@@ -3163,7 +3185,7 @@ Class method that returns the list of possible status strings for packages
 tie my %statuscolor, 'Tie::IxHash', 
   'on hold'         => '7E0079', #purple!
   'not yet billed'  => '009999', #teal? cyan?
-  'one-time charge' => '000000',
+  'one-time charge' => '0000CC', #blue  #'000000',
   'active'          => '00CC00',
   'suspended'       => 'FF9900',
   'cancelled'       => 'FF0000',
@@ -3174,6 +3196,11 @@ sub statuses {
   #grep { $_ !~ /^(not yet billed)$/ } #this is a dumb status anyway
   #                                    # mayble split btw one-time vs. recur
     keys %statuscolor;
+}
+
+sub statuscolors {
+  #my $self = shift;
+  \%statuscolor;
 }
 
 =item statuscolor

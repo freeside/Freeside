@@ -1,4 +1,16 @@
 <& /elements/header-popup.html &>
+<STYLE>
+P.pre {
+  font-family: monospace;
+  height: auto;
+  width: auto;
+  display: block;
+  white-space: pre-wrap;
+  text-align: left;
+  border: 1px solid #7e0079
+}
+</STYLE>
+  
 <TABLE>
 <TR><TD>From:</TD><TD><% $cust_msg->env_from %></TD></TR>
 <TR><TD>To:</TD><TD><% $env_to %></TD></TR>
@@ -8,31 +20,35 @@
 % if ( $cust_msg->error ) {
 <TR><TD>Error:</TD><TD><% encode_entities($cust_msg->error) %></TD></TR>
 % }
-<TR><TD colspan=2>
-<FORM name="myform">
-<SCRIPT type="text/javascript">
-function toggle_display(obj) {
-  document.getElementById('content-header').style.display = 
-    (obj.value == 'header' ? 'block' : 'none');
-  document.getElementById('content-body').style.display = 
-    (obj.value == 'body' ? 'block' : 'none');
-}
-</SCRIPT>
-<INPUT type="radio" name="what_to_show" onchange="toggle_display(this)" value="header" checked> Header
-<INPUT type="radio" name="what_to_show" onchange="toggle_display(this)" value="body"> Body
-</FORM>
-</TR>
-<TR><TD colspan=2 style="text-align:left">
-<TEXTAREA id="content-header" style="font-family:monospace" 
-readonly=1 cols=80 rows=20>
-<% encode_entities($cust_msg->header) %>
-</TEXTAREA>
-<TEXTAREA id="content-body" style="font-family:monospace;display:none" 
-readonly=1 cols=80 rows=20>
-<% encode_entities($cust_msg->body) %>
-</TEXTAREA>
-</TD></TR>
+<& /elements/menubar.html,
+  { 'newstyle' => 1,
+    'url_base' => $cgi->self_url . ';part=',
+    'selected' => $selected_index,
+  },
+  map { $partnames[$_] => $_ } (0 .. scalar(@parts) - 1),
+&>
 </TABLE>
+<DIV STYLE="text-align:center">
+% if ( $selected_part->isa('MIME::Entity') ) {
+%   my $type = $selected_part->mime_type;
+%   if ( $type =~ /^text/ ) {
+%#<TEXTAREA style="font-family:monospace" readonly=1 cols=80 rows=20>
+  <P CLASS="pre"><% encode_entities( $selected_part->bodyhandle->as_string ) %></P>
+%   } else { # show a download link
+%     my $url = $fsurl . "view/cust_msg_part.html?$custmsgnum+$selected_index";
+  <A HREF="<% $url %>">
+    <DIV STYLE="display: inline-block; padding: 4px; border: 2px solid #00c">
+%     if ( $type =~ /^image\/\w+$/ ) {
+      <IMG SRC="<% $url %>">
+%     } else {
+      <FONT SIZE="+1">Download <% $partnames[$selected_index] %></FONT>
+%     }
+  </A>
+%   }
+% } elsif ($selected_part->isa('MIME::Head')) {
+  <P CLASS="pre"><% encode_entities( $cust_msg->header ) %></P>
+% }
+</DIV>
 
 <& /elements/footer.html &>
 <%init>
@@ -52,4 +68,26 @@ my %label = (
   'failed' => 'Attempted: ',
   'prepared' => 'Not sent',
 );
+
+my $partname = sub {
+  my %friendly_name = ( 'text/plain' => 'Text', 'text/html' => 'HTML' );
+  my $part = shift;
+  $part->head->recommended_filename
+  || $friendly_name{$part->mime_type}
+  || $part->mime_type;
+};
+
+my @parts = $cust_msg->parts;
+my @partnames = map { &{$partname}($_) } @parts;
+push @parts, $cust_msg->entity->head;
+push @partnames, mt('Header');
+
+my $selected_part;
+my $selected_index = 0;
+if ( $cgi->param('part') =~ /^(\d+)$/ ) {
+  $selected_index = $1 if $1 < scalar(@parts);
+}
+$selected_part = $parts[$selected_index];
+$cgi->delete('part'); # for self_url
+
 </%init>

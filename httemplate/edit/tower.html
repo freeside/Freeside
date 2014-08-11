@@ -37,7 +37,10 @@
 my $m2_error_callback = sub { # reconstruct the list
   my ($cgi, $object) = @_;
 
-  my @fields = qw( sectorname ip_addr height freq_mhz direction width range );
+  my @fields = qw(
+    sectorname ip_addr height freq_mhz direction width sector_range
+  );
+
   map {
     my $k = $_;
     new FS::tower_sector {

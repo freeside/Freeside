@@ -11,6 +11,7 @@ use Business::CreditCard;
 use Text::Template;
 use FS::Misc::DateTime qw( parse_datetime ); #for batch_import
 use FS::Record qw( dbh qsearch qsearchs );
+use FS::UID qw( driver_name );
 use FS::CurrentUser;
 use FS::payby;
 use FS::cust_main_Mixin;
@@ -892,6 +893,13 @@ sub unapplied_sql {
 
 }
 
+sub API_getinfo {
+ my $self = shift;
+ my @fields = grep { $_ ne 'payinfo' } $self->fields;
+ +{ ( map { $_=>$self->$_ } @fields ),
+  };
+}
+
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
@@ -1043,9 +1051,10 @@ sub process_upgrade_paybatch {
   ###
   # migrate batchnums from the misused 'paybatch' field to 'batchnum'
   ###
+  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
   my $search = FS::Cursor->new( {
     'table'     => 'cust_pay',
-    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
+    'addl_from' => " JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS $text) ",
   } );
   while (my $cust_pay = $search->fetch) {
     $cust_pay->set('batchnum' => $cust_pay->paybatch);

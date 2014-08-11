@@ -2,7 +2,7 @@ package FS::Setup;
 use base qw( Exporter );
 
 use strict;
-use vars qw( ISA @EXPORT_OK );
+use vars qw( @EXPORT_OK );
 #use Tie::DxHash;
 use Tie::IxHash;
 use Crypt::OpenSSL::RSA;

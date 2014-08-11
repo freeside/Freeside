@@ -41,11 +41,6 @@ use FS::L10N;
 $DEBUG = 0;
 $me = '[FS::cust_bill]';
 
-#ask FS::UID to run this stuff for us later
-FS::UID->install_callback( sub { 
-  my $conf = new FS::Conf; #global
-} );
-
 =head1 NAME
 
 FS::cust_bill - Object methods for cust_bill records
@@ -102,23 +97,19 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =back
 
-Customer info at invoice generation time
+Deprecated fields
 
 =over 4
 
-=item billing_balance - the customer's balance at the time the invoice was 
-generated (not including charges on this invoice)
+=item billing_balance - the customer's balance immediately before generating
+this invoice.  DEPRECATED.  Use the L<FS::cust_main/balance_date> method 
+to determine the customer's balance at a specific time.
 
-=item previous_balance - the billing_balance of this customer's previous 
-invoice plus the charges on that invoice
+=item previous_balance - the customer's balance immediately after generating
+the invoice before this one.  DEPRECATED.
 
-=back
-
-Deprecated
-
-=over 4
-
-=item printed - deprecated
+=item printed - formerly used to track the number of times an invoice had 
+been printed; no longer used.
 
 =back
 
@@ -416,8 +407,8 @@ cust_bill-default_agent_invid is set and it has a value, invnum otherwise.
 
 sub display_invnum {
   my $self = shift;
-  my $conf = $self->conf;
-  if ( $conf->exists('cust_bill-default_agent_invid') && $self->agent_invid ){
+  if ( $self->agent_invid
+         && FS::Conf->new->exists('cust_bill-default_agent_invid') ) {
     return $self->agent_invid;
   } else {
     return $self->invnum;
@@ -1516,6 +1507,8 @@ sub fax_invoice {
 Place this invoice into the open batch (see C<FS::bill_batch>).  If there 
 isn't an open batch, one will be created.
 
+HASHREF may contain any options to be passed to C<print_pdf>.
+
 =cut
 
 sub batch_invoice {
@@ -2405,13 +2398,20 @@ sub invoice_barcode {
 =item invnum_date_pretty
 
 Returns a string with the invoice number and date, for example:
-"Invoice #54 (3/20/2008)"
+"Invoice #54 (3/20/2008)".
+
+Intended for back-end context, with regard to translation and date formatting.
 
 =cut
 
+#note: this uses _date_pretty_unlocalized because _date_pretty is too expensive
+# for backend use (and also does the wrong thing, localizing for end customer
+# instead of backoffice configured date format)
 sub invnum_date_pretty {
   my $self = shift;
-  $self->mt('Invoice #'). $self->invnum. ' ('. $self->_date_pretty. ')';
+  #$self->mt('Invoice #').
+  'Invoice #'. #XXX should be translated ala web UI user (not invoice customer)
+    $self->invnum. ' ('. $self->_date_pretty_unlocalized. ')';
 }
 
 #sub _items_extra_usage_sections {
@@ -2919,6 +2919,49 @@ sub _items_svc_phone_sections {
 
 }
 
+=sub _items_usage_class_summary OPTIONS
+
+Returns a list of detail items summarizing the usage charges on this 
+invoice.  Each one will have 'amount', 'description' (the usage charge name),
+and 'usage_classnum'.
+
+OPTIONS can include 'escape' (a function to escape the descriptions).
+
+=cut
+
+sub _items_usage_class_summary {
+  my $self = shift;
+  my %opt = @_;
+
+  my $escape = $opt{escape} || sub { $_[0] };
+  my $invnum = $self->invnum;
+  my @classes = qsearch({
+      'table'     => 'usage_class',
+      'select'    => 'classnum, classname, SUM(amount) AS amount',
+      'addl_from' => ' LEFT JOIN cust_bill_pkg_detail USING (classnum)' .
+                     ' LEFT JOIN cust_bill_pkg USING (billpkgnum)',
+      'extra_sql' => " WHERE cust_bill_pkg.invnum = $invnum".
+                     ' GROUP BY classnum, classname, weight'.
+                     ' HAVING (usage_class.disabled IS NULL OR SUM(amount) > 0)'.
+                     ' ORDER BY weight ASC',
+  });
+  my @l;
+  my $section = {
+    description   => &{$escape}($self->mt('Usage Summary')),
+    no_subtotal   => 1,
+    usage_section => 1,
+  };
+  foreach my $class (@classes) {
+    push @l, {
+      'description'     => &{$escape}($class->classname),
+      'amount'          => sprintf('%.2f', $class->amount),
+      'usage_classnum'  => $class->classnum,
+      'section'         => $section,
+    };
+  }
+  return @l;
+}
+
 sub _items_previous {
   my $self = shift;
   my $conf = $self->conf;
@@ -3196,6 +3239,14 @@ sub re_X {
 
   }
 
+}
+
+sub API_getinfo {
+  my $self = shift;
+  +{ ( map { $_=>$self->$_ } $self->fields ),
+     'owed' => $self->owed,
+     #XXX last payment applied date
+   };
 }
 
 =back

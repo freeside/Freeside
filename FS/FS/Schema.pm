@@ -200,7 +200,7 @@ sub dbdef_dist {
     grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
-           && ( ! /^queue(_arg)?$/ || ! $opt->{'queue-no_history'} )
+           && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -662,6 +662,7 @@ sub tables_hashref {
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
 
         #customer balance info at invoice generation time
+        #(deprecated)
         'previous_balance',   @money_typen, '', '',  #eventually not nullable
         'billing_balance',    @money_typen, '', '',  #eventually not nullable
 
@@ -1008,7 +1009,7 @@ sub tables_hashref {
 
     'cust_bill_pkg_detail' => {
       'columns' => [
-        'detailnum', 'serial', '', '', '', '', 
+        'detailnum', 'serial', '', '', '', '',
         'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
         'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
         'invnum',  'int', 'NULL', '', '', '',           # deprecated
@@ -2586,9 +2587,17 @@ sub tables_hashref {
       'index'        => [ ['custnum'], ['pkgpart'], ['pkgbatch'],
                           ['locationnum'], ['usernum'], ['agent_pkgid'],
                           ['order_date'], [ 'start_date' ], ['setup'], ['bill'],
-                          ['last_bill'], ['susp'], ['adjourn'], ['cancel'],
-                          ['expire'], ['contract_end'], ['change_date'],
+                          ['last_bill'], ['susp'], ['adjourn'], ['resume'],
+                          ['cancel'], ['expire'], ['contract_end'],
+                          ['change_date'],
                           ['no_auto'],
+                          #['contactnum'],
+                          ['salesnum'],
+                          #['uncancel_pkgnum'],
+                          #['change_pkgnum'], ['change_locationnum'],
+                          #['change_custnum'],
+                          ['main_pkgnum'],
+                          #['pkglinknum'], ['change_to_pkgnum'],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
@@ -4034,7 +4043,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'prepaynum',
       'unique'       => [ ['identifier'] ],
-      'index'        => [],
+      'index'        => [ ['agentnum'] ],
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
                             table      => 'agent',
@@ -4166,6 +4175,21 @@ sub tables_hashref {
                             on_delete  => 'CASCADE',
                           },
                         ],
+    },
+
+    'queue_stat' => {
+      'columns' => [
+        'statnum', 'bigserial',     '',  '', '', '',
+        'jobnum',     'bigint',     '',  '', '', '',
+        'job',       'varchar',     '', 512, '', '', 
+        'custnum',       'int', 'NULL',  '', '', '',
+        'insert_date', @date_type, '', '',
+        'start_date',  @date_type, '', '', 
+        'end_date',    @date_type, '', '', 
+      ],
+      'primary_key'  => 'statnum',
+      'unique'       => [], #[ ['jobnum'] ],
+      'index'        => [],
     },
 
     'export_svc' => {
@@ -4548,16 +4572,16 @@ sub tables_hashref {
 
     'tower_sector' => {
       'columns' => [
-        'sectornum',   'serial',     '',      '', '', '',
-        'towernum',       'int',     '',      '', '', '',
-        'sectorname', 'varchar',     '', $char_d, '', '',
-        'ip_addr',    'varchar', 'NULL',      15, '', '',
-        'height',     'decimal', 'NULL',      '', '', '', 
-        'freq_mhz',       'int', 'NULL',      '', '', '',
-        'direction',      'int', 'NULL',      '', '', '',
-        'width',          'int', 'NULL',      '', '', '',
+        'sectornum',     'serial',     '',      '', '', '',
+        'towernum',         'int',     '',      '', '', '',
+        'sectorname',   'varchar',     '', $char_d, '', '',
+        'ip_addr',      'varchar', 'NULL',      15, '', '',
+        'height',       'decimal', 'NULL',      '', '', '', 
+        'freq_mhz',         'int', 'NULL',      '', '', '',
+        'direction',        'int', 'NULL',      '', '', '',
+        'width',            'int', 'NULL',      '', '', '',
         #downtilt etc? rfpath has profile files for devices/antennas you upload?
-        'range',      'decimal', 'NULL',      '', '', '',  #?
+        'sector_range', 'decimal', 'NULL',      '', '', '',  #?
       ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
@@ -4746,6 +4770,18 @@ sub tables_hashref {
                             table      => 'usage_class',
                           },
                         ],
+    },
+
+    'part_pkg_fcc_option' => {
+      'columns' => [
+        'num',        'serial', '', '', '', '',
+        'fccoptionname', 'varchar', '', $char_d, '', '',
+        'pkgpart',       'int', '', '', '', '',
+        'optionvalue',   'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'num',
+      'unique'      => [ [ 'fccoptionname', 'pkgpart' ] ],
+      'index'       => [],
     },
 
     'rate' => {
@@ -5554,6 +5590,8 @@ sub tables_hashref {
         'sms_carrierid',                  'int', 'NULL',      '', '', '',
         'sms_account',                'varchar', 'NULL', $char_d, '', '',
         'max_simultaneous',               'int', 'NULL',      '', '', '',
+        'e911_class',                    'char', 'NULL',       1, '', '',
+        'e911_type',                     'char', 'NULL',       1, '', '', 
       ],
       'primary_key'  => 'svcnum',
       'unique'       => [ [ 'sms_carrierid', 'sms_account'] ],
@@ -6455,7 +6493,8 @@ sub tables_hashref {
       'columns' => [
         'vendbillnum',    'serial',     '',      '', '', '', 
         'vendnum',           'int',     '',      '', '', '', 
-        '_date',        @date_type,                  '', '', 
+        #'_date',        @date_type,                  '', '', 
+        '_date',     'int', '', '',                   '', '', 
         'charged',     @money_type,                  '', '', 
       ],
       'primary_key'  => 'vendbillnum',
@@ -6472,7 +6511,8 @@ sub tables_hashref {
       'columns' => [
         'vendpaynum',   'serial',    '',       '', '', '',
         'vendnum',         'int',    '',       '', '', '', 
-        '_date',     @date_type,                   '', '', 
+        #'_date',     @date_type,                   '', '', 
+        '_date',     'int', '', '',                   '', '', 
         'paid',      @money_type,                  '', '', 
       ],
       'primary_key'  => 'vendpaynum',
@@ -6580,6 +6620,130 @@ sub tables_hashref {
                           },
                         ],
     },
+
+    'export_batch' => {
+      'columns' => [
+        'batchnum',    'serial',     '',      '', '', '',
+        'exportnum',      'int',     '',      '', '', '',
+        '_date',          'int',     '',      '', '', '',
+        'status',     'varchar', 'NULL',      32, '', '',
+        'statustext',    'text', 'NULL',      '', '', '',
+      ],
+      'primary_key'  => 'batchnum',
+      'unique'       => [],
+      'index'        => [ [ 'exportnum' ], [ 'status' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'exportnum' ],
+                            table      => 'part_export',
+                            references => [ 'exportnum' ]
+                          },
+                        ],
+    },
+
+    'export_batch_item' => {
+      'columns' => [
+        'itemnum',     'serial',     '',      '', '', '',
+        'batchnum',       'int',     '',      '', '', '',
+        'svcnum',         'int',     '',      '', '', '',
+        'action',     'varchar',     '',      32, '', '',
+        'data',          'text', 'NULL',      '', '', '',
+        'frozen',        'char', 'NULL',       1, '', '',
+      ],
+      'primary_key'  => 'itemnum',
+      'unique'       => [],
+      'index'        => [ [ 'batchnum' ], [ 'svcnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'batchnum' ],
+                            table      => 'export_batch',
+                            references => [ 'batchnum' ]
+                          },
+                        ],
+    },
+
+    # lookup table for states, similar to msa and lata
+    'state' => {
+      'columns' => [
+        'statenum', 'int',  '', '', '', '', 
+        'country',  'char', '',  2, '', '',
+        'state',    'char', '', $char_d, '', '', 
+        'fips',     'char', '',  3, '', '',
+      ],
+      'primary_key' => 'statenum',
+      'unique' => [ [ 'country', 'state' ], ],
+      'index' => [],
+    },
+
+    # eventually link to tower/sector?
+    'deploy_zone' => {
+      'columns' => [
+        'zonenum',        'serial',  '',     '',      '', '',
+        'description',    'char',    'NULL', $char_d, '', '',
+        'agentnum',       'int',     '',     '',      '', '',
+        'dbaname',        'char',    'NULL', $char_d, '', '',
+        'zonetype',       'char',    '',     1,       '', '',
+        'technology',     'int',     '',     '',      '', '',
+        'spectrum',       'int',     'NULL', '',      '', '',
+        'adv_speed_up',   'decimal', '',     '10,3', '0', '',
+        'adv_speed_down', 'decimal', '',     '10,3', '0', '',
+        'cir_speed_up',   'decimal', '',     '10,3', '0', '',
+        'cir_speed_down', 'decimal', '',     '10,3', '0', '',
+        'is_broadband',   'char',    'NULL', 1,       '', '',
+        'is_voice',       'char',    'NULL', 1,       '', '',
+        'is_consumer',    'char',    'NULL', 1,       '', '',
+        'is_business',    'char',    'NULL', 1,       '', '',
+        'active_date',    @date_type,                 '', '',
+        'expire_date',    @date_type,                 '', '',
+      ],
+      'primary_key' => 'zonenum',
+      'unique' => [],
+      'index'  => [ [ 'agentnum' ] ],
+      'foreign_keys' => [
+                          { columns     => [ 'agentnum' ],
+                            table       => 'agent',
+                            references  => [ 'agentnum' ],
+                          },
+                        ],
+    },
+
+    'deploy_zone_block' => {
+      'columns' => [
+        'blocknum',       'serial',  '',     '',      '', '',
+        'zonenum',        'int',     '',     '',      '', '',
+        'censusblock',    'char',    '',     15,      '', '',
+        'censusyear',     'char',    '',      4,      '', '',
+      ],
+      'primary_key' => 'blocknum',
+      'unique' => [],
+      'index'  => [ [ 'zonenum' ] ],
+      'foreign_keys' => [
+                          { columns     => [ 'zonenum' ],
+                            table       => 'deploy_zone',
+                            references  => [ 'zonenum' ],
+                          },
+                        ],
+    },
+
+    'deploy_zone_vertex' => {
+      'columns' => [
+        'vertexnum',      'serial',  '',     '',      '', '',
+        'zonenum',        'int',     '',     '',      '', '',
+        'latitude',       'decimal', '',     '10,7',  '', '', 
+        'longitude',      'decimal', '',     '10,7',  '', '', 
+      ],
+      'primary_key' => 'vertexnum',
+      'unique' => [ ],
+      'index'  => [ ],
+      'foreign_keys' => [
+                          { columns     => [ 'zonenum' ],
+                            table       => 'deploy_zone',
+                            references  => [ 'zonenum' ],
+                          },
+                        ],
+    },
+
+
+
+
 
     # name type nullability length default local
 

@@ -108,7 +108,7 @@ my $cust_link = sub {
 # only valid for $table == 'cust_pay' atm
 my  $tax_names = '';
 if ( $cgi->param('tax_names') ) {
-  if ( dbh->{Driver}->{Name} eq 'Pg' ) {
+  if ( dbh->{Driver}->{Name} =~ /^Pg/i ) {
 
     $tax_names = "
       array_to_string(
@@ -280,6 +280,11 @@ if ( $cgi->param('magic') ) {
 
           my $cardtype = $3;
 
+          my $similar_to = dbh->{Driver}->{Name} =~ /^mysql/i
+                             ? 'REGEXP' #doesn't behave exactly the same, but
+                                        #should work for our patterns
+                             : 'SIMILAR TO';
+
           my $search;
           if ( $cardtype eq 'VisaMC' ) {
 
@@ -288,15 +293,15 @@ if ( $cgi->param('magic') ) {
               " ( (     substring($table.payinfo from 1 for 1) = '4'     ".
               "     AND substring($table.payinfo from 1 for 4) != '4936' ".
               "     AND substring($table.payinfo from 1 for 6)           ".
-              "         NOT SIMILAR TO '49030[2-9]'                        ".
+              "         NOT $similar_to '49030[2-9]'                        ".
               "     AND substring($table.payinfo from 1 for 6)           ".
-              "         NOT SIMILAR TO '49033[5-9]'                        ".
+              "         NOT $similar_to '49033[5-9]'                        ".
               "     AND substring($table.payinfo from 1 for 6)           ".
-              "         NOT SIMILAR TO '49110[1-2]'                        ".
+              "         NOT $similar_to '49110[1-2]'                        ".
               "     AND substring($table.payinfo from 1 for 6)           ".
-              "         NOT SIMILAR TO '49117[4-9]'                        ".
+              "         NOT $similar_to '49117[4-9]'                        ".
               "     AND substring($table.payinfo from 1 for 6)           ".
-              "         NOT SIMILAR TO '49118[1-2]'                        ".
+              "         NOT $similar_to '49118[1-2]'                        ".
               "   )".
               "   OR substring($table.payinfo from 1 for 2) = '51' ".
               "   OR substring($table.payinfo from 1 for 2) = '52' ".
@@ -360,15 +365,15 @@ if ( $cgi->param('magic') ) {
               "   OR substring($table.payinfo from 1 for 6 ) = '564182' ".
               "   OR substring($table.payinfo from 1 for 4 ) = '4936'   ".
               "   OR substring($table.payinfo from 1 for 6 )            ".
-              "      SIMILAR TO '49030[2-9]'                             ".
+              "      $similar_to '49030[2-9]'                             ".
               "   OR substring($table.payinfo from 1 for 6 )            ".
-              "      SIMILAR TO '49033[5-9]'                             ".
+              "      $similar_to '49033[5-9]'                             ".
               "   OR substring($table.payinfo from 1 for 6 )            ".
-              "      SIMILAR TO '49110[1-2]'                             ".
+              "      $similar_to '49110[1-2]'                             ".
               "   OR substring($table.payinfo from 1 for 6 )            ".
-              "      SIMILAR TO '49117[4-9]'                             ".
+              "      $similar_to '49117[4-9]'                             ".
               "   OR substring($table.payinfo from 1 for 6 )            ".
-              "      SIMILAR TO '49118[1-2]'                             ".
+              "      $similar_to '49118[1-2]'                             ".
               " ) ";
 
           } elsif ( $cardtype eq 'Tokenized' ) {
@@ -488,7 +493,7 @@ if ( $cgi->param('magic') ) {
   my $group_by = '';
 
   if ( $cgi->param('tax_names') ) {
-    if ( dbh->{Driver}->{Name} eq 'Pg' ) {
+    if ( dbh->{Driver}->{Name} =~ /^Pg/i ) {
 
       0;#twiddle thumbs
 

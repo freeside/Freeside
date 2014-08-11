@@ -100,7 +100,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('availnum')
-    || $self->ut_foreign_key('itemnum', 'sched_avail', 'itemnum')
+    || $self->ut_foreign_key('itemnum', 'sched_item', 'itemnum')
     || $self->ut_number('wday')
     || $self->ut_number('stime')
     || $self->ut_number('etime')

@@ -1,0 +1,40 @@
+<% encode_rest($return) %>\
+<%init>
+
+rest_auth($cgi);
+
+my( $pkgpart, $command ) = split('/', rest_uri_remain($r, $m) );
+
+my @fields = fields('part_pkg');
+
+my $return = [];
+
+if ( $pkgpart ) {
+
+  my $part_pkg = qsearchs('part_pkg', { 'pkgpart'=>$pkgpart } )
+    or die "unknown pkgpart $pkgpart";
+
+  if ( $command eq '' ) {
+
+    $return = $part_pkg->API_getinfo;
+
+  } elsif ( $command eq 'customers' ) {
+     die 'XXX not yet implemented';
+     #XXX redirect to a cust_main search?
+  }
+
+} else {
+
+  my %hash = ( map { $_ => scalar($cgi->param($_)) }
+                 qw( disabled classnum )
+             );
+
+  my @part_pkg = qsearch('part_pkg', \%hash);
+
+  $return = [ map $part_pkg->API_getinfo, @part_pkg ];
+
+}
+
+
+
+</%init>

@@ -98,6 +98,19 @@ sub inbound {
   $self->{inbound};
 }
 
+=item phonenum VALUE
+
+Set/get the locally meaningful phone number.  This is used to tag call details
+for presentation on certain kinds of invoices.
+
+=cut
+
+sub phonenum {
+  my $self = shift;
+  $self->{phonenum} = shift if @_;
+  $self->{phonenum};
+}
+
 =item append CDRS
 
 Takes any number of call detail records (as L<FS::cdr> objects),
@@ -165,21 +178,15 @@ Takes a single CDR and returns an invoice detail to describe it.
 
 By default, this maps the following fields from the CDR:
 
-=over 4
+rated_price       => amount
+rated_classnum    => classnum
+rated_seconds     => duration
+rated_regionname  => regionname
+accountcode       => accountcode
+startdate         => startdate
 
-=item rated_price       => amount
-
-=item rated_classnum    => classnum
-
-=item rated_seconds     => duration
-
-=item rated_regionname  => regionname
-
-=item accountcode       => accountcode
-
-=item startdate         => startdate
-
-=back
+'phonenum' is set to the internal C<phonenum> value set on the formatter
+object.
 
 It then calls C<columns> on the CDR to obtain a list of detail
 columns, formats them as a CSV string, and stores that in the 
@@ -209,6 +216,7 @@ sub single_detail {
       'startdate'   => $cdr->startdate,
       'format'      => 'C',
       'detail'      => $self->csv->string,
+      'phonenum'    => $self->phonenum,
   });
 }
 
