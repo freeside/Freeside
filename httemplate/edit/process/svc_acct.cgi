@@ -102,9 +102,13 @@ if ( ! $error ) {
       map { $_ => $cgi->param("router_$_") }
       qw( routernum routername blocknum )
     });
-    if (length($router->routername == 0)) {
+    if (length($router->routername) == 0) {
       #sensible default
       $router->set('routername', $new->label);
+    }
+    if (length($router->blocknum) == 0) {
+      #unset it
+      $router->set('blocknum', 0);
     }
     push @child_objects, $router;
   }

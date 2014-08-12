@@ -116,7 +116,7 @@ sub replace {
   my $error = $self->SUPER::replace($old, @_);
   return $error if $error;
 
-  if ( defined($self->blocknum) ) {
+  if ( length($self->blocknum) ) {
     #warn "FS::router::replace: blocknum = ".$self->blocknum."\n";
     # then release any blocks we're already holding
     foreach my $block ($self->addr_block) {
