@@ -59,6 +59,7 @@ sub calc_recur {
 
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';
+  my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
   my $total_agent_charge = 0;
 
@@ -140,8 +141,8 @@ sub calc_recur {
         my $recur_charge += $pkg_recur_charge;
 
         $pkg_details .= $money_char. sprintf('%.2f', $recur_charge ).
-                        ' ('.  time2str('%x', $pkg_start).
-                        ' - '. time2str('%x', $pkg_end  ). ')'
+                        ' ('.  time2str($date_format, $pkg_start).
+                        ' - '. time2str($date_format, $pkg_end  ). ')'
           if $recur_charge;
 
         $pkg_charge += $recur_charge;
