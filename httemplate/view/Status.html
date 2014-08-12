@@ -135,7 +135,7 @@ if ( _is_running('cdrd') ) {
     },
   ];
 
-  my $dayago = time2str('%Y-%m-$d %X', time - 86400);
+  my $dayago = time2str('%Y-%m-%d %X', time - 86400);
   my $cdrs = FS::Record->scalar_sql(qq{
     SELECT COUNT(*) FROM cdr
       WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
