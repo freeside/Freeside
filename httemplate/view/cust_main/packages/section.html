@@ -4,17 +4,22 @@
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Package') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Contact/Location') |h %></TH>
+% if (!$opt{no_services}) {
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Services') |h %></TH>
+% }
 </TR>
 
 % #$FS::cust_pkg::DEBUG = 2;
 %   foreach my $cust_pkg (@$packages) {
+%    # if requested, this can override cust_pkg-group_by_location
     <& .packagerow, $cust_pkg,
+        %conf_opt,
         ( map { $_ => $opt{$_} } qw(
             cust_main bgcolor no_links cust_location_cache
             before_pkg_callback before_svc_callback after_svc_callback
+            cust_pkg-group_by_location
+            no_services
         )),
-        %conf_opt
     &>
 %   }
 % } else { # there are no packages
@@ -30,11 +35,32 @@
     <& package.html, %iopt &>
     <& status.html,  %iopt &>
     <TD CLASS="inv" BGCOLOR="<% $iopt{bgcolor} %>" WIDTH="20%" VALIGN="top">
-      <& contact.html, %iopt &><BR>
+      <& contact.html, %iopt &>
       <& location.html, %iopt &>
     </TD>
+%   if (!$iopt{no_services}) {
     <& services.html, %iopt &>
+%   }
   </TR>
+% # insert hidden predecessors to this package, if any
+% # and a rolldown button to show them
+% # (we'll make it do something later)
+% if ( $cust_pkg->get('changed_from_pkg') ) {
+  <TR CLASS="row<% $row % 2 %>">
+    <TD COLSPAN=4>
+    <BUTTON CLASS="rolldown_button"
+            ID="rolldown_<% $cust_pkg->change_pkgnum %>">
+      History &#x2b07;
+    </BUTTON>
+% # the hidden block here has ID="cust_pkgX" where X is the first pkgnum
+% # it contains.
+    <& hidden.html, $cust_pkg->get('changed_from_pkg'),
+       %iopt,
+       'next_pkg' => $cust_pkg,
+    &>
+    </TD>
+  </TR>
+% }
 % $row++;
 % # show the change target, if there is one
 % if ( $cust_pkg->change_to_pkg ) {
