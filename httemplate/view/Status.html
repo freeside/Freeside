@@ -135,11 +135,11 @@ if ( _is_running('cdrd') ) {
     },
   ];
 
-  my $24ago = time2str('%Y-%m-$d %X', time - 86400);
+  my $dayago = time2str('%Y-%m-$d %X', time - 86400);
   my $cdrs = FS::Record->scalar_sql(qq{
     SELECT COUNT(*) FROM cdr
       WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
-        AND calldate > '$24ago'
+        AND calldate > '$dayago'
   });
   $status{'CDR Processing'} = [
     { 'title' => 'Unprocessed CDRs (last 24 hours)',
