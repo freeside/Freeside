@@ -92,6 +92,8 @@ sub report_option_to_fcc_option {
     } elsif ($formkey =~ /^part2b_row_option_(\d+)/) {
       #VoIP options (are all media types)
       push @return, (split(':', $voip_option[$1]));
+    } elsif ($formkey =~ /^part5_report_option/) {
+      # ignore this
     } else {
       warn "can't parse option with formkey '$formkey'\n";
     }
@@ -110,21 +112,25 @@ for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
     push @fcc_opts, report_option_to_fcc_option($num);
   }
   # other special stuff:
-  # FCC voice class (VoIP OTT, VoIP + broadband)
+  # FCC voice class (VoIP OTT, VoIP + broadband, Wholesale VoIP, Local
+  # Exchange) and DS0 equivalent lines
+  my $sessions = $part_pkg->fcc_ds0s || 1;
+
   if ($part_pkg->fcc_voip_class == 1) {
-    push @fcc_opts, 'is_voip' => 1;
+    # VoIP OTT (connection not included)
+    push @fcc_opts, 'is_voip' => 1, 'voip_ott' => 1,
+                    'voip_sessions' => $sessions;
   } elsif ( $part_pkg->fcc_voip_class == 2) {
-    push @fcc_opts, 'is_voip' => 1, 'is_broadband' => 1;
-  }
-  # DS0 equivalent lines
-  if ( $part_pkg->fcc_ds0s ) {
-    if ($part_pkg->fcc_voip_class) {
-      # there's no such thing as a VoIP DS0 equivalent, but this is
-      # what we used the field for
-      push @fcc_opts, 'voip_sessions' => $part_pkg->fcc_ds0s;
-    } else {
-      push @fcc_opts, 'phone_lines' => $part_pkg->fcc_ds0s, 'is_phone' => 1;
-    }
+    # VoIP non-OTT; do not set is_broadband since the connection is not 
+    # necessarily general Internet access
+    push @fcc_opts, 'is_voip' => 1,
+                    'voip_sessions' => $sessions;
+  } elsif ( $part_pkg->fcc_voip_class == 3 ) {
+    # wholesale VoIP; apparently no longer reportable?
+  } else {
+    # local exchange telephone
+    push @fcc_opts, 'is_phone' => 1,
+                    'phone_lines' => $sessions;
   }
 
   my %fcc_opts = @fcc_opts;
