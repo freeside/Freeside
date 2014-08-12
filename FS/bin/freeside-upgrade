@@ -465,13 +465,12 @@ Also performs other upgrade functions:
           current default.
 
   [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
+          changes will be replicated from the Pg/slony master.
 
   [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
           databases may be inaccessible.
 
   [ -c ]: Skip cdr and h_cdr updates.
-
-          changes will be replicated from the Pg/slony master.
 
   [ -j ]: Run certain upgrades asychronously from the job queue.  Currently 
           used only for the 2.x -> 3.x cust_location, cust_pay and part_pkg
