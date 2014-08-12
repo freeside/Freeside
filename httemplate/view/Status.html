@@ -106,11 +106,6 @@ if ( _is_running('cdrd') ) {
                         $s. 's';
 
   }
-  $status{'CDR Processing'} = [
-    { 'title' => 'Current processing delay',
-      'value' => $delay,
-    },
-  ];
 
   my $pr_delay = FS::Record->scalar_sql('
     SELECT AVG(end_date-start_date)
@@ -129,11 +124,6 @@ if ( _is_running('cdrd') ) {
                            $s. 's';
 
   }
-  $status{'CDR Processing'} = [
-    { 'title' => 'Average billing time',
-      'value' => $pr_delay,
-    },
-  ];
 
   my $dayago = time2str('%Y-%m-%d %X', time - 86400);
   my $cdrs = FS::Record->scalar_sql(qq{
@@ -141,7 +131,14 @@ if ( _is_running('cdrd') ) {
       WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
         AND calldate > '$dayago'
   });
+
   $status{'CDR Processing'} = [
+    { 'title' => 'Current processing delay',
+      'value' => $delay,
+    },
+    { 'title' => 'Average billing time',
+      'value' => $pr_delay,
+    },
     { 'title' => 'Unprocessed CDRs (last 24 hours)',
       'value' => $cdrs,
     },
