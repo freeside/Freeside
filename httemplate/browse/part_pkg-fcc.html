@@ -94,8 +94,6 @@ my $select = join(',',
 my $addl_from = 
   FS::Report::FCC_477::join_optionnames(@optionnames);
 
-$cgi->param('classnum', $classnum) if length($classnum);
-
 my $link = [ $p.'edit/part_pkg.cgi?', 'pkgpart' ];
 
 my @header = ( '#', 'Package', 'Comment' );
@@ -202,6 +200,9 @@ my $html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD
       + document.getElementById('classnum').value;
   }
   </SCRIPT>!;
+
+# restore this only after creating $html_form
+$cgi->param('classnum', $classnum) if length($classnum);
 
 my $html_foot = qq!
   <INPUT TYPE="submit" VALUE="Save changes">
