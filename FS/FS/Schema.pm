@@ -6248,7 +6248,7 @@ sub tables_hashref {
       'columns' => [
         'logcontextnum', 'serial', '', '', '', '',
         'lognum', 'int', '', '', '', '',
-        'context', 'varchar', '', 32, '', '',
+        'context', 'varchar', '', $char_d, '', '',
       ],
       'primary_key'  => 'logcontextnum',
       'unique'       => [ [ 'lognum', 'context' ] ],
