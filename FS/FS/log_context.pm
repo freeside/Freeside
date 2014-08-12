@@ -7,6 +7,8 @@ use FS::Record qw( qsearch qsearchs );
 my @contexts = ( qw(
   test
   bill_and_collect
+  FS::cust_main::Billing::bill_and_collect
+  FS::cust_main::Billing::bill
   Cron::bill
   Cron::upload
   spool_upload
@@ -112,7 +114,8 @@ sub check {
   my $error = 
     $self->ut_numbern('logcontextnum')
     || $self->ut_number('lognum')
-    || $self->ut_enum('context', \@contexts)
+    #|| $self->ut_enum('context', \@contexts)
+    #|| $self->ut_enum('context', \@contexts)
   ;
   return $error if $error;
 
