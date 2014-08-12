@@ -6352,7 +6352,7 @@ sub tables_hashref {
         'mac_addr',  'varchar', 'NULL',      12, '', '', 
       ],
       'primary_key'  => 'svcnum',
-      'unique'       => [],
+      'unique'       => [ ['serialnum'] , ['mac_addr'] ],
       'index'        => [],
       'foreign_keys' => [
                           { columns    => [ 'svcnum' ],
