@@ -114,23 +114,25 @@ for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
   # other special stuff:
   # FCC voice class (VoIP OTT, VoIP + broadband, Wholesale VoIP, Local
   # Exchange) and DS0 equivalent lines
-  my $sessions = $part_pkg->fcc_ds0s || 1;
+  my $sessions = $part_pkg->fcc_ds0s;
 
-  if ($part_pkg->fcc_voip_class == 1) {
-    # VoIP OTT (connection not included)
-    push @fcc_opts, 'is_voip' => 1, 'voip_ott' => 1,
-                    'voip_sessions' => $sessions;
-  } elsif ( $part_pkg->fcc_voip_class == 2) {
-    # VoIP non-OTT; do not set is_broadband since the connection is not 
-    # necessarily general Internet access
-    push @fcc_opts, 'is_voip' => 1,
-                    'voip_sessions' => $sessions;
-  } elsif ( $part_pkg->fcc_voip_class == 3 ) {
-    # wholesale VoIP; apparently no longer reportable?
-  } else {
-    # local exchange telephone
-    push @fcc_opts, 'is_phone' => 1,
-                    'phone_lines' => $sessions;
+  if ( $sessions ) { # then this is a voice package of some kind
+    if ($part_pkg->fcc_voip_class == 1) {
+      # VoIP OTT (connection not included)
+      push @fcc_opts, 'is_voip' => 1, 'voip_ott' => 1,
+                      'voip_sessions' => $sessions;
+    } elsif ( $part_pkg->fcc_voip_class == 2) {
+      # VoIP non-OTT; do not set is_broadband since the connection is not 
+      # necessarily general Internet access
+      push @fcc_opts, 'is_voip' => 1,
+                      'voip_sessions' => $sessions;
+    } elsif ( $part_pkg->fcc_voip_class == 3 ) {
+      # wholesale VoIP; apparently no longer reportable?
+    } else {
+      # local exchange telephone
+      push @fcc_opts, 'is_phone' => 1,
+                      'phone_lines' => $sessions;
+    }
   }
 
   my %fcc_opts = @fcc_opts;
