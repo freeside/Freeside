@@ -17,13 +17,15 @@ Valid parameters are
 
 =item agentnum
 
-=item magic
-
-on hold, active, inactive (or one-time charge), suspended, cancel (or cancelled)
-
 =item status
 
-on hold, active, inactive (or one-time charge), suspended, cancel (or cancelled)
+on hold, active, inactive (or one-time charge), suspended, canceled (or cancelled)
+
+=item magic
+
+Equivalent to "status", except that "canceled"/"cancelled" will exclude 
+packages that were changed into a new package with the same pkgpart (i.e.
+location or quantity changes).
 
 =item custom
 
@@ -207,6 +209,19 @@ sub search {
 
     push @where, FS::cust_pkg->cancelled_sql();
 
+  }
+  
+  ### special case: "magic" is used in detail links from browse/part_pkg,
+  # where "cancelled" has the restriction "and not replaced with a package
+  # of the same pkgpart".  Be consistent with that.
+  ###
+
+  if ( $params->{'magic'} =~ /^cancell?ed$/ ) {
+    my $new_pkgpart = "SELECT pkgpart FROM cust_pkg AS cust_pkg_next ".
+                      "WHERE cust_pkg_next.change_pkgnum = cust_pkg.pkgnum";
+    # ...may not exist, if this was just canceled and not changed; in that
+    # case give it a "new pkgpart" that never equals the old pkgpart
+    push @where, "COALESCE(($new_pkgpart), 0) != cust_pkg.pkgpart";
   }
 
   ###
