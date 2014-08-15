@@ -41,7 +41,7 @@ foreach my $option (split(',', $cgi->param('multi_options'))) {
 foreach my $option (split(',', $cgi->param('multi_options'))) {
   my $value = '';
   foreach my $row (sort keys %{$optionrows{_ALL_}}) {
-    $value .= ($optionrows{$option}{$row} || '') . "\n";
+    $value .= ($optionrows{$option}{$row} // '') . "\n";
   }
   chomp($value);
   $options{$option} = $value;
