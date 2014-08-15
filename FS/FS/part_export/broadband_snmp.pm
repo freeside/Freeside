@@ -34,9 +34,10 @@ tie my %options, 'Tie::IxHash',
    },
   'community' => { label=>'Community', default=>'public' },
 
-  'action' => { multiple=>1 },
-  'oid'    => { multiple=>1 },
-  'value'  => { multiple=>1 },
+  'action'  => { multiple=>1 },
+  'oid'     => { multiple=>1 },
+  'value'   => { multiple=>1 },
+  'datatype'=> { multiple=>1 },
 
   'ip_addr_change_to_new' => { 
     label=>'Send IP address changes to new address',
