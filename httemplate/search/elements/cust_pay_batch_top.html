@@ -12,6 +12,7 @@ function format_changed() {
     }
   );
 }
+<&| /elements/onload.js &>format_changed()</&>
 </script>
 % # Download batch
 % if ( $status eq 'O'
@@ -29,10 +30,10 @@ function format_changed() {
       <OPTION VALUE="<%$_%>"><% $download_formats{$_} %></OPTION>
 %     }
     </SELECT> 
-    <BR>
-    <DIV STYLE="color:#ff0000" ID="download_note"></DIV>
     <& .select_gateway &>
 %   }
+    <BR>
+    <DIV STYLE="color:#ff0000" ID="download_note"></DIV>
     <INPUT TYPE="submit" VALUE="Download">
 % } # end of download
 </FORM>
