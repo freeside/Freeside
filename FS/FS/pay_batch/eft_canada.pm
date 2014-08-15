@@ -116,16 +116,23 @@ sub download_note { # is a class method
   my $conf = FS::Conf->new;
   my $agentnum = $pay_batch->agentnum;
   my $tomorrow = (localtime(time))[2] >= 10;
-  my $upload_date = time;
-  $upload_date += 86400 if $tomorrow;
   my $process_date = process_date($conf, $agentnum);
+  my $upload_date = $process_date - 86400;
   my $date_format = $conf->config('date_format') || '%D';
 
-  'Upload this file before 11:00 AM '.
-    ($tomorrow ? 'tomorrow' : 'today') .
-    ' (' . time2str($date_format, $upload_date) . '). '.
-    'Payments will be processed on '.
+  my $note = '';
+  if ( $process_date - time < 86400*2 ) {
+    $note = 'Upload this file before 11:00 AM '. 
+            ($tomorrow ? 'tomorrow' : 'today') .
+            ' (' . time2str($date_format, $upload_date) . '). ';
+  } else {
+    $note = 'Upload this file before 11:00 AM on '.
+      time2str($date_format, $upload_date) . '. ';
+  }
+  $note .= 'Payments will be processed on '.
     time2str($date_format, $process_date) . '.';
+
+  $note;
 }
 
 sub process_date {
@@ -139,7 +146,7 @@ sub process_date {
 
   my $process_delay = $config[3] || 1;
 
-  if ( (localtime(time))[2] >= 10 ) {
+  if ( (localtime(time))[2] >= 10 and $process_delay == 1 ) {
     # If downloading the batch after 10:00 local time, it likely won't make
     # the cutoff for next-day turnaround, and EFT will reject it.
     $process_delay++;
