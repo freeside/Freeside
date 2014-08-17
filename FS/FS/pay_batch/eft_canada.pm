@@ -66,23 +66,9 @@ my %holiday = (
       @config = $conf->config('batchconfig-eft_canada');
     }
     # SFTP login, password, trans code, delay time
-    my $process_delay;
-    ($trans_code, $process_delay) = @config[2,3];
-    $process_delay ||= 1; # days
+    ($trans_code) = $config[2];
 
-    my $pt = time + ($process_delay * 86400);
-    my @lt = localtime($pt);
-    while (    $lt[6] == 0 #Sunday
-            || $lt[6] == 6 #Saturday
-            || $holiday_yearly{ $lt[4]+1 }{ $lt[3] }
-            || $holiday{ $lt[5]+1900 }{ $lt[4]+1 }{ $lt[3] }
-          )
-    {
-      $pt += 86400;
-      @lt = localtime($pt);
-    }
-
-    $process_date = time2str('%D', $pt);
+    $process_date = time2str('%D', process_date($conf, $agentnum));
   },
 
   delimiter => '', # avoid blank lines for header/footer
@@ -123,5 +109,62 @@ my %holiday = (
   },
 
 );
+
+sub download_note { # is a class method
+  my $class = shift;
+  my $pay_batch = shift;
+  my $conf = FS::Conf->new;
+  my $agentnum = $pay_batch->agentnum;
+  my $tomorrow = (localtime(time))[2] >= 10;
+  my $process_date = process_date($conf, $agentnum);
+  my $upload_date = $process_date - 86400;
+  my $date_format = $conf->config('date_format') || '%D';
+
+  my $note = '';
+  if ( $process_date - time < 86400*2 ) {
+    $note = 'Upload this file before 11:00 AM '. 
+            ($tomorrow ? 'tomorrow' : 'today') .
+            ' (' . time2str($date_format, $upload_date) . '). ';
+  } else {
+    $note = 'Upload this file before 11:00 AM on '.
+      time2str($date_format, $upload_date) . '. ';
+  }
+  $note .= 'Payments will be processed on '.
+    time2str($date_format, $process_date) . '.';
+
+  $note;
+}
+
+sub process_date {
+  my ($conf, $agentnum) = @_;
+  my @config;
+  if ( $conf->exists('batch-spoolagent') ) {
+    @config = $conf->config('batchconfig-eft_canada', $agentnum);
+  } else {
+    @config = $conf->config('batchconfig-eft_canada');
+  }
+
+  my $process_delay = $config[3] || 1;
+
+  if ( (localtime(time))[2] >= 10 and $process_delay == 1 ) {
+    # If downloading the batch after 10:00 local time, it likely won't make
+    # the cutoff for next-day turnaround, and EFT will reject it.
+    $process_delay++;
+  }
+
+  my $pt = time + ($process_delay * 86400);
+  my @lt = localtime($pt);
+  while (    $lt[6] == 0 #Sunday
+          || $lt[6] == 6 #Saturday
+          || $holiday_yearly{ $lt[4]+1 }{ $lt[3] }
+          || $holiday{ $lt[5]+1900 }{ $lt[4]+1 }{ $lt[3] }
+        )
+  {
+    $pt += 86400;
+    @lt = localtime($pt);
+  }
+
+  $pt;
+}
 
 1;

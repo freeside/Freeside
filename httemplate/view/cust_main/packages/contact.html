@@ -10,10 +10,12 @@
           (&nbsp;<%pkg_detach_link($cust_pkg)%>&nbsp;)
         </FONT>
 %    }
+    <BR>
 % } elsif ( $show_contact_link && ! $opt{no_links} ) {
     <FONT SIZE=-1>
       (&nbsp;<%pkg_add_contact_link($cust_pkg)%>&nbsp;)
     </FONT>
+    <BR>
 % }
 <%init>
 

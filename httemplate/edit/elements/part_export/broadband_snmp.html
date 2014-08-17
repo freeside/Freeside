@@ -29,7 +29,7 @@
 function open_select_mib(obj) {
   nd(1); // if there's already one open, close it
   var rownum = obj.rownum;
-  var curr_oid = obj.value || '';
+  var curr_oid = obj.form.elements['oid' + rownum].value || '';
   var url = '<%$fsurl%>/elements/select-mib-popup.html?' +
             'callback=receive_mib;' +
             'arg=' + rownum +
@@ -66,10 +66,11 @@ function receive_mib(obj, rownum) {
     </SELECT>
   </TD>
   <TD>
-    <INPUT NAME="oid" ID="oid" SIZE="60" onclick="open_select_mib(this)">
+    <INPUT NAME="oid" ID="oid" SIZE="54">
+    <INPUT TYPE="button" VALUE="..." ID="openselector" onclick="open_select_mib(this)">
   </TD>
   <TD>
-    <INPUT TYPE="text" NAME="datatype" ID="datatype" READONLY=1>
+    <INPUT TYPE="text" NAME="datatype" ID="datatype">
   </TD>
   <TD>
     <INPUT NAME="value" ID="value">

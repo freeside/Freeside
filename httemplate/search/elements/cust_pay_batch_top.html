@@ -1,24 +1,43 @@
+<& /elements/xmlhttp.html,
+  'url'   => $p.'misc/xmlhttp-pay_batch-note.html',
+  'subs'  => [ 'get_note' ]
+&>
+<script type="text/javascript">
+function format_changed() {
+  var form = document.forms['download'];
+  get_note( <% $batchnum %>, form.elements['format'].value,
+    //callback
+    function(text) {
+      document.getElementById('download_note').textContent = text;
+    }
+  );
+}
+<&| /elements/onload.js &>format_changed()</&>
+</script>
 % # Download batch
 % if ( $status eq 'O'
 %   or ( $status eq 'I' and $curuser->access_right('Reprocess batches') )
 %   or ( $status eq 'R' and $curuser->access_right('Redownload resolved batches') )
 %   ) {
-<TABLE>
-<TR><FORM ACTION="<%$p%>misc/download-batch.cgi" METHOD="POST">
-<INPUT TYPE="hidden" NAME="batchnum" VALUE="<%$batchnum%>">
+<FORM ACTION="<%$p%>misc/download-batch.cgi" NAME="download" METHOD="POST">
+    <INPUT TYPE="hidden" NAME="batchnum" VALUE="<%$batchnum%>">
 %   if ( $fixed ) {
-<INPUT TYPE="hidden" NAME="format" VALUE="<%$fixed%>">
+    <INPUT TYPE="hidden" NAME="format" VALUE="<%$fixed%>">
 %   }
 %   else {
-Download batch in format <SELECT NAME="format">
+    Download batch in format <SELECT NAME="format" onchange="format_changed()">
 %     foreach ( keys %download_formats ) {
-<OPTION VALUE="<%$_%>"><% $download_formats{$_} %></OPTION>
+      <OPTION VALUE="<%$_%>"><% $download_formats{$_} %></OPTION>
 %     }
-</SELECT> 
-<& .select_gateway &>
+    </SELECT> 
+    <& .select_gateway &>
 %   }
-<INPUT TYPE="submit" VALUE="Download"></FORM><BR><BR></TR>
+    <BR>
+    <DIV STYLE="color:#ff0000" ID="download_note"></DIV>
+    <INPUT TYPE="submit" VALUE="Download">
 % } # end of download
+</FORM>
+<BR>
 
 % # Upload batch
 % if ( $pay_batch->status eq 'I'
@@ -27,44 +46,42 @@ Download batch in format <SELECT NAME="format">
 %     and $conf->exists('batch-manual_approval')
 %   ) 
 % ) {
-<TR>
-<% include('/elements/form-file_upload.html',
+<& /elements/form-file_upload.html,
               'name'      => 'FileUpload',
               'action'    => "${p}misc/upload-batch.cgi",
               'num_files' => 1,
               'fields'    => [ 'batchnum', 'format', 'gatewaynum' ],
               'url'       => $cgi->self_url,
               'message'   => 'Batch results uploaded.',
-) %>
-Upload results<BR></TR>
-<TR>
-<% include('/elements/file-upload.html',
+&>
+  Upload results<BR>
+  <& /elements/file-upload.html,
               'field'     => 'file',
               'label'     => 'Filename',
               'no_table'  => 1,
-) %>
-<INPUT TYPE="hidden" NAME="batchnum" VALUE="<% $batchnum %>">
-<BR></TR>
+  &>
+  <INPUT TYPE="hidden" NAME="batchnum" VALUE="<% $batchnum %>">
+  <BR>
 %   if ( $fixed ) {
 %     if ( $fixed eq 'td_eft1464' ) { # special case
-<TR>Upload in format <SELECT NAME="format">
-<OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>
-<OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>
-</SELECT> </TR>
+  Upload in format <SELECT NAME="format">
+    <OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>
+    <OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>
+  </SELECT>
 %     }
 %     else {
-<INPUT TYPE="hidden" NAME="format" VALUE="<% $fixed %>">
+  <INPUT TYPE="hidden" NAME="format" VALUE="<% $fixed %>">
 %     }
 %   }
 %   else {
-<TR>Upload in format <SELECT NAME="format">
+  Upload in format <SELECT NAME="format">
 %     foreach ( keys(%upload_formats) ) {
-<OPTION VALUE="<%$_%>"><% $upload_formats{$_} %></OPTION>
+    <OPTION VALUE="<%$_%>"><% $upload_formats{$_} %></OPTION>
 %     }
-</SELECT>
-<& .select_gateway &>
+  </SELECT>
+  <& .select_gateway &>
 %   } # if $fixed
-<TR><INPUT TYPE="submit" VALUE="Upload"></TR>
+  <INPUT TYPE="submit" VALUE="Upload">
 </FORM><BR>
 % } # end upload
 
@@ -74,12 +91,12 @@ Upload results<BR></TR>
 %   and $payby eq 'CHEK'
 %   and $conf->exists('batch-manual_approval')
 %   ) {
-<TR><INPUT TYPE="button" VALUE="Manually approve" onclick="
+<INPUT TYPE="button" VALUE="Manually approve" onclick="
 if ( confirm('Approve all remaining payments in this batch?') ) 
   window.location.href='<%$p%>misc/process/pay_batch-approve.cgi?batchnum=<%$batchnum%>';
-"></TR>
+">
+<BR>
 % } # end manual approval
-</TABLE>
 
 % # summary info
 Batch is <% $statustext{$status} %><BR>
@@ -119,19 +136,19 @@ my $batchnum = $pay_batch->batchnum;
 my $fixed = $conf->config("batch-fixed_format-$payby");
 
 tie my %download_formats, 'Tie::IxHash', (
-'' => 'Default batch mode',
-'NACHA' => '94 byte NACHA',
-'csv-td_canada_trust-merchant_pc_batch' => 
-              'CSV file for TD Canada Trust Merchant PC Batch',
-'csv-chase_canada-E-xactBatch' =>
-              'CSV file for Chase Canada E-xactBatch',
-'PAP' => '80 byte file for TD Canada Trust PAP Batch',
-'BoM' => 'Bank of Montreal ECA batch',
-'ach-spiritone' => 'Spiritone ACH batch',
-'paymentech' => 'XML file for Chase Paymentech',
-'RBC' => 'Royal Bank of Canada PDS batch',
-'td_eft1464' => '1464 byte file for TD Commercial Banking EFT',
-'eft_canada' => 'EFT Canada CSV batch',
+  '' => 'Default batch mode',
+  'NACHA' => '94 byte NACHA',
+  'csv-td_canada_trust-merchant_pc_batch' => 
+                'CSV file for TD Canada Trust Merchant PC Batch',
+  'csv-chase_canada-E-xactBatch' =>
+                'CSV file for Chase Canada E-xactBatch',
+  'PAP' => '80 byte file for TD Canada Trust PAP Batch',
+  'BoM' => 'Bank of Montreal ECA batch',
+  'ach-spiritone' => 'Spiritone ACH batch',
+  'paymentech' => 'XML file for Chase Paymentech',
+  'RBC' => 'Royal Bank of Canada PDS batch',
+  'td_eft1464' => '1464 byte file for TD Commercial Banking EFT',
+  'eft_canada' => 'EFT Canada CSV batch',
 # insert new batch formats here
 );
 
@@ -150,4 +167,5 @@ my $count_query = "SELECT COUNT(*) FROM cust_pay_batch WHERE batchnum=$batchnum"
 my $count = FS::Record->scalar_sql($count_query);
 my $sum_query = "SELECT SUM(amount) FROM cust_pay_batch WHERE batchnum=$batchnum";
 my $total = sprintf("%.2f", FS::Record->scalar_sql($sum_query));
+
 </%init>
