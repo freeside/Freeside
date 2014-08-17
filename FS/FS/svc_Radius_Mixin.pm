@@ -185,9 +185,8 @@ sub seconds_since_sqlradacct {
 
 =item attribute_since_sqlradacct TIMESTAMP_START TIMESTAMP_END ATTRIBUTE
 
-Returns the sum of the given attribute for all accounts (see L<FS::svc_acct>)
-in this package for sessions ending between TIMESTAMP_START (inclusive) and
-TIMESTAMP_END (exclusive).
+For this service, returns the sum of the given attribute for sessions ending
+between TIMESTAMP_START (inclusive) and TIMESTAMP_END (exclusive).
 
 TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
 L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
@@ -201,6 +200,17 @@ sub attribute_since_sqlradacct {
   $self->cust_svc->attribute_since_sqlradacct(@_);
 }
 
+=item attribute_last_sqlradacct ATTRIBUTE
+
+For this service, returns the most recent value of the given attribute.
+
+=cut
+
+#note: POD here, implementation in FS::cust_svc
+sub attribute_last_sqlradacct {
+  my $self = shift;
+  $self->cust_svc->attribute_last_sqlradacct(@_);
+}
 =item get_session_history TIMESTAMP_START TIMESTAMP_END
 
 Returns an array of hash references of this customers login history for the

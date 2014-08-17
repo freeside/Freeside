@@ -7,7 +7,7 @@ use Carp;
 #use Scalar::Util qw( blessed );
 use List::Util qw( max );
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs dbh str2time_sql );
+use FS::Record qw( qsearch qsearchs dbh str2time_sql str2time_sql_closing );
 use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
@@ -648,6 +648,7 @@ sub seconds_since_sqlradacct {
 
     #select a unix time conversion function based on database type
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+    my $closing = str2time_sql_closing( $dbh->{Driver}->{Name} );
     
     my $username = $part_export->export_username($svc_x);
 
@@ -667,9 +668,9 @@ sub seconds_since_sqlradacct {
                                FROM radacct
                                WHERE UserName = ?
                                  $realm
-                                 AND $str2time AcctStartTime) >= ?
-                                 AND $str2time AcctStopTime ) <  ?
-                                 AND $str2time AcctStopTime ) > 0
+                                 AND $str2time AcctStartTime $closing >= ?
+                                 AND $str2time AcctStopTime  $closing <  ?
+                                 AND $str2time AcctStopTime  $closing > 0
                                  AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
     $sth->execute($username, ($realm ? $realmparam : ()), $start, $end)
@@ -680,14 +681,14 @@ sub seconds_since_sqlradacct {
       if $DEBUG;
 
     # count session start->range end
-    $query = "SELECT SUM( ? - $str2time AcctStartTime ) )
+    $query = "SELECT SUM( ? - $str2time AcctStartTime $closing )
                 FROM radacct
                 WHERE UserName = ?
                   $realm
-                  AND $str2time AcctStartTime ) >= ?
-                  AND $str2time AcctStartTime ) <  ?
-                  AND ( ? - $str2time AcctStartTime ) ) < 86400
-                  AND (    $str2time AcctStopTime ) = 0
+                  AND $str2time AcctStartTime $closing >= ?
+                  AND $str2time AcctStartTime $closing <  ?
+                  AND ( ? - $str2time AcctStartTime $closing ) < 86400
+                  AND (    $str2time AcctStopTime $closing = 0
                                     OR AcctStopTime IS NULL )";
     $sth = $dbh->prepare($query) or die $dbh->errstr;
     $sth->execute( $end,
@@ -703,14 +704,14 @@ sub seconds_since_sqlradacct {
       if $DEBUG;
 
     #count range start->session end
-    $sth = $dbh->prepare("SELECT SUM( $str2time AcctStopTime ) - ? ) 
+    $sth = $dbh->prepare("SELECT SUM( $str2time AcctStopTime $closing - ? ) 
                             FROM radacct
                             WHERE UserName = ?
                               $realm
-                              AND $str2time AcctStartTime ) < ?
-                              AND $str2time AcctStopTime  ) >= ?
-                              AND $str2time AcctStopTime  ) <  ?
-                              AND $str2time AcctStopTime ) > 0
+                              AND $str2time AcctStartTime $closing < ?
+                              AND $str2time AcctStopTime  $closing >= ?
+                              AND $str2time AcctStopTime  $closing <  ?
+                              AND $str2time AcctStopTime  $closing > 0
                               AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
     $sth->execute( $start,
@@ -731,8 +732,8 @@ sub seconds_since_sqlradacct {
                             FROM radacct
                             WHERE UserName = ?
                               $realm
-                              AND $str2time AcctStartTime ) < ?
-                              AND ( $str2time AcctStopTime ) >= ?
+                              AND $str2time AcctStartTime $closing < ?
+                              AND ( $str2time AcctStopTime $closing >= ?
                                                                   )"
                               #      OR AcctStopTime =  0
                               #      OR AcctStopTime IS NULL       )"
@@ -793,6 +794,7 @@ sub attribute_since_sqlradacct {
 
     #select a unix time conversion function based on database type
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+    my $closing = str2time_sql_closing( $dbh->{Driver}->{Name} );
 
     my $username = $part_export->export_username($svc_x);
 
@@ -810,8 +812,8 @@ sub attribute_since_sqlradacct {
                                FROM radacct
                                WHERE UserName = ?
                                  $realm
-                                 AND $str2time AcctStopTime ) >= ?
-                                 AND $str2time AcctStopTime ) <  ?
+                                 AND $str2time AcctStopTime $closing >= ?
+                                 AND $str2time AcctStopTime $closing <  ?
                                  AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
     $sth->execute($username, ($realm ? $realmparam : ()), $start, $end)
@@ -826,6 +828,78 @@ sub attribute_since_sqlradacct {
   }
 
   $sum;
+
+}
+
+#note: implementation here, POD in FS::svc_acct
+# false laziness w/above
+sub attribute_last_sqlradacct {
+  my($self, $attrib) = @_;
+
+  my $mes = "$me attribute_last_sqlradacct:";
+
+  my $svc_x = $self->svc_x;
+
+  my @part_export = $self->part_svc->part_export_usage;
+  die "no accounting-capable exports are enabled for ". $self->part_svc->svc.
+      " service definition"
+    unless @part_export;
+    #or return undef;
+
+  my $value = '';
+  my $AcctStartTime = 0;
+
+  foreach my $part_export ( @part_export ) {
+
+    next if $part_export->option('ignore_accounting');
+
+    warn "$mes connecting to sqlradius database\n"
+      if $DEBUG;
+
+    my $dbh = DBI->connect( map { $part_export->option($_) }
+                            qw(datasrc username password)    )
+      or die "can't connect to sqlradius database: ". $DBI::errstr;
+
+    warn "$mes connected to sqlradius database\n"
+      if $DEBUG;
+
+    #select a unix time conversion function based on database type
+    my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+    my $closing = str2time_sql_closing( $dbh->{Driver}->{Name} );
+
+    my $username = $part_export->export_username($svc_x);
+
+    warn "$mes finding most-recent $attrib\n"
+      if $DEBUG;
+
+    my $realm = '';
+    my $realmparam = '';
+    if ($part_export->option('process_single_realm')) {
+      $realm = 'AND Realm = ?';
+      $realmparam = $part_export->option('realm');
+    }
+
+    my $sth = $dbh->prepare("SELECT $attrib, $str2time AcctStartTime $closing
+                               FROM radacct
+                               WHERE UserName = ?
+                                 $realm
+                               ORDER BY AcctStartTime DESC LIMIT 1
+    ") or die $dbh->errstr;
+    $sth->execute($username, ($realm ? $realmparam : ()) )
+      or die $sth->errstr;
+
+    my $row = $sth->fetchrow_arrayref;
+    if ( defined($row->[0]) && $row->[1] > $AcctStartTime ) {
+      $value = $row->[0];
+      $AcctStartTime = $row->[1];
+    }
+
+    warn "$mes done\n"
+      if $DEBUG;
+
+  }
+
+  $value;
 
 }
 
