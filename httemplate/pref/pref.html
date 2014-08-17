@@ -78,7 +78,7 @@ Interface
 
   <TR>
     <TH ALIGN="right">Hide package changes: </TH>
-    <TD>
+    <TD COLSPAN=2>
     <& /elements/select.html,
       field   => 'hide_package_changes',
       options => [ '', 'location', 'all' ],
@@ -155,6 +155,13 @@ Interface
     <TH ALIGN="right">Don't copy MAC address delimiters to clipboard</TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="enable_mask_clipboard_hack" VALUE="1" <% $curuser->option('enable_mask_clipboard_hack') ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">How many recently-modified customers displayed on dashboard</TH>
+    <TD ALIGN="left" COLSPAN=2>
+      <INPUT TYPE="text" NAME="dashboard_customers" VALUE="<% $curuser->option('dashboard_customers') %>"></TD>
     </TD>
   </TR>
 

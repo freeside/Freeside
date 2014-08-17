@@ -11,43 +11,48 @@
 %
 <& /elements/dashboard-toplist.html &>
 
-% warn time.": fetching recently changed customers\n" if $debug;
+% my $curuser = $FS::CurrentUser::CurrentUser;
+% my $numcust = $curuser->option('dashboard_customers');
+% $numcust ||= 10 unless $numcust =~ /^\s*0+\s*$/;
+% if ( $numcust ) {
 %
-%  my $sth = dbh->prepare(
-%    #"SELECT DISTINCT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
-%    "SELECT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
-%       WHERE ( history_action = 'insert' OR history_action = 'replace_new' ) 
-%         AND history_user = ?
-%       ORDER BY history_date desc" # LIMIT 10
-%    ) or die dbh->errstr;
+%   warn time.": fetching recently changed customers\n" if $debug;
 %
-%  $sth->execute( getotaker() ) or die $sth->errstr;
+%   my $sth = dbh->prepare(
+%     #"SELECT DISTINCT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
+%     "SELECT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
+%        WHERE ( history_action = 'insert' OR history_action = 'replace_new' ) 
+%          AND history_user = ?
+%        ORDER BY history_date desc LIMIT 1000" # LIMIT 10
+%     ) or die dbh->errstr;
 %
-%  my %saw = ();
-%  my @custnums = grep { !$saw{$_}++ } map $_->[0], @{ $sth->fetchall_arrayref };
+%   $sth->execute( getotaker() ) or die $sth->errstr;
 %
-%  @custnums = splice(@custnums, 0, 10);
+%   my %saw = ();
+%   my @custnums = grep { !$saw{$_}++ } map $_->[0], @{ $sth->fetchall_arrayref };
 %
-%  if ( @custnums ) {
-%    warn time.": displaying recently changed customers\n" if $debug;
+%   @custnums = splice(@custnums, 0, $numcust);
+%
+%   if ( @custnums ) {
+%     warn time.": displaying recently changed customers\n" if $debug;
 
-  <& /elements/table-grid.html &>
+      <& /elements/table-grid.html &>
 
-% my $bgcolor1 = '#eeeeee';
+%     my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
 %     my $bgcolor = $bgcolor2;
 
-  <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=1><% mt('Customers I recently added or modified') |h %></TH>
-  </TR>
+        <TR>
+          <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=1><% mt('Customers I recently added or modified') |h %></TH>
+        </TR>
 
-% foreach my $custnum ( @custnums ) { 
-% my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } ); 
-% next unless $cust_main; 
+%     foreach my $custnum ( @custnums ) { 
+%     my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } ); 
+%     next unless $cust_main; 
 
-    <TR>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->display_custnum %>: <% $cust_main->name |h %></A></TD>
-    </TR>
+        <TR>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->display_custnum %>: <% $cust_main->name |h %></A></TD>
+        </TR>
 
 %       if ( $bgcolor eq $bgcolor1 ) {
 %          $bgcolor = $bgcolor2;
@@ -55,10 +60,11 @@
 %          $bgcolor = $bgcolor1;
 %        }
 %    
-% } 
+%     } 
 
-  </TABLE>
+      </TABLE>
 
-% } 
+%   } 
+% }
 
 <& /elements/footer.html &>
