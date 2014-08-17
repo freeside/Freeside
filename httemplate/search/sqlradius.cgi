@@ -13,17 +13,6 @@
 %   if ( $part_export->option('hide_data') ) {
 %     delete $efields{$_} foreach qw(acctinputoctets acctoutputoctets);
 %   }
-%   if ( $part_export->option('show_called_station') ) {
-%     $efields->Splice(1, 0,
-%       'calledstationid' => {
-%                              'name'   => 'Destination',
-%                              'attrib' => 'Called-Station-ID',
-%                              'fmt'    =>
-%                                sub { length($_[0]) ? shift : '&nbsp'; },
-%                              'align'  => 'left',
-%                            },
-%     );
-%   }
 
     <FONT CLASS="fsinnerbox-title">
       <% $part_export->exportname || $part_export->exporttype |h %>
@@ -384,6 +373,37 @@ tie %fields, 'Tie::IxHash',
                                           },
                            align   => 'right',
                          },
+  'callingstationid'  => {
+                           name    => 'Source&nbsp;or&nbsp;MAC',
+                           attrib  => 'Calling-Station-Id',
+                           fmt     => sub {
+                             my $src = shift;
+                             if ( $src =~
+                                    /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i ) {
+                               return $src. ' ('.
+                                        (Net::MAC::Vendor::lookup($1))->[0].
+                                      ')';
+
+                             }
+                             length($src) ? $src : '&nbsp';
+                           },
+                           align   => 'right',
+                         },
+  'calledstationid'   => {
+                           name    => 'Destination',
+                           attrib  => 'Called-Station-ID',
+                           fmt     => sub {
+                             my $dst = shift;
+                             if ( $dst =~
+                                    /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i ) {
+                               return $dst. ' ('.
+                                        (Net::MAC::Vendor::lookup($1))->[0].
+                                      ')';
+                             }
+                             length($dst) ? $dst : '&nbsp';
+                           },
+                           align   => 'left',
+                       },
   'acctstarttime'     => {
                            name    => 'Start&nbsp;time',
                            attrib  => 'Acct-Start-Time',
