@@ -101,7 +101,7 @@ sub check {
 =item name
 
 Returns a name for this item; either the name of the associated employee (see
-L<FS::access_user), or the itemname field.
+L<FS::access_user>), or the itemname field.
 
 =cut
 
