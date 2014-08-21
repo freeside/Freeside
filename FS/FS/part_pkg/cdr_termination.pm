@@ -74,11 +74,11 @@ tie my %temporalities, 'Tie::IxHash',
 
   },
                        #cdr_column
-  'fieldorder' => [qw( recur_temporality recur_method cutoff_day ),
-                       FS::part_pkg::prorate_Mixin::fieldorder, 
-                       qw(
+  'fieldorder' => [ qw( recur_temporality recur_method cutoff_day ),
+                    FS::part_pkg::prorate_Mixin::fieldorder, 
+                    qw(
                        output_format usage_section summarize_usage usage_mandate
-                     )
+                    ),
                   ],
 
   'weight' => 48,
@@ -106,9 +106,8 @@ sub calc_recur {
   my $charges = 0;
 
   #find an svc_external record
-  my @svc_external = map  { $_->svc_x }
-                     grep { $_->part_svc->svcdb eq 'svc_external' }
-                     $cust_pkg->cust_svc;
+  my @svc_external = map { $_->svc_x }
+                     $cust_pkg->cust_svc_unsorted( svcdb=>'svc_external' );
 
   die "cdr_termination package has no svc_external service"
     unless @svc_external;
