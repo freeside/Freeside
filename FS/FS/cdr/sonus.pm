@@ -10,7 +10,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
   'weight'        => 525,
   'header'        => 0,     #0 default, set to 1 to ignore the first line, or
                             # to higher numbers to ignore that number of lines
-  'type'          => 'csv', #csv (default), fixedlength or xls
+  'type'          => 'csv',
   'sep_char'      => ',',   #for csv, defaults to ,
   'import_fields' => [
     'src', # also customer id
