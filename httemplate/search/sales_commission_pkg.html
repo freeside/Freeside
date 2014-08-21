@@ -67,6 +67,7 @@ td.money:before { content: '<% $money_char %>'; }
 <%init>
 
 #pretty bad false laziness w/agent_commission.html, lots of s/agent/sales/ :/
+# everything above is completely untouched
 
 die "access denied" 
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
