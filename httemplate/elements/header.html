@@ -51,7 +51,7 @@ Example:
   <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
       <tr>
-        <td BGCOLOR="#ffffff"><% $company_url ? qq(<A HREF="$company_url">) : '' %><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"><% $company_url ? '</A>' : '' %></td>
+        <td BGCOLOR="#ffffff"><% $company_url ? qq(<A HREF="$company_url">) : '' |n %><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"><% $company_url ? '</A>' : '' |n %></td>
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
