@@ -34,7 +34,7 @@ CDR importing
 
 =head1 CLASS METHODS
 
-=item do_cli_import
+=item dbi_import
 
 =cut
 
