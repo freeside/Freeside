@@ -3,6 +3,7 @@ package FS::option_Common;
 use strict;
 use base qw( FS::Record );
 use vars qw( $DEBUG );
+use Carp qw( cluck );
 use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs dbh );
 
@@ -344,7 +345,7 @@ sub option {
       $pkey    => $self->get($pkey),
       $namecol => shift,
   };
-  warn "$self -> option: searching for ".
+  cluck "$self -> option: searching for ".
          join(' / ', map { "$_ => ". $hashref->{$_} } keys %$hashref )
     if $DEBUG;
   my $obj = qsearchs($option_table, $hashref);
