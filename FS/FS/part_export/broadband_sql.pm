@@ -26,6 +26,7 @@ tie my %options, 'Tie::IxHash',
   'nodomain' => '',
   'no_machine' => 1,
   'notes'    => <<END
+Export broadband services to SQL databases.
 END
 );
 
