@@ -70,7 +70,8 @@ sub calc_recur {
     next if $pkg_svc->bulk_skip;
 
     my @label = $cust_svc->label_long( $$sdate, $last_bill );
-    die "fatal: no label found, wtf?" unless scalar(@label); #?
+    die "fatal: no label found for svcnum ". $cust_svc->svcnum
+      unless scalar(@label); #?
     my $svc_details = $label[0]. ': '. $label[1]. ': ';
     $part_svc_label{$cust_svc->svcpart} ||= $label[0];
 
