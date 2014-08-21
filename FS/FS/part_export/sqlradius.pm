@@ -48,7 +48,7 @@ tie %options, 'Tie::IxHash',
   },
   'show_called_station' => {
     type  => 'checkbox',
-    label => 'Show the Called-Station-ID on session reports',
+    label => 'Show the Called-Station-ID on session reports', #as a phone number
   },
   'overlimit_groups' => {
       label => 'Radius groups to assign to svc_acct which has exceeded its bandwidth or time limit (if not overridden by overlimit_groups global or per-agent config)', 
