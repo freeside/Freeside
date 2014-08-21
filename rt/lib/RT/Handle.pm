@@ -128,6 +128,7 @@ sub Connect {
     if ( $db_type eq 'Pg' ) {
         my $version = $self->DatabaseVersion;
         ($version) = $version =~ /^(\d+\.\d+)/;
+        $self->dbh->{pg_server_prepare} = 0 if $version > 9.1; #and we're using a deb-7 version DBD::Pg?
         $self->dbh->do("SET bytea_output = 'escape'") if $version >= 9.0;
     }
 

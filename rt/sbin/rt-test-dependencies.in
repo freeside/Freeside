@@ -181,6 +181,12 @@ sub text_to_hash {
 
     return %hash;
 }
+sub set_dep {
+    my ($name, $module, $version) = @_;
+    my %list = @{$deps{$name}};
+    $list{$module} = ($version || '');
+    $deps{$name} = [ %list ];
+}
 
 $deps{'CORE'} = [ text_to_hash( << '.') ];
 Class::Accessor 0.34
@@ -253,6 +259,8 @@ Plack 0.9971
 Plack::Handler::Starlet
 CGI::Emulate::PSGI
 .
+set_dep( PSGI => CGI => 4.00 ) if $] > 5.019003;
+
 
 $deps{'MAILGATE'} = [ text_to_hash( << '.') ];
 Getopt::Long
@@ -296,7 +304,7 @@ Test::Builder 0.90 # needed for is_passing
 Test::MockTime
 Log::Dispatch::Perl
 Test::WWW::Mechanize::PSGI
-Plack::Middleware::Test::StashWarnings 0.06
+Plack::Middleware::Test::StashWarnings 0.08
 Test::LongString
 Test::NoWarnings
 Locale::PO
@@ -374,6 +382,7 @@ HTML::Entities
 
 my %AVOID = (
     'DBD::Oracle' => [qw(1.23)],
+    'DBD::Pg' => [qw(3.3.0)],
     'Email::Address' => [qw(1.893 1.894)],
     'Devel::StackTrace' => [qw(1.28 1.29)],
 );
@@ -453,6 +462,7 @@ sub test_dep {
         print $module, ': ', $version || 0, "\n"; 
     }
     else {
+        no warnings 'deprecated';
         eval "use $module $version ()";
         if ( my $error = $@ ) {
             return 0 unless wantarray;
