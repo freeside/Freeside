@@ -1160,6 +1160,13 @@ sub upgrade_tax_location {
   ' WHERE cust_bill_pkg.invnum = cust_bill.invnum'.
   ' AND exempt_monthly IS NULL';
 
+  my %all_tax_names = (
+    '' => 1,
+    'Tax' => 1,
+    map { $_->taxname => 1 }
+      qsearch('h_cust_main_county', { taxname => { op => '!=', value => '' }})
+  );
+
   my $search = FS::Cursor->new({
       table => 'cust_bill',
       hashref => {},
@@ -1197,7 +1204,7 @@ sub upgrade_tax_location {
     # invoice date-of-insertion.  (Not necessarily the invoice date.)
     my $date = $h_cust_bill->history_date;
     my $h_cust_main = qsearchs('h_cust_main',
-        { custnum => $custnum },
+        { custnum   => $custnum },
         FS::h_cust_main->sql_h_searchs($date)
       );
     if (!$h_cust_main ) {
@@ -1209,28 +1216,31 @@ sub upgrade_tax_location {
     # This is a historical customer record, so it has a historical address.
     # If there's no cust_location matching this custnum and address (there 
     # probably isn't), create one.
-    $pre = 'ship_' if $use_ship and length($h_cust_main->get('ship_last'));
-    my %hash = map { $_ => $h_cust_main->get($pre.$_) }
-                  FS::cust_main->location_fields;
-    # not really needed for this, and often result in duplicate locations
-    delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
+    my $tax_loc;
+    if ( $h_cust_main->bill_locationnum ) {
+      # the location has already been upgraded
+      if ($use_ship) {
+        $tax_loc = $h_cust_main->ship_location;
+      } else {
+        $tax_loc = $h_cust_main->bill_location;
+      }
+    } else {
+      $pre = 'ship_' if $use_ship and length($h_cust_main->get('ship_last'));
+      my %hash = map { $_ => $h_cust_main->get($pre.$_) }
+                    FS::cust_main->location_fields;
+      # not really needed for this, and often result in duplicate locations
+      delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
 
-    $hash{custnum} = $h_cust_main->custnum;
-    my $tax_loc = FS::cust_location->new(\%hash);
-    my $error = $tax_loc->find_or_insert || $tax_loc->disable_if_unused;
-    if ( $error ) {
-      warn "couldn't create historical location record for cust#".
-      $h_cust_main->custnum.": $error\n";
-      next INVOICE;
+      $hash{custnum} = $h_cust_main->custnum;
+      $tax_loc = FS::cust_location->new(\%hash);
+      my $error = $tax_loc->find_or_insert || $tax_loc->disable_if_unused;
+      if ( $error ) {
+        warn "couldn't create historical location record for cust#".
+        $h_cust_main->custnum.": $error\n";
+        next INVOICE;
+      }
     }
     my $exempt_cust = 1 if $h_cust_main->tax;
-
-    # Get any per-customer taxname exemptions that were in effect.
-    my %exempt_cust_taxname = map {
-      $_->taxname => 1
-    } qsearch('h_cust_main_exemption', { 'custnum' => $custnum },
-      FS::h_cust_main_exemption->sql_h_searchs($date)
-    );
 
     # classify line items
     my @tax_items;
@@ -1281,14 +1291,29 @@ sub upgrade_tax_location {
         push @{ $nontax_items{$taxclass} }, $item;
       }
     }
+
     printf("%d tax items: \$%.2f\n", scalar(@tax_items), map {$_->setup} @tax_items)
       if @tax_items;
+
+    # Get any per-customer taxname exemptions that were in effect.
+    my %exempt_cust_taxname;
+    foreach (keys %all_tax_names) {
+      my $h_exemption = qsearchs('h_cust_main_exemption', {
+          'custnum' => $custnum,
+          'taxname' => $_,
+        },
+        FS::h_cust_main_exemption->sql_h_searchs($date, $date)
+      );
+      if ($h_exemption) {
+        $exempt_cust_taxname{ $_ } = 1;
+      }
+    }
 
     # Use a variation on the procedure in 
     # FS::cust_main::Billing::_handle_taxes to identify taxes that apply 
     # to this bill.
     my @loc_keys = qw( district city county state country );
-    my %taxhash = map { $_ => $h_cust_main->get($pre.$_) } @loc_keys;
+    my %taxhash = map { $_ => $tax_loc->get($pre.$_) } @loc_keys;
     my %taxdef_by_name; # by name, and then by taxclass
     my %est_tax; # by name, and then by taxclass
     my %taxable_items; # by taxnum, and then an array
@@ -1406,8 +1431,7 @@ sub upgrade_tax_location {
 
       if ( !exists( $taxdef_by_name{$taxname} ) ) {
         # then we didn't find any applicable taxes with this name
-        warn "no definition found for tax item '$taxname'.\n".
-          '('.join(' ', @hash{qw(country state county city district)}).")\n";
+        warn "no definition found for tax item '$taxname', custnum $custnum\n";
         # possibly all of these should be "next TAX_ITEM", but whole invoices
         # are transaction protected and we can go back and retry them.
         next INVOICE;
