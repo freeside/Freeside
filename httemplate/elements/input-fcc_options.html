@@ -37,7 +37,8 @@ function show_fcc_options(id) {
       tech = 'Technology '+tech; // unknown?
     }
   }
-  var media = String.toLowerCase(curr_values['media'] || 'unknown media');
+  var media = curr_values['media'] || 'unknown media';
+  media = media.toLowerCase();
   if ( curr_values['is_consumer'] ) {
     out += '<li><strong>Consumer-grade</strong> service</li>';
   } else {
