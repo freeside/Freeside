@@ -1163,6 +1163,7 @@ sub upgrade_tax_location {
   my $conf = FS::Conf->new; # h_conf?
   return if $conf->exists('enable_taxproducts'); #don't touch this case
   my $use_ship = $conf->exists('tax-ship_address');
+  my $use_pkgloc = $conf->exists('tax-pkg_address');
 
   my $date_where = '';
   if ($opt{s}) {
@@ -1240,13 +1241,14 @@ sub upgrade_tax_location {
     # This is a historical customer record, so it has a historical address.
     # If there's no cust_location matching this custnum and address (there 
     # probably isn't), create one.
-    my $tax_loc;
+    my %tax_loc; # keys are pkgnums, values are cust_location objects
+    my $default_tax_loc;
     if ( $h_cust_main->bill_locationnum ) {
       # the location has already been upgraded
       if ($use_ship) {
-        $tax_loc = $h_cust_main->ship_location;
+        $default_tax_loc = $h_cust_main->ship_location;
       } else {
-        $tax_loc = $h_cust_main->bill_location;
+        $default_tax_loc = $h_cust_main->bill_location;
       }
     } else {
       $pre = 'ship_' if $use_ship and length($h_cust_main->get('ship_last'));
@@ -1256,8 +1258,8 @@ sub upgrade_tax_location {
       delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
 
       $hash{custnum} = $h_cust_main->custnum;
-      $tax_loc = FS::cust_location->new(\%hash);
-      my $error = $tax_loc->find_or_insert || $tax_loc->disable_if_unused;
+      $default_tax_loc = FS::cust_location->new(\%hash);
+      my $error = $default_tax_loc->find_or_insert || $default_tax_loc->disable_if_unused;
       if ( $error ) {
         warn "couldn't create historical location record for cust#".
         $h_cust_main->custnum.": $error\n";
@@ -1286,6 +1288,15 @@ sub upgrade_tax_location {
           next INVOICE;
         }
         my $pkgpart = $h_cust_pkg->pkgpart;
+
+        if ( $use_pkgloc and $h_cust_pkg->locationnum ) {
+          # then this package already had a locationnum assigned, and that's 
+          # the one to use for tax calculation
+          $tax_loc{$pkgnum} = FS::cust_location->by_key($h_cust_pkg->locationnum);
+        } else {
+          # use the customer's bill or ship loc, which was inserted earlier
+          $tax_loc{$pkgnum} = $default_tax_loc;
+        }
 
         if (!exists $pkgpart_taxclass{$pkgpart}) {
           my $h_part_pkg = qsearchs('h_part_pkg', { pkgpart => $pkgpart },
@@ -1337,33 +1348,31 @@ sub upgrade_tax_location {
     # FS::cust_main::Billing::_handle_taxes to identify taxes that apply 
     # to this bill.
     my @loc_keys = qw( district city county state country );
-    my %taxhash = map { $_ => $tax_loc->get($pre.$_) } @loc_keys;
     my %taxdef_by_name; # by name, and then by taxclass
     my %est_tax; # by name, and then by taxclass
     my %taxable_items; # by taxnum, and then an array
 
     foreach my $taxclass (keys %nontax_items) {
-      my %myhash = %taxhash;
-      my @elim = qw( district city county state );
-      my @taxdefs; # because there may be several with different taxnames
-      do {
-        $myhash{taxclass} = $taxclass;
-        @taxdefs = qsearch('cust_main_county', \%myhash);
-        if ( !@taxdefs ) {
-          $myhash{taxclass} = '';
+      foreach my $orig_item (@{ $nontax_items{$taxclass} }) {
+        my $my_tax_loc = $tax_loc{ $orig_item->pkgnum };
+        my %myhash = map { $_ => $my_tax_loc->get($pre.$_) } @loc_keys;
+        my @elim = qw( district city county state );
+        my @taxdefs; # because there may be several with different taxnames
+        do {
+          $myhash{taxclass} = $taxclass;
           @taxdefs = qsearch('cust_main_county', \%myhash);
-        }
-        $myhash{ shift @elim } = '';
-      } while scalar(@elim) and !@taxdefs;
+          if ( !@taxdefs ) {
+            $myhash{taxclass} = '';
+            @taxdefs = qsearch('cust_main_county', \%myhash);
+          }
+          $myhash{ shift @elim } = '';
+        } while scalar(@elim) and !@taxdefs;
 
-      print "Class '$taxclass': ". scalar(@{ $nontax_items{$taxclass} }).
-            " items, ". scalar(@taxdefs)." tax defs found.\n";
-      foreach my $taxdef (@taxdefs) {
-        next if $taxdef->tax == 0;
-        $taxdef_by_name{$taxdef->taxname}{$taxdef->taxclass} = $taxdef;
+        foreach my $taxdef (@taxdefs) {
+          next if $taxdef->tax == 0;
+          $taxdef_by_name{$taxdef->taxname}{$taxdef->taxclass} = $taxdef;
 
-        $taxable_items{$taxdef->taxnum} ||= [];
-        foreach my $orig_item (@{ $nontax_items{$taxclass} }) {
+          $taxable_items{$taxdef->taxnum} ||= [];
           # clone the item so that taxdef-dependent changes don't
           # change it for other taxdefs
           my $item = FS::cust_bill_pkg->new({ $orig_item->hash });
@@ -1443,8 +1452,8 @@ sub upgrade_tax_location {
               next INVOICE;
             }
           } #foreach @new_exempt
-        } #foreach $item
-      } #foreach $taxdef
+        } #foreach $taxdef
+      } #foreach $item
     } #foreach $taxclass
 
     # Now go through the billed taxes and match them up with the line items.
@@ -1490,6 +1499,7 @@ sub upgrade_tax_location {
         printf("\t$taxclass: %.2f\n", $this_est_tax->{$taxclass}/$est_total);
 
         foreach my $nontax (@items) {
+          my $my_tax_loc = $tax_loc{ $nontax->pkgnum };
           my $part = int($real_tax
                             # class allocation
                          * ($this_est_tax->{$taxclass}/$est_total) 
@@ -1502,6 +1512,7 @@ sub upgrade_tax_location {
           push @tax_links, {
             taxnum      => $taxdef->taxnum,
             pkgnum      => $nontax->pkgnum,
+            locationnum => $my_tax_loc->locationnum,
             billpkgnum  => $nontax->billpkgnum,
             cents       => $part,
           };
@@ -1544,7 +1555,7 @@ sub upgrade_tax_location {
         my $link = FS::cust_bill_pkg_tax_location->new({
             billpkgnum  => $tax_item->billpkgnum,
             taxtype     => 'FS::cust_main_county',
-            locationnum => $tax_loc->locationnum,
+            locationnum => $_->{locationnum},
             taxnum      => $_->{taxnum},
             pkgnum      => $_->{pkgnum},
             amount      => sprintf('%.2f', $_->{cents} / 100),
