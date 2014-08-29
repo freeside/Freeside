@@ -258,6 +258,71 @@ sub cust_bill_pkg { #actually cust_bill_pkg_void objects
 
 =back
 
+=item cust_pkg
+
+Returns the packages (see L<FS::cust_pkg>) corresponding to the line items for
+this invoice.
+
+=cut
+
+sub cust_pkg {
+  my $self = shift;
+  my @cust_pkg = map { $_->pkgnum > 0 ? $_->cust_pkg : () }
+                 $self->cust_bill_pkg;
+  my %saw = ();
+  grep { ! $saw{$_->pkgnum}++ } @cust_pkg;
+}
+
+=item search_sql_where HASHREF
+
+Class method which returns an SQL WHERE fragment to search for parameters
+specified in HASHREF.  Accepts the following parameters for 
+L<FS::cust_bill::search_sql_where>: C<_date>, C<invnum_min>, C<invnum_max>,
+C<agentnum>, C<custnum>, C<cust_classnum>, C<refnum>, C<payby>.  Also 
+accepts the following:
+
+=over 4
+
+=item void_date
+
+Arrayref of start and end date to find invoices voided in a date range.
+
+=item void_usernum
+
+User identifier (L<FS::access_user> key) that voided the invoice.
+
+=back
+
+=cut
+
+sub search_sql_where {
+  my($class, $param) = @_;
+
+  my $cust_bill_param = {
+    map { $_ => $param->{$_} }
+    grep { exists($param->{$_}) }
+    qw( _date invnum_min invnum_max agentnum custnum cust_classnum 
+        refnum payby )
+  };
+  my $search_sql = FS::cust_bill->search_sql_where($cust_bill_param);
+  $search_sql =~ s/cust_bill/cust_bill_void/g;
+  my @search = ($search_sql);
+
+  if ( $param->{void_date} ) {
+    my($beginning, $ending) = @{$param->{void_date}};
+    push @search, "cust_bill_void.void_date >= $beginning",
+                  "cust_bill_void.void_date <  $ending";
+  }
+
+  if ( $param->{void_usernum} =~ /^(\d+)$/ ) {
+    my $usernum = $1;
+    push @search, "cust_bill_void.void_usernum = $1";
+  }
+
+  join(" AND ", @search);
+}
+
+
 =item enable_previous
 
 =cut

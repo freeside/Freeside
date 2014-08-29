@@ -1,0 +1,18 @@
+<% $note %>\
+<%init>
+
+my ($batchnum, $format) = $cgi->param('arg');
+
+my $note = '';
+if ( $batchnum =~ /^(\d+)$/ ) {
+  my $pay_batch = FS::pay_batch->by_key($batchnum);
+  if ( $pay_batch and $format =~ /^(\w+)$/ ) {
+    my $class = "FS::pay_batch::$format";
+    if ( $class->can('download_note') ) {
+      # now we can actually do something
+      $note = $class->download_note($pay_batch);
+    }
+  }
+}
+
+</%init>

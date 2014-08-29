@@ -8,6 +8,7 @@ use File::Slurp;
 use FS::UID qw( dbh driver_name );
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch str2time_sql);
+use FS::queue;
 use FS::upgrade_journal;
 
 use FS::svc_domain;
@@ -96,6 +97,34 @@ sub upgrade_config {
     $conf->touch('cust_main-enable_spouse');
     $conf->delete('cust_main-enable_spouse_birthdate');
   }
+
+  # renamed/repurposed
+  if ( $conf->exists('cust_pkg-show_fcc_voice_grade_equivalent') ) {
+    $conf->touch('part_pkg-show_fcc_options');
+    $conf->delete('cust_pkg-show_fcc_voice_grade_equivalent');
+    warn "
+You have FCC Form 477 package options enabled.
+
+Starting with the October 2014 filing date, the FCC has redesigned 
+Form 477 and introduced new service categories.  See bin/convert-477-options
+to update your package configuration for the new report.
+
+If you need to continue using the old Form 477 report, turn on the
+'old_fcc_report' configuration option.
+";
+  }
+
+  # boolean invoice_sections_by_location option is now
+  # invoice_sections_method = 'location'
+  my @invoice_sections_confs =
+    qsearch('conf', { 'name' => { op=>'LIKE', value=>'%sections_by_location' } });
+  foreach my $c (@invoice_sections_confs) {
+    $c->name =~ /^(\w+)sections_by_location$/;
+    $conf->delete($c->name);
+    my $newname = $1.'sections_method';
+    $conf->set($newname, 'location');
+  }
+
 }
 
 sub upgrade_overlimit_groups {
@@ -152,6 +181,26 @@ sub upgrade {
       my $start = time;
 
       $class->_upgrade_data(%opt);
+
+      # New interface for async upgrades: a class can declare a 
+      # "queueable_upgrade" method, which will run as part of the normal 
+      # upgrade, but if the -j option is passed, will instead be run from 
+      # the job queue.
+      if ( $class->can('queueable_upgrade') ) {
+        my $jobname = $class . '::queueable_upgrade';
+        my $num_jobs = FS::queue->count("job = '$jobname' and status != 'failed'");
+        if ($num_jobs > 0) {
+          warn "$class upgrade already scheduled.\n";
+        } else {
+          if ( $opt{'queue'} ) {
+            warn "Scheduling $class upgrade.\n";
+            my $job = FS::queue->new({ job => $jobname });
+            $job->insert($class, %opt);
+          } else {
+            $class->queueable_upgrade(%opt);
+          }
+        } #$num_jobs == 0
+      }
 
       if ( $oldAutoCommit ) {
         warn "  committing\n";
@@ -322,6 +371,9 @@ sub upgrade_data {
 
     #fix taxable line item links
     'cust_bill_pkg_tax_location' => [],
+
+    #populate state FIPS codes if not already done
+    'state' => [],
   ;
 
   \%hash;

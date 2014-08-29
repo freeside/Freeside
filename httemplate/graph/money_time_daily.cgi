@@ -1,4 +1,4 @@
-<% include('elements/monthly.html',
+<% include('elements/monthly.html', #well, not really, daily flag below
                 'title'        => $agentname.
                                   'Daily Sales, Credits and Receipts Summary',
                 'items'        => \@items,

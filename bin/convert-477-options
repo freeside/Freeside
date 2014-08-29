@@ -1,0 +1,148 @@
+#!/usr/bin/perl
+
+my $user = shift;
+use FS::UID 'adminsuidsetup';
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::part_pkg_report_option;
+use Text::CSV;
+
+if (!$user) {
+  print "
+Usage: bin/convert-477-options <username>
+
+This script will convert your per-package FCC 477 report options
+from the classic style (part IA, IB, IIA...) to the 2014 style.
+This is an approximate conversion, and you should review the 
+resulting package settings for accuracy.  In particular:
+  - Broadband speeds will be set to the lowest speed in their 
+    tier.
+  - Broadband technologies for ADSL and cable modem will be set
+    to 'other ADSL' and 'other cable modem'.  You should set 
+    them to the specific ADSL or cable encapsulation in use.
+  - All packages will be set to 'business grade'.  The 'consumer grade'
+    category did not exist in previous versions of the report.
+";
+  exit(1);
+}
+
+adminsuidsetup($user) or die "invalid user '$user'";
+$FS::UID::AutoCommit = 1;
+$FS::Record::nowarn_classload = 1;
+
+print "Configuring packages...\n";
+
+my @min_download_speed = ( 0.2, 0.768, 1.5, 3, 6, 10, 25, 100 );
+my @min_upload_speed = ( 0.1, @min_download_speed );
+my @media_type = ( 'Copper', 'Copper', 'Copper', 'Cable Modem',
+                   'Fiber', 'Satellite', 'Fixed Wireless', 'Mobile Wireless',
+                   'Other', 'Other' );
+my @technology = ( 10, 20, 30, 40,
+                   50, 60, 70, 80,
+                   90, 0 );
+
+my @phone_option = (
+  'phone_longdistance:1',   # LD carrier
+  'phone_localloop:owned',  # owned loops
+  'phone_localloop:leased', # unswitched UNE loops
+  'phone_localloop:resale', # UNE-P (is pretty much extinct...)
+  'phone_localloop:resale', # UNE-P replacement
+  'media:Fiber',
+  'media:Cable Modem',
+  'media:Fixed Wireless',
+);
+
+my @voip_option = (
+  '', #nomadic; no longer reported
+  'media:Copper',
+  'media:Fiber',
+  'media:Cable Modem',
+  'media:Fixed Wireless',
+  'media:Other'
+);
+
+my %num_to_formkey; # o2m
+foreach ( qsearch('fcc477map', {}) ) {
+  push @{ $num_to_formkey{$_->formvalue} ||= [] }, $_->formkey;
+}
+
+sub report_option_to_fcc_option {
+  my $report_option_num = shift;
+  my $formkeys = $num_to_formkey{$report_option_num}
+    or return;
+  my @return;
+  foreach my $formkey (@$formkeys) {
+    if      ($formkey =~ /^part1_column_option_(\d+)/) {
+      #download speed
+      push @return, (broadband_downstream => $min_download_speed[$1]);
+    } elsif ($formkey =~ /^part1_row_option_(\d+)/) {
+      #upload speed
+      push @return, (broadband_upstream   => $min_upload_speed[$1]);
+    } elsif ($formkey =~ /^part1_technology_option_(\d+)/) {
+      #broadband tech
+      push @return, 
+             (is_broadband  => 1,
+              media         => $media_type[$1],
+              technology    => $technology[$1]);
+    } elsif ($formkey =~ /^part2a_row_option_(\d+)/) {
+      #local phone options
+      push @return,
+             (media => 'Copper', # sensible default
+              split(':', $phone_option[$1])
+             );
+    } elsif ($formkey =~ /^part2b_row_option_(\d+)/) {
+      #VoIP options (are all media types)
+      push @return, (split(':', $voip_option[$1]));
+    } elsif ($formkey =~ /^part5_report_option/) {
+      # ignore this
+    } else {
+      warn "can't parse option with formkey '$formkey'\n";
+    }
+  }
+  @return;
+}
+
+for my $part_pkg (qsearch('part_pkg', { freq => {op => '!=', value => '0'}})) {
+  my $pkgpart = $part_pkg->pkgpart;
+  #print "#$pkgpart\n";
+  my %report_opts = $part_pkg->options;
+  my @fcc_opts;
+  foreach my $optionname (keys(%report_opts)) {
+    $optionname =~ /^report_option_(\d+)$/ or next;
+    my $num = $1;
+    push @fcc_opts, report_option_to_fcc_option($num);
+  }
+  # other special stuff:
+  # FCC voice class (VoIP OTT, VoIP + broadband, Wholesale VoIP, Local
+  # Exchange) and DS0 equivalent lines
+  my $sessions = $part_pkg->fcc_ds0s;
+
+  if ( $sessions ) { # then this is a voice package of some kind
+    if ($part_pkg->fcc_voip_class == 1) {
+      # VoIP OTT (connection not included)
+      push @fcc_opts, 'is_voip' => 1, 'voip_ott' => 1,
+                      'voip_sessions' => $sessions;
+    } elsif ( $part_pkg->fcc_voip_class == 2) {
+      # VoIP non-OTT; do not set is_broadband since the connection is not 
+      # necessarily general Internet access
+      push @fcc_opts, 'is_voip' => 1,
+                      'voip_sessions' => $sessions;
+    } elsif ( $part_pkg->fcc_voip_class == 3 ) {
+      # wholesale VoIP; apparently no longer reportable?
+    } else {
+      # local exchange telephone
+      push @fcc_opts, 'is_phone' => 1,
+                      'phone_lines' => $sessions;
+    }
+  }
+
+  my %fcc_opts = @fcc_opts;
+  #print map {"\t$_\t".$fcc_opts{$_}."\n"} keys %fcc_opts;
+  my $error = $part_pkg->set_fcc_options(\%fcc_opts);
+  if ( $error ) {
+    die "$error\n";
+  }
+  #print "\n";
+}
+
+print "Finished.\n";
+

@@ -83,6 +83,7 @@ if ( -e $addl_handler_use_file ) {
   use IO::File;
   use IO::Scalar;
   use IO::String;
+  use File::Slurp qw( slurp );
   #not actually using this yet anyway...# use IPC::Run3 0.036;
   use Net::Whois::Raw qw(whois);
   if ( $] < 5.006 ) {
@@ -98,6 +99,7 @@ if ( -e $addl_handler_use_file ) {
 
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
+  use Net::MAC::Vendor;
   use Net::Ping;
   use Net::Ping::External;
   #if CPAN #7815 ever gets fixed# if ( $Net::Ping::External::VERSION <= 0.12 )
@@ -137,6 +139,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::UI::Web qw(svc_url);
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
+  use FS::UI::REST qw( rest_auth rest_uri_remain encode_rest );
   use FS::Msgcat qw(gettext geterror);
   use FS::Misc qw( send_email send_fax ocr_image
                    states_hash counties cities state_label
@@ -378,6 +381,15 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_fee_usage;
   use FS::sched_item;
   use FS::sched_avail;
+  use FS::export_batch;
+  use FS::export_batch_item;
+  use FS::part_pkg_fcc_option;
+  use FS::state;
+  use FS::state;
+  use FS::queue_stat;
+  use FS::deploy_zone;
+  use FS::deploy_zone_block;
+  use FS::deploy_zone_vertex;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -34,19 +34,19 @@ a subclass.
 
 OPTIONS may contain:
 
-- buffer: an arrayref to store details into.  This may avoid the need for 
-  a large copy operation at the end of processing.  However, since 
-  summary formats will produce nothing until the end of processing, 
-  C<finish> must be called after all CDRs have been appended.
+- buffer: an arrayref to store details into.  This may avoid the need for a
+large copy operation at the end of processing.  However, since summary formats
+will produce nothing until the end of processing, C<finish> must be called
+after all CDRs have been appended.
 
-- inbound: a flag telling the formatter to format CDRs for display to 
-  the receiving party, rather than the originator.  In this case, the 
-  L<FS::cdr_termination> object will be fetched and its values used for
-  rated_price, rated_seconds, rated_minutes, and svcnum.  This can be 
-  changed with the C<inbound> method.
+- inbound: a flag telling the formatter to format CDRs for display to the
+receiving party, rather than the originator.  In this case, the
+L<FS::cdr_termination> object will be fetched and its values used for
+rated_price, rated_seconds, rated_minutes, and svcnum.  This can be changed
+with the C<inbound> method.
 
-- locale: a locale string to use for static text and date formats.  This
-  is optional.
+- locale: a locale string to use for static text and date formats.  This is
+optional.
 
 =cut
 
@@ -84,6 +84,8 @@ sub new {
 
 =head1 METHODS
 
+=over 4
+
 =item inbound VALUE
 
 Set/get the 'inbound' flag.
@@ -94,6 +96,19 @@ sub inbound {
   my $self = shift;
   $self->{inbound} = ($_[0] > 0) if (@_);
   $self->{inbound};
+}
+
+=item phonenum VALUE
+
+Set/get the locally meaningful phone number.  This is used to tag call details
+for presentation on certain kinds of invoices.
+
+=cut
+
+sub phonenum {
+  my $self = shift;
+  $self->{phonenum} = shift if @_;
+  $self->{phonenum};
 }
 
 =item append CDRS
@@ -170,6 +185,9 @@ rated_regionname  => regionname
 accountcode       => accountcode
 startdate         => startdate
 
+'phonenum' is set to the internal C<phonenum> value set on the formatter
+object.
+
 It then calls C<columns> on the CDR to obtain a list of detail
 columns, formats them as a CSV string, and stores that in the 
 'detail' field.
@@ -198,6 +216,7 @@ sub single_detail {
       'startdate'   => $cdr->startdate,
       'format'      => 'C',
       'detail'      => $self->csv->string,
+      'phonenum'    => $self->phonenum,
   });
 }
 

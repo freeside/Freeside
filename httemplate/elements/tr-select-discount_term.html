@@ -34,8 +34,8 @@ function change_discount_term(what) {
   </TR>
 
 % }
-
 <%init>
+
 my %opt = @_;
 
 my $custnum = $opt{'custnum'};
@@ -45,7 +45,10 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
 
 my @discount_term = ();
 my %discounted_total = ();
+
+#this is inefficient for many years worth of invoices
 my $last_bill = ($cust_main->cust_bill)[-1];
+
 if ( $last_bill ) { # if not, there are no discounts possible
   my %plans = $last_bill->discount_plans;
   @discount_term = sort { $a <=> $b } keys %plans;

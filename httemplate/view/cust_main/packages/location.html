@@ -74,7 +74,7 @@ my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
-my $loc = $cust_pkg->cust_location_or_main;
+my $loc = $cust_pkg->cust_location_or_main('_cache'=>$opt{cust_location_cache});
 # dubious--they should all have a location now
 my $default = $cust_pkg->locationnum == $opt{'cust_main'}->ship_locationnum;
 

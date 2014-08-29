@@ -19,10 +19,7 @@ $DEBUG = 1;
   'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
     'ratenum'   => { 'name' => 'Rate plan',
-                     'type' => 'select',
-                     'select_table' => 'rate',
-                     'select_key'   => 'ratenum',
-                     'select_label' => 'ratename',
+                     'type' => 'select-rate',
                    },
   },
   'fieldorder' => [qw( ratenum ignore_unrateable )],

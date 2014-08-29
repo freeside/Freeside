@@ -34,9 +34,17 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item ratenum - primary key
+=item ratenum
+
+primary key
 
 =item ratename
+
+Rate name
+
+=item agentnum
+
+Optional agent (see L<FS::agent>) for agent-virtualized rates.
 
 =back
 
@@ -253,15 +261,13 @@ and replace methods.
 
 =cut
 
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
-
 sub check {
   my $self = shift;
 
   my $error =
        $self->ut_numbern('ratenum')
     || $self->ut_text('ratename')
+    #|| $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
   ;
   return $error if $error;
 

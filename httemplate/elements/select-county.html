@@ -2,7 +2,7 @@
 
 Example:
 
-  include( '/elements/select-county.html',
+ <& /elements/select-county.html,
     #recommended
     country    => $current_country,
     state      => $current_state,
@@ -15,7 +15,7 @@ Example:
     disable_empty => 1, #defaults to 1, disable the empty option
     empty_label   => 'all', #label for empty option
     style         => [ 'attribute:value', 'another:value' ],
-  );
+  &>
 
 </%doc>
 % if ( $countyflag ) { 

@@ -132,6 +132,9 @@ tie my %report_invoices, 'Tie::IxHash',
   'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
   'separator'     => '',
   'Line items'    => [ $fsurl. 'search/report_cust_bill_pkg.html', 'Individual line item detail' ],
+  'separator'     => '',
+  'Voided invoices' => [ $fsurl.'search/report_cust_bill_void.html', 'Search for voided invoices' ],
+
 ;
 
 tie my %report_discounts, 'Tie::IxHash',
@@ -255,8 +258,8 @@ $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi
 $report_packages{'Suspension summary'} = [ $fsurl.'search/cust_pkg_susp.html', 'Show suspension activity', ]
   if $curuser->access_right('Summarize packages');
 $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
-$report_packages{'FCC Form 477 packages'} =  [ $fsurl.'search/report_477.html', 'Summarize packages by census tract for particular types' ]
-  if $conf->exists('cust_main-require_censustract');
+$report_packages{'FCC Form 477'} =  [ $fsurl.'search/report_477.html' ]
+  if $conf->exists('part_pkg-show_fcc_options');
 $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
 
 tie my %report_inventory, 'Tie::IxHash',
@@ -374,7 +377,8 @@ if( $curuser->access_right('Financial reports') ) {
 } # else $report_financial contains nothing.
 
 tie my %report_payable, 'Tie::IxHash',
-  'Payables' => [ $fsurl. 'search/report_vend_bill.html' ],
+  'Payables summary' => [ $fsurl. 'search/report_vend_main.html', 'Payables summary by vendor' ],
+  'Payables detail' => [ $fsurl. 'search/report_vend_bill.html' ],
 ;
 
 tie my %report_logs, 'Tie::IxHash';
@@ -495,6 +499,9 @@ $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
   if $curuser->access_right('Import');
 $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
   if $curuser->access_right('Export');
+$tools_menu{'Status'} = [ $fsurl.'view/Status.html', 'System status' ]
+  if $curuser->access_right('Configuration'); # 'View system status');
+
 
 tie my %config_employees, 'Tie::IxHash',
   'Employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
@@ -615,15 +622,19 @@ tie my %config_sales, 'Tie::IxHash',
   'Sales People' => [ $fsurl.'browse/sales.html', 'Sales people bring in new business.' ],
 ;
 
-tie my %config_billing_rates, 'Tie::IxHash',
-  'Rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
-  'Regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
-  'Usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation.' ],
-  'Time periods' => [ $fsurl.'browse/rate_time.html', 'Time periods define days and hours for rate plans' ],
-  'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ], #"Edit with Excel" ?
-  'separator'     => '', #its a separator!
-  'Tiering plans' => [ $fsurl.'browse/rate_tier.html', 'Rating tiers' ],
-;
+tie my %config_billing_rates, 'Tie::IxHash';
+$config_billing_rates{'Rate plans'} = [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ]
+  if $curuser->access_right('Edit CDR rates')
+  #|| $curuser->access_right('Edit global CDR rates')
+  || $curuser->access_right('Configuration');
+if ( $curuser->access_right('Configuration') ) {
+  $config_billing_rates{'Regions and prefixes'} = [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ];
+  $config_billing_rates{'Usage classes'} = [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation.' ];
+  $config_billing_rates{'Time periods'} = [ $fsurl.'browse/rate_time.html', 'Time periods define days and hours for rate plans' ];
+  $config_billing_rates{'Edit rates with Excel'} = [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ]; #"Edit with Excel" ?
+  $config_billing_rates{'separator'} = ''; #its a separator!
+  $config_billing_rates{'Tiering plans'} = [ $fsurl.'browse/rate_tier.html', 'Rating tiers' ];
+}
 
 tie my %config_billing, 'Tie::IxHash';
 #  'Payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
@@ -636,7 +647,10 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'separator'} = ''; #its a separator!
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
-  $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+}
+$config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ]
+  if keys %config_billing_rates;
+if ( $curuser->access_right('Configuration') ) {
   $config_billing{'separator2'} = ''; #its a separator!
 
   my $config_taxes_name = 'Locales and tax rates'.
@@ -767,8 +781,7 @@ if ( $curuser->access_right('Configuration') ) {
 }
 
 $config_menu{'Billing'} = [ \%config_billing, '' ]
-  if $curuser->access_right('Edit billing events')
-  || $curuser->access_right('Edit global billing events');
+  if keys %config_billing;
 $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
   if $conf->config('ticket_system')
   && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');

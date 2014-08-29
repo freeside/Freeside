@@ -21,8 +21,8 @@ sub option_fields {
       'type'    => 'select',
       #add additional ways to specify in the package def
       'options' => [qw(
-        base_recur_permonth cust_bill_pkg_recur recur_cost_permonth
-        unit_setup setup_cost
+        base_recur_permonth cust_bill_pkg_recur recur_cost_permonth recur_margin_permonth
+        unit_setup setup_cost setup_margin
       )],
       'labels'  => {
         'base_recur_permonth' => 'Base monthly fee',
@@ -31,6 +31,8 @@ sub option_fields {
         'recur_cost_permonth' => 'Monthly cost',
         'unit_setup'          => 'Setup fee',
         'setup_cost'          => 'Setup cost',
+        'setup_margin'        => 'Setup margin (fee minus cost)',
+        'recur_margin_permonth' => 'Monthly margin (fee minus cost)',
       },
     },
   );

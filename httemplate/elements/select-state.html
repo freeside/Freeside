@@ -2,7 +2,7 @@
 
 Example:
 
-  include( '/elements/select-state.html',
+  <& /elements/select-state.html,
     #recommended
     country    => $current_country,
     state      => $current_state,
@@ -15,7 +15,7 @@ Example:
     empty_label   => 'all', #label for empty option
     disable_countyupdate => 0, #bool - disabled update of the select-state.html
     style         => [ 'attribute:value', 'another:value' ],
-  );
+  &>
 
 </%doc>
 

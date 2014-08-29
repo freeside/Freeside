@@ -9,10 +9,12 @@ my $conf;
 
 my $templatename;
 my $agentnum = '';
-if ( $cgi->param('invnum') ) {
+if ( $cgi->param('invnum') =~ /^(\d+)$/ ) {
+  my $invnum = $1; 
   $templatename = $cgi->param('template') || $cgi->param('templatename');
-  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $cgi->param('invnum') } )
-    or die 'unknown invnum';
+  my $cust_bill = FS::cust_bill->by_key($invnum)
+               || FS::cust_bill_void->by_key($invnum);
+  die 'unknown invnum' unless $cust_bill;
   $conf = $cust_bill->conf;
   $agentnum = $cust_bill->cust_main->agentnum;
 } else {

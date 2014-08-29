@@ -4,17 +4,22 @@
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Package') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Contact/Location') |h %></TH>
+% if (!$opt{no_services}) {
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Services') |h %></TH>
+% }
 </TR>
 
 % #$FS::cust_pkg::DEBUG = 2;
 %   foreach my $cust_pkg (@$packages) {
+%    # if requested, this can override cust_pkg-group_by_location
     <& .packagerow, $cust_pkg,
+        %conf_opt,
         ( map { $_ => $opt{$_} } qw(
-            cust_main bgcolor
-            no_links before_pkg_callback before_svc_callback after_svc_callback
+            cust_main bgcolor no_links cust_location_cache
+            before_pkg_callback before_svc_callback after_svc_callback
+            cust_pkg-group_by_location
+            no_services
         )),
-        %conf_opt
     &>
 %   }
 % } else { # there are no packages
@@ -30,10 +35,12 @@
     <& package.html, %iopt &>
     <& status.html,  %iopt &>
     <TD CLASS="inv" BGCOLOR="<% $iopt{bgcolor} %>" WIDTH="20%" VALIGN="top">
-      <& contact.html, %iopt &><BR>
+      <& contact.html, %iopt &>
       <& location.html, %iopt &>
     </TD>
+%   if (!$iopt{no_services}) {
     <& services.html, %iopt &>
+%   }
   </TR>
 % # insert hidden predecessors to this package, if any
 % # and a rolldown button to show them
@@ -99,6 +106,7 @@ my %conf_opt = (
   #for package.html
   'invoice-unitprice'         => $conf->exists('invoice-unitprice'),
   'show_pkgnum'               => $curuser->option('show_pkgnum'),
+  'part_pkg-term_discounts'   => $conf->exists('part_pkg-term_discounts'),
 
   #for services.html and status.html
   'cust_pkg-display_times'    => ($conf->exists('cust_pkg-display_times')
@@ -126,6 +134,7 @@ my %conf_opt = (
   'manage_link_loc'           => scalar($conf->config('svc_broadband-manage_link_loc')),
   'manage_link-new_window'    => $conf->exists('svc_broadband-manage_link-new_window'),
   'cust_pkg-large_pkg_size'   => scalar($conf->config('cust_pkg-large_pkg_size')),
+  'cust_pkg-hide_discontinued-part_svc' => $conf->exists('cust_pkg-hide_discontinued-part_svc'),
 
 );
 

@@ -10,7 +10,7 @@
                  'agent_virt'            => 1,
                  'agent_null_right'      => [ $edit, $edit_global ],
                  'agent_null_right_link' => $edit_global,
-                 'agent_pos'             => 6,
+                 'agent_pos'             => 7, #5?
                  'query'                 => { 'select'    => $select,
                                               'table'     => 'part_pkg',
                                               'hashref'   => \%hash,
@@ -108,6 +108,14 @@ my $count_cust_pkg = "
     WHERE cust_pkg.pkgpart = part_pkg.pkgpart
       AND $agentnums_sql
 ";
+my $count_cust_pkg_cancel = "
+  SELECT COUNT(*) FROM cust_pkg LEFT JOIN cust_main USING ( custnum )
+    LEFT JOIN cust_pkg AS cust_pkg_next
+      ON (cust_pkg.pkgnum = cust_pkg_next.change_pkgnum)
+    WHERE cust_pkg.pkgpart = part_pkg.pkgpart
+      AND $agentnums_sql
+      AND cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0
+";
 
 $select = "
 
@@ -137,11 +145,16 @@ $select = "
       AND ( setup IS NULL OR setup = 0 )
   ) AS num_on_hold,
 
-  ( $count_cust_pkg
-      AND cancel IS NOT NULL AND cancel != 0
+  ( $count_cust_pkg_cancel
+      AND (cust_pkg_next.pkgnum IS NULL
+           OR cust_pkg_next.pkgpart != cust_pkg.pkgpart)
   ) AS num_cancelled
 
 ";
+# About the num_cancelled expression: packages that were changed, but 
+# kept the same pkgpart, are considered "moved", not "canceled" (because
+# this is the part_pkg UI).  We could show the count of those but it's 
+# probably not interesting.
 
 my $html_init = qq!
     One or more service definitions are grouped together into a package 
@@ -352,6 +365,51 @@ push @fields, sub {
 #      : ''
 #    ).
 #    $part_pkg->freq_pretty; #.'<BR>'
+};
+
+push @header, 'Cost&nbsp;tracking';
+$align .= 'r'; #?
+push @fields, sub {
+  my $part_pkg = shift;
+  #(my $plan = $plan_labels{$part_pkg->plan} ) =~ s/ /&nbsp;/g;
+  my $is_recur = ( $part_pkg->freq ne '0' );
+
+  [
+    [
+      { data => '&nbsp;', # $plan,
+        align=>'center',
+        colspan=>2,
+      },
+    ],
+    [
+      { data =>$money_char.
+               sprintf('%.2f ', $part_pkg->setup_cost ),
+        align=>'right'
+      },
+      { data => ( $is_recur ? '&nbsp;setup' : '&nbsp;one-time' ),
+        align=>'left',
+      },
+    ],
+    [
+      { data=>(
+          $is_recur
+            ? $money_char. sprintf('%.2f', $part_pkg->recur_cost)
+            : '(no&nbsp;recurring)' #$part_pkg->freq_pretty
+        ),
+        align=> ( $is_recur ? 'right' : 'center' ),
+        colspan=> ( $is_recur ? 1 : 2 ),
+      },
+      ( $is_recur
+        ?  { data => ( $is_recur
+                         ? '&nbsp;'. $part_pkg->freq_pretty
+                         : ''
+                     ),
+             align=>'left',
+           }
+        : ()
+      ),
+    ],
+  ];
 };
 
 ###

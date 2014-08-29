@@ -51,7 +51,7 @@ Example:
   <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
       <tr>
-        <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
+        <td BGCOLOR="#ffffff"><% $company_url ? qq(<A HREF="$company_url">) : '' |n %><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"><% $company_url ? '</A>' : '' |n %></td>
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
@@ -206,11 +206,13 @@ if ( $cgi->param('mobile') =~ /^(\d)$/ ) { # allow client to override
   $mobile = $1;
 }
 
-my $company_name;
+my($company_name, $company_url);
 my @agentnums = $curuser->agentnums;
 if ( scalar(@agentnums) == 1 ) {
   $company_name = $conf->config('company_name', $agentnums[0] );
+  $company_url  = $conf->config('company_url',  $agentnums[0] );
 } else {
   $company_name = $conf->config('company_name');
+  $company_url  = $conf->config('company_url');
 }
 </%init>

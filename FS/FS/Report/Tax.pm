@@ -93,7 +93,7 @@ sub report_internal {
   my $pkg_tax_exempt = "SELECT SUM(amount) AS exempt_charged, billpkgnum, taxnum ".
     "FROM cust_tax_exempt_pkg EXEMPT_WHERE GROUP BY billpkgnum, taxnum";
 
-  my $where = "WHERE _date >= $beginning AND _date <= $ending ".
+  my $where = "WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending ".
               "AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname' ".
               "AND cust_main_county.country = '$country'";
   # SELECT/GROUP clauses for first-level queries
@@ -238,9 +238,16 @@ sub report_internal {
   # ($creditfrom includes join of taxable item to part_pkg if with_pkgclass
   # is on)
   my $creditfrom = $taxfrom .
-     ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)';
+    ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)' .
+    ' JOIN cust_credit_bill     USING (creditbillnum)';
   my $creditwhere = $where . 
-     ' AND billpkgtaxratelocationnum IS NULL';
+    ' AND billpkgtaxratelocationnum IS NULL';
+
+  # if the credit_date option is set to application date, change
+  # $creditwhere accordingly
+  if ( $opt{credit_date} eq 'cust_credit_bill' ) {
+    $creditwhere     =~ s/cust_bill._date/cust_credit_bill._date/g;
+  }
 
   $sql{credit} = "$select SUM(cust_credit_bill_pkg.amount)
                   $creditfrom

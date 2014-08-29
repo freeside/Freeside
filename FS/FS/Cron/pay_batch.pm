@@ -11,7 +11,7 @@ use FS::queue;
 use FS::agent;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw ( batch_submit batch_receive );
+@EXPORT_OK = qw ( pay_batch_submit pay_batch_receive );
 $DEBUG = 0;
 $me = '[FS::Cron::pay_batch]';
 
@@ -22,7 +22,7 @@ $me = '[FS::Cron::pay_batch]';
 #  -r: Multi-process mode dry run option
 #  -a: Only process customers with the specified agentnum
 
-sub batch_submit {
+sub pay_batch_submit {
   my %opt = @_;
   local $DEBUG = ($opt{l} || 1) if $opt{v};
   # if anything goes wrong, don't try to roll back previously submitted batches
@@ -71,7 +71,7 @@ sub batch_submit {
   1;
 }
 
-sub batch_receive {
+sub pay_batch_receive {
   my %opt = @_;
   local $DEBUG = ($opt{l} || 1) if $opt{v};
   local $FS::UID::AutoCommit = 0;

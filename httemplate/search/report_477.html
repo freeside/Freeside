@@ -1,32 +1,30 @@
-<% include('/elements/header.html', 'FCC Form 477 Report' ) %>
-
+% if ( $conf->exists('old_fcc_report') ) {
+%   $m->clear_buffer;
+%   $m->print($cgi->redirect($fsurl . 'search/old477/report_477.html'));
+%   $m->abort;
+% }
+<& /elements/header.html, 'FCC Form 477 Report' &>
+% if ( $curuser->access_right('Edit FCC report configuration') ) {
+<FONT SIZE="+1"><STRONG>Preparation</STRONG></FONT>
+<UL>
+  <LI> <A HREF="<% $p %>browse/part_pkg-fcc.html">Configure packages</A> for FCC reporting categories.</LI>
+  <LI> <A HREF="<% $p %>browse/deploy_zone.html">Enter deployment zones</A> for broadband Internet or mobile phone.</LI>
+</UL>
+% }
+  
 <FORM ACTION="477.html" METHOD="GET">
-<INPUT TYPE="hidden" NAME="magic" VALUE="active">
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
     <TR>
       <TH CLASS="background" COLSPAN=2 ALIGN="left">
-        <FONT SIZE="+1">Search options</FONT>
+        <FONT SIZE="+1">Report options</FONT>
       </TH>
     </TR>
 
-    <% include( '/elements/tr-select-agent.html',
-                   'curr_value'    => scalar( $cgi->param('agentnum') ),
-                   'disable_empty' => 0,
-               )
-    %>
-
-%   # not tr-select-state, we only want to choose from among those that 
-%   # have customers
-    <& /elements/tr-select-table.html,
-        'label'         => 'State',
-        'field'         => 'state',
-        'table'         => 'cust_location',
-        'name_col'      => 'state',
-        'value_col'     => 'state',
-        'disable_empty' => 1,
-        'records'       => \@states,
+    <& /elements/tr-select-agent.html,
+      'curr_value'    => scalar( $cgi->param('agentnum') ),
+      'disable_empty' => 0,
     &>
 
     <& /elements/tr-input-date-field.html, {
@@ -36,247 +34,28 @@
         'format'        => '%m/%d/%Y'
     } &>
 
-    <% include( '/elements/tr-select-pkg_class.html',
-                   'multiple'       => 1,
-                   'empty_label' => '(empty class)',
-               )
-    %>
-
-    <SCRIPT type="text/javascript">
-      function partchange(what) {
-        var id = 'part' + what.value;
-        var element = document.getElementById(id);
-        if (what.checked) {
-          element.style.display = '';
-        } else {
-          element.style.display = 'none';
-        }
-      }
-      function toggleV() {
-        document.getElementById('enableV').disabled =
-          ! (document.getElementById('enableIIA').checked ||
-             document.getElementById('enableIIB').checked);
-      }
-      function toggleVI() {
-        document.getElementById('enableVI').disabled =
-          ! document.getElementById('enableIA').checked;
-      }
-    </SCRIPT>
-
-    <% include( '/elements/tr-checkbox.html',
-                   'label' => 'Enable part IA?',
-                   'field' => 'part',
-                   'id'    => 'enableIA',
-                   'value' => 'IA',
-                   'onchange' => 'partchange(this); toggleVI();',
-               )
-    %>
-
-    <TR id='partIA' style="display:none"><TD>Part IA</TD><TD><TABLE>
-      <TR><TD>Download speeds</TD><TD>
-        <TABLE>
-%       my $i = 0;
-%       foreach my $speed ( @FS::Report::FCC_477::download ) {
-          <TR>
-            <TH><% $speed %></TH>
-            <TD>
-            <% include( '/elements/select-table.html',
-                           'table'        => 'part_pkg_report_option',
-                           'name_col'     => 'name',
-                           'hashref'      => { 'disabled' => '' },
-                           'element_name' => 'part1_column_option',
-                           'disable_empty' => 1,
-                           'curr_value'   =>
-                                FS::Report::FCC_477::restore_fcc477map("part1_column_option_$i"),
-                       )
-            %>
-            </TD>
-          </TR>
-%       $i++
-%       }
-        </TABLE></TD>
-      <TD>Upload speeds</TD><TD>
-        <TABLE>
-%       $i = 0;
-%       foreach my $speed ( @FS::Report::FCC_477::upload ) {
-          <TR>
-            <TH><% $speed %></TH>
-            <TD>
-            <% include( '/elements/select-table.html',
-                           'table'        => 'part_pkg_report_option',
-                           'name_col'     => 'name',
-                           'hashref'      => { 'disabled' => '' },
-                           'element_name' => 'part1_row_option',
-                           'disable_empty' => 1,
-                           'curr_value'   =>
-                                FS::Report::FCC_477::restore_fcc477map("part1_row_option_$i"),
-                       )
-            %>
-            </TD>
-          </TR>
-%       $i++
-%       }
-        </TABLE></TD></TR>
-      <TR><TD>Technologies</TD><TD>
-        <TABLE>
-%       $i = 0;
-%       foreach my $tech ( @FS::Report::FCC_477::technology ) {
-          <TR>
-            <TH><% $tech %></TH>
-            <TD>
-            <% include( '/elements/select-table.html',
-                           'table'        => 'part_pkg_report_option',
-                           'name_col'     => 'name',
-                           'hashref'      => { 'disabled' => '' },
-                           'element_name' => "part1_technology_option_$i",
-                           'empty_label'  => '(omit)',
-                           'curr_value'   =>
-                                FS::Report::FCC_477::restore_fcc477map("part1_technology_option_$i"),
-                       )
-            %>
-            </TD>
-          </TR>
-%       $i++
-%       }
-        </TABLE></TD></TR>
-    </TABLE></TD></TR>
-
-    <% include( '/elements/tr-checkbox.html',
-                   'label' => 'Enable part IIA?',
-                   'field' => 'part',
-                   'id'    => 'enableIIA',
-                   'value' => 'IIA',
-                   'onchange' => 'partchange(this); toggleV();',
-               )
-    %>
-
-    <TR id='partIIA' style="display:none"><TD>Part IIA</TD><TD><TABLE>
-%   $i = 0;
-%   foreach my $option ( @FS::Report::FCC_477::part2aoption ) {
-    <TR>
-      <TH><% $option %></TH>
-      <TD>
-      <% include( '/elements/select-table.html',
-                     'table'        => 'part_pkg_report_option',
-                     'name_col'     => 'name',
-                     'hashref'      => { 'disabled' => '' },
-                     'element_name' => 'part2a_row_option',
-                     'curr_value'   =>
-                           FS::Report::FCC_477::restore_fcc477map("part2a_row_option_$i"),
-                 )
-      %>
-      </TD>
-    </TR>
-%    $i++
-%   }
-  </TABLE></TD></TR>
-
-    <% include( '/elements/tr-checkbox.html',
-                   'label' => 'Enable part IIB?',
-                   'field' => 'part',
-                   'id'    => 'enableIIB',
-                   'value' => 'IIB',
-                   'onchange' => 'partchange(this); toggleV();',
-               )
-    %>
-
-    <TR id='partIIB' style="display:none"><TD>Part IIB</TD><TD><TABLE>
-%   $i = 0;
-%   foreach my $option ( @FS::Report::FCC_477::part2boption ) {
-    <TR>
-      <TH><% $option %></TH>
-      <TD>
-      <% include( '/elements/select-table.html',
-                     'table'        => 'part_pkg_report_option',
-                     'name_col'     => 'name',
-                     'hashref'      => { 'disabled' => '' },
-                     'element_name' => 'part2b_row_option',
-                      'curr_value'   =>
-                            FS::Report::FCC_477::restore_fcc477map("part2b_row_option_$i"),
-                 )
-      %>
-      </TD>
-    </TR>
-%    $i++
-%   }
-  </TABLE></TD></TR>
-
-    <% include( '/elements/tr-checkbox.html',
-                   'label' => 'Enable part IV?',
-                   'field' => 'part',
-                   'id'    => 'enableIV', #unused
-                   'value' => 'IV',
-                   'onchange' => 'partchange(this)',
-               )
-    %>
-
-    <TR id='partIV' style="display:none"><TD>Part IV</TD><TD><TABLE>
-    <% include( '/elements/tr-textarea.html',
-                   'label'        => 'Explanatory notes',
-                   'id'           => 'partIV',
-                   'field'         => 'notes',
-                   'rows'         => 15,
-                   'cols'         => 80,
-               )
-    %>
-  </TABLE></TD></TR>
-
-    <% include( '/elements/tr-checkbox.html',
-                   'label' => 'Enable part V?',
-                   'field' => 'part',
-                   'value' => 'V',
-                   'id'    => 'enableV',
-                   'onchange' => 'partchange(this)',
-                   'postfix'  => 
-                    '&nbsp;<FONT SIZE="-1">(requires Part IIA or IIB)</FONT>',
-               )
-    %>
-    <TR id='partV' style="display:none">
-        <TD>Part V</TD>
-        <TD>
-            <% include( '/elements/select-table.html',
-                     'table'        => 'part_pkg_report_option',
-                     'name_col'     => 'name',
-                     'hashref'      => { 'disabled' => '' },
-                     'element_name' => 'part5_report_option',
-                     'curr_value'   =>
-                            FS::Report::FCC_477::restore_fcc477map("part5_report_option"),
-                 )
-            %>
-        </TD>
-    </TR>
-
-
-    <% include( '/elements/tr-checkbox.html',
-                   'label' => 'Enable part VI?',
-                   'field' => 'part',
-                   'id'    => 'enableVI',
-                   'value' => 'VI_census',
-                   'postfix'  =>
-                    '&nbsp;<FONT SIZE="-1">(requires part IA)</FONT>',
-               )
-    %>
-  <SCRIPT TYPE="text/javascript">
-  toggleV();
-  toggleVI();
-  </SCRIPT>
+    <& /elements/tr-checkbox-multiple.html,
+      'label'   => 'Enable parts',
+      'field'   => 'parts',
+      'labels'  => $part_titles,
+      'options' => [ keys %$part_titles ]
+    &>
   </TABLE>
 
-<BR>
-<INPUT TYPE="submit" VALUE="Get Report">
+  <BR>
+  <INPUT TYPE="submit" VALUE="Get Report">
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+  unless $curuser->access_right('List packages');
 
-my @states = qsearch({
-  'table'   => 'cust_location',
-  'select'  => 'DISTINCT(state)',
-  'hashref' => { 'country' => 'US' }, # 477 report isn't relevant elsewhere
-});
+my $conf = FS::Conf->new;
+
+my $part_titles = FS::Report::FCC_477->parts;
 
 </%init>

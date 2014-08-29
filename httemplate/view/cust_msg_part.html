@@ -1,0 +1,23 @@
+<%init>
+die "access denied" unless $FS::CurrentUser::CurrentUser->access_right('View email logs');
+# invoke this as "view/cust_msg_part.html?$custmsgnum+$partnum"
+my ($custmsgnum, $partnum) = $cgi->keywords;
+$custmsgnum =~ /^\d+$/ or die "bad custmsgnum";
+$partnum =~ /^\d+$/ or die "bad partnum";
+my $cust_msg = FS::cust_msg->by_key($custmsgnum)
+  or die "message not found";
+my $part = ($cust_msg->parts)[$partnum]
+  or die "message part $partnum does not exist";
+
+my $filename = $part->head->recommended_filename;
+if (!$filename) {
+  # for lack of a better idea
+  $part->bodyhandle->{MB_Path} =~ /.*\/(.*)/;
+  $filename = $1;
+}
+
+$m->clear_buffer;
+$r->content_type($part->mime_type || 'application/octet-stream');
+$r->headers_out->add('Content-Disposition' => 'attachment;filename=' . $filename);
+$m->print($part->bodyhandle->as_string);
+</%init>

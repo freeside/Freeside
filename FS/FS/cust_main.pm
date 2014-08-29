@@ -8,6 +8,7 @@ use base qw( FS::cust_main::Packages
              FS::cust_main::Billing_ThirdParty
              FS::cust_main::Location
              FS::cust_main::Credit_Limit
+             FS::cust_main::API
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
              FS::geocode_Mixin FS::Quotable_Mixin FS::Sales_Mixin
              FS::o2m_Common
@@ -2837,13 +2838,19 @@ UNIX timestamps; see L<perlfunc/"time">).  Also see L<Time::Local> and
 L<Date::Parse> for conversion functions.  The empty string can be passed
 to disable that time constraint completely.
 
-Available options are:
+Accepts the same options as L<balance_date_sql>:
 
 =over 4
 
 =item unapplied_date
 
 set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting, probably a bad idea for event triggering)
+
+=item cutoff
+
+An absolute cutoff time.  Payments, credits, and refunds I<applied> after this 
+time will be ignored.  Note that START_TIME and END_TIME only limit the date 
+range for invoices and I<unapplied> payments, credits, and refunds.
 
 =back
 
@@ -3770,9 +3777,17 @@ Returns all the payments (see L<FS::cust_pay>) for this customer.
 
 sub cust_pay {
   my $self = shift;
-  return $self->num_cust_pay unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_pay', { 'custnum' => $self->custnum } )
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  return $self->num_cust_pay unless wantarray || keys %$opt;
+
+  $opt->{'table'} = 'cust_pay';
+  $opt->{'hashref'}{'custnum'} = $self->custnum;
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->_date <=> $b->_date }
+      qsearch($opt);
+
 }
 
 =item num_cust_pay
@@ -3788,6 +3803,22 @@ sub num_cust_pay {
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute($self->custnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
+}
+
+=item unapplied_cust_pay
+
+Returns all the unapplied payments (see L<FS::cust_pay>) for this customer.
+
+=cut
+
+sub unapplied_cust_pay {
+  my $self = shift;
+
+  $self->cust_pay(
+    'extra_sql' => ' AND '. FS::cust_pay->unapplied_sql. ' > 0',
+    #@_
+  );
+
 }
 
 =item cust_pay_pkgnum

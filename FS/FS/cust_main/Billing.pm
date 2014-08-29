@@ -106,8 +106,9 @@ options of those methods are also available.
 sub bill_and_collect {
   my( $self, %options ) = @_;
 
-  my $log = FS::Log->new('bill_and_collect');
-  $log->debug('start', object => $self, agentnum => $self->agentnum);
+  my $log = FS::Log->new('FS::cust_main::Billing::bill_and_collect');
+  my %logopt = (object => $self);
+  $log->debug('start', %logopt);
 
   my $error;
 
@@ -123,6 +124,7 @@ sub bill_and_collect {
                     );
 
   $job->update_statustext('0,cleaning expired packages') if $job;
+  $log->debug('canceling expired packages', %logopt);
   $error = $self->cancel_expired_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
@@ -131,6 +133,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $log->debug('suspending adjourned packages', %logopt);
   $error = $self->suspend_adjourned_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
@@ -139,6 +142,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $log->debug('unsuspending resumed packages', %logopt);
   $error = $self->unsuspend_resumed_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error resuming custnum ".$self->custnum. ": $error";
@@ -148,6 +152,7 @@ sub bill_and_collect {
   }
 
   $job->update_statustext('20,billing packages') if $job;
+  $log->debug('billing packages', %logopt);
   $error = $self->bill( %options );
   if ( $error ) {
     $error = "Error billing custnum ". $self->custnum. ": $error";
@@ -157,6 +162,7 @@ sub bill_and_collect {
   }
 
   $job->update_statustext('50,applying payments and credits') if $job;
+  $log->debug('applying payments and credits', %logopt);
   $error = $self->apply_payments_and_credits;
   if ( $error ) {
     $error = "Error applying custnum ". $self->custnum. ": $error";
@@ -165,10 +171,11 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $job->update_statustext('70,running collection events') if $job;
   unless ( $conf->exists('cancelled_cust-noevents')
            && ! $self->num_ncancelled_pkgs
   ) {
+    $job->update_statustext('70,running collection events') if $job;
+    $log->debug('running collection events', %logopt);
     $error = $self->collect( %options );
     if ( $error ) {
       $error = "Error collecting custnum ". $self->custnum. ": $error";
@@ -177,8 +184,9 @@ sub bill_and_collect {
       else                                                   { warn   $error; }
     }
   }
+
   $job->update_statustext('100,finished') if $job;
-  $log->debug('finish', object => $self, agentnum => $self->agentnum);
+  $log->debug('finish', %logopt);
 
   '';
 
@@ -371,7 +379,10 @@ sub bill {
   return '' if $self->payby eq 'COMP';
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+  my $log = FS::Log->new('FS::cust_main::Billing::bill');
+  my %logopt = (object => $self);
 
+  $log->debug('start', %logopt);
   warn "$me bill customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -400,11 +411,13 @@ sub bill {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  $log->debug('acquiring lock', %logopt);
   warn "$me acquiring lock on customer ". $self->custnum. "\n"
     if $DEBUG;
 
   $self->select_for_update; #mutex
 
+  $log->debug('running pre-bill events', %logopt);
   warn "$me running pre-bill events for customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -420,6 +433,7 @@ sub bill {
     return $error;
   }
 
+  $log->debug('done running pre-bill events', %logopt);
   warn "$me done running pre-bill events for customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -450,6 +464,7 @@ sub bill {
 
     next if $options{'no_prepaid'} && $part_pkg->is_prepaid;
 
+    $log->debug('bill package '. $cust_pkg->pkgnum, %logopt);
     warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG;
 
     #? to avoid use of uninitialized value errors... ?
@@ -630,6 +645,7 @@ sub bill {
         $taxlisthash{$pass},
         $fee_item,
         location => $fee_location
+        # probably not right to pass cancel => 1 for fees
       );
       return $error if $error;
 
@@ -729,15 +745,18 @@ sub bill {
 
     my $charged = sprintf('%.2f', ${ $total_setup{$pass} } + ${ $total_recur{$pass} } );
 
-    my @cust_bill = $self->cust_bill;
     my $balance = $self->balance;
-    my $previous_bill = $cust_bill[-1] if @cust_bill;
-    my $previous_balance = 0;
-    if ( $previous_bill ) {
-      $previous_balance = $previous_bill->billing_balance 
-                        + $previous_bill->charged;
-    }
 
+    my $previous_bill = qsearchs({ 'table'     => 'cust_bill',
+                                   'hashref'   => { custnum=>$self->custnum },
+                                   'extra_sql' => 'ORDER BY _date DESC LIMIT 1',
+                                });
+    my $previous_balance =
+      $previous_bill
+        ? ( $previous_bill->billing_balance + $previous_bill->charged )
+        : 0;
+
+    $log->debug('creating the new invoice', %logopt);
     warn "creating the new invoice\n" if $DEBUG;
     #create the new invoice
     my $cust_bill = new FS::cust_bill ( {
@@ -1353,7 +1372,8 @@ sub _make_lines {
       # handle taxes
       ###
 
-      my $error = $self->_handle_taxes( $taxlisthash, $cust_bill_pkg );
+      my $error = $self->_handle_taxes( $taxlisthash, $cust_bill_pkg,
+        cancel => $options{cancel} );
       return $error if $error;
 
       $cust_bill_pkg->set_display(
@@ -1473,6 +1493,8 @@ OPTIONS may include:
 - part_item: a part_pkg or part_fee object to be used as the package/fee 
   definition.
 - location: a cust_location to be used as the billing location.
+- cancel: true if this package is being billed on cancellation.  This 
+  allows tax to be calculated on usage charges only.
 
 If not supplied, part_item will be inferred from the pkgnum or feepart of the
 cust_bill_pkg, and location from the pkgnum (or, for fees, the invnum and 
@@ -1507,10 +1529,9 @@ sub _handle_taxes {
     my %taxes = ();
 
     my @classes;
-    #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
     push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
-    push @classes, 'setup' if $cust_bill_pkg->setup;
-    push @classes, 'recur' if $cust_bill_pkg->recur;
+    push @classes, 'setup' if $cust_bill_pkg->setup and !$options{cancel};
+    push @classes, 'recur' if $cust_bill_pkg->recur and !$options{cancel};
 
     my $exempt = $conf->exists('cust_class-tax_exempt')
                    ? ( $self->cust_class ? $self->cust_class->tax : '' )
@@ -1784,7 +1805,8 @@ sub retry_realtime {
 
   #a little false laziness w/due_cust_event (not too bad, really)
 
-  my $join = FS::part_event_condition->join_conditions_sql;
+  # I guess this is always as of now?
+  my $join = FS::part_event_condition->join_conditions_sql('', 'time' => time);
   my $order = FS::part_event_condition->order_conditions_sql;
   my $mine = 
   '( '
@@ -2097,7 +2119,8 @@ sub due_cust_event {
 
       #some false laziness w/Cron::bill bill_where
 
-      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable);
+      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable,
+        'time' => $opt{'time'});
       my $where = FS::part_event_condition->where_conditions_sql($eventtable,
         'time'=>$opt{'time'},
       );
@@ -2136,7 +2159,8 @@ sub due_cust_event {
       my $pkey = $object->primary_key;
       $cross_where = "$eventtable.$pkey = ". $object->$pkey();
 
-      my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+      my $join = FS::part_event_condition->join_conditions_sql( $eventtable,
+        'time' => $opt{'time'});
       my $extra_sql =
         FS::part_event_condition->where_conditions_sql( $eventtable,
                                                         'time'=>$opt{'time'}
@@ -2420,13 +2444,9 @@ sub apply_payments {
 
   #return 0 unless
 
-  my @payments = sort { $b->_date <=> $a->_date }
-                 grep { $_->unapplied > 0 }
-                 $self->cust_pay;
+  my @payments = $self->unapplied_cust_pay;
 
-  my @invoices = sort { $a->_date <=> $b->_date}
-                 grep { $_->owed > 0 }
-                 $self->cust_bill;
+  my @invoices = $self->open_cust_bill;
 
   if ( $conf->exists('pkg-balances') ) {
     # limit @payments to those w/ a pkgnum grepped from $self

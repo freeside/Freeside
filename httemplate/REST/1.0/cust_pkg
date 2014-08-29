@@ -1,0 +1,39 @@
+<% encode_rest($return) %>\
+<%init>
+
+rest_auth($cgi);
+
+my( $pkgnum, $command ) = split('/', rest_uri_remain($r, $m), 2 );
+
+if ( $r->method eq 'GET' ) {
+
+  my $return = [];
+
+  if ( $pkgnum ) {
+
+    my $cust_pkg = qsearchs('cust_main', { 'pkgnum'=>$pkgnum } )
+      or die "unknown pkgnum $pkgnum";
+
+    if ( $command eq '' ) {
+
+      $return = $cust_pkg->API_getinfo;
+
+    } elsif ( $command eq 'cust_svc' ) {
+
+      $return = [ map $_->API_getinfo, $cust_pkg->cust_svc ];
+
+    }
+
+
+
+  #} else { #list
+
+  }
+
+} elsif ( $r->method eq 'POST' ) { #create new
+
+} elsif ( $r->method eq 'PUT' ) { #modify
+
+}
+
+</%init>

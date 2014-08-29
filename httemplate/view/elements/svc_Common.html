@@ -105,9 +105,14 @@ function areyousure(href) {
           %>
         </TD>
 
-%	$value = time2str($date_format,$value) if ( $type eq 'date' && $value );
-%	$value = time2str("$date_format %H:%M",$value) if ( $type eq 'datetime' && $value );
-%	$value = $value eq 'Y' ? emt('Yes') : emt('No') if ( $type eq 'checkbox' );
+%	$value = time2str($date_format,$value)
+%         if $type eq 'date' && $value;
+%	$value = time2str("$date_format %H:%M",$value)
+%         if $type eq 'datetime' && $value;
+%	$value = $value eq 'Y' ? emt('Yes') : emt('No')
+%         if $type eq 'checkbox';
+%       $value .= ' ('. (Net::MAC::Vendor::lookup($value))->[0]. ')'
+%         if $type =~ /mac_addr$/ && $value =~ /\w/i;
 %       #eventually more options for <SELECT>, etc. fields
 
         <TD BGCOLOR="#ffffff"><% $value %><TD>

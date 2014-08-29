@@ -1,0 +1,162 @@
+<& /elements/header.html &>
+% foreach my $section ( keys %status ) {
+<FONT CLASS="fsinnerbox-title"><% mt($section) |h %></FONT>
+<TABLE CLASS="fsinnerbox">
+%   foreach my $item ( @{ $status{$section} } ) {
+      <TR>
+        <TD ALIGN="right"><% $item->{title} %></TH>
+        <TD><B><% $item->{value} %></B></TD>
+      </TR>
+%   }
+</TABLE>
+<BR><BR>
+% }
+<& /elements/footer.html &>
+<%init>
+
+my $os;
+-e '/usr/bin/lsb_release' and run( ['lsb_release', '-d'], '>',\$os );
+if ( ! $@ && $os =~ /^\s*Description:\s*(.+)$/ ) {
+  $os = $1;
+} elsif ( my $deb_version = slurp('/etc/debian_version') ) {
+  $os = "Debian $deb_version";
+}
+
+( my $perl_ver = $^V ) =~ s/^v//;
+
+my $db = driver_name;
+$db = 'PostgreSQL' if $db =~ /^Pg/;
+$db = 'MySQL'      if $db =~ /^mysql/;
+
+my $db_ver = FS::Record->scalar_sql('SELECT VERSION()');
+if ( $db eq 'PostgreSQL' && $db_ver =~ /^\s*PostgreSQL\s+([\w\.]+)\s+on\s+/ ) {
+  $db_ver = $1;
+}
+
+tie my %status, 'Tie::IxHash',
+  'Basics' => [
+    { 'title' => 'Freeside version',
+      'value' => $FS::VERSION,
+    },
+    { 'title' => 'Operating System',
+      'value' => $os,
+    },
+    { 'title' => 'Perl version',
+      'value' => $perl_ver,
+    },
+    { 'title' => 'Database engine',
+      'value' => $db,
+    },
+    { 'title' => 'Database version',
+      'value' => $db_ver,
+    },
+  ],
+  'Required Daemons' => [
+    { 'title' => 'Queue daemon',
+      'value' => _is_running('queued') ? 'Running' : 'Not running',
+    },
+  ],
+  'Optional Daemons' => [
+    { 'title' => 'Self-service server(s)',
+      'value' => '(Not checked)', #XXX multiple pid files, per machine etc
+    },
+    { 'title' => 'Self-service XML-RPC server',
+      'value' => _is_running('selfservice-xmlrpcd') ? 'Running' : 'Not running',
+    },
+    { 'title' => 'Back office XML-RPC server',
+      'value' => _is_running('xmlrpcd') ? 'Running' : 'Not running',
+    },
+    { 'title' => 'RADIUS accounting import daemon',
+      'value' => _is_running('sqlradius-radacctd') ? 'Running' : 'Not running',
+    },
+    { 'title' => 'Prepaid daemon',
+      'value' => _is_running('prepaidd') ? 'Running' : 'Not running',
+    },
+    { 'title' => 'CDR Rewrite daemon',
+      'value' => _is_running('cdrrewrited') ? 'Running' : 'Not running',
+    },
+    { 'title' => 'CDR Prepaid daemon',
+      'value' => _is_running('cdrd') ? 'Running' : 'Not running',
+    },
+    { 'title' => 'CDR Real-time rating daemon',
+      'value' => _is_running('cdrrated') ? 'Running' : 'Not running',
+    },
+    #{ 'title' => 'Network monitoring port combiner', #?
+    #  'value' => _is_running('torrus-srvderive') ? 'Running' : 'Not running',
+    #},
+  ],
+;
+
+if ( _is_running('cdrd') ) {
+
+  my $delay = FS::Record->scalar_sql('
+    SELECT AVG(end_date-insert_date)
+      FROM queue_stat
+      GROUP BY statnum
+      ORDER BY statnum DESC
+      LIMIT 100
+  ');
+  if ( $delay ) {
+    my $h = int($delay/3600);
+    my $m = int( ($delay%3600) / 60 );
+    my $s = $delay%60;
+
+    $delay = ( $h     ? $h. 'h' : '' ).
+             ( $h||$m ? $m. 'm' : '').
+                        $s. 's';
+
+  }
+
+  my $pr_delay = FS::Record->scalar_sql('
+    SELECT AVG(end_date-start_date)
+      FROM queue_stat
+      GROUP BY statnum
+      ORDER BY statnum DESC
+      LIMIT 100
+  ');
+  if ( $pr_delay ) {
+    my $h = int($delay/3600);
+    my $m = int( ($delay%3600) / 60 );
+    my $s = $delay%60;
+
+    $pr_delay = ( $h     ? $h. 'h' : '' ).
+                ( $h||$m ? $m. 'm' : '').
+                           $s. 's';
+
+  }
+
+  my $dayago = time2str('%Y-%m-%d %X', time - 86400);
+  my $cdrs = FS::Record->scalar_sql(qq{
+    SELECT COUNT(*) FROM cdr
+      WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
+        AND calldate > '$dayago'
+  });
+
+  $status{'CDR Processing'} = [
+    { 'title' => 'Current processing delay',
+      'value' => $delay,
+    },
+    { 'title' => 'Average billing time',
+      'value' => $pr_delay,
+    },
+    { 'title' => 'Unprocessed CDRs (last 24 hours)',
+      'value' => $cdrs,
+    },
+  ];
+
+}
+
+sub _is_running {
+  my $thing = shift;
+
+  my $pid_path = '/var/run'; #XXX hardcoded path
+
+  my $pidfile =
+    -e "$pid_path/freeside/$thing.pid" ? "$pid_path/freeside/$thing.pid" :
+    -e "$pid_path/freeside-$thing.pid" ? "$pid_path/freeside-$thing.pid" :
+   return 0;
+
+  -e $pidfile and kill 0, slurp($pidfile)
+}
+
+</%init>

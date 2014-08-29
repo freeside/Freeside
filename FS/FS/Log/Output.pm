@@ -1,7 +1,7 @@
 package FS::Log::Output;
+use base qw( Log::Dispatch::Output );
 
-use base Log::Dispatch::Output;
-use FS::Record qw( dbdef );
+use FS::log;
 
 sub new { # exactly by the book
   my $proto = shift;
@@ -24,7 +24,7 @@ sub log_message {
   my ($tablename, $tablenum) = @m{'tablename', 'tablenum'};
   if ( $object and $object->isa('FS::Record') ) {
     $tablename = $object->table;
-    $tablenum = $object->get( dbdef->table($tablename)->primary_key );
+    $tablenum = $object->get( $object->primary_key );
 
     # get the agentnum from the object if it has one
     $m{'agentnum'} ||= $object->get('agentnum');

@@ -7,6 +7,8 @@ use FS::Record qw( qsearch qsearchs );
 my @contexts = ( qw(
   test
   bill_and_collect
+  FS::cust_main::Billing::bill_and_collect
+  FS::cust_main::Billing::bill
   Cron::bill
   Cron::upload
   spool_upload
@@ -65,8 +67,6 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-# the new method can be inherited from FS::Record, if a table method is defined
-
 sub table { 'log_context'; }
 
 =item insert
@@ -74,26 +74,14 @@ sub table { 'log_context'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-# the replace method can be inherited from FS::Record
 
 =item check
 
@@ -103,16 +91,13 @@ and replace methods.
 
 =cut
 
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
-
 sub check {
   my $self = shift;
 
   my $error = 
     $self->ut_numbern('logcontextnum')
     || $self->ut_number('lognum')
-    || $self->ut_enum('context', \@contexts)
+    || $self->ut_text('context') #|| $self->ut_enum('context', \@contexts)
   ;
   return $error if $error;
 

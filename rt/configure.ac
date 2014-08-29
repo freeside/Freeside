@@ -266,7 +266,7 @@ fi
 AC_SUBST(RT_DEVEL_MODE)
 
 dnl RT's GraphViz dependency charts
-AC_CHECK_LIB([graph],[aginitlib],RT_GRAPHVIZ="1")
+AC_CHECK_PROG([RT_GRAPHVIZ], [dot], "yes", "no")
 AC_ARG_WITH(graphviz,[],RT_GRAPHVIZ=$withval)
 AC_ARG_ENABLE(graphviz,
             AC_HELP_STRING([--enable-graphviz],
@@ -408,6 +408,7 @@ dnl Configure the output files, and generate them.
 dnl Binaries that should be +x
 AC_CONFIG_FILES([
                  etc/upgrade/3.8-ical-extension
+                 etc/upgrade/4.0-customfield-checkbox-extension
                  etc/upgrade/split-out-cf-categories
                  etc/upgrade/generate-rtaddressregexp
                  etc/upgrade/upgrade-articles

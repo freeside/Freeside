@@ -548,7 +548,7 @@ sub states_hash {
 
   #it could throw a fatal "Invalid country code" error (for example "AX")
   my $subcountry = eval { new Locale::SubCountry($country) }
-    or return ( '', '(n/a)' );
+    or return (); # ( '', '(n/a)' );
 
   #"i see your schwartz is as big as mine!"
   map  { ( $_->[0] => $_->[1] ) }
@@ -718,7 +718,9 @@ sub generate_ps {
 
   _pslatex($file);
 
-  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
+  my $papersize = $conf->config('papersize') || 'letter';
+
+  system('dvips', '-q', '-t', $papersize, "$file.dvi", '-o', "$file.ps" ) == 0
     or die "dvips failed";
 
   open(POSTSCRIPT, "<$file.ps")
@@ -773,8 +775,10 @@ sub generate_pdf {
   my $sfile = shell_quote $file;
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
+  my $papersize = $conf->config('papersize') || 'letter';
+
   system(
-    "dvips -q -t letter -f $sfile.dvi ".
+    "dvips -q -f $sfile.dvi -t $papersize ".
     "| gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$sfile.pdf ".
     "     -c save pop -"
   ) == 0

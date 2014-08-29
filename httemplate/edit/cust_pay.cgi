@@ -56,10 +56,12 @@
   <TD><INPUT TYPE="text" NAME="paid" ID="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
 </TR>
 
-  <& /elements/tr-select-discount_term.html,
-               'custnum' => $custnum,
-               'amount_id' => 'paid',
-  &>
+% if ( $conf->exists('part_pkg-term_discounts') ) {
+    <& /elements/tr-select-discount_term.html,
+         'custnum'   => $custnum,
+         'amount_id' => 'paid',
+    &>
+% }
 
 % if ( $payby eq 'BILL' ) { 
   <TR>

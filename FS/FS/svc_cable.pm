@@ -53,7 +53,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'svc_cable'; }
 
-sub table_dupcheck_fields { ( 'mac_addr' ); }
+sub table_dupcheck_fields { ( 'serialnum', 'mac_addr' ); }
 
 sub search_sql {
   my( $class, $string ) = @_;
@@ -98,7 +98,7 @@ sub table_info {
                        type           => 'input-mac_addr',
                        value_callback => sub {
                                            my $svc = shift;
-                                           join(':', $svc->mac_addr =~ /../g);
+                                           $svc->mac_addr_formatted('U',':');
                                          },
                      },
   ;
@@ -166,6 +166,27 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub _check_duplicate {
+  my $self = shift;
+
+  # Not reliable checks because the table isn't locked, but that's why we have
+  # unique indices.  These are just to give friendlier error messages.
+
+  my @dup_mac;
+  @dup_mac = $self->find_duplicates('global', 'mac_addr');
+  if ( @dup_mac ) {
+    return "MAC address in use (svcnum ".$dup_mac[0]->svcnum.")";
+  }
+
+  my @dup_serial;
+  @dup_serial = $self->find_duplicates('global', 'serialnum');
+  if ( @dup_serial ) {
+    return "Serial number in use (svcnum ".$dup_serial[0]->svcnum.")";
+  }
+
+  '';
 }
 
 =item cable_provider

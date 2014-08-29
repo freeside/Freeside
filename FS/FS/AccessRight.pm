@@ -153,6 +153,7 @@ tie my %rights, 'Tie::IxHash',
     'Waive setup fee', #NEW
     'View appointments', #NEWNEW
     'Make appointment',
+    'View package definition costs', #NEWNEW
   ],
   
   ###
@@ -359,6 +360,12 @@ tie my %rights, 'Tie::IxHash',
 
     'Bulk edit package definitions',
 
+    'Edit FCC report configuration',
+    { rightname => 'Edit FCC report configuration for all agents', global=>1 },
+
+    'Edit CDR rates',
+    #{ rightname=>'Edit global CDR rates', global=>1, },
+
     'Edit fee definitions',
     { rightname=>'Edit global fee definitions', global=>1 },
 
@@ -435,7 +442,7 @@ sub default_superuser_rights {
     'Edit usage',
     'Credit card void',
     'Echeck void',
-    'Edit customer package dates',
+    'Void invoices',#people are overusing this when credits are more appropriate
   );
 
   no warnings 'uninitialized';

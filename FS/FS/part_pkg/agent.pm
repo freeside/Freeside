@@ -40,7 +40,7 @@ $me = '[FS::part_pkg::agent]';
 
   'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
 
-  'weight' => 51,
+  'weight' => 52,
 
 );
 
@@ -56,6 +56,7 @@ sub calc_recur {
 
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';
+  my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
   my $total_agent_charge = 0;
 
@@ -102,11 +103,15 @@ sub calc_recur {
           if $DEBUG;
 
         my $pkg_details = $cust_main->name_short. ': '; #name?
+
+        my $part_pkg = $cust_pkg->part_pkg;
+
         # + something to identify package... primary service probably
+        # no... package def for now
+        $pkg_details .= $part_pkg->pkg. ': ';
 
         my $pkg_charge = 0;
 
-        my $part_pkg = $cust_pkg->part_pkg;
         #option to not fallback? via options above
         my $pkg_setup_fee  =
           $part_pkg->setup_cost || $part_pkg->option('setup_fee');
@@ -133,8 +138,8 @@ sub calc_recur {
         my $recur_charge += $pkg_recur_charge;
 
         $pkg_details .= $money_char. sprintf('%.2f', $recur_charge ).
-                        ' ('.  time2str('%x', $pkg_start).
-                        ' - '. time2str('%x', $pkg_end  ). ')'
+                        ' ('.  time2str($date_format, $pkg_start).
+                        ' - '. time2str($date_format, $pkg_end  ). ')'
           if $recur_charge;
 
         $pkg_charge += $recur_charge;

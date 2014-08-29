@@ -1060,6 +1060,7 @@ sub reason_type_options {
                        '%m/%d/%Y' => 'MM/DD/YYYY',
                        '%d/%m/%Y' => 'DD/MM/YYYY',
 		       '%Y/%m/%d' => 'YYYY/MM/DD',
+                       '%e %b %Y' => 'DD Mon YYYY',
                      ],
     'per_locale'  => 1,
   },
@@ -1113,7 +1114,7 @@ sub reason_type_options {
   {
     'key'         => 'unapplycredits',
     'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to nable "unapplication" of unclosed credits.',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed credits.',
     'type'        => 'checkbox',
   },
 
@@ -1526,6 +1527,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'invoice_print_pdf-duplex',
+    'section'     => 'invoicing',
+    'description' => 'Insert blank pages so that spooled invoices are each an even number of pages.  Use this for double-sided printing.',
+    'type'        => 'checkbox',
+  },
+
   { 
     'key'         => 'invoice_default_terms',
     'section'     => 'invoicing',
@@ -1560,11 +1568,19 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'invoice_sections_by_location',
+    'key'         => 'invoice_sections_method',
     'section'     => 'invoicing',
-    'description' => 'Divide invoice into sections according to service location.  Currently, this overrides sectioning by package category.',
-    'type'        => 'checkbox',
-    'per_agent'   => 1,
+    'description' => 'How to group line items on multi-section invoices.',
+    'type'        => 'select',
+    'select_enum' => [ qw(category location) ],
+  },
+
+  {
+    'key'         => 'summary_subtotals_method',
+    'section'     => 'invoicing',
+    'description' => 'How to group line items when calculating summary subtotals.  By default, it will be the same method used for grouping invoice sections.',
+    'type'        => 'select',
+    'select_enum' => [ qw(category location) ],
   },
 
   #quotations seem broken-ish with sections ATM?
@@ -1575,6 +1591,13 @@ and customer address. Include units.',
   #  'type'        => 'checkbox',
   #  'per_agent'   => 1,
   #},
+
+  {
+    'key'         => 'usage_class_summary',
+    'section'     => 'invoicing',
+    'description' => 'Summarize total usage by usage class in a separate section.',
+    'type'        => 'checkbox',
+  },
 
   { 
     'key'         => 'usage_class_as_a_section',
@@ -1688,6 +1711,14 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Raw printer commands added to the end of postscript print jobs (evaluated as a double-quoted perl string - backslash escapes are available)',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'papersize',
+    'section'     => 'billing',
+    'description' => 'Invoice paper size.  Default is "letter" (U.S. standard).  The LaTeX template must be configured to match this size.',
+    'type'        => 'select',
+    'select_enum' => [ qw(letter a4) ],
   },
 
   {
@@ -2869,6 +2900,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-password_change_oldpass',
+    'section'     => 'self-service',
+    'description' => 'Require old password to be entered again for password changes (in addition to being logged in), at the API level.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'selfservice-hide_invoices-taxclass',
     'section'     => 'self-service',
     'description' => 'Hide invoices with only this package tax class from self-service and supress sending (emailing, printing, faxing) them.  Typically set to something like "Previous balance" and used when importing legacy invoices into legacy_cust_bill.',
@@ -3442,17 +3480,24 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_pkg-show_fcc_voice_grade_equivalent',
-    'section'     => 'UI',
-    'description' => "Show fields on package definitions for FCC Form 477 classification",
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'cust_pkg-large_pkg_size',
     'section'     => 'UI',
     'description' => "In customer view, summarize packages with more than this many services.  Set to zero to never summarize packages.",
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_pkg-hide_discontinued-part_svc',
+    'section'     => 'UI',
+    'description' => "In customer view, hide provisioned services which are no longer available in the package definition.  Not normally used except for very specific situations as it hides still-provisioned services.",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'part_pkg-show_fcc_options',
+    'section'     => 'UI',
+    'description' => "Show fields on package definitions for FCC Form 477 classification",
+    'type'        => 'checkbox',
   },
 
   {
@@ -3875,6 +3920,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-enable_order_package',
+    'section'     => 'UI',
+    'description' => 'Display order new package on the basic tab',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-edit_calling_list_exempt',
     'section'     => 'UI',
     'description' => 'Display the "calling_list_exempt" checkbox on customer edit.',
@@ -4221,6 +4273,16 @@ and customer address. Include units.',
     'key'         => 'previous_balance-payments_since',
     'section'     => 'invoicing',
     'description' => 'Instead of showing payments (and credits) applied to the invoice, show those received since the previous invoice date.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'previous_invoice_history',
+    'section'     => 'invoicing',
+    'description' => 'Show a month-by-month history of the customer\'s '.
+                     'billing amounts.  This requires template '.
+                     'modification and is currently not supported on the '.
+                     'stock template.',
     'type'        => 'checkbox',
   },
 
@@ -5692,6 +5754,45 @@ and customer address. Include units.',
 			   );
                            $reason ? $reason->reason : '';
 			 },
+  },
+
+  {
+    'key'         => 'part_pkg-term_discounts',
+    'section'     => 'billing',
+    'description' => 'Enable the term discounts feature.  Recommended to keep turned off unless actually using - not well optimized for large installations.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'prepaid-never_renew',
+    'section'     => 'billing',
+    'description' => 'Prepaid packages never renew.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'agent-disable_counts',
+    'section'     => 'UI',
+    'description' => 'On the agent browse page, disable the customer and package counts.  Typically used for very large databases when this page takes too long to render.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'tollfree-country',
+    'section'     => 'telephony',
+    'description' => 'Country / region for toll-free recognition',
+    'type'        => 'select',
+    'select_hash' => [ ''   => 'NANPA (US/Canada)',
+                       'AU' => 'Australia',
+                       'NZ' => 'New Zealand',
+                     ],
+  },
+
+  {
+    'key'         => 'old_fcc_report',
+    'section'     => '',
+    'description' => 'Use the old (pre-2014) FCC Form 477 report format.',
+    'type'        => 'checkbox',
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

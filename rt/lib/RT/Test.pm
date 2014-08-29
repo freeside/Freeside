@@ -709,6 +709,39 @@ sub load_or_create_user {
     return $obj;
 }
 
+
+sub load_or_create_group {
+    my $self = shift;
+    my $name = shift;
+    my %args = (@_);
+
+    my $group = RT::Group->new( RT->SystemUser );
+    $group->LoadUserDefinedGroup( $name );
+    unless ( $group->id ) {
+        my ($id, $msg) = $group->CreateUserDefinedGroup(
+            Name => $name,
+        );
+        die "$msg" unless $id;
+    }
+
+    if ( $args{Members} ) {
+        my $cur = $group->MembersObj;
+        while ( my $entry = $cur->Next ) {
+            my ($status, $msg) = $entry->Delete;
+            die "$msg" unless $status;
+        }
+
+        foreach my $new ( @{ $args{Members} } ) {
+            my ($status, $msg) = $group->AddMember(
+                ref($new)? $new->id : $new,
+            );
+            die "$msg" unless $status;
+        }
+    }
+
+    return $group;
+}
+
 =head2 load_or_create_queue
 
 =cut
@@ -995,6 +1028,43 @@ sub run_mailgate {
     };
 
     $self->run_and_capture(%args);
+}
+
+sub run_validator {
+    my $self = shift;
+    my %args = (check => 1, resolve => 0, force => 1, timeout => 0, @_ );
+
+    my $validator_path = "$RT::SbinPath/rt-validator";
+
+    my $cmd = $validator_path;
+    die "Couldn't find $cmd command" unless -f $cmd;
+
+    my $timeout = delete $args{timeout};
+
+    while( my ($k,$v) = each %args ) {
+        next unless $v;
+        $cmd .= " --$k '$v'";
+    }
+    $cmd .= ' 2>&1';
+
+    require IPC::Open2;
+    my ($child_out, $child_in);
+    my $pid = IPC::Open2::open2($child_out, $child_in, $cmd);
+    close $child_in;
+
+    local $SIG{ALRM} = sub { kill KILL => $pid; die "Timeout!" };
+
+    alarm $timeout if $timeout;
+    my $result = eval { local $/; <$child_out> };
+    warn $@ if $@;
+    close $child_out;
+    waitpid $pid, 0;
+    alarm 0;
+
+    DBIx::SearchBuilder::Record::Cachable->FlushCache
+        if $args{'resolve'};
+
+    return ($?, $result);
 }
 
 sub run_and_capture {
@@ -1392,7 +1462,8 @@ sub test_app {
     }
 
     require Plack::Middleware::Test::StashWarnings;
-    my $stashwarnings = Plack::Middleware::Test::StashWarnings->new;
+    my $stashwarnings = Plack::Middleware::Test::StashWarnings->new(
+        $ENV{'RT_TEST_WEB_HANDLER'} && $ENV{'RT_TEST_WEB_HANDLER'} eq 'inline' ? ( verbose => 0 ) : () );
     $app = $stashwarnings->wrap($app);
 
     if ($server_opt{basic_auth}) {
@@ -1525,8 +1596,6 @@ sub file_content {
     my %args = @_;
 
     $path = File::Spec->catfile( @$path ) if ref $path eq 'ARRAY';
-
-    Test::More::diag "reading content of '$path'" if $ENV{'TEST_VERBOSE'};
 
     open( my $fh, "<:raw", $path )
         or do {

@@ -61,9 +61,8 @@ my $conf = new FS::Conf;
 my %search_hash;
 if ( $cgi->param('magic') eq 'unlinked' ) {
   %search_hash = ( 'unlinked' => 1 );
-}
-else {
-  foreach (qw(custnum agentnum svcpart)) {
+} else {
+  foreach (qw( custnum agentnum svcpart cust_fields )) {
     $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
   }
   foreach (qw(pkgpart routernum towernum sectornum)) {

@@ -3,7 +3,7 @@ package FS::Cursor;
 use strict;
 use vars qw($DEBUG $buffer);
 use FS::Record;
-use FS::UID qw(myconnect);
+use FS::UID qw(myconnect driver_name);
 use Scalar::Util qw(refaddr);
 
 $DEBUG = 2;
@@ -39,13 +39,13 @@ and returns an FS::Cursor object to fetch the rows one at a time.
 sub new {
   my $class = shift;
   my $q = FS::Record::_query(@_); # builds the statement and parameter list
-  my $dbh = myconnect();
+  my $dbh;
 
   my $self = {
     query => $q,
     class => 'FS::' . ($q->{table} || 'Record'),
     buffer => [],
-    dbh   => $dbh,
+    position => 0, # for mysql
   };
   bless $self, $class;
 
@@ -56,7 +56,25 @@ sub new {
   $self->{pid} = $$;
 
   $self->{id} = sprintf('cursor%08x', refaddr($self));
-  my $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
+
+  my $statement;
+  if ( driver_name() eq 'Pg' ) {
+    $self->{dbh} = $dbh = myconnect();
+    $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
+  } elsif ( driver_name() eq 'mysql' ) {
+    # build a cursor from scratch
+    #
+    #
+    # there are problems doing it this way, and we don't have time to resolve
+    # them all right now...
+    #$statement = "CREATE TEMPORARY TABLE $self->{id} 
+    #  (rownum INT AUTO_INCREMENT, PRIMARY KEY (rownum))
+    #  $q->{statement}";
+
+    # one of those problems is locking, so keep everything on the main session
+    $self->{dbh} = $dbh = FS::UID::dbh();
+    $statement = $q->{statement};
+  }
 
   my $sth = $dbh->prepare($statement)
     or die $dbh->errstr;
@@ -68,7 +86,17 @@ sub new {
 
   $sth->execute or die $sth->errstr;
 
-  $self->{fetch} = $dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
+  if ( driver_name() eq 'Pg' ) {
+    $self->{fetch} = $dbh->prepare("FETCH FORWARD $buffer FROM ".$self->{id});
+  } elsif ( driver_name() eq 'mysql' ) {
+    # make sure we're not holding any locks on the tables mentioned
+    # in the query
+    #$dbh->commit if driver_name() eq 'mysql';
+    #$self->{fetch} = $dbh->prepare("SELECT * FROM $self->{id} ORDER BY rownum LIMIT ?, $buffer");
+
+    # instead, fetch all the rows at once
+    $self->{buffer} = $sth->fetchall_arrayref( {} );
+  }
 
   $self;
 }
@@ -98,15 +126,21 @@ sub fetch {
 
 sub refill {
   my $self = shift;
-  my $sth = $self->{fetch};
-  $sth->execute or die $sth->errstr;
-  my $result = $self->{fetch}->fetchall_arrayref( {} );
-  $self->{buffer} = $result;
-  scalar @$result;
+  if (driver_name() eq 'Pg') {
+    my $sth = $self->{fetch};
+    $sth->bind_param(1, $self->{position}) if driver_name() eq 'mysql';
+    $sth->execute or die $sth->errstr;
+    my $result = $self->{fetch}->fetchall_arrayref( {} );
+    $self->{buffer} = $result;
+    $self->{position} += $sth->rows;
+    scalar @$result;
+  } # mysql can't be refilled, since everything is buffered from the start
 }
 
 sub DESTROY {
   my $self = shift;
+  return if driver_name() eq 'mysql';
+
   return unless $self->{pid} eq $$;
   $self->{dbh}->do('CLOSE '. $self->{id})
     or die $self->{dbh}->errstr; # clean-up the cursor in Pg
@@ -122,7 +156,8 @@ Replace all uses of qsearch with this.
 
 =head1 BUGS
 
-Doesn't support MySQL.
+Still doesn't really support MySQL, but it pretends it does, by simply
+running the query and returning records one at a time.
 
 The cursor will close prematurely if any code issues a rollback/commit. If
 you need protection against this use qsearch or fork and get a new dbh

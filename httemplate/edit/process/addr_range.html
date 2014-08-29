@@ -13,10 +13,13 @@
         $cgi->param('end', $end->addr);
         $cgi->param('start', $start->addr);
       }
-      if ( $start + 0x7FFFFFFF <= $end ) {
+      # detect addr ranges that are too big
+      my ($one) = split('\.', $start->addr);
+      if ( $one < 128 and $start + 0x7FFFFFFF <= $end ) {
         # then this is going to overflow
-        return "Address ranges must be < 2^31 - 1 addresses long."
-      }
+        return "Address ranges must be < 2^31 - 1 addresses long.";
+      } # if the first octet is >= 128, then it's in the top half of 
+        # address space and it CAN'T be too big
 
       $cgi->param('length', $end - $start + 1);
     } else {

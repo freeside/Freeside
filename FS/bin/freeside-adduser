@@ -9,6 +9,7 @@ my $FREESIDE_CONF = "%%%FREESIDE_CONF%%%";
 
 getopts("g:");
 my $user = shift or die &usage;
+my $password = shift;
 
 use FS::UID qw(adminsuidsetup);
 use FS::CurrentUser;
@@ -21,7 +22,7 @@ adminsuidsetup $user;
 
 my $access_user = new FS::access_user {
   'username'  => $user,
-  '_password' => '',
+  '_password' => $password,
   'first'     => 'Firstname', # $opt_f || 
   'last'      => 'Lastname',  # $opt_l || 
 };

@@ -1,9 +1,10 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c $opt_j );
+use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c $opt_j $opt_a );
 use vars qw( $DEBUG $DRY_RUN );
 use Getopt::Std;
+use DBD::Pg qw(:async); #for -a
 use DBIx::DBSchema 0.31; #0.39
 use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);
 use FS::CurrentUser;
@@ -17,7 +18,7 @@ my $start = time;
 
 die "Not running uid freeside!" unless checkeuid();
 
-getopts("dqrcsj");
+getopts("dqrcsja");
 
 $DEBUG = !$opt_q;
 #$DEBUG = $opt_v;
@@ -93,10 +94,19 @@ if ( dbdef->table('areacode') and
 }
 
 if ( dbdef->table('upgrade_journal') ) {
-  push @bugfix, "SELECT SETVAL( 'upgrade_journal_upgradenum_seq',
-                                ( SELECT MAX(upgradenum) FROM upgrade_journal )
-                              )
-                ";
+  if ( driver_name =~ /^Pg/i ) {
+    push @bugfix, "
+      SELECT SETVAL( 'upgrade_journal_upgradenum_seq',
+                     ( SELECT MAX(upgradenum) FROM upgrade_journal )
+                   )
+    ";
+  #MySQL can't do this in a statement so have to do it manually
+  #} elsif ( driver_name =~ /^mysql/i ) {
+  #  push @bugfix, "
+  #     ALTER TABLE upgrade_journal AUTO_INCREMENT =
+  #                 ( ( SELECT MAX(upgradenum) FROM upgrade_journal ) + 1 )
+  #  ";
+  }
 }
 
 if ( $DRY_RUN ) {
@@ -181,21 +191,111 @@ if ( $opt_c ) {
 
 }
 
+my $MAX_HANDLES; # undef for now, set it if you want a limit
+
 if ( $DRY_RUN ) {
   print
     join(";\n", @statements ). ";\n";
   exit;
-} else {
-  foreach my $statement ( @statements ) {
-    warn "$statement\n";
-    $dbh->do( $statement )
-      or die "Error: ". $dbh->errstr. "\n executing: $statement";
+} elsif ( $opt_a ) {
+
+  my @phases = map { [] } 0..4;
+  my $fsupgrade_idx = 1;
+  my %idx_map;
+  foreach (@statements) {
+    if ( /^ *(CREATE|ALTER) +TABLE/ ) {
+      # phase 0: CREATE TABLE, ALTER TABLE
+      push @{ $phases[0] }, $_;
+    } elsif ( /^ *ALTER +INDEX.* RENAME TO dbs_temp(\d+)/ ) {
+      # phase 1: rename index to dbs_temp%d
+      # (see DBIx::DBSchema::Table)
+      # but in this case, uniqueify all the dbs_temps.  This method only works
+      # because they are in the right order to begin with...
+      my $dbstemp_idx = $1;
+      s/dbs_temp$dbstemp_idx/fsupgrade_temp$fsupgrade_idx/;
+      $idx_map{ $dbstemp_idx } = $fsupgrade_idx;
+      push @{ $phases[1] }, $_;
+      $fsupgrade_idx++;
+    } elsif ( /^ *(CREATE|DROP)( +UNIQUE)? +INDEX/ ) {
+      # phase 2: create/drop indices
+      push @{ $phases[2] }, $_;
+    } elsif ( /^ *ALTER +INDEX +dbs_temp(\d+) +RENAME/ ) {
+      # phase 3: rename temp indices back to real ones
+      my $dbstemp_idx = $1;
+      my $mapped_idx = $idx_map{ $dbstemp_idx }
+        or die "unable to remap dbs_temp$1 RENAME statement";
+      s/dbs_temp$dbstemp_idx/fsupgrade_temp$mapped_idx/;
+      push @{ $phases[3] }, $_;
+    } else {
+      # phase 4: everything else (CREATE SEQUENCE, SELECT SETVAL, etc.)
+      push @{ $phases[4] }, $_;
+    }
   }
+  my $i = 0;
+  my @busy = ();
+  my @free = ();
+  foreach my $phase (@phases) {
+    warn "Starting schema changes, phase $i...\n";
+    while (@$phase or @busy) {
+      # check status of all running tasks
+      my @newbusy;
+      my $failed_clone;
+      for my $clone (@busy) {
+        if ( $clone->pg_ready ) {
+          # then clean it up
+          my $rv = $clone->pg_result && $clone->commit;
+          $failed_clone = $clone if !$rv;
+          push @free, $clone;
+        } else {
+          push @newbusy, $clone;
+        }
+      }
+      if ( $failed_clone ) {
+        my $errstr = $failed_clone->errstr;
+        foreach my $clone (@newbusy, $failed_clone) {
+          $clone->pg_cancel if $clone->{pg_async_status} == 1;
+          $clone->disconnect;
+        }
+        die "$errstr\n";
+      }
+      @busy = @newbusy;
+      if (my $statement = $phase->[0]) {
+        my $clone;
+        if ( @free ) {
+          $clone = shift(@free);
+        } elsif ( !$MAX_HANDLES or 
+                  scalar(@free) + scalar(@busy) < $MAX_HANDLES ) {
+          $clone = $dbh->clone; # this will fail if over the server limit
+        }
+
+        if ( $clone ) {
+          my $rv = $clone->do($statement, {pg_async => PG_ASYNC});
+          if ( $rv ) {
+            warn "$statement\n";
+            shift @{ $phase }; # and actually take the statement off the queue
+            push @busy, $clone;
+          } # else I don't know, wait and retry
+        } # else too many handles, wait and retry
+      } elsif (@busy) {
+        # all statements are dispatched
+        warn "Waiting for phase $i to complete\n";
+        sleep 30;
+      }
+    } # while @$phase or @busy
+    $i++;
+  } # foreach $phase
+  warn "Schema changes complete.\n";
 
 #  warn "Pre-schema change upgrades completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 #  $start = time;
 
 #  dbdef->update_schema( dbdef_dist(datasrc), $dbh );
+} else { # normal case, run statements sequentially
+  foreach my $statement ( @statements ) {
+    warn "$statement\n";
+    $dbh->do( $statement )
+      or die "Error: ". $dbh->errstr. "\n executing: $statement";
+  }
 }
 
 warn "Schema upgrade completed in ". (time-$start). " seconds\n"; # if $DEBUG;
@@ -330,7 +430,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-upgrade [ -d ] [ -r ] [ -s ] [ -q | -v ] user\n"; 
+  die "Usage:\n  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -c ] [ -s ] [ -j ] [ -a ] user\n"; 
 }
 
 =head1 NAME
@@ -339,7 +439,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -r ] [ -c ] [ -s ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -c ] [ -s ] [ -j ] [ -a ]
 
 =head1 DESCRIPTION
 
@@ -361,21 +461,26 @@ Also performs other upgrade functions:
 
   [ -q ]: Run quietly.  This may become the default at some point.
 
-  [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
-          databases may be inaccessible.
-
-  [ -c ]: Skip cdr and h_cdr updates.
-
   [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
           current default.
 
   [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
           changes will be replicated from the Pg/slony master.
 
+  [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
+          databases may be inaccessible.
+
+  [ -c ]: Skip cdr and h_cdr updates.
+
   [ -j ]: Run certain upgrades asychronously from the job queue.  Currently 
-          used only for the 2.x -> 3.x cust_location upgrade.  This may cause
-          odd behavior before the upgrade is complete, so it's recommended 
-          only for very large cust_main tables that take too long to upgrade.
+          used only for the 2.x -> 3.x cust_location, cust_pay and part_pkg
+          upgrades.  This may cause odd behavior before the upgrade is
+          complete, so it's recommended only for very large cust_main, cust_pay
+          and/or part_pkg tables that take too long to upgrade.
+
+  [ -a ]: Run schema changes in parallel (Pg only).  DBIx::DBSchema minimum 
+          version 0.41 recommended.  Recommended only for large databases and
+          powerful database servers, to reduce upgrade time.
 
 =head1 SEE ALSO
 

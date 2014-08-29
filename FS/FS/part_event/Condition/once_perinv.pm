@@ -18,6 +18,10 @@ sub option_fields {
                 'type'  => 'checkbox',
                 'value' => 'Y',
               },
+    'no_late' => { 'label' => "But don't consider paid bills which were late.",
+                   'type'  => 'checkbox',
+                   'value' => 'Y',
+                 },
   )
 }
 
@@ -33,9 +37,31 @@ sub condition {
 
   my @cust_bill_pkg = qsearch('cust_bill_pkg', { pkgnum=>$cust_pkg->pkgnum });
 
-  @cust_bill_pkg = grep { ($_->owed_setup + $_->owed_recur) == 0 }
-                     @cust_bill_pkg
-    if $self->option('paid');
+  if ( $self->option('paid') ) {
+    @cust_bill_pkg = grep { ($_->owed_setup + $_->owed_recur) == 0 }
+                       @cust_bill_pkg;
+
+    if ( $self->option('no_late') ) {
+      @cust_bill_pkg = grep {
+        my $cust_bill_pkg = $_;
+
+        my @cust_bill_pay_pkg = ();
+        push @cust_bill_pay_pkg, $cust_bill_pkg->cust_bill_pay_pkg($_)
+          for qw( setup recur );
+        return 1 unless @cust_bill_pay_pkg; #no payments?  must be credits then
+                                            #not considering those "late"
+
+        my @cust_pay = sort { $a->_date <=> $b->_date }
+                         map { $_->cust_bill_pay->cust_pay }
+                           @cust_bill_pay_pkg;
+
+        #most recent payment less than due date?  okay, we were paid on time
+        $cust_pay[-1] <= $cust_bill_pkg->cust_bill->due_date;
+                 
+      } @cust_bill_pkg;
+    }
+
+  }
 
   my %invnum = ();
   $invnum{$_->invnum} = 1 foreach @cust_bill_pkg;

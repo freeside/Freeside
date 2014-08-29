@@ -1,0 +1,103 @@
+<STYLE>
+  ul.fcc_options {
+    font-weight: normal;
+    text-align: left;
+    padding: 0em 1em 0em 2em;
+  }
+</STYLE>
+<TR>
+  <TH COLSPAN=2>
+    <& hidden.html, 'id' => $id, @_ &>
+%#    <& input-text.html, 'id' => $id, @_ &> # XXX debugging
+    <UL ID="<%$id%>_display_fcc_options" CLASS="fcc_options">
+    </UL>
+    <BUTTON TYPE="button" onclick="edit_fcc_options()">
+      Edit
+    </BUTTON>
+% # show some kind of useful summary of the FCC options here
+  </TH>
+</TR>
+<SCRIPT TYPE="text/javascript">
+function edit_fcc_options() {
+  <& popup_link_onclick.html,
+  'action'      => $fsurl.'misc/part_pkg_fcc_options.html?id=' . $id,
+  'actionlabel' => 'FCC Form 477 options',
+  'width'       => 760,
+  'height'      => 600,
+  &>
+}
+var technology_labels = <% encode_json(FS::part_pkg_fcc_option->technology_labels) %>;
+function show_fcc_options() {
+  var curr_values = JSON.parse(document.getElementById('<% $id %>').value);
+  // hardcoded for the same reasons as misc/part_pkg_fcc_options
+  var out = '';
+  var tech = curr_values['technology'];
+  if ( tech ) {
+    if (technology_labels[tech]) {
+      tech = technology_labels[tech];
+    } else {
+      tech = 'Technology '+tech; // unknown?
+    }
+  }
+  var media = curr_values['media'] || 'unknown media';
+  media = media.toLowerCase();
+  if ( curr_values['is_consumer'] ) {
+    out += '<li><strong>Consumer-grade</strong></li>>';
+  } else {
+    out += '<li><strong>Business-grade</strong></li>';
+  }
+  if ( curr_values['is_broadband'] ) {
+    out += '<li>Broadband via <strong>' + tech + '</strong>'
+        +  '<li><strong>' + curr_values['broadband_downstream']
+        +  'Mbps </strong> down / '
+        +  '<strong>' + curr_values['broadband_upstream']
+        +  'Mbps </strong> up</li>';
+  }
+  if ( curr_values['is_phone'] ) {
+    if ( curr_values['phone_wholesale'] ) {
+      out += '<li>Wholesale telephone</li>';
+      if ( curr_values['phone_vges'] ) {
+        out += '<li><strong>' + curr_values['phone_vges'] + '</strong>'
+            +  ' switched voice-grade lines</li>';
+      }
+      if ( curr_values['phone_circuits'] ) {
+        out += '<li><strong>' + curr_values['phone_circuits'] + '</strong>'
+            +  ' unswitched circuits</li>';
+      }
+    } else {
+      // enduser service
+      out += '<li>Local telephone over <strong>' + media + '</strong></li>'
+          +  '<li><strong>' + curr_values['phone_lines']
+          +  '</strong> voice-grade lines</li>';
+      if ( curr_values['phone_localloop'] == 'resale' ) {
+        out += '<li><strong>Resold</strong> from another carrier</li>>';
+      } else if ( curr_values['phone_localloop'] == 'leased' ) {
+        out += '<li>Using <strong>leased circuits</strong> from another carrier</li>';
+      } else if ( curr_values['phone_localloop'] == 'owned' ) {
+        out += '<li>Using <strong>our own circuits</strong></li>';
+      }
+      if ( curr_values['phone_longdistance'] ) {
+        out += '<li>Includes <strong>long-distance service</strong></li>';
+      }
+    }
+  } // is_phone
+  if ( curr_values['is_voip'] ) {
+    out += '<li><strong>VoIP</strong> telephone service</li>';
+    if ( curr_values['voip_ott'] ) {
+      out += '<li>Using a <strong>separate</strong> last-mile connection</li>';
+    } else {
+      out += '<li><strong>Including</strong> last-mile connection</li>';
+    }
+  } // is_voip
+
+  var out_ul = document.getElementById('<% $id %>_display_fcc_options');
+  out_ul.innerHTML = out;
+}
+<&| onload.js &>
+  show_fcc_options();
+</&>
+</SCRIPT>
+<%init>
+my %opt = @_;
+my $id = $opt{id} || $opt{field};
+</%init>

@@ -1,0 +1,27 @@
+<& /elements/header-popup.html &>
+<TABLE STYLE="width: 100%">
+<& cust_main/packages/section.html,
+  'cust_main' => $cust_main,
+  'packages'  => [ $cust_pkg ],
+  'cust_pkg-group_by_location' => 0,
+  'no_services' => 1,
+&>
+</TABLE>
+</BODY>
+</HTML>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my ($pkgnum) = $cgi->keywords;
+$pkgnum =~ /^\d+$/ or die "bad pkgnum $pkgnum";
+
+my $cust_pkg = qsearchs({
+  'table'     => 'cust_pkg',
+  'addl_from' => 'JOIN cust_main USING (custnum)',
+  'hashref'   => { 'pkgnum' => $pkgnum },
+  'extra_sql' => ' AND '.$curuser->agentnums_sql,
+});
+die "Package not found" unless $cust_pkg;
+my $cust_main = $cust_pkg->cust_main;
+
+my $title = mt('Package [_1]', $pkgnum);
+</%init>
