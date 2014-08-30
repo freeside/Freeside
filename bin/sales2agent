@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch);
+use FS::sales;
+use FS::agent;
+use FS::access_group;
+use FS::access_groupagent;
+use FS::cust_main;
+
+adminsuidsetup shift or die &usage;
+
+$FS::UID::AutoCommit = 0;
+
+my @sales = qsearch('sales', {'disabled'=>''});
+
+foreach my $sales (@sales) {
+
+  my $agent = new FS::agent {
+    'agent'         => $sales->salesperson,
+    'agent_custnum' => $sales->sales_custnum,
+  };
+  my $error = $agent->insert;
+  if ( $error ) {
+    dbh->rollback or die dbh->errstr;
+    die $error;
+  }
+
+  my $access_group = new FS::access_group {
+    'groupname' => $agent->agent,
+  };
+  $error = $access_group->insert;
+  if ( $error ) {
+    dbh->rollback or die dbh->errstr;
+    die $error;
+  }
+
+  my $access_groupagent = new FS::access_groupagent {
+    'groupnum' => $access_group->groupnum,
+    'agentnum' => $agent->agentnum,
+  };
+  $error = $access_groupagent->insert;
+  if ( $error ) {
+    dbh->rollback or die dbh->errstr;
+    die $error;
+  }
+
+  foreach my $cust_main (qsearch('cust_main', {'salesnum'=>$sales->salesnum})) {
+
+    $cust_main->salesnum('');
+    $cust_main->agentnum($agent->agentnum);
+    $error = $cust_main->replace;
+    if ( $error ) {
+      dbh->rollback or die dbh->errstr;
+      die $error;
+    }
+
+  }
+
+  $sales->disabled('');
+  $error = $sales->replace;
+  if ( $error ) {
+    dbh->rollback or die dbh->errstr;
+    die $error;
+  }
+  
+}
+
+dbh->commit or die dbh->errstr;
+
+1;
+
+sub usage {
+  die "Usage:\n\n  sales2agent username\n";
+}
