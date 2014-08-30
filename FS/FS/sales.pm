@@ -38,14 +38,21 @@ FS::Record.  The following fields are currently supported:
 
 primary key
 
+=item salesperson
+
+Name
+
 =item agentnum
 
-agentnum
+Agent (see L<FS::agent)
 
 =item disabled
 
-disabled
+Disabled flag, empty or `Y'
 
+=item sales_custnum
+
+Sales person master customer (see L<FS::cust_main>)
 
 =back
 
