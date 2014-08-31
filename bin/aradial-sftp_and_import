@@ -157,6 +157,9 @@ foreach my $filename ( @$ls ) {
 
     my @keys = keys %dbhash;
 
+    #skip blank records
+    next unless grep defined($_), values %dbhash;
+
     $hash{'Status-Type'} = $status_type{ $hash{'Status-Type'} }
       if exists $status_type{ $hash{'Status-Type'} };
 
@@ -166,8 +169,8 @@ foreach my $filename ( @$ls ) {
 
       $dbhash{'AcctStartTime'} = $hash{'Date'};
 
-      $sql = 'INSERT INTO radacct ( ', join(',', @keys).
-             ' ) VALUES ( '. map( ' ? ', @keys ). ' )';
+      $sql = 'INSERT INTO radacct ( '. join(',', @keys).
+             ' ) VALUES ( '. join(',', map ' ? ', @keys ). ' )';
 
     } elsif ( $hash{'Status-Type'} eq 'Stop' ) {
 
@@ -194,6 +197,7 @@ foreach my $filename ( @$ls ) {
     foreach my $value ( map $dbhash{$_}, @keys ) {
       my $key = shift @keys;
       my $type = exists($bind_type{$key}) ? $bind_type{$key} : SQL_VARCHAR;
+      $value ||= 0 if $type == SQL_INTEGER;
       $sth->bind_param($p_num++, $value, $type);
     }
     foreach my $value ( @extra_values ) {
