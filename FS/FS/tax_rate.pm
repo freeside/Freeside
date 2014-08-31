@@ -880,20 +880,22 @@ sub batch_import {
     }
 
     my $tax_rate = qsearchs( 'tax_rate', $delete{$_} );
-    unless ($tax_rate) {
+    if (!$tax_rate) {
       $dbh->rollback if $oldAutoCommit;
       $tax_rate = $delete{$_};
-      return "can't find tax_rate to delete for: ".
-        #join(" ", map { "$_ => ". $tax_rate->{$_} } @fields);
-        join(" ", map { "$_ => ". $tax_rate->{$_} } keys(%$tax_rate) );
-    }
-    my $error = $tax_rate->delete;
+      warn "WARNING: can't find tax_rate to delete for: ".
+        join(" ", map { "$_ => ". $tax_rate->{$_} } keys(%$tax_rate) ).
+        " (ignoring)\n";
+    } else {
+      my $error = $tax_rate->delete; #  XXX we really should not do this
+                                     # (it orphans CBPTRL records)
 
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      my $hashref = $delete{$_};
-      $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
-      return "can't delete tax_rate for $line: $error";
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        my $hashref = $delete{$_};
+        $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
+        return "can't delete tax_rate for $line: $error";
+      }
     }
 
     $imported++;
