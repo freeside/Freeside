@@ -1472,8 +1472,10 @@ package in the location specified by GEOCODE, for usage class CLASS (one of
 sub tax_rates {
   my $self = shift;
   my ($vendor, $geocode, $class) = @_;
+  # if this part_pkg is overridden into a specific taxclass, get that class
   my @taxclassnums = map { $_->taxclassnum } 
                      $self->part_pkg_taxoverride($class);
+  # otherwise, get its tax product category
   if (!@taxclassnums) {
     my $part_pkg_taxproduct = $self->taxproduct($class);
     # If this isn't defined, then the class has no taxproduct designation,
@@ -1494,7 +1496,8 @@ sub tax_rates {
   my $extra_sql = "AND taxclassnum IN (". join(',', @taxclassnums) . ")";
   my @taxes = qsearch({ 'table'     => 'tax_rate',
                         'hashref'   => { 'geocode'     => $geocode,
-                                         'data_vendor' => $vendor },
+                                         'data_vendor' => $vendor,
+                                         'disabled'    => '' },
                         'extra_sql' => $extra_sql,
                       });
   warn "Found taxes ". join(',', map {$_->taxnum} @taxes) ."\n"

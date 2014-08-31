@@ -85,52 +85,38 @@ Delete this record from the database.
 sub delete {
   my $self = shift;
 
-  return "Can't delete a tax class which has package tax rates!"
-    if qsearch( 'part_pkg_taxrate', { 'taxclassnumtaxed' => $self->taxclassnum } );
-
-  return "Can't delete a tax class which has package tax overrides!"
-    if qsearch( 'part_pkg_taxoverride', { 'taxclassnum' => $self->taxclassnum } );
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  foreach my $tax_rate (
-    qsearch( 'tax_rate', { taxclassnum=>$self->taxclassnum } )
-  ) {
-    my $error = $tax_rate->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
+  #return "Can't delete a tax class which has package tax rates!"
+  #if qsearch( 'part_pkg_taxrate', { 'taxclassnumtaxed' => $self->taxclassnum    
+  # If this tax class is manually assigned to a package,
+  # then return a useful error message instead of just having a conniption.
+  my @overrides = qsearch( 'part_pkg_taxoverride', {
+                    'taxclassnum' => $self->taxclassnum
+                  } );
+  if (@overrides) {
+    return "Tried to delete tax class " . $self->taxclass .
+      ", which is assigned to package definition " .
+      join(', ', map { '#'.$_->pkgpart} @overrides) .
+      ".";
   }
 
-  foreach my $part_pkg_taxrate (
-    qsearch( 'part_pkg_taxrate', { taxclassnum=>$self->taxclassnum } )
-  ) {
-    my $error = $part_pkg_taxrate->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
+  # part_pkg_taxrate.taxclass identifies taxes belonging to this taxclass.
+  # part_pkg_taxrate.taxclassnumtaxed identifies taxes applying to this 
+  # taxclass.
+  # If this taxclass goes away, remove all of them. (CCH upgrade CAN'T 
+  # remove them, because it removes the tax_class first and then doesn't 
+  # know what the taxclassnum was. Yeah, I know. So it will just skip 
+  # over them at the TXMATRIX stage.)
+  my @part_pkg_taxrate = (
+    qsearch('part_pkg_taxrate', { 'taxclassnum' => $self->taxclassnum }),
+    qsearch('part_pkg_taxrate', { 'taxclassnumtaxed' => $self->taxclassnum })
+  );
+  foreach (@part_pkg_taxrate) {
+    my $error = $_->delete;
+    return "when deleting taxclass ".$self->taxclass.": $error"
+      if $error;
   }
 
-  my $error = $self->SUPER::delete(@_);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  '';
+  $self->SUPER::delete(@_);
 
 }
 

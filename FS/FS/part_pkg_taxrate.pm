@@ -243,9 +243,12 @@ sub batch_import {
                                         );
 
       unless ($part_pkg_taxproduct) {
-        return "Can't find part_pkg_taxproduct for txmatrix deletion: ".
-               join(" ", map { "$_ => ". $hash->{$_} } @fields)
-          if ($hash->{'actionfield'} && $hash->{'actionflag'} eq 'D');
+        if (($hash->{'actionfield'} || '') eq 'D') {
+          warn "WARNING: Can't find part_pkg_taxproduct for txmatrix deletion: ".
+            join(" ", map { "$_ => ". $hash->{$_} } @fields) .
+            " (ignored)\n";
+          next;
+        }
 
         $part_pkg_taxproduct{'description'} = 
           join(' : ', (map{ $hash->{$_} } qw(groupdesc itemdesc)),
@@ -262,6 +265,8 @@ sub batch_import {
 
       delete($hash->{$_})
         for qw(group groupdesc item itemdesc provider customer rectype );
+      
+      # resolve the taxtype/taxcat fields to taxclassnums
 
       my %map = ( 'taxclassnum'      => [ 'taxtype', 'taxcat' ],
                   'taxclassnumtaxed' => [ 'taxtypetaxed', 'taxcattaxed' ],
@@ -275,14 +280,13 @@ sub batch_import {
                       'taxclass' => $class,
                     }
                   );
-        $hash->{$item} = $tax_class->taxclassnum
-          if $tax_class;
-
-        return "Can't find tax class for txmatrix deletion: ".
-               join(" ", map { "$_ => ". $hash->{$_} } @fields)
-          if ( $hash->{'actionflag'} && $hash->{'actionflag'} eq 'D' &&
-               !$tax_class && $class ne ':'
-             );
+        if ( $tax_class ) {
+          $hash->{$item} = $tax_class->taxclassnum;
+        } elsif ($class ne ':' and ($hash->{actionflag} || '') eq 'D') {
+          # return "Can't find tax class for txmatrix deletion: ".
+          warn "WARNING: Can't find tax class $class for txmatrix deletion (ignored)\n";
+          return ''; # don't delete the record, then
+        }
 
         delete($hash->{$_}) foreach @{$map{$item}};
       }
@@ -319,7 +323,7 @@ sub batch_import {
             $hash->{taxproductnum} .= ' ( '. $taxproduct->taxproduct. ' )'
               if $taxproduct;
           }
-          return "Can't find part_pkg_taxrate to delete: ".
+          warn "WARNING: Can't find part_pkg_taxrate to delete: ".
                  join(" ", map { "$_ => *". $hash->{$_}. '*' } keys(%$hash) );
         }
 

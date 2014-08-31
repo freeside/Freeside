@@ -1266,7 +1266,8 @@ sub upgrade_tax_location {
         next INVOICE;
       }
     }
-    my $exempt_cust = 1 if $h_cust_main->tax;
+    my $exempt_cust;
+    $exempt_cust = 1 if $h_cust_main->tax;
 
     # classify line items
     my @tax_items;
