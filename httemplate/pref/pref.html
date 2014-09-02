@@ -297,7 +297,7 @@ $customer_views{'Jumbo'} = 'jumbo';
   =~ /^(\w+)$/ or die "illegal menu_position";
 my $menu_position = $1;
 ( $curuser->option('email_address') )
-  =~ /^([,\w\@.]*)$/ or die "illegal email_address";  #too late
+  =~ /^([,\w\@.\-]*)$/ or die "illegal email_address";  #too late
 my $email_address = $1;
 
 </%init>
