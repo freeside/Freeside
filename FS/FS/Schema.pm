@@ -243,6 +243,23 @@ sub dbdef_dist {
                         ],
          });
 
+ 	#necessary for queries that want to look at *who* made changes
+      $h_indices{"h_${table}_usernum"} =
+         DBIx::DBSchema::Index->new({
+           'name'    => "h_${table}_usernum",
+           'unique'  => 0,
+           'columns' => [ 'history_usernum'],
+         });
+
+ 	# necessary because of the evil OR username for older data, be really nice if everything was just migrated to usernum and we could drop username
+	# This will not be helpful to mysql, but postgres smartly does a bitmap across both indexes, mysql will just use one
+
+      $h_indices{"h_${table}_username"} =
+         DBIx::DBSchema::Index->new({
+           'name'    => "h_${table}_username",
+           'unique'  => 0,
+           'columns' => [ 'history_username'],
+         });
     }
 
     my $primary_key_col = $tableobj->column($tableobj->primary_key)
