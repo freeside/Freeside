@@ -254,11 +254,11 @@ sub dbdef_dist {
  	# necessary because of the evil OR username for older data, be really nice if everything was just migrated to usernum and we could drop username
 	# This will not be helpful to mysql, but postgres smartly does a bitmap across both indexes, mysql will just use one
 
-      $h_indices{"h_${table}_username"} =
+      $h_indices{"h_${table}_user"} =
          DBIx::DBSchema::Index->new({
-           'name'    => "h_${table}_username",
+           'name'    => "h_${table}_user",
            'unique'  => 0,
-           'columns' => [ 'history_username'],
+           'columns' => [ 'history_user'],
          });
     }
 
