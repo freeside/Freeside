@@ -1043,7 +1043,10 @@ sub fk_methods {
 
     my $method = '';
     if ( scalar( @{$fk->columns} ) == 1 ) {
-      if ( ! @{$fk->references} || $fk->columns->[0] eq $fk->references->[0] ){
+      if (    ! defined($fk->references)
+           || ! @{$fk->references}
+           || $fk->columns->[0] eq $fk->references->[0]
+      ) {
         $method = $fk->table;
       } else {
         #some sort of hint in the table.pm or schema for methods not named
@@ -1074,7 +1077,10 @@ sub fk_methods {
 
       my $method = '';
       if ( scalar( @{$fk->columns} ) == 1 ) {
-        if ( ! @{$fk->references} || $fk->columns->[0] eq $fk->references->[0] ){
+        if (    ! defined($fk->references)
+             || ! @{$fk->references}
+             || $fk->columns->[0] eq $fk->references->[0]
+        ) {
           $method = $f_table;
         } else {
           #some sort of hint in the table.pm or schema for methods not named
