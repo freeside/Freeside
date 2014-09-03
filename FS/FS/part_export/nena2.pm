@@ -20,6 +20,9 @@ tie %options, 'Tie::IxHash', (
   'company_id'      => {  label => 'NENA company ID',
                           type  => 'text',
                        },
+  'customer_code'   => {  label => 'Customer code',
+                          type  => 'text',
+                       },
   'prefix'          => {  label => 'File name prefix',
                           type  => 'text',
                        },
@@ -215,7 +218,7 @@ sub data {
   my $cust_location = FS::cust_location->by_key($locationnum);
 
   # initialize with empty strings
-  my %hash = map { $_ => '' } $item_format->names;
+  my %hash = map { $_ => '' } @{ $item_format->names };
 
   $hash{function_code} = $function_code{$action};
 
@@ -277,13 +280,11 @@ sub data {
   # so we can't comply.  NENA 3 fixed this...
 
   $hash{company_id} = $self->option('company_id');
+  $hash{customer_code} = $self->option('customer_code') || '';
   $hash{source_id} = $initial_load_hack ? 'C' : ' ';
 
-  @hash{'zip', 'zip_'} = split('-', $cust_location->zip);
-  
-  # $hash{customer_code} is supposed to "uniquely identify a customer" but 
-  # they give us 3 alphanumeric characters.  Not sure how that works.
-
+  @hash{'zip_code', 'zip_4'} = split('-', $cust_location->zip);
+ 
   $hash{x_coordinate} = $cust_location->longitude;
   $hash{y_coordinate} = $cust_location->latitude;
   # $hash{z_coordinate} = $cust_location->altitude; # not implemented, sadly
