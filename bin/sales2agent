@@ -2,11 +2,16 @@
 
 use FS::UID qw(adminsuidsetup dbh);
 use FS::Record qw(qsearch);
+use Getopt::Std;
+use vars qw($opt_t);
 use FS::sales;
 use FS::agent;
 use FS::access_group;
 use FS::access_groupagent;
 use FS::cust_main;
+
+# -t passes through the typenum in agent_type
+getopts('t:');
 
 adminsuidsetup shift or die &usage;
 
@@ -19,6 +24,7 @@ foreach my $sales (@sales) {
   my $agent = new FS::agent {
     'agent'         => $sales->salesperson,
     'agent_custnum' => $sales->sales_custnum,
+    'typenum'       => $opt_t,
   };
   my $error = $agent->insert;
   if ( $error ) {
