@@ -36,13 +36,11 @@ $where{'usernum'}   = $usernum if $usernum;
 my $sdate = DateTime->new(
     year       => $cgi->param('start_year'),
     month      => $cgi->param('start_month'),
-    time_zone  => 'America/Los_Angeles',
 )->epoch();
 
 my $edate = DateTime->new(
     year       => $cgi->param('end_year'),
-    month      => $cgi->param('end_month'),
-    time_zone  => 'America/Los_Angeles',
+    month      => ($cgi->param('end_month') % 12 + 1) # first day of the next month
 )->epoch();
 
 my $where .= " AND signupdate >= $sdate ".
