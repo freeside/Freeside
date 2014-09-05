@@ -40,13 +40,13 @@ my $sdate = DateTime->new(
 
 my $edate = DateTime->new(
     year       => $cgi->param('end_year'),
-    month      => ($cgi->param('end_month') % 12 + 1) # first day of the next month
-)->epoch();
+    month      => $cgi->param('end_month')
+)->add( months => 1 )->epoch();
 
 my $where .= " AND signupdate >= $sdate ".
-             " AND signupdate <= $edate ";
+             " AND signupdate < $edate ";
 
-foreach my $cust (qsearch({ table   => 'cust_main', 
+foreach my $cust (qsearch({ table   => 'cust_main',
                             hashref => \%where,
                             extra_sql => $where } )) {
   next if !$cust->signupdate;
