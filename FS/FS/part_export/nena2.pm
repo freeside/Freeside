@@ -15,7 +15,7 @@ my %upload_targets;
 
 tie %options, 'Tie::IxHash', (
   'company_name'    => {  label => 'Company name for header record',
-                          type  => 'text'
+                          type  => 'text',
                        },
   'company_id'      => {  label => 'NENA company ID',
                           type  => 'text',
@@ -226,8 +226,8 @@ sub data {
   $hash{function_code} = $function_code{$action};
 
   # Add default area code if phonenum is 7 digits
-  if ($self->option('area_code') =~ /^\d{3}/ && $svc->phonenum =~ /^\d{7}/ ){
-  $svc->phonenum = $self->option('area_code'). $svc->phonenum
+  if ($self->option('area_code') =~ /^\d{3}$/ && $svc->phonenum =~ /^\d{7}$/ ){
+  $svc->phonenum = $self->option('area_code'). $svc->phonenum;
   }
  
   # phone number
