@@ -5,6 +5,46 @@ use base qw( FS::part_event::Condition );
 
 sub description { 'Customer balance age'; }
 
+=item check_options OPTIONS
+
+Validate options
+
+=cut
+
+my $duration_rx = qr/^(\d+)$/;
+my $unit_rx = qr/^[wmdh]$/;
+my $both_rx = qr/^(\d+)([wmdh])/;
+
+sub check_options {
+  my ($self, $options) = @_;
+
+  my $age       = $options->{age};
+  my $age_units = $options->{age_units};
+
+  return "Invalid (age) must be defined: $age"
+    unless( defined $age );
+
+  # over-ride possibly inaccurate unit indicator
+  if( $age =~ /$both_rx/ ){
+    $age = $1;
+    $age_units = $2;
+  }
+
+  return "Invalid (age_units) must be defined: $age_units"
+    unless defined $age_units;
+
+  return "Invalid (age) must be integer: $age"
+    unless( $age =~ /$duration_rx/ );
+
+  return "Invalid (age) must be non-zero: $age"
+    if ( $age == 0 );
+
+  return( "Invalid (age_units) must be m/w/d/h: $age_units" )
+    unless( $age_units =~ /$unit_rx/i );
+
+  return '';
+}
+
 sub option_fields {
   (
     'balance' => { 'label'      => 'Balance over',
