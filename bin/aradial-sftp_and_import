@@ -127,6 +127,8 @@ else {
 
 foreach my $filename ( @$ls ) {
 
+  next if $opt_d && $filename eq $opt_d;
+
   warn "Downloading $filename\n" if $opt_v;
 
   #get the file
