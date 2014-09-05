@@ -85,6 +85,21 @@
       if ( $cgi->param('_initialize') ) {
         $cgi->param('disabled', 'Y');
       }
+
+      my $balance_age_rx = qr/^(condition.+)\.balance_age\.age$/;
+
+      foreach my $param ( keys %{ $cgi->Vars() } ){
+
+	next unless ( $param =~ /$balance_age_rx/ );
+	next unless $cgi->param($1) eq 'balance_age';
+
+	my $errstr = FS::part_event::Condition::balance_age->
+	  check_options( { age       => $cgi->param($param),
+			   age_units => $cgi->param("${param}_units") } );
+
+	return $errstr if $errstr;
+      }
+
       return '';
     },
     'noerror_callback' => sub {
