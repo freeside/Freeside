@@ -23,6 +23,9 @@ tie %options, 'Tie::IxHash', (
   'customer_code'   => {  label => 'Customer code',
                           type  => 'text',
                        },
+  'area_code'       => {  label => 'Default area code for 7 digit numbers',
+                          type  => 'text',
+                       },
   'prefix'          => {  label => 'File name prefix',
                           type  => 'text',
                        },
@@ -222,7 +225,13 @@ sub data {
 
   $hash{function_code} = $function_code{$action};
 
-  # phone number 
+  # Add default area code if phonenum is 7 digits
+  if ($self->option('area_code') =~ /^\d{3}/ && $svc->phonenum =~ /^\d{7}/ ){
+  $svc->phonenum = $self->option('area_code'). $svc->phonenum
+  }
+ 
+  # phone number
+  
   $svc->phonenum =~ /^(\d{3})(\d*)$/;
   $hash{npa} = $1;
   $hash{calling_number} = $2;
