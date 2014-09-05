@@ -15,12 +15,15 @@ my %upload_targets;
 
 tie %options, 'Tie::IxHash', (
   'company_name'    => {  label => 'Company name for header record',
-                          type  => 'text'
+                          type  => 'text',
                        },
   'company_id'      => {  label => 'NENA company ID',
                           type  => 'text',
                        },
   'customer_code'   => {  label => 'Customer code',
+                          type  => 'text',
+                       },
+  'area_code'       => {  label => 'Default area code for 7 digit numbers',
                           type  => 'text',
                        },
   'prefix'          => {  label => 'File name prefix',
@@ -222,7 +225,13 @@ sub data {
 
   $hash{function_code} = $function_code{$action};
 
-  # phone number 
+  # Add default area code if phonenum is 7 digits
+  if ($self->option('area_code') =~ /^\d{3}$/ && $svc->phonenum =~ /^\d{7}$/ ){
+  $svc->phonenum = $self->option('area_code'). $svc->phonenum;
+  }
+ 
+  # phone number
+  
   $svc->phonenum =~ /^(\d{3})(\d*)$/;
   $hash{npa} = $1;
   $hash{calling_number} = $2;

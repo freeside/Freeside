@@ -118,7 +118,7 @@ sub request_user_edit {
 sub request {
   my $self = shift;
   my @params = @_;
-  my $path = '/Admin'; # I think this is always right
+  my $path = '/ArdWeb/ARDAdminIs.dll'; # I think this is always right
   my $url = URI->new('http://' . $self->host . $path);
   warn "$me request: \n".Dumper(\@params)."\n\n" if $DEBUG >= 2;
   my $response = $self->ua->post($url, \@params);
