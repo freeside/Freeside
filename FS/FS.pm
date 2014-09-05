@@ -616,6 +616,8 @@ Commercial products and services are available; see
 
 Jeremy Davis
 
+Jason Hall
+
 Ivan Kohler
 
 Mark Wells
@@ -625,8 +627,6 @@ Mark Wells
 Peter Bowen
 
 Jeff Finucane
-
-Jason Hall
 
 Kristian Hoffman
 
