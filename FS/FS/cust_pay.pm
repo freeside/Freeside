@@ -1183,7 +1183,7 @@ sub batch_import {
   my @fields;
   my $payby;
   if ( $format eq 'simple' ) {
-    @fields = qw( custnum agent_custid paid payinfo );
+    @fields = qw( custnum agent_custid paid payinfo invnum );
     $payby = 'BILL';
   } elsif ( $format eq 'extended' ) {
     die "unimplemented\n";
@@ -1268,8 +1268,19 @@ sub batch_import {
       $cust_pay{custnum} = $2;
     }
 
+    my $custnum = $cust_pay{custnum};
+
     my $cust_pay = new FS::cust_pay( \%cust_pay );
     my $error = $cust_pay->insert;
+
+    if ( ! $error && $cust_pay->custnum != $custnum ) {
+      #invnum was defined, and ->insert set custnum to the customer for that
+      #invoice, but it wasn't the one the import specified.
+      $dbh->rollback if $oldAutoCommit;
+      $error = "specified invoice #". $cust_pay{invnum}.
+               " is for custnum ". $cust_pay->custnum.
+               ", not specified custnum $custnum";
+    }
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
