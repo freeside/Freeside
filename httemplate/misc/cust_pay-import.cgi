@@ -59,7 +59,9 @@ Field information:
 
   <li><i>amount</i>: A positive numeric value with at most two digits after the decimal point.
 
-  <li><i>checknum</i>: A sequences of digits.  May be left blank.
+  <li><i>checknum</i>: A sequence of digits.  May be left blank.
+
+  <li><i>invnum</i>: Invoice number, optional
 
 </ul>
 
