@@ -649,6 +649,8 @@ Returns an arrayref of hashrefs with the following fields:
 
 =item acctoutputoctets
 
+=item callingstationid
+
 =item calledstationid
 
 =back
@@ -692,7 +694,7 @@ sub usage_sessions {
   my @fields = (
                  qw( username realm framedipaddress
                      acctsessiontime acctinputoctets acctoutputoctets
-                     calledstationid
+                     callingstationid calledstationid
                    ),
                  "$str2time acctstarttime ) as acctstarttime",
                  "$str2time acctstoptime ) as acctstoptime",
