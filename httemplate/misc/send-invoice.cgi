@@ -1,4 +1,8 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
 <% $cgi->redirect("${p}view/cust_main.cgi?$custnum") %>
+% }
 <%once>
 
 my %method = ( map { $_=>1 } qw( email print fax_invoice ) );
@@ -26,9 +30,13 @@ my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Can't find invoice!\n" unless $cust_bill;
 
 $cust_bill->set('mode' => $mode) if $mode;
-$cust_bill->$method({ 'template'    => $template,
-                      'notice_name' => $notice_name,
-                   }); 
+
+#these methods die instead of return errors, so, handle that without a backtrace
+eval { $cust_bill->$method({ 'template'    => $template,
+                             'notice_name' => $notice_name,
+                          }); 
+     };
+my $error = $@;
 
 my $custnum = $cust_bill->getfield('custnum');
 
