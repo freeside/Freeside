@@ -914,7 +914,8 @@ sub payment_info {
 
   #doubleclick protection
   my $_date = time;
-  $return{paybatch} = "webui-MyAccount-$_date-$$-". rand() * 2**32;
+  $return{payunique} = "webui-MyAccount-$_date-$$-". rand() * 2**32; #new
+  $return{paybatch} = $return{payunique};  #back compat
 
   return { 'error' => '',
            %return,
@@ -964,9 +965,15 @@ sub validate_payment {
     or return { 'error' => gettext('illegal_name'). " payname: ". $p->{'payname'} };
   my $payname = $1;
 
+  $p->{'payunique'} =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
+    or return { 'error' => gettext('illegal_text'). " payunique: ". $p->{'payunique'} };
+  my $payunique = $1;
+
   $p->{'paybatch'} =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
     or return { 'error' => gettext('illegal_text'). " paybatch: ". $p->{'paybatch'} };
   my $paybatch = $1;
+
+  $payunique = $paybatch if ! length($payunique) && length($paybatch);
 
   $p->{'payby'} ||= 'CARD';
   $p->{'payby'} =~ /^([A-Z]{4})$/
@@ -1051,7 +1058,8 @@ sub validate_payment {
     'month'          => $p->{'month'},
     'year'           => $p->{'year'},
     'payname'        => $payname,
-    'paybatch'       => $paybatch, #this doesn't actually do anything
+    'payunique'      => $payunique,
+    'paybatch'       => $paybatch,
     'paycvv'         => $paycvv,
     'payname'        => $payname,
     'discount_term'  => $discount_term,
@@ -1225,16 +1233,14 @@ sub do_process_payment {
 
   if ( $cust_pay ) {
 
-    my($gw, $auth, $order) = split(':', $cust_pay->paybatch);
-
     return {
       'error'        => '',
       'amount'       => sprintf('%.2f', $cust_pay->paid),
       'date'         => $cust_pay->_date,
       'date_pretty'  => time2str('%Y-%m-%d', $cust_pay->_date),
       'time_pretty'  => time2str('%T', $cust_pay->_date),
-      'auth_num'     => $auth,
-      'order_num'    => $order,
+      'auth_num'     => $cust_pay->auth,
+      'order_num'    => $cust_pay->order_number,
       'receipt_html' => $receipt_html,
     };
 

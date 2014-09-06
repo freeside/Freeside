@@ -627,7 +627,10 @@ sub payment_results {
   my $auto = 0;
   $auto = 1 if $cgi->param('auto');
 
-  $cgi->param('paybatch') =~ /^([\w\-\.]+)$/ or die "illegal paybatch";
+  $cgi->param('payunique') =~ /^([\w\-\.]*)$/ or die "illegal payunique";
+  my $payunique = $1;
+
+  $cgi->param('paybatch') =~ /^([\w\-\.]*)$/ or die "illegal paybatch";
   my $paybatch = $1;
 
   $cgi->param('discount_term') =~ /^(\d*)$/ or die "illegal discount_term";
@@ -651,6 +654,7 @@ sub payment_results {
     'country'    => $country,
     'save'       => $save,
     'auto'       => $auto,
+    'payunique'  => $payunique,
     'paybatch'   => $paybatch,
     'discount_term' => $discount_term,
   );
