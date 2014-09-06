@@ -4,7 +4,7 @@ use strict;
 use vars qw(@ISA @EXPORT_OK $DEBUG %info %options $notes1 $notes2);
 use Exporter;
 use Tie::IxHash;
-use FS::Record qw( dbh qsearch qsearchs str2time_sql );
+use FS::Record qw( dbh qsearch qsearchs str2time_sql str2time_sql_closing );
 use FS::part_export;
 use FS::svc_acct;
 use FS::export_svc;
@@ -689,15 +689,16 @@ sub usage_sessions {
                                    qw( datasrc username password ) );
 
   #select a unix time conversion function based on database type
-  my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+  my $str2time = str2time_sql(         $dbh->{Driver}->{Name} );
+  my $closing  = str2time_sql_closing( $dbh->{Driver}->{Name} );
 
   my @fields = (
                  qw( username realm framedipaddress
                      acctsessiontime acctinputoctets acctoutputoctets
                      callingstationid calledstationid
                    ),
-                 "$str2time acctstarttime ) as acctstarttime",
-                 "$str2time acctstoptime ) as acctstoptime",
+                 "$str2time acctstarttime $closing as acctstarttime",
+                 "$str2time acctstoptime  $closing as acctstoptime",
                );
 
   @fields = ( 'username', 'sum(acctsessiontime) as acctsessiontime', 'sum(acctinputoctets) as acctinputoctets',
@@ -736,12 +737,12 @@ sub usage_sessions {
   my $acctstoptime = '';
   if ( $opt->{session_status} ne 'open' ) {
     if ( $start ) {
-      $acctstoptime .= "$str2time AcctStopTime ) >= ?";
+      $acctstoptime .= "$str2time AcctStopTime $closing >= ?";
       push @param, $start;
       $acctstoptime .= ' AND ' if $end;
     }
     if ( $end ) {
-      $acctstoptime .= "$str2time AcctStopTime ) <= ?";
+      $acctstoptime .= "$str2time AcctStopTime $closing <= ?";
       push @param, $end;
     }
   }
@@ -755,11 +756,11 @@ sub usage_sessions {
   push @where, $acctstoptime;
 
   if ( $opt->{starttime_start} ) {
-    push @where, "$str2time AcctStartTime ) >= ?";
+    push @where, "$str2time AcctStartTime $closing >= ?";
     push @param, $opt->{starttime_start};
   }
   if ( $opt->{starttime_end} ) {
-    push @where, "$str2time AcctStartTime ) <= ?";
+    push @where, "$str2time AcctStartTime $closing <= ?";
     push @param, $opt->{starttime_end};
   }
 
@@ -798,7 +799,9 @@ sub update_svc {
   my $dbh = sqlradius_connect( map $self->option($_),
                                    qw( datasrc username password ) );
 
-  my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+  my $str2time = str2time_sql(         $dbh->{Driver}->{Name} );
+  my $closing  = str2time_sql_closing( $dbh->{Driver}->{Name} );
+
   my @fields = qw( radacctid username realm acctsessiontime );
 
   my @param = ();
@@ -806,7 +809,7 @@ sub update_svc {
 
   my $sth = $dbh->prepare("
     SELECT RadAcctId, UserName, Realm, AcctSessionTime,
-           $str2time AcctStartTime),  $str2time AcctStopTime), 
+           $str2time AcctStartTime $closing,  $str2time AcctStopTime $closing, 
            AcctInputOctets, AcctOutputOctets
       FROM radacct
       WHERE FreesideStatus IS NULL
