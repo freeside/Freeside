@@ -168,10 +168,17 @@ sub calc_discount {
     $months = sprintf('%.2f', $months) if $months =~ /\./;
 
     my $d = 'Includes ';
-    $d .= 'setup ' if defined $param->{'setup_charge'};
-    $d .= 'discount of '. $discount->description_short;
-    $d .= " for $months month". ( $months!=1 ? 's' : '' ) unless defined $param->{'setup_charge'};
-    $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
+
+    if ( $months eq '1' ) {
+      $d .= "discount of $money_char$amount each";
+    } else {
+      $d .= 'setup ' if defined $param->{'setup_charge'};
+      $d .= 'discount of '. $discount->description_short;
+      $d .= " for $months month". ( $months!=1 ? 's' : '' )
+	unless defined $param->{'setup_charge'};
+      $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
+    }
+
     push @$details, $d;
 
     $tot_discount += $amount;
