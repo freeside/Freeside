@@ -65,7 +65,7 @@ our %status_type = (
 ###
 
 use vars qw( $opt_m $opt_a $opt_b $opt_r $opt_d $opt_v $opt_P );
-getopts('m:abr:dP:v:');
+getopts('m:abr:d:P:v:');
 
 my %options = ();
 
