@@ -402,13 +402,31 @@ sub qsearch {
         get_real_fields($table, $record, \@real_fields));
     }
 
-    $statement .= " $extra_sql" if defined($extra_sql);
+    if( defined($extra_sql) ){
+      if( $statement =~ /\sWHERE\s/i ){
+	if( $extra_sql =~ /^\s*AND /i ){
+	  # correct format
+	}elsif($extra_sql =~ /^\s*WHERE /i ){
+	  $extra_sql =~ s/WHERE /AND /i;
+	}else{
+	  $extra_sql = " AND $extra_sql";
+	}
+      }else{
+	if( $extra_sql =~ /^\s*AND /i ){
+	  $extra_sql =~ s/AND /WHERE /i;
+	}elsif($extra_sql =~ /^\s*WHERE /i ){
+	  # correct format
+	}else{
+	  $extra_sql = " WHERE $extra_sql";
+	}
+      }
+      $statement .= " $extra_sql";
+    }
     $statement .= " $order_by"  if defined($order_by);
 
     push @statement, $statement;
 
     warn "[debug]$me $statement\n" if $DEBUG > 1 || $debug;
- 
 
     foreach my $field (
       grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
