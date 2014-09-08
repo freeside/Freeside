@@ -43,8 +43,9 @@ my $edate = DateTime->new(
     month      => $cgi->param('end_month')
 )->add( months => 1 )->epoch();
 
-my $where .= " AND signupdate >= $sdate ".
-             " AND signupdate < $edate ";
+my $where = (%where ? ' AND ' : ' WHERE ');
+$where .= " signupdate >= $sdate ".
+          " AND signupdate < $edate ";
 
 foreach my $cust (qsearch({ table   => 'cust_main',
                             hashref => \%where,
