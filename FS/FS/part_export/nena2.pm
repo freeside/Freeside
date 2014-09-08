@@ -224,15 +224,15 @@ sub data {
   my %hash = map { $_ => '' } @{ $item_format->names };
 
   $hash{function_code} = $function_code{$action};
-
+  
   # Add default area code if phonenum is 7 digits
-  if ($self->option('area_code') =~ /^\d{3}$/ && $svc->phonenum =~ /^\d{7}$/ ){
-  $svc->phonenum = $self->option('area_code'). $svc->phonenum;
+  my $phonenum = $svc->phonenum;
+  if ($self->option('area_code') =~ /^\d{3}$/ && $phonenum =~ /^\d{7}$/ ){
+  $phonenum = $self->option('area_code'). $svc->phonenum;
   }
  
   # phone number
-  
-  $svc->phonenum =~ /^(\d{3})(\d*)$/;
+  $phonenum =~ /^(\d{3})(\d*)$/;
   $hash{npa} = $1;
   $hash{calling_number} = $2;
 
