@@ -49,7 +49,7 @@ to the database.  FS::Log inherits from L<Log::Dispatch>.
 
 =over 4
 
-new CONTEXT
+=item new CONTEXT
 
 Constructs and returns a log handle.  CONTEXT must be a known context tag
 indicating what activity is going on, such as the name of the function or
