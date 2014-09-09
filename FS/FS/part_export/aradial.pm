@@ -90,7 +90,7 @@ sub export_delete {
   my ($self, $svc) = @_;
   $self->request_user_edit(
     'ConfirmDelete' => 1,
-    ('$Delete$' . $svc->username) => 1,
+    ('$Checked$' . $svc->username) => 1,
   );
 }
 
