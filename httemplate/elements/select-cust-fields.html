@@ -1,22 +1,18 @@
-%
-%  my( $cust_fields, %opt ) = @_;
-%
-%  use FS::ConfDefaults;
-%  $opt{'avail_fields'} ||= [ FS::ConfDefaults->cust_fields_avail() ];
-%
-%  tie my %hash, 'Tie::IxHash', @{ $opt{'avail_fields'} };
-%
-%
+<%init>
+  my( $cust_fields, %opt ) = @_;
 
+  use FS::ConfDefaults;
+  $opt{'avail_fields'} ||= [ FS::ConfDefaults->cust_fields_avail() ];
+
+  tie my %hash, 'Tie::IxHash', @{ $opt{'avail_fields'} };
+</%init>
 
 <SELECT NAME="cust_fields">
 
   <OPTION VALUE="">(configured default)
-% 
-%     foreach my $value ( keys %hash ) { 
 
-
-       <OPTION VALUE="<% $value %>"><% $hash{$value} %>
+% foreach my $value ( keys %hash ) { 
+  <OPTION VALUE="<% $value %>"><% $hash{$value} %>
 % } 
 
 
