@@ -7,8 +7,6 @@ use List::Util  qw( min );
 use FS::cust_pkg;
 use FS::cust_bill_pkg_discount;
 
-%info = ( 'disabled' => 1 );
-
 =head1 NAME
 
 FS::part_pkg::discount_Mixin - Mixin class for part_pkg:: classes that 
@@ -168,18 +166,22 @@ sub calc_discount {
     $months = sprintf('%.2f', $months) if $months =~ /\./;
 
     my $d = 'Includes ';
+    my $format;
 
     if ( $months eq '1' ) {
       $d .= "discount of $money_char$amount each";
+      $format = 'Undiscounted amount: %s%.2f';
     } else {
       $d .= 'setup ' if defined $param->{'setup_charge'};
       $d .= 'discount of '. $discount->description_short;
       $d .= " for $months month". ( $months!=1 ? 's' : '' )
 	unless defined $param->{'setup_charge'};
       $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
+      $format = 'Undiscounted monthly amount: %s%.2f';
     }
 
     push @$details, $d;
+    push @$details, sprintf $format, $money_char, $br;
 
     $tot_discount += $amount;
   }
