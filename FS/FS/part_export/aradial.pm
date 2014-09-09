@@ -63,6 +63,7 @@ sub export_replace {
   $self->request_user_edit(
     'Page'    => 'UserEdit',
     'Modify'  => 1,
+    'UserID'  => $old->username,
     $self->svc_acct_params($new),
     UserLockout => $UserLockout,
   );
