@@ -432,6 +432,8 @@ $opt{'date_format'} ||= '%m/%d/%Y';
 foreach my $legacy_cust_bill ($cust_main->legacy_cust_bill) {
   push @history, {
     'date'   => $legacy_cust_bill->_date,
+    'order'  => 1,
+    'num'    => $legacy_cust_bill->legacyid,
     'desc'   => include('payment_history/legacy_invoice.html', $legacy_cust_bill, %opt ),
     'charge_nobal' => $legacy_cust_bill->charged,
   };
@@ -442,6 +444,8 @@ my $num_cust_bill = 0;
 foreach my $cust_bill ($cust_main->cust_bill) {
   push @history, {
     'date'   => $cust_bill->_date,
+    'order'  => 1,
+    'num'    => $cust_bill->invnum,
     'desc'   => include('payment_history/invoice.html', $cust_bill, %opt ),
     'charge' => $cust_bill->charged,
   };
@@ -452,6 +456,8 @@ foreach my $cust_bill ($cust_main->cust_bill) {
 foreach my $cust_bill_void ($cust_main->cust_bill_void) {
   push @history, {
     'date'        => $cust_bill_void->_date,
+    'order'       => 0,
+    'num'         => $cust_bill_void->invnum,
     'desc'        => include('payment_history/voided_invoice.html', $cust_bill_void, %opt ),
     'void_charge' => $cust_bill_void->charged,
   };
@@ -461,6 +467,8 @@ foreach my $cust_bill_void ($cust_main->cust_bill_void) {
 foreach my $cust_statement ($cust_main->cust_statement) {
   push @history, {
     'date'   => $cust_statement->_date,
+    'order'  => 2,
+    'num'    => $cust_statement->statementnum,
     'desc'   => include('payment_history/statement.html', $cust_statement, %opt ),
     #'charge' => $cust_bill->charged,
   };
@@ -470,6 +478,8 @@ foreach my $cust_statement ($cust_main->cust_statement) {
 foreach my $cust_pay ($cust_main->cust_pay) {
   push @history, {
     'date'    => $cust_pay->_date,
+    'order'   => 6,
+    'num'     => $cust_pay->paynum,
     'desc'    => include('payment_history/payment.html', $cust_pay, %opt ),
     'payment' => $cust_pay->paid,
     #'target'  => $target, #XXX
@@ -480,6 +490,8 @@ foreach my $cust_pay ($cust_main->cust_pay) {
 foreach my $cust_pay_pending ($cust_main->cust_pay_pending) {
   push @history, {
     'date'    => $cust_pay_pending->_date,
+    'order'   => 4,
+    'num'     => $cust_pay_pending->paypendingnum,
     'desc'    => include('payment_history/pending_payment.html', $cust_pay_pending, %opt ),
     'void_payment' => $cust_pay_pending->paid, 
   };
@@ -490,6 +502,8 @@ foreach my $cust_pay_pending ($cust_main->cust_pay_pending) {
 foreach my $cust_pay_void ($cust_main->cust_pay_void) {
   push @history, {
     'date'   => $cust_pay_void->_date,
+    'order'  => 3,
+    'num'    => $cust_pay_void->paynum,
     'desc'   => include('payment_history/voided_payment.html', $cust_pay_void, %opt ),
     'void_payment' => $cust_pay_void->paid,
   };
@@ -500,6 +514,8 @@ foreach my $cust_pay_void ($cust_main->cust_pay_void) {
 foreach my $cust_credit_void ($cust_main->cust_credit_void) {
   push @history, {
     'date'        => $cust_credit_void->_date,
+    'order'       => 7,
+    'num'         => $cust_credit_void->paynum,
     'desc'        => include('payment_history/voided_credit.html', $cust_credit_void, %opt ),
     'void_credit' => $cust_credit_void->amount,
   };
@@ -509,6 +525,8 @@ foreach my $cust_credit_void ($cust_main->cust_credit_void) {
 foreach my $cust_pay_pending ($cust_main->cust_pay_pending_attempt) {
   push @history, {
     'date'    => $cust_pay_pending->_date,
+    'order'   => 5,
+    'num'     => $cust_pay_pending->paypendingnum,
     'desc'    => include('payment_history/attempted_payment.html', $cust_pay_pending, %opt ),
     'void_payment' => $cust_pay_pending->paid, #??
     #'target'  => $target, #XXX
@@ -521,6 +539,8 @@ foreach my $cust_pay_batch (
   my $pay_batch = $cust_pay_batch->pay_batch;
   push @history, {
     'date'    => $pay_batch->upload,
+    'order'   => 5,
+    'num'     => $cust_pay_batch->paybatchnum,
     'desc'    => include('payment_history/attempted_batch_payment.html', $cust_pay_batch, %opt),
     'void_payment' => $cust_pay_batch->amount,
   };
@@ -530,6 +550,8 @@ foreach my $cust_pay_batch (
 foreach my $cust_credit ($cust_main->cust_credit) {
   push @history, {
     'date'   => $cust_credit->_date,
+    'order'  => 8,
+    'num'    => $cust_credit->crednum,
     'desc'   => include('payment_history/credit.html', $cust_credit, %opt ),
     'credit' => $cust_credit->amount,
   };
@@ -540,6 +562,8 @@ foreach my $cust_credit ($cust_main->cust_credit) {
 foreach my $cust_refund ($cust_main->cust_refund) {
   push @history, {
     'date'   => $cust_refund->_date,
+    'order'  => 9,
+    'num'    => $cust_refund->refundnum,
     'desc'   => include('payment_history/refund.html', $cust_refund, %opt),
     'refund' => $cust_refund->refund,
   };
@@ -551,7 +575,12 @@ my $years =  $conf->config('payment_history-years') || 2;
 my $older_than = time - $years * 31556926; #60*60*24*365.2422
 my $balance = 0;
 
-@history = sort { $a->{date} <=> $b->{date} } @history;
+@history = sort {    $a->{date}  <=> $b->{date}
+                  or $a->{order} <=> $b->{order}
+                  or $a->{num}   <=> $b->{num}
+                }
+             @history;
+
 my $i = 0;
 my $balance_forward;
 foreach my $item (@history) {
@@ -578,7 +607,11 @@ if ( @history and $history[-1]->{'hide'} ) {
 
 # then sort in user-pref order
 if ( $curuser->option('history_order') eq 'newest' ) {
-  @history = sort { $b->{date} <=> $a->{date} } @history;
+  @history = sort {    $b->{date}  <=> $a->{date}
+                    or $b->{order} <=> $a->{order} #or still forward here?
+                    or $b->{num}   <=> $a->{num}
+                  }
+               @history;
 } # else it's already oldest-first, and there are no other options yet
 
 sub translate_payby {
