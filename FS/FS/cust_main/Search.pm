@@ -477,11 +477,12 @@ sub smart_search {
 
     push @cust_main, qsearch({
       'table'     => 'cust_main',
+      'addl_from' => ' JOIN cust_payby USING (custnum)',
       'hashref'   => {},
-      'extra_sql' => " WHERE (    payinfo LIKE '$like_search'
-                               OR paymask =    '$mask_search'
+      'extra_sql' => " WHERE (    cust_payby.payinfo LIKE '$like_search'
+                               OR cust_payby.paymask =    '$mask_search'
                              ) ".
-                     " AND payby IN ('CARD','DCRD') ".
+                     " AND cust_payby.payby IN ('CARD','DCRD') ".
                      " AND $agentnums_sql", #agent virtulization
     });
 
@@ -896,10 +897,10 @@ sub search {
                   :  ( $params->{'payby'} );
 
     @payby = grep /^([A-Z]{4})$/, @payby;
-
-    push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )'
+    my $in_payby = 'IN(' . join(',', map {"'$_'"} @payby) . ')';
+    push @where, "EXISTS( SELECT 1 FROM cust_payby WHERE payby $in_payby ".
+                 "AND cust_payby.custnum = cust_main.custnum)"
       if @payby;
-
   }
 
   ###
