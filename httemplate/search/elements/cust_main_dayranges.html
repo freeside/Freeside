@@ -187,7 +187,7 @@ my $sql_query = {
                    'cust_main.custnum',
                    $range_cols,
                    $packages_cols,
-                   FS::UI::Web::cust_sql_fields($cgi->param('cust_fields')),
+                   FS::UI::Web::cust_sql_fields(),
                    'payby',
                  ),
   'extra_sql' => $where,
