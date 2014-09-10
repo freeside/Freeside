@@ -183,7 +183,7 @@ sub calc_discount {
     }
 
     push @$details, $d;
-    push @$details, sprintf $format, $money_char, $br;
+    push @$details, sprintf( $format, $money_char, $br );
 
     $tot_discount += $amount;
   }
