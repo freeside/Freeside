@@ -7,6 +7,8 @@ use List::Util  qw( min );
 use FS::cust_pkg;
 use FS::cust_bill_pkg_discount;
 
+%info = ( 'disabled' => 1 );
+
 =head1 NAME
 
 FS::part_pkg::discount_Mixin - Mixin class for part_pkg:: classes that 
