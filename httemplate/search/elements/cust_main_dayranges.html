@@ -19,8 +19,8 @@ Example:
                  'name'        => 'customers',
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
-                 'header'      => [ 
-                                    FS::UI::Web::cust_header($cgi->param('cust_fields')),
+                 'header'      => [
+                                    @cust_header,
                                     '0-30',
                                     '30-60',
                                     '60-90',
@@ -30,12 +30,7 @@ Example:
                                   ],
                  'footer'      => [
                                     'Total',
-                                    ( map '',
-                                          ( 1 .. 
-                                            scalar(FS::UI::Web::cust_header($cgi->param('cust_fields'))-1)
-                                          ),
-                                    ),
-                                    
+                                    ( map '',( 1 .. $#cust_header ),),
                                     sprintf( $money_char.'%.2f',
                                              $row->{'rangecol_0_30'} ),
                                     sprintf( $money_char.'%.2f',
@@ -59,7 +54,7 @@ Example:
                                   ],
                  'links'       => [
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
-                                          FS::UI::Web::cust_header($cgi->param('cust_fields'))
+                                          @cust_header
                                     ),
                                     '',
                                     '',
@@ -71,7 +66,7 @@ Example:
                  'align'       => FS::UI::Web::cust_aligns(). 
                                    'rrrrr'.
                                   ('c' x @pay_labels),
-                 'size'        => [ ( map '', FS::UI::Web::cust_header($cgi->param('cust_fields')) ),
+                 'size'        => [ ( map '', @cust_header ),
                                     #'-1', '', '', '', '',  '', ],
                                     '', '', '', '', '',  '', 
                                     ( map '', @pay_labels ),
@@ -98,7 +93,7 @@ Example:
 &>
 <%init>
 
-my @cust_field = FS::UI::Web::cust_header($cgi->param('cust_fields'));
+my @cust_header = FS::UI::Web::cust_header($cgi->param('cust_fields'));
 my %opt = @_;
 
 #actually need to auto-generate other things too for a passed-in ranges to work
@@ -192,7 +187,7 @@ my $sql_query = {
                    'cust_main.custnum',
                    $range_cols,
                    $packages_cols,
-                   FS::UI::Web::cust_sql_fields(),
+                   FS::UI::Web::cust_sql_fields($cgi->param('cust_fields')),
                    'payby',
                  ),
   'extra_sql' => $where,
