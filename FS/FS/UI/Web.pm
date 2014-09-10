@@ -325,7 +325,7 @@ sub cust_header {
 }
 
 sub cust_sort_fields {
-  cust_header(@_);
+  cust_header(@_) if( @_ or !@cust_fields );
   #inefficientish, but tiny lists and only run once per page
 
   map { $_ eq 'custnum' ? 'custnum' : '' } @cust_fields;
@@ -347,7 +347,7 @@ sub cust_sql_fields {
   my @fields = qw( last first company );
 #  push @fields, map "ship_$_", @fields;
 
-  cust_header(@_);
+  cust_header(@_) if( @_ or !@cust_fields );
   #inefficientish, but tiny lists and only run once per page
 
   my @location_fields;
@@ -487,6 +487,7 @@ element.
 
 sub cust_fields_subs {
   my $unlinked_warn = 0;
+
   return map { 
     my $f = $_;
     if ( $unlinked_warn++ ) {
