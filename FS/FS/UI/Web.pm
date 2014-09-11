@@ -250,6 +250,7 @@ sub cust_header {
     'Country'                  => 'bill_country_full',
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
+    'Mobile phone'             => 'mobile',  # XXX should use msgcat, but how?
     'Fax number'               => 'fax',
     '(bill) Address 1'         => 'bill_address1',
     '(bill) Address 2'         => 'bill_address2',
@@ -363,7 +364,7 @@ sub cust_sql_fields {
     }
   }
 
-  foreach my $field (qw(daytime night fax payby)) {
+  foreach my $field (qw(daytime night mobile fax payby)) {
     push @fields, $field if (grep { $_ eq $field } @cust_fields);
   }
   push @fields, 'agent_custid';
