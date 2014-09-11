@@ -7,6 +7,15 @@ use FS::part_pkg::flat;
 
 @ISA = qw(FS::part_pkg::flat);
 
+# some constants to facilitate changes
+# maybe we display charge per petabyte in the future?
+use constant KB => 1024;
+use constant MB => KB * 1024;
+use constant GB => MB * 1024;
+use constant BU => GB;            # base unit
+use constant BS => 'gigabyte';    # BU spelled out
+use constant BA => 'gig';         # BU abbreviation
+
 %info = (
   'name' => 'Time and data charges from an SQL RADIUS radacct table',
   'shortname' => 'Usage charges from RADIUS',
@@ -24,11 +33,11 @@ use FS::part_pkg::flat;
                                'default' => 0,
                              },
 
-    'recur_included_input' => { 'name' => 'Upload megabytes included',
+    'recur_included_input' => { 'name' => 'Upload ' . BS . 's included',
                                 'default' => 0,
                               },
     'recur_input_charge' => { 'name' =>
-                                      'Additional charge per megabyte upload',
+                                      'Additional charge per ' . BS . ' upload',
                               'default' => 0,
                             },
     'recur_input_cap'    => { 'name' => 'Maximum overage charge for upload'.
@@ -36,11 +45,11 @@ use FS::part_pkg::flat;
                                'default' => 0,
                              },
 
-    'recur_included_output' => { 'name' => 'Download megabytes included',
+    'recur_included_output' => { 'name' => 'Download ' . BS . 's included',
                                  'default' => 0,
                               },
     'recur_output_charge' => { 'name' =>
-                                     'Additional charge per megabyte download',
+                                     'Additional charge per ' . BS . ' download',
                               'default' => 0,
                             },
     'recur_output_cap'    => { 'name' => 'Maximum overage charge for download'.
@@ -49,15 +58,15 @@ use FS::part_pkg::flat;
                              },
 
     'recur_included_total' => { 'name' =>
-                                     'Total megabytes included',
+                                     'Total ' . BS . 's included',
                                 'default' => 0,
                               },
     'recur_total_charge' => { 'name' =>
-                               'Additional charge per megabyte total',
+                               'Additional charge per ' . BS . ' total',
                               'default' => 0,
                             },
     'recur_total_cap'    => { 'name' => 'Maximum overage charge for total'.
-                                        ' megabytes (0 means no cap)',
+                                        ' ' . BS . 's (0 means no cap)',
                                'default' => 0,
                              },
 
@@ -89,12 +98,12 @@ sub calc_recur {
   my $input = $cust_pkg->attribute_since_sqlradacct(  $last_bill,
                                                       $$sdate,
                                                       'AcctInputOctets' )
-              / 1048576;
+              / BU;
 
   my $output = $cust_pkg->attribute_since_sqlradacct( $last_bill,
                                                       $$sdate,
                                                       'AcctOutputOctets' )
-               / 1048576;
+               / BU;
 
   my $total = $input + $output - $self->option('recur_included_total');
   $total = 0 if $total < 0;
@@ -128,16 +137,16 @@ sub calc_recur {
     && $hourscharge > $self->option('recur_hourly_cap');
 
   if ( $self->option('recur_total_charge') > 0 ) {
-    push @$details, "Last month's data ".
-                    sprintf('%.1f', $total). " megs: $totalcharge";
+    push @$details,
+      sprintf( "Last month's data %.1f %ss: %s", $total, BA, $totalcharge );
   }
   if ( $self->option('recur_input_charge') > 0 ) {
-    push @$details, "Last month's download ".
-                   sprintf('%.1f', $input). " megs: $inputcharge";
+    push @$details,
+      sprintf( "Last month's download %.1f %ss: %s", $input, BA, $inputcharge );
   }
   if ( $self->option('recur_output_charge') > 0 ) {
-    push @$details, "Last month's upload ".
-                   sprintf('%.1f', $output). " megs: $outputcharge";
+    push @$details,
+      sprintf( "Last month's upload %.1f %ss: %s", $output, BA, $outputcharge );
   }
   if ( $self->option('recur_hourly_charge')  > 0 ) {
     push @$details, "Last month\'s time ".
