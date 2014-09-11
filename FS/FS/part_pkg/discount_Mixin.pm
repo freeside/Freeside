@@ -171,14 +171,15 @@ sub calc_discount {
     my $format;
 
     if ( $months eq '1' ) {
-      $d .= "discount of $money_char$amount each";
+      $d .= "discount of $money_char$amount";
+      $d .= " each" if $cust_pkg->quantity > 1;
       $format = 'Undiscounted amount: %s%.2f';
     } else {
       $d .= 'setup ' if defined $param->{'setup_charge'};
       $d .= 'discount of '. $discount->description_short;
-      $d .= " for $months month". ( $months!=1 ? 's' : '' )
+      $d .= " for $months months"
 	unless defined $param->{'setup_charge'};
-      $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
+      $d .= ": $money_char$amount" if $discount->percent;
       $format = 'Undiscounted monthly amount: %s%.2f';
     }
 
