@@ -32,22 +32,24 @@ my @count = (0) x 24;
 my %where;
 $where{'agentnum'} = $agentnum if $agentnum;
 $where{'usernum'}   = $usernum if $usernum;
-my $sdate = $cgi->param('start_year').
-            '-'.
-            $cgi->param('start_month').
-            '-01';
-my $edate = ($cgi->param('end_year') + 
-               ($cgi->param('end_month')==12)).
-            '-'.
-            ($cgi->param('end_month') % 12 + 1).
-            '-01'; # first day of the next month
 
-my $sql = "AND signupdate >= ".str2time($sdate).
-          " AND signupdate < ".str2time($edate);
+my $sdate = DateTime->new(
+    year       => $cgi->param('start_year'),
+    month      => $cgi->param('start_month'),
+)->epoch();
 
-foreach my $cust (qsearch({ table   => 'cust_main', 
+my $edate = DateTime->new(
+    year       => $cgi->param('end_year'),
+    month      => $cgi->param('end_month')
+)->add( months => 1 )->epoch();
+
+my $where = (%where ? ' AND ' : ' WHERE ');
+$where .= " signupdate >= $sdate ".
+          " AND signupdate < $edate ";
+
+foreach my $cust (qsearch({ table   => 'cust_main',
                             hashref => \%where,
-                            extra_sql => $sql } )) {
+                            extra_sql => $where } )) {
   next if !$cust->signupdate;
   my $hour = time2str('%H',$cust->signupdate);
   $count[$hour]++;
