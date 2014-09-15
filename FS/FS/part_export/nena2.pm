@@ -169,15 +169,6 @@ my %function_code = (
 );
 
 sub immediate {
-  local $@;
-  eval "use Geo::StreetAddress::US";
-  if ($@) {
-    if ($@ =~ /^Can't locate/) {
-      return "Geo::StreetAddress::US must be installed to use the NENA2 export.";
-    } else {
-      die $@;
-    }
-  }
 
   # validate some things
   my ($self, $action, $svc) = @_;
@@ -209,6 +200,15 @@ sub create_item {
 }
 
 sub data {
+  local $@;
+  eval "use Geo::StreetAddress::US";
+  if ($@) {
+    if ($@ =~ /^Can't locate/) {
+      return "Geo::StreetAddress::US must be installed to use the NENA2 export.";
+    } else {
+      die $@;
+    }
+  }
   # generate the entire record here.  reconciliation of multiple updates to 
   # the same service can be done at process time.
   my $self = shift;
@@ -259,7 +259,6 @@ sub data {
   } else {
     $hash{location} = $cust_location->address2;
   }
-  $hash{location}             = $location_hash->{address2};
 
   # customer name and class
   $hash{customer_name} = $svc->phone_name_or_cust;
