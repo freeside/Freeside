@@ -3613,7 +3613,7 @@ sub transfer {
   return ('Package does not exist: '.$dest_pkgnum) unless $dest;
 
   foreach my $pkg_svc ( $dest->part_pkg->pkg_svc ) {
-    $target{$pkg_svc->svcpart} = $pkg_svc->quantity;
+    $target{$pkg_svc->svcpart} = $pkg_svc->quantity * ( $dest->quantity || 1 );
   }
 
   foreach my $cust_svc ($dest->cust_svc) {
