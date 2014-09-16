@@ -3052,6 +3052,7 @@ sub tables_hashref {
         'successor',     'int',     'NULL', '', '', '',
         'family_pkgpart','int',     'NULL', '', '', '',
         'delay_start',   'int',     'NULL', '', '', '',
+        'start_on_hold', 'char',    'NULL',  1, '', '',
         'agent_pkgpartid', 'varchar', 'NULL', 20, '', '',
       ],
       'primary_key'  => 'pkgpart',

@@ -56,6 +56,7 @@ my @return = map  {
                     ( $_->pkgpart,
                       $_->pkg_comment,
                       $_->can_discount,
+                      ($_->start_on_hold ? 1 : 0),
                       $_->can_start_date(
                         num_ncancelled_pkgs => $num_ncancelled_pkgs,
                       ),

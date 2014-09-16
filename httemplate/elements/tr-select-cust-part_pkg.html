@@ -5,9 +5,10 @@
 
   <SCRIPT TYPE="text/javascript">
 
-    function part_pkg_opt(what, value, text, can_discount, can_start_date, start_date) {
+    function part_pkg_opt(what, value, text, can_discount, start_on_hold, can_start_date, start_date) {
       var optionName = new Option(text, value, false, false);
       optionName.setAttribute('data-can_discount',   can_discount);
+      optionName.setAttribute('data-start_on_hold',  start_on_hold);
       optionName.setAttribute('data-can_start_date', can_start_date);
       optionName.setAttribute('data-start_date',     start_date || '');
       var length = what.length;
@@ -37,14 +38,16 @@
         // add the new packages
         opt(what.form.pkgpart, '', 'Select package');
         var packagesArray = eval('(' + part_pkg + ')' );
-        for ( var s = 0; s < packagesArray.length; s=s+5 ) {
+        while (packagesArray.length > 0) {
           //surely this should be some kind of JSON structure
-          var packagesLabel  = packagesArray[s+1];
-          var can_discount   = packagesArray[s+2];
-          var can_start_date = packagesArray[s+3];
-          var start_date     = packagesArray[s+4];
+          var pkgpart        = packagesArray.shift();
+          var label          = packagesArray.shift();
+          var can_discount   = packagesArray.shift();
+          var start_on_hold  = packagesArray.shift();
+          var can_start_date = packagesArray.shift();
+          var start_date     = packagesArray.shift();
           part_pkg_opt(
-            what.form.pkgpart, packagesArray[s], packagesLabel, can_discount, can_start_date, start_date
+            what.form.pkgpart, pkgpart, label, can_discount, start_on_hold, can_start_date, start_date
           );
         }
 

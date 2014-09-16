@@ -241,6 +241,39 @@ sub cust_unlinked_msg {
   ' (cust_pkg.pkgnum '. $self->pkgnum. ')';
 }
 
+=item set_initial_timers
+
+If required by the package definition, sets any automatic expire, adjourn,
+or contract_end timers to some number of months after the start date 
+(or setup date, if the package has already been setup). If the package has
+a delayed setup fee after a period of "free days", will also set the 
+start date to the end of that period.
+
+=cut
+
+sub set_initial_timers {
+  my $self = shift;
+  my $part_pkg = $self->part_pkg;
+  foreach my $action ( qw(expire adjourn contract_end) ) {
+    my $months = $part_pkg->option("${action}_months",1);
+    if($months and !$self->get($action)) {
+      my $start = $self->start_date || $self->setup || time;
+      $self->set($action, $part_pkg->add_freq($start, $months) );
+    }
+  }
+
+  # if this package has "free days" and delayed setup fee, then
+  # set start date that many days in the future.
+  # (this should have been set in the UI, but enforce it here)
+  if ( $part_pkg->option('free_days',1)
+       && $part_pkg->option('delay_setup',1)
+     )
+  {
+    $self->start_date( $part_pkg->default_start_date );
+  }
+  '';
+}
+
 =item insert [ OPTION => VALUE ... ]
 
 Adds this billing item to the database ("Orders" the item).  If there is an
@@ -305,6 +338,9 @@ sub insert {
 
   if ( ! $import && ! $options{'change'} ) {
 
+    # set order date to now
+    $self->order_date(time) unless ($import && $self->order_date);
+
     # if the package def says to start only on the first of the month:
     if ( $part_pkg->option('start_1st', 1) && !$self->start_date ) {
       my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
@@ -313,35 +349,17 @@ sub insert {
       $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
     }
 
-    # set up any automatic expire/adjourn/contract_end timers
-    # based on the start date
-    foreach my $action ( qw(expire adjourn contract_end) ) {
-      my $months = $part_pkg->option("${action}_months",1);
-      if($months and !$self->$action) {
-        my $start = $self->start_date || $self->setup || time;
-        $self->$action( $part_pkg->add_freq($start, $months) );
-      }
+    if ($self->susp eq 'now' or $part_pkg->start_on_hold) {
+      # if the package was ordered on hold:
+      # - suspend it
+      # - don't set the start date (it will be started manually)
+      $self->set('susp', $self->order_date);
+      $self->set('start_date', '');
+    } else {
+      # set expire/adjourn/contract_end timers, and free days, if appropriate
+      $self->set_initial_timers;
     }
-
-    # if this package has "free days" and delayed setup fee, then 
-    # set start date that many days in the future.
-    # (this should have been set in the UI, but enforce it here)
-    if (    ! $options{'change'}
-         && $part_pkg->option('free_days', 1)
-         && $part_pkg->option('delay_setup',1)
-         #&& ! $self->start_date
-       )
-    {
-      $self->start_date( $part_pkg->default_start_date );
-    }
-  }
-
-  # set order date unless it was specified as part of an import
-  # or this was previously a different package
-  $self->order_date(time) unless ($import && $self->order_date)
-                              or $self->change_pkgnum;
-
-  $self->susp( $self->order_date ) if $self->susp eq 'now';
+  } # else this is a package change, and shouldn't have "new package" behavior
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -1470,6 +1488,8 @@ sub unsuspend {
     return "";  # no error                     # complain instead?
   }
 
+  # handle the case of setting a future unsuspend (resume) date
+  # and do not continue to actually unsuspend the package
   my $date = $opt{'date'};
   if ( $date and $date > time ) { # return an error if $date <= time?
 
@@ -1492,6 +1512,11 @@ sub unsuspend {
     }
   
   } #if $date 
+
+  if (!$self->setup) {
+    # then this package is being released from on-hold status
+    $self->set_initial_timers;
+  }
 
   my @labels = ();
 
