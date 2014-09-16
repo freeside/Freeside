@@ -150,7 +150,7 @@ sub calc_recur {
   }
   if ( $self->option('recur_hourly_charge')  > 0 ) {
     push @$details, "Last month\'s time ".
-                   sprintf('%.3f', $hours). " hours: $hourscharge";
+                   sprintf('%.1f', $hours). " hours: $hourscharge";
   }
 
   my $charges = $hourscharge + $inputcharge + $outputcharge + $totalcharge;
