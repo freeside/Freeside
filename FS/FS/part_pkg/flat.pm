@@ -256,6 +256,7 @@ sub is_prepaid { 0; } #no, we're postpaid
 sub can_start_date {
   my $self = shift;
   my %opt = @_;
+  return 0 if $self->start_on_hold;
 
   ! $self->option('start_1st', 1) && (   ! $self->option('sync_bill_date',1)
                                       || ! $self->option('prorate_defer_bill',1)

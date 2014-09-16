@@ -43,6 +43,7 @@
                             'plan'             => 'Price plan',
                             'disabled'         => 'Disable new orders',
                             'disable_line_item_date_ranges' => 'Disable line item date ranges',
+                            'start_on_hold'    => 'Start on hold',
                             'setup_cost'       => 'Setup cost',
                             'recur_cost'       => 'Recur cost',
                             'pay_weight'       => 'Payment weight',
@@ -102,6 +103,10 @@
                               ),
                               {field=>'disabled', type=>$disabled_type, value=>'Y'},
                               {field=>'disable_line_item_date_ranges', type=>$disabled_type, value=>'Y'},
+                              { field => 'start_on_hold',
+                                type => 'checkbox',
+                                value => 'Y'
+                              },
 
                               { type     => 'tablebreak-tr-title',
                                 value    => 'Pricing', #better name?

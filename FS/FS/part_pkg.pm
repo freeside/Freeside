@@ -120,6 +120,10 @@ part_pkg, will be equal to pkgpart.
 
 =item delay_start - Number of days to delay package start, by default
 
+=item start_on_hold - 'Y' to suspend this package immediately when it is 
+ordered. The package will not start billing or have a setup fee charged 
+until it is manually unsuspended.
+
 =back
 
 =head1 METHODS
@@ -601,14 +605,15 @@ sub check {
     || $self->ut_textn('comment')
     || $self->ut_textn('promo_code')
     || $self->ut_alphan('plan')
-    || $self->ut_enum('setuptax', [ '', 'Y' ] )
-    || $self->ut_enum('recurtax', [ '', 'Y' ] )
+    || $self->ut_flag('setuptax')
+    || $self->ut_flag('recurtax')
     || $self->ut_textn('taxclass')
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
-    || $self->ut_enum('custom', [ '', 'Y' ] )
-    || $self->ut_enum('no_auto', [ '', 'Y' ])
-    || $self->ut_enum('recur_show_zero', [ '', 'Y' ])
-    || $self->ut_enum('setup_show_zero', [ '', 'Y' ])
+    || $self->ut_flag('disabled')
+    || $self->ut_flag('custom')
+    || $self->ut_flag('no_auto')
+    || $self->ut_flag('recur_show_zero')
+    || $self->ut_flag('setup_show_zero')
+    || $self->ut_flag('start_on_hold')
     #|| $self->ut_moneyn('setup_cost')
     #|| $self->ut_moneyn('recur_cost')
     || $self->ut_floatn('setup_cost')
@@ -1082,7 +1087,10 @@ sub is_free {
 sub can_discount { 0; }
 
 # whether the plan allows changing the start date
-sub can_start_date { 1; }
+sub can_start_date {
+  my $self = shift;
+  $self->start_on_hold ? 0 : 1;
+}
 
 # the delay start date if present
 sub delay_start_date {
