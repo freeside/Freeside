@@ -302,10 +302,10 @@ my $duration_format = sub {
 
 my $octets_format = sub {
   my $octets = shift;
-  my $megs = $octets / 1048576;
-  sprintf('<B>%.3f</B>&nbsp;megs', $megs);
-  #my $gigs = $octets / 1073741824
-  #sprintf('<B>%.3f</B> gigabytes', $gigs);
+  #my $megs = $octets / 1048576;
+  #sprintf('<B>%.3f</B>&nbsp;megs', $megs);
+  my $gigs = $octets / 1073741824;
+  sprintf('<B>%.3f</B>&nbsp;gigs', $gigs);
 };
 
 ###
@@ -380,9 +380,9 @@ tie %fields, 'Tie::IxHash',
                              my $src = shift;
                              if ( $src =~
                                     /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i ) {
-                               return $src. ' ('.
+                               return $src. ' <span style="white-space: nowrap">('.
                                         (Net::MAC::Vendor::lookup($1))->[0].
-                                      ')';
+                                      ')</span>';
 
                              }
                              length($src) ? $src : '&nbsp';
@@ -396,9 +396,9 @@ tie %fields, 'Tie::IxHash',
                              my $dst = shift;
                              if ( $dst =~
                                     /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i ) {
-                               return $dst. ' ('.
+                               return $dst. ' <span style="white-space: nowrap">('.
                                         (Net::MAC::Vendor::lookup($1))->[0].
-                                      ')';
+                                      ')</span>';
                              }
                              length($dst) ? $dst : '&nbsp';
                            },

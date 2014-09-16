@@ -138,15 +138,15 @@ sub calc_recur {
 
   if ( $self->option('recur_total_charge') > 0 ) {
     push @$details,
-      sprintf( "Last month's data %.1f %ss: %s", $total, BA, $totalcharge );
+      sprintf( "Last month's data %.3f %ss: %s", $total, BA, $totalcharge );
   }
   if ( $self->option('recur_input_charge') > 0 ) {
     push @$details,
-      sprintf( "Last month's download %.1f %ss: %s", $input, BA, $inputcharge );
+      sprintf( "Last month's download %.3f %ss: %s", $input, BA, $inputcharge );
   }
   if ( $self->option('recur_output_charge') > 0 ) {
     push @$details,
-      sprintf( "Last month's upload %.1f %ss: %s", $output, BA, $outputcharge );
+      sprintf( "Last month's upload %.3f %ss: %s", $output, BA, $outputcharge );
   }
   if ( $self->option('recur_hourly_charge')  > 0 ) {
     push @$details, "Last month\'s time ".
