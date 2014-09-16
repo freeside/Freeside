@@ -11,7 +11,11 @@
 
 <TR>
   <TD ALIGN="right">Prospect #</TD>
-  <TD BGCOLOR="#FFFFFF"><B><% $prospectnum %></B></TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $prospectnum %></B>
+%   if ( $prospect_main->disabled ) {
+      <B>(DISABLED)</B>
+%   }
+  </TD>
 </TR>
 
 %unless ( scalar(@agentnums) == 1
@@ -19,7 +23,15 @@
 %  my $agent = qsearchs('agent',{ 'agentnum' => $prospect_main->agentnum } );
    <TR>
      <TD ALIGN="right">Agent</TD>
-     <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
+     <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent |h %></TD>
+   </TR>
+%}
+
+%unless ( ! $prospect_main->refnum ) { # || scalar(@part_referral) == 1 ) {
+%  my $part_referral = qsearchs('part_referral',{ 'refnum' => $prospect_main->refnum } );
+   <TR>
+     <TD ALIGN="right">Advertising source</TD>
+     <TD BGCOLOR="#ffffff"><% $part_referral->referral |h %></TD>
    </TR>
 %}
 
@@ -76,6 +88,9 @@
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc">#</TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Setup') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Recurring') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       </TR>
 %     foreach my $quotation (@quotations) {
 %       if ( $bgcolor eq $bgcolor1 ) {
@@ -88,6 +103,9 @@
         <TR>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->quotationnum %></A></TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% time2str($date_format, $quotation->_date) |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->total_setup |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->total_recur |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>">Convert to customer</A></TD>
         </TR>
 %     }
     </TABLE>

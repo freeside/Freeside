@@ -3,7 +3,11 @@ use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record
            );
 
 use strict;
+use Tie::RefHash;
 use FS::CurrentUser;
+use FS::UID qw( dbh );
+use FS::cust_main;
+use FS::cust_pkg;
 
 =head1 NAME
 
@@ -193,6 +197,75 @@ sub _items_total {
 =cut
 
 sub enable_previous { 0 }
+
+=item convert_cust_main
+
+If this quotation already belongs to a customer, then returns that customer, as
+an FS::cust_main object.
+
+Otherwise, creates a new customer (FS::cust_main object and record, and
+associated) based on this quotation's prospect, then orders this quotation's
+packages as real packages for the customer.
+
+If there is an error, returns an error message, otherwise, returns the
+newly-created FS::cust_main object.
+
+=cut
+
+sub convert_cust_main {
+  my $self = shift;
+
+  my $cust_main = $self->cust_main;
+  return $cust_main if $cust_main; #already converted, don't again
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $cust_main = $self->prospect_main->convert_cust_main;
+  unless ( ref($cust_main) ) { # eq 'FS::cust_main' ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $cust_main;
+  }
+
+  $self->prospectnum('');
+  $self->custnum( $cust_main->custnum );
+  my $error = $self->replace || $self->order;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  $cust_main;
+
+}
+
+=item order
+
+This method is for use with quotations which are already associated with a customer.
+
+Orders this quotation's packages as real packages for the customer.
+
+If there is an error, returns an error message, otherwise returns false.
+
+=cut
+
+sub order {
+  my $self = shift;
+
+  tie my %cust_pkg, 'Tie::RefHash',
+    map { FS::cust_pkg->new({ pkgpart  => $_->pkgpart,
+                              quantity => $_->quantity,
+                           })
+            => [] #services
+        }
+      $self->quotation_pkg ;
+
+  $self->cust_main->order_pkgs( \%cust_pkg );
+
+}
 
 =back
 

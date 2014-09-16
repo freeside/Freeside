@@ -6,6 +6,7 @@ use vars qw( $DEBUG @location_fields );
 use Scalar::Util qw( blessed );
 use FS::Record qw( dbh qsearch ); # qsearchs );
 use FS::cust_location;
+use FS::cust_main;
 
 $DEBUG = 0;
 
@@ -78,7 +79,11 @@ primary key
 
 =item agentnum
 
-Agent
+Agent (see L<FS::agent>)
+
+=item refnum
+
+Referral (see L<FS::part_referral>)
 
 =item company
 
@@ -237,7 +242,8 @@ sub check {
 
   my $error = 
     $self->ut_numbern('prospectnum')
-    || $self->ut_foreign_key('agentnum', 'agent', 'agentnum' )
+    || $self->ut_foreign_key( 'agentnum', 'agent',         'agentnum' )
+    || $self->ut_foreign_key( 'refnum',   'part_referral', 'refnum' )
     || $self->ut_textn('company')
   ;
   return $error if $error;
@@ -291,6 +297,49 @@ Returns the qualifications (see L<FS::qual>) associated with this prospect.
 =item agent
 
 Returns the agent (see L<FS::agent>) for this customer.
+
+=item convert_cust_main
+
+Converts this prospect to a customer.
+
+If there is an error, returns an error message, otherwise, returns the
+newly-created FS::cust_main object.
+
+=cut
+
+sub convert_cust_main {
+  my $self = shift;
+
+  my @cust_location = $self->cust_location;
+  #the interface only allows one, so we're just gonna go with that for now
+
+  my @contact = $self->contact;
+
+  #XXX define one contact type as "billing", then we could pick just that one
+  my @invoicing_list = map $_->emailaddress, map $_->contact_email, @contact;
+
+  #XXX i'm not compatible with cust_main-require_phone (which is kind of a
+  # pre-contact thing anyway)
+
+  my $cust_main = new FS::cust_main {
+    'bill_location' => $cust_location[0],
+    'ship_location' => $cust_location[0],
+    ( map { $_ => $self->$_ } qw( agentnum refnum company ) ),
+  };
+
+  #XXX again, arbitrary, if one contact was "billing", that would be better
+  if ( $contact[0] ) {
+    $cust_main->set($_, $contact[0]->get($_)) foreach qw( first last );
+  } else {
+    $cust_main->set('first', 'Unknown');
+    $cust_main->set('last',  'Unknown');
+  }
+
+  $cust_main->insert( {}, \@invoicing_list,
+    'prospectnum' => $self->prospectnum,
+  )
+    or $cust_main;
+}
 
 =item search HASHREF
 
