@@ -1,0 +1,17 @@
+<% $cgi->redirect(popurl(3). 'view/cust_main.cgi?'. $cust_main->custnum ) %>
+<%init>
+
+#my $curuser = $FS::CurrentUser::CurrentUser;
+#die "access denied" unless $curuser->access_right('Edit customer');
+
+#my $conf = new FS::Conf;
+
+my $quotation = qsearchs( 'quotation' => {
+  quotationnum => scalar( $cgi->param('quotationnum') ),
+} ) or die 'unknown quotationnum';
+
+my $cust_main = $quotation->convert_cust_main;
+errorpage($cust_main) unless ref($cust_main);# eq 'FS::cust_main';
+
+</%init>
+
