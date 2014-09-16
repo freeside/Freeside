@@ -1771,7 +1771,7 @@ sub parse {
 # Used by FS::Upgrade to migrate to a new database.
 
 sub _upgrade_data { # class method
-  my($class, %opts) = @_;
+   my($class, %opts) = @_;
 
   warn "[FS::part_pkg] upgrading $class\n" if $DEBUG;
 
@@ -1791,6 +1791,56 @@ sub _upgrade_data { # class method
     $part_pkg->replace;
 
   }
+
+  # Convert RADIUS accounting usage metrics from megabytes to gigabytes
+  # (FS RT#28105)
+  my $upgrade = 'part_pkg_gigabyte_usage';
+  if (!FS::upgrade_journal->is_done($upgrade)) {
+    foreach my $part_pkg (qsearch('part_pkg',
+				  { plan => 'sqlradacct_hour' })
+			 ){
+
+      my $pkgpart = $part_pkg->pkgpart;
+
+      foreach my $opt (qsearch('part_pkg_option',
+			       { 'optionname'  => { op => 'LIKE',
+						    value => 'recur_included_%',
+						  },
+				 pkgpart => $pkgpart,
+			       })){
+
+        next if $opt->optionname eq 'recur_included_hours'; # unfortunately named field
+        next if $opt->optionvalue == 0;
+
+	$opt->optionvalue($opt->optionvalue / 1024);
+
+	my $error = $opt->replace;
+	die $error if $error;
+      }
+
+      foreach my $optionname( qw(
+				  recur_hourly_%
+				  recur_input_%
+				  recur_output_%
+				  recur_total_%
+			       ) ){
+	foreach my $opt (qsearch('part_pkg_option',
+				 { 'optionname'  => { op => 'LIKE',
+						      value => $optionname,
+						    },
+				   pkgpart => $pkgpart,
+				 })){
+	  $opt->optionvalue($opt->optionvalue * 1024);
+
+	  my $error = $opt->replace;
+	  die $error if $error;
+	}
+      }
+
+    }
+    FS::upgrade_journal->set_done($upgrade);
+  }
+
   # the rest can be done asynchronously
 }
 
