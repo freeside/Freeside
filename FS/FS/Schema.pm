@@ -1300,10 +1300,11 @@ sub tables_hashref {
         'add_date',   @date_type,                  '', '', 
         'disabled',       'char', 'NULL',       1, '', '', 
         'custnum',         'int', 'NULL',      '', '', '',
+        'refnum',          'int', 'NULL',      '', '', '', 
       ],
       'primary_key' => 'prospectnum',
       'unique'      => [],
-      'index'       => [ [ 'company' ], [ 'agentnum' ], [ 'disabled' ] ],
+      'index'        => [ ['company'], ['agentnum'], ['disabled'], ['refnum'] ],
     },
 
     'quotation' => {
