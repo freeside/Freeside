@@ -414,14 +414,9 @@ sub insert {
 
   # insert locations
   foreach my $l (qw(bill_location ship_location)) {
-    my $loc = delete $self->hashref->{$l};
-    # XXX if we're moving a prospect's locations, do that here
-    if ( !$loc ) {
-      #return "$l not set";
-      #location-less customer records are now permitted
-      next;
-    }
-    
+
+    my $loc = delete $self->hashref->{$l} or next;
+
     if ( !$loc->locationnum ) {
       # warn the location that we're going to insert it with no custnum
       $loc->set(custnum_pending => 1);
@@ -433,8 +428,19 @@ sub insert {
         my $label = $l eq 'ship_location' ? 'service' : 'billing';
         return "$error (in $label location)";
       }
-    }
-    elsif ( ($loc->custnum || 0) > 0 or $loc->prospectnum ) {
+
+    } elsif ( $loc->prospectnum ) {
+
+      $loc->prospectnum('');
+      $loc->set(custnum_pending => 1);
+      my $error = $loc->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        my $label = $l eq 'ship_location' ? 'service' : 'billing';
+        return "$error (moving $label location)";
+      }
+
+    } elsif ( ($loc->custnum || 0) > 0 ) {
       # then it somehow belongs to another customer--shouldn't happen
       $dbh->rollback if $oldAutoCommit;
       return "$l belongs to customer ".$loc->custnum;
