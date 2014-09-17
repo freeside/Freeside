@@ -1818,23 +1818,16 @@ sub _upgrade_data { # class method
 	die $error if $error;
       }
 
-      foreach my $optionname( qw(
-				  recur_hourly_%
-				  recur_input_%
-				  recur_output_%
-				  recur_total_%
-			       ) ){
-	foreach my $opt (qsearch('part_pkg_option',
-				 { 'optionname'  => { op => 'LIKE',
-						      value => $optionname,
-						    },
-				   pkgpart => $pkgpart,
-				 })){
-	  $opt->optionvalue($opt->optionvalue * 1024);
+      foreach my $opt (qsearch('part_pkg_option',
+			       { 'optionname'  => { op => 'LIKE',
+						    value => 'recur_%_charge',
+						  },
+				 pkgpart => $pkgpart,
+			       })){
+	$opt->optionvalue($opt->optionvalue * 1024);
 
-	  my $error = $opt->replace;
-	  die $error if $error;
-	}
+	my $error = $opt->replace;
+	die $error if $error;
       }
 
     }
