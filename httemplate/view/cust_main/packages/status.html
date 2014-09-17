@@ -48,7 +48,8 @@
 %
 %   if ( $cust_pkg->get('susp') ) { #suspended or on hold
 %
-%     if ( $cust_pkg->order_date eq $cust_pkg->get('susp') ) { #status: on hold
+%     #if ( $cust_pkg->order_date eq $cust_pkg->get('susp') ) { # inconsistent with FS::cust_pkg::status
+%     if ( ! $cust_pkg->setup ) { #status: on hold
 
         <% pkg_status_row( $cust_pkg, emt('On Hold'), '', 'color'=>'7E0079', %opt ) %>
 

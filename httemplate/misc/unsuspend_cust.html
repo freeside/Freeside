@@ -7,8 +7,7 @@
 
  <P ALIGN="center"><B><% mt('Unsuspend this customer?') |h %></B>
 
-<TABLE BORDER="0" CELLSPACING="2"
-STYLE="margin-left:auto; margin-right:auto">
+<TABLE BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <TR>
   <TD ALIGN="right">
     <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
@@ -26,6 +25,21 @@ STYLE="margin-left:auto; margin-right:auto">
     }  &>
   </TD>
 </TR>
+% if ( $on_hold_pkgs > 0 ) {
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="checkbox" NAME="release_hold" VALUE="1" CHECKED \
+    <% $susp_pkgs == 0 ? 'DISABLED' : '' %> />
+
+  </TD>
+  <TD ALIGN="left">
+    <% emt('Activate [quant,_1,on-hold package,on-hold packages]', $on_hold_pkgs) %>
+  </TD>
+</TR>
+% }
+% if ( $susp_pkgs == 0 ) { # then always release holds, or this will do nothing
+  <INPUT TYPE="hidden" NAME="release_hold" VALUE="1">
+% }
 </TABLE>
 <SCRIPT type="text/javascript">
 function toggle(val) {
@@ -63,6 +77,14 @@ my $cust_main = qsearchs( {
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 } );
 die "No customer # $custnum" unless $cust_main;
+
+my $susp_pkgs = FS::cust_pkg->count(
+  FS::cust_pkg->susp_sql . " AND custnum = ?", $custnum
+);
+
+my $on_hold_pkgs = FS::cust_pkg->count(
+  FS::cust_pkg->on_hold_sql . " AND custnum = ?", $custnum
+);
 
 </%init>
 

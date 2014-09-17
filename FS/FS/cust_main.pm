@@ -2149,14 +2149,27 @@ sub cust_contact {
 =item unsuspend
 
 Unsuspends all unflagged suspended packages (see L</unflagged_suspended_pkgs>
-and L<FS::cust_pkg>) for this customer.  Always returns a list: an empty list
-on success or a list of errors.
+and L<FS::cust_pkg>) for this customer, except those on hold.
+
+Returns a list: an empty list on success or a list of errors.
 
 =cut
 
 sub unsuspend {
   my $self = shift;
-  grep { $_->unsuspend } $self->suspended_pkgs;
+  grep { ($_->get('setup')) && $_->unsuspend } $self->suspended_pkgs;
+}
+
+=item release_hold
+
+Unsuspends all suspended packages in the on-hold state (those without setup 
+dates) for this customer. 
+
+=cut
+
+sub release_hold {
+  my $self = shift;
+  grep { (!$_->setup) && $_->unsuspend } $self->suspended_pkgs;
 }
 
 =item suspend

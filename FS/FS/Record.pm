@@ -3165,7 +3165,7 @@ sub scalar_sql {
   defined($scalar) ? $scalar : '';
 }
 
-=item count [ WHERE ]
+=item count [ WHERE [, PLACEHOLDER ...] ]
 
 Convenience method for the common case of "SELECT COUNT(*) FROM table", 
 with optional WHERE.  Must be called as method on a class with an 
@@ -3178,7 +3178,7 @@ sub count {
   my $table = $self->table or die 'count called on object of class '.ref($self);
   my $sql = "SELECT COUNT(*) FROM $table";
   $sql .= " WHERE $where" if $where;
-  $self->scalar_sql($sql);
+  $self->scalar_sql($sql, @_);
 }
 
 =back
