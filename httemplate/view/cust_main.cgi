@@ -40,6 +40,11 @@ function areyousure(href, message) {
 }
 </SCRIPT>
 
+
+% ###
+% # Basics
+% ###
+
 % if ( $view eq 'basics' || $view eq 'jumbo' ) {
 
 % if ( $curuser->access_right('Edit customer') ) { 
@@ -189,6 +194,11 @@ function areyousure(href, message) {
 
 % }
 
+
+% ###
+% # Notes
+% ###
+
 % if ( $view eq 'notes' || $view eq 'jumbo' ) {
 
 <& cust_main/notes.html, 'cust_main' => $cust_main &>
@@ -201,6 +211,11 @@ function areyousure(href, message) {
 
 <BR>
 
+
+% ###
+% # Tickets
+% ###
+
 % if ( $view eq 'tickets' || $view eq 'jumbo' ) {
 
 % if ( $conf->config('ticket_system') ) { 
@@ -209,6 +224,10 @@ function areyousure(href, message) {
   <BR><BR>
 
 % }
+
+% ###
+% # Appointments
+% ###
 
 % if ( $view eq 'appointments' || $view eq 'jumbo' ) {
 
@@ -219,6 +238,28 @@ function areyousure(href, message) {
   <BR><BR>
 
 % }
+
+
+% ###
+% # Quotations
+% ###
+
+% if ( $view eq 'jumbo' && $curuser->access_right('Generate quotation') ) { 
+  <A NAME="quotation"><FONT SIZE="+2"><% mt('Quotations') |h %></FONT></A><BR>
+% }
+
+% if ( $view eq 'quotations' || $view eq 'jumbo' ) {
+
+%   if ( $curuser->access_right('Generate quotation') ) { 
+      <& cust_main/quotations.html, $cust_main &>
+%   }
+
+% }
+
+
+% ###
+% # Packages
+% ###
 
 % if ( $view eq 'jumbo' ) { #XXX enable me && $curuser->access_right('View customer packages') { 
 
@@ -233,6 +274,11 @@ function areyousure(href, message) {
 
 % }
 
+
+% ###
+% # Payment History
+% ###
+
 % if ( $view eq 'jumbo' ) {
     <BR><BR>
     <A NAME="history"><FONT SIZE="+2"><% mt('Payment History') |h %></FONT></A>
@@ -246,6 +292,11 @@ function areyousure(href, message) {
 % } 
 
 % }
+
+
+% ###
+% # Change History
+% ###
 
 % if ( $view eq 'change_history' ) { #  || $view eq 'jumbo' 	 
 <& cust_main/change_history.html, $cust_main &> 	 
@@ -305,6 +356,7 @@ if ( $conf->config('ticket_system') ) {
   $views{emt('Appointments')}  =  'appointments'
     if $curuser->access_right('View appointments');
 }
+$views{emt('Quotations')}      =  'quotations';
 $views{emt('Packages')}        =  'packages';
 $views{emt('Payment History')} =  'payment_history'
                                unless $conf->config('payby-default' eq 'HIDE');

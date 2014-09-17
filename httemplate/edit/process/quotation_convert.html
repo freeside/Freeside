@@ -10,8 +10,19 @@ my $quotation = qsearchs( 'quotation' => {
   quotationnum => scalar( $cgi->param('quotationnum') ),
 } ) or die 'unknown quotationnum';
 
-my $cust_main = $quotation->convert_cust_main;
-errorpage($cust_main) unless ref($cust_main);# eq 'FS::cust_main';
+my $cust_main = $quotation->cust_main;
+if ( $cust_main ) {
+  my $error = $quotation->order;
+  errorpage($error) if $error;
+
+  #i should be part of the order transaction
+  $quotation->disabled('Y');
+  $quotation->replace;
+
+} else {
+  $cust_main = $quotation->convert_cust_main;
+  errorpage($cust_main) unless ref($cust_main);# eq 'FS::cust_main';
+}
 
 </%init>
 
