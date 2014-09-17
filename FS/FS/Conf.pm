@@ -4046,13 +4046,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'disable_setup_suspended_pkgs',
-    'section'     => 'billing',
-    'description' => 'Disables charging of setup fees for suspended packages.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'password-generated-allcaps',
     'section'     => 'password',
     'description' => 'Causes passwords automatically generated to consist entirely of capital letters',

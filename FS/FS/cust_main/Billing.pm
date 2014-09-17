@@ -1090,6 +1090,16 @@ sub _make_lines {
   my %setup_param = ( 'discounts' => \@setup_discounts );
   my $setup_billed_currency = '';
   my $setup_billed_amount = 0;
+  # Conditions for setting setup date and charging the setup fee:
+  # - this is not a recurring-only billing run
+  # - and the package is not currently being canceled
+  # - and, unless we're specifically told otherwise via 'resetup':
+  #   - it doesn't already HAVE a setup date
+  #   - or a start date in the future
+  #   - and it's not suspended
+  #
+  # The last condition used to check the "disable_setup_suspended" option but 
+  # that's obsolete. We now never set the setup date on a suspended package.
   if (     ! $options{recurring_only}
        and ! $options{cancel}
        and ( $options{'resetup'}
@@ -1097,11 +1107,7 @@ sub _make_lines {
                   && ( ! $cust_pkg->start_date
                        || $cust_pkg->start_date <= $cmp_time
                      )
-                  && ( ! $conf->exists('disable_setup_suspended_pkgs')
-                       || ( $conf->exists('disable_setup_suspended_pkgs') &&
-                            ! $cust_pkg->getfield('susp')
-                          )
-                     )
+                  && ( ! $cust_pkg->getfield('susp') )
                 )
            )
      )

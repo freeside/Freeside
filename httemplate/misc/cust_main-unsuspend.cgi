@@ -34,6 +34,10 @@ if($cgi->param('now_or_later')) {
   if($resume) {
     #warn "setting resume dates on custnum#$custnum\n";
     my @pkgs = $cust_main->suspended_pkgs;
+    if (!$cgi->param('release_hold')) {
+      # then avoid packages that are on hold
+      @pkgs = grep { $_->get('setup') } @pkgs;
+    }
     @errors = grep {$_} map { $_->unsuspend(
       'date'    => $resume,
     ) } @pkgs;
@@ -42,9 +46,13 @@ if($cgi->param('now_or_later')) {
     @errors = ("error parsing adjourn date: ".$cgi->param('adjourn'));
   }
 }
-else {
+else { # unsuspending now
   warn "unsuspending $cust_main";
   @errors = $cust_main->unsuspend;
+
+  if ( $cgi->param('release_hold') ) {
+    push @errors, $cust_main->release_hold;
+  }
 }
 my $error = join(' / ', @errors) if scalar(@errors);
 
