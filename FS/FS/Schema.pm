@@ -4429,13 +4429,17 @@ sub tables_hashref {
 
     'svc_alarm' => {
       'columns' => [
-        'svcnum',          'int',      '',      '', '', '', 
-        'alarmsystemnum',  'int',      '',      '', '', '',
-        'alarmtypenum',    'int',      '',      '', '', '',
-        'alarmstationnum', 'int',      '',      '', '', '',
-        'acctnum',      'varchar',     '', $char_d, '', '',
-        '_password',    'varchar',     '', $char_d, '', '',
-        'location',     'varchar', 'NULL', $char_d, '', '',
+#       name               type        null   length   default local
+        'svcnum',          'int',      '',    '',      '',     '', 
+        'alarmsystemnum',  'int',      '',    '',      '',     '',
+        'alarmtypenum',    'int',      '',    '',      '',     '',
+        'alarmstationnum', 'int',      '',    '',      '',     '',
+        'acctnum',         'varchar',  '',    $char_d, '',     '',
+        '_password',       'varchar',  '',    $char_d, '',     '',
+        'location',        'varchar', 'NULL', $char_d, '',     '',
+        'cs_receiver',     'int',     'NULL', '',      '',     '',
+        'cs_phonenum',     'varchar', 'NULL', $char_d, '',     '',
+        'serialnum',       'varchar', 'NULL', $char_d, '',     '',
         #installer (rep)
       ],
       'primary_key' => 'svcnum',
