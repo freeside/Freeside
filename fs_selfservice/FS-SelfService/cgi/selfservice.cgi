@@ -124,7 +124,15 @@ unless ( $nologin_actions{$action} ) {
           'email'    => $email,
           'password' => $password
         );
-        $session_id = $login_rv->{'session_id'};
+
+	if ( $login_rv->{'error'} ) {
+	  my $ip = $cgi->remote_addr();
+	  warn("login failure [email $email] [ip $ip] [error $login_rv->{error}]");
+	} else {
+	  #successful login
+	}
+
+	$session_id = $login_rv->{'session_id'};
 
       } else {
 
