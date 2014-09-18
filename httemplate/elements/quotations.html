@@ -55,7 +55,7 @@ if ( $opt{cust_main} ) {
   $new_query = 'custnum='. $opt{cust_main}->custnum;
   @quotations = $opt{cust_main}->quotation;
 } elsif ( $opt{prospect_main} ) {
-  $new_query = 'quotationnum='. $opt{prospect_main}->quotationnum;
+  $new_query = 'prospectnum='. $opt{prospect_main}->prospectnum;
   @quotations = $opt{prospect_main}->quotation;
 } else {
   die 'guru meditation #&&: neither cust_main nor prospect_main specified';
