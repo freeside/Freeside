@@ -1,7 +1,7 @@
 <% include('elements/monthly.html',
    #Dumper(
                 'title'        => $title,
-                'graph_type'   => 'Mountain',
+                'graph_type'   => $graph_type,
                 'items'        => \@items,
                 'params'       => \@params,
                 'labels'       => \@labels,
@@ -10,7 +10,8 @@
                 'links'        => \@links,
                 'no_graph'     => \@no_graph,
                 'remove_empty' => 1,
-                'bottom_total' => 1,
+                'bottom_total' => $show_total,
+                'nototal'      => !$show_total,
                 'bottom_link'  => $bottom_link,
                 'agentnum'     => $agentnum,
                 'cust_classnum'=> \@cust_classnums,
@@ -29,6 +30,15 @@ my $use_setup = $cgi->param('use_setup') || 0;
 my $use_override         = $cgi->param('use_override')         ? 1 : 0;
 my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
 my $distribute           = $cgi->param('distribute')           ? 1 : 0;
+
+my $show_total = 1;
+my $graph_type = 'Mountain';
+
+if ( $average_per_cust_pkg ) {
+  # then the rows are not additive
+  $show_total = 0;
+  $graph_type = 'LinesPoints';
+}
 
 my %charge_labels = (
   'SR' => 'setup + recurring',
@@ -355,6 +365,17 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
   $anum++;
 
 }
+
+# may be useful at some point...
+#if ( $average_per_cust_pkg ) {
+#  @items = map { ('cust_bill_pkg', 'cust_bill_pkg_count_pkgnum') } @items;
+#  @labels = map { $_, "Packages" } @labels;
+#  @params = map { $_, $_ } @params;
+#  @links = map { $_, $_ } @links;
+#  @colors = map { $_, $_ } @colors;
+#  @no_graph = map { $_, 1 } @no_graph;
+#}
+#
 
 #use Data::Dumper;
 if ( $cgi->param('debug') == 1 ) {
