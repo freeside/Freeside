@@ -74,7 +74,7 @@ sub table_info {
     'acctnum'         => { label => 'Account #', %opts },
     '_password'       => { label => 'Password' , %opts },
     'location'        => { label => 'Location',  %opts },
-    'cs_receiver'     => { label => 'CS Reciever #'},
+    'cs_receiver'     => { label => 'CS Receiver #'},
     'cs_phonenum'     => { label => 'CS Phone #' },
     'serialnum'       => { label => 'Alarm Serial #' },
     'alarmsystemnum'  => { label => 'Alarm System Vendor',
