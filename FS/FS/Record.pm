@@ -2649,8 +2649,8 @@ sub ut_alpha_lower {
 Check/untaint phone numbers.  May be null.  If there is an error, returns
 the error, otherwise returns false.
 
-Takes an optional two-letter ISO country code; without it or with unsupported
-countries, ut_phonen simply calls ut_alphan.
+Takes an optional two-letter ISO 3166-1 alpha-2 country code; without
+it or with unsupported countries, ut_phonen simply calls ut_alphan.
 
 =cut
 
