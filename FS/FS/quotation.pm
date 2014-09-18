@@ -118,6 +118,10 @@ sub check {
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
+  return 'prospectnum or custnum must be specified'
+    if ! $self->prospectnum
+    && ! $self->custnum;
+
   $self->SUPER::check;
 }
 
