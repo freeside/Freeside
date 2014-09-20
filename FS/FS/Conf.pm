@@ -2706,6 +2706,20 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'backoffice-require_cvv',
+    'section'     => 'billing',
+    'description' => 'Require CVV for manual credit card entry.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-onfile_require_cvv',
+    'section'     => 'self-service',
+    'description' => 'Require CVV for on-file credit card during self-service payments.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'selfservice-require_cvv',
     'section'     => 'self-service',
     'description' => 'Require CVV for credit card self-service payments, except for cards on-file.',

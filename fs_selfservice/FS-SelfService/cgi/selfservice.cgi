@@ -314,6 +314,7 @@ sub process_change_pay {
             'error' => '<FONT COLOR="#FF0000">Postal or email required.</FONT>',
           };
         }
+
         _process_change_info( 'change_pay', @list );
 }
 
