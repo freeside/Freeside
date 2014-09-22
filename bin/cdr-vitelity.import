@@ -66,7 +66,7 @@ foreach my $export (@part_exports) {
     or die "exportnum $exportnum is not a Vitelity export\n";
 
   if ( $opt{'r'} ) {
-    my $result = $export->vitelity_command('resetcdrlist');
+    my $result = $export->vitelity_command('getcdr');
     if ( $result ne 'ok' ) {
       $dbh->rollback;
       die "Failed to reset CDR list: $result\n";
