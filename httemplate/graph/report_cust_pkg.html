@@ -2,16 +2,57 @@
 
 <FORM ACTION="cust_pkg.cgi" METHOD="GET">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-<% include('/elements/tr-select-from_to.html' ) %>
+<& /elements/tr-select-from_to.html &>
 
-<% include('/elements/tr-select-agent.html',
-             'curr_value'    => scalar($cgi->param('agentnum')),
-             'label'         => 'For agent: ',
-             'disable_empty' => 0,
-          )
-%>
+<& /elements/tr-select-agent.html,
+  'curr_value'    => scalar($cgi->param('agentnum')),
+  'label'         => 'For agent: ',
+  'disable_empty' => 0,
+&>
+
+<& /elements/tr-select-pkg_class.html,
+  'multiple'      => 1,
+  'pre_options'   => [ '0' => '(empty class)' ],
+  'disable_empty' => 1,
+&>
+
+<& /elements/tr-select-part_referral.html,
+  'multiple'      => 1,
+  'disable_empty' => 1,
+&>
+
+<& /elements/tr-select-table.html,
+  'label'         => 'Tower',
+  'table'         => 'tower',
+  'field'         => 'towernum',
+  'name_col'      => 'towername',
+  'multiple'      => 1,
+  'pre_options'   => [ 0 => '(none)' ],
+  'size'          => 8,
+  'hashref'       => { disabled => '' },
+&>
+
+<& /elements/tr-input-text.html,
+  'field'         => 'zip',
+  'label'         => 'Zip',
+&>
+
+<& /elements/tablebreak-tr-title.html,
+  'value' => mt('Display options')
+&>
+
+<& /elements/tr-select.html,
+  'field'         => 'breakdown_by',
+  'label'         => 'Breakdown by: ',
+  'options'       => [ '', 'classnum', 'refnum', 'towernum' ],
+  'labels'        => { ''         => '(none)',
+                       'classnum' => 'Package class',
+                       'refnum'   => 'Advertising source',
+                       'towernum' => 'Tower',
+                     },
+&>
 
 </TABLE>
 
