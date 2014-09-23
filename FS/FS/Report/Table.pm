@@ -1,15 +1,25 @@
 package FS::Report::Table;
 
 use strict;
-use vars qw( @ISA $DEBUG );
-use FS::Report;
+use base 'FS::Report';
 use Time::Local qw( timelocal );
 use FS::UID qw( dbh driver_name );
 use FS::Report::Table;
 use FS::CurrentUser;
+use Cache::FileCache;
 
-$DEBUG = 0; # turning this on will trace all SQL statements, VERY noisy
-@ISA = qw( FS::Report );
+our $DEBUG = 0; # turning this on will trace all SQL statements, VERY noisy
+
+our $CACHE; # feel free to use this for whatever
+
+FS::UID->install_callback(sub {
+    $CACHE = Cache::FileCache->new( {
+      'namespace'   => __PACKAGE__,
+      'cache_root'  => "$FS::UID::cache_dir/cache.$FS::UID::datasrc",
+    } );
+    # reset this on startup (causes problems with database backups, etc.)
+    $CACHE->remove('tower_pkg_cache_update');
+});
 
 =head1 NAME
 
@@ -462,12 +472,9 @@ sub cust_bill_pkg_setup {
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_report_option(%opt),
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
   );
-
-  # yuck, false laziness
-  push @where, "cust_main.refnum = ". $opt{'refnum'} if $opt{'refnum'};
-
-  push @where, $self->with_cust_classnum(%opt);
 
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
   FROM cust_bill_pkg
@@ -490,11 +497,9 @@ sub _cust_bill_pkg_recurring {
     '(pkgnum != 0 OR feepart IS NOT NULL)',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_report_option(%opt),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
   );
-
-  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
-
-  push @where, $self->with_cust_classnum(%opt);
 
   if ( $opt{'distribute'} ) {
     $where[0] = 'pkgnum != 0'; # specifically exclude fees
@@ -574,16 +579,14 @@ sub cust_bill_pkg_detail {
   my @where = 
     ( "(cust_bill_pkg.pkgnum != 0 OR cust_bill_pkg.feepart IS NOT NULL)" );
 
-  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
-
-  push @where, $self->with_cust_classnum(%opt);
-
   $agentnum ||= $opt{'agentnum'};
 
   push @where,
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_usageclass($opt{'usageclass'}),
     $self->with_report_option(%opt),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
     ;
 
   if ( $opt{'distribute'} ) {
@@ -661,22 +664,91 @@ sub cust_bill_pkg_discount {
 
 }
 
-sub setup_pkg  { shift->pkg_field( 'setup',  @_ ); }
-sub susp_pkg   { shift->pkg_field( 'susp',   @_ ); }
-sub cancel_pkg { shift->pkg_field( 'cancel', @_ ); }
- 
-sub pkg_field {
-  my( $self, $field, $speriod, $eperiod, $agentnum ) = @_;
-  $self->scalar_sql("
-    SELECT COUNT(*) FROM cust_pkg
-        LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent( $speriod,
-                                                $eperiod,
-                                                $agentnum,
-                                                "cust_pkg.$field",
-                                              )
+sub pkg_field_where {
+  my( $self, $field, $speriod, $eperiod, $agentnum, %opt ) = @_;
+  # someday this will use an aggregate query and return all the columns
+  # at once
+  # and I will drive a Tesla and have a live-in sushi chef who is also a 
+  # ninja bodyguard
+  my @where = (
+    $self->in_time_period_and_agent($speriod,
+                                    $eperiod,
+                                    $agentnum,
+                                    "cust_pkg.$field",
+                                   ),
+    $self->with_refnum(%opt),
+    $self->with_towernum(%opt),
+    $self->with_zip(%opt),
+    # can't use with_classnum here...
   );
+  if ($opt{classnum}) {
+    my $classnum = $opt{classnum};
+    $classnum = [ $classnum ] if !ref($classnum);
+    @$classnum = grep /^\d+$/, @$classnum;
+    my $in = 'IN ('. join(',', @$classnum). ')';
+    push @where, "COALESCE(part_pkg.classnum, 0) $in" if scalar @$classnum;
+  }
 
+  ' WHERE ' . join(' AND ', grep $_, @where);
+}
+
+=item setup_pkg: The number of packages with setup dates in the period.
+
+This excludes packages created by package changes. Options:
+
+- refnum: Limit to customers with this advertising source.
+- classnum: Limit to packages with this class.
+- towernum: Limit to packages that have a broadband service with this tower.
+- zip: Limit to packages with this service location zip code.
+
+Except for zip, any of these can be an arrayref to allow multiple values for
+the field.
+
+=item susp_pkg: The number of suspended packages that were last suspended
+in the period. Options are as for setup_pkg.
+
+=item cancel_pkg: The number of packages with cancel dates in the period.
+Excludes packages that were canceled to be changed to a new package. Options
+are as for setup_pkg.
+
+=cut
+
+sub setup_pkg {
+  my $self = shift;
+  my $sql = 'SELECT COUNT(*) FROM cust_pkg
+              LEFT JOIN part_pkg USING (pkgpart)
+              LEFT JOIN cust_main USING (custnum)'.
+              $self->pkg_field_where('setup', @_) .
+              ' AND change_pkgnum IS NULL';
+
+  $self->scalar_sql($sql);
+}
+
+sub susp_pkg {
+  # number of currently suspended packages that were suspended in the period
+  my $self = shift;
+  my $sql = 'SELECT COUNT(*) FROM cust_pkg
+              LEFT JOIN part_pkg USING (pkgpart)
+              LEFT JOIN cust_main USING (custnum) '.
+              $self->pkg_field_where('susp', @_);
+
+  $self->scalar_sql($sql);
+}
+
+sub cancel_pkg {
+  # number of packages canceled in the period and not changed to another
+  # package
+  my $self = shift;
+  my $sql = 'SELECT COUNT(*) FROM cust_pkg
+              LEFT JOIN part_pkg USING (pkgpart)
+              LEFT JOIN cust_main USING (custnum)
+              LEFT JOIN cust_pkg changed_to_pkg ON(
+                cust_pkg.pkgnum = changed_to_pkg.change_pkgnum
+              ) '.
+              $self->pkg_field_where('cancel', @_) .
+              ' AND changed_to_pkg.pkgnum IS NULL';
+
+  $self->scalar_sql($sql);
 }
 
 #this is going to be harder..
@@ -711,8 +783,11 @@ sub for_opts {
     if ( $opt{'custnum'} =~ /^(\d+)$/ ) {
       $sql .= " and custnum = $1 ";
     }
-    if ( $opt{'refnum'} =~ /^(\d+)$/ ) {
-      $sql .= " and refnum = $1 ";
+    if ( $opt{'refnum'} ) {
+      my $refnum = $opt{'refnum'};
+      $refnum = [ $refnum ] if !ref($refnum);
+      my $in = join(',', grep /^\d+$/, @$refnum);
+      $sql .= " and refnum IN ($in)" if length $in;
     }
     if ( my $where = $self->with_cust_classnum(%opt) ) {
       $sql .= " and $where";
@@ -821,6 +896,49 @@ sub with_report_option {
 
 }
 
+sub with_refnum {
+  my ($self, %opt) = @_;
+  if ( $opt{'refnum'} ) {
+    my $refnum = $opt{'refnum'};
+    $refnum = [ $refnum ] if !ref($refnum);
+    my $in = join(',', grep /^\d+$/, @$refnum);
+    return "cust_main.refnum IN ($in)" if length $in;
+  }
+  return;
+}
+
+sub with_towernum {
+  my ($self, %opt) = @_;
+  if ( $opt{'towernum'} ) {
+    my $towernum = $opt{'towernum'};
+    $towernum = [ $towernum ] if !ref($towernum);
+    my $in = join(',', grep /^\d+$/, @$towernum);
+    return unless length($in); # if no towers are specified, don't restrict
+
+    # materialize/cache the set of pkgnums that, as of the last
+    # svc_broadband history record, had a certain towernum
+    # (because otherwise this is painfully slow)
+    $self->_init_tower_pkg_cache;
+
+    return "EXISTS(
+            SELECT 1 FROM tower_pkg_cache
+              WHERE towernum IN($in)
+              AND cust_pkg.pkgnum = tower_pkg_cache.pkgnum
+            )";
+  }
+  return;
+}
+
+sub with_zip {
+  my ($self, %opt) = @_;
+  if (length($opt{'zip'})) {
+    return "(SELECT zip FROM cust_location 
+             WHERE cust_location.locationnum = cust_pkg.locationnum
+            ) = " . dbh->quote($opt{'zip'});
+  }
+  return;
+}
+
 sub with_cust_classnum {
   my ($self, %opt) = @_;
   if ( $opt{'cust_classnum'} ) {
@@ -830,7 +948,7 @@ sub with_cust_classnum {
     return 'cust_main.classnum in('. join(',',@$classnums) .')'
       if @$classnums;
   }
-  ();
+  return; 
 }
 
 
@@ -963,6 +1081,54 @@ sub extend_projection {
     } until $rows == 0;
   }
 }
+
+=item _init_tower_pkg_cache
+
+Internal method: creates a temporary table relating pkgnums to towernums.
+A (pkgnum, towernum) record indicates that this package once had a 
+svc_broadband service which, as of its last insert or replace_new history 
+record, had a sectornum associated with that towernum.
+
+This is expensive, so it won't be done more than once an hour. Historical 
+data about package churn shouldn't be changing in realtime anyway.
+
+=cut
+
+sub _init_tower_pkg_cache {
+  my $self = shift;
+  my $dbh = dbh;
+
+  my $current = $CACHE->get('tower_pkg_cache_update');
+  return if $current;
+ 
+  # XXX or should this be in the schema?
+  my $sql = "DROP TABLE IF EXISTS tower_pkg_cache";
+  $dbh->do($sql) or die $dbh->errstr;
+  $sql = "CREATE TABLE tower_pkg_cache (towernum int, pkgnum int)";
+  $dbh->do($sql) or die $dbh->errstr;
+
+  # assumptions:
+  # sectornums never get reused, or move from one tower to another
+  # all service history is intact
+  # svcnums never get reused (this would be bad)
+  # pkgnums NEVER get reused (this would be extremely bad)
+  $sql = "INSERT INTO tower_pkg_cache (
+    SELECT COALESCE(towernum,0), pkgnum
+    FROM ( SELECT DISTINCT pkgnum, svcnum FROM h_cust_svc ) AS pkgnum_svcnum
+    LEFT JOIN (
+      SELECT DISTINCT ON(svcnum) svcnum, sectornum
+        FROM h_svc_broadband
+        WHERE (history_action = 'replace_new'
+               OR history_action = 'replace_old')
+        ORDER BY svcnum ASC, history_date DESC
+    ) AS svcnum_sectornum USING (svcnum)
+    LEFT JOIN tower_sector USING (sectornum)
+  )";
+  $dbh->do($sql) or die $dbh->errstr;
+
+  $CACHE->set('tower_pkg_cache_update', 1, 3600);
+
+};
 
 =head1 BUGS
 
