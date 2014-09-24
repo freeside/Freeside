@@ -66,68 +66,27 @@ my $twhere = "
     AND Transactions.ObjectId = Tickets.Id
 ";
 
-my $transaction_time;
 my $applied = '';
-my $cfname = '';
-if ( $cgi->param('cfname') =~ /^\w(\w|\s)*$/ ) {
 
-  $cfname = $cgi->param('cfname');
+my $transaction_time = "
+CASE transactions.type when 'Set'
+  THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
+  ELSE timetaken*60
+END";
 
-  $transaction_time = "(CASE Transactions.Type 
-    WHEN 'CustomField' THEN 
-    ( coalesce(to_number(ocfv_new.Content,'999999'),0) 
-    - coalesce(to_number(ocfv_old.Content,'999999'),0) )
-    ELSE ( to_number(ocfv_main.Content,'999999') )
-    END) * 60";
-
-  $join .= "
-    LEFT JOIN ObjectCustomFieldValues ocfv_new
-    ON ( ocfv_new.Id = Transactions.NewReference )
-    LEFT JOIN ObjectCustomFieldValues ocfv_old
-    ON ( ocfv_old.Id = Transactions.OldReference )
-    LEFT JOIN ObjectCustomFieldValues ocfv_main
-    ON ( ocfv_main.ObjectType = 'RT::Transaction'
-         AND ocfv_main.ObjectId = Transactions.Id )
-    JOIN CustomFields
-    ON ( ( CustomFields.LookupType = 'RT::Queue-RT::Ticket-RT::Transaction'
-           AND CustomFields.Id = ocfv_main.CustomField
-           AND ocfv_main.Id IS NOT NULL
-         )
-         OR
-         ( CustomFields.LookupType = 'RT::Queue-RT::Ticket'
-           AND (CustomFields.Id = ocfv_new.CustomField OR ocfv_new.Id IS NULL)
-           AND (CustomFields.Id = ocfv_old.CustomField OR ocfv_old.Id IS NULL)
-           AND ocfv_main.Id IS NULL
-         ) )
-    ";
-
-  $twhere .= " AND CustomFields.Name = '$cfname'
-    AND (ocfv_new.Id IS NOT NULL OR ocfv_old.Id IS NOT NULL OR ocfv_main.Id IS NOT NULL)";
-
-} else {
-
-  $transaction_time = "
-  CASE transactions.type when 'Set'
-    THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
-    ELSE timetaken*60
-  END";
- 
-  if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
-    $twhere .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
-    $applied = "AND svcnum = $1";
-  }
-
-  $twhere .= "
-    AND (    ( Transactions.Type = 'Set'
-               AND Transactions.Field = 'TimeWorked'
-               AND Transactions.NewValue != Transactions.OldValue )
-          OR ( Transactions.Type IN ( 'Create', 'Comment', 'Correspond', 'Touch' )
-               AND Transactions.TimeTaken > 0
-             )
-        )";
-
+if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
+  $twhere .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
+  $applied = "AND svcnum = $1";
 }
 
+$twhere .= "
+  AND (    ( Transactions.Type = 'Set'
+             AND Transactions.Field = 'TimeWorked'
+             AND Transactions.NewValue != Transactions.OldValue )
+        OR ( Transactions.Type IN ( 'Create', 'Comment', 'Correspond', 'Touch' )
+             AND Transactions.TimeTaken > 0
+           )
+      )";
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 # TIMESTAMP is Pg-specific... ?
@@ -145,8 +104,11 @@ if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
 }
 
 my $transactions = "FROM Transactions $join $twhere";
-
 my $where = "WHERE EXISTS ( SELECT 1 $transactions )";
+
+if ( $cgi->param('category') =~ /^(\w+)$/ ) {
+  $where .= " AND ocfv_TimeType.Content = '$1'";
+}
 
 my $ticket_time = "( SELECT SUM($transaction_time) $transactions )";
 push @select, "$ticket_time AS ticket_time";
@@ -161,18 +123,30 @@ if ( $applied ) {
 
 }
 
+my $addl_from = " LEFT JOIN (
+    SELECT DISTINCT ON (ObjectId)
+      ObjectId, Content
+    FROM ObjectCustomFieldValues
+      JOIN CustomFields
+        ON (ObjectCustomFieldValues.CustomField = CustomFields.Id)
+    WHERE CustomFields.Name = 'TimeType'
+      AND ObjectCustomFieldValues.ObjectType = 'RT::Ticket'
+      AND ObjectCustomFieldValues.Disabled = 0
+    ORDER BY ObjectId ASC, ObjectCustomFieldValues.LastUpdated DESC
+    ) AS ocfv_TimeType ON (Tickets.Id = ocfv_TimeType.ObjectId)
+";
+
 my $query = {
   'select'    => join(', ', @select),
   'table'     => 'tickets', #Pg-ism
   #'table'     => 'Tickets',
-  'addl_from' => '', #$join,
+  'addl_from' => $addl_from,
   'extra_sql' => $where,
   'order by'  => 'ORDER BY Created',
 };
 
-my $count_query = "SELECT ".join(', ', @select_total)." FROM Tickets $where";
-  #"SELECT COUNT(*), SUM($transactiontime), SUM(acct_rt_transaction.support) FROM Transactions $join $where";
-  #"SELECT COUNT(*), ( SUM($transactiontime) $transactions ) FROM Tickets"; # $join $where";
+my $count_query = "SELECT ".join(', ', @select_total).
+  " FROM Tickets $addl_from $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('ticketid'); } ];
 
