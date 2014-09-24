@@ -58,80 +58,50 @@ my @select_total = ( 'COUNT(*)' );
 
 my ($transaction_time, $applied_time);
 my $join = 'JOIN Tickets ON Transactions.ObjectId = Tickets.Id '.
-           'JOIN Users   ON Transactions.Creator = Users.Id '; #.
+           'JOIN Users   ON Transactions.Creator = Users.Id '.
+           "LEFT JOIN (
+               SELECT DISTINCT ON (ObjectId)
+                 ObjectId, Content
+               FROM ObjectCustomFieldValues
+                 JOIN CustomFields
+                   ON (ObjectCustomFieldValues.CustomField = CustomFields.Id)
+               WHERE CustomFields.Name = 'TimeType'
+                 AND ObjectCustomFieldValues.ObjectType = 'RT::Ticket'
+                 AND ObjectCustomFieldValues.Disabled = 0
+               ORDER BY ObjectId ASC, ObjectCustomFieldValues.LastUpdated DESC
+               ) AS ocfv_TimeType ON (Tickets.Id = ocfv_TimeType.ObjectId)
+           ";
 
 my $where = "WHERE Transactions.ObjectType = 'RT::Ticket'";
 
-my $cfname = '';
-if ( $cgi->param('cfname') =~ /^\w(\w|\s)*$/ ) {
+# the intrinsic TimeWorked/TimeTaken fields
+$transaction_time = "CASE Transactions.Type when 'Set'
+    THEN (to_number(NewValue,'999999')-to_number(OldValue, '999999')) * 60
+    ELSE TimeTaken*60
+  END";
 
-  # a TimeValue-type custom field
-  $cfname = $cgi->param('cfname');
-
-  $transaction_time = "(CASE Transactions.Type 
-    WHEN 'CustomField' THEN 
-      ( coalesce(to_number(ocfv_new.Content,'999999'),0) 
-      - coalesce(to_number(ocfv_old.Content,'999999'),0) )
-    ELSE ( to_number(ocfv_main.Content,'999999') )
-    END) * 60";
-
-  # complicated because we have to deal with the case of editing the
-  # ticket custom field directly (OldReference/NewReference) as well as 
-  # entering a transaction with a custom field value (ObjectId)
-  $join .= "
-    LEFT JOIN ObjectCustomFieldValues ocfv_new
-    ON ( ocfv_new.Id = Transactions.NewReference )
-    LEFT JOIN ObjectCustomFieldValues ocfv_old
-    ON ( ocfv_old.Id = Transactions.OldReference )
-    LEFT JOIN ObjectCustomFieldValues ocfv_main
-    ON ( ocfv_main.ObjectType = 'RT::Transaction'
-         AND ocfv_main.ObjectId = Transactions.Id )
-    JOIN CustomFields
-    ON ( ( CustomFields.LookupType = 'RT::Queue-RT::Ticket-RT::Transaction'
-           AND CustomFields.Id = ocfv_main.CustomField
-           AND ocfv_main.Id IS NOT NULL
-         )
-         OR
-         ( CustomFields.LookupType = 'RT::Queue-RT::Ticket'
-           AND (CustomFields.Id = ocfv_new.CustomField OR ocfv_new.Id IS NULL)
-           AND (CustomFields.Id = ocfv_old.CustomField OR ocfv_old.Id IS NULL)
-           AND ocfv_main.Id IS NULL
-         ) )
-  ";
-
-  $where .= " AND CustomFields.Name = '$cfname'
-  AND (ocfv_new.Id IS NOT NULL OR ocfv_old.Id IS NOT NULL OR ocfv_main.Id IS NOT NULL)";
-
+my $applied = ''; 
+if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
+  $where .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
+  $applied = "AND svcnum = $1";
 }
-else {
 
-  # the intrinsic TimeWorked/TimeTaken fields
-  $transaction_time = "CASE Transactions.Type when 'Set'
-      THEN (to_number(NewValue,'999999')-to_number(OldValue, '999999')) * 60
-      ELSE TimeTaken*60
-    END";
- 
-  my $applied = ''; 
-  if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
-    $where .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
-    $applied = "AND svcnum = $1";
-  }
+$applied_time = "( SELECT SUM(support) from acct_rt_transaction where transaction_id = Transactions.id $applied )";
 
-  $applied_time = "( SELECT SUM(support) from acct_rt_transaction where transaction_id = Transactions.id $applied )";
+$where .= "
+  AND (    ( Transactions.Type = 'Set'
+             AND Transactions.Field = 'TimeWorked'
+             AND Transactions.NewValue != Transactions.OldValue )
+        OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' OR Transactions.Type='Touch' )
+             AND Transactions.TimeTaken > 0
+           )
+      )
+";
 
-  $where .= "
-    AND (    ( Transactions.Type = 'Set'
-               AND Transactions.Field = 'TimeWorked'
-               AND Transactions.NewValue != Transactions.OldValue )
-          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' OR Transactions.Type='Touch' )
-               AND Transactions.TimeTaken > 0
-             )
-        )
-  ";
-
+if ( $cgi->param('category') =~ /^(\w+)$/ ) {
+  $where .= " AND ocfv_TimeType.Content = '$1'";
 }
-#AND transaction_time != 0
-#AND $wheretimeleft
+
 push @select, "($transaction_time) AS transaction_time";
 push @select_total, "SUM($transaction_time)";
 if ( $applied_time ) {

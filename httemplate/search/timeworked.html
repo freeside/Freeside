@@ -86,25 +86,46 @@ my $where = "
 my $str2time_sql = str2time_sql;
 my $closing      = str2time_sql_closing;
 
+
 my($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
 $where .= " AND $str2time_sql Transactions.Created $closing >= $begin ".
           " AND $str2time_sql Transactions.Created $closing <= $end ";
+
+if ($cgi->param('category') =~ /^(\w+)$/) {
+  $where .= " AND ocfv_TimeType.Content = '$1'";
+}
+warn $where."\n";;
+
+my $from = "
+    FROM Transactions
+      JOIN Tickets ON Transactions.ObjectId = Tickets.id
+      LEFT JOIN acct_rt_transaction
+        ON Transactions.id = acct_rt_transaction.transaction_id
+      LEFT JOIN (
+        SELECT DISTINCT ON (ObjectId)
+          ObjectId, Content
+        FROM ObjectCustomFieldValues
+          JOIN CustomFields
+            ON (ObjectCustomFieldValues.CustomField = CustomFields.Id)
+        WHERE CustomFields.Name = 'TimeType'
+          AND ObjectCustomFieldValues.ObjectType = 'RT::Ticket'
+          AND ObjectCustomFieldValues.Disabled = 0
+        ORDER BY ObjectId ASC, ObjectCustomFieldValues.LastUpdated DESC
+      ) AS ocfv_TimeType ON (Tickets.Id = ocfv_TimeType.ObjectId)
+";
 
 my $query = "
   SELECT Tickets.id, Tickets.Subject,
          TO_CHAR(Transactions.Created, 'Dy Mon DD HH24:MI:SS YYYY'),
          $transactiontime-$appliedtimeclause,
          Transactions.id
-    FROM Transactions
-      JOIN Tickets ON Transactions.ObjectId = Tickets.id
-      LEFT JOIN acct_rt_transaction
-        ON Transactions.id = acct_rt_transaction.transaction_id
+    $from
     $where
     GROUP BY $groupby
     ORDER BY Transactions.Created
 ";
 
-my $count_query = "SELECT COUNT(*) FROM Transactions $where";
+my $count_query = "SELECT COUNT(*) $from $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->[0]; } ];
 

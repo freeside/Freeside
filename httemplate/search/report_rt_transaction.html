@@ -6,16 +6,13 @@
 
   <% include ( '/elements/tr-input-beginning_ending.html' ) %>
 
-  <& /elements/tr-td-label.html, label => 'Time category:' &>
-  <TD>
-  <& /elements/select-rt-customfield.html,
-      name        => 'cfname',
-      lookuptype  => 'RT::Transaction',
-      valuetype   => 'TimeValue',
-      empty_label => 'Worked',
+  <& /elements/tr-select.html,
+      label       => 'Time category:',
+      field       => 'category',
+      options     => [ '', 'development', 'support' ],
+      option_labels => { '' => 'all' },
+      curr_value  => 'development',
   &>
-  </TD></TR>
-
 
   <% include ( '/elements/tr-select-otaker.html' ) %>
 
