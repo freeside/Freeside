@@ -1613,6 +1613,7 @@ sub list_pkgs {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $conf = new FS::Conf;
+  my $immutable = $conf->exists('selfservice_immutable-package');
   
 # the duplication below is necessary:
 # 1. to maintain the current buggy behaviour wrt the cust_pkg and part_pkg
@@ -1625,6 +1626,7 @@ sub list_pkgs {
 	    'custnum'  => $custnum,
 	    'cust_pkg' => [ map {
                           { $_->hash,
+			    immutable => $immutable,
                             part_pkg => [ map $_->hashref, $_->part_pkg ],
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
@@ -1657,6 +1659,7 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
+			    immutable   => $immutable,
                             pkg_label   => $_->pkg_locale,
                             status      => $_->status,
                             statuscolor => $_->statuscolor,
@@ -2349,6 +2352,10 @@ sub change_pkg {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
+  my $conf = new FS::Conf;
+  my $immutable = $conf->exists('selfservice_immutable-package');
+  return { 'error' => "Package modification disabled" } if $immutable;
+
   my $search = { 'custnum' => $custnum };
   $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
   my $cust_main = qsearchs('cust_main', $search )
@@ -2370,7 +2377,6 @@ sub change_pkg {
                                    \@newpkg,
                                  );
 
-  my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
     my $bill_error = _do_bop_realtime( $cust_main, $status, 'no_credit'=>1 );

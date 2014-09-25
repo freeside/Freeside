@@ -13,8 +13,8 @@ foreach my $pkg (
   my $susp = $pkg->{'susp'} || '';
   my @pkg_actions = ();
   if ( ! $susp ) {
-    push @pkg_actions, [ 'customer_change_pkg' => 'change' ];
-    push @pkg_actions, [ 'process_suspend_pkg' => 'suspend' ] 
+    push @pkg_actions, [ 'customer_change_pkg' => 'change' ] unless $pkg->{'immutable'};
+    push @pkg_actions, [ 'process_suspend_pkg' => 'suspend' ]
       if $self_suspend_reason;
   }
 
