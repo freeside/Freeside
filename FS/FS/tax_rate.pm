@@ -288,16 +288,25 @@ sub unittype_name {
 
 =item maxtype_name
 
-Returns the human understandable value associated with the maxtype column
+Returns the human understandable value associated with the maxtype column.
 
 =cut
+
+# XXX these are non-functional, and most of them are horrible to implement
+# in our current model
 
 %tax_maxtypes = ( '0' => 'receipts per invoice',
                   '1' => 'receipts per item',
                   '2' => 'total utility charges per utility tax year',
                   '3' => 'total charges per utility tax year',
                   '4' => 'receipts per access line',
+                  '7' => 'total utility charges per calendar year',
                   '9' => 'monthly receipts per location',
+                  '10' => 'monthly receipts exceeds taxbase and total tax per month does not exceed maxtax', # wtf?
+                  '11' => 'receipts/units per access line',
+                  '14' => 'units per invoice',
+                  '15' => 'units per month',
+                  '18' => 'units per account',
 );
 
 sub maxtype_name {
@@ -425,17 +434,12 @@ sub taxline {
   }
 
   my $maxtype = $self->maxtype || 0;
-  if ($maxtype != 0 && $maxtype != 1 && $maxtype != 9) {
+  if ($maxtype != 0 && $maxtype != 1 
+      && $maxtype != 14 && $maxtype != 15) {
     return $self->_fatal_or_null( 'tax with "'.
                                     $self->maxtype_name. '" threshold'
                                 );
-  }
-
-  if ($maxtype == 9) {
-    return
-      $self->_fatal_or_null( 'tax with "'. $self->maxtype_name. '" threshold' );
-                                                                # "texas" tax
-  }
+  } # I don't know why, it's not like there are maxtypes that we DO support
 
   # we treat gross revenue as gross receipts and expect the tax data
   # to DTRT (i.e. tax on tax rules)
@@ -495,6 +499,15 @@ sub taxline {
   # the tax or fee is applied to taxbase or feebase and then
   # the excessrate or excess fee is applied to taxmax or feemax
 
+  if ( ($self->taxmax > 0 and $taxable_charged > $self->taxmax) or
+       ($self->feemax > 0 and $taxable_units > $self->feemax) ) {
+    # throw an error
+    # (why not just cap taxable_charged/units at the taxmax/feemax? because
+    # it's way more complicated than that. this won't even catch every case
+    # where a bracket maximum should apply.)
+    return $self->_fatal_or_null( 'tax base > taxmax/feemax for tax'.$self->taxnum );
+  }
+
   $amount += $taxable_charged * $self->tax;
   $amount += $taxable_units * $self->fee;
   
@@ -510,6 +523,8 @@ sub taxline {
 
 sub _fatal_or_null {
   my ($self, $error) = @_;
+
+  $DB::single = 1; # not a mistake
 
   my $conf = new FS::Conf;
 
