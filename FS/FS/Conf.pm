@@ -2753,6 +2753,15 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice_immutable-package',
+    'section'     => 'self-service',
+    'description' => 'Disable package changes in self-service interface.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+
+  {
     'key'         => 'selfservice_process-pkgpart',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by the customer themselves in the self-service interface.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
