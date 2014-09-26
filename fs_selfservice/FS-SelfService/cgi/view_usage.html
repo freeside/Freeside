@@ -18,6 +18,8 @@
     '';
 %>
 <%= include('header', 'Account usage') %>
+<%= if( $hide_usage ){ $OUT .= '<' . '!--' } %>
+
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
@@ -216,4 +218,6 @@ foreach my $svc_port ( @svc_port ) {
 
 
 </TD></TR></TABLE>
+<%= if( $hide_usage ){ $OUT .= '--'. '>' } %>
 <%= include('footer') %>
+

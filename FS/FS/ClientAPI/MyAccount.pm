@@ -398,11 +398,12 @@ sub access_info {
 
   $info->{'timeout'} = $conf->config('selfservice-timeout') || 3600;
 
+  $info->{'hide_usage'} = $conf->exists('selfservice_hide-usage');
+
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
            'access_svcnum' => $session->{'svcnum'},
-	   'hide_usage'    => $conf->exists('selfservice_hide-usage'),
          };
 }
 
