@@ -402,6 +402,7 @@ sub access_info {
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
            'access_svcnum' => $session->{'svcnum'},
+	   'hide_usage'    => $conf->exists('selfservice_hide-usage'),
          };
 }
 

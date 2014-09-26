@@ -2760,6 +2760,13 @@ and customer address. Include units.',
     'per_agent'   => 1,
   },
 
+  {
+    'key'         => 'selfservice_hide-usage',
+    'section'     => 'self-service',
+    'description' => 'Hide usage data in self-service interface.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
 
   {
     'key'         => 'selfservice_process-pkgpart',
