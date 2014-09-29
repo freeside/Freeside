@@ -263,6 +263,15 @@ sub data {
   # customer name and class
   $hash{customer_name} = $svc->phone_name_or_cust;
   $hash{class_of_service} = $svc->e911_class;
+  if (!$hash{class_of_service}) {
+    # then guess
+    my $cust_main = $svc->cust_main;
+    if ($cust_main->company) {
+      $hash{class_of_service} = '2';
+    } else {
+      $hash{class_of_service} = '1';
+    }
+  }
   $hash{type_of_service}  = $svc->e911_type || '0';
 
   $hash{exchange} = '';
