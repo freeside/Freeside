@@ -284,6 +284,9 @@ name strings) as an arrayref of arrayrefs.  OPTIONS may contain "date"
 (a timestamp value to run the report as of this date) and "agentnum"
 (to limit to a single agent).
 
+OPTIONS may also contain "detail", a flag that tells the report to return
+a comma-separated list of the detail records included in each row count.
+
 =cut
 
 sub report {
@@ -319,8 +322,9 @@ sub fbd_sql {
     'cir_speed_down',
     'cir_speed_up',
   );
-  my $from =
-    'deploy_zone_block
+  push @select, 'blocknum' if $opt{detail};
+
+  my $from = 'deploy_zone_block
     JOIN deploy_zone USING (zonenum)
     JOIN agent USING (agentnum)';
   my @where = (
@@ -353,6 +357,8 @@ sub fbs_sql {
     'COUNT(*)',
     'COUNT(is_consumer)',
   );
+  push @select, "array_to_string(array_agg(pkgnum), ',')" if $opt{detail};
+
   my $from =
     'cust_pkg
       JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
@@ -395,8 +401,9 @@ sub fvs_sql {
     # number of lines/subscriptions
     'SUM(CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END)',
     # consumer grade lines/subscriptions
-    'SUM(CASE WHEN is_consumer = 1 THEN ( CASE WHEN is_voip = 1 THEN voip_sessions ELSE phone_lines END) ELSE 0 END)'
+    'SUM(CASE WHEN is_consumer = 1 THEN ( CASE WHEN is_voip = 1 THEN voip_sessions ELSE phone_lines END) ELSE 0 END)',
   );
+  push @select, "array_to_string(array_agg(pkgnum), ',')" if $opt{detail};
 
   my $from = 'cust_pkg
     JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
@@ -447,6 +454,8 @@ sub lts_sql {
     "SUM(CASE WHEN media = 'Cable Modem' THEN phone_lines ELSE 0 END)",
     "SUM(CASE WHEN media = 'Fixed Wireless' THEN phone_lines ELSE 0 END)",
   );
+  push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
+
   my $from =
     'cust_pkg
       JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
@@ -497,6 +506,7 @@ sub voip_sql {
     "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Fixed Wireless') THEN 1 ELSE 0 END)",
     "SUM(CASE WHEN (voip_lastmile = 1 AND media NOT IN('Copper', 'Fiber', 'Cable Modem', 'Fixed Wireless') ) THEN 1 ELSE 0 END)",
   );
+  push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
 
   my $from =
     'cust_pkg
@@ -538,6 +548,8 @@ sub mbs_sql {
     'COUNT(*)',
     'COUNT(is_consumer)',
   );
+  push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
+
   my $from =
     'cust_pkg
       JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
@@ -577,6 +589,8 @@ sub mvs_sql {
     'COUNT(*)',
     'COUNT(mobile_direct)',
   );
+  push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
+
   my $from =
     'cust_pkg
       JOIN cust_location ON (cust_pkg.locationnum = cust_location.locationnum)
@@ -623,6 +637,24 @@ tie our %parts, 'Tie::IxHash', (
 
 sub parts {
   Storable::dclone(\%parts);
+}
+
+=item part_table SECTION
+
+Returns the name of the primary table that's aggregated in the report section 
+SECTION. The last column of the report returned by the L</report> method is 
+a comma-separated list of record numbers, in this table, that are included in
+the report line item.
+
+=cut
+
+sub part_table {
+  my ($class, $part) = @_;
+  if ($part eq 'fbd') {
+    return 'deploy_zone_block';
+  } else {
+    return 'cust_pkg';
+  } # add other cases as we add more of the deployment/availability reports
 }
 
 1;
