@@ -4479,6 +4479,15 @@ Limit to packages associated with a svc_broadband, associated with a sector,
 associated with this towernum (or any of these, if it's an arrayref) (or NO
 towernum, if it's zero). This is an extreme niche case.
 
+=item 477part, 477rownum, date
+
+Limit to packages included in a specific row of one of the FCC 477 reports.
+'477part' is the section name (see L<FS::Report::FCC_477> methods), 'date'
+is the report as-of date (completely unrelated to the package setup/bill/
+other date fields), and '477rownum' is the row number of the report starting
+with zero. Row numbers have no inherent meaning, so this is useful only 
+for explaining a 477 report you've already run.
+
 =back
 
 =cut
@@ -4898,6 +4907,40 @@ sub search {
         AND tower_pkg_cache.towernum IN ($in)
       )"
     }
+  }
+
+  ##
+  # parse the 477 report drill-down options
+  ##
+
+  if ($params->{'477part'} =~ /^([a-z]+)$/) {
+    my $section = $1;
+    my ($date, $rownum, $agentnum);
+    if ($params->{'date'} =~ /^(\d+)$/) {
+      $date = $1;
+    }
+    if ($params->{'477rownum'} =~ /^(\d+)$/) {
+      $rownum = $1;
+    }
+    if ($params->{'agentnum'} =~ /^(\d+)$/) {
+      $agentnum = $1;
+    }
+    if ($date and defined($rownum)) {
+      my $report = FS::Report::FCC_477->report($section,
+        'date'      => $date,
+        'agentnum'  => $agentnum,
+        'detail'    => 1
+      );
+      my $row = $report->[$rownum]
+        or die "row $rownum is past the end of the report";
+      my $pkgnums = $row->[-1] || '0';
+        # '0' so that if there are no pkgnums (empty string) it will create
+        # a valid query that returns nothing
+      warn "PKGNUMS:\n$pkgnums\n\n"; # XXX debug
+
+      # and this overrides everything
+      @where = ( "cust_pkg.pkgnum IN($pkgnums)" );
+    } # else we're missing some params, ignore the whole business
   }
 
   ##
