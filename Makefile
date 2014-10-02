@@ -46,13 +46,20 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 
 #deb, redhat, fedora, mandrake, suse, others?
 INIT_FILE = /etc/init.d/freeside
+INIT_FILE_QUEUED = /etc/init.d/freeside-queued
+INIT_FILE_PREPAIDD = /etc/init.d/freeside-prepaidd
+INIT_FILE_XMLRPCD = /etc/init.d/freeside-xmlrpcd
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
 #deb
-INIT_INSTALL = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside defaults 23 01
+#INIT_INSTALL = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside defaults 23 01
 #redhat, fedora
-#INIT_INSTALL = /sbin/chkconfig freeside on
+INIT_INSTALL = /sbin/chkconfig freeside on
+INIT_INSTALL_QUEUED = /sbin/chkconfig freeside-queued on
+INIT_INSTALL_PREPAIDD = /sbin/chkconfig freeside-prepaidd on
+INIT_INSTALL_XMLRPCD = /sbin/chkconfig freeside-xmlrpcd on
+
 #not necessary (freebsd)
 #INIT_INSTALL = /usr/bin/true
 
@@ -276,6 +283,34 @@ install-init:
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
 	${INIT_INSTALL}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-queued.init ${INIT_FILE_QUEUED}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_QUEUED}
+	${INIT_INSTALL_QUEUED}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-prepaidd.init ${INIT_FILE_PREPAIDD}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_PREPAIDD}
+	${INIT_INSTALL_PREPAIDD}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-xmlrpcd.init ${INIT_FILE_XMLRPCD}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_XMLRPCD}
+	${INIT_INSTALL_XMLRPCD}
+
 
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true
