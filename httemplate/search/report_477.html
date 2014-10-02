@@ -40,6 +40,12 @@
       'labels'  => $part_titles,
       'options' => [ keys %$part_titles ]
     &>
+
+    <& /elements/tr-checkbox.html,
+      'label'   => 'Ignore package quantities',
+      'field'   => 'ignore_quantity',
+      'value'   => 1,
+    &>
   </TABLE>
 
   <BR>

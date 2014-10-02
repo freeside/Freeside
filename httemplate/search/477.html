@@ -91,10 +91,13 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/ ) {
 }
 my $date = parse_datetime($cgi->param('date')) || time;
 my @partnames = grep /^\w+$/, $cgi->param('parts');
+my $ignore_quantity = ($cgi->param('ignore_quantity') ? 1 : 0);
+
 foreach my $partname (@partnames) {
   $parts{$partname} ||= FS::Report::FCC_477->report( $partname,
-    date      => $date,
-    agentnum  => $agentnum,
+    date            => $date,
+    agentnum        => $agentnum,
+    ignore_quantity => $ignore_quantity,
   );
   my $detail_table = FS::Report::FCC_477->part_table($partname);
   if ($detail_table eq 'cust_pkg') {

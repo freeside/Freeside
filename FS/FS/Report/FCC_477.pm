@@ -280,12 +280,18 @@ sub is_mobile_broadband {
 =item report SECTION, OPTIONS
 
 Returns the report section SECTION (see the C<parts> method for section 
-name strings) as an arrayref of arrayrefs.  OPTIONS may contain "date"
-(a timestamp value to run the report as of this date) and "agentnum"
-(to limit to a single agent).
+name strings) as an arrayref of arrayrefs.  OPTIONS may contain the following:
 
-OPTIONS may also contain "detail", a flag that tells the report to return
-a comma-separated list of the detail records included in each row count.
+- date: a timestamp value. Packages that were active on that date will be 
+counted.
+
+- agentnum: limit to packages with this agent.
+
+- detail: if true, the report will contain an additional column which contains
+the keys of all objects aggregated in the row.
+
+- ignore_quantity: if true, package quantities will be ignored (only distinct
+packages will be counted).
 
 =cut
 
@@ -308,7 +314,6 @@ sub fbd_sql {
   my $class = shift;
   my %opt = @_;
   my $date = $opt{date} || time;
-  warn $date;
   my $agentnum = $opt{agentnum};
 
   my @select = (
@@ -348,14 +353,15 @@ sub fbs_sql {
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
+  my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
   my @select = (
     'cust_location.censustract',
     'technology',
     'broadband_downstream',
     'broadband_upstream',
-    'COUNT(*)',
-    'COUNT(is_consumer)',
+    "SUM($q)",
+    "SUM(COALESCE(is_consumer,0) * $q)",
   );
   push @select, "array_to_string(array_agg(pkgnum), ',')" if $opt{detail};
 
@@ -393,15 +399,16 @@ sub fvs_sql {
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
+  my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
   my @select = (
     'cust_location.censustract',
     # VoIP indicator (0 for non-VoIP, 1 for VoIP)
     'COALESCE(is_voip, 0)',
     # number of lines/subscriptions
-    'SUM(CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END)',
+    "SUM($q * (CASE WHEN is_voip = 1 THEN 1 ELSE phone_lines END))",
     # consumer grade lines/subscriptions
-    'SUM(CASE WHEN is_consumer = 1 THEN ( CASE WHEN is_voip = 1 THEN voip_sessions ELSE phone_lines END) ELSE 0 END)',
+    "SUM($q * COALESCE(is_consumer,0) * (CASE WHEN is_voip = 1 THEN voip_sessions ELSE phone_lines END))",
   );
   push @select, "array_to_string(array_agg(pkgnum), ',')" if $opt{detail};
 
@@ -436,23 +443,24 @@ sub lts_sql {
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
+  my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
   my @select = (
     "state.fips",
-    "SUM(phone_vges)",
-    "SUM(phone_circuits)",
-    "SUM(phone_lines)",
-    "SUM(CASE WHEN is_broadband = 1 THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer = 1 AND phone_longdistance IS NULL THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer = 1 AND phone_longdistance = 1 THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer IS NULL AND phone_longdistance IS NULL THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN is_consumer IS NULL AND phone_longdistance = 1 THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN phone_localloop = 'owned' THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN phone_localloop = 'leased' THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN phone_localloop = 'resale' THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN media = 'Fiber' THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN media = 'Cable Modem' THEN phone_lines ELSE 0 END)",
-    "SUM(CASE WHEN media = 'Fixed Wireless' THEN phone_lines ELSE 0 END)",
+    "SUM($q * phone_vges)",
+    "SUM($q * phone_circuits)",
+    "SUM($q * phone_lines)",
+    "SUM($q * (CASE WHEN is_broadband = 1 THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN is_consumer = 1 AND phone_longdistance IS NULL THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN is_consumer = 1 AND phone_longdistance = 1 THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN is_consumer IS NULL AND phone_longdistance IS NULL THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN is_consumer IS NULL AND phone_longdistance = 1 THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN phone_localloop = 'owned' THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN phone_localloop = 'leased' THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN phone_localloop = 'resale' THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN media = 'Fiber' THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN media = 'Cable Modem' THEN phone_lines ELSE 0 END))",
+    "SUM($q * (CASE WHEN media = 'Fixed Wireless' THEN phone_lines ELSE 0 END))",
   );
   push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
 
@@ -490,21 +498,22 @@ sub voip_sql {
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
+  my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
   my @select = (
     "state.fips",
     # OTT, OTT + consumer
-    "SUM(CASE WHEN (voip_lastmile IS NULL) THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile IS NULL AND is_consumer = 1) THEN 1 ELSE 0 END)",
+    "SUM($q * (CASE WHEN (voip_lastmile IS NULL) THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile IS NULL AND is_consumer = 1) THEN 1 ELSE 0 END))",
     # non-OTT: total, consumer, broadband bundle, media types
-    "SUM(CASE WHEN (voip_lastmile = 1) THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND is_consumer = 1) THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND is_broadband = 1) THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Copper') THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Cable Modem') THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Fiber') THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND media = 'Fixed Wireless') THEN 1 ELSE 0 END)",
-    "SUM(CASE WHEN (voip_lastmile = 1 AND media NOT IN('Copper', 'Fiber', 'Cable Modem', 'Fixed Wireless') ) THEN 1 ELSE 0 END)",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1) THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND is_consumer = 1) THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND is_broadband = 1) THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Copper') THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Cable Modem') THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Fiber') THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Fixed Wireless') THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media NOT IN('Copper', 'Fiber', 'Cable Modem', 'Fixed Wireless') ) THEN 1 ELSE 0 END))",
   );
   push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
 
@@ -540,13 +549,14 @@ sub mbs_sql {
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
+  my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
   my @select = (
     'state.fips',
     'broadband_downstream',
     'broadband_upstream',
-    'COUNT(*)',
-    'COUNT(is_consumer)',
+    "SUM($q)",
+    "SUM(COALESCE(is_consumer, 0) * $q)",
   );
   push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
 
@@ -583,11 +593,12 @@ sub mvs_sql {
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
+  my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
   my @select = (
     'state.fips',
-    'COUNT(*)',
-    'COUNT(mobile_direct)',
+    "SUM($q)",
+    "SUM($q * COALESCE(mobile_direct,0))",
   );
   push @select, "array_to_string(array_agg(pkgnum),',')" if $opt{detail};
 
