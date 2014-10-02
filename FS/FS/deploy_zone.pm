@@ -181,7 +181,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('zonenum')
-    || $self->ut_textn('description')
+    || $self->ut_text('description')
     || $self->ut_number('agentnum')
     || $self->ut_foreign_key('agentnum', 'agent', 'agentnum')
     || $self->ut_textn('dbaname')
