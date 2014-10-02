@@ -1,4 +1,3 @@
-etc/freeside/apache2/freeside-alias.conf etc/apache2/conf.d/freeside-alias.conf
 etc/freeside/apache2/freeside-base2.conf etc/apache2/conf.d/freeside-base2.conf
 etc/freeside/apache2/freeside-rt.conf    etc/apache2/conf.d/freeside-rt.conf
 

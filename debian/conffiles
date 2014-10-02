@@ -1,0 +1,3 @@
+/usr/local/etc/freeside/secrets
+/etc/default/freeside
+/opt/rt3/etc/RT_SiteConfig.pm
