@@ -24,9 +24,11 @@ daemonize2();
 
 $conf = new FS::Conf;
 
-die "not running; cdr-asterisk_forward_rewrite, cdr-charged_party_rewrite ".
-    " and cdr-taqua-accountcode_rewrite conf options are all off\n"
-  unless _shouldrun();
+do {
+    warn "not running; cdr-asterisk_forward_rewrite, cdr-charged_party_rewrite ".
+    " and cdr-taqua-accountcode_rewrite conf options are all off\n";
+    myexit();
+} unless _shouldrun();
 
 #--
 

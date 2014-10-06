@@ -49,6 +49,8 @@ INIT_FILE = /etc/init.d/freeside
 INIT_FILE_QUEUED = /etc/init.d/freeside-queued
 INIT_FILE_PREPAIDD = /etc/init.d/freeside-prepaidd
 INIT_FILE_XMLRPCD = /etc/init.d/freeside-xmlrpcd
+INIT_FILE_CDRREWRITED = /etc/init.d/freeside-cdrrewrited
+INIT_FILE_CDRD = /etc/init.d/freeside-cdrd
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
@@ -59,6 +61,8 @@ INIT_INSTALL = /sbin/chkconfig freeside on
 INIT_INSTALL_QUEUED = /sbin/chkconfig freeside-queued on
 INIT_INSTALL_PREPAIDD = /sbin/chkconfig freeside-prepaidd on
 INIT_INSTALL_XMLRPCD = /sbin/chkconfig freeside-xmlrpcd on
+INIT_INSTALL_CDRREWRITED = /sbin/chkconfig freeside-cdrrewrited on
+INIT_INSTALL_CDRD = /sbin/chkconfig freeside-cdrd on
 
 #not necessary (freebsd)
 #INIT_INSTALL = /usr/bin/true
@@ -311,6 +315,23 @@ install-init:
 	" ${INIT_FILE_XMLRPCD}
 	${INIT_INSTALL_XMLRPCD}
 
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-cdrrewrited.init ${INIT_FILE_CDRREWRITED}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_CDRREWRITED}
+	${INIT_INSTALL_CDRREWRITED}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-cdrd.init ${INIT_FILE_CDRD}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_CDRD}
+	${INIT_INSTALL_CDRD}
 
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true

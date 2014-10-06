@@ -55,7 +55,7 @@ startfunc() {
     then
         action "Already running ${SERVICE} " /bin/false
     else
-        scl enable perl516 "${SERVICE} $QUEUED_USER"
+        ${SERVICE} $QUEUED_USER
         RETVAL=$?
         action "Starting ${SERVICE} " /bin/true
         if [ $RETVAL = 0 ]

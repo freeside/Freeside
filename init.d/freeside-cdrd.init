@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# description: Manage the freeside-xmlrpcd script service, SYS-V style 
+# description: Manage the freeside-cdrd script service, SYS-V style 
 # chkconfig: 2345 10 90
 
 
 ARG1=${1}
-SERVICE=freeside-xmlrpcd
+SERVICE=freeside-cdrd
 LOCKFILE=/var/lock/subsys/${SERVICE}
-PIDFILE=/var/run/freeside/xmlrpcd.pid
+PIDFILE=/var/run/${SERVICE}.pid
 
 
 if [ -f /etc/rc.d/init.d/functions ]
@@ -23,9 +23,9 @@ then
     . %%%FREESIDE_DEFAULTS%%%
 fi
 
-if [ -z ${API_USER} ] 
+if [ -z ${QUEUED_USER} ] 
 then
-    API_USER=%%%API_USER%%%
+    QUEUED_USER=%%%QUEUED_USER%%%
 fi
 
 # 0:	program is running or service is OK
@@ -55,7 +55,7 @@ startfunc() {
     then
         action "Already running ${SERVICE} " /bin/false
     else
-        ${SERVICE} $API_USER
+        ${SERVICE} $QUEUED_USER
         RETVAL=$?
         action "Starting ${SERVICE} " /bin/true
         if [ $RETVAL = 0 ]

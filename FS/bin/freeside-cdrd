@@ -21,8 +21,10 @@ logfile( "%%%FREESIDE_LOG%%%/cdrd-log.". $FS::UID::datasrc );
 
 daemonize2();
 
-die "not running; no voip_cdr package defs w/ bill_every_call and customer pkgs"
-  unless _shouldrun();
+do {
+    warn "not running; no voip_cdr package defs w/ bill_every_call and customer pkgs"
+    myexit();
+} unless _shouldrun();
 
 #--
 
