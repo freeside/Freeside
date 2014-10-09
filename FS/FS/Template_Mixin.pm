@@ -2031,27 +2031,20 @@ sub _items_sections {
                   ! $cust_bill_pkg->feepart   and
                   ! $section;
 
-          if (! $type || $type eq 'S') {
+          if ( $type eq 'S' ) {
             $subtotal{$locationnum}{$section} += $cust_bill_pkg->setup
               if $cust_bill_pkg->setup != 0
               || $cust_bill_pkg->setup_show_zero;
-          }
-
-          if (! $type) {
-            $subtotal{$locationnum}{$section} += $cust_bill_pkg->recur
-              if $cust_bill_pkg->recur != 0
-              || $cust_bill_pkg->recur_show_zero;
-          }
-
-          if ($type && $type eq 'R') {
+          } elsif ( $type eq 'R' ) {
             $subtotal{$locationnum}{$section} += $cust_bill_pkg->recur - $usage
               if $cust_bill_pkg->recur != 0
               || $cust_bill_pkg->recur_show_zero;
-          }
-          
-          if ($type && $type eq 'U') {
+          } elsif ( $type eq 'U' ) {
             $subtotal{$locationnum}{$section} += $usage
               unless scalar(@extra_sections);
+          } elsif ( !$type ) {
+            $subtotal{$locationnum}{$section} += $cust_bill_pkg->setup
+                                               + $cust_bill_pkg->recur;
           }
 
         }

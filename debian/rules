@@ -36,17 +36,18 @@ export FREESIDE_LOG = $(TMP)/usr/local/etc/freeside
 export FREESIDE_LOCK = $(TMP)/usr/local/etc/freeside
 export FREESIDE_CACHE = $(TMP)/usr/local/etc/freeside
 export FREESIDE_EXPORT = $(TMP)/usr/local/etc/freeside
+expory FREESIDE_SS = $(TMP)/usr/share/docs/freeside
 
 #XXX own subdir?
-#export MASON_HANDLER          = $(TMP)-webui/usr/share/freeside/handler.pl
+#export MASON_HANDLER          = /usr/share/freeside/handler.pl
 export MASON_HANDLER=$(TMP)-webui/usr/local/etc/freeside/handler.pl
 
-#export FREESIDE_DOCUMENT_ROOT = $(TMP)-webui/usr/share/freeside/www
+#export FREESIDE_DOCUMENT_ROOT = /usr/share/freeside/www
 export FREESIDE_DOCUMENT_ROOT = $(TMP)-webui/var/www/freeside
 export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
-#export APACHE_CONF            = $(TMP)-webui/etc/apache2/conf.d
+#export APACHE_CONF           = /etc/apache2/conf.d
 export APACHE_CONF            = $(TMP)-webui/etc/freeside/apache2
 export FREESIDE_RESTART       = /bin/true
 
@@ -56,22 +57,21 @@ export INSTALLGROUP           = adm
 export SELFSERVICE_MACHINES   = 
 
 #prompt ?   XXX these are runtime, not buildtime :/
-#export RT_DOMAIN              = `dnsdomainname`
-#export RT_TIMEZONE            = `cat /etc/timezone`
-
-#export HOSTNAME               = `hostname -f`
-#export FREESIDE_URL           = http://$(HOSTNAME)/freeside/
+export RT_DOMAIN              =  freeside.biz
+export RT_TIMEZONE            = US/Eastern
+export HOSTNAME               = localhost
+export FREESIDE_URL           = http://$(HOSTNAME)/freeside/
 
 #specific to deb pkg, for purposes of saving off a permanent copy of default
 #config for postinst and that sort of thing
-#export DIST_CONF           = $(TMP)/usr/share/freeside/default_conf
+#export DIST_CONF           = /usr/share/freeside/default_conf
 
 #XXX yuck.  proper RT layout is entirely necessary
 #this seems to infect way to much of RT with the build location, requiring
 # a kludge to hack it out afterwords.  look into using fakeroot (didn't
 # realize it would need to be explicit argh)
 # (but leaving it for now, otherwise can't get RT to put files where we need em)
-#export RT_PATH                = $(TMP)/var/opt/freeside/rt
+export RT_PATH                = $(TMP)/opt/rt3
 
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
@@ -91,7 +91,7 @@ build-stamp:
 	
 	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor )
 
-	$(MAKE) -e perl-modules
+	$(MAKE) -e DESTDIR=${TMP}-lib perl-modules
 
 	#TEST#
 
@@ -117,98 +117,95 @@ install-stamp: build-stamp
 
 	# Add here commands to install package into
 	# debian/<package>-whatever.
+
 	( cd FS/ && $(MAKE) -e DESTDIR=$(TMP)-lib install )
 
-        #false laziness w/install-perl-modules now
-	#install this for postinst later (no create-config)
-	##install -d $(DIST_CONF)
-	#install conf/[a-z]* $(DEFAULT_CONF)
-	#CVS is not [a-z]
-	##install `ls -d conf/[a-z]* | grep -v CVS` $(DIST_CONF)
-
 	install -d $(FREESIDE_DOCUMENT_ROOT)
+	install -d $(TMP)-webui/usr/local/etc/freeside/
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
 	$(MAKE) -e DESTDIR=$(TMP)-webui install-docs
+
+
+	# Ugly hack, why is handler.pl not being "handled" by install-docs
+	install -D htetc/handler.pl DESTDIR=$(FREESIDE_CACHE)
+
+	# Create Apache configurations
+	install -d $(APACHE_CONF)
+	$(MAKE) -e DESTDIR=$(APACHE_CONF) install-apache
+
+        #Hack the build dir out of apache config
+
+	perl -p -i -e "\
+         s'${TMP}(-webui)?''g;\
+        "  $(TMP)-webui/etc/freeside/apache2/*
+
+        # Install configuration files, hack what to do???
+	$(MAKE) -e DESTDIR=$(TMP) create-config
+	$(MAKE) -e DESTDIR=$(TMP) install-init
 
 	#hack the build dir out of Freeside too.  oh yeah, sucky.
 	perl -p -i -e "\
 	  s'${TMP}(-webui)?''g;\
-	" ${TMP}-webui/usr/local/etc/freeside/handler.pl \
-	  ${TMP}-webui/etc/freeside/apache2/* \
-	  ${TMP}-lib/usr/share/perl5/FS/* \
-	  ${TMP}-lib/usr/share/perl5/FS/*/* \
-	  ${TMP}-lib/usr/bin/*
+	" ${TMP}-webui/usr/local/etc/freeside/handler.pl 
 
-	#rm -r $(FREESIDE_DOCUMENT_ROOT).*
+	#back the build dur out of lib
+	perl -p -i -e "\
+          s'${TMP}-lib?''g;\
+	  s'${TMP}(-webui)?''g;\
+        " ${TMP}-webui/usr/local/etc/freeside/handler.pl \
+	  ${TMP}-lib/usr/share/perl5/FS/*.pm \
+	  ${TMP}-lib/usr/share/perl5/FS/*/*.pm 
+        
+        #hack the build dir out of Freeside binaries
 
-	install -d $(APACHE_CONF)
-	#install debian/freeside.apache-alias.conf $(APACHE_CONF)/freeside-alias.conf
-	#FREESIDE_DOCUMENT_ROOT=/usr/share/freeside/www MASON_HANDLER=/usr/share/freeside/handler.pl FREESIDE_CONF=/etc/freeside $(MAKE) -e install-apache
-	$(MAKE) -e install-apache
+	perl -p -i -e "\
+          s'${TMP}?''g;\
+        " ${TMP}-lib/usr/bin/* \
 
-	$(MAKE) -e install-init
+	#RT Config
 
-	#RT
-	#(configure-rt)
-	$(MAKE) -e configure-rt
+	( cd rt; \
+          cp config.layout.in config.layout; \
+          perl -p -i -e "\
+            s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g;\
+            s'%%%MASONDATA%%%'${FREESIDE_CACHE}/masondata'g;\
+          " config.layout; \
+          ./configure --prefix=${RT_PATH} \
+		--enable-layout=Freeside \
+		--with-db-type=Pg \
+		--with-db-dba=freeside \
+		--with-db-database=freeside \
+		--with-db-rt-user=freeside \
+		--with-db-rt-pass="" \
+		--with-web-user=freeside \
+		--with-web-group=freeside \
+		--with-rt-group=freeside \
+		--with-web-handler=modperl2 )
 
-	## XXX need to adjust db-type, db-database, db-rt-user, db-rt-pass
-	## based on info from dbc
-	#( cd rt; \
-	#  cp config.layout.in config.layout; \
-	#  perl -p -i -e "\
-	#    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g;\
-	#    s'%%%MASONDATA%%%'${FREESIDE_CACHE}/masondata'g;\
-	#  " config.layout; \
-	#  ./configure --prefix=${RT_PATH} \
-	#              --enable-layout=Freeside \
-	#              --with-db-type=Pg \
-	#              --with-db-dba=freeside \
-	#              --with-db-database=_DBC_DBNAME_ \
-	#              --with-db-rt-user=_DBC_DBUSER_ \
-	#              --with-db-rt-pass=_DBC_DBPASS_ \
-	#              --with-web-user=freeside \
-	#              --with-web-group=freeside \
-	#              --with-rt-group=freeside \
-	#)
-
-	##(create-rt)
-	#$(MAKE) -e create-rt
-
-	#install -d $(RT_PATH)
-	#( cd rt; make install )
+        ##(create-rt)
+        #$(MAKE) -e create-rt
+	install -d $(RT_PATH)
+	( cd rt; make install )
+	
 	##hack the build dir out of RT.  yeah, sucky.
-	#perl -p -i -e "\
-	#  s'${TMP}''g;\
-	#" ${RT_PATH}/etc/RT_Config.pm \
-	#  ${RT_PATH}/lib/RT.pm \
-	#  ${RT_PATH}/bin/mason_handler.fcgi \
-	#  ${RT_PATH}/bin/mason_handler.scgi \
-	#  ${RT_PATH}/bin/standalone_httpd \
-	#  ${RT_PATH}/bin/webmux.pl \
-	#  ${RT_PATH}/bin/rt-crontool \
-	#  ${RT_PATH}/sbin/rt-dump-database \
-	#  ${RT_PATH}/sbin/rt-setup-database
-	#
-	##hack @INC dir out of RT (well, handler.pl) too.
-	#perl -p -i -e "\
-	#  s'/opt/rt3/'/var/opt/freeside/rt/'g;\
-	#" ${TMP}-webui/usr/share/freeside/handler.pl
 
-	#mv ${RT_PATH}/etc/RT_Config.pm ${RT_PATH}/etc/RT_Config.pm.dbc
+	perl -p -i -e "\
+	s'${TMP}(-webui)''g;\
+	s'${TMP}''g;\
+	" ${TMP}/opt/rt3/etc/*.pm \
+		${TMP}/opt/rt3/lib/*.pm \
+		${TMP}/opt/rt3/lib/RT/*.pm \
+		${TMP}/opt/rt3/etc/upgrade/* \
+		${TMP}/opt/rt3/sbin/* \
+		${TMP}/opt/rt3/bin/* \
 
-	#perl -p -i -e "\
-	#  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
-	#  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
-	#  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
-	#" ${RT_PATH}/etc/RT_SiteConfig.pm
+	# Default RT Settings
+	perl -p -i -e "\
+		s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
+		s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
+		s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+		" ${RT_PATH}/etc/RT_SiteConfig.pm
 
-	#install -D debian/dbconfig-common.install $(DBC_SCRIPTS)/install/pgsql
-	#install -D debian/dbconfig-common.install $(DBC_SCRIPTS)/install/mysql
-	
-	#install -D debian/dbconfig-common.upgrade $(DBC_SCRIPTS)/upgrade/pgsql/$(DEBVERSION)
-	#install -D debian/dbconfig-common.upgrade $(DBC_SCRIPTS)/upgrade/mysql/$(DEBVERSION)
-	
 	dh_install
 
 	touch $@
@@ -219,12 +216,13 @@ binary-arch:
 binary-indep: build install
 	dh_testdir
 	dh_testroot
+	dh_installdeb install
 	dh_installdocs #freeside.docs README AGPL
 	dh_installexamples eg/*
 #	dh_installmenu
 	dh_installdebconf	
 #	dh_installlogrotate	
-	dh_installinit
+	dh_installinit --no-start 
 	dh_installcron
 #	dh_installinfo
 	dh_installman

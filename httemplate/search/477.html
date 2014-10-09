@@ -49,13 +49,23 @@ a.download {
   <thead>
     <& $header &>
   </thead>
+%   my $rownum = 0;
 %   foreach my $row (@$data) {
   <tr>
+%     my $first = 1;
 %     foreach my $item (@$row) {
-    <td><% $item %></td>
+    <td>
+%     if ($first and $part_link{$partname}) {
+      <a href="<% $part_link{$partname} . "477rownum=$rownum" %>"><% $item || '(empty)' %></a>
+%       $first = 0;
+%     } else {
+      <% $item %>
 %     }
+    </td>
+%   } #foreach $item
   </tr>
-%   }
+%   $rownum++;
+%   } #foreach $row
 </table>
 % } # foreach $partname
 <& /elements/footer.html &>
@@ -64,6 +74,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
 
 my %parts;
+my %part_link;
 # load from cache if possible
 my $session;
 if ( $cgi->param('session') =~ /^(\d+)$/ ) {
@@ -80,11 +91,22 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/ ) {
 }
 my $date = parse_datetime($cgi->param('date')) || time;
 my @partnames = grep /^\w+$/, $cgi->param('parts');
+my $ignore_quantity = ($cgi->param('ignore_quantity') ? 1 : 0);
+
 foreach my $partname (@partnames) {
   $parts{$partname} ||= FS::Report::FCC_477->report( $partname,
-    date      => $date,
-    agentnum  => $agentnum
+    date            => $date,
+    agentnum        => $agentnum,
+    ignore_quantity => $ignore_quantity,
   );
+  my $detail_table = FS::Report::FCC_477->part_table($partname);
+  if ($detail_table eq 'cust_pkg') {
+    my $link = popurl(1).'cust_pkg.cgi?477part='.$partname.";date=$date;";
+    if ($agentnum) {
+      $link .= "agentnum=$agentnum;";
+    }
+    $part_link{$partname} = $link;
+  } # don't include detail links to deploy_blocks, that's pointless
 }
 $m->cache->set($session, \%parts, '1h');
 

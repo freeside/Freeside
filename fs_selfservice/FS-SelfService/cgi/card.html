@@ -26,7 +26,7 @@
   </TD>
 </TR>
 <%= 
-  if ( $withcvv ) {
+  if ( $withcvv || $require_cvv || $onfile_require_cvv ) {
     $OUT .= qq!<TR>!;
     $OUT .= qq!<TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD>!;
     $OUT .= qq!<TD><INPUT TYPE="text" NAME="paycvv" VALUE="" SIZE=4 MAXLENGTH=4></TD>!;

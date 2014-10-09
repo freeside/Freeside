@@ -1,3 +1,9 @@
+freeside (3.4~20140918-1) UNRELEASED; urgency=low
+
+  * Complete packaging.
+
+ -- Jeremy Davis <jeremyd-debian@freeside.biz>  Thu, 18 Feb 2014 15:50:36 -0500
+
 freeside (3.0~20130205-1) UNRELEASED; urgency=low
 
   * Another stab at packaging.

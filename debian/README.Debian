@@ -1,25 +1,25 @@
 Freeside for Debian
 -------------------
 
-1.
-Edit /etc/apache2/envvars or /etc/apache2/apache2.conf and set User and Group
-to freeside
+1. Initialize Freeside:
+freeside-setup -d yourdomain.com
 
-2.
-/etc/init.d/apache2 restart
+2. Boot strap freeside users
 
-3.
-Create one or more Freeside users (your internal sales/tech folks, not customer accounts): 
-$ su
-# su freeside
-$ freeside-adduser -g 1 desired_username
-$ htpasswd /etc/freeside/htpasswd username
-(enter password)
+3. Initialize RT
 
-4.
-Go to http://your.host.name/freeside and log in.
+4. Create one or more Freeside users (your internal sales/tech folks, not customer accounts): 
 
-Optional but recommended.
-(Hopefully) get an SSL certificate setup and change that to https://
+sudo su freeside
+freeside-adduser -g 1 desired_username
+htpasswd /usr/local/etc/freeside/htpasswd desired_username
 
- -- Ivan Kohler <ivan-debian@420.am>  Wed, 02 Apr 2008 01:46:20 -0700
+
+5. Start the Apache and the Freeside services
+
+/etc/init.d/apache start
+/etc/init.d/freeside start
+
+6. Go to https://your.host.name/freeside and log in.
+
+ -- Jeremy Davis <jeremyd-debian@freeside.biz>  Tue, 30 Sept 2014 15:46:20 -0500

@@ -2706,6 +2706,20 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'backoffice-require_cvv',
+    'section'     => 'billing',
+    'description' => 'Require CVV for manual credit card entry.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-onfile_require_cvv',
+    'section'     => 'self-service',
+    'description' => 'Require CVV for on-file credit card during self-service payments.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'selfservice-require_cvv',
     'section'     => 'self-service',
     'description' => 'Require CVV for credit card self-service payments, except for cards on-file.',
@@ -2736,6 +2750,22 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => "When using manual_process-pkgpart, omit the fee if it is the customer's first payment.",
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice_immutable-package',
+    'section'     => 'self-service',
+    'description' => 'Disable package changes in self-service interface.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice_hide-usage',
+    'section'     => 'self-service',
+    'description' => 'Hide usage data in self-service interface.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {

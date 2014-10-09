@@ -12,6 +12,12 @@
 
   <% include ('/elements/tr-input-beginning_ending.html') %>
 
+  <& /elements/tr-select.html,
+      label       => 'Time category:',
+      field       => 'category',
+      options     => [ 'development', 'support' ]
+  &>
+
 </TABLE>
 
 <BR>

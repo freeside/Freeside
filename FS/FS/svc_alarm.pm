@@ -74,7 +74,7 @@ sub table_info {
     'acctnum'         => { label => 'Account #', %opts },
     '_password'       => { label => 'Password' , %opts },
     'location'        => { label => 'Location',  %opts },
-    'cs_receiver'     => { label => 'CS Reciever #'},
+    'cs_receiver'     => { label => 'CS Receiver #'},
     'cs_phonenum'     => { label => 'CS Phone #' },
     'serialnum'       => { label => 'Alarm Serial #' },
     'alarmsystemnum'  => { label => 'Alarm System Vendor',
@@ -197,13 +197,15 @@ sub check {
   my $x = $self->setfixed;
   return $x unless ref $x;
 
+  my $iso3166 = $self->cust_main->ship_location->country();
+
   my $error =
     $self->ut_numbern('svcnum')
     || $self->ut_text('acctnum')
     || $self->ut_alphan('_password')
     || $self->ut_textn('location')
     || $self->ut_numbern('cs_receiver')
-    || $self->ut_phonen('cs_phonenum')
+    || $self->ut_phonen('cs_phonenum', $iso3166)
     || $self->ut_alphan('serialnum')
     || $self->ut_foreign_key('alarmsystemnum',  'alarm_system',  'systemnum')
     || $self->ut_foreign_key('alarmtypenum',    'alarm_type',    'typenum')

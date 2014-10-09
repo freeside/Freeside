@@ -122,6 +122,8 @@ if ( $payby eq 'CHEK' ) {
           or errorpage("CVV2 (CVC2/CID) is three digits.");
         $paycvv = $1;
       }
+    }elsif( $conf->exists('backoffice-require_cvv') ){
+      errorpage("CVV2 is required");
     }
   }
 

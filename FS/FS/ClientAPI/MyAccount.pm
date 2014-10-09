@@ -398,6 +398,8 @@ sub access_info {
 
   $info->{'timeout'} = $conf->config('selfservice-timeout') || 3600;
 
+  $info->{'hide_usage'} = $conf->exists('selfservice_hide-usage');
+
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
@@ -751,6 +753,8 @@ sub edit_info {
     $payby = $1;
   }
 
+  my $conf = new FS::Conf;
+
   if ( $payby =~ /^(CARD|DCRD)$/ ) {
 
     $new->paydate($p->{'year'}. '-'. $p->{'month'}. '-01');
@@ -762,6 +766,10 @@ sub edit_info {
     }
 
     $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
+
+    if ( $conf->exists('selfservice-onfile_require_cvv') ){
+      return { 'error' => 'CVV2 is required' } unless $p->{'paycvv'};
+    }
 
   } elsif ( $payby =~ /^(CHEK|DCHK)$/ ) {
 
@@ -839,8 +847,9 @@ sub payment_info {
 
       'card_types' => card_types(),
 
-      'withcvv'     => $conf->exists('selfservice-require_cvv'), #or enable optional cvv?
-      'require_cvv' => $conf->exists('selfservice-require_cvv'),
+      'withcvv'            => $conf->exists('selfservice-require_cvv'), #or enable optional cvv?
+      'require_cvv'        => $conf->exists('selfservice-require_cvv'),
+      'onfile_require_cvv' => $conf->exists('selfservice-onfile_require_cvv'),
 
       'paytypes' => [ @FS::cust_main::paytypes ],
 
@@ -1029,6 +1038,8 @@ sub validate_payment {
           or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
         $paycvv = $1;
       }
+    } elsif ( $conf->exists('selfservice-onfile_require_cvv') ) {
+      return { 'error' => 'CVV2 is required' };
     } elsif ( !$onfile && $conf->exists('selfservice-require_cvv') ) {
       return { 'error' => 'CVV2 is required' };
     }
@@ -1608,6 +1619,7 @@ sub list_pkgs {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $conf = new FS::Conf;
+  my $immutable = $conf->exists('selfservice_immutable-package');
   
 # the duplication below is necessary:
 # 1. to maintain the current buggy behaviour wrt the cust_pkg and part_pkg
@@ -1620,6 +1632,7 @@ sub list_pkgs {
 	    'custnum'  => $custnum,
 	    'cust_pkg' => [ map {
                           { $_->hash,
+			    immutable => $immutable,
                             part_pkg => [ map $_->hashref, $_->part_pkg ],
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
@@ -1652,6 +1665,7 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
+			    immutable   => $immutable,
                             pkg_label   => $_->pkg_locale,
                             status      => $_->status,
                             statuscolor => $_->statuscolor,
@@ -2344,6 +2358,10 @@ sub change_pkg {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
+  my $conf = new FS::Conf;
+  my $immutable = $conf->exists('selfservice_immutable-package');
+  return { 'error' => "Package modification disabled" } if $immutable;
+
   my $search = { 'custnum' => $custnum };
   $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
   my $cust_main = qsearchs('cust_main', $search )
@@ -2365,7 +2383,6 @@ sub change_pkg {
                                    \@newpkg,
                                  );
 
-  my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
     my $bill_error = _do_bop_realtime( $cust_main, $status, 'no_credit'=>1 );

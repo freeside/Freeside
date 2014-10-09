@@ -70,6 +70,7 @@ Example:
         NAME = "<% $opt{'element_name'} || $opt{'field'} || $key %>"
         ID   = "<% $opt{'id'} || $key %>"
         <% $onchange %>
+        <% $size %>
         <% $opt{'element_etc'} %>
 >
 
@@ -211,5 +212,7 @@ unless (    !ref($value) && $value < 1 # !$value #ignore negatives too
 
 my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();
 my @post_options = $opt{post_options} ? @{ $opt{post_options} } : ();
+
+my $size = $opt{'size'} ? 'SIZE=' . $opt{'size'} : '';
 
 </%init>

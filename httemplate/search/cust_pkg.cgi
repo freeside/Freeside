@@ -157,14 +157,15 @@ $search_hash{'query'} = $cgi->keywords;
 
 #scalars
 for (qw( agentnum cust_status cust_main_salesnum salesnum custnum magic status
-         custom cust_fields pkgbatch
+         custom cust_fields pkgbatch zip
+         477part 477rownum date 
     )) 
 {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
 }
 
 #arrays
-for my $param (qw( pkgpart classnum )) {
+for my $param (qw( pkgpart classnum refnum towernum )) {
   $search_hash{$param} = [ $cgi->param($param) ]
     if grep { $_ eq $param } $cgi->param;
 }
