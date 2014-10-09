@@ -233,7 +233,6 @@
                      { field       => 'agent_type',
                        type        => 'select-agent_type',
                        disabled    => ! $acl_edit_global,
-                #XXX ???  'element_name' => 'agent_type',
                        element_etc => 'size="10"',
                        multiple    =>  '1', #cause edit.html is dum
                        curr_value_callback => sub {
