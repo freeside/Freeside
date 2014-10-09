@@ -56,7 +56,8 @@ my @select = (
 );
 my @select_total = ( 'COUNT(*)' );
 
-my ($transaction_time, $applied_time);
+my $transaction_time;
+my $applied_time = '';
 my $join = 'JOIN Tickets ON Transactions.ObjectId = Tickets.Id '.
            'JOIN Users   ON Transactions.Creator = Users.Id '; #.
 
