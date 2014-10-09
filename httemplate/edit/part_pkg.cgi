@@ -50,6 +50,7 @@
                             'credit_weight'    => 'Credit weight',
                             'agent_pkgpartid'  => 'External ID',
 			    'agentnum'         => 'Agent',
+			    'agent_type'       => ' ', #just its title headingn is fine
                             'setup_fee'        => 'Setup fee',
                             'setup_show_zero'  => 'Show zero setup',
                             'recur_fee'        => 'Recurring fee',
@@ -204,9 +205,13 @@
 
                             { type => 'columnnext' },
 
-                              { field    => 'agent_type',
-                                type     => 'select-agent_types',
-                                disabled => ! $acl_edit_global,
+                              {type=>'justtitle', value=>'Agent (reseller) types' },
+                              
+                              { field       => 'agent_type',
+                                type        => 'select-agent_types',
+                                disabled    => ! $acl_edit_global,
+                                element_etc => 'size="10"',
+                                multiple    =>  '1', #cause edit.html is dum
                                 curr_value_callback => sub {
                                   my($cgi, $object, $field) = @_;
                                   #in the other callbacks..?  hmm.
