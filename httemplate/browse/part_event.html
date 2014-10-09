@@ -175,8 +175,10 @@ my $html_init =
   '&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>';
 
 foreach my $part_event ( qsearch('part_event', {'disabled'=>''}) ) {
-  $html_init .=  '<OPTION VALUE="'. $part_event->eventpart. '">'.
-                  $part_event->eventpart. ': '. $part_event->event. '</OPTION>';
+  $html_init .= '<OPTION VALUE="'. $part_event->eventpart. '">'.
+                  $part_event->eventpart. ': '. 
+                  encode_entities($part_event->event).
+                '</OPTION>';
 }
 
 $html_init .= '</SELECT><INPUT TYPE="submit" VALUE="Clone existing event">'.
