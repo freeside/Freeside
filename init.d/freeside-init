@@ -68,7 +68,7 @@ case "$1" in
 
         echo -n "Starting freeside-cdrrewrited: "
         freeside-cdrrewrited $QUEUED_USER
-        echo "done."
+        echo "done." 
 
         echo -n "Starting freeside-cdrd: "
         freeside-cdrd $QUEUED_USER

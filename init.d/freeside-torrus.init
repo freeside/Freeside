@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# description: Manage the freeside-queued script service, SYS-V style 
+# description: Manage the torrus script service, SYS-V style 
 # chkconfig: 2345 10 90
 
 
 ARG1=${1}
-SERVICE=freeside-queued
+SERVICE=torrus
 LOCKFILE=/var/lock/subsys/${SERVICE}
-PIDFILE=/var/run/${SERVICE}.pid
+PIDFILE=/var/run/torrus/collector.main_0.pid
 
 
 if [ -f /etc/rc.d/init.d/functions ]
@@ -55,11 +55,15 @@ startfunc() {
     then
         action "Already running ${SERVICE} " /bin/false
     else
-        ${SERVICE} $QUEUED_USER
+        ${SERVICE} collector --tree=main
         RETVAL=$?
         action "Starting ${SERVICE} " /bin/true
         if [ $RETVAL = 0 ]
         then
+            if ! [ -d /var/run/torrus ]
+            then
+                mkdir /var/run/torrus
+            fi
             touch ${LOCKFILE}
         fi
         return $RETVAL

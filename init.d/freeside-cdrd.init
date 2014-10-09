@@ -60,13 +60,6 @@ startfunc() {
         action "Starting ${SERVICE} " /bin/true
         if [ $RETVAL = 0 ]
         then
-            if ! [ -d /var/run/freeside ]
-            then
-                mkdir /var/run/freeside
-            fi
-            # Don't need to capture PID. It's handled by the service
-            # PID=`pgrep -f '^perl.*${SERVICE}'`
-            # echo $PID > ${PIDFILE}
             touch ${LOCKFILE}
         fi
         return $RETVAL

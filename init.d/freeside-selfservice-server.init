@@ -5,9 +5,9 @@
 
 
 ARG1=${1}
-SERVICE=freeside-queued
+SERVICE=freeside-selfservice-server
 LOCKFILE=/var/lock/subsys/${SERVICE}
-PIDFILE=/var/run/${SERVICE}.pid
+PIDFILE=/var/run/${SERVICE}.USERMACHINE.pid
 
 
 if [ -f /etc/rc.d/init.d/functions ]
@@ -23,9 +23,9 @@ then
     . %%%FREESIDE_DEFAULTS%%%
 fi
 
-if [ -z ${QUEUED_USER} ] 
+if [ -z ${SELFSERVICE_USER} ] 
 then
-    QUEUED_USER=%%%QUEUED_USER%%%
+    SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
 fi
 
 # 0:	program is running or service is OK
@@ -33,19 +33,40 @@ fi
 # 2:	program is dead and /var/lock lock file exists
 # 3:	program is not running
 statusfunc() {
-    RUNNING=0
     if [ -f ${LOCKFILE} ]
     then
-        if [ -f ${PIDFILE} ]
-        then
-            PID=`cat $PIDFILE`
-            if ps -p ${PID} > /dev/null
+        MACH_RUNNING=0
+        MACH_DEAD=0
+        MACH_STOPPED=0
+        # Loop over machines
+        for MACHINE in $SELFSERVICE_MACHINES
+        do
+            USERMACHINE="${SELFSERVICE_USER}.${MACHINE}"
+            MYPIDFILE=`echo $PIDFILE | sed "s/USERMACHINE/$USERMACHINE/"`
+            
+            if [ -f ${MYPIDFILE} ]
             then
-                return 0
+                PID=`cat $MYPIDFILE`
+                if ps -p ${PID} > /dev/null
+                then
+                    MACH_RUNNING=$((MACH_RUNNING + 1))
+                else
+                    MACH_DEAD=$((MACH_DEAD + 1))
+                fi
             else
-                return 1
+                MACH_STOPPED=$((MACH_STOPPED + 1))
             fi
+        done
+
+        if [ $MACH_DEAD -gt 0 ] 
+        then
+            return 1
         fi
+        if [ $MACH_RUNNING -ge 0 -a $MACH_STOPPED -eq 0 ]
+        then
+            return 0
+        fi
+
     fi
     return 3
 }
@@ -55,24 +76,39 @@ startfunc() {
     then
         action "Already running ${SERVICE} " /bin/false
     else
-        ${SERVICE} $QUEUED_USER
-        RETVAL=$?
-        action "Starting ${SERVICE} " /bin/true
-        if [ $RETVAL = 0 ]
+        # Loop over machines
+        STARTERR=0
+        for MACHINE in $SELFSERVICE_MACHINES
+        do
+            ${SERVICE} $SELFSERVICE_USER $MACHINE
+            RETVAL=$?
+            action "Starting ${SERVICE} " /bin/true
+            if [ $RETVAL != 0 ]
+            then
+                STARTERR=1
+            fi
+        done
+        if [ $STARTERR -eq 0 ]
         then
             touch ${LOCKFILE}
+            return 0
         fi
-        return $RETVAL
+        return 1
     fi
 }
 
 stopfunc() {
     if statusfunc
     then
-        echo -n "Stopping ${SERVICE} service"
-        killproc -p ${PIDFILE}
+        for MACHINE in $SELFSERVICE_MACHINES
+        do
+            USERMACHINE="${SELFSERVICE_USER}.${MACHINE}"
+            MYPIDFILE=`echo $PIDFILE | sed "s/USERMACHINE/$USERMACHINE/"`
+            echo -n "Stopping ${SERVICE} service for $MACHINE"
+            killproc -p ${MYPIDFILE}
+            echo
+        done
         rm -f ${LOCKFILE}
-        echo
     else
         action "Service not running" /bin/false
     fi
@@ -87,7 +123,12 @@ restartfunc() {
 echo_statusfunc() {
     # we need a way of displaying the status to the end user if called with the parameter status. This status function will check for pid or lockfile
     echo -n $SERVICE
-    status -p $PIDFILE
+    for MACHINE in $SELFSERVICE_MACHINES
+    do
+        USERMACHINE="${SELFSERVICE_USER}.${MACHINE}"
+        MYPIDFILE=`echo $PIDFILE | sed "s/USERMACHINE/$USERMACHINE/"`
+        status -p $MYPIDFILE
+    done
 }
 
 # main loop/case statement

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# description: Manage the freeside-queued script service, SYS-V style 
+# description: Manage the freeside-cdrrated script service, SYS-V style 
 # chkconfig: 2345 10 90
 
 
 ARG1=${1}
-SERVICE=freeside-queued
+SERVICE=freeside-cdrrated
 LOCKFILE=/var/lock/subsys/${SERVICE}
 PIDFILE=/var/run/${SERVICE}.pid
 

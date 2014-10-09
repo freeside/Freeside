@@ -22,8 +22,10 @@ daemonize2();
 
 our $conf = new FS::Conf;
 
-die "not running; cdr-prerate conf option is off\n"
-  unless _shouldrun();
+do {
+    warn "not running; cdr-prerate conf option is off\n"
+    myexit();
+} unless _shouldrun();
 
 #--
 

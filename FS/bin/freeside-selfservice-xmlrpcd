@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use FS::Daemon::Preforking qw( freeside_init1 freeside_init2 daemon_run );
+use FS::Daemon qw( myexit );
 
 use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer
                      #and XMLRPC::Transport::HTTP
@@ -26,8 +27,10 @@ freeside_init2(ME);
 FS::ClientAPI::Signup::clear_cache();
 
 my $conf = new FS::Conf;
-die "not running; selfservice-xmlrpc conf option is off\n"
-  unless $conf->exists('selfservice-xmlrpc');
+do {
+    warn "not running; selfservice-xmlrpc conf option is off\n"
+    myexit();
+} unless $conf->exists('selfservice-xmlrpc');
 
 daemon_run( 'port' => 8080, 'handle_request' =>
   sub {

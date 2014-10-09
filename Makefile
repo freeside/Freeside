@@ -51,6 +51,11 @@ INIT_FILE_PREPAIDD = /etc/init.d/freeside-prepaidd
 INIT_FILE_XMLRPCD = /etc/init.d/freeside-xmlrpcd
 INIT_FILE_CDRREWRITED = /etc/init.d/freeside-cdrrewrited
 INIT_FILE_CDRD = /etc/init.d/freeside-cdrd
+INIT_FILE_CDRRATED = /etc/init.d/freeside-cdrrated
+INIT_FILE_TORRUS_SRVDERIVE = /etc/init.d/freeside-torrus-srvderive
+INIT_FILE_SQLRADIUS_RADACCTD = /etc/init.d/freeside-sqlradius_radacctd
+INIT_FILE_TORRUS = /etc/init.d/freeside-torrus
+INIT_FILE_SELFSERVICE_XMLRPCD = /etc/init.d/freeside-selfservice-xmlrpcd
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
@@ -63,6 +68,10 @@ INIT_INSTALL_PREPAIDD = /sbin/chkconfig freeside-prepaidd on
 INIT_INSTALL_XMLRPCD = /sbin/chkconfig freeside-xmlrpcd on
 INIT_INSTALL_CDRREWRITED = /sbin/chkconfig freeside-cdrrewrited on
 INIT_INSTALL_CDRD = /sbin/chkconfig freeside-cdrd on
+INIT_INSTALL_TORRUS_SRVDERIVE = /sbin/chkconfig freeside-torrus-srvderive on
+INIT_INSTALL_SQLRADIUS_RADACCTD = /sbin/chkconfig freeside-sqlradius_radacctd on
+INIT_INSTALL_TORRUS = /sbin/chkconfig freeside-torrus on
+INIT_INSTALL_SELFSERVICE_XMLRPCD = /sbin/chkconfig freeside-selfservice-xmlrpcd on
 
 #not necessary (freebsd)
 #INIT_INSTALL = /usr/bin/true
@@ -332,6 +341,52 @@ install-init:
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE_CDRD}
 	${INIT_INSTALL_CDRD}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-cdrrated.init ${INIT_FILE_CDRRATED}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_CDRRATED}
+	${INIT_INSTALL_CDRRATED}
+
+	[ ${TORRUS_ENABLED} -eq 1 ] && install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus-srvderive.init ${INIT_FILE_TORRUS_SRVDERIVE}
+	[ ${TORRUS_ENABLED} -eq 1 ] && perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_TORRUS_SRVDERIVE}
+	[ ${TORRUS_ENABLED} -eq 1 ]	&& ${INIT_INSTALL_TORRUS_SRVDERIVE}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-sqlradius-radacctd.init ${INIT_FILE_SQLRADIUS_RADACCTD}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_SQLRADIUS_RADACCTD}
+	${INIT_INSTALL_SQLRADIUS_RADACCTD}
+
+	[ ${TORRUS_ENABLED} -eq 1 ] && install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus.init ${INIT_FILE_TORRUS}
+	[ ${TORRUS_ENABLED} -eq 1 ] && perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_TORRUS}
+	[ ${TORRUS_ENABLED} -eq 1 ]	&& ${INIT_INSTALL_TORRUS}
+
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-selfservice-xmlrpcd.init ${INIT_FILE_SELFSERVICE_XMLRPCD}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s/%%%API_USER%%%/${API_USER}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" ${INIT_FILE_SELFSERVICE_XMLRPCD}
+	${INIT_INSTALL_SELFSERVICE_XMLRPCD}
+
 
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true

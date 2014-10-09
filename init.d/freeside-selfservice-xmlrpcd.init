@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# description: Manage the freeside-queued script service, SYS-V style 
+# description: Manage the freeside-selfservice-xmlrpcd script service, SYS-V style 
 # chkconfig: 2345 10 90
 
 
 ARG1=${1}
-SERVICE=freeside-queued
+SERVICE=freeside-selfservice-xmlrpcd
 LOCKFILE=/var/lock/subsys/${SERVICE}
-PIDFILE=/var/run/${SERVICE}.pid
+PIDFILE=/var/run/freeside/${SERVICE}.pid
 
 
 if [ -f /etc/rc.d/init.d/functions ]
@@ -33,7 +33,6 @@ fi
 # 2:	program is dead and /var/lock lock file exists
 # 3:	program is not running
 statusfunc() {
-    RUNNING=0
     if [ -f ${LOCKFILE} ]
     then
         if [ -f ${PIDFILE} ]
@@ -55,11 +54,15 @@ startfunc() {
     then
         action "Already running ${SERVICE} " /bin/false
     else
-        ${SERVICE} $QUEUED_USER
+        ${SERVICE} $SELFSERVICE_USER
         RETVAL=$?
         action "Starting ${SERVICE} " /bin/true
         if [ $RETVAL = 0 ]
         then
+            if ! [ -d /var/run/freeside ]
+            then
+                mkdir /var/run/freeside
+            fi
             touch ${LOCKFILE}
         fi
         return $RETVAL

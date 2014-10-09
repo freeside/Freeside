@@ -5,7 +5,7 @@ use vars qw( @part_export );
 use subs qw(myshutdown);
 use POSIX qw(:sys_wait_h);
 #use IO::File;
-use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
+use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm myexit);
 use FS::UID qw(adminsuidsetup); #forksuidsetup driver_name dbh myconnect);
 use FS::Record qw(qsearch); # qsearchs);
 use FS::part_export;
@@ -32,9 +32,11 @@ daemonize2();
 
 my @part_export = FS::part_export::sqlradius->all_sqlradius_withaccounting();
 
-die "no sqlradius, sqlradius_withdomain, radiator or phone_sqlradius exports".
+do {
+    warn "no sqlradius, sqlradius_withdomain, radiator or phone_sqlradius exports".
     " without ignore_accounting"
-  unless @part_export;
+    myexit();
+} unless @part_export;
 
 while (1) {
 
@@ -89,7 +91,7 @@ sub myshutdown {
     &reap_kids;
   }
   warn "abandoning children" if grep $_->{'_radacct_kid'}, @part_export;
-  die "exiting";
+  myexit();
 }
 
 sub reap_kids {

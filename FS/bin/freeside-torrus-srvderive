@@ -29,8 +29,10 @@ daemonize2();
 
 our $conf = new FS::Conf;
 
-die "not running: network_monitoring_system not Torrus_Internal\n"
-  unless _shouldrun();
+do {
+    warn "not running: network_monitoring_system not Torrus_Internal\n"
+    myexit();
+} unless _shouldrun();
 
 #--
 
