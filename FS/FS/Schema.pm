@@ -4151,9 +4151,9 @@ sub tables_hashref {
                           [ 'job' ], [ 'svcnum' ], [ 'custnum' ], [ 'status' ],
                         ],
       'foreign_keys' => [
-                          { columns    => [ 'svcnum' ],
-                            table      => 'cust_svc',
-                          },
+#                          { columns    => [ 'svcnum' ],
+#                            table      => 'cust_svc',
+#                          },
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
                           },
