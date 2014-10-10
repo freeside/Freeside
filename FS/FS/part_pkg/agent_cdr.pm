@@ -23,7 +23,7 @@ tie my %temporalities, 'Tie::IxHash',
 
 %info = (
   'name'      => 'Wholesale CDR cost billing, for master customers of an agent.',
-  'shortname' => 'Whilesale CDR cost billing for agent.',
+  'shortname' => 'Wholesale CDR cost billing for agent',
   'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => { #false laziness w/cdr_termination
 
@@ -177,7 +177,11 @@ sub calc_recur {
         my $classnum = ''; #usage class?
 
        #option to turn off?  or just use squelch_cdr for the customer probably
-        push @$details, [ 'C', $call_details, $cost, $classnum ];
+        # XXX use detail_format for this at some point
+        push @$details, { 'format'    => 'C',
+                          'detail'    => $call_details,
+                          'amount'    => $cost,
+                          'classnum'  => $classnum };
 
         #eofalse laziness w/cdr_termination
 
