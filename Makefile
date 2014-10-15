@@ -12,11 +12,11 @@ DB_PASSWORD=
 DATASOURCE = DBI:${DB_TYPE}:dbname=freeside
 
 #changable now (some things which should go to the others still go to CONF)
-FREESIDE_CONF = /usr/local/etc/freeside
-FREESIDE_LOG = /usr/local/etc/freeside
-FREESIDE_LOCK = /usr/local/etc/freeside
-FREESIDE_CACHE = /usr/local/etc/freeside
-FREESIDE_EXPORT = /usr/local/etc/freeside
+FREESIDE_CONF = /opt/etc/freeside
+FREESIDE_LOG = /opt/etc/freeside
+FREESIDE_LOCK = /opt/etc/freeside
+FREESIDE_CACHE = /opt/etc/freeside
+FREESIDE_EXPORT = /opt/etc/freeside
 
 MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
 MASONDATA = ${FREESIDE_CACHE}/masondata
@@ -53,7 +53,7 @@ INIT_FILE_CDRREWRITED = /etc/init.d/freeside-cdrrewrited
 INIT_FILE_CDRD = /etc/init.d/freeside-cdrd
 INIT_FILE_CDRRATED = /etc/init.d/freeside-cdrrated
 INIT_FILE_TORRUS_SRVDERIVE = /etc/init.d/freeside-torrus-srvderive
-INIT_FILE_SQLRADIUS_RADACCTD = /etc/init.d/freeside-sqlradius_radacctd
+INIT_FILE_SQLRADIUS_RADACCTD = /etc/init.d/freeside-sqlradius-radacctd
 INIT_FILE_TORRUS = /etc/init.d/freeside-torrus
 INIT_FILE_SELFSERVICE_XMLRPCD = /etc/init.d/freeside-selfservice-xmlrpcd
 INIT_FILE_SELFSERVICE_SERVER = /etc/init.d/freeside-selfservice-server
@@ -70,7 +70,7 @@ INIT_INSTALL_XMLRPCD = /sbin/chkconfig freeside-xmlrpcd on
 INIT_INSTALL_CDRREWRITED = /sbin/chkconfig freeside-cdrrewrited on
 INIT_INSTALL_CDRD = /sbin/chkconfig freeside-cdrd on
 INIT_INSTALL_TORRUS_SRVDERIVE = /sbin/chkconfig freeside-torrus-srvderive on
-INIT_INSTALL_SQLRADIUS_RADACCTD = /sbin/chkconfig freeside-sqlradius_radacctd on
+INIT_INSTALL_SQLRADIUS_RADACCTD = /sbin/chkconfig freeside-sqlradius-radacctd on
 INIT_INSTALL_TORRUS = /sbin/chkconfig freeside-torrus on
 INIT_INSTALL_SELFSERVICE_XMLRPCD = /sbin/chkconfig freeside-selfservice-xmlrpcd on
 INIT_INSTALL_SELFSERVICE_SERVER = /sbin/chkconfig freeside-selfservice-server on
@@ -93,7 +93,7 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
 #debian unstable/8.0+, apache2.4
-APACHE_CONF = /etc/apache2/conf-available
+APACHE_CONF = /etc/httpd/conf.d
 #deb (3.1+), apache2
 #APACHE_CONF = /etc/apache2/conf.d
 
@@ -353,14 +353,17 @@ install-init:
 	" ${INIT_FILE_CDRRATED}
 	${INIT_INSTALL_CDRRATED}
 
-	[ ${TORRUS_ENABLED} -eq 1 ] && install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus-srvderive.init ${INIT_FILE_TORRUS_SRVDERIVE}
-	[ ${TORRUS_ENABLED} -eq 1 ] && perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_TORRUS_SRVDERIVE}
-	[ ${TORRUS_ENABLED} -eq 1 ]	&& ${INIT_INSTALL_TORRUS_SRVDERIVE}
+	if [ ${TORRUS_ENABLED} -eq 1 ]; then \
+		( install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus-srvderive.init ${INIT_FILE_TORRUS_SRVDERIVE}; \
+		  perl -p -i -e "\
+ 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+ 	  s/%%%API_USER%%%/${API_USER}/g;\
+ 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+ 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+ 	" ${INIT_FILE_TORRUS_SRVDERIVE} ${INIT_FILE_TORRUS}; \
+	${INIT_INSTALL_TORRUS_SRVDERIVE}; \
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus.init ${INIT_FILE_TORRUS}; \
+	${INIT_INSTALL_TORRUS}); fi
 
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-sqlradius-radacctd.init ${INIT_FILE_SQLRADIUS_RADACCTD}
 	perl -p -i -e "\
@@ -370,15 +373,6 @@ install-init:
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE_SQLRADIUS_RADACCTD}
 	${INIT_INSTALL_SQLRADIUS_RADACCTD}
-
-	[ ${TORRUS_ENABLED} -eq 1 ] && install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus.init ${INIT_FILE_TORRUS}
-	[ ${TORRUS_ENABLED} -eq 1 ] && perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_TORRUS}
-	[ ${TORRUS_ENABLED} -eq 1 ]	&& ${INIT_INSTALL_TORRUS}
 
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-selfservice-xmlrpcd.init ${INIT_FILE_SELFSERVICE_XMLRPCD}
 	perl -p -i -e "\
@@ -397,7 +391,6 @@ install-init:
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE_SELFSERVICE_SERVER}
 	${INIT_INSTALL_SELFSERVICE_SERVER}
-
 
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true
