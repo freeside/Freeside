@@ -45,7 +45,6 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #FREESIDE_DOCUMENT_ROOT = /usr/local/apache/htdocs/freeside
 
 #deb, redhat, fedora, mandrake, suse, others?
-INIT_FILE = /etc/init.d/freeside
 INIT_FILE_QUEUED = /etc/init.d/freeside-queued
 INIT_FILE_PREPAIDD = /etc/init.d/freeside-prepaidd
 INIT_FILE_XMLRPCD = /etc/init.d/freeside-xmlrpcd
@@ -63,16 +62,25 @@ INIT_FILE_SELFSERVICE_SERVER = /etc/init.d/freeside-selfservice-server
 #deb
 #INIT_INSTALL = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside defaults 23 01
 #redhat, fedora
-INIT_INSTALL = /sbin/chkconfig freeside on
+# INIT_INSTALL_QUEUED = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-queued defaults 23 01
 INIT_INSTALL_QUEUED = /sbin/chkconfig freeside-queued on
+# INIT_INSTALL_PREPAIDD = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-prepaidd defaults 23 01 
 INIT_INSTALL_PREPAIDD = /sbin/chkconfig freeside-prepaidd on
+# INIT_INSTALL_XMLRPCD = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-xmlrpcd defaults 23 01 
 INIT_INSTALL_XMLRPCD = /sbin/chkconfig freeside-xmlrpcd on
+# INIT_INSTALL_CDRREWRITED = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-cdrrewrited defaults 23 01 
 INIT_INSTALL_CDRREWRITED = /sbin/chkconfig freeside-cdrrewrited on
+# INIT_INSTALL_CDRD = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-cdrd defaults 23 01 
 INIT_INSTALL_CDRD = /sbin/chkconfig freeside-cdrd on
+# INIT_INSTALL_TORRUS_SRVDERIVE = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-torrus-srvderive defaults 23 01 
 INIT_INSTALL_TORRUS_SRVDERIVE = /sbin/chkconfig freeside-torrus-srvderive on
+# INIT_INSTALL_SQLRADIUS_RADACCTD = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-sqlradius-radacctd defaults 23 01  
 INIT_INSTALL_SQLRADIUS_RADACCTD = /sbin/chkconfig freeside-sqlradius-radacctd on
+# INIT_INSTALL_TORRUS = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-torrus defaults 23 01  
 INIT_INSTALL_TORRUS = /sbin/chkconfig freeside-torrus on
+# INIT_INSTALL_SELFSERVICE_XMLRPCD = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-selfservice-xmlrpcd defaults 23 01  
 INIT_INSTALL_SELFSERVICE_XMLRPCD = /sbin/chkconfig freeside-selfservice-xmlrpcd on
+# INIT_INSTALL_SELFSERVICE_SERVER = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside-selfservice-server defaults 23 01  
 INIT_INSTALL_SELFSERVICE_SERVER = /sbin/chkconfig freeside-selfservice-server on
 
 #not necessary (freebsd)
@@ -289,16 +297,6 @@ install-texmf:
 	texhash /usr/local/share/texmf
 
 install-init:
-	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
-	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE}
-	${INIT_INSTALL}
-
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-queued.init ${INIT_FILE_QUEUED}
 	perl -p -i -e "\
 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
