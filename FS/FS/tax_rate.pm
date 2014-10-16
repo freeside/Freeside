@@ -433,7 +433,9 @@ sub taxline {
 
   my $maxtype = $self->maxtype || 0;
   if ($maxtype != 0 && $maxtype != 1 
-      && $maxtype != 14 && $maxtype != 15) {
+      && $maxtype != 14 && $maxtype != 15
+      && $maxtype != 18 # sigh
+    ) {
     return $self->_fatal_or_null( 'tax with "'.
                                     $self->maxtype_name. '" threshold'
                                 );
