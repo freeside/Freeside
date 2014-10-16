@@ -7,9 +7,12 @@
   'links'         => \@links,
   'params'        => \@params,
   'agentnum'      => $agentnum,
-  'sprintf'       => '%u',
+  'sprintf'       => ( $normalize ? '%0.1f%%' : '%u'), 
+  'normalize'     => ( $normalize ? 0 : undef ),
   'disable_money' => 1,
   'remove_empty'  => (scalar(@group_keys) > 1 ? 1 : 0),
+  'nototal'       => 1,
+  'no_graph'      => [ 1, 0, 0, 0, 0 ], # don't graph 'active'
 &>
 <%init>
 
@@ -30,36 +33,29 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 
 my $agentname = $agent ? $agent->agent.' ' : '';
 
-my @base_items = qw( setup_pkg susp_pkg cancel_pkg );
+my @base_items = qw( active_pkg setup_pkg susp_pkg unsusp_pkg cancel_pkg );
 
 my %base_labels = (
+  'active_pkg' => 'Active packages',
   'setup_pkg'  => 'New orders',
   'susp_pkg'   => 'Suspensions',
-#  'unsusp' => 'Unsuspensions',
+  'unsusp_pkg' => 'Unsuspensions',
   'cancel_pkg' => 'Cancellations',
 );
 
 my %base_colors = (
+  'active_pkg'  => '000000', #black
   'setup_pkg'   => '00cc00', #green
   'susp_pkg'    => 'ff9900', #yellow
-  #'unsusp'  => '', #light green?
-  'cancel_pkg'  => 'cc0000', #red ? 'ff0000'
+  'unsusp_pkg'  => '44ff44', #light green
+  'cancel_pkg'  => 'cc0000', #red 
 );
 
-my %base_links = (
-  'setup_pkg'  => { 'link' => "${p}search/cust_pkg.cgi?agentnum=$agentnum;",
-                    'fromparam' => 'setup_begin',
-                    'toparam'   => 'setup_end',
-                  },
-  'susp_pkg'   => { 'link' => "${p}search/cust_pkg.cgi?agentnum=$agentnum;",
-                    'fromparam' => 'susp_begin',
-                    'toparam'   => 'susp_end',
-                  },
-  'cancel_pkg' => { 'link' => "${p}search/cust_pkg.cgi?agentnum=$agentnum;",
-                    'fromparam' => 'cancel_begin',
-                    'toparam'   => 'cancel_end',
-                  },
-);
+my %base_links;
+foreach my $status (qw(active setup cancel susp unsusp)) {
+  $base_links{$status.'_pkg'} =
+    "${p}search/cust_pkg_churn.html?agentnum=$agentnum;status=$status;";
+}
 
 my %filter_params = (
   # not agentnum, that's elsewhere
@@ -76,7 +72,7 @@ foreach my $link (values %base_links) {
     if (ref($value)) {
       $value = join(',', @$value);
     }
-    $link->{'link'} .= "$key=$value;" if length($value);
+    $link .= "$key=$value;" if length($value);
   }
 }
 
@@ -143,9 +139,9 @@ if (scalar(@group_keys) > 1) {
       # and colors (?!)
       push @colors, $scheme->colorset->[$i]->[1];
       # and links...
-      my %this_link = %{ $base_links{$_} };
-      $this_link{link} .= "$breakdown=$key;";
-      push @links, \%this_link;
+      my $this_link = $base_links{$_};
+      $this_link .= "$breakdown=$key;";
+      push @links, $this_link;
       $i++;
     } #foreach (@base_items
     $hue += 35;
@@ -157,5 +153,7 @@ if (scalar(@group_keys) > 1) {
   @links = @base_links{@base_items};
   @params = map { [ %filter_params ] } @base_items;
 }
+
+my $normalize = $cgi->param('normalize');
 
 </%init>

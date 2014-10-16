@@ -67,7 +67,7 @@ sub search {
 
   # make some adjustments
   $query->{'table'} = 'h_cust_pkg';
-  foreach (qw(select addl_from extra_sql count_query)) {
+  foreach (qw(select addl_from extra_sql count_query order_by)) {
     $query->{$_} =~ s/cust_pkg\b/h_cust_pkg/g;
     $query->{$_} =~ s/cust_main\b/h_cust_main/g;
   }
@@ -92,8 +92,94 @@ sub search {
   $query;
 }
 
+=item churn_fromwhere_sql STATUS, START, END
+
+Returns SQL fragments to do queries related to "package churn". STATUS
+is one of "active", "setup", "cancel", "susp", or "unsusp". These do NOT
+correspond directly to package statuses. START and END define a date range.
+
+- active: limit to packages that were active on START. END is ignored.
+- setup: limit to packages that were set up between START and END, except
+those created by package changes.
+- cancel: limit to packages that were canceled between START and END, except
+those changed into other packages.
+- susp: limit to packages that were suspended between START and END.
+- unsusp: limit to packages that were unsuspended between START and END.
+
+The logic of these may change in the future, especially with respect to 
+package changes. Watch this space.
+
+Returns a list of:
+- a fragment usable as a FROM clause (without the keyword FROM), in which
+  the package table is named or aliased to 'cust_pkg'
+- one or more conditions to include in the WHERE clause
+
+=cut
+
+sub churn_fromwhere_sql {
+  my ($self, $status, $speriod, $eperiod) = @_;
+
+  my ($from, @where);
+  if ( $status eq 'active' ) {
+    # for all packages that were setup before $speriod, find the pkgnum
+    # and the most recent update of the package before $speriod
+    my $setup_before = "SELECT DISTINCT ON (pkgnum) pkgnum, historynum
+      FROM h_cust_pkg
+      WHERE setup < $speriod
+        AND history_date < $speriod
+        AND history_action IN('insert', 'replace_new')
+      ORDER BY pkgnum ASC, history_date DESC";
+    # for each of these, exclude if the package was suspended or canceled
+    # in the most recent update before $speriod
+    $from = "h_cust_pkg AS cust_pkg
+      JOIN ($setup_before) AS setup_before USING (historynum)";
+    @where = ( 'susp IS NULL', 'cancel IS NULL' );
+  } elsif ( $status eq 'setup' ) {
+    # the simple case, because packages should only get set up once
+    # (but exclude those that were created due to a package change)
+    # XXX or should we include if they were created by a pkgpart change?
+    $from = "cust_pkg";
+    @where = (
+      "setup >= $speriod",
+      "setup < $eperiod",
+      "change_pkgnum IS NULL"
+    );
+  } elsif ( $status eq 'cancel' ) {
+    # also simple, because packages should only be canceled once
+    # (exclude those that were canceled due to a package change)
+    $from = "cust_pkg";
+    @where = (
+      "cust_pkg.cancel >= $speriod",
+      "cust_pkg.cancel < $eperiod",
+      "NOT EXISTS(SELECT 1 FROM cust_pkg AS changed_to_pkg ".
+        "WHERE cust_pkg.pkgnum = changed_to_pkg.change_pkgnum)",
+    );
+  } elsif ( $status eq 'susp' ) {
+    # more complicated
+    # find packages that were changed from susp = null to susp != null
+    my $susp_during = $self->sql_diff($speriod, $eperiod) .
+      ' WHERE old.susp IS NULL AND new.susp IS NOT NULL';
+    $from = "h_cust_pkg AS cust_pkg
+      JOIN ($susp_during) AS susp_during
+        ON (susp_during.new_historynum = cust_pkg.historynum)";
+    @where = ( 'cust_pkg.cancel IS NULL' );
+  } elsif ( $status eq 'unsusp' ) {
+    # similar to 'susp'
+    my $unsusp_during = $self->sql_diff($speriod, $eperiod) .
+      ' WHERE old.susp IS NOT NULL AND new.susp IS NULL';
+    $from = "h_cust_pkg AS cust_pkg
+      JOIN ($unsusp_during) AS unsusp_during
+        ON (unsusp_during.new_historynum = cust_pkg.historynum)";
+    @where = ( 'cust_pkg.cancel IS NULL' );
+  } else {
+    die "'$status' makes no sense";
+  }
+  return ($from, @where);
+}
 
 =head1 BUGS
+
+churn_fromwhere_sql fails on MySQL.
 
 =head1 SEE ALSO
 
@@ -103,5 +189,4 @@ documentation.
 =cut
 
 1;
-
 
