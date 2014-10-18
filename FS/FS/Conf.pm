@@ -4330,7 +4330,6 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_hash' => [ '' => '', 
                        'usps'     => 'U.S. Postal Service',
-                       'ezlocate' => 'EZLocate',
                        'tomtom'   => 'TomTom',
                        'melissa'  => 'Melissa WebSmart',
                      ],
@@ -4353,22 +4352,8 @@ and customer address. Include units.',
   {
     'key'         => 'tomtom-userid',
     'section'     => 'UI',
-    'description' => 'TomTom geocoding service API key.  See <a href="http://www.tomtom.com/">the TomTom website</a> to obtain a key.  This is recommended for addresses in the United States only.',
+    'description' => 'TomTom geocoding service API key.  See <a href="http://geocoder.tomtom.com/">the TomTom website</a> to obtain a key.  This is recommended for addresses in the United States only.',
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'ezlocate-userid',
-    'section'     => 'UI',
-    'description' => 'User ID for EZ-Locate service.  See <a href="http://www.geocode.com/">the TomTom website</a> for access and pricing information.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'ezlocate-password',
-    'section'     => 'UI',
-    'description' => 'Password for EZ-Locate service.',
-    'type'        => 'text'
   },
 
   {
