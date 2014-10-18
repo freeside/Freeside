@@ -43,7 +43,7 @@ Example:
 
     #listref of column labels, <TH>
     #recommended unless 'query' is an SQL query string
-    # (if not specified the database column names will be used)
+    # (if not specified the database column names will be used) (XXX this is not currently working either)
     'header'      => [ '#',
                        'Item',
                        { 'label' => 'Another Item',
@@ -52,7 +52,7 @@ Example:
                      ],
 
     #listref - each item is a literal column name (or method) or coderef
-    #if not specified all columns will be shown
+    #if not specified all columns will be shown (XXX this is not currently working?)
     'fields'      => [
                        'column',
                        sub { my $row = shift; $row->column; },
@@ -130,7 +130,7 @@ Example:
     'agent_pos'             => 3, # optional position (starting from 0) to
                                   # insert an Agent column (query needs to be a
                                   # qsearch hashref and header & fields need to
-                                  # be defined)
+                                  # be defined)cust_pkg_susp.html
 
     # sort, link & display properties for fields
 
@@ -141,7 +141,7 @@ Example:
     #          or a listref of link and method name to append,
     #          or a listref of link and coderef to run and append
     #          or a coderef that returns such a listref
-    'links'       => [],`
+    'links'       => [],
 
     #listref - each item is the empty string,
     #          or a string onClick handler for the corresponding link
