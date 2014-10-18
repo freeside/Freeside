@@ -1,0 +1,43 @@
+<& elements/search.html,
+  title         => 'Contacts',
+  name_singular => 'contact',
+  query         => { select    => $select,
+                     table     => 'contact',
+                     addl_from => $addl_from,
+                     hashref   => \%hash,
+                     extra_sql => $extra_sql,
+                   },
+  count_query   => "SELECT COUNT(*) FROM contact $extra_sql", #XXX
+  header        => [ 'First', 'Last', 'Title', 'Company', 'Self-service', ],
+  fields        => [ 'first', 'last', 'title', 'company', 'selfservice_access' ],
+  links         => [ '', '', '', $company_link, '', ],
+&>
+<%init>
+
+my $select = 'contact.*';
+my %hash = ();
+my $addl_from = '';
+
+my $company_link = '';
+
+if ( $cgi->param('selfservice_access') eq 'Y' ) {
+  $hash{'selfservice_access'} = 'Y';
+}
+
+my $extra_sql = '';
+if ( $cgi->param('cust_main') ) {
+  $select .= ', cust_main.company';
+  $addl_from = ' LEFT JOIN cust_main USING ( custnum )';
+  $extra_sql = ' custnum IS NOT NULL ';
+  $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
+} elsif ( $cgi->param('prospect_main') ) {
+  $select .= ', prospect_main.company';
+  $addl_from = ' LEFT JOIN prospect_main USING ( prospectnum )';
+  $extra_sql = ' prospectnum IS NOT NULL ';
+  $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
+}
+
+$extra_sql = (keys(%hash) ? ' AND ' : ' WHERE '). $extra_sql
+ if $extra_sql;
+
+</%init>
