@@ -208,7 +208,7 @@
                               {type=>'justtitle', value=>'Agent (reseller) types' },
                               
                               { field       => 'agent_type',
-                                type        => 'select-agent_types',
+                                type        => 'select-agent_type',
                                 disabled    => ! $acl_edit_global,
                                 element_etc => 'size="10"',
                                 multiple    =>  '1', #cause edit.html is dum
