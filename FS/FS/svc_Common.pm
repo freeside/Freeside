@@ -807,6 +807,9 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub set_auto_inventory {
+  # don't try to do this during an upgrade
+  return '' if $FS::CurrentUser::upgrade_hack;
+
   my $self = shift;
   my $old = @_ ? shift : '';
 
