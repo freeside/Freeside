@@ -799,8 +799,8 @@ sub rate_prefix {
 
   }
 
+  my $regionnum = $rate_detail->dest_regionnum;
   my $rate_region = $rate_detail->dest_region;
-  my $regionnum = $rate_region->regionnum;
   warn "  found rate for regionnum $regionnum ".
        "and rate detail $rate_detail\n"
     if $DEBUG;
@@ -841,6 +841,11 @@ sub rate_prefix {
   #my $seconds = 0;
   my $charge = 0;
   my $connection_charged = 0;
+
+  # before doing anything else, if there's an upstream multiplier and 
+  # an upstream price, add that to the charge. (usually the rate detail 
+  # will then have a minute charge of zero, but not necessarily.)
+  $charge += ($self->upstream_price || 0) * $rate_detail->upstream_mult_charge;
 
   my $etime;
   while($seconds_left) {
@@ -989,7 +994,7 @@ sub rate_prefix {
     $price,
     $opt{'svcnum'},
     'rated_pretty_dst'    => $pretty_dst,
-    'rated_regionname'    => $rate_region->regionname,
+    'rated_regionname'    => ($rate_region ? $rate_region->regionname : ''),
     'rated_seconds'       => $rated_seconds, #$seconds,
     'rated_granularity'   => $rate_detail->sec_granularity, #$granularity
     'rated_ratedetailnum' => $rate_detail->ratedetailnum,
@@ -1073,10 +1078,15 @@ sub rate_cost {
   my $rate_detail =
     qsearchs('rate_detail', { 'ratedetailnum' => $self->rated_ratedetailnum } );
 
-  return $rate_detail->min_cost if $self->rated_granularity == 0;
+  my $charge = 0;
+  $charge += ($self->upstream_price || 0) * ($rate_detail->upstream_mult_cost);
 
-  my $minutes = $self->rated_seconds / 60;
-  my $charge = $rate_detail->conn_cost + $minutes * $rate_detail->min_cost;
+  if ( $self->rated_granularity == 0 ) {
+    $charge += $rate_detail->min_cost;
+  } else {
+    my $minutes = $self->rated_seconds / 60;
+    $charge += $rate_detail->conn_cost + $minutes * $rate_detail->min_cost;
+  }
 
   sprintf('%.2f', $charge + .00001 );
 

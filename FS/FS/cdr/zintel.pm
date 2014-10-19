@@ -16,7 +16,17 @@ use Date::Parse;
 
 	'accountcode',	#customer
 	'src',		#anumber
-	'dst',		#bnumber
+		 sub { my ($cdr, $dst) = @_; # Handling cosolidated local calls in the CDR formats
+
+			my $src = $cdr->src;
+
+			if ($dst =~ /^64\/U$/) {
+			$cdr->set('dst', $src);
+			} else {
+			$cdr->set('dst', $dst);
+			}
+			}, #bnumber
+
                  sub { my ($cdr, $calldate) = @_;
                         $cdr->set('calldate', $calldate);
 

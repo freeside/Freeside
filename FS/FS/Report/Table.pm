@@ -664,37 +664,10 @@ sub cust_bill_pkg_discount {
 
 }
 
-sub pkg_field_where {
-  my( $self, $field, $speriod, $eperiod, $agentnum, %opt ) = @_;
-  # someday this will use an aggregate query and return all the columns
-  # at once
-  # and I will drive a Tesla and have a live-in sushi chef who is also a 
-  # ninja bodyguard
-  my @where = (
-    $self->in_time_period_and_agent($speriod,
-                                    $eperiod,
-                                    $agentnum,
-                                    "cust_pkg.$field",
-                                   ),
-    $self->with_refnum(%opt),
-    $self->with_towernum(%opt),
-    $self->with_zip(%opt),
-    # can't use with_classnum here...
-  );
-  if ($opt{classnum}) {
-    my $classnum = $opt{classnum};
-    $classnum = [ $classnum ] if !ref($classnum);
-    @$classnum = grep /^\d+$/, @$classnum;
-    my $in = 'IN ('. join(',', @$classnum). ')';
-    push @where, "COALESCE(part_pkg.classnum, 0) $in" if scalar @$classnum;
-  }
+##### churn report #####
 
-  ' WHERE ' . join(' AND ', grep $_, @where);
-}
-
-=item setup_pkg: The number of packages with setup dates in the period.
-
-This excludes packages created by package changes. Options:
+=item active_pkg: The number of packages that were active at the start of 
+the period. The end date of the period is ignored. Options:
 
 - refnum: Limit to customers with this advertising source.
 - classnum: Limit to packages with this class.
@@ -704,61 +677,86 @@ This excludes packages created by package changes. Options:
 Except for zip, any of these can be an arrayref to allow multiple values for
 the field.
 
-=item susp_pkg: The number of suspended packages that were last suspended
-in the period. Options are as for setup_pkg.
+=item setup_pkg: The number of packages with setup dates in the period. This 
+excludes packages created by package changes. Options are as for active_pkg.
+
+=item susp_pkg: The number of packages that were suspended in the period
+(and not canceled).  Options are as for active_pkg.
+
+=item unsusp_pkg: The number of packages that were unsuspended in the period.
+Options are as for active_pkg.
 
 =item cancel_pkg: The number of packages with cancel dates in the period.
 Excludes packages that were canceled to be changed to a new package. Options
-are as for setup_pkg.
+are as for active_pkg.
 
 =cut
 
-sub setup_pkg {
+sub active_pkg {
   my $self = shift;
-  my $sql = 'SELECT COUNT(*) FROM cust_pkg
-              LEFT JOIN part_pkg USING (pkgpart)
-              LEFT JOIN cust_main USING (custnum)'.
-              $self->pkg_field_where('setup', @_) .
-              ' AND change_pkgnum IS NULL';
-
-  $self->scalar_sql($sql);
+  $self->churn_pkg('active', @_);
 }
 
-sub susp_pkg {
-  # number of currently suspended packages that were suspended in the period
+sub setup_pkg {
   my $self = shift;
-  my $sql = 'SELECT COUNT(*) FROM cust_pkg
-              LEFT JOIN part_pkg USING (pkgpart)
-              LEFT JOIN cust_main USING (custnum) '.
-              $self->pkg_field_where('susp', @_);
-
-  $self->scalar_sql($sql);
+  $self->churn_pkg('setup', @_);
 }
 
 sub cancel_pkg {
-  # number of packages canceled in the period and not changed to another
-  # package
   my $self = shift;
-  my $sql = 'SELECT COUNT(*) FROM cust_pkg
-              LEFT JOIN part_pkg USING (pkgpart)
-              LEFT JOIN cust_main USING (custnum)
-              LEFT JOIN cust_pkg changed_to_pkg ON(
-                cust_pkg.pkgnum = changed_to_pkg.change_pkgnum
-              ) '.
-              $self->pkg_field_where('cancel', @_) .
-              ' AND changed_to_pkg.pkgnum IS NULL';
+  $self->churn_pkg('cancel', @_);
+}
+
+sub susp_pkg {
+  my $self = shift;
+  $self->churn_pkg('susp', @_);
+}
+
+sub unsusp_pkg {
+  my $self = shift;
+  $self->churn_pkg('unsusp', @_);
+}
+
+sub churn_pkg {
+  my $self = shift;
+  my ( $status, $speriod, $eperiod, $agentnum, %opt ) = @_;
+  my ($from, @where) =
+    FS::h_cust_pkg->churn_fromwhere_sql( $status, $speriod, $eperiod);
+
+  push @where, $self->pkg_where(%opt, 'agentnum' => $agentnum);
+
+  my $sql = "SELECT COUNT(*) FROM $from
+    JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
+    JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)";
+  $sql .= ' WHERE '.join(' AND ', @where)
+    if scalar(@where);
 
   $self->scalar_sql($sql);
 }
 
-#this is going to be harder..
-#sub unsusp_pkg {
-#  my( $self, $speriod, $eperiod, $agentnum ) = @_;
-#  $self->scalar_sql("
-#    SELECT COUNT(*) FROM h_cust_pkg
-#      WHERE 
-#
-#}
+sub pkg_where {
+  my $self = shift;
+  my %opt = @_;
+  my @where = (
+    "part_pkg.freq != '0'",
+    $self->with_refnum(%opt),
+    $self->with_towernum(%opt),
+    $self->with_zip(%opt),
+  );
+  if ($opt{agentnum} =~ /^(\d+)$/) {
+    push @where, "cust_main.agentnum = $1";
+  }
+  if ($opt{classnum}) {
+    my $classnum = $opt{classnum};
+    $classnum = [ $classnum ] if !ref($classnum);
+    @$classnum = grep /^\d+$/, @$classnum;
+    my $in = 'IN ('. join(',', @$classnum). ')';
+    push @where, "COALESCE(part_pkg.classnum, 0) $in" if scalar @$classnum;
+  }
+  @where;
+}
+
+##### end of churn report stuff #####
 
 sub in_time_period_and_agent {
   my( $self, $speriod, $eperiod, $agentnum ) = splice(@_, 0, 4);

@@ -1,6 +1,6 @@
 <% include('/elements/header.html', 'Package Churn Summary' ) %>
 
-<FORM ACTION="cust_pkg.cgi" METHOD="GET">
+<FORM ACTION="cust_pkg.html" METHOD="GET">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -52,6 +52,12 @@
                        'refnum'   => 'Advertising source',
                        'towernum' => 'Tower',
                      },
+&>
+
+<& /elements/tr-checkbox.html,
+  'field'         => 'normalize',
+  'value'         => 1,
+  'label'         => 'Show percentages'
 &>
 
 </TABLE>

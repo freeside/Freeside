@@ -108,11 +108,11 @@ any delimiter and linked from the elements in @data.
 %     foreach ( @{ shift( @data ) } ) {
 %       $total += $_;
 %       $bottom_total[$col-1] += $_ unless $opt{no_graph}[$row];
-%       $worksheet->write($row, $col++,  sprintf($sprintf, $_) );
+%       $worksheet->write_number($row, $col++,  sprintf($sprintf, $_) );
 %     }
 %     if ( !$opt{'nototal'} ) {
 %       $bottom_total[$col-1] += $total unless $opt{no_graph}[$row]; 
-%       $worksheet->write($row, $col++,  sprintf($sprintf, $total) );
+%       $worksheet->write_number($row, $col++,  sprintf($sprintf, $total) );
 %     } 
 %   }
 % 
@@ -120,7 +120,7 @@ any delimiter and linked from the elements in @data.
 %   if ( $opt{'bottom_total'} ) {
 %     $row++;
 %     $worksheet->write($row, $col++, 'Total');
-%     $worksheet->write($row, $col++, sprintf($sprintf, $_)) foreach @bottom_total;
+%     $worksheet->write_number($row, $col++, sprintf($sprintf, $_)) foreach @bottom_total;
 %   } 
 %   
 %   $workbook->close();# or die "Error creating .xls file: $!";
