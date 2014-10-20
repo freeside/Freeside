@@ -444,7 +444,7 @@ sub export_unsuspend {
   if ( $svc->isa('FS::svc_acct') ) {
     $error = $self->a2b_insert_or_replace('cc_card', 'svcnum',
       { svcnum    => $svc->svcnum,
-        status    => 0, #"ACTIVE"
+        status    => 1, #"ACTIVE"
         activated => 1,
       }
     );
