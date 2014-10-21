@@ -110,9 +110,9 @@ $name = 'RBC';
     ' '.
     sprintf("%-19s", $cust_pay_batch->paybatchnum).
     '00'.
-    sprintf("%04u", $bankno).
-    sprintf("%05u", $branch).
-    sprintf("%-18u", $account).
+    sprintf("%04s", $bankno).
+    sprintf("%05s", $branch).
+    sprintf("%-18s", $account).
     ' '.
     sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
