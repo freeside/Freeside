@@ -237,27 +237,61 @@ sub data {
   $hash{calling_number} = $2;
 
   # street address
+  # some cleanup:
+  my $full_address = $cust_location->address1;
+  my $address2 = $cust_location->address2;
+  if (length($address2)) {
+    # correct 'Sp', 'Sp.', 'sp ', etc. to the word SPACE for convenience
+    $address2 =~ s/^sp\b\.? ?/SPACE /i;
+    # and join it to $full_address with a space, not a comma
+    $full_address .= ' ' . $address2;
+  }
+
   my $location_hash = Geo::StreetAddress::US->parse_address(
-    uc( join(', ', $cust_location->address1,
-                   $cust_location->address2,
-                   $cust_location->city,
-                   $cust_location->state,
-                   $cust_location->zip
+    uc( join(', ',  $full_address,
+                    $cust_location->city,
+                    $cust_location->state,
+                    $cust_location->zip
     ) )
   );
-  $hash{house_number}         = $location_hash->{number};
-  $hash{house_number_suffix}  = ''; # we don't support this, do we?
-  $hash{prefix_directional}   = $location_hash->{prefix};
-  $hash{street_name}          = $location_hash->{street};
-  $hash{street_suffix}        = $location_hash->{type};
-  $hash{post_directional}     = $location_hash->{suffix};
-  $hash{community_name}       = $location_hash->{city};
-  $hash{state}                = $location_hash->{state};
-  if ($location_hash->{sec_unit_type}) {
-    $hash{location} = $location_hash->{sec_unit_type} . ' ' .
-                      $location_hash->{sec_unit_num};
+  if ( !$location_hash and length($address2) ) {
+    # then parsing failed. Try again without the address2.
+    $location_hash = Geo::StreetAddress::US->parse_address(
+      uc( join(', ',
+                    $cust_location->address1,
+                    $cust_location->city,
+                    $cust_location->state,
+                    $cust_location->zip
+      ) )
+    );
+    # this should not produce an address with sec_unit_type,
+    # so 'location' will be set to address2
+  }
+  if ( $location_hash ) {
+    # then store it
+    $hash{house_number}         = $location_hash->{number};
+    $hash{house_number_suffix}  = ''; # we don't support this, do we?
+    $hash{prefix_directional}   = $location_hash->{prefix};
+    $hash{street_name}          = $location_hash->{street};
+    $hash{street_suffix}        = $location_hash->{type};
+    $hash{post_directional}     = $location_hash->{suffix};
+    $hash{community_name}       = $location_hash->{city};
+    $hash{state}                = $location_hash->{state};
+    if ($location_hash->{sec_unit_type}) {
+      $hash{location} = $location_hash->{sec_unit_type} . ' ' .
+                        $location_hash->{sec_unit_num};
+    } else {
+      $hash{location} = $address2;
+    }
   } else {
-    $hash{location} = $cust_location->address2;
+    # then it still wouldn't parse; happens when the address has no house
+    # number (which is allowed in NENA 2 format). so just put all the 
+    # information we have into the record. (Parse::FixedLength will trim
+    # it to fit if necessary.)
+    $hash{street_name}    = uc($cust_location->address1);
+    $hash{location}       = uc($address2);
+    $hash{community_name} = uc($cust_location->city);
+    $hash{state}          = uc($cust_location->state);
   }
 
   # customer name and class
