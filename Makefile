@@ -296,13 +296,13 @@ install-apache:
 
 install-selfservice:
 	[ -e ~freeside ] || cp -pr /etc/skel ~freeside && chown -R freeside ~freeside
-	[ -e ~freeside/.ssh/id_dsa.pub ] || [ -e ~freeside/.ssh/id_rsa.pub ] || su - freeside -c 'ssh-keygen -t dsa'
+	[ -e ~freeside/.ssh/id_rsa.pub ] || su - freeside -c 'ssh-keygen'
 	for MACHINE in ${SELFSERVICE_MACHINES}; do \
 	  scp -r fs_selfservice/FS-SelfService ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; perl Makefile.PL && make" ;\
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
-	  scp ~freeside/.ssh/id_dsa.pub ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
-	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo ${SELFSERVICE_INSTALL_USERADD} freeside; sudo install -d -o freeside -m 755 ~freeside/.ssh/; sudo install -o freeside -m 600 ./id_dsa.pub ~freeside/.ssh/authorized_keys" ;\
+	  scp ~freeside/.ssh/id_rsa.pub ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
+	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo ${SELFSERVICE_INSTALL_USERADD} freeside; sudo install -d -o freeside -m 755 ~freeside/.ssh/; sudo install -o freeside -m 600 ./id_rsa.pub ~freeside/.ssh/authorized_keys" ;\
 	   ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo install -o freeside -d /usr/local/freeside" ;\
 	done
 
