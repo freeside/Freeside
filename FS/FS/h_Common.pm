@@ -110,6 +110,55 @@ sub sql_h_searchs {
   ($select, $where, $cacheobj, $as);
 }
 
+=item sql_diff START_TIMESTAMP, END_TIMESTAMP[, WHERE]
+
+Returns a complete SQL statement to find all records that were changed 
+between START_TIMESTAMP and END_TIMESTAMP. This finds only replacements,
+not new or deleted records.
+
+For each modified record, this will return I<one> row (not two rows as in
+the history table) with the primary key of the record, "old_historynum"
+(the historynum of the last modification before START_TIMESTAMP), and
+"new_historynum" (the last modification before END_TIMESTAMP). Join these
+back to the h_* table to retrieve the actual field values.
+
+Within the query, the last history records as of START and END are aliased
+as "old" and "new"; you can append a WHERE clause to take advantage of this.
+
+=cut
+
+sub sql_diff {
+  my $class = shift;
+  my $table = $class->table;
+  my ($real_table) = ($table =~ /^h_(\w+)$/);
+  my $pkey = dbdef->table($real_table)->primary_key;
+  my @fields = "FS::$real_table"->fields;
+
+  my ($sdate, $edate) = @_;
+  ($sdate, $edate) = ($edate, $sdate) if $edate < $sdate;
+
+  my @select = (
+    "old.$pkey",
+    'old.historynum   AS old_historynum',
+    'new.historynum   AS new_historynum',
+  );
+  my $new = 
+    "SELECT DISTINCT ON ($pkey) * FROM $table
+      WHERE history_action = 'replace_new'
+        AND history_date >= $sdate AND history_date <  $edate
+      ORDER BY $pkey ASC, history_date DESC";
+  my $old =
+    "SELECT DISTINCT ON ($pkey) * FROM $table
+      WHERE (history_action = 'replace_new' OR history_action = 'insert')
+        AND history_date <  $sdate
+      ORDER BY $pkey ASC, history_date DESC";
+
+  my $from = "($new) AS new JOIN ($old) AS old USING ($pkey)";
+
+  return "SELECT ".join(',', @select)." FROM $from";
+}
+
+
 =back
 
 =head1 BUGS

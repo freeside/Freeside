@@ -125,6 +125,7 @@ my %reportopts = (
       'cust_classnum'=> $opt{'cust_classnum'},
       'remove_empty' => $opt{'remove_empty'},
       'doublemonths' => $opt{'doublemonths'},
+      'normalize'    => $opt{'normalize'},
 );
 
 warn Dumper({ 'REPORTOPTS' => \%reportopts }) if $opt{'debug'};
@@ -147,17 +148,12 @@ $col_labels = $data->{label} if $opt{'daily'};
 my @colors;
 my @graph_labels;
 my @no_graph;
-if ( $opt{'remove_empty'} ) {
+#if ( $opt{'remove_empty'} ) { # no, always do this
   # then filter out per-item things for collapsed rows
-  foreach my $i (@{ $data->{'indices'} }) {
-    push @colors,       $opt{'colors'}[$i];
-    push @graph_labels, $opt{'graph_labels'}[$i];
-    push @no_graph,     $opt{'no_graph'}[$i];
-  }
-} else {
-  @colors       = @{ $opt{'colors'} };
-  @graph_labels = @{ $opt{'graph_labels'} };
-  @no_graph     = @{ $opt{'no_graph'} || [] };
+foreach my $i (@{ $data->{'indices'} }) {
+  push @colors,       $opt{'colors'}[$i];
+  push @graph_labels, $opt{'graph_labels'}[$i];
+  push @no_graph,     $opt{'no_graph'}[$i];
 }
 
 my @links;
