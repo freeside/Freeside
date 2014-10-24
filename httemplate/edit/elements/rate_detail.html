@@ -47,34 +47,85 @@ with row headers showing the region name and prefixes.
 %   }
 %   foreach my $rate_time (@rate_time, '') {
   <TD>
-%     my $detail = $details[$row][$col];
-%     if($detail) {
-      <TABLE CLASS="inv" STYLE="border:none">
-      <TR><TD><% edit_link($detail) %><% $money_char.$detail->min_charge %>
-              <% $detail->sec_granularity ? ' / minute':' / call' %>
-%             if ( $detail->min_cost ) {
-                (<% $money_char.$detail->min_cost %> cost)
-%             }
-      <% $edit_hint %></A>
-      </TD></TR>
-      <% granularity_detail($detail) %>
-      <% min_included_detail($detail) %>
-      <% conn_charge_detail($detail) %>
-      <TR><TD><% ( $rate_time || $cdrtypenum ) ? delete_link($detail) : '' %>
-      </TD></TR>
-    </TABLE>
-%     }
-%     else { #!$detail
-    <% add_link($rate, $region, $rate_time, $cdrtypenum) %>
-%     }
+    <& .detail_box,
+      detail      => $details[$row][$col],
+      ratetimenum => ($rate_time ? $rate_time->ratetimenum : ''),
+      cdrtypenum  => $cdrtypenum,
+      regionnum   => $region->regionnum,
+      ratenum     => $rate->ratenum
+    &>
 %     $col++;
   </TD>
 %   } # foreach @rate_time
 </TR>
 %   $row++;
 % }# foreach @rate_region
+% if ( !$opt{regionnum} ) {
+%# global default
+<TR>
+  <TD COLSPAN=2 STYLE="padding-top: 10px">
+    <B>Global default</B> (for calls not matching any prefix)
+  </TD>
+  <TD STYLE="padding-top: 10px">
+%   # default rate: set a null region
+    <B>
+    <& .detail_box,
+      detail      => $rate->default_detail,
+      ratetimenum => '',
+      cdrtypenum  => '',
+      regionnum   => '',
+      ratenum     => $rate->ratenum
+    &>
+    </B>
+  </TD>
+% }
 </TABLE>
-
+<%def .detail_box>
+<%args>
+$detail => undef,
+$ratetimenum
+$cdrtypenum
+$regionnum
+$ratenum
+</%args>
+% if ($detail) {
+      <TABLE CLASS="inv" STYLE="border:none">
+      <TR><TD><% edit_link($detail) %>
+%   if ( $detail->min_charge > 0 or $detail->conn_charge > 0) {
+              <% $money_char.$detail->min_charge %>
+              <% $detail->sec_granularity ? ' / minute':' / call' %>
+%             if ( $detail->min_cost ) {
+                (<% $money_char.$detail->min_cost %> cost)
+%             }
+%     if ( $detail->upstream_mult_charge > 0
+%          or $detail->upstream_mult_cost > 0) {
+              <BR>+ 
+%     }
+%   }
+%   if ( $detail->upstream_mult_charge > 0 
+%        or $detail->upstream_mult_cost > 0) {
+              <% $detail->upstream_mult_charge %> &times; upstream price
+%             if ( $detail->upstream_mult_cost > 0 ) {
+              (<% $detail->upstream_mult_cost %> cost)
+%             }
+%   }
+%   if ( $detail->upstream_mult_charge == 0
+%        and $detail->min_charge == 0 
+%        and $detail->conn_charge == 0 ) {
+              Free
+%   }
+      <% $edit_hint %></A>
+      </TD></TR>
+      <% granularity_detail($detail) %>
+      <% min_included_detail($detail) %>
+      <% conn_charge_detail($detail) %>
+      <TR><TD><% ( $ratetimenum || $cdrtypenum ) ? delete_link($detail) : '' %>
+      </TD></TR>
+    </TABLE>
+% } else {
+    <% add_link($ratenum, $regionnum, $ratetimenum, $cdrtypenum) %>
+% }
+</%def>
 <%once>
 
 tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
@@ -95,25 +146,27 @@ sub edit_link {
   include( '/elements/popup_link_onclick.html',
              'action'      => "${p}edit/rate_detail.html?$ratedetailnum",
              'actionlabel' => 'Edit rate',
-             'height'      => 460,
+             'height'      => 550,
+             'width'       => 580,
              #default# 'width'       => 540,
              #default# 'color'       => '#333399',
          ) . '">'
 }
 
 sub add_link {
-  my ($rate, $region, $rate_time, $cdrtypenum) = @_;
+  my ($ratenum, $regionnum, $ratetimenum, $cdrtypenum) = @_;
   '<A HREF="javascript:void(0);" onclick="'.
   include( '/elements/popup_link_onclick.html',
              'action'      => "${p}edit/rate_detail.html?ratenum=".
-                                  $rate->ratenum.
+                                  $ratenum.
                                ';dest_regionnum='.
-                                  $region->regionnum.
+                                  $regionnum.
                                ';ratetimenum='.
-                                 ($rate_time ? $rate_time->ratetimenum : '').
+                                 ($ratetimenum || '').
                                ";cdrtypenum=$cdrtypenum",
              'actionlabel' => 'Add rate',
-             'height'      => 460,
+             'width'       => 580,
+             'height'      => 550,
              ).'">'.small('(add)').'</A>'
 }
 
@@ -133,7 +186,10 @@ sub delete_link {
 
 sub granularity_detail {
   my $rate_detail = shift;
-  if($rate_detail->sec_granularity != 60 && $rate_detail->sec_granularity > 0) {
+  if(
+      $rate_detail->sec_granularity != 60 
+      && $rate_detail->sec_granularity > 0
+      && $rate_detail->min_charge > 0) {
     '<TR><TD>'.
     small('in '.$granularity{$rate_detail->sec_granularity}.' increments').
     '</TD></TR>';

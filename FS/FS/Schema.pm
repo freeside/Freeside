@@ -3348,9 +3348,10 @@ sub tables_hashref {
 
     'rate' => {
       'columns' => [
-        'ratenum',   'serial',     '',      '', '', '', 
-        'ratename', 'varchar',     '', $char_d, '', '', 
-        'agentnum',     'int', 'NULL',      '', '', '',
+        'ratenum',          'serial',     '', '', '', '', 
+        'ratename',        'varchar', '',$char_d, '', '', 
+        'agentnum',            'int', 'NULL', '', '', '',
+        'default_detailnum',   'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'ratenum',
       'unique'      => [],
@@ -3362,7 +3363,7 @@ sub tables_hashref {
         'ratedetailnum',   'serial',  '',     '',      '', '', 
         'ratenum',         'int',     '',     '',      '', '', 
         'orig_regionnum',  'int', 'NULL',     '',      '', '', 
-        'dest_regionnum',  'int',     '',     '',      '', '', 
+        'dest_regionnum',  'int', 'NULL',     '',      '', '', 
         'min_included',    'int',     '',     '',      '', '', 
         'conn_charge',     'decimal', '', '10,4', '0.0000', '',
         'conn_cost',       'decimal', '', '10,4', '0.0000', '',
@@ -3374,6 +3375,8 @@ sub tables_hashref {
         'classnum',        'int', 'NULL',     '',       '', '', 
         'cdrtypenum',      'int', 'NULL',     '',       '', '',
         'region_group',   'char', 'NULL',      1,       '', '', 
+        'upstream_mult_charge',  'decimal',  '', '10,4', '0.0000', '',
+        'upstream_mult_cost',    'decimal',  '', '10,4', '0.0000', '',
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],

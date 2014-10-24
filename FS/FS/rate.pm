@@ -47,6 +47,16 @@ Rate name
 
 Optional agent (see L<FS::agent>) for agent-virtualized rates.
 
+=item default_detailnum 
+
+Optional rate detail to apply when a call doesn't match any region in the 
+rate plan. If this is not set, the call will either be left unrated (though
+it may still be processed under a different pricing addon package), or be 
+marked as 'skipped', or throw a fatal error, depending on the setting of 
+the 'ignore_unrateable' package option.
+
+=item 
+
 =back
 
 =head1 METHODS
@@ -269,6 +279,7 @@ sub check {
        $self->ut_numbern('ratenum')
     || $self->ut_text('ratename')
     #|| $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
+    || $self->ut_numbern('default_detailnum')
   ;
   return $error if $error;
 
@@ -278,8 +289,8 @@ sub check {
 =item dest_detail REGIONNUM | RATE_REGION_OBJECTD | HASHREF
 
 Returns the rate detail (see L<FS::rate_detail>) for this rate to the
-specificed destination, or the empty string if no rate can be found for
-the given destination.
+specificed destination. If no rate can be found, returns the default 
+rate if there is one, and an empty string otherwise.
 
 Destination can be specified as an FS::rate_detail object or regionnum
 (see L<FS::rate_detail>), or as a hashref containing the following keys:
@@ -380,8 +391,8 @@ sub dest_detail {
   foreach (@details) {
     return $_ if $_->ratetimenum eq '';
   }
-  # found nothing
-  return;
+  # if still nothing, return the global default rate for this plan
+  return $self->default_detail;
 }
 
 =item rate_detail
@@ -407,6 +418,18 @@ sub agent {
 }
 
 =back
+
+=item default_detail
+
+Returns the default rate detail, if there is one.
+
+=cut
+
+sub default_detail {
+  my $self = shift;
+  $self->default_detailnum ?
+    FS::rate_detail->by_key($self->default_detailnum) : ''
+}
 
 =head1 SUBROUTINES
 

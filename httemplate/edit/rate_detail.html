@@ -15,6 +15,8 @@
                    'conn_cost'           => 'Wholesale connection cost',
                    'min_cost'            => 'Wholesale cost per minute/call',
                    'classnum'            => 'Usage class',
+                   'upstream_mult_charge'=> 'Upstream multiplier (retail)',
+                   'upstream_mult_cost'  => 'Upstream multiplier (cost)',
                  },
      'fields' => [
                    { field=>'ratenum',             type=>'hidden', },
@@ -46,13 +48,15 @@
                      labels        => \%granularity,
                      disable_empty => 1,
                    },
-                   { field         =>'classnum',
-                     type          =>'select-table',
-                     table         =>'usage_class',
-                     name_col      =>'classname',
-                     empty_label   =>'(default)',
-                     hashref        =>{ disabled => '' },
+                   { field         => 'classnum',
+                     type          => 'select-table',
+                     table         => 'usage_class',
+                     name_col      => 'classname',
+                     empty_label   => '(default)',
+                     hashref       => { disabled => '' },
                    },
+                   { field         => 'upstream_mult_charge', type => 'text', },
+                   { field         => 'upstream_mult_cost', type => 'text', },
 
                  ],
      'new_hashref_callback' => sub {
@@ -62,6 +66,8 @@
           cdrtypenum     => scalar($cgi->param('cdrtypenum')),
           min_included   => 0,
           conn_charge    => 0,
+          upstream_mult_charge  => 0,
+          upstream_mult_cost    => 0,
         }
       },
    )
@@ -85,8 +91,8 @@ if (    $keywords                    =~ /^(\d+)$/
      || $cgi->param('ratedetailnum') =~ /^(\d+)$/ ) {
   my $rate_detail = qsearchs('rate_detail', { 'ratedetailnum' => $1 } )
     or die "unknown ratedetailnum $1";
-  $name =
-    $rate_detail->rate->ratename. ' rate for '. $rate_detail->dest_regionname;
+  $name = $rate_detail->rate->ratename. ' rate for '. 
+          ($rate_detail->dest_regionname || 'global default');
 }
 
 #sec_granularity should default to 60!  for new rates when this gets used for em

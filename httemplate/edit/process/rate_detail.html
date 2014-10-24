@@ -1,13 +1,35 @@
-<% include( 'elements/process.html',
-              'table' => 'rate_detail',
-              'popup_reload' => 'Rate changed', #a popup "parent reload" for now
+<& elements/process.html,
+  'table' => 'rate_detail',
+  'popup_reload' => 'Rate changed', #a popup "parent reload" for now
               #someday change the individual element and go away instead
-          )
-%>
+  'noerror_callback' => $set_default_detail
+&>
 <%init>
 
 my $conf = new FS::Conf;
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $set_default_detail = sub {
+  my ($cgi, $rate_detail) = @_;
+warn Dumper $rate_detail;
+  if (!$rate_detail->dest_regionnum) {
+    # then this is a global default rate
+    my $rate = $rate_detail->rate;
+    if ($rate->default_detailnum) {
+      if ($rate->default_detailnum == $rate_detail->ratedetailnum) {
+        return;
+      } else {
+        # there's somehow an existing default rate. remove it.
+        my $old_default = $rate->default_detail;
+        my $error = $old_default->delete;
+        die "$error (removing old default rate)\n" if $error;
+      }
+    }
+    $rate->set('default_detailnum' => $rate_detail->ratedetailnum);
+    my $error = $rate->replace;
+    die "$error (setting default rate)\n" if $error;
+  }
+};
 
 </%init>
