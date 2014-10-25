@@ -2,8 +2,8 @@
 
 =pod
 
-cdr-vitelity.import [ -v ] [ -k ] [ -r ]
-                    [ -s date ] [ -e date ]
+cdr-vitelity.import [ -v ] [ -k ]
+                    -s date -e date
                     username
                     [ exportnum ]
 
@@ -13,16 +13,11 @@ Download CDRs using the Vitelity API.
 
 -k: Keep the .csv file for debugging purposes, instead of deleting it.
 
--r: Reset the CDR counter before fetching.  This will download previously 
-imported CDRs.
+-s date: Import only records on or after 'date'  Now required as the Vitelity
+API has changed.
 
--s date: Import only records on or after 'date'.  If not specified, the 
-script will import the entire history (if -r is specified) or everything 
-since the last import (if not).  Note that the API request doesn't have any 
-limits, so the entire data file will be downloaded regardless, but parsing 
-and importing the records is considerably slower than downloading them.
-
--e date: Import only records before 'date'.  See above.
+-e date: Import only records before 'date'.  Now required as the Vitelity API
+has changed.
 
 username: a Freeside user
 
@@ -42,11 +37,15 @@ use Date::Format 'time2str';
 use Date::Parse 'str2time';
 
 my %opt;
-getopts('vrkas:e:', \%opt);
+getopts('vks:e:', \%opt);
 
 my $user = shift or die &usage;
 my $exportnum = shift;
 my $dbh = adminsuidsetup $user;
+
+my $start = $opt{'s'} ? str2time($opt{'s'}) : die &usage('-s is now required');
+my $end   = $opt{'e'} ? str2time($opt{'e'}) : die &usage('-e is now required');
+
 local $FS::UID::AutoCommit = 0;
 
 my @part_exports;
@@ -66,7 +65,7 @@ foreach my $export (@part_exports) {
     or die "exportnum $exportnum is not a Vitelity export\n";
 
   if ( $opt{'r'} ) {
-    my $result = $export->vitelity_command('getcdr');
+    my $result = $export->vitelity_command('resetcdrlist');
     if ( $result ne 'ok' ) {
       $dbh->rollback;
       die "Failed to reset CDR list: $result\n";
@@ -82,7 +81,7 @@ foreach my $export (@part_exports) {
   print "Downloading to ".$temp->filename."\n" if $opt{'v'};
 
   print "Sending API request..." if $opt{'v'};
-  my @records = eval { $export->vitelity_command('cdrlist') };
+  my @records = eval { $export->vitelity_command('getcdr') };
   if ( $@ ) {
     print "download error: $@\n";
     exit(-1);
@@ -96,10 +95,8 @@ foreach my $export (@part_exports) {
   print $temp "Date,Source,Destination,Seconds,CallerID,Disposition,Cost\n";
 
   my $regex = qr/^(\d{4})-(\d{2})-(\d{2})/;
-  my $start = $opt{'s'} ? str2time($opt{'s'}) : '';
-  my $s = time2str('%Y-%m-%d', $start) if $start;
-  my $end = $opt{'e'} ? str2time($opt{'e'}) : '';
-  my $e = time2str('%Y-%m-%d', $end) if $end;
+  my $s = time2str('%m-%d-%Y', $start);
+  my $e = time2str('%m-%d-%Y', $end);
   my $count = 0;
   while (my $rec = shift @records) {
     my $date = substr($rec, 0, 10);
@@ -132,11 +129,12 @@ print "done.\n";
 exit(0);
 
 sub usage {
-"Usage: 
-cdr-vitelity.import [ -v ] [ -k ] [ -r ]
-                    [ -s date ] [ -e date ]
+  my $err = @_ ? shift."\n\n" : '';
+$err."Usage: 
+cdr-vitelity.import [ -v ] [ -k ]
+                    -s date -e date
                     username
                     [ exportnum ]
-"
+";
 }
 
