@@ -64,14 +64,6 @@ foreach my $export (@part_exports) {
   $export->isa('FS::part_export::vitelity') 
     or die "exportnum $exportnum is not a Vitelity export\n";
 
-  if ( $opt{'r'} ) {
-    my $result = $export->vitelity_command('resetcdrlist');
-    if ( $result ne 'ok' ) {
-      $dbh->rollback;
-      die "Failed to reset CDR list: $result\n";
-    }
-  }
-
   my $dir = $FS::UID::cache_dir . "/cache.". $FS::UID::datasrc;
   my $temp = new File::Temp ( TEMPLATE => 'download.XXXXXXXX',
                               SUFFIX   => '.csv',
@@ -106,7 +98,7 @@ foreach my $export (@part_exports) {
     $count++;
   }
   close $temp;
-  print "Selected $count records in date range." if $opt{'v'} and ($s or $e);
+  print "Selected $count records in date range." if $opt{'v'};
 
   my $format = 'vitelity';
   my $batchname = "vitelity-$exportnum-".time2str('%Y/%m/%d-%T',time);
