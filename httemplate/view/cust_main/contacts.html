@@ -60,6 +60,14 @@
 %   }
 % }
 % # now the actual address
+
+% if ( $location->locationname ) {
+    <TR>
+      <TD ALIGN="right"><% mt('Location ID') |h %></TD>
+      <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->locationname |h %></TD>
+    </TR>
+% }
+
 <TR>
   <TD ALIGN="right"><% mt('Address') |h %></TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->address1 |h %></TD>

@@ -115,6 +115,8 @@
           $OUT .= '<p class="allcaps"><b>';
           my $sectionhead;
           if ( $section->{'location'} ) {
+            $sectionhead .= $section->{'location'}{'label_prefix'}. ': '.
+              if length($section->{'location'}{'label_prefix'});
             $sectionhead = $section->{'location'}{'address1'};
             $sectionhead .= ', '.$section->{'location'}{'address2'}
               if length($section->{'location'}{'address2'});

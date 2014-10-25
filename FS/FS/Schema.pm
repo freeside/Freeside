@@ -1358,6 +1358,7 @@ sub tables_hashref {
         'locationnum',      'serial',     '',      '', '', '',
         'prospectnum',         'int', 'NULL',      '', '', '',
         'custnum',             'int', 'NULL',      '', '', '',
+        'locationname',    'varchar', 'NULL', $char_d, '', '',
         'address1',        'varchar',     '', $char_d, '', '', 
         'address2',        'varchar', 'NULL', $char_d, '', '', 
         'city',            'varchar',     '', $char_d, '', '', 

@@ -259,6 +259,8 @@
       $OUT .= '\begin{longtable}{cllllllr}';
       $OUT .= '\caption*{ ';
       if ($section->{'location'}) {
+        $OUT .= $section->{'location'}{'label_prefix'}. ': '
+          if length($section->{'location'}{'label_prefix'});
         $OUT .= $section->{'location'}{'address1'};
         $OUT .= ', ' . $section->{'location'}{'address2'}
           if length($section->{'location'}{'address2'});

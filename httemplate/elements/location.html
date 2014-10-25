@@ -41,6 +41,33 @@ Example:
 
 % } 
 
+% if ( $label_prefix eq '_location' ) {
+
+    <TR>
+      <TD ALIGN="right" ><% $opt{'locationname_label'} || emt('Location ID') %></TD>
+      <TD COLSPAN=7>
+        <INPUT TYPE     = "text"
+               NAME     = "<%$pre%>locationname"
+               ID       = "<%$pre%>locationname"
+               VALUE    = "<% $object->get('locationname') |h %>"
+               SIZE     = 24
+               onChange = "<% $onchange %>"
+               <% $disabled %>
+               <% $style %>
+        >
+      </TD>
+    </TR>
+
+% } else {
+
+    <INPUT TYPE     = "hidden"
+           NAME     = "<%$pre%>locationname"
+           ID       = "<%$pre%>locationname"
+           VALUE    = "<% $object->get('locationname') |h %>"
+    >
+
+% }
+
 <TR>
   <<%$th%> STYLE="width:16ex" ALIGN="right"><%$r%><% $opt{'address1_label'} || emt('Address') %></<%$th%>>
   <TD COLSPAN=7>
@@ -291,13 +318,14 @@ my $object   = $opt{'object'};
 my $onchange = $opt{'onchange'};
 my $disabled = $opt{'disabled'};
 
-my $conf = new FS::Conf;
-
 my $r = $opt{'no_asterisks'} ? '' : qq!<font color="#ff0000">*</font>&nbsp;!;
 
+my $conf = new FS::Conf;
 my $countrydefault = $conf->config('countrydefault') || 'US';
-my $statedefault = $conf->config('statedefault') 
-                   || ($countrydefault eq 'US' ? 'CA' : '');
+my $statedefault   = $conf->config('statedefault') 
+                       || ($countrydefault eq 'US' ? 'CA' : '');
+my $label_prefix   = $conf->config('cust_location-label_prefix');
+
 $object ||= FS::cust_location->new({
   'country' => $countrydefault,
   'state'   => $statedefault,
