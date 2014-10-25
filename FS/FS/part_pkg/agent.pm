@@ -107,6 +107,10 @@ sub calc_recur {
 
         my $pkg_details = $cust_main->name_short. ': '; #name?
 
+        my $cust_location = $cust_pkg->cust_location;
+        $pkg_details .= $cust_location->locationname. ': '
+          if $cust_location->locationname;
+
         my $part_pkg = $cust_pkg->part_pkg;
 
         # + something to identify package... primary service probably
