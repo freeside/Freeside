@@ -2099,6 +2099,7 @@ Returns a list of fields which have ship_ duplicates.
 
 sub addr_fields {
   qw( last first company
+      locationname
       address1 address2 city county state zip country
       latitude longitude
       daytime night fax mobile

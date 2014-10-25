@@ -2090,8 +2090,9 @@ sub _items_sections {
           $section->{'sort_weight'} = sprintf('%012s',$location->zip) .
                                       $locationnum;
           $section->{'location'} = {
+            label_prefix => &{ $escape }($location->label_prefix),
             map { $_ => &{ $escape }($location->get($_)) }
-            $location->fields
+              $location->fields
           };
         } else {
           $section->{'category'} = $sectionname;

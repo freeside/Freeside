@@ -322,6 +322,7 @@ sub check {
     $self->ut_numbern('locationnum')
     || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
     || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
+    || $self->ut_alphan('locationname')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
     || $self->ut_text('city')
@@ -604,12 +605,59 @@ sub dealternize {
 
 =item location_label
 
-Returns the label of the location object, with an optional site ID
-string (based on the cust_location-label_prefix config option).
+Returns the label of the location object.
+
+Options:
+
+=over 4
+
+=item cust_main
+
+Customer object (see L<FS::cust_main>)
+
+=item prospect_main
+
+Prospect object (see L<FS::prospect_main>)
+
+=item join_string
+
+String used to join location elements
+
+=back
 
 =cut
 
 sub location_label {
+  my( $self, %opt ) = @_;
+
+  my $prefix = $self->label_prefix;
+  $prefix .= ($opt{join_string} ||  ': ') if $prefix;
+
+  $prefix . $self->SUPER::location_label(%opt);
+}
+
+=item label_prefix
+
+Returns the optional site ID string (based on the cust_location-label_prefix
+config option), "Default service location", or the empty string.
+
+Options:
+
+=over 4
+
+=item cust_main
+
+Customer object (see L<FS::cust_main>)
+
+=item prospect_main
+
+Prospect object (see L<FS::prospect_main>)
+
+=back
+
+=cut
+
+sub label_prefix {
   my( $self, %opt ) = @_;
 
   my $cust_or_prospect = $opt{cust_main} || $opt{prospect_main};
@@ -633,14 +681,16 @@ sub location_label {
         ($agent =~ /^(..)/),
         sprintf('%05d', $self->locationnum)
     ) );
-  }
-  elsif (    ( $opt{'cust_main'} || $self->custnum )
+
+  } elsif ( $label_prefix eq '_location' && $self->locationname ) {
+    $prefix = $self->locationname;
+
+  } elsif (    ( $opt{'cust_main'} || $self->custnum )
           && $self->locationnum == $cust_or_prospect->ship_locationnum ) {
     $prefix = 'Default service location';
   }
 
-  $prefix .= ($opt{join_string} ||  ': ') if $prefix;
-  $prefix . $self->SUPER::location_label(%opt);
+  $prefix;
 }
 
 =item county_state_county
