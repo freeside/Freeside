@@ -23,7 +23,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
           '' },                                   #  3: type
             
     skip(2),
-    dcontext,					  #  6: direction
+    'dcontext',					  #  6: direction
     trim('src'),                                  #  7: callingNumber
     skip(1),
     trim('dst'),                                  #  9: calledNumber
@@ -37,7 +37,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     _cdr_date_parser_maker('answerdate'),         # 13: answerTime
     _cdr_date_parser_maker('enddate'),            # 14: releaseTime
     skip(17),
-    accountcode,				  # 32: group
+    'accountcode',				  # 32: group
   ],
 
 );
