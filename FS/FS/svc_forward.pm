@@ -353,6 +353,54 @@ sub dstsvc_acct {
   qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } );
 }
 
+=item src_email
+
+Returns the email address to be forwarded regardless of weither it is local
+or remote
+
+=cut
+
+sub src_email {
+my $self = shift;
+
+if ($self->srcsvc eq '0'){
+	return $self->src;
+} else {
+	my $svc_acct = $self->srcsvc_acct;
+	return $svc_acct->email;
+}}
+
+=item dst_email
+
+Returns the email address which gets forwarded to regardless of weither it is local
+or remote
+
+=cut
+
+sub dst_email {
+my $self = shift;
+
+if ($self->dstsvc eq '0'){
+        return $self->dst;
+} else {
+	my $svc_acct = $self->dstsvc_acct;
+        return $svc_acct->email;
+}}
+
+=item srcsvc_acct_domain
+
+Returns the domain of the srcsvc_acct
+
+=cut
+
+sub srcsvc_acct_domain {
+my $self = shift;
+
+        my $svc_acct = $self->srcsvc_acct;
+        return $svc_acct->domain;
+}
+
+
 =back
 
 =head1 BUGS
