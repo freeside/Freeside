@@ -37,7 +37,12 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     _cdr_date_parser_maker('answerdate'),         # 13: answerTime
     _cdr_date_parser_maker('enddate'),            # 14: releaseTime
     skip(17),
-    'accountcode',				  # 32: group
+    sub { my($cdr, $accountcode) = @_;
+    if ($cdr->is_tollfree){
+        $cdr->set('accountcode', $cdr->dst);
+    } else {
+        $cdr->set('accountcode', $accountcode);
+    }},
   ],
 
 );
