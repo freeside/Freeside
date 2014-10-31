@@ -13,6 +13,12 @@ use vars qw(%info %options $initial_load_hack $DEBUG);
 
 my %upload_targets;
 
+tie our %parsing_rules, 'Tie::IxHash', (
+  'no_street_suffix' => 'Avoid street suffix',
+  'no_postdir'       => 'Avoid post directional',
+  # add others as we learn about them
+);
+
 tie %options, 'Tie::IxHash', (
   'company_name'    => {  label => 'Company name for header record',
                           type  => 'text',
@@ -51,7 +57,14 @@ tie %options, 'Tie::IxHash', (
                        },
   'debug'           => { label => 'Enable debugging',
                          type => 'checkbox' },
+  'parsing_rules'   => { label => 'Address parsing rules',
+                         type => 'title' },
+
+  map({ $_ => { label => $parsing_rules{$_}, type => 'checkbox' } }
+    keys %parsing_rules
+  ),
 );
+
 
 %info = (
   'svc'       => 'svc_phone',
@@ -247,6 +260,8 @@ sub data {
     $full_address .= ' ' . $address2;
   }
 
+  Geo::StreetAddress::US->avoid_redundant_street_type(1);
+
   my $location_hash = Geo::StreetAddress::US->parse_address(
     uc( join(', ',  $full_address,
                     $cust_location->city,
@@ -254,7 +269,16 @@ sub data {
                     $cust_location->zip
     ) )
   );
-  if ( !$location_hash and length($address2) ) {
+  if ( length($address2) ) {
+    # be careful how we handle this
+    if ( !defined $location_hash ) {
+      # then it did successfully parse. BUT.
+      # if there's no sec_unit_type, then the address2 was parsed as part
+      # of the street name, which is wrong. Then reparse.
+      if ( !$location_hash->{sec_unit_type} ) {
+        undef $location_hash;
+      }
+    }
     # then parsing failed. Try again without the address2.
     $location_hash = Geo::StreetAddress::US->parse_address(
       uc( join(', ',
@@ -273,16 +297,30 @@ sub data {
     $hash{house_number_suffix}  = ''; # we don't support this, do we?
     $hash{prefix_directional}   = $location_hash->{prefix};
     $hash{street_name}          = $location_hash->{street};
-    $hash{street_suffix}        = $location_hash->{type};
-    $hash{post_directional}     = $location_hash->{suffix};
     $hash{community_name}       = $location_hash->{city};
     $hash{state}                = $location_hash->{state};
+
     if ($location_hash->{sec_unit_type}) {
       $hash{location} = $location_hash->{sec_unit_type} . ' ' .
                         $location_hash->{sec_unit_num};
     } else {
+      # if sec_unit_type was not set, then put address2 in 'location'
       $hash{location} = $address2;
     }
+
+    if ( $self->option('no_street_suffix') and $location_hash->{type} ) {
+      my $type = $location_hash->{type};
+      $hash{street_name}  .= ' ' . uc($location_hash->{type});
+    } else {
+      $hash{street_suffix} = uc($location_hash->{type});
+    }
+
+    if ( $self->option('no_postdir') and $location_hash->{suffix} ) {
+      $hash{street_name}  .= ' ' . $location_hash->{suffix};
+    } else {
+      $hash{post_directional} = $location_hash->{suffix};
+    }
+
   } else {
     # then it still wouldn't parse; happens when the address has no house
     # number (which is allowed in NENA 2 format). so just put all the 
