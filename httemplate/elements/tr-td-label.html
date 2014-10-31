@@ -15,5 +15,8 @@ $style .= '; '. $opt{'cell_style'}
   if $opt{'cell_style'};
 
 my $required = $opt{'required'} ? '<font color="#ff0000">*</font>&nbsp;' : '';
+if ($required) {
+  $style .= ';font-weight: bold';
+}
 
 </%init>

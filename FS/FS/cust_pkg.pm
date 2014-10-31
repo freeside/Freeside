@@ -2458,12 +2458,10 @@ sub modify_charge {
 
 
 
-use Storable 'thaw';
-use MIME::Base64;
 use Data::Dumper;
 sub process_bulk_cust_pkg {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   my $old_part_pkg = qsearchs('part_pkg', 

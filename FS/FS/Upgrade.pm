@@ -125,6 +125,14 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set($newname, 'location');
   }
 
+  # boolean enable_taxproducts is now enable_taxproducts = 'cch'
+  if ( $conf->exists('enable_taxproducts') and
+       $conf->config('enable_taxproducts') eq '' ) {
+
+    $conf->set('enable_taxproducts', 'cch');
+
+  }
+
 }
 
 sub upgrade_overlimit_groups {
@@ -374,6 +382,9 @@ sub upgrade_data {
 
     #populate state FIPS codes if not already done
     'state' => [],
+
+    #populate tax statuses
+    'tax_status' => [],
   ;
 
   \%hash;

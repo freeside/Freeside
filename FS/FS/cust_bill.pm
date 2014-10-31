@@ -125,6 +125,8 @@ Specific use cases
 
 =item promised_date - customer promised payment date, for collection
 
+=item pending - invoice is still being generated, empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -334,6 +336,7 @@ sub replace_check {
   #return "Can't change _date!" unless $old->_date eq $new->_date;
   return "Can't change _date" unless $old->_date == $new->_date;
   return "Can't change charged" unless $old->charged == $new->charged
+                                    || $old->pending eq 'Y'
                                     || $old->charged == 0
 				    || $new->{'Hash'}{'cc_surcharge_replace_hack'};
 
@@ -388,6 +391,7 @@ sub check {
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('statementnum', 'cust_statement', 'statementnum' )
     || $self->ut_numbern('agent_invid') #varchar?
+    || $self->ut_flag('pending')
   ;
   return $error if $error;
 
@@ -3173,14 +3177,12 @@ sub process_respool {
   process_re_X('spool', @_);
 }
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process_re_X {
   my( $method, $job ) = ( shift, shift );
   warn "$me process_re_X $method for job $job\n" if $DEBUG;
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   re_X(

@@ -422,13 +422,10 @@ Job-queue processor for web interface adds/edits
 
 =cut
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process {
   my $job = shift;
-
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   my $old = qsearchs('rate', { 'ratenum' => $param->{'ratenum'} } )

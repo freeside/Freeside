@@ -25,7 +25,7 @@
 %# agent, agent_custid, refnum (advertising source), referral_custnum
 %# better section title for this?
 <FONT CLASS="fsinnerbox-title"><% mt('Basics') |h %></FONT>
-<& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
+<& cust_main/basics.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
 % if (    $conf->config('national_id-country')

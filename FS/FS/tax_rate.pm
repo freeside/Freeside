@@ -8,7 +8,6 @@ use vars qw( $DEBUG $me
 use Date::Parse;
 use DateTime;
 use DateTime::Format::Strptime;
-use Storable qw( thaw nfreeze );
 use IO::File;
 use File::Temp;
 use Text::CSV_XS;
@@ -16,7 +15,6 @@ use URI::Escape;
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Response;
-use MIME::Base64;
 use DBIx::DBSchema;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
@@ -80,9 +78,10 @@ a location code provided by a tax authority
 
 =item taxclassnum
 
-a foreign key into FS::tax_class - the type of tax
-referenced but FS::part_pkg_taxrate
-eitem effective_date
+a foreign key into FS::tax_class - the type of tax referenced by 
+FS::part_pkg_taxrate
+
+=item effective_date
 
 the time after which the tax applies
 
@@ -214,7 +213,7 @@ sub check {
     || $self->ut_text('geocode')
     || $self->ut_textn('data_vendor')
     || $self->ut_cch_textn('location')
-    || $self->ut_foreign_key('taxclassnum', 'tax_class', 'taxclassnum')
+    || $self->ut_foreign_keyn('taxclassnum', 'tax_class', 'taxclassnum')
     || $self->ut_snumbern('effective_date')
     || $self->ut_float('tax')
     || $self->ut_floatn('excessrate')
@@ -380,7 +379,7 @@ sub passtype_name {
   $tax_passtypes{$self->passtype};
 }
 
-=item taxline TAXABLES
+=item taxline_cch TAXABLES, [ OPTIONSHASH ]
 
 Returns a listref of a name and an amount of tax calculated for the list
 of packages/amounts referenced by TAXABLES.  If an error occurs, a message
@@ -388,7 +387,7 @@ is returned as a scalar.
 
 =cut
 
-sub taxline {
+sub taxline_cch {
   my $self = shift;
   # this used to accept a hash of options but none of them did anything
   # so it's been removed.
@@ -612,6 +611,36 @@ sub tax_rate_location {
           }) ||
   new FS::tax_rate_location;
 
+}
+
+
+=item find_or_insert
+
+Finds an existing tax definition matching the data_vendor, taxname,
+taxclassnum, and geocode of this one, if one exists, and sets the contents of
+this tax rate equal to that one (including its taxnum). If an existing
+definition is not found, inserts this one. Returns an error string if
+inserting a record failed.
+
+=cut
+
+sub find_or_insert {
+  my $self = shift;
+  # this doesn't uniquely identify CCH taxes (kinda goofy, I know)
+  die "find_or_insert is not compatible with CCH taxes\n"
+    if $self->data_vendor eq 'cch';
+
+  my @keys = (qw(data_vendor taxname taxclassnum geocode));
+  my %hash = map { $_ => $self->get($_) } @keys;
+  my $existing = qsearchs('tax_rate', \%hash);
+  if ($existing) {
+    foreach ($self->fields) {
+      $self->set($_, $existing->get($_));
+    }
+    return;
+  } else {
+    return $self->insert;
+  }
 }
 
 =back
@@ -933,35 +962,25 @@ Load a batch import as a queued JSRPC job
 =cut
 
 sub process_batch_import {
-  my $job = shift;
+  my ($job, $param) = @_;
+
+  if ( $param->{reload} ) {
+    process_batch_reload($job, $param);
+  } else {
+    # '_perform', yuck
+    _perform_batch_import($job, $param);
+  }
+
+}
+
+sub _perform_batch_import {
+  my ($job, $param) = @_;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-
-  my $param = thaw(decode_base64(shift));
-  my $args = '$job, encode_base64( nfreeze( $param ) )';
-
-  my $method = '_perform_batch_import';
-  if ( $param->{reload} ) {
-    $method = 'process_batch_reload';
-  }
-
-  eval "$method($args);";
-  if ($@) {
-    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-    die $@;
-  }
-
-  #success!
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-}
-
-sub _perform_batch_import {
-  my $job = shift;
-
-  my $param = thaw(decode_base64(shift));
-  my $format = $param->{'format'};        #well... this is all cch specific
+  
+  my $format = $param->{'format'};
 
   my $files = $param->{'uploaded_files'}
     or die "No files provided.";
@@ -969,20 +988,18 @@ sub _perform_batch_import {
   my (%files) = map { /^(\w+):((taxdata\/\w+\.\w+\/)?[\.\w]+)$/ ? ($1,$2):() }
                 split /,/, $files;
 
+  my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
+  my $error = '';
+
   if ( $format eq 'cch' || $format eq 'cch-fixed'
     || $format eq 'cch-update' || $format eq 'cch-fixed-update' )
   {
 
-    my $oldAutoCommit = $FS::UID::AutoCommit;
-    local $FS::UID::AutoCommit = 0;
-    my $dbh = dbh;
-    my $error = '';
     my @insert_list = ();
     my @delete_list = ();
     my @predelete_list = ();
     my $insertname = '';
     my $deletename = '';
-    my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
 
     my @list = ( 'GEOCODE',  \&FS::tax_rate_location::batch_import,
                  'CODE',     \&FS::tax_class::batch_import,
@@ -1051,19 +1068,45 @@ sub _perform_batch_import {
       unlink $file or warn "Can't delete $file: $!";
     }
 
-    if ($error) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die $error;
-    }else{
-      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  } elsif ( $format =~ /^billsoft-(\w+)$/ ) {
+    my $mode = $1;
+    my $file = $dir.'/'.$files{'file'};
+    open my $fh, "< $file" or $error ||= "Can't open file $file: $!";
+    my @param = (
+        {
+          filehandle  => $fh,
+          format      => 'billsoft',
+        }, $job);
+    if ( $mode eq 'pcode' ) {
+      $error ||= FS::cust_tax_location::batch_import(@param);
+      seek $fh, 0, 0;
+      $error ||= FS::tax_rate_location::batch_import(@param);
+    } elsif ( $mode eq 'taxclass' ) {
+      $error ||= FS::tax_class::batch_import(@param);
+    } elsif ( $mode eq 'taxproduct' ) {
+      $error ||= FS::part_pkg_taxproduct::batch_import(@param);
+    } else {
+      die "unknown import mode 'billsoft-$mode'\n";
     }
 
-  }else{
+  } else {
     die "Unknown format: $format";
+  }
+
+  if ($error) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    die $error;
+  } else {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   }
 
 }
 
+#
+#
+# EVERYTHING THAT FOLLOWS IS CCH-SPECIFIC.
+#
+#
 
 sub _perform_cch_tax_import {
   my ( $job, $predelete_list, $insert_list, $delete_list, $addl_param ) = @_;
@@ -1549,15 +1592,20 @@ sub _copy_from_temp {
 =item process_download_and_reload
 
 Download and process a tax update as a queued JSRPC job after wiping the
-existing wipable tax data.
+existing wipeable tax data.
 
 =cut
 
 sub process_download_and_reload {
-  _process_reload('process_download_and_update', @_);
+  _process_reload(\&process_download_and_update, @_);
 }
 
-  
+#
+#
+# END OF CCH STUFF
+#
+#
+
 =item process_batch_reload
 
 Load and process a tax update from the provided files as a queued JSRPC job
@@ -1566,15 +1614,12 @@ after wiping the existing wipable tax data.
 =cut
 
 sub process_batch_reload {
-  _process_reload('_perform_batch_import', @_);
+  _process_reload(\&_perform_batch_import, @_);
 }
 
-  
 sub _process_reload {
-  my ( $method, $job ) = ( shift, shift );
-
-  my $param = thaw(decode_base64($_[0]));
-  my $format = $param->{'format'};        #well... this is all cch specific
+  my ( $continuation, $job, $param ) = @_;
+  my $format = $param->{'format'};
 
   my ( $imported, $last, $min_sec ) = _progressbar_foo();
 
@@ -1588,47 +1633,79 @@ sub _process_reload {
   my $dbh = dbh;
   my $error = '';
 
-  my $sql =
-    "SELECT count(*) FROM part_pkg_taxoverride JOIN tax_class ".
-    "USING (taxclassnum) WHERE data_vendor = '$format'";
-  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-  $sth->execute
-    or die "Unexpected error executing statement $sql: ". $sth->errstr;
-  die "Don't (yet) know how to handle part_pkg_taxoverride records."
-    if $sth->fetchrow_arrayref->[0];
+  if ( $format =~ /^cch/ ) {
+    # no, THIS part is CCH specific
 
-  # really should get a table EXCLUSIVE lock here
+    my $sql =
+      "SELECT count(*) FROM part_pkg_taxoverride JOIN tax_class ".
+      "USING (taxclassnum) WHERE data_vendor = '$format'";
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+    $sth->execute
+      or die "Unexpected error executing statement $sql: ". $sth->errstr;
+    die "Don't (yet) know how to handle part_pkg_taxoverride records."
+      if $sth->fetchrow_arrayref->[0];
 
-  #remember disabled taxes
-  my %disabled_tax_rate = ();
-  $error ||= _remember_disabled_taxes( $job, $format, \%disabled_tax_rate );
+    # really should get a table EXCLUSIVE lock here
 
-  #remember tax products
-  my %taxproduct = ();
-  $error ||= _remember_tax_products( $job, $format, \%taxproduct );
+    #remember disabled taxes
+    my %disabled_tax_rate = ();
+    $error ||= _remember_disabled_taxes( $job, $format, \%disabled_tax_rate );
 
-  #create temp tables
-  $error ||= _create_temporary_tables( $job, $format );
+    #remember tax products
+    my %taxproduct = ();
+    $error ||= _remember_tax_products( $job, $format, \%taxproduct );
 
-  #import new data
-  unless ($error) {
-    my $args = '$job, @_';
-    eval "$method($args);";
-    $error = $@ if $@;
-  }
+    #create temp tables
+    $error ||= _create_temporary_tables( $job, $format );
 
-  #restore taxproducts
-  $error ||= _restore_remembered_tax_products( $job, $format, \%taxproduct );
+    #import new data
+    unless ($error) {
+      eval { &{$continuation}( $job, $param ) };
+      $error = $@ if $@;
+    }
 
-  #disable tax_rates
-  $error ||=
-   _restore_remembered_disabled_taxes( $job, $format, \%disabled_tax_rate );
+    #restore taxproducts
+    $error ||= _restore_remembered_tax_products( $job, $format, \%taxproduct );
 
-  #wipe out the old data
-  $error ||= _remove_old_tax_data( $job, $format ); 
+    #disable tax_rates
+    $error ||=
+     _restore_remembered_disabled_taxes( $job, $format, \%disabled_tax_rate );
 
-  #untemporize
-  $error ||= _copy_from_temp( $job, $format );
+    #wipe out the old data
+    $error ||= _remove_old_tax_data( $job, $format ); 
+
+    #untemporize
+    $error ||= _copy_from_temp( $job, $format );
+
+  } elsif ( $format =~ /^billsoft-(\w+)/ ) {
+
+    my $mode = $1;
+    my @sql;
+    if ( $mode eq 'pcode' ) {
+      push @sql,
+        "DELETE FROM cust_tax_location WHERE data_vendor = 'billsoft'",
+        "UPDATE tax_rate_location SET disabled = 'Y' WHERE data_vendor = 'billsoft'";
+    } elsif ( $mode eq 'taxclass' ) {
+      push @sql,
+        "DELETE FROM tax_class WHERE data_vendor = 'billsoft'";
+    } elsif ( $mode eq 'taxproduct' ) {
+      push @sql,
+        "DELETE FROM part_pkg_taxproduct WHERE data_vendor = 'billsoft'";
+    }
+
+    foreach (@sql) {
+      if (!$dbh->do($_)) {
+        $error = $dbh->errstr;
+        last;
+      }
+    }
+
+    unless ( $error ) {
+      local $@;
+      eval { &{ $continuation }($job, $param) };
+      $error = $@;
+    }
+  } # if ($format ...)
 
   if ($error) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
@@ -1649,7 +1726,7 @@ Download and process a tax update as a queued JSRPC job
 sub process_download_and_update {
   my $job = shift;
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   my $format = $param->{'format'};        #well... this is all cch specific
 
   my ( $imported, $last, $min_sec ) = _progressbar_foo();
@@ -1752,7 +1829,7 @@ sub process_download_and_update {
     $param->{uploaded_files} = join( ',', @list );
     $param->{format} .= '-update' if $update;
     $error ||=
-      _perform_batch_import( $job, encode_base64( nfreeze( $param ) ) );
+      _perform_batch_import( $job, $param );
     
     rename "$dir.new", "$dir"
       or die "cch tax update processed, but can't rename $dir.new: $!\n";
@@ -1855,7 +1932,7 @@ PARAMS needs to be a base64-encoded Storable hash containing:
 
 sub queue_liability_report {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
 
   my $cgi = new CGI;
   $cgi->param('beginning', $param->{beginning});
@@ -2160,10 +2237,16 @@ EOF
 
 =head1 BUGS
 
+  Highly specific to CCH taxes.  This should arguably go in some kind of 
+  subclass (FS::tax_rate::CCH) with auto-reblessing, similar to part_pkg
+  subclasses.  But currently there aren't any other options, so.
+
   Mixing automatic and manual editing works poorly at present.
 
   Tax liability calculations take too long and arguably don't belong here.
   Tax liability report generation not entirely safe (escaped).
+
+  Sparse documentation.
 
 =head1 SEE ALSO
 

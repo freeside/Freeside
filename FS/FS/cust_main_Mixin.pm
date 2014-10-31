@@ -526,7 +526,7 @@ sub process_email_search_result {
   my $job = shift;
   #warn "$me process_re_X $method for job $job\n" if $DEBUG;
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   $param->{'job'} = $job;

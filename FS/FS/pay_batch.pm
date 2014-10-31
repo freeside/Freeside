@@ -436,12 +436,10 @@ sub import_results {
 
 }
 
-use MIME::Base64;
-use Storable 'thaw';
 use Data::Dumper;
 sub process_import_results {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   $param->{'job'} = $job;
   warn Dumper($param) if $DEBUG;
   my $gatewaynum = delete $param->{'gatewaynum'};

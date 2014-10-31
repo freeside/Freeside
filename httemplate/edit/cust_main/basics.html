@@ -145,6 +145,13 @@
              'label'       => emt("Class"),
 &>
 
+%# tax status
+<& /elements/tr-select-tax_status.html,
+             'curr_value'     => $cust_main->taxstatusnum,
+             'disable_empty'  => 0,
+             'empty_label'    => ' ',
+&>
+
 %#sales person
 <& /elements/tr-select-sales.html,
      'curr_value' => $cust_main->salesnum,

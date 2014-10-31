@@ -9,8 +9,6 @@ use FS::inventory_class;
 use FS::inventory_item;
 use IO::Socket::INET;
 use Data::Dumper;
-use MIME::Base64 qw(decode_base64);
-use Storable qw(thaw);
 
 use strict;
 
@@ -251,7 +249,7 @@ sub command {
 
 sub process_import_sim {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   $param->{'job'} = $job;
   my $exportnum = delete $param->{'exportnum'};
   my $export = __PACKAGE__->by_key($exportnum);

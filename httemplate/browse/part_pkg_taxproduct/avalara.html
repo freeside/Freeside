@@ -1,0 +1,84 @@
+<& /elements/header-popup.html, { title => 'Select tax product' } &>
+<form NAME="myform">
+<table class="inv" width="100%">
+<& /elements/tr-select-table.html,
+  'label'           => 'Tax product',
+  'field'           => 'taxproductnum',
+  'table'           => 'part_pkg_taxproduct',
+  'hashref'         => { data_vendor => 'avalara' },
+  'name_col'        => 'taxproduct', # for sorting
+  'label_callback'  => $label_callback,
+  'curr_value'      => $taxproductnum,
+  'empty_label'     => 'none',
+  'onchange'        => 'select_onchange',
+&>
+</table>
+<table class="inv" width="100%">
+<tr>
+  <td style="border-top: 1px solid #7e0079; text-align: center" colspan=2>
+  Add a new tax product</td>
+</tr>
+<tr>
+  <td style="text-align: right">Avalara tax code</td>
+  <td><input name="taxproduct" size=8></td>
+</tr>
+<tr>
+  <td style="text-align: right">Description</td>
+  <td><input name="description" size=20></td>
+</tr>
+<tr>
+  <td colspan="2" style="text-align: center">
+    <input type="button" onclick="add_new()" value="Add" />
+  </td>
+</tr>
+</table>
+</form>
+<SCRIPT TYPE="text/javascript">
+function select_onchange() {
+  var select = document.forms['myform']['taxproductnum'];
+  parent.document.getElementById('<% $id %>').value = select.value;
+  parent.document.getElementById('<% $id %>_description').value =
+    select.options[select.selectedIndex].text;
+  parent.nd(1);
+}
+function add_new() {
+  parent.document.getElementById('<% $id %>').value = -1;
+  parent.document.getElementById('<% $id %>_description').value =
+    document.forms['myform']['taxproduct'].value + ' ' +
+    document.forms['myform']['description'].value;
+  parent.nd(1);
+}
+</SCRIPT>
+</BODY>
+</HTML>
+<%once>
+
+my $conf = new FS::Conf;
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions');
+
+warn Dumper({ $cgi->Vars });
+
+# id: where to put the taxproductnum (in the parent document) after the user 
+# selects it
+$cgi->param('id') =~ /^([ \w]+)$/
+  or die "id parameter required";
+my $id = $1;
+
+# current value of taxproductnum
+my $taxproductnum = '';
+if ($cgi->param('taxproductnum') =~ /^(\d+)$/) {
+  $taxproductnum = $1;
+}
+
+my $label_callback = sub {
+  my $part_pkg_taxproduct = shift;
+  join(' ', $part_pkg_taxproduct->taxproduct,
+            $part_pkg_taxproduct->description);
+};
+
+</%init>

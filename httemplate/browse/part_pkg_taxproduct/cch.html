@@ -1,4 +1,4 @@
-<% include( 'elements/browse.html',
+<% include( '../elements/browse.html',
      'title'          => "Tax Products $title",
      'name_singular'  => 'tax product',
      'menubar'        => \@menubar,
@@ -33,12 +33,7 @@ my @menubar;
 my $title = '';
 my $onclick = 'cClick';
 
-my $data_vendor = '';
-if ( $cgi->param('data_vendor') =~ /^(\w+)$/ ) {
-  $data_vendor = $1;
-  $title = "$data_vendor";
-}
-$cgi->delete('data_vendor');
+my $data_vendor = 'cch';
 
 $title = " for $title" if $title;
 
@@ -83,10 +78,7 @@ if ($taxproductnum) {
 }
 
 my $hashref = {};
-my $extra_sql = '';
-if ( $data_vendor ) {
-  $extra_sql .= ' WHERE data_vendor = '. dbh->quote($data_vendor);
-}
+my $extra_sql .= ' WHERE data_vendor = '. dbh->quote($data_vendor);
 
 if ($tax_group || $tax_item || $tax_customer || $tax_provider) {
   my $compare = "LIKE '". ( $tax_group || "%" ). " : ". ( $tax_item || "%" ). " : ".
@@ -111,7 +103,6 @@ if ( $tax_group || $tax_item || $tax_provider || $tax_customer ) {
 $cgi->param('dummy', 1);
 
 #restore this so pagination works
-$cgi->param('data_vendor',  $data_vendor) if $data_vendor;
 $cgi->param('tax_group',  $tax_group) if $tax_group;
 $cgi->param('tax_item', $tax_item ) if $tax_item;
 $cgi->param('tax_provider', $tax_provider ) if $tax_provider;
@@ -120,9 +111,8 @@ $cgi->param('onclick', $onclick ) if $onclick;
 
 my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct $extra_sql";
 
-my @header        = ( 'Data Vendor', 'Group', 'Item', 'Provider', 'Customer' );
+my @header        = ( 'Group', 'Item', 'Provider', 'Customer' );
 my @links         = ( $select_link,
-                      $select_link,
                       $select_link,
                       $select_link,
                       $select_link,
@@ -131,12 +121,10 @@ my @link_onclicks = ( $select_onclick,
                       $select_onclick,
                       $select_onclick,
                       $select_onclick,
-                      $select_onclick,
                     );
-my $align = 'lllll';
+my $align = 'llll';
 
 my @fields = (
-  'data_vendor',
   sub { shift->description =~ /^(.*):.*:.*:.*$/; $1;},
   sub { shift->description =~ /^.*:(.*):.*:.*$/; $1;},
   sub { shift->description =~ /^.*:.*:(.*):.*$/; $1;},
@@ -162,31 +150,16 @@ $html_init .= qq(
     <INPUT NAME="id" TYPE="hidden" VALUE="$id">
     <TABLE>
       <TR>
-        <TD><SELECT NAME="data_vendor" onChange="this.form.submit()">
-);
-
-my $sql = "SELECT DISTINCT data_vendor FROM part_pkg_taxproduct ORDER BY data_vendor";
-my $dbh = dbh;
-my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-$sth->execute or die $sth->errstr;
-for (['(choose data vendor)'], @{$sth->fetchall_arrayref}) {
-  $html_init .= '<OPTION VALUE="'. $_->[0]. '"'.
-                ($_->[0] eq $data_vendor ? " SELECTED" : "").
-                '">'.  $_->[0];
-}
-$html_init .= qq(
-        </SELECT>
-
-<!-- cch specific -->
         <TD><SELECT NAME="tax_group" onChange="this.form.submit()">
 );
 
-$sql = "SELECT DISTINCT ".
+my $sql = "SELECT DISTINCT ".
        qq!substring(description from '#"%#" : % : % : %' for '#'),!.
        qq!substring(description from '#"%#" : % : % : %' for '#')!.
        "FROM part_pkg_taxproduct ORDER BY 1";
 
-$sth = $dbh->prepare($sql) or die $dbh->errstr;
+my $dbh = dbh;
+my $sth = $dbh->prepare($sql) or die $dbh->errstr;
 $sth->execute or die $sth->errstr;
 for (['', '(choose group)'], @{$sth->fetchall_arrayref}) {
   $html_init .= '<OPTION VALUE="'. $_->[0]. '"'.

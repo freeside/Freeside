@@ -96,11 +96,31 @@ my $args_callback = sub {
         grep { $_ !~ /^report_option_/ }
         @options;
 
-  foreach ( split(',', $cgi->param('taxproductnums') ) ) {
-    my $value = $cgi->param("taxproductnum_$_");
-    $error ||= "Illegal taxproductnum_$_: $value"
+  foreach my $class ( '', split(',', $cgi->param('taxproductnums') ) ) {
+    my $param = 'taxproductnum';
+    $param .= "_$class" if length($class); # gah, "_$class"?
+    my $value = $cgi->param($param);
+
+    if ( $value == -1 ) {
+      my $desc = $cgi->param($param.'_description');
+      # insert a new part_pkg_taxproduct
+      my $engine = FS::TaxEngine->new;
+      my $obj_or_error = $engine->add_taxproduct($desc);
+      if (ref $obj_or_error) {
+        $value = $obj_or_error->taxproductnum;
+        $cgi->param($param, $value); # for error handling
+      } else {
+        die "$obj_or_error (adding tax product)";
+      }
+    }
+
+    $error ||= "Illegal $param: $value"
       unless ( $value =~ /^\d*$/  );
-    $options{"usage_taxproductnum_$_"} = $value;
+    if (length($class)) {
+      $options{"usage_taxproductnum_$_"} = $value;
+    } else {
+      $new->set('taxproductnum', $value);
+    }
   }
 
   foreach ( grep $_, $cgi->param('report_option') ) {

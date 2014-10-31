@@ -2453,8 +2453,9 @@ and customer address. Include units.',
   {
     'key'         => 'enable_taxproducts',
     'section'     => 'billing',
-    'description' => 'Enable per-package mapping to vendor tax data from CCH or elsewhere.',
-    'type'        => 'checkbox',
+    'description' => 'Tax data vendor you are using.',
+    'type'        => 'select',
+    'select_enum' => [ 'cch', 'billsoft', 'avalara' ],
   },
 
   {
@@ -2469,6 +2470,20 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Prefer to invoice without tax over not billing at all',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'billsoft-company_code',
+    'section'     => 'billing',
+    'description' => 'Billsoft tax service company code (3 letters)',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'avalara-taxconfig',
+    'section'     => 'billing',
+    'description' => 'Avalara tax service configuration. Four lines: company code, account number, license key, test mode (1 to enable).',
+    'type'        => 'textarea',
   },
 
   {

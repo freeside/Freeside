@@ -28,8 +28,6 @@ use vars qw( $DEBUG $me $conf
 use Carp;
 use Scalar::Util qw( blessed );
 use Time::Local qw(timelocal);
-use Storable qw(thaw);
-use MIME::Base64;
 use Data::Dumper;
 use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
@@ -61,6 +59,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::cust_location;
 use FS::cust_class;
+use FS::tax_status;
 use FS::cust_main_exemption;
 use FS::cust_tax_adjustment;
 use FS::cust_tax_location;
@@ -1746,6 +1745,7 @@ sub check {
     || $self->ut_foreign_keyn('ship_locationnum', 'cust_location','locationnum')
     || $self->ut_foreign_keyn('classnum', 'cust_class', 'classnum')
     || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
+    || $self->ut_foreign_keyn('taxstatusnum', 'tax_status', 'taxstatusnum')
     || $self->ut_textn('custbatch')
     || $self->ut_name('last')
     || $self->ut_name('first')
@@ -2442,6 +2442,36 @@ sub classname {
   my $cust_class = $self->cust_class;
   $cust_class
     ? $cust_class->classname
+    : '';
+}
+
+=item tax_status
+
+Returns the external tax status, as an FS::tax_status object, or the empty 
+string if there is no tax status.
+
+=cut
+
+sub tax_status {
+  my $self = shift;
+  if ( $self->taxstatusnum ) {
+    qsearchs('tax_status', { 'taxstatusnum' => $self->taxstatusnum } );
+  } else {
+    return '';
+  } 
+}
+
+=item taxstatus
+
+Returns the tax status code if there is one.
+
+=cut
+
+sub taxstatus {
+  my $self = shift;
+  my $tax_status = $self->tax_status;
+  $tax_status
+    ? $tax_status->taxstatus
     : '';
 }
 
@@ -4998,9 +5028,24 @@ sub queued_bill {
   $cust_main->bill_and_collect( %args );
 }
 
+=item queued_collect 'custnum' => CUSTNUM [ , OPTION => VALUE ... ]
+
+Like queued_bill, but instead of C<bill_and_collect>, just runs the 
+C<collect> part.  This is used in batch tax calculation, where invoice 
+generation and collection events have to be completely separated.
+
+=cut
+
+sub queued_collect {
+  my (%args) = @_;
+  my $cust_main = FS::cust_main->by_key($args{'custnum'});
+  
+  $cust_main->collect(%args);
+}
+
 sub process_bill_and_collect {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   my $cust_main = qsearchs( 'cust_main', { custnum => $param->{'custnum'} } )
       or die "custnum '$param->{custnum}' not found!\n";
   $param->{'job'}   = $job;

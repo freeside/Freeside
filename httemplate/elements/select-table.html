@@ -89,10 +89,12 @@ Example:
     <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
 % }
 
-% foreach my $record ( sort {    $a->$name_col() cmp $b->$name_col()
-%                             || $a->$key()      <=> $b->$key()
-%                           }
-%                           @records
+% foreach my $record ( 
+% # we have the order_by parameter for this
+% #sort {    $a->$name_col() cmp $b->$name_col()
+% #                           || $a->$key()      <=> $b->$key()
+% #                         }
+%                          @records
 %                    )
 % {
 %   my $recvalue = $record->$key();
@@ -174,7 +176,8 @@ if ( $opt{'agent_virt'} ) {
 
 my @records = ();
 if ( $opt{'records'} ) {
-  @records = @{ $opt{'records'} };
+  @records = sort { $a->get($name_col) cmp $b->get($name_col) }
+             @{ $opt{'records'} };
 } else {
   @records = qsearch( {
     'table'     => $opt{'table'},

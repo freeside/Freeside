@@ -10,9 +10,6 @@ use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::cdr;
 use FS::detail_format;
-#use FS::rate;
-#use FS::rate_prefix;
-#use FS::rate_detail; #for ::granularities
 
 $DEBUG = 0;
 

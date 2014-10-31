@@ -31,26 +31,24 @@ FS::tax_class - Object methods for tax_class records
 
 =head1 DESCRIPTION
 
-An FS::tax_class object represents a tax class.  FS::tax_class
-inherits from FS::Record.  The following fields are currently supported:
+An FS::tax_class object represents a class of tax definitions.  FS::tax_class
+inherits from FS::Record.
+
+This should not be confused with L<FS::part_pkg_taxclass>, which defines tax
+classes for I<package> definitions.  The two kinds of tax classes are 
+completely unrelated.
+
+The following fields are currently supported:
 
 =over 4
 
-=item taxclassnum
+=item taxclassnum - Primary key
 
-Primary key
+=item data_vendor - Vendor of the tax data ('cch' or 'billsoft')
 
-=item data_vendor
+=item taxclass - The identifier used in the tax tables for this class.
 
-Vendor of the tax data
-
-=item taxclass
-
-Tax class
-
-=item description
-
-Human readable description of the tax class
+=item description -  Human readable description of the tax class.
 
 =back
 
@@ -320,6 +318,13 @@ sub batch_import {
 
       '';
     };
+
+  } elsif ( $format eq 'billsoft' ) {
+    # Billsoft doesn't actually have a format for this; it's just my own
+    # invention to have a way to load the list of tax classes from the 
+    # documentation.
+    @fields = qw( taxclass description );
+    $endhook = $hook = sub {};
 
   } elsif ( $format eq 'extended' ) {
     die "unimplemented\n";

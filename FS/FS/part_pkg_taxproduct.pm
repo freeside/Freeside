@@ -3,6 +3,7 @@ package FS::part_pkg_taxproduct;
 use strict;
 use vars qw( @ISA $delete_kludge );
 use FS::Record qw( qsearch dbh );
+use Text::CSV_XS;
 
 @ISA = qw(FS::Record);
 $delete_kludge = 0;
@@ -28,7 +29,7 @@ FS::part_pkg_taxproduct - Object methods for part_pkg_taxproduct records
 
 =head1 DESCRIPTION
 
-An FS::part_pkg_taxproduct object represents a tax product. 
+An FS::part_pkg_taxproduct object represents a tax product.
 FS::part_pkg_taxproduct inherits from FS::Record.  The following fields are
 currently supported:
 
@@ -198,6 +199,55 @@ sub expand_cch_taxproduct {
 =back
 
 =cut
+
+sub batch_import {
+  my ($param, $job) = @_;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $fh = $param->{filehandle};
+  my $format = $param->{format};
+  die "unsupported part_pkg_taxproduct format '$format'"
+    unless $format eq 'billsoft';
+
+  # this is slightly silly
+  my @lines = <$fh>;
+  my $lines = scalar @lines;
+  seek($fh, 0, 0);
+  
+  my $imported = 0;
+  my $csv = Text::CSV_XS->new;
+  # fields: taxproduct, description
+  while ( my $row = $csv->getline($fh) ) {
+    if (!defined $row) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't parse: ". $csv->error_input();
+    }
+
+    if ( $job ) {
+      $job->update_statustext(
+        int( 100 * $imported / $lines ) . ',Inserting tax product records'
+      );
+    }
+
+    my $new = FS::part_pkg_taxproduct->new({
+        'data_vendor' => 'billsoft',
+        'taxproduct'  => $row->[0],
+        'description' => $row->[1],
+    });
+    my $error = $new->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error inserting part_pkg_taxproduct: $error\n";
+    }
+    $imported++;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return '';
+}
 
 =head1 BUGS
 

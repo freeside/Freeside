@@ -1,0 +1,146 @@
+<& /elements/header-popup.html, $title &>
+<& /browse/elements/browse.html,
+  'name_singular'  => 'tax product',
+  'html_form'      => include('.form', $service_code, $trans_code),
+  'query'          => {
+                        'table'     => 'part_pkg_taxproduct',
+                        'hashref'   => $hashref,
+                        'order_by'  => 'ORDER BY taxproduct',
+                      },
+  'count_query'    => $count_query,
+  'header'         => \@header,
+  'fields'         => \@fields,
+  'align'          => $align,
+  'links'          => [],
+  'link_onclicks'  => \@link_onclicks,
+  'nohtmlheader'   => 1,
+&>
+<%shared>
+# populate dropdowns
+
+# taxproduct is 12 digits.  First half is the service type code, second
+# half is the transaction code.  Description is also two parts, corresponding
+# to those codes, separated with a :.
+
+my (@service_codes, @trans_codes, %service_labels, %trans_labels);
+foreach my $row ( qsearch({
+  table   => 'part_pkg_taxproduct',
+  select  => 'DISTINCT substr(taxproduct, 1, 6) AS code, '.
+             "substring(description from '(.*):') AS label",
+  }))
+{
+  $service_labels{$row->get('code')} =
+    sprintf('%02d %s', $row->get('code'), $row->get('label'));
+}
+foreach my $row ( qsearch({
+  table   => 'part_pkg_taxproduct',
+  select  => 'DISTINCT substr(taxproduct, 7, 6) AS code, '.
+             "substring(description from ':(.*)') AS label",
+  }))
+{
+  $trans_labels{$row->get('code')} =
+    sprintf('%02d %s', $row->get('code'), $row->get('label'));
+}
+$service_labels{''} = $trans_labels{''} = '';
+
+@service_codes = sort {$a <=> $b} keys %service_labels;
+@trans_codes = sort {$a <=> $b} keys %trans_labels;
+
+</%shared>
+<%def .form>
+% my ($service_code, $trans_code) = @_;
+<FORM ACTION="<% $cgi->url %>" METHOD="GET">
+<& /elements/select.html,
+  field       => 'service_code',
+  options     => \@service_codes,
+  labels      => \%service_labels,
+  curr_value  => $service_code,
+  onchange    => 'this.form.submit()',
+&>
+&nbsp;
+<& /elements/select.html,
+  field       => 'trans_code',
+  options     => \@trans_codes,
+  labels      => \%trans_labels,
+  curr_value  => $trans_code,
+  onchange    => 'this.form.submit()',
+&>
+<& /elements/hidden.html,
+  field       => 'id',
+  curr_value  => $cgi->param('id'),
+&>
+</%def>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('id') =~ /^\w+$/ or die "missing id parameter";
+my $id = $cgi->param('id');
+
+my $select_onclick = sub {
+  my $row = shift;
+  my $taxnum = $row->taxproductnum;
+  my $desc = $row->description;
+  "parent.document.getElementById('$id').value = $taxnum;".
+  "parent.document.getElementById('${id}_description').value = '$desc';".
+  "parent.cClick();";
+}
+  if $id;
+
+my @menubar;
+my $title = 'Tax Products';
+
+my $hashref = { data_vendor => 'billsoft' };
+
+my ($service_code, $trans_code, $taxproduct);
+if ( $cgi->param('service_code') =~ /^(\d+)$/ ) {
+  $service_code = $1;
+  $taxproduct = sprintf('%06d', $service_code);
+} else {
+  $taxproduct = '%';
+}
+
+if ( $cgi->param('trans_code') =~ /^(\d+)$/ ) {
+  $trans_code = $1;
+  $taxproduct .= sprintf('%06d', $trans_code);
+} elsif ( $service_code ) {
+  $taxproduct .= '%';
+}
+
+$hashref->{taxproduct} = { op => 'LIKE', value => $taxproduct };
+
+my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct ".
+                  "WHERE data_vendor = 'billsoft' AND ".
+                  "taxproduct LIKE '$taxproduct'";
+
+my $sub_service_desc = sub {
+  my $ppt = shift; #part_pkg_taxproduct
+  my @codes = ($ppt->taxproduct =~ /(\d{6})(\d{6})/);
+  my @descs = split(':', $ppt->description);
+  $ppt->set('service_desc' => sprintf('%02d %s', $codes[0], $descs[0]));
+  $ppt->set('trans_desc'   => sprintf('%02d %s', $codes[1], $descs[1]));
+  $ppt->service_desc;
+};
+
+my $sub_trans_desc = sub {
+  my $ppt = shift;
+  $ppt->trans_desc;
+};
+
+my @fields = (
+  $sub_service_desc,
+  $sub_trans_desc,
+  'note'
+);
+  
+my @header = (
+  'Service Type',
+  'Transaction',
+  '',
+);
+
+my $align = 'lll';
+my @link_onclicks = ( $select_onclick, $select_onclick );
+
+</%init>

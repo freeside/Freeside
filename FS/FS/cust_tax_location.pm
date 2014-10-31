@@ -28,38 +28,48 @@ FS::cust_tax_location - Object methods for cust_tax_location records
 
 =head1 DESCRIPTION
 
-An FS::cust_tax_location object represents a mapping between a customer and
-a tax location.  FS::cust_tax_location inherits from FS::Record.  The
-following fields are currently supported:
+An FS::cust_tax_location object represents a classification rule for
+determining a tax region code ('geocode') for a service location.  These
+records are used when editing customer locations to help the user choose the
+correct tax jurisdiction code.  The jurisdiction codes are actually defined
+in L<FS::tax_rate_location>, and appear directly in records in
+L<FS::tax_rate>.
+
+FS::cust_tax_location is used in tax calculation (for CCH) to determine 
+"implied" geocodes for customers and locations that have a complete U.S.
+ZIP+4 code and thus can be exactly placed in a jurisdiction.  For those that
+don't, the user is expected to choose the geocode when entering the customer
+record.
+
+FS::cust_tax_location inherits from FS::Record.  The following fields are
+currently supported:
 
 =over 4
 
-=item custlocationnum
+=item custlocationnum - primary key
 
-primary key
+=item data_vendor - a tax data vendor and "style" of record
 
-=item data_vendor
+=item country - the two-letter country code
 
-a tax data vendor
+=item state - the two-letter state code (though CCH uses this differently;
+see QUIRKS)
 
-=item zip 
+=item zip - an exact zip code (again, see QUIRKS)
 
-=item state
+=item ziplo -  the lower bound of the zip code range (requires zip to be null)
 
-=item plus4hi
+=item ziphi - the upper bound of the zip code range (requires zip to be null)
 
-the upper bound of the last 4 zip code digits
+=item plus4lo - the lower bound of the last 4 zip code digits
 
-=item plus4lo
+=item plus4hi - the upper bound of the last 4 zip code digits
 
-the lower bound of the last 4 zip code digits
+=item default_location - 'Y' when this record represents the default.  The UI
+will list default locations before non-default locations.
 
-=item default_location
-
-'Y' when this record represents the default for zip
-
-=item geocode - the foreign key into FS::part_pkg_tax_rate and FS::tax_rate
-
+=item geocode - the foreign key into L<FS::part_pkg_tax_rate>, 
+L<FS::tax_rate>, L<FS::tax_rate_location>, etc.
 
 =back
 
@@ -123,32 +133,28 @@ sub check {
     || $self->ut_enum('cityflag', [ '', 'I', 'O', 'B' ] )
     || $self->ut_alpha('geocode')
   ;
-  return $error if $error;
-
-  #ugh!  cch canada weirdness and more
-  if ($self->state eq 'CN' && $self->data_vendor eq 'cch-zip' ) {
-    $error = "Illegal cch canadian zip"
-     unless $self->zip =~ /^[A-Z]$/;
-  } elsif ($self->state =~ /^E([B-DFGILNPR-UW])$/ && $self->data_vendor eq 'cch-zip' ) {
-    $error = "Illegal cch european zip"
-     unless $self->zip =~ /^E$1$/;
-  } else {
-    $error = $self->ut_number('zip', $self->state eq 'CN' ? 'CA' : 'US');
+  if ( $self->country ) {
+    $error ||= $self->ut_country('country')
+           ||  $self->ut_zip('ziphi', $self->country)
+           ||  $self->ut_zip('ziplo', $self->country);
   }
   return $error if $error;
 
-  #ugh!  cch canada weirdness and more
-  return "must specify either city/county or plus4lo/plus4hi"
-    unless ( $self->plus4lo && $self->plus4hi || 
-             ( $self->city ||
-               $self->state eq 'CN' ||
-               $self->state =~ /^E([B-DFGILNPR-UW])$/
-             ) && $self->county
-           );
+  if ($self->state eq 'CN' && $self->data_vendor eq 'cch-zip' ) {
+    $error = "Illegal canadian zip"
+     unless $self->zip =~ /^[A-Z]$/;
+  } elsif ($self->state =~ /^E([B-DFGILNPR-UW])$/ && $self->data_vendor eq 'cch-zip' ) {
+    $error = "Illegal european zip"
+     unless $self->zip =~ /^E$1$/;
+  } elsif ($self->data_vendor =~ /^cch/) {
+    $error = $self->ut_numbern('zip', $self->state eq 'CN' ? 'CA' : 'US');
+  }
+  return $error if $error;
 
   $self->SUPER::check;
 }
 
+# annoyingly incompatible with FS::Record::batch_import.
 
 sub batch_import {
   my ($param, $job) = @_;
@@ -255,6 +261,25 @@ sub batch_import {
       
     };
 
+  } elsif ( $format eq 'billsoft' ) {
+
+    @fields = qw( geocode alt_location country state county city 
+                  ziplo ziphi );
+    $hook = sub {
+      my $hash = shift;
+      $hash->{data_vendor} = 'billsoft';
+      $hash->{default_location} = ($hash->{alt_location} ? '' : 'Y');
+      $hash->{city} =~ s/[^\w ]//g; # remove asterisks and other bad things
+      $hash->{country} = substr($hash->{country}, 0, 2);
+      if (    $hash->{state} =~ /^ *$/
+           or $hash->{county} =~ /^ *$/
+           or $hash->{country} !~ /^US|CA$/ ) {
+        # remove whole-country rows, whole-state rows, and non-CAN/USA rows
+        %$hash = ();
+      }
+      '';
+    };
+
   } elsif ( $format eq 'extended' ) {
     die "unimplemented\n";
     @fields = qw( );
@@ -287,7 +312,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count ). ",Importing locations"
+          int( 100 * $imported / $count ). ",Importing tax locations"
         );
         die $error if $error;
         $last = time;
@@ -311,6 +336,8 @@ sub batch_import {
       return $error;
     }
 
+    # $hook can delete the contents of the hash to prevent the row from 
+    # being inserted
     next unless scalar(keys %cust_tax_location);
 
     my $cust_tax_location = new FS::cust_tax_location( \%cust_tax_location );
@@ -334,9 +361,52 @@ sub batch_import {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4
+
+=item process_batch_import JOB, PARAMS
+
+Starts a batch import given JOB (an L<FS::queue>) and PARAMS (a 
+Base64-Storable hash).  PARAMS should contain 'format' and 'uploaded_files'.
+
+Currently only usable for Billsoft imports; CCH's agglomeration of update
+files need to be imported through L<FS::tax_rate::process_batch_import>.
+
+=cut
+
+sub process_batch_import {
+  my $job = shift;
+  my $param = shift;
+
+  my $files = $param->{'uploaded_files'};
+
+  my ($file) = ($files =~ /^zipfile:(.*)$/)
+    or die "No files provided.\n";
+
+  my $dir = $FS::UID::cache_dir . '/cache.' . $FS::UID::datasrc;
+  open ( $param->{'filehandle'}, '<', "$dir/$file" )
+    or die "unable to open '$file': $!\n";
+
+  my $error = batch_import($param, $job);
+  die $error if $error;
+}
+
+=back
+
+=head1 QUIRKS
+
+CCH doesn't have a "country" field; for addresses in Canada it uses state 
+= 'CN', and zip = the one-letter postal code prefix for the province.  Or
+maybe that's just our CCH implementation.  This doesn't apply to Billsoft,
+and shouldn't apply to any other tax vendor that may somehow be implemented.
+
+CCH also has two styles of records in this table: cch and cch-zip.  cch 
+records define a unique 
+
 =head1 BUGS
 
-The author should be informed of any you find.
+CCH clutter.
 
 =head1 SEE ALSO
 

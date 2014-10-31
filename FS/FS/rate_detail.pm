@@ -310,9 +310,7 @@ sub conn_secs {
 
 =cut
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process_edit_import {
   my $job = shift;
 
@@ -351,7 +349,7 @@ sub process_edit_import {
   my @pass_params = @{ $opt->{params} };
   my %formats = %{ $opt->{formats} };
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
   
   my $files = $param->{'uploaded_files'}

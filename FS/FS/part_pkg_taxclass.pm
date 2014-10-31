@@ -30,8 +30,16 @@ FS::part_pkg_taxclass - Object methods for part_pkg_taxclass records
 
 =head1 DESCRIPTION
 
-An FS::part_pkg_taxclass object represents a tax class.  FS::part_pkg_taxclass
-inherits from FS::Record.  The following fields are currently supported:
+An FS::part_pkg_taxclass object declares the existence of a taxable sales
+class.  FS::part_pkg_taxclass inherits from FS::Record.  
+
+FS::part_pkg_taxclass is not used in tax calculation.  It is only used to 
+list a set of valid tax class names for use in the user interface.  When
+using internal taxes, the actual matching of tax definitions to package
+tax class is a string match between tax class names.  This is arguably
+a bug.
+
+The following fields are currently supported:
 
 =over 4
 

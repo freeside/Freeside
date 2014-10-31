@@ -94,6 +94,11 @@ Geocode
 
 Tax district code (optional)
 
+=item incorporated
+
+Incorporated city flag: set to 'Y' if the address is in the legal borders 
+of an incorporated city.
+
 =item disabled
 
 Disabled flag; set to 'Y' to disable the location.
@@ -340,6 +345,7 @@ sub check {
     || $self->ut_alphan('geocode')
     || $self->ut_alphan('district')
     || $self->ut_numbern('censusyear')
+    || $self->ut_flag('incorporated')
   ;
   return $error if $error;
   if ( $self->censustract ne '' ) {

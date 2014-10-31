@@ -131,13 +131,11 @@ Returns the agent (see L<FS::agent>) for this invoice batch.
 
 =cut
 
-use Storable 'thaw';
 use Data::Dumper;
-use MIME::Base64;
 
 sub process_print_pdf {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
   die "no batchnum specified!\n" if ! exists($param->{batchnum});
   my $batch = FS::bill_batch->by_key($param->{batchnum});

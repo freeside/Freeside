@@ -722,13 +722,10 @@ Job-queue processor for web interface adds/edits
 
 =cut
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process {
   my $job = shift;
-
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   my $old = qsearchs('part_svc', { 'svcpart' => $param->{'svcpart'} }) 
@@ -802,13 +799,10 @@ Job-queue processor for web interface bulk customer service changes
 
 =cut
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process_bulk_cust_svc {
   my $job = shift;
-
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   local($FS::svc_Common::noexport_hack) = 1

@@ -2,9 +2,7 @@ package FS::cust_pkg::Import;
 
 use strict;
 use vars qw( $DEBUG ); #$conf );
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 use FS::Misc::DateTime qw( parse_datetime );
 use FS::Record qw( qsearchs );
 use FS::cust_pkg;
@@ -60,8 +58,7 @@ Load a batch import as a queued JSRPC job
 
 sub process_batch_import {
   my $job = shift;
-
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
   
   my $files = $param->{'uploaded_files'}
