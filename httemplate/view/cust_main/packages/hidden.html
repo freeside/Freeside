@@ -9,22 +9,28 @@
     </TD>
     <TD>
 %     if ( $pkgpart_change and $location_change ) {
-      Package type and location change
+      <% emt('Package type and location change') %>
 %     } elsif ( $pkgpart_change ) {
-      Package type change
+      <% emt('Package type change') %>
 %     } elsif ( $location_change ) {
-      Location change
-%     } # or else what?
+      <% emt('Location change') %>
+%     } else { # in case the package was somehow replaced with itself
+      <% emt('Other package change') %>
+%     }
       <B><% time2str('%b %o, %Y', $cust_pkg->get('cancel')) %></B>
     </TD><TD>
 %     if ( $pkgpart_change ) {
-      from <% $popup_link |n %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->custom_comment |h %></A>
+      <% emt('from') %> <% $popup_link |n %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->custom_comment |h %></A>
 %     }
 %     if ( $pkgpart_change and $location_change ) {
       <BR>
 %     }
 %     if ( $location_change ) {
-      from <I><% $popup_link |n %><% $cust_pkg->location_label %></A></I>
+      <% emt('from') %> <I><% $popup_link |n %><% $cust_pkg->location_label %></A></I>
+%     }
+%     if ( !$pkgpart_change and !$location_change ) {
+%     # have to show _something_
+      <% $popup_link |n %><% emt('Details') %></A>
 %     }
     </TD>
   </TR>
