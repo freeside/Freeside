@@ -169,6 +169,7 @@ foreach my $filename ( @$ls ) {
     my @extra_values = ();
     if ( $hash{'Status-Type'} eq 'Start' ) {
 
+      push @keys, 'AcctStartTime';
       $dbhash{'AcctStartTime'} = $hash{'Date'};
 
       $sql = 'INSERT INTO radacct ( '. join(',', @keys).
@@ -177,6 +178,8 @@ foreach my $filename ( @$ls ) {
     } elsif ( $hash{'Status-Type'} eq 'Stop' ) {
 
       my $AcctSessionId = delete($dbhash{AcctSessionId});
+
+      push @keys, 'AcctStopTime';
       $dbhash{'AcctStopTime'} = $hash{'Date'};
 
       push @extra_values, $AcctSessionId;
