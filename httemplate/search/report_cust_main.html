@@ -204,7 +204,35 @@
         }
       }
     </SCRIPT>
- 
+
+% my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
+% unless ( @exempt_groups ) { 
+
+%   #falze laziness with With/Without postal mail invoices
+     <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Tax exempt') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="tax" ID="tax" onClick="tax_changed();"></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Not tax exempt') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="no_tax" ID="no_tax" onClick="no_tax_changed();"></TD>
+    </TR>
+
+    <SCRIPT TYPE="text/javascript">
+      function  tax_changed() {
+        if ( document.getElementById('tax').checked == true ) {
+          document.getElementById('no_tax').checked = false;
+        }
+      }
+      function no_tax_changed() {
+        if ( document.getElementById('no_tax').checked == true ) {
+          document.getElementById('tax').checked = false;
+        }
+      }
+    </SCRIPT>
+% }
+
     <TR>
       <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
       <TD>
