@@ -831,6 +831,18 @@ sub search {
     if $params->{'no_POST'};
 
   ##
+  # "tax exempt" checkbox
+  ##
+  push @where, "cust_main.tax = 'Y'"
+    if $params->{'tax'};
+
+  ##
+  # "not tax exempt" checkbox
+  ##
+  push @where, "(cust_main.tax = '' OR cust_main.tax IS NULL )"
+    if $params->{'no_tax'};
+
+  ##
   # dates
   ##
 
