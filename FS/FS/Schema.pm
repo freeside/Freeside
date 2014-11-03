@@ -2292,7 +2292,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'paypendingnum',
       'unique'       => [ [ 'payunique' ] ],
-      'index'        => [ [ 'custnum' ], [ 'status' ], ],
+      'index'        => [ [ 'custnum' ], [ 'status' ], ['paynum'], ['void_paynum'], ['jobnum'], ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
