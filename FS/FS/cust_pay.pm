@@ -190,7 +190,13 @@ If the additional field discount_term is defined then a prepayment discount
 is taken for that length of time.  It is an error for the customer to owe
 after this payment is made.
 
-A hash of optional arguments may be passed.  Currently "manual" is supported.
+A hash of optional arguments may be passed.  The following arguments are
+supported:
+
+=over 4
+
+=item manual
+
 If true, a payment receipt is sent instead of a statement when
 'payment_receipt_email' configuration option is set.
 
@@ -202,6 +208,13 @@ instead send a I<payment receipt>.  "manual" should be true whenever a
 payment is created directly from the web interface, from a user-initiated
 realtime payment, or from a third-party payment via self-service.  It should
 be I<false> when creating a payment from a billing event or from a batch.
+
+=item noemail
+
+Don't send an email receipt.  (Note: does not currently work when
+payment_receipt-trigger is set to something other than default / cust_bill)
+
+=back
 
 =cut
 
@@ -379,6 +392,7 @@ sub insert {
   if ( $trigger eq 'cust_pay' ) {
     my $error = $self->send_receipt(
       'manual'    => $options{'manual'},
+      'noemail'   => $options{'noemail'},
       'cust_bill' => $cust_bill,
       'cust_main' => $cust_main,
     );
@@ -581,6 +595,12 @@ will be assumed.
 
 Customer (FS::cust_main) object (for efficiency).
 
+=item noemail
+
+Don't send an email receipt.
+
+=cut
+
 =back
 
 =cut
@@ -687,7 +707,8 @@ sub send_receipt {
 
     }
 
-  } elsif ( ! $cust_main->invoice_noemail ) { #not manual
+  #not manual and no noemail flag (here or on the customer)
+  } elsif ( ! $opt->{'noemail'} && ! $cust_main->invoice_noemail ) {
 
     my $queue = new FS::queue {
        'job'     => 'FS::cust_bill::queueable_email',
