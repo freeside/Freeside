@@ -25,11 +25,7 @@ use FS::cust_pay_void;
 use FS::upgrade_journal;
 use FS::Cursor;
 
-$DEBUG = 0;
-
-$me = '[FS::cust_pay]';
-
-$ignore_noapply = 0;
+our ($DEBUG, $me, $import, $ignore_noapply) = (0,'[FS::cust_pay]',0,0);
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -687,7 +683,7 @@ sub send_receipt {
 
     }
 
-  } elsif ( ! $cust_main->invoice_noemail ) { #not manual
+  } elsif ( ! $import && ! $cust_main->invoice_noemail ) { #not manual and not an import
 
     my $queue = new FS::queue {
        'job'     => 'FS::cust_bill::queueable_email',
