@@ -64,6 +64,7 @@ FS/addr_block.pm
 FS/agent.pm
 FS/agent_type.pm
 FS/cust_bill.pm
+FS/cust_bill/Search.pm
 FS/cust_bill_pkg.pm
 FS/cust_bill_pkg_detail.pm
 FS/cust_credit.pm
