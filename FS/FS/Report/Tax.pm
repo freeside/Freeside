@@ -7,7 +7,7 @@ use Date::Format qw( time2str );
 
 use Data::Dumper;
 
-$DEBUG = 2;
+$DEBUG = 0;
 
 =item report_internal OPTIONS
 
@@ -500,7 +500,6 @@ sub title {
   if ( $self->{opt}->{agentnum} ) {
     my $agent = qsearchs('agent', { agentnum => $self->{opt}->{agentnum} });
     $string .= $agent->agent . ' ';
-    warn $string;
   }
   $string .= 'Tax Report: '; # XXX localization
   if ( $self->{opt}->{beginning} ) {
