@@ -99,13 +99,30 @@ my %formatdef = (
     valign    => 'vcenter',
     bold      => 1,
   },
+  rowhead_outside => {
+    size      => 11,
+    align     => 'left',
+    valign    => 'vcenter',
+    bg_color  => 'gray',
+    bold      => 1,
+    italic    => 1,
+  },
+  currency_outside => {
+    size      => 11,
+    align     => 'right',
+    valign    => 'vcenter',
+    bg_color  => 'gray',
+    italic    => 1,
+    num_format=> 8, # ($#,##0.00_);[Red]($#,##0.00)
+  },
+
 );
 my %default = (
   font      => 'Calibri',
   border    => 1,
 );
 my @widths = ( #ick
-  18, (13) x 5, 3, 7.5, 3, 11, 11, 3, 11, 3, 11
+  30, (13) x 5, 3, 7.5, 3, 11, 11, 3, 11, 3, 11
 );
 
 my @format = ( {}, {}, {} ); # white row, gray row, yellow (totals) row
@@ -193,6 +210,15 @@ foreach my $row (@rows) {
   $rownum++;
   $y++;
   $prev_row = $row;
+}
+
+# at the end of everything
+if ( $report->{outside} > 0 ) {
+  my $f = $format[0];
+  $ws->set_row($y, 30); # height
+  $ws->write($y, 0, mt('Out of taxable region'), $f->{rowhead_outside});
+  $ws->write($y, 1, $report->{outside}, $f->{currency_outside});
+  $y++;
 }
 
 # ewwwww...
