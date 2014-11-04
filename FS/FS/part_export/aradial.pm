@@ -58,14 +58,14 @@ sub export_replace {
   if ($new->email ne $old->email) {
     return $old->export_delete || $new->export_insert;
   }
-  my $UserLockout = 0;
-  $UserLockout = 1 if $new->cust_svc->cust_pkg->susp > 0;
+  my $Status = 0;
+  $Status = 1 if $new->cust_svc->cust_pkg->susp > 0;
   $self->request_user_edit(
     'Page'    => 'UserEdit',
     'Modify'  => 1,
     'UserID'  => $old->email,
     $self->svc_acct_params($new),
-    UserLockout => $UserLockout,
+   'Status' => $Status,
   );
 }
 
@@ -74,7 +74,7 @@ sub export_suspend {
   $self->request_user_edit(
     'Modify'  => 1,
     'UserID'  => $svc->email,
-    'UserLockout' => 1,
+    'Status' => 1,
   );
 }
 
@@ -83,7 +83,7 @@ sub export_unsuspend {
   $self->request_user_edit(
     'Modify'  => 1,
     'UserID'  => $svc->email,
-    'UserLockout' => 0,
+    'Status' => 0,
   );
 }
 
