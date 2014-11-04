@@ -388,12 +388,8 @@ if ( $cgi->param('nottax') ) {
   }
 
   # specific taxnums
-  if ( $cgi->param('taxnum') ) {
-    my $taxnum_in = join(',', 
-      grep /^\d+$/, $cgi->param('taxnum')
-    );
-    push @tax_where, "cust_main_county.taxnum IN ($taxnum_in)"
-      if $taxnum_in;
+  if ( $cgi->param('taxnum') =~ /^([0-9,]+)$/ ) {
+    push @tax_where, "cust_main_county.taxnum IN ($1)";
   }
 
   # If we're showing exempt items, we need to find those with 
@@ -557,12 +553,8 @@ if ( $cgi->param('nottax') ) {
   }
 
   # specific taxnums
-  if ( $cgi->param('taxnum') ) {
-    my $taxnum_in = join(',', 
-      grep /^\d+$/, $cgi->param('taxnum')
-    );
-    push @where, "cust_main_county.taxnum IN ($taxnum_in)"
-      if $taxnum_in;
+  if ( $cgi->param('taxnum') =~ /^([0-9,]+)$/ ) {
+    push @where, "cust_main_county.taxnum IN ($1)";
   }
 
   # report group (itemdesc)

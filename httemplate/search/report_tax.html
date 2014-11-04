@@ -4,67 +4,35 @@
 
 <TABLE>
 
-% if ( $conf->config('tax-report_groups') ) {
-%   my @lines = $conf->config('tax-report_groups');
-    
-  <TR>
-    <TD ALIGN="right">Tax group</TD>
-    <TD>
-      <SELECT NAME="report_group">
+  <& /elements/tr-select-agent.html, 'disable_empty'=>0 &>
 
-        <OPTION VALUE="">all</OPTION>
+  <& /elements/tr-input-beginning_ending.html &>
 
-%       foreach my $line ( @lines ) {
-%         $line =~ /^\s*(.+)\s+(=|!=)\s+(.*)\s*$/ #or next;
-%           or do { warn "bad report_group line: $line\n"; next; };
-%         my($label, $op, $value) = ($1, $2, $3);
+  <& /elements/tr-select.html,
+    'label'         => 'Country',
+    'field'         => 'country',
+    'options'       => \@countries,
+    'curr_value'    => ($conf->config('countrydefault') || 'US'),
+  &>
 
-          <OPTION VALUE="<% "$op $value" %>"><% $label %></OPTION>
-%       }
+  <& /elements/tr-select.html,
+    'label'         => 'For tax named ',
+    'field'         => 'taxname',
+    'options'       => \@taxnames,
+    'disable_empty' => 1,
+  &>
 
-      </SELECT>
-    </TD>
-  </TR>
-
-% }
-
- <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
-
- <% include( '/elements/tr-input-beginning_ending.html' ) %>
-
-%    if ( $city ) {
-   <TR>
-     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_cities" VALUE="1" onclick="toggle_show_cities(this)"></TD>
-     <TD>Show cities</TD>
-   </TR>
-   <TR>
-     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_districts" VALUE="1" DISABLED></TD>
-     <TD>Show districts</TD>
-   </TR>
-  <SCRIPT TYPE="text/javascript">
-  function toggle_show_cities() {
-    what = document.getElementsByName('show_cities')[0];
-    what.form.show_districts.disabled = !what.checked;
-    what.form.show_districts.checked  = what.checked;
-  }
-  toggle_show_cities();
-  </SCRIPT>
-% } 
-
-%    if ( $conf->exists('enable_taxclasses') ) {
-   <TR>
-     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
-     <TD>Show tax classes</TD>
-   </TR>
-% } 
-
-% my @pkg_class = qsearch('pkg_class', {});
-% if ( @pkg_class ) {
-   <TR>
-     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_pkgclasses" VALUE="1"></TD>
-     <TD>Show package classes</TD>
-   </TR>
-% } 
+  <& /elements/tr-checkbox-multiple.html,
+    'label'         => 'Break down by ',
+    'field'         => 'breakdown',
+    'options'       => \@breakdown,
+    'option_labels' => {
+      taxclass  => 'Tax class',
+      pkgclass  => 'Package class',
+      city      => 'City',
+      district  => 'District',
+    },
+  &>
   <TR>
     <TD></TD>
     <TD>Deduct credited tax if it was 
@@ -89,12 +57,26 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
-my $city_sql = "SELECT COUNT(*) FROM cust_main_county
-                  WHERE city != '' AND city IS NOT NULL
-                  LIMIT 1";
+my $sth = dbh->prepare('SELECT DISTINCT(COALESCE(taxname, \'Tax\')) FROM cust_main_county');
+$sth->execute or die $sth->errstr;
+my @taxnames = map { $_->[0] } @{ $sth->fetchall_arrayref };
 
-my $city_sth = dbh->prepare($city_sql) or die dbh->errstr;
-$city_sth->execute or die $city_sth->errstr;
-my $city = $city_sth->fetchrow_arrayref->[0];
+$sth = dbh->prepare('SELECT DISTINCT(country) FROM cust_location');
+$sth->execute or die $sth->errstr;
+my @countries = map { $_->[0] } @{ $sth->fetchall_arrayref };
+
+my @breakdown;
+if ( $conf->exists('enable_taxclasses') ) {
+  push @breakdown, 'taxclass';
+}
+if ( FS::pkg_class->count() > 0 ) {
+  push @breakdown, 'pkgclass';
+}
+if ( FS::cust_main_county->count("city is not null and city != ''") > 0 ) {
+  push @breakdown, 'city';
+}
+if ( FS::cust_main_county->count("district is not null") > 0 ) {
+  push @breakdown, 'district';
+}
 
 </%init>
