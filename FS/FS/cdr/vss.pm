@@ -18,9 +18,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
         'accountcode',  # account_id
         'src',          # caller
         'dst',          # called
-        skip(1),        # reason
-#        _cdr_date_parser_maker('startdate'),       # time
-        'calldate',
+        skip(2),        # reason
+			# call id
+        _cdr_date_parser_maker('startdate'),       # time
         'billsec',      # duration
         skip(3),        # ringtime
                         # status
