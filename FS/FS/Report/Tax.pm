@@ -358,13 +358,13 @@ sub report_internal {
       SELECT 1 FROM cust_tax_exempt_pkg
         JOIN cust_main_county USING (taxnum)
         WHERE cust_tax_exempt_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-          AND cust_main_county.taxname = '$taxname'
+          AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname'
     )
     AND NOT EXISTS(
       SELECT 1 FROM cust_bill_pkg_tax_location
         JOIN cust_main_county USING (taxnum)
         WHERE cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum
-          AND cust_main_county.taxname = '$taxname'
+          AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname'
     )
   ";
   warn "\nOUTSIDE:\n$sql_outside\n" if $DEBUG;

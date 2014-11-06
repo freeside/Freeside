@@ -149,7 +149,11 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
       <TD CLASS="rowhead">
         <% emt('Out of taxable region') %>
       </TD>
-      <TD><% $money_sprintf->( $report->{outside } ) %></TD>
+      <TD STYLE="text-align: right">
+        <A HREF="<% $saleslink %>;out=1;taxname=<% $params{taxname} %>">
+          <% $money_sprintf->( $report->{outside } ) %>
+        </A>
+      </TD>
       <TD COLSPAN=0></TD>
     </TR>
   </TBODY>
