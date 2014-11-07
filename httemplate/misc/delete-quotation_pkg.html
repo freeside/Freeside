@@ -1,0 +1,21 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p. "view/quotation.html?". $quotationnum) %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Generate quotation'); #separate ACL for editing it later?  too silly for us yet
+
+#untaint quotationpkgnum
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ or die "Illegal quotationpkgnum";
+my $quotationpkgnum = $1;
+
+my $quotation_pkg = qsearchs('quotation_pkg',{'quotationpkgnum'=>$quotationpkgnum});
+my $quotationnum = $quotation_pkg->quotationnum;
+
+my $error = $quotation_pkg->delete;
+
+</%init>

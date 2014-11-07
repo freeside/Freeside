@@ -1,5 +1,12 @@
 <& /elements/header.html, mt('Quotation View'), $menubar &>
 
+<SCRIPT TYPE="text/javascript">
+function areyousure(href, message) {
+  if (confirm(message) == true)
+    window.location.href = href;
+}
+</SCRIPT>
+
 %#XXX link to order...
 
 <%doc>
@@ -38,7 +45,7 @@ XXX resending quotations
 % } 
 
 % if ( $conf->exists('quotation_html') ) { 
-    <% join('', $quotation->print_html() ) %>
+    <% join('', $quotation->print_html( preref_callback=>$preref_callback )) %>
 % } else { 
 %   die "quotation_html config missing";
 % }
@@ -87,5 +94,17 @@ my $link = "quotationnum=$quotationnum";
 #$link .= ';template='. uri_escape($template) if $template;
 #$link .= ';notice_name='. $notice_name if $notice_name;
 
+my $preref_callback = sub {
+  areyousure_link("${p}misc/delete-quotation_pkg.html?". shift->quotationpkgnum,
+                  emt('Are you sure you want to remove this package from the quotation?'),
+                  emt('Remove this package'), #tooltip
+                  qq(<img src="${p}images/cross.png">), #link
+                 );
+};
+
+sub areyousure_link {
+    my ($url,$msg,$title,$label) = (shift,shift,shift,shift);
+    '<A HREF="javascript:areyousure(\''.$url.'\',\''.$msg.'\')" TITLE="'.$title.'">'.$label.'</A>';
+}
 
 </%init>
