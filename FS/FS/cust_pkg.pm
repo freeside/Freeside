@@ -795,7 +795,9 @@ sub cancel {
   my $error;
 
   # pass all suspend/cancel actions to the main package
-  if ( $self->main_pkgnum and !$options{'from_main'} ) {
+  # (unless the pkglinknum has been removed, then the link is defunct and
+  # this package can be canceled on its own)
+  if ( $self->main_pkgnum and $self->pkglinknum and !$options{'from_main'} ) {
     return $self->main_pkg->cancel(%options);
   }
 
@@ -895,6 +897,12 @@ sub cancel {
     $hash{'cancel'} = $cancel_time;
   }
   $hash{'change_custnum'} = $options{'change_custnum'};
+
+  # if this is a supplemental package that's lost its part_pkg_link, and it's
+  # being canceled for real, unlink it completely
+  if ( !$date and ! $self->pkglinknum ) {
+    $hash{main_pkgnum} = '';
+  }
 
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
@@ -4709,6 +4717,23 @@ sub _upgrade_data {  # class method
   foreach my $sql (@statements) {
     my $sth = dbh->prepare($sql);
     $sth->execute or die $sth->errstr;
+  }
+
+  # RT31194: supplemental package links that are deleted don't clean up 
+  # linked records
+  my @pkglinknums = qsearch({
+      'select'    => 'DISTINCT cust_pkg.pkglinknum',
+      'table'     => 'cust_pkg',
+      'addl_from' => ' LEFT JOIN part_pkg_link USING (pkglinknum) ',
+      'extra_sql' => ' WHERE cust_pkg.pkglinknum IS NOT NULL 
+                        AND part_pkg_link.pkglinknum IS NULL',
+  });
+  foreach (@pkglinknums) {
+    my $pkglinknum = $_->pkglinknum;
+    warn "cleaning part_pkg_link #$pkglinknum\n";
+    my $part_pkg_link = FS::part_pkg_link->new({pkglinknum => $pkglinknum});
+    my $error = $part_pkg_link->remove_linked;
+    die $error if $error;
   }
 }
 
