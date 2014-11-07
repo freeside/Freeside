@@ -122,12 +122,14 @@ install-stamp: build-stamp
 
 	install -d $(FREESIDE_DOCUMENT_ROOT)
 	install -d $(TMP)-webui/usr/local/etc/freeside/
+	install -d $(TMP)/usr/local/etc/freeside/
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
+
+        # Install configuration files, hack what to do???
+	$(MAKE) -e DESTDIR=$(TMP) create-config
+
+	# Install interfaces
 	$(MAKE) -e DESTDIR=$(TMP)-webui install-docs
-
-
-	# Ugly hack, why is handler.pl not being "handled" by install-docs
-	install -D htetc/handler.pl DESTDIR=$(FREESIDE_CACHE)
 
 	# Create Apache configurations
 	install -d $(APACHE_CONF)
@@ -139,20 +141,22 @@ install-stamp: build-stamp
          s'${TMP}(-webui)?''g;\
         "  $(TMP)-webui/etc/freeside/apache2/*
 
-        # Install configuration files, hack what to do???
-	$(MAKE) -e DESTDIR=$(TMP) create-config
+	# Install init
 	$(MAKE) -e DESTDIR=$(TMP) install-init
 
 	#hack the build dir out of Freeside too.  oh yeah, sucky.
 	perl -p -i -e "\
 	  s'${TMP}(-webui)?''g;\
-	" ${TMP}-webui/usr/local/etc/freeside/handler.pl 
+	" ${TMP}/usr/local/etc/freeside/handler.pl \
+	  ${TMP}/usr/share/perl5/FS/* \
+	  ${TMP}/usr/share/perl5/FS/*/* \
+	  ${TMP}/usr/bin/*
 
-	#back the build dur out of lib
+	#hack the build dur out of lib
 	perl -p -i -e "\
           s'${TMP}-lib?''g;\
 	  s'${TMP}(-webui)?''g;\
-        " ${TMP}-webui/usr/local/etc/freeside/handler.pl \
+        " ${TMP}/usr/local/etc/freeside/handler.pl \
 	  ${TMP}-lib/usr/share/perl5/FS/*.pm \
 	  ${TMP}-lib/usr/share/perl5/FS/*/*.pm 
         
