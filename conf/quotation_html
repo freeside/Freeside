@@ -155,7 +155,11 @@
               $OUT .=  ( ($line->{'ref'} && $line->{'ref'} ne $lastref) ? '' : '_more' ).
                        '">'.
                        '<td align="center">'. 
-                       ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ). '</td>'.
+                         ( $line->{'ref'} ne $lastref
+                             ? $line->{'preref_html'}. $line->{'ref'}
+                             : ''
+                         ).
+                       '</td>'.
                        '<td align="left">'. $line->{'description'}. '</td>'.
                        ( $unitprices 
                            ? '<td align="left">'. $line->{'unit_amount'}. '</td>'.

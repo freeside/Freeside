@@ -220,26 +220,82 @@ Internal method - returns a filled-in template for this invoice as a scalar.
 
 See print_ps and print_pdf for methods that return PostScript and PDF output.
 
-Non optional options include 
-  format - latex, html, template
+Required options
 
-Optional options include
+=over 4
 
-template - a value used as a suffix for a configuration template.  Please 
-don't use this.
+=item format
 
-time - a value used to control the printing of overdue messages.  The
+The B<format> option is required and should be set to html, latex (print and PDF) or template (plaintext).
+
+=back
+
+Additional options
+
+=over 4
+
+=item notice_name
+
+Overrides "Invoice" as the name of the sent document.
+
+=item today
+
+Used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-cid - 
+=item logo_file
 
-unsquelch_cdr - overrides any per customer cdr squelching when true
+Logo file (path to temporary EPS file on the local filesystem)
 
-notice_name - overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+=item cid
 
-locale - override customer's locale
+CID for inline (emailed) images (logo)
+
+=item locale
+
+Override customer's locale
+
+=item unsquelch_cdr
+
+Overrides any per customer cdr squelching when true
+
+=item no_number
+
+Supress the (invoice, quotation, statement, etc.) number
+
+=item no_date
+
+Supress the date
+
+=item no_coupon
+
+Supress the payment coupon
+
+=item barcode_file
+
+Barcode file (path to temporary EPS file on the local filesystem)
+
+=item barcode_img
+
+Flag indicating the barcode image should be a link (normal HTML dipaly)
+
+=item barcode_cid
+
+Barcode CID for inline (emailed) images
+
+=item preref_callback
+
+Coderef run for each line item, code should return HTML to be displayed
+before that line item (quotations only)
+
+=item template
+
+Dprecated.  Used as a suffix for a configuration template.  Please 
+don't use this, it deprecated in favor of more flexible alternatives.
+
+=back
 
 =cut
 
@@ -1106,6 +1162,7 @@ sub print_generic {
     $options{'summary_page'} = $summarypage;
     $options{'skip_usage'} =
       scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
+    $options{'preref_callback'} = $params{'preref_callback'};
 
     warn "$me   searching for line items\n"
       if $DEBUG > 1;
@@ -1113,7 +1170,8 @@ sub print_generic {
     foreach my $line_item ( $self->_items_pkg(%options),
                             $self->_items_fee(%options) ) {
 
-      warn "$me     adding line item $line_item\n"
+      warn "$me     adding line item ".
+           join(', ', map "$_=>".$line_item->{$_}, keys %$line_item). "\n"
         if $DEBUG > 1;
 
       $line_item->{'ref'} = $line_item->{'pkgnum'};
@@ -2541,6 +2599,9 @@ location (whichever is defined).
 multisection: a flag indicating that this is a multisection invoice,
 which does something complicated.
 
+preref_callback: coderef run for each line item, code should return HTML to be
+displayed before that line item (quotations only)
+
 Returns a list of hashrefs, each of which may contain:
 
 pkgnum, description, amount, unit_amount, quantity, pkgpart, _is_setup, and 
@@ -2661,12 +2722,18 @@ sub _items_cust_bill_pkg {
             || $discount_show_always
             || $cust_bill_pkg->recur_show_zero;
           push @b, {
+            'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => $description,
             'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
+            'preref_html' => ( $opt{preref_callback}
+                                 ? &{ $opt{preref_callback} }( $cust_bill_pkg )
+                                 : ''
+                             ),
           };
         }
         if ( $cust_bill_pkg->recur != 0 ) {
           push @b, {
+            'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => "$desc (". $cust_bill_pkg->part_pkg->freq_pretty.")",
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
           };
