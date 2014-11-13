@@ -100,7 +100,7 @@
   'color' => [ ('') x (5 + $x),
                 sub {
                   my $cust_pkg = shift->cust_pkg;
-                  $cust_pkg ? ucfirst($cust_pkg->statuscolor) : '';
+                  $cust_pkg ? $cust_pkg->statuscolor : '';
                 },
                ('') x 6,
              ],

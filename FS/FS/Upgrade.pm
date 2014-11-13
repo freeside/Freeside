@@ -236,7 +236,7 @@ sub upgrade {
   }
 
   local($FS::cust_main::ignore_expired_card) = 1;
-  local($FS::cust_main::ignore_illegal_zip) = 1;
+  #this is long-gone... would need to set an equivalent in cust_location #local($FS::cust_main::ignore_illegal_zip) = 1;
   local($FS::cust_main::ignore_banned_card) = 1;
   local($FS::cust_main::skip_fuzzyfiles) = 1;
 

@@ -17,14 +17,6 @@ use base qw( FS::cust_main::Packages
 
 require 5.006;
 use strict;
-use vars qw( $DEBUG $me $conf
-             @encrypted_fields
-             $import
-             $ignore_expired_card $ignore_banned_card $ignore_illegal_zip
-             $ignore_invalid_card
-             $skip_fuzzyfiles
-             @paytypes
-           );
 use Carp;
 use Scalar::Util qw( blessed );
 use Time::Local qw(timelocal);
@@ -86,21 +78,24 @@ use FS::cust_payby;
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
 # 3 is even more information including possibly sensitive data
-$DEBUG = 0;
-$me = '[FS::cust_main]';
+our $DEBUG = 0;
+our $me = '[FS::cust_main]';
 
-$import = 0;
-$ignore_expired_card = 0;
-$ignore_banned_card = 0;
-$ignore_invalid_card = 0;
+our $import = 0;
+our $ignore_expired_card = 0;
+our $ignore_banned_card = 0;
+our $ignore_invalid_card = 0;
 
-$skip_fuzzyfiles = 0;
+our $skip_fuzzyfiles = 0;
 
-@encrypted_fields = ('payinfo', 'paycvv');
+our $ucfirst_nowarn = 0;
+
+our @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
 
-@paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
+our @paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
 
+our $conf;
 #ask FS::UID to run this stuff for us later
 #$FS::UID::callback{'FS::cust_main'} = sub { 
 install_callback FS::UID sub { 
@@ -4230,17 +4225,29 @@ Returns a status string for this customer, currently:
 
 =over 4
 
-=item prospect - No packages have ever been ordered
+=item prospect
 
-=item ordered - Recurring packages all are new (not yet billed).
+No packages have ever been ordered.  Displayed as "No packages".
 
-=item active - One or more recurring packages is active
+=item ordered
 
-=item inactive - No active recurring packages, but otherwise unsuspended/uncancelled (the inactive status is new - previously inactive customers were mis-identified as cancelled)
+Recurring packages all are new (not yet billed).
 
-=item suspended - All non-cancelled recurring packages are suspended
+=item active
 
-=item cancelled - All recurring packages are cancelled
+One or more recurring packages is active.
+
+=item inactive
+
+No active recurring packages, but otherwise unsuspended/uncancelled (the inactive status is new - previously inactive customers were mis-identified as cancelled).
+
+=item suspended
+
+All non-cancelled recurring packages are suspended.
+
+=item cancelled
+
+All recurring packages are cancelled.
 
 =back
 
@@ -4267,15 +4274,33 @@ sub cust_status {
 
 =item ucfirst_status
 
+Deprecated, use the cust_status_label method instead.
+
 Returns the status with the first character capitalized.
 
 =cut
 
-sub ucfirst_status { shift->ucfirst_cust_status(@_); }
+sub ucfirst_status {
+  carp "ucfirst_status deprecated, use cust_status_label" unless $ucfirst_nowarn;
+  local($ucfirst_nowarn) = 1;
+  shift->ucfirst_cust_status(@_);
+}
 
 sub ucfirst_cust_status {
+  carp "ucfirst_cust_status deprecated, use cust_status_label" unless $ucfirst_nowarn;
   my $self = shift;
   ucfirst($self->cust_status);
+}
+
+=item cust_status_label
+
+Returns the display label for this status.
+
+=cut
+
+sub cust_status_label {
+  my $self = shift;
+  __PACKAGE__->statuslabels->{$self->cust_status};
 }
 
 =item statuscolor

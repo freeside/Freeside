@@ -17,7 +17,7 @@
 % if ( $custnum ) { 
   <% mt('Customer #') |h %><B><% $cust_main->display_custnum %></B> - 
   <B><FONT COLOR="#<% $cust_main->statuscolor %>">
-    <% ucfirst($cust_main->status) %>
+    <% $cust_main->status_label %>
   </FONT></B>
   <BR><BR>
 % } 

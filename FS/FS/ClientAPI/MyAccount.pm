@@ -464,8 +464,9 @@ sub customer_info {
                     );
 
     $return{has_ship_address} = $cust_main->has_ship_address;
-    $return{status} = $cust_main->status;
+    $return{status} = $cust_main->status_label; #$cust_main->status; #better to break anyone obscurely testing for strings in self-service than to have to upgrade every front-end to get the new status to display
     $return{statuscolor} = $cust_main->statuscolor;
+    $return{status_label} = $cust_main->status_label;
 
     # compatibility: some places in selfservice use this to determine
     # if there's a ship address

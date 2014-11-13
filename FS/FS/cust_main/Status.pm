@@ -68,6 +68,21 @@ sub statuscolors {
 
 }
 
+sub statuslabels {
+  #my $self = shift; #i guess i'm a class method
+
+  my %statuslabels = (
+      'prospect'  => 'No packages',
+      'active'    => 'Active',
+      'ordered'   => 'Ordered',
+      'inactive'  => 'Inactive',
+      'suspended' => 'Suspended',
+      'cancelled' => 'Cancelled',
+  );
+
+  \%statuslabels;
+}
+
 =item cancelled_sql
 
 =cut
