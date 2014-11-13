@@ -3717,20 +3717,27 @@ sub tables_hashref {
 	'suffix',       'varchar', 'NULL',  $char_d, '', '',
         'catchall',         'int', 'NULL',       '', '', '',
 	'parent_svcnum',    'int', 'NULL',       '', '', '',
+        'quota',        'varchar', 'NULL',  $char_d, '', '', 
+
+        #registration info
 	'registrarnum',     'int', 'NULL',       '', '', '',
 	'registrarkey', 'varchar', 'NULL',      512, '', '',
 	'setup_date',      @date_type, '', '',
 	'renewal_interval', 'int', 'NULL',       '', '', '',
 	'expiration_date', @date_type, '', '',
+
+        #some weird shit australia-specific shit?  yuck.. seems totally unused
 	'au_registrant_name',       'varchar', 'NULL',  $char_d, '', '',
 	'au_eligibility_type',      'varchar', 'NULL',  $char_d, '', '',
+
         #communigate pro fields (quota = MaxAccountSize)
         'max_accounts',     'int', 'NULL',       '', '', '',
         'trailer',         'text', 'NULL',       '', '', '',
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
         'cgp_certificatetype','varchar','NULL', $char_d, '', '',
-        #settings
+
+        #(account default) settings
         'acct_def_password_selfchange',   'char', 'NULL',       1,  '', '', 
         'acct_def_password_recover',      'char', 'NULL',       1, 'Y', '', 
         'acct_def_cgp_accessmodes',    'varchar', 'NULL',     255,  '', '',
@@ -3743,7 +3750,8 @@ sub tables_hashref {
         'acct_def_cgp_mailtoall',         'char', 'NULL',       1,  '', '', 
         'acct_def_cgp_addmailtrailer',    'char', 'NULL',       1,  '', '', 
         'acct_def_cgp_archiveafter',       'int', 'NULL',      '',  '', '',
-        #preferences
+
+        #(account default) preferences
         'acct_def_cgp_deletemode',     'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_emptytrash',     'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_language',       'varchar', 'NULL', $char_d,  '', '',

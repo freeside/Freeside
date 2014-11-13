@@ -26,7 +26,7 @@
     <INPUT TYPE="hidden" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>">
 % }
 
-% if ( $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
+% if ( ! $communigate || $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
     <INPUT TYPE="hidden" NAME="max_accounts" VALUE="<% $svc_domain->max_accounts %>">
 % } else {
     <TR>
