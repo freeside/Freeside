@@ -63,6 +63,13 @@ Service #<B><% $svcnum %></B>
 
 % }
 
+% if ( $svc_domain->quota ) {
+  <TR>
+    <TD ALIGN="right">Quota</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->quota %></TD>
+  </TR>
+% }
+
 % if ( $communigate && $svc_domain->max_accounts ) {
   <TR>
     <TD ALIGN="right">Maximum number of Accounts</TD>

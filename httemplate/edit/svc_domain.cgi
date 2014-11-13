@@ -56,6 +56,17 @@ Available top-level domains: <% $export->option('tlds') %>
   </TD>
 </TR>
 
+% if ( $part_svc->part_svc_column('quota')->columnflag =~ /^[FA]$/ ) {
+    <INPUT TYPE="hidden" NAME="quota" VALUE="<% $svc_domain->quota %>">
+% } else {
+    <TR>
+      <TD ALIGN="right">Quota</TD>
+      <TD>
+        <INPUT TYPE="text" NAME="quota" SIZE=8 VALUE="<% $svc_domain->quota %>">
+      </TD>
+    </TR>
+% }
+
 <% include('svc_domain/communigate-basics.html',
              'svc_domain'  => $svc_domain,
              'part_svc'    => $part_svc,
