@@ -177,9 +177,57 @@ sub churn_fromwhere_sql {
   return ($from, @where);
 }
 
+=head1 as_of_sql DATE
+
+Returns a qsearch hash for the instantaneous state of the cust_pkg table 
+on DATE.
+
+Currently accepts no restrictions; use it in a subquery if you want to 
+limit or sort the output. (Restricting within the query is problematic.)
+
+=cut
+
+sub as_of_sql {
+  my $class = shift;
+  my $date = shift;
+  "SELECT DISTINCT ON (pkgnum) *
+    FROM h_cust_pkg
+    WHERE history_date < $date
+      AND history_action IN('insert', 'replace_new')
+    ORDER BY pkgnum ASC, history_date DESC"
+}
+
+=item status_query DATE
+
+Returns a statement for determining the status of packages on a particular 
+past date.
+
+=cut
+
+sub status_as_of_sql {
+  my $class = shift;
+  my $date = shift;
+
+  my @select = (
+    'h_cust_pkg.*',
+    FS::cust_pkg->active_sql() . ' AS is_active',
+    FS::cust_pkg->suspended_sql() . ' AS is_suspended',
+    FS::cust_pkg->cancelled_sql() . ' AS is_cancelled',
+  );
+  # foo_sql queries reference 'cust_pkg' in field names
+  foreach(@select) {
+    s/\bcust_pkg\b/h_cust_pkg/g;
+  }
+
+  return "SELECT DISTINCT ON(pkgnum) ".join(',', @select).
+         " FROM h_cust_pkg".
+         " WHERE history_date < $date AND history_action IN('insert','replace_new')".
+         " ORDER BY pkgnum ASC, history_date DESC";
+}
+
 =head1 BUGS
 
-churn_fromwhere_sql fails on MySQL.
+churn_fromwhere_sql and as_of_sql fail on MySQL.
 
 =head1 SEE ALSO
 

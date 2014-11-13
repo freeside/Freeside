@@ -664,7 +664,7 @@ sub cust_bill_pkg_discount {
 
 }
 
-##### churn report #####
+##### package churn report #####
 
 =item active_pkg: The number of packages that were active at the start of 
 the period. The end date of the period is ignored. Options:
@@ -756,7 +756,91 @@ sub pkg_where {
   @where;
 }
 
-##### end of churn report stuff #####
+##### end of package churn report stuff #####
+
+##### customer churn report #####
+
+=item active_cust: The number of customers who had any active recurring 
+packages at the start of the period. The end date is ignored, agentnum is 
+mandatory, and no other parameters are accepted.
+
+=item started_cust: The number of customers who had no active packages at 
+the start of the period, but had active packages at the end. Like
+active_cust, agentnum is mandatory and no other parameters are accepted.
+
+=item suspended_cust: The number of customers who had active packages at
+the start of the period, and at the end had no active packages but some
+suspended packages. Note that this does not necessarily mean that their 
+packages were suspended during the period.
+
+=item resumed_cust: The inverse of suspended_cust: the number of customers
+who had suspended packages and no active packages at the start of the 
+period, and active packages at the end.
+
+=item cancelled_cust: The number of customers who had active packages
+at the start of the period, and only cancelled packages at the end.
+
+=cut
+
+sub active_cust {
+  my $self = shift;
+  $self->churn_cust(@_)->{active};
+}
+sub started_cust {
+  my $self = shift;
+  $self->churn_cust(@_)->{started};
+}
+sub suspended_cust {
+  my $self = shift;
+  $self->churn_cust(@_)->{suspended};
+}
+sub resumed_cust {
+  my $self = shift;
+  $self->churn_cust(@_)->{resumed};
+}
+sub cancelled_cust {
+  my $self = shift;
+  $self->churn_cust(@_)->{cancelled};
+}
+
+sub churn_cust {
+  my $self = shift;
+  my ( $speriod ) = @_;
+
+  # run one query for each interval
+  return $self->{_interval}{$speriod} ||= $self->calculate_churn_cust(@_);
+}
+
+sub calculate_churn_cust {
+  my $self = shift;
+  my ($speriod, $eperiod, $agentnum, %opt) = @_;
+
+  my $churn_sql = FS::cust_main::Status->churn_sql($speriod, $eperiod);
+  my $where = '';
+  $where = " WHERE cust_main.agentnum = $agentnum " if $agentnum;
+  my $cust_sql =
+    "SELECT churn.* ".
+    "FROM cust_main JOIN ($churn_sql) AS churn USING (custnum)".
+    $where;
+
+  # query to count the ones with certain status combinations
+  my $total_sql = "
+    SELECT SUM((s_active > 0)::int)                   as active,
+           SUM((s_active = 0 and e_active > 0)::int)  as started,
+           SUM((s_active > 0 and e_active = 0 and e_suspended > 0)::int)
+                                                      as suspended,
+           SUM((s_active = 0 and s_suspended > 0 and e_active > 0)::int)
+                                                      as resumed,
+           SUM((s_active > 0 and e_active = 0 and e_suspended = 0)::int)
+                                                      as cancelled
+    FROM ($cust_sql) AS x
+  ";
+
+  my $sth = dbh->prepare($total_sql);
+  $sth->execute or die "failed to execute churn query: " . $sth->errstr;
+
+  $self->{_interval}{$speriod} = $sth->fetchrow_hashref;
+}
 
 sub in_time_period_and_agent {
   my( $self, $speriod, $eperiod, $agentnum ) = splice(@_, 0, 4);
