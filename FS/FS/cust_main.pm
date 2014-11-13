@@ -4294,9 +4294,13 @@ sub ucfirst_cust_status {
 
 =item cust_status_label
 
+=item status_label
+
 Returns the display label for this status.
 
 =cut
+
+sub status_label { shift->cust_status_label(@_); }
 
 sub cust_status_label {
   my $self = shift;
