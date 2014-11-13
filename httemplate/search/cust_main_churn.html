@@ -1,0 +1,120 @@
+<& elements/search.html,
+  'title'       => $title,
+  'name'        => 'customers',
+  'query'       => $query,
+  'count_query' => $count_query,
+  'header'      => [ emt('#'),
+                     FS::UI::Web::cust_header(
+                       $cgi->param('cust_fields')
+                     ),
+                     { label => "Packages on $start_date", colspan => 3 },
+                     '',
+                     '',
+                     { label => "Packages on $end_date", colspan => 3 },
+                     '',
+                     '',
+                   ],
+  'header2'     => [ '',
+                     map({ '' } (FS::UI::Web::cust_header())),
+                     'Active',
+                     'Suspended',
+                     'Cancelled',
+                     'Active',
+                     'Suspended',
+                     'Cancelled',
+                   ],
+  'fields'      => [
+    'custnum',
+    \&FS::UI::Web::cust_fields,
+    's_active',
+    's_suspended',
+    's_cancelled',
+    'e_active',
+    'e_suspended',
+    'e_cancelled',
+  ],
+  'color' => [
+    '',
+    FS::UI::Web::cust_colors(),
+    # package colors here
+    '00CC00',
+    'FF9900',
+    'FF0000',
+
+    '00CC00',
+    'FF9900',
+    'FF0000',
+  ],
+  'style' => [ '',
+               FS::UI::Web::cust_styles(),
+               '' ],
+  'align' => 'r'. FS::UI::Web::cust_aligns(). 'rrrrrr',
+  'links' => [
+    '',
+    ( map { $_ ne 'Cust. Status' ? $clink : '' }
+          FS::UI::Web::cust_header(
+                                    $cgi->param('cust_fields')
+                                  )
+    ),
+    '',
+  ],
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List customers');
+
+my($speriod, $eperiod) = FS::UI::Web::parse_beginning_ending($cgi);
+my $start_date = time2str('%b %o, %Y', $speriod);
+my $end_date = time2str('%b %o, %Y', $eperiod);
+
+my $agentnum;
+if ($cgi->param('agentnum') =~ /^(\d+)$/) {
+  $agentnum = $1;
+}
+
+# can't use this directly as it doesn't have any cust_main fields.
+my $churn = FS::cust_main::Status->churn_sql($speriod, $eperiod);
+
+my $query = {
+  'table'     => 'cust_main',
+  'select'    => 'cust_main.*, churn.*',
+  'addl_from' => " JOIN ($churn) AS churn USING (custnum) ",
+};
+my $count_query = "SELECT COUNT(*) FROM cust_main JOIN ($churn) AS churn USING (custnum)";
+my @where;
+
+my $status = $cgi->param('status');
+my $title;
+if ( $status eq 'active' ) {
+  $title = "Customers active on $start_date";
+  push @where, "s_active > 0";
+} elsif ( $status eq 'started' ) {
+  $title = "Customers starting service, $start_date - $end_date";
+  push @where, "s_active = 0 and e_active > 0";
+} elsif ( $status eq 'suspended' ) {
+  $title = "Customers suspended, $start_date - $end_date";
+  push @where, "s_active > 0 and e_active = 0 and e_suspended > 0";
+} elsif ( $status eq 'resumed' ) {
+  $title = "Customers resuming service, $start_date - $end_date";
+  push @where, "s_active = 0 and s_suspended > 0 and e_active > 0";
+} elsif ( $status eq 'cancelled' ) {
+  $title = "Customers cancelled, $start_date - $end_date";
+  push @where, "s_active > 0 and e_active = 0 and e_suspended = 0";
+}
+
+if ($agentnum) {
+  push @where, "agentnum = $agentnum";
+}
+
+if ( @where ) {
+  my $where = " WHERE ". join(' AND ', @where);
+  $query->{extra_sql} = $where;
+  $count_query .= $where;
+}
+
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+</%init>
