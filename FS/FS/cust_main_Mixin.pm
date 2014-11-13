@@ -236,6 +236,7 @@ linked to a customer.
 
 sub ucfirst_cust_status {
   carp "ucfirst_cust_status deprecated, use cust_status_label";
+  local($FS::cust_main::ucfirst_nowarn) = 1;
   my $self = shift;
   $self->cust_linked
     ? ucfirst( $self->cust_status(@_) ) 
