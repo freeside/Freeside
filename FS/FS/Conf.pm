@@ -4951,7 +4951,7 @@ and customer address. Include units.',
   {
     'key'         => 'default_phone_countrycode',
     'section'     => '',
-    'description' => 'Default countrcode',
+    'description' => 'Default countrycode',
     'type'        => 'text',
   },
 
