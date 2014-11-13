@@ -3729,7 +3729,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone', 'RBC'
+                       'paymentech', 'ach-spiritone', 'RBC', 'CIBC',
                     ]
   },
 
@@ -3791,7 +3791,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch', 'BoM',
                        'PAP', 'paymentech', 'ach-spiritone', 'RBC',
-                       'td_eft1464', 'eft_canada'
+                       'td_eft1464', 'eft_canada', 'CIBC'
                      ]
   },
 
@@ -3806,6 +3806,13 @@ and customer address. Include units.',
     'key'         => 'batchconfig-BoM',
     'section'     => 'billing',
     'description' => 'Configuration for Bank of Montreal batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
+    'type'        => 'textarea',
+  },
+
+{
+    'key'         => 'batchconfig-CIBC',
+    'section'     => 'billing',
+    'description' => 'Configuration for Canadian Imperial Bank of Commerce, six lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Bank, 6. Bank account',
     'type'        => 'textarea',
   },
 
