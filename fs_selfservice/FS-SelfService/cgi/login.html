@@ -47,7 +47,7 @@ if ( $single_domain ) {
 <TR>
   <TH ALIGN="right">Password </TH>
   <TD>
-    <INPUT TYPE="password" NAME="password"> <A HREF="<%= $selfurl %>?action=forgot_password">Forgot your password?</A>
+   <INPUT TYPE="password" NAME="password"> <A HREF="<%= $selfurl %>?<%= "agentnum=$agentnum&" if $agentnum; %>action=forgot_password">Forgot your password?</A>
   </TD>
 </TR>
 <TR>
