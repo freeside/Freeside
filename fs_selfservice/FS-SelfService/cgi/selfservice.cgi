@@ -936,11 +936,17 @@ sub delete_svc {
 }
 
 sub view_usage {
-  list_svcs(
+  my $res = list_svcs(
     'session_id'  => $session_id,
     'svcdb'       => [ 'svc_acct', 'svc_phone', 'svc_port', ],
     'ncancelled'  => 1,
   );
+  if ($res->{hide_usage}) {
+    $action = 'myaccount';
+    return myaccount();
+  } else {
+    return $res;
+  }
 }
 
 sub real_port_graph {

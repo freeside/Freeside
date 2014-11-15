@@ -64,8 +64,14 @@ if ( $balance > 0 ) { #XXXFIXME "enable selfservice prepay features" flag or som
 }
 
 push @menu,
-  { title=>' ' },
-  { title=>'View my usage', url=>'view_usage', size=>'+1', },
+  { title=>' ' };
+
+unless( $hide_usage ){
+  push @menu,
+    { title=>'View my usage', url=>'view_usage', size=>'+1', }
+}
+
+push @menu,
   { title=>'Create a ticket', url=>'tktcreate', size=>'+1', },
 ;
 
