@@ -946,7 +946,9 @@ sub _make_lines {
   my $setup = 0;
   my $unitsetup = 0;
   my @setup_discounts = ();
-  my %setup_param = ( 'discounts' => \@setup_discounts );
+  my %setup_param = ( 'discounts'     => \@setup_discounts,
+                      'real_pkgpart'  => $params{real_pkgpart}
+                    );
   my $setup_billed_currency = '';
   my $setup_billed_amount = 0;
   # Conditions for setting setup date and charging the setup fee:
