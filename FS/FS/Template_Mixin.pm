@@ -3036,6 +3036,14 @@ sub _items_cust_bill_pkg {
         ) {
 
           my @discounts = $cust_bill_pkg->cust_bill_pkg_discount;
+          # special case: if there are old "discount details" on this line 
+          # item, don't show discount line items
+          if ( FS::cust_bill_pkg_detail->count(
+              "detail LIKE 'Includes discount%' AND billpkgnum = " .
+              $cust_bill_pkg->billpkgnum
+             ) > 0 ) {
+             @discounts = ();
+          }
           if( @discounts ) {
             warn "$me _items_cust_bill_pkg including discounts for ".
               $cust_bill_pkg->billpkgnum."\n"
