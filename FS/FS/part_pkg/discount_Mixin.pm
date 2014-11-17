@@ -162,6 +162,7 @@ sub calc_discount {
       'months'         => $months,
     };
     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
+    $tot_discount += $amount;
 
     #add details on discount to invoice
     # no longer! this is now done during rendering based on the existence
@@ -189,7 +190,6 @@ sub calc_discount {
     #push @$details, $d;
     #push @$details, sprintf( $format, $money_char, $br );
 
-    #$tot_discount += $amount;
   }
 
   sprintf('%.2f', $tot_discount);
