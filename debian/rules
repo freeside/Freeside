@@ -17,6 +17,9 @@ TMP     = $(CURDIR)/debian/$(PACKAGE)
 ##this is gotten from dbconfig-common
 #DB_TYPE = db_type_is_configured_during_pkg_install_by_dbconfig-common_not_at_build_time
 
+#Data source
+DATASOURCE = DBI:${DB_TYPE}:dbname=freeside
+
 #no chance, it doesn't get backslash-interpolted now...
 ##DEBVERSION                    = `head -1 debian/changelog | cut -d')' -f1 | cut -c11-`
 #DEBVERSION                    = 1.7.3~rc2-1
@@ -36,7 +39,8 @@ export FREESIDE_LOG = $(TMP)/usr/local/etc/freeside
 export FREESIDE_LOCK = $(TMP)/usr/local/etc/freeside
 export FREESIDE_CACHE = $(TMP)/usr/local/etc/freeside
 export FREESIDE_EXPORT = $(TMP)/usr/local/etc/freeside
-expory FREESIDE_SS = $(TMP)/usr/share/docs/freeside
+export FREESIDE_SS = $(TMP)/usr/share/docs/freeside
+export DIST_CONF = ${FREESIDE_CONF}/default_conf
 
 #XXX own subdir?
 #export MASON_HANDLER          = /usr/share/freeside/handler.pl
@@ -118,15 +122,36 @@ install-stamp: build-stamp
 	# Add here commands to install package into
 	# debian/<package>-whatever.
 
-	( cd FS/ && $(MAKE) -e DESTDIR=$(TMP)-lib install )
-
 	install -d $(FREESIDE_DOCUMENT_ROOT)
 	install -d $(TMP)-webui/usr/local/etc/freeside/
 	install -d $(TMP)/usr/local/etc/freeside/
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
 
-        # Install configuration files, hack what to do???
-	$(MAKE) -e DESTDIR=$(TMP) create-config
+        # Install configuration files
+	install -d -o freeside ${FREESIDE_CONF}
+
+	touch ${FREESIDE_CONF}/secrets
+	chown freeside ${FREESIDE_CONF}/secrets
+	chmod 600 ${FREESIDE_CONF}/secrets
+
+	/bin/echo -e "${DATASOURCE}\n${DB_USER}\n${DB_PASSWORD}" >${FREESIDE_CONF}/secrets
+	chmod 600 ${FREESIDE_CONF}/secrets
+	chown freeside ${FREESIDE_CONF}/secrets
+
+	mkdir "${FREESIDE_CACHE}/counters.${DATASOURCE}"
+	chown freeside "${FREESIDE_CACHE}/counters.${DATASOURCE}"
+
+	mkdir "${FREESIDE_CACHE}/cache.${DATASOURCE}"
+	chown freeside "${FREESIDE_CACHE}/cache.${DATASOURCE}"
+
+	mkdir "${FREESIDE_EXPORT}/export.${DATASOURCE}"
+	chown freeside "${FREESIDE_EXPORT}/export.${DATASOURCE}"
+
+	#install this for freeside-setup
+	install -d $(DIST_CONF)
+	#install conf/[a-z]* $(DEFAULT_CONF)
+	#CVS is not [a-z]
+	install `ls -d conf/[a-z]* | grep -v CVS | grep -v '^conf/registries'` $(DIST_CONF)
 
 	# Install interfaces
 	$(MAKE) -e DESTDIR=$(TMP)-webui install-docs
@@ -187,9 +212,11 @@ install-stamp: build-stamp
 		--with-web-handler=modperl2 )
 
         ##(create-rt)
-        #$(MAKE) -e create-rt
+	#$(MAKE) -e DESTDIR=${TMP}-lib create-rt
 	install -d $(RT_PATH)
-	( cd rt; make install )
+	install -d $(RT_PATH)/share
+
+	( cd rt; $(MAKE) install )
 	
 	##hack the build dir out of RT.  yeah, sucky.
 
@@ -212,7 +239,7 @@ install-stamp: build-stamp
 
 	dh_install
 
-	touch $@
+	#touch $@
 
 binary-arch:
 # We have nothing to do here for an architecture-independent package
@@ -234,7 +261,6 @@ binary-indep: build install
 	dh_link
 	dh_compress 
 	dh_fixperms
-	dh_installdeb
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
