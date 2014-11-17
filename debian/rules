@@ -93,9 +93,11 @@ build-stamp:
 	dh_testdir
 	# Add commands to compile the package here
 	
-	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor )
-
-	$(MAKE) -e DESTDIR=${TMP}-lib perl-modules
+	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor && [ -e Makefile ] || perl Makefile.PL && make )
+	
+	#install this for freeside-setup
+	install -d $(DIST_CONF)
+	install `ls -d conf/[a-z]* | grep -v CVS | grep -v '^conf/registries'` $(DIST_CONF)
 
 	#TEST#
 
@@ -123,9 +125,12 @@ install-stamp: build-stamp
 	# debian/<package>-whatever.
 
 	install -d $(FREESIDE_DOCUMENT_ROOT)
+	install -d $(TMP)-lib/usr/bin/
 	install -d $(TMP)-webui/usr/local/etc/freeside/
 	install -d $(TMP)/usr/local/etc/freeside/
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
+
+	( cd FS/ && $(MAKE) -e DESTDIR=${TMP}-lib install UNINST=1 )
 
         # Install configuration files
 	install -d -o freeside ${FREESIDE_CONF}
