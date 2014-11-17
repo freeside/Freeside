@@ -1087,7 +1087,9 @@ sub _make_lines {
   my $setup = 0;
   my $unitsetup = 0;
   my @setup_discounts = ();
-  my %setup_param = ( 'discounts' => \@setup_discounts );
+  my %setup_param = ( 'discounts'    => \@setup_discounts,
+                      'real_pkgpart' => $params{real_pkgpart}
+                    );
   # Conditions for setting setup date and charging the setup fee:
   # - this is not a recurring-only billing run
   # - and the package is not currently being canceled
