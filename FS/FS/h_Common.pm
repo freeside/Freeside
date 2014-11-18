@@ -52,19 +52,19 @@ sub sql_h_search {
   my( $notdeleted, $notdeleted_mr ) = ( '', '' );
   if ( scalar(@_) && $_[0] ) {
     $notdeleted =
-      "AND 0 = ( SELECT COUNT(*) FROM $table as notdel
-                   WHERE notdel.$pkey = maintable.$pkey
-                     AND notdel.history_action = 'delete'
-                     AND notdel.history_date > maintable.history_date
-                     AND notdel.history_date <= $_[0]
-               )";
+      "AND NOT EXISTS ( SELECT 1 FROM $table as notdel
+                          WHERE notdel.$pkey = maintable.$pkey
+                            AND notdel.history_action = 'delete'
+                            AND notdel.history_date > maintable.history_date
+                            AND notdel.history_date <= $_[0]
+                      )";
     $notdeleted_mr =
-      "AND 0 = ( SELECT COUNT(*) FROM $table as notdel_mr
-                   WHERE notdel_mr.$pkey = mostrecent.$pkey
-                     AND notdel_mr.history_action = 'delete'
-                     AND notdel_mr.history_date > mostrecent.history_date
-                     AND notdel_mr.history_date <= $_[0]
-               )";
+      "AND NOT EXISTS ( SELECT 1 FROM $table as notdel_mr
+                          WHERE notdel_mr.$pkey = mostrecent.$pkey
+                            AND notdel_mr.history_action = 'delete'
+                            AND notdel_mr.history_date > mostrecent.history_date
+                            AND notdel_mr.history_date <= $_[0]
+                      )";
   }
 
   (
