@@ -23,7 +23,8 @@
 %     "SELECT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
 %        WHERE ( history_action = 'insert' OR history_action = 'replace_new' ) 
 %          AND history_user = ?
-%        ORDER BY history_date desc LIMIT 1000" # LIMIT 10
+%          AND ". $curuser->agentnums_sql( table=>'cust_main' ).
+%     "  ORDER BY history_date desc LIMIT 1000" # LIMIT 10
 %     ) or die dbh->errstr;
 %
 %   $sth->execute( getotaker() ) or die $sth->errstr;
