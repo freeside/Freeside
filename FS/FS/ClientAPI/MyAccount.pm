@@ -1716,6 +1716,9 @@ sub list_svcs {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
+  my $conf = new FS::Conf;
+
+  my $hide_usage = $conf->exists('selfservice_hide-usage') ? 1 : 0;
   my $search = { 'custnum' => $custnum };
   $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
   my $cust_main = qsearchs('cust_main', $search )
@@ -1729,7 +1732,6 @@ sub list_svcs {
 
   my @cust_svc = ();
   my @cust_pkg_usage = ();
-  #foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
   foreach my $cust_pkg ( $p->{'ncancelled'} 
                          ? $cust_main->ncancelled_pkgs
                          : $cust_main->unsuspended_pkgs ) {
@@ -1740,14 +1742,16 @@ sub list_svcs {
 
   @cust_svc = grep { $_->part_svc->selfservice_access ne 'hidden' } @cust_svc;
   my %usage_pools;
-  foreach (@cust_pkg_usage) {
-    my $part = $_->part_pkg_usage;
-    my $tag = $part->description . ($part->shared ? 1 : 0);
-    my $row = $usage_pools{$tag} 
-          ||= [ $part->description, 0, 0, $part->shared ? 1 : 0 ];
-    $row->[1] += sprintf('%.1f', $_->minutes); # minutes remaining
-    $row->[2] += $part->minutes; # minutes total
-  }
+  if (!$hide_usage) {
+    foreach (@cust_pkg_usage) {
+      my $part = $_->part_pkg_usage;
+      my $tag = $part->description . ($part->shared ? 1 : 0);
+      my $row = $usage_pools{$tag} 
+            ||= [ $part->description, 0, 0, $part->shared ? 1 : 0 ];
+      $row->[1] += sprintf('%.1f', $_->minutes); # minutes remaining
+      $row->[2] += $part->minutes; # minutes total
+    }
+  } # otherwise just leave them empty
 
   if ( $p->{'svcdb'} ) {
     my $svcdb = ref($p->{'svcdb'}) eq 'HASH'
@@ -1761,108 +1765,110 @@ sub list_svcs {
   #@svc_x = sort { $a->domain cmp $b->domain || $a->username cmp $b->username }
   #              @svc_x;
 
-    my $conf = new FS::Conf;
+  my @svcs; # stuff to return to the client
+  foreach my $cust_svc (@cust_svc) {
+    my $svc_x = $cust_svc->svc_x;
+    my($label, $value) = $cust_svc->label;
+    my $part_svc = $cust_svc->part_svc;
+    my $svcdb = $part_svc->svcdb;
+    my $cust_pkg = $cust_svc->cust_pkg;
+    my $part_pkg = $cust_pkg->part_pkg;
 
-  { 
+    my %hash = (
+      'svcnum'         => $cust_svc->svcnum,
+      'display_svcnum' => $cust_svc->display_svcnum,
+      'svcdb'          => $svcdb,
+      'label'          => $label,
+      'value'          => $value,
+      'pkg_label'      => $cust_pkg->pkg_locale,
+      'pkg_status'     => $cust_pkg->status,
+      'readonly'       => ($part_svc->selfservice_access eq 'readonly'),
+    );
+
+    # would it make sense to put this in a svc_* method?
+
+    if ( $svcdb eq 'svc_acct' ) {
+      foreach (qw(username email finger seconds)) {
+        $hash{$_} = $svc_x->$_;
+      }
+
+      if (!$hide_usage) {
+        %hash = (
+          %hash,
+          'upbytes'    => display_bytecount($svc_x->upbytes),
+          'downbytes'  => display_bytecount($svc_x->downbytes),
+          'totalbytes' => display_bytecount($svc_x->totalbytes),
+
+          'recharge_amount'  => $part_pkg->option('recharge_amount',1),
+          'recharge_seconds' => $part_pkg->option('recharge_seconds',1),
+          'recharge_upbytes'    =>
+            display_bytecount($part_pkg->option('recharge_upbytes',1)),
+          'recharge_downbytes'  =>
+            display_bytecount($part_pkg->option('recharge_downbytes',1)),
+          'recharge_totalbytes' =>
+            display_bytecount($part_pkg->option('recharge_totalbytes',1)),
+          # more...
+        );
+      }
+
+    } elsif ( $svcdb eq 'svc_dsl' ) {
+
+      $hash{'phonenum'} = $svc_x->phonenum;
+      if ( $svc_x->first || $svc_x->get('last') || $svc_x->company ) {
+        $hash{'name'} = $svc_x->first. ' '. $svc_x->get('last');
+        $hash{'name'} = $svc_x->company. ' ('. $hash{'name'}. ')'
+          if $svc_x->company;
+      } else {
+        $hash{'name'} = $cust_main->name;
+      }
+      # no usage to hide here
+
+    } elsif ( $svcdb eq 'svc_phone' ) {
+      if (!$hide_usage) {
+        # could potentially show lots of things...
+        $hash{'outbound'} = 1;
+        $hash{'inbound'}  = 0;
+        if ( $part_pkg->plan eq 'voip_inbound' ) {
+          $hash{'outbound'} = 0;
+          $hash{'inbound'}  = 1;
+        } elsif ( $part_pkg->option('selfservice_inbound_format')
+              or  $conf->config('selfservice-default_inbound_cdr_format')
+        ) {
+          $hash{'inbound'}  = 1;
+        }
+        foreach (qw(inbound outbound)) {
+          # hmm...we can't filter by status here, because there might
+          # not be cdr_terminations at all.  have to go by date.
+          # find all since the last bill date.
+          # XXX cdr types?  we are going to need them.
+          if ( $hash{$_} ) {
+            my $sum_cdr = $svc_x->sum_cdrs(
+              'inbound' => ( $_ eq 'inbound' ? 1 : 0 ),
+              'begin'   => ($cust_pkg->last_bill || 0),
+              'nonzero' => 1,
+              'disable_charged_party' => 1,
+            );
+            $hash{$_} = $sum_cdr->hashref;
+          }
+        }
+      } # not hiding usage
+    } # svcdb
+
+    push @svcs, \%hash;
+  } # foreach $cust_svc
+
+  return { 
     'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
     'date_format' => $conf->config('date_format') || '%m/%d/%Y',
     'view_usage_nodomain' => $conf->exists('selfservice-view_usage_nodomain'),
-    'svcs'     => [
-      map { 
-            my $svc_x = $_->svc_x;
-            my($label, $value) = $_->label;
-            my $part_svc = $_->part_svc;
-            my $svcdb = $part_svc->svcdb;
-            my $cust_pkg = $_->cust_pkg;
-            my $part_pkg = $cust_pkg->part_pkg;
-
-            my %hash = (
-              'svcnum'         => $_->svcnum,
-              'display_svcnum' => $_->display_svcnum,
-              'svcdb'          => $svcdb,
-              'label'          => $label,
-              'value'          => $value,
-              'pkg_label'      => $cust_pkg->pkg_locale,
-              'pkg_status'     => $cust_pkg->status,
-              'readonly'       => ($part_svc->selfservice_access eq 'readonly'),
-            );
-
-            if ( $svcdb eq 'svc_acct' ) {
-              %hash = (
-                %hash,
-                'username'   => $svc_x->username,
-                'email'      => $svc_x->email,
-                'finger'     => $svc_x->finger,
-                'seconds'    => $svc_x->seconds,
-                'upbytes'    => display_bytecount($svc_x->upbytes),
-                'downbytes'  => display_bytecount($svc_x->downbytes),
-                'totalbytes' => display_bytecount($svc_x->totalbytes),
-
-                'recharge_amount'  => $part_pkg->option('recharge_amount',1),
-                'recharge_seconds' => $part_pkg->option('recharge_seconds',1),
-                'recharge_upbytes'    =>
-                  display_bytecount($part_pkg->option('recharge_upbytes',1)),
-                'recharge_downbytes'  =>
-                  display_bytecount($part_pkg->option('recharge_downbytes',1)),
-                'recharge_totalbytes' =>
-                  display_bytecount($part_pkg->option('recharge_totalbytes',1)),
-                # more...
-              );
-
-            } elsif ( $svcdb eq 'svc_dsl' ) {
-              $hash{'phonenum'} = $svc_x->phonenum;
-              if ( $svc_x->first || $svc_x->get('last') || $svc_x->company ) {
-                $hash{'name'} = $svc_x->first. ' '. $svc_x->get('last');
-                $hash{'name'} = $svc_x->company. ' ('. $hash{'name'}. ')'
-                  if $svc_x->company;
-              } else {
-                $hash{'name'} = $cust_main->name;
-              }
-            } elsif ( $svcdb eq 'svc_phone' ) {
-              # could potentially show lots of things...
-              $hash{'outbound'} = 1;
-              $hash{'inbound'}  = 0;
-              if ( $part_pkg->plan eq 'voip_inbound' ) {
-                $hash{'outbound'} = 0;
-                $hash{'inbound'}  = 1;
-              } elsif ( $part_pkg->option('selfservice_inbound_format')
-                    or  $conf->config('selfservice-default_inbound_cdr_format')
-              ) {
-                $hash{'inbound'}  = 1;
-              }
-              foreach (qw(inbound outbound)) {
-                # hmm...we can't filter by status here, because there might
-                # not be cdr_terminations at all.  have to go by date.
-                # find all since the last bill date.
-                # XXX cdr types?  we are going to need them.
-                if ( $hash{$_} ) {
-                  my $sum_cdr = $svc_x->sum_cdrs(
-                    'inbound' => ( $_ eq 'inbound' ? 1 : 0 ),
-                    'begin'   => ($cust_pkg->last_bill || 0),
-                    'nonzero' => 1,
-                    'disable_charged_party' => 1,
-                  );
-                  $hash{$_} = $sum_cdr->hashref;
-                }
-              }
-            }
-
-            # elsif ( $svcdb eq 'svc_phone' || $svcdb eq 'svc_port' ) {
-            #  %hash = (
-            #    %hash,
-            #  );
-            #}
-
-            \%hash;
-          }
-          @cust_svc
-    ],
+    'svcs'     => \@svcs,
     'usage_pools' => [
       map { $usage_pools{$_} }
       sort { $a cmp $b }
       keys %usage_pools
     ],
+    'hide_usage' => $hide_usage,
   };
 
 }
@@ -2143,6 +2149,10 @@ sub list_cdr_usage {
 sub _usage_details {
   my($callback, $p, %opt) = @_;
   my $conf = FS::Conf->new;
+
+  if ( $conf->exists('selfservice_hide-usage') ) {
+    return { 'error' => 'Viewing usage is not allowed.' };
+  }
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';

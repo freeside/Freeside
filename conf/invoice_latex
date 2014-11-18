@@ -187,11 +187,11 @@
 \newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
   \multicolumn{[@-- $unitprices ? '4' : '6' --@]}{l}{\textbf{#2}} &
-[@-- $unitprices ? '  \multicolumn{1}{r}{\textbf{\dollar #3}} &'."\n".
+[@-- $unitprices ? '  \multicolumn{1}{r}{\textbf{#3}} &'."\n".
                    '  \multicolumn{1}{r}{\textbf{#4}} &'."\n"
                  : ''
 --@]
-  \multicolumn{1}{r}{\textbf{\dollar #5}}\\
+  \multicolumn{1}{r}{\textbf{#5}}\\
 }
 % ...extended description...
 \newcommand{\FSextdesc}[1]{
@@ -333,10 +333,17 @@
         } else {
           $OUT .= '\FSdesc'.
                   '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
-                  '{' . $line->{'description'} . '}' .
-                  '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
-                  '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
-                  '{' . $line->{'amount'} . "}${rowbreak}\n";
+                  '{' . $line->{'description'} . '}' ;
+          if ( $unitprices and length($line->{'unit_amount'}) ) {
+            # then show the unit amount and quantity
+            $OUT .= 
+                '{\\dollar' . $line->{'unit_amount'} . '}'.
+                '{'         . $line->{'quantity'}    . '}';
+          } else {
+            # leave those columns blank
+            $OUT .= '{}{}';
+          }
+          $OUT .= '{\\dollar' . $line->{'amount'} . "}${rowbreak}\n";
         }
         $lastref = $line->{'ref'};
 

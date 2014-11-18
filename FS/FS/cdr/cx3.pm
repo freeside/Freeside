@@ -16,18 +16,17 @@ use Date::Parse;
 
 sub {                 
       	my ($cdr, $data, $conf, $param) = @_;
-      	 	$param->{skiprow} = 1 if $data ne 'CallDetail 0'; # skip non-detail records
+      	 	$param->{skiprow} = 1 unless $data =~ 'CallDetail'; # skip non-detail records
 	},		# record type
-	'uniqueid',	# unique id  
-	skip(1),	# unknown
+	skip(2),	# unknown, callid ( not unique )
 	'src',		# source
 	'dst',		# destination
 sub { my ($cdr, $calldate, $param) = @_;
 
-	if ($calldate =~ /^(\d{4})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2}):(\d{2})$/){
+	if ($calldate =~ /^(\d{2})\/(\d{2})\/(\d{4})\s*(\d{2}):(\d{2}):(\d{2})$/){
 
 		$cdr->set('calldate', $calldate);
-                my $tmp_date = "$2/$3/$1 $4:$5:$6";
+                my $tmp_date = "$2/$1/$3 $4:$5:$6";
 
                 $tmp_date = str2time($tmp_date);
                 $cdr->set('startdate', $tmp_date);
