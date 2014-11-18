@@ -125,12 +125,11 @@ install-stamp: build-stamp
 	# debian/<package>-whatever.
 
 	install -d $(FREESIDE_DOCUMENT_ROOT)
-	install -d $(TMP)-lib/usr/bin/
 	install -d $(TMP)-webui/usr/local/etc/freeside/
 	install -d $(TMP)/usr/local/etc/freeside/
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
 
-	( cd FS/ && $(MAKE) -e DESTDIR=${TMP}-lib install)
+	( cd FS/ && $(MAKE) -e DESTDIR=${TMP} install)
 
         # Install configuration files
 	install -d -o freeside ${FREESIDE_CONF}
