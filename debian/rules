@@ -93,7 +93,7 @@ build-stamp:
 	dh_testdir
 	# Add commands to compile the package here
 	
-	( cd FS/ && $(PERL) Makefile.PL PREFIX=$(TMP)-lib/usr INSTALLDIRS=vendor && [ -e Makefile ] || perl Makefile.PL && make )
+	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor && [ -e Makefile ] || perl Makefile.PL && make )
 	
 	#install this for freeside-setup
 	install -d $(DIST_CONF)
