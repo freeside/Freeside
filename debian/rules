@@ -93,7 +93,7 @@ build-stamp:
 	dh_testdir
 	# Add commands to compile the package here
 	
-	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor && [ -e Makefile ] || perl Makefile.PL && make )
+	( cd FS/ && $(PERL) Makefile.PL PREFIX=$(TMP)-lib/usr INSTALLDIRS=vendor && [ -e Makefile ] || perl Makefile.PL && make )
 	
 	#install this for freeside-setup
 	install -d $(DIST_CONF)
@@ -130,7 +130,7 @@ install-stamp: build-stamp
 	install -d $(TMP)/usr/local/etc/freeside/
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
 
-	( cd FS/ && $(MAKE) -e DESTDIR=${TMP}-lib install UNINST=1 )
+	( cd FS/ && $(MAKE) -e DESTDIR=${TMP}-lib install)
 
         # Install configuration files
 	install -d -o freeside ${FREESIDE_CONF}
