@@ -1,8 +1,8 @@
 package FS::cust_main_exemption;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs );
 use FS::Conf;
 use FS::cust_main;
 
@@ -117,11 +117,25 @@ sub check {
   return $error if $error;
 
   my $conf = new FS::Conf;
-  if ( ! $self->exempt_number && $conf->exists('tax-cust_exempt-groups-require_individual_nums') ) {
-    return 'Tax exemption number required for '. $self->taxname. ' exemption';
-  }
+  return 'Tax exemption number required for '. $self->taxname. ' exemption'
+    if ! $self->exempt_number
+    && (    $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+         || $conf->config('tax-cust_exempt-groups-num_req') eq 'all'
+         || ( $conf->config('tax-cust_exempt-groups-num_req') eq 'residential'
+              && ! $self->cust_main->company
+            )
+       );
 
   $self->SUPER::check;
+}
+
+=item cust_main
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs('cust_main', { custnum=>$self->custnum } );
 }
 
 =back

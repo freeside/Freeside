@@ -448,6 +448,7 @@
 %   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 %   if (    $conf->exists('cust_class-tax_exempt')
 %        || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+%        || $conf->config('tax-cust_exempt-groups-num_req') =~ /\w/
 %        || ! $curuser->access_right('Edit customer tax exemptions')
 %      )
 %   {
