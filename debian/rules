@@ -15,7 +15,7 @@ TMP     = $(CURDIR)/debian/$(PACKAGE)
 #DBC_SCRIPTS = $(TMP)/usr/share/dbconfig-common/scripts/freeside
 
 ##this is gotten from dbconfig-common
-#DB_TYPE = db_type_is_configured_during_pkg_install_by_dbconfig-common_not_at_build_time
+DB_TYPE = Pg
 
 #Data source
 DATASOURCE = DBI:${DB_TYPE}:dbname=freeside
