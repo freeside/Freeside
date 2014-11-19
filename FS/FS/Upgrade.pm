@@ -133,6 +133,12 @@ If you need to continue using the old Form 477 report, turn on the
 
   }
 
+  # boolean tax-cust_exempt-groups-require_individual_nums is now -num_req all
+  if ( $conf->exists('tax-cust_exempt-groups-require_individual_nums') ) {
+    $conf->set('tax-cust_exempt-groups-num_req', 'all');
+    $conf->delete('tax-cust_exempt-groups-require_individual_nums');
+  }
+
 }
 
 sub upgrade_overlimit_groups {

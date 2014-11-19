@@ -5161,16 +5161,27 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax-cust_exempt-groups',
-    'section'     => '',
+    'section'     => 'billing',
     'description' => 'List of grouping possibilities for tax names, for per-customer exemption purposes, one tax name per line.  For example, "GST" would indicate the ability to exempt customers individually from taxes named "GST" (but not other taxes).',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'tax-cust_exempt-groups-require_individual_nums',
-    'section'     => '',
-    'description' => 'When using tax-cust_exempt-groups, require an individual tax exemption number for each exemption from different taxes.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated: see tax-cust_exempt-groups-number_requirement',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'tax-cust_exempt-groups-num_req',
+    'section'     => 'billing',
+    'description' => 'When using tax-cust_exempt-groups, control whether individual tax exemption numbers are required for exemption from different taxes.',
+    'type'        => 'select',
+    'select_hash' => [ ''            => 'Not required',
+                       'residential' => 'Required for residential customers only',
+                       'all'         => 'Required for all customers',
+                     ],
   },
 
   {
