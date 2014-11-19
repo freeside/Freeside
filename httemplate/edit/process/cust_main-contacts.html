@@ -5,18 +5,8 @@
      'skip_process'   => 1, #we don't want to make any changes to cust_main
      'process_o2m' => {
        'table'  => 'contact',
-       'fields' => \@contact_fields,
+       'fields' => FS::contact->cgi_contact_fields,
      },
      'redirect' => popurl(3). 'view/cust_main.cgi?',
    )
 %>
-<%init>
-
-my @contact_fields = qw(
-  classnum first last title comment emailaddress selfservice_access
-);
-foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
-  push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
-}
-
-</%init>

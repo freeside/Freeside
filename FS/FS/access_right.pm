@@ -244,6 +244,8 @@ sub _upgrade_data { # class method
     'Edit global package definitions' => 'Edit package definition costs',
     'Configuration' => 'Edit global fee definitions',
     'Edit package definition costs' => 'View package definition costs',
+    'List prospects' => 'List contacts',
+    'List customers' => 'List contacts',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

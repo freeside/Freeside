@@ -93,11 +93,9 @@ tie my %rights, 'Tie::IxHash',
     'New prospect',
     'View prospect',
     'Edit prospect',
-    'List prospects',
     'Edit contact', #!
     #'New contact',
     #'View customer contacts',
-    #'List contacts',
     'Generate quotation',
   ],
   
@@ -269,6 +267,8 @@ tie my %rights, 'Tie::IxHash',
   # report/listing rights...
   ###
   'Reporting/listing rights' => [
+    'List prospects',
+    'List contacts',
     'List customers',
     'List all customers',
     'Advanced customer search',

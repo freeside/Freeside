@@ -1,0 +1,43 @@
+<& /elements/header.html, mt($title) &>
+
+<FORM ACTION="contact.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => emt('Contacts for agent: '),
+                 'disable_empty' => 0,
+  &>
+
+  <& /elements/tr-select.html,
+       'label'      => 'Contact source', #??? not "type" - contacts have a type
+       'field'      => 'link',
+       'options'    => [ 'prospect_main', 'cust_main', '' ],
+       'labels'     => { 'prospect_main' => 'Prospect contacts',
+                         'cust_main'     => 'Customer contacts',
+                         ''              => 'All contacts',
+                       },
+       'curr_value' => scalar( $cgi->param('link') ),
+  &>
+
+</FORM>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
+
+my $conf = new FS::Conf;
+
+my $title = 'Contact Report';
+
+</%init>

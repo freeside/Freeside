@@ -13,6 +13,7 @@ use FS::contact_phone;
 use FS::contact_email;
 use FS::queue;
 use FS::cust_pkg;
+use FS::phone_type; #for cgi_contact_fields
 
 $skip_fuzzyfiles = 0;
 
@@ -37,8 +38,9 @@ FS::contact - Object methods for contact records
 
 =head1 DESCRIPTION
 
-An FS::contact object represents an example.  FS::contact inherits from
-FS::Record.  The following fields are currently supported:
+An FS::contact object represents an specific contact person for a prospect or
+customer.  FS::contact inherits from FS::Record.  The following fields are
+currently supported:
 
 =over 4
 
@@ -97,14 +99,12 @@ disabled
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new contact.  To add the contact to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
-
-# the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'contact'; }
 
@@ -198,8 +198,6 @@ sub insert {
 Delete this record from the database.
 
 =cut
-
-# the delete method can be inherited from FS::Record
 
 sub delete {
   my $self = shift;
@@ -355,7 +353,15 @@ sub replace {
 
 }
 
-#i probably belong in contact_phone.pm
+=item _parse_phonestring PHONENUMBER_STRING
+
+Subroutine, takes a string and returns a list (suitable for assigning to a hash)
+with keys 'countrycode', 'phonenum' and 'extension'
+
+(Should probably be moved to contact_phone.pm, hence the initial underscore.)
+
+=cut
+
 sub _parse_phonestring {
   my $value = shift;
 
@@ -418,14 +424,11 @@ sub queue_fuzzyfiles_update {
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid contact.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
 =cut
-
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
 
 sub check {
   my $self = shift;
@@ -461,6 +464,13 @@ sub check {
   $self->SUPER::check;
 }
 
+=item line
+
+Returns a formatted string representing this contact, including name, title and
+comment.
+
+=cut
+
 sub line {
   my $self = shift;
   my $data = $self->first. ' '. $self->last;
@@ -483,10 +493,22 @@ sub contact_class {
   qsearchs('contact_class', { 'classnum' => $self->classnum } );
 }
 
+=item firstlast
+
+Returns a formatted string representing this contact, with just the name.
+
+=cut
+
 sub firstlast {
   my $self = shift;
   $self->first . ' ' . $self->last;
 }
+
+=item contact_classname
+
+Returns the name of this contact's class (see L<FS::contact_class>).
+
+=cut
 
 sub contact_classname {
   my $self = shift;
@@ -514,6 +536,13 @@ sub cust_pkg {
   qsearch('cust_pkg', { 'contactnum' => $self->contactnum  } );
 }
 
+=item by_selfservice_email EMAILADDRESS
+
+Alternate search constructor (class method).  Given an email address,
+returns the contact for that address, or the empty string if no contact
+has that email address.
+
+=cut
 
 sub by_selfservice_email {
   my($class, $email) = @_;
@@ -661,6 +690,31 @@ sub myaccount_cache {
                          'namespace' => 'FS::ClientAPI::MyAccount',
                        } );
 }
+
+=item cgi_contact_fields
+
+Returns a list reference containing the set of contact fields used in the web
+interface for one-line editing (i.e. excluding contactnum, prospectnum, custnum
+and locationnum, as well as password fields, but including fields for
+contact_email and contact_phone records.)
+
+=cut
+
+sub cgi_contact_fields {
+  #my $class = shift;
+
+  my @contact_fields = qw(
+    classnum first last title comment emailaddress selfservice_access
+  );
+
+  push @contact_fields, 'phonetypenum'. $_->phonetypenum
+    foreach qsearch({table=>'phone_type', order_by=>'weight'});
+
+  \@contact_fields;
+
+}
+
+use FS::phone_type;
 
 =back
 
