@@ -1,7 +1,7 @@
 <& elements/search.html,
                  'title'       => 'Time Worked',
                  'name'        => 'time',
-		 'html_form'   => qq!<FORM NAME="timeForm" ACTION="${p}misc/timeworked.html" METHOD="POST">!,
+		 'html_form'   => $html_form,
                  'query'       => $query,
                  'count_query' => $count_query,
                  'header' => [ '#',
@@ -91,10 +91,12 @@ my($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
 $where .= " AND $str2time_sql Transactions.Created $closing >= $begin ".
           " AND $str2time_sql Transactions.Created $closing <= $end ";
 
+my $html_form =
+  qq( <FORM NAME="timeForm" ACTION="${p}misc/timeworked.html" METHOD="POST"> );
 if ($cgi->param('category') =~ /^(\w+)$/) {
   $where .= " AND ocfv_TimeType.Content = '$1'";
+  $html_form .= qq( <INPUT TYPE="hidden" NAME="category" VALUE="$1"> );
 }
-warn $where."\n";;
 
 my $from = "
     FROM Transactions

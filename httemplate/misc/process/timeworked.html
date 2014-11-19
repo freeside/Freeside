@@ -1,7 +1,7 @@
 % if ($error) {
 <% $cgi->redirect(popurl(2). "timeworked.html?". $cgi->query_string) %>
 % } else {
-<% $cgi->redirect(popurl(3). "search/timeworked.html?begin=$begin;end=$end") %>
+<% $cgi->redirect(popurl(3). "search/timeworked.html?begin=$begin;end=$end;category=$category") %>
 % }
 <%init>
 
@@ -9,6 +9,9 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
 
 my($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
+
+( my $category = $cgi->param('category') ) =~ /^\w*$/
+  or die 'illegal category';#no need for nice error messages for XSS, just avoid
 
 my @acct_rt_transaction;
 foreach my $transaction (
