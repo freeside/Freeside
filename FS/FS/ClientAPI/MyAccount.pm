@@ -308,11 +308,12 @@ sub login {
 
 sub logout {
   my $p = shift;
+  my $skin_info = skin_info($p);
   if ( $p->{'session_id'} ) {
     _cache->remove($p->{'session_id'});
-    return { %{ skin_info($p) }, 'error' => '' };
+    return { %$skin_info, 'error' => '' };
   } else {
-    return { %{ skin_info($p) }, 'error' => "Can't resume session" }; #better error message
+    return { %$skin_info, 'error' => "Can't resume session" }; #better error message
   }
 }
 
