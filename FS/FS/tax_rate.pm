@@ -1366,11 +1366,14 @@ sub _remember_tax_products {
 
   my ( $imported, $last, $min_sec ) = _progressbar_foo();
 
-  my $extra_sql = "WHERE taxproductnum IS NOT NULL OR ".
-                  "0 < ( SELECT count(*) from part_pkg_option WHERE ".
-                  "       part_pkg_option.pkgpart = part_pkg.pkgpart AND ".
-                  "       optionname LIKE 'usage_taxproductnum_%' AND ".
-                  "       optionvalue != '' )";
+  my $extra_sql = "
+    WHERE taxproductnum IS NOT NULL
+       OR EXISTS ( SELECT 1 from part_pkg_option
+                     WHERE part_pkg_option.pkgpart = part_pkg.pkgpart
+                      AND optionname LIKE 'usage_taxproductnum_%'
+                      AND optionvalue != ''
+                 )
+  ";
   my @items = qsearch( { table => 'part_pkg',
                          select  => 'DISTINCT pkgpart,taxproductnum',
                          hashref => {},
