@@ -52,6 +52,7 @@
 % while ( my $CustomField = $CustomFields->Next ) {
 % my $Values = $Object->CustomFieldValues( $CustomField->Id );
 % my $count = $Values->Count;
+% next if $count == 0 and $CustomField->Disabled;
   <tr id="CF-<%$CustomField->id%>-ShowRow">
     <td class="label"><% $CustomField->Name %>:</td>
     <td class="value">
@@ -70,6 +71,10 @@
 % }
     </td>
   </tr>
+%   if ( $CustomFields->IsLast ) {
+%     # switch to the other result set
+%     $CustomFields = $HiddenCustomFields;
+%   }
 % }
 % if ($Table) {
 </table>
@@ -82,6 +87,13 @@ $m->callback(
     Object => $Object,
     CustomFields => $CustomFields,
 );
+
+# kludge to allow "Support time" to be displayed even though it's been
+# removed
+my $HiddenCustomFields = RT::CustomFields->new($session{'CurrentUser'});
+$HiddenCustomFields->LimitToChildType(ref $Object);
+$HiddenCustomFields->Limit( FIELD => 'Type', VALUE => 'TimeValue' );
+$HiddenCustomFields->Limit( FIELD => 'Disabled', VALUE => 1 );
 
 # don't print anything if there is no custom fields
 return unless $CustomFields->First;
@@ -127,5 +139,6 @@ my $print_value = sub {
 <%ARGS>
 $Object => undef
 $CustomFields => $Object->CustomFields
+
 $Table => 1
 </%ARGS>
