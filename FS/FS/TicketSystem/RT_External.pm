@@ -175,12 +175,11 @@ sub _from_customer {
 
     } else {
 
-      $where =
-               "AND 0 = ( SELECT COUNT(*) FROM ObjectCustomFieldValues
-                           WHERE ObjectId    = Tickets.id
-                             AND ObjectType  = 'RT::Ticket'
-                             AND $customfield_sql
-                        )
+      $where = " AND NOT EXISTS ( SELECT 1 FROM ObjectCustomFieldValues
+                                    WHERE ObjectId    = Tickets.id
+                                      AND ObjectType  = 'RT::Ticket'
+                                      AND $customfield_sql
+                                )
                ";
     }
 
