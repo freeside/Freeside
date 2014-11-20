@@ -42,11 +42,13 @@ sub _discount_pkgs_and_bill {
   push @where, "part_pkg.freq = '1'";
   push @where, "(cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0)";
   push @where, "(cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0)";
-  push @where, "0<(SELECT count(*) FROM part_pkg_discount
-                  WHERE part_pkg.pkgpart = part_pkg_discount.pkgpart)";
+  push @where, "EXISTS( SELECT 1 FROM part_pkg_discount
+                          WHERE part_pkg.pkgpart = part_pkg_discount.pkgpart )";
   push @where,
-    "0=(SELECT count(*) FROM cust_bill_pkg_discount
-         WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_discount.billpkgnum)";
+    "NOT EXISTS (
+       SELECT 1 FROM cust_bill_pkg_discount
+         WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_discount.billpkgnu:
+    )";
 
   my $extra_sql = 'WHERE '. join(' AND ', @where);
 
