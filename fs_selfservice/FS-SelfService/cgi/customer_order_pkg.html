@@ -1,5 +1,11 @@
 <%= include('header', 'Purchase additional package') %>
 
-<%= include('order_pkg') %>
+<%= if (grep $_ eq 'Purchase additional package', @menu_disable){
+        $OUT .= "This functionality has been disabled";
+} else { 
+
+include('order_pkg') 
+
+} %>
 
 <%= include('footer') %>
