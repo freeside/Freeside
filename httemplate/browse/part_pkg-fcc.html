@@ -180,9 +180,11 @@ if ( $cgi->param('redirect') ) {
 my $html_init = 
   include('/elements/init_overlib.html') .
   include('/elements/input-fcc_options.html', js_only => 1) .
-  include('.style');
+  include('.style') .
+  include('.script');
 
-my $html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD="POST">
+my $html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD="POST" NAME="bulk-part_pkg-fcc">
+  <INPUT TYPE="hidden" NAME="jump">
   ( show class: !.
   include('/elements/select-pkg_class.html',
             #'curr_value'    => $classnum,
@@ -193,20 +195,13 @@ my $html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD
             'disable_empty' => 1,
          ).
   ' )
-  <BR><BR>' .
-  qq!<SCRIPT TYPE="text/javascript">
-  function filter_change() {
-    window.location = '! . $cgi->self_url . qq!?classnum='
-      + document.getElementById('classnum').value;
-  }
-  </SCRIPT>!;
+  <BR><BR>';
+
 
 # restore this only after creating $html_form
 $cgi->param('classnum', $classnum) if length($classnum);
 
-my $html_foot = qq!
-  <INPUT TYPE="submit" VALUE="Save changes">
-  </FORM>!;
+my $html_foot = '</FORM>';
 
 my @menubar =
   ( 'Package definitions' => $p.'browse/part_pkg.cgi' );
@@ -223,4 +218,18 @@ my @menubar =
     float: right;
   }
 </style>
+</%def>
+<%def .script>
+<script type="text/javascript">
+  function finish_edit_fcc(id) {
+    cClick();
+    document.forms['bulk-part_pkg-fcc']['jump'].value = id;
+    document.forms['bulk-part_pkg-fcc'].submit(); //immediately save/refresh
+  }
+
+  function filter_change() {
+    window.location = '! . $cgi->self_url . qq!?classnum='
+      + document.getElementById('classnum').value;
+  }
+</script>
 </%def>

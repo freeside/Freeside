@@ -805,6 +805,11 @@ my $javascript = <<'END';
       }
     }
 
+    function finish_edit_fcc(id) {
+      cClick();
+      show_fcc_options(id); // refresh the display
+    }
+
 END
 
 my $warning =
