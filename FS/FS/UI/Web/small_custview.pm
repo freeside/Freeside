@@ -36,7 +36,7 @@ sub small_custview {
 
   $html .= 'Customer #<B>'. $cust_main->display_custnum. '</B></A>'.
     ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
-    ucfirst($cust_main->status). '</FONT></B>';
+    $cust_main->status_label. '</FONT></B>';
 
   my @part_tag = $cust_main->part_tag;
   if ( @part_tag ) {

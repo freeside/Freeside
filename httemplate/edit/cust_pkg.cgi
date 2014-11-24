@@ -46,17 +46,17 @@
 
 Order new packages
 <BR><BR>
-%
+
 %my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 %my $agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
 %
-%my %agent_pkgs = map { ( $_->pkgpart , $all_pkg{$_->pkgpart} ) }
-%                     qsearch('type_pkgs',{'typenum'=> $agent->typenum });
+%my %agent_pkgs = map { ( $_->pkgpart => $all_pkg{$_->pkgpart} ) }
+%                   ( qsearch('type_pkgs',{ typenum  => $agent->typenum      }),
+%                     qsearch('part_pkg', { agentnum => $cust_main->agentnum }),
+%                   );
 %
 %my $count = 0;
 %my $pkgparts = 0;
-%
-
 
 <TABLE>
   <TR STYLE="background-color: #cccccc;">

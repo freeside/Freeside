@@ -225,7 +225,7 @@ sub cust_header {
 
   my %header2method = (
     'Customer'                 => 'name',
-    'Cust. Status'             => 'ucfirst_cust_status',
+    'Cust. Status'             => 'cust_status_label',
     'Cust#'                    => 'custnum',
     'Name'                     => 'contact',
     'Company'                  => 'company',
@@ -694,14 +694,9 @@ sub start_job {
   #too slow to insert all the cgi params as individual args..,?
   #my $error = $queue->insert('_JOB', $cgi->Vars);
   
-  #warn 'froze string of size '. length(nfreeze(\%param)). " for job args\n"
-  #  if $DEBUG;
-  #
-  #  XXX FS::queue::insert knows how to do this.
-  #  not changing it here because that requires changing it everywhere else,
-  #  too, but we should eventually fix it
+  #rely on FS::queue smartness to freeze/encode the param hash
 
-  my $error = $job->insert( '_JOB', encode_base64(nfreeze(\%param)) );
+  my $error = $job->insert( '_JOB', \%param );
 
   if ( $error ) {
 

@@ -11,7 +11,7 @@
             <% ref($value) && $value->{$option} || $option eq $value
                ? 'SELECTED' : ''
             %>
-    ><% $option %>
+    ><% FS::cust_main->statuslabels->{$option} %>
 
 % } 
 

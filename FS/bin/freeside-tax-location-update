@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch dbh);
+use FS::TaxEngine;
+use FS::cust_location;
+
+my %opt;
+getopts('d', \%opt);
+
+my $user = shift or die &usage;
+adminsuidsetup($user);
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $engine = FS::TaxEngine->new;
+my %hash = ( 'geocode' => '',
+             'country' => 'US' );
+$hash{'disabled'} = '' unless $opt{d};
+my @locations = qsearch('cust_location', \%hash);
+foreach my $location (@locations) {
+  print $location->location_label . "...";
+  # only take the first one (the 'default')
+  my ($cust_tax_location) = $engine->cust_tax_locations($location);
+  if ($cust_tax_location) {
+    print $cust_tax_location->geocode;
+    $location->set('geocode', $cust_tax_location->geocode);
+    # geocode is not an immutable location field, so this is safe
+    my $error = $location->replace;
+    if ( $error ) {
+      print "$error\n";
+    }
+  } else {
+    print "not found.";
+  }
+  print "\n";
+}
+$dbh->commit;
+print "Finished!\n";
+
+sub usage {
+    "Usage:\n\n  freeside-tax-location-update [ -d ] user\n\n"
+  }
+
+=head1 NAME
+
+freeside-tax-location-update - Update service locations with tax data vendor 
+codes.
+
+=head1 SYNOPSIS
+
+  freeside-tax-location-update [ -d ] user
+
+=head1 DESCRIPTION
+
+When using tax tables from an external vendor, there's a table of tax 
+jurisdiction codes that act as a foreign key to the tax rate definitions.
+The jurisdiction is usually chosen based on the customer's postal code.
+
+This script finds all non-disabled customer locations that don't have a 
+value in the 'geocode' field, finds the most likely matching geocode in the 
+cust_tax_location table, and stores that geocode in the cust_location record.
+This is not guaranteed to be accurate.  There may be multiple correct 
+geocodes for a given zip code; the script chooses the one that's marked
+as "default".
+
+The -d option tells the script to work on disabled location records as well,
+which is not likely to be necessary.
+
+Updating the geocode this way is not a location change and does not trigger
+a cancel/reorder of the customer's packages.
+
+=cut

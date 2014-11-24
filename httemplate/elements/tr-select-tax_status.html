@@ -1,0 +1,24 @@
+% if ( !$vendor ) {
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'taxstatusnum' %>" VALUE="">
+
+% } else { 
+
+  <& tr-select-table.html,
+    label     => 'Customer tax status',
+    table     => 'tax_status',
+    name_col  => 'description',
+    hashref   => { data_vendor => $vendor },
+    order_by  => 'order by taxstatus',
+    %opt
+  &>
+
+% } 
+
+<%shared>
+my $conf = FS::Conf->new;
+my $vendor = $conf->config('enable_taxproducts');
+</%shared>
+<%init>
+my %opt = @_;
+</%init>

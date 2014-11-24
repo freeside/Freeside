@@ -7,7 +7,7 @@
 
 <TR>
   <TD ALIGN="right"><% mt('Status') |h %></TD>
-  <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
+  <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% $cust_main->status_label %></B></FONT></TD>
 </TR>
 
 % my @part_tag = $cust_main->part_tag;

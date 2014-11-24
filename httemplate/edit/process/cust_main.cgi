@@ -59,6 +59,9 @@ $cgi->param('invoicing_list', join(',', @invoicing_list) );
 
 # is this actually used?  if so, we need to clone locations...
 # but I can't find anything that sets this parameter to a non-empty value
+# yes, fec48523d3cf056da08813f9b2b7d633b27aaf8d for #16582 is where it came in,
+# for "duplicate address checking for new customers".  afaict still in
+# edit/cust_main/bottomfixup.html (and working?)
 $cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
 my $duplicate_of = $1;
 
@@ -350,15 +353,11 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   
 }
 
-unless ( $error ) { #XXX i guess i should be transactional... all in the insert
+unless ( $error ) { #XXX i should be transactional... all in the insert
                     # or replace call
-  my @contact_fields = qw( classnum first last title comment emailaddress );
-  foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
-    push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
-  }
 
   $error = $new->process_o2m( 'table'  => 'contact',
-                              'fields' => \@contact_fields,
+                              'fields' => FS::contact->cgi_contact_fields,
                               'params' => scalar($cgi->Vars),
                             );
 }

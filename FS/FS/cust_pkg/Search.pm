@@ -281,6 +281,21 @@ sub search {
   }
 
   ###
+  # parse refnum (advertising source)
+  ###
+
+  if ( exists($params->{'refnum'}) ) {
+    my @refnum;
+    if (ref $params->{'refnum'}) {
+      @refnum = @{ $params->{'refnum'} };
+    } else {
+      @refnum = ( $params->{'refnum'} );
+    }
+    my $in = join(',', grep /^\d+$/, @refnum);
+    push @where, "refnum IN($in)" if length $in;
+  }
+
+  ###
   # parse package report options
   ###
 

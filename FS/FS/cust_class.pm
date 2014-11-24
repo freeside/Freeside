@@ -102,8 +102,6 @@ sub check {
 
 =item cust_category
 
-=item category
-
 Returns the cust_category record associated with this class, or false if there
 is none.
 

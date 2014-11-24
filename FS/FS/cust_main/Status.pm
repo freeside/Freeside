@@ -68,6 +68,21 @@ sub statuscolors {
 
 }
 
+sub statuslabels {
+  #my $self = shift; #i guess i'm a class method
+
+  my %statuslabels = (
+      'prospect'  => 'No packages',
+      'active'    => 'Active',
+      'ordered'   => 'Ordered',
+      'inactive'  => 'Inactive',
+      'suspended' => 'Suspended',
+      'cancelled' => 'Cancelled',
+  );
+
+  \%statuslabels;
+}
+
 =item cancelled_sql
 
 =cut
@@ -102,6 +117,42 @@ sub cancelled_sql {
 }
 
 =back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item churn_sql START, END
+
+Returns an SQL statement for the customer churn status query.  The columns
+returned are the custnum and the number of active, suspended, and cancelled
+packages (excluding one-time packages) at the start date ("s_active",
+"s_suspended", and "s_cancelled") and the end date ("e_active", etc.).
+
+=cut
+
+# not sure this belongs here...FS::cust_main::Packages?
+
+sub churn_sql {
+  my $self = shift;
+  my ($speriod, $eperiod) = @_;
+
+  my $s_sql = FS::h_cust_pkg->status_as_of_sql($speriod);
+  my $e_sql = FS::h_cust_pkg->status_as_of_sql($eperiod);
+
+  my @select = (
+    'custnum',
+    'COALESCE(SUM(s.is_active::int),0)     as s_active',
+    'COALESCE(SUM(s.is_suspended::int),0)  as s_suspended',
+    'COALESCE(SUM(s.is_cancelled::int),0)  as s_cancelled',
+    'COALESCE(SUM(e.is_active::int),0)     as e_active',
+    'COALESCE(SUM(e.is_suspended::int),0)  as e_suspended',
+    'COALESCE(SUM(e.is_cancelled::int),0)  as e_cancelled',
+  );
+  my $from = "($s_sql) AS s FULL JOIN ($e_sql) AS e USING (custnum)";
+
+  return "SELECT ".join(',', @select)." FROM $from GROUP BY custnum";
+}
 
 =head1 BUGS
 

@@ -235,9 +235,23 @@ linked to a customer.
 =cut
 
 sub ucfirst_cust_status {
+  carp "ucfirst_cust_status deprecated, use cust_status_label";
+  local($FS::cust_main::ucfirst_nowarn) = 1;
   my $self = shift;
   $self->cust_linked
     ? ucfirst( $self->cust_status(@_) ) 
+    : $self->cust_unlinked_msg;
+}
+
+=item cust_status_label
+
+=cut
+
+sub cust_status_label {
+  my $self = shift;
+
+  $self->cust_linked
+    ? FS::cust_main::cust_status_label($self)
     : $self->cust_unlinked_msg;
 }
 
@@ -526,7 +540,7 @@ sub process_email_search_result {
   my $job = shift;
   #warn "$me process_re_X $method for job $job\n" if $DEBUG;
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   $param->{'job'} = $job;

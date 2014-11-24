@@ -53,6 +53,7 @@ old_ for replace operations):
   <LI><code>$cust_name</code> - Customer name (quoted for the shell)
   <LI><code>$pkgnum</code> - Internal package number
   <LI><code>$custnum</code> - Internal customer number
+  <LI><code>$phone_name</code> - Phone name (quoted for the shell)
   <LI><code>$mac_addr</code> - MAC address (Device MAC address insert and delete commands only)
   <LI><code>$devicename</code> - Device type (Device type insert and delete commands only)
 </UL>
@@ -115,6 +116,7 @@ sub _export_command {
   my $cust_name = $cust_pkg ? $cust_pkg->cust_main->name : '';
   $cust_name = shell_quote $cust_name;
   my $sip_password = shell_quote $svc_phone->sip_password;
+  my $phone_name = shell_quote $svc_phone->phone_name;
   #done setting variables for the command
 
   $self->shellcommands_queue( $svc_phone->svcnum,

@@ -233,7 +233,6 @@
                      { field       => 'agent_type',
                        type        => 'select-agent_type',
                        disabled    => ! $acl_edit_global,
-                #XXX ???  'element_name' => 'agent_type',
                        element_etc => 'size="10"',
                        multiple    =>  '1', #cause edit.html is dum
                        curr_value_callback => sub {
@@ -894,6 +893,11 @@ my $javascript = <<'END';
         button.style.border = '1px solid #7e0079';
         button.style.padding = '1px';
       }
+    }
+
+    function finish_edit_fcc(id) {
+      cClick();
+      show_fcc_options(id); // refresh the display
     }
 
 END

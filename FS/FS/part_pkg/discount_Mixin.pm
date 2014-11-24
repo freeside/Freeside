@@ -32,7 +32,7 @@ sub calc_recur {
 
 Takes all the arguments of calc_recur.  Calculates and returns  the amount 
 by which to reduce the recurring fee; also increments months used on the 
-discount and generates an invoice detail describing it.
+discount.
 
 =cut
 
@@ -162,31 +162,34 @@ sub calc_discount {
       'months'         => $months,
     };
     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
+    $tot_discount += $amount;
 
     #add details on discount to invoice
-    my $money_char = $conf->config('money_char') || '$';
-    $months = sprintf('%.2f', $months) if $months =~ /\./;
+    # no longer! this is now done during rendering based on the existence
+    # of the cust_bill_pkg_discount record
+    #
+    #my $money_char = $conf->config('money_char') || '$';
+    #$months = sprintf('%.2f', $months) if $months =~ /\./;
 
-    my $d = 'Includes ';
-    my $format;
+    #my $d = 'Includes ';
+    #my $format;
 
-    if ( $months eq '1' ) {
-      $d .= "discount of $money_char$amount";
-      $d .= " each" if $cust_pkg->quantity > 1;
-      $format = 'Undiscounted amount: %s%.2f';
-    } else {
-      $d .= 'setup ' if defined $param->{'setup_charge'};
-      $d .= 'discount of '. $discount->description_short;
-      $d .= " for $months months"
-	unless defined $param->{'setup_charge'};
-      $d .= ": $money_char$amount" if $discount->percent;
-      $format = 'Undiscounted monthly amount: %s%.2f';
-    }
+    #if ( $months eq '1' ) {
+    #  $d .= "discount of $money_char$amount";
+    #  $d .= " each" if $cust_pkg->quantity > 1;
+    #  $format = 'Undiscounted amount: %s%.2f';
+    #} else {
+    #  $d .= 'setup ' if defined $param->{'setup_charge'};
+    #  $d .= 'discount of '. $discount->description_short;
+    #  $d .= " for $months months"
+    #    unless defined $param->{'setup_charge'};
+    #  $d .= ": $money_char$amount" if $discount->percent;
+    #  $format = 'Undiscounted monthly amount: %s%.2f';
+    #}
 
-    push @$details, $d;
-    push @$details, sprintf( $format, $money_char, $br );
+    #push @$details, $d;
+    #push @$details, sprintf( $format, $money_char, $br );
 
-    $tot_discount += $amount;
   }
 
   sprintf('%.2f', $tot_discount);

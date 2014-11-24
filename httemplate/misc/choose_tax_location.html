@@ -4,9 +4,8 @@
 
 <SELECT NAME='geocodes' ID='geocodes' STYLE="<% $style %>">
 % foreach my $location (@cust_tax_location) {
-%   my %value = ( zip => $zip5,
-%                 map { $_ => $location->$_ }
-%                   qw ( city state geocode )
+%   my %value = ( map { $_ => $location->$_ }
+%                   qw ( zip city state geocode )
 %               );
 %   map { $value{$_} = $location{$_} } qw ( city state )
 %     if $location{country} eq 'CA';
@@ -36,10 +35,10 @@
 <%init>
 
 my $conf = new FS::Conf;
+my $tax_engine = FS::TaxEngine->new;
 
-my %location = ();
-
-($location{data_vendor}) = $cgi->param('data_vendor') =~ /^([-\w]+)$/;
+my %location;
+($location{data_vendor}) = $conf->config('enable_taxproducts');
 ($location{city})        = $cgi->param('city')        =~ /^([\w ]+)$/;
 ($location{state})       = $cgi->param('state')       =~ /^(\w+)$/;
 ($location{zip})         = $cgi->param('zip')         =~ /^([-\w ]+)$/;
@@ -50,22 +49,7 @@ my($geocode)             = $cgi->param('geocode')     =~ /^([\w]+)$/;
 my($formname)            = $cgi->param('formname')    =~ /^([\w]*)$/;
 $formname ||= 'CustomerForm';
 
-my($zip5, $zip4) = split('-', $location{zip});
-
-#only support US & CA
-my $hashref = { 'data_vendor' => $location{data_vendor} };
-$hashref->{zip} = $location{country} eq 'CA' ? substr($zip5,0,1) : $zip5,
-
-my @keys = keys(%$hashref);
-my @cust_tax_location = ();
-until ( @cust_tax_location ) {
-  @cust_tax_location = qsearch({ table    => 'cust_tax_location',
-                                 hashref  =>  $hashref,
-                                 order_by =>  'LIMIT 50',
-                              });
-  last unless scalar(@keys);
-  delete $hashref->{ shift @keys };
-} 
+my @cust_tax_location = $tax_engine->cust_tax_locations(\%location);
 
 my %max = ( city => 4, county => 6, state => 5);
 foreach my $location (@cust_tax_location) {

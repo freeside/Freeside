@@ -41,6 +41,8 @@ sub report_internal {
 
   my ($taxname, $country, %breakdown);
 
+  # purify taxname properly here, as we're going to include it in lots of 
+  # SQL statements using single quotes only
   if ( $opt{taxname} =~ /^([\w\s]+)$/ ) {
     $taxname = $1;
   } else {
@@ -199,9 +201,36 @@ sub report_internal {
   $sql{taxable} =~ s/EXEMPT_WHERE//; # unrestricted
   $all_sql{taxable} =~ s/EXEMPT_WHERE//;
 
+  # estimated tax (taxable * rate)
+  $sql{estimated} = "$select
+    SUM(cust_main_county.tax / 100 * 
+      (cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+    )
+    FROM cust_main_county
+    JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
+      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
+          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    $join_cust_pkg $where AND $nottax 
+    $group";
+
+  $all_sql{estimated} = "$select_all
+    SUM(cust_main_county.tax / 100 * 
+      (cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+    )
+    FROM cust_main_county
+    JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
+      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
+          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    $join_cust_pkg $where AND $nottax 
+    $group_all";
+
   # there isn't one for 'sales', because we calculate sales by adding up 
   # the taxable and exempt columns.
-
+  
   # TAX QUERIES (billed tax, credited tax)
   # -----------
 
@@ -261,6 +290,9 @@ sub report_internal {
 
   my %data;
   my %total;
+  # note that we use keys(%sql) here and keys(%all_sql) later. nothing
+  # obligates us to use the same set of variables for the total query 
+  # as for the individual category queries
   foreach my $k (keys(%sql)) {
     my $stmt = $sql{$k};
     warn "\n".uc($k).":\n".$stmt."\n" if $DEBUG;
@@ -304,6 +336,40 @@ sub report_internal {
   # ]
   # non-requested grouping levels simply collapse into key = ''
 
+  # the much-maligned "out of taxable region"...
+  # find sales that are not linked to any tax with this name
+  # but are still inside the date range/agent criteria.
+  #
+  # This doesn't use $select_all/$group_all because we want a single number,
+  # not a breakdown by pkgclass. Unless someone needs that eventually, 
+  # in which case we'll turn it into an %all_sql query.
+  
+  my $outside_where =
+    "WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending";
+  if ( $agentnum ) {
+    $outside_where .= " AND cust_main.agentnum = $agentnum";
+  }
+  my $sql_outside = "SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
+    FROM cust_bill_pkg
+    $join_cust_pkg
+    $outside_where
+    AND $nottax
+    AND NOT EXISTS(
+      SELECT 1 FROM cust_tax_exempt_pkg
+        JOIN cust_main_county USING (taxnum)
+        WHERE cust_tax_exempt_pkg.billpkgnum = cust_bill_pkg.billpkgnum
+          AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname'
+    )
+    AND NOT EXISTS(
+      SELECT 1 FROM cust_bill_pkg_tax_location
+        JOIN cust_main_county USING (taxnum)
+        WHERE cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum
+          AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname'
+    )
+  ";
+  warn "\nOUTSIDE:\n$sql_outside\n" if $DEBUG;
+  my $total_outside = FS::Record->scalar_sql($sql_outside);
+
   my %taxrates;
   foreach my $tax (
     qsearch('cust_main_county', {
@@ -320,6 +386,7 @@ sub report_internal {
     'data'      => \%data,
     'total'     => \%total,
     'taxrates'  => \%taxrates,
+    'outside'   => $total_outside,
   }, $class;
 }
 
@@ -411,8 +478,6 @@ sub table {
         $this_row{rate} = 'variable';
       } elsif ( $rate > 0 ) {
         $this_row{rate} = sprintf('%.2f', $rate);
-        $this_row{estimated} =
-          sprintf('%.2f', $this_row{taxable} * $rate / 100);
       }
       push @rows, \%this_row;
     }
@@ -435,7 +500,6 @@ sub title {
   if ( $self->{opt}->{agentnum} ) {
     my $agent = qsearchs('agent', { agentnum => $self->{opt}->{agentnum} });
     $string .= $agent->agent . ' ';
-    warn $string;
   }
   $string .= 'Tax Report: '; # XXX localization
   if ( $self->{opt}->{beginning} ) {

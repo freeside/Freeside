@@ -2453,8 +2453,9 @@ and customer address. Include units.',
   {
     'key'         => 'enable_taxproducts',
     'section'     => 'billing',
-    'description' => 'Enable per-package mapping to vendor tax data from CCH or elsewhere.',
-    'type'        => 'checkbox',
+    'description' => 'Tax data vendor you are using.',
+    'type'        => 'select',
+    'select_enum' => [ 'cch', 'billsoft', 'avalara' ],
   },
 
   {
@@ -2469,6 +2470,20 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Prefer to invoice without tax over not billing at all',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'billsoft-company_code',
+    'section'     => 'billing',
+    'description' => 'Billsoft tax service company code (3 letters)',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'avalara-taxconfig',
+    'section'     => 'billing',
+    'description' => 'Avalara tax service configuration. Four lines: company code, account number, license key, test mode (1 to enable).',
+    'type'        => 'textarea',
   },
 
   {
@@ -3484,7 +3499,8 @@ and customer address. Include units.',
     'description' => 'Optional "site ID" to show in the location label',
     'type'        => 'select',
     'select_hash' => [ '' => '',
-                       'CoStAg' => 'CoStAgXXXXX (country, state, agent name, locationnum)',
+                       'CoStAg'    => 'CoStAgXXXXX (country, state, agent name, locationnum)',
+                       '_location' => 'Manually defined per location',
                       ],
   },
 
@@ -3713,7 +3729,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone', 'RBC'
+                       'paymentech', 'ach-spiritone', 'RBC', 'CIBC',
                     ]
   },
 
@@ -3775,7 +3791,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch', 'BoM',
                        'PAP', 'paymentech', 'ach-spiritone', 'RBC',
-                       'td_eft1464', 'eft_canada'
+                       'td_eft1464', 'eft_canada', 'CIBC'
                      ]
   },
 
@@ -3790,6 +3806,13 @@ and customer address. Include units.',
     'key'         => 'batchconfig-BoM',
     'section'     => 'billing',
     'description' => 'Configuration for Bank of Montreal batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
+    'type'        => 'textarea',
+  },
+
+{
+    'key'         => 'batchconfig-CIBC',
+    'section'     => 'billing',
+    'description' => 'Configuration for Canadian Imperial Bank of Commerce, six lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Bank, 6. Bank account',
     'type'        => 'textarea',
   },
 
@@ -4330,7 +4353,6 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_hash' => [ '' => '', 
                        'usps'     => 'U.S. Postal Service',
-                       'ezlocate' => 'EZLocate',
                        'tomtom'   => 'TomTom',
                        'melissa'  => 'Melissa WebSmart',
                      ],
@@ -4353,22 +4375,8 @@ and customer address. Include units.',
   {
     'key'         => 'tomtom-userid',
     'section'     => 'UI',
-    'description' => 'TomTom geocoding service API key.  See <a href="http://www.tomtom.com/">the TomTom website</a> to obtain a key.  This is recommended for addresses in the United States only.',
+    'description' => 'TomTom geocoding service API key.  See <a href="http://geocoder.tomtom.com/">the TomTom website</a> to obtain a key.  This is recommended for addresses in the United States only.',
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'ezlocate-userid',
-    'section'     => 'UI',
-    'description' => 'User ID for EZ-Locate service.  See <a href="http://www.geocode.com/">the TomTom website</a> for access and pricing information.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'ezlocate-password',
-    'section'     => 'UI',
-    'description' => 'Password for EZ-Locate service.',
-    'type'        => 'text'
   },
 
   {
@@ -4943,7 +4951,7 @@ and customer address. Include units.',
   {
     'key'         => 'default_phone_countrycode',
     'section'     => '',
-    'description' => 'Default countrcode',
+    'description' => 'Default countrycode',
     'type'        => 'text',
   },
 
@@ -5153,16 +5161,27 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax-cust_exempt-groups',
-    'section'     => '',
+    'section'     => 'billing',
     'description' => 'List of grouping possibilities for tax names, for per-customer exemption purposes, one tax name per line.  For example, "GST" would indicate the ability to exempt customers individually from taxes named "GST" (but not other taxes).',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'tax-cust_exempt-groups-require_individual_nums',
-    'section'     => '',
-    'description' => 'When using tax-cust_exempt-groups, require an individual tax exemption number for each exemption from different taxes.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated: see tax-cust_exempt-groups-number_requirement',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'tax-cust_exempt-groups-num_req',
+    'section'     => 'billing',
+    'description' => 'When using tax-cust_exempt-groups, control whether individual tax exemption numbers are required for exemption from different taxes.',
+    'type'        => 'select',
+    'select_hash' => [ ''            => 'Not required',
+                       'residential' => 'Required for residential customers only',
+                       'all'         => 'Required for all customers',
+                     ],
   },
 
   {

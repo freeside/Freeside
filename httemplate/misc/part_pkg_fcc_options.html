@@ -156,8 +156,7 @@ function save_changes() {
   }
   parent_input.value = JSON.stringify(data);
   // update the display
-  parent.show_fcc_options(parent_input.id);
-  parent.cClick(); //overlib
+  parent.finish_edit_fcc(parent_input.id);
 }
 
 function enable_fieldset(fieldset_id) {

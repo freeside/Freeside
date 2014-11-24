@@ -67,25 +67,43 @@ FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
-=item svcnum - primary key (assigned automatically for new accounts)
+=item svcnum
+
+primary key (assigned automatically for new accounts)
 
 =item domain
 
-=item catchall - optional svcnum of an svc_acct record, designating an email catchall account.
+=item catchall
 
-=item suffix - 
+optional svcnum of an svc_acct record, designating an email catchall account.
 
-=item parent_svcnum -
+=item suffix
 
-=item registrarnum - Registrar (see L<FS::registrar>)
+=item parent_svcnum
 
-=item registrarkey - Registrar key or password for this domain
+=item quota
 
-=item setup_date - UNIX timestamp
+Storage limit
 
-=item renewal_interval - Number of days before expiration date to start renewal
+=item registrarnum
 
-=item expiration_date - UNIX timestamp
+Registrar (see L<FS::registrar>)
+
+=item registrarkey
+
+Registrar key or password for this domain
+
+=item setup_date
+
+UNIX timestamp
+
+=item renewal_interval
+
+Number of days before expiration date to start renewal
+
+=item expiration_date
+
+UNIX timestamp
 
 =item max_accounts
 
@@ -139,6 +157,11 @@ sub table_info {
       'max_accounts' => { label => 'Maximum number of accounts',
                           'disable_inventory' => 1,
                         },
+      'quota'     => { 
+                         label => 'Quota', #storage limit
+                         type  => 'text',
+                         disable_inventory => 1,
+                     },
       'cgp_aliases' => { 
                          label => 'Communigate aliases',
                          type  => 'text',
@@ -580,6 +603,7 @@ sub check {
               || $self->ut_textn('au_registrant_name')
               || $self->ut_numbern('catchall')
               || $self->ut_numbern('max_accounts')
+              || $self->ut_alphan('quota')
               || $self->ut_anything('trailer') #well
               || $self->ut_textn('cgp_aliases') #well
               || $self->ut_enum('acct_def_password_selfchange', [ '', 'Y' ])

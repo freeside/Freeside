@@ -140,7 +140,7 @@ sub agent_list_customers {
                          my $cust_main = $_;
                          my $hashref = $cust_main->hashref;
                          $hashref->{$_} = $cust_main->$_()
-                           foreach qw(name status statuscolor);
+                           foreach qw(name status statuscolor status_label);
                          delete $hashref->{$_} foreach qw( payinfo paycvv );
                          $hashref;
                    } @cust_main

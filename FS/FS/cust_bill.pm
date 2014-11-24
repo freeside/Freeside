@@ -1,5 +1,7 @@
 package FS::cust_bill;
-use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::Record );
+use base qw( FS::cust_bill::Search FS::Template_Mixin
+             FS::cust_main_Mixin FS::Record
+           );
 
 use strict;
 use vars qw( $DEBUG $me );
@@ -124,6 +126,8 @@ Specific use cases
 =item agent_invid - legacy invoice number
 
 =item promised_date - customer promised payment date, for collection
+
+=item pending - invoice is still being generated, empty or 'Y'
 
 =back
 
@@ -334,6 +338,7 @@ sub replace_check {
   #return "Can't change _date!" unless $old->_date eq $new->_date;
   return "Can't change _date" unless $old->_date == $new->_date;
   return "Can't change charged" unless $old->charged == $new->charged
+                                    || $old->pending eq 'Y'
                                     || $old->charged == 0
 				    || $new->{'Hash'}{'cc_surcharge_replace_hack'};
 
@@ -388,6 +393,7 @@ sub check {
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('statementnum', 'cust_statement', 'statementnum' )
     || $self->ut_numbern('agent_invid') #varchar?
+    || $self->ut_flag('pending')
   ;
   return $error if $error;
 
@@ -3173,14 +3179,12 @@ sub process_respool {
   process_re_X('spool', @_);
 }
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process_re_X {
   my( $method, $job ) = ( shift, shift );
   warn "$me process_re_X $method for job $job\n" if $DEBUG;
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   re_X(
@@ -3329,219 +3333,6 @@ sub due_date_sql {
     ), E\'Net (\\\\d+)\'
   )::INTEGER, 0
 ) * 86400 + cust_bill._date'
-}
-
-=item search_sql_where HASHREF
-
-Class method which returns an SQL WHERE fragment to search for parameters
-specified in HASHREF.  Valid parameters are
-
-=over 4
-
-=item _date
-
-List reference of start date, end date, as UNIX timestamps.
-
-=item invnum_min
-
-=item invnum_max
-
-=item agentnum
-
-=item charged
-
-List reference of charged limits (exclusive).
-
-=item owed
-
-List reference of charged limits (exclusive).
-
-=item open
-
-flag, return open invoices only
-
-=item net
-
-flag, return net invoices only
-
-=item days
-
-=item newest_percust
-
-=item custnum
-
-Return only invoices belonging to that customer.
-
-=item cust_classnum
-
-Limit to that customer class (single value or arrayref).
-
-=item payby
-
-Limit to customers with that payment method (single value or arrayref).
-
-=item refnum
-
-Limit to customers with that advertising source.
-
-=back
-
-Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
-
-=cut
-
-sub search_sql_where {
-  my($class, $param) = @_;
-  if ( $DEBUG ) {
-    warn "$me search_sql_where called with params: \n".
-         join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
-  }
-
-  my @search = ();
-
-  #agentnum
-  if ( $param->{'agentnum'} =~ /^(\d+)$/ ) {
-    push @search, "cust_main.agentnum = $1";
-  }
-
-  #refnum
-  if ( $param->{'refnum'} =~ /^(\d+)$/ ) {
-    push @search, "cust_main.refnum = $1";
-  }
-
-  #custnum
-  if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
-    push @search, "cust_bill.custnum = $1";
-  }
-
-  #customer classnum (false laziness w/ cust_main/Search.pm)
-  if ( $param->{'cust_classnum'} ) {
-
-    my @classnum = ref( $param->{'cust_classnum'} )
-                     ? @{ $param->{'cust_classnum'} }
-                     :  ( $param->{'cust_classnum'} );
-
-    @classnum = grep /^(\d*)$/, @classnum;
-
-    if ( @classnum ) {
-      push @search, '( '. join(' OR ', map {
-                                             $_ ? "cust_main.classnum = $_"
-                                                : "cust_main.classnum IS NULL"
-                                           }
-                                           @classnum
-                              ).
-                    ' )';
-    }
-
-  }
-
-  #payby
-  if ( $param->{payby} ) {
-    my $payby = $param->{payby};
-    $payby = [ $payby ] unless ref $payby;
-    my $payby_in = join(',', map {dbh->quote($_)} @$payby);
-    push @search, "cust_main.payby IN($payby_in)" if length($payby_in);
-  }
-
-  #_date
-  if ( $param->{_date} ) {
-    my($beginning, $ending) = @{$param->{_date}};
-
-    push @search, "cust_bill._date >= $beginning",
-                  "cust_bill._date <  $ending";
-  }
-
-  #invnum
-  if ( $param->{'invnum_min'} =~ /^(\d+)$/ ) {
-    push @search, "cust_bill.invnum >= $1";
-  }
-  if ( $param->{'invnum_max'} =~ /^(\d+)$/ ) {
-    push @search, "cust_bill.invnum <= $1";
-  }
-
-  #charged
-  if ( $param->{charged} ) {
-    my @charged = ref($param->{charged})
-                    ? @{ $param->{charged} }
-                    : ($param->{charged});
-
-    push @search, map { s/^charged/cust_bill.charged/; $_; }
-                      @charged;
-  }
-
-  my $owed_sql = FS::cust_bill->owed_sql;
-
-  #owed
-  if ( $param->{owed} ) {
-    my @owed = ref($param->{owed})
-                 ? @{ $param->{owed} }
-                 : ($param->{owed});
-    push @search, map { s/^owed/$owed_sql/; $_; }
-                      @owed;
-  }
-
-  #open/net flags
-  push @search, "0 != $owed_sql"
-    if $param->{'open'};
-  push @search, '0 != '. FS::cust_bill->net_sql
-    if $param->{'net'};
-
-  #days
-  push @search, "cust_bill._date < ". (time-86400*$param->{'days'})
-    if $param->{'days'};
-
-  #newest_percust
-  if ( $param->{'newest_percust'} ) {
-
-    #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
-    #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
-
-    my @newest_where = map { my $x = $_;
-                             $x =~ s/\bcust_bill\./newest_cust_bill./g;
-                             $x;
-                           }
-                           grep ! /^cust_main./, @search;
-    my $newest_where = scalar(@newest_where)
-                         ? ' AND '. join(' AND ', @newest_where)
-			 : '';
-
-
-    push @search, "cust_bill._date = (
-      SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
-        WHERE newest_cust_bill.custnum = cust_bill.custnum
-          $newest_where
-    )";
-
-  }
-
-  #promised_date - also has an option to accept nulls
-  if ( $param->{promised_date} ) {
-    my($beginning, $ending, $null) = @{$param->{promised_date}};
-
-    push @search, "(( cust_bill.promised_date >= $beginning AND ".
-                    "cust_bill.promised_date <  $ending )" .
-                    ($null ? ' OR cust_bill.promised_date IS NULL ) ' : ')');
-  }
-
-  #agent virtualization
-  my $curuser = $FS::CurrentUser::CurrentUser;
-  if ( $curuser->username eq 'fs_queue'
-       && $param->{'CurrentUser'} =~ /^(\w+)$/ ) {
-    my $username = $1;
-    my $newuser = qsearchs('access_user', {
-      'username' => $username,
-      'disabled' => '',
-    } );
-    if ( $newuser ) {
-      $curuser = $newuser;
-    } else {
-      warn "$me WARNING: (fs_queue) can't find CurrentUser $username\n";
-    }
-  }
-  push @search, $curuser->agentnums_sql;
-
-  join(' AND ', @search );
-
 }
 
 =back

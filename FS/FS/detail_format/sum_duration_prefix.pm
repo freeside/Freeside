@@ -24,6 +24,7 @@ my $prefix_length = 6;
 sub append {
   my $self = shift;
   my $prefixes = ($self->{prefixes} ||= {});
+  my $acctids = ($self->{acctids} ||= []);
   foreach my $cdr (@_) {
     my (undef, $phonenum) = $cdr->parse_number(
       column => ( $self->{inbound} ? 'src' : 'dst' ),
@@ -52,6 +53,8 @@ sub append {
     $subtotal->{duration} += $object->rated_seconds;
     $subtotal->{amount} += $object->rated_price
       if $object->freesidestatus ne 'no-charge';
+
+    push @$acctids, $cdr->acctid;
   }
 }
 
@@ -91,6 +94,7 @@ sub finish {
         startdate   => '', #could use the earliest startdate in the bunch?
         regionname  => '', #no, we're using prefix instead
         detail      => $self->csv->string,
+        acctid      => $self->{acctids},
     });
   } #foreach $prefix
 }

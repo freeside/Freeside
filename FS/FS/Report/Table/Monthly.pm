@@ -88,6 +88,13 @@ hidden rows (due to C<remove_empty>) filtered out, which is the only
 reason to do this.  Now that we have C<indices> it's probably better to 
 use that.
 
+=item PROCESSING
+
+=item normalize: Set this to an item index to have all other items expressed
+as a percentage of that one.  That item will then be omitted from the output.
+If the normalization item is zero in some period, all the values in that
+period will be undef.
+
 =head1 RETURNED DATA
 
 The C<data> method runs the report and returns a hashref of the following:
@@ -180,7 +187,7 @@ sub data {
     my $eperiod = timelocal(0,0,0,1,$smonth-1,$syear);
     push @{$data{eperiod}}, $eperiod;
 
-    my $col = 0;
+    my $col = 0; # a "column" here is the data corresponding to an item
     my @items = @{$self->{'items'}};
     my $i;
 
@@ -214,7 +221,30 @@ sub data {
   $data{'colors'}      = $self->{'colors'};
   $data{'links'}       = $self->{'links'} || [];
 
-  if ( !$self->{'cross_params'} and $self->{'remove_empty'} ) {
+  if ( defined $self->{'normalize'} ) {
+    my $norm_col = $self->{'normalize'};
+    my $norm_data = $data{data}->[$norm_col];
+
+    my $row = 0;
+    while ( exists $data{speriod}->[$row] ) {
+      my $col = 0;
+      while ( exists $data{items}->[$col ] ) {
+        if ( $col != $norm_col ) {
+          if ( $norm_data->[$row] == 0 ) {
+            $data{data}->[$col][$row] = undef;
+          } else {
+            $data{data}->[$col][$row] = 
+              ( $data{data}->[$col][$row] * 100 / $norm_data->[$row] );
+          }
+        }
+        $col++;
+      }
+      $row++;
+    }
+  }
+
+  if ( !$self->{'cross_params'} ) {
+    # remove unnecessary rows
 
     my $col = 0;
     #these need to get generalized, sheesh
@@ -228,6 +258,12 @@ sub data {
     my @indices = ();
     foreach my $item ( @{$self->{'items'}} ) {
 
+      # if remove_empty, then remove rows of zeroes
+      my $is_nonzero = scalar( grep { $_ != 0 } @{ $data{'data'}->[$col] });
+      next if ($self->{'remove_empty'} and $is_nonzero == 0);
+      # if normalizing, strip out the norm column
+      next if (defined($self->{'normalize'}) and $self->{'normalize'} == $col);
+
       if ( grep { $_ != 0 } @{$data{'data'}->[$col]} ) {
         push @newitems,  $data{'items'}->[$col];
         push @newlabels, $data{'item_labels'}->[$col];
@@ -236,7 +272,7 @@ sub data {
         push @newlinks,  $data{'links'}->[$col];
         push @indices,   $col;
       }
-
+    } continue {
       $col++;
     }
 
@@ -248,6 +284,7 @@ sub data {
     $data{'indices'}     = \@indices;
 
   }
+
   # clean up after ourselves
   #dbh->rollback;
   # leave in until development is finished, for diagnostics

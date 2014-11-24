@@ -27,6 +27,10 @@ expire_banned_pay(%opt);
 use FS::Cron::bill qw(bill);
 bill(%opt);
 
+#you can skip this by not setting enable_taxproducts to 'billsoft'
+use FS::Cron::tax_batch qw(process_tax_batch);
+process_tax_batch(%opt);
+
 #you can skip this just by not having the config
 use FS::Cron::breakage qw(reconcile_breakage);
 reconcile_breakage(%opt);

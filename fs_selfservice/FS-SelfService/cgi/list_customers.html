@@ -20,7 +20,7 @@
       $OUT .=
         '<TR>'.
         "$td<FONT COLOR=\"". $customer->{'statuscolor'}. '">'.
-          ucfirst($customer->{'status'}). "</TD>". "$td</TD>".
+          $customer->{'status_label'}. "</TD>". "$td</TD>".
         "$td$a". $customer->{'name'}. "</A></TD>".
         '</TR>';
         #"$td</TD>".

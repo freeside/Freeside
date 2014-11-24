@@ -62,15 +62,15 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List invoices');
 
-my $join_cust_main = FS::UI::Web::join_cust_main('cust_bill');
-#here is the agent virtualization
-my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
-
 my( $count_query, $sql_query );
 my $count_addl = '';
-my %search;
+my %search = ();
 
 if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
+
+  my $join_cust_main = FS::UI::Web::join_cust_main('cust_bill');
+  #here is the agent virtualization
+  my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
   my $invnum_or_invid = "( invnum = $2 OR agent_invid = $2 )";
   my $where = "WHERE $invnum_or_invid AND $agentnums_sql";
@@ -100,56 +100,37 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
 
 } else {
 
-  #some false laziness w/cust_bill::re_X
-  my $orderby = 'ORDER BY cust_bill._date';
-
-  if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-    $search{'agentnum'} = $1;
-  }
-
-  if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
-    $search{'refnum'} = $1;
-  }
-
-if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
-    $search{'cust_classnum'} = [ $cgi->param('cust_classnum') ];
-  }
-
-  if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
-    $search{'custnum'} = $1;
-  }
-
-  # begin/end/beginning/ending
-  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
-  $search{'_date'} = [ $beginning, $ending ]
-    unless $beginning == 0 && $ending == 4294967295;
-
-  if ( $cgi->param('invnum_min') =~ /^\s*(\d+)\s*$/ ) {
-    $search{'invnum_min'} = $1;
-  }
-  if ( $cgi->param('invnum_max') =~ /^\s*(\d+)\s*$/ ) {
-    $search{'invnum_max'} = $1;
-  }
-
-  #amounts
-  $search{$_} = [ FS::UI::Web::parse_lt_gt($cgi, $_) ]
-    foreach qw( charged owed );
-
-  $search{'open'} = 1 if $cgi->param('open');
-  $search{'net'}  = 1 if $cgi->param('net' );
-
+  #deal with some old-style URLs
   my($query) = $cgi->keywords;
   if ( $query =~ /^(OPEN(\d*)_)?(invnum|date|custnum)$/ ) {
     $search{'open'} = 1 if $1;
     ($search{'days'}, my $field) = ($2, $3);
     $field = "_date" if $field eq 'date';
-    $orderby = "ORDER BY cust_bill.$field";
+    $search{'order_by'} = "cust_bill.$field";
   }
 
-  if ( $cgi->param('newest_percust') ) {
-    $search{'newest_percust'} = 1;
-    $count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
+  #scalars
+  for (qw( agentnum custnum cust_status refnum invnum_min invnum_max
+           open net newest_percust 
+
+      )) 
+  {
+    $search{$_} = $cgi->param($_) if length($cgi->param($_));
   }
+
+  #arrays
+  for my $param (qw( cust_classnum payby )) {
+  $search{$param} = [ $cgi->param($param) ]
+    if grep { $_ eq $param } $cgi->param;
+  }
+
+  #amounts (range)
+  $search{$_} = [ FS::UI::Web::parse_lt_gt($cgi, $_) ]
+    foreach qw( charged owed );
+
+  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
+  $search{'_date'} = [ $beginning, $ending ]
+    unless $beginning == 0 && $ending == 4294967295;
 
   # promised date
   my $start_of_day = timelocal(0, 0, 0, (localtime(time))[3,4,5]);
@@ -170,46 +151,12 @@ if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
     }
   }
 
-  #payby
-  if ($cgi->param('payby')) {
-    $search{payby} = [ $cgi->param('payby') ];
-  }
-
-  my $extra_sql = FS::cust_bill->search_sql_where( \%search );
-  $extra_sql = "WHERE $extra_sql" if $extra_sql;
-
-  unless ( $count_query ) {
-    $count_query = 'SELECT COUNT(*), '. join(', ',
-                     map "SUM($_)",
-                         ( 'charged',
-                           FS::cust_bill->net_sql,
-                           FS::cust_bill->owed_sql,
-                         )
-                   );
-    $count_addl = [ '$%.2f invoiced (gross)',
-                    '$%.2f invoiced (net)',
-                    '$%.2f outstanding balance',
-                  ];
-  }
-  $count_query .=  " FROM cust_bill $join_cust_main $extra_sql";
-
-  $sql_query = {
-    'table'     => 'cust_bill',
-    'addl_from' => $join_cust_main,
-    'hashref'   => {},
-    'select'    => join(', ',
-                     'cust_bill.*',
-                     #( map "cust_main.$_", qw(custnum last first company) ),
-                     'cust_main.custnum as cust_main_custnum',
-                     FS::UI::Web::cust_sql_fields(),
-                     FS::cust_bill->owed_sql. ' AS owed',
-                     FS::cust_bill->net_sql.  ' AS net',
-                   ),
-    'extra_sql' => $extra_sql,
-    'order_by'  => $orderby,
-  };
+  $sql_query   = FS::cust_bill->search(\%search);
+  $count_query = delete( $sql_query->{'count_query'} );
+  $count_addl  = delete( $sql_query->{'count_addl'}  );
 
 }
+
 my $link  = [ "${p}view/cust_bill.cgi?", 'invnum', ];
 my $clink = sub {
   my $cust_bill = shift;

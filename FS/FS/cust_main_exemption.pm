@@ -115,9 +115,14 @@ sub check {
   return $error if $error;
 
   my $conf = new FS::Conf;
-  if ( ! $self->exempt_number && $conf->exists('tax-cust_exempt-groups-require_individual_nums') ) {
-    return 'Tax exemption number required for '. $self->taxname. ' exemption';
-  }
+  return 'Tax exemption number required for '. $self->taxname. ' exemption'
+    if ! $self->exempt_number
+    && (    $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+         || $conf->config('tax-cust_exempt-groups-num_req') eq 'all'
+         || ( $conf->config('tax-cust_exempt-groups-num_req') eq 'residential'
+              && ! $self->cust_main->company
+            )
+       );
 
   $self->SUPER::check;
 }

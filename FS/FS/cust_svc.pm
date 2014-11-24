@@ -334,15 +334,34 @@ sub replace {
 
   #trigger a relocate export on location changes
   if ( $new->cust_pkg->locationnum != $old->cust_pkg->locationnum ) {
-    $error ||= $new->svc_x->export('relocate',
-                                   $new->cust_pkg->cust_location,
-                                   $old->cust_pkg->cust_location,
+    my $svc_x = $new->svc_x;
+    if ( $svc_x->locationnum ) {
+      if ( $svc_x->locationnum == $old->cust_pkg->locationnum ) {
+        # in this case, set the service location to be the same as the new
+        # package location
+        $svc_x->set('locationnum', $new->cust_pkg->locationnum);
+        # and replace it, which triggers a relocate export so we don't 
+        # need to
+        $error ||= $svc_x->replace;
+      } else {
+        # the service already has a different location from its package
+        # so don't change it
+      }
+    } else {
+      # the service doesn't have a locationnum (either isn't of a type 
+      # that has the locationnum field, or the locationnum is null and 
+      # defaults to cust_pkg->locationnum)
+      # so just trigger the export here
+      $error ||= $new->svc_x->export('relocate',
+                                     $new->cust_pkg->cust_location,
+                                     $old->cust_pkg->cust_location,
                                   );
-  }
+    } # if ($svc_x->locationnum)
+  } # if this is a location change
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return $error if $error;
+    return $error if $error
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

@@ -20,6 +20,11 @@
                  'disable_empty' => 0,
   &>
 
+  <& /elements/tr-select-cust_main-status.html,
+       'label' => 'Customer status',
+       'field' => 'cust_status',
+  &>
+
   <& /elements/tr-select-cust_class.html,
       label         => mt('Customer Class'),
       field         => 'cust_classnum',

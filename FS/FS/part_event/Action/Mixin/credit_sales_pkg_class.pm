@@ -11,12 +11,6 @@ sub option_fields {
 
   delete $option_fields{'percent'};
 
-  $option_fields{'cust_main_sales'} = {
-    'label' => "Credit the customer sales person if there is no package sales person",
-    'type'  => 'checkbox',
-    'value' => 'Y',
-  };
-
   %option_fields;
 }
 

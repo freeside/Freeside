@@ -121,8 +121,7 @@ sub LimitToChildType  {
     my $self = shift;
     my $lookup = shift;
 
-    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup" );
-    $self->Limit( FIELD => 'LookupType', ENDSWITH => "$lookup" );
+    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup", OPERATOR => "ENDSWITH" );
 }
 
 
@@ -137,8 +136,7 @@ sub LimitToParentType  {
     my $self = shift;
     my $lookup = shift;
 
-    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup" );
-    $self->Limit( FIELD => 'LookupType', STARTSWITH => "$lookup" );
+    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup", OPERATOR => "STARTSWITH" );
 }
 
 =head2 LimitToObjectId

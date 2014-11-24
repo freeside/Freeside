@@ -1,4 +1,4 @@
-% if ( $conf->exists('enable_taxproducts') ) { 
+% if ( FS::TaxEngine->new->info->{override} ) {
   <%include('tr-td-label.html', @_) %>
     <TD <% $cell_style %>><% include('select-taxoverride.html', @_) %></TD>
   </TR>
@@ -8,8 +8,6 @@
 % } 
 
 <%init>
-
-my $conf = new FS::Conf;
 
 my %opt = @_;
 my $cell_style = $opt{'cell_style'}? 'STYLE="'. $opt{cell_style}. '"' : '';

@@ -220,26 +220,82 @@ Internal method - returns a filled-in template for this invoice as a scalar.
 
 See print_ps and print_pdf for methods that return PostScript and PDF output.
 
-Non optional options include 
-  format - latex, html, template
+Required options
 
-Optional options include
+=over 4
 
-template - a value used as a suffix for a configuration template.  Please 
-don't use this.
+=item format
 
-time - a value used to control the printing of overdue messages.  The
+The B<format> option is required and should be set to html, latex (print and PDF) or template (plaintext).
+
+=back
+
+Additional options
+
+=over 4
+
+=item notice_name
+
+Overrides "Invoice" as the name of the sent document.
+
+=item today
+
+Used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-cid - 
+=item logo_file
 
-unsquelch_cdr - overrides any per customer cdr squelching when true
+Logo file (path to temporary EPS file on the local filesystem)
 
-notice_name - overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+=item cid
 
-locale - override customer's locale
+CID for inline (emailed) images (logo)
+
+=item locale
+
+Override customer's locale
+
+=item unsquelch_cdr
+
+Overrides any per customer cdr squelching when true
+
+=item no_number
+
+Supress the (invoice, quotation, statement, etc.) number
+
+=item no_date
+
+Supress the date
+
+=item no_coupon
+
+Supress the payment coupon
+
+=item barcode_file
+
+Barcode file (path to temporary EPS file on the local filesystem)
+
+=item barcode_img
+
+Flag indicating the barcode image should be a link (normal HTML dipaly)
+
+=item barcode_cid
+
+Barcode CID for inline (emailed) images
+
+=item preref_callback
+
+Coderef run for each line item, code should return HTML to be displayed
+before that line item (quotations only)
+
+=item template
+
+Dprecated.  Used as a suffix for a configuration template.  Please 
+don't use this, it deprecated in favor of more flexible alternatives.
+
+=back
 
 =cut
 
@@ -288,13 +344,13 @@ sub print_generic {
   my @invoice_template = map "$_\n", $conf->config($templatefile)
     or die "cannot load config data $templatefile";
 
-  my $old_latex = '';
   if ( $format eq 'latex' && grep { /^%%Detail/ } @invoice_template ) {
     #change this to a die when the old code is removed
-    warn "old-style invoice template $templatefile; ".
+    # it's been almost ten years, changing it to a die.
+    die "old-style invoice template $templatefile; ".
          "patch with conf/invoice_latex.diff or use new conf/invoice_latex*\n";
-    $old_latex = 'true';
-    @invoice_template = _translate_old_latex_format(@invoice_template);
+         #$old_latex = 'true';
+         #@invoice_template = _translate_old_latex_format(@invoice_template);
   } 
 
   warn "$me print_generic creating T:T object\n"
@@ -824,6 +880,7 @@ sub print_generic {
                     );
   my $money_char = $money_chars{$format};
 
+  # extremely dubious
   my %other_money_chars = ( 'latex'    => '\dollar ',#XXX should be a config too
                             'html'     => $conf->config('money_char') || '$',
                             'template' => '',
@@ -1035,8 +1092,7 @@ sub print_generic {
         ext_description => [ map { &$escape_function($_) } 
                              @{ $line_item->{'ext_description'} || [] }
                            ],
-        amount          => ( $old_latex ? '' : $money_char).
-                            $line_item->{'amount'},
+        amount          => $money_char . $line_item->{'amount'},
         product_code    => $line_item->{'pkgpart'} || 'N/A',
       };
 
@@ -1106,6 +1162,7 @@ sub print_generic {
     $options{'summary_page'} = $summarypage;
     $options{'skip_usage'} =
       scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
+    $options{'preref_callback'} = $params{'preref_callback'};
 
     warn "$me   searching for line items\n"
       if $DEBUG > 1;
@@ -1113,15 +1170,17 @@ sub print_generic {
     foreach my $line_item ( $self->_items_pkg(%options),
                             $self->_items_fee(%options) ) {
 
-      warn "$me     adding line item $line_item\n"
+      warn "$me     adding line item ".
+           join(', ', map "$_=>".$line_item->{$_}, keys %$line_item). "\n"
         if $DEBUG > 1;
 
       $line_item->{'ref'} = $line_item->{'pkgnum'};
       $line_item->{'product_code'} = $line_item->{'pkgpart'} || 'N/A'; # mt()?
       $line_item->{'section'} = $section;
       $line_item->{'description'} = &$escape_function($line_item->{'description'});
-      if (!$old_latex) { # dubious; templates should provide this
-        $line_item->{'amount'} = $money_char.$line_item->{'amount'};
+      $line_item->{'amount'} = $money_char.$line_item->{'amount'};
+
+      if ( length($line_item->{'unit_amount'}) ) {
         $line_item->{'unit_amount'} = $money_char.$line_item->{'unit_amount'};
       }
       $line_item->{'ext_description'} ||= [];
@@ -1168,13 +1227,12 @@ sub print_generic {
 
     if ( $multisection ) {
 
-      my $money = $old_latex ? '' : $money_char;
       push @detail_items, {
         ext_description => [],
         ref          => '',
         quantity     => '',
         description  => $description,
-        amount       => $money. $amount,
+        amount       => $money_char. $amount,
         product_code => '',
         section      => $tax_section,
       };
@@ -1302,13 +1360,12 @@ sub print_generic {
         $total->{'total_amount'} = $minus.$other_money_char.$credit->{'amount'};
         $adjusttotal += $credit->{'amount'};
         if ( $multisection ) {
-          my $money = $old_latex ? '' : $money_char;
           push @detail_items, {
             ext_description => [],
             ref          => '',
             quantity     => '',
             description  => &$escape_function($credit->{'description'}),
-            amount       => $money. $credit->{'amount'},
+            amount       => $money_char . $credit->{'amount'},
             product_code => '',
             section      => $adjust_section,
           };
@@ -1337,13 +1394,12 @@ sub print_generic {
         $total->{'total_amount'} = $minus.$other_money_char.$payment->{'amount'};
         $adjusttotal += $payment->{'amount'};
         if ( $multisection ) {
-          my $money = $old_latex ? '' : $money_char;
           push @detail_items, {
             ext_description => [],
             ref          => '',
             quantity     => '',
             description  => &$escape_function($payment->{'description'}),
-            amount       => $money. $payment->{'amount'},
+            amount       => $money_char . $payment->{'amount'},
             product_code => '',
             section      => $adjust_section,
           };
@@ -2090,8 +2146,9 @@ sub _items_sections {
           $section->{'sort_weight'} = sprintf('%012s',$location->zip) .
                                       $locationnum;
           $section->{'location'} = {
+            label_prefix => &{ $escape }($location->label_prefix),
             map { $_ => &{ $escape }($location->get($_)) }
-            $location->fields
+              $location->fields
           };
         } else {
           $section->{'category'} = $sectionname;
@@ -2540,6 +2597,9 @@ location (whichever is defined).
 multisection: a flag indicating that this is a multisection invoice,
 which does something complicated.
 
+preref_callback: coderef run for each line item, code should return HTML to be
+displayed before that line item (quotations only)
+
 Returns a list of hashrefs, each of which may contain:
 
 pkgnum, description, amount, unit_amount, quantity, pkgpart, _is_setup, and 
@@ -2573,16 +2633,21 @@ sub _items_cust_bill_pkg {
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
                                    # and location labels
 
-  my @b = ();
-  my ($s, $r, $u) = ( undef, undef, undef );
+  my @b = (); # accumulator for the line item hashes that we'll return
+  my ($s, $r, $u, $d) = ( undef, undef, undef );
+            # the 'current' line item hashes for setup, recur, usage, discount
   foreach my $cust_bill_pkg ( @$cust_bill_pkgs )
   {
-
-    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
+    # if the current line item is waiting to go out, and the one we're about
+    # to start is not bundled, then push out the current one and start a new
+    # one.
+    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) , $d ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
-        $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+        $_->{amount}      = sprintf( "%.2f", $_->{amount} );
         $_->{amount}      =~ s/^\-0\.00$/0.00/;
-        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+        if (exists($_->{unit_amount})) {
+          $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} );
+        }
         push @b, { %$_ }
           if $_->{amount} != 0
           || $discount_show_always
@@ -2653,6 +2718,7 @@ sub _items_cust_bill_pkg {
         # quotation_pkgs are never fees, so don't worry about the case where
         # part_pkg is undefined
 
+        # and I guess they're never bundled either?
         if ( $cust_bill_pkg->setup != 0 ) {
           my $description = $desc;
           $description .= ' Setup'
@@ -2660,18 +2726,33 @@ sub _items_cust_bill_pkg {
             || $discount_show_always
             || $cust_bill_pkg->recur_show_zero;
           push @b, {
+            'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => $description,
             'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
+            'unit_amount'   => sprintf("%.2f", $cust_bill_pkg->unitsetup),
+            'quantity'    => $cust_bill_pkg->quantity,
+            'preref_html' => ( $opt{preref_callback}
+                                 ? &{ $opt{preref_callback} }( $cust_bill_pkg )
+                                 : ''
+                             ),
           };
         }
         if ( $cust_bill_pkg->recur != 0 ) {
           push @b, {
+            'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => "$desc (". $cust_bill_pkg->part_pkg->freq_pretty.")",
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
+            'unit_amount'   => sprintf("%.2f", $cust_bill_pkg->unitrecur),
+            'quantity'    => $cust_bill_pkg->quantity,
+	    'preref_html' => ( $opt{preref_callback}
+                                 ? &{ $opt{preref_callback} }( $cust_bill_pkg )
+                                 : ''
+                             ),
           };
         }
 
-      } elsif ( $cust_bill_pkg->pkgnum > 0 ) { # and it's not a quotation_pkg
+      } elsif ( $cust_bill_pkg->pkgnum > 0 ) {
+        # a "normal" package line item (not a quotation, not a fee, not a tax)
 
         warn "$me _items_cust_bill_pkg cust_bill_pkg is non-tax\n"
           if $DEBUG > 1;
@@ -2950,6 +3031,66 @@ sub _items_cust_bill_pkg {
 
         } # recurring or usage with recurring charge
 
+        # decide whether to show active discounts here
+        if (
+            # case 1: we are showing a single line for the package
+            ( !$type )
+            # case 2: we are showing a setup line for a package that has
+            # no base recurring fee
+            or ( $type eq 'S' and $cust_bill_pkg->unitrecur == 0 )
+            # case 3: we are showing a recur line for a package that has 
+            # a base recurring fee
+            or ( $type eq 'R' and $cust_bill_pkg->unitrecur > 0 )
+        ) {
+
+          my @discounts = $cust_bill_pkg->cust_bill_pkg_discount;
+          # special case: if there are old "discount details" on this line 
+          # item, don't show discount line items
+          if ( FS::cust_bill_pkg_detail->count(
+              "detail LIKE 'Includes discount%' AND billpkgnum = " .
+              $cust_bill_pkg->billpkgnum
+             ) > 0 ) {
+             @discounts = ();
+          }
+          if( @discounts ) {
+            warn "$me _items_cust_bill_pkg including discounts for ".
+              $cust_bill_pkg->billpkgnum."\n"
+              if $DEBUG;
+            my $discount_amount = sum( map {$_->amount} @discounts );
+            my $orig_amount = $cust_bill_pkg->setup + $cust_bill_pkg->recur
+                              + $discount_amount;
+            # if multiple discounts apply to the same package, how to display
+            # them? ext_description lines, apparently
+            if ( $d and $cust_bill_pkg->hidden ) {
+              $d->{amount}      += $discount_amount;
+              $d->{orig_amount} += $orig_amount;
+            } else {
+              my @ext;
+              # make a placeholder for the original price, if necessary
+              # (if unit prices are enabled, it won't be necessary)
+              push @ext, '' if !$conf->exists('invoice-unitprice');
+              $d = {
+                _is_discount    => 1,
+                description     => $self->mt('Discount included'),
+                amount          => $discount_amount,
+                orig_amount     => $orig_amount,
+                ext_description => \@ext,
+              };
+              foreach my $cust_bill_pkg_discount (@discounts) {
+                my $def = $cust_bill_pkg_discount->cust_pkg_discount->discount;
+                push @ext, &{$escape_function}( $def->description );
+              }
+            }
+
+            # update the placeholder to show the original price in the 
+            # first ext_description line
+            if ( !$conf->exists('invoice-unitprice') ) {
+              $d->{ext_description}->[0] =
+                sprintf('Original price: %.2f', $d->{orig_amount});
+            }
+          } # if there are any discounts
+        } # if this is an appropriate place to show discounts
+
       } else { # taxes and fees
 
         warn "$me _items_cust_bill_pkg cust_bill_pkg is tax\n"
@@ -2971,13 +3112,14 @@ sub _items_cust_bill_pkg {
 
   }
 
-  foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
+  foreach ( $s, $r, ($opt{skip_usage} ? () : $u, $d ) ) {
     if ( $_  ) {
       $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
         if exists($_->{amount});
       $_->{amount}      =~ s/^\-0\.00$/0.00/;
-      $_->{unit_amount} = sprintf('%.2f', $_->{unit_amount})
-        if exists($_->{unit_amount});
+      if (exists($_->{unit_amount})) {
+        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} );
+      }
 
       push @b, { %$_ }
         if $_->{amount} != 0

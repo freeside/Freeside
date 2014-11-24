@@ -390,6 +390,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::deploy_zone;
   use FS::deploy_zone_block;
   use FS::deploy_zone_vertex;
+  use FS::TaxEngine;
+  use FS::tax_status;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

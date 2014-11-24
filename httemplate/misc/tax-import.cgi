@@ -1,4 +1,4 @@
-<% include("/elements/header.html",'Batch Tax Rate Import') %>
+<& /elements/header.html,'Batch Tax Rate Import' &>
 
 Import a CSV file set containing tax rate records.
 <BR><BR>
@@ -6,22 +6,22 @@ Import a CSV file set containing tax rate records.
 <& /elements/form-file_upload.html,
      'name'      => 'TaxRateUpload',
      'action'    => 'process/tax-import.cgi', 
-     'num_files' => 6,
      'fields'    => [ 'format', 'reload' ],
+     'num_files' => $vendor_info{$data_vendor}->{num_files},
      'message'   => 'Tax rates imported',
      'onsubmit'  => "document.TaxRateUpload.submitButton.disabled=true;",
 &>
 
-<% &ntable("#cccccc", 2) %>
+<& /elements/table-grid.html &>
 
   <TR>
     <TH ALIGN="right">Format</TH>
     <TD>
       <SELECT NAME="format">
-        <!-- <OPTION VALUE="cch-update" SELECTED>CCH update (CSV) -->
-        <OPTION VALUE="cch">CCH import (CSV)
-        <!-- <OPTION VALUE="cch-fixed-update">CCH update (fixed length) -->
-        <OPTION VALUE="cch-fixed">CCH import (fixed length)
+% my @formats = @{ $vendor_info{$data_vendor}->{formats} };
+% while (@formats) {
+        <OPTION VALUE="<% shift @formats %>"><% shift @formats %></OPTION>
+% }
       </SELECT>
     </TD>
   </TR>
@@ -33,24 +33,11 @@ Import a CSV file set containing tax rate records.
     </TD>
   </TR>
 
-  <% include( '/elements/file-upload.html',
-                'field'    => [ 'geocodefile',
-                                'codefile',
-                                'plus4file',
-                                'zipfile',
-                                'txmatrixfile',
-                                'detailfile',
-                              ],
-                'label'    => [ 'geocode filename',
-                                'code filename',
-                                'plus4 filename',
-                                'zip filename',
-                                'txmatrix filename',
-                                'detail filename',
-                              ],
+  <& /elements/file-upload.html,
+                'field' => $vendor_info{$data_vendor}->{field},
+                'label' => $vendor_info{$data_vendor}->{label},
                 'debug'    => 0,
-            )
-  %>
+  &>
 
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
@@ -72,4 +59,37 @@ Import a CSV file set containing tax rate records.
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
+my $conf = FS::Conf->new;
+my $data_vendor = $conf->config('enable_taxproducts');
+
+my %vendor_info = (
+  CCH => {
+    'num_files' => 6,
+    'formats' => [ 'cch'        => 'CCH import (CSV)',
+                   'cch-fixed'  => 'CCH import (fixed length)' ],
+    'field'   => [ 'geocodefile',
+                   'codefile',
+                   'plus4file',
+                   'zipfile',
+                   'txmatrixfile',
+                   'detailfile',
+                 ],
+    'label'   => [ 'geocode filename',
+                   'code filename',
+                   'plus4 filename',
+                   'zip filename',
+                   'txmatrix filename',
+                   'detail filename',
+                 ],
+  },
+  Billsoft => {
+    'num_files' => 1,
+    'formats' => [ 'billsoft-pcode' => 'Billsoft PCodes',
+                   'billsoft-taxclass' => 'Tax classes',
+                   'billsoft-taxproduct' => 'Tax products' ],
+    'field'   => [ 'file' ],
+    'label'   => [ 'Filename' ],
+  },
+);
+    
 </%init>

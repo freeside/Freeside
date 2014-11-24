@@ -1,0 +1,32 @@
+<% include('/elements/header.html', 'Customer Churn Summary' ) %>
+
+<FORM ACTION="cust_churn.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<& /elements/tr-select-from_to.html &>
+
+<& /elements/tr-select-agent.html,
+  'curr_value'    => scalar($cgi->param('agentnum')),
+  'label'         => 'For agent: ',
+  'disable_empty' => 1,
+&>
+
+<& /elements/tr-checkbox.html,
+  'field'         => 'normalize',
+  'value'         => 1,
+  'label'         => 'Show percentages'
+&>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List customers');
+
+</%init>

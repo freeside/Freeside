@@ -14,7 +14,7 @@ TD.sectionhead {
 .grid TH { background-color: #cccccc; padding: 0px 3px 2px }
 .row0 TD { background-color: #eeeeee; padding: 0px 3px 2px; text-align: right}
 .row1 TD { background-color: #ffffff; padding: 0px 3px 2px; text-align: right}
-TD.rowhead { font-weight: bold; text-align: left }
+TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 .bigmath { font-size: large; font-weight: bold; font: sans-serif; text-align: center }
 .total { font-style: italic }
 </STYLE>
@@ -141,6 +141,23 @@ TD.rowhead { font-weight: bold; text-align: left }
 %   $rownum++;
 %   $prev_row = $row;
 % } # foreach my $row
+% # at the end of everything
+  </TBODY>
+% if ( $report->{outside} > 0 ) {
+  <TBODY CLASS="total" STYLE="background-color: #cccccc; line-height: 3">
+    <TR>
+      <TD CLASS="rowhead">
+        <% emt('Out of taxable region') %>
+      </TD>
+      <TD STYLE="text-align: right">
+        <A HREF="<% $saleslink %>;out=1;taxname=<% $params{taxname} %>">
+          <% $money_sprintf->( $report->{outside } ) %>
+        </A>
+      </TD>
+      <TD COLSPAN=0></TD>
+    </TR>
+  </TBODY>
+% }
 </TABLE>
 
 <& /elements/footer.html &>

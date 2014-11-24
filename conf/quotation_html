@@ -18,7 +18,7 @@
 
   <table class="invoice_header" width="100%">
     <tr>
-     <td><img src="<%= $cid ? "cid:$cid" : "cust_bill-logo.cgi?invnum=$invnum;template=$template" %>"></td>
+     <td><img src="<%= $cid ? "cid:$cid" : "cust_bill-logo.cgi?quotationnum=$quotationnum;template=$template" %>"></td>
      <td align="left"><%= $returnaddress %></td>
       <td align="right">
         <table CLASS="invoice_headerright" cellspacing=0>
@@ -155,7 +155,11 @@
               $OUT .=  ( ($line->{'ref'} && $line->{'ref'} ne $lastref) ? '' : '_more' ).
                        '">'.
                        '<td align="center">'. 
-                       ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ). '</td>'.
+                         ( $line->{'ref'} ne $lastref
+                             ? $line->{'preref_html'}. $line->{'ref'}
+                             : ''
+                         ).
+                       '</td>'.
                        '<td align="left">'. $line->{'description'}. '</td>'.
                        ( $unitprices 
                            ? '<td align="left">'. $line->{'unit_amount'}. '</td>'.

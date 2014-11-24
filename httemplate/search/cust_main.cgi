@@ -150,15 +150,15 @@
 %      ? qq!<A HREF="$view"><FONT SIZE=-1>!. encode_entities($company). '</FONT></A>'
 %      : '<FONT SIZE=-1>&nbsp;</FONT>';
 %    
-%    my $status = $cust_main->status;
-%    my $statuscol = $cust_main->statuscolor;
+%    my $status_label = $cust_main->status_label;
+%    my $statuscolor = $cust_main->statuscolor;
 
     <TR>
       <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <A HREF="<% $view %>"><FONT SIZE=-1><% $cust_main->display_custnum %></FONT></A>
       </TD>
       <TD CLASS="grid" ALIGN="center" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
-        <FONT SIZE="-1" COLOR="#<% $statuscol %>"><B><% ucfirst($status) %></B></FONT>
+        <FONT SIZE="-1" COLOR="#<% $statuscolor %>"><B><% $status_label %></B></FONT>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <A HREF="<% $view %>"><FONT SIZE=-1><% "$last, $first" |h %></FONT></A>

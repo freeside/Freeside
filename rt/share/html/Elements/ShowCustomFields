@@ -49,27 +49,31 @@
 % if ($Table) {
 <table>
 % }
-% while ( my $CustomField = $CustomFields->Next ) {
-% my $Values = $Object->CustomFieldValues( $CustomField->Id );
-% my $count = $Values->Count;
+% foreach my $set ($CustomFields, $HiddenCustomFields) {
+%   $set->GotoFirstItem;
+%   while ( my $CustomField = $set->Next ) {
+%     my $Values = $Object->CustomFieldValues( $CustomField->Id );
+%     my $count = $Values->Count;
+%     next if $count == 0 and $CustomField->Disabled;
   <tr id="CF-<%$CustomField->id%>-ShowRow">
     <td class="label"><% $CustomField->Name %>:</td>
     <td class="value">
-% unless ( $count ) {
+%     if ( $count == 0 ) {
 <i><&|/l&>(no value)</&></i>
-% } elsif ( $count == 1 ) {
-%   $print_value->( $CustomField, $Values->First );
-% } else {
+%     } elsif ( $count == 1 ) {
+%       $print_value->( $CustomField, $Values->First );
+%     } else {
 <ul>
-% while ( my $Value = $Values->Next ) {
+%       while ( my $Value = $Values->Next ) {
 <li>
-% $print_value->( $CustomField, $Value );
+%         $print_value->( $CustomField, $Value );
 </li>
-% }
+%       }
 </ul>
-% }
+%     }
     </td>
   </tr>
+%   }
 % }
 % if ($Table) {
 </table>
@@ -83,9 +87,15 @@ $m->callback(
     CustomFields => $CustomFields,
 );
 
+# kludge to allow "Support time" to be displayed even though it's been
+# removed
+my $HiddenCustomFields = RT::CustomFields->new($session{'CurrentUser'});
+$HiddenCustomFields->LimitToChildType(ref $Object);
+$HiddenCustomFields->Limit( FIELD => 'Type', VALUE => 'TimeValue' );
+$HiddenCustomFields->LimitToDeleted;
+
 # don't print anything if there is no custom fields
-return unless $CustomFields->First;
-$CustomFields->GotoFirstItem;
+return unless $CustomFields->Count > 0 or $HiddenCustomFields->Count > 0;
 
 my $print_value = sub {
     my ($cf, $value) = @_;
@@ -127,5 +137,6 @@ my $print_value = sub {
 <%ARGS>
 $Object => undef
 $CustomFields => $Object->CustomFields
+
 $Table => 1
 </%ARGS>

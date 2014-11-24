@@ -179,7 +179,7 @@ function confirm_manual_address() {
 
 function post_standardization() {
 
-% if ( $conf->exists('enable_taxproducts') ) {
+% if ( $need_tax_location ) {
 
   var cf = document.<% $formname %>;
 
@@ -204,9 +204,8 @@ function post_standardization() {
       var state_el = cf.elements[prefix + 'state'];
       var state = state_el.options[ state_el.selectedIndex ].value;
 
-      var url = "<% $p %>/misc/choose_tax_location.html" +
-                  "?data_vendor=cch-zip" + 
-                  ";city="     + cf.elements[prefix + 'city'].value +
+      var url = "<% $p %>/misc/choose_tax_location.html?" +
+                  "city="     + cf.elements[prefix + 'city'].value +
                   ";state="    + state + 
                   ";zip="      + cf.elements[prefix + 'zip'].value +
                   ";country="  + country +
@@ -252,11 +251,9 @@ function update_geocode() {
       prefix = 'bill_';
     }
 
-    //alert(what.options[what.selectedIndex].value);
-    var argsHash = eval('(' + what.options[what.selectedIndex].value + ')');
-    cf.elements[prefix + 'city'].value     = argsHash['city'];
-    setselect(cf.elements[prefix + 'state'], argsHash['state']);
-    cf.elements[prefix + 'zip'].value      = argsHash['zip'];
+%# this used to set the city/state/zip to the selected value; I think
+%# that's wrong.
+    var argsHash = JSON.parse(what.value);
     cf.elements[prefix + 'geocode'].value  = argsHash['geocode'];
     <% $post_geocode %>;
 
@@ -342,5 +339,8 @@ if ( $census_functions ) {
   $post_censustract = $post_geocode;
   $post_geocode = 'confirm_censustract()';
 }
+
+my $tax_engine = FS::TaxEngine->new;
+my $need_tax_location = $tax_engine->info->{manual_tax_location} ? 1 : 0;
 
 </%init>

@@ -17,7 +17,7 @@
 %   }
 <% $cgi->redirect($fsurl.'browse/part_pkg-fcc.html?redirect='.$session) %>
 % } else {
-<% $cgi->redirect($fsurl.'browse/part_pkg-fcc.html?classnum='.$classnum) %>
+<% $cgi->redirect($fsurl.'browse/part_pkg-fcc.html?classnum='.$classnum.$jump) %>
 % }
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -40,4 +40,8 @@ foreach my $param ($cgi->param) {
 
 my $classnum = $cgi->param('classnum');
 
+my $jump = '';
+if ( $cgi->param('jump') =~ /^pkgpart(\d+)$/ ) {
+  $jump = '#'.$1;
+}
 </%init>

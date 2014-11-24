@@ -4,6 +4,7 @@
 
 use strict;
 use Getopt::Std;
+use Date::Parse;
 use Date::Format;
 use Text::CSV_XS;
 use DBI qw( :sql_types );
@@ -162,6 +163,8 @@ foreach my $filename ( @$ls ) {
     #skip blank records
     next unless grep defined($_), values %dbhash;
 
+    my $date = time2str( '%Y-%m-%d %X', str2time( $hash{'Date'} ) );
+
     $hash{'Status-Type'} = $status_type{ $hash{'Status-Type'} }
       if exists $status_type{ $hash{'Status-Type'} };
 
@@ -169,7 +172,8 @@ foreach my $filename ( @$ls ) {
     my @extra_values = ();
     if ( $hash{'Status-Type'} eq 'Start' ) {
 
-      $dbhash{'AcctStartTime'} = $hash{'Date'};
+      push @keys, 'AcctStartTime';
+      $dbhash{'AcctStartTime'} = $date;
 
       $sql = 'INSERT INTO radacct ( '. join(',', @keys).
              ' ) VALUES ( '. join(',', map ' ? ', @keys ). ' )';
@@ -177,7 +181,9 @@ foreach my $filename ( @$ls ) {
     } elsif ( $hash{'Status-Type'} eq 'Stop' ) {
 
       my $AcctSessionId = delete($dbhash{AcctSessionId});
-      $dbhash{'AcctStopTime'} = $hash{'Date'};
+
+      push @keys, 'AcctStopTime';
+      $dbhash{'AcctStopTime'} = $date;
 
       push @extra_values, $AcctSessionId;
 

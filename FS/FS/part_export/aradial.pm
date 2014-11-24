@@ -46,6 +46,7 @@ sub export_insert {
   my $result = $self->request_user_edit(
     'Add'   => 1,
     $self->svc_acct_params($svc),
+    'db_$N$Users.Status' => 0,
   );
   if ($svc->cust_svc->cust_pkg->susp > 0 ) {
     $result ||= $self->export_suspend($svc);
@@ -58,14 +59,14 @@ sub export_replace {
   if ($new->email ne $old->email) {
     return $old->export_delete || $new->export_insert;
   }
-  my $UserLockout = 0;
-  $UserLockout = 1 if $new->cust_svc->cust_pkg->susp > 0;
+  my $Status = 0;
+  $Status = 3 if $new->cust_svc->cust_pkg->susp > 0;
   $self->request_user_edit(
     'Page'    => 'UserEdit',
     'Modify'  => 1,
     'UserID'  => $old->email,
     $self->svc_acct_params($new),
-    UserLockout => $UserLockout,
+    'db_$N$Users.Status' => $Status,
   );
 }
 
@@ -74,7 +75,7 @@ sub export_suspend {
   $self->request_user_edit(
     'Modify'  => 1,
     'UserID'  => $svc->email,
-    'UserLockout' => 1,
+    'db_$N$Users.Status' => '3',
   );
 }
 
@@ -83,7 +84,7 @@ sub export_unsuspend {
   $self->request_user_edit(
     'Modify'  => 1,
     'UserID'  => $svc->email,
-    'UserLockout' => 0,
+    'db_$N$Users.Status' => 0,
   );
 }
 
@@ -151,7 +152,6 @@ sub svc_acct_params {
   (
     'db_Users.UserID'               => $svc->email,
     $self->password_params($svc),
-    'db_$N$Users.Status'            => 0, # we suspend using UserLockout
     'db_$D$Users.StartDate'         => $setup_date,
     'db_$D$Users.UserExpiryDate'    => $expire_date,
     'db_$RS$Users.GroupName'        => $self->option('group'),

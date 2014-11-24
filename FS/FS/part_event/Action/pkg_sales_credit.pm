@@ -1,7 +1,8 @@
 package FS::part_event::Action::pkg_sales_credit;
+use base qw( FS::part_event::Action::Mixin::pkg_sales_credit
+             FS::part_event::Action::pkg_referral_credit );
 
 use strict;
-use base qw( FS::part_event::Action::pkg_referral_credit );
 
 sub description { 'Credit the sales person a specific amount'; }
 

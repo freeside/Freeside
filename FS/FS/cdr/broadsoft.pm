@@ -22,8 +22,8 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
           $param->{skiprow} = 1 if lc($data) ne 'normal';
           '' },                                   #  3: type
             
-    trim('accountcode'),                          #  4: userNumber
     skip(2),
+    'dcontext',					  #  6: direction
     trim('src'),                                  #  7: callingNumber
     skip(1),
     trim('dst'),                                  #  9: calledNumber
@@ -36,7 +36,13 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
             'ANSWERED' : 'NO ANSWER') },          # 12: answerIndicator
     _cdr_date_parser_maker('answerdate'),         # 13: answerTime
     _cdr_date_parser_maker('enddate'),            # 14: releaseTime
-    
+    skip(17),
+    sub { my($cdr, $accountcode) = @_;
+    if ($cdr->is_tollfree){
+        $cdr->set('accountcode', $cdr->dst);
+    } else {
+        $cdr->set('accountcode', $accountcode);
+    }},
   ],
 
 );

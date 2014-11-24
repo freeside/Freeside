@@ -528,7 +528,7 @@ sub substitutions {
       balance
       credit_limit
       invoicing_list_emailonly
-      cust_status ucfirst_cust_status cust_statuscolor
+      cust_status ucfirst_cust_status cust_statuscolor cust_status_label
 
       signupdate dundate
       packages recurdates

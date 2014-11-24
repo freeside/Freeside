@@ -125,6 +125,20 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set($newname, 'location');
   }
 
+  # boolean enable_taxproducts is now enable_taxproducts = 'cch'
+  if ( $conf->exists('enable_taxproducts') and
+       $conf->config('enable_taxproducts') eq '' ) {
+
+    $conf->set('enable_taxproducts', 'cch');
+
+  }
+
+  # boolean tax-cust_exempt-groups-require_individual_nums is now -num_req all
+  if ( $conf->exists('tax-cust_exempt-groups-require_individual_nums') ) {
+    $conf->set('tax-cust_exempt-groups-num_req', 'all');
+    $conf->delete('tax-cust_exempt-groups-require_individual_nums');
+  }
+
 }
 
 sub upgrade_overlimit_groups {
@@ -228,7 +242,7 @@ sub upgrade {
   }
 
   local($FS::cust_main::ignore_expired_card) = 1;
-  local($FS::cust_main::ignore_illegal_zip) = 1;
+  #this is long-gone... would need to set an equivalent in cust_location #local($FS::cust_main::ignore_illegal_zip) = 1;
   local($FS::cust_main::ignore_banned_card) = 1;
   local($FS::cust_main::skip_fuzzyfiles) = 1;
 
@@ -374,6 +388,9 @@ sub upgrade_data {
 
     #populate state FIPS codes if not already done
     'state' => [],
+
+    #populate tax statuses
+    'tax_status' => [],
   ;
 
   \%hash;

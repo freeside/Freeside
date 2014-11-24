@@ -161,6 +161,8 @@ following fields are currently supported:
 
 =item cdrbatch
 
+=item detailnum - Link to invoice detail (L<FS::cust_bill_pkg_detail>)
+
 =back
 
 =head1 METHODS
@@ -226,6 +228,7 @@ sub table_info {
         'freesiderewritestatus' => 'Freeside rewrite status',
         'cdrbatch'              => 'Legacy batch',
         'cdrbatchnum'           => 'Batch',
+        'detailnum'             => 'Freeside invoice detail line',
     },
 
   };
@@ -337,8 +340,12 @@ sub check {
 
   #check the foreign keys even?
   #do we want to outright *reject* the CDR?
-  my $error =
-       $self->ut_numbern('acctid');
+  my $error = $self->ut_numbern('acctid');
+  return $error if $error;
+
+  if ( $self->freesidestatus ne 'done' ) {
+    $self->set('detailnum', ''); # can't have this on an unbilled call
+  }
 
   #add a config option to turn these back on if someone needs 'em
   #
@@ -350,8 +357,6 @@ sub check {
   #
   #  # Telstra =1, Optus = 2, RSL COM = 3
   #  || $self->ut_foreign_keyn('carrierid', 'cdr_carrier', 'carrierid' )
-
-  return $error if $error;
 
   $self->SUPER::check;
 }
@@ -1627,7 +1632,7 @@ sub _cdr_date_parse {
     # optionally without seconds
     ($mon, $day, $year, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
     $sec = 0 if !defined($sec);
-  } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d+\.\d+)(\D|$)/ ) {
+   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\.\d+$)/ ) {
     # broadsoft: 20081223201938.314
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\d+(\D|$)/ ) {

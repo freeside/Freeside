@@ -691,6 +691,8 @@ sub tables_hashref {
         'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
         'agent_invid',  'int', 'NULL', '', '', '', #(varchar?) importing legacy
         'promised_date', @date_type,       '', '',
+        
+        'pending',     'char', 'NULL',  1, '', '',
       ],
       'primary_key'  => 'invnum',
       'unique'       => [ [ 'custnum', 'agent_invid' ] ], #agentnum?  huh
@@ -1026,7 +1028,8 @@ sub tables_hashref {
 
     'cust_bill_pkg_detail' => {
       'columns' => [
-        'detailnum', 'serial', '', '', '', '',
+        'detailnum', 'serial', '', '', '', '', 
+          # bigserial? this table will eventually be as big as cdr...
         'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
         'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
         'invnum',  'int', 'NULL', '', '', '',           # deprecated
@@ -1038,7 +1041,7 @@ sub tables_hashref {
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
-        'detail',  'varchar', '', 255, '', '', 
+        'detail',  'varchar', '', 255, '', '',
       ],
       'primary_key'  => 'detailnum',
       'unique'       => [],
@@ -1625,6 +1628,7 @@ sub tables_hashref {
         'message_noemail', 'char', 'NULL', 1, '', '',
         'bill_locationnum', 'int', 'NULL', '', '', '',
         'ship_locationnum', 'int', 'NULL', '', '', '',
+        'taxstatusnum',   'char', 'NULL',      32, '', '',
       ],
       'primary_key'  => 'custnum',
       'unique'       => [ [ 'agentnum', 'agent_custid' ] ],
@@ -1910,6 +1914,7 @@ sub tables_hashref {
         'locationnum',      'serial',     '',      '', '', '',
         'prospectnum',         'int', 'NULL',      '', '', '',
         'custnum',             'int', 'NULL',      '', '', '',
+        'locationname',    'varchar', 'NULL', $char_d, '', '',
         'address1',        'varchar',     '', $char_d, '', '', 
         'address2',        'varchar', 'NULL', $char_d, '', '', 
         'city',            'varchar',     '', $char_d, '', '', 
@@ -1928,6 +1933,7 @@ sub tables_hashref {
         'location_type',   'varchar', 'NULL',      20, '', '',
         'location_number', 'varchar', 'NULL',      20, '', '',
         'location_kind',      'char', 'NULL',       1, '', '',
+        'incorporated',       'char', 'NULL',       1, '', '',
         'disabled',           'char', 'NULL',       1, '', '', 
       ],
       'primary_key'  => 'locationnum',
@@ -2157,7 +2163,7 @@ sub tables_hashref {
         'geocode',     'varchar', 'NULL', $char_d, '', '',#cch provides 10 char
         'data_vendor', 'varchar', 'NULL', $char_d, '', '',#auto update source
         'location',    'varchar', 'NULL', $char_d, '', '',#provided by tax authority
-        'taxclassnum', 'int',      '',      '', '', '', 
+        'taxclassnum', 'int',     'NULL',      '', '', '', 
         'effective_date', @date_type, '', '', 
         'tax',        @taxrate_type,      '', '',        # tax %
         'excessrate', @taxrate_typen,     '', '',        # second tax %
@@ -2201,6 +2207,7 @@ sub tables_hashref {
         'city',               'varchar', 'NULL', $char_d, '', '',
         'county',             'varchar', 'NULL', $char_d, '', '',
         'state',              'char',    'NULL',       2, '', '', 
+        'country',            'char',    'NULL',       2, '', '',
         'disabled',           'char',    'NULL', 1, '', '',
       ],
       'primary_key' => 'taxratelocationnum',
@@ -2215,8 +2222,11 @@ sub tables_hashref {
         'city',            'varchar', 'NULL', $char_d, '', '',
         'postalcity',      'varchar', 'NULL', $char_d, '', '',
         'county',          'varchar', 'NULL', $char_d, '', '',
-        'zip',             'char',    '',     5,  '', '', 
+        'zip',             'char',    'NULL', 5,  '', '', 
         'state',           'char',    '',     2,  '', '', 
+        'country',         'char',    'NULL', 2,  '', '', # should not actually be NULL, but cch...
+        'ziphi',           'char',    'NULL', 10, '', '',
+        'ziplo',           'char',    'NULL', 10, '', '',
         'plus4hi',         'char',    'NULL', 4,  '', '', 
         'plus4lo',         'char',    'NULL', 4,  '', '', 
         'default_location','char',    'NULL', 1,  '', '', # Y = default for zip
@@ -2225,7 +2235,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'custlocationnum',
       'unique' => [],
-      'index' => [ [ 'zip', 'plus4lo', 'plus4hi' ] ],
+      'index' => [ [ 'zip', 'plus4lo', 'plus4hi', 'ziphi', 'ziplo' ] ],
     },
 
     'tax_class' => { 
@@ -2237,6 +2247,18 @@ sub tables_hashref {
       ],
       'primary_key' => 'taxclassnum',
       'unique' => [ [ 'data_vendor', 'taxclass' ] ],
+      'index' => [],
+    },
+
+    'tax_status' => {
+      'columns' => [
+        'taxstatusnum', 'serial', '',             '', '', '',
+        'data_vendor',  'varchar', 'NULL',   $char_d, '', '',
+        'taxstatus',    'varchar', '',       $char_d, '', '',          
+        'description',  'varchar', '',       $char_d, '', '',
+      ],
+      'primary_key' => 'taxstatusnum',
+      'unique'      => [ [ 'data_vendor', 'taxstatus' ] ],
       'index' => [],
     },
 
@@ -2270,7 +2292,9 @@ sub tables_hashref {
       ],
       'primary_key'  => 'paypendingnum',
       'unique'       => [ [ 'payunique' ] ],
-      'index'        => [ [ 'custnum' ], [ 'status' ], ],
+      'index'        => [ [ 'custnum' ], [ 'status' ],
+                          ['paynum'], ['void_paynum'], ['jobnum'], ['invnum'],
+                        ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
@@ -3311,6 +3335,7 @@ sub tables_hashref {
         'data_vendor',   'varchar', 'NULL',   $char_d, '', '', 
         'taxproduct',    'varchar',     '',   $char_d, '', '', 
         'description',   'varchar',     '', 3*$char_d, '', '', 
+        'note',             'text', 'NULL',        '', '', '',
       ],
       'primary_key' => 'taxproductnum',
       'unique'      => [ [ 'data_vendor', 'taxproduct' ] ],
@@ -3692,20 +3717,27 @@ sub tables_hashref {
 	'suffix',       'varchar', 'NULL',  $char_d, '', '',
         'catchall',         'int', 'NULL',       '', '', '',
 	'parent_svcnum',    'int', 'NULL',       '', '', '',
+        'quota',        'varchar', 'NULL',  $char_d, '', '', 
+
+        #registration info
 	'registrarnum',     'int', 'NULL',       '', '', '',
 	'registrarkey', 'varchar', 'NULL',      512, '', '',
 	'setup_date',      @date_type, '', '',
 	'renewal_interval', 'int', 'NULL',       '', '', '',
 	'expiration_date', @date_type, '', '',
+
+        #some weird shit australia-specific shit?  yuck.. seems totally unused
 	'au_registrant_name',       'varchar', 'NULL',  $char_d, '', '',
 	'au_eligibility_type',      'varchar', 'NULL',  $char_d, '', '',
+
         #communigate pro fields (quota = MaxAccountSize)
         'max_accounts',     'int', 'NULL',       '', '', '',
         'trailer',         'text', 'NULL',       '', '', '',
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
         'cgp_certificatetype','varchar','NULL', $char_d, '', '',
-        #settings
+
+        #(account default) settings
         'acct_def_password_selfchange',   'char', 'NULL',       1,  '', '', 
         'acct_def_password_recover',      'char', 'NULL',       1, 'Y', '', 
         'acct_def_cgp_accessmodes',    'varchar', 'NULL',     255,  '', '',
@@ -3718,7 +3750,8 @@ sub tables_hashref {
         'acct_def_cgp_mailtoall',         'char', 'NULL',       1,  '', '', 
         'acct_def_cgp_addmailtrailer',    'char', 'NULL',       1,  '', '', 
         'acct_def_cgp_archiveafter',       'int', 'NULL',      '',  '', '',
-        #preferences
+
+        #(account default) preferences
         'acct_def_cgp_deletemode',     'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_emptytrash',     'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_language',       'varchar', 'NULL', $char_d,  '', '',
@@ -5284,6 +5317,9 @@ sub tables_hashref {
         #new
         'cdrbatchnum',      'int',    'NULL',      '', '', '',
 
+        # FK to cust_bill_pkg_detail; having a value here absolutely means
+        # that the CDR appears on an invoice
+        'detailnum',     'bigint',    'NULL',      '', '', '',
       ],
       'primary_key' => 'acctid',
       'unique' => [],

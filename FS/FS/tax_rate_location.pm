@@ -26,39 +26,32 @@ FS::tax_rate_location - Object methods for tax_rate_location records
 
 =head1 DESCRIPTION
 
-An FS::tax_rate_location object represents an example.  FS::tax_rate_location inherits from
-FS::Record.  The following fields are currently supported:
+An FS::tax_rate_location object represents a tax jurisdiction.  The only
+functional field is "geocode", a foreign key to tax rates (L<FS::tax_rate>) 
+that apply in the jurisdiction.  The city, county, state, and country fields 
+are provided for description and reporting.
+
+FS::tax_rate_location inherits from FS::Record.  The following fields are 
+currently supported:
 
 =over 4
 
-=item taxratelocationnum
+=item taxratelocationnum - Primary key (assigned automatically for new 
+tax_rate_locations)
 
-Primary key (assigned automatically for new tax_rate_locations)
+=item data_vendor - The tax data vendor ('cch' or 'billsoft').
 
-=item data_vendor
+=item geocode - A unique geographic location code provided by the data vendor
 
-The tax data vendor
+=item city - City
 
-=item geocode
+=item county -  County
 
-A unique geographic location code provided by the data vendor
+=item state - State (2-letter code)
 
-=item city
+=item country - Country (2-letter code, optional)
 
-City
-
-=item county
-
-County
-
-=item state
-
-State
-
-=item disabled
-
-If 'Y' this record is no longer active.
-
+=item disabled - If 'Y' this record is no longer active.
 
 =back
 
@@ -149,6 +142,40 @@ sub check {
   $self->SUPER::check;
 }
 
+=item find_or_insert
+
+Finds an existing, non-disabled tax jurisdiction matching the data_vendor 
+and geocode fields. If there is one, updates its city, county, state, and
+country to match this record.  If there is no existing record, inserts this 
+record.
+
+=cut
+
+sub find_or_insert {
+  my $self = shift;
+  my $existing = qsearchs('tax_rate_location', {
+      disabled    => '',
+      data_vendor => $self->data_vendor,
+      geocode     => $self->geocode
+  });
+  if ($existing) {
+    my $update = 0;
+    foreach (qw(city county state country)) {
+      if ($self->get($_) ne $existing->get($_)) {
+        $update++;
+      }
+    }
+    $self->set(taxratelocationnum => $existing->taxratelocationnum);
+    if ($update) {
+      return $self->replace($existing);
+    } else {
+      return;
+    }
+  } else {
+    return $self->insert;
+  }
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -186,9 +213,16 @@ sub location_sql {
 
 =over 4
 
-=item batch_import
+=item batch_import HASHREF, JOB
+
+Starts importing tax_rate_location records from a file.  HASHREF must contain
+'filehandle' (an open handle to the input file) and 'format' (one of 'cch',
+'cch-fixed', 'cch-update', 'cch-fixed-update', or 'billsoft').  JOB is an
+L<FS::queue> object to receive progress messages.
 
 =cut
+
+# XXX move this into TaxEngine modules at some point
 
 sub batch_import {
   my ($param, $job) = @_;
@@ -214,7 +248,7 @@ sub batch_import {
 
   my $line;
   my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
-  if ( $job || scalar(@column_callbacks) ) {
+  if ( $job || scalar(@column_callbacks) ) { # this makes zero sense
     my $error =
       csv_from_fixed(\$fh, \$count, \@column_lengths, \@column_callbacks);
     return $error if $error;
@@ -251,6 +285,29 @@ sub batch_import {
 
     };
 
+  } elsif ( $format eq 'billsoft' ) {
+    @fields = ( qw( geocode alt_location country state county city ), '', '' );
+
+    $hook = sub {
+      my $hash = shift;
+      if ($hash->{alt_location}) {
+        # don't import these; the jurisdiction should be named using its 
+        # primary city
+        %$hash = ();
+        return;
+      }
+
+      $hash->{data_vendor} = 'billsoft';
+      # unlike cust_tax_location, keep the whole-country and whole-state 
+      # rows, but strip the whitespace
+      $hash->{county} =~ s/^ //g;
+      $hash->{state} =~ s/^ //g;
+      $hash->{country} =~ s/^ //g;
+      $hash->{city} =~ s/[^\w ]//g; # remove asterisks and other bad things
+      $hash->{country} = substr($hash->{country}, 0, 2);
+      '';
+    }
+
   } elsif ( $format eq 'extended' ) {
     die "unimplemented\n";
     @fields = qw( );
@@ -286,7 +343,8 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ) .
+          ',Creating tax jurisdiction records'
         );
         die $error if $error;
         $last = time;

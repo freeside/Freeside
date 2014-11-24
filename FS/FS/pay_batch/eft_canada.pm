@@ -81,9 +81,11 @@ my %holiday = (
     # company + empty or first + last
     my $company = sprintf('%.64s', $cust_pay_batch->cust_main->company);
     if ( $company ) {
+      push @fields, 'Business';
       push @fields, $company, ''
     }
     else {
+      push @fields, 'Personal';
       push @fields, map { sprintf('%.64s', $_) } 
         $cust_pay_batch->first, $cust_pay_batch->last;
     }

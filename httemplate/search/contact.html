@@ -1,0 +1,68 @@
+<& elements/search.html,
+  title         => 'Contacts',
+  name_singular => 'contact',
+  query         => { select    => $select,
+                     table     => 'contact',
+                     addl_from => $addl_from,
+                     hashref   => \%hash,
+                     extra_sql => $extra_sql,
+                   },
+  count_query   => "SELECT COUNT(*) FROM contact $extra_sql", #XXX
+  header        => \@header,
+  fields        => \@fields,
+  links         => \@links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
+
+my $select = 'contact.*';
+my %hash = ();
+my $addl_from = '';
+
+my @header = ( 'First', 'Last', 'Title', );
+my @fields = ( 'first', 'last', 'title', );
+my @links = ( '', '', '' );
+
+my $company_link = '';
+
+if ( $cgi->param('selfservice_access') eq 'Y' ) {
+  $hash{'selfservice_access'} = 'Y';
+}
+
+my $extra_sql = '';
+if ( $cgi->param('link') ) {
+
+  my $coalesce = ', COALESCE( cust_main.company,';
+  my $as       = ') AS prospect_or_customer';
+
+  if ( $cgi->param('link') eq 'cust_main' ) {
+    push @header, 'Customer';
+    $select .= "$coalesce cust_main.first||' '||cust_main.last $as";
+    $addl_from = ' LEFT JOIN cust_main USING ( custnum )';
+    $extra_sql = ' custnum IS NOT NULL ';
+    $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
+  } elsif ( $cgi->param('link') eq 'prospect_main' ) {
+    push @header, 'Prospect';
+    $select .= "$coalesce contact.first||'  '||contact.last $as";
+    $addl_from = ' LEFT JOIN prospect_main USING ( prospectnum )';
+    $extra_sql = ' prospectnum IS NOT NULL ';
+    $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
+  } else {
+    die "don't know how to report on contacts linked to specified table";
+  }
+
+  #because right now its harder to show it for both kinds of contacts
+  push @fields, 'prospect_or_customer';
+  push @links, $company_link; 
+
+}
+
+push @header, 'Self-service';
+push @fields, 'selfservice_access';
+
+$extra_sql = (keys(%hash) ? ' AND ' : ' WHERE '). $extra_sql
+ if $extra_sql;
+
+</%init>

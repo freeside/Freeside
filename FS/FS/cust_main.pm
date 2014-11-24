@@ -17,19 +17,9 @@ use base qw( FS::cust_main::Packages
 
 require 5.006;
 use strict;
-use vars qw( $DEBUG $me $conf
-             @encrypted_fields
-             $import
-             $ignore_expired_card $ignore_banned_card $ignore_illegal_zip
-             $ignore_invalid_card
-             $skip_fuzzyfiles
-             @paytypes
-           );
 use Carp;
 use Scalar::Util qw( blessed );
 use Time::Local qw(timelocal);
-use Storable qw(thaw);
-use MIME::Base64;
 use Data::Dumper;
 use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
@@ -61,6 +51,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::cust_location;
 use FS::cust_class;
+use FS::tax_status;
 use FS::cust_main_exemption;
 use FS::cust_tax_adjustment;
 use FS::cust_tax_location;
@@ -87,21 +78,24 @@ use FS::cust_payby;
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
 # 3 is even more information including possibly sensitive data
-$DEBUG = 0;
-$me = '[FS::cust_main]';
+our $DEBUG = 0;
+our $me = '[FS::cust_main]';
 
-$import = 0;
-$ignore_expired_card = 0;
-$ignore_banned_card = 0;
-$ignore_invalid_card = 0;
+our $import = 0;
+our $ignore_expired_card = 0;
+our $ignore_banned_card = 0;
+our $ignore_invalid_card = 0;
 
-$skip_fuzzyfiles = 0;
+our $skip_fuzzyfiles = 0;
 
-@encrypted_fields = ('payinfo', 'paycvv');
+our $ucfirst_nowarn = 0;
+
+our @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
 
-@paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
+our @paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
 
+our $conf;
 #ask FS::UID to run this stuff for us later
 #$FS::UID::callback{'FS::cust_main'} = sub { 
 install_callback FS::UID sub { 
@@ -1746,6 +1740,7 @@ sub check {
     || $self->ut_foreign_keyn('ship_locationnum', 'cust_location','locationnum')
     || $self->ut_foreign_keyn('classnum', 'cust_class', 'classnum')
     || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
+    || $self->ut_foreign_keyn('taxstatusnum', 'tax_status', 'taxstatusnum')
     || $self->ut_textn('custbatch')
     || $self->ut_name('last')
     || $self->ut_name('first')
@@ -2099,6 +2094,7 @@ Returns a list of fields which have ship_ duplicates.
 
 sub addr_fields {
   qw( last first company
+      locationname
       address1 address2 city county state zip country
       latitude longitude
       daytime night fax mobile
@@ -2441,6 +2437,36 @@ sub classname {
   my $cust_class = $self->cust_class;
   $cust_class
     ? $cust_class->classname
+    : '';
+}
+
+=item tax_status
+
+Returns the external tax status, as an FS::tax_status object, or the empty 
+string if there is no tax status.
+
+=cut
+
+sub tax_status {
+  my $self = shift;
+  if ( $self->taxstatusnum ) {
+    qsearchs('tax_status', { 'taxstatusnum' => $self->taxstatusnum } );
+  } else {
+    return '';
+  } 
+}
+
+=item taxstatus
+
+Returns the tax status code if there is one.
+
+=cut
+
+sub taxstatus {
+  my $self = shift;
+  my $tax_status = $self->tax_status;
+  $tax_status
+    ? $tax_status->taxstatus
     : '';
 }
 
@@ -4199,17 +4225,29 @@ Returns a status string for this customer, currently:
 
 =over 4
 
-=item prospect - No packages have ever been ordered
+=item prospect
 
-=item ordered - Recurring packages all are new (not yet billed).
+No packages have ever been ordered.  Displayed as "No packages".
 
-=item active - One or more recurring packages is active
+=item ordered
 
-=item inactive - No active recurring packages, but otherwise unsuspended/uncancelled (the inactive status is new - previously inactive customers were mis-identified as cancelled)
+Recurring packages all are new (not yet billed).
 
-=item suspended - All non-cancelled recurring packages are suspended
+=item active
 
-=item cancelled - All recurring packages are cancelled
+One or more recurring packages is active.
+
+=item inactive
+
+No active recurring packages, but otherwise unsuspended/uncancelled (the inactive status is new - previously inactive customers were mis-identified as cancelled).
+
+=item suspended
+
+All non-cancelled recurring packages are suspended.
+
+=item cancelled
+
+All recurring packages are cancelled.
 
 =back
 
@@ -4236,15 +4274,37 @@ sub cust_status {
 
 =item ucfirst_status
 
+Deprecated, use the cust_status_label method instead.
+
 Returns the status with the first character capitalized.
 
 =cut
 
-sub ucfirst_status { shift->ucfirst_cust_status(@_); }
+sub ucfirst_status {
+  carp "ucfirst_status deprecated, use cust_status_label" unless $ucfirst_nowarn;
+  local($ucfirst_nowarn) = 1;
+  shift->ucfirst_cust_status(@_);
+}
 
 sub ucfirst_cust_status {
+  carp "ucfirst_cust_status deprecated, use cust_status_label" unless $ucfirst_nowarn;
   my $self = shift;
   ucfirst($self->cust_status);
+}
+
+=item cust_status_label
+
+=item status_label
+
+Returns the display label for this status.
+
+=cut
+
+sub status_label { shift->cust_status_label(@_); }
+
+sub cust_status_label {
+  my $self = shift;
+  __PACKAGE__->statuslabels->{$self->cust_status};
 }
 
 =item statuscolor
@@ -4997,9 +5057,24 @@ sub queued_bill {
   $cust_main->bill_and_collect( %args );
 }
 
+=item queued_collect 'custnum' => CUSTNUM [ , OPTION => VALUE ... ]
+
+Like queued_bill, but instead of C<bill_and_collect>, just runs the 
+C<collect> part.  This is used in batch tax calculation, where invoice 
+generation and collection events have to be completely separated.
+
+=cut
+
+sub queued_collect {
+  my (%args) = @_;
+  my $cust_main = FS::cust_main->by_key($args{'custnum'});
+  
+  $cust_main->collect(%args);
+}
+
 sub process_bill_and_collect {
   my $job = shift;
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   my $cust_main = qsearchs( 'cust_main', { custnum => $param->{'custnum'} } )
       or die "custnum '$param->{custnum}' not found!\n";
   $param->{'job'}   = $job;

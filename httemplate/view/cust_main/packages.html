@@ -201,8 +201,6 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 
-my $hide_changed = $curuser->option('hide_package_changes');
-
 my $hide_cancelled = 0;
 if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
    || ( $conf->exists('hidecancelledpackages')
@@ -262,29 +260,26 @@ foreach my $cust_pkg ( @packages ) {
 if ( keys %change_to_from or keys %changed_from ) {
   my @displayable_packages;
   foreach my $cust_pkg (@packages) {
+
     if ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
+
       # $cust_pkg is an ordered, not-yet-active package change target
       my $change_from = $change_to_from{ $cust_pkg->pkgnum };
       $cust_pkg->set('change_from_pkg', $change_from);
       $change_from->set('change_to_pkg', $cust_pkg);
+
     } elsif ( exists( $changed_from{$cust_pkg->pkgnum} ) ) {
+
       # $cust_pkg is a canceled package changed into another packge
+      # hide it under the destination package's history
       my $changed_to = $changed_from{$cust_pkg->pkgnum};
-      if ( ( $hide_changed eq 'all' ) or
-           ( $hide_changed eq 'location' 
-              and $changed_to->pkgpart  == $cust_pkg->pkgpart
-              and $changed_to->refnum   == $cust_pkg->refnum
-              and $changed_to->quantity == $cust_pkg->quantity )
-      ) {
-        # then we're hiding it
-        $cust_pkg->set('changed_to_pkg', $changed_to);
-        $changed_to->set('changed_from_pkg', $cust_pkg);
-      } else { # show it anyway
-        push @displayable_packages, $cust_pkg;
-      }
+      $cust_pkg->set('changed_to_pkg', $changed_to);
+      $changed_to->set('changed_from_pkg', $cust_pkg);
+
     } else {
       push @displayable_packages, $cust_pkg;
     }
+
   }
   @packages = @displayable_packages;
 }

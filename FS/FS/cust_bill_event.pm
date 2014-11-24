@@ -304,13 +304,11 @@ sub process_refax {
   process_re_X('fax', @_);
 }
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process_re_X {
   my( $method, $job ) = ( shift, shift );
 
-  my $param = thaw(decode_base64(shift));
+  my $param = shift;
   warn Dumper($param) if $DEBUG;
 
   re_X(

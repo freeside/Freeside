@@ -17,7 +17,7 @@
 % if ( $custnum ) { 
   <% mt('Customer #') |h %><B><% $cust_main->display_custnum %></B> - 
   <B><FONT COLOR="#<% $cust_main->statuscolor %>">
-    <% ucfirst($cust_main->status) %>
+    <% $cust_main->status_label %>
   </FONT></B>
   <BR><BR>
 % } 
@@ -25,7 +25,7 @@
 %# agent, agent_custid, refnum (advertising source), referral_custnum
 %# better section title for this?
 <FONT CLASS="fsinnerbox-title"><% mt('Basics') |h %></FONT>
-<& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
+<& cust_main/basics.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
 % if (    $conf->config('national_id-country')

@@ -422,63 +422,88 @@ if ( $cgi->param('nottax') ) {
   # If we're showing 'out' (items that aren't region/class taxable),
   # then we need the set of all items minus the union of those.
 
-  my $exempt_sub;
-
-  if ( @exempt_where or @tax_where 
-    or $cgi->param('taxable') or $cgi->param('out') )
-  {
-    # process exemption restrictions, including @tax_where
-    my $exempt_sub = 'SELECT SUM(amount) as exempt_amount, billpkgnum 
-    FROM cust_tax_exempt_pkg JOIN cust_main_county USING (taxnum)';
-
-    $exempt_sub .= ' WHERE '.join(' AND ', @tax_where, @exempt_where)
-      if (@tax_where or @exempt_where);
-
-    $exempt_sub .= ' GROUP BY billpkgnum';
-
-    $join_pkg .= " LEFT JOIN ($exempt_sub) AS item_exempt
-    USING (billpkgnum)";
  
-    # process tax restrictions
-    unshift @tax_where,
-      'cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum',
-      'cust_main_county.tax > 0';
-  }
+  if ( $cgi->param('out') ) {
+    # separate from the rest, in that we're not going to join cust_main_county
+    # in the outer query
 
-  my $tax_sub = "SELECT 1
-    FROM cust_bill_pkg_tax_location
-    JOIN cust_bill_pkg AS tax_item USING (billpkgnum)
-    JOIN cust_main_county USING (taxnum)
-    WHERE ". join(' AND ', @tax_where);
+    my @exclude = ( 'cust_tax_exempt_pkg.billpkgnum',
+                    'cust_bill_pkg_tax_location.taxable_billpkgnum'
+                  );
+    foreach my $col (@exclude) {
+      my ($table) = split(/\./, $col);
+      my $this_where = 'WHERE ' .  join(' AND ',
+        "$col = cust_bill_pkg.billpkgnum",
+        @tax_where
+      );
 
-  # now do something with that
-  if ( @exempt_where ) {
+      push @where,
+      "NOT EXISTS(SELECT 1 FROM $table
+        JOIN cust_main_county USING (taxnum)
+        $this_where
+      )";
+    }
+  
+  } else {
+    # everything that returns things joined to a tax definition
 
-    push @where,    'item_exempt.billpkgnum IS NOT NULL';
-    push @select,   'item_exempt.exempt_amount';
-    push @peritem,  'exempt_amount';
-    push @peritem_desc, 'Exempt';
-    push @total,    'SUM(exempt_amount)';
-    push @total_desc, "$money_char%.2f tax-exempt";
+    my $exempt_sub;
+    if ( @exempt_where or @tax_where or $cgi->param('taxable') ) {
 
-  } elsif ( $cgi->param('taxable') ) {
+      # process exemption restrictions, including @tax_where
+      my $exempt_sub = 'SELECT SUM(amount) as exempt_amount, billpkgnum 
+      FROM cust_tax_exempt_pkg JOIN cust_main_county USING (taxnum)';
 
-    my $taxable = 'cust_bill_pkg.setup + cust_bill_pkg.recur '.
-                  '- COALESCE(item_exempt.exempt_amount, 0)';
+      $exempt_sub .= ' WHERE '.join(' AND ', @tax_where, @exempt_where)
+        if (@tax_where or @exempt_where);
 
-    push @select,   "($taxable) AS taxable_amount";
-    push @where,    "EXISTS($tax_sub)";
-    push @peritem,  'taxable_amount';
-    push @peritem_desc, 'Taxable';
-    push @total,    "SUM($taxable)";
-    push @total_desc, "$money_char%.2f taxable";
+      $exempt_sub .= ' GROUP BY billpkgnum';
 
-  } elsif ( @tax_where ) {
+      $join_pkg .= " LEFT JOIN ($exempt_sub) AS item_exempt
+      USING (billpkgnum)";
+   
+      # process tax restrictions
+      unshift @tax_where,
+        'cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum',
+        'cust_main_county.tax > 0';
+    }
 
-    # union of taxable + all exempt_ cases
-    push @where, "(EXISTS($tax_sub) OR item_exempt.billpkgnum IS NOT NULL)";
+    my $tax_sub = "SELECT 1
+      FROM cust_bill_pkg_tax_location
+      JOIN cust_bill_pkg AS tax_item USING (billpkgnum)
+      JOIN cust_main_county USING (taxnum)
+      WHERE ". join(' AND ', @tax_where);
 
-  }
+    # now do something with that
+    if ( @exempt_where ) {
+
+      push @where,    'item_exempt.billpkgnum IS NOT NULL';
+      push @select,   'item_exempt.exempt_amount';
+      push @peritem,  'exempt_amount';
+      push @peritem_desc, 'Exempt';
+      push @total,    'SUM(exempt_amount)';
+      push @total_desc, "$money_char%.2f tax-exempt";
+
+    } elsif ( $cgi->param('taxable') ) {
+
+      my $taxable = 'cust_bill_pkg.setup + cust_bill_pkg.recur '.
+                    '- COALESCE(item_exempt.exempt_amount, 0)';
+
+      push @select,   "($taxable) AS taxable_amount";
+      push @where,    "EXISTS($tax_sub)";
+      push @peritem,  'taxable_amount';
+      push @peritem_desc, 'Taxable';
+      push @total,    "SUM($taxable)";
+      push @total_desc, "$money_char%.2f taxable";
+
+    } elsif ( @tax_where ) {
+
+      # union of taxable + all exempt_ cases
+      push @where, "(EXISTS($tax_sub) OR item_exempt.billpkgnum IS NOT NULL)";
+
+    }
+
+  } # handle all joins to cust_main_county
 
   # recur/usage separation
   if ( $cgi->param('usage') eq 'recurring' ) {
@@ -524,18 +549,7 @@ if ( $cgi->param('nottax') ) {
                cust_bill_pkg.setup + cust_bill_pkg.recur)
     )';
 
-  } elsif ( $cgi->param('out') ) {
-
-    $join_pkg .= '
-      LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
-    ';
-    push @where, 'cust_bill_pkg_tax_location.billpkgnum IS NULL';
-
-    # each billpkgnum should appear only once
-    $total[0] = 'COUNT(*)';
-    $total[1] = 'SUM(cust_bill_pkg.setup)';
-
-  } else { # not locationtaxid or 'out'--the normal case
+  } else { # the internal-tax case
 
     $join_pkg .= '
       LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)

@@ -1766,17 +1766,14 @@ files.  Currently only supports a single file named "file".
 
 =cut
 
-use Storable qw(thaw);
 use Data::Dumper;
-use MIME::Base64;
 sub process_batch_import {
-  my($job, $opt) = ( shift, shift );
+  my($job, $opt, $param) = @_;
 
   my $table = $opt->{table};
   my @pass_params = $opt->{params} ? @{ $opt->{params} } : ();
   my %formats = %{ $opt->{formats} };
 
-  my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
   
   my $files = $param->{'uploaded_files'}

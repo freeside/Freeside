@@ -1,0 +1,70 @@
+<& elements/monthly.html,
+  'title'         => $agentname. 'Customer Churn',
+  'items'         => \@items,
+  'labels'        => \@labels,
+  'graph_labels'  => \@labels,
+  'colors'        => \@colors,
+  'links'         => \@links,
+  #'params'        => \@params,
+  'agentnum'      => $agentnum,
+  'sprintf'       => ( $normalize ? '%0.1f%%' : '%u'), 
+  'normalize'     => ( $normalize ? 0 : undef ),
+  'disable_money' => 1,
+  'remove_empty'  => 0,
+  'nototal'       => 1,
+  'no_graph'      => [ 1, 0, 0, 0, 0 ], # don't graph 'active'
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('List customers');
+
+my( $agentnum, $agent ) = ('', '');
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+} else {
+  die "agentnum required"; # UI prevents this
+}
+
+my $agentname = $agent ? $agent->agent.' ' : '';
+
+my @base_items = qw(active_cust    
+                    started_cust   
+                    suspended_cust 
+                    resumed_cust   
+                    cancelled_cust  );
+
+my %base_labels = (
+  active_cust    => 'Active customers',
+  started_cust   => 'New',
+  suspended_cust => 'Suspended',
+  resumed_cust   => 'Resumed',
+  cancelled_cust => 'Cancelled',
+);
+
+my %base_colors = (
+  active_cust     => '000000', #black
+  started_cust    => '00cc00', #green
+  suspended_cust  => 'ff9900', #yellow
+  resumed_cust    => '4444ff', #light blue for some reason
+  cancelled_cust  => 'cc0000', #red 
+);
+
+my %base_links;
+foreach my $status (qw(active started suspended resumed cancelled)) {
+  $base_links{$status.'_cust'} =
+    "${p}search/cust_main_churn.html?agentnum=$agentnum;status=$status;";
+}
+
+# indirection in case at some point we need to add breakdown options
+my (@items, @labels, @colors, @links, @params);
+@items = @base_items;
+@labels = @base_labels{@base_items};
+@colors = @base_colors{@base_items};
+@links = @base_links{@base_items};
+
+my $normalize = $cgi->param('normalize');
+
+</%init>
