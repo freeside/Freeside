@@ -2740,6 +2740,10 @@ sub _items_cust_bill_pkg {
             'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => "$desc (". $cust_bill_pkg->part_pkg->freq_pretty.")",
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
+	    'preref_html' => ( $opt{preref_callback}
+                                 ? &{ $opt{preref_callback} }( $cust_bill_pkg )
+                                 : ''
+                             ),
           };
         }
 
