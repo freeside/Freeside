@@ -164,6 +164,26 @@ sub recur {
   sprintf('%.2f', $recur);
 }
 
+sub unitsetup {
+  my $self = shift;
+  return '0.00' if $self->waive_setup eq 'Y' || $self->{'_NO_SETUP_KLUDGE'};
+  my $part_pkg = $self->part_pkg;
+  my $setup = $part_pkg->option('setup_fee');
+
+  #XXX discounts
+  sprintf('%.2f', $setup);
+}
+
+sub unitrecur {
+  my $self = shift;
+  return '0.00' if $self->{'_NO_RECUR_KLUDGE'};
+  my $part_pkg = $self->part_pkg;
+  my $recur = $part_pkg->can('base_recur') ? $part_pkg->base_recur
+                                           : $part_pkg->option('recur_fee');
+  #XXX discounts
+  sprintf('%.2f', $recur);
+}
+
 =item part_pkg_currency_option OPTIONNAME
 
 Returns a two item list consisting of the currency of this quotation's customer
