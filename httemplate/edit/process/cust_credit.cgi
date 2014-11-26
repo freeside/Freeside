@@ -1,5 +1,4 @@
 %if ( $error ) {
-%  $cgi->param('reasonnum', $reasonnum);
 %  $cgi->param('error', $error);
 %  $dbh->rollback if $oldAutoCommit;
 %  
@@ -37,19 +36,11 @@ my $oldAutoCommit = $FS::UID::AutoCommit;
 local $FS::UID::AutoCommit = 0;
 my $dbh = dbh;
 
-my $error = '';
-if ($reasonnum == -1) {
-
-  $error = 'Enter a new reason (or select an existing one)'
-    unless $cgi->param('newreasonnum') !~ /^\s*$/;
-  my $reason = new FS::reason {
-                 'reason_type' => scalar($cgi->param('newreasonnumT')),
-                 'reason'      => scalar($cgi->param('newreasonnum')),
-               };
-  $error ||= $reason->insert;
-  $cgi->param('reasonnum', $reason->reasonnum)
-    unless $error;
+my ($reasonnum, $error) = $m->comp('/misc/process/elements/reason');
+if (!$reasonnum) {
+  $error ||= 'Reason required'
 }
+$cgi->param('reasonnum', $reasonnum) unless $error;
 
 unless ($error) {
   my $new = new FS::cust_credit ( {

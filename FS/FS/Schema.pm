@@ -5881,6 +5881,7 @@ sub tables_hashref {
         'disabled',      'char',    'NULL', 1, '', '', 
         'unsuspend_pkgpart', 'int',  'NULL', '', '', '',
         'unsuspend_hold','char',    'NULL', 1, '', '',
+        'unused_credit', 'char',    'NULL', 1, '', '',
       ],
       'primary_key'  => 'reasonnum',
       'unique'       => [],

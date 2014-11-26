@@ -65,17 +65,12 @@ if ( $method eq 'suspend' ) { #or 'adjourn'
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
 
-#untaint reasonnum
-my $reasonnum = $cgi->param('reasonnum');
-if ( $method !~ /^(unsuspend|uncancel)$/ ) {
-  $reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
-  $reasonnum = $1;
-
-  if ($reasonnum == -1) {
-    $reasonnum = {
-      'typenum' => scalar( $cgi->param('newreasonnumT') ),
-      'reason'  => scalar( $cgi->param('newreasonnum' ) ),
-    };
+#untaint reasonnum, and set up new reason if appropriate
+my ($reasonnum, $error);
+if ($method ne 'resume' and $method ne 'uncancel') {
+  ($reasonnum, $error) = $m->comp('elements/reason');
+  if (!$reasonnum) {
+    $error ||= 'Reason required';
   }
 }
 
@@ -87,7 +82,7 @@ my $bill =
 
 my $svc_fatal = ( $cgi->param('svc_not_fatal') ne 'Y' );
 
-my $error = $cust_pkg->$method( 'reason'      => $reasonnum,
+$error ||=  $cust_pkg->$method( 'reason'      => $reasonnum,
                                 'date'        => $date,
                                 'resume_date' => $resume_date,
                                 'last_bill'   => $last_bill,

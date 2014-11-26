@@ -60,8 +60,8 @@ function areyousure(href, message) {
                 'actionlabel' => emt('Confirm Suspension'),
                 'color'       => '#ff9900',
                 'cust_main'   => $cust_main,
-                'width'       => 616, #make room for reasons
-                'height'      => 366,
+                'width'       => 768, #make room for reasons
+                'height'      => 450, 
               }
   &> | 
 % }
@@ -91,7 +91,7 @@ function areyousure(href, message) {
                 'color'       => '#ff0000',
                 'cust_main'   => $cust_main,
                 'width'       => 616, #make room for reasons
-                'height'      => 366,
+                'height'      => 410,
               }
   &> | 
 % }
