@@ -1,0 +1,126 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format;
+use File::Temp 'tempdir';
+use Net::FTP;
+use FS::UID qw(adminsuidsetup datasrc dbh);
+use FS::cdr;
+use FS::cdr_batch;
+use FS::Record qw(qsearch qsearchs);
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
+
+
+###
+# parse command line
+###
+
+use vars qw( $opt_d $opt_v $opt_c $opt_s $opt_e $opt_a );
+getopts('dvc:s:e:a');
+
+my ($user, $login, $password) = @ARGV;
+($user and $login and $password) or die &usage;
+
+my $dbh = adminsuidsetup $user;
+$FS::UID::AutoCommit = 0;
+
+# index already-downloaded batches
+my @previous = qsearch({
+    'table'     => 'cdr_batch',
+    'hashref'   => { 'cdrbatch' => {op=>'like', value=>'thinktel%'} },
+    'order_by'  => 'ORDER BY cdrbatch DESC',
+});
+my %exists = map {$_->cdrbatch => 1} @previous;
+
+my $tempdir = tempdir( CLEANUP => !$opt_v );
+
+my $format = 'thinktel';
+my $hostname = 'ucontrol.thinktel.ca';
+
+my $ftp = Net::FTP->new($hostname, Debug => $opt_d)
+  or die "Can't connect to $hostname: $@\n";
+
+$ftp->login($login, $password)
+  or die "Login failed: ".$ftp->message."\n";
+
+###
+# get the file list
+###
+
+warn "Retrieving directory listing\n" if $opt_v;
+
+$ftp->cwd('/');
+my @files = $ftp->ls();
+warn scalar(@files)." CDR files found.\n" if $opt_v;
+# apply date range
+if ( $opt_a ) {
+  my $most_recent = $previous[0];
+  if ($most_recent) {
+    if ($most_recent->cdrbatch =~ /^thinktel-(\d+)/) {
+      my $date = $1;
+      warn "limiting to dates > $date (from most recent batch)\n" if $opt_v;
+      @files = grep { /^(\d+)_/ && $1 > $date } @files;
+    }
+  } # else download them all
+}
+if ( $opt_s ) {
+  # start date
+  # normalize date format
+  $opt_s = time2str('%Y%m%d', str2time($opt_s)) if $opt_s =~ /\D/;
+  warn "limiting to dates > $opt_s\n" if $opt_v;
+  @files= grep { /^(\d+)_/ && $1 >= $opt_s } @files;
+}
+if ( $opt_e ) {
+  # end date
+  $opt_e = time2str('%Y%m%d', str2time($opt_e)) if $opt_e =~ /\D/;
+  warn "limiting to dates < $opt_e\n" if $opt_v;
+  @files= grep { /^(\d+)_/ && $1 < $opt_e } @files;
+}
+warn scalar(@files) ." files to be downloaded to '$tempdir'\n" if $opt_v;
+foreach my $file (@files) {
+
+  warn "downloading $file\n" if $opt_v;
+  $ftp->get($file, "$tempdir/$file");
+  warn "processing $file\n" if $opt_v;
+
+  my $batchname = "$format-$file";
+  if ($exists{$batchname}) {
+    warn "already imported $file\n";
+    next;
+  }
+  my $import_options = {
+    'file'            => "$tempdir/$file",
+    'format'          => $format,
+    'batch_namevalue' => $batchname,
+    'empty_ok'        => 1,
+  };
+  $import_options->{'cdrtypenum'} = $opt_c if $opt_c;
+  
+  my $error = FS::cdr::batch_import($import_options);
+
+  if ( $error ) {
+    die "error processing $file: $error\n";
+  }
+}
+warn "finished\n" if $opt_v;
+$dbh->commit;
+
+###
+# subs
+###
+
+sub usage {
+  "Usage: \n  cdr-thinktel.import [ options ] user login password
+  Options:
+    -v: be verbose
+    -d: enable FTP debugging (very noisy)
+    -c num: apply a cdrtypenum to the imported CDRs
+    -s date: start date
+    -e date: end date
+    -a: automatically choose start date from most recently downloaded batch
+
+";
+}
+
