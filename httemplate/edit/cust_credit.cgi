@@ -25,7 +25,7 @@
 <& /elements/tr-select-reason.html,
               'field'          => 'reasonnum',
               'reason_class'   => 'R',
-              'control_button' => "document.getElementById('confirm_credit_button')",
+              'control_button' => 'confirm_credit_button',
               'cgi'            => $cgi,
 &>
 

@@ -29,109 +29,119 @@ Example:
 
 </%doc>
 
+% # note style improvements.
+% # - no more conditionally included code here
+% # - callers are not expected to pass javascript fragments
+% # - no redundant checking of ACLs or parameters
+% # - form fields are grouped for easy management
+% # - use the standard select-table widget instead of ad hoc crap
 <SCRIPT TYPE="text/javascript">
-  function sh_add<% $func_suffix %>()
-  {
-    var hints = <% encode_json(\@hints) %>;
+  function <% $id %>_changed() {
+    var hints = <% encode_json(\%all_hints) %>;
     var select_reason = document.getElementById('<% $id %>');
 
-% if ( $class eq 'S' ) {    
     document.getElementById('<% $id %>_hint').innerHTML =
-      hints[select_reason.selectedIndex];
-% }
+      hints[select_reason.value] || '';
 
-    if (select_reason.selectedIndex == 0){
-      <% $controlledbutton ? $controlledbutton.'.disabled = true;' : ';' %>
-    }else{
-      <% $controlledbutton ? $controlledbutton.'.disabled = false;' : ';' %>
+    // toggle submit button state
+    var submit_button = document.getElementById(<% $opt{control_button} |js_string %>);
+    if (submit_button) {
+      submit_button.disabled = ( select_reason.value == 0 );
     }
 
-%if ($curuser->access_right($add_access_right)){
-
-    if (select_reason.selectedIndex == 
-         (select_reason.length - 1)) {
-      document.getElementById('new<% $id %>').disabled = false;
-      document.getElementById('new<% $id %>').style.display = 'inline';
-      document.getElementById('new<% $id %>Label').style.display = 'inline';
-      document.getElementById('new<% $id %>T').disabled = false;
-      document.getElementById('new<% $id %>T').style.display = 'inline';
-      document.getElementById('new<% $id %>TLabel').style.display = 'inline';
+    // toggle visibility of 'new reason' fields
+    var new_fields = document.getElementById('<% $id %>_new_fields');
+    if ( select_reason.value == -1 ) {
+      new_fields.disabled = false;
+      new_fields.style.display = '';
     } else {
-      document.getElementById('new<% $id %>').disabled = true;
-      document.getElementById('new<% $id %>').style.display = 'none';
-      document.getElementById('new<% $id %>Label').style.display = 'none';
-      document.getElementById('new<% $id %>T').disabled = true;
-      document.getElementById('new<% $id %>T').style.display = 'none';
-      document.getElementById('new<% $id %>TLabel').style.display = 'none';
+      new_fields.disabled = true;
+      new_fields.style.display = 'none';
     }
-
-%}
 
   }
+  <&| onload.js &> <% $id %>_changed(); </&>
 </SCRIPT>
 
-<TR>
-  <TD ALIGN="right"><% mt('Reason') |h %></TD>
-  <TD>
-    <SELECT id="<% $id %>" name="<% $name %>" onFocus="sh_add<% $func_suffix %>()" onChange="sh_add<% $func_suffix %>()">
-      <OPTION VALUE="" <% ($init_reason eq '') ? 'SELECTED' : '' %>><% mt('Select Reason...') |h %></OPTION>
-%    foreach my $reason (@reasons) {
-      <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reasontype->type %> : <% $reason->reason %></OPTION>
-%    }
-%    if ($curuser->access_right($add_access_right)) {
-      <OPTION VALUE="-1" <% ($init_reason == -1) ? 'SELECTED' : '' %>><% mt('Add new reason') |h %></OPTION>
-%    }
-%
-    </SELECT>
-  </TD>
-</TR>
+%# sadly can't just use add_inline here, as we have non-text fields
+<& tr-select-table.html,
+  'label'           => 'Reason',
+  'field'           => $name,
+  'id'              => $id,
+  'table'           => 'reason',
+  'records'         => \@reasons,
+  'label_callback'  => sub { my $reason = shift;
+                             $reason->type . ' : ' .  $reason->reason },
+  'disable_empty'   => 1,
+  'pre_options'     => [ 0 => 'Select reason...' ],
+  'post_options'    => [ -1 => 'Add new reason' ],
+  'curr_value'      => $init_reason,
+  'onchange'        => $id.'_changed()',
+&>
 
-%   my @types = qsearch( 'reason_type', { 'class' => $class } );
-%   if (scalar(@types) < 1) {  # we should never reach this
-<TR>
-  <TD ALIGN="right">
-    <P><% mt('No reason types. Please add some.') |h %></P>
-  </TD>
-</TR>
-%   }elsif (scalar(@types) == 1) {
-<TR>
-  <TD ALIGN="right">
-    <P id="new<% $name %>TLabel" style="display:<% $display %>"><% mt('Reason Type') |h %></P>
-  </TD>
-  <TD>
-    <P id="new<% $name %>T" disabled="<% $disabled %>" style="display:<% $display %>"><% $types[0]->type %>
-    <INPUT type="hidden" name="new<% $name %>T" value="<% $types[0]->typenum %>">
-  </TD>
-</TR>
+% # "add new reason" fields
+% # should be a <fieldset>, but that doesn't fit well into the table
 
-%   }else{
+<TR id="<% $id %>_new_fields">
+  <TD COLSPAN=2>
+    <TABLE CLASS="inv" STYLE="text-align: left">
 
-<TR>
-  <TD ALIGN="right">
-    <P id="new<% $id %>TLabel" style="display:<% $display %>"><% mt('Reason Type') |h %></P>
-  </TD>
-  <TD>
-    <SELECT id="new<% $id %>T" name="new<% $name %>T" "<% $disabled %>" style="display:<% $display %>">
-%     for my $type (@types) {
-        <OPTION VALUE="<% $type->typenum %>" <% ($init_type == $type->typenum) ? 'SELECTED' : '' %>><% $type->type %></OPTION>
-%     }
-    </SELECT>
-  </TD>
-</TR>
-%   }
+      <& tr-input-text.html,
+        label => 'New reason',
+        field => $id.'_new_reason'
+      &>
+
+% my @types = qsearch( 'reason_type', { 'class' => $class } );
+% if (scalar(@types) < 1) {  # we should never reach this
+      <TR>
+        <TD ALIGN="right">
+          <P><% mt('No reason types. Please add some.') |h %></P>
+        </TD>
+      </TR>
+% } elsif (scalar(@types) == 1) {
+      <& tr-fixed.html,
+        label => 'Reason type',
+        field => $id.'_new_reason_type',
+        curr_value => $types[0]->typenum,
+        formatted_value => $types[0]->type,
+      &>
+% } else { # more than one type, the normal case
+      <& tr-select-table.html,
+        label         => 'Reason type',
+        field         => $id.'_new_reason_type',
+        table         => 'reason_type',
+        name_col      => 'type',
+        hashref       => { 'class' => $class },
+        disable_empty => 1,
+      &>
+% } # scalar(@types)
 
 % if ( $class eq 'S' ) {
-<TR>
-  <TD COLSPAN=2 ALIGN="center" id="<% $id %>_hint">
-  </TD>
-</TR>
+      <& tr-checkbox.html,
+        label => 'Credit the unused portion of service when suspending',
+        field => $id.'_new_unused_credit',
+        value => 'Y'
+      &>
+      <& tr-select-part_pkg.html,
+        label   => 'Charge this fee when unsuspending',
+        field   => $id.'_new_unsuspend_pkgpart',
+        hashref => { disabled => '', freq => '0' },
+        empty_label => 'none',
+      &>
+      <& tr-checkbox.html,
+        label => 'Hold unsuspension fee until the next bill',
+        field => $id.'_new_unsuspend_hold',
+        value => 'Y',
+      &>
 % }
+    </table>
+  </td>
+</tr>
 
+% # container for hints
 <TR>
-  <TD ALIGN="right">
-    <P id="new<% $id %>Label" style="display:<% $display %>"><% mt('New Reason') |h %></P>
+  <TD COLSPAN=2 ALIGN="center" id="<% $id %>_hint" style="font-size:small">
   </TD>
-  <TD><INPUT id="new<% $id %>" name="new<% $name %>" type="text" value="<% $init_newreason |h %>" "<% $disabled %>" style="display:<% $display %>"></TD>
 </TR>
 
 <%init>
@@ -148,11 +158,7 @@ if ( $opt{'cgi'} ) {
   $init_reason = $opt{'curr_value'};
 }
 
-my $controlledbutton = $opt{'control_button'};
-
-( my $func_suffix = $name ) =~ s/\./_/g;
-
-my $id = $opt{'id'} || $func_suffix;
+my $id = $opt{'id'} || $name;
 
 my $add_access_right;
 if ($class eq 'C') {
@@ -165,41 +171,21 @@ if ($class eq 'C') {
   die "illegal class: $class";
 }
 
-my( $display, $disabled ) = ( 'none', 'DISABLED' );
-my( $init_type, $init_newreason ) = ( '', '' );
-if ($init_reason == -1 || ref($init_reason) ) {
-
-  $display = 'inline';
-  $disabled = '';
-
-  if ( ref($init_reason) ) {
-    $init_type      = $init_reason->{'typenum'};
-    $init_newreason = $init_reason->{'reason'};
-    $init_reason = -1;
-  } elsif ( $opt{'cgi'} ) {
-    $init_type      = $opt{'cgi'}->param( "new${name}T" );
-    $init_newreason = $opt{'cgi'}->param( "new$name"    );
-  }
-
-}
-
-my $extra_sql =
-  "WHERE class = '$class' and (disabled = '' OR disabled is NULL)";
-
 my @reasons = qsearch({
-  table     => 'reason', 
-  hashref   => {},
-  extra_sql => $extra_sql,
-  addl_from => 'LEFT JOIN reason_type '.
-               ' ON reason_type.typenum = reason.reason_type',
-  order_by  => 'ORDER BY reason_type.type ASC, reason.reason ASC',
+  'table'           => 'reason',
+  'addl_from'       => ' LEFT JOIN reason_type'.
+                       ' ON (reason.reason_type = reason_type.typenum)',
+  'hashref'         => { disabled => '' },
+  'extra_sql'       => " AND reason_type.class = '$class'",
+  'order_by'        => ' ORDER BY type, reason',
 });
 
-my @hints;
+my %all_hints;
 if ( $class eq 'S' ) {
   my $conf = FS::Conf->new;
-  @hints = ( '' );
+  %all_hints = ( 0 => '', -1 => '' );
   foreach my $reason (@reasons) {
+    my @hints;
     if ( $reason->unsuspend_pkgpart ) {
       my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart);
       if ( $part_pkg ) {
@@ -223,15 +209,13 @@ if ( $class eq 'S' ) {
           '<FONT COLOR="#ff0000">Unsuspend pkg #'.$reason->unsuspend_pkgpart.
           ' not found.</FONT>';
       }
-    } else { #no unsuspend_pkgpart
-      push @hints, '';
     }
+    if ( $reason->unused_credit ) {
+      push @hints, mt('The customer will be credited for unused time.');
+    }
+    $all_hints{ $reason->reasonnum } = join('<BR>', @hints);
   }
-  push @hints, ''; # for the "new reason" case
-  @hints = map {'<FONT SIZE="-1">'.$_.'</FONT>'} @hints;
 }
 
-
 my $curuser = $FS::CurrentUser::CurrentUser;
-
 </%init>

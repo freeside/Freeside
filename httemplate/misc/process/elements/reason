@@ -1,0 +1,17 @@
+<%init>
+#untaint reasonnum, and set up new reason if appropriate
+my $reasonnum = $cgi->param('reasonnum');
+$reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
+$reasonnum = $1;
+
+my $error;
+if ($reasonnum == -1) {
+  my $new_reason = FS::reason->new({
+    map { $_ => scalar( $cgi->param("reasonnum_new_$_") ) }
+    qw( reason_type reason unsuspend_pkgpart unsuspend_hold unused_credit )
+  }); # not sanitizing them here, but check() will do it
+  $error = $new_reason->insert;
+  $reasonnum = $new_reason->reasonnum;
+}
+return ($reasonnum, $error);
+</%init>

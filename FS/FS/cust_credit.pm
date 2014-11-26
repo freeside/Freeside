@@ -783,11 +783,9 @@ Example:
     'apply'             => 1, #0 leaves the credit unapplied
 
     #the credit
-    'newreasonnum'      => scalar($cgi->param('newreasonnum')),
-    'newreasonnum_type' => scalar($cgi->param('newreasonnumT')),
     map { $_ => scalar($cgi->param($_)) }
       #fields('cust_credit')  
-      qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
+      qw( custnum _date amount reasonnum addlinfo ), #pkgnum eventnum
 
   );
 
@@ -829,26 +827,11 @@ sub credit_lineitems {
   #});
 
   my $error = '';
-  if ($arg{reasonnum} == -1) {
-
-    $error = 'Enter a new reason (or select an existing one)'
-      unless $arg{newreasonnum} !~ /^\s*$/;
-    my $reason = new FS::reason {
-                   'reason'      => $arg{newreasonnum},
-                   'reason_type' => $arg{newreasonnum_type},
-                 };
-    $error ||= $reason->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error inserting reason: $error";
-    }
-    $arg{reasonnum} = $reason->reasonnum;
-  }
 
   my $cust_credit = new FS::cust_credit ( {
     map { $_ => $arg{$_} }
       #fields('cust_credit')
-      qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
+      qw( custnum _date amount reasonnum addlinfo ), #pkgnum eventnum
   } );
   $error = $cust_credit->insert;
   if ( $error ) {

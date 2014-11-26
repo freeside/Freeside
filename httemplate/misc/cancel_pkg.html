@@ -6,9 +6,9 @@
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 <INPUT TYPE="hidden" NAME="method" VALUE="<% $method %>">
 
-<BR><BR>
+<BR>
 <% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment) %>
-<% ntable("#cccccc", 2) %>
+<table style="background-color: #cccccc; border-spacing: 2; width: 100%">
 
 % my $date_init = 0;
 % if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume') {
@@ -58,7 +58,7 @@
        field          => 'reasonnum',
        reason_class   => $class,
        curr_value     => $reasonnum,
-       control_button => "document.getElementById('confirm_cancel_pkg_button')",
+       control_button => "confirm_cancel_pkg_button",
   &>
 % }
 

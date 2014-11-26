@@ -1234,7 +1234,7 @@ Available options are:
 
 =over 4
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>), 
+=item reason - can be set to a cancellation reason (see L<FS:reason>),
 either a reasonnum of an existing reason, or passing a hashref will create 
 a new reason.  The hashref should have the following keys: 
 - typenum - Reason type (see L<FS::reason_type>
@@ -1331,6 +1331,16 @@ sub suspend {
     }
   }
 
+  # if a reasonnum was passed, get the actual reason object so we can check
+  # unused_credit
+  # (passing a reason hashref is still allowed, but it can't be used with
+  # the fancy behavioral options.)
+
+  my $reason;
+  if ($options{'reason'} =~ /^\d+$/) {
+    $reason = FS::reason->by_key($options{'reason'});
+  }
+
   my %hash = $self->hash;
   if ( $date ) {
     $hash{'adjourn'} = $date;
@@ -1355,9 +1365,15 @@ sub suspend {
     return $error;
   }
 
-  unless ( $date ) {
+  unless ( $date ) { # then we are suspending now
+
     # credit remaining time if appropriate
-    if ( $self->part_pkg->option('unused_credit_suspend', 1) ) {
+    # (if required by the package def, or the suspend reason)
+    my $unused_credit = $self->part_pkg->option('unused_credit_suspend',1)
+                        || ( defined($reason) && $reason->unused_credit );
+
+    if ( $unused_credit ) {
+      warn "crediting unused time on pkg#".$self->pkgnum."\n" if $DEBUG;
       my $error = $self->credit_remaining('suspend', $suspend_time);
       if ($error) {
         $dbh->rollback if $oldAutoCommit;
@@ -3920,7 +3936,7 @@ sub insert_reason {
     $reasonnum = $reason->reasonnum;
 
   } else {
-    return "Unparsable reason: ". $options{'reason'};
+    return "Unparseable reason: ". $options{'reason'};
   }
 
   my $cust_pkg_reason =
