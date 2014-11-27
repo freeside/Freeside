@@ -11,6 +11,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
   'name'          => 'VSS',
   'weight'        => 120,
   'header'        => 1,
+
+  'header'        => 1,
   'import_fields' => [
 
         skip(1),        # Customer
