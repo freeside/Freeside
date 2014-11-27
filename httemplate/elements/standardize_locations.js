@@ -290,10 +290,15 @@ function confirm_censustract() {
         '<%$p%>/misc/confirm-censustract.html',
         'q=' + encodeURIComponent(JSON.stringify(address_info)),
         function() {
-          overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
-            AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
-            576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
-            TEXTSIZE, 3 );
+          if ( OLresponseAJAX ) {
+            overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
+              AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
+              576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
+              TEXTSIZE, 3 );
+          } else {
+            // no response
+            <% $post_censustract %>;
+          }
         },
         0);
   } else {
