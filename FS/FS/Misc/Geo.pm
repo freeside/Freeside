@@ -42,6 +42,10 @@ sub get_censustract_ffiec {
   my $location = shift;
   my $year  = shift;
 
+  if ( length($location->{country}) and uc($location->{country}) ne 'US' ) {
+    return '';
+  }
+
   warn Dumper($location, $year) if $DEBUG;
 
   my $url = 'http://www.ffiec.gov/Geocode/default.aspx';

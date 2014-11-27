@@ -35,16 +35,18 @@ table.location {
 <TH COLSPAN=5>
 <DIV CLASS="<% $loc->disabled ? 'loclabel disabled' : 'loclabel' %>">
 <% $loc->location_label %>
-%   if ( $loc->censustract ) {
-        <BR>
-        <FONT SIZE=-1>
-        <% $loc->censustract %> (<% $loc->censusyear %> census)
-        </FONT>
-%   } elsif ( $conf->exists('cust_main-require_censustract') ) {
-        <BR>
-        <FONT SIZE=-1 COLOR="#ee3300">
-        <% emt('Census tract unknown') %>
-        </FONT>
+%   if ( $loc->country eq 'US' ) { # only U.S. census tracts for now
+%     if ( $loc->censustract ) {
+          <BR>
+          <FONT SIZE=-1>
+          <% $loc->censustract %> (<% $loc->censusyear %> census)
+          </FONT>
+%     } elsif ( $conf->exists('cust_main-require_censustract') ) {
+          <BR>
+          <FONT SIZE=-1 COLOR="#ee3300">
+          <% emt('Census tract unknown') %>
+          </FONT>
+%     }
 %   }
 </DIV>
 <DIV STYLE="display: inline; float:right;">
