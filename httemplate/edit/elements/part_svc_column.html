@@ -249,7 +249,10 @@ that field.
   </TR>
 % }
 % # special case: services with attached routers (false laziness...)
-% if ( $svcdb eq 'svc_acct' or $svcdb eq 'svc_broadband' or $svcdb eq 'svc_dsl' ) {
+% if ( $svcdb eq 'svc_acct'
+%      or $svcdb eq 'svc_broadband'
+%      or $svcdb eq 'svc_dsl'
+%      or $svcdb eq 'svc_circuit' ) {
 %   push @fields, 'has_router';
   <TR>
     <TD COLSPAN=3 ALIGN="right">

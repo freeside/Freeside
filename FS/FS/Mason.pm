@@ -392,6 +392,10 @@ if ( -e $addl_handler_use_file ) {
   use FS::deploy_zone_vertex;
   use FS::TaxEngine;
   use FS::tax_status;
+  use FS::circuit_type;
+  use FS::circuit_provider;
+  use FS::circuit_termination;
+  use FS::svc_circuit;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

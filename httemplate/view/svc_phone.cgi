@@ -1,7 +1,7 @@
 <& elements/svc_Common.html,
               'table'     => 'svc_phone',
               'fields'    => \@fields,
-	          'labels'    => \%labels,
+              'labels'    => \%labels,
               'html_foot' => $html_foot,
 &>
 <%init>
@@ -52,6 +52,11 @@ if ( $conf->exists('svc_phone-lnp') ) {
                 'lnp_other_provider_account',
   ;
 }
+
+$labels{circuit_label} = mt('Circuit');
+push @fields, { field => 'circuit_label',
+                link => [ $p.'view/svc_circuit.html?', 'circuit_svcnum' ]
+              };
 
 my $html_foot = sub {
   my $svc_phone = shift;

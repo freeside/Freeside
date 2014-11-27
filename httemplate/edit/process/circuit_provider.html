@@ -1,0 +1,11 @@
+<& elements/process.html,
+  'table'         => 'circuit_provider',
+  'viewall_dir'   => 'browse',
+  'popup_reload'  => 'Updating',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

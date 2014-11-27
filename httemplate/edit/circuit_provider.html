@@ -1,0 +1,21 @@
+<& elements/edit.html,
+  'popup'         => 1,
+  'table'         => 'circuit_provider',
+  'name_singular' => 'provider',
+  'labels'        => \%labels,
+  'fields'        => \@fields,
+&>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @fields = (
+  'provider',
+  { field => 'disabled', type => 'checkbox', value => 'Y' }
+);
+my %labels = (
+  'providernum' => '',
+  'provider' => 'Provider name',
+  'disabled' => 'Disabled'
+);
+</%init>
