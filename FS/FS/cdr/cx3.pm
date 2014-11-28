@@ -43,6 +43,7 @@ sub { my ($cdr, $duration) = @_;
 },			#duration
 	skip(1),        # unknown
 	'disposition',  # call status
+	'accountcode',  # AccountCode
 
   ],
 );
