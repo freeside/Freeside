@@ -370,6 +370,10 @@ if ( -e $addl_handler_use_file ) {
   use FS::deploy_zone;
   use FS::deploy_zone_block;
   use FS::deploy_zone_vertex;
+  use FS::circuit_type;
+  use FS::circuit_provider;
+  use FS::circuit_termination;
+  use FS::svc_circuit;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

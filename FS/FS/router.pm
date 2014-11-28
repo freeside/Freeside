@@ -202,17 +202,19 @@ sub delete {
 Returns a list of FS::addr_block objects (address blocks) associated
 with this object.
 
+=cut
+
+sub addr_block {
+  my $self = shift;
+  qsearch('addr_block', { routernum => $self->routernum });
+}
+
 =item auto_addr_block
 
 Returns a list of address blocks on which auto-assignment of IP addresses
 is enabled.
 
 =cut
-
-sub addr_block {
-  my $self = shift;
-  return qsearch('addr_block', { routernum => $self->routernum });
-}
 
 sub auto_addr_block {
   my $self = shift;

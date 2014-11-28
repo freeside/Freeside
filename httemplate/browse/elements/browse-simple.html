@@ -1,0 +1,57 @@
+<& browse.html,
+  'query'               => { 'table' => $table },
+  'count_query'         => "SELECT COUNT(*) FROM $table",
+  'header'              => [ '#', $opt{name_header} ],
+  'fields'              => [ $table_key, $opt{name_col} ],
+  'links'               => [ '', '' ],
+  'link_onclicks'       => [ '', $sub_edit_popup ],
+  'disableable'         => 1,
+  'disabled_statuspos'  => 2,
+  'html_init'           => $html_init,
+  %opt,
+&>
+<%doc>
+A simple wrapper around search/elements/search.html for browsing/editing
+tables that only have a primary key, a 'disabled' field, and one other column
+which is the object's name or description. Usage:
+
+<& browse-simple.html,
+  # required
+  'table'         => 'mytable',
+  'title'         => 'My Things',
+  'name_singular' => 'thing',
+  'name_col'      => 'thingname',
+  'name_header'   => 'Thing name'
+  'acl'           => 'Configure things',
+&>
+
+</%doc>
+<%init>
+my %opt = @_;
+
+my $table = delete $opt{table};
+my $name_singular = $opt{name_singular};
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right($opt{acl});
+
+my $table_key = dbdef->table($table)->primary_key;
+my $sub_edit_popup = sub {
+  my $pkey = $_[0]->get($table_key);
+  include('/elements/popup_link_onclick.html',
+    'action'      => $p."edit/$table.html?$pkey",
+    'actionlabel' => "Edit $name_singular",
+    'width'       => 350,
+    'height'      => 220,
+  );
+};
+
+my $html_init = include('/elements/popup_link.html',
+    'action'      => $p."edit/$table.html?",
+    'actionlabel' => "Add $name_singular",
+    'width'       => 350,
+    'height'      => 220,
+    'label'       => "Add a new $name_singular",
+) . '<BR>';
+
+</%init>

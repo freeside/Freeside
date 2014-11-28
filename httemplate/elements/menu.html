@@ -541,6 +541,12 @@ tie my %config_alarm, 'Tie::IxHash',
   'Alarm central stations' => [ $fsurl.'browse/alarm_station.html', '' ],
 ;
 
+tie my %config_circuit, 'Tie::IxHash',
+  'Circuit types'     => [ $fsurl.'browse/circuit_type.html',         '' ],
+  'Circuit providers' => [ $fsurl.'browse/circuit_provider.html',     '' ],
+  'Termination types' => [ $fsurl.'browse/circuit_termination.html',  '' ],
+;
+
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
@@ -559,6 +565,8 @@ $config_export_svc{'Cable'} = [ \%config_cable, '' ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'Alarm'} = [ \%config_alarm, '' ]
   if $curuser->access_right(['Alarm configuration', 'Alarm global configuration']);
+$config_export_svc{'Circuits'} = [ \%config_circuit, '' ]
+  if $curuser->access_right('Configuration');
 $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
   if $curuser->access_right('Configuration');
 

@@ -412,8 +412,6 @@ sub label {
   ($router ? $router->routername : '(unallocated)'). ':'. $self->NetAddr;
 }
 
-=back
-
 =head1 BUGS
 
 Minimum block size should be a config option.  It's hardcoded at /30 right

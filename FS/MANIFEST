@@ -776,3 +776,11 @@ t/deploy_zone_block.t
 FS/deploy_zone_vertex.pm
 t/deploy_zone_vertex.t
 
+FS/circuit_type.pm
+t/circuit_type.t
+FS/circuit_provider.pm
+t/circuit_provider.t
+FS/circuit_termination.pm
+t/circuit_termination.t
+FS/svc_circuit.pm
+t/svc_circuit.t

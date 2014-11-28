@@ -113,16 +113,16 @@ sub svc_url {
     if $DEBUG;
   if ( $opt{m}->interp->comp_exists("/$opt{action}/$svcdb.cgi") ) {
     $url = "$svcdb.cgi?";
+  } elsif ( $opt{m}->interp->comp_exists("/$opt{action}/$svcdb.html") ) {
+    $url = "$svcdb.html?";
   } else {
-
     my $generic = $opt{action} eq 'search' ? 'cust_svc' : 'svc_Common';
 
     $url = "$generic.html?svcdb=$svcdb;";
     $url .= 'svcnum=' if $query =~ /^\d+(;|$)/ or $query eq '';
   }
 
-  import FS::CGI 'rooturl'; #WTF!  why is this necessary
-  my $return = rooturl(). "$opt{action}/$url$query";
+  my $return = FS::CGI::rooturl(). "$opt{action}/$url$query";
 
   $return = qq!<A HREF="$return">! if $opt{ahref};
 
@@ -572,6 +572,19 @@ sub cust_aligns {
   } else {
     join('', @cust_aligns);
   }
+}
+
+=item cust_links
+
+Returns an array of links to view/cust_main.cgi, for use with cust_fields.
+
+=cut
+
+sub cust_links {
+  my $link = [ FS::CGI::rooturl().'view/cust_main.cgi?', 'custnum' ];
+
+  return map { $_ eq 'cust_status_label' ? '' : $link }
+    @cust_fields;
 }
 
 =item is_mobile
