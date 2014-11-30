@@ -159,6 +159,7 @@ if ( $opt{'cgi'} ) {
 }
 
 my $id = $opt{'id'} || $name;
+$id =~ s/\./_/g; # for edit/part_event
 
 my $add_access_right;
 if ($class eq 'C') {
