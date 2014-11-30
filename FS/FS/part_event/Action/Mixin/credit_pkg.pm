@@ -2,12 +2,19 @@ package FS::part_event::Action::Mixin::credit_pkg;
 
 use strict;
 
+# credit_pkg: calculates a credit amount that is some percentage of the 
+# package charge / cost / margin / some other amount of a package
+#
+# also provides an option field for the percentage, unless the action knows
+# how to calculate its own percentage somehow (has a _calc_credit_percent)
+
 sub eventtable_hashref {
   { 'cust_pkg' => 1 };
 }
 
 sub option_fields {
-  ( 
+  my $class = shift;
+  my @fields = (
     'reasonnum' => { 'label'        => 'Credit reason',
                      'type'         => 'select-reason',
                      'reason_class' => 'R',
@@ -36,12 +43,19 @@ sub option_fields {
       },
     },
   );
+  if ($class->can('_calc_credit_percent')) {
+    splice @fields, 2, 2; #remove the percentage option
+  }
+  @fields;
 }
 
-#my %no_cust_pkg = ( 'setup_cost' => 1 );
+# arguments:
+# 1. cust_pkg
+# 2. recipient of the credit (passed through to _calc_credit_percent)
 
 sub _calc_credit {
-  my( $self, $cust_pkg ) = @_;
+  my $self = shift;
+  my $cust_pkg = shift;
 
   my $cust_main = $self->cust_main($cust_pkg);
 
@@ -59,18 +73,17 @@ sub _calc_credit {
     }
   }
 
-  my $percent = $self->_calc_credit_percent($cust_pkg);
+  my $percent;
+  if ( $self->can('_calc_credit_percent') ) {
+    $percent = $self->_calc_credit_percent($cust_pkg, @_);
+  } else {
+    $percent = $self->option('percent') || 0;
+  }
 
-  #my @arg = $no_cust_pkg{$what} ? () : ($cust_pkg);
   my @arg = ($what eq 'setup_cost') ? () : ($cust_pkg);
 
   sprintf('%.2f', $part_pkg->$what(@arg) * $percent / 100 );
 
-}
-
-sub _calc_credit_percent {
-  my( $self, $cust_pkg ) = @_;
-  $self->option('percent');
 }
 
 1;
