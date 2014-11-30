@@ -62,12 +62,17 @@
             my $value = join(',', $cgi->param( "$prefix$option" ) );
 
             if ( $option eq 'reasonnum' && $value == -1 ) {
-              $value = {
-                'typenum' => scalar( $cgi->param( "new$prefix${option}T" ) ),
-                'reason'  => scalar( $cgi->param( "new$prefix${option}"  ) ),
-              };
+              my $reason_prefix = $object->action . '_' . $option .  '_new_';
+              my $new_reason = FS::reason->new;
+              foreach ( qw( reason_type reason unsuspend pkgpart 
+                            unsuspend_hold unused_credit ) ) {
+                $new_reason->set($_, $cgi->param("$reason_prefix$_"));
+              }
+              warn Dumper $new_reason;
+              my $error = $new_reason->insert;
+              die "error creating reason: $error" if $error;
+              $value = $new_reason->reasonnum;
             }
-
             ( $option => $value );
           }
           @{ $object->option_fields_listref };
