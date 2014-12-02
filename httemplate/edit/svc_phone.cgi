@@ -2,17 +2,12 @@
      'table'            => 'svc_phone',
      'fields'           => [],
      'begin_callback'   => $begin_callback,
-     'svc_new_callback' => sub {
-       my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
-       $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
-     },
-     'svc_edit_callback' => sub {
-       my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt) = @_;
-       my $conf = new FS::Conf;
-       $svc_x->sip_password('*HIDDEN*') unless $conf->exists('showpasswords');
-     },
+     'svc_new_callback'   => $svc_callback,
+     'svc_edit_callback'  => $svc_callback,
+     'svc_error_callback' => $svc_callback,
 &>
 <%init>
+my $conf = new FS::Conf;
 
 my $begin_callback = sub {
   my( $cgi, $fields, $opt ) = @_;
@@ -24,8 +19,6 @@ my $begin_callback = sub {
 
   die "access denied"
     unless $FS::CurrentUser::CurrentUser->access_right($right);
-
-  my $conf = new FS::Conf;
 
   push @$fields,
               'countrycode',
@@ -149,7 +142,26 @@ my $begin_callback = sub {
 
   }
 
+}; # begin_callback
+
+# svc_edit_callback / svc_new_callback
+my $svc_callback = sub {
+  my ($cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt) = @_;
+
+  push @$fields, {
+    field => 'circuit_svcnum',
+    type  => 'select-svc_circuit',
+    cust_pkg => $cust_pkg,
+    part_svc => $part_svc,
+  };
+
+  if ( $cust_pkg and not $svc_x->svcnum ) {
+    # new service, default to package location
+    $svc_x->set('locationnum', $cust_pkg->locationnum);
+  }
+
+  if ( not $conf->exists('showpasswords') and $svc_x->svcnum ) {
+    $svc_x->sip_password('*HIDDEN*');
+  }
 };
-
-
 </%init>

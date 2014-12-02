@@ -1,4 +1,4 @@
-% if ($censustract) {
+% if ($location->country eq 'US' and $censustract) {
 <TR>
   <TD ALIGN="right"><% mt('Census tract') |h %></TD>
   <TD COLSPAN=5>

@@ -1,7 +1,8 @@
 package FS::part_event::Action::pkg_employee_credit;
 
 use strict;
-use base qw( FS::part_event::Action::pkg_referral_credit );
+use base qw( FS::part_event::Action::Mixin::credit_flat
+             FS::part_event::Action );
 
 sub description { 'Credit the ordering employee a specific amount'; }
 
@@ -18,7 +19,7 @@ sub do_action {
   my $employee_cust_main = $employee->user_cust_main;
     #? or return "No customer record for employee ". $employee->username;
 
-  my $amount    = $self->_calc_credit($cust_pkg);
+  my $amount    = $self->_calc_credit($cust_pkg, $employee);
   return '' unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');

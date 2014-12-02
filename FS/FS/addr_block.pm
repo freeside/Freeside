@@ -388,6 +388,24 @@ sub label {
   ($router ? $router->routername : '(unallocated)'). ':'. $self->NetAddr;
 }
 
+=item router
+
+Returns the router assigned to this block.
+
+=cut
+
+# necessary, because this can't be foreign keyed
+
+sub router {
+  my $self = shift;
+  my $routernum = $self->routernum;
+  if ( $routernum ) {
+    return FS::router->by_key($routernum);
+  } else {
+    return;
+  }
+}
+
 =back
 
 =head1 BUGS

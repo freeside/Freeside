@@ -30,16 +30,18 @@
           &>
           </FONT>
 %     }
-%     if ( $loc->censustract ) {
-         <BR>
-         <FONT SIZE=-1>
-         <% $loc->censustract %> (<% $loc->censusyear %> census)
-         </FONT>
-%     } elsif ( $opt{'cust_main-require_censustract'} ) {
-          <BR>
-          <FONT SIZE=-1 COLOR="#ee3300">
-          <% emt('Census tract unknown') %>
-          </FONT>
+%     if ( $loc->country eq 'US' ) {
+%       if ( $loc->censustract ) {
+           <BR>
+           <FONT SIZE=-1>
+           <% $loc->censustract %> (<% $loc->censusyear %> census)
+           </FONT>
+%       } elsif ( $opt{'cust_main-require_censustract'} ) {
+            <BR>
+            <FONT SIZE=-1 COLOR="#ee3300">
+            <% emt('Census tract unknown') %>
+            </FONT>
+%       }
 %     }
 
 %     if ( $default ) {

@@ -27,19 +27,35 @@ foreach my $billpkgnum_setuprecur (@billpkgnum_setuprecurs) {
   push @amounts,     $amount;
 }
 
-my $error = FS::cust_credit->credit_lineitems(
+my $reasonnum = $cgi->param('reasonnum');
+$reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
+$reasonnum = $1;
+
+my $error;
+if ($reasonnum == -1) {
+  my $new_reason = FS::reason->new({
+    map { $_ => scalar( $cgi->param("select_reason_new_$_") ) }
+    qw( reason_type reason )
+  });
+  $error = $new_reason->insert;
+  $reasonnum = $new_reason->reasonnum;
+}
+
+if ( !$reasonnum ) {
+  $error ||= 'Reason required'
+}
+
+$error ||= FS::cust_credit->credit_lineitems(
   #the lineitems to credit
   'billpkgnums'       => \@billpkgnums,
   'setuprecurs'       => \@setuprecurs,
   'amounts'           => \@amounts,
   'apply'             => ( $cgi->param('apply') eq 'yes' ),
+  'reasonnum'         => $reasonnum,
 
-  #the credit
-  'newreasonnum'      => scalar($cgi->param('newreasonnum')),
-  'newreasonnum_type' => scalar($cgi->param('newreasonnumT')),
   map { $_ => scalar($cgi->param($_)) }
     #fields('cust_credit')  
-    qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
+    qw( custnum _date amount addlinfo ), #pkgnum eventnum
 );
 
 </%init>

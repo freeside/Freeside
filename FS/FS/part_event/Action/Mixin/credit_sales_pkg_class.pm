@@ -1,30 +1,16 @@
 package FS::part_event::Action::Mixin::credit_sales_pkg_class;
-use base qw( FS::part_event::Action::Mixin::credit_pkg );
 
 use strict;
 use FS::Record qw(qsearchs);
 use FS::sales_pkg_class;
 
-sub option_fields {
-  my $class = shift;
-  my %option_fields = $class->SUPER::option_fields;
-
-  delete $option_fields{'percent'};
-
-  %option_fields;
-}
-
 sub _calc_credit_percent {
-  my( $self, $cust_pkg ) = @_;
+  my( $self, $cust_pkg, $sales ) = @_;
 
-  my $salesnum = $cust_pkg->salesnum;
-  $salesnum ||= $self->cust_main($cust_pkg)->salesnum
-    if $self->option('cust_main_sales');
-
-  return 0 unless $salesnum;
+  die "sales record required" unless $sales;
 
   my $sales_pkg_class = qsearchs( 'sales_pkg_class', {
-    'salesnum' => $salesnum,
+    'salesnum' => $sales->salesnum,
     'classnum' => $cust_pkg->part_pkg->classnum,
   });
 

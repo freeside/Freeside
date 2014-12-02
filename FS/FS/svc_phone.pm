@@ -189,6 +189,14 @@ sub table_info {
                          select_label => 'domain',
                          disable_inventory => 1,
                        },
+        'circuit_svcnum'   => { label             => 'Circuit',
+                                type              => 'select',
+                                select_table      => 'svc_domain',
+                                select_key        => 'svcnum',
+                                select_label      => 'circuit_label',
+                                disable_inventory => 1,
+                              },
+
         'sms_carrierid'    => { label             => 'SMS Carrier',
                                 type              => 'select',
                                 select_table      => 'cdr_carrier',
@@ -711,6 +719,8 @@ sub radius_groups {
 
 =item sms_cdr_carrier
 
+Returns the L<FS::cdr_carrier> assigned as the SMS carrier for this phone.
+
 =cut
 
 sub sms_cdr_carrier {
@@ -721,12 +731,37 @@ sub sms_cdr_carrier {
 
 =item sms_carriername
 
+Returns the name of the SMS carrier, or an empty string if there isn't one.
+
 =cut
 
 sub sms_carriername {
   my $self = shift;
   my $cdr_carrier = $self->sms_cdr_carrier or return '';
   $cdr_carrier->carriername;
+}
+
+=item svc_circuit
+
+Returns the L<FS::svc_circuit> assigned as the trunk for this phone line.
+
+=item circuit_label
+
+Returns the label of the circuit (the part_svc label followed by the 
+circuit ID), or an empty string if there isn't one.
+
+=cut
+
+sub svc_circuit {
+  my $self = shift;
+  my $svcnum = $self->get('circuit_svcnum') or return '';
+  return FS::svc_circuit->by_key($svcnum);
+}
+
+sub circuit_label {
+  my $self = shift;
+  my $svc_circuit = $self->svc_circuit or return '';
+  return join(' ', $svc_circuit->part_svc->svc, $svc_circuit->circuit_id);
 }
 
 =item phone_device

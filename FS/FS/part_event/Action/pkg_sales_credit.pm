@@ -1,12 +1,15 @@
 package FS::part_event::Action::pkg_sales_credit;
-use base qw( FS::part_event::Action::Mixin::pkg_sales_credit
-             FS::part_event::Action::pkg_referral_credit );
+use base qw( FS::part_event::Action::Mixin::credit_flat
+             FS::part_event::Action );
 
 use strict;
 
 sub description { 'Credit the sales person a specific amount'; }
 
-#a little false laziness w/pkg_referral_credit
+sub eventtable_hashref {
+  { 'cust_pkg' => 1 };
+} 
+
 sub do_action {
   my( $self, $cust_pkg, $cust_event ) = @_;
 
@@ -24,7 +27,7 @@ sub do_action {
   my $sales_cust_main = $sales->sales_cust_main;
     #? or return "No customer record for sales person ". $sales->salesperson;
 
-  my $amount = $self->_calc_credit($cust_pkg);
+  my $amount = $self->_calc_credit($cust_pkg, $sales);
   return '' unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');

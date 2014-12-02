@@ -1,3 +1,10 @@
+% if ( !$error and !$new_tract ) {
+%   # then set_censustract returned nothing
+%   # because it's not relevant for this address
+%   # so output nothing (forces confirm_censustract() to continue)
+% $m->clear_buffer;
+% $m->abort;
+% }
 <CENTER><BR><B>
 % if ( $error ) {
 Census tract error
