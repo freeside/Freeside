@@ -43,6 +43,10 @@ foreach my $pre ( @prefixes ) {
     last if !$all_same;
   }
 
+  $all_same = 0 if ( length( $old{$pre.'censustract'} ) > 0 &&
+                     length( $new{$pre.'censustract'} ) > 0 &&
+                     $old{$pre.'censustract'} ne $new{$pre.'censustract'} );
+
   $all_same = 0 if $new{$pre.'error'};
 }
 

@@ -282,10 +282,7 @@ function setselect(el, value) {
 function confirm_censustract() {
 %   if ( FS::Conf->new->exists('cust_main-require_censustract') ) {
   var form = document.<% $formname %>;
-  // this is the existing/confirmed censustract, not the manually entered one
-  if ( form.elements['censustract'].value == '' ||
-       form.elements['censustract'].value != 
-          form.elements['enter_censustract'].value ) {
+  if ( form.elements['censustract'].value == '' ) {
     var address_info = form_address_info();
     address_info['latitude']  = form.elements['latitude'].value;
     address_info['longitude'] = form.elements['longitude'].value;
