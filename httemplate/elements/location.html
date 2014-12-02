@@ -59,12 +59,7 @@ Example:
     </TR>
 
 % } else {
-
-    <INPUT TYPE     = "hidden"
-           NAME     = "<%$pre%>locationname"
-           ID       = "<%$pre%>locationname"
-           VALUE    = "<% $object->get('locationname') |h %>"
-    >
+    <& hidden.html, field => $pre.'locationname', value => $object->get('locationname') &>
 
 % }
 
@@ -102,10 +97,7 @@ Example:
 
 % } else { # alternate format
 
-      <INPUT TYPE  = "hidden"
-             NAME  = "<%$pre%>address2"
-             VALUE = "<% $object->get('address2') |h %>"
-      >
+<& hidden.html, field => $pre.'address2', value => $object->get('address2') &>
 
 <TR>
     <<%$th%> ALIGN="right">Unit&nbsp;type&nbsp;and&nbsp;#</<%$th%>>
@@ -227,14 +219,14 @@ Example:
 </TR>
 % } else {
 %   foreach (qw(latitude longitude)) {
-<INPUT TYPE="hidden" NAME="<% $_ %>" ID="<% $_ %>" VALUE="<% $object->get($_) |h%>">
+<& hidden.html, field => $pre.$_, value => $object->get($_) &>
 %   }
 % }
-<INPUT TYPE="hidden" NAME="<%$pre%>coord_auto" VALUE="<% $object->coord_auto %>">
-
-<INPUT TYPE="hidden" NAME="<%$pre%>geocode" VALUE="<% $object->geocode %>">
-<INPUT TYPE="hidden" NAME="<%$pre%>censustract" VALUE="<% $object->censustract %>">
-<INPUT TYPE="hidden" NAME="<%$pre%>censusyear" VALUE="<% $object->censusyear %>">
+%
+% foreach (qw(coord_auto geocode censustract censusyear)) {
+  <& hidden.html, field => $pre.$_, value => $object->get($_) &>
+% }
+%
 % if ( $opt{enable_censustract} ) {
 <TR>
   <TD ALIGN="right">Census&nbsp;tract</TD>
@@ -259,7 +251,7 @@ Example:
     </TD>
   </TR>
 % } else {
-    <INPUT TYPE="hidden" ID="<%$pre%>" NAME="<%$pre%>district" VALUE="<% $object->district %>">
+  <& hidden.html, field => $pre.'district', value => $object->get('district') &>
 % }
 
 %# For address standardization:
@@ -267,11 +259,11 @@ Example:
 %# to re-standardize
 % foreach (qw(address1 city state country zip latitude
 %             longitude censustract district addr_clean) ) {
-<INPUT TYPE="hidden" NAME="old_<%$pre.$_%>" ID="old_<%$pre.$_%>" VALUE="<% $object->get($_) |h%>">
+<& hidden.html, field => 'old_'.$pre.$_, value => $object->get($_) &>
 % }
 %# Placeholders
-<INPUT TYPE="hidden" NAME="<%$pre%>cachenum" VALUE="">
-<INPUT TYPE="hidden" NAME="<%$pre%>addr_clean" VALUE="">
+<& hidden.html, field => $pre.'cachenum', value => '' &>
+<& hidden.html, field => $pre.'addr_clean', value => '' &>
 
 <SCRIPT TYPE="text/javascript">
 <&| /elements/onload.js &>
@@ -306,6 +298,26 @@ Example:
       el.attachEvent('onchange', clear_coords);
     }
   }
+  function clear_censustract() {
+    // if the user manually edits the census tract, clear the 'hard' census
+    // tract field so that we can re-verify and present a confirmation popup 
+
+    // get the ID of the hidden censustract field
+    var censustract_id = this.id.replace('enter_', '');
+    var el = document.getElementById(censustract_id);
+    if (el) {
+      el.value = '';
+    }
+  }
+  var el = document.getElementById('<%$pre%>enter_censustract');
+  if (el) {
+    if ( el.addEventListener ) {
+      el.addEventListener('change', clear_censustract);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_censustract);
+    }
+  }
+
 </&>
 </SCRIPT>
 
