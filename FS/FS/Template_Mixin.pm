@@ -2153,9 +2153,9 @@ sub _items_sections {
         } else {
           $section->{'category'} = $sectionname;
           $section->{'description'} = &{ $escape }($sectionname);
-          if ( _pkg_category($_) ) {
-            $section->{'sort_weight'} = _pkg_category($_)->weight;
-            if ( _pkg_category($_)->condense ) {
+          if ( _pkg_category($sectionname) ) {
+            $section->{'sort_weight'} = _pkg_category($sectionname)->weight;
+            if ( _pkg_category($sectionname)->condense ) {
               $section = { %$section, $self->_condense_section($opt{format}) };
             }
           }
