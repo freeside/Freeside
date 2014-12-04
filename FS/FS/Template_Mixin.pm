@@ -703,10 +703,10 @@ sub print_generic {
       # cares about application dates.  We want to know the sum of all 
       # _top-level transactions_ dated before the last invoice.
       my @sql = (
-        'SELECT SUM(charged) FROM cust_bill WHERE _date <= ? AND custnum = ?',
-        'SELECT -1*SUM(amount) FROM cust_credit WHERE _date <= ? AND custnum = ?',
-        'SELECT -1*SUM(paid) FROM cust_pay  WHERE _date <= ? AND custnum = ?',
-        'SELECT SUM(refund) FROM cust_refund WHERE _date <= ? AND custnum = ?',
+        "SELECT      COALESCE( SUM(charged), 0 ) FROM cust_bill",
+        "SELECT -1 * COALESCE( SUM(amount),  0 ) FROM cust_credit",
+        "SELECT -1 * COALESCE( SUM(paid),    0 ) FROM cust_pay",
+        "SELECT      COALESCE( SUM(refund),  0 ) FROM cust_refund",
       );
 
       # the customer's current balance immediately after generating the last 
@@ -714,13 +714,11 @@ sub print_generic {
 
       my $last_bill_balance = $last_bill->charged;
       foreach (@sql) {
-        #warn "$_\n";
         my $delta = FS::Record->scalar_sql(
-          $_,
+          "$_ WHERE _date <= ? AND custnum = ?",
           $last_bill->_date - 1,
           $self->custnum,
         );
-        #warn "$delta\n";
         $last_bill_balance += $delta;
       }
 
@@ -2729,7 +2727,7 @@ sub _items_cust_bill_pkg {
             'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => $description,
             'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
-            'unit_amount'   => sprintf("%.2f", $cust_bill_pkg->unitsetup),
+            'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitsetup),
             'quantity'    => $cust_bill_pkg->quantity,
             'preref_html' => ( $opt{preref_callback}
                                  ? &{ $opt{preref_callback} }( $cust_bill_pkg )
@@ -2742,9 +2740,9 @@ sub _items_cust_bill_pkg {
             'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => "$desc (". $cust_bill_pkg->part_pkg->freq_pretty.")",
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
-            'unit_amount'   => sprintf("%.2f", $cust_bill_pkg->unitrecur),
+            'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitrecur),
             'quantity'    => $cust_bill_pkg->quantity,
-	    'preref_html' => ( $opt{preref_callback}
+           'preref_html'  => ( $opt{preref_callback}
                                  ? &{ $opt{preref_callback} }( $cust_bill_pkg )
                                  : ''
                              ),
