@@ -7,8 +7,7 @@
 
  <P ALIGN="center"><B><% mt('Suspend this customer?') |h %></B>
 
-<TABLE BORDER="0" CELLSPACING="2"
-STYLE="margin-left:auto; margin-right:auto">
+<TABLE BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <TR>
   <TD ALIGN="right">
     <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
@@ -36,8 +35,7 @@ function toggle(val) {
 toggle(false);
 </SCRIPT> 
 
-<TABLE BGCOLOR="#cccccc", BORDER="0" CELLSPACING="2"
-STYLE="margin-left:auto; margin-right:auto">
+<TABLE BGCOLOR="#cccccc" BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
              'reason_class'   => 'S',
