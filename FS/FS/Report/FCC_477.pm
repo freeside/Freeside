@@ -355,8 +355,10 @@ sub fbs_sql {
   my $agentnum = $opt{agentnum};
   my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
+  my $censustract = "replace(cust_location.censustract, '.', '')";
+
   my @select = (
-    'cust_location.censustract',
+    "$censustract AS censustract",
     'technology',
     'broadband_downstream',
     'broadband_upstream',
@@ -381,8 +383,7 @@ sub fbs_sql {
     is_fixed_broadband()
   );
   push @where, "cust_main.agentnum = $agentnum" if $agentnum;
-  my $group_by = 'cust_location.censustract, technology, '.
-                   'broadband_downstream, broadband_upstream ';
+  my $group_by = "$censustract, technology, broadband_downstream, broadband_upstream ";
   my $order_by = $group_by;
 
   "SELECT ".join(', ', @select) . "
@@ -400,9 +401,10 @@ sub fvs_sql {
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
   my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
+  my $censustract = "replace(cust_location.censustract, '.', '')";
 
   my @select = (
-    'cust_location.censustract',
+    "$censustract AS censustract",
     # VoIP indicator (0 for non-VoIP, 1 for VoIP)
     'COALESCE(is_voip, 0)',
     # number of lines/subscriptions
@@ -426,7 +428,7 @@ sub fvs_sql {
     "(is_voip = 1 OR is_phone = 1)",
   );
   push @where, "cust_main.agentnum = $agentnum" if $agentnum;
-  my $group_by = 'cust_location.censustract, COALESCE(is_voip, 0)';
+  my $group_by = "$censustract, COALESCE(is_voip, 0)";
   my $order_by = $group_by;
 
   "SELECT ".join(', ', @select) . "
