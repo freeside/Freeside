@@ -6,16 +6,26 @@
 <INPUT TYPE="hidden" NAME="crednum" VALUE="">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum |h %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
-<INPUT TYPE="hidden" NAME="_date" VALUE="<% $_date %>">
 <INPUT TYPE="hidden" NAME="credited" VALUE="">
 <INPUT TYPE="hidden" NAME="otaker" VALUE="<% $otaker %>">
 
 <% ntable("#cccccc", 2) %>
 
-  <TR>
-    <TD ALIGN="right"><% mt('Date') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% time2str($date_format, $_date) %></TD>
-  </TR>
+% my %date_args = (
+%   'name'   =>  '_date',
+%   'label'  => emt('Date'),
+%   'value'  => $_date,
+%   'format' => $date_format. ' %r',
+% );
+% if ( $FS::CurrentUser::CurrentUser->access_right('Backdate credit') ) {
+
+  <& /elements/tr-input-date-field.html, \%date_args &>
+
+% } else {
+
+  <& /elements/tr-fixed-date.html, \%date_args &>
+
+% }
 
   <TR>
     <TD ALIGN="right"><% mt('Amount') |h %></TD>
