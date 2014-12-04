@@ -195,6 +195,7 @@ install-stamp: build-stamp
 	perl -p -i -e "\
           s'${TMP}?''g;\
         " ${TMP}-lib/usr/bin/* \
+	  ${TMP}-webui/usr/local/etc/freeside/handler.pl
 
 	#RT Config
 

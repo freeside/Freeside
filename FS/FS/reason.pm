@@ -56,6 +56,10 @@ suspensions but not others.
 whether to bill the unsuspend package immediately ('') or to wait until 
 the customer's next invoice ('Y').
 
+=item unused_credit - 'Y' or ''. For suspension reasons only (for now).
+If enabled, the customer will be credited for their remaining time on 
+suspension.
+
 =back
 
 =head1 METHODS
@@ -109,7 +113,6 @@ sub check {
     || $self->ut_number('reason_type')
     || $self->ut_foreign_key('reason_type', 'reason_type', 'typenum')
     || $self->ut_text('reason')
-    || $self->ut_flag('disabled')
   ;
   return $error if $error;
 
@@ -117,11 +120,13 @@ sub check {
     $error = $self->ut_numbern('unsuspend_pkgpart')
           || $self->ut_foreign_keyn('unsuspend_pkgpart', 'part_pkg', 'pkgpart')
           || $self->ut_flag('unsuspend_hold')
+          || $self->ut_flag('unused_credit')
     ;
     return $error if $error;
   } else {
-    $self->set('unsuspend_pkgpart' => '');
-    $self->set('unsuspend_hold'    => '');
+    foreach (qw(unsuspend_pkgpart unsuspend_hold unused_credit)) {
+      $self->set($_ => '');
+    }
   }
 
   $self->SUPER::check;
@@ -177,8 +182,6 @@ sub new_or_existing {
 
 
 =head1 BUGS
-
-Here by termintes.  Don't use on wooden computers.
 
 =head1 SEE ALSO
 

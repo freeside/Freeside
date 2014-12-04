@@ -29,7 +29,7 @@ my $args_callback = sub {
       map { $_ => $cgi->param("router_$_") }
       qw( routernum routername blocknum )
     });
-   if (length($router->routername) == 0) {
+   if ($router->blocknum and length($router->routername) == 0) {
       #sensible default
       $router->set('routername', $svc->label);
     }

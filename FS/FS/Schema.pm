@@ -5653,6 +5653,7 @@ sub tables_hashref {
         'max_simultaneous',               'int', 'NULL',      '', '', '',
         'e911_class',                    'char', 'NULL',       1, '', '',
         'e911_type',                     'char', 'NULL',       1, '', '', 
+        'circuit_svcnum',                 'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'svcnum',
       'unique'       => [ [ 'sms_carrierid', 'sms_account'] ],
@@ -5677,6 +5678,10 @@ sub tables_hashref {
                           { columns    => [ 'sms_carrierid' ],
                             table      => 'cdr_carrier',
                             references => [ 'carrierid' ],
+                          },
+                          { columns    => [ 'circuit_svcnum' ],
+                            table      => 'svc_circuit',
+                            references => [ 'svcnum' ],
                           },
                         ],
     },
@@ -5881,6 +5886,7 @@ sub tables_hashref {
         'disabled',      'char',    'NULL', 1, '', '', 
         'unsuspend_pkgpart', 'int',  'NULL', '', '', '',
         'unsuspend_hold','char',    'NULL', 1, '', '',
+        'unused_credit', 'char',    'NULL', 1, '', '',
       ],
       'primary_key'  => 'reasonnum',
       'unique'       => [],
@@ -6524,6 +6530,75 @@ sub tables_hashref {
                             table   => 'cust_svc',
                           },
                         ],
+    },
+
+    'circuit_type' => {
+      'columns' => [
+        'typenum',     'serial',     '',      '', '', '',
+        'typename',   'varchar',     '', $char_d, '', '',
+        'disabled',      'char', 'NULL',       1, '', '',
+        # speed? number of voice lines? anything else?
+      ],
+      'primary_key' => 'typenum',
+      'unique' => [ [ 'typename' ] ],
+      'index'  => [],
+    },
+
+    'circuit_provider' => {
+      'columns' => [
+        'providernum', 'serial',     '',      '', '', '',
+        'provider',   'varchar',     '', $char_d, '', '',
+        'disabled',      'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'providernum',
+      'unique' => [ [ 'provider' ], ],
+      'index'  => [],
+    },
+
+    'circuit_termination' => {
+      'columns' => [
+        'termnum',     'serial',     '',      '', '', '',
+        'termination','varchar',     '', $char_d, '', '',
+        'disabled',      'char', 'NULL',       1, '', '',
+      ],
+      'primary_key' => 'termnum',
+      'unique' => [ [ 'termination' ] ],
+      'index' => [],
+    },
+
+    'svc_circuit' => {
+      'columns' => [
+        'svcnum',                   'int',     '', '', '', '',
+        'typenum',                  'int',     '', '', '', '',
+        'providernum',              'int',     '', '', '', '',
+        'termnum',                  'int',     '', '', '', '',
+        'circuit_id',           'varchar',     '', 64, '', '',
+        'desired_due_date',         'int', 'NULL', '', '', '',
+        'due_date',                 'int', 'NULL', '', '', '',
+        'vendor_order_id',      'varchar', 'NULL', $char_d,  '', '',
+        'vendor_qual_id',       'varchar', 'NULL', $char_d,  '', '',
+        'vendor_order_type',    'varchar', 'NULL', $char_d,  '', '',
+        'vendor_order_status',  'varchar', 'NULL', $char_d,  '', '',
+        'endpoint_ip_addr',     'varchar', 'NULL', 40, '', '',
+        'endpoint_mac_addr',    'varchar', 'NULL', 12, '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique'      => [],
+      'index'       => [ [ 'providernum' ], [ 'typenum' ] ],
+      'foreign_keys' => [
+                          { columns => [ 'svcnum' ],
+                            table   => 'cust_svc',
+                          },
+                          { columns => [ 'typenum' ],
+                            table   => 'circuit_type',
+                          },
+                          { columns => [ 'providernum' ],
+                            table   => 'circuit_provider',
+                          },
+                          { columns => [ 'termnum' ],
+                            table   => 'circuit_termination',
+                          },
+      ],
     },
 
     'vend_main' => {

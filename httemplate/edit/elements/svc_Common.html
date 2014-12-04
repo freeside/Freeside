@@ -103,10 +103,42 @@
                    my $flag = $columndef->columnflag;
 
                    if ( $flag eq 'F' ) { #fixed
-                     $f->{'type'} = length($columndef->columnvalue)
-                                      ? 'fixed'
-                                      : 'hidden';
                      $f->{'value'} = $columndef->columnvalue;
+                     if (length($columndef->columnvalue)) {
+
+                       if ( $f->{'type'} =~ /^select-?(.*)/ ) {
+                         # try to display this in a user-friendly manner
+                         if ( $f->{'table'} ) { # find matching records
+                           $f->{'value_col'} ||=
+                             dbdef->table($f->{'table'})->primary_key;
+
+                           my @values = split(',', $f->{'value'});
+                           my @recs;
+                           foreach (@values) {
+                             push @recs, qsearchs( $f->{'table'},
+                                         { $f->{'value_col'} => $_ }
+                                         );
+                           }
+                           if ( @recs ) {
+                             my $method = $f->{'name_col'};
+                             if ( $f->{'multiple'} ) {
+                               $f->{'formatted_value'} = [
+                                 map { $_->method } @recs
+                               ];
+                             } else { # there shouldn't be more than one...
+                               $f->{'formatted_value'} = $recs[0]->$method;
+                             }
+                           } # if not, then just let tr-fixed display the
+                             # values as-is
+
+                         } # other select types probably don't matter
+                       } # if it's a select
+
+                       $f->{'type'} = 'fixed';
+
+                     } else { # fixed, null
+                       $f->{'type'} = 'hidden';
+                     }
 
                    } elsif ( $flag eq 'A' ) { #auto assign from inventory
                      $f->{'type'} = 'hidden';
@@ -127,16 +159,14 @@
                                            };
 
                    } elsif ( $flag eq 'S' #selectable choice
-                               && $f->{type} !~ /^select-svc(-domain|_pbx)$/ ) {
+                               && $f->{type} !~ /^select-svc/ ) {
                      $f->{type}    = 'select';
                      $f->{options} = [ split( /\s*,\s*/,
                                                 $columndef->columnvalue)
                                      ];
-                   }
+                   } # shouldn't this be enforced for all 'S' fields?
 
-                   if (    $f->{'type'} eq 'select-svc_pbx'
-                        || $f->{'type'} eq 'select-svc-domain' 
-                      )
+                   if ( $f->{'type'} =~ /^select-svc/ )
                    {
                      $f->{'include_opt_callback'} =
                        sub { ( 'pkgnum'  => $pkgnum,

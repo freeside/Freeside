@@ -1,0 +1,41 @@
+% if ( $columnflag eq 'F' ) { # no good reason for this, but support it anyway
+  <INPUT TYPE="hidden" NAME="circuit_svcnum" VALUE="<% $circuit_svcnum %>">
+% } else { 
+  <& tr-select-table.html,
+    'table'       => 'svc_circuit',
+    'name_col'    => 'circuit_id',
+    'empty_label' => ' ',
+    %select_hash,
+    %opt
+  &>
+% } 
+<%init>
+
+my %opt = @_;
+
+my $circuit_svcnum;
+if ( $opt{'curr_value'} =~ /^(\d+)$/ ) {
+  $circuit_svcnum = $1;
+}
+
+# generally not the svcpart of the circuit service (or any circuit service)
+my $part_svc = $opt{'part_svc'}
+               || qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} });
+
+my $columnflag = $part_svc->part_svc_column('circuit_svcnum')->columnflag;
+
+my $cust_pkg = $opt{'cust_pkg'};
+my $custnum;
+$custnum = $cust_pkg->custnum if $cust_pkg;
+
+my %select_hash;
+if ( $custnum =~ /^(\d+)$/ ) {
+  %select_hash = (
+    'addl_from' => ' LEFT JOIN cust_svc USING (svcnum)' .
+                   ' LEFT JOIN cust_pkg USING (pkgnum)',
+    'extra_sql' => " WHERE cust_pkg.custnum = $custnum".
+                   " OR svcnum = $circuit_svcnum",
+  );
+}
+
+</%init>

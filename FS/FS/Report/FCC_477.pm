@@ -4,14 +4,13 @@ use base qw( FS::Report );
 use strict;
 use vars qw( @upload @download @technology @part2aoption @part2boption
              %states
-             $DEBUG
            );
 use FS::Record qw( dbh );
 
 use Tie::IxHash;
 use Storable;
 
-$DEBUG = 0;
+our $DEBUG = 0;
 
 =head1 NAME
 
@@ -305,6 +304,7 @@ sub report {
     unless $class->can($method);
   my $statement = $class->$method(%opt);
 
+  warn $statement if $DEBUG;
   my $sth = dbh->prepare($statement);
   $sth->execute or die $sth->errstr;
   $sth->fetchall_arrayref;

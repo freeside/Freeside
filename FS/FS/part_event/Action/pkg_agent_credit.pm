@@ -1,7 +1,8 @@
 package FS::part_event::Action::pkg_agent_credit;
 
 use strict;
-use base qw( FS::part_event::Action::pkg_referral_credit );
+use base qw( FS::part_event::Action::Mixin::credit_flat
+             FS::part_event::Action );
 
 sub description { 'Credit the agent a specific amount'; }
 
@@ -18,7 +19,7 @@ sub do_action {
   my $agent_cust_main = $agent->agent_cust_main;
     #? or return "No customer record for agent ". $agent->agent;
 
-  my $amount = $self->_calc_credit($cust_pkg);
+  my $amount = $self->_calc_credit($cust_pkg, $agent);
   return '' unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');

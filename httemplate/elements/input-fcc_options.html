@@ -80,7 +80,8 @@ function show_fcc_options(id) {
     }
   } // is_phone
   if ( curr_values['is_voip'] ) {
-    out += '<li><strong>VoIP</strong> telephone service</li>';
+    out += '<li><strong>VoIP</strong> telephone service over <strong>' 
+            + media + '</strong></li>';
     out += '<li><strong>' + curr_values['voip_sessions'] + 
            '</strong> sessions allowed</li>';
     if ( curr_values['voip_lastmile'] ) {

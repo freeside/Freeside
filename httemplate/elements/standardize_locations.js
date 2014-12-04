@@ -279,10 +279,7 @@ function setselect(el, value) {
 function confirm_censustract() {
 %   if ( FS::Conf->new->exists('cust_main-require_censustract') ) {
   var form = document.<% $formname %>;
-  // this is the existing/confirmed censustract, not the manually entered one
-  if ( form.elements['censustract'].value == '' ||
-       form.elements['censustract'].value != 
-          form.elements['enter_censustract'].value ) {
+  if ( form.elements['censustract'].value == '' ) {
     var address_info = form_address_info();
     address_info['latitude']  = form.elements['latitude'].value;
     address_info['longitude'] = form.elements['longitude'].value;
@@ -290,10 +287,15 @@ function confirm_censustract() {
         '<%$p%>/misc/confirm-censustract.html',
         'q=' + encodeURIComponent(JSON.stringify(address_info)),
         function() {
-          overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
-            AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
-            576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
-            TEXTSIZE, 3 );
+          if ( OLresponseAJAX ) {
+            overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
+              AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
+              576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
+              TEXTSIZE, 3 );
+          } else {
+            // no response
+            <% $post_censustract %>;
+          }
         },
         0);
   } else {

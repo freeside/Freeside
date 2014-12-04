@@ -22,21 +22,11 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $custnum = $1;
 }
 
-#false laziness w/process/cancel_pkg.html
-
-#untaint reasonnum
-my $reasonnum = $cgi->param('reasonnum');
-$reasonnum =~ /^(-?\d+)$/ || die "Illegal reasonnum";
-$reasonnum = $1;
-
-if ($reasonnum == -1) {
-  $reasonnum = {
-    'typenum' => scalar( $cgi->param('newreasonnumT') ),
-    'reason'  => scalar( $cgi->param('newreasonnum' ) ),
-  };
+#untaint reasonnum / create new reason
+my ($reasonnum, $error) = $m->comp('process/elements/reason');
+if (!$reasonnum) {
+  $error ||= 'Reason required';
 }
-
-#eslaf
 
 my $cust_main = qsearchs( {
   'table'     => 'cust_main',
@@ -44,28 +34,27 @@ my $cust_main = qsearchs( {
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 } );
 
-my @errors;
-if($cgi->param('now_or_later')) {
+if ( $error ) {
+  # do nothing
+} elsif ( $cgi->param('now_or_later') ) {
   $adjourn = parse_datetime($adjourn);
   if($adjourn) {
     #warn "setting adjourn dates on custnum#$custnum\n";
     my @pkgs = $cust_main->unsuspended_pkgs;
-    @errors = grep {$_} map { $_->suspend(
+    my @errors = grep {$_} map { $_->suspend(
       'reason'  => $reasonnum,
       'date'    => $adjourn,
     ) } @pkgs;
+    $error = join(' / ', @errors);
+  } else {
+    $error = ("error parsing adjourn date: ".$cgi->param('adjourn'));
   }
-  else {
-    @errors = ("error parsing adjourn date: ".$cgi->param('adjourn'));
-  }
-}
-else {
+} else {
   warn "suspending $cust_main";
-  @errors = $cust_main->suspend(
+  $error = $cust_main->suspend(
     'reason' => $reasonnum,
   );
 }
-my $error = join(' / ', @errors) if scalar(@errors);
 
 if ( $error ) {
   $cgi->param('error', $error);

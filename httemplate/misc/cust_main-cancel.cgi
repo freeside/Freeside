@@ -22,21 +22,12 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $custnum = $1;
 }
 
-#false laziness w/process/cancel_pkg.html
 
-#untaint reasonnum
-my $reasonnum = $cgi->param('reasonnum');
-$reasonnum =~ /^(-?\d+)$/ || die "Illegal reasonnum";
-$reasonnum = $1;
-
-if ($reasonnum == -1) {
-  $reasonnum = {
-    'typenum' => scalar( $cgi->param('newreasonnumT') ),
-    'reason'  => scalar( $cgi->param('newreasonnum' ) ),
-  };
+#untaint reasonnum / create new reason
+my ($reasonnum, $error) = $m->comp('process/elements/reason');
+if (!$reasonnum) {
+  $error ||= 'Reason required'
 }
-
-#eslaf
 
 my $cust_main = qsearchs( {
   'table'     => 'cust_main',
@@ -44,29 +35,30 @@ my $cust_main = qsearchs( {
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 } );
 
-my @errors;
-if($cgi->param('now_or_later')) {
+if ( $error ) {
+  # do nothing
+} elsif ( $cgi->param('now_or_later') ) {
   $expire = parse_datetime($expire);
   if($expire) {
     #warn "setting expire dates on custnum#$custnum\n";
     my @pkgs = $cust_main->ncancelled_pkgs;
-    @errors = grep {$_} map { $_->cancel(
+    my @errors = grep {$_} map { $_->cancel(
       'reason'  => $reasonnum,
       'date'    => $expire,
     ) } @pkgs;
+    $error = join(' / ', @errors);
   }
   else {
-    @errors = ("error parsing expire date: ".$cgi->param('expire'));
+    $error = ("error parsing expire date: ".$cgi->param('expire'));
   }
 }
 else {
   warn "cancelling $cust_main";
-  @errors = $cust_main->cancel(
+  $error = $cust_main->cancel(
     'ban'    => $ban,
     'reason' => $reasonnum,
   );
 }
-my $error = join(' / ', @errors) if scalar(@errors);
 
 if ( $error ) {
   $cgi->param('error', $error);

@@ -20,7 +20,8 @@ my %template_select = (
     %templates = (0 => '',
       map { $_->msgnum, $_->msgname } 
       qsearch({ table => 'msg_template',
-                hashref => { disabled => 1 },
+                hashref => { disabled => { 'op'    => '!=',
+                                           'value' => 1 }},
                 order_by => 'ORDER BY msgnum ASC'
               })
     );

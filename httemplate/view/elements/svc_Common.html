@@ -32,6 +32,15 @@ function areyousure(href) {
     window.location.href = href;
 }
 </SCRIPT>
+<STYLE>
+  td.content {
+    background-color: #ffffff;
+  }
+  .error {
+    color: #ff0000;
+    font-weight: bold;
+  }
+</STYLE>
 
 % if ( $custnum ) { 
 
@@ -67,61 +76,20 @@ function areyousure(href) {
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 
-% my @inventory_items = $svc_x->inventory_item;
 % foreach my $f ( @$fields ) {
-%
-%   my($field, $type, $value);
-%   if ( ref($f) ) {
-%     $field = $f->{'field'};
-%     $type  = $f->{'type'} || 'text';
-%     if ( $f->{'value_callback'} ) {
-%       my $hack_strict_refs = \&{ $f->{'value_callback'} };
-%       $value = &$hack_strict_refs($svc_x);
-%     } else {
-%       $value = encode_entities($svc_x->$field);
-%     }
-%   } else {
-%     $field = $f;
-%     $type = 'text';
-%     $value = encode_entities($svc_x->$field);
-%   }
-%
-%   my $columndef = $part_svc->part_svc_column($field);
-%   if ( $columndef->columnflag =~ /^[MA]$/ && $columndef->columnvalue =~ /,/ )
-%   {
-%     # inventory-select field with multiple classes
-%     # show the class name to disambiguate
-%     my ($item) = grep { $_->svc_field eq $field } @inventory_items;
-%     my $class = qsearchs('inventory_class', { classnum => $item->classnum });
-%     $value .= ' <i>('. $class->classname . ')</i>' if $class;
-%   }
-%   unless ($columndef->columnflag eq 'F' && !length($columndef->columnvalue)) {
-
+%   my ($field, $label, $value) = &{ $format_field }($f);
+%   next if !$field; 
       <TR>
         <TD ALIGN="right">
-          <% ( $opt{labels} && exists $opt{labels}->{$field} )
-                  ? $opt{labels}->{$field}
-                  : $field
-          %>
+          <% $label %>
         </TD>
 
-%	$value = time2str($date_format,$value)
-%         if $type eq 'date' && $value;
-%	$value = time2str("$date_format %H:%M",$value)
-%         if $type eq 'datetime' && $value;
-%	$value = $value eq 'Y' ? emt('Yes') : emt('No')
-%         if $type eq 'checkbox';
-%       $value .= ' ('. (Net::MAC::Vendor::lookup($value))->[0]. ')'
-%         if $type =~ /mac_addr$/ && $value =~ /\w/i;
-%       #eventually more options for <SELECT>, etc. fields
-
-        <TD BGCOLOR="#ffffff"><% $value %><TD>
-
+        <TD CLASS="content">
+          <% $value %>
+        </TD>
       </TR>
 
-%   }
-%
-% } 
+% }
 
 % foreach (sort { $a cmp $b } $svc_x->virtual_fields) { 
   <% $svc_x->pvf($_)->widget('HTML', 'view', $svc_x->getfield($_)) %>
@@ -193,7 +161,7 @@ my $svc_x = qsearchs({
 
 my $cust_svc = $svc_x->cust_svc;
 my ($label, $value, $svcdb, $part_svc );
-my $labels = $opt{labels}; #not -> here
+my $labels = $opt{labels} || {};
 
 if ( $cust_svc ) {
   ($label, $value, $svcdb) = $cust_svc->label;
@@ -227,7 +195,10 @@ if ($pkgnum) {
 
 # attached routers
 if ( my $router = qsearchs('router', { svcnum => $svc_x->svcnum }) ) {
-  push @$fields, qw(router_routername router_block);
+  push @$fields,
+    'router_routername',
+    'router_block';
+
   $labels->{'router_routername'} = 'Attached router';
   $labels->{'router_block'} = 'Attached address block';
   $svc_x->set('router_routername', $router->routername);
@@ -235,9 +206,99 @@ if ( my $router = qsearchs('router', { svcnum => $svc_x->svcnum }) ) {
   if ( $block ) {
     $svc_x->set('router_block', $block->cidr);
   } else {
-    $svc_x->set('router_block', '<i>(none)</i>');
+    $svc_x->set('router_block', '(none)');
   }
 }
+
+my @inventory_items = $svc_x->inventory_item;
+
+my $format_field = sub {
+  my $f = shift;
+  my($field, $type, $value);
+  if ( ref($f) ) {
+    $field = $f->{'field'};
+    $type  = $f->{'type'} || 'text';
+  } else {
+    $field = $f;
+    $type = 'text';
+  }
+
+  my $columndef = $part_svc->part_svc_column($field);
+  # skip fields that are fixed and empty
+  if ( $columndef->columnflag eq 'F'
+       and length($columndef->columnvalue) == 0 ) {
+    return;
+  }
+
+  # things that override the column value: value_callback, select
+  if ( ref($f) and $f->{'value_callback'} ) {
+
+    my $hack_strict_refs = \&{ $f->{'value_callback'} };
+    $value = &$hack_strict_refs($svc_x);
+
+  } elsif ( $type eq 'select-table' ) {
+    # imitates the /elements/select-table interface
+    $value = $svc_x->$field;
+
+    my $value_col = $f->{'value_col'} ||
+                    dbdef->table($f->{'table'})->primary_key;
+    my $name_col = $f->{'name_col'} or die 'name_col required';
+    # we don't yet support multiple-valued fields here
+    my $obj = qsearchs($f->{'table'}, { $value_col => $value });
+    if ( $obj ) {
+      $value = $obj->$name_col; # can be any method of the object
+    } else {
+      # show the raw value, but mark it as an error
+      $value = '<SPAN CLASS="error">' . $f->{'table'} . ' ' .
+                encode_entities($value) . '</SPAN>';
+    }
+
+  } else {
+    $value = encode_entities($svc_x->$field);
+  }
+
+  # inventory-select field with multiple classes
+  # show the class name to disambiguate
+  if ( $columndef->columnflag =~ /^[MA]$/ && $columndef->columnvalue =~ /,/ )
+  {
+    my ($item) = grep { $_->svc_field eq $field } @inventory_items;
+    my $class = qsearchs('inventory_class', { classnum => $item->classnum });
+    $value .= ' <i>('. $class->classname . ')</i>' if $class;
+  }
+
+  # formatting tweaks
+  if ( $type eq 'date' and $value ) {
+    $value = time2str($date_format,$value)
+  } elsif ( $type eq 'datetime' and $value ) {
+    $value = time2str("$date_format %H:%M",$value)
+  } elsif ( $type eq 'checkbox' ) {
+    $value = $value eq 'Y' ? emt('Yes') : emt('No');
+  } elsif ( $type eq 'mac_addr' and $value =~ /\w/) {
+    $value .= ' ('. (Net::MAC::Vendor::lookup($value))->[0]. ')'
+  }
+
+  # 'link' option
+  my $href;
+  if ( ref($f) and exists $f->{'link'} ) {
+    my $link = $f->{'link'};
+    if ( ref($link) eq 'CODE' ) {
+      $link = &{$link}($svc_x);
+    }
+    if ( ref($link) eq 'ARRAY' ) {
+      my ($base, $method) = @$link;
+      $href = $base . $svc_x->$method();
+    } elsif ( !ref($link) ) {
+      $href = $link;
+    }
+
+    if ( $href ) {
+      $value = qq!<A HREF="$href">$value</A>!;
+    }
+  }
+
+  my $label = $opt{labels}->{$field} || $field;
+  return ($field, $label, $value);
+};
 
 &{ $opt{'svc_callback'} }( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, \%opt ) 
     if $opt{'svc_callback'};

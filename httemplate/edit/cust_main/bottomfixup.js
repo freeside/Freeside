@@ -100,14 +100,13 @@ function copyelement(from, to) {
   //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
 }
 
-% # the value in pre+'censustract' is the confirmed censustract; if it's set,
-% # and the user hasn't changed it manually, skip this
+% # the value in pre+'censustract' is the confirmed censustract (either from
+% # the previous saved record, or from address standardization (if the backend
+% # supports it), or from an aborted previous submit. only need to reconfirm
+% # if it's empty.
 function confirm_censustract(pre) {
   var cf = document.CustomerForm;
-  if ( cf.elements[pre+'censustract'].value == '' ||
-         cf.elements[pre+'enter_censustract'].value != 
-         cf.elements[pre+'censustract'].value )
-  {
+  if ( cf.elements[pre+'censustract'].value == '' ) {
     var address_info = form_address_info();
     address_info[pre+'latitude']  = cf.elements[pre+'latitude'].value;
     address_info[pre+'longitude'] = cf.elements[pre+'longitude'].value;
@@ -116,10 +115,13 @@ function confirm_censustract(pre) {
         '<%$p%>/misc/confirm-censustract.html',
         'q=' + encodeURIComponent(JSON.stringify(address_info)),
         function() {
-          overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
-            AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
-            576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
-            TEXTSIZE, 3 );
+          if ( OLresponseAJAX ) {
+            overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
+              AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
+              576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
+              TEXTSIZE, 3 );
+          } else
+            submit_continue();
         },
         0);
   } else submit_continue();
