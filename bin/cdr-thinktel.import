@@ -52,7 +52,8 @@ $ftp->login($login, $password)
 warn "Retrieving directory listing\n" if $opt_v;
 
 $ftp->cwd('/');
-my @files = $ftp->ls();
+my @files = grep { $_ =~ /MetaSwitch/ } $ftp->ls();
+
 warn scalar(@files)." CDR files found.\n" if $opt_v;
 # apply date range
 if ( $opt_a ) {
