@@ -7,8 +7,7 @@
 
  <P ALIGN="center"><B><% mt('Permanently delete all services and cancel this customer?') |h %></B>
 
-<TABLE BORDER="0" CELLSPACING="2"
-STYLE="margin-left:auto; margin-right:auto">
+<TABLE BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <TR>
   <TD ALIGN="right">
     <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
@@ -44,8 +43,7 @@ toggle(false);
          <INPUT TYPE="checkbox" NAME="ban" ID="ban" VALUE="1"><% mt($ban) |h %> 
 % }
 
-<TABLE BGCOLOR="#cccccc", BORDER="0" CELLSPACING="2"
-STYLE="margin-left:auto; margin-right:auto">
+<TABLE BGCOLOR="#cccccc" BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
              'reason_class'   => 'C',
