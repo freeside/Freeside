@@ -217,6 +217,7 @@ tie my %rights, 'Tie::IxHash',
   ###
   'Customer credit and refund rights' => [
     'Post credit',
+    { rightname=>'Backdate credit', desc=>'Enable credits to be posted for days other than today.' },
     'Credit line items', #NEWNEWNEW
     'Apply credit', #NEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
@@ -444,6 +445,7 @@ sub default_superuser_rights {
     'Credit card void',
     'Echeck void',
     'Void invoices',#people are overusing this when credits are more appropriate
+    'Backdate credit',
   );
 
   no warnings 'uninitialized';

@@ -42,11 +42,20 @@ if (!$reasonnum) {
 }
 $cgi->param('reasonnum', $reasonnum) unless $error;
 
+my $_date;
+if ( $FS::CurrentUser::CurrentUser->access_right('Backdate credit') ) {
+  $_date = parse_datetime($cgi->param('_date'));
+}
+else {
+  $_date = time;
+}
+
+my @fields = grep { $_ ne '_date' } fields('cust_credit');
+
 unless ($error) {
   my $new = new FS::cust_credit ( {
-    map {
-      $_, scalar($cgi->param($_));
-    } fields('cust_credit')
+    _date  => $_date,
+    map { $_ => scalar($cgi->param($_)) } @fields
   } );
   $error = $new->insert;
 }
