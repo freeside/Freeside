@@ -89,10 +89,16 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 #XXX Active tickets not assigned to a customer
 
-tie my %report_prospects, 'Tie::IxHash',
-  'List prospects' => [ $fsurl. 'search/prospect_main.html', '' ],
-  'Advanced prospect reports' => [ $fsurl. 'search/report_prospect_main.html', '' ],
-;
+tie my %report_prospects, 'Tie::IxHash';
+if ( $curuser->access_right('List prospects') ) {
+  $report_prospects{'List prospects'} = [ $fsurl. 'search/prospect_main.html', '' ];
+  $report_prospects{'Advanced prospect reports'} = [ $fsurl. 'search/report_prospect_main.html', '' ];
+}
+$report_prospects{'separator'} = ''
+  if $curuser->access_right('List prospects')
+  && $curuser->access_right('List contacts');
+$report_prospects{'Prospect contacts'} = [ $fsurl. 'search/report_contact.html?link=prospect_main', '' ]
+  if $curuser->access_right('List contacts');
 
 tie my %report_quotations, 'Tie::IxHash',
   'List quotations' => [ $fsurl. 'search/quotation.html', '' ],
@@ -118,6 +124,10 @@ $report_customers{'Customer churn report'} =  [ $fsurl.'graph/report_cust_churn.
 $report_customers{'Signup date report'}        = [ $fsurl. 'graph/report_signupdate.html',     'Signup date report (by date of signup)' ];
 $report_customers{'Advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html',     'by status, signup date, agent, etc.' ]
   if $curuser->access_right('Advanced customer search');
+if ( $curuser->access_right('List contacts') ) {
+  $report_customers{'separator'} = '';
+  $report_customers{'Customer contacts'} = [ $fsurl. 'search/report_contact.html?link=cust_main' ];
+}
 
 tie my %report_invoices_open, 'Tie::IxHash',
   'All open invoices' => [ $fsurl.'search/cust_bill.html?OPEN_date', 'All invoices with an unpaid balance' ],
@@ -392,11 +402,13 @@ $report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgo
 
 tie my %report_menu, 'Tie::IxHash';
 $report_menu{'Prospects'}      = [ \%report_prospects, 'Prospect reports' ]
-  if $curuser->access_right('List prospects');
+  if $curuser->access_right('List prospects')
+  || $curuser->access_right('List contacts');
 $report_menu{'Quotations'}     = [ \%report_quotations, 'Quotation reports' ]
   if $curuser->access_right('List quotations');
 $report_menu{'Customers'}      = [ \%report_customers, 'Customer reports'  ]
-  if $curuser->access_right('List customers');
+  if $curuser->access_right('List customers')
+  || $curuser->access_right('List contacts');
 $report_menu{'Invoices'}       =  [ \%report_invoices,  'Invoice reports'   ]
   if $curuser->access_right('List invoices');
 $report_menu{'Discounts'}      =  [ \%report_discounts, 'Discount reports'  ]
