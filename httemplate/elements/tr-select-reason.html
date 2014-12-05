@@ -74,7 +74,7 @@ Example:
                              $reason->type . ' : ' .  $reason->reason },
   'disable_empty'   => 1,
   'pre_options'     => [ 0 => 'Select reason...' ],
-  'post_options'    => [ -1 => 'Add new reason' ],
+  'post_options'    => \@post_options,
   'curr_value'      => $init_reason,
   'onchange'        => $id.'_changed()',
 &>
@@ -82,6 +82,7 @@ Example:
 % # "add new reason" fields
 % # should be a <fieldset>, but that doesn't fit well into the table
 
+% if ( $curuser->access_right($add_access_right) ) {
 <TR id="<% $id %>_new_fields">
   <TD COLSPAN=2>
     <TABLE CLASS="inv" STYLE="text-align: left">
@@ -91,21 +92,21 @@ Example:
         field => $id.'_new_reason'
       &>
 
-% my @types = qsearch( 'reason_type', { 'class' => $class } );
-% if (scalar(@types) < 1) {  # we should never reach this
+%   my @types = qsearch( 'reason_type', { 'class' => $class } );
+%   if (scalar(@types) < 1) {  # we should never reach this
       <TR>
         <TD ALIGN="right">
           <P><% mt('No reason types. Please add some.') |h %></P>
         </TD>
       </TR>
-% } elsif (scalar(@types) == 1) {
+%   } elsif (scalar(@types) == 1) {
       <& tr-fixed.html,
         label => 'Reason type',
         field => $id.'_new_reason_type',
         curr_value => $types[0]->typenum,
         formatted_value => $types[0]->type,
       &>
-% } else { # more than one type, the normal case
+%   } else { # more than one type, the normal case
       <& tr-select-table.html,
         label         => 'Reason type',
         field         => $id.'_new_reason_type',
@@ -114,9 +115,9 @@ Example:
         hashref       => { 'class' => $class },
         disable_empty => 1,
       &>
-% } # scalar(@types)
+%   } # scalar(@types)
 
-% if ( $class eq 'S' ) {
+%   if ( $class eq 'S' ) {
       <& tr-checkbox.html,
         label => 'Credit the unused portion of service when suspending',
         field => $id.'_new_unused_credit',
@@ -133,10 +134,11 @@ Example:
         field => $id.'_new_unsuspend_hold',
         value => 'Y',
       &>
-% }
+%   }
     </table>
   </td>
 </tr>
+% } # if the current user can add a reason
 
 % # container for hints
 <TR>
@@ -146,6 +148,7 @@ Example:
 
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
 my %opt = @_;
 
 my $name = $opt{'field'};
@@ -220,5 +223,9 @@ if ( $class eq 'S' ) {
   }
 }
 
-my $curuser = $FS::CurrentUser::CurrentUser;
+my @post_options;
+if ( $curuser->access_right($add_access_right) ) {
+  @post_options = ( -1 => 'Add new reason' );
+}
+
 </%init>
