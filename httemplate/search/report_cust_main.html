@@ -236,9 +236,12 @@
     <TR>
       <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
       <TD>
+%       my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
+%       my $agentnum = scalar(@agentnums) == 1 ? $agentnums[0] : '';
         <& /elements/select-terms.html,
-                      'pre_options' => [ '' => emt('all') ],
-                      'empty_value' => 'NULL',
+             'pre_options' => [ '' => emt('all') ],
+             'empty_value' => 'NULL',
+             'agentnum'    => $agentnum,
         &>
       </TD>
     </TR>

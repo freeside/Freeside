@@ -35,13 +35,14 @@ sub condition {
   $as_of >= ($cust_bill->due_date || $cust_bill->_date);
 }
 
-sub condition_sql {
-  my( $class, $table, %opt ) = @_;
-  return 'true' if $opt{'driver_name'} ne 'Pg';
-  my $delay = $class->condition_sql_option_integer('delay', 'Pg');
-  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($opt{'time'}))[0..5];
-  my $as_of = timelocal(0,0,0,$mday,$mon,$year) . " - ($delay * 86400)";
-  "( $as_of ) >= ".FS::cust_bill->due_date_sql;
-}
+#->due_date_sql can't cope with agent-specific invoice_default_terms
+#sub condition_sql {
+#  my( $class, $table, %opt ) = @_;
+#  return 'true' if $opt{'driver_name'} ne 'Pg';
+#  my $delay = $class->condition_sql_option_integer('delay', 'Pg');
+#  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($opt{'time'}))[0..5];
+#  my $as_of = timelocal(0,0,0,$mday,$mon,$year) . " - ($delay * 86400)";
+#  "( $as_of ) >= ".FS::cust_bill->due_date_sql;
+#}
 
 1;

@@ -26,9 +26,11 @@ my $conf = new FS::Conf;
 
 my $empty_label =
   $opt{'empty_label'}
-  || emt('Default').' ('.
-       ($conf->config('invoice_default_terms') || emt('Payable upon receipt')).
-     ')';
+    || emt('Default').' ('.
+         ( $conf->config('invoice_default_terms', $opt{'agentnum'})
+             || emt('Payable upon receipt')
+         ).
+       ')';
 
 my $empty_value = $opt{'empty_value'} || '';
 
