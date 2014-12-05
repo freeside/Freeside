@@ -28,52 +28,52 @@ sub notify_flat_delay {
 
   # select * from cust_pkg where
   my $where_pkg = <<"END";
-    where ( cancel is null or cancel = 0 )
-      and ( bill > 0 )
-      and
-      0 < ( select count(*) from part_pkg
-              where cust_pkg.pkgpart = part_pkg.pkgpart
-                and part_pkg.plan = 'flat_delayed'
-                and 0 < ( select count(*) from part_pkg_option
-                            where part_pkg.pkgpart = part_pkg_option.pkgpart
-                              and part_pkg_option.optionname = 'recur_notify'
-                              and CAST( part_pkg_option.optionvalue AS $integer ) > 0
-                              and 0 <= ( $time
-                                         + CAST( part_pkg_option.optionvalue AS $integer )
-                                           * 86400
-                                         - cust_pkg.bill
-                                       )
-                              and ( cust_pkg.expire is null
-                                or  cust_pkg.expire > ( $time
-                                                        + CAST( part_pkg_option.optionvalue AS $integer )
-                                                          * 86400
-                                                      )
+    WHERE ( cancel IS NULL OR cancel = 0 )
+      AND ( bill > 0 )
+      AND EXISTS (
+        SELECT 1 FROM part_pkg
+          WHERE cust_pkg.pkgpart = part_pkg.pkgpart
+            AND part_pkg.plan = 'flat_delayed'
+            AND EXISTS ( SELECT 1 from part_pkg_option
+                           WHERE part_pkg.pkgpart = part_pkg_option.pkgpart
+                             AND part_pkg_option.optionname = 'recur_notify'
+                             AND CAST( part_pkg_option.optionvalue AS $integer ) > 0
+                             AND 0 <= ( $time
+                                        + CAST( part_pkg_option.optionvalue AS $integer )
+                                          * 86400
+                                        - cust_pkg.bill
+                                      )
+                             AND (    cust_pkg.expire is null
+                                   OR cust_pkg.expire > ( $time
+                                                          + CAST( part_pkg_option.optionvalue AS $integer )
+                                                            * 86400
+                                                        )
 END
 
-#/*                            and ( cust_pkg.adjourn is null
-#                                or  cust_pkg.adjourn > $time
+#/*                           and (     cust_pkg.adjourn is null
+#                                    or cust_pkg.adjourn > $time
 #-- Should notify suspended ones  + cast(part_pkg_option.optionvalue as $integer)
-#                                    * 86400
+#                                          * 86400
 #*/
 
   $where_pkg .= <<"END";
-                                  )
-                        )
-          )
-      and
-      0 = ( select count(*) from cust_pkg_option
-              where cust_pkg.pkgnum = cust_pkg_option.pkgnum
-                and cust_pkg_option.optionname = 'impending_recur_notification_sent'
-                and CAST( cust_pkg_option.optionvalue AS $integer ) = 1
-          )
+                                 )
+                       )
+      )
+      AND NOT EXISTS (
+        SELECT 1 from cust_pkg_option
+          WHERE cust_pkg.pkgnum = cust_pkg_option.pkgnum
+            AND cust_pkg_option.optionname = 'impending_recur_notification_sent'
+            AND CAST( cust_pkg_option.optionvalue AS $integer ) = 1
+      )
 END
   
   if ($opt{a}) {
     $where_pkg .= <<END;
-      and 0 < ( select count(*) from cust_main
-                  where cust_pkg.custnum = cust_main.custnum
-                    and cust_main.agentnum IN ( $opt{a} )
-              )
+      AND EXISTS ( SELECT 1 from cust_main
+                     WHERE cust_pkg.custnum = cust_main.custnum
+                       AND cust_main.agentnum IN ( $opt{a} )
+                 )
 END
   }
   

@@ -249,6 +249,7 @@ sub _upgrade_data { # class method
     'Edit package definition costs' => 'View package definition costs',
     'List prospects' => 'List contacts',
     'List customers' => 'List contacts',
+    'Backdate payment' => 'Backdate credit',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

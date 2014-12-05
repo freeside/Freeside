@@ -52,13 +52,13 @@ sub condition_sql {
 
   my $pkey = $pkey{$table};
 
-  "0 = ( SELECT COUNT(*) FROM cust_event
-           WHERE cust_event.eventpart = part_event.eventpart
-             AND cust_event.tablenum IN (
-               SELECT $pkey FROM $table AS once_percust
-                 WHERE once_percust.custnum = cust_main.custnum )
-             AND status != 'failed'
-       )
+  "NOT EXISTS ( SELECT 1 FROM cust_event
+                  WHERE cust_event.eventpart = part_event.eventpart
+                    AND cust_event.tablenum IN (
+                      SELECT $pkey FROM $table AS once_percust
+                        WHERE once_percust.custnum = cust_main.custnum )
+                    AND status != 'failed'
+              )
   ";
 
 }

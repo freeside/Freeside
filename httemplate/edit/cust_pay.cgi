@@ -23,37 +23,26 @@
 <% mt('Payment') |h %> 
 <% ntable("#cccccc", 2) %>
 
+% my %date_args = (
+%   'name'    =>  '_date',
+%   'label'   => emt('Date'),
+%   'value'   => $_date,
+%   'format'  => $date_format. ' %r',
+%   'colspan' => 2,
+% );
 % if ( $FS::CurrentUser::CurrentUser->access_right('Backdate payment') ) {
-<TR>
-  <TD ALIGN="right"><% mt('Date') |h %></TD>
-  <TD COLSPAN=2>
-    <INPUT TYPE="text" NAME="_date" ID="_date_text" VALUE="<% time2str($date_format.' %r',$_date) %>">
-    <IMG SRC="../images/calendar.png" ID="_date_button" STYLE="cursor: pointer" TITLE="<% mt('Select date') |h %>">
-  </TD>
-</TR>
 
-<SCRIPT TYPE="text/javascript">
-  Calendar.setup({
-    inputField: "_date_text",
-    ifFormat:   "<% $date_format %>",
-    button:     "_date_button",
-    align:      "BR"
-  });
-</SCRIPT>
-% }
-% else {
-<TR>
-  <TD ALIGN="right"><% mt('Date') |h %></TD>
-  <TD COLSPAN=2>
-    <% time2str($date_format.' %r',$_date) %>
-  </TD>
-</TR>
+  <& /elements/tr-input-date-field.html, \%date_args &>
+
+% } else {
+
+  <& /elements/tr-fixed-date.html, \%date_args &>
+
 % }
 
 <TR>
   <TD ALIGN="right"><% mt('Amount') |h %></TD>
-  <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char %></TD>
-  <TD><INPUT TYPE="text" NAME="paid" ID="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
+  <TD BGCOLOR="#ffffff"><% $money_char |h %><INPUT TYPE="text" NAME="paid" ID="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
 </TR>
 
 % if ( $conf->exists('part_pkg-term_discounts') ) {

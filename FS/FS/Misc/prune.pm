@@ -44,34 +44,34 @@ sub prune_applications {
 
   my $ccr = <<EOW;
     WHERE
-         0 = (select count(*) from cust_credit
+         NOT EXISTS (select 1 from cust_credit
                where cust_credit_refund.crednum = cust_credit.crednum)
       or 
-         0 = (select count(*) from cust_refund
+         NOT EXISTS (select 1 from cust_refund
                where cust_credit_refund.refundnum = cust_refund.refundnum)
 EOW
   my $ccb = <<EOW;
     WHERE
-         0 = (select count(*) from cust_credit
+         NOT EXISTS (select 1 from cust_credit
                where cust_credit_bill.crednum = cust_credit.crednum)
       or 
-         0 = (select count(*) from cust_bill
+         NOT EXISTS (select 1 from cust_bill
                where cust_credit_bill.invnum = cust_bill.invnum)
 EOW
   my $cbp = <<EOW;
     WHERE
-         0 = (select count(*) from cust_bill
+         NOT EXISTS (select 1 from cust_bill
                where cust_bill_pay.invnum = cust_bill.invnum)
       or 
-         0 = (select count(*) from cust_pay
+         NOT EXISTS (select 1 from cust_pay
                where cust_bill_pay.paynum = cust_pay.paynum)
 EOW
   my $cpr = <<EOW;
     WHERE
-         0 = (select count(*) from cust_pay
+         NOT EXISTS (select 1 from cust_pay
                where cust_pay_refund.paynum = cust_pay.paynum)
       or 
-         0 = (select count(*) from cust_refund
+         NOT EXISTS (select 1 from cust_refund
                where cust_pay_refund.refundnum = cust_refund.refundnum)
 EOW
 
