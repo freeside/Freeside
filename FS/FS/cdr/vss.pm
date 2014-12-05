@@ -11,8 +11,6 @@ use FS::cdr qw(_cdr_date_parser_maker);
   'name'          => 'VSS',
   'weight'        => 120,
   'header'        => 1,
-
-  'header'        => 1,
   'import_fields' => [
 
         skip(1),        # Customer
@@ -34,4 +32,3 @@ use FS::cdr qw(_cdr_date_parser_maker);
 sub skip { map {''} (1..$_[0]) }
 
 1;
-
