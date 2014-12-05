@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# These functions are used by Freeside's init scripts
+
+if [ -f /etc/rc.d/init.d/functions ]
+then
+    . /etc/init.d/functions
+elif [ -f /lib/lsb/init-functions ]
+then
+    . /lib/lsb/init-functions
+fi
+
+if [ -f %%%FREESIDE_DEFAULTS%%% ]
+then
+    . %%%FREESIDE_DEFAULTS%%% 
+fi
+
+PATH="%%%FREESIDE_BIN%%%:$PATH"
+
+statusfunc() {
+    RUNNING=0
+    if [ -f ${LOCKFILE} ]
+    then
+        if [ -f ${PIDFILE} ]
+        then
+            PIDFILE=`eval ls $PIDFILE 2> /dev/null`
+            PID=`cat $PIDFILE`
+            if ps -p ${PID} > /dev/null
+            then
+                return 0
+            else
+                return 1
+            fi
+        fi
+    fi
+    return 3
+}
+
+startfunc() {
+    if statusfunc
+    then
+        action "Already running ${SERVICE} " /bin/false
+    else
+        eval "${STARTCOMMAND[@]}"
+        RETVAL=$?
+        action "Starting ${SERVICE} " /bin/true
+        if [ $RETVAL = 0 ]
+        then
+            touch ${LOCKFILE}
+        fi
+        return $RETVAL
+    fi
+}
+
+stopfunc() {
+    if statusfunc
+    then
+        echo -n "Stopping ${SERVICE} service"
+        PIDFILE=`eval ls $PIDFILE 2> /dev/null`
+        killproc -p ${PIDFILE}
+        rm -f ${LOCKFILE}
+        echo
+    else
+        action "Service not running" /bin/false
+    fi
+}
+
+restartfunc() {
+    stopfunc
+    startfunc
+} 
+
+echo_statusfunc() {
+    echo -n $SERVICE
+    EVAL_PIDFILE=`eval ls $PIDFILE > /dev/null`
+    if [ -n "$EVAL_PIDFILE" ]
+    then
+        PIDFILE=$EVAL_PIDFILE
+    fi
+    status -p $PIDFILE
+}
+
+
