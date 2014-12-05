@@ -6,92 +6,19 @@
 
 ARG1=${1}
 SERVICE=freeside-prepaidd
-LOCKFILE=/var/lock/subsys/${SERVICE}
-PIDFILE=/var/run/${SERVICE}.pid
 
-
-if [ -f /etc/rc.d/init.d/functions ]
+if [ -f /etc/rc.d/init.d/freeside-functions ]
 then
-    . /etc/init.d/functions
-elif [ -f /lib/lsb/init-functions ]
-then
-    . /lib/lsb/init-functions
+    . /etc/rc.d/init.d/freeside-functions
+else 
+    echo "ERROR: freeside-functions could not be sourced."
+    exit 1
 fi
 
-if [ -f %%%FREESIDE_DEFAULTS%%% ]
-then
-    . %%%FREESIDE_DEFAULTS%%%
-fi
+STARTCOMMAND=($SERVICE $QUEUED_USER)
+LOCKFILE=${LOCKFILE_DIR}/${SERVICE}
+PIDFILE=${PIDFILE_DIR}/${SERVICE}.pid
 
-if [ -z ${QUEUED_USER} ] 
-then
-    QUEUED_USER=%%%QUEUED_USER%%%
-fi
-
-# 0:	program is running or service is OK
-# 1:	program is dead and /var/run pid file exists
-# 2:	program is dead and /var/lock lock file exists
-# 3:	program is not running
-statusfunc() {
-    RUNNING=0
-    if [ -f ${LOCKFILE} ]
-    then
-        if [ -f ${PIDFILE} ]
-        then
-            PID=`cat $PIDFILE`
-            if ps -p ${PID} > /dev/null
-            then
-                return 0
-            else
-                return 1
-            fi
-        fi
-    fi
-    return 3
-}
-
-startfunc() {
-    if statusfunc
-    then
-        action "Already running ${SERVICE} " /bin/false
-    else
-        ${SERVICE} $QUEUED_USER
-        RETVAL=$?
-        action "Starting ${SERVICE} " /bin/true
-        if [ $RETVAL = 0 ]
-        then
-            touch ${LOCKFILE}
-        fi
-        return $RETVAL
-    fi
-}
-
-stopfunc() {
-    if statusfunc
-    then
-        echo -n "Stopping ${SERVICE} service"
-        killproc -p ${PIDFILE}
-        rm -f ${LOCKFILE}
-        echo
-    else
-        action "Service not running" /bin/false
-    fi
-}
-
-restartfunc() {
-    stopfunc
-    startfunc
-} 
-
-# echo_status function
-echo_statusfunc() {
-    # we need a way of displaying the status to the end user if called with the parameter status. This status function will check for pid or lockfile
-    echo -n $SERVICE
-    status -p $PIDFILE
-}
-
-# main loop/case statement
-# The main loop is done with a case statment, and we no longer call $0 directly, which saves shell instances and makes our scripts more efficent.
 case $ARG1 in 
 
 start)

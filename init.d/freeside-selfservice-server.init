@@ -6,32 +6,18 @@
 
 ARG1=${1}
 SERVICE=freeside-selfservice-server
-LOCKFILE=/var/lock/subsys/${SERVICE}
-PIDFILE=/var/run/${SERVICE}.USERMACHINE.pid
-
-
-if [ -f /etc/rc.d/init.d/functions ]
-then
-    . /etc/init.d/functions
-elif [ -f /lib/lsb/init-functions ]
-then
-    . /lib/lsb/init-functions
-fi
 
 if [ -f %%%FREESIDE_DEFAULTS%%% ]
 then
     . %%%FREESIDE_DEFAULTS%%%
+else 
+    echo "ERROR: freeside defaults could not be sourced."
+    exit 1
 fi
 
-if [ -z ${SELFSERVICE_USER} ] 
-then
-    SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
-fi
+LOCKFILE=$LOCKFILE_DIR/$SERVICE
+PIDFILE=$PIDFILE_DIR/${SERVICE}.USERMACHINE.pid
 
-# 0:	program is running or service is OK
-# 1:	program is dead and /var/run pid file exists
-# 2:	program is dead and /var/lock lock file exists
-# 3:	program is not running
 statusfunc() {
     if [ -f ${LOCKFILE} ]
     then
@@ -131,8 +117,6 @@ echo_statusfunc() {
     done
 }
 
-# main loop/case statement
-# The main loop is done with a case statment, and we no longer call $0 directly, which saves shell instances and makes our scripts more efficent.
 case $ARG1 in 
 
 start)

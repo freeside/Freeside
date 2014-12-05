@@ -44,6 +44,13 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #apache
 #FREESIDE_DOCUMENT_ROOT = /usr/local/apache/htdocs/freeside
 
+
+# /etc/default/freeside on Debian/Ubuntu
+FREESIDE_DEFAULTS = /etc/sysconfig/freeside
+FREESIDE_BIN = /usr/bin
+LOCKFILE_DIR = /var/lock/subsys
+PIDFILE_DIR = /var/run
+
 #deb, redhat, fedora, mandrake, suse, others?
 INIT_FILE_QUEUED = /etc/init.d/freeside-queued
 INIT_FILE_PREPAIDD = /etc/init.d/freeside-prepaidd
@@ -56,6 +63,7 @@ INIT_FILE_SQLRADIUS_RADACCTD = /etc/init.d/freeside-sqlradius-radacctd
 INIT_FILE_TORRUS = /etc/init.d/freeside-torrus
 INIT_FILE_SELFSERVICE_XMLRPCD = /etc/init.d/freeside-selfservice-xmlrpcd
 INIT_FILE_SELFSERVICE_SERVER = /etc/init.d/freeside-selfservice-server
+INIT_FILE_FUNCTIONS = /etc/init.d/freeside-functions
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
@@ -106,8 +114,6 @@ APACHE_CONF = /etc/httpd/conf.d
 #APACHE_CONF = /etc/apache2/conf.d
 
 INSSERV_OVERRIDE = /etc/insserv/overrides
-
-FREESIDE_RESTART = ${INIT_FILE} restart
 
 #deb, redhat, fedora, mandrake, suse, others?
 INSTALLGROUP = root
@@ -298,97 +304,41 @@ install-texmf:
 
 install-init:
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-queued.init ${INIT_FILE_QUEUED}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_QUEUED}
-	${INIT_INSTALL_QUEUED}
-
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-prepaidd.init ${INIT_FILE_PREPAIDD}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_PREPAIDD}
-	${INIT_INSTALL_PREPAIDD}
-
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-xmlrpcd.init ${INIT_FILE_XMLRPCD}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_XMLRPCD}
-	${INIT_INSTALL_XMLRPCD}
-
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-cdrrewrited.init ${INIT_FILE_CDRREWRITED}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_CDRREWRITED}
-	${INIT_INSTALL_CDRREWRITED}
-
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-cdrd.init ${INIT_FILE_CDRD}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_CDRD}
-	${INIT_INSTALL_CDRD}
-
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-cdrrated.init ${INIT_FILE_CDRRATED}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_CDRRATED}
-	${INIT_INSTALL_CDRRATED}
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-selfservice-xmlrpcd.init ${INIT_FILE_SELFSERVICE_XMLRPCD}
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-selfservice-server.init ${INIT_FILE_SELFSERVICE_SERVER}
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-sqlradius-radacctd.init ${INIT_FILE_SQLRADIUS_RADACCTD}
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-functions ${INIT_FILE_FUNCTIONS}
+
 
 	if [ ${TORRUS_ENABLED} -eq 1 ]; then \
 		( install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus-srvderive.init ${INIT_FILE_TORRUS_SRVDERIVE}; \
-		  perl -p -i -e "\
- 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
- 	  s/%%%API_USER%%%/${API_USER}/g;\
- 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
- 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
- 	" ${INIT_FILE_TORRUS_SRVDERIVE} ${INIT_FILE_TORRUS}; \
-	${INIT_INSTALL_TORRUS_SRVDERIVE}; \
-	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus.init ${INIT_FILE_TORRUS}; \
-	${INIT_INSTALL_TORRUS}); fi
+		install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-torrus.init ${INIT_FILE_TORRUS}; \
+		$INIT_INSTALL_TORRUS; \
+		$INIT_INSTALL_TORRUS_SRVDERIVE;); fi
 
-	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-sqlradius-radacctd.init ${INIT_FILE_SQLRADIUS_RADACCTD}
 	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_SQLRADIUS_RADACCTD}
+ 	  s/%%%FREESIDE_DEFAULTS%%%/${FREESIDE_DEFAULTS}/g;\
+ 	  s/%%%FREESIDE_BIN%%%/${FREESIDE_BIN}/g;\
+ 	" init.d/freeside-functions
+
+	${INIT_INSTALL_QUEUED} 
+	${INIT_INSTALL_PREPAIDD} 
+	${INIT_INSTALL_XMLRPCD}
+	${INIT_INSTALL_CDRREWRITED}
+	${INIT_INSTALL_CDRD}
+	${INIT_INSTALL_CDRRATED}
 	${INIT_INSTALL_SQLRADIUS_RADACCTD}
-
-	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-selfservice-xmlrpcd.init ${INIT_FILE_SELFSERVICE_XMLRPCD}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_SELFSERVICE_XMLRPCD}
 	${INIT_INSTALL_SELFSERVICE_XMLRPCD}
-
-	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-selfservice-server.init ${INIT_FILE_SELFSERVICE_SERVER}
-	perl -p -i -e "\
-	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s/%%%API_USER%%%/${API_USER}/g;\
-	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
-	" ${INIT_FILE_SELFSERVICE_SERVER}
 	${INIT_INSTALL_SELFSERVICE_SERVER}
+
+	/bin/echo -e "#!/bin/bash\n\nLOCKFILE_DIR=${LOCKFILE_DIR}\nPIDFILE_DIR=${PIDFILE_DIR}" > ${FREESIDE_DEFAULTS}
+	/bin/echo -e "QUEUED_USER=${QUEUED_USER}\nAPI_USER=${API_USER}" >> ${FREESIDE_DEFAULTS}
+	/bin/echo -e "SELFSERVICE_USER=${SELFSERVICE_USER}\nSELFSERVICE_MACHINES=${SELFSERVICE_MACHINES}" >> ${FREESIDE_DEFAULTS}
 
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true
@@ -435,7 +385,6 @@ install: install-perl-modules install-docs install-init install-apache install-r
 
 deploy: install
 	${HTTPD_RESTART}
-	${FREESIDE_RESTART}
 
 dev: dev-perl-modules dev-docs
 
