@@ -200,8 +200,9 @@ function bill_now_changed (what) {
     >
     <% mt('with terms') |h %> 
     <& /elements/select-terms.html,
-                 'curr_value'  => scalar($cgi->param('invoice_terms')),
-                 'disabled'    => ( $cgi->param('bill_now') ? 0 : 1 ),
+         'curr_value' => scalar($cgi->param('invoice_terms')),
+         'disabled'   => ( $cgi->param('bill_now') ? 0 : 1 ),
+         'agentnum'   => $cust_main->agentnum,
     &>
   </TD>
 </TR>
@@ -429,9 +430,12 @@ my $default_terms;
 if ( $cust_main->invoice_terms ) {
   $default_terms = emt("Customer default ([_1])", $cust_main->invoice_terms);
 } else {
-  $default_terms = emt("Default ([_1])",
-            ($conf->config('invoice_default_terms') || emt('Payable upon receipt'))
-                      );
+  $default_terms =
+    emt( "Default ([_1])",
+         ( $conf->config('invoice_default_terms', $cust_main->agentnum)
+             || emt('Payable upon receipt')
+         )
+       );
 }
 
 my @description;

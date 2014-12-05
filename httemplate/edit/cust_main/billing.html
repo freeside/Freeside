@@ -547,7 +547,8 @@
       <TD ALIGN="right" WIDTH="200"><% mt('Invoice terms') |h %> </TD>
       <TD WIDTH="408">
         <& /elements/select-terms.html,
-                     'curr_value' => $cust_main->invoice_terms,
+             'curr_value' => $cust_main->invoice_terms,
+             'agentnum'   => $cust_main->agentnum,
         &>
       </TD>
     </TR>

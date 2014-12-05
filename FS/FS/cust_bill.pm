@@ -3323,6 +3323,13 @@ Currently only supported on PostgreSQL.
 =cut
 
 sub due_date_sql {
+  die "don't use: doesn't account for agent-specific invoice_default_terms";
+
+  #we're passed a $conf but not a specific customer (that's in the query), so
+  # to make this work we'd need an agentnum-aware "condition_sql_conf" like
+  # "condition_sql_option" that retreives a conf value with SQL in an agent-
+  # aware fashion
+
   my $conf = new FS::Conf;
 'COALESCE(
   SUBSTRING(

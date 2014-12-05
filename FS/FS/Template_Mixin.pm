@@ -1856,8 +1856,15 @@ sub terms {
   my $cust_main = $self->cust_main;
   return $cust_main->invoice_terms if $cust_main && $cust_main->invoice_terms;
 
+  my $agentnum = '';
+  if ( $cust_main ) {
+    $agentnum = $cust_main->agentnum;
+  } elsif ( my $prospect_main = $self->prospect_main ) {
+    $agentnum = $prospect_main->agentnum;
+  }
+
   #use configured default
-  $conf->config('invoice_default_terms') || '';
+  $conf->config('invoice_default_terms', $agentnum) || '';
 }
 
 sub due_date {
@@ -1891,8 +1898,8 @@ sub balance_due_date {
   my $self = shift;
   my $conf = $self->conf;
   my $duedate = '';
-  if (    $conf->exists('invoice_default_terms') 
-       && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
+  my $terms = $self->terms;
+  if ( $terms =~ /^\s*Net\s*(\d+)\s*$/ ) {
     $duedate = $self->time2str_local('rdate', $self->_date + ($1*86400) );
   }
   $duedate;
