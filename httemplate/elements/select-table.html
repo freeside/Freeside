@@ -89,12 +89,14 @@ Example:
     <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
 % }
 
-% foreach my $record ( sort {    $a->$name_col() cmp $b->$name_col()
-%                             || $a->$key()      <=> $b->$key()
-%                           }
-%                           @records
-%                    )
-% {
+%# foreach my $record ( sort {    $a->$name_col() cmp $b->$name_col()
+%#                             || $a->$key()      <=> $b->$key()
+%#                           }
+%#                           @records
+%#                    )
+%# {
+% # show records in query order, or preserve the order they were given
+% foreach my $record (@records) {
 %   my $recvalue = $record->$key();
 %   my $selected;
 %   if ( $opt{'all_selected'} ) {
