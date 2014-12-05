@@ -702,12 +702,13 @@ sub print_generic {
       # "balance_date_range" unfortunately is unsuitable for this, since it
       # cares about application dates.  We want to know the sum of all 
       # _top-level transactions_ dated before the last invoice.
-      my @sql = (
-        "SELECT      COALESCE( SUM(charged), 0 ) FROM cust_bill",
-        "SELECT -1 * COALESCE( SUM(amount),  0 ) FROM cust_credit",
-        "SELECT -1 * COALESCE( SUM(paid),    0 ) FROM cust_pay",
-        "SELECT      COALESCE( SUM(refund),  0 ) FROM cust_refund",
-      );
+      my @sql =
+        map "$_ WHERE _date <= ? AND custnum = ?", (
+          "SELECT      COALESCE( SUM(charged), 0 ) FROM cust_bill",
+          "SELECT -1 * COALESCE( SUM(amount),  0 ) FROM cust_credit",
+          "SELECT -1 * COALESCE( SUM(paid),    0 ) FROM cust_pay",
+          "SELECT      COALESCE( SUM(refund),  0 ) FROM cust_refund",
+        );
 
       # the customer's current balance immediately after generating the last 
       # bill
@@ -715,7 +716,7 @@ sub print_generic {
       my $last_bill_balance = $last_bill->charged;
       foreach (@sql) {
         my $delta = FS::Record->scalar_sql(
-          "$_ WHERE _date <= ? AND custnum = ?",
+          $_,
           $last_bill->_date - 1,
           $self->custnum,
         );
@@ -737,13 +738,11 @@ sub print_generic {
       # to immediately before this one
       my $before_this_bill_balance = 0;
       foreach (@sql) {
-        #warn "$_\n";
         my $delta = FS::Record->scalar_sql(
           $_,
           $self->_date - 1,
           $self->custnum,
         );
-        #warn "$delta\n";
         $before_this_bill_balance += $delta;
       }
       $invoice_data{'balance_adjustments'} =
