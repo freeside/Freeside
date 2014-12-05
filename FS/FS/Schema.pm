@@ -497,12 +497,13 @@ sub tables_hashref {
 
     'agent_type' => {
       'columns' => [
-        'typenum',   'serial',  '', '', '', '', 
-        'atype',     'varchar', '', $char_d, '', '', 
+        'typenum',  'serial',      '',      '', '', '',
+        'atype',    'varchar',     '', $char_d, '', '',
+        'disabled',    'char', 'NULL',       1, '', '',
       ],
       'primary_key' => 'typenum',
       'unique' => [],
-      'index' => [],
+      'index' => [ ['disabled'] ],
     },
 
     'type_pkgs' => {

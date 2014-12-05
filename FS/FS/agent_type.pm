@@ -45,9 +45,17 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item typenum - primary key (assigned automatically for new agent types)
+=item typenum
 
-=item atype - Text name of this agent type
+primary key (assigned automatically for new agent types)
+
+=item atype
+
+Text name of this agent type
+
+=item disabled
+
+Disabled flag, empty or 'Y'
 
 =back
 
@@ -103,8 +111,9 @@ sub check {
   my $self = shift;
 
   $self->ut_numbern('typenum')
-  or $self->ut_text('atype')
-  or $self->SUPER::check;
+    || $self->ut_text('atype')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->SUPER::check;
 
 }
 

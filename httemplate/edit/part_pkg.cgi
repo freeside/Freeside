@@ -607,8 +607,7 @@ my $new_callback = sub {
   my $conf = new FS::Conf; 
 
   if ( $conf->exists('agent_defaultpkg') ) {
-    #my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
-    @agent_type = map {$_->typenum} qsearch('agent_type',{});
+    @agent_type = map {$_->typenum} qsearch('agent_type', { 'disabled'=>'' });
   }
 
   $options{'suspend_bill'}=1 if $conf->exists('part_pkg-default_suspend_bill');
