@@ -7,15 +7,31 @@
 
 <FORM ACTION="<% popurl(1) %>process/agent_type.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="typenum" VALUE="<% $agent_type->typenum %>">
+
+<FONT CLASS="fsinnerbox-title">
 Agent Type #<% $agent_type->typenum || "(NEW)" %>
+</FONT>
+
+<TABLE CLASS="fsinnerbox">
+
+  <TR>
+    <TH ALIGN="right">Agent Type</TH>
+    <TD><INPUT TYPE="text" NAME="atype" SIZE=32 VALUE="<% $agent_type->atype %>"></TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">Disable</TH>
+    <TD><INPUT TYPE="checkbox" NAME="disabled" VALUE="Y" <% $agent_type->disabled eq 'Y' ? ' CHECKED' : '' %>></TD>
+  </TR>
+
+<TABLE>
 <BR>
 
-Agent Type
-<INPUT TYPE="text" NAME="atype" SIZE=32 VALUE="<% $agent_type->atype %>">
-<BR><BR>
+<FONT CLASS="fsinnerbox-title">
+Package definitions that agents of this type can sell
+</FONT>
 
-Select which packages agents of this type may sell to customers<BR>
-<% ntable("#cccccc", 2) %><TR><TD>
+<TABLE CLASS="fsinnerbox"><TR><TD>
 <% include('/elements/checkboxes-table.html',
               'source_obj'    => $agent_type,
               'link_table'    => 'type_pkgs',
