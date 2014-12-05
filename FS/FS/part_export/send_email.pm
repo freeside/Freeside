@@ -17,13 +17,13 @@ my %template_select = (
     $templates{$_[0]};
   },
   option_values => sub {
-    %templates = (0 => '',
+    %templates = (
+      0 => '',
       map { $_->msgnum, $_->msgname } 
-      qsearch({ table => 'msg_template',
-                hashref => { disabled => { 'op'    => '!=',
-                                           'value' => 1 }},
-                order_by => 'ORDER BY msgnum ASC'
-              })
+        qsearch({ table    => 'msg_template',
+                  hashref  => { disabled => '', },
+                  order_by => 'ORDER BY msgnum ASC'
+                })
     );
     sort keys (%templates);
   },
