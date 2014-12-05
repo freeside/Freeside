@@ -1632,7 +1632,7 @@ sub _cdr_date_parse {
     # optionally without seconds
     ($mon, $day, $year, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
     $sec = 0 if !defined($sec);
-   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\.\d+$)/ ) {
+   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\.\d+)$/ ) {
     # broadsoft: 20081223201938.314
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\d+(\D|$)/ ) {
@@ -1642,7 +1642,7 @@ sub _cdr_date_parse {
     # WIP: 20100329121420
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
   } elsif ( $date =~ /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/) {
-    # Telos
+    # Telos 2014-10-10T05:30:33Z
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
     $options{gmt} = 1;
   } else {
