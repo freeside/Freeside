@@ -9,6 +9,7 @@ Example:
     ##
     'table'          => 'table_name',
     'name_col'       => 'name_column', #or method if you pass an order_by
+                                       # order_by is currently broken, though
    
     #strongly recommended (you want your forms to be "sticky" on errors, right?)
     'curr_value'     => 'current_value',
@@ -89,14 +90,13 @@ Example:
     <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
 % }
 
-%# foreach my $record ( sort {    $a->$name_col() cmp $b->$name_col()
-%#                             || $a->$key()      <=> $b->$key()
-%#                           }
-%#                           @records
-%#                    )
-%# {
-% # show records in query order, or preserve the order they were given
-% foreach my $record (@records) {
+% # XXX fix this eventually, when we have time to test it
+% foreach my $record ( sort {    $a->$name_col() cmp $b->$name_col()
+%                             || $a->$key()      <=> $b->$key()
+%                           }
+%                           @records
+%                    )
+% {
 %   my $recvalue = $record->$key();
 %   my $selected;
 %   if ( $opt{'all_selected'} ) {

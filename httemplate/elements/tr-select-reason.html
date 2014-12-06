@@ -70,8 +70,7 @@ Example:
   'id'              => $id,
   'table'           => 'reason',
   'records'         => \@reasons,
-  'label_callback'  => sub { my $reason = shift;
-                             $reason->type . ' : ' .  $reason->reason },
+  'name_col'        => 'label',
   'disable_empty'   => 1,
   'pre_options'     => [ 0 => 'Select reason...' ],
   'post_options'    => \@post_options,
@@ -177,11 +176,11 @@ if ($class eq 'C') {
 
 my @reasons = qsearch({
   'table'           => 'reason',
+  'select'          => "reason.*, (type || ' : ' || reason) AS label",
   'addl_from'       => ' LEFT JOIN reason_type'.
                        ' ON (reason.reason_type = reason_type.typenum)',
   'hashref'         => { disabled => '' },
   'extra_sql'       => " AND reason_type.class = '$class'",
-  'order_by'        => ' ORDER BY type, reason',
 });
 
 my %all_hints;
