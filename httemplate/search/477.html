@@ -32,26 +32,54 @@ table.fcc477part thead tr.subhead {
   font-size: large;
   float: left;
 }
+.errortitle {
+  font-weight: bold;
+  color: #ff0000;
+}
+tr.error td {
+  background-color: #ffdddd;
+}
+tr.error td.error {
+  text-align: left;
+  border: none;
+}
+tr.error ul {
+  margin: 0px;
+  list-style-image: url("<% $fsurl %>images/cross.png");
+}
 a.download {
   float: right;
 }
 </STYLE>
 % foreach my $partname (@partnames) {
+%   my $this_part = $parts{$partname};
 %   $cgi->param('parts', $partname);
 %   $cgi->param('type', 'csv');
 <table class="fcc477part">
   <caption>
     <span class="parttitle"><% $part_titles->{$partname} %></span>
+%   if ( $this_part->{num_errors} > 0 ) {
+%     # disable downloading while it contains errors
+    <span class="errortitle">
+      <% emt('This section contains [quant,_1,error].', $this_part->{num_errors}) %>
+    </span>
+%   } else {
     <a class="download" href="<% $cgi->self_url %>">Download</a>
+%   }
   </caption>
 %   my $header = ".header_$partname";
-%   my $data = $parts{$partname};
+%   my $data = $this_part->{data};
+%   my $error = $this_part->{error};
   <thead>
     <& $header &>
   </thead>
 %   my $rownum = 0;
 %   foreach my $row (@$data) {
-  <tr>
+%     my %eh; # error hash
+%     if ( $error->[$rownum] ) {
+%       %eh = %{ $error->[$rownum] };
+%     }
+  <tr<% keys(%eh) ? ' class="error"' : ''%>>
 %     my $first = 1;
 %     foreach my $item (@$row) {
     <td>
@@ -63,6 +91,14 @@ a.download {
 %     }
     </td>
 %   } #foreach $item
+%   # display errors
+%   if ( keys %eh ) {
+    <td class="error"><ul>
+%     foreach my $key (sort keys %eh) {
+      <li><% $eh{$key} %></li>
+%     }
+    </ul></td>
+%   } # if there are errors
   </tr>
 %   $rownum++;
 %   } #foreach $row
@@ -98,10 +134,10 @@ foreach my $partname (@partnames) {
     date            => $date,
     agentnum        => $agentnum,
     ignore_quantity => $ignore_quantity,
-  );
+  ); # includes error, detail, and data parts
   my $detail_table = FS::Report::FCC_477->part_table($partname);
   if ($detail_table eq 'cust_pkg') {
-    my $link = popurl(1).'cust_pkg.cgi?477part='.$partname.";date=$date;";
+    my $link = popurl(1).'477_cust_pkg.html?477part='.$partname.";date=$date;";
     if ($agentnum) {
       $link .= "agentnum=$agentnum;";
     }
@@ -114,7 +150,7 @@ my $title = 'FCC Form 477 Data - ' . time2str('%b %o, %Y', $date);
 
 if ( $cgi->param('type') eq 'csv' ) {
   my $partname = $partnames[0]; # ignore any beyond the first
-  my $data = $parts{$partname};
+  my $data = $parts{$partname}->{data};
   my $csv = Text::CSV_XS->new({ eol => "\r\n" }); # i think
 
   my $filename = time2str('%Y-%m-%d', $date) . '-'. $partname . '.csv';
