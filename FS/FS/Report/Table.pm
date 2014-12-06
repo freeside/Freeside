@@ -886,14 +886,24 @@ sub with_classnum {
   @$classnum = grep /^\d+$/, @$classnum;
   my $in = 'IN ('. join(',', @$classnum). ')';
 
-  my $expr = "
-         ( COALESCE(part_pkg.classnum, 0) $in AND pkgpart_override IS NULL)
-      OR ( COALESCE(part_fee.classnum, 0) $in AND feepart IS NOT NULL )";
   if ( $use_override ) {
-    $expr .= "
-      OR ( COALESCE(override.classnum, 0) $in AND pkgpart_override IS NOT NULL )";
+    # then include packages if their base package is in the set and they are 
+    # not overridden,
+    # or if they are overridden and their override package is in the set,
+    # or fees if they are in the set
+    return "(
+         ( COALESCE(part_pkg.classnum, 0) $in AND cust_pkg.pkgpart IS NOT NULL AND pkgpart_override IS NULL )
+      OR ( COALESCE(override.classnum, 0) $in AND pkgpart_override IS NOT NULL )
+      OR ( COALESCE(part_fee.classnum, 0) $in AND cust_bill_pkg.feepart IS NOT NULL )
+    )";
+  } else {
+    # include packages if their base package is in the set,
+    # or fees if they are in the set
+    return "(
+         ( COALESCE(part_pkg.classnum, 0) $in AND cust_pkg.pkgpart IS NOT NULL )
+      OR ( COALESCE(part_fee.classnum, 0) $in AND cust_bill_pkg.feepart IS NOT NULL )
+    )";
   }
-  "( $expr )";
 }
 
 sub with_usageclass {
