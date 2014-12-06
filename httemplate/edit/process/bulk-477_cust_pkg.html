@@ -1,0 +1,20 @@
+<% $cgi->redirect($fsurl.'search/477_cust_pkg.html?redirect='.$session) %>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $edit_acl = $curuser->access_right('Edit FCC report configuration');
+my $global_edit_acl = $curuser->access_right('Edit FCC report configuration for all agents');
+die "access denied" unless $edit_acl or $global_edit_acl;
+
+my %error;
+foreach my $param ($cgi->param) {
+  $param =~ /^pkgnum(\d+)pkgpart(\d+)$/ or next;
+  my $pkgpart = $2;
+  my $part_pkg = FS::part_pkg->by_key($pkgpart);
+  my $hashref = decode_json( $cgi->param($param) );
+  my $error = $part_pkg->set_fcc_options($hashref);
+  $error{$pkgpart} = $error if $error; # XXX report this somehow
+}
+
+my $session = $cgi->param('redirect');
+
+</%init>
