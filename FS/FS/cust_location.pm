@@ -267,10 +267,6 @@ sub replace {
   my $old = shift;
   $old ||= $self->replace_old;
   # the following fields are immutable
-  if ($self->get('unlock')) {
-    # well, mostly immutable
-    warn "WARNING: locationnum ".$old->locationnum." MODIFIED IN PLACE\n";
-  } else {
   foreach (qw(address1 address2 city state zip country)) {
     if ( $self->$_ ne $old->$_ ) {
       return "can't change cust_location field $_";
