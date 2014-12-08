@@ -73,8 +73,9 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   # construct base links that limit to the tax rates described by this row
 %   my $rowlink = ';taxnum=' . $row->{taxnums};
 %   # and also the package class, if we're limiting package class
-%   $rowlink .= ';pkgclass='.$row->{pkgclass}
-%     if $params{breakdown}->{pkgclass};
+%   if ( $params{breakdown}->{pkgclass} ) {
+%     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
+%   }
 %
 %   if ( $row->{total} ) {
   </TBODY><TBODY CLASS="total">
@@ -210,7 +211,9 @@ my $money_sprintf = sub {
 };
 
 my $dateagentlink = "begin=$beginning;end=$ending";
-$dateagentlink .= $params{agentnum} if $params{agentnum};
+if ( $params{agentnum} ) {
+  $dateagentlink .= ';agentnum=' . $params{agentnum};
+}
 my $saleslink  = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1";
 my $taxlink    = $p. "search/cust_bill_pkg.cgi?$dateagentlink;istax=1";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
