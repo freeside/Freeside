@@ -118,6 +118,12 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   push @where,  "cust_main.custnum = $1";
 }
 
+if ( $cgi->param('classnum') eq '0' ) {
+  push @where,  "part_pkg.classnum IS NULL";
+} elsif ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  push @where,  "part_pkg.classnum = $1";
+}
+
 if ( $cgi->param('out') ) {
   # wtf? how would you ever get exemptions on a non-taxable package location?
 
