@@ -265,7 +265,8 @@ sub active_on {
   # "suspended as of some past date" is a complicated query.)
   my $date = shift;
   "cust_pkg.setup <= $date AND ".
-  "(cust_pkg.cancel IS NULL OR cust_pkg.cancel > $date)";
+  "(cust_pkg.cancel IS NULL OR cust_pkg.cancel > $date) AND ".
+  "(cust_pkg.change_date IS NULL OR cust_pkg.change_date <= $date)"
 }
 
 sub is_fixed_broadband {
@@ -276,25 +277,65 @@ sub is_mobile_broadband {
   "is_broadband::int = 1 AND technology::int IN( 80, 81, 82, 83, 84, 85, 86, 87, 88)"
 }
 
+
 =item report SECTION, OPTIONS
 
 Returns the report section SECTION (see the C<parts> method for section 
-name strings) as an arrayref of arrayrefs.  OPTIONS may contain the following:
+name strings).  OPTIONS may contain the following:
 
 - date: a timestamp value. Packages that were active on that date will be 
 counted.
 
 - agentnum: limit to packages with this agent.
 
-- detail: if true, the report will contain an additional column which contains
-the keys of all objects aggregated in the row.
-
 - ignore_quantity: if true, package quantities will be ignored (only distinct
 packages will be counted).
+
+The result will be a hashref containing three parallel arrayrefs:
+- "data", the columns required by the FCC.
+- "detail", a list of the package numbers included in each row's aggregation
+- "error", a hashref containing any error status strings in that row. Keys
+are error identifiers, values are the messages to show the user.
+as well as an informational item:
+- "num_errors", the number of rows that contain errors
+
+=item report_data SECTION, OPTIONS
+
+Returns only the data, not the detail or error columns.  This is the part that
+will be submitted to the FCC.
 
 =cut
 
 sub report {
+  my $class = shift;
+  my $section = shift;
+  my %opt = @_;
+  $opt{detail} = 1;
+
+  # add the error column
+  my $data = $class->report_data($section, %opt);
+  my $error = [];
+  my $detail = [];
+  my $check_method = $section.'_check';
+  my $num_errors = 0;
+  foreach my $row (@$data) {
+    if ( $class->can($check_method) ) { # they don't all have these
+      my $eh = $class->$check_method( $row );
+      $num_errors++ if keys(%$eh);
+      push $error, $eh
+    }
+    push @$detail, pop @$row; # this comes from the query
+  }
+  
+  return +{
+    data => $data,
+    error => $error,
+    detail => $detail,
+    num_errors => $num_errors,
+  };
+}
+
+sub report_data {
   my $class = shift;
   my $section = shift;
   my %opt = @_;
@@ -307,7 +348,7 @@ sub report {
   warn $statement if $DEBUG;
   my $sth = dbh->prepare($statement);
   $sth->execute or die $sth->errstr;
-  $sth->fetchall_arrayref;
+  return $sth->fetchall_arrayref;
 }
 
 sub fbd_sql {
@@ -395,6 +436,34 @@ sub fbs_sql {
 
 }
 
+sub fbs_check {
+  my $class = shift;
+  my $row = shift;
+  my %e;
+  #censustract
+  if ( length($row->[0]) == 0 ) {
+    $e{'censustract_null'} = 'The package location has no census tract.';
+  } elsif ($row->[0] !~ /^\d{11}$/) {
+    $e{'censustract_bad'} = 'The census tract must be exactly 11 digits.';
+  }
+
+  #technology
+  if ( length($row->[1]) == 0 ) {
+    $e{'technology_null'} = 'The package has no technology type.';
+  }
+
+  #speeds
+  if ( length($row->[2]) == 0 or length($row->[3]) == 0 ) {
+    $e{'speed_null'} = 'The package is missing downstream or upstream speeds.';
+  } elsif ( $row->[2] !~ /^\d*(\.\d+)?$/ or $row->[3] !~ /^\d*(\.\d+)?$/ ) {
+    $e{'speed_bad'} = 'The downstream and upstream speeds must be decimal numbers in Mbps.';
+  } elsif ( $row->[2] == 0 or $row->[3] == 0 ) {
+    $e{'speed_zero'} = 'The downstream and upstream speeds cannot be zero.';
+  }
+
+  return \%e;
+}
+
 sub fvs_sql {
   my $class = shift;
   my %opt = @_;
@@ -438,6 +507,19 @@ sub fvs_sql {
   ORDER BY $order_by
   ";
 
+}
+
+sub fvs_check {
+  my $class = shift;
+  my $row = shift;
+  my %e;
+  #censustract
+  if ( length($row->[0]) == 0 ) {
+    $e{'censustract_null'} = 'The package location has no census tract.';
+  } elsif ($row->[0] !~ /^\d{11}$/) {
+    $e{'censustract_bad'} = 'The census tract must be exactly 11 digits.';
+  }
+  return \%e;
 }
 
 sub lts_sql {

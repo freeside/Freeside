@@ -7,11 +7,10 @@
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Agent Type' %></TD>
     <TD>
-      <% include( '/elements/select-agent_type.html',
-                     'curr_value'  => $typenum,
-                     %opt,
-                 )
-      %>
+      <& /elements/select-agent_type.html,
+           'curr_value'  => $typenum,
+           %opt,
+      &>
     </TD>
   </TR>
 
@@ -22,6 +21,6 @@
 my %opt = @_;
 my $typenum = $opt{'curr_value'} || $opt{'value'};
 
-my @agent_types = qsearch('agent_type', {});
+my @agent_types = qsearch('agent_type', { 'disabled' => '' });
 
 </%init>

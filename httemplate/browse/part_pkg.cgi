@@ -77,11 +77,11 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
 $cgi->delete('classnum');
 
 if ( $cgi->param('missing_recur_fee') ) {
-  push @where, "0 = ( SELECT COUNT(*) FROM part_pkg_option
-                        WHERE optionname = 'recur_fee'
-                          AND part_pkg_option.pkgpart = part_pkg.pkgpart
-                          AND CAST( optionvalue AS NUMERIC ) > 0
-                    )";
+  push @where, "NOT EXISTS ( SELECT 1 FROM part_pkg_option
+                               WHERE optionname = 'recur_fee'
+                                 AND part_pkg_option.pkgpart = part_pkg.pkgpart
+                                 AND CAST( optionvalue AS NUMERIC ) > 0
+                           )";
 }
 
 if ( $cgi->param('family') =~ /^(\d+)$/ ) {
@@ -419,7 +419,8 @@ push @fields, sub {
 #agent type
 if ( $acl_edit_global ) {
   #really we just want a count, but this is fine unless someone has tons
-  my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
+  my @all_agent_types = map {$_->typenum}
+                          qsearch('agent_type', { 'disabled'=>'' });
   if ( scalar(@all_agent_types) > 1 ) {
     push @header, 'Agent types';
     my $typelink = $p. 'edit/agent_type.cgi?';

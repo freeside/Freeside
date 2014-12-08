@@ -260,7 +260,12 @@
 <TR>
   <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% $cust_main->invoice_terms || emt('Default').' ('. ( $conf->config('invoice_default_terms') || emt('Payable upon receipt') ). ')' %>
+    <% $cust_main->invoice_terms
+         || emt('Default').' ('. ( $conf->config('invoice_default_terms', $cust_main->agentnum)
+                                     || emt('Payable upon receipt')
+                                 ).
+                           ')'
+    %>
   </TD>
 </TR>
 <TR>

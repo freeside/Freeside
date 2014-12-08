@@ -35,7 +35,7 @@
     <TH ALIGN="right">Agent type</TH>
     <TD>
       <SELECT NAME="typenum" SIZE=1>
-%       foreach my $agent_type (qsearch('agent_type',{})) { 
+%       foreach my $agent_type ( qsearch('agent_type', { 'disabled'=>'' }) ) { 
 
           <OPTION VALUE="<% $agent_type->typenum %>"<% ( $agent->typenum && ( $agent->typenum == $agent_type->typenum ) ) ? ' SELECTED' : '' %>>
     <% $agent_type->getfield('typenum') %>: <% $agent_type->getfield('atype') %>
