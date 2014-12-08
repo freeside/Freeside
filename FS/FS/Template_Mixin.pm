@@ -346,8 +346,8 @@ sub print_generic {
 
   if ( $format eq 'latex' && grep { /^%%Detail/ } @invoice_template ) {
     #change this to a die when the old code is removed
-    # it's been almost ten years, changing it to a die.
-    die "old-style invoice template $templatefile; ".
+    # it's been almost ten years, changing it to a die on the next release.
+    warn "old-style invoice template $templatefile; ".
          "patch with conf/invoice_latex.diff or use new conf/invoice_latex*\n";
          #$old_latex = 'true';
          #@invoice_template = _translate_old_latex_format(@invoice_template);
@@ -2631,14 +2631,14 @@ sub _items_cust_bill_pkg {
                                    # and location labels
 
   my @b = (); # accumulator for the line item hashes that we'll return
-  my ($s, $r, $u, $d) = ( undef, undef, undef );
+  my ($s, $r, $u, $d) = ( undef, undef, undef, undef );
             # the 'current' line item hashes for setup, recur, usage, discount
   foreach my $cust_bill_pkg ( @$cust_bill_pkgs )
   {
     # if the current line item is waiting to go out, and the one we're about
     # to start is not bundled, then push out the current one and start a new
     # one.
-    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) , $d ) {
+    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ), $d ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
         $_->{amount}      = sprintf( "%.2f", $_->{amount} );
         $_->{amount}      =~ s/^\-0\.00$/0.00/;
@@ -3040,6 +3040,15 @@ sub _items_cust_bill_pkg {
             or ( $type eq 'R' and $cust_bill_pkg->unitrecur > 0 )
         ) {
 
+          # the line item hashref for the line that will show the original
+          # price
+          # (use the recur or single line for the package, unless we're 
+          # showing a setup line for a package with no recurring fee)
+          my $active_line = $r;
+          if ( $type eq 'S' ) {
+            $active_line = $s;
+          }
+
           my @discounts = $cust_bill_pkg->cust_bill_pkg_discount;
           # special case: if there are old "discount details" on this line 
           # item, don't show discount line items
@@ -3054,23 +3063,18 @@ sub _items_cust_bill_pkg {
               $cust_bill_pkg->billpkgnum."\n"
               if $DEBUG;
             my $discount_amount = sum( map {$_->amount} @discounts );
-            my $orig_amount = $cust_bill_pkg->setup + $cust_bill_pkg->recur
-                              + $discount_amount;
             # if multiple discounts apply to the same package, how to display
             # them? ext_description lines, apparently
+            #
+            # # discount amounts are negative
             if ( $d and $cust_bill_pkg->hidden ) {
-              $d->{amount}      += $discount_amount;
-              $d->{orig_amount} += $orig_amount;
+              $d->{amount}      -= $discount_amount;
             } else {
               my @ext;
-              # make a placeholder for the original price, if necessary
-              # (if unit prices are enabled, it won't be necessary)
-              push @ext, '' if !$conf->exists('invoice-unitprice');
               $d = {
                 _is_discount    => 1,
-                description     => $self->mt('Discount included'),
-                amount          => $discount_amount,
-                orig_amount     => $orig_amount,
+                description     => $self->mt('Discount'),
+                amount          => -1 * $discount_amount,
                 ext_description => \@ext,
               };
               foreach my $cust_bill_pkg_discount (@discounts) {
@@ -3079,12 +3083,10 @@ sub _items_cust_bill_pkg {
               }
             }
 
-            # update the placeholder to show the original price in the 
-            # first ext_description line
-            if ( !$conf->exists('invoice-unitprice') ) {
-              $d->{ext_description}->[0] =
-                sprintf('Original price: %.2f', $d->{orig_amount});
-            }
+            # update the active line (before the discount) to show the 
+            # original price (whether this is a hidden line or not)
+            $active_line->{amount} += $discount_amount;
+            
           } # if there are any discounts
         } # if this is an appropriate place to show discounts
 
@@ -3109,7 +3111,7 @@ sub _items_cust_bill_pkg {
 
   }
 
-  foreach ( $s, $r, ($opt{skip_usage} ? () : $u, $d ) ) {
+  foreach ( $s, $r, ($opt{skip_usage} ? () : $u ), $d ) {
     if ( $_  ) {
       $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
         if exists($_->{amount});
