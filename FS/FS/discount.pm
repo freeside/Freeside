@@ -174,12 +174,12 @@ sub description_short {
   my $money_char = $conf->config('money_char') || '$';  
 
   my $desc = $self->name ? $self->name.': ' : '';
-  $desc .= $money_char. sprintf('%.2f/month ', $self->amount)
+  $desc .= $money_char. sprintf('%.2f/month', $self->amount)
     if $self->amount > 0;
 
   ( my $percent = $self->percent ) =~ s/\.0+$//;
   $percent =~ s/(\.\d*[1-9])0+$/$1/;
-  $desc .= $percent. '% '
+  $desc .= $percent. '%'
     if $self->percent > 0;
 
   $desc;
