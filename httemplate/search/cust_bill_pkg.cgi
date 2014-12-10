@@ -174,7 +174,8 @@ Filtering parameters:
   exempt portion (setup, recurring, or both) when calculating totals.
 
 - taxable: Limit to packages that are subject to tax, i.e. where a
-  cust_bill_pkg_tax_location record exists.
+  cust_bill_pkg_tax_location record exists, and subtract tax exemptions
+  and credits.
 
 - credit: Limit to line items that received a credit application.  The
   amount of the credit will also be shown.
@@ -423,36 +424,38 @@ if ( $cgi->param('nottax') ) {
     # everything that returns things joined to a tax definition
 
     my $exempt_sub;
-    if ( @exempt_where or @tax_where or $cgi->param('taxable') ) {
 
-      # process exemption restrictions, including @tax_where
-      my $exempt_sub = 'SELECT SUM(amount) as exempt_amount, billpkgnum 
-      FROM cust_tax_exempt_pkg JOIN cust_main_county USING (taxnum)';
+    # process exemption restrictions, including @tax_where
+    my $exempt_sub = 'SELECT SUM(amount) as exempt_amount, billpkgnum 
+    FROM cust_tax_exempt_pkg JOIN cust_main_county USING (taxnum)';
 
-      $exempt_sub .= ' WHERE '.join(' AND ', @tax_where, @exempt_where)
-        if (@tax_where or @exempt_where);
+    $exempt_sub .= ' WHERE '.join(' AND ', @tax_where, @exempt_where)
+      if (@tax_where or @exempt_where);
 
-      $exempt_sub .= ' GROUP BY billpkgnum';
+    $exempt_sub .= ' GROUP BY billpkgnum';
 
-      $join_pkg .= " LEFT JOIN ($exempt_sub) AS item_exempt
-      USING (billpkgnum)";
-    }
+    $join_pkg .= " LEFT JOIN ($exempt_sub) AS item_exempt
+    ON (cust_bill_pkg.billpkgnum = item_exempt.billpkgnum)";
+
+    my $credit_sub = 'SELECT SUM(amount) AS credit_amount, billpkgnum
+    FROM cust_credit_bill_pkg GROUP BY billpkgnum';
+
+    $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
+    ON (cust_bill_pkg.billpkgnum = item_credit.billpkgnum)";
    
     if ( @tax_where or $cgi->param('taxable') ) {
       # process tax restrictions
       unshift @tax_where,
         'cust_main_county.tax > 0';
 
-      my $tax_sub = "SELECT invnum, cust_bill_pkg_tax_location.pkgnum
+      my $tax_sub = "SELECT taxable_billpkgnum AS billpkgnum
       FROM cust_bill_pkg_tax_location
-      JOIN cust_bill_pkg AS tax_item USING (billpkgnum)
       JOIN cust_main_county USING (taxnum)
       WHERE ". join(' AND ', @tax_where).
-      " GROUP BY invnum, cust_bill_pkg_tax_location.pkgnum";
+      " GROUP BY taxable_billpkgnum";
 
       $join_pkg .= " LEFT JOIN ($tax_sub) AS item_tax
-      ON (item_tax.invnum = cust_bill_pkg.invnum AND
-          item_tax.pkgnum = cust_bill_pkg.pkgnum)";
+      ON (cust_bill_pkg.billpkgnum = item_tax.billpkgnum)"
     }
 
     # now do something with that
@@ -465,23 +468,28 @@ if ( $cgi->param('nottax') ) {
       push @total,    'SUM(exempt_amount)';
       push @total_desc, "$money_char%.2f tax-exempt";
 
-    } elsif ( $cgi->param('taxable') ) {
+    } elsif ( @tax_where or $cgi->param('taxable') ) {
 
       my $taxable = 'cust_bill_pkg.setup + cust_bill_pkg.recur '.
-                    '- COALESCE(item_exempt.exempt_amount, 0)';
+                    '- COALESCE(item_exempt.exempt_amount, 0) '.
+                    '- COALESCE(item_credit.credit_amount, 0)';
 
-      push @where,    'item_tax.invnum IS NOT NULL';
+      push @where,    "(item_tax.billpkgnum IS NOT NULL OR item_exempt.billpkgnum IS NOT NULL)";
       push @select,   "($taxable) AS taxable_amount";
       push @peritem,  'taxable_amount';
       push @peritem_desc, 'Taxable';
+
+      if ( $cgi->param('taxable') ) {
+        push @where, "($taxable) > 0";
+      } else {
+        push @total, 'SUM('.
+                        'cust_bill_pkg.setup + cust_bill_pkg.recur '.
+                        '- COALESCE(item_credit.credit_amount, 0) )';
+        push @total_desc, "$money_char%.2f net sales";
+      }
+
       push @total,    "SUM($taxable)";
       push @total_desc, "$money_char%.2f taxable";
-
-    } elsif ( @tax_where ) {
-      # union of taxable + all exempt_ cases
-      push @where,
-        '(item_tax.invnum IS NOT NULL OR item_exempt.billpkgnum IS NOT NULL)';
-
     }
 
   } # handle all joins to cust_main_county
