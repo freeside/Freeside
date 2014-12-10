@@ -542,43 +542,97 @@ L<FS::UI::bytecount> - Byte counter user-interface class
 
 =head2 Command-line utilities
 
+=head3 Setup and upgrade
+
 L<freeside-adduser> - Command line interface to add (freeside) users.
+
+L<freeside-deluser> - Command line interface to delete (freeside) users.
+
+L<freeside-dbdef-create> - Recreate database schema cache
+
+L<freeside-setup> - Create new database
+
+L<freeside-upgrade> - Upgrades database schema for new freeside verisons.
+
+L<freeside-lata-import> - Seed LATA data
+
+L<freeside-msa-import> - Seed MSA data
+
+=head3 Cron
 
 L<freeside-daily> - Run daily billing and collection events.
 
 L<freeside-monthly> - Run monthly billing and invoice collection events.
 
-L<freeside-dbdef-create> - Recreate database schema cache
-
-L<freeside-deluser> - Command line interface to delete (freeside) users.
-
 L<freeside-expiration-alerter> - Emails notifications of credit card expirations.
+
+=head3 Cron (payment batches)
+
+L<freeside-eftca-download> - Download EFT Canada batch results
+
+L<freeside-eftca-upload> - Upload an EFT Canada batch
+
+L<freeside-paymentech-download> - Download Chase Paymentech batch results
+
+L<freeside-paymentech-upload> - Upload a Chase Paymentech batch
+
+=head3 Usage
+
+L<freeside-cdr-sftp_and_import> - Download and import CDR files
+
+L<freeside-ipifony-download> - Download usage data from IPifony
+
+=head3 Misc. Tools (retreiving data)
 
 L<freeside-email> -  Prints email addresses of all users on STDOUT
 
-L<freeside-fetch> - Send a freeside page to a list of employees.
+L<freeside-username_list> - List all usernames in the sytem
 
-L<freeside-prepaidd> - Real-time daemon for prepaid packages
+L<freeside-phonenum_list> - List all phone numbers in the system
+
+=head3 Misc. Tools (taking actions)
+
+L<freeside-fetch> - Send a freeside page to a list of employees.
 
 L<freeside-prune-applications> - Removes stray applications of credit, payment to bills, refunds, etc.
 
-L<freeside-queued> - Job queue daemon
-
-L<freeside-radgroup> - Command line utility to manipulate radius groups
+=head3 Services
 
 L<freeside-reexport> - Command line tool to re-trigger export jobs for existing services
 
 L<freeside-reset-fixed> - Command line tool to set the fixed columns for existing services
 
-L<freeside-sqlradius-dedup-group> - Command line tool to eliminate duplicate usergroup entries from radius tables
+=head3 RADIUS
 
-L<freeside-sqlradius-radacctd> - Real-time radacct import daemon
+L<freeside-radgroup> - Command line utility to manipulate radius groups
+
+L<freeside-sqlradius-dedup-group> - Command line tool to eliminate duplicate usergroup entries from radius tables
 
 L<freeside-sqlradius-reset> - Command line interface to reset and recreate RADIUS SQL tables
 
 L<freeside-sqlradius-seconds> - Command line time-online tool
 
-L<freeside-upgrade> - Upgrades database schema for new freeside verisons.
+=head2 Daemons
+
+L<freeside-cdrd> - CDR daemon
+
+L<freeside-cdrrated> - Real-time CDR rating daemon
+
+L<freeside-cdrrewrited> - CDR rewriting daemon
+
+L<freeside-prepaidd> - Real-time daemon for prepaid packages
+
+L<freeside-queued> - Job queue daemon
+
+L<freeside-selvservice-server> - Self-service server
+
+L<freeside-selfservice-xmlrpcd> - Self-service XML-RPC server
+
+L<freeside-sqlradius-radacctd> - Real-time radacct import daemon
+
+L<freeside-torrus-srvderive> - Torrus virtual port combining daemon
+
+L<freeside-xmlrpcd> - Back-office XML-RPC server
 
 =head1 Notes
 
