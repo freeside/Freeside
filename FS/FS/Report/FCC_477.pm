@@ -322,7 +322,7 @@ sub report {
     if ( $class->can($check_method) ) { # they don't all have these
       my $eh = $class->$check_method( $row );
       $num_errors++ if keys(%$eh);
-      push $error, $eh
+      push @$error, $eh
     }
     push @$detail, pop @$row; # this comes from the query
   }
