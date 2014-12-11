@@ -18,6 +18,7 @@ sub condition {
 
   my $age = $self->option_age_from('age', $opt{'time'} );
 
+  my $cust_main = $cust_bill->cust_main;
   ( $cust_main->signupdate - 60 ) <= $age;
 
 }

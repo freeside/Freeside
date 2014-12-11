@@ -585,9 +585,8 @@ sub search {
         'agentnum'  => $agentnum,
         'detail'    => 1
       );
-      my $row = $report->[$rownum]
+      my $pkgnums = $report->{detail}->[$rownum]
         or die "row $rownum is past the end of the report";
-      my $pkgnums = $row->[-1] || '0';
         # '0' so that if there are no pkgnums (empty string) it will create
         # a valid query that returns nothing
       warn "PKGNUMS:\n$pkgnums\n\n"; # XXX debug
