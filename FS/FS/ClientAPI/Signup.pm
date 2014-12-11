@@ -476,7 +476,6 @@ sub domain_select_hash {
 
 sub new_customer {
   my $packet = shift;
-warn Dumper($packet);
 
   my $conf = new FS::Conf;
   my $svc_x = $conf->config('signup_server-service') || 'svc_acct';
