@@ -160,31 +160,31 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
     my $payby = $cgi->param('payby');
     if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
       #$payinfo = join('@', map { $cgi->param( $payby. "_payinfo$_" ) } (1,2) );
-      $cgi->param('payinfo' => $cgi->param($payby. '_payinfo1'). '@'. 
-                               $cgi->param($payby. '_payinfo2')
+      $cgi->param('payinfo' => scalar($cgi->param($payby. '_payinfo1')). '@'. 
+                               scalar($cgi->param($payby. '_payinfo2'))
                  );
     } else {
-      $cgi->param('payinfo' => $cgi->param( $payby. '_payinfo' ) );
+      $cgi->param('payinfo' => scalar($cgi->param( $payby. '_payinfo' ) ) );
     }
-    $cgi->param('paydate' => $cgi->param( $payby. '_month' ). '-'.
-                             $cgi->param( $payby. '_year' )
+    $cgi->param('paydate' => scalar($cgi->param( $payby. '_month' )). '-'.
+                             scalar($cgi->param( $payby. '_year' ))
                );
-    $cgi->param('payname' => $cgi->param( $payby. '_payname' ) );
+    $cgi->param('payname' => scalar($cgi->param( $payby. '_payname' ) ) );
     $cgi->param('paycvv' => defined $cgi->param( $payby. '_paycvv' )
-                              ? $cgi->param( $payby. '_paycvv' )
+                              ? scalar($cgi->param( $payby. '_paycvv' ))
                               : ''
                );
     $cgi->param('paytype' => defined $cgi->param( $payby. '_paytype' )
-                              ? $cgi->param( $payby. '_paytype' )
+                              ? scalar($cgi->param( $payby. '_paytype' ))
                               : ''
                );
     $cgi->param('paystate' => defined $cgi->param( $payby. '_paystate' )
-                              ? $cgi->param( $payby. '_paystate' )
+                              ? scalar($cgi->param( $payby. '_paystate' ))
                               : ''
                );
 
     if ( $cgi->param('invoicing_list') ) {
-      $cgi->param('invoicing_list' => $cgi->param('invoicing_list'). ', POST')
+      $cgi->param('invoicing_list' => scalar($cgi->param('invoicing_list')). ', POST')
         if $cgi->param('invoicing_list_POST');
     } else {
       $cgi->param('invoicing_list' => 'POST' );
@@ -240,7 +240,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
                 mac_addr
                 countrycode phonenum sip_password pin prepaid_shortform
               ),
-            grep { /^snarf_/ } $cgi->param
+            grep { /^(snarf_|tax_)/ } $cgi->param
         ),
         'payip' => $cgi->remote_host(),
       } );
@@ -255,10 +255,9 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
         qw( popup_url reference amount );
       print_collect($rv);
     } elsif ( $error ) {
-
-      #fudge the snarf info
+      #fudge the snarf and tax info
       no strict 'refs';
-      ${$_} = $cgi->param($_) foreach grep { /^snarf_/ } $cgi->param;
+      ${$_} = $cgi->param($_) foreach grep { /^(snarf_|tax_)/ } $cgi->param;
 
       if ( $error =~ /^_duplicate_(card|ach)/ ) {
         my $what = ($1 eq 'card') ? 'Credit card' : 'Electronic check';

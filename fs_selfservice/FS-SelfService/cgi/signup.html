@@ -30,9 +30,13 @@
          ' Signup form</FONT><BR><BR>';
 %>
 
-<FONT SIZE="+1" COLOR="#ff0000"><%= encode_entities($error) %></FONT>
+<%= if ( $error ) {
+      $OUT .= '<FONT SIZE="+1" COLOR="#ff0000">'. encode_entities($error).
+              '</FONT><BR><BR>';
+    }
+%>
 
-<FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
+<FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true" STYLE="margin:0">
 <INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= encode_entities($prepaid_shortform) %>">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
@@ -41,11 +45,24 @@
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
 <input type="hidden" name="payby">
 <%=
-  $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paystate paytype paycvv month year type  /  } @payby);
+  $OUT = join("\n",
+           map {
+             my $method = $_ ;
+             map { qq|<input type="hidden" name="${method}_$_" />| }
+               qw( payinfo payinfo1 payinfo2 payname paystate paytype paycvv
+                   month year type )
+           } @payby
+         );
 %>
 
 <%=
-  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum domsvc mac_addr countrycode phonenum sip_password pin / );
+  $OUT = join("\n",
+           map { qq|<input type="hidden" name="$_" />| }
+             qw( promo_code reg_code pkgpart username _password _password2
+                 sec_phrase popnum domsvc mac_addr countrycode phonenum
+                 sip_password pin ),
+             map { ( "tax_$_", "tax_${_}_num" ) } @exempt_groups
+         );
 %>
 
 <%=
@@ -71,7 +88,7 @@ Where did you hear about our service? <SELECT NAME="refnum">
 
 my $bgcolor = $box_bgcolor || '#c0c0c0';
 $OUT .= qq!
-Contact Information
+<FONT SIZE="+1"><B>Contact Information</B></FONT>
 <TABLE BGCOLOR="$bgcolor" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
@@ -152,7 +169,8 @@ else {
 '';
 %>
 
-<BR>Billing information<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<BR><FONT SIZE="+1"><B>Billing information</B></FONT>
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR><TD>
 
   <%=
@@ -182,10 +200,12 @@ else {
       $cardselect .= qq!<OPTION $selected VALUE="$card_types{$_}">$_</OPTION>!;
     }
     $cardselect .= '</SELECT>';
+
+    my $table = '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). '" BORDER=0 CELLSPACING=0 WIDTH="100%">';
   
     my %payby = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
+      'CARD' => qq!$table<TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expiration</TD><TD>!. expselect("CARD"). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
+      'DCRD' => qq!$table<TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expiration</TD><TD>!. expselect("DCRD"). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname"></TD></TR>!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>{$r}Bank State <INPUT TYPE="text" NAME="CHEK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><BR>{$r}Bank State <INPUT TYPE="text" NAME="DCHK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
@@ -215,8 +235,8 @@ else {
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
-      'CARD' => '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). qq!" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expiration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
-      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
+      'CARD' => qq!$table<TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expiration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
+      'DCRD' => qq!$table<TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expiration</TD><TD>!. expselect("DCRD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname"></TD></TR>!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? ' SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? ' SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
@@ -248,9 +268,9 @@ else {
     }
 
   my %payby_index = ( 'CARD'   => qq/Credit Card/,
-                      'DCRD'   => qq/Credit Card/,
+                      'DCRD'   => qq/Credit Card (no auto-charge)/,
                       'CHEK'   => qq/Check/,
-                      'DCHK'   => qq/Check/,
+                      'DCHK'   => qq/Check (no auto-charge)/,
                       'LECB'   => qq/Phone Bill Billing/,
                       'BILL'   => qq/Billing/,
                       'COMP'   => qq/Complimentary/,
@@ -270,7 +290,7 @@ HTML::Widgets::SelectLayers->new(
   options => \%options,
   selected_layer => $selected_layer,
   form_name => 'dummy',
-  html_between => '</td></tr></table>',
+  html_between => '</table>',
   form_action => 'dummy.cgi',
   layer_callback => sub { my $layer = shift; return ( shift @hide_payment_fields ? '' : $paybychecked{$layer} ) . '</TABLE>'; },
 )->html;
@@ -278,8 +298,42 @@ HTML::Widgets::SelectLayers->new(
 
   %>
 
-</TR></TABLE><font color="#ff0000">*</font> required fields
-<FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><BR>First package
+</TABLE>
+
+<FORM NAME="TaxForm" STYLE="margin:0">
+
+<SCRIPT TYPE="text/javascript">
+    function tax_changed(what) {
+      var num = document.getElementById(what.id + '_num'); 
+      if ( what.checked ) {
+        num.disabled = false;
+      } else {
+        num.disabled = true;
+      }
+    }
+</SCRIPT> 
+
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<%=
+  foreach my $exempt_group ( @exempt_groups ) {
+    no strict 'refs';
+    my $checked = ${"tax_$exempt_group"} ? 'CHECKED' : '';
+    my $disabled = $checked ? '' : 'DISABLED';
+     
+    $OUT .= qq!
+      <TR><TD><INPUT TYPE="checkbox" NAME="tax_$exempt_group" ID="tax_$exempt_group" VALUE="Y" $checked onChange="tax_changed(this)"> Tax Exempt ($exempt_group taxes)
+          - Exemption number <INPUT TYPE="text" NAME="tax_${exempt_group}_num" ID="tax_${exempt_group}_num" VALUE="${"tax_${exempt_group}_num"}" $disabled></TD>
+        </TR>
+    !;
+  }
+%>
+
+
+</TABLE><font color="#ff0000">*</font> required fields
+
+</FORM>
+
+<FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><FONT SIZE="+1"><B>First package</B></FONT>
 <INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
 <INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
 <TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
@@ -429,10 +483,11 @@ I agree to the <a href="javascript:void(0);" onclick="show_terms();">Terms of Se
 <%= length($terms_of_service) ? 'agree_to_terms(false)' : '' %>
 
 function fixup_form() {
-    
+
     // copy payment method data up to OneTrueForm
     
-    var payment_method_elements = new Array( 'payinfo', 'payinfo1', 'payinfo2', 'payname', 'paycvv' , 'paystate', 'paytype', 'month', 'year','type' );
+    var payment_method_elements = new Array( 'payinfo', 'payinfo1', 'payinfo2', 'payname', 'paycvv' , 'paystate', 'paytype', 'month', 'year', 'type' );
+
     var payment_method_form_name = document.OneTrueForm.select.options[document.OneTrueForm.select.selectedIndex].value;
     document.OneTrueForm.elements['payby'].value = payment_method_form_name;
     var payment_method_form = document.forms[payment_method_form_name];
@@ -442,7 +497,20 @@ function fixup_form() {
 	copyelement ( payment_method_form.elements[true_element_name],
 		      document.OneTrueForm.elements[true_element_name] );
     }
-    
+
+
+    // copy tax exempt data up to OneTrueForm
+
+    var tax_elements = new Array(
+      <%= join(', ', map "'tax_$_', 'tax_${_}_num'", @exempt_groups ) %>
+    );
+
+    for ( ii = 0 ; ii < tax_elements.length ; ii++ ) {
+	copyelement ( document.TaxForm.elements[tax_elements[ii]],
+		      document.OneTrueForm.elements[tax_elements[ii]] );
+    }
+
+
     // Copy signup details to OneTrueForm
     
     var signup_elements = new Array (
@@ -462,7 +530,6 @@ function fixup_form() {
 }
 
 function copyelement(from, to) {
-//    alert ( from + ' ' + to );
     
     if ( from == undefined ) {
 	to.value = '';
@@ -482,7 +549,7 @@ function copyelement(from, to) {
 		to.value = from.value;
 	    }
 	}
-//	alert(from.name + " (" + from.type + "): " + to.name + " => " + to.value);
+	//alert(from.name + " (" + from.type + "): " + to.name + " => " + to.value);
     }
 }
 
