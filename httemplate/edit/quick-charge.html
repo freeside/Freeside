@@ -111,12 +111,22 @@ function bill_now_changed (what) {
 % # don't allow changing these after the fact
 % $field = '/elements/tr-fixed.html' if $billed;
 <& $field,
-  label => 'Amount',
-  field => 'amount',
-  value => sprintf('%.2f',$part_pkg->option('setup_fee')),
-  size  => 8,
-  prefix  => $money_char,
+  label  => mt('Amount to charge'),
+  field  => 'amount',
+  value  => sprintf('%.2f',$part_pkg->option('setup_fee')),
+  size   => 8,
+  prefix => $money_char,
 &> 
+
+% if ( $curuser->access_right('Edit package definition costs') ) {
+  <& $field,
+    label  => mt('Cost'),
+    field  => 'setup_cost',
+    value  => sprintf('%.2f',$part_pkg->setup_cost),
+    size   => 8,
+    prefix => $money_char,
+  &> 
+% }
 
 %   if ( $conf->exists('invoice-unitprice') ) {
 <& $field,
@@ -158,20 +168,31 @@ function bill_now_changed (what) {
         }
       &>
 %   }
+
 % } else { # new one-time charge
 
-<TR>
-  <TD ALIGN="right"><% mt('Amount') |h %> </TD>
-  <TD>
-    <% $money_char %><INPUT TYPE       = "text"
-                            NAME       = "amount"
-                            SIZE       = 6
-                            VALUE      = "<% $amount %>"
-                            onChange   = "return enable_quick_charge(event)"
-                            onKeyPress = "return enable_quick_charge(event)"
-                     >
-  </TD>
-</TR>
+    <TR>
+      <TD ALIGN="right"><% mt('Amount to charge') |h %> </TD>
+      <TD>
+        <% $money_char %><INPUT TYPE       = "text"
+                                NAME       = "amount"
+                                SIZE       = 8
+                                VALUE      = "<% $amount %>"
+                                onChange   = "return enable_quick_charge(event)"
+                                onKeyPress = "return enable_quick_charge(event)"
+                         >
+      </TD>
+    </TR>
+
+%   if ( $curuser->access_right('Edit package definition costs') ) {
+      <& /elements/tr-input-text.html,
+           label  => mt('Cost'),
+           field  => 'setup_cost',
+           value  => $setup_cost,
+           size   => 8,
+           prefix => $money_char,
+      &> 
+%   }
 
 %   if ( $conf->exists('invoice-unitprice') ) {
     <TR>
@@ -415,6 +436,11 @@ $start_date = $start_date ? time2str($format, $start_date) : '';
 my $amount = '';
 if ( $cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ) {
   $amount = $1;
+}
+
+my $setup_cost = '';
+if ( $cgi->param('setup_cost') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ) {
+  $setup_cost = $1;
 }
 
 my $quantity = 1;
