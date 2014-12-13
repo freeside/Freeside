@@ -36,6 +36,10 @@ $me = '[FS::part_pkg::agent]';
                             'type' => 'checkbox',
                           },
 
+    'display_separate_cust'=> { 'name' => 'Separate customer from package display on invoices',
+                                'type' => 'checkbox',
+                              },
+
   },
 
   'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
@@ -97,12 +101,14 @@ sub calc_recur {
                           }
                      $cust_main->all_pkgs;
 
+      my $cust_details = 0;
+
       foreach my $cust_pkg ( @cust_pkg ) {
 
         warn "$me billing agent charges for pkgnum ". $cust_pkg->pkgnum. "\n"
           if $DEBUG;
 
-        my $pkg_details = $cust_main->name_short. ': '; #name?
+        my $pkg_details = '';
 
         my $cust_location = $cust_pkg->cust_location;
         $pkg_details .= $cust_location->locationname. ': '
@@ -159,11 +165,20 @@ sub calc_recur {
 
         $pkg_charge += $quantity * $recur_charge;
 
-        push @$details, $pkg_details
-          if $pkg_charge;
+        if ( $pkg_charge ) {
+          if ( $self->option('display_separate_cust') ) {
+            push @$details, $cust_main->name.':' unless $cust_details++;
+            push @$details, '    '.$pkg_details;
+          } else {
+            push @$details, $cust_main->name_short.': '. $pkg_details;
+          }
+        };
+
         $total_agent_charge += $pkg_charge;
 
       } #foreach $cust_pkg
+
+      push @$details, ' ' if $cust_details;
 
     } #foreach $cust_main
 
