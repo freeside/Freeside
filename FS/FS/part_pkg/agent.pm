@@ -43,6 +43,10 @@ $me = '[FS::part_pkg::agent]';
                                 'type' => 'checkbox',
                               },
 
+    'cost_only' => { 'name' => 'Bill wholesale on cost only, disabling the price fallback',
+                     'type' => 'checkbox' 
+                   },
+
   },
 
   'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
@@ -127,11 +131,15 @@ sub calc_recur {
 
         my $quantity = $cust_pkg->quantity || 1;
 
-        #option to not fallback? via options above
-        my $pkg_setup_fee  =
-          $part_pkg->setup_cost || $part_pkg->option('setup_fee');
-        my $pkg_base_recur =
-          $part_pkg->recur_cost || $part_pkg->base_recur_permonth($cust_pkg);
+        my $pkg_setup_fee  = $part_pkg->setup_cost;
+        $pkg_setup_fee ||= $part_pkg->option('setup_fee')
+          unless $self->option('cost_only');
+        $pkg_setup_fee ||= 0;
+
+        my $pkg_base_recur = $part_pkg->recur_cost;
+        $pkg_base_recur ||= $part_pkg->base_recur_permonth($cust_pkg)
+          unless $self->option('cost_only');
+        $pkg_base_recur ||= 0;
 
         my $pkg_start = $cust_pkg->get('setup');
         if ( $pkg_start < $last_bill ) {
