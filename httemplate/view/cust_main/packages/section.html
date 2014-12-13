@@ -128,6 +128,7 @@ my %conf_opt = (
   
   #for services.html
   'svc_external-skip_manual'  => $conf->exists('svc_external-skip_manual'),
+  'svc_phone-bulk_provision_simple' => $conf->exists('svc_phone-bulk_provision_simple'),
   'legacy_link'               => $conf->exists('legacy_link'),
   'manage_link'               => scalar($conf->config('svc_broadband-manage_link')),
   'manage_link_text'          => scalar($conf->config('svc_broadband-manage_link_text')),

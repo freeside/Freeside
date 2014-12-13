@@ -1,0 +1,52 @@
+<& /elements/header.html, mt('Bulk add [_1]',$svc) &>
+
+<& /elements/error.html &>
+
+% if ( $cust_main ) { 
+
+  <& /elements/small_custview.html, $cust_main, '', 1,
+              popurl(2) . "view/cust_main.cgi" &>
+  <BR>
+% } 
+
+<FORM NAME="OneTrueForm" ACTION="<% popurl(1) %>process/bulk-svc_phone.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
+<INPUT TYPE="hidden" NAME="num_avail" VALUE="<% scalar($cgi->param('num_avail')) |h %>">
+
+<% ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right"><% mt('Phone number range') |h %></TD>
+  <TD><INPUT TYPE="text" NAME="phonenum" VALUE=""></TD>
+</TR>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Submit">
+
+</FORM>
+
+<& /elements/footer.html &>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Bulk provision customer service');
+
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+my $pkgnum = $1;
+my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum })
+  or die 'unknown pkgnum';
+my $cust_main = $cust_pkg->cust_main;
+
+$cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+my $svcpart = $1;
+
+my $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+die "No part_svc entry!" unless $part_svc;
+
+my $svc = $part_svc->getfield('svc');
+
+</%init>
