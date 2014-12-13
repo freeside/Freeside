@@ -2,7 +2,7 @@ package FS::Report::Tax;
 
 use strict;
 use vars qw($DEBUG);
-use FS::Record qw(dbh qsearch qsearchs);
+use FS::Record qw(dbh qsearch qsearchs group_concat_sql);
 use Date::Format qw( time2str );
 
 use Data::Dumper;
@@ -113,7 +113,8 @@ sub report_internal {
       $select .= "NULL AS $_, ";
     }
   }
-  $select .= "array_to_string(array_agg(DISTINCT(cust_main_county.taxnum)), ',') AS taxnums, ";
+  $select .= group_concat_sql('DISTINCT(cust_main_county.taxnum)', ',') .
+             ' AS taxnums, ';
   $group =~ s/, $//;
 
   # SELECT/GROUP clauses for second-level (totals) queries
@@ -124,7 +125,8 @@ sub report_internal {
     $select_all = "SELECT $breakdown{pkgclass} AS pkgclass, ";
     $group_all = "GROUP BY $breakdown{pkgclass}";
   }
-  $select_all .= "array_to_string(array_agg(DISTINCT(cust_main_county.taxnum)), ',') AS taxnums, ";
+  $select_all .= group_concat_sql('DISTINCT(cust_main_county.taxnum)', ',') .
+                 ' AS taxnums, ';
 
   my $agentnum;
   if ( $opt{agentnum} and $opt{agentnum} =~ /^(\d+)$/ ) {
