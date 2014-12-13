@@ -119,6 +119,8 @@ sub calc_recur {
 
         my $pkg_charge = 0;
 
+        my $quantity = $cust_pkg->quantity || 1;
+
         #option to not fallback? via options above
         my $pkg_setup_fee  =
           $part_pkg->setup_cost || $part_pkg->option('setup_fee');
@@ -129,13 +131,17 @@ sub calc_recur {
         if ( $pkg_start < $last_bill ) {
           $pkg_start = $last_bill;
         } elsif ( $pkg_setup_fee ) {
-          $pkg_charge += $pkg_setup_fee;
-          $pkg_details .= $money_char. sprintf('%.2f setup, ', $pkg_setup_fee );
+          $pkg_charge += $quantity * $pkg_setup_fee;
+          $pkg_details .= $money_char.
+                          sprintf('%.2f setup', $quantity * $pkg_setup_fee );
+          $pkg_details .= sprintf(" ($quantity \@ $money_char". '%.2f)',
+                                  $pkg_setup_fee )
+            if $quantity > 1;
+          $pkg_details .= ', ';
         }
 
         my $pkg_end = $cust_pkg->get('cancel');
         $pkg_end = ( !$pkg_end || $pkg_end > $$sdate ) ? $$sdate : $pkg_end;
-
 
         my $pkg_recur_charge = $prorate_ratio * $pkg_base_recur;
         $pkg_recur_charge *= ( $pkg_end - $pkg_start )
@@ -144,12 +150,17 @@ sub calc_recur {
 
         my $recur_charge += $pkg_recur_charge;
 
-        $pkg_details .= $money_char. sprintf('%.2f', $recur_charge ).
-                        ' ('.  time2str($date_format, $pkg_start).
-                        ' - '. time2str($date_format, $pkg_end  ). ')'
-          if $recur_charge;
+        if ( $recur_charge ) {
+          $pkg_details .= $money_char.
+                          sprintf('%.2f', $quantity * $recur_charge );
+          $pkg_details .= sprintf(" ($quantity \@ $money_char". '%.2f)',
+                                  $recur_charge )
+            if $quantity > 1;
+          $pkg_details .= ' ('.  time2str($date_format, $pkg_start).
+                          ' - '. time2str($date_format, $pkg_end  ). ')';
+        }
 
-        $pkg_charge += $recur_charge;
+        $pkg_charge += $quantity * $recur_charge;
 
         push @$details, $pkg_details
           if $pkg_charge;
