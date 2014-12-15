@@ -160,6 +160,11 @@ install-stamp: build-stamp
 
 	# Install interfaces
 	$(MAKE) -e DESTDIR=$(TMP)-webui install-docs
+	
+	# Install tex
+	install -D -o freeside -m 444 etc/longtable.sty \
+	$(TMP)-lib/usr/local/share/texmf/tex/latex/longtable.sty
+	texhash $(TMP)-lib/usr/local/share/texmf
 
 	# Create Apache configurations
 	install -d $(APACHE_CONF)
