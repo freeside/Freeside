@@ -1,0 +1,41 @@
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?custnum=$custnum;show=packages#cust_pkg$pkgnum") %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Bulk provision customer service');
+
+$cgi->param('phonenum') =~ /^\s*(\d+)\s*\-\s*(\d+)\s*$/
+  or errorpage('Enter a phone number range, with dash as the separator');
+my($start, $end) = ($1, $2);
+
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'illegal pkgnum';
+my $pkgnum = $1;
+my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum })
+  or die 'unknown pkgnum';
+my $custnum = $cust_pkg->custnum;
+
+if ( length($end) < length($start) ) {
+  $end = substr($start, 0, length($start) - length($end) ). $end;
+}
+
+errorpage("$end is smaller than $start") if $end < $start;
+
+$cgi->param('num_avail') =~ /^(\d+)$/ or die 'illegal num_avail';
+my $num_avail = $1;
+errorpage("There are only $num_avail available")
+  if $end - $start + 1 > $num_avail;
+
+foreach my $phonenum ( $start .. $end ) {
+
+  my $svc_phone = new FS::svc_phone {
+    'phonenum' => $phonenum,
+    'pkgnum'   => $pkgnum,
+    'svcpart'  => scalar($cgi->param('svcpart')),
+  };
+  $svc_phone->set_default_and_fixed;
+
+  my $error = $svc_phone->insert;
+  errorpage($error) if $error;
+}
+
+</%init>

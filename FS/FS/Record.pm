@@ -32,7 +32,8 @@ our @encrypt_payby = qw( CARD DCRD CHEK DCHK );
 #export dbdef for now... everything else expects to find it here
 our @EXPORT_OK = qw(
   dbh fields hfields qsearch qsearchs dbdef jsearch
-  str2time_sql str2time_sql_closing regexp_sql not_regexp_sql concat_sql
+  str2time_sql str2time_sql_closing regexp_sql not_regexp_sql
+  concat_sql group_concat_sql
   midnight_sql
 );
 
@@ -3566,6 +3567,24 @@ sub concat_sql {
     join('||', @$items);
   }
 
+}
+
+=item group_concat_sql COLUMN, DELIMITER
+
+Returns an SQL expression to concatenate an aggregate column, using 
+GROUP_CONCAT() for mysql and array_to_string() and array_agg() for Pg.
+
+=cut
+
+sub group_concat_sql {
+  my ($col, $delim) = @_;
+  $delim = dbh->quote($delim);
+  if ( driver_name() =~ /^mysql/i ) {
+    # DISTINCT(foo) is valid as $col
+    return "GROUP_CONCAT($col SEPARATOR $delim)";
+  } else {
+    return "array_to_string(array_agg($col), $delim)";
+  }
 }
 
 =item midnight_sql DATE

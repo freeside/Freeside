@@ -2362,18 +2362,7 @@ sub modify_charge {
   }
 
   if ( !$self->get('setup') ) {
-    # not yet billed, so allow amount and quantity
-    if ( exists($opt{'quantity'})
-          and $opt{'quantity'} != $self->quantity
-          and $opt{'quantity'} > 0 ) {
-        
-      $self->set('quantity', $opt{'quantity'});
-    }
-    if ( exists($opt{'start_date'})
-          and $opt{'start_date'} != $self->start_date ) {
-
-      $self->set('start_date', $opt{'start_date'});
-    }
+    # not yet billed, so allow amount, setup_cost, quantity and start_date
 
     if ( exists($opt{'amount'}) 
           and $part_pkg->option('setup_fee') != $opt{'amount'}
@@ -2381,8 +2370,29 @@ sub modify_charge {
 
       $pkg_opt{'setup_fee'} = $opt{'amount'};
       $pkg_opt_modified = 1;
-
     }
+
+    if ( exists($opt{'setup_cost'}) 
+          and $part_pkg->setup_cost != $opt{'setup_cost'}
+          and $opt{'setup_cost'} > 0 ) {
+
+      $part_pkg->set('setup_cost', $opt{'setup_cost'});
+    }
+
+    if ( exists($opt{'quantity'})
+          and $opt{'quantity'} != $self->quantity
+          and $opt{'quantity'} > 0 ) {
+        
+      $self->set('quantity', $opt{'quantity'});
+    }
+
+    if ( exists($opt{'start_date'})
+          and $opt{'start_date'} != $self->start_date ) {
+
+      $self->set('start_date', $opt{'start_date'});
+    }
+
+
   } # else simply ignore them; the UI shouldn't allow editing the fields
 
   my $error;

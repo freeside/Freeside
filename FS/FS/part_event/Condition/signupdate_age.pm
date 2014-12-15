@@ -14,11 +14,11 @@ sub option_fields {
 }
 
 sub condition {
-  my( $self, $cust_bill, %opt ) = @_;
+  my( $self, $object, %opt ) = @_;
 
   my $age = $self->option_age_from('age', $opt{'time'} );
 
-  my $cust_main = $cust_bill->cust_main;
+  my $cust_main = $self->cust_main($object);
   ( $cust_main->signupdate - 60 ) <= $age;
 
 }

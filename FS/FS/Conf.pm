@@ -4950,8 +4950,15 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'svc_phone-bulk_provision_simple',
+    'section'     => 'telephony',
+    'description' => 'Bulk provision phone numbers with a simple number range instead of from DID vendor orders',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'default_phone_countrycode',
-    'section'     => '',
+    'section'     => 'telephony',
     'description' => 'Default countrycode',
     'type'        => 'text',
   },

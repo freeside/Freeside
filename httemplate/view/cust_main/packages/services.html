@@ -93,6 +93,8 @@ function clearhint_search_cust_svc(obj, str) {
 %        {
 %          if ( $part_svc->num_avail > 5 ) {
 %             local $opt{'bulk'} = 1;
+%             local $opt{'svc_phone_bulk_provision_simple'} =  $svc_phone_bulk_provision_simple;
+%             local $opt{'num_avail'} = $part_svc->num_avail;
               <BR><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %>
 %           }
 %           #XXX if there's orders for this customer {
@@ -116,6 +118,8 @@ my %opt = @_;
 my $bgcolor  = $opt{'bgcolor'};
 my $cust_pkg = $opt{'cust_pkg'};
 my $part_pkg = $opt{'part_pkg'};
+my $svc_phone_bulk_provision_simple = $opt{'svc_phone-bulk_provision_simple'};
+
 my $curuser  = $FS::CurrentUser::CurrentUser;
 
 sub svc_provision_link {
@@ -133,6 +137,12 @@ sub svc_provision_link {
        && $opt->{'svc_external-skip_manual'}
   ) {
     $url = "${p}edit/process/". $part_svc->svcdb. ".cgi?$query";
+  } elsif ( $part_svc->svcdb eq 'svc_phone' && $opt->{bulk}
+              && $opt->{svc_phone_bulk_provision_simple}
+          )
+  {
+    $query .= ';num_avail='. $opt->{num_avail};
+    $url = "${p}edit/bulk-svc_phone.html?$query";
   } else {
     $url = svc_url(
                     'm'        => $m,
@@ -146,14 +156,17 @@ sub svc_provision_link {
 
   my $link = qq!<A CLASS="provision" HREF="$url">!.
              emt("$action [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
+
   if ( $opt->{'legacy_link'}
        && $curuser->access_right('View/link unlinked services')
+       && ! $opt{bulk}
      )
   {
     $link .= '<BR>'.
              qq!<A CLASS="provision" HREF="${p}misc/link.cgi?$query">!.
             emt("Link to legacy [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
   }
+
   $link;
 }
 

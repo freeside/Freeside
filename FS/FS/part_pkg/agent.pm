@@ -36,9 +36,17 @@ $me = '[FS::part_pkg::agent]';
                             'type' => 'checkbox',
                           },
 
+    'display_separate_cust'=> { 'name' => 'Separate customer from package display on invoices',
+                                'type' => 'checkbox',
+                              },
+
+    'cost_only' => { 'name' => 'Bill wholesale on cost only, disabling the price fallback',
+                     'type' => 'checkbox' 
+                   },
+
   },
 
-  'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
+  'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate display_separate_cust cost_only) ],
 
   'weight' => 52,
 
@@ -97,12 +105,14 @@ sub calc_recur {
                           }
                      $cust_main->all_pkgs;
 
+      my $cust_details = 0;
+
       foreach my $cust_pkg ( @cust_pkg ) {
 
         warn "$me billing agent charges for pkgnum ". $cust_pkg->pkgnum. "\n"
           if $DEBUG;
 
-        my $pkg_details = $cust_main->name_short. ': '; #name?
+        my $pkg_details = '';
 
         my $cust_location = $cust_pkg->cust_location;
         $pkg_details .= $cust_location->locationname. ': '
@@ -116,23 +126,33 @@ sub calc_recur {
 
         my $pkg_charge = 0;
 
-        #option to not fallback? via options above
-        my $pkg_setup_fee  =
-          $part_pkg->setup_cost || $part_pkg->option('setup_fee');
-        my $pkg_base_recur =
-          $part_pkg->recur_cost || $part_pkg->base_recur_permonth($cust_pkg);
+        my $quantity = $cust_pkg->quantity || 1;
+
+        my $pkg_setup_fee  = $part_pkg->setup_cost;
+        $pkg_setup_fee ||= $part_pkg->option('setup_fee')
+          unless $self->option('cost_only');
+        $pkg_setup_fee ||= 0;
+
+        my $pkg_base_recur = $part_pkg->recur_cost;
+        $pkg_base_recur ||= $part_pkg->base_recur_permonth($cust_pkg)
+          unless $self->option('cost_only');
+        $pkg_base_recur ||= 0;
 
         my $pkg_start = $cust_pkg->get('setup');
         if ( $pkg_start < $last_bill ) {
           $pkg_start = $last_bill;
         } elsif ( $pkg_setup_fee ) {
-          $pkg_charge += $pkg_setup_fee;
-          $pkg_details .= $money_char. sprintf('%.2f setup, ', $pkg_setup_fee );
+          $pkg_charge += $quantity * $pkg_setup_fee;
+          $pkg_details .= $money_char.
+                          sprintf('%.2f setup', $quantity * $pkg_setup_fee );
+          $pkg_details .= sprintf(" ($quantity \@ $money_char". '%.2f)',
+                                  $pkg_setup_fee )
+            if $quantity > 1;
+          $pkg_details .= ', ';
         }
 
         my $pkg_end = $cust_pkg->get('cancel');
         $pkg_end = ( !$pkg_end || $pkg_end > $$sdate ) ? $$sdate : $pkg_end;
-
 
         my $pkg_recur_charge = $prorate_ratio * $pkg_base_recur;
         $pkg_recur_charge *= ( $pkg_end - $pkg_start )
@@ -141,18 +161,32 @@ sub calc_recur {
 
         my $recur_charge += $pkg_recur_charge;
 
-        $pkg_details .= $money_char. sprintf('%.2f', $recur_charge ).
-                        ' ('.  time2str($date_format, $pkg_start).
-                        ' - '. time2str($date_format, $pkg_end  ). ')'
-          if $recur_charge;
+        if ( $recur_charge ) {
+          $pkg_details .= $money_char.
+                          sprintf('%.2f', $quantity * $recur_charge );
+          $pkg_details .= sprintf(" ($quantity \@ $money_char". '%.2f)',
+                                  $recur_charge )
+            if $quantity > 1;
+          $pkg_details .= ' ('.  time2str($date_format, $pkg_start).
+                          ' - '. time2str($date_format, $pkg_end  ). ')';
+        }
 
-        $pkg_charge += $recur_charge;
+        $pkg_charge += $quantity * $recur_charge;
 
-        push @$details, $pkg_details
-          if $pkg_charge;
+        if ( $pkg_charge ) {
+          if ( $self->option('display_separate_cust') ) {
+            push @$details, $cust_main->name.':' unless $cust_details++;
+            push @$details, '    '.$pkg_details;
+          } else {
+            push @$details, $cust_main->name_short.': '. $pkg_details;
+          }
+        };
+
         $total_agent_charge += $pkg_charge;
 
       } #foreach $cust_pkg
+
+      push @$details, ' ' if $cust_details;
 
     } #foreach $cust_main
 

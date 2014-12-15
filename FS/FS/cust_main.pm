@@ -3476,7 +3476,7 @@ Old-style:
 
 sub charge {
   my $self = shift;
-  my ( $amount, $quantity, $start_date, $classnum );
+  my ( $amount, $setup_cost, $quantity, $start_date, $classnum );
   my ( $pkg, $comment, $additional );
   my ( $setuptax, $taxclass );   #internal taxes
   my ( $taxproduct, $override ); #vendor (CCH) taxes
@@ -3486,6 +3486,7 @@ sub charge {
   my $locationnum;
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
+    $setup_cost = $_[0]->{setup_cost};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
     $start_date = exists($_[0]->{start_date}) ? $_[0]->{start_date} : '';
     $no_auto    = exists($_[0]->{no_auto}) ? $_[0]->{no_auto} : '';
@@ -3504,6 +3505,7 @@ sub charge {
     $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
   } else {
     $amount     = shift;
+    $setup_cost = '';
     $quantity   = 1;
     $start_date = '';
     $pkg        = @_ ? shift : 'One-time charge';
@@ -3534,6 +3536,7 @@ sub charge {
     'setuptax'      => $setuptax,
     'taxclass'      => $taxclass,
     'taxproductnum' => $taxproduct,
+    'setup_cost'    => $setup_cost,
   } );
 
   my %options = ( ( map { ("additional_info$_" => $additional->[$_] ) }

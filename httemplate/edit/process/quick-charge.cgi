@@ -36,7 +36,7 @@ exists($curuser->agentnums_href->{$cust_main->agentnum})
 
 my $message;
 
-if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
+if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
   $message = "One-time charge changed";
   my $pkgnum = $1;
   die "access denied"
@@ -48,18 +48,20 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
   my $part_pkg = $cust_pkg->part_pkg;
   die "pkgnum $pkgnum is not a one-time charge" unless $part_pkg->freq eq '0';
 
-  my ($amount, $quantity, $start_date);
+  my ($amount, $setup_cost, $quantity);
   if ( $cgi->param('amount') =~ /^\s*(\d*(\.\d{1,2})*)\s*$/ ) {
     $amount = sprintf('%.2f', $1);
+  }
+  if ( $cgi->param('setup_cost') =~ /^\s*(\d*(\.\d{1,2})*)\s*$/ ) {
+    $setup_cost = sprintf('%.2f', $1);
   }
   if ( $cgi->param('quantity') =~ /^\s*(\d*)\s*$/ ) {
     $quantity = $1 || 1;
   }
-  if ( $cgi->param('start_date') ) {
-    $start_date = parse_datetime($cgi->param('start_date'));
-  } else {
-    $start_date = time;
-  }
+
+  my $start_date = $cgi->param('start_date')
+                     ? parse_datetime($cgi->param('start_date'))
+                     : time;
 
   $error = $cust_pkg->modify_charge(
       'pkg'               => scalar($cgi->param('pkg')),
@@ -67,16 +69,23 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
       'additional'        => \@description,
       'adjust_commission' => ($cgi->param('adjust_commission') ? 1 : 0),
       'amount'            => $amount,
+      'setup_cost'        => $setup_cost,
       'quantity'          => $quantity,
       'start_date'        => $start_date,
   );
 
-} else {
+} else { # the usual case: new one-time charge
+
   $message = "One-time charge added";
-  # the usual case: new one-time charge
+
   $param->{"amount"} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
     or $error .= "Illegal amount " . $param->{"amount"} . "  ";
   my $amount = $1;
+
+  my $setup_cost = '';
+  $param->{"setup_cost"} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
+    or $error .= "Illegal setup_cost " . $param->{"setup_cost"} . "  ";
+  my $setup_cost = $1;
 
   my $quantity = 1;
   if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
@@ -101,6 +110,7 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
 
     $error ||= $cust_main->charge( {
       'amount'        => $amount,
+      'setup_cost'    => $setup_cost,
       'quantity'      => $quantity,
       'bill_now'      => scalar($cgi->param('bill_now')),
       'invoice_terms' => scalar($cgi->param('invoice_terms')),

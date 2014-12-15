@@ -178,6 +178,7 @@ sub signup_info {
       'require_cvv'        => $conf->exists('signup-require_cvv'),
       'stateid_enabled'    => $conf->exists('show_stateid'),
       'paystate_enabled'   => $conf->exists('show_bankstate'),
+      'exempt_groups'      => [ grep /\S/, $conf->config('tax-cust_exempt-groups') ],
       'ship_enabled'       => 1,
       'msgcat'             => $msgcat,
       'label'              => $label,
@@ -646,6 +647,14 @@ sub new_customer {
                          ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
                          : ();
 
+  my %insert_options = ();
+
+  my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
+  my @tax_exempt = grep { $packet->{"tax_$_"} eq 'Y' } @exempt_groups;
+  $insert_options{'tax_exemption'} = {
+    map { $_ => $packet->{"tax_$_".'_num'} } @tax_exempt
+  };
+
   $packet->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
   my $pkgpart = $1;
   return { 'error' => 'Please select a package' } unless $pkgpart; #msgcat
@@ -761,6 +770,7 @@ sub new_customer {
     \%hash,
     \@invoicing_list,
     'depend_jobnum' => $placeholder->jobnum,
+     %insert_options,
   );
   if ( $error ) {
     my $perror = $placeholder->delete;

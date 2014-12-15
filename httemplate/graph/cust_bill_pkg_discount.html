@@ -74,7 +74,7 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
                       #'average_per_cust_pkg' => $average_per_cust_pkg,
                     ];
 
-      push @links, "$link?agentnum=$row_agentnum"; #;classnum=$row_classnum;";
+      push @links, $link . "agentnum=$row_agentnum;";
 
       @_colors = ($col_scheme->colors)[0,4,8,1,5,9,2,6,10,3,7,11];
       push @colors, shift @_colors;
