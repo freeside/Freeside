@@ -49,7 +49,7 @@ $me = '[FS::part_pkg::agent]';
 
   },
 
-  'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
+  'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate display_separate_cust cost_only) ],
 
   'weight' => 52,
 
