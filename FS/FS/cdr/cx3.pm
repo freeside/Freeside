@@ -10,40 +10,33 @@ use Date::Parse;
 %info = (
   'name'          => '3CX',
   'weight'        => 120,
-  'header'        => 1,
   'import_fields' => [
 
 
-sub {                 
-      	my ($cdr, $data, $conf, $param) = @_;
-      	 	$param->{skiprow} = 1 unless $data =~ 'CallDetail'; # skip non-detail records
+	sub {                 
+      		my ($cdr, $data, $conf, $param) = @_;
+      	 	$param->{skiprow} = 1 unless $data =~ /Call\s/ ; # skip non-detail records
 	},		# record type
-	skip(2),	# unknown, callid ( not unique )
-	'src',		# source
-	'dst',		# destination
-sub { my ($cdr, $calldate, $param) = @_;
+	skip(1),	# unknown, callid ( not unique )
+	sub { my ($cdr, $duration) = @_;
+	
+		my ($hour,$min,$sec) = split(/:/,$duration);
+		$sec = sprintf ("%.0f", $sec);
+		$sec += $min * 60;
+		$sec += $hour * 60 * 60;
+		$cdr->set('billsec', $sec);
 
-	if ($calldate =~ /^(\d{2})\/(\d{2})\/(\d{4})\s*(\d{2}):(\d{2}):(\d{2})$/){
+	},		# duration
+	skip(1),		
+	sub { my ($cdr, $calldate, $param) = @_;
 
 		$cdr->set('calldate', $calldate);
-                my $tmp_date = "$2/$1/$3 $4:$5:$6";
-
-                $tmp_date = str2time($tmp_date);
-                $cdr->set('startdate', $tmp_date);
-                }          
 	},              #date
-sub { my ($cdr, $duration) = @_;
-               
-	my ($hour,$min,$sec) = split(/:/,$duration);
-	$sec += $min * 60;
-	$sec += $hour * 60 * 60;
-	$sec = sprintf ("%.0f", $sec);
-	$cdr->set('billsec', $sec);
-
-},			#duration
-	skip(1),        # unknown
-	'disposition',  # call status
+	skip(4),          
 	'accountcode',  # AccountCode
+	skip(6),		
+	'src',		# source
+	'dst',		# destination
 
   ],
 );
