@@ -1,23 +1,23 @@
 #!/bin/bash
 
-# description: Manage the freeside-selfservice-xmlrpcd script service, SYS-V style 
+# description: Manage the %%%SERVICE%%% script service, SYS-V style 
 # chkconfig: 2345 10 90
 
 
 ARG1=${1}
-SERVICE=freeside-selfservice-xmlrpcd
+SERVICE=%%%SERVICE%%%%
 
-if [ -f /etc/rc.d/init.d/freeside-functions ]
+if [ -f /etc/init.d/freeside-functions ]
 then
-    . /etc/rc.d/init.d/freeside-functions
+    . /etc/init.d/freeside-functions
 else 
     echo "ERROR: freeside-functions could not be sourced."
     exit 1
 fi
 
-STARTCOMMAND=($SERVICE $SELFSERVICE_USER)
+STARTCOMMAND=(%%%STARTCOMMAND%%%)
 LOCKFILE=${LOCKFILE_DIR}/${SERVICE}
-PIDFILE=${PIDFILE_DIR}/freeside/${SERVICE}.pid
+PIDFILE=%%%PIDFILE%%%
 
 case $ARG1 in 
 
