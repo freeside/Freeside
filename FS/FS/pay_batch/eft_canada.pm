@@ -15,7 +15,7 @@ $name = 'eft_canada';
 
 %import_info = ( filetype  => 'NONE' ); # see FS/bin/freeside-eftca-download
 
-my ($trans_code, $process_date);
+my ($business_trans_code, $personal_trans_code, $trans_code, $process_date);
 
 #ref http://gocanada.about.com/od/canadatravelplanner/a/canada_holidays.htm
 my %holiday_yearly = (
@@ -66,7 +66,8 @@ my %holiday = (
       @config = $conf->config('batchconfig-eft_canada');
     }
     # SFTP login, password, trans code, delay time
-    ($trans_code) = $config[2];
+    ($business_trans_code) = $config[2];
+    ($personal_trans_code) = $config[3];
 
     $process_date = time2str('%D', process_date($conf, $agentnum));
   },
@@ -82,12 +83,14 @@ my %holiday = (
     my $company = sprintf('%.64s', $cust_pay_batch->cust_main->company);
     if ( $company ) {
       push @fields, 'Business';
-      push @fields, $company, ''
+      push @fields, $company, '';
+      $trans_code = $business_trans_code;
     }
     else {
       push @fields, 'Personal';
       push @fields, map { sprintf('%.64s', $_) } 
         $cust_pay_batch->first, $cust_pay_batch->last;
+        $trans_code = $personal_trans_code;
     }
     my ($account, $aba) = split('@', $cust_pay_batch->payinfo);
     my($bankno, $branch);
