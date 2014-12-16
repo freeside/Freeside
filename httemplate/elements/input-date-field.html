@@ -14,6 +14,11 @@
     ifFormat:   "<% $format %>",
     button:     "<% $name %>_button",
     align:      "BR"
+%   if ( $format =~ /\%r/ ) {
+      ,
+      showsTime: true,
+      timeFormat: 12
+%   }
   });
 </SCRIPT>
 

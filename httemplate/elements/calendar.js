@@ -1635,6 +1635,17 @@ Date.parseDate = function(str, fmt) {
 		    case "%M":
 			min = parseInt(a[i], 10);
 			break;
+
+                    case "%r":
+                        hr = parseInt(a[i], 10);
+                        min = parseInt(a[++i], 10);
+                        var sec = parseInt(a[++i], 10);
+			if (/pm/i.test(a[++i]) && hr < 12)
+				hr += 12;
+			else if (/am/i.test(a[i]) && hr >= 12)
+				hr -= 12;
+			break;
+
 		}
 	}
 	if (isNaN(y)) y = today.getFullYear();
@@ -1759,7 +1770,13 @@ Date.prototype.print = function (str) {
 	s["%n"] = "\n";		// a newline character
 	s["%p"] = pm ? "PM" : "AM";
 	s["%P"] = pm ? "pm" : "am";
-	// FIXME: %r : the time in am/pm notation %I:%M:%S %p
+
+	// %r : the time in am/pm notation %I:%M:%S %p
+        s["%r"] = ( (ir  < 10) ? ("0" + ir ) : ir  ) + ':'
+                + ( (min < 10) ? ("0" + min) : min ) + ':'
+                + ( (sec < 10) ? ("0" + sec) : sec ) + ' '
+                + (pm ? "PM" : "AM" );
+
 	// FIXME: %R : the time in 24-hour notation %H:%M
 	s["%s"] = Math.floor(this.getTime() / 1000);
 	s["%S"] = (sec < 10) ? ("0" + sec) : sec; // seconds, range 00 to 59
