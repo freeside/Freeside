@@ -5,7 +5,7 @@
 
 
 ARG1=${1}
-SERVICE=%%%SERVICE%%%%
+SERVICE=%%%SERVICE%%%
 
 if [ -f /etc/init.d/freeside-functions ]
 then

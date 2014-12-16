@@ -383,8 +383,8 @@ install-init:
 		); fi
 
 	perl -p -i -e "\
- 	  s/%%%FREESIDE_DEFAULTS%%%/${FREESIDE_DEFAULTS}/g;\
- 	  s/%%%FREESIDE_BIN%%%/${FREESIDE_BIN}/g;\
+ 	  s|%%%FREESIDE_DEFAULTS%%%|${FREESIDE_DEFAULTS}|g;\
+ 	  s|%%%FREESIDE_BIN%%%|${FREESIDE_BIN}|g;\
  	" init.d/freeside-functions
 
 	${INIT_INSTALL_QUEUED} 
