@@ -39,3 +39,30 @@ Description: Web interface for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
  .
  This package provides the web interface for employees.
+
+Package: freeside-selfservice-lib
+Architecture: all
+Depends: libtext-template-perl,libbusiness-creditcard-perl,libhttp-browserdetect-perl,libhtml-parser-perl,libtie-ixhash-perl,libhtml-widgets-selectlayers-perl,libtimedate-perl,libnumber-format-perl,libsoap-lite-perl,libtext-csv-xs-perl,apache2-suexec-custom,apache2-mpm-worker
+Recommends:
+Description: Self-service portal for Freeside billing and trouble ticketing
+ Freeside is a web-based billing and trouble ticketing application.
+ .
+ This package provides the libraries needed for the self-service portal.
+
+Package: freeside-selfservice-ui
+Architecture: all
+Depends: 
+Recommends: freeside-selfservice-lib
+Description: Self-service portal html/cgi filesfor Freeside billing and trouble ticketing
+ Freeside is a web-based billing and trouble ticketing application.
+ .
+ This package provides the html and cgi files needed for the self-service portal.
+
+Package: freeside-ng-selfservice
+Architecture: all
+Depends:
+Recommends:
+Description: Next Generation Self-service portal written in PHP using the XML-RPC API for Freeside billing and trouble ticketing
+ Freeside is a web-based billing and trouble ticketing application.
+ .
+ This package provides a self-service portal written in PHP using the XML-RPC API.
