@@ -96,7 +96,7 @@ build-stamp:
 	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor && $(MAKE) )
 	$(MAKE) perl-modules
 	
-	( cd fs_selfservice/FS-SelfService/ && $(PERL) Makefile.PL INSTALLDIRS=vendor && $(MAKE) )
+	( cd fs_selfservice/FS-SelfService/ && $(PERL) Makefile.PL && $(MAKE) )
 	
 	#install this for freeside-setup
 	install -d $(DIST_CONF)
