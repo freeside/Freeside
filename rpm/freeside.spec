@@ -8,9 +8,9 @@ Version: %{version}
 Release: %{release}
 License: AGPLv3
 Group: Applications/Internet
-URL: http://www.sisd.com/freeside/
+URL: http://www.freeside.biz/freeside/
 Vendor: Freeside
-Source: http://www.sisd.com/freeside/%{name}-%{version}.tar.gz
+Source: http://www.freeside.biz/freeside/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildArch: noarch
 Requires: %{name}-frontend
