@@ -23,6 +23,7 @@ use FS::queue;
 use FS::reg_code;
 use FS::payby;
 use FS::banned_pay;
+use FS::part_tag;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
@@ -520,6 +521,27 @@ sub new_customer {
 
   #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
   # common that are still here and library them.
+
+  my %cust_main = (
+    'agentnum' => $agentnum,
+    'refnum'   => $packet->{refnum}
+                  || $conf->config('signup_server-default_refnum'),
+    'tagnum'   => [ FS::part_tag->default_tags ],
+
+    ( map { $_ => $packet->{$_} } qw(
+            ss stateid stateid_state
+
+            payby
+            payinfo paycvv paydate payname paystate paytype
+            paystart_month paystart_year payissue
+            payip
+
+            referral_custnum comments
+          )
+    ),
+
+  );
+
   my $template_custnum = $conf->config('signup_server-prepaid-template-custnum');
   my $cust_main;
   if ( $template_custnum && $packet->{prepaid_shortform} ) {
@@ -527,27 +549,10 @@ sub new_customer {
     my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
     return { 'error' => 'Configuration error' } unless $template_cust;
     $cust_main = new FS::cust_main ( {
-      'agentnum'      => $agentnum,
-      'refnum'        => $packet->{refnum}
-                         || $conf->config('signup_server-default_refnum'),
-
-      ( map { $_ => $template_cust->$_ } qw( 
-              last first company daytime night fax mobile
-            )
+      %cust_main,
+      map { $_ => $template_cust->$_ } qw( 
+        last first company daytime night fax mobile
       ),
-
-      ( map { $_ => $packet->{$_} } qw(
-              ss stateid stateid_state
-
-              payby
-              payinfo paycvv paydate payname paystate paytype
-              paystart_month paystart_year payissue
-              payip
-
-              referral_custnum comments
-            )
-      ),
-
     } );
 
     $bill_hash = { $template_cust->bill_location->location_hash };
@@ -556,23 +561,11 @@ sub new_customer {
   } else {
 
     $cust_main = new FS::cust_main ( {
-      #'custnum'          => '',
-      'agentnum'      => $agentnum,
-      'refnum'        => $packet->{refnum}
-                         || $conf->config('signup_server-default_refnum'),
-
+      %cust_main,
       map { $_ => $packet->{$_} } qw(
-        last first ss company 
-        daytime night fax mobile
-        stateid stateid_state
-        payby
-        payinfo paycvv paydate payname paystate paytype
-        paystart_month paystart_year payissue
-        payip
+        last first company daytime night fax mobile
         override_ban_warn
-        referral_custnum comments
       ),
-
     } );
   }
 
