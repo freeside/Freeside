@@ -39,7 +39,7 @@ export FREESIDE_LOG = $(TMP)/usr/local/etc/freeside
 export FREESIDE_LOCK = $(TMP)/usr/local/etc/freeside
 export FREESIDE_CACHE = $(TMP)/usr/local/etc/freeside
 export FREESIDE_EXPORT = $(TMP)/usr/local/etc/freeside
-export FREESIDE_SS = $(TMP)/usr/share/docs/freeside
+
 export DIST_CONF = ${FREESIDE_CONF}/default_conf
 
 #XXX own subdir?
@@ -94,7 +94,10 @@ build-stamp:
 	# Add commands to compile the package here
 	
 	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor && $(MAKE) )
-	$(MAKE) perl-modules	
+	$(MAKE) perl-modules
+	
+	( cd fs_selfservice/FS-SelfService/ && $(PERL) Makefile.PL && $(MAKE) )
+	
 	#install this for freeside-setup
 	install -d $(DIST_CONF)
 	install `ls -d conf/[a-z]* | grep -v CVS | grep -v '^conf/registries'` $(DIST_CONF)
@@ -202,6 +205,24 @@ install-stamp: build-stamp
         " ${TMP}-lib/usr/bin/* \
 	  ${TMP}-webui/usr/local/etc/freeside/handler.pl
 
+	# Self-service
+	
+	( cd fs_selfservice/FS-SelfService/; $(MAKE) -e DESTDIR=${TMP}-selfservice-lib install ) 
+	install -d -o freeside -g freeside ${TMP}-selfservice-lib/usr/local/freeside
+	touch ${TMP}-selfservice-lib/usr/local/freeside/selfservice_socket 
+	chown -R freeside ${TMP}-selfservice-lib/usr/local/freeside
+	chmod 600 ${TMP}-selfservice-lib/usr/local/freeside/selfservice_socket
+	
+	install -d -o freeside -g freeside ${TMP}-selfservice-ui/var/www/
+	cp -R fs_selfservice/FS-SelfService/cgi ${TMP}-selfservice-ui/var/www/selfservice-DIST
+	chown freeside.freeside ${TMP}-selfservice-ui/var/www/selfservice-DIST/*.cgi ${TMP}-selfservice-ui/var/www/selfservice-DIST/*/*.cgi;
+	chmod 755 ${TMP}-selfservice-ui/var/www/selfservice-DIST/*.cgi ${TMP}-selfservice-ui/var/www/selfservice-DIST/*/*.cgi
+
+	# NG-selfservice
+
+	install -d ${TMP}-ng-selfservice/var/www/
+	cp -R ng_selfservice ${TMP}-ng-selfservice/var/www/ng_selfservice-DIST/
+
 	#RT Config
 
 	( cd rt; \
@@ -271,7 +292,7 @@ binary-indep: build install
 	dh_perl
 	dh_link
 	dh_compress 
-	dh_fixperms
+	dh_fixperms -X/var/www/selfservice-DIST -X/usr/local/freeside
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
