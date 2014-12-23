@@ -106,7 +106,7 @@ RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific
 #RT_TIMEZONE = US/Eastern
-FREESIDE_URL = "http://localhost/freeside/"
+FREESIDE_URL = "http://192.168.1.6/freeside/"
 
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
@@ -460,7 +460,7 @@ release:
 	#cd /home/ivan
 	git archive --prefix=freeside-${VERSION}/ ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
 
-	scp freeside-${VERSION}.tar.gz ivan@420.am:/var/www/www.sisd.com/freeside/
+	scp freeside-${VERSION}.tar.gz ivan@freeside.biz:/var/www/www.freeside.biz/freeside/
 	mv freeside-${VERSION}.tar.gz ..
 
 	#these things failing should not make release target fail, so: "|| true"
