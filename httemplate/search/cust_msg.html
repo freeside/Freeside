@@ -1,51 +1,51 @@
-<& 'elements/search.html',
-       'title' => $title,
-       'name_singular'  => 'message',
-       'query' => $query,
-       'count_query' => $count_query,
-       'header' => [ 
-                     'Date',
-                     'Type',
-                     'Destination',
-                     'Status',
-                     '', #error
-                  ],
-       'fields' => [ 
-                     sub { 
-                       my $date = $_[0]->_date;
-                       $date ? time2str('%Y-%m-%d %T',$_[0]->_date) : '' 
-                     },
-                     sub {
-                       ucfirst($_[0]->msgtype) || $_[0]->msgname
-                     },
-                     sub {
-                       join('<BR>', split(/,\s*/, $_[0]->env_to) )
-                     },
-                     'status',
-                     sub { encode_entities($_[0]->error) },
-                  ],
-       'sort_fields' => [ '_date',
-                          'msgtype',
-                          'env_to',
-                          'status',
-                          'error',
-                        ],
-       'align' => 'rllcl',
-       'links' => [ ],
+<& elements/search.html,
+       'title'         => $title,
+       'name_singular' => 'message',
+       'query'         => $query,
+       'count_query'   => $count_query,
+       'header'        => [ 
+                            'Date',
+                            'Type',
+                            'Destination',
+                            'Status',
+                            '', #error
+                         ],
+       'fields'        => [ 
+                            sub { 
+                              my $date = $_[0]->_date;
+                              $date ? time2str('%Y-%m-%d %T',$_[0]->_date) : '' 
+                            },
+                            sub {
+                              ucfirst($_[0]->msgtype) || $_[0]->msgname
+                            },
+                            sub {
+                              join('<BR>', split(/,\s*/, $_[0]->env_to) )
+                            },
+                            'status',
+                            sub { encode_entities($_[0]->error) },
+                         ],
+       'sort_fields'   => [ '_date',
+                            'msgtype',
+                            'env_to',
+                            'status',
+                            'error',
+                          ],
+       'align'         => 'rllcl',
+       'links'         => [],
        'link_onclicks' => [ 
-                    $sub_popup_link,
-                    $sub_popup_link,
-                    $sub_popup_link,
-                    '',
-                    '',
-                  ],
-       'color' => [ '',
-                    $typecolor,
-                    '',
-                    $statuscolor,
-                    $statuscolor,
-                  ],
-       'html_init' => $html_init,
+                            $sub_popup_link,
+                            $sub_popup_link,
+                            $sub_popup_link,
+                            '',
+                            '',
+                          ],
+       'color'         => [ '',
+                            $typecolor,
+                            '',
+                            $statuscolor,
+                            $statuscolor,
+                          ],
+       'html_init'     => $html_init,
        'really_disable_download' => 1,
        @_
 &>
@@ -58,7 +58,12 @@ my $conf = new FS::Conf;
 
 my $title = 'Outgoing Message Log';
 
-my @where;
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
 if ( $cgi->param('status') =~ /^(\w+)$/ ) {
   push @where, "status = '$1'";
 }
@@ -76,20 +81,22 @@ if ( $cgi->param('order_by') =~ /^(\w+)$/ ) {
   $order_by = $1;
 }
 
-my $where = '';
-$where = ' WHERE '.join(' AND ', @where) if @where;
+my $where = ' WHERE '. join(' AND ', @where);
+
+my $join_cust_main = ' LEFT JOIN cust_main USING ( custnum ) ';
+
 my $query = {
   'table'     => 'cust_msg',
   'select'    => join(', ',
                    'cust_msg.*',
                    'msg_template.msgname',
                  ),
-  'addl_from' => ' LEFT JOIN msg_template USING ( msgnum )',
+  'addl_from' => ' LEFT JOIN msg_template USING ( msgnum ) '. $join_cust_main,
   'hashref'   => {},
   'extra_sql' => $where,
   'order_by'  => "ORDER BY $order_by",
 };
-my $count_query = 'SELECT COUNT(*) FROM cust_msg'.$where;
+my $count_query = "SELECT COUNT(*) FROM cust_msg $join_cust_main $where";
 
 my $sub_popup_link = sub {
   my $custmsgnum = $_[0]->custmsgnum;
