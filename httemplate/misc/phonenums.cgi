@@ -29,7 +29,7 @@ if ( $exchangestring ) {
       $opts{'state'} = $2;
   } else {
       $exchangestring =~ /\((\d{3})-(\d{3})-XXXX\)\s*$/i
-        or die "unparsable exchange: $exchangestring";
+        or die "unparseable exchange: $exchangestring";
       my( $areacode, $exchange ) = ( $1, $2 );
       $opts{'areacode'} = $areacode;
       $opts{'exchange'} = $exchange;

@@ -31,6 +31,9 @@
   font-size: smaller;
   font-style: italic;
 }
+.selectrole {
+  font-size: small
+}
 </STYLE>
 <SCRIPT TYPE="text/javascript">
 function fixup_submit(layer) {

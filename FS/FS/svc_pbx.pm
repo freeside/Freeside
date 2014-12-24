@@ -63,6 +63,11 @@ Maximum number of extensions
 
 Maximum number of simultaneous users
 
+=item ip_addr
+
+The IP address of this PBX, if that's relevant. This must be a valid IP 
+address (or blank), but it's not checked for block assignment or uniqueness.
+
 =back
 
 =head1 METHODS
@@ -86,9 +91,11 @@ sub table_info {
   tie my %fields, 'Tie::IxHash',
     'svcnum' => 'PBX',
     'id'     => 'PBX/Tenant ID',
+    'uuid'   => 'External UUID',
     'title'  => 'Name',
     'max_extensions' => 'Maximum number of User Extensions',
     'max_simultaneous' => 'Maximum number of simultaneous users',
+    'ip_addr' => 'IP address',
   ;
 
   {
@@ -238,9 +245,10 @@ sub check {
   my $x = $self->setfixed;
   return $x unless ref($x);
   my $part_svc = $x;
-
-
-  $self->SUPER::check;
+ 
+  return
+     $self->ut_ipn('ip_addr')
+  || $self->SUPER::check;
 }
 
 sub _check_duplicate {

@@ -2935,6 +2935,7 @@ sub tables_hashref {
         'exportsvcnum' => 'serial', '', '', '', '', 
         'exportnum'    => 'int', '', '', '', '', 
         'svcpart'      => 'int', '', '', '', '', 
+        'role'         => 'varchar', 'NULL', 16, '', '',
       ],
       'primary_key' => 'exportsvcnum',
       'unique'      => [ [ 'exportnum', 'svcpart' ] ],
@@ -4190,13 +4191,15 @@ sub tables_hashref {
       'columns' => [
         'svcnum',           'int',     '',      '', '', '', 
         'id',               'int', 'NULL',      '', '', '', 
+        'uuid',            'char', 'NULL',      36, '', '',
         'title',        'varchar', 'NULL', $char_d, '', '', 
         'max_extensions',   'int', 'NULL',      '', '', '',
         'max_simultaneous', 'int', 'NULL',      '', '', '',
+        'ip_addr',      'varchar', 'NULL',      40, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],
-      'index'  => [ [ 'id' ] ],
+      'index'  => [ [ 'id' ], [ 'uuid' ] ],
     },
 
     'pbx_extension' => {

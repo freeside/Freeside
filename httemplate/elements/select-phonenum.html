@@ -1,3 +1,34 @@
+<%doc>
+Selector for DID phone number.
+
+Options:
+
+- prefix: prefix for all the object IDs, field names, javascript functions,
+etc. for including multiple DID selectors on a single page.
+
+- empty: text to display when no number is selected ("empty_label")
+
+- bulknum: allow bulk selection of up to this many numbers (self-service 
+only? wtf?)
+
+- svcpart: svcpart (required)
+
+- tollfree: pass "tollfree" to misc/phonenums.cgi, instead of passing an 
+exchange/region/anything else.
+
+- region: corresponds to the inverse of "get_dids_npa_select". The selector
+creates an on-change handler telling the previous selector in the hierarchy
+to update the list of phone numbers. If 'region' is true, it will look for 
+a previous selector named "region", and prefix the query it sends to 
+phonenums.cgi with '_REGION', which results in get_dids() being called
+with a 'region' parameter instead of 'ratecenter' and 'state'.
+
+
+Internally, this will set up an exchange_changed or region_changed function 
+to refresh the phone number list. The function will fetch misc/phonenums.cgi,
+passing the exchange (or region) and 
+</%doc>
+
 <% include('/elements/xmlhttp.html',
               'url'  => $p.'misc/phonenums.cgi',
               'subs' => [ $opt{'prefix'}. 'get_phonenums' ],
