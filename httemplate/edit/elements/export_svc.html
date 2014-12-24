@@ -1,0 +1,84 @@
+<%args>
+$part_svc
+$svcdb
+$clone => undef
+</%args>
+<%init>
+
+my $svcpart = $clone || $part_svc->svcpart; # may be undef
+
+# get a list of applicable part_exports
+my @part_export;
+my $export_info = FS::part_export::export_info($svcdb);
+foreach ( keys %{ $export_info } ) {
+  push @part_export, qsearch('part_export', { exporttype => $_ });
+}
+# and a hash of which ones are already assigned to this part_svc
+my %export_svc;
+if ( $svcpart ) {
+  %export_svc = map { $_->exportnum => $_ }
+    qsearch('export_svc', { svcpart => $svcpart });
+}
+
+my $count = 0;
+my $columns = 3;
+
+</%init>
+<script type="text/javascript">
+function toggle_selectrole() {
+  var selectrole = document.getElementById( this.name + '_selectrole' );
+  if ( selectrole ) {
+    selectrole.style.visibility = (this.checked) ? '' : 'hidden';
+  }
+}
+<&| /elements/onload.js &>
+  var boxes = document.getElementsByClassName('checkbox_export');
+  for ( var i = 0; i < boxes.length; i++ ) {
+    boxes[i].onchange = toggle_selectrole;
+    toggle_selectrole.apply(boxes[i]);
+  }
+</&>
+</script>
+<& /elements/table.html &>
+  <TR><TH COLSPAN=<% $columns %>>Exports</TH></TR>
+  <TR>
+% # exports
+% foreach my $part_export (@part_export) {
+%   my $exportnum = $part_export->exportnum;
+    <TD>
+      <INPUT CLASS="checkbox_export"
+             TYPE="checkbox" \
+             NAME="exportnum<% $exportnum %>" \
+             VALUE=1 \
+             <% $export_svc{$exportnum} ? 'CHECKED' : '' %>>
+      <% $part_export->label_html %>
+% if ( $part_export->info->{roles} ) {
+%   my $role_info = $part_export->info->{roles};
+%   my @role_names = keys %$role_info;
+%   my %role_labels = map { %_ => $role_info->{$_}->{label} } @role_names;
+%   my $curr_role = $export_svc{$exportnum} ? $export_svc{$exportnum}->role
+%                                           : '';
+      <SPAN CLASS="selectrole" ID="exportnum<%$exportnum%>_selectrole">
+        as: 
+        <& /elements/select.html,
+          'field'       => "exportnum${exportnum}_role",
+          'options'     => \@role_names,
+          'labels'      => \%role_labels,
+          'curr_value'  => $curr_role,
+          'empty_label' => 'select',
+        &>
+      </SPAN>
+%     # XXX should lock out roles that don't apply to the selected svcdb, 
+%     # but that's a pain in the ass
+%   }
+        </SELECT>
+      </SPAN>
+    </TD>
+%   $count++;
+%   if ( $count % $columns == 0 ) {
+  </TR>
+  <TR>
+%   }
+% }
+  </TR>
+</TABLE><BR><BR>

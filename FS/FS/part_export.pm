@@ -535,6 +535,23 @@ sub default_export_machine {
   die "no default export hostname for export ".$self->exportnum;
 }
 
+=item svc_role SVC_X
+
+Returns the role that SVC_X occupies with respect to this export, if any.
+This is part of the part_svc's export configuration.
+
+=cut
+
+sub svc_role {
+  my $self = shift;
+  my $svc_x = shift;
+  my $cust_svc = $svc_x->cust_svc or return '';
+  my $export_svc = qsearchs('export_svc', { exportnum => $self->exportnum,
+                                            svcpart   => $cust_svc->svcpart })
+                   or return '';
+  $export_svc->role;
+} 
+
 #these should probably all go away, just let the subclasses define em
 
 =item export_insert SVC_OBJECT
@@ -683,6 +700,33 @@ sub info {
   };
 }
 
+=item get_dids SELECTION
+
+Does several things, which is unfortunate. DID phone numbers are organized
+in a sort-of hierarchy: state, areacode, exchange, number. Or, for some 
+vendors: state, region, number. But not always that, either.
+
+SELECTION is one or more field/value pairs specifying parts of the hierarchy
+that have already been selected.  C<get_dids> will then return an arrayref of
+the possible values for the next selection level. Note that these are not
+actual DIDs except at the lowest level.
+
+Generally, 'state' alone will return an array of area codes or region names
+in the state.
+
+'state' and 'areacode' together will return an array of exchanges (NXX
+prefixes), or for some exports, an array of ratecenter names.
+
+'areacode' and 'exchange', or 'state' and 'ratecenter', or 'region' by itself
+will return an array of actual DID numbers.
+
+Passing 'tollfree' with a true value will override the whole hierarchy and
+return an array of tollfree numbers.
+
+=cut
+
+# no stub; can('get_dids') should return false by default
+
 #default fallbacks... FS::part_export::DID_Common ?
 sub can_get_dids { 0; }
 sub get_dids_can_tollfree { 0; }
@@ -691,6 +735,24 @@ sub get_dids_can_edit     { 0; } #don't use without can_manual, otherwise the
                                  # DID selector provisions a new number from
                                  # inventory each edit
 sub get_dids_npa_select   { 1; }
+
+# get_dids_npa_select: if true, then prompt to select state, then area code,
+# then city/exchange, then phone number.
+# if false, then prompt to select state (actually province), then "region",
+# then phone number.
+#
+# get_dids_can_manual: if true, then there will be a radio button to enter
+# a phone number manually.
+#
+# get_dids_can_tollfree: if true, then the user will be prompted to choose
+# both a regular and a toll-free number. The export can have a 
+# 'restrict_selection' option to enable only one or the other of those. See
+# part_export/vitelity.pm for an example.
+#
+# get_dids_can_edit: if true, then the user can use the selector again to
+# change the phone number for a service. if false, then they can't (have to
+# reprovision completely).
+
 
 =back
 

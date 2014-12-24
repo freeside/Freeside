@@ -64,26 +64,11 @@ my %communigate_fields = (
 </%once>
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $svcdb %>">
 <BR><BR>
-<& /elements/table.html &>
-  <TR><TH COLSPAN=<% $columns %>>Exports</TH></TR>
-  <TR>
-% # exports
-% foreach my $part_export (@part_export) {
-    <TD>
-      <INPUT TYPE="checkbox" \
-             NAME="exportnum<% $part_export->exportnum %>" \
-             VALUE=1 \
-             <% $has_export_svc{$part_export->exportnum} ? 'CHECKED' : '' %>>
-      <% $part_export->label_html %>
-    </TD>
-%   $count++;
-%   if ( $count % $columns == 0 ) {
-  </TR>
-  <TR>
-%   }
-% }
-  </TR>
-</TABLE><BR><BR>
+%# include export selection
+<& export_svc.html,
+  part_svc => $part_svc,
+  svcdb => $svcdb
+&>
 For the selected table, you can give fields default or fixed (unchangeable)
 values, or select an inventory class to manually or automatically fill in 
 that field.
@@ -285,27 +270,18 @@ that field.
 <%init>
 my $svcdb = shift;
 my %opt = @_;
-my $columns = 3;
 my $count = 0;
 my $communigate = 0;
 my $conf = FS::Conf->new;
 
 my $part_svc = $opt{'part_svc'} || FS::part_svc->new;
 
-my @part_export;
-my $export_info = FS::part_export::export_info($svcdb);
-foreach (keys %{ $export_info }) {
-  push @part_export, qsearch('part_export', { exporttype => $_ });
+# see if there are communigate exports configured
+if ( exists $communigate_fields{$svcdb} ) {
+  $communigate = FS::part_export->count("exporttype like 'communigate%'");
 }
-$communigate = scalar(grep {$_->exporttype =~ /^communigate/} @part_export);
 
 my $svcpart = $opt{'clone'} || $part_svc->svcpart;
-my %has_export_svc;
-if ( $svcpart ) {
-  foreach (qsearch('export_svc', { svcpart => $svcpart })) {
-    $has_export_svc{$_->exportnum} = 1;
-  }
-}
 
 my @fields;
 if ( defined( dbdef->table($svcdb) ) ) { # when is it ever not defined?

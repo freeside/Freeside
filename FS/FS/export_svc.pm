@@ -38,6 +38,8 @@ The following fields are currently supported:
 
 =item svcpart - service definition (see L<FS::part_svc>)
 
+=item role - export role (see export parameters)
+
 =back
 
 =head1 METHODS
@@ -307,8 +309,24 @@ sub check {
     || $self->ut_foreign_key('exportnum', 'part_export', 'exportnum')
     || $self->ut_number('svcpart')
     || $self->ut_foreign_key('svcpart', 'part_svc', 'svcpart')
+    || $self->ut_alphan('role')
     || $self->SUPER::check
   ;
+
+  my $part_export = $self->part_export;
+  if ( exists $part_export->info->{roles} ) {
+    my $role = $self->get('role');
+    if ( ! $role ) {
+      return 'must select an export role'
+    }
+    if ( ! exists($part_export->info->{roles}->{$role}) ) {
+      return "invalid role for export '".$part_export->exporttype."'";
+    }
+  } else {
+    $self->set('role', '');
+  }
+
+  '';
 }
 
 =item part_export

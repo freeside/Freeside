@@ -12,7 +12,7 @@ use FS::export_svc;
 use FS::cust_svc;
 use FS::part_svc_class;
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -113,12 +113,8 @@ TODOC: JOB
 sub insert {
   my $self = shift;
   my @fields = ();
-  my @exportnums = ();
   @fields = @{shift(@_)} if @_;
-  if ( @_ ) {
-    my $exportnums = shift;
-    @exportnums = grep $exportnums->{$_}, keys %$exportnums;
-  }
+  my $exportnums = shift || {};
   my $job = '';
   $job = shift if @_;
 
@@ -191,12 +187,14 @@ sub insert {
   }
 
   # add export_svc records
+  my @exportnums = grep $exportnums->{$_}, keys %$exportnums;
   my $slice = 100/scalar(@exportnums) if @exportnums;
   my $done = 0;
   foreach my $exportnum ( @exportnums ) {
     my $export_svc = new FS::export_svc ( {
       'exportnum' => $exportnum,
       'svcpart'   => $self->svcpart,
+      'role'      => $exportnums->{$exportnum},
     } );
     $error = $export_svc->insert($job, $slice*$done++, $slice);
     if ( $error ) {
@@ -327,9 +325,10 @@ sub replace {
 
     # maintain export_svc records
 
-    if ( $exportnums ) {
+    if ( $exportnums ) { # hash of exportnum => role
 
       #false laziness w/ edit/process/agent_type.cgi
+      #and, more importantly, with m2m_Common
       my @new_export_svc = ();
       foreach my $part_export ( qsearch('part_export', {}) ) {
         my $exportnum = $part_export->exportnum;
@@ -339,13 +338,23 @@ sub replace {
         };
         my $export_svc = qsearchs('export_svc', $hashref);
 
-        if ( $export_svc && ! $exportnums->{$exportnum} ) {
-          $error = $export_svc->delete;
-          if ( $error ) {
-            $dbh->rollback if $oldAutoCommit;
-            return $error;
+        if ( $export_svc ) {
+          my $old_role = $export_svc->role || 1; # 1 = null in the db
+          if ( ! $exportnums->{$exportnum}
+               or $old_role ne $exportnums->{$exportnum} ) {
+
+            $error = $export_svc->delete;
+            if ( $error ) {
+              $dbh->rollback if $oldAutoCommit;
+              return $error;
+            }
+            undef $export_svc; # on a role change, force it to be reinserted
+
           }
-        } elsif ( ! $export_svc && $exportnums->{$exportnum} ) {
+        } # if $export_svc
+        if ( ! $export_svc && $exportnums->{$exportnum} ) {
+          # also applies if it's been undef'd because of role change
+          $hashref->{role} = $exportnums->{$exportnum};
           push @new_export_svc, new FS::export_svc ( $hashref );
         }
 
@@ -773,7 +782,13 @@ sub process {
   my %exportnums =
     map { $_->exportnum => ( $param->{'exportnum'.$_->exportnum} || '') }
         qsearch('part_export', {} );
-
+  foreach my $exportnum (%exportnums) {
+    my $role = $param->{'exportnum'.$exportnum.'_role'};
+    # role is undef if the export has no role selector
+    if ( $exportnums{$exportnum} && $role ) {
+      $exportnums{$exportnum} = $role;
+    }
+  }
   my $error;
   if ( $param->{'svcpart'} ) {
     $error = $new->replace( $old,
