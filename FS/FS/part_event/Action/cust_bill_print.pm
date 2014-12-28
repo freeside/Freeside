@@ -14,6 +14,9 @@ sub option_fields {
     'modenum' => {  label => 'Invoice mode',
                     type  => 'select-invoice_mode',
                  },
+    'skip_nopost' => { label => 'Skip customers without postal billing enabled',
+                       type  => 'checkbox',
+                     },
   );
 }
 
@@ -26,7 +29,8 @@ sub do_action {
   my $cust_main = $cust_bill->cust_main;
 
   $cust_bill->set('mode' => $self->option('modenum'));
-  $cust_bill->print;
+  $cust_bill->print unless $self->option('skip_nopost')
+                        && ! grep { $_ eq 'POST' } $cust_main->invoicing_list;
 }
 
 1;
