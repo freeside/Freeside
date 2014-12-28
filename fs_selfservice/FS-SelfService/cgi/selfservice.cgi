@@ -88,12 +88,17 @@ my @nologin_actions = (qw(
   do_forgot_password
   process_forgot_password
   do_process_forgot_password
+  process_forgot_password_session
 ));
 push @actions, @nologin_actions;
 my %nologin_actions = map { $_=>1 } @nologin_actions;
 
 my $action = 'myaccount'; # sensible default
-if ( $cgi->param('action') =~ /^(\w+)$/ ) {
+
+if ( $cgi->param('action') =~ /^process_forgot_password_session_(\w+)$/ ) {
+  $action = 'process_forgot_password_session';
+  $session_id = $1;
+} elsif ( $cgi->param('action') =~ /^(\w+)$/ ) {
   if (grep {$_ eq $1} @actions) {
     $action = $1;
   } else {
@@ -1048,6 +1053,12 @@ sub process_forgot_password {
   check_reset_passwd(
     map { $_ => scalar($cgi->param($_)) }
       qw( session_id )
+  );
+}
+
+sub process_forgot_password_session {
+  check_reset_passwd(
+    'session_id' => $session_id,
   );
 }
 

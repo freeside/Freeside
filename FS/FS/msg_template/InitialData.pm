@@ -10,7 +10,7 @@ sub _initial_data {
       _insert_args => [ subject => '{ $company_name } password reset',
                         body    => <<'END',
 To complete your { $company_name } password reset, please go to
-<a href="{ $selfservice_server_base_url }/selfservice.cgi?action=process_forgot_password;session_id={ $session_id }">{ $selfservice_server_base_url }/selfservice.cgi?action=process_forgot_password;session_id={ $session_id }</a><br />
+<a href="{ $selfservice_server_base_url }/selfservice.cgi?action=process_forgot_password_session_{ $session_id }">{ $selfservice_server_base_url }/selfservice.cgi?action=process_forgot_password_session_{ $session_id }</a><br />
 <br />
 This link will expire in 24 hours.<br />
 <br />
