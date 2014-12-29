@@ -73,12 +73,15 @@ FS/cust_credit.pm
 FS/cust_credit_bill.pm
 FS/cust_main.pm
 FS/cust_main/Billing.pm
+FS/cust_main/Billing_Batch.pm
 FS/cust_main/Billing_Discount.pm
 FS/cust_main/Billing_Realtime.pm
 FS/cust_main/Import.pm
 FS/cust_main/Import_Charges.pm
+FS/cust_main/Merge.pm
 FS/cust_main/Packages.pm
 FS/cust_main/Search.pm
+FS/cust_main/Status.pm
 FS/cust_main_Mixin.pm
 FS/cust_main_county.pm
 FS/cust_main_invoice.pm
@@ -592,7 +595,6 @@ FS/svc_port.pm
 t/svc_port.t
 FS/h_svc_port.pm
 t/h_svc_port.t
-FS/cust_main/Status.pm
 FS/NetworkMonitoringSystem.pm
 FS/NetworkMonitoringSystem/Torrus_Internal.pm
 FS/lata.pm
