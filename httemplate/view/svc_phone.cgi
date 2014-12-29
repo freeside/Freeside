@@ -19,6 +19,7 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
 my @fields = qw( countrycode phonenum sim_imsi );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
 push @fields, qw( pbx_title );
+$labels{pbx_title} = 'PBX';
 
 if ( $conf->exists('showpasswords') ) {
   push @fields, qw( sip_password );
@@ -57,6 +58,8 @@ $labels{circuit_label} = mt('Circuit');
 push @fields, { field => 'circuit_label',
                 link => [ $p.'view/svc_circuit.html?', 'circuit_svcnum' ]
               };
+
+push @fields, 'sip_server';
 
 my $html_foot = sub {
   my $svc_phone = shift;

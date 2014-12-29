@@ -81,18 +81,18 @@ Example:
 %       # if/when other folks need an areacode-less DID selector that goes
 %       # directly from state to region
 
-        <TD VALIGN="top">
-          <% include('/elements/select.html',
-                       'field'    => 'phonenum_state',
-                       'id'       => 'phonenum_state',
-                       'options'  => [ '', @{ $export->get_dids } ],
-                       'labels'   => { '' => 'Select province' },
-                       'onchange' => 'phonenum_state_changed(this);',
-                       'disabled' => ( $manual_checked ? 1 : 0 ),
-                    )
-          %>
-          <BR><FONT SIZE="-1" ID="phonenum_state_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>Province</FONT>
-        </TD>
+          <TD VALIGN="top">
+            <% include('/elements/select.html',
+                         'field'    => 'phonenum_state',
+                         'id'       => 'phonenum_state',
+                         'options'  => [ '', @{ $export->get_dids } ],
+                         'labels'   => { '' => 'Select province' },
+                         'onchange' => 'phonenum_state_changed(this);',
+                         'disabled' => ( $manual_checked ? 1 : 0 ),
+                      )
+            %>
+            <BR><FONT SIZE="-1" ID="phonenum_state_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>Province</FONT>
+          </TD>
 
           <TD VALIGN="top">
             <% include('/elements/select-region.html',

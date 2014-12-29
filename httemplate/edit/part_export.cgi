@@ -201,6 +201,15 @@ my $widget = new HTML::Widgets::SelectLayers(
         $html .= qq!<TR><TD ALIGN="right">$label</TD><TD>!;
       }
       if ( $type eq 'select' ) {
+
+        # 'select' options can specify options one of two ways:
+        # the "preferred" way:
+        #   options: arrayref of allowed option values
+        #   option_labels: hashref of option value => label
+        # OR the weird and semi-deprecated way:
+        #   option_values: coderef to return a list of allowed option values
+        #   option_label: coderef to take an option value and return its label
+
         my $size = defined($optinfo->{size}) ? " SIZE=" . $optinfo->{size} : '';
         my $multi = ($optinfo->{multi} || $optinfo->{multiple})
                       ? ' MULTIPLE' : '';
@@ -218,10 +227,15 @@ my $widget = new HTML::Widgets::SelectLayers(
           #} else {
             my $selected = ($multi ? grep {$_ eq $select_option} @values : $select_option eq $value ) ? ' SELECTED' : '';
             my $label = $select_option;
-            if (defined($optinfo->{option_label})) {
+            if ( defined $optinfo->{option_label} ) {
               my $labelsub = $optinfo->{option_label};
               $label = &$labelsub($select_option);
+            } elsif ( defined $optinfo->{option_labels} ) {
+              if (exists $optinfo->{option_labels}->{$select_option}) {
+                $label = $optinfo->{option_labels}->{$select_option};
+              }
             }
+    
             $html .= qq!<OPTION VALUE="$select_option"$selected>!.
                      qq!$label</OPTION>!;
           #}
