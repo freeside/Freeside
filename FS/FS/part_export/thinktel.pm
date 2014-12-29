@@ -66,9 +66,11 @@ tie my %roles, 'Tie::IxHash',
                },
   'did'     => {  label     => 'DID',
                   svcdb     => 'svc_phone',
+                  multiple  => 1,
                },
   'gateway' => {  label     => 'SIP gateway',
-                  svcdb     => 'svc_pbx'
+                  svcdb     => 'svc_pbx',
+                  multiple  => 1,
                },
 ;
 
@@ -86,7 +88,7 @@ our %info = (
     <LI>A phone service for the SIP trunk. This should be attached to the 
     export in the "trunk" role. Usually there will be only one of these
     per package. The <I>max_simultaneous</i> field of this service will set 
-    the channel limit on the trunk. The I<sip_password> will be used for
+    the channel limit on the trunk. The <i>sip_password</i> will be used for
     all gateways.</LI>
     <LI>A phone service for a DID. This should be attached in the "did" role.
     DIDs should have no properties other than the number and the E911 
@@ -102,40 +104,6 @@ our %info = (
 </P>
 END
 );
-
-=item svc_with_role { SVC | PKGNUM }, ROLE
-
-Finds the service(s) in the same package as SVC (or the package PKGNUM) that 
-are linked to the export in ROLE (trunk, gateway, or did).
-
-=cut
-
-sub svc_with_role {
-  my $self = shift;
-  my $svc_or_pkgnum = shift;
-  my $role = shift;
-  my $pkgnum;
-  if ( ref $svc_or_pkgnum ) {
-    $pkgnum = $svc_or_pkgnum->cust_svc->pkgnum or return '';
-  } else {
-    $pkgnum = $svc_or_pkgnum;
-  }
-  my $svcdb = ($role eq 'gateway' ? 'svc_pbx' : 'svc_phone');
-  my @svcs = qsearch({
-    'table'     =>  $svcdb,
-    'addl_from' =>  ' JOIN cust_svc USING (svcnum)' .
-                    ' JOIN export_svc USING (svcpart)',
-    'extra_sql' =>  " WHERE cust_svc.pkgnum = $pkgnum" .
-                    " AND export_svc.exportnum = ".$self->exportnum .
-                    " AND export_svc.role = '$role'",
-  });
-  if ( $role eq 'trunk' ) {
-    warn "$me more than one trunk service in pkgnum $pkgnum.\n" if @svcs > 1;
-    return $svcs[0];
-  } else {
-    return @svcs;
-  }
-}
 
 sub check_svc { # check the service for validity
   my($self, $svc_x) = (shift, shift);
