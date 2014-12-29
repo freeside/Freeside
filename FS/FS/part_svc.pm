@@ -12,7 +12,7 @@ use FS::export_svc;
 use FS::cust_svc;
 use FS::part_svc_class;
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
