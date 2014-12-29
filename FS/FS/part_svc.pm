@@ -13,7 +13,7 @@ use FS::part_svc_class;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
