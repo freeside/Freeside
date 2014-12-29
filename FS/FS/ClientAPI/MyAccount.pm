@@ -1136,6 +1136,7 @@ sub do_process_payment {
 
   my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
     'quiet'       => 1,
+    'manual'      => 1,
     'selfservice' => 1,
     'paynum_ref'  => \$paynum,
     %$validate,
