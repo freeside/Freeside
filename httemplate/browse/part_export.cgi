@@ -60,21 +60,25 @@ function part_export_areyousure(href) {
 %         my %opt = $part_export->options;
 %         my $defs = $part_export->info->{options};
 %         my %multiples;
-%         foreach my $opt (keys %$defs) { # is a Tie::IxHash
-%           my $group = $defs->{$opt}->{multiple};
+%         foreach my $optname (keys %$defs) { # is a Tie::IxHash
+%           my $def = $defs->{$optname};
+%           my $group = $def->{multiple};
 %           if ( $group ) {
-%             my @values = split("\n", $opt{$opt});
+%             my @values = split("\n", $opt{$optname});
 %             $multiples{$group} ||= [];
-%             push @{ $multiples{$group} }, [ $opt, @values ] if @values;
-%             delete $opt{$opt};
-%           } elsif (length($opt{$opt})) { # the normal case
-%#         foreach my $opt ( keys %opt ) { 
+%             push @{ $multiples{$group} }, [ $optname, @values ] if @values;
+%             delete $opt{$optname};
+%           } elsif (length($opt{$optname})) { # the normal case
+%             my $value = $opt{$optname};
+%             if ( $def->{option_labels} ) {
+%               $value = $def->{option_labels}->{$value} || $value;
+%             }
   
             <TR>
-              <TD ALIGN="right" VALIGN="top" WIDTH="33%"><% $opt %>:&nbsp;</TD>
-              <TD ALIGN="left" WIDTH="67%"><% encode_entities($opt{$opt}) %></TD>
+              <TD ALIGN="right" VALIGN="top" WIDTH="33%"><% $optname %>:&nbsp;</TD>
+              <TD ALIGN="left" WIDTH="67%"><% encode_entities($value) %></TD>
             </TR>
-%             delete $opt{$opt};
+%             delete $opt{$optname};
 %           }
 %         }
 %         # now any that are somehow not in the options list

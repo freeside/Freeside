@@ -5656,6 +5656,7 @@ sub tables_hashref {
         'e911_class',                    'char', 'NULL',       1, '', '',
         'e911_type',                     'char', 'NULL',       1, '', '', 
         'circuit_svcnum',                 'int', 'NULL',      '', '', '',
+        'sip_server',                 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'svcnum',
       'unique'       => [ [ 'sms_carrierid', 'sms_account'] ],

@@ -535,23 +535,6 @@ sub default_export_machine {
   die "no default export hostname for export ".$self->exportnum;
 }
 
-=item svc_role SVC_X
-
-Returns the role that SVC_X occupies with respect to this export, if any.
-This is part of the part_svc's export configuration.
-
-=cut
-
-sub svc_role {
-  my $self = shift;
-  my $svc_x = shift;
-  my $cust_svc = $svc_x->cust_svc or return '';
-  my $export_svc = qsearchs('export_svc', { exportnum => $self->exportnum,
-                                            svcpart   => $cust_svc->svcpart })
-                   or return '';
-  $export_svc->role;
-} 
-
 #these should probably all go away, just let the subclasses define em
 
 =item export_insert SVC_OBJECT
@@ -753,6 +736,61 @@ sub get_dids_npa_select   { 1; }
 # change the phone number for a service. if false, then they can't (have to
 # reprovision completely).
 
+=item svc_role SVC
+
+Returns the role that SVC occupies with respect to this export, if any.
+This is part of the part_svc's export configuration.
+
+=cut
+
+sub svc_role {
+  my $self = shift;
+  my $svc_x = shift;
+  my $cust_svc = $svc_x->cust_svc or return '';
+  my $export_svc = qsearchs('export_svc', { exportnum => $self->exportnum,
+                                            svcpart   => $cust_svc->svcpart })
+                   or return '';
+  $export_svc->role;
+} 
+
+=item svc_with_role { SVC | PKGNUM }, ROLE
+
+Given a svc_* object SVC or pkgnum PKG, and a role name ROLE, finds the
+service(s) in the same package that are linked to this export with ROLE.
+
+=cut
+
+sub svc_with_role {
+  my $self = shift;
+  my $svc_or_pkgnum = shift;
+  my $role = shift; 
+  my $pkgnum;
+  if ( ref $svc_or_pkgnum ) {
+    $pkgnum = $svc_or_pkgnum->cust_svc->pkgnum or return '';
+  } else {
+    $pkgnum = $svc_or_pkgnum;
+  }
+  my $role_info = $self->info->{roles}->{$role}
+    or die "role '$role' does not exist for export '".$self->exporttype."'\n";
+  my $svcdb = $role_info->{svcdb};
+
+  my @svcs = qsearch({
+    'table'     =>  $svcdb,
+    'addl_from' =>  ' JOIN cust_svc USING (svcnum)' .
+                    ' JOIN export_svc USING (svcpart)',
+    'extra_sql' =>  " WHERE cust_svc.pkgnum = $pkgnum" .
+                    " AND export_svc.exportnum = ".$self->exportnum .
+                    " AND export_svc.role = '$role'",
+  });               
+  if ( $role_info->{multiple} ) {
+    return @svcs;
+  } else {
+    if ( @svcs > 1 ) {
+      warn "multiple $role services in pkgnum $pkgnum; returning the first one.\n";
+    }
+    return $svcs[0];
+  }
+}
 
 =back
 

@@ -136,6 +136,15 @@ Class of Service for E911 service (per the NENA 2.1 standard).
 
 Type of Service for E911 service.
 
+=item circuit_svcnum
+
+The L<FS::svc_circuit> record for the physical circuit that transports this
+phone line.
+
+=item sip_server
+
+The hostname of the SIP server that this phone number is routed to.
+
 =back
 
 =head1 METHODS
@@ -253,6 +262,10 @@ sub table_info {
                                 disable_inventory => 1,
                                 multiple => 1,
                         },
+        'sip_server'  => {
+                                label => 'SIP Host',
+                                %dis2,
+                         },
     },
   };
 }
@@ -548,6 +561,7 @@ sub check {
 				'native', 'portin-reject', 'portout-reject'])
     || $self->ut_enumn('portable', ['','Y'])
     || $self->ut_textn('lnp_reject_reason')
+    || $self->ut_domainn('sip_server')
   ;
   return $error if $error;
 
