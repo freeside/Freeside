@@ -1057,6 +1057,7 @@ sub process_forgot_password {
 }
 
 sub process_forgot_password_session {
+  $action = 'process_forgot_password';
   check_reset_passwd(
     'session_id' => $session_id,
   );
