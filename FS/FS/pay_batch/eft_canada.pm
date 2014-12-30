@@ -149,7 +149,7 @@ sub process_date {
     @config = $conf->config('batchconfig-eft_canada');
   }
 
-  my $process_delay = $config[3] || 1;
+  my $process_delay = $config[4] || 1;
 
   if ( (localtime(time))[2] >= 10 and $process_delay == 1 ) {
     # If downloading the batch after 10:00 local time, it likely won't make
