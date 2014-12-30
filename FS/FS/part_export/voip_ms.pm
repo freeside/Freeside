@@ -503,7 +503,7 @@ sub cache {
   my $province = shift;
 
   $CACHE ||= Cache::FileCache->new({
-    'cache_root' => $FS::UID::cache_dir.'/cache'.$FS::UID::datasrc,
+    'cache_root' => $FS::UID::cache_dir.'/cache.'.$FS::UID::datasrc,
     'namespace'  => __PACKAGE__,
     'default_expires_in' => $cache_timeout,
   });
