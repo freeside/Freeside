@@ -3,6 +3,8 @@ package FS::deploy_zone;
 use strict;
 use base qw( FS::o2m_Common FS::Record );
 use FS::Record qw( qsearch qsearchs dbh );
+use Storable qw(thaw);
+use MIME::Base64;
 
 =head1 NAME
 
@@ -265,6 +267,55 @@ sub deploy_zone_vertex {
   });
 }
 
+=back
+
+=head2 SUBROUTINES
+
+=over 4
+
+=item process_batch_import JOB, PARAMS
+
+=cut
+
+sub process_batch_import {
+  eval {
+    use FS::deploy_zone_block;
+    use FS::deploy_zone_vertex;
+  };
+  my $job = shift;
+  my $param = shift;
+  if (!ref($param)) {
+    $param = thaw(decode_base64($param));
+  }
+
+  # even if creating a new zone, the deploy_zone object should already
+  # be inserted by this point
+  my $zonenum = $param->{zonenum}
+    or die "zonenum required";
+  my $zone = FS::deploy_zone->by_key($zonenum)
+    or die "deploy_zone #$zonenum not found";
+  my $opt;
+  if ( $zone->zonetype eq 'B' ) {
+    $opt = { 'table'    => 'deploy_zone_block',
+             'params'   => [ 'zonenum', 'censusyear' ],
+             'formats'  => { 'plain' => [ 'censusblock' ] },
+             'default_csv' => 1,
+           };
+    $job->update_statustext('1,Inserting census blocks');
+  } elsif ( $zone->zonetype eq 'P' ) {
+    $opt = { 'table'    => 'deploy_zone_vertex',
+             'params'   => [ 'zonenum' ],
+             'formats'  => { 'plain' => [ 'latitude', 'longitude' ] },
+             'default_csv' => 1,
+           };
+  } else {
+    die "don't know how to import to zonetype ".$zone->zonetype;
+  }
+
+  FS::Record::process_batch_import( $job, $opt, $param );
+
+}
+        
 =head1 BUGS
 
 =head1 SEE ALSO
