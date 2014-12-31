@@ -1590,7 +1590,7 @@ recur_cost divided by freq (only supported for monthly and longer frequencies)
 sub recur_cost_permonth {
   my($self, $cust_pkg) = @_;
   return 0 unless $self->freq =~ /^\d+$/ && $self->freq > 0;
-  sprintf('%.2f', $self->recur_cost / $self->freq );
+  sprintf('%.2f', ($self->recur_cost || 0) / $self->freq );
 }
 
 =item cust_bill_pkg_recur CUST_PKG
@@ -1635,7 +1635,7 @@ unit_setup minus setup_cost
 
 sub setup_margin {
   my $self = shift;
-  $self->unit_setup(@_) - $self->setup_cost;
+  $self->unit_setup(@_) - ($self->setup_cost || 0);
 }
 
 =item recur_margin_permonth

@@ -24,14 +24,15 @@ sub option_fields {
       'label'   => 'Of',
       'type'    => 'select',
       #add additional ways to specify in the package def
-      'options' => [qw( setuprecur setup recur setuprecur_margin setup_margin recur_margin )],
+      'options' => [qw( setuprecur setup recur setup_cost recur_cost setup_margin recur_margin_permonth )],
       'labels'  => {
-        'setuprecur'        => 'Amount charged',
-        'setup'             => 'Setup fee',
-        'recur'             => 'Recurring fee',
-        'setuprecur_margin' => 'Amount charged minus total cost',
-        'setup_margin'      => 'Setup fee minus setup cost',
-        'recur_margin'      => 'Recurring fee minus recurring cost',
+        'setuprecur'        => 'Amount charged on this invoice',
+        'setup'             => 'Setup fee charged on this invoice',
+        'recur'             => 'Recurring fee charged on this invoice',
+        'setup_cost'        => 'Setup cost',
+        'recur_cost'        => 'Recurring cost',
+        'setup_margin'      => 'Package setup fee minus setup cost',
+        'recur_margin_permonth' => 'Monthly recurring fee minus recurring cost',
       },
     },
   );
@@ -55,7 +56,8 @@ sub _calc_credit {
   my $cust_bill_pkg = shift;
 
   my $what = $self->option('what');
-  my $margin = 1 if $what =~ s/_margin$//;
+  my $cost = ($what =~ /_cost/ ? 1 : 0);
+  my $margin = ($what =~ /_margin/ ? 1 : 0);
 
   my $pkgnum = $cust_bill_pkg->pkgnum;
   my $cust_pkg = $cust_bill_pkg->cust_pkg;
@@ -68,24 +70,31 @@ sub _calc_credit {
   }
 
   my $charge = 0;
-  if ( $what eq 'setup' ) {
-    $charge = $cust_bill_pkg->get('setup');
-  } elsif ( $what eq 'recur' ) {
-    $charge = $cust_bill_pkg->get('recur');
-  } elsif ( $what eq 'setuprecur' ) {
-    $charge = $cust_bill_pkg->get('setup') + $cust_bill_pkg->get('recur');
-  }
-  if ( $margin ) {
+  if ( $margin or $cost ) {
+    # look up package costs only if we need them
     my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
     my $part_pkg   = $part_pkg_cache{$pkgpart}
                  ||= FS::part_pkg->by_key($pkgpart);
-    if ( $what eq 'setup' ) {
-      $charge -= $part_pkg->get('setup_cost');
-    } elsif ( $what eq 'recur' ) {
-      $charge -= $part_pkg->get('recur_cost');
-    } elsif ( $what eq 'setuprecur' ) {
-      $charge -= $part_pkg->get('setup_cost') + $part_pkg->get('recur_cost');
+
+    if ( $cost ) {
+      $charge = $part_pkg->get($what);
+    } else { # $margin
+      $charge = $part_pkg->$what($cust_pkg);
     }
+
+    $charge = ($charge || 0) * ($cust_pkg->quantity || 1);
+
+  } else { # setup, recur, or setuprecur
+
+    if ( $what eq 'setup' ) {
+      $charge = $cust_bill_pkg->get('setup');
+    } elsif ( $what eq 'recur' ) {
+      $charge = $cust_bill_pkg->get('recur');
+    } elsif ( $what eq 'setuprecur' ) {
+      $charge = $cust_bill_pkg->get('setup') + $cust_bill_pkg->get('recur');
+    }
+
+    # don't multiply by quantity here; it's already included
   }
 
   $charge = 0 if $charge < 0; # e.g. prorate
