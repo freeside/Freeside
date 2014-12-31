@@ -2,10 +2,22 @@
     table       => 'svc_circuit',
     edit_ext    => 'html',
     redirect    => popurl(3)."view/svc_circuit.html?",
+    precheck_callback => $precheck,
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+my $precheck = sub {
+  my $cgi = shift;
+  foreach ('desired_due_date', 'due_date') {
+    if ( length $cgi->param($_) ) {
+      my $date = parse_datetime( $cgi->param($_) );
+      $cgi->param($_, $date);
+    }
+  }
+  return;
+};
 
 </%init>
