@@ -415,10 +415,11 @@ sub new_customer {
   #same for refnum like signup_server-default_refnum
 
   my $cust_main = new FS::cust_main ( {
-      'agentnum'      => $agentnum,
-      'refnum'        => $opt{refnum}
-                         || $conf->config('signup_server-default_refnum'),
-      'payby'         => 'BILL',
+      'agentnum' => $agentnum,
+      'refnum'   => $opt{refnum}
+                    || $conf->config('signup_server-default_refnum'),
+      'payby'    => 'BILL',
+      'tagnum'   => [ FS::part_tag->default_tags ],
 
       map { $_ => $opt{$_} } qw(
         agentnum refnum agent_custid referral_custnum
