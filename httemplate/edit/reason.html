@@ -15,6 +15,7 @@
                 'class'       => '',
                 'unsuspend_pkgpart' => 'Unsuspension fee',
                 'unsuspend_hold'    => 'Delay until next bill',
+                'unused_credit'     => 'Credit unused portion of service',
               },
   'fields' => \@fields,
 &>
@@ -61,18 +62,22 @@ my @fields = (
   },
 );
 
-push @fields,
-  { 'field'     => 'unsuspend_pkgpart',
-    'type'      => 'select-part_pkg',
-    'hashref'   => { 'disabled' => '',
-                     'freq'     => 0 }, # one-time charges only
-  },
-  { 'field'     => 'unsuspend_hold',
-    'type'      => 'checkbox',
-    'value'     => 'Y',
-  },
-  if ( $class eq 'S' );
-  
-
+if ( $class eq 'S' ) {
+  push @fields,
+    { 'field'     => 'unsuspend_pkgpart',
+      'type'      => 'select-part_pkg',
+      'hashref'   => { 'disabled' => '',
+                       'freq'     => 0 }, # one-time charges only
+    },
+    { 'field'     => 'unsuspend_hold',
+      'type'      => 'checkbox',
+      'value'     => 'Y',
+    },
+    { 'field'     => 'unused_credit',
+      'type'      => 'checkbox',
+      'value'     => 'Y',
+    }, 
+  ;
+}
 
 </%init>
