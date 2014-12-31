@@ -3133,12 +3133,12 @@ sub ut_agentnum_acl {
 
   if ( $self->$field() ) {
 
-    return "Access denied"
+    return 'Access denied to agent '. $self->$field()
       unless $curuser->agentnum($self->$field());
 
   } else {
 
-    return "Access denied"
+    return 'Access denied to global'
       unless grep $curuser->access_right($_), @$null_acl;
 
   }
@@ -3161,7 +3161,7 @@ sub fields {
     $table = $something->table;
   } else {
     $table = $something;
-    $something = "FS::$table";
+    #$something = "FS::$table";
   }
   return (real_fields($table));
 }
