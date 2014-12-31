@@ -16,6 +16,8 @@
         'is_business'     => 'Business/government',
         'blocknum'        => '',
         'active_date'     => 'Active since',
+        'file'            => 'Import blocks from text file',
+        'censusyear'      => 'as census year',
     },
     'fields'        => [
         { field         => 'zonetype',
@@ -54,6 +56,19 @@
         'cir_speed_up',
 
         { type => 'tablebreak-tr-title', value => 'Census blocks'},
+        { field => 'file',
+          type  => 'file-upload',
+        },
+        { field => 'format',
+          type  => 'hidden',
+          value => 'plain',
+        },
+        { field => 'censusyear',
+          type  => 'select',
+          options => [ '', qw( 2013 2012 2011 ) ],
+        },
+
+        { type => 'tablebreak-tr-title', value => '', },
         { field => 'blocknum',
           type              => 'deploy_zone_block',
           o2m_table         => 'deploy_zone_block',

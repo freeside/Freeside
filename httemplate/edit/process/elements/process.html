@@ -62,6 +62,13 @@ Example:
                       'fields' => [qw( fieldname fieldname2 )],
                     },
 
+   'process_upload' => {
+                         'process'  => 'misc/mytable-import.html',
+                          # fields to pass to the back end job, besides the 
+                          # primary key of the object
+                         'fields'   => [qw( fieldname fieldname2 )],
+                       },
+
    'skip_process' => 0, #boolean, if set true, will skip the main table
                         #add/edit processing and only run any linked table
                         #process_ items
@@ -91,9 +98,6 @@ Example:
 </%doc>
 %if ( $error ) {
 %
-%  my $edit_ext = $opt{'edit_ext'} || 'html';
-%  my $url = $opt{'error_redirect'} || popurl(2)."$table.$edit_ext";
-
 %  #my $query = $m->scomp('/elements/create_uri_query');
 %  #$cgi->redirect("$url?$query");
 %  if ( length($cgi->query_string) > 1920 ) { #stupid IE 2083 URL limit
@@ -111,16 +115,48 @@ Example:
 %          " attempting to set redirect$session to ". $cgi->query_string."\n";
 %    }
 %
-<% $cgi->redirect("$url?redirect=$session") %>
+<% $cgi->redirect("$error_redirect?redirect=$session") %>
 %
 %  } else {
 %
-<% $cgi->redirect("$url?". $cgi->query_string ) %>
+<% $cgi->redirect("$error_redirect?". $cgi->query_string ) %>
 %
-%  } 
+%  }
 %
 % #different ways of handling success
 %
+%} elsif ( $opt{'process_upload'} and @uploaded_files ) {
+%
+% # construct a form to pass all the requested fields, the 
+%
+<& /elements/header.html &>
+<form name="UploadForm">
+%   my $job_fields = $opt{'process_upload'}{'fields'};
+%   foreach my $field ( @$job_fields ) {
+  <input type="hidden" name="<% $field %>" value="<% $cgi->param($field) |h %>">
+%   }
+%   push @$job_fields, 'uploaded_files', $pkey;
+%
+  <input type="hidden" name="uploaded_files" value="<% join(',', @uploaded_files) %>">
+  <input type="hidden" name="<% $pkey %>" value="<% $new->get($pkey) %>">
+<& /elements/progress-init.html,
+  'UploadForm',
+  $job_fields,
+  $fsurl . $opt{'process_upload'}{'process'},
+  {
+    url => $redirect,
+    error_url => "$error_redirect?$new_pkey"
+  },
+&>
+<input type="submit" style="display:none">
+</form>
+<script>
+<&| /elements/onload.js &>
+process();
+</&>
+</script>
+<& /elements/footer.html &>
+
 %} elsif ( $opt{'popup_reload'} ) {
 
   <% include('/elements/header-popup.html', $opt{'popup_reload'} ) %>
@@ -133,26 +169,8 @@ Example:
   </HTML>
 
 %} else {
-%  
-%  $opt{'redirect'} = &{$opt{'redirect'}}($cgi, $new)
-%    if ref($opt{'redirect'}) eq 'CODE';
-%
-%  if ( $opt{'redirect'} ) {
-%
-<% $cgi->redirect( $opt{'redirect'}. $new_pkey) %>
-%
-%  } else { 
-%
-%    my $ext = $opt{'viewall_ext'} || 'html';
-%    my $viewall_dir = $opt{'viewall_dir'} || 'search';
-%    my $viewall_url = $opt{'viewall_url'} || ($viewall_dir . "/$table.$ext");
-%
-%#<% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.$ext" ) %>
-<% $cgi->redirect( popurl(3) . $viewall_url ) %>
-%  }
-%
+<% $cgi->redirect($redirect) %>
 %}
-%
 <%init>
 
 my $me = 'process.html:';
@@ -203,6 +221,8 @@ if ( $bfield ) {
   @values = $cgi->param($bfield);
   warn join(',', @values);
 }
+
+my @uploaded_files;
 
 my $new;
 my $new_pkey = '';
@@ -338,6 +358,47 @@ foreach my $value ( @values ) {
   }
 
 
+  if ( !$error and $opt{'process_upload'} ) {
+    # mostly duplicates misc/file-upload.html
+    $cgi->param('upload_fields') =~ /^([,\w]+)$/
+      or $error = "invalid upload_fields";
+    my $fields = $1;
+
+    my $dir = $FS::UID::cache_dir. "/cache.". $FS::UID::datasrc;
+
+    foreach my $field (split /,/, $fields) {
+      next if $error;
+      my $source_name = $cgi->param($field);
+
+      if ( $opt{'debug'} ) {
+        warn "$me processing upload: $source_name\n";
+      }
+      my $fh = $cgi->upload( $field ); # if no file provided, that's fine
+      next if !$fh;
+
+      my $suffix = '';
+      if ( $source_name =~ /(\.\w+)$/ ) {
+        $suffix = lc($1);
+      }
+
+      my $sh = File::Temp->new( TEMPLATE => 'upload.XXXXXXXX',
+                                SUFFIX   => $suffix,
+                                DIR      => $dir,
+                                UNLINK   => 0,
+                              )
+        or $error ||= "can't open temporary file to store upload: $!\n";
+      next if $error;
+      while(<$fh>) {
+        print $sh $_;
+      }
+      $sh->filename =~ m!.*/([.\w]+)$!;
+      push @uploaded_files, "$field:$1";
+      if ( $opt{'debug'} ) {
+        warn "uploaded as $1\n";
+      }
+    }
+  }
+
   if ( $error ) {
 
     $cgi->param('error', $error);
@@ -358,4 +419,30 @@ foreach my $value ( @values ) {
   last if $error;
 
 }
+
+# set up redirect URLs
+
+my $redirect;
+if ( !$error ) {
+  $opt{'redirect'} = &{$opt{'redirect'}}($cgi, $new)
+    if ref($opt{'redirect'}) eq 'CODE';
+
+  if ( $opt{'redirect'} ) {
+
+    $redirect = $opt{'redirect'} . $new_pkey;
+
+  } else { 
+
+    my $ext = $opt{'viewall_ext'} || 'html';
+    my $viewall_dir = $opt{'viewall_dir'} || 'search';
+    my $viewall_url = $opt{'viewall_url'} || ($viewall_dir . "/$table.$ext");
+
+    $redirect = popurl(3) . $viewall_url;
+  
+  }
+}
+
+my $edit_ext = $opt{'edit_ext'} || 'html';
+my $error_redirect = $opt{'error_redirect'}
+                     || popurl(2)."$table.$edit_ext";
 </%init>

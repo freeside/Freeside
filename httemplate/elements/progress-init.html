@@ -17,6 +17,9 @@ In misc/something.html:
          # redirecting to the URL.
          #or { popup_url => $p.'popup_contents.html' }
          # which loads that URL into the popup after completion
+         #or { url => $p.'where_to_go.html',
+               error_url => $p.'where_we_just_were.html' }
+         # to redirect somewhere different on error
          ) %>
   </FORM>
   <SCRIPT TYPE="text/javascript>process();</SCRIPT>
@@ -44,6 +47,33 @@ sub process_whatever { #class method
   # etc.
   return 'this value will be ignored';
 }
+
+Internal notes:
+
+This component creates two JS functions: process(), which starts the 
+submission process, and start_job(), which starts the job on the 
+server side.
+
+process() does the following:
+- disable the form submit button
+- for all form fields named in "fields", collect their values into an array
+- declare a callback function "myCallback"
+- pass the array and callback to start_job()
+
+start_job() is an xmlhttp standard function that turns the array of values 
+into a JSON string, posts it to the location given in $action, receives a 
+job number back, and then invokes the callback with the job number as an 
+argument. Normally, the post target script will use FS::UI::Web::JSRPC to insert
+a queue job (with the form field values as arguments), and return its
+job number.
+
+myCallback() opens an Overlib popup containing progress-popup.html, with 
+the job number, form name, and destination options (url, message, popup_url,
+error_url) as URL parameters. This popup will poll the server for the status
+of the job, display a progress bar, and on completion, either redirect to 
+'url' or 'popup_url', display 'message' in the popup window, or (on failure)
+display the job statustext as an error message. If 'error_url' is specified,
+the "Close" button in the popup will then redirect the user to that location.
 
 </%doc>
 <% include('/elements/xmlhttp.html',
@@ -108,7 +138,9 @@ function <%$key%>process () {
 
 function <%$key%>myCallback( jobnum ) {
 
-  overlib( OLiframeContent('<%$fsurl%>elements/progress-popup.html?jobnum=' + jobnum + ';<%$url_or_message_link%>;formname=<%$formname%>' , 444, 168, '<% $popup_name %>'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  var url = <% $progress_url->as_string |js_string %>;
+  url = url.replace('_JOBNUM_', jobnum);
+  overlib( OLiframeContent(url, 444, 168, '<% $popup_name %>'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
 }
 
@@ -119,17 +151,22 @@ function <%$key%>myCallback( jobnum ) {
 my( $formname, $fields, $action, $url_or_message, $key ) = @_;
 $key = '' unless defined $key;
 
-my $url_or_message_link;
+my %dest_info;
 if ( ref($url_or_message) ) { #its a message or something
-  $url_or_message_link = 'message='. uri_escape( $url_or_message->{'message'} );
-  $url_or_message_link .= ';url='.   uri_escape( $url_or_message->{'url'} )
-    if $url_or_message->{'url'};
-  $url_or_message_link = 'popup_url=' .uri_escape( $url_or_message->{'popup_url'} )
-    if $url_or_message->{'popup_url'};
-
+  %dest_info = map { $_ => $url_or_message->{$_} }
+               grep { $url_or_message->{$_} }
+               qw( message url popup_url error_url );
 } else {
-  $url_or_message_link = "url=$url_or_message";
+  # it can also just be a url
+  %dest_info = ( 'url' => $url_or_message );
 }
+
+my $progress_url = URI->new($fsurl.'elements/progress-popup.html');
+$progress_url->query_form(
+  'jobnum'    => '_JOBNUM_',
+  'formname'  => $formname,
+  %dest_info,
+);
 
 #stupid safari is caching the "location" of popup iframs, and submitting them
 #instead of displaying them.  this should prevent that.
