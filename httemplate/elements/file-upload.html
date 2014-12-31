@@ -47,6 +47,11 @@
     }
   }
 
+<&| onload.js &>
+// force the form to submit as multipart
+var thisform = document.getElementById('uploaded_files').form;
+thisform.enctype = 'multipart/form-data';
+</&>
 </SCRIPT>
 
 <INPUT TYPE="hidden" NAME="uploaded_files" ID="uploaded_files" VALUE="" />

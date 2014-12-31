@@ -1,9 +1,14 @@
 <& elements/process.html, 
-    error_redirect => popurl(2).'deploy_zone-fixed.html?',
+    debug => 1,
+    error_redirect => popurl(2).'deploy_zone-fixed.html',
     table       => 'deploy_zone',
     viewall_dir => 'browse',
-    process_o2m => 
-      { 'table'  => 'deploy_zone_block',
-                     'fields' => [qw( censusblock censusyear )]
-      },
+    process_o2m => {
+      'table'  => 'deploy_zone_block',
+      'fields' => [qw( censusblock censusyear )]
+    },
+    process_upload => {
+      'process' => 'misc/process/deploy_zone-import.html',
+      'fields' => [qw( censusyear format )],
+    },
 &>

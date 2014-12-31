@@ -4,6 +4,7 @@
 %  my $message = $cgi->param('message');
 %  my $popup_url = $cgi->param('popup_url');
 %  my $formname = scalar($cgi->param('formname'));
+%  my $error_url = $cgi->param('error_url');
 %
 
 <HTML>
@@ -62,7 +63,7 @@ function updateStatus( status_statustext ) {
         }
 %   }
 
-% } elsif ( $url ) { 
+% } elsif ( $url ) {
     parent.nd(1);
     window.top.location.href = '<% $url %>';
 % } elsif ( $popup_url ) {
@@ -81,9 +82,16 @@ function updateStatus( status_statustext ) {
     window.top.location.href = statustext.substr(8, statustext.length-18);
 
   } else if ( status.indexOf('error') > -1 ) {
+%
+% # default behavior: just close the popup
+% my $onClick = 'parent.nd(1);';
+% if ( $error_url ) { # then on clicking to confirm, redirect somewhere
+%   $onClick = "window.top.location.href = \\'$error_url\\';";
+% }
+
     document.getElementById("progress_message").innerHTML = '<FONT SIZE="+1" COLOR="#FF0000">Error: ' + statustext + '</FONT>';
     document.getElementById("progress_bar").innerHTML = '';
-    document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
+    document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="<% $onClick %>">';
     document.getElementById("progress_jobnum").innerHTML = '';
     if ( parent.document.<%$formname%>.submit.disabled == true ) {
       parent.document.<%$formname%>.submit.disabled=false;
