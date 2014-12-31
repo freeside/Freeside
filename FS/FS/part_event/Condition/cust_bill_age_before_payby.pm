@@ -20,7 +20,7 @@ sub condition {
   #my $cust_main = $cust_bill->cust_main;
 
   my $change_date = 0;
-  my $newest = 4294967295; #2^32-1
+  my $newest = 2147483647; #2038 problem, because the field does
 
   #this is pretty expensive, it would be way more efficient to check for
   # changed payby in SQL
