@@ -16,6 +16,7 @@ sub option_fields {
                  },
     'skip_nopost' => { label => 'Skip customers without postal billing enabled',
                        type  => 'checkbox',
+                       value => 'Y',
                      },
   );
 }
