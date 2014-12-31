@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw($DEBUG $cgi $session_id $form_max $template_dir);
+use vars qw($DEBUG $cgi $session_id $pw_session_id $form_max $template_dir);
 use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -97,7 +97,7 @@ my $action = 'myaccount'; # sensible default
 
 if ( $cgi->param('action') =~ /^process_forgot_password_session_(\w+)$/ ) {
   $action = 'process_forgot_password_session';
-  $session_id = $1;
+  $pw_session_id = $1;
 } elsif ( $cgi->param('action') =~ /^(\w+)$/ ) {
   if (grep {$_ eq $1} @actions) {
     $action = $1;
@@ -1059,7 +1059,7 @@ sub process_forgot_password {
 sub process_forgot_password_session {
   $action = 'process_forgot_password';
   check_reset_passwd(
-    'session_id' => $session_id,
+    'session_id' => $pw_session_id,
   );
 }
 
