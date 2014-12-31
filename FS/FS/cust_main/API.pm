@@ -2,6 +2,7 @@ package FS::cust_main::API;
 
 use strict;
 use FS::Conf;
+use FS::part_tag;
 
 =item API_getinfo FIELD => VALUE, ...
 
@@ -104,7 +105,8 @@ sub API_insert {
   #same for refnum like signup_server-default_refnum?
 
   my $cust_main = new FS::cust_main ( { # $class->new( {
-      'payby'         => 'BILL',
+      'payby'  => 'BILL',
+      'tagnum' => [ FS::part_tag->default_tags ],
 
       map { $_ => $opt{$_} } qw(
         agentnum refnum agent_custid referral_custnum
