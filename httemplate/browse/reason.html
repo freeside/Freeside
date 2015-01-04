@@ -14,21 +14,10 @@
                                     'addl_from' => 'LEFT JOIN reason_type ON reason_type.typenum = reason.reason_type', 
                                   },
                  'count_query' => $count_query,
-                 'header'      => [ '#',
-                                    ucfirst($classname) . ' Reason Type',
-                                    ucfirst($classname) . ' Reason',
-                                    ($class eq 'S' ?  'Unsuspension Fee' : ()),
-                                  ],
-                 'fields'      => [ 'reasonnum',
-                                    sub { shift->reasontype->type },
-                                    'reason',
-                                    $unsuspend_pkg_comment,
-                                  ],
-                 'links'       => [ $link,
-                                    $link,
-                                    '',
-                                    $unsuspend_pkg_link,
-                                  ],
+                 'header'      => \@header,
+                 'fields'      => \@fields,
+                 'links'       => \@links,
+                 'align'       => $align,
              )
 %>
 <%init>
@@ -53,18 +42,58 @@ my $count_query = 'SELECT COUNT(*) FROM reason LEFT JOIN reason_type on ' .
 
 my $link = [ $p."edit/reason.html?class=$class&reasonnum=", 'reasonnum' ];
 
-my ($unsuspend_pkg_comment, $unsuspend_pkg_link);
-if ( $class eq 'S' ) {
-  $unsuspend_pkg_comment = sub {
-    my $pkgpart = shift->unsuspend_pkgpart or return '';
-    my $part_pkg = FS::part_pkg->by_key($pkgpart) or return '';
-    $part_pkg->pkg_comment;
-  };
+my @header = (
+  '#',
+  ucfirst($classname) . ' reason type',
+  ucfirst($classname) . ' reason',
+);
 
-  my $unsuspend_pkg_link = sub {
-    my $pkgpart = shift->unsuspend_pkgpart or return '';
-    [ $p."edit/part_pkg.cgi?", $pkgpart ];
-  };
+my @fields = (
+  'reasonnum',
+  sub { shift->reasontype->type },
+  'reason',
+);
+
+my @links = (
+  $link,
+  $link,
+  '',
+);
+
+my $align = 'rll';
+
+if ( $class eq 'S' ) {
+  push @header,
+    'Credit unused service',
+    'Unsuspension fee',
+  ;
+  push @fields,
+    sub {
+      my $reason = shift;
+      if ( $reason->unused_credit ) {
+        return '<SPAN STYLE="background-color:#00ff00">YES</SPAN>';
+      } else {
+        return '<SPAN STYLE="background-color:#ff0000">NO</SPAN>';
+      }
+    },
+    sub {
+      my $reason = shift;
+      my $pkgpart = $reason->unsuspend_pkgpart or return '';
+      my $part_pkg = FS::part_pkg->by_key($pkgpart) or return '';
+      my $text = $part_pkg->pkg_comment;
+      my $href = $p."edit/part_pkg.cgi?$pkgpart";
+      $text = qq!<A HREF="$href">! . encode_entities($text) . "</A>".
+              "<FONT SIZE=-1>";
+      if ( $reason->unsuspend_hold ) {
+        $text .= ' (on next bill)'
+      } else {
+        $text .= ' (immediately)'
+      }
+      $text .= '</FONT>';
+    }
+  ;
+  $align .= 'cl';
 }
+
 
 </%init>

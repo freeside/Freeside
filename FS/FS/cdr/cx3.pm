@@ -30,8 +30,10 @@ use Date::Parse;
 	skip(1),		
 	sub { my ($cdr, $calldate, $param) = @_;
 
-		$cdr->set('calldate', $calldate);
-	},              #date
+                my $date = str2time($calldate);
+                $cdr->set('startdate', $date);
+
+        },              #date
 	skip(4),          
 	'accountcode',  # AccountCode
 	skip(6),		

@@ -53,10 +53,10 @@ my @fields = (
     table     => 'circuit_termination',
     name_col  => 'termination',
   },
-  qw( vendor_qual_id vendor_order_id vendor_order_type vendor_order_status
-      desired_due_date due_date
-      endpoint_ip_addr
-  ),
+  qw( vendor_qual_id vendor_order_id vendor_order_type vendor_order_status ),
+  { field     => 'desired_due_date', type => 'date' },
+  { field     => 'due_date', type => 'date' },
+  'endpoint_ip_addr',
   { field     => 'endpoint_mac_addr', type => 'mac_addr' },
 );
 
