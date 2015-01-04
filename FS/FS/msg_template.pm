@@ -595,6 +595,7 @@ sub substitutions {
     'cust_bill' => [qw(
       invnum
       _date
+      due_date
     )],
     #XXX not really thinking about cust_bill substitutions quite yet
     
