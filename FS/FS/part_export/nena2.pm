@@ -262,7 +262,7 @@ sub data {
 
   Geo::StreetAddress::US->avoid_redundant_street_type(1);
 
-  my $location_hash = Geo::StreetAddress::US->parse_address(
+  my $location_hash = Geo::StreetAddress::US->parse_location(
     uc( join(', ',  $full_address,
                     $cust_location->city,
                     $cust_location->state,
@@ -280,7 +280,7 @@ sub data {
       }
     }
     # then parsing failed. Try again without the address2.
-    $location_hash = Geo::StreetAddress::US->parse_address(
+    $location_hash = Geo::StreetAddress::US->parse_location(
       uc( join(', ',
                     $cust_location->address1,
                     $cust_location->city,

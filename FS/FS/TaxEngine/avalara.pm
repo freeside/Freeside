@@ -92,7 +92,7 @@ sub build_request {
   my $our_address = join(' ', 
     $conf->config('company_address', $cust_main->agentnum)
   );
-  my $company_address = Geo::StreetAddress::US->parse_address($our_address);
+  my $company_address = Geo::StreetAddress::US->parse_location($our_address);
   my $address1 = join(' ', grep $_, @{$company_address}{qw(
       number prefix street type suffix
   )});
