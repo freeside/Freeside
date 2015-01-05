@@ -163,6 +163,10 @@ if ( $cgi->param('out') ) {
 
 }
 
+# no reason ever to show the negative exemptions created by credits.
+# they'll just confuse people.
+push @where, "creditbillpkgnum IS NULL";
+
 my $where = scalar(@where) ? 'WHERE '.join(' AND ', @where) : '';
 
 my $count_query = "SELECT COUNT(*), SUM(amount)".

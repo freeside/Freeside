@@ -398,6 +398,8 @@ if ( $cgi->param('nottax') ) {
   # If we're showing 'out' (items that aren't region/class taxable),
   # then we need the set of all items minus the union of those.
 
+  # Always exclude cust_tax_exempt_pkg records with non-NULL creditbillpkgnum.
+
   if ( $cgi->param('out') ) {
     # separate from the rest, in that we're not going to join cust_main_county
     # in the outer query
@@ -425,12 +427,13 @@ if ( $cgi->param('nottax') ) {
     my $exempt_sub;
     if ( @exempt_where or @tax_where or $cgi->param('taxable') ) {
 
+      push @exempt_where, "cust_tax_exempt_pkg.creditbillpkgnum IS NULL";
+
       # process exemption restrictions, including @tax_where
       my $exempt_sub = 'SELECT SUM(amount) as exempt_amount, billpkgnum 
       FROM cust_tax_exempt_pkg JOIN cust_main_county USING (taxnum)';
 
-      $exempt_sub .= ' WHERE '.join(' AND ', @tax_where, @exempt_where)
-        if (@tax_where or @exempt_where);
+      $exempt_sub .= ' WHERE '.join(' AND ', @tax_where, @exempt_where);
 
       $exempt_sub .= ' GROUP BY billpkgnum';
 
@@ -443,20 +446,33 @@ if ( $cgi->param('nottax') ) {
       unshift @tax_where,
         'cust_main_county.tax > 0';
 
-      my $tax_sub = "SELECT invnum, cust_bill_pkg_tax_location.pkgnum
+      my $tax_sub = "SELECT cust_bill_pkg_tax_location.taxable_billpkgnum
       FROM cust_bill_pkg_tax_location
       JOIN cust_bill_pkg AS tax_item USING (billpkgnum)
       JOIN cust_main_county USING (taxnum)
       WHERE ". join(' AND ', @tax_where).
-      " GROUP BY invnum, cust_bill_pkg_tax_location.pkgnum";
+      " GROUP BY taxable_billpkgnum";
 
       $join_pkg .= " LEFT JOIN ($tax_sub) AS item_tax
-      ON (item_tax.invnum = cust_bill_pkg.invnum AND
-          item_tax.pkgnum = cust_bill_pkg.pkgnum)";
+      ON (item_tax.taxable_billpkgnum = cust_bill_pkg.billpkgnum)
+      ";
     }
 
     # now do something with that
-    if ( @exempt_where ) {
+    if ( $cgi->param('taxable') ) {
+      # taxable query: needs sale amount - exempt amount
+
+      my $taxable = 'cust_bill_pkg.setup + cust_bill_pkg.recur '.
+                    '- COALESCE(item_exempt.exempt_amount, 0)';
+
+      push @where,    'item_tax.taxable_billpkgnum IS NOT NULL';
+      push @select,   "($taxable) AS taxable_amount";
+      push @peritem,  'taxable_amount';
+      push @peritem_desc, 'Taxable';
+      push @total,    "SUM($taxable)";
+      push @total_desc, "$money_char%.2f taxable";
+
+    } elsif ( $cgi->param('exempt_cust') or $cgi->param('exempt_pkg') ) {
 
       push @where,    'item_exempt.billpkgnum IS NOT NULL';
       push @select,   'item_exempt.exempt_amount';
@@ -465,22 +481,10 @@ if ( $cgi->param('nottax') ) {
       push @total,    'SUM(exempt_amount)';
       push @total_desc, "$money_char%.2f tax-exempt";
 
-    } elsif ( $cgi->param('taxable') ) {
-
-      my $taxable = 'cust_bill_pkg.setup + cust_bill_pkg.recur '.
-                    '- COALESCE(item_exempt.exempt_amount, 0)';
-
-      push @where,    'item_tax.invnum IS NOT NULL';
-      push @select,   "($taxable) AS taxable_amount";
-      push @peritem,  'taxable_amount';
-      push @peritem_desc, 'Taxable';
-      push @total,    "SUM($taxable)";
-      push @total_desc, "$money_char%.2f taxable";
-
     } elsif ( @tax_where ) {
       # union of taxable + all exempt_ cases
       push @where,
-        '(item_tax.invnum IS NOT NULL OR item_exempt.billpkgnum IS NOT NULL)';
+        '(item_tax.taxable_billpkgnum IS NOT NULL OR item_exempt.billpkgnum IS NOT NULL)';
 
     }
 
@@ -581,6 +585,18 @@ if ( $cgi->param('nottax') ) {
     } else {
       push @where, "$itemdesc = ". dbh->quote($cgi->param('itemdesc'));
     }
+  }
+
+  # classnum (of underlying package)
+  # not specified: all classes
+  # 0: empty class
+  # N: classnum
+  if ( grep { $_ eq 'classnum' } $cgi->param ) {
+    my @classnums = grep /^\d+$/, $cgi->param('classnum');
+    push @where, "COALESCE(part_fee.classnum, $part_pkg.classnum, 0) IN ( ".
+                     join(',', @classnums ).
+                 ' )'
+      if @classnums;
   }
 
 } # nottax / istax
