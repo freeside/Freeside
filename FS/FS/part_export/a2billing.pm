@@ -142,6 +142,7 @@ sub export_insert {
       state     => $location->state,
       country   => $country3,
       zipcode   => $location->zip,
+      simultaccess  => $part_pkg->option('a2billing_simultaccess'),
       typepaid  => $part_pkg->option('a2billing_type'),
       sip_buddy => 1,
       company_name => $cust_main->company,
