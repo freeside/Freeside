@@ -83,9 +83,11 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
   my $amount = $1;
 
   my $setup_cost = '';
-  $param->{"setup_cost"} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
-    or $error .= "Illegal setup_cost " . $param->{"setup_cost"} . "  ";
-  my $setup_cost = $1;
+  if ( $param->{setup_cost} =~ /\S/ ) {
+    $param->{setup_cost} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
+      or $error .= "Illegal setup_cost " . $param->{setup_cost} . "  ";
+    $setup_cost = $1;
+  }
 
   my $quantity = 1;
   if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
