@@ -9,6 +9,11 @@ tie my %a2billing_types, 'Tie::IxHash', (
   1 => 'Postpaid',
 );
 
+tie my %a2billing_simultaccess, 'Tie::IxHash', (
+  0 => 'Disabled',
+  1 => 'Enabled',
+);
+
 %info = (
   'disabled' => 1,
   'fields' => {
@@ -52,7 +57,14 @@ tie my %a2billing_types, 'Tie::IxHash', (
       'type'        => 'select',
       'select_options' => \%a2billing_types,
     },
-
+    'a2billing_simultaccess' => {
+      'name'        => 'A2Billing Simultaneous Access',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+      'type'        => 'select',
+      'select_options' => \%a2billing_simultaccess,
+    },  
   },
   'fieldorder' => [ qw(
     setup_fee
@@ -63,6 +75,7 @@ tie my %a2billing_types, 'Tie::IxHash', (
 
     a2billing_tariff
     a2billing_type
+    a2billing_simultaccess
   )],
 );
 
