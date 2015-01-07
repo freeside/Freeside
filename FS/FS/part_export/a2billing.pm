@@ -24,7 +24,7 @@ tie %options, 'Tie::IxHash',
   'credit'      => { label=>'Default credit limit' },
   'billtype'    => {label=>'Billing type',
                     type => 'select',
-                    options => ['monthly', 'weekly']
+                    options => ['Dial Out Rate', 'Free']
                   },
   'debug'       => { label=>'Enable debugging', type=>'checkbox' }
 ;
@@ -222,7 +222,7 @@ sub export_insert {
       id_cc_country   => $cc_country_id,
       iduser          => $cc_card_id,
       did             => $svc->phonenum,
-      billingtype     => ($self->option('billtype') eq 'weekly' ? 1 : 0),
+      billingtype     => ($self->option('billtype') eq 'Dial Out Rate' ? 2 : 3),
       activated       => 1,
     );
 
