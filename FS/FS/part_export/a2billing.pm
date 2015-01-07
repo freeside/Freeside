@@ -131,7 +131,7 @@ sub export_insert {
       username  => $username,
       useralias => $username,
       uipass    => $svc->_password,
-      credit    => $self->option('credit') || 0,
+      credit    => $cust_main->credit_limit || $self->option('credit') || 0,
       tariff    => $part_pkg->option('a2billing_tariff'),
       status    => 1,
       lastname  => $cust_main->last, # $svc->finger?
