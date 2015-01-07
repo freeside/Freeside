@@ -727,6 +727,18 @@ sub search {
   }
 
   ##
+  # city
+  ##
+  if ( $params->{'city'} =~ /\S/ ) {
+    my $city = dbh->quote($params->{'city'});
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.city = $city
+    )";
+  }
+
+  ##
   # county
   ##
   if ( $params->{'county'} =~ /\S/ ) {

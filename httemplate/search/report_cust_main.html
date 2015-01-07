@@ -6,7 +6,7 @@
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
     <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Basic search options') |h %></FONT></TH>
     </TR>
 
     <& /elements/tr-select-agent.html,
@@ -38,48 +38,6 @@
                   #no, causes customers with disabled ones to disappear
                   #'all_selected' => 1,
     &>
-
-    <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
-      <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
-    </TR>
-
-    <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('County') |h %></TD>
-      <TD>
-        <& /elements/select-county.html,
-             disable_empty => 0,
-             empty_label   => '(all)',
-        &>
-      </TD>
-    </TR>
-    
-
-    <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('State') |h %></TD>
-      <TD>
-        <& /elements/select-state.html,
-             disable_empty => 0,
-             empty_label   => '(all)',
-        &>
-      </TD>
-    </TR>
-    
-    <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TD>
-      <TD><INPUT TYPE="text" NAME="zip" SIZE=12></TD>
-    </TR>
-
-    <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Country') |h %></TD>
-      <TD>
-        <& /elements/select-country.html,
-             disable_empty       => 0,
-             state_disable_empty => 0,
-             state_empty_label   => '(all)',
-        &>
-      </TD>
-    </TR>
 
     <TR>
         <TD ALIGN="right" VALIGN="center"><% mt('Signup date') |h %></TD>
@@ -168,6 +126,74 @@
         </TD>
       </TR>
 
+    <TR>
+      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+    </TR>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Location search options') |h %></FONT></TH>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
+      <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('City') |h %></TD>
+      <TD>
+        <& /elements/city.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+             disable_text  => 1,
+        &>
+      </TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('County') |h %></TD>
+      <TD>
+        <& /elements/select-county.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+    
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('State') |h %></TD>
+      <TD>
+        <& /elements/select-state.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+    
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TD>
+      <TD><INPUT TYPE="text" NAME="zip" SIZE=12></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Country') |h %></TD>
+      <TD>
+        <& /elements/select-country.html,
+             disable_empty       => 0,
+             state_disable_empty => 0,
+             state_empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+    </TR>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Billing search options') |h %></FONT></TH>
+    </TR>
+
     <& /elements/tr-select-payby.html,
                   'payby_type'   => 'cust',
                   'multiple'     => 1,
@@ -252,7 +278,7 @@
     &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('With email address(es)') |h %></TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('With invoicing email address(es)') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="with_email"></TD>
     </TR>
 

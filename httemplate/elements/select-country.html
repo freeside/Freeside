@@ -40,6 +40,8 @@ Example:
     }
   
     function <% $pre %>country_changed(what, callback) {
+
+      what.form.<% $pre %>state.disabled = 'disabled';
   
       country = what.options[what.selectedIndex].value;
   
@@ -61,6 +63,8 @@ Example:
                 stateLabel = <% $opt{state_empty_label} || '(n/a)' |js_string %>;
             opt(what.form.<% $pre %>state, statesArray[s], stateLabel);
         }
+
+        what.form.<% $pre %>state.disabled = '';
   
         //run the callback
         if ( callback != null ) {

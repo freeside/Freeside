@@ -2,22 +2,24 @@
 
 Example:
 
-  include( '/elements/city.html',
-    #recommended
-    country    => $current_country,
-    state      => $current_state,
-    county     => $current_county,
-    city       => $current_city,
+  <& /elements/city.html,
+       #recommended
+       country        => $current_country,
+       state          => $current_state,
+       county         => $current_county,
+       city           => $current_city,
 
-    #optional
-    prefix        => $optional_unique_prefix,
-    onchange      => $javascript,
-    disabled      => 0, #bool
-#    disable_empty => 1, #defaults to 1, disable the empty option
-#    empty_label   => 'all', #label for empty option
-#    disable_select => 1, # disable the selector (just show a text input)
-    style         => [ 'attribute:value', 'another:value' ],
-  );
+       #optional
+       prefix         => $optional_unique_prefix,
+       onchange       => $javascript,
+       disabled       => 0, #bool
+       style          => [ 'attribute:value', 'another:value' ],
+       disable_empty  => 1, #defaults to 1, set to 0 to disable the empty option
+       empty_label    => 'all', #label for empty option
+       disable_text   => 1, # disable the text input (just show the select)
+       #doesn't work as an option yet, set when conf tax_district_method
+       #disable_select => 1, # disable the selector (just show a text input)
+  &>
 
 </%doc>
 
@@ -47,15 +49,21 @@ function <% $pre %>county_changed(what, callback) {}
 
   function <% $pre %>county_changed(what, callback) {
 
+    what.form.<% $pre %>city_select.disabled = 'disabled';
+
     county  = what.options[what.selectedIndex].value;
     state   = what.form.<% $pre %>state.options[what.form.<% $pre %>state.selectedIndex].value;
     country = what.form.<% $pre %>country.options[what.form.<% $pre %>country.selectedIndex].value;
 
     function <% $pre %>update_cities(cities) {
-     
+
       // blank the current city list
       for ( var i = what.form.<% $pre %>city_select.length; i >= 0; i-- )
           what.form.<% $pre %>city_select.options[i] = null;
+
+%     unless ( $opt{disable_empty} ) {
+        opt( what.form.<% $pre %>city_select, '', <% $opt{empty_label} |js_string %> );
+%     }
 
       // add the new cities
       var citiesArray = eval('(' + cities + ')' );
@@ -67,7 +75,7 @@ function <% $pre %>county_changed(what, callback) {}
           opt(what.form.<% $pre %>city_select, citiesArray[s], cityLabel);
       }
 
-     if ( citiesArray.length > 1 || citiesArray[0].length ) { 
+     if ( citiesArray.length > 1 || (citiesArray[0] && citiesArray[0].length) ){
         // turn off the text city, turn on the select
         saved_<%$pre%>city = what.form.<%$ pre %>city.value;
         <%$pre%>city_select_changed(what.form.<% $pre %>city_select);
@@ -79,6 +87,8 @@ function <% $pre %>county_changed(what, callback) {}
         what.form.<% $pre %>city.style.display = '';
         what.form.<% $pre %>city_select.style.display = 'none';
       }
+
+      what.form.<% $pre %>city_select.disabled = '';
 
       //run the callback
       if ( callback != null )
@@ -98,39 +108,44 @@ function <% $pre %>county_changed(what, callback) {}
 
 % } #!disable_select
 
-<INPUT TYPE     = "text"
+<INPUT TYPE     = "<% $opt{disable_text} ? 'hidden' : 'text' %>"
        NAME     = "<%$pre%>city"
        ID       = "<%$pre%>city"
        VALUE    = "<% $opt{'city'} |h %>"
+% unless ( $opt{disable_text} ) {
        onChange = "<% $opt{'onchange'} %>"
        <% $opt{'disabled'} %>
        <% $text_style %>
+% }
 >
 
 % if ( $disable_select ) {
 %# avoid JS errors
-<INPUT TYPE="hidden" ID="city_select">
+    <INPUT TYPE="hidden" ID="city_select">
+% } else {
+
+    <SELECT NAME     = "<%$pre%>city_select"
+            ID       = "<%$pre%>city_select"
+            onChange = "<%$pre%>city_select_changed(this); <% $opt{onchange} %>"
+            <% $opt{disabled} %>
+            <% $select_style %>
+    >
+
+%   unless ( $opt{'disable_empty'} ) {
+      <OPTION VALUE="" <% $opt{city} eq '' ? 'SELECTED' : '' %>><% $opt{empty_label} %>
+%   }
+
+%   foreach my $city ( @cities ) {
+
+      <OPTION VALUE="<% $city |h %>"
+              <% $city eq $opt{city} ? 'SELECTED' : '' %>
+      ><% $city eq $opt{empty_data_value} ? $opt{empty_data_label} : $city %>
+
+%   }
+
+    </SELECT>
 % }
-% else {
 
-<SELECT NAME     = "<%$pre%>city_select"
-        ID       = "<%$pre%>city_select"
-        onChange = "<%$pre%>city_select_changed(this); <% $opt{'onchange'} %>"
-        <% $opt{'disabled'} %>
-        <% $select_style %>
->
-
-% foreach my $city ( @cities ) {
-
-    <OPTION VALUE="<% $city |h %>"
-            <% $city eq $opt{'city'} ? 'SELECTED' : '' %>
-    ><% $city eq $opt{'empty_data_value'} ? $opt{'empty_data_label'} : $city %>
-
-% }
-
-</SELECT>
-% }
-%#           VALUE    = "<% $curr_value |h %>"
 <%init>
 
 my %opt = @_;
@@ -141,6 +156,8 @@ my $conf = new FS::Conf;
 # Using tax_district_method implies that there's not a preloaded city/county
 # tax district table.
 my $disable_select = 1 if $conf->config('tax_district_method');
+
+$opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
 
 my $text_style   = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 my $select_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
