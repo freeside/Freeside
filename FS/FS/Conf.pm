@@ -5845,6 +5845,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cust_main-default_commercial',
+    'section'     => 'UI',
+    'description' => 'Default for new customers is commercial rather than residential.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
