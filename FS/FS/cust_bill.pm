@@ -629,6 +629,23 @@ sub num_cust_event {
 
 Returns the customer (see L<FS::cust_main>) for this invoice.
 
+=item suspend
+
+Suspends all unsuspended packages (see L<FS::cust_pkg>) for this invoice
+
+Returns a list: an empty list on success or a list of errors.
+
+=cut
+
+sub suspend {
+  my $self = shift;
+
+  grep { $_->suspend(@_) } 
+  grep { $_->getfield('cancel') } 
+  $self->cust_pkg;
+
+}
+
 =item cust_suspend_if_balance_over AMOUNT
 
 Suspends the customer associated with this invoice if the total amount owed on
