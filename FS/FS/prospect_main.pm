@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::Quotable_Mixin FS::o2m_Common FS::Record );
 use vars qw( $DEBUG @location_fields );
 use Scalar::Util qw( blessed );
+use FS::Conf;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::agent;
 use FS::cust_location;
@@ -350,6 +351,9 @@ sub convert_cust_main {
     'ship_location' => $cust_location[0],
     ( map { $_ => $self->$_ } qw( agentnum refnum company ) ),
   };
+
+  $cust_main->refnum( FS::Conf->new->config('referraldefault') || 1  )
+    unless $cust_main->refnum;
 
   #XXX again, arbitrary, if one contact was "billing", that would be better
   if ( $contact[0] ) {
