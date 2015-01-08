@@ -174,9 +174,14 @@ if ($class eq 'C') {
   die "illegal class: $class";
 }
 
+my $select = join(',',
+  'reason.*',
+  FS::Record::concat_sql([ 'type', "' : '", 'reason' ]) . ' AS label',
+);
+
 my @reasons = qsearch({
   'table'           => 'reason',
-  'select'          => "reason.*, (type || ' : ' || reason) AS label",
+  'select'          => $select,
   'addl_from'       => ' LEFT JOIN reason_type'.
                        ' ON (reason.reason_type = reason_type.typenum)',
   'hashref'         => { disabled => '' },
