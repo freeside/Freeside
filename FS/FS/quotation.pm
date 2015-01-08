@@ -288,6 +288,15 @@ sub order {
 
 }
 
+=item quotation_pkg
+
+=cut
+
+sub quotation_pkg {
+  my $self = shift;
+  qsearch('quotation_pkg', { 'quotationnum' => $self->quotationnum } );
+}
+
 =back
 
 =head1 CLASS METHODS
