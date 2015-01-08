@@ -359,6 +359,10 @@ sub convert_cust_main {
     $cust_main->set('last',  'Unknown');
   }
 
+  #v3 payby
+  $cust_main->payby('BILL');
+  $cust_main->paydate('12/2037');
+
   $cust_main->insert( {}, \@invoicing_list,
     'prospectnum' => $self->prospectnum,
   )
