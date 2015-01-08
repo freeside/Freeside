@@ -41,8 +41,13 @@ XXX resending quotations
 
 % if ( $conf->exists('quotation_latex') ) { 
   | <A HREF="<% $p %>view/quotation-pdf.cgi?<% $link %>"><% mt('View typeset quotation PDF') |h %></A>
-  <BR><BR>
-% } 
+% }
+
+% if ( $curuser->access_right('New customer') && $quotation->quotation_pkg ) {
+  | <A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>">Place order</A>
+% }
+
+<BR><BR>
 
 % if ( $conf->exists('quotation_html') ) { 
     <% join('', $quotation->print_html( preref_callback=>$preref_callback )) %>
