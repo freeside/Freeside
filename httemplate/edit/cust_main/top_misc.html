@@ -83,6 +83,7 @@
   }
 
   <&| /elements/onload.js &>
+  rescom_changed(document.getElementById('residential_commercial_Residential'));
   agent_changed(document.getElementById('agentnum'))
   </&>
  
@@ -240,6 +241,8 @@ my( $cust_main, %opt ) = @_;
 
 my $custnum = $opt{'custnum'};
 
+my $conf = new FS::Conf;
+
 if ( $cgi->param('error') ) {
   $cust_main->set('residential_commercial',
     ($cgi->param('residential_commercial') eq 'Commercial')
@@ -253,11 +256,12 @@ if ( $cgi->param('error') ) {
       : 'Residential'
   );
 } else { #new customer
-  #config to default to commercial and/or disable residential when someone needs
-  $cust_main->set('residential_commercial', 'Residential');
+  $cust_main->set('residential_commercial',
+    $conf->exists('cust_main-default_commercial')
+      ? 'Commercial'
+      : 'Residential'
+  );
 }
-
-my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
