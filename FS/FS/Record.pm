@@ -3093,7 +3093,7 @@ on the column first.
 
 sub ut_foreign_key {
   my( $self, $field, $table, $foreign ) = @_;
-  return '' if $no_check_foreign;
+  return $self->ut_number($field) if $no_check_foreign;
   qsearchs($table, { $foreign => $self->getfield($field) })
     or return "Can't find ". $self->table. ".$field ". $self->getfield($field).
               " in $table.$foreign";

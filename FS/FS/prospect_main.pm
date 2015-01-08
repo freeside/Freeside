@@ -243,8 +243,8 @@ sub check {
 
   my $error = 
     $self->ut_numbern('prospectnum')
-    || $self->ut_foreign_key( 'agentnum', 'agent',         'agentnum' )
-    || $self->ut_foreign_key( 'refnum',   'part_referral', 'refnum' )
+    || $self->ut_foreign_key(  'agentnum', 'agent',         'agentnum' )
+    || $self->ut_foreign_keyn( 'refnum',   'part_referral', 'refnum'   )
     || $self->ut_textn('company')
   ;
   return $error if $error;
