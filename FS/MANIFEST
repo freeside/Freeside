@@ -548,6 +548,7 @@ FS/part_event/Action/pkg_agent_credit_pkg.pm
 FS/part_event/Action/pkg_employee_credit.pm
 FS/part_event/Action/pkg_employee_credit_pkg.pm
 FS/Misc/DateTime.pm
+FS/Misc/Getopt.pm
 FS/cgp_rule.pm
 t/cgp_rule.t
 FS/cgp_rule_condition.pm
