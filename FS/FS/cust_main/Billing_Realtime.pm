@@ -364,6 +364,8 @@ sub realtime_bop {
   if ( $DEBUG ) {
     warn "$me realtime_bop (new): $options{method} $options{amount}\n";
     warn " cc_surcharge = $cc_surcharge\n";
+  }
+  if ( $DEBUG > 2 ) {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
@@ -546,7 +548,9 @@ sub realtime_bop {
                   ? $options{'balance'}
                   : $self->balance;
 
+  warn "claiming mutex on customer ". $self->custnum. "\n" if $DEBUG > 1;
   $self->select_for_update; #mutex ... just until we get our pending record in
+  warn "obtained mutex on customer ". $self->custnum. "\n" if $DEBUG > 1;
 
   #the checks here are intended to catch concurrent payments
   #double-form-submission prevention is taken care of in cust_pay_pending::check
@@ -597,8 +601,15 @@ sub realtime_bop {
   };
   $cust_pay_pending->payunique( $options{payunique} )
     if defined($options{payunique}) && length($options{payunique});
+
+  warn "inserting cust_pay_pending record for customer ". $self->custnum. "\n"
+    if $DEBUG > 1;
   my $cpp_new_err = $cust_pay_pending->insert; #mutex lost when this is inserted
   return $cpp_new_err if $cpp_new_err;
+
+  warn "inserted cust_pay_pending record for customer ". $self->custnum. "\n"
+    if $DEBUG > 1;
+  warn Dumper($cust_pay_pending) if $DEBUG > 2;
 
   my( $action1, $action2 ) =
     split( /\s*\,\s*/, $payment_gateway->gateway_action );
