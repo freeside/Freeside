@@ -19,6 +19,7 @@ tie my %cdr_svc_method, 'Tie::IxHash',
   'svc_pbx.svcnum'     => 'Freeside service # (svc_pbx.svcnum)',
   'svc_pbx.ip.src'     => 'PBX name to source IP address',
   'svc_pbx.ip.dst'     => 'PBX name to destination IP address',
+  'svc_acct.username'  => 'Username (svc_acct.username)',
 ;
 
 tie my %rating_method, 'Tie::IxHash',
@@ -463,16 +464,20 @@ sub calc_usage {
     #my @invoice_details_sort;
 
     # for tagging invoice details
+    # (unfortunate; should be a svc_x class method or table_info item or 
+    # something)
     my $phonenum;
     if ( $svc_table eq 'svc_phone' ) {
       $phonenum = $svc_x->phonenum;
     } elsif ( $svc_table eq 'svc_pbx' ) {
       $phonenum = $svc_x->title;
+    } elsif ( $svc_table eq 'svc_acct' ) {
+      $phonenum = $svc_x->username;
     }
     $formatter->phonenum($phonenum);
 
     #first rate any outstanding CDRs not yet rated
-    # XXX eventually use an FS::Cursor for this
+    # use FS::Cursor for this starting in 4.x
     my $cdr_search = $svc_x->psearch_cdrs(%options);
     $cdr_search->limit(1000);
     $cdr_search->increment(0); # because we're changing their status as we go

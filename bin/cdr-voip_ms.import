@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::Misc::Getopt;
+use FS::cdr_batch;
+use FS::part_export;
+use FS::Record qw(qsearch qsearchs dbh);
+use Date::Format 'time2str';
+
+###
+# parse command line
+###
+
+our %opt;
+getopts('');
+
+$FS::UID::AutoCommit = 0;
+
+my @exports = qsearch('part_export', { exporttype => 'voip_ms' });
+if (!@exports) {
+  die "There are no voip.ms exports configured.\n";
+}
+
+foreach my $part_export (@exports) {
+  debug "Account #".$part_export->option('account');
+
+  if (!$opt{start}) {
+    # find the most recently downloaded batch
+    my $exportnum = $part_export->exportnum;
+    my $most_recent = qsearchs({
+        'table'     => 'cdr_batch',
+        'hashref'   => { 'cdrbatch' => {op=>'like',
+                                        value=>'voip_ms-' . $exportnum . '-%'}
+                       },
+        'order_by'  => 'ORDER BY _date DESC LIMIT 1',
+    });
+    if ( $most_recent ) {
+      $most_recent->cdrbatch =~ /-(\d+)$/; # extract the end timestamp
+      $opt{start} = $1;
+      debug "Downloading records since most recent batch: ".
+            time2str('%Y-%m-%d', $opt{start});
+    } else {
+      $opt{start} = 0;
+      debug "Downloading records since time = zero.";
+    }
+  }
+
+  $opt{end} ||= time;
+
+  my $error_or_batch = $part_export->import_cdrs( $opt{start}, $opt{end} );
+  if ( ref $error_or_batch ) {
+    debug "Created batch #".$error_or_batch->cdrbatchnum;
+    dbh->commit;
+  } elsif ( $error_or_batch ) {
+    warn $error_or_batch;
+    dbh->rollback;
+  } else {
+    debug "No CDRs found."
+  }
+}
+
+sub usage {
+  "Usage: \n  cdr-voip_ms.import [ options ] user
+  Options:
+    -v: be verbose
+    -s date: start date (defaults to the most recent batch date)
+    -e date: end date
+";
+}
+

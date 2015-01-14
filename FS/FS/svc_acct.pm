@@ -40,6 +40,7 @@ use FS::Record qw( qsearch qsearchs fields dbh dbdef );
 use FS::Msgcat qw(gettext);
 use FS::UI::bytecount;
 use FS::UI::Web;
+use FS::PagedSearch qw( psearch ); # XXX in v4, replace with FS::Cursor
 use FS::part_pkg;
 use FS::part_svc;
 use FS::svc_acct_pop;
@@ -2371,65 +2372,94 @@ sub last_login_text {
   $self->last_login ? ctime($self->last_login) : 'unknown';
 }
 
-=item get_cdrs TIMESTAMP_START TIMESTAMP_END [ 'OPTION' => 'VALUE ... ]
+=item psearch_cdrs OPTIONS
+
+Returns a paged search (L<FS::PagedSearch>) for Call Detail Records
+associated with this service. For svc_acct, "associated with" means that
+either the "src" or the "charged_party" field of the CDR matches the
+"username" field of the service.
+
+=cut
+
+sub psearch_cdrs {
+  my($self, %options) = @_;
+  my @fields;
+  my %hash;
+  my @where;
+
+  my $did = dbh->quote($self->username);
+
+  my $prefix = $options{'default_prefix'} || ''; #convergent.au '+61'
+  my $prefixdid = dbh->quote($prefix . $self->username);
+
+  my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
+
+  if ( $options{inbound} ) {
+    # these will be selected under their DIDs
+    push @where, "FALSE";
+  }
+
+  my @orwhere;
+  if (!$options{'disable_charged_party'}) {
+    push @orwhere,
+      "charged_party = $did",
+      "charged_party = $prefixdid";
+  }
+  if (!$options{'disable_src'}) {
+    push @orwhere,
+      "src = $did AND charged_party IS NULL",
+      "src = $prefixdid AND charged_party IS NULL";
+  }
+  push @where, '(' . join(' OR ', @orwhere) . ')';
+
+  # $options{'status'} = '' is meaningful; for the rest of them it's not
+  if ( exists $options{'status'} ) {
+    $hash{'freesidestatus'} = $options{'status'};
+  }
+  if ( $options{'cdrtypenum'} ) {
+    $hash{'cdrtypenum'} = $options{'cdrtypenum'};
+  }
+  if ( $options{'calltypenum'} ) {
+    $hash{'calltypenum'} = $options{'calltypenum'};
+  }
+  if ( $options{'begin'} ) {
+    push @where, 'startdate >= '. $options{'begin'};
+  } 
+  if ( $options{'end'} ) {
+    push @where, 'startdate < '.  $options{'end'};
+  } 
+  if ( $options{'nonzero'} ) {
+    push @where, 'duration > 0';
+  } 
+
+  my $extra_sql = join(' AND ', @where);
+  if ($extra_sql) {
+    if (keys %hash) {
+      $extra_sql = " AND ".$extra_sql;
+    } else {
+      $extra_sql = " WHERE ".$extra_sql;
+    }
+  }
+  return psearch({
+    'select'    => '*',
+    'table'     => 'cdr',
+    'hashref'   => \%hash,
+    'extra_sql' => $extra_sql,
+    'order_by'  => "ORDER BY startdate $for_update",
+  });
+}
+
+=item get_cdrs (DEPRECATED)
+
+Like psearch_cdrs, but returns all the L<FS::cdr> objects at once, in a 
+single list. Arguments are the same as for psearch_cdrs.
 
 =cut
 
 sub get_cdrs {
-  my($self, $start, $end, %opt ) = @_;
-
-  my $did = $self->username; #yup
-
-  my $prefix = $opt{'default_prefix'}; #convergent.au '+61'
-
-  my $for_update = $opt{'for_update'} ? 'FOR UPDATE' : '';
-
-  #SELECT $for_update * FROM cdr
-  #  WHERE calldate >= $start #need a conversion
-  #    AND calldate <  $end   #ditto
-  #    AND (    charged_party = "$did"
-  #          OR charged_party = "$prefix$did" #if length($prefix);
-  #          OR ( ( charged_party IS NULL OR charged_party = '' )
-  #               AND
-  #               ( src = "$did" OR src = "$prefix$did" ) # if length($prefix)
-  #             )
-  #        )
-  #    AND ( freesidestatus IS NULL OR freesidestatus = '' )
-
-  my $charged_or_src;
-  if ( length($prefix) ) {
-    $charged_or_src =
-      " AND (    charged_party = '$did' 
-              OR charged_party = '$prefix$did'
-              OR ( ( charged_party IS NULL OR charged_party = '' )
-                   AND
-                   ( src = '$did' OR src = '$prefix$did' )
-                 )
-            )
-      ";
-  } else {
-    $charged_or_src = 
-      " AND (    charged_party = '$did' 
-              OR ( ( charged_party IS NULL OR charged_party = '' )
-                   AND
-                   src = '$did'
-                 )
-            )
-      ";
-
-  }
-
-  qsearch(
-    'select'    => "$for_update *",
-    'table'     => 'cdr',
-    'hashref'   => {
-                     #( freesidestatus IS NULL OR freesidestatus = '' )
-                     'freesidestatus' => '',
-                   },
-    'extra_sql' => $charged_or_src,
-
-  );
-
+  my $self = shift;
+  my $psearch = $self->psearch_cdrs(@_);
+  qsearch ( $psearch->{query} )
 }
 
 # sub radius_groups has moved to svc_Radius_Mixin

@@ -10,9 +10,14 @@ use URI::Escape;
 use JSON;
 use HTTP::Request::Common;
 use Cache::FileCache;
+use FS::Record qw(dbh);
+use FS::Misc::DateTime qw(parse_datetime);
+use DateTime;
 
 our $me = '[voip.ms]';
-our $DEBUG = 2;
+our $DEBUG = 0;
+# our $DEBUG = 1; # log requests
+# our $DEBUG = 2; # log requests and content of replies
 our $base_url = 'https://voip.ms/api/v1/rest.php';
 
 # cache cities and provinces
@@ -222,6 +227,9 @@ sub export_unsuspend {
   '';
 }
 
+################
+# PROVISIONING #
+################
 
 sub insert_subacct {
   my ($self, $svc_acct) = @_;
@@ -587,6 +595,142 @@ sub reload_cache {
   }
 }
 
+################
+# CALL DETAILS #
+################
+
+=item import_cdrs START, END
+
+Retrieves CDRs for calls in the date range from START to END and inserts them
+as a new CDR batch. On success, returns a new cdr_batch object. On failure,
+returns an error message. If there are no new CDRs, returns nothing.
+
+=cut
+
+sub import_cdrs {
+  my ($self, $start, $end) = @_;
+  $start ||= 0; # all CDRs ever
+  $end ||= time;
+  $DEBUG ||= $self->option('debug');
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  ($start, $end) = ($end, $start) if $end < $start;
+  $start = DateTime->from_epoch(epoch => $start, time_zone => 'local');
+  $end = DateTime->from_epoch(epoch => $end, time_zone => 'local');
+  my $accountnum = $self->option('account');
+  my $cdr_batch;
+  # can't retrieve more than 92 days at a time
+  # actually, it's even less than that; on large batches their server
+  # sometimes cuts off in mid-sentence. so set the chunk size smaller.
+  while ( $start < $end ) {
+
+    my $this_end = $start->clone;
+    $this_end->add(days => 14);
+    if ($this_end > $end) {
+      $this_end = $end;
+    }
+
+    my $date_from = $start->strftime('%F');
+    my $date_to = $this_end->strftime('%F');
+    warn "retrieving CDRs from $date_from to $date_to\n" if $DEBUG;
+    my $timezone = $start->strftime('%z') / 100; # integer number of hours
+    my $result = $self->api_request('getCDR', {
+        date_from => $date_from,
+        date_to   => $date_to,
+        answered  => 1,
+        noanswer  => 1,
+        busy      => 1,
+        failed    => 1,
+        timezone  => $timezone,
+    });
+    if ( $result->{status} eq 'success' ) {
+      if (!$cdr_batch) {
+        # then create one
+        my $cdrbatchname = 'voip_ms-' . $self->exportnum . '-' . $end->epoch;
+        $cdr_batch = FS::cdr_batch->new({ cdrbatch => $cdrbatchname });
+        my $error = $cdr_batch->insert;
+        if ( $error ) {
+          dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
+
+      foreach ( @{ $result->{cdr} } ) {
+        my $uniqueid = $_->{uniqueid};
+        # download ranges may overlap; avoid double-importing CDRs
+        if ( FS::cdr->row_exists("uniqueid = ?", $uniqueid) ) {
+          warn "skipped call with uniqueid = '$uniqueid' (already imported)\n"
+            if $DEBUG;
+          next;
+        }
+        # in this case, and probably in other cases in the near future,
+        # easier to do this than to create a FS::cdr::* format module
+        my $hash = {
+          disposition             => $_->{disposition},
+          calldate                => $_->{date},
+          dst                     => $_->{destination},
+          uniqueid                => $_->{uniqueid},
+          upstream_price          => $_->{total},
+          upstream_dst_regionname => $_->{description},
+          clid                    => $_->{callerid},
+          duration                => $_->{seconds},
+          billsec                 => $_->{seconds},
+          cdrbatchnum             => $cdr_batch->cdrbatchnum,
+        };
+        if ( $_->{date} ) {
+          $hash->{startdate} = parse_datetime($_->{date});
+        }
+        if ( $_->{account} eq $accountnum ) {
+          # calls made from the master account, not a subaccount
+          # charged_party will be set to the source number
+          $hash->{charged_party} = '';
+        } elsif ( $_->{account} =~ /^${accountnum}_(\w+)$/ ) {
+          $hash->{charged_party} = $1;
+        } else {
+          warn "skipped call with account = '$_->{account}'\n";
+          next;
+        }
+        if ( $_->{callerid} =~ /<(\w+)>$/ ) {
+          $hash->{src} = $1;
+        } elsif ( $_->{callerid} =~ /^(\w+)$/ ) {
+          $hash->{src} = $1;
+        } else {
+          # else what? they don't have a source number anywhere else
+          warn "skipped call with unparseable callerid '$_->{callerid}'\n";
+          next;
+        }
+
+        my $cdr = FS::cdr->new($hash);
+        my $error = $cdr->insert;
+        if ( $error ) {
+          dbh->rollback if $oldAutoCommit;
+          return "$error (uniqueid $_->{uniqueid})";
+        }
+      } # foreach @{ $result->{cdr} }
+
+    } elsif ( $result->{status} eq 'no_cdr' ) {
+      # normal result if there are no CDRs, duh
+      next; # there may still be more CDRs later
+    } else {
+      dbh->rollback if $oldAutoCommit;
+      return "$me error retrieving CDRs: $result->{status}";
+    }
+
+    # we've retrieved and inserted this sub-batch of CDRs
+    $start->add(days => 15);
+  } # while ( $start < $end )
+
+  if ( $cdr_batch ) {
+    dbh->commit if $oldAutoCommit;
+    return $cdr_batch;
+  } else {
+    # no CDRs were ever found
+    return;
+  }
+}
+
 ##############
 # API ACCESS #
 ##############
@@ -614,15 +758,21 @@ sub api_request {
     'Accept'        => 'text/json',
   );
 
-  warn "$me $method\n" . $request->as_string ."\n" if $DEBUG;
+  warn "$me $method\n" if $DEBUG;
+  warn $request->as_string ."\n" if $DEBUG > 1;
   my $ua = LWP::UserAgent->new;
   my $response = $ua->request($request);
-  warn "$me received\n" . $response->as_string ."\n" if $DEBUG;
+  warn "$me received\n" . $response->as_string ."\n" if $DEBUG > 1;
   if ( !$response->is_success ) {
     return { status => $response->content };
   }
 
-  return decode_json($response->content);
+  local $@;
+  my $decoded_response = eval { decode_json($response->content) };
+  if ( $@ ) {
+    die "Error parsing response:\n" . $response->content . "\n\n";
+  }
+  return $decoded_response;
 }
 
 =item api_insist METHOD, CONTENT
