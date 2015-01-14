@@ -40,8 +40,8 @@ foreach my $part_export (@exports) {
       debug "Downloading records since most recent batch: ".
             time2str('%Y-%m-%d', $opt{start});
     } else {
-      $opt{start} = 0;
-      debug "Downloading records since time = zero.";
+      $opt{start} = 1262332800;
+      debug "Downloading records since January 2010.";
     }
   }
 
