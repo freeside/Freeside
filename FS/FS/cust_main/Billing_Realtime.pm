@@ -3,6 +3,7 @@ package FS::cust_main::Billing_Realtime;
 use strict;
 use vars qw( $conf $DEBUG $me );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
+use Carp;
 use Data::Dumper;
 use Business::CreditCard 0.28;
 use FS::UID qw( dbh );
@@ -318,6 +319,10 @@ my %bop_method2payby = (
 
 sub realtime_bop {
   my $self = shift;
+
+  confess "Can't call realtime_bop within another transaction ".
+          '($FS::UID::AutoCommit is false)'
+    unless $FS::UID::AutoCommit;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
  
