@@ -1,8 +1,8 @@
-package FS::Getopt;
+package FS::Misc::Getopt;
 
 =head1 NAME
 
-FS::Getopt - Getopt::Std for Freeside command line/cron scripts
+FS::Misc::Getopt - Getopt::Std for Freeside command line/cron scripts
 
 =head1 SYNOPSIS
 
