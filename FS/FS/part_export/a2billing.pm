@@ -144,6 +144,9 @@ sub export_insert {
       zipcode   => $location->zip,
       simultaccess  => $part_pkg->option('a2billing_simultaccess'),
       typepaid  => $part_pkg->option('a2billing_type'),
+      email_notification => $cust_main->invoicing_list_emailonly_scalar,
+      notify_email => (if $cust_main->invoicing_list_emailonly_scalar ? 1 : 0),
+      credit_notification => $cust_main->credit_limit || $self->option('credit') || 0,
       sip_buddy => 1,
       company_name => $cust_main->company,
       activated => 't',
@@ -233,12 +236,14 @@ sub export_insert {
 
     my $cc_did_id = $self->a2b_find('cc_did', 'svcnum', $svc->svcnum);
     
-    my $destination = 'SIP/' . $svc->phonenum . '@' . $svc_acct->username;
+    my $destination = 'SIP/user-'. $svc_acct->username. '@'. $svc->sip_server. "!". $svc->phonenum;
     my %cc_did_destination = (
       destination     => $destination,
       priority        => 1,
       id_cc_card      => $cc_card_id,
       id_cc_did       => $cc_did_id,
+      validated       => 1,
+      voip_call       => 1,
     );
 
     # and if there's already a destination, change it to point to
