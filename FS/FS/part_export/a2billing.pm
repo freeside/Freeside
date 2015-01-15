@@ -145,7 +145,7 @@ sub export_insert {
       simultaccess  => $part_pkg->option('a2billing_simultaccess'),
       typepaid  => $part_pkg->option('a2billing_type'),
       email_notification => $cust_main->invoicing_list_emailonly_scalar,
-      notify_email => (if $cust_main->invoicing_list_emailonly_scalar ? 1 : 0),
+      notify_email => ($cust_main->invoicing_list_emailonly_scalar ? 1 : 0),
       credit_notification => $cust_main->credit_limit || $self->option('credit') || 0,
       sip_buddy => 1,
       company_name => $cust_main->company,
