@@ -1,0 +1,53 @@
+% if (!$init) {
+%   if ($clipboard_hack) {
+<& init_overlib.html &>
+<script>
+<&| /elements/onload.js &>
+  var transform_text = function(str) {
+    var regexp = new RegExp('.*(..):(..):(..):(..):(..):(..).*');
+    return  str.replace(regexp, '$1$2$3$4$5$6');
+  }
+  var span_onclick = function() {
+    var input = document.createElement('INPUT');
+    // IE8 doesn't support textContent
+    var str = this.textContent || this.innerText || '';
+    input.value = transform_text(str);
+    input.style.position = 'absolute';
+    input.style.top = '0px';
+    input.style.left = '0px';
+    input.onblur = function() { input.parentNode.removeChild(input) }
+    this.appendChild(input);
+    input.select();
+  }
+  // set this on any ".mac_addr" object in the doc
+
+  // IE8 doesn't support getElementsByClassName
+  var els = document.getElementsByTagName('span');
+  for (var i = 0; i < els.length; i++) {
+    if (els[i].className = 'mac_addr') {
+      els[i].id = 'span_mac_addr' + i;
+      els[i].onclick = span_onclick;
+    }
+  }
+</&>
+</SCRIPT>
+<style type="text/css">
+.mac_addr {
+  border-bottom: 1px dotted blue;
+  color: blue;
+  position: relative;
+}
+</style>
+%   } # if $clipboard_hack
+% $init++;
+% }
+%# the only part to be included in every instance
+<SPAN CLASS="mac_addr"><% $value |h %></SPAN>
+<%shared>
+my $init = 0;
+</%shared>
+<%init>
+my $clipboard_hack =
+  $FS::CurrentUser::CurrentUser->option('enable_mask_clipboard_hack');
+my $value = shift; # no other params
+</%init>
