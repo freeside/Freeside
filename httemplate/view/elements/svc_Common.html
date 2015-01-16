@@ -222,6 +222,7 @@ my $format_field = sub {
     $field = $f;
     $type = 'text';
   }
+  warn "$field\t$type\t$value\n";
 
   my $columndef = $part_svc->part_svc_column($field);
   # skip fields that are fixed and empty
@@ -273,8 +274,10 @@ my $format_field = sub {
     $value = time2str("$date_format %H:%M",$value)
   } elsif ( $type eq 'checkbox' ) {
     $value = $value eq 'Y' ? emt('Yes') : emt('No');
-  } elsif ( $type eq 'mac_addr' and $value =~ /\w/) {
-    $value .= ' ('. (Net::MAC::Vendor::lookup($value))->[0]. ')'
+  } elsif ( $type =~ /(input-)?mac_addr/ and $value =~ /\w/) {
+    my $vendor = Net::MAC::Vendor::lookup($value)->[0];
+    $value .= " ($vendor)" if $vendor;
+    $value = $m->scomp('/elements/mac_addr.html', $value);
   }
 
   # 'link' option
