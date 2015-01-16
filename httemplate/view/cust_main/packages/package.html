@@ -51,8 +51,15 @@
 %           # One-time charge.  Nothing you can do with this, unless:
 %           if ( $curuser->access_right('Modify one-time charge') ) {
                 (&nbsp;<%onetime_change_link($cust_pkg)%>&nbsp;)
-                <BR>
 %           }
+%           # also, you can discount it
+%           if ( $curuser->access_right('Discount customer package')
+%                && ! scalar($cust_pkg->cust_pkg_discount_active)
+%                && ! scalar($cust_pkg->part_pkg->part_pkg_discount)
+%              ) {
+              (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
+%           }
+          <BR>
 %
 %         } elsif ( !$cust_pkg->get('cancel') and !$opt{no_links} ) {
 %           
@@ -65,6 +72,7 @@
 %             if ( $curuser->access_right('Edit customer package dates') ) {
                 (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
 %             }
+%
 %           } else {
 %             # the usual case: links to change package definition,
 %             # discount, and customization
