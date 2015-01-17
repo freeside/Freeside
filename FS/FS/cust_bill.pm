@@ -629,6 +629,23 @@ sub num_cust_event {
 
 Returns the customer (see L<FS::cust_main>) for this invoice.
 
+=item suspend
+
+Suspends all unsuspended packages (see L<FS::cust_pkg>) for this invoice
+
+Returns a list: an empty list on success or a list of errors.
+
+=cut
+
+sub suspend {
+  my $self = shift;
+
+  grep { $_->suspend(@_) } 
+  grep {! $_->getfield('cancel') } 
+  $self->cust_pkg;
+
+}
+
 =item cust_suspend_if_balance_over AMOUNT
 
 Suspends the customer associated with this invoice if the total amount owed on
@@ -646,6 +663,36 @@ sub cust_suspend_if_balance_over {
   } else {
     $cust_main->suspend(@_);
   }
+}
+
+=item cancel
+
+Cancel the packages on this invoice. Largely similar to the cust_main version, but does not bother yet with banned payment options
+
+=cut
+
+sub cancel {
+  my( $self, %opt ) = @_;
+
+  warn "$me cancel called on cust_bill ". $self->invnum . " with options ".
+       join(', ', map { "$_: $opt{$_}" } keys %opt ). "\n"
+    if $DEBUG;
+
+  return ( 'access denied' )
+    unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
+
+  my @pkgs = $self->cust_pkg;
+
+  if ( !$opt{nobill} && $conf->exists('bill_usage_on_cancel') ) {
+    $opt{nobill} = 1;
+    my $error = $self->cust_main->bill( pkg_list => [ @pkgs ], cancel => 1 );
+    warn "Error billing during cancel, custnum ". $self->custnum. ": $error"
+      if $error;
+  }
+
+  grep { $_ } map { $_->cancel(%opt) }
+  grep {! $_->getfield('cancel') } 
+  @pkgs;
 }
 
 =item cust_bill_pay
