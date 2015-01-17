@@ -3336,6 +3336,22 @@ sub count {
   $self->scalar_sql($sql, @_);
 }
 
+=item row_exists [ WHERE [, PLACEHOLDER ...] ]
+
+Convenience method for the common case of "SELECT 1 FROM table ... LIMIT 1"
+with optional (but almost always needed) WHERE.
+
+=cut
+
+sub row_exists {
+  my($self, $where) = (shift, shift);
+  my $table = $self->table or die 'row_exists called on object of class '.ref($self);
+  my $sql = "SELECT 1 FROM $table";
+  $sql .= " WHERE $where" if $where;
+  $sql .= " LIMIT 1";
+  $self->scalar_sql($sql, @_);
+}
+
 =back
 
 =head1 SUBROUTINES
