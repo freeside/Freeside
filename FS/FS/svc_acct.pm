@@ -295,25 +295,21 @@ sub table_info {
                          label => 'Quota', #Mail storage limit
                          type => 'text',
                          disable_inventory => 1,
-                         disable_select => 1,
                        },
         'file_quota'=> { 
                          label => 'File storage limit',
                          type => 'text',
                          disable_inventory => 1,
-                         disable_select => 1,
                        },
         'file_maxnum'=> { 
                          label => 'Number of files limit',
                          type => 'text',
                          disable_inventory => 1,
-                         disable_select => 1,
                        },
         'file_maxsize'=> { 
                          label => 'File size limit',
                          type => 'text',
                          disable_inventory => 1,
-                         disable_select => 1,
                        },
         '_password' => 'Password',
         'gid'       => {
