@@ -122,14 +122,15 @@ sub _target_table {
 
 sub _target_column { 'classnum'; }
 
-use vars qw( $_category_table );
+use vars qw( %_category_table );
 sub _category_table {
-  return $_category_table if $_category_table;
   my $self = shift;
-  $_category_table = $self->table;
-  $_category_table =~ s/class/category/ # s/_class$/_category/
-    or die "can't determine an automatic category table for $_category_table";
-  $_category_table;
+  return $_category_table{ ref $self } ||= do {
+    my $category_table = $self->table;
+    $category_table =~ s/class/category/ # s/_class$/_category/
+      or die "can't determine an automatic category table for $category_table";
+    $category_table;
+  }
 }
 
 =head1 BUGS
