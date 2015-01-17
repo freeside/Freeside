@@ -678,6 +678,7 @@ sub reset_usage {
 
 # tells whether cust_bill_pkg_detail should return a single line for 
 # each phonenum
+# i think this is currently unused?
 sub sum_usage {
   my $self = shift;
   $self->option('output_format') =~ /^sum_/;
