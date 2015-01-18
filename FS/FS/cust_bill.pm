@@ -678,21 +678,22 @@ sub cancel {
        join(', ', map { "$_: $opt{$_}" } keys %opt ). "\n"
     if $DEBUG;
 
-  return ( 'access denied' )
+  return ( 'Access denied' )
     unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
 
   my @pkgs = $self->cust_pkg;
 
-  if ( !$opt{nobill} && $conf->exists('bill_usage_on_cancel') ) {
+  if ( !$opt{nobill} && $self->conf->exists('bill_usage_on_cancel') ) {
     $opt{nobill} = 1;
     my $error = $self->cust_main->bill( pkg_list => [ @pkgs ], cancel => 1 );
     warn "Error billing during cancel, custnum ". $self->custnum. ": $error"
       if $error;
   }
 
-  grep { $_ } map { $_->cancel(%opt) }
-  grep {! $_->getfield('cancel') } 
-  @pkgs;
+  grep { $_ }
+    map { $_->cancel(%opt) }
+      grep { ! $_->getfield('cancel') } 
+        @pkgs;
 }
 
 =item cust_bill_pay
