@@ -40,17 +40,37 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item usernum - primary key
+=item usernum
 
-=item username - 
+primary key
 
-=item _password - 
+=item username
 
-=item last -
+=item _password
 
-=item first -
+=item _password_encoding
 
-=item disabled - empty or 'Y'
+Empty or bcrypt
+
+=item last
+
+Last name
+
+=item first
+
+First name
+
+=item user_custnum
+
+Master customer for this employee (for commissions)
+
+=item report_salesnum
+
+Default sales person for this employee (for reports)
+
+=item disabled
+
+Empty or 'Y'
 
 =back
 
