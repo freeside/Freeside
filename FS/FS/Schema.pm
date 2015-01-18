@@ -1322,7 +1322,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'quotationnum',
       'unique' => [],
-      'index' => [ [ 'prospectnum' ], ['custnum'], ],
+      'index' => [ [ 'prospectnum' ], ['custnum'], ['disabled'], ],
     },
 
     'quotation_pkg' => {
