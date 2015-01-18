@@ -72,7 +72,7 @@ if ( $cgi->param('batchnum') && $cgi->param('batchnum') =~ /^(\d+)$/ ) {
 }
 
 if ( $cgi->param('custnum') && $cgi->param('custnum') =~ /^(\d+)$/ ) {
-  push @search, "custnum = $1";
+  push @search, "cust_pay_batch.custnum = $1";
 }
 
 if ( $cgi->param('status') && $cgi->param('status') =~ /^(\w)$/ ) {
@@ -116,7 +116,6 @@ $sql_query = {
   'hashref'   => {},
   'addl_from' => 'LEFT JOIN pay_batch USING ( batchnum ) '.
                  'LEFT JOIN cust_main USING ( custnum ) '.
-                 
                  'LEFT JOIN cust_pay  USING ( batchnum, custnum ) ',
   'extra_sql' => $search,
   'order_by'  => "ORDER BY $orderby",
