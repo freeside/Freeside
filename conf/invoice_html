@@ -143,7 +143,7 @@
             $OUT .= $header;
             $columncount = scalar(my @array = split /<\/th><th/i, $header);
           } else {
-            $OUT .=  '<th align="center">' . emt('Ref') . '</th>'.
+            $OUT .=  '<th align="center"></th>'.
                      '<th align="left">' . emt('Description') . '</th>'.
                      ( $unitprices 
                        ? '<th align="right">' . emt('Unit Price') . '</th>'.
@@ -172,9 +172,9 @@
               }
               $OUT .= '<tr class="'.$class.'">
                        <td align="center">';
-              if ( $line->{'ref'} ne $lastref ) {
-                $OUT .= $line->{'ref'};
-              }
+              #if ( $line->{'ref'} ne $lastref ) {
+              #  $OUT .= $line->{'ref'};
+              #}
               $OUT .= '</td>
                        <td align="left">'. $line->{'description'}. '</td>';
               if ( $unitprices ) {
