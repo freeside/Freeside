@@ -40,7 +40,7 @@ my $query = 'name='. uri_escape_utf8($name).
             ';lon='. $longitude;
 
 my $js_name = $name;
-$js_name =~ s/[<>"]/ /g;
+$js_name =~ s/[<>"']/ /g;
 $m->interp->apply_escapes($js_name, 'js_string');
 $js_name =~ s/^'//;
 $js_name =~ s/'$//;
