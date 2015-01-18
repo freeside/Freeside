@@ -129,7 +129,7 @@
             $OUT .= $header;
             $columncount = scalar(my @array = split /<\/th><th/i, $header);
           } else {
-            $OUT .=  '<th align="center">' . emt('Ref') . '</th>'.
+            $OUT .=  '<th align="center"></th>'.
                      '<th align="left">' . emt('Description') . '</th>'.
                      ( $unitprices 
                        ? '<th align="left">' . emt('Unit Price') . '</th>'.
@@ -156,7 +156,7 @@
                        '">'.
                        '<td align="center">'. 
                          ( $line->{'ref'} ne $lastref
-                             ? $line->{'preref_html'}. $line->{'ref'}
+                             ? $line->{'preref_html'} #. $line->{'ref'}
                              : ''
                          ).
                        '</td>'.

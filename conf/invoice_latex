@@ -176,7 +176,7 @@
 \newcommand{\FShead}{
   \hline
   \rule{0pt}{2.5ex}
-  \makebox[1.4cm]{\textbf{Ref}} &
+  \makebox[1.4cm]{} &
   \multicolumn{\FSdescriptioncolumncount}{l}{\makebox[\FSdescriptionlength][l]{\textbf{[@-- emt('Description') --@]}}}&
   \FSunitcolumns
   \makebox[1.6cm][r]{\textbf{[@-- emt('Amount') --@]}} \\
@@ -332,7 +332,7 @@
           $OUT .= &{$section->{description_generator}}($line);
         } else {
           $OUT .= '\FSdesc'.
-                  '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
+                  '{}'. #'{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
                   '{' . $line->{'description'} . '}' ;
           if ( $unitprices and length($line->{'unit_amount'}) ) {
             # then show the unit amount and quantity
