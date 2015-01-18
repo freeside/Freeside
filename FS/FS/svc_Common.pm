@@ -1394,7 +1394,7 @@ sub search {
 
   #custnum
   if ( $params->{'custnum'} =~ /^(\d+)$/ && $1 ) {
-    push @where, "custnum = $1";
+    push @where, "cust_pkg.custnum = $1";
   }
 
   #customer status
