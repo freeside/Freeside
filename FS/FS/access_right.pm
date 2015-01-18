@@ -250,6 +250,7 @@ sub _upgrade_data { # class method
     'List prospects' => 'List contacts',
     'List customers' => 'List contacts',
     'Backdate payment' => 'Backdate credit',
+    'Generate quotation' => 'Disable quotation',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

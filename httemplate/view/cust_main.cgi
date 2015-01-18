@@ -239,7 +239,7 @@ function areyousure(href, message) {
 % ###
 
 % if ( $view eq 'jumbo' && $curuser->access_right('Generate quotation') ) { 
-  <A NAME="quotation"><FONT SIZE="+2"><% mt('Quotations') |h %></FONT></A><BR>
+  <A NAME="quotations"><FONT SIZE="+2"><% mt('Quotations') |h %></FONT></A><BR>
 % }
 
 % if ( $view eq 'quotations' || $view eq 'jumbo' ) {

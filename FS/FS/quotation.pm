@@ -6,6 +6,7 @@ use strict;
 use Tie::RefHash;
 use FS::CurrentUser;
 use FS::UID qw( dbh );
+use FS::Maketext qw( emt );
 use FS::cust_main;
 use FS::cust_pkg;
 
@@ -166,6 +167,38 @@ sub _total {
 
 }
 
+=item cust_or_prospect_label_link P
+
+HTML links to either the customer or prospect.
+
+Returns a list consisting of two elements.  The first is a text label for the
+link, and the second is the URL.
+
+=cut
+
+sub cust_or_prospect_label_link {
+  my( $self, $p ) = @_;
+
+  if ( my $custnum = $self->custnum ) {
+    my $display_custnum = $self->cust_main->display_custnum;
+    my $target = $FS::CurrentUser::CurrentUser->default_customer_view eq 'jumbo'
+                   ? '#quotations'
+                   : ';show=quotations';
+    (
+      emt("View this customer (#[_1])",$display_custnum) =>
+        "${p}view/cust_main.cgi?custnum=$custnum$target"
+    );
+  } elsif ( my $prospectnum = $self->prospectnum ) {
+    (
+      emt("View this prospect (#[_1])",$prospectnum) =>
+        "${p}view/prospect_main.html?$prospectnum"
+    );
+  } else { #die?
+    ( '', '' );
+  }
+
+}
+
 #prevent things from falsely showing up as taxes, at least until we support
 # quoting tax amounts..
 sub _items_tax {
@@ -269,6 +302,35 @@ sub order {
 
   $self->cust_main->order_pkgs( \%cust_pkg );
 
+}
+
+=item disable
+
+Disables this quotation (sets disabled to Y, which hides the quotation on
+prospects and customers).
+
+If there is an error, returns an error message, otherwise returns false.
+
+=cut
+
+sub disable {
+  my $self = shift;
+  $self->disabled('Y');
+  $self->replace();
+}
+
+=item enable
+
+Enables this quotation.
+
+If there is an error, returns an error message, otherwise returns false.
+
+=cut
+
+sub enable {
+  my $self = shift;
+  $self->disabled('');
+  $self->replace();
 }
 
 =back
