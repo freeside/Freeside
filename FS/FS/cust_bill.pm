@@ -2629,6 +2629,7 @@ sub _did_summary {
 		$num_activated++;
 	    }
 	    else { # this one not so clean, should probably move to (h_)svc_phone
+                 local($FS::Record::qsearch_qualify_columns) = 0;
 		 my $phone_portedin = qsearchs( 'h_svc_phone',
 		      { 'svcnum' => $h_cust_svc->svcnum, 
 			'lnp_status' => 'portedin' },  
