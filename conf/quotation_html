@@ -14,7 +14,7 @@
 .allcaps { text-transform:uppercase }
 </STYLE>
 
-<table class="invoice" bgcolor="#ffffff" WIDTH=625 CELLSPACING=8><tr><td>
+<table class="invoice" bgcolor="#ffffff" WIDTH=625 CELLSPACING=8 STYLE="border:1px solid #000000"><tr><td>
 
   <table class="invoice_header" width="100%">
     <tr>
