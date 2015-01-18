@@ -45,7 +45,7 @@ our $nowarn_classload = 0;
 our $no_update_diff = 0;
 our $no_history = 0;
 
-our $qsearch_qualify_columns = 0;
+our $qsearch_qualify_columns = 1;
 
 our $no_check_foreign = 1; #well, not inefficiently in perl by default anymore
 

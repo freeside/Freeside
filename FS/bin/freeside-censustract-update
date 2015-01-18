@@ -26,6 +26,7 @@ $date ||= time;
 # Find all locations that, as of $date, did not have 
 # censusyear = the current year.  This includes those 
 # that have no censusyear.
+local($FS::Record::qsearch_qualify_columns) = 0;
 my %h_cust_location = map { $_->locationnum => $_ }
   qsearch(
     'h_cust_location',

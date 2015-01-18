@@ -6,6 +6,7 @@ use FS::h_radius_usergroup;
 
 sub h_usergroup {
   my $self = shift;
+  local($FS::Record::qsearch_qualify_columns) = 0;
   map { $_->groupnum } 
     qsearch( 'h_radius_usergroup',
              { svcnum => $self->svcnum },

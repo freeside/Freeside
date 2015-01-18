@@ -2934,12 +2934,16 @@ sub h_cust_svc {
     if $DEBUG;
 
   my ($end, $start, $mode) = @_;
+
+  local($FS::Record::qsearch_qualify_columns) = 0;
+
   my @cust_svc = $self->_sort_cust_svc(
     [ qsearch( 'h_cust_svc',
       { 'pkgnum' => $self->pkgnum, },  
       FS::h_cust_svc->sql_h_search(@_),  
     ) ]
   );
+
   if ( defined($mode) && $mode eq 'I' ) {
     my %hidden_svcpart = map { $_->svcpart => $_->hidden } $self->part_svc;
     return grep { !$hidden_svcpart{$_->svcpart} } @cust_svc;

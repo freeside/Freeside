@@ -60,6 +60,7 @@ my %agent = ('agentnum' => $agentnum) if $agentnum;
 my %class = ('classnum' => $classnum) if $classnum;
 
 my @rows = ( map {[ (0) x $numdays ]} @labels);
+local($FS::Record::qsearch_qualify_columns) = 0;
 my $opening_balance = scalar(
   qsearch('h_inventory_item', 
           { 'svcnum' => '',

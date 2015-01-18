@@ -98,6 +98,7 @@ sub h_svc_x {
 
   warn "requiring FS/h_$svcdb.pm" if $DEBUG;
   require "FS/h_$svcdb.pm";
+  local($FS::Record::qsearch_qualify_columns) = 0;
   my $svc_x = qsearchs(
     "h_$svcdb",
     { 'svcnum' => $self->svcnum, },

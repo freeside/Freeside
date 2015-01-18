@@ -1204,6 +1204,7 @@ sub upgrade_tax_location {
     # It's either the bill or ship address of the customer as of the
     # invoice date-of-insertion.  (Not necessarily the invoice date.)
     my $date = $h_cust_bill->history_date;
+    local($FS::Record::qsearch_qualify_columns) = 0;
     my $h_cust_main = qsearchs('h_cust_main',
         { custnum   => $custnum },
         FS::h_cust_main->sql_h_searchs($date)
@@ -1257,6 +1258,7 @@ sub upgrade_tax_location {
 
       } else {
         # (pkgparts really shouldn't change, right?)
+        local($FS::Record::qsearch_qualify_columns) = 0;
         my $h_cust_pkg = qsearchs('h_cust_pkg', { pkgnum => $pkgnum },
           FS::h_cust_pkg->sql_h_searchs($date)
         );
@@ -1276,6 +1278,7 @@ sub upgrade_tax_location {
         }
 
         if (!exists $pkgpart_taxclass{$pkgpart}) {
+          local($FS::Record::qsearch_qualify_columns) = 0;
           my $h_part_pkg = qsearchs('h_part_pkg', { pkgpart => $pkgpart },
             FS::h_part_pkg->sql_h_searchs($date)
           );
@@ -1310,6 +1313,7 @@ sub upgrade_tax_location {
     # Get any per-customer taxname exemptions that were in effect.
     my %exempt_cust_taxname;
     foreach (keys %all_tax_names) {
+     local($FS::Record::qsearch_qualify_columns) = 0;
       my $h_exemption = qsearchs('h_cust_main_exemption', {
           'custnum' => $custnum,
           'taxname' => $_,
