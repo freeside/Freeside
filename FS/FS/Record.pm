@@ -6,7 +6,8 @@ use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              $conf $conf_encryption $money_char $lat_lower $lon_upper
              $me
              $nowarn_identical $nowarn_classload
-             $no_update_diff $no_history $no_check_foreign
+             $no_update_diff $no_history $qsearch_qualify_columns
+             $no_check_foreign
              @encrypt_payby
            );
 use Exporter;
@@ -50,6 +51,9 @@ $nowarn_identical = 0;
 $nowarn_classload = 0;
 $no_update_diff = 0;
 $no_history = 0;
+
+$qsearch_qualify_columns = 0;
+
 $no_check_foreign = 0;
 
 my $rsa_module;
@@ -742,72 +746,74 @@ sub _from_hashref {
   return @return;
 }
 
-## makes this easier to read
-
 sub get_real_fields {
   my $table = shift;
   my $record = shift;
   my $real_fields = shift;
 
-   ## this huge map was previously inline, just broke it out to help read the qsearch method, should be optimized for readability
-      return ( 
-      map {
+  ## could be optimized more for readability
+  return ( 
+    map {
 
       my $op = '=';
       my $column = $_;
+      my $table_column = $qsearch_qualify_columns ? "$table.$column" : $column;
       my $type = dbdef->table($table)->column($column)->type;
       my $value = $record->{$column};
       $value = $value->{'value'} if ref($value);
-      if ( ref($record->{$_}) ) {
-        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
+
+      if ( ref($record->{$column}) ) {
+        $op = $record->{$column}{'op'} if $record->{$column}{'op'};
         #$op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name ne 'Pg';
         if ( uc($op) eq 'ILIKE' ) {
           $op = 'LIKE';
-          $record->{$_}{'value'} = lc($record->{$_}{'value'});
-          $column = "LOWER($_)";
+          $record->{$column}{'value'} = lc($record->{$column}{'value'});
+          $table_column = "LOWER($table_column)";
         }
-        $record->{$_} = $record->{$_}{'value'}
+        $record->{$column} = $record->{$column}{'value'}
       }
 
-      if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
+      if ( ! defined( $record->{$column} ) || $record->{$column} eq '' ) {
         if ( $op eq '=' ) {
           if ( driver_name eq 'Pg' ) {
             if ( $type =~ /(int|numeric|real|float4|(big)?serial)/i ) {
-              qq-( $column IS NULL )-;
+              qq-( $table_column IS NULL )-;
             } else {
-              qq-( $column IS NULL OR $column = '' )-;
+              qq-( $table_column IS NULL OR $table_column = '' )-;
             }
           } else {
-            qq-( $column IS NULL OR $column = "" )-;
+            qq-( $table_column IS NULL OR $table_column = "" )-;
           }
         } elsif ( $op eq '!=' ) {
           if ( driver_name eq 'Pg' ) {
             if ( $type =~ /(int|numeric|real|float4|(big)?serial)/i ) {
-              qq-( $column IS NOT NULL )-;
+              qq-( $table_column IS NOT NULL )-;
             } else {
-              qq-( $column IS NOT NULL AND $column != '' )-;
+              qq-( $table_column IS NOT NULL AND $table_column != '' )-;
             }
           } else {
-            qq-( $column IS NOT NULL AND $column != "" )-;
+            qq-( $table_column IS NOT NULL AND $table_column != "" )-;
           }
         } else {
           if ( driver_name eq 'Pg' ) {
-            qq-( $column $op '' )-;
+            qq-( $table_column $op '' )-;
           } else {
-            qq-( $column $op "" )-;
+            qq-( $table_column $op "" )-;
           }
         }
       } elsif ( $op eq '!=' ) {
-        qq-( $column IS NULL OR $column != ? )-;
+        qq-( $table_column IS NULL OR $table_column != ? )-;
       #if this needs to be re-enabled, it needs to use a custom op like
       #"APPROX=" or something (better name?, not '=', to avoid affecting other
       # searches
       #} elsif ( $op eq 'APPROX=' && _is_fs_float( $type, $value ) ) {
-      #  ( "$column <= ?", "$column >= ?" );
+      #  ( "$table_column <= ?", "$table_column >= ?" );
       } else {
-        "$column $op ?";
+        "$table_column $op ?";
       }
-    } @{ $real_fields } );  
+
+    } @{ $real_fields }
+  );  
 }
 
 =item by_key PRIMARY_KEY_VALUE

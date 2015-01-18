@@ -1,20 +1,22 @@
 <& elements/search.html,
-                 'title'       => emt('Quotation Search Results'),
-                 'html_init'   => $html_init,
-                 'menubar'     => $menubar,
-                 'name'        => 'quotations',
-                 'query'       => $sql_query,
-                 'count_query' => $count_query,
-                 'count_addl'  => $count_addl,
-                 'redirect'    => $link,
-                 'header'      => [ emt('Quotation #'),
-                                    emt('Setup'),
-                                    emt('Recurring'),
-                                    emt('Date'),
-                                    emt('Prospect'),
-                                    emt('Customer'),
-                                  ],
-                 'fields'      => [
+                 'title'              => emt('Quotation Search Results'),
+                 'html_init'          => $html_init,
+                 'menubar'            => $menubar,
+                 'name'               => 'quotations',
+                 'query'              => $sql_query,
+                 'count_query'        => $count_query,
+                 'count_addl'         => $count_addl,
+                 'redirect'           => $link,
+                 'disableable'        => 1,
+                 'disabled_statuspos' => 1,
+                 'header'             => [ emt('Quotation #'),
+                                           emt('Setup'),
+                                           emt('Recurring'),
+                                           emt('Date'),
+                                           emt('Prospect'),
+                                           emt('Customer'),
+                                         ],
+                 'fields'             => [
                    'quotationnum',
                    sub { $money_char. shift->total_setup },
                    sub { $money_char. shift->total_recur },
@@ -27,7 +29,7 @@
                        },
                    #\&FS::UI::Web::cust_fields,
                  ],
-                 'sort_fields' => [
+                 'sort_fields'        => [
                    'quotationnum',
                    '', #FS::quotation->total_setup_sql,
                    '', #FS::quotation->total_recur_sql,
@@ -43,7 +45,7 @@
                    $link,
                    $prospect_link,
                    $cust_link,
-                   #( map { $_ ne 'Cust. Status' ? $clink : '' }
+                   #( map { $_ ne 'Cust. Status' ? $cust_link : '' }
                    #      FS::UI::Web::cust_header()
                    #),
                  ],
@@ -70,6 +72,8 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
   unless $curuser->access_right('List quotations');
+
+local($FS::Record::qsearch_qualify_columns) = 1;
 
 my $join_prospect_main = 'LEFT JOIN prospect_main USING ( prospectnum )';
 my $join_cust_main = FS::UI::Web::join_cust_main('quotation');
