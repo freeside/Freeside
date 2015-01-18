@@ -45,6 +45,8 @@ our $nowarn_classload = 0;
 our $no_update_diff = 0;
 our $no_history = 0;
 
+our $qsearch_qualify_columns = 0;
+
 our $no_check_foreign = 1; #well, not inefficiently in perl by default anymore
 
 my $rsa_module;
@@ -754,7 +756,7 @@ sub get_real_fields {
 
       my $op = '=';
       my $column = $_;
-      my $table_column = "$table.$column";
+      my $table_column = $qsearch_qualify_columns ? "$table.$column" : $column;
       my $type = dbdef->table($table)->column($column)->type;
       my $value = $record->{$column};
       $value = $value->{'value'} if ref($value);

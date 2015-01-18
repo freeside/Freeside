@@ -73,6 +73,8 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('List quotations');
 
+local($FS::Record::qsearch_qualify_columns) = 1;
+
 my $join_prospect_main = 'LEFT JOIN prospect_main USING ( prospectnum )';
 my $join_cust_main = FS::UI::Web::join_cust_main('quotation');
 
