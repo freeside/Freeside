@@ -87,6 +87,50 @@ tie my %status, 'Tie::IxHash',
   ],
 ;
 
+if ( $db eq 'PostgreSQL' ) {
+
+  my $enabled =    FS::Record->scalar_sql('SHOW wal_level')    eq 'hot_standby'
+                && FS::Record->scalar_sql('SHOW archive_mode') eq 'on';
+
+  my $slave = 
+    FS::Record->scalar_sql('SHOW archive_command') =~ / postgres\@([\w\.\-]): /
+      ? $1 : '';
+
+  $status{'Replication'} = [
+    { 'title' => 'Status', #?
+      'value' => $enabled ? 'Enabled' : 'Disabled',
+    },
+  ];
+
+  if ( $enabled ) {
+    push @{ $status{'Replication'} }, 
+      { 'title' => 'Slave',
+        'value' => $slave || '(Missing, or unparseable archive_command)',
+      },
+    ;
+    if ( $slave ) {
+      #how far behind is it?  will be easier once we're off 9.1
+      # http://www.keithf4.com/monitoring_streaming_slave_lag/
+      # except pg_stat_replication still doesn't fill in the columns we need as
+      # non-Pg user :/
+      push @{ $status{'Replication'} }, 
+        { 'title' => 'Slave',
+          'value' => $slave || '(Missing, or unparseable archive_command)',
+        },
+      ;
+    }
+  }
+
+} else {
+
+  $status{'Replication'} = [
+    { 'title' => 'Enabled',
+      'value' => "(Not yet checked on $db)",
+    },
+  ];
+
+}
+
 if ( _is_running('cdrd') ) {
 
   my $delay = FS::Record->scalar_sql('
