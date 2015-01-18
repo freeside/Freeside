@@ -75,43 +75,47 @@
 
 <& /elements/tr-input-pkg-quantity.html, curr_value => $quantity &>
 
-% if ( $cust_main && $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
-%   my $what = lc(FS::payby->shortname($cust_main->payby));
+% unless ( $quotationnum ) {
+
+%   if ( $cust_main && $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
+%     my $what = lc(FS::payby->shortname($cust_main->payby));
+      <TR>
+        <TH ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TH>
+        <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+      </TR>
+%   }
+
     <TR>
-      <TH ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TH>
-      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+      <TH ALIGN="right"><% mt('Start') |h %> </TD>
+      <TD COLSPAN=6>
+        <INPUT TYPE="radio" NAME="start" ID="start_now" VALUE="" <% $cgi->param('start') eq '' ? 'CHECKED' : ''%>>Now
+        &emsp;
+        <INPUT TYPE="radio" NAME="start" ID="start_on_hold" VALUE="on_hold" <% $cgi->param('start') eq 'on_hold' ? 'CHECKED' : ''%>>On hold
+        &emsp;
+        <INPUT TYPE="radio" NAME="start" ID="start_on_date" VALUE="on_date" <% $cgi->param('start') eq 'date' ? 'CHECKED' : ''%>>On date
+
+        <& /elements/input-date-field.html,{
+                    'name'      => 'start_date',
+                    'format'    => $date_format,
+                    'value'     => '',
+                    'noinit'    => 1,
+                  } &>
+      </TD>
     </TR>
+
+    <TR>
+      <TH ALIGN="right"><% mt('Contract end date') |h %> </TD>
+      <TD COLSPAN=6>
+        <& /elements/input-date-field.html,{
+                    'name'      => 'contract_end',
+                    'format'    => $date_format,
+                    'value'     => '',
+                    'noinit'    => 1,
+                    } &>
+      </TD>
+    </TR>
+
 % }
-
-<TR>
-  <TH ALIGN="right"><% mt('Start') |h %> </TD>
-  <TD COLSPAN=6>
-    <INPUT TYPE="radio" NAME="start" ID="start_now" VALUE="" <% $cgi->param('start') eq '' ? 'CHECKED' : ''%>>Now
-    &emsp;
-    <INPUT TYPE="radio" NAME="start" ID="start_on_hold" VALUE="on_hold" <% $cgi->param('start') eq 'on_hold' ? 'CHECKED' : ''%>>On hold
-    &emsp;
-    <INPUT TYPE="radio" NAME="start" ID="start_on_date" VALUE="on_date" <% $cgi->param('start') eq 'date' ? 'CHECKED' : ''%>>On date
-
-    <& /elements/input-date-field.html,{
-                'name'      => 'start_date',
-                'format'    => $date_format,
-                'value'     => '',
-                'noinit'    => 1,
-              } &>
-  </TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right"><% mt('Contract end date') |h %> </TD>
-  <TD COLSPAN=6>
-    <& /elements/input-date-field.html,{
-                'name'      => 'contract_end',
-                'format'    => $date_format,
-                'value'     => '',
-                'noinit'    => 1,
-                } &>
-  </TD>
-</TR>
 
 </TABLE><BR>
 
