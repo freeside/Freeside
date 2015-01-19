@@ -1,0 +1,20 @@
+<& /elements/header-popup.html, mt('Email sent') &>
+<SCRIPT TYPE="text/javascript">
+  setTimeout("parent.cClick()", 3000);
+</SCRIPT>
+<& /elements/footer-popup.html &>
+<%init>
+
+#die "access denied"
+#  unless $FS::CurrentUser::CurrentUser->access_right('Generate quotation'); #separate rights to generate vs send/email?
+
+$cgi->param('quotationnum') =~ /^(\d+)$/ or die "Illegal quotationnum";
+my $quotationnum = $1;
+
+#XXX agent-virt
+my $quotation = qsearchs('quotation', { 'quotationnum'=>$quotationnum })
+  or die "Unknown quotationnum";
+
+$quotation->email({ 'to' => [ $cgi->param('emailaddress') ] });
+
+</%init>

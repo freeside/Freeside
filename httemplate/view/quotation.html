@@ -1,5 +1,7 @@
 <& /elements/header.html, mt('Quotation View'), $menubar &>
 
+<& /elements/init_overlib.html &>
+
 <SCRIPT TYPE="text/javascript">
 function areyousure(href, message) {
   if (confirm(message) == true)
@@ -7,47 +9,63 @@ function areyousure(href, message) {
 }
 </SCRIPT>
 
-%#XXX link to order...
+% unless ( $quotation->disabled eq 'Y' ) {
 
-<%doc>
+%   if ( $curuser->access_right('Order customer package') ) {
+      <& /elements/order_pkg_link.html,
+           'label'       => emt('Add package'),
+           'actionlabel' => emt('Add package'),
+           map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
+      &>
+      <BR><BR>
+%   }
 
-XXX resending quotations
+%   if ( 1 ) { #if ( $curuser->access_right('Send quotations') )
 
-% if ( $curuser->access_right('Resend invoices') ) {
+      <& /elements/popup_link.html,
+           'action'      => "${p}misc/email-quotation.html".
+                              "?quotationnum=$quotationnum",
+           'label'       => emt('Email this quotation'),
+           'actionlabel' => emt('Select recipients'),
+           #'width'       => 540,
+           #'height'      => 336,
+      &>
 
-    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
+%#      <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
 
-%   if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
-        | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>"><% mt('Re-email this invoice') |h %></A>
-%   } 
+%#%     if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
+%#           | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>"><% mt('Re-fax this invoice') |h %></A>
+%#%     } 
 
-%   if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
-        | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>"><% mt('Re-fax this invoice') |h %></A>
-%   } 
+%   }
+
+%   if ( $conf->exists('quotation_latex') ) { 
+      | <A HREF="<% $p %>view/quotation-pdf.cgi?<% $link %>"><% mt('View typeset quotation PDF') |h %></A>
+%   }
 
     <BR><BR>
 
-% } 
+%   if ( $curuser->access_right('New customer') && $quotation->quotation_pkg ) {
+      <A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>">Place order</A>
+      <BR><BR>
+%   }
 
-</%doc>
-
-% if ( $curuser->access_right('Order customer package') ) {
-  <& /elements/order_pkg_link.html,
-       'label'       => emt('Add package'),
-       'actionlabel' => emt('Add package'),
-       map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
-  &>
 % }
 
-% if ( $conf->exists('quotation_latex') ) { 
-  | <A HREF="<% $p %>view/quotation-pdf.cgi?<% $link %>"><% mt('View typeset quotation PDF') |h %></A>
+% if ( $curuser->access_right('Disable quotation') ) {
+%   if ( $quotation->disabled eq 'Y' ) {
+      <A HREF="<%$p%>misc/enable-quotation.html?quotationnum=<% $quotation->quotationnum %>" TITLE="<% emt('Enable this quotation') %>"><% emt('Enable this quotation') %></A>
+%   } else {
+      <% areyousure_link(
+           "${p}misc/disable-quotation.html?quotationnum=". $quotation->quotationnum,
+           emt('Are you sure you want to disable this quotation?'),
+           emt('Disable this quotation'), #tooltip
+           emt('Disable this quotation'), #link
+      ) %>
+%   }
+  <BR><BR>
 % }
 
-% if ( $curuser->access_right('New customer') && $quotation->quotation_pkg ) {
-  | <A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>">Place order</A>
-% }
-
-<BR><BR>
 
 % if ( $conf->exists('quotation_html') ) { 
     <% join('', $quotation->print_html( preref_callback=>$preref_callback )) %>
@@ -83,17 +101,7 @@ my $quotation = qsearchs({
 });
 die "Quotation #$quotationnum not found!" unless $quotation;
 
-my $menubar;
-if ( my $custnum = $quotation->custnum ) {
-  my $display_custnum = $quotation->cust_main->display_custnum;
-  $menubar = menubar(
-    emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
-  );
-} elsif ( my $prospectnum = $quotation->prospectnum ) {
-  $menubar = menubar(
-    emt("View this prospect (#[_1])",$prospectnum) => "${p}view/prospect_main.html?$prospectnum",
-  );
-}
+my $menubar = menubar( $quotation->cust_or_prospect_label_link($p) );
 
 my $link = "quotationnum=$quotationnum";
 #$link .= ';template='. uri_escape($template) if $template;

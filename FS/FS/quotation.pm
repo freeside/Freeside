@@ -4,6 +4,7 @@ use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record 
 use strict;
 use Tie::RefHash;
 use FS::UID qw( dbh );
+use FS::Maketext qw( emt );
 use FS::Record qw( qsearch qsearchs );
 use FS::CurrentUser;
 use FS::cust_main;
@@ -183,6 +184,85 @@ sub _total {
 
 }
 
+sub email {
+  my $self = shift;
+  my $opt = shift || {};
+  if ($opt and !ref($opt)) {
+    die ref($self). '->email called with positional parameters';
+  }
+
+  my $conf = $self->conf;
+
+  my $from = delete $opt->{from};
+
+  # this is where we set the From: address
+  $from ||= $conf->config('quotation_from', $self->cust_or_prospect->agentnum )
+         || $conf->config('invoice_from',   $self->cust_or_prospect->agentnum );
+
+  $self->SUPER::email( {
+    'from' => $from,
+    %$opt,
+  });
+
+}
+
+sub email_subject {
+  my $self = shift;
+
+  my $subject =
+    $self->conf->config('quotation_subject') #, $self->cust_main->agentnum)
+      || 'Quotation';
+
+  #my $cust_main = $self->cust_main;
+  #my $name = $cust_main->name;
+  #my $name_short = $cust_main->name_short;
+  #my $invoice_number = $self->invnum;
+  #my $invoice_date = $self->_date_pretty;
+
+  eval qq("$subject");
+}
+
+=item cust_or_prosect
+
+=cut
+
+sub cust_or_prospect {
+  my $self = shift;
+  $self->custnum ? $self->cust_main : $self->prospect_main;
+}
+
+=item cust_or_prospect_label_link P
+
+HTML links to either the customer or prospect.
+
+Returns a list consisting of two elements.  The first is a text label for the
+link, and the second is the URL.
+
+=cut
+
+sub cust_or_prospect_label_link {
+  my( $self, $p ) = @_;
+
+  if ( my $custnum = $self->custnum ) {
+    my $display_custnum = $self->cust_main->display_custnum;
+    my $target = $FS::CurrentUser::CurrentUser->default_customer_view eq 'jumbo'
+                   ? '#quotations'
+                   : ';show=quotations';
+    (
+      emt("View this customer (#[_1])",$display_custnum) =>
+        "${p}view/cust_main.cgi?custnum=$custnum$target"
+    );
+  } elsif ( my $prospectnum = $self->prospectnum ) {
+    (
+      emt("View this prospect (#[_1])",$prospectnum) =>
+        "${p}view/prospect_main.html?$prospectnum"
+    );
+  } else { #die?
+    ( '', '' );
+  }
+
+}
+
 #prevent things from falsely showing up as taxes, at least until we support
 # quoting tax amounts..
 sub _items_tax {
@@ -295,6 +375,35 @@ sub order {
 sub quotation_pkg {
   my $self = shift;
   qsearch('quotation_pkg', { 'quotationnum' => $self->quotationnum } );
+}
+
+=item disable
+
+Disables this quotation (sets disabled to Y, which hides the quotation on
+prospects and customers).
+
+If there is an error, returns an error message, otherwise returns false.
+
+=cut
+
+sub disable {
+  my $self = shift;
+  $self->disabled('Y');
+  $self->replace();
+}
+
+=item enable
+
+Enables this quotation.
+
+If there is an error, returns an error message, otherwise returns false.
+
+=cut
+
+sub enable {
+  my $self = shift;
+  $self->disabled('');
+  $self->replace();
 }
 
 =back

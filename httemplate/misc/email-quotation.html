@@ -1,0 +1,71 @@
+<& /elements/header-popup.html, mt('Select recipients') &>
+
+<% include('/elements/error.html') %>
+
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="process/email-quotation.html" onSubmit="document.OneTrueForm.submit.disabled=true; document.OneTrueForm.submit.style.display='none'; document.getElementById('emailingwait').style.display='';">
+<INPUT TYPE="hidden" NAME="quotationnum" VALUE="<% $quotationnum %>">
+
+<% ntable("#cccccc", 2) %>
+
+% my $emails = 0;
+
+% if ( my $cust_main = $quotation->cust_main ) {
+%   foreach my $email ( $cust_main->invoicing_list_emailonly ) {
+%     $emails++;
+      <& .emailrow, $email &>
+%   }
+% }
+
+% my @contact = $quotation->custnum ? $quotation->cust_main->cust_contact
+%                                   : $quotation->prospect_main->contact;
+% foreach my $contact ( @contact ) {
+%    foreach my $contact_email ( $contact->contact_email ) {
+%      $emails++;
+       <& .emailrow, $contact_email->emailaddress, $contact->firstlast &>
+%    }
+% }
+
+<%def .emailrow>
+% my( $email, $name ) = @_;
+% if ( $name ) { 
+%   $name = "$name <$email>";
+% } else { 
+%   $name = $email;
+% }
+  <TR>
+    <TD><INPUT TYPE="checkbox" NAME="emailaddress" VALUE="<% $email |h %>"></TD>
+    <TD><% $name |h %></TD>
+  </TR>
+</%def>
+
+</TABLE>
+
+<BR>
+
+<CENTER>
+% if ( $emails ) {
+  <BUTTON TYPE="submit" NAME="submit" ID="submit">Email quotation</BUTTON>
+  <DIV ID="emailingwait" STYLE="display:none">
+    <IMG SRC="<%$p%>images/wait-orange.gif"> <B>Sending...</B>
+  </DIV>
+% } else {
+  <FONT SIZE="+1" COLOR="#ff0000"><% mt('Add a contact email address first') |h %></FONT>
+% }
+</CENTER>
+
+</FORM>
+
+<& /elements/footer-popup.html &>
+<%init>
+
+#die "access denied"
+#  unless $FS::CurrentUser::CurrentUser->access_right('Generate quotation'); #separate rights to generate vs send/email?
+
+$cgi->param('quotationnum') =~ /^(\d+)$/ or die "Illegal quotationnum";
+my $quotationnum = $1;
+
+#XXX agent-virt
+my $quotation = qsearchs('quotation', { 'quotationnum'=>$quotationnum })
+  or die "Unknown quotationnum";
+
+</%init>
