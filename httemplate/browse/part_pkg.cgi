@@ -76,6 +76,10 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
 }
 $cgi->delete('classnum');
 
+if ( $cgi->param('pkgpartbatch') =~ /^([\w\/\-\:\. ]+)$/ ) {
+  push @where, "pkgpartbatch = '$1' ";
+}
+
 if ( $cgi->param('missing_recur_fee') ) {
   push @where, "NOT EXISTS ( SELECT 1 FROM part_pkg_option
                                WHERE optionname = 'recur_fee'

@@ -1,0 +1,116 @@
+<& /elements/header.html, 'Import package definitions' &>
+
+Import a file containing package definitions.
+<BR><BR>
+
+<& /elements/form-file_upload.html,
+     'name'      => 'PackageDefImportForm',
+     'action'    => 'process/part_pkg-import.html',
+     'num_files' => 1,
+     'fields'    => [ 'agentnum', 'pkgpartbatch', 'format' ],
+     'message'   => 'Package definition import successful',
+     'url'       => $p."browse/part_pkg.cgi?pkgpartbatch=$pkgpartbatch",
+     'onsubmit'  => "document.PackageDefImportForm.submitButton.disabled=true;"
+&>
+
+<% &ntable("#cccccc", 2) %>
+
+  <& /elements/tr-select-agent.html,
+       #'curr_value' => '', #$agentnum,
+       'label'       => "<B>Agent</B>",
+
+       'disable_empty' => 1,
+       #this doesn't work yet, no type_pkgs records are inserted
+       #'empty_label' => '(global)',
+
+       #disable_empty => ! $acl_edit_global,
+  &>
+
+
+  <INPUT TYPE="hidden" NAME="pkgpartbatch" VALUE="<% $pkgpartbatch %>"%>
+
+  <TR>
+    <TH ALIGN="right">Format</TH>
+    <TD>
+      <SELECT NAME="format">
+        <OPTION VALUE="default" SELECTED>Default
+      </SELECT>
+    </TD>
+  </TR>
+
+  <& /elements/file-upload.html,
+       'field' => 'file',
+       'label' => 'Filename',
+  &>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             NAME    = "submitButton"
+             ID      = "submitButton"
+             VALUE   = "Import file"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+<BR>
+Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  The file should have a .CSV or .XLS extension.
+<BR><BR>
+
+<b>Default</b> format has the following field order: <i>agent_pkgpartid, pkg<%$req%>, comment<%$req%>, freq<%$req%>, plan<%$req%>, setup_fee<%$req%>, recur_fee<%$req%>, setup_cost, recur_cost, classnum, taxclass
+</i>
+<BR><BR>
+
+<%$req%> Required fields
+<BR><BR>
+
+Field information:
+
+<ul>
+
+  <li><i>agent_pkgpartid</i>: Current product ID or code
+
+  <li><i>pkg</i>: Package name (customer-visible)
+
+  <li><i>comment</i>: Package comment (customer-hidden)
+
+  <li><i>freq</i>: Recurring fee frequency - 0 for one-time charges, a number of months (i.e. 1 for months, 12 for yearly), or a number followed by h, d or w for hours, days or weeks.
+
+  <li><i>plan</i>: Price plan, i.e. flat, prorate, voip_cdr, etc.
+
+  <li><i>setup_fee</i>: Setup price
+
+  <li><i>recur_fee</i>: Recurring price
+
+  <li><i>setup_cost</i>: Setup cost
+
+  <li><i>recur_cost</i>: Recurring cost
+
+  <li><i>classnum</i>: Package class (integer)
+
+  <li><i>taxclass</i>: Tax class (string)
+
+</ul>
+
+<BR>
+
+<& /elements/footer.html &>
+
+<%once>
+
+my $req = qq!<font color="#ff0000">*</font>!;
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+my $pkgpartbatch =
+  time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+
+</%init>

@@ -1809,6 +1809,7 @@ sub process_batch_import {
     #?
     default_csv                => $opt->{default_csv},
     postinsert_callback        => $opt->{postinsert_callback},
+    insert_args_callback       => $opt->{insert_args_callback},
   );
 
   if ( $opt->{'batch_namecol'} ) {
@@ -1895,6 +1896,9 @@ sub batch_import {
   my $preinsert_callback = '';
   $preinsert_callback = $param->{'preinsert_callback'}
 	  if $param->{'preinsert_callback'};
+  my $insert_args_callback = '';
+  $insert_args_callback = $param->{'insert_args_callback'}
+	  if $param->{'insert_args_callback'};
 
   if ( $param->{'format'} ) {
 
@@ -2204,7 +2208,12 @@ sub batch_import {
       next if exists $param->{skiprow} && $param->{skiprow};
     }
 
-    my $error = $record->insert;
+    my @insert_args = ();
+    if ( $insert_args_callback ) {
+      @insert_args = &{$insert_args_callback}($record, $param);
+    }
+
+    my $error = $record->insert(@insert_args);
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
