@@ -96,7 +96,7 @@ if ( el ) el.scrollIntoView(true);
 %        && $conf->config('payby-default') ne 'HIDE'
 %      ) {
   <% $s++ ? ' | ' : '' %>
-  <& one_time_charge_link.html, $cust_main &>
+  <& /elements/one_time_charge_link.html, 'custnum'=>$cust_main->custnum &>
 % } 
 
 % if ( $curuser->access_right('Bulk move customer services') ) { 

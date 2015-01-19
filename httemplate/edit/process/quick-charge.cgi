@@ -24,15 +24,20 @@ for ( my $row = 0; exists($param->{"description$row"}); $row++ ) {
     if ($param->{"description$row"} =~ /\S/);
 }
 
-$param->{"custnum"} =~ /^(\d+)$/
-  or $error .= "Illegal customer number " . $param->{"custnum"} . "  ";
-my $custnum = $1;
-
-my $cust_main = FS::cust_main->by_key($custnum)
-  or die "custnum $custnum not found";
-
-exists($curuser->agentnums_href->{$cust_main->agentnum})
-  or die "access denied";
+my( $cust_main, $prospect_main, $quotation ) = ( '', '', '' );
+if ( $cgi->param('quotationnum') =~ /^(\d+)$/ ) {
+  $quotation = FS::quotation->by_key($1) or die "quotationnum $1 not found";
+}
+if ( $param->{"custnum"} =~ /^(\d+)$/ ) {
+  $cust_main = FS::cust_main->by_key($1) or die "custnum $1 not found";
+  exists($curuser->agentnums_href->{$cust_main->agentnum})
+    or die "access denied";
+}
+if ( $param->{"prospectnum"} =~ /^(\d+)$/ ) {
+  $prospect_main = FS::prospect_main->by_key($1) or die "prospectnum $1 not found";
+  exists($curuser->agentnums_href->{$prospect_main->agentnum})
+    or die "access denied";
+}
 
 my $message;
 
@@ -106,30 +111,32 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
     $cgi->param('taxclass', '');
   }
 
-  unless ( $error ) {
-    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
-      or $error .= "Unknown customer number $custnum.  ";
+  my %charge = (
+    'amount'        => $amount,
+    'setup_cost'    => $setup_cost,
+    'quantity'      => $quantity,
+    'bill_now'      => scalar($cgi->param('bill_now')),
+    'invoice_terms' => scalar($cgi->param('invoice_terms')),
+    'start_date'    => ( scalar($cgi->param('start_date'))
+                           ? parse_datetime($cgi->param('start_date'))
+                           : ''
+                       ),
+    'no_auto'       => scalar($cgi->param('no_auto')),
+    'pkg'           => scalar($cgi->param('pkg')),
+    'setuptax'      => scalar($cgi->param('setuptax')),
+    'taxclass'      => scalar($cgi->param('taxclass')),
+    'taxproductnum' => scalar($cgi->param('taxproductnum')),
+    'tax_override'  => $override,
+    'classnum'      => scalar($cgi->param('classnum')),
+    'additional'    => \@description,
+  );
 
-    $error ||= $cust_main->charge( {
-      'amount'        => $amount,
-      'setup_cost'    => $setup_cost,
-      'quantity'      => $quantity,
-      'bill_now'      => scalar($cgi->param('bill_now')),
-      'invoice_terms' => scalar($cgi->param('invoice_terms')),
-      'start_date'    => ( scalar($cgi->param('start_date'))
-                             ? parse_datetime($cgi->param('start_date'))
-                             : ''
-                         ),
-      'no_auto'       => scalar($cgi->param('no_auto')),
-      'pkg'           => scalar($cgi->param('pkg')),
-      'setuptax'      => scalar($cgi->param('setuptax')),
-      'taxclass'      => scalar($cgi->param('taxclass')),
-      'taxproductnum' => scalar($cgi->param('taxproductnum')),
-      'tax_override'  => $override,
-      'classnum'      => scalar($cgi->param('classnum')),
-      'additional'    => \@description,
-    } );
+  if ( $quotation ) {
+    $error ||= $quotation->charge( \%charge );
+  } else {
+    $error ||= $cust_main->charge( \%charge );
   }
+
 }
 
 </%init>

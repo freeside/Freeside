@@ -17,8 +17,14 @@ function areyousure(href, message) {
            'actionlabel' => emt('Add package'),
            map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
       &>
-      <BR><BR>
 %   }
+
+%   if ( $curuser->access_right('One-time charge') ) {
+      | <& /elements/one_time_charge_link.html,
+             map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
+        &>
+%   }
+      <BR><BR>
 
 %   if ( 1 ) { #if ( $curuser->access_right('Send quotations') )
 
