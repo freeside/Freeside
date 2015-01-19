@@ -1964,8 +1964,8 @@ sub _pkgs_sql {
 #false laziness w/part_export & cdr
 my %info;
 foreach my $INC ( @INC ) {
-  warn "globbing $INC/FS/part_pkg/*.pm\n" if $DEBUG;
-  foreach my $file ( glob("$INC/FS/part_pkg/*.pm") ) {
+  warn "globbing $INC/FS/part_pkg/[a-z]*.pm\n" if $DEBUG;
+  foreach my $file ( glob("$INC/FS/part_pkg/[a-z]*.pm") ) {
     warn "attempting to load plan info from $file\n" if $DEBUG;
     $file =~ /\/(\w+)\.pm$/ or do {
       warn "unrecognized file in $INC/FS/part_pkg/: $file\n";
