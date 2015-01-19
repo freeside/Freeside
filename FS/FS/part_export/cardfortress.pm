@@ -58,7 +58,22 @@ sub _export_replace {
 sub _export_delete {
   #my( $self, $svc_x ) = (shift, shift);
 
-  return 'deletion not yet supproted';
+  #well, we're just going to disable them for now, but there you go
+
+  eval "use Net::OpenSSH;";
+  return $@ if $@;
+
+  open my $def_in, '<', '/dev/null' or die "unable to open /dev/null";
+  my $ssh = Net::OpenSSH->new( $self->machine,
+                               default_stdin_fh => $def_in );
+
+  my $private_key = $ssh->run(
+    '/usr/local/bin/merchant_disable', map $svc_acct->$_, qw( username )
+  );
+  return $ssh->error if $ssh->error;
+
+  '';
+
 }
 
 1;
