@@ -7,8 +7,11 @@ use Tie::RefHash;
 use FS::CurrentUser;
 use FS::UID qw( dbh );
 use FS::Maketext qw( emt );
+use FS::Record qw( qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
+use FS::quotation_pkg;
+use FS::type_pkgs;
 
 =head1 NAME
 
@@ -348,6 +351,133 @@ sub order {
       $self->quotation_pkg ;
 
   $self->cust_main->order_pkgs( \%cust_pkg );
+
+}
+
+=item charge
+
+One-time charges, like FS::cust_main::charge()
+
+=cut
+
+#super false laziness w/cust_main::charge
+sub charge {
+  my $self = shift;
+  my ( $amount, $setup_cost, $quantity, $start_date, $classnum );
+  my ( $pkg, $comment, $additional );
+  my ( $setuptax, $taxclass );   #internal taxes
+  my ( $taxproduct, $override ); #vendor (CCH) taxes
+  my $no_auto = '';
+  my $cust_pkg_ref = '';
+  my ( $bill_now, $invoice_terms ) = ( 0, '' );
+  my $locationnum;
+  if ( ref( $_[0] ) ) {
+    $amount     = $_[0]->{amount};
+    $setup_cost = $_[0]->{setup_cost};
+    $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
+    $start_date = exists($_[0]->{start_date}) ? $_[0]->{start_date} : '';
+    $no_auto    = exists($_[0]->{no_auto}) ? $_[0]->{no_auto} : '';
+    $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
+    $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
+                                           : '$'. sprintf("%.2f",$amount);
+    $setuptax   = exists($_[0]->{setuptax}) ? $_[0]->{setuptax} : '';
+    $taxclass   = exists($_[0]->{taxclass}) ? $_[0]->{taxclass} : '';
+    $classnum   = exists($_[0]->{classnum}) ? $_[0]->{classnum} : '';
+    $additional = $_[0]->{additional} || [];
+    $taxproduct = $_[0]->{taxproductnum};
+    $override   = { '' => $_[0]->{tax_override} };
+    $cust_pkg_ref = exists($_[0]->{cust_pkg_ref}) ? $_[0]->{cust_pkg_ref} : '';
+    $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
+    $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
+    $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
+  } else {
+    $amount     = shift;
+    $setup_cost = '';
+    $quantity   = 1;
+    $start_date = '';
+    $pkg        = @_ ? shift : 'One-time charge';
+    $comment    = @_ ? shift : '$'. sprintf("%.2f",$amount);
+    $setuptax   = '';
+    $taxclass   = @_ ? shift : '';
+    $additional = [];
+  }
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $part_pkg = new FS::part_pkg ( {
+    'pkg'           => $pkg,
+    'comment'       => $comment,
+    'plan'          => 'flat',
+    'freq'          => 0,
+    'disabled'      => 'Y',
+    'classnum'      => ( $classnum ? $classnum : '' ),
+    'setuptax'      => $setuptax,
+    'taxclass'      => $taxclass,
+    'taxproductnum' => $taxproduct,
+    'setup_cost'    => $setup_cost,
+  } );
+
+  my %options = ( ( map { ("additional_info$_" => $additional->[$_] ) }
+                        ( 0 .. @$additional - 1 )
+                  ),
+                  'additional_count' => scalar(@$additional),
+                  'setup_fee' => $amount,
+                );
+
+  my $error = $part_pkg->insert( options       => \%options,
+                                 tax_overrides => $override,
+                               );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $pkgpart = $part_pkg->pkgpart;
+
+  #DIFF
+  my %type_pkgs = ( 'typenum' => $self->cust_or_prospect->agent->typenum, 'pkgpart' => $pkgpart );
+
+  unless ( qsearchs('type_pkgs', \%type_pkgs ) ) {
+    my $type_pkgs = new FS::type_pkgs \%type_pkgs;
+    $error = $type_pkgs->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  #except for DIFF, eveything above is idential to cust_main version
+  #but below is our own thing pretty much (adding a quotation package instead
+  # of ordering a customer package, no "bill now")
+
+  my $quotation_pkg = new FS::quotation_pkg ( {
+    'quotationnum'  => $self->quotationnum,
+    'pkgpart'       => $pkgpart,
+    'quantity'      => $quantity,
+    #'start_date' => $start_date,
+    #'no_auto'    => $no_auto,
+    'locationnum'=> $locationnum,
+  } );
+
+  $error = $quotation_pkg->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  #} elsif ( $cust_pkg_ref ) {
+  #  ${$cust_pkg_ref} = $cust_pkg;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '';
 
 }
 

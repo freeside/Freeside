@@ -1,3 +1,16 @@
+<%doc>
+
+Example:
+
+  <& /elements/one_time_charge_link.html,
+
+     #one of these is required
+     'custnum'     => $custnum,
+     'prospectnum' => $prospectnum,
+
+  &>
+
+</%doc>
 <SCRIPT TYPE="text/javascript">
 
 function taxproductmagic(which) {
@@ -72,10 +85,16 @@ function taxoverridequickchargemagic() {
 
 </SCRIPT>
 
-<FORM NAME='quickcharge' STYLE="margin:0; padding:0; display:inline"><INPUT NAME="taxproductnum"  ID="taxproductnum"  TYPE="hidden"><INPUT NAME="tax_override"   ID="tax_override"   TYPE="hidden"><INPUT NAME="charge_storage" ID="charge_storage" TYPE="hidden"><INPUT NAME="taxproductnum_description" ID="taxproductnum_description" TYPE="hidden"></FORM>
+<FORM NAME='quickcharge' STYLE="margin:0; padding:0; display:inline">
+% for (qw(
+%   taxproductnum tax_override charge_storage taxproductnum_description
+% )) {
+    <INPUT NAME="<% $_ %>" ID="<% $_ %>" TYPE="hidden">
+% }
+</FORM>
 
 <% include('/elements/popup_link.html', { 
-     'action'      => $p.'edit/quick-charge.html?custnum='. $cust_main->custnum,
+     'action'      => $p. 'edit/quick-charge.html?'. $query,
      'label'       => emt('One-time charge'),
      'actionlabel' => emt('One-time charge'),
      'color'       => '#333399',
@@ -86,6 +105,10 @@ function taxoverridequickchargemagic() {
 
 <%init>
 
-my($cust_main) = @_;
+my %opt = @_;
+
+my $query = $opt{custnum} ? 'custnum='.$opt{custnum}
+                          : 'prospectnum='.$opt{prospectnum};
+$query .= ';quotationnum='.$opt{quotationnum} if $opt{quotationnum};
 
 </%init>
