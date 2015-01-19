@@ -307,9 +307,11 @@ if ( $opt{'disableable'} ) {
     $opt{'query'}{'hashref'}{'disabled'} = '';
     $opt{'query'}{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
 
+    my $table = $opt{'query'}{'table'};
+
     $opt{'count_query'} .=
       ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-      "( disabled = '' OR disabled IS NULL )";
+      "( $table.disabled = '' OR $table.disabled IS NULL )";
 
   } elsif (    $opt{'disabled_statuspos'}
             || $opt{'disabled_statuspos'} eq '0' ) { #add status column
@@ -358,12 +360,6 @@ unless ( $type =~ /^(csv|xml|\w*.xls)$/) {
   unless (exists($opt{count_query}) && length($opt{count_query})) {
     ( $opt{count_query} = $opt{query} ) =~
       s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i; #silly vim:/
-  }
-
-  if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
-    $opt{count_query} .=
-      ( ( $opt{count_query} =~ /WHERE/i ) ? ' AND ' : ' WHERE ' ).
-      "( disabled = '' OR disabled IS NULL )";
   }
 
   unless ( $type eq 'html-print' ) {

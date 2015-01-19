@@ -97,6 +97,7 @@ tie my %rights, 'Tie::IxHash',
     #'New contact',
     #'View customer contacts',
     'Generate quotation',
+    'Disable quotation',
   ],
   
   ###
