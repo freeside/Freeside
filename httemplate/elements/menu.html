@@ -439,12 +439,13 @@ $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
   if $curuser->access_right('Raw SQL');
 
 tie my %tools_importing, 'Tie::IxHash',
-  'Customers' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
-  'Customer packages' => [ $fsurl.'misc/cust_pkg-import.html', '' ],
-  'Customer comments' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
-  'One-time charges' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
-  'Payments' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
-  'Credits' => [ $fsurl.'misc/cust_credit-import.html', '' ],
+  'Customers'            => [ $fsurl.'misc/cust_main-import.cgi', '' ],
+  'Package definitions'  => [ $fsurl.'misc/part_pkg-import.html', '' ],
+  'Customer packages'    => [ $fsurl.'misc/cust_pkg-import.html', '' ],
+  'Customer comments'    => [ $fsurl.'misc/cust_main_note-import.html', '' ],
+  'One-time charges'     => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
+  'Payments'             => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
+  'Credits'              => [ $fsurl.'misc/cust_credit-import.html', '' ],
   'Phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'misc/cdr-import.html', '' ],
 ;

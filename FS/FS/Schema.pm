@@ -2126,6 +2126,7 @@ sub tables_hashref {
    'part_pkg' => {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
+        'pkgpartbatch',  'varchar', 'NULL', $char_d, '', '',
         'pkg',           'varchar',   '',   $char_d, '', '', 
         'comment',       'varchar', 'NULL', 2*$char_d, '', '', 
         'promo_code',    'varchar', 'NULL', $char_d, '', '', 

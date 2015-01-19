@@ -1,6 +1,6 @@
-<% include("/elements/header.html",'Batch Package Import') %>
+<& /elements/header.html, 'Customer package import' &>
 
-Import a file containing package records.
+Import a file containing customer packages.
 <BR><BR>
 
 <& /elements/form-file_upload.html,
@@ -8,19 +8,18 @@ Import a file containing package records.
      'action'    => 'process/cust_pkg-import.html',
      'num_files' => 1,
      'fields'    => [ 'agentnum', 'pkgbatch', 'format' ],
-     'message'   => 'Package import successful',
+     'message'   => 'Customer package import successful',
      'url'       => $p."search/cust_pkg.cgi?pkgbatch=$pkgbatch",
      'onsubmit'  => "document.PackageImportForm.submitButton.disabled=true;"
 &>
 
 <% &ntable("#cccccc", 2) %>
 
-  <% include( '/elements/tr-select-agent.html',
-                 #'curr_value' => '', #$agentnum,
-                 'label'       => "<B>Agent</B>",
-                 'empty_label' => 'Select agent',
-             )
-  %>
+  <& /elements/tr-select-agent.html,
+       #'curr_value' => '', #$agentnum,
+       'label'       => "<B>Agent</B>",
+       'empty_label' => 'Select agent',
+  &>
 
   <INPUT TYPE="hidden" NAME="pkgbatch" VALUE="<% $pkgbatch %>"%>
 
@@ -43,11 +42,10 @@ Import a file containing package records.
     </TD>
   </TR>
 
-  <% include( '/elements/file-upload.html',
-                'field' => 'file',
-                'label' => 'Filename',
-            )
-  %>
+  <& /elements/file-upload.html,
+       'field' => 'file',
+       'label' => 'Filename',
+  &>
 
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
@@ -171,7 +169,7 @@ Field information:
 
 <BR>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%once>
 
