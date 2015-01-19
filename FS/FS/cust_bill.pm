@@ -15,7 +15,7 @@ use HTML::Entities;
 use Storable qw( freeze thaw );
 use GD::Barcode;
 use FS::UID qw( datasrc );
-use FS::Misc qw( send_email send_fax do_print );
+use FS::Misc qw( send_fax do_print );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_statement;
 use FS::cust_bill_pkg;
@@ -1024,301 +1024,6 @@ sub apply_payments_and_credits {
 
 }
 
-=item generate_email OPTION => VALUE ...
-
-Options:
-
-=over 4
-
-=item from
-
-sender address, required
-
-=item template
-
-alternate template name, optional
-
-=item print_text
-
-text attachment arrayref, optional
-
-=item subject
-
-email subject, optional
-
-=item notice_name
-
-notice name instead of "Invoice", optional
-
-=back
-
-Returns an argument list to be passed to L<FS::Misc::send_email>.
-
-=cut
-
-use MIME::Entity;
-
-sub generate_email {
-
-  my $self = shift;
-  my %args = @_;
-  my $conf = $self->conf;
-
-  my $me = '[FS::cust_bill::generate_email]';
-
-  my %return = (
-    'from'      => $args{'from'},
-    'subject'   => ($args{'subject'} || $self->email_subject),
-    'custnum'   => $self->custnum,
-    'msgtype'   => 'invoice',
-  );
-
-  $args{'unsquelch_cdr'} = $conf->exists('voip-cdr_email');
-
-  my $cust_main = $self->cust_main;
-
-  if (ref($args{'to'}) eq 'ARRAY') {
-    $return{'to'} = $args{'to'};
-  } else {
-    $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
-                           $cust_main->invoicing_list
-                    ];
-  }
-
-  if ( $conf->exists('invoice_html') ) {
-
-    warn "$me creating HTML/text multipart message"
-      if $DEBUG;
-
-    $return{'nobody'} = 1;
-
-    my $alternative = build MIME::Entity
-      'Type'        => 'multipart/alternative',
-      #'Encoding'    => '7bit',
-      'Disposition' => 'inline'
-    ;
-
-    my $data;
-    if ( $conf->exists('invoice_email_pdf')
-         and scalar($conf->config('invoice_email_pdf_note')) ) {
-
-      warn "$me using 'invoice_email_pdf_note' in multipart message"
-        if $DEBUG;
-      $data = [ map { $_ . "\n" }
-                    $conf->config('invoice_email_pdf_note')
-              ];
-
-    } else {
-
-      warn "$me not using 'invoice_email_pdf_note' in multipart message"
-        if $DEBUG;
-      if ( ref($args{'print_text'}) eq 'ARRAY' ) {
-        $data = $args{'print_text'};
-      } else {
-        $data = [ $self->print_text(\%args) ];
-      }
-
-    }
-
-    $alternative->attach(
-      'Type'        => 'text/plain',
-      'Encoding'    => 'quoted-printable',
-      'Charset'     => 'UTF-8',
-      #'Encoding'    => '7bit',
-      'Data'        => $data,
-      'Disposition' => 'inline',
-    );
-
-
-    my $htmldata;
-    my $image = '';
-    my $barcode = '';
-    if ( $conf->exists('invoice_email_pdf')
-         and scalar($conf->config('invoice_email_pdf_note')) ) {
-
-      $htmldata = join('<BR>', $conf->config('invoice_email_pdf_note') );
-
-    } else {
-
-      $args{'from'} =~ /\@([\w\.\-]+)/;
-      my $from = $1 || 'example.com';
-      my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
-
-      my $logo;
-      my $agentnum = $cust_main->agentnum;
-      if ( defined($args{'template'}) && length($args{'template'})
-           && $conf->exists( 'logo_'. $args{'template'}. '.png', $agentnum )
-         )
-      {
-        $logo = 'logo_'. $args{'template'}. '.png';
-      } else {
-        $logo = "logo.png";
-      }
-      my $image_data = $conf->config_binary( $logo, $agentnum);
-
-      $image = build MIME::Entity
-        'Type'       => 'image/png',
-        'Encoding'   => 'base64',
-        'Data'       => $image_data,
-        'Filename'   => 'logo.png',
-        'Content-ID' => "<$content_id>",
-      ;
-   
-      if ($conf->exists('invoice-barcode')) {
-        my $barcode_content_id = join('.', rand()*(2**32), $$, time). "\@$from";
-        $barcode = build MIME::Entity
-          'Type'       => 'image/png',
-          'Encoding'   => 'base64',
-          'Data'       => $self->invoice_barcode(0),
-          'Filename'   => 'barcode.png',
-          'Content-ID' => "<$barcode_content_id>",
-        ;
-        $args{'barcode_cid'} = $barcode_content_id;
-      }
-
-      $htmldata = $self->print_html({ 'cid'=>$content_id, %args });
-    }
-
-    $alternative->attach(
-      'Type'        => 'text/html',
-      'Encoding'    => 'quoted-printable',
-      'Data'        => [ '<html>',
-                         '  <head>',
-                         '    <title>',
-                         '      '. encode_entities($return{'subject'}), 
-                         '    </title>',
-                         '  </head>',
-                         '  <body bgcolor="#e8e8e8">',
-                         $htmldata,
-                         '  </body>',
-                         '</html>',
-                       ],
-      'Disposition' => 'inline',
-      #'Filename'    => 'invoice.pdf',
-    );
-
-
-    my @otherparts = ();
-    if ( $cust_main->email_csv_cdr ) {
-
-      push @otherparts, build MIME::Entity
-        'Type'        => 'text/csv',
-        'Encoding'    => '7bit',
-        'Data'        => [ map { "$_\n" }
-                             $self->call_details('prepend_billed_number' => 1)
-                         ],
-        'Disposition' => 'attachment',
-        'Filename'    => 'usage-'. $self->invnum. '.csv',
-      ;
-
-    }
-
-    if ( $conf->exists('invoice_email_pdf') ) {
-
-      #attaching pdf too:
-      # multipart/mixed
-      #   multipart/related
-      #     multipart/alternative
-      #       text/plain
-      #       text/html
-      #     image/png
-      #   application/pdf
-
-      my $related = build MIME::Entity 'Type'     => 'multipart/related',
-                                       'Encoding' => '7bit';
-
-      #false laziness w/Misc::send_email
-      $related->head->replace('Content-type',
-        $related->mime_type.
-        '; boundary="'. $related->head->multipart_boundary. '"'.
-        '; type=multipart/alternative'
-      );
-
-      $related->add_part($alternative);
-
-      $related->add_part($image) if $image;
-
-      my $pdf = build MIME::Entity $self->mimebuild_pdf(\%args);
-
-      $return{'mimeparts'} = [ $related, $pdf, @otherparts ];
-
-    } else {
-
-      #no other attachment:
-      # multipart/related
-      #   multipart/alternative
-      #     text/plain
-      #     text/html
-      #   image/png
-
-      $return{'content-type'} = 'multipart/related';
-      if ($conf->exists('invoice-barcode') && $barcode) {
-        $return{'mimeparts'} = [ $alternative, $image, $barcode, @otherparts ];
-      } else {
-        $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
-      }
-      $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
-      #$return{'disposition'} = 'inline';
-
-    }
-  
-  } else {
-
-    if ( $conf->exists('invoice_email_pdf') ) {
-      warn "$me creating PDF attachment"
-        if $DEBUG;
-
-      #mime parts arguments a la MIME::Entity->build().
-      $return{'mimeparts'} = [
-        { $self->mimebuild_pdf(\%args) }
-      ];
-    }
-  
-    if ( $conf->exists('invoice_email_pdf')
-         and scalar($conf->config('invoice_email_pdf_note')) ) {
-
-      warn "$me using 'invoice_email_pdf_note'"
-        if $DEBUG;
-      $return{'body'} = [ map { $_ . "\n" }
-                              $conf->config('invoice_email_pdf_note')
-                        ];
-
-    } else {
-
-      warn "$me not using 'invoice_email_pdf_note'"
-        if $DEBUG;
-      if ( ref($args{'print_text'}) eq 'ARRAY' ) {
-        $return{'body'} = $args{'print_text'};
-      } else {
-        $return{'body'} = [ $self->print_text(\%args) ];
-      }
-
-    }
-
-  }
-
-  %return;
-
-}
-
-=item mimebuild_pdf
-
-Returns a list suitable for passing to MIME::Entity->build(), representing
-this invoice as PDF attachment.
-
-=cut
-
-sub mimebuild_pdf {
-  my $self = shift;
-  (
-    'Type'        => 'application/pdf',
-    'Encoding'    => 'base64',
-    'Data'        => [ $self->print_pdf(@_) ],
-    'Disposition' => 'attachment',
-    'Filename'    => 'invoice-'. $self->invnum. '.pdf',
-  );
-}
-
 =item send HASHREF
 
 Sends this invoice to the destinations configured for this customer: sends
@@ -1331,7 +1036,7 @@ I<template>: a suffix for alternate invoices
 
 I<agentnum>: obsolete, now does nothing.
 
-I<invoice_from> overrides the default email invoice From: address.
+I<from> overrides the default email invoice From: address.
 
 I<amount>: obsolete, does nothing
 
@@ -1367,55 +1072,22 @@ sub send {
 
 }
 
-=item email HASHREF | [ TEMPLATE [ , INVOICE_FROM ] ] 
-
-Sends this invoice to the customer's email destination(s).
-
-Options must be passed as a hashref.  Positional parameters are no longer
-allowed.
-
-I<template>, if specified, is the name of a suffix for alternate invoices.
-
-I<invoice_from>, if specified, overrides the default email invoice From: 
-address.
-
-I<notice_name> is the name of the sent document.
-
-=cut
-
-sub queueable_email {
-  my %opt = @_;
-
-  my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
-    or die "invalid invoice number: " . $opt{invnum};
-
-  my %args = map {$_ => $opt{$_}} 
-             grep { $opt{$_} }
-              qw( invoice_from notice_name no_coupon template );
-
-  my $error = $self->email( \%args );
-  die $error if $error;
-
-}
-
 sub email {
   my $self = shift;
-  return if $self->hide;
-  my $conf = $self->conf;
   my $opt = shift || {};
   if ($opt and !ref($opt)) {
-    die "FS::cust_bill::email called with positional parameters";
+    die ref($self). '->email called with positional parameters';
   }
 
-  my $template = $opt->{template};
-  my $from = delete $opt->{invoice_from};
+  my $conf = $self->conf;
+
+  my $from = delete $opt->{from};
 
   # this is where we set the From: address
   $from ||= $self->_agent_invoice_from ||    #XXX should go away
             $conf->config('invoice_from', $self->cust_main->agentnum );
 
-  my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } 
-                            $self->cust_main->invoicing_list;
+  my @invoicing_list = $self->cust_main->invoicing_list_emailonly;
 
   if ( ! @invoicing_list ) { #no recipients
     if ( $conf->exists('cust_bill-no_recipients-error') ) {
@@ -1426,19 +1098,28 @@ sub email {
     }
   }
 
-  # this is where we set the Subject:
-  my $subject = $self->email_subject($template);
+  $self->SUPER::email( {
+    'from' => $from,
+    'to'   => \@invoicing_list,
+    %$opt,
+  });
 
-  my $error = send_email(
-    $self->generate_email(
-      'from'        => $from,
-      'to'          => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
-      'subject'     => $subject,
-      %$opt, # template, etc.
-    )
-  );
-  die "can't email invoice: $error\n" if $error;
-  #die "$error\n" if $error;
+}
+
+#this stays here for now because its explicitly used as
+# FS::cust_bill::queueable_email
+sub queueable_email {
+  my %opt = @_;
+
+  my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
+    or die "invalid invoice number: " . $opt{invnum};
+
+  my %args = map {$_ => $opt{$_}} 
+             grep { $opt{$_} }
+              qw( from notice_name no_coupon template );
+
+  my $error = $self->email( \%args );
+  die $error if $error;
 
 }
 

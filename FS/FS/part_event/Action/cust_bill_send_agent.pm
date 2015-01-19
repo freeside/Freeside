@@ -45,8 +45,8 @@ sub do_action {
 
   $cust_bill->set('mode' => $self->option('modenum'));
   $cust_bill->send(
-    'template'      => $self->option('agent_templatename'),
-    'invoice_from'  => $self->option('agent_invoice_from'),
+    'template' => $self->option('agent_templatename'),
+    'from'     => $self->option('agent_invoice_from'),
   );
 }
 

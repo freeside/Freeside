@@ -1,5 +1,7 @@
 <& /elements/header.html, mt('Quotation View'), $menubar &>
 
+<& /elements/init_overlib.html &>
+
 <SCRIPT TYPE="text/javascript">
 function areyousure(href, message) {
   if (confirm(message) == true)
@@ -20,9 +22,14 @@ function areyousure(href, message) {
 
 %   if ( 1 ) { #if ( $curuser->access_right('Send quotations') )
 
-%     #if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
-%#      <A HREF="<% $p %>misc/email-quotation.html?<% $link %>"><% mt('Email this quotation') |h %></A>
-%     #} 
+      <& /elements/popup_link.html,
+           'action'      => "${p}misc/email-quotation.html".
+                              "?quotationnum=$quotationnum",
+           'label'       => emt('Email this quotation'),
+           'actionlabel' => emt('Select recipients'),
+           #'width'       => 540,
+           #'height'      => 336,
+      &>
 
 %#      <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
 

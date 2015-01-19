@@ -16,6 +16,7 @@ use HTML::Entities;
 use Locale::Country;
 use Cwd;
 use FS::UID;
+use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 use FS::Misc qw( generate_ps generate_pdf );
@@ -1845,6 +1846,10 @@ sub _translate_old_latex_format {
   (@template);
 }
 
+=item terms
+
+=cut
+
 sub terms {
   my $self = shift;
   my $conf = $self->conf;
@@ -1867,6 +1872,10 @@ sub terms {
   $conf->config('invoice_default_terms', $agentnum) || '';
 }
 
+=item due_date
+
+=cut
+
 sub due_date {
   my $self = shift;
   my $duedate = '';
@@ -1876,10 +1885,18 @@ sub due_date {
   $duedate;
 }
 
+=item due_date2str
+
+=cut
+
 sub due_date2str {
   my $self = shift;
   $self->due_date ? $self->time2str_local(shift, $self->due_date) : '';
 }
+
+=item balance_due_msg
+
+=cut
 
 sub balance_due_msg {
   my $self = shift;
@@ -1893,6 +1910,10 @@ sub balance_due_msg {
   }
   $msg;
 }
+
+=item balance_due_date
+
+=cut
 
 sub balance_due_date {
   my $self = shift;
@@ -1932,6 +1953,348 @@ configured for the back-office.  Use _date_pretty for end-customer display use.
 sub _date_pretty_unlocalized {
   my $self = shift;
   time2str($date_format, $self->_date);
+}
+
+=item email HASHREF
+
+Emails this template.
+
+Options are passed as a hashref.  Available options:
+
+=over 4
+
+=item from
+
+If specified, overrides the default From: address.
+
+=item notice_name
+
+If specified, overrides the name of the sent document ("Invoice" or "Quotation")
+
+=item template
+
+(Deprecated) If specified, is the name of a suffix for alternate template files.
+
+=back
+
+Options accepted by generate_email can also be used.
+
+=cut
+
+sub email {
+  my $self = shift;
+  my $opt = shift || {};
+  if ($opt and !ref($opt)) {
+    die ref($self). '->email called with positional parameters';
+  }
+
+  return if $self->hide;
+
+  my $error = send_email(
+    $self->generate_email(
+      'subject'     => $self->email_subject($opt->{template}),
+      %$opt, # template, etc.
+    )
+  );
+
+  die "can't email: $error\n" if $error;
+}
+
+=item generate_email OPTION => VALUE ...
+
+Options:
+
+=over 4
+
+=item from
+
+sender address, required
+
+=item template
+
+alternate template name, optional
+
+=item print_text
+
+text attachment arrayref, optional
+
+=item subject
+
+email subject, optional
+
+=item notice_name
+
+notice name instead of "Invoice", optional
+
+=back
+
+Returns an argument list to be passed to L<FS::Misc::send_email>.
+
+=cut
+
+use MIME::Entity;
+
+sub generate_email {
+
+  my $self = shift;
+  my %args = @_;
+  my $conf = $self->conf;
+
+  my $me = '[FS::Template_Mixin::generate_email]';
+
+  my %return = (
+    'from'      => $args{'from'},
+    'subject'   => ($args{'subject'} || $self->email_subject),
+    'custnum'   => $self->custnum,
+    'msgtype'   => 'invoice',
+  );
+
+  $args{'unsquelch_cdr'} = $conf->exists('voip-cdr_email');
+
+  my $cust_main = $self->cust_main;
+
+  if (ref($args{'to'}) eq 'ARRAY') {
+    $return{'to'} = $args{'to'};
+  } elsif ( $cust_main ) {
+    $return{'to'} = [ $cust_main->invoicing_list_emailonly ];
+  }
+
+  my $tc = $self->template_conf;
+
+  if ( $conf->exists($tc.'html') ) {
+
+    warn "$me creating HTML/text multipart message"
+      if $DEBUG;
+
+    $return{'nobody'} = 1;
+
+    my $alternative = build MIME::Entity
+      'Type'        => 'multipart/alternative',
+      #'Encoding'    => '7bit',
+      'Disposition' => 'inline'
+    ;
+
+    my $data = '';
+    if ( $conf->exists($tc. 'email_pdf')
+         and scalar($conf->config($tc. 'email_pdf_note')) ) {
+
+      warn "$me using '${tc}email_pdf_note' in multipart message"
+        if $DEBUG;
+      $data = [ map { $_ . "\n" }
+                    $conf->config($tc.'email_pdf_note')
+              ];
+
+    } else {
+
+      warn "$me not using '${tc}email_pdf_note' in multipart message"
+        if $DEBUG;
+      if ( ref($args{'print_text'}) eq 'ARRAY' ) {
+        $data = $args{'print_text'};
+      } elsif ( $conf->exists($tc.'template') ) { #plaintext invoice_template
+        $data = [ $self->print_text(\%args) ];
+      }
+
+    }
+
+    if ( $data ) {
+      $alternative->attach(
+        'Type'        => 'text/plain',
+        'Encoding'    => 'quoted-printable',
+        'Charset'     => 'UTF-8',
+        #'Encoding'    => '7bit',
+        'Data'        => $data,
+        'Disposition' => 'inline',
+      );
+    }
+
+    my $htmldata;
+    my $image = '';
+    my $barcode = '';
+    if ( $conf->exists($tc.'email_pdf')
+         and scalar($conf->config($tc.'email_pdf_note')) ) {
+
+      $htmldata = join('<BR>', $conf->config($tc.'email_pdf_note') );
+
+    } else {
+
+      $args{'from'} =~ /\@([\w\.\-]+)/;
+      my $from = $1 || 'example.com';
+      my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
+
+      my $logo;
+      my $agentnum = $cust_main ? $cust_main->agentnum
+                                : $self->prospect_main->agentnum;
+      if ( defined($args{'template'}) && length($args{'template'})
+           && $conf->exists( 'logo_'. $args{'template'}. '.png', $agentnum )
+         )
+      {
+        $logo = 'logo_'. $args{'template'}. '.png';
+      } else {
+        $logo = "logo.png";
+      }
+      my $image_data = $conf->config_binary( $logo, $agentnum);
+
+      $image = build MIME::Entity
+        'Type'       => 'image/png',
+        'Encoding'   => 'base64',
+        'Data'       => $image_data,
+        'Filename'   => 'logo.png',
+        'Content-ID' => "<$content_id>",
+      ;
+   
+      if ( ref($self) eq 'FS::cust_bill' && $conf->exists('invoice-barcode') ) {
+        my $barcode_content_id = join('.', rand()*(2**32), $$, time). "\@$from";
+        $barcode = build MIME::Entity
+          'Type'       => 'image/png',
+          'Encoding'   => 'base64',
+          'Data'       => $self->invoice_barcode(0),
+          'Filename'   => 'barcode.png',
+          'Content-ID' => "<$barcode_content_id>",
+        ;
+        $args{'barcode_cid'} = $barcode_content_id;
+      }
+
+      $htmldata = $self->print_html({ 'cid'=>$content_id, %args });
+    }
+
+    $alternative->attach(
+      'Type'        => 'text/html',
+      'Encoding'    => 'quoted-printable',
+      'Data'        => [ '<html>',
+                         '  <head>',
+                         '    <title>',
+                         '      '. encode_entities($return{'subject'}), 
+                         '    </title>',
+                         '  </head>',
+                         '  <body bgcolor="#e8e8e8">',
+                         $htmldata,
+                         '  </body>',
+                         '</html>',
+                       ],
+      'Disposition' => 'inline',
+      #'Filename'    => 'invoice.pdf',
+    );
+
+
+    my @otherparts = ();
+    if ( ref($self) eq 'FS::cust_bill' && $cust_main->email_csv_cdr ) {
+
+      push @otherparts, build MIME::Entity
+        'Type'        => 'text/csv',
+        'Encoding'    => '7bit',
+        'Data'        => [ map { "$_\n" }
+                             $self->call_details('prepend_billed_number' => 1)
+                         ],
+        'Disposition' => 'attachment',
+        'Filename'    => 'usage-'. $self->invnum. '.csv',
+      ;
+
+    }
+
+    if ( $conf->exists($tc.'email_pdf') ) {
+
+      #attaching pdf too:
+      # multipart/mixed
+      #   multipart/related
+      #     multipart/alternative
+      #       text/plain
+      #       text/html
+      #     image/png
+      #   application/pdf
+
+      my $related = build MIME::Entity 'Type'     => 'multipart/related',
+                                       'Encoding' => '7bit';
+
+      #false laziness w/Misc::send_email
+      $related->head->replace('Content-type',
+        $related->mime_type.
+        '; boundary="'. $related->head->multipart_boundary. '"'.
+        '; type=multipart/alternative'
+      );
+
+      $related->add_part($alternative);
+
+      $related->add_part($image) if $image;
+
+      my $pdf = build MIME::Entity $self->mimebuild_pdf(\%args);
+
+      $return{'mimeparts'} = [ $related, $pdf, @otherparts ];
+
+    } else {
+
+      #no other attachment:
+      # multipart/related
+      #   multipart/alternative
+      #     text/plain
+      #     text/html
+      #   image/png
+
+      $return{'content-type'} = 'multipart/related';
+      if ($conf->exists('invoice-barcode') && $barcode) {
+        $return{'mimeparts'} = [ $alternative, $image, $barcode, @otherparts ];
+      } else {
+        $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
+      }
+      $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
+      #$return{'disposition'} = 'inline';
+
+    }
+  
+  } else {
+
+    if ( $conf->exists($tc.'email_pdf') ) {
+      warn "$me creating PDF attachment"
+        if $DEBUG;
+
+      #mime parts arguments a la MIME::Entity->build().
+      $return{'mimeparts'} = [
+        { $self->mimebuild_pdf(\%args) }
+      ];
+    }
+  
+    if ( $conf->exists($tc.'email_pdf')
+         and scalar($conf->config($tc.'email_pdf_note')) ) {
+
+      warn "$me using '${tc}email_pdf_note'"
+        if $DEBUG;
+      $return{'body'} = [ map { $_ . "\n" }
+                              $conf->config($tc.'email_pdf_note')
+                        ];
+
+    } else {
+
+      warn "$me not using '${tc}email_pdf_note'"
+        if $DEBUG;
+      if ( ref($args{'print_text'}) eq 'ARRAY' ) {
+        $return{'body'} = $args{'print_text'};
+      } else {
+        $return{'body'} = [ $self->print_text(\%args) ];
+      }
+
+    }
+
+  }
+
+  %return;
+
+}
+
+=item mimebuild_pdf
+
+Returns a list suitable for passing to MIME::Entity->build(), representing
+this invoice as PDF attachment.
+
+=cut
+
+sub mimebuild_pdf {
+  my $self = shift;
+  (
+    'Type'        => 'application/pdf',
+    'Encoding'    => 'base64',
+    'Data'        => [ $self->print_pdf(@_) ],
+    'Disposition' => 'attachment',
+    'Filename'    => 'invoice-'. $self->invnum. '.pdf',
+  );
 }
 
 =item _items_sections OPTIONS
@@ -3065,7 +3428,7 @@ sub _items_cust_bill_pkg {
              ) > 0 ) {
              @discounts = ();
           }
-          if( @discounts ) {
+          if ( @discounts ) {
             warn "$me _items_cust_bill_pkg including discounts for ".
               $cust_bill_pkg->billpkgnum."\n"
               if $DEBUG;

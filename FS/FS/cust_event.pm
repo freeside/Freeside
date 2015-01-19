@@ -481,9 +481,10 @@ sub re_X {
     my $modenum = $part_event->option('modenum') || '';
     my $invoice_from = $part_event->option('agent_invoice_from') || '';
     $cust_X->set('mode' => $modenum);
-    $cust_X->$method( { template      => $template,
-                        modenum       => $modenum,
-                        invoice_from  => $invoice_from } );
+    $cust_X->$method( { template => $template,
+                        modenum  => $modenum,
+                        from     => $invoice_from,
+                    } );
 
     if ( $job ) { #progressbar foo
       $num++;

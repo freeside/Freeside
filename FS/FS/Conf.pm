@@ -1239,11 +1239,29 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'quotation_from',
+    'section'     => '',
+    'description' => 'Return address on email quotations',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+
+  {
     'key'         => 'invoice_subject',
     'section'     => 'invoicing',
     'description' => 'Subject: header on email invoices.  Defaults to "Invoice".  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
     'type'        => 'text',
     'per_agent'   => 1,
+    'per_locale'  => 1,
+  },
+
+  {
+    'key'         => 'quotation_subject',
+    'section'     => '',
+    'description' => 'Subject: header on email quotations.  Defaults to "Quotation".', #  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
+    'type'        => 'text',
+    #'per_agent'   => 1,
     'per_locale'  => 1,
   },
 
@@ -1502,14 +1520,28 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_email_pdf',
     'section'     => 'invoicing',
-    'description' => 'Send PDF invoice as an attachment to emailed invoices.  By default, includes the plain text invoice as the email body, unless invoice_email_pdf_note is set.',
+    'description' => 'Send PDF invoice as an attachment to emailed invoices.  By default, includes the HTML invoice as the email body, unless invoice_email_pdf_note is set.',
+    'type'        => 'checkbox'
+  },
+
+  {
+    'key'         => 'quotation_email_pdf',
+    'section'     => '',
+    'description' => 'Send PDF quotations as an attachment to emailed quotations.  By default, includes the HTML quotation as the email body, unless quotation_email_pdf_note is set.',
     'type'        => 'checkbox'
   },
 
   {
     'key'         => 'invoice_email_pdf_note',
     'section'     => 'invoicing',
-    'description' => 'If defined, this text will replace the default plain text invoice as the body of emailed PDF invoices.',
+    'description' => 'If defined, this text will replace the default HTML invoice as the body of emailed PDF invoices.',
+    'type'        => 'textarea'
+  },
+
+  {
+    'key'         => 'quotation_email_pdf_note',
+    'section'     => '',
+    'description' => 'If defined, this text will replace the default HTML quotation as the body of emailed PDF quotations.',
     'type'        => 'textarea'
   },
 

@@ -167,6 +167,53 @@ sub _total {
 
 }
 
+sub email {
+  my $self = shift;
+  my $opt = shift || {};
+  if ($opt and !ref($opt)) {
+    die ref($self). '->email called with positional parameters';
+  }
+
+  my $conf = $self->conf;
+
+  my $from = delete $opt->{from};
+
+  # this is where we set the From: address
+  $from ||= $conf->config('quotation_from', $self->cust_or_prospect->agentnum )
+         || $conf->config('invoice_from',   $self->cust_or_prospect->agentnum );
+
+  $self->SUPER::email( {
+    'from' => $from,
+    %$opt,
+  });
+
+}
+
+sub email_subject {
+  my $self = shift;
+
+  my $subject =
+    $self->conf->config('quotation_subject') #, $self->cust_main->agentnum)
+      || 'Quotation';
+
+  #my $cust_main = $self->cust_main;
+  #my $name = $cust_main->name;
+  #my $name_short = $cust_main->name_short;
+  #my $invoice_number = $self->invnum;
+  #my $invoice_date = $self->_date_pretty;
+
+  eval qq("$subject");
+}
+
+=item cust_or_prosect
+
+=cut
+
+sub cust_or_prospect {
+  my $self = shift;
+  $self->custnum ? $self->cust_main : $self->prospect_main;
+}
+
 =item cust_or_prospect_label_link P
 
 HTML links to either the customer or prospect.
