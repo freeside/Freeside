@@ -67,7 +67,7 @@ sub _export_delete {
   my $ssh = Net::OpenSSH->new( $self->machine,
                                default_stdin_fh => $def_in );
 
-  my $private_key = $ssh->system(
+  my $unused_output = $ssh->capture(
     '/usr/local/bin/merchant_disable', map $svc_acct->$_, qw( username )
   );
   return $ssh->error if $ssh->error;
