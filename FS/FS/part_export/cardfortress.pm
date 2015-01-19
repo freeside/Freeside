@@ -56,7 +56,7 @@ sub _export_replace {
 }
 
 sub _export_delete {
-  #my( $self, $svc_x ) = (shift, shift);
+  my( $self, $svc_acct ) = (shift, shift);
 
   #well, we're just going to disable them for now, but there you go
 
