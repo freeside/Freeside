@@ -1,0 +1,21 @@
+%if ( $error ) {
+%  errorpage($error);
+%} else {
+<% $cgi->redirect(popurl(2)."view/quotation.html?quotationnum=$quotationnum") %>
+%}
+<%init>
+
+die "access deined"
+  unless $FS::CurrentUser::CurrentUser->access_right('Disable quotation');
+
+$cgi->param('quotationnum') =~ /^(\d+)$/ or die 'illegal quotationnum';
+my $quotationnum = $1;
+
+my $quotation =
+  qsearchs('quotation', { 'quotationnum' => $quotationnum } );
+
+my $error = $quotation->enable;
+
+#my( $label, $url ) = $quotation->cust_or_prospect_label_link( popurl(2) );
+
+</%init>
