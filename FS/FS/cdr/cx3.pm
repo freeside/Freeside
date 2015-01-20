@@ -38,7 +38,10 @@ use Date::Parse;
 	'accountcode',  # AccountCode
 	skip(6),		
 	'src',		# source
-	'dst',		# destination
+	sub { my ($cdr, $dst, $param) = @_;
+         	$dst =~ s/#//;
+		$cdr->set('dst', $dst);
+	},		# destination
 
   ],
 );
