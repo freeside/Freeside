@@ -22,14 +22,14 @@ use FS::cdr_type;
     'clid',         #Calling name
     skip(1),        #Called type
     'dst',          #Called number
-    skip(5),        #Destination customer, Destination type
+    skip(10),       #Destination customer, Destination type
                     #Destination number
                     #Destination group ID, Destination group name,
     \&in_calling_type,  #Inbound calling type,
     \&in_calling_num,   #Inbound calling number,
     '',                 #Inbound called type,
     \&in_called_num,    #Inbound called number,
-    skip(14),
+    skip(11),
                     #Inbound destination type, Inbound destination number,
                     #Outbound calling type, Outbound calling number,
                     #Outbound called type, Outbound called number,
@@ -41,6 +41,7 @@ use FS::cdr_type;
     skip(1),        #Ring seconds
     'billsec',      #Billable seconds
     'upstream_price', #Cost
+    skip(1),        #Cost including taxes
     'accountcode',  #Billing customer
     skip(3),        #Billing customer name, Billing type, Billing reference
   ],
