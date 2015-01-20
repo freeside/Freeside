@@ -577,12 +577,28 @@ sub lts_sql {
   ";
 }
 
+# voip_sql has a special case: the fifth column, "Voice with Internet",
+# must test whether there are _any_ broadband packages at the same location,
+# not just whether this package is both VoIP and broadband.
+
 sub voip_sql {
   my $class = shift;
   my %opt = @_;
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
   my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
+
+  # subquery to test whether there's an is_broadband package at this location
+  my $broadband_pkg =
+    "SELECT 1 FROM cust_pkg AS broadband_pkg
+    WHERE broadband_pkg.locationnum = cust_pkg.locationnum 
+    AND EXISTS(SELECT 1 FROM part_pkg_fcc_option
+      WHERE fccoptionname = 'is_broadband'
+      AND part_pkg_fcc_option.pkgpart = broadband_pkg.pkgpart
+      AND optionvalue = '1')
+    AND ".  active_on( $date );
+
+  my $has_broadband = "EXISTS($broadband_pkg)";
 
   my @select = (
     "state.fips",
@@ -592,10 +608,10 @@ sub voip_sql {
     # non-OTT: total, consumer, broadband bundle, media types
     "SUM($q * (CASE WHEN (voip_lastmile = 1) THEN 1 ELSE 0 END))",
     "SUM($q * (CASE WHEN (voip_lastmile = 1 AND is_consumer = 1) THEN 1 ELSE 0 END))",
-    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND is_broadband = 1) THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND $has_broadband) THEN 1 ELSE 0 END))",
     "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Copper') THEN 1 ELSE 0 END))",
-    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Cable Modem') THEN 1 ELSE 0 END))",
     "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Fiber') THEN 1 ELSE 0 END))",
+    "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Cable Modem') THEN 1 ELSE 0 END))",
     "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media = 'Fixed Wireless') THEN 1 ELSE 0 END))",
     "SUM($q * (CASE WHEN (voip_lastmile = 1 AND media NOT IN('Copper', 'Fiber', 'Cable Modem', 'Fixed Wireless') ) THEN 1 ELSE 0 END))",
   );
@@ -608,7 +624,7 @@ sub voip_sql {
       JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
       JOIN part_pkg USING (pkgpart) '.
       join_optionnames_int(
-        qw( is_voip is_broadband is_consumer voip_lastmile)
+        qw( is_voip is_consumer voip_lastmile)
       ).
       join_optionnames('media')
   ;
