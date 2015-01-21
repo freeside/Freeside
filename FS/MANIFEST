@@ -832,3 +832,5 @@ FS/circuit_termination.pm
 t/circuit_termination.t
 FS/svc_circuit.pm
 t/svc_circuit.t
+FS/cust_credit_source_bill_pkg.pm
+t/cust_credit_source_bill_pkg.t

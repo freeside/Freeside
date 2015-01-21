@@ -176,6 +176,17 @@ sub insert {
     return "error inserting $self: $error";
   }
 
+  if ( $options{'cust_credit_source_bill_pkg'} ) {
+    foreach my $ccsbr ( @{ $options{'cust_credit_source_bill_pkg'} } ) {
+      $ccsbr->crednum( $self->crednum );
+      $error = $ccsbr->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting $ccsbr: $error";
+      }
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   #false laziness w/ cust_pay::insert

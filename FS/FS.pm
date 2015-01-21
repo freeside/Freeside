@@ -452,6 +452,8 @@ L<FS::cust_credit_bill> - Credit application to invoice class
 
 L<FS::cust_credit_bill_pkg> - Line-item specific credit application to invoice class
 
+L<FS::cust_credit_source_bill_pkg> - Line-item sources for triggered package credits
+
 L<FS::cust_pay_refund> - Refund application to payment class
 
 L<FS::pay_batch> - Credit card transaction queue class
