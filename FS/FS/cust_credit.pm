@@ -132,10 +132,26 @@ sub cust_unlinked_msg {
   ' (cust_credit.crednum '. $self->crednum. ')';
 }
 
-=item insert
+=item insert [ OPTION => VALUE ... ]
 
 Adds this credit to the database ("Posts" the credit).  If there is an error,
 returns the error, otherwise returns false.
+
+Ooptions are passed as a list of keys and values.  Available options:
+
+=over 4
+
+=item reason_type
+
+L<FS::reason_type|Reason> type for newly-inserted reason
+
+=item cust_credit_source_bill_pkg
+
+An arrayref of
+L<FS::cust_credit_source_bill_pkg|FS::cust_credit_source_bilL_pkg> objects.
+They will have their crednum set and will be inserted along with this credit.
+
+=back
 
 =cut
 
