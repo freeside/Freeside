@@ -4,6 +4,9 @@
   fields       => \@fields,
   svc_callback => \&svc_callback,
   radius_usage => 1,
+  'manage_link'               => scalar($conf->config('svc_broadband-manage_link')),
+  'manage_link_text'          => scalar($conf->config('svc_broadband-manage_link_text')),
+  'manage_link-new_window'    => $conf->exists('svc_broadband-manage_link-new_window')
 &>
 <%init>
 
