@@ -1638,16 +1638,120 @@ sub _rebless {
   $self;
 }
 
+=item calc_setup CUST_PKG START_DATE DETAILS_ARRAYREF OPTIONS_HASHREF
+
+=item calc_recur CUST_PKG START_DATE DETAILS_ARRAYREF OPTIONS_HASHREF
+
+Calculates and returns the setup or recurring fees, respectively, for this
+package.  Implementation is in the FS::part_pkg:* module specific to this price
+plan.
+
+Adds invoicing details to the passed-in DETAILS_ARRAYREF
+
+Options are passed as a hashref.  Available options:
+
+=over 4
+
+=item freq_override
+
+Frequency override (for calc_recur)
+
+=item discounts
+
+This option is filled in by the method rather than controlling its operation.
+It is an arrayref.  Applicable discounts will be added to the arrayref, as
+L<FS::cust_bill_pkg_discount|FS::cust_bill_pkg_discount records>.
+
+=item real_pkgpart
+
+For package add-ons, is the base L<FS::part_pkg|package definition>, otherwise
+no different than pkgpart.
+
+=item precommit_hooks
+
+This option is filled in by the method rather than controlling its operation.
+It is an arrayref.  Anonymous coderefs will be added to the arrayref.  They
+need to be called before completing the billing operation.  For calc_recur
+only.
+
+=item increment_next_bill
+
+Increment the next bill date (boolean, for calc_recur).  Typically true except
+for particular situations.
+
+=item setup_fee
+
+This option is filled in by the method rather than controlling its operation.
+It indicates a deferred setup fee that is billed at calc_recur time (see price
+plan option prorate_defer_bill).
+
+=back
+
+Note: Don't calculate prices when not actually billing the package.  For that,
+see the L</base_setup|base_setup> and L</base_recur|base_recur> methods.
+
+=cut
+
 #fatal fallbacks
 sub calc_setup { die 'no calc_setup for '. shift->plan. "\n"; }
 sub calc_recur { die 'no calc_recur for '. shift->plan. "\n"; }
 
-#fallback that return 0 for old legacy packages with no plan
+=item calc_remain CUST_PKG [ OPTION => VALUE ... ]
+
+Calculates and returns the remaining value to be credited upon package
+suspension, change, or cancellation, if enabled.
+
+Options are passed as a list of keys and values.  Available options:
+
+=over 4
+
+=item time
+
+Override for the current time
+
+=item cust_credit_source_bill_pkg
+
+This option is filled in by the method rather than controlling its operation.
+It is an arrayref.
+L<FS::cust_credit_source_bill_pkg|FS::cust_credit_source_bill_pkg> records will
+be added to the arrayref indicating the specific line items and amounts which
+are the source of this remaining credit.
+
+=back
+
+Note: Don't calculate prices when not actually suspending or cancelling the
+package.
+
+=cut
+
+#fallback that returns 0 for old legacy packages with no plan
 sub calc_remain { 0; }
+
+=item calc_units CUST_PKG
+
+This returns the number of provisioned svc_phone records, or, of the package
+count_available_phones option is set, the number available to be provisoined
+in the package.
+
+=cut
+
+#fallback that returns 0 for old legacy packages with no plan
 sub calc_units  { 0; }
 
 #fallback for everything not based on flat.pm
 sub recur_temporality { 'upcoming'; }
+
+=item calc_cancel START_DATE DETAILS_ARRAYREF OPTIONS_HASHREF
+
+Runs any necessary billing on cancellation: another recurring cycle for
+recur_temporailty 'preceding' pacakges with the bill_recur_on_cancel option
+set (calc_recur), or, any outstanding usage for pacakges with the
+bill_usage_on_cancel option set (calc_usage).
+
+=cut
+
+#fallback for everything not based on flat.pm, doesn't do this yet (which is
+#okay, nothing of ours not based on flat.pm does usage-on-cancel billing
 sub calc_cancel { 0; }
 
 #fallback for everything except bulk.pm

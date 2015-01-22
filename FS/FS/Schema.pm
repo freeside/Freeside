@@ -1526,6 +1526,27 @@ sub tables_hashref {
                         ],
     },
 
+    'cust_credit_source_bill_pkg' => {
+      'columns' => [
+        'creditsourcebillpkgnum', 'serial',     '', '', '', '',
+        'crednum',                   'int',     '', '', '', '',
+        'billpkgnum',                'int',     '', '', '', '',
+        'amount',              @money_type,             '', '',
+        'currency',                 'char', 'NULL',  3, '', '',
+      ],
+      'primary_key'  => 'creditsourcebillpkgnum',
+      'unique'       => [],
+      'index'        => [ ['crednum'], ['billpkgnum'] ],
+      'foreign_keys' => [
+                          { columns => ['billpkgnum'],
+                            table   => 'cust_bill_pkg',
+                          },
+                          { columns => ['crednum'],
+                            table   => 'cust_credit',
+                          },
+                        ],
+    },
+
     'cust_main' => {
       'columns' => [
         'custnum',  'serial',  '',     '', '', '', 

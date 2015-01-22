@@ -7,6 +7,7 @@ use base qw( FS::part_pkg::prorate_Mixin
 use strict;
 use vars qw( %info %usage_recharge_fields @usage_recharge_fieldorder );
 use FS::Record qw( qsearch );
+use FS::cust_credit_source_bill_pkg;
 use Tie::IxHash;
 use List::Util qw( min );
 use FS::UI::bytecount;
@@ -242,7 +243,7 @@ sub calc_remain {
   # Use sdate < $time and edate >= $time because when billing on 
   # cancellation, edate = $time.
   my $credit = 0;
-  foreach my $item ( 
+  foreach my $cust_bill_pkg ( 
     qsearch('cust_bill_pkg', { 
       pkgnum => $cust_pkg->pkgnum,
       sdate => {op => '<' , value => $time},
@@ -250,16 +251,28 @@ sub calc_remain {
       recur => {op => '>' , value => 0},
     })
   ) {
+
     # hack to deal with the weird behavior of edate on package cancellation
-    my $edate = $item->edate;
+    my $edate = $cust_bill_pkg->edate;
     if ( $self->recur_temporality eq 'preceding' ) {
-      $edate = $self->add_freq($item->sdate);
+      $edate = $self->add_freq($cust_bill_pkg->sdate);
     }
-    $credit += ($item->recur - $item->usage) * 
-               ($edate - $time) / ($edate - $item->sdate);
+
+    my $amount = ($cust_bill_pkg->recur - $cust_bill_pkg->usage) * 
+                 ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
+    $credit += $amount;
+
+    push @{ $options{'cust_credit_source_bill_pkg'} },
+      new FS::cust_credit_source_bill_pkg {
+        'billpkgnum' => $cust_bill_pkg->billpkgnum,
+        'amount'     => sprintf('%.2f', $amount),
+        'currency'   => $cust_bill_pkg->cust_bill->currency,
+      }
+        if $options{'cust_credit_source_bill_pkg'};
+
   } 
+
   sprintf('%.2f', $credit);
-  #sprintf("%.2f", $self->base_recur($cust_pkg, \$time) * ( $next_bill - $time ) / $freq_sec );
 
 }
 

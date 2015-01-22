@@ -1440,7 +1440,11 @@ sub credit_remaining {
       and $next_bill > 0      # the package has a next bill date
       and $next_bill >= $time # which is in the future
   ) {
-    my $remaining_value = $self->calc_remain('time' => $time);
+    my @cust_credit_source_bill_pkg = ();
+    my $remaining_value = $self->calc_remain(
+      'time' => $time, 
+      'cust_credit_source_bill_pkg' => \@cust_credit_source_bill_pkg,
+    );
     if ( $remaining_value > 0 ) {
       warn "Crediting for $remaining_value on package ".$self->pkgnum."\n"
         if $DEBUG;
@@ -1448,6 +1452,7 @@ sub credit_remaining {
         $remaining_value,
         'Credit for unused time on '. $self->part_pkg->pkg,
         'reason_type' => $reason_type,
+        'cust_credit_source_bill_pkg' => \@cust_credit_source_bill_pkg,
       );
       return "Error crediting customer \$$remaining_value for unused time".
         " on ". $self->part_pkg->pkg. ": $error"

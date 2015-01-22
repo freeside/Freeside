@@ -227,6 +227,12 @@ sub export_insert {
       did             => $svc->phonenum,
       billingtype     => ($self->option('billtype') eq 'Dial Out Rate' ? 2 : 3),
       activated       => 1,
+      aleg_carrier_cost_min_offp  => $part_pkg->option('a2billing_carrier_cost_min'),
+      aleg_carrier_initblock_offp => $part_pkg->option('a2billing_carrier_initblock_offp'),
+      aleg_carrier_increment_offp => $part_pkg->option('a2billing_carrier_increment_offp'),
+      aleg_retail_cost_min_offp   => $part_pkg->option('a2billing_retail_cost_min_offp'),
+      aleg_retail_initblock_offp  => $part_pkg->option('a2billing_retail_initblock_offp'),
+      aleg_retail_increment_offp  => $part_pkg->option('a2billing_retail_increment_offp'),
     );
 
     # use 'did' as the key here so that if the DID already exists, we 

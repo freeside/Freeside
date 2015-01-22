@@ -1,0 +1,210 @@
+<& elements/search.html,
+              'title'         => 'Credit package source detail', #from line item
+              'name_singular' => 'credit source',
+              'query'         => $query,
+              'count_query'   => $count_query,
+               'count_addl'   => [ $money_char. '%.2f total', ],
+               'header'       => [
+                   #'#',
+
+                   'Amount',
+
+                   #credit
+                   'Date',
+                   'By',
+                   'Reason',
+
+                   # line item
+                   'Line item',
+
+                   #invoice
+                   'Invoice',
+                   'Date',
+                   FS::UI::Web::cust_header(),
+               ],
+               'fields'       => [
+                   #'creditsourcebillpkgnum',
+                   sub { sprintf($money_char.'%.2f', shift->amount ) },
+
+                   sub { time2str('%b %d %Y', shift->get('cust_credit_date') ) },
+                   sub { shift->cust_credit->otaker },
+                   sub { shift->cust_credit->reason },
+
+                   sub { $_[0]->pkgnum > 0
+                           ? $_[0]->get('pkg')      # possibly use override.pkg
+                           : $_[0]->get('itemdesc') # but i think this correct
+                       },
+                   'invnum',
+                   sub { time2str('%b %d %Y', shift->_date ) },
+                   \&FS::UI::Web::cust_fields,
+               ],
+               'sort_fields'  => [
+                   'amount',
+                   'cust_credit_date',
+                   '', #'otaker',
+                   '', #reason
+                   '', #line item description
+                   'invnum',
+                   '_date',
+                   FS::UI::Web::cust_sort_fields(),
+               ],
+               'links' => [
+                   '',
+                   '',
+                   '',
+                   '',
+                   '',
+                   $ilink,
+                   $ilink,
+                   ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                         FS::UI::Web::cust_header()
+                   ),
+               ],
+               'align' => 'rrlll'.
+                          'rr'.
+                          FS::UI::Web::cust_aligns(),
+               'color' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+               'style' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                          ],
+           
+&>
+<%init>
+
+#copied from cust_credit_source_bill.html, which itself was cribbed from
+# cust_bill_pkg.cgi and cust_credit.html, but then i took out a bunch of the
+# tax reports stuff... maybe look for parts of all three that can be made into
+# common subs?
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
+if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+  push @where, "cust_credit.usernum = $1";
+}
+
+#source invoice date (not yet in UI)
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @where, "cust_bill._date >= $beginning",
+             "cust_bill._date <= $ending";
+
+#credit date
+my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'credit');
+push @where, "cust_credit._date >= $cr_begin",
+             "cust_credit._date <= $cr_end";
+
+#credit amount?  seems more what is expected than the applied amount (not in UI)
+my @lt_gt = FS::UI::Web::parse_lt_gt($cgi, 'amount' );
+s/amount/cust_credit.amount/g foreach (@lt_gt);
+push @where, @lt_gt;
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.agentnum = $1";
+}
+
+#(not in UI)
+if ( $cgi->param('billpkgnum') =~ /^(\d+)$/ ) {
+  push @where, "billpkgnum = $1";
+}
+
+#(not in UI)
+#classnum
+# not specified: all classes
+# 0: empty class
+# N: classnum
+my $use_override = $cgi->param('use_override');
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  my $comparison = '';
+  if ( $1 == 0 ) {
+    $comparison = "IS NULL";
+  } else {
+    $comparison = "= $1";
+  }
+
+  if ( $use_override ) {
+    push @where, "(
+      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+      override.classnum $comparison AND pkgpart_override IS NOT NULL
+    )";
+  } else {
+    push @where, "part_pkg.classnum $comparison";
+  }
+}
+
+my $count_query = "SELECT COUNT(DISTINCT creditsourcebillpkgnum),
+                          SUM(cust_credit_source_bill_pkg.amount)";
+
+my $join_cust =
+  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum )'.
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
+
+
+my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum )';
+
+my $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                  LEFT JOIN part_pkg USING ( pkgpart ) ';
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+my $join_credit = ' LEFT JOIN cust_credit      USING ( crednum ) ';
+
+$count_query .= " FROM cust_credit_source_bill_pkg
+                         $join_cust_bill_pkg
+                         $join_pkg
+                         $join_credit
+                         $join_cust
+                       $where";
+
+my @select = ( 'cust_credit_source_bill_pkg.*',
+               'cust_bill_pkg.*',
+               'cust_credit.otaker',
+               'cust_credit._date AS cust_credit_date',
+               'cust_bill._date',
+             );
+push @select, 'part_pkg.pkg' unless $cgi->param('istax');
+push @select, 'cust_main.custnum',
+              FS::UI::Web::cust_sql_fields();
+
+my $query = {
+  'table'     => 'cust_credit_source_bill_pkg',
+  'addl_from' => "$join_cust_bill_pkg
+                  $join_pkg
+                  $join_credit
+                  $join_cust",
+  'hashref'   => {},
+  'select'    => join(', ', @select ),
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY creditsourcebillpkgnum', #cust_bill. or cust_credit._date?
+};
+
+my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$'; #well, no guarantee we're totaling these up in the multi-currency world
+
+</%init>

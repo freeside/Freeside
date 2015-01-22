@@ -336,6 +336,7 @@ $report_payments{'Deleted Payments / Payment history table'} = [ $fsurl.'search/
 
 tie my %report_credits, 'Tie::IxHash',
   'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
+  'Credit package source detail' => [ $fsurl.'search/report_cust_credit_source_bill_pkg.html', 'Line-item detail for triggered package credits' ],
   'Credit application detail' => [ $fsurl.'search/report_cust_credit_bill_pkg.html', 'Line item application detail' ],
   'Unapplied Credits' => [ $fsurl.'search/report_cust_credit.html?unapplied=1', 'Unapplied credit report (by type and/or date range)' ],
 ;
