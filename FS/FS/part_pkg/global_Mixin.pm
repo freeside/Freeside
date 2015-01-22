@@ -65,7 +65,44 @@ tie my %a2billing_simultaccess, 'Tie::IxHash', (
       'type'        => 'select',
       'select_options' => \%a2billing_simultaccess,
     },  
-  },
+    'a2billing_carrier_cost_min' => {
+      'name'        => 'A2Billing inbound carrier cost',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+    },
+   'a2billing_carrer_initblock_offp' => {
+      'name'        => 'A2Billing inbound carrier min duration',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+    },
+    'a2billing_carrier_increment_offp' => {
+      'name'        => 'A2Billing inbound carrier billing block',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+    },
+    'a2billing_retail_cost_min_offp' => {
+      'name'        => 'A2Billing inbound retail cost',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+    },
+    'a2billing_retail_initblock_offp' => {
+      'name'        => 'A2Billing inbound retail min duration',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+    },
+    'a2billing_retail_increment_offp' => {
+      'name'        => 'A2Billing inbound retail billing block',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+     },
+   },
+
+ },
   'fieldorder' => [ qw(
     setup_fee
     recur_fee
@@ -76,6 +113,12 @@ tie my %a2billing_simultaccess, 'Tie::IxHash', (
     a2billing_tariff
     a2billing_type
     a2billing_simultaccess
+    a2billing_carrier_cost_min
+    a2billing_carrer_initblock_offp
+    a2billing_carrier_increment_offp
+    a2billing_retail_cost_min_offp
+    a2billing_retail_initblock_offp
+    a2billing_retail_increment_offp
   )],
 );
 
