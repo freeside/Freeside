@@ -14,6 +14,14 @@ function areyousure_delete() {
 | <A HREF="javascript:areyousure_delete()"><% mt('Unprovision this Service') |h %></A>
 %   }
 % }
+<& /elements/manage_device_link.html, 
+	'svc' => $svc_x,
+	'part_svc' => $opt{'part_svc'} || $cust_svc->part_svc,
+	'manage_link' => $opt{'manage_link'},
+	'manage_link_text' => $opt{'manage_link_text'},
+	'manage_link-new_window' => $opt{'manage_link-new_window'},
+	'prepend' => '| '
+&>
 <%init>
 my %opt = @_;
 my $svc_x = $opt{'svc'} or die "'svc' required";

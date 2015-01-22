@@ -1,0 +1,46 @@
+<%doc>
+
+#For including the "Manage Device" link for broadband svc
+#  Handles check if svcdb is svc_broadband, ip_addr/mac_addr substitution 
+#  and manage_link-new_window, but manage_link_loc and no_links must
+#  be checked as appropriate before including this
+
+#Example:
+
+  <& /elements/manage_device_link.html, 
+	'svc' => $svc_x,
+	'part_svc' => $part_svc,
+	'manage_link' => scalar($conf->config('svc_broadband-manage_link')),
+	'manage_link_text' => scalar($conf->config('svc_broadband-manage_link_text')),
+	'manage_link-new_window' => $conf->exists('svc_broadband-manage_link-new_window'),
+	'prepend' => ' ( ',
+	'append' => ' ) '
+  &>
+
+</%doc>
+% if ($manage_link) {
+<% $startdec %><A HREF="<% $manage_link %>"<% $manage_target %>><% $manage_link_text |h %></A><% $enddec %>
+% }
+<%init>
+
+my %opt = @_;
+my $manage_link = '';
+my $manage_link_text = '';
+my $manage_target = '';
+my $startdec = '';
+my $enddec = '';
+
+if ( $opt{'part_svc'} and $opt{'svc'} and $opt{'manage_link'} and $opt{'part_svc'}->svcdb eq 'svc_broadband' ) {
+	my $ip_addr  = $opt{'svc'}->ip_addr || '';  #substitution for $manage_link
+	my $mac_addr = $opt{'svc'}->mac_addr || ''; # ditto
+	$manage_link = $opt{'manage_link'};
+	$manage_link =~ s/\$ip_addr/$ip_addr/g;   #safer than using eval
+	$manage_link =~ s/\$mac_addr/$mac_addr/g; # ditto
+	$manage_link_text = $opt{'manage_link_text'} || mt('Manage Device');
+	$manage_target = ' target="_blank"' if $opt{'manage_link-new_window'};
+	$startdec = $opt{'prepend'};
+	$enddec = $opt{'append'};
+}
+
+</%init>
+

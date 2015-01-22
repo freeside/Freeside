@@ -22,6 +22,11 @@
              #at the very bottom (well, as low as you can go from here)
              'html_foot'  => '',
 
+             #only needed for svc_broadband Manage Devices link
+             'manage_link' => scalar($conf->config('svc_broadband-manage_link')),
+             'manage_link_text' => scalar($conf->config('svc_broadband-manage_link_text')),
+             'manage_link-new_window' => $conf->exists('svc_broadband-manage_link-new_window')
+
          )
 
 </%doc>
@@ -70,7 +75,11 @@ function areyousure(href) {
 <% mt('Service #') |h %><B><% $svcnum %></B>
 % if ( $custnum ) {
 %   my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
-<& /view/elements/svc_edit_link.html, 'svc' => $svc_x, 'edit_url' => $url &>
+<& /view/elements/svc_edit_link.html, 'svc' => $svc_x, 'part_svc' => $part_svc, 'edit_url' => $url,
+  'manage_link'               => $opt{'manage_link'},
+  'manage_link_text'          => $opt{'manage_link_text'},
+  'manage_link-new_window'    => $opt{'manage_link-new_window'}
+&>
 % }
 <BR>
 
@@ -222,7 +231,6 @@ my $format_field = sub {
     $field = $f;
     $type = 'text';
   }
-  warn "$field\t$type\t$value\n";
 
   my $columndef = $part_svc->part_svc_column($field);
   # skip fields that are fixed and empty
