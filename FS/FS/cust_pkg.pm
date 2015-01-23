@@ -1458,6 +1458,21 @@ are mandatory.
 
 =cut
 
+# Implementation note:
+#
+# If you pkgpart-change a package that has been billed, and it's set to give
+# credit on package change, then this method gets called and then the new
+# package will have no last_bill date. Therefore the customer will be credited
+# only once (per billing period) even if there are multiple package changes.
+#
+# If you location-change a package that has been billed, this method will NOT
+# be called and the new package WILL have the last bill date of the old
+# package.
+#
+# If the new package is then canceled within the same billing cycle, 
+# credit_remaining needs to run calc_remain on the OLD package to determine
+# the amount of unused time to credit.
+
 sub credit_remaining {
   # Add a credit for remaining service
   my ($self, $mode, $time) = @_;
@@ -1474,7 +1489,23 @@ sub credit_remaining {
       and $next_bill > 0      # the package has a next bill date
       and $next_bill >= $time # which is in the future
   ) {
-    my $remaining_value = $self->calc_remain('time' => $time);
+    my $remaining_value = 0;
+
+    my $remain_pkg = $self;
+    $remaining_value = $remain_pkg->calc_remain('time' => $time);
+
+    # we may have to walk back past some package changes to get to the 
+    # one that actually has unused time
+    while ( $remaining_value == 0 ) {
+      if ( $remain_pkg->change_pkgnum ) {
+        $remain_pkg = FS::cust_pkg->by_key($remain_pkg->change_pkgnum);
+      } else {
+        # the package has really never been billed
+        return;
+      }
+      $remaining_value = $remain_pkg->calc_remain('time' => $time);
+    }
+
     if ( $remaining_value > 0 ) {
       warn "Crediting for $remaining_value on package ".$self->pkgnum."\n"
         if $DEBUG;
