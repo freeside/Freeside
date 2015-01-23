@@ -109,7 +109,7 @@
 <& /elements/tr-select-reason.html,
               'field'          => 'reasonnum',
               'reason_class'   => 'F',
-              'control_button' => "document.getElementById('confirm_refund_button')",
+              'control_button' => "confirm_refund_button",
               'cgi'            => $cgi,
 &>
 

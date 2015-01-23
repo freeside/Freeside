@@ -172,16 +172,23 @@ sub insert {
   my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
   my $old_balance = $cust_main->balance;
 
-  unless ($self->reasonnum) {
-    my $result = $self->reason( $self->getfield('reason'),
-                                exists($options{ 'reason_type' })
-                                  ? ('reason_type' => $options{ 'reason_type' })
-                                  : (),
-                              );
-    unless($result) {
+  if (!$self->reasonnum) {
+    my $reason_text = $self->get('reason')
+      or return "reason text or existing reason required";
+    my $reason_type = $options{'reason_type'}
+      or return "reason type required";
+
+    local $@;
+    my $reason = FS::reason->new_or_existing(
+      reason => $reason_text,
+      type   => $reason_type,
+      class  => 'R',
+    );
+    if ($@) {
       $dbh->rollback if $oldAutoCommit;
-      return "failed to set reason for $me"; #: ". $dbh->errstr;
+      return "failed to set credit reason: $@";
     }
+    $self->set('reasonnum', $reason->reasonnum);
   }
 
   $self->setfield('reason', '');

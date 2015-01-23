@@ -152,7 +152,8 @@ sub reasontype {
 
 Fetches the reason matching these parameters if there is one.  If not,
 inserts one.  Will also insert the reason type if necessary.  CLASS must
-be one of 'C' (cancel reasons), 'R' (credit reasons), or 'S' (suspend reasons).
+be one of 'C' (cancel reasons), 'R' (credit reasons), 'S' (suspend reasons),
+or 'F' (refund reasons).
 
 This will die if anything fails.
 
@@ -163,14 +164,25 @@ sub new_or_existing {
   my %opt = @_;
 
   my $error = '';
-  my %hash = ('class' => $opt{'class'}, 'type' => $opt{'type'});
-  my $reason_type = qsearchs('reason_type', \%hash)
-                    || FS::reason_type->new(\%hash);
+  my $reason_type;
+  if ( ref $opt{type} eq 'FS::reason_type' ) {
+    $reason_type = $opt{type};
+  } elsif ( $opt{type} =~ /^\d+$/ ) {
+    $reason_type = FS::reason_type->by_key($opt{type});
+    if (!$reason_type) {
+      die "reason_type #$opt{type} not found\n";
+    }
+  } else {
+    my %hash = ('class' => $opt{'class'}, 'type' => $opt{'type'});
+    my $reason_type = qsearchs('reason_type', \%hash)
+                      || FS::reason_type->new(\%hash);
 
-  $error = $reason_type->insert unless $reason_type->typenum;
-  die "error inserting reason type: $error\n" if $error;
+    $error = $reason_type->insert unless $reason_type->typenum;
+    die "error inserting reason type: $error\n" if $error;
+  }
 
-  %hash = ('reason_type' => $reason_type->typenum, 'reason' => $opt{'reason'});
+  my %hash = ('reason_type' => $reason_type->typenum,
+              'reason' => $opt{'reason'});
   my $reason = qsearchs('reason', \%hash)
                || FS::reason->new(\%hash);
 

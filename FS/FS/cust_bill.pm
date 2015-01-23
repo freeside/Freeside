@@ -1059,7 +1059,7 @@ sub send {
 
   $self->email($opt)
     if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list )
-    && ! $self->invoice_noemail;
+    && ! $cust_main->invoice_noemail;
 
   $self->print($opt)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
