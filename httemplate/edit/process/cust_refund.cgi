@@ -41,8 +41,13 @@ push @rights, 'Refund Echeck payment'      if $payby eq 'CHEK';
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right(\@rights);
 
-my $error = '';
-if ( $payby =~ /^(CARD|CHEK)$/ ) { 
+$cgi->param('reasonnum') =~ /^(-?\d+)$/ or die "Illegal reasonnum";
+my ($reasonnum, $error) = $m->comp('/misc/process/elements/reason');
+$cgi->param('reasonnum', $reasonnum) unless $error;
+
+if ( $error ) {
+  # do nothing
+} elsif ( $payby =~ /^(CARD|CHEK)$/ ) { 
   my %options = ();
   my $bop = $FS::payby::payby2bop{$1};
   $cgi->param('refund') =~ /^(\d*)(\.\d{2})?$/

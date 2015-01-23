@@ -5,6 +5,7 @@ use Carp qw( croak ); #confess );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::access_user;
 use FS::UID qw( dbh );
+use FS::reason;
 
 our $DEBUG = 0;
 our $me = '[FS::reason_Mixin]';
@@ -17,49 +18,23 @@ Returns the text of the associated reason (see L<FS::reason>) for this credit.
 
 sub reason {
   my ($self, $value, %options) = @_;
-  my $dbh = dbh;
-  my $reason;
-  my $typenum = $options{'reason_type'};
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;  # this should already be in
-  local $FS::UID::AutoCommit = 0;            # a transaction if it matters
-
-  if ( defined( $value ) ) {
-    my $hashref = { 'reason' => $value };
-    $hashref->{'reason_type'} = $typenum if $typenum;
-    my $addl_from = "LEFT JOIN reason_type ON ( reason_type = typenum ) ";
-    my $extra_sql = " AND reason_type.class='F'";
-
-    $reason = qsearchs( { 'table'     => 'reason',
-                          'hashref'   => $hashref,
-                          'addl_from' => $addl_from,
-                          'extra_sql' => $extra_sql,
-                       } );
-
-    if (!$reason && $typenum) {
-      $reason = new FS::reason( { 'reason_type' => $typenum,
-                                  'reason' => $value,
-                                  'disabled' => 'Y',
-                              } );
-      my $error = $reason->insert;
-      if ( $error ) {
-        warn "error inserting reason: $error\n";
-        $reason = undef;
-      }
-    }
-
-    $self->reasonnum($reason ? $reason->reasonnum : '') ;
-    warn "$me reason used in set mode with non-existant reason -- clearing"
-      unless $reason;
+  my $reason_text;
+  if ( $self->reasonnum ) {
+    my $reason = FS::reason->by_key($self->reasonnum);
+    $reason_text = $reason->reason;
+  } else { # in case one of these somehow still exists
+    $reason_text = $self->get('reason');
   }
-  $reason = qsearchs( 'reason', { 'reasonnum' => $self->reasonnum } );
+  if ( $self->get('addlinfo') ) {
+    $reason_text .= ' ' . $self->get('addlinfo');
+  }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  ( $reason ? $reason->reason : '' ).
-  ( $self->addlinfo ? ' '.$self->addlinfo : '' );
+  return $reason_text;
 }
 
+# it was a mistake to allow setting the reason this way; use 
+# FS::reason->new_or_existing
+ 
 # Used by FS::Upgrade to migrate reason text fields to reasonnum.
 sub _upgrade_reasonnum {  # class method
   my $class = shift;
