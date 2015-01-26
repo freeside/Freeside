@@ -242,6 +242,9 @@ my %substitutions = (
   ],
   'cust_bill' => [
     '$invnum'         => 'Invoice#',
+    '$_date_pretty'   => 'Invoice date',
+    '$due_date'       => 'Invoice due date (timestamp)',
+    '$due_date2str'   => 'Invoice due date (human readable)',
   ],
   'cust_pkg' => [
     '$pkgnum'         => 'Package#',

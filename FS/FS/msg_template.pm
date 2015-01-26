@@ -597,6 +597,7 @@ sub substitutions {
       _date
       _date_pretty
       due_date
+      due_date2str
     )],
     #XXX not really thinking about cust_bill substitutions quite yet
     
