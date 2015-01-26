@@ -58,6 +58,11 @@
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card payment') |h %></A>
 % } 
 
+% if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { 
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCHK;custnum=<% $custnum %>"><% mt('Post manual (offline) electronic check payment') |h %></A>
+% } 
+
 <% $s ? '<BR>' : '' %>
 
 %# credit links
@@ -134,6 +139,11 @@
 % if ( $payby{'MCRD'} && $curuser->access_right('Post refund') ) { 
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>edit/cust_refund.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card refund') |h %></A>
+% } 
+
+% if ( $payby{'MCHK'} && $curuser->access_right('Post refund') ) { 
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>edit/cust_refund.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline) electronic check refund') |h %></A>
 % } 
 
     </TD>

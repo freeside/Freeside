@@ -38,14 +38,15 @@ For Customers (cust_main):
 For Refunds (cust_refund):
 'CARD' (credit cards), 'CHEK' (electronic check/ACH),
 'LECB' (Phone bill billing), 'BILL' (billing), 'CASH' (cash),
-'WEST' (Western Union), 'MCRD' (Manual credit card), 'CBAK' Chargeback, or 'COMP' (free)
+'WEST' (Western Union), 'MCRD' (Manual credit card), 'MCHK' (Manual electronic
+check), 'CBAK' Chargeback, or 'COMP' (free)
 
 
 For Payments (cust_pay):
 'CARD' (credit cards), 'CHEK' (electronic check/ACH),
 'LECB' (phone bill billing), 'BILL' (billing), 'PREP' (prepaid card),
-'CASH' (cash), 'WEST' (Western Union), 'MCRD' (Manual credit card),
-'PPAL' (PayPal)
+'CASH' (cash), 'WEST' (Western Union), 'MCRD' (Manual credit card), 'MCHK'
+(Manual electronic check), 'PPAL' (PayPal)
 'COMP' (free) is depricated as a payment type in cust_pay
 
 =cut 
@@ -129,7 +130,11 @@ sub mask_payinfo {
     return 'N/A (tokenized)'; #?
   } else { # if not, mask it...
 
-    if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') {
+    if ($payby eq 'CARD' || $payby eq 'DCRD') {
+                                                #|| $payby eq 'MCRD') {
+                                                #MCRD isn't a card in payinfo,
+                                                #its a record of an _offline_
+                                                #card
 
       # Credit Cards
 
@@ -176,23 +181,6 @@ sub mask_payinfo {
 =item payinfo_check
 
 Checks payby and payinfo.
-
-For Customers (cust_main):
-'CARD' (credit card - automatic), 'DCRD' (credit card - on-demand),
-'CHEK' (electronic check - automatic), 'DCHK' (electronic check - on-demand),
-'LECB' (Phone bill billing), 'BILL' (billing), 'COMP' (free), or
-'PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to I<BILL>)
-
-For Refunds (cust_refund):
-'CARD' (credit cards), 'CHEK' (electronic check/ACH),
-'LECB' (Phone bill billing), 'BILL' (billing), 'CASH' (cash),
-'WEST' (Western Union), 'MCRD' (Manual credit card), 'CBAK' (Chargeback),  or 'COMP' (free)
-
-For Payments (cust_pay):
-'CARD' (credit cards), 'CHEK' (electronic check/ACH),
-'LECB' (phone bill billing), 'BILL' (billing), 'PREP' (prepaid card),
-'CASH' (cash), 'WEST' (Western Union), or 'MCRD' (Manual credit card)
-'COMP' (free) is depricated as a payment type in cust_pay
 
 =cut
 
@@ -276,6 +264,8 @@ sub payby_payinfo_pretty {
     $lh->maketext('Western Union');
   } elsif ( $self->payby eq 'MCRD' ) {
     $lh->maketext('Manual credit card');
+  } elsif ( $self->payby eq 'MCHK' ) {
+    $lh->maketext('Manual electronic check');
   } elsif ( $self->payby eq 'EDI' ) {
     $lh->maketext('EDI') . ' ' . $self->paymask;
   } elsif ( $self->payby eq 'PPAL' ) {
