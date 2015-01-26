@@ -36,7 +36,11 @@ to that URL.
 =cut
 
 my @methods = qw(PAYPAL CC);
-my %method2payby = ( 'PAYPAL' => 'PPAL', 'CC' => 'MCRD' );
+my %method2payby = ( 'PAYPAL' => 'PPAL',
+                     'CC'     => 'MCRD', #?  but doesn't MCRD mean _offline_
+                                         #card, not third-party card?  but no
+                                         #one is doing non-paypal right now
+                   );
 
 sub create_payment {
   my $self = shift;

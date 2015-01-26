@@ -353,7 +353,7 @@ sub check {
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
       # shouldn't payinfo_check do this?
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|PPAL)$/;
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|MCHK|PPAL)$/;
     $self->paydate('');
   } else {
     my( $m, $y );
