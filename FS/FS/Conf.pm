@@ -2607,7 +2607,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD PPAL COMP) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD MCHK PPAL COMP) ],
   },
 
   {

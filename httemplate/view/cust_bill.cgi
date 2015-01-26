@@ -25,7 +25,7 @@
 % }
 
 % if ( $cust_bill->owed > 0
-%      && scalar( grep $payby{$_}, qw(BILL CASH WEST MCRD) )
+%      && scalar( grep $payby{$_}, qw(BILL CASH WEST MCRD MCHK) )
 %      && $curuser->access_right(['Post payment', 'Post check payment', 'Post cash payment'])
 %      && ! $conf->exists('pkg-balances')
 %    )
@@ -52,6 +52,11 @@
 %     if ( $payby{'MCRD'} && $curuser->access_right(['Post payment']) ) { 
           <% $s++ ? ' | ' : '' %>
           <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>"><% mt('manual credit card') |h %></A>
+%     } 
+
+%     if ( $payby{'MCHK'} && $curuser->access_right(['Post payment']) ) { 
+          <% $s++ ? ' | ' : '' %>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCHK;invnum=<% $invnum %>"><% mt('manual electronic check') |h %></A>
 %     } 
 
       <% mt('payment against this invoice') |h %><BR><BR>

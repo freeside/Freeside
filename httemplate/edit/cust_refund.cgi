@@ -137,7 +137,7 @@ my $reason  = $cgi->param('reason');
 my $link    = $cgi->param('popup') ? 'popup' : '';
 
 my @rights = ();
-push @rights, 'Post refund'                if $payby =~ /^(BILL|CASH|MCRD)$/;
+push @rights, 'Post refund'                if $payby =~ /^(BILL|CASH|MCRD|MCHK)$/;
 push @rights, 'Post check refund'          if $payby eq 'BILL';
 push @rights, 'Post cash refund '          if $payby eq 'CASH';
 push @rights, 'Refund payment'             if $payby =~ /^(CARD|CHEK)$/;

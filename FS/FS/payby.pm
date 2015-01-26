@@ -113,6 +113,12 @@ tie %hash, 'Tie::IxHash',
     longname  => 'Manual credit card', 
     cust_main => 'BILL', #this is a payment type only, customers go to BILL...
   },
+  'MCHK' => { #not the same as DCHK
+    tinyname  => 'card',
+    shortname => 'Manual electronic check', # initial payment, then billing
+    longname  => 'Manual electronic check', 
+    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+  },
   'APPL' => {
     tinyname  => 'apple store',
     shortname => 'Apple Store',
@@ -207,7 +213,9 @@ sub longname {
 %payby2bop = (
   'CARD' => 'CC',
   'CHEK' => 'ECHECK',
-  'MCRD' => 'CC',
+  'MCRD' => 'CC', #?  but doesn't MCRD mean _offline_ card?  i think it got
+                  # overloaded for third-party card payments -- but no one is
+                  # doing those other than paypal now
   'PPAL' => 'PAYPAL',
 );
 

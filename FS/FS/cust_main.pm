@@ -392,7 +392,7 @@ sub insert {
 
     $payby = 'PREP' if $amount;
 
-  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD|PPAL)$/ ) {
+  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD|MCHK|PPAL)$/ ) {
 
     $payby = $1;
     $self->payby('BILL');
@@ -3459,6 +3459,7 @@ Old-style:
 
 =cut
 
+#super false laziness w/quotation::charge
 sub charge {
   my $self = shift;
   my ( $amount, $setup_cost, $quantity, $start_date, $classnum );
