@@ -29,7 +29,10 @@ sub agent_email {
     RT::ConnectToDatabase();
   }
 
-  my $from = $conf->config('invoice_from');
+  my $from = $conf->config('invoice_from_name') ?
+             $conf->config('invoice_from_name') . ' <' . 
+             $conf->config('invoice_from') . '>' :
+             $conf->config('invoice_from');
 
   my $outbuf = '';;
   my( $fs_interp, $rt_interp ) = mason_interps('standalone', 'outbuf'=>\$outbuf);

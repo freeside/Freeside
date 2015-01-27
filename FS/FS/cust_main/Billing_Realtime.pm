@@ -1107,7 +1107,10 @@ sub _realtime_bop_result {
         };
 
         my $error = send_email(
-          'from'    => $conf->config('invoice_from', $self->agentnum ),
+          'from'    => $conf->config('invoice_from_name', $self->agentnum ) ?
+                       $conf->config('invoice_from_name', $self->agentnum ) . ' <' .
+                       $conf->config('invoice_from', $self->agentnum ) . '>' :
+                       $conf->config('invoice_from', $self->agentnum ),
           'to'      => [ grep { $_ ne 'POST' } $self->invoicing_list ],
           'subject' => 'Your payment could not be processed',
           'body'    => [ $template->fill_in(HASH => $templ_hash) ],
