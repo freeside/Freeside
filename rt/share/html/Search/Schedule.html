@@ -55,11 +55,11 @@
      Query       => "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
                      AND ( Type = 'reminder' OR 'Type' = 'ticket' )",
                     #XXX and we have the magic custom field
-     slots       => scalar( @{ $ARGS{username} } ),
+     slots       => scalar(@usernames),
      Embed       => 'Schedule.html',
      DimPast     => 1,
      Display     => 'Schedule',
-     DisplayArgs => [ username  => $ARGS{username},
+     DisplayArgs => [ username  => \@usernames,
                       LengthMin => $LengthMin,
                       #oops, more freeside abstraction-leaking
                       custnum   => $ARGS{custnum},
@@ -79,6 +79,17 @@ my @files = ();
   push @files, map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
   push @files, map { "${_}contentmws" } qw( iframe ajax );
 #%}
+
+my @usernames = ();
+if ( ref($ARGS{username}) ) {
+  @usernames = @{ $ARGS{username} };
+} elsif ( $ARGS{username} ) {
+  @usernames = ( $ARGS{username} );
+} else {
+  #XXX shouldn't even get offered the link in the first place rather than perl
+  # barf, but this is better than erroring out later or empty @username
+  die "Can't schedule an appointment - no employees are configured as installers";
+}
 
 ( my $LengthMin = $ARGS{LengthMin} ) =~ /^\d+$/ or die 'non-numeric LengthMin';
 
