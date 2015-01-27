@@ -529,6 +529,7 @@ sub new_customer {
     'tagnum'   => [ FS::part_tag->default_tags ],
 
     ( map { $_ => $packet->{$_} } qw(
+            salesnum
             ss stateid stateid_state
 
             payby
@@ -623,7 +624,7 @@ sub new_customer {
                                     );
     }
 
-    $cust_main->payby('BILL')   # MCRD better?
+    $cust_main->payby('BILL')   # MCRD better?  no, that's for something else
       if $gw && $gw->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
   }
 

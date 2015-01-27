@@ -383,7 +383,11 @@ Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
 
 =item referral_custnum
 
-referring customer number
+Referring customer number
+
+=item salesnum
+
+Sales person number
 
 =item agentnum
 
@@ -422,7 +426,7 @@ sub new_customer {
       'tagnum'   => [ FS::part_tag->default_tags ],
 
       map { $_ => $opt{$_} } qw(
-        agentnum refnum agent_custid referral_custnum
+        agentnum salesnum refnum agent_custid referral_custnum
         last first company 
         daytime night fax mobile
         payby payinfo paydate paycvv payname
