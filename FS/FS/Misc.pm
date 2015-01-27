@@ -255,9 +255,9 @@ sub send_email {
   
   push @to, $options{bcc} if defined($options{bcc});
   local $@; # just in case
-  eval { sendmail($message, { transport => $transport,
-                              from      => $from,
-                              to        => \@to }) };
+#  eval { sendmail($message, { transport => $transport,
+#                              from      => $from,
+#                              to        => \@to }) };
 
   my $error = '';
   if(ref($@) and $@->isa('Email::Sender::Failure')) {

@@ -398,8 +398,10 @@ sub prepare {
       $from_addr = scalar( $conf->config($opt{'from_config'}, 
                                          $cust_main->agentnum) );
     }
-    $from_addr ||= scalar( $conf->config('invoice_from',
-                                         $cust_main->agentnum) );
+    $from_addr ||= $conf->config('invoice_from_name', $cust_main->agentnum) ?
+                   $conf->config('invoice_from_name', $cust_main->agentnum) . ' <' .
+                   $conf->config('invoice_from', $cust_main->agentnum) . '>' :
+                   $conf->config('invoice_from', $cust_main->agentnum);
   }
 #  my @cust_msg = ();
 #  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {

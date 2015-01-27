@@ -7,7 +7,7 @@ DB_TYPE = Pg
 #DB_TYPE = mysql
 
 DB_USER = freeside
-DB_PASSWORD=
+DB_PASSWORD=hRoVj902
 
 DATASOURCE = DBI:${DB_TYPE}:dbname=freeside
 
@@ -27,9 +27,9 @@ MASONDATA = ${FREESIDE_CACHE}/masondata
 DIST_CONF = ${FREESIDE_CONF}/default_conf
 
 #mod_perl v2 1.999_22 on Apache 2.0 through 2.3 (Debian ancient through 7.x)
-#APACHE_VERSION=2
+APACHE_VERSION=2
 #Apache 2.4 (Debian 8.x)
-APACHE_VERSION=2.4
+#APACHE_VERSION=2.4
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -71,9 +71,9 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
 #debian unstable/8.0+, apache2.4
-APACHE_CONF = /etc/apache2/conf-available
+#APACHE_CONF = /etc/apache2/conf-available
 #deb (3.1+), apache2
-#APACHE_CONF = /etc/apache2/conf.d
+APACHE_CONF = /etc/apache2/conf.d
 
 INSSERV_OVERRIDE = /etc/insserv/overrides
 
@@ -103,10 +103,10 @@ SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 
 #RT_ENABLED = 0
 RT_ENABLED = 1
-RT_DOMAIN = example.com
-RT_TIMEZONE = US/Pacific
+RT_DOMAIN = localhost
+RT_TIMEZONE = US/Central
 #RT_TIMEZONE = US/Eastern
-FREESIDE_URL = "http://192.168.1.6/freeside/"
+FREESIDE_URL = "http://localhost/freeside/"
 
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
