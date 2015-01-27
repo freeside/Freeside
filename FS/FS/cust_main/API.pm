@@ -109,7 +109,7 @@ sub API_insert {
       'tagnum' => [ FS::part_tag->default_tags ],
 
       map { $_ => $opt{$_} } qw(
-        agentnum refnum agent_custid referral_custnum
+        agentnum salesnum refnum agent_custid referral_custnum
         last first company 
         daytime night fax mobile
         payby payinfo paydate paycvv payname

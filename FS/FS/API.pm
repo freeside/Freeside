@@ -384,7 +384,11 @@ Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
 
 =item referral_custnum
 
-referring customer number
+Referring customer number
+
+=item salesnum
+
+Sales person number
 
 =item agentnum
 
