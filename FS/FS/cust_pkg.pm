@@ -1649,19 +1649,41 @@ sub unsuspend {
 
   my $conf = new FS::Conf;
 
-  $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
-    if $inactive > 0
+  # increment next bill date if certain conditions are met:
+  # - it was due to be billed at some point
+  # - either the global or local config says to do this
+  my $adjust_bill = 0;
+  if (
+       $inactive > 0
     && ( $hash{'bill'} || $hash{'setup'} )
     && (    $opt{'adjust_next_bill'}
          || $conf->exists('unsuspend-always_adjust_next_bill_date')
          || $self->part_pkg->option('unsuspend_adjust_bill', 1)
        )
-    && ! $self->option('suspend_bill',1)
-    && (    ! $self->part_pkg->option('suspend_bill',1)
-         || $self->option('no_suspend_bill',1)
-       )
-    && $hash{'order_date'} != $hash{'susp'}
-  ;
+  ) {
+    $adjust_bill = 1;
+  }
+
+  # but not if:
+  # - the package billed during suspension
+  # - or it was ordered on hold
+  # - or the customer was credited for the unused time
+
+  if ( $self->option('suspend_bill',1)
+      or ( $self->part_pkg->option('suspend_bill',1)
+           and ! $self->option('no_suspend_bill',1)
+         )
+      or $hash{'order_date'} == $hash{'susp'}
+      or $self->part_pkg->option('unused_credit_suspend')
+      or ( defined($reason) and $reason->unused_credit )
+  ) {
+    $adjust_bill = 0;
+  }
+
+  # then add the length of time suspended to the bill date
+  if ( $adjust_bill ) {
+    $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
+  }
 
   $hash{'susp'} = '';
   $hash{'adjourn'} = '' if $hash{'adjourn'} and $hash{'adjourn'} < time;
