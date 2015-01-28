@@ -405,6 +405,11 @@ sub search {
 
 }
 
+# stub this so that calling ->cust_bill doesn't return an empty string
+sub cust_bill {
+  return;
+}
+
 =back
 
 =head1 BUGS
