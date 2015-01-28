@@ -2,6 +2,7 @@ package FS::contact_email;
 use base qw( FS::Record );
 
 use strict;
+use FS::Msgcat qw( gettext );
 
 =head1 NAME
 
