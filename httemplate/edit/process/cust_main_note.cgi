@@ -33,6 +33,7 @@ my $new = new FS::cust_main_note ( {
   _date    => time,
   usernum  => $FS::CurrentUser::CurrentUser->usernum,
   comments => $comment,
+  sticky   => scalar( $cgi->param('sticky') ),
 } );
 
 my $error;

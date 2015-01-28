@@ -1416,13 +1416,14 @@ sub tables_hashref {
 
     'cust_main_note' => {
       'columns' => [
-        'notenum',  'serial',  '',     '', '', '', 
-        'custnum',  'int',  '',     '', '', '', 
-        'classnum',      'int',     'NULL', '', '', '', 
-        '_date',    @date_type, '', '', 
-        'otaker',   'varchar', 'NULL',    32, '', '', 
-        'usernum',   'int', 'NULL', '', '', '',
-        'comments', 'text', 'NULL', '', '', '', 
+        'notenum',   'serial',    '',  '', '', '', 
+        'custnum',      'int',    '',  '', '', '', 
+        'classnum',     'int', 'NULL', '', '', '', 
+        '_date',          @date_type,      '', '', 
+        'otaker',   'varchar', 'NULL', 32, '', '', 
+        'usernum',      'int', 'NULL', '', '', '',
+        'comments',    'text', 'NULL', '', '', '', 
+        'sticky',       'int',     '', '',  0, '',
       ],
       'primary_key' => 'notenum',
       'unique' => [],

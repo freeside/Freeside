@@ -113,6 +113,7 @@ sub check {
     || $self->ut_numbern('_date')
     || $self->ut_textn('otaker')
     || $self->ut_anything('comments')
+    || $self->ut_numbern('sticky')
   ;
   return $error if $error;
 
