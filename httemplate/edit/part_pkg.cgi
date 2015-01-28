@@ -883,7 +883,7 @@ my $html_bottom = sub {
             }
         },
         'unused_credit_cancel' => {
-            'msg'       => q|You must set the 'suspend_credit_type' option in Configuration->Settings to gain access to this option.|,
+            'msg'       => q|You must set the 'cancel_credit_type' option in Configuration->Settings to gain access to this option.|,
             'are_met'   => sub{
                 my $conf = new FS::conf;
                 my @conf_info = qsearch('conf', { 'name' => 'cancel_credit_type' } );
