@@ -942,10 +942,11 @@ sub _upgrade_data {  #class method
 
     #not the most efficient, but hey, it only has to run once
 
-    my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
-                "  AND usernum IS NULL ".
-                "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
-                "              WHERE cust_main.custnum = cust_pay.custnum ) ";
+    my $where = " WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' )
+                    AND usernum IS NULL
+                    AND EXISTS ( SELECT 1 FROM cust_main                    
+                                   WHERE cust_main.custnum = cust_pay.custnum )
+                ";
 
     my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
 
