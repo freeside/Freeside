@@ -347,8 +347,8 @@ sub print_generic {
 
   if ( $format eq 'latex' && grep { /^%%Detail/ } @invoice_template ) {
     #change this to a die when the old code is removed
-    # it's been almost ten years, changing it to a die on the next release.
-    warn "old-style invoice template $templatefile; ".
+    # it's been almost ten years, changing it to a die
+    die "old-style invoice template $templatefile; ".
          "patch with conf/invoice_latex.diff or use new conf/invoice_latex*\n";
          #$old_latex = 'true';
          #@invoice_template = _translate_old_latex_format(@invoice_template);
