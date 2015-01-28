@@ -1172,6 +1172,12 @@ sub print_generic {
            join(', ', map "$_=>".$line_item->{$_}, keys %$line_item). "\n"
         if $DEBUG > 1;
 
+      push @buf, ( [ $line_item->{'description'},
+                     $money_char. sprintf("%10.2f", $line_item->{'amount'}),
+                   ],
+                   map { [ " ". $_, '' ] } @{$line_item->{'ext_description'}},
+                 );
+
       $line_item->{'ref'} = $line_item->{'pkgnum'};
       $line_item->{'product_code'} = $line_item->{'pkgpart'} || 'N/A'; # mt()?
       $line_item->{'section'} = $section;
@@ -1184,11 +1190,6 @@ sub print_generic {
       $line_item->{'ext_description'} ||= [];
  
       push @detail_items, $line_item;
-      push @buf, ( [ $line_item->{'description'},
-                     $money_char. sprintf("%10.2f", $line_item->{'amount'}),
-                   ],
-                   map { [ " ". $_, '' ] } @{$line_item->{'ext_description'}},
-                 );
     }
 
     if ( $section->{'description'} ) {
