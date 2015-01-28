@@ -2,6 +2,7 @@ package FS::contact_email;
 use base qw( FS::Record );
 
 use strict;
+use FS::Msgcat qw( gettext );
 use FS::Record qw( qsearch qsearchs );
 use FS::contact;
 
