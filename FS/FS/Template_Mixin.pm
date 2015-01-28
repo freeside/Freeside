@@ -3448,8 +3448,29 @@ sub _items_cust_bill_pkg {
                 ext_description => \@ext,
               };
               foreach my $cust_bill_pkg_discount (@discounts) {
-                my $def = $cust_bill_pkg_discount->cust_pkg_discount->discount;
-                push @ext, &{$escape_function}( $def->description );
+                my $discount = $cust_bill_pkg_discount->cust_pkg_discount->discount;
+                my $discount_desc = $discount->description_short;
+
+                if ($discount->months) {
+
+                  # calculate months remaining after this invoice
+                  my $used = FS::Record->scalar_sql(
+                    'SELECT SUM(months) FROM cust_bill_pkg_discount
+                      JOIN cust_bill_pkg USING (billpkgnum)
+                      JOIN cust_bill USING (invnum)
+                      WHERE pkgdiscountnum = ? AND _date <= ?',
+                    $cust_bill_pkg_discount->pkgdiscountnum,
+                    $self->_date
+                  );
+                  $used ||= 0;
+                  my $remaining = sprintf('%.2f', $discount->months - $used);
+                  # append "for X months (Y months remaining)"
+                  $discount_desc .= $self->mt(' for [quant,_1,month] ([quant,_2,month] remaining)',
+                    $cust_bill_pkg_discount->months,
+                    $remaining
+                  );
+                } # else it's not time-limited
+                push @ext, &{$escape_function}($discount_desc);
               }
             }
 
