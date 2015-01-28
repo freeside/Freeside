@@ -749,7 +749,10 @@ sub import_from_gateway {
       my $body = "Import from gateway ".$gateway->label."\n".$error_text;
       send_email(
         to      => $mail_on_error,
-        from    => $conf->config('invoice_from'),
+        from    => $conf->config('invoice_from_name') ?
+                   $conf->config('invoice_from_name') . ' <' .
+                   $conf->config('invoice_from') . '>' :
+                   $conf->config('invoice_from'),
         subject => $subject,
         body    => $body,
       );

@@ -947,7 +947,10 @@ sub cancel {
     }
     else {
       $error = send_email(
-        'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+        'from'    => $conf->config('invoice_from_name', $self->cust_main->agentnum) ?
+                     $conf->config('invoice_from_name', $self->cust_main->agentnum) . ' <' .
+                     $conf->config('invoice_from', $self->cust_main->agentnum) . '>' :
+                     $conf->config('invoice_from', $self->cust_main->agentnum),
         'to'      => \@invoicing_list,
         'subject' => ( $conf->config('cancelsubject') || 'Cancellation Notice' ),
         'body'    => [ map "$_\n", $conf->config('cancelmessage') ],

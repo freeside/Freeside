@@ -959,7 +959,30 @@ my $html_bottom = sub {
     my @fields = exists($plans{$layer}->{'fieldorder'})
                    ? @{$plans{$layer}->{'fieldorder'}}
                    : keys %{ $href };
-  
+    
+    # hash of dependencies for each of the Pricing Plan fields.
+    # make sure NOT to use double-quotes inside the 'msg' value.
+    my $dependencies = {
+        'unused_credit_suspend' => {
+            'msg'       => q|You must set the 'suspend_credit_type' option in Configuration->Settings to gain access to this option.|,
+            'are_met'   => sub{
+                my $conf = new FS::conf;
+                my @conf_info = qsearch('conf', { 'name' => 'suspend_credit_type' } );
+                return 1 if (exists($conf_info[0]) && $conf_info[0]->{Hash}{value});
+                return 0;
+            }
+        },
+        'unused_credit_cancel' => {
+            'msg'       => q|You must set the 'cancel_credit_type' option in Configuration->Settings to gain access to this option.|,
+            'are_met'   => sub{
+                my $conf = new FS::conf;
+                my @conf_info = qsearch('conf', { 'name' => 'cancel_credit_type' } );
+                return 1 if (exists($conf_info[0]) && $conf_info[0]->{Hash}{value});
+                return 0;
+            }
+        }
+    };
+    
     foreach my $field ( grep $_ !~ /^(setup|recur)_fee$/, @fields ) {
   
       if(!exists($href->{$field})) {
@@ -981,7 +1004,10 @@ my $html_bottom = sub {
       #XXX these should use elements/ fields... (or this whole thing should
       #just use layer_fields instead of layer_callback)
   
-      if ( ! exists($href->{$field}{'type'}) ) {
+      if (exists($dependencies->{$field}) && !$dependencies->{$field}{'are_met'}()) {
+          $html .= q!<span title="!.$dependencies->{$field}{'msg'}.q!">N/A</span>!;
+          
+      } elsif ( ! exists($href->{$field}{'type'}) ) {
   
         $html .= qq!<INPUT TYPE="text" NAME="${layer}__$field" VALUE="!.
                  ( exists($options{$field})

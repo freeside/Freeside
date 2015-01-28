@@ -183,8 +183,10 @@ sub email {
 
   # this is where we set the From: address
   $from ||= $conf->config('quotation_from', $self->cust_or_prospect->agentnum )
-         || $conf->config('invoice_from',   $self->cust_or_prospect->agentnum );
-
+        || ($conf->config('invoice_from_name', $self->cust_or_prospect->agentnum ) ?
+            $conf->config('invoice_from_name', $self->cust_or_prospect->agentnum ) . ' <' .
+            $conf->config('invoice_from', $self->cust_or_prospect->agentnum ) . '>' :
+            $conf->config('invoice_from', $self->cust_or_prospect->agentnum ));
   $self->SUPER::email( {
     'from' => $from,
     %$opt,

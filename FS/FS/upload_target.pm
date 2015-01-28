@@ -163,7 +163,10 @@ sub put {
     # (maybe use only the raw content, so that we don't have to supply a 
     # customer for substitutions? ewww.)
     my %message = (
-      'from'          => $conf->config('invoice_from'),
+      'from'          => $conf->config('invoice_from_name') ?
+                         $conf->config('invoice_from_name') . ' <' .
+                         $conf->config('invoice_from') . '>' :
+                         $conf->config('invoice_from'),
       'to'            => $to,
       'subject'       => $self->subject,
       'nobody'        => 1,

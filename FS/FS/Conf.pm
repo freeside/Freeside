@@ -1233,9 +1233,24 @@ sub reason_type_options {
   {
     'key'         => 'invoice_from',
     'section'     => 'required',
-    'description' => 'Return address on email invoices',
+    'description' => 'Return address on email invoices (address only, see invoice_from_name)',
     'type'        => 'text',
     'per_agent'   => 1,
+    'validate'    => sub { $_[0] =~
+                             /^[^@]+\@[[:alnum:]-]+(\.[[:alnum:]-]+)+$/
+                             ? '' : 'Invalid email address';
+                         }
+  },
+
+  {
+    'key'         => 'invoice_from_name',
+    'section'     => 'invoicing',
+    'description' => 'Return name on email invoices (set address in invoice_from)',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { (($_[0] =~ /[^[:alnum:][:space:]]/) && ($_[0] !~ /^\".*\"$/))
+                           ? 'Invalid name.  Use quotation marks around names that contain punctuation.'
+                           : '' }
   },
 
   {
