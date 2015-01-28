@@ -46,6 +46,22 @@ sub upgrade_config {
 
   my $conf = new FS::Conf;
 
+  if ($conf->config('invoice_from') =~ /\<(.*)\>/) {
+    my $realemail = $1;
+    $realemail =~ s/^\s*//; # remove leading spaces
+    $realemail =~ s/\s*$//; # remove trailing spaces
+    my $realname = $conf->config('invoice_from');
+    $realname =~ s/\<.*\>//; # remove email address
+    $realname =~ s/^\s*//; # remove leading spaces
+    $realname =~ s/\s*$//; # remove trailing spaces
+    # properly quote names that contain punctuation
+    if (($realname =~ /[^[:alnum:][:space:]]/) && ($realname !~ /^\".*\"$/)) {
+      $realname = '"' . $realname . '"';
+    }
+    $conf->set('invoice_from_name', $realname);
+    $conf->set('invoice_from', $realemail);
+  }
+
   $conf->touch('payment_receipt')
     if $conf->exists('payment_receipt_email')
     || $conf->config('payment_receipt_msgnum');
