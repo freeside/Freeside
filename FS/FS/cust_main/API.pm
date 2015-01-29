@@ -3,6 +3,7 @@ package FS::cust_main::API;
 use strict;
 use FS::Conf;
 use FS::part_tag;
+use FS::Record qw( qsearchs );
 
 =item API_getinfo FIELD => VALUE, ...
 
@@ -154,6 +155,68 @@ sub API_insert {
            'custnum' => $cust_main->custnum,
          };
 
+}
+
+sub API_update {
+
+  my( $class, %opt ) = @_;
+
+  my $conf = new FS::Conf;
+
+
+  my $custnum = $opt{'custnum'}
+    or return { 'error' => "no customer record" };
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $new = new FS::cust_main { $cust_main->hash };
+
+  $new->set( $_ => $opt{$_} )
+    foreach grep { exists $opt{$_} } qw(
+        agentnum salesnum refnum agent_custid referral_custnum
+        last first company
+        daytime night fax mobile
+        payby payinfo paydate paycvv payname
+      ),
+
+  
+  my @invoicing_list = $opt{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
+                         : ();
+  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+
+  my ($bill_hash, $ship_hash);
+  foreach my $f (FS::cust_main->location_fields) {
+    # avoid having to change this in front-end code
+    $bill_hash->{$f} = $opt{"bill_$f"} || $opt{$f};
+    $ship_hash->{$f} = $opt{"ship_$f"};
+  }
+
+  my $bill_location = FS::cust_location->new($bill_hash);
+  my $ship_location;
+  # we don't have an equivalent of the "same" checkbox in selfservice^Wthis API
+  # so is there a ship address, and if so, is it different from the billing 
+  # address?
+  if ( length($ship_hash->{address1}) > 0 and
+          grep { $bill_hash->{$_} ne $ship_hash->{$_} } keys(%$ship_hash)
+         ) {
+
+    $ship_location = FS::cust_location->new( $ship_hash );
+  
+  } else {
+    $ship_location = $bill_location;
+  }
+
+  $new->set('bill_location' => $bill_location);
+  $new->set('ship_location' => $ship_location);
+
+  my $error = $new->replace( $cust_main, \@invoicing_list );
+  return { 'error'   => $error } if $error;
+  
+  return { 'error'   => '',
+         };
+  
 }
 
 1;

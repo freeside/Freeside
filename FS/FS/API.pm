@@ -427,6 +427,119 @@ sub new_customer {
 
 =back 
 
+=item update_customer
+
+Updates an existing customer. Takes a hash reference as parameter with the foll$
+
+=over 4
+
+=item secret
+
+API Secret
+
+=item first
+
+first name (required)
+
+=item last
+
+last name (required)
+
+=item company
+
+Company name
+
+=item address1 (required)
+
+Address line one
+
+=item city (required)
+
+City
+
+=item county
+
+County
+
+=item state (required)
+
+State
+
+=item zip (required)
+
+Zip or postal code
+
+=item country
+
+2 Digit Country Code
+
+=item daytime
+
+Daytime phone number
+
+=item night
+
+Evening phone number
+
+=item fax
+
+Fax number
+
+=item mobile
+
+Mobile number
+
+=item invoicing_list
+
+comma-separated list of email addresses for email invoices. The special value '$
+postal_invoicing
+Set to 1 to enable postal invoicing
+
+=item payby
+
+CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
+
+=item payinfo
+
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pi$
+
+=item paycvv
+
+Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
+
+=item paydate
+
+Expiration date for CARD/DCRD
+
+=item payname
+
+Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
+
+=item referral_custnum
+
+Referring customer number
+
+=item salesnum
+Sales person number
+
+=item agentnum
+
+Agent number
+
+=cut
+sub update_customer {
+  my( $class, %opt ) = @_;
+
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  FS::cust_main->API_update( %opt );
+}
+
+=back
+
+
 =item customer_info
 
 Returns general customer information. Takes a hash reference as parameter with the following keys: custnum and API secret 
