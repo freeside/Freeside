@@ -1,9 +1,15 @@
 <DEL><% $link %><% $invoice %><% $link ? '</A>' : '' %></DEL>
-<I><% mt("voided ([_1]) [_2]", $cust_bill_void->reason, time2str($date_format, $cust_bill_void->void_date) ) |h %> 
+<I>voided 
 % my $void_user = $cust_bill_void->void_access_user;
 % if ($void_user) {
-    by <% $void_user->username %></I>
+    by <% $void_user->username %>
 % }
+% my $reason = $cust_bill_void->reason;
+% if ($reason) {
+     for <% $reason %>
+% }
+<% mt("on [_1]", time2str($date_format, $cust_bill_void->void_date) ) |h %> 
+</I>
 <% "$unvoid$delete$under" %>
 <%init>
 
