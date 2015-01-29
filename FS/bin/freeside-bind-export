@@ -1,0 +1,196 @@
+#!/usr/bin/perl -w
+
+use strict;
+use File::Path;
+use File::Rsync;
+use Net::SSH qw(ssh);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::part_export;
+use FS::cust_pkg;
+use FS::cust_svc;
+use FS::svc_domain;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/bind";
+mkdir $spooldir, 0700 unless -d $spooldir;
+
+my @exports = qsearch('part_export', { 'exporttype' => 'bind' } );
+my @sexports = qsearch('part_export', { 'exporttype' => 'bind_slave' } );
+
+my $rsync = File::Rsync->new({
+  rsh     => 'ssh',
+#  dry_run => 1,
+});
+
+foreach my $export ( @exports ) {
+
+  my $machine = $export->machine;
+  my $prefix = "$spooldir/$machine";
+
+  my $bind_rel = $export->option('bind_release');
+  my $ndc_cmd = $export->option('reload')
+                || ( ($bind_rel eq 'BIND9') ? 'rndc' : 'ndc' );
+  my $minttl = $export->option('bind9_minttl');
+
+  #prevent old domain files from piling up
+  #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
+
+  mkdir $prefix, 0700 unless -d $prefix;
+
+  open(NAMED_CONF,">$prefix/named.conf")
+    or die "can't open $prefix/named.conf: $!";
+
+  if ( -e "$prefix/named.conf.HEADER" ) {
+    open(CONF_HEADER,"<$prefix/named.conf.HEADER")
+      or die "can't open $prefix/named.conf.HEADER: $!";
+    while (<CONF_HEADER>) { print NAMED_CONF $_; }
+    close CONF_HEADER;
+  }
+
+  my $zonepath = $export->option('zonepath');
+  $zonepath =~ s/\/$//;
+
+  my @svc_domain = $export->svc_x;
+
+  foreach my $svc_domain ( @svc_domain ) {
+    my $domain = $svc_domain->domain;
+    my @masters = qsearch('domain_record', {
+      'svcnum' => $svc_domain->svcnum,
+      'rectype' => '_mstr',
+    } );
+    if ( @masters ) {
+      my $masters = join('; ', map { $_->recdata } @masters );
+
+      print NAMED_CONF <<END;
+zone "$domain" {
+	type slave;
+	file "db.$domain";
+	masters { $masters; };
+};
+
+END
+      unlink "$prefix/db.$domain" if -e "$prefix/db.$domain";
+
+    } else {
+
+      print NAMED_CONF <<END;
+zone "$domain" {
+	type master;
+	file "$zonepath/db.$domain";
+};
+
+END
+
+      open (DB_MASTER,">$prefix/db.$domain")
+        or die "can't open $prefix/db.$domain: $!";
+
+      if ($bind_rel eq 'BIND9') {
+        print DB_MASTER "\$TTL $minttl\n\$ORIGIN $domain.\n";
+      }
+
+      my @domain_records =
+        qsearch('domain_record', { 'svcnum' => $svc_domain->svcnum } );
+      foreach my $domain_record (
+        sort { $b->rectype cmp $a->rectype } @domain_records
+      ) {
+        #if ( $domain_record->rectype eq 'SOA' ) {
+        #  print DB_MASTER join("\t", $domain_record-> reczone
+        #} else {
+          print DB_MASTER join("\t",
+            map { $domain_record->getfield($_) }
+              qw( reczone recaf rectype recdata )
+          ), "\n";
+        #}
+      }
+
+      close DB_MASTER;
+
+    }
+
+  }
+
+  $rsync->exec( {
+    src       => "$prefix/",
+    recursive => 1,
+    dest      => "root\@$machine:$zonepath/",
+    exclude   => [qw( *.import named.conf.HEADER named.conf )],
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+ # warn $rsync->out;
+
+  $rsync->exec( {
+    src     => "$prefix/named.conf",
+    dest    => "root\@$machine:". $export->option('named_conf'),
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+#  warn $rsync->out;
+
+  ssh("root\@$machine", "$ndc_cmd reload");
+
+}
+
+close NAMED_CONF;
+
+foreach my $sexport ( @sexports ) { #false laziness with above
+
+  my $machine = $sexport->machine;
+  my $prefix = "$spooldir/$machine";
+
+  my $bind_rel = $sexport->option('bind_release');
+  my $ndc_cmd = ($bind_rel eq 'BIND9') ? 'rndc' : 'ndc';
+
+  #prevent old domain files from piling up
+  #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
+
+  mkdir $prefix, 0700 unless -d $prefix;
+
+  open(NAMED_CONF,">$prefix/named.conf")
+    or die "can't open $prefix/named.conf: $!";
+
+  if ( -e "$prefix/named.conf.HEADER" ) {
+    open(CONF_HEADER,"<$prefix/named.conf.HEADER")
+      or die "can't open $prefix/named.conf.HEADER: $!";
+    while (<CONF_HEADER>) { print NAMED_CONF $_; }
+    close CONF_HEADER;
+  }
+
+  my $masters = $sexport->option('master');
+
+  #false laziness with  freeside-sqlradius-reset 
+  my @svc_domain =
+    map { qsearchs('svc_domain', { 'svcnum' => $_->svcnum } ) }
+      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+          $sexport->export_svc;
+
+  foreach my $svc_domain ( @svc_domain ) {
+    my $domain = $svc_domain->domain;
+    print NAMED_CONF <<END;
+zone "$domain" {
+	type slave;
+	file "db.$domain";
+	masters { $masters; };
+};
+
+END
+
+  }
+
+  $rsync->exec( {
+    src     => "$prefix/named.conf",
+    dest    => "root\@$machine:". $sexport->option('named_conf'),
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+#  warn $rsync->out;
+
+  ssh("root\@$machine", "$ndc_cmd reload");
+
+}
+close NAMED_CONF;
+
+# -----
+
+sub usage {
+  die "Usage:\n  bind.export user\n"; 
+}
+
