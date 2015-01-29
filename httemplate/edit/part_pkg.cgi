@@ -967,8 +967,17 @@ my $html_bottom = sub {
             'msg'       => q|You must set the 'suspend_credit_type' option in Configuration->Settings to gain access to this option.|,
             'are_met'   => sub{
                 my $conf = new FS::conf;
-                my @suspend_credit_type_conf = qsearch('conf', { 'name' => 'suspend_credit_type' } );
-                return 1 if (exists($suspend_credit_type_conf[0]) && $suspend_credit_type_conf[0]->{Hash}{value});
+                my @conf_info = qsearch('conf', { 'name' => 'suspend_credit_type' } );
+                return 1 if (exists($conf_info[0]) && $conf_info[0]->{Hash}{value});
+                return 0;
+            }
+        },
+        'unused_credit_cancel' => {
+            'msg'       => q|You must set the 'cancel_credit_type' option in Configuration->Settings to gain access to this option.|,
+            'are_met'   => sub{
+                my $conf = new FS::conf;
+                my @conf_info = qsearch('conf', { 'name' => 'cancel_credit_type' } );
+                return 1 if (exists($conf_info[0]) && $conf_info[0]->{Hash}{value});
                 return 0;
             }
         }

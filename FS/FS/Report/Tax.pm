@@ -41,13 +41,9 @@ sub report_internal {
 
   my ($taxname, $country, %breakdown);
 
-  # purify taxname properly here, as we're going to include it in lots of 
-  # SQL statements using single quotes only
-  if ( $opt{taxname} =~ /^([\w\s]+)$/ ) {
-    $taxname = $1;
-  } else {
-    die "taxname required"; # UI prevents this
-  }
+  # taxname can contain arbitrary punctuation; escape it properly and 
+  # include $taxname unquoted elsewhere
+  $taxname = dbh->quote($opt{'taxname'});
 
   if ( $opt{country} =~ /^(\w\w)$/ ) {
     $country = $1;
@@ -103,7 +99,7 @@ sub report_internal {
      GROUP BY billpkgnum, taxnum";
 
   my $where = "WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending ".
-              "AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname' ".
+              "AND COALESCE(cust_main_county.taxname,'Tax') = $taxname ".
               "AND cust_main_county.country = '$country'";
   # SELECT/GROUP clauses for first-level queries
   my $select = "SELECT ";
@@ -370,14 +366,14 @@ sub report_internal {
       SELECT 1 FROM cust_tax_exempt_pkg
         JOIN cust_main_county USING (taxnum)
         WHERE cust_tax_exempt_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-          AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname'
+          AND COALESCE(cust_main_county.taxname,'Tax') = $taxname
           AND cust_tax_exempt_pkg.creditbillpkgnum IS NULL
     )
     AND NOT EXISTS(
       SELECT 1 FROM cust_bill_pkg_tax_location
         JOIN cust_main_county USING (taxnum)
         WHERE cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum
-          AND COALESCE(cust_main_county.taxname,'Tax') = '$taxname'
+          AND COALESCE(cust_main_county.taxname,'Tax') = $taxname
     )
   ";
   warn "\nOUTSIDE:\n$sql_outside\n" if $DEBUG;

@@ -1,5 +1,5 @@
 <DEL><% mt("Payment [_1] by [_2]", $info, $cust_pay_void->otaker ) |h %></DEL>
-<I><% mt("voided [_1]", time2str($date_format, $cust_pay_void->void_date) ) |h %> 
+<I><% mt("voided ([_1]) [_2]", $cust_pay_void->reason, time2str($date_format, $cust_pay_void->void_date) ) |h %> 
 % my $void_user = $cust_pay_void->void_access_user;
 % if ($void_user) {
     by <% $void_user->username %></I>

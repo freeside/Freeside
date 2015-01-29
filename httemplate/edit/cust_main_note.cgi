@@ -18,17 +18,24 @@
     <BR>
 % }
 
-% if( $FS::CurrentUser::CurrentUser->option('disable_html_editor') ) {
-  <TEXTAREA NAME="comment_plain" ROWS="12" COLS="60"><% 
-  join '', split /<br \/>|&nbsp;/, $comment 
-  %></TEXTAREA>
-% }
-% else {
-<% include('/elements/htmlarea.html', 'field' => 'comment_html',
-                                      'curr_value' => $comment) %>
+% if ( $FS::CurrentUser::CurrentUser->option('disable_html_editor') ) {
+    <TEXTAREA NAME="comment_plain" ROWS="12" COLS="60"><% 
+    join '', split /<br \/>|&nbsp;/, $comment 
+    %></TEXTAREA>
+% } else {
+    <& /elements/htmlarea.html, 'field'      => 'comment_html',
+                                'curr_value' => $comment
+    &>
 % }
 
-<BR><BR>
+<BR>
+
+<& /elements/checkbox.html, 'field'      => 'sticky',
+                            'value'      => 1,
+                            'curr_value' => $sticky,
+&>
+Sticky note<BR><BR>
+
 <INPUT TYPE="submit" VALUE="<% $notenum ? emt("Apply changes") : emt("Add Note") %>">
 
 </FORM>
@@ -42,6 +49,7 @@ my $conf = new FS::Conf;
 my $comment;
 my $notenum = '';
 my $classnum;
+my $sticky = 0;
 if ( $cgi->param('error') ) {
   $comment     = $cgi->param('comment');
   $classnum = $cgi->param('classnum');
@@ -52,6 +60,7 @@ if ( $cgi->param('error') ) {
   die "no such note: ". $notenum unless $note;
   $comment = $note->comments;
   $classnum = $note->classnum;
+  $sticky = $note->sticky;
 }
 
 $comment =~ s/\r//g; # remove weird line breaks to protect FCKeditor

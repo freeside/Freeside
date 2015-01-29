@@ -773,7 +773,7 @@ sub reason_type_options {
   {
     'key'         => 'log_sent_mail',
     'section'     => 'notification',
-    'description' => 'Enable logging of template-generated email.',
+    'description' => 'Enable logging of all sent email.',
     'type'        => 'checkbox',
   },
 
