@@ -97,20 +97,7 @@ function clearhint_search_cust_svc(obj, str) {
 %             local $opt{'num_avail'} = $part_svc->num_avail;
               <BR><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %>
 %           }
-%           if ( 
-%                qsearch({
-%                          'table' => 'did_order',
-%                          'hashref' => { 'custnum' => $cust_pkg->custnum },
-%                          'extra_sql' => ' LIMIT 1'
-%                        })
-%                ||
-%                qsearch({
-%                          'table' => 'did_order_item',
-%                          'hashref' => { 'custnum' => $cust_pkg->custnum },
-%                          'addl_from' => ' INNER JOIN did_order ON did_order_item.ordernum = did_order.ordernum',
-%                          'extra_sql' => ' LIMIT 1'
-%                       })
-%           ) {
+%           if (browse_received_did_inventory($cust_pkg->custnum)) {
               <BR><A HREF="<%$p%>browse/did_order.html?custnum=<%$cust_pkg->custnum%>"><% mt('Browse Received DID Inventory') |h %></A> 
 %           }
 %       }
@@ -181,6 +168,21 @@ sub svc_provision_link {
   }
 
   $link;
+}
+
+sub browse_received_did_inventory {
+  local($FS::Record::qsearch_qualify_columns) = 1;
+  qsearch({
+    'table' => 'did_order',
+    'hashref' => { 'custnum' => $_[0] },
+    'extra_sql' => ' LIMIT 1'
+  }) ||
+  qsearch({
+    'table' => 'did_order_item',
+    'hashref' => { 'custnum' => $_[0] },
+    'addl_from' => ' INNER JOIN did_order ON did_order_item.ordernum = did_order.ordernum',
+    'extra_sql' => ' LIMIT 1'
+  });
 }
 
 my %hints = (
