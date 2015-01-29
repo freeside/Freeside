@@ -151,7 +151,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
         <% emt('Out of taxable region') %>
       </TD>
       <TD STYLE="text-align: right">
-        <A HREF="<% $saleslink %>;out=1;taxname=<% $params{taxname} %>">
+        <A HREF="<% $saleslink %>;out=1;taxname=<% encode_entities($params{'taxname'}) %>">
           <% $money_sprintf->( $report->{outside } ) %>
         </A>
       </TD>
@@ -188,8 +188,9 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentname = $agent->agentname;
 }
 
-if ( $cgi->param('taxname') =~ /^([\w ]+)$/ ) {
-  $params{taxname} = $1;
+# allow anything in here; FS::Report::Tax will treat it as unsafe
+if ( length($cgi->param('taxname')) ) {
+  $params{taxname} = $cgi->param('taxname');
 } else {
   die "taxname required";
 }
