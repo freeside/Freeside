@@ -46,22 +46,6 @@ sub upgrade_config {
 
   my $conf = new FS::Conf;
 
-  if ($conf->config('invoice_from') =~ /\<(.*)\>/) {
-    my $realemail = $1;
-    $realemail =~ s/^\s*//; # remove leading spaces
-    $realemail =~ s/\s*$//; # remove trailing spaces
-    my $realname = $conf->config('invoice_from');
-    $realname =~ s/\<.*\>//; # remove email address
-    $realname =~ s/^\s*//; # remove leading spaces
-    $realname =~ s/\s*$//; # remove trailing spaces
-    # properly quote names that contain punctuation
-    if (($realname =~ /[^[:alnum:][:space:]]/) && ($realname !~ /^\".*\"$/)) {
-      $realname = '"' . $realname . '"';
-    }
-    $conf->set('invoice_from_name', $realname);
-    $conf->set('invoice_from', $realemail);
-  }
-
   $conf->touch('payment_receipt')
     if $conf->exists('payment_receipt_email')
     || $conf->config('payment_receipt_msgnum');
@@ -79,8 +63,15 @@ sub upgrade_config {
     }
   }
 
+  my @agents = qsearch('agent', {});
+
   upgrade_overlimit_groups($conf);
-  map { upgrade_overlimit_groups($conf,$_->agentnum) } qsearch('agent', {});
+  map { upgrade_overlimit_groups($conf,$_->agentnum) } @agents;
+
+  upgrade_invoice_from($conf);
+  foreach my $agent (@agents) {
+    upgrade_invoice_from($conf,$agent->agentnum);
+  }
 
   my $DIST_CONF = '/usr/local/etc/freeside/default_conf/';#DIST_CONF in Makefile
   $conf->set($_, scalar(read_file( "$DIST_CONF/$_" )) )
@@ -173,6 +164,28 @@ sub upgrade_overlimit_groups {
             $conf->set('overlimit_groups',join("\n",@groupnums),$agentnum);
         }
     }
+}
+
+sub upgrade_invoice_from {
+  my ($conf, $agentnum) = @_;
+  if (
+      (!$conf->config('invoice_from_name',$agentnum)) && 
+      ($conf->config('invoice_from',$agentnum) =~ /\<(.*)\>/)
+  ) {
+    my $realemail = $1;
+    $realemail =~ s/^\s*//; # remove leading spaces
+    $realemail =~ s/\s*$//; # remove trailing spaces
+    my $realname = $conf->config('invoice_from',$agentnum);
+    $realname =~ s/\<.*\>//; # remove email address
+    $realname =~ s/^\s*//; # remove leading spaces
+    $realname =~ s/\s*$//; # remove trailing spaces
+    # properly quote names that contain punctuation
+    if (($realname =~ /[^[:alnum:][:space:]]/) && ($realname !~ /^\".*\"$/)) {
+      $realname = '"' . $realname . '"';
+    }
+    $conf->set('invoice_from_name', $realname, $agentnum);
+    $conf->set('invoice_from', $realemail, $agentnum);
+  }
 }
 
 =item upgrade
