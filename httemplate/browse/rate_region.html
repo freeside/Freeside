@@ -40,7 +40,7 @@ if ( driver_name =~ /^Pg/ ) {
                    "   THEN npa ".
                    "   ELSE npa || '-' || nxx ".
                    " END";
-  my $prefixes_sql = "SELECT $prefix_sql $fromwhere AND npa IS NOT NULL";
+  my $prefixes_sql = "SELECT $prefix_sql $fromwhere AND npa IS NOT NULL ORDER BY npa";
   $select .= "( SELECT '+'||countrycode $fromwhere LIMIT 1 ) AS ccode, 
               ARRAY_TO_STRING( ARRAY($prefixes_sql), ', ' ) AS prefixes";
 } elsif ( driver_name =~ /^mysql/i ) {

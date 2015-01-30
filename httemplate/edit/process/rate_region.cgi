@@ -25,6 +25,8 @@ my $new = new FS::rate_region ( {
 
 my $countrycode = $cgi->param('countrycode');
 my @npa = split(/\s*,\s*/, $cgi->param('npa'));
+my %npa = map { $_, 1 } @npa; #removing duplicates
+@npa = sort keys %npa;
 $npa[0] = '' unless @npa;
 my @rate_prefix = map {
                         #my($npa,$nxx) = split('-', $_);
