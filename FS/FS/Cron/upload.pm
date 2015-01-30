@@ -508,10 +508,7 @@ sub prepare_report {
 
   (
     to      => $to,
-    from    => $conf->config('invoice_from_name', $agentnum) ?
-               $conf->config('invoice_from_name', $agentnum) . ' <' . 
-               $conf->config('invoice_from', $agentnum) . '>' :
-               $conf->config('invoice_from', $agentnum),
+    from    => $conf->invoice_from_full($agentnum),
     subject => $subject,
     body    => $body,
   );
