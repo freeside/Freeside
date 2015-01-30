@@ -133,7 +133,17 @@ sub search_sql {
 
 sub label {
   my $self = shift;
-  $self->serial || $self->display_hw_addr;
+  my @label = ();
+  if (my $type = $self->hardware_type) {
+    push @label, 'Type:' . $type->description;
+  }
+  if (my $ser = $self->serial) {
+    push @label, 'Serial#' . $ser;
+  }
+  if (my $mac = $self->display_hw_addr) {
+    push @label, 'MAC:'. $mac;
+  }
+  return join(', ', @label);
 }
 
 =item insert
