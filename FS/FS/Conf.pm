@@ -958,7 +958,7 @@ sub reason_type_options {
   {
     'key'         => 'business-onlinepayment',
     'section'     => 'billing',
-    'description' => '<a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support, at least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.',
+    'description' => '<a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support, at least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.  For more detailed information and examples see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation:Administration:Real-time_Processing">real-time credit card processing documentation</a>.',
     'type'        => 'textarea',
   },
 
