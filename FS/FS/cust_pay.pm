@@ -707,10 +707,7 @@ sub send_receipt {
         'msgtype' => 'receipt',
       };
       $error = $queue->insert(
-        'from'    => $conf->config('invoice_from_name', $cust_main->agentnum ) ?
-                     $conf->config('invoice_from_name', $cust_main->agentnum ) . ' <' .
-                     $conf->config('invoice_from', $cust_main->agentnum ) . '>' :
-                     $conf->config('invoice_from', $cust_main->agentnum ),
+        'from'    => $conf->invoice_from_full( $cust_main->agentnum ),
                                    #invoice_from??? well as good as any
         'to'      => \@invoicing_list,
         'subject' => 'Payment receipt',

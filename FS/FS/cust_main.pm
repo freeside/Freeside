@@ -4818,10 +4818,7 @@ sub notify {
 
   return unless $conf->exists($template);
 
-  my $from = $conf->config('invoice_from_name', $self->agentnum) ?
-             $conf->config('invoice_from_name', $self->agentnum) . ' <' .
-             $conf->config('invoice_from', $self->agentnum) . '>' :
-             $conf->config('invoice_from', $self->agentnum)
+  my $from = $conf->invoice_from_full($self->agentnum)
     if $conf->exists('invoice_from', $self->agentnum);
   $from = $options{from} if exists($options{from});
 
