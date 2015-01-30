@@ -1085,10 +1085,7 @@ sub email {
 
   # this is where we set the From: address
   $from ||= $self->_agent_invoice_from ||    #XXX should go away
-            $conf->config('invoice_from_name', $self->cust_main->agentnum ) ?
-            $conf->config('invoice_from_name', $self->cust_main->agentnum ) . ' <' .
-            $conf->config('invoice_from', $self->cust_main->agentnum ) . '>' :
-            $conf->config('invoice_from', $self->cust_main->agentnum );
+            $conf->invoice_from_full( $self->cust_main->agentnum );
 
   my @invoicing_list = $self->cust_main->invoicing_list_emailonly;
 

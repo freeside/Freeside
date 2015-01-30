@@ -593,6 +593,21 @@ sub config_items {
   ( @config_items, $self->_orbase_items(@_) );
 }
 
+=item invoice_from_full [ AGENTNUM ]
+
+Returns values of invoice_from and invoice_from_name, appropriately combined
+based on their current values.
+
+=cut
+
+sub invoice_from_full {
+  my ($self, $agentnum) = @_;
+  return $self->config('invoice_from_name', $agentnum ) ?
+         $self->config('invoice_from_name', $agentnum ) . ' <' .
+         $self->config('invoice_from', $agentnum ) . '>' :
+         $self->config('invoice_from', $agentnum );
+}
+
 =back
 
 =head1 SUBROUTINES
