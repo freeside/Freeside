@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use FS::Daemon::Preforking qw( freeside_init1 freeside_init2 daemon_run );
+use FS::Daemon qw( myexit );
 
 use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer
                      #and XMLRPC::Transport::HTTP
@@ -20,10 +21,15 @@ freeside_init1(ME);
 freeside_init2(ME);
 
 my $conf = new FS::Conf;
-die "not running; xmlrpc_api conf option is off\n"
-  unless $conf->exists('xmlrpc_api');
-die "not running; api_shared_secret conf option is not set\n"
-  unless $conf->config('api_shared_secret');
+do {
+    warn "not running; xmlrpc_api conf option is off";
+    myexit();
+} unless $conf->exists('xmlrpc_api');
+
+do {
+    warn "not running; api_shared_secret conf option is not set";
+    myexit();
+} unless $conf->config('api_shared_secret');
 
 daemon_run( 'port' => 8008, 'handle_request' =>
   sub {

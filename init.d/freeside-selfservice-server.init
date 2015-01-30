@@ -1,0 +1,149 @@
+#!/bin/bash
+
+# description: Manage the freeside-queued script service, SYS-V style 
+# chkconfig: 2345 10 90
+
+
+ARG1=${1}
+SERVICE=freeside-selfservice-server
+
+if [ -f %%%FREESIDE_DEFAULTS%%% ]
+then
+    . %%%FREESIDE_DEFAULTS%%%
+else 
+    echo "ERROR: freeside defaults could not be sourced."
+    exit 1
+fi
+
+LOCKFILE=$LOCKFILE_DIR/$SERVICE
+PIDFILE=$PIDFILE_DIR/${SERVICE}.USERMACHINE.pid
+
+statusfunc() {
+    if [ -f ${LOCKFILE} ]
+    then
+        MACH_RUNNING=0
+        MACH_DEAD=0
+        MACH_STOPPED=0
+        # Loop over machines
+        for MACHINE in $SELFSERVICE_MACHINES
+        do
+            USERMACHINE="${SELFSERVICE_USER}.${MACHINE}"
+            MYPIDFILE=`echo $PIDFILE | sed "s/USERMACHINE/$USERMACHINE/"`
+            
+            if [ -f ${MYPIDFILE} ]
+            then
+                PID=`cat $MYPIDFILE`
+                if ps -p ${PID} > /dev/null
+                then
+                    MACH_RUNNING=$((MACH_RUNNING + 1))
+                else
+                    MACH_DEAD=$((MACH_DEAD + 1))
+                fi
+            else
+                MACH_STOPPED=$((MACH_STOPPED + 1))
+            fi
+        done
+
+        if [ $MACH_DEAD -gt 0 ] 
+        then
+            return 1
+        fi
+        if [ $MACH_RUNNING -ge 0 -a $MACH_STOPPED -eq 0 ]
+        then
+            return 0
+        fi
+
+    fi
+    return 3
+}
+
+startfunc() {
+    if statusfunc
+    then
+        action "Already running ${SERVICE} " /bin/false
+    else
+        # Loop over machines
+        STARTERR=0
+        for MACHINE in $SELFSERVICE_MACHINES
+        do
+            ${SERVICE} $SELFSERVICE_USER $MACHINE
+            RETVAL=$?
+            action "Starting ${SERVICE} " /bin/true
+            if [ $RETVAL != 0 ]
+            then
+                STARTERR=1
+            fi
+        done
+        if [ $STARTERR -eq 0 ]
+        then
+            touch ${LOCKFILE}
+            return 0
+        fi
+        return 1
+    fi
+}
+
+stopfunc() {
+    if statusfunc
+    then
+        for MACHINE in $SELFSERVICE_MACHINES
+        do
+            USERMACHINE="${SELFSERVICE_USER}.${MACHINE}"
+            MYPIDFILE=`echo $PIDFILE | sed "s/USERMACHINE/$USERMACHINE/"`
+            echo -n "Stopping ${SERVICE} service for $MACHINE"
+            killproc -p ${MYPIDFILE}
+            echo
+        done
+        rm -f ${LOCKFILE}
+    else
+        action "Service not running" /bin/false
+    fi
+}
+
+restartfunc() {
+    stopfunc
+    startfunc
+} 
+
+# echo_status function
+echo_statusfunc() {
+    # we need a way of displaying the status to the end user if called with the parameter status. This status function will check for pid or lockfile
+    echo -n $SERVICE
+    for MACHINE in $SELFSERVICE_MACHINES
+    do
+        USERMACHINE="${SELFSERVICE_USER}.${MACHINE}"
+        MYPIDFILE=`echo $PIDFILE | sed "s/USERMACHINE/$USERMACHINE/"`
+        status -p $MYPIDFILE
+    done
+}
+
+case $ARG1 in 
+
+start)
+    # if our parameter is 'start' we should run this
+    startfunc
+;;
+
+stop)
+    # if our parameter is 'stop' we should run this
+    stopfunc
+;;
+
+restart)
+    # if our parameter is 'restart' we should run this
+    restartfunc
+;;
+
+status)
+    # display the status of our service using the echo_statusfunc function
+    echo_statusfunc
+;;
+
+*)
+    # catchall case statement... if we get a parameter that we don't understand show the syntax and exit with and error code of >0
+    echo "Syntax Error... usage: $0 (start|stop|restart|status)"
+    exit 1
+;;
+
+# close up that case
+esac

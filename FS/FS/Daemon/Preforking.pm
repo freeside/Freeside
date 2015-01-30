@@ -99,6 +99,7 @@ sub daemon_run {
 
   server_spawn(MAX_PROCESSES);
   POE::Kernel->run();
+  myexit();
   #exit;
 
 }
