@@ -25,7 +25,7 @@ my $num_avail = $1;
 errorpage("There are only $num_avail available")
   if $end - $start + 1 > $num_avail;
 
-foreach my $phonenum ( $start .. $end ) {
+foreach my $phonenum ( "$start" .. "$end" ) {
 
   my $svc_phone = new FS::svc_phone {
     'phonenum' => $phonenum,
