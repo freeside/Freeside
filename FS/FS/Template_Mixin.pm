@@ -691,11 +691,12 @@ sub print_generic {
   # (this is used in the summary & on the payment coupon)
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
-  # info from customer's last invoice before this one, for some 
-  # summary formats
-  $invoice_data{'last_bill'} = {};
+  # flag telling this invoice to have a first-page summary
+  my $summarypage = '';
 
   if ( $self->custnum && $self->invnum ) {
+    # XXX should be an FS::cust_bill method to set the defaults, instead
+    # of checking the type here
 
     my $last_bill = $self->previous_bill;
     if ( $last_bill ) {
@@ -801,13 +802,16 @@ sub print_generic {
       $invoice_data{'previous_payments'} = [];
       $invoice_data{'previous_credits'} = [];
     }
-  } # if this is an invoice
 
-  my $summarypage = '';
-  if ( $conf->exists('invoice_usesummary', $agentnum) ) {
-    $summarypage = 1;
-  }
-  $invoice_data{'summarypage'} = $summarypage;
+    # info from customer's last invoice before this one, for some 
+    # summary formats
+    $invoice_data{'last_bill'} = {};
+  
+    if ( $conf->exists('invoice_usesummary', $agentnum) ) {
+      $invoice_data{'summarypage'} = $summarypage = 1;
+    }
+
+  } # if this is an invoice
 
   warn "$me substituting variables in notes, footer, smallfooter\n"
     if $DEBUG > 1;
@@ -1172,6 +1176,12 @@ sub print_generic {
            join(', ', map "$_=>".$line_item->{$_}, keys %$line_item). "\n"
         if $DEBUG > 1;
 
+      push @buf, ( [ $line_item->{'description'},
+                     $money_char. sprintf("%10.2f", $line_item->{'amount'}),
+                   ],
+                   map { [ " ". $_, '' ] } @{$line_item->{'ext_description'}},
+                 );
+
       $line_item->{'ref'} = $line_item->{'pkgnum'};
       $line_item->{'product_code'} = $line_item->{'pkgpart'} || 'N/A'; # mt()?
       $line_item->{'section'} = $section;
@@ -1184,11 +1194,6 @@ sub print_generic {
       $line_item->{'ext_description'} ||= [];
  
       push @detail_items, $line_item;
-      push @buf, ( [ $line_item->{'description'},
-                     $money_char. sprintf("%10.2f", $line_item->{'amount'}),
-                   ],
-                   map { [ " ". $_, '' ] } @{$line_item->{'ext_description'}},
-                 );
     }
 
     if ( $section->{'description'} ) {
@@ -3092,7 +3097,9 @@ sub _items_cust_bill_pkg {
             if $cust_bill_pkg->recur != 0
             || $discount_show_always
             || $cust_bill_pkg->recur_show_zero;
-          push @b, {
+          #push @b, {
+          # keep it consistent, please
+          $s = {
             'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => $description,
             'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
@@ -3105,7 +3112,8 @@ sub _items_cust_bill_pkg {
           };
         }
         if ( $cust_bill_pkg->recur != 0 ) {
-          push @b, {
+          #push @b, {
+          $r = {
             'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
             'description' => "$desc (". $cust_bill_pkg->part_pkg->freq_pretty.")",
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
@@ -3398,68 +3406,6 @@ sub _items_cust_bill_pkg {
 
         } # recurring or usage with recurring charge
 
-        # decide whether to show active discounts here
-        if (
-            # case 1: we are showing a single line for the package
-            ( !$type )
-            # case 2: we are showing a setup line for a package that has
-            # no base recurring fee
-            or ( $type eq 'S' and $cust_bill_pkg->unitrecur == 0 )
-            # case 3: we are showing a recur line for a package that has 
-            # a base recurring fee
-            or ( $type eq 'R' and $cust_bill_pkg->unitrecur > 0 )
-        ) {
-
-          # the line item hashref for the line that will show the original
-          # price
-          # (use the recur or single line for the package, unless we're 
-          # showing a setup line for a package with no recurring fee)
-          my $active_line = $r;
-          if ( $type eq 'S' ) {
-            $active_line = $s;
-          }
-
-          my @discounts = $cust_bill_pkg->cust_bill_pkg_discount;
-          # special case: if there are old "discount details" on this line 
-          # item, don't show discount line items
-          if ( FS::cust_bill_pkg_detail->count(
-              "detail LIKE 'Includes discount%' AND billpkgnum = " .
-              $cust_bill_pkg->billpkgnum
-             ) > 0 ) {
-             @discounts = ();
-          }
-          if ( @discounts ) {
-            warn "$me _items_cust_bill_pkg including discounts for ".
-              $cust_bill_pkg->billpkgnum."\n"
-              if $DEBUG;
-            my $discount_amount = sum( map {$_->amount} @discounts );
-            # if multiple discounts apply to the same package, how to display
-            # them? ext_description lines, apparently
-            #
-            # # discount amounts are negative
-            if ( $d and $cust_bill_pkg->hidden ) {
-              $d->{amount}      -= $discount_amount;
-            } else {
-              my @ext;
-              $d = {
-                _is_discount    => 1,
-                description     => $self->mt('Discount'),
-                amount          => -1 * $discount_amount,
-                ext_description => \@ext,
-              };
-              foreach my $cust_bill_pkg_discount (@discounts) {
-                my $def = $cust_bill_pkg_discount->cust_pkg_discount->discount;
-                push @ext, &{$escape_function}( $def->description );
-              }
-            }
-
-            # update the active line (before the discount) to show the 
-            # original price (whether this is a hidden line or not)
-            $active_line->{amount} += $discount_amount;
-            
-          } # if there are any discounts
-        } # if this is an appropriate place to show discounts
-
       } else { # taxes and fees
 
         warn "$me _items_cust_bill_pkg cust_bill_pkg is tax\n"
@@ -3473,6 +3419,56 @@ sub _items_cust_bill_pkg {
         };
 
       } # if quotation / package line item / other line item
+
+      # decide whether to show active discounts here
+      if (
+          # case 1: we are showing a single line for the package
+          ( !$type )
+          # case 2: we are showing a setup line for a package that has
+          # no base recurring fee
+          or ( $type eq 'S' and $cust_bill_pkg->unitrecur == 0 )
+          # case 3: we are showing a recur line for a package that has 
+          # a base recurring fee
+          or ( $type eq 'R' and $cust_bill_pkg->unitrecur > 0 )
+      ) {
+
+        my $item_discount = $cust_bill_pkg->_item_discount;
+        if ( $item_discount ) {
+          # $item_discount->{amount} is negative
+
+          if ( $d and $cust_bill_pkg->hidden ) {
+            $d->{amount}      += $item_discount->{amount};
+          } else {
+            $d = $item_discount;
+            $_ = &{$escape_function}($_) foreach @{ $d->{ext_description} };
+          }
+
+          # update the active line (before the discount) to show the 
+          # original price (whether this is a hidden line or not)
+          #
+          # quotation discounts keep track of setup and recur; invoice 
+          # discounts currently don't
+          if ( exists $item_discount->{setup_amount} ) {
+
+            $s->{amount} -= $item_discount->{setup_amount} if $s;
+            $r->{amount} -= $item_discount->{recur_amount} if $r;
+
+          } else {
+
+            # $active_line is the line item hashref for the line that will
+            # show the original price
+            # (use the recur or single line for the package, unless we're 
+            # showing a setup line for a package with no recurring fee)
+            my $active_line = $r;
+            if ( $type eq 'S' ) {
+              $active_line = $s;
+            }
+            $active_line->{amount} -= $item_discount->{amount};
+
+          }
+
+        } # if there are any discounts
+      } # if this is an appropriate place to show discounts
 
     } # foreach $display
 
