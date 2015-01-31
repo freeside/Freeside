@@ -175,7 +175,12 @@ sub description_short {
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';  
 
-  my $desc = $self->name ? $self->name.': ' : '';
+  my $desc;
+  if ( $self->name ) {
+    $desc = $self->name . ': ';
+  } else {
+    $desc = 'Discount of ';
+  }
   $desc .= $money_char. sprintf('%.2f/month', $self->amount)
     if $self->amount > 0;
 
