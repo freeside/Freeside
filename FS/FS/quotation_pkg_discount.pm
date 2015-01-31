@@ -1,5 +1,6 @@
 package FS::quotation_pkg_discount;
 use base qw( FS::Record );
+use FS::Maketext 'mt'; # XXX not really correct
 
 use strict;
 
@@ -36,12 +37,21 @@ primary key
 
 =item quotationpkgnum
 
-quotationpkgnum
+quotationpkgnum of the L<FS::quotation_pkg> record that this discount is
+for.
 
 =item discountnum
 
-discountnum
+discountnum (L<FS::discount>)
 
+=item setup_amount
+
+Amount that will be discounted from setup fees, per package quantity.
+
+=item recur_amount
+
+Amount that will be discounted from recurring fees in the first billing
+cycle, per package quantity.
 
 =back
 
@@ -107,6 +117,8 @@ sub check {
     $self->ut_numbern('quotationpkgdiscountnum')
     || $self->ut_foreign_key('quotationpkgnum', 'quotation_pkg', 'quotationpkgnum' )
     || $self->ut_foreign_key('discountnum', 'discount', 'discountnum' )
+    || $self->ut_moneyn('setup_amount')
+    || $self->ut_moneyn('recur_amount')
   ;
   return $error if $error;
 
@@ -114,6 +126,39 @@ sub check {
 }
 
 =back
+
+=item amount
+
+Returns the total amount of this discount (setup + recur), for compatibility
+with L<FS::cust_bill_pkg_discount>.
+
+=cut
+
+sub amount {
+  my $self = shift;
+  return $self->get('setup_amount') + $self->get('recur_amount');
+}
+
+=item description
+
+Returns a string describing the discount (for use on the quotation).
+
+=cut
+
+sub description {
+  my $self = shift;
+  my $discount = $self->discount;
+  my $desc = $discount->description_short;
+  # XXX localize to prospect language, once prospects get languages
+  $desc .= mt(' each') if $self->quotation_pkg->quantity > 1;
+
+  if ($discount->months) {
+    # unlike cust_bill_pkg_discount, there are no "months remaining"; it 
+    # hasn't started yet.
+    $desc .= mt(' (for [quant,_1,month])', $discount->months);
+  }
+  return $desc;
+}
 
 =head1 BUGS
 

@@ -367,15 +367,17 @@ sub cust_bill_pkg_detail {
 
 }
 
-=item cust_bill_pkg_discount 
+=item pkg_discount 
 
-Returns the list of associated cust_bill_pkg_discount objects.
+Returns the list of associated cust_bill_pkg_discount or 
+quotation_pkg_discount objects.
 
 =cut
 
-sub cust_bill_pkg_discount {
+sub pkg_discount {
   my $self = shift;
-  qsearch( $self->discount_table, { 'billpkgnum' => $self->billpkgnum } );
+  my $pkey = $self->primary_key;
+  qsearch( $self->discount_table, { $pkey => $self->get($pkey) } );
 }
 
 1;
