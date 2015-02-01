@@ -2,7 +2,7 @@ package FS::quotation_pkg;
 
 use strict;
 use base qw( FS::TemplateItem_Mixin FS::Record );
-use FS::Record qw( qsearchs dbh ); #qsearch
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_pkg;
 use FS::cust_location;
 use FS::quotation;
@@ -227,7 +227,7 @@ sub estimate {
   if ( $self->waive_setup eq 'Y' || $self->{'_NO_SETUP_KLUDGE'} ) {
     $unitsetup = '0.00';
   } else {
-    $unitsetup = $part_pkg->base_setup;
+    $unitsetup = $part_pkg->option('setup_fee',1) || '0.00'; # XXX 3.x only
   }
   if ( $self->{'_NO_RECUR_KLUDGE'} ) {
     $unitrecur = '0.00';
@@ -412,6 +412,18 @@ sub cust_main {
   my $self = shift;
   my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
   $quotation->cust_main;
+}
+
+#stub for 3.x
+
+sub quotation {
+  my $self = shift;
+  FS::quotation->by_key($self->quotationnum);
+}
+
+sub quotation_pkg_discount {
+  my $self = shift;
+  qsearch('quotation_pkg_discount', { quotationpkgnum => $self->quotationpkgnum });
 }
 
 =back

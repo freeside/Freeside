@@ -3,6 +3,8 @@ package FS::quotation_pkg_discount;
 use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::quotation_pkg;
+use FS::discount;
 use FS::Maketext 'mt';
 
 =head1 NAME
@@ -159,6 +161,17 @@ sub description {
     $desc .= mt(' (for [quant,_1,month])', $discount->months);
   }
   return $desc;
+}
+
+#stub for 3.x
+sub quotation_pkg {
+  my $self = shift;
+  FS::quotation_pkg->by_key($self->quotationpkgnum);
+}
+
+sub discount {
+  my $self = shift;
+  FS::discount->by_key($self->discountnum);
 }
 
 =head1 BUGS
