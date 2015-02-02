@@ -106,7 +106,7 @@ function bill_now_changed (what) {
 
 <TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
-% if ( $cust_pkg ) {
+% if ( $cust_pkg ) { #modify one-time charge
 
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $cust_pkg->pkgnum %>">
 % my $field = '/elements/tr-input-text.html';
