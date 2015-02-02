@@ -144,7 +144,7 @@ if ( $quotationnum ) {
   $quotation_pkg->prospectnum($prospect_main->prospectnum) if $prospect_main;
 
   #XXX handle new location
-  $error = $quotation_pkg->insert;
+  $error = $quotation_pkg->insert || $quotation_pkg->estimate;
 
 } else {
 

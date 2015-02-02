@@ -671,6 +671,45 @@ sub units {
   $self->pkgnum ? $self->part_pkg->calc_units($self->cust_pkg) : 0; # 1?
 }
 
+=item _item_discount
+
+If this item has any discounts, returns a hashref in the format used
+by L<FS::Template_Mixin/_items_cust_bill_pkg> to describe the discount(s)
+on an invoice. This will contain the keys 'description', 'amount', 
+'ext_description' (an arrayref of text lines describing the discounts),
+and '_is_discount' (a flag).
+
+The value for 'amount' will be negative, and will be scaled for the package
+quantity.
+
+=cut
+
+sub _item_discount {
+  my $self = shift;
+  my @pkg_discounts = $self->pkg_discount;
+  return if @pkg_discounts == 0;
+  # special case: if there are old "discount details" on this line item, don't
+  # show discount line items
+  if ( FS::cust_bill_pkg_detail->count("detail LIKE 'Includes discount%' AND billpkgnum = ?", $self->billpkgnum || 0) > 0 ) {
+    return;
+  } 
+  
+  my @ext;
+  my $d = {
+    _is_discount    => 1,
+    description     => $self->mt('Discount'),
+    amount          => 0,
+    ext_description => \@ext,
+    # maybe should show quantity/unit discount?
+  };
+  foreach my $pkg_discount (@pkg_discounts) {
+    push @ext, $pkg_discount->description;
+    $d->{amount} -= $pkg_discount->amount;
+  } 
+  $d->{amount} *= $self->quantity || 1;
+  
+  return $d;
+}
 
 =item set_display OPTION => VALUE ...
 

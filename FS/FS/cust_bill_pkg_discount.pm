@@ -144,6 +144,39 @@ sub cust_pkg_discount {
 }
 
 
+=item description
+
+Returns a string describing the discount (for use on an invoice).
+
+=cut
+
+sub description {
+  my $self = shift;
+  my $discount = $self->cust_pkg_discount->discount;
+  my $desc = $discount->description_short;
+  $desc .= $self->mt(' each') if $self->cust_bill_pkg->quantity > 1;
+
+  if ($discount->months) {
+    # calculate months remaining on this cust_pkg_discount after this invoice
+    my $date = $self->cust_bill_pkg->cust_bill->_date;
+    my $used = FS::Record->scalar_sql(
+      'SELECT SUM(months) FROM cust_bill_pkg_discount
+      JOIN cust_bill_pkg USING (billpkgnum)
+      JOIN cust_bill USING (invnum)
+      WHERE pkgdiscountnum = ? AND _date <= ?',
+      $self->pkgdiscountnum,
+      $date
+    );
+    $used ||= 0;
+    my $remaining = sprintf('%.2f', $discount->months - $used);
+    $desc .= $self->mt(' for [quant,_1,month] ([quant,_2,month] remaining)',
+              $self->months,
+              $remaining
+             );
+  }
+  return $desc;
+}
+
 =back
 
 =head1 BUGS

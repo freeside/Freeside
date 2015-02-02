@@ -655,6 +655,27 @@ sub search_sql_where {
 
 }
 
+=item _items_pkg
+
+Return line item hashes for each package on this quotation. Differs from the
+base L<FS::Template_Mixin> version in that it recalculates each quoted package
+first, and doesn't implement the "condensed" option.
+
+=cut
+
+sub _items_pkg {
+  my ($self, %options) = @_;
+  my @quotation_pkg = $self->quotation_pkg;
+  foreach (@quotation_pkg) {
+    my $error = $_->estimate;
+    die "error calculating estimate for pkgpart " . $_->pkgpart.": $error\n"
+      if $error;
+  }
+
+  # run it through the Template_Mixin engine
+  return $self->_items_cust_bill_pkg(\@quotation_pkg, %options);
+}
+
 =back
 
 =head1 BUGS

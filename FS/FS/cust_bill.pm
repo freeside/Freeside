@@ -1909,13 +1909,18 @@ sub print_csv {
     my $lineseq = 0;
     foreach my $item ( $self->_items_pkg ) {
 
+      my $description = $item->{'description'};
+      if ( $item->{'_is_discount'} and exists($item->{ext_description}[0]) ) {
+        $description .= ': ' . $item->{ext_description}[0];
+      }
+
       $csv->combine(
         '',                     #  1 | N/A-Leave Empty            CHAR   2
         '',                     #  2 | N/A-Leave Empty            CHAR  15
         $tracctnum,             #  3 | Account Number             CHAR  15
         $self->invnum,          #  4 | Invoice Number             CHAR  15
         $lineseq++,             #  5 | Line Sequence (sort order) NUM    6
-        $item->{'description'}, #  6 | Transaction Detail         CHAR 100
+        $description,           #  6 | Transaction Detail         CHAR 100
         $item->{'amount'},      #  7 | Amount                     NUM*   9
         '',                     #  8 | Line Format Control**      CHAR   2
         '',                     #  9 | Grouping Code              CHAR   2
