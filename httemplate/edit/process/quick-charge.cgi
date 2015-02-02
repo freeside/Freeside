@@ -67,6 +67,18 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
   my $start_date = $cgi->param('start_date')
                      ? parse_datetime($cgi->param('start_date'))
                      : time;
+   
+  $param->{'tax_override'} =~ /^\s*([,\d]*)\s*$/
+    or $error .= "Illegal tax override " . $param->{"tax_override"} . "  ";
+  my $override = $1;
+ 
+  if ( $param->{'taxclass'} eq '(select)' ) {
+    $error .= "Must select a tax class.  "
+      unless ($conf->exists('enable_taxproducts') &&
+               ( $override || $param->{taxproductnum} )
+             );
+    $cgi->param('taxclass', '');
+  }
 
   $error = $cust_pkg->modify_charge(
       'pkg'               => scalar($cgi->param('pkg')),
@@ -75,6 +87,10 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
       'adjust_commission' => ($cgi->param('adjust_commission') ? 1 : 0),
       'amount'            => $amount,
       'setup_cost'        => $setup_cost,
+      'setuptax'          => scalar($cgi->param('setuptax')),
+      'taxclass'          => scalar($cgi->param('taxclass')),
+      'taxproductnum'     => scalar($cgi->param('taxproductnum')),
+      'tax_override'      => $override,
       'quantity'          => $quantity,
       'start_date'        => $start_date,
   );

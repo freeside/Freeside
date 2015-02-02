@@ -70,7 +70,7 @@ sub upgrade_config {
 
   upgrade_invoice_from($conf);
   foreach my $agent (@agents) {
-    upgrade_invoice_from($conf,$agent->agentnum);
+    upgrade_invoice_from($conf,$agent->agentnum,1);
   }
 
   my $DIST_CONF = '/usr/local/etc/freeside/default_conf/';#DIST_CONF in Makefile
@@ -175,10 +175,10 @@ sub upgrade_overlimit_groups {
 }
 
 sub upgrade_invoice_from {
-  my ($conf, $agentnum) = @_;
+  my ($conf, $agentnum, $agentonly) = @_;
   if (
-      (!$conf->config('invoice_from_name',$agentnum)) && 
-      ($conf->config('invoice_from',$agentnum) =~ /\<(.*)\>/)
+      (!$conf->exists('invoice_from_name',$agentnum,$agentonly)) && 
+      ($conf->config('invoice_from',$agentnum,$agentonly) =~ /\<(.*)\>/)
   ) {
     my $realemail = $1;
     $realemail =~ s/^\s*//; # remove leading spaces
