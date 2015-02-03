@@ -1900,7 +1900,14 @@ sub print_csv {
   if ( lc($opt{'format'}) eq 'billco' ) {
 
     my $lineseq = 0;
-    foreach my $item ( $self->_items_pkg ) {
+    my %items_opt = ( format => 'template',
+                      escape_function => sub { shift } );
+    # I don't know what characters billco actually tolerates in spool entries.
+    # Text::CSV will take care of delimiters, though.
+
+    my @items = ( $self->_items_pkg(%items_opt),
+                  $self->_items_fee(%items_opt) );
+    foreach my $item (@items) {
 
       my $description = $item->{'description'};
       if ( $item->{'_is_discount'} and exists($item->{ext_description}[0]) ) {
