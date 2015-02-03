@@ -140,7 +140,8 @@ that field.
           'value_col'   => $def->{'select_key'},
           'order_by'    => dbdef->table($def->{'select_table'})->primary_key,
           'multiple'    => $def->{'multiple'},
-          'disable_empty' => 1,
+          'disable_empty' => $def->{'select_allow_empty'} ? undef : 1,
+          'empty_label' => $def->{'select_allow_empty'} ? ' ' : undef,
           'curr_value'  => $value,
           # these can be switched between multiple and singular,
           # so put the complete curr_value in an attribute
