@@ -34,18 +34,19 @@ if ( $cgi->param('selfservice_access') eq 'Y' ) {
 my $extra_sql = '';
 if ( $cgi->param('link') ) {
 
-  my $coalesce = ', COALESCE( cust_main.company,';
   my $as       = ') AS prospect_or_customer';
 
   if ( $cgi->param('link') eq 'cust_main' ) {
     push @header, 'Customer';
-    $select .= "$coalesce cust_main.first||' '||cust_main.last $as";
+    $select .=
+      ", COALESCE( cust_main.company, cust_main.first||' '||cust_main.last $as";
     $addl_from = ' LEFT JOIN cust_main USING ( custnum )';
     $extra_sql = ' custnum IS NOT NULL ';
     $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
   } elsif ( $cgi->param('link') eq 'prospect_main' ) {
     push @header, 'Prospect';
-    $select .= "$coalesce contact.first||'  '||contact.last $as";
+    $select .=
+     ", COALESCE( prospect_main.company, contact.first||'  '||contact.last $as";
     $addl_from = ' LEFT JOIN prospect_main USING ( prospectnum )';
     $extra_sql = ' prospectnum IS NOT NULL ';
     $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
