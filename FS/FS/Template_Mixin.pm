@@ -2830,6 +2830,8 @@ sub _items_fee {
   my $self = shift;
   my %options = @_;
   my @cust_bill_pkg = grep { $_->feepart } $self->cust_bill_pkg;
+  my $escape_function = $options{escape_function};
+
   my @items;
   foreach my $cust_bill_pkg (@cust_bill_pkg) {
     # cache this, so we don't look it up again in every section
@@ -2865,12 +2867,17 @@ sub _items_fee {
     foreach (sort keys(%base_invnums)) {
       next if $_ == $self->invnum;
       push @ext_desc,
-        $self->mt('from invoice \\#[_1] on [_2]', $_, $base_invnums{$_});
+        &{$escape_function}(
+          $self->mt('from invoice #[_1] on [_2]', $_, $base_invnums{$_})
+        );
     }
+    my $desc = $part_fee->itemdesc_locale($self->cust_main->locale);
+    $desc = &{$escape_function}($desc);
+
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
-        description => $part_fee->itemdesc_locale($self->cust_main->locale),
+        description => $desc,
         ext_description => \@ext_desc
         # sdate/edate?
       };
