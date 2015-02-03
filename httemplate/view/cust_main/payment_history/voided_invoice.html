@@ -6,7 +6,7 @@
 % }
 % my $reason = $cust_bill_void->reason;
 % if ($reason) {
-     for <% $reason %>
+     (<% $reason %>)
 % }
 <% mt("on [_1]", time2str($date_format, $cust_bill_void->void_date) ) |h %> 
 </I>

@@ -36,9 +36,10 @@ in plaintext.
 
 =over 4
 
-=item insert_payment
+=item insert_payment OPTION => VALUE, ...
 
-Adds a new payment to a customers account. Takes a hash reference as parameter with the following keys:
+Adds a new payment to a customers account. Takes a list of keys and values as
+paramters with the following keys:
 
 =over 5
 
@@ -60,8 +61,9 @@ Amount paid
 
 =item _date
 
-
 Option date for payment
+
+=back
 
 Example:
 
@@ -81,8 +83,6 @@ Example:
     #payment was inserted
     print "paynum ". $result->{'paynum'};
   }
-
-=back
 
 =cut
 
@@ -133,9 +133,10 @@ sub _by_phonenum {
 
 }
 
-=item insert_credit
+=item insert_credit OPTION => VALUE, ...
 
-Adds a a credit to a customers account. Takes a hash reference as parameter with the following keys
+Adds a a credit to a customers account.  Takes a list of keys and values as
+parameters with the following keys
 
 =over 
 
@@ -155,6 +156,8 @@ Amount of the credit
 
 The date the credit will be posted
 
+=back
+
 Example:
 
   my $result = FS::API->insert_credit(
@@ -172,8 +175,6 @@ Example:
     #credit was inserted
     print "crednum ". $result->{'crednum'};
   }
-
-=back
 
 =cut
 
@@ -206,9 +207,10 @@ sub insert_credit_phonenum {
 
 }
 
-=item insert_refund
+=item insert_refund OPTION => VALUE, ...
 
-Adds a a credit to a customers account. Takes a hash reference as parameter with the following keys: custnum,payby,refund
+Adds a a credit to a customers account.  Takes a list of keys and values as
+parmeters with the following keys: custnum, payby, refund
 
 Example:
 
@@ -270,9 +272,10 @@ sub insert_refund_phonenum {
 
 # long-term: package changes?
 
-=item new_customer
+=item new_customer OPTION => VALUE, ...
 
-Creates a new customer. Takes a hash reference as parameter with the following keys:
+Creates a new customer. Takes a list of keys and values as parameters with the
+following keys:
 
 =over 4
 
@@ -402,6 +405,7 @@ Agent specific customer number
 
 Referring customer number
 
+=back
 
 =cut
 
@@ -424,8 +428,6 @@ sub new_customer {
 
   $class->API_insert( %opt );
 }
-
-=back 
 
 =item update_customer
 
@@ -520,13 +522,17 @@ Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
 Referring customer number
 
 =item salesnum
+
 Sales person number
 
 =item agentnum
 
 Agent number
 
+=back
+
 =cut
+
 sub update_customer {
   my( $class, %opt ) = @_;
 
@@ -537,12 +543,10 @@ sub update_customer {
   FS::cust_main->API_update( %opt );
 }
 
-=back
+=item customer_info OPTION => VALUE, ...
 
-
-=item customer_info
-
-Returns general customer information. Takes a hash reference as parameter with the following keys: custnum and API secret 
+Returns general customer information. Takes a list of keys and values as
+parameters with the following keys: custnum, secret 
 
 =cut
 
@@ -560,9 +564,8 @@ sub customer_info {
 
 =item location_info
 
-Returns location specific information for the customer. Takes a hash reference as parameter with the following keys: custnum,secret
-
-=back
+Returns location specific information for the customer. Takes a list of keys
+and values as paramters with the following keys: custnum, secret
 
 =cut
 
@@ -585,6 +588,36 @@ sub location_info {
 
   return \%return;
 }
+
+=item bill_now OPTION => VALUE, ...
+
+Bills a single customer now, in the same fashion as the "Bill now" link in the
+UI.
+
+Returns a hash reference with a single key, 'error'.  If there is an error,
+the value contains the error, otherwise it is empty.
+
+=cut
+
+sub bill_now {
+  my( $class, %opt ) = @_;
+  my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
+    or return { 'error' => 'Unknown custnum' };
+
+  my $error = $cust_main->bill_and_collect( 'fatal'      => 'return',
+                                            'retry'      => 1,
+                                            'check_freq' =>'1d',
+                                          );
+
+   return { 'error' => $error,
+          };
+
+}
+
 
 #Advertising sources?
 
