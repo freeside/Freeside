@@ -268,7 +268,7 @@ sub replace {
     return $error;
   }
 
-  foreach my $pf ( grep { /^phonetypenum(\d+)$/ && $self->get($_) }
+  foreach my $pf ( grep { /^phonetypenum(\d+)$/ }
                         keys %{ $self->hashref } ) {
     $pf =~ /^phonetypenum(\d+)$/ or die "wtf (daily, the)";
     my $phonetypenum = $1;
@@ -276,8 +276,21 @@ sub replace {
     my %cp = ( 'contactnum'   => $self->contactnum,
                'phonetypenum' => $phonetypenum,
              );
-    my $contact_phone = qsearchs('contact_phone', \%cp)
-                        || new FS::contact_phone   \%cp;
+    my $contact_phone = qsearchs('contact_phone', \%cp);
+
+    # if new value is empty, delete old entry
+    if (!$self->get($pf)) {
+      if ($contact_phone) {
+        $error = $contact_phone->delete;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
+      next;
+    }
+
+    $contact_phone ||= new FS::contact_phone \%cp;
 
     my %cpd = _parse_phonestring( $self->get($pf) );
     $contact_phone->set( $_ => $cpd{$_} ) foreach keys %cpd;
