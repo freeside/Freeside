@@ -283,8 +283,8 @@ sub _upgrade_data {
   my $sth = dbh->prepare(
     'UPDATE phone_avail SET svcnum = NULL
        WHERE svcnum IS NOT NULL
-         AND 0 = ( SELECT COUNT(*) FROM svc_phone
-                     WHERE phone_avail.svcnum = svc_phone.svcnum )'
+         AND NOT EXISTS ( SELECT 1 FROM svc_phone
+                            WHERE phone_avail.svcnum = svc_phone.svcnum )'
   ) or die dbh->errstr;
 
   $sth->execute or die $sth->errstr;

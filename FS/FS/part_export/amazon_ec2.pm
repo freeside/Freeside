@@ -8,10 +8,12 @@ use FS::Record qw( qsearchs );
 use FS::svc_external;
 
 tie my %options, 'Tie::IxHash',
-  'access_key' => { label => 'AWS access key', },
-  'secret_key' => { label => 'AWS secret key', },
-  'ami'        => { label => 'AMI', 'default' => 'ami-ff46a796', },
-  'keyname'    => { label => 'Keypair name', },
+  'access_key'   => { label => 'AWS access key', },
+  'secret_key'   => { label => 'AWS secret key', },
+  'ami'          => { label => 'AMI', 'default' => 'ami-ff46a796', },
+  'keyname'      => { label => 'Keypair name', },
+  'region'       => { label => 'Region', },
+  'InstanceType' => { label => 'Instance Type', },
   #option to turn off (or on) ip address allocation
 ;
 
@@ -38,6 +40,7 @@ sub _export_insert {
     $svc_external->svcnum,
     $self->option('ami'),
     $self->option('keyname'),
+    $self->option('InstanceType'),
   );
   ref($err_or_queue) ? '' : $err_or_queue;
 }
@@ -96,31 +99,35 @@ sub amazon_ec2_queue {
   };
   $queue->insert( $self->option('access_key'),
                   $self->option('secret_key'),
+                  $self->option('region'),
                   @_
                 )
     or $queue;
 }
 
 sub amazon_ec2_new {
-  my( $access_key, $secret_key, @rest ) = @_;
+  my( $access_key, $secret_key, $region, @rest ) = @_;
 
   eval 'use Net::Amazon::EC2;';
   die $@ if $@;
 
   my $ec2 = new Net::Amazon::EC2 'AWSAccessKeyId'  => $access_key,
-                                 'SecretAccessKey' => $secret_key;
-
+                                 'SecretAccessKey' => $secret_key,
+                                 'region'          => $region || 'us-east-1',
+                                ;
   ( $ec2, @rest );
 }
 
 sub amazon_ec2_insert { #subroutine, not method
-  my( $ec2, $svcnum, $ami, $keyname ) = amazon_ec2_new(@_);
+  my( $ec2, $svcnum, $ami, $keyname, $InstanceType ) = amazon_ec2_new(@_);
 
-  my $reservation_info = $ec2->run_instances( 'ImageId'  => $ami,
-                                              'KeyName'  => $keyname,
-                                              'MinCount' => 1,
-                                              'MaxCount' => 1,
-                                            );
+  my $reservation_info = $ec2->run_instances(
+    'ImageId'      => $ami,
+    'KeyName'      => $keyname,
+    'InstanceType' => $InstanceType || 'm1.small',
+    'MinCount'     => 1,
+    'MaxCount'     => 1,
+  );
 
   my $instance_id = $reservation_info->instances_set->[0]->instance_id;
 

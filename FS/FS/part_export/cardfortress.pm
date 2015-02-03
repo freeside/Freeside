@@ -28,6 +28,7 @@ sub _export_insert {
   my $ssh = Net::OpenSSH->new( $self->machine,
                                default_stdin_fh => $def_in );
 
+  #capture2 and return STDERR, its probably useful if there's a problem
   my $private_key = $ssh->capture(
     { 'stdin_data' => $svc_acct->_password. "\n" },
     '/usr/local/bin/merchant_create', map $svc_acct->$_, qw( username finger )
@@ -67,6 +68,7 @@ sub _export_delete {
   my $ssh = Net::OpenSSH->new( $self->machine,
                                default_stdin_fh => $def_in );
 
+  #capture2 and return STDERR, its probably useful if there's a problem
   my $unused_output = $ssh->capture(
     '/usr/local/bin/merchant_disable', map $svc_acct->$_, qw( username )
   );

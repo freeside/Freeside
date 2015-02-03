@@ -464,6 +464,8 @@ sub replace {
       next;
     }
 
+    $contact_phone ||= new FS::contact_phone \%cp;
+
     my %cpd = _parse_phonestring( $self->get($pf) );
     $contact_phone->set( $_ => $cpd{$_} ) foreach keys %cpd;
 

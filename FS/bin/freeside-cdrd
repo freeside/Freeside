@@ -120,10 +120,10 @@ while (1) {
 sub _shouldrun {
 
   my $extra_sql =
-    ' AND 0 < ( SELECT COUNT(*) FROM cust_pkg
-                  WHERE cust_pkg.pkgpart = part_pkg.pkgpart
-                    AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-              )
+    ' AND EXISTS ( SELECT 1 FROM cust_pkg
+                     WHERE cust_pkg.pkgpart = part_pkg.pkgpart
+                       AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+                 )
     ';
 
   my @part_pkg =

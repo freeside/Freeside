@@ -2,9 +2,9 @@
 
 Example:
 
-  include('/elements/init_overlib.html')
+  <& /elements/init_overlib.html &>
 
-  include( '/elements/popup_link.html', { #hashref or a list, either way is fine
+  <& /elements/popup_link.html', { #hashref or a list, either way is fine
 
     #required
     'action'         => 'content.html', # uri for content of popup
@@ -23,7 +23,8 @@ Example:
     'aname'          => "target", # link NAME= value, useful for #targets
     'target'         => '_parent',
     'style'          => 'css-attribute:value',
-  } )
+  }
+  &>
 
 </%doc>
 % if ($params->{'action'} && $label) {

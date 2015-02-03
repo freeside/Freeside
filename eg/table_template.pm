@@ -1,7 +1,7 @@
 package FS::table_name;
+use base qw( FS::Record );
 
 use strict;
-use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME

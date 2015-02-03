@@ -193,16 +193,17 @@ foreach my $cust_bill ( @cust_bill ) {
   my $cur_cr = 0;
   $cur_cr += $_->amount foreach $cust_bill->cust_credited;
   $cur_cr = '' if $cur_cr == 0;
-  if ( $opt_p ) {
-    #print $cust_bill->invnum. ','. $cust_bill->custnum. ",$tax,$credit,$cr_percent%\n";
-    print $cust_bill->invnum. ','. $cust_bill->custnum. ',"'.
-          $cust_bill->cust_main->name. '",'. "$tax,$credit,$cur_cr\n";
-  }
 
   next if $cur_cr > 0 && $opt_k;
 
-#COMMENTING OUT ALL DANGEROUS STUFF
-#
+  if ( $opt_p ) {
+    #print $cust_bill->invnum. ','. $cust_bill->custnum. ",$tax,$credit,$cr_percent%\n";
+#    print $cust_bill->invnum. ','. $cust_bill->custnum. ',"'.
+#          $cust_bill->cust_main->name. '",'. "$tax,$credit,$cur_cr\n";
+    print $cust_bill->invnum. ','. $cust_bill->custnum. ',"'.
+          $cust_bill->cust_main->name. '",'. "$tax,$credit\n";
+  }
+
 #  if ( $opt_m && ! $opt_r ) {
 #
 #    my $msg_template = qsearchs('msg_template', { 'msgnum' => $opt_m } )
@@ -216,28 +217,28 @@ foreach my $cust_bill ( @cust_bill ) {
 #           " custnum ". $cust_bill->custnum. ": $error\n";
 #    }
 #  }
-#
-#  if ( $opt_c ) {
-#    my $cust_credit = new FS::cust_credit {
-#      'custnum'   => $cust_main->custnum,
-#      'amount'    => $credit,
-#      'reasonnum' => $opt_c,
-#    };
-#    my $error = $cust_credit->insert;
-#    if ( $error ) {
-#      warn "error inserting credit: $error\n";
-#    }
-#    my $cust_credit_bill = new FS::cust_credit_bill {
-#      'crednum' => $cust_credit->crednum,
-#      'invnum'  => $cust_bill->invnum,
-#      'amount'  => $credit,
-#    };
-#    my $aerror = $cust_credit_bill->insert;
-#    if ( $aerror ) {
-#      warn "error applying credit to invnum ". $cust_bill->invnum. ": $aerror\n";
-#    }
-#  }
-#
+
+  if ( $opt_c ) {
+    my $cust_credit = new FS::cust_credit {
+      'custnum'   => $cust_main->custnum,
+      'amount'    => $credit,
+      'reasonnum' => $opt_c,
+    };
+    my $error = $cust_credit->insert;
+    if ( $error ) {
+      warn "error inserting credit: $error\n";
+    }
+    my $cust_credit_bill = new FS::cust_credit_bill {
+      'crednum' => $cust_credit->crednum,
+      'invnum'  => $cust_bill->invnum,
+      'amount'  => $credit,
+    };
+    my $aerror = $cust_credit_bill->insert;
+    if ( $aerror ) {
+      warn "error applying credit to invnum ". $cust_bill->invnum. ": $aerror\n";
+    }
+  }
+
 #  if ( $opt_e && ! $opt_r ) {
 #    eval { $cust_bill->email };
 #    if ( $@ ) {
