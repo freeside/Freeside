@@ -31,18 +31,21 @@ sub condition {
   my($self, $object, %opt) = @_;
 
   my $cust_main = $self->cust_main($object);
+  return 0 unless $cust_main; #sanity check
+  return 0 unless $cust_main->referral_custnum;
+
+  my $referring_cust_main = $cust_main->referral_custnum_cust_main;
+  return 0 unless $referring_cust_main; #sanity check;
+
+  #referring customer must sign up before referred customer
+  return 0 unless $cust_main->signupdate > $referring_cust_main->signupdate;
 
   if ( $self->option('active') ) {
-    return 0 unless $cust_main->referral_custnum;
     #check for no cust_main for referral_custnum? (deleted?)
-    return 0 unless $cust_main->referral_custnum_cust_main->status eq 'active';
-  } else {
-    return 0 unless $cust_main->referral_custnum; # ? 1 : 0;
+    return 0 unless $referring_cust_main->status eq 'active';
   }
 
   return 1 unless $self->option('check_bal');
-
-  my $referring_cust_main = $cust_main->referral_custnum_cust_main;
 
   #false laziness w/ balance_age_under
   my $under = $self->option('balance');
