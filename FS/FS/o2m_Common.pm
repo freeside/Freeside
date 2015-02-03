@@ -87,7 +87,7 @@ sub process_o2m {
 
   foreach my $del_obj (
     grep { ! $edits{$_->$table_pkey()} }
-         qsearch( $table, $hashref )
+         $self->process_o2m_qsearch( $table, $hashref )
   ) {
     my $error = $del_obj->delete;
     if ( $error ) {
@@ -97,7 +97,7 @@ sub process_o2m {
   }
 
   foreach my $pkey_value ( keys %edits ) {
-    my $old_obj = qsearchs( $table, { %$hashref, $table_pkey => $pkey_value } ),
+    my $old_obj = $self->process_o2m_qsearchs( $table, { %$hashref, $table_pkey => $pkey_value } );
     my $add_param = $edits{$pkey_value};
     my %hash = ( $table_pkey => $pkey_value,
                  map { $_ => $opt{'params'}->{$add_param."_$_"} }
@@ -130,6 +130,9 @@ sub process_o2m {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
+
+sub process_o2m_qsearch  { shift->qsearch( @_  ); }
+sub process_o2m_qsearchs { shift->qsearchs( @_ ); }
 
 sub _load_table {
   my( $self, $table ) = @_;

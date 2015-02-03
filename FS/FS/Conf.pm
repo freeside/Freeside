@@ -2996,7 +2996,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_hash' => [ '' => 'Password reset disabled',
                        'email' => 'Click on a link in email',
-                       'paymask,amount,zip' => 'Click on a link in email, and also verify with credit card (or bank account) last 4 digits, payment amount and zip code',
+                       'paymask,amount,zip' => 'Click on a link in email, and also verify with credit card (or bank account) last 4 digits, payment amount and zip code.  Note: Do not use if you have multi-customer contacts, as they will be unable to reset their passwords.',
                      ],
   },
 

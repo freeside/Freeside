@@ -71,7 +71,7 @@ use FS::agent_payment_gateway;
 use FS::banned_pay;
 use FS::cust_main_note;
 use FS::cust_attachment;
-use FS::contact;
+use FS::cust_contact;
 use FS::Locales;
 use FS::upgrade_journal;
 use FS::sales;
@@ -529,11 +529,23 @@ sub insert {
       return $error;
     }
 
-    my @contact = $prospect_main->contact;
+    foreach my $prospect_contact ( $prospect_main->prospect_contact ) {
+      my $cust_contact = new FS::cust_contact {
+        'custnum' => $self->custnum,
+        map { $_ => $prospect_contact->$_() } qw( contactnum classnum comment )
+      };
+      my $error =  $cust_contact->insert
+                || $prospect_contact->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
     my @cust_location = $prospect_main->cust_location;
     my @qual = $prospect_main->qual;
 
-    foreach my $r ( @contact, @cust_location, @qual ) {
+    foreach my $r ( @cust_location, @qual ) {
       $r->prospectnum('');
       $r->custnum($self->custnum);
       my $error = $r->replace;
@@ -1915,14 +1927,13 @@ sub cust_location {
 
 =item cust_contact
 
-Returns all contacts (see L<FS::contact>) for this customer.
+Returns all contact associations (see L<FS::cust_contact>) for this customer.
 
 =cut
 
-#already used :/ sub contact {
 sub cust_contact {
   my $self = shift;
-  qsearch('contact', { 'custnum' => $self->custnum } );
+  qsearch('cust_contact', { 'custnum' => $self->custnum } );
 }
 
 =item cust_payby
@@ -3656,9 +3667,11 @@ sub service_contact {
     my $classnum = $self->scalar_sql(
       'SELECT classnum FROM contact_class WHERE classname = \'Service\''
     ) || 0; #if it's zero, qsearchs will return nothing
-    $self->{service_contact} = qsearchs('contact', { 
-        'classnum' => $classnum, 'custnum' => $self->custnum
-      }) || undef;
+    my $cust_contact = qsearchs('cust_contact', { 
+        'classnum' => $classnum,
+        'custnum'  => $self->custnum,
+    });
+    $self->{service_contact} = $cust_contact->contact if $cust_contact;
   }
   $self->{service_contact};
 }
@@ -4612,6 +4625,42 @@ sub _agent_plandata {
 
   $part_event_option->optionvalue;
 
+}
+
+sub process_o2m_qsearch {
+  my $self = shift;
+  my $table = shift;
+  return qsearch($table, @_) unless $table eq 'contact';
+
+  my $hashref = shift;
+  my %hash = %$hashref;
+  ( my $custnum = delete $hash{'custnum'} ) =~ /^(\d+)$/
+    or die 'guru meditation #4343';
+
+  qsearch({ 'table'     => 'contact',
+            'addl_from' => 'LEFT JOIN cust_contact USING ( contactnum )',
+            'hashref'   => \%hash,
+            'extra_sql' => ( keys %hash ? ' AND ' : ' WHERE ' ).
+                           " cust_contact.custnum = $custnum "
+         });                
+}
+
+sub process_o2m_qsearchs {
+  my $self = shift;
+  my $table = shift;
+  return qsearchs($table, @_) unless $table eq 'contact';
+
+  my $hashref = shift;
+  my %hash = %$hashref;
+  ( my $custnum = delete $hash{'custnum'} ) =~ /^(\d+)$/
+    or die 'guru meditation #2121';
+
+  qsearchs({ 'table'     => 'contact',
+             'addl_from' => 'LEFT JOIN cust_contact USING ( contactnum )',
+             'hashref'   => \%hash,
+             'extra_sql' => ( keys %hash ? ' AND ' : ' WHERE ' ).
+                            " cust_contact.custnum = $custnum "
+          });                
 }
 
 =item queued_bill 'custnum' => CUSTNUM [ , OPTION => VALUE ... ]

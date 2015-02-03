@@ -1740,20 +1740,69 @@ sub tables_hashref {
       'index' => [ ['disabled'] ],
     },
 
+    'cust_contact' => {
+      'columns' => [
+        'custcontactnum',     'serial',     '',  '', '', '',
+        'custnum',               'int',     '',  '', '', '',
+        'contactnum',            'int',     '',  '', '', '',
+        'classnum',              'int', 'NULL',  '', '', '',
+        'comment',           'varchar', 'NULL', 255, '', '',
+        'selfservice_access',   'char', 'NULL',   1, '', '',
+      ],
+      'primary_key'  => 'custcontactnum',
+      'unique'       => [ [ 'custnum', 'contactnum' ], ],
+      'index'        => [ [ 'custnum' ], [ 'contactnum' ], ],
+      'foreign_keys' => [
+                          { columns    => [ 'custnum' ],
+                            table      => 'cust_main',
+                          },
+                          { columns    => [ 'contactnum' ],
+                            table      => 'contact',
+                          },
+                          { columns    => [ 'classnum' ],
+                            table      => 'contact_class',
+                          },
+                        ],
+    },
+
+    'prospect_contact' => {
+      'columns' => [
+        'prospectcontactnum', 'serial',     '',  '', '', '',
+        'prospectnum',       'int',     '',  '', '', '',
+        'contactnum',        'int',     '',  '', '', '',
+        'classnum',          'int', 'NULL',  '', '', '',
+        'comment',       'varchar', 'NULL', 255, '', '',
+      ],
+      'primary_key'  => 'prospectcontactnum',
+      'unique'       => [ [ 'prospectnum', 'contactnum' ], ],
+      'index'        => [ [ 'prospectnum' ], [ 'contactnum' ], ],
+      'foreign_keys' => [
+                          { columns    => [ 'prospectnum' ],
+                            table      => 'prospect_main',
+                          },
+                          { columns    => [ 'contactnum' ],
+                            table      => 'contact',
+                          },
+                          { columns    => [ 'classnum' ],
+                            table      => 'contact_class',
+                          },
+                        ],
+    },
+
     'contact' => {
       'columns' => [
         'contactnum', 'serial',     '',      '', '', '',
-        'prospectnum',   'int', 'NULL',      '', '', '',
-        'custnum',       'int', 'NULL',      '', '', '',
+        'prospectnum',   'int', 'NULL',      '', '', '', #deprecated, now prospect_contact table
+        'custnum',       'int', 'NULL',      '', '', '', #deprecated, now cust_contact table
         'locationnum',   'int', 'NULL',      '', '', '', #not yet
-        'classnum',      'int', 'NULL',      '', '', '',
+        'classnum',      'int', 'NULL',      '', '', '', #deprecated, now prospect_contact or cust_contact
 #        'titlenum',      'int', 'NULL',      '', '', '', #eg Mr. Mrs. Dr. Rev.
         'last',      'varchar',     '', $char_d, '', '', 
 #        'middle',    'varchar', 'NULL', $char_d, '', '', 
         'first',     'varchar',     '', $char_d, '', '', 
         'title',     'varchar', 'NULL', $char_d, '', '', #eg Head Bottle Washer
-        'comment',   'varchar', 'NULL',     255, '', '', 
-        'selfservice_access',    'char', 'NULL',       1, '', '',
+        'comment',   'varchar', 'NULL',     255, '', '',  #depredated, now prospect_contact or cust_contact
+        'selfservice_access',    'char', 'NULL',       1, '', '', #deprecated, now cust_contact
         '_password',          'varchar', 'NULL', $char_d, '', '',
         '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
         'disabled',              'char', 'NULL',       1, '', '', 

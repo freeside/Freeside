@@ -12,9 +12,9 @@
                                   sub {
                                     my $pm = shift;
                                     [ map {
-                                            [ { 'data' => $_->line, }, ];
+                                            [ { 'data'=>$_->contact->line, }, ];
                                           }
-                                          $pm->contact
+                                          $pm->prospect_contact
                                     ];
                                   },
                                 ],

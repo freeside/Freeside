@@ -46,6 +46,7 @@ use FS::payby;
 use FS::acct_rt_transaction;
 use FS::msg_template;
 use FS::contact;
+use FS::cust_contact;
 
 $DEBUG = 1;
 $me = '[FS::ClientAPI::MyAccount]';
@@ -82,7 +83,7 @@ sub skin_info {
   #return { 'error' => $session } if $context eq 'error';
 
   my $agentnum = '';
-  if ( $context eq 'customer' ) {
+  if ( $context eq 'customer' && $custnum ) {
 
     my $sth = dbh->prepare('SELECT agentnum FROM cust_main WHERE custnum = ?')
       or die dbh->errstr;
@@ -237,7 +238,16 @@ sub login {
     return { error => 'Incorrect contact password.' }
       unless $contact->authenticate_password($p->{'password'});
 
-    $session->{'custnum'} = $contact->custnum;
+    my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
+    if ( scalar(@cust_contact) == 1 ) {
+      $session->{'custnum'} = $cust_contact[0]->custnum;
+    } elsif ( scalar(@cust_contact) ) {
+      $session->{'customers'} = { map { $_->custnum => $_->cust_main->name }
+                                    @cust_contact
+                                };
+    } else {
+      return { error => 'No customer self-service access for contact' }; #??
+    }
 
   } else {
 
@@ -303,6 +313,7 @@ sub login {
 
   return { 'error'      => '',
            'session_id' => $session_id,
+           %$session,
          };
 }
 
@@ -334,6 +345,23 @@ sub switch_acct {
 
   return { 'error' => '' };
 
+}
+
+sub switch_cust {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  $session->{'custnum'} = $p->{'custnum'}
+    if exists $session->{'customers'}{ $p->{'custnum'} };
+
+  my $conf = new FS::Conf;
+  my $timeout = $conf->config('selfservice-session_timeout') || '1 hour';
+  _cache->set( $p->{'session_id'}, $session, $timeout );
+
+  return { 'error'      => '',
+           %{ customer_info( { session_id=>$p->{'session_id'} } ) },
+         };
 }
 
 sub payment_gateway {
@@ -380,22 +408,23 @@ sub access_info {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
-    or return { 'error' => "unknown custnum $custnum" };
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
 
   $info->{'hide_payment_fields'} = [ 
     map { 
-      my $pg = payment_gateway($cust_main, $_);
+      my $pg = $cust_main && payment_gateway($cust_main, $_);
       $pg && $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
     } @{ $info->{cust_paybys} }
   ];
 
   $info->{'self_suspend_reason'} = 
-      $conf->config('selfservice-self_suspend_reason', $cust_main->agentnum);
+      $conf->config('selfservice-self_suspend_reason',
+                      $cust_main ? $cust_main->agentnum : ''
+                   );
 
   $info->{'edit_ticket_subject'} =
       $conf->exists('ticket_system-selfservice_edit_subject') && 
-      $cust_main->edit_subject;
+      $cust_main && $cust_main->edit_subject;
 
   $info->{'timeout'} = $conf->config('selfservice-timeout') || 3600;
 
@@ -432,7 +461,7 @@ sub customer_info {
     my $search = { 'custnum' => $custnum };
     $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
     my $cust_main = qsearchs('cust_main', $search )
-      or return { 'error' => "unknown custnum $custnum" };
+      or return { 'error' => "customer_info: unknown custnum $custnum" };
 
     my $list_tickets = list_tickets($p);
     $return{'tickets'} = $list_tickets->{'tickets'};
@@ -536,7 +565,7 @@ sub customer_info_short {
     my $search = { 'custnum' => $custnum };
     $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
     my $cust_main = qsearchs('cust_main', $search )
-      or return { 'error' => "unknown custnum $custnum" };
+      or return { 'error' => "customer_info_short: unknown custnum $custnum" };
 
     $return{display_custnum} = $cust_main->display_custnum;
 
@@ -2916,7 +2945,12 @@ sub myaccount_passwd {
   #need to support the "ISP provides email that's used as a contact email" case
   #as well as we can.
   my $contact = FS::contact->by_selfservice_email($svc_acct->email);
-  if ( $contact && $contact->custnum == $custnum ) {
+  if ( $contact && qsearchs('cust_contact', { contactnum=> $contact->contactnum,
+                                              custnum   => $custnum,
+                                              selfservice_access => 'Y',
+                                            }
+                           )
+  ) {
     #svc_acct was successful but this one returns an error?  "shouldn't happen"
     $error ||= $contact->change_password($p->{'new_password'});
   }
@@ -2993,7 +3027,10 @@ sub reset_passwd {
   
     $contact = FS::contact->by_selfservice_email($p->{'email'});
 
-    $cust_main = $contact->cust_main if $contact;
+    if ( $contact ) {
+      my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
+      $cust_main = $cust_contact[0]->cust_main if scalar(@cust_contact) == 1;
+    }
 
     #also look for an svc_acct, otherwise it would be super confusing
 
@@ -3034,6 +3071,9 @@ sub reset_passwd {
     $cust_main = $cust_pkg->cust_main;
 
   }
+
+  return { %$info, 'error' => 'Multi-customer contacts incompatible with customer-based verification' }
+    if ! $cust_main && $verification ne 'email';
 
   my %verify = (
     'email'   => sub { 1; },
@@ -3157,7 +3197,9 @@ sub check_reset_passwd {
     my @contact_email = $contact->contact_email;
     return { 'error' => 'No contact email' } unless @contact_email;
 
-    $p->{'agentnum'} = $contact->cust_main->agentnum;
+    my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
+    $p->{'agentnum'} = $cust_contact[0]->cust_main->agentnum
+      if scalar(@cust_contact) == 1;
     my $info = skin_info($p);
 
     return { %$info,
@@ -3207,7 +3249,9 @@ sub process_reset_passwd {
     $contact = qsearchs('contact', { 'contactnum' => $contactnum } )
       or return { 'error' => "Contact not found" };
 
-    $p->{'agentnum'} ||= $contact->cust_main->agentnum;
+    my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
+    $p->{'agentnum'} = $cust_contact[0]->cust_main->agentnum
+      if scalar(@cust_contact) == 1;
     $info ||= skin_info($p);
 
   }

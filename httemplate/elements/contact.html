@@ -9,7 +9,7 @@
           <SELECT NAME="<%$name%>_classnum" <% $onchange %>>
             <OPTION VALUE="">
 %           my $classnum = scalar($cgi->param($name.'_classnum'))
-%                            || $contact->classnum;
+%                            || $X_contact->classnum;
 %           foreach my $contact_class (@contact_class) {
               <OPTION VALUE="<% $contact_class->classnum %>"
                  <% ($contact_class->classnum == $classnum) ? 'SELECTED' : '' %>
@@ -40,6 +40,8 @@
 %         }
 %       } elsif ( $field eq 'emailaddress' ) {
 %         $value = join(', ', map $_->emailaddress, $contact->contact_email);
+%       } elsif ( $field eq 'selfservice_access' || $field eq 'comment' ) {
+%         $value = $X_contact->get($field);
 %       } else {
 %         $value = $contact->get($field);
 %       }
@@ -100,10 +102,25 @@ if ( $opt{'onchange'} ) {
 my @contact_class = qsearch('contact_class', { 'disabled' => '' });
 
 my $contact;
+my $X_contact;
 if ( $curr_value ) {
   $contact = qsearchs('contact', { 'contactnum' => $curr_value } );
+  if ( $opt{'custnum'} ) {
+    $X_contact = qsearchs('cust_contact', {
+                            'contactnum' => $curr_value,
+                            'custnum'    => $opt{'custnum'},
+                 });
+  } elsif ( $opt{'prospectnum'} ) {
+    $X_contact = qsearchs('prospect_contact', {
+                   'contactnum'  => $curr_value,
+                   'prospectnum' => $opt{'prospectnum'},
+                 });
+  } else {
+    die 'neither custnum nor prospectnum specified';
+  }
 } else {
   $contact = new FS::contact {};
+  $X_contact = new FS::cust_contact; #arbitrary, it could be prospect_contact
 }
 
 my %size = ( 'title' => 12 );

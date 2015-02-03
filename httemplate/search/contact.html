@@ -1,13 +1,13 @@
 <& elements/search.html,
   title         => 'Contacts',
   name_singular => 'contact',
-  query         => { select    => $select,
+  query         => { select    => join(', ', @select),
                      table     => 'contact',
                      addl_from => $addl_from,
                      hashref   => \%hash,
                      extra_sql => $extra_sql,
                    },
-  count_query   => "SELECT COUNT(*) FROM contact $extra_sql", #XXX
+  count_query   => "SELECT COUNT(*) FROM contact $addl_from $extra_sql", #XXX
   header        => \@header,
   fields        => \@fields,
   links         => \@links,
@@ -17,13 +17,29 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
 
-my $select = 'contact.*';
+my @select = 'contact.contactnum AS contact_contactnum'; #if we select it as bare contactnum, the multi-customer listings go away
+push @select, map "contact.$_", qw( first last title );
 my %hash = ();
 my $addl_from = '';
 
-my @header = ( 'First', 'Last', 'Title', );
-my @fields = ( 'first', 'last', 'title', );
-my @links = ( '', '', '' );
+my $link; #for closure in this sub, we'll define it later
+my $contact_classname_sub = sub {
+  my $contact = shift;
+  my %hash = ( 'contactnum' => $contact->contact_contactnum );
+  my $X_contact;
+  if ( $link eq 'cust_main' ) {
+    $X_contact = qsearchs('cust_contact', { %hash, 'custnum' => $contact->custnum } );
+  } elsif ( $link eq 'prospect_main' ) {
+    $X_contact = qsearchs('prospect_contact', { %hash, 'prospectnum' => $contact->prospectnum } );
+  } else {
+    die 'guru meditation #5555';
+  }
+  $X_contact->contact_classname;
+};
+
+my @header = ( 'First', 'Last', 'Title', 'Type' );
+my @fields = ( 'first', 'last', 'title', $contact_classname_sub );
+my @links = ( '', '', '', '', );
 
 my $company_link = '';
 
@@ -32,23 +48,30 @@ if ( $cgi->param('selfservice_access') eq 'Y' ) {
 }
 
 my $extra_sql = '';
-if ( $cgi->param('link') ) {
+$link = $cgi->param('link');
+if ( $link ) {
 
   my $as       = ') AS prospect_or_customer';
 
-  if ( $cgi->param('link') eq 'cust_main' ) {
+  if ( $link eq 'cust_main' ) {
     push @header, 'Customer';
-    $select .=
-      ", COALESCE( cust_main.company, cust_main.first||' '||cust_main.last $as";
-    $addl_from = ' LEFT JOIN cust_main USING ( custnum )';
-    $extra_sql = ' custnum IS NOT NULL ';
+    push @select,
+       "COALESCE( cust_main.company, cust_main.first||' '||cust_main.last $as",
+       map "cust_contact.$_", qw( custnum classnum comment selfservice_access );
+    $addl_from =
+      ' LEFT JOIN cust_contact USING ( contactnum ) '.
+      ' LEFT JOIN cust_main ON ( cust_contact.custnum = cust_main.custnum )';
+    $extra_sql = ' cust_contact.custnum IS NOT NULL ';
     $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
-  } elsif ( $cgi->param('link') eq 'prospect_main' ) {
+  } elsif ( $link eq 'prospect_main' ) {
     push @header, 'Prospect';
-    $select .=
-     ", COALESCE( prospect_main.company, contact.first||'  '||contact.last $as";
-    $addl_from = ' LEFT JOIN prospect_main USING ( prospectnum )';
-    $extra_sql = ' prospectnum IS NOT NULL ';
+    push @select,
+      "COALESCE( prospect_main.company, contact.first||'  '||contact.last $as",
+      map "prospect_contact.$_", qw( prospectnum classnum comment );
+    $addl_from =
+      ' LEFT JOIN prospect_contact USING ( contactnum ) '.
+      ' LEFT JOIN prospect_main ON ( prospect_contact.prospectnum = prospect_main.prospectnum )';
+    $extra_sql = ' prospect_contact.prospectnum IS NOT NULL ';
     $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
   } else {
     die "don't know how to report on contacts linked to specified table";
@@ -62,6 +85,9 @@ if ( $cgi->param('link') ) {
 
 push @header, 'Self-service';
 push @fields, 'selfservice_access';
+
+push @header, 'Comment';
+push @fields, 'comment';
 
 $extra_sql = (keys(%hash) ? ' AND ' : ' WHERE '). $extra_sql
  if $extra_sql;
