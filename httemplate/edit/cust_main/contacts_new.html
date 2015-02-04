@@ -36,8 +36,8 @@ my $m2_error_callback = sub {
   my($cgi, $object) = @_;
 
   #process_o2m fields in process/cust_main-contacts.html
-  my @fields = qw( first last title comment );
-  my @gfields = ( '', map "_$_", @fields );
+  my $fields = FS::contact->cgi_contact_fields;
+  my @gfields = ( '', map "_$_", @$fields );
 
   map {
         if ( /^contactnum(\d+)$/ ) {
@@ -45,7 +45,7 @@ my $m2_error_callback = sub {
           if ( grep $cgi->param("contactnum$num$_"), @gfields ) {
             my $x = new FS::contact {
               'contactnum' => scalar($cgi->param("contactnum$num")),
-              map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @fields,
+              map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @$fields,
             };
             $x;
           } else {
