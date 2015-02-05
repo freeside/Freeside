@@ -131,8 +131,8 @@ sub process_o2m {
   '';
 }
 
-sub process_o2m_qsearch  { shift->qsearch( @_  ); }
-sub process_o2m_qsearchs { shift->qsearchs( @_ ); }
+sub process_o2m_qsearch  { my $self = shift; qsearch(  @_ ); }
+sub process_o2m_qsearchs { my $self = shift; qsearchs( @_ ); }
 
 sub _load_table {
   my( $self, $table ) = @_;
