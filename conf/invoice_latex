@@ -327,12 +327,12 @@
         # Don't break-up small packages.
         my $rowbreak = @$ext_description < 5 ? '*' : '';
   
-        $OUT .= "\\hline\n" if ($line->{'ref'} && $line->{'ref'} ne $lastref);
+        $OUT .= "\\hline\n" if (($line->{'ref'} || 0) ne $lastref);
         if ($section->{description_generator}) {
           $OUT .= &{$section->{description_generator}}($line);
         } else {
           $OUT .= '\FSdesc'.
-                  '{}'. #'{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
+                  '{}'.
                   '{' . $line->{'description'} . '}' ;
           if ( $unitprices and length($line->{'unit_amount'}) ) {
             # then show the unit amount and quantity
@@ -345,7 +345,7 @@
           }
           $OUT .= '{\\dollar' . $line->{'amount'} . "}${rowbreak}\n";
         }
-        $lastref = $line->{'ref'};
+        $lastref = $line->{'ref'} || 0;
 
         foreach my $ext_desc (@$ext_description) {
           if ($section->{extended_description_generator}) {

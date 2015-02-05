@@ -7,7 +7,7 @@ use vars qw( $DEBUG $me
            );
              # but NOT $conf
 use vars qw( $invoice_lines @buf ); #yuck
-use List::Util qw(sum);
+use List::Util qw(sum first);
 use Date::Format;
 use Date::Language;
 use Text::Template 1.20;
@@ -908,29 +908,6 @@ sub print_generic {
   warn "$me generating sections\n"
     if $DEBUG > 1;
 
-  my $taxtotal = 0;
-  my $tax_section = { 'description' => $self->mt('Taxes, Surcharges, and Fees'),
-                      'subtotal'    => $taxtotal,   # adjusted below
-                      'tax_section' => 1,
-                    };
-  my $tax_weight = _pkg_category($tax_section->{description})
-                        ? _pkg_category($tax_section->{description})->weight
-                        : 0;
-  $tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
-  $tax_section->{'sort_weight'} = $tax_weight;
-
-  my $adjusttotal = 0;
-  my $adjust_section = {
-    'description'    => $self->mt('Credits, Payments, and Adjustments'),
-    'adjust_section' => 1,
-    'subtotal'       => 0,   # adjusted below
-  };
-  my $adjust_weight = _pkg_category($adjust_section->{description})
-                        ? _pkg_category($adjust_section->{description})->weight
-                        : 0;
-  $adjust_section->{'summarized'} = ''; #why? $summarypage && !$adjust_weight ? 'Y' : '';
-  $adjust_section->{'sort_weight'} = $adjust_weight;
-
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $conf->exists($tc.'sections', $cust_main->agentnum) ||
                      $conf->exists($tc.'sections_by_location', $cust_main->agentnum);
@@ -970,6 +947,21 @@ sub print_generic {
     # otherwise put them in the main section
     $previous_section = $default_section;
   }
+
+  my $adjust_section = {
+    'description'    => $self->mt('Credits, Payments, and Adjustments'),
+    'adjust_section' => 1,
+    'subtotal'       => 0,   # adjusted below
+  };
+  my $adjust_weight = _pkg_category($adjust_section->{description})
+                        ? _pkg_category($adjust_section->{description})->weight
+                        : 0;
+  $adjust_section->{'summarized'} = ''; #why? $summarypage && !$adjust_weight ? 'Y' : '';
+  # Note: 'sort_weight' here is actually a flag telling whether there is an
+  # explicit package category for the adjust section. If so, certain behavior
+  # happens.
+  $adjust_section->{'sort_weight'} = $adjust_weight;
+
 
   if ( $multisection ) {
     ($extra_sections, $extra_lines) =
@@ -1220,6 +1212,26 @@ sub print_generic {
   warn "$me adding taxes\n"
     if $DEBUG > 1;
 
+  # create a tax section if we don't yet have one
+  my $tax_description = 'Taxes, Surcharges, and Fees';
+  my $tax_section = first { $_->{description} eq $tax_description } @sections;
+  if (!$tax_section) {
+    $tax_section = { 'description' => $tax_description };
+    push @sections, $tax_section if $multisection;
+  }
+  $tax_section->{tax_section} = 1; # mark this section as containing taxes
+  # if this is an existing tax section, we're merging the tax items into it.
+  # grab the taxtotal that's already there, strip the money symbol if any
+  my $taxtotal = $tax_section->{'subtotal'} || 0;
+  $taxtotal =~ s/^\Q$other_money_char\E//;
+
+  # this does nothing
+  #my $tax_weight = _pkg_category($tax_section->{description})
+  #                      ? _pkg_category($tax_section->{description})->weight
+  #                      : 0;
+  #$tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
+  #$tax_section->{'sort_weight'} = $tax_weight;
+
   my @items_tax = $self->_items_tax;
   foreach my $tax ( @items_tax ) {
 
@@ -1262,14 +1274,20 @@ sub print_generic {
       $other_money_char. sprintf('%.2f', $self->charged - $taxtotal );
 
     if ( $multisection ) {
-      $tax_section->{'subtotal'} = $other_money_char.
-                                   sprintf('%.2f', $taxtotal);
-      $tax_section->{'pretotal'} = 'New charges sub-total '.
-                                   $total->{'total_amount'};
-      if ( $taxtotal ) {
-        push @sections, $tax_section;
-        push @summary_subtotals, $tax_section;
+      if ( $taxtotal > 0 ) {
+        $tax_section->{'subtotal'} = $other_money_char.
+                                     sprintf('%.2f', $taxtotal);
+        $tax_section->{'pretotal'} = 'New charges sub-total '.
+                                     $total->{'total_amount'};
+        $tax_section->{'description'} = $self->mt($tax_description);
+
+        # append it if it's not already there
+        if ( !grep $tax_section, @sections ) {
+          push @sections, $tax_section;
+          push @summary_subtotals, $tax_section;
+        }
       }
+
     } else {
       unshift @total_items, $total;
     }
@@ -1284,7 +1302,6 @@ sub print_generic {
              ),
              $money_char. sprintf("%10.2f",$self->charged) ];
   push @buf,['',''];
-
 
   ###
   # Totals
@@ -1361,7 +1378,6 @@ sub print_generic {
         $total->{'total_item'} = &$escape_function($credit->{'description'});
         $credittotal += $credit->{'amount'};
         $total->{'total_amount'} = $minus.$other_money_char.$credit->{'amount'};
-        $adjusttotal += $credit->{'amount'};
         if ( $multisection ) {
           push @detail_items, {
             ext_description => [],
@@ -1395,7 +1411,6 @@ sub print_generic {
         $total->{'total_item'} = &$escape_function($payment->{'description'});
         $paymenttotal += $payment->{'amount'};
         $total->{'total_amount'} = $minus.$other_money_char.$payment->{'amount'};
-        $adjusttotal += $payment->{'amount'};
         if ( $multisection ) {
           push @detail_items, {
             ext_description => [],
@@ -1417,7 +1432,10 @@ sub print_generic {
     
       if ( $multisection ) {
         $adjust_section->{'subtotal'} = $other_money_char.
-                                        sprintf('%.2f', $adjusttotal);
+                                        sprintf('%.2f', $credittotal + $paymenttotal);
+
+        #why this? because {sort_weight} forces the adjust_section to appear
+        #in @extra_sections instead of @sections. obviously.
         push @sections, $adjust_section
           unless $adjust_section->{sort_weight};
         # do not summarize; adjustments there are shown according to 
@@ -2794,11 +2812,16 @@ equivalent to
 
 $self->_items_cust_bill_pkg([ $self->cust_bill_pkg ])
 
-The only OPTIONS accepted is 'section', which may point to a hashref 
-with a key named 'condensed', which may have a true value.  If it 
-does, this method tries to merge identical items into items with 
-'quantity' equal to the number of items (not the sum of their 
-separate quantities, for some reason).
+OPTIONS are passed through to _items_cust_bill_pkg, and should include
+'format' and 'escape_function' at minimum.
+
+To produce items for a specific invoice section, OPTIONS should include
+'section', a hashref containing 'category' and/or 'locationnum' keys.
+
+'section' may also contain a key named 'condensed'. If this is present
+and has a true value, _items_pkg will try to merge identical items into items
+with 'quantity' equal to the number of items (not the sum of their separate
+quantities, for some reason).
 
 =cut
 
@@ -2866,13 +2889,14 @@ sub _items_fee {
     }
     foreach (sort keys(%base_invnums)) {
       next if $_ == $self->invnum;
+      # per convention, we must escape ext_description lines
       push @ext_desc,
         &{$escape_function}(
           $self->mt('from invoice #[_1] on [_2]', $_, $base_invnums{$_})
         );
     }
     my $desc = $part_fee->itemdesc_locale($self->cust_main->locale);
-    $desc = &{$escape_function}($desc);
+    # but not escape the base description line
 
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
