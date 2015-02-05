@@ -452,8 +452,11 @@ sub replace {
              );
     my $contact_phone = qsearchs('contact_phone', \%cp);
 
+    my $pv = $self->get($pf);
+	$pv =~ s/\s//g;
+
     #if new value is empty, delete old entry
-    if (!$self->get($pf)) {
+    if (!$pv) {
       if ($contact_phone) {
         $error = $contact_phone->delete;
         if ( $error ) {
@@ -466,7 +469,7 @@ sub replace {
 
     $contact_phone ||= new FS::contact_phone \%cp;
 
-    my %cpd = _parse_phonestring( $self->get($pf) );
+    my %cpd = _parse_phonestring( $pv );
     $contact_phone->set( $_ => $cpd{$_} ) foreach keys %cpd;
 
     my $method = $contact_phone->contactphonenum ? 'replace' : 'insert';
