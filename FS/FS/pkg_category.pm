@@ -3,7 +3,7 @@ use base qw( FS::category_Common );
 
 use strict;
 use vars qw( @ISA $me $DEBUG );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch qsearchs );
 use FS::pkg_class;
 use FS::part_pkg;
 
@@ -145,6 +145,40 @@ sub _upgrade_data {
       $weight += 10;
     }
   }
+
+  # create default category for package fees
+  my $tax_category_name = 'Taxes, Surcharges, and Fees';
+  my $tax_category = qsearchs('pkg_category', 
+    { categoryname => $tax_category_name }
+  );
+  if (!$tax_category) {
+    $tax_category = FS::pkg_category->new({
+        categoryname => $tax_category_name,
+        weight       => 1000, # doesn't really matter
+    });
+    my $error = $tax_category->insert;
+    die "error creating tax category: $error\n" if $error;
+  }
+
+  my $fee_class_name = 'Fees'; # does not appear on invoice
+  my $fee_class = qsearchs('pkg_class', { classname => $fee_class_name });
+  if (!$fee_class) {
+    $fee_class = FS::pkg_class->new({
+        classname   => $fee_class_name,
+        categorynum => $tax_category->categorynum,
+    });
+    my $error = $fee_class->insert;
+    die "error creating fee class: $error\n" if $error;
+  }
+
+  # assign it to all fee defs that don't otherwise have a class
+  foreach my $part_fee (qsearch('part_fee', { classnum => '' })) {
+    $part_fee->set('classnum', $fee_class->classnum);
+    my $error = $part_fee->replace;
+    die "error assigning default class to fee def#".$part_fee->feepart .
+      ":$error\n" if $error;
+  }
+
   '';
 }
 
