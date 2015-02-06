@@ -105,8 +105,11 @@ otherwise returns false.
 
 =cut
 
+use Data::Dumper; #XXX DEBUG
 sub insert {
   my ($self, %options) = @_;
+  warn Dumper($self);
+  warn Dumper(\%options);
 
   my $dbh = dbh;
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -251,6 +254,9 @@ sub estimate {
 
   # XXX the order of applying discounts is ill-defined, which matters
   # if there are percentage and amount discounts on the same package.
+  #
+  # but right now there can only be one discount on any package, so 
+  # it doesn't matter
   foreach my $pkg_discount ($self->quotation_pkg_discount) {
 
     my $discount = $pkg_discount->discount;

@@ -356,15 +356,23 @@ If there is an error, returns an error message, otherwise returns false.
 sub order {
   my $self = shift;
 
-  tie my %cust_pkg, 'Tie::RefHash',
-    map { FS::cust_pkg->new({ pkgpart  => $_->pkgpart,
-                              quantity => $_->quantity,
-                           })
-            => [] #services
-        }
-      $self->quotation_pkg ;
+  tie my %all_cust_pkg, 'Tie::RefHash';
+  foreach my $quotation_pkg ($self->quotation_pkg) {
+    my $cust_pkg = FS::cust_pkg->new;
+    foreach (qw(pkgpart locationnum start_date contract_end quantity waive_setup)) {
+      $cust_pkg->set( $_, $quotation_pkg->get($_) );
+    }
 
-  $self->cust_main->order_pkgs( \%cust_pkg );
+    # currently only one discount each
+    my ($pkg_discount) = $quotation_pkg->quotation_pkg_discount;
+    if ( $pkg_discount ) {
+      $cust_pkg->set('discountnum', $pkg_discount->discountnum);
+    }
+
+    $all_cust_pkg{$cust_pkg} = []; # no services
+  }
+
+  $self->cust_main->order_pkgs( \%all_cust_pkg );
 
 }
 
