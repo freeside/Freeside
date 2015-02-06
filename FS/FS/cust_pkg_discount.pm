@@ -1,5 +1,8 @@
 package FS::cust_pkg_discount;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
+use base qw( FS::otaker_Mixin
+             FS::cust_main_Mixin
+             FS::pkg_discount_Mixin
+             FS::Record );
 
 use strict;
 use FS::Record qw( dbh ); # qsearch qsearchs dbh );
@@ -81,52 +84,6 @@ sub table { 'cust_pkg_discount'; }
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  #my( $self, %options ) = @_;
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  if ( $self->discountnum == -1 ) {
-    my $discount = new FS::discount {
-      '_type'    => $self->_type,
-      'amount'   => $self->amount,
-      'percent'  => $self->percent,
-      'months'   => $self->months,
-      'setup'    => $self->setup,
-      #'linked'   => $self->linked,
-      'disabled' => 'Y',
-    };
-    my $error = $discount->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-    $self->discountnum($discount->discountnum);
-  }
-
-  my $error = $self->SUPER::insert; #(@_); #(%options);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
-
-}
 
 =item delete
 

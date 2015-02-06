@@ -1,5 +1,6 @@
 package FS::quotation_pkg_discount;
-use base qw( FS::Record );
+
+use base qw( FS::pkg_discount_Mixin FS::Record );
 use FS::Maketext 'mt'; # XXX not really correct
 
 use strict;
@@ -78,26 +79,14 @@ sub table { 'quotation_pkg_discount'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-# the replace method can be inherited from FS::Record
 
 =item check
 
