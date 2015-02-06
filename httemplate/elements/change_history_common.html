@@ -172,6 +172,18 @@ my $svc_labelsub = sub {
   $label. ': <b>'. encode_entities($item->label($item->history_date)). '</b>';
 };
 
+my $discounts = {};
+my $discount_labelsub = sub {
+  my($item, $label) = @_;
+  my $dnum = $item->discountnum;
+  $discounts->{$dnum} ||= qsearchs({
+    'table'=>'discount',
+    'hashref'=>{'discountnum'=>$dnum}
+  });
+  my $d = $discounts->{$dnum};
+  $label . ': <b>' . encode_entities($d->description_short) . '<b>';
+};
+
 my %h_table_labelsub = (
   'h_cust_pkg'      => $pkg_labelsub,
   'h_svc_acct'      => $svc_labelsub,
@@ -183,6 +195,7 @@ my %h_table_labelsub = (
   'h_svc_external'  => $svc_labelsub,
   'h_svc_phone'     => $svc_labelsub,
   #'h_phone_device'
+  'h_cust_pkg_discount' => $discount_labelsub,
 );
 
 my $cust_pkg_date_format = '%b %o, %Y';
