@@ -838,3 +838,5 @@ FS/prospect_contact.pm
 t/prospect_contact.t
 FS/cust_contact.pm
 t/cust_contact.t
+FS/pkg_discount_Mixin.pm
+t/pkg_discount_Mixin.t
