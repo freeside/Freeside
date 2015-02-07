@@ -10,7 +10,7 @@
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 
 <%= $selfurl =~ s/\?.*//; ''; %>
-<FORM ACTION="<%= $selfurl %>" METHOD=POST>
+<FORM NAME="SelectCustomerForm" ACTION="<%= $selfurl %>" METHOD=POST>
 <INPUT TYPE="hidden" NAME="action" VALUE="switch_cust">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
 
@@ -19,7 +19,7 @@
   <TR>
     <TH ALIGN="right">Customer </TH>
     <TD>
-      <SELECT NAME="custnum">
+      <SELECT NAME="custnum" ID="custnum" onChange="custnum_changed()">
         <OPTION VALUE="">Select a customer
 <%=     $OUT .= qq(<OPTION VALUE="$_">). encode_entities( $customers{$_} )
           foreach keys %customers;
@@ -29,10 +29,23 @@
   </TR>
 
   <TR>
-    <TD COLSPAN=2 ALIGN="center"><INPUT TYPE="submit" VALUE="Select customer"></TD>
+    <TD COLSPAN=2 ALIGN="center"><INPUT TYPE="submit" ID="submit" VALUE="Select customer" DISABLED></TD>
   </TR>
 
 </TABLE>
 </FORM>
+
+<SCRIPT TYPE="text/javascript">
+
+function custnum_changed () {
+  var form = document.SelectCustomerForm;
+  if ( form.custnum.selectedIndex > 0 ) {
+    form.submit.disabled = false;
+  } else {
+    form.submit.disabled = true;
+  }
+}
+
+</SCRIPT>
 
 <%= $body_footer %>
