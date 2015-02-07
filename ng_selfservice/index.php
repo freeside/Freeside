@@ -10,6 +10,7 @@ extract($login_info);
 $error = $_GET['error'];
 if ( $error ) {
   $username = $_GET['username'];
+  $email    = $_GET['email'];
   $domain   = $_GET['domain'];
 }
 
@@ -22,23 +23,23 @@ if ( $error ) {
 
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
 
-<TR>
-  <TH ALIGN="right">Username </TH>
-  <TD>
-    <INPUT TYPE="text" NAME="username" VALUE="<? echo htmlspecialchars($username); ?>"><? if ( $single_domain ) { echo '@'.$single_domain; } ?>
-  </TD>
-</TR>
-
 <? if ( $single_domain ) { ?>
+
+  <TR>
+    <TH ALIGN="right">Username </TH>
+    <TD>
+      <INPUT TYPE="text" NAME="username" VALUE="<? echo htmlspecialchars($username); ?>"><? if ( $single_domain ) { echo '@'.$single_domain; } ?>
+    </TD>
+<  /TR>
 
   <INPUT TYPE="hidden" NAME="domain" VALUE="<? echo $single_domain ?>">
 
 <? } else { ?>
 
   <TR>
-    <TH ALIGN="right">Domain </TH>
+    <TH ALIGN="right">Email address </TH>
     <TD>
-      <INPUT TYPE="text" NAME="domain" VALUE="<? echo htmlspecialchars($domain); ?>">
+      <INPUT TYPE="text" NAME="email" VALUE="<? echo htmlspecialchars($email); ?>">
     </TD>
   </TR>
 
