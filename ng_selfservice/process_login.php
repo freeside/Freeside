@@ -3,8 +3,8 @@
 require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
-$response = $freeside->login( array( 
-  'username' => strtolower($_POST['username']),
+$response = $freeside->login( array(
++  'email'    => strtolower($_POST['email']),                                     'username' => strtolower($_POST['username']),
   'domain'   => strtolower($_POST['domain']),
   'password' => $_POST['password'],
 ) );
@@ -16,8 +16,9 @@ $error = $response['error'];
 if ( $error ) {
 
   header('Location:index.php?username='. urlencode($username).
-                            '&domain='.   urlencode($domain).
-                            '&error='.    urlencode($error)
+                           '&domain='.   urlencode($domain).
+                           '&email='.    urlencode($email).
+                           '&error='.    urlencode($error)
         );
   die();
 
