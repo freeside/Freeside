@@ -477,6 +477,181 @@ sub new_customer {
 
 }
 
+=item update_customer
+Updates an existing customer. Passing an empty value clears that field, while NOT passing that key/value at all leaves it alone.
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item secret
+
+API Secret (required)
+
+=item custnum
+
+Customer number (required)
+
+=item first
+
+first name 
+
+=item last
+
+last name 
+
+=item company
+
+Company name
+
+=item address1 
+
+Address line one
+
+=item city 
+
+City
+
+=item county
+
+County
+
+=item state 
+
+State
+
+=item zip 
+
+Zip or postal code
+
+=item country
+
+2 Digit Country Code
+
+=item daytime
+
+Daytime phone number
+
+=item night
+
+Evening phone number
+
+=item fax
+
+Fax number
+
+=item mobile
+
+Mobile number
+
+=item invoicing_list
+
+comma-separated list of email addresses for email invoices. The special value '$
+postal_invoicing
+Set to 1 to enable postal invoicing
+
+=item payby
+
+CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
+
+=item payinfo
+
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pi$
+
+=item paycvv
+
+Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
+
+=item paydate
+
+Expiration date for CARD/DCRD
+
+=item payname
+
+Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
+
+=item referral_custnum
+
+Referring customer number
+
+=item salesnum
+
+Sales person number
+
+=item agentnum
+
+Agent number
+
+=back
+
+=cut
+
+sub update_customer {
+
+ my( $class, %opt ) = @_;
+
+  my $conf = new FS::Conf;
+
+
+  my $custnum = $opt{'custnum'}
+    or return { 'error' => "no customer record" };
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $new = new FS::cust_main { $cust_main->hash };
+
+  $new->set( $_ => $opt{$_} )
+    foreach grep { exists $opt{$_} } qw(
+        agentnum salesnum refnum agent_custid referral_custnum
+        last first company
+        daytime night fax mobile
+        payby payinfo paydate paycvv payname
+      ),
+
+  my @invoicing_list = $opt{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
+                         : $cust_main->invoicing_list;
+  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+ 
+  if ( exists( $opt{'address1'} ) ) {
+    my $bill_location = FS::cust_location->new({
+        map { $_ => $opt{$_} } @location_editable_fields
+    });
+    $bill_location->set('custnum' => $custnum);
+    my $error = $bill_location->find_or_insert;
+    die $error if $error;
+
+    # if this is unchanged from before, cust_main::replace will ignore it
+    $new->set('bill_location' => $bill_location);
+  }
+
+  if ( exists($opt{'ship_address1'}) ) {
+    my $ship_location = FS::cust_location->new({
+        map { $_ => $opt{"ship_$_"} } @location_editable_fields
+    });
+
+    $ship_location->set('custnum' => $custnum);
+    my $error = $ship_location->find_or_insert;
+    die $error if $error;
+
+   }
+
+   if ( !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
+      # Selfservice unfortunately tries to indicate "same as billing
+      # address" by sending all fields empty.  Did this ever work?
+
+      my $ship_location = $cust_main->bill_location;
+      $new->set('ship_location' => $ship_location);
+
+   }
+  my $error = $new->replace( $cust_main, \@invoicing_list );
+  return { 'error'   => $error } if $error;
+
+  return { 'error'   => '',
+         };  
+}
+
+
 =item customer_info
 
 Returns general customer information. Takes a list of keys and values as
