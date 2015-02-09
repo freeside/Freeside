@@ -1,52 +1,62 @@
 % if ( !$init ) {
-<script type="text/javascript" src="<%$p%>elements/masked_input_1.1.js">
+<script type="text/javascript" src="<%$p%>elements/masked_input_1.3.js">
 </script>
 % $init++;
 % }
 <& /elements/tr-input-text.html, id => $id, @_ &>
 <script type="text/javascript">
 <&| /elements/onload.js &>
-MaskedInput({
-  elm: document.getElementById('<%$id%>'),
+var el = document.getElementById('<%$id%>');
+el.MaskedInput = window.MaskedInput({
+  elm: el,
   format: '<% $opt{format} %>',
   <% $opt{allowed} ? "allowed: '$opt{allowed}'," : '' %>
   <% $opt{typeon}  ? "typeon:  '$opt{typeon}',"  : '' %>
 });
-document.getElementById('<%$id%>').value = <% $value |js_string %>;
+el.value = <% $value |js_string %>;
 % if ( $clipboard_hack ) {
-var t = document.getElementById('<% $id %>');
 var container = document.getElementById('<%$id%>_clipboard');
-var KeyHandlerDown = t.onkeydown
-t.onkeydown = function(e) {
-  if (typeof(e) == 'undefined') {
-    // ie8 hack
-    e = event;
-  }
+var KeyDownHandler = function(e) {
+  e = e || event; // IE8
   // intercept ctrl-c and ctrl-x
   // and cmd-c and cmd-x on mac
-  // when text is selected
   if ( ( e.ctrlKey || e.metaKey ) ) {
-    // do the dance
-    var separators = /[\\/:-]/g;
-    var s = t.value.substr(t.selectionStart, t.selectionEnd);
-    if ( s ) {
-      container.value = s.replace(separators, '');
-      container.previous = t;
-      container.focus();
-      container.select();
-      return true;
+    // grab contents of the field, strip out delimiters and copy to container,
+    // and select its contents so that the next "ctrl-c" copies it
+
+    el.select(); // just a visual hint to the user
+    var reject = /[^A-Za-z0-9]/g;
+    container.value = el.value.replace(reject, '');
+    container.focus();
+    container.select();
+    // don't confuse the maskedinput key handlers by letting them see this
+    if (e.stopImmediatePropagation) {
+      e.stopImmediatePropagation();
+    } else {
+      // IE8
+      e.returnValue = false;
+      e.cancelBubble = true;
     }
   }
-  return KeyHandlerDown.call(t, e);
 };
-container.onkeyup = function(e) {
-  if ( container.previous ) {
-    setTimeout(function() {
-      //container.previous.value = container.value;
-      container.previous.focus();
-    }, 10);
-  }
+var KeyUpHandler = function(e) {
+  e = e || event;
+  setTimeout( function() { el.focus() } , 10);
   return true;
+};
+var PasteHandler = function(e) {
+  setTimeout( function() {
+    el.MaskedInput.setValue(container.value);
+  }, 10);
+};
+if ( el.addEventListener ) {
+  el.addEventListener('keydown', KeyDownHandler);
+  container.addEventListener('keyup', KeyUpHandler);
+  container.addEventListener('paste', PasteHandler);
+} else if ( el.attachEvent ) {
+  el.attachEvent('onkeydown', KeyDownHandler);
+  container.attachEvent('onkeyup', KeyUpHandler);
+  container.attachEvent('onpaste', PasteHandler);
 }
 % } # clipboard hack
 </&>

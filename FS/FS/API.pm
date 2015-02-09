@@ -430,32 +430,36 @@ sub new_customer {
 }
 
 =item update_customer
-
-Updates an existing customer. Takes a hash reference as parameter with the foll$
+Updates an existing customer. Passing an empty value clears that field, while NOT passing that key/value at all leaves it alone.
+Takes a hash reference as parameter with the following keys:
 
 =over 4
 
 =item secret
 
-API Secret
+API Secret (required)
+
+=item custnum
+
+Customer number (required)
 
 =item first
 
-first name (required)
+first name 
 
 =item last
 
-last name (required)
+last name 
 
 =item company
 
 Company name
 
-=item address1 (required)
+=item address1 
 
 Address line one
 
-=item city (required)
+=item city 
 
 City
 
@@ -463,11 +467,11 @@ City
 
 County
 
-=item state (required)
+=item state 
 
 State
 
-=item zip (required)
+=item zip 
 
 Zip or postal code
 

@@ -159,7 +159,7 @@ sub API_insert {
 
 sub API_update {
 
-  my( $class, %opt ) = @_;
+ my( $class, %opt ) = @_;
 
   my $conf = new FS::Conf;
 
@@ -180,43 +180,47 @@ sub API_update {
         payby payinfo paydate paycvv payname
       ),
 
-  
   my @invoicing_list = $opt{'invoicing_list'}
                          ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
-                         : ();
+                         : $cust_main->invoicing_list;
   push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+ 
+  if ( exists( $opt{'address1'} ) ) {
+    my $bill_location = FS::cust_location->new({
+        map { $_ => $opt{$_} } @location_editable_fields
+    });
+    $bill_location->set('custnum' => $custnum);
+    my $error = $bill_location->find_or_insert;
+    die $error if $error;
 
-  my ($bill_hash, $ship_hash);
-  foreach my $f (FS::cust_main->location_fields) {
-    # avoid having to change this in front-end code
-    $bill_hash->{$f} = $opt{"bill_$f"} || $opt{$f};
-    $ship_hash->{$f} = $opt{"ship_$f"};
+    # if this is unchanged from before, cust_main::replace will ignore it
+    $new->set('bill_location' => $bill_location);
   }
 
-  my $bill_location = FS::cust_location->new($bill_hash);
-  my $ship_location;
-  # we don't have an equivalent of the "same" checkbox in selfservice^Wthis API
-  # so is there a ship address, and if so, is it different from the billing 
-  # address?
-  if ( length($ship_hash->{address1}) > 0 and
-          grep { $bill_hash->{$_} ne $ship_hash->{$_} } keys(%$ship_hash)
-         ) {
+  if ( exists($opt{'ship_address1'}) ) {
+    my $ship_location = FS::cust_location->new({
+        map { $_ => $opt{"ship_$_"} } @location_editable_fields
+    });
 
-    $ship_location = FS::cust_location->new( $ship_hash );
-  
-  } else {
-    $ship_location = $bill_location;
-  }
+    $ship_location->set('custnum' => $custnum);
+    my $error = $ship_location->find_or_insert;
+    die $error if $error;
 
-  $new->set('bill_location' => $bill_location);
-  $new->set('ship_location' => $ship_location);
+   }
 
+   if ( !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
+      # Selfservice unfortunately tries to indicate "same as billing
+      # address" by sending all fields empty.  Did this ever work?
+
+      my $ship_location = $cust_main->bill_location;
+      $new->set('ship_location' => $ship_location);
+
+   }
   my $error = $new->replace( $cust_main, \@invoicing_list );
   return { 'error'   => $error } if $error;
-  
+
   return { 'error'   => '',
-         };
-  
+         };  
 }
 
 1;
