@@ -163,7 +163,6 @@ sub API_update {
 
   my $conf = new FS::Conf;
 
-
   my $custnum = $opt{'custnum'}
     or return { 'error' => "no customer record" };
 
@@ -180,11 +179,14 @@ sub API_update {
         payby payinfo paydate paycvv payname
       ),
 
-  my @invoicing_list = $opt{'invoicing_list'}
-                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
-                         : $cust_main->invoicing_list;
-  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
- 
+  my @invoicing_list;
+  if ( exists $opt{'invoicing_list'} || exists $opt{'postal_invoicing'} ) {
+    @invoicing_list = split( /\s*\,\s*/, $opt{'invoicing_list'} );
+    push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+  } else {
+    @invoicing_list = $cust_main->invoicing_list;
+  }
+
   if ( exists( $opt{'address1'} ) ) {
     my $bill_location = FS::cust_location->new({
         map { $_ => $opt{$_} } @location_editable_fields
@@ -197,7 +199,7 @@ sub API_update {
     $new->set('bill_location' => $bill_location);
   }
 
-  if ( exists($opt{'ship_address1'}) ) {
+  if ( exists($opt{'ship_address1'}) && length($opt{"ship_address1"}) > 0 ) {
     my $ship_location = FS::cust_location->new({
         map { $_ => $opt{"ship_$_"} } @location_editable_fields
     });
@@ -206,16 +208,13 @@ sub API_update {
     my $error = $ship_location->find_or_insert;
     die $error if $error;
 
+   $new->set('ship_location' => $ship_location);
+
+   } elsif (exists($opt{'ship_address1'} ) && !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
+      my $ship_location = $new->bill_location;
+     $new->set('ship_location' => $ship_location);
    }
 
-   if ( !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
-      # Selfservice unfortunately tries to indicate "same as billing
-      # address" by sending all fields empty.  Did this ever work?
-
-      my $ship_location = $cust_main->bill_location;
-      $new->set('ship_location' => $ship_location);
-
-   }
   my $error = $new->replace( $cust_main, \@invoicing_list );
   return { 'error'   => $error } if $error;
 

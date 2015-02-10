@@ -430,8 +430,10 @@ sub new_customer {
 }
 
 =item update_customer
-Updates an existing customer. Passing an empty value clears that field, while NOT passing that key/value at all leaves it alone.
-Takes a hash reference as parameter with the following keys:
+
+Updates an existing customer. Passing an empty value clears that field, while
+NOT passing that key/value at all leaves it alone. Takes a list of keys and
+values as parameters with the following keys:
 
 =over 4
 
@@ -497,7 +499,9 @@ Mobile number
 
 =item invoicing_list
 
-comma-separated list of email addresses for email invoices. The special value '$
+Comma-separated list of email addresses for email invoices. The special value 
+'POST' is used to designate postal invoicing (it may be specified alone or in
+addition to email addresses),
 postal_invoicing
 Set to 1 to enable postal invoicing
 
@@ -507,7 +511,8 @@ CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
 
 =item payinfo
 
-Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pi$
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid 
+"pin" for PREPAY, purchase order number for BILL
 
 =item paycvv
 
