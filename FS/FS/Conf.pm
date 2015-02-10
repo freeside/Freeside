@@ -3352,6 +3352,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'city_not_required',
+    'section'     => 'required',
+    'description' => 'Turn off requirement for a City to be entered for billing & shipping addresses',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'echeck-void',
     'section'     => 'deprecated',
     'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
