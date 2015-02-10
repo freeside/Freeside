@@ -170,10 +170,10 @@ case "$1" in
           if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid ]
           then
             echo -n "Stopping freeside-selfservice-server to $MACHINE"
+            kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
             howlong=10
             while [ $howlong -gt 0 ] && kill -0 `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid` 2>/dev/null; do
               echo -n '.'
-              kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
               sleep 1
               howlong=$(( $howlong - 1 ))
               if [ $howlong -eq 0 ]; then
