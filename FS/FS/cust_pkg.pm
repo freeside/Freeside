@@ -2486,6 +2486,12 @@ sub modify_charge {
 
   } # else simply ignore them; the UI shouldn't allow editing the fields
 
+  if ( exists($opt{'taxclass'}) 
+          and $part_pkg->taxclass ne $opt{'taxclass'}) {
+        
+      $part_pkg->set('taxclass', $opt{'taxclass'});
+  }
+
   my $error;
   if ( $part_pkg->modified or $pkg_opt_modified ) {
     # can we safely modify the package def?
