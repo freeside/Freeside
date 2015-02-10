@@ -196,6 +196,7 @@ sub table_info {
                          select_table => 'svc_domain',
                          select_key   => 'svcnum',
                          select_label => 'domain',
+                         select_allow_empty => 1,
                          disable_inventory => 1,
                        },
         'circuit_svcnum'   => { label             => 'Circuit',

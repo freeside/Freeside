@@ -81,6 +81,7 @@ my @actions = ( qw(
   process_change_password
   customer_suspend_pkg
   process_suspend_pkg
+  switch_cust
 ));
 
 my @nologin_actions = (qw(
@@ -204,6 +205,12 @@ unless ( $nologin_actions{$action} ) {
 
   # at this point $session_id is a real session
 
+  if ( ! $login_rv->{'custnum'} && ! $login_rv->{'svcnum'} && $login_rv->{'customers'} ) {
+    #select a customer if we're a multi-contact customer
+    do_template('select_cust', { %$login_rv } );
+    exit;
+  }
+
 }
 
 warn "calling $action sub\n"
@@ -212,6 +219,7 @@ $FS::SelfService::DEBUG = $DEBUG;
 my $result = eval "&$action();";
 die $@ if $@;
 
+use Data::Dumper;
 warn Dumper($result) if $DEBUG;
 
 if ( $result->{error} && ( $result->{error} eq "Can't resume session"
@@ -237,7 +245,13 @@ do_template($action, {
 
 #--
 
-use Data::Dumper;
+sub switch_cust {
+  $action = 'myaccount';
+  FS::SelfService::switch_cust( 'session_id' => $session_id,
+                                'custnum'    => scalar($cgi->param('custnum')),
+                              );
+}
+
 sub myaccount { 
   customer_info( 'session_id' => $session_id ); 
 }

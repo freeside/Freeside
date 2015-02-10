@@ -30,6 +30,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'switch_acct'               => 'MyAccount/switch_acct',
+  'switch_cust'               => 'MyAccount/switch_cust',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
   'billing_history'           => 'MyAccount/billing_history',

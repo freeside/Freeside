@@ -121,7 +121,7 @@ Example:
 
         <OPTION VALUE="<% $option %>"
                 <% $option eq $selected ? ' SELECTED' : '' %>
-        ><% $options->{$option} %></OPTION>
+        ><% $options->{$option} |h %></OPTION>
 
 %     }
 

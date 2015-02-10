@@ -1,6 +1,7 @@
 package FS::part_event::Condition::has_referral_pkgpart;
 use base qw( FS::part_event::Condition );
 
+use FS::part_event::Condition::has_referral_custnum;
 #maybe i should be incorporated in has_referral_custnum
 
 use strict;
@@ -19,10 +20,10 @@ sub option_fields {
 sub condition {
   my($self, $object, %opt) = @_;
 
+  return 0 unless FS::part_event::Condition::has_referral_custnum::condition($self, $object, %opt);
+
   my $cust_main = $self->cust_main($object);
 
-  return 0 unless $cust_main->referral_custnum;
-  
   my $if_pkgpart = $self->option('if_pkgpart') || {};
   grep $if_pkgpart->{ $_->pkgpart },
     $cust_main->referral_custnum_cust_main->ncancelled_pkgs;

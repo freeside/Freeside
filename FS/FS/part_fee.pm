@@ -2,11 +2,11 @@ package FS::part_fee;
 
 use strict;
 use base qw( FS::o2m_Common FS::Record );
-use vars qw( $DEBUG );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_bill_pkg_display;
 
-$DEBUG = 0;
+our $DEBUG = 0;
+our $default_class;
 
 =head1 NAME
 
@@ -50,6 +50,9 @@ the invoice
 =item disabled - 'Y' if the fee is disabled
 
 =item classnum - the L<FS::pkg_class> that the fee belongs to, for reporting
+and placement on multisection invoices. Unlike packages, fees I<must> be 
+assigned to a class; they will default to class named "Fees", which belongs 
+to the same invoice section that normally contains taxes.
 
 =item taxable - 'Y' if this fee should be considered a taxable sale.  
 Currently, taxable fees will be treated like they exist at the customer's
@@ -129,6 +132,13 @@ sub check {
 
   $self->set('amount', 0) unless $self->amount;
   $self->set('percent', 0) unless $self->percent;
+
+  $default_class ||= qsearchs('pkg_class', { classname => 'Fees' })
+    or die "default package fee class not found; run freeside-upgrade to continue.\n";
+
+  if (!$self->get('classnum')) {
+    $self->set('classnum', $default_class->classnum);
+  }
 
   my $error = 
     $self->ut_numbern('feepart')

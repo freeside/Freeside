@@ -159,10 +159,9 @@ sub API_insert {
 
 sub API_update {
 
-  my( $class, %opt ) = @_;
+ my( $class, %opt ) = @_;
 
   my $conf = new FS::Conf;
-
 
   my $custnum = $opt{'custnum'}
     or return { 'error' => "no customer record" };
@@ -180,43 +179,47 @@ sub API_update {
         payby payinfo paydate paycvv payname
       ),
 
-  
-  my @invoicing_list = $opt{'invoicing_list'}
-                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
-                         : ();
-  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
-
-  my ($bill_hash, $ship_hash);
-  foreach my $f (FS::cust_main->location_fields) {
-    # avoid having to change this in front-end code
-    $bill_hash->{$f} = $opt{"bill_$f"} || $opt{$f};
-    $ship_hash->{$f} = $opt{"ship_$f"};
-  }
-
-  my $bill_location = FS::cust_location->new($bill_hash);
-  my $ship_location;
-  # we don't have an equivalent of the "same" checkbox in selfservice^Wthis API
-  # so is there a ship address, and if so, is it different from the billing 
-  # address?
-  if ( length($ship_hash->{address1}) > 0 and
-          grep { $bill_hash->{$_} ne $ship_hash->{$_} } keys(%$ship_hash)
-         ) {
-
-    $ship_location = FS::cust_location->new( $ship_hash );
-  
+  my @invoicing_list;
+  if ( exists $opt{'invoicing_list'} || exists $opt{'postal_invoicing'} ) {
+    @invoicing_list = split( /\s*\,\s*/, $opt{'invoicing_list'} );
+    push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
   } else {
-    $ship_location = $bill_location;
+    @invoicing_list = $cust_main->invoicing_list;
   }
 
-  $new->set('bill_location' => $bill_location);
-  $new->set('ship_location' => $ship_location);
+  if ( exists( $opt{'address1'} ) ) {
+    my $bill_location = FS::cust_location->new({
+        map { $_ => $opt{$_} } @location_editable_fields
+    });
+    $bill_location->set('custnum' => $custnum);
+    my $error = $bill_location->find_or_insert;
+    die $error if $error;
+
+    # if this is unchanged from before, cust_main::replace will ignore it
+    $new->set('bill_location' => $bill_location);
+  }
+
+  if ( exists($opt{'ship_address1'}) && length($opt{"ship_address1"}) > 0 ) {
+    my $ship_location = FS::cust_location->new({
+        map { $_ => $opt{"ship_$_"} } @location_editable_fields
+    });
+
+    $ship_location->set('custnum' => $custnum);
+    my $error = $ship_location->find_or_insert;
+    die $error if $error;
+
+   $new->set('ship_location' => $ship_location);
+
+   } elsif (exists($opt{'ship_address1'} ) && !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
+      my $ship_location = $new->bill_location;
+     $new->set('ship_location' => $ship_location);
+   }
 
   my $error = $new->replace( $cust_main, \@invoicing_list );
   return { 'error'   => $error } if $error;
-  
+
   return { 'error'   => '',
-         };
-  
+         };  
 }
 
 1;

@@ -325,8 +325,8 @@ if ( $cgi->param('error') ) {
     $cust_main->company(  $prospect_main->company  );
 
     #first contact? -> name
-    my @contacts = $prospect_main->contact;
-    my $contact = $contacts[0];
+    my @prospect_contacts = $prospect_main->prospect_contact;
+    my $contact = $prospect_contacts[0]->contact;
     $cust_main->first( $contact->first );
     $cust_main->set( 'last', $contact->get('last') );
     #contact phone numbers?

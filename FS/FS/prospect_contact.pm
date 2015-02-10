@@ -1,4 +1,4 @@
-package FS::table_name;
+package FS::prospect_contact;
 use base qw( FS::Record );
 
 use strict;
@@ -6,14 +6,14 @@ use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
-FS::table_name - Object methods for table_name records
+FS::prospect_contact - Object methods for prospect_contact records
 
 =head1 SYNOPSIS
 
-  use FS::table_name;
+  use FS::prospect_contact;
 
-  $record = new FS::table_name \%hash;
-  $record = new FS::table_name { 'column' => 'value' };
+  $record = new FS::prospect_contact \%hash;
+  $record = new FS::prospect_contact { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -25,12 +25,32 @@ FS::table_name - Object methods for table_name records
 
 =head1 DESCRIPTION
 
-An FS::table_name object represents an example.  FS::table_name inherits from
-FS::Record.  The following fields are currently supported:
+An FS::prospect_contact object represents a contact's attachment to a specific
+prospect.  FS::prospect_contact inherits from FS::Record.  The following fields
+are currently supported:
 
 =over 4
 
-=item field - description
+=item prospectcontactnum
+
+primary key
+
+=item prospectnum
+
+prospectnum
+
+=item contactnum
+
+contactnum
+
+=item classnum
+
+classnum
+
+=item comment
+
+comment
+
 
 =back
 
@@ -40,7 +60,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new record.  To add the record to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -49,37 +69,25 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'table_name'; }
+sub table { 'prospect_contact'; }
 
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-=cut
-
-# the replace method can be inherited from FS::Record
-
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid record.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -92,8 +100,11 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_numbern('primary_key')
-    || $self->ut_number('validate_other_fields')
+    $self->ut_numbern('prospectcontactnum')
+    || $self->ut_number('prospectnum')
+    || $self->ut_number('contactnum')
+    || $self->ut_numbern('classnum')
+    || $self->ut_textn('comment')
   ;
   return $error if $error;
 
@@ -104,11 +115,9 @@ sub check {
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
-
 =head1 SEE ALSO
 
-L<FS::Record>
+L<FS::contact>, L<FS::prospect_main>, L<FS::Record>
 
 =cut
 

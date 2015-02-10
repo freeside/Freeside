@@ -3,12 +3,15 @@ use base qw( FS::Record );
 
 use strict;
 use vars qw( $skip_fuzzyfiles );
+use Carp;
 use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::contact_phone;
 use FS::contact_email;
 use FS::queue;
 use FS::phone_type; #for cgi_contact_fields
+use FS::cust_contact;
+use FS::prospect_contact;
 
 $skip_fuzzyfiles = 0;
 
@@ -123,10 +126,88 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
+  #save off and blank values that move to cust_contact / prospect_contact now
+  my $prospectnum = $self->prospectnum;
+  $self->prospectnum('');
+  my $custnum = $self->custnum;
+  $self->custnum('');
+
+  my %link_hash = ();
+  for (qw( classnum comment selfservice_access )) {
+    $link_hash{$_} = $self->get($_);
+    $self->$_('');
+  }
+
+  #look for an existing contact with this email address
+  my $existing_contact = '';
+  if ( $self->get('emailaddress') =~ /\S/ ) {
+  
+    my %existing_contact = ();
+
+    foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
+ 
+      my $contact_email = qsearchs('contact_email', { emailaddress=>$email } )
+        or next;
+
+      my $contact = $contact_email->contact;
+      $existing_contact{ $contact->contactnum } = $contact;
+
+    }
+
+    if ( scalar( keys %existing_contact ) > 1 ) {
+      $dbh->rollback if $oldAutoCommit;
+      return 'Multiple email addresses specified '.
+             ' that already belong to separate contacts';
+    } elsif ( scalar( keys %existing_contact ) ) {
+      ($existing_contact) = values %existing_contact;
+    }
+
+  }
+
+  if ( $existing_contact ) {
+
+    $self->$_($existing_contact->$_())
+      for qw( contactnum _password _password_encoding );
+    $self->SUPER::replace($existing_contact);
+
+  } else {
+
+    my $error = $self->SUPER::insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  my $cust_contact = '';
+  if ( $custnum ) {
+    my %hash = ( 'contactnum' => $self->contactnum,
+                 'custnum'    => $custnum,
+               );
+    $cust_contact =  qsearchs('cust_contact', \%hash )
+                  || new FS::cust_contact { %hash, %link_hash };
+    my $error = $cust_contact->custcontactnum ? $cust_contact->replace
+                                              : $cust_contact->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ( $prospectnum ) {
+    my %hash = ( 'contactnum'  => $self->contactnum,
+                 'prospectnum' => $prospectnum,
+               );
+    my $prospect_contact =  qsearchs('prospect_contact', \%hash )
+                         || new FS::prospect_contact { %hash, %link_hash };
+    my $error =
+      $prospect_contact->prospectcontactnum ? $prospect_contact->replace
+                                            : $prospect_contact->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   foreach my $pf ( grep { /^phonetypenum(\d+)$/ && $self->get($_) =~ /\S/ }
@@ -134,12 +215,14 @@ sub insert {
     $pf =~ /^phonetypenum(\d+)$/ or die "wtf (daily, the)";
     my $phonetypenum = $1;
 
-    my $contact_phone = new FS::contact_phone {
-      'contactnum' => $self->contactnum,
-      'phonetypenum' => $phonetypenum,
-      _parse_phonestring( $self->get($pf) ),
-    };
-    $error = $contact_phone->insert;
+    my %hash = ( 'contactnum'   => $self->contactnum,
+                 'phonetypenum' => $phonetypenum,
+               );
+    my $contact_phone =
+      qsearchs('contact_phone', \%hash)
+        || new FS::contact_phone { %hash, _parse_phonestring($self->get($pf)) };
+    my $error = $contact_phone->contactphonenum ? $contact_phone->replace
+                                                : $contact_phone->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -149,17 +232,18 @@ sub insert {
   if ( $self->get('emailaddress') =~ /\S/ ) {
 
     foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
- 
-      my $contact_email = new FS::contact_email {
+      my %hash = (
         'contactnum'   => $self->contactnum,
         'emailaddress' => $email,
-      };
-      $error = $contact_email->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+      );
+      unless ( qsearchs('contact_email', \%hash) ) {
+        my $contact_email = new FS::contact_email \%hash;
+        my $error = $contact_email->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
-
     }
 
   }
@@ -167,14 +251,17 @@ sub insert {
   unless ( $skip_fuzzyfiles ) { #unless ( $import || $skip_fuzzyfiles ) {
     #warn "  queueing fuzzyfiles update\n"
     #  if $DEBUG > 1;
-    $error = $self->queue_fuzzyfiles_update;
+    my $error = $self->queue_fuzzyfiles_update;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "updating fuzzy search cache: $error";
     }
   }
 
-  if ( $self->selfservice_access ) {
+  if (      $link_hash{'selfservice_access'} eq 'R'
+       or ( $link_hash{'selfservice_access'} && $cust_contact )
+     )
+  {
     my $error = $self->send_reset_email( queue=>1 );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -207,6 +294,44 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  #got a prospetnum or custnum? delete the prospect_contact or cust_contact link
+
+  if ( $self->prospectnum ) {
+    my $prospect_contact = qsearchs('prospect_contact', {
+                             'contactnum'  => $self->contactnum,
+                             'prospectnum' => $self->prospectnum,
+                           });
+    my $error = $prospect_contact->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ( $self->custnum ) {
+    my $cust_contact = qsearchs('cust_contact', {
+                         'contactnum'  => $self->contactnum,
+                         'custnum' => $self->custnum,
+                       });
+    my $error = $cust_contact->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  # then, proceed with deletion only if the contact isn't attached to any other
+  # prospects or customers
+
+  #inefficient, but how many prospects/customers can a single contact be
+  # attached too?  (and is removing them from one a common operation?)
+  if ( $self->prospect_contact || $self->cust_contact ) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+  }
+
+  #proceed with deletion
 
   foreach my $cust_pkg ( $self->cust_pkg ) {
     $cust_pkg->contactnum('');
@@ -262,13 +387,62 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  #save off and blank values that move to cust_contact / prospect_contact now
+  my $prospectnum = $self->prospectnum;
+  $self->prospectnum('');
+  my $custnum = $self->custnum;
+  $self->custnum('');
+
+  my %link_hash = ();
+  for (qw( classnum comment selfservice_access )) {
+    $link_hash{$_} = $self->get($_);
+    $self->$_('');
+  }
+
   my $error = $self->SUPER::replace($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  foreach my $pf ( grep { /^phonetypenum(\d+)$/ && $self->get($_) }
+  my $cust_contact = '';
+  if ( $custnum ) {
+    my %hash = ( 'contactnum' => $self->contactnum,
+                 'custnum'    => $custnum,
+               );
+    my $error;
+    if ( $cust_contact = qsearchs('cust_contact', \%hash ) ) {
+      $cust_contact->$_($link_hash{$_}) for keys %link_hash;
+      $error = $cust_contact->replace;
+    } else {
+      $cust_contact = new FS::cust_contact { %hash, %link_hash };
+      $error = $cust_contact->insert;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ( $prospectnum ) {
+    my %hash = ( 'contactnum'  => $self->contactnum,
+                 'prospectnum' => $prospectnum,
+               );
+    my $error;
+    if ( my $prospect_contact = qsearchs('prospect_contact', \%hash ) ) {
+      $prospect_contact->$_($link_hash{$_}) for keys %link_hash;
+      $error = $prospect_contact->replace;
+    } else {
+      my $prospect_contact = new FS::prospect_contact { %hash, %link_hash };
+      $error = $prospect_contact->insert;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $pf ( grep { /^phonetypenum(\d+)$/ }
                         keys %{ $self->hashref } ) {
     $pf =~ /^phonetypenum(\d+)$/ or die "wtf (daily, the)";
     my $phonetypenum = $1;
@@ -276,10 +450,26 @@ sub replace {
     my %cp = ( 'contactnum'   => $self->contactnum,
                'phonetypenum' => $phonetypenum,
              );
-    my $contact_phone = qsearchs('contact_phone', \%cp)
-                        || new FS::contact_phone   \%cp;
+    my $contact_phone = qsearchs('contact_phone', \%cp);
 
-    my %cpd = _parse_phonestring( $self->get($pf) );
+    my $pv = $self->get($pf);
+	$pv =~ s/\s//g;
+
+    #if new value is empty, delete old entry
+    if (!$pv) {
+      if ($contact_phone) {
+        $error = $contact_phone->delete;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
+      next;
+    }
+
+    $contact_phone ||= new FS::contact_phone \%cp;
+
+    my %cpd = _parse_phonestring( $pv );
     $contact_phone->set( $_ => $cpd{$_} ) foreach keys %cpd;
 
     my $method = $contact_phone->contactphonenum ? 'replace' : 'insert';
@@ -329,11 +519,14 @@ sub replace {
     }
   }
 
-  if (    ( $old->selfservice_access eq '' && $self->selfservice_access
-              && ! $self->_password
-          )
-       || $self->_resend()
-     )
+  if ( $cust_contact and (
+                              (      $cust_contact->selfservice_access eq ''
+                                  && $link_hash{selfservice_access}
+                                  && ! length($self->_password)
+                              )
+                           || $cust_contact->_resend()
+                         )
+    )
   {
     my $error = $self->send_reset_email( queue=>1 );
     if ( $error ) {
@@ -450,7 +643,6 @@ sub check {
   ;
   return $error if $error;
 
-  return "No prospect or customer!" unless $self->prospectnum || $self->custnum;
   return "Prospect and customer!"       if $self->prospectnum && $self->custnum;
 
   return "One of first name, last name, or title must have a value"
@@ -487,17 +679,35 @@ sub firstlast {
   $self->first . ' ' . $self->last;
 }
 
-=item contact_classname
-
-Returns the name of this contact's class (see L<FS::contact_class>).
-
-=cut
-
-sub contact_classname {
-  my $self = shift;
-  my $contact_class = $self->contact_class or return '';
-  $contact_class->classname;
-}
+#=item contact_classname PROSPECT_OBJ | CUST_MAIN_OBJ
+#
+#Returns the name of this contact's class for the specified prospect or
+#customer (see L<FS::prospect_contact>, L<FS::cust_contact> and
+#L<FS::contact_class>).
+#
+#=cut
+#
+#sub contact_classname {
+#  my( $self, $prospect_or_cust ) = @_;
+#
+#  my $link = '';
+#  if ( ref($prospect_or_cust) eq 'FS::prospect_main' ) {
+#    $link = qsearchs('prospect_contact', {
+#              'contactnum'  => $self->contactnum,
+#              'prospectnum' => $prospect_or_cust->prospectnum,
+#            });
+#  } elsif ( ref($prospect_or_cust) eq 'FS::cust_main' ) {
+#    $link = qsearchs('cust_contact', {
+#              'contactnum'  => $self->contactnum,
+#              'custnum'     => $prospect_or_cust->custnum,
+#            });
+#  } else {
+#    croak "$prospect_or_cust is not an FS::prospect_main or FS::cust_main object";
+#  }
+#
+#  my $contact_class = $link->contact_class or return '';
+#  $contact_class->classname;
+#}
 
 =item by_selfservice_email EMAILADDRESS
 
@@ -514,8 +724,7 @@ sub by_selfservice_email {
     'table'     => 'contact_email',
     'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
     'hashref'   => { 'emailaddress' => $email, },
-    'extra_sql' => " AND selfservice_access = 'Y' ".
-                   " AND ( disabled IS NULL OR disabled = '' )",
+    'extra_sql' => " AND ( disabled IS NULL OR disabled = '' )",
   }) or return '';
 
   $contact_email->contact;
@@ -616,10 +825,12 @@ sub send_reset_email {
 
   my $conf = new FS::Conf;
 
-  my $cust_main = $self->cust_main
-    or die "no customer"; #reset a password for a prospect contact?  someday
+  my $cust_main = '';
+  my @cust_contact = grep $_->selfservice_access, $self->cust_contact;
+  $cust_main = $cust_contact[0]->cust_main if scalar(@cust_contact) == 1;
 
-  my $msgnum = $conf->config('selfservice-password_reset_msgnum', $cust_main->agentnum);
+  my $agentnum = $cust_main ? $cust_main->agentnum : '';
+  my $msgnum = $conf->config('selfservice-password_reset_msgnum', $agentnum);
   #die "selfservice-password_reset_msgnum unset" unless $msgnum;
   return { 'error' => "selfservice-password_reset_msgnum unset" } unless $msgnum;
   my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
@@ -634,7 +845,7 @@ sub send_reset_email {
 
     my $queue = new FS::queue {
       'job'     => 'FS::Misc::process_send_email',
-      'custnum' => $cust_main->custnum,
+      'custnum' => $cust_main ? $cust_main->custnum : '',
     };
     $queue->insert( $msg_template->prepare( %msg_template ) );
 
@@ -677,7 +888,21 @@ sub cgi_contact_fields {
 
 }
 
-use FS::phone_type;
+use FS::upgrade_journal;
+sub _upgrade_data { #class method
+  my ($class, %opts) = @_;
+
+  unless ( FS::upgrade_journal->is_done('contact__DUPEMAIL') ) {
+
+    foreach my $contact (qsearch('contact', {})) {
+      my $error = $contact->replace;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('contact__DUPEMAIL');
+  }
+
+}
 
 =back
 

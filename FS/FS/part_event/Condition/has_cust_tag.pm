@@ -16,7 +16,6 @@ sub eventtable_hashref {
     };
 }
 
-#something like this
 sub option_fields {
   (
     'tagnum'  => { 'label'    => 'Customer tag',

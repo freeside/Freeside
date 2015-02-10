@@ -876,6 +876,7 @@ sub qsearchs { # $result_record = &FS::Record:qsearchs('table',\%hash);
   my $table = $_[0];
   my(@result) = qsearch(@_);
   cluck "warning: Multiple records in scalar search ($table)"
+        #.join(' / ', map "$_=>".$_[1]->{$_}, keys %{ $_[1] } )
     if scalar(@result) > 1;
   #should warn more vehemently if the search was on a primary key?
   scalar(@result) ? ($result[0]) : ();

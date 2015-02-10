@@ -47,7 +47,7 @@
                           ],
        'html_init'     => $html_init,
        'really_disable_download' => 1,
-       @_
+       @_ #why?
 &>
 <%init>
 #hmm...
@@ -71,7 +71,7 @@ if ( $cgi->param('msgtype') =~ /^(\w+)$/ ) {
   push @where, "msgtype = '$1'";
 }
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
-  push @where, "custnum = $1";
+  push @where, "cust_msg.custnum = $1";
 }
 my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
 push @where, "(_date >= $beginning AND _date <= $ending)";

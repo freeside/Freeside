@@ -312,6 +312,9 @@ sub upgrade_data {
     #cust_main (remove paycvv from history)
     'cust_main' => [],
 
+    #contact -> cust_contact / prospect_contact
+    'contact' => [],
+
     #msgcat
     'msgcat' => [],
 

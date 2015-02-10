@@ -396,6 +396,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::circuit_provider;
   use FS::circuit_termination;
   use FS::svc_circuit;
+  use FS::cust_credit_source_bill_pkg;
+  use FS::prospect_contact;
+  use FS::cust_contact;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

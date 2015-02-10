@@ -269,7 +269,7 @@ sub name {
   my $self = shift;
   return $self->company if $self->company;
 
-  my $contact = ($self->contact)[0]; #first contact?  good enough for now
+  my $contact = ($self->prospect_contact)[0]->contact; #first contact?  good enough for now
   return $contact->line if $contact;
 
   'Prospect #'. $self->prospectnum;
@@ -314,7 +314,7 @@ sub convert_cust_main {
   my @cust_location = $self->cust_location;
   #the interface only allows one, so we're just gonna go with that for now
 
-  my @contact = $self->contact;
+  my @contact = map $_->contact, $self->prospect_contact;
 
   #XXX define one contact type as "billing", then we could pick just that one
   my @invoicing_list = map $_->emailaddress, map $_->contact_email, @contact;

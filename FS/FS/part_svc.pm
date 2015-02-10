@@ -697,6 +697,8 @@ some components specified by "select-.*.html", and a bunch more...
 
 =item select_label - Used with select_table, this is the field name of labels
 
+=item select_allow_empty - Used with select_table, adds an empty option
+
 =back
 
 =cut

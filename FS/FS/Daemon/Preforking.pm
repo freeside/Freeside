@@ -96,6 +96,7 @@ sub daemon_run {
   #parent doesn't need to hold a DB connection open
   dbh->disconnect;
   undef $FS::UID::dbh;
+  undef $RT::Handle;
 
   server_spawn(MAX_PROCESSES);
   POE::Kernel->run();

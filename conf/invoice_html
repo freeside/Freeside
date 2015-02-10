@@ -166,15 +166,12 @@
                       &{$section->{description_generator}}($line);
             } else {
               my $class = 'invoice_desc_more';
-              if ( $line->{'ref'} and $line->{'ref'} ne $lastref ) {
+              if ( ($line->{'ref'} || 0) ne $lastref ) {
                 # then it's a new package (not a continuation)
                 $class = 'invoice_desc';
               }
               $OUT .= '<tr class="'.$class.'">
                        <td align="center">';
-              #if ( $line->{'ref'} ne $lastref ) {
-              #  $OUT .= $line->{'ref'};
-              #}
               $OUT .= '</td>
                        <td align="left">'. $line->{'description'}. '</td>';
               if ( $unitprices ) {
@@ -185,7 +182,7 @@
               $OUT .= '<td align="right">'. $line->{'amount'}. '</td>';
             }
             $OUT .= '</tr>';
-            $lastref = $line->{'ref'};
+            $lastref = $line->{'ref'} || 0;
             if ( @{$line->{'ext_description'} } ) {
               unless ( $section->{description_generator} ) {
                 $OUT .= '<tr class="invoice_extdesc"><td></td><td';

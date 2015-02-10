@@ -287,6 +287,8 @@ if ( $locationnum && $locationnum > 0 ) {
 $cust_location->coord_auto('Y');
 
 my $location_sort = sub {
+  #enabled w/label_prefix _location #    $a->locationname cmp $b->locationname
+                                    # or 
         $a->country   cmp $b->country
   or lc($a->city)     cmp lc($b->city)
   or lc($a->address1) cmp lc($b->address1)

@@ -278,16 +278,17 @@ A hash reference of additional substitutions
 sub prepare {
   my( $self, %opt ) = @_;
 
-  my $cust_main = $opt{'cust_main'} or die 'cust_main required';
+  my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
   my $object = $opt{'object'} or die 'object required';
 
   # localization
-  my $locale = $cust_main->locale || '';
+  my $locale = $cust_main && $cust_main->locale || '';
   warn "no locale for cust#".$cust_main->custnum."; using default content\n"
-    if $DEBUG and !$locale;
-  my $content = $self->content($cust_main->locale);
-  warn "preparing template '".$self->msgname."' to cust#".$cust_main->custnum."\n"
-    if($DEBUG);
+    if $DEBUG and $cust_main && !$locale;
+  my $content = $self->content($locale);
+
+  warn "preparing template '".$self->msgname."\n"
+    if $DEBUG;
 
   my $subs = $self->substitutions;
 
@@ -295,7 +296,8 @@ sub prepare {
   # create substitution table
   ###  
   my %hash;
-  my @objects = ($cust_main);
+  my @objects = ();
+  push @objects, $cust_main if $cust_main;
   my @prefixes = ('');
   my $svc;
   if( ref $object ) {
@@ -385,20 +387,22 @@ sub prepare {
   my @to;
   if ( exists($opt{'to'}) ) {
     @to = split(/\s*,\s*/, $opt{'to'});
-  }
-  else {
+  } elsif ( $cust_main ) {
     @to = $cust_main->invoicing_list_emailonly;
+  } else {
+    die 'no To: address or cust_main object specified';
   }
-  # no warning when preparing with no destination
 
   my $from_addr = $self->from_addr;
 
   if ( !$from_addr ) {
+
+    my $agentnum = $cust_main ? $cust_main->agentnum : '';
+
     if ( $opt{'from_config'} ) {
-      $from_addr = scalar( $conf->config($opt{'from_config'}, 
-                                         $cust_main->agentnum) );
+      $from_addr = $conf->config($opt{'from_config'}, $agentnum);
     }
-    $from_addr ||= $conf->invoice_from_full($cust_main->agentnum);
+    $from_addr ||= $conf->invoice_from_full($agentnum);
   }
 #  my @cust_msg = ();
 #  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {
@@ -416,11 +420,11 @@ sub prepare {
                       ->format( HTML::TreeBuilder->new_from_content($body) )
                   );
   (
-    'custnum' => $cust_main->custnum,
-    'msgnum'  => $self->msgnum,
-    'from' => $from_addr,
-    'to'   => \@to,
-    'bcc'  => $self->bcc_addr || undef,
+    'custnum'   => ( $cust_main ? $cust_main->custnum : ''),
+    'msgnum'    => $self->msgnum,
+    'from'      => $from_addr,
+    'to'        => \@to,
+    'bcc'       => $self->bcc_addr || undef,
     'subject'   => $subject,
     'html_body' => $body,
     'text_body' => $text_body

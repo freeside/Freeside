@@ -44,13 +44,13 @@ sub condition_sql {
   my $servicenums =
     $class->condition_sql_option_option_integer('has_service');
 
-  my $sql = qq| 0 < ( SELECT COUNT(cs.svcpart)
+  my $sql = " 0 < ( SELECT COUNT(cs.svcpart)
      FROM cust_bill_pkg cbp, cust_svc cs
     WHERE cbp.invnum = cust_bill.invnum
       AND cs.pkgnum = cbp.pkgnum
       AND cs.svcpart IN $servicenums
   )
-  |;
+  ";
   return $sql;
 }
 

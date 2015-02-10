@@ -160,6 +160,7 @@ case "$1" in
         then
           echo -n "Stopping (old) freeside-selfservice-server: "
           kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid`
+          sleep 
           rm /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid
           echo "done."
         fi
@@ -168,9 +169,20 @@ case "$1" in
         for MACHINE in $SELFSERVICE_MACHINES; do
           if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid ]
           then
-            echo -n "Stopping freeside-selfservice-server to $MACHINE: "
-            kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
+            echo -n "Stopping freeside-selfservice-server to $MACHINE"
+            howlong=10
+            while [ $howlong -gt 0 ] && kill -0 `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid` 2>/dev/null; do
+              echo -n '.'
+              kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
+              sleep 1
+              howlong=$(( $howlong - 1 ))
+              if [ $howlong -eq 0 ]; then
+                echo -n 'forcefully.'
+                kill -9 `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
+              fi
+            done
             echo "done."
+            rm /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid
           fi
         done
 

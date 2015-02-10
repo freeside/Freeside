@@ -16,9 +16,11 @@
 %   }
 % }
 
-% my @contact = $quotation->custnum ? $quotation->cust_main->cust_contact
-%                                   : $quotation->prospect_main->contact;
-% foreach my $contact ( @contact ) {
+% my @X_contact = $quotation->custnum
+%                   ? $quotation->cust_main->cust_contact
+%                   : $quotation->prospect_main->prospect_contact;
+% foreach my $X_contact ( @X_contact ) {
+%    my $contact = $X_contact->contact;
 %    foreach my $contact_email ( $contact->contact_email ) {
 %      $emails++;
        <& .emailrow, $contact_email->emailaddress, $contact->firstlast &>

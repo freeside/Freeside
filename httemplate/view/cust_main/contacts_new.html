@@ -6,26 +6,31 @@
 % my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
 %     my $bgcolor = $bgcolor2;
+% my $th = '<TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">';
 <TR>
-  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Type</TH>
-  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Contact</TH>
-  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Email</TH>
-  <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Self-service</TH>
+  <%$th%>Type</TH>
+  <%$th%>Contact</TH>
+  <%$th%>Email</TH>
+  <%$th%>Self-service</TH>
 % foreach my $phone_type (@phone_type) {
-    <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc"><% $phone_type->typename |h %> phone</TD>
+    <%$th%><% $phone_type->typename |h %></TH>
 % }
+  <%$th%>Comment</TH>
 </TR>
 
-%   foreach my $contact ( @contacts ) {
+%   foreach my $cust_contact ( @cust_contacts ) {
+%     my $contact = $cust_contact->contact;
+%     my $td = qq(<TD CLASS="grid" BGCOLOR="$bgcolor">);
+
       <TR>
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $contact->contact_classname |h %></TD>
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $contact->line |h %></TD>
+        <%$td%><% $cust_contact->contact_classname |h %></TD>
+        <%$td%><% $contact->line |h %></TD>
 
 %       my @contact_email = $contact->contact_email;
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% join(', ', map $_->emailaddress, @contact_email) %></TD>
+        <%$td%><% join(', ', map $_->emailaddress, @contact_email) %></TD>
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%         if ( $contact->selfservice_access ) {
+        <%$td%>
+%         if ( $cust_contact->selfservice_access ) {
             Enabled
 %#            <FONT SIZE="-1"><A HREF="XXX">disable</A>
 %#                            <A HREF="XXX">re-email</A></FONT>
@@ -41,8 +46,10 @@
 %                      'contactnum'   => $contact->contactnum,
 %                      'phonetypenum' => $phone_type->phonetypenum,
 %                   });
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $contact_phone ? $contact_phone->phonenum_pretty : '' |h %></TD>
+          <%$td%><% $contact_phone ? $contact_phone->phonenum_pretty : '' |h %></TD>
 %       }
+
+        <%$td%><% $cust_contact->comment |h %></TD>
 
       </TR>
 
@@ -63,6 +70,6 @@ my @phone_type = qsearch({table=>'phone_type', order_by=>'weight'});
 my( $cust_main ) = @_;
 #my $conf = new FS::Conf;
 
-my @contacts = $cust_main->cust_contact;
+my @cust_contacts = $cust_main->cust_contact;
 
 </%init>
