@@ -478,9 +478,11 @@ sub new_customer {
 }
 
 =item update_customer
-Updates an existing customer. Passing an empty value clears that field, while NOT passing that key/value at all leaves it alone.
-Takes a hash reference as parameter with the following keys:
 
+Updates an existing customer. Passing an empty value clears that field, while
+NOT passing that key/value at all leaves it alone. Takes a list of keys and
+values as parameters with the following keys:
+ 
 =over 4
 
 =item secret
@@ -545,9 +547,9 @@ Mobile number
 
 =item invoicing_list
 
-comma-separated list of email addresses for email invoices. The special value '$
-postal_invoicing
-Set to 1 to enable postal invoicing
+Comma-separated list of email addresses for email invoices. The special value 
+'POST' is used to designate postal invoicing (it may be specified alone or in
+addition to email addresses)
 
 =item payby
 
@@ -555,7 +557,8 @@ CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
 
 =item payinfo
 
-Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pi$
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid 
++"pin" for PREPAY, purchase order number for BILL
 
 =item paycvv
 
@@ -608,10 +611,13 @@ sub update_customer {
         payby payinfo paydate paycvv payname
       ),
 
-  my @invoicing_list = $opt{'invoicing_list'}
-                         ? split( /\s*\,\s*/, $opt{'invoicing_list'} )
-                         : $cust_main->invoicing_list;
-  push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+  my @invoicing_list;
+  if ( exists $opt{'invoicing_list'} || exists $opt{'postal_invoicing'} ) {
+    @invoicing_list = split( /\s*\,\s*/, $opt{'invoicing_list'} );
+    push @invoicing_list, 'POST' if $opt{'postal_invoicing'};
+  } else {
+    @invoicing_list = $cust_main->invoicing_list;
+  }
  
   if ( exists( $opt{'address1'} ) ) {
     my $bill_location = FS::cust_location->new({
@@ -625,7 +631,7 @@ sub update_customer {
     $new->set('bill_location' => $bill_location);
   }
 
-  if ( exists($opt{'ship_address1'}) ) {
+  if ( exists($opt{'ship_address1'}) && length($opt{"ship_address1"}) > 0 ) {
     my $ship_location = FS::cust_location->new({
         map { $_ => $opt{"ship_$_"} } @location_editable_fields
     });
@@ -634,16 +640,13 @@ sub update_customer {
     my $error = $ship_location->find_or_insert;
     die $error if $error;
 
-   }
+    $new->set('ship_location' => $ship_location);
 
-   if ( !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
-      # Selfservice unfortunately tries to indicate "same as billing
-      # address" by sending all fields empty.  Did this ever work?
+   } elsif (exists($opt{'ship_address1'} ) && !grep { length($opt{"ship_$_"}) } @location_editable_fields ) {
+      my $ship_location = $new->bill_location;
+     $new->set('ship_location' => $ship_location);
+    }
 
-      my $ship_location = $cust_main->bill_location;
-      $new->set('ship_location' => $ship_location);
-
-   }
   my $error = $new->replace( $cust_main, \@invoicing_list );
   return { 'error'   => $error } if $error;
 
