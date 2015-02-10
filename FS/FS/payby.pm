@@ -5,7 +5,6 @@ use vars qw(%hash %payby2bop);
 use Tie::IxHash;
 use Business::CreditCard;
 
-
 =head1 NAME
 
 FS::payby - Object methods for payment type records
@@ -39,9 +38,8 @@ Payment types.
 =cut
 
 # paybys can be any/all of:
-# - a customer payment type (cust_main.payby)
+# - a customer saved payment type (cust_payby.payby)
 # - a payment or refund type (cust_pay.payby, cust_pay_batch.payby, cust_refund.payby)
-# - an event type (part_bill_event.payby)
 
 tie %hash, 'Tie::IxHash',
   'CARD' => {
@@ -69,18 +67,6 @@ tie %hash, 'Tie::IxHash',
     longname  => 'Electronic check (on-demand)',
     cust_pay  => 'CHEK', #this is a customer type only, payments are CHEK...
     realtime  => 1,
-  },
-  #'LECB' => {
-  #  tinyname  => 'phone bill',
-  #  shortname => 'Phone bill billing',
-  #  longname  => 'Phone bill billing',
-  #  realtime  => 1,
-  #},
-  'BILL' => {
-    tinyname  => 'billing',
-    shortname => 'Billing',
-    payname   => 'Check',
-    longname  => 'Billing',
   },
   'PPAL' => {
     tinyname  => 'PayPal',
@@ -142,12 +128,6 @@ tie %hash, 'Tie::IxHash',
     shortname => 'Wire transfer',
     longname  => 'Wire transfer',
     cust_main => '', #not a customer type
-  },
-  'COMP' => {
-    tinyname  => 'comp',
-    shortname => 'Complimentary',
-    longname  => 'Complimentary',
-    cust_pay  => '', # (free) is depricated as a payment type in cust_pay
   },
   'CBAK' => {
     tinyname  => 'chargeback',
@@ -232,6 +212,11 @@ sub payby2payment {
 sub cust_payby {
   my $self = shift;
   grep { ! exists $hash{$_}->{cust_main} } $self->payby;
+}
+
+sub cust_payby2shortname {
+  my $self = shift;
+  map { $_ => $hash{$_}->{shortname} } $self->cust_payby;
 }
 
 sub cust_payby2longname {

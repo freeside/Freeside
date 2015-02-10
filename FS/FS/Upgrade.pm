@@ -309,7 +309,10 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
-    #cust_main (remove paycvv from history)
+    #payby conditions to new ones
+    'part_event_condition' => [],
+
+    #cust_main (remove paycvv from history, locations, cust_payby, etc)
     'cust_main' => [],
 
     #contact -> cust_contact / prospect_contact

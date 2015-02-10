@@ -76,6 +76,7 @@ use FS::Locales;
 use FS::upgrade_journal;
 use FS::sales;
 use FS::cust_payby;
+use FS::contact;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -94,8 +95,6 @@ our $ucfirst_nowarn = 0;
 
 our @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
-
-our @paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
 
 our $conf;
 #ask FS::UID to run this stuff for us later
@@ -331,7 +330,7 @@ invoicing_list destination to the newly-created svc_acct.  Here's an example:
   $cust_main->insert( {}, [ $email, 'POST' ] );
 
 Currently available options are: I<depend_jobnum>, I<noexport>,
-I<tax_exemption> and I<prospectnum>.
+I<tax_exemption>, I<prospectnum>, I<contact> and I<contact_params>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
@@ -350,6 +349,14 @@ If I<prospectnum> is set, moves contacts and locations from that prospect.
 
 If I<contact> is set to an arrayref of FS::contact objects, inserts those
 new contacts with this new customer.
+
+If I<contact_params> is set to a hashref of CGI parameters (and I<contact> is
+unset), inserts those new contacts with this new customer.  Handles CGI
+paramaters for an "m2" multiple entry field as passed by edit/cust_main.cgi
+
+If I<cust_payby_params> is set to a hashref o fCGI parameters, inserts those
+new stored payment records with this new customer.  Handles CGI parameters
+for an "m2" multiple entry field as passed by edit/cust_main.cgi
 
 =cut
 
@@ -378,7 +385,7 @@ sub insert {
   my $payby = '';
   if ( $self->payby eq 'PREPAY' ) {
 
-    $self->payby('BILL');
+    $self->payby(''); #'BILL');
     $prepay_identifier = $self->payinfo;
     $self->payinfo('');
 
@@ -403,7 +410,7 @@ sub insert {
   } elsif ( $self->payby =~ /^(CASH|WEST|MCRD|MCHK|PPAL)$/ ) {
 
     $payby = $1;
-    $self->payby('BILL');
+    $self->payby(''); #'BILL');
     $amount = $self->paid;
 
   }
@@ -557,8 +564,10 @@ sub insert {
 
   }
 
-  my $contact = delete $options{'contact'};
-  if ( $contact ) {
+  warn "  setting contacts\n"
+    if $DEBUG > 1;
+
+  if ( my $contact = delete $options{'contact'} ) {
 
     foreach my $c ( @$contact ) {
       $c->custnum($self->custnum);
@@ -568,6 +577,34 @@ sub insert {
         return $error;
       }
 
+    }
+
+  } elsif ( my $contact_params = delete $options{'contact_params'} ) {
+
+    my $error = $self->process_o2m( 'table'  => 'contact',
+                                    'fields' => FS::contact->cgi_contact_fields,
+                                    'params' => $contact_params,
+                                  );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  warn "  setting cust_payby\n"
+    if $DEBUG > 1;
+
+  if ( my $cust_payby_params = delete $options{'cust_payby_params'} ) {
+
+    my $error = $self->process_o2m(
+      'table'         => 'cust_payby',
+      'fields'        => FS::cust_payby->cgi_cust_payby_fields,
+      'params'        => $cust_payby_params,
+      'hash_callback' => \&FS::cust_payby::cgi_hash_callback,
+    );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
 
   }
@@ -1122,10 +1159,9 @@ sub delete {
 
   #cust_tax_adjustment in financials?
   #cust_pay_pending?  ouch
-  #cust_recon?
   foreach my $table (qw(
     cust_main_invoice cust_main_exemption cust_tag cust_attachment contact
-    cust_location cust_main_note cust_tax_adjustment
+    cust_payby cust_location cust_main_note cust_tax_adjustment
     cust_pay_void cust_pay_batch queue cust_tax_exempt
   )) {
     foreach my $record ( qsearch( $table, { 'custnum' => $self->custnum } ) ) {
@@ -1250,13 +1286,10 @@ sub replace {
     if $DEBUG;
 
   my $curuser = $FS::CurrentUser::CurrentUser;
-  if (    $self->payby eq 'COMP'
-       && $self->payby ne $old->payby
-       && ! $curuser->access_right('Complimentary customer')
-     )
-  {
-    return "You are not permitted to create complimentary accounts.";
-  }
+  return "You are not permitted to create complimentary accounts."
+    if $self->complimentary eq 'Y'
+    && $self->complimentary ne $old->complimentary
+    && ! $curuser->access_right('Complimentary customer');
 
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
@@ -1285,8 +1318,8 @@ sub replace {
   my $dbh = dbh;
 
   for my $l (qw(bill_location ship_location)) {
-    my $old_loc = $old->$l;
-    my $new_loc = $self->$l;
+    #my $old_loc = $old->$l;
+    my $new_loc = $self->$l or next;
 
     # find the existing location if there is one
     $new_loc->set('custnum' => $self->custnum);
@@ -1403,21 +1436,19 @@ sub replace {
 
   }
 
-  if ( $self->payby =~ /^(CARD|CHEK|LECB)$/
-       && ( ( $self->get('payinfo') ne $old->get('payinfo')
-              && $self->get('payinfo') !~ /^99\d{14}$/ 
-            )
-            || grep { $self->get($_) ne $old->get($_) } qw(paydate payname)
-          )
-     )
-  {
+  if ( my $cust_payby_params = delete $options{'cust_payby_params'} ) {
 
-    # card/check/lec info has changed, want to retry realtime_ invoice events
-    my $error = $self->retry_realtime;
+    my $error = $self->process_o2m(
+      'table'         => 'cust_payby',
+      'fields'        => FS::cust_payby->cgi_cust_payby_fields,
+      'params'        => $cust_payby_params,
+      'hash_callback' => \&FS::cust_payby::cgi_hash_callback,
+    );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+
   }
 
   unless ( $import || $skip_fuzzyfiles ) {
@@ -1555,6 +1586,8 @@ sub check {
     || $self->ut_flag('message_noemail')
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
     || $self->ut_currencyn('currency')
+    || $self->ut_alphan('po_number')
+    || $self->ut_enum('complimentary', [ '', 'Y' ])
   ;
 
   foreach (qw(company ship_company)) {
@@ -1809,6 +1842,11 @@ sub check {
 
   }
 
+  return "You are not permitted to create complimentary accounts."
+    if ! $self->custnum
+    && $self->complimentary eq 'Y'
+    && ! $FS::CurrentUser->CurrentUser->access_right('Complimentary customer');
+
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
       # shouldn't payinfo_check do this?
@@ -1947,7 +1985,7 @@ sub cust_payby {
   qsearch({
     'table'    => 'cust_payby',
     'hashref'  => { 'custnum' => $self->custnum },
-    'order_by' => 'ORDER BY weight ASC',
+    'order_by' => "ORDER BY payby IN ('CARD','CHEK') DESC, weight ASC",
   });
 }
 
@@ -4816,18 +4854,31 @@ sub _upgrade_data { #class method
 
     while (my $cust_main = $search->fetch) {
 
-      my $cust_payby = new FS::cust_payby {
-        'custnum' => $cust_main->custnum,
-        'weight'  => 1,
-        map { $_ => $cust_main->$_(); } @payfields
-      };
+      unless ( $cust_main->payby =~ /^(BILL|COMP)$/ ) {
 
-      my $error = $cust_payby->insert;
-      die $error if $error;
+        my $cust_payby = new FS::cust_payby {
+          'custnum' => $cust_main->custnum,
+          'weight'  => 1,
+          map { $_ => $cust_main->$_(); } @payfields
+        };
+
+        my $error = $cust_payby->insert;
+        die $error if $error;
+
+      }
+
+      $cust_main->complimentary('Y') if $cust_main->payby eq 'COMP';
+
+      $cust_main->invoice_attn( $cust_main->payname )
+        if $cust_main->payby eq 'BILL' && $cust_main->payname;
+      $cust_main->po_number( $cust_main->payinfo )
+        if $cust_main->payby eq 'BILL' && $cust_main->payinfo;
 
       $cust_main->setfield($_, '') foreach @payfields;
-      $error = $cust_main->replace;
-      die $error if $error;
+      my $error = $cust_main->replace;
+      die "Error upgradging payment information for custnum ".
+          $cust_main->custnum. ": $error"
+        if $error;
 
     };
 

@@ -118,6 +118,8 @@ Example:
     # display, no <FORM>, no hidden fields for table name or primary key, no
     # display of primary key, no submit button, no html_foot, no footer)
     'embed' => $object, #need to pass the object
+    'tablenum' => 4, #need to specify a table number when using multiple
+                     #embedded edits on a page (and m2 stuff)
 
     #don't show the primary key label and value
     'no_pkey_display' => 1,
@@ -256,7 +258,7 @@ Example:
 
 % }
 
-% my $tablenum = 0;
+% my $tablenum = $opt{'tablenum'} || 0;
 <TABLE ID="TableNumber<% $tablenum++ %>" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 
 % my $g_row = 0;

@@ -1,26 +1,23 @@
 package FS::cust_payby;
+use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
-use base qw( FS::payinfo_Mixin FS::Record );
-use FS::UID;
-use FS::Record qw( qsearchs ); #qsearch;
+use Business::CreditCard qw( validate cardtype );
+use FS::UID qw( dbh );
+use FS::Msgcat qw( gettext );
+use FS::Record; #qw( qsearch qsearchs );
 use FS::payby;
 use FS::cust_main;
-use Business::CreditCard qw( validate cardtype );
-use FS::Msgcat qw( gettext );
+use FS::banned_pay;
 
-use vars qw( $conf @encrypted_fields
-             $ignore_expired_card $ignore_banned_card
-             $ignore_invalid_card
-           );
-
-@encrypted_fields = ('payinfo', 'paycvv');
+our @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
 
-$ignore_expired_card = 0;
-$ignore_banned_card = 0;
-$ignore_invalid_card = 0;
+our $ignore_expired_card = 0;
+our $ignore_banned_card = 0;
+our $ignore_invalid_card = 0;
 
+our $conf;
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
   #yes, need it for stuff below (prolly should be cached)
@@ -141,15 +138,44 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $self->payby =~ /^(CARD|CHEK)$/ ) {
+    # new auto card/check info, want to retry realtime_ invoice events
+    #  (new customer?  that's okay, they won't have any)
+    my $error = $self->cust_main->retry_realtime;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
@@ -158,7 +184,87 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $self = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $self->replace_old;
+
+  if ( length($old->paycvv) && $self->paycvv =~ /^\s*[\*x]*\s*$/ ) {
+    $self->paycvv($old->paycvv);
+  }
+
+  if ( $self->payby =~ /^(CARD|DCRD)$/
+       && (    $self->payinfo =~ /xx/
+            || $self->payinfo =~ /^\s*N\/A\s+\(tokenized\)\s*$/
+          )
+     )
+  {
+warn $self->payinfo;
+warn $old->payinfo;
+    $self->payinfo($old->payinfo);
+
+  } elsif ( $self->payby =~ /^(CHEK|DCHK)$/ && $self->payinfo =~ /xx/ ) {
+    #fix for #3085 "edit of customer's routing code only surprisingly causes
+    #nothing to happen...
+    # this probably won't do the right thing when we don't have the
+    # public key (can't actually get the real $old->payinfo)
+    my($new_account, $new_aba) = split('@', $self->payinfo);
+    my($old_account, $old_aba) = split('@', $old->payinfo);
+    $new_account = $old_account if $new_account =~ /xx/;
+    $new_aba     = $old_aba     if $new_aba     =~ /xx/;
+    $self->payinfo($new_account.'@'.$new_aba);
+  }
+
+  local($ignore_expired_card) = 1
+    if $old->payby  =~ /^(CARD|DCRD)$/
+    && $self->payby =~ /^(CARD|DCRD)$/
+    && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
+
+  local($ignore_banned_card) = 1
+    if (    $old->payby  =~ /^(CARD|DCRD)$/ && $self->payby =~ /^(CARD|DCRD)$/
+         || $old->payby  =~ /^(CHEK|DCHK)$/ && $self->payby =~ /^(CHEK|DCHK)$/ )
+    && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $self->payby =~ /^(CARD|CHEK)$/
+       && ( ( $self->get('payinfo') ne $old->get('payinfo')
+              && $self->get('payinfo') !~ /^99\d{14}$/ 
+            )
+            || grep { $self->get($_) ne $old->get($_) } qw(paydate payname)
+          )
+     )
+  {
+
+    # card/check/lec info has changed, want to retry realtime_ invoice events
+    my $error = $self->cust_main->retry_realtime;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item check
 
@@ -174,7 +280,7 @@ sub check {
   my $error = 
     $self->ut_numbern('custpaybynum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
-    || $self->ut_number('weight')
+    || $self->ut_numbern('weight')
     #encrypted #|| $self->ut_textn('payinfo')
     #encrypted #|| $self->ut_textn('paycvv')
 #    || $self->ut_textn('paymask') #XXX something
@@ -207,7 +313,7 @@ sub check {
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
     $payinfo =~ /^(\d{13,16}|\d{8,9})$/
-      or return gettext('invalid_card'); # . ": ". $self->payinfo;
+      or return gettext('invalid_card'); #. ": ". $self->payinfo;
     $payinfo = $1;
     $self->payinfo($payinfo);
     validate($payinfo)
@@ -308,52 +414,23 @@ sub check {
       }
     }
 
-  } elsif ( $self->payby eq 'LECB' ) {
-
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $payinfo =~ /^1?(\d{10})$/ or return 'invalid btn billing telephone number';
-    $payinfo = $1;
-    $self->payinfo($payinfo);
-    $self->paycvv('');
-
-  } elsif ( $self->payby eq 'BILL' ) {
-
-    $error = $self->ut_textn('payinfo');
-    return "Illegal P.O. number: ". $self->payinfo if $error;
-    $self->paycvv('');
-
-  } elsif ( $self->payby eq 'COMP' ) {
-
-    my $curuser = $FS::CurrentUser::CurrentUser;
-    if (    ! $self->custnum
-         && ! $curuser->access_right('Complimentary customer')
-       )
-    {
-      return "You are not permitted to create complimentary accounts."
-    }
-
-    $error = $self->ut_textn('payinfo');
-    return "Illegal comp account issuer: ". $self->payinfo if $error;
-    $self->paycvv('');
-
-  } elsif ( $self->payby eq 'PREPAY' ) {
-
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\W//g; #anything else would just confuse things
-    $self->payinfo($payinfo);
-    $error = $self->ut_alpha('payinfo');
-    return "Illegal prepayment identifier: ". $self->payinfo if $error;
-    return "Unknown prepayment identifier"
-      unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
-    $self->paycvv('');
+#  } elsif ( $self->payby eq 'PREPAY' ) {
+#
+#    my $payinfo = $self->payinfo;
+#    $payinfo =~ s/\W//g; #anything else would just confuse things
+#    $self->payinfo($payinfo);
+#    $error = $self->ut_alpha('payinfo');
+#    return "Illegal prepayment identifier: ". $self->payinfo if $error;
+#    return "Unknown prepayment identifier"
+#      unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
+#    $self->paycvv('');
 
   }
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
       # shouldn't payinfo_check do this?
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|MCHK|PPAL)$/;
+      unless $self->payby =~ /^(CHEK|DCHK)$/;
     $self->paydate('');
   } else {
     my( $m, $y );
@@ -398,6 +475,247 @@ sub check {
   ###
 
   $self->SUPER::check;
+}
+
+sub _banned_pay_hashref {
+  my $self = shift;
+
+  my %payby2ban = (
+    'CARD' => 'CARD',
+    'DCRD' => 'CARD',
+    'CHEK' => 'CHEK',
+    'DCHK' => 'CHEK'
+  );
+
+  {
+    'payby'   => $payby2ban{$self->payby},
+    'payinfo' => $self->payinfo,
+    #don't ever *search* on reason! #'reason'  =>
+  };
+}
+
+=item paydate_mon_year
+
+Returns a two element list consisting of the paydate month and year.
+
+=cut
+
+sub paydate_mon_year {
+  my $self = shift;
+
+  my $date = $self->paydate; # || '12-2037';
+
+  #false laziness w/elements/select-month_year.html
+  if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+    ( $2, $1 );
+  } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+    ( $1, $3 );
+  } else {
+    warn "unrecognized expiration date format: $date";
+    ( '', '' );
+  }
+
+}
+
+=item realtime_bop
+
+=cut
+
+sub realtime_bop {
+  my( $self, %opt ) = @_;
+
+  $opt{$_} = $self->$_() for qw( payinfo payname paydate );
+
+  if ( $self->locationnum ) {
+    my $cust_location = $self->cust_location;
+    $opt{$_} = $cust_location->$_() for qw( address1 address2 city state zip );
+  }
+
+  $self->cust_main->realtime_bop({
+    'method' => FS::payby->payby2bop( $self->payby ),
+    %opt,
+  });
+
+}
+
+=item paytypes
+
+Returns a list of valid values for the paytype field (bank account type for
+electronic check payment).
+
+=cut
+
+sub paytypes {
+  #my $class = shift;
+
+  ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
+}
+
+=item cgi_cust_payby_fields
+
+Returns the field names used in the web interface (including some pseudo-fields).
+
+=cut
+
+sub cgi_cust_payby_fields {
+  #my $class = shift;
+  [qw( payby payinfo paydate_month paydate_year paycvv payname weight
+       payinfo1 payinfo2 payinfo3 paytype paystate )];
+}
+
+=item cgi_hash_callback HASHREF
+
+Subroutine (not a class or object method).  Processes a hash reference
+of web interface contet (transfers the data from pseudo-fields to real fields).
+
+=cut
+
+sub cgi_hash_callback {
+  my $hashref = shift;
+
+  my %noauto = (
+    'CARD' => 'DCRD',
+    'CHEK' => 'DCHK',
+  );
+  $hashref->{payby} = $noauto{$hashref->{payby}}
+    if ! $hashref->{weight} && exists $noauto{$hashref->{payby}};
+
+  if ( $hashref->{payby} =~ /^(CHEK|DCHK)$/ ) {
+
+    unless ( grep $hashref->{$_}, qw( payinfo1 payinfo2 payinfo3 payname ) ) {
+      %$hashref = ();
+      return;
+    }
+
+    $hashref->{payinfo} = $hashref->{payinfo1}. '@';
+    $hashref->{payinfo} .= $hashref->{payinfo3}.'.' 
+      if $conf->config('echeck-country') eq 'CA';
+    $hashref->{payinfo} .= $hashref->{'payinfo2'};
+
+    $hashref->{payname} .= $hashref->{'payname_CHEK'};
+
+  } elsif ( $hashref->{payby} =~ /^(CARD|DCRD)$/ ) {
+
+    unless ( grep $hashref->{$_}, qw( payinfo paycvv payname ) ) {
+      %$hashref = ();
+      return;
+    }
+
+  }
+
+  $hashref->{paydate}= $hashref->{paydate_month}. '-'. $hashref->{paydate_year};
+
+}
+
+=item search_sql
+
+Class method.
+
+Returns a qsearch hash expression to search for parameters specified in HASHREF.
+Valid paramters are:
+
+=over 4
+
+=item payby
+
+listref
+
+=item paydate_year
+
+=item paydate_month
+
+
+=back
+
+=cut
+
+sub search_sql {
+  my ($class, $params) = @_;
+
+  my @where = ();
+  my $orderby;
+
+  # initialize these to prevent warnings
+  $params = {
+    'paydate_year'  => '',
+    %$params
+  };
+
+  ###
+  # payby
+  ###
+
+  if ( $params->{'payby'} ) {
+
+    my @payby = ref( $params->{'payby'} )
+                  ? @{ $params->{'payby'} }
+                  :  ( $params->{'payby'} );
+
+    @payby = grep /^([A-Z]{4})$/, @payby;
+    my $in_payby = 'IN(' . join(',', map {"'$_'"} @payby) . ')';
+    push @where, "cust_payby.payby $in_payby"
+      if @payby;
+  }
+
+  ###
+  # paydate_year / paydate_month
+  ###
+
+  if ( $params->{'paydate_year'} =~ /^(\d{4})$/ ) {
+    my $year = $1;
+    $params->{'paydate_month'} =~ /^(\d\d?)$/
+      or die "paydate_year without paydate_month?";
+    my $month = $1;
+
+    push @where,
+      'cust_payby.paydate IS NOT NULL',
+      "cust_payby.paydate != ''",
+      "CAST(cust_payby.paydate AS timestamp) < CAST('$year-$month-01' AS timestamp )"
+;
+  }
+  ##
+  # setup queries, subs, etc. for the search
+  ##
+
+  $orderby ||= 'ORDER BY custnum';
+
+  # here is the agent virtualization
+  push @where,
+    $FS::CurrentUser::CurrentUser->agentnums_sql(table => 'cust_main');
+
+  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+
+  my $addl_from = ' LEFT JOIN cust_main USING ( custnum ) ';
+  # always make address fields available in results
+  for my $pre ('bill_', 'ship_') {
+    $addl_from .= 
+      ' LEFT JOIN cust_location AS '.$pre.'location '.
+      'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
+  }
+
+  my $count_query = "SELECT COUNT(*) FROM cust_payby $addl_from $extra_sql";
+
+  my @select = ( 'cust_payby.*',
+                 #'cust_main.custnum',
+                 # there's a good chance that we'll need these
+                 'cust_main.bill_locationnum',
+                 'cust_main.ship_locationnum',
+                 FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
+               );
+
+  my $select = join(', ', @select);
+
+  my $sql_query = {
+    'table'         => 'cust_payby',
+    'select'        => $select,
+    'addl_from'     => $addl_from,
+    'hashref'       => {},
+    'extra_sql'     => $extra_sql,
+    'order_by'      => $orderby,
+    'count_query'   => $count_query,
+  };
+  $sql_query;
+
 }
 
 =back

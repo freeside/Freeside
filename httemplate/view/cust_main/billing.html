@@ -32,165 +32,25 @@
 % }
 
 % if ( $conf->exists('cust_main-select-billday') 
-%    && ($cust_main->payby eq 'CARD' || $cust_main->payby eq 'CHEK') ) {
-<TR>
-  <TD ALIGN="right"><% mt('Billing day of month') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->billday %>
-  </TD>
-</TR>
+%        && qsearch({ 'table'     => 'cust_payby',
+%                     'hashref'   => { 'custnum' => $cust_main->custnum, },
+%                     'extra_sql' => "AND payby IN ( 'CARD', 'CHEK' )",
+%                     'order_by'  => 'LIMIT 1',
+%                  })
+%    )
+% {
+    <TR>
+      <TD ALIGN="right"><% mt('Payment day of month') |h %></TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main->billday %>
+      </TD>
+    </TR>
 % }
 
-<TR>
-  <TD ALIGN="right"><% mt('Billing type') |h %></TD>
-  <TD BGCOLOR="#ffffff">
-% if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) { 
-
-%   my $autodemand = $cust_main->payby eq 'CARD' ? 'automatic' : 'on-demand';
-    <% mt("Credit card ([_1])",$autodemand) |h %>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Card number') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->paymask %></TD>
-</TR>
-%
-%#false laziness w/elements/select-month_year.html & edit/cust_main/billing.html
-%my( $mon, $year );
-%my $date = $cust_main->paydate || '12-2037';
-%if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-%  ( $mon, $year ) = ( $2, $1 );
-%} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-%  ( $mon, $year ) = ( $1, $3 );
-%} else {
-%  warn "unrecognized expiration date format: $date";
-%  ( $mon, $year ) = ( '', '' );
-%}
-%
-
-<TR>
-  <TD ALIGN="right"><% mt('Expiration') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
-</TR>
-% if ( $cust_main->paystart_month ) { 
-
-  <TR>
-    <TD ALIGN="right"><% mt('Start date') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->paystart_month. '/'. $cust_main->paystart_year %>
-  </TR>
-% } elsif ( $cust_main->payissue ) { 
-
-  <TR>
-    <TD ALIGN="right"><% mt('Issue #') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->payissue %>
-  </TR>
-% } 
-
-
-<TR>
-  <TD ALIGN="right"><% mt('Name on card') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
-</TR>
-% } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
-%     my( $account, $aba ) = split('@', $cust_main->paymask );
-%  my $branch = '';
-%  ($branch,$aba) = split('\.',$aba) if $conf->config('echeck-country') eq 'CA';
-
-
-% my $autodemand = $cust_main->payby eq 'CHEK' ? 'automatic' : 'on-demand';
-    <% mt("Electronic check ([_1])",$autodemand) |h %>
-  </TD>
-</TR>
-
-%  #false laziness w/edit/cust_main/billing.html and misc/payment.cgi
-%  my $routing_label = $conf->config('echeck-country') eq 'US'
-%                        ? 'ABA/Routing number'
-%                        : 'Routing number';
-
-<TR>
-  <TD ALIGN="right"><% mt($routing_label) |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $aba %></TD>
-</TR>
-
-% if ( $conf->config('echeck-country') eq 'CA' ) {
-<TR>
-  <TD ALIGN="right"><% mt('Branch number') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $branch %></TD>
-<TR>
-% }
-
-  <TD ALIGN="right"><% mt('Account number') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $account %></TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Account type') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->paytype %></TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Bank name') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
-</TR>
-% if ( $conf->exists('show_bankstate') ) {
-<TR>
-  <TD ALIGN="right"><% $paystate_label %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
-</TR>
-% }
-% } elsif ( $cust_main->payby eq 'LECB' ) {
-%     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
-%     my $payinfo = "$1-$2-$3";
-
-    <% mt('Phone bill billing') |h %> 
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Phone number') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $payinfo %></TD>
-</TR>
-% } elsif ( $cust_main->payby eq 'BILL' ) { 
-
-    <% mt('Billing') |h %> 
-  </TD>
-</TR>
-% if ( $cust_main->payinfo ) { 
-
-<TR>
-  <TD ALIGN="right"><% mt('P.O.') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
-</TR>
-% } 
-
-
-<TR>
-  <TD ALIGN="right"><% mt('Attention') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payname |h %></TD>
-</TR>
-% } elsif ( $cust_main->payby eq 'COMP' ) { 
-
-    <% mt('Complimentary') |h %> 
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Authorized by') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
-</TR>
-%
-%#false laziness w/above etc.
-%my( $mon, $year );
-%my $date = $cust_main->paydate || '12-2037';
-%if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-%  ( $mon, $year ) = ( $2, $1 );
-%} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-%  ( $mon, $year ) = ( $1, $3 );
-%} else {
-%  warn "unrecognized expiration date format: $date";
-%  ( $mon, $year ) = ( '', '' );
-%}
-%
-
-<TR>
-  <TD ALIGN="right"><% mt('Expiration') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
-</TR>
+% if ( $cust_main->po_number ) { 
+    <TR>
+      <TD ALIGN="right"><% mt('Purchase Order #') |h %></TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main->po_number %></TD>
+    </TR>
 % } 
 
 % my $yes = emt('yes');
@@ -230,13 +90,13 @@
 <TR>
   <TD ALIGN="right"><% mt('Postal mail invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% ( grep { $_ eq 'POST' } @invoicing_list ) ? $yes : $no %>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Fax invoices') |h %></TD>
-  <TD BGCOLOR="#ffffff">
-    <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? $yes : $no %>
+    <% ( grep { $_ eq 'POST' } @invoicing_list )
+         ? $yes. ( $cust_main->invoice_attn
+                     ? ', attn: '. $cust_main->invoice_attn
+                     : ''
+                 )
+         : $no
+    %>
   </TD>
 </TR>
 <TR>
@@ -336,12 +196,6 @@
 
 
 </TABLE>
-<%once>
-
-my $paystate_label = FS::Msgcat::_gettext('paystate');
-$paystate_label = 'Bank state' if $paystate_label =~/^paystate$/;
-
-</%once>
 <%init>
 
 my( $cust_main ) = @_;

@@ -1,10 +1,9 @@
 <DIV ID="contacts_div" STYLE="display:<% $display %>">
-<BR>
 <FONT CLASS="fsinnerbox-title">Contacts</FONT>
 <% include('/edit/elements/edit.html',
      'embed'           => $opt{cust_main},
      'table'           => 'cust_main',
-     'labels'          => { 'contactnum'  => 'Contact',
+     'labels'          => { 'contactnum'  => '', #'Contact',
                             #'locationnum' => '&nbsp;',
                           },
      'fields'          => [
@@ -14,7 +13,7 @@
          'custnum'           => $opt{cust_main}->custnum,
          'm2m_method'        => 'cust_contact',
          'm2m_dstcol'        => 'contactnum',   
-         'm2_label'          => 'Contact',
+         'm2_label'          => ' ', #'Contact',
          'm2_error_callback' => $m2_error_callback,
        },
      ],

@@ -608,14 +608,6 @@ listref of start date, end date
 
 listref of start date, end date
 
-=item payby
-
-listref
-
-=item paydate_year
-
-=item paydate_month
-
 =item current_balance
 
 listref (list returned by FS::UI::Web::parse_lt_gt($cgi, 'current_balance'))
@@ -646,7 +638,6 @@ sub search {
     'status'        => '',
     'address'       => '',
     'zip'           => '',
-    'paydate_year'  => '',
     'invoice_terms' => '',
     'custbatch'     => '',
     %$params
@@ -911,40 +902,6 @@ sub search {
   }
 
   ###
-  # payby
-  ###
-
-  if ( $params->{'payby'} ) {
-
-    my @payby = ref( $params->{'payby'} )
-                  ? @{ $params->{'payby'} }
-                  :  ( $params->{'payby'} );
-
-    @payby = grep /^([A-Z]{4})$/, @payby;
-    my $in_payby = 'IN(' . join(',', map {"'$_'"} @payby) . ')';
-    push @where, "EXISTS( SELECT 1 FROM cust_payby WHERE payby $in_payby ".
-                 "AND cust_payby.custnum = cust_main.custnum)"
-      if @payby;
-  }
-
-  ###
-  # paydate_year / paydate_month
-  ###
-
-  if ( $params->{'paydate_year'} =~ /^(\d{4})$/ ) {
-    my $year = $1;
-    $params->{'paydate_month'} =~ /^(\d\d?)$/
-      or die "paydate_year without paydate_month?";
-    my $month = $1;
-
-    push @where,
-      'paydate IS NOT NULL',
-      "paydate != ''",
-      "CAST(paydate AS timestamp) < CAST('$year-$month-01' AS timestamp )"
-;
-  }
-
-  ###
   # invoice terms
   ###
 
@@ -1134,7 +1091,6 @@ sub search {
     'extra_headers' => \@extra_headers,
     'extra_fields'  => \@extra_fields,
   };
-  #warn Data::Dumper::Dumper($sql_query);
   $sql_query;
 
 }

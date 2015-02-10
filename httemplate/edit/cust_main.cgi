@@ -1,8 +1,4 @@
-<& /elements/header.html,
-      $title,
-      '',
-      ' onUnload="myclose()"' #hmm, in billing.html
-&>
+<& /elements/header.html, $title, &>
 
 <& /elements/error.html &>
 
@@ -60,7 +56,7 @@
     </TABLE>
   </TD>
 </TR>
-<TR><TD STYLE="height:40px"></TD></TR>
+<TR><TD STYLE="height:14px"></TD></TR>
 <TR>
   <TD STYLE="width:650px">
     <FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
@@ -105,16 +101,13 @@ function samechanged(what) {
 
 <BR>
 
-<& cust_main/contacts_new.html,
-             'cust_main' => $cust_main,
-&>
+<& cust_main/contacts_new.html, 'cust_main'=>$cust_main, &>
 
 %# billing info
 <& cust_main/billing.html, $cust_main,
                'payinfo'        => $payinfo,
                'invoicing_list' => \@invoicing_list,
 &>
-<BR>
 
 % my $ro_comments = $conf->exists('cust_main-use_comments')?'':'readonly';
 % if (!$ro_comments || $cust_main->comments) {
@@ -155,18 +148,6 @@ function samechanged(what) {
 <INPUT TYPE="hidden" NAME="locationnum" VALUE="<% $locationnum %>">
 
 <INPUT TYPE="hidden" NAME="usernum" VALUE="<% $cust_main->usernum %>">
-
-%# cust_main/bottomfixup.js
-% foreach my $hidden (
-%    'payauto', 'billday',
-%    'payinfo', 'payinfo1', 'payinfo2', 'payinfo3', 'paytype',
-%    'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
-%    'paystart_month', 'paystart_year', 'payissue',
-%    'payip',
-%    'paid',
-% ) {
-    <INPUT TYPE="hidden" NAME="<% $hidden %>" VALUE="">
-% } 
 
 <& cust_main/bottomfixup.html, 'custnum' => $custnum &>
 
@@ -374,9 +355,6 @@ if ( $cgi->param('error') ) {
   }
 
 }
-
-my %keep = map { $_=>1 } qw( error tagnum lock_agentnum lock_pkgpart );
-$cgi->delete( grep { !$keep{$_} && $_ !~ /^tax_/ } $cgi->param );
 
 my $title = $custnum ? 'Edit Customer' : 'Add Customer';
 $title = mt($title);

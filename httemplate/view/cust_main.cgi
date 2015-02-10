@@ -169,14 +169,12 @@ function areyousure(href, message) {
 <TABLE BORDER=0>
 <TR>
   <TD VALIGN="top">
-    <& cust_main/contacts.html, $cust_main &>
+    <& cust_main/misc.html, $cust_main &>
+    <BR><& cust_main/contacts.html, $cust_main &>
   </TD>
   <TD VALIGN="top" STYLE="padding-left: 54px">
-    <& cust_main/misc.html, $cust_main &>
-% if ( $conf->config('payby-default') ne 'HIDE' ) { 
-      <BR><& cust_main/billing.html, $cust_main &>
-% } 
-
+    <& cust_main/billing.html, $cust_main &>
+    <BR><& cust_main/cust_payby.html, $cust_main &>
   </TD>
 </TR>
 <TR>
@@ -281,9 +279,7 @@ function areyousure(href, message) {
 
 % if ( $view eq 'payment_history' || $view eq 'jumbo' ) {
 
-% if ( $conf->config('payby-default') ne 'HIDE' ) { 
-  <& cust_main/payment_history.html, $cust_main &>
-% } 
+<& cust_main/payment_history.html, $cust_main &>
 
 % }
 
@@ -352,8 +348,7 @@ if ( $conf->config('ticket_system') ) {
 }
 $views{emt('Quotations')}      =  'quotations';
 $views{emt('Packages')}        =  'packages';
-$views{emt('Payment History')} =  'payment_history'
-                               unless $conf->config('payby-default' eq 'HIDE');
+$views{emt('Payment History')} =  'payment_history';
 $views{emt('Change History')}  =  'change_history'
   if $curuser->access_right('View customer history');
 $views{$conf->config('cust_main-custom_title') || emt('Custom')} =  'custom'

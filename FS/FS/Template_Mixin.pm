@@ -316,9 +316,6 @@ sub print_generic {
     unless $format =~ /^(latex|html|template)$/;
 
   my $cust_main = $self->cust_main || $self->prospect_main;
-  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname
-        && $cust_main->payby !~ /^(CARD|DCRD|CHEK|DCHK)$/;
 
   my $locale = $params{'locale'} || $cust_main->locale;
 
@@ -565,9 +562,11 @@ sub print_generic {
     'custnum'         => $cust_main->display_custnum,
     'prospectnum'     => $cust_main->prospectnum,
     'agent_custid'    => &$escape_function($cust_main->agent_custid),
-    ( map { $_ => &$escape_function($cust_main->$_()) } qw(
-      payname company address1 address2 city state zip fax
-    )),
+    ( map { $_ => &$escape_function($cust_main->$_()) }
+        qw( company address1 address2 city state zip fax )
+    ),
+    'payname'         => &$escape_function( $cust_main->invoice_attn
+                                             || $cust_main->contact_firstlast ),
 
     #global config
     'ship_enable'     => $conf->exists('invoice-ship_address'),
@@ -655,10 +654,10 @@ sub print_generic {
   my @address = ();
   $invoice_data{'address'} = \@address;
   push @address,
-    $cust_main->payname.
-      ( ( $cust_main->payby eq 'BILL' ) && $cust_main->payinfo
-        ? " (P.O. #". $cust_main->payinfo. ")"
-        : ''
+    $invoice_data{'payname'}.
+      ( $cust_main->po_number
+          ? " (P.O. #". $cust_main->po_number. ")"
+          : ''
       )
   ;
   push @address, $cust_main->company

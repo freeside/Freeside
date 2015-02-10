@@ -5,7 +5,7 @@ my $conf = new FS::Conf;
 my $company_latitude  = $conf->config('company_latitude');
 my $company_longitude = $conf->config('company_longitude');
 
-my @fixups = ('copy_payby_fields', 'standardize_locations');
+my @fixups = ('standardize_locations');
 
 push @fixups, 'confirm_censustract_bill', 'confirm_censustract_ship'
     if $conf->exists('cust_main-require_censustract');
@@ -51,54 +51,11 @@ function do_submit() {
   document.CustomerForm.submit();
 }
 
-function copy_payby_fields() {
-  var layervars = new Array(
-    'payauto', 'billday',
-    'payinfo', 'payinfo1', 'payinfo2', 'payinfo3', 'paytype',
-    'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
-    'paystart_month', 'paystart_year', 'payissue',
-    'payip',
-    'paid'
-  );
-
-  var cf = document.CustomerForm;
-  var payby = cf.payby.options[cf.payby.selectedIndex].value;
-  for ( f=0; f < layervars.length; f++ ) {
-    var field = layervars[f];
-    copyelement( cf.elements[payby + '_' + field],
-                 cf.elements[field]
-               );
-  }
-  submit_continue();
-}
-
 <& /elements/standardize_locations.js,
   'callback' => 'submit_continue();',
   'billship' => 1,
   'with_census' => 1, # no with_firm, apparently
 &>
-
-function copyelement(from, to) {
-  if ( from == undefined ) {
-    to.value = '';
-  } else if ( from.type == 'select-one' ) {
-    to.value = from.options[from.selectedIndex].value;
-    //alert(from + " (" + from.type + "): " + to.name + " => (" + from.selectedIndex + ") " + to.value);
-  } else if ( from.type == 'checkbox' ) {
-    if ( from.checked ) {
-      to.value = from.value;
-    } else {
-      to.value = '';
-    }
-  } else {
-    if ( from.value == undefined ) {
-      to.value = '';
-    } else {
-      to.value = from.value;
-    }
-  }
-  //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
-}
 
 % # the value in pre+'censustract' is the confirmed censustract (either from
 % # the previous saved record, or from address standardization (if the backend

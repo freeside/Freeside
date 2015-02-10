@@ -1651,6 +1651,9 @@ sub tables_hashref {
         'bill_locationnum', 'int', 'NULL', '', '', '',
         'ship_locationnum', 'int', 'NULL', '', '', '',
         'taxstatusnum',   'char', 'NULL',      32, '', '',
+        'complimentary', 'char', 'NULL', 1, '', '',
+        'po_number', 'varchar', 'NULL', $char_d, '', '',
+        'invoice_attn', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'custnum',
       'unique'       => [ [ 'agentnum', 'agent_custid' ] ],
@@ -1699,7 +1702,7 @@ sub tables_hashref {
       'columns' => [
         'custpaybynum', 'serial',     '',        '', '', '', 
         'custnum',         'int',     '',        '', '', '',
-        'weight',          'int',     '',        '', '', '', 
+        'weight',          'int', 'NULL',        '', '', '', 
         'payby',          'char',     '',         4, '', '', 
         'payinfo',     'varchar', 'NULL',       512, '', '', 
         'cardtype',    'varchar', 'NULL',   $char_d, '', '',

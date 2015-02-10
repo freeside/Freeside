@@ -74,9 +74,11 @@ sub bill_location {
   $self->hashref->{bill_location} 
     ||= FS::cust_location->by_key($self->bill_locationnum)
     # degraded mode--let the system keep running during upgrades
-    ||  FS::cust_location->new({
-        map { $_ => $self->get($_) } @location_fields
-      })
+    ||  ( $self->get('address1')
+            && FS::cust_location->new({
+                 map { $_ => $self->get($_) } @location_fields
+               })
+        );
 }
 
 =item ship_location
@@ -89,9 +91,17 @@ sub ship_location {
   my $self = shift;
   $self->hashref->{ship_location}
     ||= FS::cust_location->by_key($self->ship_locationnum)
-    ||  FS::cust_location->new({
-        map { $_ => $self->get('ship_'.$_) || $self->get($_) } @location_fields
-      })
+    # degraded mode--let the system keep running during upgrades
+    ||  ( $self->get('ship_address1')
+            ? FS::cust_location->new({
+                map { $_ => $self->get('ship_'.$_) } @location_fields
+              })
+            : $self->get('address1')
+                ? FS::cust_location->new({
+                    map { $_ => $self->get($_) } @location_fields
+                  })
+                : ''
+        );
 
 }
 

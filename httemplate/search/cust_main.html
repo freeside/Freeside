@@ -42,7 +42,7 @@ my %search_hash = ();
 #scalars
 my @scalars = qw (
   agentnum salesnum status address city county state zip country
-  paydate_year paydate_month invoice_terms
+  invoice_terms
   no_censustract with_geocode with_email tax no_tax POST no_POST
   custbatch usernum
   cancelled_pkgs
@@ -58,7 +58,7 @@ for my $param ( @scalars ) {
 }
 
 #lists
-for my $param (qw( classnum refnum payby tagnum pkg_classnum )) {
+for my $param (qw( classnum refnum tagnum pkg_classnum )) {
   $search_hash{$param} = [ $cgi->param($param) ];
 }
 

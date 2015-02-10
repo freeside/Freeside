@@ -1,0 +1,56 @@
+<% include('/edit/elements/edit.html',
+     'embed'           => $opt{cust_main},
+     'tablenum'        => 1,
+     'table'           => 'cust_main',
+     'labels'          => { 'custpaybynum'  => '',
+                            #'locationnum' => '&nbsp;',
+                          },
+     'fields'          => [
+       { 'field'             => 'custpaybynum',
+         'type'              => 'cust_payby',
+         'colspan'           => 6,
+         #'custnum'           => $opt{cust_main}->custnum,
+         'm2m_method'        => 'cust_payby',
+         'm2m_dstcol'        => 'custpaybynum',   
+         'm2_label'          => ' ',
+         'm2_error_callback' => $m2_error_callback,
+       },
+     ],
+     'agent_virt'      => 1,
+    )
+%>
+</DIV>
+<%init>
+
+my %opt = @_;
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #process_o2m fields in process/cust_main-cust_payby.html
+  my $fields = FS::cust_payby->cgi_cust_payby_fields;
+  my @gfields = ( '', map "_$_", grep $_ !~ /^(payby|paydate_)/, @$fields );
+
+  map {
+        if ( /^custpaybynum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("custpaybynum$num$_"), @gfields ) {
+            my %hash = (
+              'custpaybynum' => scalar($cgi->param("custpaybynum$num")),
+              map { $_ => scalar($cgi->param("custpaybynum${num}_$_")) }
+                @$fields,
+            );
+            FS::cust_payby::cgi_hash_callback( \%hash );
+            FS::cust_payby->new( \%hash );
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
+</%init>
+

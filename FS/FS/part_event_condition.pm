@@ -354,6 +354,45 @@ sub order_conditions_sql {
 
 }
 
+sub _upgrade_data { #class method
+  my ($class, %opts) = @_;
+
+  foreach my $part_event_condition (
+    qsearch('part_event_condition', { 'conditionname' => 'payby' } )
+  ) {
+
+    my $payby = $part_event_condition->option('payby');
+
+    if ( scalar( keys %$payby ) == 1 ) {
+
+      if ( $payby->{'CARD'} ) {
+
+        $part_event_condition->conditionname('has_cust_payby_auto');
+
+      } elsif ( $payby->{'CHEK'} ) {
+
+        $part_event_condition->conditionname('has_cust_payby_auto');
+
+      }
+
+    } elsif ( $payby->{'BILL'} && ! $payby->{'CARD'} && ! $payby->{'CHEK'} ) {
+
+      $part_event_condition->conditionname('hasnt_cust_payby_auto');
+
+    } else {
+
+      die 'Unable to automatically convert payby condition for event #'.
+          $part_event_condition->eventpart. "\n";
+
+    }
+
+    my $error = $part_event_condition->replace;
+    die $error if $error;
+
+  }
+
+}
+
 =back
 
 =head1 BUGS

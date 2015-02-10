@@ -1,0 +1,94 @@
+<& elements/search.html,
+                  'title'       => emt('Customer stored payment information results'),
+                  'menubar'     => $menubar,
+                  'name'        => emt('cards or bank accounts'), #??
+                  'query'       => $sql_query,
+                  'count_query' => $count_query,
+                  'header'      => [ @headers,
+                                     FS::UI::Web::cust_header(
+                                       $cgi->param('cust_fields')
+                                     ),
+                                   ],
+                  'fields'      => [
+                    @fields,
+                    \&FS::UI::Web::cust_fields,
+                  ],
+                  'color'       => [ 
+                                     ( map '', @fields ),
+                                     FS::UI::Web::cust_colors(),
+                                   ],
+                  'style'       => [
+                                     ( map '', @fields ),
+                                     FS::UI::Web::cust_styles(),
+                                   ],
+                  'align'       => [ 
+                                     ( map '', @fields ),
+                                     FS::UI::Web::cust_aligns(),
+                                   ],
+                  'links'       => [
+                                     ( map '', @fields ),
+                                     ( map { $_ ne 'Cust. Status' ? $link : '' }
+                                           FS::UI::Web::cust_header(
+                                                      $cgi->param('cust_fields')
+                                                                   )
+                                     ),
+                                   ],
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Advanced customer search');
+
+my %search_hash = ();
+
+my @scalars = qw (
+  paydate_year paydate_month
+);
+
+for my $param ( @scalars ) {
+  $search_hash{$param} = scalar( $cgi->param($param) )
+    if length($cgi->param($param));
+}
+
+#lists
+for my $param (qw( payby )) {
+  $search_hash{$param} = [ $cgi->param($param) ];
+}
+
+###
+# etc
+###
+
+my $sql_query = FS::cust_payby->search_sql(\%search_hash);
+my $count_query   = delete($sql_query->{'count_query'});
+
+my @headers = ( 'Payment information',
+              );
+
+my @fields = ( sub { my $cust_payby = shift;
+                     FS::payby->shortname( $cust_payby->payby ). ' '.
+                       $cust_payby->paymask;
+                   }
+             );
+
+my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+###
+# email links
+###
+
+my $menubar = [];
+
+#XXX TODO
+#if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
+#
+#  my $uri = new URI;
+#  $uri->query_form( \%search_hash );
+#  my $query = $uri->query;
+#
+#  push @$menubar, emt('Email a notice to these customers') =>
+#                    "${p}misc/email-customers.html?table=cust_main&$query",
+#
+#}
+
+</%init>

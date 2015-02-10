@@ -29,29 +29,6 @@ $cgi->param('tax','') unless defined $cgi->param('tax');
 
 $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
-my $payby = $cgi->param('payby');
-
-my %noauto = (
-  'CARD' => 'DCRD',
-  'CHEK' => 'DCHK',
-);
-$payby = $noauto{$payby}
-  if ! $cgi->param('payauto') && exists $noauto{$payby};
-
-$cgi->param('payby', $payby);
-
-if ( $payby ) {
-  if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
-      my $payinfo = $cgi->param('payinfo1'). '@';
-      $payinfo .= $cgi->param('payinfo3').'.' 
-            if $conf->config('echeck-country') eq 'CA';
-      $payinfo .= $cgi->param('payinfo2');
-      $cgi->param('payinfo',$payinfo);
-  }
-  $cgi->param('paydate',
-    $cgi->param( 'exp_month' ). '-'. $cgi->param( 'exp_year' ) );
-}
-
 my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
 push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 push @invoicing_list, 'FAX' if $cgi->param('invoicing_list_FAX');
@@ -176,6 +153,9 @@ if ( $curuser->access_right('Edit customer tax exemptions') ) {
     map { $_ => scalar($cgi->param("tax_$_".'_num')) } @tax_exempt
   };
 }
+
+$options{'contact_params'} = scalar($cgi->Vars);
+$options{'cust_payby_params'} = scalar($cgi->Vars);
 
 #perhaps this stuff should go to cust_main.pm
 if ( $new->custnum eq '' or $duplicate_of ) {
@@ -304,33 +284,11 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   $error ||= "Old record not found!" unless $old;
 
-  if ( length($old->paycvv) && $new->paycvv =~ /^\s*\*+\s*$/ ) {
-    $new->paycvv($old->paycvv);
-  }
   if ($new->ss =~ /xx/) {
     $new->ss($old->ss);
   }
   if ($new->stateid =~ /^xxx/) {
     $new->stateid($old->stateid);
-  }
-  if ( $new->payby =~ /^(CARD|DCRD)$/
-       && (    $new->payinfo =~ /xx/
-            || $new->payinfo =~ /^\s*N\/A\s+\(tokenized\)\s*$/
-          )
-     )
-  {
-    $new->payinfo($old->payinfo);
-
-  } elsif ( $new->payby =~ /^(CHEK|DCHK)$/ && $new->payinfo =~ /xx/ ) {
-    #fix for #3085 "edit of customer's routing code only surprisingly causes
-    #nothing to happen...
-    # this probably won't do the right thing when we don't have the
-    # public key (can't actually get the real $old->payinfo)
-    my($new_account, $new_aba) = split('@', $new->payinfo);
-    my($old_account, $old_aba) = split('@', $old->payinfo);
-    $new_account = $old_account if $new_account =~ /xx/;
-    $new_aba     = $old_aba     if $new_aba     =~ /xx/;
-    $new->payinfo($new_account.'@'.$new_aba);
   }
 
   if ( ! $conf->exists('cust_main-edit_signupdate') or
@@ -351,15 +309,6 @@ if ( $new->custnum eq '' or $duplicate_of ) {
 
   warn "$me returned from replace" if $DEBUG;
   
-}
-
-unless ( $error ) { #XXX i should be transactional... all in the insert
-                    # or replace call
-
-  $error = $new->process_o2m( 'table'  => 'contact',
-                              'fields' => FS::contact->cgi_contact_fields,
-                              'params' => scalar($cgi->Vars),
-                            );
 }
 
 </%init>

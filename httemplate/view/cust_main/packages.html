@@ -92,9 +92,7 @@ if ( el ) el.scrollIntoView(true);
   <& /elements/order_pkg_link.html, 'cust_main'=>$cust_main &>
 % } 
 
-% if ( $curuser->access_right('One-time charge')
-%        && $conf->config('payby-default') ne 'HIDE'
-%      ) {
+% if ( $curuser->access_right('One-time charge') ) {
   <% $s++ ? ' | ' : '' %>
   <& /elements/one_time_charge_link.html, 'custnum'=>$cust_main->custnum &>
 % } 

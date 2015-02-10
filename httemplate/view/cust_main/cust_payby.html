@@ -1,0 +1,133 @@
+% if ( @cust_payby ) {
+
+    <FONT CLASS="fsinnerbox-title"><% mt('Payment information') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
+
+%   my $num = 0;
+%   foreach my $cust_payby ( @cust_payby ) {
+
+%     #one line per piece of info?  maybe, but just getting something working
+%     # for now
+
+%     if ( $cust_payby->payby eq 'CARD' || $cust_payby->payby eq 'DCRD' ) { 
+
+%       my $auto = $cust_payby->payby eq 'CARD' ? 'automatic' : 'on-demand';
+        <TR>
+          <TD COLSPAN=2 ALIGN="center" BGCOLOR="#ffffff">
+            <% mt("Credit card ([_1])",$auto) |h %>
+          </TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right"><% mt('Card number') |h %></TD>
+          <TD BGCOLOR="#ffffff"><% $cust_payby->paymask %></TD>
+        </TR>
+
+%       my( $mon, $year ) = $cust_payby->paydate_mon_year;
+        <TR>
+          <TD ALIGN="right"><% mt('Expiration') |h %></TD>
+          <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
+        </TR>
+
+%       if ( $cust_payby->paystart_month ) { 
+          <TR>
+            <TD ALIGN="right"><% mt('Start date') |h %></TD>
+            <TD BGCOLOR="#ffffff"><% $cust_payby->paystart_month. '/'. $cust_payby->paystart_year %>
+          </TR>
+%       } elsif ( $cust_payby->payissue ) { 
+          <TR>
+            <TD ALIGN="right"><% mt('Issue #') |h %></TD>
+            <TD BGCOLOR="#ffffff"><% $cust_payby->payissue %>
+          </TR>
+%       } 
+
+        <TR>
+          <TD ALIGN="right"><% mt('Name on card') |h %></TD>
+          <TD BGCOLOR="#ffffff"><% $cust_payby->payname %></TD>
+        </TR>
+
+%     } elsif ( $cust_payby->payby eq 'CHEK' || $cust_payby->payby eq 'DCHK') {
+
+%       my $auto = $cust_payby->payby eq 'CHEK' ? 'automatic' : 'on-demand';
+%
+%       my( $account, $aba ) = split('@', $cust_payby->paymask );
+%       my $branch = '';
+%       ($branch,$aba) = split('\.',$aba)
+%         if $conf->config('echeck-country') eq 'CA';
+
+        <TR>
+          <TD COLSPAN=2 ALIGN="center" BGCOLOR="#ffffff">
+            <% mt("Electronic check ([_1])",$auto) |h %>
+          </TD>
+        </TR>
+
+%       #false laziness w/edit/cust_main/billing.html and misc/payment.cgi
+%       my $routing_label = $conf->config('echeck-country') eq 'US'
+%                             ? 'ABA/Routing number'
+%                             : 'Routing number';
+        <TR>
+          <TD ALIGN="right"><% mt($routing_label) |h %></TD>
+          <TD BGCOLOR="#ffffff"><% $aba %></TD>
+        </TR>
+
+%       if ( $conf->config('echeck-country') eq 'CA' ) {
+          <TR>
+            <TD ALIGN="right"><% mt('Branch number') |h %></TD>
+            <TD BGCOLOR="#ffffff"><% $branch %></TD>
+          </TR>
+%       }
+
+        <TR>
+          <TD ALIGN="right"><% mt('Account number') |h %></TD>
+          <TD BGCOLOR="#ffffff"><% $account %></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right"><% mt('Account type') |h %></TD>
+          <TD BGCOLOR="#ffffff"><% $cust_payby->paytype %></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right"><% mt('Bank name') |h %></TD>
+          <TD BGCOLOR="#ffffff"><% $cust_payby->payname %></TD>
+        </TR>
+
+%       if ( $conf->exists('show_bankstate') ) {
+          <TR>
+            <TD ALIGN="right"><% $paystate_label %></TD>
+            <TD BGCOLOR="#ffffff"><% $cust_payby->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
+          </TR>
+%       }
+
+%     } else {
+        <TR>
+          <TD COLSPAN="2"><FONT COLOR="#FF0000">
+            Unknown cust_pay.payby <% $cust_payby->payby %>
+          </FONT></TD>
+        </TR>
+%     }
+
+%     unless ( $num++ == $#cust_payby ) {
+        <TR>
+          <TD COLSPAN="2"></TD>
+        </TR>
+        <TR>
+          <TD COLSPAN="2" STYLE="border-top: 1px solid black; padding:2px"></TD>
+        </TR>
+%     }
+
+%   }
+
+    </TABLE>
+
+% }
+<%once>
+
+my $paystate_label = FS::Msgcat::_gettext('paystate');
+$paystate_label = 'Bank state' if $paystate_label =~/^paystate$/;
+
+</%once>
+<%init>
+
+my( $cust_main ) = @_;
+my $conf = new FS::Conf;
+my @cust_payby = $cust_main->cust_payby;
+
+</%init>
