@@ -4250,6 +4250,27 @@ sub cust_status {
   }
 }
 
+=item is_status_delay_cancel
+
+Returns true if customer status is 'suspended'
+and all suspended cust_pkg return true for
+cust_pkg->is_status_delay_cancel.
+
+This is not a real status, this only meant for hacking display 
+values, because otherwise treating the customer as suspended is 
+really the whole point of the delay_cancel option.
+
+=cut
+
+sub is_status_delay_cancel {
+  my ($self) = @_;
+  return 0 unless $self->status eq 'suspended';
+  foreach my $cust_pkg ($self->ncancelled_pkgs) {
+    return 0 unless $cust_pkg->is_status_delay_cancel;
+  }
+  return 1;
+}
+
 =item ucfirst_cust_status
 
 =item ucfirst_status

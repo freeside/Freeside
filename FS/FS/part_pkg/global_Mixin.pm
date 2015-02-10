@@ -40,6 +40,10 @@ tie my %a2billing_simultaccess, 'Tie::IxHash', (
                 'changing packages',
       'type' => 'checkbox',
     },
+    'delay_cancel' => {
+      'name' => 'Automatically suspend for one day before cancelling',
+      'type' => 'checkbox',
+    },
 
     # miscellany--maybe put this in a separate module?
 
@@ -109,6 +113,7 @@ tie my %a2billing_simultaccess, 'Tie::IxHash', (
     unused_credit_cancel
     unused_credit_suspend
     unused_credit_change
+    delay_cancel
 
     a2billing_tariff
     a2billing_type

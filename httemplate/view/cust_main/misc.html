@@ -7,7 +7,7 @@
 
 <TR>
   <TD ALIGN="right"><% mt('Status') |h %></TD>
-  <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
+  <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% $status_label %></B></FONT></TD>
 </TR>
 
 % my @part_tag = $cust_main->part_tag;
@@ -203,5 +203,10 @@ my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my @agentnums = $curuser->agentnums;
+
+my $status_label = $cust_main->status_label;
+if ($cust_main->is_status_delay_cancel) {
+  $status_label .= ' (Cancelled)';
+}
 
 </%init>

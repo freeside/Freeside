@@ -837,6 +837,20 @@ sub cancel {
   my $date = $options{'date'} if $options{'date'}; # expire/cancel later
   $date = '' if ($date && $date <= $cancel_time);      # complain instead?
 
+  my $delay_cancel = undef;
+  if ( !$date && $self->part_pkg->option('delay_cancel',1)
+       && (($self->status eq 'active') || ($self->status eq 'suspended'))
+  ) {
+    my $expdays = $conf->config('part_pkg-delay_cancel-days') || 1;
+    my $expsecs = 60*60*24*$expdays;
+    my $suspfor = $self->susp ? $cancel_time - $self->susp : 0;
+    $expsecs = $expsecs - $suspfor if $suspfor;
+    unless ($expsecs <= 0) { #if it's already been suspended long enough, don't re-suspend
+      $delay_cancel = 1;
+      $date = $cancel_time + $expsecs;
+    }
+  }
+
   #race condition: usage could be ongoing until unprovisioned
   #resolved by performing a change package instead (which unprovisions) and
   #later cancelling
@@ -907,6 +921,11 @@ sub cancel {
   my %hash = $self->hash;
   if ( $date ) {
     $hash{'expire'} = $date;
+    if ($delay_cancel) {
+      $hash{'susp'} = $cancel_time unless $self->susp;
+      $hash{'adjourn'} = undef;
+      $hash{'resume'} = undef;
+    }
   } else {
     $hash{'cancel'} = $cancel_time;
   }
@@ -3365,6 +3384,31 @@ Returns a hex triplet color string for this package's status.
 sub statuscolor {
   my $self = shift;
   $statuscolor{$self->status};
+}
+
+=item is_status_delay_cancel
+
+Returns true if part_pkg has option delay_cancel, 
+cust_pkg status is 'suspended' and expire is set
+to cancel package within the next day (or however
+many days are set in global config part_pkg-delay_cancel-days.
+
+This is not a real status, this only meant for hacking display 
+values, because otherwise treating the package as suspended is 
+really the whole point of the delay_cancel option.
+
+=cut
+
+sub is_status_delay_cancel {
+  my ($self) = @_;
+  return 0 unless $self->part_pkg->option('delay_cancel',1);
+  return 0 unless $self->status eq 'suspended';
+  return 0 unless $self->expire;
+  my $conf = new FS::Conf;
+  my $expdays = $conf->config('part_pkg-delay_cancel-days') || 1;
+  my $expsecs = 60*60*24*$expdays;
+  return 0 unless $self->expire < time + $expsecs;
+  return 1;
 }
 
 =item pkg_label
