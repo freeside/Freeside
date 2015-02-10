@@ -169,10 +169,15 @@ Example:
 
 
 <TR>
+% if ($conf->exists('city_not_required')) {
+<input type="hidden" name="<% ($select_hash{'prefix'}) ? $select_hash{'prefix'} : '' %>city" value=" "/>
+%} else {
   <<%$th%> ALIGN="right"><%$r%><% mt('City') |h %></<%$th%>>
   <TD WIDTH="1"><% include('/elements/city.html', %select_hash, 'text_style' => \@style ) %></TD>
+
   <<%$th%> ALIGN="right" WIDTH="1" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
   <TD WIDTH="1"><% include('/elements/select-county.html', %select_hash ) %></TD>
+% }
   <<%$th%> ALIGN="right" WIDTH="1"><%$r%><% mt('State') |h %></<%$th%>>
   <TD WIDTH="1">
     <% include('/elements/select-state.html', %select_hash ) %>
