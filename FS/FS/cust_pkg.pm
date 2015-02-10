@@ -1643,7 +1643,7 @@ sub unsuspend {
          )
       or $hash{'order_date'} == $hash{'susp'}
       or $self->part_pkg->option('unused_credit_suspend')
-      or ( defined($reason) and $reason->unused_credit )
+      or ( ref($reason) and $reason->unused_credit )
   ) {
     $adjust_bill = 0;
   }
