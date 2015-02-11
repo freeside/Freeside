@@ -749,8 +749,21 @@ sub location_info {
 Bills a single customer now, in the same fashion as the "Bill now" link in the
 UI.
 
-Returns a hash reference with a single key, 'error'.  If there is an error,
-the value contains the error, otherwise it is empty.
+Returns a hash reference with a single key, 'error'.  If there is an error,   
+the value contains the error, otherwise it is empty. Takes a list of keys and
+values as parameters with the following keys:
+
+=over 4
+
+=item secret
+
+API Secret (required)
+
+=item custnum
+
+Customer number (required)
+
+=back
 
 =cut
 
