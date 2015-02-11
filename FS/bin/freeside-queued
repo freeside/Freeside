@@ -38,15 +38,16 @@ drop_root();
 $ENV{HOME} = (getpwuid($>))[7]; #for ssh
 
 warn "connecting to database\n" if $DEBUG;
-$@ = 'not connected';
-while ( $@ ) {
-  eval { adminsuidsetup $user; };
-  if ( $@ ) {
-    warn $@;
-    warn "sleeping for reconnect...\n";
-    sleep 5;
-  }
-}
+#$@ = 'not connected';
+#while ( $@ ) {
+#  eval { adminsuidsetup $user; };
+#  if ( $@ ) {
+#    warn $@;
+#    warn "sleeping for reconnect...\n";
+#    sleep 5;
+#  }
+#}
+adminsuidsetup $user;
 
 my $log = FS::Log->new('queue');
 logfile( "%%%FREESIDE_LOG%%%/queuelog.". $FS::UID::datasrc );
