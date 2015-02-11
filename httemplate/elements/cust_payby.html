@@ -1,0 +1,309 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE STYLE="display:inline">
+    <TR>
+
+%     ###
+%     # select
+%     ###
+
+      <TD>
+        <SELECT NAME="<%$name%>_payby"
+                onChange="<%$name%>_payby_changed(this)"
+        >
+%         foreach my $payby (@payby) {
+            <OPTION VALUE="<% $payby %>"
+               <% ($sel_payby eq $payby) ? 'SELECTED' : '' %>
+            ><% FS::payby->shortname($payby) |h %>
+%         }
+        </SELECT><BR>
+        <FONT SIZE="-1"><% mt('Type') |h %></FONT>
+      </TD>
+
+%     ###
+%     # card info
+%     ###
+
+%     my $card_display = $sel_payby eq 'CARD' ? '' : 'STYLE="display:none"';
+
+      <TD ID="<%$id%>_td_payinfo" <%$card_display%>>
+        <INPUT TYPE      = "text"
+               NAME      = "<%$name%>_payinfo"
+               ID        = "<%$id%>_payinfo"
+               SIZE      = 22
+               MAXLENGTH = 19
+               VALUE     = "<% ( $cgi->param($name.'_payby')
+                                   || $cust_payby->payby    ) =~ /^(CARD|DCRD)$/
+                                 ? ( $cgi->param($name.'_payinfo') || $cust_payby->paymask )
+                                 : ''
+                            |h %>"
+               onChange  = "<% $onchange %>"
+        >
+        <BR><FONT SIZE="-1"><% mt('Card number') |h %></FONT>
+      </TD>
+
+      <TD ID="<%$id%>_td_paydate" <%$card_display%>>
+        <& /elements/select-month_year.html,
+             'prefix'        => $name. '_paydate',
+             'selected_date' => (
+               ( $cgi->param($name.'_payby') || $cust_payby->payby ) =~ /^(CARD|DCRD)$/
+                 ? ( $cgi->param($name.'_paydate_month')
+                       ? $cgi->param($name.'_paydate_month'). '-1-'.
+                         $cgi->param($name.'_paydate_year')
+                       : $cust_payby->paydate
+                   )
+                 : ''
+             ),
+             'onhhange'      => $onchange,
+        &>
+        <BR><FONT SIZE="-1">Expiration&nbsp;date</FONT>
+      </TD>
+
+      <TD ID="<%$id%>_td_paycvv" <%$card_display%>>
+        <INPUT TYPE      = "text"
+               NAME      = "<%$name%>_paycvv"
+               ID        = "<%$id%>_paycvv"
+               SIZE      = 2
+               MAXLENGTH = 4
+               VALUE     = "<% $cgi->param($name.'_paycvv') %>"
+               onChange  = "<% $onchange %>"
+        >
+        <BR><FONT SIZE="-1"><% mt('CVV2') |h %>&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%$p%>docs/cvv2.html', 480, 275, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)</FONT>
+      </TD>
+
+      <TD ID="<%$id%>_td_payname" <%$card_display%>>
+        <INPUT TYPE     = "text"
+               NAME     = "<%$name%>_payname"
+               ID       = "<%$id%>_payname"
+               onChange = "<% $onchange %>"
+               VALUE     = "<% ( $cgi->param($name.'_payby')
+                                   || $cust_payby->payby    ) =~ /^(CARD|DCRD)$/
+                                 ? ( $cgi->param($name.'_payname') || $cust_payby->payname )
+                                 : ''
+                            |h %>"
+        >
+        <BR><FONT SIZE="-1"><% mt('Exact name on card') |h %></FONT>
+      </TD>
+
+%     ###
+%     # chek info
+%     ###
+
+%     my $chek_display = $sel_payby eq 'CHEK' ? '' : 'STYLE="display:none"';
+
+      <TD ID="<%$id%>_td_paytype" <%$chek_display%>>
+        <SELECT NAME="<%$name%>_paytype">!.
+%         foreach my $paytype ( FS::cust_payby->paytypes ) {
+            <OPTION VALUE="<%$paytype%>"
+                    <% $paytype eq ( $cgi->param($name.'_paytype')
+                                       || $cust_payby->paytype     )
+                         ? 'SELECTED'
+                         : ''
+                    %>
+            ><% $paytype %>
+%         }
+        </SELECT>
+        <BR><FONT SIZE="-1"><% mt('Account type') |h %></FONT>
+      </TD>
+ 
+%     my( $account, $aba ) = split('@',
+%       ( $cgi->param($name.'_payby') || $cust_payby->payby ) =~ /^(CHEK|DCHK)$/
+%         ? $cgi->param($name.'_payinfo')
+%         : $cust_payby->payinfo
+%       );
+%     my $branch = '';
+%     ($branch,$aba) = split('\.',$aba)
+%       if $echeck_country eq 'CA';
+%
+%     #false laziness w/view/cust_main/billing.html and misc/payment.cgi
+%     my $routing_label = $echeck_country eq 'US' ? 'ABA/Routing #'
+%                                                 : 'Routing #';
+%     my $routing_size      = $echeck_country eq 'CA' ? 4 : 10;
+%     my $routing_maxlength = $echeck_country eq 'CA' ? 3 : 9;
+%     my $bankname_size     = $echeck_country eq 'CA' ? 13 : 20;
+
+      <TD ID="<%$id%>_td_payinfo1" <%$chek_display%>>
+        <INPUT TYPE = "text"
+               NAME      = "<%$name%>_payinfo1"
+               ID        = "<%$id%>_payinfo1"
+               VALUE     = "<% $account |h %>"
+               SIZE      = 12
+        >
+        <BR><FONT SIZE="-1"><% mt('Account #') |h %>&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%$p%>docs/ach.html', 380, 220, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)</FONT>
+      </TD>
+
+     <TD ID="<%$id%>_td_payinfo2" <%$chek_display%>>
+        <INPUT TYPE = "text"
+               NAME      = "<%$name%>_payinfo2"
+               ID        = "<%$id%>_payinfo2"
+               VALUE     = "<% $aba |h %>"
+               SIZE      = "<% $routing_size %>"
+               MAXLENGTH = "<% $routing_maxlength %>"
+        >
+        <BR><FONT SIZE="-1"><% mt($routing_label) |h %></FONT>
+      </TD>
+
+%     if ( $echeck_country eq 'CA' ) {
+        <TD ID="<%$id%>_td_payinfo3" <%$chek_display%>>
+          <INPUT TYPE = "text"
+                 NAME      = "<%$name%>_payinfo3"
+                 ID        = "<%$id%>_payinfo3"
+                 VALUE     = "<% $branch |h %>"
+                 SIZE      = 6
+                 MAXLENGTH = 5
+          >
+          <BR><FONT SIZE="-1"><% mt('Branch #') |h %></FONT>
+        </TD>
+%     }
+
+      <TD ID="<%$id%>_td_payname_CHEK" <%$chek_display%>>
+        <INPUT TYPE = "text"
+               NAME      = "<%$name%>_payname_CHEK"
+               ID        = "<%$id%>_payname_CHEK"
+               VALUE     = "<% ( $cgi->param($name.'_payby')
+                                   || $cust_payby->payby    ) =~ /^(CHEK|DCHK)$/
+                                 ? ( $cgi->param($name.'_payname_CHEK') || $cust_payby->payname )
+                                 : ''
+                            |h %>"
+               SIZE      = "<% $bankname_size %>"
+        >
+        <BR><FONT SIZE="-1"><% mt('Bank name') |h %></FONT>
+      </TD>
+
+%     if ( $conf->exists('show_bankstate') ) {
+        <TD ID="<%$id%>_td_paystate" <%$chek_display%>>
+          <& /elements/select-state.html,
+               'prefix'  => $name. '_pay',
+               'empty'   => emt('(choose)'),
+               'state'   => $cgi->param($name.'_paystate')
+                              || $cust_payby->paystate,
+               #was cust_main->country in 3.x, but this will do until/unlesss
+               # someone needs to track foreign bank states
+               'country' => scalar($conf->config('countrydefault')) || 'US',
+          &>
+          <BR><FONT SIZE="-1"><% mt('Bank state') |h %></FONT>
+        </TD>
+%     }
+
+%     ###
+%     # auto (maybe this should be first...)
+%     ###
+
+%     #some fun javascript to enforce a single value for each weight
+
+      <TD>
+        <SELECT NAME = "<%$name%>_weight">
+          <OPTION VALUE="">Do not auto-charge
+%         foreach my $weight ( 1 .. max(5,$cust_payby->weight) ) { #more than 5?
+            <OPTION VALUE="<%$weight%>"
+                    <% $weight == $cust_payby->weight
+                         ? 'SELECTED'
+                         : ''
+                    %>
+            ><% mt( $weight{$weight} ) |h %>
+%         }
+        </SELECT>
+        <BR>
+        <FONT SIZE="-1"><% mt('Auto-charge') |h %></FONT>
+      </TD>
+
+    </TR>
+  </TABLE>
+
+% }
+% unless ( $opt{'html_only'} ) {
+  <SCRIPT TYPE="text/javascript">
+
+    function <%$name%>_payby_changed(what) {
+      var payby = what.options[what.selectedIndex].value;
+      if ( payby == 'CARD' ) {
+        document.getElementById('<%$id%>_td_payinfo').style.display = '';
+        document.getElementById('<%$id%>_td_paydate').style.display = '';
+        document.getElementById('<%$id%>_td_paycvv').style.display = '';
+        document.getElementById('<%$id%>_td_payname').style.display = '';
+        document.getElementById('<%$id%>_td_payinfo1').style.display = 'none';
+        document.getElementById('<%$id%>_td_payinfo2').style.display = 'none';
+        document.getElementById('<%$id%>_td_paytype').style.display = 'none';
+        document.getElementById('<%$id%>_td_payname_CHEK').style.display = 'none';
+        var td_payinfo3 = document.getElementById('<%$id%>_td_payinfo3');
+        if ( td_payinfo3 ) {
+          td_payinfo3.style.display = 'none';
+        }
+        var td_paystate = document.getElementById('<%$id%>_td_paystate');
+        if ( td_paystate ) {
+          td_paystate.style.display = 'none';
+        }
+      } else if ( payby == 'CHEK' ) {
+        document.getElementById('<%$id%>_td_payinfo').style.display = 'none';
+        document.getElementById('<%$id%>_td_paydate').style.display = 'none';
+        document.getElementById('<%$id%>_td_paycvv').style.display = 'none';
+        document.getElementById('<%$id%>_td_payname').style.display = 'none';
+        document.getElementById('<%$id%>_td_payinfo1').style.display = '';
+        document.getElementById('<%$id%>_td_payinfo2').style.display = '';
+        document.getElementById('<%$id%>_td_paytype').style.display = '';
+        document.getElementById('<%$id%>_td_payname_CHEK').style.display = '';
+        var td_payinfo3 = document.getElementById('<%$id%>_td_payinfo3');
+        if ( td_payinfo3 ) {
+          td_payinfo3.style.display = '';
+        }
+        var td_paystate = document.getElementById('<%$id%>_td_paystate');
+        if ( td_paystate ) {
+          td_paystate.style.display = '';
+        }
+      } else {
+        alert( 'unknown payby ' + payby );
+      }
+    }
+
+  </SCRIPT>
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+
+my $echeck_country = $conf->config('echeck-country');
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'custpaybynum';
+my $id = $opt{'id'} || 'custpaybynum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  #$onchange = 'onChange="'. $onchange. '"';
+}
+
+my $cust_payby;
+if ( $curr_value ) {
+  $cust_payby = qsearchs('cust_payby', { 'custpaybynum' => $curr_value } );
+} else {
+  $cust_payby = new FS::cust_payby {};
+}
+my $sel_payby = $cust_payby->payby;
+$sel_payby = 'CARD' if $sel_payby eq 'DCRD' || $sel_payby eq '';
+$sel_payby = 'CHEK' if $sel_payby eq 'DCHK';
+
+my @payby = FS::payby->cust_payby;
+my %conf_payby = map { $_=>1 } $conf->config('payby');
+@payby = grep $conf_payby{$_}, @payby if keys %conf_payby;
+@payby = grep $_ !~ /^(DCRD|DCHK)$/, @payby;
+
+my %weight = (
+  1 => 'Primary',
+  2 => 'Secondary',
+  3 => 'Tertiary',
+  4 => 'Fourth',
+  5 => 'Fifth',
+  6 => 'Sixth',
+  7 => 'Seventh',
+);
+
+</%init>
