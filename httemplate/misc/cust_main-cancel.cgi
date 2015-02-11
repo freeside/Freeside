@@ -54,10 +54,11 @@ if ( $error ) {
 }
 else {
   warn "cancelling $cust_main";
-  $error = $cust_main->cancel(
+  my @error = $cust_main->cancel( #returns list of errors
     'ban'    => $ban,
     'reason' => $reasonnum,
   );
+  $error = join(', ',@error);
 }
 
 if ( $error ) {

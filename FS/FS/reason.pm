@@ -174,7 +174,7 @@ sub new_or_existing {
     }
   } else {
     my %hash = ('class' => $opt{'class'}, 'type' => $opt{'type'});
-    my $reason_type = qsearchs('reason_type', \%hash)
+    $reason_type = qsearchs('reason_type', \%hash)
                       || FS::reason_type->new(\%hash);
 
     $error = $reason_type->insert unless $reason_type->typenum;
