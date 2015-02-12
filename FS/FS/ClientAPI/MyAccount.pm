@@ -48,7 +48,7 @@ use FS::msg_template;
 use FS::contact;
 use FS::cust_location;
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
 
 use vars qw( @cust_main_editable_fields @location_editable_fields );
