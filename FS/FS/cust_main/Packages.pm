@@ -57,6 +57,15 @@ jobs will have a dependancy on the supplied job (they will not run until the
 specific job completes).  This can be used to defer provisioning until some
 action completes (such as running the customer's credit card successfully).
 
+=item noexport
+
+This option is option is deprecated but still works for now (use
+I<depend_jobnum> instead for new code).  If I<noexport> is set true, no
+provisioning jobs (exports) are scheduled.  (You can schedule them later with
+the B<reexport> method for each cust_pkg object.  Using the B<reexport> method
+on the cust_main object is not recommended, as existing services will also be
+reexported.)
+
 =item ticket_subject
 
 Optional subject for a ticket created and attached to this customer
@@ -78,6 +87,8 @@ sub order_pkg {
   warn "$me order_pkg called with options ".
        join(', ', map { "$_: $opt->{$_}" } keys %$opt ). "\n"
     if $DEBUG;
+
+  local $FS::svc_Common::noexport_hack = 1 if $opt->{'noexport'};
 
   my $cust_pkg = $opt->{'cust_pkg'};
   my $svcs     = $opt->{'svcs'} || [];
@@ -182,18 +193,14 @@ sub order_pkg {
         'custnum'       => $self->custnum,
         'main_pkgnum'   => $cust_pkg->pkgnum,
         # try to prevent as many surprises as possible
-        'pkgbatch'      => $cust_pkg->pkgbatch,
-        'start_date'    => $cust_pkg->start_date,
-        'order_date'    => $cust_pkg->order_date,
-        'expire'        => $cust_pkg->expire,
-        'adjourn'       => $cust_pkg->adjourn,
-        'contract_end'  => $cust_pkg->contract_end,
-        'refnum'        => $cust_pkg->refnum,
-        'discountnum'   => $cust_pkg->discountnum,
-        'waive_setup'   => $cust_pkg->waive_setup,
         'allow_pkgpart' => $opt->{'allow_pkgpart'},
+        map { $_ => $cust_pkg->$_() }
+          qw( pkgbatch
+              start_date order_date expire adjourn contract_end
+              refnum discountnum waive_setup
+            )
     });
-    $error = $self->order_pkg('cust_pkg' => $pkg,
+    $error = $self->order_pkg('cust_pkg'    => $pkg,
                               'locationnum' => $cust_pkg->locationnum);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -233,7 +240,8 @@ on the supplied jobnum (they will not run until the specific job completes).
 This can be used to defer provisioning until some action completes (such
 as running the customer's credit card successfully).
 
-The I<noexport> option is deprecated.  If I<noexport> is set true, no
+The I<noexport> option is deprecated but still works for now (use
+I<depend_jobnum> instead for new code).  If I<noexport> is set true, no
 provisioning jobs (exports) are scheduled.  (You can schedule them later with
 the B<reexport> method for each cust_pkg object.  Using the B<reexport> method
 on the cust_main object is not recommended, as existing services will also be
