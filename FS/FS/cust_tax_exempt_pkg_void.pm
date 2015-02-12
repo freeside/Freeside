@@ -110,10 +110,11 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  my $error = 
+  my $error =
     $self->ut_number('exemptpkgnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg_void', 'billpkgnum' )
-    || $self->ut_foreign_key('taxnum', 'cust_main_county', 'taxnum')
+    || $self->ut_enum('taxtype', [ 'FS::cust_main_county', 'FS::tax_rate' ])
+    || $self->ut_number('taxnum')
     || $self->ut_numbern('year')
     || $self->ut_numbern('month')
     || $self->ut_numbern('creditbillpkgnum') #no FK check, will have been del'ed
@@ -124,6 +125,11 @@ sub check {
     || $self->ut_flag('exempt_cust_taxname')
     || $self->ut_flag('exempt_monthly')
   ;
+
+  $self->get('taxtype') =~ /^FS::(\w+)$/; 
+  my $rate_table = $1;
+  $error ||= $self->ut_foreign_key('taxnum', $rate_table, 'taxnum');
+
   return $error if $error;
 
   $self->SUPER::check;

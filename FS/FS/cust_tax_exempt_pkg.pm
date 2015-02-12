@@ -6,6 +6,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_Mixin;
 use FS::cust_bill_pkg;
 use FS::cust_main_county;
+use FS::tax_rate;
 use FS::cust_credit_bill_pkg;
 use FS::UID qw(dbh);
 use FS::upgrade_journal;
@@ -49,6 +50,9 @@ currently supported:
 
 =item billpkgnum - invoice line item (see L<FS::cust_bill_pkg>) that 
 was exempted from tax.
+
+=item taxtype - the object class of the tax record ('FS::cust_main_county'
+or 'FS::tax_rate').
 
 =item taxnum - tax rate (see L<FS::cust_main_county>)
 
@@ -138,7 +142,7 @@ sub check {
 
   my $error = $self->ut_numbern('exemptnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
-    || $self->ut_foreign_key('taxnum', 'cust_main_county', 'taxnum')
+    || $self->ut_enum('taxtype', [ 'FS::cust_main_county', 'FS::tax_rate' ])
     || $self->ut_foreign_keyn('creditbillpkgnum',
                               'cust_credit_bill_pkg',
                               'creditbillpkgnum')
@@ -151,6 +155,10 @@ sub check {
     || $self->ut_flag('exempt_cust_taxname')
     || $self->SUPER::check
   ;
+
+  $self->get('taxtype') =~ /^FS::(\w+)$/;
+  my $rate_table = $1;
+  $error ||= $self->ut_foreign_key('taxnum', $rate_table, 'taxnum');
 
   return $error if $error;
 
@@ -178,6 +186,8 @@ sub check {
 
 =item cust_main_county
 
+=item tax_rate
+
 Returns the associated tax definition if it still exists in the database.
 Otherwise returns false.
 
@@ -185,7 +195,14 @@ Otherwise returns false.
 
 sub cust_main_county {
   my $self = shift;
-  qsearchs( 'cust_main_county', { 'taxnum', $self->taxnum } );
+  my $class = $self->taxtype;
+  $class->by_key($self->taxnum);
+}
+
+sub tax_rate {
+  my $self = shift;
+  my $class = $self->taxtype;
+  $class->by_key($self->taxnum);
 }
 
 sub _upgrade_data {
@@ -198,6 +215,19 @@ sub _upgrade_data {
     dbh->do($sql) or die dbh->errstr;
     FS::upgrade_journal->set_done($journal);
   }
+
+  $journal = 'cust_tax_exempt_pkg_taxtype';
+  if ( !FS::upgrade_journal->is_done($journal) ) {
+    my $sql = "UPDATE cust_tax_exempt_pkg ".
+              "SET taxtype = 'FS::cust_main_county' WHERE taxtype IS NULL";
+    dbh->do($sql) or die dbh->errstr;
+    $sql =    "UPDATE cust_tax_exempt_pkg_void ".
+              "SET taxtype = 'FS::cust_main_county' WHERE taxtype IS NULL";
+    dbh->do($sql) or die dbh->errstr;
+    FS::upgrade_journal->set_done($journal);
+  }
+
+
 }
 
 =back

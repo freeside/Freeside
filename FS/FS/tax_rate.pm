@@ -18,6 +18,7 @@ use MIME::Base64;
 use DBIx::DBSchema;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
+use List::Util 'sum';
 use FS::Record qw( qsearch qsearchs dbh dbdef );
 use FS::Conf;
 use FS::tax_class;
@@ -382,56 +383,75 @@ sub passtype_name {
   $tax_passtypes{$self->passtype};
 }
 
-=item taxline TAXABLES
+#Returns a listref of a name and an amount of tax calculated for the list
+#of packages/amounts referenced by TAXABLES.  If an error occurs, a message
+#is returned as a scalar.
 
-Returns a listref of a name and an amount of tax calculated for the list
-of packages/amounts referenced by TAXABLES.  If an error occurs, a message
-is returned as a scalar.
+=item taxline TAXABLES_ARRAYREF, [ OPTION => VALUE ... ]
+
+Takes an arrayref of L<FS::cust_bill_pkg> objects representing taxable
+line items, and returns some number of new L<FS::cust_bill_pkg> objects 
+representing the tax on them under this tax rate.  Each returned object
+will correspond to a single input line item.
+
+For accurate calculation of per-customer or per-location taxes, ALL items
+appearing on the invoice MUST be passed to this method together.
+
+Optionally, any of the L<FS::cust_bill_pkg> objects may be followed in the
+array by a charge class: 'setup', 'recur', '' (for unclassified usage), or an
+integer denoting an L<FS::usage_class> number.  In this case, the tax will 
+only be charged on that portion of the line item.
+
+Each returned object will have a pseudo-field,
+"cust_bill_pkg_tax_rate_location", containing a single
+L<FS::cust_bill_pkg_tax_rate_location> object.  This will in turn
+have a "taxable_cust_bill_pkg" pseudo-field linking it to one of the taxable
+items.  All of these links must be resolved as the objects are inserted.
+
+If the tax is disabled, this method will return nothing.  Be prepared for 
+that.
+
+In addition to calculating the tax for the line items, this will calculate
+tax exemptions and attach them to the line items.  I<Currently this only
+supports customer exemptions.>
+
+Options may include 'custnum' and 'invoice_time' in case the cust_bill_pkg
+objects belong to an invoice that hasn't been inserted yet.
+
+The 'exemptions' option allowed in L<FS::cust_main_county::taxline> does 
+nothing here, since monthly exemptions aren't supported.
 
 =cut
 
 sub taxline {
-  my $self = shift;
-  # this used to accept a hash of options but none of them did anything
-  # so it's been removed.
-
-  my $taxables;
-
-  if (ref($_[0]) eq 'ARRAY') {
-    $taxables = shift;
-  }else{
-    $taxables = [ @_ ];
-    #exemptions would be broken in this case
-  }
+  my( $self, $taxables, %opt) = @_;
+  $taxables = [ $taxables ] unless ref($taxables) eq 'ARRAY';
 
   my $name = $self->taxname;
   $name = 'Other surcharges'
     if ($self->passtype == 2);
   my $amount = 0;
   
-  if ( $self->disabled ) { # we always know how to handle disabled taxes
-    return {
-      'name'   => $name,
-      'amount' => $amount,
-    };
+  return unless @$taxables; # nothing to do
+  return if $self->disabled; # tax is disabled, skip it
+  return if $self->passflag eq 'N'; # tax can't be passed to the customer
+    # but should probably still appear on the liability report--create a 
+    # cust_tax_exempt_pkg record for it?
+
+  # XXX a certain amount of false laziness with FS::cust_main_county
+  my $cust_bill = $taxables->[0]->cust_bill;
+  my $custnum = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
+  my $cust_main = FS::cust_main->by_key($custnum) if $custnum > 0;
+  if (!$cust_main) {
+    die "unable to calculate taxes for an unknown customer\n";
   }
 
-  my $taxable_charged = 0;
-  my @cust_bill_pkg = grep { $taxable_charged += $_ unless ref; ref; }
-                      @$taxables;
+  my $taxratelocationnum = $self->tax_rate_location->taxratelocationnum
+    or die "no tax_rate_location linked to tax_rate #".$self->taxnum."\n";
 
   warn "calculating taxes for ". $self->taxnum. " on ".
-    join (",", map { $_->pkgnum } @cust_bill_pkg)
+    join (",", map { $_->pkgnum } @$taxables)
     if $DEBUG;
-
-  if ($self->passflag eq 'N') {
-    # return "fatal: can't (yet) handle taxes not passed to the customer";
-    # until someone needs to track these in freeside
-    return {
-      'name'   => $name,
-      'amount' => 0,
-    };
-  }
 
   my $maxtype = $self->maxtype || 0;
   if ($maxtype != 0 && $maxtype != 1 
@@ -454,54 +474,139 @@ sub taxline {
       $self->_fatal_or_null( 'tax with "'. $self->basetype_name. '" basis' );
   }
 
-  unless ($self->setuptax =~ /^Y$/i) {
-    $taxable_charged += $_->setup foreach @cust_bill_pkg;
-  }
-  unless ($self->recurtax =~ /^Y$/i) {
-    $taxable_charged += $_->recur foreach @cust_bill_pkg;
-  }
+  my @tax_locations;
+  my %seen; # locationnum or pkgnum => 1
 
+  my $taxable_cents = 0;
   my $taxable_units = 0;
-  unless ($self->recurtax =~ /^Y$/i) {
+  my $tax_cents = 0;
 
-    if (( $self->unittype || 0 ) == 0) { #access line
-      my %seen = ();
-      foreach (@cust_bill_pkg) {
-        $taxable_units += $_->units
-          unless $seen{$_->pkgnum}++;
-      }
-
-    } elsif ($self->unittype == 1) { #minute
-      return $self->_fatal_or_null( 'fee with minute unit type' );
-
-    } elsif ($self->unittype == 2) { #account
-
-      my $conf = new FS::Conf;
-      if ( $conf->exists('tax-pkg_address') ) {
-        #number of distinct locations
-        my %seen = ();
-        foreach (@cust_bill_pkg) {
-          $taxable_units++
-            unless $seen{$_->cust_pkg->locationnum}++;
-        }
-      } else {
-        $taxable_units = 1;
-      }
-
-    } else {
-      return $self->_fatal_or_null( 'unknown unit type in tax'. $self->taxnum );
+  while (@$taxables) {
+    my $cust_bill_pkg = shift @$taxables;
+    my $class = 'all';
+    if ( defined($taxables->[0]) and !ref($taxables->[0]) ) {
+      $class = shift @$taxables;
     }
 
-  }
+    my %usage_map = map { $_ => $cust_bill_pkg->usage($_) }
+                    $cust_bill_pkg->usage_classes;
+    my $usage_total = sum( values(%usage_map), 0 );
 
-  # XXX handle excessrate (use_excessrate) / excessfee /
-  #            taxbase/feebase / taxmax/feemax
-  #            and eventually exemptions
-  #
-  # the tax or fee is applied to taxbase or feebase and then
-  # the excessrate or excess fee is applied to taxmax or feemax
+    # determine if the item has exemptions that apply to this tax def
+    my @exemptions = grep { $_->taxnum == $self->taxnum }
+      @{ $cust_bill_pkg->cust_tax_exempt_pkg };
 
-  if ( ($self->taxmax > 0 and $taxable_charged > $self->taxmax) or
+    if ( $self->tax > 0 ) {
+
+      my $taxable_charged = 0;
+      if ($class eq 'all') {
+        $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur;
+      } elsif ($class eq 'setup') {
+        $taxable_charged = $cust_bill_pkg->setup;
+      } elsif ($class eq 'recur') {
+        $taxable_charged = $cust_bill_pkg->recur - $usage_total;
+      } else {
+        $taxable_charged = $usage_map{$class} || 0;
+      }
+
+      foreach my $ex (@exemptions) {
+        # the only cases where the exemption doesn't apply:
+        # if it's a setup exemption and $class is not 'setup' or 'all'
+        # if it's a recur exemption and $class is 'setup'
+        if (   ( $ex->exempt_recur and $class eq 'setup' ) 
+            or ( $ex->exempt_setup and $class ne 'setup' and $class ne 'all' )
+        ) {
+          next;
+        }
+
+        $taxable_charged -= $ex->amount;
+      }
+      # cust_main_county handles monthly capped exemptions; this doesn't.
+      #
+      # $taxable_charged can also be less than zero at this point 
+      # (recur exemption + usage class breakdown); treat that as zero.
+      next if $taxable_charged <= 0;
+
+      # yeah, some false laziness with cust_main_county
+      my $this_tax_cents = int(100 * $taxable_charged * $self->tax);
+      my $tax_location = FS::cust_bill_pkg_tax_rate_location->new({
+          'taxnum'                => $self->taxnum,
+          'taxtype'               => ref($self),
+          'cents'                 => $this_tax_cents, # not a real field
+          'locationtaxid'         => $self->location, # fundamentally silly
+          'taxable_cust_bill_pkg' => $cust_bill_pkg,
+          'taxratelocationnum'    => $taxratelocationnum,
+          'taxclass'              => $class,
+      });
+      push @tax_locations, $tax_location;
+
+      $taxable_cents += 100 * $taxable_charged;
+      $tax_cents += $this_tax_cents;
+
+    } elsif ( $self->fee > 0 ) {
+      # most CCH taxes are this type, because nearly every county has a 911
+      # fee
+      my $units = 0;
+
+      # since we don't support partial exemptions (except setup/recur), 
+      # if there's an exemption that applies to this package and taxrate, 
+      # don't charge ANY per-unit fees
+      next if @exemptions;
+
+      # don't apply fees to usage classes (maybe if we ever get per-minute
+      # fees?)
+      next unless $class eq 'setup'
+              or  $class eq 'recur'
+              or  $class eq 'all';
+      
+      if ( $self->unittype == 0 ) {
+        if ( !$seen{$cust_bill_pkg->pkgnum} ) {
+          # per access line
+          $units = $cust_bill_pkg->units;
+          $seen{$cust_bill_pkg->pkgnum} = 1;
+        } # else it's been seen, leave it at zero units
+
+      } elsif ($self->unittype == 1) { # per minute
+        # STILL not supported...fortunately these only exist if you happen
+        # to be in Idaho or Little Rock, Arkansas
+        #
+        # though a voip_cdr package could easily report minutes of usage...
+        return $self->_fatal_or_null( 'fee with minute unit type' );
+
+      } elsif ( $self->unittype == 2 ) {
+
+        # per account
+        $units = 1 unless $seen{$cust_bill_pkg->tax_locationnum};
+        $seen{$cust_bill_pkg->tax_locationnum} = 1;
+
+      } else {
+        # Unittype 19 is used for prepaid wireless E911 charges in many states.
+        # Apparently "per retail purchase", which for us would mean per invoice.
+        # Unittype 20 is used for some 911 surcharges and I have no idea what 
+        # it means.
+        return $self->_fatal_or_null( 'unknown unit type in tax'. $self->taxnum );
+      }
+      my $this_tax_cents = int($units * $self->fee * 100);
+      my $tax_location = FS::cust_bill_pkg_tax_rate_location->new({
+          'taxnum'                => $self->taxnum,
+          'taxtype'               => ref($self),
+          'cents'                 => $this_tax_cents,
+          'locationtaxid'         => $self->location,
+          'taxable_cust_bill_pkg' => $cust_bill_pkg,
+          'taxratelocationnum'    => $taxratelocationnum,
+      });
+      push @tax_locations, $tax_location;
+
+      $taxable_units += $units;
+      $tax_cents += $this_tax_cents;
+
+    }
+  } # foreach $cust_bill_pkg
+
+  # check bracket maxima; throw an error if we've gone over, because
+  # we don't really implement them
+
+  if ( ($self->taxmax > 0 and $taxable_cents > $self->taxmax*100 ) or
        ($self->feemax > 0 and $taxable_units > $self->feemax) ) {
     # throw an error
     # (why not just cap taxable_charged/units at the taxmax/feemax? because
@@ -510,17 +615,42 @@ sub taxline {
     return $self->_fatal_or_null( 'tax base > taxmax/feemax for tax'.$self->taxnum );
   }
 
-  $amount += $taxable_charged * $self->tax;
-  $amount += $taxable_units * $self->fee;
-  
-  warn "calculated taxes as [ $name, $amount ]\n"
-    if $DEBUG;
+  # round and distribute
+  my $total_tax_cents = sprintf('%.0f',
+    ($taxable_cents * $self->tax) + ($taxable_units * $self->fee * 100)
+  );
+  my $extra_cents = sprintf('%.0f', $total_tax_cents - $tax_cents);
+  $tax_cents += $extra_cents;
+  my $i = 0;
+  foreach (@tax_locations) { # can never require more than a single pass, yes?
+    my $cents = $_->get('cents');
+    if ( $extra_cents > 0 ) {
+      $cents++;
+      $extra_cents--;
+    }
+    $_->set('amount', sprintf('%.2f', $cents/100));
+  }
 
-  return {
-    'name'   => $name,
-    'amount' => $amount,
-  };
+  # just transform each CBPTRL record into a tax line item.
+  # calculate_taxes will consolidate them, but before that happens we have
+  # to do tax on tax calculation.
+  my @tax_items;
+  foreach (@tax_locations) {
+    next if $_->amount == 0;
+    my $tax_item = FS::cust_bill_pkg->new({
+        'pkgnum'        => 0,
+        'recur'         => 0,
+        'setup'         => $_->amount,
+        'sdate'         => '', # $_->sdate?
+        'edate'         => '',
+        'itemdesc'      => $name,
+        'cust_bill_pkg_tax_rate_location' => [ $_ ],
+    });
+    $_->set('tax_cust_bill_pkg' => $tax_item);
+    push @tax_items, $tax_item;
+  }
 
+  return @tax_items;
 }
 
 sub _fatal_or_null {

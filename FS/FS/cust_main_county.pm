@@ -241,9 +241,6 @@ will in turn have a "taxable_cust_bill_pkg" pseudo-field linking it to one
 of the taxable items.  All of these links must be resolved as the objects
 are inserted.
 
-In addition to calculating the tax for the line items, this will calculate
-any appropriate tax exemptions and attach them to the line items.
-
 Options may include 'custnum' and 'invoice_time' in case the cust_bill_pkg
 objects belong to an invoice that hasn't been inserted yet.
 
@@ -257,6 +254,10 @@ tax exemption limit if there is one.
 
 sub taxline {
   my( $self, $taxables, %opt ) = @_;
+  $taxables = [ $taxables ] unless ref($taxables) eq 'ARRAY';
+  # remove any charge class identifiers; they're not supported here
+  @$taxables = grep { ref $_ } @$taxables;
+
   return 'taxline called with no line items' unless @$taxables;
 
   local $SIG{HUP} = 'IGNORE';
@@ -283,20 +284,6 @@ sub taxline {
     die "unable to calculate taxes for an unknown customer\n";
   }
 
-  # set a flag if the customer is tax-exempt
-  my $exempt_cust;
-  my $conf = FS::Conf->new;
-  if ( $conf->exists('cust_class-tax_exempt') ) {
-    my $cust_class = $cust_main->cust_class;
-    $exempt_cust = $cust_class->tax if $cust_class;
-  } else {
-    $exempt_cust = $cust_main->tax;
-  }
-
-  # set a flag if the customer is exempt from this tax here
-  my $exempt_cust_taxname = $cust_main->tax_exemption($self->taxname)
-    if $self->taxname;
-
   # Gather any exemptions that are already attached to these cust_bill_pkgs
   # so that we can deduct them from the customer's monthly limit.
   my @existing_exemptions = @{ $opt{'exemptions'} };
@@ -314,70 +301,18 @@ sub taxline {
 
   foreach my $cust_bill_pkg (@$taxables) {
 
-    my $cust_pkg  = $cust_bill_pkg->cust_pkg;
-    my $part_pkg  = $cust_bill_pkg->part_pkg;
-    my $part_fee  = $cust_bill_pkg->part_fee;
-
-    my $locationnum = $cust_pkg
-                      ? $cust_pkg->locationnum
-                      : $cust_main->bill_locationnum;
-
-    my @new_exemptions;
-    my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur
-      or next; # don't create zero-amount exemptions
-
-    # XXX the following procedure should probably be in cust_bill_pkg
-
-    if ( $exempt_cust ) {
-
-      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
-          amount => $taxable_charged,
-          exempt_cust => 'Y',
-        });
-      $taxable_charged = 0;
-
-    } elsif ( $exempt_cust_taxname ) {
-
-      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
-          amount => $taxable_charged,
-          exempt_cust_taxname => 'Y',
-        });
-      $taxable_charged = 0;
-
+    my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur;
+    foreach ( grep { $_->taxnum == $self->taxnum }
+              @{ $cust_bill_pkg->cust_tax_exempt_pkg }
+    ) {
+      # deal with exemptions that have been set on this line item, and 
+      # pertain to this tax def
+      $taxable_charged -= $_->amount;
     }
+ 
+    my $locationnum = $cust_bill_pkg->tax_locationnum;
 
-    my $setup_exempt = ( ($part_fee and not $part_fee->taxable)
-                      or ($part_pkg and $part_pkg->setuptax)
-                      or $self->setuptax );
-
-    if ( $setup_exempt
-        and $cust_bill_pkg->setup > 0
-        and $taxable_charged > 0 ) {
-
-      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
-          amount => $cust_bill_pkg->setup,
-          exempt_setup => 'Y'
-      });
-      $taxable_charged -= $cust_bill_pkg->setup;
-
-    }
-
-    my $recur_exempt = ( ($part_fee and not $part_fee->taxable)
-                      or ($part_pkg and $part_pkg->recurtax)
-                      or $self->recurtax );
-
-    if ( $recur_exempt
-        and $cust_bill_pkg->recur > 0
-        and $taxable_charged > 0 ) {
-
-      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
-          amount => $cust_bill_pkg->recur,
-          exempt_recur => 'Y'
-      });
-      $taxable_charged -= $cust_bill_pkg->recur;
-    
-    }
-  
+    ### Monthly capped exemptions ### 
     if ( $self->exempt_amount && $self->exempt_amount > 0 
       and $taxable_charged > 0 ) {
       # If the billing period extends across multiple calendar months, 
@@ -476,13 +411,21 @@ sub taxline {
             : $remaining_exemption;
           $addl = $taxable_charged if $addl > $taxable_charged;
 
-          push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+          my $new_exemption = 
+            FS::cust_tax_exempt_pkg->new({
               amount          => sprintf('%.2f', $addl),
               exempt_monthly  => 'Y',
               year            => $year,
               month           => $mon,
+              taxnum          => $self->taxnum,
+              taxtype         => ref($self)
             });
           $taxable_charged -= $addl;
+
+          # create a record of it
+          push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, $new_exemption;
+          # and allow it to be counted against the limit for other packages
+          push @existing_exemptions, $new_exemption;
         }
         # if they're using multiple months of exemption for a multi-month
         # package, then record the exemptions in separate months
@@ -494,12 +437,6 @@ sub taxline {
 
       }
     } # if exempt_amount
-
-    $_->taxnum($self->taxnum) foreach @new_exemptions;
-
-    # attach them to the line item
-    push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, @new_exemptions;
-    push @existing_exemptions, @new_exemptions;
 
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
     next if $taxable_charged == 0;
