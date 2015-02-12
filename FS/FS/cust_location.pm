@@ -322,7 +322,7 @@ sub check {
     $self->ut_numbern('locationnum')
     || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
     || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
-    || $self->ut_alphan('locationname')
+    || $self->ut_textn('locationname')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
     || $self->ut_text('city')

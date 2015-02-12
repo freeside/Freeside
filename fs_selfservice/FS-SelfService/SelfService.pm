@@ -832,6 +832,25 @@ Session identifier
 
 Package to order (see L<FS::part_pkg>).
 
+=item quantity
+
+Quantity for this package order (default 1).
+
+=item locationnum
+
+Optional locationnum for this package order, for existing locations.
+
+Or, for new locations, pass the following fields: address1*, address2, city*,
+county, state*, zip*, country.  (* = required in this case)
+
+=item address1
+
+=item address 2
+
+=item city
+
+=item 
+
 =item svcpart
 
 Service to order (see L<FS::part_svc>).

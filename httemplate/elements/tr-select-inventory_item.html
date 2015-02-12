@@ -12,7 +12,6 @@
 <& tr-td-label.html, %opt &>
 <TD>
 <& select-tiered.html,
-  'prefix' => $opt{'field'}.'_',
   'tiers' => [
     {
       field         => $opt{'field'}.'_classnum',
@@ -32,12 +31,15 @@
     },
   ],
   %opt,
+  'prefix' => $opt{'prefix'}. $opt{'field'}. '_', #after %opt so it overrides
 &>
 </TD>
 </TR>
 % }
 <%init>
+
 my %opt = @_;
+
 my @classnums;
 if (ref($opt{'classnum'})) {
   @classnums = @{ $opt{'classnum'} };
@@ -45,4 +47,5 @@ if (ref($opt{'classnum'})) {
   @classnums = split(',', $opt{'classnum'});
 }
 my $classnum_sql = 'classnum IN('.join(',', @classnums).')';
+
 </%init>

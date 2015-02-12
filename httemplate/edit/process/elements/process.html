@@ -219,7 +219,7 @@ my %hash =
 my @values = ( 1 );
 if ( $bfield ) {
   @values = $cgi->param($bfield);
-  warn join(',', @values);
+  #warn join(',', @values);
 }
 
 my @uploaded_files;
@@ -308,7 +308,7 @@ foreach my $value ( @values ) {
       warn "$me processing m2m:\n". Dumper( %$process_m2m )
         if $opt{'debug'};
 
-      $error = $new->process_m2m( %$process_m2m );
+      $error ||= $new->process_m2m( %$process_m2m );
     }
 
   }
@@ -350,7 +350,7 @@ foreach my $value ( @values ) {
                                                );
       }
 
-      $error = $new->process_o2m( %{ $process_o2m },
+      $error ||= $new->process_o2m( %{ $process_o2m },
                                      'params' => scalar($cgi->Vars),
                                    );
     }
