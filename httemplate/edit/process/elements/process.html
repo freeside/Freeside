@@ -315,7 +315,7 @@ foreach my $value ( @values ) {
       warn "$me processing m2m:\n". Dumper( %$process_m2m )
         if $opt{'debug'};
 
-      $error = $new->process_m2m( %$process_m2m );
+      $error ||= $new->process_m2m( %$process_m2m );
     }
 
   }
@@ -357,7 +357,7 @@ foreach my $value ( @values ) {
                                                );
       }
 
-      $error = $new->process_o2m( %{ $process_o2m },
+      $error ||= $new->process_o2m( %{ $process_o2m },
                                      'params' => scalar($cgi->Vars),
                                    );
     }
