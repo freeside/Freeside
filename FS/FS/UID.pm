@@ -74,7 +74,6 @@ sub adminsuidsetup {
 
 sub forksuidsetup {
   my $user = shift;
-  my $olduser = $user;
   warn "$me forksuidsetup starting for $user\n" if $DEBUG;
 
   if ( $FS::CurrentUser::upgrade_hack ) {
@@ -88,7 +87,7 @@ sub forksuidsetup {
 
   env_setup();
 
-  db_setup($olduser);
+  db_setup();
 
   callback_setup();
 
@@ -118,16 +117,11 @@ sub env_setup {
 }
 
 sub db_setup {
-  my $olduser = shift;
-
   croak "Not running uid freeside (\$>=$>, \$<=$<)\n" unless checkeuid();
 
   warn "$me forksuidsetup connecting to database\n" if $DEBUG;
-  if ( $FS::CurrentUser::upgrade_hack && $olduser ) {
-    $dbh = &myconnect($olduser);
-  } else {
-    $dbh = &myconnect();
-  }
+  $dbh = &myconnect();
+
   warn "$me forksuidsetup connected to database with handle $dbh\n" if $DEBUG;
 
   warn "$me forksuidsetup loading schema\n" if $DEBUG;
