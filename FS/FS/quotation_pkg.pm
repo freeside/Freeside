@@ -103,11 +103,8 @@ otherwise returns false.
 
 =cut
 
-use Data::Dumper; #XXX DEBUG
 sub insert {
   my ($self, %options) = @_;
-  warn Dumper($self);
-  warn Dumper(\%options);
 
   my $dbh = dbh;
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -318,7 +315,7 @@ sub insert_discount {
   #my ($self, %options) = @_;
   my $self = shift;
 
-  my $cust_pkg_discount = FS::quotation_pkg_discount->new( {
+  my $quotation_pkg_discount = FS::quotation_pkg_discount->new( {
     'quotationpkgnum' => $self->quotationpkgnum,
     'discountnum'     => $self->discountnum,
     #for the create a new discount case
@@ -329,7 +326,7 @@ sub insert_discount {
     'setup'       => $self->discountnum_setup,
   } );
 
-  $cust_pkg_discount->insert;
+  $quotation_pkg_discount->insert;
 }
 
 sub _item_discount {
@@ -351,7 +348,7 @@ sub _item_discount {
     push @ext, $pkg_discount->description;
     $d->{setup_amount} -= $pkg_discount->setup_amount;
     $d->{recur_amount} -= $pkg_discount->recur_amount;
-  } 
+  }
   $d->{setup_amount} *= $self->quantity || 1;
   $d->{recur_amount} *= $self->quantity || 1;
   $d->{amount} = $d->{setup_amount} + $d->{recur_amount};

@@ -116,18 +116,6 @@ sub check {
 
 =back
 
-=item amount
-
-Returns the total amount of this discount (setup + recur), for compatibility
-with L<FS::cust_bill_pkg_discount>.
-
-=cut
-
-sub amount {
-  my $self = shift;
-  return $self->get('setup_amount') + $self->get('recur_amount');
-}
-
 =item description
 
 Returns a string describing the discount (for use on the quotation).
