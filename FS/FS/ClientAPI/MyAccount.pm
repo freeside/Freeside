@@ -2270,7 +2270,7 @@ sub order_pkg {
 
   my $status = $cust_main->status;
 
-  my %order_pkg_options = ());
+  my %order_pkg_options = ();
   if ( $p->{locationnum} > 0 ) {
     $order_pkg_options{locationnum} = delete($p->{locationnum});
   } elsif ( $p->{address1} ) {
