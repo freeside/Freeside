@@ -46,6 +46,7 @@ use FS::payby;
 use FS::acct_rt_transaction;
 use FS::msg_template;
 use FS::contact;
+use FS::cust_location;
 
 $DEBUG = 1;
 $me = '[FS::ClientAPI::MyAccount]';
@@ -2268,11 +2269,23 @@ sub order_pkg {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $status = $cust_main->status;
+
+  my %order_pkg_options = ());
+  if ( $p->{locationnum} > 0 ) {
+    $order_pkg_options{locationnum} = delete($p->{locationnum});
+  } elsif ( $p->{address1} ) {
+    $order_pkg_options{'cust_location'} = new FS::cust_location {
+      map { $_ => $p->{$_} }
+        qw( address1 address2 city county state zip country )
+    };
+  }
+
   #false laziness w/ClientAPI/Signup.pm
 
   my $cust_pkg = new FS::cust_pkg ( {
-    'custnum' => $custnum,
-    'pkgpart' => $p->{'pkgpart'},
+    'custnum'  => $custnum,
+    'pkgpart'  => $p->{'pkgpart'},
+    'quantity' => $p->{'quantity'} || 1,
   } );
   my $error = $cust_pkg->check;
   return { 'error' => $error } if $error;
@@ -2331,11 +2344,12 @@ sub order_pkg {
 
   }
 
-  use Tie::RefHash;
-  tie my %hash, 'Tie::RefHash';
-  %hash = ( $cust_pkg => \@svc );
-  #msgcat
-  $error = $cust_main->order_pkgs( \%hash, 'noexport' => 1 );
+  $error = $cust_main->order_pkg(
+    'cust_pkg' => $cust_pkg,
+    'svcs'     => \@svc,
+    'noexport' => 1,
+    %order_pkg_options,
+  );
   return { 'error' => $error } if $error;
 
   my $conf = new FS::Conf;
