@@ -6,7 +6,7 @@
         var delim_o = '{';
         var delim_c = '}';
 
-        var create_block = function(content) {
+        var create_block = function(content, inside) {
           // fix nbsp's
           content = content.replace(/&nbsp;/gi, ' ');
           // escape the content
@@ -18,7 +18,12 @@
             el.innerText = content;
           }
           el.setAttribute('class', 'cke_blockprotect');
-          return el.outerHTML;
+          if (inside) {
+            return el.innerHTML; // escapes the contents but doesn't wrap
+                                 // them in a <span>
+          } else {
+            return el.outerHTML;
+          }
         };
         var block_writeHtml = function( element ) {
           // to unescape the element contents, write it out as HTML,
@@ -39,6 +44,7 @@
           var depth = 0;
           var chunk = '';
           var out = '';
+          var in_tag = false;
           var p = 0; // position in the string
           while( 1 ) {
             // find the next delimiter of either kind
@@ -54,7 +60,16 @@
               if ( i > p ) chunk += data.substr(p, i - p);
               p = i + 1;
               if ( depth == 0 ) {
-                // start of a protected block
+                // we're in document text. find whether an HTML tag starts, 
+                // or ends, before the next delimiter, so that we know whether
+                // to output the next block in a SPAN or just as escaped text
+                for(var q = 0; q < chunk.length; q++ ) {
+                  if (chunk[q] == '<') in_tag = true;
+                  if (chunk[q] == '>') in_tag = false;
+                }
+
+                // then output the chunk, and go to the start of the 
+                // protected block
                 out += chunk;
                 chunk = '';
               }
@@ -65,21 +80,21 @@
               if ( j > p ) chunk += data.substr(p, j - p);
               p = j + 1;
               depth--;
-              chunk += delim_c
-                if ( depth == 0 ) {
-                  // end of a protected block
-                  out += create_block(chunk);
-                  chunk = '';
-                } else if ( depth < 0 ) {
-                  depth = 0;
-                }
+              chunk += delim_c;
+              if ( depth == 0 ) {
+                // end of a protected block
+                out += create_block(chunk, in_tag);
+                chunk = '';
+              } else if ( depth < 0 ) {
+                depth = 0;
+              }
             } else {
               // can't happen
             }
           }
           // append any text after the last delimiter
           if ( depth ) {
-            out += create_block(data.substr(p));
+            out += create_block(data.substr(p), in_tag);
           } else {
             out += data.substr(p);
           }
