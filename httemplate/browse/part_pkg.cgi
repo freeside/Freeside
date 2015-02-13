@@ -451,15 +451,7 @@ if ( $acl_edit_global ) {
 
 #if ( $cgi->param('active') ) {
   push @header, 'Customer<BR>packages';
-  my %col = (
-    'on hold'         => '7E0079', #purple!
-    'not yet billed'  => '009999', #teal? cyan?
-    'active'          => '00CC00',
-    'suspended'       => 'FF9900',
-    'cancelled'       => 'FF0000',
-    #'one-time charge' => '000000',
-    'charge'          => '000000',
-  );
+  my %col = %{ FS::cust_pkg->statuscolors };
   my $cust_pkg_link = $p. 'search/cust_pkg.cgi?pkgpart=';
   push @fields, sub { my $part_pkg = shift;
                         [
