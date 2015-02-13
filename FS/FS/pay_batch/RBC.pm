@@ -108,7 +108,7 @@ $name = 'RBC';
     sprintf("%3s",$trans_code).
     sprintf("%10s",$client_num).
     ' '.
-    sprintf("%-19s", $cust_pay_batch->cust_main->custnum).
+    sprintf("%-19s", $cust_pay_batch->paybatchnum).
     '00'.
     sprintf("%04s", $bankno).
     sprintf("%05s", $branch).
