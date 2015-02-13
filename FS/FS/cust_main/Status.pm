@@ -44,7 +44,7 @@ sub statuscolors {
 
   if ( $module eq 'Classic' ) {
     tie %statuscolors, 'Tie::IxHash',
-      'prospect'  => '7e0079', #'000000', #black?  naw, purple
+      'prospect'  => 'FF00F5', #'000000', #black?  naw, purple
       'active'    => '00CC00', #green
       'ordered'   => '009999', #teal? cyan?
       'inactive'  => '0000CC', #blue
@@ -53,7 +53,7 @@ sub statuscolors {
     ;
   } elsif ( $module eq 'Recurring' ) {
     tie %statuscolors, 'Tie::IxHash',
-      'prospect'  => '7e0079', #'000000', #black?  naw, purple
+      'prospect'  => 'FF00F5', #'000000', #black?  naw, purple
       'active'    => '00CC00', #green
       'ordered'   => '009999', #teal? cyan?
       'suspended' => 'FF9900', #yellow
