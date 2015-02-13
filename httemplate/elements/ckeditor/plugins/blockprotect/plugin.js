@@ -7,6 +7,7 @@
         var delim_c = '}';
 
         var create_block = function(content, inside) {
+          if (inside) return content;
           // fix nbsp's
           content = content.replace(/&nbsp;/gi, ' ');
           // escape the content
@@ -18,12 +19,7 @@
             el.innerText = content;
           }
           el.setAttribute('class', 'cke_blockprotect');
-          if (inside) {
-            return el.innerHTML; // escapes the contents but doesn't wrap
-                                 // them in a <span>
-          } else {
-            return el.outerHTML;
-          }
+          return el.outerHTML;
         };
         var block_writeHtml = function( element ) {
           // to unescape the element contents, write it out as HTML,
