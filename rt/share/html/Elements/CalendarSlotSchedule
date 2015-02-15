@@ -83,7 +83,8 @@
 %                 "&Owner=$username".
 %                 '&Starts='. $Date->strftime('%F').'%20'. $Starts.
 %                 '&Due='.    $Date->strftime('%F').'%20'. $Due.
-%                 '&new-MemberOf='. $member; #XXX uri_escape?
+%                 '&new-MemberOf='. $member. #XXX uri_escape?
+%                 '&Status=new';
 %                 #'&Requestors='. #XXX Freeside customer requestor(s) (package?
 
         onmouseover = "boxon(this);"
