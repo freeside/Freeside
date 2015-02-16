@@ -49,7 +49,7 @@ following fields are currently supported:
 
 =item batchnum - indentifies group in batch
 
-=item payby - CARD/CHEK/LECB/BILL/COMP
+=item payby - CARD/CHEK
 
 =item payinfo
 
@@ -154,7 +154,7 @@ sub check {
 
   if ( $self->exp eq '' ) {
     return "Expiration date required"
-      unless $self->payby =~ /^(CHEK|DCHK|LECB|WEST)$/;
+      unless $self->payby =~ /^(CHEK|DCHK|WEST)$/;
     $self->exp('');
   } else {
     if ( $self->exp =~ /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/ ) {
@@ -246,39 +246,6 @@ sub retriable {
   confess "deprecated method cust_pay_batch->retriable called; try removing ".
           "the once condition and adding an every condition?";
 
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';        #Hmm
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
-    or return "event $self->eventnum references nonexistant invoice $self->invnum";
-
-  warn "cust_pay_batch->retriable working with self of " . $self->paybatchnum . " and invnum of " . $self->invnum;
-  my @cust_bill_event =
-    sort { $a->part_bill_event->seconds <=> $b->part_bill_event->seconds }
-      grep {
-        $_->part_bill_event->eventcode =~ /\$cust_bill->batch_card/
-	  && $_->status eq 'done'
-	  && ! $_->statustext
-	}
-      $cust_bill->cust_bill_event;
-  # complain loudly if scalar(@cust_bill_event) > 1 ?
-  my $error = $cust_bill_event[0]->retriable;
-  if ($error ) {
-    # gah, even with transactions.
-    $dbh->commit if $oldAutoCommit; #well.
-    return "error marking invoice event retriable: $error";
-  }
-  '';
 }
 
 =item approve OPTIONS

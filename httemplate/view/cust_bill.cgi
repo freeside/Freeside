@@ -111,10 +111,6 @@
 <A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>">( <% mt('View invoice events') |h %> )</A> 
 % }
 
-% if ( $cust_bill->num_cust_bill_event ) { $br++;
-<A HREF="<%$p%>search/cust_bill_event.cgi?invnum=<% $cust_bill->invnum %>">( <% mt('View deprecated, old-style invoice events') |h %> )</A> 
-% }
-
 % my @modes = grep {! $_->disabled} 
 %   $cust_bill->cust_main->agent->invoice_modes;
 % if ( @modes ) {

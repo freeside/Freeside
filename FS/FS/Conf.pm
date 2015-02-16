@@ -2147,11 +2147,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'safe-part_bill_event',
-    'section'     => 'UI',
-    'description' => 'Validates invoice event expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
-    'type'        => 'checkbox',
-  },
 
   {
     'key'         => 'show_ship_company',

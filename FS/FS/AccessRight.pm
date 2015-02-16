@@ -53,7 +53,6 @@ assigned to users and/or groups.
 #    'billing' => [
 #      '_desc' => 'Access to billing configuration',
 #      'payment_gateway'  => {},
-#      'part_bill_event'  => {},
 #      'prepay_credit'    => {},
 #      'rate'             => {},
 #      'cust_main_county' => {},
