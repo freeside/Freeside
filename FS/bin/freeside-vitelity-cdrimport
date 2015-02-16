@@ -1,0 +1,132 @@
+#!/usr/bin/perl
+
+=pod
+
+freeside-vitelity-cdrimport [ -v ] [ -k ]
+                    -s date -e date
+                    username
+                    [ exportnum ]
+
+Download CDRs using the Vitelity API.
+
+-v: Be verbose.
+
+-k: Keep the .csv file for debugging purposes, instead of deleting it.
+
+-s date: Import only records on or after 'date'  Now required as the Vitelity
+API has changed.
+
+-e date: Import only records before 'date'.  Now required as the Vitelity API
+has changed.
+
+username: a Freeside user
+
+exportnum: Run only for that export.  If not specified, this will run for 
+all Vitelity exports.
+
+=cut
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearchs qsearch);
+use FS::cdr;
+use FS::part_export;
+use Getopt::Std;
+use File::Temp;
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
+
+my %opt;
+getopts('vks:e:', \%opt);
+
+my $user = shift or die &usage;
+my $exportnum = shift;
+my $dbh = adminsuidsetup $user;
+
+my $start = $opt{'s'} ? str2time($opt{'s'}) : die &usage('-s is now required');
+my $end   = $opt{'e'} ? str2time($opt{'e'}) : die &usage('-e is now required');
+
+local $FS::UID::AutoCommit = 0;
+
+my @part_exports;
+if ( $exportnum ) {
+  @part_exports = ( qsearchs('part_export', { 'exportnum' => $exportnum }) )
+    or die "exportnum $exportnum not found\n";
+}
+else {
+  @part_exports = qsearch('part_export', { 'exporttype' => 'vitelity' })
+    or die "no Vitelity exports found\n";
+}
+
+foreach my $export (@part_exports) {
+  my $exportnum = $export->exportnum;
+  print "Processing exportnum $exportnum.\n" if $opt{'v'};
+  $export->isa('FS::part_export::vitelity') 
+    or die "exportnum $exportnum is not a Vitelity export\n";
+
+  my $dir = $FS::UID::cache_dir . "/cache.". $FS::UID::datasrc;
+  my $temp = new File::Temp ( TEMPLATE => 'download.XXXXXXXX',
+                              SUFFIX   => '.csv',
+                              DIR      => $dir,
+                              UNLINK   => !$opt{'k'} )
+    or die "can't open temporary file to store download: $!\n";
+  print "Downloading to ".$temp->filename."\n" if $opt{'v'};
+
+  print "Sending API request..." if $opt{'v'};
+
+  my $s = time2str('%m-%d-%Y', $start);
+  my $e = time2str('%m-%d-%Y', $end);
+
+  my @records = eval { $export->vitelity_command('getcdr',
+                                                   'startdate' => $s,
+                                                   'enddate'   => $e,
+                                                );
+                     };
+  if ( $@ ) {
+    print "download error: $@\n";
+    exit(-1);
+  }
+
+  print "received ".scalar(@records)." records\n" if $opt{'v'};
+  if ( !@records ) {
+    print "No records to process.\n" if $opt{'v'};
+    exit(1);
+  }
+
+  print $temp "Date,Source,Destination,Seconds,CallerID,Disposition,Cost\n";
+
+  while (my $rec = shift @records) {
+    print $temp $rec, "\n";
+  }
+  close $temp;
+
+  my $format = 'vitelity';
+  my $batchname = "vitelity-$exportnum-".time2str('%Y/%m/%d-%T',time);
+
+  print "Importing batch..." if $opt{'v'};
+  my $error = FS::cdr::batch_import( {
+    'file'            => $temp->filename,
+    'format'          => $format,
+    'batch_namevalue' => $batchname,
+  } );
+
+  if ( $error ) {
+    $dbh->rollback;
+    print "error: $error";
+    exit(-2);
+  }
+}
+$dbh->commit;
+print "done.\n";
+exit(0);
+
+sub usage {
+  my $err = @_ ? shift."\n\n" : '';
+$err."Usage: 
+freeside-vitelity-cdrimport [ -v ] [ -k ]
+                    -s date -e date
+                    username
+                    [ exportnum ]
+";
+}
+
