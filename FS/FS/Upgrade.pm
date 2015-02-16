@@ -312,6 +312,9 @@ sub upgrade_data {
     #payby conditions to new ones
     'part_event_condition' => [],
 
+    #payby actions to new ones
+    'part_event' => [],
+
     #cust_main (remove paycvv from history, locations, cust_payby, etc)
     'cust_main' => [],
 

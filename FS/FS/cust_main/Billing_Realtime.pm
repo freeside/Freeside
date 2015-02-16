@@ -45,6 +45,36 @@ These methods are available on FS::cust_main objects.
 
 =over 4
 
+=item realtime_cust_payby
+
+=cut
+
+sub realtime_cust_payby {
+  my( $self, %options ) = @_;
+
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+
+  $options{amount} = $self->balance unless exists( $options{amount} );
+
+  my @cust_payby = qsearch({
+    'table'     => 'cust_payby',
+    'hashref'   => { 'custnum' => $self->custnum, },
+    'extra_sql' => " AND payby IN ( 'CARD', 'CHEK' ) ",
+    'order_by'  => 'ORDER BY weight ASC',
+  });
+                                                   
+  my $error;
+  foreach my $cust_payby (@cust_payby) {
+    $error = $cust_payby->realtime_bop( %options, );
+    last unless $error;
+  }
+
+  #XXX what about the earlier errors?
+
+  $error;
+
+}
+
 =item realtime_collect [ OPTION => VALUE ... ]
 
 Attempt to collect the customer's current balance with a realtime credit 
