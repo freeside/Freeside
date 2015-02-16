@@ -33,17 +33,6 @@
      'all_selected' => 1,
   &>
 
-%   if ( $cust_main ) {
-    <INPUT TYPE="hidden" NAME="payby" VALUE="<% $cust_main->payby %>">
-%   } else {
-    <& /elements/tr-select-payby.html,
-                  label   => emt('Payment method:'),
-                  payby_type   => 'cust',
-                  multiple     => 1,
-                  all_selected => 1,
-    &>
-% }
-
   </TABLE>
   <BR>
 
