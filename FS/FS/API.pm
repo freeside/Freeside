@@ -365,26 +365,6 @@ comma-separated list of email addresses for email invoices. The special value 'P
 postal_invoicing
 Set to 1 to enable postal invoicing
 
-=item payby
-
-CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
-
-=item payinfo
-
-Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pin" for PREPAY, purchase order number for BILL
-
-=item paycvv
-
-Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
-
-=item paydate
-
-Expiration date for CARD/DCRD
-
-=item payname
-
-Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
-
 =item referral_custnum
 
 Referring customer number
@@ -504,27 +484,6 @@ Comma-separated list of email addresses for email invoices. The special value
 addition to email addresses),
 postal_invoicing
 Set to 1 to enable postal invoicing
-
-=item payby
-
-CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY
-
-=item payinfo
-
-Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid 
-"pin" for PREPAY, purchase order number for BILL
-
-=item paycvv
-
-Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
-
-=item paydate
-
-Expiration date for CARD/DCRD
-
-=item payname
-
-Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
 
 =item referral_custnum
 

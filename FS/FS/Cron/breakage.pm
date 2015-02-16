@@ -47,7 +47,7 @@ sub reconcile_breakage {
     my @customers = qsearch({
       'table'     => 'cust_main',
       'hashref'   => { 'agentnum' => $agent->agentnum,
-                       'payby'    => { op=>'!=', value=>'COMP', },
+                       'complimentary' => { op=>'!=', value=>'Y', },
                      },
       'extra_sql' => $extra_sql,
     });

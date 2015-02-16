@@ -794,58 +794,6 @@ sub tables_hashref {
                         ],
     },
 
-    #old "invoice" events, deprecated
-    'cust_bill_event' => {
-      'columns' => [
-        'eventnum',    'serial',  '', '', '', '', 
-        'invnum',   'int',  '', '', '', '', 
-        'eventpart',   'int',  '', '', '', '', 
-        '_date',     @date_type, '', '', 
-        'status', 'varchar', '', $char_d, '', '', 
-        'statustext', 'text', 'NULL', '', '', '', 
-      ],
-      'primary_key'  => 'eventnum',
-      #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
-      'unique'       => [],
-      'index'        => [ ['invnum'], ['status'], ['eventpart'],
-                          ['statustext'], ['_date'],
-                        ],
-      'foreign_keys' => [
-                          { columns    => [ 'invnum' ],
-                            table      => 'cust_bill',
-                          },
-                          { columns    => [ 'eventpart' ],
-                            table      => 'part_bill_event',
-                          },
-                        ],
-    },
-
-    #old "invoice" events, deprecated
-    'part_bill_event' => {
-      'columns' => [
-        'eventpart',    'serial',  '', '', '', '', 
-        'freq',        'varchar',       'NULL',     $char_d, '', '', 
-        'payby',       'char',  '', 4, '', '', 
-        'event',       'varchar',           '',     $char_d, '', '', 
-        'eventcode',    @perl_type, '', '', 
-        'seconds',     'int', 'NULL', '', '', '', 
-        'weight',      'int', '', '', '', '', 
-        'plan',       'varchar', 'NULL', $char_d, '', '', 
-        'plandata',   'text', 'NULL', '', '', '', 
-        'reason',     'int', 'NULL', '', '', '', 
-        'disabled',     'char', 'NULL', 1, '', '', 
-      ],
-      'primary_key'  => 'eventpart',
-      'unique'       => [],
-      'index'        => [ ['payby'], ['disabled'], ],
-      'foreign_keys' => [
-                          { columns    => [ 'reason' ],
-                            table      => 'reason',
-                            references => [ 'reasonnum' ],
-                          },
-                        ],
-    },
-
     'part_event' => {
       'columns' => [
         'eventpart',   'serial',      '',      '', '', '', 

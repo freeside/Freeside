@@ -119,7 +119,7 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   }
 
   #arrays
-  for my $param (qw( cust_classnum payby )) {
+  for my $param (qw( cust_classnum )) {
   $search{$param} = [ $cgi->param($param) ]
     if grep { $_ eq $param } $cgi->param;
   }

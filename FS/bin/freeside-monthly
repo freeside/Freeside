@@ -12,6 +12,10 @@ getopts("p:a:d:vsy:m", \%opt);
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
+die "The -p option has been removed in version 4 -- customers no longer have ".
+    "a single, specific payment type"
+  if $opt{'p'};
+
 use FS::Cron::bill qw(bill);
 bill(%opt, 'check_freq'=>'1m' );
 
@@ -45,7 +49,7 @@ freeside-monthly - Run monthly billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-monthly [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] user [ custnum custnum ... ]
+  freeside-monthly [ -d 'date' ] [ -y days ] [ -a agentnum ] [ -s ] [ -v ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -64,7 +68,7 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
       "pretend date" 15 days from whatever was specified by the -d switch
       (or now, if no -d switch was given).
 
-  -p: Only process customers with the specified payby (CARD, DCRD, CHEK, DCHK, BILL, COMP, LECB)
+  -p: Deprecated, will produce a fatal error (formerly was: Only process customers with the specified payby (CARD, DCRD, CHEK, DCHK, BILL, COMP, LECB))
 
   -a: Only process customers with the specified agentnum
 

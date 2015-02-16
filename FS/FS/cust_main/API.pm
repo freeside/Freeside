@@ -21,8 +21,7 @@ use vars qw(
   first last company daytime night fax mobile
 );
 #  locale
-#  payby payinfo payname paystart_month paystart_year payissue payip
-#  ss paytype paystate stateid stateid_state
+#  ss stateid stateid_state
 @location_editable_fields = qw(
   address1 address2 city county state zip country
 );
@@ -106,14 +105,12 @@ sub API_insert {
   #same for refnum like signup_server-default_refnum?
 
   my $cust_main = new FS::cust_main ( { # $class->new( {
-      'payby'  => 'BILL',
       'tagnum' => [ FS::part_tag->default_tags ],
 
       map { $_ => $opt{$_} } qw(
         agentnum salesnum refnum agent_custid referral_custnum
         last first company 
         daytime night fax mobile
-        payby payinfo paydate paycvv payname
       ),
 
   } );
@@ -176,7 +173,6 @@ sub API_update {
         agentnum salesnum refnum agent_custid referral_custnum
         last first company
         daytime night fax mobile
-        payby payinfo paydate paycvv payname
       ),
 
   my @invoicing_list;

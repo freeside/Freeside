@@ -55,12 +55,6 @@ my $statementnum = $3;
 
 my $conf = new FS::Conf;
 
-my @payby =  grep /\w/, $conf->config('payby');
-#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
-@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
-  unless @payby;
-my %payby = map { $_=>1 } @payby;
-
 my $cust_statement = qsearchs({
   'select'    => 'cust_statement.*',
   'table'     => 'cust_statement',

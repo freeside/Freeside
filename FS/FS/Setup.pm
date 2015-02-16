@@ -363,13 +363,11 @@ sub initial_data {
     #with billing type Complimentary. Leave the First package dropdown set to
     #(none).
     'cust_main' => [
-      { 'agentnum'  => 1, #XXX
-        'refnum'    => 1, #XXX
-        'first'     => 'System',
-        'last'      => 'Accounts',
-        'payby'     => 'COMP',
-        'payinfo'   => 'system', #or something
-        'paydate'   => '1/2037',
+      { 'agentnum'      => 1, #XXX
+        'refnum'        => 1, #XXX
+        'first'         => 'System',
+        'last'          => 'Accounts',
+        'complimentary' => 'Y',
         'bill_location' => $cust_location,
         'ship_location' => $cust_location,
       },

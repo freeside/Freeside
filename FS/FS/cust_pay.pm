@@ -978,7 +978,6 @@ sub _upgrade_data {  #class method
         $cust_pay->set('otaker', 'legacy');
       }
 
-      delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
       my $error = $cust_pay->replace;
 
       if ( $error ) {
@@ -986,8 +985,6 @@ sub _upgrade_data {  #class method
              $cust_pay->paynun. ": $error\n";
         next;
       }
-
-      $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
 
       $count++;
       if ( $DEBUG > 1 && $lastprog + 30 < time ) {
@@ -1042,9 +1039,7 @@ sub _upgrade_data {  #class method
   # otaker->usernum upgrade
   ###
 
-  delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
   $class->_upgrade_otaker(%opt);
-  $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
 
   # if we do this anywhere else, it should become an FS::Upgrade method
   my $num_to_upgrade = $class->count('paybatch is not null');

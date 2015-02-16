@@ -128,10 +128,6 @@ Return only invoices belonging to that customer.
 
 Limit to that customer class (single value or arrayref).
 
-=item payby
-
-Limit to customers with that payment method (single value or arrayref).
-
 =item refnum
 
 Limit to customers with that advertising source.
@@ -192,14 +188,6 @@ sub search_sql_where {
                     ' )';
     }
 
-  }
-
-  #payby
-  if ( $param->{payby} ) {
-    my $payby = $param->{payby};
-    $payby = [ $payby ] unless ref $payby;
-    my $payby_in = join(',', map {dbh->quote($_)} @$payby);
-    push @search, "cust_main.payby IN($payby_in)" if length($payby_in);
   }
 
   #_date

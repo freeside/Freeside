@@ -12,6 +12,11 @@ getopts("p:a:d:vl:sy:nmrkg:o", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
+
+die "The -p option has been removed in version 4 -- customers no longer have ".
+    "a single, specific payment type\n"
+  if $opt{'p'};
+
 my $log = FS::Log->new('daily');
 $log->info('start');
 
@@ -108,7 +113,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]\n";
+  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]\n";
 }
 
 ###
@@ -121,7 +126,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -o ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -a agentnum,agentnum,... ] [ -s ] [ -o ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -143,7 +148,7 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
       with today's date, irregardless of the pretend date used to pre-generate
       the invoices.
 
-  -p: Only process customers with the specified payby (CARD, DCRD, CHEK, DCHK, BILL, COMP, LECB)
+  -p: Deprecated, will produce a fatal error (formerly was: Only process customers with the specified payby (CARD, DCRD, CHEK, DCHK, BILL, COMP, LECB))
 
   -a: Only process customers with the specified agentnum.  Multiple agentnums can be specified, separated with commas.
 

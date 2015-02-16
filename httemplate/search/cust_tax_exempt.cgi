@@ -61,7 +61,6 @@ my @where = ();
 #if ( $beginning || $ending ) {
 #  push @where, "_date >= $beginning",
 #               "_date <= $ending";
-#               #"payby != 'COMP';
 #}
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {

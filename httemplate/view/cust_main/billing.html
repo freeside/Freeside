@@ -13,7 +13,17 @@
   &>
 % } 
 
+% my $yes = emt('yes');
+% my $no = emt('no');
+
 <TABLE CLASS="fsinnerbox">
+
+% if ( $cust_main->complimentary ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Complimentary') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $yes %></TD>
+  </TR>
+% }
 
 %( my $balance = $cust_main->balance )
 %  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
@@ -52,9 +62,6 @@
       <TD BGCOLOR="#ffffff"><% $cust_main->po_number %></TD>
     </TR>
 % } 
-
-% my $yes = emt('yes');
-% my $no = emt('no');
 
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 

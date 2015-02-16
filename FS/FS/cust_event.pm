@@ -337,10 +337,6 @@ specified in HASHREF.  Valid parameters are
 
 =item ending
 
-=item payby
-
-=item 
-
 =back
 
 =cut

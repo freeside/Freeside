@@ -6,6 +6,7 @@ use base qw( FS::cust_bill::Search FS::Template_Mixin
 use strict;
 use vars qw( $DEBUG $me );
              # but NOT $conf
+use Carp;
 use Fcntl qw(:flock); #for spool_csv
 use Cwd;
 use List::Util qw(min max sum);
@@ -26,11 +27,9 @@ use FS::cust_pay;
 use FS::cust_pkg;
 use FS::cust_credit_bill;
 use FS::pay_batch;
-use FS::cust_bill_event;
 use FS::cust_event;
 use FS::part_pkg;
 use FS::cust_bill_pay;
-use FS::part_bill_event;
 use FS::payby;
 use FS::bill_batch;
 use FS::cust_bill_batch;
@@ -285,7 +284,6 @@ sub delete {
   my $dbh = dbh;
 
   foreach my $table (qw(
-    cust_bill_event
     cust_event
     cust_credit_bill
     cust_bill_pay
@@ -563,32 +561,6 @@ sub open_cust_bill_pkg {
   }
 
   @open;
-}
-
-=item cust_bill_event
-
-Returns the completed invoice events (deprecated, old-style events - see L<FS::cust_bill_event>) for this invoice.
-
-=cut
-
-sub cust_bill_event {
-  my $self = shift;
-  qsearch( 'cust_bill_event', { 'invnum' => $self->invnum } );
-}
-
-=item num_cust_bill_event
-
-Returns the number of completed invoice events (deprecated, old-style events - see L<FS::cust_bill_event>) for this invoice.
-
-=cut
-
-sub num_cust_bill_event {
-  my $self = shift;
-  my $sql =
-    "SELECT COUNT(*) FROM cust_bill_event WHERE invnum = ?";
-  my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
-  $sth->execute($self->invnum) or die $sth->errstr. " executing $sql";
-  $sth->fetchrow_arrayref->[0];
 }
 
 =item cust_event
@@ -1982,24 +1954,8 @@ sub print_csv {
 
 }
 
-=item comp
-
-Pays this invoice with a compliemntary payment.  If there is an error,
-returns the error, otherwise returns false.
-
-=cut
-
 sub comp {
-  my $self = shift;
-  my $cust_pay = new FS::cust_pay ( {
-    'invnum'   => $self->invnum,
-    'paid'     => $self->owed,
-    '_date'    => '',
-    'payby'    => 'COMP',
-    'payinfo'  => $self->cust_main->payinfo,
-    'paybatch' => '',
-  } );
-  $cust_pay->insert;
+  croak 'cust_bill->comp is deprecated (COMP payments are deprecated)';
 }
 
 =item realtime_card

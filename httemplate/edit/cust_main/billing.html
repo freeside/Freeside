@@ -18,6 +18,27 @@
   <% &ntable("#cccccc") %>
 
 %   my $curuser = $FS::CurrentUser::CurrentUser;
+
+%   ###
+%   # complimentry flag
+%   ###
+
+%   if ( $curuser->access_right('Complimentary customer') ) {
+
+      <TR>
+        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="complimentary" VALUE="Y" <% $cust_main->complimentary eq "Y" ? 'CHECKED' : '' %>>Complimentary customer
+      </TR>
+
+%   } else {
+
+      <INPUT TYPE="hidden" NAME="complimentary" VALUE="<% $cust_main->complimentary eq 'Y' ? 'Y' : '' %>">
+
+%   }
+
+%   ###
+%   # tax exemptions
+%   ###
+
 %   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 %   if (    $conf->exists('cust_class-tax_exempt')
 %        || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
@@ -31,7 +52,7 @@
 %   } else {
 
       <TR>
-        <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
+        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
       </TR>
 
 %   }
@@ -48,10 +69,14 @@
 %     }
 %   }
 
+%   ###
+%   # postal invoices
+%   ###
+
 % unless ( $conf->exists('emailinvoiceonly') ) {
 
     <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" <%
+      <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" <%
 
         ( grep { $_ eq 'POST' } @invoicing_list )
 
@@ -65,8 +90,12 @@
 
 % }
 
+%   ###
+%   # email invoices
+%   ###
+
     <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" <%
+      <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" <%
 
         ( $cust_main->invoice_noemail eq 'Y' )
           ? ''
@@ -93,6 +122,10 @@
     </TR>
 % }
 
+%   ###
+%   # prorate_day
+%   ###
+
 % if ( $conf->exists('cust_main-select-prorate_day') ) {
     <TR>
       <TD ALIGN="right" WIDTH="200"><% mt('Prorate day (1-28)') |h %> </TD>
@@ -103,6 +136,10 @@
 % } else {
     <INPUT TYPE="hidden" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>">
 % }
+
+%   ###
+%   # billday
+%   ###
 
     <TR>
       <TD ALIGN="right" WIDTH="200"><% mt('Charge card/e-check on this day of the month') |h %> </TD>
@@ -124,6 +161,10 @@
 %   $ret;
 %  }
 
+%   ###
+%   # invoice_terms
+%   ###
+
     <TR>
       <TD ALIGN="right" WIDTH="200"><% mt('Invoice terms') |h %> </TD>
       <TD WIDTH="408">
@@ -133,6 +174,10 @@
         &>
       </TD>
     </TR>
+
+%   ###
+%   # credit_limit
+%   ###
 
     <TR>
       <TD ALIGN="right" WIDTH="200"><% mt('Credit limit') |h %> </TD>
@@ -161,6 +206,10 @@ function toggle(obj) {
           %> 
       </TD>
     </TR>
+
+%   ###
+%   # CDR flags / options
+%   ###
 
 % if ( $conf->exists('voip-cust_cdr_spools') ) { 
       <TR>
@@ -213,6 +262,10 @@ function toggle(obj) {
       <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="<% $cust_main->cdr_termination_percentage %>">
 % }
 
+%   ###
+%   # Invoicing currency
+%   ###
+
 %my @currencies = $conf->config('currencies');
 %if ( scalar(@currencies) ) {
 %  unshift @currencies, ''; #default
@@ -229,6 +282,9 @@ function toggle(obj) {
     &>
 % }
 
+%   ###
+%   # Invoicing locale
+%   ###
 
 %my @available_locales = $conf->config('available-locales');
 %if ( scalar(@available_locales) ) {
@@ -267,11 +323,6 @@ my $payinfo = $options{'payinfo'};
 my $conf = new FS::Conf;
 
 my $money_char = $conf->config('money_char') || '$';
-
-my @payby = grep /\w/, $conf->config('payby');
-#@payby = (qw( CARD DCRD CHEK DCHK BILL CASH WEST COMP ))
-@payby = (qw( CARD DCRD CHEK DCHK BILL CASH COMP ))
-  unless @payby;
 
 my $show_term = '';
 if ( $cust_main->custnum ) {

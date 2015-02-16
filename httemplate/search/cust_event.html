@@ -163,7 +163,7 @@ for my $param (@scalars) {
 }
 
 #lists
-my @lists = qw( payby eventpart );
+my @lists = qw( eventpart );
 foreach my $param (@lists) {
   $search{$param} = [ $cgi->param($param) ];
 }

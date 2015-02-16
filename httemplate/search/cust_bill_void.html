@@ -124,10 +124,6 @@ if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
   if ( $cgi->param('invnum_max') =~ /^\s*(\d+)\s*$/ ) {
     $search{'invnum_max'} = $1;
   }
-  #payby
-  if ( $cgi->param('payby') ) {
-    $search{'payby'} = [ $cgi->param('payby') ];
-  }
 
   #amounts
   $search{'charged'} = [ FS::UI::Web::parse_lt_gt($cgi, 'charged') ];

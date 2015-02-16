@@ -604,6 +604,22 @@ sub process_initialize {
   $part_event->initialize;
 }
 
+sub _upgrade_data { #class method
+  my ($class, %opts) = @_;
+
+  foreach my $part_event (
+    qsearch('part_event', { 'action' => 'cust_bill_realtime_card' }),
+    qsearch('part_event', { 'action' => 'cust_bill_realtime_check' }),
+  ) {
+
+    $part_event->action('realtime_auto');
+    my $error = $part_event->replace;
+    die $error if $error;
+
+  }
+     
+}
+
 =back
 
 =head1 SEE ALSO

@@ -390,7 +390,7 @@ terms or the default terms are used.
 sub bill {
   my( $self, %options ) = @_;
 
-  return '' if $self->payby eq 'COMP';
+  return '' if $self->complimentary eq 'Y';
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
   my $log = FS::Log->new('FS::cust_main::Billing::bill');
