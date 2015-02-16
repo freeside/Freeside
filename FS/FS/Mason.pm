@@ -180,7 +180,6 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_pay_refund;
   use FS::cust_svc;
   use FS::nas;
-  use FS::part_bill_event;
   use FS::part_event;
   use FS::part_event_condition;
   use FS::part_pkg;

@@ -86,7 +86,6 @@ FS/cust_main_Mixin.pm
 FS/cust_main_county.pm
 FS/cust_main_invoice.pm
 FS/cust_pay.pm
-FS/cust_bill_event.pm
 FS/cust_bill_pay.pm
 FS/cust_pay_batch.pm
 FS/cust_pay_refund.pm
@@ -110,7 +109,6 @@ FS/h_svc_domain.pm
 FS/h_svc_external.pm
 FS/h_svc_forward.pm
 FS/h_svc_www.pm
-FS/part_bill_event.pm
 FS/payinfo_Mixin.pm
 FS/export_svc.pm
 FS/export_device.pm
@@ -246,7 +244,6 @@ t/UID.t
 t/Msgcat.t
 t/SearchCache.t
 t/cust_bill.t
-t/cust_bill_event.t
 t/cust_bill_pay.t
 t/cust_bill_pkg.t
 t/cust_bill_pkg_detail.t
@@ -280,7 +277,6 @@ t/cust_tax_exempt.t
 t/cust_tax_exempt_pkg.t
 t/domain_record.t
 t/nas.t
-t/part_bill_event.t
 t/export_svc.t
 t/export_device.t
 t/part_export.t

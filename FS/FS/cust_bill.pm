@@ -26,11 +26,9 @@ use FS::cust_pay;
 use FS::cust_pkg;
 use FS::cust_credit_bill;
 use FS::pay_batch;
-use FS::cust_bill_event;
 use FS::cust_event;
 use FS::part_pkg;
 use FS::cust_bill_pay;
-use FS::part_bill_event;
 use FS::payby;
 use FS::bill_batch;
 use FS::cust_bill_batch;
@@ -285,7 +283,6 @@ sub delete {
   my $dbh = dbh;
 
   foreach my $table (qw(
-    cust_bill_event
     cust_event
     cust_credit_bill
     cust_bill_pay
@@ -563,32 +560,6 @@ sub open_cust_bill_pkg {
   }
 
   @open;
-}
-
-=item cust_bill_event
-
-Returns the completed invoice events (deprecated, old-style events - see L<FS::cust_bill_event>) for this invoice.
-
-=cut
-
-sub cust_bill_event {
-  my $self = shift;
-  qsearch( 'cust_bill_event', { 'invnum' => $self->invnum } );
-}
-
-=item num_cust_bill_event
-
-Returns the number of completed invoice events (deprecated, old-style events - see L<FS::cust_bill_event>) for this invoice.
-
-=cut
-
-sub num_cust_bill_event {
-  my $self = shift;
-  my $sql =
-    "SELECT COUNT(*) FROM cust_bill_event WHERE invnum = ?";
-  my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
-  $sth->execute($self->invnum) or die $sth->errstr. " executing $sql";
-  $sth->fetchrow_arrayref->[0];
 }
 
 =item cust_event
