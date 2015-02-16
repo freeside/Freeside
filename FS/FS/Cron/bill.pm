@@ -190,8 +190,6 @@ sub bill_where {
 
   push @search, "( cust_main.archived != 'Y' OR archived IS NULL )"; #disable?
 
-  push @search, "cust_main.payby    = '". $opt{'p'}. "'"
-    if $opt{'p'};
   push @search, "cust_main.agentnum IN ( ". $opt{'a'}. " ) "
     if $opt{'a'};
 
