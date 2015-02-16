@@ -174,8 +174,7 @@ my %opt = (
 $opt{'barcode_img'} = 1 if $conf->exists('invoice-barcode');
 
 my @payby =  grep /\w/, $conf->config('payby');
-#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
-@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+@payby = (qw( CARD DCRD CHEK DCHK BILL CASH ))
   unless @payby;
 my %payby = map { $_=>1 } @payby;
 

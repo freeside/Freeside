@@ -6,6 +6,7 @@ use base qw( FS::cust_bill::Search FS::Template_Mixin
 use strict;
 use vars qw( $DEBUG $me );
              # but NOT $conf
+use Carp;
 use Fcntl qw(:flock); #for spool_csv
 use Cwd;
 use List::Util qw(min max sum);
@@ -1953,24 +1954,8 @@ sub print_csv {
 
 }
 
-=item comp
-
-Pays this invoice with a compliemntary payment.  If there is an error,
-returns the error, otherwise returns false.
-
-=cut
-
 sub comp {
-  my $self = shift;
-  my $cust_pay = new FS::cust_pay ( {
-    'invnum'   => $self->invnum,
-    'paid'     => $self->owed,
-    '_date'    => '',
-    'payby'    => 'COMP',
-    'payinfo'  => $self->cust_main->payinfo,
-    'paybatch' => '',
-  } );
-  $cust_pay->insert;
+  croak 'cust_bill->comp is deprecated (COMP payments are deprecated)';
 }
 
 =item realtime_card

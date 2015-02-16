@@ -107,7 +107,6 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 if ( $beginning || $ending ) {
   push @where, "_date >= $beginning",
                "_date <= $ending";
-               #"payby != 'COMP';
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {

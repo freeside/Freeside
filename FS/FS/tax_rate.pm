@@ -2055,9 +2055,6 @@ sub generate_liability_report {
         join(';', map { "$_=". uri_escape($t->$_) } @params);
 
       my $itemdesc_loc = 
-      # "    payby != 'COMP' ". # breaks the entire report under 4.x
-      #                         # and unnecessary since COMP accounts don't
-      #                         # get taxes calculated in the first place
         "    ( itemdesc = ? OR ? = '' AND itemdesc IS NULL ) ".
         "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
                                                          @taxparams
