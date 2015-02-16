@@ -260,11 +260,6 @@ sub check {
                ") must be an integer multiple of main package period.";
       }
     }
-    if (( $src_pkg->option('delay_cancel',1) && !$dst_pkg->option('delay_cancel',1) ) ||
-        ( $dst_pkg->option('delay_cancel',1) && !$src_pkg->option('delay_cancel',1) )
-    ) {
-      return "Supplemental package must have same value as main package for automatic suspension on cancel.";
-    }
   }
 
   $self->SUPER::check;

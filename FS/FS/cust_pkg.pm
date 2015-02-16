@@ -935,7 +935,11 @@ sub cancel {
   }
 
   foreach my $supp_pkg ( $self->supplemental_pkgs ) {
-    $error = $supp_pkg->cancel(%options, 'from_main' => 1);
+    if ($delay_cancel) {
+        $error = $supp_pkg->suspend(%options, 'from_main' => 1, 'reason' => undef);
+    } else {
+        $error = $supp_pkg->cancel(%options, 'from_main' => 1);
+    }
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
