@@ -107,15 +107,17 @@
         </SELECT>
         <BR><FONT SIZE="-1"><% mt('Account type') |h %></FONT>
       </TD>
- 
-%     my( $account, $aba ) = split('@',
-%       ( $cgi->param($name.'_payby') || $cust_payby->payby ) =~ /^(CHEK|DCHK)$/
-%         ? $cgi->param($name.'_payinfo')
-%         : $cust_payby->payinfo
-%       );
-%     my $branch = '';
-%     ($branch,$aba) = split('\.',$aba)
-%       if $echeck_country eq 'CA';
+
+%     my ( $account, $aba, $branch ) = ( '', '', '' );
+%     if ( $cgi->param($name.'_payby') =~ /^(CHEK|DCHK)$/ ) {
+%       $account = $cgi->param($name.'_payinfo1');
+%       $aba     = $cgi->param($name.'_payinfo2');
+%       $branch  = $cgi->param($name.'_payinfo3');
+%     } elsif ( $cust_payby->payby =~ /^(CHEK|DCHK)$/ ) {
+%       ( $account, $aba ) = split('@', $cust_payby->payinfo);
+%       ( $branch,  $aba ) = split('\.',$aba)
+%         if $echeck_country eq 'CA';
+%     }
 %
 %     #false laziness w/view/cust_main/billing.html and misc/payment.cgi
 %     my $routing_label = $echeck_country eq 'US' ? 'ABA/Routing #'
@@ -287,7 +289,7 @@ if ( $curr_value ) {
 } else {
   $cust_payby = new FS::cust_payby {};
 }
-my $sel_payby = $cust_payby->payby;
+my $sel_payby = $cgi->param($name.'_payby') || $cust_payby->payby;
 $sel_payby = 'CARD' if $sel_payby eq 'DCRD' || $sel_payby eq '';
 $sel_payby = 'CHEK' if $sel_payby eq 'DCHK';
 

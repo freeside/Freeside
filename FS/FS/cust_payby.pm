@@ -427,12 +427,16 @@ sub check {
 
   }
 
-  if ( $self->paydate eq '' || $self->paydate eq '-' ) {
-    return "Expiration date required"
-      # shouldn't payinfo_check do this?
-      unless $self->payby =~ /^(CHEK|DCHK)$/;
+  if ( $self->payby =~ /^(CHEK|DCHK)$/ ) {
+
     $self->paydate('');
-  } else {
+
+  } elsif ( $self->payby =~ /^(CARD|DCRD)$/ ) {
+
+    # shouldn't payinfo_check do this?
+    return "Expiration date required"
+      if $self->paydate eq '' || $self->paydate eq '-';
+
     my( $m, $y );
     if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
       ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
@@ -451,6 +455,7 @@ sub check {
       #&&
          !$ignore_expired_card 
       && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
+
   }
 
   if ( $self->payname eq '' && $self->payby !~ /^(CHEK|DCHK)$/ &&
@@ -560,7 +565,7 @@ Returns the field names used in the web interface (including some pseudo-fields)
 sub cgi_cust_payby_fields {
   #my $class = shift;
   [qw( payby payinfo paydate_month paydate_year paycvv payname weight
-       payinfo1 payinfo2 payinfo3 paytype paystate )];
+       payinfo1 payinfo2 payinfo3 paytype paystate payname_CHEK )];
 }
 
 =item cgi_hash_callback HASHREF
@@ -582,7 +587,7 @@ sub cgi_hash_callback {
 
   if ( $hashref->{payby} =~ /^(CHEK|DCHK)$/ ) {
 
-    unless ( grep $hashref->{$_}, qw( payinfo1 payinfo2 payinfo3 payname ) ) {
+    unless ( grep $hashref->{$_}, qw(payinfo1 payinfo2 payinfo3 payname_CHEK)) {
       %$hashref = ();
       return;
     }
@@ -592,7 +597,7 @@ sub cgi_hash_callback {
       if $conf->config('echeck-country') eq 'CA';
     $hashref->{payinfo} .= $hashref->{'payinfo2'};
 
-    $hashref->{payname} .= $hashref->{'payname_CHEK'};
+    $hashref->{payname} = $hashref->{'payname_CHEK'};
 
   } elsif ( $hashref->{payby} =~ /^(CARD|DCRD)$/ ) {
 
