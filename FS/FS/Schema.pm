@@ -1423,6 +1423,7 @@ sub tables_hashref {
         #void fields
         'void_date',  @date_type,                  '', '', 
         'void_reason', 'varchar', 'NULL', $char_d, '', '', 
+        'void_reasonnum', 'int', 'NULL', '', '', '', 
         'void_usernum',    'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'crednum',
@@ -1457,6 +1458,10 @@ sub tables_hashref {
                           { columns    => [ 'commission_pkgnum' ],
                             table      => 'cust_pkg',
                             references => [ 'pkgnum' ],
+                          },
+                          { columns    => [ 'void_reasonnum' ],
+                            table      => 'reason',
+                            references => [ 'reasonnum' ],
                           },
                           { columns    => [ 'void_usernum' ],
                             table      => 'access_user',

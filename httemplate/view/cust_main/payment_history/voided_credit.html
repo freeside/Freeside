@@ -8,16 +8,26 @@
 % }
 <% $void_reason |h %>
 </I>
+<% $unvoid %>
 <%init>
 
 my( $cust_credit_void, %opt ) = @_;
 
 my $date_format = $opt{'date_format'} || '%m/%d/%Y';
 
-#my $unvoid = ''; # not yet available
+my $unvoid = '';
+$unvoid = areyousure_link("${p}misc/unvoid-cust_credit_void.cgi?".$cust_credit_void->crednum,
+                            emt('Are you sure you want to unvoid this credit?'),
+                            '',
+                            emt('unvoid')
+                          )
+  if $cust_credit_void->closed !~ /^Y/i
+  && $opt{'Unvoid credit'};
+
 my $reason = $cust_credit_void->reason;
 $reason = " ($reason)" if $reason;
 
 my $void_reason = $cust_credit_void->void_reason;
 $void_reason = " ($void_reason)" if $void_reason;
 </%init>
+

@@ -11,6 +11,7 @@ our %class_name = (
   'R' => 'credit',
   'S' => 'suspend',
   'F' => 'refund',
+  'X' => 'void credit',
 );
 
 our %class_purpose = (  
@@ -18,6 +19,7 @@ our %class_purpose = (
   'R' => 'explain why a customer was credited',
   'S' => 'explain why a customer package was suspended',
   'F' => 'explain why a customer was refunded',
+  'X' => 'explain why a credit was voided',
 );
 
 =head1 NAME
@@ -48,7 +50,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item typenum - primary key
 
-=item class - currently 'C', 'R',  or 'S' for cancel, credit, or suspend 
+=item class - currently 'C', 'R', 'S', 'F' or 'X' for cancel, credit, suspend, refund or void credit 
 
 =item type - name of the type of reason
 

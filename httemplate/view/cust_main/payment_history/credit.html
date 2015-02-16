@@ -1,4 +1,4 @@
-<% $credit. ' '. $reason. $desc. $change_pkg. $apply. $delete. $unapply %>
+<% $credit. ' '. $reason. $desc. $change_pkg. $apply. $delete. $unapply. $void %>
 <%init>
 
 my( $cust_credit, %opt ) = @_;
@@ -125,6 +125,18 @@ if ( $apply && $opt{'pkg-balances'} && $cust_credit->pkgnum ) {
                ).
    ')';
 }
+
+my $void = '';
+$void = ' ('.
+               include( '/elements/popup_link.html',
+                    'label'    => emt('void'),
+                    'action'   => "${p}misc/void-cust_credit.html?".
+                                  $cust_credit->crednum,
+                    'actionlabel' => emt('Void credit'),
+                ).
+          ')'
+  if $cust_credit->closed !~ /^Y/i
+  && $opt{'Void credit'};
 
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_credit.cgi?".$cust_credit->crednum,

@@ -6,8 +6,8 @@ Example:
 
     #required 
     'field'         => 'reasonnum',
-    'reason_class'  => 'C', # currently 'C', 'R', 'F',  or 'S'
-                           # for cancel, credit, refund, or suspend
+    'reason_class'  => 'C', # currently 'C', 'R', 'F', 'S' or 'X'
+                           # for cancel, credit, refund, suspend or void credit
 
     #recommended
     'cgi' => $cgi, #easiest way for things to be properly "sticky" on errors
@@ -173,6 +173,8 @@ if ($class eq 'C') {
   $add_access_right = 'Add on-the-fly credit reason';
 } elsif ($class eq 'F') {
   $add_access_right = 'Add on-the-fly refund reason';
+} elsif ($class eq 'X') {
+  $add_access_right = 'Add on-the-fly void credit reason';
 } else {
   die "illegal class: $class";
 }

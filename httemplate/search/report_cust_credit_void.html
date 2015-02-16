@@ -1,0 +1,50 @@
+<& /elements/header.html, mt($title) &>
+
+<FORM ACTION="cust_credit_void.html" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+
+<TABLE>
+
+  <& /elements/tr-select-user.html,
+                'label'       => emt('Credit voids by employee: '),
+                'access_user' => \%access_user,
+  &>
+
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => emt('for agent: '),
+                 'disable_empty' => 0,
+  &>
+
+  <& /elements/tr-input-beginning_ending.html &>
+
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                'label' => emt('Amount'),
+                'field' => 'amount',
+  &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $sth = dbh->prepare("SELECT DISTINCT usernum FROM cust_credit_void")
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my @usernum = map $_->[0], @{$sth->fetchall_arrayref};
+my %access_user =
+  map { $_ => qsearchs('access_user',{'usernum'=>$_})->username }
+      @usernum;
+
+my $title = 'Voided credit report';
+
+</%init>
