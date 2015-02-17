@@ -5,6 +5,7 @@ Example:
   <& elements/cust_main_dayranges.html,
                  'title'       => 'Accounts Receivable Aging Summary',
                  'range_sub'   => $mysub,
+                 'email_link'  => 1,  #adds an action column with an email link if true
   &>
 
   my $mysub = sub {
@@ -27,6 +28,7 @@ Example:
                                     '90+',
                                     emt('Total'),
                                     @pay_head,
+                                    @act_header,
                                   ],
                  'footer'      => [
                                     'Total',
@@ -42,6 +44,7 @@ Example:
                                     sprintf( '<b>'.$money_char.'%.2f</b>',
                                              $row->{'rangecol_0_0'} ),
                                     ('') x @pay_labels,
+                                    @act_blank,
                                   ],
                  'fields'      => [
                                     FS::UI::Web::cust_fields_subs(),
@@ -51,6 +54,7 @@ Example:
                                     format_rangecol('90_0'),
                                     format_rangecol('0_0'),
                                     @pay_labels,
+                                    @act_fields,
                                   ],
                  'links'       => [
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
@@ -62,22 +66,32 @@ Example:
                                     '',
                                     '',
                                     @pay_links,
+                                    @act_blank,
                                   ],
+                 'link_onclicks' => [ ( map '', @cust_header ),
+                                      '', '', '', '', '', 
+                                      ( map '', @pay_labels ),
+                                      @act_link_onclicks,
+                                    ],
                  'align'       => FS::UI::Web::cust_aligns(). 
                                    'rrrrr'.
                                   ('c' x @pay_labels),
+                                  @act_align,
                  'size'        => [ ( map '', @cust_header ),
                                     #'-1', '', '', '', '',  '', ],
                                     '', '', '', '', '',  '', 
                                     ( map '', @pay_labels ),
+                                    @act_blank,
                                     ],
                  'style'       => [ FS::UI::Web::cust_styles(),
                                     #'b', '', '', '', '', 'b', ],
                                     '', '', '', '', 'b', 
                                     ( map '', @pay_labels ),
+                                    @act_blank,
                                     ],
                  'xls_format'  => [ (map '', FS::UI::Web::cust_styles),
                                     '', '', '', '', { bold => 1 },
+                                    @act_blank,
                                   ],
                  'color'       => [
                                     FS::UI::Web::cust_colors(),
@@ -88,6 +102,7 @@ Example:
                                     '',
                                     '',
                                     ( map '', @pay_labels ),
+                                    @act_blank,
                                   ],
                %opt,
 &>
@@ -233,6 +248,19 @@ if($opt{'payment_links'} && $curuser->access_right('Process payment') && @payby)
 
   @pay_links = (map { [ "${p}misc/payment.cgi?payby=$_;custnum=", 'custnum' ] }
                          @payby );
+}
+
+my (@act_header, @act_fields, @act_link_onclicks, @act_align, @act_blank);
+if (delete($opt{'email_links'})) {
+  push @act_header, 'Actions';
+  push @act_fields, sub { 'send email' };
+  push @act_link_onclicks, sub {
+    my $row = shift;
+    my $custnum = $row->custnum;
+    return qq!window.open('${p}misc/email-customers.html?table=cust_main&custnum=$custnum','_blank')!;
+  };
+  push @act_align, 'l';
+  push @act_blank, '';
 }
 
 </%init>
