@@ -6,6 +6,9 @@ use strict;
 use warnings;
 use FS::Mason qw( mason_interps );
 use FS::Trace;
+use FS::Conf;
+
+$FS::Conf::conf_cache_enabled = 1; # enable FS::Conf caching for performance
 
 if ( %%%RT_ENABLED%%% ) {
 
