@@ -593,6 +593,8 @@ sub update_customer {
  my( $class, %opt ) = @_;
 
   my $conf = new FS::Conf;
+  return { 'error' => 'Incorrect shared secret' }
+    unless $opt{secret} eq $conf->config('api_shared_secret');
 
 
   my $custnum = $opt{'custnum'}
