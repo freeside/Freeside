@@ -18,7 +18,7 @@ $me = '[FS::part_pkg::bulk]';
 
 sub _bulk_cust_svc {
   my( $self, $cust_pkg, $sdate ) = @_;
-  $cust_pkg->cust_svc;
+  return $self->_only_svcs_filter($cust_pkg->cust_svc);
 }
 
 sub _bulk_setup {
