@@ -17,7 +17,7 @@
 %   }
 <% $cgi->redirect($fsurl.'browse/part_pkg-fcc.html?redirect='.$session) %>
 % } else {
-<% $cgi->redirect($fsurl.'browse/part_pkg-fcc.html?classnum='.$classnum.$jump) %>
+<% $cgi->redirect($dest) %>
 % }
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -38,10 +38,14 @@ foreach my $param ($cgi->param) {
   $error{$pkgpart} = $error if $error;
 }
 
-my $classnum = $cgi->param('classnum');
+my $dest = $fsurl.'browse/part_pkg-fcc.html?';
+foreach (qw(classnum maxrecords offset)) {
+  if ( $cgi->param($_) =~ /^(\d+)$/ ) {
+    $dest .= "$_=$1;";
+  }
+}
 
-my $jump = '';
 if ( $cgi->param('jump') =~ /^pkgpart(\d+)$/ ) {
-  $jump = '#'.$1;
+  $dest .= "#$1";
 }
 </%init>
