@@ -915,7 +915,6 @@ sub cancel {
         return $error;
       }
     }
-
   } #unless $date
 
   my %hash = $self->hash;
@@ -950,9 +949,13 @@ sub cancel {
 
   foreach my $supp_pkg ( $self->supplemental_pkgs ) {
     if ($delay_cancel) {
-        $error = $supp_pkg->suspend(%options, 'from_main' => 1, 'reason' => undef);
+      $error = $supp_pkg->suspend(
+        'from_main'   => 1, 
+        'from_cancel' => 1,
+        'time'        => $cancel_time
+      );
     } else {
-        $error = $supp_pkg->cancel(%options, 'from_main' => 1);
+      $error = $supp_pkg->cancel(%options, 'from_main' => 1);
     }
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -960,11 +963,13 @@ sub cancel {
     }
   }
 
-  foreach my $usage ( $self->cust_pkg_usage ) {
-    $error = $usage->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "deleting usage pools: $error";
+  unless ($date) {
+    foreach my $usage ( $self->cust_pkg_usage ) {
+      $error = $usage->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "deleting usage pools: $error";
+      }
     }
   }
 
@@ -1278,6 +1283,9 @@ separately.
 =item from_main - allows a supplemental package to be suspended, rather
 than redirecting the method call to its main package.  For internal use.
 
+=item from_cancel - used when suspending from the cancel method, forces
+this to skip everything besides basic suspension.  For internal use.
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -1327,7 +1335,7 @@ sub suspend {
   }
 
   # some false laziness with sub cancel
-  if ( !$options{nobill} && !$date &&
+  if ( !$options{nobill} && !$date && !$options{'from_cancel'} &&
        $self->part_pkg->option('bill_suspend_as_cancel',1) ) {
     # kind of a kludge--'bill_suspend_as_cancel' to avoid having to 
     # make the entire cust_main->bill path recognize 'suspend' and 
@@ -1392,17 +1400,19 @@ sub suspend {
 
   unless ( $date ) { # then we are suspending now
 
-    # credit remaining time if appropriate
-    # (if required by the package def, or the suspend reason)
-    my $unused_credit = $self->part_pkg->option('unused_credit_suspend',1)
-                        || ( defined($reason) && $reason->unused_credit );
+    unless ($options{'from_cancel'}) {
+      # credit remaining time if appropriate
+      # (if required by the package def, or the suspend reason)
+      my $unused_credit = $self->part_pkg->option('unused_credit_suspend',1)
+                          || ( defined($reason) && $reason->unused_credit );
 
-    if ( $unused_credit ) {
-      warn "crediting unused time on pkg#".$self->pkgnum."\n" if $DEBUG;
-      my $error = $self->credit_remaining('suspend', $suspend_time);
-      if ($error) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+      if ( $unused_credit ) {
+        warn "crediting unused time on pkg#".$self->pkgnum."\n" if $DEBUG;
+        my $error = $self->credit_remaining('suspend', $suspend_time);
+        if ($error) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
     }
 
@@ -1433,7 +1443,7 @@ sub suspend {
     }
 
     my $conf = new FS::Conf;
-    if ( $conf->config('suspend_email_admin') ) {
+    if ( $conf->config('suspend_email_admin') && !$options{'from_cancel'} ) {
  
       my $error = send_email(
         'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
