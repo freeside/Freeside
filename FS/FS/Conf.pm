@@ -2147,8 +2147,6 @@ and customer address. Include units.',
   },
 
   {
-
-  {
     'key'         => 'show_ship_company',
     'section'     => 'UI',
     'description' => 'Turns on display/collection of a "service company name" field for customers.',
