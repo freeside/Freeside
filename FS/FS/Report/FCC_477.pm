@@ -400,7 +400,8 @@ sub fbs_sql {
 
   my @select = (
     "$censustract AS censustract",
-    'technology',
+    '(technology - technology % 10) AS media_type',
+      # media types are multiples of 10
     'broadband_downstream',
     'broadband_upstream',
     "SUM($q)",
