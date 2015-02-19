@@ -191,9 +191,10 @@ my %h_table_labelsub = (
 my $discounts = {};
 my $discount_descripsub = sub {
   my($item) = @_;
-  die "Could not find part_pkg for pkgpart " . $item->pkgpart
-    unless $item->part_pkg;
-  $pkgpart{$item->pkgpart} ||= $item->part_pkg->pkg;
+  $pkgpart{$item->pkgpart} ||= qsearchs({
+    'table' => 'part_pkg',
+    'hashref' => {'pkgpart' => $item->pkgpart}
+  })->pkg;
   my $dnum = $item->discountnum;
   $discounts->{$dnum} ||= qsearchs({
     'table'=>'discount',
