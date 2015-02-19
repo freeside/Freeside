@@ -575,9 +575,11 @@ sub taxline {
 
       } elsif ( $self->unittype == 2 ) {
 
+        my $locationnum = $cust_bill_pkg->tax_locationnum
+                       || $cust_main->ship_locationnum;
         # per account
-        $units = 1 unless $seen{$cust_bill_pkg->tax_locationnum};
-        $seen{$cust_bill_pkg->tax_locationnum} = 1;
+        $units = 1 unless $seen{$locationnum};
+        $seen{$locationnum} = 1;
 
       } else {
         # Unittype 19 is used for prepaid wireless E911 charges in many states.

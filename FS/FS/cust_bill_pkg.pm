@@ -954,6 +954,7 @@ sub disintegrate {
 
   my $usage_total;
   foreach my $classnum ($self->usage_classes) {
+    next if $classnum eq ''; # null-class usage is included in 'recur'
     my $amount = $self->usage($classnum);
     next if $amount == 0; # though if so we shouldn't be here
     my $usage_item = FS::cust_bill_pkg->new({
@@ -1013,7 +1014,11 @@ sub usage {
 
     my $sql = 'SELECT SUM(COALESCE(amount,0)) FROM cust_bill_pkg_detail '.
               ' WHERE billpkgnum = '. $self->billpkgnum;
-    $sql .= " AND classnum = $classnum" if defined($classnum);
+    if ($classnum =~ /^(\d+)$/) {
+      $sql .= " AND classnum = $1";
+    } elsif (defined($classnum) and $classnum eq '') {
+      $sql .= " AND classnum IS NULL";
+    }
 
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
@@ -1128,7 +1133,7 @@ sub tax_locationnum {
   my $self = shift;
   if ( $self->pkgnum ) { # normal sales
     return $self->cust_pkg->tax_locationnum;
-  } elsif ( $self->feepart ) { # fees
+  } elsif ( $self->feepart and $self->invnum ) { # fees
     return $self->cust_bill->cust_main->ship_locationnum;
   } else { # taxes
     return '';
@@ -1139,7 +1144,7 @@ sub tax_location {
   my $self = shift;
   if ( $self->pkgnum ) { # normal sales
     return $self->cust_pkg->tax_location;
-  } elsif ( $self->feepart ) { # fees
+  } elsif ( $self->feepart and $self->invnum ) { # fees
     return $self->cust_bill->cust_main->ship_location;
   } else { # taxes
     return;

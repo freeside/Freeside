@@ -309,8 +309,11 @@ sub taxline {
       # pertain to this tax def
       $taxable_charged -= $_->amount;
     }
- 
-    my $locationnum = $cust_bill_pkg->tax_locationnum;
+
+    # can't determine the tax_locationnum directly for fees; they're not
+    # yet linked to an invoice
+    my $locationnum = $cust_bill_pkg->tax_locationnum
+                   || $cust_main->ship_locationnum;
 
     ### Monthly capped exemptions ### 
     if ( $self->exempt_amount && $self->exempt_amount > 0 
