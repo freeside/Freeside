@@ -75,6 +75,15 @@ function setAll(setTo) {
     checkboxes[i].checked = setTo;
   }
 }
+function toCGIString() {
+  var out = '';
+  for (var i = 0; i < checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      out += '&' + checkboxes[i].name + '=' + checkboxes[i].value;
+    }
+  }
+  return out;
+}
 </SCRIPT>
 <%init>
 my %opt = @_;
