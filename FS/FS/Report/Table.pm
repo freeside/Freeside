@@ -495,11 +495,16 @@ sub _cust_bill_pkg_recurring {
 
   my @where = (
     '(pkgnum != 0 OR feepart IS NOT NULL)',
-    $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_report_option(%opt),
     $self->with_refnum(%opt),
     $self->with_cust_classnum(%opt)
   );
+
+  my $where_classnum = $self->with_classnum($opt{'classnum'}, $opt{'use_override'});
+  if ($opt{'project'}) {
+    $where_classnum =~ s/\bcust_bill_pkg/v_cust_bill_pkg/g;
+  }
+  push @where, $where_classnum;
 
   if ( $opt{'distribute'} ) {
     $where[0] = 'pkgnum != 0'; # specifically exclude fees

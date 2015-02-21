@@ -2,6 +2,7 @@
                  'title'       => emt('Accounts Receivable Aging Summary'),
                  'range_sub'   => \&balance,
                  'payment_links' => 1,
+                 'email_checkboxes' => 1,
 &>
 <%init>
 

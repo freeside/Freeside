@@ -8,6 +8,9 @@ Example:
 
     #required
     'action'         => 'content.html', # uri for content of popup
+
+    #alternately, use instead of action
+    'js_action'      => 'url',          # javascript variable or expression
    
     #strongly recommended
     'actionlabel     => 'You clicked',  # popup title
@@ -47,7 +50,8 @@ if (ref($_[0]) eq 'HASH') {
   $params = { @_ };
 }
 
-$action      = $params->{'action'}      if exists $params->{'action'};
+$action      = q(') . $params->{'action'} . q(') if exists $params->{'action'};
+$action      = $params->{'js_action'}   if exists $params->{'js_action'};
 $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
 $width       = $params->{'width'}       if exists $params->{'width'};
 $height      = $params->{'height'}      if exists $params->{'height'};
@@ -61,7 +65,7 @@ $scrolling   = $params->{'scrolling'}   if exists $params->{'scrolling'};
 my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
 
 my $onclick =
-  "overlib( OLiframeContent('$action', $width, $height, '$popup_name', 0, '$scrolling' ), ".
+  "overlib( OLiframeContent($action, $width, $height, '$popup_name', 0, '$scrolling' ), ".
     "CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
     "DRAGGABLE, CLOSECLICK, ".
     "BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext'".

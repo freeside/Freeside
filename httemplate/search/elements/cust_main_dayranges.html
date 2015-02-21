@@ -5,6 +5,7 @@ Example:
   <& elements/cust_main_dayranges.html,
                  'title'       => 'Accounts Receivable Aging Summary',
                  'range_sub'   => $mysub,
+                 'email_link'  => 1,  #adds an action column with an email link if true
   &>
 
   my $mysub = sub {
@@ -20,6 +21,7 @@ Example:
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
                  'header'      => [
+                                    @act_blank,
                                     @cust_header,
                                     '0-30',
                                     '30-60',
@@ -29,6 +31,7 @@ Example:
                                     @pay_head,
                                   ],
                  'footer'      => [
+                                    @act_blank,
                                     'Total',
                                     ( map '',( 1 .. $#cust_header ),),
                                     sprintf( $money_char.'%.2f',
@@ -44,6 +47,7 @@ Example:
                                     ('') x @pay_labels,
                                   ],
                  'fields'      => [
+                                    @act_fields,
                                     FS::UI::Web::cust_fields_subs(),
                                     format_rangecol('0_30'),
                                     format_rangecol('30_60'),
@@ -53,6 +57,7 @@ Example:
                                     @pay_labels,
                                   ],
                  'links'       => [
+                                    @act_blank,
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
                                           @cust_header
                                     ),
@@ -63,32 +68,40 @@ Example:
                                     '',
                                     @pay_links,
                                   ],
-                 'align'       => FS::UI::Web::cust_aligns(). 
+                 'align'       => $act_align.
+                                  FS::UI::Web::cust_aligns(). 
                                    'rrrrr'.
                                   ('c' x @pay_labels),
-                 'size'        => [ ( map '', @cust_header ),
+                 'size'        => [ 
+                                    @act_blank,
+                                    ( map '', @cust_header ),
                                     #'-1', '', '', '', '',  '', ],
-                                    '', '', '', '', '',  '', 
+                                    '', '', '', '', '',
                                     ( map '', @pay_labels ),
-                                    ],
-                 'style'       => [ FS::UI::Web::cust_styles(),
+                                  ],
+                 'style'       => [ 
+                                    @act_blank,
+                                    FS::UI::Web::cust_styles(),
                                     #'b', '', '', '', '', 'b', ],
                                     '', '', '', '', 'b', 
                                     ( map '', @pay_labels ),
                                     ],
-                 'xls_format'  => [ (map '', FS::UI::Web::cust_styles),
+                 'xls_format'  => [ 
+                                    @act_blank,
+                                    (map '', FS::UI::Web::cust_styles),
                                     '', '', '', '', { bold => 1 },
                                   ],
                  'color'       => [
+                                    @act_blank,
                                     FS::UI::Web::cust_colors(),
                                     '',
                                     '',
                                     '',
                                     '',
                                     '',
-                                    '',
                                     ( map '', @pay_labels ),
                                   ],
+                 'html_foot'   => $html_foot,
                %opt,
 &>
 <%init>
@@ -233,6 +246,32 @@ if($opt{'payment_links'} && $curuser->access_right('Process payment') && @payby)
 
   @pay_links = (map { [ "${p}misc/payment.cgi?payby=$_;custnum=", 'custnum' ] }
                          @payby );
+}
+
+my (@act_blank, @act_fields, $act_align, $html_foot);
+if (delete($opt{'email_checkboxes'})) {
+  my $email_link = q!var url = toCGIString(); !;
+  $email_link   .= q/if (!url) { alert('No customers selected'); return false; }; /;
+  $email_link   .= q!url = '!;
+  $email_link   .= "${p}misc/email-customers.html?table=cust_main";
+  $email_link   .= q!' + url + '&popup=1&url=javascript%3Awindow.top.location.reload%28%29%3B'; !;
+  $email_link   .= include('/elements/popup_link_onclick.html',
+    'js_action' => 'url',
+    'actionlabel' => 'Send Customer Email',
+    'width' => '900',
+    'height' => '500',
+  );
+  $html_foot = include('checkbox-foot.html',
+    label   => 'Email selected customers',
+    onclick => $email_link,
+  );
+  push @act_fields, sub { 
+    my $row = shift;
+    my $custnum = $row->custnum;
+    qq!<input type="checkbox" name="custnum" value="$custnum">!;
+  };
+  $act_align = 'l';
+  push @act_blank, '';
 }
 
 </%init>

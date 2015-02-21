@@ -3,6 +3,7 @@ package FS::part_event::Condition::has_cust_payby_auto;
 use strict;
 use Tie::IxHash;
 use FS::payby;
+use FS::Record qw(qsearch);
 
 use base qw( FS::part_event::Condition );
 

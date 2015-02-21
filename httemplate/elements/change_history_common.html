@@ -191,7 +191,10 @@ my %h_table_labelsub = (
 my $discounts = {};
 my $discount_descripsub = sub {
   my($item) = @_;
-  $pkgpart{$item->pkgpart} ||= $item->part_pkg->pkg;
+  $pkgpart{$item->pkgpart} ||= qsearchs({
+    'table' => 'part_pkg',
+    'hashref' => {'pkgpart' => $item->pkgpart}
+  })->pkg;
   my $dnum = $item->discountnum;
   $discounts->{$dnum} ||= qsearchs({
     'table'=>'discount',

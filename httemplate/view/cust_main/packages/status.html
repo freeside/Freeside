@@ -54,9 +54,15 @@
         <% pkg_status_row( $cust_pkg, emt('On Hold'), '', 'color'=>'7E0079', %opt ) %>
 
 %     } else { #status: suspended
-
-        <% pkg_status_row( $cust_pkg, emt('Suspended'), 'susp', 'color'=>'FF9900', %opt ) %>
-%       my $cpr = $cust_pkg->last_cust_pkg_reason('susp');
+%       my ($cpr,$susplabel);
+%       if ($cust_pkg->is_status_delay_cancel) {
+%         $cpr = $cust_pkg->last_cust_pkg_reason('expire');
+%         $susplabel = 'Suspended (Cancelled)';
+%       } else {
+%         $cpr = $cust_pkg->last_cust_pkg_reason('susp');
+%         $susplabel = 'Suspended';
+%       }
+        <% pkg_status_row( $cust_pkg, emt($susplabel), 'susp', 'color'=>'FF9900', %opt ) %>
         <% pkg_reason_row( $cust_pkg, $cpr, 'color' => 'FF9900', %opt ) %>
 
 %     }

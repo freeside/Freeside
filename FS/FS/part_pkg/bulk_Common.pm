@@ -5,6 +5,7 @@ use strict;
 use vars qw($DEBUG $me %info);
 use Date::Format;
 use FS::Conf;
+use FS::Record qw(qsearchs);
 
 $DEBUG = 0;
 $me = '[FS::part_pkg::bulk_Common]';
@@ -23,8 +24,17 @@ $me = '[FS::part_pkg::bulk_Common]';
                                    'instead of a detailed list',
                          'type' => 'checkbox',
                        },
+    'only_svcs' => {
+      'name' => 'Only charge fees for these services',
+      'type' => 'select_multiple',
+      'select_table'  => 'part_svc',
+      'select_key'    => 'svcpart',
+      'select_label'  => 'svc',
+      'disable_empty' => 1,
+      'parse'         => sub { @_ }, #should this be the default in /edit/process/part_pkg.cgi?
+    },
   },
-  'fieldorder' => [ 'svc_setup_fee', 'svc_recur_fee',
+  'fieldorder' => [ 'svc_setup_fee', 'svc_recur_fee', 'only_svcs',
                     'summarize_svcs', 'no_prorate' ],
   'weight' => 51,
 );
@@ -122,6 +132,18 @@ sub is_free_options {
 }
 
 sub can_usageprice { 0; }
+
+sub _only_svcs_filter {
+  my ($self, @cust_svc) = @_;
+  my @only_svcs = split(', ',$self->option('only_svcs',1));
+  if (@only_svcs) {
+    @cust_svc = grep { 
+      my $svcpart = $_->svcpart;
+      grep(/^$svcpart$/,@only_svcs);
+    } @cust_svc;
+  }
+  return @cust_svc;
+}
 
 1;
 

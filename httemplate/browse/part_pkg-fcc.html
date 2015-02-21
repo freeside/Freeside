@@ -197,6 +197,13 @@ my $html_form = qq!<FORM ACTION="${p}edit/process/bulk-part_pkg-fcc.html" METHOD
   ' )
   <BR><BR>';
 
+# pass the page selection through so we can jump back to the current spot
+if ( $cgi->param('maxrecords') =~ /^(\d+)$/ ) {
+  $html_form .= qq!<INPUT TYPE="hidden" NAME="maxrecords" VALUE="$1">!;
+}
+if ( $cgi->param('offset') =~ /^(\d+)$/ ) {
+  $html_form .= qq!<INPUT TYPE="hidden" NAME="offset" VALUE="$1">!;
+}
 
 # restore this only after creating $html_form
 $cgi->param('classnum', $classnum) if length($classnum);
@@ -228,7 +235,7 @@ my @menubar =
   }
 
   function filter_change() {
-    window.location = '! . $cgi->self_url . qq!?classnum='
+    window.location = '<% $cgi->self_url %>?classnum='
       + document.getElementById('classnum').value;
   }
 </script>

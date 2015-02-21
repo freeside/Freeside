@@ -1,4 +1,9 @@
+% if ($popup) {
+<% include('/elements/header-popup.html', $title) %>
+% } else {
 <% include('/elements/header.html', $title) %>
+% }
+
 
 <FORM NAME="OneTrueForm" ACTION="email-customers.html" METHOD="POST">
 <INPUT TYPE="hidden" NAME="table" VALUE="<% $table %>">
@@ -7,6 +12,8 @@
 %# multi-valued search params.  We are no longer in search context, so we 
 %# pack the search into a Storable string for later use.
 <INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
+<INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
+<INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
 
 % if ( $cgi->param('action') eq 'send' ) { 
 
@@ -16,7 +23,7 @@
                  'OneTrueForm',
                  [ qw( search table from subject html_body text_body msgnum ) ],
                  'process/email-customers.html',
-                 { 'message' => "Notice sent" }, #would be nice to show #, but..
+                 $pdest,
               )
     %>
 
@@ -159,13 +166,18 @@ my $conf = FS::Conf->new;
 my $table = $cgi->param('table') or die "'table' required";
 my $agent_virt_agentnum = $cgi->param('agent_virt_agentnum') || '';
 
+my $popup = $cgi->param('popup');
+my $url   = $cgi->param('url');
+my $pdest = { 'message' => "Notice sent" };
+$pdest->{'url'} = $cgi->param('url') if $url;
+
 my %search;
 if ( $cgi->param('search') ) {
   %search = %{ thaw(decode_base64($cgi->param('search'))) };
 }
 else {
   %search = $cgi->Vars;
-  delete $search{$_} for qw( action table from subject html_body text_body );
+  delete $search{$_} for qw( action table from subject html_body text_body popup url );
   # FS::$table->search is expected to know which parameters might be 
   # multi-valued, and to accept scalar values for them also.  No good 
   # solution to this since CGI can't tell whether a parameter _might_
