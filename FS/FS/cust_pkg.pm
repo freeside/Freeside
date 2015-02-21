@@ -791,6 +791,10 @@ to a different pkgpart or location, and probably shouldn't be in any other
 case.  If it's not set, the 'unused_credit_cancel' part_pkg option will 
 be used.
 
+=item delay_cancel - for internal use, to allow proper handling of
+supplemental packages when the main package is flagged to suspend 
+before cancelling
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -837,7 +841,7 @@ sub cancel {
   my $date = $options{'date'} if $options{'date'}; # expire/cancel later
   $date = '' if ($date && $date <= $cancel_time);      # complain instead?
 
-  my $delay_cancel = undef;
+  my $delay_cancel = $options{'delay_cancel'};
   if ( !$date && $self->part_pkg->option('delay_cancel',1)
        && (($self->status eq 'active') || ($self->status eq 'suspended'))
   ) {
@@ -921,7 +925,7 @@ sub cancel {
   if ( $date ) {
     $hash{'expire'} = $date;
     if ($delay_cancel) {
-      $hash{'susp'} = $cancel_time unless $self->susp;
+      # just to be sure these are clear
       $hash{'adjourn'} = undef;
       $hash{'resume'} = undef;
     }
@@ -948,19 +952,22 @@ sub cancel {
   }
 
   foreach my $supp_pkg ( $self->supplemental_pkgs ) {
-    if ($delay_cancel) {
-      $error = $supp_pkg->suspend(
-        'from_main'   => 1, 
-        'from_cancel' => 1,
-        'time'        => $cancel_time
-      );
-    } else {
-      $error = $supp_pkg->cancel(%options, 'from_main' => 1);
-    }
+    $error = $supp_pkg->cancel(%options, 
+      'from_main' => 1, 
+      'date' => $date, #in case it got changed by delay_cancel
+      'delay_cancel' => $delay_cancel,
+    );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
     }
+  }
+
+  if ($delay_cancel && !$options{'from_main'}) {
+    $error = $new->suspend(
+      'from_cancel' => 1,
+      'time'        => $cancel_time
+    );
   }
 
   unless ($date) {
@@ -3415,6 +3422,9 @@ really the whole point of the delay_cancel option.
 
 sub is_status_delay_cancel {
   my ($self) = @_;
+  if ( $self->main_pkgnum and $self->pkglinknum ) {
+    return $self->main_pkg->is_status_delay_cancel;
+  }
   return 0 unless $self->part_pkg->option('delay_cancel',1);
   return 0 unless $self->status eq 'suspended';
   return 0 unless $self->expire;
