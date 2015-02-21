@@ -1,3 +1,9 @@
+freeside (3.7git~20150221-1) UNRELEASED; urgency=low
+
+  * Testing version of freeside.
+
+ -- Jeremy Davis <jeremyd-debian@freeside.biz>  Thu, 21 Feb 2015 11:18:36 -0500
+
 freeside (3.6git~20141209-1) UNRELEASED; urgency=low
 
   * Testing version of freeside.
