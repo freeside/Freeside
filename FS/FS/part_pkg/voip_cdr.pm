@@ -282,6 +282,9 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'bill_inactive_svcs' => { 'name' => 'Bill for all phone numbers that were active during the billing period',
                               'type' => 'checkbox',
                             },
+    'bill_only_pkg_dates' => { 'name' => 'Only bill CDRs with a date during the package billing period',
+                               'type' => 'checkbox',
+                             },
 
     'count_available_phones' => { 'name' => 'Consider for tax purposes the number of lines to be svc_phones that may be provisioned rather than those that actually are.',
                            'type' => 'checkbox',
@@ -345,6 +348,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        selfservice_format selfservice_inbound_format
                        usage_mandate usage_section summarize_usage 
                        usage_showzero bill_every_call bill_inactive_svcs
+                       bill_only_pkg_dates
                        count_available_phones suspend_bill 
                      )
                   ],
@@ -453,11 +457,14 @@ sub calc_usage {
         'calltypenum'    => $self->option('use_calltypenum',1),
         'status'         => '',
         'for_update'     => 1,
-      );  # $last_bill, $$sdate )
+    );
+    if ( $self->option('bill_only_pkg_dates') ) {
+      $options{'begin'} = $last_bill;
+      $options{'end'}   = $$sdate;
+    }
     if ( $svc_field eq 'svcnum' ) {
       $options{'by_svcnum'} = 1;
-    }
-    elsif ($svc_table eq 'svc_pbx' and $svc_field eq 'ip') {
+    } elsif ($svc_table eq 'svc_pbx' and $svc_field eq 'ip') {
       $options{'by_ip_addr'} = $by_ip_addr;
     }
 
