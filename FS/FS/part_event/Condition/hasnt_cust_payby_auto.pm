@@ -1,9 +1,8 @@
 package FS::part_event::Condition::hasnt_cust_payby_auto;
+use base qw( FS::part_event::Condition );
 
 use strict;
-use Tie::IxHash;
-
-use base qw( FS::part_event::Condition );
+use FS::Record qw(qsearch);
 
 sub description {
   'Customer does not have automatic payment information';
