@@ -1562,6 +1562,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'invoice_email_pdf_msgnum',
+    'section'     => 'invoicing',
+    'description' => 'Message template to send as the text and HTML part of PDF invoices. If not selected, a text and HTML version of the invoice will be sent.',
+    %msg_template_options,
+  },
+
+  {
     'key'         => 'invoice_email_pdf_note',
     'section'     => 'invoicing',
     'description' => 'If defined, this text will replace the default HTML invoice as the body of emailed PDF invoices.',
