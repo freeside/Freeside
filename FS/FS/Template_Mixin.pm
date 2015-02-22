@@ -7,7 +7,7 @@ use vars qw( $DEBUG $me
            );
              # but NOT $conf
 use vars qw( $invoice_lines @buf ); #yuck
-use List::Util qw(sum first);
+use List::Util qw(sum); #can't import first, it conflicts with cust_main.first
 use Date::Format;
 use Date::Language;
 use Text::Template 1.20;
@@ -1213,7 +1213,8 @@ sub print_generic {
 
   # create a tax section if we don't yet have one
   my $tax_description = 'Taxes, Surcharges, and Fees';
-  my $tax_section = first { $_->{description} eq $tax_description } @sections;
+  my $tax_section =
+    List::Util::first { $_->{description} eq $tax_description } @sections;
   if (!$tax_section) {
     $tax_section = { 'description' => $tax_description };
     push @sections, $tax_section if $multisection;
