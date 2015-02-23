@@ -203,17 +203,43 @@ FS::SelfService - Freeside self-service API
   # "my account" functionality
   use FS::SelfService qw( login customer_info invoice cancel payment_info process_payment );
 
+  #new-style login with an email address and password
+  # can also be used for svc_acct login, set $emailaddress to username@domain
+  my $rv = login ( { 'email'    => $emailaddress,
+                     'password' => $password,
+                   },
+                 );
+  if ( $rv->{'error'} ) {
+    #handle login error...
+  } else {
+    #successful login
+    $session_id = $rv->{'session_id'};
+  }
+
+  #classic svc_acct-based login with separate username and password
   my $rv = login( { 'username' => $username,
                     'domain'   => $domain,
                     'password' => $password,
                   }
                 );
-
   if ( $rv->{'error'} ) {
     #handle login error...
   } else {
     #successful login
-    my $session_id = $rv->{'session_id'};
+    $session_id = $rv->{'session_id'};
+  }
+
+  #svc_phone login with phone number and PIN
+  my $rv = login( { 'username' => $phone_number,
+                    'domain'   => 'svc_phone',
+                    'password' => $pin,
+                  }
+                );
+  if ( $rv->{'error'} ) {
+    #handle login error...
+  } else {
+    #successful login
+    $session_id = $rv->{'session_id'};
   }
 
   my $customer_info = customer_info( { 'session_id' => $session_id } );
@@ -309,6 +335,11 @@ Creates a user session.  Takes a hash reference as parameter with the
 following keys:
 
 =over 4
+
+=item email
+
+Email address (username@domain), instead of username and domain.  Required for
+contact-based self-service login, can also be used for svc_acct-based login.
 
 =item username
 
