@@ -2,7 +2,7 @@ package FS::cust_main_credit_limit;
 use base qw( FS::Record );
 
 use strict;
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 
 =head1 NAME
@@ -105,6 +105,11 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub cust_main {
+  my $self = shift;
+  qsearchs('cust_main', { 'custnum' => $self->custnum } );
 }
 
 =back
