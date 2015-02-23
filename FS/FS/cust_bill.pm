@@ -1121,6 +1121,10 @@ sub queueable_email {
   my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
     or die "invalid invoice number: " . $opt{invnum};
 
+  if ( $opt{mode} ) {
+    $self->set('mode', $opt{mode});
+  }
+
   my %args = map {$_ => $opt{$_}} 
              grep { $opt{$_} }
               qw( from notice_name no_coupon template );
