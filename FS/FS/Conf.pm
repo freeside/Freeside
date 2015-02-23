@@ -1,6 +1,7 @@
 package FS::Conf;
 
 use vars qw($base_dir @config_items @base_items @card_types $DEBUG);
+use strict;
 use Carp;
 use IO::File;
 use File::Basename;
@@ -731,6 +732,23 @@ my %batch_gateway_options = (
     );
     map { $_->gatewaynum, $_->label } @gateways;
   },
+);
+
+my %invoice_mode_options = (
+  'type'        => 'select-sub',
+  'options_sub' => sub { 
+    my @modes = qsearch({
+        'table' => 'invoice_mode', 
+        'extra_sql' => ' WHERE '.
+          $FS::CurrentUser::CurrentUser->agentnums_sql(null => 1),
+        });
+    map { $_->modenum, $_->modename } @modes;
+  },
+  'option_sub'  => sub { 
+                         my $mode = FS::invoice_mode->by_key(shift);
+                         $mode ? $mode->modename : '',
+                       },
+  'per_agent' => 1,
 );
 
 my @cdr_formats = (
@@ -1721,9 +1739,16 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'payment_receipt_statement_mode',
+    'section'     => 'notification',
+    'description' => 'Automatic payments will cause a post-payment statement to be sent to the customer. Select the invoice mode to use for this statement. If unspecified, it will use the "_statement" versions of invoice configuration settings, and have the notice name "Statement".',
+    %invoice_mode_options,
+  },
+
+  {
     'key'         => 'payment_receipt_msgnum',
     'section'     => 'notification',
-    'description' => 'Template to use for payment receipts.',
+    'description' => 'Template to use for manual payment receipts.',
     %msg_template_options,
   },
   
@@ -3054,7 +3079,7 @@ and customer address. Include units.',
 			 },
     'option_sub'  => sub { require FS::Record;
                            require FS::agent_type;
-			   my $agent = FS::Record::qsearchs(
+			   my $agent_type = FS::Record::qsearchs(
 			     'agent_type', { 'typenum'=>shift }
 			   );
                            $agent_type ? $agent_type->atype : '';

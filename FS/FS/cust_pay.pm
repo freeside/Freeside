@@ -716,12 +716,21 @@ sub send_receipt {
        'custnum' => $cust_main->custnum,
     };
 
-    $error = $queue->insert(
+    my %opt = (
       'invnum'      => $cust_bill->invnum,
-      'template'    => 'statement',
-      'notice_name' => 'Statement',
       'no_coupon'   => 1,
     );
+
+    if ( my $mode = $conf->config('payment_receipt_statement_mode') ) {
+      $opt{'mode'} = $mode;
+    } else {
+      # backward compatibility, no good fix for this yet as some people may
+      # still have "invoice_latex_statement" and such options
+      $opt{'template'} = 'statement';
+      $opt{'notice_name'} = 'Statement';
+    }
+
+    $error = $queue->insert(%opt);
 
   }
   
