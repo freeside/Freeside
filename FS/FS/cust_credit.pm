@@ -348,12 +348,17 @@ adds a record of the voided credit to the cust_credit_void table.
 
 =cut
 
-# yes, false laziness with cust_pay and cust_bill
-# but frankly I don't have time to fix it now
-
 sub void {
   my $self = shift;
   my $reason = shift;
+
+  unless (ref($reason) || !$reason) {
+    $reason = FS::reason->new_or_existing(
+      'class'  => 'X',
+      'type'   => 'Void credit',
+      'reason' => $reason
+    );
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -369,7 +374,7 @@ sub void {
   my $cust_credit_void = new FS::cust_credit_void ( {
       map { $_ => $self->get($_) } $self->fields
     } );
-  $cust_credit_void->set('void_reason', $reason);
+  $cust_credit_void->set('void_reasonnum', $reason->reasonnum);
   my $error = $cust_credit_void->insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;

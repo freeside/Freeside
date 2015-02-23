@@ -1036,6 +1036,7 @@ sub tables_hashref {
         #void fields
         'void_date',  @date_type,                  '', '', 
         'void_reason', 'varchar', 'NULL', $char_d, '', '', 
+        'void_reasonnum', 'int', 'NULL', '', '', '', 
         'void_usernum',    'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'crednum',

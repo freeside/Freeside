@@ -6,6 +6,7 @@ use FS::Record qw(qsearch qsearchs dbh fields);
 use FS::CurrentUser;
 use FS::access_user;
 use FS::cust_credit;
+use FS::UID qw( dbh );
 
 =head1 NAME
 
@@ -85,6 +86,7 @@ sub check {
     || $self->ut_numbern('void_date')
     || $self->ut_textn('void_reason')
     || $self->ut_foreign_keyn('void_usernum', 'access_user', 'usernum')
+    || $self->ut_foreign_keyn('void_reasonnum', 'reason', 'reasonnum')
   ;
   return $error if $error;
 
@@ -94,6 +96,49 @@ sub check {
     unless $self->void_usernum;
 
   $self->SUPER::check;
+}
+
+=item unvoid 
+
+"Un-void"s this credit: Deletes the voided credit from the database and adds
+back (but does not re-apply) a normal credit.
+
+=cut
+
+sub unvoid {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_credit = new FS::cust_credit ( {
+    map { $_ => $self->get($_) } grep { $_ !~ /void/ } $self->fields
+  } );
+  my $error = $cust_credit->insert;
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $error ||= $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item cust_main
@@ -116,6 +161,40 @@ Returns the voiding employee object (see L<FS::access_user>).
 sub void_access_user {
   my $self = shift;
   qsearchs('access_user', { 'usernum' => $self->void_usernum } );
+}
+
+=item void_access_user_name
+
+Returns the voiding employee name.
+
+=cut
+
+sub void_access_user_name {
+  my $self = shift;
+  my $user = $self->void_access_user;
+  return unless $user;
+  return $user->name;
+}
+
+=item void_reason
+
+Returns the text of the associated void credit reason (see L<FS::reason>) for this voided credit.
+
+The reason for the original credit remains accessible through the reason method.
+
+=cut
+
+sub void_reason {
+  my ($self, $value, %options) = @_;
+  my $reason_text;
+  if ( $self->void_reasonnum ) {
+    my $reason = FS::reason->by_key($self->void_reasonnum);
+    $reason_text = $reason->reason;
+  } else { # in case one of these somehow still exists
+    $reason_text = $self->get('void_reason');
+  }
+
+  return $reason_text;
 }
 
 =back

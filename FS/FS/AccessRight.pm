@@ -222,6 +222,8 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Backdate credit', desc=>'Enable credits to be posted for days other than today.' },
     'Credit line items', #NEWNEWNEW
     'Apply credit', #NEWNEW
+    'Void credit', #NEWER than things marked NEWNEWNEW
+    'Unvoid credit', #NEWER than things marked NEWNEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
     { rightname=>'Delete credit', desc=>'Enable deletion of unclosed credits. Be very careful!  Only delete credits that were data-entry errors, not adjustments.' }, #aka. deletecredits Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
     'View refunds',
@@ -234,6 +236,7 @@ tie my %rights, 'Tie::IxHash',
     'Refund Echeck payment',
     'Delete refund', #NEW
     'Add on-the-fly credit reason', #NEW
+    'Add on-the-fly void credit reason',
   ],
   
   ###
