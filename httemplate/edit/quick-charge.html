@@ -169,18 +169,22 @@ function bill_now_changed (what) {
           noinit  => 1,
         }
       &>
-%   }
 
-% 		unless ($billed) {
-<TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %> </TD>
-  <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
-</TR>
+      <& /elements/tr-checkbox.html,
+        label => emt('Invoice this charge separately'),
+        field => 'separate_bill',
+        value => 'Y',
+        curr_value => $cust_pkg->get('separate_bill'),
+      &>
+      <TR>
+        <TD ALIGN="right"><% mt('Tax exempt') |h %> </TD>
+        <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
+      </TR>
 
-<& /elements/tr-select-taxclass.html, 'curr_value' => $part_pkg->get('taxclass')  &>
+      <& /elements/tr-select-taxclass.html, 'curr_value' => $part_pkg->get('taxclass')  &>
 
-<& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $part_pkg->get('taxproductnum')  &>
-%		}
+      <& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $part_pkg->get('taxproductnum')  &>
+% }
 
 % } else { # new one-time charge
 
@@ -279,6 +283,12 @@ function bill_now_changed (what) {
         align:      "BR"
       });
     </SCRIPT>
+
+<& /elements/tr-checkbox.html,
+  label => emt('Invoice this charge separately'),
+  field => 'separate_bill',
+  value => 'Y'
+&>
 
 % }
 

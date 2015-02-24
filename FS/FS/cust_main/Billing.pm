@@ -497,13 +497,31 @@ sub bill {
       push @{ $cust_bill_pkg{$pass} }, @transfer_items;
       # treating this as recur, just because most charges are recur...
       ${$total_recur{$pass}} += $_->recur foreach @transfer_items;
+
+      # currently not considering separate_bill here, as it's for 
+      # one-time charges only
     }
 
     foreach my $part_pkg ( @part_pkg ) {
 
       $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
 
-      my $pass = ($cust_pkg->no_auto || $part_pkg->no_auto) ? 'no_auto' : '';
+      my $pass = '';
+      if ( $cust_pkg->separate_bill ) {
+        # if no_auto is also set, that's fine. we just need to not have
+        # invoices that are both auto and no_auto, and since the package
+        # gets an invoice all to itself, it will only be one or the other.
+        $pass = $cust_pkg->pkgnum;
+        if (!exists $cust_bill_pkg{$pass}) { # it may not exist yet
+          push @passes, $pass;
+          $total_setup{$pass} = do { my $z = 0; \$z };
+          $total_recur{$pass} = do { my $z = 0; \$z };
+          $taxlisthash{$pass} = {};
+          $cust_bill_pkg{$pass} = [];
+        }
+      } elsif ( ($cust_pkg->no_auto || $part_pkg->no_auto) ) {
+        $pass = 'no_auto';
+      }
 
       my $next_bill = $cust_pkg->getfield('bill') || 0;
       my $error;
@@ -545,13 +563,7 @@ sub bill {
 
   } #foreach my $cust_pkg
 
-  #if the customer isn't on an automatic payby, everything can go on a single
-  #invoice anyway?
-  #if ( $cust_main->payby !~ /^(CARD|CHEK)$/ ) {
-    #merge everything into one list
-  #}
-
-  foreach my $pass (@passes) { # keys %cust_bill_pkg ) {
+  foreach my $pass (@passes) { # keys %cust_bill_pkg )
 
     my @cust_bill_pkg = _omit_zero_value_bundles(@{ $cust_bill_pkg{$pass} });
 

@@ -1884,6 +1884,7 @@ sub tables_hashref {
         'recur_show_zero',    'char', 'NULL',  1, '', '',
         'setup_show_zero',    'char', 'NULL',  1, '', '',
         'change_to_pkgnum',    'int', 'NULL', '', '', '',
+        'separate_bill',      'char', 'NULL',  1, '', '',
       ],
       'primary_key' => 'pkgnum',
       'unique' => [],

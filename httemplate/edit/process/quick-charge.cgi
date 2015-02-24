@@ -93,6 +93,7 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
       'tax_override'      => $override,
       'quantity'          => $quantity,
       'start_date'        => $start_date,
+      'separate_bill'     => scalar($cgi->param('separate_bill')),
   );
 
 } else { # the usual case: new one-time charge
@@ -138,6 +139,7 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
                            : ''
                        ),
     'no_auto'       => scalar($cgi->param('no_auto')),
+    'separate_bill' => scalar($cgi->param('separate_bill')),
     'pkg'           => scalar($cgi->param('pkg')),
     'setuptax'      => scalar($cgi->param('setuptax')),
     'taxclass'      => scalar($cgi->param('taxclass')),
