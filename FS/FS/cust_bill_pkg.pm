@@ -1014,10 +1014,12 @@ sub usage {
 
     my $sql = 'SELECT SUM(COALESCE(amount,0)) FROM cust_bill_pkg_detail '.
               ' WHERE billpkgnum = '. $self->billpkgnum;
-    if ($classnum =~ /^(\d+)$/) {
-      $sql .= " AND classnum = $1";
-    } elsif (defined($classnum) and $classnum eq '') {
-      $sql .= " AND classnum IS NULL";
+    if (defined $classnum) {
+      if ($classnum =~ /^(\d+)$/) {
+        $sql .= " AND classnum = $1";
+      } elsif (defined($classnum) and $classnum eq '') {
+        $sql .= " AND classnum IS NULL";
+      }
     }
 
     my $sth = dbh->prepare($sql) or die dbh->errstr;
