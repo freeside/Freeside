@@ -537,7 +537,12 @@ sub bill {
           push @passes, $pass;
           $total_setup{$pass} = do { my $z = 0; \$z };
           $total_recur{$pass} = do { my $z = 0; \$z };
-          $taxlisthash{$pass} = {};
+          # it also needs its own tax context
+          $tax_engines{$pass} = FS::TaxEngine->new(
+                                  cust_main    => $self,
+                                  invoice_time => $invoice_time,
+                                  cancel       => $options{cancel}
+                                );
           $cust_bill_pkg{$pass} = [];
         }
       } elsif ( ($cust_pkg->no_auto || $part_pkg->no_auto) ) {
