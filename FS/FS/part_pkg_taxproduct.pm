@@ -153,7 +153,11 @@ sub part_pkg_taxrate {
     map { $_->taxproductnum }
     $self->expand_cch_taxproduct
   );
-  $extra_sql .= "AND taxproductnum IN($tpnums)";
+
+  # if there are no taxproductnums, there are no matching tax classes
+  return if length($tpnums) == 0;
+
+  $extra_sql .= " AND taxproductnum IN($tpnums)";
 
   my $addl_from = 'LEFT JOIN part_pkg_taxproduct USING ( taxproductnum )';
   my $order_by = 'ORDER BY taxclassnum, length(geocode) desc, length(taxproduct) desc';
