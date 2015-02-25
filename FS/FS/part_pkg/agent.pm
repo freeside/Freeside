@@ -18,7 +18,7 @@ $me = '[FS::part_pkg::agent]';
 
 %info = (
   'name'      => 'Wholesale bulk billing, for master customers of an agent.',
-  'shortname' => 'Wholesale bulk billing for agent.',
+  'shortname' => 'Wholesale bulk billing for agent',
   'inherit_fields' => [qw( prorate global_Mixin)],
   'fields' => {
     #'recur_method'  => { 'name' => 'Recurring fee method',
