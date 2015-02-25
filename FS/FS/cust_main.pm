@@ -24,7 +24,6 @@ use Scalar::Util qw( blessed );
 use Time::Local qw(timelocal);
 use Data::Dumper;
 use Tie::IxHash;
-use Digest::MD5 qw(md5_base64);
 use Date::Format;
 #use Date::Manip;
 use File::Temp; #qw( tempfile );
@@ -2129,16 +2128,21 @@ sub cancel {
   return ( 'access denied' )
     unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
 
-  if ( $opt{'ban'} && $self->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
+  if ( $opt{'ban'} ) {
 
-    #should try decryption (we might have the private key)
-    # and if not maybe queue a job for the server that does?
-    return ( "Can't (yet) ban encrypted credit cards" )
-      if $self->is_encrypted($self->payinfo);
+    foreach my $cust_payby ( $self->cust_payby ) {
 
-    my $ban = new FS::banned_pay $self->_new_banned_pay_hashref;
-    my $error = $ban->insert;
-    return ( $error ) if $error;
+      #well, if they didn't get decrypted on search, then we don't have to 
+      # try again... queue a job for the server that does have decryption
+      # capability if we're in a paranoid multi-server implementation?
+      return ( "Can't (yet) ban encrypted credit cards" )
+        if $cust_payby->is_encrypted($cust_payby->payinfo);
+
+      my $ban = new FS::banned_pay $cust_payby->_new_banned_pay_hashref;
+      my $error = $ban->insert;
+      return ( $error ) if $error;
+
+    }
 
   }
 
@@ -2173,13 +2177,6 @@ sub _banned_pay_hashref {
     'payinfo' => $self->payinfo,
     #don't ever *search* on reason! #'reason'  =>
   };
-}
-
-sub _new_banned_pay_hashref {
-  my $self = shift;
-  my $hr = $self->_banned_pay_hashref;
-  $hr->{payinfo} = md5_base64($hr->{payinfo});
-  $hr;
 }
 
 =item notes

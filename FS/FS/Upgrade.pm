@@ -10,6 +10,7 @@ use FS::Conf;
 use FS::Record qw(qsearchs qsearch str2time_sql);
 use FS::queue;
 use FS::upgrade_journal;
+use FS::Setup qw( enable_banned_pay_pad );
 
 use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;
@@ -145,6 +146,8 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set('tax-cust_exempt-groups-num_req', 'all');
     $conf->delete('tax-cust_exempt-groups-require_individual_nums');
   }
+
+  enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
 }
 

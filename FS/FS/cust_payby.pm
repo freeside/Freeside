@@ -2,6 +2,7 @@ package FS::cust_payby;
 use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
+use Digest::SHA qw( sha512_base64 );
 use Business::CreditCard qw( validate cardtype );
 use FS::UID qw( dbh );
 use FS::Msgcat qw( gettext );
@@ -497,6 +498,14 @@ sub _banned_pay_hashref {
     'payinfo' => $self->payinfo,
     #don't ever *search* on reason! #'reason'  =>
   };
+}
+
+sub _new_banned_pay_hashref {
+  my $self = shift;
+  my $hr = $self->_banned_pay_hashref;
+  $hr->{payinfo_hash} = 'SHA512';
+  $hr->{payinfo} = sha512_base64($hr->{payinfo});
+  $hr;
 }
 
 =item paydate_mon_year

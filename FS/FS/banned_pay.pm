@@ -1,9 +1,10 @@
 package FS::banned_pay;
+use base qw( FS::otaker_Mixin FS::Record );
 
 use strict;
-use base qw( FS::otaker_Mixin FS::Record );
 use Digest::MD5 qw(md5_base64);
-use FS::Record qw( qsearch qsearchs );
+use Digest::SHA qw( sha512_base64 );
+use FS::Record qw( qsearchs dbh );
 use FS::CurrentUser;
 
 =head1 NAME
@@ -33,22 +34,43 @@ supported:
 
 =over 4
 
-=item bannum - primary key
+=item bannum
 
-=item payby - I<CARD> or I<CHEK>
+primary key
 
-=item payinfo - fingerprint of banned card (base64-encoded MD5 digest)
+=item payby
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+I<CARD> or I<CHEK>
+
+=item payinfo
+
+fingerprint of banned card (base64-encoded MD5 or SHA512 digest)
+
+=item payinfo_hash
+
+Digest hash algorythm, currently either MD5 or SHA512.  Empty implies a legacy
+MD5 hash.
+
+=item _date
+
+specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item end_date - optional end date, also specified as a UNIX timestamp.
+=item end_date
 
-=item usernum - order taker (assigned automatically, see L<FS::access_user>)
+optional end date, also specified as a UNIX timestamp.
 
-=item bantype - Ban type: "" or null (regular ban), "warn" (warning)
+=item usernum
 
-=item reason - reason (text)
+order taker (assigned automatically, see L<FS::access_user>)
+
+=item bantype
+
+Ban type: "" or null (regular ban), "warn" (warning)
+
+=item reason
+
+reason (text)
 
 =back
 
@@ -74,26 +96,14 @@ sub table { 'banned_pay'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-# the replace method can be inherited from FS::Record
 
 =item check
 
@@ -103,9 +113,6 @@ and replace methods.
 
 =cut
 
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
-
 sub check {
   my $self = shift;
 
@@ -113,6 +120,7 @@ sub check {
     $self->ut_numbern('bannum')
     || $self->ut_enum('payby', [ 'CARD', 'CHEK' ] )
     || $self->ut_text('payinfo')
+    || $self->ut_enum('payinfo_hash', [ '', 'MD5', 'SHA512' ] )
     || $self->ut_numbern('_date')
     || $self->ut_numbern('end_date')
     || $self->ut_enum('bantype', [ '', 'warn' ] )
@@ -144,11 +152,17 @@ sub ban_search {
   my( $class, %opt ) = @_;
   qsearchs({
     'table'     => 'banned_pay',
-    'hashref'   => {
-                     'payby'   => $opt{payby},
-                     'payinfo' => md5_base64($opt{payinfo}),
-                   },
-    'extra_sql' => 'AND ( end_date IS NULL OR end_date >= '. time. ' ) ',
+    'hashref'   => { 'payby' => $opt{payby}, },
+    'extra_sql' => "
+      AND (((payinfo_hash IS NULL OR payinfo_hash = '' OR payinfo_hash = 'MD5')
+              AND payinfo = ". dbh->quote( md5_base64($opt{payinfo}) ). "
+           )
+           OR 
+           (payinfo_hash = 'SHA256'
+              AND payinfo = ". dbh->quote( sha512_base64($opt{payinfo}) ). "
+           )
+          )
+      AND ( end_date IS NULL OR end_date >= ". time. " ) ",
   });
 }
 

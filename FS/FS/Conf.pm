@@ -2698,6 +2698,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'banned_pay-pad',
+    'section'     => 'billing',
+    'description' => 'Padding for encrypted storage of banned credit card hashes.  If you already have new-style SHA512 entries in the banned_pay table, do not change as this will invalidate the old entries.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'payby-default',
     'section'     => 'deprecated',
     'description' => 'Deprecated; in 4.x there is no longer the concept of a single "payment type".  Used to indicate the default payment type.  HIDE disables display of billing information and sets customers to BILL.',

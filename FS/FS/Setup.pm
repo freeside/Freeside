@@ -27,7 +27,7 @@ use FS::access_groupagent;
 use FS::Record qw(qsearch);
 use FS::msgcat;
 
-@EXPORT_OK = qw( create_initial_data enable_encryption );
+@EXPORT_OK = qw( create_initial_data enable_encryption enable_banned_pay_pad );
 
 =head1 NAME
 
@@ -71,6 +71,8 @@ sub create_initial_data {
   populate_numbering();
 
   enable_encryption();
+
+  enable_banned_pay_pad();
   
   if ( $oldAutoCommit ) {
     dbh->commit or die dbh->errstr;
@@ -96,6 +98,25 @@ sub enable_encryption {
   $conf->set('encryptionmodule',     'Crypt::OpenSSL::RSA');
   $conf->set('encryptionpublickey',  $rsa->get_public_key_string );
   $conf->set('encryptionprivatekey', $rsa->get_private_key_string );
+
+}
+
+sub enable_banned_pay_pad {
+
+  eval "use FS::Conf";
+  die $@ if $@;
+
+  my $conf = new FS::Conf;
+
+  die "banned_pay-pad already in place"
+    if length( $conf->config('banned_pay-pad') );
+
+  #arbitrary but good enough... all we need is *some* per-site random padding
+  my @pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '.', ',' );
+
+  $conf->set('banned_pay-pad',
+    join('', map($pw_set[ int(rand($#pw_set)) ], (0..15) ) )
+  );
 
 }
 
