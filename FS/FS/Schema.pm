@@ -3959,11 +3959,6 @@ sub tables_hashref {
       'primary_key'  => 'itemnum',
       'unique'       => [ [ 'usernum' ] ],
       'index'        => [],
-      'foreign_keys' => [
-                          { columns    => [ 'usernum' ],
-                            table      => 'access_user',
-                          },
-                        ],
     },
 
     #'sched_item_class'
@@ -3980,11 +3975,6 @@ sub tables_hashref {
       'primary_key'  => 'availnum',
       'unique'       => [],
       'index'        => [],
-      'foreign_keys' => [
-                          { columns    => [ 'itemnum' ],
-                            table      => 'sched_item',
-                          },
-                        ],
     },
 
     'svc_phone' => {
@@ -4226,15 +4216,6 @@ sub tables_hashref {
       'primary_key'  => 'extensionnum',
       'unique'       => [ [ 'svcnum', 'extension' ] ],
       'index'        => [ [ 'svcnum' ] ],
-      'foreign_keys' => [
-                          { columns    => [ 'svcnum' ],
-                            table      => 'svc_pbx',
-                          },
-                          { columns    => [ 'circuit_svcnum' ],
-                            table      => 'svc_circuit',
-                            references => [ 'svcnum' ],
-                          },
-                        ],
     },
 
     'svc_mailinglist' => { #svc_group?
@@ -4607,20 +4588,6 @@ sub tables_hashref {
       'primary_key' => 'svcnum',
       'unique'      => [],
       'index'       => [ [ 'providernum' ], [ 'typenum' ] ],
-      'foreign_keys' => [
-                          { columns => [ 'svcnum' ],
-                            table   => 'cust_svc',
-                          },
-                          { columns => [ 'typenum' ],
-                            table   => 'circuit_type',
-                          },
-                          { columns => [ 'providernum' ],
-                            table   => 'circuit_provider',
-                          },
-                          { columns => [ 'termnum' ],
-                            table   => 'circuit_termination',
-                          },
-      ],
     },
     %{ tables_hashref_torrus() },
 
@@ -4693,12 +4660,6 @@ sub tables_hashref {
       'primary_key'  => 'batchnum',
       'unique'       => [],
       'index'        => [ [ 'exportnum' ], [ 'status' ] ],
-      'foreign_keys' => [
-                          { columns    => [ 'exportnum' ],
-                            table      => 'part_export',
-                            references => [ 'exportnum' ]
-                          },
-                        ],
     },
 
     'export_batch_item' => {
@@ -4713,12 +4674,6 @@ sub tables_hashref {
       'primary_key'  => 'itemnum',
       'unique'       => [],
       'index'        => [ [ 'batchnum' ], [ 'svcnum' ] ],
-      'foreign_keys' => [
-                          { columns    => [ 'batchnum' ],
-                            table      => 'export_batch',
-                            references => [ 'batchnum' ]
-                          },
-                        ],
     },
 
     # lookup table for states, similar to msa and lata
@@ -4758,12 +4713,6 @@ sub tables_hashref {
       'primary_key' => 'zonenum',
       'unique' => [],
       'index'  => [ [ 'agentnum' ] ],
-      'foreign_keys' => [
-                          { columns     => [ 'agentnum' ],
-                            table       => 'agent',
-                            references  => [ 'agentnum' ],
-                          },
-                        ],
     },
 
     'deploy_zone_block' => {
@@ -4776,12 +4725,6 @@ sub tables_hashref {
       'primary_key' => 'blocknum',
       'unique' => [],
       'index'  => [ [ 'zonenum' ] ],
-      'foreign_keys' => [
-                          { columns     => [ 'zonenum' ],
-                            table       => 'deploy_zone',
-                            references  => [ 'zonenum' ],
-                          },
-                        ],
     },
 
     'deploy_zone_vertex' => {
@@ -4794,12 +4737,6 @@ sub tables_hashref {
       'primary_key' => 'vertexnum',
       'unique' => [ ],
       'index'  => [ ],
-      'foreign_keys' => [
-                          { columns     => [ 'zonenum' ],
-                            table       => 'deploy_zone',
-                            references  => [ 'zonenum' ],
-                          },
-                        ],
     },
 
 
