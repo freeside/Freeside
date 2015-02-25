@@ -47,7 +47,7 @@
 %# END BPS TAGGED BLOCK }}}
 <%INIT>
 if ($m->dhandler_arg =~ /^(\d+)/) {
-    $m->comp('/Dashboards/Render.html', id => $1, %ARGS);
+    $m->subexec('/Dashboards/Render.html', id => $1, %ARGS);
 }
 else {
     $m->decline;
