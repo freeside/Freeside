@@ -39,6 +39,8 @@
 
   my $mon  = $opt{'selected_mon'}  || 0;
   my $year = $opt{'selected_year'} || 0;
+
+  #false laziness w/cust_payby->paydate_mon_year
   if ( $date ) {
     if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
       ( $mon, $year ) = ( $2, $1 );
