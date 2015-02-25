@@ -46,7 +46,7 @@ use warnings;
 use strict;
 
 use constant DEBUG         => 0;       # Enable much runtime information.
-use constant MAX_PROCESSES => 4;      # Total server process count. XXX conf to increase per-different daemon for busy sites using this (currently the only things using this are freeside-xmlrpcd and freeside-selfservice-xmlrpcd)
+use constant MAX_PROCESSES => 10;      # Total server process count. XXX conf to increase per-different daemon for busy sites using this (currently the only things using this are freeside-xmlrpcd and freeside-selfservice-xmlrpcd)
 #use constant TESTING_CHURN => 0;       # Randomly test process respawning.
 
 use vars qw( @EXPORT_OK $FREESIDE_LOG $SERVER_PORT $user $handle_request );
