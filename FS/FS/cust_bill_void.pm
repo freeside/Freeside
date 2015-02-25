@@ -278,7 +278,7 @@ sub cust_pkg {
 Class method which returns an SQL WHERE fragment to search for parameters
 specified in HASHREF.  Accepts the following parameters for 
 L<FS::cust_bill::search_sql_where>: C<_date>, C<invnum_min>, C<invnum_max>,
-C<agentnum>, C<custnum>, C<cust_classnum>, C<refnum>, C<payby>.  Also 
+C<agentnum>, C<custnum>, C<cust_classnum>, C<refnum>.  Also 
 accepts the following:
 
 =over 4
@@ -302,7 +302,7 @@ sub search_sql_where {
     map { $_ => $param->{$_} }
     grep { exists($param->{$_}) }
     qw( _date invnum_min invnum_max agentnum custnum cust_classnum 
-        refnum payby )
+        refnum )
   };
   my $search_sql = FS::cust_bill->search_sql_where($cust_bill_param);
   $search_sql =~ s/cust_bill/cust_bill_void/g;

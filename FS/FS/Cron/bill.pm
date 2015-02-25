@@ -161,8 +161,6 @@ sub bill {
 #      with today's date, regardless of the pretend date used to pre-generate
 #      the invoices.
 #
-#  -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
-#
 #  -a: Only process customers with the specified agentnum
 #
 #  -v: enable debugging
