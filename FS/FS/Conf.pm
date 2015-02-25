@@ -23,6 +23,8 @@ $base_dir = '%%%FREESIDE_CONF%%%';
 
 $DEBUG = 0;
 
+$conf_cache_enabled = 0;
+
 =head1 NAME
 
 FS::Conf - Freeside configuration values
@@ -123,7 +125,8 @@ sub _config {
   my($self,$name,$agentnum,$agentonly)=@_;
   my $hashref = { 'name' => $name };
   local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
-  $conf_cache = undef unless $conf_cache_enabled;  # use cache only when it is safe to do so
+  $conf_cache = undef unless $conf_cache_enabled; # use cache only when it is
+                                                  # safe to do so
   my $cv;
   my @a = (
     ($agentnum || ()),
@@ -140,7 +143,8 @@ sub _config {
       my $key = join(':',$name, $a, $l);
       if (! exists $conf_cache->{$key}){
         $hashref->{locale} = $l;
-        # $conf_cache is reset in FS::UID during myconnect, so the cache is reset per connection
+        # $conf_cache is reset in FS::UID during myconnect, so the cache is
+        # reset per connection
         $conf_cache->{$key} = FS::Record::qsearchs('conf', $hashref);
       }
       return $conf_cache->{$key} if $conf_cache->{$key};
