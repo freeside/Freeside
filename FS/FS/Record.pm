@@ -489,6 +489,8 @@ sub qsearch {
 
   $sth->finish;
 
+  #below was refactored out to _from_hashref, this should use it at some point
+
   my @return;
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
