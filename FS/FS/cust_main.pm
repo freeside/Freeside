@@ -2178,7 +2178,7 @@ sub _banned_pay_hashref {
 sub _new_banned_pay_hashref {
   my $self = shift;
   my $hr = $self->_banned_pay_hashref;
-  $hr->{payinfo} = md5_base64($hr->{payinfo});
+  $hr->{payinfo} = md5_base64($conf->config('banned-pay-pad') . $hr->{payinfo});
   $hr;
 }
 

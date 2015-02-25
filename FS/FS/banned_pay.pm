@@ -146,7 +146,7 @@ sub ban_search {
     'table'     => 'banned_pay',
     'hashref'   => {
                      'payby'   => $opt{payby},
-                     'payinfo' => md5_base64($opt{payinfo}),
+                     'payinfo' => md5_base64($conf->config('banned-pay-pad') . $opt{payinfo}),
                    },
     'extra_sql' => 'AND ( end_date IS NULL OR end_date >= '. time. ' ) ',
   });
