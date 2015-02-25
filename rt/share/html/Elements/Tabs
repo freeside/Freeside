@@ -516,9 +516,14 @@ my $build_main_nav = sub {
                     if $obj->CurrentUserCanSubscribe;
                 $tabs->child( show         => title => loc('Show'),         path => "/Dashboards/" . $obj->id . "/" . $obj->Name)
             }
+        } else {
+            my $tabs = PageMenu();
+            if ( $dashboard->CurrentUserCanCreateAny ) {
+                # FREESIDE: provide a way to create dashboards
+                $tabs->child('dashboard_create' => title => loc('New Dashboard'), path => "/Dashboards/Modify.html?Create=1");
+            }
         }
     }
-
 
     if ( $request_path =~ m{^/Ticket/} ) {
         if ( ( $DECODED_ARGS->{'id'} || '' ) =~ /^(\d+)$/ ) {
