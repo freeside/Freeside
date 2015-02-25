@@ -1,6 +1,6 @@
 package FS::Conf;
 
-use vars qw($base_dir @config_items @base_items @card_types $DEBUG);
+use vars qw($base_dir @config_items @base_items @card_types $DEBUG $conf_cache $conf_cache_enabled);
 use strict;
 use Carp;
 use IO::File;
@@ -121,6 +121,7 @@ sub _config {
   my($self,$name,$agentnum,$agentonly)=@_;
   my $hashref = { 'name' => $name };
   local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
+  $conf_cache = undef unless $conf_cache_enabled;  # use cache only when it is safe to do so
   my $cv;
   my @a = (
     ($agentnum || ()),
@@ -134,9 +135,13 @@ sub _config {
   foreach my $a (@a) {
     $hashref->{agentnum} = $a;
     foreach my $l (@l) {
-      $hashref->{locale} = $l;
-      $cv = FS::Record::qsearchs('conf', $hashref);
-      return $cv if $cv;
+      my $key = join(':',$name, $a, $l);
+      if (! exists $conf_cache->{$key}){
+        $hashref->{locale} = $l;
+        # $conf_cache is reset in FS::UID during myconnect, so the cache is reset per connection
+        $conf_cache->{$key} = FS::Record::qsearchs('conf', $hashref);
+      }
+      return $conf_cache->{$key} if $conf_cache->{$key};
     }
   }
   return undef;
@@ -360,6 +365,12 @@ sub set {
     $error = $new->replace($old);
   } else {
     $error = $new->insert;
+  }
+
+  if (! $error) {
+    # clean the object cache
+    my $key = join(':',$name, $agentnum, $self->{locale});
+    $conf_cache->{ $key } = $new;
   }
 
   die "error setting configuration value: $error \n"

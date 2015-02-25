@@ -176,6 +176,9 @@ sub myconnect {
                            )
     or die "DBI->connect error: $DBI::errstr\n";
 
+  require FS::Conf;
+  $FS::Conf::conf_cache = undef;
+
   if ( $schema ) {
     use DBIx::DBSchema::_util qw(_load_driver ); #quelle hack
     my $driver = _load_driver($handle);
