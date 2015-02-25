@@ -467,9 +467,11 @@ sub render {
 
   # Graphics/stylesheets should probably go in /var/www on the Freeside 
   # machine.
+  my $script_path = `/usr/bin/which freeside-wkhtmltopdf`;
+  chomp $script_path;
   my $kit = PDF::WebKit->new(\$html); #%options
   # hack to use our wrapper script
-  $kit->configure(sub { shift->wkhtmltopdf('freeside-wkhtmltopdf') });
+  $kit->configure(sub { shift->wkhtmltopdf($script_path) });
 
   $kit->to_pdf;
 }
