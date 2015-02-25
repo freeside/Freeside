@@ -93,6 +93,8 @@ our $skip_fuzzyfiles = 0;
 
 our $ucfirst_nowarn = 0;
 
+#this info is in cust_payby as of 4.x
+#this and the fields themselves can be removed in 5.x
 our @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
 
