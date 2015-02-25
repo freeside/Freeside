@@ -69,6 +69,8 @@
 
     <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
+    <% pkg_status_row_separate_bill( $cust_pkg, %opt ) %>
+
     <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
 %   unless ( $cust_pkg->order_date eq $cust_pkg->get('susp') ) { #on hold
@@ -144,6 +146,8 @@
 
           <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
+          <% pkg_status_row_separate_bill( $cust_pkg, %opt ) %>
+
           <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_if(
@@ -174,6 +178,8 @@
 
           <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
+          <% pkg_status_row_separate_bill( $cust_pkg, %opt ) %>
+
           <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_if($cust_pkg, emt('Start billing'), 'start_date', %opt) %>
@@ -190,6 +196,8 @@
           <% pkg_status_row($cust_pkg, emt('Billed'), 'setup', %opt) %>
 
           <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
+
+          <% pkg_status_row_separate_bill( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
@@ -223,6 +231,8 @@
 %         } 
 
           <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
+
+          <% pkg_status_row_separate_bill( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
@@ -494,6 +504,12 @@ sub pkg_status_row_noauto {
   my $what = lc(FS::payby->shortname($cust_main->payby));
 
   pkg_status_row_colspan( $cust_pkg, emt("No automatic $what charge"), '');
+}
+
+sub pkg_status_row_separate_bill {
+  my $cust_pkg = shift;
+  return '' unless $cust_pkg->separate_bill;
+  pkg_status_row_colspan( $cust_pkg, emt("Invoiced separately") );
 }
 
 sub pkg_status_row_discount {

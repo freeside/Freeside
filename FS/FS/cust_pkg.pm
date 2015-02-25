@@ -667,8 +667,9 @@ sub check {
     || $self->ut_numbern('resume')
     || $self->ut_numbern('expire')
     || $self->ut_numbern('dundate')
-    || $self->ut_enum('no_auto', [ '', 'Y' ])
-    || $self->ut_enum('waive_setup', [ '', 'Y' ])
+    || $self->ut_flag('no_auto', [ '', 'Y' ])
+    || $self->ut_flag('waive_setup', [ '', 'Y' ])
+    || $self->ut_flag('separate_bill')
     || $self->ut_textn('agent_pkgid')
     || $self->ut_enum('recur_show_zero', [ '', 'Y', 'N', ])
     || $self->ut_enum('setup_show_zero', [ '', 'Y', 'N', ])
@@ -1065,7 +1066,8 @@ sub uncancel {
       setup
       susp adjourn resume expire start_date contract_end dundate
       change_date change_pkgpart change_locationnum
-      manual_flag no_auto quantity agent_pkgid recur_show_zero setup_show_zero
+      manual_flag no_auto separate_bill quantity agent_pkgid 
+      recur_show_zero setup_show_zero
     ),
   };
 
@@ -2408,6 +2410,7 @@ and, I<if the charge has not yet been billed>:
 - start_date: the date when it will be billed
 - amount: the setup fee to be charged
 - quantity: the multiplier for the setup fee
+- separate_bill: whether to put the charge on a separate invoice
 
 If you pass 'adjust_commission' => 1, and the classnum changes, and there are
 commission credits linked to this charge, they will be recalculated.
@@ -2463,7 +2466,8 @@ sub modify_charge {
   }
 
   if ( !$self->get('setup') ) {
-    # not yet billed, so allow amount, setup_cost, quantity and start_date
+    # not yet billed, so allow amount, setup_cost, quantity, start_date,
+    # and separate_bill
 
     if ( exists($opt{'amount'}) 
           and $part_pkg->option('setup_fee') != $opt{'amount'}
@@ -2491,6 +2495,12 @@ sub modify_charge {
           and $opt{'start_date'} != $self->start_date ) {
 
       $self->set('start_date', $opt{'start_date'});
+    }
+
+    if ( exists($opt{'separate_bill'})
+          and $opt{'separate_bill'} ne $self->separate_bill ) {
+
+      $self->set('separate_bill', $opt{'separate_bill'});
     }
 
 

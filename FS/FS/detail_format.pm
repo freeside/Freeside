@@ -63,13 +63,13 @@ sub new {
   my %opt = @_;
 
   my $locale = $opt{'locale'} || '';
-  my $conf = FS::Conf->new(locale => $locale);
+  my $conf = FS::Conf->new({ locale => $locale });
   $locale ||= $conf->config('locale') || 'en_US';
 
   my %locale_info = FS::Locales->locale_info($locale);
   my $language_name = $locale_info{'name'};
 
-  my $self = { conf => FS::Conf->new(locale => $locale),
+  my $self = { conf => FS::Conf->new({ locale => $locale }),
                csv  => Text::CSV_XS->new({ binary => 1 }),
                inbound  => ($opt{'inbound'} ? 1 : 0),
                buffer   => ($opt{'buffer'} || []),

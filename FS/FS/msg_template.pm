@@ -601,8 +601,9 @@ sub substitutions {
       _date
       _date_pretty
       due_date
-      due_date2str
-    )],
+    ),
+      [ due_date2str      => sub { shift->due_date2str('short') } ],
+    ],
     #XXX not really thinking about cust_bill substitutions quite yet
     
     # for welcome and limit warning messages

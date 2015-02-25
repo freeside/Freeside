@@ -3133,6 +3133,7 @@ sub charge {
   my ( $setuptax, $taxclass );   #internal taxes
   my ( $taxproduct, $override ); #vendor (CCH) taxes
   my $no_auto = '';
+  my $separate_bill = '';
   my $cust_pkg_ref = '';
   my ( $bill_now, $invoice_terms ) = ( 0, '' );
   my $locationnum;
@@ -3155,7 +3156,8 @@ sub charge {
     $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
     $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
     $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
-  } else {
+    $separate_bill = $_[0]->{separate_bill} || '';
+  } else { # yuck
     $amount     = shift;
     $setup_cost = '';
     $quantity   = 1;
@@ -3223,6 +3225,7 @@ sub charge {
     'quantity'   => $quantity,
     'start_date' => $start_date,
     'no_auto'    => $no_auto,
+    'separate_bill' => $separate_bill,
     'locationnum'=> $locationnum,
   } );
 

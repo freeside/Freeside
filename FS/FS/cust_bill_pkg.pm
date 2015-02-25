@@ -899,7 +899,13 @@ sub usage {
 
     my $sql = 'SELECT SUM(COALESCE(amount,0)) FROM cust_bill_pkg_detail '.
               ' WHERE billpkgnum = '. $self->billpkgnum;
-    $sql .= " AND classnum = $classnum" if defined($classnum);
+    if (defined $classnum) {
+      if ($classnum =~ /^(\d+)$/) {
+        $sql .= " AND classnum = $1";
+      } elsif ($classnum eq '') {
+        $sql .= " AND classnum IS NULL";
+      }
+    }
 
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
