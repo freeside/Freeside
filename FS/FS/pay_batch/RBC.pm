@@ -14,7 +14,7 @@ $name = 'RBC';
 %import_info = (
   'filetype'    => 'fixed',
   'formatre'    => 
-  '^(.).{18}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
+  '^([0134]).{18}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
   'fields' => [ qw(
     recordtype
     batchnum
@@ -61,7 +61,8 @@ $name = 'RBC';
   },
   'skip_condition' => sub {
       my $hash = shift;
-      $hash->{'subtype'} ne '0';
+      $hash->{'recordtype'} eq '3' ||
+        $hash->{'subtype'} ne '0';
   },
 );
 
