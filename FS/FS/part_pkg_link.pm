@@ -170,6 +170,14 @@ sub delete {
   return;
 }
 
+=item remove_linked
+
+Removes any supplemental packages that were created by this link, by canceling
+them and setting their pkglinknum to null. This should be done in preparation
+for removing the link itself.
+
+=cut
+
 sub remove_linked {
   my $self = shift;
   my $pkglinknum = $self->pkglinknum;
@@ -180,23 +188,11 @@ sub remove_linked {
   warn "expiring ".scalar(@pkgs).
        " linked packages from part_pkg_link #$pkglinknum\n";
 
-  my $reason = qsearchs('reason', { reason => $cancel_reason_text });
-  if (!$reason) {
-    # upgrade/FS::Setup created this one automatically
-    my $reason_type = qsearchs('reason_type',
-                               { type => $cancel_reason_type }
-      ) or die "default cancel reason type does not exist";
-
-    $reason = FS::reason->new({
-        reason_type => $reason_type->typenum,
-        reason      => $cancel_reason_text,
-        disabled    => 'Y',
-    });
-    $error = $reason->insert;
-    if ( $error ) {
-      return "$error (creating package cancel reason)";
-    }
-  }
+  my $reason = FS::reason->new_or_existing(
+    class => 'C',
+    type => $cancel_reason_type,
+    reason => $cancel_reason_text
+  );
 
   foreach my $pkg (@pkgs) {
     $pkg->set('pkglinknum' => '');
