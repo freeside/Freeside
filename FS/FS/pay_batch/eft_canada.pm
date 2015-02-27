@@ -5,8 +5,7 @@ use vars qw(@ISA %import_info %export_info $name);
 use FS::Record 'qsearch';
 use FS::Conf;
 use FS::cust_pay_batch;
-use Date::Format 'time2str';
-use Time::Local 'timelocal';
+use DateTime;
 
 my $conf;
 my $origid;
@@ -15,8 +14,10 @@ $name = 'eft_canada';
 
 %import_info = ( filetype  => 'NONE' ); # see FS/bin/freeside-eftca-download
 
-my ($business_trans_code, $personal_trans_code, $trans_code, $process_date);
+my ($business_trans_code, $personal_trans_code, $trans_code);
+my $req_date; # requested process date, in %D format
 
+# use Date::Holidays::CA for this?
 #ref http://gocanada.about.com/od/canadatravelplanner/a/canada_holidays.htm
 my %holiday_yearly = (
    1 => { map {$_=>1}  1 }, #new year's
@@ -45,6 +46,16 @@ my %holiday = (
           },
 );
 
+sub is_holiday {
+  my $dt = shift;
+  return 1 if exists( $holiday_yearly{$dt->month} )
+          and exists( $holiday_yearly{$dt->month}{$dt->day} );
+  return 1 if exists( $holiday{$dt->year} )
+          and exists( $holiday{$dt->year}{$dt->month} )
+          and exists( $holiday{$dt->year}{$dt->month}{$dt->day} );
+  return 0;
+}
+
 %export_info = (
 
   init => sub {
@@ -56,11 +67,12 @@ my %holiday = (
     } else {
       @config = $conf->config('batchconfig-eft_canada');
     }
-    # SFTP login, password, trans code, delay time
+    # SFTP login, password, business and personal trans codes, delay time
     ($business_trans_code) = $config[2];
     ($personal_trans_code) = $config[3];
 
-    $process_date = time2str('%D', process_date($conf, $agentnum));
+    my ($process_date) = process_dates($conf, $agentnum);
+    $req_date = $process_date->strftime('%D');
   },
 
   delimiter => '', # avoid blank lines for header/footer
@@ -97,7 +109,7 @@ my %holiday = (
                   $account,
                   sprintf('%.02f', $cust_pay_batch->amount);
     # DB = debit
-    push @fields, 'DB', $trans_code, $process_date;
+    push @fields, 'DB', $trans_code, $req_date;
     push @fields, $cust_pay_batch->paybatchnum; # reference
     # strip illegal characters that might occur in customer name
     s/[,|']//g foreach @fields; # better substitution for these?
@@ -111,27 +123,28 @@ sub download_note { # is a class method
   my $pay_batch = shift;
   my $conf = FS::Conf->new;
   my $agentnum = $pay_batch->agentnum;
-  my $tomorrow = (localtime(time))[2] >= 10;
-  my $process_date = process_date($conf, $agentnum);
-  my $upload_date = $process_date - 86400;
+  my ($process_date, $upload_date) = process_dates($conf, $agentnum);
   my $date_format = $conf->config('date_format') || '%D';
+  my $days_until_upload = $upload_date->delta_days(DateTime->now);
 
   my $note = '';
-  if ( $process_date - time < 86400*2 ) {
-    $note = 'Upload this file before 11:00 AM '. 
-            ($tomorrow ? 'tomorrow' : 'today') .
-            ' (' . time2str($date_format, $upload_date) . '). ';
+  if ( $days_until_upload->days == 0 ) {
+    $note = 'Upload this file before 11:00 AM today'. 
+            ' (' . $upload_date->strftime($date_format) . '). ';
+  } elsif ( $days_until_upload->days == 1 ) {
+    $note = 'Upload this file before 11:00 AM tomorrow'. 
+            ' (' . $upload_date->strftime($date_format) . '). ';
   } else {
     $note = 'Upload this file before 11:00 AM on '.
-      time2str($date_format, $upload_date) . '. ';
+      $upload_date->strftime($date_format) . '. ';
   }
   $note .= 'Payments will be processed on '.
-    time2str($date_format, $process_date) . '.';
+    $process_date->strftime($date_format) . '.';
 
   $note;
 }
 
-sub process_date {
+sub process_dates { # returns both process and upload dates
   my ($conf, $agentnum) = @_;
   my @config;
   if ( $conf->exists('batch-spoolagent') ) {
@@ -139,28 +152,40 @@ sub process_date {
   } else {
     @config = $conf->config('batchconfig-eft_canada');
   }
-
+  
   my $process_delay = $config[4] || 1;
 
-  if ( (localtime(time))[2] >= 10 and $process_delay == 1 ) {
-    # If downloading the batch after 10:00 local time, it likely won't make
-    # the cutoff for next-day turnaround, and EFT will reject it.
-    $process_delay++;
+  my $ut = DateTime->now; # the latest time we assume the user
+                          # could upload the file
+  $ut->truncate(to => 'day')->set_hour(10); # is 10 AM on whatever day
+  if ( $ut < DateTime->now ) {
+    # then we would submit the file today but it's already too late
+    $ut->add(days => 1);
   }
-
-  my $pt = time + ($process_delay * 86400);
-  my @lt = localtime($pt);
-  while (    $lt[6] == 0 #Sunday
-          || $lt[6] == 6 #Saturday
-          || $holiday_yearly{ $lt[4]+1 }{ $lt[3] }
-          || $holiday{ $lt[5]+1900 }{ $lt[4]+1 }{ $lt[3] }
+  while (    $ut->day_of_week == 6 # Saturday
+          or $ut->day_of_week == 7 # Sunday
+          or is_holiday($ut)
         )
   {
-    $pt += 86400;
-    @lt = localtime($pt);
+    $ut->add(days => 1);
+  }
+  # $ut is now the latest time that the user can upload the file.
+
+  # that time, plus the process delay, is the _earliest_ process date we can
+  # request. if that's on a weekend or holiday, the process date has to be
+  # later.
+
+  my $pt = $ut->clone();
+  $pt->add(days => $process_delay);
+  while (    $pt->day_of_week == 6
+          or $pt->day_of_week == 7
+          or is_holiday($pt)
+        )
+  {
+    $pt->add(days => 1);
   }
 
-  $pt;
+  ($pt, $ut);
 }
 
 1;
