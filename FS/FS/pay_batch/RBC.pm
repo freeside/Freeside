@@ -23,8 +23,6 @@ $name = 'RBC';
 # 3 - Error Message Record
 # 4 - Foreign Currency Information Records
 # We skip all subtypes except 0
-#
-# additional information available at https://www.rbcroyalbank.com/ach/file-451806.pdf
 %import_info = (
   'filetype'    => 'fixed',
   'formatre'    => 
