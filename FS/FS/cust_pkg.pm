@@ -1676,15 +1676,20 @@ sub unsuspend {
            and ! $self->option('no_suspend_bill',1)
          )
       or $hash{'order_date'} == $hash{'susp'}
-      or $self->part_pkg->option('unused_credit_suspend')
-      or ( defined($reason) and $reason->unused_credit )
   ) {
     $adjust_bill = 0;
   }
 
-  # then add the length of time suspended to the bill date
   if ( $adjust_bill ) {
-    $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
+    if (    $self->part_pkg->option('unused_credit_suspend')
+         or ( $reason and $reason->unused_credit ) ) {
+      # then the customer was credited for the unused time before suspending,
+      # so their next bill should be immediate.
+      $hash{'bill'} = time;
+    } else {
+      # add the length of time suspended to the bill date
+      $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive;
+    }
   }
 
   $hash{'susp'} = '';
