@@ -11,6 +11,20 @@ my ($client_num, $shortname, $longname, $trans_code, $i);
 $name = 'RBC';
 # Royal Bank of Canada ACH Direct Payments Service
 
+# Meaning of initial characters in records:
+# 0 - header row, skipped by begin_condition
+# 1 - Debit Detail Record (only when subtype is 0)
+# 2 - Credit Detail Record, we die with a parse error (shouldn't appear in freeside-generated batches)
+# 3 - Account Trailer Record (appears after Returned items, we skip)
+# 4 - Client Trailer Record, indicates end of batch in end_condition
+#
+# Subtypes (27th char) indicate different kinds of Debit/Credit records
+# 0 - Credit/Debit Detail Record
+# 3 - Error Message Record
+# 4 - Foreign Currency Information Records
+# We skip all subtypes except 0
+#
+# additional information available at https://www.rbcroyalbank.com/ach/file-451806.pdf
 %import_info = (
   'filetype'    => 'fixed',
   'formatre'    => 
