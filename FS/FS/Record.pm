@@ -1686,6 +1686,7 @@ sub process_batch_import {
     format_xml_formats         => $opt->{format_xml_formats},
     format_asn_formats         => $opt->{format_asn_formats},
     format_row_callbacks       => $opt->{format_row_callbacks},
+    format_hash_callbacks      => $opt->{format_hash_callbacks},
     #per-import
     job                        => $job,
     file                       => $file,
@@ -1694,6 +1695,7 @@ sub process_batch_import {
     params                     => { map { $_ => $param->{$_} } @pass_params },
     #?
     default_csv                => $opt->{default_csv},
+    preinsert_callback         => $opt->{preinsert_callback},
     postinsert_callback        => $opt->{postinsert_callback},
     insert_args_callback       => $opt->{insert_args_callback},
   );
@@ -1731,6 +1733,8 @@ Class method for batch imports.  Available params:
 =item format_fixedlength_formats
 
 =item format_row_callbacks
+
+=item format_hash_callbacks - After parsing, before object creation
 
 =item fields - Alternate way to specify import, specifying import fields directly as a listref
 
@@ -1773,7 +1777,7 @@ sub batch_import {
 
   my( $type, $header, $sep_char,
       $fixedlength_format, $xml_format, $asn_format,
-      $parser_opt, $row_callback, @fields );
+      $parser_opt, $row_callback, $hash_callback, @fields );
 
   my $postinsert_callback = '';
   $postinsert_callback = $param->{'postinsert_callback'}
@@ -1829,6 +1833,11 @@ sub batch_import {
         ? $param->{'format_row_callbacks'}{ $param->{'format'} }
         : '';
 
+    $hash_callback =
+      $param->{'format_hash_callbacks'}
+        ? $param->{'format_hash_callbacks'}{ $param->{'format'} }
+        : '';
+
     @fields = @{ $formats->{ $format } };
 
   } elsif ( $param->{'fields'} ) {
@@ -1838,6 +1847,7 @@ sub batch_import {
     $sep_char = ',';
     $fixedlength_format = '';
     $row_callback = '';
+    $hash_callback = '';
     @fields = @{ $param->{'fields'} };
 
   } else {
@@ -2062,6 +2072,8 @@ sub batch_import {
                          && length($1) == $custnum_length ) {
       $hash{custnum} = $2;
     }
+
+    %hash = &{$hash_callback}(%hash) if $hash_callback;
 
     #my $table   = $param->{table};
     my $class = "FS::$table";

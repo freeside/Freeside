@@ -227,6 +227,12 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return "Unknown cust_bill.invnum: ". $self->invnum;
       };
+    if ($self->custnum && ($cust_bill->custnum ne $self->custnum)) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Invoice custnum ".$cust_bill->custnum
+        ." does not match specified custnum ".$self->custnum
+        ." for invoice ".$self->invnum;
+    }
     $self->custnum($cust_bill->custnum );
   }
 
@@ -1165,6 +1171,87 @@ sub process_upgrade_paybatch {
 =head1 SUBROUTINES
 
 =over 4 
+
+=item process_batch_import
+
+=cut
+
+sub process_batch_import {
+  my $job = shift;
+
+  #agent_custid isn't a cust_pay field, see hash callback
+  my $format = [ qw(custnum agent_custid paid payinfo invnum) ];
+  my $hashcb = sub {
+    my %hash = @_;
+    my $custnum = $hash{'custnum'};
+    my $agent_custid = $hash{'agent_custid'};
+    #standardize date
+    $hash{'_date'} = parse_datetime($hash{'_date'})
+      if $hash{'_date'} && $hash{'_date'} =~ /\D/;
+    # translate agent_custid into regular custnum
+    if ($custnum && $agent_custid) {
+      die "can't specify both custnum and agent_custid\n";
+    } elsif ($agent_custid) {
+      # here is the agent virtualization
+      my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+      my $agentnum = $hash{'agentnum'};
+      my %search = (
+        'agent_custid' => $agent_custid,
+        'agentnum'     => $agentnum,
+      );
+      my $cust_main = qsearchs({
+        'table'     => 'cust_main',
+        'hashref'   => \%search,
+        'extra_sql' => $extra_sql,
+      });
+      die "can't find customer with agent_custid $agent_custid\n"
+        unless $cust_main;
+      $custnum = $cust_main->custnum;
+    }
+    #remove custnum_prefix
+    my $custnum_prefix = $conf->config('cust_main-custnum-display_prefix');
+    my $custnum_length = $conf->config('cust_main-custnum-display_length') || 8;
+    if (
+      $custnum_prefix 
+      && $custnum =~ /^$custnum_prefix(0*([1-9]\d*))$/
+      && length($1) == $custnum_length 
+    ) {
+      $custnum = $2;
+    }
+    $hash{'custnum'} = $custnum;
+    delete($hash{'agent_custid'});
+    return %hash;
+  };
+
+  my $opt = { 'table'   => 'cust_pay',
+              'params'  => [ '_date', 'agentnum', 'payby', 'paybatch' ],
+              'formats' => {
+                'simple-csv' => $format,
+                'simple-xls' => $format,
+              },
+              'format_types' => {
+                'simple-csv' => 'csv',
+                'simple-xls' => 'xls',
+              },
+              'default_csv' => 1,
+              'format_hash_callbacks' => { 
+                'simple-csv' => $hashcb,
+                'simple-xls' => $hashcb,
+              },
+              'postinsert_callback' => sub {
+                 my $cust_pay = shift;
+                 my $cust_main = $cust_pay->cust_main ||
+                   return "can't find customer to which payments apply";
+                 my $error = $cust_main->apply_payments_and_credits;
+                 return $error
+                   ? "can't apply payments to customer ".$cust_pay->custnum."$error"
+                   : '';
+              },
+            };
+
+  FS::Record::process_batch_import( $job, $opt, @_ );
+
+}
 
 =item batch_import HASHREF
 

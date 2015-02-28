@@ -239,6 +239,28 @@ sub cust_payby2longname {
   map { $_ => $hash{$_}->{longname} } $self->cust_payby;
 }
 
+=item payment_payby
+
+Returns all values of payby that can be used by payments.
+
+=cut
+
+sub payment_payby {
+  my $self = shift;
+  grep { ! exists $hash{$_}->{cust_pay} } $self->payby;
+}
+
+=item payment_payby2longname
+
+Returns hash, keys are L</payment_payby> types, values are payby longname.
+
+=cut
+
+sub payment_payby2longname {
+  my $self = shift;
+  map { $_ => $hash{$_}->{longname} } $self->payment_payby;
+}
+
 =back
 
 =head1 BUGS
