@@ -1,22 +1,31 @@
 <& /elements/header.html, 'Batch Payment Import' &>
 
-Import a CSV file containing customer payments.
+Import a file containing customer payments.
 <BR><BR>
 
-<FORM ACTION="process/cust_pay-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+
+<% include( '/elements/form-file_upload.html',
+     'name'      => 'OneTrueForm',
+     'action'    => 'process/cust_pay-import.cgi', #progress-init target
+     'fields'    => [ 'agentnum', '_date', 'paybatch', 'format', 'payby' ],
+     'num_files' => 1,
+     'url' => popurl(2)."search/cust_pay.html?magic=paybatch;paybatch=$paybatch",
+     'message' => 'Batch Payment Imported',
+   )
+%>
 
 <% &ntable("#cccccc", 2) %>
 
+<INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch | h %>">
+
 <& /elements/tr-select-agent.html,
-     #'curr_value' => '', #$agentnum,
      'label'       => "<B>Agent</B>",
      'empty_label' => 'Select agent',
 &>
 
 <& /elements/tr-input-date-field.html, {
      'name'  => '_date',
-     #'value' => '',
-     'label' => 'Date',
+     'label' => '<B>Date</B>',
    }
 &>
 
@@ -24,18 +33,26 @@ Import a CSV file containing customer payments.
   <TH ALIGN="right">Format</TH>
   <TD>
     <SELECT NAME="format">
-      <OPTION VALUE="simple">Simple
-<!--      <OPTION VALUE="extended" SELECTED>Extended -->
+      <OPTION VALUE="simple-csv">Comma-separated (.csv)</OPTION>
+      <OPTION VALUE="simple-xls">Excel (.xls)</OPTION>
     </SELECT>
   </TD>
 </TR>
 
-<TR>
-  <TH ALIGN="right">CSV filename</TH>
-  <TD><INPUT TYPE="file" NAME="csvfile"></TD>
-</TR>
+<% include( '/elements/tr-select-payby.html',
+     'paybys' => \%paybys,
+     'no_all' => 1,
+     'label'  => '<B>Payment type</B>',
+   )
+%>
 
-<TR><TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px"><INPUT TYPE="submit" VALUE="Import CSV file"></TD></TR>
+<% include( '/elements/file-upload.html',
+             'field'    => 'file',
+             'label'    => 'Filename',
+   )
+%>
+
+<TR><TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px"><INPUT TYPE="submit" VALUE="Import file"></TD></TR>
 
 </TABLE>
 
@@ -43,11 +60,10 @@ Import a CSV file containing customer payments.
 
 <BR>
 
-Simple file format is CSV, with the following field order: <i>custnum, agent_custid, amount, checknum</i>
+Simple file format is CSV or XLS, with the following field order: <i>custnum, agent_custid, amount, checknum, invnum</i>
 <BR><BR>
 
-<!-- Extended file format is not yet defined</i>
-<BR><BR> -->
+<!-- Extended file format is not yet defined -->
 
 Field information:
 
@@ -68,3 +84,9 @@ Field information:
 <BR>
 
 <& /elements/footer.html &>
+
+<%init>
+my $paybatch = time2str('webbatch-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+my %paybys;
+tie %paybys, 'Tie::IxHash', FS::payby->payment_payby2longname();
+</%init>

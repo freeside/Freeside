@@ -3,7 +3,7 @@
         <% $onchange %>
 >
 
-% unless ( $opt{'multiple'} ) {
+% unless ( $opt{'multiple'} || $opt{'no_all'} ) {
     <OPTION VALUE="" <% '' eq $value ? 'SELECTED' : '' %> ><% mt('all') |h %> 
 % }
 
