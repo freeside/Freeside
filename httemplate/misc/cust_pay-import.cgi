@@ -41,7 +41,7 @@ Import a file containing customer payments.
 
 <% include( '/elements/tr-select-payby.html',
      'paybys' => \%paybys,
-     'no_all' => 1,
+     'disable_empty' => 1,
      'label'  => '<B>Payment type</B>',
    )
 %>
