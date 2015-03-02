@@ -1175,30 +1175,11 @@ sub process_batch_import {
   my $hashcb = sub {
     my %hash = @_;
     my $custnum = $hash{'custnum'};
+    my $agentnum = $hash{'agentnum'};
     my $agent_custid = $hash{'agent_custid'};
     #standardize date
     $hash{'_date'} = parse_datetime($hash{'_date'})
       if $hash{'_date'} && $hash{'_date'} =~ /\D/;
-    # translate agent_custid into regular custnum
-    if ($custnum && $agent_custid) {
-      die "can't specify both custnum and agent_custid\n";
-    } elsif ($agent_custid) {
-      # here is the agent virtualization
-      my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
-      my $agentnum = $hash{'agentnum'};
-      my %search = (
-        'agent_custid' => $agent_custid,
-        'agentnum'     => $agentnum,
-      );
-      my $cust_main = qsearchs({
-        'table'     => 'cust_main',
-        'hashref'   => \%search,
-        'extra_sql' => $extra_sql,
-      });
-      die "can't find customer with agent_custid $agent_custid\n"
-        unless $cust_main;
-      $custnum = $cust_main->custnum;
-    }
     #remove custnum_prefix
     my $custnum_prefix = $conf->config('cust_main-custnum-display_prefix');
     my $custnum_length = $conf->config('cust_main-custnum-display_length') || 8;
@@ -1208,6 +1189,34 @@ sub process_batch_import {
       && length($1) == $custnum_length 
     ) {
       $custnum = $2;
+    }
+    # check agentnum against custnum and
+    # translate agent_custid into regular custnum
+    if ($custnum && $agent_custid) {
+      die "can't specify both custnum and agent_custid\n";
+    } elsif ($agentnum || $agent_custid) {
+      # here is the agent virtualization
+      my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+      my %search;
+      $search{'agentnum'} = $agentnum
+        if $agentnum;
+      $search{'agent_custid'} = $agent_custid
+        if $agent_custid;
+      $search{'custnum'} = $custnum
+        if $custnum;
+      my $cust_main = qsearchs({
+        'table'     => 'cust_main',
+        'hashref'   => \%search,
+        'extra_sql' => $extra_sql,
+      });
+      die "can't find customer with" .
+        ($agentnum ? " agentnum $agentnum" : '') .
+        ($custnum  ? " custnum $custnum" : '') .
+        ($agent_custid ? " agent_custid $agent_custid" : '') . "\n"
+        unless $cust_main;
+      die "mismatched customer number\n"
+        if $custnum && ($custnum ne $cust_main->custnum);
+      $custnum = $cust_main->custnum;
     }
     $hash{'custnum'} = $custnum;
     delete($hash{'agent_custid'});
