@@ -117,7 +117,7 @@ sub insert {
 
   if ($taxable_per_month >= 0) {  #panic if its subzero?
     my $groupby = join(',',
-      qw(taxnum year month exempt_monthly exempt_cust 
+      qw(taxnum taxtype year month exempt_monthly exempt_cust 
          exempt_cust_taxname exempt_setup exempt_recur));
     my $sum = 'SUM(amount)';
     my @exemptions = qsearch(
