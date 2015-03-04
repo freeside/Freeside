@@ -236,6 +236,8 @@ sub wa_sales {
   die "WA tax district lookup error: $error";
 }
 
+###### USPS Standardization ######
+
 sub standardize_usps {
   my $class = shift;
 
@@ -291,6 +293,55 @@ sub standardize_usps {
     country   => 'US',
     addr_clean=> 'Y' }
 }
+
+###### U.S. Census Bureau ######
+
+sub standardize_uscensus {
+  my $self = shift;
+  my $location = shift;
+
+  eval "use Geo::USCensus::Geocoding";
+  die $@ if $@;
+
+  if ( $location->{country} ne 'US' ) {
+    # soft failure
+    warn "standardize_uscensus not for use in country ".$location->{country}."\n";
+    $location->{addr_clean} = '';
+    return $location;
+  }
+
+  my $request = {
+    street  => $location->{address1},
+    city    => $location->{city},
+    state   => $location->{state},
+    zip     => $location->{zip},
+    debug   => ($DEBUG || 0),
+  };
+
+  my $result = Geo::USCensus::Geocoding->query($request);
+  if ( $result->is_match ) {
+    # unfortunately we get the address back as a single line
+    if ($result->address =~ /^(.*), (.*), ([A-Z]{2}), (\d{5}.*)$/) {
+      return +{
+        address1    => $1,
+        city        => $2,
+        state       => $3,
+        zip         => $4,
+        address2    => uc($location->{address2}),
+        latitude    => $result->latitude,
+        longitude   => $result->longitude,
+        censustract => $result->censustract,
+      };
+    } else {
+      die "can't parse address '".$result->address."'";
+    }
+  } else {
+    warn Dumper($result) if $DEBUG;
+    die $result->error_message;
+  }
+}
+
+####### EZLOCATE (obsolete) #######
 
 my %ezlocate_error = ( # USA_Geo_002 documentation
   10  => 'State not found',
