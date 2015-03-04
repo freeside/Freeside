@@ -4440,6 +4440,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Instead of showing payments (and credits) applied to the invoice, show those received since the previous invoice date.',
     'type'        => 'checkbox',
+                       'uscensus' => 'U.S. Census Bureau',
   },
 
   {
