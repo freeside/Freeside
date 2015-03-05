@@ -7,7 +7,7 @@
 
 <& /elements/tr-select-user.html,
               'label'       => emt('Employee: '),
-              'access_user' => \%access_user,
+              'access_user' => $access_user,
 &>
 
 <& /elements/tr-select-agent.html,
@@ -89,14 +89,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-#false laziness w/report_cust_credit.html
-my $sth = dbh->prepare("SELECT DISTINCT usernum FROM cust_credit")
-  or die dbh->errstr;
-$sth->execute or die $sth->errstr;
-my @usernum = map $_->[0], @{$sth->fetchall_arrayref};
-my %access_user =
-  map { $_ => qsearchs('access_user',{'usernum'=>$_})->username }
-      @usernum;
+my $access_user = $FS::CurrentUser::CurrentUser->access_users_hashref('table' => 'cust_credit');
 
 my $conf = new FS::Conf;
 

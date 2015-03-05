@@ -400,7 +400,9 @@ sub agentnums_sql {
   if ( $self->access_right($viewall_right) ) {
     push @or, "$agentnum IS NOT NULL";
   } else {
-    push @or, "$agentnum IN (". join(',', $self->agentnums). ')';
+    my @agentnums = $self->agentnums;
+    push @or, "$agentnum IN (". join(',', @agentnums). ')'
+      if @agentnums;
   }
 
   push @or, "$agentnum IS NULL"
@@ -416,17 +418,24 @@ sub agentnums_sql {
 
 Returns true if the user can view the specified agent.
 
+Also accepts optional hashref cache, to avoid redundant database calls.
+
 =cut
 
 sub agentnum {
-  my( $self, $agentnum ) = @_;
+  my( $self, $agentnum, $cache ) = @_;
+  $cache ||= {};
+  return $cache->{$self->usernum}->{$agentnum}
+    if $cache->{$self->usernum}->{$agentnum};
   my $sth = dbh->prepare(
     "SELECT COUNT(*) FROM access_usergroup
                      JOIN access_groupagent USING ( groupnum )
        WHERE usernum = ? AND agentnum = ?"
   ) or die dbh->errstr;
   $sth->execute($self->usernum, $agentnum) or die $sth->errstr;
-  $sth->fetchrow_arrayref->[0];
+  $cache->{$self->usernum}->{$agentnum} = $sth->fetchrow_arrayref->[0];
+  $sth->finish;
+  return $cache->{$self->usernum}->{$agentnum};
 }
 
 =item agents [ HASHREF | OPTION => VALUE ... ]
@@ -444,6 +453,104 @@ sub agents {
     'extra_sql' => ' AND '. $self->agentnums_sql(@_),
     'order_by'  => 'ORDER BY agent',
   });
+}
+
+=item access_users [ HASHREF | OPTION => VALUE ... ]
+
+Returns an array of FS::access_user objects, one for each non-disabled 
+access_user in the system that shares an agent (via group membership) with 
+the invoking object.  Regardless of options and agents, will always at
+least return the invoking user and any users who have viewall_right.
+
+Accepts the following options:
+
+=over 4
+
+=item table
+
+Only return users who appear in the usernum field of this table
+
+=item disabled
+
+Include disabled users if true (defaults to false)
+
+=item viewall_right
+
+All users will be returned if the current user has the provided 
+access right, regardless of agents (other filters still apply.)  
+Defaults to 'View customers of all agents'
+
+=cut
+
+#Leaving undocumented until such time as this functionality is actually used
+#
+#=item null
+#
+#Users with no agents will be returned.
+#
+#=item null_right
+#
+#Users with no agents will be returned if the current user has the provided
+#access right.
+
+sub access_users {
+  my $self = shift;
+  my %opt = ref($_[0]) ? %{$_[0]} : @_;
+  my $table = $opt{'table'};
+  my $search = { 'table' => 'access_user' };
+  $search->{'hashref'} = $opt{'disabled'} ? {} : { 'disabled' => '' };
+  $search->{'addl_from'} = "INNER JOIN $table ON (access_user.usernum = $table.usernum)"
+    if $table;
+  my @access_users = qsearch($search);
+  my $viewall_right = $opt{'viewall_right'} || 'View customers of a￼ll agents';
+  return @access_users if $self->access_right($viewall_right);
+  #filter for users with agents $self can view
+  my @out;
+  my $agentnum_cache = {};
+ACCESS_USER:
+  foreach my $access_user (@access_users) {
+    # you can always view yourself, regardless of agents,
+    # and you can always view someone who can view you, 
+    # since they might have affected your customers
+    if ( ($self->usernum eq $access_user->usernum) 
+         || $access_user->access_right($viewall_right)
+    ) {
+      push(@out,$access_user);
+      next;
+    }
+    # if user has no agents, you need null or null_right to view
+    my @agents = $access_user->agents('viewall_right'=>'NONE'); #handled viewall_right above
+    if (!@agents) {
+      if ( $opt{'null'} ||
+           ( $opt{'null_right'} && $self->access_right($opt{'null_right'}) )
+      ) {
+        push(@out,$access_user);
+      }
+      next;
+    }
+    # otherwise, you need an agent in common
+    foreach my $agent (@agents) {
+      if ($self->agentnum($agent->agentnum,$agentnum_cache)) {
+        push(@out,$access_user);
+        next ACCESS_USER;
+      }
+    }
+  }
+  return @out;
+}
+
+=item access_users_hashref  [ HASHREF | OPTION => VALUE ... ]
+
+Accepts same options as L</access_users>.  Returns a hashref of
+users, with keys of usernum and values of username.
+
+=cut
+
+sub access_users_hashref {
+  my $self = shift;
+  my %access_users = map { $_->usernum => $_->username } 
+                       $self->access_users(@_);
+  return \%access_users;
 }
 
 =item access_right RIGHTNAME | LISTREF
