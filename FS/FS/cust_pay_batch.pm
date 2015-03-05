@@ -311,15 +311,15 @@ sub approve {
   my %opt = @_;
   my $paybatchnum = $new->paybatchnum;
   my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
-    or return "paybatchnum $paybatchnum not found";
+    or return "cannot approve, paybatchnum $paybatchnum not found";
   # leave these restrictions in place until TD EFT is converted over
   # to B::BP
-  return "paybatchnum $paybatchnum already resolved ('".$old->status."')" 
+  return "cannot approve paybatchnum $paybatchnum, already resolved ('".$old->status."')" 
     if $old->status;
   $new->status('Approved');
   my $error = $new->replace($old);
   if ( $error ) {
-    return "error updating status of paybatchnum $paybatchnum: $error\n";
+    return "error approving paybatchnum $paybatchnum: $error\n";
   }
   my $cust_pay = new FS::cust_pay ( {
       'custnum'   => $new->custnum,
@@ -361,7 +361,7 @@ sub decline {
 
   my $paybatchnum = $new->paybatchnum;
   my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
-    or return "paybatchnum $paybatchnum not found";
+    or return "cannot decline, paybatchnum $paybatchnum not found";
   if ( $old->status ) {
     # Handle the case where payments are rejected after the batch has been 
     # approved.  FS::pay_batch::import_results won't allow results to be 
@@ -386,16 +386,22 @@ sub decline {
       }
       $cust_pay->void($reason);
     }
+    elsif ( lc($old->status) eq 'declined' ) {
+      # batch files from RBC can have multiple lines for one decline
+      # if this causes problems elsewhere, try hacking pay_batch/RBC.pm instead
+      return '';
+    }
     else {
       # normal case: refuse to do anything
-      return "paybatchnum $paybatchnum already resolved ('".$old->status."')";
+      # should never happen...only statuses are approved or declined
+      return "cannot decline paybatchnum $paybatchnum, already resolved ('".$old->status."')";
     }
   } # !$old->status
   $new->status('Declined');
   $new->error_message($reason);
   my $error = $new->replace($old);
   if ( $error ) {
-    return "error updating status of paybatchnum $paybatchnum: $error\n";
+    return "error declining paybatchnum $paybatchnum: $error\n";
   }
   my $due_cust_event = $new->cust_main->due_cust_event(
     'eventtable'  => 'cust_pay_batch',
