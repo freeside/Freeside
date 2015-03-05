@@ -17,17 +17,6 @@
 
 my %opt = @_;
 
-unless ( $opt{'access_user'} ) {
-
-  my $sth = dbh->prepare("
-    SELECT usernum, username FROM access_user
-      WHERE disabled = '' or disabled IS NULL
-  ") or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  while ( my $row = $sth->fetchrow_arrayref ) {
-    $opt{'access_user'}->{$row->[0]} = $row->[1];
-  }
-
-}
+$opt{'access_user'} ||= $FS::CurrentUser::CurrentUser->access_users_hashref();
 
 </%init>
