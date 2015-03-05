@@ -1170,8 +1170,6 @@ sub process_upgrade_paybatch {
 sub process_batch_import {
   my $job = shift;
 
-  #agent_custid isn't a cust_pay field, see hash callback
-  my $format = [ qw(custnum agent_custid paid payinfo invnum) ];
   my $hashcb = sub {
     my %hash = @_;
     my $custnum = $hash{'custnum'};
@@ -1225,19 +1223,11 @@ sub process_batch_import {
 
   my $opt = { 'table'   => 'cust_pay',
               'params'  => [ '_date', 'agentnum', 'payby', 'paybatch' ],
-              'formats' => {
-                'simple-csv' => $format,
-                'simple-xls' => $format,
-              },
-              'format_types' => {
-                'simple-csv' => 'csv',
-                'simple-xls' => 'xls',
-              },
-              'default_csv' => 1,
-              'format_hash_callbacks' => { 
-                'simple-csv' => $hashcb,
-                'simple-xls' => $hashcb,
-              },
+                                         #agent_custid isn't a cust_pay field, see hash callback
+              'formats' => { 'simple' => [ qw(custnum agent_custid paid payinfo invnum) ] },
+              'format_types' => { 'simple' => '' }, #force infer from file extension
+              'default_csv' => 1, #if it's not .xls, it'll read as csv, regardless of extension
+              'format_hash_callbacks' => { 'simple' => $hashcb },
               'postinsert_callback' => sub {
                  my $cust_pay = shift;
                  my $cust_main = $cust_pay->cust_main ||

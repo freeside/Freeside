@@ -33,8 +33,7 @@ Import a file containing customer payments.
   <TH ALIGN="right">Format</TH>
   <TD>
     <SELECT NAME="format">
-      <OPTION VALUE="simple-csv">Comma-separated (.csv)</OPTION>
-      <OPTION VALUE="simple-xls">Excel (.xls)</OPTION>
+      <OPTION VALUE="simple">Simple</OPTION>
     </SELECT>
   </TD>
 </TR>
