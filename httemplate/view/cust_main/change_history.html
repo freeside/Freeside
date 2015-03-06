@@ -46,9 +46,6 @@ tie my %tables, 'Tie::IxHash',
   'phone_device'      => 'Phone device',
   'cust_pkg_discount' => 'Discount',
   #? it gets provisioned anyway 'phone_avail'         => 'Phone',
-
-  'legacy_history'    => 'Label not used',
-
 ;
 
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
@@ -145,7 +142,13 @@ foreach my $table ( keys %tables ) {
     'extra_sql' => ' AND custnum = '. $cust_main->custnum,
   });
   push @history, @items;
-
 }
+
+my @legacy_items = qsearch({
+  'table'     => 'legacy_cust_history',
+  'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than }, },
+  'extra_sql' => ' AND custnum = '. $cust_main->custnum,
+});
+push @history, @legacy_items;
 
 </%init>
