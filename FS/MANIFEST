@@ -836,3 +836,5 @@ FS/cust_contact.pm
 t/cust_contact.t
 FS/pkg_discount_Mixin.pm
 t/pkg_discount_Mixin.t
+FS/legacy_cust_history.pm
+t/legacy_cust_history.t

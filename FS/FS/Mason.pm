@@ -398,6 +398,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_credit_source_bill_pkg;
   use FS::prospect_contact;
   use FS::cust_contact;
+  use FS::legacy_cust_history;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

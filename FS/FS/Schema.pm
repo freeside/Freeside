@@ -200,6 +200,7 @@ sub dbdef_dist {
     grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
+           && ! /^legacy_cust_history$/
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
          }
@@ -774,6 +775,31 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
+                          },
+                        ],
+    },
+
+    'legacy_cust_history' => {
+      'columns' => [
+        'legacyhistorynum', 'serial',     '',        '', '', '',
+        'custnum',             'int',     '',        '', '', '',
+        'history_action',  'varchar',     '',   $char_d, '', '',
+        'history_date',           @date_type,            '', '',
+        'history_usernum',     'int', 'NULL',        '', '', '',
+        'item',            'varchar', 'NULL',   $char_d, '', '',
+        'description',     'varchar', 'NULL', 2*$char_d, '', '',
+        'change_data',        'text', 'NULL',        '', '', '',
+      ],
+      'primary_key'  => 'legacyhistorynum',
+      'unique'       => [],
+      'index'        => [ ['custnum'], ['history_date'], ],
+      'foreign_keys' => [
+                          { columns    => [ 'custnum' ],
+                            table      => 'cust_main',
+                          },
+                          { columns    => [ 'history_usernum' ],
+                            table      => 'access_user',
+                            references => [ 'usernum' ],
                           },
                         ],
     },
