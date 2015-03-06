@@ -1980,7 +1980,12 @@ sub tables_hashref {
       'primary_key' => 'quotationtaxnum',,
       'unique' => [],
       'index'  => [ [ 'quotationpkgnum' ] ],
-    },
+      'foreign_keys' => [
+                          { columns    => [ 'quotationpkgnum' ],
+                            table      => 'quotation_pkg',
+                          },
+                        ],
+},
 
     'cust_location' => { #'location' now that its prospects too, but...
       'columns' => [

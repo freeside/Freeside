@@ -104,12 +104,6 @@ sub check {
   $self->SUPER::check;
 }
 
-#stub for 3.x
-sub quotation_pkg {
-  my $self = shift;
-  FS::quotation_pkg->by_key($self->quotationpkgnum);
-}
-
 =back
 
 =head1 SEE ALSO

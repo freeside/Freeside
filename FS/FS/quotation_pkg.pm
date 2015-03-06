@@ -442,7 +442,7 @@ Returns the customer (L<FS::cust_main> object).
 
 sub cust_main {
   my $self = shift;
-  my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
+  my $quotation = $self->quotation or return '';
   $quotation->cust_main;
 }
 
@@ -454,18 +454,8 @@ Returns the prospect (L<FS::prospect_main> object).
 
 sub prospect_main {
   my $self = shift;
-  my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
+  my $quotation = $self->quotation or return '';
   $quotation->prospect_main;
-}
-
-sub quotation_pkg_tax {
-  my $self = shift;
-  qsearch('quotation_pkg_tax', { quotationpkgnum => $self->quotationpkgnum });
-}
-
-sub cust_location {
-  my $self = shift;
-  $self->locationnum ? qsearchs('cust_location', { locationnum => $self->locationnum }) : '';
 }
 
 =back
