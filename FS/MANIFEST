@@ -787,3 +787,5 @@ FS/svc_circuit.pm
 t/svc_circuit.t
 FS/pkg_discount_Mixin.pm
 t/pkg_discount_Mixin.t
+FS/legacy_cust_history.pm
+t/legacy_cust_history.t

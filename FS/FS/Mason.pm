@@ -374,6 +374,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::circuit_provider;
   use FS::circuit_termination;
   use FS::svc_circuit;
+  use FS::legacy_cust_history;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

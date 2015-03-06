@@ -18,7 +18,7 @@
 % foreach my $item ( @history ) {
 %   my $history_other = '';
 %   my $act  = $item->history_action;
-%   if ( $act =~ /^replace/ ) {
+%   if ( $act =~ /^replace/ && $item->table ne 'legacy_cust_history' ) {
 %     my $pkey = $item->primary_key;
 %     my $date = $item->history_date;
 %     $history_other = qsearchs({
@@ -44,18 +44,29 @@
 %   }
 
   <TR>
+
     <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $otaker = $item->history_user;
+%     my $otaker;
+%     if ( $item->history_usernum ) {
+%       $access_user{ $item->history_usernum } ||=
+%         qsearchs('access_user', { 'usernum' => $item->history_usernum });
+%       $otaker = $access_user{ $item->history_usernum }->username
+%         if $access_user{ $item->history_usernum };
+%     }
+%     $otaker ||= $item->history_user;
 %     $otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
 %     $otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
 %     $otaker = '<i>job queue</i>'             if $otaker eq 'fs_queue';
+%     $otaker = '<i>system bootstrap user</i>' if $otaker eq 'fs_bootstrap';
       <% $otaker %>
     </TD>
+
     <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
 %     my $d = time2str('%b %o, %Y', $item->history_date );
 %     $d =~ s/ /&nbsp;/g;
       <% $d %>
     </TD>
+
     <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
 %     my $t = time2str('%r', $item->history_date );
 %     $t =~ s/ /&nbsp;/g;
@@ -72,44 +83,53 @@
 
     <TD ALIGN="center" CLASS="grid" BGCOLOR="<% $bgcolor %>">
 %       my $label = '';
-%       $label = $item->table;
-%       $label =~ s/^h_//;
-%       $label = $tables{$label};
-% if ( $single_cust ) {
-%     $label = &{ $h_table_labelsub{$item->table} }( $item, $label )
-%       if $h_table_labelsub{$item->table};
-% }
+%       if ( $item->table eq 'legacy_cust_bill' ) {
+%         $label = $item->item;
+%       } else {
+%         $label = $item->table;
+%         $label =~ s/^h_//;
+%         $label = $tables{$label};
+%         $label = &{ $h_table_labelsub{$item->table} }( $item, $label )
+%           if $single_cust && $h_table_labelsub{$item->table};
+%       }
       <% $label %>
     </TD>
-    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% $action{$item->history_action} %>
-    </TD>
-    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% join(', ',
-           map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
-                                ? 'N/A'
-                                : $item->get($_);
-                  $value = time2str($cust_pkg_date_format, $value)
-                   if $item->table eq 'h_cust_pkg'
-                   && $cust_pkg_date_fields{$_}
-                   && $value;
 
-                  $value = substr($value, 0, 77).'...' if length($value) > 80;
-                  $value = encode_entities($value);
-                  "<I>$_</I>:<B>$value</B>";
-                }
-           grep { $history_other
-                    ? ( $item->get($_) ne $history_other->get($_) )
-                    : ( $item->get($_) =~ /\S/ )
-                }
-           grep { ! /^(history|custnum$)/i }
-                $item->fields
-         )
-      %>
-% if ( $single_cust && $h_table_descripsub{$item->table} ) {
-      <% &{ $h_table_descripsub{$item->table} }( $item ) %>
-% }
+    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $action{$item->history_action} || ucfirst($item->history_action) |h %>
     </TD>
+
+    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+%     if ( $item->table eq 'legacy_cust_bill' ) {
+        <% $item->description |h %>
+%     } else {
+        <% join(', ',
+             map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
+                                  ? 'N/A'
+                                  : $item->get($_);
+                    $value = time2str($cust_pkg_date_format, $value)
+                     if $item->table eq 'h_cust_pkg'
+                     && $cust_pkg_date_fields{$_}
+                     && $value;
+
+                    $value = substr($value, 0, 77).'...' if length($value) > 80;
+                    $value = encode_entities($value);
+                    "<I>$_</I>:<B>$value</B>";
+                  }
+             grep { $history_other
+                      ? ( $item->get($_) ne $history_other->get($_) )
+                      : ( $item->get($_) =~ /\S/ )
+                  }
+             grep { ! /^(history|custnum$)/i }
+                  $item->fields
+           )
+        %>
+%       if ( $single_cust && $h_table_descripsub{$item->table} ) {
+          <% &{ $h_table_descripsub{$item->table} }( $item ) %>
+%       }
+%     }
+    </TD>
+
   </TR>
 
 % }
@@ -220,5 +240,7 @@ $cust_pkg_date_format .= ' %l:%M:%S%P'
 if ( $curuser->option('history_order') eq 'newest' ) {
   @history = reverse @history;
 }
+
+my %access_user = (); #cache
 
 </%init>

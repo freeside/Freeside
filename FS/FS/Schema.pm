@@ -194,7 +194,8 @@ sub dbdef_dist {
     grep {    ! /^clientapi_session/
            && ! /^h_/
            && ! /^log(_context)?$/
-           && ( ! /^queue(_arg)?$/ || ! $opt->{'queue-no_history'} )
+           && ! /^legacy_cust_history$/
+           && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -634,6 +635,22 @@ sub tables_hashref {
       'primary_key' => 'legacyinvnum',
       'unique' => [],
       'index'  => [ ['legacyid', 'custnum', 'locale' ], ],
+    },
+
+    'legacy_cust_history' => {
+      'columns' => [
+        'legacyhistorynum', 'serial',     '',        '', '', '',
+        'custnum',             'int',     '',        '', '', '',
+        'history_action',  'varchar',     '',   $char_d, '', '',
+        'history_date',           @date_type,            '', '',
+        'history_usernum',     'int', 'NULL',        '', '', '',
+        'item',            'varchar', 'NULL',   $char_d, '', '',
+        'description',     'varchar', 'NULL', 2*$char_d, '', '',
+        'change_data',        'text', 'NULL',        '', '', '',
+      ],
+      'primary_key'  => 'legacyhistorynum',
+      'unique'       => [],
+      'index'        => [ ['custnum'], ['history_date'], ],
     },
 
     'cust_statement' => {
