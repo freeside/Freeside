@@ -375,6 +375,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::circuit_termination;
   use FS::svc_circuit;
   use FS::legacy_cust_history;
+  use FS::quotation_pkg_tax;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

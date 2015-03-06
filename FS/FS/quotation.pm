@@ -7,10 +7,12 @@ use FS::CurrentUser;
 use FS::UID qw( dbh );
 use FS::Maketext qw( emt );
 use FS::Record qw( qsearch qsearchs );
+use FS::Conf;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::prospect_main;
 use FS::quotation_pkg;
+use FS::quotation_pkg_tax;
 use FS::type_pkgs;
 
 =head1 NAME
@@ -263,33 +265,86 @@ sub cust_or_prospect_label_link {
 
 }
 
-#prevent things from falsely showing up as taxes, at least until we support
-# quoting tax amounts..
 sub _items_tax {
-  return ();
+  ();
 }
+
 sub _items_nontax {
   shift->cust_bill_pkg;
 }
 
 sub _items_total {
-  my( $self, $total_items ) = @_;
+  my $self = shift;
+  $self->quotationnum =~ /^(\d+)$/ or return ();
 
-  if ( $self->total_setup > 0 ) {
-    push @$total_items, {
+  my @items;
+
+  # show taxes in here also; the setup/recurring breakdown is different
+  # from what Template_Mixin expects
+  my @setup_tax = qsearch({
+      select      => 'itemdesc, SUM(setup_amount) as setup_amount',
+      table       => 'quotation_pkg_tax',
+      addl_from   => ' JOIN quotation_pkg USING (quotationpkgnum) ',
+      extra_sql   => ' WHERE quotationnum = '.$1,
+      order_by    => ' GROUP BY itemdesc HAVING SUM(setup_amount) > 0' .
+                     ' ORDER BY itemdesc',
+  });
+  # recurs need to be grouped by frequency, and to have a pkgpart
+  my @recur_tax = qsearch({
+      select      => 'freq, itemdesc, SUM(recur_amount) as recur_amount, MAX(pkgpart) as pkgpart',
+      table       => 'quotation_pkg_tax',
+      addl_from   => ' JOIN quotation_pkg USING (quotationpkgnum)'.
+                     ' JOIN part_pkg USING (pkgpart)',
+      extra_sql   => ' WHERE quotationnum = '.$1,
+      order_by    => ' GROUP BY freq, itemdesc HAVING SUM(recur_amount) > 0' .
+                     ' ORDER BY freq, itemdesc',
+  });
+
+  my $total_setup = $self->total_setup;
+  foreach my $pkg_tax (@setup_tax) {
+    if ($pkg_tax->setup_amount > 0) {
+      $total_setup += $pkg_tax->setup_amount;
+      push @items, {
+        'total_item'    => $pkg_tax->itemdesc . ' ' . $self->mt('(setup)'),
+        'total_amount'  => $pkg_tax->setup_amount,
+      };
+    }
+  }
+
+  if ( $total_setup > 0 ) {
+    push @items, {
       'total_item'   => $self->mt( $self->total_recur > 0 ? 'Total Setup' : 'Total' ),
-      'total_amount' => $self->total_setup,
+      'total_amount' => sprintf('%.2f',$total_setup),
+      'break_after'  => ( scalar(@recur_tax) ? 1 : 0 )
     };
   }
 
   #could/should add up the different recurring frequencies on lines of their own
   # but this will cover the 95% cases for now
-  if ( $self->total_recur > 0 ) {
-    push @$total_items, {
+  my $total_recur = $self->total_recur;
+  # label these with the frequency
+  foreach my $pkg_tax (@recur_tax) {
+    if ($pkg_tax->recur_amount > 0) {
+      $total_recur += $pkg_tax->recur_amount;
+      # an arbitrary part_pkg, but with the right frequency
+      # XXX localization
+      my $part_pkg = qsearchs('part_pkg', { pkgpart => $pkg_tax->pkgpart });
+      push @items, {
+        'total_item'    => $pkg_tax->itemdesc . ' (' .  $part_pkg->freq_pretty . ')',
+        'total_amount'  => $pkg_tax->recur_amount,
+      };
+    }
+  }
+
+  if ( $total_recur > 0 ) {
+    push @items, {
       'total_item'   => $self->mt('Total Recurring'),
-      'total_amount' => $self->total_recur,
+      'total_amount' => sprintf('%.2f',$total_recur),
+      'break_after'  => 1,
     };
   }
+
+  return @items;
 
 }
 
@@ -420,7 +475,7 @@ sub charge {
     $cust_pkg_ref = exists($_[0]->{cust_pkg_ref}) ? $_[0]->{cust_pkg_ref} : '';
     $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
     $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
-    $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
+    $locationnum = $_[0]->{locationnum};
   } else {
     $amount     = shift;
     $setup_cost = '';
@@ -539,6 +594,139 @@ sub enable {
   my $self = shift;
   $self->disabled('');
   $self->replace();
+}
+
+=item estimate
+
+Calculates current prices for all items on this quotation, including 
+discounts and taxes, and updates the quotation_pkg records accordingly.
+
+=cut
+
+sub estimate {
+  my $self = shift;
+  my $conf = FS::Conf->new;
+
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  # bring individual items up to date (set setup/recur and discounts)
+  my @quotation_pkg = $self->quotation_pkg;
+  foreach my $pkg (@quotation_pkg) {
+    my $error = $pkg->estimate;
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      die "error calculating estimate for pkgpart " . $pkg->pkgpart.": $error\n";
+    }
+
+    # delete old tax records
+    foreach my $quotation_pkg_tax ($pkg->quotation_pkg_tax) {
+      $error = $quotation_pkg_tax->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        die "error flushing tax records for pkgpart ". $pkg->pkgpart.": $error\n";
+      }
+    }
+  }
+
+  # annoyingly duplicates handle_taxes--fix this in 4.x 
+  if ( $conf->exists('enable_taxproducts') ) {
+    warn "can't calculate external taxes for quotations yet\n";
+    # then we're done
+    return;
+  }
+
+  my %taxnum_exemptions; # for monthly exemptions; as yet unused
+
+  foreach my $pkg (@quotation_pkg) {
+    my $location = $pkg->cust_location;
+
+    my $part_item = $pkg->part_pkg; # we don't have fees on these yet
+    my @loc_keys = qw( district city county state country);
+    my %taxhash = map { $_ => $location->$_ } @loc_keys;
+    $taxhash{'taxclass'} = $part_item->taxclass;
+    my @taxes;
+    my %taxhash_elim = %taxhash;
+    my @elim = qw( district city county state );
+    do {
+      @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
+      if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
+        #then try a match without taxclass
+        my %no_taxclass = %taxhash_elim;
+        $no_taxclass{ 'taxclass' } = '';
+        @taxes = qsearch( 'cust_main_county', \%no_taxclass );
+      }
+    
+      $taxhash_elim{ shift(@elim) } = '';
+    } while ( !scalar(@taxes) && scalar(@elim) );
+
+    foreach my $tax_def (@taxes) {
+      my $taxnum = $tax_def->taxnum;
+      $taxnum_exemptions{$taxnum} ||= [];
+
+      # XXX do some kind of equivalent to set_exemptions here
+      # but for now just declare that there are no exemptions,
+      # and then hack the taxable amounts if the package def
+      # excludes setup/recur
+      $pkg->set('cust_tax_exempt_pkg', []);
+
+      if ( $part_item->setuptax or $tax_def->setuptax ) {
+        $pkg->set('unitsetup', 0);
+      }
+      if ( $part_item->recurtax or $tax_def->recurtax ) {
+        $pkg->set('unitrecur', 0);
+      }
+
+      my %taxline;
+      foreach my $pass (qw(first recur)) {
+        if ($pass eq 'recur') {
+          $pkg->set('unitsetup', 0);
+        }
+
+        my $taxline = $tax_def->taxline(
+          [ $pkg ],
+          exemptions => $taxnum_exemptions{$taxnum}
+        );
+        if ($taxline and !ref($taxline)) {
+          $dbh->rollback if $oldAutoCommit;
+          die "error calculating '".$tax_def->taxname .
+              "' for pkgpart '".$pkg->pkgpart."': $taxline\n";
+        }
+        $taxline{$pass} = $taxline;
+      }
+
+      my $quotation_pkg_tax = FS::quotation_pkg_tax->new({
+          quotationpkgnum => $pkg->quotationpkgnum,
+          itemdesc        => $tax_def->taxname,
+          taxnum          => $taxnum,
+          taxtype         => ref($tax_def),
+      });
+      my $setup_amount = 0;
+      my $recur_amount = 0;
+      if ($taxline{first}) {
+        $setup_amount = $taxline{first}->setup; # "first cycle", not setup
+      }
+      if ($taxline{recur}) {
+        $recur_amount = $taxline{recur}->setup;
+        $setup_amount -= $recur_amount; # to get the actual setup amount
+      }
+      if ( $recur_amount > 0 or $setup_amount > 0 ) {
+        $quotation_pkg_tax->set('setup_amount', sprintf('%.2f', $setup_amount));
+        $quotation_pkg_tax->set('recur_amount', sprintf('%.2f', $recur_amount));
+
+        my $error = $quotation_pkg_tax->insert;
+        if ($error) {
+          $dbh->rollback if $oldAutoCommit;
+          die "error recording '".$tax_def->taxname .
+              "' for pkgpart '".$pkg->pkgpart."': $error\n";
+        } # if $error
+      } # else there are no non-zero taxes; continue
+    } # foreach $tax_def
+  } # foreach $pkg
+
+  $dbh->commit if $oldAutoCommit;
+  '';
 }
 
 =back
@@ -673,15 +861,9 @@ first, and doesn't implement the "condensed" option.
 
 sub _items_pkg {
   my ($self, %options) = @_;
-  my @quotation_pkg = $self->quotation_pkg;
-  foreach (@quotation_pkg) {
-    my $error = $_->estimate;
-    die "error calculating estimate for pkgpart " . $_->pkgpart.": $error\n"
-      if $error;
-  }
-
+  $self->estimate;
   # run it through the Template_Mixin engine
-  return $self->_items_cust_bill_pkg(\@quotation_pkg, %options);
+  return $self->_items_cust_bill_pkg([ $self->quotation_pkg ], %options);
 }
 
 =back

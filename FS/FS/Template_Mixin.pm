@@ -1267,7 +1267,7 @@ sub print_generic {
               ];
 
   }
-  
+ 
   if ( @items_tax ) {
     my $total = {};
     $total->{'total_item'} = $self->mt('Sub-total');
@@ -1317,13 +1317,12 @@ sub print_generic {
 
   if ( $self->can('_items_total') ) { # quotations
 
-    $self->_items_total(\@total_items);
+    my @new_total_items = $self->_items_total;
 
-    foreach ( @total_items ) {
+    foreach ( @new_total_items ) {
       $_->{'total_item'}   = &$embolden_function( $_->{'total_item'} );
-      $_->{'total_amount'} = &$embolden_function( $other_money_char.
-                                                   $_->{'total_amount'}
-                                                );
+      $_->{'total_amount'} = &$embolden_function( $other_money_char.$_->{'total_amount'});
+      push @total_items, $_;
     }
 
   } else { #normal invoice case
@@ -1545,7 +1544,7 @@ sub print_generic {
   # invoice history "section" (not really a section)
   # not to be included in any subtotals, completely independent of 
   # everything...
-  if ( $conf->exists('previous_invoice_history') ) {
+  if ( $conf->exists('previous_invoice_history') and $cust_main->isa('FS::cust_main') ) {
     my %history;
     my %monthorder;
     foreach my $cust_bill ( $cust_main->cust_bill ) {
@@ -3095,6 +3094,7 @@ sub _items_cust_bill_pkg {
                         );
 
       if ( ref($cust_bill_pkg) eq 'FS::quotation_pkg' ) {
+        # XXX this should be pulled out into quotation_pkg
 
         warn "$me _items_cust_bill_pkg cust_bill_pkg is quotation_pkg\n"
           if $DEBUG > 1;

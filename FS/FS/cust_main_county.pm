@@ -279,10 +279,11 @@ sub taxline {
   my $custnum   = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
   my $invoice_time = $cust_bill ? $cust_bill->_date : $opt{'invoice_time'};
   my $cust_main = FS::cust_main->by_key($custnum) if $custnum > 0;
-  if (!$cust_main) {
-    # better way to handle this?  should we just assume that it's taxable?
-    die "unable to calculate taxes for an unknown customer\n";
-  }
+  # (to avoid complications with estimated tax on quotations, assume it's
+  # taxable if there is no customer)
+  #if (!$cust_main) {
+    #die "unable to calculate taxes for an unknown customer\n";
+  #}
 
   # Gather any exemptions that are already attached to these cust_bill_pkgs
   # so that we can deduct them from the customer's monthly limit.
@@ -300,6 +301,7 @@ sub taxline {
   my @tax_location;
 
   foreach my $cust_bill_pkg (@$taxables) {
+    # careful... may be a cust_bill_pkg or a quotation_pkg
 
     my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur;
     foreach ( grep { $_->taxnum == $self->taxnum }
@@ -317,7 +319,11 @@ sub taxline {
 
     ### Monthly capped exemptions ### 
     if ( $self->exempt_amount && $self->exempt_amount > 0 
-      and $taxable_charged > 0 ) {
+      and $taxable_charged > 0
+      and $cust_main ) {
+
+      # XXX monthly exemptions currently don't work on quotations
+
       # If the billing period extends across multiple calendar months, 
       # there may be several months of exemption available.
       my $sdate = $cust_bill_pkg->sdate || $invoice_time;
@@ -439,7 +445,7 @@ sub taxline {
         }
 
       }
-    } # if exempt_amount
+    } # if exempt_amount and $cust_main
 
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
     next if $taxable_charged == 0;
