@@ -2,5 +2,8 @@
 
 chown -R freeside /usr/local/etc/freeside
 /usr/sbin/update-rc.d freeside defaults 23 01
+/sbin/insserv -d
+rm -fr  /usr/local/etc/freeside/masondata/*
+
 exit 0
 

@@ -1,13 +1,9 @@
 package FS::Report::Table::Daily;
 
 use strict;
-use vars qw( @ISA );
-use FS::Report::Table;
+use base 'FS::Report::Table';
+use DateTime;
 use FS::Conf;
-use Time::Local qw( timelocal timelocal_nocheck ); # eventually replace with DateTime
-use Date::Format qw( time2str );
-
-@ISA = qw( FS::Report::Table );
 
 =head1 NAME
 
@@ -50,35 +46,51 @@ sub data {
 
   my $sday = $self->{'start_day'};
   my $smonth = $self->{'start_month'};
-  my $syear = $self->{'start_year'};
+  my $syear = $self->{'start_year'} + 1900; # temporary kludge
   my $eday = $self->{'end_day'};
   my $emonth = $self->{'end_month'};
-  my $eyear = $self->{'end_year'};
+  my $eyear = $self->{'end_year'} + 1900;
   my $agentnum = $self->{'agentnum'};
   my $cust_classnum = $self->{'cust_classnum'} || [];
   $cust_classnum = [ $cust_classnum ] if !ref($cust_classnum);
 
-  my %data;
+  #these need to get generalized, sheesh
+  my %data = (
+    # rows (time intervals)
+    speriod   => [], # start timestamps
+    eperiod   => [], # end timestamps
+    label     => [], # date labels
+    data      => [], # arrayrefs of column values
 
-  my $sdate = timelocal(0,0,0,$sday,$smonth-1,$syear);
-  my $edate = timelocal(0,0,0,$eday,$emonth-1,$eyear);
+    # columns (observables + query parameters)
+    items         => $self->{'items'},
+    item_labels   => $self->{'item_labels'} || $self->{'items'},
+    colors        => $self->{'colors'}, # no default?
+    links         => $self->{'links'} || [],
+  );
+
+  my $sdate = DateTime->new(
+                day => $sday,
+                month => $smonth,
+                year => $syear,
+                time_zone => 'local'
+              );
+  my $edate = DateTime->new(
+                day => $eday,
+                month => $emonth,
+                year => $eyear,
+                time_zone => 'local'
+              )->add(days => 1); # include all of the end day
 
   my $conf = FS::Conf->new;
   my $date_format = $conf->config('date_format') || '%d/%m/%Y';
 
-  #warn "daily range $sdate $edate\n";
-
-  # XXX: use date_format config for the labels since we have day in the labels now?
   while ( $sdate < $edate ) {
-    push @{$data{label}}, time2str($date_format, $sdate);
+    push @{$data{label}}, $sdate->strftime($date_format);
 
-    my $speriod = $sdate;
-
-    #ala part_pkg->add_freq, to deal with local DST.  DateTime also a good idea
-    my ($mday,$mon,$year) = (localtime($sdate) )[3,4,5];
-    $sdate = timelocal_nocheck(0,0,0,$mday+1,$mon,$year);
-
-    my $eperiod = $sdate;
+    my $speriod = $sdate->epoch;
+    $sdate->add(days => 1);
+    my $eperiod = $sdate->epoch;;
 
     push @{$data{speriod}}, $speriod;
     push @{$data{eperiod}}, $eperiod;
@@ -95,7 +107,6 @@ sub data {
     }
   }
 
-  #these need to get generalized, sheesh
   $data{'items'}       = $self->{'items'};
   $data{'item_labels'} = $self->{'item_labels'} || $self->{'items'};
   $data{'colors'}      = $self->{'colors'};
