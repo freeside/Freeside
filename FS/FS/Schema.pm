@@ -1951,11 +1951,11 @@ sub tables_hashref {
 
     'cust_pkg_detail' => {
       'columns' => [
-        'pkgdetailnum', 'serial', '',      '', '', '',
-        'pkgnum',          'int', '',      '', '', '',
-        'detail',      'varchar', '', $char_d, '', '', 
-        'detailtype',     'char', '',       1, '', '', # "I"nvoice or "C"omment
-        'weight',          'int', '',      '', '', '',
+        'pkgdetailnum', 'serial', '',        '', '', '',
+        'pkgnum',          'int', '',        '', '', '',
+        'detail',      'varchar', '', 2*$char_d, '', '', 
+        'detailtype',     'char', '',         1, '', '', #"I"nvoice or "C"omment
+        'weight',          'int', '',        '', '', '',
       ],
       'primary_key' => 'pkgdetailnum',
       'unique' => [],
