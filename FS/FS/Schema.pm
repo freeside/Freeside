@@ -1197,6 +1197,7 @@ sub tables_hashref {
         'message_noemail', 'char', 'NULL', 1, '', '',
         'bill_locationnum', 'int', 'NULL', '', '', '',
         'ship_locationnum', 'int', 'NULL', '', '', '',
+        'invoice_ship_address', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],

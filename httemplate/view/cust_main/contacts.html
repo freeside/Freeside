@@ -13,6 +13,13 @@
  (<% mt('same as billing') %>)
 %   }
 </FONT>
+%   if (
+%     ($this eq 'ship')
+%     && $cust_main->invoice_ship_address 
+%     && !$conf->exists('invoice-ship_address') #it's always on, so hide per-cust config
+%    ) {
+<SPAN STYLE="padding-left: .25em;">(<% emt('included on invoices') %>)</SPAN>
+%   }
 <TABLE CLASS="fsinnerbox">
 
 % if ( $this eq 'bill' ) {

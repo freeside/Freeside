@@ -274,6 +274,10 @@ Allow self-service editing of ticket subjects, empty or 'Y'
 
 Do not call, empty or 'Y'
 
+=item invoice_ship_address
+
+Display ship_address ("Service address") on invoices for this customer, empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -443,6 +447,8 @@ sub insert {
       return "$l not set";
     }
   }
+
+  $self->_loc_change();
 
   warn "  inserting $self\n"
     if $DEBUG > 1;
@@ -1530,6 +1536,8 @@ sub replace {
     $self->set($l.'num', $new_loc->locationnum);
   } #for $l
 
+  $self->_loc_change($old);
+
   # replace the customer record
   my $error = $self->SUPER::replace($old);
 
@@ -1784,6 +1792,7 @@ sub check {
     || $self->ut_flag('invoice_noemail')
     || $self->ut_flag('message_noemail')
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
+    || $self->ut_flag('invoice_ship_address')
   ;
 
   foreach (qw(company ship_company)) {
@@ -5161,6 +5170,22 @@ sub process_bill_and_collect {
   $param->{'retry'} = 1;
 
   $cust_main->bill_and_collect( %$param );
+}
+
+#hook for insert/replace
+#runs after locations have been set
+#but before custnum has been set (for insert)
+sub _loc_change {
+  my $self = shift;
+  my $old = shift;
+  #turn off invoice_ship_address if ship & bill are the same
+  if ($self->bill_locationnum eq $self->ship_locationnum) {
+    $self->invoice_ship_address('');
+  }
+  #preserve old value if global config is set (replace only)
+  elsif ($old && $conf->exists('invoice-ship_address')) {
+    $self->invoice_ship_address($old->invoice_ship_address);
+  }
 }
 
 #starting to take quite a while for big dbs
