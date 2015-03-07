@@ -1633,6 +1633,7 @@ sub tables_hashref {
         'complimentary', 'char', 'NULL', 1, '', '',
         'po_number', 'varchar', 'NULL', $char_d, '', '',
         'invoice_attn', 'varchar', 'NULL', $char_d, '', '',
+        'invoice_ship_address', 'char', 'NULL', 1, '', '',
       ],
       'primary_key'  => 'custnum',
       'unique'       => [ [ 'agentnum', 'agent_custid' ] ],

@@ -569,7 +569,7 @@ sub print_generic {
                                              || $cust_main->contact_firstlast ),
 
     #global config
-    'ship_enable'     => $conf->exists('invoice-ship_address'),
+    'ship_enable'     => $cust_main->invoice_ship_address || $conf->exists('invoice-ship_address'),
     'unitprices'      => $conf->exists('invoice-unitprice'),
     'smallernotes'    => $conf->exists('invoice-smallernotes'),
     'smallerfooter'   => $conf->exists('invoice-smallerfooter'),

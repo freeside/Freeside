@@ -78,6 +78,19 @@
           enable_district => 1,
           enable_coords => 1,
       &>
+% unless ($conf->exists('invoice-ship_address')) { #it's always on, so hide per-cust config
+        <TR>
+          <TD>&nbsp;</TD>
+          <TD COLSPAN="7">
+            <% include('/elements/checkbox.html',
+                 'field'      => 'invoice_ship_address',
+                 'value'      => 'Y',
+                 'curr_value' => $cust_main->invoice_ship_address,
+                 'postfix'    => emt('included on invoices'),
+            ) %>
+          </TD>
+        </TR>
+% }
       </TABLE>
     </DIV>
   </TD>
