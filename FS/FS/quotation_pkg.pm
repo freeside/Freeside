@@ -145,7 +145,7 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
 
-  foreach ($self->quotation_pkg_discount) {
+  foreach ($self->quotation_pkg_discount, $self->quotation_pkg_tax) {
     my $error = $_->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -358,13 +358,13 @@ sub _item_discount {
 
 sub setup {
   my $self = shift;
-  ($self->unitsetup - sum(map { $_->setup_amount } $self->pkg_discount))
+  ($self->unitsetup - sum(0, map { $_->setup_amount } $self->pkg_discount))
     * ($self->quantity || 1);
 }
 
 sub recur {
   my $self = shift;
-  ($self->unitrecur - sum(map { $_->recur_amount } $self->pkg_discount))
+  ($self->unitrecur - sum(0, map { $_->recur_amount } $self->pkg_discount))
     * ($self->quantity || 1);
 }
 
@@ -417,6 +417,11 @@ sub cust_bill_pkg_display {
     $recur->{'type'} = 'R';
 
     if ( $type eq 'S' ) {
+sub tax_locationnum {
+  my $self = shift;
+  $self->locationnum;
+}
+
       return ($setup);
     } elsif ( $type eq 'R' ) {
       return ($recur);
@@ -437,7 +442,7 @@ Returns the customer (L<FS::cust_main> object).
 
 sub cust_main {
   my $self = shift;
-  my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
+  my $quotation = $self->quotation or return '';
   $quotation->cust_main;
 }
 
@@ -449,7 +454,7 @@ Returns the prospect (L<FS::prospect_main> object).
 
 sub prospect_main {
   my $self = shift;
-  my $quotation = FS::quotation->by_key($self->quotationnum) or return '';
+  my $quotation = $self->quotation or return '';
   $quotation->prospect_main;
 }
 
@@ -457,7 +462,7 @@ sub prospect_main {
 
 =head1 BUGS
 
-Doesn't support taxes, fees, or add-on packages.
+Doesn't support fees, or add-on packages.
 
 =head1 SEE ALSO
 

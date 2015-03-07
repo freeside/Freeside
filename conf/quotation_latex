@@ -281,18 +281,16 @@
         }
       }
 
-      #if ($section == $sections[$#sections]) {
-        foreach my $line (grep {$_->{section}->{description} eq $section->{description}} @total_items) {
-          if ($section->{total_line_generator}) {
-            $OUT .= &{$section->{total_line_generator}}($line);
-          } else {
-            $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
-                    '{' . $line->{'total_amount'} . '}' . "\n";
-          }
+      foreach my $line (grep {$_->{section}->{description} eq $section->{description}} @total_items) {
+        if ($section->{total_line_generator}) {
+          $OUT .= &{$section->{total_line_generator}}($line);
+        } else {
+          $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
+                  '{' . $line->{'total_amount'} . '}' . "\n";
+          $OUT .= '\hline' . "\n" if $line->{'break_after'};
         }
-      #}
+      }
 
-      $OUT .= '\hline';
       $OUT .= '\endlastfoot';
 
       my $lastref = 0;

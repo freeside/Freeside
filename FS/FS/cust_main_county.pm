@@ -277,25 +277,29 @@ sub taxline {
   my $cust_bill = $taxables->[0]->cust_bill;
   my $custnum   = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
   my $invoice_time = $cust_bill ? $cust_bill->_date : $opt{'invoice_time'};
-  my $cust_main = FS::cust_main->by_key($custnum) if $custnum > 0;
-  if (!$cust_main) {
-    # better way to handle this?  should we just assume that it's taxable?
-    die "unable to calculate taxes for an unknown customer\n";
-  }
+  my $cust_main = FS::cust_main->by_key($custnum) if $custnum;
+  # (to avoid complications with estimated tax on quotations, assume it's
+  # taxable if there is no customer)
+  #if (!$cust_main) {
+    #die "unable to calculate taxes for an unknown customer\n";
+  #}
 
   # set a flag if the customer is tax-exempt
-  my $exempt_cust;
+  my ($exempt_cust, $exempt_cust_taxname);
   my $conf = FS::Conf->new;
-  if ( $conf->exists('cust_class-tax_exempt') ) {
-    my $cust_class = $cust_main->cust_class;
-    $exempt_cust = $cust_class->tax if $cust_class;
-  } else {
-    $exempt_cust = $cust_main->tax;
-  }
+  if ( $cust_main ) {
+    if ( $conf->exists('cust_class-tax_exempt') ) {
+      my $cust_class = $cust_main->cust_class;
+      $exempt_cust = $cust_class->tax if $cust_class;
+    } else {
+      $exempt_cust = $cust_main->tax;
+    }
 
-  # set a flag if the customer is exempt from this tax here
-  my $exempt_cust_taxname = $cust_main->tax_exemption($self->taxname)
-    if $self->taxname;
+    # set a flag if the customer is exempt from this tax here
+    if ( $self->taxname ) {
+      $exempt_cust_taxname = $cust_main->tax_exemption($self->taxname);
+    }
+  }
 
   # Gather any exemptions that are already attached to these cust_bill_pkgs
   # so that we can deduct them from the customer's monthly limit.
@@ -313,14 +317,14 @@ sub taxline {
   my @tax_location;
 
   foreach my $cust_bill_pkg (@$taxables) {
+    # careful... may be a cust_bill_pkg or a quotation_pkg
 
     my $cust_pkg  = $cust_bill_pkg->cust_pkg;
     my $part_pkg  = $cust_bill_pkg->part_pkg;
     my $part_fee  = $cust_bill_pkg->part_fee;
 
-    my $locationnum = $cust_pkg
-                      ? $cust_pkg->locationnum
-                      : $cust_main->bill_locationnum;
+    my $locationnum = $cust_bill_pkg->tax_locationnum
+                      || $cust_main->ship_locationnum;
 
     my @new_exemptions;
     my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur
@@ -379,7 +383,11 @@ sub taxline {
     }
   
     if ( $self->exempt_amount && $self->exempt_amount > 0 
-      and $taxable_charged > 0 ) {
+      and $taxable_charged > 0
+      and $cust_main ) {
+
+      # XXX monthly exemptions currently don't work on quotations
+
       # If the billing period extends across multiple calendar months, 
       # there may be several months of exemption available.
       my $sdate = $cust_bill_pkg->sdate || $invoice_time;
@@ -493,7 +501,7 @@ sub taxline {
         }
 
       }
-    } # if exempt_amount
+    } # if exempt_amount and $cust_main
 
     $_->taxnum($self->taxnum) foreach @new_exemptions;
 

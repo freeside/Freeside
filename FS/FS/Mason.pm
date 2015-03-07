@@ -399,6 +399,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::prospect_contact;
   use FS::cust_contact;
   use FS::legacy_cust_history;
+  use FS::quotation_pkg_tax;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

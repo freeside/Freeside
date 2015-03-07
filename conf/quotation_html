@@ -231,8 +231,10 @@
 
       foreach my $line ( @total_items ) {
 
+        # in the quotation logic, we specifically tag the total line
+        # instead of using "the second one from the bottom"
         $style .= 'border-bottom: 3px solid #000000;'
-          if ++$linenum == scalar(@total_items) - ( $balance_due_below_line ? 1 : 0 );
+          if $line->{break_after};
 
         $OUT .=
           '<tr class="invoice_totaldesc">';
