@@ -448,8 +448,6 @@ sub insert {
     }
   }
 
-  $self->_loc_change();
-
   warn "  inserting $self\n"
     if $DEBUG > 1;
 
@@ -1536,8 +1534,6 @@ sub replace {
     $self->set($l.'num', $new_loc->locationnum);
   } #for $l
 
-  $self->_loc_change($old);
-
   # replace the customer record
   my $error = $self->SUPER::replace($old);
 
@@ -1828,6 +1824,11 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
+  #turn off invoice_ship_address if ship & bill are the same
+  if ($self->bill_locationnum eq $self->ship_locationnum) {
+    $self->invoice_ship_address('');
+  }
+
   # cust_main_county verification now handled by cust_location check
 
   $error =
@@ -2091,6 +2092,21 @@ sub check {
     if $DEBUG > 2;
 
   $self->SUPER::check;
+}
+
+=item replace_check
+
+Additional checks for replace only.
+
+=cut
+
+sub replace_check {
+  my ($new,$old) = @_;
+  #preserve old value if global config is set
+  if ($old && $conf->exists('invoice-ship_address')) {
+    $new->invoice_ship_address($old->invoice_ship_address);
+  }
+  return '';
 }
 
 =item addr_fields 
@@ -5170,22 +5186,6 @@ sub process_bill_and_collect {
   $param->{'retry'} = 1;
 
   $cust_main->bill_and_collect( %$param );
-}
-
-#hook for insert/replace
-#runs after locations have been set
-#but before custnum has been set (for insert)
-sub _loc_change {
-  my $self = shift;
-  my $old = shift;
-  #turn off invoice_ship_address if ship & bill are the same
-  if ($self->bill_locationnum eq $self->ship_locationnum) {
-    $self->invoice_ship_address('');
-  }
-  #preserve old value if global config is set (replace only)
-  elsif ($old && $conf->exists('invoice-ship_address')) {
-    $self->invoice_ship_address($old->invoice_ship_address);
-  }
 }
 
 #starting to take quite a while for big dbs
