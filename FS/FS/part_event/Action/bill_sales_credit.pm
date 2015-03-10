@@ -38,6 +38,7 @@ sub do_action {
                                          pkgnum => { op => '>', value => '0' }
                                        });
 
+  my $warning = '';
   foreach my $cust_bill_pkg (@items) {
     my $pkgnum = $cust_bill_pkg->pkgnum;
     my $cust_pkg = $pkgnum_pkg{$pkgnum} ||= $cust_bill_pkg->cust_pkg;
@@ -50,7 +51,7 @@ sub do_action {
 
     next if !$sales; #no sales person, no credit
 
-    my $amount = $self->_calc_credit($cust_bill_pkg, $sales);
+    my $amount = $self->_calc_credit($cust_bill_pkg, $sales, \$warning);
 
     if ($amount > 0) {
       $salesnum_amount{$salesnum} ||= 0;
@@ -85,6 +86,8 @@ sub do_action {
         " for sales commission: $error"
       if $error;
   } # foreach $salesnum
+
+  return $warning;
 
 }
 
