@@ -46,10 +46,10 @@
   <TR>
 
     <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $otaker;
+%     my $otaker = '';
 %     if ( $item->history_usernum ) {
 %       $access_user{ $item->history_usernum } ||=
-%         qsearchs('access_user', { 'usernum' => $item->history_usernum });
+%         FS::access_user->by_key( $item->history_usernum );
 %       $otaker = $access_user{ $item->history_usernum }->username
 %         if $access_user{ $item->history_usernum };
 %     }
@@ -83,7 +83,7 @@
 
     <TD ALIGN="center" CLASS="grid" BGCOLOR="<% $bgcolor %>">
 %       my $label = '';
-%       if ( $item->table eq 'legacy_cust_bill' ) {
+%       if ( $item->table eq 'legacy_cust_history' ) {
 %         $label = $item->item;
 %       } else {
 %         $label = $item->table;
@@ -100,7 +100,7 @@
     </TD>
 
     <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     if ( $item->table eq 'legacy_cust_bill' ) {
+%     if ( $item->table eq 'legacy_cust_history' ) {
         <% $item->description |h %>
 %     } else {
         <% join(', ',
