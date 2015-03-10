@@ -199,7 +199,11 @@ sub check {
     if ($quotation->custnum) {
       $self->set('locationnum', $quotation->cust_main->ship_locationnum);
     } elsif ($quotation->prospectnum) {
-      $self->set('locationnum', $quotation->prospect_main->locationnum);
+      # use the first non-disabled location for that prospect
+      my $cust_location = qsearchs('cust_location',
+        { prospectnum => $quotation->prospectnum,
+          disabled => '' });
+      $self->set('locationnum', $cust_location->locationnum) if $cust_location;
     } # else the quotation is invalid
   }
 

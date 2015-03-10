@@ -3026,7 +3026,10 @@ sub _items_cust_bill_pkg {
     }) || $cust_main;
     $default_locationnum = $h_cust_main->ship_locationnum;
   } elsif ( $self->prospectnum ) {
-    $default_locationnum = $self->prospect_main->cust_location->locationnum;
+    my $cust_location = qsearchs('cust_location',
+      { prospectnum => $self->prospectnum,
+        disabled => '' });
+    $default_locationnum = $cust_location->locationnum if $cust_location;
   }
 
   my @b = (); # accumulator for the line item hashes that we'll return
