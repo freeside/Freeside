@@ -67,7 +67,7 @@ my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
 
 #untaint reasonnum, and set up new reason if appropriate
 my ($reasonnum, $error);
-if ($method ne 'resume' and $method ne 'uncancel') {
+if ($method ne 'unsuspend' and $method ne 'uncancel') {
   ($reasonnum, $error) = $m->comp('elements/reason');
   if (!$reasonnum) {
     $error ||= 'Reason required';
