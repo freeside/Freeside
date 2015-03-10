@@ -45,6 +45,6 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $access_user = $FS::CurrentUser::CurrentUser->access_users_hashref('table' => 'cust_pkg_discount');
+my $access_user = $FS::CurrentUser::CurrentUser->access_users_hashref('table' => 'cust_pkg_discount', 'disabled' => 1);
 
 </%init>

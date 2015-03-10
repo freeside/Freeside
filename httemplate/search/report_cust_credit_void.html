@@ -37,7 +37,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $access_user = $FS::CurrentUser::CurrentUser->access_users_hashref('table' => 'cust_credit_void');
+my $access_user = $FS::CurrentUser::CurrentUser->access_users_hashref('table' => 'cust_credit_void', 'disabled' => 1);
 
 my $title = 'Voided credit report';
 
