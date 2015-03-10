@@ -406,6 +406,9 @@ sub upgrade_data {
 
     #populate state FIPS codes if not already done
     'state' => [],
+
+    #set default locations on quoted packages
+    'quotation_pkg' => [],
   ;
 
   \%hash;
