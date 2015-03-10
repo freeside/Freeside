@@ -193,6 +193,16 @@ sub check {
     || $self->ut_enum('waive_setup', [ '', 'Y'] )
   ;
 
+  if ($self->locationnum eq '') {
+    # use the customer default
+    my $quotation = $self->quotation;
+    if ($quotation->custnum) {
+      $self->set('locationnum', $quotation->cust_main->ship_locationnum);
+    } elsif ($quotation->prospectnum) {
+      $self->set('locationnum', $quotation->prospect_main->locationnum);
+    } # else the quotation is invalid
+  }
+
   return $error if $error;
 
   $self->SUPER::check;
@@ -456,6 +466,24 @@ sub prospect_main {
   my $self = shift;
   my $quotation = $self->quotation or return '';
   $quotation->prospect_main;
+}
+
+
+sub _upgrade_data {
+  my $class = shift;
+  my @quotation_pkg_without_location =
+    qsearch( 'quotation_pkg', { locationnum => '' } );
+  if (@quotation_pkg_without_location) {
+    warn "setting default location on quotation_pkg records\n";
+    foreach my $quotation_pkg (@quotation_pkg_without_location) {
+      # check() will fix this
+      my $error = $quotation_pkg->replace;
+      if ($error) {
+        die "quotation #".$quotation_pkg->quotationnum.": $error\n";
+      }
+    }
+  }
+  '';
 }
 
 =back
