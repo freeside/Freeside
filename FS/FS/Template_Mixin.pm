@@ -3012,7 +3012,22 @@ sub _items_cust_bill_pkg {
   my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;
 
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
-                                   # and location labels
+
+  # for location labels: use default location on the invoice date
+  my $default_locationnum;
+  if ( $self->custnum ) {
+    my $h_cust_main;
+    my @h_search = FS::h_cust_main->sql_h_search($self->_date);
+    $h_cust_main = qsearchs({
+        'table'     => 'h_cust_main',
+        'hashref'   => { custnum => $self->custnum },
+        'extra_sql' => $h_search[1],
+        'addl_from' => $h_search[3],
+    }) || $cust_main;
+    $default_locationnum = $h_cust_main->ship_locationnum;
+  } elsif ( $self->prospectnum ) {
+    $default_locationnum = $self->prospect_main->cust_location->locationnum;
+  }
 
   my @b = (); # accumulator for the line item hashes that we'll return
   my ($s, $r, $u, $d) = ( undef, undef, undef, undef );
@@ -3197,11 +3212,10 @@ sub _items_cust_bill_pkg {
 
             push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
-            my $lnum = $cust_main ? $cust_main->ship_locationnum
-                                  : $self->prospect_main->locationnum;
             # show the location label if it's not the customer's default
             # location, and we're not grouping items by location already
-            if ( $cust_pkg->locationnum != $lnum and !defined($locationnum) ) {
+            if ( $cust_pkg->locationnum != $default_locationnum
+                  and !defined($locationnum) ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
@@ -3299,11 +3313,10 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
 
-            my $lnum = $cust_main ? $cust_main->ship_locationnum
-                                  : $self->prospect_main->locationnum;
             # show the location label if it's not the customer's default
             # location, and we're not grouping items by location already
-            if ( $cust_pkg->locationnum != $lnum and !defined($locationnum) ) {
+            if ( $cust_pkg->locationnum != $default_locationnum
+                  and !defined($locationnum) ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;

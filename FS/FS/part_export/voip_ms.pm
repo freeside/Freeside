@@ -408,6 +408,7 @@ sub subacct_content {
   }
   return {
     username            => $svc_acct->username,
+    protocol            => $self->option('protocol'),
     description         => $desc,
     %auth,
     device_type         => $self->option('device_type'),

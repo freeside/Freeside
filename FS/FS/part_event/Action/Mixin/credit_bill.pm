@@ -54,6 +54,9 @@ our %part_pkg_cache;
 sub _calc_credit {
   my $self = shift;
   my $cust_bill_pkg = shift;
+  my $who = shift;
+  my $warnref = shift;
+  my $warning = '';
 
   my $what = $self->option('what');
   my $cost = ($what =~ /_cost/ ? 1 : 0);
@@ -64,9 +67,11 @@ sub _calc_credit {
 
   my $percent;
   if ( $self->can('_calc_credit_percent') ) {
-    $percent = $self->_calc_credit_percent($cust_pkg, @_);
+    $percent = $self->_calc_credit_percent($cust_pkg, $who);
+    $warning = 'Percent calculated to zero ' unless $percent+0;
   } else {
     $percent = $self->option('percent') || 0;
+    $warning = 'Percent set to zero ' unless $percent+0;
   }
 
   my $charge = 0;
@@ -83,19 +88,25 @@ sub _calc_credit {
     }
 
     $charge = ($charge || 0) * ($cust_pkg->quantity || 1);
+    $warning .= 'Charge calculated to zero ' unless $charge+0;
 
   } else { # setup, recur, or setuprecur
 
     if ( $what eq 'setup' ) {
       $charge = $cust_bill_pkg->get('setup');
+      $warning .= 'Setup is zero ' unless $charge+0;
     } elsif ( $what eq 'recur' ) {
       $charge = $cust_bill_pkg->get('recur');
+      $warning .= 'Recur is zero ' unless $charge+0;
     } elsif ( $what eq 'setuprecur' ) {
       $charge = $cust_bill_pkg->get('setup') + $cust_bill_pkg->get('recur');
+      $warning .= 'Setup and recur are zero ' unless $charge+0;
     }
 
     # don't multiply by quantity here; it's already included
   }
+
+  $$warnref .= $warning if ref($warnref);
 
   $charge = 0 if $charge < 0; # e.g. prorate
   return ($percent * $charge / 100);
