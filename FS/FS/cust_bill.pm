@@ -2755,7 +2755,7 @@ sub _items_previous {
 
 sub _items_credits {
   my( $self, %opt ) = @_;
-  my $trim_len = $opt{'trim_len'} || 60;
+  my $trim_len = $opt{'trim_len'} || 50;
 
   my @b;
   #credits

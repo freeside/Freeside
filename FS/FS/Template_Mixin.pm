@@ -1371,7 +1371,7 @@ sub print_generic {
       # credits
       my $credittotal = 0;
       foreach my $credit (
-        $self->_items_credits( 'template' => $template, 'trim_len' => 60 )
+        $self->_items_credits( 'template' => $template, 'trim_len' => 50 )
       ) {
 
         my $total;
