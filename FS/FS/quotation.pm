@@ -674,7 +674,7 @@ sub estimate {
 
       my $quotation_pkg_tax = FS::quotation_pkg_tax->new({
           quotationpkgnum => $pkg->quotationpkgnum,
-          itemdesc        => $tax_def->taxname,
+          itemdesc        => ($tax_def->taxname || 'Tax'),
           taxnum          => $taxnum,
           taxtype         => ref($tax_def),
       });
