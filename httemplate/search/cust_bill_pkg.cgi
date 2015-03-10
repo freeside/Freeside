@@ -99,11 +99,7 @@ Output control parameters:
   range of the report.  Line items will be limited to those for which this 
   portion is > 0.  This disables filtering on invoice date.
 
-- usage: Separate usage (cust_bill_pkg_detail records) from
-  recurring charges.  If set to "usage", will show usage instead of 
-  recurring charges.  If set to "recurring", will deduct usage and only
-  show the flat rate charge.  If not passed, the "recurring charge" column
-  will include usage charges also.
+- charges: 'S'etup, 'R'ecur, 'U'sage, or any string combination of those.
 
 Filtering parameters:
 - begin, end: Date range.  Applies to invoice date, not necessarily package
@@ -194,7 +190,7 @@ my @total = ( 'COUNT(*)', 'SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)');
 my @total_desc = ( $money_char.'%.2f total' ); # sprintf strings
 
 my @peritem = ( 'setup', 'recur' );
-my @peritem_desc = ( 'Setup charge', 'Recurring charge' );
+my @peritem_desc = ( 'Setup charges', 'Recurring charges' );
 
 my @pkgnum_header = ();
 my @pkgnum = ();
@@ -490,16 +486,32 @@ if ( $cgi->param('nottax') ) {
 
   } # handle all joins to cust_main_county
 
-  # recur/usage separation
-  if ( $cgi->param('usage') eq 'recurring' ) {
+  # setup/recur/usage separation
+  my %charges = map { $_ => 1 } split('', $cgi->param('charges') || 'SRU');
 
-    my $recur_no_usage = FS::cust_bill_pkg->charged_sql('', '', no_usage => 1);
+  if ( $charges{R} and $charges{U} ) {
+
+    # default, don't change @peritem or @total
+    if ( !$charges{S} ) {
+      push @where, 'cust_bill_pkg.recur > 0';
+      $total[1] = "SUM(cust_bill_pkg.recur)";
+      $total_desc[0] = "$money_char%.2f recurring";
+    }
+
+  } elsif ( $charges{R} and !$charges{U} ) {
+
+    my $recur_no_usage = FS::cust_bill_pkg->charged_sql('', '', 
+      setuprecur => 'recur', no_usage => 1);
     push @select, "($recur_no_usage) AS recur_no_usage";
     $peritem[1] = 'recur_no_usage';
-    $total[1] = "SUM(cust_bill_pkg.setup + $recur_no_usage)";
-    $total_desc[0] .= ' (excluding usage)';
+    $peritem_desc[1] = 'Recurring charges (excluding usage)';
+    $total[1] = "SUM($recur_no_usage)";
+    $total_desc[0] = "$money_char%.2f recurring";
+    if ( !$charges{S} ) {
+      push @where, "($recur_no_usage) > 0";
+    }
 
-  } elsif ( $cgi->param('usage') eq 'usage' ) {
+  } elsif ( !$charges{R} and $charges{U} ) {
 
     my $usage = FS::cust_bill_pkg->usage_sql();
     push @select, "($usage) AS _usage";
@@ -507,8 +519,18 @@ if ( $cgi->param('nottax') ) {
     $peritem[1] = '_usage';
     $peritem_desc[1] = 'Usage charge';
     $total[1] = "SUM($usage)";
-    $total_desc[0] .= ' usage charges';
-  }
+    $total_desc[0] = "$money_char%.2f usage charges";
+    if ( !$charges{S} ) {
+      push @where, "($usage) > 0";
+    }
+
+  } elsif ( $charges{S} ) {
+
+    push @where, "cust_bill_pkg.setup > 0";
+    $total[1] = "SUM(cust_bill_pkg.setup)";
+    $total_desc[0] = "$money_char%.2f setup";
+
+  } # else huh? you have to have SOME charges
 
 } elsif ( $cgi->param('istax') ) {
 
