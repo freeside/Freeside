@@ -793,7 +793,12 @@ be used.
 
 =item delay_cancel - for internal use, to allow proper handling of
 supplemental packages when the main package is flagged to suspend 
-before cancelling
+before cancelling, probably shouldn't be used otherwise (set the
+corresponding package option instead)
+
+=item no_delay_cancel - for internal use, prevents delay_cancel behavior
+no matter what other options say, for use when changing packages (or any
+other time you're really sure you want an unadulterated cancel)
 
 =back
 
@@ -841,9 +846,10 @@ sub cancel {
   my $date = $options{'date'} if $options{'date'}; # expire/cancel later
   $date = '' if ($date && $date <= $cancel_time);      # complain instead?
 
-  my $delay_cancel = $options{'delay_cancel'};
+  my $delay_cancel = $options{'no_delay_cancel'} ? 0 : $options{'delay_cancel'};
   if ( !$date && $self->part_pkg->option('delay_cancel',1)
        && (($self->status eq 'active') || ($self->status eq 'suspended'))
+       && !$options{'no_delay_cancel'}
   ) {
     my $expdays = $conf->config('part_pkg-delay_cancel-days') || 1;
     my $expsecs = 60*60*24*$expdays;
@@ -944,7 +950,7 @@ sub cancel {
   $error = $new->replace( $self, options => { $self->options } );
   if ( $self->change_to_pkgnum ) {
     my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
-    $error ||= $change_to->cancel || $change_to->delete;
+    $error ||= $change_to->cancel('no_delay_cancel' => 1) || $change_to->delete;
   }
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -2228,6 +2234,7 @@ sub change {
     unused_credit  => $unused_credit,
     nobill         => $keep_dates,
     change_custnum => ( $self->custnum != $custnum ? $custnum : '' ),
+    no_delay_cancel => 1,
   );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
@@ -2325,7 +2332,7 @@ sub change_later {
 
         $error = $self->replace       ||
                  $err_or_pkg->replace ||
-                 $change_to->cancel   ||
+                 $change_to->cancel('no_delay_cancel' => 1) ||
                  $change_to->delete;
       } else {
         $error = $err_or_pkg;
@@ -5497,7 +5504,7 @@ sub order {
       $dbh->rollback if $oldAutoCommit;
       return "Unable to transfer all services from package ".$old_pkg->pkgnum;
     }
-    $error = $old_pkg->cancel( quiet=>1 );
+    $error = $old_pkg->cancel( quiet=>1, 'no_delay_cancel'=>1 );
     if ($error) {
       $dbh->rollback;
       return $error;
