@@ -1,5 +1,5 @@
 package FS::agent_pkg_class;
-use base qw( FS::Record );
+use base qw( FS::Commission_Mixin FS::Record );
 
 use strict;
 #use FS::Record qw( qsearch qsearchs );
@@ -103,6 +103,31 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub cust_credit_search {
+  my $self = shift;
+  my $agent = FS::agent->by_key($self->agentnum);
+  $agent->cust_credit_search(@_, commission_classnum => $self->classnum);
+}
+
+sub cust_bill_pkg_search {
+  my $self = shift;
+  my $agent = FS::agent->by_key($self->agentnum);
+  $agent->cust_bill_pkg_search(@_, classnum => $self->classnum);
+}
+
+#3.x stub
+sub pkg_class {
+  my $self = shift;
+  my $classnum = $self->get('classnum');
+  $classnum ? FS::pkg_class->by_key($classnum) : '';
+}
+
+sub classname {
+  my $self = shift;
+  my $pkg_class = $self->pkg_class;
+  $pkg_class ? $pkg_class->classname : '(no package class)';
 }
 
 =back

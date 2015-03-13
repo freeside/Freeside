@@ -1,5 +1,5 @@
 package FS::sales_pkg_class;
-use base qw( FS::Record );
+use base qw( FS::Commission_Mixin FS::Record );
 
 use strict;
 use FS::Record qw( qsearchs ); # qsearch qsearchs );
@@ -119,6 +119,18 @@ sub classname {
   my $self = shift;
   my $pkg_class = $self->pkg_class;
   $pkg_class ? $pkg_class->classname : '(no package class)';
+}
+
+sub cust_credit_search {
+  my $self = shift;
+  my $sales = FS::sales->by_key($self->salesnum);
+  $sales->cust_credit_search(@_, commission_classnum => $self->classnum);
+}
+
+sub cust_bill_pkg_search {
+  my $self = shift;
+  my $sales = FS::sales->by_key($self->salesnum);
+  $sales->cust_bill_pkg_search(@_, classnum => $self->classnum);
 }
 
 =back

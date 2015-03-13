@@ -1,0 +1,22 @@
+<% include('/elements/header.html', 'Agent commission report' ) %>
+
+<FORM ACTION="agent_commission_pkg.html">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<% include( '/elements/tr-select-agent.html', disable_empty => 1 ) %>
+
+<% include( '/elements/tr-input-beginning_ending.html', ) %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

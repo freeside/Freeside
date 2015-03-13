@@ -1,7 +1,7 @@
 package FS::agent;
 
 use strict;
-use vars qw( @ISA );
+use base qw( FS::Commission_Mixin FS::m2m_Common FS::Record );
 #use Crypt::YAPassGen;
 use Business::CreditCard 0.28;
 use FS::Record qw( dbh qsearch qsearchs );
@@ -11,8 +11,6 @@ use FS::agent_type;
 use FS::reg_code;
 use FS::TicketSystem;
 use FS::Conf;
-
-@ISA = qw( FS::m2m_Common FS::Record );
 
 =head1 NAME
 
@@ -720,6 +718,16 @@ sub num_sales {
   ) or die dbh->errstr;
   $sth->execute($self->agentnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
+}
+
+sub commission_where {
+  my $self = shift;
+  'cust_credit.commission_agentnum = ' . $self->agentnum;
+}
+
+sub sales_where {
+  my $self = shift;
+  'cust_main.agentnum = ' . $self->agentnum;
 }
 
 =back

@@ -359,10 +359,16 @@ tie my %report_sales, 'Tie::IxHash',
   'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
   'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
   'Sales with Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
-  'Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
-  'Sales Person Commissions' => [ $fsurl.'search/report_sales_commission.html' ],
-  'Sales Person Commission per package' => [ $fsurl.'search/report_sales_commission_pkg.html' ],
 ;
+
+tie my %report_commissions, 'Tie::IxHash',
+  'Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
+  'Agent Commissions Per Package' => [ $fsurl.'search/report_agent_commission_pkg.html' ],
+  'Sales Person Commissions' => [ $fsurl.'search/report_sales_commission.html' ],
+  'Sales Person Commissions Per Package' => [ $fsurl.'search/report_sales_commission_pkg.html' ],
+;
+$report_commissions{'Employee Commissions'} = [ $fsurl.'search/report_employee_commission.html', '' ]
+  if $curuser->access_right('Employees: Commission Report');
 
 tie my %report_financial, 'Tie::IxHash';
 if( $curuser->access_right('Financial reports') ) {
@@ -371,6 +377,7 @@ if( $curuser->access_right('Financial reports') ) {
     'Sales' => [ \%report_sales, 'Sales reports', ],
     'Credits' => [ \%report_credits, 'Credit reports', ],
     'Refunds' => [ \%report_refunds, 'Refund reports', ],
+    'Commissions' => [ \%report_commissions, 'Commission reports' ],
   );
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
