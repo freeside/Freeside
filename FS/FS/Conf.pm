@@ -3927,7 +3927,7 @@ and customer address. Include units.',
   {
     'key'         => 'batchconfig-RBC',
     'section'     => 'billing',
-    'description' => 'Configuration for Royal Bank of Canada PDS batching, four lines: 1. Client number, 2. Short name, 3. Long name, 4. Transaction code.',
+    'description' => 'Configuration for Royal Bank of Canada PDS batching, five lines: 1. Client number, 2. Short name, 3. Long name, 4. Transaction code 5. (optional) set to TEST to turn on test mode.',
     'type'        => 'textarea',
   },
 

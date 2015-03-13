@@ -234,6 +234,36 @@ I<format> - an L<FS::pay_batch> module
 I<gateway> - an L<FS::payment_gateway> object for a batch gateway.  This 
 takes precedence over I<format>.
 
+Supported format keys (defined in the specified FS::pay_batch module) are:
+
+I<filetype> - required, can be CSV, fixed, variable, XML
+
+I<fields> - required list of field names for each row/line
+
+I<formatre> - regular expression for fixed filetype
+
+I<parse> - required for variable filetype
+
+I<xmlkeys> - required for XML filetype
+
+I<xmlrow> - required for XML filetype
+
+I<begin_condition> - sub, ignore all lines before this returns true
+
+I<end_condition> - sub, stop processing lines when this returns true
+
+I<end_hook> - sub, runs immediately after end_condition returns true
+
+I<skip_condition> - sub, skip lines when this returns true
+
+I<hook> - required, sub, runs before approved/declined conditions are checked
+
+I<approved> - required, sub, returns true when approved
+
+I<declined> - required, sub, returns true when declined
+
+I<close_condition> - sub, decide whether or not to close the batch
+
 =cut
 
 sub import_results {

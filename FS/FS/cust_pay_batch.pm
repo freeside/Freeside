@@ -386,14 +386,8 @@ sub decline {
       }
       $cust_pay->void($reason);
     }
-    elsif ( lc($old->status) eq 'declined' ) {
-      # batch files from RBC can have multiple lines for one decline
-      # if this causes problems elsewhere, try hacking pay_batch/RBC.pm instead
-      return '';
-    }
     else {
       # normal case: refuse to do anything
-      # should never happen...only statuses are approved or declined
       return "cannot decline paybatchnum $paybatchnum, already resolved ('".$old->status."')";
     }
   } # !$old->status

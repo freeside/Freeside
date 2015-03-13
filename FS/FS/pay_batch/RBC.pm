@@ -6,7 +6,7 @@ use Date::Format 'time2str';
 use FS::Conf;
 
 my $conf;
-my ($client_num, $shortname, $longname, $trans_code, $i);
+my ($client_num, $shortname, $longname, $trans_code, $testmode, $i, $declined, $totaloffset);
 
 $name = 'RBC';
 # Royal Bank of Canada ACH Direct Payments Service
@@ -24,11 +24,12 @@ $name = 'RBC';
 # 4 - Foreign Currency Information Records
 # We skip all subtypes except 0
 #
-# additional info available at https://www.rbcroyalbank.com/ach/file-451806.pdf
+# additional info available at https://www.rbcroyalbank.com/ach/cid-213166.html
 %import_info = (
   'filetype'    => 'fixed',
+  #this only really applies to Debit Detail, but we otherwise only need first char
   'formatre'    => 
-  '^([0134]).{18}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
+  '^(.).{18}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
   'fields' => [ qw(
     recordtype
     batchnum
@@ -53,30 +54,67 @@ $name = 'RBC';
   },
   'declined'    => sub {
       my $hash = shift;
-      grep { $hash->{'status'} eq $_ } ('E', 'R', 'U', 'T');
+      my $status = $hash->{'status'};
+      my $message = '';
+      if ($status eq 'E') {
+        $message = 'Reversed payment';
+      } elsif ($status eq 'R') {
+        $message = 'Rejected payment';
+      } elsif ($status eq 'U') {
+        $message = 'Returned payment';
+      } elsif ($status eq 'T') {
+        $message = 'Error';
+      } else {
+        return 0;
+      }
+      $hash->{'error_message'} = $message;
+      $declined->{$hash->{'paybatchnum'}} = 1;
+      return 1;
   },
   'begin_condition' => sub {
       my $hash = shift;
-      $hash->{recordtype} eq '1'; # Detail Record
+      # Debit Detail Record
+      if ($hash->{recordtype} eq '1') {
+        $declined = {};
+        $totaloffset = 0;
+        return 1;
+      # Credit Detail Record, will immediately trigger end condition & error
+      } elsif ($hash->{recordtype} eq '2') { 
+        return 1;
+      } else {
+        return 0;
+      }
   },
   'end_hook'    => sub {
       my( $hash, $total, $line ) = @_;
+      return "Can't process Credit Detail Record, aborting import"
+        if ($hash->{'recordtype'} eq '2');
+      $totaloffset = sprintf("%.2f", $totaloffset / 100 );
+      $total += $totaloffset;
       $total = sprintf("%.2f", $total);
-      # We assume here that this is an 'All Records' or 'Input Records'
-      # report.
+      # We assume here that this is an 'All Records' or 'Input Records' report.
       my $batch_total = sprintf("%.2f", substr($line, 59, 18) / 100);
       return "Our total $total does not match bank total $batch_total!"
         if $total != $batch_total;
-      '';
+      return '';
   },
   'end_condition' => sub {
       my $hash = shift;
-      $hash->{recordtype} eq '4'; # Client Trailer Record
+      return ($hash->{recordtype} eq '4')  # Client Trailer Record
+          || ($hash->{recordtype} eq '2'); # Credit Detail Record, will throw error in end_hook
   },
   'skip_condition' => sub {
       my $hash = shift;
-      $hash->{'recordtype'} eq '3' ||
-        $hash->{'subtype'} ne '0';
+      #we already declined it this run, no takebacks
+      if ($declined->{$hash->{'paybatchnum'}}) {
+        #file counts this as part of total, but we skip
+        $totaloffset += $hash->{'paid'}
+          if $hash->{'status'} eq ' '; #false laziness with 'approved' above
+        return 1;
+      }
+      return 
+        ($hash->{'recordtype'} eq '3') || #Account Trailer Record, concludes returned items
+        ($hash->{'subtype'} ne '0'); #error messages, etc, too late to apply to previous entry
   },
 );
 
@@ -87,18 +125,22 @@ $name = 'RBC';
      $shortname,
      $longname,
      $trans_code, 
+     $testmode
      ) = $conf->config("batchconfig-RBC");
+    $testmode = '' unless $testmode eq 'TEST';
     $i = 1;
   },
   header => sub { 
     my $pay_batch = shift;
-    '$$AAPASTD0152[PROD[NL$$'."\n".
+    my $mode = $testmode ? 'TEST' : 'PROD';
+    my $filenum = $testmode ? 'TEST' : sprintf("%04u", $pay_batch->batchnum);
+    '$$AAPASTD0152['.$mode.'[NL$$'."\n".
     '000001'.
     'A'.
     'HDR'.
     sprintf("%10s", $client_num).
     sprintf("%-30s", $longname).
-    sprintf("%04u", $pay_batch->batchnum).
+    $filenum.
     time2str("%Y%j", $pay_batch->download).
     'CAD'.
     '1'.
