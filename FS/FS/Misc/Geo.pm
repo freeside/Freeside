@@ -6,6 +6,7 @@ use vars qw( $DEBUG @EXPORT_OK $conf );
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common qw( GET POST );
+use HTML::TokeParser;
 use JSON;
 use URI::Escape 3.31;
 use Data::Dumper;
