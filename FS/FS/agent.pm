@@ -731,6 +731,16 @@ sub num_sales {
   $sth->fetchrow_arrayref->[0];
 }
 
+sub commission_where {
+  my $self = shift;
+  'cust_credit.commission_agentnum = ' . $self->agentnum;
+}
+
+sub sales_where {
+  my $self = shift;
+  'cust_main.agentnum = ' . $self->agentnum;
+}
+
 =back
 
 =head1 BUGS

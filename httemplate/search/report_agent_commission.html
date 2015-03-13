@@ -4,9 +4,15 @@
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-<% include( '/elements/tr-select-agent.html', disable_empty => 1 ) %>
+<& /elements/tr-select-agent.html &>
 
-<% include( '/elements/tr-input-beginning_ending.html', ) %>
+<& /elements/tr-checkbox.html,
+    'label' => 'Show paid sales only',
+    'field' => 'paid',
+    'value' => 'Y',
+&> 
+
+<& /elements/tr-input-beginning_ending.html &>
 
 </TABLE>
 
@@ -16,7 +22,8 @@
 <% include('/elements/footer.html') %>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Financial reports');
 
 </%init>

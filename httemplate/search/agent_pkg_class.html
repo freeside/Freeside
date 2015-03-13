@@ -17,30 +17,27 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
-$cgi->param('salesnum') =~ /^(\d+)$/ or die 'illegal salesnum';
-my $salesnum = $1;
-my $sales = FS::sales->by_key($salesnum);
+$cgi->param('agentnum') =~ /^(\d+)$/ or die 'illegal agentnum';
+my $agentnum = $1;
+my $agent = FS::agent->by_key($agentnum);
 
-my $title = $sales->salesperson . ' commission';
+my $title = $agent->agent . ' commission';
 
-my %query = ( 'table'     => 'sales_pkg_class',
+my %query = ( 'table'     => 'agent_pkg_class',
               'addl_from' => ' LEFT JOIN pkg_class USING (classnum)',
-              'hashref'   => { 'salesnum' => $salesnum },
+              'hashref'   => { 'agentnum' => $agentnum },
             );
-my $count_query = "SELECT COUNT(*) FROM sales_pkg_class WHERE salesnum = $salesnum";
+my $count_query = "SELECT COUNT(*) FROM agent_pkg_class WHERE agentnum = $agentnum";
 
-my $cust_main_sales = $cgi->param('cust_main_sales') eq 'Y' ? 'Y' : '';
-$query{'cust_main_sales'} = $cust_main_sales;
-
+# cust_bill_pkg.cgi expects "classnum=0" for null classnum
 my $sales_link = [ 'cust_bill_pkg.cgi?nottax=1;'.
-                   "cust_main_sales=$cust_main_sales;salesnum=$salesnum;" .
+                   "agentnum=$agentnum;" .
                    'classnum=',
                    sub { shift->classnum || 0 },
                  ];
 
 my $commission_link = [ 'cust_credit.html?'.
-                        "cust_main_sales=$cust_main_sales;" .
-                        "commission_salesnum=$salesnum;" .
+                        "commission_agentnum=$agentnum;" .
                         'classnum=',
                         'classnum'
                       ];

@@ -1,5 +1,5 @@
 package FS::sales;
-use base qw( FS::Agent_Mixin FS::Record );
+use base qw( FS::Commission_Mixin FS::Agent_Mixin FS::Record );
 
 use strict;
 use FS::Record qw( qsearch qsearchs );
@@ -153,29 +153,20 @@ package sales person will be included if this is their customer sales person.
 
 =cut
 
-sub cust_bill_pkg_search {
-  my( $self, $sdate, $edate, %search ) = @_;
-
-  my $cmp_salesnum = delete $search{'cust_main_sales'}
-                       ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
-                       : ' cust_pkg.salesnum ';
-
+sub sales_where {
+  my $self = shift;
   my $salesnum = $self->salesnum;
   die "bad salesnum" unless $salesnum =~ /^(\d+)$/;
+  my %opt = @_;
+
+  my $cmp_salesnum = 'cust_pkg.salesnum';
+  if ($opt{cust_main_sales}) {
+    $cmp_salesnum = 'COALESCE(cust_pkg.salesnum, cust_main.salesnum)';
+  }
+
   my @where = ( "$cmp_salesnum    = $salesnum",
                 "sales_pkg_class.salesnum = $salesnum"
               );
-  push @where, "cust_bill._date >= $sdate" if $sdate;
-  push @where, "cust_bill._date  < $edate" if $edate;
-
-  my $classnum_sql = '';
-  if ( exists( $search{'classnum'}  ) ) {
-    my $classnum = $search{'classnum'} || '';
-    die "bad classnum" unless $classnum =~ /^(\d*)$/;
-
-    push @where,
-      "part_pkg.classnum ". ( $classnum ? " = $classnum " : ' IS NULL ' );
-  }
 
   # sales_pkg_class number-of-months limit, grr
   # (we should be able to just check for the cust_event record from the 
@@ -189,60 +180,22 @@ sub cust_bill_pkg_search {
                "THEN $charge_date < $setup_date + $interval ".
                "ELSE TRUE END";
 
-  if ( $search{'paid'} ) {
-    push @where, FS::cust_bill_pkg->owed_sql . ' <= 0.005';
-  }
-
-  my $extra_sql = "WHERE ".join(' AND ', map {"( $_ )"} @where);
-
-  { 'table'     => 'cust_bill_pkg',
-    'select'    => 'cust_bill_pkg.*',
-    'addl_from' => ' LEFT JOIN cust_bill USING ( invnum ) '.
-                   ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
-                   ' LEFT JOIN part_pkg  USING ( pkgpart ) '.
-                   ' LEFT JOIN cust_main ON ( cust_pkg.custnum = cust_main.custnum )'.
-                   ' JOIN sales_pkg_class ON ( '.
-                   ' COALESCE( sales_pkg_class.classnum, 0) = COALESCE( part_pkg.classnum, 0) )',
-    'extra_sql' => $extra_sql,
- };
+  @where;
 }
 
-sub cust_bill_pkg {
+sub commission_where {
   my $self = shift;
-  qsearch( $self->cust_bill_pkg_search(@_) )
+  'cust_credit.commission_salesnum = ' . $self->salesnum;
 }
 
-sub cust_credit_search {
-  my( $self, $sdate, $edate, %search ) = @_;
-
-  $search{'hashref'}->{'commission_salesnum'} = $self->salesnum;
-
-  my @where = ();
-  push @where, "cust_credit._date >= $sdate" if $sdate;
-  push @where, "cust_credit._date  < $edate" if $edate;
-
-  my $classnum_sql = '';
-  if ( exists($search{'commission_classnum'}) ) {
-    my $classnum = delete($search{'commission_classnum'});
-    push @where, 'part_pkg.classnum '. ( $classnum ? " = $classnum"
-                                                   : " IS NULL "    );
-
-    $search{'addl_from'} .=
-      ' LEFT JOIN cust_pkg ON ( commission_pkgnum = cust_pkg.pkgnum ) '.
-      ' LEFT JOIN part_pkg USING ( pkgpart ) ';
-  }
-
-  my $extra_sql = "AND ".join(' AND ', map {"( $_ )"} @where);
-
-  { 'table'     => 'cust_credit',
-    'extra_sql' => $extra_sql,
-    %search,
-  };
-}
-
-sub cust_credit {
+# slightly modify it
+sub cust_bill_pkg_search {
   my $self = shift;
-  qsearch( $self->cust_credit_search(@_) )
+  my $search = $self->SUPER::cust_bill_pkg_search(@_);
+  $search->{addl_from} .= '
+    JOIN sales_pkg_class ON( COALESCE(sales_pkg_class.classnum, 0) = COALESCE(part_pkg.classnum, 0) )';
+
+  return $search;
 }
 
 =back

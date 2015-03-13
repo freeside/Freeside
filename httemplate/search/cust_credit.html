@@ -106,6 +106,11 @@ if ( $cgi->param('commission_salesnum') =~ /^(\d+)$/ ) {
   push @search, "commission_salesnum = $1";
 }
 
+# commission agentnum
+if ( $cgi->param('commission_agentnum') =~ /^(\d+)$/ ) {
+  push @search, "commission_agentnum = $1";
+}
+
 # commission_classnum
 if ( grep { $_ eq 'commission_classnum' } $cgi->param ) {
   $cgi->param('commission_classnum') =~ /^(\d*)$/ or die 'guru meditation #13';

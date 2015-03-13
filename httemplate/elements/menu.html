@@ -356,6 +356,7 @@ tie my %report_sales, 'Tie::IxHash',
 
 tie my %report_commissions, 'Tie::IxHash',
   'Agent' => [ $fsurl.'search/report_agent_commission.html' ],
+  'Agent per package' => [ $fsurl.'search/report_agent_commission_pkg.html' ],
   'Sales Person' => [ $fsurl.'search/report_sales_commission.html' ],
   'Sales Person per package' => [ $fsurl.'search/report_sales_commission_pkg.html' ],
   'Employee' => [ $fsurl.'search/report_employee_commission.html', '' ]
