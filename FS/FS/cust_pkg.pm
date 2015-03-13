@@ -785,20 +785,21 @@ to a different pkgpart or location, and probably shouldn't be in any other
 case.  If it's not set, the 'unused_credit_cancel' part_pkg option will 
 be used.
 
-=item delay_cancel - for internal use, to allow proper handling of
-supplemental packages when the main package is flagged to suspend 
-before cancelling, probably shouldn't be used otherwise (set the
-corresponding package option instead)
-
-=item no_delay_cancel - for internal use, prevents delay_cancel behavior
+=item no_delay_cancel - prevents delay_cancel behavior
 no matter what other options say, for use when changing packages (or any
-other time you're really sure you want an unadulterated cancel)
+other time you're really sure you want an immediate cancel)
 
 =back
 
 If there is an error, returns the error, otherwise returns false.
 
 =cut
+
+#NOT DOCUMENTING - this should only be used when calling recursively
+#=item delay_cancel - for internal use, to allow proper handling of
+#supplemental packages when the main package is flagged to suspend 
+#before cancelling, probably shouldn't be used otherwise (set the
+#corresponding package option instead)
 
 sub cancel {
   my( $self, %options ) = @_;
