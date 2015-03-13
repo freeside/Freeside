@@ -204,7 +204,7 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 my @agentnums = $curuser->agentnums;
 
-my $status_label = $cust_main->status_label;
+my $status_label = ucfirst($cust_main->status);
 if ($cust_main->is_status_delay_cancel) {
   $status_label .= ' (Cancelled)';
 }
