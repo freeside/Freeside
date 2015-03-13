@@ -222,17 +222,17 @@ takes precedence over I<format>.
 
 Supported format keys (defined in the specified FS::pay_batch module) are:
 
-I<filetype> - CSV, fixed, variable, XML
+I<filetype> - required, can be CSV, fixed, variable, XML
 
-I<fields> - list of field names for each row/line
+I<fields> - required list of field names for each row/line
 
 I<formatre> - regular expression for fixed filetype
 
-I<parse> - for variable filetype
+I<parse> - required for variable filetype
 
-I<xmlkeys> - for XML filetype
+I<xmlkeys> - required for XML filetype
 
-I<xmlrow> - for XML filetype
+I<xmlrow> - required for XML filetype
 
 I<begin_condition> - sub, ignore all lines before this returns true
 
@@ -242,11 +242,11 @@ I<end_hook> - sub, runs immediately after end_condition returns true
 
 I<skip_condition> - sub, skip lines when this returns true
 
-I<hook> - sub, runs before approved/declined conditions are checked
+I<hook> - required, sub, runs before approved/declined conditions are checked
 
-I<approved> - sub, returns true when approved
+I<approved> - required, sub, returns true when approved
 
-I<declined> - sub, returns true when declined
+I<declined> - required, sub, returns true when declined
 
 I<close_condition> - sub, decide whether or not to close the batch
 
