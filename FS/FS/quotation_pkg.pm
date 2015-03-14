@@ -2,7 +2,7 @@ package FS::quotation_pkg;
 use base qw( FS::TemplateItem_Mixin FS::Record );
 
 use strict;
-use FS::Record qw( qsearchs dbh ); #qsearch
+use FS::Record qw( qsearchs qsearch dbh );
 use FS::part_pkg;
 use FS::quotation_pkg_discount; #so its loaded when TemplateItem_Mixin needs it
 use List::Util qw(sum);
