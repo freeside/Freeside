@@ -50,6 +50,7 @@ our %part_pkg_cache;
 # 2. the recipient of the commission; may be FS::sales, FS::agent, 
 # FS::access_user, etc. Here we don't use it, but it will be passed through
 # to _calc_credit_percent.
+# 3. optional scalar reference for recording a warning message
 
 sub _calc_credit {
   my $self = shift;
