@@ -21,7 +21,7 @@ Example:
      'agent_null'     => 1,
      'name_col'       => 'pkg',
      'empty_label'    => 'Select package', #should this be the default?
-     'label_callback' => $opt{'label_callback'} || sub { shift->pkg_comment },
+     'label_callback' => $opt{'label_callback'} || sub { shift->pkg_comment_only },
      'hashref'        => \%hash,
      %opt,
 &>

@@ -100,6 +100,7 @@ my %session_callbacks = (
     $args{part_pkg} = \@part_pkg;
     $args{first_svc} = \@first_svc;
     $args{no_comment} = 1;
+    $args{label_callback} = sub { shift->pkg_comment };
     @$argsref = ( %args );
     return ''; #no error
 

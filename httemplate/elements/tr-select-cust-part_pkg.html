@@ -91,11 +91,12 @@
   <TH ALIGN="right"><% mt('Package') |h %></TH>
   <TD COLSPAN=7>
     <& /elements/select-cust-part_pkg.html,
-                 'curr_value'    => $opt{'curr_value'}, #$pkgpart
-                 'classnum'      => $opt{'classnum'},
-                 'cust_main'     => $opt{'cust_main'},  #$cust_main
-                 'prospect_main' => $opt{'prospect_main'},  #$prospect_main
-                 'onchange'      => 'pkg_changed',
+                 'curr_value'     => $opt{'curr_value'}, #$pkgpart
+                 'classnum'       => $opt{'classnum'},
+                 'cust_main'      => $opt{'cust_main'},  #$cust_main
+                 'prospect_main'  => $opt{'prospect_main'},  #$prospect_main
+                 'onchange'       => 'pkg_changed',
+                 'label_callback' => sub { shift->pkg_comment },
     &>
   </TD>
 </TR>
