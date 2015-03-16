@@ -2216,7 +2216,7 @@ sub _items_extra_usage_sections {
   my %classnums = ();
   my %lines = ();
 
-  my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;
+  my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 40;
 
   my %usage_class =  map { $_->classnum => $_ } qsearch( 'usage_class', {} );
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
@@ -2456,7 +2456,7 @@ sub _items_svc_phone_sections {
   my %classnums = ();
   my %lines = ();
 
-  my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;
+  my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 40;
 
   my %usage_class =  map { $_->classnum => $_ } qsearch( 'usage_class', {} );
   $usage_class{''} ||= new FS::usage_class { 'classname' => '', 'weight' => 0 };
@@ -2755,7 +2755,7 @@ sub _items_previous {
 
 sub _items_credits {
   my( $self, %opt ) = @_;
-  my $trim_len = $opt{'trim_len'} || 50;
+  my $trim_len = $opt{'trim_len'} || 40;
 
   my @b;
   #credits

@@ -1371,7 +1371,7 @@ sub print_generic {
       # credits
       my $credittotal = 0;
       foreach my $credit (
-        $self->_items_credits( 'template' => $template, 'trim_len' => 50 )
+        $self->_items_credits( 'template' => $template, 'trim_len' => 40 )
       ) {
 
         my $total;
@@ -3010,7 +3010,7 @@ sub _items_cust_bill_pkg {
   my $multisection = defined($category) || defined($locationnum);
   my $discount_show_always = 0;
 
-  my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;
+  my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 40;
 
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
 
