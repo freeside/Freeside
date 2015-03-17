@@ -2860,6 +2860,7 @@ sub _items_fee {
     my %base_invnums; # invnum => invoice date
     foreach ($cust_bill_pkg->cust_bill_pkg_fee) {
       if ($_->base_invnum) {
+        # XXX what if base_bill has been voided?
         my $base_bill = FS::cust_bill->by_key($_->base_invnum);
         my $base_date = $self->time2str_local('short', $base_bill->_date)
           if $base_bill;

@@ -871,6 +871,23 @@ sub tables_hashref {
                        ],
     },
 
+    'cust_bill_pkg_fee_void' => {
+      'columns' => [
+        'billpkgfeenum',    'serial', '', '', '', '',
+        'billpkgnum',          'int', '', '', '', '',
+        'base_invnum',       'int', '', '', '', '',
+        'base_billpkgnum',   'int', 'NULL', '', '', '',
+        'amount',        @money_type,         '', '',
+      ],
+      'primary_key' => 'billpkgfeenum',
+      'unique'      => [],
+      'index'       => [ ['billpkgnum'],
+                         ['base_invnum'],
+                         ['base_billpkgnum'],
+                       ],
+    },
+
+
     'cust_bill_pkg_tax_location' => {
       'columns' => [
         'billpkgtaxlocationnum', 'serial',      '', '', '', '',
@@ -928,6 +945,7 @@ sub tables_hashref {
         'unitsetup',           @money_typen,            '', '', 
         'unitrecur',           @money_typen,            '', '', 
         'hidden',              'char', 'NULL',       1, '', '',
+        'feepart',              'int', 'NULL',      '', '', '',
         #void fields
         'void_date', @date_type, '', '', 
         'reason',    'varchar',   'NULL', $char_d, '', '', 

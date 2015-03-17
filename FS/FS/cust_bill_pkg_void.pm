@@ -8,6 +8,7 @@ use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
 use FS::cust_bill_pkg_discount;
 use FS::cust_bill_pkg;
+use FS::cust_bill_pkg_fee;
 use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_tax_exempt_pkg;
@@ -170,6 +171,7 @@ sub unvoid {
     cust_bill_pkg_tax_location
     cust_bill_pkg_tax_rate_location
     cust_tax_exempt_pkg
+    cust_bill_pkg_fee
   )) {
 
     foreach my $voided (
@@ -239,6 +241,7 @@ sub check {
     || $self->ut_moneyn('unitsetup')
     || $self->ut_moneyn('unitrecur')
     || $self->ut_enum('hidden', [ '', 'Y' ])
+    || $self->ut_numbern('feepart')
   ;
   return $error if $error;
 
@@ -256,6 +259,11 @@ sub cust_bill {
   my $self = shift;
   #cust_bill or cust_bill_void, if we ever support line item voiding
   qsearchs( 'cust_bill_void', { 'invnum' => $self->invnum } );
+}
+
+sub cust_bill_pkg_fee {
+  my $self = shift;
+  qsearch( 'cust_bill_pkg_fee_void', { 'billpkgnum' => $self->billpkgnum } );
 }
 
 =back

@@ -45,7 +45,31 @@ sub part_pkg {
     $part_pkg = $cust_pkg->part_pkg if $cust_pkg;
     $part_pkg;
   }
+}
 
+=item part_fee
+
+Returns the fee definition for this line item, if there is one.
+
+=cut
+
+sub part_fee {
+  my $self = shift;
+  $self->feepart
+    ? FS::part_fee->by_key($self->feepart)
+    : '';
+}
+
+=item part_X
+
+Returns L</part_pkg> or L</part_fee>, whichever is applicable (or nothing,
+if called on a tax line item).
+
+=cut
+
+sub part_X {
+  my $self = shift;
+  $self->part_pkg || $self->part_fee;
 }
 
 =item desc LOCALE
