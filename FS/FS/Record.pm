@@ -399,10 +399,17 @@ sub qsearch {
     my @real_fields = grep exists($record->{$_}), real_fields($table);
 
     my $statement .= "SELECT $select FROM $stable";
-    $statement .= " $addl_from" if $addl_from;
+    my $alias_main;
+    if ( $addl_from ) {
+      $statement .= " $addl_from";
+      # detect aliasing of the main table
+      if ( $addl_from =~ /^\s*AS\s+(\w+)/i ) {
+        $alias_main = $1;
+      }
+    }
     if ( @real_fields ) {
       $statement .= ' WHERE '. join(' AND ',
-        get_real_fields($table, $record, \@real_fields));
+        get_real_fields($table, $record, \@real_fields, $alias_main));
     }
 
     $statement .= " $extra_sql" if defined($extra_sql);
@@ -751,6 +758,8 @@ sub get_real_fields {
   my $table = shift;
   my $record = shift;
   my $real_fields = shift;
+  my $alias_main = shift; # defaults to undef
+  $alias_main ||= $table;
 
   ## could be optimized more for readability
   return ( 
@@ -758,7 +767,7 @@ sub get_real_fields {
 
       my $op = '=';
       my $column = $_;
-      my $table_column = $qsearch_qualify_columns ? "$table.$column" : $column;
+      my $table_column = $qsearch_qualify_columns ? "$alias_main.$column" : $column;
       my $type = dbdef->table($table)->column($column)->type;
       my $value = $record->{$column};
       $value = $value->{'value'} if ref($value);
