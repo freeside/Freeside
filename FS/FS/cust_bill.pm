@@ -284,7 +284,6 @@ sub delete {
   my $dbh = dbh;
 
   foreach my $table (qw(
-    cust_event
     cust_credit_bill
     cust_bill_pay
     cust_pay_batch
@@ -292,6 +291,7 @@ sub delete {
     cust_bill_batch
     cust_bill_pkg
   )) {
+    #cust_event # problematic
 
     foreach my $linked ( $self->$table() ) {
       my $error = $linked->delete;
