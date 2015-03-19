@@ -25,6 +25,7 @@ use FS::cust_bill_pkg_discount_void;
 use FS::cust_bill_pkg_tax_location_void;
 use FS::cust_bill_pkg_tax_rate_location_void;
 use FS::cust_tax_exempt_pkg_void;
+use FS::cust_bill_pkg_fee_void;
 
 use FS::Cursor;
 
@@ -358,6 +359,7 @@ sub void {
     cust_bill_pkg_tax_location
     cust_bill_pkg_tax_rate_location
     cust_tax_exempt_pkg
+    cust_bill_pkg_fee
   )) {
 
     foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
@@ -417,6 +419,7 @@ sub delete {
     cust_tax_exempt_pkg
     cust_bill_pay_pkg
     cust_credit_bill_pkg
+    cust_bill_pkg_fee
   )) {
 
     foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
@@ -1022,26 +1025,6 @@ sub tax_location {
   } elsif ( $self->feepart ) { # fees
     return $self->cust_bill->cust_main->ship_location;
   } else { # taxes
-    return;
-  }
-}
-
-=item part_X
-
-Returns the L<FS::part_pkg> or L<FS::part_fee> object that defines this
-charge.  If called on a tax line, returns nothing.
-
-=cut
-
-sub part_X {
-  my $self = shift;
-  if ( $self->pkgpart_override ) {
-    return FS::part_pkg->by_key($self->pkgpart_override);
-  } elsif ( $self->pkgnum ) {
-    return $self->cust_pkg->part_pkg;
-  } elsif ( $self->feepart ) {
-    return $self->part_fee;
-  } else {
     return;
   }
 }
