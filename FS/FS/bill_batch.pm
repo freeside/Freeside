@@ -61,7 +61,8 @@ sub print_pdf {
   my @invoices = sort { $a->invnum <=> $b->invnum } $self->cust_bill_batch;
   return "No invoices in batch ".$self->batchnum.'.' if !@invoices;
 
-  my $duplex = FS::Conf->exists('invoice_print_pdf-duplex');
+  my $conf = FS::Conf->new;
+  my $duplex = $conf->exists('invoice_print_pdf-duplex');
 
   my $pdf_out;
   my $num = 0;
