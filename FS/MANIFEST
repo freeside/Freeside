@@ -791,3 +791,5 @@ FS/legacy_cust_history.pm
 t/legacy_cust_history.t
 FS/quotation_pkg_tax.pm
 t/quotation_pkg_tax.t
+FS/h_svc_circuit.pm
+FS/h_svc_circuit.t
