@@ -65,7 +65,8 @@ sub print_pdf {
                  qsearch('cust_bill_batch', { batchnum => $self->batchnum });
   return "No invoices in batch ".$self->batchnum.'.' if !@invoices;
 
-  my $duplex = FS::Conf->exists('invoice_print_pdf-duplex');
+  my $conf = FS::Conf->new;
+  my $duplex = $conf->exists('invoice_print_pdf-duplex');
 
   my $pdf_out;
   my $num = 0;
