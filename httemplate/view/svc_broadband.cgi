@@ -72,6 +72,17 @@ sub ip_addr {
   my $out = $ip_addr;
   $out .= ' (' . include('/elements/popup_link-ping.html', ip => $ip_addr) . ')'
     if $ip_addr;
+  if ($svc->cacti_leaf_id) {
+    # should only ever be one, but not sure if that is enforced
+    my ($cacti) = $svc->cust_svc->part_svc->part_export('cacti');
+    $out .= ' (<A HREF="' 
+         .  $cacti->option('base_url')
+         .  'graph_view.php?action=tree&tree_id='
+         .  $cacti->option('tree_id')
+         .  '&leaf_id='
+         .  $svc->cacti_leaf_id
+         .  '">cacti</A>)';
+  }
   if ( my $addr_block = $svc->addr_block ) {
     $out .= '<br>Netmask: ' . $addr_block->NetAddr->mask .
             '<br>Gateway: ' . $addr_block->ip_gateway;
