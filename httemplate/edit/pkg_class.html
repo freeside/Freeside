@@ -1,16 +1,4 @@
-<% include( 'elements/class_Common.html',
-              'name_singular'   => 'Package Class',
-              'table'  => 'pkg_class',
-              %opt,
-          )
-%>
-<%init>
-
-my $conf = new FS::Conf;
-
-my %opt = ();
-if($conf->exists('cust_main-require_censustract')) {
- $opt{'addl_fields'} = [ 'fcc_ds0s' ];
- $opt{'addl_labels'} = { 'fcc_ds0s' => 'FCC form 477 voice-grade equivalents' };
-}
-</%init>
+<& elements/class_Common.html,
+  'name_singular'   => 'Package Class',
+  'table'  => 'pkg_class',
+&>

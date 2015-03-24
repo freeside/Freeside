@@ -68,8 +68,6 @@
                    'svc_dst_pkgpart'  => 'Include services of package',
                    'supp_dst_pkgpart' => 'When ordering package, also order',
                    'report_option'    => 'Report classes',
-                   'fcc_ds0s'         => 'Voice-grade equivalents',
-                   'fcc_voip_class'   => 'Category',
                    'delay_start'      => 'Default delay (days)',
                  },
 
