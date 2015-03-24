@@ -2033,7 +2033,9 @@ sub change {
   }
 
   # Transfer services and cancel old package.
-
+  # Enforce service limits only if this is a pkgpart change.
+  local $FS::cust_svc::ignore_quantity;
+  $FS::cust_svc::ignore_quantity = 1 if $same_pkgpart;
   $error = $self->transfer($cust_pkg);
   if ($error and $error == 0) {
     # $old_pkg->transfer failed.
