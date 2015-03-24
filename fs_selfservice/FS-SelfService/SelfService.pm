@@ -319,6 +319,37 @@ see XXXX instead.
 
 =item passwd
 
+Changes the password for an existing user in svc_acct.  Takes a hash
+reference with the following keys:
+
+=over 4
+
+=item username
+
+Username of the account (required)
+
+=item domain
+
+Domain of the account (required)
+
+=item old_password
+
+Old password (required)
+
+=item new_password
+ 
+New password (required)
+
+=item new_gecos
+
+New gecos
+
+=item new_shell
+
+New Shell
+
+=back 
+
 =item chfn
 
 =item chsh
