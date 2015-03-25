@@ -22,6 +22,7 @@ use Encode;
                  generate_ps generate_pdf do_print
                  csv_from_fixed
                  ocr_image
+                 bytes_substr
                );
 
 $DEBUG = 0;
@@ -959,6 +960,26 @@ sub ocr_image {
   foreach (@lines) { s/\.c0m\s*$/.com/; }
 
   @lines;
+}
+
+=item bytes_substr STRING, OFFSET[, LENGTH[, REPLACEMENT] ]
+
+A replacement for "substr" that counts raw bytes rather than logical 
+characters. Unlike "bytes::substr", will suppress fragmented UTF-8 characters
+rather than output them. Unlike real "substr", is not an lvalue.
+
+=cut
+
+sub bytes_substr {
+  my ($string, $offset, $length, $repl) = @_;
+  my $bytes = substr(
+    Encode::encode('utf8', $string),
+    $offset,
+    $length,
+    Encode::encode('utf8', $repl)
+  );
+  my $chk = $DEBUG ? Encode::FB_WARN : Encode::FB_QUIET;
+  return Encode::decode('utf8', $bytes, $chk);
 }
 
 =back

@@ -8,6 +8,7 @@ use Date::Format 'time2str';
 use Date::Parse 'str2time';
 use Tie::IxHash;
 use FS::Conf;
+use FS::Misc 'bytes_substr';
 
 my $conf;
 my ($bin, $merchantID, $terminalID, $username, $password, $with_recurringInd);
@@ -98,7 +99,13 @@ my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
     my @cust_pay_batch = @{(shift)};
     my $count = 1;
     my $output;
-    my $xml = new XML::Writer(OUTPUT => \$output, DATA_MODE => 1, DATA_INDENT => 2);
+    my $xml = XML::Writer->new(
+      OUTPUT => \$output,
+      DATA_MODE => 1,
+      DATA_INDENT => 2,
+      ENCODING => 'utf-8'
+    );
+    $xml->xmlDecl(); # it is in the spec
     $xml->startTag('transRequest', RequestCount => scalar(@cust_pay_batch) + 1);
     $xml->startTag('batchFileID');
     $xml->dataElement(userID => $username);
@@ -124,12 +131,12 @@ my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
           ecpBankAcctType => $paytype{lc($_->cust_main->paytype)},
           ecpDelvMethod   => 'A',
         ),
-        avsZip          => substr($_->zip,      0, 10),
-        avsAddress1     => substr($_->address1, 0, 30),
-        avsAddress2     => substr($_->address2, 0, 30),
-        avsCity         => substr($_->city,     0, 20),
-        avsState        => substr($_->state,    0, 2),
-        avsName         => substr($_->first. ' '. $_->last, 0, 30),
+        avsZip          => bytes_substr($_->zip,      0, 10),
+        avsAddress1     => bytes_substr($_->address1, 0, 30),
+        avsAddress2     => bytes_substr($_->address2, 0, 30),
+        avsCity         => bytes_substr($_->city,     0, 20),
+        avsState        => bytes_substr($_->state,    0, 2),
+        avsName         => bytes_substr($_->first. ' '. $_->last, 0, 30),
         ( $paymentech_countries{ $_->country }
           ? ( avsCountryCode  => $_->country )
           : ()
@@ -174,4 +181,3 @@ sub _upgrade_gateway {
 }
 
 1;
-
