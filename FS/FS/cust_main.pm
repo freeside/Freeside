@@ -1856,7 +1856,7 @@ sub check {
   return "You are not permitted to create complimentary accounts."
     if ! $self->custnum
     && $self->complimentary eq 'Y'
-    && ! $FS::CurrentUser->CurrentUser->access_right('Complimentary customer');
+    && ! $FS::CurrentUser::CurrentUser->access_right('Complimentary customer');
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
