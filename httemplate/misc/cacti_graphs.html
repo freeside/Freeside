@@ -1,0 +1,53 @@
+<% include( '/elements/header.html', 'Cacti Graphs' ) %>
+
+% if ($load) {
+
+<FORM NAME="CactiGraphForm" ID="CactiGraphForm" style="margin-top: 0">
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+</FORM>
+<% include( '/elements/progress-init.html',
+              'CactiGraphForm', 
+              [ 'svcnum' ],
+              $p.'misc/process/cacti_graphs.cgi',
+              { url => 'javascript:window.location.replace("'.popurl(2).'misc/cacti_graphs.html?svcnum='.$svcnum.'")' },
+) %>
+<!--
+  note we use window.location.replace for the callback url above
+  so that this page gets removed from browser history after processing
+  so that process() doesn't get triggered by the back button
+-->
+<P>Loading graphs, please wait...</P>
+<SCRIPT TYPE="text/javascript">
+process();
+</SCRIPT>
+
+% } else {
+%   if ($error) {
+
+<P><% $error %></P>
+
+%   } else {
+
+<% slurp($htmlfile) %>
+
+%   }
+% }
+
+<%init>
+use File::Slurp qw( slurp );
+
+my $svcnum    = $cgi->param('svcnum') or die 'Illegal svcnum';
+my $load      = $cgi->param('load');
+my $graphnum  = $cgi->param('graphnum');
+
+my $htmlfile = $FS::UID::cache_dir 
+             . '/cacti-graphs/'
+             . 'svc_'
+             . $svcnum;
+$htmlfile .= '_graph_' . $graphnum
+  if $graphnum;
+$htmlfile .= '.html';
+
+my $error = (-e $htmlfile) ? '' : 'File not found';
+</%init>
+

@@ -32,15 +32,15 @@ if (!isset($_SERVER["argv"][0]) || isset($_SERVER['REQUEST_METHOD'])  || isset($
 $no_http_headers = true;
 
 /* 
-Currently, only drop-device is actually being used by Freeside integration,
+Currently, only drop-device and get-graphs is actually being used by Freeside integration,
 but keeping commented out code for potential future development.
 */
 
 include(dirname(__FILE__)."/../site/include/global.php");
 include_once($config["base_path"]."/lib/api_device.php");
+include_once($config["base_path"]."/lib/api_automation_tools.php");
 
 /*
-include_once($config["base_path"]."/lib/api_automation_tools.php");
 include_once($config["base_path"]."/lib/api_data_source.php");
 include_once($config["base_path"]."/lib/api_graph.php");
 include_once($config["base_path"]."/lib/functions.php");
@@ -57,6 +57,9 @@ if (sizeof($parms)) {
 	foreach($parms as $parameter) {
 		@list($arg, $value) = @explode("=", $parameter);
 		switch ($arg) {
+        case "--get-graphs":
+			$action = 'get-graphs';
+            break;
         case "--drop-device":
 			$action = 'drop-device';
             break;
@@ -94,6 +97,9 @@ if (sizeof($parms)) {
 
 /* Now take an action */
 switch ($action) {
+case "get-graphs":
+	displayHostGraphs(host_id($ip),TRUE);
+	break;
 case "drop-device":
 	$host_id = host_id($ip);
 /*
