@@ -697,6 +697,10 @@ sub print_generic {
     # XXX should be an FS::cust_bill method to set the defaults, instead
     # of checking the type here
 
+    # info from customer's last invoice before this one, for some 
+    # summary formats
+    $invoice_data{'last_bill'} = {};
+ 
     my $last_bill = $self->previous_bill;
     if ( $last_bill ) {
 
@@ -757,9 +761,7 @@ sub print_generic {
       # ($pr_total is used elsewhere but not as $previous_balance)
       $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
 
-      $invoice_data{'last_bill'} = {
-        '_date'     => $last_bill->_date, #unformatted
-      };
+      $invoice_data{'last_bill'}{'_date'} = $last_bill->_date; #unformatted
       my (@payments, @credits);
       # for formats that itemize previous payments
       foreach my $cust_pay ( qsearch('cust_pay', {
@@ -801,11 +803,7 @@ sub print_generic {
       $invoice_data{'previous_payments'} = [];
       $invoice_data{'previous_credits'} = [];
     }
-
-    # info from customer's last invoice before this one, for some 
-    # summary formats
-    $invoice_data{'last_bill'} = {};
-  
+ 
     if ( $conf->exists('invoice_usesummary', $agentnum) ) {
       $invoice_data{'summarypage'} = $summarypage = 1;
     }
