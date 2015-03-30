@@ -224,7 +224,7 @@ sub export_insert {
       id_cc_didgroup  => $self->option('didgroup'),
       id_cc_country   => $cc_country_id,
       iduser          => $cc_card_id,
-      did             => $svc->phonenum,
+      did             => $svc->countrycode. $svc->phonenum,
       billingtype     => ($self->option('billtype') eq 'Dial Out Rate' ? 2 : 3),
       activated       => 1,
       aleg_carrier_cost_min_offp  => $part_pkg->option('a2billing_carrier_cost_min'),
@@ -242,7 +242,7 @@ sub export_insert {
 
     my $cc_did_id = $self->a2b_find('cc_did', 'svcnum', $svc->svcnum);
     
-    my $destination = 'SIP/user-'. $svc_acct->username. '@'. $svc->sip_server. "!". $svc->phonenum;
+    my $destination = 'SIP/user-'. $svc_acct->username. '@'. $svc->sip_server. "!". $svc->countrycode. $svc->phonenum;
     my %cc_did_destination = (
       destination     => $destination,
       priority        => 1,
@@ -408,7 +408,7 @@ sub export_replace {
   } elsif ( $new->isa('FS::svc_phone') ) {
 
     # if the phone number has changed, need to create a new DID.
-    if ( $new->phonenum ne $old->phonenum ) {
+    if ( $new->phonenum ne $old->phonenum || $new->countrycode ne $old->countrycode ) {
       # deactivate/unlink/close the old DID
       # and create/link the new one
       $error = $self->export_delete($old)
