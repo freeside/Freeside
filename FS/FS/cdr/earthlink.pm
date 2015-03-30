@@ -24,6 +24,7 @@ use Date::Parse;
 	my $datetime = $date. " ". $time;
 	$cdr->set('startdate', $datetime );
         },              		#time
+        skip(1),                        #TollFreeNumber
 	sub { my($cdr, $src) = @_;	
 	$src =~ s/\D//g;
 	$cdr->set('src', $src);
