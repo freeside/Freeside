@@ -31,8 +31,10 @@ DIST_CONF = ${FREESIDE_CONF}/default_conf
 #Apache 2.4 (Debian 8.x)
 APACHE_VERSION=2.4
 
-#deb
+#deb (-7 and upgrades)
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
+#deb (new installs of 8+)
+#FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #redhat, fedora, mandrake
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #freebsd
