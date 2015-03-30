@@ -2398,26 +2398,26 @@ sub change_pkg {
   return { error=>"Can't change a suspended package", pkgnum=>$cust_pkg->pkgnum}
     if $cust_pkg->status eq 'suspended';
 
-  my @newpkg;
-  my $error = FS::cust_pkg::order( $custnum,
-                                   [$p->{pkgpart}],
-                                   [$p->{pkgnum}],
-                                   \@newpkg,
-                                 );
+  my $err_or_cust_pkg = $cust_pkg->change( 'pkgpart'  => $p->{'pkgpart'},
+                                           'quantity' => $p->{'quantity'} || 1,
+                                         );
+
+  return { error=>$err_or_cust_pkg, pkgnum=>$cust_pkg->pkgnum }
+    unless ref($err_or_cust_pkg);
 
   if ( $conf->exists('signup_server-realtime') ) {
 
     my $bill_error = _do_bop_realtime( $cust_main, $status, 'no_credit'=>1 );
 
     if ($bill_error) {
-      $newpkg[0]->suspend;
+      $err_or_cust_pkg->suspend;
       return $bill_error;
     } else {
-      $newpkg[0]->reexport;
+      $err_or_cust_pkg->reexport;
     }
 
   } else {  
-    $newpkg[0]->reexport;
+    $err_or_cust_pkg->reexport;
   }
 
   return { error => '', pkgnum => $cust_pkg->pkgnum };

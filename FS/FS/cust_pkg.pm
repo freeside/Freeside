@@ -108,6 +108,8 @@ FS::cust_pkg - Object methods for cust_pkg objects
 
   $seconds = $record->seconds_since($timestamp);
 
+  #bulk cancel+order... perhaps slightly deprecated, only used by the bulk
+  # cancel+order in the web UI and nowhere else (edit/process/cust_pkg.cgi)
   $error = FS::cust_pkg::order( $custnum, \@pkgparts );
   $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
 
@@ -5361,6 +5363,9 @@ sub _X_show_zero {
 =over 4
 
 =item order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF [ REFNUM ] ] ]
+
+Bulk cancel + order subroutine.  Perhaps slightly deprecated, only used by the
+bulk cancel+order in the web UI and nowhere else (edit/process/cust_pkg.cgi)
 
 CUSTNUM is a customer (see L<FS::cust_main>)
 
