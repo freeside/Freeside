@@ -1028,6 +1028,10 @@ Existing customer package.
 
 New package to order (see L<FS::part_pkg>).
 
+=item quantity
+
+Quantity for this package order (default 1).
+
 =back
 
 Returns a hash reference with the following keys:
