@@ -574,7 +574,14 @@ sub import_from_gateway {
 
   my $processor = $gateway->batch_processor(%proc_opt);
 
-  my @batches = $processor->receive;
+  my @processor_ids = map { $_->processor_id } 
+                        qsearch({
+                          'table' => 'pay_batch',
+                          'hashref' => { 'status' => 'I' },
+                          'extra_sql' => q( AND processor_id != '' AND processor_id IS NOT NULL)
+                        });
+
+  my @batches = $processor->receive(@processor_ids);
 
   my $num = 0;
 
@@ -1058,6 +1065,11 @@ sub export_to_gateway {
     items     => \@items
   );
   $processor->submit($batch);
+
+  if ($batch->processor_id) {
+    $self->set('processor_id',$batch->processor_id);
+    $self->replace;
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';

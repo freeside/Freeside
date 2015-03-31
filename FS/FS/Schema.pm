@@ -1850,6 +1850,7 @@ sub tables_hashref {
         'download',       @date_type,     '', '', 
         'upload',         @date_type,     '', '', 
         'title',   'varchar', 'NULL',255, '', '',
+        'processor_id',   'varchar', 'NULL',255, '', '',
       ],
       'primary_key' => 'batchnum',
       'unique' => [],
