@@ -8,7 +8,8 @@ my $error;
 if ($reasonnum == -1) {
   my $new_reason = FS::reason->new({
     map { $_ => scalar( $cgi->param("reasonnum_new_$_") ) }
-    qw( reason_type reason unsuspend_pkgpart unsuspend_hold unused_credit )
+    qw( reason_type reason unsuspend_pkgpart unsuspend_hold unused_credit
+        feepart fee_on_unsuspend fee_hold )
   }); # not sanitizing them here, but check() will do it
   $error = $new_reason->insert;
   $reasonnum = $new_reason->reasonnum;

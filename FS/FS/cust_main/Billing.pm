@@ -21,7 +21,7 @@ use FS::cust_bill_pkg_tax_rate_location;
 use FS::part_event;
 use FS::part_event_condition;
 use FS::pkg_category;
-use FS::cust_event_fee;
+use FS::FeeOrigin_Mixin;
 use FS::Log;
 use FS::TaxEngine;
 
@@ -601,17 +601,17 @@ sub bill {
     # process fees
     ###
 
-    my @pending_event_fees = FS::cust_event_fee->by_cust($self->custnum,
+    my @pending_fees = FS::FeeOrigin_Mixin->by_cust($self->custnum,
       hashref => { 'billpkgnum' => '' }
     );
-    warn "$me found pending fee events:\n".Dumper(\@pending_event_fees)."\n"
-      if @pending_event_fees and $DEBUG > 1;
+    warn "$me found pending fees:\n".Dumper(\@pending_fees)."\n"
+      if @pending_fees and $DEBUG > 1;
 
     # determine whether to generate an invoice
     my $generate_bill = scalar(@cust_bill_pkg) > 0;
 
-    foreach my $event_fee (@pending_event_fees) {
-      $generate_bill = 1 unless $event_fee->nextbill;
+    foreach my $fee (@pending_fees) {
+      $generate_bill = 1 unless $fee->nextbill;
     }
     
     # don't create an invoice with no line items, or where the only line 
@@ -620,38 +620,11 @@ sub bill {
 
     # calculate fees...
     my @fee_items;
-    foreach my $event_fee (@pending_event_fees) {
-      my $object = $event_fee->cust_event->cust_X;
-      my $part_fee = $event_fee->part_fee;
-      my $cust_bill;
-      if ( $object->isa('FS::cust_main')
-           or $object->isa('FS::cust_pkg')
-           or $object->isa('FS::cust_pay_batch') )
-      {
-        # Not the real cust_bill object that will be inserted--in particular
-        # there are no taxes yet.  If you want to charge a fee on the total 
-        # invoice amount including taxes, you have to put the fee on the next
-        # invoice.
-        $cust_bill = FS::cust_bill->new({
-            'custnum'       => $self->custnum,
-            'cust_bill_pkg' => \@cust_bill_pkg,
-            'charged'       => ${ $total_setup{$pass} } +
-                               ${ $total_recur{$pass} },
-        });
+    foreach my $fee_origin (@pending_fees) {
+      my $part_fee = $fee_origin->part_fee;
 
-        # If this is a package event, only apply the fee to line items 
-        # from that package.
-        if ($object->isa('FS::cust_pkg')) {
-          $cust_bill->set('cust_bill_pkg', 
-            [ grep  { $_->pkgnum == $object->pkgnum } @cust_bill_pkg ]
-          );
-        }
-
-      } elsif ( $object->isa('FS::cust_bill') ) {
-        # simple case: applying the fee to a previous invoice (late fee, 
-        # etc.)
-        $cust_bill = $object;
-      }
+      # check whether the fee is applicable before doing anything expensive:
+      #
       # if the fee def belongs to a different agent, don't charge the fee.
       # event conditions should prevent this, but just in case they don't,
       # skip the fee.
@@ -662,10 +635,41 @@ sub bill {
       }
       # also skip if it's disabled
       next if $part_fee->disabled eq 'Y';
+
+      # Decide which invoice to base the fee on.
+      my $cust_bill = $fee_origin->cust_bill;
+      if (!$cust_bill) {
+        # Then link it to the current invoice. This isn't the real cust_bill
+        # object that will be inserted--in particular there are no taxes yet.
+        # If you want to charge a fee on the total invoice amount including
+        # taxes, you have to put the fee on the next invoice.
+        $cust_bill = FS::cust_bill->new({
+            'custnum'       => $self->custnum,
+            'cust_bill_pkg' => \@cust_bill_pkg,
+            'charged'       => ${ $total_setup{$pass} } +
+                               ${ $total_recur{$pass} },
+        });
+
+        # If the origin is for a specific package, then only apply the fee to
+        # line items from that package.
+        if ( my $cust_pkg = $fee_origin->cust_pkg ) {
+          my @charge_fee_on_item;
+          my $charge_fee_on_amount = 0;
+          foreach (@cust_bill_pkg) {
+            if ($_->pkgnum == $cust_pkg->pkgnum) {
+              push @charge_fee_on_item, $_;
+              $charge_fee_on_amount += $_->setup + $_->recur;
+            }
+          }
+          $cust_bill->set('cust_bill_pkg', \@charge_fee_on_item);
+          $cust_bill->set('charged', $charge_fee_on_amount);
+        }
+
+      } # $cust_bill is now set
       # calculate the fee
       my $fee_item = $part_fee->lineitem($cust_bill) or next;
       # link this so that we can clear the marker on inserting the line item
-      $fee_item->set('cust_event_fee', $event_fee);
+      $fee_item->set('fee_origin', $fee_origin);
       push @fee_items, $fee_item;
 
     }

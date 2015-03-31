@@ -295,13 +295,12 @@ sub insert {
     } # foreach my $link
   }
 
-  my $cust_event_fee = $self->get('cust_event_fee');
-  if ( $cust_event_fee ) {
-    $cust_event_fee->set('billpkgnum' => $self->billpkgnum);
-    $error = $cust_event_fee->replace;
+  if ( my $fee_origin = $self->get('fee_origin') ) {
+    $fee_origin->set('billpkgnum' => $self->billpkgnum);
+    $error = $fee_origin->replace;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "error updating cust_event_fee: $error";
+      return "error updating fee origin record: $error";
     }
   }
 

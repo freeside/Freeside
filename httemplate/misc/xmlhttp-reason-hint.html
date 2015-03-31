@@ -1,0 +1,83 @@
+<%doc>
+Example:
+
+<& /elements/xmlhttp.html,
+  url => $p . 'misc/xmlhttp-reason-hint.html',
+  subs => [ 'get_hint' ]
+&>
+<script>
+var reasonnum = 101;
+get_hint( reasonnum, function(stuff) { alert(stuff); } )
+</script>
+
+Currently will provide hints for:
+1. suspension events (new-style reconnection fees, notification)
+2. unsuspend_pkgpart package info (older reconnection fees)
+3. crediting for unused time
+</%doc>
+<%init>
+my $sub = $cgi->param('sub');
+my ($reasonnum) = $cgi->param('arg');
+# arg is a reasonnum
+my $conf = FS::Conf->new;
+my $error = '';
+my @hints;
+if ( $reasonnum =~ /^\d+$/ ) {
+  my $reason = FS::reason->by_key($reasonnum);
+  if ( $reason ) {
+    # 1.
+    if ( $reason->feepart ) { # XXX
+      my $part_fee = FS::part_fee->by_key($reason->feepart);
+      my $when = '';
+      if ( $reason->fee_hold ) {
+        $when = 'on the next bill after ';
+      } else {
+        $when = 'upon ';
+      }
+      if ( $reason->fee_on_unsuspend ) {
+        $when .= 'unsuspension';
+      } else {
+        $when .= 'suspension';
+      }
+
+      my $fee_amt = $part_fee->explanation;
+      push @hints, mt('A fee of [_1] will be charged [_2].',
+                      $fee_amt, $when);
+    }
+    # 2.
+    if ( $reason->unsuspend_pkgpart ) {
+      my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart);
+      if ( $part_pkg ) {
+        if ( $part_pkg->option('setup_fee',1) > 0 and 
+             $part_pkg->option('recur_fee',1) == 0 ) {
+          # the usual case
+          push @hints,
+            mt('A [_1] unsuspension fee will apply.',
+               ($conf->config('money_char') || '$') .
+               sprintf('%.2f', $part_pkg->option('setup_fee'))
+               );
+        } else {
+          # oddball cases--not really supported
+          push @hints,
+            mt('An unsuspension package will apply: [_1]',
+              $part_pkg->price_info
+              );
+        }
+      } else { #no $part_pkg
+        push @hints,
+          '<FONT COLOR="#ff0000">Unsuspend pkg #'.$reason->unsuspend_pkgpart.
+          ' not found.</FONT>';
+      }
+    }
+    # 3.
+    if ( $reason->unused_credit ) {
+      push @hints, mt('The customer will be credited for unused time.');
+    }
+  } else {
+    warn "reasonnum $reasonnum not found; returning no hints\n";
+  }
+} else {
+  warn "reason-hint arg '$reasonnum' not a valid reasonnum\n";
+}
+</%init>
+<% join('<BR>', @hints) %>

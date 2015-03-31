@@ -1,7 +1,7 @@
 package FS::cust_event_fee;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::Record FS::FeeOrigin_Mixin );
 use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
@@ -27,8 +27,8 @@ FS::cust_event_fee - Object methods for cust_event_fee records
 
 An FS::cust_event_fee object links a billing event that charged a fee
 (an L<FS::cust_event>) to the resulting invoice line item (an 
-L<FS::cust_bill_pkg> object).  FS::cust_event_fee inherits from FS::Record.  
-The following fields are currently supported:
+L<FS::cust_bill_pkg> object).  FS::cust_event_fee inherits from FS::Record 
+and FS::FeeOrigin_Mixin.  The following fields are currently supported:
 
 =over 4
 
@@ -85,9 +85,6 @@ and replace methods.
 
 =cut
 
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
-
 sub check {
   my $self = shift;
 
@@ -109,18 +106,14 @@ sub check {
 
 =over 4
 
-=item by_cust CUSTNUM[, PARAMS]
+=item _by_cust CUSTNUM[, PARAMS]
 
-Finds all cust_event_fee records belonging to the customer CUSTNUM.  Currently
-fee events can be cust_main, cust_pkg, or cust_bill events; this will return 
-all of them.
-
-PARAMS can be additional params to pass to qsearch; this really only works
-for 'hashref' and 'order_by'.
+See L<FS::FeeOrigin_Mixin/by_cust>. This is the implementation for 
+event-triggered fees.
 
 =cut
 
-sub by_cust {
+sub _by_cust {
   my $class = shift;
   my $custnum = shift or return;
   my %params = @_;
@@ -167,13 +160,45 @@ sub by_cust {
   })
 }
 
-                  
+=item cust_bill
+
+See L<FS::FeeOrigin_Mixin/cust_bill>. This version simply returns the event
+object if the event is an invoice event.
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  my $object = $self->cust_event->cust_X;
+  if ( $object->isa('FS::cust_bill') ) {
+    return $object;
+  } else {
+    return '';
+  }
+}
+
+=item cust_pkg
+
+See L<FS::FeeOrigin_Mixin/cust_bill>. This version simply returns the event
+object if the event is a package event.
+
+=cut
+
+sub cust_pkg {
+  my $self = shift;
+  my $object = $self->cust_event->cust_X;
+  if ( $object->isa('FS::cust_pkg') ) {
+    return $object;
+  } else {
+    return '';
+  }
+}
 
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::cust_event>, L<FS::part_fee>, L<FS::Record>
+L<FS::cust_event>, L<FS::FeeOrigin_Mixin>, L<FS::Record>
 
 =cut
 
