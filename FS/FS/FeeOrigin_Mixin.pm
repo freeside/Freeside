@@ -110,13 +110,7 @@ sub cust_bill { '' }
 
 sub cust_pkg { '' }
 
-# stubs; remove in 4.x
-
-sub part_fee {
-  my $self = shift;
-  FS::part_fee->by_key($self->feepart);
-}
-
+# still necessary in 4.x; can't FK the billpkgnum because of voids
 sub cust_bill_pkg {
   my $self = shift;
   $self->billpkgnum ? FS::cust_bill_pkg->by_key($self->billpkgnum) : '';

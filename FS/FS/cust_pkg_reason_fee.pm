@@ -142,12 +142,6 @@ sub cust_pkg {
   $self->cust_pkg_reason->cust_pkg;
 }
 
-#stub - remove in 4.x
-sub cust_pkg_reason {
-  my $self = shift;
-  FS::cust_pkg_reason->by_key($self->pkgreasonnum);
-}
-
 =head1 SEE ALSO
 
 L<FS::FeeOrigin_Mixin>, L<FS::cust_pkg_reason>, L<part_fee>

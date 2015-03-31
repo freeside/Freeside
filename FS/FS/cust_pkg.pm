@@ -1750,7 +1750,7 @@ sub unsuspend {
 
   if ( $reason ) {
     if ( $reason->unsuspend_pkgpart ) {
-      #warn "Suspend reason '".$reason->reason."' uses deprecated unsuspend_pkgpart feature.\n"; # in 4.x
+      warn "Suspend reason '".$reason->reason."' uses deprecated unsuspend_pkgpart feature.\n";
       my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart)
         or $error = "Unsuspend package definition ".$reason->unsuspend_pkgpart.
                     " not found.";
