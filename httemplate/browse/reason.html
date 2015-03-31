@@ -65,7 +65,7 @@ my $align = 'rll';
 if ( $class eq 'S' ) {
   push @header,
     'Credit unused service',
-    'Unsuspension fee',
+    'Suspension fee',
   ;
   push @fields,
     sub {
@@ -78,17 +78,29 @@ if ( $class eq 'S' ) {
     },
     sub {
       my $reason = shift;
-      my $pkgpart = $reason->unsuspend_pkgpart or return '';
-      my $part_pkg = FS::part_pkg->by_key($pkgpart) or return '';
-      my $text = $part_pkg->pkg_comment;
-      my $href = $p."edit/part_pkg.cgi?$pkgpart";
-      $text = qq!<A HREF="$href">! . encode_entities($text) . "</A>".
-              "<FONT SIZE=-1>";
-      if ( $reason->unsuspend_hold ) {
-        $text .= ' (on next bill)'
+      my $feepart = $reason->feepart;
+      my ($href, $text, $detail);
+      if ( $feepart ) {
+        my $part_fee = FS::part_fee->by_key($feepart) or return '';
+        $text = $part_fee->itemdesc . ': ' . $part_fee->explanation;
+        $detail = $reason->fee_on_unsuspend ? 'unsuspension' : 'suspension';
+        if ( $reason->fee_hold ) {
+          $detail = "next bill after $detail";
+        }
+        $detail = "(on $detail)";
+        $href = $p."edit/part_fee.html?$feepart";
       } else {
-        $text .= ' (immediately)'
+        my $pkgpart = $reason->unsuspend_pkgpart;
+        my $part_pkg = FS::part_pkg->by_key($pkgpart) or return '';
+        $text = $part_pkg->pkg_comment;
+        $href = $p."edit/part_pkg.cgi?$pkgpart";
+        $detail = $reason->unsuspend_hold ?
+          '(on next bill after unsuspension)' : '(on unsuspension)';
       }
+      return '' unless length($text);
+
+      $text = qq!<A HREF="$href">! . encode_entities($text) . "</A> ".
+              "<FONT SIZE=-1>$detail</FONT>";
       $text .= '</FONT>';
     }
   ;

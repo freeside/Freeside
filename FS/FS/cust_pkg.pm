@@ -1368,6 +1368,7 @@ sub suspend {
       if $error;
   }
 
+  my $cust_pkg_reason;
   if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'},
                                    'action' => $date ? 'adjourn' : 'suspend',
@@ -1378,6 +1379,11 @@ sub suspend {
       dbh->rollback if $oldAutoCommit;
       return "Error inserting cust_pkg_reason: $error";
     }
+    $cust_pkg_reason = qsearchs('cust_pkg_reason', {
+        'date'    => $date ? $date : $suspend_time,
+        'action'  => $date ? 'A' : 'S',
+        'pkgnum'  => $self->pkgnum,
+    });
   }
 
   # if a reasonnum was passed, get the actual reason object so we can check
@@ -1455,6 +1461,27 @@ sub suspend {
         }
         my( $label, $value ) = $cust_svc->label;
         push @labels, "$label: $value";
+      }
+    }
+
+    # suspension fees: if there is a feepart, and it's not an unsuspend fee,
+    # and this is not a suspend-before-cancel
+    if ( $cust_pkg_reason ) {
+      my $reason_obj = $cust_pkg_reason->reason;
+      if ( $reason_obj->feepart and
+           ! $reason_obj->fee_on_unsuspend and
+           ! $options{'from_cancel'} ) {
+
+        # register the need to charge a fee, cust_main->bill will do the rest
+        warn "registering suspend fee: pkgnum ".$self->pkgnum.", feepart ".$reason->feepart."\n"
+          if $DEBUG;
+        my $cust_pkg_reason_fee = FS::cust_pkg_reason_fee->new({
+            'pkgreasonnum'  => $cust_pkg_reason->num,
+            'pkgnum'        => $self->pkgnum,
+            'feepart'       => $reason->feepart,
+            'nextbill'      => $reason->fee_hold,
+        });
+        $error ||= $cust_pkg_reason_fee->insert;
       }
     }
 
@@ -1753,23 +1780,39 @@ sub unsuspend {
 
   my $unsusp_pkg;
 
-  if ( $reason && $reason->unsuspend_pkgpart ) {
-    my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart)
-      or $error = "Unsuspend package definition ".$reason->unsuspend_pkgpart.
-                  " not found.";
-    my $start_date = $self->cust_main->next_bill_date 
-      if $reason->unsuspend_hold;
+  if ( $reason ) {
+    if ( $reason->unsuspend_pkgpart ) {
+      #warn "Suspend reason '".$reason->reason."' uses deprecated unsuspend_pkgpart feature.\n"; # in 4.x
+      my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart)
+        or $error = "Unsuspend package definition ".$reason->unsuspend_pkgpart.
+                    " not found.";
+      my $start_date = $self->cust_main->next_bill_date 
+        if $reason->unsuspend_hold;
 
-    if ( $part_pkg ) {
-      $unsusp_pkg = FS::cust_pkg->new({
-          'custnum'     => $self->custnum,
-          'pkgpart'     => $reason->unsuspend_pkgpart,
-          'start_date'  => $start_date,
-          'locationnum' => $self->locationnum,
-          # discount? probably not...
+      if ( $part_pkg ) {
+        $unsusp_pkg = FS::cust_pkg->new({
+            'custnum'     => $self->custnum,
+            'pkgpart'     => $reason->unsuspend_pkgpart,
+            'start_date'  => $start_date,
+            'locationnum' => $self->locationnum,
+            # discount? probably not...
+        });
+
+        $error ||= $self->cust_main->order_pkg( 'cust_pkg' => $unsusp_pkg );
+      }
+    }
+    # new way, using fees
+    if ( $reason->feepart and $reason->fee_on_unsuspend ) {
+      # register the need to charge a fee, cust_main->bill will do the rest
+      warn "registering unsuspend fee: pkgnum ".$self->pkgnum.", feepart ".$reason->feepart."\n"
+        if $DEBUG;
+      my $cust_pkg_reason_fee = FS::cust_pkg_reason_fee->new({
+          'pkgreasonnum'  => $cust_pkg_reason->num,
+          'pkgnum'        => $self->pkgnum,
+          'feepart'       => $reason->feepart,
+          'nextbill'      => $reason->fee_hold,
       });
-      
-      $error ||= $self->cust_main->order_pkg( 'cust_pkg' => $unsusp_pkg );
+      $error ||= $cust_pkg_reason_fee->insert;
     }
 
     if ( $error ) {
