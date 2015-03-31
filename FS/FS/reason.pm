@@ -50,7 +50,7 @@ FS::Record.  The following fields are currently supported:
 L<FS::part_pkg>) of a package to be ordered when the package is unsuspended.
 Typically this will be some kind of reactivation fee.  Attaching it to 
 a suspension reason allows the reactivation fee to be charged for some
-suspensions but not others.
+suspensions but not others. DEPRECATED.
 
 =item unsuspend_hold - 'Y' or ''.  If unsuspend_pkgpart is set, this tells
 whether to bill the unsuspend package immediately ('') or to wait until 
@@ -59,6 +59,15 @@ the customer's next invoice ('Y').
 =item unused_credit - 'Y' or ''. For suspension reasons only (for now).
 If enabled, the customer will be credited for their remaining time on 
 suspension.
+
+=item feepart - for suspension reasons, the feepart of a fee to be
+charged when a package is suspended for this reason.
+
+=item fee_hold - 'Y' or ''. If feepart is set, tells whether to bill the fee
+immediately ('') or wait until the customer's next invoice ('Y').
+
+=item fee_on_unsuspend - If feepart is set, tells whether to charge the fee
+on suspension ('') or unsuspension ('Y').
 
 =back
 
@@ -121,10 +130,14 @@ sub check {
           || $self->ut_foreign_keyn('unsuspend_pkgpart', 'part_pkg', 'pkgpart')
           || $self->ut_flag('unsuspend_hold')
           || $self->ut_flag('unused_credit')
+          || $self->ut_foreign_keyn('feepart', 'part_fee', 'feepart')
+          || $self->ut_flag('fee_on_unsuspend')
+          || $self->ut_flag('fee_hold')
     ;
     return $error if $error;
   } else {
-    foreach (qw(unsuspend_pkgpart unsuspend_hold unused_credit)) {
+    foreach (qw(unsuspend_pkgpart unsuspend_hold unused_credit feepart
+                fee_on_unsuspend fee_hold)) {
       $self->set($_ => '');
     }
   }
@@ -191,7 +204,6 @@ sub new_or_existing {
 
   $reason;
 }
-
 
 =head1 BUGS
 

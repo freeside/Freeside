@@ -2852,6 +2852,29 @@ sub tables_hashref {
                         ],
     },
 
+    'cust_pkg_reason_fee' => {
+      'columns' => [
+        'pkgreasonfeenum', 'serial', '', '', '', '',
+        'pkgreasonnum',       'int', '', '', '', '',
+        'billpkgnum',         'int', 'NULL', '', '', '',
+        'feepart',            'int', '', '', '', '',
+        'nextbill',          'char', 'NULL',  1, '', '',
+      ],
+      'primary_key'  => 'pkgreasonfeenum',
+      'unique' => [ [ 'billpkgnum' ], [ 'pkgreasonnum' ] ], # one-to-one link
+      'index'  => [ [ 'feepart' ] ],
+      'foreign_keys' => [
+                          { columns     => [ 'pkgreasonnum' ],
+                            table       => 'cust_pkg_reason',
+                            references  => [ 'num' ],
+                          },
+                          { columns     => [ 'feepart' ],
+                            table       => 'part_fee',
+                          },
+                          # can't link billpkgnum, because of voids
+      ],
+    },
+
     'cust_pkg_discount' => {
       'columns' => [
         'pkgdiscountnum', 'serial', '',        '', '', '',
@@ -5985,6 +6008,9 @@ sub tables_hashref {
         'unsuspend_pkgpart', 'int',  'NULL', '', '', '',
         'unsuspend_hold','char',    'NULL', 1, '', '',
         'unused_credit', 'char',    'NULL', 1, '', '',
+        'feepart',        'int', 'NULL', '', '', '',
+        'fee_on_unsuspend','char',  'NULL', 1, '', '',
+        'fee_hold',      'char',    'NULL', 1, '', '',
       ],
       'primary_key'  => 'reasonnum',
       'unique'       => [],

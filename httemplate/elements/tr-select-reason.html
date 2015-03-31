@@ -35,13 +35,17 @@ Example:
 % # - no redundant checking of ACLs or parameters
 % # - form fields are grouped for easy management
 % # - use the standard select-table widget instead of ad hoc crap
+<& /elements/xmlhttp.html,
+  url => $p . 'misc/xmlhttp-reason-hint.html',
+  subs => [ 'get_hint' ],
+&>
 <SCRIPT TYPE="text/javascript">
   function <% $id %>_changed() {
-    var hints = <% encode_json(\%all_hints) %>;
     var select_reason = document.getElementById('<% $id %>');
 
-    document.getElementById('<% $id %>_hint').innerHTML =
-      hints[select_reason.value] || '';
+    get_hint(select_reason.value, function(stuff) {
+      document.getElementById('<% $id %>_hint').innerHTML = stuff || '';
+    });
 
     // toggle submit button state
     var submit_button = document.getElementById(<% $opt{control_button} |js_string %>);
@@ -123,24 +127,45 @@ Example:
         field => $id.'_new_unused_credit',
         value => 'Y'
       &>
-      <& tr-select-part_pkg.html,
-        label   => 'Charge this fee when unsuspending',
-        field   => $id.'_new_unsuspend_pkgpart',
-        hashref => { disabled => '', freq => '0' },
+      <& tr-select-table.html,
+        label     => 'Charge a suspension fee',
+        field     => $id.'_new_feepart',
+        table     => 'part_fee',
+        hashref   => { disabled => '' },
+        name_col  => 'itemdesc',
+        value_col => 'feepart',
         empty_label => 'none',
       &>
-      <& tr-checkbox.html,
-        label => 'Hold unsuspension fee until the next bill',
-        field => $id.'_new_unsuspend_hold',
-        value => 'Y',
+      <& tr-select.html,
+        label     => 'When this package is',
+        field     => $id.'_new_fee_on_unsuspend',
+        options   => [ '', 'Y' ],
+        labels    => { '' => 'suspended', 'Y' => 'unsuspended' },
       &>
+      <& tr-checkbox.html,
+        label     => 'Delay fee until the next bill',
+        field     => $id.'_new_fee_hold',
+        value     => 'Y',
+      &>
+%# deprecated, but still accessible through the "Suspend Reasons" UI
+%#      <& tr-select-part_pkg.html,
+%#        label   => 'Charge this fee when unsuspending',
+%#        field   => $id.'_new_unsuspend_pkgpart',
+%#        hashref => { disabled => '', freq => '0' },
+%#        empty_label => 'none',
+%#      &>
+%#      <& tr-checkbox.html,
+%#        label => 'Hold unsuspension fee until the next bill',
+%#        field => $id.'_new_unsuspend_hold',
+%#        value => 'Y',
+%#      &>
 %   }
     </table>
   </td>
 </tr>
 % } # if the current user can add a reason
 
-% # container for hints
+% # container for hints (hints themselves come from xmlhttp-reason-hint)
 <TR>
   <TD COLSPAN=2 ALIGN="center" id="<% $id %>_hint" style="font-size:small">
   </TD>
@@ -187,43 +212,6 @@ my @reasons = qsearch({
   'extra_sql'       => " AND reason_type.class = '$class'",
   'order_by'        => ' ORDER BY type, reason',
 });
-
-my %all_hints;
-if ( $class eq 'S' ) {
-  my $conf = FS::Conf->new;
-  %all_hints = ( 0 => '', -1 => '' );
-  foreach my $reason (@reasons) {
-    my @hints;
-    if ( $reason->unsuspend_pkgpart ) {
-      my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart);
-      if ( $part_pkg ) {
-        if ( $part_pkg->option('setup_fee',1) > 0 and 
-             $part_pkg->option('recur_fee',1) == 0 ) {
-          # the usual case
-          push @hints,
-            mt('A [_1] unsuspension fee will apply.', 
-               ($conf->config('money_char') || '$') .
-               sprintf('%.2f', $part_pkg->option('setup_fee'))
-               );
-        } else {
-          # oddball cases--not really supported
-          push @hints,
-            mt('An unsuspension package will apply: [_1]',
-              $part_pkg->price_info
-              );
-        }
-      } else { #no $part_pkg
-        push @hints,
-          '<FONT COLOR="#ff0000">Unsuspend pkg #'.$reason->unsuspend_pkgpart.
-          ' not found.</FONT>';
-      }
-    }
-    if ( $reason->unused_credit ) {
-      push @hints, mt('The customer will be credited for unused time.');
-    }
-    $all_hints{ $reason->reasonnum } = join('<BR>', @hints);
-  }
-}
 
 my @post_options;
 if ( $curuser->access_right($add_access_right) ) {
