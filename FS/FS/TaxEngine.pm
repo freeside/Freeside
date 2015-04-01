@@ -160,19 +160,27 @@ sub consolidate_taxlines {
   my %tax_amount;
 
   my $link_table = $self->info->{link_table};
+
+  # Preconstruct cust_bill_pkg objects that will become the "final"
+  # taxlines for each name, so that we can reference them.
+  # (keys are taxnames)
+  my %real_taxline_named = map {
+    $_ => FS::cust_bill_pkg->new({
+        'pkgnum'    => 0,
+        'recur'     => 0,
+        'sdate'     => '',
+        'edate'     => '',
+        'itemdesc'  => $_
+    })
+  } keys %taxname;
+
   # For each distinct tax name (the values set as $taxline->itemdesc),
   # create a consolidated tax item with the total amount and all the links
   # of all tax items that share that name.
   foreach my $taxname ( keys %taxname ) {
     my @tax_links;
-    my $tax_cust_bill_pkg = FS::cust_bill_pkg->new({
-        'pkgnum'    => 0,
-        'recur'     => 0,
-        'sdate'     => '',
-        'edate'     => '',
-        'itemdesc'  => $taxname,
-        $link_table => \@tax_links,
-    });
+    my $tax_cust_bill_pkg = $real_taxline_named{$taxname};
+    $tax_cust_bill_pkg->set( $link_table => \@tax_links );
 
     my $tax_total = 0;
     warn "adding $taxname\n" if $DEBUG > 1;
@@ -183,6 +191,16 @@ sub consolidate_taxlines {
       $tax_total += $taxitem->setup;
       foreach my $link ( @{ $taxitem->get($link_table) } ) {
         $link->set('tax_cust_bill_pkg', $tax_cust_bill_pkg);
+
+        # if the link represents tax on tax, also fix its taxable pointer
+        # to point to the "final" taxline
+        my $taxable_cust_bill_pkg = $link->get('taxable_cust_bill_pkg');
+        if (my $other_taxname = $taxable_cust_bill_pkg->itemdesc) {
+          $link->set('taxable_cust_bill_pkg',
+            $real_taxline_named{$other_taxname}
+          );
+        }
+
         push @tax_links, $link;
       }
     } # foreach $taxitem
