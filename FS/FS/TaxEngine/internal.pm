@@ -15,10 +15,11 @@ my %part_pkg_cache;
 
 sub add_sale {
   my ($self, $cust_bill_pkg) = @_;
-  my $cust_pkg = $cust_bill_pkg->cust_pkg;
-  my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
-  my $part_pkg = $part_pkg_cache{$pkgpart} ||= FS::part_pkg->by_key($pkgpart)
-    or die "pkgpart $pkgpart not found";
+
+  my $part_item = $cust_bill_pkg->part_X;
+  my $location = $cust_bill_pkg->tax_location;
+  my $custnum = $self->{cust_main}->custnum;
+
   push @{ $self->{items} }, $cust_bill_pkg;
 
   my $location = $cust_pkg->tax_location; # cacheable?
@@ -46,9 +47,10 @@ sub add_sale {
     $taxhash_elim{ shift(@elim) } = '';
   } while ( !scalar(@taxes) && scalar(@elim) );
 
-  foreach (@taxes) {
-    my $taxnum = $_->taxnum;
-    $self->{taxes}->{$taxnum} ||= [ $_ ];
+  foreach my $tax (@taxes) {
+    my $taxnum = $tax->taxnum;
+    $self->{taxes}->{$taxnum} ||= [ $tax ];
+    $cust_bill_pkg->set_exemptions( $tax, 'custnum' => $custnum );
     push @{ $self->{taxes}->{$taxnum} }, $cust_bill_pkg;
   }
 }

@@ -202,10 +202,13 @@ sub insert {
     }
   }
 
-  my $tax_location = $self->get('cust_bill_pkg_tax_location');
-  if ( $tax_location ) {
+  foreach my $tax_link_table (qw(cust_bill_pkg_tax_location
+                                 cust_bill_pkg_tax_rate_location))
+  {
+    my $tax_location = $self->get($tax_link_table) || [];
     foreach my $link ( @$tax_location ) {
-      next if $link->billpkgtaxlocationnum; # don't try to double-insert
+      my $pkey = $link->primary_key;
+      next if $link->get($pkey); # don't try to double-insert
       # This cust_bill_pkg can be linked on either side (i.e. it can be the
       # tax or the taxed item).  If the other side is already inserted, 
       # then set billpkgnum to ours, and insert the link.  Otherwise,
@@ -221,8 +224,8 @@ sub insert {
       my $taxable_cust_bill_pkg = $link->get('taxable_cust_bill_pkg');
       if ( $taxable_cust_bill_pkg && $taxable_cust_bill_pkg->billpkgnum ) {
         $link->set('taxable_billpkgnum', $taxable_cust_bill_pkg->billpkgnum);
-        # XXX if we ever do tax-on-tax for these, this will have to change
-        # since pkgnum will be zero
+        # XXX pkgnum is zero for tax on tax; it might be better to use
+        # the underlying package?
         $link->set('pkgnum', $taxable_cust_bill_pkg->pkgnum);
         $link->set('locationnum', $taxable_cust_bill_pkg->tax_locationnum);
         $link->set('taxable_cust_bill_pkg', '');
@@ -246,18 +249,18 @@ sub insert {
   }
 
   # someday you will be as awesome as cust_bill_pkg_tax_location...
-  # but not today
-  my $tax_rate_location = $self->get('cust_bill_pkg_tax_rate_location');
-  if ( $tax_rate_location ) {
-    foreach my $cust_bill_pkg_tax_rate_location ( @$tax_rate_location ) {
-      $cust_bill_pkg_tax_rate_location->billpkgnum($self->billpkgnum);
-      $error = $cust_bill_pkg_tax_rate_location->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error inserting cust_bill_pkg_tax_rate_location: $error";
-      }
-    }
-  }
+  # and today is that day
+  #my $tax_rate_location = $self->get('cust_bill_pkg_tax_rate_location');
+  #if ( $tax_rate_location ) {
+  #  foreach my $cust_bill_pkg_tax_rate_location ( @$tax_rate_location ) {
+  #    $cust_bill_pkg_tax_rate_location->billpkgnum($self->billpkgnum);
+  #    $error = $cust_bill_pkg_tax_rate_location->insert;
+  #    if ( $error ) {
+  #      $dbh->rollback if $oldAutoCommit;
+  #      return "error inserting cust_bill_pkg_tax_rate_location: $error";
+  #    }
+  #  }
+  #}
 
   my $fee_links = $self->get('cust_bill_pkg_fee');
   if ( $fee_links ) {
@@ -556,6 +559,138 @@ sub regularize_details {
   return;
 }
 
+=item set_exemptions TAXOBJECT, OPTIONS
+
+Sets up tax exemptions.  TAXOBJECT is the L<FS::cust_main_county> or 
+L<FS::tax_rate> record for the tax.
+
+This will deal with the following cases:
+
+=over 4
+
+=item Fully exempt customers (cust_main.tax flag) or customer classes 
+(cust_class.tax).
+
+=item Customers exempt from specific named taxes (cust_main_exemption 
+records).
+
+=item Taxes that don't apply to setup or recurring fees 
+(cust_main_county.setuptax and recurtax, tax_rate.setuptax and recurtax).
+
+=item Packages that are marked as tax-exempt (part_pkg.setuptax,
+part_pkg.recurtax).
+
+=item Fees that aren't marked as taxable (part_fee.taxable).
+
+=back
+
+It does NOT deal with monthly tax exemptions, which need more context 
+than this humble little method cares to deal with.
+
+OPTIONS should include "custnum" => the customer number if this tax line
+hasn't been inserted (which it probably hasn't).
+
+Returns a list of exemption objects, which will also be attached to the 
+line item as the 'cust_tax_exempt_pkg' pseudo-field.  Inserting the line
+item will insert these records as well.
+
+=cut
+
+sub set_exemptions {
+  my $self = shift;
+  my $tax = shift;
+  my %opt = @_;
+
+  my $part_pkg  = $self->part_pkg;
+  my $part_fee  = $self->part_fee;
+
+  my $cust_main;
+  my $custnum = $opt{custnum};
+  $custnum ||= $self->cust_bill->custnum if $self->cust_bill;
+
+  $cust_main = FS::cust_main->by_key( $custnum )
+    or die "set_exemptions can't identify customer (pass custnum option)\n";
+
+  my @new_exemptions;
+  my $taxable_charged = $self->setup + $self->recur;
+  return unless $taxable_charged > 0;
+
+  ### Fully exempt customer ###
+  my $exempt_cust;
+  my $conf = FS::Conf->new;
+  if ( $conf->exists('cust_class-tax_exempt') ) {
+    my $cust_class = $cust_main->cust_class;
+    $exempt_cust = $cust_class->tax if $cust_class;
+  } else {
+    $exempt_cust = $cust_main->tax;
+  }
+
+  ### Exemption from named tax ###
+  my $exempt_cust_taxname;
+  if ( !$exempt_cust and $tax->taxname ) {
+    $exempt_cust_taxname = $cust_main->tax_exemption($tax->taxname);
+  }
+
+  if ( $exempt_cust ) {
+
+    push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+        amount => $taxable_charged,
+        exempt_cust => 'Y',
+      });
+    $taxable_charged = 0;
+
+  } elsif ( $exempt_cust_taxname ) {
+
+    push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+        amount => $taxable_charged,
+        exempt_cust_taxname => 'Y',
+      });
+    $taxable_charged = 0;
+
+  }
+
+  my $exempt_setup = ( ($part_fee and not $part_fee->taxable)
+      or ($part_pkg and $part_pkg->setuptax)
+      or $tax->setuptax );
+
+  if ( $exempt_setup
+      and $self->setup > 0
+      and $taxable_charged > 0 ) {
+
+    push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+        amount => $self->setup,
+        exempt_setup => 'Y'
+      });
+    $taxable_charged -= $self->setup;
+
+  }
+
+  my $exempt_recur = ( ($part_fee and not $part_fee->taxable)
+      or ($part_pkg and $part_pkg->recurtax)
+      or $tax->recurtax );
+
+  if ( $exempt_recur
+      and $self->recur > 0
+      and $taxable_charged > 0 ) {
+
+    push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+        amount => $self->recur,
+        exempt_recur => 'Y'
+      });
+    $taxable_charged -= $self->recur;
+
+  }
+
+  foreach (@new_exemptions) {
+    $_->set('taxnum', $tax->taxnum);
+    $_->set('taxtype', ref($tax));
+  }
+
+  push @{ $self->cust_tax_exempt_pkg }, @new_exemptions;
+  return @new_exemptions;
+
+}
+
 =item cust_bill
 
 Returns the invoice (see L<FS::cust_bill>) for this invoice line item.
@@ -810,71 +945,47 @@ recur) of charge.
 sub disintegrate {
   my $self = shift;
   # XXX this goes away with cust_bill_pkg refactor
+  # or at least I wish it would, but it turns out to be harder than
+  # that.
 
-  my $cust_bill_pkg = new FS::cust_bill_pkg { $self->hash };
+  #my $cust_bill_pkg = new FS::cust_bill_pkg { $self->hash }; # wha huh?
   my %cust_bill_pkg = ();
 
-  $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
-  $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
-
-
-  #split setup and recur
-  if ($cust_bill_pkg->setup && $cust_bill_pkg->recur) {
-    my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
-    $cust_bill_pkg->set('details', []);
-    $cust_bill_pkg->recur(0);
-    $cust_bill_pkg->unitrecur(0);
-    $cust_bill_pkg->type('');
-    $cust_bill_pkg_recur->setup(0);
-    $cust_bill_pkg_recur->unitsetup(0);
-    $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
-
+  my $usage_total;
+  foreach my $classnum ($self->usage_classes) {
+    my $amount = $self->usage($classnum);
+    next if $amount == 0; # though if so we shouldn't be here
+    my $usage_item = FS::cust_bill_pkg->new({
+        $self->hash,
+        'setup'     => 0,
+        'recur'     => $amount,
+        'taxclass'  => $classnum,
+        'inherit'   => $self
+    });
+    $cust_bill_pkg{$classnum} = $usage_item;
+    $usage_total += $amount;
   }
 
-  #split usage from recur
-  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage )
-    if exists($cust_bill_pkg{recur});
-  warn "usage is $usage\n" if $DEBUG > 1;
-  if ($usage) {
-    my $cust_bill_pkg_usage =
-        new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
-    $cust_bill_pkg_usage->recur( $usage );
-    $cust_bill_pkg_usage->type( 'U' );
-    my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
-    $cust_bill_pkg{recur}->recur( $recur );
-    $cust_bill_pkg{recur}->type( '' );
-    $cust_bill_pkg{recur}->set('details', []);
-    $cust_bill_pkg{''} = $cust_bill_pkg_usage;
+  foreach (qw(setup recur)) {
+    next if ($self->get($_) == 0);
+    my $item = FS::cust_bill_pkg->new({
+        $self->hash,
+        'setup'     => 0,
+        'recur'     => 0,
+        'taxclass'  => $_,
+        'inherit'   => $self,
+    });
+    $item->set($_, $self->get($_));
+    $cust_bill_pkg{$_} = $item;
   }
 
-  #subdivide usage by usage_class
-  if (exists($cust_bill_pkg{''})) {
-    foreach my $class (grep { $_ } $self->usage_classes) {
-      my $usage = sprintf( "%.2f", $cust_bill_pkg{''}->usage($class) );
-      my $cust_bill_pkg_usage =
-          new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
-      $cust_bill_pkg_usage->recur( $usage );
-      $cust_bill_pkg_usage->set('details', []);
-      my $classless = sprintf( "%.2f", $cust_bill_pkg{''}->recur - $usage );
-      $cust_bill_pkg{''}->recur( $classless );
-      $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
-    }
-    warn "Unexpected classless usage value: ". $cust_bill_pkg{''}->recur
-      if ($cust_bill_pkg{''}->recur && $cust_bill_pkg{''}->recur < 0);
-    delete $cust_bill_pkg{''}
-      unless ($cust_bill_pkg{''}->recur && $cust_bill_pkg{''}->recur > 0);
+  if ($usage_total) {
+    $cust_bill_pkg{recur}->set('recur',
+      sprintf('%.2f', $cust_bill_pkg{recur}->get('recur') - $usage_total)
+    );
   }
 
-#  # sort setup,recur,'', and the rest numeric && return
-#  my @result = map { $cust_bill_pkg{$_} }
-#               sort { my $ad = ($a=~/^\d+$/); my $bd = ($b=~/^\d+$/);
-#                      ( $ad cmp $bd ) || ( $ad ? $a<=>$b : $b cmp $a )
-#                    }
-#               keys %cust_bill_pkg;
-#
-#  return (@result);
-
-   %cust_bill_pkg;
+  %cust_bill_pkg;
 }
 
 =item usage CLASSNUM
@@ -949,7 +1060,7 @@ sub usage_classes {
 sub cust_tax_exempt_pkg {
   my ( $self ) = @_;
 
-  $self->{Hash}->{cust_tax_exempt_pkg} ||= [];
+  my $array = $self->{Hash}->{cust_tax_exempt_pkg} ||= [];
 }
 
 =item cust_bill_pkg_tax_Xlocation

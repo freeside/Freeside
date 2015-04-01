@@ -8,6 +8,7 @@ use List::Util qw( min );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::Misc::DateTime qw( day_end );
+use Tie::RefHash;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
@@ -1389,6 +1390,11 @@ If not supplied, part_item will be inferred from the pkgnum or feepart of the
 cust_bill_pkg, and location from the pkgnum (or, for fees, the invnum and 
 the customer's default service location).
 
+This method will also calculate exemptions for any taxes that apply to the
+line item (using the C<set_exemptions> method of L<FS::cust_bill_pkg>) and
+attach them.  This is the only place C<set_exemptions> is called in normal
+invoice processing.
+
 =cut
 
 sub _handle_taxes {
@@ -1418,85 +1424,73 @@ sub _handle_taxes {
     my %taxes = ();
 
     my @classes;
-    push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
+    my $usage = $cust_bill_pkg->usage || 0;
+    push @classes, $cust_bill_pkg->usage_classes if $usage;
     push @classes, 'setup' if $cust_bill_pkg->setup and !$options{cancel};
-    push @classes, 'recur' if $cust_bill_pkg->recur and !$options{cancel};
+    push @classes, 'recur' if ($cust_bill_pkg->recur - $usage)
+        and !$options{cancel};
+    # that's better--probably don't even need $options{cancel} now
+    # but leave it for now, just to be safe
+    #
+    # About $options{cancel}: This protects against charging per-line or
+    # per-customer or other flat-rate surcharges on a package that's being
+    # billed on cancellation (which is an out-of-cycle bill and should only
+    # have usage charges).  See RT#29443.
 
-    my $exempt = $conf->exists('cust_class-tax_exempt')
-                   ? ( $self->cust_class ? $self->cust_class->tax : '' )
-                   : $self->tax;
+    # customer exemption is now handled in the 'taxline' method
+    #my $exempt = $conf->exists('cust_class-tax_exempt')
+    #               ? ( $self->cust_class ? $self->cust_class->tax : '' )
+    #               : $self->tax;
     # standardize this just to be sure
-    $exempt = ($exempt eq 'Y') ? 'Y' : '';
-  
-    if ( !$exempt ) {
+    #$exempt = ($exempt eq 'Y') ? 'Y' : '';
+    #
+    #if ( !$exempt ) {
 
-      foreach my $class (@classes) {
-        my $err_or_ref = $self->_gather_taxes($part_item, $class, $location);
-        return $err_or_ref unless ref($err_or_ref);
-        $taxes{$class} = $err_or_ref;
-      }
-
-      unless (exists $taxes{''}) {
-        my $err_or_ref = $self->_gather_taxes($part_item, '', $location);
-        return $err_or_ref unless ref($err_or_ref);
-        $taxes{''} = $err_or_ref;
-      }
-
+    unless (exists $taxes{''}) {
+      # unsure what purpose this serves, but last time I deleted something
+      # from here just because I didn't see the point, it actually did
+      # something important.
+      my $err_or_ref = $self->_gather_taxes($part_item, '', $location);
+      return $err_or_ref unless ref($err_or_ref);
+      $taxes{''} = $err_or_ref;
     }
 
-    my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate; # grrr
-    foreach my $key (keys %tax_cust_bill_pkg) {
-      # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
-      # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
-      # the line item.
-      # $taxes{$key} is an arrayref of cust_main_county or tax_rate objects that
-      # apply to $key-class charges.
-      my @taxes = @{ $taxes{$key} || [] };
-      my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
+    # NO DISINTEGRATIONS.
+    # my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
+    #
+    # do not call taxline() with any argument except the entire set of
+    # cust_bill_pkgs on an invoice that are eligible for the tax.
 
-      my %localtaxlisthash = ();
+    # only calculate exemptions once for each tax rate, even if it's used
+    # for multiple classes
+    my %tax_seen = ();
+ 
+    foreach my $class (@classes) {
+      my $err_or_ref = $self->_gather_taxes($part_item, $class, $location);
+      return $err_or_ref unless ref($err_or_ref);
+      my @taxes = @$err_or_ref;
+
+      next if !@taxes;
+
       foreach my $tax ( @taxes ) {
 
-        # this is the tax identifier, not the taxname
-        my $taxname = ref( $tax ). ' '. $tax->taxnum;
-        # $taxlisthash: keys are "setup", "recur", and usage classes.
+        my $tax_id = ref( $tax ). ' '. $tax->taxnum;
+        # $taxlisthash: keys are tax identifiers ('FS::tax_rate 123456').
         # Values are arrayrefs, first the tax object (cust_main_county
-        # or tax_rate) and then any cust_bill_pkg objects that the 
-        # tax applies to.
-        $taxlisthash->{ $taxname } ||= [ $tax ];
-        push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
+        # or tax_rate), then the cust_bill_pkg object that the 
+        # tax applies to, then the tax class (setup, recur, usage classnum).
+        $taxlisthash->{ $tax_id } ||= [ $tax ];
+        push @{ $taxlisthash->{ $tax_id  } }, $cust_bill_pkg, $class;
 
-        $localtaxlisthash{ $taxname } ||= [ $tax ];
-        push @{ $localtaxlisthash{ $taxname  } }, $tax_cust_bill_pkg;
-
-      }
-
-      warn "finding taxed taxes...\n" if $DEBUG > 2;
-      foreach my $tax ( keys %localtaxlisthash ) {
-        my $tax_object = shift @{ $localtaxlisthash{$tax} };
-        warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
-          if $DEBUG > 2;
-        next unless $tax_object->can('tax_on_tax');
-
-        foreach my $tot ( $tax_object->tax_on_tax( $location ) ) {
-          my $totname = ref( $tot ). ' '. $tot->taxnum;
-
-          warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
-            if $DEBUG > 2;
-          next unless exists( $localtaxlisthash{ $totname } ); # only increase
-                                                               # existing taxes
-          warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
-          # calculate the tax amount that the tax_on_tax will apply to
-          my $hashref_or_error = 
-            $tax_object->taxline( $localtaxlisthash{$tax} );
-          return $hashref_or_error
-            unless ref($hashref_or_error);
-          
-          # and append it to the list of taxable items
-          $taxlisthash->{ $totname } ||= [ $tot ];
-          push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
-
+        # determine any exemptions that apply
+        if (!$tax_seen{$tax_id}) {
+          $cust_bill_pkg->set_exemptions( $tax, custnum => $self->custnum );
+          $tax_seen{$tax_id} = 1;
         }
+
+        # tax on tax will be done later, when we actually create the tax
+        # line items
+
       }
     }
 
@@ -1536,6 +1530,7 @@ sub _handle_taxes {
     foreach (@taxes) {
       my $tax_id = 'cust_main_county '.$_->taxnum;
       $taxlisthash->{$tax_id} ||= [ $_ ];
+      $cust_bill_pkg->set_exemptions($_, custnum => $self->custnum);
       push @{ $taxlisthash->{$tax_id} }, $cust_bill_pkg;
     }
 

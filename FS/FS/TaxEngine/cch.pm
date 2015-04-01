@@ -8,7 +8,7 @@ use FS::Conf;
 
 =head1 SUMMARY
 
-FS::TaxEngine::cch CCH published tax tables.  Uses multiple tables:
+FS::TaxEngine::cch - CCH published tax tables.  Uses multiple tables:
 - tax_rate: definition of specific taxes, based on tax class and geocode.
 - cust_tax_location: definition of geocodes, using zip+4 codes.
 - tax_class: definition of tax classes.
@@ -27,91 +27,74 @@ $DEBUG = 0;
 
 my %part_pkg_cache;
 
-sub add_sale {
-  my ($self, $cust_bill_pkg, %options) = @_;
+=item add_sale LINEITEM
 
-  my $part_item = $options{part_item} || $cust_bill_pkg->part_X;
-  my $location = $options{location} || $cust_bill_pkg->tax_location;
+Takes LINEITEM (a L<FS::cust_bill_pkg> object) and adds it to three internal
+data structures:
+
+- C<items>, an arrayref of all items on this invoice.
+- C<taxes>, a hashref of taxnum => arrayref containing the items that are
+  taxable under that tax definition.
+- C<taxclass>, a hashref of taxnum => arrayref containing the tax class
+  names parallel to the C<taxes> array for the same tax.
+
+The item will appear on C<taxes> once for each tax class (setup, recur,
+or a usage class number) that's taxable under that class and appears on
+the item.
+
+C<add_sale> will also determine any exemptions that apply to the item
+and attach them to LINEITEM.
+
+=cut
+
+sub add_sale {
+  my ($self, $cust_bill_pkg) = @_;
+
+  my $part_item = $cust_bill_pkg->part_X;
+  my $location = $cust_bill_pkg->tax_location;
+  my $custnum = $self->{cust_main}->custnum;
 
   push @{ $self->{items} }, $cust_bill_pkg;
 
   my $conf = FS::Conf->new;
 
   my @classes;
+  my $usage = $cust_bill_pkg->usage || 0;
   push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
-  # debatable
-  push @classes, 'setup' if ($cust_bill_pkg->setup && !$self->{cancel});
-  push @classes, 'recur' if ($cust_bill_pkg->recur && !$self->{cancel});
-
-  my %taxes_for_class;
-
-  my $exempt = $conf->exists('cust_class-tax_exempt')
-                  ? ( $self->cust_class ? $self->cust_class->tax : '' )
-                  : $self->{cust_main}->tax;
-  # standardize this just to be sure
-  $exempt = ($exempt eq 'Y') ? 'Y' : '';
-
-  if ( !$exempt ) {
-
-    foreach my $class (@classes) {
-      my $err_or_ref = $self->_gather_taxes( $part_item, $class, $location );
-      return $err_or_ref unless ref($err_or_ref);
-      $taxes_for_class{$class} = $err_or_ref;
-    }
-    unless (exists $taxes_for_class{''}) {
-      my $err_or_ref = $self->_gather_taxes( $part_item, '', $location );
-      return $err_or_ref unless ref($err_or_ref);
-      $taxes_for_class{''} = $err_or_ref;
-    }
-
+  if (!$self->{cancel}) {
+    push @classes, 'setup' if $cust_bill_pkg->setup > 0;
+    push @classes, 'recur' if ($cust_bill_pkg->recur - $usage) > 0;
   }
 
-  my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate; # grrr
-  foreach my $key (keys %tax_cust_bill_pkg) {
-    # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
-    # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
-    # the line item.
-    # $taxes_for_class{$key} is an arrayref of tax_rate objects that
-    # apply to $key-class charges.
-    my @taxes = @{ $taxes_for_class{$key} || [] };
-    my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
+  # About $self->{cancel}: This protects against charging per-line or
+  # per-customer or other flat-rate surcharges on a package that's being
+  # billed on cancellation (which is an out-of-cycle bill and should only
+  # have usage charges).  See RT#29443.
 
-    my %localtaxlisthash = ();
-    foreach my $tax ( @taxes ) {
+  # only calculate exemptions once for each tax rate, even if it's used for
+  # multiple classes.
+  my %tax_seen;
 
+  foreach my $class (@classes) {
+    my $err_or_ref = $self->_gather_taxes($part_item, $class, $location);
+    return $err_or_ref unless ref($err_or_ref);
+    my @taxes = @$err_or_ref;
+
+    next if !@taxes;
+
+    foreach my $tax (@taxes) {
       my $taxnum = $tax->taxnum;
-      $self->{taxes}{$taxnum} ||= [ $tax ];
-      push @{ $self->{taxes}{$taxnum} }, $tax_cust_bill_pkg;
+      $self->{taxes}{$taxnum} ||= [];
+      $self->{taxclass}{$taxnum} ||= [];
+      push @{ $self->{taxes}{$taxnum} }, $cust_bill_pkg;
+      push @{ $self->{taxclass}{$taxnum} }, $class;
 
-      $localtaxlisthash{ $taxnum } ||= [ $tax ];
-      push @{ $localtaxlisthash{$taxnum} }, $tax_cust_bill_pkg;
-
-    }
-
-    warn "finding taxed taxes...\n" if $DEBUG > 2;
-    foreach my $taxnum ( keys %localtaxlisthash ) {
-      my $tax_object = shift @{ $localtaxlisthash{$taxnum} };
-
-      foreach my $tot ( $tax_object->tax_on_tax( $location ) ) {
-        my $totnum = $tot->taxnum;
-
-        # I'm not sure why, but for some reason we only add ToT if that 
-        # tax_rate already applies to a non-tax item on the same invoice.
-        next unless exists( $localtaxlisthash{ $totnum } );
-        warn "adding #$totnum to taxed taxes\n" if $DEBUG > 2;
-        # calculate the tax amount that the tax_on_tax will apply to
-        my $taxline =
-          $self->taxline( 'tax' => $tax_object,
-                          'sales' => $localtaxlisthash{$taxnum}
-                        );
-        return $taxline unless ref $taxline;
-        # and append it to the list of taxable items
-        $self->{taxes}->{$totnum} ||= [ $tot ];
-        push @{ $self->{taxes}->{$totnum} }, $taxline->setup;
-
-      } # foreach $tot (tax-on-tax)
-    } # foreach $tax
-  } # foreach $key (i.e. usage class)
+      if ( !$tax_seen{$taxnum} ) {
+        $cust_bill_pkg->set_exemptions( $tax, 'custnum' => $custnum );
+        $tax_seen{$taxnum}++;
+      }
+    } #foreach $tax
+  } #foreach $class
 }
 
 sub _gather_taxes { # interface for this sucks
@@ -129,44 +112,95 @@ sub _gather_taxes { # interface for this sucks
    if $DEBUG;
 
   \@taxes;
-
 }
 
-sub taxline {
-  # FS::tax_rate::taxline() ridiculously returns a description and amount 
-  # instead of a real line item.  Fix that here.
-  #
-  # XXX eventually move the code from tax_rate to here
-  # but that's not necessary yet
-  my ($self, %opt) = @_;
-  my $tax_object = $opt{tax};
-  my $taxables = $opt{sales};
-  my $hashref = $tax_object->taxline_cch($taxables);
-  return $hashref unless ref $hashref; # it's an error message
+# differs from stock make_taxlines because we need another pass to do
+# tax on tax
+sub make_taxlines {
+  my $self = shift;
+  my $cust_bill = shift;
 
-  my $tax_amount = sprintf('%.2f', $hashref->{amount});
-  my $tax_item = FS::cust_bill_pkg->new({
-      'itemdesc'  => $hashref->{name},
-      'pkgnum'    => 0,
-      'recur'     => 0,
-      'sdate'     => '',
-      'edate'     => '',
-      'setup'     => $tax_amount,
-  });
-  my $tax_link = FS::cust_bill_pkg_tax_rate_location->new({
-      'taxnum'              => $tax_object->taxnum,
-      'taxtype'             => ref($tax_object), #redundant
-      'amount'              => $tax_amount,
-      'locationtaxid'       => $tax_object->location,
-      'taxratelocationnum'  =>
-          $tax_object->tax_rate_location->taxratelocationnum,
-      'tax_cust_bill_pkg'   => $tax_item,
-      # XXX still need to get taxable_cust_bill_pkg in here
-      # but that requires messing around in the taxline code
-  });
-  $tax_item->set('cust_bill_pkg_tax_rate_location', [ $tax_link ]);
+  my @raw_taxlines;
+  my %taxable_location; # taxable billpkgnum => cust_location
+  my %item_has_tax; # taxable billpkgnum => taxnum
+  foreach my $taxnum ( keys %{ $self->{taxes} } ) {
+    my $tax_rate = FS::tax_rate->by_key($taxnum);
+    my $taxables = $self->{taxes}{$taxnum};
+    my $charge_classes = $self->{taxclass}{$taxnum};
+    foreach (@$taxables) {
+      $taxable_location{ $_->billpkgnum } ||= $_->tax_location;
+    }
 
-  return $tax_item;
+    my @taxlines = $tax_rate->taxline_cch( $taxables, $charge_classes );
+
+    next if !@taxlines;
+    if (!ref $taxlines[0]) {
+      # it's an error string
+      warn "error evaluating tax#$taxnum\n";
+      return $taxlines[0];
+    }
+
+    my $billpkgnum = -1; # the current one
+    my $fragments; # $item_has_tax{$billpkgnum}{taxnum}
+
+    foreach my $taxline (@taxlines) {
+      next if $taxline->setup == 0;
+
+      my $link = $taxline->get('cust_bill_pkg_tax_rate_location')->[0];
+      # store this tax fragment, indexed by taxable item, then by taxnum
+      if ( $billpkgnum != $link->taxable_billpkgnum ) {
+        $billpkgnum = $link->taxable_billpkgnum;
+        $item_has_tax{$billpkgnum} ||= {};
+        $fragments = $item_has_tax{$billpkgnum}{$taxnum} ||= [];
+      }
+
+      $taxline->set('invnum', $cust_bill->invnum);
+      push @$fragments, $taxline; # so we can ToT it
+      push @raw_taxlines, $taxline; # so we actually bill it
+    }
+  } # foreach $taxnum
+
+  # all first-tier taxes are calculated. now for tax on tax
+  # (has to be done on a per-taxable-item basis)
+  foreach my $billpkgnum (keys %item_has_tax) {
+    # taxes that apply to this item
+    my $this_has_tax = $item_has_tax{$billpkgnum};
+    my $location = $taxable_location{$billpkgnum};
+    foreach my $taxnum (keys %$this_has_tax) {
+      my $tax_rate = FS::tax_rate->by_key($taxnum);
+      # find all taxes that apply to it in this location
+      my @tot = $tax_rate->tax_on_tax( $location );
+      next if !@tot;
+
+      warn "found possible taxed taxnum $taxnum\n"
+        if $DEBUG > 2;
+      # Calculate ToT separately for each taxable item, and only if _that 
+      # item_ is already taxed under the ToT.  This is counterintuitive.
+      # See RT#5243.
+      foreach my $tot (@tot) { 
+        my $totnum = $tot->taxnum;
+        warn "checking taxnum ".$tot->taxnum. 
+             " which we call ". $tot->taxname ."\n"
+          if $DEBUG > 2;
+        if ( exists $this_has_tax->{ $totnum } ) {
+          warn "calculating tax on tax: taxnum ".$tot->taxnum." on $taxnum\n"
+            if $DEBUG; 
+          my @taxlines = $tot->taxline_cch(
+            $this_has_tax->{ $taxnum }, # the first-stage tax (in an arrayref)
+          );
+          next if (!@taxlines); # it didn't apply after all
+          if (!ref($taxlines[0])) {
+            warn "error evaluating TOT ($totnum on $taxnum)\n";
+            return $taxlines[0];
+          }
+          # add these to the taxline queue
+          push @raw_taxlines, @taxlines;
+        } # if $this_has_tax->{$totnum}
+      } # foreach my $tot (tax-on-tax rate definition)
+    } # foreach $taxnum (first-tier rate definition)
+  } # foreach $taxable_item
+
+  return @raw_taxlines;
 }
 
 sub cust_tax_locations {
