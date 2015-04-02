@@ -268,6 +268,13 @@ sub batch_processor {
   eval "use Business::BatchPayment;";
   die "couldn't load Business::BatchPayment: $@" if $@;
 
+  #false laziness with processor
+  foreach (qw(username password)) {
+    if (length($self->get("gateway_$_"))) {
+      $opt{$_} = $self->get("gateway_$_");
+    }
+  }
+
   my $module = $self->gateway_module;
   my $processor = eval { 
     Business::BatchPayment->create($module, $self->options, %opt)
