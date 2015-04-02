@@ -22,12 +22,10 @@ sub add_sale {
 
   push @{ $self->{items} }, $cust_bill_pkg;
 
-  my $location = $cust_pkg->tax_location; # cacheable?
-
   my @loc_keys = qw( district city county state country );
   my %taxhash = map { $_ => $location->get($_) } @loc_keys;
 
-  $taxhash{'taxclass'} = $part_pkg->taxclass;
+  $taxhash{'taxclass'} = $part_item->taxclass;
 
   my @taxes = (); # entries are cust_main_county objects
   my %taxhash_elim = %taxhash;
