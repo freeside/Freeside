@@ -1236,6 +1236,7 @@ sub _make_lines {
                               )
                          )
                   )
+               || $cust_pkg->is_status_delay_cancel
            )
        and
             ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= $cmp_time )
