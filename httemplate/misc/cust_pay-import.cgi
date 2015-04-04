@@ -87,5 +87,5 @@ Field information:
 <%init>
 my $paybatch = time2str('webbatch-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 my %paybys;
-tie %paybys, 'Tie::IxHash', FS::payby->payment_payby2longname();
+tie %paybys, 'Tie::IxHash', FS::payby->payment_payby2payname();
 </%init>
