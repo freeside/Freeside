@@ -246,6 +246,17 @@ sub payment_payby2longname {
   map { $_ => $hash{$_}->{longname} } $self->payment_payby;
 }
 
+=item payment_payby2payname
+
+Returns hash, keys are L</payment_payby> types, values are payby payname.
+
+=cut
+
+sub payment_payby2payname {
+  my $self = shift;
+  map { $_ => $self->payname($_) } $self->payment_payby;
+}
+
 =back
 
 =head1 BUGS
