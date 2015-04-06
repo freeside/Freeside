@@ -16,10 +16,10 @@ use FS::cdr_type;
     'startdate',    #Start, already a unix timestamp
     skip(2),        #Start date, Start time
     'enddate',      #End
-    skip(6),        #End date, End time
+    skip(4),        #End date, End time
                     #Calling customer, Calling type
     'src',          #Calling number     
-    skip(1),        #Called type
+    'dcontext',     #Called type
     'dst',          #Called number
     skip(26),       #Destination customer, Destination type
                     #Destination number
@@ -38,8 +38,8 @@ use FS::cdr_type;
     'duration',     #Total seconds
     skip(1),        #Ring seconds
     'billsec',      #Billable seconds
-    'upstream_price', #Cost
-    skip(1),        #Cost including taxes
+    skip(2),        #Cost
+    	            #Cost including taxes
     'accountcode',  #Billing customer
     skip(3),        #Billing customer name, Billing type, Billing reference
   ],
