@@ -402,7 +402,8 @@ if ( $cgi->param('magic') ) {
     if ( $cgi->param('payinfo') ) {
       $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/
         or die "illegal payinfo ". $cgi->param('payinfo');
-      push @search, "$table.payinfo = '$1'";
+      my $regexp = regexp_sql();
+      push @search, "$table.payinfo $regexp '^0*$1\$'";
     }
 
     if ( $cgi->param('ccpay') =~ /^([\w-:]+)$/ ) {
@@ -538,6 +539,7 @@ if ( $cgi->param('magic') ) {
 } else {
 
   #hmm... is this still used?
+  warn "undefined search magic";
 
   $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";
   my $payinfo = $1;
