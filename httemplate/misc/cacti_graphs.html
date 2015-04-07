@@ -21,33 +21,43 @@
 process();
 </SCRIPT>
 
+% } elsif ($error) {
+
+<P><% emt($error) %></P>
+<FORM NAME="CactiGraphForm" ID="CactiGraphForm" style="margin-top: 0">
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+<INPUT TYPE="hidden" NAME="load" VALUE="1">
+<INPUT TYPE="submit" VALUE="Reload Graphs">
+</FORM>
+
 % } else {
-%   if ($error) {
 
-<P><% $error %></P>
+<% $content %>
 
-%   } else {
-
-<% slurp($htmlfile) %>
-
-%   }
 % }
 
 <%init>
 use File::Slurp qw( slurp );
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
+
 my $svcnum    = $cgi->param('svcnum') or die 'Illegal svcnum';
 my $load      = $cgi->param('load');
-my $graphnum  = $cgi->param('graphnum');
+my $graphnum  = $cgi->param('graphnum') || '';
 
-my $htmlfile = $FS::UID::cache_dir 
-             . '/cacti-graphs/'
-             . 'svc_'
-             . $svcnum;
-$htmlfile .= '_graph_' . $graphnum
-  if $graphnum;
-$htmlfile .= '.html';
+my ($content,$error);
+unless ($load) {
+  my $page = qsearchs({
+    'table'    => 'cacti_page',
+    'hashref'  => { 'svcnum' => $svcnum, 'graphnum' => $graphnum },
+  });
+  if ($page) {
+    $content = $page->content;
+  } else {
+    $error = 'No graphs found in import cache.  Click below to retry import.';
+  }
+}
 
-my $error = (-e $htmlfile) ? '' : 'File not found';
 </%init>
 
