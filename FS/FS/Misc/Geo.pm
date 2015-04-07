@@ -17,7 +17,7 @@ FS::UID->install_callback( sub {
   $conf = new FS::Conf;
 } );
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 @EXPORT_OK = qw( get_district );
 
@@ -334,8 +334,12 @@ sub standardize_uscensus {
         censustract => $result->censustract,
       };
     } else {
-      die "can't parse address '".$result->address."'";
+      die "Geocoding returned '".$result->address."', which does not seem to be a valid address.\n";
     }
+  } elsif ( $result->match_level eq 'Tie' ) {
+    die "Geocoding was not able to identify a unique matching address.\n";
+  } elsif ( $result->match_level ) {
+    die "Geocoding did not find a matching address.\n";
   } else {
     warn Dumper($result) if $DEBUG;
     die $result->error_message;
