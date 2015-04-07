@@ -68,6 +68,13 @@ tie %hash, 'Tie::IxHash',
     cust_pay  => 'CHEK', #this is a customer type only, payments are CHEK...
     realtime  => 1,
   },
+  'BILL' => {
+    tinyname  => 'billing',
+    shortname => 'Billing',
+    payname   => 'Check',
+    longname  => 'Billing',
+    cust_main => '', #no longer a customer type
+  },
   'PPAL' => {
     tinyname  => 'PayPal',
     shortname => 'PayPal',
@@ -79,43 +86,43 @@ tie %hash, 'Tie::IxHash',
     tinyname  => 'prepaid card',
     shortname => 'Prepaid card',
     longname  => 'Prepaid card',
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'CASH' => {
     tinyname  => 'cash',
     shortname => 'Cash', # initial payment, then billing
     longname  => 'Cash',
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'WEST' => {
     tinyname  => 'western union',
     shortname => 'Western Union', # initial payment, then billing
     longname  => 'Western Union',
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'MCRD' => { #not the same as DCRD
     tinyname  => 'card',
     shortname => 'Manual credit card', # initial payment, then billing
     longname  => 'Manual credit card', 
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'MCHK' => { #not the same as DCHK
     tinyname  => 'card',
     shortname => 'Manual electronic check', # initial payment, then billing
     longname  => 'Manual electronic check', 
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'APPL' => {
     tinyname  => 'apple store',
     shortname => 'Apple Store',
     longname  => 'Apple Store',
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'ANRD' => {
     tinyname  => 'android market',
     shortname => 'Android Market',
     longname  => 'Android Market',
-    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+    cust_main => '', #this is a payment type only
   },
   'EDI' => {
     tinyname  => 'EDI',
