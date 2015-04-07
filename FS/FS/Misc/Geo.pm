@@ -17,7 +17,7 @@ FS::UID->install_callback( sub {
   $conf = new FS::Conf;
 } );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 @EXPORT_OK = qw( get_district );
 
