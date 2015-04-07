@@ -203,6 +203,7 @@ sub dbdef_dist {
            && ! /^legacy_cust_history$/
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
+           && ! /^cacti_graph$/
          }
       $dbdef->tables
   ) {
@@ -7007,9 +7008,29 @@ sub tables_hashref {
                         ],
     },
 
-
-
-
+    'cacti_page' => {
+      'columns' => [
+        'cacti_pagenum',  'serial',   '',     '', '', '',
+        'exportnum',      'int',      'NULL', '', '', '',
+        'svcnum',         'int',      'NULL', '', '', '', 
+        'graphnum',       'int',      'NULL', '', '', '', 
+        'imported',       @date_type,             '', '',
+        'content',        'text',     'NULL', '', '', '',
+      ],
+      'primary_key' => 'cacti_pagenum',
+      'unique'  => [ ],
+      'index'   => [ ['svcnum'], ['imported'] ],
+      'foreign_keys' => [
+                          { columns    => [ 'svcnum' ],
+                            table      => 'cust_svc',
+                            references => [ 'svcnum' ],
+                          },
+                          { columns    => [ 'exportnum' ],
+                            table      => 'part_export',
+                            references => [ 'exportnum' ],
+                          },
+                        ],
+    },
 
     # name type nullability length default local
 

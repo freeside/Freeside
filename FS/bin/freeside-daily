@@ -83,6 +83,11 @@ export_batch_submit(%opt);
 use FS::Cron::agent_email qw(agent_email);
 agent_email(%opt);
 
+#does nothing unless there are cacti imports
+#should run before backup, no need to backup cacti imports
+use FS::Cron::cacti_cleanup qw(cacti_cleanup);
+cacti_cleanup();
+
 my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
 unlink <${deldir}.invoice*>;
 unlink <${deldir}.letter*>;
