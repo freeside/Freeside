@@ -3,7 +3,7 @@ package FS::cdr::ispphone;
 use strict;
 use vars qw( @ISA %info $tmp_mon $tmp_mday $tmp_year );
 use Time::Local;
-use FS::cdr;
+use FS::cdr qw ( _cdr_date_parser_maker );
 use Date::Parse;
 
 @ISA = qw(FS::cdr);
@@ -11,29 +11,15 @@ use Date::Parse;
 %info = (
   'name'          => 'ISPPhone',
   'weight'        => 123,
-  'header'        => 2,
+  'header'        => 1,
   'import_fields' => [
 
+                 'accountcode',  # Accountcode
 	                 'src',	 # Form
 		         'dst',  # To
-     'upstream_dst_regionname',  # Country
-                    'dcontext',  # Description
-              	 
-			sub { my ($cdr, $calldate) = @_;
-                        	$cdr->set('calldate', $calldate);
-
-			my $tmp_date;
-
- 	                      if ($calldate =~ /^(\d{2})\/(\d{2})\/(\d{2})\s*(\d{1,2}):(\d{2})$/){
-
-                	        $tmp_date = "$2/$1/$3 $4:$5:$6";
-        	                        
-			      } else { $tmp_date = $calldate; }
-	
-				$tmp_date = str2time($tmp_date);
-                        	$cdr->set('startdate', $tmp_date);
-
-                 	},       #DateTime
+		       skip(1),  # Country
+     'upstream_dst_regionname',  # Description
+_cdr_date_parser_maker('startdate'),  #DateTime
 
 	                sub { my ($cdr, $duration) = @_;
 				my ($min,$sec) = split(/:/, $duration);
@@ -46,6 +32,8 @@ use Date::Parse;
 ],
 
 );
+
+sub skip { map {''} (1..$_[0]) }
 
 1;
 
