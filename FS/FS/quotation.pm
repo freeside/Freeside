@@ -5,7 +5,7 @@ use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record
 use strict;
 use Tie::RefHash;
 use FS::CurrentUser;
-use FS::UID qw( dbh );
+use FS::UID qw( dbh myconnect );
 use FS::Maketext qw( emt );
 use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
@@ -14,6 +14,9 @@ use FS::cust_pkg;
 use FS::quotation_pkg;
 use FS::quotation_pkg_tax;
 use FS::type_pkgs;
+
+our $DEBUG = 1;
+use Data::Dumper;
 
 =head1 NAME
 
@@ -383,7 +386,7 @@ sub convert_cust_main {
 
 }
 
-=item order
+=item order [ HASHREF ]
 
 This method is for use with quotations which are already associated with a customer.
 
@@ -391,14 +394,21 @@ Orders this quotation's packages as real packages for the customer.
 
 If there is an error, returns an error message, otherwise returns false.
 
+If HASHREF is passed, it will be filled with a hash mapping the 
+C<quotationpkgnum> of each quoted package to the C<pkgnum> of the package
+as ordered.
+
 =cut
 
 sub order {
   my $self = shift;
+  my $pkgnum_map = shift || {};
 
   tie my %all_cust_pkg, 'Tie::RefHash';
   foreach my $quotation_pkg ($self->quotation_pkg) {
     my $cust_pkg = FS::cust_pkg->new;
+    $pkgnum_map->{ $quotation_pkg->quotationpkgnum } = $cust_pkg;
+
     foreach (qw(pkgpart locationnum start_date contract_end quantity waive_setup)) {
       $cust_pkg->set( $_, $quotation_pkg->get($_) );
     }
@@ -412,8 +422,15 @@ sub order {
     $all_cust_pkg{$cust_pkg} = []; # no services
   }
 
-  $self->cust_main->order_pkgs( \%all_cust_pkg );
+  my $error = $self->cust_main->order_pkgs( \%all_cust_pkg );
+  
+  foreach my $quotationpkgnum (keys %$pkgnum_map) {
+    # convert the objects to just pkgnums
+    my $cust_pkg = $pkgnum_map->{$quotationpkgnum};
+    $pkgnum_map->{$quotationpkgnum} = $cust_pkg->pkgnum;
+  }
 
+  $error;
 }
 
 =item charge
@@ -583,126 +600,195 @@ sub estimate {
   my $self = shift;
   my $conf = FS::Conf->new;
 
-  my $dbh = dbh;
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
+  my %pkgnum_of; # quotationpkgnum => temporary pkgnum
 
-  # bring individual items up to date (set setup/recur and discounts)
-  my @quotation_pkg = $self->quotation_pkg;
-  foreach my $pkg (@quotation_pkg) {
-    my $error = $pkg->estimate;
-    if ($error) {
-      $dbh->rollback if $oldAutoCommit;
-      die "error calculating estimate for pkgpart " . $pkg->pkgpart.": $error\n";
+  my $me = "[quotation #".$self->quotationnum."]"; # for debug messages
+
+  my @return_bill = ([]);
+  my $error;
+
+  ###### BEGIN TRANSACTION ######
+  local $@;
+  eval {
+    my $temp_dbh = myconnect();
+    local $FS::UID::dbh = $temp_dbh;
+    local $FS::UID::AutoCommit = 0;
+
+    my $fake_self = FS::quotation->new({ $self->hash });
+
+    # if this is a prospect, make them into a customer for now
+    # XXX prospects currently can't have service locations
+    my $cust_or_prospect = $self->cust_or_prospect;
+    my $cust_main;
+    if ( $cust_or_prospect->isa('FS::prospect_main') ) {
+      $cust_main = $cust_or_prospect->convert_cust_main;
+      die "$cust_main (simulating customer signup)\n" unless ref $cust_main;
+      $fake_self->set('prospectnum', '');
+      $fake_self->set('custnum', $cust_main->custnum);
+    } else {
+      $cust_main = $cust_or_prospect;
     }
 
-    # delete old tax records
-    foreach my $quotation_pkg_tax ($pkg->quotation_pkg_tax) {
-      $error = $quotation_pkg_tax->delete;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        die "error flushing tax records for pkgpart ". $pkg->pkgpart.": $error\n";
-      }
+    # order packages
+    $error = $fake_self->order(\%pkgnum_of);
+    die "$error (simulating package order)\n" if $error;
+
+    my @new_pkgs = map { FS::cust_pkg->by_key($_) } values(%pkgnum_of);
+
+    # simulate the first bill
+    my %bill_opt = (
+      'pkg_list'        => \@new_pkgs,
+      'time'            => time, # an option to adjust this?
+      'return_bill'     => $return_bill[0],
+      'no_usage_reset'  => 1,
+    );
+    $error = $cust_main->bill(%bill_opt);
+    die "$error (simulating initial billing)\n" if $error;
+
+    # pick dates for future bills
+    my %next_bill_pkgs;
+    foreach (@new_pkgs) {
+      my $bill = $_->get('bill');
+      next if !$bill;
+      push @{ $next_bill_pkgs{$bill} ||= [] }, $_;
+    }
+
+    my $i = 1;
+    foreach my $next_bill (keys %next_bill_pkgs) {
+      $bill_opt{'time'} = $next_bill;
+      $bill_opt{'return_bill'} = $return_bill[$i] = [];
+      $bill_opt{'pkg_list'} = $next_bill_pkgs{$next_bill};
+      $error = $cust_main->bill(%bill_opt);
+      die "$error (simulating recurring billing cycle $i)\n" if $error;
+      $i++;
+    }
+
+    $temp_dbh->rollback;
+  };
+  return $@ if $@;
+  ###### END TRANSACTION ######
+  my %quotationpkgnum_of = reverse %pkgnum_of;
+
+  if ($DEBUG) {
+    warn "pkgnums:\n".Dumper(\%pkgnum_of);
+    warn Dumper(\@return_bill);
+  }
+
+  # careful: none of the pkgnums in here are correct outside the sandbox.
+  my %quotation_pkg; # quotationpkgnum => quotation_pkg
+  foreach my $qp ($self->quotation_pkg) {
+    $quotation_pkg{$qp->quotationpkgnum} = $qp;
+    $qp->set($_, 0) foreach qw(unitsetup unitrecur);
+    $qp->set('freq', '');
+    # flush old tax records
+    foreach ($qp->quotation_pkg_tax, $qp->quotation_pkg_discount) {
+      $error = $_->delete;
+      return "$error (flushing tax records for pkgpart ".$qp->part_pkg->pkgpart.")" 
+        if $error;
     }
   }
 
-  # annoyingly duplicates handle_taxes--fix this in 4.x 
-  if ( $conf->exists('enable_taxproducts') ) {
-    warn "can't calculate external taxes for quotations yet\n";
-    # then we're done
-    return;
+  my %quotation_pkg_tax; # quotationpkgnum => taxnum => quotation_pkg_tax obj
+
+  for (my $i = 0; $i < scalar(@return_bill); $i++) {
+    my $this_bill = $return_bill[$i]->[0];
+    if (!$this_bill) {
+      warn "$me billing cycle $i produced no invoice\n";
+      next;
+    }
+
+    my @nonpkg_lines;
+    my %cust_bill_pkg;
+    foreach my $cust_bill_pkg (@{ $this_bill->get('cust_bill_pkg') }) {
+      my $pkgnum = $cust_bill_pkg->pkgnum;
+      $cust_bill_pkg{ $cust_bill_pkg->billpkgnum } = $cust_bill_pkg;
+      if ( !$pkgnum ) {
+        # taxes/fees; come back to it
+        push @nonpkg_lines, $cust_bill_pkg;
+        next;
+      }
+      my $quotationpkgnum = $quotationpkgnum_of{$pkgnum};
+      my $qp = $quotation_pkg{$quotationpkgnum};
+      if (!$qp) {
+        # XXX supplemental packages could do this (they have separate pkgnums)
+        # handle that special case at some point
+        warn "$me simulated bill returned a package not on the quotation (pkgpart ".$cust_bill_pkg->pkgpart.")\n";
+        next;
+      }
+      if ( $i == 0 ) {
+        # then this is the first (setup) invoice
+        $qp->set('start_date', $cust_bill_pkg->sdate);
+        $qp->set('unitsetup', $qp->unitsetup + $cust_bill_pkg->unitsetup);
+        # pkgpart_override is a possibility
+      } else {
+        # recurring invoice (should be only one of these per package, though
+        # it may have multiple lineitems with the same pkgnum)
+        $qp->set('unitrecur', $qp->unitrecur + $cust_bill_pkg->unitrecur);
+      }
+    }
+    foreach my $cust_bill_pkg (@nonpkg_lines) {
+      if ($cust_bill_pkg->feepart) {
+        warn "$me simulated bill included a non-package fee (feepart ".
+          $cust_bill_pkg->feepart.")\n";
+        next;
+      }
+      my $links = $cust_bill_pkg->get('cust_bill_pkg_tax_location') ||
+                  $cust_bill_pkg->get('cust_bill_pkg_tax_rate_location') ||
+                  [];
+      # breadth-first unrolled recursion
+      while (my $tax_link = shift @$links) {
+        my $target = $cust_bill_pkg{ $tax_link->taxable_billpkgnum }
+          or die "$me unable to resolve tax link (taxnum ".$tax_link->taxnum.")\n";
+        if ($target->pkgnum) {
+          my $quotationpkgnum = $quotationpkgnum_of{$target->pkgnum};
+          # create this if there isn't one yet
+          my $qpt =
+            $quotation_pkg_tax{$quotationpkgnum}{$tax_link->taxnum} ||=
+            FS::quotation_pkg_tax->new({
+              quotationpkgnum => $quotationpkgnum,
+              itemdesc        => $cust_bill_pkg->itemdesc,
+              taxnum          => $tax_link->taxnum,
+              taxtype         => $tax_link->taxtype,
+              setup_amount    => 0,
+              recur_amount    => 0,
+            });
+          if ( $i == 0 ) { # first invoice
+            $qpt->set('setup_amount', $qpt->setup_amount + $tax_link->amount);
+          } else { # subsequent invoices
+            # this isn't perfectly accurate, but that's why it's an estimate
+            $qpt->set('recur_amount', $qpt->recur_amount + $tax_link->amount);
+            $qpt->set('setup_amount', sprintf('%.2f', $qpt->setup_amount - $tax_link->amount));
+            $qpt->set('setup_amount', 0) if $qpt->setup_amount < 0;
+          }
+        } elsif ($target->feepart) {
+          # do nothing; we already warned for the fee itself
+        } else {
+          # tax on tax: the tax target is another tax item
+          # since this is an estimate, I'm just going to assign it to the 
+          # first of the underlying packages
+          my $sublinks = $target->cust_bill_pkg_tax_rate_location;
+          if ($sublinks and $sublinks->[0]) {
+            $tax_link->set('taxable_billpkgnum', $sublinks->[0]->taxable_billpkgnum);
+            push @$links, $tax_link; #try again
+          } else {
+            warn "$me unable to assign tax on tax; ignoring\n";
+          }
+        }
+      } # while my $tax_link
+    } # foreach my $cust_bill_pkg
+    #XXX discounts
   }
-
-  my %taxnum_exemptions; # for monthly exemptions; as yet unused
-
-  foreach my $pkg (@quotation_pkg) {
-    my $location = $pkg->cust_location;
-
-    my $part_item = $pkg->part_pkg; # we don't have fees on these yet
-    my @loc_keys = qw( district city county state country);
-    my %taxhash = map { $_ => $location->$_ } @loc_keys;
-    $taxhash{'taxclass'} = $part_item->taxclass;
-    my @taxes;
-    my %taxhash_elim = %taxhash;
-    my @elim = qw( district city county state );
-    do {
-      @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
-      if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
-        #then try a match without taxclass
-        my %no_taxclass = %taxhash_elim;
-        $no_taxclass{ 'taxclass' } = '';
-        @taxes = qsearch( 'cust_main_county', \%no_taxclass );
-      }
-    
-      $taxhash_elim{ shift(@elim) } = '';
-    } while ( !scalar(@taxes) && scalar(@elim) );
-
-    foreach my $tax_def (@taxes) {
-      my $taxnum = $tax_def->taxnum;
-      $taxnum_exemptions{$taxnum} ||= [];
-
-      # XXX do some kind of equivalent to set_exemptions here
-      # but for now just declare that there are no exemptions,
-      # and then hack the taxable amounts if the package def
-      # excludes setup/recur
-      $pkg->set('cust_tax_exempt_pkg', []);
-
-      if ( $part_item->setuptax or $tax_def->setuptax ) {
-        $pkg->set('unitsetup', 0);
-      }
-      if ( $part_item->recurtax or $tax_def->recurtax ) {
-        $pkg->set('unitrecur', 0);
-      }
-
-      my %taxline;
-      foreach my $pass (qw(first recur)) {
-        if ($pass eq 'recur') {
-          $pkg->set('unitsetup', 0);
-        }
-
-        my $taxline = $tax_def->taxline(
-          [ $pkg ],
-          exemptions => $taxnum_exemptions{$taxnum}
-        );
-        if ($taxline and !ref($taxline)) {
-          $dbh->rollback if $oldAutoCommit;
-          die "error calculating '".$tax_def->taxname .
-              "' for pkgpart '".$pkg->pkgpart."': $taxline\n";
-        }
-        $taxline{$pass} = $taxline;
-      }
-
-      my $quotation_pkg_tax = FS::quotation_pkg_tax->new({
-          quotationpkgnum => $pkg->quotationpkgnum,
-          itemdesc        => ($tax_def->taxname || 'Tax'),
-          taxnum          => $taxnum,
-          taxtype         => ref($tax_def),
-      });
-      my $setup_amount = 0;
-      my $recur_amount = 0;
-      if ($taxline{first}) {
-        $setup_amount = $taxline{first}->setup; # "first cycle", not setup
-      }
-      if ($taxline{recur}) {
-        $recur_amount = $taxline{recur}->setup;
-        $setup_amount -= $recur_amount; # to get the actual setup amount
-      }
-      if ( $recur_amount > 0 or $setup_amount > 0 ) {
-        $quotation_pkg_tax->set('setup_amount', sprintf('%.2f', $setup_amount));
-        $quotation_pkg_tax->set('recur_amount', sprintf('%.2f', $recur_amount));
-
-        my $error = $quotation_pkg_tax->insert;
-        if ($error) {
-          $dbh->rollback if $oldAutoCommit;
-          die "error recording '".$tax_def->taxname .
-              "' for pkgpart '".$pkg->pkgpart."': $error\n";
-        } # if $error
-      } # else there are no non-zero taxes; continue
-    } # foreach $tax_def
-  } # foreach $pkg
-
-  $dbh->commit if $oldAutoCommit;
-  '';
+  foreach my $quotation_pkg (values %quotation_pkg) {
+    $error = $quotation_pkg->replace;
+    return "$error (recording estimate for ".$quotation_pkg->part_pkg->pkg.")"
+      if $error;
+  }
+  foreach my $quotation_pkg_tax (map { values %$_ } values %quotation_pkg_tax) {
+    $error = $quotation_pkg_tax->insert;
+    return "$error (recording estimated tax for ".$quotation_pkg_tax->itemdesc.")"
+    if $error;
+  }
+  return;
 }
 
 =back
