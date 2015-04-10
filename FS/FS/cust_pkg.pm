@@ -2013,6 +2013,40 @@ sub change {
 
   my $error;
 
+  if ( $opt->{'cust_location'} ) {
+    $error = $opt->{'cust_location'}->find_or_insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "creating location record: $error";
+    }
+    $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
+  }
+
+  # Before going any further here: if the package is still in the pre-setup
+  # state, it's safe to modify it in place. No need to charge/credit for 
+  # partial period, transfer services, transfer usage pools, copy invoice
+  # details, or change any dates.
+  if ( ! $self->setup and ! $opt->{cust_pkg} and ! $opt->{cust_main} ) {
+    foreach ( qw( locationnum pkgpart quantity refnum salesnum ) ) {
+      if ( length($opt->{$_}) ) {
+        $self->set($_, $opt->{$_});
+      }
+    }
+    # almost. if the new pkgpart specifies start/adjourn/expire timers, 
+    # apply those.
+    if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
+      $self->set_initial_timers;
+    }
+    $error = $self->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "modifying package: $error";
+    } else {
+      $dbh->commit if $oldAutoCommit;
+      return '';
+    }
+  }
+
   my %hash = (); 
 
   my $time = time;
@@ -2022,15 +2056,6 @@ sub change {
   $hash{'change_date'} = $time;
   $hash{"change_$_"}  = $self->$_()
     foreach qw( pkgnum pkgpart locationnum );
-
-  if ( $opt->{'cust_location'} ) {
-    $error = $opt->{'cust_location'}->find_or_insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "creating location record: $error";
-    }
-    $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
-  }
 
   if ( $opt->{'cust_pkg'} ) {
     # treat changing to a package with a different pkgpart as a 
@@ -2077,6 +2102,9 @@ sub change {
   # and
   # 2. (more importantly) changing a package before it's billed
   $hash{'waive_setup'} = $self->waive_setup;
+
+  # if this package is scheduled for a future package change, preserve that
+  $hash{'change_to_pkgnum'} = $self->change_to_pkgnum;
 
   my $custnum = $self->custnum;
   if ( $opt->{cust_main} ) {
