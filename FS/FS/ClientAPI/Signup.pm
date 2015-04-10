@@ -941,6 +941,16 @@ sub new_customer_minimal {
 
   } );
 
+  if ( grep length($packet->{$_}), FS::cust_main->location_fields ) {
+    my $bill_hash;
+    foreach my $f (FS::cust_main->location_fields) {
+      $bill_hash->{$f} =  $packet->{$f};
+    }
+    my $bill_location = FS::cust_location->new($bill_hash);
+    $cust_main->set('bill_location' => $bill_location);
+    $cust_main->set('ship_location' => $bill_location);
+  }
+
   my @invoicing_list = $packet->{'invoicing_list'}
                          ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
                          : ();
