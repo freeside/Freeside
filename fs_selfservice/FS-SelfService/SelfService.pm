@@ -254,7 +254,7 @@ FS::SelfService - Freeside self-service API
   #!!! cancel_pkg example
 
   # signup functionality
-  use FS::SelfService qw( signup_info new_customer );
+  use FS::SelfService qw( signup_info new_customer new_customer_minimal );
 
   my $signup_info = signup_info;
 
@@ -1255,6 +1255,147 @@ Default state
 =item countrydefault
 
 Default country
+
+=back
+
+=item new_customer_minimal HASHREF
+
+Creates a new customer.
+
+Current differences from new_customer: An address is not required.  promo_code
+and reg_code are not supported.  If invoicing_list and _password is passed, a
+contact will be created with self-service access (no pkgpart or username is
+necessary).  No initial billing is run (this may change in a future version).
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item first
+
+first name (required)
+
+=item last
+
+last name (required)
+
+=item ss
+
+(not typically collected; mostly used for ACH transactions)
+
+=item company
+
+Company name
+
+=item address1
+
+Address line one
+
+=item address2
+
+Address line two
+
+=item city
+
+City
+
+=item county
+
+County
+
+=item state
+
+State
+
+=item zip
+
+Zip or postal code
+
+=item daytime
+
+Daytime phone number
+
+=item night
+
+Evening phone number
+
+=item fax
+
+Fax number
+
+=item payby
+
+CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY (see L</signup_info> (required)
+
+=item payinfo
+
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pin" for PREPAY, purchase order number for BILL
+
+=item paycvv
+
+Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
+
+=item paydate
+
+Expiration date for CARD/DCRD
+
+=item payname
+
+Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
+
+=item invoicing_list
+
+comma-separated list of email addresses for email invoices.  The special value 'POST' is used to designate postal invoicing (it may be specified alone or in addition to email addresses),
+
+=item referral_custnum
+
+referring customer number
+
+=item agentnum
+
+Agent number
+
+=item pkgpart
+
+pkgpart of initial package
+
+=item username
+
+Username
+
+=item _password
+
+Password
+
+=item sec_phrase
+
+Security phrase
+
+=item popnum
+
+Access number (index, not the literal number)
+
+=item countrycode
+
+Country code (to be provisioned as a service)
+
+=item phonenum
+
+Phone number (to be provisioned as a service)
+
+=item pin
+
+Voicemail PIN
+
+=back
+
+Returns a hash reference with the following keys:
+
+=over 4
+
+=item error
+
+Empty on success, or an error message on errors.  The special error '_decline' is returned for declined transactions; other error messages should be suitable for display to the user (and are customizable in under Configuration | View/Edit message catalog)
 
 =back
 
