@@ -34,7 +34,7 @@ sub calc_setup {
       delete $param->{'setup_charge'};
   }
 
-  sprintf('%.2f', $charge - $discount);
+  sprintf('%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
 }
 
 sub cutoff_day {

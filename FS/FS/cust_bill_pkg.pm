@@ -207,7 +207,6 @@ sub insert {
   {
     my $tax_location = $self->get($tax_link_table) || [];
     foreach my $link ( @$tax_location ) {
-      $DB::single=1; #XXX
       my $pkey = $link->primary_key;
       next if $link->get($pkey); # don't try to double-insert
       # This cust_bill_pkg can be linked on either side (i.e. it can be the

@@ -70,6 +70,11 @@ The amount per package that will be charged in setup/one-time fees.
 
 The amount per package that will be charged per billing cycle.
 
+=item freq
+
+The length of the billing cycle. If zero it's a one-time charge; if any 
+other number it's that many months; other values are in L<FS::Misc::pkg_freqs>.
+
 =back
 
 =head1 METHODS
@@ -180,6 +185,8 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  my @freqs = ('', keys (%{ FS::Misc->pkg_freqs }));
+
   my $error = 
     $self->ut_numbern('quotationpkgnum')
     || $self->ut_foreign_key(  'quotationnum', 'quotation',    'quotationnum' )
@@ -190,6 +197,7 @@ sub check {
     || $self->ut_numbern('quantity')
     || $self->ut_moneyn('unitsetup')
     || $self->ut_moneyn('unitrecur')
+    || $self->ut_enum('freq', \@freqs)
     || $self->ut_enum('waive_setup', [ '', 'Y'] )
   ;
 
@@ -431,11 +439,6 @@ sub cust_bill_pkg_display {
     $recur->{'type'} = 'R';
 
     if ( $type eq 'S' ) {
-sub tax_locationnum {
-  my $self = shift;
-  $self->locationnum;
-}
-
       return ($setup);
     } elsif ( $type eq 'R' ) {
       return ($recur);
@@ -470,6 +473,11 @@ sub prospect_main {
   my $self = shift;
   my $quotation = $self->quotation or return '';
   $quotation->prospect_main;
+}
+
+sub tax_locationnum {
+  my $self = shift;
+  $self->locationnum;
 }
 
 
