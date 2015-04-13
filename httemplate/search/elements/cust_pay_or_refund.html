@@ -437,7 +437,7 @@ if ( $cgi->param('magic') ) {
                     "$table.void_date <= $v_ending";
     }
 
-    push @search, FS::UI::Web::parse_lt_gt($cgi, "$table.$amount_field" );
+    push @search, FS::UI::Web::parse_lt_gt($cgi, $amount_field, $table);
 
     $orderby = '_date';
 

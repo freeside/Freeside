@@ -170,7 +170,8 @@ sub svc_export_links {
 }
 
 sub parse_lt_gt {
-  my($cgi, $field) = @_;
+  my($cgi, $field) = (shift, shift);
+  my $table = ( @_ && length($_[0]) ) ? shift.'.' : '';
 
   my @search = ();
 
@@ -188,7 +189,7 @@ sub parse_lt_gt {
 
       my $num = $1;
       $num =~ s/[\,\s]+//g;
-      my $search = "$field $op{$op} $num";
+      my $search = "$table$field $op{$op} $num";
       push @search, $search;
 
       warn "found ${field}_$op field; adding search element $search\n"
