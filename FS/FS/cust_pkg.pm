@@ -2025,6 +2025,7 @@ sub change {
 
   my $unused_credit = 0;
   my $keep_dates = $opt->{'keep_dates'};
+
   # Special case.  If the pkgpart is changing, and the customer is
   # going to be credited for remaining time, don't keep setup, bill, 
   # or last_bill dates, and DO pass the flag to cancel() to credit 
@@ -2085,6 +2086,15 @@ sub change {
       $cust_pkg->set("change_$_", $self->get($_));
     }
     $cust_pkg->set('change_date', $time);
+    $cust_pkg->set('start_date', ''); # it's starting now
+    # if we are crediting unused time, then create the new package as a new
+    # package, charge its setup fee, etc. (same as an immediate change)
+    if (! $unused_credit) {
+      foreach my $date ( qw(setup bill last_bill susp adjourn resume 
+                            contract_end ) ) {
+        $cust_pkg->set($date, $self->getfield($date));
+      }
+    }
     $error = $cust_pkg->replace;
 
   } else {
