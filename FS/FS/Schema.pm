@@ -197,7 +197,7 @@ sub dbdef_dist {
            && ! /^legacy_cust_history$/
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
-           && ! /^cacti_graph$/
+           && ! /^cacti_page$/
          }
       $dbdef->tables
   ) {

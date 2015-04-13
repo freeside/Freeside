@@ -74,15 +74,9 @@ export_batch_submit(%opt);
 use FS::Cron::agent_email qw(agent_email);
 agent_email(%opt);
 
-#does nothing unless there are cacti imports
-#should run before backup, no need to backup cacti imports
-use FS::Cron::cacti_cleanup qw(cacti_cleanup);
-cacti_cleanup();
-
-my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
-unlink <${deldir}.invoice*>;
-unlink <${deldir}.letter*>;
-unlink <${deldir}.CGItemp*>;
+#clears out cacti imports & deletes select database cache files
+use FS::Cron::cleanup qw( cleanup cleanup_before_backup );
+cleanup_before_backup();
 
 #backup should be last
 #you can skip this just by not having the config
@@ -90,7 +84,6 @@ use FS::Cron::backup qw(backup);
 backup();
 
 #except we'd rather not start cleanup jobs until the backup is done
-use FS::Cron::cleanup qw(cleanup);
 cleanup();
 
 $log->info('finish');
