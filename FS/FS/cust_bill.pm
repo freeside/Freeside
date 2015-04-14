@@ -2812,6 +2812,8 @@ sub _items_total {
 
   my @items;
   my ($pr_total) = $self->previous;
+  my ($new_charges_desc, $new_charges_amount);
+
   if ( $conf->exists('previous_balance-exclude_from_total') ) {
     # then return separate lines for previous balance and total new charges
     if ( $pr_total ) {
@@ -2820,36 +2822,39 @@ sub _items_total {
           total_amount  => sprintf('%.2f',$pr_total)
         };
     }
-    my $new_charges_desc = $self->mt(
+    $new_charges_desc = $self->mt(
       $conf->config('previous_balance-exclude_from_total')
        || 'Total New Charges'
     ); # localize 'Total New Charges' or whatever's in the config
 
-    if ( $conf->exists('invoice_show_prior_due_date') ) {
-      # then the due date should be shown with Total New Charges,
-      # and should NOT be shown with the Balance Due message.
-      if ( $self->due_date ) {
-        # localize the "Please pay by" message and the date itself
-        # (grammar issues with this, yeah)
-        $new_charges_desc .= ' - ' . $self->mt('Please pay by') . ' ' .
-                             $self->due_date2str('short');
-      } elsif ( $self->terms ) {
-        # phrases like "due on receipt" should be localized
-        $new_charges_desc .= ' - ' . $self->mt($self->terms);
-      }
-    }
-
-    push @items,
-      { total_item    => $self->mt($new_charges_desc),
-        total_amount  => $self->charged
-      };
+    $new_charges_amount = $self->charged;
 
   } else {
-    push @items,
-      { total_item    => $self->mt('Total Charges'),
-        total_amount  => sprintf('%.2f',$self->charged + $pr_total)
-      };
+
+    $new_charges_desc = $self->mt('Total Charges');
+    $new_charges_amount = sprintf('%.2f',$self->charged + $pr_total);
+
   }
+
+  if ( $conf->exists('invoice_show_prior_due_date') ) {
+    # then the due date should be shown with Total New Charges,
+    # and should NOT be shown with the Balance Due message.
+    if ( $self->due_date ) {
+      # localize the "Please pay by" message and the date itself
+      # (grammar issues with this, yeah)
+      $new_charges_desc .= ' - ' . $self->mt('Please pay by') . ' ' .
+                           $self->due_date2str('short');
+    } elsif ( $self->terms ) {
+      # phrases like "due on receipt" should be localized
+      $new_charges_desc .= ' - ' . $self->mt($self->terms);
+    }
+  }
+
+  push @items,
+    { total_item    => $new_charges_desc,
+      total_amount  => $new_charges_amount,
+    };
+
   @items;
 }
 
