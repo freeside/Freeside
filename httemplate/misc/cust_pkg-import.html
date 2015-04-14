@@ -30,6 +30,7 @@ Import a file containing customer packages.
         <OPTION VALUE="default" SELECTED>Default
         <OPTION VALUE="default-agent_custid">Default with agent_custid
         <OPTION VALUE="all_dates" SELECTED>All dates
+        <OPTION VALUE="all_dates-agent_custid" SELECTED>All dates with agent_custid
         <OPTION VALUE="svc_acct">Account service
         <OPTION VALUE="svc_acct-agent_custid">Account service with agent_custid
         <OPTION VALUE="svc_phone">Phone service
@@ -74,6 +75,8 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 
 <b>All dates</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, order_date, start_date, setup, bill, last_bill, susp, adjourn, resume, cancel, expire, contract_end, dundate</i>
 <BR><BR>
+
+<b>All dates with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, order_date, start_date, setup, bill, last_bill, susp, adjourn, resume, cancel, expire, contract_end, dundate</i>
 
 <b>Account service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
 <BR><BR>
