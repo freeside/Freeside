@@ -10,6 +10,7 @@
                                  'Router',
                                  @tower_header,
                                  'IP Address',
+                                 'Attached Router',
                                  FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                ],
               'fields'      => [ 'svcnum',
@@ -20,6 +21,11 @@
                                  },
                                  @tower_fields,
                                  'ip_addr',
+                                 sub {
+                                   my $svc = shift;
+                                   my $router = qsearchs('router', { svcnum => $svc->svcnum });
+                                   return $router ? $router->routername : '';
+                                 },
                                  \&FS::UI::Web::cust_fields,
                                ],
               'links'       => [ $link,
@@ -27,17 +33,19 @@
                                  '', #$link_router,
                                  (map '', @tower_fields),
                                  $link,
+                                 '',
                                  ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                        FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                  ),
                                ],
-              'align'       => 'rll'.('r' x @tower_fields).'r'.
+              'align'       => 'rll'.('r' x @tower_fields).'rl'.
                                 FS::UI::Web::cust_aligns(),
               'color'       => [ 
                                  '',
                                  '',
                                  '',
                                  (map '', @tower_fields),
+                                 '',
                                  '',
                                  FS::UI::Web::cust_colors(),
                                ],
@@ -46,6 +54,7 @@
                                  '',
                                  '',
                                  (map '', @tower_fields),
+                                 '',
                                  '',
                                  FS::UI::Web::cust_styles(),
                                ],
