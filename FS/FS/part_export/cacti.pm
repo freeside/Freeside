@@ -27,7 +27,9 @@ use FS::cacti_page;
 use File::Rsync;
 use File::Slurp qw( slurp );
 use File::stat;
-use MIME::Base64 qw( encode_base64 );
+use MIME::Base64 qw( decode_base64 encode_base64 );
+use Storable qw(thaw);
+
 
 use vars qw( %info );
 
@@ -275,7 +277,8 @@ and stores the generated pages in the database.
 =cut
 
 sub process_graphs {
-  my ($job,$param) = @_;
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
 
   $job->update_statustext(10);
   my $cachedir = $FS::UID::cache_dir . '/cacti-graphs/';
