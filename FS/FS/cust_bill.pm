@@ -447,16 +447,20 @@ followed by the previous outstanding invoices (as FS::cust_bill objects also).
 
 sub previous {
   my $self = shift;
-  my $total = 0;
-  my @cust_bill = sort { $a->_date <=> $b->_date }
-    grep { $_->owed != 0 }
-      qsearch( 'cust_bill', { 'custnum' => $self->custnum,
-                              #'_date'   => { op=>'<', value=>$self->_date },
-                              'invnum'   => { op=>'<', value=>$self->invnum },
-                            } ) 
-  ;
-  foreach ( @cust_bill ) { $total += $_->owed; }
-  $total, @cust_bill;
+  # simple memoize; we use this a lot
+  if (!$self->get('previous')) {
+    my $total = 0;
+    my @cust_bill = sort { $a->_date <=> $b->_date }
+      grep { $_->owed != 0 }
+        qsearch( 'cust_bill', { 'custnum' => $self->custnum,
+                                #'_date'   => { op=>'<', value=>$self->_date },
+                                'invnum'   => { op=>'<', value=>$self->invnum },
+                              } ) 
+    ;
+    foreach ( @cust_bill ) { $total += $_->owed; }
+    $self->set('previous', [$total, @cust_bill]);
+  }
+  return @{ $self->get('previous') };
 }
 
 =item enable_previous
@@ -2801,6 +2805,55 @@ sub _items_payments {
   @b;
 
 }
+
+sub _items_total {
+  my $self = shift;
+  my $conf = $self->conf;
+
+  my @items;
+  my ($pr_total) = $self->previous;
+  if ( $conf->exists('previous_balance-exclude_from_total') ) {
+    # then return separate lines for previous balance and total new charges
+    if ( $pr_total ) {
+      push @items,
+        { total_item    => $self->mt('Previous Balance'),
+          total_amount  => sprintf('%.2f',$pr_total)
+        };
+    }
+    my $new_charges_desc = $self->mt(
+      $conf->config('previous_balance-exclude_from_total')
+       || 'Total New Charges'
+    ); # localize 'Total New Charges' or whatever's in the config
+
+    if ( $conf->exists('invoice_show_prior_due_date') ) {
+      # then the due date should be shown with Total New Charges,
+      # and should NOT be shown with the Balance Due message.
+      if ( $self->due_date ) {
+        # localize the "Please pay by" message and the date itself
+        # (grammar issues with this, yeah)
+        $new_charges_desc .= ' - ' . $self->mt('Please pay by') . ' ' .
+                             $self->due_date2str('short');
+      } elsif ( $self->terms ) {
+        # phrases like "due on receipt" should be localized
+        $new_charges_desc .= ' - ' . $self->mt($self->terms);
+      }
+    }
+
+    push @items,
+      { total_item    => $self->mt($new_charges_desc),
+        total_amount  => $self->charged
+      };
+
+  } else {
+    push @items,
+      { total_item    => $self->mt('Total Charges'),
+        total_amount  => sprintf('%.2f',$self->charged + $pr_total)
+      };
+  }
+  @items;
+}
+
+
 
 =item call_details [ OPTION => VALUE ... ]
 

@@ -1292,15 +1292,6 @@ sub print_generic {
   }
   $invoice_data{'taxtotal'} = sprintf('%.2f', $taxtotal);
 
-  push @buf,['','-----------'];
-  push @buf,[$self->mt( 
-              (!$self->enable_previous)
-               ? 'Total Charges'
-               : 'Total New Charges'
-             ),
-             $money_char. sprintf("%10.2f",$self->charged) ];
-  push @buf,['',''];
-
   ###
   # Totals
   ###
@@ -1312,50 +1303,37 @@ sub print_generic {
   );
   my $embolden_function = $embolden_functions{$format};
 
-  if ( $self->can('_items_total') ) { # quotations
+  if ( $multisection ) {
+
+    if ( $adjust_section->{'sort_weight'} ) {
+      $adjust_section->{'posttotal'} = $self->mt('Balance Forward').' '.
+        $other_money_char.  sprintf("%.2f", ($self->billing_balance || 0) );
+    } else{
+      $adjust_section->{'pretotal'} = $self->mt('New charges total').' '.
+        $other_money_char.  sprintf('%.2f', $self->charged );
+    }
+
+  }
+  
+  if ( $self->can('_items_total') ) { # should always be true now
+
+    # even for multisection, need plain text version
 
     my @new_total_items = $self->_items_total;
 
-    foreach ( @new_total_items ) {
-      $_->{'total_item'}   = &$embolden_function( $_->{'total_item'} );
-      $_->{'total_amount'} = &$embolden_function( $other_money_char.$_->{'total_amount'});
-      push @total_items, $_;
-    }
-
-  } else { #normal invoice case
-
-    # calculate total, possibly including total owed on previous
-    # invoices
-    my $total = {};
-    my $item = 'Total';
-    $item = $conf->config('previous_balance-exclude_from_total')
-         || 'Total New Charges'
-      if $conf->exists('previous_balance-exclude_from_total');
-    my $amount = $self->charged;
-    if ( $self->enable_previous and !$conf->exists('previous_balance-exclude_from_total') ) {
-      $amount += $pr_total;
-    }
-
-    $total->{'total_item'} = &$embolden_function($self->mt($item));
-    $total->{'total_amount'} =
-      &$embolden_function( $other_money_char.  sprintf( '%.2f', $amount ) );
-    if ( $multisection ) {
-      if ( $adjust_section->{'sort_weight'} ) {
-        $adjust_section->{'posttotal'} = $self->mt('Balance Forward').' '.
-          $other_money_char.  sprintf("%.2f", ($self->billing_balance || 0) );
-      } else {
-        $adjust_section->{'pretotal'} = $self->mt('New charges total').' '.
-          $other_money_char.  sprintf('%.2f', $self->charged );
-      } 
-    } else {
-      push @total_items, $total;
-    }
     push @buf,['','-----------'];
-    push @buf,[$item,
-               $money_char.
-               sprintf( '%10.2f', $amount )
-              ];
-    push @buf,['',''];
+
+    foreach ( @new_total_items ) {
+      my ($item, $amount) = ($_->{'total_item'}, $_->{'total_amount'});
+      $_->{'total_item'}   = &$embolden_function( $item );
+      $_->{'total_amount'} = &$embolden_function( $other_money_char.$amount );
+      # but if it's multisection, don't append to @total_items. the adjust
+      # section has all this stuff
+      push @total_items, $_ if !$multisection;
+      push @buf, [ $item, $money_char.sprintf('%10.2f',$amount) ];
+    }
+
+    push @buf, [ '', '' ];
 
     # if we're showing previous invoices, also show previous
     # credits and payments 
@@ -1363,7 +1341,6 @@ sub print_generic {
           and $self->can('_items_credits')
           and $self->can('_items_payments') )
       {
-      #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
     
       # credits
       my $credittotal = 0;
@@ -1455,7 +1432,7 @@ sub print_generic {
         if ( $multisection && !$adjust_section->{sort_weight} ) {
           $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
                                            $total->{'total_amount'};
-        }else{
+        } else {
           push @total_items, $total;
         }
         push @buf,['','-----------'];
@@ -1921,12 +1898,18 @@ sub due_date2str {
 sub balance_due_msg {
   my $self = shift;
   my $msg = $self->mt('Balance Due');
-  return $msg unless $self->terms;
-  if ( $self->due_date ) {
-    $msg .= ' - ' . $self->mt('Please pay by'). ' '.
-      $self->due_date2str('short');
-  } elsif ( $self->terms ) {
-    $msg .= ' - '. $self->terms;
+  return $msg unless $self->terms; # huh?
+  if ( !$self->conf->exists('invoice_show_prior_due_date')
+       or $self->conf->exists('invoice_sections') ) {
+    # if enabled, the due date is shown with Total New Charges (see 
+    # _items_total) and not here
+    # (yes, or if invoice_sections is enabled; this is just for compatibility)
+    if ( $self->due_date ) {
+      $msg .= ' - ' . $self->mt('Please pay by'). ' '.
+        $self->due_date2str('short');
+    } elsif ( $self->terms ) {
+      $msg .= ' - '. $self->mt($self->terms);
+    }
   }
   $msg;
 }
