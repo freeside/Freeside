@@ -128,7 +128,6 @@ my %import_options = (
         $cust_location->set($1, $param->{$p});
       }
 
-warn Dumper $cust_location; # XXX
       my $error = $cust_location->find_or_insert; # this avoids duplicates
       return "error creating location: $error" if $error;
       $record->set('locationnum', $cust_location->locationnum);
@@ -211,9 +210,23 @@ sub batch_import {
 
   push @fields, ( 'pkgpart', 'discountnum' );
 
-  foreach my $field ( 
-    qw( start_date setup bill last_bill susp adjourn cancel expire )
-  ) {
+  my @date_fields = ();
+  if ( $format =~ /all_dates/ ) {
+    @date_fields = qw(
+      order_date
+      start_date setup bill last_bill susp adjourn
+      resume
+      cancel expire
+      contract_end dundate
+    );
+  } else {
+    @date_fields = qw(
+      start_date setup bill last_bill susp adjourn
+      cancel expire
+    );
+  }
+
+  foreach my $field (@date_fields) { 
     push @fields, sub {
       my( $self, $value ) = @_; # $conf, $param
       #->$field has undesirable effects
