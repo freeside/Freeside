@@ -19,9 +19,9 @@ use FS::cdr_type;
     skip(4),        #End date, End time
                     #Calling customer, Calling type
     'src',          #Calling number     
-    'dcontext',     #Called type
+    skip(1),     #Called type
     'dst',          #Called number
-    skip(26),       #Destination customer, Destination type
+    skip(14),       #Destination customer, Destination type
                     #Destination number
                     #Destination group ID, Destination group name,
     		    #Inbound calling type,
@@ -29,7 +29,8 @@ use FS::cdr_type;
                     #Inbound called type,
     		    #Inbound called number,
                     #Inbound destination type, Inbound destination number,
-                    #Outbound calling type, Outbound calling number,
+    'dcontext',     #Outbound calling type,
+      skip(11),     #Outbound calling number,
                     #Outbound called type, Outbound called number,
                     #Outbound destination type, Outbound destination number,
                     #Internal calling type, Internal calling number,
