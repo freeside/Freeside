@@ -1155,6 +1155,102 @@ pkgpart of package to cancel
 Returns a hash reference with a single key, B<error>, empty on success, or an
 error message on errors.
 
+=item provision_acct 
+
+Provisions an account (svc_acct).
+
+Takes a hash references as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=item pkgnum
+
+pkgnum of package into which this service is provisioned
+
+=item svcpart
+
+svcpart or service definition to provision
+
+=item username
+
+=item domsvc
+
+=item _password
+
+=back
+
+=item provision_phone
+
+Provisions a phone number (svc_phone).
+
+Takes a hash references as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=item pkgnum
+
+pkgnum of package into which this service is provisioned
+
+=item svcpart
+
+svcpart or service definition to provision
+
+=item countrycode
+
+=item phonenum
+
+=item address1
+
+=item address2
+
+=item city
+
+=item county
+
+=item state
+
+=item zip
+
+=item country
+
+E911 Address (optional)
+
+=back
+
+=item provision_external
+
+Provisions an external service (svc_external).
+
+Takes a hash references as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=item pkgnum
+
+pkgnum of package into which this service is provisioned
+
+=item svcpart
+
+svcpart or service definition to provision
+
+=item id
+
+=item title
+
+=back
+
 =back
 
 =head1 SIGNUP FUNCTIONS

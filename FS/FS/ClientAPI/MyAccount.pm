@@ -2665,11 +2665,12 @@ sub cancel_pkg {
 }
 
 sub provision_phone {
- my $p = shift;
- my @bulkdid;
- @bulkdid = @{$p->{'bulkdid'}} if $p->{'bulkdid'};
+  my $p = shift;
+  my @bulkdid;
+  @bulkdid = @{$p->{'bulkdid'}} if $p->{'bulkdid'};
 
- if($p->{'svcnum'} && $p->{'svcnum'} =~ /^\d+$/){
+  #editing an existing phone number
+  if ( $p->{'svcnum'} && $p->{'svcnum'} =~ /^\d+$/ ) {
       my($context, $session, $custnum) = _custoragent_session_custnum($p);
       return { 'error' => $session } if $context eq 'error';
     
@@ -2686,8 +2687,8 @@ sub provision_phone {
       return { 'error' => $svc_phone->replace };
  }
 
-# single DID LNP
- unless($p->{'lnp'}) {
+  # single DID LNP
+  unless ( $p->{'lnp'} ) {
     $p->{'lnp_desired_due_date'} = parse_datetime($p->{'lnp_desired_due_date'});
     $p->{'lnp_status'} = "portingin";
     return _provision( 'FS::svc_phone',
@@ -2697,19 +2698,19 @@ sub provision_phone {
 		  $p,
 		  @_
 		);
- }
+  }
 
-# single DID order
- unless (scalar(@bulkdid)) {
+  # single DID order (the usual case)
+  unless (scalar(@bulkdid)) {
     return _provision( 'FS::svc_phone',
 		  [qw(phonenum countrycode)],
 		  [qw(phonenum countrycode)],
 		  $p,
 		  @_
 		);
- }
+  }
 
-# bulk DID order case
+  # bulk DID order case
   my $error;
   foreach my $did ( @bulkdid ) {
     $did =~ s/[^0-9]//g;
@@ -2801,9 +2802,21 @@ sub _provision {
     'svcpart' => $p->{'svcpart'},
     map { $_ => $p->{$_} } @$fields
   } );
+
+  my %insert_args = ();
+  #i shouldn't be a special case here (pass an option or something)
+  if ( $class eq 'FS::svc_phone'
+         && grep length($p->{$_}), @location_editable_fields
+     )
+  {
+    $insert_args{'cust_location'} = new FS::cust_location {
+      map { $_ => $p->{$_} } @location_editable_fields
+    };
+  }
+
   warn "inserting $class record\n"
     if $DEBUG;
-  my $error = $svc_x->insert;
+  my $error = $svc_x->insert(%insert_args);
 
   unless ( $error ) {
     warn "finding inserted record for svcnum ". $svc_x->svcnum. "\n"
