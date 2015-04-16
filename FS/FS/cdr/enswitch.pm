@@ -12,14 +12,14 @@ use FS::cdr_type;
   'header'        => 2,
   'type'          => 'csv',
   'import_fields' => [
-    'disposition',  #Status
+    'dcontext',     #Status
     'startdate',    #Start, already a unix timestamp
     skip(2),        #Start date, Start time
     'enddate',      #End
     skip(4),        #End date, End time
                     #Calling customer, Calling type
     'src',          #Calling number     
-    skip(1),     #Called type
+    skip(1),        #Called type
     'dst',          #Called number
     skip(14),       #Destination customer, Destination type
                     #Destination number
@@ -29,7 +29,7 @@ use FS::cdr_type;
                     #Inbound called type,
     		    #Inbound called number,
                     #Inbound destination type, Inbound destination number,
-    'dcontext',     #Outbound calling type,
+    'disposition',  #Outbound calling type,
       skip(11),     #Outbound calling number,
                     #Outbound called type, Outbound called number,
                     #Outbound destination type, Outbound destination number,
