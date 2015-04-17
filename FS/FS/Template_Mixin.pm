@@ -2093,11 +2093,20 @@ sub generate_email {
 
   if (!@text) {
 
-    warn "$me generating plain text invoice"
-      if $DEBUG;
+    if ( $conf->config($tc.'template') ) {
 
-    # 'print_text' argument is no longer used
-    @text = $self->print_text(\%args);
+      warn "$me generating plain text invoice"
+        if $DEBUG;
+
+      # 'print_text' argument is no longer used
+      @text = $self->print_text(\%args);
+
+    } else {
+
+      warn "$me no plain text version exists; sending empty message body"
+        if $DEBUG;
+
+    }
 
   }
 
