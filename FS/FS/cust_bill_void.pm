@@ -108,7 +108,17 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_bill_void'; }
 sub notice_name { 'VOIDED Invoice'; }
-#XXXsub template_conf { 'quotation_'; }
+sub template_conf { 'invoice_'; }
+
+sub has_sections {
+  my $self = shift;
+  my $agentnum = $self->cust_main->agentnum;
+  my $tc = $self->template_conf;
+
+  $self->conf->exists($tc.'sections', $agentnum) ||
+  $self->conf->exists($tc.'sections_by_location', $agentnum);
+}
+
 
 =item insert
 

@@ -40,8 +40,12 @@ FS::TaxEngine - Base class for tax calculation engines.
 Creates an L<FS::TaxEngine> object.  The subclass will be chosen by the 
 'enable_taxproducts' configuration setting.
 
-CUST_MAIN and TIME are required.  OPTIONS can include "cancel" => 1 to 
-indicate that the package is being billed on cancellation.
+CUST_MAIN and TIME are required.  OPTIONS can include:
+
+"cancel" => 1 to indicate that the package is being billed on cancellation.
+
+"estimate" => 1 to indicate that this calculation is for tax estimation,
+and isn't an actual sale invoice, in case that matters.
 
 =cut
 

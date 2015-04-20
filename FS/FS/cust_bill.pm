@@ -143,6 +143,16 @@ Invoices are normally created by calling the bill method of a customer object
 =cut
 
 sub table { 'cust_bill'; }
+sub template_conf { 'invoice_'; }
+
+sub has_sections {
+  my $self = shift;
+  my $agentnum = $self->cust_main->agentnum;
+  my $tc = $self->template_conf;
+
+  $self->conf->exists($tc.'sections', $agentnum) ||
+  $self->conf->exists($tc.'sections_by_location', $agentnum);
+}
 
 # should be the ONLY occurrence of "Invoice" in invoice rendering code.
 # (except email_subject and invnum_date_pretty)

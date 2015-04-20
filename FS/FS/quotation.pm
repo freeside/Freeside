@@ -14,8 +14,9 @@ use FS::cust_pkg;
 use FS::quotation_pkg;
 use FS::quotation_pkg_tax;
 use FS::type_pkgs;
+use List::MoreUtils;
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 use Data::Dumper;
 
 =head1 NAME
@@ -87,6 +88,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 sub table { 'quotation'; }
 sub notice_name { 'Quotation'; }
 sub template_conf { 'quotation_'; }
+sub has_sections { 1; }
 
 =item insert
 
@@ -152,7 +154,7 @@ sub cust_bill_pkg { #actually quotation_pkg objects
 
 sub total_setup {
   my $self = shift;
-  $self->_total('setup');
+  sprintf('%.2f', $self->_total('setup') + $self->_total('setup_tax'));
 }
 
 =item total_recur [ FREQ ]
@@ -163,14 +165,14 @@ sub total_recur {
   my $self = shift;
 #=item total_recur [ FREQ ]
   #my $freq = @_ ? shift : '';
-  $self->_total('recur');
+  sprintf('%.2f', $self->_total('recur') + $self->_total('recur_tax'));
 }
 
 sub _total {
   my( $self, $method ) = @_;
 
   my $total = 0;
-  $total += $_->$method() for $self->cust_bill_pkg;
+  $total += $_->$method() for $self->quotation_pkg;
   sprintf('%.2f', $total);
 
 }
@@ -221,7 +223,7 @@ sub cust_or_prospect {
   $self->custnum ? $self->cust_main : $self->prospect_main;
 }
 
-=item cust_or_prospect_label_link P
+=item cust_or_prospect_label_link
 
 HTML links to either the customer or prospect.
 
@@ -253,87 +255,47 @@ sub cust_or_prospect_label_link {
 
 }
 
-sub _items_tax {
-  ();
-}
-
-sub _items_nontax {
-  shift->cust_bill_pkg;
-}
-
-sub _items_total {
+sub _items_sections {
   my $self = shift;
-  $self->quotationnum =~ /^(\d+)$/ or return ();
+  my %opt = @_;
+  my $escape = $opt{escape}; # the only one we care about
 
-  my @items;
-
-  # show taxes in here also; the setup/recurring breakdown is different
-  # from what Template_Mixin expects
-  my @setup_tax = qsearch({
-      select      => 'itemdesc, SUM(setup_amount) as setup_amount',
-      table       => 'quotation_pkg_tax',
-      addl_from   => ' JOIN quotation_pkg USING (quotationpkgnum) ',
-      extra_sql   => ' WHERE quotationnum = '.$1,
-      order_by    => ' GROUP BY itemdesc HAVING SUM(setup_amount) > 0' .
-                     ' ORDER BY itemdesc',
-  });
-  # recurs need to be grouped by frequency, and to have a pkgpart
-  my @recur_tax = qsearch({
-      select      => 'freq, itemdesc, SUM(recur_amount) as recur_amount, MAX(pkgpart) as pkgpart',
-      table       => 'quotation_pkg_tax',
-      addl_from   => ' JOIN quotation_pkg USING (quotationpkgnum)'.
-                     ' JOIN part_pkg USING (pkgpart)',
-      extra_sql   => ' WHERE quotationnum = '.$1,
-      order_by    => ' GROUP BY freq, itemdesc HAVING SUM(recur_amount) > 0' .
-                     ' ORDER BY freq, itemdesc',
-  });
-
-  my $total_setup = $self->total_setup;
-  foreach my $pkg_tax (@setup_tax) {
-    if ($pkg_tax->setup_amount > 0) {
-      $total_setup += $pkg_tax->setup_amount;
-      push @items, {
-        'total_item'    => $pkg_tax->itemdesc . ' ' . $self->mt('(setup)'),
-        'total_amount'  => $pkg_tax->setup_amount,
-      };
-    }
+  my %subtotals; # package frequency => subtotal
+  foreach my $pkg ($self->quotation_pkg) {
+    my $recur_freq = $pkg->part_pkg->freq;
+    ($subtotals{0} ||= 0) += $pkg->setup + $pkg->setup_tax;
+    ($subtotals{$recur_freq} ||= 0) += $pkg->recur + $pkg->recur_tax;
   }
+  my @pkg_freq_order = keys %{ FS::Misc->pkg_freqs };
 
-  if ( $total_setup > 0 ) {
-    push @items, {
-      'total_item'   => $self->mt( $self->total_recur > 0 ? 'Total Setup' : 'Total' ),
-      'total_amount' => sprintf('%.2f',$total_setup),
-      'break_after'  => ( scalar(@recur_tax) ? 1 : 0 )
+  my @sections;
+  foreach my $freq (keys %subtotals) {
+
+    next if $subtotals{$freq} == 0;
+
+    my $weight = 
+      List::MoreUtils::first_index { $_ eq $freq } @pkg_freq_order;
+    my $desc;
+    if ( $freq eq '0' ) {
+      if ( scalar(keys(%subtotals)) == 1 ) {
+        # there are no recurring packages
+        $desc = $self->mt('Charges');
+      } else {
+        $desc = $self->mt('Setup Charges');
+      }
+    } else { # recurring
+      $desc = $self->mt('Recurring Charges') . ' - ' .
+              ucfirst($self->mt(FS::Misc->pkg_freqs->{$freq}))
+    }
+
+    push @sections, {
+      'description' => &$escape($desc),
+      'sort_weight' => $weight,
+      'category'    => $freq,
+      'subtotal'    => sprintf('%.2f',$subtotals{$freq}),
     };
   }
-
-  #could/should add up the different recurring frequencies on lines of their own
-  # but this will cover the 95% cases for now
-  my $total_recur = $self->total_recur;
-  # label these with the frequency
-  foreach my $pkg_tax (@recur_tax) {
-    if ($pkg_tax->recur_amount > 0) {
-      $total_recur += $pkg_tax->recur_amount;
-      # an arbitrary part_pkg, but with the right frequency
-      # XXX localization
-      my $part_pkg = qsearchs('part_pkg', { pkgpart => $pkg_tax->pkgpart });
-      push @items, {
-        'total_item'    => $pkg_tax->itemdesc . ' (' .  $part_pkg->freq_pretty . ')',
-        'total_amount'  => $pkg_tax->recur_amount,
-      };
-    }
-  }
-
-  if ( $total_recur > 0 ) {
-    push @items, {
-      'total_item'   => $self->mt('Total Recurring'),
-      'total_amount' => sprintf('%.2f',$total_recur),
-      'break_after'  => 1,
-    };
-  }
-
-  return @items;
-
+  return \@sections, [];
 }
 
 =item enable_previous
@@ -637,6 +599,7 @@ sub estimate {
 
     # simulate the first bill
     my %bill_opt = (
+      'estimate'        => 1,
       'pkg_list'        => \@new_pkgs,
       'time'            => time, # an option to adjust this?
       'return_bill'     => $return_bill[0],
@@ -674,21 +637,24 @@ sub estimate {
     warn Dumper(\@return_bill);
   }
 
-  # careful: none of the pkgnums in here are correct outside the sandbox.
+  # Careful: none of the foreign keys in here are correct outside the sandbox.
+  # We have a translation table for pkgnums; all others are total lies.
+
   my %quotation_pkg; # quotationpkgnum => quotation_pkg
   foreach my $qp ($self->quotation_pkg) {
     $quotation_pkg{$qp->quotationpkgnum} = $qp;
     $qp->set($_, 0) foreach qw(unitsetup unitrecur);
     $qp->set('freq', '');
     # flush old tax records
-    foreach ($qp->quotation_pkg_tax, $qp->quotation_pkg_discount) {
+    foreach ($qp->quotation_pkg_tax) {
       $error = $_->delete;
       return "$error (flushing tax records for pkgpart ".$qp->part_pkg->pkgpart.")" 
         if $error;
     }
   }
 
-  my %quotation_pkg_tax; # quotationpkgnum => taxnum => quotation_pkg_tax obj
+  my %quotation_pkg_tax; # quotationpkgnum => tax name => quotation_pkg_tax obj
+  my %quotation_pkg_discount; # quotationpkgnum => quotation_pkg_discount obj
 
   for (my $i = 0; $i < scalar(@return_bill); $i++) {
     my $this_bill = $return_bill[$i]->[0];
@@ -725,8 +691,37 @@ sub estimate {
         # it may have multiple lineitems with the same pkgnum)
         $qp->set('unitrecur', $qp->unitrecur + $cust_bill_pkg->unitrecur);
       }
+
+      # discounts
+      if ( $cust_bill_pkg->get('discounts') ) {
+        my $discount = $cust_bill_pkg->get('discounts')->[0];
+        # discount records are generated as (setup, recur).
+        # well, not always, sometimes it's just (recur), but fixing this
+        # is horribly invasive.
+        my $qpd = $quotation_pkg_discount{$quotationpkgnum}
+              ||= qsearchs('quotation_pkg_discount', {
+                  'quotationpkgnum' => $quotationpkgnum
+                  });
+
+        if (!$qpd) { #can't happen
+          warn "$me simulated bill returned a discount but no discount is in effect.\n";
+        }
+        if ($discount and $qpd) {
+          if ( $i == 0 ) {
+            $qpd->set('setup_amount', $discount->amount);
+          } else {
+            $qpd->set('recur_amount', $discount->amount);
+          }
+        }
+      } # end of discount stuff
+
     }
+
+    # create tax records
     foreach my $cust_bill_pkg (@nonpkg_lines) {
+
+      my $itemdesc = $cust_bill_pkg->itemdesc;
+
       if ($cust_bill_pkg->feepart) {
         warn "$me simulated bill included a non-package fee (feepart ".
           $cust_bill_pkg->feepart.")\n";
@@ -735,20 +730,20 @@ sub estimate {
       my $links = $cust_bill_pkg->get('cust_bill_pkg_tax_location') ||
                   $cust_bill_pkg->get('cust_bill_pkg_tax_rate_location') ||
                   [];
-      # breadth-first unrolled recursion
+      # breadth-first unrolled recursion:
+      # take each tax link and any tax-on-tax descendants, and merge them 
+      # into a single quotation_pkg_tax record for each pkgnum/taxname 
+      # combination
       while (my $tax_link = shift @$links) {
         my $target = $cust_bill_pkg{ $tax_link->taxable_billpkgnum }
-          or die "$me unable to resolve tax link (taxnum ".$tax_link->taxnum.")\n";
+          or die "$me unable to resolve tax link\n";
         if ($target->pkgnum) {
           my $quotationpkgnum = $quotationpkgnum_of{$target->pkgnum};
           # create this if there isn't one yet
-          my $qpt =
-            $quotation_pkg_tax{$quotationpkgnum}{$tax_link->taxnum} ||=
+          my $qpt = $quotation_pkg_tax{$quotationpkgnum}{$itemdesc} ||=
             FS::quotation_pkg_tax->new({
               quotationpkgnum => $quotationpkgnum,
-              itemdesc        => $cust_bill_pkg->itemdesc,
-              taxnum          => $tax_link->taxnum,
-              taxtype         => $tax_link->taxtype,
+              itemdesc        => $itemdesc,
               setup_amount    => 0,
               recur_amount    => 0,
             });
@@ -763,9 +758,10 @@ sub estimate {
         } elsif ($target->feepart) {
           # do nothing; we already warned for the fee itself
         } else {
-          # tax on tax: the tax target is another tax item
+          # tax on tax: the tax target is another tax item.
           # since this is an estimate, I'm just going to assign it to the 
-          # first of the underlying packages
+          # first of the underlying packages. (RT#5243 is why we can't have
+          # nice things.)
           my $sublinks = $target->cust_bill_pkg_tax_rate_location;
           if ($sublinks and $sublinks->[0]) {
             $tax_link->set('taxable_billpkgnum', $sublinks->[0]->taxable_billpkgnum);
@@ -775,12 +771,17 @@ sub estimate {
           }
         }
       } # while my $tax_link
+
     } # foreach my $cust_bill_pkg
-    #XXX discounts
   }
   foreach my $quotation_pkg (values %quotation_pkg) {
     $error = $quotation_pkg->replace;
     return "$error (recording estimate for ".$quotation_pkg->part_pkg->pkg.")"
+      if $error;
+  }
+  foreach my $quotation_pkg_discount (values %quotation_pkg_discount) {
+    $error = $quotation_pkg_discount->replace;
+    return "$error (recording estimated discount)"
       if $error;
   }
   foreach my $quotation_pkg_tax (map { values %$_ } values %quotation_pkg_tax) {
@@ -915,17 +916,92 @@ sub search_sql_where {
 
 =item _items_pkg
 
-Return line item hashes for each package on this quotation. Differs from the
-base L<FS::Template_Mixin> version in that it recalculates each quoted package
-first, and doesn't implement the "condensed" option.
+Return line item hashes for each package on this quotation.
 
 =cut
 
 sub _items_pkg {
   my ($self, %options) = @_;
-  $self->estimate;
-  # run it through the Template_Mixin engine
-  return $self->_items_cust_bill_pkg([ $self->quotation_pkg ], %options);
+  my $escape = $options{'escape_function'};
+  my $locale = $self->cust_or_prospect->locale;
+
+  my $preref = $options{'preref_callback'};
+
+  my $section = $options{'section'};
+  my $freq = $section->{'category'};
+  my @pkgs = $self->quotation_pkg;
+  my @items;
+  die "_items_pkg called without section->{'category'}"
+    unless defined $freq;
+
+  my %tax_item; # taxname => hashref, will be aggregated AT DISPLAY TIME
+                # like we should have done in the first place
+
+  foreach my $quotation_pkg (@pkgs) {
+    my $part_pkg = $quotation_pkg->part_pkg;
+    my $setuprecur;
+    my $this_item = {
+      'pkgnum'          => $quotation_pkg->quotationpkgnum,
+      'description'     => $quotation_pkg->desc($locale),
+      'ext_description' => [],
+      'quantity'        => $quotation_pkg->quantity,
+    };
+    if ($freq eq '0') {
+      # setup/one-time
+      $setuprecur = 'setup';
+      if ($part_pkg->freq ne '0') {
+        # indicate that it's a setup fee on a recur package (cust_bill does 
+        # this too)
+        $this_item->{'description'} .= ' Setup';
+      }
+    } else {
+      # recur for this frequency
+      next if $freq ne $part_pkg->freq;
+      $setuprecur = 'recur';
+    }
+
+    $this_item->{'unit_amount'} = sprintf('%.2f', 
+      $quotation_pkg->get('unit'.$setuprecur));
+    $this_item->{'amount'} = sprintf('%.2f', $this_item->{'unit_amount'}
+                                             * $quotation_pkg->quantity);
+    next if $this_item->{'amount'} == 0;
+
+    if ( $preref ) {
+      $this_item->{'preref_html'} = &$preref($quotation_pkg);
+    }
+
+    push @items, $this_item;
+    my $discount = $quotation_pkg->_item_discount(setuprecur => $setuprecur);
+    if ($discount) {
+      $_ = &{$escape}($_) foreach @{ $discount->{ext_description} };
+      push @items, $discount;
+    }
+
+    # each quotation_pkg_tax has two amounts: the amount charged on the 
+    # setup invoice, and the amount on the recurring invoice.
+    foreach my $qpt ($quotation_pkg->quotation_pkg_tax) {
+      my $this_tax = $tax_item{$qpt->itemdesc} ||= {
+        'pkgnum'          => 0,
+        'description'     => $qpt->itemdesc,
+        'ext_description' => [],
+        'amount'          => 0,
+      };
+      $this_tax->{'amount'} += $qpt->get($setuprecur.'_amount');
+    }
+  } # foreach $quotation_pkg
+
+  foreach my $taxname ( sort { $a cmp $b } keys (%tax_item) ) {
+    my $this_tax = $tax_item{$taxname};
+    $this_tax->{'amount'} = sprintf('%.2f', $this_tax->{'amount'});
+    next if $this_tax->{'amount'} == 0;
+    push @items, $this_tax;
+  }
+
+  return @items;
+}
+
+sub _items_tax {
+  ();
 }
 
 =back

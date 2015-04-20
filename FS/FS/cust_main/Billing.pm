@@ -379,6 +379,12 @@ Do not save the generated bill in the database.  Useful with return_bill
 
 A list reference on which the generated bill(s) will be returned.
 
+=item estimate
+
+Boolean value; indicates that this is an estimate rather than a "tax invoice".
+This will be passed through to the tax engine, as online tax services 
+sometimes need to know it for reporting purposes. Otherwise it has no effect.
+
 =item invoice_terms
 
 Optional terms to be printed on this invoice.  Otherwise, customer-specific
@@ -474,7 +480,8 @@ sub bill {
   foreach (@passes) {
     $tax_engines{$_} = FS::TaxEngine->new(cust_main    => $self,
                                           invoice_time => $invoice_time,
-                                          cancel       => $options{cancel}
+                                          cancel       => $options{cancel},
+                                          estimate     => $options{estimate},
                                          );
     $tax_is_batch ||= $tax_engines{$_}->info->{batch};
   }
@@ -542,7 +549,8 @@ sub bill {
           $tax_engines{$pass} = FS::TaxEngine->new(
                                   cust_main    => $self,
                                   invoice_time => $invoice_time,
-                                  cancel       => $options{cancel}
+                                  cancel       => $options{cancel},
+                                  estimate     => $options{estimate},
                                 );
           $cust_bill_pkg{$pass} = [];
         }

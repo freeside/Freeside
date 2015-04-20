@@ -118,14 +118,9 @@ sub insert {
   my $error = $self->SUPER::insert;
 
   if ( !$error and $self->discountnum ) {
+    warn "inserting discount #".$self->discountnum."\n";
     $error = $self->insert_discount;
     $error .= ' (setting discount)' if $error;
-  }
-
-  # update $self and any discounts with their amounts
-  if ( !$error ) {
-    $error = $self->estimate;
-    $error .= ' (calculating charges)' if $error;
   }
 
   if ( $error ) {
@@ -164,9 +159,9 @@ sub delete {
     return $error;
   } else {
     $dbh->commit if $oldAutoCommit;
-    return '';
   }
   
+  $self->quotation->estimate;
 }
 
 =item replace OLD_RECORD
@@ -232,98 +227,7 @@ sub desc {
   $self->part_pkg->pkg;
 }
 
-=item estimate
-
-Update the quotation_pkg record with the estimated setup and recurring 
-charges for the package. Returns nothing on success, or an error message
-on failure.
-
 =cut
-
-sub estimate {
-  my $self = shift;
-  my $part_pkg = $self->part_pkg;
-  my $quantity = $self->quantity || 1;
-  my ($unitsetup, $unitrecur);
-  # calculate base fees
-  if ( $self->waive_setup eq 'Y' || $self->{'_NO_SETUP_KLUDGE'} ) {
-    $unitsetup = '0.00';
-  } else {
-    $unitsetup = $part_pkg->base_setup;
-  }
-  if ( $self->{'_NO_RECUR_KLUDGE'} ) {
-    $unitrecur = '0.00';
-  } else {
-    $unitrecur = $part_pkg->base_recur;
-  }
-
-  #XXX add-on packages
-
-  $self->set('unitsetup', $unitsetup);
-  $self->set('unitrecur', $unitrecur);
-  my $error = $self->replace;
-  return $error if $error;
-
-  # semi-duplicates calc_discount
-  my $setup_discount = 0;
-  my $recur_discount = 0;
-
-  my %setup_discounts; # quotationpkgdiscountnum => amount
-  my %recur_discounts; # quotationpkgdiscountnum => amount
-
-  # XXX the order of applying discounts is ill-defined, which matters
-  # if there are percentage and amount discounts on the same package.
-  #
-  # but right now there can only be one discount on any package, so 
-  # it doesn't matter
-  foreach my $pkg_discount ($self->quotation_pkg_discount) {
-
-    my $discount = $pkg_discount->discount;
-    my $this_setup_discount = 0;
-    my $this_recur_discount = 0;
-
-    if ( $discount->percent > 0 ) {
-
-      if ( $discount->setup ) {
-        $this_setup_discount = ($discount->percent * $unitsetup / 100);
-      }
-      $this_recur_discount = ($discount->percent * $unitrecur / 100);
-
-    } elsif ( $discount->amount > 0 ) {
-
-      my $discount_left = $discount->amount;
-      if ( $discount->setup ) {
-        if ( $discount_left > $unitsetup - $setup_discount ) {
-          # then discount the setup to zero
-          $discount_left -= $unitsetup - $setup_discount;
-          $this_setup_discount = $unitsetup - $setup_discount;
-        } else {
-          # not enough discount to fully cover the setup
-          $this_setup_discount = $discount_left;
-          $discount_left = 0;
-        }
-      }
-      # same logic for recur
-      if ( $discount_left > $unitrecur - $recur_discount ) {
-        $this_recur_discount = $unitrecur - $recur_discount;
-      } else {
-        $this_recur_discount = $discount_left;
-      }
-
-    }
-
-    # increment the total discountage
-    $setup_discount += $this_setup_discount;
-    $recur_discount += $this_recur_discount;
-    # and update the pkg_discount object
-    $pkg_discount->set('setup_amount', sprintf('%.2f', $setup_discount));
-    $pkg_discount->set('recur_amount', sprintf('%.2f', $recur_discount));
-    my $error = $pkg_discount->replace;
-    return $error if $error;
-  }
-
-  '';
-}
 
 =item insert_discount
 
@@ -353,6 +257,11 @@ sub insert_discount {
 
 sub _item_discount {
   my $self = shift;
+  my %options = @_;
+  my $setuprecur = $options{'setuprecur'};
+
+  # kind of silly treating this as multiple records, but it works, and will
+  # work if we allow multiple discounts at some point
   my @pkg_discounts = $self->pkg_discount;
   return if @pkg_discounts == 0;
   
@@ -360,20 +269,16 @@ sub _item_discount {
   my $d = {
     _is_discount    => 1,
     description     => $self->mt('Discount'),
-    setup_amount    => 0,
-    recur_amount    => 0,
     amount          => 0,
     ext_description => \@ext,
     # maybe should show quantity/unit discount?
   };
   foreach my $pkg_discount (@pkg_discounts) {
     push @ext, $pkg_discount->description;
-    $d->{setup_amount} -= $pkg_discount->setup_amount;
-    $d->{recur_amount} -= $pkg_discount->recur_amount;
+    my $amount = $pkg_discount->get($setuprecur.'_amount');
+    $d->{amount} -= $amount;
   }
-  $d->{setup_amount} *= $self->quantity || 1;
-  $d->{recur_amount} *= $self->quantity || 1;
-  $d->{amount} = $d->{setup_amount} + $d->{recur_amount};
+  $d->{amount} = sprintf('%.2f', $d->{amount} * $self->quantity);
   
   return $d;
 }
@@ -382,12 +287,23 @@ sub setup {
   my $self = shift;
   ($self->unitsetup - sum(0, map { $_->setup_amount } $self->pkg_discount))
     * ($self->quantity || 1);
+
+}
+
+sub setup_tax {
+  my $self = shift;
+  sum(0, map { $_->setup_amount } $self->quotation_pkg_tax);
 }
 
 sub recur {
   my $self = shift;
   ($self->unitrecur - sum(0, map { $_->recur_amount } $self->pkg_discount))
-    * ($self->quantity || 1);
+    * ($self->quantity || 1)
+}
+
+sub recur_tax {
+  my $self = shift;
+  sum(0, map { $_->recur_amount } $self->quotation_pkg_tax);
 }
 
 =item part_pkg_currency_option OPTIONNAME
@@ -479,7 +395,6 @@ sub tax_locationnum {
   my $self = shift;
   $self->locationnum;
 }
-
 
 sub _upgrade_data {
   my $class = shift;

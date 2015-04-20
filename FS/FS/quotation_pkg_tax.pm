@@ -41,11 +41,6 @@ to.
 
 =item itemdesc - the name of the tax
 
-=item taxnum - the L<FS::cust_main_county> or L<FS::tax_rate> defining the 
-tax.
-
-=item taxtype - the class of the tax rate represented by C<taxnum>.
-
 =item setup_amount - the amount of tax calculated on one-time charges
 
 =item recur_amount - the amount of tax calculated on recurring charges
@@ -94,8 +89,6 @@ sub check {
     $self->ut_numbern('quotationtaxnum')
     || $self->ut_foreign_key('quotationpkgnum', 'quotation_pkg', 'quotationpkgnum')
     || $self->ut_text('itemdesc')
-    || $self->ut_number('taxnum')
-    || $self->ut_enum('taxtype', [ 'FS::cust_main_county', 'FS::tax_rate' ])
     || $self->ut_money('setup_amount')
     || $self->ut_money('recur_amount')
   ;

@@ -906,7 +906,8 @@ sub print_generic {
     if $DEBUG > 1;
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
-  my $multisection = $conf->exists($tc.'sections', $cust_main->agentnum) ||
+  my $multisection = $self->has_sections;
+  $conf->exists($tc.'sections', $cust_main->agentnum) ||
                      $conf->exists($tc.'sections_by_location', $cust_main->agentnum);
   $invoice_data{'multisection'} = $multisection;
   my $late_sections;
@@ -1215,7 +1216,6 @@ sub print_generic {
     List::Util::first { $_->{description} eq $tax_description } @sections;
   if (!$tax_section) {
     $tax_section = { 'description' => $tax_description };
-    push @sections, $tax_section if $multisection;
   }
   $tax_section->{tax_section} = 1; # mark this section as containing taxes
   # if this is an existing tax section, we're merging the tax items into it.
@@ -1231,6 +1231,8 @@ sub print_generic {
   #$tax_section->{'sort_weight'} = $tax_weight;
 
   my @items_tax = $self->_items_tax;
+  push @sections, $tax_section if $multisection and @items_tax > 0;
+
   foreach my $tax ( @items_tax ) {
 
     $taxtotal += $tax->{'amount'};
@@ -1647,7 +1649,10 @@ sub print_generic {
 
 sub notice_name { '('.shift->table.')'; }
 
-sub template_conf { 'invoice_'; }
+# this is not supposed to happen
+sub template_conf { warn "bare FS::Template_Mixin::template_conf";
+  'invoice_';
+}
 
 # helper routine for generating date ranges
 sub _prior_month30s {

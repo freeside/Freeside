@@ -72,6 +72,9 @@ function areyousure(href, message) {
   <BR><BR>
 % }
 
+% if ( $error ) {
+<& /elements/error.html, $error &>
+% }
 
 % if ( $conf->exists('quotation_html') ) { 
     <% join('', $quotation->print_html( preref_callback=>$preref_callback )) %>
@@ -106,6 +109,8 @@ my $quotation = qsearchs({
   #'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
 die "Quotation #$quotationnum not found!" unless $quotation;
+
+my $error = $quotation->estimate;
 
 my $menubar = menubar( $quotation->cust_or_prospect_label_link($p) );
 
