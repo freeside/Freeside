@@ -1052,7 +1052,7 @@ sub new_customer_minimal {
 
   my $session_id;
   do {
-    $session_id = sha1_hex(time(). {}. rand(). $$)
+    $session_id = sha512_hex(time(). {}. rand(). $$)
   } until ( ! defined _myaccount_cache->get($session_id) ); #just in case
 
   _cache->set( $session_id, $session, '1 hour' ); # 1 hour?
