@@ -170,6 +170,7 @@ sub ss2clientapi {
   'access_info'               => 'MyAccount/access_info',
   'domain_select_hash'        => 'Signup/domain_select_hash',  # expose?
   'new_customer'              => 'Signup/new_customer',
+  'new_customer_minimal'      => 'Signup/new_customer_minimal',
   'capture_payment'           => 'Signup/capture_payment',
   'clear_signup_cache'        => 'Signup/clear_cache',
   'new_agent'                 => 'Agent/new_agent',

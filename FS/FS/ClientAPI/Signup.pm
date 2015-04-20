@@ -890,6 +890,208 @@ sub new_customer {
 
 }
 
+#false laziness w/ above
+# fresh restart to support "free account" portals with 3.x/4.x-style
+#  addressless accounts
+# and a contact (for self-service login)
+sub new_customer_minimal {
+  my $packet = shift;
+
+  my $conf = new FS::Conf;
+  my $svc_x = $conf->config('signup_server-service') || 'svc_acct';
+
+  if ( $svc_x eq 'svc_acct' ) {
+  
+    #things that aren't necessary in base class, but are for signup server
+      #return "Passwords don't match"
+      #  if $hashref->{'_password'} ne $hashref->{'_password2'}
+    return { 'error' => gettext('empty_password') }
+      unless length($packet->{'_password'});
+    # a bit inefficient for large numbers of pops
+    return { 'error' => gettext('no_access_number_selected') }
+      unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
+
+  }
+  elsif ( $svc_x eq 'svc_pbx' ) {
+    #possibly some validation will be needed
+  }
+
+  my $agentnum;
+  if ( exists $packet->{'session_id'} ) {
+    my $cache = new FS::ClientAPI_SessionCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    my $session = $cache->get($packet->{'session_id'});
+    if ( $session ) {
+      $agentnum = $session->{'agentnum'};
+    } else {
+      return { 'error' => "Can't resume session" }; #better error message
+    }
+  } else {
+    $agentnum = $packet->{agentnum}
+                || $conf->config('signup_server-default_agentnum');
+  }
+
+  #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
+  # common that are still here and library them.
+
+  my $cust_main = new FS::cust_main ( {
+      'agentnum' => $agentnum,
+      'refnum'   => $packet->{refnum}
+                    || $conf->config('signup_server-default_refnum'),
+      'tagnum'   => [ FS::part_tag->default_tags ],
+      'payby'    => 'BILL',
+
+      map { $_ => $packet->{$_} } qw(
+        salesnum
+        last first company daytime night fax mobile
+        ss
+      ),
+
+  } );
+
+  if ( grep length($packet->{$_}), FS::cust_main->location_fields ) {
+    my $bill_hash;
+    foreach my $f (FS::cust_main->location_fields) {
+      $bill_hash->{$f} =  $packet->{$f};
+    }
+    my $bill_location = FS::cust_location->new($bill_hash);
+    $cust_main->set('bill_location' => $bill_location);
+    $cust_main->set('ship_location' => $bill_location);
+  }
+
+  my @invoicing_list = $packet->{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
+                         : ();
+
+  use Tie::RefHash;
+  tie my %hash, 'Tie::RefHash', ();
+  my @svc = ();
+
+  $packet->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
+  my $pkgpart = $1;
+
+  if ( $pkgpart ) {
+
+    my $part_pkg =
+      qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
+        or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
+    my $svcpart = $part_pkg->svcpart($svc_x);
+
+    my $cust_pkg = new FS::cust_pkg ( {
+      #later#'custnum' => $custnum,
+      'pkgpart'    => $packet->{'pkgpart'},
+    } );
+    #my $error = $cust_pkg->check;
+    #return { 'error' => $error } if $error;
+
+    #should be all auto-magic and shit
+    if ( $svc_x eq 'svc_acct' ) {
+
+      my $svc = new FS::svc_acct {
+        'svcpart'   => $svcpart,
+        map { $_ => $packet->{$_} }
+          qw( username _password sec_phrase popnum domsvc ),
+      };
+
+      push @svc, $svc;
+
+    } elsif ( $svc_x eq 'svc_phone' ) {
+
+      push @svc, new FS::svc_phone ( {
+        'svcpart' => $svcpart,
+         map { $_ => $packet->{$_} }
+           qw( countrycode phonenum sip_password pin ),
+      } );
+
+    } elsif ( $svc_x eq 'svc_pbx' ) {
+
+      push @svc, new FS::svc_pbx ( {
+          'svcpart' => $svcpart,
+          map { $_ => $packet->{$_} } 
+            qw( id title ),
+          } );
+    
+    } else {
+      die "unknown signup service $svc_x";
+    }
+
+    foreach my $svc ( @svc ) {
+      my $y = $svc->setdefault; # arguably should be in new method
+      return { 'error' => $y } if $y && !ref($y);
+      #$error = $svc->check;
+      #return { 'error' => $error } if $error;
+    }
+
+    use Tie::RefHash;
+    tie my %hash, 'Tie::RefHash';
+    $hash{ $cust_pkg } = \@svc;
+
+  }
+
+  my %opt = ();
+  if ( $invoicing_list[0] && $packet->{'_password'} ) {
+    $opt{'contact'} = [
+      new FS::contact { 'first'        => $cust_main->first,
+                        'last'         => $cust_main->get('last'),
+                        '_password'    => $packet->{'_password'},
+                        'emailaddress' => $invoicing_list[0],
+                        'selfservice_access' => 'Y',
+                      }
+    ];
+  }
+
+  my $error = $cust_main->insert(
+    \%hash,
+    \@invoicing_list,
+    %opt,
+  );
+  return { 'error' => $error } if $error;
+
+  my $session = { 'custnum' => $cust_main->custnum };
+
+  my $session_id;
+  do {
+    $session_id = sha1_hex(time(). {}. rand(). $$)
+  } until ( ! defined _myaccount_cache->get($session_id) ); #just in case
+
+  _cache->set( $session_id, $session, '1 hour' ); # 1 hour?
+
+  my %return = ( 'error'          => '',
+                 'signup_service' => $svc_x,
+                 'custnum'        => $cust_main->custnum,
+                 'session_id'     => $session_id,
+               );
+
+  if ( $svc[0] ) {
+
+    $return{'svcnum'} = $svc[0]->svcnum;
+
+    if ( $svc_x eq 'svc_acct' ) {
+      $return{$_} = $svc[0]->$_() for qw( username _password );
+    } elsif ( $svc_x eq 'svc_phone' ) {
+      $return{$_} = $svc[0]->$_() for qw(countrycode phonenum sip_password pin);
+    } elsif ( $svc_x eq 'svc_pbx' ) {
+      #$return{$_} = $svc[0]->$_() for qw( ) #nothing yet
+     } else {
+      return {'error' => "configuration error: unknown signup service $svc_x"};
+      #die "unknown signup service $svc_x";
+      # return an error that's visible to someone somewhere
+    }
+
+  }
+
+  return \%return;
+
+}
+
+use vars qw( $myaccount_cache );
+sub _myaccount_cache {
+  $myaccount_cache ||= new FS::ClientAPI_SessionCache( {
+                         'namespace' => 'FS::ClientAPI::MyAccount',
+                       } );
+}
+
 sub capture_payment {
   my $packet = shift;
 
