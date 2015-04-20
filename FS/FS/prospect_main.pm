@@ -5,7 +5,7 @@ use strict;
 use vars qw( $DEBUG @location_fields );
 use Scalar::Util qw( blessed );
 use FS::Conf;
-use FS::Record qw( dbh qsearch ); # qsearchs );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_location;
 use FS::cust_main;
 
@@ -246,6 +246,7 @@ sub check {
     || $self->ut_foreign_key(  'agentnum', 'agent',         'agentnum' )
     || $self->ut_foreign_keyn( 'refnum',   'part_referral', 'refnum'   )
     || $self->ut_textn('company')
+    || $self->ut_foreign_keyn( 'taxstatusnum', 'tax_status', 'taxstatusnum' )
   ;
   return $error if $error;
 
@@ -299,6 +300,36 @@ Returns the qualifications (see L<FS::qual>) associated with this prospect.
 
 Returns the agent (see L<FS::agent>) for this customer.
 
+=item tax_status
+
+Returns the external tax status, as an FS::tax_status object, or the empty 
+string if there is no tax status.
+
+=cut
+
+sub tax_status {
+  my $self = shift;
+  if ( $self->taxstatusnum ) {
+    qsearchs('tax_status', { 'taxstatusnum' => $self->taxstatusnum } );
+  } else { 
+    return '';
+  }
+}
+
+=item taxstatus
+
+Returns the tax status code if there is one.
+
+=cut
+
+sub taxstatus {
+  my $self = shift;
+  my $tax_status = $self->tax_status;
+  $tax_status
+    ? $tax_status->taxstatus
+    : '';
+}
+
 =item convert_cust_main
 
 Converts this prospect to a customer.
@@ -325,7 +356,7 @@ sub convert_cust_main {
   my $cust_main = new FS::cust_main {
     'bill_location' => $cust_location[0],
     'ship_location' => $cust_location[0],
-    ( map { $_ => $self->$_ } qw( agentnum refnum company ) ),
+    ( map { $_ => $self->$_ } qw( agentnum refnum company taxstatusnum ) ),
   };
 
   $cust_main->refnum( FS::Conf->new->config('referraldefault') || 1  )
@@ -408,6 +439,11 @@ sub search {
 # stub this so that calling ->cust_bill doesn't return an empty string
 sub cust_bill {
   return;
+}
+
+# XXX should have real localization here eventually
+sub locale {
+  FS::Conf->new->config('locale');
 }
 
 =back

@@ -11,7 +11,7 @@ use FS::tax_rate;
 use JSON;
 use Geo::StreetAddress::US;
 
-our $DEBUG = 2;
+our $DEBUG = 0;
 our $json = JSON->new->pretty(1);
 
 our $conf;
@@ -28,10 +28,6 @@ FS::UID->install_callback( sub {
 #sub cust_tax_locations {
 #}
 # Avalara address standardization would be nice but isn't necessary
-
-# XXX this is just here to avoid reworking the framework right now. By the
-# 4.0 release, ALL tax calculations should be done after the invoice has 
-# been inserted into the database.
 
 # nothing to do here
 sub add_sale {}
@@ -85,6 +81,8 @@ sub build_request {
     };
     push @lines, $line;
   }
+  # don't make the request unless there are some eligible line items
+  return '' if !@lines;
 
   # assemble address records for any cust_locations we used here, plus
   # the company address
@@ -141,6 +139,7 @@ sub build_request {
 
   # create the top level object
   my $date = DateTime->from_epoch(epoch => $self->{invoice_time});
+  my $doctype = $self->{estimate} ? 'SalesOrder' : 'SalesInvoice';
   return {
     'CustomerCode'      => $cust_main->custnum,
     'DocDate'           => $date->strftime('%Y-%m-%d'),
@@ -149,7 +148,7 @@ sub build_request {
     'DocCode'           => $cust_bill->invnum,
     'DetailLevel'       => 'Tax',
     'Commit'            => 'false',
-    'DocType'           => 'SalesInvoice', # ???
+    'DocType'           => $doctype,
     'CustomerUsageType' => $cust_main->taxstatus,
     # ExemptionNo, Discount, TaxOverride, PurchaseOrderNo,
     'Addresses'         => \@addrs,
@@ -196,6 +195,10 @@ account number, and license key.
 
   # assemble the request hash
   my $request = $self->build_request;
+  if (!$request) {
+    warn "no tax-eligible items on this invoice\n" if $DEBUG;
+    return [];
+  }
 
   warn "sending Avalara tax request\n" if $DEBUG;
   my $request_json = $json->encode($request);
@@ -247,6 +250,7 @@ account number, and license key.
       my $error = $tax_rate->find_or_insert;
       return "error inserting tax_rate record for '$taxname': $error\n"
         if $error;
+      $tax_rate = $tax_rate->replace_old; # get its taxnum if there wasn't one
 
       # create a tax_rate_location record
       my $tax_rate_location = FS::tax_rate_location->new({
@@ -266,7 +270,7 @@ account number, and license key.
 
       # create a link record
       my $tax_link = FS::cust_bill_pkg_tax_rate_location->new({
-          cust_bill_pkg       => $tax_item,
+          tax_cust_bill_pkg   => $tax_item,
           taxtype             => 'FS::tax_rate',
           taxnum              => $tax_rate->taxnum,
           taxratelocationnum  => $tax_rate_location->taxratelocationnum,

@@ -7,6 +7,7 @@
                             'company'     => 'Company',
                             'contactnum'  => 'Contact',
                             'locationnum' => '&nbsp;',
+                            'taxstatusnum'=> 'Tax status',
                           },
      'fields'          => [
        { 'field'       => 'agentnum',
@@ -45,6 +46,10 @@
          'include_opt_callback' => sub { 
             'prospect_main' => shift
           },
+       },
+       { 'field'    => 'taxstatusnum',
+         'type'     => 'select-tax_status',
+         'empty_label'   => ' ',
        },
      ],
      'new_callback'    => $new_callback,

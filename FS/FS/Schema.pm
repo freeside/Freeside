@@ -1643,7 +1643,7 @@ sub tables_hashref {
         'message_noemail', 'char', 'NULL', 1, '', '',
         'bill_locationnum', 'int', 'NULL', '', '', '',
         'ship_locationnum', 'int', 'NULL', '', '', '',
-        'taxstatusnum',   'char', 'NULL',      32, '', '',
+        'taxstatusnum',   'int', 'NULL', '', '', '',
         'complimentary', 'char', 'NULL', 1, '', '',
         'po_number', 'varchar', 'NULL', $char_d, '', '',
         'invoice_attn', 'varchar', 'NULL', $char_d, '', '',
@@ -1885,6 +1885,7 @@ sub tables_hashref {
         'disabled',       'char', 'NULL',       1, '', '', 
         'custnum',         'int', 'NULL',      '', '', '',
         'refnum',          'int', 'NULL',      '', '', '', 
+        'taxstatusnum',    'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'prospectnum',
       'unique'       => [],
@@ -1987,12 +1988,10 @@ sub tables_hashref {
         'quotationtaxnum',  'serial',     '',      '', '', '',
         'quotationpkgnum',     'int',     '',      '', '', '',
         'itemdesc',        'varchar',     '', $char_d, '', '',
-        'taxnum',              'int',     '',      '', '', '', 
-        'taxtype',         'varchar',     '', $char_d, '', '',
         'setup_amount',    @money_type,                '', '',
         'recur_amount',    @money_type,                '', '',
       ],
-      'primary_key' => 'quotationtaxnum',,
+      'primary_key' => 'quotationtaxnum',
       'unique' => [],
       'index'  => [ [ 'quotationpkgnum' ] ],
       'foreign_keys' => [
@@ -2000,7 +1999,7 @@ sub tables_hashref {
                             table      => 'quotation_pkg',
                           },
                         ],
-},
+    },
 
     'cust_location' => { #'location' now that its prospects too, but...
       'columns' => [

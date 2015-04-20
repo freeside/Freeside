@@ -69,6 +69,14 @@
       &>
 %   }
 % }
+% if ( my $tax_status = $prospect_main->tax_status ) {
+  <TR>
+    <TD ALIGN="right">Tax status</TD>
+    <TD BGCOLOR="#FFFFFF">
+      <B><% $tax_status->taxstatus %>:</B> <% $tax_status->description %>
+    </TD>
+  </TR>
+% }
 
 </TABLE>
 
