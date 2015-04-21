@@ -4,6 +4,7 @@ use strict;
 use vars qw( $DEBUG $me );
 use Data::Dumper;
 use Tie::RefHash;
+use Digest::SHA qw(sha512_hex);
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(popurl);
