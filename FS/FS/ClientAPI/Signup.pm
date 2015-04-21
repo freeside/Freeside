@@ -942,6 +942,7 @@ sub new_customer_minimal {
       'refnum'   => $packet->{refnum}
                     || $conf->config('signup_server-default_refnum'),
       'tagnum'   => [ FS::part_tag->default_tags ],
+      'payby'    => 'BILL',
 
       map { $_ => $packet->{$_} } qw(
         salesnum
