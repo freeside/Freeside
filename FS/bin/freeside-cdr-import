@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::Misc::Getopt;
+use FS::cdr_batch;
+use FS::part_export; # yes, they're really "imports" in this context
+use FS::Record qw(qsearch qsearchs dbh);
+use Date::Format 'time2str';
+
+###
+# parse command line
+###
+
+our %opt;
+getopts('');
+
+$FS::UID::AutoCommit = 0;
+
+my @exports = grep { $_->can('import_cdrs') } qsearch('part_export');
+if (!@exports) {
+  die "There are no CDR exports configured.\n";
+}
+
+foreach my $part_export (@exports) {
+  debug $part_export->label;
+
+  if (!$opt{start}) {
+    # find the most recently downloaded batch
+    my $prefix = $part_export->exporttype . '-' . $part_export->exportnum
+                 . '-%';
+    my $most_recent = qsearchs({
+        'table'     => 'cdr_batch',
+        'hashref'   => { 'cdrbatch' => {op=>'like', value=>$prefix}
+                       },
+        'order_by'  => 'ORDER BY _date DESC LIMIT 1',
+    });
+    if ( $most_recent ) {
+      $most_recent->cdrbatch =~ /-(\d+)$/; # extract the end timestamp
+      $opt{start} = $1;
+      debug "Downloading records since most recent batch: ".
+            time2str('%Y-%m-%d', $opt{start});
+    } else {
+      $opt{start} = 1262332800;
+      debug "Downloading records since January 2010.";
+    }
+  }
+
+  $opt{end} ||= time;
+
+  my $error_or_batch = $part_export->import_cdrs( $opt{start}, $opt{end} );
+  if ( ref $error_or_batch ) {
+    debug "Created batch #".$error_or_batch->cdrbatchnum;
+    dbh->commit;
+  } elsif ( $error_or_batch ) {
+    warn $error_or_batch;
+    dbh->rollback;
+  } else {
+    debug "No CDRs found."
+  }
+}
+
+sub usage {
+  "Usage: \n  freeside-cdr-import [ options ] user
+  Imports CDRs from certain svc_phone exports that are capable of it.
+  Options:
+    -v: be verbose
+    -s date: start date (defaults to the most recent batch date)
+    -e date: end date
+";
+}
+
