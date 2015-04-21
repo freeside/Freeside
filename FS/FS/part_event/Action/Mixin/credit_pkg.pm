@@ -52,10 +52,14 @@ sub option_fields {
 # arguments:
 # 1. cust_pkg
 # 2. recipient of the credit (passed through to _calc_credit_percent)
+# 3. optional scalar reference for recording a warning message
 
 sub _calc_credit {
   my $self = shift;
   my $cust_pkg = shift;
+  my $who = shift;
+  my $warnref = shift;
+  my $warning = '';
 
   my $cust_main = $self->cust_main($cust_pkg);
 
@@ -75,15 +79,19 @@ sub _calc_credit {
 
   my $percent;
   if ( $self->can('_calc_credit_percent') ) {
-    $percent = $self->_calc_credit_percent($cust_pkg, @_);
+    $percent = $self->_calc_credit_percent($cust_pkg, $who) || 0;
+    $warning = 'Percent calculated to zero ' unless $percent+0;
   } else {
     $percent = $self->option('percent') || 0;
+    $warning = 'Percent set to zero ' unless $percent+0;
   }
 
   my @arg = ($what eq 'setup_cost') ? () : ($cust_pkg);
+  my $charge = $part_pkg->$what(@arg) || 0;
+  $warning .= "$what is zero" unless $charge+0;
 
-  sprintf('%.2f', $part_pkg->$what(@arg) * $percent / 100 );
-
+  $$warnref .= $warning if ref($warnref);
+  return sprintf('%.2f', $charge * $percent / 100 );
 }
 
 1;

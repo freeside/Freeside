@@ -19,8 +19,9 @@ sub do_action {
   my $agent_cust_main = $agent->agent_cust_main;
     #? or return "No customer record for agent ". $agent->agent;
 
-  my $amount = $self->_calc_credit($cust_pkg, $agent);
-  return '' unless $amount > 0;
+  my $warning = '';
+  my $amount = $self->_calc_credit($cust_pkg, $agent, \$warning);
+  return $warning unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');
 

@@ -19,8 +19,9 @@ sub do_action {
   my $employee_cust_main = $employee->user_cust_main;
     #? or return "No customer record for employee ". $employee->username;
 
-  my $amount    = $self->_calc_credit($cust_pkg, $employee);
-  return '' unless $amount > 0;
+  my $warning = '';
+  my $amount    = $self->_calc_credit($cust_pkg, $employee, \$warning);
+  return $warning unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');
 
