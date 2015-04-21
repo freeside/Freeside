@@ -23,8 +23,9 @@ sub do_action {
   return 'Referring customer is cancelled'
     if $referring_cust_main->status eq 'cancelled';
 
-  my $amount    = $self->_calc_credit($cust_pkg, $referring_cust_main);
-  return '' unless $amount > 0;
+  my $warning = '';
+  my $amount    = $self->_calc_credit($cust_pkg, $referring_cust_main, \$warning);
+  return $warning unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');
 

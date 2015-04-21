@@ -107,9 +107,12 @@ sub _calc_credit {
     # don't multiply by quantity here; it's already included
   }
 
-  $$warnref .= $warning if ref($warnref);
+  if ($charge < 0) { # e.g. prorate
+    $charge = 0;
+    $warning .= 'Negative charge set to zero ';
+  }
 
-  $charge = 0 if $charge < 0; # e.g. prorate
+  $$warnref .= $warning if ref($warnref);
   return ($percent * $charge / 100);
 }
 

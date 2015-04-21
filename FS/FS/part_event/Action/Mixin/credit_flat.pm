@@ -19,7 +19,10 @@ sub option_fields {
 
 sub _calc_credit {
   my $self = shift;
-  $self->option('amount');
+  my $warnref = $_[2]; #other input not used by credit_flat
+  my $warning = $self->option('amount') ? '' : 'Amount set to zero ';
+  $$warnref .= $warning if ref($warnref);
+  return $self->option('amount');
 }
 
 1;
