@@ -2,6 +2,7 @@ package FS::ClientAPI::Signup;
 
 use strict;
 use vars qw( $DEBUG $me );
+use subs qw( _myaccount_cache );
 use Data::Dumper;
 use Tie::RefHash;
 use Digest::SHA qw(sha512_hex);
@@ -931,7 +932,6 @@ sub new_customer_minimal {
       'refnum'   => $packet->{refnum}
                     || $conf->config('signup_server-default_refnum'),
       'tagnum'   => [ FS::part_tag->default_tags ],
-      'payby'    => 'BILL',
 
       map { $_ => $packet->{$_} } qw(
         salesnum
@@ -1046,7 +1046,7 @@ sub new_customer_minimal {
     $session_id = sha512_hex(time(). {}. rand(). $$)
   } until ( ! defined _myaccount_cache->get($session_id) ); #just in case
 
-  _cache->set( $session_id, $session, '1 hour' ); # 1 hour?
+  _myaccount_cache->set( $session_id, $session, '1 hour' ); # 1 hour?
 
   my %return = ( 'error'          => '',
                  'signup_service' => $svc_x,
