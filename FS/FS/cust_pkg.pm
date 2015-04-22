@@ -2039,14 +2039,15 @@ sub change {
   }
 
   if ( $keep_dates ) {
-    foreach my $date ( qw(setup bill last_bill susp adjourn cancel expire 
-                          resume start_date contract_end ) ) {
+    foreach my $date ( qw(setup bill last_bill) ) {
       $hash{$date} = $self->getfield($date);
     }
   }
-  # always keep this date, regardless of anything
-  # (the date of the package change is in a different field)
-  $hash{'order_date'} = $self->getfield('order_date');
+  # always keep the following dates
+  foreach my $date (qw(order_date susp adjourn cancel expire resume 
+                    start_date contract_end)) {
+    $hash{$date} = $self->getfield($date);
+  }
 
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
@@ -2082,19 +2083,15 @@ sub change {
     # changed from this package.
     $cust_pkg = $opt->{'cust_pkg'};
 
-    foreach ( qw( pkgnum pkgpart locationnum ) ) {
-      $cust_pkg->set("change_$_", $self->get($_));
+    # follow all the above rules for date changes, etc.
+    foreach (keys %hash) {
+      $cust_pkg->set($_, $hash{$_});
     }
-    $cust_pkg->set('change_date', $time);
-    $cust_pkg->set('start_date', ''); # it's starting now
-    # if we are crediting unused time, then create the new package as a new
-    # package, charge its setup fee, etc. (same as an immediate change)
-    if (! $unused_credit) {
-      foreach my $date ( qw(setup bill last_bill susp adjourn resume 
-                            contract_end ) ) {
-        $cust_pkg->set($date, $self->getfield($date));
-      }
+    # except those that implement the future package change behavior
+    foreach (qw(change_to_pkgnum start_date expire)) {
+      $cust_pkg->set($_, '');
     }
+
     $error = $cust_pkg->replace;
 
   } else {
