@@ -57,7 +57,7 @@ returns an error message. If there are no new CDRs, returns nothing.
 # map their column names to cdr fields
 # (warning: API docs are not quite accurate here)
 our %column_map = (
-  'Tenant'      => 'subscriber',
+  'Tenant'      => 'accountcode',
   'From'        => 'src',
   'To'          => 'dst',
   'Date/Time'   => 'startdate',
