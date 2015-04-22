@@ -71,6 +71,9 @@ sub cust_fields_avail { (
   'Cust# | Cust. Status | Name | Company | (bill) Address 1 | (bill) Address 2 | (bill) City | (bill) State | (bill) Zip | (bill) Country | Day phone | Night phone | Mobile phone | Fax number | (service) Address 1 | (service) Address 2 | (service) City | (service) State | (service) Zip | (service) Country | Invoicing email(s) | Payment Type | Current Balance' =>
     'custnum | Status | Last, First | Company | (address) | (all phones) | (service address) | Invoicing email(s) | Payment Type | Current Balance',
 
+  'Cust# | Cust. Status | Name | Company | (bill) Address 1 | (bill) Address 2 | (bill) City | (bill) State | (bill) Zip | (bill) Country | (bill) Latitude | (bill) Longitude | Day phone | Night phone | Mobile phone | Fax number | (service) Address 1 | (service) Address 2 | (service) City | (service) State | (service) Zip | (service) Country | (service) Latitude | (service) Longitude | Invoicing email(s) | Payment Type | Current Balance' =>
+    'custnum | Status | Last, First | Company | (address+coord) | (all phones) | (service address+coord) | Invoicing email(s) | Payment Type | Current Balance',
+
   'Invoicing email(s)' => 'Invoicing email(s)',
   'Cust# | Invoicing email(s)' => 'custnum | Invoicing email(s)',
 

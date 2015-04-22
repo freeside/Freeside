@@ -206,6 +206,7 @@ sub parse_lt_gt {
 # cust_main report subroutines
 ###
 
+=over 4
 
 =item cust_header [ CUST_FIELDS_VALUE ]
 
@@ -259,12 +260,16 @@ sub cust_header {
     '(bill) State'             => 'bill_state',
     '(bill) Zip'               => 'bill_zip',
     '(bill) Country'           => 'bill_country_full',
+    '(bill) Latitude'          => 'bill_latitude',
+    '(bill) Longitude'         => 'bill_longitude',
     '(service) Address 1'      => 'ship_address1',
     '(service) Address 2'      => 'ship_address2',
     '(service) City'           => 'ship_city',
     '(service) State'          => 'ship_state',
     '(service) Zip'            => 'ship_zip',
     '(service) Country'        => 'ship_country_full',
+    '(service) Latitude'       => 'ship_latitude',
+    '(service) Longitude'      => 'ship_longitude',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
     'Payment Type'             => 'payby',
     'Current Balance'          => 'current_balance',
@@ -352,7 +357,7 @@ sub cust_sql_fields {
   #inefficientish, but tiny lists and only run once per page
 
   my @location_fields;
-  foreach my $field (qw( address1 address2 city state zip )) {
+  foreach my $field (qw( address1 address2 city state zip latitude longitude )) {
     foreach my $pre ('bill_','ship_') {
       if ( grep { $_ eq $pre.$field } @cust_fields ) {
         push @location_fields, $pre.'location.'.$field.' AS '.$pre.$field;
@@ -601,7 +606,11 @@ sub is_mobile {
   }
   return 0;
 }
-    
+
+=back
+
+=cut
+
 ###
 # begin JSRPC code...
 ###
