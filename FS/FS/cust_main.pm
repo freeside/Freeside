@@ -541,6 +541,33 @@ sub insert {
 
   }
 
+  warn "  setting contacts\n"
+    if $DEBUG > 1;
+
+  if ( my $contact = delete $options{'contact'} ) {
+
+    foreach my $c ( @$contact ) {
+      $c->custnum($self->custnum);
+      my $error = $c->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    }
+
+  } elsif ( my $contact_params = delete $options{'contact_params'} ) {
+
+    my $error = $self->process_o2m( 'table'  => 'contact',
+                                    'fields' => FS::contact->cgi_contact_fields,
+                                    'params' => $contact_params,
+                                  );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   warn "  setting cust_main_exemption\n"
     if $DEBUG > 1;
 
