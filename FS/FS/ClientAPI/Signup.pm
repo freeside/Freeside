@@ -947,7 +947,12 @@ sub new_customer_minimal {
       map { $_ => $packet->{$_} } qw(
         salesnum
         last first company daytime night fax mobile
-        ss
+        ss stateid stateid_state
+
+        payby
+        payinfo paycvv paydate payname paystate paytype
+        paystart_month paystart_year payissue
+        payip
       ),
 
   } );
