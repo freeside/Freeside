@@ -2822,6 +2822,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'manual_process-single_invoice_amount',
+    'section'     => 'billing',
+    'description' => 'When entering manual credit card and ACH payments, amount will not autofill if the customer has more than one open invoice',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'manual_process-pkgpart',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
