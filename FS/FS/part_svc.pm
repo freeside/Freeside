@@ -95,7 +95,11 @@ the part_svc_column table appropriately (see L<FS::part_svc_column>).
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
+=item I<svcdb>__I<field>_label
+
 =item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), , `S' for selectable choice, `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
+
+=item I<svcdb>__I<field>_required - I<field> should always have a true value
 
 =back
 
@@ -145,6 +149,7 @@ sub insert {
   foreach my $field (
     grep { $_ ne 'svcnum'
            && ( defined( $self->getfield($svcdb.'__'.$_.'_flag') )
+                || defined($self->getfield($svcdb.'__'.$_.'_required'))
                 || $self->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
          } (fields($svcdb), @fields)
   ) {
@@ -156,6 +161,7 @@ sub insert {
 
     my $flag  = $self->getfield($svcdb.'__'.$field.'_flag');
     my $label = $self->getfield($svcdb.'__'.$field.'_label');
+    my $required = $self->getfield($svcdb.'__'.$field.'_required') ? 'Y' : '';
     if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
 
       if ( uc($flag) =~ /^([A-Z])$/ ) {
@@ -169,6 +175,8 @@ sub insert {
 
       $part_svc_column->setfield('columnlabel', $label)
         if $label !~ /^\s*$/;
+
+      $part_svc_column->setfield('required', $required);
 
       if ( $previous ) {
         $error = $part_svc_column->replace($previous);
@@ -279,6 +287,7 @@ sub replace {
     foreach my $field (
       grep { $_ ne 'svcnum'
              && ( defined( $new->getfield($svcdb.'__'.$_.'_flag') )
+                  || defined($new->getfield($svcdb.'__'.$_.'_required'))
                   || $new->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
            } (fields($svcdb),@fields)
     ) {
@@ -291,6 +300,7 @@ sub replace {
 
       my $flag  = $new->getfield($svcdb.'__'.$field.'_flag');
       my $label = $new->getfield($svcdb.'__'.$field.'_label');
+      my $required = $new->getfield($svcdb.'__'.$field.'_required') ? 'Y' : '';
  
       if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
 
@@ -308,6 +318,8 @@ sub replace {
 
         $part_svc_column->setfield('columnlabel', $label)
           if $label !~ /^\s*$/;
+
+        $part_svc_column->setfield('required', $required);
 
         if ( $previous ) {
           $error = $part_svc_column->replace($previous);
@@ -699,6 +711,8 @@ some components specified by "select-.*.html", and a bunch more...
 
 =item select_allow_empty - Used with select_table, adds an empty option
 
+=item required - This field should always have a true value (do not use with type checkbox or disabled)
+
 =back
 
 =cut
@@ -773,7 +787,7 @@ sub process {
                          and ref($param->{ $f }) ) {
                       $param->{ $f } = join(',', @{ $param->{ $f } });
 		    }
-                    ( $f, $f.'_flag', $f.'_label' );
+                    ( $f, $f.'_flag', $f.'_label', $f.'_required' );
                   }
                   @fields;
 

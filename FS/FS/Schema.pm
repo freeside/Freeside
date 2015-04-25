@@ -3595,6 +3595,7 @@ sub tables_hashref {
         'columnlabel', 'varchar', 'NULL', $char_d, '', '',
         'columnvalue', 'varchar', 'NULL',     512, '', '', 
         'columnflag',  'char',    'NULL',       1, '', '', 
+        'required',    'char',    'NULL',       1, '', '', 
       ],
       'primary_key'  => 'columnnum',
       'unique'       => [ [ 'svcpart', 'columnname' ] ],
