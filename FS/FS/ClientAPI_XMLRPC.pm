@@ -52,6 +52,7 @@ our %typefix = (
   'login_info'         => \%typefix_skin_info,
   'invoice_logo'       => { 'logo' => 'base64', },
   'login_banner_image' => { 'image' => 'base64', },
+  'quotation_print'    => { 'document' => 'base64' },
 );
 
 sub AUTOLOAD {
@@ -186,6 +187,12 @@ sub ss2clientapi {
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
+
+  'quotation_info'            => 'MyAccount/quotation/quotation_info',
+  'quotation_print'           => 'MyAccount/quotation/quotation_print',
+  'quotation_add_pkg'         => 'MyAccount/quotation/quotation_add_pkg',
+  'quotation_remove_pkg'      => 'MyAccount/quotation/quotation_remove_pkg',
+  'quotation_order'           => 'MyAccount/quotation/quotation_order',
   };
 }
 

@@ -695,22 +695,24 @@ sub estimate {
       # discounts
       if ( $cust_bill_pkg->get('discounts') ) {
         my $discount = $cust_bill_pkg->get('discounts')->[0];
-        # discount records are generated as (setup, recur).
-        # well, not always, sometimes it's just (recur), but fixing this
-        # is horribly invasive.
-        my $qpd = $quotation_pkg_discount{$quotationpkgnum}
-              ||= qsearchs('quotation_pkg_discount', {
-                  'quotationpkgnum' => $quotationpkgnum
-                  });
+        if ( $discount ) {
+          # discount records are generated as (setup, recur).
+          # well, not always, sometimes it's just (recur), but fixing this
+          # is horribly invasive.
+          my $qpd = $quotation_pkg_discount{$quotationpkgnum}
+                ||= qsearchs('quotation_pkg_discount', {
+                    'quotationpkgnum' => $quotationpkgnum
+                    });
 
-        if (!$qpd) { #can't happen
-          warn "$me simulated bill returned a discount but no discount is in effect.\n";
-        }
-        if ($discount and $qpd) {
-          if ( $i == 0 ) {
-            $qpd->set('setup_amount', $discount->amount);
-          } else {
-            $qpd->set('recur_amount', $discount->amount);
+          if (!$qpd) { #can't happen
+            warn "$me simulated bill returned a discount but no discount is in effect.\n";
+          }
+          if ($discount and $qpd) {
+            if ( $i == 0 ) {
+              $qpd->set('setup_amount', $discount->amount);
+            } else {
+              $qpd->set('recur_amount', $discount->amount);
+            }
           }
         }
       } # end of discount stuff
