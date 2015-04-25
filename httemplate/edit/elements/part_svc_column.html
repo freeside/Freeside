@@ -77,6 +77,7 @@ that field.
     <TH BGCOLOR="#cccccc">Field</TH>
     <TH BGCOLOR="#cccccc">Label</TH>
     <TH BGCOLOR="#cccccc" COLSPAN=2>Modifier</TH>
+    <TH BGCOLOR="#cccccc">Required?</TH>
   </TR>
 % $part_svc->set('svcpart' => $opt{'clone'}) if $opt{'clone'}; # for now
 % my $i = 0;
@@ -210,9 +211,17 @@ that field.
       &>
 %   }
     </TD>
+    <TD>
+%   if (!$def->{'type'} || !(grep {$_ eq $def->{'type'}} ('checkbox','disabled'))) {
+      <INPUT ID="<% $name.'_required' %>" TYPE="checkbox" NAME="<% $svcdb %>__<% $field %>_required" VALUE="Y" 
+        <% ($part_svc_column->required || $def->{'required'}) ? 'CHECKED' : '' %> 
+        <% $def->{'required'} ? 'DISABLED' : '' %>
+       >
+%   }
+    </TD>
   </TR>
   <TR CLASS="row<%$i%>">
-    <TD COLSPAN=2 CLASS="def_info">
+    <TD COLSPAN=3 CLASS="def_info">
 %   if ( $def->{def_info} ) {
       (<% $def->{def_info} %>)
     </TD>
@@ -228,7 +237,7 @@ that field.
     <TD COLSPAN=3 ALIGN="right">
       <% emt('Require "Provision" access right to edit password') %>
     </TD>
-    <TD>
+    <TD COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="restrict_edit_password" VALUE="Y" \
       <% $part_svc->restrict_edit_password ? 'CHECKED' : '' %>>
     </TD>
@@ -244,7 +253,7 @@ that field.
     <TD COLSPAN=3 ALIGN="right">
       <% emt('This service has an attached router') %>
     </TD>
-    <TD>
+    <TD COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="has_router" VALUE="Y" \
       <% $part_svc->has_router ? 'CHECKED' : '' %>>
     </TD>
