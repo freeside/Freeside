@@ -4,7 +4,8 @@ require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
 $response = $freeside->login( array(
-+  'email'    => strtolower($_POST['email']),                                     'username' => strtolower($_POST['username']),
+  'email'    => strtolower($_POST['email']),
+  'username' => strtolower($_POST['username']),
   'domain'   => strtolower($_POST['domain']),
   'password' => $_POST['password'],
 ) );
