@@ -114,6 +114,13 @@ $socket .= '.'.$tag if defined $tag && length($tag);
 
   'start_thirdparty'          => 'MyAccount/start_thirdparty',
   'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
+
+  'quotation_info'            => 'MyAccount/quotation/quotation_info',
+  'quotation_print'           => 'MyAccount/quotation/quotation_print',
+  'quotation_add_pkg'         => 'MyAccount/quotation/quotation_add_pkg',
+  'quotation_remove_pkg'      => 'MyAccount/quotation/quotation_remove_pkg',
+  'quotation_order'           => 'MyAccount/quotation/quotation_order',
+
 );
 @EXPORT_OK = (
   keys(%autoload),

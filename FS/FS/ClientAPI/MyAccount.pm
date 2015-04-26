@@ -48,6 +48,8 @@ use FS::msg_template;
 use FS::contact;
 use FS::cust_location;
 
+use FS::ClientAPI::MyAccount::quotation; # just for code organization
+
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
 
