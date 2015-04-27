@@ -211,6 +211,8 @@ sub quotation_order {
   my $quotation = _quotation($session);
 
   my $error = $quotation->order;
+  $quotation->set('disabled' => 'Y');
+  $error ||= $quotation->replace;
 
   return { 'error' => $error };
 }
