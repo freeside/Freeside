@@ -136,7 +136,10 @@ sub quotation_add_pkg {
 
   my $part_pkg = FS::part_pkg->by_key($pkgpart);
 
-  if (!$part_pkg or !$allowed_pkgpart->{$pkgpart}) {
+  if (!$part_pkg or
+      (!$allowed_pkgpart->{$pkgpart} and 
+       $cust_main->agentnum != ($part_pkg->agentnum || 0))
+  ) {
     warn "disallowed quotation_pkg pkgpart $pkgpart\n"
       if $DEBUG;
     return { 'error' => "unknown package $pkgpart" };
