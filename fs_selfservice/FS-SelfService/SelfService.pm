@@ -251,7 +251,30 @@ FS::SelfService - Freeside self-service API
 
   #!!! list_pkgs example
 
-  #!!! order_pkg example
+  #ordering a package with an svc_acct service
+  my $rv = order_pkg( { 'session_id' => $session_id,
+                        'pkgpart'    => $pkgpart,
+                        'svcpart'    => $svcpart,
+                        'username'   => $username,
+                        'domsvc'     => $domsvc, #svcnum of svc_domain
+                        '_password'  => $password,
+                      }
+                    );
+
+  #!!! ordering a package with an svc_domain service example
+
+  #!!! ordering a package with an svc_phone service example
+
+  #!!! ordering a package with an svc_external service example
+
+  #!!! ordering a package with an svc_pbx service
+
+  #ordering a package with no service
+  my $rv = order_pkg( { 'session_id' => $session_id,
+                        'pkgpart'    => $pkgpart,
+                        'svcpart'    => 'none',
+                      }
+                    );
 
   #!!! cancel_pkg example
 
