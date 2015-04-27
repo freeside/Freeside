@@ -2015,6 +2015,17 @@ sub cust_payby {
   });
 }
 
+sub has_cust_payby_auto {
+  my $self = shift;
+  scalar( qsearch({ 
+    'table'     => 'cust_payby',
+    'hashref'   => { 'custnum' => $self->custnum, },
+    'extra_sql' => " AND payby IN ( 'CARD', 'CHEK' ) ",
+    'order_by'  => 'LIMIT 1',
+  }) );
+
+}
+
 =item unsuspend
 
 Unsuspends all unflagged suspended packages (see L</unflagged_suspended_pkgs>

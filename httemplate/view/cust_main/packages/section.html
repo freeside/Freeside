@@ -20,6 +20,8 @@
             cust_pkg-group_by_location
             no_services
         )),
+        #for status.html
+        'has_cust_payby_auto' => $cust_main->has_cust_payby_auto,
     &>
 %   }
 % } else { # there are no packages

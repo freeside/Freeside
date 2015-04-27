@@ -494,16 +494,11 @@ sub pkg_status_row_detached {
 
 sub pkg_status_row_noauto {
   my( $cust_pkg, %opt ) = @_;
-  my $part_pkg = $opt{'part_pkg'};
-  return '' unless $cust_pkg->no_auto || $part_pkg->no_auto;
 
-  #inefficient, should be passed in
-  my $cust_main = $cust_pkg->cust_main;
+  return '' unless ( $cust_pkg->no_auto || $opt{'part_pkg'}->no_auto );
+                && $opt{'has_cust_payby_auto'};
 
-  return '' unless $cust_main->payby =~ /^(CARD|CHEK)$/;
-  my $what = lc(FS::payby->shortname($cust_main->payby));
-
-  pkg_status_row_colspan( $cust_pkg, emt("No automatic $what charge"), '');
+  pkg_status_row_colspan( $cust_pkg, emt("No automatic charge"), '');
 }
 
 sub pkg_status_row_separate_bill {
