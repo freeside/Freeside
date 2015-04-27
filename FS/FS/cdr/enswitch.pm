@@ -20,7 +20,13 @@ use FS::cdr_type;
                     #Calling customer, Calling type
     'src',          #Calling number     
     skip(1),        #Called type
-    'dst',          #Called number
+
+    sub { my ($cdr, $dst) = @_; $dst =~ s/*//g;
+
+	$cdr->set('dst', $dst);
+
+    },              #Called number
+
     skip(14),       #Destination customer, Destination type
                     #Destination number
                     #Destination group ID, Destination group name,
