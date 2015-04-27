@@ -58,7 +58,6 @@ Returns a hashref describing the current quotation, containing:
 
 =cut
 
-use Data::Dumper;
 sub quotation_info {
   my $p = shift;
 
@@ -84,7 +83,6 @@ sub quotation_info {
       'detail_items' => \@items
     }
   ];
-  warn Dumper $sections;
 
   return { 'error' => '', 'sections' => $sections }
 }
@@ -224,6 +222,9 @@ sub quotation_order {
   my $quotation = _quotation($session);
 
   my $error = $quotation->order;
+
+  $quotation->set('disabled' => 'Y');
+  $error ||= $quotation->replace;
 
   return { 'error' => $error };
 }
