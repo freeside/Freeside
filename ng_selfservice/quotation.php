@@ -58,34 +58,46 @@ if ( isset($quotation['sections']) and count($quotation['sections']) > 0 ) {
     );
     $row = 0;
     foreach ( $section['detail_items'] as $detail ) {
-      print(
-        '<TR CLASS="row' . $row . '">'.
-        '<TD>'
-      );
-      if ( $detail['pkgnum'] ) {
+      if (isset($detail['description'])) {
         print(
-          '<A HREF="quotation_remove_pkg.php?pkgnum=' .
-          $detail['pkgnum'] . '">'.
-          '<IMG SRC="images/cross.png" /></A>'
+          '<TR CLASS="row' . $row . '">'.
+          '<TD>'
+        );
+        if ( $detail['pkgnum'] ) {
+          print(
+            '<A HREF="quotation_remove_pkg.php?pkgnum=' .
+            $detail['pkgnum'] . '">'.
+            '<IMG SRC="images/cross.png" /></A>'
+          );
+        }
+        print(
+          '</TD>'.
+          '<TD>'. htmlspecialchars($detail['description']). '</TD>'.
+          '<TD CLASS="amount">'. $detail['amount']. '</TD>'.
+          '</TR>'. "\n"
+        );
+        $row = 1 - $row;
+      } else {
+        # total rows; a 3.x-ism
+        print(
+          '<TR CLASS="total">'.
+          '<TD></TD>'.
+          '<TD>'. htmlspecialchars($detail['total_item']). '</TD>'.
+          '<TD CLASS="amount">'. $detail['total_amount']. '</TD>'.
+          '</TR>'."\n"
         );
       }
-      print(
-        '</TD>'.
-        '<TD>'. htmlspecialchars($detail['description']). '</TD>'.
-        '<TD CLASS="amount">'. $detail['amount']. '</TD>'.
-        '</TR>'. "\n"
-      );
-      $row = 1 - $row;
     }
-    print(
-      '<TR CLASS="total">'.
-      '<TD></TD>'.
-      '<TD>Total</TD>'.
-      '<TD CLASS="amount">'. $section['subtotal']. '</TD>'.
-      '</TR>'.
-      '</TABLE>'.
-      "\n"
-    );
+    if (isset($section['subtotal'])) {
+      print(
+        '<TR CLASS="total">'.
+        '<TD></TD>'.
+        '<TD>Total</TD>'.
+        '<TD CLASS="amount">'. $section['subtotal']. '</TD>'.
+        '</TR>'
+      );
+    }
+    print "</TABLE>\n";
   } # foreach $section
 }
 

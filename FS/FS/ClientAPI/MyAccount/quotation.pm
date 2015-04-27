@@ -5,7 +5,7 @@ use FS::Record qw(qsearch qsearchs);
 use FS::quotation;
 use FS::quotation_pkg;
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 
 sub _custoragent_session_custnum {
   FS::ClientAPI::MyAccount::_custoragent_session_custnum(@_);
@@ -58,6 +58,7 @@ Returns a hashref describing the current quotation, containing:
 
 =cut
 
+use Data::Dumper;
 sub quotation_info {
   my $p = shift;
 
@@ -69,13 +70,22 @@ sub quotation_info {
   warn "quotation_info #".$quotation->quotationnum
     if $DEBUG;
 
-  # code reuse ftw
   my $null_escape = sub { @_ };
-  my ($sections) = $quotation->_items_sections(escape => $null_escape);
-  foreach my $section (@$sections) {
-    $section->{'detail_items'} =
-      [ $quotation->_items_pkg('section' => $section, escape_function => $null_escape) ]; 
-  }
+  # 3.x only; 4.x quotation redesign uses actual sections for this
+  # and isn't a weird hack
+  my @items =
+    map { $_->{'pkgnum'} = $_->{'preref_html'}; $_ }
+    $quotation->_items_pkg(escape_function => $null_escape,
+                           preref_callback => sub { shift->quotationpkgnum });
+  push @items, $quotation->_items_total();
+
+  my $sections = [
+    { 'description' => 'Estimated Charges',
+      'detail_items' => \@items
+    }
+  ];
+  warn Dumper $sections;
+
   return { 'error' => '', 'sections' => $sections }
 }
 
