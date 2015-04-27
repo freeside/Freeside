@@ -61,6 +61,8 @@ function part_export_areyousure(href) {
 
     <TH COLSPAN=2 CLASS="grid" BGCOLOR="#cccccc">Modifier</TH>
 
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="font-size: smaller;">Required</TH>
+
   </TR>
 % my $conf = FS::Conf->new;
 % foreach my $part_svc ( @part_svc ) {
@@ -77,6 +79,9 @@ function part_export_areyousure(href) {
 %              or $_ ne 'svcnum' && (
 %                $col->columnflag || ( $col->columnlabel !~ /^\S*$/
 %                                      && $col->columnlabel ne $def->{'label'}
+%                                    )
+%                                 || ( $col->required
+%                                      && !$def->{'required'}
 %                                    )
 %              )
 %            }
@@ -150,7 +155,7 @@ function part_export_areyousure(href) {
     </TD>
 
 %     unless ( @fields ) {
-%       for ( 1..4 ) {  
+%       for ( 1..5 ) {  
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"</TD>
 %       }
 %     }
@@ -170,7 +175,6 @@ function part_export_areyousure(href) {
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $field %></TD>
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $label %></TD>
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $flag{$flag} %></TD>
-
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 % my $value = &$formatter($part_svc->part_svc_column($field)->columnvalue);
 % if ( $flag =~ /^[MAH]$/ ) { 
@@ -188,6 +192,11 @@ function part_export_areyousure(href) {
             <% $value %>
 % }
 
+     </TD>
+     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+% if ($part_svc_column->required) {
+       Yes
+% }
      </TD>
 %     $n1="</TR><TR>";
 %     } #foreach $field

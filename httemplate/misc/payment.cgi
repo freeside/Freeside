@@ -273,7 +273,9 @@ my @states = sort { $a cmp $b } keys %states;
 
 my $amount = '';
 if ( $balance > 0 ) {
-  $amount = $balance;
+  $amount = $balance
+    unless $conf->exists('manual_process-single_invoice_amount')
+      && ($cust_main->open_cust_bill != 1);
 }
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
