@@ -115,6 +115,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'start_thirdparty'          => 'MyAccount/start_thirdparty',
   'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
 
+  'list_quotations'           => 'MyAccount/quotation/list_quotations',
+  'quotation_new'             => 'MyAccount/quotation/quotation_new',
+  'quotation_delete'          => 'MyAccount/quotation/quotation_delete',
   'quotation_info'            => 'MyAccount/quotation/quotation_info',
   'quotation_print'           => 'MyAccount/quotation/quotation_print',
   'quotation_add_pkg'         => 'MyAccount/quotation/quotation_add_pkg',
@@ -258,6 +261,31 @@ FS::SelfService - Freeside self-service API
   #!!! list_pkgs example
 
   #!!! order_pkg example
+
+  #quoting a package, then ordering after confirmation
+
+  my $rv = quotation_new({ 'session_id' => $session_id });
+  my $qnum = $rv->{quotationnum};
+  #  add packages to the quotation
+  $rv = quotation_add_pkg({ 'session_id'   => $session_id,
+                            'quotationnum' => $qnum,
+                            'pkgpart'      => $pkgpart,
+                            'quantity'     => $quantity, # defaults to 1
+                          });
+  #  repeat until all packages are added
+  #  view the pricing information
+  $rv = quotation_info({ 'session_id'   => $session_id,
+                         'quotationnum' => $qnum,
+                      });
+  print "Total setup charges: ".$rv->{total_setup}."\n".
+        "Total recurring charges: ".$rv->{total_recur}."\n";
+  #  quotation_info also provides a detailed breakdown of charges, in
+  #  $rv->{sections}.
+
+  #  ask customer for confirmation, then:
+  $rv = quotation_order({ 'session_id'   => $session_id,
+                          'quotationnum' => $qnum,
+                        });
 
   #!!! cancel_pkg example
 
@@ -1254,6 +1282,147 @@ svcpart or service definition to provision
 =item id
 
 =item title
+
+=back
+
+=back
+
+=head2 "MY ACCOUNT" QUOTATION FUNCTIONS
+
+All of these functions require the user to be logged in, and the 'session_id'
+key to be included in the argument hashref.`
+
+=over 4
+
+=item list_quotations HASHREF
+
+Returns a hashref listing this customer's active self-service quotations.
+Contents are:
+
+- 'quotations', an arrayref containing an element for each quotation.
+  - quotationnum, the primary key
+  - _date, the date it was started
+  - num_pkgs, the number of packages
+  - total_setup, the sum of setup fees
+  - total_recur, the sum of recurring charges
+
+=item quotation_new HASHREF
+
+Creates an empty quotation and returns a hashref containing 'quotationnum',
+the primary key of the new quotation.
+
+=item quotation_delete HASHREF
+
+Disables (does not really delete) a quotation. Takes the following arguments:
+
+=over 4
+
+=item session_id
+
+=item quotationnum - the quotation to delete
+
+=back
+
+Returns 'error' => a string, which will be empty on success.
+
+=item quotation_info HASHREF
+
+Returns total and detailed pricing information on a quotation.
+
+Takes the following arguments:
+
+=over 4
+
+=item session_id
+
+=item quotationnum - the quotation to return
+
+=back
+
+Returns a hashref containing:
+
+- total_setup, the total of setup fees (and their taxes)
+- total_recur, the total of all recurring charges (and their taxes)
+- sections, an arrayref containing an element for each quotation section.
+  - description, a line of text describing the group of charges
+  - subtotal, the total of charges in this group (if appropriate)
+  - detail_items, an arrayref of line items
+    - pkgnum, the reference number of the package
+    - description, the package name (or tax name)
+    - quantity
+    - amount, the amount charged
+    If the detail item represents a subtotal, it will instead contain:
+    - total_item: description of the subtotal
+    - total_amount: the subtotal amount
+
+
+=item quotation_print HASHREF
+
+Renders the quotation as HTML or PDF. Takes the following arguments:
+
+=over 4
+
+=item session_id
+
+=item quotationnum - the quotation to return
+
+=item format - 'html' or 'pdf'
+
+=back
+
+Returns a hashref containing 'document', the contents of the file.
+
+=item quotation_add_pkg HASHREF
+
+Adds a package to a quotation. Takes the following arguments:
+
+=over 4
+
+=item session_id
+
+=item pkgpart - the package to add
+
+=item quotationnum - the quotation to add it to
+
+=item quantity - the package quantity (defaults to 1)
+
+=item address1, address2, city, state, zip, country - address fields to set
+the service location
+
+=back
+
+Returns 'error' => a string, which will be empty on success.
+
+=item quotation_remove_pkg HASHREF
+
+Removes a package from a quotation. Takes the following arguments:
+
+=over 4
+
+=item session_id
+
+=item pkgnum - the primary key (quotationpkgnum) of the package to remove
+
+=item quotationnum - the quotation to remove it from
+
+=back
+
+Returns 'error' => a string, which will be empty on success.
+
+=back
+
+=item quotation_order HASHREF
+
+Converts the packages in a quotation into real packages. Takes the following
+arguments:
+
+Takes the following arguments:
+
+=over 4
+
+=item session_id
+
+=item quotationnum - the quotation to order
 
 =back
 

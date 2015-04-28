@@ -11,40 +11,123 @@ sub _custoragent_session_custnum {
   FS::ClientAPI::MyAccount::_custoragent_session_custnum(@_);
 }
 
+# _quotation(session, quotationnum)
+# returns that quotation, or '' if it doesn't exist and belong to this
+# customer
+
 sub _quotation {
-  # the currently active quotation
   my $session = shift;
+  my $quotationnum = shift;
   my $quotation;
-  if ( my $quotationnum = $session->{'quotationnum'} ) {
-    $quotation = FS::quotation->by_key($quotationnum);
-  } 
-  if ( !$quotation ) {
-    # find the last quotation created through selfservice
+
+  if ( $quotationnum =~ /^(\d+)$/ ) {
     $quotation = qsearchs( 'quotation', {
-        'custnum'   => $session->{'custnum'},
-        'usernum'   => $FS::CurrentUser::CurrentUser->usernum,
-        'disabled'  => '',
+        'custnum'       => $session->{'custnum'},
+        'usernum'       => $FS::CurrentUser::CurrentUser->usernum,
+        'disabled'      => '',
+        'quotationnum'  => $1,
     }); 
     warn "found selfservice quotation #". $quotation->quotationnum."\n"
       if $quotation and $DEBUG;
-  } 
-  if ( !$quotation ) {
-    $quotation = FS::quotation->new({
-        'custnum'   => $session->{'custnum'},
-        'usernum'   => $FS::CurrentUser::CurrentUser->usernum,
-        '_date'     => time,
-    }); 
-    $quotation->insert; # what to do on error? call the police?
-    warn "started new selfservice quotation #". $quotation->quotationnum."\n"
-      if $quotation and $DEBUG;
-  } 
-  $session->{'quotationnum'} = $quotation->quotationnum;
-  return $quotation;
+
+    return $quotation;
+  }
+  '';
 }
 
-=item quotation_info { session }
+=item list_quotations { session }
 
-Returns a hashref describing the current quotation, containing:
+Returns a hashref listing this customer's active self-service quotations.
+Contents are:
+
+- 'quotations', an arrayref containing an element for each quotation.
+  - quotationnum, the primary key
+  - _date, the date it was started
+  - num_pkgs, the number of packages
+  - total_setup, the sum of setup fees
+  - total_recur, the sum of recurring charges
+
+=cut
+
+sub list_quotations {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my @quotations = qsearch('quotation', {
+      'custnum'   => $session->{'custnum'},
+      'usernum'   => $FS::CurrentUser::CurrentUser->usernum,
+      'disabled'  => '',
+  });
+  my @q;
+  foreach my $quotation (@quotations) {
+    warn "found selfservice quotation #". $quotation->quotationnum."\n"
+      if $quotation and $DEBUG;
+    push @q, { 'quotationnum' => $quotation->quotationnum,
+               '_date'        => $quotation->_date,
+               'num_pkgs'     => scalar($quotation->quotation_pkg),
+               'total_setup'  => $quotation->total_setup,
+               'total_recur'  => $quotation->total_recur,
+             };
+  }
+  return { 'quotations' => \@q, 'error' => '' };
+}
+
+=item quotation_new { session }
+
+Creates a quotation and returns its quotationnum.
+
+=cut
+
+sub quotation_new {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $quotation = FS::quotation->new({
+      'custnum'   => $session->{'custnum'},
+      'usernum'   => $FS::CurrentUser::CurrentUser->usernum,
+      '_date'     => time,
+  }); 
+  my $error = $quotation->insert;
+  if ( $error ) {
+    warn "failed to create selfservice quotation for custnum #" .
+      $session->{custnum} . "\n";
+    return { 'error' => $error };
+  } else {
+    warn "started new selfservice quotation #". $quotation->quotationnum."\n"
+      if $DEBUG;
+    return { 'error' => $error, 'quotationnum' => $quotation->quotationnum };
+  }
+}
+
+=item quotation_delete { session, quotationnum }
+
+Disables (doesn't actually delete) the specified quotationnum.
+
+=cut
+
+sub quotation_delete {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $quotation = _quotation($session, $p->{quotationnum})
+    or return { 'error' => "Quotation not found" };
+  warn "quotation_delete #".$quotation->quotationnum
+    if $DEBUG;
+
+  $quotation->set('disabled' => 'Y');
+  my $error = $quotation->replace;
+  return { 'error' => $error };
+}
+
+=item quotation_info { session, quotationnum }
+
+Returns a hashref describing the specified quotation, containing:
 
 - "sections", an arrayref containing one section for each billing frequency.
   Each one will have:
@@ -55,6 +138,9 @@ Returns a hashref describing the current quotation, containing:
     - "description", the package name (or tax name)
     - "quantity"
     - "amount"
+- "num_pkgs", the number of packages in the quotation
+- "total_setup", the sum of setup/one-time charges and their taxes
+- "total_recur", the sum of all recurring charges and their taxes
 
 =cut
 
@@ -64,8 +150,8 @@ sub quotation_info {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  my $quotation = _quotation($session);
-  return { 'error' => "No current quotation for this customer" } if !$quotation;
+  my $quotation = _quotation($session, $p->{quotationnum})
+    or return { 'error' => "Quotation not found" };
   warn "quotation_info #".$quotation->quotationnum
     if $DEBUG;
 
@@ -84,7 +170,12 @@ sub quotation_info {
     }
   ];
 
-  return { 'error' => '', 'sections' => $sections }
+  return { 'error'        => '',
+           'sections'     => $sections,
+           'num_pkgs'     => scalar($quotation->quotation_pkg),
+           'total_setup'  => $quotation->total_setup,
+           'total_recur'  => $quotation->total_recur,
+         };
 }
 
 =item quotation_print { session, 'format' }
@@ -100,8 +191,8 @@ sub quotation_print {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  my $quotation = _quotation($session);
-  return { 'error' => "No current quotation for this customer" } if !$quotation;
+  my $quotation = _quotation($session, $p->{quotationnum})
+    or return { 'error' => "Quotation not found" };
   warn "quotation_print #".$quotation->quotationnum
     if $DEBUG;
 
@@ -136,7 +227,8 @@ sub quotation_add_pkg {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
   
-  my $quotation = _quotation($session);
+  my $quotation = _quotation($session, $p->{quotationnum})
+    or return { 'error' => "Quotation not found" };
   my $cust_main = $quotation->cust_main;
 
   my $pkgpart = $p->{'pkgpart'};
@@ -172,7 +264,8 @@ sub quotation_add_pkg {
   }
 
   my $error = $quotation_pkg->insert
-           || $quotation->estimate;
+           || $quotation->estimate
+           || '';
 
   { 'error'         => $error,
     'quotationnum'  => $quotation->quotationnum };
@@ -190,7 +283,8 @@ sub quotation_remove_pkg {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
   
-  my $quotation = _quotation($session);
+  my $quotation = _quotation($session, $p->{quotationnum})
+    or return { 'error' => "Quotation not found" };
   my $quotationpkgnum = $p->{pkgnum};
   my $quotation_pkg = FS::quotation_pkg->by_key($quotationpkgnum);
   if (!$quotation_pkg
@@ -219,7 +313,8 @@ sub quotation_order {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
   
-  my $quotation = _quotation($session);
+  my $quotation = _quotation($session, $p->{quotationnum})
+    or return { 'error' => "Quotation not found" };
 
   my $error = $quotation->order;
 

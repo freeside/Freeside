@@ -187,6 +187,9 @@ sub ss2clientapi {
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
 
+  'list_quotations'           => 'MyAccount/quotation/list_quotations',
+  'quotation_new'             => 'MyAccount/quotation/quotation_new',
+  'quotation_delete'          => 'MyAccount/quotation/quotation_delete',
   'quotation_info'            => 'MyAccount/quotation/quotation_info',
   'quotation_print'           => 'MyAccount/quotation/quotation_print',
   'quotation_add_pkg'         => 'MyAccount/quotation/quotation_add_pkg',
