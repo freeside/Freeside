@@ -236,6 +236,8 @@ sub process_district_update {
   my $class = shift;
   my $id = shift;
 
+  local $DEBUG = 1;
+
   eval "use FS::Misc::Geo qw(get_district); use FS::Conf; use $class;";
   die $@ if $@;
   die "$class has no location data" if !$class->can('location_hash');
@@ -255,6 +257,8 @@ sub process_district_update {
 
     my %hash = map { $_ => $tax_info->{$_} } 
       qw( district city county state country );
+    $hash{'taxname'} = '';
+
     my $old = qsearchs('cust_main_county', \%hash);
     if ( $old ) {
       my $new = new FS::cust_main_county { $old->hash, %$tax_info };
