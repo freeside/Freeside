@@ -55,7 +55,7 @@
 
 %     } else { #status: suspended
 %       my ($cpr,$susplabel);
-%       if ($cust_pkg->is_status_delay_cancel) {
+%       if ($cust_pkg->is_status_delay_cancel(%opt)) {
 %         $cpr = $cust_pkg->last_cust_pkg_reason('expire');
 %         $susplabel = 'Suspended (Cancelled)';
 %       } else {

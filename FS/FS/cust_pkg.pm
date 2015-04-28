@@ -3504,6 +3504,9 @@ cust_pkg status is 'suspended' and expire is set
 to cancel package within the next day (or however
 many days are set in global config part_pkg-delay_cancel-days.
 
+Accepts option I<part_pkg-delay_cancel-days> which should be
+the value of the config setting, to avoid looking it up again.
+
 This is not a real status, this only meant for hacking display 
 values, because otherwise treating the package as suspended is 
 really the whole point of the delay_cancel option.
@@ -3511,15 +3514,18 @@ really the whole point of the delay_cancel option.
 =cut
 
 sub is_status_delay_cancel {
-  my ($self) = @_;
+  my ($self,%opt) = @_;
   if ( $self->main_pkgnum and $self->pkglinknum ) {
     return $self->main_pkg->is_status_delay_cancel;
   }
   return 0 unless $self->part_pkg->option('delay_cancel',1);
   return 0 unless $self->status eq 'suspended';
   return 0 unless $self->expire;
-  my $conf = new FS::Conf;
-  my $expdays = $conf->config('part_pkg-delay_cancel-days') || 1;
+  my $expdays = $opt{'part_pkg-delay_cancel-days'};
+  unless ($expdays) {
+    my $conf = new FS::Conf;
+    $expdays = $conf->config('part_pkg-delay_cancel-days') || 1;
+  }
   my $expsecs = 60*60*24*$expdays;
   return 0 unless $self->expire < time + $expsecs;
   return 1;
