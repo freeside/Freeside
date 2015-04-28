@@ -49,7 +49,7 @@ foreach my $taxnum ( @taxnum ) {
               qw( taxname tax exempt_amount setuptax recurtax )
         ),
         ( map { $_ => $cust_main_county->get($_) }
-              qw( country state county taxclass ) 
+              qw( country state county city district taxclass ) 
         )
       };
 

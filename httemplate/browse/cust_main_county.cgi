@@ -10,7 +10,9 @@
                            'table'    => 'cust_main_county',
                            'hashref'  => $hashref,
                            'order_by' =>
-                  'ORDER BY country, state, county, city, district, taxclass',
+                              'ORDER BY country, state, county, city, '.
+                              'district, taxclass, '.
+                              "COALESCE(taxname, '')",
                          },
      'count_query'    => $count_query,
      'header'         => \@header,
