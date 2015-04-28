@@ -495,7 +495,7 @@ sub pkg_status_row_detached {
 sub pkg_status_row_noauto {
   my( $cust_pkg, %opt ) = @_;
 
-  return '' unless ( $cust_pkg->no_auto || $opt{'part_pkg'}->no_auto );
+  return '' unless ( $cust_pkg->no_auto || $opt{'part_pkg'}->no_auto )
                 && $opt{'has_cust_payby_auto'};
 
   pkg_status_row_colspan( $cust_pkg, emt("No automatic charge"), '');

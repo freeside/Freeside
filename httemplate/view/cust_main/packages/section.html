@@ -21,7 +21,7 @@
             no_services
         )),
         #for status.html
-        'has_cust_payby_auto' => $cust_main->has_cust_payby_auto,
+        'has_cust_payby_auto' => $opt{cust_main}->has_cust_payby_auto,
     &>
 %   }
 % } else { # there are no packages
