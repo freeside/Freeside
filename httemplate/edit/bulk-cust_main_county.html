@@ -24,6 +24,20 @@
   </TR>
 % }
 
+% if ( $cities ) {
+  <& /elements/tr-td-label.html, 'label' => 'City' &>
+    <TD BGCOLOR="#dddddd"><% $cities %>
+    </TD>
+  </TR>
+% }
+
+% if ( $districts ) {
+  <& /elements/tr-td-label.html, 'label' => 'District' &>
+    <TD BGCOLOR="#dddddd"><% $districts %>
+    </TD>
+  </TR>
+% }
+
 % if ( $conf->exists('enable_taxclasses') && $taxclasses ) {
   <% include('/elements/tr-td-label.html', 'label' => 'Tax Class' ) %>
     <TD BGCOLOR="#dddddd"><% $taxclasses %>
@@ -111,6 +125,13 @@ my $states = join(', ', @states);
 my %seen_county = {};
 my @counties = grep !$seen_county{$_}++, map $_->county, @cust_main_county;
 my $counties = join(', ', @counties);
+
+my %seen_city = ( map { $_->city => 1 } @cust_main_county );
+my @cities = grep $_, keys %seen_city;
+my $cities = join(', ', @cities);
+
+my @districts = grep $_, map { $_->district } @cust_main_county;
+my $districts = join(', ', @districts);
 
 my %seen_taxclass = {};
 my @taxclasses = grep !$seen_taxclass{$_}++, map $_->taxclass, @cust_main_county;
