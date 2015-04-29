@@ -273,6 +273,8 @@ my @states = sort { $a cmp $b } keys %states;
 
 my $amount = '';
 if ( $balance > 0 ) {
+  # when configured to do so, amount will only auto-fill with balance
+  # if balance represents a single invoice
   $amount = $balance
     unless $conf->exists('manual_process-single_invoice_amount')
       && ($cust_main->open_cust_bill != 1);
