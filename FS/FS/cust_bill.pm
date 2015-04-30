@@ -2862,20 +2862,26 @@ sub _items_total {
 
   my @items;
   my ($pr_total) = $self->previous;
-  my ($new_charges_desc, $new_charges_amount);
+  my ($previous_charges_desc, $new_charges_desc, $new_charges_amount);
 
   if ( $conf->exists('previous_balance-exclude_from_total') ) {
+    # can we do some caching on this stuff? it's going to change infrequently
+    # in production
+    $previous_charges_desc = $self->mt(
+      $conf->config('previous_balance-text') || 'Previous Balance'
+    );
+
     # then return separate lines for previous balance and total new charges
     if ( $pr_total ) {
       push @items,
-        { total_item    => $self->mt('Previous Balance'),
+        { total_item    => $previous_charges_desc,
           total_amount  => sprintf('%.2f',$pr_total)
         };
     }
     $new_charges_desc = $self->mt(
-      $conf->config('previous_balance-exclude_from_total')
+      $conf->config('previous_balance-text-total_new_charges')
        || 'Total New Charges'
-    ); # localize 'Total New Charges' or whatever's in the config
+    );
 
     $new_charges_amount = $self->charged;
 
