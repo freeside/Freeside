@@ -3630,7 +3630,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'svclinknum',
       'unique'       => [ ['agentnum','src_svcpart','dst_svcpart','link_type'] ],
-      'index'        => [ [ 'src_svcpart' ] ],
+      'index'        => [ [ 'src_svcpart' ], [ 'src_svcpart', 'link_type' ], [ 'disabled' ] ],
       'foreign_keys' => [
                           { columns    => [ 'src_svcpart' ],
                             table      => 'part_svc',

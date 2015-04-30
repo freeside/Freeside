@@ -559,6 +559,11 @@ my $error_callback = sub {
     'cgiparam'
   );
 
+  if ( $cgi->param('error') =~ / is suggested with / ) {
+    #yeah, detection is a shitty kludge, but we don't have exception objects
+    $opt->{form_init} = '<INPUT TYPE="checkbox" NAME="part_pkg_restrict_soft_override" VALUE="Y"> Override suggestion<BR><BR>';
+  }
+
 };
 
 my $new_hashref_callback = sub { { 'plan' => 'flat' }; };

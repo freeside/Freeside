@@ -132,6 +132,9 @@ Example:
 
     'html_init'   => '', #after the header/menubar
 
+    'form_init'   => '', #after html_init, error and the opening <FORM>, but
+                         #before any other form contents
+
     #string or coderef of additional HTML to add before </TABLE>
     'html_table_bottom' => '',
 
@@ -243,6 +246,14 @@ Example:
 
   <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
   <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
+
+  <% defined($opt{'form_init'}) 
+        ? ( ref($opt{'form_init'})
+              ? &{$opt{'form_init'}}()
+              : $opt{'form_init'}
+          )
+        : ''
+  %>
 
 %   unless ( $opt{'no_pkey_display'} ) {
 

@@ -188,6 +188,9 @@ my $args_callback = sub {
     push @args, 'part_pkg_vendor' => \%part_pkg_vendor;
   }
 
+  push @args, 'part_pkg_restrict_soft_override' => 1
+    if $cgi->param('part_pkg_restrict_soft_override');
+
   #warn "args: ".join('/', @args). "\n";
 
   @args;

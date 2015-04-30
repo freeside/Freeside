@@ -301,6 +301,12 @@ sub insert {
       }
     }
 
+    my $error = $self->check_pkg_svc(%options);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
   }
 
   if ( $options{'cust_pkg'} ) {
@@ -514,6 +520,7 @@ sub replace {
   my $hidden_svc = $options->{'hidden_svc'} || {};
   my $bulk_skip  = $options->{'bulk_skip'} || {};
   if ( $pkg_svc ) { # if it wasn't passed, don't change existing pkg_svcs
+
     foreach my $part_svc ( qsearch('part_svc', {} ) ) {
       my $quantity  = $pkg_svc->{$part_svc->svcpart} || 0;
       my $hidden    = $hidden_svc->{$part_svc->svcpart} || '';
@@ -564,6 +571,13 @@ sub replace {
         return $error;
       }
     } #foreach $part_svc
+
+    my $error = $new->check_pkg_svc(%$options);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
   } #if $options->{pkg_svc}
   
   my @part_pkg_vendor = $old->part_pkg_vendor;
@@ -720,6 +734,84 @@ sub check {
     if ! $self->taxclass && $conf->exists('require_taxclasses');
 
   '';
+}
+
+=item check_pkg_svc
+
+Checks pkg_svc records as a whole (for part_svc_link dependencies).
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub check_pkg_svc {
+  my( $self, %opt ) = @_;
+
+  my $agentnum = $self->agentnum;
+
+  my %pkg_svc = map { $_->svcpart => $_ } $self->pkg_svc;
+
+  foreach my $svcpart ( keys %pkg_svc ) {
+
+    warn 'checking '. $pkg_svc{$svcpart}->svcpart;
+
+    foreach my $part_svc_link ( $self->part_svc_link(
+                                  'src_svcpart' => $svcpart,
+                                  'link_type'   => 'part_pkg_restrict',
+                                )
+    ) {
+
+      use Data::Dumper;
+      warn 'checking '. Dumper($part_svc_link);
+
+      return $part_svc_link->dst_svc. ' must be included with '.
+             $part_svc_link->src_svc
+        unless $pkg_svc{ $part_svc_link->dst_svcpart };
+    }
+
+  }
+
+  return '' if $opt{part_pkg_restrict_soft_override};
+
+  foreach my $svcpart ( keys %pkg_svc ) {
+
+    foreach my $part_svc_link ( $self->part_svc_link(
+                                  'src_svcpart' => $svcpart,
+                                  'link_type'   => 'part_pkg_restrict_soft',
+                                )
+    ) {
+      return $part_svc_link->dst_svc. ' is suggested with '.
+             $part_svc_link->src_svc
+        unless $pkg_svc{ $part_svc_link->dst_svcpart };
+    }
+
+  }
+
+  '';
+}
+
+=item part_svc_link OPTION => VALUE ...
+
+Returns the service dependencies (see L<FS::part_svc_link>) for the given
+search options, taking into account this package definition's agent.
+
+Available options are any field in part_svc_link.  Typically used options are
+src_svcpart and link_type.
+
+=cut
+
+sub part_svc_link {
+  my( $self, %opt ) = @_;
+
+  my $agentnum = $self->agentnum;
+
+  qsearch({ 'table'     => 'part_svc_link',
+            'hashref'   => \%opt,
+            'extra_sql' =>
+              $agentnum
+                ? "AND ( agentnum IS NULL OR agentnum = $agentnum )"
+                : 'AND agentnum IS NULL',
+         });
 }
 
 =item supersede OLD [, OPTION => VALUE ... ]

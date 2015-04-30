@@ -64,15 +64,14 @@ Link type:
 
 # XXX false laziness w/edit/part_svc_link.html
 
-=item part_svc_restrict
+=item part_pkg_restrict
 
 In package defintions, require the destination service definition when the
 source service definition is included
 
-=item part_svc_restrict_soft
+=item part_pkg_restrict_soft
 
-Soft order block: in package definitions, warn if the destination service
-definition is included without the source service definition
+Soft order block: in package definitions,  suggest the destination service definition when the source service definition is included
 
 =item cust_svc_provision_restrict
 
@@ -167,10 +166,10 @@ sub description {
   #  (and hooks each place we have manual checks for the various rules)
   # but this will do for now
 
-  $self->link_type eq 'part_svc_restrict'
+  $self->link_type eq 'part_pkg_restrict'
    and return "In package definitions, $dst is required when $src is included";
 
-  $self->link_type eq 'part_svc_restrict_soft'
+  $self->link_type eq 'part_pkg_restrict_soft'
    and return "In package definitions, $dst is suggested when $src is included";
 
   $self->link_type eq 'cust_svc_provision_restrict'
@@ -219,7 +218,6 @@ L<FS::part_svc>).
 
 =cut
 
-
 sub dst_part_svc {
   my $self = shift;
   qsearchs('part_svc', { svcpart=>$self->dst_svcpart } );
@@ -232,7 +230,7 @@ Returns the destination service definition name (part_svc.svc).
 =cut
 
 sub dst_svc {
-  shift->src_part_svc->svc;
+  shift->dst_part_svc->svc;
 }
 
 =back
