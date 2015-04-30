@@ -753,16 +753,11 @@ sub check_pkg_svc {
 
   foreach my $svcpart ( keys %pkg_svc ) {
 
-    warn 'checking '. $pkg_svc{$svcpart}->svcpart;
-
     foreach my $part_svc_link ( $self->part_svc_link(
                                   'src_svcpart' => $svcpart,
                                   'link_type'   => 'part_pkg_restrict',
                                 )
     ) {
-
-      use Data::Dumper;
-      warn 'checking '. Dumper($part_svc_link);
 
       return $part_svc_link->dst_svc. ' must be included with '.
              $part_svc_link->src_svc
