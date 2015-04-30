@@ -2,7 +2,7 @@ package FS::part_svc_link;
 use base qw( FS::Record );
 
 use strict;
-use FS::Record qw( qsearchs ); # qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
@@ -107,9 +107,30 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-# the new method can be inherited from FS::Record, if a table method is defined
-
 sub table { 'part_svc_link'; }
+
+=item by_agentnum AGENTNUM, KEY => VALUE, ...
+
+Alternate search consructor.  Given an agentnum then a list of keys and values,
+searches for part_svc_link records with the given agentnum (or no agentnum).
+
+Additional keys and values are searched for in the part_pkg_link table
+(typically src_svcpart and link_type).
+
+=cut
+
+sub by_agentnum {
+  my( $class, $agentnum, %opt ) = @_;
+
+  qsearch({ 'table'     => 'part_svc_link', #$class->table,
+            'hashref'   => \%opt,
+            'extra_sql' =>
+              $agentnum
+                ? "AND ( agentnum IS NULL OR agentnum = $agentnum )"
+                : 'AND agentnum IS NULL',
+         });
+
+}
 
 =item insert
 
@@ -166,26 +187,28 @@ sub description {
   #  (and hooks each place we have manual checks for the various rules)
   # but this will do for now
 
-  $self->link_type eq 'part_pkg_restrict'
+  my $l = $self->link_type;
+
+  $l eq 'part_pkg_restrict'
    and return "In package definitions, $dst is required when $src is included";
 
-  $self->link_type eq 'part_pkg_restrict_soft'
+  $l eq 'part_pkg_restrict_soft'
    and return "In package definitions, $dst is suggested when $src is included";
 
-  $self->link_type eq 'cust_svc_provision_restrict'
+  $l eq 'cust_svc_provision_restrict'
    and return "Require $dst provisioning before $src";
 
-  $self->link_type eq 'cust_svc_unprovision_restrict'
+  $l eq 'cust_svc_unprovision_restrict'
    and return "Require $dst unprovisioning before $src";
 
-  $self->link_type eq 'cust_svc_unprovision_cascade'
+  $l eq 'cust_svc_unprovision_cascade'
    and return "Automatically unprovision $dst when $src is unprovisioned";
 
-  $self->link_type eq 'cust_svc_suspend_cascade'
+  $l eq 'cust_svc_suspend_cascade'
    and return "Suspend $dst before $src";
 
-  warn "WARNING: unknown part_svc_link.link_type ". $self->link_type. "\n";
-  return "$src (unknown link_type ". $self->link_type. ") $dst";
+  warn "WARNING: unknown part_svc_link.link_type $l\n";
+  return "$src (unknown link_type $l) $dst";
 
 }
 

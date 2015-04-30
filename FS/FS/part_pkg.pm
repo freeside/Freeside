@@ -797,17 +797,7 @@ src_svcpart and link_type.
 =cut
 
 sub part_svc_link {
-  my( $self, %opt ) = @_;
-
-  my $agentnum = $self->agentnum;
-
-  qsearch({ 'table'     => 'part_svc_link',
-            'hashref'   => \%opt,
-            'extra_sql' =>
-              $agentnum
-                ? "AND ( agentnum IS NULL OR agentnum = $agentnum )"
-                : 'AND agentnum IS NULL',
-         });
+  FS::part_svc_link->by_agentnum( shift->agentnum, @_ );
 }
 
 =item supersede OLD [, OPTION => VALUE ... ]

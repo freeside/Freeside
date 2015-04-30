@@ -11,6 +11,7 @@ use FS::Record qw( qsearch qsearchs dbh str2time_sql str2time_sql_closing );
 use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
+use FS::part_svc_link;
 use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
@@ -431,9 +432,45 @@ sub check {
            " services for pkgnum ". $self->pkgnum
       if $num_avail <= 0;
 
+    #part_svc_link rules (only make sense in pkgpart context, and 
+    # skipping this when ignore_quantity is set DTRT when we're "forcing"
+    # an implicit change here (location change triggered pkgpart change, 
+    # ->overlimit, bulk customer service changes)
+    foreach my $part_svc_link ( $self->part_svc_link(
+                                  link_type   => 'cust_svc_provision_restrict',
+                                )
+    ) {
+      return $part_svc_link->dst_svc. ' must be provisioned before '.
+             $part_svc_link->src_svc
+        unless qsearchs({
+          'table'    => 'cust_svc',
+          'hashref'  => { 'pkgnum'  => $self->pkgnum,
+                          'svcpart' => $part_svc_link->dst_svcpart,
+                        },
+          'order_by' => 'LIMIT 1',
+        });
+    }
+
   }
 
   $self->SUPER::check;
+}
+
+=item part_svc_link
+
+Returns the service dependencies (see L<FS::part_svc_link>) for the given
+search options, taking into account this service definition as source and
+this customer's agent.
+
+Available options are any field in part_svc_link.  Typically used options are
+link_type.
+
+=cut
+
+sub part_svc_link {
+  my $self = shift;
+  my $agentnum = $self->pkgnum ? $self->cust_pkg->cust_main->agentnum : '';
+  FS::part_svc_link->by_agentnum($agentnum, src_svcpart=>$self->svcpart, @_);
 }
 
 =item display_svcnum 
