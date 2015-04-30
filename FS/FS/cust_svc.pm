@@ -118,8 +118,42 @@ sub delete {
   my $cust_pkg = $self->cust_pkg;
   my $custnum = $cust_pkg->custnum if $cust_pkg;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error = $self->SUPER::delete;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $part_svc_link ( $self->part_svc_link(
+                                link_type   => 'cust_svc_unprovision_cascade',
+                              )
+  ) {
+    foreach my $cust_svc ( qsearch( 'cust_svc', {
+                             'pkgnum'  => $self->pkgnum,
+                             'svcpart' => $part_svc_link->dst_svcpart,
+                           })
+    ) {
+      my $error = $cust_svc->svc_x->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   if ( $ticket_system eq 'RT_Internal' ) {
     unless ( $rt_session ) {
@@ -144,6 +178,9 @@ sub delete {
       warn "error unlinking ticket $svcnum: $msg\n" if !$val;
     }
   }
+
+  '';
+
 }
 
 =item cancel
