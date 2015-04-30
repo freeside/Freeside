@@ -202,7 +202,7 @@ sub suspend {
   my $svc = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } )
     or return '';
 
-  $error = $svc->suspend;
+  my $error = $svc->suspend;
   return $error if $error;
 
   if ( $opt{labels_arryref} ) {

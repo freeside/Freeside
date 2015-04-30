@@ -1404,7 +1404,7 @@ sub suspend {
       }
     }
 
-    my @cust_svc = qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
+    my @cust_svc = qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
 
     #attempt ordering ala cust_svc_suspend_cascade (without infinite-looping
     # on the circular dep case)
@@ -1413,7 +1413,7 @@ sub suspend {
     my %svcpart = ();
     $svcpart{$_->svcpart} = 0 foreach @cust_svc;
     foreach my $svcpart ( keys %svcpart ) {
-      foreach my $part_pkg_link (
+      foreach my $part_svc_link (
         FS::part_svc_link->by_agentnum($self->cust_main->agentnum,
                                          src_svcpart => $svcpart,
                                          link_type => 'cust_svc_suspend_cascade'
