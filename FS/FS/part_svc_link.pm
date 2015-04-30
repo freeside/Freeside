@@ -88,7 +88,7 @@ unprovisioned
 
 =item cust_svc_suspend_cascade
 
-Suspend the destination service before the source service
+Suspend the destination service after the source service
 
 =back
 
@@ -205,7 +205,7 @@ sub description {
    and return "Automatically unprovision $dst when $src is unprovisioned";
 
   $l eq 'cust_svc_suspend_cascade'
-   and return "Suspend $dst before $src";
+   and return "Suspend $dst after $src";
 
   warn "WARNING: unknown part_svc_link.link_type $l\n";
   return "$src (unknown link_type $l) $dst";

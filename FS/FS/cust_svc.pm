@@ -183,6 +183,37 @@ sub delete {
 
 }
 
+=item suspend
+
+Suspends the relevant service by calling the B<suspend> method of the associated
+FS::svc_XXX object (i.e. an FS::svc_acct object or FS::svc_domain object).
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub suspend {
+  my( $self, %opt ) = @_;
+
+  $self->part_svc->svcdb =~ /^([\w\-]+)$/ or return 'Illegal part_svc.svcdb';
+  my $svcdb = $1;
+  require "FS/$svcdb.pm";
+
+  my $svc = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } )
+    or return '';
+
+  $error = $svc->suspend;
+  return $error if $error;
+
+  if ( $opt{labels_arryref} ) {
+    my( $label, $value ) = $self->label;
+    push @{ $opt{labels_arrayref} }, "$label: $value";
+  }
+
+  '';
+
+}
+
 =item cancel
 
 Cancels the relevant service by calling the B<cancel> method of the associated

@@ -35,7 +35,7 @@ my @fields = (
       cust_svc_provision_restrict => 'Require the target service to be provisioned before the source service',
       cust_svc_unprovision_restrict => 'Require the target service to be unprovisioned before the source service',
       cust_svc_unprovision_cascade => 'Automatically unprovision the target service when the source service is unprovisioned',
-      cust_svc_suspend_cascade => 'Suspend the target service before the source service',
+      cust_svc_suspend_cascade => 'Suspend the target service after the source service',
     },
   },
   { field => 'disabled', type => 'checkbox', value => 'Y' }

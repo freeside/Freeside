@@ -1404,30 +1404,33 @@ sub suspend {
       }
     }
 
-    my @labels = ();
+    my @cust_svc = qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
 
-    foreach my $cust_svc (
-      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
-    ) {
-      my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
-
-      $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
-        $dbh->rollback if $oldAutoCommit;
-        return "Illegal svcdb value in part_svc!";
-      };
-      my $svcdb = $1;
-      require "FS/$svcdb.pm";
-
-      my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
-      if ($svc) {
-        $error = $svc->suspend;
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $error;
-        }
-        my( $label, $value ) = $cust_svc->label;
-        push @labels, "$label: $value";
+    #attempt ordering ala cust_svc_suspend_cascade (without infinite-looping
+    # on the circular dep case)
+    #  (this is too simple for multi-level deps, we need to use something
+    #   to resolve the DAG properly when possible)
+    my %svcpart = ();
+    $svcpart{$_->svcpart} = 0 foreach @cust_svc;
+    foreach my $svcpart ( keys %svcpart ) {
+      foreach my $part_pkg_link (
+        FS::part_svc_link->by_agentnum($self->cust_main->agentnum,
+                                         src_svcpart => $svcpart,
+                                         link_type => 'cust_svc_suspend_cascade'
+                                      )
+      ) {
+        $svcpart{$part_svc_link->dst_svcpart} = max(
+          $svcpart{$part_svc_link->dst_svcpart},
+          $svcpart{$part_svc_link->src_svcpart} + 1
+        );
       }
+    }
+    @cust_svc = sort { $svcpart{ $a->svcpart } <=> $svcpart{ $b->svcpart } }
+                  @cust_svc;
+
+    my @labels = ();
+    foreach my $cust_svc ( @cust_svc ) {
+      $cust_svc->suspend( 'labels_arrayref' => \@labels );
     }
 
     # suspension fees: if there is a feepart, and it's not an unsuspend fee,
