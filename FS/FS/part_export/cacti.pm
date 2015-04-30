@@ -50,16 +50,42 @@ tie my %options, 'Tie::IxHash',
                            default => '5' },
   'max_graph_size'    => { label   => 'Maximum size per graph (MB)',
                            default => '5' },
-#  'delete_graphs'     => { label   => 'Delete associated graphs and data sources when unprovisioning', 
-#                           type    => 'checkbox',
-#                         },
+  'delete_graphs'     => { label   => 'Delete associated graphs and data sources when unprovisioning', 
+                           type    => 'checkbox',
+                         },
+  'cacti_graph_template_id'  => { 
+    'label'    => 'Graph Template',
+    'type'     => 'custom',
+    'multiple' => 1,
+  },
+  'cacti_snmp_query_id'      => { 
+    'label'    => 'SNMP Query ID',
+    'type'     => 'custom',
+    'multiple' => 1,
+  },
+  'cacti_snmp_query_type_id' => { 
+    'label'    => 'SNMP Query Type ID',
+    'type'     => 'custom',
+    'multiple' => 1,
+  },
+  'cacti_snmp_field'         => { 
+    'label'    => 'SNMP Field',
+    'type'     => 'custom',
+    'multiple' => 1,
+  },
+  'cacti_snmp_value'         => { 
+    'label'    => 'SNMP Value',
+    'type'     => 'custom',
+    'multiple' => 1,
+  },
 ;
 
 %info = (
-  'svc'             => 'svc_broadband',
-  'desc'            => 'Export service to cacti server, for svc_broadband services',
-  'options'         => \%options,
-  'notes'           => <<'END',
+  'svc'                  => 'svc_broadband',
+  'desc'                 => 'Export service to cacti server, for svc_broadband services',
+  'post_config_element'  => '/edit/elements/part_export/cacti.html',
+  'options'              => \%options,
+  'notes'                => <<'END',
 Add service to cacti upon provisioning, for broadband services.<BR>
 See <A HREF="http://www.freeside.biz/mediawiki/index.php/Freeside:4:Documentation:Cacti#Connecting_Cacti_To_Freeside">documentation</A> for details.
 END
@@ -75,8 +101,23 @@ sub _export_insert {
 
 sub _export_delete {
   my ($self, $svc_broadband) = @_;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  foreach my $page (qsearch('cacti_page',{ svcnum => $svc_broadband->svcnum })) {
+    my $error = $page->delete;
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
   my ($q,$error) = _delete_queue($self, $svc_broadband);
-  return $error;
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '';
 }
 
 sub _export_replace {
@@ -133,6 +174,7 @@ sub _insert_queue {
 	'svc_desc'    => $svc_broadband->description,
     'contact'     => $svc_broadband->cust_main->contact,
     'svcnum'      => $svc_broadband->svcnum,
+    'self'        => $self
   );
   return ($queue,$error);
 }
@@ -148,7 +190,7 @@ sub _delete_queue {
     'user'          => $self->option('user'),
     'hostname'      => $svc_broadband->ip_addr,
     'script_path'   => $self->option('script_path'),
-#    'delete_graphs' => $self->option('delete_graphs'),
+    'delete_graphs' => $self->option('delete_graphs'),
   );
   return ($queue,$error);
 }
@@ -157,6 +199,7 @@ sub _delete_queue {
 
 sub ssh_insert {
   my %opt = @_;
+  my $self = $opt{'self'};
 
   # Option validation
   die "Non-numerical Host Template ID, check export configuration\n"
@@ -169,7 +212,10 @@ sub ssh_insert {
   $desc =~ s/\$ip_addr/$opt{'hostname'}/g;
   $desc =~ s/\$description/$opt{'svc_desc'}/g;
   $desc =~ s/\$contact/$opt{'contact'}/g;
-  $desc =~ s/'/'\\''/g;
+#for some reason, device names with apostrophes fail to export graphs in Cacti
+#just removing them for now, someday maybe dig to figure out why
+#  $desc =~ s/'/'\\''/g;
+  $desc =~ s/'//g;
   my $cmd = $php
           . $opt{'script_path'} 
           . q(add_device.php --description=')
@@ -194,51 +240,94 @@ sub ssh_insert {
          . $id;
     $response = ssh_cmd(%opt, 'command' => $cmd);
     unless ( $response =~ /Added Node node-id: \((\d+)\)/ ) {
-      die "Error adding host to tree: $response";
+      die "Host added, but error adding host to tree: $response";
     }
   }
 
-#  # Get list of graph templates for new id
-#  $cmd = $php
-#       . $opt{'script_path'} 
-#       . q(freeside_cacti.php --get-graph-templates --host-template=)
-#       . $opt{'template_id'};
-#  my @gtids = split(/\n/,ssh_cmd(%opt, 'command' => $cmd));
-#  die "No graphs configured for host template"
-#    unless @gtids;
-#
-#  # Create graphs
-#  foreach my $gtid (@gtids) {
-#
-#    # sanity checks, should never happen
-#    next unless $gtid;
-#    die "Bad graph template: $gtid"
-#      unless $gtid =~ /^\d+$/;
-#
-#    # create the graph
-#    $cmd = $php
-#         . $opt{'script_path'}
-#         . q(add_graphs.php --graph-type=cg --graph-template-id=)
-#         . $gtid
-#         . q( --host-id=)
-#         . $id;
-#    $response = ssh_cmd(%opt, 'command' => $cmd);
-#    die "Error creating graph $gtid: $response"
-#      unless $response =~ /Graph Added - graph-id: \((\d+)\)/;
-#    my $gid = $1;
-#
-#    # add the graph to the tree
-#    $cmd = $php
-#         . $opt{'script_path'}
-#         . q(add_tree.php --type=node --node-type=graph --tree-id=)
-#         . $opt{'tree_id'}
-#         . q( --graph-id=)
-#         . $gid;
-#    $response = ssh_cmd(%opt, 'command' => $cmd);
-#    die "Error adding graph $gid to tree: $response"
-#      unless $response =~ /Added Node/;
-#
-#  } #foreach $gtid
+  # Get list of graph templates for new id
+  $cmd = $php
+       . $opt{'script_path'} 
+       . q(freeside_cacti.php --get-graph-templates --host-template=)
+       . $opt{'template_id'};
+  my $ginfo = { map { $_ ? ($_ => undef) : () } split(/\n/,ssh_cmd(%opt, 'command' => $cmd)) };
+
+  # Add extra config info
+  my @xtragid = split("\n", $self->option('cacti_graph_template_id'));
+  my @query_id = split("\n", $self->option('cacti_snmp_query_id'));
+  my @query_type_id = split("\n", $self->option('cacti_snmp_query_type_id'));
+  my @snmp_field = split("\n", $self->option('cacti_snmp_field'));
+  my @snmp_value = split("\n", $self->option('cacti_snmp_value'));
+  for (my $i = 0; $i < @xtragid; $i++) {
+    my $gtid = $xtragid[$i];
+    $ginfo->{$gtid} ||= [];
+    push(@{$ginfo->{$gtid}},{
+      'gtid'          => $gtid,
+      'query_id'      => $query_id[$i],
+      'query_type_id' => $query_type_id[$i],
+      'snmp_field'    => $snmp_field[$i],
+      'snmp_value'    => $snmp_value[$i],
+    });
+  }
+
+  my @gdefs = map {
+    ref($ginfo->{$_}) ? @{$ginfo->{$_}} : {'gtid' => $_}
+  } keys %$ginfo;
+  warn "Host ".$opt{'hostname'}." exported to cacti, but no graphs configured"
+    unless @gdefs;
+
+  # Create graphs
+  my $gerror = '';
+  foreach my $gdef (@gdefs) {
+    # validate graph info
+    my $gtid = $gdef->{'gtid'};
+    next unless $gtid;
+    $gerror .= " Bad graph template: $gtid"
+      unless $gtid =~ /^\d+$/;
+    my $isds = $gdef->{'query_id'} 
+            || $gdef->{'query_type_id'} 
+            || $gdef->{'snmp_field'} 
+            || $gdef->{'snmp_value'};
+    if ($isds) {
+      $gerror .= " Bad SNMP Query Id: " . $gdef->{'query_id'}
+        unless $gdef->{'query_id'} =~ /^\d+$/;
+      $gerror .= " Bad SNMP Query Type Id: " . $gdef->{'query_type_id'}
+        unless $gdef->{'query_type_id'} =~ /^\d+$/;
+      $gerror .= " SNMP Field cannot contain apostrophe"
+        if $gdef->{'snmp_field'} =~ /'/;
+      $gerror .= " SNMP Value cannot contain apostrophe"
+        if $gdef->{'snmp_value'} =~ /'/;
+    }
+    next if $gerror;
+
+    # create the graph
+    $cmd = $php
+         . $opt{'script_path'}
+         . q(add_graphs.php --graph-type=)
+         . ($isds ? 'ds' : 'cg')
+         . q( --graph-template-id=)
+         . $gtid
+         . q( --host-id=)
+         . $id;
+    if ($isds) {
+      $cmd .= q( --snmp-query-id=)
+           .  $gdef->{'query_id'}
+           .  q( --snmp-query-type-id=)
+           .  $gdef->{'query_type_id'}
+           .  q( --snmp-field=')
+           .  $gdef->{'snmp_field'}
+           .  q(' --snmp-value=')
+           .  $gdef->{'snmp_value'}
+           .  q(');
+    }
+    $response = ssh_cmd(%opt, 'command' => $cmd);
+    #might be more than one graph added, just testing success
+    $gerror .= "Error creating graph $gtid: $response"
+      unless $response =~ /Graph Added - graph-id: \((\d+)\)/;
+
+  } #foreach $gtid
+
+  # job fails, but partial export may have occurred
+  die $gerror . " Partial export occurred\n" if $gerror;
 
   return '';
 }
@@ -250,8 +339,8 @@ sub ssh_delete {
           . q(freeside_cacti.php --drop-device --ip=')
           . $opt{'hostname'}
           . q(');
-#  $cmd .= q( --delete-graphs)
-#    if $opt{'delete_graphs'};
+  $cmd .= q( --delete-graphs)
+    if $opt{'delete_graphs'};
   my $response = ssh_cmd(%opt, 'command' => $cmd);
   die "Error removing from cacti: " . $response
     if $response;
@@ -368,42 +457,43 @@ sub process_graphs {
   for (my $i = 0; $i <= $#graphs; $i++) {
     my $graph = $graphs[$i];
     my $thumbfile = $cachedir . 'graphs/thumb_' . $$graph[0] . '.png';
-    if (
-      (-e $thumbfile) && 
-      ( stat($thumbfile)->size() < $maxgraph )
-    ) {
-      $nographs = 0;
-      # add graph to main file
-      my $graphhead = q(<H3>) . $$graph[1] . q(</H3>);
-      $svchtml .= $graphhead;
-      $svchtml .= anchor_tag( $svcnum, $$graph[0], img_tag($thumbfile) );
-      # create graph details file
-      my $graphhtml = $svchead . $graphhead;
-      my $nodetail = 1;
-      my $j = 1;
-      while (-e (my $graphfile = $cachedir.'graphs/graph_'.$$graph[0].'_'.$j.'.png')) {
-        if ( stat($graphfile)->size() < $maxgraph ) {
-          $nodetail = 0;
-          $graphhtml .= img_tag($graphfile);
+    if (-e $thumbfile) {
+      if ( stat($thumbfile)->size() < $maxgraph ) {
+        $nographs = 0;
+        # add graph to main file
+        my $graphhead = q(<H3>) . $$graph[1] . q(</H3>);
+        $svchtml .= $graphhead;
+        $svchtml .= anchor_tag( $svcnum, $$graph[0], img_tag($thumbfile) );
+        # create graph details file
+        my $graphhtml = $svchead . $graphhead;
+        my $nodetail = 1;
+        my $j = 1;
+        while (-e (my $graphfile = $cachedir.'graphs/graph_'.$$graph[0].'_'.$j.'.png')) {
+          if ( stat($graphfile)->size() < $maxgraph ) {
+            $nodetail = 0;
+            $graphhtml .= img_tag($graphfile);
+          }
+          unlink($graphfile);
+          $j++;
         }
-        $j++;
+        $graphhtml .= '<P>No detail graphs to display for this graph</P>'
+          if $nodetail;
+        my $newobj = new FS::cacti_page {
+          'exportnum' => $self->exportnum,
+          'svcnum'    => $svcnum,
+          'graphnum'  => $$graph[0],
+          'imported'  => $now,
+          'content'   => $graphhtml,
+        };
+        $error = $newobj->insert;
+        if ($error) {
+          $dbh->rollback if $oldAutoCommit;
+          die $error;
+        }
       }
-      $graphhtml .= '<P>No detail graphs to display for this graph</P>'
-        if $nodetail;
-      my $newobj = new FS::cacti_page {
-        'exportnum' => $self->exportnum,
-        'svcnum'    => $svcnum,
-        'graphnum'  => $$graph[0],
-        'imported'  => $now,
-        'content'   => $graphhtml,
-      };
-      $error = $newobj->insert;
-      if ($error) {
-        $dbh->rollback if $oldAutoCommit;
-        die $error;
-      }
+      unlink($thumbfile);
     }
-    $job->update_statustext(49 + int($i / $#graphs) * 50);
+    $job->update_statustext(49 + int($i / @graphs) * 50);
   }
   $svchtml .= '<P>No graphs to display for this service</P>'
     if $nographs;
@@ -452,7 +542,7 @@ sub ssh_cmd {
   my $ssh = Net::OpenSSH->new($opt->{'user'}.'@'.$opt->{'host'});
   die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
   my ($output, $errput) = $ssh->capture2($opt->{'command'});
-  die "Error running SSH command: ". $ssh->error if $ssh->error;
+  die "Error running SSH command: ". $opt->{'command'}. ' ERROR: ' . $ssh->error if $ssh->error;
   die $errput if $errput;
   return $output;
 }
