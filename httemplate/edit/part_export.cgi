@@ -183,6 +183,10 @@ my $widget = new HTML::Widgets::SelectLayers(
                       ? $optinfo->{default}
                       : ''
                     );
+
+      #handle these with post_config_element
+      next if $type eq 'custom';
+
       if ( $type eq 'title' ) {
         $html .= qq!<TR><TH COLSPAN=1 ALIGN="right"><FONT SIZE="+1">! .
                  $label .
@@ -282,6 +286,17 @@ my $widget = new HTML::Widgets::SelectLayers(
     }
 
     $html .= '</TABLE>';
+
+    # false laziness with config_element above
+    # create 'post_config_element' to generate the whole layer with a Mason component
+    if ( my $include = $exports->{$layer}{post_config_element} ) {
+      # might need to adjust the scope of  this at some point
+      $html .= $m->scomp($include, 
+        part_export => $part_export,
+        layer       => $layer,
+        export_info => $exports->{$layer}
+      );
+    }
 
     $html .= '<INPUT TYPE="hidden" NAME="options" VALUE="'.
              join(',', keys %{$exports->{$layer}{options}} ). '">';

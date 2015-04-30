@@ -1,0 +1,42 @@
+<table bgcolor="#cccccc" border=0 cellspacing=3>
+<TR>
+  <TH>Graph Template ID</TH>
+  <TH>SNMP Query ID</TH>
+  <TH>SNMP Query Type ID</TH>
+  <TH>SNMP Field</TH>
+  <TH>SNMP Value</TH>
+</TR>
+<TR id="mytemplate">
+  <TD><INPUT TYPE="text" NAME="graph_template_id" ID="graph_template_id"></TD>
+  <TD><INPUT TYPE="text" NAME="snmp_query_id" ID="snmp_query_id"></TD>
+  <TD><INPUT TYPE="text" NAME="snmp_query_type_id" ID="snmp_query_type_id"></TD>
+  <TD><INPUT TYPE="text" NAME="snmp_field" ID="snmp_field"></TD>
+  <TD><INPUT TYPE="text" NAME="snmp_value" ID="snmp_value"></TD>
+</TR>
+<& /elements/auto-table.html,
+  template_row  => 'mytemplate',
+  fieldorder    => ['graph_template_id','snmp_query_id','snmp_query_type_id','snmp_field','snmp_value'],
+  data          => \@data,
+  table         => 'cacti',
+&>
+</table>
+<INPUT TYPE="hidden" name="multi_options" value="<% $multiopts %>">
+<%init>
+my %opt = @_;
+my $part_export = $opt{part_export} || die "No part_export specified";
+
+my @fields = ('cacti_graph_template_id','cacti_snmp_query_id','cacti_snmp_query_type_id','cacti_snmp_field','cacti_snmp_value');
+my $multiopts = join(',',@fields);
+my @byfield = map {
+  [ split("\n", $part_export->option($_)) ]
+} @fields;
+my @data;
+for (my $i = 0; $i < @{$byfield[0]}; $i++) {
+  my @thisrow;
+  for (my $j = 0; $j < @byfield; $j++) {
+    push(@thisrow,$byfield[$j][$i]);
+  }
+  push(@data,\@thisrow);
+}
+
+</%init>

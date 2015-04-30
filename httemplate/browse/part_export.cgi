@@ -66,7 +66,7 @@ function part_export_areyousure(href) {
 %           if ( $group ) {
 %             my @values = split("\n", $opt{$optname});
 %             $multiples{$group} ||= [];
-%             push @{ $multiples{$group} }, [ $optname, @values ] if @values;
+%             push @{ $multiples{$group} }, [ $def->{label} || $optname, @values ] if @values;
 %             delete $opt{$optname};
 %           } elsif (length($opt{$optname})) { # the normal case
 %             my $value = $opt{$optname};

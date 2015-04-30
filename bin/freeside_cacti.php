@@ -39,18 +39,15 @@ but keeping commented out code for potential future development.
 include(dirname(__FILE__)."/../site/include/global.php");
 include_once($config["base_path"]."/lib/api_device.php");
 include_once($config["base_path"]."/lib/api_automation_tools.php");
-
-/*
 include_once($config["base_path"]."/lib/api_data_source.php");
 include_once($config["base_path"]."/lib/api_graph.php");
 include_once($config["base_path"]."/lib/functions.php");
-*/
 
 /* process calling arguments */
 $action = '';
 $ip = '';
 $host_template = '';
-// $delete_graphs = FALSE;
+$delete_graphs = FALSE;
 $parms = $_SERVER["argv"];
 array_shift($parms);
 if (sizeof($parms)) {
@@ -67,21 +64,19 @@ if (sizeof($parms)) {
         case "--get-device":
 			$action = 'get-device';
             break;
+*/
         case "--get-graph-templates":
 			$action = 'get-graph-templates';
             break;
-*/
 		case "--ip":
 			$ip = trim($value);
 			break;
 		case "--host-template":
 			$host_template = trim($value);
 			break;
-/*
 		case "--delete-graphs":
 			$delete_graphs = TRUE;
 			break;
-*/
 		case "--version":
 		case "-V":
 		case "-H":
@@ -102,7 +97,6 @@ case "get-graphs":
 	break;
 case "drop-device":
 	$host_id = host_id($ip);
-/*
 	if ($delete_graphs) {
 		// code copied & pasted from version 0.8.8a
         // cacti/site/lib/host.php and cacti/site/graphs.php 
@@ -126,7 +120,6 @@ case "drop-device":
 			}
 		}
 	}
-*/
 	api_device_remove($host_id);
 	if (host_id($ip,1)) {
 		die("Failed to remove hostname $ip");
@@ -136,6 +129,7 @@ case "drop-device":
 case "get-device":
 	echo host_id($ip);
 	exit(0);
+*/
 case "get-graph-templates":
 	if (!$host_template) {
 		die("No host template specified");
@@ -148,7 +142,6 @@ case "get-graph-templates":
 		exit(0);
 	}
 	die("No graph templates associated with this host template");
-*/
 default:
 	die("Specified action not found, contact a developer");
 }
