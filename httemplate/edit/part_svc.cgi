@@ -187,10 +187,9 @@ window.onload = function() {
 
 <BR>
 
-<BR>
-Table <% $widget->html %>
+<FONT SIZE="+1"><B>Table</B></FONT> <% $widget->html %>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%init>
 

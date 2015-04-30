@@ -794,7 +794,7 @@ t/cust_bill_pkg_fee.t
 FS/part_fee_msgcat.pm
 t/part_fee_msgcat.t
 FS/part_fee_usage.pm
-FS/part_fee_usage.t
+t/part_fee_usage.t
 FS/sched_item.pm
 t/sched_item.t
 FS/sched_avail.pm
@@ -841,7 +841,8 @@ t/legacy_cust_history.t
 FS/quotation_pkg_tax.pm
 t/quotation_pkg_tax.t
 FS/h_svc_circuit.pm
-FS/h_svc_circuit.t
 FS/FeeOrigin_Mixin.pm
 FS/cust_pkg_reason_fee.pm
 t/cust_pkg_reason_fee.t
+FS/part_svc_link.pm
+t/part_svc_link.t

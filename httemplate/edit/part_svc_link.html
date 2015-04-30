@@ -1,0 +1,51 @@
+<& elements/edit.html,
+  'table'         => 'part_svc_link',
+  'name_singular' => 'dependency',
+  'labels'        => \%labels,
+  'fields'        => \@fields,
+&>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @fields = (
+  { field       => 'agentnum',
+    type        => 'select-agent',
+    empty_label => '(global)',
+  },
+  { field       => 'src_svcpart',
+    type        => 'select-part_svc',
+    empty_label => 'Select service definition',
+  },
+  { field       => 'dst_svcpart',
+    type        => 'select-part_svc',
+    empty_label => 'Select service definition',
+  },
+  { field       => 'link_type',
+    type        => 'select',
+    #XXX false laziness w/part_svc_link POD documentation
+    options     =>[ qw(
+      part_svc_restrict part_svc_restrict_soft
+      cust_svc_provision_restrict cust_svc_unprovision_restrict
+      cust_svc_unprovision_cascade cust_svc_suspend_cascade
+    )],
+    labels      => {
+      part_svc_restrict => 'In package defintions, prevent including the destination service definition unless the source service definition is also included',
+      part_svc_restrict_soft => 'Soft order block: in package definitions, warn if the destination service definition is included without the source service definition',
+      cust_svc_provision_restrict => 'Require the target service to be provisioned before the source service',
+      cust_svc_unprovision_restrict => 'Require the target service to be unprovisioned before the source service',
+      cust_svc_unprovision_cascade => 'Automatically unprovision the target service when the source service is unprovisioned',
+      cust_svc_suspend_cascade => 'Suspend the target service before the source service',
+    },
+  },
+  { field => 'disabled', type => 'checkbox', value => 'Y' }
+);
+my %labels = (
+  'svclinknum ' => '',
+  'agentnum'    => 'Agent',
+  'src_svcpart' => 'Source service',
+  'dst_svcpart' => 'Destination service',
+  'link_type'   => 'Dependency type',
+  'disabled'    => 'Disabled'
+);
+</%init>

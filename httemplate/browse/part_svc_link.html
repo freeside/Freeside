@@ -1,0 +1,32 @@
+<& elements/browse.html,
+     'title'              => 'Service dependencies',
+     'name_singular'      => 'dependency',
+     'menubar'            => [ 'Add a new service dependency' =>
+                                 $p.'edit/part_svc_link.html',
+                             ],
+     'query'              => { 'table'    => 'part_svc_link',
+                               'order_by' => 'ORDER BY src_svcpart',
+                             },
+     'count_query'        => 'SELECT COUNT(*) FROM part_svc_link',
+     'header'             => [ 'Source', 'Dependency', ],
+     'fields'             => [ 'src_svc', 'description', ],
+     'sort_fields'        => [],
+     'links'              => [ $svc_link, $link, ],
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'agent_virt'         => 1,
+     'agent_null'         => 1,
+     'agent_null_right'   => 'Configuration',
+     #agent_null_right_link'
+     'agent_pos'          => 0,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $svc_link = [ "${p}edit/part_svc.cgi?", 'src_svcpart' ];
+
+my $link = [ "${p}edit/part_svc_link.html?", 'svclinknum' ];
+
+</%init>

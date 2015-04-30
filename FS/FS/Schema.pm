@@ -3618,6 +3618,31 @@ sub tables_hashref {
       'index' => [ ['disabled'] ],
     },
 
+    'part_svc_link' => {
+      'columns' => [
+        'svclinknum',  'serial',   '',      '', '', '',
+        #'linkname',    'varchar', 'NULL', $char_d, '', '',
+        'agentnum',    'int',     'NULL', '', '', '', 
+        'src_svcpart', 'int',      '',      '', '', '',
+        'dst_svcpart', 'int',      '',      '', '', '', 
+        'link_type',   'varchar',  '', $char_d, '', '',
+        'disabled',    'char', 'NULL',   1, '', '', 
+      ],
+      'primary_key'  => 'svclinknum',
+      'unique'       => [ ['agentnum','src_svcpart','dst_svcpart','link_type'] ],
+      'index'        => [ [ 'src_svcpart' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'src_svcpart' ],
+                            table      => 'part_svc',
+                            references => [ 'svcpart' ]
+                          },
+                          { columns    => [ 'dst_svcpart' ],
+                            table      => 'part_svc',
+                            references => [ 'svcpart' ]
+                          },
+                        ],
+    },
+
     #(this should be renamed to part_pop)
     'svc_acct_pop' => {
       'columns' => [

@@ -63,15 +63,14 @@ my %communigate_fields = (
 );
 </%once>
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $svcdb %>">
-<BR><BR>
+<BR>
 %# include export selection
 <& export_svc.html,
   part_svc => $part_svc,
   svcdb => $svcdb
 &>
-For the selected table, you can give fields default or fixed (unchangeable)
-values, or select an inventory class to manually or automatically fill in 
-that field.
+
+<FONT CLASS="fsinnerbox-title">Fields</FONT>
 <& /elements/table-grid.html, cellpadding => 4 &>
   <TR>
     <TH BGCOLOR="#cccccc">Field</TH>
