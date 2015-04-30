@@ -58,11 +58,9 @@ table.location {
 % }
 </DIV></TH></TR>
 %   if (@$packages) {
-      <& packages/section.html,
-           'packages'  => $packages,
-           'cust_main' => $cust_main,
-           'no_links'  => $opt{no_links}
-      &>
+%     my %sopt = %opt;
+%     $sopt{'packages'} = $packages;
+      <& packages/section.html, %sopt &>
 %   }
 </TABLE><BR>
 % } #foreach $locationnum
