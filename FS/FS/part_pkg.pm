@@ -30,6 +30,7 @@ use FS::part_pkg_link;
 use FS::part_pkg_discount;
 use FS::part_pkg_vendor;
 use FS::part_pkg_currency;
+use FS::part_svc_link;
 
 $DEBUG = 0;
 $setup_hack = 0;
