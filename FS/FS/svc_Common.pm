@@ -395,7 +395,8 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = 	$self->predelete_hook_first 
+  my $error =    $self->cust_svc->check_part_svc_link_unprovision
+              || $self->predelete_hook_first 
 	      || $self->SUPER::delete
               || $self->export('delete', @$export_args)
 	      || $self->return_inventory

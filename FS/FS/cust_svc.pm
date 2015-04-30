@@ -456,6 +456,35 @@ sub check {
   $self->SUPER::check;
 }
 
+=item check_part_svc_link_unprovision
+
+Checks service dependency unprovision rules for this service.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub check_part_svc_link_unprovision {
+  my $self = shift;
+
+  foreach my $part_svc_link ( $self->part_svc_link(
+                                link_type   => 'cust_svc_unprovision_restrict',
+                              )
+  ) {
+    return $part_svc_link->dst_svc. ' must be unprovisioned before '.
+           $part_svc_link->src_svc
+      if qsearchs({
+        'table'    => 'cust_svc',
+        'hashref'  => { 'pkgnum'  => $self->pkgnum,
+                        'svcpart' => $part_svc_link->dst_svcpart,
+                      },
+        'order_by' => 'LIMIT 1',
+      });
+  }
+
+  '';
+}
+
 =item part_svc_link
 
 Returns the service dependencies (see L<FS::part_svc_link>) for the given
