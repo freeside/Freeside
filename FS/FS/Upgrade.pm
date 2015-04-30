@@ -147,6 +147,13 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('tax-cust_exempt-groups-require_individual_nums');
   }
 
+  # boolean+text previous_balance-exclude_from_total is now two separate options
+  my $total_new_charges = $conf->config('previous_balance-exclude_from_total');
+  if (length($total_new_charges) > 0) {
+    $conf->set('previous_balance-text-total_new_charges', $total_new_charges);
+    $conf->set('previous_balance-exclude_from_total', '');
+  }
+
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
 }

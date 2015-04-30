@@ -4410,8 +4410,22 @@ and customer address. Include units.',
   {
     'key'         => 'previous_balance-exclude_from_total',
     'section'     => 'invoicing',
-    'description' => 'Do not include previous balance in the \'Total\' line.  Only meaningful when invoice_sections is false.  Optionally provide text to override the Total New Charges description',
-    'type'        => [ qw(checkbox text) ],
+    'description' => 'Show separate totals for previous invoice balance and new charges. Only meaningful when invoice_sections is false.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'previous_balance-text',
+    'section'     => 'invoicing',
+    'description' => 'Text for the label of the total previous balance, when it is shown separately. Defaults to "Previous Balance".',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'previous_balance-text-total_new_charges',
+    'section'     => 'invoicing',
+    'description' => 'Text for the label of the total of new charges, when it is shown separately. If invoice_show_prior_due_date is enabled, the due date of current charges will be appended. Defaults to "Total New Charges".',
+    'type'        => 'text',
   },
 
   {
