@@ -36,6 +36,7 @@ my %queue_select = (
     $queues{$_[0]};
   },
   option_values => sub {
+    return (0) unless FS::Conf->new->config('ticket_system');
     %queues = (0 => '', FS::TicketSystem->queues());
     sort {$queues{$a} cmp $queues{$b}} keys %queues;
   },
