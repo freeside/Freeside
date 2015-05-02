@@ -17,7 +17,7 @@ use Date::Parse;
 	'accountcode',			#Account number
               skip(2),  		#SERVICE LOC / BILL NUMBER 
 	sub { my($cdr, $date) = @_;  
-	
+	$date;	
 	}, 				#date 
 	sub { my($cdr, $time) = @_;
 
