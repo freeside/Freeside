@@ -251,6 +251,7 @@ sub _upgrade_data { # class method
     'Void credit' => 'Void credit',
     'Unvoid credit' => 'Unvoid credit',
     'Add on-the-fly void credit reason' => 'Add on-the-fly void credit reason',
+    '_ALL' => 'Employee preference telephony integration',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {
@@ -271,7 +272,7 @@ sub _upgrade_data { # class method
 
       # grant $new_acl to all groups who have $old_acl
       for my $group (@all_groups) {
-        next unless $group->access_right($old_acl);
+        next unless $old_acl eq '_ALL' || $group->access_right($old_acl);
         next if     $group->access_right($new_acl);
         my $access_right = FS::access_right->new( {
             'righttype'   => 'FS::access_group',
