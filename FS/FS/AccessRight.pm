@@ -348,6 +348,12 @@ tie my %rights, 'Tie::IxHash',
   ###
   #'Database access rights' => [
     { rightname=>'Raw SQL', global=>1 }, #NEW
+  #]
+
+  #'Employee preference rights' => [
+    { rightname=>'Employee preference telephony integration' },
+  #]
+
   ],
   
   ###

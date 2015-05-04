@@ -204,6 +204,8 @@ Development
 </TABLE>
 <BR>
 
+% if ( $curuser->access_right('Employee preference telephony integration') ) {
+
 SNOM integration
 <% ntable("#cccccc",2) %>
 
@@ -248,6 +250,7 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 </TABLE>
 <BR>
 
+% }
 
 % foreach my $prop (qw( height width availHeight availWidth colorDepth )) {
   <INPUT TYPE="hidden" NAME="<% $prop %>" VALUE="">
