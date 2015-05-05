@@ -134,10 +134,7 @@ sub table_info {
     'display_weight' => 20,
     'cancel_weight'  => 60,
     'fields' => {
-      'domain' => {
-                  label => 'Domain',
-                  required => 1,
-                },
+      'domain' => 'Domain',
       'parent_svcnum' => { 
                          label => 'Parent domain / Communigate administrator domain',
                          type  => 'select',

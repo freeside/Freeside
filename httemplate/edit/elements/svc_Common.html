@@ -102,6 +102,9 @@
                    my $columndef = $part_svc->part_svc_column($f->{'field'});
                    my $flag = $columndef->columnflag;
 
+                   $f->{'required'} = 1
+                     if $columndef->required;
+
                    if ( $flag eq 'F' ) { #fixed
                      $f->{'value'} = $columndef->columnvalue;
                      if (length($columndef->columnvalue)) {
