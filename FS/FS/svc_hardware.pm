@@ -76,6 +76,7 @@ sub table_info {
     'name_plural'    => 'Hardware',
     'display_weight' => 59,
     'cancel_weight'  => 86,
+    'manual_require' => 1,
     'fields' => {
       'svcnum'    => { label => 'Service' },
       'typenum'   => { label => 'Device type',
@@ -84,6 +85,7 @@ sub table_info {
                        disable_fixed     => 1,
                        disable_default   => 1,
                        disable_inventory => 1,
+                       required => 1,
                      },
       'serial'    => { label => 'Serial number', %opts },
       'hw_addr'   => { label => 'Hardware address', %opts },

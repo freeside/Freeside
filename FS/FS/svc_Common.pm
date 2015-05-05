@@ -170,28 +170,30 @@ sub check {
   my $required = {};
   my $labels = {};
   my $tinfo = $self->can('table_info') ? $self->table_info : {};
-  my $fields = $tinfo->{'fields'} || {};
-  foreach my $field (keys %$fields) {
-    if (ref($fields->{$field}) && $fields->{$field}->{'required'}) {
-      $required->{$field} = 1;
-      $labels->{$field} = $fields->{$field}->{'label'};
+  if ($tinfo->{'manual_require'}) {
+    my $fields = $tinfo->{'fields'} || {};
+    foreach my $field (keys %$fields) {
+      if (ref($fields->{$field}) && $fields->{$field}->{'required'}) {
+        $required->{$field} = 1;
+        $labels->{$field} = $fields->{$field}->{'label'};
+      }
     }
-  }
-  # add fields marked as required in database
-  foreach my $column (
-    qsearch('part_svc_column',{
-      'svcpart' => $self->svcpart,
-      'required' => 'Y'
-    })
-  ) {
-    $required->{$column->columnname} = 1;
-    $labels->{$column->columnname} = $column->columnlabel;
-  }
-  # do the actual checking
-  foreach my $field (keys %$required) {
-    unless ($self->$field) {
-      my $name = $labels->{$field} || $field;
-      return "Field $name is required\n"
+    # add fields marked as required in database
+    foreach my $column (
+      qsearch('part_svc_column',{
+        'svcpart' => $self->svcpart,
+        'required' => 'Y'
+      })
+    ) {
+      $required->{$column->columnname} = 1;
+      $labels->{$column->columnname} = $column->columnlabel;
+    }
+    # do the actual checking
+    foreach my $field (keys %$required) {
+      unless (length($self->get($field)) > 0) {
+        my $name = $labels->{$field} || $field;
+        return "Field $name is required\n"
+      }
     }
   }
 

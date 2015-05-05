@@ -1,5 +1,6 @@
-<TR>
-  <TD ALIGN="right"><% $opt{'label'} || 'Device type: ' %></TD>
+<% include('/elements/tr-td-label.html',
+     'label'    => $opt{'label'} || 'Device type: ',
+     'required' => $opt{'required'} ) %>
   <TD><% include('select-hardware_type.html', %opt) %></TD>
 </TR>
 

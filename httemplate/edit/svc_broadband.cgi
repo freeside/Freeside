@@ -102,7 +102,16 @@ END
 my @fields = (
   qw( description speed_down speed_up ),
   { field=>'sectornum', type=>'select-tower_sector', },
-  { field=>'routernum', type=>'select-router_block_ip' },
+  { field=>'routernum', type=>'select-router_block_ip', 
+    include_opt_callback => sub { 
+      my $svc_broadband = shift;
+      my $part_svc = $svc_broadband->part_svc;
+      return () unless $part_svc; #sanity check
+      my $col = $part_svc->part_svc_column('ip_addr');
+      return () unless $col; #sanity check
+      return ('ip_addr_required' => $col->required);
+    },
+  },
   { field=>'mac_addr' , type=>'input-mac_addr' },
   qw(
       latitude longitude altitude

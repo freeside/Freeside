@@ -77,7 +77,7 @@ that field.
     <TH BGCOLOR="#cccccc">Field</TH>
     <TH BGCOLOR="#cccccc">Label</TH>
     <TH BGCOLOR="#cccccc" COLSPAN=2>Modifier</TH>
-    <TH BGCOLOR="#cccccc">Required?</TH>
+    <TH BGCOLOR="#cccccc"><% $manual_require ? 'Required?' : '' %></TH>
   </TR>
 % $part_svc->set('svcpart' => $opt{'clone'}) if $opt{'clone'}; # for now
 % my $i = 0;
@@ -212,7 +212,9 @@ that field.
 %   }
     </TD>
     <TD>
-%   if (!$def->{'type'} || !(grep {$_ eq $def->{'type'}} ('checkbox','disabled'))) {
+%   if ($manual_require && 
+%       (!$def->{'type'} || !(grep {$_ eq $def->{'type'}} ('checkbox','disabled')))
+%   ) {
       <INPUT ID="<% $name.'_required' %>" TYPE="checkbox" NAME="<% $svcdb %>__<% $field %>_required" VALUE="Y" 
         <% ($part_svc_column->required || $def->{'required'}) ? 'CHECKED' : '' %> 
         <% $def->{'required'} ? 'DISABLED' : '' %>
@@ -310,4 +312,5 @@ if ( $svcdb eq 'svc_acct'
 }
 
 my @defs = map { FS::part_svc->svc_table_fields($svcdb)->{$_} } @fields;
+my $manual_require = FS::part_svc->svc_table_info($svcdb)->{'manual_require'};
 </%init>
