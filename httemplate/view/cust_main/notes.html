@@ -77,15 +77,8 @@
 % if ( $curuser->access_right('View email logs')
 %      and FS::cust_msg->count("custnum = $custnum")) {
 <BR>
-%   if (!$cgi->param('order_by')) {
-%     my $order_by = '_date';
-%     $order_by .= ' DESC' if $curuser->option('history_order') eq 'newest';
-%     $cgi->param('order_by', $order_by);
-%   }
-<& /search/cust_msg.html,
-  nohtmlheader  => 1,
-  html_init     => mt('Mail sent to this customer: '),
-&>
+<& notes/email.html, 'cust_main' => $cust_main &>
+<BR>
 % }
 <%init>
 

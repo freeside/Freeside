@@ -386,10 +386,7 @@ unless ( $type =~ /^(csv|xml|\w*.xls)$/) {
 }
 
 #order by override
-my $order_by = '';
-#if ( $cgi->param('order_by') =~ /^([\w\, ]+)$/ ) {
-#  $order_by = $1;
-#}
+my $order_by = $opt{order_by} || '';
 $order_by = $cgi->param('order_by') if $cgi->param('order_by');
 
 # run the query
@@ -415,6 +412,8 @@ if ( ref($opt{query}) ) {
       }
     }
 
+    $opt{query}->{'order_by'} .= " $limit";
+
   } elsif (ref($opt{query}) eq 'ARRAY') {
     @query = @{ $opt{query} };
   } else {
@@ -434,7 +433,7 @@ if ( ref($opt{query}) ) {
                            }
                        @query
                      ],
-                     'order_by' => $opt{order_by}. " ". $limit,
+                     #'order_by' => $opt{order_by}. " ". $limit,
                    )
           ]; 
 } else {
