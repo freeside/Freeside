@@ -3,6 +3,7 @@
   'name_singular' => 'dependency',
   'labels'        => \%labels,
   'fields'        => \@fields,
+  'viewall_dir'   => 'browse',
 &>
 <%init>
 die "access denied"
@@ -41,7 +42,7 @@ my @fields = (
   { field => 'disabled', type => 'checkbox', value => 'Y' }
 );
 my %labels = (
-  'svclinknum ' => '',
+  'svclinknum ' => 'Dependency',
   'agentnum'    => 'Agent',
   'src_svcpart' => 'Source service',
   'dst_svcpart' => 'Destination service',
