@@ -179,7 +179,7 @@ sub insert {
     }
   }
 
-  if ( $self->selfservice_access ) {
+  if ( $self->selfservice_access && ! length($self->_password) ) {
     my $error = $self->send_reset_email( queue=>1 );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
