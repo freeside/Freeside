@@ -1,0 +1,106 @@
+% if ( scalar(@rows) ) {
+<STYLE type="text/css">
+#cust_msg td.grid a:link {text-decoration: none}
+#cust_msg td.grid a:visited {text-decoration: none}
+#cust_msg td.grid a:hover {text-decoration: underline}
+#cust_msg th {background-color: #cccccc}
+.row0 {background-color: #eeeeee}
+.row1 {background-color: #ffffff}
+</STYLE>
+<DIV id="cust_msg">
+<FONT SIZE="+1"> <% mt('Email sent to this customer') %> </FONT><BR>
+%   if ($maxrecords < $total) {
+<% mt('Showing [_1] most recent of [quant,_2,total message]', $maxrecords, $total) %>
+  <A HREF="<%$p%>search/cust_msg.html?custnum=<%$custnum%>">
+  <i>(<% mt('view all') %>)</i>
+  </A>
+%   } else {
+<% mt('[quant,_1,total message]', $total) %>
+%   }
+<BR>
+<& /elements/table-grid.html &>
+  <TR>
+    <TH CLASS="grid"><% mt('Date') %></TH>
+    <TH CLASS="grid"><% mt('Type') %></TH>
+    <TH CLASS="grid"><% mt('Destination') %></TH>
+    <TH CLASS="grid"><% mt('Subject') %></TH>
+    <TH CLASS="grid"></TH>
+  </TR>
+%   my $i = 0;
+%   foreach my $row (@rows) {
+%     my $onclick = $sub_popup_link->($row);
+%     my $link = qq!<A onclick="$onclick">!;
+  <TR CLASS="row<%$i%>">
+    <TD CLASS="grid"><% $link %>
+      <% $row->_date ? time2str('%Y-%m-%d %T', $row->_date) : '' %>
+    </A></TD>
+    <TD CLASS="grid" STYLE="color: <% $typecolor->($row) %>"><% $link %>
+      <% ucfirst($row->msgtype) || $row->msgname %>
+    </A></TD>
+    <TD CLASS="grid"><% $link %>
+      <% join('<BR>', split(/,\s*/, $row->env_to)) %>
+    </A></TD>
+    <TD CLASS="grid" STYLE="color: <% $statuscolor->($row) %>">
+      <% $row->status %>
+    </TD>
+    <TD CLASS="grid">
+      <% $row->error |h %>
+    </TD>
+  </TR>
+%     $i = 1 - $i;
+%   }
+</TABLE>
+</DIV>
+% }
+<%init>
+my %opt = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $cust_main = $opt{'cust_main'}
+  or die "cust_main required";
+my $custnum = $cust_main->custnum;
+
+my $where = "WHERE cust_msg.custnum = $custnum";
+my $maxrecords = $curuser->option('customer_view_emails') || 10;
+
+my $order_by = '_date DESC';
+
+my $query = {
+  'table'     => 'cust_msg',
+  'select'    => join(', ',
+                   'cust_msg.*',
+                   'msg_template.msgname',
+                 ),
+  'addl_from' => ' LEFT JOIN msg_template USING ( msgnum ) ',
+  'hashref'   => {},
+  'extra_sql' => $where,
+  'order_by'  => "ORDER BY $order_by LIMIT $maxrecords",
+};
+my $count_query = "SELECT COUNT(*) FROM cust_msg $where";
+
+my @rows = qsearch($query);
+my $total = FS::Record->scalar_sql($count_query);
+
+my $sub_popup_link = sub {
+  my $custmsgnum = $_[0]->custmsgnum;
+  include('/elements/popup_link_onclick.html',
+    'action'      => $p. 'view/cust_msg.html?' . $custmsgnum,
+    'actionlabel' => 'Message detail',
+    'width'       => 680,
+    'height'      => 550,
+  );
+};
+
+my %color = (
+  'failed'   => '#FF0000',
+  'sent'     => '#000000',
+
+  'invoice'  => '#00CC00',
+  'receipt'  => '#0000CC',
+  'admin'    => '#CC0000',
+  ''         => '#000000',
+);
+my $statuscolor = sub { $color{$_[0]->status} };
+my $typecolor = sub { $color{$_[0]->msgtype} };
+
+</%init>
