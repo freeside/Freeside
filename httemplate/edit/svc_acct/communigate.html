@@ -47,8 +47,9 @@
   <INPUT TYPE="hidden" NAME="quota" VALUE="<% $svc_acct->quota %>">
 % } else {
 %   my $quota_label = $communigate ? 'Mail storage limit' : 'Quota';
-    <TR>
-      <TD ALIGN="right"><% $quota_label %></TD>
+<% include('/elements/tr-td-label.html',
+     'label'    => $quota_label,
+     'required' => $part_svc->part_svc_column('quota')->required ) %>
       <TD><INPUT TYPE="text" NAME="quota" VALUE="<% $svc_acct->quota %>"></TD>
     </TR>
 % }

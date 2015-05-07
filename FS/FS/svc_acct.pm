@@ -260,6 +260,7 @@ sub table_info {
     'display_weight' => 10,
     'cancel_weight'  => 50, 
     'ip_field' => 'slipip',
+    'manual_require' => 1,
     'fields' => {
         'dir'       => 'Home directory',
         'uid'       => {

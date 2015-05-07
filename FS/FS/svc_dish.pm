@@ -63,9 +63,10 @@ sub table_info {
     'name'           => 'Dish service',
     'display_weight' => 58,
     'cancel_weight'  => 85,
+    'manual_require' => 1,
     'fields' => {
       'svcnum'    =>  { label => 'Service' },
-      'acctnum'   =>  { label => 'DISH account#', %opts },
+      'acctnum'   =>  { label => 'DISH account#', required => 1, %opts },
       'installdate' => { label => 'Install date', %opts },
       'note'      => { label => 'Installation notes', %opts },
     }

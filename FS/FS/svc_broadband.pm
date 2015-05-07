@@ -103,6 +103,7 @@ sub table_info {
     'display_weight' => 50,
     'cancel_weight'  => 70,
     'ip_field' => 'ip_addr',
+    'manual_require' => 1,
     'fields' => {
       'svcnum'      => 'Service',
       'description' => 'Descriptive label',

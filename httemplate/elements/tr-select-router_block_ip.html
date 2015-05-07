@@ -30,7 +30,7 @@ function clearhint_ip_addr (what) {
     what.value = '';
 }
 </script>
-<& /elements/tr-td-label.html, label => ($opt{'label'} || 'Router') &>
+<& /elements/tr-td-label.html, label => ($opt{'label'} || 'Router'), required => $opt{'required'} &>
 <td>
   <& /elements/select-tiered.html, prefix => 'router_', tiers => [
   {
@@ -56,9 +56,9 @@ function clearhint_ip_addr (what) {
 ]
 &>
 </td></tr>
-<& /elements/tr-td-label.html, label => 'IP address' &>
+<& /elements/tr-td-label.html, label => 'IP address', required => $opt{'ip_addr_required'} &>
 <td>
-% warn Dumper \%fixed;
+% #warn Dumper \%fixed;
 % if ( exists $fixed{$ip_field} ) {
   <input type="hidden" id="input_ip_addr" name="<% $ip_field %>" 
     value="<% $opt{'ip_addr'} |h%>"><% $opt{'ip_addr'} || '' %>
