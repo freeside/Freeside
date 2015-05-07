@@ -259,7 +259,10 @@ sub insert {
   }
 
   if (      $link_hash{'selfservice_access'} eq 'R'
-       or ( $link_hash{'selfservice_access'} && $cust_contact )
+       or ( $link_hash{'selfservice_access'}
+            && $cust_contact
+            && ! length($self->_password)
+          )
      )
   {
     my $error = $self->send_reset_email( queue=>1 );
