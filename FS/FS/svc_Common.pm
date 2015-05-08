@@ -250,7 +250,7 @@ sub insert {
     $self->svcpart($cust_svc->svcpart);
   }
 
-  my $error =    $self->preinsert_hook_first
+  my $error =    $self->preinsert_hook_first(%options)
               || $self->set_auto_inventory
               || $self->check
               || $self->_check_duplicate

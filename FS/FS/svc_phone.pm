@@ -323,46 +323,20 @@ error, otherwise returns false.
 
 =cut
 
-sub insert {
-  my $self = shift;
-  my %options = @_;
+sub preinsert_hook_first {
+  my( $self, %options ) = @_;
 
-  if ( $DEBUG ) {
-    warn "[$me] insert called on $self: ". Dumper($self).
-         "\nwith options: ". Dumper(%options);
-  }
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
+  return '' unless $options{'cust_location'};
 
   #false laziness w/cust_pkg.pm... move this to location_Mixin?  that would
   #make it more of a base class than a mixin... :)
-  if ( $options{'cust_location'} ) {
-    $options{'cust_location'}->custnum( $self->cust_svc->cust_pkg->custnum );
-    my $error = $options{'cust_location'}->find_or_insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "inserting cust_location (transaction rolled back): $error";
-    }
-    $self->locationnum( $options{'cust_location'}->locationnum );
-  }
+  $options{'cust_location'}->custnum( $self->cust_svc->cust_pkg->custnum );
+  my $error = $options{'cust_location'}->find_or_insert;
+  return "inserting cust_location (transaction rolled back): $error"
+    if $error;
+  $self->locationnum( $options{'cust_location'}->locationnum );
   #what about on-the-fly edits?  if the ui supports it?
 
-  my $error = $self->SUPER::insert(%options);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
 }
