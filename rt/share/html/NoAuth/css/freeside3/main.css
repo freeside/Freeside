@@ -59,5 +59,6 @@
 @import "ticket-search.css";
 @import "ticket.css";
 @import "misc.css";
+@import "freeside.css";
 
 % $m->callback(CallbackName => 'End');
