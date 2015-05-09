@@ -11,32 +11,97 @@ use FS::cust_main;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( small_custview );
 
+=head1 NAME
+
+FS::UI::Web::small_custview
+
+=head1 SYNOPSIS
+
+  use FS::UI::Web::small_custview qw( small_custview );
+  
+  #new-style
+  $html = small_custview(
+    { 'cust_main'      => $cust_main, #or 'custnum' => $custnum,
+      'countrydefault' => 'US',
+      'nobalance'      => 1,
+      'url'            => 'http://freeside.machine/freeside/view/cust_main.cgi',
+      'nopkg'          => 1,
+    }
+  );
+
+  #old-style (deprecated)
+  $html = small_custview( $cust_main, $countrydefault, $nobalance, $url );
+
+=head1 DESCRIPTION
+
+A subroutine for displaying customer information.
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item small_custview HASHREF
+
+New-style interface.  Keys are:
+
+=over 4
+
+=item cust_main
+
+Customer (as a FS::cust_main object)
+
+=item custnum
+
+Customer number (if cust_main is not provided).
+
+=item countrydefault
+
+=item nobalance
+
+=item url
+
+=back
+
 =item small_custview CUSTNUM || CUST_MAIN_OBJECT, COUNTRYDEFAULT, NOBALANCE_FLAG, URL
 
-Sheesh. I did switch to mason, but this is still hanging around.  Figure out
-some better way to sling mason components to self-service & RT.
+Old-style (deprecated) interface.
 
 =cut
 
 sub small_custview {
+  my( $cust_main, $countrydefault, $nobalance, $url, $nopkg );
+  if ( ref($_[0]) eq 'HASH' ) {
+    my $opt = shift;
+    $cust_main =  $opt->{cust_main}
+               || qsearchs('cust_main', { 'custnum' => $opt->{custnum} } );
+    $countrydefault = $opt->{countrydefault} || 'US';
+    $nobalance = $opt->{nobalance};
+    $url = $opt->{url};
+    $nopkg = $opt->{nopkg};
+  } else {
+    my $arg = shift;
+    $countrydefault = shift || 'US';
+    $nobalance = shift;
+    $url = shift;
+    $nopkg = 0;
 
-  my $arg = shift;
-  my $countrydefault = shift || 'US';
-  my $nobalance = shift;
-  my $url = shift;
-
-  my $cust_main = ref($arg) ? $arg
-                  : qsearchs('cust_main', { 'custnum' => $arg } )
-    or die "unknown custnum $arg";
+    $cust_main = ref($arg) ? $arg
+                           : qsearchs('cust_main', { 'custnum' => $arg } )
+      or die "unknown custnum $arg";
+  }
 
   my $html = '<DIV ID="fs_small_custview" CLASS="small_custview">';
   
   $html = qq!<A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
 
-  $html .= 'Customer #<B>'. $cust_main->display_custnum. '</B></A>'.
-    ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
-    $cust_main->status_label. '</FONT></B>';
+  $html .= 'Customer #<B>'. $cust_main->display_custnum.
+           ': '. encode_entities($cust_main->name). '</B></A>';
+           ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
+           $cust_main->status_label. '</FONT></B>';
+
+  $html .= ' (Balance: <B>$'. $cust_main->balance. '</B>)'
+    unless $nobalance;
 
   my @part_tag = $cust_main->part_tag;
   if ( @part_tag ) {
@@ -57,11 +122,7 @@ sub small_custview {
 
   $html .=
     ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).
-    '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
-    encode_entities($cust_main->getfield('last')). ', '.
-    encode_entities($cust_main->first). '<BR>';
-
-  $html .= encode_entities($cust_main->company). '<BR>' if $cust_main->company;
+    '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">';
 
   if ( $cust_main->bill_locationnum ) {
 
@@ -98,8 +159,7 @@ sub small_custview {
       '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">';
     $html .= join('<BR>', 
       map encode_entities($_), grep $_,
-        $cust_main->contact,
-        $cust_main->company,
+        $cust_main->ship_company,
         $ship->address1,
         $ship->address2,
         ($ship->city . ', ' . $ship->state . '  ' . $ship->zip),
@@ -112,10 +172,25 @@ sub small_custview {
 
   }
 
-  $html .= '</TR></TABLE>';
+  $html .= '</TR>';
 
-  $html .= '<BR>Balance: <B>$'. $cust_main->balance. '</B><BR>'
-    unless $nobalance;
+  #would be better to use ncancelled_active_pkgs, but that doesn't have an
+  # optimization to just count them yet, so it would be a perf problem on 
+  # tons-of-package customers
+  if ( !$nopkg && scalar($cust_main->ncancelled_pkgs) < 20 ) {
+
+    foreach my $cust_pkg ( $cust_main->ncancelled_active_pkgs ) {
+
+      $html .= '<TR><TD COLSPAN="2">'.
+               '<B><FONT COLOR="#'. $cust_pkg->statuscolor. '">'.
+               ucfirst($cust_pkg->status). '</FONT></B> - '.
+               encode_entities($cust_pkg->part_pkg->pkg_comment_only(nopkgpart=>1)).
+               '</TD></TR>';
+    }
+
+  }
+
+  $html .= '</TABLE>';
 
   # last payment might be good here too?
 
@@ -136,6 +211,23 @@ sub ntable {
   }
 
 }
+
+=back
+
+=head1 BUGS
+
+Sheesh. I did switch to mason, but this is still hanging around.  Figure out
+some better way to sling mason components to self-service & RT.
+
+(Or, is it useful to have this without depending on the regular back-office UI
+and Mason stuff to be in place?  So we have something suitable for displaying
+customer information in other external systems, not just RT?)
+
+=head1 SEE ALSO
+
+L<FS::UI::Web>
+
+=cut
 
 1;
 

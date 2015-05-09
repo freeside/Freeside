@@ -574,6 +574,21 @@ sub active_pkgs {
        $self->unsuspended_pkgs;
 }
 
+=item ncancelled_active_pkgs
+
+Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer that
+are active (recurring).
+
+=cut
+
+sub ncancelled_active_pkgs {
+  my $self = shift; 
+  grep { my $part_pkg = $_->part_pkg;
+         $part_pkg->freq ne '' && $part_pkg->freq ne '0';
+       }
+       $self->ncancelled_pkgs;
+}
+
 =item billing_pkgs
 
 Returns active packages, and also any suspended packages which are set to
