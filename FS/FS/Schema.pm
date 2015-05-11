@@ -4820,16 +4820,6 @@ sub tables_hashref {
       'primary_key' => 'cacti_pagenum',
       'unique'  => [ ],
       'index'   => [ ['svcnum'], ['imported'] ],
-      'foreign_keys' => [
-                          { columns    => [ 'svcnum' ],
-                            table      => 'cust_svc',
-                            references => [ 'svcnum' ],
-                          },
-                          { columns    => [ 'exportnum' ],
-                            table      => 'part_export',
-                            references => [ 'exportnum' ],
-                          },
-                        ],
     },
 
     # name type nullability length default local
