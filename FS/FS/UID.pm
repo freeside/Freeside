@@ -176,7 +176,6 @@ sub myconnect {
                            )
     or die "DBI->connect error: $DBI::errstr\n";
 
-  require FS::Conf;
   $FS::Conf::conf_cache = undef;
 
   if ( $schema ) {
