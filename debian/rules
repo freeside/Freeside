@@ -250,7 +250,7 @@ install-stamp: build-stamp
 	install -d $(RT_PATH)
 	install -d $(RT_PATH)/share
 
-	( cd rt; $(MAKE) install )
+	( cd rt; $(MAKE) config-install dirs files-install fixperms instruct )
 	
 	##hack the build dir out of RT.  yeah, sucky.
 
