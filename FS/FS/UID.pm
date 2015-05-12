@@ -1,23 +1,21 @@
 package FS::UID;
+use base qw( Exporter );
 
 use strict;
 use vars qw(
-  @ISA @EXPORT_OK $DEBUG $me $cgi $freeside_uid $conf_dir $cache_dir
+  @EXPORT_OK $DEBUG $me $cgi $freeside_uid $conf_dir $cache_dir
   $secrets $datasrc $db_user $db_pass $schema $dbh $driver_name
-  $AutoCommit %callback @callback $callback_hack $use_confcompat
+  $AutoCommit %callback @callback $callback_hack
 );
 use subs qw( getsecrets );
-use Exporter;
 use Carp qw( carp croak cluck confess );
 use DBI;
 use IO::File;
 use FS::CurrentUser;
 
-@ISA = qw(Exporter);
 @EXPORT_OK = qw( checkeuid checkruid cgi setcgi adminsuidsetup forksuidsetup
                  preuser_setup
                  getotaker dbh datasrc getsecrets driver_name myconnect
-                 use_confcompat
                );
 
 $DEBUG = 0;
@@ -29,7 +27,6 @@ $conf_dir  = "%%%FREESIDE_CONF%%%";
 $cache_dir = "%%%FREESIDE_CACHE%%%";
 
 $AutoCommit = 1; #ours, not DBI
-$use_confcompat = 1;
 $callback_hack = 0;
 
 =head1 NAME
@@ -131,20 +128,13 @@ sub db_setup {
 
   warn "$me forksuidsetup deciding upon config system to use\n" if $DEBUG;
 
-  if ( ! $FS::Schema::setup_hack && dbdef->table('conf') ) {
+  unless ( $FS::Schema::setup_hack ) {
 
+    #how necessary is this now that we're no longer possibly a pre-1.9 db?
     my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
     $sth->execute or die $sth->errstr;
-    my $confcount = $sth->fetchrow_arrayref->[0];
-  
-    if ($confcount) {
-      $use_confcompat = 0;
-    }else{
-      die "NO CONFIGURATION RECORDS FOUND";
-    }
+    $sth->fetchrow_arrayref->[0] or die "NO CONFIGURATION RECORDS FOUND";
 
-  } else {
-    die "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
   }
 
 
@@ -317,16 +307,6 @@ sub getsecrets {
   undef $driver_name;
 
   ($datasrc, $db_user, $db_pass);
-}
-
-=item use_confcompat
-
-Returns true whenever we should use 1.7 configuration compatibility.
-
-=cut
-
-sub use_confcompat {
-  $use_confcompat;
 }
 
 =back

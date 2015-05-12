@@ -16,7 +16,7 @@ use FS::Locales;
 use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
-use FS::UID qw(dbh datasrc use_confcompat);
+use FS::UID qw(dbh datasrc);
 use FS::Misc::Invoicing qw( spool_formats );
 
 $base_dir = '%%%FREESIDE_CONF%%%';
@@ -113,14 +113,6 @@ specific value(s) is returned.
 
 =cut
 
-sub _usecompat {
-  my ($self, $method) = (shift, shift);
-  carp "NO CONFIGURATION RECORDS FOUND -- USING COMPATIBILITY MODE"
-    if use_confcompat;
-  my $compat = new FS::Conf_compat17 ("$base_dir/conf." . datasrc);
-  $compat->$method(@_);
-}
-
 sub _config {
   my($self,$name,$agentnum,$agentonly)=@_;
   my $hashref = { 'name' => $name };
@@ -155,7 +147,6 @@ sub _config {
 
 sub config {
   my $self = shift;
-  return $self->_usecompat('config', @_) if use_confcompat;
 
   carp "FS::Conf->config(". join(', ', @_). ") called"
     if $DEBUG > 1;
@@ -179,7 +170,6 @@ Returns the exact scalar value for key.
 
 sub config_binary {
   my $self = shift;
-  return $self->_usecompat('config_binary', @_) if use_confcompat;
 
   my $cv = $self->_config(@_) or return;
   length($cv->value) ? decode_base64($cv->value) : '';
@@ -194,7 +184,6 @@ is undefined.
 
 sub exists {
   my $self = shift;
-  return $self->_usecompat('exists', @_) if use_confcompat;
 
   #my($name, $agentnum)=@_;
 
@@ -209,7 +198,6 @@ sub exists {
 
 sub config_bool {
   my $self = shift;
-  return $self->_usecompat('exists', @_) if use_confcompat;
 
   my($name,$agentnum,$agentonly) = @_;
 
@@ -264,7 +252,6 @@ KEY_SUFFIX, if it exists, otherwise for KEY
 # these to fall back to standard values
 sub config_orbase {
   my $self = shift;
-  return $self->_usecompat('config_orbase', @_) if use_confcompat;
 
   my( $name, $suffix ) = @_;
   if ( $self->exists("${name}_$suffix") ) {
@@ -284,7 +271,6 @@ config_orbase.
 
 sub key_orbase {
   my $self = shift;
-  #no compat for this...return $self->_usecompat('config_orbase', @_) if use_confcompat;
 
   my( $name, $suffix ) = @_;
   if ( $self->exists("${name}_$suffix") ) {
@@ -327,7 +313,6 @@ Creates the specified configuration key if it does not exist.
 
 sub touch {
   my $self = shift;
-  return $self->_usecompat('touch', @_) if use_confcompat;
 
   my($name, $agentnum) = @_;
   #unless ( $self->exists($name, $agentnum) ) {
@@ -348,7 +333,6 @@ Sets the specified configuration key to the given value.
 
 sub set {
   my $self = shift;
-  return $self->_usecompat('set', @_) if use_confcompat;
 
   my($name, $value, $agentnum) = @_;
   $value =~ /^(.*)$/s;
@@ -393,7 +377,6 @@ can be retrieved with config_binary.
 
 sub set_binary {
   my $self  = shift;
-  return if use_confcompat;
 
   my($name, $value, $agentnum)=@_;
   $self->set($name, encode_base64($value), $agentnum);
@@ -407,7 +390,6 @@ Deletes the specified configuration key.
 
 sub delete {
   my $self = shift;
-  return $self->_usecompat('delete', @_) if use_confcompat;
 
   my($name, $agentnum) = @_;
   if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum, locale => $self->{locale}}) ) {
@@ -434,7 +416,6 @@ sub delete {
 
 sub delete_bool {
   my $self = shift;
-  return $self->_usecompat('delete', @_) if use_confcompat;
 
   my($name, $agentnum) = @_;
 
@@ -465,7 +446,7 @@ in the directory DIR.
 sub import_config_item { 
   my ($self,$item,$dir) = @_;
   my $key = $item->key;
-  if ( -e "$dir/$key" && ! use_confcompat ) {
+  if ( -e "$dir/$key" ) {
     warn "Inserting $key\n" if $DEBUG;
     local $/;
     my $value = readline(new IO::File "$dir/$key");
@@ -474,68 +455,9 @@ sub import_config_item {
     }else{
       $self->set($key, $value);
     }
-  }else {
+  } else {
     warn "Not inserting $key\n" if $DEBUG;
   }
-}
-
-=item verify_config_item CONFITEM DIR 
-
-  Compares the item specified by the CONFITEM (see L<FS::ConfItem>) in
-the database to the legacy file value in DIR.
-
-=cut
-
-sub verify_config_item { 
-  return '' if use_confcompat;
-  my ($self,$item,$dir) = @_;
-  my $key = $item->key;
-  my $type = $item->type;
-
-  my $compat = new FS::Conf_compat17 $dir;
-  my $error = '';
-  
-  $error .= "$key fails existential comparison; "
-    if $self->exists($key) xor $compat->exists($key);
-
-  if ( $type !~ /^(binary|image)$/ ) {
-
-    {
-      no warnings;
-      $error .= "$key fails scalar comparison; "
-        unless scalar($self->config($key)) eq scalar($compat->config($key));
-    }
-
-    my (@new) = $self->config($key);
-    my (@old) = $compat->config($key);
-    unless ( scalar(@new) == scalar(@old)) { 
-      $error .= "$key fails list comparison; ";
-    }else{
-      my $r=1;
-      foreach (@old) { $r=0 if ($_ cmp shift(@new)); }
-      $error .= "$key fails list comparison; "
-        unless $r;
-    }
-
-  } else {
-
-    no warnings 'uninitialized';
-    $error .= "$key fails binary comparison; "
-      unless scalar($self->config_binary($key)) eq scalar($compat->config_binary($key));
-
-  }
-
-#remove deprecated config on our own terms, not freeside-upgrade's
-#  if ($error =~ /existential comparison/ && $item->section eq 'deprecated') {
-#    my $proto;
-#    for ( @config_items ) { $proto = $_; last if $proto->key eq $key;  }
-#    unless ($proto->key eq $key) { 
-#      warn "removed config item $error\n" if $DEBUG;
-#      $error = '';
-#    }
-#  }
-
-  $error;
 }
 
 #item _orbase_items OPTIONS
@@ -606,7 +528,6 @@ FS::ConfItem objects.  See L<FS::ConfItem>.
 
 sub config_items {
   my $self = shift; 
-  return $self->_usecompat('config_items', @_) if use_confcompat;
 
   ( @config_items, $self->_orbase_items(@_) );
 }
@@ -642,23 +563,11 @@ to conf records in the database.
 sub init_config {
   my $dir = shift;
 
-  {
-    local $FS::UID::use_confcompat = 0;
-    my $conf = new FS::Conf;
-    foreach my $item ( $conf->config_items(dir => $dir) ) {
-      $conf->import_config_item($item, $dir);
-      my $error = $conf->verify_config_item($item, $dir);
-      return $error if $error;
-    }
-  
-    my $compat = new FS::Conf_compat17 $dir;
-    foreach my $item ( $compat->config_items ) {
-      my $error = $conf->verify_config_item($item, $dir);
-      return $error if $error;
-    }
+  my $conf = new FS::Conf;
+  foreach my $item ( $conf->config_items(dir => $dir) ) {
+    $conf->import_config_item($item, $dir);
   }
 
-  $FS::UID::use_confcompat = 0;
   '';  #success
 }
 
