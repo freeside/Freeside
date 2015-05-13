@@ -140,6 +140,11 @@ sub import_cdrs {
         uniqueid    => $uniqueid,
       );
       @hash{@names} = @$row;
+      # strip non-numeric junk that sometimes gets appended to these (it 
+      # causes problems creating Freeside detail records)
+      foreach (qw(src dst)) {
+        $hash{$_} =~ s/\D*$//;
+      }
 
       my $cdr = FS::cdr->new(\%hash);
       $error = $cdr->insert;
