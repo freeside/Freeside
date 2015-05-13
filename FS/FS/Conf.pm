@@ -11,7 +11,6 @@ use MIME::Base64;
 use Locale::Currency;
 use FS::ConfItem;
 use FS::ConfDefaults;
-use FS::Conf_compat17;
 use FS::Locales;
 use FS::payby;
 use FS::conf;
