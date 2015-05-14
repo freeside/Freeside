@@ -33,7 +33,7 @@ APACHE_VERSION=2.4
 
 #deb (-7 and upgrades)
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
-#deb (new installs of 8+)
+#deb (new installs of 8+) (plus needs more work w/new auth)
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #redhat, fedora, mandrake
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
@@ -52,7 +52,7 @@ INIT_FILE = /etc/init.d/freeside
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
 #deb
-INIT_INSTALL = PATH=$PATH:/sbin /usr/sbin/update-rc.d freeside defaults 23 01
+INIT_INSTALL = PATH=${PATH}:/sbin /usr/sbin/update-rc.d freeside defaults 23 01
 #redhat, fedora
 #INIT_INSTALL = /sbin/chkconfig freeside on
 #not necessary (freebsd)
