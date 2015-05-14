@@ -26,8 +26,18 @@ MASONDATA = ${FREESIDE_CACHE}/masondata
 #package maintainers
 DIST_CONF = ${FREESIDE_CONF}/default_conf
 
-#deb
-FREESIDE_DOCUMENT_ROOT = /var/www/freeside
+#mod_perl v2 1.999_22 on Apache 2.0 through 2.3 (Debian ancient through 7.x)
+#APACHE_VERSION=2
+#Apache 2.4 (Debian 8.x)
+#APACHE_VERSION=2.4
+APACHE_VERSION := $(shell /usr/sbin/apache2 -v | grep -q '\/2\.4\.' && echo '2.4' || echo '2')
+
+#deb (-7 and upgrades)
+#FREESIDE_DOCUMENT_ROOT = /var/www/freeside
+#deb (new installs of 8+) (plus needs more work w/new auth)
+#FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
+FREESIDE_DOCUMENT_ROOT := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html/freeside' || echo '/var/www/freeside')
+
 #redhat, fedora, mandrake
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #freebsd
@@ -66,7 +76,11 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
 #deb (3.1+), apache2
-APACHE_CONF = /etc/apache2/conf.d
+#APACHE_CONF = /etc/apache2/conf.d
+#debian unstable/8.0+, apache2.4
+#APACHE_CONF = /etc/apache2/conf-available
+APACHE_CONF := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/etc/apache2/conf-available' || echo '/etc/apache2/conf.d')
+
 INSSERV_OVERRIDE = /etc/insserv/overrides
 
 FREESIDE_RESTART = ${INIT_FILE} restart
@@ -273,7 +287,7 @@ install-init:
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true
 	[ -d ${APACHE_CONF} ] && \
-	  ( install -o root -m 755 htetc/freeside-base2.conf ${APACHE_CONF} && \
+	  ( install -o root -m 755 htetc/freeside-base${APACHE_VERSION}.conf ${APACHE_CONF} && \
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
 	    ( [ ${TORRUS_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-torrus.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
@@ -282,6 +296,9 @@ install-apache:
 	      s'%%%MASON_HANDLER%%%'${MASON_HANDLER}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
+	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2enconf ] && ( /usr/sbin/a2enconf freeside-base${APACHE_VERSION} ) || true
+	[ -d ${APACHE_CONF} ] && [ ${APACHE_VERSION} = '2.4' ] && [ -x /usr/sbin/a2disconf ] && ( /usr/sbin/a2disconf freeside-base2 ) || true
+	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2enconf ] && [ ${RT_ENABLED} -eq 1 ] && ( /usr/sbin/a2enconf freeside-rt ) || true
 	[ -d ${INSSERV_OVERRIDE} ] && [ -x /sbin/insserv ] && ( install -o root -m 755 init.d/insserv-override-apache2 ${INSSERV_OVERRIDE}/apache2 && insserv -d ) || true
 
 install-selfservice:
@@ -450,7 +467,7 @@ release:
 	#cd /home/ivan
 	git archive --prefix=freeside-${VERSION}/ ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
 
-	scp freeside-${VERSION}.tar.gz ivan@420.am:/var/www/www.sisd.com/freeside/
+	scp freeside-${VERSION}.tar.gz ivan@freeside.biz:/var/www/www.freeside.biz/freeside/
 	mv freeside-${VERSION}.tar.gz ..
 
 	#these things failing should not make release target fail, so: "|| true"
