@@ -294,6 +294,7 @@ sub _upgrade_data { # class method
 
     # grant to everyone
     for my $group (@all_groups) {
+      next if $group->access_right('Download report data');
       my $access_right = FS::access_right->new( {
           'righttype'   => 'FS::access_group',
           'rightobjnum' => $group->groupnum,
