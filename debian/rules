@@ -47,7 +47,8 @@ export DIST_CONF = ${FREESIDE_CONF}/default_conf
 export MASON_HANDLER=$(TMP)-webui/usr/local/etc/freeside/handler.pl
 
 #export FREESIDE_DOCUMENT_ROOT = /usr/share/freeside/www
-export FREESIDE_DOCUMENT_ROOT = $(TMP)-webui/var/www/freeside
+export APACHE_DOCUMENT_ROOT := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html' || echo '/var/www')
+export FREESIDE_DOCUMENT_ROOT = $(TMP)$(APACHE_DOCUMENT_ROOT)/freeside
 export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
@@ -215,15 +216,15 @@ install-stamp: build-stamp
 	chown -R freeside ${TMP}-selfservice-lib/usr/local/freeside
 	chmod 600 ${TMP}-selfservice-lib/usr/local/freeside/selfservice_socket
 	
-	install -d -o freeside -g freeside ${TMP}-selfservice-ui/var/www/
-	cp -R fs_selfservice/FS-SelfService/cgi ${TMP}-selfservice-ui/var/www/selfservice-DIST
-	chown freeside.freeside ${TMP}-selfservice-ui/var/www/selfservice-DIST/*.cgi ${TMP}-selfservice-ui/var/www/selfservice-DIST/*/*.cgi;
-	chmod 755 ${TMP}-selfservice-ui/var/www/selfservice-DIST/*.cgi ${TMP}-selfservice-ui/var/www/selfservice-DIST/*/*.cgi
+	install -d -o freeside -g freeside ${TMP}-selfservice-ui$(APACHE_DOCUMENT_ROOT)/
+	cp -R fs_selfservice/FS-SelfService/cgi ${TMP}-selfservice-ui$(APACHE_DOCUMENT_ROOT)/selfservice-DIST
+	chown freeside.freeside ${TMP}-selfservice-ui$(APACHE_DOCUMENT_ROOT)/selfservice-DIST/*.cgi ${TMP}-selfservice-ui$(APACHE_DOCUMENT_ROOT)/selfservice-DIST/*/*.cgi;
+	chmod 755 ${TMP}-selfservice-ui$(APACHE_DOCUMENT_ROOT)/selfservice-DIST/*.cgi ${TMP}-selfservice-ui$(APACHE_DOCUMENT_ROOT)/selfservice-DIST/*/*.cgi
 
 	# NG-selfservice
 
-	install -d ${TMP}-ng-selfservice/var/www/
-	cp -R ng_selfservice ${TMP}-ng-selfservice/var/www/ng_selfservice-DIST/
+	install -d ${TMP}-ng-selfservice$(APACHE_DOCUMENT_ROOT)/
+	cp -R ng_selfservice ${TMP}-ng-selfservice$(APACHE_DOCUMENT_ROOT)/ng_selfservice-DIST/
 
 	#RT Config
 
