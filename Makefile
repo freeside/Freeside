@@ -29,12 +29,15 @@ DIST_CONF = ${FREESIDE_CONF}/default_conf
 #mod_perl v2 1.999_22 on Apache 2.0 through 2.3 (Debian ancient through 7.x)
 #APACHE_VERSION=2
 #Apache 2.4 (Debian 8.x)
-APACHE_VERSION=2.4
+#APACHE_VERSION=2.4
+APACHE_VERSION := $(shell /usr/sbin/apache2 -v | grep -q '\/2\.4\.' && echo '2.4' || echo '2')
 
 #deb (-7 and upgrades)
-FREESIDE_DOCUMENT_ROOT = /var/www/freeside
+#FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #deb (new installs of 8+) (plus needs more work w/new auth)
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
+FREESIDE_DOCUMENT_ROOT := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html/freeside' || echo '/var/www/freeside')
+
 #redhat, fedora, mandrake
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #freebsd
@@ -72,10 +75,11 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 #HTTPD_RESTART = /usr/local/apache/bin/apachectl stop; sleep 10; /usr/local/apache/bin/apachectl startssl
 
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
-#debian unstable/8.0+, apache2.4
-APACHE_CONF = /etc/apache2/conf-available
 #deb (3.1+), apache2
 #APACHE_CONF = /etc/apache2/conf.d
+#debian unstable/8.0+, apache2.4
+#APACHE_CONF = /etc/apache2/conf-available
+APACHE_CONF := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/etc/apache2/conf-available' || echo '/etc/apache2/conf.d')
 
 INSSERV_OVERRIDE = /etc/insserv/overrides
 
@@ -108,7 +112,7 @@ RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific
 #RT_TIMEZONE = US/Eastern
-FREESIDE_URL = "http://192.168.1.6/freeside/"
+FREESIDE_URL = "http://localhost/freeside/"
 
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
