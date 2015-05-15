@@ -112,7 +112,7 @@
 %           }
 %           if ( $curuser->access_right('Unsuspend customer package') ) { 
 %             if ( $cust_pkg->order_date eq $cust_pkg->get('susp') ) { #on hold
-                (&nbsp;<% pkg_link('misc/unsusp_pkg', emt('Start bililng now'), $cust_pkg) %>&nbsp;)
+                (&nbsp;<% pkg_link('misc/unsusp_pkg', emt('Start billing now'), $cust_pkg) %>&nbsp;)
 %             } else {
                 (&nbsp;<% pkg_unsuspend_link($cust_pkg) %>&nbsp;)
                 (&nbsp;<% pkg_resume_link($cust_pkg) %>&nbsp;)
