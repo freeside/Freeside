@@ -6,7 +6,7 @@ use vars qw( @EXPORT_OK %handler $domain $DEBUG $me );
 
 @EXPORT_OK = qw( load_clientapi_modules );
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::ClientAPI]';
 
 %handler = ();

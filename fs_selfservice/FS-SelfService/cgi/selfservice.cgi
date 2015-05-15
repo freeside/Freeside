@@ -957,7 +957,7 @@ sub delete_svc {
 sub view_usage {
   my $res = list_svcs(
     'session_id'  => $session_id,
-    'svcdb'       => [ 'svc_acct', 'svc_phone', 'svc_port', ],
+    'svcdb'       => [ 'svc_acct', 'svc_phone', 'svc_port', 'svc_pbx' ],
     'ncancelled'  => 1,
   );
   if ($res->{hide_usage}) {

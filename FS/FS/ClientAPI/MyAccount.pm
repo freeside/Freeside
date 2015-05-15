@@ -1857,18 +1857,20 @@ sub list_svcs {
       }
       # no usage to hide here
 
-    } elsif ( $svcdb eq 'svc_phone' ) {
+    } elsif ( $svcdb eq 'svc_phone' or $svcdb eq 'svc_pbx' ) {
       if (!$hide_usage) {
         # could potentially show lots of things...
         $hash{'outbound'} = 1;
         $hash{'inbound'}  = 0;
-        if ( $part_pkg->plan eq 'voip_inbound' ) {
-          $hash{'outbound'} = 0;
-          $hash{'inbound'}  = 1;
-        } elsif ( $part_pkg->option('selfservice_inbound_format')
-              or  $conf->config('selfservice-default_inbound_cdr_format')
-        ) {
-          $hash{'inbound'}  = 1;
+        if ( $svcdb eq 'svc_phone' ) {
+          if ( $part_pkg->plan eq 'voip_inbound' ) {
+            $hash{'outbound'} = 0;
+            $hash{'inbound'}  = 1;
+          } elsif ( $part_pkg->option('selfservice_inbound_format')
+                or  $conf->config('selfservice-default_inbound_cdr_format')
+          ) {
+            $hash{'inbound'}  = 1;
+          }
         }
         foreach (qw(inbound outbound)) {
           # hmm...we can't filter by status here, because there might
@@ -2163,11 +2165,11 @@ sub _list_cdr_usage {
   # XXX CDR type support...
   # XXX any way to do a paged search on this?
   # we have to return the results all at once...
-  my($svc_phone, $begin, $end, %opt) = @_;
+  my($svc_x, $begin, $end, %opt) = @_;
   map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
-    $svc_phone->get_cdrs(
-      'begin'=>$begin,
-      'end'=>$end,
+    $svc_x->get_cdrs(
+      'begin' => $begin,
+      'end'   => $end,
       'disable_charged_party' => 1,
       %opt
     );
@@ -2175,9 +2177,7 @@ sub _list_cdr_usage {
 
 sub list_cdr_usage {
   my $p = shift;
-  _usage_details( \&_list_cdr_usage, $p,
-                  'svcdb' => 'svc_phone',
-                );
+  _usage_details( \&_list_cdr_usage, $p );
 }
 
 sub _usage_details {
@@ -2194,17 +2194,17 @@ sub _usage_details {
   my $search = { 'svcnum' => $p->{'svcnum'} };
   $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
 
-  my $svcdb = $opt{'svcdb'} || 'svc_acct';
-
-  my $svc_x = qsearchs( $svcdb, $search );
+  my $cust_svc = qsearchs( 'cust_svc', $search );
   return { 'error' => 'No service selected in list_svc_usage' } 
-    unless $svc_x;
+    unless $cust_svc;
 
-  my $cust_pkg = $svc_x->cust_svc->cust_pkg;
+  my $svc_x = $cust_svc->svc_x;
+  my $svcdb = $svc_x->table;
+  my $cust_pkg = $cust_svc->cust_pkg;
   my $freq     = $cust_pkg->part_pkg->freq;
   my %callback_opt;
   my $header = [];
-  if ( $svcdb eq 'svc_phone' ) {
+  if ( $svcdb eq 'svc_phone' or $svcdb eq 'svc_pbx' ) {
     my $format = '';
     if ( $p->{inbound} ) {
       $format = $cust_pkg->part_pkg->option('selfservice_inbound_format') 
