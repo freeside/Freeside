@@ -387,6 +387,34 @@ sub get_cdrs {
   qsearch ( $psearch->{query} )
 }
 
+=item sum_cdrs
+
+Takes the same options as psearch_cdrs, but returns a single row containing
+"count" (the number of CDRs) and the sums of the following fields: duration,
+billsec, rated_price, rated_seconds, rated_minutes.
+
+Note that if any calls are not rated, their rated_* fields will be null.
+If you want to use those fields, pass the 'status' option to limit to 
+calls that have been rated.  This is intentional; please don't "fix" it.
+
+=cut
+
+sub sum_cdrs {
+  my $self = shift;
+  my $psearch = $self->psearch_cdrs(@_);
+  $psearch->{query}->{'select'} = join(',',
+    'COUNT(*) AS count',
+    map { "SUM($_) AS $_" }
+      qw(duration billsec rated_price rated_seconds rated_minutes)
+  );
+  # hack
+  $psearch->{query}->{'extra_sql'} =~ s/ ORDER BY.*$//;
+  qsearchs ( $psearch->{query} );
+}
+
+
+# 3.x stub
+
 sub pbx_extension {
   my $self = shift;
   qsearch('pbx_extension', { svcnum=>$self->svcnum });
