@@ -13,8 +13,10 @@
 % } 
              
 %#  <FORM METHOD="POST" ACTION="<%$url_string%>loginout/login">
+%  my $uri = $r->prev->uri;
+%  $uri .= '?'. $r->prev->args if length( $r->prev->args );
   <FORM METHOD="POST" ACTION="/login">
-    <INPUT TYPE="hidden" NAME="destination" VALUE="<% $r->prev->unparsed_uri %>">
+    <INPUT TYPE="hidden" NAME="destination" VALUE="<% $uri %>">
 
     <TABLE CELLSPACING=0 CELLPADDING=4 BGCOLOR="#cccccc">
       <TR>
@@ -45,7 +47,7 @@ my %error = (
 );
 
 my $error = # $cgi->param('logout') ||
-            $r->prev->subprocess_env("AuthCookieReason");
+            $r->prev->subprocess_env('AuthCookieReason');
 
 $error = exists($error{$error}) ? $error{$error} : $error;
 
