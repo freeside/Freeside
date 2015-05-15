@@ -201,9 +201,10 @@ sub table_info {
                        },
         'circuit_svcnum'   => { label             => 'Circuit',
                                 type              => 'select',
-                                select_table      => 'svc_domain',
+                                select_table      => 'svc_circuit',
                                 select_key        => 'svcnum',
-                                select_label      => 'circuit_label',
+                                select_label      => 'label',
+                                select_allow_empty=> 1,
                                 disable_inventory => 1,
                               },
 
