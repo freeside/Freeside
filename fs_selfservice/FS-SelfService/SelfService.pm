@@ -80,6 +80,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'part_svc_info'             => 'MyAccount/part_svc_info',
   'provision_acct'            => 'MyAccount/provision_acct',
   'provision_phone'           => 'MyAccount/provision_phone',
+  'provision_pbx'             => 'MyAccount/provision_pbx',
   'provision_external'        => 'MyAccount/provision_external',
   'unprovision_svc'           => 'MyAccount/unprovision_svc',
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
@@ -1256,6 +1257,38 @@ svcpart or service definition to provision
 =item country
 
 E911 Address (optional)
+
+=back
+
+=item provision_pbx
+
+Provisions a customer PBX (svc_pbx).
+
+Takes a hash references as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=item pkgnum
+
+pkgnum of package into which this service is provisioned
+
+=item svcpart
+
+svcpart or service definition to provision
+
+=item id
+
+=item title
+
+=item max_extensions
+
+=item max_simultaneous
+
+=item ip_addr
 
 =back
 
