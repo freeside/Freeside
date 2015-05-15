@@ -3,6 +3,7 @@
     @svc_acct = ();
     @svc_phone = ();
     @svc_port = ();
+    @svc_pbx = ();
 
     foreach (@svcs) {
       $by_pkg_label{ $_->{pkg_label} } ||= [];
@@ -13,6 +14,8 @@
         push @svc_phone, $_;
       } elsif ( $_->{svcdb} eq 'svc_port' ) {
         push @svc_port, $_;
+      } elsif ( $_->{svcdb} eq 'svc_pbx' ) {
+        push @svc_pbx, $_;
       }
     }
     '';
@@ -74,10 +77,10 @@
 
 <%= scalar(@svc_acct) ? '</TABLE><BR><BR>' : '' %>
 
-<%= if ( @svc_phone ) {
+<%= if ( @svc_phone or @svc_pbx ) {
       %any = ();
       for my $dir (qw(outbound inbound)) {
-        $any{$dir} = grep { $_->{$dir} } @svc_phone;
+        $any{$dir} = grep { $_->{$dir} } (@svc_phone, @svc_pbx);
       }
       $OUT.= '<FONT SIZE="4">Call usage</FONT><BR><BR>
               <TABLE BGCOLOR="#cccccc" STYLE="display:inline-block">
@@ -97,21 +100,22 @@
     }
 %>
 
-<%= foreach my $svc_phone ( @svc_phone ) {
-      my $link = "${url}view_cdr_details;".
-        "svcnum=$svc_phone->{'svcnum'};beginning=0;ending=0";
-  $OUT .= '<TR><TD>'. $svc_phone->{'label'}. ': '. $svc_phone->{'value'};
+<%= foreach my $svc_x ( @svc_phone, @svc_pbx ) {
+  my $link = $url . 'view_cdr_details;' .
+          'svcnum='.$svc_x->{'svcnum'}.
+          ';beginning=0;ending=0';
+  $OUT .= '<TR><TD>'. $svc_x->{'label'}. ': '. $svc_x->{'value'};
   $OUT .= '</TD>';
   # usage summary w/ links
   for my $dir (qw(outbound inbound)) {
     if ( $dir eq 'inbound' ) {
       $link .= ';inbound=1';
     }
-    if ( $svc_phone->{$dir} ) {
+    if ( $svc_x->{$dir} ) {
       $OUT .= '<TD ALIGN="right">'.qq!<A HREF="$link">! .
         sprintf('%d calls (%.0f minutes)',
-          $svc_phone->{$dir}->{'count'},
-          $svc_phone->{$dir}->{'duration'} / 60
+          $svc_x->{$dir}->{'count'},
+          $svc_x->{$dir}->{'duration'} / 60
         ) .
         '</A></TD>';
     } elsif ( $any{$dir} )  {
@@ -154,7 +158,7 @@
             '<TD COLSPAN=4>* shared among all your phone plans</TD></TR>';
   }
 }
-if ( scalar(@svc_phone) or scalar(@usage_pools) ) {
+if ( @svc_phone or @svc_pbx or @usage_pools ) {
   $OUT .= '</TABLE><BR><BR>';
 }
 '';
