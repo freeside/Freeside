@@ -1,5 +1,6 @@
 <& /elements/header.html, {
              'title' => $title,
+             'title_noescape' => $title_noescape,
              'head'  => $head,
              'nobr'  => 1,
           }
@@ -169,12 +170,14 @@ function areyousure(href, message) {
 <TABLE BORDER=0>
 <TR>
   <TD VALIGN="top">
+    <& cust_main/contacts.html, $cust_main &>
+    <BR>
     <& cust_main/misc.html, $cust_main &>
-    <BR><& cust_main/contacts.html, $cust_main &>
   </TD>
   <TD VALIGN="top" STYLE="padding-left: 54px">
     <& cust_main/billing.html, $cust_main &>
-    <BR><& cust_main/cust_payby.html, $cust_main &>
+    <BR>
+    <& cust_main/cust_payby.html, $cust_main &>
   </TD>
 </TR>
 <TR>
@@ -331,10 +334,20 @@ my $cust_main = qsearchs( {
 });
 die "Customer not found!" unless $cust_main;
 
-my $title = $cust_main->name;
-$title = '('. $cust_main->display_custnum. ") $title"
-  if $conf->exists('cust_main-title-display_custnum');
-$title = mt("Customer:")." ".$title;
+my $title = encode_entities($cust_main->name);
+$title = '#'. $cust_main->display_custnum. " $title";
+#  if $conf->exists('cust_main-title-display_custnum');
+$title = mt("Customer")." ".$title;
+
+my @agentnums = $curuser->agentnums;
+if (scalar(@agentnums) > 1 ) {
+  $title = encode_entities($cust_main->agent->agent). " $title";
+}
+
+my $status = $cust_main->status_label;
+$status .= ' (Cancelled)' if $cust_main->is_status_delay_cancel;
+my $title_noescape = $title. ' (<B><FONT COLOR="#'. $cust_main->statuscolor. '">'. $status.  '</FONT></B>)';
+$title .= " ($status)";
 
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',

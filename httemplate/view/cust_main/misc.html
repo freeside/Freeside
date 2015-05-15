@@ -1,14 +1,5 @@
+<FONT CLASS="fsinnerbox-title"><% mt('Miscellaneous information') |h %></FONT>
 <TABLE CLASS="fsinnerbox">
-
-<TR>
-  <TD ALIGN="right"><% mt('Customer number') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->display_custnum %></TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right"><% mt('Status') |h %></TD>
-  <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% $status_label %></B></FONT></TD>
-</TR>
 
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') =~ /^(cust_misc|)$/ && @part_tag ) {
@@ -24,15 +15,6 @@
 %   }
   </TD>
 </TR>
-% }
-
-%unless ( scalar(@agentnums) == 1
-%         && !$curuser->access_right('View customers of all agents')  ) {
-%  my $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
-   <TR>
-     <TD ALIGN="right"><% mt('Agent') |h %></TD>
-     <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
-   </TR>
 % }
 
 %  if ( $cust_main->agent_custid

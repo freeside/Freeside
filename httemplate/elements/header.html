@@ -23,7 +23,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% $title |h %>
+      <% $title %>
     </TITLE>
     <!-- per RT, to prevent IE compatibility mode -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -162,7 +162,7 @@ Example:
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
-            <% $title |h %>
+            <% $title_noescape || encode_entities($title) %>
           </FONT>
 
 % unless ( $nobr ) {
@@ -172,7 +172,7 @@ Example:
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
 <%init>
 
-my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
+my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
 my( $nobr, $nocss ) = ( 0, 0 );
 
 my $mobile;
@@ -180,6 +180,7 @@ my $mobile;
 if ( ref($_[0]) ) {
   my $opt = shift;
   $title   = $opt->{title};
+  $title_noescape = $opt->{title_noescape};
   $menubar = $opt->{menubar};
   $etc     = $opt->{etc};
   $head    = $opt->{head};
