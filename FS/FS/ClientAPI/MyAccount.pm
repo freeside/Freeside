@@ -2732,6 +2732,21 @@ sub provision_phone {
   { 'bulkdid' => [ @bulkdid ], 'svc' => $error->{'svc'} }
 }
 
+sub provision_pbx {
+  my $p = shift;
+  warn "provision_pbx called\n"
+    if $DEBUG;
+
+  warn "provision_pbx calling _provision\n"
+    if $DEBUG;
+  _provision( 'FS::svc_pbx',
+              [qw(id title max_extensions max_simultaneous ip_addr)],
+              [qw(id title max_extensions max_simultaneous ip_addr)],
+              $p,
+              @_
+            );
+}
+
 sub provision_acct {
   my $p = shift;
   warn "provision_acct called\n"
@@ -2796,6 +2811,9 @@ sub _provision {
     if $DEBUG;
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $p->{'svcpart'} } )
     or return { 'error' => "unknown svcpart $p->{'svcpart'}" };
+
+  return { error=> 'svcpart '. $p->{'svcpart'}. " is not a $class definition" }
+    if $class ne 'FS::'. $part_svc->svcdb;
 
   warn "creating $class record\n"
     if $DEBUG;
