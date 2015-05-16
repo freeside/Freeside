@@ -23,13 +23,7 @@
 </TABLE>
 % }
 
-<& /elements/menubar.html,
-             { 'newstyle' => 1,
-               'selected' => $viewname{$view},
-               'url_base' => $cgi->url. "?custnum=$custnum;show=",
-             },
-             %views,
-&>
+<& cust_main/menu.html, cust_main => $cust_main, show => $view &>
 <DIV CLASS="fstabcontainer">
 
 <& /elements/init_overlib.html &>
@@ -41,6 +35,7 @@ function areyousure(href, message) {
 }
 </SCRIPT>
 
+<br><br>
 
 % ###
 % # Basics
@@ -48,99 +43,7 @@ function areyousure(href, message) {
 
 % if ( $view eq 'basics' || $view eq 'jumbo' ) {
 
-% if ( $curuser->access_right('Edit customer') ) { 
-  <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>"><% mt('Edit this customer') |h %></A> | 
-% } 
-
-% if ( $curuser->access_right('Suspend customer')
-%        && scalar($cust_main->unsuspended_pkgs)
-%      ) {
-  <& /elements/popup_link-cust_main.html,
-              { 'action'      => $p. 'misc/suspend_cust.html',
-                'label'       => emt('Suspend this customer'),
-                'actionlabel' => emt('Confirm Suspension'),
-                'color'       => '#ff9900',
-                'cust_main'   => $cust_main,
-                'width'       => 768, #make room for reasons
-                'height'      => 450, 
-              }
-  &> | 
-% }
-
-% if ( $curuser->access_right('Unsuspend customer')
-%        && scalar($cust_main->suspended_pkgs)
-%      ) {
-  <& /elements/popup_link-cust_main.html,
-              { 'action'      => $p. 'misc/unsuspend_cust.html',
-                'label'       => emt('Unsuspend this customer'),
-                'actionlabel' => emt('Confirm Unsuspension'),
-                #'color'       => '#ff9900',
-                'cust_main'   => $cust_main,
-                #'width'       => 616, #make room for reasons
-                #'height'      => 366,
-              }
-  &> | 
-% }
-
-% if ( $curuser->access_right('Cancel customer')
-%        && scalar($cust_main->ncancelled_pkgs)
-%      ) {
-  <& /elements/popup_link-cust_main.html,
-              { 'action'      => $p. 'misc/cancel_cust.html',
-                'label'       => emt('Cancel this customer'),
-                'actionlabel' => emt('Confirm Cancellation'),
-                'color'       => '#ff0000',
-                'cust_main'   => $cust_main,
-                'width'       => 616, #make room for reasons
-                'height'      => 410,
-              }
-  &> | 
-% }
-
-% if (     $curuser->access_right('Merge customer')
-%      and (    scalar($cust_main->ncancelled_pkgs)
-%            # || we start supporting payment info merge again in some way
-%          )
-%    )
-% {
-  <& /elements/popup_link-cust_main.html,
-              { 'action'      => $p. 'misc/merge_cust.html',
-                'label'       => emt('Merge this customer'),
-                'actionlabel' => emt('Merge customer'),
-                'cust_main'   => $cust_main,
-                'width'       => 569,
-                'height'      => 210,
-              }
-  &> | 
-% } 
-
-% unless ( $conf->exists('disable_customer_referrals') ) { 
-  <A HREF="<% $p %>edit/cust_main.cgi?referral_custnum=<% $custnum %>"><% mt('Refer a new customer') |h %></A> | 
-  <A HREF="<% $p %>search/cust_main.cgi?referral_custnum=<% $custnum %>"><% mt('View this customer\'s referrals') |h %></A>
-% } 
-
-<BR><BR>
-
 % my $br = 0;
-% if (    $curuser->access_right('Billing event reports') 
-%      || $curuser->access_right('View customer billing events')
-%    ) {
-% $br=1;
-  <A HREF="<% $p %>search/cust_event.html?custnum=<% $custnum %>"><% mt('View billing events for this customer') |h %></A>
-% }
-% 
-% my $email_link = ($cust_main->invoicing_list_emailonly) && 
-%   include('/elements/email-link.html',
-%            'table'               => 'cust_main', 
-%            'search_hash'         => { 'custnum' => $custnum },
-%            'agent_virt_agentnum' => $cust_main->agentnum,
-%            'label'               => 'Email a notice to this customer',
-% );
-% if ( $email_link and $br ) {
- | 
-% }
-<% $email_link || '' %>
-
 % if ( $curuser->access_right('Order customer package') && $conf->exists('cust_main-enable_order_package') ) {
   | <& /elements/order_pkg_link.html, 'cust_main'=>$cust_main &>
 % }
@@ -324,6 +227,7 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
   $query =~ /^(\d+)$/;
   $custnum = $1;
+  $cgi->delete('keywords');
   $cgi->param('custnum', $1);
 }
 

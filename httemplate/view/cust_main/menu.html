@@ -1,0 +1,559 @@
+<style type="text/css">
+#menu_ul {
+  padding: 0;
+  margin: 0 auto;
+}
+#menu_ul li {
+  float: left;
+  list-style: none;
+  position: relative;
+  border-right: 4px solid #e8e8e8;
+}
+#menu_ul a {
+  display: block;
+  padding: 6px 8px;
+  color: #525151;
+  font-size: 13px;
+  font-weight: bold;
+  white-space: nowrap;
+  background: #cccccc;
+  -moz-border-radius-topleft:8px;
+  -moz-border-radius-topright:8px;
+  -webkit-border-radius-topleft:8px;
+  -webkit-border-radius-topright:8px;
+  border-top-left-radius:8px;
+  border-top-right-radius:8px;
+}
+
+#menu_ul ul {
+  margin:0;
+  padding:0;
+  display:none;
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  background: #ae2099;
+  border: 1px solid #ffffff;
+}
+
+#menu_ul ul li {
+  float: none;
+  border-style: none;
+  display: inline;
+  width: 100%;
+}
+
+#menu_ul ul a {
+  padding: 4px 10px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: normal;
+  background: transparent;
+}
+#menu_ul ul a:hover  {
+  background: #7e0079;
+  -moz-border-radius-topleft:0px;
+  -moz-border-radius-topright:0px;
+  -webkit-border-radius-topleft:0px;
+  -webkit-border-radius-topright:0px;
+  border-top-left-radius:0px;
+  border-top-right-radius:0px;
+}
+
+#menu_ul a.current_menu, #menu_ul a.hover {
+  color: #ffffff;
+  background: #7e0079;
+}
+</style>
+<script src="<% $p %>elements/jquery.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+        $('#menu_ul > li').hover(function(){
+                $('a:first', this).addClass('hover');
+                $('ul:first', this).show();
+                if ($('.current_menu:first', this).length == 0) {
+                        $('img[src*="dropdown_arrow_white"]', this).show();
+                        $('img[src*="dropdown_arrow_grey"]', this).hide();
+                }
+        }, function(){
+                $('ul:first', this).hide();
+                $('a:first', this).removeClass('hover');
+                if ($('.current_menu:first', this).length == 0) {
+                        $('img[src*="dropdown_arrow_white"]', this).hide();
+                        $('img[src*="dropdown_arrow_grey"]', this).show();
+                }
+        });
+});
+</script>
+
+<ul id="menu_ul">
+% foreach my $submenu (@processed_menu) {
+  <li>
+    <% shift @$submenu %>
+    <ul>
+%   foreach my $link ( @$submenu ) {
+      <li><% $link %></li>
+%   }
+    </ul>
+  </li>
+% }
+</ul>
+
+<%init>
+my %opt = @_;
+my $cust_main = $opt{'cust_main'};
+my $custnum = $cust_main->custnum;
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $conf = FS::Conf->new;
+
+my %payby = map { $_ => 1 } $conf->config('payby');
+
+# nice declarative menu; should be a parameter to some kind of menu generator
+my @menu = ( 
+  [
+    { show        => 'basics',
+      label       => 'Basics',
+    },
+    {
+      label       => 'Edit customer',
+      url         => 'edit/cust_main.cgi?$custnum',
+      acl         => 'Edit customer'
+    },
+    {
+      label       => 'Edit contacts',
+      url         => 'edit/cust_main-contacts.html?$custnum',
+    },
+# separator
+    {
+      label       => 'Bill now',
+      acl         => 'Bill customer now',
+      content     => sub { include( '/elements/bill.html',
+                              label   => emt('Bill now'),
+                              url     => $cgi->self_url,
+                              custnum => shift->custnum,
+                           ),
+                     },
+    },
+    {
+      label       => 'Suspend',
+      popup       => 'misc/suspend_cust.html?custnum=$custnum',
+      acl         => 'Suspend customer',
+      condition   => sub { shift->unsuspended_pkgs > 0 },
+      actionlabel => 'Confirm Suspension',
+      color       => '#ff9900',
+    },
+    {
+      label       => 'Unsuspend',
+      popup       => 'misc/unsuspend_cust.html?custnum=$custnum',
+      acl         => 'Unsuspend customer',
+      condition   => sub { shift->suspended_pkgs > 0 },
+      actionlabel => 'Confirm Unsuspension',
+    },
+    {
+      label       => 'Cancel',
+      popup       => 'misc/suspend_cust.html?custnum=$custnum',
+      acl         => 'Cancel customer',
+      condition   => sub { shift->ncancelled_pkgs > 0 },
+      actionlabel => 'Confirm Cancellation',
+      color       => '#ff0000',
+    },
+    {
+      label       => 'Merge',
+      popup       => 'misc/merge_cust.html?custnum=$custnum',
+      acl         => 'Merge customer',
+      actionlabel => 'Merge customer',
+      width       => 569,
+      height      => 210,
+    },
+    {
+      label       => 'Refer a new customer',
+      url         => 'edit/cust_main.cgi?referral_custnum=$custnum',
+      confexists  => '!disable_customer_referrals',
+    },
+# should have a separator here
+    {
+      label       => 'View this customer\'s referrals',
+      url         => 'search/cust_main.cgi?referral_custnum=$custnum',
+      confexists  => '!disable_customer_referrals',
+      condition   => sub {
+        FS::cust_main->count('referral_custnum = ?', shift->custnum) > 0
+      },
+    },
+    {
+      label       => 'View billing events',
+      url         => 'search/cust_event.html?custnum=$custnum',
+      acl         => [ 'Billing event reports',
+                       'View customer billing events' ],
+    },
+    {
+      label       => 'Email a notice to this customer',
+      url         => sub {
+                      my $cust_main = shift;
+                      my $agentnum = $cust_main->agentnum;
+                      'misc/email-customers.html?table=cust_main;search_hash='.
+                      'agent_virt_agentnum='.$agentnum.';custnum=$custnum';
+                     },
+      condition   => sub { shift->invoicing_list_emailonly },
+    },
+  ],
+  [
+    {
+      label => 'Notes',
+      show  => 'notes',
+    },
+    {
+      label       => 'Add note',
+      popup       => 'edit/cust_main_note.cgi?custnum=$custnum',
+      actionlabel => 'Add note',
+      confexists  => '!cust_main-disable_notes',
+      acl         => 'Add customer note',
+      width       => 616,
+      height      => 538,
+    },
+    {
+      label       => 'Attach file',
+      popup       => 'edit/cust_main_attach.cgi?custnum=$custnum',
+      actionlabel => 'Upload file',
+      confexists  => '!disable_cust_attachment',
+      acl         => 'Add attachment',
+      width       => 480,
+      height      => 296,
+    },
+  ],
+  [
+    {
+      label => 'Tickets',
+      show  => 'tickets',
+      confexists => 'ticket_system'
+    },
+  ],
+  [
+    {
+      label => 'Appointments',
+      show  => 'appointments',
+      confexists => 'ticket_system',
+      acl   => 'View appointments',
+    },
+  ],
+  [
+    {
+      label => 'Quotations',
+      show  => 'quotations',
+    },
+    {
+      label => 'Add quotation',
+      url   => 'edit/quotation.html?custnum=$custnum',
+      acl   => 'Generate quotation',
+    },
+  ],
+  [
+    {
+      label => 'Packages',
+      show  => 'packages',
+    },
+    {
+      label       => 'New qualification',
+      popup       => 'misc/qual.html?custnum=$custnum',
+      actionlabel => 'New qualification',
+      color       => '#333399',
+      width       => 763,
+      height      => 436,
+      acl         => 'Qualify service',
+    },
+    {
+      label       => 'Order new package',
+      popup       => 'misc/order_pkg.html?custnum=$custnum',
+      actionlabel => 'Order new package',
+      color       => '#333399',
+      width       => 960,
+      height      => 740,
+      acl         => 'Order customer package',
+    },
+    {
+      # it's just a popup, but there's some freaky CCH tax stuff in it
+      label       => 'One-time charge',
+      content     => sub {
+                      include( '/elements/one_time_charge_link.html',
+                        custnum => shift->custnum,
+                      );
+                     },
+      acl         => 'One-time charge',
+    },
+    {
+      label       => 'Move services between packages',
+      popup       => 'edit/bulk-cust_svc-pkgnum.html?custnum=$custnum',
+      actionlabel => 'Move services',
+      width       => 968,
+      height      => 575,
+      acl         => 'Bulk move customer services',
+    },
+    {
+      label       => 'Bulk order and cancel packages',
+      url         => 'edit/cust_pkg.cgi?$custnum',
+      acl         => 'Bulk change customer packages',
+    },
+# separator
+    {
+      label => 'Package reports',
+      url   => 'search/report_cust_pkg?custnum=$custnum',
+    },
+    {
+      label => 'View qualifications',
+      url   => 'search/qual.cgi?custnum=$custnum',
+      acl   => 'Qualify service',
+    },
+    {
+      label => 'View accounts',
+      url   => 'search/report_svc_acct.html?custnum=$custnum',
+    },
+    {
+      label => 'View CDRs',
+      url   => 'search/report_cdr.html?custnum=$custnum',
+    },
+  ],
+  [
+    {
+      label => 'Payment History',
+      show  => 'payment_history',
+    },
+    # manual payment entry via edit/cust_pay
+    {
+      label       => 'Enter check payment',
+      popup       => 'edit/cust_pay.cgi?popup=1;payby=BILL;custnum=$custnum',
+      actionlabel => 'Enter check payment',
+      width       => 763,
+      height      => 392,
+      acl         => [ 'Post payment', 'Post check payment' ],
+      condition   => sub { $payby{BILL} },
+    },
+    {
+      label       => 'Enter cash payment',
+      popup       => 'edit/cust_pay.cgi?popup=1;payby=CASH;custnum=$custnum',
+      actionlabel => 'Enter cash payment',
+      width       => 763,
+      height      => 392,
+      acl         => [ 'Post payment', 'Post cash payment' ],
+      condition   => sub { $payby{CASH} },
+    },
+    {
+      label       => 'Enter Western Union payment',
+      popup       => 'edit/cust_pay.cgi?popup=1;payby=WEST;custnum=$custnum',
+      actionlabel => 'Enter Western Union payment',
+      width       => 763,
+      height      => 392,
+      acl         => [ 'Post payment', ],
+      condition   => sub { $payby{WEST} },
+    },
+    {
+      label       => 'Post manual (offline/POS) credit card payment',
+      popup       => 'edit/cust_pay.cgi?popup=1;payby=MCRD;custnum=$custnum',
+      actionlabel => 'Enter credit card payment',
+      width       => 763,
+      height      => 392,
+      acl         => [ 'Post payment', ],
+      condition   => sub { $payby{MCRD} },
+    },
+    {
+      label       => 'Post manual (offline/POS) electronic check',
+      popup       => 'edit/cust_pay.cgi?popup=1;payby=MCHK;custnum=$custnum',
+      actionlabel => 'Enter credit card payment',
+      width       => 763,
+      height      => 392,
+      acl         => [ 'Post payment', ],
+      condition   => sub { $payby{MCHK} },
+    },
+    # realtime payments via payment.cgi
+    {
+      label       => 'Process credit card payment',
+      url         => 'misc/payment.cgi?payby=CARD;custnum=$custnum',
+      acl         => [ 'Process payment', 'Process credit card payment', ],
+      condition   => sub { $payby{CARD} or $payby{DCRD} },
+    },
+    {
+      label       => 'Process electronic check payment',
+      url         => 'misc/payment.cgi?payby=CHEK;custnum=$custnum',
+      acl         => [ 'Process payment', 'Process Echeck payment', ],
+      condition   => sub { $payby{CHEK} or $payby{DCHK} },
+    },
+#separator?
+    {
+      label       => 'Enter credit',
+      popup       => 'edit/cust_credit.cgi?custnum=$custnum',
+      actionlabel => 'Enter credit',
+      width       => 763,
+      acl         => 'Post credit',
+    },
+    {
+      label       => 'Credit line items',
+      popup       => 'edit/credit-cust_bill_pkg.html?custnum=$custnum',
+      actionlabel => 'Credit line items',
+      width       => 968,
+      height      => 575,
+      acl         => 'Credit line items',
+      condition   => sub {
+        FS::cust_bill->count('custnum = ?', shift->custnum) > 0
+      },
+    },
+    {
+      label       => 'Enter check refund',
+      popup       => 'edit/cust_refund.cgi?popup=1;payby=BILL;custnum=$custnum',
+      actionlabel => 'Enter check refund',
+      width       => 440,
+      acl         => ['Post refund', 'Post check refund'],
+      condition   => sub { $payby{BILL} },
+    },
+    {
+      label       => 'Enter cash refund',
+      popup       => 'edit/cust_refund.cgi?popup=1;payby=CASH;custnum=$custnum',
+      actionlabel => 'Enter cash refund',
+      width       => 392,
+      acl         => ['Post refund', 'Post cash refund'],
+      condition   => sub { $payby{CASH} },
+    },
+    {
+      label       => 'Enter manual (offline/POS) credit card refund',
+      popup       => 'edit/cust_refund.cgi?popup=1;payby=MCRD;custnum=$custnum',
+      actionlabel => 'Enter credit card refund',
+      width       => 440,
+      acl         => ['Post refund' ],
+      condition   => sub { $payby{MCRD} },
+    },
+    {
+      label       => 'Enter manual (offline/POS) electronic check refund',
+      popup       => 'edit/cust_refund.cgi?popup=1;payby=MCHK;custnum=$custnum',
+      actionlabel => 'Enter electronic check refund',
+      width       => 440,
+      acl         => ['Post refund' ],
+      condition   => sub { $payby{MCHK} },
+    },
+    {
+      label       => 'Add tax adjustment',
+      popup       => 'edit/cust_tax_adjustment.html?custnum=$custnum',
+      actionlabel => 'Add tax adjustment',
+      height      => 200,
+      confexists  => 'enable_tax_adjustments',
+      acl         => 'Add customer tax adjustment',
+    },
+# separator, definitely
+    {
+      label       => 'Download statement',
+      url         => 'view/cust_main_statement-pdf.cgi?$custnum',
+      acl         => 'List invoices',
+      condition   => sub {
+        FS::cust_bill->count('custnum = ?', shift->custnum) > 0
+      },
+    },
+    {
+      label       => 'Search invoices',
+      url         => 'search/report_cust_bill.html?custnum=$custnum',
+      acl         => 'List invoices',
+    },
+    {
+      label       => 'View tax exemptions',
+      url         => 'search/cust_tax_exempt_pkg.cgi?custnum=$custnum',
+      acl         => 'View customer tax exemptions',
+    },
+    {
+      label       => 'View tax adjustments',
+      url         => 'search/cust_tax_adjustment.html?custnum=$custnum',
+      confexists  => 'enable_tax_adjustments',
+      acl         => 'Add customer tax adjustment',
+    },
+    {
+      label       => 'View pending payments',
+      url         => 'search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=$custnum',
+      acl         => 'View pending payments',
+      condition   => sub { 
+        FS::cust_pay_pending->count('custnum = ?', shift->custnum) > 0
+      },
+    },
+  ],
+  [
+    {
+      label => 'Change History',
+      show  => 'change_history',
+      acl   => 'View customer history',
+    },
+  ],
+);
+
+
+my @processed_menu;
+foreach my $submenu (@menu) {
+
+  my @links;
+  my $first = 1;
+  foreach my $entry ( @$submenu ) {
+    # if the menu head was skipped, skip the whole menu
+    last if (!$first and !@links);
+    $first = 0;
+
+    # check conditions
+    if ( $entry->{acl} ) {
+      next unless $curuser->access_right( $entry->{acl} );
+    }
+    if ( $entry->{confexists} ) {
+      if ( $entry->{confexists} =~ /^!(.*)/ ) {
+        # confexists => !foo, a negative condition
+        next if $conf->exists( $1 );
+      } else {
+        next unless $conf->exists( $entry->{confexists} );
+      }
+    }
+    if ( $entry->{condition} ) {
+      next unless &{ $entry->{condition} }($cust_main);
+    }
+
+    my $label = emt($entry->{label});
+    my $target = $entry->{content}
+              || $entry->{popup}
+              || $entry->{url};
+
+    if ( ref($target) eq 'CODE' ) {
+      $target = &$target($cust_main);
+    }
+    my $a = '';
+
+    if ( $entry->{content} ) { # then the coderef specified the whole thing
+      $a = $target;
+
+    } elsif ( $entry->{show} ) {
+
+      # the menu head: always a link back to this page
+      $cgi->param('show', $entry->{show});
+            $target = $cgi->self_url;
+
+      $a = qq[ <A HREF="$target"];
+      if ( $opt{'show'} eq $entry->{show} ) {
+        $a .= ' class="fstabselected"';
+      }
+      $a .= qq[>$label</A> ];
+
+
+    } elsif ( $entry->{popup} ) {
+
+      $target =~ s/\$custnum/$custnum/g;
+      $target = $p.$target;
+      $a = include('/elements/popup_link.html',
+        action  => $target,
+        width   => 616,
+        height  => 410,
+        %$entry,
+        label   => emt($label),
+      );
+
+    } elsif ( $entry->{url} ) {
+
+      $target =~ s/\$custnum/$custnum/g;
+      $target = $p.$target;
+      $a = qq[ <A HREF="$target">$label</A> ];
+    }
+
+    push @links, $a;
+
+  } # foreach $entry
+  if (@links) {
+    push @processed_menu, \@links;
+  }
+}
+</%init>

@@ -275,6 +275,10 @@ table.grid {
   filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
 }
 
+th, td {
+  vertical-align: top;
+}
+
 th.grid {
   padding-left: 3px;
   padding-right: 3px;

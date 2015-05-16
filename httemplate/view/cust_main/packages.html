@@ -78,48 +78,6 @@ for (var i = 0; i < all_buttons.length; i++) {
 if ( el ) el.scrollIntoView(true);
 </&>
 </SCRIPT>
-% unless ( $opt{no_links} ) {
-
-%   my $s = 0;
-
-% if ( $curuser->access_right('Qualify service') ) { 
-  <% $s++ ? ' | ' : '' %>
-  <& qual_link.html, $cust_main &>
-% }
-
-% if ( $curuser->access_right('Order customer package') ) { 
-  <% $s++ ? ' | ' : '' %>
-  <& /elements/order_pkg_link.html, 'cust_main'=>$cust_main &>
-% } 
-
-% if ( $curuser->access_right('One-time charge') ) {
-  <% $s++ ? ' | ' : '' %>
-  <& /elements/one_time_charge_link.html, 'custnum'=>$cust_main->custnum &>
-% } 
-
-% if ( $curuser->access_right('Bulk move customer services') ) { 
-  <% $s++ ? ' | ' : '' %>
-
-  <& /elements/popup_link-cust_main.html,
-               'label'       => emt('Move services between packages'),
-               'action'      => "${p}edit/bulk-cust_svc-pkgnum.html",
-               'cust_main'   => $cust_main,
-               'actionlabel' => emt('Move services'),
-               'width'       => 968, #763,
-               'height'      => 575,
-  &>
-
-% } 
-
-% if ( $curuser->access_right('Bulk change customer packages') ) { 
-  <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A>
-% } 
-
-<BR><BR>
-
-% } # unless $opt{no_links}
-
 <TABLE>
   <TR>
     <TD ALIGN="left" VALIGN="top">
@@ -152,22 +110,6 @@ if ( el ) el.scrollIntoView(true);
 % }
 
     </TD>
-
-%   unless ( $opt{no_links} ) {
-
-    <TD ALIGN="right">
-      <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>"><% mt('Package reports') |h %></A>
-% if ( $curuser->access_right('Qualify service') ) { 
-    | <A HREF="<%$p%>search/qual.cgi?custnum=<% $cust_main->custnum %>"><% mt('View Qualifications') |h %></A>
-% }
-      <BR>
-      <% mt('Service reports:') |h %> 
-        <A HREF="<%$p%>search/report_svc_acct.html?custnum=<% $cust_main->custnum %>"><% mt('accounts') |h %></A><BR>
-      <% mt('Usage reports:') |h %> 
-        <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>"><% mt('CDRs') |h %></A>
-    </TD>
-
-%   } # unless $opt{no_links}
 
   </TR>
 
