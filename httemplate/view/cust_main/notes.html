@@ -23,20 +23,6 @@
 
 %   }
 
-%   if ( $curuser->access_right('Add customer note') &&
-%        ! $conf->exists('cust_main-disable_notes')
-%      ) {
-
-  <& /elements/popup_link-cust_main.html,
-                'label'       => emt('Add customer note'),
-                'action'      => $p. 'edit/cust_main_note.cgi',
-                'actionlabel' => emt('Enter customer note'),
-                'cust_main'   => $cust_main,
-                'width'       => 616,
-                'height'      => 538, #575
-  &>
-
-%   }
 <BR>
 
 % # actually display notes
@@ -49,19 +35,6 @@
 % if( $curuser->access_right('View attachments') ) {
 % # List attachments
 <& notes/attachments.html, 'cust_main' => $cust_main &>
-% # "Attach file" link
-% if(! $conf->config('disable_cust_attachment')
-%  and $curuser->access_right('Add attachment')) {
-<& /elements/popup_link-cust_main.html,
-              'label'       => emt('Attach file'),
-              'action'      => $p.'edit/cust_main_attach.cgi',
-              'actionlabel' => emt('Upload file'),
-              'cust_main'   => $cust_main,
-              'width'       => 480,
-              'height'      => 296,
-&>
-% }
-
 %   if ($cgi->param('show_deleted')) {
 <A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
            ($view ? ";show=$view" : '') . '#notes' 
