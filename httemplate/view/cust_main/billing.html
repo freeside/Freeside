@@ -20,8 +20,8 @@
 
 % if ( $cust_main->complimentary ) {
   <TR>
-    <TD ALIGN="right"><% mt('Complimentary') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $yes %></TD>
+    <TH ALIGN="right"><% mt('Complimentary') |h %></TH>
+    <TD><% $yes %></TD>
   </TR>
 % }
 
@@ -29,14 +29,14 @@
 %  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
 
 <TR>
-  <TD ALIGN="right"><% mt('Balance due') |h %></TD>
-  <TD BGCOLOR="#ffffff"><B><% $balance %></B></TD>
+  <TH ALIGN="right"><% mt('Balance due') |h %></TH>
+  <TD><B><% $balance %></B></TD>
 </TR>
 
 % if ( $conf->exists('cust_main-select-prorate_day') ) {
 <TR>
-  <TD ALIGN="right"><% mt('Prorate day of month') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->prorate_day %>
+  <TH ALIGN="right"><% mt('Prorate day of month') |h %></TH>
+  <TD><% $cust_main->prorate_day %>
   </TD>
 </TR>
 % }
@@ -50,16 +50,16 @@
 %    )
 % {
     <TR>
-      <TD ALIGN="right"><% mt('Payment day of month') |h %></TD>
-      <TD BGCOLOR="#ffffff"><% $cust_main->billday %>
+      <TH ALIGN="right"><% mt('Payment day of month') |h %></TH>
+      <TD><% $cust_main->billday %>
       </TD>
     </TR>
 % }
 
 % if ( $cust_main->po_number ) { 
     <TR>
-      <TD ALIGN="right"><% mt('Purchase Order #') |h %></TD>
-      <TD BGCOLOR="#ffffff"><% $cust_main->po_number %></TD>
+      <TH ALIGN="right"><% mt('Purchase Order #') |h %></TH>
+      <TD><% $cust_main->po_number %></TD>
     </TR>
 % } 
 
@@ -70,16 +70,16 @@
 %        )
 % {
     <TR>
-      <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
-      <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
+      <TH ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TH>
+      <TD><% $cust_main->tax ? $yes : $no %></TD>
     </TR>
 % }
 
 % foreach my $exempt_group ( @exempt_groups ) {
 %   my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
     <TR>
-      <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
-      <TD BGCOLOR="#ffffff"><% $cust_main_exemption ? $yes : $no %>
+      <TH ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TH>
+      <TD><% $cust_main_exemption ? $yes : $no %>
         <% $cust_main_exemption ? $cust_main_exemption->exempt_number : '' |h %>
       </TD>
     </TR>
@@ -87,16 +87,16 @@
 
 % if ( $conf->exists('enable_taxproducts') ) {
 <TR>
-  <TD ALIGN="right"><% mt('Tax location') |h %></TD>
+  <TH ALIGN="right"><% mt('Tax location') |h %></TH>
 % my $tax_location = $conf->exists('tax-ship_address')
 %                    ? $cust_main->ship_location
 %                    : $cust_main->bill_location;
-  <TD BGCOLOR="#ffffff"><% $tax_location->geocode('cch') %></TD>
+  <TD><% $tax_location->geocode('cch') %></TD>
 </TR>
 % }
 <TR>
-  <TD ALIGN="right"><% mt('Postal mail invoices') |h %></TD>
-  <TD BGCOLOR="#ffffff">
+  <TH ALIGN="right"><% mt('Postal mail invoices') |h %></TH>
+  <TD>
     <% ( grep { $_ eq 'POST' } @invoicing_list )
          ? $yes. ( $cust_main->invoice_attn
                      ? ', attn: '. $cust_main->invoice_attn
@@ -107,15 +107,15 @@
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
-  <TD BGCOLOR="#ffffff">
+  <TH ALIGN="right"><% mt('Email invoices') |h %></TH>
+  <TD>
     <% $cust_main->invoice_noemail ? $no : $yes %>
   </TD>
 </TR>
 % unless ( $conf->exists('cust-email-high-visibility')) {
 <TR>
-  <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
-  <TD BGCOLOR="#ffffff">
+  <TH ALIGN="right"><% mt('Email address(es)') |h %></TH>
+  <TD>
     <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
 %   if ( $cust_main->message_noemail ) {
     <BR>
@@ -125,8 +125,8 @@
 </TR>
 % }
 <TR>
-  <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
-  <TD BGCOLOR="#ffffff">
+  <TH ALIGN="right"><% mt('Invoice terms') |h %></TH>
+  <TD>
     <% $cust_main->invoice_terms
          || emt('Default').' ('. ( $conf->config('invoice_default_terms', $cust_main->agentnum)
                                      || emt('Payable upon receipt')
@@ -136,8 +136,8 @@
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right"><% mt('Credit limit') |h %></TD>
-  <TD BGCOLOR="#ffffff">
+  <TH ALIGN="right"><% mt('Credit limit') |h %></TH>
+  <TD>
 %   my $default_credit_limit = $conf->config('default_credit_limit');
     <% length($cust_main->credit_limit)
          ? $money_char. sprintf("%.2f", $cust_main->credit_limit)
@@ -153,51 +153,51 @@
 
 % if ( $conf->exists('voip-cust_cdr_spools') ) { 
   <TR>
-    <TD ALIGN="right"><% mt('Spool CDRs') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->spool_cdr ? $yes : $no %></TD>
+    <TH ALIGN="right"><% mt('Spool CDRs') |h %></TH>
+    <TD><% $cust_main->spool_cdr ? $yes : $no %></TD>
   </TR>
 % } 
 
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
   <TR>
-    <TD ALIGN="right"><% mt($conf->exists('voip-cdr_email') ? 'Print CDRs' : 'Show CDRs') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->squelch_cdr ? $no : $yes %></TD>
+    <TH ALIGN="right"><% mt($conf->exists('voip-cdr_email') ? 'Print CDRs' : 'Show CDRs') |h %></TH>
+    <TD><% $cust_main->squelch_cdr ? $no : $yes %></TD>
   </TR>
 % } 
 
 % if ( $conf->exists('voip-cust_accountcode_cdr') ) { 
    <TR>
-     <TD ALIGN="right"><% mt('Breakdown CDRs by accountcode') |h %></TD>
-     <TD BGCOLOR="#ffffff"><% $cust_main->accountcode_cdr ? $yes : $no %></TD>
+     <TH ALIGN="right"><% mt('Breakdown CDRs by accountcode') |h %></TH>
+     <TD><% $cust_main->accountcode_cdr ? $yes : $no %></TD>
    </TR>
 % }
 
 % if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
   <TR>
-    <TD ALIGN="right"><% mt('Email CDRs as CSV') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->email_csv_cdr ? $yes : $no %></TD>
+    <TH ALIGN="right"><% mt('Email CDRs as CSV') |h %></TH>
+    <TD><% $cust_main->email_csv_cdr ? $yes : $no %></TD>
   </TR>
 % } 
 
 % if ( $show_term || $cust_main->cdr_termination_percentage ) {
   <TR>
-    <TD ALIGN="right"><% mt('CDR termination settlement') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->cdr_termination_percentage %><% $cust_main->cdr_termination_percentage =~ /\d/ ? '%' : '' %></TD>
+    <TH ALIGN="right"><% mt('CDR termination settlement') |h %></TH>
+    <TD><% $cust_main->cdr_termination_percentage %><% $cust_main->cdr_termination_percentage =~ /\d/ ? '%' : '' %></TD>
   </TR>
 % }
 
 % if ( $cust_main->currency ) {
   <TR>
-    <TD ALIGN="right"><% mt('Invoicing currency') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->currency. ': '. code2currency($cust_main->currency) %></TD>
+    <TH ALIGN="right"><% mt('Invoicing currency') |h %></TH>
+    <TD><% $cust_main->currency. ': '. code2currency($cust_main->currency) %></TD>
   </TR>
 % }
 
 % if ( $cust_main->locale ) {
 % my %locale_info = FS::Locales->locale_info($cust_main->locale);
   <TR>
-    <TD ALIGN="right"><% mt('Invoicing locale') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $locale_info{name} . " (" . $locale_info{country} .")" %></TD>
+    <TH ALIGN="right"><% mt('Invoicing locale') |h %></TH>
+    <TD><% $locale_info{name} . " (" . $locale_info{country} .")" %></TD>
   </TR>
 % }
 

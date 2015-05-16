@@ -13,36 +13,36 @@
 
 %       my $auto = $cust_payby->payby eq 'CARD' ? 'automatic' : 'on-demand';
         <TR>
-          <TD COLSPAN=2 ALIGN="center" BGCOLOR="#ffffff">
+          <TD COLSPAN=2 ALIGN="center">
             <% mt("Credit card ([_1])",$auto) |h %>
           </TD>
         </TR>
         <TR>
-          <TD ALIGN="right"><% mt('Card number') |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $cust_payby->paymask %></TD>
+          <TH ALIGN="right"><% mt('Card number') |h %></TH>
+          <TD><% $cust_payby->paymask %></TD>
         </TR>
 
 %       my( $mon, $year ) = $cust_payby->paydate_mon_year;
         <TR>
-          <TD ALIGN="right"><% mt('Expiration') |h %></TD>
-          <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
+          <TH ALIGN="right"><% mt('Expiration') |h %></TH>
+          <TD><% "$mon/$year" %></TD>
         </TR>
 
 %       if ( $cust_payby->paystart_month ) { 
           <TR>
-            <TD ALIGN="right"><% mt('Start date') |h %></TD>
-            <TD BGCOLOR="#ffffff"><% $cust_payby->paystart_month. '/'. $cust_payby->paystart_year %>
+            <TH ALIGN="right"><% mt('Start date') |h %></TH>
+            <TD><% $cust_payby->paystart_month. '/'. $cust_payby->paystart_year %>
           </TR>
 %       } elsif ( $cust_payby->payissue ) { 
           <TR>
-            <TD ALIGN="right"><% mt('Issue #') |h %></TD>
-            <TD BGCOLOR="#ffffff"><% $cust_payby->payissue %>
+            <TH ALIGN="right"><% mt('Issue #') |h %></TH>
+            <TD><% $cust_payby->payissue %>
           </TR>
 %       } 
 
         <TR>
-          <TD ALIGN="right"><% mt('Name on card') |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $cust_payby->payname %></TD>
+          <TH ALIGN="right"><% mt('Name on card') |h %></TH>
+          <TD><% $cust_payby->payname %></TD>
         </TR>
 
 %     } elsif ( $cust_payby->payby eq 'CHEK' || $cust_payby->payby eq 'DCHK') {
@@ -55,7 +55,7 @@
 %         if $conf->config('echeck-country') eq 'CA';
 
         <TR>
-          <TD COLSPAN=2 ALIGN="center" BGCOLOR="#ffffff">
+          <TD COLSPAN=2 ALIGN="center">
             <% mt("Electronic check ([_1])",$auto) |h %>
           </TD>
         </TR>
@@ -65,34 +65,34 @@
 %                             ? 'ABA/Routing number'
 %                             : 'Routing number';
         <TR>
-          <TD ALIGN="right"><% mt($routing_label) |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $aba %></TD>
+          <TH ALIGN="right"><% mt($routing_label) |h %></TH>
+          <TD><% $aba %></TD>
         </TR>
 
 %       if ( $conf->config('echeck-country') eq 'CA' ) {
           <TR>
-            <TD ALIGN="right"><% mt('Branch number') |h %></TD>
-            <TD BGCOLOR="#ffffff"><% $branch %></TD>
+            <TH ALIGN="right"><% mt('Branch number') |h %></TH>
+            <TD><% $branch %></TD>
           </TR>
 %       }
 
         <TR>
-          <TD ALIGN="right"><% mt('Account number') |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $account %></TD>
+          <TH ALIGN="right"><% mt('Account number') |h %></TH>
+          <TD><% $account %></TD>
         </TR>
         <TR>
-          <TD ALIGN="right"><% mt('Account type') |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $cust_payby->paytype %></TD>
+          <TH ALIGN="right"><% mt('Account type') |h %></TH>
+          <TD><% $cust_payby->paytype %></TD>
         </TR>
         <TR>
-          <TD ALIGN="right"><% mt('Bank name') |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $cust_payby->payname %></TD>
+          <TH ALIGN="right"><% mt('Bank name') |h %></TH>
+          <TD><% $cust_payby->payname %></TD>
         </TR>
 
 %       if ( $conf->exists('show_bankstate') ) {
           <TR>
-            <TD ALIGN="right"><% $paystate_label %></TD>
-            <TD BGCOLOR="#ffffff"><% $cust_payby->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
+            <TH ALIGN="right"><% $paystate_label %></TH>
+            <TD><% $cust_payby->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
           </TR>
 %       }
 

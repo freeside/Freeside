@@ -1,9 +1,7 @@
 <TR>
-  <TD ALIGN="right"><% mt('Latitude') |h %></TD>
+  <TH ALIGN="right"><% mt('Coordinates') |h %></TH>
   <TD COLSPAN=7>
-    <FONT STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $latitude %></FONT>
-    &nbsp;<% mt('Longitude') |h %>
-    <FONT STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $longitude %></FONT>
+    <% $latitude %>,&nbsp;<% $longitude %>
     <& /elements/coord-links.html, @_ &>
   </TD>
 </TR>

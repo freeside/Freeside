@@ -29,15 +29,15 @@
 
 %  #if ( $cust_main->classnum ) {
      <TR>
-       <TD ALIGN="right"><% mt('Class') |h %></TD>
-       <TD BGCOLOR="#ffffff"><% $cust_main->classname || '('.emt('none').')' %></TD>
+       <TH ALIGN="right"><% mt('Class') |h %></TH>
+       <TD><% $cust_main->classname || '('.emt('none').')' %></TD>
      </TR>
 %  #}
 
 % if ( $cust_main->salesnum ) {
     <TR>
-      <TD ALIGN="right"><% mt('Sales Person') |h %></TD>
-      <TD BGCOLOR="#ffffff"><% $cust_main->salesperson |h %></TD>
+      <TH ALIGN="right"><% mt('Sales Person') |h %></TH>
+      <TD><% $cust_main->salesperson |h %></TD>
     </TR>
 % }
 
@@ -47,15 +47,15 @@
 %    } );
 
 <TR>
-  <TD ALIGN="right"><% mt('Advertising source') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $referral->refnum %>: <% $referral->referral%></TD>
+  <TH ALIGN="right"><% mt('Advertising source') |h %></TH>
+  <TD><% $referral->refnum %>: <% $referral->referral%></TD>
 </TR>
 % } 
 
 
 <TR>
-  <TD ALIGN="right"><% mt('Referring Customer') |h %></TD>
-  <TD BGCOLOR="#ffffff">
+  <TH ALIGN="right"><% mt('Referring Customer') |h %></TH>
+  <TD>
 %
 %  my $referring_cust_main = '';
 %  if ( $cust_main->referral_custnum
@@ -82,13 +82,13 @@
 </TR>
 
 <TR>
-  <TD ALIGN="right"><% mt('Order taker') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->otaker %></TD>
+  <TH ALIGN="right"><% mt('Order taker') |h %></TH>
+  <TD><% $cust_main->otaker %></TD>
 </TR>
 
   <TR>
-    <TD ALIGN="right"><% mt('Signup Date') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->signupdate ? time2str($date_format, $cust_main->signupdate) : '' %></TD>
+    <TH ALIGN="right"><% mt('Signup Date') |h %></TH>
+    <TD><% $cust_main->signupdate ? time2str($date_format, $cust_main->signupdate) : '' %></TD>
   </TR>
 
 % my $id_country = $conf->config('national_id-country');
@@ -97,14 +97,14 @@
       <TR>
 %     my($old, $nric) = ( '', '');
 %     if ( $cust_main->national_id =~ /^\d{6}\-\d{2}\-\d{4}$/ ) {
-          <TD ALIGN="right"><% mt('NRIC') |h %></TD>
+          <TH ALIGN="right"><% mt('NRIC') |h %></TH>
 %     } else { # elsif ( $cust_main->national_id =~ /^\w\d{9}$/ ) {
-          <TD ALIGN="right"><% mt('Old IC/Passport') |h %></TD>
+          <TH ALIGN="right"><% mt('Old IC/Passport') |h %></TH>
 %     #} else {
 %     #  warn "unknown national_id format";
-%#         <TD ALIGN="right"></TD>
+%#         <TH ALIGN="right"></TH>
 %     }
-        <TD BGCOLOR="#ffffff"><% $cust_main->national_id |h %></TD>
+        <TD><% $cust_main->national_id |h %></TD>
       </TR>
 %   } else {
 %     warn "unknown national_id-country $id_country";
@@ -119,8 +119,8 @@
 %              : '';
 
   <TR>
-    <TD ALIGN="right"><% mt('Date of Birth') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+    <TH ALIGN="right"><% mt('Date of Birth') |h %></TH>
+    <TD><% $dt ? $dt->strftime($date_format) : '' %></TD>
   </TR>
 
 %   if ( $conf->exists('cust_main-enable_spouse') 
@@ -131,8 +131,8 @@
 %              );
 
   <TR>
-    <TD ALIGN="right"><% mt('Spouse Date of Birth') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+    <TH ALIGN="right"><% mt('Spouse Date of Birth') |h %></TH>
+    <TD><% $dt ? $dt->strftime($date_format) : '' %></TD>
   </TR>
 
 %   }
@@ -146,8 +146,8 @@
 %              : '';
 
   <TR>
-    <TD ALIGN="right"><% mt('Anniversary Date') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+    <TH ALIGN="right"><% mt('Anniversary Date') |h %></TH>
+    <TD><% $dt ? $dt->strftime($date_format) : '' %></TD>
   </TR>
 
 % }
@@ -155,8 +155,8 @@
 % if ( $cust_main->district ) {
 
   <TR>
-    <TD ALIGN="right"><% mt('Tax district') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->ship_location->district %></TD>
+    <TH ALIGN="right"><% mt('Tax district') |h %></TH>
+    <TD><% $cust_main->ship_location->district %></TD>
   </TR>
 
 % }
@@ -165,8 +165,8 @@
 % if ( $conf->exists('ticket_system-selfservice_edit_subject') ) {
 
   <TR>
-    <TD ALIGN="right"><% mt('Edit ticket subjects') %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->edit_subject ? 'yes' : 'no' %></TD>
+    <TH ALIGN="right"><% mt('Edit ticket subjects') %></TH>
+    <TD><% $cust_main->edit_subject ? 'yes' : 'no' %></TD>
   </TR>
 
 % }

@@ -25,11 +25,11 @@
 % if ( $this eq 'bill' ) {
 %   #billing contact fields
   <TR>
-    <TD ALIGN="right"><% mt('Contact name') |h %></TD>
-    <TD COLSPAN=5 BGCOLOR="#ffffff"><% $cust_main->contact |h %></TD>
+    <TH ALIGN="right"><% mt('Contact name') |h %></TH>
+    <TD COLSPAN=5><% $cust_main->contact |h %></TD>
 %   if ( $conf->exists('show_ss') ) {
-    <TD ALIGN="right"><% mt('SS#') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $conf->exists('unmask_ss')
+    <TH ALIGN="right"><% mt('SS#') |h %></TH>
+    <TD><% $conf->exists('unmask_ss')
                               ? $cust_main->ss
                               : $cust_main->masked('ss') || '&nbsp;' %></TD>
 %   }
@@ -37,8 +37,8 @@
 %   if ( $conf->exists('cust_main-enable_spouse') and
 %        ($cust_main->spouse_last or $cust_main->spouse_first) ) {
   <TR>
-    <TD ALIGN="right"><% mt('Spouse') |h %></TD>
-    <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <TH ALIGN="right"><% mt('Spouse') |h %></TH>
+    <TD COLSPAN=5>
       <% join(', ', grep $_, 
                     $cust_main->spouse_last, $cust_main->spouse_first) %>
     </TD>
@@ -46,7 +46,7 @@
 % }
 %   if ( $conf->exists('cust-email-high-visibility') ) {
   <TR>
-    <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
+    <TH ALIGN="right"><% mt('Email address(es)') |h %></TH>
     <TD BGCOLOR="#ffff00">
       <% $cust_main->invoicing_list_emailonly_scalar || $no %>
     </TD>
@@ -54,15 +54,15 @@
 %   }
 %   if ( $cust_main->company ) {
   <TR>
-    <TD ALIGN="right"><% mt('Company') |h %></TD>
-    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->company |h %></TD>
+    <TH ALIGN="right"><% mt('Company') |h %></TH>
+    <TD COLSPAN=7><% $cust_main->company |h %></TD>
   </TR>
 %   }
 % } elsif ( $this eq 'ship' ) {
 %   if ( $cust_main->ship_company ) { # mostly obsolete these days...
   <TR>
     <TD ALIGN="right"><% mt('Company') |h %></TD>
-    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->ship_company |h %></TD>
+    <TD COLSPAN=7><% $cust_main->ship_company |h %></TD>
   </TR>
 %   }
 % }
@@ -73,13 +73,13 @@
 %   if ( $location->locationname ) {
       <TR>
         <TD ALIGN="right"><% mt('Location ID') |h %></TD>
-        <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->locationname |h %></TD>
+        <TD COLSPAN=7><% $location->locationname |h %></TD>
       </TR>
 %   }
 
 <TR>
-  <TD ALIGN="right"><% mt('Address') |h %></TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->address1 |h %></TD>
+  <TH ALIGN="right"><% mt('Address') |h %></TH>
+  <TD COLSPAN=7><% $location->address1 |h %></TD>
 </TR>
 
 % if ( $location->get('address2') ) {
@@ -88,27 +88,25 @@
 %                        : ' ';
 
 <TR>
-  <TD ALIGN="right"><% $address2_label %></TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->address2 |h %></TD>
+  <TH ALIGN="right"><% $address2_label %></TH>
+  <TD COLSPAN=7><% $location->address2 |h %></TD>
 </TR>
 
 % } 
 
 <TR>
-  <TD ALIGN="right"><% mt('City') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $location->city |h %></TD>
+  <TH></TH>
+  <TD COLSPAN=5><% $location->city |h %>\
 % if ( $location->county ) {
-    <TD ALIGN="right"><% mt('County') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $location->county |h %></TD>
+ (<% $location->county |h %> county)\
 % }
-  <TD ALIGN="right"><% mt('State') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% state_label( $location->state, $location->country ) |h %></TD>
-  <TD ALIGN="right"><% mt('Zip') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $location->zip %></TD>
+,<% state_label( $location->state, $location->country ) |h %>
+  <% $location->zip %>
+</TD>
 </TR>
 <TR>
-  <TD ALIGN="right"><% mt('Country') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% code2country( $location->country ) %></TD>
+  <TH></TH>
+  <TD><% code2country( $location->country ) %></TD>
 </TR>
 
 % if ( $location->latitude && $location->longitude ) {
@@ -128,7 +126,7 @@
 %     next if !$cust_main->get($phone);
 <TR>
   <TD ALIGN="right"><% $phone_label{$phone} %></TD>
-  <TD COLSPAN=3 BGCOLOR="#ffffff">
+  <TD COLSPAN=3>
     <& /elements/phonenumber.html,
         $cust_main->get($phone),
         callable => 1,
@@ -142,7 +140,7 @@
 
   <TR>
     <TD ALIGN="right"><% mt('Fax') |h %></TD>
-    <TD COLSPAN=3 BGCOLOR="#ffffff">
+    <TD COLSPAN=3>
       <% $cust_main->get('fax') || '&nbsp;' %>
     </TD>
   </TR>
@@ -153,9 +151,9 @@
 
 <TR>
     <TD ALIGN="right"><% $stateid_label %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->masked('stateid') || '&nbsp' %></TD>
+    <TD><% $cust_main->masked('stateid') || '&nbsp' %></TD>
     <TD ALIGN="right"><% $stateid_state_label %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->stateid_state || '&nbsp' %></TD>
+    <TD><% $cust_main->stateid_state || '&nbsp' %></TD>
   </TR>
 
 %   }
