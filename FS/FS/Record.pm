@@ -65,9 +65,9 @@ FS::UID->install_callback( sub {
   die $@ if $@;
   $conf = FS::Conf->new; 
   $conf_encryption           = $conf->exists('encryption');
-  $conf_encryptionmodule     = $conf->exists('encryptionmodule');
-  $conf_encryptionpublickey  = $conf->exists('encryptionpublickey');
-  $conf_encryptionprivatekey = $conf->exists('encryptionprivatekey');
+  $conf_encryptionmodule     = $conf->config('encryptionmodule');
+  $conf_encryptionpublickey  = $conf->config('encryptionpublickey');
+  $conf_encryptionprivatekey = $conf->config('encryptionprivatekey');
   $money_char = $conf->config('money_char') || '$';
   my $nw_coords = $conf->exists('geocode-require_nw_coordinates');
   $lat_lower = $nw_coords ? 1 : -90;
