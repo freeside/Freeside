@@ -56,12 +56,18 @@ my $rsa_decrypt;
 
 our $conf = '';
 our $conf_encryption = '';
+our $conf_encryptionmodule = '';
+our $conf_encryptionpublickey = '';
+our $conf_encryptionprivatekey = '';
 FS::UID->install_callback( sub {
 
   eval "use FS::Conf;";
   die $@ if $@;
   $conf = FS::Conf->new; 
-  $conf_encryption = $conf->exists('encryption');
+  $conf_encryption           = $conf->exists('encryption');
+  $conf_encryptionmodule     = $conf->exists('encryptionmodule');
+  $conf_encryptionpublickey  = $conf->exists('encryptionpublickey');
+  $conf_encryptionprivatekey = $conf->exists('encryptionprivatekey');
   $money_char = $conf->config('money_char') || '$';
   my $nw_coords = $conf->exists('geocode-require_nw_coordinates');
   $lat_lower = $nw_coords ? 1 : -90;
@@ -1295,7 +1301,7 @@ sub insert {
   # Encrypt before the database
   if (    defined(eval '@FS::'. $table . '::encrypted_fields')
        && scalar( eval '@FS::'. $table . '::encrypted_fields')
-       && $conf->exists('encryption')
+       && $conf_encryption
   ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       next if $field eq 'payinfo' 
@@ -1536,7 +1542,7 @@ sub replace {
   
   # Encrypt for replace
   my $saved = {};
-  if (    $conf->exists('encryption')
+  if (    $conf_encryption
        && defined(eval '@FS::'. $new->table . '::encrypted_fields')
        && scalar( eval '@FS::'. $new->table . '::encrypted_fields')
   ) {
@@ -2287,7 +2293,7 @@ sub _h_statement {
   ;
 
   # If we're encrypting then don't store the payinfo in the history
-  if ( $conf && $conf->exists('encryption') && $self->table ne 'banned_pay' ) {
+  if ( $conf_encryption && $self->table ne 'banned_pay' ) {
     @fields = grep { $_ ne 'payinfo' } @fields;
   }
 
@@ -3218,7 +3224,7 @@ sub encrypt {
   my ($self, $value) = @_;
   my $encrypted = $value;
 
-  if ($conf->exists('encryption')) {
+  if ($conf_encryption) {
     if ($self->is_encrypted($value)) {
       # Return the original value if it isn't plaintext.
       $encrypted = $value;
@@ -3261,7 +3267,7 @@ You should generally not have to worry about calling this, as the system handles
 sub decrypt {
   my ($self,$value) = @_;
   my $decrypted = $value; # Will return the original value if it isn't encrypted or can't be decrypted.
-  if ($conf->exists('encryption') && $self->is_encrypted($value)) {
+  if ($conf_encryption && $self->is_encrypted($value)) {
     $self->loadRSA;
     if (ref($rsa_decrypt) =~ /::RSA/) {
       my $encrypted = unpack ("u*", $value);
@@ -3277,8 +3283,8 @@ sub loadRSA {
     #Initialize the Module
     $rsa_module = 'Crypt::OpenSSL::RSA'; # The Default
 
-    if ($conf->exists('encryptionmodule') && $conf->config('encryptionmodule') ne '') {
-      $rsa_module = $conf->config('encryptionmodule');
+    if ($conf_encryptionmodule && $conf_encryptionmodule ne '') {
+      $rsa_module = $conf_encryptionmodule;
     }
 
     if (!$rsa_loaded) {
@@ -3286,14 +3292,14 @@ sub loadRSA {
 	$rsa_loaded++;
     }
     # Initialize Encryption
-    if ($conf->exists('encryptionpublickey') && $conf->config('encryptionpublickey') ne '') {
-      my $public_key = join("\n",$conf->config('encryptionpublickey'));
+    if ($conf_encryptionpublickey && $conf_encryptionpublickey ne '') {
+      my $public_key = join("\n",$conf_encryptionpublickey);
       $rsa_encrypt = $rsa_module->new_public_key($public_key);
     }
     
     # Intitalize Decryption
-    if ($conf->exists('encryptionprivatekey') && $conf->config('encryptionprivatekey') ne '') {
-      my $private_key = join("\n",$conf->config('encryptionprivatekey'));
+    if ($conf_encryptionprivatekey && $conf_encryptionprivatekey ne '') {
+      my $private_key = join("\n",$conf_encryptionprivatekey);
       $rsa_decrypt = $rsa_module->new_private_key($private_key);
     }
 }
