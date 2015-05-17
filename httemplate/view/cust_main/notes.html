@@ -16,15 +16,6 @@
 % my $notecount = scalar($cust_main->notes(0));
 % if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
-%   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
-<P>
-  <A NAME="cust_main_note"><FONT SIZE="+2"><% mt('Notes') |h %></FONT></A>
-</P>
-
-%   }
-
-<BR>
-
 % # actually display notes
 <& notes/notes.html, 'cust_main' => $cust_main &>
 <BR>

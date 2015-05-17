@@ -175,16 +175,7 @@ div.fstabcontainer {
   border-left:1px solid #7e0079;
   border-right:1px solid #7e0079;
   border-bottom:1px solid #7e0079;
-         -moz-border-radius-bottomleft:8px;
-         -moz-border-radius-bottomright:8px;
-         -webkit-border-radius-bottomleft:8px;
-         -webkit-border-radius-bottomright:8px;
-         border-bottom-left-radius:8px;
-         border-bottom-right-radius:8px;
-  -moz-box-shadow: #666666 1px 1px 2px;
-  -webkit-box-shadow: #666666 1px 1px 2px;
-  box-shadow: #666666 1px 1px 2px;
-  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
+  border-top:1px solid #7e0079;
 }
 
 .fscontainer {
@@ -228,39 +219,20 @@ div.fstabcontainer {
   /* background-color:#cccccc; */
   padding:2px;
   border: 1px solid #dddddd;
-  /* -moz-box-shadow:  1px 1px 2px #666666;
-  -webkit-box-shadow:  1px 1px 2px #666666;
-  box-shadow: 1px 1px 2px #666666;
-  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
-  */
+  border-radius: 2px;
 }
 
 .fsinnerbox th {
   font-weight:normal;
   font-size:75%;
   valign: bottom;
-  color: #999999;
+  color: #666666;
 }
 
 .fsinnerbox-title {
   font-size:110%;
   font-weight:bold;
-  /*border-top: 1px solid #dddddd;
-  border-left: 1px solid #dddddd;
-  border-right: 1px solid #dddddd; */
-  /* background-color:#cccccc;
-  padding:2px;
-         -moz-border-radius-topleft:8px;
-         -moz-border-radius-topright:8px;
-         -webkit-border-radius-topleft:8px;
-         -webkit-border-radius-topright:8px;
-         border-top-left-radius:8px;
-         border-top-right-radius:8px;
-  -moz-box-shadow:  1px 0px 1px #999999;
-  -webkit-box-shadow:  1px 0px 1px #999999;
-  box-shadow: 1px 0px 1px #999999;
-  filter: progid:DXImageTransform.Microsoft.Shadow(color='#999999', Direction=90, Strength=1);
-  */
+  color: #333333;
 }
 
 .background {

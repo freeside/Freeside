@@ -6,6 +6,7 @@
           }
 &>
 <BR>
+
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') eq 'top' && @part_tag ) {
 <TABLE STYLE="margin-bottom:8px" CELLSPACING=2>
@@ -24,6 +25,8 @@
 % }
 
 <& cust_main/menu.html, cust_main => $cust_main, show => $view &>
+<BR>
+
 <DIV CLASS="fstabcontainer">
 
 <& /elements/init_overlib.html &>
@@ -35,13 +38,13 @@ function areyousure(href, message) {
 }
 </SCRIPT>
 
-<br><br>
+<br>
 
 % ###
 % # Basics
 % ###
 
-% if ( $view eq 'basics' || $view eq 'jumbo' ) {
+% if ( $view eq 'basics' ) {
 
 % my $br = 0;
 % if ( $curuser->access_right('Order customer package') && $conf->exists('cust_main-enable_order_package') ) {
@@ -69,7 +72,6 @@ function areyousure(href, message) {
   <BR><BR>
 % } 
 
-<A NAME="cust_main"></A>
 <TABLE BORDER=0>
 <TR>
   <TD VALIGN="top">
@@ -89,6 +91,7 @@ function areyousure(href, message) {
   </TD>
 </TR>
 </TABLE>
+<BR>
 
 % }
 
@@ -96,30 +99,22 @@ function areyousure(href, message) {
 % ###
 % # Notes
 % ###
-
-% if ( $view eq 'notes' || $view eq 'jumbo' ) {
-
-<& cust_main/notes.html, 'cust_main' => $cust_main &>
-
+% if ( $view eq 'notes' ) {
+  <& cust_main/notes.html, 'cust_main' => $cust_main &>
+  <BR>
 % }
-
-% if ( $view eq 'jumbo' ) {
-    <BR>
-% }
-
-<BR>
 
 
 % ###
 % # Tickets
 % ###
 
-% if ( $view eq 'tickets' || $view eq 'jumbo' ) {
+% if ( $view eq 'tickets' ) {
 
 % if ( $conf->config('ticket_system') ) { 
   <& cust_main/tickets.html, $cust_main &>
 % } 
-  <BR><BR>
+  <BR>
 
 % }
 
@@ -127,13 +122,13 @@ function areyousure(href, message) {
 % # Appointments
 % ###
 
-% if ( $view eq 'appointments' || $view eq 'jumbo' ) {
+% if ( $view eq 'appointments' ) {
 
 % if ( $conf->config('ticket_system')
 %        && $curuser->access_right('View appointments') ) { 
   <& cust_main/appointments.html, $cust_main &>
 % } 
-  <BR><BR>
+  <BR>
 
 % }
 
@@ -142,11 +137,7 @@ function areyousure(href, message) {
 % # Quotations
 % ###
 
-% if ( $view eq 'jumbo' && $curuser->access_right('Generate quotation') ) { 
-  <A NAME="quotations"><FONT SIZE="+2"><% mt('Quotations') |h %></FONT></A><BR>
-% }
-
-% if ( $view eq 'quotations' || $view eq 'jumbo' ) {
+% if ( $view eq 'quotations' ) {
 
 %   if ( $curuser->access_right('Generate quotation') ) { 
       <& cust_main/quotations.html, $cust_main &>
@@ -159,16 +150,12 @@ function areyousure(href, message) {
 % # Packages
 % ###
 
-% if ( $view eq 'jumbo' ) { #XXX enable me && $curuser->access_right('View customer packages') { 
-
-  <A NAME="cust_pkg"><FONT SIZE="+2"><% mt('Packages') |h %></FONT></A><BR>
-% }
-
-% if ( $view eq 'packages' || $view eq 'jumbo' ) {
+% if ( $view eq 'packages' ) {
 
 % #XXX enable me# if ( $curuser->access_right('View customer packages') { 
 <& cust_main/packages.html, $cust_main &>
 % #}
+<BR>
 
 % }
 
@@ -177,15 +164,10 @@ function areyousure(href, message) {
 % # Payment History
 % ###
 
-% if ( $view eq 'jumbo' ) {
-    <BR><BR>
-    <A NAME="history"><FONT SIZE="+2"><% mt('Payment History') |h %></FONT></A>
-    <BR>
-% }
-
-% if ( $view eq 'payment_history' || $view eq 'jumbo' ) {
+% if ( $view eq 'payment_history' ) {
 
 <& cust_main/payment_history.html, $cust_main &>
+<BR>
 
 % }
 
@@ -194,8 +176,9 @@ function areyousure(href, message) {
 % # Change History
 % ###
 
-% if ( $view eq 'change_history' ) { #  || $view eq 'jumbo' 	 
-<& cust_main/change_history.html, $cust_main &> 	 
+% if ( $view eq 'change_history' ) {
+<& cust_main/change_history.html, $cust_main &>
+<BR>
 % }
 
 % if ( $view eq 'custom' ) { 
@@ -271,11 +254,11 @@ $views{emt('Change History')}  =  'change_history'
 $views{$conf->config('cust_main-custom_title') || emt('Custom')} =  'custom'
   if $conf->config('cust_main-custom_link')
   || $conf->config('cust_main-custom_content');
-$views{emt('Jumbo')}           =  'jumbo';
 
 my %viewname = reverse %views;
 
 my $view =  $cgi->param('show') || $curuser->default_customer_view;
+$view = 'basics' if $view eq 'jumbo';
 
 my $ie_compat = $conf->config('ie-compatibility_mode');
 my $head = '';
