@@ -289,11 +289,11 @@ my $qsearch = join(' AND ', @qsearch);
 $qsearch = ( scalar(keys %$hashref) ? ' AND ' : ' WHERE ' ) . $qsearch
   if $qsearch;
 
-my $query =     {   'table'     => 'cdr',
-                    'hashref'   => $hashref,
-			        'extra_sql' => $qsearch,
-			        'order_by'  => 'ORDER BY calldate',
-                };
+my $query = { 'table'     => 'cdr',
+              'hashref'   => $hashref,
+              'extra_sql' => $qsearch,
+              'order_by'  => 'ORDER BY calldate',
+            };
 
 if ( $cgi->param('longest') =~ /^(\d+)$/ && $cgi->param('longest') > 0 ) {
     $cgi->param('maxrecords',$1);
@@ -308,14 +308,24 @@ if ( $cgi->param('longest') =~ /^(\d+)$/ && $cgi->param('longest') > 0 ) {
 ###
 
 my %header = %{ FS::cdr->table_info->{'fields'} };
+$header{ratename} = 'Rate plan';
 
 my @first = qw( acctid calldate clid charged_party src dst dcontext );
 my %first = map { $_=>1 } @first;
 
-my @fields = ( @first, grep !$first{$_}, fields('cdr') );
+my @fields = ( @first,
+               grep !$first{$_}, ( fields('cdr'), 'ratename' )
+             );
 
 if ( $cgi->param('show') ) {
   @fields = grep $cgi->param("show_$_"), @fields;
+}
+
+if ( grep { $_ eq 'ratename' } @fields ) {
+  $query->{addl_from} .= '
+  LEFT JOIN rate_detail ON (cdr.rated_ratedetailnum = rate_detail.ratedetailnum)
+  LEFT JOIN rate        ON (rate_detail.ratenum = rate.ratenum)
+  ';
 }
 
 my @header = map {
