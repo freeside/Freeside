@@ -73,8 +73,8 @@ FS::UID->install_callback( sub {
   $conf = FS::Conf->new; 
   $conf_encryption           = $conf->exists('encryption');
   $conf_encryptionmodule     = $conf->config('encryptionmodule');
-  $conf_encryptionpublickey  = $conf->config('encryptionpublickey');
-  $conf_encryptionprivatekey = $conf->config('encryptionprivatekey');
+  $conf_encryptionpublickey  = join("\n",$conf->config('encryptionpublickey'));
+  $conf_encryptionprivatekey = join("\n",$conf->config('encryptionprivatekey'));
   $money_char = $conf->config('money_char') || '$';
   my $nw_coords = $conf->exists('geocode-require_nw_coordinates');
   $lat_lower = $nw_coords ? 1 : -90;
@@ -3137,14 +3137,12 @@ sub loadRSA {
     }
     # Initialize Encryption
     if ($conf_encryptionpublickey && $conf_encryptionpublickey ne '') {
-      my $public_key = join("\n",$conf_encryptionpublickey);
-      $rsa_encrypt = $rsa_module->new_public_key($public_key);
+      $rsa_encrypt = $rsa_module->new_public_key($conf_encryptionpublickey);
     }
     
     # Intitalize Decryption
     if ($conf_encryptionprivatekey && $conf_encryptionprivatekey ne '') {
-      my $private_key = join("\n",$conf_encryptionprivatekey);
-      $rsa_decrypt = $rsa_module->new_private_key($private_key);
+      $rsa_decrypt = $rsa_module->new_private_key($conf_encryptionprivatekey);
     }
 }
 
