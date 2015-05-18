@@ -1,5 +1,5 @@
 package FS::cust_bill_pay_pkg;
-use base qw( FS::Record );
+use base qw(  FS::cust_main_Mixin FS::Record );
 
 use strict;
 use FS::Conf;

@@ -1,0 +1,572 @@
+<& elements/search.html,
+              'title'         => 'Payment application detail', #to line item
+              'name_singular' => 'payment application',
+              'query'         => $query,
+              'count_query'   => $count_query,
+               'count_addl'   => [ $money_char. '%.2f total', ],
+               'header'       => [
+                   #'#',
+
+                   'Amount',
+                   'By',
+                   '#',
+
+                   #payment
+                   'Date',
+                   'By',
+
+                   #application
+                   'Applied',
+
+                   # line item
+                   'Description',
+                   'Location',
+                   @post_desc_header,
+
+                   #invoice
+                   'Invoice',
+                   'Date',
+                   FS::UI::Web::cust_header(),
+               ],
+               'fields'       => [
+                   #'billpaypkgnum',
+                   sub { sprintf($money_char.'%.2f', shift->paid ) },
+                   sub { $payby{shift->cust_bill_pay->cust_pay->payby} },
+                   sub { my $cust_pay = shift->cust_bill_pay->cust_pay;
+                         $cust_pay->payby =~ /^(CARD|CHEK)$/
+                           ? $cust_pay->paymask : $cust_pay->payinfo;
+                       },
+
+                   sub { time2str('%b %d %Y', shift->get('cust_pay_date') ) },
+                   sub { shift->cust_bill_pay->cust_pay->otaker },
+
+                   sub { sprintf($money_char.'%.2f', shift->amount ) },
+
+                   sub { $_[0]->pkgnum > 0
+                           ? $_[0]->get('pkg')      # possibly use override.pkg
+                           : $_[0]->get('itemdesc') # but i think this correct
+                       },
+                   $location_sub,
+                   @post_desc,
+                   'invnum',
+                   sub { time2str('%b %d %Y', shift->_date ) },
+                   \&FS::UI::Web::cust_fields,
+               ],
+               'sort_fields'  => [
+                   'paid',
+                   '', #payby
+                   'cust_pay_date',
+                   '', #'otaker',
+                   '', #amount
+                   '', #line item description
+                   '', #location
+                   @post_desc_null,
+                   'invnum',
+                   '_date',
+                   #cust fields
+               ],
+               'links' => [
+                   '',
+                   '',
+                   '',
+                   '',
+                   '',
+                   '',
+                   '',
+                   '',
+                   @post_desc_null,
+                   $ilink,
+                   $ilink,
+                   ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                         FS::UI::Web::cust_header()
+                   ),
+               ],
+               'align' => 'rcrrlrlllrrcl'.
+                          $post_desc_align.
+                          'rr'.
+                          FS::UI::Web::cust_aligns(),
+               'color' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              @post_desc_null,
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+               'style' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              @post_desc_null,
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                          ],
+           
+&>
+<%init>
+
+#(and now we're cust_bill_pay_pkg.html, false laziness w/cust_credit_bill_pkg)
+#LOTS of false laziness below w/cust_bill_pkg.cgi
+# and a little w/cust_credit.html
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+
+my %payby = FS::payby->payby2shortname;
+
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
+if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+  push @where, "cust_pay.usernum = $1";
+}
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @where, "cust_bill._date >= $beginning",
+             "cust_bill._date <= $ending";
+
+my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'payment');
+push @where, "cust_pay._date >= $cr_begin",
+             "cust_pay._date <= $cr_end";
+
+#payment amount?  seems more what is expected than the applied amount
+my @lt_gt = FS::UI::Web::parse_lt_gt($cgi, 'paid' );
+s/paid/cust_pay.paid/g foreach (@lt_gt);
+push @where, @lt_gt;
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.agentnum = $1";
+}
+
+if ( $cgi->param('billpkgnum') =~ /^(\d+)$/ ) {
+  push @where, "billpkgnum = $1";
+}
+
+#classnum
+# not specified: all classes
+# 0: empty class
+# N: classnum
+my $use_override = $cgi->param('use_override');
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  my $comparison = '';
+  if ( $1 == 0 ) {
+    $comparison = "IS NULL";
+  } else {
+    $comparison = "= $1";
+  }
+
+  if ( $use_override ) {
+    push @where, "(
+      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+      override.classnum $comparison AND pkgpart_override IS NOT NULL
+    )";
+  } else {
+    push @where, "part_pkg.classnum $comparison";
+  }
+}
+
+if ( $cgi->param('taxclass')
+     && ! $cgi->param('istax')  #no part_pkg.taxclass in this case
+                                #(should we save a taxclass or a link to taxnum
+                                # in cust_bill_pkg or something like
+                                # cust_bill_pkg_tax_location?)
+   )
+{
+
+  #override taxclass when use_override is specified?  probably
+  #if ( $use_override ) {
+  #
+  #  push @where,
+  #    ' ( '. join(' OR ',
+  #                  map {
+  #                        ' (    part_pkg.taxclass = '. dbh->quote($_).
+  #                        '      AND pkgpart_override IS NULL '.
+  #                        '   OR '.
+  #                        '      override.taxclass = '. dbh->quote($_).
+  #                        '      AND pkgpart_override IS NOT NULL '.
+  #                        ' ) '
+  #                      }
+  #                      $cgi->param('taxclass')
+  #               ).
+  #    ' ) ';
+  #
+  #} else {
+
+    push @where,
+      ' ( '. join(' OR ',
+                    map ' part_pkg.taxclass = '.dbh->quote($_),
+                        $cgi->param('taxclass')
+                 ).
+      ' ) ';
+
+  #}
+
+}
+
+my @loc_param = qw( district city county state country );
+
+if ( $cgi->param('out') ) {
+
+  my ( $loc_sql, @param ) = FS::cust_pkg->location_sql( 'ornull' => 1 );
+  while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+    $loc_sql =~ s/\?/'cust_main_county.'.shift(@param)/e;
+  }
+
+  $loc_sql =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g
+    if $cgi->param('istax');
+
+  push @where, "
+    0 = (
+          SELECT COUNT(*) FROM cust_main_county
+           WHERE cust_main_county.tax > 0
+             AND $loc_sql
+        )
+  ";
+
+  #not linked to by anything, but useful for debugging "out of taxable region"
+  if ( grep $cgi->param($_), @loc_param ) {
+
+    my %ph = map { $_ => dbh->quote( scalar($cgi->param($_)) ) } @loc_param;
+
+    my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+    while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+      $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+    }
+
+    push @where, $loc_sql;
+
+  }
+
+} elsif ( $cgi->param('country') ) {
+
+  my @counties = $cgi->param('county');
+   
+  if ( scalar(@counties) > 1 ) {
+
+    #hacky, could be more efficient.  care if it is ever used for more than the
+    # tax-report_groups filtering kludge
+
+    my $locs_sql =
+      ' ( '. join(' OR ', map {
+
+          my %ph = ( 'county' => dbh->quote($_),
+                     map { $_ => dbh->quote( $cgi->param($_) ) }
+                       qw( district city state country )
+                   );
+
+          my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+          while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+            $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+          }
+
+          $loc_sql;
+
+        } @counties
+
+      ). ' ) ';
+
+    push @where, $locs_sql;
+
+  } else {
+
+    my %ph = map { $_ => dbh->quote( scalar($cgi->param($_)) ) } @loc_param;
+
+    my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+    while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+      $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+    }
+
+    push @where, $loc_sql;
+
+  }
+   
+  my($title, $name);
+  if ( $cgi->param('istax') ) {
+    $title = 'Tax credits';
+    $name  = 'tax credits';
+    if ( $cgi->param('taxname') ) {
+      push @where, 'itemdesc = '. dbh->quote( $cgi->param('taxname') );
+    #} elsif ( $cgi->param('taxnameNULL') {
+    } else {
+      push @where, "( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
+    }
+  } elsif ( $cgi->param('nottax') ) {
+    $title = 'Payment applications to line items';
+    $name  = 'applications';
+    #what can we usefully do with "taxname" ????  look up a class???
+  } else {
+    $title = 'Payment applications to line items';
+    $name  = 'applications';
+    #warn "neither nottax nor istax parameters specified";
+  }
+
+  if ( $cgi->param('taxclassNULL')
+       && ! $cgi->param('istax')  #no taxclass in this case
+     )
+  {
+
+    my %hash = ( 'country' => scalar($cgi->param('country')) );
+    foreach (qw( state county )) {
+      $hash{$_} = scalar($cgi->param($_)) if $cgi->param($_);
+    }
+    my $cust_main_county = qsearchs('cust_main_county', \%hash);
+    die "unknown base region for empty taxclass" unless $cust_main_county;
+
+    my $same_sql = $cust_main_county->sql_taxclass_sameregion;
+    push @where, $same_sql if $same_sql;
+
+  }
+
+} elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+
+  # this should really be shoved out to FS::cust_pkg->location_sql or something
+  # along with the code in report_newtax.cgi
+
+  my %pn = (
+   'county'        => 'tax_rate_location.county',
+   'state'         => 'tax_rate_location.state',
+   'city'          => 'tax_rate_location.city',
+   'locationtaxid' => 'cust_bill_pkg_tax_rate_location.locationtaxid',
+  );
+
+  my %ph = map { ( $pn{$_} => dbh->quote( $cgi->param($_) || '' ) ) }
+           qw( city county state locationtaxid );
+
+  push @where,
+    join( ' AND ', map { "( $_ = $ph{$_} OR $ph{$_} = '' AND $_ IS NULL)" }
+                   keys %ph
+    );
+
+}
+
+if ( $cgi->param('itemdesc') ) {
+  if ( $cgi->param('itemdesc') eq 'Tax' ) {
+    push @where, "(itemdesc='Tax' OR itemdesc is null)";
+  } else {
+    push @where, 'itemdesc='. dbh->quote($cgi->param('itemdesc'));
+  }
+}
+
+if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ && $cgi->param('istax') ) {
+  my ( $group_op, $group_value ) = ( $1, $2 );
+  if ( $group_op eq '=' ) {
+    #push @where, 'itemdesc LIKE '. dbh->quote($group_value.'%');
+    push @where, 'itemdesc = '. dbh->quote($group_value);
+  } elsif ( $group_op eq '!=' ) {
+    push @where, '( itemdesc != '. dbh->quote($group_value) .' OR itemdesc IS NULL )';
+  } else {
+    die "guru meditation #00de: group_op $group_op\n";
+  }
+  
+}
+
+push @where, 'cust_bill_pkg.pkgnum != 0' if $cgi->param('nottax');
+push @where, 'cust_bill_pkg.pkgnum  = 0' if $cgi->param('istax');
+
+if ( $cgi->param('cust_tax') ) {
+  #false laziness -ish w/report_tax.cgi
+  my $cust_exempt;
+  if ( $cgi->param('taxname') ) {
+    my $q_taxname = dbh->quote($cgi->param('taxname'));
+    $cust_exempt =
+      "( tax = 'Y'
+         OR EXISTS ( SELECT 1 FROM cust_main_exemption
+                       WHERE cust_main_exemption.custnum = cust_main.custnum
+                         AND cust_main_exemption.taxname = $q_taxname )
+       )
+      ";
+  } else {
+    $cust_exempt = " tax = 'Y' ";
+  }
+
+  push @where, $cust_exempt;
+}
+
+my $count_query = "SELECT COUNT(DISTINCT billpaypkgnum),
+                          SUM(cust_bill_pay_pkg.amount)";
+
+my $join_cust =
+  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum )'.
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
+
+
+my $join_pkg;
+
+my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum )';
+
+if ( $cgi->param('nottax') ) {
+
+  $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                 LEFT JOIN part_pkg USING ( pkgpart )
+                 LEFT JOIN part_pkg AS override
+                   ON pkgpart_override = override.pkgpart ';
+  $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
+    if $conf->exists('tax-pkg_address');
+
+} elsif ( $cgi->param('istax') ) {
+
+  #false laziness w/report_tax.cgi $taxfromwhere
+  if ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
+            $cgi->param('iscredit') eq 'rate') {
+
+    $join_pkg .=
+      ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ';
+    if ( $cgi->param('iscredit') eq 'rate' ) {
+      $join_pkg .= ', billpkgtaxratelocationnum )';
+    } elsif ( $conf->exists('tax-pkg_address') ) {
+      $join_pkg .= ', billpkgtaxlocationnum )';
+      push @where, "billpkgtaxratelocationnum IS NULL";
+    } else {
+      $join_pkg .= ' )';
+      push @where, "billpkgtaxratelocationnum IS NULL";
+    }
+
+    $join_pkg .= ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
+
+  } elsif ( $conf->exists('tax-pkg_address') ) {
+
+    $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
+                   LEFT JOIN cust_location              USING ( locationnum ) ';
+
+    #quelle kludge, somewhat false laziness w/report_tax.cgi
+    s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
+  }
+
+} else {
+
+  #warn "neither nottax nor istax parameters specified";
+  #same as before?
+  $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                 LEFT JOIN part_pkg USING ( pkgpart ) ';
+
+}
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+my $join_pay = ' LEFT JOIN cust_bill_pay USING ( billpaynum )
+                 LEFT JOIN cust_pay      USING ( paynum ) ';
+
+$count_query .= " FROM cust_bill_pay_pkg
+                         $join_cust_bill_pkg
+                         $join_pkg
+                         $join_pay
+                         $join_cust
+                       $where";
+
+my @select = ( 'cust_bill_pay_pkg.*',
+               'cust_bill_pkg.*',
+               'cust_pay.paid',
+               'cust_pay.otaker',
+               'cust_pay._date AS cust_pay_date',
+               'cust_bill._date',
+             );
+push @select, 'part_pkg.pkg' unless $cgi->param('istax');
+push @select, 'cust_main.custnum',
+              FS::UI::Web::cust_sql_fields();
+
+my @post_desc_header = ();
+my @post_desc = ();
+my @post_desc_null = ();
+my $post_desc_align = '';
+if ( $conf->exists('enable_taxclasses') && ! $cgi->param('istax') ) {
+  push @post_desc_header, 'Tax class';
+  push @post_desc, 'taxclass';
+  push @post_desc_null, '';
+  $post_desc_align .= 'l';
+  push @select, 'part_pkg.taxclass'; # or should this use override?
+}
+
+warn "$join_cust_bill_pkg
+                  $join_pkg
+                  $join_pay
+                  $join_cust";
+
+my $query = {
+  'table'     => 'cust_bill_pay_pkg',
+  'addl_from' => "$join_cust_bill_pkg
+                  $join_pkg
+                  $join_pay
+                  $join_cust",
+  'hashref'   => {},
+  'select'    => join(', ', @select ),
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY billpaypkgnum', #cust_bill. or cust_pay._date?
+};
+
+my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $tax_pkg_address = $conf->exists('tax-pkg_address');
+my $tax_ship_address = $conf->exists('tax-ship_address');
+
+my $location_sub = sub {
+  #my $cust_bill_pay_pkg = shift;
+  my $self = shift;
+  my $tax_Xlocation = $self->cust_bill_pkg_tax_Xlocation;
+  if ( defined($tax_Xlocation) && $tax_Xlocation ) {
+
+    if ( ref($tax_Xlocation) eq 'FS::cust_bill_pkg_tax_location' ) {
+
+      if ( $tax_Xlocation->taxtype eq 'FS::cust_main_county' ) {
+        my $cust_main_county = $tax_Xlocation->cust_main_county;
+        if ( $cust_main_county ) {
+          $cust_main_county->label;
+        } else {
+          ''; #cust_main_county record is gone... history?  yuck.
+        }
+      } else {
+        '(CCH tax_rate)'; #XXX FS::tax_rate.. vendor taxes not yet handled here
+      }
+
+    } elsif ( ref($tax_Xlocation) eq 'FS::cust_bill_pkg_tax_rate_location' ) {
+      '(CCH)'; #XXX vendor taxes not yet handled here
+    } else {
+      'unknown tax_Xlocation '. ref($tax_Xlocation);
+    }
+
+  } else {
+
+    my $cust_bill_pkg = $self->cust_bill_pkg;
+    if ( $cust_bill_pkg->pkgnum > 0 ) {
+      my $cust_pkg = $cust_bill_pkg->cust_pkg;
+      if ( $tax_pkg_address && (my $cust_location = $cust_pkg->cust_location) ){
+        $cust_location->county_state_country;
+      } else {
+        my $cust_main = $cust_pkg->cust_main;
+        if ( $tax_ship_address && $cust_main->has_ship_address ) {
+          $cust_main->county_state_country('ship_');
+        } else {
+          $cust_main->county_state_country;
+        }
+      }
+
+    } else {
+      #tax?  we shouldn't have wound up here then...
+      ''; #return customer ship or bill address? (depending on tax-ship_address)
+    }
+
+  }
+
+};
+
+</%init>

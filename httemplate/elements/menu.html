@@ -320,13 +320,14 @@ tie my %report_bill_event, 'Tie::IxHash',
 ;
 
 tie my %report_payments, 'Tie::IxHash',
-    'Payments' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
+  'Payments' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
+  'Payment application detail' => [ $fsurl.'search/report_cust_bill_pay_pkg.html', 'Line item application detail' ],
 ;
 $report_payments{'Pending Payments'} = [ $fsurl.'search/cust_pay_pending.html?magic=_date;statusNOT=done', 'Pending real-time payments' ]
   if $curuser->access_right('View customer pending payments');
+$report_payments{'Unapplied Payments'} = [ $fsurl.'search/report_cust_pay.html?unapplied=1', 'Unapplied payment report (by type and/or date range)' ];
 $report_payments{'Voided Payments'} = [ $fsurl.'search/report_cust_pay.html?void=1', 'Voided payment report (by type and/or date range)' ]
   if $curuser->access_right('View customer pending payments');
-$report_payments{'Unapplied Payments'} = [ $fsurl.'search/report_cust_pay.html?unapplied=1', 'Unapplied payment report (by type and/or date range)' ];
 $report_payments{'Payment Batches'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
   if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
 $report_payments{'Unapplied Payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
