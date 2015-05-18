@@ -129,7 +129,7 @@ sub insert {
 
     return $error if $error;
   }
-
+  $dbh->commit;
   return;
 }
 
