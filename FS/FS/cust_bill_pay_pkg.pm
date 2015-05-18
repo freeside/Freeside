@@ -1,13 +1,11 @@
 package FS::cust_bill_pay_pkg;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_bill_pay;
 use FS::cust_bill_pkg;
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
