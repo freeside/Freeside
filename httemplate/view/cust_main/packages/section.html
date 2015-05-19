@@ -1,4 +1,5 @@
 % if ( @$packages ) { 
+<THEAD>
 <TR>
 % #my $width = $show_location ? 'WIDTH="25%"' : 'WIDTH="33%"';
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Package') |h %></TH>
@@ -8,6 +9,7 @@
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Services') |h %></TH>
 % }
 </TR>
+</THEAD>
 
 % #$FS::cust_pkg::DEBUG = 2;
 %   foreach my $cust_pkg (@$packages) {

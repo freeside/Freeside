@@ -8,6 +8,7 @@
 %     my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
 %     my $bgcolor = '';
+      <THEAD>
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc">#</TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
@@ -15,6 +16,7 @@
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Recurring') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       </TR>
+      </THEAD>
 %     foreach my $quotation (@quotations) {
 %       if ( $bgcolor eq $bgcolor1 ) {
 %         $bgcolor = $bgcolor2;

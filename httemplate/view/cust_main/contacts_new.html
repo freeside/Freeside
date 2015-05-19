@@ -1,11 +1,10 @@
+%if ( @cust_contacts ) {
 <BR>
 <FONT CLASS="fsinnerbox-title">Contacts</FONT>
 
 <& /elements/table-grid.html &>
-% my $bgcolor1 = '#eeeeee';
-%     my $bgcolor2 = '#ffffff';
-%     my $bgcolor = $bgcolor2;
-% my $th = '<TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">';
+<THEAD>
+% my $th = '<TH CLASS="grid" ALIGN="left">';
 <TR>
   <%$th%>Type</TH>
   <%$th%>Contact</TH>
@@ -16,7 +15,11 @@
 % }
   <%$th%>Comment</TH>
 </TR>
+</THEAD>
 
+%   my $bgcolor1 = '#ffffff';
+%   my $bgcolor2 = '#eeeeee';
+%   my $bgcolor = $bgcolor2;
 %   foreach my $cust_contact ( @cust_contacts ) {
 %     my $contact = $cust_contact->contact;
 %     my $td = qq(<TD CLASS="grid" BGCOLOR="$bgcolor">);
@@ -59,6 +62,7 @@
 %      }
 %   }
 </TABLE>
+%}
 <%once>
 
 my @phone_type = qsearch({table=>'phone_type', order_by=>'weight'});

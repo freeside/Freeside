@@ -89,6 +89,7 @@
 		style="display:<% $display %>"
 	>
 	<& /elements/table-grid.html &>
+        <THEAD>
 	<TR>
 	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
 %   if ( $conf->exists('cust_main_note-display_times') ) {
@@ -103,6 +104,7 @@
 	    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
 %   }
 	</TR>
+        </THEAD>
 % $skipheader = (!$conf->exists('note-classes') || $conf->config('note-classes') < 2);
 % $last_classnum = $note->classnum;
 % }

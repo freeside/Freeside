@@ -20,17 +20,20 @@
 %# <A HREF="<% $res_link  %>"><% mt('resolved') |h %></A>
  <BR>
 
+%if ( @tickets ) {
 <& /elements/table-grid.html &>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
 
+<THEAD>
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Type') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Owner') |h %></TH>
 </TR>
+</THEAD>
 
 % foreach my $ticket ( @tickets ) {
 %     my $href = FS::TicketSystem->href_ticket($ticket->{id});
@@ -69,7 +72,7 @@
 % } 
 
 </TABLE>
-
+%}
 <%init>
 
 my $cust_main = shift;
