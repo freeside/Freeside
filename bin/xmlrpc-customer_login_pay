@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my( $username, $password ) = ( @ARGV );
+
+my $uri = new URI 'http://localhost:8080/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $result = $server->call('FS.ClientAPI_XMLRPC.login',
+
+	'email'    => 'joe@test.com',
+        'password' => 'testpass',
+);
+
+die $result->{'error'} if $result->{'error'};
+
+my $session_id = $result->{'session_id'};
+warn "$session_id";
+
+my $process_payment = $server->call('FS.ClientAPI_XMLRPC.process_payment',
+
+        # Required fields
+	'session_id'  => $session_id,
+	'amount'      => '1.00',
+        'payname'     => 'Joe Tester',
+	'payinfo'     => '4111111111111111',
+	'month'       => '1', # CC Expiration month
+	'year'	      => '2019', # CC Expiration year
+
+  	#Optional fields (Only needed which these are not set on the customers account or when new information needs to be saved)
+	'save'	      => 1, # Save this information to the customers account
+	'auto'	      => 1, # Set this customers account to "automatic" payment type
+	'address1'    => '1234 Testerville Rd',
+	'address2'    => '',
+	'city'        => 'Testerville',
+	'state'       => 'MD',
+	'zip'         => '12345',
+	'country'     => 'US',
+	
+
+
+);	
+
+die $process_payment->{'error'} if $process_payment->{'error'};
+
+1;
