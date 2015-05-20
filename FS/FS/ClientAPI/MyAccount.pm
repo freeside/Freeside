@@ -140,6 +140,7 @@ sub skin_info {
       'logo' => scalar($conf->config_binary('logo.png', $agentnum )),
       ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
         qw( head body_header body_footer company_address ) ),
+      'money_char' => $conf->config("money_char") || '$',
       'menu' => join("\n", $conf->config("ng_selfservice-menu", $agentnum ) ) ||
                 'main.php Home
 
