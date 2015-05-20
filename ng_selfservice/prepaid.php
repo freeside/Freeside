@@ -84,7 +84,7 @@ foreach ($cust_pkg as $pkg) {
   $thissvc['pkgnum'] = $pkg['pkgnum'];
   $thissvc['status'] = $pkg['status'];
   $actsvcs[$thissvc['svcnum']] = $thissvc;
-  if ($thissvc['overlimit']) {
+  if ($thissvc['overlimit'] or ($thissvc['status'] != 'active')) {
     $expsvcs[$thissvc['svcnum']] = $thissvc;
   }
 }
