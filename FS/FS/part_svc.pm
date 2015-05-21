@@ -146,9 +146,9 @@ sub insert {
   foreach my $field (fields($svcdb), @fields) {
     next if $field eq 'svcnum';
     my $prefix = $svcdb.'__';
-    if ( defined( $self->getfield($prefix.$_.'_flag'))
-      or defined($self->getfield($prefix.$_.'_required'))
-      or length($self->getfield($prefix.$_.'_label'))
+    if ( defined( $self->getfield($prefix.$field.'_flag'))
+      or defined($self->getfield($prefix.$field.'_required'))
+      or length($self->getfield($prefix.$field.'_label'))
     ) {
       my $part_svc_column = $self->part_svc_column($field);
       my $previous = qsearchs('part_svc_column', {
@@ -285,9 +285,9 @@ sub replace {
     foreach my $field (fields($svcdb),@fields) {
       next if $field eq 'svcnum';
       my $prefix = $svcdb.'__';
-      if ( defined( $new->getfield($prefix.$_.'_flag'))
-        or defined($new->getfield($prefix.$_.'_required'))
-        or length($new->getfield($prefix.$_.'_label'))
+      if ( defined( $new->getfield($prefix.$field.'_flag'))
+        or defined($new->getfield($prefix.$field.'_required'))
+        or length($new->getfield($prefix.$field.'_label'))
       ) {
         my $part_svc_column = $new->part_svc_column($field);
         my $previous = qsearchs('part_svc_column', {
