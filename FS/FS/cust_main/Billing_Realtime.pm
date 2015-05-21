@@ -343,8 +343,9 @@ sub realtime_bop {
   my $cc_surcharge = 0;
   my $cc_surcharge_pct = 0;
   $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage') 
-    if $conf->config('credit-card-surcharge-percentage');
-  
+    if $conf->config('credit-card-surcharge-percentage')
+    && $options{method} eq 'CC';
+
   # always add cc surcharge if called from event 
   if($options{'cc_surcharge_from_event'} && $cc_surcharge_pct > 0) {
       $cc_surcharge = $options{'amount'} * $cc_surcharge_pct / 100;
