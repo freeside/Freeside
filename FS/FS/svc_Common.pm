@@ -192,7 +192,7 @@ sub check {
     foreach my $field (keys %$required) {
       unless (length($self->get($field)) > 0) {
         my $name = $labels->{$field} || $field;
-        return "Field $name is required\n"
+        return "$name is required\n"
       }
     }
   }
