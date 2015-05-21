@@ -1,5 +1,5 @@
 <? $title ='Prepaid Card Account Recharge'; include('elements/header.php'); ?>
-<? $current_menu = 'recharge.php'; include('elements/menu.php'); ?>
+<? $current_menu = 'prepaid.php'; include('elements/menu.php'); ?>
 
 <?
 // This page is currently only designed for packages that use prepaid pricing.
@@ -141,7 +141,7 @@ if ($balance != 0) {
 }
 ?>
 
-<FORM NAME="OneTrueForm" METHOD="POST" ACTION="recharge.php" onSubmit="document.OneTrueForm.process.disabled=true">
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="prepaid.php" onSubmit="document.OneTrueForm.process.disabled=true">
 
 <?
 if ($balance <= 0) {
