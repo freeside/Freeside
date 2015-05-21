@@ -17,7 +17,11 @@
        'process-display'    => scalar($conf->config('manual_process-display')),
        'process-skip_first' => $conf->exists('manual_process-skip_first'),
        'num_payments'       => scalar($cust_main->cust_pay), 
-       'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
+       'surcharge_percentage' =>
+         ( $payby eq 'CARD'
+             ? scalar($conf->config('credit-card-surcharge-percentage'))
+             : 0
+         ),
   &>
 
 % if ( $conf->exists('part_pkg-term_discounts') ) {
