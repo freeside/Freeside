@@ -37,7 +37,7 @@ use Date::Parse;
 	skip(2),			#TERM CITY / TERM STATE
 	_cdr_min_parser_maker, 		#MINUTES
 	skip(1),			#AMOUNT
-	disposition,			#Call Type
+	'disposition',			#Call Type
   ],
 );
 
