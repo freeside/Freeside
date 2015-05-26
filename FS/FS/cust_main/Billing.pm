@@ -818,16 +818,17 @@ sub bill {
 
     # calculate and append taxes
     if ( ! $tax_is_batch) {
-      my $arrayref_or_error = $tax_engines{$pass}->calculate_taxes($cust_bill);
+      local $@;
+      my $arrayref = eval { $tax_engines{$pass}->calculate_taxes($cust_bill) };
 
-      unless ( ref( $arrayref_or_error ) ) {
+      if ( $@ ) {
         $dbh->rollback if $oldAutoCommit && !$options{no_commit};
-        return $arrayref_or_error;
+        return $@;
       }
 
       # or should this be in TaxEngine?
       my $total_tax = 0;
-      foreach my $taxline ( @$arrayref_or_error ) {
+      foreach my $taxline ( @$arrayref ) {
         $total_tax += $taxline->setup;
         $taxline->set('invnum' => $cust_bill->invnum); # just to be sure
         push @cust_bill_pkg, $taxline; # for return_bill

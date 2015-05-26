@@ -852,16 +852,16 @@ sub credit_lineitems {
 
   foreach my $invnum ( sort { $a <=> $b } keys %cust_credit_bill ) {
 
-    my $arrayref_or_error =
-      $cust_main->calculate_taxes(
+    local $@;
+    my $arrayref_or_error = eval { $cust_main->calculate_taxes(
         $cust_bill_pkg{$invnum}, # list of taxable items that we're crediting
         $taxlisthash{$invnum},   # list of tax-item bindings
         $cust_bill_pkg{$invnum}->[0]->cust_bill->_date, # invoice time
-      );
+      ) };
 
-    unless ( ref( $arrayref_or_error ) ) {
+    if ( $@ ) {
       $dbh->rollback if $oldAutoCommit;
-      return "Error calculating taxes: $arrayref_or_error";
+      return "Error calculating taxes: $@";
     }
     
     my %tax_links; # {tax billpkgnum}{nontax billpkgnum}

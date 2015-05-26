@@ -73,7 +73,7 @@ function areyousure(href, message) {
 % }
 
 % if ( $error ) {
-<& /elements/error.html, $error &>
+<DIV CLASS="error"><% emt('Error calculating quotation: [_1]', $error) %></DIV>
 % }
 
 % if ( $conf->exists('quotation_html') ) { 

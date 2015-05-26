@@ -95,6 +95,11 @@ L<FS::cust_bill_pkg> objects to add to the invoice.  The base implementation
 is to call L</make_taxlines> to produce a list of "raw" tax line items, 
 then L</consolidate_taxlines> to combine those with the same itemdesc.
 
+If this fails, it will throw an exception. (Accordingly it should not trap
+exceptions from internal methods that it calls, except to translate error 
+messages into a more meaningful form.) If it succeeds, it MUST return an
+arrayref (even if the arrayref is empty).
+
 =cut
 
 sub calculate_taxes {

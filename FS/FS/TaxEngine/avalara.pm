@@ -35,10 +35,6 @@ sub add_sale {}
 sub build_request {
   my ($self, %opt) = @_;
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
   my $cust_bill = $self->{cust_bill};
   my $cust_main = $cust_bill->cust_main;
 
@@ -91,6 +87,12 @@ sub build_request {
     $conf->config('company_address', $cust_main->agentnum)
   );
   my $company_address = Geo::StreetAddress::US->parse_location($our_address);
+  if (!$company_address->{street}
+      or !$company_address->{city}
+      or !$company_address->{zip}) {
+    die "Your company address could not be parsed. Avalara tax calculation requires a company address with street, city, and zip code.\n";
+  }
+
   my $address1 = join(' ', grep $_, @{$company_address}{qw(
       number prefix street type suffix
   )});
@@ -162,8 +164,8 @@ sub calculate_taxes {
 
   my $cust_bill = shift;
   if (!$cust_bill->invnum) {
-    warn "FS::TaxEngine::avalara: can't calculate taxes on a non-inserted invoice";
-    return;
+    # then something is wrong
+    die "FS::TaxEngine::avalara: can't calculate taxes on a non-inserted invoice\n";
   }
   $self->{cust_bill} = $cust_bill;
 
@@ -212,8 +214,9 @@ account number, and license key.
   my %tax_item_named;
 
   if ( $response->{ResultCode} ne 'Success' ) {
-    return "invoice#".$cust_bill->invnum.": ".
-           join("\n", @{ $response->{Messages} });
+    die "Avalara tax error on invoice#".$cust_bill->invnum.": ".
+           join("\n", @{ $response->{Messages} }).
+           "\n";
   }
   warn "creating taxes for inv#$invnum\n" if $DEBUG > 1;
   foreach my $TaxLine (@{ $response->{TaxLines} }) {
@@ -248,7 +251,7 @@ account number, and license key.
           fee         => 0,
       });
       my $error = $tax_rate->find_or_insert;
-      return "error inserting tax_rate record for '$taxname': $error\n"
+      die "error inserting tax_rate record for '$taxname': $error\n"
         if $error;
       $tax_rate = $tax_rate->replace_old; # get its taxnum if there wasn't one
 
@@ -264,7 +267,7 @@ account number, and license key.
                         # country?
       });
       $error = $tax_rate_location->find_or_insert;
-      return "error inserting tax_rate_location record for ".
+      die "error inserting tax_rate_location record for ".
               $TaxDetail->{JurisCode} .": $error\n"
         if $error;
 

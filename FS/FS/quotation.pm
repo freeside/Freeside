@@ -571,6 +571,7 @@ sub estimate {
 
   ###### BEGIN TRANSACTION ######
   local $@;
+  local $SIG{__DIE__};
   eval {
     my $temp_dbh = myconnect();
     local $FS::UID::dbh = $temp_dbh;
