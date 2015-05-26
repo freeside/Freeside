@@ -122,7 +122,7 @@
       <TD ALIGN="right"><% mt('Account number') |h %></TD>
       <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$account%>"></TD>
       <TD ALIGN="right"><% mt('Type') |h %></TD>
-      <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
+      <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } FS::cust_payby->paytypes) %></SELECT></TD>
     </TR>
     <TR>
       <TD ALIGN="right"><% mt($routing_label) |h %></TD>

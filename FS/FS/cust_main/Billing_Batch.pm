@@ -5,6 +5,7 @@ use vars qw( $conf );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::pay_batch;
 use FS::cust_pay_batch;
+use FS::cust_bill_pay_batch;
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
