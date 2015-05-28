@@ -179,7 +179,7 @@ install-stamp: build-stamp
 
 	perl -p -i -e "\
          s'${TMP}(-webui)?''g;\
-        "  $(TMP)-webui/etc/freeside/apache2/*
+        " $(APACHE_CONF)/*
 
 	# Install init
 	$(MAKE) -e DESTDIR=$(TMP) install-init

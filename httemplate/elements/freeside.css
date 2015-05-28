@@ -3,6 +3,12 @@
   /* font-family: Verdana, Arial, Helvetica, sans-serif; */
 }
 
+h1 {
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
 pre {
   font-family: monospace;
 }
@@ -172,10 +178,13 @@ div.fstabs {
 div.fstabcontainer {
   background-color:#ffffff;
   padding:8px;
+  clear: left;
+/*
   border-left:1px solid #7e0079;
   border-right:1px solid #7e0079;
   border-bottom:1px solid #7e0079;
   border-top:1px solid #7e0079;
+*/
 }
 
 .fscontainer {
