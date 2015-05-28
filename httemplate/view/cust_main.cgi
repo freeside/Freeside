@@ -5,7 +5,6 @@
              'nobr'  => 1,
           }
 &>
-<BR>
 
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') eq 'top' && @part_tag ) {

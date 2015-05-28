@@ -1,43 +1,31 @@
 <style type="text/css">
 #menu_ul {
   padding: 0;
-  margin: 0px 0px 18px 0px;
+  margin: .5em 0 0 0;
+  font-size: smaller;
 }
+
 #menu_ul li {
+  margin: 0;
   float: left;
   list-style: none;
   position: relative;
 }
-#menu_ul a {
-  background: #dddddd;
-  display: block;
-  padding: 6px 8px;
-  margin: 8px 8px 8px 0px;
-/*  margin: 0px 0px 8px 0px; */
-  color: #525151;
-  font-size: 13px;
-  font-weight: bold;
-  white-space: nowrap;
-  border-top-left-radius:2px;
-  border-top-right-radius:2px;
-}
-#menu_ul a.current_show {
-  background: #ffffff;
-  border-top: 1px solid #7e007f;
-  border-left: 1px solid #7e007f;
-  border-right: 1px solid #7e007f;
-  border-bottom: 1px solid #ffffff;
 
+#menu_ul a {
   display: block;
-  padding: 6px 8px;
-  margin: 8px 8px 8px 0px;
-/*  margin: 0px 0px 8px 0px; */
+  margin: 0;
+  padding: .5em .75em;
+  background: #ffffff;
   color: #525151;
-  font-size: 13px;
-  font-weight: bold;
   white-space: nowrap;
-  border-top-left-radius:2px;
-  border-top-right-radius:2px;
+  text-decoration: none;
+  border-top: thin solid #CFDEFF;
+}
+
+#menu_ul a.current_show {
+  font-weight: bold;
+  background: #cfdeff;
 }
 
 #menu_ul ul {
@@ -46,54 +34,48 @@
   display:none;
   position: absolute;
   top: 100%;
-  left: -1px;
+  left: 0;
   background: #ffffff;
-  border: 1px solid #7e007f;
+  border-bottom: thin solid #CFDEFF;
 }
 
 #menu_ul ul li {
+  margin: 0;
+  padding: 0;
   float: none;
-  border-style: none;
-  display: inline;
-  width: 100%;
 }
 
 #menu_ul ul a {
-  padding: 0px 10px;
+  border-top: thin solid #CFDEFF;
   color: #333333;
-  font-size: 13px;
-  font-weight: normal;
   background: transparent;
 }
-#menu_ul ul a:hover  {
+
+#menu_ul a:hover {
+  background: #cfdeff;
+  text-decoration: underline;
   color: #7e0079;
-  background: #fff8fb; /* ?? too pink? */
-  border-top-left-radius:0px;
-  border-top-right-radius:0px;
 }
 
-#menu_ul a.current_menu, #menu_ul a.hover {
-  color: #7e0079;
-}
 </style>
 <script src="<% $p %>elements/jquery.js"></script>
 <script type="text/javascript">
+
 $(document).ready(function() {
-        $('#menu_ul > li').hover(function(){
-                $('a:first', this).addClass('hover');
-                $('ul:first', this).show();
-                if ($('.current_menu:first', this).length == 0) {
-                        $('img[src*="dropdown_arrow_white"]', this).show();
-                        $('img[src*="dropdown_arrow_grey"]', this).hide();
-                }
-        }, function(){
-                $('ul:first', this).hide();
-                $('a:first', this).removeClass('hover');
-                if ($('.current_menu:first', this).length == 0) {
-                        $('img[src*="dropdown_arrow_white"]', this).hide();
-                        $('img[src*="dropdown_arrow_grey"]', this).show();
-                }
-        });
+	var openmenu;
+	function closemenu () {
+		if (openmenu !== undefined) {
+			openmenu.hide();
+			openmenu = undefined;
+		}
+	}		
+	$('#menu_ul > li').hover(function(){
+		closemenu();
+		openmenu = $('ul:first', this);
+		openmenu.show();
+	}, function(){
+		closemenu();
+	});
 });
 </script>
 
