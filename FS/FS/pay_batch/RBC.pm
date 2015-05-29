@@ -174,7 +174,7 @@ $name = 'RBC';
     ' '.
     sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
-    time2str("%Y%j", $pay_batch->download).
+    time2str("%Y%j", time + 86400).
     sprintf("%-30.30s", encode('utf8', $cust_pay_batch->cust_main->first . ' ' .
                      $cust_pay_batch->cust_main->last)).
     'E'. # English
