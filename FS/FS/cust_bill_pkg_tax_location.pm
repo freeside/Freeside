@@ -144,6 +144,19 @@ Returns the cust_bill_pkg object for the I<taxable> charge.
 
 Returns the associated cust_location object
 
+=item taxname
+
+Returns the tax name (for populating the itemdesc field).
+
+=cut
+
+sub taxname {
+  my $self = shift;
+  my $cust_main_county = FS::cust_main_county->by_key($self->taxnum)
+    or return '';
+  $cust_main_county->taxname || 'Tax';
+}
+
 =item desc
 
 Returns a description for this tax line item constituent.  Currently this

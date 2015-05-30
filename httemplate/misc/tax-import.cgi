@@ -60,10 +60,10 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
 my $conf = FS::Conf->new;
-my $data_vendor = $conf->config('enable_taxproducts');
+my $data_vendor = $conf->config('tax_data_vendor');
 
 my %vendor_info = (
-  CCH => {
+  cch => {
     'num_files' => 6,
     'formats' => [ 'cch'        => 'CCH import (CSV)',
                    'cch-fixed'  => 'CCH import (fixed length)' ],
@@ -82,7 +82,7 @@ my %vendor_info = (
                    'detail filename',
                  ],
   },
-  Billsoft => {
+  billsoft => {
     'num_files' => 1,
     'formats' => [ 'billsoft-pcode' => 'Billsoft PCodes',
                    'billsoft-taxclass' => 'Tax classes',

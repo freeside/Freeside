@@ -60,7 +60,6 @@ sub taxline {
   my $taxnum = $tax_object->taxnum;
   my $exemptions = $self->{exemptions}->{$taxnum} ||= [];
   
-  my $name = $tax_object->taxname || 'Tax';
   my $taxable_cents = 0;
   my $tax_cents = 0;
 
@@ -87,14 +86,7 @@ sub taxline {
   push @existing_exemptions, @{ $_->cust_tax_exempt_pkg }
     foreach @$taxables;
 
-  my $tax_item = FS::cust_bill_pkg->new({
-      'pkgnum'    => 0,
-      'recur'     => 0,
-      'sdate'     => '',
-      'edate'     => '',
-      'itemdesc'  => $name,
-  });
-  my @tax_location;
+  my @tax_links;
 
   foreach my $cust_bill_pkg (@$taxables) {
 
@@ -274,9 +266,8 @@ sub taxline {
         'pkgnum'      => $cust_bill_pkg->pkgnum,
         'locationnum' => $cust_bill_pkg->cust_pkg->tax_locationnum,
         'taxable_cust_bill_pkg' => $cust_bill_pkg,
-        'tax_cust_bill_pkg'     => $tax_item,
     });
-    push @tax_location, $location;
+    push @tax_links, $location;
 
     $taxable_cents += $taxable_charged;
     $tax_cents += $this_tax_cents;
@@ -292,7 +283,7 @@ sub taxline {
   }
   $tax_cents += $extra_cents;
   my $i = 0;
-  foreach (@tax_location) { # can never require more than a single pass, yes?
+  foreach (@tax_links) { # can never require more than a single pass, yes?
     my $cents = $_->get('cents');
     if ( $extra_cents > 0 ) {
       $cents++;
@@ -300,10 +291,8 @@ sub taxline {
     }
     $_->set('amount', sprintf('%.2f', $cents/100));
   }
-  $tax_item->set('setup' => sprintf('%.2f', $tax_cents / 100));
-  $tax_item->set('cust_bill_pkg_tax_location', \@tax_location);
 
-  return $tax_item;
+  return @tax_links;
 }
 
 sub info {

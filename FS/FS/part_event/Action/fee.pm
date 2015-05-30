@@ -40,7 +40,7 @@ sub _calc_fee {
       # they're definitely NOT linear and we haven't yet had a reason to 
       # make that case work.
       return $total if $self->option('setuptax') eq 'Y'
-                    or FS::Conf->new->exists('enable_taxproducts');
+                    or FS::Conf->new->config('tax_data_vendor');
 
       # estimate tax rate
       # false laziness with xmlhttp-calculate_taxes, cust_main::Billing, etc.

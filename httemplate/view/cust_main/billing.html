@@ -71,7 +71,7 @@
     </TR>
 % }
 
-% if ( $conf->exists('enable_taxproducts') ) {
+% if ( $conf->config('tax_data_vendor') eq 'cch' ) {
 <TR>
   <TH ALIGN="right"><% mt('Tax location') |h %></TH>
 % my $tax_location = $conf->exists('tax-ship_address')

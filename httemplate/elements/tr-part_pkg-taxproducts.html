@@ -1,0 +1,34 @@
+<TR>
+  <TH COLSPAN=2>Tax products</TH>
+</TR>
+% foreach my $usage_class (@classes) {
+%   my $classnum = $usage_class->classnum;
+%   my $curr_value =
+%        $cgi->param("usage_taxproductnum_$classnum")
+%     || $pkg_options{"usage_taxproductnum_$classnum"}
+%     || '';
+<TR>
+  <TD><% $usage_class->classname %></TD>
+  <TD><& select-taxproduct.html,
+        %opt,
+        'field'       => $field.'_'.$classnum,
+        'curr_value'  => $curr_value
+      &>
+  </TD>
+</TR>
+% }
+<%init>
+my %opt = @_;
+my $field = delete($opt{field}) || 'taxproductnum';
+my $pkgpart = delete($opt{pkgpart});
+my $part_pkg = FS::part_pkg->by_key($pkgpart);
+my %pkg_options = $part_pkg->options;
+$pkg_options{'usage_taxproductnum_'} = $part_pkg->taxproductnum;
+
+my @classes = qsearch('usage_class', { 'disabled' => '' });
+unshift @classes,
+  FS::usage_class->new({ 'classnum' => '', 'classname' => '(default)', }),
+  FS::usage_class->new({ 'classnum' => 'setup', 'classname' => 'Setup', }),
+  FS::usage_class->new({ 'classnum' => 'recur', 'classname' => 'Recur', }),
+;
+</%init>

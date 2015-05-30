@@ -117,7 +117,7 @@ my $args_callback = sub {
     $error ||= "Illegal $param: $value"
       unless ( $value =~ /^\d*$/  );
     if (length($class)) {
-      $options{"usage_taxproductnum_$_"} = $value;
+      $options{"usage_taxproductnum_$class"} = $value;
     } else {
       $new->set('taxproductnum', $value);
     }

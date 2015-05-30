@@ -38,7 +38,7 @@ my $conf = new FS::Conf;
 my $tax_engine = FS::TaxEngine->new;
 
 my %location;
-($location{data_vendor}) = $conf->config('enable_taxproducts');
+($location{data_vendor}) = $conf->config('tax_data_vendor');
 ($location{city})        = $cgi->param('city')        =~ /^([\w ]+)$/;
 ($location{state})       = $cgi->param('state')       =~ /^(\w+)$/;
 ($location{zip})         = $cgi->param('zip')         =~ /^([-\w ]+)$/;

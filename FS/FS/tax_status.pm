@@ -149,6 +149,12 @@ sub _upgrade_data {
     # P, Q, R: Canada, not yet supported
     # MED1/MED2: totally irrelevant to our users
   },
+  suretax => {
+    'R' => 'Residential',
+    'B' => 'Business',
+    'I' => 'Industrial',
+    'L' => 'Lifeline',
+  },
 );
 
 =back

@@ -375,7 +375,7 @@ if( $curuser->access_right('Financial reports') ) {
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
 
-  my $taxproducts = $conf->exists('enable_taxproducts');
+  my $taxproducts = $conf->config('tax_data_vendor');
   $report_financial{'Tax Liability'. ($taxproducts ? ' (internal tax data)' : '')} = [ $fsurl.'search/report_tax.html', 'Tax liability report (internal tax data)' ];
   $report_financial{'Tax Liability (vendor tax data)'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor tax data)' ]
     if $taxproducts;
@@ -458,7 +458,7 @@ tie my %tools_importing, 'Tie::IxHash',
   'Phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'misc/cdr-import.html', '' ],
 ;
-if ( $conf->exists('enable_taxproducts') ) {
+if ( $conf->config('tax_data_vendor') eq 'cch' ) {
   if ( $conf->exists('taxdatadirectdownload') ) {
       $tools_importing{'Tax rates from vendor site'} =
       [ $fsurl.'misc/tax-fetch_and_import.cgi', '' ];
@@ -680,13 +680,13 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'separator2'} = ''; #its a separator!
 
   my $config_taxes_name = 'Locales and tax rates'.
-                          ( $conf->exists('enable_taxproducts')
+                          ( $conf->config('tax_data_vendor')
                             ? ' (internal tax class system)'
                             : ''
                           );
   $config_billing{$config_taxes_name}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
   $config_billing{'Tax rates (vendor data tax products system)'}  = [ $fsurl.'browse/tax_rate.cgi', 'Edit tax rates for the vendor data tax products system' ]
-     if $conf->exists('enable_taxproducts');
+     if $conf->config('tax_data_vendor');
   $config_billing{'Tax classes'} = [ $fsurl. 'browse/part_pkg_taxclass.html', 'Tax classes' ];
 
   if ( $conf->config('currencies') ) {

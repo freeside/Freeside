@@ -133,11 +133,11 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set($newname, 'location');
   }
 
-  # boolean enable_taxproducts is now enable_taxproducts = 'cch'
-  if ( $conf->exists('enable_taxproducts') and
-       $conf->config('enable_taxproducts') eq '' ) {
+  # boolean enable_taxproducts is now tax_data_vendor = 'cch'
+  if ( $conf->exists('enable_taxproducts') ) {
 
-    $conf->set('enable_taxproducts', 'cch');
+    $conf->delete('enable_taxproducts');
+    $conf->set('tax_data_vendor', 'cch');
 
   }
 

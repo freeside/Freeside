@@ -2451,53 +2451,82 @@ and customer address. Include units.',
 
   {
     'key'         => 'enable_taxclasses',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Enable per-package tax classes',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'require_taxclasses',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Require a taxclass to be entered for every package',
     'type'        => 'checkbox',
   },
 
   {
-    'key'         => 'enable_taxproducts',
-    'section'     => 'billing',
+    'key'         => 'tax_data_vendor',
+    'section'     => 'taxation',
     'description' => 'Tax data vendor you are using.',
     'type'        => 'select',
-    'select_enum' => [ 'cch', 'billsoft', 'avalara' ],
+    'select_enum' => [ '', 'cch', 'billsoft', 'avalara', 'suretax' ],
   },
 
   {
     'key'         => 'taxdatadirectdownload',
-    'section'     => 'billing',  #well
-    'description' => 'Enable downloading tax data directly from the vendor site. at least three lines: URL, username, and password.j',
+    'section'     => 'taxation',
+    'description' => 'Enable downloading tax data directly from CCH. at least three lines: URL, username, and password.j',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'ignore_incalculable_taxes',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Prefer to invoice without tax over not billing at all',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'billsoft-company_code',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Billsoft tax service company code (3 letters)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'avalara-taxconfig',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Avalara tax service configuration. Four lines: company code, account number, license key, test mode (1 to enable).',
     'type'        => 'textarea',
   },
+
+  {
+    'key'         => 'suretax-client_number',
+    'section'     => 'taxation',
+    'description' => 'SureTax tax service client ID.',
+    'type'        => 'text',
+  },
+  {
+    'key'         => 'suretax-validation_key',
+    'section'     => 'taxation',
+    'description' => 'SureTax validation key (UUID).',
+    'type'        => 'text',
+  },
+  {
+    'key'         => 'suretax-business_unit',
+    'section'     => 'taxation',
+    'description' => 'SureTax client business unit name; optional.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+  {
+    'key'         => 'suretax-regulatory_code',
+    'section'     => 'taxation',
+    'description' => 'SureTax client regulatory status.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'ILEC', 'IXC', 'CLEC', 'VOIP', 'ISP', 'Wireless' ],
+    'per_agent'   => 1,
+  },
+
 
   {
     'key'         => 'welcome_msgnum',
@@ -3678,14 +3707,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax-ship_address',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the shipping address instead.',
     'type'        => 'checkbox',
   }
 ,
   {
     'key'         => 'tax-pkg_address',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the package address instead (when present).',
     'type'        => 'checkbox',
   },
@@ -4467,7 +4496,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax_district_method',
-    'section'     => 'UI',
+    'section'     => 'taxation',
     'description' => 'The method to use to look up tax district codes.',
     'type'        => 'select',
     #'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
@@ -5228,7 +5257,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax-cust_exempt-groups',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'List of grouping possibilities for tax names, for per-customer exemption purposes, one tax name per line.  For example, "GST" would indicate the ability to exempt customers individually from taxes named "GST" (but not other taxes).',
     'type'        => 'textarea',
   },
@@ -5242,7 +5271,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax-cust_exempt-groups-num_req',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'When using tax-cust_exempt-groups, control whether individual tax exemption numbers are required for exemption from different taxes.',
     'type'        => 'select',
     'select_hash' => [ ''            => 'Not required',
@@ -5270,7 +5299,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'enable_tax_adjustments',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Enable the ability to add manual tax adjustments.',
     'type'        => 'checkbox',
   },
@@ -5723,7 +5752,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_class-tax_exempt',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Control the tax exemption flag per customer class rather than per indivual customer.',
     'type'        => 'checkbox',
   },

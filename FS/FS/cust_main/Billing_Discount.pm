@@ -110,6 +110,9 @@ by prepaying the most recent invoice for MONTHS.
 
 =cut
 
+# XXX this should work by creating a quotation; then we can finally retire
+# the "no_commit" option, which doesn't work with modern tax calculation
+
 sub discount_term_values {
   my $self = shift;
   my $term = shift;

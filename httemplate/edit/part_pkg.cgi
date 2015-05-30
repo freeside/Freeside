@@ -179,22 +179,28 @@
                        type  => 'hidden',
                        value => join(',', @taxproductnums),
                      },
-                     { field => 'taxproduct_select',
-                       type  => 'selectlayers',
-                       options => [ '(default)', @taxproductnums ],
-                       curr_value => '(default)',
-                       labels  => { ( '(default)' => '(default)' ),
-                                    map {($_=>$usage_class{$_})}
-                                    @taxproductnums
-                                  },
-                       layer_fields => \%taxproduct_fields,
-                       layer_values_callback => $taxproduct_values,
-                       layers_only  =>   !$taxproducts,
-                       cell_style   => ( !$taxproducts
-                                         ? 'display:none'
-                                         : ''
-                                       ),
+                     #{ field => 'taxproduct_select',
+                     #  type  => 'selectlayers',
+                     #  options => [ '(default)', @taxproductnums ],
+                     #  curr_value => '(default)',
+                     #  labels  => { ( '(default)' => '(default)' ),
+                     #               map {($_=>$usage_class{$_})}
+                     #               @taxproductnums
+                     #             },
+                     #  layer_fields => \%taxproduct_fields,
+                     #  layer_values_callback => $taxproduct_values,
+                     #  layers_only  =>   !$taxproducts,
+                     #  cell_style   => ( !$taxproducts
+                     #                    ? 'display:none'
+                     #                    : ''
+                     #                  ),
+                     #},
+                     { field => 'taxproductnum',
+                       type  => 'part_pkg-taxproducts',
+                       include_opt_callback =>
+                         sub { pkgpart => $_[0]->pkgpart },
                      },
+                      
 
                      { type  => 'tablebreak-tr-title',
                        value => 'Promotions', #better name?
@@ -414,7 +420,7 @@ my $agent_clone_extra_sql =
   ' ) ';
 
 my $conf = new FS::Conf;
-my $taxproducts = $conf->exists('enable_taxproducts');
+my $taxproducts = $conf->config('tax_data_vendor') ne '';
 
 my $fcc_opts = $conf->exists('part_pkg-show_fcc_options');
 
@@ -1120,9 +1126,9 @@ my $html_bottom = sub {
     '<SCRIPT TYPE="text/javascript">'.
       include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 );
 
-  $return .=
-    "taxproduct_selectchanged(document.getElementById('taxproduct_select'));\n"
-      if $taxproducts;
+#  $return .=
+#    "taxproduct_selectchanged(document.getElementById('taxproduct_select'));\n"
+#      if $taxproducts;
 
   $return .= '</SCRIPT>';
 

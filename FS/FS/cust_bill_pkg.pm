@@ -1275,7 +1275,7 @@ sub upgrade_tax_location {
   local $FS::cust_location::import = 1;
 
   my $conf = FS::Conf->new; # h_conf?
-  return if $conf->exists('enable_taxproducts'); #don't touch this case
+  return if $conf->config('tax_data_vendor'); #don't touch this case
   my $use_ship = $conf->exists('tax-ship_address');
   my $use_pkgloc = $conf->exists('tax-pkg_address');
 

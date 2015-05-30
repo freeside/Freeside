@@ -523,6 +523,11 @@ sub has_taxproduct {
   return ($self->taxproductnum ? 1 : 0);
 }
 
+sub taxproduct { # compat w/ part_pkg
+  my $self = shift;
+  $self->part_pkg_taxproduct;
+}
+
 =back
 
 =head1 BUGS

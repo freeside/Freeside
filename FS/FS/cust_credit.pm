@@ -558,7 +558,7 @@ sub _upgrade_data {  # class method
   $class->_upgrade_otaker(%opts);
 
   if ( !FS::upgrade_journal->is_done('cust_credit__tax_link')
-      and !$conf->exists('enable_taxproducts') ) {
+      and !$conf->config('tax_data_vendor') ) {
     # RT#25458: fix credit line item applications that should refer to a 
     # specific tax allocation
     my @cust_credit_bill_pkg = qsearch({

@@ -1422,7 +1422,7 @@ sub _handle_taxes {
 
   return if ( $self->payby eq 'COMP' ); #dubious
 
-  if ( $conf->exists('enable_taxproducts')
+  if ( $conf->config('enable_taxproducts')
        && ( scalar($part_item->part_pkg_taxoverride)
             || $part_item->has_taxproduct
           )

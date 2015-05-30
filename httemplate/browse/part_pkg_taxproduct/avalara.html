@@ -61,8 +61,6 @@ my $conf = new FS::Conf;
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions');
 
-warn Dumper({ $cgi->Vars });
-
 # id: where to put the taxproductnum (in the parent document) after the user 
 # selects it
 $cgi->param('id') =~ /^([ \w]+)$/

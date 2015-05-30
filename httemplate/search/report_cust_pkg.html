@@ -190,7 +190,7 @@
     <& /elements/tr-title.html, value => mt('Location search options') &>
 
 %   my @location_options = qw(cust nocust census nocensus);
-%   if ( $conf->exists('enable_taxproducts') ) {
+%   if ( $conf->config('tax_data_vendor') eq 'cch' ) {
 %     push @location_options, 'geocode', 'nogeocode';
 %   }
     <& /elements/tr-checkbox-multiple.html,

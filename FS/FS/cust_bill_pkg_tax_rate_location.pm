@@ -6,6 +6,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cust_pkg;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
+use FS::tax_rate;
 
 =head1 NAME
 
@@ -129,6 +130,19 @@ Returns the associated cust_bill_pkg object
 =item tax_rate_location
 
 Returns the associated tax_rate_location object
+
+=item taxname
+
+Returns the tax name (the itemdesc).
+
+=cut
+
+sub taxname {
+  my $self = shift;
+  my $tax_rate = FS::tax_rate->by_key($self->taxnum)
+    or return '';
+  $tax_rate->taxname;
+}
 
 =item desc
 

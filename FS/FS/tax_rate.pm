@@ -386,10 +386,7 @@ Takes an arrayref of L<FS::cust_bill_pkg> objects representing taxable line
 items, and an arrayref of charge classes ('setup', 'recur', '' for 
 unclassified usage, or an L<FS::usage_class> number). Calculates the tax on
 each item under this tax definition and returns a list of new 
-L<FS::cust_bill_pkg> objects for the taxes charged. Each returned object
-will have a pseudo-field, "cust_bill_pkg_tax_rate_location", containing a 
-single L<FS::cust_bill_pkg_tax_rate_location> object linking the tax rate
-back to this tax, and to its originating sale.
+L<FS::cust_bill_pkg_tax_rate_location> objects for the taxes charged.
 
 If the taxable objects are linked to an invoice, this will also calculate
 per-customer exemptions (cust_exempt and cust_taxname_exempt) and attach them
@@ -461,7 +458,7 @@ sub taxline_cch {
       $self->_fatal_or_null( 'tax with "'. $self->basetype_name. '" basis' );
   }
 
-  my @tax_locations;
+  my @tax_links; # for output
   my %seen; # locationnum or pkgnum => 1
 
   my $taxable_cents = 0;
@@ -514,7 +511,7 @@ sub taxline_cch {
 
       # yeah, some false laziness with cust_main_county
       my $this_tax_cents = int(100 * $taxable_charged * $self->tax);
-      my $tax_location = FS::cust_bill_pkg_tax_rate_location->new({
+      my $tax_link = FS::cust_bill_pkg_tax_rate_location->new({
           'taxnum'                => $self->taxnum,
           'taxtype'               => ref($self),
           'cents'                 => $this_tax_cents, # not a real field
@@ -524,7 +521,7 @@ sub taxline_cch {
           'taxratelocationnum'    => $taxratelocationnum,
           'taxclass'              => $class,
       });
-      push @tax_locations, $tax_location;
+      push @tax_links, $tax_link;
 
       $taxable_cents += 100 * $taxable_charged;
       $tax_cents += $this_tax_cents;
@@ -579,7 +576,7 @@ sub taxline_cch {
         return $self->_fatal_or_null( 'unknown unit type in tax'. $self->taxnum );
       }
       my $this_tax_cents = int($units * $self->fee * 100);
-      my $tax_location = FS::cust_bill_pkg_tax_rate_location->new({
+      my $tax_link = FS::cust_bill_pkg_tax_rate_location->new({
           'taxnum'                => $self->taxnum,
           'taxtype'               => ref($self),
           'cents'                 => $this_tax_cents,
@@ -587,7 +584,7 @@ sub taxline_cch {
           'taxable_cust_bill_pkg' => $cust_bill_pkg,
           'taxratelocationnum'    => $taxratelocationnum,
       });
-      push @tax_locations, $tax_location;
+      push @tax_links, $tax_link;
 
       $taxable_units += $units;
       $tax_cents += $this_tax_cents;
@@ -614,7 +611,7 @@ sub taxline_cch {
   my $extra_cents = sprintf('%.0f', $total_tax_cents - $tax_cents);
   $tax_cents += $extra_cents;
   my $i = 0;
-  foreach (@tax_locations) { # can never require more than a single pass, yes?
+  foreach (@tax_links) { # can never require more than a single pass, yes?
     my $cents = $_->get('cents');
     if ( $extra_cents > 0 ) {
       $cents++;
@@ -623,26 +620,7 @@ sub taxline_cch {
     $_->set('amount', sprintf('%.2f', $cents/100));
   }
 
-  # just transform each CBPTRL record into a tax line item.
-  # calculate_taxes will consolidate them, but before that happens we have
-  # to do tax on tax calculation.
-  my @tax_items;
-  foreach (@tax_locations) {
-    next if $_->amount == 0;
-    my $tax_item = FS::cust_bill_pkg->new({
-        'pkgnum'        => 0,
-        'recur'         => 0,
-        'setup'         => $_->amount,
-        'sdate'         => '', # $_->sdate?
-        'edate'         => '',
-        'itemdesc'      => $name,
-        'cust_bill_pkg_tax_rate_location' => [ $_ ],
-    });
-    $_->set('tax_cust_bill_pkg' => $tax_item);
-    push @tax_items, $tax_item;
-  }
-
-  return @tax_items;
+  return @tax_links;
 }
 
 sub _fatal_or_null {

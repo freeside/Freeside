@@ -35,7 +35,7 @@ die "access denied"
 
 my $conf = FS::Conf->new;
 my @tax_fields;
-if ( $conf->exists('enable_taxproducts') ) {
+if ( $conf->config('tax_data_vendor') ) {
   @tax_fields = (
     { field => 'taxproductnum', type => 'select-taxproduct' }
   );

@@ -4,7 +4,7 @@ use strict;
 use vars qw($DEBUG $buffer);
 use FS::Record;
 use FS::UID qw(myconnect driver_name);
-use Scalar::Util qw(refaddr);
+use Scalar::Util qw(refaddr blessed);
 
 $DEBUG = 2;
 
@@ -29,17 +29,24 @@ while ( my $row = $search->fetch ) {
 
 =over 4
 
-=item new ARGUMENTS
+=item new ARGUMENTS [, DBH ]
 
 Constructs a cursored search.  Accepts all the same arguments as qsearch,
 and returns an FS::Cursor object to fetch the rows one at a time.
+
+DBH may be a database handle; if so, the cursor will be created on that 
+connection and have all of its transaction state. Otherwise a new connection
+will be opened for the cursor.
 
 =cut
 
 sub new {
   my $class = shift;
-  my $q = FS::Record::_query(@_); # builds the statement and parameter list
   my $dbh;
+  if ( blessed($_[-1]) and $_[-1]->isa('DBI::db') ) {
+    $dbh = pop;
+  }
+  my $q = FS::Record::_query(@_); # builds the statement and parameter list
 
   my $self = {
     query => $q,
@@ -59,7 +66,11 @@ sub new {
 
   my $statement;
   if ( driver_name() eq 'Pg' ) {
-    $self->{dbh} = $dbh = myconnect();
+    if (!$dbh) {
+      $dbh = myconnect();
+      $self->{autoclean} = 1;
+    }
+    $self->{dbh} = $dbh;
     $statement = "DECLARE ".$self->{id}." CURSOR FOR ".$q->{statement};
   } elsif ( driver_name() eq 'mysql' ) {
     # build a cursor from scratch
@@ -144,8 +155,11 @@ sub DESTROY {
   return unless $self->{pid} eq $$;
   $self->{dbh}->do('CLOSE '. $self->{id})
     or die $self->{dbh}->errstr; # clean-up the cursor in Pg
-  $self->{dbh}->rollback;
-  $self->{dbh}->disconnect;
+  if ($self->{autoclean}) {
+    # the dbh was created just for this cursor, so it has no transaction 
+    # state that we care about 
+    $self->{dbh}->rollback;
+  }
 }
 
 =back
@@ -158,12 +172,6 @@ Replace all uses of qsearch with this.
 
 Still doesn't really support MySQL, but it pretends it does, by simply
 running the query and returning records one at a time.
-
-The cursor will close prematurely if any code issues a rollback/commit. If
-you need protection against this use qsearch or fork and get a new dbh
-handle.
-Normally this issue will represent itself this message.
-ERROR: cursor "cursorXXXXXXX" does not exist.
 
 =head1 SEE ALSO
 

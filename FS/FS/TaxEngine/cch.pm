@@ -5,6 +5,7 @@ use vars qw( $DEBUG );
 use base 'FS::TaxEngine';
 use FS::Record qw(dbh qsearch qsearchs);
 use FS::Conf;
+use List::Util qw(sum);
 
 =head1 SUMMARY
 
@@ -131,32 +132,21 @@ sub make_taxlines {
       $taxable_location{ $_->billpkgnum } ||= $_->tax_location;
     }
 
-    my @taxlines = $tax_rate->taxline_cch( $taxables, $charge_classes );
-
-    next if !@taxlines;
-    if (!ref $taxlines[0]) {
+    foreach my $link ( $tax_rate->taxline_cch( $taxables, $charge_classes ) ) {
+      if (!ref $link) {
       # it's an error string
-      warn "error evaluating tax#$taxnum\n";
-      return $taxlines[0];
-    }
-
-    my $billpkgnum = -1; # the current one
-    my $fragments; # $item_has_tax{$billpkgnum}{taxnum}
-
-    foreach my $taxline (@taxlines) {
-      next if $taxline->setup == 0;
-
-      my $link = $taxline->get('cust_bill_pkg_tax_rate_location')->[0];
-      # store this tax fragment, indexed by taxable item, then by taxnum
-      if ( $billpkgnum != $link->taxable_billpkgnum ) {
-        $billpkgnum = $link->taxable_billpkgnum;
-        $item_has_tax{$billpkgnum} ||= {};
-        $fragments = $item_has_tax{$billpkgnum}{$taxnum} ||= [];
+        die "error evaluating tax#$taxnum: $link\n";
       }
+      next if $link->amount == 0;
 
-      $taxline->set('invnum', $cust_bill->invnum);
-      push @$fragments, $taxline; # so we can ToT it
-      push @raw_taxlines, $taxline; # so we actually bill it
+      # store this tax fragment, indexed by taxable item, then by taxnum
+      my $billpkgnum = $link->taxable_billpkgnum;
+      $item_has_tax{$billpkgnum} ||= {};
+      my $fragments = $item_has_tax{$billpkgnum}{$taxnum} ||= [];
+
+      push @raw_taxlines, $link; # this will go into final consolidation
+      push @$fragments, $link; # this will go into a temporary cust_bill_pkg
+                               # for ToT calculation
     }
   } # foreach $taxnum
 
@@ -167,6 +157,9 @@ sub make_taxlines {
     my $this_has_tax = $item_has_tax{$billpkgnum};
     my $location = $taxable_location{$billpkgnum};
     foreach my $taxnum (keys %$this_has_tax) {
+      # $this_has_tax->{$taxnum} = an arrayref of the tax links for taxdef 
+      # $taxnum on taxable item $billpkgnum
+
       my $tax_rate = FS::tax_rate->by_key($taxnum);
       # find all taxes that apply to it in this location
       my @tot = $tax_rate->tax_on_tax( $location );
@@ -177,6 +170,7 @@ sub make_taxlines {
       # Calculate ToT separately for each taxable item, and only if _that 
       # item_ is already taxed under the ToT.  This is counterintuitive.
       # See RT#5243.
+      my $temp_lineitem;
       foreach my $tot (@tot) { 
         my $totnum = $tot->taxnum;
         warn "checking taxnum ".$tot->taxnum. 
@@ -185,16 +179,22 @@ sub make_taxlines {
         if ( exists $this_has_tax->{ $totnum } ) {
           warn "calculating tax on tax: taxnum ".$tot->taxnum." on $taxnum\n"
             if $DEBUG; 
-          my @taxlines = $tot->taxline_cch(
-            $this_has_tax->{ $taxnum }, # the first-stage tax (in an arrayref)
-          );
-          next if (!@taxlines); # it didn't apply after all
-          if (!ref($taxlines[0])) {
-            warn "error evaluating TOT ($totnum on $taxnum)\n";
-            return $taxlines[0];
+          # construct a line item to calculate tax on
+          $temp_lineitem ||= FS::cust_bill_pkg->new({
+              'pkgnum'    => 0,
+              'invnum'    => $cust_bill->invnum,
+              'setup'     => sum(map $_->amount, @{ $this_has_tax->{$taxnum} }),
+              'recur'     => 0,
+              'itemdesc'  => $tax_rate->taxname,
+              'cust_bill_pkg_tax_rate_location' => $this_has_tax->{$taxnum},
+          });
+          my @new_taxlines = $tot->taxline_cch( [ $temp_lineitem ] );
+          next if (!@new_taxlines); # it didn't apply after all
+          if (!ref($new_taxlines[0])) {
+            die "error evaluating TOT ($totnum on $taxnum): $new_taxlines[0]\n";
           }
           # add these to the taxline queue
-          push @raw_taxlines, @taxlines;
+          push @raw_taxlines, @new_taxlines;
         } # if $this_has_tax->{$totnum}
       } # foreach my $tot (tax-on-tax rate definition)
     } # foreach $taxnum (first-tier rate definition)

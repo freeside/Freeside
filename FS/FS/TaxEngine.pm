@@ -35,10 +35,28 @@ FS::TaxEngine - Base class for tax calculation engines.
 
 =over 4
 
+=item class
+
+Returns the class name for tax engines, according to the 'tax_data_vendor'
+configuration setting.
+
+=cut
+
+sub class {
+  my $conf = FS::Conf->new;
+  my $subclass = $conf->config('tax_data_vendor') || 'internal';
+  my $class = "FS::TaxEngine::$subclass";
+  local $@;
+  eval "use $class";
+  die "couldn't load $class: $@\n" if $@;
+
+  $class;
+}
+
 =item new 'cust_main' => CUST_MAIN, 'invoice_time' => TIME, OPTIONS...
 
 Creates an L<FS::TaxEngine> object.  The subclass will be chosen by the 
-'enable_taxproducts' configuration setting.
+'tax_data_vendor' configuration setting.
 
 CUST_MAIN and TIME are required.  OPTIONS can include:
 
@@ -54,11 +72,7 @@ sub new {
   my %opt = @_;
   my $conf = FS::Conf->new;
   if ($class eq 'FS::TaxEngine') {
-    my $subclass = $conf->config('enable_taxproducts') || 'internal';
-    $class .= "::$subclass";
-    local $@;
-    eval "use $class";
-    die "couldn't load $class: $@\n" if $@;
+    $class = $class->class;
   }
   my $self = { items => [], taxes => {}, conf => $conf, %opt };
   bless $self, $class;
@@ -107,6 +121,11 @@ sub calculate_taxes {
   my $cust_bill = shift;
 
   my @raw_taxlines = $self->make_taxlines($cust_bill);
+  if ( !@raw_taxlines ) {
+    return;
+  } elsif ( !ref $raw_taxlines[0] ) { # error message
+    return $raw_taxlines[0];
+  }
 
   my @real_taxlines = $self->consolidate_taxlines(@raw_taxlines);
 
@@ -117,12 +136,13 @@ sub calculate_taxes {
 }
 
 sub make_taxlines {
+  # only used by FS::TaxEngine::internal; should just move there
   my $self = shift;
   my $conf = $self->{conf};
 
   my $cust_bill = shift;
 
-  my @taxlines;
+  my @raw_taxlines;
 
   # For each distinct tax rate definition, calculate the tax and exemptions.
   foreach my $taxnum ( keys %{ $self->{taxes} } ) {
@@ -134,16 +154,17 @@ sub make_taxlines {
     # the rest of @{ $taxlisthash->{$tax} } is cust_bill_pkg component objects
     # (setup, recurring, usage classes)
 
-    my $taxline = $self->taxline('tax' => $tax_object, 'sales' => $taxables);
-    # taxline methods are now required to return real line items
-    # with their link records
-    die $taxline unless ref($taxline);
+    my @taxlines = $self->taxline('tax' => $tax_object, 'sales' => $taxables);
+    # taxline methods are now required to return the link records alone.
+    # Consolidation will take care of the rest.
+    next if !@taxlines;
+    die $taxlines[0] unless ref($taxlines[0]);
 
-    push @taxlines, $taxline;
+    push @raw_taxlines, @taxlines;
 
   } #foreach $taxnum
 
-  return @taxlines;
+  return @raw_taxlines;
 }
 
 sub consolidate_taxlines {
@@ -152,14 +173,16 @@ sub consolidate_taxlines {
   my $conf = $self->{conf};
 
   my @raw_taxlines = @_;
+  return if !@raw_taxlines; # shouldn't even be here
+
   my @tax_line_items;
 
   # keys are tax names (as printed on invoices / itemdesc )
-  # values are arrayrefs of taxlines
+  # values are arrayrefs of tax links ("raw taxlines")
   my %taxname;
   # collate these by itemdesc
   foreach my $taxline (@raw_taxlines) {
-    my $taxname = $taxline->itemdesc;
+    my $taxname = $taxline->taxname;
     $taxname{$taxname} ||= [];
     push @{ $taxname{$taxname} }, $taxline;
   }
@@ -168,7 +191,7 @@ sub consolidate_taxlines {
   # values are (cumulative) amounts
   my %tax_amount;
 
-  my $link_table = $self->info->{link_table};
+  my $link_table = $raw_taxlines[0]->table;
 
   # Preconstruct cust_bill_pkg objects that will become the "final"
   # taxlines for each name, so that we can reference them.
@@ -187,32 +210,30 @@ sub consolidate_taxlines {
   # create a consolidated tax item with the total amount and all the links
   # of all tax items that share that name.
   foreach my $taxname ( keys %taxname ) {
-    my @tax_links;
+    my $tax_links = $taxname{$taxname};
     my $tax_cust_bill_pkg = $real_taxline_named{$taxname};
-    $tax_cust_bill_pkg->set( $link_table => \@tax_links );
+    $tax_cust_bill_pkg->set( $link_table => $tax_links );
 
     my $tax_total = 0;
     warn "adding $taxname\n" if $DEBUG > 1;
 
-    foreach my $taxitem ( @{ $taxname{$taxname} } ) {
+    foreach my $link ( @$tax_links ) {
       # then we need to transfer the amount and the links from the
       # line item to the new one we're creating.
-      $tax_total += $taxitem->setup;
-      foreach my $link ( @{ $taxitem->get($link_table) } ) {
-        $link->set('tax_cust_bill_pkg', $tax_cust_bill_pkg);
+      $tax_total += $link->amount;
+      $link->set('tax_cust_bill_pkg', $tax_cust_bill_pkg);
 
-        # if the link represents tax on tax, also fix its taxable pointer
-        # to point to the "final" taxline
-        my $taxable_cust_bill_pkg = $link->get('taxable_cust_bill_pkg');
-        if (my $other_taxname = $taxable_cust_bill_pkg->itemdesc) {
-          $link->set('taxable_cust_bill_pkg',
-            $real_taxline_named{$other_taxname}
-          );
-        }
-
-        push @tax_links, $link;
+      # if the link represents tax on tax, also fix its taxable pointer
+      # to point to the "final" taxline
+      my $taxable_cust_bill_pkg = $link->get('taxable_cust_bill_pkg');
+      if ( $taxable_cust_bill_pkg and
+           my $other_taxname = $taxable_cust_bill_pkg->itemdesc) {
+        $link->set('taxable_cust_bill_pkg',
+          $real_taxline_named{$other_taxname}
+        );
       }
-    } # foreach $taxitem
+
+    } # foreach $link
     next unless $tax_total;
 
     # we should really neverround this up...I guess it's okay if taxline 

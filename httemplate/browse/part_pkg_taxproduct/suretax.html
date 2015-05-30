@@ -1,0 +1,172 @@
+<& /elements/header-popup.html, $title &>
+<& /browse/elements/browse.html,
+  'name_singular'  => 'tax product',
+  'html_form'      => include('.form', $category_code),
+  'query'          => {
+                        'table'     => 'part_pkg_taxproduct',
+                        'hashref'   => $hashref,
+                        'order_by'  => 'ORDER BY taxproduct',
+                      },
+  'count_query'    => $count_query,
+  'header'         => \@header,
+  'fields'         => \@fields,
+  'align'          => $align,
+  'links'          => [],
+  'link_onclicks'  => \@link_onclicks,
+  'nohtmlheader'   => 1,
+  'disable_total'  => 1,
+&>
+<style>
+input { float: right}
+</style>
+<script src="<% $fsurl %>elements/jquery.js"></script>
+<script>
+var category_labels = <% encode_json(\%category_labels) %>;
+$().ready(function() {
+  var new_taxproduct = $('#new_taxproduct');
+  var new_category_desc = $('#new_category_desc');
+  var new_taxproduct_desc = $('#new_taxproduct_desc');
+  var new_taxproduct_submit = $('#new_taxproduct_submit');
+
+  new_taxproduct.on('keyup', function() {
+    var curr_value = this.value || '';
+    var a = curr_value.match(/^\d{2}/);
+    var f = this.form;
+    if (a) { // there is a category code in the box
+      var category = a[0];
+      if (category_labels[category]) { // it matches an existing category
+        new_category_desc.val(category_labels[category]);
+        new_category_desc.prop('disabled', true);
+      } else {
+        new_category_desc.val('');
+        new_category_desc.prop('disabled', false);
+      }
+    } else {
+      new_category_desc.prop('disabled', true);
+    }
+    if (curr_value.match(/^\d{6}$/)) {
+      new_taxproduct_submit.prop('disabled', false);
+    } else {
+      new_taxproduct_submit.prop('disabled', true);
+    }
+  });
+
+  new_taxproduct_submit.on('click', function() {
+    select_taxproduct( -1,
+                       new_taxproduct.val()
+                          + ' '
+                          + new_category_desc.val()
+                          + ':'
+                          + new_taxproduct_desc.val()
+                     );
+  });
+});
+// post the values back to the parent form
+function select_taxproduct(taxproductnum, description) {
+  parent.document.getElementById('<% $id %>').value = taxproductnum;
+  parent.document.getElementById('<% $id %>_description').value = description;
+  parent.cClick();
+}
+  
+</script>  
+<DIV STYLE="width: 50%">
+<FORM NAME="myform">
+  <label for="new_taxproduct">New tax product code</label>
+  <input type="text" size="6" name="new_taxproduct" id="new_taxproduct">
+  <br>
+  <label for="new_category_desc">Category</label>
+  <input type="text" name="new_category_desc" id="new_category_desc" disabled=1>
+  <br>
+  <label for="new_taxproduct_desc">Product</label>
+  <input type="text" name="new_taxproduct_desc" id="new_taxproduct_desc">
+  <br>
+  <input type="button" id="new_taxproduct_submit" disabled=1 value="Add">
+</FORM>
+</DIV>
+<%shared>
+# populate dropdown
+
+# taxproduct is 6 digits: 2-digit category code + 4-digit detail code.
+# Description is also two parts, corresponding to those codes, separated with
+# a :.
+
+my (@category_codes, @taxproduct_codes, %category_labels, %taxproduct_labels);
+foreach my $row ( qsearch({
+  table   => 'part_pkg_taxproduct',
+  select  => 'DISTINCT substr(taxproduct, 1, 2) AS code, '.
+             "substring(description from '(.*):') AS label",
+  hashref => { data_vendor => 'suretax' },
+  }))
+{
+  $category_labels{$row->get('code')} = $row->get('label');
+}
+
+@category_codes = sort {$a <=> $b} keys %category_labels;
+
+</%shared>
+<%def .form>
+% my ($category_code) = @_;
+<FORM ACTION="<% $cgi->url %>" METHOD="GET">
+<& /elements/select.html,
+  field       => 'category_code',
+  options     => \@category_codes,
+  labels      => \%category_labels,
+  curr_value  => $category_code,
+  onchange    => 'this.form.submit()',
+&>
+<& /elements/hidden.html,
+  field       => 'id',
+  curr_value  => $cgi->param('id'),
+&>
+</%def>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('id') =~ /^\w+$/ or die "missing id parameter";
+my $id = $cgi->param('id');
+
+my $select_onclick = sub {
+  my $row = shift;
+  my $taxnum = $row->taxproductnum;
+  my $code = $row->taxproduct;
+  my $desc = $row->description;
+  "select_taxproduct('$taxnum', '$desc')";
+};
+
+my @menubar;
+my $title = 'Tax Products';
+
+my $hashref = { data_vendor => 'suretax' };
+
+my ($category_code, $taxproduct);
+if ( $cgi->param('category_code') =~ /^(\d+)$/ ) {
+  $category_code = $1;
+  $taxproduct = $category_code . '%';
+} else {
+  $taxproduct = '%';
+}
+
+$hashref->{taxproduct} = { op => 'LIKE', value => $taxproduct };
+
+my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct ".
+                  "WHERE data_vendor = 'suretax' AND ".
+                  "taxproduct LIKE '$taxproduct'";
+
+my @fields = (
+  'taxproduct',
+  'description',
+  'note'
+);
+
+my @header = (
+  'Code',
+  'Description',
+  '',
+);
+
+my $align = 'lll';
+my @link_onclicks = ( $select_onclick, $select_onclick );
+
+</%init>

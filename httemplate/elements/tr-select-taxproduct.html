@@ -1,4 +1,4 @@
-% if ( $conf->exists('enable_taxproducts') ) { 
+% if ( $conf->config('tax_data_vendor') ) { # still not quite right
   <%include('tr-td-label.html', @_) %>
     <TD <% $cell_style %>><% include('select-taxproduct.html', @_) %></TD>
   </TR>
