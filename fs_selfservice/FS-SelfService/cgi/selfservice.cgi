@@ -15,7 +15,7 @@ use FS::SelfService qw(
   access_info login_info login customer_info edit_info invoice
   payment_info process_payment realtime_collect process_prepay
   list_pkgs order_pkg signup_info order_recharge
-  part_svc_info provision_acct provision_external provision_phone
+  part_svc_info provision_acct provision_external provision_phone provision_forward
   unprovision_svc change_pkg suspend_pkg domainselector
   list_svcs list_svc_usage list_cdr_usage list_support_usage
   myaccount_passwd list_invoices create_ticket get_ticket did_report
@@ -70,6 +70,7 @@ my @actions = ( qw(
   process_svc_acct
   process_svc_phone
   process_svc_external
+  process_svc_forward
   delete_svc
   view_usage
   view_usage_details
@@ -861,7 +862,7 @@ sub provision_svc {
 
   my $result = part_svc_info(
     'session_id' => $session_id,
-    map { $_ => $cgi->param($_) } qw( pkgnum svcpart svcnum ),
+    map { $_ => ($cgi->param($_) || '') } qw( pkgnum svcpart svcnum ),
   );
   die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
 
@@ -945,6 +946,33 @@ sub process_svc_external {
     'session_id' => $session_id,
     map { $_ => $cgi->param($_) } qw( pkgnum svcpart )
   );
+}
+
+sub process_svc_forward {
+
+  my $result = provision_forward (
+    'session_id' => $session_id,
+    map { $_ => $cgi->param($_) || '' } qw(
+      pkgnum svcpart srcsvc src dstsvc dst )
+  );
+
+  if ( exists $result->{'error'} && $result->{'error'} ) { 
+    #warn "$result $result->{'error'}"; 
+    $action = 'provision_svc_forward';
+    return {
+      $cgi->Vars,
+      %{ part_svc_info( 'session_id' => $session_id,
+                        map { $_ => $cgi->param($_) } qw( svcnum pkgnum svcpart )
+                      )
+      },
+      'error' => $result->{'error'},
+    };
+  } else {
+    #just go to setup services page, results will be visible there
+    $action = 'provision';
+    return provision();
+  }
+
 }
 
 sub delete_svc {
@@ -1157,7 +1185,7 @@ package FS::SelfService::_selfservicecgi;
 
 use HTML::Entities;
 use FS::SelfService qw(
-    regionselector popselector domainselector location_form didselector
+    regionselector popselector domainselector location_form didselector mason_comp
 );
 
 #false laziness w/agent.cgi

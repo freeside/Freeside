@@ -22,6 +22,7 @@ my %allowed_comps = map { $_=>1 } qw(
   /misc/counties.cgi
   /misc/svc_acct-domains.cgi
   /misc/part_svc-columns.cgi
+  /edit/elements/svc_forward.html
 );
 
 my %session_comps = map { $_=>1 } qw(
