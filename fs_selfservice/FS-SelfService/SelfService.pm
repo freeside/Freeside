@@ -82,6 +82,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'provision_phone'           => 'MyAccount/provision_phone',
   'provision_pbx'             => 'MyAccount/provision_pbx',
   'provision_external'        => 'MyAccount/provision_external',
+  'provision_forward'         => 'MyAccount/provision_forward',
   'unprovision_svc'           => 'MyAccount/unprovision_svc',
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
   'reset_passwd'              => 'MyAccount/reset_passwd',

@@ -2752,6 +2752,15 @@ sub provision_external {
             );
 }
 
+sub provision_forward {
+  my $p = shift;
+  _provision( 'FS::svc_forward',
+              ['srcsvc','src','dstsvc','dst'],
+              [],
+              $p,
+            );
+}
+
 sub _provision {
   my( $class, $fields, $return_fields, $p ) = splice(@_, 0, 4);
   warn "_provision called for $class\n"
@@ -2875,6 +2884,10 @@ sub part_svc_info {
             $ret->{'email'} = $svc_phone->email;
             $ret->{'forwarddst'} = $svc_phone->forwarddst;
         }
+  }
+
+  if ($ret->{'svcdb'} eq 'svc_forward') {
+    $ret->{'forward_emails'} = {$cust_pkg->forward_emails()};
   }
 
   $ret;

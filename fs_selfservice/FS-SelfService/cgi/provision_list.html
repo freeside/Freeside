@@ -96,7 +96,7 @@ foreach my $pkg (
             '('. $part_svc->{'num_avail'}. ' available)'.
             '</TD></TR>'
       #self-service only supports these services so far
-      if grep { $part_svc->{'svcdb'} eq $_ } qw( svc_acct svc_external );
+      if grep { $part_svc->{'svcdb'} eq $_ } qw( svc_acct svc_external svc_forward );
 
     $col = $col eq $col1 ? $col2 : $col1;
   }
