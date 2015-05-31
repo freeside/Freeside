@@ -28,28 +28,34 @@ Hello <%= $name %>!<BR><BR>
 } %>
 <%=
   if ( @open_invoices ) {
-    $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
-            '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Invoices</TH></TR>';
-    my $link = qq!<A HREF="<%= $url %>myaccount!;
-    my $col1 = $stripe1_bgcolor || '#ffffff';
-    my $col2 = $stripe2_bgcolor || '#dddddd';
+    my $th  = q!<TH STYLE="background: #ff9999; text-align: left; padding: .1em .5em;">!;
+    my $thr = q!<TH STYLE="background: #ff9999; text-align: right; padding: .1em .5em;">!;
+    $OUT .= '<TABLE STYLE="border: 0;" CELLSPACING="0">'.
+            '<TR><TH BGCOLOR="#ff6666" COLSPAN="4">Open Invoices</TH></TR>'.
+            '<TR>'.$th.'Invoice #</TH>'.$th.'Date</TH>'.$thr.'Charges</TH>'
+            .$thr.'Owed</TH></TR>';
+    my $col1 = "#ffffff";
+    my $col2 = "#dddddd";
     my $col = $col1;
 
     foreach my $invoice ( @open_invoices ) {
-      my $td = qq!<TD BGCOLOR="$col">!;
+      my $td  = qq!<TD STYLE="background: $col; padding: .1em .5em;">!;
+      my $tdr = qq!<TD STYLE="background: $col; padding: .1em .5em; text-align: right;">!;
       my $a=qq!<A HREF="${url}view_invoice;invnum=!. $invoice->{'invnum'}. '">';
       $OUT .=
-        "<TR>$td${a}Invoice #". $invoice->{'invnum'}. "</A></TD>$td</TD>".
-        "$td$a". $invoice->{'date'}. "</A></TD>$td</TD>".
-        qq!<TD BGCOLOR="$col" ALIGN="right">$a\$!. $invoice->{'owed'}.
-          '</A></TD>'.
+        "<TR>".
+        $td . $a . $invoice->{'invnum'}. "</A></TD>" .
+        $td . $a . $invoice->{'date'} . "</A></TD>" .
+        $tdr . $a . $money_char . $invoice->{'charged'} . "</A></TD>" .
+        $tdr . $a . $money_char . $invoice->{'owed'} . "</A></TD>" .
         '</TR>';
       $col = $col eq $col1 ? $col2 : $col1;
     }
     $OUT .= '</TABLE><BR>';
   } else {
-    $OUT .= 'You have no outstanding invoices.<BR><BR>';
+    $OUT .= '<P>You have no outstanding invoices.</P>';
   }
+
 %>
 
 <%=
