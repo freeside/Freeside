@@ -473,11 +473,13 @@ sub customer_info {
     if ( $session->{'pkgnum'} ) {
       #XXX open invoices in the pkg-balances case
     } else {
+      $return{'money_char'} = $conf->config("money_char") || '$';
       my @open = map {
                        {
-                         invnum => $_->invnum,
-                         date   => time2str("%b %o, %Y", $_->_date),
-                         owed   => $_->owed,
+                         invnum     => $_->invnum,
+                         date       => time2str("%b %o, %Y", $_->_date),
+                         owed       => $_->owed,
+                         charged    => $_->charged,
                        };
                      } $cust_main->open_cust_bill;
       $return{open_invoices} = \@open;
@@ -1589,25 +1591,31 @@ sub list_invoices {
   my @cust_bill = grep ! $_->hide, $cust_main->cust_bill;
 
   my $balance = 0;
+  my $invoices = [
+    map {
+      #not super efficient, we also run cust_bill_pay/cust_credited inside owed
+      my @payments_and_credits = sort {$b->_date <=> $a->_date} ($_->cust_bill_pay,$_->cust_credited);
+      my $owed = $_->owed;
+      $balance += $owed;
+      +{ 'invnum'       => $_->invnum,
+         '_date'        => $_->_date,
+         'date'         => time2str("%b %o, %Y", $_->_date),
+         'date_short'   => time2str("%m-%d-%Y",  $_->_date),
+         'previous'     => sprintf('%.2f', ($_->previous)[0]),
+         'charged'      => sprintf('%.2f', $_->charged),
+         'owed'         => sprintf('%.2f', $owed),
+         'balance'      => sprintf('%.2f', $balance),
+         'lastpay'      => @payments_and_credits 
+                           ? time2str("%b %o, %Y", $payments_and_credits[0]->_date)
+                           : '',
+      }
+    } @cust_bill
+  ];
 
   return  { 'error'       => '',
             'balance'     => $cust_main->balance,
-            'invoices'    => [
-              map {
-                    my $owed = $_->owed;
-                    $balance += $owed;
-                    +{ 'invnum'       => $_->invnum,
-                       '_date'        => $_->_date,
-                       'date'         => time2str("%b %o, %Y", $_->_date),
-                       'date_short'   => time2str("%m-%d-%Y",  $_->_date),
-                       'previous'     => sprintf('%.2f', ($_->previous)[0]),
-                       'charged'      => sprintf('%.2f', $_->charged),
-                       'owed'         => sprintf('%.2f', $owed),
-                       'balance'      => sprintf('%.2f', $balance),
-                     }
-                  }
-                  @cust_bill
-            ],
+            'money_char'  => $conf->config("money_char") || '$',
+            'invoices'    => $invoices,
             'legacy_invoices' => [
               map {
                     +{ 'legacyinvnum' => $_->legacyinvnum,
