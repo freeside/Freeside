@@ -8,7 +8,10 @@
                                   ],
                  'query'       => { 'table' => 'part_device', },
                  'count_query' => 'SELECT COUNT(*) FROM part_device',
-                 'header'      => [ '#', 'Device type', 'Inventory Class', ],
+                 'header'      => [ '#',
+                                    'Device type',
+                                    'Inventory Class',
+                                    'External name', ],
                  'fields'      => [ 'devicepart',
                                     'devicename',
 				    sub {
@@ -18,10 +21,12 @@
 					    if $inventory_class;
 					'';
 				    },
+                                    'title',
                                   ],
                  'links'       => [ $link,
                                     $link,
 				    '',
+                                    '',
                                   ],
              )
 %>

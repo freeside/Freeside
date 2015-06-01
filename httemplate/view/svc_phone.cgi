@@ -146,7 +146,7 @@ my $html_foot = sub {
   ###
 
   $e911.
-  $devices.
+  #$devices.
   $status.
   join(' | ', @links ). '<BR>'.
   join(' | ', @ilinks). '<BR>';
