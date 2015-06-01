@@ -214,6 +214,10 @@ sub check {
   ;
   return $error if $error;
 
+  #really just an signed int, but to discourage storing other data (e.g. phone)
+  return 'CS Receiver must be 9 digits or less'
+    if $self->cs_receiver =~ /\d{10}/;
+
   $self->SUPER::check;
 }
 
