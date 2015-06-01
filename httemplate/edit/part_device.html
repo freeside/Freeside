@@ -5,6 +5,7 @@
                                'devicepart' => 'Part number',
                                'devicename' => 'Device name',
 			       'inventory_classnum' => 'Inventory class',
+                               'title'      => 'External name',
                              },
 		 'fields' => \@fields,
                  'viewall_dir' => 'browse',
@@ -34,6 +35,7 @@ foreach my $inventory_class ( @inventory_classes ) {
 			
 my @fields;
 push @fields, 'devicename',
+              'title',
 	      { field => 'inventory_classnum', 
 		type => 'select',
 		options => \@inventory_classnums,

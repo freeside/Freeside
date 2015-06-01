@@ -5858,6 +5858,7 @@ sub tables_hashref {
         'devicepart', 'serial',  '',      '', '', '',
         'devicename', 'varchar', '', $char_d, '', '',
         'inventory_classnum', 'int', 'NULL', '', '', '',
+        'title',      'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'devicepart',
       'unique'       => [ [ 'devicename' ] ], #?

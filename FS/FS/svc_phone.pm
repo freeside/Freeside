@@ -276,6 +276,8 @@ sub table { 'svc_phone'; }
 
 sub table_dupcheck_fields { ( 'countrycode', 'phonenum' ); }
 
+sub device_table { 'phone_device'; }
+
 =item search_sql STRING
 
 Class method which returns an SQL fragment to search for the given string.
