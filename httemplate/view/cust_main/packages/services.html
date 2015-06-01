@@ -10,6 +10,7 @@ function clearhint_search_cust_svc(obj, str) {
 }
     </SCRIPT>
 
+%  my $showdidlink = browse_received_did_inventory($cust_pkg->custnum);
 %  foreach my $part_svc (
 %    $cust_pkg->part_svc(
 %      'summarize_size'    => $opt{'cust_pkg-large_pkg_size'},
@@ -97,7 +98,7 @@ function clearhint_search_cust_svc(obj, str) {
 %             local $opt{'num_avail'} = $part_svc->num_avail;
               <BR><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %>
 %           }
-%           if (browse_received_did_inventory($cust_pkg->custnum)) {
+%           if ($showdidlink) {
               <BR><A HREF="<%$p%>browse/did_order.html?custnum=<%$cust_pkg->custnum%>"><% mt('Browse Received DID Inventory') |h %></A> 
 %           }
 %       }
