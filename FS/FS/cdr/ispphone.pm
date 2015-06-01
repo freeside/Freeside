@@ -15,8 +15,16 @@ use Date::Parse;
   'import_fields' => [
 
                  'accountcode',  # Accountcode
-	                 'src',	 # Form
-		         'dst',  # To
+	                sub { my ($cdr, $src) = @_;
+				$src =~ s/^\s+//;
+                                $cdr->set('src', $src);
+
+                        },       # Form
+		        sub { my ($cdr, $dst) = @_;
+                                $dst =~ s/^\s+//;
+                                $cdr->set('dst', $dst);
+
+                        },       # To
 		       skip(1),  # Country
      'upstream_dst_regionname',  # Description
 _cdr_date_parser_maker('startdate'),  #DateTime
