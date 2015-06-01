@@ -34,7 +34,13 @@ use FS::cdr_type;
                     #Inbound called type,
     		    #Inbound called number,
                     #Inbound destination type, Inbound destination number,
-    'disposition',  #Outbound calling type,
+    sub { my ($cdr, $data) = @_;
+	$data ||= 'none';
+
+ 	my $cdr_type = qsearchs('cdr_type', { 'cdrtypename' => $data } );
+	$cdr->set('cdrtypenum', $cdr_type->cdrtypenum) if $cdr_type; 
+                } , #Outbound calling type,
+
       skip(11),     #Outbound calling number,
                     #Outbound called type, Outbound called number,
                     #Outbound destination type, Outbound destination number,
@@ -52,24 +58,5 @@ use FS::cdr_type;
 );
 
 sub skip { map {''} (1..$_[0]) }
-
-#create CDR types with names matching in_calling_type valuesj - 'none'
-# (without the quotes) for blank
-our %cdr_type = ();
-sub in_calling_type {
-  my ($record, $data) = @_;
-
-  $data ||= 'none';
-
-  my $cdr_type = exists($cdr_type{$data})
-                   ? $cdr_type{$data}
-                   : qsearchs('cdr_type', { 'cdrtypename' => $data } );
-
-  $cdr_type{$data} = $cdr_type;
-
-  $record->set('in_calling_type', $data); #for below
-  $record->set('cdrtypenum', $cdr_type->cdrtypenum) if $cdr_type;
-
-}
 
 1;
