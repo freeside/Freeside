@@ -2500,6 +2500,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'suretax-hostname',
+    'section'     => 'taxation',
+    'description' => 'SureTax server name; defaults to the test server.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'suretax-client_number',
     'section'     => 'taxation',
     'description' => 'SureTax tax service client ID.',

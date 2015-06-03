@@ -20,9 +20,6 @@ our %taxproduct_cache;
 
 our $conf;
 
-our $host = 'testapi.taxrating.net';
-# production: 'api.taxrating.net'
-
 FS::UID->install_callback( sub {
     $conf = FS::Conf->new;
     # should we enable conf caching here?
@@ -313,6 +310,9 @@ sub make_taxlines {
   warn "sending SureTax request\n" if $DEBUG;
   my $request_json = $json->encode($request);
   warn $request_json if $DEBUG > 1;
+
+  my $host = $conf->config('suretax-hostname');
+  $host ||= 'testapi.taxrating.net';
 
   # We are targeting the "V05" interface:
   # - accepts both telecom and general sales transactions

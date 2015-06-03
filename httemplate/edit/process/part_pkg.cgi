@@ -97,8 +97,7 @@ my $args_callback = sub {
         @options;
 
   foreach my $class ( '', split(',', $cgi->param('taxproductnums') ) ) {
-    my $param = 'taxproductnum';
-    $param .= "_$class" if length($class); # gah, "_$class"?
+    my $param = "taxproductnum_$class";
     my $value = $cgi->param($param);
 
     if ( $value == -1 ) {
