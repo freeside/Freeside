@@ -34,12 +34,12 @@ sub condition {
             'order_by' => 'ORDER BY history_date DESC LIMIT 1',
         }))
   {
-    my $newest = $replace_new->history_date;
+    $newest = $replace_new->history_date;
     my $replace_old = qsearchs({
       'table' => 'h_cust_main',
       'hashref' => { 'custnum'        => $replace_new->custnum,
                      'history_action' => 'replace_old',
-                     'history_date'   => $replace_new->history_date,
+                     'history_date'   => $replace_new->history_date, #fuzz?
                    }
     }) or next; #no replace_old?  ignore and continue on i guess
 
