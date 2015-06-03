@@ -2000,7 +2000,7 @@ sub change {
       return "modifying package: $error";
     } else {
       $dbh->commit if $oldAutoCommit;
-      return '';
+      return $self;
     }
   }
 
