@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+use Cwd;
+use String::ShellQuote;
+
+my $USER = $ENV{USER};
+
+my $dir = getcwd;
+( my $prefix = $dir ) =~ s(^/home/$USER/freeside/?)() or die $dir; #eventually from anywhere
+
+system join('',
+  "git add @ARGV ; ",
+  "( for file in @ARGV; do ",
+     "cp -i \$file /home/$USER/freeside4/$prefix/`dirname \$file`;",
+     "cp -i \$file /home/$USER/freeside3/$prefix/`dirname \$file`;",
+  "done ) && ",
+  "cd /home/$USER/freeside4/$prefix/ && ",
+  "git add @ARGV; ",
+  "cd /home/$USER/freeside3/$prefix/ && ",
+  "git add @ARGV"
+);
+
