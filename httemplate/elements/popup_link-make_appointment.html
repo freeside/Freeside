@@ -1,0 +1,31 @@
+<%doc>
+
+Example:
+
+  include('/elements/init_overlib.html')
+
+  include( '/elements/popup_link-make-appointment.html', { #hashref or a list, either way
+             'custnum' => 54,
+  })
+
+</%doc>
+<& /elements/popup_link.html, $params &>\
+<%init>
+
+my $params = { 'closetext' => 'Close' };
+
+if (ref($_[0]) eq 'HASH') {
+  $params = { %$params, %{ $_[0] } };
+} else {
+  $params = { %$params, @_ };
+}
+
+#$params->{'label'} ||= 'schedule new appointment';
+$params->{'label'} ||= 'Schedule new appointment';
+$params->{'actionlabel'} ||= 'Schedule appointment';
+#$params->{'width'} ||= 350;
+#$params->{'height'} ||= 220;
+
+$params->{'action'} = $p. '/elements/make_appointment.html?custnum='. $params->{'custnum'};
+
+</%init>

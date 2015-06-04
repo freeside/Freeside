@@ -2,16 +2,7 @@
 <A NAME="appointments"><FONT CLASS="fsinnerbox-title">Appointments</FONT></A>
 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Make appointment') ) { 
-%# just a link for now,  should probably be FS::TicketSystem->href_schedule
-%# maybe need to add a dropdown for type (install etc.) from a custom field
-%# or maybe change to a popup and get that info there
-% my @sched_item = qsearch('sched_item', { 'disabled' => '', });
-% my @username = map $_->access_user->username, @sched_item;
-% my $query = join('&', map "username=$_", @username).
-%             '&LengthMin=180'. #XXX appointment length
-%             '&custnum='. $cust_main->custnum; #.
-%             #XXX '&pkgnum=$pkgnum";need to be for specific package/location, not just for a customer... default to active(/ordered) package in a pkg_class w/ticketing_queueid, otherwise, a popup?  we're getting complicated like form-creat_ticket.html
-<A HREF="<%$p%>rt/Search/Schedule.html?<% $query %>">Make appointment</A>
+  <& /elements/popup_link-make_appointment.html, custnum=>$cust_main->custnum &>
 % }
 
 %#  |
