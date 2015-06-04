@@ -93,7 +93,7 @@ if ( $db eq 'PostgreSQL' ) {
                 && FS::Record->scalar_sql('SHOW archive_mode') eq 'on';
 
   my $slave = 
-    FS::Record->scalar_sql('SHOW archive_command') =~ / postgres\@([\w\.\-]): /
+    FS::Record->scalar_sql('SHOW archive_command') =~ / postgres\@([\w\.\-]+): /
       ? $1 : '';
 
   $status{'Replication'} = [
