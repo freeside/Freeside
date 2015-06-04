@@ -15,7 +15,10 @@
 Length: 
 <SELECT NAME="LengthMin">
 %  for ( my $hours = .5; $hours < 10.5; $hours += .5 ) {
-     <OPTION VALUE="<% $hours * 60 %>"><% $hours %> hour<% $hours > 1 ? 's' : '' %>
+%    my $min = $hours * 60;
+     <OPTION VALUE="<% $min %>"
+             <% $min == $default_length ? 'SELECTED' : '' %>
+     ><% $hours %> hour<% $hours > 1 ? 's' : '' %>
 %  }
 </SELECT>
 <BR>
@@ -27,6 +30,8 @@ Length:
 
 <& /elements/footer-popup.html &>
 <%init>
+
+my $default_length = FS::Conf->new->config('default_appointment_length') || 180;
 
 #XXX '&pkgnum=$pkgnum";need to be for specific package/location, not just for a customer... default to active(/ordered) package in a pkg_class w/ticketing_queueid, otherwise, a popup?  (well, we're already a popup now) we're getting complicated like form-creat_ticket.html
 

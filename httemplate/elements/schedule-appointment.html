@@ -1,10 +1,9 @@
-<HTML>
-<HEAD>
+<& /elements/header-popup.html &>
+<h1>Scheduling appointment...</h1>
 <SCRIPT TYPE="text/javascript">
   window.top.location.href = '<% $url %>';
 </SCRIPT>
-</HEAD>
-</HTML>
+<& /elements/footer-popup.html &>
 <%init>
 
 my @username = map encode_entities($_), $cgi->param('username');
