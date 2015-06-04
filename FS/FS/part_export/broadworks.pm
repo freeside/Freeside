@@ -6,7 +6,6 @@ use strict;
 use Tie::IxHash;
 use FS::Record qw(dbh qsearch qsearchs);
 use Locale::SubCountry;
-use BroadWorks::OCI;
 
 our $me = '[broadworks]';
 our %client; # exportnum => client object
