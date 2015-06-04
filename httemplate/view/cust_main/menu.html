@@ -109,12 +109,12 @@ my @menu = (
     },
     {
       label       => 'Edit customer',
-      url         => 'edit/cust_main.cgi?$custnum',
+      url         => "edit/cust_main.cgi?$custnum",
       acl         => 'Edit customer'
     },
     {
       label       => 'Edit contacts',
-      url         => 'edit/cust_main-contacts.html?$custnum',
+      url         => "edit/cust_main-contacts.html?$custnum",
     },
 # separator
     {
@@ -129,7 +129,7 @@ my @menu = (
     },
     {
       label       => 'Suspend',
-      popup       => 'misc/suspend_cust.html?custnum=$custnum',
+      popup       => "misc/suspend_cust.html?custnum=$custnum",
       acl         => 'Suspend customer',
       condition   => sub { shift->unsuspended_pkgs > 0 },
       actionlabel => 'Confirm Suspension',
@@ -137,14 +137,14 @@ my @menu = (
     },
     {
       label       => 'Unsuspend',
-      popup       => 'misc/unsuspend_cust.html?custnum=$custnum',
+      popup       => "misc/unsuspend_cust.html?custnum=$custnum",
       acl         => 'Unsuspend customer',
       condition   => sub { shift->suspended_pkgs > 0 },
       actionlabel => 'Confirm Unsuspension',
     },
     {
       label       => 'Cancel',
-      popup       => 'misc/suspend_cust.html?custnum=$custnum',
+      popup       => "misc/suspend_cust.html?custnum=$custnum",
       acl         => 'Cancel customer',
       condition   => sub { shift->ncancelled_pkgs > 0 },
       actionlabel => 'Confirm Cancellation',
@@ -152,7 +152,7 @@ my @menu = (
     },
     {
       label       => 'Merge',
-      popup       => 'misc/merge_cust.html?custnum=$custnum',
+      popup       => "misc/merge_cust.html?custnum=$custnum",
       acl         => 'Merge customer',
       actionlabel => 'Merge customer',
       width       => 569,
@@ -160,13 +160,13 @@ my @menu = (
     },
     {
       label       => 'Refer a new customer',
-      url         => 'edit/cust_main.cgi?referral_custnum=$custnum',
+      url         => "edit/cust_main.cgi?referral_custnum=$custnum",
       confexists  => '!disable_customer_referrals',
     },
 # should have a separator here
     {
       label       => 'View this customer\'s referrals',
-      url         => 'search/cust_main.cgi?referral_custnum=$custnum',
+      url         => "search/cust_main.cgi?referral_custnum=$custnum",
       confexists  => '!disable_customer_referrals',
       condition   => sub {
         FS::cust_main->count('referral_custnum = ?', shift->custnum) > 0
@@ -174,7 +174,7 @@ my @menu = (
     },
     {
       label       => 'View billing events',
-      url         => 'search/cust_event.html?custnum=$custnum',
+      url         => "search/cust_event.html?custnum=$custnum",
       acl         => [ 'Billing event reports',
                        'View customer billing events' ],
     },
@@ -184,7 +184,7 @@ my @menu = (
                       my $cust_main = shift;
                       my $agentnum = $cust_main->agentnum;
                       'misc/email-customers.html?table=cust_main;search_hash='.
-                      'agent_virt_agentnum='.$agentnum.';custnum=$custnum';
+                      'agent_virt_agentnum='.$agentnum.";custnum=$custnum";
                      },
       condition   => sub { shift->invoicing_list_emailonly },
     },
@@ -196,7 +196,7 @@ my @menu = (
     },
     {
       label       => 'Add note',
-      popup       => 'edit/cust_main_note.cgi?custnum=$custnum',
+      popup       => "edit/cust_main_note.cgi?custnum=$custnum",
       actionlabel => 'Add note',
       confexists  => '!cust_main-disable_notes',
       acl         => 'Add customer note',
@@ -205,7 +205,7 @@ my @menu = (
     },
     {
       label       => 'Attach file',
-      popup       => 'edit/cust_main_attach.cgi?custnum=$custnum',
+      popup       => "edit/cust_main_attach.cgi?custnum=$custnum",
       actionlabel => 'Upload file',
       confexists  => '!disable_cust_attachment',
       acl         => 'Add attachment',
@@ -227,6 +227,13 @@ my @menu = (
       confexists => 'ticket_system',
       acl   => 'View appointments',
     },
+    {
+      label       => 'Schedule new appointment',
+      confexists  => 'ticket_system',
+      acl        => 'Make appointment',
+      popup       => "elements/make_appointment.html?custnum=$custnum",
+      actionlabel => 'Schedule appointment',
+    },
   ],
   [
     {
@@ -235,7 +242,7 @@ my @menu = (
     },
     {
       label => 'Add quotation',
-      url   => 'edit/quotation.html?custnum=$custnum',
+      url   => "edit/quotation.html?custnum=$custnum",
       acl   => 'Generate quotation',
     },
   ],
@@ -246,7 +253,7 @@ my @menu = (
     },
     {
       label       => 'New qualification',
-      popup       => 'misc/qual.html?custnum=$custnum',
+      popup       => "misc/qual.html?custnum=$custnum",
       actionlabel => 'New qualification',
       color       => '#333399',
       width       => 763,
@@ -255,7 +262,7 @@ my @menu = (
     },
     {
       label       => 'Order new package',
-      popup       => 'misc/order_pkg.html?custnum=$custnum',
+      popup       => "misc/order_pkg.html?custnum=$custnum",
       actionlabel => 'Order new package',
       color       => '#333399',
       width       => 960,
@@ -274,7 +281,7 @@ my @menu = (
     },
     {
       label       => 'Move services between packages',
-      popup       => 'edit/bulk-cust_svc-pkgnum.html?custnum=$custnum',
+      popup       => "edit/bulk-cust_svc-pkgnum.html?custnum=$custnum",
       actionlabel => 'Move services',
       width       => 968,
       height      => 575,
@@ -282,26 +289,26 @@ my @menu = (
     },
     {
       label       => 'Bulk order and cancel packages',
-      url         => 'edit/cust_pkg.cgi?$custnum',
+      url         => "edit/cust_pkg.cgi?$custnum",
       acl         => 'Bulk change customer packages',
     },
 # separator
     {
       label => 'Package reports',
-      url   => 'search/report_cust_pkg?custnum=$custnum',
+      url   => "search/report_cust_pkg?custnum=$custnum",
     },
     {
       label => 'View qualifications',
-      url   => 'search/qual.cgi?custnum=$custnum',
+      url   => "search/qual.cgi?custnum=$custnum",
       acl   => 'Qualify service',
     },
     {
       label => 'View accounts',
-      url   => 'search/report_svc_acct.html?custnum=$custnum',
+      url   => "search/report_svc_acct.html?custnum=$custnum",
     },
     {
       label => 'View CDRs',
-      url   => 'search/report_cdr.html?custnum=$custnum',
+      url   => "search/report_cdr.html?custnum=$custnum",
     },
   ],
   [
@@ -312,7 +319,7 @@ my @menu = (
     # manual payment entry via edit/cust_pay
     {
       label       => 'Enter check payment',
-      popup       => 'edit/cust_pay.cgi?popup=1;payby=BILL;custnum=$custnum',
+      popup       => "edit/cust_pay.cgi?popup=1;payby=BILL;custnum=$custnum",
       actionlabel => 'Enter check payment',
       width       => 763,
       height      => 392,
@@ -321,7 +328,7 @@ my @menu = (
     },
     {
       label       => 'Enter cash payment',
-      popup       => 'edit/cust_pay.cgi?popup=1;payby=CASH;custnum=$custnum',
+      popup       => "edit/cust_pay.cgi?popup=1;payby=CASH;custnum=$custnum",
       actionlabel => 'Enter cash payment',
       width       => 763,
       height      => 392,
@@ -330,7 +337,7 @@ my @menu = (
     },
     {
       label       => 'Enter Western Union payment',
-      popup       => 'edit/cust_pay.cgi?popup=1;payby=WEST;custnum=$custnum',
+      popup       => "edit/cust_pay.cgi?popup=1;payby=WEST;custnum=$custnum",
       actionlabel => 'Enter Western Union payment',
       width       => 763,
       height      => 392,
@@ -339,7 +346,7 @@ my @menu = (
     },
     {
       label       => 'Post manual (offline/POS) credit card payment',
-      popup       => 'edit/cust_pay.cgi?popup=1;payby=MCRD;custnum=$custnum',
+      popup       => "edit/cust_pay.cgi?popup=1;payby=MCRD;custnum=$custnum",
       actionlabel => 'Enter credit card payment',
       width       => 763,
       height      => 392,
@@ -348,7 +355,7 @@ my @menu = (
     },
     {
       label       => 'Post manual (offline/POS) electronic check',
-      popup       => 'edit/cust_pay.cgi?popup=1;payby=MCHK;custnum=$custnum',
+      popup       => "edit/cust_pay.cgi?popup=1;payby=MCHK;custnum=$custnum",
       actionlabel => 'Enter credit card payment',
       width       => 763,
       height      => 392,
@@ -358,27 +365,27 @@ my @menu = (
     # realtime payments via payment.cgi
     {
       label       => 'Process credit card payment',
-      url         => 'misc/payment.cgi?payby=CARD;custnum=$custnum',
+      url         => "misc/payment.cgi?payby=CARD;custnum=$custnum",
       acl         => [ 'Process payment', 'Process credit card payment', ],
       condition   => sub { $payby{CARD} or $payby{DCRD} },
     },
     {
       label       => 'Process electronic check payment',
-      url         => 'misc/payment.cgi?payby=CHEK;custnum=$custnum',
+      url         => "misc/payment.cgi?payby=CHEK;custnum=$custnum",
       acl         => [ 'Process payment', 'Process Echeck payment', ],
       condition   => sub { $payby{CHEK} or $payby{DCHK} },
     },
 #separator?
     {
       label       => 'Enter credit',
-      popup       => 'edit/cust_credit.cgi?custnum=$custnum',
+      popup       => "edit/cust_credit.cgi?custnum=$custnum",
       actionlabel => 'Enter credit',
       width       => 763,
       acl         => 'Post credit',
     },
     {
       label       => 'Credit line items',
-      popup       => 'edit/credit-cust_bill_pkg.html?custnum=$custnum',
+      popup       => "edit/credit-cust_bill_pkg.html?custnum=$custnum",
       actionlabel => 'Credit line items',
       width       => 968,
       height      => 575,
@@ -389,7 +396,7 @@ my @menu = (
     },
     {
       label       => 'Enter check refund',
-      popup       => 'edit/cust_refund.cgi?popup=1;payby=BILL;custnum=$custnum',
+      popup       => "edit/cust_refund.cgi?popup=1;payby=BILL;custnum=$custnum",
       actionlabel => 'Enter check refund',
       width       => 440,
       acl         => ['Post refund', 'Post check refund'],
@@ -397,7 +404,7 @@ my @menu = (
     },
     {
       label       => 'Enter cash refund',
-      popup       => 'edit/cust_refund.cgi?popup=1;payby=CASH;custnum=$custnum',
+      popup       => "edit/cust_refund.cgi?popup=1;payby=CASH;custnum=$custnum",
       actionlabel => 'Enter cash refund',
       width       => 392,
       acl         => ['Post refund', 'Post cash refund'],
@@ -405,7 +412,7 @@ my @menu = (
     },
     {
       label       => 'Enter manual (offline/POS) credit card refund',
-      popup       => 'edit/cust_refund.cgi?popup=1;payby=MCRD;custnum=$custnum',
+      popup       => "edit/cust_refund.cgi?popup=1;payby=MCRD;custnum=$custnum",
       actionlabel => 'Enter credit card refund',
       width       => 440,
       acl         => ['Post refund' ],
@@ -413,7 +420,7 @@ my @menu = (
     },
     {
       label       => 'Enter manual (offline/POS) electronic check refund',
-      popup       => 'edit/cust_refund.cgi?popup=1;payby=MCHK;custnum=$custnum',
+      popup       => "edit/cust_refund.cgi?popup=1;payby=MCHK;custnum=$custnum",
       actionlabel => 'Enter electronic check refund',
       width       => 440,
       acl         => ['Post refund' ],
@@ -421,7 +428,7 @@ my @menu = (
     },
     {
       label       => 'Add tax adjustment',
-      popup       => 'edit/cust_tax_adjustment.html?custnum=$custnum',
+      popup       => "edit/cust_tax_adjustment.html?custnum=$custnum",
       actionlabel => 'Add tax adjustment',
       height      => 200,
       confexists  => 'enable_tax_adjustments',
@@ -430,7 +437,7 @@ my @menu = (
 # separator, definitely
     {
       label       => 'Download statement',
-      url         => 'view/cust_main_statement-pdf.cgi?$custnum',
+      url         => "view/cust_main_statement-pdf.cgi?$custnum",
       acl         => 'List invoices',
       condition   => sub {
         FS::cust_bill->count('custnum = ?', shift->custnum) > 0
@@ -438,23 +445,23 @@ my @menu = (
     },
     {
       label       => 'Search invoices',
-      url         => 'search/report_cust_bill.html?custnum=$custnum',
+      url         => "search/report_cust_bill.html?custnum=$custnum",
       acl         => 'List invoices',
     },
     {
       label       => 'View tax exemptions',
-      url         => 'search/cust_tax_exempt_pkg.cgi?custnum=$custnum',
+      url         => "search/cust_tax_exempt_pkg.cgi?custnum=$custnum",
       acl         => 'View customer tax exemptions',
     },
     {
       label       => 'View tax adjustments',
-      url         => 'search/cust_tax_adjustment.html?custnum=$custnum',
+      url         => "search/cust_tax_adjustment.html?custnum=$custnum",
       confexists  => 'enable_tax_adjustments',
       acl         => 'Add customer tax adjustment',
     },
     {
       label       => 'View pending payments',
-      url         => 'search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=$custnum',
+      url         => "search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=$custnum",
       acl         => 'View pending payments',
       condition   => sub { 
         FS::cust_pay_pending->count('custnum = ?', shift->custnum) > 0
