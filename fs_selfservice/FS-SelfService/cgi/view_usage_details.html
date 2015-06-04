@@ -47,7 +47,9 @@
     $OUT .= '</TD><TD ALIGN="right">';
     $OUT .= Date::Format::time2str('%T%P %a&nbsp;%b&nbsp;%o&nbsp;%Y', $usage->{'acctstarttime'});
     $OUT .= '</TD><TD ALIGN="right">';
-    my $duration =  $usage->{'acctstoptime'} - $usage->{'acctstarttime'};
+    my $duration = ( $usage->{'acctstoptime'} && $usage->{'acctstarttime'} )
+                     ? ( $usage->{'acctstoptime'} - $usage->{'acctstarttime'} )
+                     : 0;
     $total += $duration;
     my $h = int($duration/3600);
     my $m = sprintf("%02d", int(($duration % 3600) / 60));
