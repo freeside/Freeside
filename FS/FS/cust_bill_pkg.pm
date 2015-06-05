@@ -834,6 +834,8 @@ sub _item_discount {
     description     => $self->mt('Discount'),
     amount          => 0,
     ext_description => \@ext,
+    pkgpart         => $self->pkgpart,
+    feepart         => $self->feepart,
     # maybe should show quantity/unit discount?
   };
   foreach my $pkg_discount (@pkg_discounts) {
