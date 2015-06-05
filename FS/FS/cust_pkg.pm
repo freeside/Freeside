@@ -3723,6 +3723,7 @@ Returns the parent customer object (see L<FS::cust_main>).
 
 sub cust_main {
   my $self = shift;
+  cluck 'cust_pkg->cust_main called' if $DEBUG;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
