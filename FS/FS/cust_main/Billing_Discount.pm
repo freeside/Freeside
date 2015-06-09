@@ -47,7 +47,7 @@ sub _discount_pkgs_and_bill {
   push @where,
     "NOT EXISTS (
        SELECT 1 FROM cust_bill_pkg_discount
-         WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_discount.billpkgnu:
+         WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_discount.billpkgnum
     )";
 
   my $extra_sql = 'WHERE '. join(' AND ', @where);
