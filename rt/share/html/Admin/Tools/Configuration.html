@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -65,7 +65,7 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
 <%PERL>
 my $index_conf;
 foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
-    my $val = RT->Config->GetObfuscated( $key );
+    my $val = RT->Config->GetObfuscated( $key, $session{'CurrentUser'} );
     next unless defined $val;
 
     my $meta = RT->Config->Meta( $key );

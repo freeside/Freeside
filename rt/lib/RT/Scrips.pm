@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -114,35 +114,19 @@ sub LimitToGlobal  {
   
 }
 
-# {{{ sub Next 
+=head2 AddRecord
 
-=head2 Next
-
-Returns the next scrip that this user can see.
+Overrides the collection to ensure that only scrips the user can see are
+returned.
 
 =cut
-  
-sub Next {
-    my $self = shift;
-    
-    
-    my $Scrip = $self->SUPER::Next();
-    if ((defined($Scrip)) and (ref($Scrip))) {
 
-	if ($Scrip->CurrentUserHasRight('ShowScrips')) {
-	    return($Scrip);
-	}
-	
-	#If the user doesn't have the right to show this scrip
-	else {	
-	    return($self->Next());
-	}
-    }
-    #if there never was any scrip
-    else {
-	return(undef);
-    }	
-    
+sub AddRecord {
+    my $self = shift;
+    my ($record) = @_;
+
+    return unless $record->CurrentUserHasRight('ShowScrips');
+    return $self->SUPER::AddRecord( $record );
 }
 
 =head2 Apply
