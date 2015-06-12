@@ -16,16 +16,22 @@
   display: block;
   margin: 0;
   padding: .5em .75em;
-  background: #ffffff;
+  background: #f8f8f8;
   color: #525151;
   white-space: nowrap;
   text-decoration: none;
-  border-top: thin solid #CFDEFF;
+  border-bottom: thin solid #CFDFDF;
+  border-top-left-radius: .5em;
+  border-top-right-radius: .5em;
 }
 
 #menu_ul a.current_show {
   font-weight: bold;
-  background: #cfdeff;
+  background: #FFFFFF;
+  border-top: thin solid #CFDEFF;
+  border-left: thin solid #CFDEFF;
+  border-right: thin solid #CFDEFF;
+  border-bottom: none;
 }
 
 #menu_ul ul {
@@ -36,6 +42,9 @@
   top: 100%;
   left: 0;
   background: #ffffff;
+  border-top: none;
+  border-left: thin solid #CFDEFF;
+  border-right: thin solid #CFDEFF;
   border-bottom: thin solid #CFDEFF;
 }
 
@@ -46,9 +55,10 @@
 }
 
 #menu_ul ul a {
-  border-top: thin solid #CFDEFF;
   color: #333333;
   background: transparent;
+  border-bottom: none;
+  border-radius: 0;
 }
 
 #menu_ul a:hover {
