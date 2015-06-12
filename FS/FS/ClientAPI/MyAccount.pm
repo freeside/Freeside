@@ -763,6 +763,7 @@ sub billing_history {
   @history = sort { $b->{'date'} <=> $a->{'date'} } @history;
 
   $return{'history'} = \@history;
+  $return{'money_char'} = $conf->config("money_char") || '$',
 
   return \%return;
 
