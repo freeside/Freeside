@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -220,19 +220,12 @@ sub LimitByTicket {
     return;
 }
 
-# {{{ sub Next
-sub Next {
+sub AddRecord {
     my $self = shift;
+    my ($record) = @_;
 
-    my $Attachment = $self->SUPER::Next;
-    return $Attachment unless $Attachment;
-
-    if ( $Attachment->TransactionObj->CurrentUserCanSee ) {
-        return $Attachment;
-    } else {
-        # If the user doesn't have the right to show this ticket
-        return $self->Next;
-    }
+    return unless $record->TransactionObj->CurrentUserCanSee;
+    return $self->SUPER::AddRecord( $record );
 }
 
 
