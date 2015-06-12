@@ -23,6 +23,7 @@ use FS::SelfService qw(
   mason_comp port_graph
   start_thirdparty finish_thirdparty
   reset_passwd check_reset_passwd process_reset_passwd
+  billing_history
 );
 
 $template_dir = '.';
@@ -82,6 +83,7 @@ my @actions = ( qw(
   process_change_password
   customer_suspend_pkg
   process_suspend_pkg
+  history
 ));
 
 my @nologin_actions = (qw(
@@ -337,6 +339,10 @@ sub view_invoice {
 
 sub invoices {
   list_invoices( 'session_id' => $session_id, );
+}
+
+sub history {
+  billing_history( 'session_id' => $session_id, );
 }
 
 sub tktcreate {
