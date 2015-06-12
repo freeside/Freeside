@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -740,10 +740,14 @@ sub CompileCheck {
 sub CurrentUserCanRead {
     my $self =shift;
 
-    return 1 if $self->CurrentUserHasQueueRight('ShowTemplate');
-
-    return $self->CurrentUser->HasRight( Right =>'ShowGlobalTemplates', Object => $RT::System )
-        if !$self->QueueObj->Id;
+    if ($self->__Value('Queue')) {
+        my $queue = RT::Queue->new( RT->SystemUser );
+        $queue->Load( $self->__Value('Queue'));
+        return 1 if $self->CurrentUser->HasRight( Right => 'ShowTemplate', Object => $queue );
+    } else {
+        return 1 if $self->CurrentUser->HasRight( Right => 'ShowGlobalTemplates', Object => $RT::System );
+        return 1 if $self->CurrentUser->HasRight( Right => 'ShowTemplate',        Object => $RT::System );
+    }
 
     return;
 }

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -616,6 +616,7 @@ sub SetRTSpecialHeaders {
 # XXX, TODO: use /ShowUser/ShowUserEntry(or something like that) when it would be
 #            refactored into user's method.
     if ( my $email = $self->TransactionObj->CreatorObj->EmailAddress
+         and ! defined $self->TemplateObj->MIMEObj->head->get("RT-Originator")
          and RT->Config->Get('UseOriginatorHeader')
     ) {
         $self->SetHeader( 'RT-Originator', $email );

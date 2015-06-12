@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -668,7 +668,6 @@ sub __Value {
 
 sub _CacheConfig {
   {
-     'cache_p'        => 1,
      'cache_for_sec'  => 30,
   }
 }

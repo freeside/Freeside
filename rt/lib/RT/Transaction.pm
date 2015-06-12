@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -1434,8 +1434,6 @@ sub DeferredRecipients {
 # Transactions don't change. by adding this cache config directive, we don't lose pathalogically on long tickets.
 sub _CacheConfig {
   {
-     'cache_p'        => 1,
-     'fast_update_p'  => 1,
      'cache_for_sec'  => 6000,
   }
 }
