@@ -130,6 +130,7 @@ sub insert {
     return $error if $error;
   }
 
+  $dbh->commit if $oldAutoCommit;
   return;
 }
 
@@ -166,7 +167,7 @@ sub delete {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
-  $dbh->commit;
+  $dbh->commit if $oldAutoCommit;
   return;
 }
 
