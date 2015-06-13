@@ -4,6 +4,7 @@ use strict;
 use vars qw(@ISA %import_info %export_info $name);
 use Date::Format 'time2str';
 use FS::Conf;
+use Encode 'encode';
 
 my $conf;
 my ($client_num, $shortname, $longname, $trans_code, $testmode, $i, $declined, $totaloffset);
@@ -173,9 +174,9 @@ $name = 'RBC';
     ' '.
     sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
-    time2str("%Y%j", $pay_batch->download).
-    sprintf("%-30s", $cust_pay_batch->cust_main->first . ' ' .
-                     $cust_pay_batch->cust_main->last).
+    time2str("%Y%j", time + 86400).
+    sprintf("%-30.30s", encode('utf8', $cust_pay_batch->cust_main->first . ' ' .
+                     $cust_pay_batch->cust_main->last)).
     'E'. # English
     ' '.
     sprintf("%-15s", $shortname).

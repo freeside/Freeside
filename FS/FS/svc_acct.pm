@@ -261,6 +261,7 @@ sub table_info {
     'display_weight' => 10,
     'cancel_weight'  => 50, 
     'ip_field' => 'slipip',
+    'manual_require' => 1,
     'fields' => {
         'dir'       => 'Home directory',
         'uid'       => {
@@ -284,6 +285,7 @@ sub table_info {
                          disable_default => 1,
                          disable_fixed => 1,
                          disable_select => 1,
+                         required => 1,
                        },
         'password_selfchange' => { label => 'Password modification',
                                    type  => 'checkbox',
@@ -311,7 +313,9 @@ sub table_info {
                          type => 'text',
                          disable_inventory => 1,
                        },
-        '_password' => 'Password',
+        '_password' => { label => 'Password',
+                         required => 1
+                       },
         'gid'       => {
                          label    => 'GID',
 		         def_info => 'when blank, defaults to UID',
@@ -334,6 +338,7 @@ sub table_info {
                          select_key   => 'svcnum',
                          select_label => 'domain',
                          disable_inventory => 1,
+                         required => 1,
                        },
         'pbxsvc'    => { label => 'PBX',
                          type  => 'select-svc_pbx.html',

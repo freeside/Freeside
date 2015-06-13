@@ -101,6 +101,15 @@ function flag_changed(obj) {
       }
     }
   }
+  var required = document.getElementById(layer + '__' + field + '_required');
+  if (required && !required.disabledinit) {
+    if (newflag == "F") {
+      required.checked = false;
+      required.disabled = true;
+    } else {
+      required.disabled = false;
+    }
+  }
 }
 
 window.onload = function() {
@@ -109,6 +118,17 @@ window.onload = function() {
     var obj = selects[i];
     if ( obj.multiple ) {
       obj.setAttribute('should_be_multiple', true);
+    }
+  }
+  var inputs = document.getElementsByTagName('INPUT');
+  for(i = 0; i < inputs.length; i++) {
+    var obj = inputs[i];
+    if (obj.type == 'checkbox') {
+      if ( obj.name.match(/_required$/) ) {
+        if ( obj.disabled ) {
+          obj.disabledinit = 1;
+        }
+      }
     }
   }
   for(i = 0; i < selects.length; i++) {

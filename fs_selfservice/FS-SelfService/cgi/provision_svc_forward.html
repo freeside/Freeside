@@ -1,0 +1,29 @@
+<%= include('header', 'Setup forward') %>
+
+<FORM name="OneTrueForm" action="<%= $selfurl %>" METHOD="POST">
+<INPUT TYPE="hidden" NAME="action" VALUE="process_svc_forward">
+
+<%= '<P><B>' . $error . '</B></P>' if $error %>
+
+<%=
+my $out = mason_comp(
+  'session_id' => $session_id,
+  'comp'       => '/edit/elements/svc_forward.html',
+  'args'       => [
+    'svcnum'  => $svcnum,
+    'pkgnum'  => $pkgnum,
+    'svcpart' => $svcpart,
+    'srcsvc'  => $srcsvc,
+    'dstsvc'  => $dstsvc,
+    'src'     => $src,
+    'dst'     => $dst,
+    'email'   => \%forward_emails,
+  ]
+);
+$out->{'output'} || $out->{'error'};
+%>
+
+<INPUT TYPE="submit" VALUE="Setup">
+</FORM>
+
+<%= include('footer') %>

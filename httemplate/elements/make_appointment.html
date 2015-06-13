@@ -1,0 +1,39 @@
+<& /elements/header-popup.html &>
+
+% #XXX actually, the action needs to repace the top-level window with this
+% #$params->{'action'} = $p. 'rt/Search/Schedule.html?'. $query;
+<FORM NAME="appointment_form" METHOD="POST" ACTION="<% $p %>elements/schedule-appointment.html">
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cgi->param('custnum') |h %>">
+
+% my @sched_item = qsearch('sched_item', { 'disabled' => '', });
+% my @username = map $_->access_user->username, @sched_item;
+% foreach my $username (@username) { 
+  <INPUT TYPE="hidden" NAME="username" VALUE="<% $username |h %>">
+% }
+
+Length: 
+<SELECT NAME="LengthMin">
+%  for ( my $hours = .5; $hours < 10.5; $hours += .5 ) {
+%    my $min = $hours * 60;
+     <OPTION VALUE="<% $min %>"
+             <% $min == $default_length ? 'SELECTED' : '' %>
+     ><% $hours %> hour<% $hours > 1 ? 's' : '' %>
+%  }
+</SELECT>
+<BR>
+<BR>
+
+<INPUT TYPE="submit" VALUE="Schedule appointment">
+
+</FORM>
+
+<& /elements/footer-popup.html &>
+<%init>
+
+my $default_length = FS::Conf->new->config('default_appointment_length') || 180;
+
+#XXX '&pkgnum=$pkgnum";need to be for specific package/location, not just for a customer... default to active(/ordered) package in a pkg_class w/ticketing_queueid, otherwise, a popup?  (well, we're already a popup now) we're getting complicated like form-creat_ticket.html
+
+
+</%init>

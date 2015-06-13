@@ -1,0 +1,83 @@
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $opt{'svcnum'} %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $opt{'pkgnum'} %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $opt{'svcpart'} %>">
+
+<SCRIPT TYPE="text/javascript">
+function srcchanged(what) {
+  if ( what.options[what.selectedIndex].value == 0 ) {
+    what.form.src.disabled = false;
+    what.form.src.style.backgroundColor = "white";
+  } else {
+    what.form.src.disabled = true;
+    what.form.src.style.backgroundColor = "lightgrey";
+  }
+}
+function dstchanged(what) {
+  if ( what.options[what.selectedIndex].value == 0 ) {
+    what.form.dst.disabled = false;
+    what.form.dst.style.backgroundColor = "white";
+  } else {
+    what.form.dst.disabled = true;
+    what.form.dst.style.backgroundColor = "lightgrey";
+  }
+}
+</SCRIPT>
+
+<% ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Email to</TD>
+  <TD>
+%   if ( $conf->exists('svc_forward-no_srcsvc') ) {
+      <INPUT NAME="srcsrc" TYPE="hidden" VALUE="0">
+%   } else {
+      <SELECT NAME="srcsvc" SIZE=1 onChange="srcchanged(this)">
+%       foreach my $somesvc (keys %email) { 
+          <OPTION VALUE="<% $somesvc %>"
+                  <% $somesvc eq $opt{'srcsvc'} ? 'SELECTED' : '' %>
+          ><% $email{$somesvc} %></OPTION>
+%       } 
+        <OPTION VALUE="0" <% $opt{'src'} ? 'SELECTED' : '' %>
+        >(other email address)</OPTION>
+      </SELECT>
+%   }
+
+%   my $src_disabled =    $opt{'src'}
+%                      || $conf->exists('svc_forward-no_srcsvc')
+%                      || !scalar(%email);
+    <INPUT NAME  = "src"
+           TYPE  = "text"
+           VALUE = "<% $opt{'src'} %>"
+           <% $src_disabled ? '' : 'DISABLED STYLE="background-color: lightgrey"' %>
+    >
+
+  </TD>
+</TR>
+
+<TR><TD ALIGN="right">Forwards to</TD>
+<TD><SELECT NAME="dstsvc" SIZE=1 onChange="dstchanged(this)">
+% foreach my $somesvc (keys %email) { 
+
+  <OPTION<% $somesvc eq $opt{'dstsvc'} ? " SELECTED" : "" %> VALUE="<% $somesvc %>"><% $email{$somesvc} %></OPTION>
+% } 
+
+<OPTION <% $opt{'dst'} ? 'SELECTED' : '' %> VALUE="0">(other email address)</OPTION>
+</SELECT>
+<INPUT TYPE="text" NAME="dst" VALUE="<% $opt{'dst'} %>" <% ( $opt{'dst'} || !scalar(%email) ) ? '' : 'DISABLED STYLE="background-color: lightgrey"' %>>
+</TD></TR>
+</TABLE>
+
+<%init>
+
+# This is used directly by selfservice, only use what's passed
+# Do not look up sensitive information here
+
+my %opt = @_;
+
+my $conf = $opt{'conf'};
+$conf ||= new FS::Conf;
+
+my %email;
+%email = %{$opt{'email'}} if ref($opt{'email'}) eq 'HASH';
+
+</%init>

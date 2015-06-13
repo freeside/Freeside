@@ -96,7 +96,11 @@ the part_svc_column table appropriately (see L<FS::part_svc_column>).
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
+=item I<svcdb>__I<field>_label
+
 =item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), , `S' for selectable choice, `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
+
+=item I<svcdb>__I<field>_required - I<field> should always have a true value
 
 =back
 
@@ -139,52 +143,53 @@ sub insert {
   # add part_svc_column records
 
   my $svcdb = $self->svcdb;
-#  my @rows = map { /^${svcdb}__(.*)$/; $1 }
-#    grep ! /_flag$/,
-#      grep /^${svcdb}__/,
-#        fields('part_svc');
-  foreach my $field (
-    grep { $_ ne 'svcnum'
-           && ( defined( $self->getfield($svcdb.'__'.$_.'_flag') )
-                || $self->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
-         } (fields($svcdb), @fields)
-  ) {
-    my $part_svc_column = $self->part_svc_column($field);
-    my $previous = qsearchs('part_svc_column', {
-      'svcpart'    => $self->svcpart,
-      'columnname' => $field,
-    } );
+  foreach my $field (fields($svcdb), @fields) {
+    next if $field eq 'svcnum';
+    my $prefix = $svcdb.'__';
+    if ( defined( $self->getfield($prefix.$field.'_flag'))
+      or defined($self->getfield($prefix.$field.'_required'))
+      or length($self->getfield($prefix.$field.'_label'))
+    ) {
+      my $part_svc_column = $self->part_svc_column($field);
+      my $previous = qsearchs('part_svc_column', {
+        'svcpart'    => $self->svcpart,
+        'columnname' => $field,
+      } );
 
-    my $flag  = $self->getfield($svcdb.'__'.$field.'_flag');
-    my $label = $self->getfield($svcdb.'__'.$field.'_label');
-    if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
+      my $flag  = $self->getfield($prefix.$field.'_flag');
+      my $label = $self->getfield($prefix.$field.'_label');
+      my $required = $self->getfield($prefix.$field.'_required') ? 'Y' : '';
+      if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
 
-      if ( uc($flag) =~ /^([A-Z])$/ ) {
-        my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
-                     || sub { shift };
-        $part_svc_column->setfield('columnflag', $1);
-        $part_svc_column->setfield('columnvalue',
-          &$parser($self->getfield($svcdb.'__'.$field))
-        );
-      }
+        if ( uc($flag) =~ /^([A-Z])$/ ) {
+          my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
+                       || sub { shift };
+          $part_svc_column->setfield('columnflag', $1);
+          $part_svc_column->setfield('columnvalue',
+            &$parser($self->getfield($prefix.$field))
+          );
+        }
 
-      $part_svc_column->setfield('columnlabel', $label)
-        if $label !~ /^\s*$/;
+        $part_svc_column->setfield('columnlabel', $label)
+          if $label !~ /^\s*$/;
 
-      if ( $previous ) {
-        $error = $part_svc_column->replace($previous);
+        $part_svc_column->setfield('required', $required);
+
+        if ( $previous ) {
+          $error = $part_svc_column->replace($previous);
+        } else {
+          $error = $part_svc_column->insert;
+        }
+
       } else {
-        $error = $part_svc_column->insert;
+        $error = $previous ? $previous->delete : '';
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
       }
 
-    } else {
-      $error = $previous ? $previous->delete : '';
     }
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-
   }
 
   # add export_svc records
@@ -277,50 +282,54 @@ sub replace {
    # maintain part_svc_column records
 
     my $svcdb = $new->svcdb;
-    foreach my $field (
-      grep { $_ ne 'svcnum'
-             && ( defined( $new->getfield($svcdb.'__'.$_.'_flag') )
-                  || $new->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
-           } (fields($svcdb),@fields)
-    ) {
+    foreach my $field (fields($svcdb),@fields) {
+      next if $field eq 'svcnum';
+      my $prefix = $svcdb.'__';
+      if ( defined( $new->getfield($prefix.$field.'_flag'))
+        or defined($new->getfield($prefix.$field.'_required'))
+        or length($new->getfield($prefix.$field.'_label'))
+      ) {
+        my $part_svc_column = $new->part_svc_column($field);
+        my $previous = qsearchs('part_svc_column', {
+          'svcpart'    => $new->svcpart,
+          'columnname' => $field,
+        } );
 
-      my $part_svc_column = $new->part_svc_column($field);
-      my $previous = qsearchs('part_svc_column', {
-        'svcpart'    => $new->svcpart,
-        'columnname' => $field,
-      } );
-
-      my $flag  = $new->getfield($svcdb.'__'.$field.'_flag');
-      my $label = $new->getfield($svcdb.'__'.$field.'_label');
+        my $flag  = $new->getfield($svcdb.'__'.$field.'_flag');
+        my $label = $new->getfield($svcdb.'__'.$field.'_label');
+        my $required = $new->getfield($svcdb.'__'.$field.'_required') ? 'Y' : '';
  
-      if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
+        if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
 
-        if ( uc($flag) =~ /^([A-Z])$/ ) {
-          $part_svc_column->setfield('columnflag', $1);
-          my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
-                     || sub { shift };
-          $part_svc_column->setfield('columnvalue',
-            &$parser($new->getfield($svcdb.'__'.$field))
-          );
+          if ( uc($flag) =~ /^([A-Z])$/ ) {
+            $part_svc_column->setfield('columnflag', $1);
+            my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
+                       || sub { shift };
+            $part_svc_column->setfield('columnvalue',
+              &$parser($new->getfield($svcdb.'__'.$field))
+            );
+          } else {
+            $part_svc_column->setfield('columnflag',  '');
+            $part_svc_column->setfield('columnvalue', '');
+          }
+
+          $part_svc_column->setfield('columnlabel', $label)
+            if $label !~ /^\s*$/;
+
+          $part_svc_column->setfield('required', $required);
+
+          if ( $previous ) {
+            $error = $part_svc_column->replace($previous);
+          } else {
+            $error = $part_svc_column->insert;
+          }
         } else {
-          $part_svc_column->setfield('columnflag',  '');
-          $part_svc_column->setfield('columnvalue', '');
+          $error = $previous ? $previous->delete : '';
         }
-
-        $part_svc_column->setfield('columnlabel', $label)
-          if $label !~ /^\s*$/;
-
-        if ( $previous ) {
-          $error = $part_svc_column->replace($previous);
-        } else {
-          $error = $part_svc_column->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
         }
-      } else {
-        $error = $previous ? $previous->delete : '';
-      }
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
       }
     }
 
@@ -594,6 +603,7 @@ sub svc_x {
 =cut
 
 my $svc_defs;
+my $svc_info;
 sub _svc_defs {
 
   return $svc_defs if $svc_defs; #cache
@@ -648,7 +658,14 @@ sub _svc_defs {
     sort { $info{$a}->{'display_weight'} <=> $info{$b}->{'display_weight'} }
     keys %info,
   ;
-  
+
+  tie my %svc_info, 'Tie::IxHash',
+    map  { $_ => $info{$_} }
+    sort { $info{$a}->{'display_weight'} <=> $info{$b}->{'display_weight'} }
+    keys %info,
+  ;
+    
+  $svc_info = \%svc_info; #access via svc_table_info  
   $svc_defs = \%svc_defs; #cache
   
 }
@@ -700,6 +717,8 @@ some components specified by "select-.*.html", and a bunch more...
 
 =item select_allow_empty - Used with select_table, adds an empty option
 
+=item required - This field should always have a true value (do not use with type checkbox or disabled)
+
 =back
 
 =cut
@@ -720,6 +739,27 @@ sub svc_table_fields {
   }
 
   $def;
+}
+
+=item svc_table_info TABLE
+
+Returns table_info for TABLE from cache, or empty
+hashref if none is found.
+
+Caution:  caches table_info for ALL services when run;
+access a service's table_info directly unless you know
+you're loading them all.
+
+Caution:  does not standardize fields into hashrefs;
+use L</svc_table_fields> to access fields.
+
+=cut
+
+sub svc_table_info {
+  my $class = shift;
+  my $table = shift;
+  $class->_svc_defs; #creates cache if needed
+  return $svc_info->{$table} || {};
 }
 
 =back
@@ -777,7 +817,7 @@ sub process {
                          and ref($param->{ $f }) ) {
                       $param->{ $f } = join(',', @{ $param->{ $f } });
 		    }
-                    ( $f, $f.'_flag', $f.'_label' );
+                    ( $f, $f.'_flag', $f.'_label', $f.'_required' );
                   }
                   @fields;
 

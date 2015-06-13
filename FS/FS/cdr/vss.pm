@@ -13,7 +13,6 @@ use FS::cdr qw(_cdr_date_parser_maker);
   'header'        => 1,
   'import_fields' => [
 
-        skip(1),        # Customer
         skip(1),        # i_customer
         'accountcode',  # account_id
         'src',          # caller

@@ -46,14 +46,13 @@ export DIST_CONF = ${FREESIDE_CONF}/default_conf
 #export MASON_HANDLER          = /usr/share/freeside/handler.pl
 export MASON_HANDLER=$(TMP)-webui/usr/local/etc/freeside/handler.pl
 
-#export FREESIDE_DOCUMENT_ROOT = /usr/share/freeside/www
-export APACHE_DOCUMENT_ROOT := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html' || echo '/var/www')
+export APACHE_VERSION        := $(shell /usr/sbin/apache2 -v | grep -q '\/2\.4\.' && echo '2.4' || echo '2')
+export APACHE_DOCUMENT_ROOT  := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html' || echo '/var/www')
 export FREESIDE_DOCUMENT_ROOT = $(TMP)$(APACHE_DOCUMENT_ROOT)/freeside
 export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
-#export APACHE_CONF           = /etc/apache2/conf.d
-export APACHE_CONF            = $(TMP)-webui/etc/freeside/apache2
+export APACHE_CONF           := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo "$(TMP)-webui/etc/apache2/conf-available" || echo "$(TMP)-webui/etc/apache2/conf.d")
 export FREESIDE_RESTART       = /bin/true
 
 #XXX root?
@@ -180,7 +179,7 @@ install-stamp: build-stamp
 
 	perl -p -i -e "\
          s'${TMP}(-webui)?''g;\
-        "  $(TMP)-webui/etc/freeside/apache2/*
+        " $(APACHE_CONF)/*
 
 	# Install init
 	$(MAKE) -e DESTDIR=$(TMP) install-init

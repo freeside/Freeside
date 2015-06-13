@@ -30,7 +30,7 @@ if ( $error ) {
     <TD>
       <INPUT TYPE="text" NAME="username" VALUE="<? echo htmlspecialchars($username); ?>"><? if ( $single_domain ) { echo '@'.$single_domain; } ?>
     </TD>
-<  /TR>
+  </TR>
 
   <INPUT TYPE="hidden" NAME="domain" VALUE="<? echo $single_domain ?>">
 

@@ -33,6 +33,10 @@ sub option_fields {
                              empty_label => '(do not upload)',
                              order_by => 'targetnum',
                            },
+    'skip_nopost' => { label => 'Skip customers without postal billing enabled',
+                       type  => 'checkbox',
+                       value => 'Y',
+                     },
   );
 }
 
@@ -43,6 +47,9 @@ sub do_action {
 
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
+
+  return if $self->option('skip_nopost')
+         && ! grep { $_ eq 'POST' } $cust_main->invoicing_list;
 
   $cust_bill->spool_csv(
     'time'         => $cust_event->_date,

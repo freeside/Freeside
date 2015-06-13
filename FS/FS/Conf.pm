@@ -2377,6 +2377,7 @@ and customer address. Include units.',
                        'svc_acct'  => 'Account (svc_acct)',
                        'svc_phone' => 'Phone number (svc_phone)',
                        'svc_pbx'   => 'PBX (svc_pbx)',
+                       'none'      => 'None - package only',
                      ],
   },
   
@@ -5962,6 +5963,13 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Default for new customers is commercial rather than residential.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'default_appointment_length',
+    'section'     => 'UI',
+    'description' => 'Default appointment length, in minutes (30 minute granularity).',
+    'type'        => 'text',
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

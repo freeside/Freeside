@@ -36,6 +36,8 @@ use Date::Parse;
         },				#TERM NUMBER
 	skip(2),			#TERM CITY / TERM STATE
 	_cdr_min_parser_maker, 		#MINUTES
+	skip(1),			#AMOUNT
+	'disposition',			#Call Type
   ],
 );
 

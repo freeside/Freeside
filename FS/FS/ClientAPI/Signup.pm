@@ -667,7 +667,6 @@ sub new_customer {
   my $part_pkg =
     qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
       or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
-  my $svcpart = $part_pkg->svcpart($svc_x);
 
   my $reg_code = '';
   if ( $packet->{'reg_code'} ) {
@@ -685,50 +684,55 @@ sub new_customer {
   #my $error = $cust_pkg->check;
   #return { 'error' => $error } if $error;
 
-  #should be all auto-magic and shit
   my @svc = ();
-  if ( $svc_x eq 'svc_acct' ) {
+  unless ( $svc_x eq 'none' ) {
 
-    my $svc = new FS::svc_acct {
-      'svcpart'   => $svcpart,
-      map { $_ => $packet->{$_} }
-        qw( username _password sec_phrase popnum domsvc ),
-    };
+    my $svcpart = $part_pkg->svcpart($svc_x);
+    #should be all auto-magic and shit
+    if ( $svc_x eq 'svc_acct' ) {
 
-    my @acct_snarf;
-    my $snarfnum = 1;
-    while (    exists($packet->{"snarf_machine$snarfnum"})
-            && length($packet->{"snarf_machine$snarfnum"}) ) {
-      my $acct_snarf = new FS::acct_snarf ( {
-        'machine'   => $packet->{"snarf_machine$snarfnum"},
-        'protocol'  => $packet->{"snarf_protocol$snarfnum"},
-        'username'  => $packet->{"snarf_username$snarfnum"},
-        '_password' => $packet->{"snarf_password$snarfnum"},
-      } );
-      $snarfnum++;
-      push @acct_snarf, $acct_snarf;
-    }
-    $svc->child_objects( \@acct_snarf );
-    push @svc, $svc;
+      my $svc = new FS::svc_acct {
+        'svcpart'   => $svcpart,
+        map { $_ => $packet->{$_} }
+          qw( username _password sec_phrase popnum domsvc ),
+      };
 
-  } elsif ( $svc_x eq 'svc_phone' ) {
-
-    push @svc, new FS::svc_phone ( {
-      'svcpart' => $svcpart,
-       map { $_ => $packet->{$_} }
-         qw( countrycode phonenum sip_password pin ),
-    } );
-
-  } elsif ( $svc_x eq 'svc_pbx' ) {
-
-    push @svc, new FS::svc_pbx ( {
-        'svcpart' => $svcpart,
-        map { $_ => $packet->{$_} } 
-          qw( id title ),
+      my @acct_snarf;
+      my $snarfnum = 1;
+      while (    exists($packet->{"snarf_machine$snarfnum"})
+              && length($packet->{"snarf_machine$snarfnum"}) ) {
+        my $acct_snarf = new FS::acct_snarf ( {
+          'machine'   => $packet->{"snarf_machine$snarfnum"},
+          'protocol'  => $packet->{"snarf_protocol$snarfnum"},
+          'username'  => $packet->{"snarf_username$snarfnum"},
+          '_password' => $packet->{"snarf_password$snarfnum"},
         } );
+        $snarfnum++;
+        push @acct_snarf, $acct_snarf;
+      }
+      $svc->child_objects( \@acct_snarf );
+      push @svc, $svc;
+
+    } elsif ( $svc_x eq 'svc_phone' ) {
+
+      push @svc, new FS::svc_phone ( {
+        'svcpart' => $svcpart,
+         map { $_ => $packet->{$_} }
+           qw( countrycode phonenum sip_password pin ),
+      } );
+
+    } elsif ( $svc_x eq 'svc_pbx' ) {
+
+      push @svc, new FS::svc_pbx ( {
+          'svcpart' => $svcpart,
+          map { $_ => $packet->{$_} } 
+            qw( id title ),
+          } );
   
-  } else {
-    die "unknown signup service $svc_x";
+    } else {
+      die "unknown signup service $svc_x";
+    }
+
   }
 
   if ($packet->{'mac_addr'} && $conf->exists('signup_server-mac_addr_svcparts'))
@@ -983,7 +987,6 @@ sub new_customer_minimal {
     my $part_pkg =
       qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
         or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
-    my $svcpart = $part_pkg->svcpart($svc_x);
 
     my $cust_pkg = new FS::cust_pkg ( {
       #later#'custnum' => $custnum,
@@ -992,35 +995,40 @@ sub new_customer_minimal {
     #my $error = $cust_pkg->check;
     #return { 'error' => $error } if $error;
 
-    #should be all auto-magic and shit
-    if ( $svc_x eq 'svc_acct' ) {
+    unless ( $svc_x eq 'none' ) {
 
-      my $svc = new FS::svc_acct {
-        'svcpart'   => $svcpart,
-        map { $_ => $packet->{$_} }
-          qw( username _password sec_phrase popnum domsvc ),
-      };
+      my $svcpart = $part_pkg->svcpart($svc_x);
+      #should be all auto-magic and shit
+      if ( $svc_x eq 'svc_acct' ) {
 
-      push @svc, $svc;
+        my $svc = new FS::svc_acct {
+          'svcpart'   => $svcpart,
+          map { $_ => $packet->{$_} }
+            qw( username _password sec_phrase popnum domsvc ),
+        };
 
-    } elsif ( $svc_x eq 'svc_phone' ) {
+        push @svc, $svc;
 
-      push @svc, new FS::svc_phone ( {
-        'svcpart' => $svcpart,
-         map { $_ => $packet->{$_} }
-           qw( countrycode phonenum sip_password pin ),
-      } );
+      } elsif ( $svc_x eq 'svc_phone' ) {
 
-    } elsif ( $svc_x eq 'svc_pbx' ) {
-
-      push @svc, new FS::svc_pbx ( {
+        push @svc, new FS::svc_phone ( {
           'svcpart' => $svcpart,
-          map { $_ => $packet->{$_} } 
-            qw( id title ),
-          } );
+           map { $_ => $packet->{$_} }
+             qw( countrycode phonenum sip_password pin ),
+        } );
+
+      } elsif ( $svc_x eq 'svc_pbx' ) {
+
+        push @svc, new FS::svc_pbx ( {
+            'svcpart' => $svcpart,
+            map { $_ => $packet->{$_} } 
+              qw( id title ),
+            } );
     
-    } else {
-      die "unknown signup service $svc_x";
+      } else {
+        die "unknown signup service $svc_x";
+      }
+
     }
 
     foreach my $svc ( @svc ) {
@@ -1068,6 +1076,7 @@ sub new_customer_minimal {
                  'signup_service' => $svc_x,
                  'custnum'        => $cust_main->custnum,
                  'session_id'     => $session_id,
+                 map { $_ => $cust_main->$_ } qw( first last company ),
                );
 
   if ( $svc[0] ) {

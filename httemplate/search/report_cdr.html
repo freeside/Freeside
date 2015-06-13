@@ -188,7 +188,9 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
 
 my @fields = fields('cdr');
+push @fields, 'ratename';
 my $labels = FS::cdr->table_info->{'fields'};
+$labels->{ratename} = 'Rate plan';
 
 my $conf = new FS::Conf;
 my $default_phone_countrycode =

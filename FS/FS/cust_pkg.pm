@@ -2043,7 +2043,7 @@ sub change {
       return "modifying package: $error";
     } else {
       $dbh->commit if $oldAutoCommit;
-      return '';
+      return $self;
     }
   }
 
@@ -3723,6 +3723,7 @@ Returns the parent customer object (see L<FS::cust_main>).
 
 sub cust_main {
   my $self = shift;
+  cluck 'cust_pkg->cust_main called' if $DEBUG;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
@@ -5664,6 +5665,78 @@ sub bulk_change {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+}
+
+=item forward_emails
+
+Returns a hash of svcnums and corresponding email addresses
+for svc_acct services that can be used as source or dest
+for svc_forward services provisioned in this package.
+
+Accepts options I<svc_forward> OR I<svcnum> for a svc_forward
+service;  if included, will ensure the current values of the
+specified service are included in the list, even if for some
+other reason they wouldn't be.  If called as a class method
+with a specified service, returns only these current values.
+
+Caution: does not actually check if svc_forward services are
+available to be provisioned on this package.
+
+=cut
+
+sub forward_emails {
+  my $self = shift;
+  my %opt = @_;
+
+  #load optional service, thoroughly validated
+  die "Use svcnum or svc_forward, not both"
+    if $opt{'svcnum'} && $opt{'svc_forward'};
+  my $svc_forward = $opt{'svc_forward'};
+  $svc_forward ||= qsearchs('svc_forward',{ 'svcnum' => $opt{'svcnum'} })
+    if $opt{'svcnum'};
+  die "Specified service is not a forward service"
+    if $svc_forward && (ref($svc_forward) ne 'FS::svc_forward');
+  die "Specified service not found"
+    if ($opt{'svcnum'} || $opt{'svc_forward'}) && !$svc_forward;
+
+  my %email;
+
+  ## everything below was basically copied from httemplate/edit/svc_forward.cgi 
+  ## with minimal refactoring, not sure why we can't just load all svc_accts for this custnum
+
+  #add current values from specified service, if there was one
+  if ($svc_forward) {
+    foreach my $method (qw( srcsvc_acct dstsvc_acct )) {
+      my $svc_acct = $svc_forward->$method();
+      $email{$svc_acct->svcnum} = $svc_acct->email if $svc_acct;
+    }
+  }
+
+  if (ref($self) eq 'FS::cust_pkg') {
+
+    #and including the rest for this customer
+    my($u_part_svc,@u_acct_svcparts);
+    foreach $u_part_svc ( qsearch('part_svc',{'svcdb'=>'svc_acct'}) ) {
+      push @u_acct_svcparts,$u_part_svc->getfield('svcpart');
+    }
+
+    my $custnum = $self->getfield('custnum');
+    foreach my $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
+      my $cust_pkgnum = $i_cust_pkg->getfield('pkgnum');
+      #now find the corresponding record(s) in cust_svc (for this pkgnum!)
+      foreach my $acct_svcpart (@u_acct_svcparts) {
+        foreach my $i_cust_svc (
+          qsearch( 'cust_svc', { 'pkgnum'  => $cust_pkgnum,
+                                 'svcpart' => $acct_svcpart } )
+        ) {
+          my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $i_cust_svc->svcnum } );
+          $email{$svc_acct->svcnum} = $svc_acct->email;
+        }  
+      }
+    }
+  }
+
+  return %email;
 }
 
 # Used by FS::Upgrade to migrate to a new database.

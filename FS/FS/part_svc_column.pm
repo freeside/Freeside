@@ -45,6 +45,8 @@ fields are currently supported:
 
 =item columnflag - null or empty (no default), `D' for default, `F' for fixed (unchangeable), `S' for selectable choice, `M' for manual selection from inventory, `A' for automatic selection from inventory, or `H' for selection from a hardware class.  For virtual fields, can also be 'X' for excluded.
 
+=item required - column value expected to be true
+
 =back
 
 =head1 METHODS
@@ -91,6 +93,7 @@ sub check {
     || $self->ut_alpha('columnname')
     || $self->ut_textn('columnlabel')
     || $self->ut_anything('columnvalue')
+    || $self->ut_flag('required')
   ;
   return $error if $error;
 

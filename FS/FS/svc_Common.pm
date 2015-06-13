@@ -155,13 +155,48 @@ sub cust_linked {
 
 Checks the validity of fields in this record.
 
-At present, this does nothing but call FS::Record::check (which, in turn, 
-does nothing but run virtual field checks).
+Only checks fields marked as required in table_info or 
+part_svc_column definition.  Should be invoked by service-specific
+check using SUPER.  Invokes FS::Record::check using SUPER.
 
 =cut
 
 sub check {
   my $self = shift;
+
+  ## Checking required fields
+
+  # get fields marked as required in table_info
+  my $required = {};
+  my $labels = {};
+  my $tinfo = $self->can('table_info') ? $self->table_info : {};
+  if ($tinfo->{'manual_require'}) {
+    my $fields = $tinfo->{'fields'} || {};
+    foreach my $field (keys %$fields) {
+      if (ref($fields->{$field}) && $fields->{$field}->{'required'}) {
+        $required->{$field} = 1;
+        $labels->{$field} = $fields->{$field}->{'label'};
+      }
+    }
+    # add fields marked as required in database
+    foreach my $column (
+      qsearch('part_svc_column',{
+        'svcpart' => $self->svcpart,
+        'required' => 'Y'
+      })
+    ) {
+      $required->{$column->columnname} = 1;
+      $labels->{$column->columnname} = $column->columnlabel;
+    }
+    # do the actual checking
+    foreach my $field (keys %$required) {
+      unless (length($self->get($field)) > 0) {
+        my $name = $labels->{$field} || $field;
+        return "$name is required\n"
+      }
+    }
+  }
+
   $self->SUPER::check;
 }
 

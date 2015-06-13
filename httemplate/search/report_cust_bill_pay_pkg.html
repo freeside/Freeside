@@ -1,0 +1,88 @@
+<& /elements/header.html, mt('Payment application report') &>
+
+<FORM ACTION="cust_bill_pay_pkg.html" METHOD="GET">
+<!--<INPUT TYPE="hidden" NAME="magic" VALUE="_date">-->
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<& /elements/tr-select-user.html,
+              'label'       => emt('Employee: '),
+              'access_user' => $access_user,
+&>
+
+<& /elements/tr-select-agent.html,
+     curr_value    => scalar( $cgi->param('agentnum') ),
+     #label         => emt('Line items for agent: '),
+     disable_empty => 0,
+&>
+
+<!--
+<& /elements/tr-select-cust_main-status.html,
+     label => emt('Customer status'),
+&>
+-->
+
+<!-- customer
+<& /elements/tr-select-cust_class.html,
+     'label'        => emt('Class'),
+     'multiple'     => 1,
+     'pre_options'  => [ '' => emt('(none)') ],
+     'all_selected' => 1,
+&>
+-->
+
+<!-- some sort of label saying this is the payment date... -->
+<& /elements/tr-input-beginning_ending.html,
+     'prefix' => 'payment',
+&>
+
+<& /elements/tr-input-lessthan_greaterthan.html,
+     label   => emt('Amount'),
+     field   => 'paid',
+&>
+
+<!--
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="nottax" VALUE="Y" onClick="nottax_changed(this)" onChange="nottax_change(thid)"></TD>
+  <TD><% mt('Omit taxes') |h %></TD>
+</TD>
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="istax" VALUE="Y" onClick="istax_changed(this)" onChange="istax_change(thid)"></TD>
+  <TD><% mt('Taxes only') |h %></TD>
+</TD>
+
+<SCRIPT TYPE="text/javascript">
+  function nottax_changed (what) {
+    if (what.checked && what.form.istax.checked) {
+      what.form.istax.checked = false;
+    }
+  }
+  function istax_changed (what) {
+    if (what.checked && what.form.nottax.checked) {
+      what.form.nottax.checked = false;
+    }
+  }
+</SCRIPT>
+-->
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+#Financial reports?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $access_user = $FS::CurrentUser::CurrentUser->access_users_hashref('table' => 'cust_pay');
+
+my $conf = new FS::Conf;
+
+</%init>
+

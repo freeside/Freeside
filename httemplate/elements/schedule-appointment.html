@@ -1,0 +1,20 @@
+<& /elements/header-popup.html &>
+<h1>Scheduling appointment...</h1>
+<SCRIPT TYPE="text/javascript">
+  window.top.location.href = '<% $url %>';
+</SCRIPT>
+<& /elements/footer-popup.html &>
+<%init>
+
+my @username = map encode_entities($_), $cgi->param('username');
+my $LengthMin = encode_entities( $cgi->param('LengthMin') );
+my $custnum = encode_entities( $cgi->param('custnum') );
+
+my $query = join('&', map "username=$_", @username).
+            "&LengthMin=$LengthMin".
+            "&custnum=$custnum";
+            #XXX '&pkgnum=$pkgnum";need to be for specific package/location, not just for a customer... default to active(/ordered) package in a pkg_class w/ticketing_queueid, otherwise, a popup?  we're getting complicated like form-creat_ticket.html
+
+my $url = $p. 'rt/Search/Schedule.html?'. $query;
+
+</%init>
