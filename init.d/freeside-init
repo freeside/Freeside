@@ -88,9 +88,11 @@ case "$1" in
         freeside-torrus-srvderive $QUEUED_USER
         echo "done."
 
-        #ip=`/sbin/ifconfig $IF | grep 'inet addr:' | cut -d: -f2- | cut -d' ' -f1`
-        #cp /opt/rt3/etc/RT_SiteConfig.pm.ORIG /opt/rt3/etc/RT_SiteConfig.pm
-        #perl -pi -e "s/localhost/$ip/" /opt/rt3/etc/RT_SiteConfig.pm
+        if [ -e /opt/rt3/etc/RT_SiteConfig.pm.ORIG_WEBDEMO_HACK ]; then
+          ip=`/sbin/ifconfig $IF | grep 'inet addr:' | cut -d: -f2- | cut -d' ' -f1`
+          cp /opt/rt3/etc/RT_SiteConfig.pm.ORIG_WEBDEMO_HACK /opt/rt3/etc/RT_SiteConfig.pm
+          perl -pi -e "s/localhost/$ip/" /opt/rt3/etc/RT_SiteConfig.pm
+        fi
 
         ;;
   stop)
