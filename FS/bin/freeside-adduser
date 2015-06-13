@@ -22,10 +22,10 @@ adminsuidsetup $user;
 
 my $access_user = new FS::access_user {
   'username'  => $user,
-  '_password' => $password,
   'first'     => 'Firstname', # $opt_f || 
   'last'      => 'Lastname',  # $opt_l || 
 };
+$access_user->change_password_fields($password) if length($password);
 my $au_error = $access_user->insert;
 die $au_error if $au_error;
 
