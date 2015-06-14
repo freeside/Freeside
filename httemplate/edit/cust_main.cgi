@@ -40,7 +40,7 @@
 % }
 <BR>
 <TABLE> <TR>
-  <TD STYLE="width:650px">
+  <TD>
 %#; padding-right:2px; vertical-align:top">
     <FONT CLASS="fsinnerbox-title"><% mt('Billing address') |h %></FONT>
     <TABLE CLASS="fsinnerbox" WIDTH="100%">
@@ -58,7 +58,7 @@
 </TR>
 <TR><TD STYLE="height:14px"></TD></TR>
 <TR>
-  <TD STYLE="width:650px">
+  <TD>
     <FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
     <INPUT TYPE="checkbox" 
            NAME="same"

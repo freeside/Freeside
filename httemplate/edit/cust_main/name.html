@@ -2,12 +2,12 @@
 % my ($field, $value, $label, $extra) = @_;
 <DIV STYLE="display: inline-block">
   <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
-  <BR><FONT SIZE=-1><% mt($label) %></FONT>
+  <BR><FONT SIZE="-1" COLOR="#333333"><% mt($label) %></FONT>
 </DIV>
 </%def>
 
 <TR>
-  <TD CLASS="required label"><% mt('Contact name') |h %></TD>
+  <TH CLASS="required label" ALIGN="right"><% mt('Contact name') |h %></TD>
   <TD COLSPAN=6 STYLE="vertical-align:top">
         <& .namepart, 'last', $cust_main->last, 'Last', ',' &>
         <& .namepart, 'first', $cust_main->first, 'First' &>
@@ -21,7 +21,7 @@
 </TR>
 % if ( $conf->exists('cust_main-enable_spouse') ) {
 <TR ID="spouse_row">
-  <TD CLASS="label"><% mt('Spouse\'s name') |h %></TD>
+  <TH CLASS="label"><% mt('Spouse\'s name') |h %></TD>
   <TD COLSPAN=6>
         <& .namepart, 'spouse_last', $cust_main->spouse_last, 'Last', ',' &>
         <& .namepart, 'spouse_first', $cust_main->spouse_first, 'First' &>
@@ -31,7 +31,7 @@
 
 % if ( $conf->exists('cust-email-high-visibility') ) {
 <TR>
-  <TD ALIGN="right" CLASS="
+  <TH ALIGN="right" CLASS="
     <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum)
         ? 'required label'
         : 'label' %>">Email address(es)
