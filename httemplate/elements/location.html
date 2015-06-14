@@ -44,7 +44,7 @@ Example:
 % if ( $label_prefix eq '_location' ) {
 
     <TR>
-      <TD ALIGN="right" ><% $opt{'locationname_label'} || emt('Location ID') %></TD>
+      <TH ALIGN="right" ><% $opt{'locationname_label'} || emt('Location ID') %></TD>
       <TD COLSPAN=7>
         <INPUT TYPE     = "text"
                NAME     = "<%$pre%>locationname"
@@ -81,7 +81,7 @@ Example:
 % if ( ! $opt{'alt_format'} ) { #regular format
 
 <TR>
-      <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" <% $address2_label_style %>>*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" <% $address2_label_style %>><B>Unit&nbsp;#</B></FONT></TD>
+      <TH ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" <% $address2_label_style %>>*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" <% $address2_label_style %>><B>Unit&nbsp;#</B></FONT></TD>
       <TD COLSPAN=7>
         <INPUT TYPE     = "text"
                NAME     = "<%$pre%>address2"
@@ -203,7 +203,7 @@ Example:
 
 % if ( $opt{enable_coords} ) {
 <TR>
-  <TD ALIGN="right"><% mt('Latitude') |h %></TD>
+  <TH ALIGN="right"><% mt('Latitude') |h %></TD>
   <TD COLSPAN=7>
     <INPUT TYPE  = "text"
            NAME  = "<%$pre%>latitude"
@@ -212,7 +212,7 @@ Example:
            <% $disabled %>
            <% $style %>
     >
-    <% mt('Longitude') |h %>
+    <FONT SIZE="-1" COLOR="#666666"><% mt('Longitude') |h %></FONT>
     <INPUT TYPE  = "text"
            NAME  = "<%$pre%>longitude"
            ID    = "<%$pre%>longitude"
@@ -234,13 +234,13 @@ Example:
 %
 % if ( $opt{enable_censustract} ) {
 <TR>
-  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TH ALIGN="right">Census&nbsp;tract</TD>
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
            ID="<% $pre %>enter_censustract" 
            NAME="<% $pre %>enter_censustract" 
            VALUE="<% $object->censustract |h %>">
-    <% '(automatic)' %>
+    <FONT SIZE="-1" COLOR="#333333"><% '(automatic)' %></FONT>
   </TD>
 </TR>
 % }
