@@ -98,7 +98,7 @@
 .webfx-menu-bar {
 	/* background:		rgb(120,172,255);/*rgb(255,128,0);*/
 	/* background:		 #a097ed; */
-	background:		 #cccccc;
+	background:		 #dddddd;
 	/* border:			1px solid #7E0079; */
 	/* border:			1px solid #000000; */
 	/* border: none */
@@ -126,7 +126,7 @@
 	/* IE5.0 Does not paint borders and padding on inline elements without a height/width */
 	height:		expression(constExpression(ie50 ? "17px" : "auto"));
 
-        border: 1px solid #cccccc;
+        border: 1px solid #dddddd;
 
         margin-right: 4px
 
