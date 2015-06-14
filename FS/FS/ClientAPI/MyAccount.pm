@@ -260,16 +260,39 @@ sub login {
     my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
       or return { error => 'Domain '. $p->{'domain'}. ' not found' };
 
-    my $svc_acct = qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
-                                           'domsvc'    => $svc_domain->svcnum, }
-                           );
-    return { error => 'User not found.' } unless $svc_acct;
+    my @svc_acct = qsearch( 'svc_acct', { 'username'  => $p->{'username'},
+                                          'domsvc'    => $svc_domain->svcnum, }
+                          );
 
-    if($conf->exists('selfservice_server-login_svcpart')) {
-	my @svcpart = $conf->config('selfservice_server-login_svcpart');
-	my $svcpart = $svc_acct->cust_svc->svcpart;
-	return { error => 'Invalid user.' } 
-	    unless grep($_ eq $svcpart, @svcpart);
+    if ( $conf->exists('selfservice_server-login_svcpart') ) {
+      my @svcpart = $conf->config('selfservice_server-login_svcpart');
+      @svc_acct = grep { my $svcpart = $_->cust_svc->svcpart;
+                         scalar( grep( $_ eq $svcpart, @svcpart ) );
+                       }
+                    @svc_acct;
+    }
+
+    if ( $conf->exists('selfservice_server-primary_only') ) {
+        @svc_acct =
+          grep {
+            my $cust_svc = $_->cust_svc;
+            $cust_svc->cust_pkg->part_pkg->svcpart([qw( svc_acct svc_phone )])
+              == $cust_svc->svcpart
+          }
+          @svc_acct;
+    }
+
+    return { error => 'User not found.' } unless @svc_acct;
+
+    #return { error => 'Multiple users.' } if scalar(@svc_acct) > 1;
+
+    my $svc_acct = $svc_acct[0];
+
+    if ( $conf->exists('selfservice_server-login_svcpart') ) {
+      my @svcpart = $conf->config('selfservice_server-login_svcpart');
+      my $svcpart = $svc_acct->cust_svc->svcpart;
+      return { error => 'Invalid user.' } 
+        unless grep($_ eq $svcpart, @svcpart);
     }
 
     return { error => 'Incorrect password.' }
