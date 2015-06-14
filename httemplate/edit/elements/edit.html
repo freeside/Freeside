@@ -7,7 +7,7 @@ Example:
                         # (preferred, will be pluralized automatically)
     'name'          =>  #name for the record
                         # (deprecated, will be pluralized simplistically)
-    'table'         =>
+    'table'         =>  #database table
 
     #? 'primary_key' => #required when the dbdef doesn't know...???
     'labels' => {
@@ -134,6 +134,8 @@ Example:
 
     'form_init'   => '', #after html_init, error and the opening <FORM>, but
                          #before any other form contents
+
+    'html_table_class' => '', #HTML <TABLE CLASS=
 
     #string or coderef of additional HTML to add before </TABLE>
     'html_table_bottom' => '',
@@ -270,7 +272,11 @@ Example:
 % }
 
 % my $tablenum = $opt{'tablenum'} || 0;
-<TABLE ID="TableNumber<% $tablenum++ %>" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TABLE ID="TableNumber<% $tablenum++ %>"
+       <% $opt{html_table_class} ? 'CLASS="'. $opt{html_table_class}. '"'
+                                 : 'BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0'
+       %>
+>
 
 % my $g_row = 0;
 % my @g_row_stack = ();
