@@ -107,8 +107,6 @@ function samechanged(what) {
 samechanged(document.getElementById('same'));
 </SCRIPT>
 
-<BR>
-
 <& cust_main/contacts_new.html, 'cust_main'=>$cust_main, &>
 
 %# billing info

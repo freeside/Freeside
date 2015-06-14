@@ -1,12 +1,15 @@
 <DIV ID="contacts_div" STYLE="display:<% $display %>">
+<BR>
 <FONT CLASS="fsinnerbox-title">Contacts</FONT>
 <% include('/edit/elements/edit.html',
-     'embed'           => $opt{cust_main},
-     'table'           => 'cust_main',
-     'labels'          => { 'contactnum'  => '', #'Contact',
-                            #'locationnum' => '&nbsp;',
-                          },
-     'fields'          => [
+     'embed'            => $opt{cust_main},
+     'table'            => 'cust_main',
+     'agent_virt'       => 1,
+     'html_table_class' => 'fsinnerbox',
+     'labels'           => { 'contactnum'  => '', #'Contact',
+                             #'locationnum' => '&nbsp;',
+                           },
+     'fields'           => [
        { 'field'             => 'contactnum',
          'type'              => 'contact',
          'colspan'           => 6,
@@ -17,7 +20,6 @@
          'm2_error_callback' => $m2_error_callback,
        },
      ],
-     'agent_virt'      => 1,
     )
 %>
 </DIV>

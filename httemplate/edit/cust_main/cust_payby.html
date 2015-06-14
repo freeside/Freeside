@@ -1,11 +1,13 @@
 <% include('/edit/elements/edit.html',
-     'embed'           => $opt{cust_main},
-     'tablenum'        => 1,
-     'table'           => 'cust_main',
-     'labels'          => { 'custpaybynum'  => '',
-                            #'locationnum' => '&nbsp;',
-                          },
-     'fields'          => [
+     'embed'            => $opt{cust_main},
+     'tablenum'         => 1,
+     'table'            => 'cust_main',
+     'agent_virt'       => 1,
+     'html_table_class' => 'fsinnerbox',
+     'labels'           => { 'custpaybynum'  => '',
+                             #'locationnum' => '&nbsp;',
+                           },
+     'fields'           => [
        { 'field'             => 'custpaybynum',
          'type'              => 'cust_payby',
          'colspan'           => 6,
@@ -16,7 +18,6 @@
          'm2_error_callback' => $m2_error_callback,
        },
      ],
-     'agent_virt'      => 1,
     )
 %>
 </DIV>
