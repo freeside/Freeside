@@ -14,13 +14,15 @@
 
 #menu_ul a {
   display: block;
-  margin: 0;
+  margin-left: 0;
+  margin-right: 1em;
+  margin-bottom: -1px;
+  margin-top: 0;
   padding: .5em .75em;
-  background: #f8f8f8;
+  background: #e0e0e0;
   color: #525151;
   white-space: nowrap;
   text-decoration: none;
-  border-bottom: thin solid #CFDFDF;
   border-top-left-radius: .5em;
   border-top-right-radius: .5em;
 }
@@ -28,10 +30,10 @@
 #menu_ul a.current_show {
   font-weight: bold;
   background: #FFFFFF;
-  border-top: thin solid #CFDEFF;
-  border-left: thin solid #CFDEFF;
-  border-right: thin solid #CFDEFF;
-  border-bottom: none;
+  border-top: thin solid #7e0079;
+  border-left: thin solid #7e0079;
+  border-right: thin solid #7e0079;
+  border-bottom: thin solid #ffffff;
 }
 
 #menu_ul ul {
@@ -42,10 +44,10 @@
   top: 100%;
   left: 0;
   background: #ffffff;
-  border-top: none;
-  border-left: thin solid #CFDEFF;
-  border-right: thin solid #CFDEFF;
-  border-bottom: thin solid #CFDEFF;
+  border: thin solid #7e0079;
+  z-index:8888;
+  border-radius: 2px;
+  box-shadow: #333333 1px 1px 2px;
 }
 
 #menu_ul ul li {
@@ -62,7 +64,6 @@
 }
 
 #menu_ul a:hover {
-  background: #cfdeff;
   text-decoration: underline;
   color: #7e0079;
 }
