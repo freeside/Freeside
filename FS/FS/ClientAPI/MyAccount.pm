@@ -284,7 +284,7 @@ sub login {
 
     return { error => 'User not found.' } unless @svc_acct;
 
-    #return { error => 'Multiple users.' } if scalar(@svc_acct) > 1;
+    return { error => 'Multiple users.' } if scalar(@svc_acct) > 1;
 
     my $svc_acct = $svc_acct[0];
 
