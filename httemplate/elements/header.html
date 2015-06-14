@@ -157,6 +157,8 @@ Example:
 
         </TD>
 
+% } else { #$menu_position eq 'top'
+    <BR>
 % }
 %# page content starts here
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
@@ -166,7 +168,7 @@ Example:
           </H1>
 
 % unless ( $nobr ) {
-          <BR><BR>
+          <BR>
 % }
 
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
