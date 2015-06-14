@@ -112,7 +112,7 @@ function samechanged(what) {
     t1.style.visibility = 'visible'
   }
 }
-//samechanged(document.getElementById('same'));
+samechanged(document.getElementById('same'));
 </SCRIPT>
 
 <BR>
