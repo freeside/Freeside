@@ -23,14 +23,10 @@
 	z-index:		9999;
 	visibility:		hidden;
 	border:			1px solid #7e0079;
-	 -moz-border-radius: 4px;
-	 -webkit-border-radius: 4px;
-	 border-radius: 4px;
+	border-radius: 2px;
 	padding:		1px;
 	background:		white;
-        -moz-box-shadow: #000000 1px 1px 4px;
-        -webkit-box-shadow: #000000 1px 1px 4px;
-        box-shadow: #000000 1px 1px 4px;
+        box-shadow: #333333 1px 1px 2px;
 }
 
 .webfx-menu-empty {
