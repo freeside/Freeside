@@ -80,13 +80,12 @@
       &>
 % unless ($conf->exists('invoice-ship_address')) { #it's always on, so hide per-cust config
         <TR>
-          <TD>&nbsp;</TD>
-          <TD COLSPAN="7">
+          <TD COLSPAN="8">
             <% include('/elements/checkbox.html',
                  'field'      => 'invoice_ship_address',
                  'value'      => 'Y',
                  'curr_value' => $cust_main->invoice_ship_address,
-                 'postfix'    => emt('included on invoices'),
+                 'postfix'    => emt('Include service address on invoices'),
             ) %>
           </TD>
         </TR>
