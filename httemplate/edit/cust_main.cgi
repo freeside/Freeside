@@ -97,12 +97,10 @@
 
 <SCRIPT>
 function samechanged(what) {
-%#  document.getElementById('table_ship_location').style.visibility = 
   var t1 = document.getElementById('table_ship_location');
   if ( what.checked ) {
     t1.style.display = 'none';
-  }
-  else {
+  } else {
     t1.style.display = ''
   }
 }
