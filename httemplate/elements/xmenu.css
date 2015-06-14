@@ -28,9 +28,9 @@
 	 border-radius: 4px;
 	padding:		1px;
 	background:		white;
-        -moz-box-shadow: #000000 1px 1px 4px;
-        -webkit-box-shadow: #000000 1px 1px 4px;
-        box-shadow: #000000 1px 1px 4px;
+        -moz-box-shadow: #333333 1px 1px 2px;
+        -webkit-box-shadow: #333333 1px 1px 2px;
+        box-shadow: #333333 1px 1px 2px;
 }
 
 .webfx-menu-empty {
