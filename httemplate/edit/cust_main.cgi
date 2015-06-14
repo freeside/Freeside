@@ -97,15 +97,13 @@
 
 <SCRIPT>
 function samechanged(what) {
-%# not display = 'none', because we still want it to take up space
 %#  document.getElementById('table_ship_location').style.visibility = 
-%#    what.checked ? 'hidden' : 'visible';
   var t1 = document.getElementById('table_ship_location');
   if ( what.checked ) {
-    t1.style.visibility = 'hidden';
+    t1.style.display = 'none';
   }
   else {
-    t1.style.visibility = 'visible'
+    t1.style.display = ''
   }
 }
 samechanged(document.getElementById('same'));
