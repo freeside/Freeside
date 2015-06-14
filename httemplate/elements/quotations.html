@@ -1,7 +1,7 @@
 % if ( $curuser->access_right('Generate quotation') ) { 
 
   <FONT CLASS="fsinnerbox-title"><% mt( 'Quotations' ) |h %></FONT>
-  <A HREF="<%$p%>edit/quotation.html?<% $new_query %>">New quotation</A>
+  <A HREF="<%$p%>edit/quotation.html?<% $new_query %>">Create new quotation</A>
 
 % if ( @quotations ) {
     <& /elements/table-grid.html &>
