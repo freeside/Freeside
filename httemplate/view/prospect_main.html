@@ -1,40 +1,22 @@
-<& /elements/header.html, 'Prospect View: '. $prospect_main->company &>
+<& /elements/header.html, $title &>
 
 % if ( $curuser->access_right('Edit prospect') ) { 
   <A HREF="<% $p %>edit/prospect_main.html?<% $prospectnum %>">Edit this prospect</A>
 % } 
 
-<% ntable("#cccccc",2) %>
-
-<TR>
-  <TD ALIGN="right">Prospect #</TD>
-  <TD BGCOLOR="#FFFFFF"><B><% $prospectnum %></B>
-%   if ( $prospect_main->disabled ) {
-      <B>(DISABLED)</B>
-%   }
-  </TD>
-</TR>
-
-%unless ( scalar(@agentnums) == 1
-%         && !$curuser->access_right('View customers of all agents') ) {
-%  my $agent = qsearchs('agent',{ 'agentnum' => $prospect_main->agentnum } );
-   <TR>
-     <TD ALIGN="right">Agent</TD>
-     <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent |h %></TD>
-   </TR>
-%}
+<TABLE CLASS="fsinnerbox">
 
 %unless ( ! $prospect_main->refnum ) { # || scalar(@part_referral) == 1 ) {
 %  my $part_referral = qsearchs('part_referral',{ 'refnum' => $prospect_main->refnum } );
    <TR>
-     <TD ALIGN="right">Advertising source</TD>
+     <TH ALIGN="right">Advertising source</TD>
      <TD BGCOLOR="#ffffff"><% $part_referral->referral |h %></TD>
    </TR>
 %}
 
 % if ( $prospect_main->company ) { 
   <TR>
-    <TD ALIGN="right">Company</TD>
+    <TH ALIGN="right">Company</TD>
     <TD BGCOLOR="#FFFFFF"><B><% $prospect_main->company |h %></B></TD>
   </TR>
 % }
@@ -42,7 +24,7 @@
 % foreach my $prospect_contact ( $prospect_main->prospect_contact ) {
 %   my $contact = $prospect_contact->contact;
     <TR>
-      <TD ALIGN="right"><% $prospect_contact->contact_classname %> Contact</TD>
+      <TH ALIGN="right"><% $prospect_contact->contact_classname %> Contact</TD>
       <TD BGCOLOR="#FFFFFF"><% $contact->line %></TD>
     </TR>
 %}
@@ -52,7 +34,7 @@
 % #but only one, for now
 % foreach my $cust_location (@cust_location) {
     <TR>
-      <TD ALIGN="right">Address</TD>
+      <TH ALIGN="right">Address</TD>
       <TD BGCOLOR="#FFFFFF">
         <% $cust_location->location_label(
              'join_string'     => '<BR>',
@@ -71,7 +53,7 @@
 % }
 % if ( my $tax_status = $prospect_main->tax_status ) {
   <TR>
-    <TD ALIGN="right">Tax status</TD>
+    <TH ALIGN="right">Tax status</TD>
     <TD BGCOLOR="#FFFFFF">
       <B><% $tax_status->taxstatus %>:</B> <% $tax_status->description %>
     </TD>
@@ -100,15 +82,7 @@
     <BR><BR>
 % }
 
-<!--
-<% ntable("#cccccc") %>
-
-<TR>
-  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Tickets</FONT></TH>
-</TR>
-
-</TABLE>
--->
+%# XXX display prospect tickets
 
 <%init>
 
@@ -134,6 +108,14 @@ my $prospect_main = qsearchs( {
 });
 die "Prospect not found!" unless $prospect_main;
 
+my $title = encode_entities($prospect_main->name);
+$title = mt("Prospect"). ": $title";
+$title .= ' ('.mt('DISABLED').')'
+  if $prospect_main->disabled;
+
 my @agentnums = $curuser->agentnums;
+if (scalar(@agentnums) > 1 ) {
+  $title = encode_entities($prospect_main->agent->agent). " $title";
+}
 
 </%init>
