@@ -787,15 +787,15 @@ sub edit_info {
 
     if ( $new->payinfo eq $cust_main->paymask ) {
       $new->payinfo($cust_main->payinfo);
+      $new->paycvv( $p->{'paycvv'} || $cust_main->paycvv );
     } else {
       $new->payinfo($p->{'payinfo'});
+      return { 'error' => 'CVV2 is required' }
+        if ! $p->{'paycvv'} && $conf->exists('selfservice-onfile_require_cvv');
+      $new->paycvv( $p->{'paycvv'} )
     }
 
     $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
-
-    if ( $conf->exists('selfservice-onfile_require_cvv') ){
-      return { 'error' => 'CVV2 is required' } unless $p->{'paycvv'};
-    }
 
   } elsif ( $payby =~ /^(CHEK|DCHK)$/ ) {
 
