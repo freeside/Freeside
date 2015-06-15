@@ -40,7 +40,7 @@ Description: Web interface for Freeside billing and trouble ticketing
 
 Package: freeside-selfservice-lib
 Architecture: all
-Depends: libtext-template-perl,libbusiness-creditcard-perl,libhttp-browserdetect-perl,libhtml-parser-perl,libtie-ixhash-perl,libhtml-widgets-selectlayers-perl,libtimedate-perl,libnumber-format-perl,libsoap-lite-perl,libtext-csv-xs-perl,apache2-suexec-custom,apache2-mpm-worker|apache2-mpm-prefork
+Depends: libtext-template-perl,libbusiness-creditcard-perl,libhttp-browserdetect-perl,libhtml-parser-perl,libtie-ixhash-perl,libhtml-widgets-selectlayers-perl,libtimedate-perl,libnumber-format-perl,libsoap-lite-perl,libtext-csv-xs-perl,apache2-suexec-custom,apache2
 Recommends:
 Description: Self-service portal for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
@@ -49,7 +49,7 @@ Description: Self-service portal for Freeside billing and trouble ticketing
 
 Package: freeside-selfservice-ui
 Architecture: all
-Depends: freeside-selfservice-lib
+Depends: freeside-selfservice-lib,apache2
 Description: Self-service portal html/cgi filesfor Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
  .
