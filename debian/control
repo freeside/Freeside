@@ -57,7 +57,7 @@ Description: Self-service portal html/cgi filesfor Freeside billing and trouble 
 
 Package: freeside-ng-selfservice
 Architecture: all
-Depends:
+Depends: libapache2-mod-php5,php5-xmlrpc,apache2-mpm-prefork
 Recommends:
 Description: Next Generation Self-service portal written in PHP using the XML-RPC API for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
