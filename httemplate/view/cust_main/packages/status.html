@@ -417,6 +417,10 @@ sub pkg_status_row_expire {
     } elsif ( $cust_pkg->change_to_pkg->locationnum != $cust_pkg->locationnum )
     {
       $title = mt('Will <b>change location</b> on');
+    } elsif (( $cust_pkg->change_to_pkg->quantity != $cust_pkg->quantity ) ||
+             ( $cust_pkg->change_to_pkg->contract_end != $cust_pkg->contract_end ))
+    {
+      $title = mt('Will change on');
     } else {
       # FS::cust_pkg->change_later should have prevented this, but 
       # just so that we can display _something_
