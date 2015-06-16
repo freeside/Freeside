@@ -37,6 +37,34 @@ Example:
 
          )
 
+Some incomplete notes for javascript programmers:
+
+On page load, existing rows are initialized by passing values to addRow
+based on existing cgi values.  An empty row (marked with the 'emptyrow' 
+attribute) is created by invoking addRow without values.  After that, 
+to keep the non-empty row count (totalrows) accurate, use newEmptyRow to 
+create the next row.  There should only be one empty row at a time.
+
+Global vars:
+total_el  - element for displaying total number of rows
+totalrows - total number of non-empty rows
+rownum - really more of a "next row" value, used by addRow
+allrows - array of tr elements, one for each row
+
+Don't confuse the global rownum with the element attribute rownum
+that is set as a reference point on some of the elements generated
+by this script.  They have different values.
+
+Some of the functions:
+updateTotalRow() - updates total_el based on value of totalrows
+addDeleteButton(searchrow) - adds delete button to searchrow
+newEmptyRow() - replaces old empty row
+deleteRow() - removes the row specified by this.rownum
+addRow(values) - adds a new row (marked as empty if values aren't specified)
+
+This mason element is currently only used by misc/batch-cust_pay.html, 
+and probably should be cleaned up more before being used by anything else.
+
 </%doc>
 
 <SCRIPT TYPE="text/javascript">
@@ -112,7 +140,7 @@ Example:
       }
   }
 
-  function <% $opt{prefix} %>search_invnum() {
+  function search_invnum() {
 
     this.style.color = '#000000'
 
@@ -129,7 +157,7 @@ Example:
     }
 
     if ( document.getElementById('row'+searchrow).emptyrow ) {
-      <% $opt{prefix} %>newEmptyRow(searchrow);
+      newEmptyRow(searchrow);
     }
     var customer = document.getElementById('customer'+searchrow);
     customer.value = 'searching...';
@@ -153,7 +181,7 @@ Example:
       update_customer(searchrow, customerArray);
 
 % if ( $opt{invnum_update_callback} ) {
-        <% $opt{invnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+        <% $opt{invnum_update_callback} %>(searchrow)
 % }
 
     }
@@ -162,7 +190,7 @@ Example:
 
   }
 
-  function <% $opt{prefix} %>search_custnum() {
+  function search_custnum() {
 
     this.style.color = '#000000'
 
@@ -180,7 +208,7 @@ Example:
     }
 
     if ( document.getElementById('row'+searchrow).emptyrow ) {
-      <% $opt{prefix} %>newEmptyRow(searchrow);
+      newEmptyRow(searchrow);
     }
 
     var customer_obj = document.getElementById('customer'+searchrow);
@@ -214,7 +242,7 @@ Example:
 
         update_customer(searchrow, customerArrayArray[0]);
 % if ( $opt{custnum_update_callback} ) {
-          <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+          <% $opt{custnum_update_callback} %>(searchrow)
 % }
 
       } else {
@@ -248,7 +276,7 @@ Example:
 
   }
 
-  function <% $opt{prefix} %>search_customer() {
+  function search_customer() {
 
     var customer_obj = this;
     var searchrow = this.getAttribute('rownum');
@@ -263,7 +291,7 @@ Example:
     }
 
     if ( document.getElementById('row'+searchrow).emptyrow ) {
-      <% $opt{prefix} %>newEmptyRow(searchrow);
+      newEmptyRow(searchrow);
     }
     
     var invnum = document.getElementById('invnum'+searchrow);
@@ -292,7 +320,7 @@ Example:
 
         update_customer(searchrow, customerArrayArray[0]);
 % if ( $opt{custnum_update_callback} ) {
-        <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+        <% $opt{custnum_update_callback} %>(searchrow)
 % }
 
       } else {
@@ -355,7 +383,7 @@ Example:
       update_customer(searchrow, JSON.parse(custnum_balance_status));
 
 % if ( $opt{custnum_update_callback} ) {
-      <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+      <% $opt{custnum_update_callback} %>(searchrow)
 % }
 
     }
@@ -389,29 +417,30 @@ Example:
     num_open_invoices[rownum] = newval;
   }
 
-  function <% $opt{prefix} %>updateTotalRow () {
-    if ( <% $opt{prefix} %>totalrows == 1 ) {
-      <% $opt{prefix} %>total_el.innerHTML =
+  // updates display of total rows based on value of totalrows
+  function updateTotalRow () {
+    if ( totalrows == 1 ) {
+      total_el.innerHTML =
         'Total '
-          + <% $opt{prefix} %>totalrows
+          + totalrows
           + ' <% $opt{name_singular} || 'customer' %>';
     } else {
-      <% $opt{prefix} %>total_el.innerHTML =
+      total_el.innerHTML =
         'Total '
-          + <% $opt{prefix} %>totalrows
+          + totalrows
           + ' <% PL($opt{name_singular} || 'customer') %>';
     }
   }
 
-  var <% $opt{prefix} %>total_el, <% $opt{prefix} %>rownum, <% $opt{prefix} %>totalrows, <% $opt{prefix} %>allrows;
+  var total_el, rownum, totalrows, allrows;
 
-  function <% $opt{prefix} %>addDeleteButton (searchrow) {
+  function addDeleteButton (searchrow) {
     var td_delete = document.getElementById('delete'+searchrow);
     var button_delete = document.createElement('INPUT');
     button_delete.setAttribute('rownum', searchrow);
     button_delete.setAttribute('type', 'button');
     button_delete.setAttribute('value', 'X');
-    button_delete.onclick = <% $opt{prefix} %>deleteRow;
+    button_delete.onclick = deleteRow;
     button_delete.style.color = '#ff0000';
     button_delete.style.fontWeight = 'bold';
     button_delete.style.paddingLeft = '2px';
@@ -419,24 +448,24 @@ Example:
     td_delete.appendChild(button_delete);
   }
 
-  function <% $opt{prefix} %>newEmptyRow (searchrow) {
+  function newEmptyRow (searchrow) {
     // add delete button to current row
-    <% $opt{prefix} %>addDeleteButton(searchrow);
+    addDeleteButton(searchrow);
     // mark current row as non-empty
     var oldemptyrow = document.getElementById('row'+searchrow);
     oldemptyrow.emptyrow = false;
     // update totalrows
-    <% $opt{prefix} %>totalrows++
-    <% $opt{prefix} %>updateTotalRow();
+    totalrows++
+    updateTotalRow();
     // add a new empty row
-    <% $opt{prefix} %>addRow();
+    addRow();
   }
 
-  function <% $opt{prefix} %>deleteRow() {
+  function deleteRow() {
     var thisrownum = this.getAttribute('rownum');
 % if ( $opt{delete_row_callback} ) {
     // callback
-    <% $opt{delete_row_callback} %>(thisrownum,'<% $opt{prefix} %>');
+    <% $opt{delete_row_callback} %>(thisrownum);
 % }
     // remove the actual row
     var thisrow = document.getElementById('row'+thisrownum);
@@ -448,25 +477,25 @@ Example:
       newrows.push(allrows[i]);
     }
     allrows = newrows;
-    <% $opt{prefix} %>totalrows--; // should never be deleting empty rows
-    <% $opt{prefix} %>updateTotalRow();
+    totalrows--; // should never be deleting empty rows
+    updateTotalRow();
     // recalculate column totals, if any
 % my $col = 0;
 % foreach my $footer ( @{$opt{footer}} ) {
 %   if ($footer eq '_TOTAL' ) {
-    <% $opt{prefix} %>calc_total<% $col %>()
+    calc_total<% $col %>()
 %   }
 %   $col++;
 % }
   }
 
-  function <% $opt{prefix} %>addRow(values) {
+  function addRow(values) {
 
-    var table = document.getElementById('<% $opt{prefix} %>OneTrueTable');
+    var table = document.getElementById('OneTrueTable');
     var tablebody = table.getElementsByTagName('tbody').item(0);
 
     var row = table.insertRow(table.rows.length - 1);
-    var thisrownum = values ? values.rownum : <% $opt{prefix} %>rownum;
+    var thisrownum = values ? values.rownum : rownum;
     row.setAttribute('id', 'row'+thisrownum);
     row.emptyrow = values ? false : true;
     
@@ -481,7 +510,7 @@ Example:
       invnum_input.setAttribute('rownum', thisrownum);
       invnum_input.value = values ? values.invnum : '';
       invnum_input.onfocus = clearhint_invnum;
-      invnum_input.onchange = <% $opt{prefix} %>search_invnum;
+      invnum_input.onchange = search_invnum;
       invnum_cell.appendChild(invnum_input);
 
     row.appendChild(invnum_cell);
@@ -497,7 +526,7 @@ Example:
       display_custnum_input.setAttribute('rownum', thisrownum);
       display_custnum_input.value = values ? values.custnum : '';
       display_custnum_input.onfocus = clearhint_custnum;
-      display_custnum_input.onchange = <% $opt{prefix} %>search_custnum;
+      display_custnum_input.onchange = search_custnum;
       custnum_cell.appendChild(display_custnum_input);
 
       var custnum_input = document.createElement('INPUT');
@@ -552,7 +581,7 @@ Example:
       customer_input.value = values ? values.customer : '';
       customer_input.onfocus = clearhint_customer;
       customer_input.onclick = clearhint_customer;
-      customer_input.onchange = <% $opt{prefix} %>search_customer;
+      customer_input.onchange = search_customer;
       customer_cell.appendChild(customer_input);
 
       var customer_select = document.createElement('SELECT');
@@ -602,6 +631,9 @@ Example:
 
       var my_cell = document.createElement('TD');
       my_cell.setAttribute('align', '<% $align{ $opt{align}->[$col] || 'l' } %>');
+%     if ($opt{'color'}->[$col]) {
+      my_cell.style.color = '<% $opt{color}->[$col] %>';
+%     }
 
 %     if ($types->[$col] eq 'immutable') {
         var my_text = document.createTextNode(values ? values.<% $field %> : '');
@@ -626,8 +658,8 @@ Example:
         my_input.onchange   = <% $opt{onchange}->[$col] %>;
 %     }
 %     elsif ( $opt{footer}->[$col] eq '_TOTAL' ) {
-        my_input.onchange   = <% $opt{prefix} %>calc_total<%$col%>;
-        my_input.onkeyup    = <% $opt{prefix} %>calc_total<%$col%>;
+        my_input.onchange   = calc_total<%$col%>;
+        my_input.onkeyup    = calc_total<%$col%>;
 %     }
       my_cell.appendChild(my_input);
 
@@ -640,24 +672,23 @@ Example:
     td_delete.setAttribute('id', 'delete'+thisrownum);
     row.appendChild(td_delete);
     if (values) {
-      <% $opt{prefix} %>addDeleteButton(thisrownum);
+      addDeleteButton(thisrownum);
     }
 
     update_num_open(thisrownum, (values ? values.num_open : '0'));
 
 % if ( $opt{add_row_callback} ) {
-    <% $opt{add_row_callback} %>(thisrownum,
-                                 '<% $opt{prefix} %>', values);
+    <% $opt{add_row_callback} %>(thisrownum, values);
 % }
 
     // update the total number of rows display
     allrows.push(thisrownum);
-    if (values) <% $opt{prefix} %>totalrows++;
-    <% $opt{prefix} %>updateTotalRow();
+    if (values) totalrows++;
+    updateTotalRow();
 
     // update the next available row number
-    if (thisrownum >= <% $opt{prefix} %>rownum) {
-      <% $opt{prefix} %>rownum = thisrownum + 1;
+    if (thisrownum >= rownum) {
+      rownum = thisrownum + 1;
     }
 
   } // end of addRow
@@ -665,7 +696,7 @@ Example:
 
 </SCRIPT>
 
-<TABLE ID="<% $opt{prefix} %>OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TABLE ID="OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 
 <TR>
   <TH>Inv #</TH>
@@ -680,7 +711,7 @@ Example:
 
 % my @rownums = sort { $a <=> $b } map /^custnum(\d+)$/, keys %$param;
 <TR id="row_total">
-  <TH COLSPAN=5 ID="<% $opt{'prefix'} %>_TOTAL_TOTAL">
+  <TH COLSPAN=5 ID="_TOTAL_TOTAL">
     Total <% @rownums || 0 %>
     <% PL($opt{name_singular} || 'customer', ( @rownums || 0 ) ) %>
   </TH>
@@ -702,17 +733,17 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
-<% $opt{prefix} %>total_el =
-  document.getElementById("<% $opt{'prefix'} %>_TOTAL_TOTAL");
+total_el =
+  document.getElementById("_TOTAL_TOTAL");
 
-<% $opt{prefix} %>rownum = 1; // really more of a "next row", used by addrow
-<% $opt{prefix} %>totalrows = 0; // will not include empty rows
-<% $opt{prefix} %>allrows = []; // will include empty rows
+rownum = 1; // really more of a "next row", used by addrow
+totalrows = 0; // will not include empty rows
+allrows = []; // will include empty rows
 
 % foreach my $row ( @rownums ) {
 %   if ( grep($param->{$_.$row},qw(invnum display_custnum custnum status statuscolor customer balance),@{$opt{fields}} ) ) {
 
-<% $opt{prefix} %>addRow({
+addRow({
   rownum:<% $row %>,
   num_open:<% $param->{"num_open$row"} |js_string %>,
   invnum:<% $param->{"invnum$row"} |js_string %>,
@@ -738,27 +769,27 @@ Example:
 %   }
 % }
 
-<% $opt{prefix} %>addRow();
+addRow();
 
 % my $col = 0;
 % foreach my $footer ( @{$opt{footer}} ) {
 %   if ($footer eq '_TOTAL' ) {
 %     my $name = $opt{fields}->[$col];
 %     $name = ref($name) ? "column$col" : $name;
-      var <% $opt{prefix} %>th_el = document.getElementById("<%$name%>_TOTAL");
-      function <% $opt{prefix} %>calc_total<% $col %>() {
+      var th_el = document.getElementById("<%$name%>_TOTAL");
+      function calc_total<% $col %>() {
         var row = 0;
         var total = 0;
-        for (i = 0; i < <% $opt{prefix} %>allrows.length; i++) {
-          var value = document.getElementById("<%$name%>"+<% $opt{prefix} %>allrows[i]).value;
+        for (i = 0; i < allrows.length; i++) {
+          var value = document.getElementById("<%$name%>"+allrows[i]).value;
           value = parseFloat(value);
           if ( ! isNaN(value) ) {
             total = total + value;
           }
         }
-        <% $opt{prefix} %>th_el.innerHTML = '&nbsp;' + total.toFixed(2);
+        th_el.innerHTML = '&nbsp;' + total.toFixed(2);
       }
-      <% $opt{prefix} %>calc_total<% $col %>()
+      calc_total<% $col %>()
 %   }
 %   $col++;
 % }
@@ -774,10 +805,6 @@ Example:
 
 my(%opt) = @_;
 my $conf = new FS::Conf;
-
-## caution when using prefix, it isn't consistently applied to tag id/name
-$opt{prefix} = '' unless defined $opt{prefix};
-$opt{prefix} .= '_' if $opt{prefix};
 
 my $types = $opt{'type'} ? [ @{$opt{'type'}} ] : [];
 my $sizes = $opt{'size'} ? [ @{$opt{'size'}} ] : [];
