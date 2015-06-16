@@ -68,8 +68,8 @@
            VALUE="Y"
            <% $has_ship_address ? '' : 'CHECKED' %>
     ><% mt('same as billing address') |h %>
-    <DIV CLASS="fsinnerbox">
-      <TABLE ID="table_ship_location" WIDTH="100%">
+    <DIV ID="div_ship_location">
+      <TABLE WIDTH="100%" CLASS="fsinnerbox">
       <& cust_main/before_ship_location.html, $cust_main &>
       <& /elements/location.html,
           object => $cust_main->ship_location,
@@ -95,16 +95,20 @@
   </TD>
 </TR></TABLE>
 
-<SCRIPT>
+<SCRIPT TYPE="text/javascript">
+
 function samechanged(what) {
-  var t1 = document.getElementById('table_ship_location');
   if ( what.checked ) {
-    t1.style.display = 'none';
+    $('#div_ship_location').slideUp();
   } else {
-    t1.style.display = ''
+    $('#div_ship_location').slideDown();
   }
 }
-samechanged(document.getElementById('same'));
+
+% if ( ! $has_ship_address ) {
+  $('#div_ship_location').hide();
+% }
+
 </SCRIPT>
 
 <& cust_main/contacts_new.html, 'cust_main'=>$cust_main, &>
