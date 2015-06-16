@@ -26,15 +26,15 @@ function warnUnload() {
 }
 window.onbeforeunload = warnUnload;
 
-function add_row_callback(rownum, prefix, values) {
+function add_row_callback(rownum, values) {
   if (values) {
-    custnum_update_callback(rownum, prefix);
+    custnum_update_callback(rownum);
   } else {
     document.getElementById('enable_app'+rownum).disabled = true;
   }
 }
 
-function delete_row_callback(rownum, prefix) {
+function delete_row_callback(rownum) {
   var i = 0;
   var delbutton = document.getElementById('delete'+rownum+'.'+i);
   var delrows = [];
@@ -49,7 +49,7 @@ function delete_row_callback(rownum, prefix) {
   }
 }
 
-function custnum_update_callback(rownum, prefix) {
+function custnum_update_callback(rownum) {
   var custnum = document.getElementById('custnum'+rownum).value;
   // if there is a custnum and more than one open invoice, enable
   // (and check) the box
@@ -58,17 +58,17 @@ function custnum_update_callback(rownum, prefix) {
   enable_app_checkbox.disabled = show_applications;
 
 % if ( $use_discounts ) {
-  select_discount_term(rownum, prefix);
+  select_discount_term(rownum);
 % }
 }
 
-function invnum_update_callback(rownum, prefix) {
-  custnum_update_callback(rownum, prefix);
+function invnum_update_callback(rownum) {
+  custnum_update_callback(rownum);
 }
 
-function select_discount_term(row, prefix) {
-  var custnum_obj = document.getElementById('custnum'+prefix+row);
-  var select_obj = document.getElementById('discount_term'+prefix+row);
+function select_discount_term(row) {
+  var custnum_obj = document.getElementById('custnum'+row);
+  var select_obj = document.getElementById('discount_term'+row);
 
   var value = '';
   if (select_obj.type == 'hidden') {
@@ -436,6 +436,7 @@ my @footer_align = ( 'r', 'r' );
 my @onchange = ( '', '' );;
 my $use_discounts = '';
 
+# Not entirely sure this works anymore...
 if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
   #push @header, 'Discount';
   push @header, '';
