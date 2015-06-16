@@ -1943,6 +1943,13 @@ can't be transferred (also see the I<cust_pkg-change_svcpart> config option).
 If unprotect_svcs is true, this method will transfer as many services as 
 it can and then unconditionally cancel the old package.
 
+=item contract_end
+
+If specified, sets this value for the contract_end date on the new package 
+(without regard for keep_dates or the usual date-preservation behavior.)
+Will throw an error if defined but false;  the UI doesn't allow editing 
+this unless it already exists, making removal impossible to undo.
+
 =back
 
 At least one of locationnum, cust_location, pkgpart, refnum, cust_main, or
@@ -1956,6 +1963,36 @@ For example:
 
 =cut
 
+#used by change and change_later
+#didn't put with documented check methods because it depends on change-specific opts
+#and it also possibly edits the value of opts
+sub _check_change {
+  my $self = shift;
+  my $opt = shift;
+  if ( defined($opt->{'contract_end'}) ) {
+    my $current_contract_end = $self->get('contract_end');
+    unless ($opt->{'contract_end'}) {
+      if ($current_contract_end) {
+        return "Cannot remove contract end date when changing packages";
+      } else {
+        #shouldn't even pass this option if there's not a current value
+        #but can be handled gracefully if the option is empty
+        warn "Contract end date passed unexpectedly";
+        delete $opt->{'contract_end'};
+        return '';
+      }
+    }
+    unless ($current_contract_end) {
+      #option shouldn't be passed, throw error if it's non-empty
+      return "Cannot add contract end date when changing packages " . $self->pkgnum;
+    }
+    if ($opt->{'start_date'} && ($opt->{'contract_end'} < $opt->{'start_date'})) {
+      return "Contract end date is before change date";
+    }
+  }
+  return '';
+}
+
 #some false laziness w/order
 sub change {
   my $self = shift;
@@ -1963,12 +2000,20 @@ sub change {
 
   my $conf = new FS::Conf;
 
+  # handle contract_end on cust_pkg same as passed option
+  if ( $opt->{'cust_pkg'} ) {
+    $opt->{'contract_end'} = $opt->{'cust_pkg'}->contract_end;
+    delete $opt->{'contract_end'} unless $opt->{'contract_end'};
+  }
+
+  # check contract_end, prevent adding/removing
+  my $error = $self->_check_change($opt);
+  return $error if $error;
+
   # Transactionize this whole mess
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-
-  my $error;
 
   if ( $opt->{'cust_location'} ) {
     $error = $opt->{'cust_location'}->find_or_insert;
@@ -1994,6 +2039,9 @@ sub change {
     if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
       $self->set_initial_timers;
     }
+    # but if contract_end was explicitly specified, that overrides all else
+    $self->set('contract_end', $opt->{'contract_end'})
+      if $opt->{'contract_end'};
     $error = $self->replace;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -2051,6 +2099,9 @@ sub change {
                     start_date contract_end)) {
     $hash{$date} = $self->getfield($date);
   }
+  # but if contract_end was explicitly specified, that overrides all else
+  $hash{'contract_end'} = $opt->{'contract_end'}
+    if $opt->{'contract_end'};
 
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
@@ -2339,8 +2390,10 @@ The date for the package change.  Required, and must be in the future.
 
 =item quantity
 
-The pkgpart. locationnum, and quantity of the new package, with the same 
-meaning as in C<change>.
+=item contract_end
+
+The pkgpart, locationnum, quantity and optional contract_end of the new 
+package, with the same meaning as in C<change>.
 
 =back
 
@@ -2349,6 +2402,10 @@ meaning as in C<change>.
 sub change_later {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
+
+  # check contract_end, prevent adding/removing
+  my $error = $self->_check_change($opt);
+  return $error if $error;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -2363,8 +2420,6 @@ sub change_later {
     return "start_date $date is in the past";
   }
 
-  my $error;
-
   if ( $self->change_to_pkgnum ) {
     my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
     my $new_pkgpart = $opt->{'pkgpart'}
@@ -2373,7 +2428,9 @@ sub change_later {
         if $opt->{'locationnum'} and $opt->{'locationnum'} != $change_to->locationnum;
     my $new_quantity = $opt->{'quantity'}
         if $opt->{'quantity'} and $opt->{'quantity'} != $change_to->quantity;
-    if ( $new_pkgpart or $new_locationnum or $new_quantity ) {
+    my $new_contract_end = $opt->{'contract_end'}
+        if $opt->{'contract_end'} and $opt->{'contract_end'} != $change_to->contract_end;
+    if ( $new_pkgpart or $new_locationnum or $new_quantity or $new_contract_end ) {
       # it hasn't been billed yet, so in principle we could just edit
       # it in place (w/o a package change), but that's bad form.
       # So change the package according to the new options...
@@ -2413,8 +2470,10 @@ sub change_later {
       if $opt->{'locationnum'} and $opt->{'locationnum'} != $self->locationnum;
   my $new_quantity = $opt->{'quantity'}
       if $opt->{'quantity'} and $opt->{'quantity'} != $self->quantity;
+  my $new_contract_end = $opt->{'contract_end'}
+      if $opt->{'contract_end'} and $opt->{'contract_end'} != $self->contract_end;
 
-  return '' unless $new_pkgpart or $new_locationnum or $new_quantity; # wouldn't do anything
+  return '' unless $new_pkgpart or $new_locationnum or $new_quantity or $new_contract_end; # wouldn't do anything
 
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
@@ -2425,7 +2484,7 @@ sub change_later {
     locationnum => $opt->{'locationnum'},
     start_date  => $date,
     map   {  $_ => ( $opt->{$_} || $self->$_() )  }
-      qw( pkgpart quantity refnum salesnum )
+      qw( pkgpart quantity refnum salesnum contract_end )
   } );
   $error = $new->insert('change' => 1, 
                         'allow_pkgpart' => ($new_pkgpart ? 0 : 1));
