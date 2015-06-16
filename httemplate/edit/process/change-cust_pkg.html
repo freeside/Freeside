@@ -41,34 +41,49 @@ if ( $cgi->param('locationnum') == -1 ) {
 }
 
 my $error;
-if ( $cgi->param('delay') ) {
-  my $date = parse_datetime($cgi->param('start_date'));
-  if (!$date) {
-    $error = "Invalid change date '".$cgi->param('start_date')."'.";
-  } elsif ( $date < time ) {
-    $error = "Change date ".$cgi->param('start_date')." is in the past.";
+my $contract_end;
+my $now = time;
+if (defined($cgi->param('contract_end'))) {
+  $contract_end = parse_datetime($cgi->param('contract_end'));
+  if ($contract_end < $now) {
+    $error = "Contract end ".$cgi->param('contract_end')." is in the past.";
   } else {
-    # schedule the change
-    $change{'start_date'} = $date;
-    $error = $cust_pkg->change_later(\%change);
+    $change{'contract_end'} = $contract_end;
   }
-} else {
-  # special case: if there's a package change scheduled, and it matches
-  # the parameters the user requested this time, then change to the existing
-  # future package.
-  if ( $cust_pkg->change_to_pkgnum ) {
-    my $change_to = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
-    if ( $change_to->pkgpart      == $change{'pkgpart'} and
-         $change_to->locationnum  == $change{'locationnum'} ) {
+}
 
-      %change = ( 'cust_pkg' => $change_to );
-
+unless ($error) {
+  if ( $cgi->param('delay') ) {
+    my $date = parse_datetime($cgi->param('start_date'));
+    if (!$date) {
+      $error = "Invalid change date '".$cgi->param('start_date')."'.";
+    } elsif ( $date < $now ) {
+      $error = "Change date ".$cgi->param('start_date')." is in the past.";
+    } else {
+      # schedule the change
+      $change{'start_date'} = $date;
+      $error = $cust_pkg->change_later(\%change);
     }
-  }
+  } else {
+    # special case: if there's a package change scheduled, and it matches
+    # the parameters the user requested this time, then change to the existing
+    # future package.
+    if ( $cust_pkg->change_to_pkgnum ) {
+      my $change_to = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
+      if (
+        $change_to->pkgpart      == $change{'pkgpart'} and
+        $change_to->locationnum  == $change{'locationnum'} and
+        $change_to->quantity     == $change{'quantity'} and
+        $change_to->contract_end == $change{'contract_end'}
+      ) {
+        %change = ( 'cust_pkg' => $change_to );
+      }
+    }
     
-  # do a package change right now
-  my $pkg_or_error = $cust_pkg->change( \%change );
-  $error = ref($pkg_or_error) ? '' : $pkg_or_error;
+    # do a package change right now
+    my $pkg_or_error = $cust_pkg->change( \%change );
+    $error = ref($pkg_or_error) ? '' : $pkg_or_error;
+  }
 }
 
 </%init>

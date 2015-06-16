@@ -28,6 +28,14 @@
                'curr_value' => $cust_pkg->quantity
   &>
 
+% if ($use_contract_end) {
+  <& /elements/tr-input-date-field.html, {
+      'name'  => 'contract_end',
+      'value' => ($cgi->param('contract_end') || $cust_pkg->get('contract_end')),
+      'label' => '<B>Contract End</B>',
+    } &>
+% }
+
 </TABLE>
 <BR>
 
@@ -124,12 +132,17 @@ my $part_pkg = $cust_pkg->part_pkg;
 
 my $title = "Change Package";
 
+my $use_contract_end = $cust_pkg->get('contract_end') ? 1 : 0;
+
 # if there's already a package change ordered, preload it
 if ( $cust_pkg->change_to_pkgnum ) {
   my $change_to = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
   $cgi->param('delay', 1);
   foreach(qw( start_date pkgpart locationnum quantity )) {
     $cgi->param($_, $change_to->get($_));
+  }
+  if ($use_contract_end) {
+    $cgi->param('contract_end', $change_to->get('contract_end'));
   }
   $title = "Edit Scheduled Package Change";
 }
