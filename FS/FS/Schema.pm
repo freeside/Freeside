@@ -4016,6 +4016,18 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'access_user_log' => {
+      'columns'      => [
+        'lognum',  'serial', '',        '', '', '',
+        'usernum',    'int', '',        '', '', '',
+        'path',   'varchar', '', 2*$char_d, '', '',
+        '_date',         @date_type,        '', '',
+      ],
+      'primary_key'  => 'lognum',
+      'unique'       => [],
+      'index'        => [ ['usernum'], ['path'], ['_date'] ],
+    },
+
     'sched_item' => {
       'columns' => [
         'itemnum',   'serial',      '', '', '', '', 

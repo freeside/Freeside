@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use FS::Mason qw( mason_interps );
 use FS::Trace;
+use FS::access_user_log;
 
 if ( %%%RT_ENABLED%%% ) {
 
@@ -104,7 +105,6 @@ sub handler
       return -1 if defined( $r->content_type )
                 && $r->content_type !~ m!(^text/|\bxml\b)!io;
 
-
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
@@ -135,6 +135,8 @@ sub handler
       $ah->interp($fs_interp);
 
     }
+
+    FS::access_user_log->insert_new_path( $r->uri );
 
     FS::Trace->log('handling request');
     my %session;
