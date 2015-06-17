@@ -846,3 +846,5 @@ FS/cust_pkg_reason_fee.pm
 t/cust_pkg_reason_fee.t
 FS/part_svc_link.pm
 t/part_svc_link.t
+FS/access_user_log.pm
+t/access_user_log.t
