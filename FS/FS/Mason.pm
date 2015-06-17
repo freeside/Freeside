@@ -377,6 +377,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::legacy_cust_history;
   use FS::quotation_pkg_tax;
   use FS::cust_pkg_reason_fee;
+  use FS::access_user_log;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -435,6 +436,7 @@ if ( -e $addl_handler_use_file ) {
     die $@ if $@;
   }
 
+  no warnings 'redefine';
   *CGI::redirect = sub {
     my $self = shift;
     my $cookie = '';
