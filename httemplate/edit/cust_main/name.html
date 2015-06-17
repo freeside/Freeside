@@ -1,6 +1,6 @@
 <%def .namepart>
 % my ($field, $value, $label, $extra) = @_;
-<DIV STYLE="display: inline-block">
+<DIV STYLE="display: inline-block" ID="<% $field %>_input">
   <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
   <BR><FONT SIZE="-1" COLOR="#333333"><% mt($label) %></FONT>
 </DIV>
@@ -21,7 +21,7 @@
 </TR>
 % if ( $conf->exists('cust_main-enable_spouse') ) {
 <TR ID="spouse_row">
-  <TH CLASS="label"><% mt('Spouse\'s name') |h %></TD>
+  <TH CLASS="label" ALIGN="right"><DIV ID="spouse_label"><% mt('Spouse\'s name') |h %></DIV></TD>
   <TD COLSPAN=6>
         <& .namepart, 'spouse_last', $cust_main->spouse_last, 'Last', ',' &>
         <& .namepart, 'spouse_first', $cust_main->spouse_first, 'First' &>
