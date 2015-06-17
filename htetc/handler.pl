@@ -7,7 +7,6 @@ use warnings;
 use FS::Mason qw( mason_interps );
 use FS::Trace;
 use FS::Conf;
-use FS::access_user_log;
 
 $FS::Conf::conf_cache_enabled = 1; # enable FS::Conf caching for performance
 
@@ -138,8 +137,6 @@ sub handler
       $ah->interp($fs_interp);
 
     }
-
-    FS::access_user_log->insert_new_path( $r->uri );
 
     FS::Trace->log('handling request');
     my %session;
