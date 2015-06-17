@@ -25,15 +25,21 @@
 
   function rescom_changed(what) {
     if ( what.checked == (what.value == 'Commercial' ) ) {
-      document.getElementById('company_row').style.display = '';
-      document.getElementById('contacts_div').style.display = '';
-      document.getElementById('spouse_row').style.display = 'none';
+      $('#company_label').slideDown();
+      $('#company_input').slideDown();
+      $('#contacts_div').slideDown();
+      $('#spouse_label').slideUp();
+      $('#spouse_last_input').slideUp();
+      $('#spouse_first_input').slideUp();
     } else {
       if ( document.getElementById('company').value.length == 0 ) {
-        document.getElementById('company_row').style.display = 'none';
+        $('#company_label').slideUp();
+        $('#company_input').slideUp();
       }
-      document.getElementById('contacts_div').style.display = 'none';
-      document.getElementById('spouse_row').style.display = '';
+      $('#contacts_div').slideUp();
+      $('#spouse_label').slideDown();
+      $('#spouse_last_input').slideDown();
+      $('#spouse_first_input').slideDown();
     }
   }
 
