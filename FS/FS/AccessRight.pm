@@ -405,6 +405,8 @@ tie my %rights, 'Tie::IxHash',
     #{ rightname=>'Edit employees', global=>1, },
     #{ rightname=>'Edit employee groupss', global=>1, },
 
+    { rightname=>'Edit custom fields', global=>1 },
+
     { rightname=>'Configuration', global=>1 }, #most of the rest of the configuraiton is not agent-virtualized
 
     { rightname=>'Configuration download', }, #description of how it affects
