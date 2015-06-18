@@ -262,8 +262,9 @@ Example:
 %# For address standardization:
 %# keep a clean copy of the address so we know if we need
 %# to re-standardize
-% foreach (qw(address1 city state country zip latitude
-%             longitude censustract district addr_clean) ) {
+% foreach (qw(locationname address1 city state country zip latitude
+%             longitude censustract district addr_clean
+%             ) ) {
 <& hidden.html, field => 'old_'.$pre.$_, value => $object->get($_) &>
 % }
 %# Placeholders
