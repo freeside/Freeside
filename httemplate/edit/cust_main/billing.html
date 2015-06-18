@@ -128,11 +128,25 @@
 
 % if ( $conf->exists('cust_main-select-prorate_day') ) {
     <TR>
-      <TH ALIGN="right" WIDTH="200"><% mt('Prorate day (1-28)') |h %> </TD>
+      <TH ALIGN="right" WIDTH="200"><% mt('Prorate day') |h %> </TD>
       <TD>
-        <INPUT TYPE="text" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>" SIZE=3 MAXLENGTH=2>
+        <SELECT NAME="prorate_day">
+          <% prorate_day_options($cust_main->prorate_day) %>
+        </SELECT>
       </TD>
     </TR>
+
+%   sub prorate_day_options {
+%     my $curr_value = shift;
+%     my $ret = '';
+%     for my $prorate_day ( 1 .. 28 ) {
+%       my $sel = '';
+%       $sel = "SELECTED='SELECTED'" if $curr_value == $prorate_day;
+%       $ret .= "<OPTION VALUE='$prorate_day' $sel>$prorate_day</OPTION>";
+%     }
+%     $ret;
+%    }
+
 % } else {
     <INPUT TYPE="hidden" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>">
 % }
