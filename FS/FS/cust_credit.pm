@@ -822,8 +822,6 @@ Example:
 
 =cut
 
-use Data::Dumper; #XXX
-
 #maybe i should just be an insert with extra args instead of a class method
 sub credit_lineitems {
   my( $class, %arg ) = @_;
@@ -887,7 +885,6 @@ sub credit_lineitems {
   # determine the tax adjustments
   my %tax_adjust = $class->calculate_tax_adjustment(%arg);
 
-  warn Dumper \%arg;
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
     my $amount = shift @{$arg{amounts}};
