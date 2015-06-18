@@ -4,7 +4,7 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied" unless $curuser->access_right('Credit line items');
 
-my $DEBUG = 0;
+my $DEBUG = 1;
 
 my $conf = new FS::Conf;
 
@@ -12,107 +12,31 @@ my $sub = $cgi->param('sub');
 
 my $return = {};
 
-if ( $sub eq 'calculate_taxes' ) {
+die "unknown sub '$sub'" if $sub ne 'calculate_taxes';
 
-  {
+my %arg = $cgi->param('arg');
+warn join('', map "$_: $arg{$_}\n", keys %arg )
+  if $DEBUG;
 
-    my %arg = $cgi->param('arg');
-    $return = \%arg;
-    warn join('', map "$_: $arg{$_}\n", keys %arg )
-      if $DEBUG;
+#some false laziness w/cust_credit::credit_lineitems
 
-    #some false laziness w/cust_credit::credit_lineitems
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $arg{custnum} },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+}) or die 'unknown customer';
 
-    my $cust_main = qsearchs({
-      'table'     => 'cust_main',
-      'hashref'   => { 'custnum' => $arg{custnum} },
-      'extra_sql' => ' AND '. $curuser->agentnums_sql,
-    }) or die 'unknown customer';
+$arg{billpkgnums} = [ split(',', $arg{billpkgnums}) ];
+$arg{setuprecurs} = [ split(',', $arg{setuprecurs}) ];
+$arg{amounts} =     [ split(',', $arg{amounts}) ];
 
-    my @billpkgnums = split(',', $arg{billpkgnums});
-    my @setuprecurs = split(',', $arg{setuprecurs});
-    my @amounts =     split(',', $arg{amounts});
+my %results = FS::cust_credit->calculate_tax_adjustment(%arg);
 
-    my @cust_bill_pkg = ();
-    my $taxlisthash = {};
-    while ( @billpkgnums ) {
-      my $billpkgnum = shift @billpkgnums;
-      my $setuprecur = shift @setuprecurs;
-      my $amount     = shift @amounts;
+$return = {
+  %arg,
+  %results
+};
 
-      my $cust_bill_pkg = qsearchs({
-        'table'     => 'cust_bill_pkg',
-        'hashref'   => { 'billpkgnum' => $billpkgnum },
-        'addl_from' => 'LEFT JOIN cust_bill USING (invnum)',
-        'extra_sql' => 'AND custnum = '. $cust_main->custnum,
-      }) or die "unknown billpkgnum $billpkgnum";
-
-      #shouldn't be passed# next if $cust_bill_pkg->pkgnum == 0;
-
-      if ( $setuprecur eq 'setup' ) {
-        $cust_bill_pkg->setup($amount);
-        $cust_bill_pkg->recur(0);
-        $cust_bill_pkg->unitrecur(0);
-        $cust_bill_pkg->type('');
-      } else {
-        $cust_bill_pkg->recur($amount);
-        $cust_bill_pkg->setup(0);
-        $cust_bill_pkg->unitsetup(0);
-      }
-
-      push @cust_bill_pkg, $cust_bill_pkg;
-
-      $cust_main->_handle_taxes( $taxlisthash, $cust_bill_pkg );
-    }
-
-    if ( @cust_bill_pkg ) {
-
-      my $listref_or_error = 
-        $cust_main->calculate_taxes( \@cust_bill_pkg, $taxlisthash, $cust_bill_pkg[0]->cust_bill->_date );
-
-      unless ( ref( $listref_or_error ) ) {
-        $return->{error} = $listref_or_error;
-        last;
-      }
-
-      my @taxlines = ();
-      my $taxtotal = 0;
-      $return->{taxlines} = \@taxlines;
-      foreach my $taxline ( @$listref_or_error ) {
-        my $amount = $taxline->setup;
-        my $desc = $taxline->desc;
-        foreach my $location (
-          @{$taxline->get('cust_bill_pkg_tax_location')},
-          @{$taxline->get('cust_bill_pkg_tax_rate_location')} )
-        {
-          my $taxlocnum = $location->locationnum || '';
-          my $taxratelocnum = $location->taxratelocationnum || '';
-          $location->cust_bill_pkg_desc($taxline->desc); #ugh @ that kludge
-          $taxtotal += $location->amount;
-          push @taxlines,
-            #[ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
-            [ $location->desc, $location->amount, $taxlocnum, $taxratelocnum ];
-          $amount -= $location->amount;
-        }
-        if ($amount > 0) {
-          $taxtotal += $amount;
-          push @taxlines,
-            [ $taxline->itemdesc. ' (default)', sprintf('%.2f', $amount), '', '' ];
-        }
-      }
-
-      $return->{taxlines} = \@taxlines;
-      $return->{taxtotal} = sprintf('%.2f', $taxtotal);
-
-    } else {
-
-      $return->{taxlines} = [];
-      $return->{taxtotal} = '0.00';
-
-    }
-
-  }
-
-}
+warn Dumper $return if $DEBUG;
 
 </%init>
