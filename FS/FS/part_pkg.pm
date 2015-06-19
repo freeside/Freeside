@@ -1392,6 +1392,11 @@ sub option {
   my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                      split("\n", $self->get('plandata') );
   return $plandata{$opt} if exists $plandata{$opt};
+
+  # check whether the option is defined in plan info (if so, don't warn)
+  if (exists $plans{ $self->plan }->{fields}->{$opt}) {
+    return '';
+  }
   cluck "WARNING: (pkgpart ". $self->pkgpart. ") Package def option $opt ".
         "not found in options or plandata!\n"
     unless $ornull;
