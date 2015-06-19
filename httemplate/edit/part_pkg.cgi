@@ -200,7 +200,6 @@
                        include_opt_callback =>
                          sub { pkgpart => $_[0]->pkgpart },
                      },
-                      
 
                      { type  => 'tablebreak-tr-title',
                        value => 'Promotions', #better name?
@@ -1219,6 +1218,11 @@ my $field_callback = sub {
                            };
     $fieldref->{layer_fields} = \%taxproduct_fields;
     $fieldref->{layer_values_callback} = $taxproduct_values;
+  } elsif ($field eq 'taxproductnum') { # part_pkg-taxproduct, new style
+    if ( !$taxproducts ) {
+      # then make the widget go away
+      $fieldref->{type} = 'hidden';
+    }
   }
 };
 
