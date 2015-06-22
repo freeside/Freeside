@@ -679,10 +679,12 @@ invoice_latexfooter
 invoice_latexsmallfooter
 invoice_latexnotes
 invoice_latexcoupon
+invoice_latexwatermark
 invoice_html
 invoice_htmlreturnaddress
 invoice_htmlfooter
 invoice_htmlnotes
+invoice_htmlwatermark
 logo.png
 logo.eps
 );
@@ -1379,6 +1381,15 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'invoicehtmlwatermark',
+    'section'     => 'invoicing',
+    'description' => 'Watermark for HTML invoices. Appears in a semitransparent positioned DIV overlaid on the main invoice container.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+    'per_locale'  => 1,
+  },
+
+  {
     'key'         => 'invoice_latex',
     'section'     => 'invoicing',
     'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
@@ -1560,6 +1571,15 @@ and customer address. Include units.',
     'key'         => 'invoice_latexsmallfooter',
     'section'     => 'invoicing',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+    'per_locale'  => 1,
+  },
+
+  {
+    'key'         => 'invoicelatexwatermark',
+    'section'     => 'invoicing',
+    'description' => 'Watermark for LaTeX invoices. See "texdoc background" for information on what this can contain. The content itself should be enclosed in braces, optionally followed by a comma and any formatting options.',
     'type'        => 'textarea',
     'per_agent'   => 1,
     'per_locale'  => 1,
