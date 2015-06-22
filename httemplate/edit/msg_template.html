@@ -210,6 +210,7 @@ my %substitutions = (
     '$company_address'=> 'Our company address',
     '$company_phonenum' => 'Our phone number',
     '$selfservice_server_base_url' => 'Base URL of customer self-service',
+    '$payment_history' => 'List of invoices/payments/credits/refunds',
   ],
   'contact' => [ # duplicate this for shipping
     '$name'           => 'Company and contact name',
@@ -322,7 +323,7 @@ my $widget = new HTML::Widgets::SelectLayers(
     my @hints = @{ $substitutions{$section} };
     while(@hints) {
       my $key = shift @hints;
-      $html .= qq!\n<TR><TD><A href="javascript:insertHtml('{$key}')">$key</A></TD>!;
+      $html .= qq!\n<TR><TD STYLE="padding-right: .25em;"><A href="javascript:insertHtml('{$key}')">$key</A></TD>!;
       $html .= "\n<TD>".shift(@hints).'</TD></TR>';
     }
     $html .= "\n</TABLE>";
