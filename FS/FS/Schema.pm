@@ -6914,6 +6914,8 @@ sub tables_hashref {
         'latexsmallfooter',     'text',     'NULL', '', '', '',
         'latexreturnaddress',   'text',     'NULL', '', '', '',
         'with_latexcoupon',     'char',     'NULL', '1', '', '',
+        'htmlwatermark',        'text',     'NULL', '', '', '',
+        'latexwatermark',       'text',     'NULL', '', '', '',
         'lpr',                  'varchar',  'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'confnum',
