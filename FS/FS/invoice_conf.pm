@@ -49,6 +49,8 @@ and supports the FS::Conf interface.  The following fields are supported:
 
 =item htmlreturnaddress - return address (HTML)
 
+=item htmlwatermark - watermark to show in background (HTML)
+
 =item latexnotes - "notes" section (LaTeX)
 
 =item latexfooter - footer (LaTeX)
@@ -58,6 +60,8 @@ and supports the FS::Conf interface.  The following fields are supported:
 =item latexreturnaddress - return address (LaTeX)
 
 =item latexsmallfooter - footer for pages after the first (LaTeX)
+
+=item latexwatermark - watermark to show in background (LaTeX)
 
 =item with_latexcoupon - 'Y' to print the payment coupon (LaTeX)
 
@@ -185,11 +189,13 @@ sub check {
     || $self->ut_anything('htmlfooter')
     || $self->ut_anything('htmlsummary')
     || $self->ut_anything('htmlreturnaddress')
+    || $self->ut_anything('htmlwatermark')
     || $self->ut_anything('latexnotes')
     || $self->ut_anything('latexfooter')
     || $self->ut_anything('latexsummary')
     || $self->ut_anything('latexsmallfooter')
     || $self->ut_anything('latexreturnaddress')
+    || $self->ut_anything('latexwatermark')
     # flags
     || $self->ut_flag('with_latexcoupon')
   ;
