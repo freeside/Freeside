@@ -112,6 +112,9 @@ my $conf = FS::Conf->new;
 
 my %payby = map { $_ => 1 } $conf->config('payby');
 
+# cached for conditions, to avoid looking it up twice
+my $invoicing_list_emailonly = $cust_main->invoicing_list_emailonly;
+
 # nice declarative menu; should be a parameter to some kind of menu generator
 my @menu = ( 
   [
@@ -197,7 +200,8 @@ my @menu = (
                       'misc/email-customers.html?table=cust_main;search_hash='.
                       'agent_virt_agentnum='.$agentnum.";custnum=$custnum";
                      },
-      condition   => sub { shift->invoicing_list_emailonly },
+      condition   => sub { $invoicing_list_emailonly },
+      acl         => 'Bulk send customer notices',
     },
   ],
   [
@@ -477,6 +481,18 @@ my @menu = (
       condition   => sub { 
         FS::cust_pay_pending->count('custnum = ?', shift->custnum) > 0
       },
+    },
+    {
+      label       => 'Email payment history to this customer',
+      url         => sub {
+                      my $cust_main = shift;
+                      my $agentnum = $cust_main->agentnum;
+                      'misc/email-customers-history.html?table=cust_main;search_hash='.
+                      'agent_virt_agentnum='.$agentnum.";custnum=$custnum;url=".
+                      uri_escape($cgi->self_url);
+                     },
+      condition   => sub { $invoicing_list_emailonly },
+      acl         => 'Bulk send customer notices',
     },
   ],
   [

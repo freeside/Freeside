@@ -269,7 +269,19 @@ invoicing_list addresses.  Multiple addresses may be comma-separated.
 
 =item substitutions
 
-A hash reference of additional substitutions
+A hash reference of additional string substitutions
+
+=item sub_param
+
+A hash reference, keys are the names of existing substitutions,
+values are an addition parameter object to pass to the subroutine
+for that substitution, e.g.
+
+	'sub_param' => {
+	  'payment_history' => {
+	    'start_date' => 1434764295,
+	  },
+	},
 
 =back
 
@@ -327,7 +339,10 @@ sub prepare {
       }
       elsif( ref($name) eq 'ARRAY' ) {
         # [ foo => sub { ... } ]
-        $hash{$prefix.($name->[0])} = $name->[1]->($obj);
+        my @subparam = ();
+        push(@subparam, $opt{'sub_param'}->{$name->[0]})
+          if $opt{'sub_param'} && $opt{'sub_param'}->{$name->[0]};
+        $hash{$prefix.($name->[0])} = $name->[1]->($obj,@subparam);
       }
       else {
         warn "bad msg_template substitution: '$name'\n";
@@ -340,7 +355,10 @@ sub prepare {
     $hash{$_} = $opt{substitutions}->{$_} foreach keys %{$opt{substitutions}};
   }
 
-  $_ = encode_entities($_ || '') foreach values(%hash);
+  foreach my $key (keys %hash) {
+    next if $self->no_encode($key);
+    $hash{$key} = encode_entities($_ || '');
+  };
 
   ###
   # clean up template
@@ -509,6 +527,13 @@ my $usage_warning = sub {
 
 #my $conf = new FS::Conf;
 
+# for substitutions that handle their own encoding
+sub no_encode {
+  my $self = shift;
+  my $field = shift;
+  return ($field eq 'payment_history');
+}
+
 #return contexts and fill-in values
 # If you add anything, be sure to add a description in 
 # httemplate/edit/msg_template.html.
@@ -566,6 +591,12 @@ sub substitutions {
         } ],
       [ selfservice_server_base_url => sub { 
           $conf->config('selfservice_server-base_url') #, shift->agentnum) 
+        } ],
+      [ payment_history => sub {
+          my $cust_main = shift;
+          my $param = shift || {};
+          #html works, see no_encode method
+          return '<PRE>' . encode_entities($cust_main->payment_history_text($param)) . '</PRE>';
         } ],
     ],
     # next_bill_date

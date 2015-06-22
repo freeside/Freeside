@@ -696,73 +696,15 @@ sub billing_history {
     $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
                             : '(none)';
 
-  my @history = ();
-
   my $conf = new FS::Conf;
 
-  if ( $conf->exists('selfservice-billing_history-line_items') ) {
+  $return{'history'} = [
+    $cust_main->payment_history(
+      'line_items' => $conf->exists('selfservice-billing_history-line_items'),
+      'reverse_sort' => 1,
+    )
+  ];
 
-    foreach my $cust_bill ( $cust_main->cust_bill ) {
-
-      push @history, {
-        'type'        => 'Line item',
-        'description' => $_->desc( $cust_main->locale ).
-                           ( $_->sdate && $_->edate
-                               ? ' '. time2str('%d-%b-%Y', $_->sdate).
-                                 ' To '. time2str('%d-%b-%Y', $_->edate)
-                               : ''
-                           ),
-        'amount'      => sprintf('%.2f', $_->setup + $_->recur ),
-        'date'        => $cust_bill->_date,
-        'date_pretty' =>  time2str('%m/%d/%Y', $cust_bill->_date ),
-      }
-        foreach $cust_bill->cust_bill_pkg;
-
-    }
-
-  } else {
-
-    push @history, {
-                     'type'        => 'Invoice',
-                     'description' => 'Invoice #'. $_->display_invnum,
-                     'amount'      => sprintf('%.2f', $_->charged ),
-                     'date'        => $_->_date,
-                     'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                   }
-      foreach $cust_main->cust_bill;
-
-  }
-
-  push @history, {
-                   'type'        => 'Payment',
-                   'description' => 'Payment', #XXX type
-                   'amount'      => sprintf('%.2f', 0 - $_->paid ),
-                   'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                 }
-    foreach $cust_main->cust_pay;
-
-  push @history, {
-                   'type'        => 'Credit',
-                   'description' => 'Credit', #more info?
-                   'amount'      => sprintf('%.2f', 0 -$_->amount ),
-                   'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                 }
-    foreach $cust_main->cust_credit;
-
-  push @history, {
-                   'type'        => 'Refund',
-                   'description' => 'Refund', #more info?  type, like payment?
-                   'amount'      => $_->refund,
-                   'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                 }
-    foreach $cust_main->cust_refund;
-
-  @history = sort { $b->{'date'} <=> $a->{'date'} } @history;
-
-  $return{'history'} = \@history;
   $return{'money_char'} = $conf->config("money_char") || '$',
 
   return \%return;

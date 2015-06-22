@@ -1,3 +1,26 @@
+<%doc>
+
+Allows emailing one or more customers, based on a search for customers.  Search can
+be specified either through cust_main fields as cgi params, or through a base64 encoded
+frozen hash in the 'search' cgi param.  Form allows selecting an existing msg_template,
+or creating a custom message, and shows a preview of the message before sending.
+If linked to as a popup, include the cgi parameter 'popup' for proper header handling.
+
+This may also be used as an element in other pages, enabling you to pass along
+additional substitution parameters to a message template, with the following options:
+
+form_action - the URL to submit the form to
+
+sub_param_process - subroutine to override cgi param values (such as msgnum) 
+and parse/delete additional form fields from the cgi;  should return a %sub_param 
+hash to be passed along for message substitution
+
+alternate_form - an alternate form for template selection/message creation
+
+title - the title of the page
+
+</%doc>
+
 % if ($popup) {
 <% include('/elements/header-popup.html', $title) %>
 % } else {
@@ -5,13 +28,16 @@
 % }
 
 
-<FORM NAME="OneTrueForm" ACTION="email-customers.html" METHOD="POST">
+<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="POST">
 <INPUT TYPE="hidden" NAME="table" VALUE="<% $table %>">
 %# Mixing search params with from address, subject, etc. required special-case
 %# handling of those, risked name conflicts, and caused massive problems with 
 %# multi-valued search params.  We are no longer in search context, so we 
 %# pack the search into a Storable string for later use.
 <INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
+% if (%sub_param) {
+<INPUT TYPE="hidden" NAME="sub_param" VALUE="<% encode_base64(nfreeze(\%sub_param)) %>">
+% }
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
 <INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
 
@@ -21,7 +47,7 @@
 
     <% include('/elements/progress-init.html',
                  'OneTrueForm',
-                 [ qw( search table from subject html_body text_body msgnum ) ],
+                 [ qw( search table from subject html_body text_body msgnum sub_param ) ],
                  'process/email-customers.html',
                  $pdest,
               )
@@ -93,6 +119,10 @@
     
 %   }
 
+% } elsif ($alternate_form) {
+
+<% $alternate_form %>
+
 % } else {
 
 <SCRIPT TYPE="text/javascript">
@@ -144,7 +174,7 @@ Template:
     <INPUT TYPE="hidden" NAME="action" VALUE="preview">
     <INPUT TYPE="submit" VALUE="Preview notice">
 
-% }
+% } #end not preview or alternate form
 
 </FORM>
 
@@ -158,10 +188,17 @@ Template:
 
 <%init>
 
+my %opt = @_;
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
 
 my $conf = FS::Conf->new;
+
+my $form_action = $opt{'form_action'} || 'email-customers.html';
+my %sub_param = $opt{'sub_param_process'} ? &{$opt{'sub_param_process'}}($conf) : ();
+my $alternate_form = $opt{'alternate_form'} ? &{$opt{'alternate_form'}}(%sub_param) : ();
+my $title = $opt{'title'} || 'Send customer notices';
 
 my $table = $cgi->param('table') or die "'table' required";
 my $agent_virt_agentnum = $cgi->param('agent_virt_agentnum') || '';
@@ -177,15 +214,13 @@ if ( $cgi->param('search') ) {
 }
 else {
   %search = $cgi->Vars;
-  delete $search{$_} for qw( action table from subject html_body text_body popup url );
+  delete $search{$_} for qw( action table from subject html_body text_body popup url sub_param );
   # FS::$table->search is expected to know which parameters might be 
   # multi-valued, and to accept scalar values for them also.  No good 
   # solution to this since CGI can't tell whether a parameter _might_
   # have had multiple values, only whether it does.
   @search{keys %search} = map { /\0/ ? [ split /\0/, $_ ] : $_ } values %search;
 } 
-
-my $title = 'Send customer notices';
 
 my $num_cust;
 my $from = '';
@@ -221,10 +256,12 @@ if ( $cgi->param('action') eq 'preview' ) {
     $sql_query->{'order_by'} = '';
     my $object = qsearchs($sql_query);
     my $cust = $object->cust_main;
-    my %message = $msg_template->prepare(
+    my %msgopts = (
       'cust_main' => $cust,
-      'object' => $object
+      'object' => $object,
     );
+    $msgopts{'sub_param'} = \%sub_param if %sub_param; 
+    my %message = $msg_template->prepare(%msgopts);
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
 }
