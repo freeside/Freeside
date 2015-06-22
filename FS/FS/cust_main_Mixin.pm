@@ -380,6 +380,11 @@ HTML body
 
 Text body
 
+=item sub_param
+
+Optional list of parameter hashrefs to be passed
+along to L<FS::msg_template/prepare>.
+
 =back
 
 Returns an error message, or false for success.
@@ -456,6 +461,8 @@ sub email_search_result {
         'cust_main' => $cust_main,
         'object'    => $obj,
       );
+      $message{'sub_param'} = $param->{'sub_param'}
+        if $param->{'sub_param'};
     }
     else {
       my @to = $cust_main->invoicing_list_emailonly;
@@ -533,7 +540,9 @@ sub process_email_search_result {
 
   $param->{'search'} = thaw(decode_base64($param->{'search'}))
     or die "process_email_search_result requires search params.\n";
-
+  $param->{'sub_param'} = thaw(decode_base64($param->{'sub_param'}))
+    or die "process_email_search_result error decoding sub_param\n"
+      if $param->{'sub_param'};
 #  $param->{'payby'} = [ split(/\0/, $param->{'payby'}) ]
 #    unless ref($param->{'payby'});
 

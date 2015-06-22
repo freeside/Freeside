@@ -4437,6 +4437,204 @@ my ($self,$field) = @_;
 
 }
 
+=item payment_history
+
+Returns an array of hashrefs standardizing information from cust_bill, cust_pay,
+cust_credit and cust_refund objects.  Each hashref has the following fields:
+
+I<type> - one of 'Line item', 'Invoice', 'Payment', 'Credit', 'Refund' or 'Previous'
+
+I<date> - value of _date field, unix timestamp
+
+I<date_pretty> - user-friendly date
+
+I<description> - user-friendly description of item
+
+I<amount> - impact of item on user's balance 
+(positive for Invoice/Refund/Line item, negative for Payment/Credit.)
+Not to be confused with the native 'amount' field in cust_credit, see below.
+
+I<amount_pretty> - includes money char
+
+I<balance> - customer balance, chronologically as of this item
+
+I<balance_pretty> - includes money char
+
+I<charged> - amount charged for cust_bill (Invoice or Line item) records, undef for other types
+
+I<paid> - amount paid for cust_pay records, undef for other types
+
+I<credit> - amount credited for cust_credit records, undef for other types.
+Literally the 'amount' field from cust_credit, renamed here to avoid confusion.
+
+I<refund> - amount refunded for cust_refund records, undef for other types
+
+The four table-specific keys always have positive values, whether they reflect charges or payments.
+
+The following options may be passed to this method:
+
+I<line_items> - if true, returns charges ('Line item') rather than invoices
+
+I<start_date> - unix timestamp, only include records on or after.
+If specified, an item of type 'Previous' will also be included.
+It does not have table-specific fields.
+
+I<end_date> - unix timestamp, only include records before
+
+I<reverse_sort> - order from newest to oldest (default is oldest to newest)
+
+I<conf> - optional already-loaded FS::Conf object.
+
+=cut
+
+# Caution: this gets used by FS::ClientAPI::MyAccount::billing_history,
+# and also payment_history_text, which should both be kept customer-friendly.
+# If you add anything that shouldn't be passed on through the API or exposed 
+# to customers, add a new option to include it, don't include it by default
+sub payment_history {
+  my $self = shift;
+  my $opt = ref($_[0]) ? $_[0] : { @_ };
+
+  my $conf = $$opt{'conf'} || new FS::Conf;
+  my $money_char = $conf->config("money_char") || '$',
+
+  #first load entire history, 
+  #need previous to calculate previous balance
+  #loading after end_date shouldn't hurt too much?
+  my @history = ();
+  if ( $$opt{'line_items'} ) {
+
+    foreach my $cust_bill ( $self->cust_bill ) {
+
+      push @history, {
+        'type'        => 'Line item',
+        'description' => $_->desc( $self->locale ).
+                           ( $_->sdate && $_->edate
+                               ? ' '. time2str('%d-%b-%Y', $_->sdate).
+                                 ' To '. time2str('%d-%b-%Y', $_->edate)
+                               : ''
+                           ),
+        'amount'      => sprintf('%.2f', $_->setup + $_->recur ),
+        'charged'     => sprintf('%.2f', $_->setup + $_->recur ),
+        'date'        => $cust_bill->_date,
+        'date_pretty' =>  time2str('%m/%d/%Y', $cust_bill->_date ),
+      }
+        foreach $cust_bill->cust_bill_pkg;
+
+    }
+
+  } else {
+
+    push @history, {
+                     'type'        => 'Invoice',
+                     'description' => 'Invoice #'. $_->display_invnum,
+                     'amount'      => sprintf('%.2f', $_->charged ),
+                     'charged'     => sprintf('%.2f', $_->charged ),
+                     'date'        => $_->_date,
+                     'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                   }
+      foreach $self->cust_bill;
+
+  }
+
+  push @history, {
+                   'type'        => 'Payment',
+                   'description' => 'Payment', #XXX type
+                   'amount'      => sprintf('%.2f', 0 - $_->paid ),
+                   'paid'        => sprintf('%.2f', $_->paid ),
+                   'date'        => $_->_date,
+                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                 }
+    foreach $self->cust_pay;
+
+  push @history, {
+                   'type'        => 'Credit',
+                   'description' => 'Credit', #more info?
+                   'amount'      => sprintf('%.2f', 0 -$_->amount ),
+                   'credit'      => sprintf('%.2f', $_->amount ),
+                   'date'        => $_->_date,
+                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                 }
+    foreach $self->cust_credit;
+
+  push @history, {
+                   'type'        => 'Refund',
+                   'description' => 'Refund', #more info?  type, like payment?
+                   'amount'      => $_->refund,
+                   'refund'      => $_->refund,
+                   'date'        => $_->_date,
+                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                 }
+    foreach $self->cust_refund;
+
+  #put it all in chronological order
+  @history = sort { $a->{'date'} <=> $b->{'date'} } @history;
+
+  #calculate balance, filter items outside date range
+  my $previous = 0;
+  my $balance = 0;
+  my @out = ();
+  foreach my $item (@history) {
+    last if $$opt{'end_date'} && ($$item{'date'} >= $$opt{'end_date'});
+    $balance += $$item{'amount'};
+    if ($$opt{'start_date'} && ($$item{'date'} < $$opt{'start_date'})) {
+      $previous += $$item{'amount'};
+      next;
+    }
+    $$item{'balance'} = sprintf("%.2f",$balance);
+    foreach my $key ( qw(amount balance) ) {
+      $$item{$key.'_pretty'} = $$item{$key};
+      $$item{$key.'_pretty'} =~ s/^(-?)/$1$money_char/;
+    }
+    push(@out,$item);
+  }
+
+  # start with previous balance, if there was one
+  if ($previous) {
+    my $item = {
+      'type'        => 'Previous',
+      'description' => 'Previous balance',
+      'amount'      => sprintf("%.2f",$previous),
+      'balance'     => sprintf("%.2f",$previous),
+    };
+    #false laziness with above
+    foreach my $key ( qw(amount balance) ) {
+      $$item{$key.'_pretty'} = $$item{$key};
+      $$item{$key.'_pretty'} =~ s/^(-?)/$1$money_char/;
+    }
+    unshift(@out,$item);
+  }
+
+  @out = reverse @history if $$opt{'reverse_sort'};
+
+  return @out;
+}
+
+=item payment_history_text
+
+Accepts the same options as L</payment_history> and returns those
+results as a string table with fixed-width columns, max width 80 char.
+
+=cut
+
+sub payment_history_text {
+  my $self = shift;
+  my $opt = ref($_[0]) ? $_[0] : { @_ };
+  my $out = sprintf("%-12s",'Date');
+  $out .= sprintf("%11s",'Amount') . '  ';
+  $out .= sprintf("%11s",'Balance') . '  ';
+  $out .= 'Description'; #don't need to pad with spaces
+  $out .= "\n";
+  foreach my $item ($self->payment_history($opt)) {
+    $out .= sprintf("%-10.10s",$$item{'date_pretty'}) . '  ';   #12 width
+    $out .= sprintf("%11.11s",$$item{'amount_pretty'}) . '  ';  #13 width
+    $out .= sprintf("%11.11s",$$item{'balance_pretty'}) . '  '; #13 width
+    $out .= sprintf("%.42s",$$item{'description'});             #max 42 width
+    $out .= "\n";
+  }
+  return $out;
+}
+
 =back
 
 =head1 CLASS METHODS
