@@ -705,6 +705,11 @@ sub reason_type_options {
   }
 }
 
+my $validate_email = sub { $_[0] =~
+                             /^[^@]+\@[[:alnum:]-]+(\.[[:alnum:]-]+)+$/
+                             ? '' : 'Invalid email address';
+                         };
+
 #Billing (81 items)
 #Invoicing (50 items)
 #UI (69 items)
@@ -1196,10 +1201,7 @@ sub reason_type_options {
     'description' => 'Return address on email invoices (address only, see invoice_from_name)',
     'type'        => 'text',
     'per_agent'   => 1,
-    'validate'    => sub { $_[0] =~
-                             /^[^@]+\@[[:alnum:]-]+(\.[[:alnum:]-]+)+$/
-                             ? '' : 'Invalid email address';
-                         }
+    'validate'    => $validate_email,
   },
 
   {
@@ -2755,6 +2757,14 @@ and customer address. Include units.',
     'section'     => '',
     'description' => "Optional PGP public key user or key id for database dumps.  The public key should exist on the freeside user's public keyring, and the gpg binary and GnuPG perl module should be installed.",
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'dump-email_to',
+    'section'     => '',
+    'description' => "Optional email address to send success/failure message for database dumps.",
+    'type'        => 'text',
+    'validate'    => $validate_email,
   },
 
   {
