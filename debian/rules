@@ -225,6 +225,15 @@ install-stamp: build-stamp
 	install -d ${TMP}-ng-selfservice$(APACHE_DOCUMENT_ROOT)/
 	cp -R ng_selfservice ${TMP}-ng-selfservice$(APACHE_DOCUMENT_ROOT)/ng_selfservice-DIST/
 
+	# Torrus 
+	
+	install -d ${TMP}-torrus$(APACHE_DOCUMENT_ROOT)/
+
+	( cd torrus; \
+	torrus_user=freeside var_user=freeside var_group=freeside ./configure; \
+	$(MAKE) -e DESTDIR=${TMP}-torrus/; \
+	$(MAKE) -e DESTDIR=${TMP}-torrus/ install )
+
 	#RT Config
 
 	( cd rt; \
