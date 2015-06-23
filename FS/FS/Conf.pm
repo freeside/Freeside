@@ -1306,7 +1306,7 @@ sub reason_type_options {
   },
 
   {
-    'key'         => 'invoicehtmlwatermark',
+    'key'         => 'invoice_htmlwatermark',
     'section'     => 'invoicing',
     'description' => 'Watermark for HTML invoices. Appears in a semitransparent positioned DIV overlaid on the main invoice container.',
     'type'        => 'textarea',
@@ -1502,7 +1502,7 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'invoicelatexwatermark',
+    'key'         => 'invoice_latexwatermark',
     'section'     => 'invoicing',
     'description' => 'Watermark for LaTeX invoices. See "texdoc background" for information on what this can contain. The content itself should be enclosed in braces, optionally followed by a comma and any formatting options.',
     'type'        => 'textarea',
