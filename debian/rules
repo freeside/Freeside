@@ -228,11 +228,16 @@ install-stamp: build-stamp
 	# Torrus 
 	
 	install -d ${TMP}-torrus$(APACHE_DOCUMENT_ROOT)/
+        install -o root -m 755 htetc/freeside-torrus.conf ${TMP}-torrus$(APACHE_DOCUMENT_ROOT)/
 
 	( cd torrus; \
 	torrus_user=freeside var_user=freeside var_group=freeside ./configure; \
 	$(MAKE) -e DESTDIR=${TMP}-torrus/; \
 	$(MAKE) -e DESTDIR=${TMP}-torrus/ install )
+
+        perl -p -i -e "\
+        s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+        " ${TMP}-torrus/usr/local/etc/torrus/conf/torrus-siteconfig.pl; \
 
 	#RT Config
 
