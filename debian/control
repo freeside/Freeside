@@ -49,7 +49,7 @@ Description: Self-service portal for Freeside billing and trouble ticketing
 
 Package: freeside-torrus
 Architecture: all
-Depends: rrdtool,librrds-perl,libxml-libxml-perl,libberkeleydb-perl,libtemplate-perl,libproc-daemon-perl,libnet-snmp-perl libapache-session-perl libjson-perl libdbix-abstract-perl libdbix-sequence-perl
+Depends: freeside-webui,freeside-lib,rrdtool,librrds-perl,libxml-libxml-perl,libberkeleydb-perl,libtemplate-perl,libproc-daemon-perl,libnet-snmp-perl,libapache-session-perl,libjson-perl,libdbix-abstract-perl,libdbix-sequence-perl
 Recommends:
 Description: Integrated network monitoring and billing
  Torrus is a network monitoring system (NMS) for discovering and monitoring routers, switches and other network equipment with SNMP.
