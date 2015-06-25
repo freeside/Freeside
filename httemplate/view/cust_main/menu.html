@@ -483,16 +483,16 @@ my @menu = (
       },
     },
     {
-      label       => 'Email payment history to this customer',
+      label       => 'Email statement to this customer',
       url         => sub {
                       my $cust_main = shift;
                       my $agentnum = $cust_main->agentnum;
-                      'misc/email-customers-history.html?table=cust_main;search_hash='.
+                      'misc/email-customer-statement.html?table=cust_main;search_hash='.
                       'agent_virt_agentnum='.$agentnum.";custnum=$custnum;url=".
                       uri_escape($cgi->self_url);
                      },
       condition   => sub { $invoicing_list_emailonly },
-      acl         => 'Bulk send customer notices',
+      acl         => [ 'View invoices', 'Bulk send customer notices' ],
     },
   ],
   [

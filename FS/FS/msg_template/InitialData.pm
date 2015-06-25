@@ -21,15 +21,6 @@ If you did not request this password reset, you may safely ignore and delete thi
 END
                       ],
     },
-    { msgname   => 'payment_history_template',
-      mime_type => 'text/html',
-      _conf        => 'payment_history_msgnum',
-      _insert_args => [ subject => '{ $company_name } payment history',
-                        body    => <<'END',
-{ $payment_history }
-END
-                      ],
-    },
   ];
 }
 

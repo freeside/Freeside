@@ -6,18 +6,23 @@ frozen hash in the 'search' cgi param.  Form allows selecting an existing msg_te
 or creating a custom message, and shows a preview of the message before sending.
 If linked to as a popup, include the cgi parameter 'popup' for proper header handling.
 
-This may also be used as an element in other pages, enabling you to pass along
-additional substitution parameters to a message template, with the following options:
+This may also be used as an element in other pages, enabling you to provide an
+alternate initial form while using this for search freezing/thawing and 
+preview/send actions, with the following options:
 
 form_action - the URL to submit the form to
 
-sub_param_process - subroutine to override cgi param values (such as msgnum) 
-and parse/delete additional form fields from the cgi;  should return a %sub_param 
-hash to be passed along for message substitution
-
-alternate_form - an alternate form for template selection/message creation
-
 title - the title of the page
+
+no_search_fields - arrayref of additional fields that are not search parameters
+
+alternate_form - subroutine that returns alternate html for the initial form,
+replaces msgnum/from/subject/html_body/action inputs and submit button,
+not used if an action is specified
+
+post_search_hook - sub hook for additional processing after search has been processed from cgi,
+gets passed options 'conf' and 'search' (a reference to the unfrozen %search hash),
+should be used to set msgnum or from/subject/html_body cgi params
 
 </%doc>
 
@@ -35,9 +40,6 @@ title - the title of the page
 %# multi-valued search params.  We are no longer in search context, so we 
 %# pack the search into a Storable string for later use.
 <INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
-% if (%sub_param) {
-<INPUT TYPE="hidden" NAME="sub_param" VALUE="<% encode_base64(nfreeze(\%sub_param)) %>">
-% }
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
 <INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
 
@@ -47,7 +49,7 @@ title - the title of the page
 
     <% include('/elements/progress-init.html',
                  'OneTrueForm',
-                 [ qw( search table from subject html_body text_body msgnum sub_param ) ],
+                 [ qw( search table from subject html_body text_body msgnum ) ],
                  'process/email-customers.html',
                  $pdest,
               )
@@ -105,7 +107,7 @@ title - the title of the page
 
     </TABLE>
 
-% if ( $cgi->param('action') eq 'preview' ) {
+%   if ( $cgi->param('action') eq 'preview' ) {
 
       <SCRIPT>
         function areyousure(href) {
@@ -119,9 +121,9 @@ title - the title of the page
     
 %   }
 
-% } elsif ($alternate_form) {
+% } elsif ($opt{'alternate_form'}) {
 
-<% $alternate_form %>
+<% &{$opt{'alternate_form'}}() %>
 
 % } else {
 
@@ -174,7 +176,7 @@ Template:
     <INPUT TYPE="hidden" NAME="action" VALUE="preview">
     <INPUT TYPE="submit" VALUE="Preview notice">
 
-% } #end not preview or alternate form
+% } #end not action or alternate form
 
 </FORM>
 
@@ -194,11 +196,11 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
 
 my $conf = FS::Conf->new;
+my @no_search_fields = qw( action table from subject html_body text_body popup url );
 
 my $form_action = $opt{'form_action'} || 'email-customers.html';
-my %sub_param = $opt{'sub_param_process'} ? &{$opt{'sub_param_process'}}($conf) : ();
-my $alternate_form = $opt{'alternate_form'} ? &{$opt{'alternate_form'}}(%sub_param) : ();
 my $title = $opt{'title'} || 'Send customer notices';
+push( @no_search_fields, @{$opt{'no_search_fields'}} ) if $opt{'no_search_fields'};
 
 my $table = $cgi->param('table') or die "'table' required";
 my $agent_virt_agentnum = $cgi->param('agent_virt_agentnum') || '';
@@ -214,13 +216,18 @@ if ( $cgi->param('search') ) {
 }
 else {
   %search = $cgi->Vars;
-  delete $search{$_} for qw( action table from subject html_body text_body popup url sub_param );
+  delete $search{$_} for @no_search_fields;
   # FS::$table->search is expected to know which parameters might be 
   # multi-valued, and to accept scalar values for them also.  No good 
   # solution to this since CGI can't tell whether a parameter _might_
   # have had multiple values, only whether it does.
   @search{keys %search} = map { /\0/ ? [ split /\0/, $_ ] : $_ } values %search;
-} 
+}
+
+&{$opt{'post_search_hook'}}(
+  'conf'   => $conf,
+  'search' => \%search,
+) if $opt{'post_search_hook'};
 
 my $num_cust;
 my $from = '';
@@ -238,6 +245,7 @@ my $html_body = $cgi->param('html_body') || '';
 my $msg_template = '';
 
 if ( $cgi->param('action') eq 'preview' ) {
+
   my $sql_query = "FS::$table"->search(\%search);
   my $count_query = delete($sql_query->{'count_query'});
   my $count_sth = dbh->prepare($count_query)
@@ -260,7 +268,6 @@ if ( $cgi->param('action') eq 'preview' ) {
       'cust_main' => $cust,
       'object' => $object,
     );
-    $msgopts{'sub_param'} = \%sub_param if %sub_param; 
     my %message = $msg_template->prepare(%msgopts);
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
