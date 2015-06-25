@@ -19,7 +19,7 @@ function format_changed() {
 %   or ( $status eq 'I' and $curuser->access_right('Reprocess batches') )
 %   or ( $status eq 'R' and $curuser->access_right('Redownload resolved batches') )
 %   ) {
-<FORM ACTION="<%$p%>misc/download-batch.cgi" NAME="download" METHOD="POST">
+<FORM ACTION="<%$p%>misc/download-batch.cgi" NAME="download" METHOD="GET">
     <INPUT TYPE="hidden" NAME="batchnum" VALUE="<%$batchnum%>">
 %   if ( $fixed ) {
     <INPUT TYPE="hidden" NAME="format" VALUE="<%$fixed%>">
