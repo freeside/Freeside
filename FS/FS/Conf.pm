@@ -2688,13 +2688,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'payment_history_msgnum',
-    'section'     => 'notification',
-    'description' => 'Template to use for sending payment history to customer',
-    %msg_template_options,
-  },
-
-  {
     'key'         => 'payby',
     'section'     => 'billing',
     'description' => 'Available payment types.',

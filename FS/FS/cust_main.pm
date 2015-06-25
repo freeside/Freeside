@@ -4488,7 +4488,7 @@ I<conf> - optional already-loaded FS::Conf object.
 =cut
 
 # Caution: this gets used by FS::ClientAPI::MyAccount::billing_history,
-# and also payment_history_text, which should both be kept customer-friendly.
+# and also for sending customer statements, which should both be kept customer-friendly.
 # If you add anything that shouldn't be passed on through the API or exposed 
 # to customers, add a new option to include it, don't include it by default
 sub payment_history {
@@ -4608,31 +4608,6 @@ sub payment_history {
   @out = reverse @history if $$opt{'reverse_sort'};
 
   return @out;
-}
-
-=item payment_history_text
-
-Accepts the same options as L</payment_history> and returns those
-results as a string table with fixed-width columns, max width 80 char.
-
-=cut
-
-sub payment_history_text {
-  my $self = shift;
-  my $opt = ref($_[0]) ? $_[0] : { @_ };
-  my $out = sprintf("%-12s",'Date');
-  $out .= sprintf("%11s",'Amount') . '  ';
-  $out .= sprintf("%11s",'Balance') . '  ';
-  $out .= 'Description'; #don't need to pad with spaces
-  $out .= "\n";
-  foreach my $item ($self->payment_history($opt)) {
-    $out .= sprintf("%-10.10s",$$item{'date_pretty'}) . '  ';   #12 width
-    $out .= sprintf("%11.11s",$$item{'amount_pretty'}) . '  ';  #13 width
-    $out .= sprintf("%11.11s",$$item{'balance_pretty'}) . '  '; #13 width
-    $out .= sprintf("%.42s",$$item{'description'});             #max 42 width
-    $out .= "\n";
-  }
-  return $out;
 }
 
 =back
