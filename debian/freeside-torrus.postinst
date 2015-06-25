@@ -1,0 +1,6 @@
+#!/bin/bash
+
+chown freeside.freeside /var/log/torrus
+mkdir /srv/torrus/; mkdir /srv/torrus/collector_rrd
+chown -R freeside:freeside /srv/torrus/collector_rrd /usr/local/etc/torrus/discovery /usr/local/etc/torrus/xmlconfig/
+torrus clearcache
