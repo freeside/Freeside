@@ -53,6 +53,7 @@ export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
 export APACHE_CONF           := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo "$(TMP)-webui/etc/apache2/conf-available" || echo "$(TMP)-webui/etc/apache2/conf.d")
+export TORRUS_CONF           := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo "$(TMP)-torrus/etc/apache2/conf-available" || echo "$(TMP)-torrus/etc/apache2/conf.d")
 export FREESIDE_RESTART       = /bin/true
 
 #XXX root?
@@ -227,8 +228,8 @@ install-stamp: build-stamp
 
 	# Torrus 
 	
-	install -d ${TMP}-torrus${APACHE_CONF}
-	install -o root -m 755 htetc/freeside-torrus.conf ${TMP}-torrus$(APACHE_CONF)/
+	install -d ${TORRUS_CONF}
+	install -o root -m 755 htetc/freeside-torrus.conf $(TORRUS_CONF)/
 
 	( cd torrus; \
 	torrus_user=freeside var_user=freeside var_group=freeside ./configure; \
