@@ -1,0 +1,91 @@
+
+ <% include('email-customers.html',
+      'form_action'       => 'email-customer-statement.html',
+      'title'             => 'Send statement to customer',
+      'no_search_fields'  => [ 'start_date', 'end_date' ],
+      'alternate_form'    => $alternate_form,
+      'post_search_hook'  => $post_search_hook,
+    )
+ %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+
+my $alternate_form = sub {
+  # this could maaaybe be a separate element, for cleanliness
+  # but it's really only for use by this page, and it's not overly complicated
+  my $noinit = 0;
+  return join("\n",
+    '<TABLE BORDER="0">',
+    (
+      map {
+        my $label = ucfirst($_);
+        $label =~ s/_/ /;
+        include('/elements/tr-input-date-field.html',{
+          'name' => $_,
+          'value' => $cgi->param($_) || '',
+          'label' => $label,
+          'noinit' => $noinit++
+        });
+      }
+      qw( start_date end_date )
+    ),
+    '</TABLE>',
+    '<INPUT TYPE="hidden" NAME="action" VALUE="preview">',
+    '<INPUT TYPE="submit" VALUE="Preview notice">',
+  );
+};
+
+my $post_search_hook = sub {
+  my %opt = @_;
+  return unless $cgi->param('action') eq 'preview';
+  my $cust_main = qsearchs('cust_main',$opt{'search'})
+    or die "Could not find customer";
+
+  # so that the statement indicates the latest date
+  my $date_format = $opt{'conf'}->config('date_format') || '%m/%d/%Y';
+  $cgi->param('end_date', time2str($date_format, time))
+    unless $cgi->param('end_date');
+
+  # set from/subject/html_body based on date range
+
+  $cgi->param('from',
+    $opt{'conf'}->config('invoice_from')
+  );
+
+  # shortcut for common text
+  my $summary_text  = $cust_main->name_short .
+    ($cgi->param('start_date') ? ' from ' : '') .
+    $cgi->param('start_date') .
+    ($cgi->param('end_date') ? ' through ' : '') .
+    $cgi->param('end_date');
+
+  $cgi->param('subject',
+    $opt{'conf'}->config('company_name') . 
+    ' statement for ' .
+    $summary_text
+  );
+
+  $cgi->param('html_body',
+    '<P>' .
+    $opt{'conf'}->config('company_name') . 
+    ' statement of charges and payments for ' .
+    $summary_text . 
+    "</P>" .
+    include('/elements/customer-statement.html',
+      'history' => [ 
+        $cust_main->payment_history(
+          map {
+            $_ => parse_datetime($cgi->param($_))
+          }
+          qw( start_date end_date ),
+        ),
+      ],
+    )
+  );
+};
+
+</%init>
+
