@@ -174,6 +174,15 @@ $DEBUG = 0;
 
     my $batchnum = substr( ('0'x7). $pay_batch->batchnum, -7);
 
+    my $lines = $batchcount + 4;
+    my $blocks = int($lines/10);
+    my $fill = '';
+
+    if ( my $remainder = $lines % 10 ) {
+      $blocks++;
+      $fill = ("\n".('9'x94))x( 10 - $remainder );
+    }
+
     warn "building Batch & File Control Records\n" if $DEBUG;
 
     ###
@@ -199,12 +208,18 @@ $DEBUG = 0;
 
     '9'.                                 #Record Type Code
     '000001'.                            #Batch Counter (# of batch header recs)
-    sprintf('%06d', $batchcount + 4).    #num of physical blocks on the file..?
+    sprintf('%06d', $blocks).            #num of physical blocks on the file
     sprintf('%08d', $batchcount).        #total # of entry detail and addenda
     $entry_hash.
     sprintf('%012.0f', $batchtotal * 100). #Debit total
     '000000000000'.                      #Credit total
-    ( ' 'x39 )                           #Reserved / blank
+    ( ' 'x39 ).                          #Reserved / blank
+
+    ###
+    # Pad with 9999 records to blocks of 10
+    ###
+
+    $fill
 
   },
 
