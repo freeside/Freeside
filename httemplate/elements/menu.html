@@ -291,7 +291,8 @@ $report_rating{'Unrateable CDRs'} = [ $fsurl.'search/cdr.html?freesidestatus=fai
   if $curuser->access_right("Usage: Unrateable CDRs");
 if ( $curuser->access_right("Usage: Time worked") ) {
   $report_rating{'Time worked'} = [ $fsurl.'search/report_rt_transaction.html', '' ];
-  $report_rating{'Time worked summary'} = [ $fsurl.'search/report_rt_ticket.html', '' ];
+  $report_rating{'Time worked summary per ticket'} = [ $fsurl.'search/report_rt_ticket.html', '' ];
+  $report_rating{'Time worked summary per customer'} = [ $fsurl.'search/report_rt_cust.html', '' ];
 }
 
 tie my %report_ticketing_statistics, 'Tie::IxHash',
