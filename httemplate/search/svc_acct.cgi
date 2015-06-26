@@ -148,10 +148,34 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   if ( $sortby eq 'seconds' ) {
     my $tot_time = 0;
     push @header, emt('Time');
-    push @fields, sub { my $svc_acct = shift;
-                        $tot_time += $svc_acct->seconds;
-                        format_time($svc_acct->seconds);
-                      };
+
+    if ( $conf->exists('svc_acct-display_paid_time_remaining') ) {
+      push @fields, sub { my $svc_acct = shift;
+                          my $seconds = $svc_acct->seconds;
+                          my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+                          my $part_pkg = $cust_pkg->part_pkg;
+
+                          $tot_time += $svc_acct->seconds;
+
+                          $timepermonth = $part_pkg->option('seconds');
+                          $timepermonth = $timepermonth / $part_pkg->freq
+                            if $part_pkg->freq =~ /^\d+$/ && $part_pkg->freq != 0;
+                          my $recur = $part_pkg->base_recur($cust_pkg);
+
+                          return format_time($seconds)
+                            unless $timepermonth && $recur;
+
+                          format_time($seconds).
+                            sprintf(' (%.2fx monthly)', $seconds / $timepermonth );
+
+                        };
+    } else {
+      push @fields, sub { my $svc_acct = shift;
+                          $tot_time += $svc_acct->seconds;
+                          format_time($svc_acct->seconds);
+                        };
+    }
+
     push @links, '';
     $align .= 'r';
     push @color, '';
