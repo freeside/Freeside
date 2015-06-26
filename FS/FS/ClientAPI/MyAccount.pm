@@ -48,6 +48,7 @@ use FS::msg_template;
 use FS::contact;
 use FS::cust_contact;
 use FS::cust_location;
+use FS::cust_payby;
 
 # for code organization
 use FS::ClientAPI::MyAccount::contact;
@@ -860,7 +861,7 @@ sub payment_info {
       'require_cvv'        => $conf->exists('selfservice-require_cvv'),
       'onfile_require_cvv' => $conf->exists('selfservice-onfile_require_cvv'),
 
-      'paytypes' => [ @FS::cust_main::paytypes ],
+      'paytypes' => [ FS::cust_payby::paytypes ],
 
       'paybys' => [ $conf->config('signup_server-payby') ],
       'cust_paybys' => \@cust_paybys,
