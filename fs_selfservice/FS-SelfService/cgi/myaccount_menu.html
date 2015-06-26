@@ -28,7 +28,7 @@ my %payby_mode;
 # $payby_mode{FOO} is true if FOO is thirdparty, false if it's B::OP,
 # nonexistent if it's not supported
 
-if ( ($balance || 0) > 0 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
+if ( $enable_payment_without_balance || (($balance || 0) > 0) ) { #eventually per-pkg or something really fancy
 
   if ( exists( $payby_mode{CARD} ) ) {
     push @menu, { title  => 'Recharge my account with a credit card',

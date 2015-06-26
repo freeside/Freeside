@@ -131,7 +131,7 @@ sub skin_info {
       ),
       'menu_disable' => [ $conf->config('selfservice-menu_disable',$agentnum) ],
       ( map { $_ => $conf->exists("selfservice-$_", $agentnum ) }
-        qw( menu_skipblanks menu_skipheadings menu_nounderline no_logo )
+        qw( menu_skipblanks menu_skipheadings menu_nounderline no_logo enable_payment_without_balance )
       ),
       ( map { $_ => scalar($conf->config_binary("selfservice-$_", $agentnum)) }
         qw( title_left_image title_right_image
