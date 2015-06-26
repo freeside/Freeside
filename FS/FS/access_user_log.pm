@@ -75,6 +75,8 @@ Adds a log entry for PATH for the current user and timestamp.
 sub insert_new_path {
   my( $class, $path ) = @_;
 
+  return '' unless defined $FS::CurrentUser::CurrentUser;
+
   my $self = $class->new( {
     'usernum' => $FS::CurrentUser::CurrentUser->usernum,
     'path'    => $path,
