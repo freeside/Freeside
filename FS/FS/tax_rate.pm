@@ -398,9 +398,6 @@ method together, and NO items from any other invoice should be included.
 
 =cut
 
-# future optimization: it would probably suffice to return only the link
-# records, and let the consolidation routine build the cust_bill_pkgs
-
 sub taxline_cch {
   my $self = shift;
   # this used to accept a hash of options but none of them did anything
@@ -581,8 +578,10 @@ sub taxline_cch {
           'taxtype'               => ref($self),
           'cents'                 => $this_tax_cents,
           'locationtaxid'         => $self->location,
+          'taxable_billpkgnum'    => $cust_bill_pkg->billpkgnum,
           'taxable_cust_bill_pkg' => $cust_bill_pkg,
           'taxratelocationnum'    => $taxratelocationnum,
+          'taxclass'              => $class,
       });
       push @tax_links, $tax_link;
 

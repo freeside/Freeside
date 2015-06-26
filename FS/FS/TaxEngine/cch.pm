@@ -123,7 +123,7 @@ sub make_taxlines {
 
   my @raw_taxlines;
   my %taxable_location; # taxable billpkgnum => cust_location
-  my %item_has_tax; # taxable billpkgnum => taxnum
+  my %item_has_tax; # taxable billpkgnum => charge class => taxnum
   foreach my $taxnum ( keys %{ $self->{taxes} } ) {
     my $tax_rate = FS::tax_rate->by_key($taxnum);
     my $taxables = $self->{taxes}{$taxnum};
@@ -141,8 +141,8 @@ sub make_taxlines {
 
       # store this tax fragment, indexed by taxable item, then by taxnum
       my $billpkgnum = $link->taxable_billpkgnum;
-      $item_has_tax{$billpkgnum} ||= {};
-      my $fragments = $item_has_tax{$billpkgnum}{$taxnum} ||= [];
+      my $fragments = $item_has_tax{$billpkgnum}{$link->taxclass}{$taxnum}
+                      ||= [];
 
       push @raw_taxlines, $link; # this will go into final consolidation
       push @$fragments, $link; # this will go into a temporary cust_bill_pkg
@@ -156,48 +156,58 @@ sub make_taxlines {
     # taxes that apply to this item
     my $this_has_tax = $item_has_tax{$billpkgnum};
     my $location = $taxable_location{$billpkgnum};
-    foreach my $taxnum (keys %$this_has_tax) {
-      # $this_has_tax->{$taxnum} = an arrayref of the tax links for taxdef 
-      # $taxnum on taxable item $billpkgnum
 
-      my $tax_rate = FS::tax_rate->by_key($taxnum);
-      # find all taxes that apply to it in this location
-      my @tot = $tax_rate->tax_on_tax( $location );
-      next if !@tot;
+    foreach my $charge_class (keys %$this_has_tax) {
+      # taxes that apply to this item and charge class
+      my $this_class_has_tax = $this_has_tax->{$charge_class};
+      foreach my $taxnum (keys %$this_class_has_tax) {
 
-      warn "found possible taxed taxnum $taxnum\n"
-        if $DEBUG > 2;
-      # Calculate ToT separately for each taxable item, and only if _that 
-      # item_ is already taxed under the ToT.  This is counterintuitive.
-      # See RT#5243.
-      my $temp_lineitem;
-      foreach my $tot (@tot) { 
-        my $totnum = $tot->taxnum;
-        warn "checking taxnum ".$tot->taxnum. 
-             " which we call ". $tot->taxname ."\n"
+        my $tax_rate = FS::tax_rate->by_key($taxnum);
+        # find all taxes that apply to it in this location
+        my @tot = $tax_rate->tax_on_tax( $location );
+        next if !@tot;
+
+        warn "found possible taxed taxnum $taxnum\n"
           if $DEBUG > 2;
-        if ( exists $this_has_tax->{ $totnum } ) {
-          warn "calculating tax on tax: taxnum ".$tot->taxnum." on $taxnum\n"
-            if $DEBUG; 
-          # construct a line item to calculate tax on
-          $temp_lineitem ||= FS::cust_bill_pkg->new({
-              'pkgnum'    => 0,
-              'invnum'    => $cust_bill->invnum,
-              'setup'     => sum(map $_->amount, @{ $this_has_tax->{$taxnum} }),
-              'recur'     => 0,
-              'itemdesc'  => $tax_rate->taxname,
-              'cust_bill_pkg_tax_rate_location' => $this_has_tax->{$taxnum},
-          });
-          my @new_taxlines = $tot->taxline_cch( [ $temp_lineitem ] );
-          next if (!@new_taxlines); # it didn't apply after all
-          if (!ref($new_taxlines[0])) {
-            die "error evaluating TOT ($totnum on $taxnum): $new_taxlines[0]\n";
-          }
-          # add these to the taxline queue
-          push @raw_taxlines, @new_taxlines;
-        } # if $this_has_tax->{$totnum}
-      } # foreach my $tot (tax-on-tax rate definition)
-    } # foreach $taxnum (first-tier rate definition)
+        # Calculate ToT separately for each taxable item and class, and only
+        # if _that class on the item_ is already taxed under the ToT.  This is
+        # counterintuitive.
+        # See RT#5243 and RT#36380.
+        my $temp_lineitem;
+        foreach my $tot (@tot) { 
+          my $totnum = $tot->taxnum;
+          warn "checking taxnum ".$tot->taxnum. 
+               " which we call ". $tot->taxname ."\n"
+            if $DEBUG > 2;
+         # note: if the _null class_ on this item is taxed under the ToT, 
+         # then this specific class is taxed also (because null class 
+         # includes all classes) and so ToT is applicable.
+         if (
+               exists $this_class_has_tax->{ $totnum }
+            or exists $this_has_tax->{''}{ $totnum }
+         ) {
+            warn "calculating tax on tax: taxnum ".$tot->taxnum." on $taxnum\n"
+              if $DEBUG; 
+            # construct a line item to calculate tax on
+            $temp_lineitem ||= FS::cust_bill_pkg->new({
+                'pkgnum'    => 0,
+                'invnum'    => $cust_bill->invnum,
+                'setup'     => sum(map $_->amount, @{ $this_class_has_tax->{$taxnum} }),
+                'recur'     => 0,
+                'itemdesc'  => $tax_rate->taxname,
+                'cust_bill_pkg_tax_rate_location' => $this_class_has_tax->{$taxnum},
+            });
+            my @new_taxlines = $tot->taxline_cch( [ $temp_lineitem ] );
+            next if (!@new_taxlines); # it didn't apply after all
+            if (!ref($new_taxlines[0])) {
+              die "error evaluating TOT ($totnum on $taxnum): $new_taxlines[0]\n";
+            }
+            # add these to the taxline queue
+            push @raw_taxlines, @new_taxlines;
+          } # if $this_has_tax->{$totnum}
+        } # foreach my $tot (tax-on-tax rate definition)
+      } # foreach $taxnum (first-tier rate definition)
+    } # foreach $charge_class
   } # foreach $taxable_item
 
   return @raw_taxlines;
