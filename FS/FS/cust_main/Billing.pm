@@ -914,6 +914,7 @@ sub calculate_taxes {
        #.Dumper($self, $cust_bill_pkg, $taxlisthash, $invoice_time). "\n"
     if $DEBUG > 2;
 
+  my $custnum = $self->custnum;
   # The main tax accumulator.  One bin for each tax name (itemdesc).
   # For each subdivision of tax under this name, push a cust_bill_pkg item 
   # for the calculated tax into the arrayref.
@@ -929,10 +930,15 @@ sub calculate_taxes {
   # values are arrayrefs of cust_tax_exempt_pkg objects
   my %tax_exemption;
 
+  # For tax on tax calculation, we need to remember which taxable items 
+  # (and charge classes) had which taxes applied to them.
+  #
   # keys are cust_bill_pkg objects (taxable items)
   # values are hashrefs
-  #   keys are taxlisthash keys
-  #   values are the taxlines generated for those taxes
+  #   keys are charge classes
+  #   values are hashrefs
+  #     keys are taxnums (in tax_rate only; cust_main_county doesn't use this)
+  #     values are the taxlines generated for those taxes
   tie my %item_has_tax, 'Tie::RefHash', 
     map { $_ => {} } @$cust_bill_pkg;
 
@@ -941,6 +947,7 @@ sub calculate_taxes {
 
     my $taxables = $taxlisthash->{$tax_id};
     my $tax_object = shift @$taxables;
+    my $taxnum = $tax_object->taxnum;
     # $tax_object is a cust_main_county or tax_rate 
     # (with billpkgnum, pkgnum, locationnum set)
     # the rest of @{ $taxlisthash->{$tax_id} } is cust_bill_pkg objects,
@@ -957,34 +964,35 @@ sub calculate_taxes {
     if ( $tax_object->isa('FS::tax_rate') ) { # EXTERNAL TAXES
       # STILL have tax_rate-specific crap in here...
       my @taxlines = $tax_object->taxline( $taxables,
-                              'custnum'      => $self->custnum,
+                              'custnum'      => $custnum,
                               'invoice_time' => $invoice_time,
                               'exemptions'   => $exemptions,
                               );
       next if !@taxlines;
       if (!ref $taxlines[0]) {
         # it's an error string
-        warn "error evaluating $tax_id on custnum ".$self->custnum."\n";
+        warn "error evaluating $tax_id on custnum $custnum\n";
         return $taxlines[0];
       }
       foreach my $taxline (@taxlines) {
         push @{ $taxname{ $taxline->itemdesc } }, $taxline;
         my $link = $taxline->get('cust_bill_pkg_tax_rate_location')->[0];
         my $taxable_item = $link->taxable_cust_bill_pkg;
-        $item_has_tax{$taxable_item}->{$tax_id} = $taxline;
+        $item_has_tax{$taxable_item}{$taxline->_class}{$taxnum} = $taxline;
       }
+
     } else { # INTERNAL TAXES
       # we can do this in a single taxline, because it's not stupid
 
       my $taxline =  $tax_object->taxline( $taxables,
-                        'custnum'      => $self->custnum,
+                        'custnum'      => $custnum,
                         'invoice_time' => $invoice_time,
                         'exemptions'   => $exemptions,
                       );
       next if !$taxline;
       if (!ref $taxline) {
         # it's an error string
-        warn "error evaluating $tax_id on custnum ".$self->custnum."\n";
+        warn "error evaluating $tax_id on custnum $custnum\n";
         return $taxline;
       }
       # if the calculated tax is zero, don't even keep it
@@ -1001,48 +1009,55 @@ sub calculate_taxes {
     my $this_has_tax = $item_has_tax{$taxable_item};
 
     my $location = $taxable_item->tax_location;
-    foreach my $tax_id (keys %$this_has_tax) {
-      my ($class, $taxnum) = split(' ', $tax_id);
-      # internal taxes don't support tax_on_tax, so we don't bother with 
-      # them here.
-      next unless $class eq 'FS::tax_rate';
 
-      # for each tax item that was calculated in phase 1, get the 
-      # tax definition
-      my $tax_object = FS::tax_rate->by_key($taxnum);
-      # and find all taxes that apply to it in this location
-      my @tot = $tax_object->tax_on_tax( $location );
-      next if !@tot;
-      warn "found possible taxed taxnum $taxnum\n"
-        if $DEBUG > 2;
-      # Calculate ToT separately for each taxable item, and only if _that 
-      # item_ is already taxed under the ToT.  This is counterintuitive.
-      # See RT#5243.
-      foreach my $tot (@tot) {
-        my $tot_id = ref($tot) . ' ' . $tot->taxnum;
-        warn "checking taxnum ".$tot->taxnum.
-             " which we call ". $tot->taxname ."\n"
+    foreach my $charge_class (keys %$this_has_tax) {
+      # taxes that apply to this item and charge class
+      my $this_class_has_tax = $this_has_tax->{$charge_class};
+      foreach my $taxnum (keys %$this_class_has_tax) {
+
+        # for each tax item that was calculated in phase 1, get the 
+        # tax definition
+        my $tax_object = FS::tax_rate->by_key($taxnum);
+        # and find all taxes that apply to it in this location
+        my @tot = $tax_object->tax_on_tax( $location );
+        next if !@tot;
+        warn "found possible taxed taxnum $taxnum\n"
           if $DEBUG > 2;
-        if ( exists $this_has_tax->{ $tot_id } ) {
-          warn "calculating tax on tax: taxnum ".$tot->taxnum." on $taxnum\n"
-            if $DEBUG;
-          my @taxlines = $tot->taxline(
-                            $this_has_tax->{ $tax_id }, # the first-stage tax
-                            'custnum'       => $self->custnum,
-                            'invoice_time'  => $invoice_time,
-                           );
-          next if (!@taxlines); # it didn't apply after all
-          if (!ref($taxlines[0])) {
-            warn "error evaluating $tot_id TOT on custnum ".
-              $self->custnum."\n";
-            return $taxlines[0];
-          }
-          foreach my $taxline (@taxlines) {
-            push @{ $taxname{ $taxline->itemdesc } }, $taxline;
-          }
-        } # if $has_tax
-      } # foreach my $tot (tax-on-tax rate definition)
-    } # foreach $taxnum (first-tier rate definition)
+        # Calculate ToT separately for each taxable item and class, and only 
+        # if _that class on the item_ is already taxed under the ToT.  This is
+        # counterintuitive.
+        # See RT#5243 and RT#36380.
+        foreach my $tot (@tot) {
+          my $totnum = $tot->taxnum;
+          warn "checking taxnum $totnum which we call ". $tot->taxname ."\n"
+            if $DEBUG > 2;
+          # note: if the _null class_ on this item is taxed under the ToT, 
+          # then this specific class is taxed also (because null class 
+          # includes all classes) and so ToT is applicable.
+          if (
+                exists $this_class_has_tax->{ $totnum }
+             or exists $this_has_tax->{''}{ $totnum }
+          ) {
+
+            warn "calculating tax on tax: taxnum $totnum on $taxnum\n"
+              if $DEBUG;
+            my @taxlines = $tot->taxline(
+                              $this_class_has_tax->{ $taxnum }, # the first-stage tax
+                              'custnum'       => $custnum,
+                              'invoice_time'  => $invoice_time,
+                             );
+            next if (!@taxlines); # it didn't apply after all
+            if (!ref($taxlines[0])) {
+              warn "error evaluating taxnum $totnum TOT on custnum $custnum\n";
+              return $taxlines[0];
+            }
+            foreach my $taxline (@taxlines) {
+              push @{ $taxname{ $taxline->itemdesc } }, $taxline;
+            }
+          } # if $has_tax
+        } # foreach my $tot (tax-on-tax rate definition)
+      } # foreach $taxnum (first-tier rate definition)
+    } # foreach $charge_class
   } # foreach $taxable_item
 
   #consolidate and create tax line items

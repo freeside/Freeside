@@ -596,6 +596,7 @@ sub taxline {
           'locationtaxid'         => $self->location,
           'taxable_cust_bill_pkg' => $cust_bill_pkg,
           'taxratelocationnum'    => $taxratelocationnum,
+          'taxclass'              => $class,
       });
       push @tax_locations, $tax_location;
 
@@ -647,6 +648,9 @@ sub taxline {
         'edate'         => '',
         'itemdesc'      => $name,
         'cust_bill_pkg_tax_rate_location' => [ $_ ],
+        # Make the charge class easily accessible; we need it for tax-on-tax
+        # applicability. RT#36830.
+        '_class'        => $_->taxclass,
     });
     $_->set('tax_cust_bill_pkg' => $tax_item);
     push @tax_items, $tax_item;
