@@ -5825,6 +5825,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-enable_payment_without_balance',
+    'section'     => 'self-service',
+    'description' => 'Allow selfservice customers to make payments even if balance is zero or below (resulting in an unapplied payment and negative balance.)',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'logout-timeout',
     'section'     => 'UI',
     'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
