@@ -569,10 +569,15 @@ sub make_payment {
 
   my $payment_info = payment_info( 'session_id' => $session_id );
 
+  my $amount = 
+    ($payment_info->{'balance'} && ($payment_info->{'balance'} > 0))
+    ? $payment_info->{'balance'}
+    : '';
+
   my $tr_amount_fee = mason_comp(
     'session_id' => $session_id,
     'comp'       => '/elements/tr-amount_fee.html',
-    'args'       => [ 'amount' => $payment_info->{'balance'},
+    'args'       => [ 'amount' => $amount,
                     ],
   );
 
