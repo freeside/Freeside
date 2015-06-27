@@ -1,0 +1,153 @@
+<%doc>
+
+my $group_data = $m->comp( 'elements/grouped-search/core',
+
+  'query' => {
+                'table'     => 'tablename',
+                'hashref'   => { 'field' => 'value', ... }, # optional
+                'select'    => '*',
+                'addl_from' => '',
+                'extra_sql' => '',
+                #'order_by' is not allowed
+             },
+  'group_column' => 'classnum', # must be a single field
+  # 'group_table' => 'mytable', # optional; defaults to the one in the query
+  'group_label'  => 'classname',
+  'subtotal' => { amount => 'sum(amount)', ... }
+    # The subtotal row will be generated as an FS::* object of the same type
+    # as all the detail rows.
+    # The only fields present will be the grouping column and any subtotals 
+    # defined in 'subtotal'. Key is a field name (in the FS::* object), 
+    # value is an SQL aggregate expression.
+
+    # How to display that object: arrayref of literal strings or coderefs
+    # (the subtotal object will be passed). These will be placed in table
+    # cells, and can contain HTML.
+  'subtotal_row' =>
+    [ 'Subtotal',  sub { sprintf('%.2f', $_[0]->amount) }, ],
+
+    # The subtotal aggregates will also be calculated for the entire data
+    # set, without grouping. How to display those (if not present, will 
+    # not be displayed);
+  'total_row' =>
+    [ 'Total', sub { sprintf('%.2f', $_[0]->amount) }, ],
+
+  'order_by' => '_date', # SQL ordering expression for the detail rows
+
+  'header' => [ ... ], # per search.html
+  'fields' => [ ... ],
+);
+
+returns:
+{
+  num           => number of groups,
+  groups        => [ group summary objects,
+                     with group key columns, subtotals, and "num_rows" ],
+  group_labels  => [ label strings ],
+  group_footers => [ formatted subtotal row arrayrefs ],
+  queries       => [ FS::Query objects to evaluate to get detail rows ],
+}
+
+</%doc>
+<%shared>
+my $conf = FS::Conf->new;
+</%shared>
+<%init>
+my %opt = @_;
+
+my $base_query = FS::Query->new( $opt{'query'} );
+my $main_table = $base_query->{table};
+
+# $opt{subtotal} is a hashref of field names => SQL aggregate expressions.
+
+my @subtotal_names = sort keys(%{ $opt{'subtotal'} });
+my @subtotal_exprs = map { $opt{'subtotal'}->{$_} } @subtotal_names;
+
+# qualify the group key to the main table unless otherwise specified
+my $group_table = $opt{group_table} || $main_table;
+my $group_key = $group_table . '.' . $opt{group_column};
+
+my @select = (
+  $group_key,             # need this to identify groups
+  'COUNT(*) as num_rows', # and this for pagination
+  map { '(' . $subtotal_exprs[$_] . ') AS "' . $subtotal_names[$_] . '"' }
+    0 .. (scalar(@subtotal_names) - 1)
+);
+
+my $group_query = $base_query->clone;
+$group_query->{order_by} = "GROUP BY $group_key";
+$group_query->{select} = join(',', @select);
+# keep table, addl_from, extra_sql, and hashref as they are
+
+#warn Dumper($group_query); #DEBUG
+
+# run the group query and create a tab label for each group
+my @groups = $group_query->qsearch;
+
+# also run it with no grouping, and just get overall totals
+my $total_query = $base_query->clone;
+shift @select; # remove $group_key
+$total_query->{select} = join(',', @select);
+$total_query->{order_by} = '';
+
+my $totals = $total_query->qsearchs;
+
+my $order_by = '';
+if ( $cgi->param('order_by') =~ /^(\w+\.?\w*(?: DESC)?)$/ ) {
+  $order_by = $1;
+}
+if ( $opt{order_by} ) {
+  $order_by .= ', ' if length($order_by); # user selection takes priority
+  $order_by .= $opt{order_by};
+}
+$order_by = "ORDER BY $order_by " if $order_by;
+$base_query->{order_by} = $order_by;
+
+my $group_label = $opt{group_label} || $opt{group_column};
+my (@group_labels, @group_footers, @queries);
+for my $i (0 .. scalar(@groups) - 1) {
+  my $label = $groups[$i]->$group_label . ' (' . $groups[$i]->num_rows . ')';
+  push @group_labels, $label;
+
+  my @footer;
+  if ($opt{'subtotal_row'}) {
+    for( my $col = 0;
+         exists($opt{'subtotal_row'}[$col]) or exists($opt{'header'}[$col]);
+         $col++
+    ) {
+      my $value = $opt{'subtotal_row'}[$col] || '';
+      $value = &$value( $groups[$i] ) if ref($value) eq 'CODE';
+      $footer[$col] = $value;
+    }
+  }
+  push @group_footers, \@footer;
+
+  my $detail_query = $base_query->clone;
+  my $group_key_value = $groups[$i]->get( $opt{group_column} );
+  $group_key_value = dbh->quote($group_key_value)
+    unless looks_like_number($group_key_value);
+  $detail_query->and_where("$group_key = $group_key_value");
+  push @queries, $detail_query;
+}
+
+my @total_footer;
+if ($opt{'total_row'}) {
+  for( my $col = 0;
+       exists($opt{'total_row'}[$col]) or exists($opt{'header'}[$col]);
+       $col++
+  ) {
+    my $value = $opt{'total_row'}[$col] || '';
+    $value = &$value( $totals ) if ref($value) eq 'CODE';
+    $total_footer[$col] = $value;
+  }
+}
+
+return {
+  num           => scalar(@groups),
+  groups        => \@groups,
+  group_labels  => \@group_labels,
+  group_footers => \@group_footers,
+  queries       => \@queries,
+  total_footer  => \@total_footer,
+};
+</%init>

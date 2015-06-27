@@ -39,7 +39,7 @@ Examples:
          )
 
 </%doc>
-<& search.html,
+<& grouped-search.html,
                 'title'          => $title, # XXX: translate
                 'name_singular'  => $name_singular,
                 'query'          => $sql_query,
@@ -54,12 +54,25 @@ Examples:
                 'link_onclicks'  => \@link_onclicks,
                 'color'          => \@color,
                 'style'          => \@style,
+
+                'group_column'   => 'payby',
+                'group_label'    => 'payby_name',
+                'subtotal'       => { 'paid' => 'sum(paid)' },
+                'subtotal_row'   => [ 'Subtotal',
+                                      sub { sprintf($money, $_[0]->paid) },
+                                    ],
+                'total_row'      => [ '<B>Total</B>',
+                                      sub { sprintf("<B>$money</B>", $_[0]->paid) },
+                                    ],
 &>
 <%init>
 
 my %opt = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $conf = FS::Conf->new;
+my $money = ($conf->config('money_char') || '$') . '%.2f';
 
 die "access denied"
   unless $curuser->access_right('Financial reports');
@@ -165,7 +178,7 @@ push @header, "\u$name_singular",
 $align .= 'rr';
 push @links, '', '';
 push @fields, 'payby_payinfo_pretty',
-              sub { sprintf('$%.2f', shift->$amount_field() ) },
+              sub { sprintf($money, shift->$amount_field() ) },
 ;
 push @link_onclicks, $sub_receipt, '';
 push @sort_fields, '', $amount_field;
@@ -174,7 +187,7 @@ if ( $unapplied ) {
   push @header, emt('Unapplied');
   $align .= 'r';
   push @links, '';
-  push @fields, sub { sprintf('$%.2f', shift->unapplied_amount) };
+  push @fields, sub { sprintf($money, shift->unapplied_amount) };
   push @sort_fields, '';
 }
 
@@ -252,14 +265,10 @@ if ( $cgi->param('magic') ) {
       $title = $part_referral->referral. " $title";
     }
 
-    # cust_classnum (false laziness w/ elements/cust_main_dayranges.html, prepaid_income.html, cust_bill_pay.html, cust_bill_pkg.html cust_bill_pkg_referral.html, unearned_detail.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
-    if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
-      my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
-      push @search, 'COALESCE( cust_main.classnum, 0) IN ( '.
-                        join(',', map { $_ || '0' } @classnums ).
-                    ' )'
-        if @classnums;
-    }
+    # cust_classnum - standard matching
+    push @search, $m->comp('match-classnum',
+        param => 'cust_classnum', field => 'cust_main.classnum'
+      );
 
     if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
       push @search, "$table.custnum = $1";
@@ -321,7 +330,6 @@ if ( $cgi->param('magic') ) {
 
           } elsif ( $cardtype eq 'Discover' ) {
 
-            my $conf = new FS::Conf;
             my $country = $conf->config('countrydefault') || 'US';
 
             $search =

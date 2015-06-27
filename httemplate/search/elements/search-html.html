@@ -181,300 +181,13 @@
 
 %             }
 
-              <% include('/elements/table-grid.html') %>
-
-                <TR>
-%                 my $h2 = 0;
-%                 my $colspan = 0;
-%                 my @fields = @{ $opt{'sort_fields'} || $opt{'fields'} || [] };
-%                 my $order_by = $cgi->param('order_by');
-%                 foreach my $header ( @{ $opt{header} } ) { 
-%
-%                   my $field = shift @fields;
-%
-%                   $colspan-- if $colspan > 0;
-%                   next if $colspan;
-%
-%                   my $label = ref($header) ? $header->{label} : $header;
-%                   unless ( ref($field) || !$field ) {
-%                     if ( $order_by eq $field ) {
-%                       $cgi->param('order_by', "$field DESC");
-%                     } else {
-%                       $cgi->param('order_by', $field);
-%                     }
-%                     $label = qq(<A HREF="$self_url?). $cgi->query_string.
-%                              qq(">$label</A>);
-%                   }
-%
-%                   $colspan = ref($header) ? $header->{colspan} : 0;
-%                   my $rowspan = 1;
-%                   my $style = '';
-%                   if ( $opt{header2} ) {
-%                     if ( !length($opt{header2}->[$h2]) ) {
-%                       $rowspan = 2;
-%                       splice @{ $opt{header2} }, $h2, 1;
-%                     } else {
-%                       $h2++;
-%                       $style = 'STYLE="border-bottom: none"'
-%                     }
-%                   }
-                    <TH CLASS   = "grid"
-                        BGCOLOR = "#cccccc"
-                        ROWSPAN = "<% $rowspan %>"
-                        <% $colspan ? 'COLSPAN = "'.$colspan.'"' : '' %>
-                        <% $style %>
-
-                    >
-                      <% $label %>
-                    </TH>
-%                 } 
-                </TR>
-
-%               if ( $opt{header2} ) {
-                  <TR>
-%                   foreach my $header ( @{ $opt{header2} } ) { 
-%                     my $label = ref($header) ? $header->{label} : $header;
-                      <TH CLASS="grid" BGCOLOR="#cccccc">
-                        <FONT SIZE="-1"><% $label %></FONT>
-                      </TH>
-%                   } 
-                  </TR>
-%               }
-
-%               my $bgcolor1 = '#eeeeee';
-%               my $bgcolor2 = '#ffffff';
-%               my $bgcolor;
-%
-%               foreach my $row ( @$rows ) {
-%
-%                 if ( $bgcolor eq $bgcolor1 ) {
-%                   $bgcolor = $bgcolor2;
-%                 } else {
-%                   $bgcolor = $bgcolor1;
-%                 }
-
-%                 my $rowstyle = '';
-%                 if ( $row eq $opt{'footer_data'} ) {
-%                   $rowstyle = ' STYLE="border-top: dashed 1px black; font-style: italic"';
-%                   $bgcolor = '#dddddd';
-%                 }
-
-%                 my $trid = '';
-%                   if ( $opt{'link_field' } ) {
-%                     my $link_field = $opt{'link_field'};
-%                     if ( ref($link_field) eq 'CODE' ) {
-%                       $trid = &{$link_field}($row);
-%                     } else {
-%                       $trid = $row->$link_field();
-%                     }
-%                   }
-                  <TR ID="<%$trid |h%>"<%$rowstyle%>>
-                      
-
-%                   if ( $opt{'fields'} ) {
-%
-%                     my $links    = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
-%                     my $onclicks = $opt{'link_onclicks'} ? [ @{$opt{'link_onclicks'}} ] : [];
-%                     my $tooltips = $opt{'tooltips'} ? [ @{$opt{'tooltips'}} ] : [];
-%                     my $aligns   = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
-%                     my $colors   = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
-%                     my $sizes    = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
-%                     my $styles   = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
-%                     my $cstyles  = $opt{'cell_style'} ? [ @{$opt{'cell_style'}} ] : [];
-%
-%                     foreach my $field (
-%
-%                       map {
-%                             if ( ref($_) eq 'ARRAY' ) {
-%
-%                               my $tableref = $_;
-%
-%                               '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%">'.
-%
-%                               join('', map {
-%
-%                                 my $rowref = $_;
-%
-%                                 '<tr>'.
-%
-%                                 join('', map {
-%
-%                                   my $e = $_;
-%
-%                                   '<TD '.
-%                                     join(' ', map {
-%                                       uc($_).'="'. $e->{$_}. '"';
-%                                     }
-%                                     grep exists($e->{$_}),
-%                                          qw( align bgcolor colspan rowspan
-%                                              style valign width )
-%                                     ).
-%                                   '>'.
-%
-%                                   ( $e->{'link'}
-%                                       ? '<A HREF="'. $e->{'link'}. '">'
-%                                       : ''
-%                                   ).
-%                                   ( $e->{'onclick'} # don't use with 'link'
-%                                       ? '<A HREF="#" onclick="' .
-%                                         $e->{'onclick'}.'">'
-%                                       : ''
-%                                   ).
-%                                   ( $e->{'size'}
-%                                      ? '<FONT SIZE="'.uc($e->{'size'}).'">'
-%                                      : ''
-%                                   ).
-%                                   ( $e->{'data_style'}
-%                                       ? '<'. uc($e->{'data_style'}). '>'
-%                                       : ''
-%                                   ).
-%                                   $e->{'data'}.
-%                                   ( $e->{'data_style'}
-%                                       ? '</'. uc($e->{'data_style'}). '>'
-%                                       : ''
-%                                   ).
-%                                   ( $e->{'size'} ? '</FONT>' : '' ).
-%                                   ( $e->{'link'} || $e->{'onclick'} 
-%                                       ? '</A>'
-%                                       : '' ).
-%                                   '</td>';
-%
-%                                 } @$rowref ).
-%
-%                                 '</tr>';
-%                               } @$tableref ).
-%
-%                               '</table>';
-%
-%                             } else {
-%                               $_;
-%                             }
-%                           }
-%
-%                       map {
-%                             if ( ref($_) eq 'CODE' ) {
-%                               &{$_}($row);
-%                             } elsif ( ref($row) eq 'ARRAY' and 
-%                                       $_ =~ /^\d+$/ ) {
-%                             # for the 'straight SQL' case: specify fields
-%                             # by position
-%                               encode_entities($row->[$_]);
-%                             } else {
-%                               encode_entities($row->$_());
-%                             }
-%                           }
-%                       @{$opt{'fields'}}
-%
-%                     ) {
-%
-%#                       my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
-%                       my $class = 'grid';
-%
-%                       my $align = $aligns ? shift @$aligns : '';
-%                       $align = " ALIGN=$align" if $align;
-%
-%                       my $a = '';
-%                       if ( $links ) {
-%                         my $link = shift @$links;
-%                         my $onclick = shift @$onclicks;
-%                         my $tooltip = shift @$tooltips;
-%
-%                         if (    ! $opt{'agent_virt'}
-%                              || ( $null_link && ! $row->agentnum )
-%                              || grep { $row->agentnum == $_ }
-%                                      @link_agentnums
-%                            ) {
-%        
-%                           $link = &{$link}($row)
-%                             if ref($link) eq 'CODE';
-%
-%                           $onclick = &{$onclick}($row)
-%                             if ref($onclick) eq 'CODE';
-%                           $onclick = qq( onClick="$onclick") if $onclick;
-%
-%                           $tooltip = &{$tooltip}($row)
-%                             if ref($tooltip) eq 'CODE';
-%                           $tooltip = qq! id="a$id" !.
-%                             qq! onmouseover="return overlib(!.
-%                             $m->interp->apply_escapes($tooltip, 'h', 'js_string').
-%                             qq!, FGCLASS, 'tooltip', REF, 'a$id', !.
-%                             qq!REFC, 'LL', REFP, 'UL')"! if $tooltip;
-%
-%                           if ( $link ) {
-%                             my( $url, $method ) = @{$link};
-%                             if ( ref($method) eq 'CODE' ) {
-%                               $a = $url. &{$method}($row);
-%                             } else {
-%                               $a = $url. $row->$method();
-%                             }
-%                             $a = qq(<A HREF="$a"$onclick$tooltip>);
-%                           }
-%                           elsif ( $onclick ) {
-%                             $a = qq(<A HREF="javascript:void(0);"$onclick>);
-%                           }
-%                           elsif ( $tooltip ) {
-%                             $a = qq(<A $tooltip>);
-%                           }
-%                           $id++;
-
-%                         }
-%
-%                       }
-%
-%                       my $font = '';
-%                       my $color = shift @$colors;
-%                       $color = &{$color}($row) if ref($color) eq 'CODE';
-%                       my $size = shift @$sizes;
-%                       $size = &{$size}($row) if ref($size) eq 'CODE';
-%                       if ( $color || $size ) {
-%                         $font = '<FONT '.
-%                                 ( $color ? "COLOR=#$color "   : '' ).
-%                                 ( $size  ? qq(SIZE="$size" )  : '' ).
-%                                 '>';
-%                       }
-%
-%                       my($s, $es) = ( '', '' );
-%                       my $style = shift @$styles;
-%                       $style = &{$style}($row) if ref($style) eq 'CODE';
-%                       if ( $style ) {
-%                         $s = join( '', map "<$_>", split('', $style) );
-%                         $es = join( '', map "</$_>", split('', $style) );
-%                       }
-%
-%                       my $cstyle = shift @$cstyles;
-%                       $cstyle = &{$cstyle}($row) if ref($cstyle) eq 'CODE';
-%                       $cstyle = qq(STYLE="$cstyle")
-%                         if $cstyle;
-
-                        <TD CLASS="<% $class %>" BGCOLOR="<% $bgcolor %>" <% $align %> <% $cstyle %>><% $a %><% $font %><% $s %><% $field %><% $es %><% $font ? '</FONT>' : '' %><% $a ? '</A>' : '' %></TD>
-
-%                     } 
-%
-%                   } else { 
-%
-%                     foreach ( @$row ) { 
-                        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $_ %></TD>
-%                     }
-%
-%                   }
-
-                  </TR>
-
-%               } 
-
-%               if ( $opt{'footer'} ) {
-
-                  <TR>
-
-%                   foreach my $footer ( @{ $opt{'footer'} } ) { 
-%                     $footer = &{$footer}() if ref($footer) eq 'CODE';
-                      <TD CLASS="grid" BGCOLOR="#dddddd" STYLE="border-top: dashed 1px black;"><i><% $footer %></i></TD>
-%                   } 
-
-                  </TR>
-%               } 
-            
-              </TABLE>
+              <& SELF:data_table,
+                  rows            => $rows,
+                  null_link       => $null_link,
+                  link_agentnums  => \@link_agentnums,
+                  self_url        => $self_url,
+                  %opt
+              &>
 
               <% $pager %>
   
@@ -521,14 +234,358 @@ my $confmax        = $args{'confmax'};
 my $maxrecords     = $args{'maxrecords'};
 my $offset         = $args{'offset'};
 my %opt            = %{ $args{'opt'} };
-my $self_url       = $opt{'url'} || $cgi->url('-path_info' => 1, '-full' =>1);
 
-my $count_sth = dbh->prepare($opt{'count_query'})
-  or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
-$count_sth->execute
-  or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
-my $count_arrayref = $count_sth->fetchrow_arrayref;
+# must be an arrayref of the row count, followed by any other totals
+my $count_arrayref = $args{'totals'};
 my $total = $count_arrayref->[0];
 
-my $id = 0;
+# there used to be an option to override this, for highly dubious reasons
+my $self_url = $cgi->url('-path_info' => 1, '-full' =>1);
+
 </%init>
+<%method data_table>
+% my %opt = @_;
+% my $rows = delete $opt{rows};
+% my $self_url = delete $opt{self_url};
+<& /elements/table-grid.html &>
+
+<THEAD>
+<& SELF:header_row,
+  'header'      => $opt{'header'},
+  'header2'     => $opt{'header2'},
+  'sort_fields' => ($opt{'sort_fields'} || $opt{'fields'}),
+&>
+</THEAD>
+
+<TBODY>
+<& SELF:data_rows, rows => $rows, opt => \%opt &>
+</TBODY>
+
+% if ( $opt{'footer'} ) {
+<TFOOT>
+<& SELF:footer_row, row => $opt{'footer'}, opt => \%opt &>
+</TFOOT> 
+% } 
+</TABLE>
+</%method>
+<%method header_row>
+<%args>
+@sort_fields
+@header
+@header2 => ()
+</%args>
+  <TR>
+% my $h2 = 0;
+% my $colspan = 0;
+% my $order_by = $cgi->param('order_by');
+% my $self_url = $cgi->url('-path_info' => 1, '-full' =>1);
+% foreach my $header ( @header ) { 
+%
+%   my $field = shift @sort_fields;
+%
+%   $colspan-- if $colspan > 0;
+%   next if $colspan;
+%
+%   my $label = ref($header) ? $header->{label} : $header;
+%   unless ( ref($field) || !$field ) {
+%     if ( $order_by eq $field ) {
+%       $cgi->param('order_by', "$field DESC");
+%     } else {
+%       $cgi->param('order_by', $field);
+%     }
+%     $label = qq(<A HREF="$self_url?). $cgi->query_string.
+%              qq(">$label</A>);
+%   }
+%
+%   $colspan = ref($header) ? $header->{colspan} : 0;
+%   my $rowspan = 1;
+%   my $style = '';
+%   if ( @header2 ) {
+%     if ( !length($header2[$h2]) ) {
+%       $rowspan = 2;
+%       splice @header2, $h2, 1;
+%     } else {
+%       $h2++;
+%       $style = 'STYLE="border-bottom: none"'
+%     }
+%   }
+    <TH CLASS   = "grid"
+        BGCOLOR = "#cccccc"
+        ROWSPAN = "<% $rowspan %>"
+        <% $colspan ? 'COLSPAN = "'.$colspan.'"' : '' %>
+        <% $style %>
+
+    >
+      <% $label %>
+    </TH>
+% } 
+  </TR>
+
+% if ( @header2 ) {
+  <TR>
+%   foreach my $header ( @header2 ) { 
+%     my $label = ref($header) ? $header->{label} : $header;
+      <TH CLASS="grid" BGCOLOR="#cccccc">
+        <FONT SIZE="-1"><% $label %></FONT>
+      </TH>
+%   } 
+  </TR>
+% }
+</%method>
+<%method data_rows>
+<%args>
+$rows => []
+%opt
+</%args>
+% my %align = (
+%   'l' => 'left',
+%   'r' => 'right',
+%   'c' => 'center',
+%   ' ' => '',
+%   '.' => '',
+% );
+% if ( $opt{align} and !ref($opt{align}) ) {
+%   $opt{align} = [ map $align{$_}, split(//, $opt{align}) ];
+% }
+
+% my $i = 0; # for row striping # XXX CSS - nth-child
+% foreach my $row ( @$rows ) {
+%
+%   my $rowstyle = '';
+%   if ( $row eq $opt{'footer_data'} ) { # XXX CSS - tfoot
+%     $rowstyle = ' STYLE="border-top: dashed 1px black; font-style: italic background-color=#dddddd"';
+%   }
+%
+%   my $trid = '';
+%   if ( $opt{'link_field' } ) {
+%     my $link_field = $opt{'link_field'};
+%     if ( ref($link_field) eq 'CODE' ) {
+%       $trid = &{$link_field}($row);
+%     } else {
+%       $trid = $row->$link_field();
+%     }
+%   }
+    <TR ID="<%$trid |h%>" CLASS="row<% $i % 2 %>"<%$rowstyle%>>
+
+%   if ( $opt{'fields'} ) {
+%
+%     my $links    = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+%     my $onclicks = $opt{'link_onclicks'} ? [ @{$opt{'link_onclicks'}} ] : [];
+%     my $tooltips = $opt{'tooltips'} ? [ @{$opt{'tooltips'}} ] : [];
+%     my $aligns   = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+%     my $colors   = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
+%     my $sizes    = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
+%     my $styles   = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
+%     my $cstyles  = $opt{'cell_style'} ? [ @{$opt{'cell_style'}} ] : [];
+%
+%     foreach my $field (
+%
+%       map {
+%             if ( ref($_) eq 'ARRAY' ) {
+%
+%               my $tableref = $_;
+%
+%               '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%">'.
+%
+%               join('', map {
+%
+%                 my $rowref = $_;
+%
+%                 '<tr>'.
+%
+%                 join('', map {
+%
+%                   my $e = $_;
+%
+%                   '<TD '.
+%                     join(' ', map {
+%                       uc($_).'="'. $e->{$_}. '"';
+%                     }
+%                     grep exists($e->{$_}),
+%                          qw( align bgcolor colspan rowspan
+%                              style valign width )
+%                     ).
+%                   '>'.
+%
+%                   ( $e->{'link'}
+%                       ? '<A HREF="'. $e->{'link'}. '">'
+%                       : ''
+%                   ).
+%                   ( $e->{'onclick'} # don't use with 'link'
+%                       ? '<A HREF="#" onclick="' .
+%                         $e->{'onclick'}.'">'
+%                       : ''
+%                   ).
+%                   ( $e->{'size'}
+%                      ? '<FONT SIZE="'.uc($e->{'size'}).'">'
+%                      : ''
+%                   ).
+%                   ( $e->{'data_style'}
+%                       ? '<'. uc($e->{'data_style'}). '>'
+%                       : ''
+%                   ).
+%                   $e->{'data'}.
+%                   ( $e->{'data_style'}
+%                       ? '</'. uc($e->{'data_style'}). '>'
+%                       : ''
+%                   ).
+%                   ( $e->{'size'} ? '</FONT>' : '' ).
+%                   ( $e->{'link'} || $e->{'onclick'} 
+%                       ? '</A>'
+%                       : '' ).
+%                   '</td>';
+%
+%                 } @$rowref ).
+%
+%                 '</tr>';
+%               } @$tableref ).
+%
+%               '</table>';
+%
+%             } else {
+%               $_;
+%             }
+%           }
+%
+%       map {
+%             if ( ref($_) eq 'CODE' ) {
+%               &{$_}($row);
+%             } elsif ( ref($row) eq 'ARRAY' and 
+%                       $_ =~ /^\d+$/ ) {
+%             # for the 'straight SQL' case: specify fields
+%             # by position
+%               encode_entities($row->[$_]);
+%             } else {
+%               encode_entities($row->$_());
+%             }
+%           }
+%       @{$opt{'fields'}}
+%
+%     ) {
+%
+%       my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
+%       my $class = 'grid';
+%
+%       my $align = $aligns ? shift @$aligns : '';
+%       $align = " ALIGN=$align" if $align;
+%
+%       my $a = '';
+%       if ( $links ) {
+%         my $link = shift @$links;
+%         my $onclick = shift @$onclicks;
+%         my $tooltip = shift @$tooltips;
+%
+%         if (    ! $opt{'agent_virt'}
+%              || ( $opt{'null_link'} && ! $row->agentnum )
+%              || grep { $row->agentnum == $_ }
+%                      @{ $opt{link_agentnums} }
+%            ) {
+%
+%           $link = &{$link}($row)
+%             if ref($link) eq 'CODE';
+%
+%           $onclick = &{$onclick}($row)
+%             if ref($onclick) eq 'CODE';
+%           $onclick = qq( onClick="$onclick") if $onclick;
+%
+%           $tooltip = &{$tooltip}($row)
+%             if ref($tooltip) eq 'CODE';
+%           $tooltip = qq! title="<% $tooltip |h %>"!;
+%#             qq! onmouseover="return overlib(!.
+%#             $m->interp->apply_escapes($tooltip, 'h', 'js_string').
+%#             qq!, FGCLASS, 'tooltip', REF, 'a$id', !.
+%#             qq!REFC, 'LL', REFP, 'UL')"! if $tooltip;
+%
+%           if ( $link ) {
+%             my( $url, $method ) = @{$link};
+%             if ( ref($method) eq 'CODE' ) {
+%               $a = $url. &{$method}($row);
+%             } else {
+%               $a = $url. $row->$method();
+%             }
+%             $a = qq(<A HREF="$a"$onclick$tooltip>);
+%           }
+%           elsif ( $onclick ) {
+%             $a = qq(<A HREF="javascript:void(0);"$onclick>);
+%           }
+%           elsif ( $tooltip ) {
+%             $a = qq(<A $tooltip>);
+%           }
+
+%         }
+%
+%       }
+%
+%       my $font = '';
+%       my $color = shift @$colors;
+%       $color = &{$color}($row) if ref($color) eq 'CODE';
+%       my $size = shift @$sizes;
+%       $size = &{$size}($row) if ref($size) eq 'CODE';
+%       if ( $color || $size ) {
+%         $font = '<FONT '.
+%                 ( $color ? "COLOR=#$color "   : '' ).
+%                 ( $size  ? qq(SIZE="$size" )  : '' ).
+%                 '>';
+%       }
+%
+%       my($s, $es) = ( '', '' );
+%       my $style = shift @$styles;
+%       $style = &{$style}($row) if ref($style) eq 'CODE';
+%       if ( $style ) {
+%         $s = join( '', map "<$_>", split('', $style) );
+%         $es = join( '', map "</$_>", split('', $style) );
+%       }
+%
+%       my $cstyle = shift @$cstyles;
+%       $cstyle = &{$cstyle}($row) if ref($cstyle) eq 'CODE';
+%       $cstyle = qq(STYLE="$cstyle")
+%         if $cstyle;
+
+        <TD CLASS="<% $class %>" <% $align %> <% $cstyle %>><% $a %><% $font %><% $s %><% $field %><% $es %><% $font ? '</FONT>' : '' %><% $a ? '</A>' : '' %></TD>
+
+%     } 
+%
+%   } else { # not $opt{'fields'}
+%
+%     foreach ( @$row ) { 
+        <TD CLASS="grid"><% $_ %></TD>
+%     }
+%
+%   }
+
+    </TR>
+
+%   $i++;
+%
+% } # foreach $row
+</%method>
+<%method footer_row>
+<%args>
+$row
+%opt
+</%args>
+%# don't try to respect all the styling options, just the ones that are
+%# hard to replicate with CSS
+% my %align = (
+%   'l' => 'left',
+%   'r' => 'right',
+%   'c' => 'center',
+%   ' ' => '',
+%   '.' => '',
+% );
+% if ( $opt{align} and !ref($opt{align}) ) {
+%   $opt{align} = [ map $align{$_}, split(//, $opt{align}) ];
+% }
+% my @aligns = @{ $opt{align} };
+
+<TR>
+% foreach my $footer ( @$row ) {
+%   $footer = &{$footer}() if ref($footer) eq 'CODE';
+%   my $align = shift @aligns;
+%   my $style = '';
+%   $style .= "text-align: $align;" if $align;
+    <TD CLASS="grid" STYLE="<% $style %>"><% $footer %></TD>
+% } 
+</TR>
+</%method>
+
