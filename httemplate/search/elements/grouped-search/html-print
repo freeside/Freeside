@@ -1,0 +1,79 @@
+<%doc>
+
+The "printable" view (all groups on one page).
+</%doc>
+<%init>
+my %opt = @_;
+
+my $group_info = $m->comp('core', %opt);
+my $ncols = scalar(@{ $opt{header} });
+
+my $total_footer = $group_info->{total_footer} || [];
+</%init>
+<& /elements/header-popup.html, $opt{title} &>
+
+<STYLE>
+.grouphead {
+  text-align: left;
+  font-size: 120%;
+  padding: 1ex 0 0.5ex 0.1ex;
+  border-top: 1px solid black;
+}
+.subtotal td {
+  background-color: #dddddd;
+  font-style: italic;
+  border-top: 1px dashed black;
+}
+.total td {
+  background-color: #dddddd;
+  font-style: italic;
+  font-weight: bold;
+  border-top: 2px solid black !important;
+}
+</STYLE>
+<& /elements/table-grid.html &>
+<THEAD>
+<& /search/elements/search-html.html:header_row,
+  'header'      => $opt{'header'},
+  'header2'     => $opt{'header2'},
+  'sort_fields' => ($opt{'sort_fields'} || $opt{'fields'}),
+&>
+</THEAD>
+
+% for (my $curr_group = 0; $curr_group < $group_info->{num}; $curr_group++) {
+%   my $group = $group_info->{groups}[$curr_group];
+%   my $query = $group_info->{queries}[$curr_group];
+%   my $footer = $group_info->{group_footers}[$curr_group];
+%   my $label = $group_info->{group_labels}[$curr_group];
+%   # run the query
+%   my @rows = $query->qsearch;
+%   #warn Dumper(\@rows); #DEBUG
+
+<TBODY>
+<TR><TH CLASS="grouphead" COLSPAN="<% $ncols %>">
+  <% $label %>
+</TH></TR>
+
+<& /search/elements/search-html.html:data_rows,
+  rows  => \@rows,
+  opt   => \%opt,
+&>
+</TBODY>
+<TBODY CLASS="subtotal">
+<& /search/elements/search-html.html:footer_row,
+  row   => $footer,
+  opt   => \%opt,
+&>
+</TBODY>
+% } # for $curr_group
+
+% if ( scalar @$total_footer ) {
+<TFOOT CLASS="total">
+<& /search/elements/search-html.html:footer_row,
+  row   => $total_footer,
+  opt   => \%opt,
+&>
+</TFOOT>
+% }
+</TABLE>
+<& /elements/footer.html &>
