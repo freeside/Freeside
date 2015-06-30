@@ -245,6 +245,18 @@ $opt{disable_download} = 0
 $opt{disable_download} = 1
   if $opt{really_disable_download};
 
+# split/map aligns here, so that agent_virt can add a column
+# (search-html.html will split aligns also if they aren't already split)
+my %align = (
+  'l' => 'left',
+  'r' => 'right',
+  'c' => 'center',
+  ' ' => '',
+  '.' => '',
+);
+$opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
+  unless !$opt{align} || ref($opt{align});
+
 # get our queries ready
 my $query = $opt{query} or die "query required";
 my $count_query = $opt{count_query} or die "count_query required";
