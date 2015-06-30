@@ -1986,9 +1986,6 @@ sub _check_change {
       #option shouldn't be passed, throw error if it's non-empty
       return "Cannot add contract end date when changing packages " . $self->pkgnum;
     }
-    if ($opt->{'start_date'} && ($opt->{'contract_end'} < $opt->{'start_date'})) {
-      return "Contract end date is before change date";
-    }
   }
   return '';
 }
