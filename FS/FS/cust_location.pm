@@ -68,7 +68,7 @@ Address line two (optional)
 
 =item city
 
-City
+City (optional only if cust_main-no_city_in_address config is set)
 
 =item county
 
@@ -149,8 +149,19 @@ sub find_or_insert {
 
   warn "find_or_insert:\n".Dumper($self) if $DEBUG;
 
-  my @essential = (qw(custnum address1 address2 city county state zip country
+  my @essential = (qw(custnum address1 address2 county state zip country
     location_number location_type location_kind disabled));
+
+  # Just in case this conf was accidentally/temporarily set,
+  # we'll never overwrite existing city; see city method
+  if ($conf->exists('cust_main-no_city_in_address')) {
+    warn "Warning: find_or_insert specified city when cust_main-no_city_in_address was configured"
+      if $self->get('city');
+    $self->set('city',''); # won't end up in %nonempty, hence old value is preserved
+  } else {
+    # otherwise, of course, city is essential
+    push(@essential,'city') 
+  }
 
   # I don't think this is necessary
   #if ( !$self->coord_auto and $self->latitude and $self->longitude ) {
@@ -206,6 +217,11 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
+
+  # Ideally, this should never happen,
+  # but throw a warning and save the value anyway, to avoid data loss
+  warn "Warning: inserting city when cust_main-no_city_in_address is configured"
+    if $conf->exists('cust_main-no_city_in_address') && $self->get('city');
 
   if ( $self->censustract ) {
     $self->set('censusyear' => $conf->config('census_year') || 2012);
@@ -271,6 +287,15 @@ sub replace {
   my $self = shift;
   my $old = shift;
   $old ||= $self->replace_old;
+
+  # Just in case this conf was accidentally/temporarily set,
+  # we'll never overwrite existing city; see city method
+  if ($conf->exists('cust_main-no_city_in_address')) {
+    warn "Warning: replace attempted to change city when cust_main-no_city_in_address was configured"
+      if $self->get('city') && ($old->get('city') != $self->get('city'));
+    $self->set('city',$old->get('city'));
+  }
+
   # the following fields are immutable
   foreach (qw(address1 address2 city state zip country)) {
     if ( $self->$_ ne $old->$_ ) {
@@ -330,7 +355,9 @@ sub check {
     || $self->ut_textn('locationname')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
-    || $self->ut_text('city')
+    || ($conf->exists('cust_main-no_city_in_address') 
+        ? $self->ut_textn('city') 
+        : $self->ut_text('city'))
     || $self->ut_textn('county')
     || $self->ut_textn('state')
     || $self->ut_country('country')
@@ -390,6 +417,30 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+=item city
+
+When the I<cust_main-no_city_in_address> config is set, the
+city method will return a blank string no matter the previously
+set value of the field.  You can still use the get method to
+access the contents of the field directly.
+
+Just in case this config was accidentally/temporarily set,
+we'll never overwrite existing city while the config is active.
+L</find_or_insert> will throw a warning if passed any true value for city,
+ignore the city field when finding, and preserve the existing value.
+L</replace> will only throw a warning if passed a true value that is 
+different than the existing value of city, and will preserve the existing value.
+L</insert> will throw a warning but still insert a true city value,
+to avoid unnecessary data loss.
+
+=cut
+
+sub city {
+  my $self = shift;
+  return '' if $conf->exists('cust_main-no_city_in_address');
+  return $self->get('city');
 }
 
 =item country_full
@@ -731,25 +782,29 @@ names in order.
 
 =cut
 
+### Is this actually used for anything anymore?  Grep doesn't show anything...
 sub in_county_sql {
   # replaces FS::cust_pkg::location_sql
   my ($class, %opt) = @_;
   my $ornull = $opt{ornull} ? ' OR ? IS NULL' : '';
   my $x = $ornull ? 3 : 2;
   my @fields = (('district') x 3,
-                ('city') x 3,
                 ('county') x $x,
                 ('state') x $x,
                 'country');
+
+  unless ($conf->exists('cust_main-no_city_in_address')) {
+    push( @fields, (('city') x 3) );
+  }
 
   my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
 
   my @where = (
     "cust_location.district = ? OR ? = '' OR CAST(? AS $text) IS NULL",
-    "cust_location.city     = ? OR ? = '' OR CAST(? AS $text) IS NULL",
     "cust_location.county   = ? OR (? = '' AND cust_location.county IS NULL) $ornull",
     "cust_location.state    = ? OR (? = '' AND cust_location.state IS NULL ) $ornull",
-    "cust_location.country = ?"
+    "cust_location.country = ?",
+    "cust_location.city     = ? OR ? = '' OR CAST(? AS $text) IS NULL"
   );
   my $sql = join(' AND ', map "($_)\n", @where);
   if ( $opt{param} ) {

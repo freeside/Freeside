@@ -129,7 +129,8 @@ sub small_custview {
     $html .= encode_entities($cust_main->address1). '<BR>';
     $html .= encode_entities($cust_main->address2). '<BR>'
       if $cust_main->address2;
-    $html .= encode_entities($cust_main->city). ', '. $cust_main->state. '  '.
+    $html .= encode_entities($cust_main->city) . ', ' if $cust_main->city;
+    $html .= $cust_main->state. '  '.
              $cust_main->zip. '<BR>';
     $html .= $cust_main->country. '<BR>'
       if $cust_main->country && $cust_main->country ne $countrydefault;
@@ -162,7 +163,7 @@ sub small_custview {
         $cust_main->ship_company,
         $ship->address1,
         $ship->address2,
-        ($ship->city . ', ' . $ship->state . '  ' . $ship->zip),
+        (($ship->city ? $ship->city . ', ' : '') . $ship->state . '  ' . $ship->zip),
         ($ship->country eq $countrydefault ? '' : $ship->country ),
     );
 
