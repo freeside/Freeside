@@ -159,6 +159,11 @@ my $disable_select = 1 if $conf->config('tax_district_method');
 
 $opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
 
+if ($conf->exists('cust_main-no_city_in_address')) {
+  $opt{'disable_text'} = 1;
+  $disable_select = 1;
+}
+
 my $text_style   = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 my $select_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 

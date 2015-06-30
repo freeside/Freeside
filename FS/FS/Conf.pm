@@ -3397,14 +3397,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'city_not_required',
-    'section'     => 'required',
-    'description' => 'Turn off requirement for a City to be entered for billing & shipping addresses',
-    'type'        => 'checkbox',
-    'per_agent'   => 1,
-  },
-
-  {
     'key'         => 'echeck-void',
     'section'     => 'deprecated',
     'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
@@ -4557,6 +4549,13 @@ and customer address. Include units.',
     'key'         => 'cust_main-require_censustract',
     'section'     => 'UI',
     'description' => 'Customer is required to have a census tract.  Useful for FCC form 477 reports. See also: cust_main-auto_standardize_address',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-no_city_in_address',
+    'section'     => 'UI',
+    'description' => 'Turn off City for billing & shipping addresses',
     'type'        => 'checkbox',
   },
 

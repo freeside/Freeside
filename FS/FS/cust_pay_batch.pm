@@ -130,6 +130,8 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  my $conf = new FS::Conf;
+
   my $error = 
       $self->ut_numbern('paybatchnum')
     || $self->ut_numbern('trancode') #deprecated
@@ -138,7 +140,9 @@ sub check {
     || $self->ut_number('custnum')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
-    || $self->ut_text('city')
+    || ($conf->exists('cust_main-no_city_in_address') 
+        ? $self->ut_textn('city') 
+        : $self->ut_text('city'))
     || $self->ut_textn('state')
   ;
 
