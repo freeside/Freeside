@@ -111,6 +111,10 @@ sub freeside_setup {
       FS::Trace->log('    UTF-8-decoding form data');
       #
       foreach my $param ( $cgi->param ) {
+        
+        #we can't switch to multi_param until we're done supporting deb 7
+        local($CGI::LIST_CONTEXT_WARN) = 0;
+
         my @values = $cgi->param($param);
         next if $cgi->uploadInfo($values[0]);
         #warn $param;
