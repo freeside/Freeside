@@ -41,15 +41,9 @@ if ( $cgi->param('locationnum') == -1 ) {
 }
 
 my $error;
-my $contract_end;
 my $now = time;
 if (defined($cgi->param('contract_end'))) {
-  $contract_end = parse_datetime($cgi->param('contract_end'));
-  if ($contract_end < $now) {
-    $error = "Contract end ".$cgi->param('contract_end')." is in the past.";
-  } else {
-    $change{'contract_end'} = $contract_end;
-  }
+  $change{'contract_end'} = parse_datetime($cgi->param('contract_end'));
 }
 
 unless ($error) {
