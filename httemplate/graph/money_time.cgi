@@ -39,8 +39,10 @@ if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
 }
 my $referralname = $part_referral ? $part_referral->referral.' ' : '';
 
-
-my @items = qw( invoiced netsales
+# need to clean this up. the false symmetry of "gross" and "net" everything
+# makes it aesthetically hard to make this report more useful.
+my @items = qw( gross    netsales
+                discounted
                 credits  netcredits
                 payments receipts
                 refunds  netrefunds
@@ -51,8 +53,9 @@ if ( $cgi->param('12mo') == 1 ) {
 }
 
 my %label = (
-  'invoiced'    => 'Gross Sales',
+  'gross'       => 'Gross Sales',
   'netsales'    =>   'Net Sales',
+  'discounted'  => 'Discounts',
   'credits'     => 'Gross Credits',
   'netcredits'  =>   'Net Credits',
   'payments'    => 'Gross Receipts',
@@ -64,8 +67,9 @@ my %label = (
 );
 
 my %graph_suffix = (
- 'invoiced'    => ' (invoiced)', 
+ 'gross'       => ' (invoiced + discounts)', 
  'netsales'    => ' (invoiced - applied credits)',
+ 'discounted'  => ' (discounts)',
  'credits'     => ' (credited)',
  'netcredits'  => ' (applied credits)',
  'payments'    => ' (payments)',
@@ -84,7 +88,7 @@ $graph_label{$_.'_12mo'} = $graph_label{$_}. " (prev 12 months)"
   foreach keys %graph_label;
 
 my %color = (
-  'invoiced'    => '9999ff', #light blue
+  'gross'       => '9999ff', #light blue
   'netsales'    => '0000cc', #blue
   'credits'     => 'ff9999', #light red
   'netcredits'  => 'cc0000', #red
@@ -94,6 +98,7 @@ my %color = (
   'netrefunds'  => 'ff9900', #orange
   'cashflow'    => '99cc33', #light olive
   'netcashflow' => '339900', #olive
+  'discounted'  => 'cc33cc', #purple-ish?
 );
 $color{$_.'_12mo'} = $color{$_}
   foreach keys %color;
@@ -102,7 +107,7 @@ my $ar = "agentnum=$agentnum;refnum=$refnum";
 $ar .= ";cust_classnum=$_" foreach @classnums;
 
 my %link = (
-  'invoiced'   => "${p}search/cust_bill.html?$ar;",
+  'gross'      => "${p}search/cust_bill.html?$ar;",
   'netsales'   => "${p}search/cust_bill.html?$ar;net=1;",
   'credits'    => "${p}search/cust_credit.html?$ar;",
   'netcredits' => "${p}search/cust_credit_bill.html?$ar;",
@@ -110,6 +115,7 @@ my %link = (
   'receipts'   => "${p}search/cust_bill_pay.html?$ar;",
   'refunds'    => "${p}search/cust_refund.html?magic=_date;$ar;",
   'netrefunds' => "${p}search/cust_credit_refund.html?$ar;",
+  'discounted' => "${p}search/cust_bill_pkg_discount.html?$ar;",
 );
 # XXX link 12mo?
 

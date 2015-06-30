@@ -6,14 +6,15 @@ use FS::UI::Web;
 use FS::Record qw( qsearchs dbh );
 use FS::cust_main;
 use FS::access_user;
+use FS::Conf;
                                                                                 
 =item search HASHREF                                                            
                                                                                 
 (Class method)                                                                  
                                                                                 
-Returns a qsearch hash expression to search for parameters specified in HASHREF.
-In addition to all parameters accepted by search_sql_where, the following
-additional parameters valid:
+Returns a qsearch hash expression to search for parameters specified in
+HASHREF.  In addition to all parameters accepted by search_sql_where, the
+following additional parameters valid:
 
 =over 4                                                                         
 
@@ -38,35 +39,77 @@ sub search {
 
   my $join_cust_main = FS::UI::Web::join_cust_main('cust_bill');
 
+  # get discounted, credited, and paid amounts here, for use in report
+  #
+  # Testing shows that this is by far the most efficient way to do the 
+  # joins. In particular it's almost 100x faster to join to an aggregate
+  # query than to put the subquery in a select expression. It also makes
+  # it more convenient to do arithmetic between columns, use them as sort
+  # keys, etc.
+  #
+  # Each ends with a RIGHT JOIN cust_bill so that it includes all invnums,
+  # even if they have no discounts/credits/payments; the total amount is then
+  # coalesced to zero.
+  my $join = "$join_cust_main
+  JOIN (
+    SELECT COALESCE(SUM(cust_bill_pkg_discount.amount), 0) AS discounted,
+      invnum
+      FROM cust_bill_pkg_discount
+        JOIN cust_bill_pkg USING (billpkgnum)
+        RIGHT JOIN cust_bill USING (invnum)
+      GROUP BY invnum
+    ) AS _discount USING (invnum)
+  JOIN (
+    SELECT COALESCE(SUM(cust_credit_bill.amount), 0) AS credited, invnum
+      FROM cust_credit_bill
+        RIGHT JOIN cust_bill USING (invnum)
+      GROUP BY invnum
+    ) AS _credit USING (invnum)
+  JOIN (
+    SELECT COALESCE(SUM(cust_bill_pay.amount), 0) AS paid, invnum
+      FROM cust_bill_pay
+        RIGHT JOIN cust_bill USING (invnum)
+      GROUP BY invnum
+    ) AS _pay USING (invnum)
+  ";
+
   unless ( $count_query ) {
+
+    my $money = (FS::Conf->new->config('money_char') || '$') . '%.2f';
+
     $count_query = 'SELECT COUNT(*), '. join(', ',
                      map "SUM($_)",
-                         ( 'charged',
-                           FS::cust_bill->net_sql,
-                           FS::cust_bill->owed_sql,
+                         ( 'charged + discounted',
+                           'discounted',
+                           'credited',
+                           'charged - credited',
+                           'charged - credited - paid',
                          )
                    );
-    $count_addl = [ '$%.2f invoiced (gross)',
-                    '$%.2f invoiced (net)',
-                    '$%.2f outstanding balance',
+    $count_addl = [ "$money sales (gross)",
+                    "&minus; $money discounted",
+                    "&minus; $money credited",
+                    "= $money sales (net)",
+                    "$money outstanding balance",
                   ];
   }
-  $count_query .=  " FROM cust_bill $join_cust_main $extra_sql";
+  $count_query .=  " FROM cust_bill $join $extra_sql";
 
   #$sql_query =
   +{
     'table'     => 'cust_bill',
-    'addl_from' => $join_cust_main,
+    'addl_from' => $join,
     'hashref'   => {},
     'select'    => join(', ',
                      'cust_bill.*',
                      #( map "cust_main.$_", qw(custnum last first company) ),
                      'cust_main.custnum as cust_main_custnum',
                      FS::UI::Web::cust_sql_fields(),
-                     #$class->owed_sql. ' AS owed',
-                     #$class->net_sql.  ' AS net',
-                     FS::cust_bill->owed_sql. ' AS owed',
-                     FS::cust_bill->net_sql.  ' AS net',
+                     '(charged + discounted) as gross',
+                     'discounted',
+                     'credited',
+                     '(charged - credited) as net',
+                     '(charged - credited - paid) as owed',
                    ),
     'extra_sql' => $extra_sql,
     'order_by'  => 'ORDER BY '. ( $params->{'order_by'} || 'cust_bill._date' ),
@@ -179,13 +222,7 @@ sub search_sql_where {
     @classnum = grep /^(\d*)$/, @classnum;
 
     if ( @classnum ) {
-      push @search, '( '. join(' OR ', map {
-                                             $_ ? "cust_main.classnum = $_"
-                                                : "cust_main.classnum IS NULL"
-                                           }
-                                           @classnum
-                              ).
-                    ' )';
+      push @search, 'COALESCE(cust_main.classnum, 0) IN ('.join(',', @classnum).')';
     }
 
   }
@@ -206,6 +243,7 @@ sub search_sql_where {
     push @search, "cust_bill.invnum <= $1";
   }
 
+  # these are from parse_lt_gt, and should already be sanitized
   #charged
   if ( $param->{charged} ) {
     my @charged = ref($param->{charged})
@@ -216,21 +254,22 @@ sub search_sql_where {
                       @charged;
   }
 
-  my $owed_sql = FS::cust_bill->owed_sql;
+  #my $owed_sql = FS::cust_bill->owed_sql;
+  my $owed_sql = '(cust_bill.charged - credited - paid)';
+  my $net_sql = '(cust_bill.charged - credited)';
 
   #owed
   if ( $param->{owed} ) {
     my @owed = ref($param->{owed})
                  ? @{ $param->{owed} }
                  : ($param->{owed});
-    push @search, map { s/^owed/$owed_sql/; $_; }
-                      @owed;
+    push @search, map { s/^owed/$owed_sql/ } @owed;
   }
 
   #open/net flags
   push @search, "0 != $owed_sql"
     if $param->{'open'};
-  push @search, '0 != '. FS::cust_bill->net_sql
+  push @search, "0 != $net_sql"
     if $param->{'net'};
 
   #days

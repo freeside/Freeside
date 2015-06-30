@@ -377,9 +377,16 @@ $rows => []
 %     my $sizes    = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
 %     my $styles   = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
 %     my $cstyles  = $opt{'cell_style'} ? [ @{$opt{'cell_style'}} ] : [];
+%     my $formats  = $opt{'format'} ? [ @{$opt{'format'}} ] : [];
 %
 %     foreach my $field (
 %
+%       # if the value of the field is an arrayref, then construct a table in
+%       # the cell.
+%       # if it's a (non-empty) scalar, and a format has been specified, then
+%       # format the scalar with that.
+%       # otherwise, just output the value.
+%       # XXX we should also do date formats like this
 %       map {
 %             if ( ref($_) eq 'ARRAY' ) {
 %
@@ -443,10 +450,17 @@ $rows => []
 %               '</table>';
 %
 %             } else {
+%               if ( length($_) > 0 and my $format = shift @$formats ) {
+%                 $_ = sprintf($format, $_);
+%               }
 %               $_;
 %             }
 %           }
 %
+%       # get the value of the field spec:
+%       # - if the spec is a coderef, evaluate the coderef
+%       # - if the spec is a string, call that string as a method
+%       # - if the spec is an integer, get the field in that position
 %       map {
 %             if ( ref($_) eq 'CODE' ) {
 %               &{$_}($row);
@@ -491,10 +505,6 @@ $rows => []
 %           $tooltip = &{$tooltip}($row)
 %             if ref($tooltip) eq 'CODE';
 %           $tooltip = qq! title="<% $tooltip |h %>"!;
-%#             qq! onmouseover="return overlib(!.
-%#             $m->interp->apply_escapes($tooltip, 'h', 'js_string').
-%#             qq!, FGCLASS, 'tooltip', REF, 'a$id', !.
-%#             qq!REFC, 'LL', REFP, 'UL')"! if $tooltip;
 %
 %           if ( $link ) {
 %             my( $url, $method ) = @{$link};

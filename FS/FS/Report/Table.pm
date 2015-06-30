@@ -266,6 +266,36 @@ sub netrefunds {
   );
 }
 
+=item discounted: The sum of discounts on invoices in the period.
+
+=cut
+
+sub discounted {
+  my( $self, $speriod, $eperiod, $agentnum, %opt) = @_;
+  $self->scalar_sql('SELECT SUM(cust_bill_pkg_discount.amount)
+    FROM cust_bill_pkg_discount
+      JOIN cust_bill_pkg USING  ( billpkgnum )
+      JOIN cust_bill     USING  ( invnum )
+      JOIN cust_main     USING  ( custnum )
+    WHERE '. $self->in_time_period_and_agent( $speriod,
+                                              $eperiod,
+                                              $agentnum,
+                                              'cust_bill._date'
+                                            ).
+              $self->for_opts(%opt)
+  );
+}
+
+=item gross: invoiced + discounted
+
+=cut
+
+sub gross {
+  my( $self, $speriod, $eperiod, $agentnum, %opt) = @_;
+    $self->invoiced(   $speriod, $eperiod, $agentnum, %opt)
+  + $self->discounted( $speriod, $eperiod, $agentnum, %opt);
+}
+
 #XXX docs
 
 #these should be auto-generated or $AUTOLOADed or something
