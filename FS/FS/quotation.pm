@@ -260,15 +260,30 @@ sub _items_sections {
   my %opt = @_;
   my $escape = $opt{escape}; # the only one we care about
 
-  my %subtotals; # package frequency => subtotal
+  my %subtotals = (); # package frequency => subtotal
+  my $disable_total = 0;
   foreach my $pkg ($self->quotation_pkg) {
-    my $recur_freq = $pkg->part_pkg->freq;
+
+    my $part_pkg = $pkg->part_pkg;
+
+    my $recur_freq = $part_pkg->freq;
     ($subtotals{0} ||= 0) += $pkg->setup + $pkg->setup_tax;
     ($subtotals{$recur_freq} ||= 0) += $pkg->recur + $pkg->recur_tax;
+
+    #this is a shitty hack based on what's in part_pkg/ at the moment
+    # but its good enough for the 99% common case of preventing totals from
+    # displaying for prorate packages
+    $disable_total = 1
+      if $part_pkg->plan =~ /^prorate/
+      || $part_pkg->plan eq 'agent'
+      || $part_pkg->plan =~ /^torrus/
+      || $part_pkg->option('sync_bill_date');
+
   }
   my @pkg_freq_order = keys %{ FS::Misc->pkg_freqs };
 
   my @sections;
+  my $no_recurring = 0;
   foreach my $freq (keys %subtotals) {
 
     next if $subtotals{$freq} == 0;
@@ -279,6 +294,7 @@ sub _items_sections {
     if ( $freq eq '0' ) {
       if ( scalar(keys(%subtotals)) == 1 ) {
         # there are no recurring packages
+        $no_recurring = 1;
         $desc = $self->mt('Charges');
       } else {
         $desc = $self->mt('Setup Charges');
@@ -295,6 +311,18 @@ sub _items_sections {
       'subtotal'    => sprintf('%.2f',$subtotals{$freq}),
     };
   }
+
+  unless ( $disable_total || $no_recurring ) {
+    my $total = 0;
+    $total += $_ for values %subtotals;
+    push @sections, {
+      'description' => 'First payment',
+      'sort_weight' => 0,
+      'category'   => 'Total category', #required but what's it used for?
+      'subtotal'    => sprintf('%.2f',$total)
+    };
+  }
+
   return \@sections, [];
 }
 
