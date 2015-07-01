@@ -195,7 +195,8 @@ install-docs: docs
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
 	cp htetc/htpasswd.logout ${FREESIDE_CONF}
-	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
+	rm -r ${MASONDATA}
+	mkdir ${MASONDATA}
 	chown -R freeside ${MASONDATA}
 
 dev-docs:
