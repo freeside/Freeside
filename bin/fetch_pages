@@ -1,0 +1,74 @@
+#!/usr/bin/perl
+
+use strict;
+use WWW::Mechanize;
+use Getopt::Std;
+use File::chdir;
+use URI;
+use File::Slurp qw(write_file);
+
+my %opt;
+getopts('d:h:u:p:', \%opt);
+die usage() unless ($opt{d} and $opt{u} and $opt{p});
+my $host = $opt{h} || 'http://localhost/freeside';
+
+my $mech = WWW::Mechanize->new;
+$mech->credentials($opt{u}, $opt{p}); # 3.x auth only
+
+my @tests = <>;
+
+mkdir($opt{d}) unless -d $opt{d};
+push @CWD, $opt{d};
+
+while (my $path = shift @tests) {
+  if ($path =~ /^#(.*)/) {
+    print "$1 - skipped\n";
+    next;
+  }
+  my $uri = URI->new("$host/$path");
+  print $uri->path;
+  my $response = $mech->get($uri);
+  print " - " . $response->code . "\n";
+  if ($response->is_success) {
+    local $CWD;
+    my @dirs = $uri->path_segments;
+    my $file = pop @dirs;
+    foreach my $dir (@dirs) {
+      mkdir $dir unless -d $dir;
+      push @CWD, $dir;
+    }
+    write_file($file, {binmode => ':utf8'}, $response->decoded_content);
+  }
+}
+
+sub usage {
+  "Usage: fetch_pages -d directory -u username -p password [ -h hostname ]\n\n";
+}
+
+=head1 NAME
+
+fetch_pages - a testing tool for UI changes
+
+=head1 USAGE
+
+fetch_pages -d before_change -u myuser -p mypass list_of_tests
+git checkout newbranch
+make install; apache2ctl restart
+fetch_pages -d after_change -u myuser -p mypass list_of_tests
+diff -ur before_change/ after_change/ |diffstat
+
+=head1 ARGUMENTS
+
+-d: the directory to put the files in. Required.
+
+-u: the username to use with the Freeside web interface. Required.
+
+-p: the password. Required.
+
+-h: the URL prefix for the Freeside server. Defaults to
+"http://localhost/freeside".
+
+The list of tests can be in a file specified after all arguments, or passed
+to stdin.
+
+=cut
