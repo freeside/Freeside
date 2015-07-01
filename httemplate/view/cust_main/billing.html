@@ -19,6 +19,69 @@
   <TD><B><% $balance %></B></TD>
 </TR>
 
+% #54: just an arbitrary number i pulled out of my goober.  in reality we'd want
+% # to consider e.g. a histogram of num_ncancelled_packages for the entire
+% # customer base, and compare it to a graph of the overhead for generating this
+% # information.  (and optimize it better, we could get it more from SQL)
+% if ( $cust_main->num_ncancelled_pkgs < 54 ) {
+%   my $sth = dbh->prepare("
+%     SELECT DISTINCT freq FROM cust_pkg LEFT JOIN part_pkg USING (pkgpart)
+%       WHERE freq IS NOT NULL AND freq != '0'
+%         AND ( cancel IS NULL OR cancel = 0 )
+%         AND custnum = ?
+%   ") or die $DBI::errstr;
+% 
+%   $sth->execute($cust_main->custnum) or die $sth->errstr;
+
+%   #not really a numeric sort because freqs can actually be all sorts of things
+%   # but good enough for the 99% cases of ordering monthly quarterly annually
+%   my @freqs = sort { $a <=> $b } map { $_->[0] } @{ $sth->fetchall_arrayref };
+% 
+%   foreach my $freq (@freqs) {
+%     my @cust_pkg = qsearch({
+%       'table'     => 'cust_pkg',
+%       'addl_from' => 'LEFT JOIN part_pkg USING (pkgpart)',
+%       'hashref'   => { 'custnum' => $cust_main->custnum, },
+%       'extra_sql' => 'AND ( cancel IS NULL OR cancel = 0 )
+%                       AND freq = '. dbh->quote($freq),
+%     }) or next;
+% 
+%     my $freq_pretty = $cust_pkg[0]->part_pkg->freq_pretty;
+%
+%     my $amount = 0;
+%     foreach my $cust_pkg (@cust_pkg) {
+%       my $part_pkg = $cust_pkg->part_pkg;
+%       next if $cust_pkg->susp
+%            && ! $cust_pkg->option('suspend_bill')
+%            && ( ! $part_pkg->option('suspend_bill')
+%                 || $cust_pkg->option('no_suspend_bill')
+%               );
+%
+%       #add recurring amounts for this package and its billing add-ons
+%       foreach my $l_part_pkg ( $part_pkg->self_and_bill_linked ) {
+%         $amount += $l_part_pkg->option('recur_fee');
+%       }
+%
+%       #subtract amounts for any active discounts
+%       #(there should only be one at the moment, otherwise this makes no sense)
+%       foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
+%         my $discount = $cust_pkg_discount->discount;
+%         #and only one of these for each
+%         $amount -= $discount->amount;
+%         $amount -= $amount * $discount->percent/100;
+%       }
+%
+%     }
+   
+      <TR>
+        <TH ALIGN="right"><% emt( ucfirst($freq_pretty). ' recurring' ) %></TH>
+        <TD><% $money_char. sprintf('%.2f', $amount) %></TD>
+        </TD>
+      </TR>
+%   }
+
+% }
+
 % if ( $conf->exists('cust_main-select-prorate_day') ) {
 <TR>
   <TH ALIGN="right"><% mt('Prorate day of month') |h %></TH>
