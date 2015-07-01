@@ -128,10 +128,9 @@ sub small_custview {
   $html .= encode_entities($cust_main->address2). '<BR>'
     if $cust_main->address2;
   $html .= encode_entities($cust_main->city) . ', ' if $cust_main->city;
-  $html .= $cust_main->state. '  '.
-           $cust_main->zip. '<BR>';
-           $cust_main->zip. '<BR>';
-  $html .= $cust_main->country. '<BR>'
+  $html .= encode_entities($cust_main->state). '  '.
+           encode_entities($cust_main->zip). '<BR>';
+  $html .= encode_entities($cust_main->country). '<BR>'
     if $cust_main->country && $cust_main->country ne $countrydefault;
 
   $html .= '</TD></TR><TR><TD></TD><TD BGCOLOR="#ffffff">';
