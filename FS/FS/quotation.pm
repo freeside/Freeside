@@ -347,11 +347,13 @@ sub _items_total {
     my $disable_total = 0;
     foreach my $quotation_pkg ($self->quotation_pkg) {
       my $part_pkg = $quotation_pkg->part_pkg;
-      if (   $part_pkg->plan =~ /^prorate/
-          or $part_pkg->plan eq 'agent'
-          or $part_pkg->plan =~ /^torrus/
-          or $part_pkg->option('sync_bill_date')
-          or $part_pkg->option('recur_method') eq 'prorate' ) {
+      if (    $part_pkg->plan =~ /^(prorate|torrus|agent$)/
+           || $part_pkg->option('recur_method') eq 'prorate'
+           || ( $part_pkg->option('sync_bill_date')
+                  && $self->custnum
+                  && $self->cust_main->billing_pkgs #num_billing_pkgs when we have it
+              )
+      ) {
         $disable_total = 1;
         last;
       }
