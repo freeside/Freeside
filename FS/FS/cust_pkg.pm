@@ -2415,6 +2415,7 @@ sub change_later {
 
         $error = $self->replace       ||
                  $err_or_pkg->replace ||
+                 #because change() might've edited existing scheduled change in place
                  (($err_or_pkg->pkgnum == $change_to->pkgnum) ? '' :
                   $change_to->cancel('no_delay_cancel' => 1) ||
                   $change_to->delete);
