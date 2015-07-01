@@ -19,7 +19,7 @@
   <TD><B><% $balance %></B></TD>
 </TR>
 
-% #54: just an arbitrary number i pulled out of my goober.  in reality we'd want
+% #54: just an arbitrary number i pulled out of my goober.  ideally we'd like
 % # to consider e.g. a histogram of num_ncancelled_packages for the entire
 % # customer base, and compare it to a graph of the overhead for generating this
 % # information.  (and optimize it better, we could get it more from SQL)
@@ -59,7 +59,7 @@
 %
 %       #add recurring amounts for this package and its billing add-ons
 %       foreach my $l_part_pkg ( $part_pkg->self_and_bill_linked ) {
-%         $amount += $l_part_pkg->option('recur_fee');
+%         $amount += $l_part_pkg->base_recur;
 %       }
 %
 %       #subtract amounts for any active discounts
@@ -70,6 +70,8 @@
 %         $amount -= $discount->amount;
 %         $amount -= $amount * $discount->percent/100;
 %       }
+%
+%       $amount *= ( $cust_pkg->quantity || 1 );
 %
 %     }
    
