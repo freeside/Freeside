@@ -274,10 +274,12 @@ sub _items_sections {
     # but its good enough for the 99% common case of preventing totals from
     # displaying for prorate packages
     $disable_total = 1
-      if $part_pkg->plan =~ /^prorate/
-      || $part_pkg->plan eq 'agent'
-      || $part_pkg->plan =~ /^torrus/
-      || $part_pkg->option('sync_bill_date');
+      if $part_pkg->plan =~ /^(prorate|torrus|agent$)/
+      || $part_pkg->option('recur_method') eq 'prorate'
+      || ( $part_pkg->option('sync_bill_date')
+             && $self->custnum
+             && $self->cust_main->billing_pkgs #num_billing_pkgs when we have it
+         );
 
   }
   my @pkg_freq_order = keys %{ FS::Misc->pkg_freqs };
