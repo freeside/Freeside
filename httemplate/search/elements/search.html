@@ -43,7 +43,7 @@ Example:
 
     #listref of column labels, <TH>
     #recommended unless 'query' is an SQL query string
-    # (if not specified the database column names will be used)
+    # (if not specified the database column names will be used) (XXX this is not currently working either)
     'header'      => [ '#',
                        'Item',
                        { 'label' => 'Another Item',
@@ -52,7 +52,7 @@ Example:
                      ],
 
     #listref - each item is a literal column name (or method) or coderef
-    #if not specified all columns will be shown
+    #if not specified all columns will be shown (XXX this is not currently working?)
     'fields'      => [
                        'column',
                        sub { my $row = shift; $row->column; },
@@ -106,7 +106,8 @@ Example:
     'disable_maxselect' => '', # set true to disable record/page selection
     'disable_nonefound' => '', # set true to disable the "No matching Xs found"
                                # message
-   
+    'nohtmlheader'      => '', # set true to remove the header and menu bar
+ 
     #handling "disabled" fields in the records
     'disableable' => 1,  # set set to 1 (or column position for "disabled"
                          # status col) to enable if this table has a "disabled"
@@ -130,7 +131,7 @@ Example:
     'agent_pos'             => 3, # optional position (starting from 0) to
                                   # insert an Agent column (query needs to be a
                                   # qsearch hashref and header & fields need to
-                                  # be defined)
+                                  # be defined)cust_pkg_susp.html
 
     # sort, link & display properties for fields
 
@@ -141,7 +142,7 @@ Example:
     #          or a listref of link and method name to append,
     #          or a listref of link and coderef to run and append
     #          or a coderef that returns such a listref
-    'links'       => [],`
+    'links'       => [],
 
     #listref - each item is the empty string,
     #          or a string onClick handler for the corresponding link
@@ -200,6 +201,7 @@ Example:
              confmax        => $confmax,
              maxrecords     => $maxrecords,
              offset         => $offset,
+             totals         => $totals,
              opt            => \%opt
           )
 %>
@@ -219,16 +221,6 @@ if ( !$curuser->access_right('Download report data') ) {
   $opt{'disable_download'} = 1;
   $type = 'html';
 }
-
-my %align = (
-  'l' => 'left',
-  'r' => 'right',
-  'c' => 'center',
-  ' ' => '',
-  '.' => '',
-);
-$opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
-  unless !$opt{align} || ref($opt{align});
 
 if($type =~ /csv|xls/) {
   my $h = $opt{'header'};
@@ -253,6 +245,12 @@ $opt{disable_download} = 0
 $opt{disable_download} = 1
   if $opt{really_disable_download};
 
+# get our queries ready
+my $query = $opt{query} or die "query required";
+my $count_query = $opt{count_query} or die "count_query required";
+# there was a default count_query but it hasn't worked in about ten years
+
+# set up agent restriction
 my @link_agentnums = ();
 my $null_link = '';
 if ( $opt{'agent_virt'} ) {
@@ -264,16 +262,16 @@ if ( $opt{'agent_virt'} ) {
   my $agentnums_sql = $curuser->agentnums_sql(
                         'null'       => $opt{'agent_null'},
                         'null_right' => $opt{'agent_null_right'},
-                        'table'      => $opt{'query'}{'table'},
+                        'table'      => $query->{'table'},
                       );
 
-  $opt{'query'}{'extra_sql'} .=
-    ( $opt{'query'}{'extra_sql'} =~ /WHERE/i || keys %{$opt{'query'}{'hashref'}}
-      ? ' AND '
-      : ' WHERE ' ). $agentnums_sql;
-
-  $opt{'count_query'} .=
-    ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).  $agentnums_sql;
+  if ( $query->{'extra_sql'} =~ /\bWHERE\b/i or keys %{$query->{hashref}} ) {
+    $query->{'extra_sql'} .= " AND $agentnums_sql";
+    $count_query .= " AND $agentnums_sql";
+  } else {
+    $query->{'extra_sql'} .= " WHERE $agentnums_sql";
+    $count_query .= " WHERE $agentnums_sql";
+  }
 
   if ( $opt{'agent_pos'} || $opt{'agent_pos'} eq '0'
        and scalar($curuser->agentnums) > 1           ) {
@@ -304,13 +302,13 @@ if ( $opt{'disableable'} ) {
 
   unless ( $cgi->param('showdisabled') ) { #modify searches
 
-    $opt{'query'}{'hashref'}{'disabled'} = '';
-    $opt{'query'}{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
+    $query->{'hashref'}{'disabled'} = '';
+    $query->{'extra_sql'} =~ s/^\s*\bWHERE\b/ AND/i;
 
-    my $table = $opt{'query'}{'table'};
+    my $table = $query->{'table'};
 
-    $opt{'count_query'} .=
-      ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+    $count_query .= 
+      ( $count_query =~ /\bWHERE\b/i ? ' AND ' : ' WHERE ' ).
       "( $table.disabled = '' OR $table.disabled IS NULL )";
 
   } elsif (    $opt{'disabled_statuspos'}
@@ -357,10 +355,6 @@ my($confmax, $maxrecords, $offset );
 
 unless ( $type =~ /^(csv|xml|\w*.xls)$/) {
 # html mode
-  unless (exists($opt{count_query}) && length($opt{count_query})) {
-    ( $opt{count_query} = $opt{query} ) =~
-      s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i; #silly vim:/
-  }
 
   unless ( $type eq 'html-print' ) {
 
@@ -393,60 +387,55 @@ $order_by = $cgi->param('order_by') if $cgi->param('order_by');
 
 my $header = [ map { ref($_) ? $_->{'label'} : $_ } @{$opt{header}} ];
 my $rows;
-if ( ref($opt{query}) ) {
 
-  my @query;
-  if (ref($opt{query}) eq 'HASH') {
-    @query = ( $opt{query} );
+my @query;
+if (ref($query) eq 'HASH') {
+  @query = $query;
 
-    if ( $order_by ) {
-      if ( $opt{query}->{'order_by'} ) {
-        if ( $opt{query}->{'order_by'} =~ /^(\s*ORDER\s+BY\s+)?(\S.*)$/is ) {
-          $opt{query}->{'order_by'} = "ORDER BY $order_by, $2";
-        } else {
-          warn "unparsable query order_by: ". $opt{query}->{'order_by'};
-          die "unparsable query order_by: ". $opt{query}->{'order_by'};
-        }
+  if ( $order_by ) {
+    if ( $query->{'order_by'} ) {
+      if ( $query->{'order_by'} =~ /^(\s*ORDER\s+BY\s+)?(\S.*)$/is ) {
+        $query->{'order_by'} = "ORDER BY $order_by, $2";
       } else {
-        $opt{query}->{'order_by'} = "ORDER BY $order_by";
+        warn "unparsable query order_by: ". $query->{'order_by'};
+        die "unparsable query order_by: ". $query->{'order_by'};
       }
+    } else {
+      $query->{'order_by'} = "ORDER BY $order_by";
     }
-
-    $opt{query}->{'order_by'} .= " $limit";
-
-  } elsif (ref($opt{query}) eq 'ARRAY') {
-    @query = @{ $opt{query} };
-  } else {
-    die "invalid query reference";
   }
 
-  if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
-    #%search = ( 'disabled' => '' );
-    $opt{'query'}->{'hashref'}->{'disabled'} = '';
-    $opt{'query'}->{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
-  }
+  $query->{'order_by'} .= " $limit";
 
-  #eval "use FS::$opt{'query'};";
-  my @param = qw( select table addl_from hashref extra_sql order_by );
-  $rows = [ qsearch( [ map { my $query = $_;
-                             ({ map { $_ => $query->{$_} } @param });
-                           }
-                       @query
-                     ],
-                     #'order_by' => $opt{order_by}. " ". $limit,
-                   )
-          ]; 
+} elsif (ref($query) eq 'ARRAY') {
+  # do we still use this? it was for the old 477 report.
+  @query = @{ $query };
 } else {
-  my $sth = dbh->prepare("$opt{'query'} $limit")
-    or die "Error preparing $opt{'query'}: ". dbh->errstr;
-  $sth->execute
-    or die "Error executing $opt{'query'}: ". $sth->errstr;
-
-  #can get # of rows without fetching them all?
-  $rows = $sth->fetchall_arrayref;
-
-  $header ||= $sth->{NAME};
+  die "invalid query reference";
 }
+
+if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
+  #%search = ( 'disabled' => '' );
+  $opt{'query'}->{'hashref'}->{'disabled'} = '';
+  $opt{'query'}->{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
+}
+
+#eval "use FS::$opt{'query'};";
+my @param = qw( select table addl_from hashref extra_sql order_by debug );
+$rows = [ qsearch( [ map { my $query = $_;
+                           ({ map { $_ => $query->{$_} } @param });
+                         }
+                     @query
+                   ],
+                   #'order_by' => $opt{order_by}. " ". $limit,
+                 )
+        ]; 
+
+# run the count query to get number of rows and other totals
+my $count_sth = dbh->prepare($count_query);
+$count_sth->execute
+  or die "Error executing '$count_query': ".$count_sth->errstr;
+my $totals = $count_sth->fetchrow_arrayref;
 
 push @$rows, $opt{'footer_data'} if $opt{'footer_data'};
 

@@ -1,12 +1,9 @@
 <%init>
 
 my %args = @_;
-my $type   = $args{'type'};
 my $header = $args{'header'};
 my $rows   = $args{'rows'};
 my %opt    = %{ $args{'opt'} };    
-
-my $style  = $opt{'style'};
 
 my $override = scalar(@$rows) >= 65536 ? 'XLSX' : '';
 
@@ -35,9 +32,38 @@ my $workbook = $format->{class}->new($XLS)
 my $title = $opt{'title'};
 $title =~ s/[\[\]\:\*\?\/\/]//g;
 $title = substr($title, 0, 31);
+
+# append a single worksheet
+$m->comp( 'SELF:worksheet',
+  workbook  => $workbook,
+  title     => $title,
+  opt       => \%opt,
+  header    => $header,
+  rows      => $rows
+);
+
+$workbook->close();# or die "Error creating .xls file: $!";
+
+http_header('Content-Length' => length($data) );
+$m->clear_buffer();
+$m->print($data);
+
+</%init>
+<%method worksheet>
+<%args>
+$workbook
+$title
+%opt
+$header
+$rows
+</%args>
+<%perl>
+
 my $worksheet = $workbook->add_worksheet($title);
 
-$worksheet->protect();
+#$worksheet->protect();
+
+my $style = $opt{style};
 
 my($r,$c) = (0,0);
 
@@ -63,12 +89,29 @@ xl_parse_date_init();
 
 my %bold_format;
 
-my $writer = sub {
+my @widths;
+
+my $writer;
+$writer = sub {
   # Wrapper for $worksheet->write.
   # Do any massaging of the value/format here.
   my ($r, $c, $value, $format) = @_;
   #warn "writer called with format $format\n";
 
+  if ( ref $value eq 'ARRAY' ) {
+    # imitate the write_row() method: write the array into a column starting
+    # with $r.
+    # (currently only used in the footer; to use it anywhere else we'd need
+    # some way to return the number of rows written)
+    foreach my $v (@$value) {
+      $writer->($r, $c, $v, $format);
+      $r++;
+    }
+    return;
+  }
+
+  my $bold = 0;
+  my $date = 0;
   if ( $style->[$c] eq 'b' or $value =~ /<b>/i ) { # the only one in common use
     $value =~ s[</?b>][]ig;
     if ( !exists($bold_format{$format}) ) {
@@ -77,6 +120,7 @@ my $writer = sub {
       $bold_format{$format}->set_bold();
     }
     $format = $bold_format{$format};
+    $bold = 1;
   }
 
   # convert HTML entities
@@ -106,6 +150,7 @@ my $writer = sub {
       $date_format{$format}->set_num_format('mmm dd yyyy');
     }
     $format = $date_format{$format};
+    $date = 1;
   }
   else {
     # String: replace line breaks with newlines
@@ -113,6 +158,14 @@ my $writer = sub {
   }
   #warn "writing with format $format\n";
   $worksheet->write($r, $c, $value, $format);
+
+  # estimate width
+  # use Font::TTFMetrics; # would work, but we can't redistribute the font...
+  my $width = length($value);
+  $width = 11 if $date;
+  $width *= 1.1 if $bold;
+  $width += 1; # pad it a little
+  $widths[$c] = $width if $width > ($widths[$c] || 0);
 };
 
 $writer->( $r, $c++, $_, $header_format ) foreach @$header;
@@ -170,9 +223,9 @@ if ( $opt{'footer'} ) {
   }
 }
 
-$workbook->close();# or die "Error creating .xls file: $!";
+for ( my $x = 0; $x < scalar @widths; $x++ ) {
+  $worksheet->set_column($x, $x, $widths[$x]);
+}
 
-http_header('Content-Length' => length($data) );
-$m->print($data);
-
-</%init>
+</%perl>
+</%method>

@@ -1,0 +1,131 @@
+<%shared>
+my $conf = FS::Conf->new;
+</%shared>
+<%init>
+my %opt = @_;
+$opt{'name'} ||= PL($opt{'name_singular'});
+
+my $group_info = $m->comp('core', %opt);
+
+my $redirect;
+
+if ( $group_info->{num} == 0 ) {
+  $redirect = $opt{'redirect_empty'};
+  if ($redirect) {
+    $redirect = &$redirect($cgi) if ref($redirect) eq 'CODE';
+    redirect( $redirect );
+  } else { # just print this stuff and exit
+    $m->comp('/elements/header.html', $opt{'title'});
+    $m->print('<BR><BR>No matching ' . $opt{'name'} . ' found.<BR>');
+    $m->comp('/elements/footer.html');
+    $m->abort;
+  }
+}
+
+# this mode has a concept of "current group"
+my $curr_group = 0;
+if ($cgi->param('group') =~ /^(\d+)$/) {
+  $curr_group = $1;
+}
+
+my $group = $group_info->{groups}[$curr_group];
+my $query = $group_info->{queries}[$curr_group];
+my $footer = $group_info->{group_footers}[$curr_group];
+my $total_footer =  $group_info->{total_footer} || [];
+# pagination
+my ($limit, $offset);
+my $maxrecords = $conf->config('maxsearchrecordsperpage') || 50;
+if ( $cgi->param('maxrecords') =~ /^(\d+)$/ ) {
+  $maxrecords = $1;
+}
+if ( $maxrecords ) {
+  $limit = "LIMIT $maxrecords";
+  if ( $cgi->param('offset') =~ /^(\d+)$/ ) {
+    $offset = $1;
+    $limit .= " OFFSET $offset";
+  }
+}
+$query->{order_by} .= $limit if $limit;
+
+#warn Dumper($query); #DEBUG
+
+# run the query
+my @rows = $query->qsearch;
+
+#warn Dumper(\@rows); #DEBUG
+
+my $pager = '';
+# show pager if needed
+if ( $group->num_rows > scalar(@rows) ) {
+  $pager = include( '/elements/pager.html',
+    'offset'      => $offset,
+    'num_rows'    => scalar(@rows),
+    'total'       => $group->num_rows,
+    'maxrecords'  => $maxrecords,
+  );
+}
+
+# set up tab bar
+my @menubar;
+for (my $i = 0; $i < $group_info->{num}; $i++) {
+  push @menubar, $group_info->{group_labels}[$i], ";group=$i";
+}
+
+</%init>
+
+<& /elements/header.html, $opt{title} &>
+
+%# tab bar
+% $cgi->delete('group');
+% $cgi->delete('offset');
+% $cgi->delete('type');
+<& /elements/menubar.html,
+  { newstyle => 1,
+    url_base => $cgi->self_url,
+    selected => $group_info->{group_labels}[$curr_group] },
+  @menubar
+&>
+
+<DIV CLASS="fstabcontainer">
+%# download links
+<P><% emt('Download full results') %><BR>
+% $cgi->param('type', 'xls');
+<A HREF="<% $cgi->self_url %>"><% emt('as Excel spreadsheet') %></A><BR>
+% $cgi->param('type', 'html-print');
+<A HREF="<% $cgi->self_url %>"><% emt('as printable copy') %></A><BR>
+</P>
+
+<% $pager %>
+
+<STYLE>
+  table.grid {
+    border-spacing: 0;
+  }
+</STYLE>
+<table class="grid">
+  <thead>
+  <& /search/elements/search-html.html:header_row,
+    'header'      => $opt{'header'},
+    'header2'     => $opt{'header2'},
+    'sort_fields' => ($opt{'sort_fields'} || $opt{'fields'}),
+  &>
+  </thead>
+  <tbody>
+  <& /search/elements/search-html.html:data_rows,
+    'rows' => \@rows,
+    'opt'  => \%opt,
+  &>
+  </tbody>
+  <tfoot>
+  <& /search/elements/search-html.html:footer_row, row => $footer, opt => \%opt &>
+%   if ( scalar @$total_footer ) {
+  <& /search/elements/search-html.html:footer_row, row => $total_footer, opt => \%opt &>
+%   }
+  </tfoot>
+</table>
+
+<% $pager %>
+</DIV>
+
+<& /elements/footer.html &>
+

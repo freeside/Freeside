@@ -278,6 +278,24 @@ td.grid {
   empty-cells: show;
 }
 
+tr.row0 {
+  background-color: #eeeeee;
+}
+
+tr.row1 {
+  background-color: #ffffff;
+}
+
+.grid tfoot tr {
+  background-color: #dddddd;
+  font-style: italic;
+}
+
+/* border at the top of the footer, but not between footer rows */
+.grid tfoot tr:first-child td {
+  border-top: 1px dashed black;
+}
+
 table.inv { border: none }
 th.inv { border: none }
 td.inv { border: none }

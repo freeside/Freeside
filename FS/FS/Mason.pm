@@ -57,7 +57,7 @@ if ( -e $addl_handler_use_file ) {
   use CGI::Cookie;
   use List::Util qw( max min sum );
   use List::MoreUtils qw( first_index uniq );
-  use Scalar::Util qw( blessed );
+  use Scalar::Util qw( blessed looks_like_number );
   use Data::Dumper;
   use Date::Format;
   use Time::Local;
@@ -154,6 +154,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::Tron qw( tron_lint );
   use FS::Locales;
   use FS::Maketext qw( mt emt js_mt );
+
+  use FS::Query;
 
   use FS::agent;
   use FS::agent_type;
