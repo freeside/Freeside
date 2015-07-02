@@ -494,11 +494,11 @@ sub process_graphs {
           die $error;
         }
       } else {
-        warn "File $thumbfile is too large, skipping";
+        $svchtml .= qq(<P STYLE="color: #FF0000">File $thumbfile is too large, skipping</P>);
       }
       unlink($thumbfile);
     } else {
-      warn "File $thumbfile does not exist, skipping";
+      $svchtml .= qq(<P STYLE="color: #FF0000">File $thumbfile does not exist, skipping</P>);
     }
     $job->update_statustext(49 + int($i / @graphs) * 50);
   }
