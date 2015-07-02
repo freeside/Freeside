@@ -349,6 +349,7 @@ $rows => []
 % }
 
 % my $i = 0; # for row striping # XXX CSS - nth-child
+% my $id = 0;
 % foreach my $row ( @$rows ) {
 %
 %   my $rowstyle = '';
@@ -504,7 +505,11 @@ $rows => []
 %
 %           $tooltip = &{$tooltip}($row)
 %             if ref($tooltip) eq 'CODE';
-%           $tooltip = qq! title="<% $tooltip |h %>"!;
+%           $tooltip = qq! id="a$id" !.
+%             qq! onmouseover="return overlib(!.
+%             $m->interp->apply_escapes($tooltip, 'h', 'js_string').
+%             qq!, FGCLASS, 'tooltip', REF, 'a$id', !.
+%             qq!REFC, 'LL', REFP, 'UL')"! if $tooltip;
 %
 %           if ( $link ) {
 %             my( $url, $method ) = @{$link};
@@ -521,6 +526,7 @@ $rows => []
 %           elsif ( $tooltip ) {
 %             $a = qq(<A $tooltip>);
 %           }
+%           $id++;
 
 %         }
 %
