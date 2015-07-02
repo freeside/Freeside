@@ -2,7 +2,7 @@
                'title' => 'Query Results',
                'name'  => 'rows',
                'query' => "SELECT $sql",
-          
+               'count_query' => $count,          
 &>
 <%init>
 
@@ -11,5 +11,8 @@ die "access denied"
 
 my $sql = $cgi->param('sql') or errorpage('Empty query');
 $sql =~ s/;+\s*$//; #remove trailing ;
+
+my $count = $sql;
+$count =~ s/.* FROM /SELECT COUNT(*) FROM /i;
 
 </%init>

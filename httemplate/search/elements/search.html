@@ -277,11 +277,17 @@ if ( $opt{'agent_virt'} ) {
                         'table'      => $query->{'table'},
                       );
 
+  # this is ridiculous, but we do have searches where $query has constraints
+  # and $count_query doesn't, or vice versa.
   if ( $query->{'extra_sql'} =~ /\bWHERE\b/i or keys %{$query->{hashref}} ) {
     $query->{'extra_sql'} .= " AND $agentnums_sql";
-    $count_query .= " AND $agentnums_sql";
   } else {
     $query->{'extra_sql'} .= " WHERE $agentnums_sql";
+  }
+
+  if ( $count_query =~ /\bWHERE\b/i ) {
+    $count_query .= " AND $agentnums_sql";
+  } else {
     $count_query .= " WHERE $agentnums_sql";
   }
 
@@ -400,48 +406,55 @@ $order_by = $cgi->param('order_by') if $cgi->param('order_by');
 my $header = [ map { ref($_) ? $_->{'label'} : $_ } @{$opt{header}} ];
 my $rows;
 
-my @query;
-if (ref($query) eq 'HASH') {
-  @query = $query;
+if ( ref $query ) {
+  my @query;
+  if (ref($query) eq 'HASH') {
+    @query = $query;
 
-  if ( $order_by ) {
-    if ( $query->{'order_by'} ) {
-      if ( $query->{'order_by'} =~ /^(\s*ORDER\s+BY\s+)?(\S.*)$/is ) {
-        $query->{'order_by'} = "ORDER BY $order_by, $2";
+    if ( $order_by ) {
+      if ( $query->{'order_by'} ) {
+        if ( $query->{'order_by'} =~ /^(\s*ORDER\s+BY\s+)?(\S.*)$/is ) {
+          $query->{'order_by'} = "ORDER BY $order_by, $2";
+        } else {
+          warn "unparsable query order_by: ". $query->{'order_by'};
+          die "unparsable query order_by: ". $query->{'order_by'};
+        }
       } else {
-        warn "unparsable query order_by: ". $query->{'order_by'};
-        die "unparsable query order_by: ". $query->{'order_by'};
+        $query->{'order_by'} = "ORDER BY $order_by";
       }
-    } else {
-      $query->{'order_by'} = "ORDER BY $order_by";
     }
+
+    $query->{'order_by'} .= " $limit";
+
+  } elsif (ref($query) eq 'ARRAY') {
+    # do we still use this? it was for the old 477 report.
+    @query = @{ $query };
+  } else {
+    die "invalid query reference";
   }
 
-  $query->{'order_by'} .= " $limit";
+  #eval "use FS::$opt{'query'};";
+  my @param = qw( select table addl_from hashref extra_sql order_by debug );
+  $rows = [ qsearch( [ map { my $query = $_;
+                             ({ map { $_ => $query->{$_} } @param });
+                           }
+                       @query
+                     ],
+                     #'order_by' => $opt{order_by}. " ". $limit,
+                   )
+          ]; 
 
-} elsif (ref($query) eq 'ARRAY') {
-  # do we still use this? it was for the old 477 report.
-  @query = @{ $query };
-} else {
-  die "invalid query reference";
+} else { # not ref $query; plain SQL (still used as of 07/2015)
+
+  $query .= " $limit";
+  my $sth = dbh->prepare($query)
+    or die "Error preparing $query: ". dbh->errstr;
+  $sth->execute
+    or die "Error executing $query: ". $sth->errstr;
+
+  $rows = $sth->fetchall_arrayref;
+  $header ||= $sth->{NAME};
 }
-
-if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
-  #%search = ( 'disabled' => '' );
-  $opt{'query'}->{'hashref'}->{'disabled'} = '';
-  $opt{'query'}->{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
-}
-
-#eval "use FS::$opt{'query'};";
-my @param = qw( select table addl_from hashref extra_sql order_by debug );
-$rows = [ qsearch( [ map { my $query = $_;
-                           ({ map { $_ => $query->{$_} } @param });
-                         }
-                     @query
-                   ],
-                   #'order_by' => $opt{order_by}. " ". $limit,
-                 )
-        ]; 
 
 # run the count query to get number of rows and other totals
 my $count_sth = dbh->prepare($count_query);
