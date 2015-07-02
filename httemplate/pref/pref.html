@@ -281,12 +281,13 @@ tie my %customer_views, 'Tie::IxHash',
   'Basics'          => 'basics',
   'Notes'           => 'notes', #notes and files?
   'Tickets'         => 'tickets',
+  'Appointments'    => 'appointments',
+  'Quotations'      => 'quotations',
   'Packages'        => 'packages',
   'Payment History' => 'payment_history',
 ;
 $customer_views{'Change History'} = 'change_history'
   if $curuser->access_right('View customer history');
-$customer_views{'Jumbo'} = 'jumbo';
 
 # XSS via your own preferences?  seems unlikely, but nice try anyway...
 ( $curuser->option('menu_position') || 'top' )
