@@ -269,8 +269,8 @@ dev-perl-modules: perl-modules
 	ln -sf ${FREESIDE_PATH}/FS/blib/lib/FS ${PERL_INC_DEV_KLUDGE}/FS
 
 install-texmf:	
-	install -D -o freeside -m 444 etc/longtable.sty \
-	  /usr/local/share/texmf/tex/latex/longtable.sty
+	install -D -o freeside -m 444 etc/*.sty \
+	  /usr/local/share/texmf/tex/latex/
 	texhash /usr/local/share/texmf
 
 install-init:
