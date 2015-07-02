@@ -490,8 +490,12 @@ sub process_graphs {
           $dbh->rollback if $oldAutoCommit;
           die $error;
         }
+      } else {
+        warn "File $thumbfile is too large, skipping";
       }
       unlink($thumbfile);
+    } else {
+      warn "File $thumbfile does not exist, skipping";
     }
     $job->update_statustext(49 + int($i / @graphs) * 50);
   }
