@@ -36,9 +36,25 @@
           )
 %>
 
-<TR>
-  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="12mo" VALUE="1"></TD>
-  <TD>Show 12 month totals instead of monthly values</TD>
+<tr>
+  <td />
+  <td>
+    <& /elements/checkbox.html,
+      field => '12mo',
+      value => 1,
+    &>
+    <% emt('Show 12 month totals instead of monthly values') %>
+  </td>
+</tr>
+  <td />
+  <td>
+    <& /elements/checkbox.html,
+      field => 'exclude_discount',
+      value => 1,
+      curr_value => 0,
+    &>
+    <% emt('Exclude discounts from total sales') %>
+  </td>
 </TR>
 
 </TABLE>
