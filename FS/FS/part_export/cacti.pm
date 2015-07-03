@@ -219,7 +219,7 @@ sub ssh_insert {
 #  $desc =~ s/'/'\\''/g;
   $desc =~ s/'//g;
   my $cmd = $php
-          . $opt{'script_path'} 
+          . trailslash($opt{'script_path'})
           . q(add_device.php --description=')
           . $desc
           . q(' --ip=')
@@ -235,7 +235,7 @@ sub ssh_insert {
   # Add host to tree
   if ($opt{'tree_id'}) {
     $cmd = $php
-         . $opt{'script_path'}
+         . trailslash($opt{'script_path'})
          . q(add_tree.php --type=node --node-type=host --tree-id=)
          . $opt{'tree_id'}
          . q( --host-id=)
@@ -248,7 +248,7 @@ sub ssh_insert {
 
   # Get list of graph templates for new id
   $cmd = $php
-       . $opt{'script_path'} 
+       . trailslash($opt{'script_path'}) 
        . q(freeside_cacti.php --get-graph-templates --host-template=)
        . $opt{'template_id'};
   my $ginfo = { map { $_ ? ($_ => undef) : () } split(/\n/,ssh_cmd(%opt, 'command' => $cmd)) };
@@ -303,7 +303,7 @@ sub ssh_insert {
 
     # create the graph
     $cmd = $php
-         . $opt{'script_path'}
+         . trailslash($opt{'script_path'})
          . q(add_graphs.php --graph-type=)
          . ($isds ? 'ds' : 'cg')
          . q( --graph-template-id=)
@@ -337,7 +337,7 @@ sub ssh_insert {
 sub ssh_delete {
   my %opt = @_;
   my $cmd = $php
-          . $opt{'script_path'} 
+          . trailslash($opt{'script_path'}) 
           . q(freeside_cacti.php --drop-device --ip=')
           . $opt{'hostname'}
           . q(');
@@ -370,7 +370,7 @@ sub process_graphs {
   my $param = thaw(decode_base64(shift));
 
   $job->update_statustext(10);
-  my $cachedir = $FS::UID::cache_dir . '/cacti-graphs/';
+  my $cachedir = trailslash($FS::UID::cache_dir,'cache.'.$FS::UID::datasrc,'cacti-graphs');
 
   # load the service
   my $svcnum = $param->{'svcnum'} || die "No svcnum specified";
@@ -416,7 +416,7 @@ sub process_graphs {
 
   # get list of graphs for this svc from cacti server
   my $cmd = $php
-          . $self->option('script_path')
+          . trailslash($self->option('script_path'))
           . q(freeside_cacti.php --get-graphs --ip=')
           . $svc->ip_addr
           . q(');
@@ -435,7 +435,9 @@ sub process_graphs {
     'rsh'       => 'ssh',
     'verbose'   => 1,
     'recursive' => 1,
-    'source'    => $self->option('graphs_path'),
+    'quote-src' => 1,
+    'quote-dst' => 1,
+    'source'    => trailslash($self->option('graphs_path')),
     'dest'      => $cachedir,
     'include'   => [
       (map { q('**graph_).${$_}[0].q(*.png') } @graphs),
@@ -445,8 +447,9 @@ sub process_graphs {
     ],
   });
   #don't know why a regular $rsync->exec isn't doing includes right, but this does
-  my $error = system(join(' ',@{$rsync->getcmd()}));
-  die "rsync failed with exit status $error" if $error;
+  my $rscmd = join(' ',@{$rsync->getcmd()});
+  my $error = system($rscmd);
+  die "rsync ($rscmd) failed with exit status $error" if $error;
 
   $job->update_statustext(50);
 
@@ -552,6 +555,19 @@ sub ssh_cmd {
   die "Error running SSH command: ". $opt->{'command'}. ' ERROR: ' . $ssh->error if $ssh->error;
   die $errput if $errput;
   return $output;
+}
+
+#there's probably a better place to put this?
+#makes sure there's a trailing slash between/after input
+#doesn't add leading slashes
+sub trailslash {
+  my @paths = @_;
+  my $out = '';
+  foreach my $path (@paths) {
+    $out .= $path;
+    $out .= '/' unless $out =~ /\/$/;
+  }
+  return $out;
 }
 
 =head1 METHODS
