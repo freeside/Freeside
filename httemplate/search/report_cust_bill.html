@@ -88,7 +88,12 @@
 <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD><% mt('Show only open invoices') |h %></TD>
-  </TR>
+</TR>
+
+<TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="invoiced" VALUE="1"></TD>
+    <TD><% emt('Exclude discounts from gross amount billed'), %></TD>
+</TR>
 
 % unless ( $custnum ) {
   <TR>

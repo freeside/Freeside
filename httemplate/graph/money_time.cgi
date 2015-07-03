@@ -41,35 +41,35 @@ my $referralname = $part_referral ? $part_referral->referral.' ' : '';
 
 # need to clean this up. the false symmetry of "gross" and "net" everything
 # makes it aesthetically hard to make this report more useful.
-my @items = qw( gross    netsales
-                discounted
+my @items = ($cgi->param('exclude_discount') ? 'invoiced' : 'gross');
+push @items,
+            qw( discounted   netsales
                 credits  netcredits
                 payments receipts
                 refunds  netrefunds
                 cashflow netcashflow
-              );
-if ( $cgi->param('12mo') == 1 ) {
-  @items = map $_.'_12mo', @items;
-}
+            );
 
 my %label = (
   'gross'       => 'Gross Sales',
-  'netsales'    =>   'Net Sales',
+  'invoiced'    => 'Invoiced Sales',
+  'netsales'    => 'Net Sales',
   'discounted'  => 'Discounts',
   'credits'     => 'Gross Credits',
-  'netcredits'  =>   'Net Credits',
+  'netcredits'  => 'Net Credits',
   'payments'    => 'Gross Receipts',
-  'receipts'    =>   'Net Receipts',
+  'receipts'    => 'Net Receipts',
   'refunds'     => 'Gross Refunds',
-  'netrefunds'  =>   'Net Refunds',
+  'netrefunds'  => 'Net Refunds',
   'cashflow'    => 'Gross Cashflow',
-  'netcashflow' =>   'Net Cashflow',
+  'netcashflow' => 'Net Cashflow',
 );
 
 my %graph_suffix = (
  'gross'       => ' (invoiced + discounts)', 
+ 'invoiced'    => '',
  'netsales'    => ' (invoiced - applied credits)',
- 'discounted'  => ' (discounts)',
+ 'discounted'  => '',
  'credits'     => ' (credited)',
  'netcredits'  => ' (applied credits)',
  'payments'    => ' (payments)',
@@ -81,14 +81,9 @@ my %graph_suffix = (
 );
 my %graph_label = map { $_ => $label{$_}.$graph_suffix{$_} } keys %label;
 
-$label{$_.'_12mo'} = $label{$_}. " (prev 12 months)"
-  foreach keys %label;
-
-$graph_label{$_.'_12mo'} = $graph_label{$_}. " (prev 12 months)"
-  foreach keys %graph_label;
-
 my %color = (
   'gross'       => '9999ff', #light blue
+  'invoiced'    => '9999ff', #light blue
   'netsales'    => '0000cc', #blue
   'credits'     => 'ff9999', #light red
   'netcredits'  => 'cc0000', #red
@@ -108,6 +103,7 @@ $ar .= ";cust_classnum=$_" foreach @classnums;
 
 my %link = (
   'gross'      => "${p}search/cust_bill.html?$ar;",
+  'invoiced'   => "${p}search/cust_bill.html?$ar;invoiced=1;",
   'netsales'   => "${p}search/cust_bill.html?$ar;net=1;",
   'credits'    => "${p}search/cust_credit.html?$ar;",
   'netcredits' => "${p}search/cust_credit_bill.html?$ar;",
@@ -118,5 +114,13 @@ my %link = (
   'discounted' => "${p}search/cust_bill_pkg_discount.html?$ar;",
 );
 # XXX link 12mo?
+
+if ( $cgi->param('12mo') ) {
+  $label{$_} .= " (prev 12 months)"
+    foreach keys %label;
+
+  $graph_label{$_} .= " (prev 12 months)"
+    foreach keys %graph_label;
+}
 
 </%init>
