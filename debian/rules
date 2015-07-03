@@ -78,6 +78,8 @@ export FREESIDE_URL           = http://$(HOSTNAME)/freeside/
 # (but leaving it for now, otherwise can't get RT to put files where we need em)
 export RT_PATH                = $(TMP)/opt/rt3
 
+export TEXMF_PATH             = $(TMP)-lib/usr/local/share/texmf/tex/latex
+
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
@@ -167,9 +169,8 @@ install-stamp: build-stamp
 	$(MAKE) -e DESTDIR=$(TMP)-webui install-docs
 	
 	# Install tex
-	install -D -o freeside -m 444 etc/longtable.sty \
-	$(TMP)-lib/usr/local/share/texmf/tex/latex/longtable.sty
-	texhash $(TMP)-lib/usr/local/share/texmf
+	install -d ${TEXMF_PATH}
+	install -o freeside -m 444 etc/*.sty ${TEXMF_PATH}
 
 	# Create Apache configurations
 	install -d $(APACHE_CONF)
