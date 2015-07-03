@@ -8,7 +8,7 @@
   'count_addl'  => $count_addl,
   'redirect'    => $link,
   'header'      => [ emt('Invoice #'),
-                     emt('Gross Amount'),
+                     emt($invoiced ? 'Charged' : 'Gross Amount'),
                      emt('Discount'),
                      emt('Credits'),
                      emt('Net Amount'),
@@ -18,7 +18,7 @@
                    ],
   'fields'      => [
     'display_invnum',
-    'gross',
+    $invoiced ? 'charged' : 'gross',
     'discounted',
     'credited',
     'net',
@@ -28,7 +28,7 @@
   ],
   'sort_fields' => [
     'COALESCE( agent_invid, invnum )',
-    'gross',
+    $invoiced ? 'charged' : 'gross',
     'discounted',
     'credited',
     'net',
@@ -87,6 +87,9 @@ my( $count_query, $sql_query );
 my $count_addl = '';
 my %search = ();
 
+# show invoiced amount (charged) instead of gross sales
+my $invoiced = $cgi->param('invoiced') ? 1 : 0;
+
 if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
 
   my $join_cust_main = FS::UI::Web::join_cust_main('cust_bill');
@@ -128,11 +131,12 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     ($search{'days'}, my $field) = ($2, $3);
     $field = "_date" if $field eq 'date';
     $search{'order_by'} = "cust_bill.$field";
+    $search{'invoiced'} = 1; # preserve old behavior under 3.x
   }
 
   #scalars
   for (qw( agentnum custnum cust_status refnum invnum_min invnum_max
-           open net newest_percust 
+           open net newest_percust invoiced
 
       )) 
   {

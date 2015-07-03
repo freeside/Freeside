@@ -27,7 +27,7 @@ Example:
     'start_year'      => $syear,
     'end_month'       => $emonth,
     'end_year'        => $eyear,
-
+    '12mo'            => 0,
 
     #optional, pulled from CGI params if not specified, 
     #only if 'daily' option is given
@@ -96,6 +96,8 @@ $opt{'start_year'}  ||= $cgi->param('start_year'); # || 1899+$curyear;
 $opt{'end_month'} ||= $cgi->param('end_month'); # || $curmon+1;
 $opt{'end_year'}  ||= $cgi->param('end_year'); # || 1900+$curyear;
 
+$opt{'12mo'} ||= $cgi->param('12mo') ? 1 : 0;
+
 $opt{'projection'} ||= $cgi->param('projection') ? 1 : 0;
 
 if ( $opt{'daily'} ) { # daily granularity
@@ -119,6 +121,7 @@ my %reportopts = (
       'end_day'      => $opt{'end_day'},
       'end_month'    => $opt{'end_month'},
       'end_year'     => $opt{'end_year'},
+      '12mo'         => $opt{'12mo'},
       'projection'   => $opt{'projection'},
       'agentnum'     => $opt{'agentnum'},
       'refnum'       => $opt{'refnum'},

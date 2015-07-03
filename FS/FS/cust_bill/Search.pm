@@ -7,6 +7,7 @@ use FS::Record qw( qsearchs dbh );
 use FS::cust_main;
 use FS::access_user;
 use FS::Conf;
+use charnames ':full';
                                                                                 
 =item search HASHREF                                                            
                                                                                 
@@ -18,7 +19,9 @@ following additional parameters valid:
 
 =over 4                                                                         
 
-=item newest_percust
+=item newest_percust - only show the most recent invoice for each customer
+
+=item invoiced - show the invoiced amount (excluding discounts) instead of gross sales
 
 =back
 
@@ -27,7 +30,8 @@ following additional parameters valid:
 sub search {
   my( $class, $params ) = @_;
 
-  my( $count_query, $count_addl ) = ( '', '' );
+  my $count_query = '';
+  my @count_addl;
 
   #some false laziness w/cust_bill::re_X
 
@@ -77,21 +81,30 @@ sub search {
 
     my $money = (FS::Conf->new->config('money_char') || '$') . '%.2f';
 
-    $count_query = 'SELECT COUNT(*), '. join(', ',
-                     map "SUM($_)",
-                         ( 'charged + discounted',
-                           'discounted',
-                           'credited',
-                           'charged - credited',
-                           'charged - credited - paid',
-                         )
-                   );
-    $count_addl = [ "$money sales (gross)",
-                    "&minus; $money discounted",
-                    "&minus; $money credited",
-                    "= $money sales (net)",
+    my @sums = ( 'credited',                  # credits
+                 'charged - credited',        # net sales
+                 'charged - credited - paid', # balance due
+               );
+
+    @count_addl = ( "\N{MINUS SIGN} $money credited",
+                    "= $money net sales",
                     "$money outstanding balance",
-                  ];
+                  );
+
+    if ( $params->{'invoiced'} ) {
+
+      unshift @sums, 'charged';
+      unshift @count_addl, "$money invoiced";
+
+    } else {
+
+      unshift @sums, 'charged + discounted', 'discounted';
+      unshift @count_addl, "$money gross sales",
+                           "\N{MINUS SIGN} $money discounted";
+
+    }
+
+    $count_query = 'SELECT COUNT(*), '. join(', ', map "SUM($_)", @sums);
   }
   $count_query .=  " FROM cust_bill $join $extra_sql";
 
@@ -115,7 +128,7 @@ sub search {
     'order_by'  => 'ORDER BY '. ( $params->{'order_by'} || 'cust_bill._date' ),
 
     'count_query' => $count_query,
-    'count_addl'  => $count_addl,
+    'count_addl'  => \@count_addl,
   };
 
 }
