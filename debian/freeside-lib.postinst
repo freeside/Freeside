@@ -1,0 +1,4 @@
+#!/bin/sh
+
+texhash /usr/local/share/texmf
+
