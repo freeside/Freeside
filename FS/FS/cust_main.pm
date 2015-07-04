@@ -4517,7 +4517,7 @@ sub payment_history {
         'amount'      => sprintf('%.2f', $_->setup + $_->recur ),
         'charged'     => sprintf('%.2f', $_->setup + $_->recur ),
         'date'        => $cust_bill->_date,
-        'date_pretty' =>  time2str('%m/%d/%Y', $cust_bill->_date ),
+        'date_pretty' => $self->time2str_local('short', $cust_bill->_date ),
       }
         foreach $cust_bill->cust_bill_pkg;
 
@@ -4531,7 +4531,7 @@ sub payment_history {
                      'amount'      => sprintf('%.2f', $_->charged ),
                      'charged'     => sprintf('%.2f', $_->charged ),
                      'date'        => $_->_date,
-                     'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                     'date_pretty' => $self->time2str_local('short', $_->_date ),
                    }
       foreach $self->cust_bill;
 
@@ -4543,7 +4543,7 @@ sub payment_history {
                    'amount'      => sprintf('%.2f', 0 - $_->paid ),
                    'paid'        => sprintf('%.2f', $_->paid ),
                    'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                   'date_pretty' => $self->time2str_local('short', $_->_date ),
                  }
     foreach $self->cust_pay;
 
@@ -4553,7 +4553,7 @@ sub payment_history {
                    'amount'      => sprintf('%.2f', 0 -$_->amount ),
                    'credit'      => sprintf('%.2f', $_->amount ),
                    'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                   'date_pretty' => $self->time2str_local('short', $_->_date ),
                  }
     foreach $self->cust_credit;
 
@@ -4563,7 +4563,7 @@ sub payment_history {
                    'amount'      => $_->refund,
                    'refund'      => $_->refund,
                    'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                   'date_pretty' => $self->time2str_local('short', $_->_date ),
                  }
     foreach $self->cust_refund;
 
