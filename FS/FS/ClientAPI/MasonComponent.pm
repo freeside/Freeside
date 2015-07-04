@@ -14,6 +14,7 @@ $DEBUG = 0;
 $me = '[FS::ClientAPI::MasonComponent]';
 
 my %allowed_comps = map { $_=>1 } qw(
+  /elements/customer-statement.html
   /elements/select-did.html
   /misc/areacodes.cgi
   /misc/exchanges.cgi

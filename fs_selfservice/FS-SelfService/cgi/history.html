@@ -1,39 +1,14 @@
 <%= include('header', 'Payment History') %>
 
 <%=
-my $balance = 0;
-my $style      = 'text-align: left; margin: 0; padding: 0 1em 0 0;';
-my $moneystyle = 'text-align: right; margin: 0; padding: 0 1em 0 0;';
-my $col1 = "#ffffff";
-my $col2 = "#dddddd";
-my $col = $col1;
-foreach my $item (@history) {
-  $balance += $$item{'amount'};
-  $$item{'amount'} =~ s/^(-?)/$1$money_char/;
-  $out .= <<EOF;
-  <TR>
-    <TD style="$style background: $col;">$$item{'date_pretty'}</TD>
-    <TD style="$style background: $col;">$$item{'description'}</TD>
-    <TD style="$moneystyle background: $col;">$$item{'amount'}</TD>
-  </TR>
-EOF
-  $col = $col eq $col1 ? $col2 : $col1;
-}
-$balance = sprintf('%.2f',$balance);
-$balance =~ s/^(-?)/$1$money_char/;
-$out = <<EOF;
-<P>Balance: <B>$balance</B></P>
-<TABLE style="margin: 0;" CELLSPACING="0">
-  <TR>
-    <TH style="$style background: #ff9999;">Date</TH>
-    <TH style="$style background: #ff9999;">Description</TH>
-    <TH style="$moneystyle background: #ff9999;">Amount</TH>
-  </TR>
-$out
-</TABLE>
-EOF
+my $out = mason_comp(
+  'session_id' => $session_id,
+  'comp'       => '/elements/customer-statement.html',
+  'args'       => [
+    'history' => \@history,
+  ]
+);
+$out->{'output'} || $out->{'error'};
 %>
-
-</TABLE>
 
 <%= include('footer') %>
