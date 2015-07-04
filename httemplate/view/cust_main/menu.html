@@ -197,8 +197,9 @@ my @menu = (
       url         => sub {
                       my $cust_main = shift;
                       my $agentnum = $cust_main->agentnum;
-                      'misc/email-customers.html?table=cust_main;search_hash='.
-                      'agent_virt_agentnum='.$agentnum.";custnum=$custnum";
+                      'misc/email-customers.html?table=cust_main;'.
+                      'agent_virt_agentnum='.$agentnum.";custnum=$custnum;url=".
+                      uri_escape($cgi->self_url);
                      },
       condition   => sub { $invoicing_list_emailonly },
       acl         => 'Bulk send customer notices',
@@ -487,7 +488,7 @@ my @menu = (
       url         => sub {
                       my $cust_main = shift;
                       my $agentnum = $cust_main->agentnum;
-                      'misc/email-customer-statement.html?table=cust_main;search_hash='.
+                      'misc/email-customer-statement.html?table=cust_main;'.
                       'agent_virt_agentnum='.$agentnum.";custnum=$custnum;url=".
                       uri_escape($cgi->self_url);
                      },
