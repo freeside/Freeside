@@ -57,9 +57,11 @@
 %                 || $cust_pkg->option('no_suspend_bill')
 %               );
 %
+%       my $pkg_amount = 0;
+%
 %       #add recurring amounts for this package and its billing add-ons
 %       foreach my $l_part_pkg ( $part_pkg->self_and_bill_linked ) {
-%         $amount += $l_part_pkg->base_recur;
+%         $pkg_amount += $l_part_pkg->base_recur;
 %       }
 %
 %       #subtract amounts for any active discounts
@@ -67,11 +69,13 @@
 %       foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
 %         my $discount = $cust_pkg_discount->discount;
 %         #and only one of these for each
-%         $amount -= $discount->amount;
-%         $amount -= $amount * $discount->percent/100;
+%         $pkg_amount -= $discount->amount;
+%         $pkg_amount -= $amount * $discount->percent/100;
 %       }
 %
-%       $amount *= ( $cust_pkg->quantity || 1 );
+%       $pkg_amount *= ( $cust_pkg->quantity || 1 );
+%
+%       $amount += $pkg_amount;
 %
 %     }
    
