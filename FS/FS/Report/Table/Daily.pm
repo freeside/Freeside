@@ -121,16 +121,20 @@ sub data {
     my @newdata = ();
     my @newcolors = ();
     my @newlinks = ();
+    my @indices = ();
     foreach my $item ( @{$self->{'items'}} ) {
 
-      if ( grep { $_ != 0 } @{$data{'data'}->[$col]} ) {
-        push @newitems,  $data{'items'}->[$col];
-        push @newlabels, $data{'item_labels'}->[$col];
-        push @newdata,   $data{'data'}->[$col];
-        push @newcolors, $data{'colors'}->[$col];
-        push @newlinks,  $data{'links'}->[$col];
-      }
+      my $is_nonzero = scalar( grep { $_ != 0 } @{ $data{'data'}->[$col] });
+      next if ($self->{'remove_empty'} and $is_nonzero == 0);
+      # no daily reports can normalize yet
+      push @newitems,  $data{'items'}->[$col];
+      push @newlabels, $data{'item_labels'}->[$col];
+      push @newdata,   $data{'data'}->[$col];
+      push @newcolors, $data{'colors'}->[$col];
+      push @newlinks,  $data{'links'}->[$col];
+      push @indices, $col;
 
+    } continue {
       $col++;
     }
 
@@ -139,7 +143,10 @@ sub data {
     $data{'data'}        = \@newdata;
     $data{'colors'}      = \@newcolors;
     $data{'links'}       = \@newlinks;
+    $data{'indices'}     = \@indices;
 
+  } else { # not doing remove_empty; report back that all columns are included
+    $data{'indices'} = [ 0 .. scalar( @{$self->{'items'}} ) - 1 ];
   }
 
   \%data;
