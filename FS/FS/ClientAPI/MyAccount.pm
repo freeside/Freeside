@@ -23,7 +23,7 @@ use FS::Conf;
 #use FS::UID qw(dbh);
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::Msgcat qw(gettext);
-use FS::Misc qw(card_types);
+use FS::Misc qw(card_types money_pretty);
 use FS::Misc::DateTime qw(parse_datetime);
 use FS::TicketSystem;
 use FS::ClientAPI_SessionCache;
@@ -578,6 +578,7 @@ sub customer_info_short {
         $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
                                 : '(none)';
     }
+    $return{balance_pretty} = money_pretty($return{balance});
 
     $return{countrydefault} = scalar($conf->config('countrydefault'));
 
@@ -657,6 +658,7 @@ sub billing_history {
   }
 
   $return{balance} = $cust_main->balance;
+  $return{balance_pretty} = money_pretty($return{balance});
   $return{next_bill_date} = $cust_main->next_bill_date;
   $return{next_bill_date_pretty} =
     $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
