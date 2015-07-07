@@ -71,6 +71,23 @@ for (my $i = 0; $i < $group_info->{num}; $i++) {
   push @menubar, $group_info->{group_labels}[$i], ";group=$i";
 }
 
+# not enabled yet; if we need this at some point, enable it on a per-report
+# basis and then disable it for search/cust_pay.html, because it's redundant
+# to see "Check   Check #130108", "Credit card   Card #401...", etc.
+
+## if this is the combined view, add a column for the group key
+#if ( $curr_group == 0 and $opt{'show_combined'} ) {
+#  unshift @{$opt{'header'}}, '';
+#  unshift @{$opt{'fields'}}, $opt{group_label};
+#  unshift @{$opt{'sort_fields'}}, $opt{group_column} if $opt{'sort_fields'};
+#  $opt{'align'} = 'c'.$opt{'align'};
+#  foreach (qw(header2 links link_onclicks color size style cell_style xls_format)) {
+#    if ( $opt{$_} ) {
+#      unshift @{$opt{$_}}, '';
+#    }
+#  }
+#}
+
 </%init>
 
 <& /elements/header.html, $opt{title} &>
@@ -93,6 +110,7 @@ for (my $i = 0; $i < $group_info->{num}; $i++) {
 <A HREF="<% $cgi->self_url %>"><% emt('as Excel spreadsheet') %></A><BR>
 % $cgi->param('type', 'html-print');
 <A HREF="<% $cgi->self_url %>"><% emt('as printable copy') %></A><BR>
+% $cgi->delete('type');
 </P>
 
 <% $pager %>
