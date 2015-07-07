@@ -194,6 +194,7 @@ tie my %rights, 'Tie::IxHash',
     'View customer pending payments', #NEW
     'Edit customer pending payments', #NEW
     'View customer billing events', #NEW
+    'View legacy typeset statements', #new, but no need to phase in
   ],
   
   ###
@@ -457,6 +458,7 @@ sub default_superuser_rights {
     'Echeck void',
     'Void invoices',#people are overusing this when credits are more appropriate
     'Backdate credit',
+    'View legacy typeset statments',
   );
 
   no warnings 'uninitialized';
