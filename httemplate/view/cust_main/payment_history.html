@@ -158,10 +158,12 @@
   <BR>
 
 %   }
-%   if ( $num_cust_bill > 0 ) {
-  <A HREF="<% $p %>view/cust_main_statement-pdf.cgi?<% $custnum %>"><%
-  mt('Download typeset statement PDF') |h %></A>
-  <BR>
+%   if ( $num_cust_bill > 0
+%          && $curuser->access_right('View legacy typeset statements')
+%   ) {
+      <A HREF="<% $p %>view/cust_main_statement-pdf.cgi?<% $custnum %>"><%
+      mt('Download typeset statement PDF') |h %></A>
+      <BR>
 %   }
   <A HREF="<% $p %>search/report_cust_bill.html?custnum=<% $custnum %>"><% mt('Invoice reports') |h %></A>
 % } 
