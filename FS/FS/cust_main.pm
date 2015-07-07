@@ -32,7 +32,7 @@ use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Cursor;
-use FS::Misc qw( generate_email send_email generate_ps do_print );
+use FS::Misc qw( generate_email send_email generate_ps do_print money_pretty );
 use FS::Msgcat qw(gettext);
 use FS::CurrentUser;
 use FS::TicketSystem;
@@ -4241,8 +4241,7 @@ sub payment_history {
     }
     $$item{'balance'} = sprintf("%.2f",$balance);
     foreach my $key ( qw(amount balance) ) {
-      $$item{$key.'_pretty'} = $$item{$key};
-      $$item{$key.'_pretty'} =~ s/^(-?)/$1$money_char/;
+      $$item{$key.'_pretty'} = money_pretty($$item{$key});
     }
     push(@out,$item);
   }

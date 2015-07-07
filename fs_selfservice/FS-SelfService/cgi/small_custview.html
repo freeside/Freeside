@@ -59,10 +59,17 @@ Customer #<B><%= $display_custnum %></B>
 
 </TR></TABLE>
 
-<%= unless ( $access_pkgnum ) {
-      $OUT .= '<BR>Balance: <B>$'. $balance. '</B><BR>';
-    }
-    '';
+<%= 
+unless ( $access_pkgnum ) {
+  if ($balance >= 0) {
+    $OUT .= '<BR>Balance: <B>'. $balance_pretty . '</B><BR>';
+  } else {
+    my $credit_balance_pretty = $balance_pretty;
+    $credit_balance_pretty =~ s/-//;
+    $OUT .= '<BR>Credit Balance: <B>'. $credit_balance_pretty . '</B><BR>';
+  }
+}
+'';
 %>
 
 </DIV>
