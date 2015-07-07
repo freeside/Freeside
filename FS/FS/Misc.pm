@@ -23,6 +23,7 @@ use Encode;
                  csv_from_fixed
                  ocr_image
                  bytes_substr
+                 money_pretty
                );
 
 $DEBUG = 0;
@@ -828,7 +829,7 @@ sub _pslatex {
   }
 
   return if -e "$file.dvi" && -s "$file.dvi";
-  die "pslatex $file.tex failed; see $file.log for details?\n";
+  die "pslatex $file.tex failed, see $file.log for details?\n";
 
 }
 
@@ -980,6 +981,22 @@ sub bytes_substr {
   );
   my $chk = $DEBUG ? Encode::FB_WARN : Encode::FB_QUIET;
   return Encode::decode('utf8', $bytes, $chk);
+}
+
+=item money_pretty
+
+Accepts a postive or negative numerical value.
+Returns amount formatted for display,
+including money character.
+
+=cut
+
+sub money_pretty {
+  my $amount = shift;
+  my $money_char = $conf->{'money_char'} || '$';
+  $amount = sprintf("%0.2f",$amount);
+  $amount =~ s/^(-?)/$1$money_char/;
+  return $amount;
 }
 
 =back
