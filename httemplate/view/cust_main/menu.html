@@ -452,9 +452,9 @@ my @menu = (
     },
 # separator, definitely
     {
-      label       => 'Download statement',
+      label       => 'Download PDF statement',
       url         => "view/cust_main_statement-pdf.cgi?$custnum",
-      acl         => 'List invoices',
+      acl         => 'View legacy typeset statements',
       condition   => sub {
         FS::cust_bill->count('custnum = ?', shift->custnum) > 0
       },
