@@ -273,6 +273,7 @@ sub cust_header {
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
     'Payment Type'             => 'payby',
     'Current Balance'          => 'current_balance',
+    'Agent Cust#'              => 'agent_custid',
   );
   $header2method{'Cust#'} = 'display_custnum'
     if $conf->exists('cust_main-default_agent_custid');
