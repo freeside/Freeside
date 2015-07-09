@@ -493,7 +493,7 @@ my @menu = (
                       uri_escape($cgi->self_url);
                      },
       condition   => sub { $invoicing_list_emailonly },
-      acl         => [ 'View invoices', 'Bulk send customer notices' ],
+      acl         => 'Resend invoices',
     },
   ],
   [
