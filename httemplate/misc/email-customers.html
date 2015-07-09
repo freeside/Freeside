@@ -10,7 +10,11 @@ This may also be used as an element in other pages, enabling you to provide an
 alternate initial form while using this for search freezing/thawing and 
 preview/send actions, with the following options:
 
+acl - the access right to use (defaults to 'Bulk send customer notices')
+
 form_action - the URL to submit the form to
+
+process_url - the URL for starting the JSRPC process
 
 title - the title of the page
 
@@ -50,7 +54,7 @@ should be used to set msgnum or from/subject/html_body cgi params
     <% include('/elements/progress-init.html',
                  'OneTrueForm',
                  [ qw( search table from subject html_body text_body msgnum ) ],
-                 'process/email-customers.html',
+                 $process_url,
                  $pdest,
               )
     %>
@@ -90,7 +94,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 
       <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $html_body |h %>">
       <TR>
-        <TD ALIGN="right" VALIGN="top">Message (HTML display): </TD>
+        <TH ALIGN="right" VALIGN="top">Message (HTML display): </TD>
         <TD CLASS="background" ALIGN="left"><% $html_body %></TD>
       </TR>
 
@@ -101,8 +105,11 @@ should be used to set msgnum or from/subject/html_body cgi params
 %                     );
       <INPUT TYPE="hidden" NAME="text_body" VALUE="<% $text_body |h %>">
       <TR>
-        <TD ALIGN="right" VALIGN="top">Message (Text display): </TD>
-        <TD CLASS="background" STYLE="background-color:white" ALIGN="left"><PRE><% $text_body %></PRE></TD>
+        <TH ALIGN="right" VALIGN="top">Message (Text display): </TD>
+        <TD CLASS="background" STYLE="background-color:white" ALIGN="left">
+          <a href="javascript:void(0)" onclick="this.style.display='none'; document.getElementById('email-message-text').style.display=''">click to view</a>
+          <PRE id="email-message-text" style="display: none;"><% $text_body %></PRE>
+        </TD>
       </TR>
 
     </TABLE>
@@ -192,13 +199,16 @@ Template:
 
 my %opt = @_;
 
+$opt{'acl'} ||= 'Bulk send customer notices';
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
+  unless $FS::CurrentUser::CurrentUser->access_right($opt{'acl'});
 
 my $conf = FS::Conf->new;
 my @no_search_fields = qw( action table from subject html_body text_body popup url );
 
 my $form_action = $opt{'form_action'} || 'email-customers.html';
+my $process_url = $opt{'process_url'} || 'process/email-customers.html';
 my $title = $opt{'title'} || 'Send customer notices';
 push( @no_search_fields, @{$opt{'no_search_fields'}} ) if $opt{'no_search_fields'};
 
