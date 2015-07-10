@@ -433,20 +433,12 @@ if ( -e $addl_handler_use_file ) {
       use RT::CustomFieldValues;
       use RT::ObjectCustomFieldValues;
 
-      #blah.  manually updated from RT::Interface::Web::Handler
-      use RT::Interface::Web;
-      use MIME::Entity;
-      use Text::Wrapper;
-      use Time::ParseDate;
-      use Time::HiRes;
-      use HTML::Scrubber;
+      use RT::Interface::Web::Handler;
 
       #blah.  not even in RT::Interface::Web::Handler, just in 
       #html/NoAuth/css/dhandler and rt-test-dependencies.  ask for it here
       #to throw a real error instead of just a mysterious unstyled RT
       use CSS::Squish 0.06;
-
-      use RT::Interface::Web::Request;
 
       #another undeclared web UI dep (for ticket links graph)
       use IPC::Run::SafeHandles;
