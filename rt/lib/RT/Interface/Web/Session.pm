@@ -84,8 +84,7 @@ sub Class {
     my $class = RT->Config->Get('WebSessionClass')
              || $self->Backends->{RT->Config->Get('DatabaseType')}
              || 'Apache::Session::File';
-    eval "require $class";
-    die $@ if $@;
+    $class->require or die "Can't load $class: $@";
     return $class;
 }
 
@@ -98,8 +97,9 @@ sessions class names as values.
 
 sub Backends {
     return {
-        mysql => 'Apache::Session::MySQL',
-        Pg    => 'Apache::Session::Postgres',
+        mysql  => 'Apache::Session::MySQL',
+        Pg     => 'Apache::Session::Postgres',
+        Oracle => 'Apache::Session::Oracle',
     };
 }
 
@@ -112,15 +112,27 @@ new session objects.
 
 sub Attributes {
     my $class = $_[0]->Class;
-    return !$class->isa('Apache::Session::File') ? {
-            Handle      => $RT::Handle->dbh,
-            LockHandle  => $RT::Handle->dbh,
-            Transaction => 1,
-        } : {
+    my $res;
+    if ( my %props = RT->Config->Get('WebSessionProperties') ) {
+        $res = \%props;
+    }
+    elsif ( $class->isa('Apache::Session::File') ) {
+        $res = {
             Directory     => $RT::MasonSessionDir,
             LockDirectory => $RT::MasonSessionDir,
             Transaction   => 1,
         };
+    }
+    else {
+        $res = {
+            Handle      => $RT::Handle->dbh,
+            LockHandle  => $RT::Handle->dbh,
+            Transaction => 1,
+        };
+    }
+    $res->{LongReadLen} = RT->Config->Get('MaxAttachmentSize')
+        if $class->isa('Apache::Session::Oracle');
+    return $res;
 }
 
 =head3 Ids

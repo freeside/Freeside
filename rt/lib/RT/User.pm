@@ -66,6 +66,7 @@ package RT::User;
 use strict;
 use warnings;
 
+use Scalar::Util qw(blessed);
 
 use base 'RT::Record';
 
@@ -78,6 +79,7 @@ sub Table {'Users'}
 
 use Digest::SHA;
 use Digest::MD5;
+use Crypt::Eksblowfish::Bcrypt qw();
 use RT::Principals;
 use RT::ACE;
 use RT::Interface::Email;
@@ -86,22 +88,25 @@ use Text::Password::Pronounceable;
 sub _OverlayAccessible {
     {
 
-        Name                    => { public => 1,  admin => 1 },
+          Name                  => { public => 1,  admin => 1 },    # loc_left_pair
           Password              => { read   => 0 },
-          EmailAddress          => { public => 1 },
-          Organization          => { public => 1,  admin => 1 },
-          RealName              => { public => 1 },
-          NickName              => { public => 1 },
-          Lang                  => { public => 1 },
+          EmailAddress          => { public => 1 },                 # loc_left_pair
+          Organization          => { public => 1,  admin => 1 },    # loc_left_pair
+          RealName              => { public => 1 },                 # loc_left_pair
+          NickName              => { public => 1 },                 # loc_left_pair
+          Lang                  => { public => 1 },                 # loc_left_pair
           EmailEncoding         => { public => 1 },
           WebEncoding           => { public => 1 },
           ExternalContactInfoId => { public => 1,  admin => 1 },
           ContactInfoSystem     => { public => 1,  admin => 1 },
           ExternalAuthId        => { public => 1,  admin => 1 },
           AuthSystem            => { public => 1,  admin => 1 },
-          Gecos                 => { public => 1,  admin => 1 },
-          PGPKey                => { public => 1,  admin => 1 },
-
+          Gecos                 => { public => 1,  admin => 1 },    # loc_left_pair
+          PGPKey                => { public => 1,  admin => 1 },    # loc_left_pair
+          SMIMECertificate      => { public => 1,  admin => 1 },    # loc_left_pair
+          City                  => { public => 1 },                 # loc_left_pair
+          Country               => { public => 1 },                 # loc_left_pair
+          Timezone              => { public => 1 },                 # loc_left_pair
     }
 }
 
@@ -296,7 +301,7 @@ sub ValidatePassword {
     my $password = shift;
 
     if ( length($password) < RT->Config->Get('MinimumPasswordLength') ) {
-        return ( 0, $self->loc("Password needs to be at least [_1] characters long", RT->Config->Get('MinimumPasswordLength')) );
+        return ( 0, $self->loc("Password needs to be at least [quant,_1,character,characters] long", RT->Config->Get('MinimumPasswordLength')) );
     }
 
     return 1;
@@ -549,8 +554,8 @@ sub LoadOrCreateByEmail {
             }
         }
     }
-    return (0, $message) unless $self->id;
-    return ($self->Id, $message);
+    return wantarray ? (0, $message) : 0 unless $self->id;
+    return wantarray ? ($self->Id, $message) : $self->Id;
 }
 
 =head2 ValidateEmailAddress ADDRESS
@@ -628,25 +633,13 @@ sub SetEmailAddress {
 
 =head2 EmailFrequency
 
-Takes optional Ticket argument in paramhash. Returns 'no email',
-'squelched', 'daily', 'weekly' or empty string depending on
-user preferences.
+Takes optional Ticket argument in paramhash. Returns a string, suitable
+for localization, describing any notable properties about email delivery
+to the user.  This includes lack of email address, ticket-level
+squelching (if C<Ticket> is provided in the paramhash), or user email
+delivery preferences.
 
-=over 4
-
-=item 'no email' - user has no email, so can not recieve notifications.
-
-=item 'squelched' - returned only when Ticket argument is provided and
-notifications to the user has been supressed for this ticket.
-
-=item 'daily' - retruned when user recieve daily messages digest instead
-of immediate delivery.
-
-=item 'weekly' - previous, but weekly.
-
-=item empty string returned otherwise.
-
-=back
+Returns the empty string if there are no notable properties.
 
 =cut
 
@@ -658,12 +651,18 @@ sub EmailFrequency {
     );
     return '' unless $self->id && $self->id != RT->Nobody->id
         && $self->id != RT->SystemUser->id;
-    return 'no email address' unless my $email = $self->EmailAddress;
-    return 'email disabled for ticket' if $args{'Ticket'} &&
-        grep lc $email eq lc $_->Content, $args{'Ticket'}->SquelchMailTo;
+    return 'no email address set'  # loc
+        unless my $email = $self->EmailAddress;
+    return 'email disabled for ticket' # loc
+        if $args{'Ticket'} &&
+            grep lc $email eq lc $_->Content, $args{'Ticket'}->SquelchMailTo;
     my $frequency = RT->Config->Get( 'EmailFrequency', $self ) || '';
-    return 'daily' if $frequency =~ /daily/i;
-    return 'weekly' if $frequency =~ /weekly/i;
+    return 'receives daily digests' # loc
+        if $frequency =~ /daily/i;
+    return 'receives weekly digests' # loc
+        if $frequency =~ /weekly/i;
+    return 'email delivery suspended' # loc
+        if $frequency =~ /suspend/i;
     return '';
 }
 
@@ -865,6 +864,39 @@ sub SetPassword {
 
 }
 
+sub _GeneratePassword_bcrypt {
+    my $self = shift;
+    my ($password, @rest) = @_;
+
+    my $salt;
+    my $rounds;
+    if (@rest) {
+        # The first split is the number of rounds
+        $rounds = $rest[0];
+
+        # The salt is the first 22 characters, b64 encoded usign the
+        # special bcrypt base64.
+        $salt = Crypt::Eksblowfish::Bcrypt::de_base64( substr($rest[1], 0, 22) );
+    } else {
+        $rounds = RT->Config->Get('BcryptCost');
+
+        # Generate a random 16-octet base64 salt
+        $salt = "";
+        $salt .= pack("C", int rand(256)) for 1..16;
+    }
+
+    my $hash = Crypt::Eksblowfish::Bcrypt::bcrypt_hash({
+        key_nul => 1,
+        cost    => $rounds,
+        salt    => $salt,
+    }, Digest::SHA::sha512( Encode::encode( 'UTF-8', $password) ) );
+
+    return join("!", "", "bcrypt", sprintf("%02d", $rounds),
+                Crypt::Eksblowfish::Bcrypt::en_base64( $salt ).
+                Crypt::Eksblowfish::Bcrypt::en_base64( $hash )
+              );
+}
+
 sub _GeneratePassword_sha512 {
     my $self = shift;
     my ($password, $salt) = @_;
@@ -888,13 +920,13 @@ Returns a string to store in the database.  This string takes the form:
 
    !method!salt!hash
 
-By default, the method is currently C<sha512>.
+By default, the method is currently C<bcrypt>.
 
 =cut
 
 sub _GeneratePassword {
     my $self = shift;
-    return $self->_GeneratePassword_sha512(@_);
+    return $self->_GeneratePassword_bcrypt(@_);
 }
 
 =head3 HasPassword
@@ -943,9 +975,13 @@ sub IsPassword {
     my $stored = $self->__Value('Password');
     if ($stored =~ /^!/) {
         # If it's a new-style (>= RT 4.0) password, it starts with a '!'
-        my (undef, $method, $salt, undef) = split /!/, $stored;
-        if ($method eq "sha512") {
-            return $self->_GeneratePassword_sha512($value, $salt) eq $stored;
+        my (undef, $method, @rest) = split /!/, $stored;
+        if ($method eq "bcrypt") {
+            return 0 unless $self->_GeneratePassword_bcrypt($value, @rest) eq $stored;
+            # Upgrade to a larger number of rounds if necessary
+            return 1 unless $rest[0] < RT->Config->Get('BcryptCost');
+        } elsif ($method eq "sha512") {
+            return 0 unless $self->_GeneratePassword_sha512($value, @rest) eq $stored;
         } else {
             $RT::Logger->warn("Unknown hash method $method");
             return 0;
@@ -986,8 +1022,8 @@ sub CurrentUserRequireToSetPassword {
         RequireCurrent => 1,
     );
 
-    if ( RT->Config->Get('WebExternalAuth')
-        && !RT->Config->Get('WebFallbackToInternalAuth')
+    if ( RT->Config->Get('WebRemoteUserAuth')
+        && !RT->Config->Get('WebFallbackToRTLogin')
     ) {
         $res{'CanSet'} = 0;
         $res{'Reason'} = $self->loc("External authentication enabled.");
@@ -1092,11 +1128,11 @@ sub SetDisabled {
     }
 
     $RT::Handle->BeginTransaction();
-    my $set_err = $self->PrincipalObj->SetDisabled($val);
-    unless ($set_err) {
+    my ($status, $msg) = $self->PrincipalObj->SetDisabled($val);
+    unless ($status) {
         $RT::Handle->Rollback();
         $RT::Logger->warning(sprintf("Couldn't %s user %s", ($val == 1) ? "disable" : "enable", $self->PrincipalObj->Id));
-        return (undef);
+        return ($status, $msg);
     }
     $self->_NewTransaction( Type => ($val == 1) ? "Disabled" : "Enabled" );
 
@@ -1247,26 +1283,29 @@ public, ourself, or we have AdminUsers
 
 sub CurrentUserCanSee {
     my $self = shift;
-    my ($what) = @_;
+    my ($what, $txn) = @_;
 
-    # If it's public, fine.  Note that $what may be "transaction", which
-    # doesn't have an Accessible value, and thus falls through below.
-    if ( $self->_Accessible( $what, 'public' ) ) {
-        return 1;
-    }
+    # If it's a public property, fine
+    return 1 if $self->_Accessible( $what, 'public' );
 
-    # Users can see their own properties
-    elsif ( defined($self->Id) && $self->CurrentUser->Id == $self->Id ) {
-        return 1;
-    }
+    # Users can see all of their own properties
+    return 1 if defined($self->Id) and $self->CurrentUser->Id == $self->Id;
 
     # If the user has the admin users right, that's also enough
-    elsif ( $self->CurrentUser->HasRight( Right => 'AdminUsers', Object => $RT::System) ) {
-        return 1;
+    return 1 if $self->CurrentUserHasRight( 'AdminUsers' );
+
+    # Transactions of public properties are visible to users with ShowUserHistory
+    if ($what eq "Transaction" and $self->CurrentUserHasRight( 'ShowUserHistory' )) {
+        my $type = $txn->__Value('Type');
+        my $field = $txn->__Value('Field');
+        return 1 if $type eq "Set" and $self->CurrentUserCanSee($field, $txn);
+
+        # RT::Transaction->CurrentUserCanSee deals with ensuring we meet
+        # the ACLs on CFs, so allow them here
+        return 1 if $type eq "CustomField";
     }
-    else {
-        return 0;
-    }
+
+    return 0;
 }
 
 =head2 CurrentUserCanModify RIGHT
@@ -1326,7 +1365,7 @@ sub _PrefName {
         $name = ref($name).'-'.$name->Id;
     }
 
-    return 'Pref-'.$name;
+    return 'Pref-'. $name;
 }
 
 =head2 Preferences NAME/OBJ DEFAULT
@@ -1339,7 +1378,7 @@ override the entries with user preferences.
 
 sub Preferences {
     my $self  = shift;
-    my $name = _PrefName (shift);
+    my $name = _PrefName(shift);
     my $default = shift;
 
     my ($attr) = $self->Attributes->Named( $name );
@@ -1353,7 +1392,7 @@ sub Preferences {
             exists $content->{$_} or $content->{$_} = $default->{$_};
         }
     } elsif (defined $default) {
-        $RT::Logger->error("Preferences $name for user".$self->Id." is hash but default is not");
+        $RT::Logger->error("Preferences $name for user #".$self->Id." is hash but default is not");
     }
     return $content;
 }
@@ -1415,10 +1454,8 @@ sub Stylesheet {
     my $style = RT->Config->Get('WebDefaultStylesheet', $self->CurrentUser);
 
     if (RT::Interface::Web->ComponentPathIsSafe($style)) {
-        my @css_paths = map { $_ . '/NoAuth/css' } RT::Interface::Web->ComponentRoots;
-
-        for my $css_path (@css_paths) {
-            if (-d "$css_path/$style") {
+        for my $root (RT::Interface::Web->StaticRoots) {
+            if (-d "$root/css/$style") {
                 return $style
             }
         }
@@ -1459,12 +1496,13 @@ sub WatchedQueues {
                             FIELD => 'Domain',
                             VALUE => 'RT::Queue-Role',
                             ENTRYAGGREGATOR => 'AND',
+                            CASESENSITIVE => 0,
                           );
     if (grep { $_ eq 'Cc' } @roles) {
         $watched_queues->Limit(
                                 SUBCLAUSE => 'LimitToWatchers',
                                 ALIAS => $group_alias,
-                                FIELD => 'Type',
+                                FIELD => 'Name',
                                 VALUE => 'Cc',
                                 ENTRYAGGREGATOR => 'OR',
                               );
@@ -1473,7 +1511,7 @@ sub WatchedQueues {
         $watched_queues->Limit(
                                 SUBCLAUSE => 'LimitToWatchers',
                                 ALIAS => $group_alias,
-                                FIELD => 'Type',
+                                FIELD => 'Name',
                                 VALUE => 'AdminCc',
                                 ENTRYAGGREGATOR => 'OR',
                               );
@@ -1575,9 +1613,134 @@ Return the friendly name
 
 sub FriendlyName {
     my $self = shift;
-    return $self->RealName if defined($self->RealName);
-    return $self->Name if defined($self->Name);
-    return "";
+    return $self->RealName if defined $self->RealName and length $self->RealName;
+    return $self->Name;
+}
+
+=head2 Format
+
+Class or object method.
+
+Returns a string describing a user in the current user's preferred format.
+
+May be invoked in three ways:
+
+    $UserObj->Format;
+    RT::User->Format( User => $UserObj );   # same as above
+    RT::User->Format( Address => $AddressObj, CurrentUser => $CurrentUserObj );
+
+Possible arguments are:
+
+=over
+
+=item User
+
+An L<RT::User> object representing the user to format.  Preferred to Address.
+
+=item Address
+
+An L<Email::Address> object representing the user address to format.  Address
+will be used to lookup an L<RT::User> if possible.
+
+=item CurrentUser
+
+Required when Format is called as a class method with an Address argument.
+Otherwise, this argument is ignored in preference to the CurrentUser of the
+involved L<RT::User> object.
+
+=item Format
+
+Specifies the format to use, overriding any set from the config or current
+user's preferences.
+
+=back
+
+=cut
+
+sub Format {
+    my $self = shift;
+    my %args = (
+        User        => undef,
+        Address     => undef,
+        CurrentUser => undef,
+        Format      => undef,
+        @_
+    );
+
+    if (blessed($self) and $self->id) {
+        @args{"User", "CurrentUser"} = ($self, $self->CurrentUser);
+    }
+    elsif ($args{User} and $args{User}->id) {
+        $args{CurrentUser} = $args{User}->CurrentUser;
+    }
+    elsif ($args{Address} and $args{CurrentUser}) {
+        $args{User} = RT::User->new( $args{CurrentUser} );
+        $args{User}->LoadByEmail( $args{Address}->address );
+        if ($args{User}->id) {
+            delete $args{Address};
+        } else {
+            delete $args{User};
+        }
+    }
+    else {
+        RT->Logger->warning("Invalid arguments to RT::User->Format at @{[join '/', caller]}");
+        return "";
+    }
+
+    $args{Format} ||= RT->Config->Get("UsernameFormat", $args{CurrentUser});
+    $args{Format} =~ s/[^A-Za-z0-9_]+//g;
+
+    my $method    = "_FormatUser" . ucfirst lc $args{Format};
+    my $formatter = $self->can($method);
+
+    unless ($formatter) {
+        RT->Logger->error(
+            "Either system config or user #" . $args{CurrentUser}->id .
+            " picked UsernameFormat $args{Format}, but RT::User->$method doesn't exist"
+        );
+        $formatter = $self->can("_FormatUserRole");
+    }
+    return $formatter->( $self, map { $_ => $args{$_} } qw(User Address) );
+}
+
+sub _FormatUserRole {
+    my $self = shift;
+    my %args = @_;
+
+    my $user = $args{User};
+    return $self->_FormatUserVerbose(@_)
+        unless $user and $user->Privileged;
+
+    my $name = $user->Name;
+    $name .= " (".$user->RealName.")"
+        if $user->RealName and lc $user->RealName ne lc $user->Name;
+    return $name;
+}
+
+sub _FormatUserConcise {
+    my $self = shift;
+    my %args = @_;
+    return $args{User} ? $args{User}->FriendlyName : $args{Address}->address;
+}
+
+sub _FormatUserVerbose {
+    my $self = shift;
+    my %args = @_;
+    my ($user, $address) = @args{"User", "Address"};
+
+    my $email   = '';
+    my $phrase  = '';
+    my $comment = '';
+
+    if ($user) {
+        $email   = $user->EmailAddress || '';
+        $phrase  = $user->RealName  if $user->RealName and lc $user->RealName ne lc $email;
+        $comment = $user->Name      if lc $user->Name ne lc $email;
+    } else {
+        ($email, $phrase, $comment) = (map { $address->$_ } "address", "phrase", "comment");
+    }
+
+    return join " ", grep { $_ } ($phrase || $comment || ''), ($email ? "<$email>" : "");
 }
 
 =head2 PreferredKey
@@ -1604,8 +1767,7 @@ sub PreferredKey
     return $prefkey->Content if $prefkey;
 
     # we don't have a preferred key for this user, so now we must query GPG
-    require RT::Crypt::GnuPG;
-    my %res = RT::Crypt::GnuPG::GetKeysForEncryption($self->EmailAddress);
+    my %res = RT::Crypt->GetKeysForEncryption($self->EmailAddress);
     return undef unless defined $res{'info'};
     my @keys = @{ $res{'info'} };
     return undef if @keys == 0;
@@ -1659,7 +1821,7 @@ sub SetPrivateKey {
 
     # check that it's really private key
     {
-        my %tmp = RT::Crypt::GnuPG::GetKeysForSigning( $key );
+        my %tmp = RT::Crypt->GetKeysForSigning( Signer => $key, Protocol => 'GnuPG' );
         return (0, $self->loc("No such key or it's not suitable for signing"))
             if $tmp{'exit_code'} || !$tmp{'info'};
     }
@@ -1673,6 +1835,21 @@ sub SetPrivateKey {
     return ($status, $self->loc("Set private key"));
 }
 
+sub SetLang {
+    my $self = shift;
+    my ($lang) = @_;
+
+    unless ($self->CurrentUserCanModify('Lang')) {
+        return (0, $self->loc("Permission Denied"));
+    }
+
+    # Local hack to cause the result message to be in the _new_ language
+    # if we're updating ourselves
+    $self->CurrentUser->{LangHandle} = RT::I18N->get_handle( $lang )
+        if $self->CurrentUser->id == $self->id;
+    return $self->_Set( Field => 'Lang', Value => $lang );
+}
+
 sub BasicColumns {
     (
     [ Name => 'Username' ],
@@ -1680,6 +1857,79 @@ sub BasicColumns {
     [ RealName => 'Name' ],
     [ Organization => 'Organization' ],
     );
+}
+
+=head2 Bookmarks
+
+Returns an unordered list of IDs representing the user's bookmarked tickets.
+
+=cut
+
+sub Bookmarks {
+    my $self = shift;
+    my $bookmarks = $self->FirstAttribute('Bookmarks');
+    return if !$bookmarks;
+
+    $bookmarks = $bookmarks->Content;
+    return if !$bookmarks;
+
+    return keys %$bookmarks;
+}
+
+=head2 HasBookmark TICKET
+
+Returns whether the provided ticket is bookmarked by the user.
+
+=cut
+
+sub HasBookmark {
+    my $self   = shift;
+    my $ticket = shift;
+    my $id     = $ticket->id;
+
+    # maintain bookmarks across merges
+    my @ids = ($id, $ticket->Merged);
+
+    my $bookmarks = $self->FirstAttribute('Bookmarks');
+    $bookmarks = $bookmarks ? $bookmarks->Content : {};
+
+    my @bookmarked = grep { $bookmarks->{ $_ } } @ids;
+    return @bookmarked ? 1 : 0;
+}
+
+=head2 ToggleBookmark TICKET
+
+Toggles whether the provided ticket is bookmarked by the user.
+
+=cut
+
+sub ToggleBookmark {
+    my $self   = shift;
+    my $ticket = shift;
+    my $id     = $ticket->id;
+
+    # maintain bookmarks across merges
+    my @ids = ($id, $ticket->Merged);
+
+    my $bookmarks = $self->FirstAttribute('Bookmarks');
+    $bookmarks = $bookmarks ? $bookmarks->Content : {};
+
+    my $is_bookmarked;
+
+    if ( grep { $bookmarks->{ $_ } } @ids ) {
+        delete $bookmarks->{ $_ } foreach @ids;
+        $is_bookmarked = 0;
+    } else {
+        $bookmarks->{ $id } = 1;
+        $is_bookmarked = 1;
+    }
+
+    $self->SetAttribute(
+        Name    => 'Bookmarks',
+        Content => $bookmarks,
+    );
+
+    return $is_bookmarked;
 }
 
 =head2 Create PARAMHASH
@@ -2271,6 +2521,24 @@ Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
 =cut
 
 
+=head2 SMIMECertificate
+
+Returns the current value of SMIMECertificate. 
+(In the database, SMIMECertificate is stored as text.)
+
+
+
+=head2 SetSMIMECertificate VALUE
+
+
+Set SMIMECertificate to VALUE. 
+Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
+(In the database, SMIMECertificate will be stored as a text.)
+
+
+=cut
+
+
 =head2 Creator
 
 Returns the current value of Creator. 
@@ -2569,6 +2837,8 @@ sub _CoreAccessible {
         {read => 1, write => 1, sql_type => 12, length => 50,  is_blob => 0,  is_numeric => 0,  type => 'varchar(50)', default => ''},
         PGPKey => 
         {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'text', default => ''},
+        SMIMECertificate =>
+        {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'text', default => ''},
         Creator => 
         {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created => 
@@ -2580,6 +2850,213 @@ sub _CoreAccessible {
 
  }
 };
+
+sub UID {
+    my $self = shift;
+    return undef unless defined $self->Name;
+    return "@{[ref $self]}-@{[$self->Name]}";
+}
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    # ACL equivalence group
+    my $objs = RT::Groups->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'Domain', VALUE => 'ACLEquivalence', CASESENSITIVE => 0 );
+    $objs->Limit( FIELD => 'Instance', VALUE => $self->Id );
+    $deps->Add( in => $objs );
+
+    # Memberships in SystemInternal groups
+    $objs = RT::GroupMembers->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'MemberId', VALUE => $self->Id );
+    my $principals = $objs->Join(
+        ALIAS1 => 'main',
+        FIELD1 => 'GroupId',
+        TABLE2 => 'Principals',
+        FIELD2 => 'id',
+    );
+    my $groups = $objs->Join(
+        ALIAS1 => $principals,
+        FIELD1 => 'ObjectId',
+        TABLE2 => 'Groups',
+        FIELD2 => 'Id',
+    );
+    $objs->Limit(
+        ALIAS => $groups,
+        FIELD => 'Domain',
+        VALUE => 'SystemInternal',
+        CASESENSITIVE => 0
+    );
+    $deps->Add( in => $objs );
+
+    # XXX: This ignores the myriad of "in" references from the Creator
+    # and LastUpdatedBy columns.
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# Principal
+    $deps->_PushDependency(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON | RT::Shredder::Constants::WIPE_AFTER,
+        TargetObject => $self->PrincipalObj,
+        Shredder => $args{'Shredder'}
+    );
+
+# ACL equivalence group
+# don't use LoadACLEquivalenceGroup cause it may not exists any more
+    my $objs = RT::Groups->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'Domain', VALUE => 'ACLEquivalence', CASESENSITIVE => 0 );
+    $objs->Limit( FIELD => 'Instance', VALUE => $self->Id );
+    push( @$list, $objs );
+
+# Cleanup user's membership
+    $objs = RT::GroupMembers->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'MemberId', VALUE => $self->Id );
+    push( @$list, $objs );
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+
+# TODO: Almost all objects has Creator, LastUpdatedBy and etc. fields
+# which are references on users(Principal actualy)
+    my @OBJECTS = qw(
+        ACL
+        Articles
+        Attachments
+        Attributes
+        CachedGroupMembers
+        Classes
+        CustomFieldValues
+        CustomFields
+        GroupMembers
+        Groups
+        Links
+        ObjectClasses
+        ObjectCustomFieldValues
+        ObjectCustomFields
+        ObjectScrips
+        Principals
+        Queues
+        ScripActions
+        ScripConditions
+        Scrips
+        Templates
+        Tickets
+        Transactions
+        Users
+    );
+    my @var_objs;
+    foreach( @OBJECTS ) {
+        my $class = "RT::$_";
+        foreach my $method ( qw(Creator LastUpdatedBy) ) {
+            my $objs = $class->new( $self->CurrentUser );
+            next unless $objs->RecordClass->_Accessible( $method => 'read' );
+            $objs->Limit( FIELD => $method, VALUE => $self->id );
+            push @var_objs, $objs;
+        }
+    }
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON | RT::Shredder::Constants::VARIABLE,
+        TargetObjects => \@var_objs,
+        Shredder => $args{'Shredder'}
+    );
+
+    return $self->SUPER::__DependsOn( %args );
+}
+
+sub BeforeWipeout {
+    my $self = shift;
+    if( $self->Name =~ /^(RT_System|Nobody)$/ ) {
+        RT::Shredder::Exception::Info->throw('SystemObject');
+    }
+    return $self->SUPER::BeforeWipeout( @_ );
+}
+
+sub Serialize {
+    my $self = shift;
+    return (
+        Disabled => $self->PrincipalObj->Disabled,
+        Principal => $self->PrincipalObj->UID,
+        PrincipalId => $self->PrincipalObj->Id,
+        $self->SUPER::Serialize(@_),
+    );
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    my $principal_uid = delete $data->{Principal};
+    my $principal_id  = delete $data->{PrincipalId};
+    my $disabled      = delete $data->{Disabled};
+
+    my $obj = RT::User->new( RT->SystemUser );
+    $obj->LoadByCols( Name => $data->{Name} );
+    $obj->LoadByEmail( $data->{EmailAddress} ) unless $obj->Id;
+    if ($obj->Id) {
+        # User already exists -- merge
+
+        # XXX: We might be merging a privileged user into an unpriv one,
+        # in which case we should probably promote the unpriv user to
+        # being privileged.  Of course, we don't know if the user being
+        # imported is privileged yet, as its group memberships show up
+        # later in the stream...
+        $importer->MergeValues($obj, $data);
+        $importer->SkipTransactions( $uid );
+
+        # Mark both the principal and the user object as resolved
+        $importer->Resolve(
+            $principal_uid,
+            ref($obj->PrincipalObj),
+            $obj->PrincipalObj->Id
+        );
+        $importer->Resolve( $uid => ref($obj) => $obj->Id );
+        return;
+    }
+
+    # Create a principal first, so we know what ID to use
+    my $principal = RT::Principal->new( RT->SystemUser );
+    my ($id) = $principal->Create(
+        PrincipalType => 'User',
+        Disabled => $disabled,
+        ObjectId => 0,
+    );
+
+    # Now we have a principal id, set the id for the user record
+    $data->{id} = $id;
+
+    $importer->Resolve( $principal_uid => ref($principal), $id );
+
+    $importer->Postpone(
+        for => $uid,
+        uid => $principal_uid,
+        column => "ObjectId",
+    );
+
+    return $class->SUPER::PreInflate( $importer, $uid, $data );
+}
+
+sub PostInflate {
+    my $self = shift;
+    RT->InitSystemObjects if $self->Name eq "RT_System";
+}
 
 RT::Base->_ImportOverlays();
 

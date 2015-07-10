@@ -67,41 +67,26 @@
 
 package RT::Dashboard;
 
-use RT::SavedSearch;
-
 use strict;
 use warnings;
 
 use base qw/RT::SharedSetting/;
 
+use RT::SavedSearch;
+
 use RT::System;
-RT::System::AddRights(
-    SubscribeDashboard => 'Subscribe to dashboards', #loc_pair
+'RT::System'->AddRight( Staff   => SubscribeDashboard => 'Subscribe to dashboards'); # loc
 
-    SeeDashboard       => 'View system dashboards', #loc_pair
-    CreateDashboard    => 'Create system dashboards', #loc_pair
-    ModifyDashboard    => 'Modify system dashboards', #loc_pair
-    DeleteDashboard    => 'Delete system dashboards', #loc_pair
+'RT::System'->AddRight( General => SeeDashboard       => 'View system dashboards'); # loc
+'RT::System'->AddRight( Admin   => CreateDashboard    => 'Create system dashboards'); # loc
+'RT::System'->AddRight( Admin   => ModifyDashboard    => 'Modify system dashboards'); # loc
+'RT::System'->AddRight( Admin   => DeleteDashboard    => 'Delete system dashboards'); # loc
 
-    SeeOwnDashboard    => 'View personal dashboards', #loc_pair
-    CreateOwnDashboard => 'Create personal dashboards', #loc_pair
-    ModifyOwnDashboard => 'Modify personal dashboards', #loc_pair
-    DeleteOwnDashboard => 'Delete personal dashboards', #loc_pair
-);
+'RT::System'->AddRight( Staff   => SeeOwnDashboard    => 'View personal dashboards'); # loc
+'RT::System'->AddRight( Staff   => CreateOwnDashboard => 'Create personal dashboards'); # loc
+'RT::System'->AddRight( Staff   => ModifyOwnDashboard => 'Modify personal dashboards'); # loc
+'RT::System'->AddRight( Staff   => DeleteOwnDashboard => 'Delete personal dashboards'); # loc
 
-RT::System::AddRightCategories(
-    SubscribeDashboard => 'Staff',
-
-    SeeDashboard       => 'General',
-    CreateDashboard    => 'Admin',
-    ModifyDashboard    => 'Admin',
-    DeleteDashboard    => 'Admin',
-
-    SeeOwnDashboard    => 'Staff',
-    CreateOwnDashboard => 'Staff',
-    ModifyOwnDashboard => 'Staff',
-    DeleteOwnDashboard => 'Staff',
-);
 
 =head2 ObjectName
 

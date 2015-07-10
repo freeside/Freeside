@@ -62,14 +62,12 @@ package RT::Action::NotifyGroupAsComment;
 use strict;
 use warnings;
 
-use RT::Action::NotifyGroup;
-
 use base qw(RT::Action::NotifyGroup);
 
 sub SetReturnAddress {
-	my $self = shift;
-	$self->{'comment'} = 1;
-	return $self->SUPER::SetReturnAddress( @_, is_comment => 1 );
+    my $self = shift;
+    $self->{'comment'} = 1;
+    return $self->SUPER::SetReturnAddress( @_, is_comment => 1 );
 }
 
 =head1 AUTHOR

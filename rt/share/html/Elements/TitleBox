@@ -48,5 +48,6 @@
 <&| /Widgets/TitleBox, %ARGS &><% $m->content |n%></&>
 <%init>
 # For compatibility with 3.4
+RT->Deprecated( Remove => 4.4, Instead => "/Widgets/TitleBox" );
 # $m->comp('/Widgets/TitleBox', %ARGS ); Doesn't actually work
 </%init>

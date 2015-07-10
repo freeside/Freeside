@@ -8,12 +8,12 @@ use RT;
 my $logo;
 BEGIN {
     $logo =
-      -e $RT::MasonComponentRoot . '/NoAuth/images/bpslogo.png'
+      -e $RT::StaticPath . '/images/bpslogo.png'
       ? 'bpslogo.png'
       : 'bplogo.gif';
 }
 
-use constant ImageFile => $RT::MasonComponentRoot . "/NoAuth/images/$logo";
+use constant ImageFile => $RT::StaticPath . "/images/$logo";
 
 use constant ImageFileContent => do {
     local $/;
@@ -25,14 +25,14 @@ use constant ImageFileContent => do {
 use RT::Class;
 my $class = RT::Class->new($RT::SystemUser);
 my ($ret, $msg) = $class->Create('Name' => 'tlaTestClass-'.$$,
-			      'Description' => 'A general-purpose test class');
+                                 'Description' => 'A general-purpose test class');
 ok($ret, "Test class created");
 
 
 my ($url, $m) = RT::Test->started_ok;
 isa_ok($m, 'Test::WWW::Mechanize');
 ok($m->login, 'logged in');
-$m->follow_link_ok( { text => 'Configuration' } );
+$m->follow_link_ok( { text => 'Admin' } );
 $m->title_is(q/RT Administration/, 'admin screen');
 $m->follow_link_ok( { text => 'Custom Fields' } );
 $m->title_is(q/Select a Custom Field/, 'admin-cf screen');

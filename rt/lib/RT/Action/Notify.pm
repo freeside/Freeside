@@ -71,8 +71,8 @@ sub Prepare {
 
 =head2 SetRecipients
 
-Sets the recipients of this meesage to Owner, Requestor, AdminCc, Cc or All. 
-Explicitly B<does not> notify the creator of the transaction by default
+Sets the recipients of this message to Owner, Requestor, AdminCc, Cc or All.
+Explicitly B<does not> notify the creator of the transaction by default.
 
 =cut
 
@@ -107,6 +107,7 @@ sub SetRecipients {
     if (   $arg =~ /\bOwner\b/
         && $ticket->OwnerObj->id != RT->Nobody->id
         && $ticket->OwnerObj->EmailAddress
+        && not $ticket->OwnerObj->Disabled
     ) {
         # If we're not sending to Ccs or requestors,
         # then the Owner can be the To.
@@ -131,24 +132,9 @@ sub SetRecipients {
         }
     }
 
-    my $creatorObj = $self->TransactionObj->CreatorObj;
-    my $creator = $creatorObj->EmailAddress() || '';
-
-    #Strip the sender out of the To, Cc and AdminCc and set the 
-    # recipients fields used to build the message by the superclass.
-    # unless a flag is set 
-    my $TransactionCurrentUser = RT::CurrentUser->new;
-    $TransactionCurrentUser->LoadByName($creatorObj->Name);
-    if (RT->Config->Get('NotifyActor',$TransactionCurrentUser)) {
-        @{ $self->{'To'} }  = @To;
-        @{ $self->{'Cc'} }  = @Cc;
-        @{ $self->{'Bcc'} } = @Bcc;
-    }
-    else {
-        @{ $self->{'To'} }  = grep ( lc $_ ne lc $creator, @To );
-        @{ $self->{'Cc'} }  = grep ( lc $_ ne lc $creator, @Cc );
-        @{ $self->{'Bcc'} } = grep ( lc $_ ne lc $creator, @Bcc );
-    }
+    @{ $self->{'To'} }       = @To;
+    @{ $self->{'Cc'} }       = @Cc;
+    @{ $self->{'Bcc'} }      = @Bcc;
     @{ $self->{'PseudoTo'} } = @PseudoTo;
 
     if ( $arg =~ /\bOtherRecipients\b/ ) {
@@ -159,6 +145,34 @@ sub SetRecipients {
                 Email::Address->parse( $attachment->GetHeader('RT-Send-Bcc') );
         }
     }
+}
+
+=head2 RemoveInappropriateRecipients
+
+Remove transaction creator as appropriate for the NotifyActor setting.
+
+To send email to the selected receipients regardless of RT's NotifyActor
+configuration, include AlwaysNotifyActor in the list of arguments.
+
+=cut
+
+sub RemoveInappropriateRecipients {
+    my $self = shift;
+
+    my $creatorObj = $self->TransactionObj->CreatorObj;
+    my $creator = $creatorObj->EmailAddress() || '';
+    my $TransactionCurrentUser = RT::CurrentUser->new;
+    $TransactionCurrentUser->LoadByName($creatorObj->Name);
+
+    $self->RecipientFilter(
+        Callback => sub {
+            return unless lc $_[0] eq lc $creator;
+            return "not sending to $creator, creator of the transaction, due to NotifyActor setting";
+        },
+    ) unless RT->Config->Get('NotifyActor',$TransactionCurrentUser)
+             || $self->Argument =~ /\bAlwaysNotifyActor\b/;
+
+    $self->SUPER::RemoveInappropriateRecipients();
 }
 
 RT::Base->_ImportOverlays();

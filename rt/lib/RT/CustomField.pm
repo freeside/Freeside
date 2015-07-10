@@ -50,14 +50,18 @@ package RT::CustomField;
 
 use strict;
 use warnings;
+use 5.010;
 
 use Scalar::Util 'blessed';
 
 use base 'RT::Record';
 
+use Role::Basic 'with';
+with "RT::Record::Role::Rights";
+
 sub Table {'CustomFields'}
 
-
+use Scalar::Util qw(blessed);
 use RT::CustomFieldValues;
 use RT::ObjectCustomFields;
 use RT::ObjectCustomFieldValues;
@@ -67,9 +71,9 @@ our %FieldTypes = (
         sort_order => 10,
         selection_type => 1,
 
-        labels => [ 'Select multiple values',      # loc
-                    'Select one value',            # loc
-                    'Select up to [_1] values',    # loc
+        labels => [ 'Select multiple values',               # loc
+                    'Select one value',                     # loc
+                    'Select up to [quant,_1,value,values]', # loc
                   ],
 
         render_types => {
@@ -90,27 +94,27 @@ our %FieldTypes = (
         sort_order => 20,
         selection_type => 0,
 
-        labels => [ 'Enter multiple values',       # loc
-                    'Enter one value',             # loc
-                    'Enter up to [_1] values',     # loc
+        labels => [ 'Enter multiple values',               # loc
+                    'Enter one value',                     # loc
+                    'Enter up to [quant,_1,value,values]', # loc
                   ]
                 },
     Text => {
         sort_order => 30,
         selection_type => 0,
         labels         => [
-                    'Fill in multiple text areas',      # loc
-                    'Fill in one text area',            # loc
-                    'Fill in up to [_1] text areas',    # loc
+                    'Fill in multiple text areas',                   # loc
+                    'Fill in one text area',                         # loc
+                    'Fill in up to [quant,_1,text area,text areas]', # loc
                   ]
             },
     Wikitext => {
         sort_order => 40,
         selection_type => 0,
         labels         => [
-                    'Fill in multiple wikitext areas',      # loc
-                    'Fill in one wikitext area',            # loc
-                    'Fill in up to [_1] wikitext areas',    # loc
+                    'Fill in multiple wikitext areas',                       # loc
+                    'Fill in one wikitext area',                             # loc
+                    'Fill in up to [quant,_1,wikitext area,wikitext areas]', # loc
                   ]
                 },
 
@@ -120,16 +124,16 @@ our %FieldTypes = (
         labels         => [
                     'Upload multiple images',               # loc
                     'Upload one image',                     # loc
-                    'Upload up to [_1] images',             # loc
+                    'Upload up to [quant,_1,image,images]', # loc
                   ]
              },
     Binary => {
         sort_order => 60,
         selection_type => 0,
         labels         => [
-                    'Upload multiple files',                # loc
-                    'Upload one file',                      # loc
-                    'Upload up to [_1] files',              # loc
+                    'Upload multiple files',              # loc
+                    'Upload one file',                    # loc
+                    'Upload up to [quant,_1,file,files]', # loc
                   ]
               },
 
@@ -137,18 +141,18 @@ our %FieldTypes = (
         sort_order => 70,
         selection_type => 1,
         labels         => [
-                    'Combobox: Select or enter multiple values',      # loc
-                    'Combobox: Select or enter one value',            # loc
-                    'Combobox: Select or enter up to [_1] values',    # loc
+                    'Combobox: Select or enter multiple values',               # loc
+                    'Combobox: Select or enter one value',                     # loc
+                    'Combobox: Select or enter up to [quant,_1,value,values]', # loc
                   ]
                 },
     Autocomplete => {
         sort_order => 80,
         selection_type => 1,
         labels         => [
-                    'Enter multiple values with autocompletion',      # loc
-                    'Enter one value with autocompletion',            # loc
-                    'Enter up to [_1] values with autocompletion',    # loc
+                    'Enter multiple values with autocompletion',               # loc
+                    'Enter one value with autocompletion',                     # loc
+                    'Enter up to [quant,_1,value,values] with autocompletion', # loc
                   ]
     },
 
@@ -156,18 +160,18 @@ our %FieldTypes = (
         sort_order => 90,
         selection_type => 0,
         labels         => [
-                    'Select multiple dates',                          # loc
-                    'Select date',                                    # loc
-                    'Select up to [_1] dates',                        # loc
+                    'Select multiple dates',              # loc
+                    'Select date',                        # loc
+                    'Select up to [quant,_1,date,dates]', # loc
                   ]
             },
     DateTime => {
         sort_order => 100,
         selection_type => 0,
         labels         => [
-                    'Select multiple datetimes',                      # loc
-                    'Select datetime',                                # loc
-                    'Select up to [_1] datetimes',                    # loc
+                    'Select multiple datetimes',                  # loc
+                    'Select datetime',                            # loc
+                    'Select up to [quant,_1,datetime,datetimes]', # loc
                   ]
                 },
     TimeValue => {
@@ -184,95 +188,41 @@ our %FieldTypes = (
         sort_order => 110,
         selection_type => 0,
 
-        labels => [ 'Enter multiple IP addresses',       # loc
-                    'Enter one IP address',             # loc
-                    'Enter up to [_1] IP addresses',     # loc
+        labels => [ 'Enter multiple IP addresses',                    # loc
+                    'Enter one IP address',                           # loc
+                    'Enter up to [quant,_1,IP address,IP addresses]', # loc
                   ]
                 },
     IPAddressRange => {
         sort_order => 120,
         selection_type => 0,
 
-        labels => [ 'Enter multiple IP address ranges',       # loc
-                    'Enter one IP address range',             # loc
-                    'Enter up to [_1] IP address ranges',     # loc
+        labels => [ 'Enter multiple IP address ranges',                          # loc
+                    'Enter one IP address range',                                # loc
+                    'Enter up to [quant,_1,IP address range,IP address ranges]', # loc
                   ]
                 },
 );
 
 
-our %FRIENDLY_OBJECT_TYPES =  ();
+my %BUILTIN_GROUPINGS;
+my %FRIENDLY_LOOKUP_TYPES = ();
 
-RT::CustomField->_ForObjectType( 'RT::Queue-RT::Ticket' => "Tickets", );    #loc
-RT::CustomField->_ForObjectType(
-    'RT::Queue-RT::Ticket-RT::Transaction' => "Ticket Transactions", );    #loc
-RT::CustomField->_ForObjectType( 'RT::User'  => "Users", );                           #loc
-RT::CustomField->_ForObjectType( 'RT::Queue'  => "Queues", );                         #loc
-RT::CustomField->_ForObjectType( 'RT::Group' => "Groups", );                          #loc
+__PACKAGE__->RegisterLookupType( 'RT::Queue-RT::Ticket' => "Tickets", );    #loc
+__PACKAGE__->RegisterLookupType( 'RT::Queue-RT::Ticket-RT::Transaction' => "Ticket Transactions", ); #loc
+__PACKAGE__->RegisterLookupType( 'RT::User'  => "Users", );                           #loc
+__PACKAGE__->RegisterLookupType( 'RT::Queue'  => "Queues", );                         #loc
+__PACKAGE__->RegisterLookupType( 'RT::Group' => "Groups", );                          #loc
 
-our $RIGHTS = {
-    SeeCustomField            => 'View custom fields',                                    # loc_pair
-    AdminCustomField          => 'Create, modify and delete custom fields',               # loc_pair
-    AdminCustomFieldValues    => 'Create, modify and delete custom fields values',        # loc_pair
-    ModifyCustomField         => 'Add, modify and delete custom field values for objects' # loc_pair
-};
+__PACKAGE__->RegisterBuiltInGroupings(
+    'RT::Ticket'    => [ qw(Basics Dates Links People) ],
+    'RT::User'      => [ 'Identity', 'Access control', 'Location', 'Phones' ],
+);
 
-our $RIGHT_CATEGORIES = {
-    SeeCustomField          => 'General',
-    AdminCustomField        => 'Admin',
-    AdminCustomFieldValues  => 'Admin',
-    ModifyCustomField       => 'Staff',
-};
-
-# Tell RT::ACE that this sort of object can get acls granted
-$RT::ACE::OBJECT_TYPES{'RT::CustomField'} = 1;
-
-__PACKAGE__->AddRights(%$RIGHTS);
-__PACKAGE__->AddRightCategories(%$RIGHT_CATEGORIES);
-
-=head2 AddRights C<RIGHT>, C<DESCRIPTION> [, ...]
-
-Adds the given rights to the list of possible rights.  This method
-should be called during server startup, not at runtime.
-
-=cut
-
-sub AddRights {
-    my $self = shift;
-    my %new = @_;
-    $RIGHTS = { %$RIGHTS, %new };
-    %RT::ACE::LOWERCASERIGHTNAMES = ( %RT::ACE::LOWERCASERIGHTNAMES,
-                                      map { lc($_) => $_ } keys %new);
-}
-
-sub AvailableRights {
-    my $self = shift;
-    return $RIGHTS;
-}
-
-=head2 RightCategories
-
-Returns a hashref where the keys are rights for this type of object and the
-values are the category (General, Staff, Admin) the right falls into.
-
-=cut
-
-sub RightCategories {
-    return $RIGHT_CATEGORIES;
-}
-
-=head2 AddRightCategories C<RIGHT>, C<CATEGORY> [, ...]
-
-Adds the given right and category pairs to the list of right categories.  This
-method should be called during server startup, not at runtime.
-
-=cut
-
-sub AddRightCategories {
-    my $self = shift if ref $_[0] or $_[0] eq __PACKAGE__;
-    my %new = @_;
-    $RIGHT_CATEGORIES = { %$RIGHT_CATEGORIES, %new };
-}
+__PACKAGE__->AddRight( General => SeeCustomField         => 'View custom fields'); # loc
+__PACKAGE__->AddRight( Admin   => AdminCustomField       => 'Create, modify and delete custom fields'); # loc
+__PACKAGE__->AddRight( Admin   => AdminCustomFieldValues => 'Create, modify and delete custom fields values'); # loc
+__PACKAGE__->AddRight( Staff   => ModifyCustomField      => 'Add, modify and delete custom field values for objects'); # loc
 
 =head1 NAME
 
@@ -290,7 +240,6 @@ Create takes a hash of values and creates a row in the database:
   varchar(200) 'Type'.
   int(11) 'MaxValues'.
   varchar(255) 'Pattern'.
-  smallint(6) 'Repeated'.
   varchar(255) 'Description'.
   int(11) 'SortOrder'.
   varchar(255) 'LookupType'.
@@ -311,7 +260,6 @@ sub Create {
         Description => '',
         Disabled    => 0,
         LookupType  => '',
-        Repeated    => 0,
         LinkValueTo => '',
         IncludeContentForValue => '',
         @_,
@@ -383,6 +331,8 @@ sub Create {
         }
     }
 
+    $args{'Disabled'} ||= 0;
+
     (my $rv, $msg) = $self->SUPER::Create(
         Name        => $args{'Name'},
         Type        => $args{'Type'},
@@ -394,7 +344,6 @@ sub Create {
         Description => $args{'Description'},
         Disabled    => $args{'Disabled'},
         LookupType  => $args{'LookupType'},
-        Repeated    => $args{'Repeated'},
     );
 
     if ($rv) {
@@ -446,20 +395,58 @@ sub Load {
 
 
 
-=head2 LoadByName (Queue => QUEUEID, Name => NAME)
+=head2 LoadByName Name => C<NAME>, [...]
 
-Loads the Custom field named NAME.
+Loads the Custom field named NAME.  As other optional parameters, takes:
 
-Will load a Disabled Custom Field even if there is a non-disabled Custom Field
-with the same Name.
+=over
 
-If a Queue parameter is specified, only look for ticket custom fields tied to that Queue.
+=item LookupType => C<LOOKUPTYPE>
 
-If the Queue parameter is '0', look for global ticket custom fields.
+The type of Custom Field to look for; while this parameter is not
+required, it is highly suggested, or you may not find the Custom Field
+you are expecting.  It should be passed a C<LookupType> such as
+L<RT::Ticket/CustomFieldLookupType> or
+L<RT::User/CustomFieldLookupType>.
 
-If no queue parameter is specified, look for any and all custom fields with this name.
+=item ObjectType => C<CLASS>
 
-BUG/TODO, this won't let you specify that you only want user or group CFs.
+The class of object that the custom field is applied to.  This can be
+intuited from the provided C<LookupType>.
+
+=item ObjectId => C<ID>
+
+limits the custom field search to one applied to the relevant id.  For
+example, if a C<LookupType> of C<< RT::Ticket->CustomFieldLookupType >>
+is used, this is which Queue the CF must be applied to.  Pass 0 to only
+search custom fields that are applied globally.
+
+=item IncludeDisabled => C<BOOLEAN>
+
+Whether it should return Disabled custom fields if they match; defaults
+to on, though non-Disabled custom fields are returned preferentially.
+
+=item IncludeGlobal => C<BOOLEAN>
+
+Whether to also search global custom fields, even if a value is provided
+for C<ObjectId>; defaults to off.  Non-global custom fields are returned
+preferentially.
+
+=back
+
+For backwards compatibility, a value passed for C<Queue> is equivalent
+to specifying a C<LookupType> of L<RT::Ticket/CustomFieldLookupType>,
+and a C<ObjectId> of the value passed as C<Queue>.
+
+If multiple custom fields match the above constraints, the first
+according to C<SortOrder> will be returned; ties are broken by C<id>,
+lowest-first.
+
+=head2 LoadNameAndQueue
+
+=head2 LoadByNameAndQueue
+
+Deprecated alternate names for L</LoadByName>.
 
 =cut
 
@@ -471,8 +458,17 @@ BUG/TODO, this won't let you specify that you only want user or group CFs.
 sub LoadByName {
     my $self = shift;
     my %args = (
+        Name       => undef,
+        LookupType => undef,
+        ObjectType => undef,
+        ObjectId   => undef,
+
+        IncludeDisabled => 1,
+        IncludeGlobal   => 0,
+
+        # Back-compat
         Queue => undef,
-        Name  => undef,
+
         @_,
     );
 
@@ -481,33 +477,116 @@ sub LoadByName {
         return wantarray ? (0, $self->loc("No name provided")) : 0;
     }
 
-    # if we're looking for a queue by name, make it a number
-    if ( defined $args{'Queue'} && ($args{'Queue'} =~ /\D/ || !$self->ContextObject) ) {
-        my $QueueObj = RT::Queue->new( $self->CurrentUser );
-        $QueueObj->Load( $args{'Queue'} );
-        $args{'Queue'} = $QueueObj->Id;
-        $self->SetContextObject( $QueueObj )
-            unless $self->ContextObject;
+    if ( defined $args{'Queue'} ) {
+        # Set a LookupType for backcompat, otherwise we'll calculate
+        # one of RT::Queue from your ContextObj.  Older code was relying
+        # on us defaulting to RT::Queue-RT::Ticket in old LimitToQueue call.
+        $args{LookupType} ||= 'RT::Queue-RT::Ticket';
+        $args{ObjectId}   //= delete $args{Queue};
     }
 
-    # XXX - really naive implementation.  Slow. - not really. still just one query
+    # Default the ObjectType to the top category of the LookupType; it's
+    # what the CFs are assigned on.
+    $args{ObjectType} ||= $1 if $args{LookupType} and $args{LookupType} =~ /^([^-]+)/;
+
+    # Resolve the ObjectId/ObjectType; this is necessary to properly
+    # limit ObjectId, and also possibly useful to set a ContextObj if we
+    # are currently lacking one.  It is not strictly necessary if we
+    # have a context object and were passed a numeric ObjectId, but it
+    # cannot hurt to verify its sanity.  Skip if we have a false
+    # ObjectId, which means "global", or if we lack an ObjectType
+    if ($args{ObjectId} and $args{ObjectType}) {
+        my ($obj, $ok, $msg);
+        eval {
+            $obj = $args{ObjectType}->new( $self->CurrentUser );
+            ($ok, $msg) = $obj->Load( $args{ObjectId} );
+        };
+
+        if ($ok) {
+            $args{ObjectId} = $obj->id;
+            $self->SetContextObject( $obj )
+                unless $self->ContextObject;
+        } else {
+            $RT::Logger->warning("Failed to load $args{ObjectType} '$args{ObjectId}'");
+            if ($args{IncludeGlobal}) {
+                # Fall back to acting like we were only asked about the
+                # global case
+                $args{ObjectId} = 0;
+            } else {
+                # If they didn't also want global results, there's no
+                # point in searching; abort
+                return wantarray ? (0, $self->loc("Not found")) : 0;
+            }
+        }
+    } elsif (not $args{ObjectType} and $args{ObjectId}) {
+        # If we skipped out on the above due to lack of ObjectType, make
+        # sure we clear out ObjectId of anything lingering
+        $RT::Logger->warning("No LookupType or ObjectType passed; ignoring ObjectId");
+        delete $args{ObjectId};
+    }
 
     my $CFs = RT::CustomFields->new( $self->CurrentUser );
     $CFs->SetContextObject( $self->ContextObject );
     my $field = $args{'Name'} =~ /\D/? 'Name' : 'id';
     $CFs->Limit( FIELD => $field, VALUE => $args{'Name'}, CASESENSITIVE => 0);
-    # Don't limit to queue if queue is 0.  Trying to do so breaks
-    # RT::Group type CFs.
-    if ( defined $args{'Queue'} ) {
-        $CFs->LimitToQueue( $args{'Queue'} );
+
+    # The context object may be a ticket, for example, as context for a
+    # queue CF.  The valid lookup types are thus the entire set of
+    # ACLEquivalenceObjects for the context object.
+    $args{LookupType} ||= [
+        map {$_->CustomFieldLookupType}
+            ($self->ContextObject, $self->ContextObject->ACLEquivalenceObjects) ]
+        if $self->ContextObject;
+
+    # Apply LookupType limits
+    $args{LookupType} = [ $args{LookupType} ]
+        if $args{LookupType} and not ref($args{LookupType});
+    $CFs->Limit( FIELD => "LookupType", OPERATOR => "IN", VALUE => $args{LookupType} )
+        if $args{LookupType};
+
+    # Default to by SortOrder and id; this mirrors the standard ordering
+    # of RT::CustomFields (minus the Name, which is guaranteed to be
+    # fixed)
+    my @order = (
+        { FIELD => 'SortOrder',
+          ORDER => 'ASC' },
+        { FIELD => 'id',
+          ORDER => 'ASC' },
+    );
+
+    if (defined $args{ObjectId}) {
+        # The join to OCFs is distinct -- either we have a global
+        # application or an objectid match, but never both.  Even if
+        # this were not the case, we care only for the first row.
+        my $ocfs = $CFs->_OCFAlias( Distinct => 1);
+        if ($args{IncludeGlobal}) {
+            $CFs->Limit(
+                ALIAS    => $ocfs,
+                FIELD    => 'ObjectId',
+                OPERATOR => 'IN',
+                VALUE    => [ $args{ObjectId}, 0 ],
+            );
+            # Find the queue-specific first
+            unshift @order, { ALIAS => $ocfs, FIELD => "ObjectId", ORDER => "DESC" };
+        } else {
+            $CFs->Limit(
+                ALIAS => $ocfs,
+                FIELD => 'ObjectId',
+                VALUE => $args{ObjectId},
+            );
+        }
     }
 
-    # When loading by name, we _can_ load disabled fields, but prefer
-    # non-disabled fields.
-    $CFs->FindAllRows;
-    $CFs->OrderByCols(
-        { FIELD => "Disabled", ORDER => 'ASC' },
-    );
+    if ($args{IncludeDisabled}) {
+        # Load disabled fields, but return them only as a last resort.
+        # This goes at the front of @order, as we prefer the
+        # non-disabled global CF to the disabled Queue-specific CF.
+        $CFs->FindAllRows;
+        unshift @order, { FIELD => "Disabled", ORDER => 'ASC' };
+    }
+
+    # Apply the above orderings
+    $CFs->OrderByCols( @order );
 
     # We only want one entry.
     $CFs->RowsPerPage(1);
@@ -539,9 +618,10 @@ sub Values {
 
     my $class = $self->ValuesClass;
     if ( $class ne 'RT::CustomFieldValues') {
-        eval "require $class" or die "$@";
+        $class->require or die "Can't load $class: $@";
     }
     my $cf_values = $class->new( $self->CurrentUser );
+    $cf_values->SetCustomFieldObject( $self );
     # if the user has no rights, return an empty object
     if ( $self->id && $self->CurrentUserHasRight( 'SeeCustomField') ) {
         $cf_values->LimitToCustomField( $self->Id );
@@ -758,7 +838,11 @@ sub ValidateType {
     my $type = shift;
 
     if ( $type =~ s/(?:Single|Multiple)$// ) {
-        $RT::Logger->warning( "Prefix 'Single' and 'Multiple' to Type deprecated, use MaxValues instead at (". join(":",caller).")");
+        RT->Deprecated(
+            Arguments => "suffix 'Single' or 'Multiple'",
+            Instead   => "MaxValues",
+            Remove    => "4.4",
+        );
     }
 
     if ( $FieldTypes{$type} ) {
@@ -774,7 +858,11 @@ sub SetType {
     my $self = shift;
     my $type = shift;
     if ($type =~ s/(?:(Single)|Multiple)$//) {
-        $RT::Logger->warning("'Single' and 'Multiple' on SetType deprecated, use SetMaxValues instead at (". join(":",caller).")");
+        RT->Deprecated(
+            Arguments => "suffix 'Single' or 'Multiple'",
+            Instead   => "MaxValues",
+            Remove    => "4.4",
+        );
         $self->SetMaxValues($1 ? 1 : 0);
     }
     $self->_Set(Field => 'Type', Value =>$type);
@@ -854,22 +942,6 @@ sub UnlimitedValues {
 }
 
 
-=head2 CurrentUserHasRight RIGHT
-
-Helper function to call the custom field's queue's CurrentUserHasRight with the passed in args.
-
-=cut
-
-sub CurrentUserHasRight {
-    my $self  = shift;
-    my $right = shift;
-
-    return $self->CurrentUser->HasRight(
-        Object => $self,
-        Right  => $right,
-    );
-}
-
 =head2 ACLEquivalenceObjects
 
 Returns list of objects via which users can get rights on this custom field. For custom fields
@@ -887,9 +959,10 @@ sub ACLEquivalenceObjects {
 
 =head2 ContextObject and SetContextObject
 
-Set or get a context for this object. It can be ticket, queue or another object
-this CF applies to. Used for ACL control, for example SeeCustomField can be granted on
-queue level to allow people to see all fields applied to the queue.
+Set or get a context for this object. It can be ticket, queue or another
+object this CF added to. Used for ACL control, for example
+SeeCustomField can be granted on queue level to allow people to see all
+fields added to the queue.
 
 =cut
 
@@ -944,12 +1017,13 @@ sub LoadContextObject {
 
 =head2 ValidateContextObject
 
-Ensure that a given ContextObject applies to this Custom Field.
-For custom fields that are assigned to Queues or to Classes, this checks that the Custom
-Field is actually applied to that objects.  For Global Custom Fields, it returns true
-as long as the Object is of the right type, because you may be using
-your permissions on a given Queue of Class to see a Global CF.
-For CFs that are only applied Globally, you don't need a ContextObject.
+Ensure that a given ContextObject applies to this Custom Field.  For
+custom fields that are assigned to Queues or to Classes, this checks
+that the Custom Field is actually added to that object.  For Global
+Custom Fields, it returns true as long as the Object is of the right
+type, because you may be using your permissions on a given Queue of
+Class to see a Global CF.  For CFs that are only added globally, you
+don't need a ContextObject.
 
 =cut
 
@@ -957,22 +1031,21 @@ sub ValidateContextObject {
     my $self = shift;
     my $object = shift;
 
-    return 1 if $self->IsApplied(0);
+    return 1 if $self->IsGlobal;
 
     # global only custom fields don't have objects
     # that should be used as context objects.
-    return if $self->ApplyGlobally;
+    return if $self->IsOnlyGlobal;
 
     # Otherwise, make sure we weren't passed a user object that we're
     # supposed to treat as a queue.
     return unless $self->ValidContextType(ref $object);
 
-    # Check that it is applied correctly
-    my ($applied_to) = grep {ref($_) eq $self->RecordClassFromLookupType} ($object, $object->ACLEquivalenceObjects);
-    return unless $applied_to;
-    return $self->IsApplied($applied_to->id);
+    # Check that it is added correctly
+    my ($added_to) = grep {ref($_) eq $self->RecordClassFromLookupType} ($object, $object->ACLEquivalenceObjects);
+    return unless $added_to;
+    return $self->IsAdded($added_to->id);
 }
-
 
 sub _Set {
     my $self = shift;
@@ -1172,9 +1245,7 @@ sub SetLookupType {
     my $lookup = shift;
     if ( $lookup ne $self->LookupType ) {
         # Okay... We need to invalidate our existing relationships
-        my $ObjectCustomFields = RT::ObjectCustomFields->new($self->CurrentUser);
-        $ObjectCustomFields->LimitToCustomField($self->Id);
-        $_->Delete foreach @{$ObjectCustomFields->ItemsArrayRef};
+        RT::ObjectCustomField->new($self->CurrentUser)->DeleteAll( CustomField => $self );
     }
     return $self->_Set(Field => 'LookupType', Value =>$lookup);
 }
@@ -1188,14 +1259,8 @@ Returns an array of LookupTypes available
 
 sub LookupTypes {
     my $self = shift;
-    return sort keys %FRIENDLY_OBJECT_TYPES;
+    return sort keys %FRIENDLY_LOOKUP_TYPES;
 }
-
-my @FriendlyObjectTypes = (
-    "[_1] objects",            # loc
-    "[_1]'s [_2] objects",        # loc
-    "[_1]'s [_2]'s [_3] objects",   # loc
-);
 
 =head2 FriendlyLookupType
 
@@ -1206,15 +1271,21 @@ Returns a localized description of the type of this custom field
 sub FriendlyLookupType {
     my $self = shift;
     my $lookup = shift || $self->LookupType;
-   
-    return ($self->loc( $FRIENDLY_OBJECT_TYPES{$lookup} ))
-                     if (defined  $FRIENDLY_OBJECT_TYPES{$lookup} );
+
+    return ($self->loc( $FRIENDLY_LOOKUP_TYPES{$lookup} ))
+        if defined $FRIENDLY_LOOKUP_TYPES{$lookup};
 
     my @types = map { s/^RT::// ? $self->loc($_) : $_ }
       grep { defined and length }
       split( /-/, $lookup )
       or return;
-    return ( $self->loc( $FriendlyObjectTypes[$#types], @types ) );
+
+    state $LocStrings = [
+        "[_1] objects",            # loc
+        "[_1]'s [_2] objects",        # loc
+        "[_1]'s [_2]'s [_3] objects",   # loc
+    ];
+    return ( $self->loc( $LocStrings->[$#types], @types ) );
 }
 
 =head1 RecordClassFromLookupType
@@ -1293,118 +1364,210 @@ sub CollectionClassFromLookupType {
     return $collection_class;
 }
 
-=head1 ApplyGlobally
+=head2 Groupings
 
-Certain custom fields (users, groups) should only be applied globally
-but rather than regexing in code for LookupType =~ RT::Queue, we'll codify
-the rules here.
+Returns a (sorted and lowercased) list of the groupings in which this custom
+field appears.
+
+If called on a loaded object, the returned list is limited to groupings which
+apply to the record class this CF applies to (L</RecordClassFromLookupType>).
+
+If passed a loaded object or a class name, the returned list is limited to
+groupings which apply to the class of the object or the specified class.
+
+If called on an unloaded object, all potential groupings are returned.
 
 =cut
 
-sub ApplyGlobally {
+sub Groupings {
+    my $self = shift;
+    my $record_class = $self->_GroupingClass(shift);
+
+    my $config = RT->Config->Get('CustomFieldGroupings');
+       $config = {} unless ref($config) eq 'HASH';
+
+    my @groups;
+    if ( $record_class ) {
+        push @groups, sort {lc($a) cmp lc($b)} keys %{ $BUILTIN_GROUPINGS{$record_class} || {} };
+        if ( ref($config->{$record_class} ||= []) eq "ARRAY") {
+            my @order = @{ $config->{$record_class} };
+            while (@order) {
+                push @groups, shift(@order);
+                shift(@order);
+            }
+        } else {
+            @groups = sort {lc($a) cmp lc($b)} keys %{ $config->{$record_class} };
+        }
+    } else {
+        my %all = (%$config, %BUILTIN_GROUPINGS);
+        @groups = sort {lc($a) cmp lc($b)} map {$self->Groupings($_)} grep {$_} keys(%all);
+    }
+
+    my %seen;
+    return
+        grep defined && length && !$seen{lc $_}++,
+        @groups;
+}
+
+=head2 CustomGroupings
+
+Identical to L</Groupings> but filters out built-in groupings from the the
+returned list.
+
+=cut
+
+sub CustomGroupings {
+    my $self = shift;
+    my $record_class = $self->_GroupingClass(shift);
+    return grep !$BUILTIN_GROUPINGS{$record_class}{$_}, $self->Groupings( $record_class );
+}
+
+sub _GroupingClass {
+    my $self    = shift;
+    my $record  = shift;
+
+    my $record_class = ref($record) || $record || '';
+    $record_class = $self->RecordClassFromLookupType
+        if !$record_class and blessed($self) and $self->id;
+
+    return $record_class;
+}
+
+=head2 RegisterBuiltInGroupings
+
+Registers groupings to be considered a fundamental part of RT, either via use
+in core RT or via an extension.  These groupings must be rendered explicitly in
+Mason by specific calls to F</Elements/ShowCustomFields> and
+F</Elements/EditCustomFields>.  They will not show up automatically on normal
+display pages like configured custom groupings.
+
+Takes a set of key-value pairs of class names (valid L<RT::Record> subclasses)
+and array refs of grouping names to consider built-in.
+
+If a class already contains built-in groupings (such as L<RT::Ticket> and
+L<RT::User>), new groupings are appended.
+
+=cut
+
+sub RegisterBuiltInGroupings {
+    my $self = shift;
+    my %new  = @_;
+
+    while (my ($k,$v) = each %new) {
+        $v = [$v] unless ref($v) eq 'ARRAY';
+        $BUILTIN_GROUPINGS{$k} = {
+            %{$BUILTIN_GROUPINGS{$k} || {}},
+            map { $_ => 1 } @$v
+        };
+    }
+    $BUILTIN_GROUPINGS{''} = { map { %$_ } values %BUILTIN_GROUPINGS  };
+}
+
+=head1 IsOnlyGlobal
+
+Certain custom fields (users, groups) should only be added globally;
+codify that set here for reference.
+
+=cut
+
+sub IsOnlyGlobal {
     my $self = shift;
 
     return ($self->LookupType =~ /^RT::(?:Group|User)/io);
 
 }
+sub ApplyGlobally {
+    RT->Deprecated(
+        Instead   => "IsOnlyGlobal",
+        Remove    => "4.4",
+    );
+    return shift->IsOnlyGlobal(@_);
+}
 
-=head1 AppliedTo
+=head1 AddedTo
 
-Returns collection with objects this custom field is applied to.
+Returns collection with objects this custom field is added to.
 Class of the collection depends on L</LookupType>.
-See all L</NotAppliedTo> .
+See all L</NotAddedTo> .
 
-Doesn't takes into account if object is applied globally.
+Doesn't takes into account if object is added globally.
 
 =cut
 
+sub AddedTo {
+    my $self = shift;
+    return RT::ObjectCustomField->new( $self->CurrentUser )
+        ->AddedTo( CustomField => $self );
+}
 sub AppliedTo {
-    my $self = shift;
-
-    my ($res, $ocfs_alias) = $self->_AppliedTo;
-    return $res unless $res;
-
-    $res->Limit(
-        ALIAS     => $ocfs_alias,
-        FIELD     => 'id',
-        OPERATOR  => 'IS NOT',
-        VALUE     => 'NULL',
+    RT->Deprecated(
+        Instead   => "AddedTo",
+        Remove    => "4.4",
     );
+    shift->AddedTo(@_);
+};
 
-    return $res;
-}
+=head1 NotAddedTo
 
-=head1 NotAppliedTo
-
-Returns collection with objects this custom field is not applied to.
+Returns collection with objects this custom field is not added to.
 Class of the collection depends on L</LookupType>.
-See all L</AppliedTo> .
+See all L</AddedTo> .
 
-Doesn't takes into account if object is applied globally.
+Doesn't take into account if the object is added globally.
 
 =cut
 
+sub NotAddedTo {
+    my $self = shift;
+    return RT::ObjectCustomField->new( $self->CurrentUser )
+        ->NotAddedTo( CustomField => $self );
+}
 sub NotAppliedTo {
-    my $self = shift;
-
-    my ($res, $ocfs_alias) = $self->_AppliedTo;
-    return $res unless $res;
-
-    $res->Limit(
-        ALIAS     => $ocfs_alias,
-        FIELD     => 'id',
-        OPERATOR  => 'IS',
-        VALUE     => 'NULL',
+    RT->Deprecated(
+        Instead   => "NotAddedTo",
+        Remove    => "4.4",
     );
+    shift->NotAddedTo(@_)
+};
 
-    return $res;
-}
-
-sub _AppliedTo {
-    my $self = shift;
-
-    my ($class) = $self->CollectionClassFromLookupType;
-    return undef unless $class;
-
-    my $res = $class->new( $self->CurrentUser );
-
-    # If CF is a Group CF, only display user-defined groups
-    if ( $class eq 'RT::Groups' ) {
-        $res->LimitToUserDefinedGroups;
-    }
-
-    $res->OrderBy( FIELD => 'Name' );
-    my $ocfs_alias = $res->Join(
-        TYPE   => 'LEFT',
-        ALIAS1 => 'main',
-        FIELD1 => 'id',
-        TABLE2 => 'ObjectCustomFields',
-        FIELD2 => 'ObjectId',
-    );
-    $res->Limit(
-        LEFTJOIN => $ocfs_alias,
-        ALIAS    => $ocfs_alias,
-        FIELD    => 'CustomField',
-        VALUE    => $self->id,
-    );
-    return ($res, $ocfs_alias);
-}
-
-=head2 IsApplied
+=head2 IsAdded
 
 Takes object id and returns corresponding L<RT::ObjectCustomField>
-record if this custom field is applied to the object. Use 0 to check
-if custom field is applied globally.
+record if this custom field is added to the object. Use 0 to check
+if custom field is added globally.
 
 =cut
 
-sub IsApplied {
+sub IsAdded {
     my $self = shift;
     my $id = shift;
     my $ocf = RT::ObjectCustomField->new( $self->CurrentUser );
     $ocf->LoadByCols( CustomField => $self->id, ObjectId => $id || 0 );
     return undef unless $ocf->id;
     return $ocf;
+}
+sub IsApplied {
+    RT->Deprecated(
+        Instead   => "IsAdded",
+        Remove    => "4.4",
+    );
+    shift->IsAdded(@_);
+};
+
+sub IsGlobal { return shift->IsAdded(0) }
+
+=head2 IsAddedToAny
+
+Returns true if custom field is applied to any object.
+
+=cut
+
+sub IsAddedToAny {
+    my $self = shift;
+    my $id = shift;
+    my $ocf = RT::ObjectCustomField->new( $self->CurrentUser );
+    $ocf->LoadByCols( CustomField => $self->id );
+    return $ocf->id ? 1 : 0;
 }
 
 =head2 AddToObject OBJECT
@@ -1414,7 +1577,6 @@ Add this custom field as a custom field for a single object, such as a queue or 
 Takes an object 
 
 =cut
-
 
 sub AddToObject {
     my $self  = shift;
@@ -1429,26 +1591,9 @@ sub AddToObject {
         return ( 0, $self->loc('Permission Denied') );
     }
 
-    if ( $self->IsApplied( $id ) ) {
-        return ( 0, $self->loc("Custom field is already applied to the object") );
-    }
-
-    if ( $id ) {
-        # applying locally
-        return (0, $self->loc("Couldn't apply custom field to an object as it's global already") )
-            if $self->IsApplied( 0 );
-    }
-    else {
-        my $applied = RT::ObjectCustomFields->new( $self->CurrentUser );
-        $applied->LimitToCustomField( $self->id );
-        while ( my $record = $applied->Next ) {
-            $record->Delete;
-        }
-    }
-
     my $ocf = RT::ObjectCustomField->new( $self->CurrentUser );
-    my ( $oid, $msg ) = $ocf->Create(
-        ObjectId => $id, CustomField => $self->id,
+    my ( $oid, $msg ) = $ocf->Add(
+        CustomField => $self->id, ObjectId => $id,
     );
     return ( $oid, $msg );
 }
@@ -1475,9 +1620,9 @@ sub RemoveFromObject {
         return ( 0, $self->loc('Permission Denied') );
     }
 
-    my $ocf = $self->IsApplied( $id );
+    my $ocf = $self->IsAdded( $id );
     unless ( $ocf ) {
-        return ( 0, $self->loc("This custom field does not apply to that object") );
+        return ( 0, $self->loc("This custom field cannot be added to that object") );
     }
 
     # XXX: Delete doesn't return anything
@@ -1749,9 +1894,10 @@ sub ValuesForObject {
 }
 
 
-=head2 _ForObjectType PATH FRIENDLYNAME
+=head2 RegisterLookupType LOOKUPTYPE FRIENDLYNAME
 
-Tell RT that a certain object accepts custom fields
+Tell RT that a certain object accepts custom fields via a lookup type and
+provide a friendly name for such CFs.
 
 Examples:
 
@@ -1765,13 +1911,21 @@ This is a class method.
 
 =cut
 
-sub _ForObjectType {
+sub RegisterLookupType {
     my $self = shift;
     my $path = shift;
     my $friendly_name = shift;
 
-    $FRIENDLY_OBJECT_TYPES{$path} = $friendly_name;
+    $FRIENDLY_LOOKUP_TYPES{$path} = $friendly_name;
+}
 
+sub _ForObjectType {
+    RT->Deprecated(
+        Instead => 'RegisterLookupType',
+        Remove  => '4.4',
+    );
+    my $self = shift;
+    $self->RegisterLookupType(@_);
 }
 
 
@@ -1831,18 +1985,20 @@ sub _URLTemplate {
         unless ( $self->CurrentUserHasRight('AdminCustomField') ) {
             return ( 0, $self->loc('Permission Denied') );
         }
-        $self->SetAttribute( Name => $template_name, Content => $value );
+        if (length $value and defined $value) {
+            $self->SetAttribute( Name => $template_name, Content => $value );
+        } else {
+            $self->DeleteAttribute( $template_name );
+        }
         return ( 1, $self->loc('Updated') );
     } else {
         unless ( $self->id && $self->CurrentUserHasRight('SeeCustomField') ) {
             return (undef);
         }
 
-        my @attr = $self->Attributes->Named($template_name);
-        my $attr = shift @attr;
-
-        if ($attr) { return $attr->Content }
-
+        my ($attr) = $self->Attributes->Named($template_name);
+        return undef unless $attr;
+        return $attr->Content;
     }
 }
 
@@ -1857,7 +2013,7 @@ sub SetBasedOn {
     $cf->SetContextObject( $self->ContextObject );
     $cf->Load( ref $value ? $value->id : $value );
 
-    return (0, "Permission denied")
+    return (0, "Permission Denied")
         unless $cf->id && $cf->CurrentUserHasRight('SeeCustomField');
 
     # XXX: Remove this restriction once we support lists and cascaded selects
@@ -2011,24 +2167,6 @@ Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
 =cut
 
 
-=head2 Repeated
-
-Returns the current value of Repeated. 
-(In the database, Repeated is stored as smallint(6).)
-
-
-
-=head2 SetRepeated VALUE
-
-
-Set Repeated to VALUE. 
-Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
-(In the database, Repeated will be stored as a smallint(6).)
-
-
-=cut
-
-
 =head2 BasedOn
 
 Returns the current value of BasedOn. 
@@ -2171,8 +2309,6 @@ sub _CoreAccessible {
         {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Pattern => 
         {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'text', default => ''},
-        Repeated => 
-        {read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => '0'},
         ValuesClass => 
         {read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
         BasedOn => 
@@ -2197,6 +2333,48 @@ sub _CoreAccessible {
  }
 };
 
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->BasedOnObj )
+        if $self->BasedOnObj->id;
+
+    my $applied = RT::ObjectCustomFields->new( $self->CurrentUser );
+    $applied->LimitToCustomField( $self->id );
+    $deps->Add( in => $applied );
+
+    $deps->Add( in => $self->Values ) if $self->ValuesClass eq "RT::CustomFieldValues";
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# Custom field values
+    push( @$list, $self->Values );
+
+# Ticket custom field values
+    my $objs = RT::ObjectCustomFieldValues->new( $self->CurrentUser );
+    $objs->LimitToCustomField( $self->Id );
+    push( @$list, $objs );
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+    return $self->SUPER::__DependsOn( %args );
+}
 
 RT::Base->_ImportOverlays();
 

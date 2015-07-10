@@ -68,10 +68,9 @@ package RT::Attributes;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::Attribute;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'Attributes'}
 
@@ -140,23 +139,6 @@ sub Named {
     return (@attributes);   
 }
 
-=head2 WithId ID
-
-Returns the RT::Attribute objects with the id ID
-
-XXX TODO XXX THIS NEEDS A BETTER ACL CHECK
-
-=cut
-
-sub WithId {
-    my $self = shift;
-    my $id = shift;
-
-    my $attr = RT::Attribute->new($self->CurrentUser);
-    $attr->LoadByCols( id => $id );
-    return($attr);
-}
-
 =head2 DeleteEntry { Name =>   Content => , id => }
 
 Deletes attributes with
@@ -218,18 +200,6 @@ sub LimitToObject {
 
 }
 
-
-
-=head2 NewItem
-
-Returns an empty new RT::Attribute item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Attribute->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

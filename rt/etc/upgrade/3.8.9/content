@@ -1,7 +1,9 @@
-@Initial = (
+use strict;
+use warnings;
+
+our @Initial = (
     sub {
-        use strict;
-        $RT::Logger->debug('Make sure local links are local');
+        RT->Logger->debug('Make sure local links are local');
 
         use RT::URI::fsck_com_rt;
         my $prefix = RT::URI::fsck_com_rt->LocalURIPrefix . '/ticket/';
@@ -53,7 +55,7 @@
 
             # there is only one OwnerObj->Name normally, so no need /g
             if ( $content =~
-s!(?<=Your ticket has been (?:approved|rejected) by { eval { )\$Approval->OwnerObj->Name!\$Approver->Name!
+s!(?<=Your ticket has been (?:approved|rejected) by \{ eval \{ )\$Approval->OwnerObj->Name!\$Approver->Name!
               )
             {
                 $template->SetType('Perl');

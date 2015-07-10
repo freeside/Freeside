@@ -68,28 +68,59 @@
 </tr>
 <tr>
 <td>&nbsp;</td>
-<td><input type="checkbox" name="Enabled" value="1" <%$EnabledChecked%>> <&|/l&>Enabled (Unchecking this box disables this class)</&></td>
+<td>
+    <input type="checkbox" id="Enabled" name="Enabled" value="1" <%$EnabledChecked%>>
+    <label for="Enabled"><&|/l&>Enabled (Unchecking this box disables this class)</&></label>
+</td>
 </tr>
 <tr>
 <td>&nbsp;</td>
-<td><input type="checkbox" name="HotList" value="1" <%$HotListChecked%>> <&|/l&>All Articles in this class should be listed in a dropdown of the ticket reply page</&></td>
+<td>
+    <input type="checkbox" id="HotList" name="HotList" value="1" <%$HotListChecked%>>
+    <label for="HotList"><&|/l&>All Articles in this class should be listed in a dropdown of the ticket reply page</&></label>
+</td>
 </tr>
 </table>
 
-<h3>When inserting articles in this class into emails:</h3>
+<h3><&|/l&>When inserting articles in this class into emails:</&></h3>
 <ul>
-<li><input type="checkbox" name="Include-Name" value="1" <% $include{Name} %>> Include article name</li>
-<li><input type="checkbox" name="Include-Summary" value="1" <% $include{Summary} %>> Include article summary</li>
+<li>
+    <input type="checkbox" id="Include-Name" name="Include-Name" value="1" <% $include{Name} %>>
+    <label for="Include-Name"><&|/l&>Include article name</&></label>
+</li>
+<li>
+    <input type="checkbox" id="Include-Summary" name="Include-Summary" value="1" <% $include{Summary} %>>
+    <label for="Include-Summary"><&|/l&>Include article summary</&></label>
+</li>
 % if ( $cfs ) {
 % while (my $cf = $cfs->Next) {
-<li>Include custom field '<% $cf->Name %>'
+<li><&|/l, $cf->Name &>Include custom field '[_1]'</&>
   <ul>
-    <li><input type="checkbox" name="Include-CF-Title-<% $cf->Id %>" <% $include{"CF-Title-".$cf->Id} %> />Title</li>
-    <li><input type="checkbox" name="Include-CF-Value-<% $cf->Id %>" <% $include{"CF-Value-".$cf->Id} %> />Value</li>
+    <li>
+        <input type="checkbox" id="Include-CF-Title-<% $cf->Id %>" name="Include-CF-Title-<% $cf->Id %>" <% $include{"CF-Title-".$cf->Id} %> />
+        <label for="Include-CF-Title-<% $cf->Id %>"><&|/l&>Title</&></label>
+    </li>
+    <li>
+        <input type="checkbox" id="Include-CF-Value-<% $cf->Id %>" name="Include-CF-Value-<% $cf->Id %>" <% $include{"CF-Value-".$cf->Id} %> />
+        <label for="Include-CF-Value-<% $cf->Id %>"><&|/l&>Value</&></label>
+    </li>
   </ul>
 </li>
 % } }
 </ul>
+
+% if ( @$subject_cfs ) {
+<h3><&|/l&>Change email subject:</&></h3>
+<p><&|/l&>If a Custom Field is selected, the Subject of your outgoing email will be overridden by this article.</&></p>
+
+<& /Widgets/Form/Select,
+    Name         => 'SubjectOverride',
+    DefaultLabel => loc('No Subject Override'),
+    Values       => $subject_cfs,
+    ValuesLabel  => $subject_cf_labels,
+    CurrentValue => $ClassObj->SubjectOverride,
+&>
+% }
 
 %$m->callback( CallbackName => 'BeforeSubmit', CustomFields => $cfs, ClassObj => $ClassObj );
 
@@ -132,8 +163,17 @@ if ($Create) {
 }
 
 if ($ClassObj->Id()) {
+
+    if ($ARGS{SubjectOverride}) {
+        $ARGS{SubjectOverride} = $m->comp('/Widgets/Form/Select:Process',
+            Arguments => \%ARGS,
+            Name      => 'SubjectOverride',
+            DefaultValue => (''),
+        );
+    }
+
     $ARGS{HotList} ||= 0 if $Submitted;
-    my @attribs= qw(Description Name HotList);
+    my @attribs= qw(Description Name HotList SubjectOverride);
     $m->callback( CallbackName => 'AttributeList', Attributes => \@attribs, ARGSRef => \%ARGS );
     push @results, UpdateRecordObject( AttributesRef => \@attribs,
                                        Object => $ClassObj,
@@ -148,11 +188,17 @@ if ((defined $Enabled && $Enabled == 1) or (not defined $Enabled and $Create)) {
 }
 
 my %include = (Name => 1, Summary => 1);
+my $subject_cfs = [];
+my $subject_cf_labels = {};
 
 my $cfs;
 if ( $ClassObj->id ) {
     $cfs = $ClassObj->ArticleCustomFields;
-    $include{"CF-Title-".$_->Id} = $include{"CF-Value-".$_->Id} = 1 while $_ = $cfs->Next;
+    while ( my $cf = $cfs->Next ) {
+        $include{"CF-Title-".$cf->Id} = $include{"CF-Value-".$cf->Id} = 1;
+        push @$subject_cfs,$cf->Id;
+        $subject_cf_labels->{$cf->Id} = $cf->Name;
+    }
 }
 
 if  ( $ClassObj->id && $Submitted ) {

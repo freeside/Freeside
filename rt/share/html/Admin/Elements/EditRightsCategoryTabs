@@ -52,15 +52,10 @@ $id
 $acldesc => ''
 </%args>
 <%init>
-# XXX OPTIMIZATION: Moving the calls to AvailableRights and RightCategories up
-# one component to avoid calling them for every principal would be a win, but
-# it's cleaner to do it here.  The values can really be computed once per
-# $Context.
-
 # Find all our available rights...
 my (%available_rights, %categories);
 if ( blessed($Context) and $Context->can('AvailableRights') ) {
-    %available_rights = %{$Context->AvailableRights};
+    %available_rights = %{$Context->AvailableRights( $Principal ? $Principal->PrincipalObj : undef )};
 } else {
     %available_rights = ( loc('System Error') => loc("No rights found") );
 }
@@ -104,6 +99,8 @@ for my $category ( sort keys %categories ) {
 
 $acldesc ||= join '-', ($Principal ? $Principal->PrincipalId : 'addprincipal'),
                        ref($Context), $Context->Id;
+
+$available_rights{$_} = loc( $available_rights{$_} ) for keys %available_rights;
 </%init>
     <div class="category-tabs">
       <ul>
@@ -121,10 +118,10 @@ $acldesc ||= join '-', ($Principal ? $Principal->PrincipalId : 'addprincipal'),
                id="SetRights-<% $acldesc %>-<% $right %>"
                value="<% $right %>"
                <% $current_rights{$right} ? 'checked' : '' %> />
-        <label for="SetRights-<% $acldesc %>-<% $right %>" title="<% loc($right) %>">
-          <% loc($available_rights{$right}) %>
+        <label for="SetRights-<% $acldesc %>-<% $right %>" title="<% $right %>">
+          <% $available_rights{$right} %>
           <span class="separator">&mdash;</span>
-          <span class="rightname"><% loc($right) %></span>
+          <span class="rightname"><% $right %></span>
         </label>
       </li>
 %     }

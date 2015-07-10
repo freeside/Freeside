@@ -85,7 +85,7 @@ sub Create {
         $obj = $RT::System unless $obj->id;
     }
 
-    return ( 0, $self->loc("Permission denied"))
+    return ( 0, $self->loc("Permission Denied"))
       unless ( $self->CurrentUser->HasRight(
                                             Right        => "AdminTopics",
                                             Object       => $obj,
@@ -212,46 +212,26 @@ sub _Set {
 # }}}
 
 
-# {{{ CurrentUserHasRight
+=head2 ACLEquivalenceObjects
 
-=head2 CurrentUserHasRight
-
-Returns true if the current user has the right for this topic, for the
-whole system or for whatever object this topic is associated with
+Rights on the topic are inherited from the object it is a topic on.
 
 =cut
 
-sub CurrentUserHasRight {
+sub ACLEquivalenceObjects {
     my $self  = shift;
-    my $right = shift;
+    return unless $self->id and $self->ObjectId;
 
-    my $equiv = [ $RT::System ];
-    if ($self->ObjectId) {
-        my $obj = $self->ObjectType->new($self->CurrentUser);
-        $obj->Load($self->ObjectId);
-        push @{$equiv}, $obj;
-    }
-    if ($self->Id) {
-        return ( $self->CurrentUser->HasRight(
-                                              Right        => $right,
-                                              Object       => $self,
-                                              EquivObjects => $equiv,
-                                             ) );
-    } else {
-        # If we don't have an ID, we don't even know what object we're
-        # attached to -- so the only thing we can fall back on is the
-        # system object.
-        return ( $self->CurrentUser->HasRight(
-                                              Right        => $right,
-                                              Object       => $RT::System,
-                                             ) );
-    }
-    
-
+    return $self->Object;
 }
 
-# }}}
 
+sub Object {
+    my $self  = shift;
+    my $Object = $self->__Value('ObjectType')->new( $self->CurrentUser );
+    $Object->Load( $self->__Value('ObjectId') );
+    return $Object;
+}
 
 =head2 id
 
@@ -357,20 +337,30 @@ sub _CoreAccessible {
     {
      
         id =>
-		{read => 1, type => 'int(11)', default => ''},
+                {read => 1, type => 'int(11)', default => ''},
         Parent => 
-		{read => 1, write => 1, type => 'int(11)', default => ''},
+                {read => 1, write => 1, type => 'int(11)', default => ''},
         Name => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         Description => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         ObjectType => 
-		{read => 1, write => 1, type => 'varchar(64)', default => ''},
+                {read => 1, write => 1, type => 'varchar(64)', default => ''},
         ObjectId => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+    $deps->Add( out => $self->ParentObj ) if $self->ParentObj->Id;
+    $deps->Add( in  => $self->Children );
+    $deps->Add( out => $self->Object );
+}
 
 RT::Base->_ImportOverlays();
 1;

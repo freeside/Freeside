@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -959,6 +959,13 @@ sub GetDeferred {
     my $id        = shift;
     my $links     = shift;
     my $postponed = shift;
+
+    # Unify the aliases for child/parent
+    $args->{$_} = [$args->{$_}]
+        for grep {$args->{$_} and not ref $args->{$_}} qw/members hasmember memberof/;
+    push @{$args->{'children'}}, @{delete $args->{'members'}}   if $args->{'members'};
+    push @{$args->{'children'}}, @{delete $args->{'hasmember'}} if $args->{'hasmember'};
+    push @{$args->{'parents'}},  @{delete $args->{'memberof'}}  if $args->{'memberof'};
 
     # Deferred processing
     push @$links,

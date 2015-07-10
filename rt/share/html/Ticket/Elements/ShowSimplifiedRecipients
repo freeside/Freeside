@@ -64,14 +64,6 @@ if ($Object->Scrips) {
         }
     }
 }
-if ($Object->Rules) {
-    for my $rule (grep {$_->{hints} and $_->{hints}{class} eq "SendEmail"} @{$Object->Rules}) {
-        for my $type (qw(To Cc Bcc)) {
-            $headers{$type}{$_} ||= @{[Email::Address->parse($_)]}[0] # Hate list context
-                for @{$rule->{hints}{recipients}{$type}};
-        }
-    }
-}
 my %recips;
 my %squelched = ProcessTransactionSquelching( \%ARGS );
 </%init>
@@ -95,8 +87,9 @@ my %squelched = ProcessTransactionSquelching( \%ARGS );
 % }
 % $m->callback( CallbackName => 'AfterRecipients', TicketObj => $TicketObj );
 </table>
-<i>(Uncheck boxes to disable notifications to the listed
-recipients. Does <b>not</b> change who will receive future
-updates.)</i>
+<p>
+<&|/l, RT->Config->Get('WebPath')."/Ticket/ModifyPeople.html?id=".$TicketObj->Id,
+&>Uncheck boxes to disable notifications to the listed recipients <b>for this transaction only</b>; persistent squelching is managed on the <a href="[_1]">People page</a>.</&>
+</p>
 </&>
 % $m->notes("DryRun-Recipients-".$TicketObj->Id, \%recips);

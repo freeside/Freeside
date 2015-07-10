@@ -56,9 +56,10 @@
 % $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS, Ticket => $TicketObj, CanRespond => $CanRespond, CanComment => $CanComment, ResponseDefault => $ResponseDefault, CommentDefault => $CommentDefault );
 <input type="hidden" class="hidden" name="QuoteTransaction" value="<% $ARGS{QuoteTransaction}||'' %>" />
 <input type="hidden" class="hidden" name="DefaultStatus" value="<% $DefaultStatus ||''%>" />
-<input type="hidden" class="hidden" name="Action" value="<% $ARGS{Action}||'' %>" />
+<input type="hidden" class="hidden" name="Action" value="<% $Action %>" />
+<input type="hidden" class="hidden" name="Token" value="<% $ARGS{'Token'} %>" />
 
-<& /Elements/GnuPG/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
+<& /Elements/Crypt/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
 
 <div id="ticket-update-metadata">
   <&|/Widgets/TitleBox, title => loc('Ticket and Transaction') &>
@@ -88,16 +89,8 @@
 
 <script type="text/javascript">
     jQuery(function() {
-        jQuery("#UpdateType").change(function(ev) {
-            jQuery(".messagebox-container")
-                .removeClass("action-response action-private")
-                .addClass("action-"+ev.target.value);
-        });
-    });
-    jQuery(function() {
         jQuery("input[name=TxnSendMailTo]").change(function(ev) {
-            jQuery("input[name=TxnSendMailTo][value="+ev.target.value+"]")
-                  .attr("checked",jQuery(ev.target).attr('checked'));
+            jQuery("input[name=TxnSendMailTo]").filter( function() { return this.value == ev.target.value; } ).prop("checked",jQuery(ev.target).prop('checked'));
         });
     });
 </script>
@@ -127,13 +120,11 @@ function changeStatus() {
     InTable   => 1,
     fields    => [
         {   name => 'Status',
-            comp => '/Elements/SelectStatus',
+            comp => '/Ticket/Elements/SelectStatus',
             args => {
                 Name => 'Status',
-                DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)),
-                Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus),
+                Default => $DefaultStatus,
                 TicketObj => $TicketObj,
-                QueueObj => $TicketObj->QueueObj,
                 onchange => 'changeStatus()'
             },
         },
@@ -151,7 +142,7 @@ function changeStatus() {
                 Name         => "Owner",
                 TicketObj    => $TicketObj,
                 QueueObj     => $TicketObj->QueueObj,
-                DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
+                DefaultLabel => loc("[_1] (Unchanged)", $TicketObj->OwnerObj->Format),
                 Default      => $ARGS{'Owner'}
             }
         },
@@ -160,7 +151,6 @@ function changeStatus() {
             args => {
                 Name => 'UpdateTimeWorked',
                 Default => $ARGS{UpdateTimeWorked}||'',
-                InUnits => $ARGS{'UpdateTimeWorked-TimeUnits'}||'minutes',
             }
         },
     ]
@@ -172,7 +162,7 @@ changeStatus();
 
 % $m->callback( %ARGS, CallbackName => 'AfterWorked', Ticket => $TicketObj );
 
-<& /Ticket/Elements/EditTransactionCustomFields, %ARGS, TicketObj => $TicketObj, AsTable => 1, KeepValue => 1 &>
+<& /Ticket/Elements/EditTransactionCustomFields, %ARGS, TicketObj => $TicketObj, InTable => 1, KeepValue => 1, &>
 
   <!--</table>-->
   </&>
@@ -187,7 +177,7 @@ changeStatus();
 
 % if ( $gnupg_widget ) {
 <tr><td>&nbsp;</td><td>
-<& /Elements/GnuPG/SignEncryptWidget,
+<& /Elements/Crypt/SignEncryptWidget,
     self => $gnupg_widget,
     TicketObj => $TicketObj,
 &>
@@ -255,6 +245,7 @@ my $TicketObj = LoadTicket($id);
 my @results;
 
 $m->callback( Ticket => $TicketObj, ARGSRef => \%ARGS, checks_failure => \$checks_failure, results => \@results, CallbackName => 'Initial' );
+$m->scomp( '/Articles/Elements/SubjectOverride', Ticket => $TicketObj, ARGSRef => \%ARGS, results => \@results );
 
 unless($DefaultStatus){
     $DefaultStatus=($ARGS{'Status'} ||$TicketObj->Status());
@@ -275,8 +266,8 @@ if ($Action ne 'Respond') {
 }
 
 my $type =             $ARGS{'UpdateType'} ? $ARGS{'UpdateType'} :
-           lc $ARGS{'Action'} eq 'respond' ? 'response'          :
-           lc $ARGS{'Action'} eq 'comment' ? 'private'           :
+           lc $Action eq 'respond' ? 'response'          :
+           lc $Action eq 'comment' ? 'private'           :
                                              'none'              ;
 
 
@@ -286,35 +277,30 @@ $CanRespond = 1 if ( $TicketObj->CurrentUserHasRight('ReplyToTicket') or
 $CanComment = 1 if ( $TicketObj->CurrentUserHasRight('CommentOnTicket') or
                      $TicketObj->CurrentUserHasRight('ModifyTicket') ); 
 
-
 ProcessAttachments(ARGSRef => \%ARGS);
 
-my $gnupg_widget = $m->comp('/Elements/GnuPG/SignEncryptWidget:new', Arguments => \%ARGS );
-$m->comp( '/Elements/GnuPG/SignEncryptWidget:Process',
+my %squelched = ProcessTransactionSquelching( \%ARGS );
+$ARGS{'SquelchMailTo'} = [keys %squelched] if keys %squelched;
+
+my $gnupg_widget = $m->comp('/Elements/Crypt/SignEncryptWidget:new', Arguments => \%ARGS );
+$m->comp( '/Elements/Crypt/SignEncryptWidget:Process',
     self => $gnupg_widget,
     TicketObj => $TicketObj,
 );
 
 if ( $ARGS{'SubmitTicket'} ) {
 
-    my %squelched = ProcessTransactionSquelching( \%ARGS );
-    $ARGS{'SquelchMailTo'} = [keys %squelched] if keys %squelched;
-
-    my $CFs = $TicketObj->TransactionCustomFields;
-    my $ValidCFs = $m->comp(
+    my ($status, @msg) = $m->comp(
         '/Elements/ValidateCustomFields',
-        CustomFields => $CFs,
-        NamePrefix => "Object-RT::Transaction--CustomField-",
+        CustomFields => $TicketObj->TransactionCustomFields,
+        Object => RT::Transaction->new( $session{'CurrentUser'} ),
         ARGSRef => \%ARGS
     );
-    unless ( $ValidCFs ) {
+    unless ( $status ) {
+        push @results, @msg;
         $checks_failure = 1;
-        while (my $CF = $CFs->Next) {
-            my $msg = $m->notes('InvalidField-' . $CF->Id) or next;
-            push @results, loc($CF->Name) . ': ' . $msg;
-        }
     }
-    my $status = $m->comp('/Elements/GnuPG/SignEncryptWidget:Check',
+    $status = $m->comp('/Elements/Crypt/SignEncryptWidget:Check',
         self      => $gnupg_widget,
         TicketObj => $TicketObj,
     );
@@ -348,6 +334,6 @@ if ( !$checks_failure && !$skip_update && exists $ARGS{SubmitTicket} ) {
 
 <%ARGS>
 $id => undef
-$Action => undef
+$Action => ''
 $DefaultStatus => undef
 </%ARGS>

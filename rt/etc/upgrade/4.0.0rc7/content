@@ -1,19 +1,22 @@
-@Initial = (
+use strict;
+use warnings;
+
+our @Initial = (
     sub {
-        $RT::Logger->debug("Going to set lifecycle for approvals");
+        RT->Logger->debug("Going to set lifecycle for approvals");
 
         my $queue = RT::Queue->new( RT->SystemUser );
         $queue->Load('___Approvals');
         unless ( $queue->id ) {
-            $RT::Logger->warning("There is no ___Approvals queue in the DB");
+            RT->Logger->warning("There is no ___Approvals queue in the DB");
             return 1;
         }
 
-        return 1 if $queue->Lifecycle->Name eq 'approvals';
+        return 1 if $queue->Lifecycle && $queue->Lifecycle eq 'approvals';
 
         my ($status, $msg) = $queue->SetLifecycle('approvals');
         unless ( $status ) {
-            $RT::Logger->error("Couldn't set lifecycle for '___Approvals' queue: $msg");
+            RT->Logger->error("Couldn't set lifecycle for '___Approvals' queue: $msg");
             return 0;
         }
         return 1;

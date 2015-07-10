@@ -2,17 +2,12 @@
 use strict;
 use warnings;
 use Test::More;
-BEGIN {
-    eval { require Email::Abstract; require Test::Email; 1 }
-        or plan skip_all => 'require Email::Abstract and Test::Email';
-}
-
 
 use RT;
-use RT::Test tests => 62;
+use RT::Test tests => "no_declare";
 use RT::Test::Email;
 
-RT->Config->Set( LogToScreen => 'debug' );
+RT->Config->Set( LogToSTDERR => 'debug' );
 RT->Config->Set( UseTransactionBatch => 1 );
 my ($baseurl, $m) = RT::Test->started_ok;
 
@@ -42,7 +37,6 @@ Queue: ___Approvals
 Type: approval
 Owner: CTO
 AdminCCs: COO, CEO
-Requestors: {$Tickets{"TOP"}->Requestors}
 DependedOnBy: TOP
 Subject: CTO Approval for PO: {$Tickets{"TOP"}->Id} - {$Tickets{"TOP"}->Subject}
 Due: {time + 86400}
@@ -84,20 +78,20 @@ mail_ok {
         Requestor => 'minion',
         Queue     => $q->Id,
     );
-} { from => qr/RT System/,
-    bcc => qr/ceo.*coo|coo.*ceo/i,
-    subject => qr/PO for stationary/i,
-},
-{ from => qr/RT System/,
-    to => 'cto@company.com',
-    subject => qr/New Pending Approval: CTO Approval/,
-    body => qr/pending your approval.*Your approval is requested.*Blah/s
-},
-{ from => qr/PO via RT/,
+} { from => qr/PO via RT/,
     to => 'minion@company.com',
     subject => qr/PO for stationary/,
     body => qr/automatically generated in response/
-};
+},{ from => qr/RT System/,
+    to => 'root@localhost',
+    subject => qr/PO for stationary/,
+},{ from => qr/RT System/,
+    to => 'cto@company.com',
+    bcc => qr/ceo.*coo|coo.*ceo/i,
+    subject => qr/New Pending Approval: CTO Approval/,
+    body => qr/pending your approval.*Your approval is requested.*Blah/s
+}
+;
 
 ok ($tid,$tmsg);
 
@@ -131,6 +125,11 @@ mail_ok {
     from => qr/CTO/,
     bcc => qr/ceo.*coo|coo.*ceo/i,
     body => qr/Resources exist to be consumed/,
+},
+{
+    from => qr/RT System/,
+    to => 'root@localhost',
+    subject => qr/Ticket Approved:/,
 },
 {
     from => qr/RT System/,
@@ -179,6 +178,12 @@ for my $admin (qw/coo ceo/) {
         bcc  => $admin eq 'coo' ? qr/ceo/i : qr/coo/,
         body => qr/Resources exist to be consumed/,
     },
+      {
+         from => qr/RT System/,
+         to => 'root@localhost',
+         subject => qr/Ticket Approved:/,
+         body    => qr/approved by \U$admin\E.*notes: Resources exist to be consumed/s
+      },
       {
         from    => qr/RT System/,
         to      => 'minion@company.com',
@@ -273,3 +278,6 @@ $m_coo->content_lacks( 'second approval', 'coo: second approval is gone too' );
 $m_ceo->content_lacks( 'second approval', 'ceo: second approval is gone too' );
 
 RT::Test->clean_caught_mails;
+
+undef $m;
+done_testing;

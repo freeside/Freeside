@@ -45,7 +45,7 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-% $r->content_type('application/json');
+% $r->content_type('application/json; charset=utf-8');
 <% JSON( \@suggestions ) |n %>
 % $m->abort;
 <%INIT>
@@ -53,8 +53,8 @@
 my $term = (split /\n/, $ARGS{term} || '')[-1];
 
 my $abort = sub {
-    $r->content_type('application/json');
-    $m->out(JSON::to_json( [] ));
+    $r->content_type('application/json; charset=utf-8');
+    $m->out(JSON( [] ));
     $m->abort;
 };
 
@@ -63,11 +63,17 @@ unless ( exists $ARGS{ContextType} and exists $ARGS{ContextId} ) {
     $abort->();
 }
 
+# Use _ParseObjectCustomFieldArgs to avoid duplicating the regex.
+# See the docs for _ParseObjectCustomFieldArgs for details on the data
+# structure returned. There will be only one CF, so drill down 2 layers
+# to get the cf id, if one is there.
+
+my %custom_fields = _ParseObjectCustomFieldArgs(\%ARGS);
 my $CustomField;
-for my $k ( keys %ARGS ) {
-    next unless $k =~ /^Object-.*?-\d*-CustomField-(\d+)-Values?$/;
-    $CustomField = $1;
-    last;
+foreach my $class ( keys %custom_fields ){
+    foreach my $id ( keys %{$custom_fields{$class}} ){
+        ($CustomField) = keys %{$custom_fields{$class}{$id}};
+    }
 }
 
 unless ( $CustomField ) {
@@ -119,6 +125,13 @@ $values->Limit(
     SUBCLAUSE       => 'autocomplete',
     CASESENSITIVE   => 0,
 );
+$m->callback(
+    CallbackName => 'ModifyMaxResults',
+    max => \$ARGS{max},
+    term => $term,
+    CustomField => $CustomFieldObj,
+);
+$values->RowsPerPage( $ARGS{max} // 10 );
 
 my @suggestions;
 

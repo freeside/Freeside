@@ -68,9 +68,9 @@ package RT::CustomFields;
 use strict;
 use warnings;
 
-use RT::CustomField;
-
 use base 'RT::SearchBuilder';
+
+use RT::CustomField;
 
 sub Table { 'CustomFields'}
 
@@ -79,19 +79,79 @@ sub _Init {
 
   # By default, order by SortOrder
   $self->OrderByCols(
-	 { ALIAS => 'main',
-	   FIELD => 'SortOrder',
-	   ORDER => 'ASC' },
-	 { ALIAS => 'main',
-	   FIELD => 'Name',
-	   ORDER => 'ASC' },
-	 { ALIAS => 'main',
-	   FIELD => 'id',
-	   ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'SortOrder',
+           ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'Name',
+           ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'id',
+           ORDER => 'ASC' },
      );
     $self->{'with_disabled_column'} = 1;
 
     return ( $self->SUPER::_Init(@_) );
+}
+
+=head2 LimitToGrouping
+
+Limits this collection object to custom fields which appear under a
+specified grouping by calling L</Limit> for each CF name as appropriate.
+
+Requires an L<RT::Record> object or class name as the first argument and
+accepts a grouping name as the second.  If the grouping name is false
+(usually via the empty string), limits to custom fields which appear in no
+grouping.
+
+I<Caveat:> While the record object or class name is used to find the
+available groupings, no automatic limit is placed on the lookup type of
+the custom fields.  It's highly suggested you limit the collection by
+queue or another lookup type first.  This is already done for you if
+you're creating the collection via the L</CustomFields> method on an
+L<RT::Record> object.
+
+=cut
+
+sub LimitToGrouping {
+    my $self = shift;
+    my $obj = shift;
+    my $grouping = shift;
+
+    my $grouping_class = $self->NewItem->_GroupingClass($obj);
+
+    my $config = RT->Config->Get('CustomFieldGroupings');
+       $config = {} unless ref($config) eq 'HASH';
+       $config = $config->{$grouping_class} || [];
+    my %h = ref $config eq "ARRAY" ? @{$config} : %{$config};
+
+    if ( $grouping ) {
+        my $list = $h{$grouping};
+        unless ( $list and ref($list) eq 'ARRAY' and @$list ) {
+            return $self->Limit( FIELD => 'id', VALUE => 0, ENTRYAGGREGATOR => 'AND' );
+        }
+        $self->Limit(
+            FIELD         => 'Name',
+            FUNCTION      => 'LOWER(?)',
+            OPERATOR      => 'IN',
+            VALUE         => [map {lc $_} @{$list}],
+            CASESENSITIVE => 1,
+        );
+    } else {
+        my @list = map {@$_} grep defined && ref($_) eq 'ARRAY',
+            values %h;
+
+        return unless @list;
+
+        $self->Limit(
+            FIELD         => 'Name',
+            FUNCTION      => 'LOWER(?)',
+            OPERATOR      => 'NOT IN',
+            VALUE         => [ map {lc $_} @list ],
+            CASESENSITIVE => 1,
+        );
+    }
+    return;
 }
 
 
@@ -160,7 +220,7 @@ sub LimitToObjectId {
 =head2 LimitToGlobalOrObjectId
 
 Takes list of object IDs and limits collection to custom
-fields that are applied to these objects or globally.
+fields that are added to these objects or globally.
 
 =cut
 
@@ -177,29 +237,7 @@ sub LimitToGlobalOrObjectId {
     $self->LimitToObjectId(0) unless $global_only;
 }
 
-sub _LimitToOCFs {
-    my $self = shift;
-    my @ids = @_;
-
-    my $ocfs_alias = $self->_OCFAlias( New => 1, Left => 1 );
-    if ( @ids ) {
-        # XXX: we need different EA in join clause, but DBIx::SB
-        # doesn't support them, use IN (X) instead
-        my $dbh = $self->_Handle->dbh;
-        $self->Limit(
-            LEFTJOIN   => $ocfs_alias,
-            ALIAS      => $ocfs_alias,
-            FIELD      => 'ObjectId',
-            OPERATOR   => 'IN',
-            QUOTEVALUE => 0,
-            VALUE      => "(". join( ',', map $dbh->quote($_), @ids ) .")",
-        );
-    }
-
-    return $ocfs_alias;
-}
-
-=head2 LimitToNotApplied
+=head2 LimitToNotAdded
 
 Takes either list of object ids or nothing. Limits collection
 to custom fields to listed objects or any corespondingly. Use
@@ -207,48 +245,31 @@ zero to mean global.
 
 =cut
 
-sub LimitToNotApplied {
+sub LimitToNotAdded {
     my $self = shift;
-    my @ids = @_;
-
-    my $ocfs_alias = $self->_LimitToOCFs(@ids);
-
-    $self->Limit(
-        ENTRYAGGREGATOR => 'AND',
-        ALIAS    => $ocfs_alias,
-        FIELD    => 'id',
-        OPERATOR => 'IS',
-        VALUE    => 'NULL',
-    );
+    return RT::ObjectCustomFields->new( $self->CurrentUser )
+        ->LimitTargetToNotAdded( $self => @_ );
 }
 
-=head2 LimitToApplied
+=head2 LimitToAdded
 
 Limits collection to custom fields to listed objects or any corespondingly. Use
 zero to mean global.
 
 =cut
 
-sub LimitToApplied {
+sub LimitToAdded {
     my $self = shift;
-    my @ids = @_;
-
-    my $ocfs_alias = $self->_LimitToOCFs(@ids);
-
-    $self->Limit(
-        ENTRYAGGREGATOR => 'AND',
-        ALIAS    => $ocfs_alias,
-        FIELD    => 'id',
-        OPERATOR => 'IS NOT',
-        VALUE    => 'NULL',
-    );
+    return RT::ObjectCustomFields->new( $self->CurrentUser )
+        ->LimitTargetToAdded( $self => @_ );
 }
 
 =head2 LimitToGlobalOrQueue QUEUEID
 
-DEPRECATED since CFs are applicable not only to tickets these days.
+Limits the set of custom fields found to global custom fields or those
+tied to the queue C<QUEUEID>, similar to L</LimitToGlobalOrObjectId>.
 
-Limits the set of custom fields found to global custom fields or those tied to the queue with ID QUEUEID
+Note that this will cause the collection to only return ticket CFs.
 
 =cut
 
@@ -262,34 +283,33 @@ sub LimitToGlobalOrQueue {
 
 =head2 LimitToQueue QUEUEID
 
-DEPRECATED since CFs are applicable not only to tickets these days.
+Takes a numeric C<QUEUEID>, and limits the Custom Field collection to
+those only applied directly to it; this limit is OR'd with other
+L</LimitToQueue> and L</LimitToGlobal> limits.
 
-Takes a queue id (numerical) as its only argument. Makes sure that
-Scopes it pulls out apply to this queue (or another that you've selected with
-another call to this method
+Note that this will cause the collection to only return ticket CFs.
 
 =cut
 
 sub LimitToQueue  {
    my $self = shift;
-  my $queue = shift;
+   my $queue = shift;
 
-  $self->Limit (ALIAS => $self->_OCFAlias,
-                ENTRYAGGREGATOR => 'OR',
-		FIELD => 'ObjectId',
-		VALUE => "$queue")
-      if defined $queue;
-  $self->LimitToLookupType( 'RT::Queue-RT::Ticket' );
+   $self->Limit (ALIAS => $self->_OCFAlias,
+                 ENTRYAGGREGATOR => 'OR',
+                 FIELD => 'ObjectId',
+                 VALUE => "$queue")
+       if defined $queue;
+   $self->LimitToLookupType( 'RT::Queue-RT::Ticket' );
 }
 
 
 =head2 LimitToGlobal
 
-DEPRECATED since CFs are applicable not only to tickets these days.
+Limits the Custom Field collection to global ticket CFs; this limit is
+OR'd with L</LimitToQueue> limits.
 
-Makes sure that Scopes it pulls out apply to all queues
-(or another that you've selected with
-another call to this method or LimitToQueue)
+Note that this will cause the collection to only return ticket CFs.
 
 =cut
 
@@ -298,8 +318,8 @@ sub LimitToGlobal  {
 
   $self->Limit (ALIAS => $self->_OCFAlias,
                 ENTRYAGGREGATOR => 'OR',
-		FIELD => 'ObjectId',
-		VALUE => 0);
+                FIELD => 'ObjectId',
+                VALUE => 0);
   $self->LimitToLookupType( 'RT::Queue-RT::Ticket' );
 }
 
@@ -351,19 +371,8 @@ sub SetContextObject {
 
 sub _OCFAlias {
     my $self = shift;
-    my %args = ( New => 0, Left => 0, @_ );
-
-    return $self->{'_sql_ocfalias'} if $self->{'_sql_ocfalias'} && !$args{'New'};
-
-    my $alias = $self->Join(
-        $args{'Left'} ? (TYPE => 'LEFT') : (),
-        ALIAS1 => 'main',
-        FIELD1 => 'id',
-        TABLE2 => 'ObjectCustomFields',
-        FIELD2 => 'CustomField'
-    );
-    return $alias if $args{'New'};
-    return $self->{'_sql_ocfalias'} = $alias;
+    return RT::ObjectCustomFields->new( $self->CurrentUser )
+        ->JoinTargetToThis( $self => @_ );
 }
 
 

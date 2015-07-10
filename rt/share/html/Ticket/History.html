@@ -53,12 +53,12 @@
 
 <br />
       
-<& /Ticket/Elements/ShowHistory , 
-    Ticket => $Ticket, 
+<& /Elements/ShowHistory,
+    Object => $Ticket,
     ShowHeaders => $ARGS{'ShowHeaders'}, 
-    URIFile => 'History.html', 
     Attachments => $attachments,
-    AttachmentContent => $attachment_content
+    AttachmentContent => $attachment_content,
+    DisplayPath => 'History.html',
     &> 
 
 % $m->callback( %ARGS, CallbackName => 'AfterShowHistory', Ticket => $Ticket );
@@ -77,9 +77,8 @@ unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
     Abort("No permission to view ticket");
 }
 
-my $attachments = $m->comp('Elements/FindAttachments', Ticket => $Ticket);
-my $attachment_content = $m->comp('Elements/LoadTextAttachments', Ticket =>
-$Ticket);
+my $attachments = $Ticket->Attachments;
+my $attachment_content = $Ticket->TextAttachments;
 
 
 </%INIT>

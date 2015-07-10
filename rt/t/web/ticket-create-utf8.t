@@ -32,7 +32,7 @@ foreach my $test_str ( $ru_test, $l1_test ) {
     $m->submit;
 
     $m->content_like( 
-        qr{<td\s+class="message-header-value"[^>]*>\s*\Q$test_str\E\s*</td>}i,
+        qr{<td\s+class="message-header-value\s*"[^>]*>\s*\Q$test_str\E\s*</td>}i,
         'header on the page'
     );
 
@@ -50,7 +50,7 @@ foreach my $test_str ( $ru_test, $l1_test ) {
         $m->submit;
 
         $m->content_like( 
-            qr{<td\s+class="message-header-value"[^>]*>\s*\Q$test_str\E\s*</td>}i,
+            qr{<td\s+class="message-header-value\s*"[^>]*>\s*\Q$test_str\E\s*</td>}i,
             'header on the page'
         );
         $m->content_contains(
@@ -73,7 +73,7 @@ foreach my $test_str ( $ru_test, $l1_test ) {
         $m->submit;
 
         $m->content_like( 
-            qr{<td\s+class="message-header-value"[^>]*>\s*\Q$test_str\E\s*</td>}i,
+            qr{<td\s+class="message-header-value\s*"[^>]*>\s*\Q$test_str\E\s*</td>}i,
             'header on the page'
         );
         $m->content_contains(

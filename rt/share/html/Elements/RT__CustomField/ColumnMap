@@ -48,17 +48,12 @@
 <%ARGS>
 $Name => undef
 $Attr => undef
+$GenericMap => {}
 </%ARGS>
 <%ONCE>
 my $COLUMN_MAP = {
-    id => {
-        title     => '#', # loc
-        attribute => 'id',
-        align     => 'right',
-        value     => sub { return $_[0]->id },
-    },
     Disabled => {
-        title     => \'&nbsp;',
+        title     => 'Status', # loc
         attribute => 'Disabled',
         value     => sub { return $_[0]->Disabled? $_[0]->loc('Disabled'): $_[0]->loc('Enabled') },
     },
@@ -66,7 +61,7 @@ my $COLUMN_MAP = {
     map(
         { my $c = $_; $c => {
             title     => $c, attribute => $c,
-	    value     => sub { return $_[0]->$c() },
+            value     => sub { return $_[0]->$c() },
         } }
         qw(Name Description Type LookupType Pattern)
     ),
@@ -74,26 +69,26 @@ my $COLUMN_MAP = {
         { my $c = $_; my $short = $c; $short =~ s/^Friendly//;
           $c => {
             title     => $short, attribute => $short,
-	    value     => sub { return $_[0]->$c() },
+            value     => sub { return $_[0]->$c() },
         } }
         qw(FriendlyLookupType FriendlyType FriendlyPattern)
     ),
     MaxValues => {
         title     => 'MaxValues', # loc
-	attribute => 'MaxValues',
-	value     => sub {
+        attribute => 'MaxValues',
+        value     => sub {
             my $v = $_[0]->MaxValues;
             return !$v ? $_[0]->loc('unlimited') : $v == 0 ? $_[0]->loc('one') : $v;
         },
     },
-    AppliedTo => {
-        title     => 'Applied', # loc
-	value     => sub {
-            if ( $_[0]->IsApplied ) {
+    AddedTo => {
+        title     => 'Added', # loc
+        value     => sub {
+            if ( $_[0]->IsGlobal ) {
                 return $_[0]->loc('Global');
             }
 
-            my $collection = $_[0]->AppliedTo;
+            my $collection = $_[0]->AddedTo;
             return '' unless $collection;
 
             $collection->RowsPerPage(10);
@@ -121,13 +116,13 @@ my $COLUMN_MAP = {
             my $checked = $DECODED_ARGS->{ $name .'All' }? 'checked="checked"': '';
 
             return \qq{<input type="checkbox" name="}, $name, \qq{All" value="1" $checked
-                              onclick="setCheckbox(this.form, },
+                              onclick="setCheckbox(this, },
                               $m->interp->apply_escapes($name,'j'),
-                              \qq{, this.checked)" />};
+                              \qq{)" />};
         },
         value => sub {
             my $id = $_[0]->id;
-            return '' if $_[0]->IsApplied;
+            return '' if $_[0]->IsGlobal;
 
             my $name = 'RemoveCustomField';
             my $arg = $DECODED_ARGS->{ $name };
@@ -148,7 +143,7 @@ my $COLUMN_MAP = {
             my $id = $_[0]->id;
             
             my $context = $_[2] || 0;
-            return '' unless $_[0]->IsApplied( $context );
+            return '' unless $_[0]->IsAdded( $context );
 
             my $name = 'MoveCustomField';
             my $args = $m->caller_args( 1 );
@@ -173,8 +168,10 @@ my $COLUMN_MAP = {
     },
 };
 
+$COLUMN_MAP->{'AppliedTo'} = $COLUMN_MAP->{'AddedTo'};
+
 </%ONCE>
 <%INIT>
-$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
+$m->callback( GenericMap => $GenericMap, COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
 return GetColumnMapEntry( Map => $COLUMN_MAP, Name => $Name, Attribute => $Attr );
 </%INIT>

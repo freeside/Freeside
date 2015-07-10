@@ -54,6 +54,7 @@
 
 <& /Elements/ListActions, actions => \@Actions &>
 <& Elements/ShowUpdateStatus, Ticket => $TicketObj &>
+<& Elements/ShowDependencyStatus, Ticket => $TicketObj &>
 
 % $m->callback( %ARGS, Ticket => $TicketObj, Transactions => $transactions, Attachments => $attachments, CallbackName => 'BeforeShowSummary' );
 <div class="summary">
@@ -65,16 +66,21 @@
 
 % $m->callback( Ticket => $TicketObj, %ARGS, Transactions => $transactions, Attachments => $attachments, CallbackName => 'BeforeShowHistory' );
 
-% if (not $ForceShowHistory and RT->Config->Get( 'DeferTransactionLoading', $session{'CurrentUser'} )) {
+% my $ShowHistory = RT->Config->Get("ShowHistory", $session{'CurrentUser'});
+% if ($ShowHistory eq "delay") {
+    <& /Ticket/Elements/DelayShowHistory,
+        Ticket => $TicketObj,
+        ShowHeaders => $ARGS{'ShowHeaders'},
+    &>
+% } elsif (not $ForceShowHistory and $ShowHistory eq "click") {
     <& /Ticket/Elements/ClickToShowHistory,
         Ticket => $TicketObj,
+        ShowHeaders => $ARGS{'ShowHeaders'},
     &>
 % } else {
-    <& /Ticket/Elements/ShowHistory ,
-          Ticket => $TicketObj,
-          Tickets => $Tickets,
+    <& /Elements/ShowHistory ,
+          Object => $TicketObj,
           Transactions => $transactions,
-          Collapsed => $ARGS{'Collapsed'},
           ShowHeaders => $ARGS{'ShowHeaders'},
           Attachments => $attachments,
           AttachmentContent => $attachment_content
@@ -92,7 +98,6 @@
 $id => undef
 $TicketObj => undef
 $ShowHeaders => 0
-$Collapsed => undef
 $ForceShowHistory => 0
 </%ARGS>
 
@@ -107,7 +112,7 @@ if ( ! $ARGS{'NoRedirect'} && RT::Interface::Web->MobileClient()) {
 }
 
 
-my (@Actions, $Tickets, $title);
+my (@Actions, $title);
 
 
 unless ($id || $TicketObj) {
@@ -115,7 +120,7 @@ unless ($id || $TicketObj) {
 }
 
 if ($ARGS{'id'} eq 'new') {
-    # {{{ Create a new ticket
+    # Create a new ticket
 
     # Massage customer IDs into member links.
     my @cust_uris = map { 
@@ -135,10 +140,7 @@ if ($ARGS{'id'} eq 'new') {
         Abort('You have no permission to create tickets in that queue.');
     }
 
-    ($TicketObj, @Actions) = CreateTicket(
-        Attachments => delete $session{'Attachments'},
-        %ARGS,
-    );
+    ($TicketObj, @Actions) = CreateTicket( %ARGS );
     unless ( $TicketObj->CurrentUserHasRight('ShowTicket') ) {
         Abort("No permission to view newly created ticket #".$TicketObj->id.".");
     }
@@ -150,7 +152,7 @@ if ($ARGS{'id'} eq 'new') {
     my $SkipProcessing;
 
     $m->callback( CallbackName => 'BeforeProcessArguments',
-        TicketObj => $TicketObj, Tickets => $Tickets,
+        TicketObj => $TicketObj,
         ActionsRef => \@Actions, ARGSRef => \%ARGS,
         SkipProcessing => \$SkipProcessing );
 
@@ -168,21 +170,18 @@ if ($ARGS{'id'} eq 'new') {
                 ARGSRef => \%ARGS, 
                 Actions => \@Actions);
         
-        $ARGS{UpdateAttachments} = $session{'Attachments'};
-        push @Actions,
-            ProcessUpdateMessage(
+        push @Actions, ProcessUpdateMessage(
             ARGSRef   => \%ARGS,
             Actions   => \@Actions,
             TicketObj => $TicketObj,
-            );
-        delete $session{'Attachments'};
+        );
 
         #Process status updates
         push @Actions, ProcessTicketWatchers(ARGSRef => \%ARGS, TicketObj => $TicketObj );
         push @Actions, ProcessTicketBasics(  ARGSRef => \%ARGS, TicketObj => $TicketObj );
         push @Actions, ProcessTicketLinks(   ARGSRef => \%ARGS, TicketObj => $TicketObj );
         push @Actions, ProcessTicketDates(   ARGSRef => \%ARGS, TicketObj => $TicketObj );
-        push @Actions, ProcessTicketCustomFieldUpdates(ARGSRef => \%ARGS, TicketObj => $TicketObj );
+        push @Actions, ProcessObjectCustomFieldUpdates(ARGSRef => \%ARGS, TicketObj => $TicketObj );
         # If this fails due to required fields being empty, it will set
         # notes('RedirectToBasics').
         push @Actions, ProcessTicketStatus(  ARGSRef => \%ARGS, TicketObj => $TicketObj );
@@ -212,7 +211,6 @@ $title = loc("Ticket #[_1]: [_2]", $TicketObj->Id, $TicketObj->Subject || '');
 $m->callback(
     CallbackName => 'BeforeDisplay',
     TicketObj => \$TicketObj,
-    Tickets => \$Tickets,
     Actions => \@Actions,
     title => \$title,
     ARGSRef => \%ARGS,
@@ -231,10 +229,9 @@ MaybeRedirectForResults(
     Arguments => { id => $TicketObj->id },
 );
 
-# Get the transactoins before the attachments, for great ACL justice
-my $transactions = $m->comp('Elements/FindTransactions',Ticket => $TicketObj, Tickets => $Tickets || undef);
-my $attachments = $m->comp('Elements/FindAttachments', Ticket => $TicketObj, Tickets => $Tickets);
-my $attachment_content = $m->comp('Elements/LoadTextAttachments', Ticket => $TicketObj);
+my $transactions = $TicketObj->SortedTransactions;
+my $attachments = $TicketObj->Attachments;
+my $attachment_content = $TicketObj->TextAttachments;
 
 my %link_rel;
 if (defined $session{'tickets'} and ($ARGS{'Query'} or $session{'CurrentSearchHash'}->{'Query'})) {

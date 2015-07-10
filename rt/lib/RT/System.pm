@@ -72,75 +72,64 @@ use warnings;
 
 use base qw/RT::Record/;
 
+use Role::Basic 'with';
+with "RT::Record::Role::Roles",
+     "RT::Record::Role::Rights" => { -excludes => [qw/AvailableRights RightCategories/] };
+
 use RT::ACL;
+use RT::ACE;
+use Data::GUID;
 
-# System rights are rights granted to the whole system
-# XXX TODO Can't localize these outside of having an object around.
-our $RIGHTS = {
-    SuperUser              => 'Do anything and everything',           # loc_pair
-    AdminUsers     => 'Create, modify and delete users',              # loc_pair
-    ModifySelf     => "Modify one's own RT account",                  # loc_pair
-    ShowConfigTab => "Show Configuration tab",     # loc_pair
-    ShowApprovalsTab => "Show Approvals tab",     # loc_pair
-    ShowGlobalTemplates => "Show global templates",     # loc_pair
-    LoadSavedSearch => "Allow loading of saved searches",     # loc_pair
-    CreateSavedSearch => "Allow creation of saved searches",      # loc_pair
-    ExecuteCode => "Allow writing Perl code in templates, scrips, etc", # loc_pair
-};
-
-our $RIGHT_CATEGORIES = {
-    SuperUser              => 'Admin',
-    AdminUsers             => 'Admin',
-    ModifySelf             => 'Staff',
-    ShowConfigTab          => 'Admin',
-    ShowApprovalsTab       => 'Admin',
-    ShowGlobalTemplates    => 'Staff',
-    LoadSavedSearch        => 'General',
-    CreateSavedSearch      => 'General',
-    ExecuteCode            => 'Admin',
-};
-
-# Tell RT::ACE that this sort of object can get acls granted
-$RT::ACE::OBJECT_TYPES{'RT::System'} = 1;
-
-__PACKAGE__->AddRights(%$RIGHTS);
-__PACKAGE__->AddRightCategories(%$RIGHT_CATEGORIES);
+__PACKAGE__->AddRight( Admin   => SuperUser           => 'Do anything and everything'); # loc
+__PACKAGE__->AddRight( Staff   => ShowUserHistory     => 'Show history of public user properties'); # loc
+__PACKAGE__->AddRight( Admin   => AdminUsers          => 'Create, modify and delete users'); # loc
+__PACKAGE__->AddRight( Staff   => ModifySelf          => "Modify one's own RT account"); # loc
+__PACKAGE__->AddRight( Staff   => ShowArticlesMenu    => 'Show Articles menu'); # loc
+__PACKAGE__->AddRight( Admin   => ShowConfigTab       => 'Show Admin menu'); # loc
+__PACKAGE__->AddRight( Admin   => ShowApprovalsTab    => 'Show Approvals tab'); # loc
+__PACKAGE__->AddRight( Staff   => ShowGlobalTemplates => 'Show global templates'); # loc
+__PACKAGE__->AddRight( General => LoadSavedSearch     => 'Allow loading of saved searches'); # loc
+__PACKAGE__->AddRight( General => CreateSavedSearch   => 'Allow creation of saved searches'); # loc
+__PACKAGE__->AddRight( Admin   => ExecuteCode         => 'Allow writing Perl code in templates, scrips, etc'); # loc
 
 =head2 AvailableRights
 
-Returns a hash of available rights for this object.
-The keys are the right names and the values are a
-description of what the rights do.
+Returns a hashref of available rights for this object.  The keys are the
+right names and the values are a description of what the rights do.
 
-This method as well returns rights of other RT objects,
-like L<RT::Queue> or L<RT::Group>. To allow users to apply
-those rights globally.
+This method as well returns rights of other RT objects, like
+L<RT::Queue> or L<RT::Group>, to allow users to apply those rights
+globally.
+
+If an L<RT::Principal> is passed as the first argument, the available
+rights will be limited to ones which make sense for the principal.
+Currently only role groups are supported and rights announced by object
+types to which the role group doesn't apply are not returned.
 
 =cut
 
-
-use RT::CustomField;
-use RT::Queue;
-use RT::Group; 
-use RT::Class;
 sub AvailableRights {
     my $self = shift;
+    my $principal = shift;
+    my $class = ref($self) || $self;
 
-    my $queue = RT::Queue->new(RT->SystemUser);
-    my $group = RT::Group->new(RT->SystemUser);
-    my $cf    = RT::CustomField->new(RT->SystemUser);
-    my $class = RT::Class->new(RT->SystemUser);
+    my @rights;
+    if ($principal and $principal->IsRoleGroup) {
+        my $role = $principal->Object->Name;
+        for my $class (keys %RT::ACE::RIGHTS) {
+            next unless $class->DOES('RT::Record::Role::Roles') and $class->HasRole($role) and $class ne "RT::System";
+            push @rights, values %{ $RT::ACE::RIGHTS{$class} };
+        }
+    } else {
+        @rights = map {values %{$_}} values %RT::ACE::RIGHTS;
+    }
 
-    my $qr = $queue->AvailableRights();
-    my $gr = $group->AvailableRights();
-    my $cr = $cf->AvailableRights();
-    my $clr = $class->AvailableRights();
+    my %rights;
+    $rights{$_->{Name}} = $_->{Description} for @rights;
 
-    # Build a merged list of all system wide rights, queue rights and group rights.
-    my %rights = (%{$RIGHTS}, %{$gr}, %{$qr}, %{$cr}, %{$clr});
     delete $rights{ExecuteCode} if RT->Config->Get('DisallowExecuteCode');
 
-    return(\%rights);
+    return \%rights;
 }
 
 =head2 RightCategories
@@ -152,49 +141,12 @@ values are the category (General, Staff, Admin) the right falls into.
 
 sub RightCategories {
     my $self = shift;
+    my $class = ref($self) || $self;
 
-    my $queue = RT::Queue->new(RT->SystemUser);
-    my $group = RT::Group->new(RT->SystemUser);
-    my $cf    = RT::CustomField->new(RT->SystemUser);
-    my $class = RT::Class->new(RT->SystemUser);
-
-    my $qr = $queue->RightCategories();
-    my $gr = $group->RightCategories();
-    my $cr = $cf->RightCategories();
-    my $clr = $class->RightCategories();
-
-    # Build a merged list of all system wide rights, queue rights and group rights.
-    my %rights = (%{$RIGHT_CATEGORIES}, %{$gr}, %{$qr}, %{$cr}, %{$clr});
-
-    return(\%rights);
-}
-
-=head2 AddRights C<RIGHT>, C<DESCRIPTION> [, ...]
-
-Adds the given rights to the list of possible rights.  This method
-should be called during server startup, not at runtime.
-
-=cut
-
-sub AddRights {
-    my $self = shift if ref $_[0] or $_[0] eq __PACKAGE__;
-    my %new = @_;
-    $RIGHTS = { %$RIGHTS, %new };
-    %RT::ACE::LOWERCASERIGHTNAMES = ( %RT::ACE::LOWERCASERIGHTNAMES,
-                                      map { lc($_) => $_ } keys %new);
-}
-
-=head2 AddRightCategories C<RIGHT>, C<CATEGORY> [, ...]
-
-Adds the given right and category pairs to the list of right categories.  This
-method should be called during server startup, not at runtime.
-
-=cut
-
-sub AddRightCategories {
-    my $self = shift if ref $_[0] or $_[0] eq __PACKAGE__;
-    my %new = @_;
-    $RIGHT_CATEGORIES = { %$RIGHT_CATEGORIES, %new };
+    my %rights;
+    $rights{$_->{Name}} = $_->{Category}
+        for map {values %{$_}} values %RT::ACE::RIGHTS;
+    return \%rights;
 }
 
 sub _Init {
@@ -210,6 +162,8 @@ Returns RT::System's id. It's 1.
 
 *Id = \&id;
 sub id { return 1 }
+
+sub UID { return "RT::System" }
 
 =head2 Load
 
@@ -260,6 +214,122 @@ sub QueueCacheNeedsUpdate {
         return (defined $cache ? $cache->Content : 0 );
     }
 }
+
+=head2 AddUpgradeHistory package, data
+
+Adds an entry to the upgrade history database. The package can be either C<RT>
+for core RT upgrades, or the fully qualified name of a plugin. The data must be
+a hash reference.
+
+=cut
+
+sub AddUpgradeHistory {
+    my $self  = shift;
+    my $package = shift;
+    my $data  = shift;
+
+    $data->{timestamp}  ||= time;
+    $data->{rt_version} ||= $RT::VERSION;
+
+    my $upgrade_history_attr = $self->FirstAttribute('UpgradeHistory');
+    my $upgrade_history = $upgrade_history_attr ? $upgrade_history_attr->Content : {};
+
+    push @{ $upgrade_history->{$package} }, $data;
+
+    $self->SetAttribute(
+        Name    => 'UpgradeHistory',
+        Content => $upgrade_history,
+    );
+}
+
+=head2 UpgradeHistory [package]
+
+Returns the entries of RT's upgrade history. If a package is specified, the list
+of upgrades for that package will be returned. Otherwise a hash reference of
+C<< package => [upgrades] >> will be returned.
+
+=cut
+
+sub UpgradeHistory {
+    my $self  = shift;
+    my $package = shift;
+
+    my $upgrade_history_attr = $self->FirstAttribute('UpgradeHistory');
+    my $upgrade_history = $upgrade_history_attr ? $upgrade_history_attr->Content : {};
+
+    if ($package) {
+        return @{ $upgrade_history->{$package} || [] };
+    }
+
+    return $upgrade_history;
+}
+
+sub ParsedUpgradeHistory {
+    my $self = shift;
+    my $package = shift;
+
+    my $version_status = "Current version: ";
+    if ( $package eq 'RT' ){
+        $version_status .= $RT::VERSION;
+    } elsif ( grep {/$package/} @{RT->Config->Get('Plugins')} ) {
+        no strict 'refs';
+        $version_status .= ${ $package . '::VERSION' };
+    } else {
+        $version_status = "Not currently loaded";
+    }
+
+    my %ids;
+    my @lines;
+
+    my @events = $self->UpgradeHistory( $package );
+    for my $event (@events) {
+        if ($event->{stage} eq 'before' or (($event->{action}||'') eq 'insert' and not $event->{full_id})) {
+            if (not $event->{full_id}) {
+                # For upgrade done in the 4.1 series without GUIDs
+                if (($event->{type}||'') eq 'full upgrade') {
+                    $event->{full_id} = $event->{individual_id} = Data::GUID->new->as_string;
+                } else {
+                    $event->{individual_id} = Data::GUID->new->as_string;
+                    $event->{full_id} = (@lines ? $lines[-1]{full_id} : Data::GUID->new->as_string);
+                }
+                $event->{return_value} = [1] if $event->{stage} eq 'after';
+            }
+            if ($ids{$event->{full_id}}) {
+                my $kids = $ids{$event->{full_id}}{sub_events} ||= [];
+                # Stitch non-"upgrade"s beneath the previous "upgrade"
+                if ( @{$kids} and $event->{action} ne 'upgrade' and $kids->[-1]{action} eq 'upgrade') {
+                    push @{ $kids->[-1]{sub_events} }, $event;
+                } else {
+                    push @{ $kids }, $event;
+                }
+            } else {
+                push @lines, $event;
+            }
+            $ids{$event->{individual_id}} = $event;
+        } elsif ($event->{stage} eq 'after') {
+            if (not $event->{individual_id}) {
+                if (($event->{type}||'') eq 'full upgrade') {
+                    $lines[-1]{end} = $event->{timestamp} if @lines;
+                } elsif (($event->{type}||'') eq 'individual upgrade') {
+                    $lines[-1]{sub_events}[-1]{end} = $event->{timestamp}
+                        if @lines and @{ $lines[-1]{sub_events} };
+                }
+            } elsif ($ids{$event->{individual_id}}) {
+                my $end = $event;
+                $event = $ids{$event->{individual_id}};
+                $event->{end} = $end->{timestamp};
+
+                $end->{return_value} = [ split ', ', $end->{return_value}, 2 ]
+                    if $end->{return_value} and not ref $end->{return_value};
+                $event->{return_value} = $end->{return_value};
+                $event->{content} ||= $end->{content};
+            }
+        }
+    }
+
+    return ($version_status, @lines);
+}
+
 
 RT::Base->_ImportOverlays();
 

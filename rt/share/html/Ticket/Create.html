@@ -55,11 +55,12 @@
 <form action="<% RT->Config->Get('WebPath') %>/Ticket/Create.html" method="post" enctype="multipart/form-data" name="TicketCreate">
   <input type="submit" name="SubmitTicket" value="Create" style="display:none">
   <input type="hidden" class="hidden" name="id" value="new" />
+  <input type="hidden" class="hidden" name="Token" value="<% $ARGS{'Token'} %>" />
   
 % $m->callback( CallbackName => 'FormStart', QueueObj => $QueueObj, ARGSRef => \%ARGS );
 
 % if ($gnupg_widget) {
-  <& /Elements/GnuPG/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
+  <& /Elements/Crypt/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
 % }
 
 <div id="Ticket-Create-basics">
@@ -83,12 +84,9 @@
                 },
             },
             {   name => 'Status',
-                comp => '/Elements/SelectStatus',
+                comp => '/Ticket/Elements/SelectStatus',
                 args => {
                     Name            => "Status",
-                    Default         => $ARGS{Status} || $QueueObj->Lifecycle->DefaultOnCreate,
-                    DefaultValue    => 0,
-                    SkipDeleted     => 1,
                     QueueObj        => $QueueObj,
                 },
             },
@@ -106,11 +104,26 @@
 
 % $m->callback( CallbackName => 'AfterOwner', ARGSRef => \%ARGS );
 
-      <& /Ticket/Elements/EditCustomFields, %ARGS, QueueObj => $QueueObj, InTable => 1, KeepValue => 1 &>
-      <& /Ticket/Elements/EditTransactionCustomFields, %ARGS, QueueObj => $QueueObj, InTable => 1, KeepValue => 1 &>
+      <& /Elements/EditCustomFields,
+          %ARGS,
+          Object => $ticket,
+          CustomFields => $QueueObj->TicketCustomFields,
+          Grouping => 'Basics',
+          InTable => 1,
+          KeepValue => 1,
+      &>
+      <& /Ticket/Elements/EditTransactionCustomFields, %ARGS, QueueObj => $QueueObj, InTable => 1, KeepValue => 1, &>
     </table>
   </&>
 % $m->callback( CallbackName => 'AfterBasics', QueueObj => $QueueObj, ARGSRef => \%ARGS );
+
+<& /Elements/EditCustomFieldCustomGroupings,
+    %ARGS,
+    Object => $ticket,
+    CustomFieldGenerator => sub { $QueueObj->TicketCustomFields },
+    KeepValue => 1,
+&>
+
 </div>
 
 <div id="ticket-create-message">
@@ -121,7 +134,7 @@
 <&|/l&>Requestors</&>:
 </td>
 <td class="value" colspan="5">
-<& /Elements/EmailInput, Name => 'Requestors', Size => undef, Default => exists($ARGS{Requestors}) ? $ARGS{Requestors} : $session{CurrentUser}->EmailAddress &>
+<& /Elements/EmailInput, Name => 'Requestors', Size => undef, Default => $ARGS{Requestors} // $session{CurrentUser}->EmailAddress, AutocompleteMultiple => 1 &>
 % $m->callback( CallbackName => 'AfterRequestors', QueueObj => $QueueObj, ARGSRef => \%ARGS );
 </td>
 </tr>
@@ -129,7 +142,7 @@
 <td class="label">
 <&|/l&>Cc</&>:
 </td>
-<td class="value" colspan="5"><& /Elements/EmailInput, Name => 'Cc', Size => undef, Default => $ARGS{Cc} &></td>
+<td class="value" colspan="5"><& /Elements/EmailInput, Name => 'Cc', Size => undef, Default => $ARGS{Cc}, AutocompleteMultiple => 1 &></td>
 </tr>
 
 <tr>
@@ -145,7 +158,7 @@
 <td class="label">
 <&|/l&>Admin Cc</&>:
 </td>
-<td class="value" colspan="5"><& /Elements/EmailInput, Name => 'AdminCc', Size => undef, Default => $ARGS{AdminCc} &></td>
+<td class="value" colspan="5"><& /Elements/EmailInput, Name => 'AdminCc', Size => undef, Default => $ARGS{AdminCc}, AutocompleteMultiple => 1 &></td>
 </tr>
 
 <tr>
@@ -156,6 +169,15 @@
     </font></i>
   </td>
 </tr>
+
+<& /Elements/EditCustomFields,
+    %ARGS,
+    Object => $ticket,
+    CustomFields => $QueueObj->TicketCustomFields,
+    Grouping => 'People',
+    InTable => 1,
+    KeepValue => 1,
+&>
 
 <tr>
 <td class="label">
@@ -169,7 +191,7 @@
 
 % if ( $gnupg_widget ) {
 <tr><td>&nbsp;</td><td colspan="5">
-<& /Elements/GnuPG/SignEncryptWidget, self => $gnupg_widget, QueueObj => $QueueObj &>
+<& /Elements/Crypt/SignEncryptWidget, self => $gnupg_widget, QueueObj => $QueueObj &>
 </td></tr>
 % }
 
@@ -204,9 +226,9 @@
 <tr>
 <td width="50%" valign="top" class="boxcontainer">
     <div class="ticket-info-basics">
-	  <&| /Widgets/TitleBox, title => loc('The Basics'), 
-		title_class=> 'inverse',  
-		color => "#993333" &>
+          <&| /Widgets/TitleBox, title => loc('The Basics'), 
+                title_class=> 'inverse',  
+                color => "#993333" &>
 <table border="0">
 <tr><td class="label"><&|/l&>Priority</&>:</td>
 <td><& /Elements/SelectPriority,
@@ -220,29 +242,37 @@
 &></td></tr>
 <tr><td class="label"><&|/l&>Time Estimated</&>:</td>
 <td>
-<& /Elements/EditTimeValue, Name => 'TimeEstimated', Default => $ARGS{TimeEstimated} || '', InUnits => $ARGS{'TimeEstimated-TimeUnits'} &>
+<& /Elements/EditTimeValue, Name => 'TimeEstimated', Default => $ARGS{TimeEstimated} || '' &>
 
 </td></tr>
 <tr><td class="label"><&|/l&>Time Worked</&>:</td>
 <td>
-<& /Elements/EditTimeValue, Name => 'TimeWorked', Default => $ARGS{TimeWorked} || '', InUnits => $ARGS{'TimeWorked-TimeUnits'} &>
+<& /Elements/EditTimeValue, Name => 'TimeWorked', Default => $ARGS{TimeWorked} || '' &>
 </td></tr>
 <tr>
 <td class="label"><&|/l&>Time Left</&>:</td>
 <td>
-<& /Elements/EditTimeValue, Name => 'TimeLeft', Default => $ARGS{TimeLeft} || '', InUnits => $ARGS{'TimeLeft-TimeUnits'} &>
+<& /Elements/EditTimeValue, Name => 'TimeLeft', Default => $ARGS{TimeLeft} || '' &>
 </td></tr>
 </table>
 </&>
 <br />
 <div class="ticket-info-dates">
 <&|/Widgets/TitleBox, title => loc("Dates"),
-		title_class=> 'inverse',  
-		 color => "#663366" &>
+  title_class=> 'inverse',  
+  color => "#663366" &>
 
 <table>
 <tr><td class="label"><&|/l&>Starts</&>:</td><td><& /Elements/SelectDate, Name => "Starts", Default => $ARGS{Starts} || '' &></td></tr>
 <tr><td class="label"><&|/l&>Due</&>:</td><td><& /Elements/SelectDate, Name => "Due", Default => $ARGS{Due} || '' &></td></tr>
+<& /Elements/EditCustomFields,
+    %ARGS,
+    Object => $ticket,
+    CustomFields => $QueueObj->TicketCustomFields,
+    Grouping => 'Dates',
+    InTable => 1,
+    KeepValue => 1,
+&>
 </table>
 </&>
 </div>
@@ -254,17 +284,11 @@
 <div class="ticket-info-links">
 <&| /Widgets/TitleBox, title => loc('Links'), title_class=> 'inverse' &>
 
-<em><&|/l&>(Enter ticket ids or URLs, separated with spaces)</&></em>
-<table border="0">
-<tr><td class="label"><&|/l&>Depends on</&></td><td><input size="10" name="new-DependsOn" value="<% $ARGS{'new-DependsOn'} || '' %>" /></td></tr>
-<tr><td class="label"><&|/l&>Depended on by</&></td><td><input size="10" name="DependsOn-new" value="<% $ARGS{'DependsOn-new'} || '' %>" /></td></tr>
-<tr><td class="label"><&|/l&>Parents</&></td><td><input size="10" name="new-MemberOf" value="<% $ARGS{'new-MemberOf'} || '' %>" /></td></tr>
-<tr><td class="label"><&|/l&>Children</&></td><td><input size="10" name="MemberOf-new" value="<% $ARGS{'MemberOf-new'} || '' %>" /></td></tr>
-<tr><td class="label"><&|/l&>Refers to</&></td><td><input size="10" name="new-RefersTo" value="<% $ARGS{'new-RefersTo'} || '' %>" /></td></tr>
-<tr><td class="label"><&|/l&>Referred to by</&></td><td><input size="10" name="RefersTo-new" value="<% $ARGS{'RefersTo-new'} || '' %>" /></td></tr>
-<tr><td class="label">Customer ID</td><td><input size="10" name="new-Customer" value="<% $ARGS{'new-Customer'} || '' %>" /></td></tr>
-
-</table>
+<& /Elements/AddLinks,
+    Object          => $ticket,
+    CustomFields    => $QueueObj->TicketCustomFields,
+    ARGSRef         => \%ARGS,
+    &>
 </&>
 </div>
 <br />
@@ -280,6 +304,8 @@
 $m->callback( CallbackName => "Init", ARGSRef => \%ARGS );
 my $Queue = $ARGS{Queue};
 $session{DefaultQueue} = $Queue;
+
+my $current_user = $session{'CurrentUser'};
 
 if ($CloneTicket) {
     my $CloneTicketObj = RT::Ticket->new( $session{CurrentUser} );
@@ -298,12 +324,9 @@ if ($CloneTicket) {
         # not TimeWorked, TimeEstimated, or TimeLeft
 
     $clone->{$_} = $CloneTicketObj->$_->AsString
-        for grep { $CloneTicketObj->$_->Unix }
+        for grep { $CloneTicketObj->$_->IsSet }
         map      { $_ . "Obj" } qw/Starts Started Due Resolved/;
 
-    my $members = $CloneTicketObj->Members;
-    my ( @members, @members_of, @refers, @refers_by, @depends, @depends_by );
-    my $refers = $CloneTicketObj->RefersTo;
     my $get_link_value = sub {
         my ($link, $type) = @_;
         my $uri_method = $type . 'URI';
@@ -316,6 +339,8 @@ if ($CloneTicket) {
 
         return $link->$local_method || $uri->URI;
     };
+    my (@refers, @refers_by);
+    my $refers = $CloneTicketObj->RefersTo;
     while ( my $refer = $refers->Next ) {
         my $refer_value = $get_link_value->($refer, 'Target');
         push @refers, $refer_value if defined $refer_value;
@@ -340,10 +365,10 @@ if ($CloneTicket) {
         }
 
         if ( @cf_values > 1 && $cf->Type eq 'Select' ) {
-            $clone->{"Object-RT::Ticket--CustomField-$cf_id-Value"} = \@cf_values;
+            $clone->{GetCustomFieldInputName( CustomField => $cf )} = \@cf_values;
         }
         else {
-            $clone->{"Object-RT::Ticket--CustomField-$cf_id-Value"} = join "\n",
+            $clone->{GetCustomFieldInputName( CustomField => $cf )} = join "\n",
               @cf_values;
         }
     }
@@ -368,34 +393,42 @@ my @results;
 
 my $title = loc("Create a new ticket");
 
-my $QueueObj = RT::Queue->new($session{'CurrentUser'});
-$QueueObj->Load($Queue) || Abort(loc("Queue could not be loaded."));
+my $QueueObj = RT::Queue->new($current_user);
+$QueueObj->Load($Queue) || Abort(loc("Queue [_1] could not be loaded.", $Queue||''));
 
 $m->callback( QueueObj => $QueueObj, title => \$title, results => \@results, ARGSRef => \%ARGS );
 
+$m->scomp( '/Articles/Elements/SubjectOverride', ARGSRef => \%ARGS, QueueObj => $QueueObj, results => \@results );
+
 $QueueObj->Disabled && Abort(loc("Cannot create tickets in a disabled queue."));
 
-my $CFs = $QueueObj->TicketCustomFields();
-
-my $ValidCFs = $m->comp(
-    '/Elements/ValidateCustomFields',
-    CustomFields => $CFs,
-    ARGSRef => \%ARGS
-);
+my $ticket = RT::Ticket->new($current_user); # empty ticket object
 
 ProcessAttachments(ARGSRef => \%ARGS);
 
 my $checks_failure = 0;
 
-my $gnupg_widget = $m->comp('/Elements/GnuPG/SignEncryptWidget:new', Arguments => \%ARGS );
-$m->comp( '/Elements/GnuPG/SignEncryptWidget:Process',
+{
+    my ($status, @msg) = $m->comp(
+        '/Elements/ValidateCustomFields',
+        CustomFields    => $QueueObj->TicketCustomFields,
+        ARGSRef         => \%ARGS
+    );
+    unless ($status) {
+        $checks_failure = 1;
+        push @results, @msg;
+    }
+}
+
+my $gnupg_widget = $m->comp('/Elements/Crypt/SignEncryptWidget:new', Arguments => \%ARGS );
+$m->comp( '/Elements/Crypt/SignEncryptWidget:Process',
     self      => $gnupg_widget,
     QueueObj  => $QueueObj,
 );
 
 
 if ( !exists $ARGS{'AddMoreAttach'} && ($ARGS{'id'}||'') eq 'new' ) {
-    my $status = $m->comp('/Elements/GnuPG/SignEncryptWidget:Check',
+    my $status = $m->comp('/Elements/Crypt/SignEncryptWidget:Check',
         self      => $gnupg_widget,
         Operation => 'Create',
         QueueObj  => $QueueObj,
@@ -427,7 +460,7 @@ $m->comp( '/Articles/Elements/CheckSkipCreate', ARGSRef => \%ARGS, skip_create =
               checks_failure => $checks_failure, results => \@results );
 
 if ((!exists $ARGS{'AddMoreAttach'}) and (defined($ARGS{'id'}) and $ARGS{'id'} eq 'new')) { # new ticket?
-    if ( $ValidCFs && !$checks_failure && !$skip_create ) {
+    if ( !$checks_failure && !$skip_create ) {
 # CREATE THE TICKET.
 # For some reason it's done by a Mason component named "Display.html"
 # and the call is buried in obscure error-handling stuff.
@@ -442,13 +475,6 @@ if ((!exists $ARGS{'AddMoreAttach'}) and (defined($ARGS{'id'}) and $ARGS{'id'} e
 # code dies before then, hence "$@".
         $RT::Logger->crit("After display call; error is $@");
         $m->abort();
-    }
-    elsif ( !$ValidCFs ) {
-        # Invalid CFs
-        while (my $CF = $CFs->Next) {
-            my $msg = $m->notes('InvalidField-' . $CF->Id) or next;
-            push @results, $CF->Name . ': ' . $msg;
-        }
     }
 }
 PageMenu->child( basics => raw_html =>  q[<a href="#basics" onclick="return switchVisibility('Ticket-Create-basics','Ticket-Create-details');">] . loc('Basics') . q[</a>]);
