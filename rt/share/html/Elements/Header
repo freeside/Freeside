@@ -49,7 +49,7 @@
               'title'     => $Title,
               'head'      => $head,
               'etc'       => $etc,
-              #make space for RT menu for now# 'nobr'  => 1,
+              'nobr'      => 1,
               'nocss'     => 1,
               'no_jquery' => $JavaScript,
           }
@@ -120,10 +120,20 @@ if ( $RSSAutoDiscovery ) {
 if ($JavaScript) {
     $head .= $m->scomp('/Elements/HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText );
 
-    my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
-    if ($m->comp_exists($stylesheet_plugin) ) {
-        $head .= $m->scomp($stylesheet_plugin);
-    }
+$head .= q[
+<script type="text/javascript">
+jQuery(document).ready(function(){
+    jQuery.fn.supersubs.defaults = {
+        maxWidth: 30,
+        extraWidth: 2
+    };
+
+    jQuery("#app-nav.toplevel").addClass('sf-menu sf-js-enabled sf-shadow').supersubs().superfish({ speed: 'fast' });
+    jQuery("#page-menu.toplevel").addClass('sf-menu sf-js-enabled').supersubs().superfish({ dropShadows: false, speed: 'fast' }).supposition();
+});
+</script>
+];
+
 }
 
 # $m->callback( %ARGS, CallbackName => 'Head' );

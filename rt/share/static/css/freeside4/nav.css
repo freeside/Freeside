@@ -65,10 +65,12 @@
 
 #page-navigation {
     position: absolute;
-    top: 6em;
+    /* top: 6em; */
+    top: 17em;
     right: 0;
-    left: 0;
-    padding-right: 3em;
+    /* left: 0; */
+    left: auto
+    /* padding-right: 3em; */
     z-index: 9995;
     font-size: 0.9em;
     border-bottom: 1px solid #ccc;
@@ -82,7 +84,8 @@
 }
 
 #page-navigation .sf-menu li {
-    background-color: transparent
+    /* background-color: transparent */
+    background-color: #f8f8f8
 }
 
 #page-navigation .sf-menu li li,
@@ -92,7 +95,7 @@
 
 #page-navigation .sf-menu a:visited,
 #page-navigation .sf-menu a {
-    border: none;
+    /* border: none; */
     color: #000;
 }
 
@@ -113,6 +116,8 @@
 #page-menu.toplevel.sf-menu {
     display: block
 }
+
+/*  ## new ticket via customer, and we already have a ticket search box
 
 #topactions {
     position: absolute;
@@ -156,6 +161,8 @@
 #topactions #simple-search .field:focus {
     color: #000
 }
+
+*/
 
 .sf-menu ul {
     background-image: none;
