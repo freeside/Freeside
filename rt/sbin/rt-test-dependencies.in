@@ -273,7 +273,6 @@ Crypt::SSLeay
 Net::SSL
 LWP::UserAgent 6.0
 LWP::Protocol::https
-Mozilla::CA
 .
 
 $deps{'CLI'} = [ text_to_hash( << '.') ];
