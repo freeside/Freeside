@@ -101,7 +101,7 @@ my $WebImagesURL = RT->Config->Get('WebImagesURL');
 my $squished = RT->Config->Get('DevelMode') ? '' : '-squished';
 
 if ( $JavaScript ) {
-  $head .= $m->scomp('JavascriptConfig');
+  $head .= $m->scomp('/Elements/JavascriptConfig');
 }
 
 for my $cssfile ( @css_files ) {
@@ -118,7 +118,7 @@ if ( $RSSAutoDiscovery ) {
 }
 
 if ($JavaScript) {
-    $head .= $m->scomp('HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText );
+    $head .= $m->scomp('/Elements/HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText );
 
     my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
     if ($m->comp_exists($stylesheet_plugin) ) {
@@ -135,7 +135,6 @@ my $etc = ' class="'. join( '',@{$ARGS{'BodyClass'}}). '" ';
 $etc .= qq[ id="comp-$id"] if $id;
 
 </%INIT>
-
 <%ARGS>
 #$Focus => 'focus'
 $Focus => ''
