@@ -557,6 +557,7 @@ foreach my $submenu (@menu) {
       }
       $a .= qq[>$label</A> ];
 
+      $cgi->param('show', $opt{show});
 
     } elsif ( $entry->{popup} ) {
 
