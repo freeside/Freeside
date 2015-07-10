@@ -60,9 +60,6 @@ sub Table {'Principals'}
 
 
 
-use Cache::Simple::TimedExpiry;
-
-
 use RT;
 use RT::Group;
 use RT::User;
@@ -71,6 +68,8 @@ use RT::User;
 our $_ACL_CACHE;
 InvalidateACLCache();
 
+require RT::ACE;
+RT::ACE->RegisterCacheHandler(sub { RT::Principal->InvalidateACLCache() });
 
 =head2 IsGroup
 
@@ -88,7 +87,18 @@ sub IsGroup {
     return undef;
 }
 
+=head2 IsRoleGroup
 
+Returns true if this principal is a role group.
+Returns undef, otherwise.
+
+=cut
+
+sub IsRoleGroup {
+    my $self = shift;
+    return ($self->IsGroup and $self->Object->RoleClass)
+        ? 1 : undef;
+}
 
 =head2 IsUser 
 
@@ -129,7 +139,7 @@ sub Object {
             $RT::Logger->crit("Found a principal (".$self->Id.") that was neither a user nor a group");
             return(undef);
         }
-        $self->{'object'}->Load( $self->ObjectId() );
+        $self->{'object'}->Load( $self->id );
     }
     return ($self->{'object'});
 
@@ -157,7 +167,7 @@ sub GrantRight {
         @_
     );
 
-    return (0, "Permission denied") if $args{'Right'} eq 'ExecuteCode'
+    return (0, "Permission Denied") if $args{'Right'} eq 'ExecuteCode'
         and RT->Config->Get('DisallowExecuteCode');
 
     #ACL check handled in ACE.pm
@@ -165,16 +175,16 @@ sub GrantRight {
 
     my $type = $self->_GetPrincipalTypeForACL();
 
-    RT->System->QueueCacheNeedsUpdate(1) if $args{'Right'} eq 'SeeQueue';
-
     # If it's a user, we really want to grant the right to their 
     # user equivalence group
-    return $ace->Create(
+    my ($id, $msg) = $ace->Create(
         RightName     => $args{'Right'},
         Object        => $args{'Object'},
         PrincipalType => $type,
         PrincipalId   => $self->Id,
     );
+
+    return ($id, $msg);
 }
 
 
@@ -218,9 +228,12 @@ sub RevokeRight {
         return (1);
     }
 
-    RT->System->QueueCacheNeedsUpdate(1) if $args{'Right'} eq 'SeeQueue';
     return ($status, $msg) unless $status;
-    return $ace->Delete;
+
+    my $right = $ace->RightName;
+    ($status, $msg) = $ace->Delete;
+
+    return ($status, $msg);
 }
 
 
@@ -293,19 +306,16 @@ sub HasRight {
     }
 
     {
-        my $cached = $_ACL_CACHE->fetch(
+        my $cached = $_ACL_CACHE->{
             $self->id .';:;'. ref($args{'Object'}) .'-'. $args{'Object'}->id
-        );
+        };
         return $cached->{'SuperUser'} || $cached->{ $args{'Right'} }
             if $cached;
     }
 
     unshift @{ $args{'EquivObjects'} },
         $args{'Object'}->ACLEquivalenceObjects;
-
-    unshift @{ $args{'EquivObjects'} }, $RT::System
-        unless $self->can('_IsOverrideGlobalACL')
-            && $self->_IsOverrideGlobalACL( $args{'Object'} );
+    unshift @{ $args{'EquivObjects'} }, $RT::System;
 
     # If we've cached a win or loss for this lookup say so
 
@@ -319,19 +329,19 @@ sub HasRight {
         $full_hashkey .= ";:;".$ref_id;
 
         my $short_hashkey = join(";:;", $self->id, $args{'Right'}, $ref_id);
-        my $cached_answer = $_ACL_CACHE->fetch($short_hashkey);
+        my $cached_answer = $_ACL_CACHE->{ $short_hashkey };
         return $cached_answer > 0 if defined $cached_answer;
     }
 
     {
-        my $cached_answer = $_ACL_CACHE->fetch($full_hashkey);
+        my $cached_answer = $_ACL_CACHE->{ $full_hashkey };
         return $cached_answer > 0 if defined $cached_answer;
     }
 
     my ( $hitcount, $via_obj ) = $self->_HasRight(%args);
 
-    $_ACL_CACHE->set( $full_hashkey => $hitcount ? 1 : -1 );
-    $_ACL_CACHE->set( join(';:;',  $self->id, $args{'Right'},$via_obj) => 1 )
+    $_ACL_CACHE->{ $full_hashkey } = $hitcount ? 1 : -1;
+    $_ACL_CACHE->{ join ';:;',  $self->id, $args{'Right'}, $via_obj } = 1
         if $via_obj && $hitcount;
 
     return ($hitcount);
@@ -372,15 +382,13 @@ sub HasRights {
     }
 
     my $cache_key = $self->id .';:;'. ref($object) .'-'. $object->id;
-    my $cached = $_ACL_CACHE->fetch($cache_key);
+    my $cached = $_ACL_CACHE->{ $cache_key };
     return $cached if $cached;
 
     push @{ $args{'EquivObjects'} }, $object;
     unshift @{ $args{'EquivObjects'} },
         $args{'Object'}->ACLEquivalenceObjects;
-    unshift @{ $args{'EquivObjects'} }, $RT::System
-        unless $self->can('_IsOverrideGlobalACL')
-            && $self->_IsOverrideGlobalACL( $object );
+    unshift @{ $args{'EquivObjects'} }, $RT::System;
 
     my %res = ();
     {
@@ -428,7 +436,7 @@ sub HasRights {
     delete $res{'ExecuteCode'} if 
         RT->Config->Get('DisallowExecuteCode');
 
-    $_ACL_CACHE->store( $cache_key, \%res );
+    $_ACL_CACHE->{ $cache_key } = \%res;
     return \%res;
 }
 
@@ -569,23 +577,13 @@ sub _HasRoleRightQuery {
     ;
 
     if ( $args{'Roles'} ) {
-        $query .= "AND (" . join( ' OR ', map "Groups.Type = '$_'", @{ $args{'Roles'} } ) . ")";
+        $query .= "AND (" . join( ' OR ',
+            map $RT::Handle->__MakeClauseCaseInsensitive('Groups.Name', '=', "'$_'"),
+            @{ $args{'Roles'} }
+        ) . ")";
     }
 
-    my (@object_clauses);
-    foreach my $obj ( @{ $args{'EquivObjects'} } ) {
-        my $type = ref($obj) ? ref($obj) : $obj;
-
-        my $clause = "Groups.Domain = '$type-Role'";
-
-        # XXX: Groups.Instance is VARCHAR in DB, we should quote value
-        # if we want mysql 4.0 use indexes here. we MUST convert that
-        # field to integer and drop this quotes.
-        if ( my $id = eval { $obj->id } ) {
-            $clause .= " AND Groups.Instance = '$id'";
-        }
-        push @object_clauses, "($clause)";
-    }
+    my @object_clauses = RT::Users->_RoleClauses( Groups => @{ $args{'EquivObjects'} } );
     $query .= " AND (" . join( ' OR ', @object_clauses ) . ")";
     return $query;
 }
@@ -683,10 +681,7 @@ Cleans out and reinitializes the user rights cache
 =cut
 
 sub InvalidateACLCache {
-    $_ACL_CACHE = Cache::Simple::TimedExpiry->new();
-    my $lifetime;
-    $lifetime = $RT::Config->Get('ACLCacheLifetime') if $RT::Config;
-    $_ACL_CACHE->expire_after( $lifetime || 60 );
+    $_ACL_CACHE = {}
 }
 
 
@@ -702,8 +697,8 @@ return that. if it has no type, return group.
 
 sub _GetPrincipalTypeForACL {
     my $self = shift;
-    if ($self->PrincipalType eq 'Group' && $self->Object->Domain =~ /Role$/) {
-        return $self->Object->Type;
+    if ($self->IsRoleGroup) {
+        return $self->Object->Name;
     } else {
         return $self->PrincipalType;
     }
@@ -734,7 +729,20 @@ sub _ReferenceId {
     }
 }
 
+sub ObjectId {
+    my $self = shift;
+    RT->Deprecated( Instead => 'id', Remove => '4.4' );
+    return $self->_Value('ObjectId');
+}
 
+sub LoadByCols {
+    my $self = shift;
+    my %args = @_;
+    if ( exists $args{'ObjectId'} ) {
+        RT->Deprecated( Arguments => 'ObjectId', Instead => 'id', Remove => '4.4' );
+    }
+    return $self->SUPER::LoadByCols( %args );
+}
 
 
 
@@ -807,16 +815,60 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         PrincipalType =>
-		{read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
         ObjectId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Disabled =>
-		{read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => '0'},
+                {read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => '0'},
 
  }
 };
+
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# Group or User
+# Could be wiped allready
+    my $obj = $self->Object;
+    if( defined $obj->id ) {
+        push( @$list, $obj );
+    }
+
+# Access Control List
+    my $objs = RT::ACL->new( $self->CurrentUser );
+    $objs->Limit(
+        FIELD => 'PrincipalId',
+        OPERATOR        => '=',
+        VALUE           => $self->Id
+    );
+    push( @$list, $objs );
+
+# AddWatcher/DelWatcher txns
+    foreach my $type ( qw(AddWatcher DelWatcher) ) {
+        my $objs = RT::Transactions->new( $self->CurrentUser );
+        $objs->Limit( FIELD => $type =~ /Add/? 'NewValue': 'OldValue', VALUE => $self->Id );
+        $objs->Limit( FIELD => 'Type', VALUE => $type );
+        push( @$list, $objs );
+    }
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+    return $self->SUPER::__DependsOn( %args );
+}
 
 RT::Base->_ImportOverlays();
 

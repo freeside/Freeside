@@ -3,7 +3,7 @@ use Test::MockTime qw(set_fixed_time restore_time);
 use warnings;
 use strict;
 
-use RT::Test nodata => 1, tests => 30;
+use RT::Test nodata => 1, tests => undef;
 RT->Config->Set( 'Timezone' => 'EST5EDT' ); # -04:00
 
 RT::Test->set_rights(
@@ -17,9 +17,11 @@ ok $q && $q->id, 'loaded or created a queue';
 
 my $user_m = RT::Test->load_or_create_user( Name => 'moscow', Timezone => 'Europe/Moscow' );
 ok $user_m && $user_m->id;
+$user_m = RT::CurrentUser->new( $user_m );
 
 my $user_b = RT::Test->load_or_create_user( Name => 'boston', Timezone => 'America/New_York' );
 ok $user_b && $user_b->id;
+$user_b = RT::CurrentUser->new( $user_b );
 
 my $cf = RT::CustomField->new(RT->SystemUser);
 ok(
@@ -204,6 +206,29 @@ while( my $ticket  = $tickets->Next ) {
     is( $tickets->Count, 0);
 }
 
+{
+    my $tickets = RT::Tickets->new(RT->SystemUser);
+    $tickets->LimitCustomField(
+        CUSTOMFIELD => $cf->id,
+        OPERATOR    => 'IS',
+        VALUE       => 'NULL',
+    );
+
+    is( $tickets->Count, 0, 'did not find the ticket with date IS NULL' );
+}
+
+{
+    my $tickets = RT::Tickets->new(RT->SystemUser);
+    $tickets->LimitCustomField(
+        CUSTOMFIELD => $cf->id,
+        OPERATOR    => 'IS NOT',
+        VALUE       => 'NULL',
+    );
+
+    is( $tickets->Count, 2, 'did find the ticket with date IS NOT NULL' );
+}
+
+
 # search by relative date with '=', but date only
 {
     my $ticket = RT::Ticket->new(RT->SystemUser);
@@ -235,3 +260,4 @@ while( my $ticket  = $tickets->Next ) {
     is( $tickets->Count, 0);
 }
 
+done_testing;

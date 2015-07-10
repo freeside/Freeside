@@ -98,7 +98,7 @@ the Due date. Tickets without due date B<are not updated>.
 =head1 CONFIGURATION
 
 Initial and Final priorities are controlled by queue's options
-and can be defined using the web UI via Configuration tab. This
+and can be defined using the web UI via Admin tab. This
 action should handle correctly situations when initial priority
 is greater than final.
 
@@ -140,8 +140,6 @@ use strict;
 use warnings;
 use base qw(RT::Action);
 
-our $VERSION = '0.06';
-
 #Do what we need to do and send it out.
 
 #What does this type of Action does
@@ -157,8 +155,7 @@ sub Prepare {
 
     my $ticket = $self->TicketObj;
 
-    my $due = $ticket->DueObj->Unix;
-    unless ( $due > 0 ) {
+    unless ( $ticket->DueObj->IsSet ) {
         $RT::Logger->debug('Due is not set. Not escalating.');
         return 1;
     }
@@ -183,9 +180,8 @@ sub Prepare {
     # now we know we have a due date. for every day that passes,
     # increment priority according to the formula
 
-    my $starts         = $ticket->StartsObj->Unix;
-    $starts            = $ticket->CreatedObj->Unix unless $starts > 0;
-    my $now            = time;
+    my $starts = $ticket->StartsObj->IsSet ? $ticket->StartsObj->Unix : $ticket->CreatedObj->Unix;
+    my $now    = time;
 
     # do nothing if we didn't reach starts or created date
     if ( $starts > $now ) {
@@ -193,12 +189,13 @@ sub Prepare {
         return 1;
     }
 
+    my $due = $ticket->DueObj->Unix;
     $due = $starts + 1 if $due <= $starts; # +1 to avoid div by zero
 
     my $percent_complete = ($now-$starts)/($due - $starts);
 
     my $new_priority = int($percent_complete * $priority_range) + ($ticket->InitialPriority || 0);
-	$new_priority = $ticket->FinalPriority if $new_priority > $ticket->FinalPriority;
+    $new_priority = $ticket->FinalPriority if $new_priority > $ticket->FinalPriority;
     $self->{'new_priority'} = $new_priority;
 
     return 1;

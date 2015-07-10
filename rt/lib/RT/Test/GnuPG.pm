@@ -65,12 +65,11 @@ sub import {
     my $t     = $class->builder;
 
     $t->plan( skip_all => 'GnuPG required.' )
-      unless eval { require GnuPG::Interface; 1 };
+      unless GnuPG::Interface->require;
     $t->plan( skip_all => 'gpg executable is required.' )
       unless RT::Test->find_executable('gpg');
 
     $class->SUPER::import(%args);
-    require RT::Crypt::GnuPG;
     return $class->export_to_level(1)
         if $^C;
 
@@ -107,7 +106,7 @@ Set(\%GnuPG, (
     OutgoingMessagesFormat => 'RFC',
 ));
 Set(\%GnuPGOptions => \%{ $dumped_gnupg_options });
-Set(\@MailPlugins => qw(Auth::MailFrom Auth::GnuPG));
+Set(\@MailPlugins => qw(Auth::MailFrom Auth::Crypt));
 };
 
 }
@@ -167,7 +166,7 @@ sub update_ticket {
 
     $m->click('SubmitTicket');
     is $m->status, 200, "request successful";
-    $m->content_contains("Message recorded", 'Message recorded') or diag $m->content;
+    $m->content_contains("Correspondence added", 'Correspondence added') or diag $m->content;
 
 
     my @mail = RT::Test->fetch_caught_mails;
@@ -231,7 +230,7 @@ sub cleanup_headers {
     # strip id from subject to create new ticket
     $mail =~ s/^(Subject:)\s*\[.*?\s+#\d+\]\s*/$1 /m;
     # strip several headers
-    foreach my $field ( qw(Message-ID X-RT-Original-Encoding RT-Originator RT-Ticket X-RT-Loop-Prevention) ) {
+    foreach my $field ( qw(Message-ID RT-Originator RT-Ticket X-RT-Loop-Prevention) ) {
         $mail =~ s/^$field:.*?\n(?! |\t)//gmsi;
     }
     return $mail;
@@ -276,7 +275,7 @@ sub send_email_and_check_transaction {
           "RT's outgoing mail looks not signed";
     }
     elsif ( $type eq 'signed' ) {
-        is $msg->GetHeader('X-RT-Privacy'), 'PGP',
+        is $msg->GetHeader('X-RT-Privacy'), 'GnuPG',
           "RT's outgoing mail has crypto";
         is $msg->GetHeader('X-RT-Incoming-Encryption'), 'Not encrypted',
           "RT's outgoing mail looks not encrypted";
@@ -285,7 +284,7 @@ sub send_email_and_check_transaction {
           "RT's outgoing mail looks signed";
     }
     elsif ( $type eq 'encrypted' ) {
-        is $msg->GetHeader('X-RT-Privacy'), 'PGP',
+        is $msg->GetHeader('X-RT-Privacy'), 'GnuPG',
           "RT's outgoing mail has crypto";
         is $msg->GetHeader('X-RT-Incoming-Encryption'), 'Success',
           "RT's outgoing mail looks encrypted";
@@ -294,7 +293,7 @@ sub send_email_and_check_transaction {
 
     }
     elsif ( $type eq 'signed_encrypted' ) {
-        is $msg->GetHeader('X-RT-Privacy'), 'PGP',
+        is $msg->GetHeader('X-RT-Privacy'), 'GnuPG',
           "RT's outgoing mail has crypto";
         is $msg->GetHeader('X-RT-Incoming-Encryption'), 'Success',
           "RT's outgoing mail looks encrypted";

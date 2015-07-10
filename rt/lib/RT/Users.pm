@@ -69,9 +69,9 @@ package RT::Users;
 use strict;
 use warnings;
 
-use RT::User;
-
 use base 'RT::SearchBuilder';
+
+use RT::User;
 
 sub Table { 'Users'}
 
@@ -86,12 +86,11 @@ sub _Init {
                     FIELD => 'Name',
                     ORDER => 'ASC' );
 
-    $self->{'princalias'} = $self->NewAlias('Principals');
-
     # XXX: should be generalized
-    $self->Join( ALIAS1 => 'main',
+    $self->{'princalias'} = $self->Join(
+                 ALIAS1 => 'main',
                  FIELD1 => 'id',
-                 ALIAS2 => $self->{'princalias'},
+                 TABLE2 => 'Principals',
                  FIELD2 => 'id' );
     $self->Limit( ALIAS => $self->{'princalias'},
                   FIELD => 'PrincipalType',
@@ -163,7 +162,7 @@ that email address
 sub LimitToEmail {
     my $self = shift;
     my $addr = shift;
-    $self->Limit( FIELD => 'EmailAddress', VALUE => "$addr" );
+    $self->Limit( FIELD => 'EmailAddress', VALUE => $addr, CASESENSITIVE => 0 );
 }
 
 
@@ -226,7 +225,7 @@ sub LimitToUnprivileged {
 sub Limit {
     my $self = shift;
     my %args = @_;
-    $args{'CASESENSITIVE'} = 0 unless exists $args{'CASESENSITIVE'};
+    $args{'CASESENSITIVE'} = 0 unless exists $args{'CASESENSITIVE'} or $args{'ALIAS'};
     return $self->SUPER::Limit( %args );
 }
 
@@ -363,7 +362,7 @@ sub _GetEquivObjects
     }
 
     if( $args{'IncludeSystemRights'} ) {
-        push @objects, 'RT::System';
+        push @objects, $RT::System;
     }
     push @objects, @{ $args{'EquivObjects'} };
     return grep $_, @objects;
@@ -441,7 +440,9 @@ sub WhoHaveRoleRight
                   VALUE => RT->SystemUser->id
                 );
 
-    $self->_AddSubClause( "WhichRole", "(". join( ' OR ', map "$groups.Type = '$_'", @roles ) .")" );
+    $self->_AddSubClause( "WhichRole", "(". join( ' OR ',
+        map $RT::Handle->__MakeClauseCaseInsensitive("$groups.Name", '=', "'$_'"), @roles
+    ) .")" );
 
     my @groups_clauses = $self->_RoleClauses( $groups, @objects );
     $self->_AddSubClause( "WhichObject", "(". join( ' OR ', @groups_clauses ) .")" )
@@ -458,14 +459,12 @@ sub _RoleClauses {
     my @groups_clauses;
     foreach my $obj ( @objects ) {
         my $type = ref($obj)? ref($obj): $obj;
-        my $id;
-        $id = $obj->id if ref($obj) && UNIVERSAL::can($obj, 'id') && $obj->id;
 
-        my $role_clause = "$groups.Domain = '$type-Role'";
-        # XXX: Groups.Instance is VARCHAR in DB, we should quote value
-        # if we want mysql 4.0 use indexes here. we MUST convert that
-        # field to integer and drop this quotes.
-        $role_clause   .= " AND $groups.Instance = '$id'" if $id;
+        my $role_clause = $RT::Handle->__MakeClauseCaseInsensitive("$groups.Domain", '=', "'$type-Role'");
+
+        if ( my $id = eval { $obj->id } ) {
+            $role_clause .= " AND $groups.Instance = $id";
+        }
         push @groups_clauses, "($role_clause)";
     }
     return @groups_clauses;
@@ -506,12 +505,14 @@ sub WhoHaveGroupRight
     my ($check_objects) = ('');
     my @objects = $self->_GetEquivObjects( %args );
 
+    my %seen;
     if ( @objects ) {
         my @object_clauses;
         foreach my $obj ( @objects ) {
             my $type = ref($obj)? ref($obj): $obj;
-            my $id;
+            my $id = 0;
             $id = $obj->id if ref($obj) && UNIVERSAL::can($obj, 'id') && $obj->id;
+            next if $seen{"$type-$id"}++;
 
             my $object_clause = "$acl.ObjectType = '$type'";
             $object_clause   .= " AND $acl.ObjectId   = $id" if $id;
@@ -570,27 +571,108 @@ sub WhoBelongToGroups {
     }
     my $group_members = $self->_JoinGroupMembers( %args );
 
-    foreach my $groupid (@{$args{'Groups'}}) {
-        $self->Limit( ALIAS           => $group_members,
-                      FIELD           => 'GroupId',
-                      VALUE           => $groupid,
-                      QUOTEVALUE      => 0,
-                      ENTRYAGGREGATOR => 'OR',
-                    );
-    }
+    $self->Limit(
+        ALIAS      => $group_members,
+        FIELD      => 'GroupId',
+        OPERATOR   => 'IN',
+        VALUE      => [ 0, @{$args{'Groups'}} ],
+    );
 }
 
+=head2 SimpleSearch
 
-=head2 NewItem
+Does a 'simple' search of Users against a specified Term.
 
-Returns an empty new RT::User item
+This Term is compared to a number of fields using various types of SQL
+comparison operators.
+
+Ensures that the returned collection of Users will have a value for Return.
+
+This method is passed the following.  You must specify a Term and a Return.
+
+    Privileged - Whether or not to limit to Privileged Users (0 or 1)
+    Fields     - Hashref of data - defaults to C<$UserSearchFields> emulate that if you want to override
+    Term       - String that is in the fields specified by Fields
+    Return     - What field on the User you want to be sure isn't empty
+    Exclude    - Array reference of ids to exclude
+    Max        - What to limit this collection to
 
 =cut
 
-sub NewItem {
+sub SimpleSearch {
     my $self = shift;
-    return(RT::User->new($self->CurrentUser));
+    my %args = (
+        Privileged  => 0,
+        Fields      => RT->Config->Get('UserSearchFields'),
+        Term        => undef,
+        Exclude     => [],
+        Return      => undef,
+        Max         => 10,
+        @_
+    );
+
+    return $self unless defined $args{Return}
+                        and defined $args{Term}
+                        and length $args{Term};
+
+    $self->RowsPerPage( $args{Max} );
+
+    $self->LimitToPrivileged() if $args{Privileged};
+
+    while (my ($name, $op) = each %{$args{Fields}}) {
+        $op = 'STARTSWITH'
+        unless $op =~ /^(?:LIKE|(?:START|END)SWITH|=|!=)$/i;
+
+        if ($name =~ /^CF\.(?:\{(.*)}|(.*))$/) {
+            my $cfname = $1 || $2;
+            my $cf = RT::CustomField->new(RT->SystemUser);
+            my ($ok, $msg) = $cf->LoadByName( Name => $cfname, LookupType => 'RT::User');
+            if ( $ok ) {
+                $self->LimitCustomField(
+                    CUSTOMFIELD     => $cf->Id,
+                    OPERATOR        => $op,
+                    VALUE           => $args{Term},
+                    ENTRYAGGREGATOR => 'OR',
+                    SUBCLAUSE       => 'autocomplete',
+                );
+            } else {
+                RT->Logger->warning("Asked to search custom field $name but unable to load a User CF with the name $cfname: $msg");
+            }
+        } else {
+            $self->Limit(
+                FIELD           => $name,
+                OPERATOR        => $op,
+                VALUE           => $args{Term},
+                ENTRYAGGREGATOR => 'OR',
+                SUBCLAUSE       => 'autocomplete',
+            );
+        }
+    }
+
+    # Exclude users we don't want
+    $self->Limit(FIELD => 'id', OPERATOR => 'NOT IN', VALUE => $args{Exclude} )
+        if @{$args{Exclude}};
+
+    if ( RT->Config->Get('DatabaseType') eq 'Oracle' ) {
+        $self->Limit(
+            FIELD    => $args{Return},
+            OPERATOR => 'IS NOT',
+            VALUE    => 'NULL',
+        );
+    }
+    else {
+        $self->Limit( FIELD => $args{Return}, OPERATOR => '!=', VALUE => '' );
+        $self->Limit(
+            FIELD           => $args{Return},
+            OPERATOR        => 'IS NOT',
+            VALUE           => 'NULL',
+            ENTRYAGGREGATOR => 'AND'
+        );
+    }
+
+    return $self;
 }
+
 RT::Base->_ImportOverlays();
 
 1;

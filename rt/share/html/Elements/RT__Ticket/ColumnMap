@@ -48,6 +48,7 @@
 <%ARGS>
 $Name => undef
 $Attr => undef
+$GenericMap => {}
 </%ARGS>
 
 
@@ -57,20 +58,36 @@ my $COLUMN_MAP;
 my $LinkCallback = sub {
     my $method = shift;
 
-    my $mode            = $RT::Ticket::LINKTYPEMAP{$method}{Mode};
-    my $type            = $RT::Ticket::LINKTYPEMAP{$method}{Type};
+    my $mode            = $RT::Link::TYPEMAP{$method}{Mode};
+    my $type            = $RT::Link::TYPEMAP{$method}{Type};
     my $other_mode      = ($mode eq "Target" ? "Base" : "Target");
     my $mode_uri        = $mode.'URI';
-    my $local_type      = 'Local'.$mode;
 
     return sub {
+        my $ObjectType = $_[2]||'';
         map {
             \'<a href="',
-            $_->$mode_uri->Resolver->HREF,
+            $_->$mode_uri->AsHREF,
             \'">',
-            ( $_->$mode_uri->IsLocal && $_->$local_type ? $_->$local_type : $_->$mode_uri->Resolver->AsString ),
+            ( $_->$mode_uri->AsString ),
             \'</a><br />',
-        } @{ $_[0]->Links($other_mode,$type)->ItemsArrayRef }
+        } # if someone says __RefersTo.{Ticket}__ filter for only local links that are tickets
+          grep { $ObjectType
+                    ? ( $_->$mode_uri->IsLocal
+                        && ( $_->$mode_uri->Object->RecordType eq $ObjectType ))
+                    : 1
+               }
+          @{ $_[0]->Links($other_mode,$type)->ItemsArrayRef }
+    }
+};
+
+my $trustSub = sub {
+    my $user = shift;
+    my %key = RT::Crypt->GetKeyInfo( Key => $user->EmailAddress );
+    if (!defined $key{'info'}) {
+        return $m->interp->apply_escapes(' ' . loc("(no pubkey!)"), "h");
+    } elsif ($key{'info'}{'TrustLevel'} == 0) {
+        return $m->interp->apply_escapes(' ' . loc("(untrusted!)"), "h");
     }
 };
 
@@ -118,7 +135,7 @@ $COLUMN_MAP = {
 
                     my $SearchURL = RT->Config->Get('WebPath') . '/Search/Results.html?' . $m->comp('/Elements/QueryString', Query => $Query);
 
-                    return \'<a href="',$SearchURL,\'">', loc('(pending [quant,_1,other ticket])',$count), \'</a>';
+                    return \'<a href="',$SearchURL,\'">', loc('(pending [quant,_1,other ticket,other tickets])',$count), \'</a>';
                 }
             }
             else {
@@ -169,21 +186,6 @@ $COLUMN_MAP = {
         title     => 'Time Estimated', # loc
         value     => sub { return $_[0]->TimeEstimated }
     },
-    Requestors => {
-        title     => 'Requestors', # loc
-        attribute => 'Requestor.EmailAddress',
-        value     => sub { return $_[0]->Requestors->MemberEmailAddressesAsString }
-    },
-    Cc => {
-        title     => 'Cc', # loc
-        attribute => 'Cc.EmailAddress',
-        value     => sub { return $_[0]->Cc->MemberEmailAddressesAsString }
-    },
-    AdminCc => {
-        title     => 'AdminCc', # loc
-        attribute => 'AdminCc.EmailAddress',
-        value     => sub { return $_[0]->AdminCc->MemberEmailAddressesAsString }
-    },
     StartsRelative => {
         title     => 'Starts', # loc
         attribute => 'Starts',
@@ -205,7 +207,7 @@ $COLUMN_MAP = {
         value     => sub { 
             my $date = $_[0]->DueObj;
             # Highlight the date if it was due in the past, and it's still active
-            if ( $date && $date->Unix > 0 && $date->Diff < 0 && $_[0]->QueueObj->IsActiveStatus($_[0]->Status)) {
+            if ( $date && $date->IsSet && $date->Diff < 0 && $_[0]->QueueObj->IsActiveStatus($_[0]->Status)) {
                 return (\'<span class="overdue">' , $date->AgeAsString , \'</span>');
             } else {
                 return $date->AgeAsString;
@@ -264,21 +266,7 @@ $COLUMN_MAP = {
     KeyRequestors => {
         title     => 'Requestors', # loc
         attribute => 'Requestor.EmailAddress',
-        value => sub {
-            my $t = shift;
-            my @requestors = $t->Requestors->MemberEmailAddresses;
-            for my $email (@requestors)
-            {
-                my %key = RT::Crypt::GnuPG::GetKeyInfo($email);
-                if (!defined $key{'info'}) {
-                    $email .= ' ' . loc("(no pubkey!)");
-                }
-                elsif ($key{'info'}{'TrustLevel'} == 0) {
-                    $email .= ' ' . loc("(untrusted!)");
-                }
-            }
-            return join ', ', @requestors;
-        }
+        value     => sub { return \($m->scomp("/Elements/ShowPrincipal", Object => $_[0]->Requestor, PostUser => $trustSub ) ) }
     },
     KeyOwnerName => {
         title     => 'Owner', # loc
@@ -286,7 +274,7 @@ $COLUMN_MAP = {
         value     => sub {
             my $t = shift;
             my $name = $t->OwnerObj->Name;
-            my %key = RT::Crypt::GnuPG::GetKeyInfo($t->OwnerObj->EmailAddress);
+            my %key = RT::Crypt->GetKeyInfo( Key => $t->OwnerObj->EmailAddress );
             if (!defined $key{'info'}) {
                 $name .= ' '. loc("(no pubkey!)");
             }
@@ -297,11 +285,16 @@ $COLUMN_MAP = {
             return $name;
         }
     },
+    KeyOwner => {
+        title     => 'Owner', # loc
+        attribute => 'Owner',
+        value     => sub { return \($m->scomp("/Elements/ShowPrincipal", Object => $_[0]->OwnerObj, PostUser => $trustSub ) ) }
+    },
 
     # Everything from LINKTYPEMAP
     (map {
         $_ => { value => $LinkCallback->( $_ ) }
-    } keys %RT::Ticket::LINKTYPEMAP),
+    } keys %RT::Link::TYPEMAP),
 
     '_CLASS' => {
         value => sub { return $_[1] % 2 ? 'oddline' : 'evenline' }
@@ -328,20 +321,15 @@ $COLUMN_MAP = {
     $m->comp('/Elements/CustomerFields', 'ColumnMap'),
     $m->comp('/Elements/ServiceFields', 'ColumnMap'),
 };
-
-# if no GPG support, then KeyOwnerName and KeyRequestors fall back to the regular
-# versions
-if (RT->Config->Get('GnuPG')->{'Enable'}) {
-    require RT::Crypt::GnuPG;
-}
-else {
-    $COLUMN_MAP->{KeyOwnerName} = $COLUMN_MAP->{OwnerName};
-    $COLUMN_MAP->{KeyRequestors} = $COLUMN_MAP->{Requestors};
-}
 </%ONCE>
 <%init>
-$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'Once', CallbackOnce => 1 );
-# backward compatibility
-$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap' );
+# if no encryption support, then KeyOwnerName and KeyRequestors fall back to the regular
+# versions
+unless (RT->Config->Get('Crypt')->{'Enable'}) {
+    $COLUMN_MAP->{KeyOwnerName}  = $COLUMN_MAP->{OwnerName};
+    $COLUMN_MAP->{KeyRequestors} = $GenericMap->{Requestors};
+}
+
+$m->callback( GenericMap => $GenericMap, COLUMN_MAP => $COLUMN_MAP, CallbackName => 'Once', CallbackOnce => 1 );
 return GetColumnMapEntry( Map => $COLUMN_MAP, Name => $Name, Attribute => $Attr );
 </%init>

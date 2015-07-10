@@ -113,9 +113,7 @@ sub GetReferencedQueues {
             return unless $clause->{Key} eq 'Queue';
             return unless $clause->{Op} eq '=';
 
-            my $value = $clause->{Value};
-            $value =~ s/\\(.)/$1/g if $value =~ s/^'(.*)'$/$1/;
-            $queues->{ $value } = 1;
+            $queues->{ $clause->{RawValue} } = 1;
         }
     );
 
@@ -257,6 +255,7 @@ sub ParseSQL {
     $callback{'EntryAggregator'} = sub { $node->setNodeValue( $_[0] ) };
     $callback{'Condition'} = sub {
         my ($key, $op, $value) = @_;
+        my $rawvalue = $value;
 
         my ($main_key) = split /[.]/, $key;
 
@@ -281,7 +280,7 @@ sub ParseSQL {
             $key = "'$key'";
         }
 
-        my $clause = { Key => $key, Op => $op, Value => $value };
+        my $clause = { Key => $key, Op => $op, Value => $value, RawValue => $rawvalue };
         $node->addChild( __PACKAGE__->new( $clause ) );
     };
     $callback{'Error'} = sub { push @results, @_ };

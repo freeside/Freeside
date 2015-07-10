@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 45;
+use RT::Test tests => undef;
 
 my ($baseurl, $m) = RT::Test->started_ok;
 ok $m->login, 'logged in as root';
@@ -12,7 +12,7 @@ my $cf_name = 'test select one value';
 my $cfid;
 diag "Create a CF";
 {
-    $m->follow_link( id => 'tools-config-custom-fields-create');
+    $m->follow_link( id => 'admin-custom-fields-create');
     $m->submit_form(
         form_name => "ModifyCustomField",
         fields => {
@@ -49,10 +49,10 @@ ok $queue && $queue->id, 'loaded or created queue';
 
 diag "apply the CF to General queue";
 {
-    $m->follow_link( id => 'tools-config-queues');
+    $m->follow_link( id => 'admin-queues');
     $m->follow_link( text => 'General' );
     $m->title_is(q/Configuration for queue General/, 'admin-queue: general');
-    $m->follow_link( id => 'page-ticket-custom-fields');
+    $m->follow_link( id => 'page-custom-fields-tickets');
     $m->title_is(q/Custom Fields for queue General/, 'admin-queue: general cfid');
 
     $m->form_name('EditCustomFields');
@@ -151,3 +151,32 @@ diag "check that we can set empty value when the current is 0";
        undef, 'API returns correct value';
 }
 
+diag 'retain selected cf values when adding attachments';
+{
+    my ( $ticket, $id );
+    $m->submit_form(
+        form_name => "CreateTicketInQueue",
+        fields    => { Queue => 'General' },
+    );
+    $m->content_contains($cf_name, 'Found cf field' );
+
+    $m->submit_form_ok(
+                       { form_name => "TicketCreate",
+          fields    => {
+              Subject        => 'test defaults',
+              Content        => 'test',
+              "Object-RT::Ticket--CustomField-$cfid-Values" => 'qwe',
+            },
+            button => 'AddMoreAttach',
+        },
+        'Add an attachment on create'
+    );
+
+    $m->form_name("TicketCreate");
+    is($m->value("Object-RT::Ticket--CustomField-$cfid-Values"),
+       "qwe",
+       "Selected value still on form" );
+}
+
+undef $m;
+done_testing;

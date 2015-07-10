@@ -66,11 +66,18 @@ package RT::Record;
 use strict;
 use warnings;
 
+use RT;
+use base RT->Config->Get('RecordBaseClass');
+use base 'RT::Base';
 
-use RT::Date;
-use RT::I18N;
-use RT::User;
-use RT::Attributes;
+require RT::Date;
+require RT::User;
+require RT::Attributes;
+require RT::Transactions;
+require RT::Link;
+use RT::Shredder::Dependencies;
+use RT::Shredder::Constants;
+use RT::Shredder::Exceptions;
 
 our $_TABLE_ATTR = { };
 use base RT->Config->Get('RecordBaseClass');
@@ -127,21 +134,39 @@ sub Delete {
     } 
 }
 
-=head2 ObjectTypeStr
+=head2 RecordType
 
-Returns a string which is this object's type.  The type is the class,
-without the "RT::" prefix.
-
+Returns a string which is this record's type. It's not localized and by
+default last part (everything after last ::) of class name is returned.
 
 =cut
 
+sub RecordType {
+    my $res = ref($_[0]) || $_[0];
+    $res =~ s/.*:://;
+    return $res;
+}
+
+=head2 ObjectTypeStr
+
+DEPRECATED. Stays here for backwards. Returns localized L</RecordType>.
+
+=cut
+
+# we deprecate because of:
+# * ObjectType is used in several classes with ObjectId to store
+#   records of different types, for example transactions use those
+#   and it's unclear what this method should return 'Transaction'
+#   or type of referenced record
+# * returning localized thing is not good idea
+
 sub ObjectTypeStr {
     my $self = shift;
-    if (ref($self) =~ /^.*::(\w+)$/) {
-	return $self->loc($1);
-    } else {
-	return $self->loc(ref($self));
-    }
+    RT->Deprecated(
+        Remove => "4.4",
+        Instead => "RecordType",
+    );
+    return $self->loc( $self->RecordType( @_ ) );
 }
 
 =head2 Attributes
@@ -372,7 +397,10 @@ sub LoadByCols {
     # We don't want to hang onto this
     $self->ClearAttributes;
 
-    return $self->SUPER::LoadByCols( @_ ) unless $self->_Handle->CaseSensitive;
+    unless ( $self->_Handle->CaseSensitive ) {
+        my ( $ret, $msg ) = $self->SUPER::LoadByCols( @_ );
+        return wantarray ? ( $ret, $msg ) : $ret;
+    }
 
     # If this database is case sensitive we need to uncase objects for
     # explicit loading
@@ -390,7 +418,8 @@ sub LoadByCols {
             $hash{$key}->{function} = $func;
         }
     }
-    return $self->SUPER::LoadByCols( %hash );
+    my ( $ret, $msg ) = $self->SUPER::LoadByCols( %hash );
+    return wantarray ? ( $ret, $msg ) : $ret;
 }
 
 
@@ -418,57 +447,44 @@ sub CreatedObj {
 }
 
 
-#
-# TODO: This should be deprecated
-#
+# B<DEPRECATED> and will be removed in 4.4
 sub AgeAsString {
     my $self = shift;
+    RT->Deprecated(
+        Remove => "4.4",
+        Instead => "->CreatedObj->AgeAsString",
+    );
     return ( $self->CreatedObj->AgeAsString() );
 }
 
-
-
-# TODO this should be deprecated
+# B<DEPRECATED> and will be removed in 4.4
+sub LongSinceUpdateAsString {
+    my $self = shift;
+    RT->Deprecated(
+        Remove => "4.4",
+        Instead => "->LastUpdatedObj->AgeAsString",
+    );
+    if ( $self->LastUpdated ) {
+        return ( $self->LastUpdatedObj->AgeAsString() );
+    } else {
+        return "never";
+    }
+}
 
 sub LastUpdatedAsString {
     my $self = shift;
     if ( $self->LastUpdated ) {
         return ( $self->LastUpdatedObj->AsString() );
-
-    }
-    else {
+    } else {
         return "never";
     }
 }
 
-
-#
-# TODO This should be deprecated 
-#
 sub CreatedAsString {
     my $self = shift;
     return ( $self->CreatedObj->AsString() );
 }
 
-
-#
-# TODO This should be deprecated
-#
-sub LongSinceUpdateAsString {
-    my $self = shift;
-    if ( $self->LastUpdated ) {
-
-        return ( $self->LastUpdatedObj->AgeAsString() );
-
-    }
-    else {
-        return "never";
-    }
-}
-
-
-
-#
 sub _Set {
     my $self = shift;
 
@@ -531,7 +547,6 @@ It takes no options. Arguably, this is a bug
 
 sub _SetLastUpdated {
     my $self = shift;
-    use RT::Date;
     my $now = RT::Date->new( $self->CurrentUser );
     $now->SetToNow();
 
@@ -642,6 +657,7 @@ sub __Value {
     }
 
     my $value = $self->SUPER::__Value($field);
+    return $value if ref $value;
 
     return undef if (!defined $value);
 
@@ -727,15 +743,19 @@ sub _Accessible  {
   my $self = shift;
   my $column = shift;
   my $attribute = lc(shift);
-  return 0 unless defined ($_TABLE_ATTR->{ref($self)}->{$column});
-  return $_TABLE_ATTR->{ref($self)}->{$column}->{$attribute} || 0;
+
+  my $class =  ref($self) || $self;
+  $class->_BuildTableAttributes unless ($_TABLE_ATTR->{$class});
+
+  return 0 unless defined ($_TABLE_ATTR->{$class}->{$column});
+  return $_TABLE_ATTR->{$class}->{$column}->{$attribute} || 0;
 
 }
 
 =head2 _EncodeLOB BODY MIME_TYPE FILENAME
 
 Takes a potentially large attachment. Returns (ContentEncoding,
-EncodedBody, MimeType, Filename) based on system configuration and
+EncodedBody, MimeType, Filename, NoteArgs) based on system configuration and
 selected database.  Returns a custom (short) text/plain message if
 DropLongAttachments causes an attachment to not be stored.
 
@@ -747,6 +767,10 @@ encoded on databases which are strict.
 This function expects to receive an octet string in order to properly
 evaluate and encode it.  It will return an octet string.
 
+NoteArgs is currently used to indicate caller that the message is too long and
+is truncated or dropped. It's a hashref which is expected to be passed to
+L<RT::Record/_NewTransaction>.
+
 =cut
 
 sub _EncodeLOB {
@@ -756,6 +780,7 @@ sub _EncodeLOB {
     my $Filename = shift;
 
     my $ContentEncoding = 'none';
+    my $note_args;
 
     RT::Util::assert_bytes( $Body );
 
@@ -783,11 +808,21 @@ sub _EncodeLOB {
     #if the attachment is larger than the maximum size
     if ( ($MaxSize) and ( $MaxSize < length($Body) ) ) {
 
+        my $size = length $Body;
         # if we're supposed to truncate large attachments
         if (RT->Config->Get('TruncateLongAttachments')) {
 
+            $RT::Logger->info("$self: Truncated an attachment of size $size");
+
             # truncate the attachment to that length.
             $Body = substr( $Body, 0, $MaxSize );
+            $note_args = {
+                Type           => 'AttachmentTruncate',
+                Data           => $Filename,
+                OldValue       => $size,
+                NewValue       => $MaxSize,
+                ActivateScrips => 0,
+            };
 
         }
 
@@ -795,11 +830,17 @@ sub _EncodeLOB {
         elsif (RT->Config->Get('DropLongAttachments')) {
 
             # drop the attachment on the floor
-            $RT::Logger->info( "$self: Dropped an attachment of size "
-                               . length($Body));
+            $RT::Logger->info( "$self: Dropped an attachment of size $size" );
             $RT::Logger->info( "It started: " . substr( $Body, 0, 60 ) );
-            $Filename .= ".txt" if $Filename;
-            return ("none", "Large attachment dropped", "text/plain", $Filename );
+            $note_args = {
+                Type           => 'AttachmentDrop',
+                Data           => $Filename,
+                OldValue       => $size,
+                NewValue       => $MaxSize,
+                ActivateScrips => 0,
+            };
+            $Filename .= ".txt" if $Filename && $Filename !~ /\.txt$/;
+            return ("none", "Large attachment dropped", "text/plain", $Filename, $note_args );
         }
     }
 
@@ -812,7 +853,8 @@ sub _EncodeLOB {
         $Body = MIME::QuotedPrint::encode($Body);
     }
 
-    return ($ContentEncoding, $Body, $MIMEType, $Filename );
+
+    return ($ContentEncoding, $Body, $MIMEType, $Filename, $note_args );
 }
 
 =head2 _DecodeLOB C<ContentType>, C<ContentEncoding>, C<Content>
@@ -870,23 +912,6 @@ sub _DecodeLOB {
     }
     return ($Content);
 }
-
-# A helper table for links mapping to make it easier
-# to build and parse links between tickets
-
-use vars '%LINKDIRMAP';
-
-%LINKDIRMAP = (
-    MemberOf => { Base => 'MemberOf',
-                  Target => 'HasMember', },
-    RefersTo => { Base => 'RefersTo',
-                Target => 'ReferredToBy', },
-    DependsOn => { Base => 'DependsOn',
-                   Target => 'DependedOnBy', },
-    MergedInto => { Base => 'MergedInto',
-                   Target => 'MergedInto', },
-
-);
 
 =head2 Update  ARGSHASH
 
@@ -949,17 +974,16 @@ sub Update {
         do {
             no warnings "uninitialized";
             local $@;
-            eval {
+            my $name = eval {
                 my $object = $attribute . "Obj";
-                my $name = $self->$object->Name;
-                next if $name eq $value || $name eq ($value || 0);
+                $self->$object->Name;
             };
+            unless ($@) {
+                next if $name eq $value || $name eq ($value || 0);
+            }
 
-            my $current = $self->$attribute();
-            # RT::Queue->Lifecycle returns a Lifecycle object instead of name
-            $current = eval { $current->Name } if ref $current;
-            next if $truncated_value eq $current;
-            next if ( $truncated_value || 0 ) eq $current;
+            next if $truncated_value eq $self->$attribute();
+            next if ( $truncated_value || 0 ) eq $self->$attribute();
         };
 
         $new_values{$attribute} = $value;
@@ -1117,12 +1141,9 @@ sub HasUnresolvedDependencies {
     my $deps = $self->UnresolvedDependencies;
 
     if ($args{Type}) {
-        $deps->Limit( FIELD => 'Type', 
-              OPERATOR => '=',
-              VALUE => $args{Type}); 
-    }
-    else {
-	    $deps->IgnoreType;
+        $deps->LimitType( VALUE => $args{Type} );
+    } else {
+        $deps->IgnoreType;
     }
 
     if ($deps->Count > 0) {
@@ -1148,10 +1169,7 @@ sub UnresolvedDependencies {
     my $self = shift;
     my $deps = RT::Tickets->new($self->CurrentUser);
 
-    my @live_statuses = RT::Queue->ActiveStatusArray();
-    foreach my $status (@live_statuses) {
-        $deps->LimitStatus(VALUE => $status);
-    }
+    $deps->LimitToActiveStatus;
     $deps->LimitDependedOnBy($self->Id);
 
     return($deps);
@@ -1199,35 +1217,35 @@ sub _AllLinkedTickets {
         LinkType  => undef,
         Direction => undef,
         Type   => undef,
-	_found => {},
-	_top   => 1,
+        _found => {},
+        _top   => 1,
         @_
     );
 
     my $dep = $self->_Links( $args{Direction}, $args{LinkType});
     while (my $link = $dep->Next()) {
         my $uri = $args{Direction} eq 'Target' ? $link->BaseURI : $link->TargetURI;
-	next unless ($uri->IsLocal());
+        next unless ($uri->IsLocal());
         my $obj = $args{Direction} eq 'Target' ? $link->BaseObj : $link->TargetObj;
-	next if $args{_found}{$obj->Id};
+        next if $args{_found}{$obj->Id};
 
-	if (!$args{Type}) {
-	    $args{_found}{$obj->Id} = $obj;
-	    $obj->_AllLinkedTickets( %args, _top => 0 );
-	}
-	elsif ($obj->Type and $obj->Type eq $args{Type}) {
-	    $args{_found}{$obj->Id} = $obj;
-	}
-	else {
-	    $obj->_AllLinkedTickets( %args, _top => 0 );
-	}
+        if (!$args{Type}) {
+            $args{_found}{$obj->Id} = $obj;
+            $obj->_AllLinkedTickets( %args, _top => 0 );
+        }
+        elsif ($obj->Type and $obj->Type eq $args{Type}) {
+            $args{_found}{$obj->Id} = $obj;
+        }
+        else {
+            $obj->_AllLinkedTickets( %args, _top => 0 );
+        }
     }
 
     if ($args{_top}) {
-	return map { $args{_found}{$_} } sort keys %{$args{_found}};
+        return map { $args{_found}{$_} } sort keys %{$args{_found}};
     }
     else {
-	return 1;
+        return 1;
     }
 }
 
@@ -1362,8 +1380,8 @@ Takes a Type and returns a string that is more human readable.
 sub FormatType{
     my $self = shift;
     my %args = ( Type => '',
-		 @_
-	       );
+                 @_
+               );
     $args{Type} =~ s/([A-Z])/" " . lc $1/ge;
     $args{Type} =~ s/^\s+//;
     return $args{Type};
@@ -1381,35 +1399,51 @@ Takes either a Target or a Base and returns a string of human friendly text.
 sub FormatLink {
     my $self = shift;
     my %args = ( Object => undef,
-		 FallBack => '',
-		 @_
-	       );
+                 FallBack => '',
+                 @_
+               );
     my $text = "URI " . $args{FallBack};
     if ($args{Object} && $args{Object}->isa("RT::Ticket")) {
-	$text = "Ticket " . $args{Object}->id;
+        $text = "Ticket " . $args{Object}->id;
     }
     return $text;
 }
-
-
 
 =head2 _AddLink
 
 Takes a paramhash of Type and one of Base or Target. Adds that link to this object.
 
-Returns C<link id>, C<message> and C<exist> flag.
+If Silent is true then no transactions will be recorded.  You can individually
+control transactions on both base and target and with SilentBase and
+SilentTarget respectively. By default both transactions are created.
 
+If the link destination is a local object and does the
+L<RT::Record::Role::Status> role, this method ensures object Status is not
+"deleted".  Linking to deleted objects is forbidden.
+
+If the link destination (i.e. not C<$self>) is a local object and the
+C<$StrictLinkACL> option is enabled, this method checks the appropriate right
+on the destination object (if any, as returned by the L</ModifyLinkRight>
+method).  B<< The subclass is expected to check the appropriate right on the
+source object (i.e.  C<$self>) before calling this method. >>  This allows a
+different right to be used on the source object during creation, for example.
+
+Returns a tuple of (link ID, message, flag if link already existed).
 
 =cut
 
 sub _AddLink {
     my $self = shift;
-    my %args = ( Target => '',
-                 Base   => '',
-                 Type   => '',
-                 Silent => undef,
-                 @_ );
-
+    my %args = (
+        Target       => '',
+        Base         => '',
+        Type         => '',
+        Silent       => undef,
+        Silent       => undef,
+        SilentBase   => undef,
+        SilentTarget => undef,
+        @_
+    );
 
     # Remote_link is the URI of the object that is not this ticket
     my $remote_link;
@@ -1433,8 +1467,30 @@ sub _AddLink {
         return ( 0, $self->loc('Either base or target must be specified') );
     }
 
+    my $remote_uri = RT::URI->new( $self->CurrentUser );
+    if ($remote_uri->FromURI( $remote_link )) {
+        my $remote_obj = $remote_uri->IsLocal ? $remote_uri->Object : undef;
+        if ($remote_obj and $remote_obj->id) {
+            # Enforce the remote end of StrictLinkACL
+            if (RT->Config->Get("StrictLinkACL")) {
+                my $right = $remote_obj->ModifyLinkRight;
+
+                return (0, $self->loc("Permission denied"))
+                    if $right and
+                   not $self->CurrentUser->HasRight( Right => $right, Object => $remote_obj );
+            }
+
+            # Prevent linking to deleted objects
+            if ($remote_obj->DOES("RT::Record::Role::Status")
+                and $remote_obj->Status eq "deleted") {
+                return (0, $self->loc("Linking to a deleted [_1] is not allowed", $self->loc(lc($remote_obj->RecordType))));
+            }
+        }
+    } else {
+        return (0, $self->loc("Couldn't resolve '[_1]' into a link.", $remote_link));
+    }
+
     # Check if the link already exists - we don't want duplicates
-    use RT::Link;
     my $old_link = RT::Link->new( $self->CurrentUser );
     $old_link->LoadByParams( Base   => $args{'Base'},
                              Type   => $args{'Type'},
@@ -1444,52 +1500,96 @@ sub _AddLink {
         return ( $old_link->id, $self->loc("Link already exists"), 1 );
     }
 
-    # }}}
+    if ( $args{'Type'} =~ /^(?:DependsOn|MemberOf)$/ ) {
 
+        my @tickets = $self->_AllLinkedTickets(
+            LinkType  => $args{'Type'},
+            Direction => $direction eq 'Target' ? 'Base' : 'Target',
+        );
+        if ( grep { $_->id == ( $direction eq 'Target' ? $args{'Base'} : $args{'Target'} ) } @tickets ) {
+            return ( 0, $self->loc("Refused to add link which would create a circular relationship") );
+        }
+    }
 
     # Storing the link in the DB.
     my $link = RT::Link->new( $self->CurrentUser );
     my ($linkid, $linkmsg) = $link->Create( Target => $args{Target},
-                                  Base   => $args{Base},
-                                  Type   => $args{Type} );
+                                            Base   => $args{Base},
+                                            Type   => $args{Type} );
 
     unless ($linkid) {
         $RT::Logger->error("Link could not be created: ".$linkmsg);
-        return ( 0, $self->loc("Link could not be created") );
+        return ( 0, $self->loc("Link could not be created: [_1]", $linkmsg) );
     }
 
-    my $basetext = $self->FormatLink(Object => $link->BaseObj,
-				     FallBack => $args{Base});
-    my $targettext = $self->FormatLink(Object => $link->TargetObj,
-				       FallBack => $args{Target});
+    my $basetext = $self->FormatLink(Object   => $link->BaseObj,
+                                     FallBack => $args{Base});
+    my $targettext = $self->FormatLink(Object   => $link->TargetObj,
+                                       FallBack => $args{Target});
     my $typetext = $self->FormatType(Type => $args{Type});
-    my $TransString =
-      "$basetext $typetext $targettext.";
-    return ( $linkid, $TransString ) ;
+    my $TransString = "$basetext $typetext $targettext.";
+
+    # No transactions for you!
+    return ($linkid, $TransString) if $args{'Silent'};
+
+    my $opposite_direction = $direction eq 'Target' ? 'Base': 'Target';
+
+    # Some transactions?
+    unless ( $args{ 'Silent'. $direction } ) {
+        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
+            Type      => 'AddLink',
+            Field     => $RT::Link::DIRMAP{$args{'Type'}}->{$direction},
+            NewValue  => $remote_uri->URI || $remote_link,
+            TimeTaken => 0
+        );
+        $RT::Logger->error("Couldn't create transaction: $Msg") unless $Trans;
+    }
+
+    if ( !$args{"Silent$opposite_direction"} && $remote_uri->IsLocal ) {
+        my $OtherObj = $remote_uri->Object;
+        my ( $val, $msg ) = $OtherObj->_NewTransaction(
+            Type           => 'AddLink',
+            Field          => $RT::Link::DIRMAP{$args{'Type'}}->{$opposite_direction},
+            NewValue       => $self->URI,
+            TimeTaken      => 0,
+        );
+        $RT::Logger->error("Couldn't create transaction: $msg") unless $val;
+    }
+
+    return ($linkid, $TransString);
 }
-
-
 
 =head2 _DeleteLink
 
-Delete a link. takes a paramhash of Base, Target and Type.
-Either Base or Target must be null. The null value will 
-be replaced with this ticket's id
+Takes a paramhash of Type and one of Base or Target. Removes that link from this object.
+
+If Silent is true then no transactions will be recorded.  You can individually
+control transactions on both base and target and with SilentBase and
+SilentTarget respectively. By default both transactions are created.
+
+If the link destination (i.e. not C<$self>) is a local object and the
+C<$StrictLinkACL> option is enabled, this method checks the appropriate right
+on the destination object (if any, as returned by the L</ModifyLinkRight>
+method).  B<< The subclass is expected to check the appropriate right on the
+source object (i.e.  C<$self>) before calling this method. >>
+
+Returns a tuple of (status flag, message).
 
 =cut 
 
 sub _DeleteLink {
     my $self = shift;
     my %args = (
-        Base   => undef,
-        Target => undef,
-        Type   => undef,
+        Base         => undef,
+        Target       => undef,
+        Type         => undef,
+        Silent       => undef,
+        SilentBase   => undef,
+        SilentTarget => undef,
         @_
     );
 
-    #we want one of base and target. we don't care which
-    #but we only want _one_
-
+    # We want one of base and target. We don't care which but we only want _one_.
     my $direction;
     my $remote_link;
 
@@ -1499,45 +1599,93 @@ sub _DeleteLink {
     }
     elsif ( $args{'Base'} ) {
         $args{'Target'} = $self->URI();
-	$remote_link = $args{'Base'};
-    	$direction = 'Target';
+        $remote_link    = $args{'Base'};
+        $direction      = 'Target';
     }
     elsif ( $args{'Target'} ) {
         $args{'Base'} = $self->URI();
-	$remote_link = $args{'Target'};
-        $direction='Base';
+        $remote_link  = $args{'Target'};
+        $direction    = 'Base';
     }
     else {
         $RT::Logger->error("Base or Target must be specified");
         return ( 0, $self->loc('Either base or target must be specified') );
     }
 
-    my $link = RT::Link->new( $self->CurrentUser );
-    $RT::Logger->debug( "Trying to load link: " . $args{'Base'} . " " . $args{'Type'} . " " . $args{'Target'} );
+    my $remote_uri = RT::URI->new( $self->CurrentUser );
+    if ($remote_uri->FromURI( $remote_link )) {
+        # Enforce the remote end of StrictLinkACL
+        my $remote_obj = $remote_uri->IsLocal ? $remote_uri->Object : undef;
+        if ($remote_obj and $remote_obj->id and RT->Config->Get("StrictLinkACL")) {
+            my $right = $remote_obj->ModifyLinkRight;
 
-
-    $link->LoadByParams( Base=> $args{'Base'}, Type=> $args{'Type'}, Target=>  $args{'Target'} );
-    #it's a real link. 
-
-    if ( $link->id ) {
-        my $basetext = $self->FormatLink(Object => $link->BaseObj,
-                                     FallBack => $args{Base});
-        my $targettext = $self->FormatLink(Object => $link->TargetObj,
-                                       FallBack => $args{Target});
-        my $typetext = $self->FormatType(Type => $args{Type});
-        my $linkid = $link->id;
-        $link->Delete();
-        my $TransString = "$basetext no longer $typetext $targettext.";
-        return ( 1, $TransString);
+            return (0, $self->loc("Permission denied"))
+                if $right and
+               not $self->CurrentUser->HasRight( Right => $right, Object => $remote_obj );
+        }
+    } else {
+        return (0, $self->loc("Couldn't resolve '[_1]' into a link.", $remote_link));
     }
 
-    #if it's not a link we can find
-    else {
+    my $link = RT::Link->new( $self->CurrentUser );
+    $RT::Logger->debug( "Trying to load link: "
+            . $args{'Base'} . " "
+            . $args{'Type'} . " "
+            . $args{'Target'} );
+
+    $link->LoadByParams(
+        Base   => $args{'Base'},
+        Type   => $args{'Type'},
+        Target => $args{'Target'}
+    );
+
+    unless ($link->id) {
         $RT::Logger->debug("Couldn't find that link");
         return ( 0, $self->loc("Link not found") );
     }
-}
 
+    my $basetext = $self->FormatLink(Object   => $link->BaseObj,
+                                     FallBack => $args{Base});
+    my $targettext = $self->FormatLink(Object   => $link->TargetObj,
+                                       FallBack => $args{Target});
+    my $typetext = $self->FormatType(Type => $args{Type});
+    my $TransString = "$basetext no longer $typetext $targettext.";
+
+    my ($ok, $msg) = $link->Delete();
+    unless ($ok) {
+        RT->Logger->error("Link could not be deleted: $msg");
+        return ( 0, $self->loc("Link could not be deleted: [_1]", $msg) );
+    }
+
+    # No transactions for you!
+    return (1, $TransString) if $args{'Silent'};
+
+    my $opposite_direction = $direction eq 'Target' ? 'Base': 'Target';
+
+    # Some transactions?
+    unless ( $args{ 'Silent'. $direction } ) {
+        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
+            Type      => 'DeleteLink',
+            Field     => $RT::Link::DIRMAP{$args{'Type'}}->{$direction},
+            OldValue  => $remote_uri->URI || $remote_link,
+            TimeTaken => 0
+        );
+        $RT::Logger->error("Couldn't create transaction: $Msg") unless $Trans;
+    }
+
+    if ( !$args{"Silent$opposite_direction"} && $remote_uri->IsLocal ) {
+        my $OtherObj = $remote_uri->Object;
+        my ( $val, $msg ) = $OtherObj->_NewTransaction(
+            Type           => 'DeleteLink',
+            Field          => $RT::Link::DIRMAP{$args{'Type'}}->{$opposite_direction},
+            OldValue       => $self->URI,
+            TimeTaken      => 0,
+        );
+        $RT::Logger->error("Couldn't create transaction: $msg") unless $val;
+    }
+
+    return (1, $TransString);
+}
 
 =head1 LockForUpdate
 
@@ -1604,20 +1752,20 @@ sub _NewTransaction {
     my $new_ref = $args{'NewReference'};
     my $ref_type = $args{'ReferenceType'};
     if ($old_ref or $new_ref) {
-	$ref_type ||= ref($old_ref) || ref($new_ref);
-	if (!$ref_type) {
-	    $RT::Logger->error("Reference type not specified for transaction");
-	    return;
-	}
-	$old_ref = $old_ref->Id if ref($old_ref);
-	$new_ref = $new_ref->Id if ref($new_ref);
+        $ref_type ||= ref($old_ref) || ref($new_ref);
+        if (!$ref_type) {
+            $RT::Logger->error("Reference type not specified for transaction");
+            return;
+        }
+        $old_ref = $old_ref->Id if ref($old_ref);
+        $new_ref = $new_ref->Id if ref($new_ref);
     }
 
     require RT::Transaction;
     my $trans = RT::Transaction->new( $self->CurrentUser );
     my ( $transaction, $msg ) = $trans->Create(
-	ObjectId  => $self->Id,
-	ObjectType => ref($self),
+        ObjectId  => $self->Id,
+        ObjectType => ref($self),
         TimeTaken => $args{'TimeTaken'},
         Type      => $args{'Type'},
         Data      => $args{'Data'},
@@ -1642,10 +1790,10 @@ sub _NewTransaction {
     $self->_SetLastUpdated;
 
     if ( defined $args{'TimeTaken'} and $self->can('_UpdateTimeTaken')) {
-        $self->_UpdateTimeTaken( $args{'TimeTaken'} );
+        $self->_UpdateTimeTaken( $args{'TimeTaken'}, Transaction => $trans );
     }
     if ( RT->Config->Get('UseTransactionBatch') and $transaction ) {
-	    push @{$self->{_TransactionBatch}}, $trans if $args{'CommitScrips'};
+            push @{$self->{_TransactionBatch}}, $trans if $args{'CommitScrips'};
     }
 
     RT->DatabaseHandle->Commit unless $in_txn;
@@ -1657,17 +1805,14 @@ sub _NewTransaction {
 
 =head2 Transactions
 
-  Returns an RT::Transactions object of all transactions on this record object
+Returns an L<RT::Transactions> object of all transactions on this record object
 
 =cut
 
 sub Transactions {
     my $self = shift;
 
-    use RT::Transactions;
     my $transactions = RT::Transactions->new( $self->CurrentUser );
-
-    #If the user has no rights, return an empty object
     $transactions->Limit(
         FIELD => 'ObjectId',
         VALUE => $self->id,
@@ -1677,10 +1822,138 @@ sub Transactions {
         VALUE => ref($self),
     );
 
-    return ($transactions);
+    return $transactions;
 }
 
-#
+=head2 SortedTransactions
+
+Returns the result of L</Transactions> ordered per the
+I<OldestTransactionsFirst> preference/option.
+
+=cut
+
+sub SortedTransactions {
+    my $self  = shift;
+    my $txns  = $self->Transactions;
+    my $order = RT->Config->Get("OldestTransactionsFirst", $self->CurrentUser)
+        ? 'ASC' : 'DESC';
+    $txns->OrderByCols(
+        { FIELD => 'Created',   ORDER => $order },
+        { FIELD => 'id',        ORDER => $order },
+    );
+    return $txns;
+}
+
+our %TRANSACTION_CLASSIFICATION = (
+    Create     => 'message',
+    Correspond => 'message',
+    Comment    => 'message',
+
+    AddWatcher => 'people',
+    DelWatcher => 'people',
+
+    Take       => 'people',
+    Untake     => 'people',
+    Force      => 'people',
+    Steal      => 'people',
+    Give       => 'people',
+
+    AddLink    => 'links',
+    DeleteLink => 'links',
+
+    Status     => 'basics',
+    Set        => {
+        __default => 'basics',
+        map( { $_ => 'dates' } qw(
+            Told Starts Started Due LastUpdated Created LastUpdated
+        ) ),
+        map( { $_ => 'people' } qw(
+            Owner Creator LastUpdatedBy
+        ) ),
+    },
+    SystemError => 'error',
+    AttachmentTruncate => 'attachment-truncate',
+    AttachmentDrop => 'attachment-drop',
+    AttachmentError => 'error',
+    __default => 'other',
+);
+
+sub ClassifyTransaction {
+    my $self = shift;
+    my $txn = shift;
+
+    my $type = $txn->Type;
+
+    my $res = $TRANSACTION_CLASSIFICATION{ $type };
+    return $res || $TRANSACTION_CLASSIFICATION{ '__default' }
+        unless ref $res;
+
+    return $res->{ $txn->Field } || $res->{'__default'}
+        || $TRANSACTION_CLASSIFICATION{ '__default' }; 
+}
+
+=head2 Attachments
+
+Returns an L<RT::Attachments> object of all attachments on this record object
+(for all its L</Transactions>).
+
+By default Content and Headers of attachments are not fetched right away from
+database. Use C<WithContent> and C<WithHeaders> options to override this.
+
+=cut
+
+sub Attachments {
+    my $self = shift;
+    my %args = (
+        WithHeaders => 0,
+        WithContent => 0,
+        @_
+    );
+    my @columns = grep { not /^(Headers|Content)$/ }
+                       RT::Attachment->ReadableAttributes;
+    push @columns, 'Headers' if $args{'WithHeaders'};
+    push @columns, 'Content' if $args{'WithContent'};
+
+    my $res = RT::Attachments->new( $self->CurrentUser );
+    $res->Columns( @columns );
+    my $txn_alias = $res->TransactionAlias;
+    $res->Limit(
+        ALIAS => $txn_alias,
+        FIELD => 'ObjectType',
+        VALUE => ref($self),
+    );
+    $res->Limit(
+        ALIAS => $txn_alias,
+        FIELD => 'ObjectId',
+        VALUE => $self->id,
+    );
+    return $res;
+}
+
+=head2 TextAttachments
+
+Returns an L<RT::Attachments> object of all attachments, like L<Attachments>,
+but only those that are text.
+
+By default Content and Headers are fetched. Use C<WithContent> and
+C<WithHeaders> options to override this.
+
+=cut
+
+sub TextAttachments {
+    my $self = shift;
+    my $res = $self->Attachments(
+        WithHeaders => 1,
+        WithContent => 1,
+        @_
+    );
+    $res->Limit( FIELD => 'ContentType', OPERATOR => '=', VALUE => 'text/plain');
+    $res->Limit( FIELD => 'ContentType', OPERATOR => 'STARTSWITH', VALUE => 'message/');
+    $res->Limit( FIELD => 'ContentType', OPERATOR => '=', VALUE => 'text');
+    $res->Limit( FIELD => 'Filename', OPERATOR => 'IS', VALUE => 'NULL')
+        if RT->Config->Get( 'SuppressInlineTextFiles', $self->CurrentUser );
+    return $res;
+}
 
 sub CustomFields {
     my $self = shift;
@@ -1710,8 +1983,8 @@ sub CustomFieldLookupId {
     # Save a ->Load call by not calling ->FooObj->Id, just ->Foo
     my $final = shift @classes;
     foreach my $class (reverse @classes) {
-	my $method = "${class}Obj";
-	$object = $object->$method;
+        my $method = "${class}Obj";
+        $object = $object->$method;
     }
 
     my $id = $object->$final;
@@ -1900,11 +2173,9 @@ sub _AddCustomFieldValue {
 
     # otherwise, just add a new value and record "new value added"
     else {
-        if ( !$cf->Repeated ) {
-            my $values = $cf->ValuesForObject($self);
-            if ( my $entry = $values->HasEntry($args{'Value'}, $args{'LargeContent'}) ) {
-                return $entry->id;
-            }
+        my $values = $cf->ValuesForObject($self);
+        if ( my $entry = $values->HasEntry($args{'Value'}, $args{'LargeContent'}) ) {
+            return $entry->id;
         }
 
         my ($new_value_id, $msg) = $cf->AddValueForObject(
@@ -2104,10 +2375,357 @@ sub LoadCustomFieldByIdentifier {
 
 sub ACLEquivalenceObjects { } 
 
+=head2 HasRight
+
+ Takes a paramhash with the attributes 'Right' and 'Principal'
+  'Right' is a ticket-scoped textual right from RT::ACE 
+  'Principal' is an RT::User object
+
+  Returns 1 if the principal has the right. Returns undef if not.
+
+=cut
+
+sub HasRight {
+    my $self = shift;
+    my %args = (
+        Right     => undef,
+        Principal => undef,
+        @_
+    );
+
+    $args{Principal} ||= $self->CurrentUser->PrincipalObj;
+
+    return $args{'Principal'}->HasRight(
+        Object => $self->Id ? $self : $RT::System,
+        Right  => $args{'Right'}
+    );
+}
+
+sub CurrentUserHasRight {
+    my $self = shift;
+    return $self->HasRight( Right => @_ );
+}
+
+sub ModifyLinkRight { }
+
+=head2 ColumnMapClassName
+
+ColumnMap needs a massaged collection class name to load the correct list
+display.  Equivalent to L<RT::SearchBuilder/ColumnMapClassName>, but provided
+for a record instead of a collection.
+
+Returns a string.  May be called as a package method.
+
+=cut
+
+sub ColumnMapClassName {
+    my $self  = shift;
+    my $Class = ref($self) || $self;
+       $Class =~ s/:/_/g;
+    return $Class;
+}
+
 sub BasicColumns { }
 
 sub WikiBase {
     return RT->Config->Get('WebPath'). "/index.html?q=";
+}
+
+sub UID {
+    my $self = shift;
+    return undef unless defined $self->Id;
+    return "@{[ref $self]}-$RT::Organization-@{[$self->Id]}";
+}
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+    for my $col (qw/Creator LastUpdatedBy/) {
+        if ( $self->_Accessible( $col, 'read' ) ) {
+            next unless $self->$col;
+            my $obj = RT::Principal->new( $self->CurrentUser );
+            $obj->Load( $self->$col );
+            $deps->Add( out => $obj->Object );
+        }
+    }
+
+    # Object attributes, we have to check on every object
+    my $objs = $self->Attributes;
+    $deps->Add( in => $objs );
+
+    # Transactions
+    if (   $self->isa("RT::Ticket")
+        or $self->isa("RT::User")
+        or $self->isa("RT::Group")
+        or $self->isa("RT::Article")
+        or $self->isa("RT::Queue") )
+    {
+        $objs = RT::Transactions->new( $self->CurrentUser );
+        $objs->Limit( FIELD => 'ObjectType', VALUE => ref $self );
+        $objs->Limit( FIELD => 'ObjectId', VALUE => $self->id );
+        $deps->Add( in => $objs );
+    }
+
+    # Object custom field values
+    if ((   $self->isa("RT::Transaction")
+         or $self->isa("RT::Ticket")
+         or $self->isa("RT::User")
+         or $self->isa("RT::Group")
+         or $self->isa("RT::Queue")
+         or $self->isa("RT::Article") )
+            and $self->can("CustomFieldValues") )
+    {
+        $objs = $self->CustomFieldValues; # Actually OCFVs
+        $objs->{find_expired_rows} = 1;
+        $deps->Add( in => $objs );
+    }
+
+    # ACE records
+    if (   $self->isa("RT::Group")
+        or $self->isa("RT::Class")
+        or $self->isa("RT::Queue")
+        or $self->isa("RT::CustomField") )
+    {
+        $objs = RT::ACL->new( $self->CurrentUser );
+        $objs->LimitToObject( $self );
+        $deps->Add( in => $objs );
+    }
+}
+
+sub Serialize {
+    my $self = shift;
+    my %args = (
+        Methods => {},
+        UIDs    => 1,
+        @_,
+    );
+    my %methods = (
+        Creator       => "CreatorObj",
+        LastUpdatedBy => "LastUpdatedByObj",
+        %{ $args{Methods} || {} },
+    );
+
+    my %values = %{$self->{values}};
+
+    my %ca = %{ $self->_ClassAccessible };
+    my @cols = grep {exists $values{lc $_} and defined $values{lc $_}} keys %ca;
+
+    my %store;
+    $store{$_} = $values{lc $_} for @cols;
+    $store{id} = $values{id}; # Explicitly necessary in some cases
+
+    # Un-apply the _transfer_ encoding, but don't mess with the octets
+    # themselves.  Calling ->Content directly would, in some cases,
+    # decode from some mostly-unknown character set -- which reversing
+    # on the far end would be complicated.
+    if ($ca{ContentEncoding} and $ca{ContentType}) {
+        my ($content_col) = grep {exists $ca{$_}} qw/LargeContent Content/;
+        $store{$content_col} = $self->_DecodeLOB(
+            "application/octet-stream", # Lie so that we get bytes, not characters
+            $self->ContentEncoding,
+            $self->_Value( $content_col, decode_utf8 => 0 )
+        );
+        delete $store{ContentEncoding};
+    }
+    return %store unless $args{UIDs};
+
+    # Use FooObj to turn Foo into a reference to the UID
+    for my $col ( grep {$store{$_}} @cols ) {
+        my $method = $methods{$col};
+        if (not $method) {
+            $method = $col;
+            $method =~ s/(Id)?$/Obj/;
+        }
+        next unless $self->can($method);
+
+        my $obj = $self->$method;
+        next unless $obj and $obj->isa("RT::Record");
+        $store{$col} = \($obj->UID);
+    }
+
+    # Anything on an object should get the UID stored instead
+    if ($store{ObjectType} and $store{ObjectId} and $self->can("Object")) {
+        delete $store{$_} for qw/ObjectType ObjectId/;
+        $store{Object} = \($self->Object->UID);
+    }
+
+    return %store;
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    my $ca = $class->_ClassAccessible;
+    my %ca = %{ $ca };
+
+    if ($ca{ContentEncoding} and $ca{ContentType}) {
+        my ($content_col) = grep {exists $ca{$_}} qw/LargeContent Content/;
+        if (defined $data->{$content_col}) {
+            my ($ContentEncoding, $Content) = $class->_EncodeLOB(
+                $data->{$content_col}, $data->{ContentType},
+            );
+            $data->{ContentEncoding} = $ContentEncoding;
+            $data->{$content_col} = $Content;
+        }
+    }
+
+    if ($data->{Object} and not $ca{Object}) {
+        my $ref_uid = ${ delete $data->{Object} };
+        my $ref = $importer->Lookup( $ref_uid );
+        if ($ref) {
+            my ($class, $id) = @{$ref};
+            $data->{ObjectId} = $id;
+            $data->{ObjectType} = $class;
+        } else {
+            $data->{ObjectId} = 0;
+            $data->{ObjectType} = "";
+            $importer->Postpone(
+                for => $ref_uid,
+                uid => $uid,
+                column => "ObjectId",
+                classcolumn => "ObjectType",
+            );
+        }
+    }
+
+    for my $col (keys %{$data}) {
+        if (ref $data->{$col}) {
+            my $ref_uid = ${ $data->{$col} };
+            my $ref = $importer->Lookup( $ref_uid );
+            if ($ref) {
+                my (undef, $id) = @{$ref};
+                $data->{$col} = $id;
+            } else {
+                $data->{$col} = 0;
+                $importer->Postpone(
+                    for => $ref_uid,
+                    uid => $uid,
+                    column => $col,
+                );
+            }
+        }
+    }
+
+    return 1;
+}
+
+sub PostInflate {
+}
+
+=head2 _AsInsertQuery
+
+Returns INSERT query string that duplicates current record and
+can be used to insert record back into DB after delete.
+
+=cut
+
+sub _AsInsertQuery
+{
+    my $self = shift;
+
+    my $dbh = $RT::Handle->dbh;
+
+    my $res = "INSERT INTO ". $dbh->quote_identifier( $self->Table );
+    my $values = $self->{'values'};
+    $res .= "(". join( ",", map { $dbh->quote_identifier( $_ ) } sort keys %$values ) .")";
+    $res .= " VALUES";
+    $res .= "(". join( ",", map { $dbh->quote( $values->{$_} ) } sort keys %$values ) .")";
+    $res .= ";";
+
+    return $res;
+}
+
+sub BeforeWipeout { return 1 }
+
+=head2 Dependencies
+
+Returns L<RT::Shredder::Dependencies> object.
+
+=cut
+
+sub Dependencies
+{
+    my $self = shift;
+    my %args = (
+            Shredder => undef,
+            Flags => RT::Shredder::Constants::DEPENDS_ON,
+            @_,
+           );
+
+    unless( $self->id ) {
+        RT::Shredder::Exception->throw('Object is not loaded');
+    }
+
+    my $deps = RT::Shredder::Dependencies->new();
+    if( $args{'Flags'} & RT::Shredder::Constants::DEPENDS_ON ) {
+        $self->__DependsOn( %args, Dependencies => $deps );
+    }
+    return $deps;
+}
+
+sub __DependsOn
+{
+    my $self = shift;
+    my %args = (
+            Shredder => undef,
+            Dependencies => undef,
+            @_,
+           );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# Object custom field values
+    my $objs = $self->CustomFieldValues;
+    $objs->{'find_expired_rows'} = 1;
+    push( @$list, $objs );
+
+# Object attributes
+    $objs = $self->Attributes;
+    push( @$list, $objs );
+
+# Transactions
+    $objs = RT::Transactions->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'ObjectType', VALUE => ref $self );
+    $objs->Limit( FIELD => 'ObjectId', VALUE => $self->id );
+    push( @$list, $objs );
+
+# Links
+    if ( $self->can('Links') ) {
+        # make sure we don't skip any record
+        no warnings 'redefine';
+        local *RT::Links::IsValidLink = sub { 1 };
+
+        foreach ( qw(Base Target) ) {
+            my $objs = $self->Links( $_ );
+            $objs->_DoSearch;
+            push @$list, $objs->ItemsArrayRef;
+        }
+    }
+
+# ACE records
+    $objs = RT::ACL->new( $self->CurrentUser );
+    $objs->LimitToObject( $self );
+    push( @$list, $objs );
+
+    $deps->_PushDependencies(
+            BaseObject => $self,
+            Flags => RT::Shredder::Constants::DEPENDS_ON,
+            TargetObjects => $list,
+            Shredder => $args{'Shredder'}
+        );
+    return;
+}
+
+# implement proxy method because some RT classes
+# override Delete method
+sub __Wipeout
+{
+    my $self = shift;
+    my $msg = $self->UID ." wiped out";
+    $self->SUPER::Delete;
+    $RT::Logger->info( $msg );
+    return;
 }
 
 RT::Base->_ImportOverlays();

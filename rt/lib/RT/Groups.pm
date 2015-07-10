@@ -74,14 +74,11 @@ package RT::Groups;
 use strict;
 use warnings;
 
-
-
-use RT::Group;
-
 use base 'RT::SearchBuilder';
 
 sub Table { 'Groups'}
 
+use RT::Group;
 use RT::Users;
 
 # XXX: below some code is marked as subject to generalize in Groups, Users classes.
@@ -98,8 +95,8 @@ sub _Init {
   my @result = $self->SUPER::_Init(@_);
 
   $self->OrderBy( ALIAS => 'main',
-		  FIELD => 'Name',
-		  ORDER => 'ASC');
+                  FIELD => 'Name',
+                  ORDER => 'ASC');
 
   # XXX: this code should be generalized
   $self->{'princalias'} = $self->Join(
@@ -144,7 +141,7 @@ Return only SystemInternal Groups, such as "privileged" "unprivileged" and "ever
 
 sub LimitToSystemInternalGroups {
     my $self = shift;
-    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'SystemInternal');
+    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'SystemInternal', CASESENSITIVE => 0 );
     # All system internal groups have the same instance. No reason to limit down further
     #$self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => '0');
 }
@@ -161,15 +158,33 @@ Return only UserDefined Groups
 
 sub LimitToUserDefinedGroups {
     my $self = shift;
-    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'UserDefined');
+    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'UserDefined', CASESENSITIVE => 0 );
     # All user-defined groups have the same instance. No reason to limit down further
     #$self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => '');
 }
 
+=head2 LimitToRolesForObject OBJECT
 
+Limits the set of groups to role groups specifically for the object in question
+based on the object's class and ID.  If the object has no ID, the roles are not
+limited by group C<Instance>.  That is, calling this method on an unloaded
+object will find all role groups for that class of object.
 
+Replaces L</LimitToRolesForQueue>, L</LimitToRolesForTicket>, and
+L</LimitToRolesForSystem>.
+
+=cut
+
+sub LimitToRolesForObject {
+    my $self   = shift;
+    my $object = shift;
+    $self->Limit(FIELD => 'Domain',   OPERATOR => '=', VALUE => ref($object) . "-Role", CASESENSITIVE => 0 );
+    $self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => $object->id);
+}
 
 =head2 LimitToRolesForQueue QUEUE_ID
+
+B<DEPRECATED>. Use L</LimitToRolesForObject> instead.
 
 Limits the set of groups found to role groups for queue QUEUE_ID
 
@@ -178,13 +193,19 @@ Limits the set of groups found to role groups for queue QUEUE_ID
 sub LimitToRolesForQueue {
     my $self = shift;
     my $queue = shift;
-    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'RT::Queue-Role');
+    RT->Deprecated(
+        Instead => "LimitToRolesForObject",
+        Remove => "4.4",
+    );
+    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'RT::Queue-Role', CASESENSITIVE => 0 );
     $self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => $queue);
 }
 
 
 
 =head2 LimitToRolesForTicket Ticket_ID
+
+B<DEPRECATED>. Use L</LimitToRolesForObject> instead.
 
 Limits the set of groups found to role groups for Ticket Ticket_ID
 
@@ -193,13 +214,19 @@ Limits the set of groups found to role groups for Ticket Ticket_ID
 sub LimitToRolesForTicket {
     my $self = shift;
     my $Ticket = shift;
-    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'RT::Ticket-Role');
-    $self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => '$Ticket');
+    RT->Deprecated(
+        Instead => "LimitToRolesForObject",
+        Remove => "4.4",
+    );
+    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'RT::Ticket-Role', CASESENSITIVE => 0 );
+    $self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => $Ticket);
 }
 
 
 
 =head2 LimitToRolesForSystem System_ID
+
+B<DEPRECATED>. Use L</LimitToRolesForObject> instead.
 
 Limits the set of groups found to role groups for System System_ID
 
@@ -207,7 +234,12 @@ Limits the set of groups found to role groups for System System_ID
 
 sub LimitToRolesForSystem {
     my $self = shift;
-    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'RT::System-Role');
+    RT->Deprecated(
+        Instead => "LimitToRolesForObject",
+        Remove => "4.4",
+    );
+    $self->Limit(FIELD => 'Domain', OPERATOR => '=', VALUE => 'RT::System-Role', CASESENSITIVE => 0 );
+    $self->Limit(FIELD => 'Instance', OPERATOR => '=', VALUE => RT::System->Id );
 }
 
 
@@ -223,15 +255,15 @@ sub WithMember {
     my %args = ( PrincipalId => undef,
                  Recursively => undef,
                  @_);
-    my $members;
-
-    if ($args{'Recursively'}) {
-        $members = $self->NewAlias('CachedGroupMembers');
-    } else {
-        $members = $self->NewAlias('GroupMembers');
-    }
-    $self->Join(ALIAS1 => 'main', FIELD1 => 'id',
-                ALIAS2 => $members, FIELD2 => 'GroupId');
+    my $members = $self->Join(
+        ALIAS1 => 'main', FIELD1 => 'id',
+        $args{'Recursively'}
+            ? (TABLE2 => 'CachedGroupMembers')
+            # (GroupId, MemberId) is unique in GM table
+            : (TABLE2 => 'GroupMembers', DISTINCT => 1)
+        ,
+        FIELD2 => 'GroupId',
+    );
 
     $self->Limit(ALIAS => $members, FIELD => 'MemberId', OPERATOR => '=', VALUE => $args{'PrincipalId'});
     $self->Limit(ALIAS => $members, FIELD => 'Disabled', VALUE => 0)
@@ -263,6 +295,7 @@ sub WithoutMember {
         FIELD1 => 'id',
         TABLE2 => $members,
         FIELD2 => 'GroupId',
+        DISTINCT => $members eq 'GroupMembers',
     );
     $self->Limit(
         LEFTJOIN => $members_alias,
@@ -452,28 +485,16 @@ sub AddRecord {
 
 sub _DoSearch {
     my $self = shift;
-    
+
     #unless we really want to find disabled rows, make sure we're only finding enabled ones.
     unless($self->{'find_disabled_rows'}) {
-	$self->LimitToEnabled();
+        $self->LimitToEnabled();
     }
-    
+
     return($self->SUPER::_DoSearch(@_));
-    
+
 }
 
-
-
-=head2 NewItem
-
-Returns an empty new RT::Group item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Group->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

@@ -58,7 +58,7 @@ $m->callback(
 my @lines;
 while ( my $CustomField = $CustomFields->Next ) {
     my %line;
-    $line{'Name'} = "'$TicketSQLField.{" . $CustomField->Name . "}'";
+    $line{'Name'} = "$TicketSQLField.{" . $CustomField->Name . "}";
     $line{'Field'} = $CustomField->Name;
 
     # Op
@@ -88,20 +88,11 @@ while ( my $CustomField = $CustomFields->Next ) {
     }
 
     # Value
-    if ($CustomField->Type =~ /^Date(Time)?$/) {
-        my $is_datetime = $1 ? 1 : 0;
-        $line{'Value'} = {
-            Type => 'component',
-            Path => '/Elements/SelectDate',
-            Arguments => { $is_datetime ? (ShowTime => 1) : (ShowTime => 0), },
-        };
-    } else {
-        $line{'Value'} = {
-            Type => 'component',
-            Path => '/Elements/SelectCustomFieldValue',
-            Arguments => { CustomField => $CustomField },
-        };
-    }
+    $line{'Value'} = {
+        Type => 'component',
+        Path => '/Elements/SelectCustomFieldValue',
+        Arguments => { CustomField => $CustomField },
+    };
 
     push @lines, \%line;
 }

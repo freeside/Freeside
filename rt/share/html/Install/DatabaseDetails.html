@@ -105,9 +105,6 @@ unless ( $db_type eq 'SQLite' ) {
     push @Types, 'DatabaseHost', 'DatabasePort', 'DatabaseAdmin',
         'DatabaseAdminPassword', 'DatabaseUser', 'DatabasePassword';
 }
-if ( $db_type eq 'Pg' ) {
-    push @Types, 'DatabaseRequireSSL';
-}
 
 
 if ( $Run ) {
@@ -129,7 +126,6 @@ if ( $Run ) {
 
     my ( $status, $msg ) = RT::Installer->SaveConfig;
     if ( $status ) {
-        delete $INC{'RT_SiteConfig.pm'};
         RT->LoadConfig;
         RT::Handle->FinalizeDatabaseType();
     # dba connect systemdsn

@@ -69,10 +69,7 @@ if ($ARGS{'id'} eq 'new') {
         Abort('You have no permission to create tickets in that queue.');
     }
 
-    ($Ticket, @Actions) = CreateTicket(
-        Attachments => delete $session{'Attachments'},
-        %ARGS,
-    );
+    ($Ticket, @Actions) = CreateTicket( %ARGS );
     unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
         Abort("No permission to view newly created ticket #".$Ticket->id.".");
     }
@@ -95,14 +92,12 @@ if ($ARGS{'id'} eq 'new') {
             ARGSRef => \%ARGS, 
             Actions => \@Actions);
     
-    $ARGS{UpdateAttachments} = $session{'Attachments'};
     push @Actions,
         ProcessUpdateMessage(
         ARGSRef   => \%ARGS,
         Actions   => \@Actions,
         TicketObj => $Ticket,
         );
-    delete $session{'Attachments'};
 
     #Process status updates
     push @Actions, ProcessTicketWatchers(ARGSRef => \%ARGS, TicketObj => $Ticket );
@@ -152,7 +147,7 @@ if (@Actions) {
 
 # If we haven't been passed in an Attachments object (through the precaching mechanism)
 # then we need to find one
-my $Attachments = $m->comp('/Ticket/Elements/FindAttachments', Ticket => $Ticket);
+my $Attachments = $Ticket->Attachments;
 
 my %documents;
 while ( my $attach = $Attachments->Next() ) {
@@ -172,7 +167,7 @@ my $print_value = sub {
     my $linked = $value->LinkValueTo;
     if ( defined $linked && length $linked ) {
         my $linked = $m->interp->apply_escapes( $linked, 'h' );
-        $m->out('<a href="'. $linked .'" target="_new">');
+        $m->out('<a href="'. $linked .'" target="_blank">');
     }
     my $comp = "ShowCustomField". $cf->Type;
     $m->callback(
@@ -253,7 +248,7 @@ my $print_value = sub {
   </div>
     </&>
 
-% if ($Ticket->CustomFields->First) {
+% if ($CustomFields->Count) {
     <&| /Widgets/TitleBox, title => loc('Custom Fields'),
         class => 'ticket-info-cfs',
     &>
@@ -289,20 +284,20 @@ my $print_value = sub {
 
  <div class="entry">
     <div class="label"><&|/l&>Owner</&>:</div>
-    <div class="value"><& /Elements/ShowUser, User => $Ticket->OwnerObj, Ticket => $Ticket &>
+    <div class="value"><& /Elements/ShowUser, User => $Ticket->OwnerObj, Ticket => $Ticket, Link => 0 &>
     </div>
   </div>
  <div class="entry">
     <div class="label"><&|/l&>Requestors</&>:</div>
-    <div class="value"><& /Ticket/Elements/ShowGroupMembers, Group => $Ticket->Requestors, Ticket => $Ticket &></div>
+    <div class="value"><& /Ticket/Elements/ShowGroupMembers, Group => $Ticket->Requestors, Ticket => $Ticket, Link => 0 &></div>
   </div>
  <div class="entry">
     <div class="label"><&|/l&>Cc</&>:</div>
-    <div class="value"><& /Ticket/Elements/ShowGroupMembers, Group => $Ticket->Cc, Ticket => $Ticket &></div>
+    <div class="value"><& /Ticket/Elements/ShowGroupMembers, Group => $Ticket->Cc, Ticket => $Ticket, Link => 0 &></div>
   </div>
  <div class="entry">
     <div class="label"><&|/l&>AdminCc</&>:</div>
-    <div class="value"><& /Ticket/Elements/ShowGroupMembers, Group => $Ticket->AdminCc, Ticket => $Ticket &></div>
+    <div class="value"><& /Ticket/Elements/ShowGroupMembers, Group => $Ticket->AdminCc, Ticket => $Ticket, Link => 0 &></div>
   </div>
 
     </&>
@@ -318,34 +313,10 @@ my $print_value = sub {
 <%$key%><br />
 <ul>
 % foreach my $rev (@{$documents{$key}}) {
-
-<%PERL>
-my $size = $rev->ContentLength;
-
-if ($size) {
-    my $kb = int($size/102.4) / 10;
-    my $units = RT->Config->Get('AttachmentUnits');
-
-    if (!defined($units)) {
-        if ($size > 1024) {
-            $size = $kb . "k";
-        }
-        else {
-            $size = $size . "b";
-        }
-    }
-    elsif ($units eq 'k') {
-        $size = $kb . "k";
-    }
-    else {
-        $size = $size . "b";
-    }
-
-</%PERL>
-
+% if ($rev->ContentLength) {
 <li><font size="-2">
-<a href="<%RT->Config->Get('WebPath')%>/Ticket/Attachment/<%$rev->TransactionId%>/<%$rev->Id%>/<%$rev->Filename | un%>">
-<&|/l, $rev->CreatedAsString, $size, $rev->CreatorObj->Name &>[_1] ([_2]) by [_3]</&>
+<a href="<%RT->Config->Get('WebPath')%>/Ticket/Attachment/<%$rev->TransactionId%>/<%$rev->Id%>/<%$rev->Filename | un %>">
+<&|/l, $rev->CreatedAsString, $rev->FriendlyContentLength, $rev->CreatorObj->Name &>[_1] ([_2]) by [_3]</&>
 </a>
 </font></li>
 % }
@@ -394,7 +365,7 @@ if ($size) {
  <div class="entry">
     <div class="label date due"><&|/l&>Due</&>:</div>
 % my $due = $Ticket->DueObj;
-% if ( $due && $due->Unix > 0 && $due->Diff < 0 ) {
+% if ( $due && $due->IsSet && $due->Diff < 0 && $Ticket->QueueObj->IsActiveStatus($Ticket->Status) ) {
     <div class="value date due"><span class="overdue"><% $due->AsString  %></span></div>
 % } else {
     <div class="value date due"><% $due->AsString  %></div>
@@ -456,11 +427,11 @@ for my $link ( @{ $Ticket->DependsOn->ItemsArrayRef } ) {
   </div>
  <div class="entry">
     <div class="label"><% loc('Parents') %>:</div>
-    <div class="value"><& /Ticket/Elements/ShowParents, Ticket => $Ticket &></div>
+    <div class="value"><& /Elements/ShowLinksOfType, Object => $Ticket, Type => 'MemberOf' &></div>
   </div>
  <div class="entry">
     <div class="label"><% loc('Children')%>:</div>
-    <div class="value"><& /Ticket/Elements/ShowMembers, Ticket => $Ticket &></div>
+    <div class="value"><& /Elements/ShowLinksOfType, Object => $Ticket, Type => 'Members' &></div>
   </div>
  <div class="entry">
     <div class="label"><% loc('Refers to')%>:</div>

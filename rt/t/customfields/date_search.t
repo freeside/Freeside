@@ -3,7 +3,7 @@ use Test::MockTime qw(set_fixed_time restore_time);
 use warnings;
 use strict;
 
-use RT::Test nodata => 1, tests => 21;
+use RT::Test nodata => 1, tests => undef;
 
 RT::Test->set_rights(
     { Principal => 'Everyone', Right => [qw(
@@ -16,9 +16,11 @@ ok $q && $q->id, 'loaded or created a queue';
 
 my $user_m = RT::Test->load_or_create_user( Name => 'moscow', Timezone => 'Europe/Moscow' );
 ok $user_m && $user_m->id;
+$user_m = RT::CurrentUser->new( $user_m );
 
 my $user_b = RT::Test->load_or_create_user( Name => 'boston', Timezone => 'America/New_York' );
 ok $user_b && $user_b->id;
+$user_b = RT::CurrentUser->new( $user_b );
 
 my $cf = RT::CustomField->new(RT->SystemUser);
 ok(
@@ -132,6 +134,28 @@ is( $ticket->CustomFieldValues->First->Content, '2010-05-04', 'date in db is' );
     is( $tickets->Count, 0, 'did not find the ticket with > 2010-05-05' );
 }
 
+{
+    my $tickets = RT::Tickets->new(RT->SystemUser);
+    $tickets->LimitCustomField(
+        CUSTOMFIELD => $cf->id,
+        OPERATOR    => 'IS',
+        VALUE       => 'NULL',
+    );
+
+    is( $tickets->Count, 0, 'did not find the ticket with date IS NULL' );
+}
+
+{
+    my $tickets = RT::Tickets->new(RT->SystemUser);
+    $tickets->LimitCustomField(
+        CUSTOMFIELD => $cf->id,
+        OPERATOR    => 'IS NOT',
+        VALUE       => 'NULL',
+    );
+
+    is( $tickets->Count, 1, 'did find the ticket with date IS NOT NULL' );
+}
+
 # relative search by users in different TZs
 {
     my $ticket = RT::Ticket->new(RT->SystemUser);
@@ -162,3 +186,4 @@ is( $ticket->CustomFieldValues->First->Content, '2010-05-04', 'date in db is' );
     is( $tickets->Count, 1, 'found the tickets' );
 }
 
+done_testing;

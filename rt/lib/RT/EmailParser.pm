@@ -122,10 +122,8 @@ sub SmartParseMIMEEntityFromScalar {
             close($fh);
             if ( -f $temp_file ) {
 
-                # We have to trust the temp file's name -- untaint it
-                $temp_file =~ /(.*)/;
-                my $entity = $self->ParseMIMEEntityFromFile( $1, $args{'Decode'}, $args{'Exact'} );
-                unlink($1);
+                my $entity = $self->ParseMIMEEntityFromFile( $temp_file, $args{'Decode'}, $args{'Exact'} );
+                unlink($temp_file);
                 return $entity;
             }
         }
@@ -528,30 +526,45 @@ we can use that removes the bandaid
 
 =cut
 
+use Email::Address::List;
+
 sub ParseEmailAddress {
     my $self = shift;
     my $address_string = shift;
 
-    $address_string =~ s/^\s+|\s+$//g;
+    my @list = Email::Address::List->parse(
+        $address_string,
+        skip_comments => 1,
+        skip_groups => 1,
+    );
+    my $logger = sub { RT->Logger->error(
+        "Unable to parse an email address from $address_string: ". shift
+    ) };
 
     my @addresses;
-    # if it looks like a username / local only email
-    if ($address_string !~ /@/ && $address_string =~ /^\w+$/) {
-        my $user = RT::User->new( RT->SystemUser );
-        my ($id, $msg) = $user->Load($address_string);
-        if ($id) {
-            push @addresses, Email::Address->new($user->Name,$user->EmailAddress);
+    foreach my $e ( @list ) {
+        if ($e->{'type'} eq 'mailbox') {
+            if ($e->{'not_ascii'}) {
+                $logger->($e->{'value'} ." contains not ASCII values");
+                next;
+            }
+            push @addresses, $e->{'value'}
+        } elsif ( $e->{'value'} =~ /^\s*(\w+)\s*$/ ) {
+            my $user = RT::User->new( RT->SystemUser );
+            $user->Load( $1 );
+            if ($user->id) {
+                push @addresses, Email::Address->new($user->Name, $user->EmailAddress);
+            } else {
+                $logger->($e->{'value'} ." is not a valid email address and is not user name");
+            }
         } else {
-            $RT::Logger->error("Unable to parse an email address from $address_string: $msg");
+            $logger->($e->{'value'} ." is not a valid email address");
         }
-    } else {
-        @addresses = Email::Address->parse($address_string);
     }
 
     $self->CleanupAddresses(@addresses);
 
     return @addresses;
-
 }
 
 =head2 CleanupAddresses ARRAY

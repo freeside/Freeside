@@ -32,7 +32,7 @@ diag "make sure queue has no subject tag";
 diag "set intial simple autoreply template";
 {
     my $template = RT::Template->new( RT->SystemUser );
-    $template->Load('Autoreply');
+    $template->Load('Autoreply in HTML');
     ok $template->id, "loaded autoreply tempalte";
 
     my ($status, $msg) = $template->SetContent(
@@ -144,7 +144,7 @@ foreach my $prefix_set ( 'ru', 'latin1' ) {
 diag "add non-ascii subject prefix in the autoreply template";
 {
     my $template = RT::Template->new( RT->SystemUser );
-    $template->Load('Autoreply');
+    $template->Load('Autoreply in HTML');
     ok $template->id, "loaded autoreply tempalte";
 
     my ($status, $msg) = $template->SetContent(
@@ -248,7 +248,7 @@ diag "don't change subject via template";
 # we should test situation when subject is not changed from template
 {
     my $template = RT::Template->new( RT->SystemUser );
-    $template->Load('Autoreply');
+    $template->Load('Autoreply in HTML');
     ok $template->id, "loaded autoreply tempalte";
 
     my ($status, $msg) = $template->SetContent(

@@ -64,10 +64,10 @@ It consists of an ID, a name, and some arbitrary data.
 package RT::SharedSetting;
 use strict;
 use warnings;
+use base qw/RT::Base/;
 
 use RT::Attribute;
 use Scalar::Util 'blessed';
-use base qw/RT::Base/;
 
 =head1 METHODS
 
@@ -103,27 +103,28 @@ sub Load {
     my $object = $self->_GetObject($privacy);
 
     if ($object) {
-        $self->{'Attribute'} = $object->Attributes->WithId($id);
+        $self->{'Attribute'} = RT::Attribute->new($self->CurrentUser);
+        $self->{'Attribute'}->Load( $id );
         if ($self->{'Attribute'}->Id) {
             $self->{'Id'} = $self->{'Attribute'}->Id;
             $self->{'Privacy'} = $privacy;
             $self->PostLoad();
 
-            return (0, $self->loc("Permission denied"))
+            return wantarray ? (0, $self->loc("Permission Denied")) : 0
                 unless $self->CurrentUserCanSee;
 
             my ($ok, $msg) = $self->PostLoadValidate;
-            return ($ok, $msg) if !$ok;
+            return wantarray ? ($ok, $msg) : $ok if !$ok;
 
-            return (1, $self->loc("Loaded [_1] [_2]", $self->ObjectName, $self->Name));
+            return wantarray ? (1, $self->loc("Loaded [_1] [_2]", $self->ObjectName, $self->Name)) : 1;
         } else {
             $RT::Logger->error("Could not load attribute " . $id
                     . " for object " . $privacy);
-            return (0, $self->loc("Failed to load [_1] [_2]", $self->ObjectName, $id))
+            return wantarray ? (0, $self->loc("Failed to load [_1] [_2]", $self->ObjectName, $id)) : 0;
         }
     } else {
         $RT::Logger->warning("Could not load object $privacy when loading " . $self->ObjectName);
-        return (0, $self->loc("Could not load object for [_1]", $privacy));
+        return wantarray ? (0, $self->loc("Could not load object for [_1]", $privacy)) : 0;
     }
 }
 
@@ -143,11 +144,11 @@ sub LoadById {
     my ($ok, $msg) = $attr->LoadById($id);
 
     if (!$ok) {
-        return (0, $self->loc("Failed to load [_1] [_2]: [_3]", $self->ObjectName, $id, $msg))
+        return wantarray ? (0, $self->loc("Failed to load [_1] [_2]: [_3]", $self->ObjectName, $id, $msg)) : 0;
     }
 
     my $privacy = $self->_build_privacy($attr->ObjectType, $attr->ObjectId);
-    return (0, $self->loc("Bad privacy for attribute [_1]", $id))
+    return wantarray ? (0, $self->loc("Bad privacy for attribute [_1]", $id)) : 0
         if !$privacy;
 
     return $self->Load($privacy, $id);
@@ -191,7 +192,7 @@ sub Save {
     my %args = (
         'Privacy' => 'RT::User-' . $self->CurrentUser->Id,
         'Name'    => "new " . $self->ObjectName,
-		@_,
+        @_,
     );
 
     my $privacy = $args{'Privacy'};
@@ -201,13 +202,14 @@ sub Save {
     return (0, $self->loc("Failed to load object for [_1]", $privacy))
         unless $object;
 
-    return (0, $self->loc("Permission denied"))
+    return (0, $self->loc("Permission Denied"))
         unless $self->CurrentUserCanCreate($privacy);
 
     my ($att_id, $att_msg) = $self->SaveAttribute($object, \%args);
 
     if ($att_id) {
-        $self->{'Attribute'} = $object->Attributes->WithId($att_id);
+        $self->{'Attribute'} = RT::Attribute->new($self->CurrentUser);
+        $self->{'Attribute'}->Load( $att_id );
         $self->{'Id'}        = $att_id;
         $self->{'Privacy'}   = $privacy;
         return ( 1, $self->loc( "Saved [_1] [_2]", $self->loc( $self->ObjectName ), $name ) );
@@ -242,7 +244,7 @@ sub Update {
     return(0, $self->loc("Could not load [_1] attribute", $self->ObjectName))
         unless $self->{'Attribute'}->Id;
 
-    return (0, $self->loc("Permission denied"))
+    return (0, $self->loc("Permission Denied"))
         unless $self->CurrentUserCanModify;
 
     my ($status, $msg) = $self->UpdateAttribute(\%args);
@@ -274,7 +276,7 @@ where status is true upon success.
 
 sub Delete {
     my $self = shift;
-    return (0, $self->loc("Permission denied"))
+    return (0, $self->loc("Permission Denied"))
         unless $self->CurrentUserCanDelete;
 
     my ($status, $msg) = $self->{'Attribute'}->Delete;

@@ -119,14 +119,14 @@ $m->callback( CallbackName => 'Filter', Queues => \@queues );
     {  id          => $_->Id,
        Name        => $_->Name,
        Description => $_->Description || '',
-       Lifecycle   => $_->Lifecycle->Name,
+       Lifecycle   => $_->Lifecycle,
     }
 } grep $_, @queues;
 
 my %lifecycle;
 
 for my $queue (@queues) {
-    my $cycle = RT::Lifecycle->Load( $queue->{'Lifecycle'} );
+    my $cycle = RT::Lifecycle->Load( Name => $queue->{'Lifecycle'} );
     $lifecycle{ lc $cycle->Name } = $cycle;
 }
 

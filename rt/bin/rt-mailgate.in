@@ -144,12 +144,6 @@ sub validate_cli_flags {
         return $self->permfail();
     }
 
-    if (($opts->{'ca-file'} or $opts->{"verify-ssl"})
-            and not LWP::UserAgent->can("ssl_opts")) {
-        print STDERR "Verifying SSL certificates requires LWP::UserAgent 6.0 or higher.\n";
-        return $self->tempfail();
-    }
-
     $opts->{"verify-ssl"} = 1 unless defined $opts->{"verify-ssl"};
 }
 
@@ -157,13 +151,12 @@ sub get_useragent {
     my $self = shift;
     my $opts = shift;
     my $ua   = LWP::UserAgent->new();
+    $ua->agent("rt-mailgate/@RT_VERSION_MAJOR@.@RT_VERSION_MINOR@.@RT_VERSION_PATCH@ ");
     $ua->cookie_jar( { file => $opts->{'jar'} } ) if $opts->{'jar'};
 
-    if ( $ua->can("ssl_opts") ) {
-        $ua->ssl_opts( verify_hostname => $opts->{'verify-ssl'} );
-        $ua->ssl_opts( SSL_ca_file => $opts->{'ca-file'} )
-            if $opts->{'ca-file'};
-    }
+    $ua->ssl_opts( verify_hostname => $opts->{'verify-ssl'} );
+    $ua->ssl_opts( SSL_ca_file => $opts->{'ca-file'} )
+        if $opts->{'ca-file'};
 
     return $ua;
 }
@@ -226,6 +219,14 @@ sub upload_message {
 
     $ua->timeout( exists( $opts->{'timeout'} ) ? $opts->{'timeout'} : 180 );
     my $r = $ua->post( $full_url, $post_params, Content_Type => 'form-data' );
+
+    # Follow 3 redirects
+    my $n = 0;
+    while ($n++ < 3 and $r->is_redirect) {
+        $full_url = $r->header( "Location" );
+        $r = $ua->post( $full_url, $post_params, Content_Type => 'form-data' );
+    }
+
     $self->check_failure($r);
 
     my $content = $r->content;
@@ -252,13 +253,8 @@ sub check_failure {
     my $r    = shift;
     return if $r->is_success;
 
-    # XXX TODO 4.2: Remove the multi-line error strings in favor of something more concise
-    print STDERR <<"    ERROR";
-An Error Occurred
-=================
-
-@{[ $r->status_line ]}
-    ERROR
+    print STDERR "HTTP request failed: @{[ $r->status_line ]}. "
+                ."Your webserver logs may have more information or there may be a network problem.\n";
     print STDERR "\n$0: undefined server error\n" if $opts->{'debug'};
     return $self->tempfail();
 }
@@ -358,10 +354,6 @@ is found.
 This flag tells the mail gateway where it can find your RT server. You should 
 probably use the same URL that users use to log into RT.  
 
-If your RT server uses SSL, you will need to install additional Perl
-libraries. RT will detect and install these dependencies if you pass the
-C<--enable-ssl-mailgate> flag to configure as documented in RT's README.
-
 If you have a self-signed SSL certificate, you may also need to pass
 C<--ca-file> or C<--no-verify-ssl>, below.
 
@@ -381,9 +373,6 @@ regardless of if their hostname matches the certificate, and regardless
 of CA.  This is required if you have a self-signed certificate, or some
 other certificate which is not traceable back to an certificate your
 system ultimitely trusts.
-
-Verifying SSL certificates requires L<LWP::UserAgent> version 6.0 or
-higher; explicitly passing C<--verify-ssl> on prior versions will error.
 
 =item C<--extension> OPTIONAL
 
@@ -420,19 +409,16 @@ equivalent.
 =head1 SETUP
 
 Much of the set up of the mail gateway depends on your MTA and mail
-routing configuration. However, you will need first of all to create an
-RT user for the mail gateway and assign it a password; this helps to
-ensure that mail coming into the web server did originate from the
-gateway.
+routing configuration.
 
-Next, you need to route mail to C<rt-mailgate> for the queues you're
+You need to route mail to C<rt-mailgate> for the queues you're
 monitoring. For instance, if you're using F</etc/aliases> and you have a
 "bugs" queue, you will want something like this:
 
-    bugs:         "|/opt/rt4/bin/rt-mailgate --queue bugs --action correspond
+    bugs:         "|@RT_BIN_PATH_R@/rt-mailgate --queue bugs --action correspond
               --url http://rt.mycorp.com/"
 
-    bugs-comment: "|/opt/rt4/bin/rt-mailgate --queue bugs --action comment
+    bugs-comment: "|@RT_BIN_PATH_R@/rt-mailgate --queue bugs --action comment
               --url http://rt.mycorp.com/"
 
 Note that you don't have to run your RT server on your mail server, as

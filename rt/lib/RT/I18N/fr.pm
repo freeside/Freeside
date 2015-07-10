@@ -56,11 +56,11 @@ use strict;
 use warnings;
 
 sub numf {
-	my ($handle, $num) = @_[0,1];
-	my $fr_num = $handle->SUPER::numf($num);
-	# French prefer to print 1000 as 1(nbsp)000 rather than 1,000
-	$fr_num =~ tr<.,><,\x{A0}>;
-	return $fr_num;
+        my ($handle, $num) = @_[0,1];
+        my $fr_num = $handle->SUPER::numf($num);
+        # French prefer to print 1000 as 1(nbsp)000 rather than 1,000
+        $fr_num =~ tr<.,><,\x{A0}>;
+        return $fr_num;
 }
 
 RT::Base->_ImportOverlays();

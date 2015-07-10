@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 23;
+use RT::Test tests => 25;
 
 my $root = RT::Test->load_or_create_user( Name => 'root' );
 my $group_foo = RT::Group->new($RT::SystemUser);
@@ -80,7 +80,7 @@ ok(
 $m->reload;
 ok(
     $m->find_link(
-        text      => 'Enoch Root',
+        text      => 'root (Enoch Root)',
         url_regex => qr!/Admin/Users/Modify\.html!,
     ),
     'got link to modify user'
@@ -108,6 +108,16 @@ ok(
     'got link to modify group'
 );
 
+$m->submit_form_ok({
+    with_fields => {
+        WatcherTypeEmail1    => 'Cc',
+        WatcherAddressEmail1 => '"Foo Bar" <foo@example.com>',
+    },
+    button => 'SubmitTicket',
+}, "Added email with phrase as watcher");
+
+my $foo = RT::Test->load_or_create_user( EmailAddress => 'foo@example.com' );
+is $foo->RealName, "Foo Bar", "RealName matches";
 
 # TODO test Add|Delete people
 

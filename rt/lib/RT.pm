@@ -48,6 +48,7 @@
 
 use strict;
 use warnings;
+use 5.010;
 
 package RT;
 
@@ -55,6 +56,8 @@ package RT;
 use Encode ();
 use File::Spec ();
 use Cwd ();
+use Scalar::Util qw(blessed);
+use UNIVERSAL::require;
 
 use vars qw($Config $System $SystemUser $Nobody $Handle $Logger $_Privileged $_Unprivileged $_INSTALL_MODE);
 
@@ -63,12 +66,15 @@ use vars qw($BasePath
  $BinPath
  $SbinPath
  $VarPath
+ $FontPath
  $LexiconPath
+ $StaticPath
  $PluginPath
  $LocalPath
  $LocalEtcPath
  $LocalLibPath
  $LocalLexiconPath
+ $LocalStaticPath
  $LocalPluginPath
  $MasonComponentRoot
  $MasonLocalComponentRoot
@@ -159,15 +165,11 @@ sub LoadConfig {
     # If the user does that, do what they mean.
     $RT::WebPath = '' if ($RT::WebPath eq '/');
 
-    # fix relative LogDir and GnuPG homedir
+    # Fix relative LogDir; It cannot be fixed in a PostLoadCheck, as
+    # they are run after logging is enabled.
     unless ( File::Spec->file_name_is_absolute( $Config->Get('LogDir') ) ) {
         $Config->Set( LogDir =>
               File::Spec->catfile( $BasePath, $Config->Get('LogDir') ) );
-    }
-
-    my $gpgopts = $Config->Get('GnuPGOptions');
-    unless ( File::Spec->file_name_is_absolute( $gpgopts->{homedir} ) ) {
-        $gpgopts->{homedir} = File::Spec->catfile( $BasePath, $gpgopts->{homedir} );
     }
 
     return $Config;
@@ -195,9 +197,10 @@ sub Init {
     InitClasses(%args);
     InitLogging(%args);
     InitPlugins();
+    _BuildTableAttributes();
     RT::I18N->Init;
     RT->Config->PostLoadCheck;
-
+    RT::Lifecycle->FillCache;
 }
 
 =head2 ConnectToDatabase
@@ -340,11 +343,11 @@ sub InitLogging {
                              callbacks => [ $simple_cb, $stack_cb ],
                            ));
         }
-        if ( $Config->Get('LogToScreen') ) {
+        if ( $Config->Get('LogToSTDERR') ) {
             require Log::Dispatch::Screen;
             $RT::Logger->add( Log::Dispatch::Screen->new
                          ( name => 'screen',
-                           min_level => $Config->Get('LogToScreen'),
+                           min_level => $Config->Get('LogToSTDERR'),
                            callbacks => [ $simple_cb, $stack_cb ],
                            stderr => 1,
                          ));
@@ -362,16 +365,6 @@ sub InitLogging {
         }
     }
     InitSignalHandlers(%arg);
-}
-
-{   # Work around bug in Log::Dispatch < 2.30, wherein the short forms
-    # of ->warn, ->err, and ->crit do not usefully propagate out, unlike
-    # ->warning, ->error, and ->critical
-    package Log::Dispatch;
-    no warnings 'redefine';
-    sub warn { shift->warning(@_) }
-    sub err  { shift->error(@_) }
-    sub crit { shift->critical(@_) }
 }
 
 sub InitSignalHandlers {
@@ -406,8 +399,9 @@ sub InitSignalHandlers {
 
 
 sub CheckPerlRequirements {
-    if ($^V < 5.008003) {
-        die sprintf "RT requires Perl v5.8.3 or newer.  Your current Perl is v%vd\n", $^V;
+    eval {require 5.010_001};
+    if ($@) {
+        die sprintf "RT requires Perl v5.10.1 or newer.  Your current Perl is v%vd\n", $^V;
     }
 
     # use $error here so the following "die" can still affect the global $@
@@ -486,7 +480,32 @@ sub InitClasses {
     require RT::ObjectTopics;
     require RT::Topic;
     require RT::Topics;
+    require RT::Link;
+    require RT::Links;
 
+    _BuildTableAttributes();
+
+    if ( $args{'Heavy'} ) {
+        # load scrips' modules
+        my $scrips = RT::Scrips->new(RT->SystemUser);
+        while ( my $scrip = $scrips->Next ) {
+            local $@;
+            eval { $scrip->LoadModules } or
+                $RT::Logger->error("Invalid Scrip ".$scrip->Id.".  Unable to load the Action or Condition.  ".
+                                   "You should delete or repair this Scrip in the admin UI.\n$@\n");
+        }
+
+        foreach my $class ( grep $_, RT->Config->Get('CustomFieldValuesSources') ) {
+            $class->require or $RT::Logger->error(
+                "Class '$class' is listed in CustomFieldValuesSources option"
+                ." in the config, but we failed to load it:\n$@\n"
+            );
+        }
+
+    }
+}
+
+sub _BuildTableAttributes {
     # on a cold server (just after restart) people could have an object
     # in the session, as we deserialize it so we never call constructor
     # of the class, so the list of accessible fields is empty and we die
@@ -505,6 +524,7 @@ sub InitClasses {
         RT::ScripAction
         RT::ScripCondition
         RT::Scrip
+        RT::ObjectScrip
         RT::Group
         RT::GroupMember
         RT::CustomField
@@ -513,34 +533,13 @@ sub InitClasses {
         RT::ObjectCustomFieldValue
         RT::Attribute
         RT::ACE
-        RT::Link
         RT::Article
         RT::Class
+        RT::Link
         RT::ObjectClass
         RT::ObjectTopic
         RT::Topic
     );
-
-    if ( $args{'Heavy'} ) {
-        # load scrips' modules
-        my $scrips = RT::Scrips->new(RT->SystemUser);
-        $scrips->Limit( FIELD => 'Stage', OPERATOR => '!=', VALUE => 'Disabled' );
-        while ( my $scrip = $scrips->Next ) {
-            local $@;
-            eval { $scrip->LoadModules } or
-                $RT::Logger->error("Invalid Scrip ".$scrip->Id.".  Unable to load the Action or Condition.  ".
-                                   "You should delete or repair this Scrip in the admin UI.\n$@\n");
-        }
-
-	foreach my $class ( grep $_, RT->Config->Get('CustomFieldValuesSources') ) {
-            local $@;
-            eval "require $class; 1" or $RT::Logger->error(
-                "Class '$class' is listed in CustomFieldValuesSources option"
-                ." in the config, but we failed to load it:\n$@\n"
-            );
-        }
-
-    }
 }
 
 =head2 InitSystemObjects
@@ -650,14 +649,17 @@ You can define plugins by adding them to the @Plugins list in your RT_SiteConfig
 
 =cut
 
-our @PLUGINS = ();
 sub Plugins {
+    state @PLUGINS;
+    state $DID_INIT = 0;
+
     my $self = shift;
-    unless (@PLUGINS) {
+    unless ($DID_INIT) {
         $self->InitPluginPaths;
         @PLUGINS = $self->InitPlugins;
+        $DID_INIT++;
     }
-    return \@PLUGINS;
+    return [@PLUGINS];
 }
 
 =head2 PluginDirs
@@ -789,9 +791,9 @@ sub CanonicalizeGeneratedPaths {
         $BasePath = Cwd::realpath($BasePath);
 
         for my $path (
-                    qw/EtcPath BinPath SbinPath VarPath LocalPath LocalEtcPath
-                    LocalLibPath LexiconPath LocalLexiconPath PluginPath
-                    LocalPluginPath MasonComponentRoot MasonLocalComponentRoot
+                    qw/EtcPath BinPath SbinPath VarPath LocalPath StaticPath LocalEtcPath
+                    LocalLibPath LexiconPath LocalLexiconPath PluginPath FontPath
+                    LocalPluginPath LocalStaticPath MasonComponentRoot MasonLocalComponentRoot
                     MasonDataDir MasonSessionDir/
                      )
         {
@@ -807,11 +809,15 @@ sub CanonicalizeGeneratedPaths {
 
 =head2 AddJavaScript
 
-helper method to add js files to C<JSFiles> config.
-to add extra js files, you can add the following line
-in the plugin's main file:
+Helper method to add JS files to the C<@JSFiles> config at runtime.
+
+To add files, you can add the following line to your extension's main C<.pm>
+file:
 
     RT->AddJavaScript( 'foo.js', 'bar.js' ); 
+
+Files are expected to be in a static root in a F<js/> directory, such as
+F<static/js/> in your extension or F<local/static/js/> for local overlays.
 
 =cut
 
@@ -825,12 +831,16 @@ sub AddJavaScript {
 
 =head2 AddStyleSheets
 
-helper method to add css files to C<CSSFiles> config
+Helper method to add CSS files to the C<@CSSFiles> config at runtime.
 
-to add extra css files, you can add the following line
-in the plugin's main file:
+To add files, you can add the following line to your extension's main C<.pm>
+file:
 
     RT->AddStyleSheets( 'foo.css', 'bar.css' ); 
+
+Files are expected to be in a static root in a F<css/> directory, such as
+F<static/css/> in your extension or F<local/static/css/> for local
+overlays.
 
 =cut
 
@@ -859,6 +869,94 @@ helper method of RT->Config->Get('CSSFiles')
 
 sub StyleSheets {
     return RT->Config->Get('CSSFiles');
+}
+
+=head2 Deprecated
+
+Notes that a particular call path is deprecated, and will be removed in
+a particular release.  Puts a warning in the logs indicating such, along
+with a stack trace.
+
+Optional arguments include:
+
+=over
+
+=item Remove
+
+The release which is slated to remove the method or component
+
+=item Instead
+
+A suggestion of what to use in place of the deprecated API
+
+=item Arguments
+
+Used if not the entire method is being removed, merely a manner of
+calling it; names the arguments which are deprecated.
+
+=item Message
+
+Overrides the auto-built phrasing of C<Calling function ____ is
+deprecated> with a custom message.
+
+=item Object
+
+An L<RT::Record> object to print the class and numeric id of.  Useful if the
+admin will need to hunt down a particular object to fix the deprecation
+warning.
+
+=back
+
+=cut
+
+sub Deprecated {
+    my $class = shift;
+    my %args = (
+        Arguments => undef,
+        Remove => undef,
+        Instead => undef,
+        Message => undef,
+        Stack   => 1,
+        LogLevel => "warn",
+        @_,
+    );
+
+    my ($function) = (caller(1))[3];
+    my $stack;
+    if ($function eq "HTML::Mason::Commands::__ANON__") {
+        eval { HTML::Mason::Exception->throw() };
+        my $error = $@;
+        my $info = $error->analyze_error;
+        $function = "Mason component ".$info->{frames}[0]->filename;
+        $stack = join("\n", map { sprintf("\t[%s:%d]", $_->filename, $_->line) } @{$info->{frames}});
+    } else {
+        $function = "function $function";
+        $stack = Carp::longmess();
+    }
+    $stack =~ s/^.*?\n//; # Strip off call to ->Deprecated
+
+    my $msg;
+    if ($args{Message}) {
+        $msg = $args{Message};
+    } elsif ($args{Arguments}) {
+        $msg = "Calling $function with $args{Arguments} is deprecated";
+    } else {
+        $msg = "The $function is deprecated";
+    }
+    $msg .= ", and will be removed in RT $args{Remove}"
+        if $args{Remove};
+    $msg .= ".";
+
+    $msg .= "  You should use $args{Instead} instead."
+        if $args{Instead};
+
+    $msg .= sprintf "  Object: %s #%d.", blessed($args{Object}), $args{Object}->id
+        if $args{Object};
+
+    $msg .= "  Call stack:\n$stack" if $args{Stack};
+
+    my $loglevel = $args{LogLevel};
+    RT->Logger->$loglevel($msg);
 }
 
 =head1 BUGS

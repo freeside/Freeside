@@ -71,6 +71,30 @@ Alternately, if you don't set a due date, the Priority will be incremented by 1
 until it reaches the Final Priority.  If a ticket without a due date has a Priority
 greater than Final Priority, it will be decremented by 1.
 
+=head2 CONFIGURATION
+
+EsclatePriority's behavior can be controlled by two options:
+
+=over 4
+
+=item RecordTransaction
+
+If true (the default), the action casuses a transaction on the ticket
+when it is escalated.  If false, the action updates the priority without
+running scrips or recording a transaction.
+
+=item UpdateLastUpdated
+
+If true (the default), the action updates the LastUpdated field when the
+ticket is escalated.  You cannot set C<UpdateLastUpdated> to false unless
+C<RecordTransaction> is also false.
+
+=back
+
+To use these with C<rt-crontool>, specify them with C<--action-arg>:
+
+    --action-arg "RecordTransaction: 0, UpdateLastUpdated: 0"
+
 =cut
 
 
@@ -88,67 +112,67 @@ sub Describe  {
   my $self = shift;
   return (ref $self . " will move a ticket's priority toward its final priority.");
 }
-	
+
 
 sub Prepare  {
     my $self = shift;
-    
+
     if ($self->TicketObj->Priority() == $self->TicketObj->FinalPriority()) {
-	# no update necessary.
-	return 0;
+        # no update necessary.
+        return 0;
     }
-   
+
     #compute the number of days until the ticket is due
     my $due = $self->TicketObj->DueObj();
-    
+
 
     # If we don't have a due date, adjust the priority by one
     # until we hit the final priority
-    if ($due->Unix() < 1) {
-	if ( $self->TicketObj->Priority > $self->TicketObj->FinalPriority ){
-	    $self->{'prio'} = ($self->TicketObj->Priority - 1);
-	    return 1;
-	}
-	elsif ( $self->TicketObj->Priority < $self->TicketObj->FinalPriority ){
-	    $self->{'prio'} = ($self->TicketObj->Priority + 1);
-	    return 1;
-	}
-	# otherwise the priority is at the final priority. we don't need to
-	# Continue
-	else {
-	    return 0;
-	}
+    if (not $due->IsSet) {
+        if ( $self->TicketObj->Priority > $self->TicketObj->FinalPriority ){
+            $self->{'prio'} = ($self->TicketObj->Priority - 1);
+            return 1;
+        }
+        elsif ( $self->TicketObj->Priority < $self->TicketObj->FinalPriority ){
+            $self->{'prio'} = ($self->TicketObj->Priority + 1);
+            return 1;
+        }
+        # otherwise the priority is at the final priority. we don't need to
+        # Continue
+        else {
+            return 0;
+        }
     }
 
     # we've got a due date. now there are other things we should do
-    else { 
+    else {
         my $arg = $self->Argument || '';
         my $now = time();
         if ( $arg =~ /CurrentTime:\s*(\d+)/i ) {
             $now = $1;
         } 
-	my $diff_in_seconds = $due->Diff($now);    
-	my $diff_in_days = int( $diff_in_seconds / 86400);    
-	
-	#if we haven't hit the due date yet
-	if ($diff_in_days > 0 ) {	
-	    
-	    # compute the difference between the current priority and the
-	    # final priority
-	    
-	    my $prio_delta = 
-	      $self->TicketObj->FinalPriority() - $self->TicketObj->Priority;
-	    
-	    my $inc_priority_by = int( $prio_delta / $diff_in_days );
-	    
-	    #set the ticket's priority to that amount
-	    $self->{'prio'} = $self->TicketObj->Priority + $inc_priority_by;
-	    
-	}
-	#if $days is less than 1, set priority to final_priority
-	else {	
-	    $self->{'prio'} = $self->TicketObj->FinalPriority();
-	}
+	my $diff_in_seconds = $due->Diff($now);  
+        my $diff_in_days = int( $diff_in_seconds / 86400);
+
+        #if we haven't hit the due date yet
+        if ($diff_in_days > 0 ) {
+
+            # compute the difference between the current priority and the
+            # final priority
+
+            my $prio_delta =
+              $self->TicketObj->FinalPriority() - $self->TicketObj->Priority;
+
+            my $inc_priority_by = int( $prio_delta / $diff_in_days );
+
+            #set the ticket's priority to that amount
+            $self->{'prio'} = $self->TicketObj->Priority + $inc_priority_by;
+
+        }
+        #if $days is less than 1, set priority to final_priority
+        else {
+            $self->{'prio'} = $self->TicketObj->FinalPriority();
+        }
 
     }
     return 1;
@@ -156,11 +180,58 @@ sub Prepare  {
 
 sub Commit {
     my $self = shift;
-   my ($val, $msg) = $self->TicketObj->SetPriority($self->{'prio'});
+    my $new_value = $self->{'prio'};
+    return 1 unless defined $new_value;
 
-   unless ($val) {
-	$RT::Logger->debug($self . " $msg"); 
-   }
+    my $ticket = $self->TicketObj;
+    return 1 if $ticket->Priority == $new_value;
+
+    # Overide defaults from argument
+    my($record, $update) = (1, 1);
+    {
+        my $arg = $self->Argument || '';
+        if ( $arg =~ /RecordTransaction:\s*(\d+)/i ) {
+            $record = $1;
+            $RT::Logger->debug("Overrode RecordTransaction: $record");
+        }
+        if ( $arg =~ /UpdateLastUpdated:\s*(\d+)/i ) {
+            $update = $1;
+            $RT::Logger->debug("Overrode UpdateLastUpdated: $update");
+        }
+        # If creating a transaction, we have to update lastupdated
+        $update = 1 if $record;
+    }
+
+    $RT::Logger->debug(
+       'Escalating priority of ticket #'. $ticket->Id
+       .' from '. $ticket->Priority .' to '. $new_value
+       .' and'. ($record? '': ' do not') .' record a transaction'
+       .' and'. ($update? '': ' do not') .' touch last updated field'
+    );
+
+    my ($val, $msg);
+    unless ( $record ) {
+        unless ( $update ) {
+            ( $val, $msg ) = $ticket->__Set(
+                Field => 'Priority',
+                Value => $new_value,
+            );
+        } else {
+            ( $val, $msg ) = $ticket->_Set(
+                Field => 'Priority',
+                Value => $new_value,
+                RecordTransaction => 0,
+            );
+        }
+    } else {
+        ($val, $msg) = $ticket->SetPriority($new_value);
+    }
+
+    unless ($val) {
+        $RT::Logger->error( "Couldn't set new priority value: $msg");
+        return (0, $msg);
+    }
+    return 1;
 }
 
 RT::Base->_ImportOverlays();

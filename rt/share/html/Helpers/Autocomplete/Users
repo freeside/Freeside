@@ -45,14 +45,14 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-% $r->content_type('application/json');
+% $r->content_type('application/json; charset=utf-8');
 <% JSON( \@suggestions ) |n %>
 % $m->abort;
 <%ARGS>
 $return => ''
 $term => undef
 $delim => undef
-$max => 10
+$max => undef
 $privileged => undef
 $exclude => ''
 $op => undef
@@ -84,62 +84,27 @@ my $CurrentUser = $session{'CurrentUser'};
 $m->abort unless $CurrentUser->Privileged
               or RT->Config->Get('AllowUserAutocompleteForUnprivileged');
 
-my %fields = %{ RT->Config->Get('UserAutocompleteFields')
-                || { EmailAddress => 1, Name => 1, RealName => 'LIKE' } };
+# the API wants a list of ids
+my @exclude = split /\s*,\s*/, $exclude;
+push @exclude, RT->SystemUser->id, RT->Nobody->id;
 
-# If an operator is provided, check against only the returned field
-# using that operator
-%fields = ( $return => $op ) if $op;
+$m->callback( CallbackName => 'ModifyMaxResults', max => \$max );
+$max //= 10;
 
-my $users = RT::Users->new( $CurrentUser );
-$users->RowsPerPage( $max );
-
-$users->LimitToPrivileged() if $privileged;
-
-while (my ($name, $op) = each %fields) {
-    $op = 'STARTSWITH'
-        unless $op =~ /^(?:LIKE|(?:START|END)SWITH|=|!=)$/i;
-
-    $users->Limit(
-        FIELD           => $name,
-        OPERATOR        => $op,
-        VALUE           => $term,
-        ENTRYAGGREGATOR => 'OR',
-        SUBCLAUSE       => 'autocomplete',
-    );
-}
-
-# Exclude users we don't want
-foreach (split /\s*,\s*/, $exclude) {
-    $users->Limit(FIELD => 'id', VALUE => $_, OPERATOR => '!=', ENTRYAGGREGATOR => 'AND');
-}
+my $users = RT::Users->new($CurrentUser);
+$users->SimpleSearch( Privileged => $privileged,
+                      Return     => $return,
+                      Term       => $term,
+                      Max        => $max,
+                      Exclude    => \@exclude,
+                      # If an operator is provided, check against only
+                      # the returned field using that operator
+                      $op ? ( Fields => { $return => $op } ) : (),
+                    );
 
 my @suggestions;
-
-if ( RT->Config->Get('DatabaseType') eq 'Oracle' ) {
-    $users->Limit(
-        FIELD    => $return,
-        OPERATOR => 'IS NOT',
-        VALUE    => 'NULL',
-    );
-}
-else {
-    $users->Limit( FIELD => $return, OPERATOR => '!=', VALUE => '' );
-    $users->Limit(
-        FIELD           => $return,
-        OPERATOR        => 'IS NOT',
-        VALUE           => 'NULL',
-        ENTRYAGGREGATOR => 'AND'
-    );
-}
-
 while ( my $user = $users->Next ) {
-    next if $user->id == RT->SystemUser->id
-         or $user->id == RT->Nobody->id;
-
-    my $formatted = $m->scomp('/Elements/ShowUser', User => $user, NoEscape => 1);
-    $formatted =~ s/\n//g;
-    my $suggestion = { label => $formatted, value => $user->$return, id => $user->id };
+    my $suggestion = { id => $user->id, label => $user->Format, value => $user->$return };
     $m->callback( CallbackName => "ModifySuggestion", suggestion => $suggestion, user => $user );
     push @suggestions, $suggestion;
 }

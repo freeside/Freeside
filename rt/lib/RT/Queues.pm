@@ -69,10 +69,9 @@ package RT::Queues;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::Queue;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'Queues'}
 
@@ -83,8 +82,8 @@ sub _Init {
 
   # By default, order by name
   $self->OrderBy( ALIAS => 'main',
-		  FIELD => 'Name',
-		  ORDER => 'ASC');
+                  FIELD => 'Name',
+                  ORDER => 'ASC');
 
   return ($self->SUPER::_Init(@_));
 }
@@ -92,7 +91,7 @@ sub _Init {
 sub Limit  {
   my $self = shift;
   my %args = ( ENTRYAGGREGATOR => 'AND',
-	       @_);
+               @_);
   $self->SUPER::Limit(%args);
 }
 
@@ -113,19 +112,6 @@ sub AddRecord {
     $self->{'rows'}++;
 }
 
-
-
-
-=head2 NewItem
-
-Returns an empty new RT::Queue item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Queue->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

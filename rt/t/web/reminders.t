@@ -26,7 +26,7 @@ $m->goto_ticket($ticket->id);
 $m->form_name('UpdateReminders');
 $m->field( 'NewReminder-Subject' => "baby's first reminder" );
 $m->submit;
-$m->content_contains("Reminder &#39;baby&#39;s first reminder&#39; added");
+$m->content_contains("Reminder &#39;baby&#39;s first reminder&#39;: Created");
 
 $ticket->SetStatus('deleted');
 is( $ticket->Status, 'deleted', 'deleted ticket' );

@@ -58,7 +58,7 @@
       <& /Ticket/Elements/ShowCustomFields, Ticket => $approving &>
 % }
 % if ($ShowHistory) {
-      <& /Ticket/Elements/ShowHistory, Ticket => $approving, Collapsed => 0, ShowTitle => 0, ShowHeaders => 0, ShowDisplayModes => 0, ShowTitleBarCommands => 0 &>
+      <& /Elements/ShowHistory, Object => $approving, ShowTitle => 0, ShowHeaders => 0, ShowDisplayModes => 0, ShowActions => 0, PathPrefix => RT->Config->Get('WebPath')."/Ticket/" &>
 % }
     </div>
   </div>
@@ -106,5 +106,5 @@ $ticket => undef
 </%ARGS>
 <%INIT>
 my $status = $ticket->Status;
-my $inactive = $ticket->QueueObj->Lifecycle->IsInactive( $status );
+my $inactive = $ticket->LifecycleObj->IsInactive( $status );
 </%INIT>

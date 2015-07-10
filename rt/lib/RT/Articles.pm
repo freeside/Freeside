@@ -300,7 +300,8 @@ sub LimitCustomField {
             $self->Limit( ALIAS => $fields,
                           FIELD => 'Name',
                           VALUE => $args{'FIELD'},
-                          ENTRYAGGREGATOR  => 'OR');
+                          ENTRYAGGREGATOR  => 'OR',
+                          CASESENSITIVE => 0);
             $self->Limit(
                 ALIAS => $fields,
                 FIELD => 'LookupType',
@@ -388,15 +389,15 @@ sub LimitCustomField {
 sub LimitTopics {
     my $self   = shift;
     my @topics = @_;
+    return unless @topics;
 
     my $topics = $self->NewAlias('ObjectTopics');
     $self->Limit(
-        ALIAS           => $topics,
-        FIELD           => 'Topic',
-        VALUE           => $_,
-        ENTRYAGGREGATOR => 'OR'
-      )
-      for @topics;
+        ALIAS    => $topics,
+        FIELD    => 'Topic',
+        OPERATOR => 'IN',
+        VALUE    => [ @topics ],
+    );
 
     $self->Limit(
         ALIAS => $topics,
@@ -580,16 +581,10 @@ sub Search {
     }
 
 
-    require Time::ParseDate;
     foreach my $date (qw(Created< Created> LastUpdated< LastUpdated>)) {
         next unless ( $args{$date} );
-        my ($seconds, $error) = Time::ParseDate::parsedate( $args{$date}, FUZZY => 1, PREFER_PAST => 1 );
-        unless ( defined $seconds ) {
-            $RT::Logger->warning(
-                "Couldn't parse date '$args{$date}' by Time::ParseDate" );
-        }
         my $date_obj = RT::Date->new( $self->CurrentUser );
-        $date_obj->Set( Format => 'unix', Value => $seconds );
+        $date_obj->Set( Format => 'unknown', Value => $args{$date} );
         $dates->{$date} = $date_obj;
 
         if ( $date =~ /^(.*?)<$/i ) {
@@ -897,22 +892,6 @@ sub Search {
     return 1;
 }
 
-
-=head2 NewItem
-
-Returns an empty new RT::Article item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Article->new($self->CurrentUser));
-}
-
-
-
 RT::Base->_ImportOverlays();
-
-1;
 
 1;

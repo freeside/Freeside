@@ -209,14 +209,26 @@ sub HREF {
 
 =head2 AsString
 
-Returns either a localized string 'ticket #23' or the full URI if the object is not local
+Returns either a localized string C<#23: Subject> for tickets, C<ObjectType #13:
+Name> for other object types (not really used), or the full URI if the object
+is not local.
 
 =cut
 
 sub AsString {
     my $self = shift;
-    if ($self->IsLocal && $self->Object) {
-        return $self->loc("[_1] #[_2]", $self->ObjectType, $self->Object->Id);
+    if ($self->IsLocal && ( my $object = $self->Object )) {
+        if ($object->isa('RT::Ticket')) {
+            return $self->loc("#[_1]: [_2]", $object->Id, $object->Subject || '');
+        } else {
+            my $name = $object->_Accessible('Name', 'read') ? $object->Name : undef;
+
+            if ( defined $name and length $name ) {
+                return $self->loc("[_1] #[_2]: [_3]", $self->ObjectType, $object->Id, $name);
+            } else {
+                return $self->loc("[_1] #[_2]", $self->ObjectType, $object->Id);
+            }
+        }
     }
     else {
         return $self->URI;

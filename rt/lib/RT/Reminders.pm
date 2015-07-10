@@ -90,8 +90,8 @@ sub Collection {
 
     $col->FromSQL($query);
 
-    $col->OrderBy( FIELD => 'Due' );
-    
+    $col->OrderByCols( { FIELD => 'Due' }, { FIELD => 'id' } );
+
     return($col);
 }
 
@@ -126,15 +126,26 @@ sub Add {
         return ( 0, $self->loc("Can't link to a deleted ticket") );
     }
 
+    return ( 0, $self->loc('Permission Denied') )
+      unless $self->CurrentUser->HasRight(
+        Right  => 'CreateTicket',
+        Object => $self->TicketObj->QueueObj,
+      )
+      && $self->CurrentUser->HasRight(
+        Right  => 'ModifyTicket',
+        Object => $self->TicketObj,
+      );
+
     my $reminder = RT::Ticket->new($self->CurrentUser);
-    my ( $status, $msg ) = $reminder->Create(
+    # the 2nd return value is txn id, which is useless here
+    my ( $status, undef, $msg ) = $reminder->Create(
         Subject => $args{'Subject'},
         Owner => $args{'Owner'},
         Due => $args{'Due'},
         RefersTo => $self->Ticket,
         Type => 'reminder',
         Queue => $self->TicketObj->Queue,
-        Status => $self->TicketObj->QueueObj->Lifecycle->ReminderStatusOnOpen,
+        Status => $self->TicketObj->QueueObj->LifecycleObj->ReminderStatusOnOpen,
     );
     $self->TicketObj->_NewTransaction(
         Type => 'AddReminder',
@@ -149,7 +160,7 @@ sub Open {
     my $reminder = shift;
 
     my ( $status, $msg ) =
-      $reminder->SetStatus( $reminder->QueueObj->Lifecycle->ReminderStatusOnOpen );
+      $reminder->SetStatus( $reminder->LifecycleObj->ReminderStatusOnOpen );
     $self->TicketObj->_NewTransaction(
         Type => 'OpenReminder',
         Field => 'RT::Ticket',
@@ -162,7 +173,7 @@ sub Resolve {
     my $self = shift;
     my $reminder = shift;
     my ( $status, $msg ) =
-      $reminder->SetStatus( $reminder->QueueObj->Lifecycle->ReminderStatusOnResolve );
+      $reminder->SetStatus( $reminder->LifecycleObj->ReminderStatusOnResolve );
     $self->TicketObj->_NewTransaction(
         Type => 'ResolveReminder',
         Field => 'RT::Ticket',

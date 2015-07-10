@@ -70,8 +70,10 @@ descriptions of the values to place in them, is below.
 
 Each hashref in C<@Users> is treated as a new user to create and passed
 straight into C<< RT::User->Create >>.  All of the normal user fields are
-available, as well as C<Privileged> and C<Disabled> (both booleans) which will
-do the appropriate internal group/flag handling.
+available, as well as C<Privileged> and C<Disabled> (both booleans) which
+will do the appropriate internal group/flag handling.  Also accepts an
+C<Attributes> key, which is equivalent to pushing its arrayref of values
+onto C<@Attributes>, below, with C<Object> set to the new user.
 
 For a full list of fields, read the documentation for L<RT::User/Create>.
 
@@ -131,6 +133,10 @@ groups.  An example, using a convenience function to avoid repeating yourself:
         }
     }
 
+It also accepts an C<Attributes> key, which is equivalent to pushing its
+arrayref of values onto C<@Attributes>, below, with C<Object> set to the
+new group.
+
 =head2 C<@Queues>
 
     push @Queues, {
@@ -140,12 +146,14 @@ groups.  An example, using a convenience function to avoid repeating yourself:
     };
 
 Creates a new L<RT::Queue> for each hashref.  Refer to the documentation of
-L<RT::Queue/Create> for the fields you can use.
+L<RT::Queue/Create> for the fields you can use.  It also accepts an
+C<Attributes> key, which is equivalent to pushing its arrayref of values
+onto C<@Attributes>, below, with C<Object> set to the new queue.
+
 
 =head2 C<@CustomFields>
 
     push @CustomFields, {
-        Queue       => 0,
         Name        => 'Favorite color',
         Type        => 'FreeformSingle',
         LookupType  => 'RT::Queue-RT::Ticket',
@@ -164,10 +172,15 @@ The name of this CF as displayed in RT.
 
 A short summary of what this CF is for.
 
-=item C<Queue>
+=item C<ApplyTo>
 
-May be a Name or ID.  The single queue or array ref of queues to apply this CF
-to.  This does not apply when C<LookupType> does not start with C<RT::Queue>.
+May be a single value, or an array reference of such; each should be
+either an ID or Name.  If omitted, the CF is applied globally.  This
+should not be used for User or Group custom fields.
+
+This argument may also be passed via C<Queue>, for backwards
+compatibility, which also defaults the C<LookupType> to
+C<RT::Queue-RT::Ticket>.
 
 =item C<Type>
 
@@ -215,6 +228,7 @@ is for Tickets, Transactions, Users, Groups, or Queues.  Possible values:
     RT::User                                # Users
     RT::Group                               # Groups
     RT::Queue                               # Queues
+    RT::Class-RT::Article                   # Articles
 
 Ticket CFs are the most common, meaning C<RT::Queue-RT::Ticket> is the most
 common C<LookupType>.
@@ -247,7 +261,6 @@ field.  This only makes sense for "Select" CFs.  An example:
 
     my $i = 1;
     push @CustomFields, {
-        Queue       => 0,                       # Globally applied
         LookupType  => 'RT::Queue-RT::Ticket',  # for Tickets
         Name        => 'Type of food',
         Type        => 'SelectSingle',  # SelectSingle is the same as: Type => 'Select', MaxValues => 1
@@ -275,6 +288,10 @@ The regular expression text (not C<qr//>!) used to validate values.
 
 =back
 
+It also accepts an C<Attributes> key, which is equivalent to pushing its
+arrayref of values onto C<@Attributes>, below, with C<Object> set to the
+new custom field.
+
 Refer to the documentation and implementation of L<RT::CustomField/Create> and
 L<RT::CustomFieldValue/Create> for the full list of available fields and
 allowed values.
@@ -285,10 +302,11 @@ C<@ACL> is very useful for granting rights on your newly created records or
 setting up a standard system configuration.  It is one of the most complex
 initialdata structures.
 
-=head3 Pick a Right
+=head3 Pick one or more C<Right>s
 
-All ACL definitions expect a key named C<Right> with the internal right name
-you want to grant.  The internal right names are visible in RT's admin
+All ACL definitions expect a key named C<Right> with the internal right
+name you want to grant; alternately, it may contain an array reference
+of right names.  The internal right names are visible in RT's admin
 interface in grey next to the longer descriptions.
 
 =head3 Pick a level: on a queue, on a CF, or globally
@@ -301,6 +319,7 @@ granted.  This is B<different> than the user/group/role receiving the right.
 =item Granted on a custom field by name (or ID), potentially a global or queue
 
     CF => 'Name',
+    LookupType => 'RT::User',  # optional, in case you need to disambiguate
 
 =item Granted on a queue
 
@@ -310,6 +329,19 @@ granted.  This is B<different> than the user/group/role receiving the right.
 
     CF      => 'Name',
     Queue   => 'Name',
+
+=item Granted on a custom field applied to some other object
+
+    # This finds the CF named "Name" applied to Articles in the
+    # "Responses" class
+    CF         => 'Name',
+    LookupType => RT::Article->CustomFieldLookupType,
+    ObjectId   => 'Responses',
+
+=item Granted on some other object (article Classes, etc)
+
+    ObjectType => 'RT::Class',
+    ObjectId   => 'Name',
 
 =item Granted globally
 
@@ -446,8 +478,33 @@ L<RT::Template/Create> for the fields you can use.
 
 An array of L<RT::Attribute>s to create.  You likely don't need to mess with
 this.  If you do, know that the key C<Object> is expected to be an
-L<RT::Record> object on which to call C<AddAttribute>.  If you don't provide
-C<Object> or it's undefined, C<< RT->System >> will be used.
+L<RT::Record> object or a subroutine reference that returns an object on which
+to call C<AddAttribute>.  If you don't provide C<Object> or it's undefined,
+C<< RT->System >> will be used.
+
+Here is an example of using a subroutine reference as a value for Object:
+
+    @Attributes = ({
+        Name        => 'SavedSearch',
+        Description => 'New Tickets in SomeQueue',
+        Object      => sub {
+            my $GroupName = 'SomeQueue Group';
+            my $group     = RT::Group->new( RT->SystemUser );
+    
+            my( $ret, $msg ) = $group->LoadUserDefinedGroup( $GroupName );
+            die $msg unless $ret;
+    
+            return $group;
+        },
+        Content     => {
+            Format =>  <<'        END_OF_FORMAT',
+    ....
+            END_OF_FORMAT
+            Query   => "Status = 'new' AND Queue = 'SomeQueue'",
+            OrderBy => 'id',
+            Order   => 'DESC'
+        },
+    });
 
 =head2 C<@Initial>
 
@@ -471,7 +528,7 @@ to easily create B<Classes>, B<Topics>, or B<Articles> from initialdata files.
 
 =head1 Running an initialdata file
 
-    sbin/rt-setup-database --action insert --datafile /path/to/your/initialdata
+    /opt/rt4/sbin/rt-setup-database --action insert --datafile /path/to/your/initialdata
 
 This may prompt you for a database password.
 

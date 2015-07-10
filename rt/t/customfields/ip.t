@@ -26,7 +26,7 @@ my $cf;
 diag "load and check basic properties of the IP CF" if $ENV{'TEST_VERBOSE'};
 {
     my $cfs = RT::CustomFields->new($RT::SystemUser);
-    $cfs->Limit( FIELD => 'Name', VALUE => 'IP' );
+    $cfs->Limit( FIELD => 'Name', VALUE => 'IP', CASESENSITIVE => 0 );
     is( $cfs->Count, 1, "found one CF with name 'IP'" );
 
     $cf = $cfs->First;
@@ -269,8 +269,8 @@ diag "create a ticket with an IP of 10.0.0.1 and search for doesn't match '10.0.
         $tickets->FromSQL("id=$id AND CF.{IP} NOT LIKE '10.0.0.'");
     } [qr/not a valid IPAddress/], "caught warning about valid IP address";
 
-    SKIP: {
-        skip "partical ip parse causes ambiguity", 1;
+    TODO: {
+        local $TODO = "partial ip parse causes ambiguity";
         is( $tickets->Count, 0, "should not have found the ticket" );
     }
 }
@@ -281,8 +281,8 @@ diag "test the operators in search page" if $ENV{'TEST_VERBOSE'};
     $agent->get_ok( $baseurl . "/Search/Build.html?Query=Queue='General'" );
     $agent->content_contains('CF.{IP}', 'got CF.{IP}');
     my $form = $agent->form_name('BuildQuery');
-    my $op = $form->find_input("'CF.{IP}'Op");
-    ok( $op, "found 'CF.{IP}'Op" );
+    my $op = $form->find_input("CF.{IP}Op");
+    ok( $op, "found CF.{IP}Op" );
     is_deeply( [ $op->possible_values ], [ '=', '!=', '<', '>' ], 'op values' );
 }
 
