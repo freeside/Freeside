@@ -4253,6 +4253,8 @@ sub payment_history {
       'description' => 'Previous balance',
       'amount'      => sprintf("%.2f",$previous),
       'balance'     => sprintf("%.2f",$previous),
+      'date'        => $$opt{'start_date'},
+      'date_pretty' => $self->time2str_local('short', $$opt{'start_date'} ),
     };
     #false laziness with above
     foreach my $key ( qw(amount balance) ) {

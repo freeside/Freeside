@@ -27,6 +27,8 @@ my $bottom_link = "$link;";
 
 my $use_usage = $cgi->param('use_usage') || 0;
 my $use_setup = $cgi->param('use_setup') || 0;
+my $use_discount = $cgi->param('use_discount') || 2;
+
 my $use_override         = $cgi->param('use_override')         ? 1 : 0;
 my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
 my $distribute           = $cgi->param('distribute')           ? 1 : 0;
@@ -41,11 +43,13 @@ if ( $average_per_cust_pkg ) {
 }
 
 my %charge_labels = (
+  'SRU'=> 'setup + recurring',
   'SR' => 'setup + recurring',
   'RU' => 'recurring',
   'S'  => 'setup',
   'R'  => 'recurring',
   'U'  => 'usage',
+  'D'  => 'discount',
 );
 
 #XXX or virtual
@@ -186,6 +190,10 @@ elsif ( $use_usage == 2 ) {
   $components[-1] =~ s/U//;
 }
 
+if ( $use_discount == 1 ) {
+  push @components, 'D';
+} # else leave discounts off entirely; never combine them with setup/recur
+
 # Categorization of line items goes
 # Agent -> Referral -> Package class -> Component (setup/recur/usage)
 # If per-agent totals are enabled, they go under the Agent level.
@@ -240,21 +248,26 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
                         'charges'               => $component,
         );
 
-        # XXX this is very silly.  we should cache it server-side and 
-        # just put a cache identifier in the link
-        my $rowlink = "$link;".
-                      ($all_agent ? '' : "agentnum=$row_agentnum;").
+        my $row_link = "$link;".
+                       "charges=$component;".
+                       "distribute=$distribute;";
+
+        if ( $component eq 'D' ) {
+          # discounts ignore 'charges' and 'distribute'
+          $row_link = "${p}search/cust_bill_pkg_discount.html?";
+        }
+
+        $row_link .=  ($all_agent ? '' : "agentnum=$row_agentnum;").
                       ($all_part_referral ? '' : "refnum=$row_refnum;").
                       (join('',map {"cust_classnum=$_;"} @cust_classnums)).
-                      "distribute=$distribute;".
-                      "use_override=$use_override;charges=$component;";
-        $rowlink .= "$class_param=$_;" foreach @classnums;
+                      "use_override=$use_override;";
+        $row_link .= "$class_param=$_;" foreach @classnums;
         if ( $all_report_options ) {
           push @row_params, 'all_report_options', 1;
-          $rowlink .= 'all_report_options=1';
+          $row_link .= 'all_report_options=1';
         }
         push @params, \@row_params;
-        push @links, $rowlink;
+        push @links, $row_link;
 
         @colorbuf = @agent_colors unless @colorbuf;
         push @colors, shift @colorbuf;
@@ -293,13 +306,22 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
                           ($all_part_referral ? () : ('refnum' => $row_refnum)),
                           'charges'              => $component,
           );
+
           my $row_link = "$link;".
-                       ($all_agent ? '' : "agentnum=$row_agentnum;").
+                       "charges=$component;".
+                       "distribute=$distribute;";
+
+          if ( $component eq 'D' ) {
+            # discounts ignore 'charges' and 'distribute'
+            $row_link ="${p}search/cust_bill_pkg_discount.html?";
+          }
+
+          $row_link .= ($all_agent ? '' : "agentnum=$row_agentnum;").
                        ($all_part_referral ? '' : "refnum=$row_refnum;").
                        (join('',map {"cust_classnum=$_;"} @cust_classnums)).
                        "$class_param=$row_classnum;".
-                       "distribute=$distribute;".
-                       "use_override=$use_override;charges=$component;";
+                       "use_override=$use_override;";
+
           if ( $class_param eq 'report_optionnum' ) {
             push @row_params,
                           'all_report_options' => 1,
@@ -365,17 +387,6 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
   $anum++;
 
 }
-
-# may be useful at some point...
-#if ( $average_per_cust_pkg ) {
-#  @items = map { ('cust_bill_pkg', 'cust_bill_pkg_count_pkgnum') } @items;
-#  @labels = map { $_, "Packages" } @labels;
-#  @params = map { $_, $_ } @params;
-#  @links = map { $_, $_ } @links;
-#  @colors = map { $_, $_ } @colors;
-#  @no_graph = map { $_, 1 } @no_graph;
-#}
-#
 
 #use Data::Dumper;
 if ( $cgi->param('debug') == 1 ) {

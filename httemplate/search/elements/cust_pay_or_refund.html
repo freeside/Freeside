@@ -57,13 +57,14 @@ Examples:
 
                 'group_column'   => 'payby',
                 'group_label'    => 'payby_name',
-                'subtotal'       => { 'paid' => 'sum(paid)' },
+                'subtotal'       => { $opt{name_verb} => "sum($amount_field)" },
                 'subtotal_row'   => [ 'Subtotal',
-                                      sub { sprintf($money, $_[0]->paid) },
+                                      sub { sprintf($money, $_[0]->$amount_field) },
                                     ],
                 'total_row'      => [ '<B>Total</B>',
-                                      sub { sprintf("<B>$money</B>", $_[0]->paid) },
+                                      sub { sprintf("<B>$money</B>", $_[0]->$amount_field) },
                                     ],
+                'show_combined'  => 1,
 &>
 <%init>
 
@@ -181,7 +182,7 @@ push @fields, 'payby_payinfo_pretty',
               sub { sprintf($money, shift->$amount_field() ) },
 ;
 push @link_onclicks, $sub_receipt, '';
-push @sort_fields, '', $amount_field;
+push @sort_fields, 'paysort', $amount_field;
 
 if ( $unapplied ) {
   push @header, emt('Unapplied');
@@ -243,6 +244,7 @@ if ( $cgi->param('magic') ) {
   my @search = ();
   my @select = (
     "$table.*",
+    "( $table.payby || ' ' || coalesce($table.paymask, $table.payinfo) ) AS paysort",
     FS::UI::Web::cust_sql_fields(),
     'cust_main.custnum AS cust_main_custnum',
   );
