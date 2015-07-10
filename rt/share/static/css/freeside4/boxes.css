@@ -5,15 +5,9 @@
 
 .titlebox .titlebox-content {
     padding: 0.5em 0.25em 0.5em 0.25em;
-    border-top: 2px solid #aaa;
     min-height: 3em;
-    -moz-border-radius-bottomright: 0.5em;
-    -webkit-border-bottom-right-radius: 0.5em;
-    border-bottom-right-radius: 0.5em;
-    -moz-border-radius-bottomleft: 0.5em;
-    -webkit-border-bottom-left-radius: 0.5em;
-    border-bottom-left-radius: 0.5em;
-    border-bottom: 1px solid #eee;
+    border: .1em solid #999999;
+    border-radius: .25em;
 }
 
 * html .titlebox {
@@ -47,7 +41,7 @@
 }
 
 .titlebox .titlebox-title a:hover {
-    text-decoration: underline
+    text-decoration: underline;
 }
 
 .titlebox.rolled-up  .titlebox-title .left,
@@ -68,15 +62,17 @@
     font-weight: bold;
     background: transparent;
     margin-left: 1em;
-    padding: 0.5em 1.25em 0.25em 1.25em;
+    padding: 0.25em 1.25em 0.25em 1.25em;
     line-height: 1.4em;
     font-size: 1.1em;
     border: none;
+    font-size:140%;
+    font-weight:bold;
 }
 
 .titlebox .titlebox-title .left,
 .titlebox .titlebox-title .left a {
-    color: #3858a3
+    /* color: #3858a3 */
 }
 
 .titlebox .titlebox-title .right-empty {
@@ -101,7 +97,7 @@
 
 .titlebox .titlebox-title .right a,
 .titlebox .titlebox-title .right a:visited {
-    color: #999;
+    color: #000;
     font-weight: bold;
     margin-left: 0.5em;
     margin-right: 0.5em;
@@ -109,7 +105,7 @@
 
 .titlebox:hover .titlebox-title .right a,
 .titlebox:active .titlebox-title .right a {
-    color: #000
+    color: #000 
 }
 
 .titlebox .titlebox-title .widget a {
