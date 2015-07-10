@@ -106,6 +106,7 @@ if ( $JavaScript ) {
 
 for my $cssfile ( @css_files ) {
   $head .= qq(<link rel="stylesheet" href="$WebPath$cssfile" type="text/css" media="all" />\n);
+}
 
 for (keys %{$LinkRel || {}}) {
   $head .= qq(<link rel="$_" href="$WebPath) . $LinkRel->{$_} . '" />';
@@ -148,4 +149,5 @@ $LinkRel => undef
 $SkipDoctype => 0
 $RichText => 1
 $BodyClass => undef
+$JavaScript => 1
 </%ARGS>
