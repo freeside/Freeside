@@ -128,10 +128,6 @@ if ($JavaScript) {
 # $m->callback( %ARGS, CallbackName => 'Head' );
 $head .= $m->scomp( '/Elements/Callback', _CallbackName => 'Head', %ARGS );
 
-if ($JavaScript) {
-    $head .= $m->scomp('HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText );
-}
-
 #XXX $head .= <& /Elements/Framekiller &>;
 
 my $etc = ' class="'. join( '',@{$ARGS{'BodyClass'}}). '" ';
