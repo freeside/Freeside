@@ -230,7 +230,7 @@ div.fstabcontainer {
 .fsinnerbox {
   /* background-color:#cccccc; */
   padding:2px;
-  border: .1em solid #999999;
+  border: thin solid #999999;
   border-radius: .25em;
 }
 
