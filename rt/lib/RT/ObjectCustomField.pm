@@ -46,91 +46,28 @@
 #
 # END BPS TAGGED BLOCK }}}
 
-package RT::ObjectCustomField;
-
 use strict;
 use warnings;
 
+package RT::ObjectCustomField;
+use base 'RT::Record::AddAndSort';
 
 use RT::CustomField;
-use base 'RT::Record';
+use RT::ObjectCustomFields;
 
 sub Table {'ObjectCustomFields'}
 
-
-
-
-
-
-sub Create {
+sub ObjectCollectionClass {
     my $self = shift;
-    my %args = (
-        CustomField => 0,
-        ObjectId    => 0,
-        SortOrder   => undef,
-        @_
-    );
-
-    my $cf = $self->CustomFieldObj( $args{'CustomField'} );
-    unless ( $cf->id ) {
-        $RT::Logger->error("Couldn't load '$args{'CustomField'}' custom field");
-        return 0;
-    }
-
-    #XXX: Where is ACL check for 'AssignCustomFields'?
-
-    my $ObjectCFs = RT::ObjectCustomFields->new($self->CurrentUser);
-    $ObjectCFs->LimitToObjectId( $args{'ObjectId'} );
-    $ObjectCFs->LimitToCustomField( $cf->id );
-    $ObjectCFs->LimitToLookupType( $cf->LookupType );
-    if ( my $first = $ObjectCFs->First ) {
-        $self->Load( $first->id );
-        return $first->id;
-    }
-
-    unless ( defined $args{'SortOrder'} ) {
-        my $ObjectCFs = RT::ObjectCustomFields->new( RT->SystemUser );
-        $ObjectCFs->LimitToObjectId( $args{'ObjectId'} );
-        $ObjectCFs->LimitToObjectId( 0 ) if $args{'ObjectId'};
-        $ObjectCFs->LimitToLookupType( $cf->LookupType );
-        $ObjectCFs->OrderBy( FIELD => 'SortOrder', ORDER => 'DESC' );
-        if ( my $first = $ObjectCFs->First ) {
-            $args{'SortOrder'} = $first->SortOrder + 1;
-        } else {
-            $args{'SortOrder'} = 0;
-        }
-    }
-
-    return $self->SUPER::Create(
-        CustomField => $args{'CustomField'},
-        ObjectId    => $args{'ObjectId'},
-        SortOrder   => $args{'SortOrder'},
-    );
+    my %args = (@_);
+    return $args{'CustomField'}->CollectionClassFromLookupType;
 }
 
-sub Delete {
-    my $self = shift;
-
-    my $ObjectCFs = RT::ObjectCustomFields->new($self->CurrentUser);
-    $ObjectCFs->LimitToObjectId($self->ObjectId);
-    $ObjectCFs->LimitToLookupType($self->CustomFieldObj->LookupType);
-
-    # Move everything below us up
-    my $sort_order = $self->SortOrder;
-    while (my $OCF = $ObjectCFs->Next) {
-        my $this_order = $OCF->SortOrder;
-        next if $this_order <= $sort_order; 
-        $OCF->SetSortOrder($this_order - 1);
-    }
-
-    $self->SUPER::Delete;
-}
-
+# XXX: Where is ACL check when we create a record?
 
 =head2 CustomFieldObj
 
 Returns the CustomField Object which has the id returned by CustomField
-
 
 =cut
 
@@ -154,147 +91,16 @@ sub CustomFieldObj {
     return $CF;
 }
 
-=head2 Sorting custom fields applications
-
-Custom fields sorted on multiple layers. First of all custom
-fields with different lookup type are sorted independently. All
-global custom fields have fixed order for all objects, but you
-can insert object specific custom fields between them. Object
-specific custom fields can be applied to several objects and
-be on different place. For example you have GCF1, GCF2, LCF1,
-LCF2 and LCF3 that applies to tickets. You can place GCF2
-above GCF1, but they will be in the same order in all queues.
-However, LCF1 and other local can be placed at any place
-for particular queue: above global, between them or below.
-
-=head3 MoveUp
-
-Moves custom field up. See </Sorting custom fields applications>.
-
-=cut
-
-sub MoveUp {
+sub Neighbors {
     my $self = shift;
+    my %args = @_;
 
-    my $ocfs = RT::ObjectCustomFields->new( $self->CurrentUser );
-
-    my $oid = $self->ObjectId;
-    $ocfs->LimitToObjectId( $oid );
-    if ( $oid ) {
-        $ocfs->LimitToObjectId( 0 );
-    }
-
-    my $cf = $self->CustomFieldObj;
-    $ocfs->LimitToLookupType( $cf->LookupType );
-
-    $ocfs->Limit( FIELD => 'SortOrder', OPERATOR => '<', VALUE => $self->SortOrder );
-    $ocfs->OrderByCols( { FIELD => 'SortOrder', ORDER => 'DESC' } );
-
-    my @above = ($ocfs->Next, $ocfs->Next);
-    unless ($above[0]) {
-        return (0, "Can not move up. It's already at the top");
-    }
-
-    my $new_sort_order;
-    if ( $above[0]->ObjectId == $self->ObjectId ) {
-        $new_sort_order = $above[0]->SortOrder;
-        my ($status, $msg) = $above[0]->SetSortOrder( $self->SortOrder );
-        unless ( $status ) {
-            return (0, "Couldn't move custom field");
-        }
-    }
-    elsif ( $above[1] && $above[0]->SortOrder == $above[1]->SortOrder + 1 ) {
-        my $move_ocfs = RT::ObjectCustomFields->new( RT->SystemUser );
-        $move_ocfs->LimitToLookupType( $cf->LookupType );
-        $move_ocfs->Limit(
-            FIELD => 'SortOrder',
-            OPERATOR => '>=',
-            VALUE => $above[0]->SortOrder,
-        );
-        $move_ocfs->OrderByCols( { FIELD => 'SortOrder', ORDER => 'DESC' } );
-        while ( my $record = $move_ocfs->Next ) {
-            my ($status, $msg) = $record->SetSortOrder( $record->SortOrder + 1 );
-            unless ( $status ) {
-                return (0, "Couldn't move custom field");
-            }
-        }
-        $new_sort_order = $above[0]->SortOrder;
-    } else {
-        $new_sort_order = $above[0]->SortOrder - 1;
-    }
-
-    my ($status, $msg) = $self->SetSortOrder( $new_sort_order );
-    unless ( $status ) {
-        return (0, "Couldn't move custom field");
-    }
-
-    return (1,"Moved custom field up");
+    my $res = $self->CollectionClass->new( $self->CurrentUser );
+    $res->LimitToLookupType(
+        ($args{'CustomField'} || $self->CustomFieldObj)->LookupType
+    );
+    return $res;
 }
-
-=head3 MoveDown
-
-Moves custom field down. See </Sorting custom fields applications>.
-
-=cut
-
-sub MoveDown {
-    my $self = shift;
-
-    my $ocfs = RT::ObjectCustomFields->new( $self->CurrentUser );
-
-    my $oid = $self->ObjectId;
-    $ocfs->LimitToObjectId( $oid );
-    if ( $oid ) {
-        $ocfs->LimitToObjectId( 0 );
-    }
-
-    my $cf = $self->CustomFieldObj;
-    $ocfs->LimitToLookupType( $cf->LookupType );
-
-    $ocfs->Limit( FIELD => 'SortOrder', OPERATOR => '>', VALUE => $self->SortOrder );
-    $ocfs->OrderByCols( { FIELD => 'SortOrder', ORDER => 'ASC' } );
-
-    my @below = ($ocfs->Next, $ocfs->Next);
-    unless ($below[0]) {
-        return (0, "Can not move down. It's already at the bottom");
-    }
-
-    my $new_sort_order;
-    if ( $below[0]->ObjectId == $self->ObjectId ) {
-        $new_sort_order = $below[0]->SortOrder;
-        my ($status, $msg) = $below[0]->SetSortOrder( $self->SortOrder );
-        unless ( $status ) {
-            return (0, "Couldn't move custom field");
-        }
-    }
-    elsif ( $below[1] && $below[0]->SortOrder + 1 == $below[1]->SortOrder ) {
-        my $move_ocfs = RT::ObjectCustomFields->new( RT->SystemUser );
-        $move_ocfs->LimitToLookupType( $cf->LookupType );
-        $move_ocfs->Limit(
-            FIELD => 'SortOrder',
-            OPERATOR => '<=',
-            VALUE => $below[0]->SortOrder,
-        );
-        $move_ocfs->OrderByCols( { FIELD => 'SortOrder', ORDER => 'ASC' } );
-        while ( my $record = $move_ocfs->Next ) {
-            my ($status, $msg) = $record->SetSortOrder( $record->SortOrder - 1 );
-            unless ( $status ) {
-                return (0, "Couldn't move custom field");
-            }
-        }
-        $new_sort_order = $below[0]->SortOrder;
-    } else {
-        $new_sort_order = $below[0]->SortOrder + 1;
-    }
-
-    my ($status, $msg) = $self->SetSortOrder( $new_sort_order );
-    unless ( $status ) {
-        return (0, "Couldn't move custom field");
-    }
-
-    return (1,"Moved custom field down");
-}
-
 
 =head2 id
 
@@ -400,24 +206,55 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         CustomField =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         ObjectId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         SortOrder =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->CustomFieldObj );
+
+    if ($self->ObjectId) {
+        my $class = $self->CustomFieldObj->RecordClassFromLookupType;
+        my $obj = $class->new( $self->CurrentUser );
+        $obj->Load( $self->ObjectId );
+        $deps->Add( out => $obj );
+    }
+}
+
+sub Serialize {
+    my $self = shift;
+    my %args = (@_);
+    my %store = $self->SUPER::Serialize(@_);
+
+    if ($store{ObjectId}) {
+        my $class = $self->CustomFieldObj->RecordClassFromLookupType;
+        my $obj = $class->new( RT->SystemUser );
+        $obj->Load( $store{ObjectId} );
+        $store{ObjectId} = \($obj->UID);
+    }
+    return %store;
+}
+
 
 RT::Base->_ImportOverlays();
 

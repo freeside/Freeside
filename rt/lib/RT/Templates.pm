@@ -68,9 +68,9 @@ package RT::Templates;
 use strict;
 use warnings;
 
-use RT::Template;
-
 use base 'RT::SearchBuilder';
+
+use RT::Template;
 
 sub Table { 'Templates'}
 
@@ -139,18 +139,6 @@ sub AddRecord {
     return unless $record->CurrentUserCanRead;
     return $self->SUPER::AddRecord( $record );
 }
-
-=head2 NewItem
-
-Returns an empty new RT::Template item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Template->new($self->CurrentUser));
-}
-
 
 RT::Base->_ImportOverlays();
 

@@ -77,8 +77,10 @@ the identifier by which the user will see the dropdown.
 =head2 ExternalValues
 
 This method should return an array reference of hash references.  The
-hash references should contain keys for C<name>, C<description>, and
-C<sortorder>.
+hash references must contain a key for C<name> and can optionally contain
+keys for C<description>, C<sortorder>, and C<category>. If supplying a
+category, you must also set the category the custom field is based on in
+the custom field configuration page.
 
 =head1 SEE ALSO
 
@@ -179,6 +181,7 @@ sub _DoSearch {
             customfield => $self->{'__external_cf'},
             sortorder => 0,
             description => '',
+            category => undef,
             creator => RT->SystemUser->id,
             created => undef,
             lastupdatedby => RT->SystemUser->id,
@@ -193,6 +196,7 @@ sub _DoSearch {
         $value->LoadFromHash( { %defaults, %$_ } );
         next if $check && !$check->( $self, $value );
         $self->AddRecord( $value );
+        last if $self->RowsPerPage and ++$i >= $self->RowsPerPage;
     }
     $self->{'must_redo_search'} = 0;
     return $self->_RecordCount;
@@ -212,6 +216,10 @@ sub LimitToCustomField {
     my $self = shift;
     $self->{'__external_cf'} = $_[0];
     return $self->SUPER::LimitToCustomField( @_ );
+}
+
+sub _SingularClass {
+    "RT::CustomFieldValue"
 }
 
 RT::Base->_ImportOverlays();

@@ -50,8 +50,10 @@ use strict;
 use warnings;
 
 package RT::Article;
-
 use base 'RT::Record';
+
+use Role::Basic 'with';
+with "RT::Record::Role::Links" => { -excludes => ["AddLink", "_AddLinksOnCreate"] };
 
 use RT::Articles;
 use RT::ObjectTopics;
@@ -67,8 +69,7 @@ sub Table {'Articles'}
 # This object takes custom fields
 
 use RT::CustomField;
-RT::CustomField->_ForObjectType( CustomFieldLookupType() => 'Articles' )
-  ;    #loc
+RT::CustomField->RegisterLookupType( CustomFieldLookupType() => 'Articles' );    #loc
 
 # {{{ Create
 
@@ -352,27 +353,11 @@ sub Children {
 
 =head2 AddLink
 
-Takes a paramhash of Type and one of Base or Target. Adds that link to this tick
-et.
+Takes a paramhash of Type and one of Base or Target. Adds that link to this article.
+
+Prevents the use of plain numbers to avoid confusing behaviour.
 
 =cut
-
-sub DeleteLink {
-    my $self = shift;
-    my %args = (
-        Target => '',
-        Base   => '',
-        Type   => '',
-        Silent => undef,
-        @_
-    );
-
-    unless ( $self->CurrentUserHasRight('ModifyArticle') ) {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-
-    $self->_DeleteLink(%args);
-}
 
 sub AddLink {
     my $self = shift;
@@ -396,15 +381,6 @@ sub AddLink {
     {
         return ( 0, $self->loc("Cannot add link to plain number") );
     }
-
-    # Check that we're actually getting a valid URI
-    my $uri_obj = RT::URI->new( $self->CurrentUser );
-    unless ( $uri_obj->FromURI( $args{'Target'}||$args{'Base'} )) {
-        my $msg = $self->loc( "Couldn't resolve '[_1]' into a Link.", $args{'Target'} || $args{'Base'} );
-        $RT::Logger->warning( $msg );
-        return( 0, $msg );
-    }
-
 
     $self->_AddLink(%args);
 }
@@ -522,26 +498,6 @@ sub DeleteTopic {
     }
 }
 
-=head2 CurrentUserHasRight
-
-Returns true if the current user has the right for this article, for the whole system or for this article's class
-
-=cut
-
-sub CurrentUserHasRight {
-    my $self  = shift;
-    my $right = shift;
-
-    return (
-        $self->CurrentUser->HasRight(
-            Right        => $right,
-            Object       => $self,
-            EquivObjects => [ $RT::System, $RT::System, $self->ClassObj ]
-        )
-    );
-
-}
-
 =head2 CurrentUserCanSee
 
 Returns true if the current user can see the article, using ShowArticle
@@ -610,6 +566,14 @@ sub CustomFieldLookupType {
     "RT::Class-RT::Article";
 }
 
+
+sub ACLEquivalenceObjects {
+    my $self = shift;
+    return $self->ClassObj;
+}
+
+sub ModifyLinkRight { "ModifyArticle" }
+
 =head2 LoadByInclude Field Value
 
 Takes the name of a form field from "Include Article"
@@ -646,11 +610,11 @@ sub LoadByInclude {
     }
 
     unless ($ok) { # load failed, don't check Class
-        return ($ok, $msg);
+        return wantarray ? ($ok, $msg) : $ok;
     }
 
     unless ($Queue) { # we haven't requested extra sanity checking
-        return ($ok, $msg);
+        return wantarray ? ($ok, $msg) : $ok;
     }
 
     # ensure that this article is available for the Queue we're
@@ -658,10 +622,10 @@ sub LoadByInclude {
     my $class = $self->ClassObj;
     unless ($class->IsApplied(0) || $class->IsApplied($Queue)) {
         $self->LoadById(0);
-        return (0, $self->loc("The Class of the Article identified by [_1] is not applied to the current Queue",$Value));
+        return wantarray ? (0, $self->loc("The Class of the Article identified by [_1] is not applied to the current Queue",$Value)) : 0;
     }
 
-    return ($ok, $msg);
+    return wantarray ? ($ok, $msg) : $ok;
 
 }
 
@@ -755,10 +719,10 @@ Returns the Class Object which has the id returned by Class
 =cut
 
 sub ClassObj {
-	my $self = shift;
-	my $Class =  RT::Class->new($self->CurrentUser);
-	$Class->Load($self->Class());
-	return($Class);
+    my $self = shift;
+    my $Class =  RT::Class->new($self->CurrentUser);
+    $Class->Load($self->Class());
+    return($Class);
 }
 
 =head2 Parent
@@ -838,30 +802,56 @@ sub _CoreAccessible {
     {
      
         id =>
-		{read => 1, type => 'int(11)', default => ''},
+                {read => 1, type => 'int(11)', default => ''},
         Name => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         Summary => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         SortOrder => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         Class => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         Parent => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         URI => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         Creator => 
-		{read => 1, auto => 1, type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, type => 'int(11)', default => '0'},
         Created => 
-		{read => 1, auto => 1, type => 'datetime', default => ''},
+                {read => 1, auto => 1, type => 'datetime', default => ''},
         LastUpdatedBy => 
-		{read => 1, auto => 1, type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, type => 'int(11)', default => '0'},
         LastUpdated => 
-		{read => 1, auto => 1, type => 'datetime', default => ''},
+                {read => 1, auto => 1, type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    # Links
+    my $links = RT::Links->new( $self->CurrentUser );
+    $links->Limit(
+        SUBCLAUSE       => "either",
+        FIELD           => $_,
+        VALUE           => $self->URI,
+        ENTRYAGGREGATOR => 'OR'
+    ) for qw/Base Target/;
+    $deps->Add( in => $links );
+
+    $deps->Add( out => $self->ClassObj );
+    $deps->Add( in => $self->Topics );
+}
+
+sub PostInflate {
+    my $self = shift;
+
+    $self->__Set( Field => 'URI', Value => $self->URI );
+}
 
 RT::Base->_ImportOverlays();
 

@@ -99,9 +99,9 @@ $m->title_is('Possible cross-site request forgery');
 my $link = $m->find_link(text_regex => qr{resume your request});
 (my $broken_url = $link->url) =~ s/(CSRF_Token)=\w+/$1=crud/;
 $m->get_ok($broken_url);
-$m->content_contains("Queue could not be loaded");
+$m->content_like(qr/Queue\s+could not be loaded/);
 $m->title_is('RT Error');
-$m->warning_like(qr/Queue could not be loaded/);
+$m->warning_like(qr/Queue\s+could not be loaded/);
 
 # The token doesn't work for other pages, or other arguments to the same page.
 $m->add_header(Referer => undef);
@@ -134,7 +134,7 @@ $m->content_contains("Create a new ticket", 'ticket create page');
 $m->form_name('TicketCreate');
 $m->field('Subject', 'Attachments test');
 
-my $logofile = "$RT::MasonComponentRoot/NoAuth/images/bpslogo.png";
+my $logofile = "$RT::StaticPath/images/bpslogo.png";
 open LOGO, "<", $logofile or die "Can't open logo file: $!";
 binmode LOGO;
 my $logo_contents = do {local $/; <LOGO>};

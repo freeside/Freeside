@@ -48,9 +48,10 @@
 <& /Admin/Elements/Header, Title => $title  &>
 <& /Elements/Tabs &>
 
-<& /Ticket/Elements/ShowHistory,
-    Ticket => $QueueObj,
+<& /Elements/ShowHistory,
+    Object => $QueueObj,
     ShowDisplayModes => 0,
+    DisplayPath => 'History.html',
 &>
 
 <%INIT>

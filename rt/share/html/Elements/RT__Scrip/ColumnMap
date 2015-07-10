@@ -48,25 +48,38 @@
 <%ARGS>
 $Name
 $Attr => undef
+$GenericMap => {}
 </%ARGS>
 <%ONCE>
 my $COLUMN_MAP = {
-    id => {
-        title     => '#', # loc
-        attribute => 'id',
-        align     => 'right',
-        value     => sub { return $_[0]->id },
-    },
     Queue => {
         title     => 'Queue', # loc
         value     => sub {
-            return $_[0]->QueueObj->Name if $_[0]->Queue;
-            return $_[0]->loc('Global');
+            return $_[0]->loc('Global') if $_[0]->IsGlobal;
+            return join(", ", map {$_->Name} @{$_[0]->AddedTo->ItemsArrayRef});
         },
     },
     QueueId => {
         title     => 'Queue', # loc
-        value     => sub { $_[0]->Queue },
+        value     => sub {
+            return 0 if $_[0]->IsGlobal;
+            return join(", ", map {$_->Id} @{$_[0]->AddedTo->ItemsArrayRef});
+        },
+    },
+    From => {
+        title     => 'Queue',
+        value     => sub {
+            my $request_path = $HTML::Mason::Commands::r->path_info;
+            my $queue_id = $m->request_args->{'id'};
+            if ( $request_path =~ m{/Admin/Queues/Scrips\.html} and $queue_id ) {
+                return '&From=' . $queue_id;
+            } elsif ( $request_path =~ m{/Admin/Global/Scrips\.html} ) {
+                return '&From=Global';
+            }
+            else {
+                return q{};
+            }
+        },
     },
     Condition => {
         title     => 'Condition', # loc
@@ -78,30 +91,93 @@ my $COLUMN_MAP = {
     },
     Template => {
         title     => 'Template', # loc
-        value     => sub { return $_[0]->loc( $_[0]->TemplateObj->Name ) },
+        value     => sub { return $_[0]->loc( $_[0]->Template ) },
     },
     AutoDescription => {
         title     => 'Condition, Action and Template', # loc
         value     => sub { return $_[0]->loc( "[_1] [_2] with template [_3]",
             $_[0]->loc($_[0]->ConditionObj->Name),
             $_[0]->loc($_[0]->ActionObj->Name),
-            $_[0]->loc($_[0]->TemplateObj->Name),
+            $_[0]->loc($_[0]->Template),
         ) },
     },
     Description => {
         title     => 'Description', # loc
-	attribute => 'Description',
-	value     => sub { return $_[0]->Description() },
+        attribute => 'Description',
+        value     => sub { return $_[0]->Description() },
+    },
+    Disabled => {
+        title     => 'Status', # loc
+        attribute => 'Disabled',
+        value     => sub { return $_[0]->Disabled? $_[0]->loc('Disabled'): $_[0]->loc('Enabled') },
+    },
+    RemoveCheckBox => {
+        title => sub {
+            my $name = 'RemoveScrip';
+            my $checked = $m->request_args->{ $name .'All' }? 'checked="checked"': '';
+
+            return \qq{<input type="checkbox" name="${name}All" value="1" $checked
+                              onclick="setCheckbox(this, '$name')" />};
+        },
+        value => sub {
+            my $id = $_[0]->id;
+            return '' if $_[0]->IsGlobal;
+
+            my $name = 'RemoveScrip';
+            my $arg = $m->request_args->{ $name };
+
+            my $checked = '';
+            if ( $arg && ref $arg ) {
+                $checked = 'checked="checked"' if grep $_ == $id, @$arg;
+            }
+            elsif ( $arg ) {
+                $checked = 'checked="checked"' if $arg == $id;
+            }
+            return \qq{<input type="checkbox" name="$name" value="$id" $checked />}
+        },
+    },
+    Move => {
+        title => 'Move',   # loc
+        value => sub {
+            my $id = $_[0]->id;
+
+            my $context = $_[2] || 0;
+            return '' unless $_[0]->IsAdded( $context );
+
+            my $name = 'MoveScrip';
+            my $args = $m->caller_args( 1 );
+            my @pass = ref $args->{'PassArguments'}
+                ? @{$args->{'PassArguments'}}
+                : ($args->{'PassArguments'});
+            my %pass = map { $_ => $args->{$_} } grep exists $args->{$_}, @pass;
+
+            my $uri = RT->Config->Get('WebPath') . $m->request_path;
+
+            my @res = (
+                \'<a href="',
+                $uri .'?'. $m->comp("/Elements/QueryString", %pass, MoveScripUp => $id ),
+                \'">', loc('[Up]'), \'</a>',
+                \' <a href="',
+                $uri .'?'. $m->comp("/Elements/QueryString", %pass, MoveScripDown => $id ),
+                \'">', loc('[Down]'), \'</a>'
+            );
+
+            return @res;
+        },
     },
     Stage => {
-        title     => 'Stage', # loc
-	attribute => 'Stage',
-	value     => sub { return $_[0]->Stage() },
+        title => 'Stage', # loc
+        value => sub {
+            my $os = RT::ObjectScrip->new( $_[0]->CurrentUser );
+            my $id = $_[0]->IsGlobal ? 0 : $_[-1];
+            $os->LoadByCols( Scrip =>  $_[0]->id, ObjectId => $id );
+            return $_[0]->loc( $os->FriendlyStage );
+        },
     },
 };
 
 </%ONCE>
 <%INIT>
-$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
+$m->callback( GenericMap => $GenericMap, COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
 return GetColumnMapEntry( Map => $COLUMN_MAP, Name => $Name, Attribute => $Attr );
 </%INIT>

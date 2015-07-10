@@ -28,7 +28,7 @@ ok( $m->login, 'we did log in' );
 $m->get( $baseurl.'/Admin/Queues/');
 $m->follow_link_ok( {text => 'General'} );
 $m->submit_form( form_number => 3,
-		 fields      => { CorrespondAddress => 'general@example.com' } );
+                 fields      => { CorrespondAddress => 'general@example.com' } );
 $m->content_like(qr/general\@example.com.* - never/, 'has key info.');
 
 ok(my $user = RT::User->new(RT->SystemUser));
@@ -73,6 +73,7 @@ run3(
         '--default-key' => 'recipient@example.com',
         '--homedir'     => $homedir,
         '--passphrase'  => 'recipient',
+        '--no-permission-warning',
     ),
     \"fnord\r\n",
     \$buf,
@@ -115,6 +116,7 @@ run3(
         '--default-key' => 'recipient@example.com',
         '--homedir'     => $homedir,
         '--passphrase'  => 'recipient',
+        '--no-permission-warning',
     ),
     \"clearfnord\r\n",
     \$buf,
@@ -157,6 +159,7 @@ run3(
         '--default-key' => 'recipient@example.com',
         '--homedir'     => $homedir,
         '--passphrase'  => 'recipient',
+        '--no-permission-warning',
     ),
     \"orzzzzzz\r\n",
     \$buf,
@@ -187,7 +190,7 @@ RT::Test->close_mailgate_ok($mail);
         'recorded incoming mail that is encrypted'
     );
     is( $msg->GetHeader('X-RT-Privacy'),
-        'PGP',
+        'GnuPG',
         'recorded incoming mail that is encrypted'
     );
     like( $attach->Content, qr/orz/);
@@ -224,7 +227,7 @@ RT::Test->close_mailgate_ok($mail);
         'recorded incoming mail that is encrypted'
     );
     is( $msg->GetHeader('X-RT-Privacy'),
-        'PGP',
+        'GnuPG',
         'recorded incoming mail that is encrypted'
     );
     like( $attach->Content, qr/orz/);
@@ -242,6 +245,7 @@ run3(
         '--default-key' => 'rt@example.com',
         '--homedir'     => $homedir,
         '--passphrase'  => 'test',
+        '--no-permission-warning',
     ),
     \"alright\r\n",
     \$buf,
@@ -277,6 +281,7 @@ run3(
         qw(gpg --batch --no-tty --armor --encrypt),
         '--recipient'   => 'random@localhost',
         '--homedir'     => $homedir,
+        '--no-permission-warning',
     ),
     \"should not be there either\r\n",
     \$buf,
@@ -314,6 +319,7 @@ run3(
         qw(gpg --batch --no-tty --armor --encrypt),
         '--recipient'   => 'rt@example.com',
         '--homedir'     => $homedir,
+        '--no-permission-warning',
     ),
     \"really should not be there either\r\n",
     \$buf,

@@ -51,8 +51,10 @@ package RT::Config;
 use strict;
 use warnings;
 
-
+use 5.010;
 use File::Spec ();
+use Symbol::Global::Name;
+use List::MoreUtils 'uniq';
 
 =head1 NAME
 
@@ -107,7 +109,7 @@ Keyed by config name, there are several properties that
 can be set for each config optin:
 
  Section     - What header this option should be grouped
-               under on the user Settings page
+               under on the user Preferences page
  Overridable - Can users change this option
  SortOrder   - Within a Section, how should the options be sorted
                for display to the user
@@ -122,6 +124,11 @@ can be set for each config optin:
     Callback    - subref that receives no arguments.  It returns
                   a hashref of items that are added to the rest
                   of the WidgetArguments
+ PostSet       - subref passed the RT::Config object and the current and
+                 previous setting of the config option.  This is called well
+                 before much of RT's subsystems are initialized, so what you
+                 can do here is pretty limited.  It's mostly useful for
+                 effecting the value of other config options early.
  PostLoadCheck - subref passed the RT::Config object and the current
                  setting of the config option.  Can make further checks
                  (such as seeing if a library is installed) and then change
@@ -133,7 +140,8 @@ can be set for each config optin:
 
 =cut
 
-our %META = (
+our %META;
+%META = (
     # General user overridable options
     DefaultQueue => {
         Section         => 'General',
@@ -171,8 +179,9 @@ our %META = (
         Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
             Description => 'Username format', # loc
-            Values      => [qw(concise verbose)],
+            Values      => [qw(role concise verbose)],
             ValuesLabel => {
+                role    => 'Privileged: usernames; Unprivileged: names and email addresses', # loc
                 concise => 'Short usernames', # loc
                 verbose => 'Name and email address', # loc
             },
@@ -195,26 +204,53 @@ our %META = (
         Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
             Description => 'Theme',                  #loc
-            # XXX: we need support for 'get values callback'
-            Values => [qw(web2 freeside2.1 freeside3 aileron ballard)],
+            Callback    => sub {
+                state @stylesheets;
+                unless (@stylesheets) {
+                    for my $static_path ( RT::Interface::Web->StaticRoots ) {
+                        my $css_path =
+                          File::Spec->catdir( $static_path, 'css' );
+                        next unless -d $css_path;
+                        if ( opendir my $dh, $css_path ) {
+                            push @stylesheets, grep {
+                                $_ ne 'base' && -e File::Spec->catfile( $css_path, $_, 'main.css' )
+                            } readdir $dh;
+                        }
+                        else {
+                            RT->Logger->error("Can't read $css_path: $!");
+                        }
+                    }
+                    @stylesheets = sort { lc $a cmp lc $b } uniq @stylesheets;
+                }
+                return { Values => \@stylesheets };
+            },
         },
         PostLoadCheck => sub {
             my $self = shift;
             my $value = $self->Get('WebDefaultStylesheet');
 
-            my @comp_roots = RT::Interface::Web->ComponentRoots;
-            for my $comp_root (@comp_roots) {
-                return if -d $comp_root.'/NoAuth/css/'.$value;
+            my @roots = RT::Interface::Web->StaticRoots;
+            for my $root (@roots) {
+                return if -d "$root/css/$value";
             }
 
             $RT::Logger->warning(
                 "The default stylesheet ($value) does not exist in this instance of RT. "
-              . "Defaulting to freeside3."
+              . "Defaulting to freeside4."
             );
 
-            #$self->Set('WebDefaultStylesheet', 'aileron');
-            $self->Set('WebDefaultStylesheet', 'freeside3');
+            $self->Set('WebDefaultStylesheet', 'freeside4');
         },
+    },
+    TimeInICal => {
+        Section     => 'General',
+        Overridable => 1,
+        SortOrder   => 5,
+        Widget      => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Include time in iCal feed events?', # loc
+            Hints       => 'Formats iCal feed events with date and time' #loc
+        }
     },
     UseSideBySideLayout => {
         Section => 'Ticket composition',
@@ -259,17 +295,6 @@ our %META = (
         Widget          => '/Widgets/Form/Integer',
         WidgetArguments => {
             Description => 'Message box height',          #loc
-        },
-    },
-    MessageBoxWrap => {
-        Section         => 'Ticket composition',                #loc
-        Overridable     => 1,
-        SortOrder       => 8.1,
-        Widget          => '/Widgets/Form/Select',
-        WidgetArguments => {
-            Description => 'Message box wrapping',   #loc
-            Values => [qw(SOFT HARD)],
-            Hints => "When the WYSIWYG editor is not enabled, this setting determines whether automatic line wraps in the ticket message box are sent to RT or not.",              # loc
         },
     },
     DefaultTimeUnitsToHours => {
@@ -324,6 +349,16 @@ our %META = (
     },
 
     # User overridable options for Ticket displays
+    PreferRichText => {
+        Section         => 'Ticket display', # loc
+        Overridable     => 1,
+        SortOrder       => 0.9,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Display messages in rich text if available', # loc
+            Hints       => 'Rich text (HTML) shows formatting such as colored text, bold, italics, and more', # loc
+        },
+    },
     MaxInlineBody => {
         Section         => 'Ticket display',              #loc
         Overridable     => 1,
@@ -344,13 +379,19 @@ our %META = (
             Description => 'Show oldest history first',    #loc
         },
     },
-    DeferTransactionLoading => {
+    ShowHistory => {
         Section         => 'Ticket display',
         Overridable     => 1,
         SortOrder       => 3,
-        Widget          => '/Widgets/Form/Boolean',
+        Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
-            Description => 'Hide ticket history by default',    #loc
+            Description => 'Show history',                #loc
+            Values      => [qw(delay click always)],
+            ValuesLabel => {
+                delay   => "after the rest of the page loads",  #loc
+                click   => "after clicking a link",             #loc
+                always  => "immediately",                       #loc
+            },
         },
     },
     ShowUnreadMessageNotifications => { 
@@ -364,13 +405,20 @@ our %META = (
 
     },
     PlainTextPre => {
-        Section         => 'Ticket display',
-        Overridable     => 1,
-        SortOrder       => 5,
-        Widget          => '/Widgets/Form/Boolean',
-        WidgetArguments => {
-            Description => 'add <pre> tag around plain text attachments', #loc
-            Hints       => "Use this to protect the format of plain text" #loc
+        PostSet => sub {
+            my $self  = shift;
+            my $value = shift;
+            $self->SetFromConfig(
+                Option => \'PlainTextMono',
+                Value  => [$value],
+                %{$self->Meta('PlainTextPre')->{'Source'}}
+            );
+        },
+        PostLoadCheck => sub {
+            my $self = shift;
+            # XXX: deprecated, remove in 4.4
+            $RT::Logger->info("You set \$PlainTextPre in your config, which has been removed in favor of \$PlainTextMono.  Please update your config.")
+                if $self->Meta('PlainTextPre')->{'Source'}{'Package'};
         },
     },
     PlainTextMono => {
@@ -379,18 +427,8 @@ our %META = (
         SortOrder       => 5,
         Widget          => '/Widgets/Form/Boolean',
         WidgetArguments => {
-            Description => 'display wrapped and formatted plain text attachments', #loc
-            Hints => 'Use css rules to display text monospaced and with formatting preserved, but wrap as needed.  This does not work well with IE6 and you should use the previous option', #loc
-        },
-    },
-    DisplayAfterQuickCreate => {
-        Section         => 'Ticket display',
-        Overridable     => 1,
-        SortOrder       => 6,
-        Widget          => '/Widgets/Form/Boolean',
-        WidgetArguments => {
-            Description => 'On Quick Create, redirect to ticket display', #loc
-            #Hints => '', #loc
+            Description => 'Display plain-text attachments in fixed-width font', #loc
+            Hints => 'Display all plain-text attachments in a monospace font with formatting preserved, but wrapping as needed.', #loc
         },
     },
     MoreAboutRequestorTicketList => {
@@ -399,7 +437,7 @@ our %META = (
         SortOrder       => 6,
         Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
-            Description => q|What tickets to display in the 'More about requestor' box|,                #loc
+            Description => 'What tickets to display in the "More about requestor" box',                #loc
             Values      => [qw(Active Inactive All None)],
             ValuesLabel => {
                 Active   => "Show the Requestor's 10 highest priority active tickets",                  #loc
@@ -415,7 +453,7 @@ our %META = (
         SortOrder       => 7,
         Widget          => '/Widgets/Form/Boolean',
         WidgetArguments => {
-            Description => q|Show simplified recipient list on ticket update|,                #loc
+            Description => "Show simplified recipient list on ticket update",                #loc
         },
     },
     DisplayTicketAfterQuickCreate => {
@@ -424,8 +462,17 @@ our %META = (
         SortOrder       => 8,
         Widget          => '/Widgets/Form/Boolean',
         WidgetArguments => {
-            Description => q{Display ticket after "Quick Create"}, #loc
+            Description => 'Display ticket after "Quick Create"', #loc
         },
+    },
+    QuoteFolding => {
+        Section => 'Ticket display',
+        Overridable => 1,
+        SortOrder => 9,
+        Widget => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Enable quote folding?' # loc
+        }
     },
 
     # User overridable locale options
@@ -513,6 +560,10 @@ our %META = (
     },
 
     # Internal config options
+    DatabaseExtraDSN => {
+        Type => 'HASH',
+    },
+
     FullTextSearch => {
         Type => 'HASH',
         PostLoadCheck => sub {
@@ -540,11 +591,26 @@ our %META = (
                     $RT::Logger->error("No Table set for full-text index; disabling");
                     $v->{Enable} = $v->{Indexed} = 0;
                 } elsif ($v->{'Table'} eq "Attachments") {
-                    $RT::Logger->error("Table for full-text index is set to Attachments, not SphinxSE table; disabling");
+                    $RT::Logger->error("Table for full-text index is set to Attachments, not FTS table; disabling");
                     $v->{Enable} = $v->{Indexed} = 0;
-                } elsif (not $v->{'MaxMatches'}) {
-                    $RT::Logger->warn("No MaxMatches set for full-text index; defaulting to 10000");
-                    $v->{MaxMatches} = 10_000;
+                } else {
+                    my (undef, $create) = eval { $RT::Handle->dbh->selectrow_array("SHOW CREATE TABLE " . $v->{Table}); };
+                    my ($engine) = ($create||'') =~ /engine=(\S+)/i;
+                    if (not $create) {
+                        $RT::Logger->error("External table ".$v->{Table}." does not exist");
+                        $v->{Enable} = $v->{Indexed} = 0;
+                    } elsif (lc $engine eq "sphinx") {
+                        # External Sphinx indexer
+                        $v->{Sphinx} = 1;
+                        unless ($v->{'MaxMatches'}) {
+                            $RT::Logger->warn("No MaxMatches set for full-text index; defaulting to 10000");
+                            $v->{MaxMatches} = 10_000;
+                        }
+                    } else {
+                        # Internal, one-column table
+                        $v->{Column} = 'Content';
+                        $v->{Engine} = $engine;
+                    }
                 }
             } else {
                 $RT::Logger->error("Indexed full-text-search not supported for $dbtype");
@@ -558,9 +624,7 @@ our %META = (
             my $self  = shift;
             my $value = shift;
             return if $value;
-            return if $INC{'GraphViz.pm'};
-            local $@;
-            return if eval {require GraphViz; 1};
+            return if GraphViz->require;
             $RT::Logger->debug("You've enabled GraphViz, but we couldn't load the module: $@");
             $self->Set( DisableGraphViz => 1 );
         },
@@ -571,60 +635,168 @@ our %META = (
             my $self  = shift;
             my $value = shift;
             return if $value;
-            return if $INC{'GD.pm'};
-            local $@;
-            return if eval {require GD; 1};
+            return if GD->require;
             $RT::Logger->debug("You've enabled GD, but we couldn't load the module: $@");
             $self->Set( DisableGD => 1 );
         },
     },
-    MailPlugins  => { Type => 'ARRAY' },
-    Plugins      => {
+    MailCommand => {
+        Type    => 'SCALAR',
+        PostLoadCheck => sub {
+            my $self = shift;
+            my $value = $self->Get('MailCommand');
+            return if ref($value) eq "CODE"
+                or $value =~/^(sendmail|sendmailpipe|qmail|testfile|mbox)$/;
+            $RT::Logger->error("Unknown value for \$MailCommand: $value; defaulting to sendmailpipe");
+            $self->Set( MailCommand => 'sendmailpipe' );
+        },
+    },
+    HTMLFormatter => {
+        Type => 'SCALAR',
+        PostLoadCheck => sub { RT::Interface::Email->_HTMLFormatter },
+    },
+    MailPlugins  => {
         Type => 'ARRAY',
         PostLoadCheck => sub {
             my $self = shift;
-            my $value = $self->Get('Plugins');
-            # XXX Remove in RT 4.2
-            return unless $value and grep {$_ eq "RT::FM"} @{$value};
-            warn 'RTFM has been integrated into core RT, and must be removed from your @Plugins';
+
+            # Make sure Crypt is post-loaded first
+            $META{Crypt}{'PostLoadCheck'}->( $self, $self->Get( 'Crypt' ) );
+
+            my @plugins = $self->Get('MailPlugins');
+            if ( grep $_ eq 'Auth::GnuPG' || $_ eq 'Auth::SMIME', @plugins ) {
+                $RT::Logger->warning(
+                    'Auth::GnuPG and Auth::SMIME (from an extension) have been'
+                    .' replaced with Auth::Crypt.  @MailPlugins has been adjusted,'
+                    .' but should be updated to replace both with Auth::Crypt to'
+                    .' silence this warning.'
+                );
+                my %seen;
+                @plugins =
+                    grep !$seen{$_}++,
+                    grep {
+                        $_ eq 'Auth::GnuPG' || $_ eq 'Auth::SMIME'
+                        ? 'Auth::Crypt' : $_
+                    } @plugins;
+                $self->Set( MailPlugins => @plugins );
+            }
+
+            if ( not @{$self->Get('Crypt')->{Incoming}} and grep $_ eq 'Auth::Crypt', @plugins ) {
+                $RT::Logger->warning("Auth::Crypt enabled in MailPlugins, but no available incoming encryption formats");
+            }
         },
     },
-    GnuPG        => { Type => 'HASH' },
-    GnuPGOptions => { Type => 'HASH',
+    Crypt        => {
+        Type => 'HASH',
+        PostLoadCheck => sub {
+            my $self = shift;
+            require RT::Crypt;
+
+            for my $proto (RT::Crypt->EnabledProtocols) {
+                my $opt = $self->Get($proto);
+                if (not RT::Crypt->LoadImplementation($proto)) {
+                    $RT::Logger->error("You enabled $proto, but we couldn't load module RT::Crypt::$proto");
+                    $opt->{'Enable'} = 0;
+                } elsif (not RT::Crypt->LoadImplementation($proto)->Probe) {
+                    $opt->{'Enable'} = 0;
+                } elsif ($META{$proto}{'PostLoadCheck'}) {
+                    $META{$proto}{'PostLoadCheck'}->( $self, $self->Get( $proto ) );
+                }
+
+            }
+
+            my $opt = $self->Get('Crypt');
+            my @enabled = RT::Crypt->EnabledProtocols;
+            my %enabled;
+            $enabled{$_} = 1 for @enabled;
+            $opt->{'Enable'} = scalar @enabled;
+            $opt->{'Incoming'} = [ $opt->{'Incoming'} ]
+                if $opt->{'Incoming'} and not ref $opt->{'Incoming'};
+            if ( $opt->{'Incoming'} && @{ $opt->{'Incoming'} } ) {
+                $RT::Logger->warning("$_ explicitly set as incoming Crypt plugin, but not marked Enabled; removing")
+                    for grep {not $enabled{$_}} @{$opt->{'Incoming'}};
+                $opt->{'Incoming'} = [ grep {$enabled{$_}} @{$opt->{'Incoming'}} ];
+            } else {
+                $opt->{'Incoming'} = \@enabled;
+            }
+            if ( $opt->{'Outgoing'} ) {
+                if (not $enabled{$opt->{'Outgoing'}}) {
+                    $RT::Logger->warning($opt->{'Outgoing'}.
+                                             " explicitly set as outgoing Crypt plugin, but not marked Enabled; "
+                                             . (@enabled ? "using $enabled[0]" : "removing"));
+                }
+                $opt->{'Outgoing'} = $enabled[0] unless $enabled{$opt->{'Outgoing'}};
+            } else {
+                $opt->{'Outgoing'} = $enabled[0];
+            }
+        },
+    },
+    SMIME        => {
+        Type => 'HASH',
+        PostLoadCheck => sub {
+            my $self = shift;
+            my $opt = $self->Get('SMIME');
+            return unless $opt->{'Enable'};
+
+            if (exists $opt->{Keyring}) {
+                unless ( File::Spec->file_name_is_absolute( $opt->{Keyring} ) ) {
+                    $opt->{Keyring} = File::Spec->catfile( $RT::BasePath, $opt->{Keyring} );
+                }
+                unless (-d $opt->{Keyring} and -r _) {
+                    $RT::Logger->info(
+                        "RT's SMIME libraries couldn't successfully read your".
+                        " configured SMIME keyring directory (".$opt->{Keyring}
+                        .").");
+                    delete $opt->{Keyring};
+                }
+            }
+
+            if (defined $opt->{CAPath}) {
+                if (-d $opt->{CAPath} and -r _) {
+                    # directory, all set
+                } elsif (-f $opt->{CAPath} and -r _) {
+                    # file, all set
+                } else {
+                    $RT::Logger->warn(
+                        "RT's SMIME libraries could not read your configured CAPath (".$opt->{CAPath}.")"
+                    );
+                    delete $opt->{CAPath};
+                }
+            }
+        },
+    },
+    GnuPG        => {
+        Type => 'HASH',
         PostLoadCheck => sub {
             my $self = shift;
             my $gpg = $self->Get('GnuPG');
             return unless $gpg->{'Enable'};
+
             my $gpgopts = $self->Get('GnuPGOptions');
+            unless ( File::Spec->file_name_is_absolute( $gpgopts->{homedir} ) ) {
+                $gpgopts->{homedir} = File::Spec->catfile( $RT::BasePath, $gpgopts->{homedir} );
+            }
             unless (-d $gpgopts->{homedir}  && -r _ ) { # no homedir, no gpg
-                $RT::Logger->debug(
+                $RT::Logger->info(
                     "RT's GnuPG libraries couldn't successfully read your".
                     " configured GnuPG home directory (".$gpgopts->{homedir}
-                    ."). PGP support has been disabled");
+                    ."). GnuPG support has been disabled");
                 $gpg->{'Enable'} = 0;
                 return;
             }
 
-
-            require RT::Crypt::GnuPG;
-            unless (RT::Crypt::GnuPG->Probe()) {
-                $RT::Logger->debug(
-                    "RT's GnuPG libraries couldn't successfully execute gpg.".
-                    " PGP support has been disabled");
-                $gpg->{'Enable'} = 0;
+            if ( grep exists $gpg->{$_}, qw(RejectOnMissingPrivateKey RejectOnBadData AllowEncryptDataInDB) ) {
+                $RT::Logger->warning(
+                    "The RejectOnMissingPrivateKey, RejectOnBadData and AllowEncryptDataInDB"
+                    ." GnuPG options are now properties of the generic Crypt configuration. You"
+                    ." should set them there instead."
+                );
+                delete $gpg->{$_} for qw(RejectOnMissingPrivateKey RejectOnBadData AllowEncryptDataInDB);
             }
         }
     },
+    GnuPGOptions => { Type => 'HASH' },
     ReferrerWhitelist => { Type => 'ARRAY' },
-    ResolveDefaultUpdateType => {
-        PostLoadCheck => sub {
-            my $self  = shift;
-            my $value = shift;
-            return unless $value;
-            $RT::Logger->info('The ResolveDefaultUpdateType config option has been deprecated.  '.
-                              'You can change the site default in your %Lifecycles config.');
-        }
-    },
     WebPath => {
         PostLoadCheck => sub {
             my $self  = shift;
@@ -762,35 +934,88 @@ our %META = (
             }
         },
     },
-
-    ActiveStatus => {
-        Type => 'ARRAY',
-        PostLoadCheck => sub {
-            my $self  = shift;
-            return unless shift;
-            # XXX Remove in RT 4.2
-            warn <<EOT;
-The ActiveStatus configuration has been replaced by the new Lifecycles
-functionality. You should set the 'active' property of the 'default'
-lifecycle and add transition rules; see RT_Config.pm for documentation.
-EOT
+    LogToScreen => {
+        Deprecated => {
+            Instead => 'LogToSTDERR',
+            Remove  => '4.4',
         },
     },
-    InactiveStatus => {
-        Type => 'ARRAY',
-        PostLoadCheck => sub {
-            my $self  = shift;
-            return unless shift;
-            # XXX Remove in RT 4.2
-            warn <<EOT;
-The InactiveStatus configuration has been replaced by the new Lifecycles
-functionality. You should set the 'inactive' property of the 'default'
-lifecycle and add transition rules; see RT_Config.pm for documentation.
-EOT
+    UserAutocompleteFields => {
+        Deprecated => {
+            Instead => 'UserSearchFields',
+            Remove  => '4.4',
+        },
+    },
+    CustomFieldGroupings => {
+        Type            => 'HASH',
+        PostLoadCheck   => sub {
+            my $config = shift;
+            # use scalar context intentionally to avoid not a hash error
+            my $groups = $config->Get('CustomFieldGroupings') || {};
+
+            unless (ref($groups) eq 'HASH') {
+                RT->Logger->error("Config option \%CustomFieldGroupings is a @{[ref $groups]} not a HASH; ignoring");
+                $groups = {};
+            }
+
+            for my $class (keys %$groups) {
+                my @h;
+                if (ref($groups->{$class}) eq 'HASH') {
+                    push @h, $_, $groups->{$class}->{$_}
+                        for sort {lc($a) cmp lc($b)} keys %{ $groups->{$class} };
+                } elsif (ref($groups->{$class}) eq 'ARRAY') {
+                    @h = @{ $groups->{$class} };
+                } else {
+                    RT->Logger->error("Config option \%CustomFieldGroupings{$class} is not a HASH or ARRAY; ignoring");
+                    delete $groups->{$class};
+                    next;
+                }
+
+                $groups->{$class} = [];
+                while (@h) {
+                    my $group = shift @h;
+                    my $ref   = shift @h;
+                    if (ref($ref) eq 'ARRAY') {
+                        push @{$groups->{$class}}, $group => $ref;
+                    } else {
+                        RT->Logger->error("Config option \%CustomFieldGroupings{$class}{$group} is not an ARRAY; ignoring");
+                    }
+                }
+            }
+            $config->Set( CustomFieldGroupings => %$groups );
+        },
+    },
+    ChartColors => {
+        Type    => 'ARRAY',
+    },
+    WebExternalAuth           => { Deprecated => { Instead => 'WebRemoteUserAuth',             Remove => '4.4' }},
+    WebExternalAuthContinuous => { Deprecated => { Instead => 'WebRemoteUserContinuous',       Remove => '4.4' }},
+    WebFallbackToInternalAuth => { Deprecated => { Instead => 'WebFallbackToRTLogin',          Remove => '4.4' }},
+    WebExternalGecos          => { Deprecated => { Instead => 'WebRemoteUserGecos',            Remove => '4.4' }},
+    WebExternalAuto           => { Deprecated => { Instead => 'WebRemoteUserAutocreate',       Remove => '4.4' }},
+    AutoCreate                => { Deprecated => { Instead => 'UserAutocreateDefaultsOnLogin', Remove => '4.4' }},
+    LogoImageHeight => {
+        Deprecated => {
+            LogLevel => "info",
+            Message => "The LogoImageHeight configuration option did not affect display, and has been removed; please remove it from your RT_SiteConfig.pm",
+        },
+    },
+    LogoImageWidth => {
+        Deprecated => {
+            LogLevel => "info",
+            Message => "The LogoImageWidth configuration option did not affect display, and has been removed; please remove it from your RT_SiteConfig.pm",
+        },
+    },
+    DatabaseRequireSSL => {
+        Deprecated => {
+            Remove => '4.4',
+            LogLevel => "info",
+            Message => "The DatabaseRequireSSL configuration option did not enable SSL connections to the database, and has been removed; please remove it from your RT_SiteConfig.pm.  Use DatabaseExtraDSN to accomplish the same purpose.",
         },
     },
 );
 my %OPTIONS = ();
+my @LOADED_CONFIGS = ();
 
 =head1 METHODS
 
@@ -812,19 +1037,6 @@ sub _Init {
     return;
 }
 
-=head2 InitConfig
-
-Do nothin right now.
-
-=cut
-
-sub InitConfig {
-    my $self = shift;
-    my %args = ( File => '', @_ );
-    $args{'File'} =~ s/(?<=Config)(?=\.pm$)/Meta/;
-    return 1;
-}
-
 =head2 LoadConfigs
 
 Load all configs. First of all load RT's config then load
@@ -836,11 +1048,9 @@ Takes no arguments.
 sub LoadConfigs {
     my $self    = shift;
 
-    $self->InitConfig( File => 'RT_Config.pm' );
     $self->LoadConfig( File => 'RT_Config.pm' );
 
     my @configs = $self->Configs;
-    $self->InitConfig( File => $_ ) foreach @configs;
     $self->LoadConfig( File => $_ ) foreach @configs;
     return;
 }
@@ -868,9 +1078,13 @@ sub LoadConfig {
         and my $site_config = $ENV{RT_SITE_CONFIG} )
     {
         $self->_LoadConfig( %args, File => $site_config );
+        # to allow load siteconfig again and again in case it's updated
+        delete $INC{ $site_config };
     } else {
         $self->_LoadConfig(%args);
+        delete $INC{$args{'File'}};
     }
+
     $args{'File'} =~ s/Site(?=Config\.pm$)//;
     $self->_LoadConfig(%args);
     return 1;
@@ -896,6 +1110,20 @@ sub _LoadConfig {
             return $self->SetFromConfig(
                 Option     => $opt_ref,
                 Value      => [@args],
+                Package    => $pack,
+                File       => $file,
+                Line       => $line,
+                SiteConfig => $is_site,
+                Extension  => $is_ext,
+            );
+        };
+        local *Plugin = sub {
+            my (@new_plugins) = @_;
+            @new_plugins = map {s/-/::/g if not /:/; $_} @new_plugins;
+            my ( $pack, $file, $line ) = caller;
+            return $self->SetFromConfig(
+                Option     => \@RT::Plugins,
+                Value      => [@RT::Plugins, @new_plugins],
                 Package    => $pack,
                 File       => $file,
                 Line       => $line,
@@ -953,6 +1181,14 @@ EOF
         my $errormessage = sprintf( $message,
             $file_path, $fileusername, $filegroup, $filegroup );
         die "$errormessage\n$@";
+    } else {
+        # Loaded successfully
+        push @LOADED_CONFIGS, {
+            as          => $args{'File'},
+            filename    => $INC{ $args{'File'} },
+            extension   => $is_ext,
+            site        => $is_site,
+        };
     }
     return 1;
 }
@@ -987,6 +1223,40 @@ sub Configs {
     my %seen;
     @configs = grep !$seen{$_}++, @configs;
     return @configs;
+}
+
+=head2 LoadedConfigs
+
+Returns a list of hashrefs, one for each config file loaded.  The keys of the
+hashes are:
+
+=over 4
+
+=item as
+
+Name this config file was loaded as (relative filename usually).
+
+=item filename
+
+The full path and filename.
+
+=item extension
+
+The "extension" part of the filename.  For example, the file C<RTIR_Config.pm>
+will have an C<extension> value of C<RTIR>.
+
+=item site
+
+True if the file is considered a site-level override.  For example, C<site>
+will be false for C<RT_Config.pm> and true for C<RT_SiteConfig.pm>.
+
+=back
+
+=cut
+
+sub LoadedConfigs {
+    # Copy to avoid the caller changing our internal data
+    return map { \%$_ } @LOADED_CONFIGS
 }
 
 =head2 Get
@@ -1080,6 +1350,24 @@ sub Set {
         {no warnings 'once'; no strict 'refs'; ${"RT::$name"} = $OPTIONS{$name}; }
     }
     $META{$name}->{'Type'} = $type;
+    $META{$name}->{'PostSet'}->($self, $OPTIONS{$name}, $old)
+        if $META{$name}->{'PostSet'};
+    if ($META{$name}->{'Deprecated'}) {
+        my %deprecated = %{$META{$name}->{'Deprecated'}};
+        my $new_var = $deprecated{Instead} || '';
+        $self->SetFromConfig(
+            Option => \$new_var,
+            Value  => [$OPTIONS{$name}],
+            %{$self->Meta($name)->{'Source'}}
+        ) if $new_var;
+        $META{$name}->{'PostLoadCheck'} ||= sub {
+            RT->Deprecated(
+                Message => "Configuration option $name is deprecated",
+                Stack   => 0,
+                %deprecated,
+            );
+        };
+    }
     return $self->_ReturnValue( $old, $type );
 }
 
@@ -1115,7 +1403,7 @@ sub SetFromConfig {
     my $opt = $args{'Option'};
 
     my $type;
-    my $name = $self->__GetNameByRef($opt);
+    my $name = Symbol::Global::Name->find($opt);
     if ($name) {
         $type = ref $opt;
         $name =~ s/.*:://;
@@ -1175,77 +1463,6 @@ sub SetFromConfig {
     return 1;
 }
 
-    our %REF_SYMBOLS = (
-            SCALAR => '$',
-            ARRAY  => '@',
-            HASH   => '%',
-            CODE   => '&',
-        );
-
-{
-    my $last_pack = '';
-
-    sub __GetNameByRef {
-        my $self = shift;
-        my $ref  = shift;
-        my $pack = shift;
-        if ( !$pack && $last_pack ) {
-            my $tmp = $self->__GetNameByRef( $ref, $last_pack );
-            return $tmp if $tmp;
-        }
-        $pack ||= 'main::';
-        $pack .= '::' unless substr( $pack, -2 ) eq '::';
-
-        no strict 'refs';
-        my $name = undef;
-
-        # scan $pack's nametable(hash)
-        foreach my $k ( keys %{$pack} ) {
-
-            # The hash for main:: has a reference to itself
-            next if $k eq 'main::';
-
-            # if the entry has a trailing '::' then
-            # it is a link to another name space
-            if ( substr( $k, -2 ) eq '::') {
-                $name = $self->__GetNameByRef( $ref, $pack eq 'main::'? $k : $pack.$k );
-                return $name if $name;
-            }
-
-            # entry of the table with references to
-            # SCALAR, ARRAY... and other types with
-            # the same name
-            my $entry = ${$pack}{$k};
-            next unless $entry;
-
-            # Inlined constants are simplified in the symbol table --
-            # namely, when possible, you only get a reference back in
-            # $entry, rather than a full GLOB.  In 5.10, scalar
-            # constants began being inlined this way; starting in 5.20,
-            # list constants are also inlined.  Notably, ref(GLOB) is
-            # undef, but inlined constants are currently either REF,
-            # SCALAR, or ARRAY.
-            next if ref($entry);
-
-            my $ref_type = ref($ref);
-
-            # regex/arrayref/hashref/coderef are stored in SCALAR glob
-            $ref_type = 'SCALAR' if $ref_type eq 'REF';
-
-            my $entry_ref = *{$entry}{ $ref_type };
-            next if ref $entry_ref && ref $entry_ref ne ref $ref;
-            next unless $entry_ref;
-
-            # if references are equal then we've found
-            if ( $entry_ref == $ref ) {
-                $last_pack = $pack;
-                return ( $REF_SYMBOLS{ $ref_type } || '*' ) . $pack . $k;
-            }
-        }
-        return '';
-    }
-}
-
 =head2 Metadata
 
 
@@ -1270,7 +1487,7 @@ sub Sections {
 sub Options {
     my $self = shift;
     my %args = ( Section => undef, Overridable => 1, Sorted => 1, @_ );
-    my @res  = keys %META;
+    my @res  = sort keys %META;
     
     @res = grep( ( $META{$_}->{'Section'} || 'General' ) eq $args{'Section'},
         @res 

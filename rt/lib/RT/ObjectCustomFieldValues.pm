@@ -51,10 +51,9 @@ package RT::ObjectCustomFieldValues;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::ObjectCustomFieldValue;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'ObjectCustomFieldValues'}
 
@@ -63,12 +62,12 @@ sub _Init {
 
   # By default, order by SortOrder
   $self->OrderByCols(
-	 { ALIAS => 'main',
-	   FIELD => 'SortOrder',
-	   ORDER => 'ASC' },
-	 { ALIAS => 'main',
-	   FIELD => 'id',
-	   ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'SortOrder',
+           ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'id',
+           ORDER => 'ASC' },
      );
 
     return ( $self->SUPER::_Init(@_) );
@@ -146,7 +145,7 @@ sub HasEntry {
             return $item if lc $item->Content eq lc $args->{Content};
         }
         else {
-            if ( $item->_Value('Content') eq $args->{Content} ) {
+            if ( ($item->_Value('Content') || '') eq $args->{Content} ) {
                 if ( defined $item->LargeContent ) {
                     return $item
                       if defined $args->{LargeContent}
@@ -155,6 +154,8 @@ sub HasEntry {
                 else {
                     return $item unless defined $args->{LargeContent};
                 }
+            } elsif ( $item->LargeContent && $args->{Content} ) {
+                return $item if ($item->LargeContent eq $args->{Content});
             }
         }
     }
@@ -185,17 +186,6 @@ sub _DoCount {
     return $self->SUPER::_DoCount(@_);
 }
 
-
-=head2 NewItem
-
-Returns an empty new RT::ObjectCustomFieldValue item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::ObjectCustomFieldValue->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

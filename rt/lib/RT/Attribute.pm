@@ -145,11 +145,11 @@ sub Create {
                 Content => '',
                 ContentType => '',
                 Object => undef,
-		  @_);
+                @_);
 
     if ($args{Object} and UNIVERSAL::can($args{Object}, 'Id')) {
-	    $args{ObjectType} = $args{Object}->isa("RT::CurrentUser") ? "RT::User" : ref($args{Object});
-	    $args{ObjectId} = $args{Object}->Id;
+        $args{ObjectType} = $args{Object}->isa("RT::CurrentUser") ? "RT::User" : ref($args{Object});
+        $args{ObjectId} = $args{Object}->Id;
     } else {
         return(0, $self->loc("Required parameter '[_1]' not specified", 'Object'));
 
@@ -181,7 +181,6 @@ sub Create {
         $args{'ContentType'} = 'storable';
     }
 
-    
     $self->SUPER::Create(
                          Name => $args{'Name'},
                          Content => $args{'Content'},
@@ -210,11 +209,11 @@ sub LoadByNameAndObject {
     );
 
     return (
-	$self->LoadByCols(
-	    Name => $args{'Name'},
-	    ObjectType => ref($args{'Object'}),
-	    ObjectId => $args{'Object'}->Id,
-	)
+        $self->LoadByCols(
+            Name => $args{'Name'},
+            ObjectType => ref($args{'Object'}),
+            ObjectId => $args{'Object'}->Id,
+        )
     );
 
 }
@@ -285,7 +284,9 @@ sub SetContent {
             return(0, "Content couldn't be frozen");
         }
     }
-    return $self->_Set( Field => 'Content', Value => $content );
+    my ($ok, $msg) = $self->_Set( Field => 'Content', Value => $content );
+    return ($ok, $self->loc("Attribute updated")) if $ok;
+    return ($ok, $msg);
 }
 
 =head2 SubValue KEY
@@ -375,6 +376,7 @@ sub Delete {
     unless ($self->CurrentUserHasRight('delete')) {
         return (0,$self->loc('Permission Denied'));
     }
+
     return($self->SUPER::Delete(@_));
 }
 
@@ -599,30 +601,49 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Name =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         Description =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         Content =>
-		{read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'blob', default => ''},
+                {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'blob', default => ''},
         ContentType =>
-		{read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
         ObjectType =>
-		{read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
         ObjectId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+    $deps->Add( out => $self->Object );
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    if ($data->{Object} and ref $data->{Object}) {
+        my $on_uid = ${ $data->{Object} };
+        return if $importer->ShouldSkipTransaction($on_uid);
+    }
+    return $class->SUPER::PreInflate( $importer, $uid, $data );
+}
 
 RT::Base->_ImportOverlays();
 

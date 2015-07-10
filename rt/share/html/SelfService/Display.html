@@ -52,20 +52,27 @@
 <& /Elements/ListActions, actions => \@results &>
 <& /Ticket/Elements/ShowUpdateStatus, Ticket => $Ticket &>
 
-  <table width="100%" class="ticketsummary" >
+  <table width="100%" class="ticket-summary" >
       <tr>
         <td valign="top" width="50%" class="boxcontainer">
           <&| /Widgets/TitleBox, title => loc('The Basics'),
+                class => 'ticket-info-basics',
                 ($LinkBasicsTitle ? (title_href => $title_box_link) : ()),
                 title_class=> 'inverse',
                 color => "#993333" &>
-                <& /Ticket/Elements/ShowBasics, Ticket => $Ticket &>
-                <& /Ticket/Elements/ShowCustomFields, Ticket => $Ticket &>
+                <& /Ticket/Elements/ShowBasics, Ticket => $Ticket, UngroupedCFs => 1 &>
           </&>
+
+    <& /Elements/ShowCustomFieldCustomGroupings,
+        Object       => $Ticket,
+        title_href   => ($LinkBasicsTitle ? RT->Config->Get('WebPath')."/SelfService/Update.html" : "" ),
+        Groupings    => [ grep {$_ !~ /^(Basics|Dates)$/} RT::CustomField->Groupings( "RT::Ticket" ) ],
+        &>
 </td>
         <td valign="top" width="50%" class="boxcontainer">
           <&| /Widgets/TitleBox, title => loc("Dates"),
-                title_class=> 'inverse',
+                 class => 'ticket-info-dates',
+                 title_class=> 'inverse',
                  color => "#663366" &>
           <& /Ticket/Elements/ShowDates, Ticket => $Ticket, UpdatedLink => 0 &>
           </&>
@@ -73,16 +80,12 @@
 </tr>
 </table>
 
+% $m->callback(CallbackName => 'BeforeShowHistory', ARGSRef=> \%ARGS, Ticket => $Ticket );
 
-
-<& /Ticket/Elements/ShowHistory, 
-      Ticket => $Ticket, 
-      URIFile => "Display.html", 
+<& /Elements/ShowHistory,
+      Object => $Ticket,
       ShowHeaders => $ARGS{'ShowHeaders'},
       DownloadableHeaders => 0,
-      AttachPath => "Attachment", 
-      Attachments => $attachments, 
-      UpdatePath => "Update.html" 
 &>
 
 
@@ -101,108 +104,66 @@ my @id = ( ref $id eq 'ARRAY' ) ? @{$id} : ($id);
 
 my $Ticket = RT::Ticket->new( $session{'CurrentUser'} );
 
-if ( defined ($id[0]) && $id[0] eq 'new' ) {
-
-    # {{{ Create a new ticket
+if ( ($id[0]||'') eq 'new' ) {
 
     my $Queue = RT::Queue->new( $session{'CurrentUser'} );
-    unless ( $Queue->Load( $ARGS{'Queue'} ) ) {
-        $m->comp( 'Error.html', Why => loc('Queue not found') );
-        $m->abort;
-    }
+    Abort( loc('Queue not found') ) unless $Queue->Load( $ARGS{'Queue'} );
 
-    unless ( $Queue->CurrentUserHasRight('CreateTicket') ) {
-        $m->comp( 'Error.html',
-            Why =>
-              loc('You have no permission to create tickets in that queue.') );
-        $m->abort;
-    }
+    Abort( loc('You have no permission to create tickets in that queue.') )
+        unless $Queue->CurrentUserHasRight('CreateTicket');
 
+    ( $Ticket, @results ) = CreateTicket( %ARGS );
 
-    ( $Ticket, @results ) =
-    CreateTicket( Attachments => delete $session{'Attachments'}, %ARGS );
+    Abort( join("\n", @results ) ) unless $Ticket->id;
 
-    unless ( $Ticket->id ) {
-        $m->comp( 'Error.html', Why => join( "\n", @results ));
-              $m->abort();
-        }
-    }
-    else {
-        unless ( $Ticket->Load( $id[0] ) ) {
-            $m->comp( 'Error.html',
-                Why => loc( "Couldn't load ticket '[_1]'", $id ) );
-            $m->abort();
-        }
+}
+else {
+    $Ticket = LoadTicket($ARGS{'id'});
 
-    my ( $code, $msg );
-
-
-    if (
-        $session{'Attachments'}
-        || ( defined $ARGS{'UpdateContent'}
-            && $ARGS{'UpdateContent'} ne ''
-            && $ARGS{'UpdateContent'} ne "-- \n"
-            . $session{'CurrentUser'}->UserObj->Signature )
-      )
-    {
-        $ARGS{UpdateAttachments} = $session{'Attachments'};
-    }
     push @results, ProcessUpdateMessage(
         ARGSRef   => \%ARGS,
         TicketObj => $Ticket
     );
-    delete $session{'Attachments'};
 
     my @cfupdates = ProcessObjectCustomFieldUpdates(Object => $Ticket, ARGSRef => \%ARGS);
     push (@results, @cfupdates);
-
 
     #Update the status
     if (    ( defined $ARGS{'Status'} )
         and $ARGS{'Status'}
         and ( $ARGS{'Status'} ne $Ticket->Status ) )
     {
-        ( $code, $msg ) = $Ticket->SetStatus( $ARGS{'Status'} );
+        my ($code, $msg) = $Ticket->SetStatus( $ARGS{'Status'} );
         push @results, "$msg";
     }
 
+}
 
-    }
+# This code does automatic redirection if any updates happen.
 
-    # This code does automatic redirection if any updates happen.
+unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
+    Abort( loc("No permission to display that ticket") );
+}
 
-    unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
-        $m->comp( 'Error.html',
-            Why => loc("No permission to display that ticket") );
-        # XXX: Why abort? then we loose footer //ruz
-        $m->abort();
-    }
-
-    if ( $ARGS{'MarkAsSeen'} ) {
-        $Ticket->SetAttribute(
-            Name    => 'User-'. $Ticket->CurrentUser->id .'-SeenUpTo',
-            Content => $Ticket->LastUpdated,
-        );
-        push @results, loc('Marked all messages as seen');
-    }
-
-    # This code does automatic redirection if any updates happen.
-    MaybeRedirectForResults(
-        Actions   => \@results,
-        Path      => '/SelfService/Display.html',
-        Anchor    => $ARGS{'Anchor'},
-        Arguments => { id => $Ticket->id },
+if ( $ARGS{'MarkAsSeen'} ) {
+    $Ticket->SetAttribute(
+        Name    => 'User-'. $Ticket->CurrentUser->id .'-SeenUpTo',
+        Content => $Ticket->LastUpdated,
     );
+    push @results, loc('Marked all messages as seen');
+}
 
-    my $Transactions = $Ticket->Transactions;
+MaybeRedirectForResults(
+    Actions   => \@results,
+    Path      => '/SelfService/Display.html',
+    Anchor    => $ARGS{'Anchor'},
+    Arguments => { 'id' => $Ticket->id },
+);
 
-    my $attachments =
-      $m->comp( '/Ticket/Elements/FindAttachments', Ticket => $Ticket );
-
-    my $LinkBasicsTitle = $Ticket->CurrentUserHasRight('ModifyTicket')
-                          || $Ticket->CurrentUserHasRight('ReplyToTicket');
-    my $title_box_link = RT->Config->Get('WebPath')."/SelfService/Update.html?id=".$Ticket->Id;
-    $m->callback(CallbackName => 'BeforeDisplay', Ticket => \$Ticket, ARGSRef => \%ARGS, title_box_link => \$title_box_link);
+my $LinkBasicsTitle = $Ticket->CurrentUserHasRight('ModifyTicket')
+                      || $Ticket->CurrentUserHasRight('ReplyToTicket');
+my $title_box_link = RT->Config->Get('WebPath')."/SelfService/Update.html?id=".$Ticket->Id;
+$m->callback(CallbackName => 'BeforeDisplay', Ticket => \$Ticket, ARGSRef => \%ARGS, title_box_link => \$title_box_link);
 </%INIT>
 
 

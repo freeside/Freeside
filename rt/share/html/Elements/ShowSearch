@@ -67,9 +67,10 @@ if ($SavedSearch) {
         $m->out(loc("Either you have no rights to view saved search [_1] or identifier is incorrect", $m->interp->apply_escapes($SavedSearch, 'h')));
         return;
     }
-    $search = $container_object->Attributes->WithId($search_id);
+    $search = RT::Attribute->new( $session{'CurrentUser'} );
+    $search->Load($search_id);
     unless ( $search->Id && ref( $SearchArg = $search->Content ) eq 'HASH' ) {
-        $m->out(loc("Saved Search [_1] not found", $m->interp->apply_escapes($SavedSearch, 'h'))) unless $IgnoreMissing;
+        $m->out(loc("Saved search [_1] not found", $m->interp->apply_escapes($SavedSearch, 'h'))) unless $IgnoreMissing;
         return;
     }
     $SearchArg->{'SavedSearchId'} ||= $SavedSearch;
@@ -122,17 +123,21 @@ foreach ( $SearchArg, $ProcessedSearchArg ) {
     $_->{'Format'} ||= '';
     $_->{'Query'} ||= '';
 
-    $_->{'Format'} =~ s/__(Web(?:Path|Base|BaseURL))__/scalar RT->Config->Get($1)/ge;
     # extract-message-catalog would "$1", so we avoid quotes for loc calls
     $_->{'Format'} =~ s/__loc\(["']?(\w+)["']?\)__/my $f = "$1"; loc($f)/ge;
     if ( $_->{'Query'} =~ /__Bookmarks__/ ) {
         $_->{'Rows'} = 999;
 
-        # DEPRECATED: will be here for a while up to 3.10/4.0
-        my $bookmarks = $session{'CurrentUser'}->UserObj->FirstAttribute('Bookmarks');
-        $bookmarks = $bookmarks->Content if $bookmarks;
-        $bookmarks ||= {};
-        my $query = join(" OR ", map " id = '$_' ", grep $bookmarks->{ $_ }, keys %$bookmarks ) || 'id=0';
+        # DEPRECATED: will be here for a while up to 4.4
+        RT->Deprecated(
+            Remove  => "4.4",
+            Instead => "id = '__Bookmarked__'",
+            Message => "The __Bookmarks__ query syntax is deprecated",
+            Object  => $search,
+        );
+
+        my @bookmarks = $session{'CurrentUser'}->UserObj->Bookmarks;
+        my $query = join(" OR ", map " id = '$_' ", @bookmarks ) || 'id=0';
         $_->{'Query'} =~ s/__Bookmarks__/( $query )/g;
     }
 }

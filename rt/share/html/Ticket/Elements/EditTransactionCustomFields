@@ -45,7 +45,7 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-% $m->callback( CallbackName => 'BeforeTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, NamePrefix => $NamePrefix );
+% $m->callback( CallbackName => 'BeforeTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, InTable => $InTable );
 % if ( $WRAP ) {
 <<% $WRAP %> class="edit-transaction-custom-fields">
 % }
@@ -56,7 +56,7 @@
 % next unless $CF->UILocation eq $UILocation;
 <<% $FIELD %>>
 <<% $CELL %> class="label cflabel">
-  <span class="name"><% loc($CF->Name) %>:</span><br />
+  <span class="name"><% $CF->Name %>:</span><br />
 % if ( $CF->Type ne 'TimeValue' ) {
   <span class="type"><% $CF->FriendlyType %></span>
 % }
@@ -65,7 +65,7 @@
 <& /Elements/EditCustomField,
     %ARGS,
     CustomField => $CF,
-    NamePrefix => $NamePrefix,
+    Object => RT::Transaction->new( $session{'CurrentUser'} ),
 &>
 %  if (my $msg = $m->notes('InvalidField-' . $CF->Id)) {
         <br />
@@ -78,7 +78,7 @@
 % if ( $WRAP ) {
 </<% $WRAP %>>
 % }
-% $m->callback( CallbackName => 'AfterTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, NamePrefix => $NamePrefix );
+% $m->callback( CallbackName => 'AfterTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, InTable => $InTable );
 
 <%INIT>
 my $CustomFields;
@@ -89,7 +89,7 @@ if ($TicketObj) {
     $CustomFields = $QueueObj->TicketTransactionCustomFields();
 }
 
-$m->callback( CallbackName => 'MassageTransactionCustomFields', CustomFields => $CustomFields );
+$m->callback( CallbackName => 'MassageTransactionCustomFields', CustomFields => $CustomFields, InTable => $InTable );
 
 $AsTable ||= $InTable;
 my $FIELD = $AsTable ? 'tr' : 'div';
@@ -103,7 +103,6 @@ if ( $AsTable ) {
 
 </%INIT>
 <%ARGS>
-$NamePrefix => "Object-RT::Transaction--CustomField-"
 $TicketObj => undef
 $QueueObj => undef
 $AsTable => 0

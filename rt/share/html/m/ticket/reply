@@ -54,14 +54,18 @@
     method="post" enctype="multipart/form-data">
 <input type="hidden" class="hidden" name="DefaultStatus" value="<% $DefaultStatus ||''%>" />
 <input type="hidden" class="hidden" name="Action" value="<% $ARGS{Action}||'' %>" />
+<input type="hidden" class="hidden" name="Token" value="<% $ARGS{'Token'} %>" />
 
 % if ($gnupg_widget) {
-<& /Elements/GnuPG/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
+<& /Elements/Crypt/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
 % }
 
 <div class="entry"><span class="label"><&|/l&>Status</&>:</span>
 <div class="value">
-<& /Elements/SelectStatus, Name=>"Status", TicketObj => $t, DefaultLabel => loc("[_1] (Unchanged)", loc($t->Status)), Default => $ARGS{'Status'} || ($t->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
+<& /Ticket/Elements/SelectStatus,
+   Name=>"Status",
+   TicketObj => $t,
+   Default => $DefaultStatus &>
 </div></div>
 
 <div class="entry"><span class="label"><&|/l&>Owner</&>:</span>
@@ -70,7 +74,7 @@
     Name         => "Owner",
     TicketObj    => $t,
     QueueObj     => $t->QueueObj,
-    DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $t->OwnerObj)),
+    DefaultLabel => loc("[_1] (Unchanged)", $t->OwnerObj->Format),
     Default      => $ARGS{'Owner'}
 &>
 </div></div>
@@ -78,7 +82,6 @@
 <& /Elements/EditTimeValue,
     Name => 'UpdateTimeWorked',
     Default => $ARGS{UpdateTimeWorked}||'',
-    InUnits => $ARGS{'UpdateTimeWorked-TimeUnits'}||'minutes',
 &>
 </span></div>
 % $m->callback( %ARGS, CallbackName => 'AfterWorked', Ticket => $t );
@@ -137,7 +140,7 @@
 </div>
 
 % if ( $gnupg_widget ) {
-<& /Elements/GnuPG/SignEncryptWidget, self => $gnupg_widget, QueueObj => $t->QueueObj &>
+<& /Elements/Crypt/SignEncryptWidget, self => $gnupg_widget, QueueObj => $t->QueueObj &>
 % }
 
 <& /Elements/Submit, Label => loc('Update Ticket'), Name => 'SubmitTicket' &>
@@ -209,8 +212,8 @@ ProcessAttachments(ARGSRef => \%ARGS);
     }
 }
 
-my $gnupg_widget = $m->comp('/Elements/GnuPG/SignEncryptWidget:new', Arguments => \%ARGS );
-$m->comp( '/Elements/GnuPG/SignEncryptWidget:Process',
+my $gnupg_widget = $m->comp('/Elements/Crypt/SignEncryptWidget:new', Arguments => \%ARGS );
+$m->comp( '/Elements/Crypt/SignEncryptWidget:Process',
     self => $gnupg_widget,
     TicketObj => $t,
 );
@@ -220,7 +223,7 @@ $m->callback( CallbackName => 'BeforeUpdate', ARGSRef => \%ARGS, skip_update => 
               checks_failure => $checks_failure, results => \@results, TicketObj => $t );
 
 if ( !$checks_failure && !$skip_update && exists $ARGS{SubmitTicket} ) {
-    my $status = $m->comp('/Elements/GnuPG/SignEncryptWidget:Check',
+    my $status = $m->comp('/Elements/Crypt/SignEncryptWidget:Check',
         self      => $gnupg_widget,
         TicketObj => $t,
     );

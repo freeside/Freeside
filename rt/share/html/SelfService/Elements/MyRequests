@@ -47,19 +47,19 @@
 %# END BPS TAGGED BLOCK }}}
 <&| /Widgets/TitleBox, title => $title &>
 <& /Elements/CollectionList, Title   => $title,
-			 Format  => $Format, 
-			 Query   => $Query, 
-			 Order   => @Order, 
-			 OrderBy => @OrderBy,
-			 BaseURL => $BaseURL,
-			 AllowSorting => 1,
-			 Class   => 'RT::Tickets',
-             Rows    => $Rows,
-			 Page    => $Page &>
+  Format  => $Format,
+  Query   => $Query,
+  Order   => @Order,
+  OrderBy => @OrderBy,
+  BaseURL => $BaseURL,
+  AllowSorting => 1,
+  Class   => 'RT::Tickets',
+  Rows    => $Rows,
+  Page    => $Page &>
 </&>
 
 <%INIT>
-my $title = loc("My [_1] tickets", $friendly_status);
+$title ||= loc("My [_1] tickets", $friendly_status);
 my $id = $session{'CurrentUser'}->id;
 my $Query = "( Watcher.id = $id )";
 if ( @status ) {
@@ -69,6 +69,7 @@ if ( @status ) {
 my $Format = RT->Config->Get('DefaultSelfServiceSearchResultFormat');
 </%INIT>
 <%ARGS>
+$title => undef
 $friendly_status => loc('open')
 @status => ()
 $BaseURL => undef

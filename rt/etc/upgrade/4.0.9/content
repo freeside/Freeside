@@ -1,6 +1,9 @@
-@Initial = (
+use strict;
+use warnings;
+
+our @Initial = (
     sub {
-        $RT::Logger->debug(
+        RT->Logger->debug(
             'Going to update empty Queue Lifecycle column to "default"');
 
         my $queues = RT::Queues->new( RT->SystemUser );
@@ -32,7 +35,8 @@
         my $groups = RT::Groups->new(RT->SystemUser);
         $groups->Limit( FIELD    => 'Domain',
                         OPERATOR => '=',
-                        VALUE    => 'Personal'
+                        VALUE    => 'Personal',
+                        CASESENSITIVE => 0,
                       );
         $groups->LimitToDeleted;
         while ( my $group = $groups->Next ) {
@@ -40,7 +44,7 @@
             while ( my $member = $members->Next ) {
                 my ( $ok, $msg ) = $group->DeleteMember( $member->MemberId );
                 if ( !$ok ) {
-                    $RT::Logger->warn(   "Unable to remove group member "
+                    RT->Logger->warn(   "Unable to remove group member "
                                        . $member->id . ": "
                                        . $msg );
                 }

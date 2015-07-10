@@ -55,6 +55,11 @@ BEGIN { $^W = 1 };
 
 use base 'Test::More';
 
+BEGIN {
+    # Warn about role consumers overriding role methods so we catch it in tests.
+    $ENV{PERL_ROLE_OVERRIDE_WARN} = 1;
+}
+
 # We use the Test::NoWarnings catching and reporting functionality, but need to
 # wrap it in our own special handler because of the warn handler installed via
 # RT->InitLogging().
@@ -67,6 +72,8 @@ use Socket;
 use File::Temp qw(tempfile);
 use File::Path qw(mkpath);
 use File::Spec;
+use File::Which qw();
+use Scalar::Util qw(blessed);
 
 our @EXPORT = qw(is_empty diag parse_mail works fails plan done_testing);
 
@@ -110,7 +117,8 @@ BEGIN {
 
 sub import {
     my $class = shift;
-    my %args = %rttest_opt = @_;
+    my %args = @_;
+    %rttest_opt = %args;
 
     $rttest_opt{'nodb'} = $args{'nodb'} = 1 if $^C;
 
@@ -133,6 +141,8 @@ sub import {
         if $args{'requires'};
     push @{ $args{'plugins'} ||= [] }, $args{'testing'}
         if $args{'testing'};
+    push @{ $args{'plugins'} ||= [] }, split " ", $ENV{RT_TEST_PLUGINS}
+        if $ENV{RT_TEST_PLUGINS};
 
     $class->bootstrap_tempdir;
 
@@ -143,13 +153,15 @@ sub import {
     $class->bootstrap_config( %args );
 
     use RT;
-    RT::LoadConfig;
 
-    if (RT->Config->Get('DevelMode')) { require Module::Refresh; }
+    RT::LoadConfig;
 
     RT::InitPluginPaths();
     RT::InitClasses();
 
+    RT::I18N->Init();
+
+    $class->set_config_wrapper;
     $class->bootstrap_db( %args );
 
     __reconnect_rt()
@@ -159,10 +171,7 @@ sub import {
 
     RT->Plugins;
 
-    RT::I18N->Init();
     RT->Config->PostLoadCheck;
-
-    $class->set_config_wrapper;
 
     $class->encode_output;
 
@@ -183,6 +192,12 @@ sub import {
     while ( my ($package) = caller($level-1) ) {
         last unless $package =~ /Test/;
         $level++;
+    }
+
+    # By default we test HTML templates, but text templates are
+    # available on request
+    if ( $args{'text_templates'} ) {
+        $class->switch_templates_ok('text');
     }
 
     Test::More->export_to_level($level);
@@ -291,8 +306,9 @@ sub bootstrap_config {
 Set( \$WebDomain, "localhost");
 Set( \$WebPort,   $port);
 Set( \$WebPath,   "");
-Set( \@LexiconLanguages, qw(en zh_TW fr ja));
+Set( \@LexiconLanguages, qw(en zh_TW zh_CN fr ja));
 Set( \$RTAddressRegexp , qr/^bad_re_that_doesnt_match\$/i);
+Set( \$ShowHistory, "always");
 };
     if ( $ENV{'RT_TEST_DB_SID'} ) { # oracle case
         print $config "Set( \$DatabaseName , '$ENV{'RT_TEST_DB_SID'}' );\n";
@@ -370,7 +386,7 @@ sub bootstrap_logging {
 
     print $config <<END;
 Set( \$LogToSyslog , undef);
-Set( \$LogToScreen , "warning");
+Set( \$LogToSTDERR , "warning");
 Set( \$LogToFile, 'debug' );
 Set( \$LogDir, q{$tmp{'directory'}} );
 Set( \$LogToFileNamed, 'rt.debug.log' );
@@ -382,6 +398,56 @@ sub set_config_wrapper {
 
     my $old_sub = \&RT::Config::Set;
     no warnings 'redefine';
+
+    *RT::Config::WriteSet = sub {
+        my ($self, $name) = @_;
+        my $type = $RT::Config::META{$name}->{'Type'} || 'SCALAR';
+        my %sigils = (
+            HASH   => '%',
+            ARRAY  => '@',
+            SCALAR => '$',
+        );
+        my $sigil = $sigils{$type} || $sigils{'SCALAR'};
+        open( my $fh, '<', $tmp{'config'}{'RT'} )
+            or die "Couldn't open config file: $!";
+        my @lines;
+        while (<$fh>) {
+            if (not @lines or /^Set\(/) {
+                push @lines, $_;
+            } else {
+                $lines[-1] .= $_;
+            }
+        }
+        close $fh;
+
+        # Traim trailing newlines and "1;"
+        $lines[-1] =~ s/(^1;\n|^\n)*\Z//m;
+
+        # Remove any previous definitions of this var
+        @lines = grep {not /^Set\(\s*\Q$sigil$name\E\b/} @lines;
+
+        # Format the new value for output
+        require Data::Dumper;
+        local $Data::Dumper::Terse = 1;
+        my $dump = Data::Dumper::Dumper([@_[2 .. $#_]]);
+        $dump =~ s/;?\s+\Z//;
+        push @lines, "Set( ${sigil}${name}, \@{". $dump ."});\n";
+        push @lines, "\n1;\n";
+
+        # Re-write the configuration file
+        open( $fh, '>', $tmp{'config'}{'RT'} )
+            or die "Couldn't open config file: $!";
+        print $fh $_ for @lines;
+        close $fh;
+
+        if ( @SERVERS ) {
+            warn "you're changing config option in a test file"
+                ." when server is active";
+        }
+
+        return $old_sub->(@_);
+    };
+
     *RT::Config::Set = sub {
         # Determine if the caller is either from a test script, or
         # from helper functions called by test script to alter
@@ -391,30 +457,9 @@ sub set_config_wrapper {
         my @caller = caller(1); # preserve list context
         @caller = caller(0) unless @caller;
 
-        if ( ($caller[1]||'') =~ /\.t$/) {
-            my ($self, $name) = @_;
-            my $type = $RT::Config::META{$name}->{'Type'} || 'SCALAR';
-            my %sigils = (
-                HASH   => '%',
-                ARRAY  => '@',
-                SCALAR => '$',
-            );
-            my $sigil = $sigils{$type} || $sigils{'SCALAR'};
-            open( my $fh, '>>', $tmp{'config'}{'RT'} )
-                or die "Couldn't open config file: $!";
-            require Data::Dumper;
-            local $Data::Dumper::Terse = 1;
-            my $dump = Data::Dumper::Dumper([@_[2 .. $#_]]);
-            $dump =~ s/;\s+$//;
-            print $fh
-                "\nSet(${sigil}${name}, \@{". $dump ."});\n1;\n";
-            close $fh;
+        return RT::Config::WriteSet(@_)
+            if ($caller[1]||'') =~ /\.t$/;
 
-            if ( @SERVERS ) {
-                warn "you're changing config option in a test file"
-                    ." when server is active";
-            }
-        }
         return $old_sub->(@_);
     };
 }
@@ -450,6 +495,11 @@ sub bootstrap_db {
     }
 
     my $db_type = RT->Config->Get('DatabaseType');
+
+    if ($db_type eq "SQLite") {
+        RT->Config->WriteSet( DatabaseName => File::Spec->catfile( $self->temp_directory, "rt4test" ) );
+    }
+
     __create_database();
     __reconnect_rt('as dba');
     $RT::Handle->InsertSchema;
@@ -490,7 +540,7 @@ sub bootstrap_plugins_paths {
 
         if ( grep $name eq $_, @plugins ) {
             my $variants = join "(?:|::|-|_)", map "\Q$_\E", split /::/, $name;
-            my ($path) = map $ENV{$_}, grep /^CHIMPS_(?:$variants).*_ROOT$/i, keys %ENV;
+            my ($path) = map $ENV{$_}, grep /^RT_TEST_PLUGIN_(?:$variants).*_ROOT$/i, keys %ENV;
             return $path if $path;
         }
         return $old_func->(@_);
@@ -695,7 +745,10 @@ sub load_or_create_user {
         my $groups_alias = $gms->Join(
             FIELD1 => 'GroupId', TABLE2 => 'Groups', FIELD2 => 'id',
         );
-        $gms->Limit( ALIAS => $groups_alias, FIELD => 'Domain', VALUE => 'UserDefined' );
+        $gms->Limit(
+            ALIAS => $groups_alias, FIELD => 'Domain', VALUE => 'UserDefined',
+            CASESENSITIVE => 0,
+        );
         $gms->Limit( FIELD => 'MemberId', VALUE => $obj->id );
         while ( my $group_member_record = $gms->Next ) {
             $group_member_record->Delete;
@@ -805,7 +858,7 @@ sub create_tickets {
     while ( @data ) {
         my %args = %{ shift @data };
         $args{$_} = $res[ $args{$_} ]->id foreach
-            grep $args{ $_ }, keys %RT::Ticket::LINKTYPEMAP;
+            grep $args{ $_ }, keys %RT::Link::TYPEMAP;
         push @res, $self->create_ticket( %$defaults, %args );
     }
     return @res;
@@ -817,7 +870,10 @@ sub create_ticket {
     my $self = shift;
     my %args = @_;
 
-    if ($args{Queue} && $args{Queue} =~ /\D/) {
+    if ( blessed $args{'Queue'} ) {
+        $args{Queue} = $args{'Queue'}->id;
+    }
+    elsif ($args{Queue} && $args{Queue} =~ /\D/) {
         my $queue = RT::Queue->new(RT->SystemUser);
         if (my $id = $queue->Load($args{Queue}) ) {
             $args{Queue} = $id;
@@ -834,6 +890,20 @@ sub create_ticket {
             Charset => "UTF-8",
             Data    => Encode::encode( "UTF-8", $content ),
         );
+    }
+
+    if ( my $cfs = delete $args{'CustomFields'} ) {
+        my $q = RT::Queue->new( RT->SystemUser );
+        $q->Load( $args{'Queue'} );
+        while ( my ($k, $v) = each %$cfs ) {
+            my $cf = $q->CustomField( $k );
+            unless ($cf->id) {
+                RT->Logger->error("Couldn't load custom field $k");
+                next;
+            }
+
+            $args{'CustomField-'. $cf->id} = $v;
+        }
     }
 
     my $ticket = RT::Ticket->new( RT->SystemUser );
@@ -894,7 +964,11 @@ sub load_or_create_custom_field {
     my %args = ( Disabled => 0, @_ );
     my $obj = RT::CustomField->new( RT->SystemUser );
     if ( $args{'Name'} ) {
-        $obj->LoadByName( Name => $args{'Name'}, Queue => $args{'Queue'} );
+        $obj->LoadByName(
+            Name       => $args{'Name'},
+            LookupType => RT::Ticket->CustomFieldLookupType,
+            ObjectId   => $args{'Queue'},
+        );
     } else {
         die "Name is required";
     }
@@ -932,7 +1006,7 @@ sub store_rights {
     my @res;
     while ( my $ace = $acl->Next ) {
         my $obj = $ace->PrincipalObj->Object;
-        if ( $obj->isa('RT::Group') && $obj->Type eq 'UserEquiv' && $obj->Instance == RT->Nobody->id ) {
+        if ( $obj->isa('RT::Group') && $obj->Domain eq 'ACLEquivalence' && $obj->Instance == RT->Nobody->id ) {
             next;
         }
 
@@ -965,7 +1039,7 @@ sub set_rights {
     $acl->Limit( FIELD => 'RightName', OPERATOR => '!=', VALUE => 'SuperUser' );
     while ( my $ace = $acl->Next ) {
         my $obj = $ace->PrincipalObj->Object;
-        if ( $obj->isa('RT::Group') && ($obj->Type||'') eq 'UserEquiv' && $obj->Instance == RT->Nobody->id ) {
+        if ( $obj->isa('RT::Group') && $obj->Domain eq 'ACLEquivalence' && $obj->Instance == RT->Nobody->id ) {
             next;
         }
         $ace->Delete;
@@ -984,16 +1058,16 @@ sub add_rights {
             if ( $principal =~ /^(everyone|(?:un)?privileged)$/i ) {
                 $principal = RT::Group->new( RT->SystemUser );
                 $principal->LoadSystemInternalGroup($1);
-            } elsif ( $principal =~ /^(Owner|Requestor|(?:Admin)?Cc)$/i ) {
-                $principal = RT::Group->new( RT->SystemUser );
-                $principal->LoadByCols(
-                    Domain => (ref($e->{'Object'})||'RT::System').'-Role',
-                    Type => $1,
-                    ref($e->{'Object'})? (Instance => $e->{'Object'}->id): (),
-                );
             } else {
-                die "principal is not an object, but also is not name of a system group";
+                my $type = $principal;
+                $principal = RT::Group->new( RT->SystemUser );
+                $principal->LoadRoleGroup(
+                    Object  => ($e->{'Object'} || RT->System),
+                    Name    => $type
+                );
             }
+            die "Principal is not an object nor the name of a system or role group"
+                unless $principal->id;
         }
         unless ( $principal->isa('RT::Principal') ) {
             if ( $principal->can('PrincipalObj') ) {
@@ -1007,6 +1081,46 @@ sub add_rights {
         }
     }
     return 1;
+}
+
+=head2 switch_templates_to TYPE
+
+This runs /opt/rt4/etc/upgrade/switch-templates-to in order to change the templates from
+HTML to text or vice versa.  TYPE is the type to switch to, either C<html> or
+C<text>.
+
+=cut
+
+sub switch_templates_to {
+    my $self = shift;
+    my $type = shift;
+
+    return $self->run_and_capture(
+        command => "$RT::EtcPath/upgrade/switch-templates-to",
+        args    => $type,
+    );
+}
+
+=head2 switch_templates_ok TYPE
+
+Calls L<switch_template_to> and tests the return values.
+
+=cut
+
+sub switch_templates_ok {
+    my $self = shift;
+    my $type = shift;
+
+    my ($exit, $output) = $self->switch_templates_to($type);
+    
+    if ($exit >> 8) {
+        Test::More::fail("Switched templates to $type cleanly");
+        diag("**** $RT::EtcPath/upgrade/switch-templates-to exited with ".($exit >> 8).":\n$output");
+    } else {
+        Test::More::pass("Switched templates to $type cleanly");
+    }
+
+    return ($exit, $output);
 }
 
 sub run_mailgate {
@@ -1036,43 +1150,6 @@ sub run_mailgate {
     $self->run_and_capture(%args);
 }
 
-sub run_validator {
-    my $self = shift;
-    my %args = (check => 1, resolve => 0, force => 1, timeout => 0, @_ );
-
-    my $validator_path = "$RT::SbinPath/rt-validator";
-
-    my $cmd = $validator_path;
-    die "Couldn't find $cmd command" unless -f $cmd;
-
-    my $timeout = delete $args{timeout};
-
-    while( my ($k,$v) = each %args ) {
-        next unless $v;
-        $cmd .= " --$k '$v'";
-    }
-    $cmd .= ' 2>&1';
-
-    require IPC::Open2;
-    my ($child_out, $child_in);
-    my $pid = IPC::Open2::open2($child_out, $child_in, $cmd);
-    close $child_in;
-
-    local $SIG{ALRM} = sub { kill KILL => $pid; die "Timeout!" };
-
-    alarm $timeout if $timeout;
-    my $result = eval { local $/; <$child_out> };
-    warn $@ if $@;
-    close $child_out;
-    waitpid $pid, 0;
-    alarm 0;
-
-    DBIx::SearchBuilder::Record::Cachable->FlushCache
-        if $args{'resolve'};
-
-    return ($?, $result);
-}
-
 sub run_and_capture {
     my $self = shift;
     my %args = @_;
@@ -1084,10 +1161,13 @@ sub run_and_capture {
 
     $cmd .= ' --debug' if delete $args{'debug'};
 
+    my $args = delete $args{'args'};
+
     while( my ($k,$v) = each %args ) {
         next unless $v;
         $cmd .= " --$k '$v'";
     }
+    $cmd .= " $args" if defined $args;
     $cmd .= ' 2>&1';
 
     DBIx::SearchBuilder::Record::Cachable->FlushCache;
@@ -1144,12 +1224,20 @@ sub send_via_mailgate {
 
     my ( $status, $error_message, $ticket )
         = RT::Interface::Email::Gateway( {%args, message => $message} );
+
+    # Invert the status to act like a syscall; failing return code is 1,
+    # and it will be right-shifted before being examined.
+    $status = ($status == 1)  ? 0
+            : ($status == -75) ? (-75 << 8)
+            : (1 << 8);
+
     return ( $status, $ticket ? $ticket->id : 0 );
 
 }
 
 
 sub open_mailgate_ok {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $class   = shift;
     my $baseurl = shift;
     my $queue   = shift || 'general';
@@ -1160,6 +1248,7 @@ sub open_mailgate_ok {
 
 
 sub close_mailgate_ok {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $class = shift;
     my $mail  = shift;
     close $mail;
@@ -1167,6 +1256,7 @@ sub close_mailgate_ok {
 }
 
 sub mailsent_ok {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $class = shift;
     my $expected  = shift;
 
@@ -1195,6 +1285,96 @@ sub fetch_caught_mails {
 
 sub clean_caught_mails {
     unlink $tmp{'mailbox'};
+}
+
+sub run_validator {
+    my $self = shift;
+    my %args = (check => 1, resolve => 0, force => 1, timeout => 0, @_ );
+
+    my $cmd = "$RT::SbinPath/rt-validator";
+    die "Couldn't find $cmd command" unless -f $cmd;
+
+    my $timeout = delete $args{timeout};
+
+    while( my ($k,$v) = each %args ) {
+        next unless $v;
+        $cmd .= " --$k '$v'";
+    }
+    $cmd .= ' 2>&1';
+
+    require IPC::Open2;
+    my ($child_out, $child_in);
+    my $pid = IPC::Open2::open2($child_out, $child_in, $cmd);
+    close $child_in;
+
+    local $SIG{ALRM} = sub { kill KILL => $pid; die "Timeout!" };
+
+    alarm $timeout if $timeout;
+    my $result = eval { local $/; <$child_out> };
+    warn $@ if $@;
+    close $child_out;
+    waitpid $pid, 0;
+    alarm 0;
+
+    DBIx::SearchBuilder::Record::Cachable->FlushCache
+        if $args{'resolve'};
+
+    return ($?, $result);
+}
+
+sub db_is_valid {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
+    my $self = shift;
+    my ($ecode, $res) = $self->run_validator;
+    Test::More::is( $ecode, 0, 'no invalid records' )
+        or Test::More::diag "errors:\n$res";
+}
+
+=head2 object_scrips_are
+
+Takes an L<RT::Scrip> object or ID as the first argument and an arrayref of
+L<RT::Queue> objects and/or Queue IDs as the second argument.
+
+The scrip's applications (L<RT::ObjectScrip> records) are tested to ensure they
+exactly match the arrayref.
+
+An optional third arrayref may be passed to enumerate and test the queues the
+scrip is B<not> added to.  This is most useful for testing the API returns the
+correct results.
+
+=cut
+
+sub object_scrips_are {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    my $self    = shift;
+    my $scrip   = shift;
+    my $to      = shift || [];
+    my $not_to  = shift;
+
+    unless (blessed($scrip)) {
+        my $id = $scrip;
+        $scrip = RT::Scrip->new( RT->SystemUser );
+        $scrip->Load($id);
+    }
+
+    $to = [ map { blessed($_) ? $_->id : $_ } @$to ];
+    Test::More::ok($scrip->IsAdded($_), "added to queue $_" ) foreach @$to;
+    Test::More::is_deeply(
+        [sort map $_->id, @{ $scrip->AddedTo->ItemsArrayRef }],
+        [sort grep $_, @$to ],
+        'correct list of added to queues',
+    );
+
+    if ($not_to) {
+        $not_to = [ map { blessed($_) ? $_->id : $_ } @$not_to ];
+        Test::More::ok(!$scrip->IsAdded($_), "not added to queue $_" ) foreach @$not_to;
+        Test::More::is_deeply(
+            [sort map $_->id, @{ $scrip->NotAddedTo->ItemsArrayRef }],
+            [sort grep $_, @$not_to ],
+            'correct list of not added to queues',
+        );
+    }
 }
 
 =head2 get_relocatable_dir
@@ -1241,6 +1421,21 @@ sub get_relocatable_file {
     return File::Spec->catfile(get_relocatable_dir(@_), $file);
 }
 
+sub find_relocatable_path {
+    my @path = @_;
+
+    # A simple strategy to find e.g., t/data/gnupg/keys, from the dir
+    # where test file lives. We try up to 3 directories up
+    my $path = File::Spec->catfile( @path );
+    for my $up ( 0 .. 2 ) {
+        my $p = get_relocatable_dir($path);
+        return $p if -e $p;
+
+        $path = File::Spec->catfile( File::Spec->updir(), $path );
+    }
+    return undef;
+}
+
 sub get_abs_relocatable_dir {
     (my $volume, my $directories, my $file) = File::Spec->splitpath($0);
     if (File::Spec->file_name_is_absolute($directories)) {
@@ -1266,154 +1461,59 @@ sub import_gnupg_key {
     $key =~ s/\@/-at-/g;
     $key .= ".$type.key";
 
-    require RT::Crypt::GnuPG;
-
-    # simple strategy find data/gnupg/keys, from the dir where test file lives
-    # to updirs, try 3 times in total
-    my $path = File::Spec->catfile( 'data', 'gnupg', 'keys' );
-    my $abs_path;
-    for my $up ( 0 .. 2 ) {
-        my $p = get_relocatable_dir($path);
-        if ( -e $p ) {
-            $abs_path = $p;
-            last;
-        }
-        else {
-            $path = File::Spec->catfile( File::Spec->updir(), $path );
-        }
-    }
+    my $path = find_relocatable_path( 'data', 'gnupg', 'keys' );
 
     die "can't find the dir where gnupg keys are stored"
-      unless $abs_path;
+      unless $path;
 
-    return RT::Crypt::GnuPG::ImportKey(
-        RT::Test->file_content( [ $abs_path, $key ] ) );
+    return RT::Crypt::GnuPG->ImportKey(
+        RT::Test->file_content( [ $path, $key ] ) );
 }
-
 
 sub lsign_gnupg_key {
     my $self = shift;
     my $key = shift;
 
-    require RT::Crypt::GnuPG; require GnuPG::Interface;
-    my $gnupg = GnuPG::Interface->new();
-    my %opt = RT->Config->Get('GnuPGOptions');
-    $gnupg->options->hash_init(
-        RT::Crypt::GnuPG::_PrepareGnuPGOptions( %opt ),
-        meta_interactive => 0,
-    );
-
-    my %handle; 
-    my $handles = GnuPG::Handles->new(
-        stdin   => ($handle{'input'}   = IO::Handle->new()),
-        stdout  => ($handle{'output'}  = IO::Handle->new()),
-        stderr  => ($handle{'error'}   = IO::Handle->new()),
-        logger  => ($handle{'logger'}  = IO::Handle->new()),
-        status  => ($handle{'status'}  = IO::Handle->new()),
-        command => ($handle{'command'} = IO::Handle->new()),
-    );
-
-    eval {
-        local $SIG{'CHLD'} = 'DEFAULT';
-        local @ENV{'LANG', 'LC_ALL'} = ('C', 'C');
-        my $pid = $gnupg->wrap_call(
-            handles => $handles,
-            commands => ['--lsign-key'],
-            command_args => [$key],
-        );
-        close $handle{'input'};
-        while ( my $str = readline $handle{'status'} ) {
-            if ( $str =~ /^\[GNUPG:\]\s*GET_BOOL sign_uid\..*/ ) {
-                print { $handle{'command'} } "y\n";
+    return RT::Crypt::GnuPG->CallGnuPG(
+        Command     => '--lsign-key',
+        CommandArgs => [$key],
+        Callback    => sub {
+            my %handle = @_;
+            while ( my $str = readline $handle{'status'} ) {
+                if ( $str =~ /^\[GNUPG:\]\s*GET_BOOL sign_uid\..*/ ) {
+                    print { $handle{'command'} } "y\n";
+                }
             }
-        }
-        waitpid $pid, 0;
-    };
-    my $err = $@;
-    close $handle{'output'};
-
-    my %res;
-    $res{'exit_code'} = $?;
-    foreach ( qw(error logger status) ) {
-        $res{$_} = do { local $/; readline $handle{$_} };
-        delete $res{$_} unless $res{$_} && $res{$_} =~ /\S/s;
-        close $handle{$_};
-    }
-    $RT::Logger->debug( $res{'status'} ) if $res{'status'};
-    $RT::Logger->warning( $res{'error'} ) if $res{'error'};
-    $RT::Logger->error( $res{'logger'} ) if $res{'logger'} && $?;
-    if ( $err || $res{'exit_code'} ) {
-        $res{'message'} = $err? $err : "gpg exitted with error code ". ($res{'exit_code'} >> 8);
-    }
-    return %res;
+        },
+    );
 }
 
 sub trust_gnupg_key {
     my $self = shift;
     my $key = shift;
 
-    require RT::Crypt::GnuPG; require GnuPG::Interface;
-    my $gnupg = GnuPG::Interface->new();
-    my %opt = RT->Config->Get('GnuPGOptions');
-    $gnupg->options->hash_init(
-        RT::Crypt::GnuPG::_PrepareGnuPGOptions( %opt ),
-        meta_interactive => 0,
-    );
-
-    my %handle; 
-    my $handles = GnuPG::Handles->new(
-        stdin   => ($handle{'input'}   = IO::Handle->new()),
-        stdout  => ($handle{'output'}  = IO::Handle->new()),
-        stderr  => ($handle{'error'}   = IO::Handle->new()),
-        logger  => ($handle{'logger'}  = IO::Handle->new()),
-        status  => ($handle{'status'}  = IO::Handle->new()),
-        command => ($handle{'command'} = IO::Handle->new()),
-    );
-
-    eval {
-        local $SIG{'CHLD'} = 'DEFAULT';
-        local @ENV{'LANG', 'LC_ALL'} = ('C', 'C');
-        my $pid = $gnupg->wrap_call(
-            handles => $handles,
-            commands => ['--edit-key'],
-            command_args => [$key],
-        );
-        close $handle{'input'};
-
-        my $done = 0;
-        while ( my $str = readline $handle{'status'} ) {
-            if ( $str =~ /^\[GNUPG:\]\s*\QGET_LINE keyedit.prompt/ ) {
-                if ( $done ) {
-                    print { $handle{'command'} } "quit\n";
-                } else {
-                    print { $handle{'command'} } "trust\n";
+    return RT::Crypt::GnuPG->CallGnuPG(
+        Command     => '--edit-key',
+        CommandArgs => [$key],
+        Callback    => sub {
+            my %handle = @_;
+            my $done = 0;
+            while ( my $str = readline $handle{'status'} ) {
+                if ( $str =~ /^\[GNUPG:\]\s*\QGET_LINE keyedit.prompt/ ) {
+                    if ( $done ) {
+                        print { $handle{'command'} } "quit\n";
+                    } else {
+                        print { $handle{'command'} } "trust\n";
+                    }
+                } elsif ( $str =~ /^\[GNUPG:\]\s*\QGET_LINE edit_ownertrust.value/ ) {
+                    print { $handle{'command'} } "5\n";
+                } elsif ( $str =~ /^\[GNUPG:\]\s*\QGET_BOOL edit_ownertrust.set_ultimate.okay/ ) {
+                    print { $handle{'command'} } "y\n";
+                    $done = 1;
                 }
-            } elsif ( $str =~ /^\[GNUPG:\]\s*\QGET_LINE edit_ownertrust.value/ ) {
-                print { $handle{'command'} } "5\n";
-            } elsif ( $str =~ /^\[GNUPG:\]\s*\QGET_BOOL edit_ownertrust.set_ultimate.okay/ ) {
-                print { $handle{'command'} } "y\n";
-                $done = 1;
             }
-        }
-        waitpid $pid, 0;
-    };
-    my $err = $@;
-    close $handle{'output'};
-
-    my %res;
-    $res{'exit_code'} = $?;
-    foreach ( qw(error logger status) ) {
-        $res{$_} = do { local $/; readline $handle{$_} };
-        delete $res{$_} unless $res{$_} && $res{$_} =~ /\S/s;
-        close $handle{$_};
-    }
-    $RT::Logger->debug( $res{'status'} ) if $res{'status'};
-    $RT::Logger->warning( $res{'error'} ) if $res{'error'};
-    $RT::Logger->error( $res{'logger'} ) if $res{'logger'} && $?;
-    if ( $err || $res{'exit_code'} ) {
-        $res{'message'} = $err? $err : "gpg exitted with error code ". ($res{'exit_code'} >> 8);
-    }
-    return %res;
+        },
+    );
 }
 
 sub started_ok {
@@ -1476,7 +1576,7 @@ sub test_app {
         require Plack::Middleware::Auth::Basic;
         $app = Plack::Middleware::Auth::Basic->wrap(
             $app,
-            authenticator => sub {
+            authenticator => $server_opt{basic_auth} eq 'anon' ? sub { 1 } : sub {
                 my ($username, $password) = @_;
                 return $username eq 'root' && $password eq 'password';
             }
@@ -1490,6 +1590,7 @@ sub test_app {
 }
 
 sub start_plack_server {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $self = shift;
 
     require Plack::Loader;
@@ -1524,10 +1625,8 @@ sub start_plack_server {
     }
 
     require POSIX;
-    if ( $^O !~ /MSWin32/ ) {
-        POSIX::setsid()
-            or die "Can't start a new session: $!";
-    }
+    POSIX::setsid()
+          or die "Can't start a new session: $!";
 
     # stick this in a scope so that when $app is garbage collected,
     # StashWarnings can complain about unhandled warnings
@@ -1540,6 +1639,7 @@ sub start_plack_server {
 
 our $TEST_APP;
 sub start_inline_server {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $self = shift;
 
     require Test::WWW::Mechanize::PSGI;
@@ -1557,6 +1657,7 @@ sub start_inline_server {
 }
 
 sub start_apache_server {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $self = shift;
     my %server_opt = @_;
     $server_opt{variant} ||= 'mod_perl';
@@ -1618,17 +1719,8 @@ sub file_content {
 
 sub find_executable {
     my $self = shift;
-    my $name = shift;
 
-    require File::Spec;
-    foreach my $dir ( split /:/, $ENV{'PATH'} ) {
-        my $fpath = File::Spec->catpath(
-            (File::Spec->splitpath( $dir, 'no file' ))[0..1], $name
-        );
-        next unless -e $fpath && -r _ && -x _;
-        return $fpath;
-    }
-    return undef;
+    return File::Which::which( @_ );
 }
 
 sub diag {

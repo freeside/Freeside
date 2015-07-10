@@ -60,6 +60,7 @@ use RT::Interface::Web::Handler;
 use RT::Interface::Web;
 use File::Temp 'tempdir';
 use HTML::Scrubber;
+use URI::QueryParam;
 
 sub MailDashboards {
     my $self = shift;
@@ -349,6 +350,7 @@ sub EmailDashboard {
     $RT::Logger->debug('Mailing dashboard "'.$dashboard->Name.'" to user '.$currentuser->Name." <$email>");
 
     my $ok = RT::Interface::Email::SendEmail(
+        %{ RT->Config->Get('Crypt')->{'Dashboards'} || {} },
         Entity => $entity,
     );
 
@@ -379,8 +381,10 @@ sub BuildEmail {
             # already attached this object
             return "cid:$cid_of{$uri}" if $cid_of{$uri};
 
-            $cid_of{$uri} = time() . $$ . int(rand(1e6));
             my ($data, $filename, $mimetype, $encoding) = GetResource($uri);
+            return $uri unless defined $data;
+
+            $cid_of{$uri} = time() . $$ . int(rand(1e6));
 
             # Encode textual data in UTF-8, and downgrade (treat
             # codepoints as codepoints, and ensure the UTF-8 flag is
@@ -409,7 +413,7 @@ sub BuildEmail {
         inline_css => sub {
             my $uri = shift;
             my ($content) = GetResource($uri);
-            return $content;
+            return defined $content ? $content : "";
         },
         inline_imports => 1,
     );
@@ -457,7 +461,7 @@ sub BuildEmail {
                 autohandler_name => '', # disable forced login and more
                 data_dir => $data_dir,
             );
-            $mason->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
+            $mason->set_escape( h => \&RT::Interface::Web::EscapeHTML );
             $mason->set_escape( u => \&RT::Interface::Web::EscapeURI  );
             $mason->set_escape( j => \&RT::Interface::Web::EscapeJS   );
         }
@@ -530,7 +534,13 @@ sub BuildEmail {
 
 sub GetResource {
     my $uri = URI->new(shift);
-    my ($content, $filename, $mimetype, $encoding);
+    my ($content, $content_type, $filename, $mimetype, $encoding);
+
+    # Avoid trying to inline any remote URIs.  We absolutified all URIs
+    # using WebURL in SendDashboard() above, so choose the simpler match on
+    # that rather than testing a bunch of URI accessors.
+    my $WebURL = RT->Config->Get("WebURL");
+    return unless $uri =~ /^\Q$WebURL/;
 
     $RT::Logger->debug("Getting resource $uri");
 
@@ -543,35 +553,28 @@ sub GetResource {
     $path = "/$path"
         unless $path =~ m{^/};
 
-    $HTML::Mason::Commands::r->path_info($path);
+    # Try the static handler first for non-Mason CSS, JS, etc.
+    my $res = RT::Interface::Web::Handler->GetStatic($path);
+    if ($res->is_success) {
+        RT->Logger->debug("Fetched '$path' from the static handler");
+        $content      = $res->decoded_content;
+        $content_type = $res->headers->content_type;
+    } else {
+        # Try it through Mason instead...
+        $HTML::Mason::Commands::r->path_info($path);
 
-    # grab the query arguments
-    my %args;
-    for (split /&/, ($uri->query||'')) {
-        my ($k, $v) = /^(.*?)=(.*)$/
-            or die "Unable to parse query parameter '$_'";
+        # grab the query arguments
+        my %args = map { $_ => [ map {Encode::decode("UTF-8",$_)}
+                                     $uri->query_param($_) ] } $uri->query_param;
+        # Convert empty and single element arrayrefs to a non-ref scalar
+        @$_ < 2 and $_ = $_->[0]
+            for values %args;
 
-        for ($k, $v) { s/%(..)/chr hex $1/ge }
+        $RT::Logger->debug("Running component '$path'");
+        $content = RunComponent($path, %args);
 
-        # Decode from bytes to characters
-        $_ = Encode::decode( "UTF-8", $_ ) for $k, $v;
-
-        # no value yet, simple key=value
-        if (!exists $args{$k}) {
-            $args{$k} = $v;
-        }
-        # already have key=value, need to upgrade it to key=[value1, value2]
-        elsif (!ref($args{$k})) {
-            $args{$k} = [$args{$k}, $v];
-        }
-        # already key=[value1, value2], just add the new value
-        else {
-            push @{ $args{$k} }, $v;
-        }
+        $content_type = $HTML::Mason::Commands::r->content_type;
     }
-
-    $RT::Logger->debug("Running component '$path'");
-    $content = RunComponent($path, %args);
 
     # guess at the filename from the component name
     $filename = $1 if $path =~ m{^.*/(.*?)$};
@@ -579,7 +582,6 @@ sub GetResource {
     # the rest of this was taken from Email::MIME::CreateHTML::Resolver::LWP
     ($mimetype, $encoding) = MIME::Types::by_suffix($filename);
 
-    my $content_type = $HTML::Mason::Commands::r->content_type;
     if ($content_type) {
         $mimetype = $content_type;
 

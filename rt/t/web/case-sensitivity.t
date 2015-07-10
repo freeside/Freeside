@@ -22,7 +22,7 @@ $m->login;
     require JSON;
     is_deeply(
         JSON::from_json( $m->content ),
-        [{"value" =>  "root\@localhost","label" => "Enoch Root", id=>$root_id}]
+        [{id => 12, "value" =>  "root\@localhost","label" => "root (Enoch Root)"}]
     );
 }
 
@@ -73,7 +73,7 @@ my $cf;
 
 # test custom field values auto completer
 {
-    $m->get_ok('/Helpers/Autocomplete/CustomFieldValues?term=eNo&Object---CustomField-'. $cf->id .'-Value&ContextId=1&ContextType=RT::Queue');
+    $m->get_ok('/Helpers/Autocomplete/CustomFieldValues?term=eNo&Object-RT::Ticket--CustomField-'. $cf->id .'-Value&ContextId=1&ContextType=RT::Queue');
     require JSON;
     is_deeply(
         JSON::from_json( $m->content ),

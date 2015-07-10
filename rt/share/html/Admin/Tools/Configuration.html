@@ -87,7 +87,7 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 <tr class="<% $index_conf%2 ? 'oddline' : 'evenline'%>">
 <td class="collection-as-table"><% $key %></td>
 <td class="collection-as-table">
-% if ( $key =~ /Password(?!Length)/i ) { 
+% if ( $key =~ /Password/i and $key !~ /MinimumPasswordLength|AllowLoginPasswordAutoComplete/ ) {
 <em><% loc('Password not printed' ) %></em>\
 % } else {
 <% stringify($val) |n %>\
@@ -150,6 +150,7 @@ for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers Unprivileged
     $class =~ s/Privileged|Unprivileged//;
     my $collection = $class->new(RT->SystemUser);
     $collection->UnLimit;
+    $collection->FindAllRows;   # find disabled
     if ($type =~ /PrivilegedUsers/) {
         $user_count = $collection->CountAll;
         $collection->LimitToPrivileged;
@@ -179,12 +180,37 @@ for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers Unprivileged
 </ol>
 </&>
 
+<&|/Widgets/TitleBox, title => loc("Static file search order") &>
+<ol>
+% foreach my $path ( (map {$_->{root}} RT->Config->Get('StaticRoots')),
+%                    RT::Interface::Web->StaticRoots ) {
+<li><% $path %></li>
+% }
+</ol>
+</&>
+
 <&|/Widgets/TitleBox, title => loc("Perl library search order") &>
 <ol>
 % foreach my $inc (@INC) {
 <li><% $inc %></li>
 % }
 </ol>
+</&>
+
+<&|/Widgets/TitleBox, title=> loc("Loaded config files") &>
+<ol>
+% foreach my $config (RT->Config->LoadedConfigs) {
+%   if ($config->{site}) {
+<li><strong><% $config->{filename} %></strong></li>
+%   } else {
+<li><% $config->{filename} %></li>
+%   }
+% }
+</ol>
+</&>
+
+<&|/Widgets/TitleBox, title=> loc("Logging summary") &>
+  <& /Admin/Elements/LoggingSummary &>
 </&>
 
 </td>
@@ -199,6 +225,7 @@ for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers Unprivileged
 % my $attrs = $RT::System->Attributes;
 % my $index_size = 0;
 % while ( my $attr = $attrs->Next ) {
+% next if $attr->Name eq 'UpgradeHistory';
 <tr class="<% $index_size%2 ? 'oddline' : 'evenline'%>">
 % if ($attr->Name eq 'UserLogo') {
 %   my $content = $attr->Content;
@@ -249,11 +276,75 @@ if ($item =~ /^\s*(.*?)\s*v(\S+);/) {
 </table>
 </&>
 
+<&|/Widgets/TitleBox, title => loc("RT upgrade history")&>
+<& /Admin/Elements/UpgradeHistory &>
+</&>
+
 <&|/Widgets/TitleBox, title => loc("Perl configuration") &>
 % require Config;
 <pre>
 <% Config::myconfig() %>
 </pre>
+</&>
+
+<&|/Widgets/TitleBox, title=> loc("Environment variables") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Variable</&></th>
+<th class="collection-as-table"><&|/l&>Value</&></th>
+</tr>
+% my $row = 0;
+% for my $key (sort keys %ENV) {
+<tr class="collection-as-table <% $row++ %2 ? 'oddline' : 'evenline'%>">
+<td class="collection-as-table"><% $key %></td>
+<td class="collection-as-table"><% $ENV{$key} %></td>
+</tr>
+% }
+</table>
+</&>
+
+<&|/Widgets/TitleBox, title => loc("Operating System") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table evenline">
+<td class="collection-as-table">Deployment type</td>
+<td class="collection-as-table"><%
+  $INC{'mod_perl.pm'} ? "mod_perl" :
+  $INC{'FCGI.pm'}     ? "fastcgi"  :
+                        "standalone" %>
+</td>
+</tr>
+<%perl>
+my @os = (
+    "Distribution"   => 'lsb_release --all',
+    "uname -a"       => 'uname -a',
+    "SELinux status" => 'getenforce',
+    "Apache"         => [map { "$_ -V" } qw(apache2ctl apachectl httpdctl)],
+    "nginx"          => 'nginx -V 2>&1',
+    "lighttpd"       => 'lighttpd -V',
+);
+my @os_info;
+
+while (my ($name, $cmd) = splice @os, 0, 2) {
+    $cmd = [$cmd] unless ref $cmd eq 'ARRAY';
+    for my $run (@$cmd) {
+        $run .= " </dev/null";
+        $run .= " 2>/dev/null" unless $run =~ /2>/;
+        my $result = `$run`;
+        if (defined $result and $result =~ /\S/) {
+            push @os_info, $name => $result;
+            last;
+        }
+    }
+}
+my $row = 1;
+</%perl>
+% while (my ($name, $output) = splice @os_info, 0, 2) {
+<tr class="collection-as-table <% $row++ % 2 ? "oddline" : "evenline" %>">
+<td class="collection-as-table"><% $name %></td>
+<td class="collection-as-table" style="white-space: pre-wrap; font-family: monospace"><% $output %></td>
+</tr>
+% }
+</table>
 </&>
 
 <%INIT>
@@ -264,7 +355,7 @@ local $Data::Dumper::Indent = 2;
 sub stringify {
     my $value = shift;
     my $output = Dumper $value;
-    RT::Interface::Web::EscapeUTF8(\$output);
+    RT::Interface::Web::EscapeHTML(\$output);
     $output =~ s/ /&nbsp;/g;
     $output =~ s!\n!<br />!g;
     return $output;

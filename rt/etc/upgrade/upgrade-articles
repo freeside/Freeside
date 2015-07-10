@@ -46,21 +46,18 @@
 # those contributions and any derivatives thereof.
 #
 # END BPS TAGGED BLOCK }}}
+use 5.10.1;
 use strict;
 use warnings;
 
 use lib "/opt/rt3/local/lib";
 use lib "/opt/rt3/lib";
 
-use RT;
-RT::LoadConfig();
-RT->Config->Set('LogToScreen' => 'debug');
-RT::Init();
+use RT::Interface::CLI qw(Init);
+Init();
 
-$| = 1;
-
-my $db_name = RT->Config->Get('DatabaseName');
-my $db_type = RT->Config->Get('DatabaseType');
+ my $db_name = RT->Config->Get('DatabaseName');
+ my $db_type = RT->Config->Get('DatabaseType');
 
 my $dbh = $RT::Handle->dbh;
 

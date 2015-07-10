@@ -46,11 +46,15 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <%INIT>
+RT->Deprecated(
+    Remove => "4.4",
+    Instead => "/Elements/CollectionList",
+);
 $m->comp(
-	 '/Elements/CollectionList',
-	 %ARGS,
-	 Class => 'RT::Tickets'
-	);
+         '/Elements/CollectionList',
+         %ARGS,
+         Class => 'RT::Tickets'
+        );
 </%INIT>
 <%ARGS>
 $Collection => undef

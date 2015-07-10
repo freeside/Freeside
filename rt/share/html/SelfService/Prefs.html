@@ -77,7 +77,7 @@
 </td></tr></table>
 <br />
 <& /Elements/Submit, Label => loc('Save Changes') &>
-	  </form>
+</form>
 
 
 <%INIT>
@@ -120,8 +120,8 @@ if ( $Lang ) {
 if ($Signature) {
     $Signature =~ s/(\r\n|\r)/\n/g;
     if ($Signature ne $user->Signature) {
-	my ($val, $msg) = $user->SetSignature($Signature);
-	push (@results, "Signature: ".$msg);
+        my ($val, $msg) = $user->SetSignature($Signature);
+        push (@results, "Signature: ".$msg);
     }
 }
 

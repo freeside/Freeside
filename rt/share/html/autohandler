@@ -57,8 +57,3 @@ RT::Interface::Web::HandleRequest(\%ARGS);
 #  unless $r->content_type =~ qr<^(text|application)/(x-)?(css|javascript)>;
 
 </%INIT>
-<%ARGS>
-$user => undef
-$pass => undef
-$menu => undef
-</%ARGS>

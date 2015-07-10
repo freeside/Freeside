@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test::GnuPG tests => 232, gnupg_options => { passphrase => 'rt-test' };
+use RT::Test::GnuPG tests => undef, gnupg_options => { passphrase => 'rt-test' };
 
 diag "load Everyone group";
 my $everyone;
@@ -46,8 +46,7 @@ foreach my $file ( @files ) {
     is $status >> 8, 0, "$eid: the mail gateway exited normally";
     ok $id, "$eid: got id of a newly created ticket - $id";
 
-    like($warnings, qr/Had a problem during decrypting and verifying/);
-    like($warnings, qr/public key not found/);
+    like($warnings, qr/Public key '0xD328035D84881F1B' is not available/);
 
     my $ticket = RT::Ticket->new( RT->SystemUser );
     $ticket->Load( $id );
@@ -62,12 +61,10 @@ foreach my $file ( @files ) {
     $m->content_like(qr/This is .*ID:$eid/ims, "$eid: content is there and message is decrypted");
 
     $m->next_warning_like(qr/public key not found/);
-    $m->next_warning_like(qr/above error may result from an unconfigured RT\/GPG/);
 
     # some mails contain multiple signatures
     if ($eid == 5 || $eid == 17 || $eid == 18) {
         $m->next_warning_like(qr/public key not found/);
-        $m->next_warning_like(qr/above error may result from an unconfigured RT\/GPG/);
     }
 
     $m->no_leftover_warnings_ok;
@@ -90,3 +87,5 @@ foreach my $id ( @ticket_ids ) {
     $m->no_warnings_ok;
 }
 
+undef $m;
+done_testing;

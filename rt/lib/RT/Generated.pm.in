@@ -51,6 +51,7 @@ use warnings;
 use strict;
 
 our $VERSION = '@RT_VERSION_MAJOR@.@RT_VERSION_MINOR@.@RT_VERSION_PATCH@';
+our ($MAJOR_VERSION, $MINOR_VERSION, $REVISION) = $VERSION =~ /^(\d)\.(\d)\.(\d+)/;
 
 @DATABASE_ENV_PREF@
 
@@ -59,12 +60,15 @@ $EtcPath = '@RT_ETC_PATH@';
 $BinPath = '@RT_BIN_PATH@';
 $SbinPath = '@RT_SBIN_PATH@';
 $VarPath = '@RT_VAR_PATH@';
+$FontPath = '@RT_FONT_PATH@';
 $LexiconPath = '@RT_LEXICON_PATH@';
+$StaticPath = '@RT_STATIC_PATH@';
 $PluginPath = '@RT_PLUGIN_PATH@';
 $LocalPath = '@RT_LOCAL_PATH@';
 $LocalEtcPath = '@LOCAL_ETC_PATH@';
 $LocalLibPath        =    '@LOCAL_LIB_PATH@';
 $LocalLexiconPath = '@LOCAL_LEXICON_PATH@';
+$LocalStaticPath = '@LOCAL_STATIC_PATH@';
 $LocalPluginPath = '@LOCAL_PLUGIN_PATH@';
 # $MasonComponentRoot is where your rt instance keeps its mason html files
 $MasonComponentRoot = '@MASON_HTML_PATH@';

@@ -103,6 +103,7 @@ sub _Init
     my $self = shift;
     my %args = ( @_ );
     $self->{'opt'} = \%args;
+    return;
 }
 
 =head2 List
@@ -137,7 +138,7 @@ sub List
     delete $res{'Base'};
     foreach my $name( keys %res ) {
         my $class = join '::', qw(RT Shredder Plugin), $name;
-        unless( eval "require $class" ) {
+        unless( $class->require ) {
             delete $res{ $name };
             next;
         }
@@ -161,6 +162,8 @@ Other arguments are sent to the constructor of the plugin
 Returns C<$status> and C<$message>. On errors status
 is C<false> value.
 
+In scalar context, returns $status only.
+
 =cut
 
 sub LoadByName
@@ -169,17 +172,16 @@ sub LoadByName
     my $name = shift or return (0, "Name not specified");
     $name =~ /^\w+(::\w+)*$/ or return (0, "Invalid plugin name");
 
-    local $@;
     my $plugin = "RT::Shredder::Plugin::$name";
-    eval "require $plugin" or return( 0, $@ );
-    return( 0, "Plugin '$plugin' has no method new") unless $plugin->can('new');
+    $plugin->require or return( 0, "Failed to load $plugin" );
+    return wantarray ? ( 0, "Plugin '$plugin' has no method new") : 0 unless $plugin->can('new');
 
     my $obj = eval { $plugin->new( @_ ) };
-    return( 0, $@ ) if $@;
-    return( 0, 'constructor returned empty object' ) unless $obj;
+    return wantarray ? ( 0, $@ ) : 0 if $@;
+    return wantarray ? ( 0, 'constructor returned empty object' ) : 0 unless $obj;
 
     $self->Rebless( $obj );
-    return( 1, "successfuly load plugin" );
+    return wantarray ? ( 1, "successfuly load plugin" ) : 1;
 }
 
 =head2 LoadByString

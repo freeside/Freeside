@@ -54,16 +54,10 @@ package RT::Lifecycle;
 
 our %LIFECYCLES;
 our %LIFECYCLES_CACHE;
-__PACKAGE__->RegisterRights;
+our %LIFECYCLES_TYPES;
 
 # cache structure:
 #    {
-#        '' => { # all valid statuses
-#            '' => [...],
-#            initial => [...],
-#            active => [...],
-#            inactive => [...],
-#        },
 #        lifecycle_x => {
 #            '' => [...], # all valid in lifecycle
 #            initial => [...],
@@ -119,66 +113,111 @@ sub new {
     return $self;
 }
 
-=head2 Load
+=head2 Load Name => I<NAME>, Type => I<TYPE>
 
-Takes a name of the lifecycle and loads it. If name is empty or undefined then
-loads the global lifecycle with statuses from all named lifecycles.
+Takes a name of the lifecycle and loads it. If only a Type is provided,
+loads the global lifecycle with statuses from all named lifecycles of
+that type.
 
 Can be called as class method, returns a new object, for example:
 
-    my $lifecycle = RT::Lifecycle->Load('default');
+    my $lifecycle = RT::Lifecycle->Load( Name => 'default');
+
+Returns an object which may be a subclass of L<RT::Lifecycle>
+(L<RT::Lifecycle::Ticket>, for example) depending on the type of the
+lifecycle in question.
 
 =cut
 
 sub Load {
     my $self = shift;
-    my $name = shift || '';
-    return $self->new->Load( $name, @_ )
+    return $self->new->Load( @_ )
         unless ref $self;
 
-    return unless exists $LIFECYCLES_CACHE{ $name };
+    unshift @_, Type => "ticket", "Name"
+        if @_ % 2;
 
-    $self->{'name'} = $name;
-    $self->{'data'} = $LIFECYCLES_CACHE{ $name };
+    my %args = (
+        Type => "ticket",
+        Name => '',
+        @_,
+    );
+
+    if (defined $args{Name} and exists $LIFECYCLES_CACHE{ $args{Name} }) {
+        $self->{'name'} = $args{Name};
+        $self->{'data'} = $LIFECYCLES_CACHE{ $args{Name} };
+        $self->{'type'} = $args{Type};
+
+        my $found_type = $self->{'data'}{'type'};
+        warn "Found type of $found_type ne $args{Type}" if $found_type ne $args{Type};
+    } elsif (not $args{Name} and exists $LIFECYCLES_TYPES{ $args{Type} }) {
+        $self->{'data'} = $LIFECYCLES_TYPES{ $args{Type} };
+        $self->{'type'} = $args{Type};
+    } else {
+        return undef;
+    }
+
+    my $class = "RT::Lifecycle::".ucfirst($args{Type});
+    bless $self, $class if $class->require;
 
     return $self;
 }
 
 =head2 List
 
-Returns sorted list of the lifecycles' names.
+List available lifecycles. This list omits RT's default approvals
+lifecycle.
+
+Takes: An optional parameter for lifecycle types other than tickets.
+       Defaults to 'ticket'.
+
+Returns: A sorted list of available lifecycles.
 
 =cut
 
 sub List {
     my $self = shift;
+    my $for = shift || 'ticket';
+
+    return grep { $_ ne 'approvals' } $self->ListAll( $for );
+}
+
+=head2 ListAll
+
+Returns a list of all lifecycles, including approvals.
+
+Takes: An optional parameter for lifecycle types other than tickets.
+       Defaults to 'ticket'.
+
+Returns: A sorted list of all available lifecycles.
+
+=cut
+
+sub ListAll {
+    my $self = shift;
+    my $for = shift || 'ticket';
 
     $self->FillCache unless keys %LIFECYCLES_CACHE;
 
-    return sort grep length && $_ ne '__maps__', keys %LIFECYCLES_CACHE;
+    return sort grep {$LIFECYCLES_CACHE{$_}{type} eq $for}
+        grep $_ ne '__maps__', keys %LIFECYCLES_CACHE;
 }
 
 =head2 Name
 
-Returns name of the laoded lifecycle.
+Returns name of the loaded lifecycle.
 
 =cut
 
 sub Name { return $_[0]->{'name'} }
 
-=head2 Queues
+=head2 Type
 
-Returns L<RT::Queues> collection with queues that use this lifecycle.
+Returns the type of the loaded lifecycle.
 
 =cut
 
-sub Queues {
-    my $self = shift;
-    require RT::Queues;
-    my $queues = RT::Queues->new( RT->SystemUser );
-    $queues->Limit( FIELD => 'Lifecycle', VALUE => $self->Name );
-    return $queues;
-}
+sub Type { return $_[0]->{'type'} }
 
 =head2 Getting statuses and validating.
 
@@ -354,41 +393,6 @@ sub DefaultOnCreate {
     return $self->DefaultStatus('on_create');
 }
 
-
-=head3 DefaultOnMerge
-
-Returns the status that should be used when tickets
-are merged.
-
-=cut
-
-sub DefaultOnMerge {
-    my $self = shift;
-    return $self->DefaultStatus('on_merge');
-}
-
-=head3 ReminderStatusOnOpen
-
-Returns the status that should be used when reminders are opened.
-
-=cut
-
-sub ReminderStatusOnOpen {
-    my $self = shift;
-    return $self->DefaultStatus('reminder_on_open') || 'open';
-}
-
-=head3 ReminderStatusOnResolve
-
-Returns the status that should be used when reminders are resolved.
-
-=cut
-
-sub ReminderStatusOnResolve {
-    my $self = shift;
-    return $self->DefaultStatus('reminder_on_resolve') || 'resolved';
-}
-
 =head2 Transitions, rights, labels and actions.
 
 =head3 Transitions
@@ -452,33 +456,7 @@ sub CheckRight {
     return $to eq 'deleted' ? 'DeleteTicket' : 'ModifyTicket';
 }
 
-=head3 RegisterRights
-
-Registers all defined rights in the system, so they can be addigned
-to users. No need to call it, as it's called when module is loaded.
-
-=cut
-
-sub RegisterRights {
-    my $self = shift;
-
-    my %rights = $self->RightsDescription;
-
-    require RT::ACE;
-
-    require RT::Queue;
-    my $RIGHTS = $RT::Queue::RIGHTS;
-
-    while ( my ($right, $description) = each %rights ) {
-        next if exists $RIGHTS->{ $right };
-
-        $RIGHTS->{ $right } = $description;
-        RT::Queue->AddRightCategories( $right => 'Status' );
-        $RT::ACE::LOWERCASERIGHTNAMES{ lc $right } = $right;
-    }
-}
-
-=head3 RightsDescription
+=head3 RightsDescription [TYPE]
 
 Returns hash with description of rights that are defined for
 particular transitions.
@@ -487,12 +465,14 @@ particular transitions.
 
 sub RightsDescription {
     my $self = shift;
+    my $type = shift;
 
     $self->FillCache unless keys %LIFECYCLES_CACHE;
 
     my %tmp;
     foreach my $lifecycle ( values %LIFECYCLES_CACHE ) {
         next unless exists $lifecycle->{'rights'};
+        next if $type and $lifecycle->{type} ne $type;
         while ( my ($transition, $right) = each %{ $lifecycle->{'rights'} } ) {
             push @{ $tmp{ $right } ||=[] }, $transition;
         }
@@ -562,7 +542,7 @@ move map from this cycle to provided.
 sub MoveMap {
     my $from = shift; # self
     my $to = shift;
-    $to = RT::Lifecycle->Load( $to ) unless ref $to;
+    $to = RT::Lifecycle->Load( Name => $to, Type => $from->Type ) unless ref $to;
     return $LIFECYCLES{'__maps__'}{ $from->Name .' -> '. $to->Name } || {};
 }
 
@@ -590,13 +570,14 @@ move maps.
 
 sub NoMoveMaps {
     my $self = shift;
-    my @list = $self->List;
+    my $type = $self->Type;
+    my @list = $self->List( $type );
     my @res;
     foreach my $from ( @list ) {
         foreach my $to ( @list ) {
             next if $from eq $to;
             push @res, $from, $to
-                unless RT::Lifecycle->Load( $from )->HasMoveMap( $to );
+                unless RT::Lifecycle->Load( Name => $from, Type => $type )->HasMoveMap( $to );
         }
     }
     return @res;
@@ -617,7 +598,7 @@ sub ForLocalization {
 
     my @res = ();
 
-    push @res, @{ $LIFECYCLES_CACHE{''}{''} || [] };
+    push @res, @{$_->{''}} for values %LIFECYCLES_TYPES;
     foreach my $lifecycle ( values %LIFECYCLES ) {
         push @res,
             grep defined && length,
@@ -646,29 +627,50 @@ sub FillCache {
 
     my $map = RT->Config->Get('Lifecycles') or return;
 
+    {
+        my @lifecycles;
+
+        # if users are upgrading from 3.* where we don't have lifecycle column yet,
+        # this could die. we also don't want to frighten them by the errors out
+        eval {
+            local $RT::Logger = Log::Dispatch->new;
+            @lifecycles = grep { defined } RT::Queues->new( RT->SystemUser )->DistinctFieldValues( 'Lifecycle' );
+        };
+        unless ( $@ ) {
+            for my $name ( @lifecycles ) {
+                unless ( $map->{$name} ) {
+                    warn "Lifecycle $name is missing in %Lifecycles config";
+                }
+            }
+        }
+    }
+
     %LIFECYCLES_CACHE = %LIFECYCLES = %$map;
     $_ = { %$_ } foreach values %LIFECYCLES_CACHE;
 
-    my %all = (
-        '' => [],
-        initial => [],
-        active => [],
-        inactive => [],
-    );
     foreach my $name ( keys %LIFECYCLES_CACHE ) {
         next if $name eq "__maps__";
         my $lifecycle = $LIFECYCLES_CACHE{$name};
 
+        my $type = $lifecycle->{type} ||= 'ticket';
+        $LIFECYCLES_TYPES{$type} ||= {
+            '' => [],
+            initial => [],
+            active => [],
+            inactive => [],
+            actions => [],
+        };
+
         my @statuses;
         $lifecycle->{canonical_case} = {};
-        foreach my $type ( qw(initial active inactive) ) {
-            for my $status (@{ $lifecycle->{ $type } || [] }) {
+        foreach my $category ( qw(initial active inactive) ) {
+            for my $status (@{ $lifecycle->{ $category } || [] }) {
                 if (exists $lifecycle->{canonical_case}{lc $status}) {
                     warn "Duplicate status @{[lc $status]} in lifecycle $name";
                 } else {
                     $lifecycle->{canonical_case}{lc $status} = $status;
                 }
-                push @{ $all{ $type } }, $status;
+                push @{ $LIFECYCLES_TYPES{$type}{$category} }, $status;
                 push @statuses, $status;
             }
         }
@@ -702,6 +704,13 @@ sub FillCache {
                 unless $from eq '*' or $lifecycle->{canonical_case}{lc $from};
             warn "Nonexistant status @{[lc $to]} in right transition in $name lifecycle"
                 unless $to eq '*' or $lifecycle->{canonical_case}{lc $to};
+
+            warn "Invalid right name ($lifecycle->{rights}{$schema}) in $name lifecycle; right names must be ASCII"
+                if $lifecycle->{rights}{$schema} =~ /\P{ASCII}/;
+
+            warn "Invalid right name ($lifecycle->{rights}{$schema}) in $name lifecycle; right names must be <= 25 characters"
+                if length($lifecycle->{rights}{$schema}) > 25;
+
             $lifecycle->{rights}{lc($from) . " -> " .lc($to)}
                 = delete $lifecycle->{rights}{$schema};
         }
@@ -765,12 +774,19 @@ sub FillCache {
         }
     }
 
-    foreach my $type ( qw(initial active inactive), '' ) {
-        my %seen;
-        @{ $all{ $type } } = grep !$seen{ lc $_ }++, @{ $all{ $type } };
-        push @{ $all{''} }, @{ $all{ $type } } if $type;
+    for my $type (keys %LIFECYCLES_TYPES) {
+        for my $category ( qw(initial active inactive), '' ) {
+            my %seen;
+            @{ $LIFECYCLES_TYPES{$type}{$category} } =
+                grep !$seen{ lc $_ }++, @{ $LIFECYCLES_TYPES{$type}{$category} };
+            push @{ $LIFECYCLES_TYPES{$type}{''} },
+                @{ $LIFECYCLES_TYPES{$type}{$category} } if $category;
+        }
+
+        my $class = "RT::Lifecycle::".ucfirst($type);
+        $class->RegisterRights if $class->require
+            and $class->can("RegisterRights");
     }
-    $LIFECYCLES_CACHE{''} = \%all;
 
     return;
 }

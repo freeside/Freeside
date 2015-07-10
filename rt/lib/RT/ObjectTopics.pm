@@ -69,8 +69,8 @@ sub LimitToTopic {
     my $self = shift;
     my $cf = shift;
     return ($self->Limit( FIELD => 'Topic',
-			  VALUE => $cf,
-			  OPERATOR => '='));
+                          VALUE => $cf,
+                          OPERATOR => '='));
 
 }
 
@@ -90,25 +90,13 @@ sub LimitToObject {
     my $object = shift;
 
     $self->Limit( FIELD => 'ObjectType',
-		  VALUE => ref($object));
+                  VALUE => ref($object));
     $self->Limit( FIELD => 'ObjectId',
                   VALUE => $object->Id);
 
 }
 
 # }}}
-
-=head2 NewItem
-
-Returns an empty new RT::ObjectTopic item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::ObjectTopic->new($self->CurrentUser));
-}
-
 
 RT::Base->_ImportOverlays();
 

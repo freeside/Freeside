@@ -94,11 +94,14 @@ my $build_search_link = sub {
 
 my $link_all = sub {
     my ($queue, $all_statuses) = @_;
-    return $build_search_link->($queue->{Name}, "(".join(" OR ", map "Status = '$_'", @$all_statuses).")");
+    my @escaped = @{$all_statuses};
+    s{(['\\])}{\\$1}g for @escaped;
+    return $build_search_link->($queue->{Name}, "(".join(" OR ", map "Status = '$_'", @escaped).")");
 };
 
 my $link_status = sub {
     my ($queue, $status) = @_;
+    $status =~ s{(['\\])}{\\$1}g;
     return $build_search_link->($queue->{Name}, "Status = '$status'");
 };
 
@@ -120,14 +123,14 @@ $m->callback( CallbackName => 'Filter', Queues => \@queues );
     {  id          => $_->Id,
        Name        => $_->Name,
        Description => $_->Description || '',
-       Lifecycle   => $_->Lifecycle->Name,
+       Lifecycle   => $_->Lifecycle,
     }
 } grep $_, @queues;
 
 my %lifecycle;
 
 for my $queue (@queues) {
-    my $cycle = RT::Lifecycle->Load( $queue->{'Lifecycle'} );
+    my $cycle = RT::Lifecycle->Load( Name => $queue->{'Lifecycle'} );
     $lifecycle{ lc $cycle->Name } = $cycle;
 }
 
@@ -145,9 +148,11 @@ my $statuses = {};
 
 use RT::Report::Tickets;
 my $report = RT::Report::Tickets->new( RT->SystemUser );
+my @escaped = @statuses;
+s{(['\\])}{\\$1}g for @escaped;
 my $query =
     "(".
-    join(" OR ", map {s{(['\\])}{\\$1}g; "Status = '$_'"} @statuses) #'
+    join(" OR ", map {"Status = '$_'"} @escaped) #'
     .") AND (".
     join(' OR ', map "Queue = ".$_->{id}, @queues)
     .")";

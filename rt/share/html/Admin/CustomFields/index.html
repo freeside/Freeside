@@ -49,14 +49,30 @@
 <& /Elements/Tabs &>
 
 % my $tmp = RT::CustomField->new( $session{'CurrentUser'} );
-% if ( $Type ) {
-<h2><% loc("Custom Fields for [_1]", $tmp->FriendlyLookupType( $Type )) %></h2>
+<h1><% $Type ? loc("Custom Fields for [_1]", $Type) : loc('All Custom Fields') %></h1>
+
+<form action="<%RT->Config->Get('WebPath')%>/Admin/CustomFields/index.html" method="get">
+<&|/l&>Only show custom fields for:</&>
+<select name="Type">
+<option value="" <% !$Type && 'selected="selected"'%> ><% loc('(any)') %></option>
+% for my $type ( $tmp->LookupTypes ) {
+<option value="<% $type %>" <% $type eq $Type && 'selected="selected"'%> ><% $tmp->FriendlyLookupType( $type ) %></option>
 % }
+</select>
+<br />
+<input type="checkbox" class="checkbox" id="ShowDisabled" name="ShowDisabled" value="1" <% $ShowDisabled && 'checked="checked"' |n %> />
+<label for="ShowDisabled"><&|/l&>Include disabled custom fields in listing.</&></label>
+<br />
+
+% $m->callback(CallbackName => 'BeforeSubmit');
+
+<div align="right"><input type="submit" value="<% loc('Go!') %>" /></div>
+</form>
 
 <& /Elements/CollectionList,
     OrderBy       => 'LookupType|Name',
     Order         => 'ASC|ASC',
-    Rows          => 50,
+    Rows          => $Rows,
     %ARGS,
     Collection    => $CustomFields,
     Format        => $Format,
@@ -68,24 +84,6 @@
     ],
 &>
 
-<form action="<%RT->Config->Get('WebPath')%>/Admin/CustomFields/index.html" method="get">
-<&|/l&>Only show custom fields for:</&>
-<select name="Type">
-<option value="" <% !$Type && 'selected="selected"'%> ><% loc('(any)') %></option>
-% for my $type ( $tmp->LookupTypes ) {
-<option value="<% $type %>" <% $type eq $Type && 'selected="selected"'%> ><% $tmp->FriendlyLookupType( $type ) %></option>
-% }
-</select>
-<br />
-<input type="checkbox" class="checkbox" name="ShowDisabled" value="1" <% $ShowDisabled && 'checked="checked"' |n%> />
-<&|/l&>Include disabled custom fields in listing.</&>
-<br />
-
-% $m->callback(CallbackName => 'BeforeSubmit');
-
-<input type="submit" value="<% loc('Go!') %>" />
-</form>
-
 <%args>
 $Type => ''
 $ShowDisabled => 0
@@ -95,12 +93,6 @@ $Format => undef
 <%INIT>
 my $title = loc('Select a Custom Field');
 
-$Type ||= $ARGS{'type'} || '';
-if ( !$Type && $ARGS{'type'} ) {
-    $Type ||= $ARGS{'type'};
-    $RT::Logger->warning("'type' argument is deprecated use 'Type' instead");
-}
-
 my $CustomFields = RT::CustomFields->new($session{'CurrentUser'});
 $CustomFields->UnLimit;
 $CustomFields->FindAllRows if $ShowDisabled;
@@ -109,5 +101,6 @@ $CustomFields->LimitToLookupType( $Type ) if $Type;
 $m->callback(CallbackName => 'MassageCustomFields', CustomFields => $CustomFields);
 
 $Format ||= RT->Config->Get('AdminSearchResultFormat')->{'CustomFields'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'CustomFields'} || 50;
 
 </%INIT>

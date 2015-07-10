@@ -50,10 +50,16 @@ $Attachment => undef
 $Transaction => undef
 </%ARGS>
 <%INIT>
+my $plain_text_mono
+    = RT->Config->Get( 'PlainTextMono', $session{'CurrentUser'} );
+my $use_brs = !$plain_text_mono;
+
 my $show_content = sub {
     my $attach = shift;
     if ( $attach->ContentType =~ m{^(?:text|message)/}i ) {
-        $m->out( $m->interp->apply_escapes( $attach->Content, 'h' ) );
+        my $content = $m->interp->apply_escapes( $attach->Content, 'h' );
+        $content =~ s{(\r?\n)}{<br />}g if $use_brs;
+        $m->out( $content );
         return;
     }
     my $href = RT->Config->Get('WebPath') .'/Ticket/Attachment/'
@@ -65,9 +71,15 @@ my $show_content = sub {
 my $show;
 $show = sub {
     my $attach = shift;
-    $m->out( '<div id="body"><pre style="padding: 2em;">' );
-    $m->out( $m->interp->apply_escapes( $attach->Headers, 'h' ) );
-    $m->out( "\n\n" );
+    $m->out('<div id="body">');
+    $m->out('<div class="plain-text-white-space">') if $plain_text_mono;
+
+    my $headers = $m->interp->apply_escapes( $attach->Headers, 'h' );
+    $headers =~ s{(\r?\n)}{<br />}g if $use_brs;
+    $m->out( $headers );
+
+    $m->out( $use_brs ? "<br /><br />" : "\n\n" );
+
     if ( $attach->ContentType =~ m{^multipart/}i ) {
         my $children = $attach->Children;
         while ( my $child = $children->Next ) {
@@ -76,21 +88,44 @@ $show = sub {
     } else {
         $show_content->( $attach );
     }
-    $m->out( '</pre></div>' );
+    $m->out('</div>') if $plain_text_mono;
+    $m->out('</div>');
 };
 
+# Set error for error message below. Abort doesn't display well
+# because ShowEmailRecord doesn't use the standard RT menus
+# and headers.
+
+my ($title, $error);
+
 my $AttachmentObj = RT::Attachment->new($session{'CurrentUser'});
-$AttachmentObj->Load($Attachment) || Abort(loc("Attachment '[_1]' could not be loaded", $Attachment));
-unless ( $AttachmentObj->id ) {
-    Abort(loc("Attachment '[_1]' could not be loaded", $Attachment));
+$AttachmentObj->Load($Attachment);
+
+if ( not $AttachmentObj->id
+    or not $AttachmentObj->TransactionId() == $Transaction ) {
+    $title = loc("Error loading attachment");
+    $error = loc("Attachment '[_1]' could not be loaded", $Attachment);
 }
-unless ($AttachmentObj->TransactionId() == $Transaction ) {
-    Abort(loc("Attachment '[_1]' could not be loaded", $Attachment));
+elsif ( not $AttachmentObj->TransactionObj->CurrentUserCanSee("Transaction")){
+    $title = loc("Permission Denied");
+    $error = loc("Permission Denied");
+}
+else{
+    $title = loc("Email Source for Ticket [_1], Attachment [_2]",
+        $AttachmentObj->TransactionObj->ObjectId,
+        $AttachmentObj->Id);
 }
 
 </%INIT>
-<& /Elements/Header, ShowBar => 0 &>
-% $show->( $AttachmentObj );
+<& /Elements/Header, ShowBar => 0, Title => $title &>
+% if ( $error ){
+<div id="body"><div class="error">
+<% $error %>
+</div></div>
+% }
+% else{
+%    $show->( $AttachmentObj );
+% }
 </body>
 </html>
 % $m->abort;

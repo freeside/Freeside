@@ -54,13 +54,13 @@
 
 % if ( $is_global ) {
 <h2><&|/l&>Applies to all objects</&></h2>
-<input type="checkbox" name="RemoveClass-<% $Class->id %>" value="0" />
-<&|/l&>check this box to remove this Class globally and be able to choose specific Queues.</&>
+<input type="checkbox" id="RemoveClass-<% $Class->id %>" name="RemoveClass-<% $Class->id %>" value="0" />
+<label for="RemoveClass-<% $Class->id %>"><&|/l&>check this box to remove this Class globally and be able to choose specific Queues.</&></label>
 % } else {
 <h2><&|/l&>Apply globally</&></h2>
 
-<input type="checkbox" name="AddClass-<% $Class->id %>" value="0" />
-<&|/l&>check this box to apply this Class globally to all Queues.</&>
+<input type="checkbox" id="AddClass-<% $Class->id %>" name="AddClass-<% $Class->id %>" value="0" />
+<label for="AddClass-<% $Class->id %>"><&|/l&>check this box to apply this Class globally to all Queues.</&></label>
 
 <h2><&|/l&>Selected Queues</&></h2>
 <& /Elements/CollectionList,
@@ -85,7 +85,7 @@
     Order => 'ASC',
     %ARGS,
     Collection => $not_applied,
-    Rows => 50,
+    Rows          => $rows,
     Format        => $format,
     DisplayFormat => "'__CheckBox.{AddClass-". $Class->id ."}__',". $format,
     AllowSorting  => 1,
@@ -143,6 +143,7 @@ $collection_class =~ s/^RT:://;
 
 my $format = RT->Config->Get('AdminSearchResultFormat')->{$collection_class}
     || '__id__,__Name__';
+my $rows = RT->Config->Get('AdminSearchResultRows')->{$collection_class} || 50;
 
 my $title = loc('Modify associated objects for [_1]', $Class->Name);
 

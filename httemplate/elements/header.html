@@ -23,7 +23,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% $title %>
+      <% $title_noescape || encode_entities($title) %>
     </TITLE>
     <!-- per RT, to prevent IE compatibility mode -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />

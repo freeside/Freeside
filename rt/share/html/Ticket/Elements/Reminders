@@ -50,11 +50,12 @@ $Ticket => undef
 $id => undef
 $ShowCompleted => 0
 $Edit => 0
+$ShowSave => 1
 </%args>
 <%init>
 
 $Ticket = LoadTicket($id) if ($id);
-my $resolve_status = $Ticket->QueueObj->Lifecycle->ReminderStatusOnResolve;
+my $resolve_status = $Ticket->LifecycleObj->ReminderStatusOnResolve;
 
 my $count_reminders = RT::Reminders->new($session{'CurrentUser'});
 $count_reminders->Ticket($Ticket->id);
@@ -67,10 +68,10 @@ my $has_reminders = $count_tickets->Count;
 
 # We've made changes, let's reload our search
 my $reminder_collection = $count_reminders->Collection;
-my $visible = 0;
 </%init>
 <input type="hidden" class="hidden" name="id" value="<% $Ticket->id %>" />
 <input type="hidden" class="hidden" name="update-reminders" value="1" />
+% my $editable = 0;
 % if ($has_reminders) {
 <table border="0" cellpadding="1" cellspacing="0" class="collection-as-table"<% $Edit ? ' style="width: auto;"' : '' |n %>>
 <tr>
@@ -89,16 +90,18 @@ my $visible = 0;
 % if ( $reminder->Status eq $resolve_status && !$ShowCompleted ) {
 <tr class="hidden"><td><input type="hidden" class="hidden" name="Complete-Reminder-<% $reminder->id %>" value="1" /></td></tr>
 % $i++;
-% } elsif ($Edit) {
+% }
+% else {
+%   $editable = 1 if !$editable && $reminder->CurrentUserHasRight( 'ModifyTicket' );
+%   if ($Edit) {
 <& SELF:EditEntry, Reminder => $reminder, Ticket => $Ticket, Index => $i &>
-% $visible++;
-% } else {
+%   } else {
 <& SELF:ShowEntry, Reminder => $reminder, Ticket => $Ticket, Index => $i &>
-% $visible++;
+%   }
 % }
 % }
 </table>
-% if ( $visible > 0 ) {
+% if ( $editable ) {
 <i><&|/l&>(Check box to complete)</&></i><br /><br />
 % }
 % } else {
@@ -112,11 +115,15 @@ my $visible = 0;
 % }
 % }
 
-% if (lc $Ticket->Status ne "deleted") {
+% if (lc $Ticket->Status ne "deleted" and $Ticket->QueueObj->CurrentUserHasRight('CreateTicket') and $Ticket->CurrentUserHasRight('ModifyTicket') ) {
 <&|/l&>New reminder:</&>
 <& SELF:NewReminder, Ticket => $Ticket &>
+% $editable = 1;
 % }
-% return(lc $Ticket->Status ne "deleted" or $visible);
+
+% if ( $editable && $ShowSave ) {
+<div align="right"><input type="submit" class="button" value="<&|/l&>Save</&>" /></div>
+% }
 <%method NewReminder>
 <%args>
 $Ticket
@@ -142,17 +149,38 @@ $Reminder
 $Ticket
 $Index
 </%args>
-<tr class="<% $Index%2 ? 'oddline' : 'evenline' %>">
-<td class="entry"><input type="checkbox" value="1" name="Complete-Reminder-<% $Reminder->id %>" <% $Reminder->Status eq $Reminder->QueueObj->Lifecycle->ReminderStatusOnResolve ? 'checked="checked"' : '' |n %> /></td>
+<tr class="<% $Index%2 ? 'oddline' : 'evenline' %>" id="reminder-<% $Reminder->id %>">
+<td class="entry">
+% unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+<input name="Complete-Reminder-<% $Reminder->id %>" type="hidden" 
+value=<% $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 1 : 0 %> />
+% }
+
+<input type="checkbox" value="1" name="Complete-Reminder-<% $Reminder->id %>" <% $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 'checked="checked"' : '' |n %>
+% unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+disabled="disabled" 
+% }
+/></td>
 <td class="label"><&|/l&>Subject</&>:</td>
-<td class="entry" colspan="3"><input type="text" size="50" name="Reminder-Subject-<% $Reminder->id %>" value="<% $Reminder->Subject %>" /></td>
+<td class="entry" colspan="3">
+<input type="text" size="50" name="Reminder-Subject-<% $Reminder->id %>" value="<% $Reminder->Subject %>" 
+% unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+readonly="readonly" 
+% }
+/>
+</td>
 </tr>
 <tr class="<% $Index%2 ? 'oddline' : 'evenline' %>">
 <td class="entry">&nbsp;</td>
 <td class="label"><&|/l&>Owner</&>:</td>
 <td class="entry"><& /Elements/SelectOwner, Name => 'Reminder-Owner-'.$Reminder->id, QueueObj => $Ticket->QueueObj, Default => $Reminder->Owner, DefaultValue => 0  &></td>
 <td class="label"><&|/l&>Due</&>:</td>
-<td class="entry"><& /Elements/SelectDate, Name => 'Reminder-Due-'.$Reminder->id &> (<% $Reminder->DueObj->AsString %>)</td>
+<td class="entry">
+% if ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+<& /Elements/SelectDate, Name => 'Reminder-Due-'.$Reminder->id &>
+% }
+(<% $Reminder->DueObj->AsString %>)
+</td>
 </tr>
 </%method>
 <%method ShowEntry>
@@ -162,10 +190,20 @@ $Ticket
 $Index
 </%args>
 % my $dueobj = $Reminder->DueObj;
-% my $overdue = $dueobj->Unix > 0 && $dueobj->Diff < 0 ? 1 : 0;
-<tr class="<% $Index%2 ? 'oddline' : 'evenline' %>">
-<td class="collection-as-table"><input type="checkbox" value="1" name="Complete-Reminder-<% $Reminder->id %>" <% $Reminder->Status eq $Reminder->QueueObj->Lifecycle->ReminderStatusOnResolve ? 'checked="checked"' : '' |n %> /></td>
-<td class="collection-as-table"><% $Reminder->Subject %></td>
+% my $overdue = $dueobj->IsSet && $dueobj->Diff < 0 ? 1 : 0;
+<tr class="<% $Index%2 ? 'oddline' : 'evenline' %>" id="reminder-<% $Reminder->id %>">
+
+<td class="collection-as-table">
+% unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+<input name="Complete-Reminder-<% $Reminder->id %>" type="hidden" 
+value=<% $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 1 : 0 %> />
+% }
+<input type="checkbox" value="1" id="Complete-Reminder-<% $Reminder->id %>" name="Complete-Reminder-<% $Reminder->id %>" <% $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 'checked="checked"' : '' |n %>
+% unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+disabled="disabled" 
+% }
+/></td>
+<td class="collection-as-table"><label for="Complete-Reminder-<% $Reminder->id %>"><% $Reminder->Subject %></label></td>
 <td class="collection-as-table"><% $overdue ? '<span class="overdue">' : '' |n %><% $dueobj->AgeAsString || loc('Not set') %><% $overdue ? '</span>' : '' |n %></td>
 <td class="collection-as-table"><& /Elements/ShowUser, User => $Reminder->OwnerObj &></td>
 </tr>

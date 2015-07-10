@@ -51,7 +51,7 @@
 % $m->callback(CallbackName => 'BeforeActionList', Actions => \@results, ARGSRef => \%ARGS, Ticket => $Ticket);
 <& /Elements/ListActions, actions => \@results &>
 
-<form method="post" action="ModifyPeople.html">
+<form method="post" action="ModifyPeople.html" name="TicketPeople">
 <input type="submit" name="SubmitTicket" value="Save Changes" style="display:none">
 <input type="hidden" class="hidden" name="id" value="<%$Ticket->Id%>" />
 % $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS );
@@ -60,8 +60,7 @@
 </&>
 <&| /Widgets/TitleBox, title => loc("Modify who receives mail for ticket #[_1]", $Ticket->Id),   width => "100%", color=> "#333399", class=>'ticket-info-squelch' &>
 <p>
-  The checked users may receive email related to this ticket depending on the
-  action taken.  Uncheck users to stop sending email to them about this ticket.
+<&|/l&>The checked users may receive email related to this ticket depending on the action taken. Uncheck users to stop sending email to them about this ticket.</&>
 </p>
 
 <ul>
@@ -76,6 +75,8 @@
 </&>
 <& /Elements/Submit, Name => 'SubmitTicket', Label => loc('Save Changes'), Caption => loc("If you've updated anything above, be sure to"), color => "#333399" &>
 </form>
+
+% $m->callback(CallbackName => 'AfterForm', ARGSRef => \%ARGS, Ticket => $Ticket);
 
 <%INIT>
 
@@ -101,6 +102,8 @@ $Ticket->SquelchMailTo($_)
 unless ($OnlySearchForPeople or $OnlySearchForGroup) {
     push @results, ProcessTicketBasics( TicketObj => $Ticket, ARGSRef => \%ARGS);
     push @results, ProcessTicketWatchers( TicketObj => $Ticket, ARGSRef => \%ARGS);
+    push @results, ProcessObjectCustomFieldUpdates( TicketObj => $Ticket, ARGSRef => \%ARGS );
+
     $Ticket->ApplyTransactionBatch;
 }
 

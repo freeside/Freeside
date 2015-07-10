@@ -48,9 +48,28 @@
 <& /Admin/Elements/Header, Title => loc("Admin queues") &>
 <& /Elements/Tabs &>
 
-
-
 <h1><%$caption%></h1>
+
+<form method="post" action="<% RT->Config->Get('WebPath') %>/Admin/Queues/index.html">
+% foreach my $field( qw(Format Rows Page Order OrderBy) ) {
+%     next unless defined $ARGS{ $field } && length $ARGS{ $field };
+<input type="hidden" name="<% $field %>" value="<% $ARGS{ $field } %>" />
+% }
+
+<select name="QueueField">
+% foreach my $col (qw(Name Description CorrespondAddress CommentAddress InitialPriority FinalPriority DefaultDueIn Lifecycle SubjectTag)) {
+<option <% $QueueField eq $col ? 'selected="selected"' : '' |n %> value="<% $col %>"><% loc($col) %></option>
+% }
+</select>
+<& /Elements/SelectMatch, Name => 'QueueOp', Default => $QueueOp &>
+<input size="8" name="QueueString" value="<% $QueueString %>" />
+<br />
+
+<input type="checkbox" class="checkbox" id="FindDisabledQueues" name="FindDisabledQueues" value="1" <% $FindDisabledQueues? 'checked="checked"': '' |n%> />
+<label for="FindDisabledQueues"><&|/l&>Include disabled queues in listing.</&></label>
+<div align="right"><input type="submit" class="button" value="<&|/l&>Go!</&>" /></div>
+</form>
+
 <p><&|/l&>Select a queue</&>:</p>
 % unless ( $queues->Count ) {
 <em><&|/l&>No queues matching search criteria found.</&></em>
@@ -58,7 +77,7 @@
 <& /Elements/CollectionList,
     OrderBy => 'Name',
     Order => 'ASC',
-    Rows => 50,
+    Rows  => $Rows,
     %ARGS,
     Format => $Format,
     Collection => $queues,
@@ -69,25 +88,6 @@
     )],
 &>
 % }
-<form method="post" action="<% RT->Config->Get('WebPath') %>/Admin/Queues/index.html">
-% foreach my $field( qw(Format Rows Page Order OrderBy) ) {
-%     next unless defined $ARGS{ $field } && length $ARGS{ $field };
-<input type="hidden" name="<% $field %>" value="<% $ARGS{ $field } %>" />
-% }
-
-<select name="QueueField">
-% foreach my $col (qw(Name Description CorrespondAddress CommentAddress InitialPriority FinalPriority DefaultDueIn)) {
-<option <% $QueueField eq $col ? 'selected="selected"' : '' |n %> value="<% $col %>"><% loc($col) %></option>
-% }
-</select>
-<& /Elements/SelectMatch, Name => 'QueueOp', Default => $QueueOp &>
-<input size="8" name="QueueString" value="<% $QueueString %>" />
-<br />
-
-<input type="checkbox" class="checkbox" name="FindDisabledQueues" value="1" <% $FindDisabledQueues? 'checked="checked"': '' |n%> />
-<&|/l&>Include disabled queues in listing.</&>
-<div align="right"><input type="submit" class="button" value="<&|/l&>Go!</&>" /></div> 
-</form>
 
 <%INIT>
 my $queues = RT::Queues->new($session{'CurrentUser'});
@@ -113,6 +113,7 @@ if ( defined $QueueString && length $QueueString ) {
 }
 
 $Format ||= RT->Config->Get('AdminSearchResultFormat')->{'Queues'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'Queues'} || 50;
 
 </%INIT>
 <%ARGS>
@@ -120,6 +121,6 @@ $FindDisabledQueues => 0
 $Format             => undef
 
 $QueueField         => 'Name'
-$QueueOp            => '='
+$QueueOp            => 'LIKE'
 $QueueString        => ''
 </%ARGS>

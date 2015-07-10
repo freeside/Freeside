@@ -59,10 +59,6 @@
 This module should never be called directly by client code. it's an internal module which
 should only be accessed through exported APIs in Ticket other similar objects.
 
-=head1 METHODS
-
-
-
 =cut
 
 
@@ -78,8 +74,67 @@ use base 'RT::Record';
 sub Table {'Links'}
 use Carp;
 use RT::URI;
+use List::Util 'first';
+use List::MoreUtils 'uniq';
 
+# Helper tables for links mapping to make it easier
+# to build and parse links between objects.
+our %TYPEMAP = (
+    MemberOf        => { Type => 'MemberOf',    Mode => 'Target',   Display => 0 },
+    Parents         => { Type => 'MemberOf',    Mode => 'Target',   Display => 1 },
+    Parent          => { Type => 'MemberOf',    Mode => 'Target',   Display => 0 },
+    Members         => { Type => 'MemberOf',    Mode => 'Base',     Display => 0 },
+    Member          => { Type => 'MemberOf',    Mode => 'Base',     Display => 0 },
+    Children        => { Type => 'MemberOf',    Mode => 'Base',     Display => 1 },
+    Child           => { Type => 'MemberOf',    Mode => 'Base',     Display => 0 },
+    HasMember       => { Type => 'MemberOf',    Mode => 'Base',     Display => 0 },
+    RefersTo        => { Type => 'RefersTo',    Mode => 'Target',   Display => 1 },
+    ReferredToBy    => { Type => 'RefersTo',    Mode => 'Base',     Display => 1 },
+    DependsOn       => { Type => 'DependsOn',   Mode => 'Target',   Display => 1 },
+    DependedOnBy    => { Type => 'DependsOn',   Mode => 'Base',     Display => 1 },
+    MergedInto      => { Type => 'MergedInto',  Mode => 'Target',   Display => 1 },
+);
+our %DIRMAP = (
+    MemberOf    => { Base => 'MemberOf',    Target => 'HasMember'    },
+    RefersTo    => { Base => 'RefersTo',    Target => 'ReferredToBy' },
+    DependsOn   => { Base => 'DependsOn',   Target => 'DependedOnBy' },
+    MergedInto  => { Base => 'MergedInto',  Target => 'MergedInto'   },
+);
 
+__PACKAGE__->_BuildDisplayAs;
+
+my %DISPLAY_AS;
+sub _BuildDisplayAs {
+    %DISPLAY_AS = ();
+    foreach my $in_db ( uniq map { $_->{Type} } values %TYPEMAP ) {
+        foreach my $mode (qw(Base Target)) {
+            $DISPLAY_AS{$in_db}{$mode} = first {
+                   $TYPEMAP{$_}{Display}
+                && $TYPEMAP{$_}{Type} eq $in_db
+                && $TYPEMAP{$_}{Mode} eq $mode
+            } keys %TYPEMAP;
+        }
+    }
+}
+
+=head1 CLASS METHODS
+
+=head2 DisplayTypes
+
+Returns a list of the standard link Types for display, including directional
+variants but not aliases.
+
+=cut
+
+sub DisplayTypes {
+    sort { $a cmp $b }
+    uniq
+    grep { defined }
+     map { values %$_ }
+  values %DISPLAY_AS
+}
+
+=head1 METHODS
 
 =head2 Create PARAMHASH
 
@@ -171,20 +226,20 @@ sub LoadByParams {
 
     my $base = RT::URI->new($self->CurrentUser);
     $base->FromURI( $args{'Base'} )
-        or return (0, $self->loc("Couldn't parse Base URI: [_1]", $args{Base}));
+        or return wantarray ? (0, $self->loc("Couldn't parse Base URI: [_1]", $args{Base})) : 0;
 
     my $target = RT::URI->new($self->CurrentUser);
     $target->FromURI( $args{'Target'} )
-        or return (0, $self->loc("Couldn't parse Target URI: [_1]", $args{Target}));
+        or return wantarray ? (0, $self->loc("Couldn't parse Target URI: [_1]", $args{Target})) : 0;
 
     my ( $id, $msg ) = $self->LoadByCols( Base   => $base->URI,
                                           Type   => $args{'Type'},
                                           Target => $target->URI );
 
     unless ($id) {
-        return ( 0, $self->loc("Couldn't load link: [_1]", $msg) );
+        return wantarray ? ( 0, $self->loc("Couldn't load link: [_1]", $msg) ) : 0;
     } else {
-        return ($id, $msg);
+        return wantarray ? ($id, $msg) : $id;
     }
 }
 
@@ -204,14 +259,14 @@ sub Load {
 
 
     if ( $identifier !~ /^\d+$/ ) {
-        return ( 0, $self->loc("That's not a numerical id") );
+        return wantarray ? ( 0, $self->loc("That's not a numerical id") ) : 0;
     }
     else {
         my ( $id, $msg ) = $self->LoadById($identifier);
         unless ( $self->Id ) {
-            return ( 0, $self->loc("Couldn't load link") );
+            return wantarray ? ( 0, $self->loc("Couldn't load link") ) : 0;
         }
-        return ( $id, $msg );
+        return wantarray ? ( $id, $msg ) : $id;
     }
 }
 
@@ -264,7 +319,6 @@ sub BaseObj {
   my $self = shift;
   return $self->BaseURI->Object;
 }
-
 
 =head2 id
 
@@ -406,28 +460,135 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Base =>
-		{read => 1, write => 1, sql_type => 12, length => 240,  is_blob => 0,  is_numeric => 0,  type => 'varchar(240)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 240,  is_blob => 0,  is_numeric => 0,  type => 'varchar(240)', default => ''},
         Target =>
-		{read => 1, write => 1, sql_type => 12, length => 240,  is_blob => 0,  is_numeric => 0,  type => 'varchar(240)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 240,  is_blob => 0,  is_numeric => 0,  type => 'varchar(240)', default => ''},
         Type =>
-		{read => 1, write => 1, sql_type => 12, length => 20,  is_blob => 0,  is_numeric => 0,  type => 'varchar(20)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 20,  is_blob => 0,  is_numeric => 0,  type => 'varchar(20)', default => ''},
         LocalTarget =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LocalBase =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->BaseObj )   if $self->BaseObj   and $self->BaseObj->id;
+    $deps->Add( out => $self->TargetObj ) if $self->TargetObj and $self->TargetObj->id;
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# AddLink transactions
+    my $map = { %RT::Link::TYPEMAP };
+    my $link_meta = $map->{ $self->Type };
+    unless ( $link_meta && $link_meta->{'Mode'} && $link_meta->{'Type'} ) {
+        RT::Shredder::Exception->throw( 'Wrong link link_meta, no record for '. $self->Type );
+    }
+    if ( $self->BaseURI->IsLocal ) {
+        my $objs = $self->BaseObj->Transactions;
+        $objs->Limit(
+            FIELD    => 'Type',
+            OPERATOR => '=',
+            VALUE    => 'AddLink',
+        );
+        $objs->Limit( FIELD => 'NewValue', VALUE => $self->Target );
+        while ( my ($k, $v) = each %$map ) {
+            next unless $v->{'Type'} eq $link_meta->{'Type'};
+            next unless $v->{'Mode'} eq $link_meta->{'Mode'};
+            $objs->Limit( FIELD => 'Field', VALUE => $k );
+        }
+        push( @$list, $objs );
+    }
+
+    my %reverse = ( Base => 'Target', Target => 'Base' );
+    if ( $self->TargetURI->IsLocal ) {
+        my $objs = $self->TargetObj->Transactions;
+        $objs->Limit(
+            FIELD    => 'Type',
+            OPERATOR => '=',
+            VALUE    => 'AddLink',
+        );
+        $objs->Limit( FIELD => 'NewValue', VALUE => $self->Base );
+        while ( my ($k, $v) = each %$map ) {
+            next unless $v->{'Type'} eq $link_meta->{'Type'};
+            next unless $v->{'Mode'} eq $reverse{ $link_meta->{'Mode'} };
+            $objs->Limit( FIELD => 'Field', VALUE => $k );
+        }
+        push( @$list, $objs );
+    }
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON|RT::Shredder::Constants::WIPE_AFTER,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+    return $self->SUPER::__DependsOn( %args );
+}
+
+sub Serialize {
+    my $self = shift;
+    my %args = (@_);
+    my %store = $self->SUPER::Serialize(@_);
+
+    delete $store{LocalBase}   if $store{Base};
+    delete $store{LocalTarget} if $store{Target};
+    return %store;
+}
+
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    for my $dir (qw/Base Target/) {
+        my $uid_ref = $data->{$dir};
+        next unless $uid_ref and ref $uid_ref;
+
+        my $to_uid = ${ $uid_ref };
+        my $obj = $importer->LookupObj( $to_uid );
+        if ($obj) {
+            $data->{$dir} = $obj->URI;
+            $data->{"Local$dir"} = $obj->Id if $obj->isa("RT::Ticket");
+        } else {
+            $data->{$dir} = "";
+            $importer->Postpone(
+                for => $to_uid,
+                uid => $uid,
+                uri => $dir,
+                column => ($to_uid =~ /RT::Ticket/ ? "Local$dir" : undef),
+            );
+        }
+
+    }
+
+    return $class->SUPER::PreInflate( $importer, $uid, $data );
+}
 
 RT::Base->_ImportOverlays();
 

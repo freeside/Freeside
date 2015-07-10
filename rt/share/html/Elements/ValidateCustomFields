@@ -48,38 +48,50 @@
 <%INIT>
 my ($valid, @res) = (1, ());
 $CustomFields->GotoFirstItem;
+
+my $CFArgs = _ParseObjectCustomFieldArgs( $ARGSRef )->{ref($Object)}{$Object->Id || 0} || {};
+
 while ( my $CF = $CustomFields->Next ) {
-    my $field = $NamePrefix . $CF->Id . "-Value";
+    my $submitted = $CFArgs->{$CF->Id};
+    # Pick the first grouping
+    $submitted = $submitted ? $submitted->{(keys %$submitted)[0]} : {};
 
-    my $value;
-    if ($ARGSRef->{"${field}s-Magic"} and exists $ARGSRef->{"${field}s"}) {
-        $value = $ARGSRef->{"${field}s"};
+    # If we don't have a value and we don't see the Magic, then we're not
+    # submitting a field.
+    next if not $ValidateUnsubmitted
+        and not exists $submitted->{"Value"}
+        and not exists $submitted->{"Upload"}
+        and not exists $submitted->{"Values"}
+        and not $submitted->{"Values-Magic"};
 
-        # We only validate Single Combos -- multis can never be user input
-        next if ref $value;
-    }
-    else {
-        $value = $ARGSRef->{$field};
-    }
-    $m->notes(('Field-' . $CF->Id) => $value);
+    # We only validate Single Combos -- multis can never be user input
+    next if $submitted->{"Values-Magic"} and exists $submitted->{"Values"}
+        and ref $submitted->{"Values"};
 
-    my @values = ();
-    if ( ref $value eq 'ARRAY' ) {
-        @values = @$value;
-    } elsif ( $CF->Type =~ /text/i ) {
-        @values = ($value);
-    } else {
-        @values = split /\r*\n/, ( defined $value ? $value : '');
-    }
-    @values = grep $_ ne '',
-        map {
-            s/\r+\n/\n/g;
-            s/^\s+//;
-            s/\s+$//;
-            $_;
+    $m->notes(('Field-' . $CF->Id) => $submitted->{Values} // $submitted->{Value});
+
+    my @values = _NormalizeObjectCustomFieldValue(
+        CustomField => $CF,
+        Value       => ($submitted->{Values} // $submitted->{Value} // $submitted->{Upload}),
+    );
+    if ($CF->Type =~ /^Date(?:Time)?$/) {
+        if (not @values) {
+            my $values = $Object->CustomFieldValues($CF->Id);
+            while (my $ocfv = $values->Next) {
+                push @values, $ocfv->Content;
+            }
         }
-        grep defined, @values;
-    @values = ('') unless @values;
+        @values = grep {
+            my $DateObj = RT::Date->new ( $session{'CurrentUser'} );
+            $DateObj->Set(
+                Format => 'unknown',
+                Value => $_,
+                ($CF->Type eq "Date" ? (Timezone => 'utc') : ())
+            );
+            $DateObj->IsSet
+        } @values;
+    }
+    push @values, '' unless @values;
 
     for my $value( @values ) {
         if ($value) {
@@ -87,7 +99,7 @@ while ( my $CF = $CustomFields->Next ) {
             my ($ok, $msg) = $CF->_CanonicalizeValue( $ref );
             unless ($ok) {
                 $m->notes( ( 'InvalidField-' . $CF->Id ) => $msg );
-                push @res, $msg;
+                push @res, $CF->Name .': '. $msg;
                 $valid = 0;
             }
         }
@@ -96,7 +108,7 @@ while ( my $CF = $CustomFields->Next ) {
 
         my $msg = loc("Input must match [_1]", $CF->FriendlyPattern);
         $m->notes( ('InvalidField-' . $CF->Id) => $msg );
-        push @res, $msg;
+        push @res, $CF->Name .': '. $msg;
         $valid = 0;
     }
 }
@@ -104,7 +116,8 @@ $m->notes('ValidFields', $valid);
 return wantarray? ($valid, @res): $valid;
 </%INIT>
 <%ARGS>
+$Object => RT::Ticket->new( $session{'CurrentUser'})
 $CustomFields
 $ARGSRef
-$NamePrefix => "Object-RT::Ticket--CustomField-"
+$ValidateUnsubmitted => 0
 </%ARGS>

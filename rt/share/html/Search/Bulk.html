@@ -50,13 +50,13 @@
 
 <& /Elements/ListActions, actions => \@results &>
 <form method="post" action="<% RT->Config->Get('WebPath') %>/Search/Bulk.html" enctype="multipart/form-data" name="BulkUpdate" id="BulkUpdate">
-% foreach my $var (qw(Query Format OrderBy Order Rows Page SavedChartSearchId)) {
+% foreach my $var (qw(Query Format OrderBy Order Rows Page SavedSearchId SavedChartSearchId Token)) {
 <input type="hidden" class="hidden" name="<%$var%>" value="<%$ARGS{$var} || ''%>" />
 %}
 <& /Elements/CollectionList, 
     Query => $Query,
-    DisplayFormat => $Format,
-    Format => $ARGS{'Format'},
+    DisplayFormat => $DisplayFormat,
+    Format => $Format,
     Verbatim => 1,
     AllowSorting => 1,
     OrderBy => $OrderBy,
@@ -71,7 +71,7 @@
 
 <hr />
 
-<& /Elements/Submit, Label => loc('Update'), CheckboxNameRegex => '/^UpdateTicket\d+$/', CheckAll => 1, ClearAll => 1 &>
+<& /Elements/Submit, Label => loc('Update'), CheckboxNameRegex => '/^UpdateTicket(All)?$/', CheckAll => 1, ClearAll => 1 &>
 <br />
 <&|/Widgets/TitleBox, title => $title &>
 <table>
@@ -80,20 +80,20 @@
 <table>
 <tr><td class="label"> <&|/l&>Make Owner</&>: </td>
 <td class="value"> <& /Elements/SelectOwner, Name => "Owner", Default => $ARGS{Owner} || '' &>
-(<input type="checkbox" class="checkbox" name="ForceOwnerChange"
- <% $ARGS{ForceOwnerChange} ? 'checked="checked"' : '' %> /> <&|/l&>Force change</&>) </td></tr>
+<label>(<input type="checkbox" class="checkbox" name="ForceOwnerChange"
+<% $ARGS{ForceOwnerChange} ? 'checked="checked"' : '' %> /> <&|/l&>Force change</&>)</label></td></tr>
 <tr><td class="label"> <&|/l&>Add Requestor</&>: </td>
-<td class="value"> <input name="AddRequestor" size="20" value="<% $ARGS{AddRequestor} || '' %>" /> </td></tr>
+<td class="value"> <& /Elements/EmailInput, Name => "AddRequestor", Size=> 20, Default => $ARGS{AddRequestor} &> </td></tr>
 <tr><td class="label"> <&|/l&>Remove Requestor</&>: </td>
-<td class="value"> <input name="DeleteRequestor" size="20" value="<% $ARGS{DeleteRequestor} || '' %>"/> </td></tr>
+<td class="value"> <& /Elements/EmailInput, Name => "DeleteRequestor", Size=> 20, Default => $ARGS{DeleteRequestor} &> </td></tr>
 <tr><td class="label"> <&|/l&>Add Cc</&>: </td>
-<td class="value"> <input name="AddCc" size="20" value="<% $ARGS{AddCc} || '' %>" /> </td></tr>
+<td class="value"> <& /Elements/EmailInput, Name => "AddCc", Size=> 20, Default => $ARGS{AddCc} &> </td></tr>
 <tr><td class="label"> <&|/l&>Remove Cc</&>: </td>
-<td class="value"> <input name="DeleteCc" size="20" value="<% $ARGS{DeleteCc} || '' %>" /> </td></tr>
+<td class="value"> <& /Elements/EmailInput, Name => "DeleteCc", Size=> 20, Default => $ARGS{DeleteCc} &> </td></tr>
 <tr><td class="label"> <&|/l&>Add AdminCc</&>: </td>
-<td class="value"> <input name="AddAdminCc" size="20" value="<% $ARGS{AddAdminCc} || '' %>" /> </td></tr>
+<td class="value"> <& /Elements/EmailInput, Name => "AddAdminCc", Size=> 20, Default => $ARGS{AddAdminCc} &> </td></tr>
 <tr><td class="label"> <&|/l&>Remove AdminCc</&>: </td>
-<td class="value"> <input name="DeleteAdminCc" size="20" value="<% $ARGS{DeleteAdminCc} || '' %>" /> </td></tr>
+<td class="value"> <& /Elements/EmailInput, Name => "DeleteAdminCc", Size=> 20, Default => $ARGS{DeleteAdminCc} &> </td></tr>
 </table>
 </td>
 <td valign="top">
@@ -111,7 +111,7 @@
 <tr><td class="label"> <&|/l&>Make queue</&>: </td>
 <td class="value"> <& /Elements/SelectQueue, Name => "Queue", Default => $ARGS{Queue} &> </td></tr>
 <tr><td class="label"> <&|/l&>Make Status</&>: </td>
-<td class="value"> <& /Elements/SelectStatus, Name => "Status", Default => $ARGS{Status}, Queues => $seen_queues &> </td></tr>
+<td class="value"> <& /Ticket/Elements/SelectStatus, Name => "Status", Default => $ARGS{Status}, Queues => $seen_queues &> </td></tr>
 <tr><td class="label"> <&|/l&>Make date Starts</&>: </td>
 <td class="value"> <& /Elements/SelectDate, Name => "Starts_Date", Default => $ARGS{Starts_Date} || '' &> </td></tr>
 <tr><td class="label"> <&|/l&>Make date Started</&>: </td>
@@ -120,8 +120,6 @@
 <td class="value"> <& /Elements/SelectDate, Name => "Told_Date", Default => $ARGS{Told_Date} || '' &> </td></tr>
 <tr><td class="label"> <&|/l&>Make date Due</&>: </td>
 <td class="value"> <& /Elements/SelectDate, Name => "Due_Date", Default => $ARGS{Due_Date} || '' &> </td></tr>
-<tr><td class="label"> <&|/l&>Make date Resolved</&>: </td>
-<td class="value"> <& /Elements/SelectDate, Name => "Resolved_Date", Default => $ARGS{Resolved_Date} || '' &> </td></tr>
 </table>
 
 </td>
@@ -131,28 +129,34 @@
 <&| /Widgets/TitleBox, title => loc('Add comments or replies to selected tickets') &>
 <table>
 <tr><td align="right"><&|/l&>Update Type</&>:</td>
-<td><select name="UpdateType">
+<td><select name="UpdateType" id="UpdateType">
   <option value="private" <% $ARGS{UpdateType} && $ARGS{UpdateType} eq 'private' ? 'selected="selected"' : '' %> ><&|/l&>Comments (Not sent to requestors)</&></option>
 <option value="response" <% $ARGS{UpdateType} && $ARGS{UpdateType} eq 'response' ? 'selected="selected"' : '' %>><&|/l&>Reply to requestors</&></option>
 </select> 
 </td></tr>
-<tr><td align="right"><&|/l&>Subject</&>:</td><td> <input name="UpdateSubject"
-size="60" value="<% $ARGS{UpdateSubject} || "" %>" /></td></tr>
+<tr>
+    <td align="right"><&|/l&>Subject</&>:</td>
+    <td>
+        <input name="UpdateSubject" size="60" value="<% $ARGS{UpdateSubject} || "" %>" />
+% $m->callback( %ARGS, CallbackName => 'AfterUpdateSubject' );
+    </td>
+</tr>
+% $m->callback( CallbackName => 'BeforeTransactionCustomFields', CustomFields => $TxnCFs );
 % while (my $CF = $TxnCFs->Next()) {
 <tr>
 <td align="right"><% $CF->Name %>:</td>
-<td><& /Elements/EditCustomField, 
-    CustomField => $CF, 
-    NamePrefix => "Object-RT::Transaction--CustomField-",
-    Default => $ARGS{"Object-RT::Transaction--CustomField-" . $CF->id . '-Values'} || 
-            $ARGS{"Object-RT::Transaction--CustomField-" . $CF->id . '-Value'},
+<td><& /Elements/EditCustomField,
+    CustomField => $CF,
+    Object => RT::Transaction->new( $session{'CurrentUser'} ),
     &><em><% $CF->FriendlyType %></em></td>
 </td></tr>
 % } # end if while
 
 <& /Ticket/Elements/AddAttachments, %ARGS &>
 
- <tr><td class="labeltop"><&|/l&>Message</&>:</td><td>
+ <tr><td class="labeltop"><&|/l&>Message</&>:</td>
+ <td class="messagebox-container action-<% $ARGS{UpdateType} || 'private' %>">
+% $m->callback( %ARGS, CallbackName => 'BeforeMessageBox' );
 %# Currently, bulk update always starts with Comment not Reply selected, so we check this unconditionally
 % my $IncludeSignature = RT->Config->Get('MessageBoxIncludeSignatureOnComment');
 <& /Elements/MessageBox, Name => "UpdateContent", 
@@ -168,59 +172,22 @@ size="60" value="<% $ARGS{UpdateSubject} || "" %>" /></td></tr>
 my $cfs = RT::CustomFields->new($session{'CurrentUser'});
 $cfs->LimitToGlobal();
 $cfs->LimitToQueue($_) for keys %$seen_queues;
+$cfs->SetContextObject( values %$seen_queues ) if keys %$seen_queues == 1;
 </%perl>
 
-% if ($cfs->Count) {
-<&|/Widgets/TitleBox, title => loc('Edit Custom Fields'), color => "#336633"&>
-<table>
-<tr>
-<th><&|/l&>Name</&></th>
-<th><&|/l&>Add values</&></th>
-<th><&|/l&>Delete values</&></th>
-</tr>
-% while (my $cf = $cfs->Next()) {
-<tr>
-<td class="label"><% loc($cf->Name) %><br />
-<em>(<%$cf->FriendlyType%>)</em></td>
-% my $rows = 5;
-% my $cf_id = $cf->id;
-% my @add = (NamePrefix => 'Bulk-Add-CustomField-', CustomField => $cf, Rows => $rows,
-%   Multiple => ($cf->MaxValues ==1 ? 0 : 1) , Cols => 25, 
-%   Default => $ARGS{"Bulk-Add-CustomField-$cf_id-Values"} || $ARGS{"Bulk-Add-CustomField-$cf_id-Value"}, );
-% my @del = (NamePrefix => 'Bulk-Delete-CustomField-', CustomField => $cf,
-%   Rows => $rows, Multiple => 1, Cols => 25,
-%   Default => $ARGS{"Bulk-Delete-CustomField-$cf_id-Values"} || $ARGS{"Bulk-Delete-CustomField-$cf_id-Value"}, );
-% if ($cf->Type eq 'Select') {
-<td><& /Elements/EditCustomFieldSelect, @add &></td>
-<td><& /Elements/EditCustomFieldSelect, @del &></td>
-% } elsif ($cf->Type eq 'Combobox') {
-<td><& /Elements/EditCustomFieldCombobox, @add &></td>
-<td><& /Elements/EditCustomFieldCombobox, @del &></td>
-% } elsif ($cf->Type eq 'Freeform') {
-<td><& /Elements/EditCustomFieldFreeform, @add &></td>
-<td><& /Elements/EditCustomFieldFreeform, @del &></td>
-% } elsif ($cf->Type eq 'Text') {
-<td><& /Elements/EditCustomFieldText, @add &></td>
-<td>&nbsp;</td>
-% } elsif ($cf->Type eq 'Date') {
-<td><& /Elements/EditCustomFieldDate, @add, Default => undef &></td>
-<td><& /Elements/EditCustomFieldDate, @del, Default => undef &></td>
-% } elsif ($cf->Type eq 'DateTime') {
-% # Pass datemanip format to prevent another tz date conversion
-<td><& /Elements/EditCustomFieldDateTime, @add, Default => undef, Format => 'datemanip' &></td>
-<td><& /Elements/EditCustomFieldDateTime, @del, Default => undef, Format => 'datemanip' &></td>
-% } else {
-%   $RT::Logger->crit("Unknown CustomField type: " . $cf->Type);
-% }
-</tr>
-% }
-</table>
+% if ( $cfs->Count ) {
+<&|/Widgets/TitleBox, title => loc('Edit Custom Fields') &>
+<& /Elements/BulkCustomFields, $ARGS{'AddMoreAttach'} ? %ARGS : (), CustomFields => $cfs &>
 </&>
 % }
 
 <&|/Widgets/TitleBox, title => loc('Edit Links'), color => "#336633"&>
 <em><&|/l&>Enter tickets or URIs to link tickets to. Separate multiple entries with spaces.</&></em><br />
-<& /Ticket/Elements/BulkLinks, Tickets => $Tickets, $ARGS{'AddMoreAttach'} ? %ARGS : () &>
+<& /Elements/BulkLinks, Collection => $Tickets, $ARGS{'AddMoreAttach'} ? %ARGS : () &>
+</&>
+
+<&| /Widgets/TitleBox, title => loc('Merge'), color => '#336633' &>
+<& /Ticket/Elements/EditMerge, Tickets => $Tickets, %ARGS &>
 </&>
 
 <& /Elements/Submit, Label => loc('Update') &>
@@ -248,7 +215,10 @@ $Page ||= 1;
 $Format ||= RT->Config->Get('DefaultSearchResultFormat');
 
 # inject _CHECKBOX to the first field.
-$Format =~ s/'?([^']+)'?,/'___CHECKBOX__$1',/;      #'
+my $DisplayFormat = "'__CheckBox.{UpdateTicket}__',". $Format;
+$DisplayFormat =~ s/\s*,\s*('?__NEWLINE__'?)/,$1,''/gi;
+
+$DECODED_ARGS->{'UpdateTicketAll'} = 1 unless @UpdateTicket;
 
 my $Tickets = RT::Tickets->new( $session{'CurrentUser'} );
 $Tickets->FromSQL($Query);
@@ -276,7 +246,8 @@ Abort( loc("No search to operate on.") ) unless ($Tickets);
 my $fields      = {};
 my $seen_queues = {};
 while ( my $ticket = $Tickets->Next ) {
-    next if $seen_queues->{ $ticket->Queue }++;
+    next if $seen_queues->{ $ticket->Queue };
+    $seen_queues->{ $ticket->Queue } ||= $ticket->QueueObj;
 
     my $custom_fields = $ticket->CustomFields;
     while ( my $field = $custom_fields->Next ) {
@@ -289,13 +260,6 @@ my @linkresults;
 
 $Tickets->RedoSearch();
 
-# pull out the labels for any custom fields we want to update
-
-my $cf_del_keys;
-@$cf_del_keys = grep { /^Bulk-Delete-CustomField/ } keys %ARGS;
-my $cf_add_keys;
-@$cf_add_keys = grep { /^Bulk-Add-CustomField/ } keys %ARGS;
-
 if ( defined($ARGS{'Priority'})
      and ($ARGS{'Priority-Mode'} || '') eq 'relative' ) {
     # magic in Ticket::SetPriority
@@ -304,19 +268,19 @@ if ( defined($ARGS{'Priority'})
 delete $ARGS{'Priority-Mode'};
 
 unless ( $ARGS{'AddMoreAttach'} ) {
-    # Add session attachments if any to be processed by ProcessUpdateMessage
-    $ARGS{'UpdateAttachments'} = $session{'Attachments'} if ( $session{'Attachments'} );
 
     while ( my $Ticket = $Tickets->Next ) {
-        next unless ( $ARGS{ "UpdateTicket" . $Ticket->Id } );
+        my $tid = $Ticket->id;
+        next unless grep $tid == $_, @UpdateTicket;
 
         #Update the links
         $ARGS{'id'} = $Ticket->id;
 
         my @updateresults = ProcessUpdateMessage(
-                TicketObj => $Ticket,
-                ARGSRef   => \%ARGS,
-            );
+            TicketObj       => $Ticket,
+            ARGSRef         => \%ARGS,
+            KeepAttachments => 1,
+        );
 
         #Update the basics.
         my @basicresults =
@@ -328,86 +292,11 @@ unless ( $ARGS{'AddMoreAttach'} ) {
         my @watchresults =
           ProcessTicketWatchers( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
-        foreach my $type (qw(MergeInto DependsOn MemberOf RefersTo)) {
-            $ARGS{ $Ticket->id . "-" . $type } = $ARGS{"Ticket-$type"};
-            $ARGS{ $type . "-" . $Ticket->id } = $ARGS{"$type-Ticket"};
-        }
-        @linkresults =
-          ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS );
-        foreach my $type (qw(MergeInto DependsOn MemberOf RefersTo)) {
-            delete $ARGS{ $type . "-" . $Ticket->id };
-            delete $ARGS{ $Ticket->id . "-" . $type };
-        }
+         @linkresults =
+            ProcessTicketLinks( TicketObj => $Ticket, TicketId => 'Ticket', ARGSRef => \%ARGS );
 
-        my @cfresults;
+        my @cfresults = ProcessRecordBulkCustomFields( RecordObj => $Ticket, ARGSRef => \%ARGS );
 
-        foreach my $list ( $cf_add_keys, $cf_del_keys ) {
-            next unless $list->[0];
-
-
-            my $op;
-            if ( $list->[0] =~ /Add/ ) {
-                $op = 'add';
-
-            }
-            elsif ( $list->[0] =~ /Del/ ) {
-                $op = 'del';
-            }
-            else {
-                $RT::Logger->crit(
-                    "Got an op that was neither add nor delete. can never happen"
-                      . $list->[0] );
-                last;
-            }
-
-            foreach my $key (@$list) {
-                my ( $cfid, $cf );
-                next if $key =~ /CustomField-(\d+)-Category$/;
-                if ( $key =~ /CustomField-(\d+)-/ ) {
-                    $cfid = $1;
-                    $cf   = RT::CustomField->new( $session{'CurrentUser'} );
-                    $cf->Load($cfid);
-                }
-                else {next}
-                my @values =
-                  ref( $ARGS{$key} ) eq 'ARRAY'
-                  ? @{ $ARGS{$key} }
-                  : ( $ARGS{$key} );
-                map { s/(\r\n|\r)/\n/g; } @values;    # fix the newlines
-                     # now break the multiline values into multivalues
-                @values = map { split( /\n/, $_ ) } @values
-                  unless ( $cf->SingleValue );
-
-                my $current_values = $Ticket->CustomFieldValues($cfid);
-
-                if ( $cf->Type eq 'DateTime' || $cf->Type eq 'Date' ){
-                    # Clear out empty string submissions to avoid
-                    # Not set changed to Not set
-                    @values = grep length, @values;
-                }
-
-                foreach my $value (@values) {
-
-                    if ( $op eq 'del' ) {
-                        if ( my $entry = $current_values->HasEntry($value) ) {
-                            my ( $id, $msg ) = $Ticket->DeleteCustomFieldValue(
-                                Field => $cfid,
-                                ValueId => $entry->id,
-                            );
-                            push @cfresults, $msg;
-                        }
-                    }
-
-                    elsif ( $op eq 'add' && !$current_values->HasEntry($value) ) {
-                        my ( $id, $msg ) = $Ticket->AddCustomFieldValue(
-                            Field => $cfid,
-                            Value => $value
-                        );
-                        push @cfresults, $msg;
-                    }
-                }
-            }
-        }
         my @statusresults =
           ProcessTicketStatus( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
@@ -426,8 +315,7 @@ unless ( $ARGS{'AddMoreAttach'} ) {
         @results = ( @results, @tempresults );
     }
 
-    # Cleanup WebUI
-    delete $session{'Attachments'};
+    delete $session{'Attachments'}{ $ARGS{'Token'} };
 
     $Tickets->RedoSearch();
 }
@@ -435,6 +323,7 @@ unless ( $ARGS{'AddMoreAttach'} ) {
 my $TxnCFs = RT::CustomFields->new( $session{CurrentUser} );
 $TxnCFs->LimitToLookupType( RT::Transaction->CustomFieldLookupType );
 $TxnCFs->LimitToGlobalOrObjectId( keys %$seen_queues );
+$TxnCFs->SetContextObject( values %$seen_queues ) if keys %$seen_queues == 1;
 
 </%INIT>
 <%args>
@@ -445,6 +334,5 @@ $RowsPerPage => undef
 $Order => 'ASC'
 $OrderBy => 'id'
 $Query => undef
-$SavedSearchId => undef
-$SavedChartSearchId => undef
+@UpdateTicket => ()
 </%args>

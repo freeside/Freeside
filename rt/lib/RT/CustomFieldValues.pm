@@ -51,11 +51,9 @@ package RT::CustomFieldValues;
 use strict;
 use warnings;
 
-
+use base 'RT::SearchBuilder';
 
 use RT::CustomFieldValue;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'CustomFieldValues'}
 
@@ -64,15 +62,15 @@ sub _Init {
 
   # By default, order by SortOrder
   $self->OrderByCols(
-	 { ALIAS => 'main',
-	   FIELD => 'SortOrder',
-	   ORDER => 'ASC' },
-	 { ALIAS => 'main',
-	   FIELD => 'Name',
-	   ORDER => 'ASC' },
-	 { ALIAS => 'main',
-	   FIELD => 'id',
-	   ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'SortOrder',
+           ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'Name',
+           ORDER => 'ASC' },
+         { ALIAS => 'main',
+           FIELD => 'id',
+           ORDER => 'ASC' },
      );
 
     return ( $self->SUPER::_Init(@_) );
@@ -95,19 +93,50 @@ sub LimitToCustomField {
     );
 }
 
+=head2 SetCustomFieldObject
 
-
-
-=head2 NewItem
-
-Returns an empty new RT::CustomFieldValue item
+Store the CustomField object which loaded this CustomFieldValues collection.
+Consumers of CustomFieldValues collection (such as External Custom Fields)
+can now work out how they were loaded (off a Queue or Ticket or something else)
+by inspecting the CustomField.
 
 =cut
 
-sub NewItem {
+sub SetCustomFieldObject {
     my $self = shift;
-    return(RT::CustomFieldValue->new($self->CurrentUser));
+    return $self->{'custom_field'} = shift;
 }
+
+=head2 CustomFieldObject
+
+Returns the CustomField object used to load this CustomFieldValues collection.
+Relies on $CustomField->Values having been called, is not set on manual loads.
+
+=cut
+
+sub CustomFieldObject {
+    my $self = shift;
+    return $self->{'custom_field'};
+}
+
+=head2 AddRecord
+
+Propagates the CustomField object from the Collection
+down to individual CustomFieldValue objects.
+
+=cut
+
+sub AddRecord {
+    my $self = shift;
+    my $CFV = shift;
+
+    $CFV->SetCustomFieldObj($self->CustomFieldObject);
+
+    push @{$self->{'items'}}, $CFV;
+    $self->{'rows'}++;
+}
+
+
 RT::Base->_ImportOverlays();
 
 1;

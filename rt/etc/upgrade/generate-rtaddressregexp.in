@@ -46,18 +46,15 @@
 # those contributions and any derivatives thereof.
 #
 # END BPS TAGGED BLOCK }}}
+use 5.10.1;
 use strict;
 use warnings;
 
 use lib "@LOCAL_LIB_PATH@";
 use lib "@RT_LIB_PATH@";
 
-use RT;
-RT::LoadConfig();
-RT->Config->Set('LogToScreen' => 'debug');
-RT::Init();
-
-$| = 1;
+use RT::Interface::CLI qw(Init);
+Init();
 
 if (my $re = RT->Config->Get('RTAddressRegexp')) {
     print "No need to use this script, you already have RTAddressRegexp set to $re\n";
@@ -86,7 +83,7 @@ for my $domain (sort keys %merged) {
         }
     }
     if (@addresses > 1) {
-        push @domains, "(?:".join("|", @addresses).")\Q\@".$domain."\E";
+        push @domains, "(?:".join("|", @addresses).")\Q\@$domain\E";
     } else {
         push @domains, "$addresses[0]\Q\@$domain\E";
     }

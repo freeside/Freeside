@@ -79,21 +79,7 @@ sub AddRecord {
     return $self->SUPER::AddRecord( $record );
 }
 
-sub ColumnMapClassName {
-    return 'RT__Class';
-}
-
-=head2 NewItem
-
-Returns an empty new RT::Class item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Class->new($self->CurrentUser));
-}
-
+sub _SingularClass { "RT::Class" }
 
 RT::Base->_ImportOverlays();
 

@@ -21,13 +21,14 @@ sub check {
     my %check = (
         strict   => 0,
         warnings => 0,
+        no_tabs  => 0,
         shebang  => 0,
         exec     => 0,
         bps_tag  => 0,
         @_,
     );
 
-    if ($check{strict} or $check{warnings} or $check{shebang} or $check{bps_tag}) {
+    if ($check{strict} or $check{warnings} or $check{shebang} or $check{bps_tag} or $check{no_tabs}) {
         local $/;
         open my $fh, '<', $file or die $!;
         my $content = <$fh>;
@@ -98,4 +99,21 @@ check( $_, exec => -1 )
     for grep {m{^t/data/}} @files;
 
 check( $_, exec => -1, bps_tag => -1 )
+    for grep {m{^etc/[^/]+$}} @files;
+
+check( $_, exec => -1, bps_tag => -1 )
     for grep {m{^etc/upgrade/[^/]+/}} @files;
+
+check( $_, warnings => 1, strict => 1, compile_perl => 1, no_tabs => 1 )
+    for grep {m{^etc/upgrade/.*/content$}} @files;
+
+check( $_, shebang => 1, exec => 1, warnings => 1, strict => 1, bps_tag => 1, no_tabs => 1 )
+    for grep {m{^etc/upgrade/[^/]+$}} @files;
+
+check( $_, compile_perl => 1, exec => 1 )
+    for grep{ -f $_} map {s/\.in$//; $_} grep {m{^etc/upgrade/[^/]+$}} @files;
+
+check( $_, exec => -1 )
+    for grep {m{^(devel/)?docs/}} @files;
+
+done_testing;

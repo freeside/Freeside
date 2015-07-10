@@ -71,10 +71,9 @@ package RT::Attachments;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::Attachment;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'Attachments'}
 
@@ -112,14 +111,12 @@ sub TransactionAlias {
     return $self->{'_sql_transaction_alias'}
         if $self->{'_sql_transaction_alias'};
 
-    my $res = $self->NewAlias('Transactions');
-    $self->Limit(
-        ENTRYAGGREGATOR => 'AND',
-        FIELD           => 'TransactionId',
-        VALUE           => $res . '.id',
-        QUOTEVALUE      => 0,
+    return $self->{'_sql_transaction_alias'} = $self->Join(
+        ALIAS1 => 'main',
+        FIELD1 => 'TransactionId',
+        TABLE2 => 'Transactions',
+        FIELD2 => 'id',
     );
-    return $self->{'_sql_transaction_alias'} = $res;
 }
 
 =head2 ContentType (VALUE => 'text/plain', ENTRYAGGREGATOR => 'OR', OPERATOR => '=' ) 
@@ -133,9 +130,9 @@ sub ContentType  {
     my $self = shift;
     my %args = (
         VALUE           => 'text/plain',
-	    OPERATOR        => '=',
-	    ENTRYAGGREGATOR => 'OR',
-	    @_
+        OPERATOR        => '=',
+        ENTRYAGGREGATOR => 'OR',
+        @_
     );
 
     return $self->Limit ( %args, FIELD => 'ContentType' );
@@ -203,13 +200,11 @@ sub LimitByTicket {
         VALUE           => 'RT::Ticket',
     );
 
-    my $tickets = $self->NewAlias('Tickets');
-    $self->Limit(
-        ENTRYAGGREGATOR => 'AND',
-        ALIAS           => $tickets,
-        FIELD           => 'id',
-        VALUE           => $transactions . '.ObjectId',
-        QUOTEVALUE      => 0,
+    my $tickets = $self->Join(
+        ALIAS1 => $transactions,
+        FIELD1 => 'ObjectId',
+        TABLE2 => 'Tickets',
+        FIELD2 => 'id',
     );
     $self->Limit(
         ENTRYAGGREGATOR => 'AND',
@@ -226,18 +221,6 @@ sub AddRecord {
 
     return unless $record->TransactionObj->CurrentUserCanSee;
     return $self->SUPER::AddRecord( $record );
-}
-
-
-=head2 NewItem
-
-Returns an empty new RT::Attachment item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Attachment->new($self->CurrentUser));
 }
 
 RT::Base->_ImportOverlays();

@@ -61,7 +61,7 @@ sub quant {
     return $num unless @forms;
     return $forms[3] if !$num && $forms[3];
 
-    return $num .' '. $handle->numerate($num, @forms);
+    return $handle->numf($num) .' '. $handle->numerate($num, @forms);
 }
 
 sub numerate {
@@ -75,7 +75,7 @@ sub numerate {
     } else {
         $form = 2;
     }
-    return $forms[$form];
+    return $forms[$form] || (grep defined, @forms)[0];
 }
 
 RT::Base->_ImportOverlays();

@@ -51,17 +51,21 @@
 
 % $m->callback(CallbackName => 'BeforeForm', %ARGS, ARGSRef => \%ARGS, Ticket => $Ticket );
 
-<form action="Update.html" method="post" enctype="multipart/form-data">
+<form action="Update.html" method="post" enctype="multipart/form-data" name="TicketUpdate">
 <input type="hidden" class="hidden" name="QuoteTransaction" value="<% $ARGS{QuoteTransaction}||'' %>" />
 <input type="hidden" class="hidden" name="UpdateType" value="response" />
 <input type="hidden" class="hidden" name="id" value="<%$Ticket->Id%>" />
+<input type="hidden" class="hidden" name="Token" value="<% $ARGS{'Token'} %>" />
 <table width="100%">
     <tr>
         <td class="label">
             <&|/l&>Status</&>
         </td>
         <td class="value">
-            <& /Elements/SelectStatus, Name => "Status", TicketObj => $Ticket, DefaultLabel => loc("[_1] (Unchanged)", loc($Ticket->Status)), Default => $ARGS{'Status'} || ($Ticket->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
+            <& /Ticket/Elements/SelectStatus,
+               Name => "Status",
+               TicketObj => $Ticket,
+               Default => $DefaultStatus &>
         </td>
     </tr>
     <tr>
@@ -74,7 +78,7 @@
 
     </tr>
     <& /Ticket/Elements/AddAttachments, %ARGS, TicketObj => $Ticket &>
-    <tr><td colspan="2"><& /Ticket/Elements/EditCustomFields,  TicketObj => $Ticket &></td></tr>
+    <tr><td colspan="2"><& /Elements/EditCustomFields, Object => $Ticket, AsTable => 0 &></td></tr>
 </table>
 % if (exists $ARGS{UpdateContent}) {
 % # preserve QuoteTransaction so we can use it to set up sane references/in/reply to

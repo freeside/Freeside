@@ -92,7 +92,7 @@ my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
 my $method = $Create ? 'ObjectsForCreating' : 'ObjectsForModifying';
 my @privacies = $Dashboard->$method;
 
-Abort(loc("Permission denied")) if @privacies == 0;
+Abort(loc("Permission Denied")) if @privacies == 0;
 
 if ($Create) {
     $title = loc("Create a new dashboard");
@@ -124,7 +124,7 @@ else {
 
     if ($id) {
         $title = loc("Modify the dashboard [_1]", $Dashboard->Name);
-    }	
+    }
     # If the create failed
     else {
         $Create = 1;
@@ -137,10 +137,10 @@ if (!$Create && !$tried_create && $id && $ARGS{'Save'}) {
                                         Name     => $ARGS{'Name'});
 
     if ($ok) {
-        push @results, loc("Dashboard updated");
+        push @results, loc("Dashboard [_1] updated", $Dashboard->Name);
     }
     else {
-        push @results, loc("Dashboard could not be updated: [_1]", $msg);
+        push @results, loc("Dashboard [_1] could not be updated: [_2]", $Dashboard->Name, $msg);
     }
 
 }

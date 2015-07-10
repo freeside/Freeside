@@ -48,8 +48,12 @@
 <& Elements/Header, Title => loc("Create a ticket") &>
 
 <& /Elements/ListActions, actions => \@results &>
-<form action="Create.html" method="post" enctype="multipart/form-data">
+<form action="Create.html" method="post" enctype="multipart/form-data" name="TicketCreate">
 <input type="hidden" class="hidden" name="id" value="new" />
+<input type="hidden" class="hidden" name="Token" value="<% $ARGS{'Token'} %>" />
+% for my $key (grep {defined $ARGS{$_}} map {+("new-$_", "$_-new")} keys %RT::Link::DIRMAP) {
+<input type="hidden" class="hidden" name="<% $key %>" value="<% $ARGS{$key} %>" />
+% }
 
 <table width="100%">
 <tr>
@@ -67,7 +71,7 @@
 <&|/l&>Requestors</&>:
 </td>
 <td class="value">
-<& /Elements/EmailInput, Name => 'Requestors', Size => '20', Default => $ARGS{Requestors} || $session{CurrentUser}->EmailAddress &>
+<& /Elements/EmailInput, Name => 'Requestors', Size => '20', Default => $ARGS{Requestors} || $session{CurrentUser}->EmailAddress, AutocompleteMultiple => 1 &>
 </td>
 </tr>
 <tr>
@@ -88,7 +92,12 @@
 </tr>
 <tr>
     <td colspan="2">
-        <& /Ticket/Elements/EditCustomFields, %ARGS, QueueObj => $queue_obj &>
+        <& /Elements/EditCustomFields,
+            %ARGS,
+            Object          => RT::Ticket->new($session{CurrentUser}),
+            CustomFields    => $queue_obj->TicketCustomFields,
+            AsTable         => 0,
+            &>
     </td>
 </tr>
 <& /Ticket/Elements/AddAttachments, %ARGS, QueueObj => $queue_obj &>
@@ -112,30 +121,30 @@ $Queue => undef
 my @results;
 my $queue_obj = RT::Queue->new($session{'CurrentUser'});
 $queue_obj->Load($Queue);
-my $CFs = $queue_obj->TicketCustomFields();
-my $ValidCFs = $m->comp(
-    '/Elements/ValidateCustomFields',
-    CustomFields => $CFs,
-    ARGSRef => \%ARGS
-);
 
 ProcessAttachments(ARGSRef => \%ARGS);
 
 my $skip_create = 0;
+
+{
+    my ($status, @msg) = $m->comp(
+        '/Elements/ValidateCustomFields',
+        CustomFields => $queue_obj->TicketCustomFields,
+        ARGSRef => \%ARGS
+    );
+    unless ($status) {
+        push @results, @msg;
+        $skip_create = 1;
+    }
+}
+
 $m->callback( CallbackName => 'BeforeCreate', ARGSRef => \%ARGS, skip_create => \$skip_create, results => \@results );
 
 if ( !exists $ARGS{'AddMoreAttach'} and defined($ARGS{'id'}) and $ARGS{'id'} eq 'new' ) { # new ticket?
-    if ( $ValidCFs && !$skip_create ) {
+    if ( !$skip_create ) {
         $m->comp('Display.html', %ARGS);
         $RT::Logger->crit("After display call; error is $@");
         $m->abort();
-    }
-    elsif ( !$ValidCFs ) {
-        # Invalid CFs
-        while (my $CF = $CFs->Next) {
-            my $msg = $m->notes('InvalidField-' . $CF->Id) or next;
-            push @results, $CF->Name . ': ' . $msg;
-        }
     }
 }
 

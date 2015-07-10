@@ -48,17 +48,12 @@
 <%ARGS>
 $Name => undef
 $Attr => undef
+$GenericMap => {}
 </%ARGS>
 <%ONCE>
 my $COLUMN_MAP = {
-    id => {
-        title     => '#', # loc
-        attribute => 'id',
-        align     => 'right',
-        value     => sub { return $_[0]->id },
-    },
     Disabled => {
-        title     => \'&nbsp;',
+        title     => 'Status', # loc
         attribute => 'Disabled',
         value     => sub { return $_[0]->Disabled? $_[0]->loc('Disabled'): $_[0]->loc('Enabled') },
     },
@@ -88,7 +83,15 @@ my $COLUMN_MAP = {
     Lifecycle => {
         title => 'Lifecycle',
         attribute => 'Lifecycle',
-        value => sub { return $_[0]->Lifecycle->Name },
+        value => sub { return $_[0]->Lifecycle },
+    },
+    ScripStage => {
+        title => 'Stage', # loc
+        value => sub {
+            my $os = RT::ObjectScrip->new( $_[0]->CurrentUser );
+            $os->LoadByCols( Scrip => $_[-1], ObjectId => $_[0]->id );
+            return $_[0]->loc( $os->FriendlyStage );
+        },
     },
 };
 
@@ -105,7 +108,7 @@ foreach my $field (qw(
 
 </%ONCE>
 <%INIT>
-$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
+$m->callback( GenericMap => $GenericMap, COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
 return GetColumnMapEntry( Map => $COLUMN_MAP, Name => $Name, Attribute => $Attr );
 </%INIT>
 

@@ -46,6 +46,23 @@
 #
 # END BPS TAGGED BLOCK }}}
 
+=head1 NAME
+
+RT::Condition::BeforeDue
+
+=head1 DESCRIPTION
+
+Returns true if the ticket we're operating on is within the
+amount of time defined by the passed in argument.
+
+The passed in value is a date in the format "1d2h3m4s"
+for 1 day and 2 hours and 3 minutes and 4 seconds. Single
+units can also be passed such as 1d for just one day.
+
+
+=cut
+
+
 package RT::Condition::BeforeDue;
 use base 'RT::Condition';
 
@@ -61,15 +78,15 @@ sub IsApplicable {
     # and 3 minutes and 4 seconds.
     my %e;
     foreach (qw(d h m s)) {
-	my @vals = $self->Argument =~ m/(\d+)$_/;
-	$e{$_} = pop @vals || 0;
+        my @vals = $self->Argument =~ m/(\d+)$_/i;
+        $e{$_} = pop @vals || 0;
     }
     my $elapse = $e{'d'} * 24*60*60 + $e{'h'} * 60*60 + $e{'m'} * 60 + $e{'s'};
 
     my $cur = RT::Date->new( RT->SystemUser );
     $cur->SetToNow();
     my $due = $self->TicketObj->DueObj;
-    return (undef) if $due->Unix <= 0;
+    return (undef) unless $due->IsSet;
 
     my $diff = $due->Diff($cur);
     if ( $diff >= 0 and $diff <= $elapse ) {

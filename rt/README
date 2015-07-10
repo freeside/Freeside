@@ -14,21 +14,21 @@ us at <sales@bestpractical.com>.
 REQUIRED PACKAGES
 -----------------
 
-o   Perl 5.8.3 or later (http://www.perl.org).
+o   Perl 5.10.1 or later (http://www.perl.org).
 
-        Perl versions prior to 5.8.3 contain bugs that could result in
-        data corruption. RT won't start on older versions.
+        RT won't start on versions of Perl older than 5.10.1.
 
 o   A supported SQL database
 
-        Currently supported:  MySQL 4.1 or later with InnoDB support.
-                              Postgres 8.1 or later.
+        Currently supported:  MySQL 5.1 or later with InnoDB support.
+                              Postgres 8.4 or later; 9.0 or later suggested
                               Oracle 9iR2 or later.
-                              SQLite 3.0. (Not recommended for production)
+                              SQLite 3.0 or later; for testing only, no
+                                           upgrade path guaranteed
 
 o   Apache version 1.3.x or 2.x (http://httpd.apache.org)
         with mod_perl -- (http://perl.apache.org)
-        or with FastCGI -- (www.fastcgi.com)
+        or with FastCGI -- (http://www.fastcgi.com)
         or other webserver with FastCGI support
 
         RT's FastCGI handler needs to access RT's configuration file.
@@ -66,10 +66,10 @@ GENERAL INSTALLATION
 
     If you are upgrading from a previous version of RT, please review
     the upgrade notes for the appropriate versions, which can be found
-    in docs/UPGRADING-* If you are coming from 3.8.6 to 4.0.x you should
-    review both the UPGRADING-3.8 and UPGRADING-4.0 file.  Similarly, if
-    you were coming from 3.6.7, you would want to review UPGRADING-3.6,
-    UPGRADING-3.8 and UPGRADING-4.0
+    in docs/UPGRADING-* If you are coming from 4.0.x to 4.2.x you should
+    review both the UPGRADING-4.0 and UPGRADING-4.2 file.  Similarly, if
+    you were coming from 3.8.x, you would want to review UPGRADING-3.8,
+    UPGRADING-4.0 and UPGRADING-4.2
 
     Any upgrade steps given in version-specific UPGRADING files should
     be run after the rest of the steps below; however, please read the
@@ -94,18 +94,9 @@ GENERAL INSTALLATION
     Some modules require user input or environment variables to install
     correctly, so it may be necessary to install them manually.
 
-    If you are installing with CPAN module older than 1.84, you will
-    need to start CPAN (by running perl -MCPAN -e shell) and upgrade the
-    CPAN shell with:
-
-        install CPAN
-
-    If you are unsure of your CPAN version, it will be printed when you
-    run the shell.
-
-    If you are having trouble installing GD or Graphviz, you should
-    install gd-devel and the graphviz libraries using your
-    distribution's package manager.
+    If you are having trouble installing GD, refer to "Installing GD libraries"
+    in docs/charts.pod.  Ticket relationship graphing requires the graphviz
+    library which you should install using your distribution's package manager.
 
  5) Check to make sure everything was installed properly.
 
@@ -168,12 +159,8 @@ GENERAL INSTALLATION
 
       You should back up your database before running this command.
       When you run it, you will be prompted for your previous version of
-      RT (such as 3.6.4) so that the appropriate set of database
+      RT (such as 3.8.1) so that the appropriate set of database
       upgrades can be applied.
-
-      Finally, clear the Mason cache dir:
-
-          rm -fr /opt/rt4/var/mason_data/obj
 
       If 'make upgrade-database' completes without error, your upgrade
       has been successful; you should now run any commands that were
@@ -192,7 +179,7 @@ GENERAL INSTALLATION
     logout for inactive sessions. For more information about how to do
     that, run:
 
-        perldoc /path/to/rt/sbin/rt-clean-sessions
+        perldoc /opt/rt4/sbin/rt-clean-sessions
 
  8) Set up users, groups, queues, scrips and access control.
 
@@ -205,14 +192,12 @@ GENERAL INSTALLATION
     To generate email digest messages, you must arrange for the provided
     utility to be run once daily, and once weekly. You may also want to
     arrange for the rt-email-dashboards utility to be run hourly.  For
-    example, if your task scheduler is cron, you can configure it as
-    follows:
+    example, if your task scheduler is cron, you can configure it by
+    adding the following lines as /etc/cron.d/rt:
 
-        crontab -e    # as the RT administrator (probably root)
-        # insert the following lines:
-        0 0 * * * /opt/rt4/sbin/rt-email-digest -m daily
-        0 0 * * 0 /opt/rt4/sbin/rt-email-digest -m weekly
-        0 * * * * /opt/rt4/sbin/rt-email-dashboards
+        0 0 * * * root /opt/rt4/sbin/rt-email-digest -m daily
+        0 0 * * 0 root /opt/rt4/sbin/rt-email-digest -m weekly
+        0 * * * * root /opt/rt4/sbin/rt-email-dashboards
 
 10) Configure the RT email gateway.  To let email flow to your RT
     server, you need to add a few lines of configuration to your mail
@@ -230,13 +215,6 @@ GENERAL INSTALLATION
     gateway, type:
 
            perldoc /opt/rt4/bin/rt-mailgate
-
-    If your webserver uses SSL, rt-mailgate will require several new
-    Perl libraries. RT can detect and install these for you automatically
-    if you include --enable-ssl-mailgate when running configure and then
-    run make fixdeps as described in step 4.  It is safe to rerun configure
-    and make fixdeps after you have installed RT, you should be sure to include
-    all the arguments you used in step 2 plus --enable-ssl-mailgate.
 
 
 GETTING HELP

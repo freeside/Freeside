@@ -95,6 +95,58 @@ Both Group and Member are expected to be RT::Principal objects
 
 =cut
 
+sub _InsertCGM {
+    my $self = shift;
+
+    my $cached_member = RT::CachedGroupMember->new( $self->CurrentUser );
+    my $cached_id     = $cached_member->Create(
+        Member          => $self->MemberObj,
+        Group           => $self->GroupObj,
+        ImmediateParent => $self->GroupObj,
+        Via             => '0'
+    );
+
+
+    #When adding a member to a group, we need to go back
+    #and popuplate the CachedGroupMembers of all the groups that group is part of .
+
+    my $cgm = RT::CachedGroupMembers->new( $self->CurrentUser );
+
+    # find things which have the current group as a member. 
+    # $group is an RT::Principal for the group.
+    $cgm->LimitToGroupsWithMember( $self->GroupId );
+    $cgm->Limit(
+        SUBCLAUSE => 'filter', # dont't mess up with prev condition
+        FIELD => 'MemberId',
+        OPERATOR => '!=',
+        VALUE => 'main.GroupId',
+        QUOTEVALUE => 0,
+        ENTRYAGGREGATOR => 'AND',
+    );
+
+    while ( my $parent_member = $cgm->Next ) {
+        my $parent_id = $parent_member->MemberId;
+        my $via       = $parent_member->Id;
+        my $group_id  = $parent_member->GroupId;
+
+        my $other_cached_member =
+            RT::CachedGroupMember->new( $self->CurrentUser );
+        my $other_cached_id = $other_cached_member->Create(
+            Member          => $self->MemberObj,
+                      Group => $parent_member->GroupObj,
+            ImmediateParent => $parent_member->MemberObj,
+            Via             => $parent_member->Id
+        );
+        unless ($other_cached_id) {
+            $RT::Logger->err( "Couldn't add " . $self->MemberId
+                  . " as a submember of a supergroup" );
+            return;
+        }
+    }
+
+    return $cached_id;
+}
+
 sub Create {
     my $self = shift;
     my %args = (
@@ -161,52 +213,9 @@ sub Create {
         return (undef);
     }
 
-    my $cached_member = RT::CachedGroupMember->new( $self->CurrentUser );
-    my $cached_id     = $cached_member->Create(
-        Member          => $args{'Member'},
-        Group           => $args{'Group'},
-        ImmediateParent => $args{'Group'},
-        Via             => '0'
-    );
-
-
-    #When adding a member to a group, we need to go back
-    #and popuplate the CachedGroupMembers of all the groups that group is part of .
-
-    my $cgm = RT::CachedGroupMembers->new( $self->CurrentUser );
-
-    # find things which have the current group as a member. 
-    # $group is an RT::Principal for the group.
-    $cgm->LimitToGroupsWithMember( $args{'Group'}->Id );
-    $cgm->Limit(
-        SUBCLAUSE => 'filter', # dont't mess up with prev condition
-        FIELD => 'MemberId',
-        OPERATOR => '!=',
-        VALUE => 'main.GroupId',
-        QUOTEVALUE => 0,
-        ENTRYAGGREGATOR => 'AND',
-    );
-
-    while ( my $parent_member = $cgm->Next ) {
-        my $parent_id = $parent_member->MemberId;
-        my $via       = $parent_member->Id;
-        my $group_id  = $parent_member->GroupId;
-
-          my $other_cached_member =
-          RT::CachedGroupMember->new( $self->CurrentUser );
-        my $other_cached_id = $other_cached_member->Create(
-            Member          => $args{'Member'},
-                      Group => $parent_member->GroupObj,
-            ImmediateParent => $parent_member->MemberObj,
-            Via             => $parent_member->Id
-        );
-        unless ($other_cached_id) {
-            $RT::Logger->err( "Couldn't add " . $args{'Member'}
-                  . " as a submember of a supergroup" );
-            $RT::Handle->Rollback() unless ($args{'InsideTransaction'});
-            return (undef);
-        }
-    } 
+    my $clone = RT::GroupMember->new( $self->CurrentUser );
+    $clone->Load( $id );
+    my $cached_id = $clone->_InsertCGM;
 
     unless ($cached_id) {
         $RT::Handle->Rollback() unless ($args{'InsideTransaction'});
@@ -470,22 +479,124 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         GroupId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         MemberId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->GroupObj->Object );
+    $deps->Add( out => $self->MemberObj->Object );
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+    my $objs = RT::CachedGroupMembers->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'MemberId', VALUE => $self->MemberId );
+    $objs->Limit( FIELD => 'ImmediateParentId', VALUE => $self->GroupId );
+    push( @$list, $objs );
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+
+    my $group = $self->GroupObj->Object;
+    # XXX: If we delete member of the ticket owner role group then we should also
+    # fix ticket object, but only if we don't plan to delete group itself!
+    unless( ($group->Name || '') eq 'Owner' &&
+        ($group->Domain || '') eq 'RT::Ticket-Role' ) {
+        return $self->SUPER::__DependsOn( %args );
+    }
+
+    # we don't delete group, so we have to fix Ticket and Group
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON | RT::Shredder::Constants::VARIABLE,
+        TargetObjects => $group,
+        Shredder => $args{'Shredder'}
+    );
+    $args{'Shredder'}->PutResolver(
+        BaseClass => ref $self,
+        TargetClass => ref $group,
+        Code => sub {
+            my %args = (@_);
+            my $group = $args{'TargetObject'};
+            return if $args{'Shredder'}->GetState( Object => $group )
+                & (RT::Shredder::Constants::WIPED|RT::Shredder::Constants::IN_WIPING);
+            return unless ($group->Name || '') eq 'Owner';
+            return unless ($group->Domain || '') eq 'RT::Ticket-Role';
+
+            return if $group->MembersObj->Count > 1;
+
+            my $group_member = $args{'BaseObject'};
+
+            if( $group_member->MemberObj->id == RT->Nobody->id ) {
+                RT::Shredder::Exception->throw( "Couldn't delete Nobody from owners role group" );
+            }
+
+            my( $status, $msg ) = $group->AddMember( RT->Nobody->id );
+
+            RT::Shredder::Exception->throw( $msg ) unless $status;
+
+            return;
+        },
+    );
+
+    return $self->SUPER::__DependsOn( %args );
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    $class->SUPER::PreInflate( $importer, $uid, $data );
+
+    my $obj = RT::GroupMember->new( RT->SystemUser );
+    $obj->LoadByCols(
+        GroupId  => $data->{GroupId},
+        MemberId => $data->{MemberId},
+    );
+    if ($obj->id) {
+        $importer->Resolve( $uid => ref($obj) => $obj->Id );
+        return;
+    }
+
+    return 1;
+}
+
+sub PostInflate {
+    my $self = shift;
+
+    $self->_InsertCGM;
+}
 
 RT::Base->_ImportOverlays();
 

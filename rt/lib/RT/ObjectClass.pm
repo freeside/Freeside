@@ -114,10 +114,10 @@ Returns the Class Object which has the id returned by Class
 =cut
 
 sub ClassObj {
-	my $self = shift;
-	my $Class =  RT::Class->new($self->CurrentUser);
-	$Class->Load($self->Class());
-	return($Class);
+    my $self = shift;
+    my $Class =  RT::Class->new($self->CurrentUser);
+    $Class->Load($self->Class());
+    return($Class);
 }
 
 =head2 ObjectType
@@ -197,24 +197,37 @@ sub _CoreAccessible {
     {
      
         id =>
-		{read => 1, type => 'int(11)', default => ''},
+                {read => 1, type => 'int(11)', default => ''},
         Class => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         ObjectType => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         ObjectId => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         Creator => 
-		{read => 1, auto => 1, type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, type => 'int(11)', default => '0'},
         Created => 
-		{read => 1, auto => 1, type => 'datetime', default => ''},
+                {read => 1, auto => 1, type => 'datetime', default => ''},
         LastUpdatedBy => 
-		{read => 1, auto => 1, type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, type => 'int(11)', default => '0'},
         LastUpdated => 
-		{read => 1, auto => 1, type => 'datetime', default => ''},
+                {read => 1, auto => 1, type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->ClassObj );
+
+    my $obj = $self->ObjectType->new( $self->CurrentUser );
+    $obj->Load( $self->ObjectId );
+    $deps->Add( out => $obj );
+}
 
 
 RT::Base->_ImportOverlays();

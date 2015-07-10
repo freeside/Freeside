@@ -48,24 +48,19 @@
 <%ARGS>
 $Name
 $Attr => undef
+$GenericMap => {}
 </%ARGS>
 <%ONCE>
 my $COLUMN_MAP = {
-    id => {
-        title     => '#', # loc
-        attribute => 'id',
-        align     => 'right',
-        value     => sub { return $_[0]->id },
-    },
     Name => {
         title     => 'Name', # loc
-	attribute => 'Name',
-	value     => sub { return $_[0]->Name() },
+        attribute => 'Name',
+        value     => sub { return $_[0]->Name() },
     },
     Description => {
         title     => 'Description', # loc
-	attribute => 'Description',
-	value     => sub { return $_[0]->Description() },
+        attribute => 'Description',
+        value     => sub { return $_[0]->Description() },
     },
     Queue => {
         title     => 'Queue', # loc
@@ -78,10 +73,28 @@ my $COLUMN_MAP = {
         title     => 'Queue', # loc
         value     => sub { $_[0]->Queue },
     },
+    IsEmpty => {
+        title     => 'Empty', # loc
+        value     => sub { $_[0]->IsEmpty? $_[0]->loc('Yes') : $_[0]->loc('No') },
+    },
+    UsedBy => {
+        title     => 'Used by scrips', # loc
+        value     => sub {
+            my @res;
+            my $scrips = $_[0]->UsedBy;
+            while ( my $scrip = $scrips->Next ) {
+                push @res, ', ' if @res;
+                push @res, \'<a href="', RT->Config->Get('WebPath'), '/Admin/Scrips/Modify.html';
+                push @res, '?id='. $scrip->id;
+                push @res, \'" title="', $scrip->Description, \'">', $scrip->id, \'</a>';
+            }
+            return @res;
+        },
+    },
 };
 
 </%ONCE>
 <%INIT>
-$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
+$m->callback( GenericMap => $GenericMap, COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
 return GetColumnMapEntry( Map => $COLUMN_MAP, Name => $Name, Attribute => $Attr );
 </%INIT>

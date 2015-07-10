@@ -80,6 +80,7 @@ use MIME::Base64;
 use MIME::QuotedPrint;
 use MIME::Body;
 use RT::Util 'mime_recommended_filename';
+use URI;
 
 sub _OverlayAccessible {
   {
@@ -127,13 +128,15 @@ sub Create {
     # If we possibly can, collapse it to a singlepart
     $Attachment->make_singlepart;
 
+    my $head = $Attachment->head;
+
     # Get the subject
-    my $Subject = Encode::decode( 'UTF-8', $Attachment->head->get( 'subject' ) );
+    my $Subject = Encode::decode( 'UTF-8', $head->get( 'subject' ) );
     $Subject = '' unless defined $Subject;
     chomp $Subject;
 
     #Get the Message-ID
-    my $MessageId = Encode::decode( "UTF-8", $Attachment->head->get( 'Message-ID' ) );
+    my $MessageId = Encode::decode( "UTF-8", $head->get( 'Message-ID' ) );
     defined($MessageId) or $MessageId = '';
     chomp ($MessageId);
     $MessageId =~ s/^<(.*?)>$/$1/o;
@@ -144,9 +147,18 @@ sub Create {
     # remove path part. 
     $Filename =~ s!.*/!! if $Filename;
 
+    my $content;
+    unless ( $head->get('Content-Length') ) {
+        my $length = 0;
+        $length = length $Attachment->bodyhandle->as_string
+            if defined $Attachment->bodyhandle;
+        $head->replace( 'Content-Length' => Encode::encode( "UTF-8", $length ) );
+    }
+    $head = $head->as_string;
+
     # MIME::Head doesn't support perl strings well and can return
     # octets which later will be double encoded in low-level code
-    my $head = Encode::decode( 'UTF-8', $Attachment->head->as_string );
+    $head = Encode::decode( 'UTF-8', $head );
 
     # If a message has no bodyhandle, that means that it has subparts (or appears to)
     # and we should act accordingly.  
@@ -162,6 +174,12 @@ sub Create {
 
         unless ($id) {
             $RT::Logger->crit("Attachment insert failed - ". $RT::Handle->dbh->errstr);
+            my $txn = RT::Transaction->new($self->CurrentUser);
+            $txn->Load($args{'TransactionId'});
+            if ( $txn->id ) {
+                $txn->Object->_NewTransaction( Type => 'AttachmentError', ActivateScrips => 0, Data => $Filename );
+            }
+            return ($id);
         }
 
         foreach my $part ( $Attachment->parts ) {
@@ -173,6 +191,7 @@ sub Create {
             );
             unless ($id) {
                 $RT::Logger->crit("Attachment insert failed: ". $RT::Handle->dbh->errstr);
+                return ($id);
             }
         }
         return ($id);
@@ -181,45 +200,37 @@ sub Create {
     #If it's not multipart
     else {
 
-        my ($ContentEncoding, $Body, $ContentType, $Filename) = $self->_EncodeLOB(
-            $Attachment->bodyhandle->as_string,
-            $Attachment->mime_type,
-            $Filename
-        );
+        my ( $encoding, $type, $note_args );
+        ( $encoding, $content, $type, $Filename, $note_args ) =
+                $self->_EncodeLOB( $Attachment->bodyhandle->as_string, $Attachment->mime_type, $Filename, );
 
         my $id = $self->SUPER::Create(
             TransactionId   => $args{'TransactionId'},
-            ContentType     => $ContentType,
-            ContentEncoding => $ContentEncoding,
+            ContentType     => $type,
+            ContentEncoding => $encoding,
             Parent          => $args{'Parent'},
             Headers         => $head,
             Subject         => $Subject,
-            Content         => $Body,
+            Content         => $content,
             Filename        => $Filename,
             MessageId       => $MessageId,
         );
 
-        unless ($id) {
+        if ($id) {
+            if ($note_args) {
+                $self->TransactionObj->Object->_NewTransaction( %$note_args );
+            }
+        }
+        else {
             $RT::Logger->crit("Attachment insert failed: ". $RT::Handle->dbh->errstr);
+            my $txn = RT::Transaction->new($self->CurrentUser);
+            $txn->Load($args{'TransactionId'});
+            if ( $txn->id ) {
+                $txn->Object->_NewTransaction( Type => 'AttachmentError', ActivateScrips => 0, Data => $Filename );
+            }
         }
         return $id;
     }
-}
-
-=head2 Import
-
-Create an attachment exactly as specified in the named parameters.
-
-=cut
-
-sub Import {
-    my $self = shift;
-    my %args = ( ContentEncoding => 'none', @_ );
-
-    ( $args{'ContentEncoding'}, $args{'Content'} ) =
-        $self->_EncodeLOB( $args{'Content'}, $args{'MimeType'} );
-
-    return ( $self->SUPER::Create(%args) );
 }
 
 =head2 TransactionObj
@@ -260,6 +271,35 @@ sub ParentObj {
     return $parent;
 }
 
+=head2 Closest
+
+Takes a MIME type as a string or regex.  Returns an L<RT::Attachment> object
+for the nearest containing part with a matching L</ContentType>.  Strings must
+match exactly and all matches are done case insensitively.  Strings ending in a
+C</> must only match the first part of the MIME type.  For example:
+
+    # Find the nearest multipart/* container
+    my $container = $attachment->Closest("multipart/");
+
+Returns undef if no such object is found.
+
+=cut
+
+sub Closest {
+    my $self = shift;
+    my $type = shift;
+    my $part = $self->ParentObj or return undef;
+
+    $type = qr/^\Q$type\E$/
+        unless ref $type eq "REGEX";
+
+    while (lc($part->ContentType) !~ $type) {
+        $part = $part->ParentObj or last;
+    }
+
+    return ($part and $part->id) ? $part : undef;
+}
+
 =head2 Children
 
 Returns an L<RT::Attachments> object which is preloaded with
@@ -274,6 +314,30 @@ sub Children {
     my $kids = RT::Attachments->new( $self->CurrentUser );
     $kids->ChildrenOf( $self->Id );
     return($kids);
+}
+
+=head2 Siblings
+
+Returns an L<RT::Attachments> object containing all the attachments sharing
+the same immediate parent as the current object, excluding the current
+attachment itself.
+
+If the current attachment is a top-level part (i.e. Parent == 0) then a
+guaranteed empty L<RT::Attachments> object is returned.
+
+=cut
+
+sub Siblings {
+    my $self = shift;
+    my $siblings = RT::Attachments->new( $self->CurrentUser );
+    if ($self->Parent) {
+        $siblings->ChildrenOf( $self->Parent );
+        $siblings->Limit( FIELD => 'id', OPERATOR => '!=', VALUE => $self->Id );
+    } else {
+        # Ensure emptiness
+        $siblings->Limit( SUBCLAUSE => 'empty', FIELD => 'id', VALUE => 0 );
+    }
+    return $siblings;
 }
 
 =head2 Content
@@ -318,16 +382,11 @@ sub OriginalContent {
 
     return $self->Content unless RT::I18N::IsTextualContentType($self->ContentType);
 
-    my $content;
-    if ( !$self->ContentEncoding || $self->ContentEncoding eq 'none' ) {
-        $content = $self->_Value('Content', decode_utf8 => 0);
-    } elsif ( $self->ContentEncoding eq 'base64' ) {
-        $content = MIME::Base64::decode_base64($self->_Value('Content', decode_utf8 => 0));
-    } elsif ( $self->ContentEncoding eq 'quoted-printable' ) {
-        $content = MIME::QuotedPrint::decode($self->_Value('Content', decode_utf8 => 0));
-    } else {
-        return( $self->loc("Unknown ContentEncoding [_1]", $self->ContentEncoding));
-    }
+    my $content = $self->_DecodeLOB(
+        "application/octet-stream", # Force _DecodeLOB to not decode to characters
+        $self->ContentEncoding,
+        $self->_Value('Content', decode_utf8 => 0),
+    );
 
     my $entity = MIME::Entity->new();
     $entity->head->add("Content-Type", $self->GetHeader("Content-Type"));
@@ -379,59 +438,32 @@ sub ContentLength {
     return $len;
 }
 
-=head2 Quote
+=head2 FriendlyContentLength
+
+Returns L</ContentLength> in bytes, kilobytes, or megabytes as most
+appropriate.  The size is suffixed with C<MiB>, C<KiB>, or C<B> and the returned
+string is localized.
+
+Returns the empty string if the L</ContentLength> is 0 or undefined.
 
 =cut
 
-sub Quote {
-    my $self=shift;
-    my %args=(Reply=>undef, # Prefilled reply (i.e. from the KB/FAQ system)
-	      @_);
+sub FriendlyContentLength {
+    my $self = shift;
+    my $size = $self->ContentLength;
+    return '' unless $size;
 
-    my ($quoted_content, $body, $headers);
-    my $max=0;
-
-    # TODO: Handle Multipart/Mixed (eventually fix the link in the
-    # ShowHistory web template?)
-    if (RT::I18N::IsTextualContentType($self->ContentType)) {
-	$body=$self->Content;
-
-	# Do we need any preformatting (wrapping, that is) of the message?
-
-	# Remove quoted signature.
-	$body =~ s/\n-- \n(.*)$//s;
-
-	# What's the longest line like?
-	foreach (split (/\n/,$body)) {
-	    $max=length if ( length > $max);
-	}
-
-	if ($max>76) {
-	    require Text::Wrapper;
-	    my $wrapper = Text::Wrapper->new
-		(
-		 columns => 70, 
-		 body_start => ($max > 70*3 ? '   ' : ''),
-		 par_start => ''
-		 );
-	    $body=$wrapper->wrap($body);
-	}
-
-	$body =~ s/^/> /gm;
-
-	$body = '[' . $self->TransactionObj->CreatorObj->Name() . ' - ' . $self->TransactionObj->CreatedAsString()
-	            . "]:\n\n"
-   	        . $body . "\n\n";
-
-    } else {
-	$body = "[Non-text message not quoted]\n\n";
+    my $res = '';
+    if ( $size > 1024*1024 ) {
+        $res = $self->loc( "[_1]MiB", int( $size / 1024 / 102.4 ) / 10 );
     }
-    
-    $max=60 if $max<60;
-    $max=70 if $max>78;
-    $max+=2;
-
-    return (\$body, $max);
+    elsif ( $size > 1024 ) {
+        $res = $self->loc( "[_1]KiB", int( $size / 102.4 ) / 10 );
+    }
+    else {
+        $res = $self->loc( "[_1]B", $size );
+    }
+    return $res;
 }
 
 =head2 ContentAsMIME [Children => 1]
@@ -443,6 +475,44 @@ recursively added to the entity.
 
 =cut
 
+sub _EncodeHeaderToMIME {
+    my ( $self, $header_name, $header_val ) = @_;
+    if ($header_name =~ /^Content-/i) {
+        my $params = MIME::Field::ParamVal->parse_params($header_val);
+        $header_val = delete $params->{'_'};
+        foreach my $key ( sort keys %$params ) {
+            my $value = $params->{$key};
+            if ( $value =~ /[^\x00-\x7f]/ ) { # check for non-ASCII
+                $value = q{UTF-8''} . URI->new(
+                    Encode::encode('UTF-8', $value)
+                );
+                $value =~ s/(["\\])/\\$1/g;
+                $header_val .= qq{; ${key}*="$value"};
+            }
+            else {
+                $header_val .= qq{; $key="$value"};
+            }
+        }
+    }
+    elsif ( $header_name =~ /^(?:Resent-)?(?:To|From|B?Cc|Sender|Reply-To)$/i ) {
+        my @addresses = RT::EmailParser->ParseEmailAddress( $header_val );
+        foreach my $address ( @addresses ) {
+            foreach my $field (qw(phrase comment)) {
+                my $v = $address->$field() or next;
+                $v = RT::Interface::Email::EncodeToMIME( String => $v );
+                $address->$field($v);
+            }
+        }
+        $header_val = join ', ', map $_->format, @addresses;
+    }
+    else {
+        $header_val = RT::Interface::Email::EncodeToMIME(
+            String => $header_val
+        );
+    }
+    return $header_val;
+}
+
 sub ContentAsMIME {
     my $self = shift;
     my %opts = (
@@ -453,24 +523,27 @@ sub ContentAsMIME {
     my $entity = MIME::Entity->new();
     foreach my $header ($self->SplitHeaders) {
         my ($h_key, $h_val) = split /:/, $header, 2;
-        $entity->head->add( $h_key, RT::Interface::Email::EncodeToMIME( String => $h_val ) );
+        $entity->head->add(
+            $h_key, $self->_EncodeHeaderToMIME($h_key, $h_val)
+        );
     }
-    
-    # since we want to return original content, let's use original encoding
-    $entity->head->mime_attr(
-        "Content-Type.charset" => $self->OriginalEncoding )
-      if $self->OriginalEncoding;
 
-    $entity->bodyhandle(
-        MIME::Body::Scalar->new( $self->OriginalContent )
-    );
-
-    if ($opts{'Children'} and not $self->IsMessageContentType) {
-        my $children = $self->Children;
-        while (my $child = $children->Next) {
-            $entity->make_multipart unless $entity->is_multipart;
-            $entity->add_part( $child->ContentAsMIME(%opts) );
+    if ($entity->is_multipart) {
+        if ($opts{'Children'} and not $self->IsMessageContentType) {
+            my $children = $self->Children;
+            while (my $child = $children->Next) {
+                $entity->add_part( $child->ContentAsMIME(%opts) );
+            }
         }
+    } else {
+        # since we want to return original content, let's use original encoding
+        $entity->head->mime_attr(
+            "Content-Type.charset" => $self->OriginalEncoding )
+          if $self->OriginalEncoding;
+
+        $entity->bodyhandle(
+            MIME::Body::Scalar->new( $self->OriginalContent )
+        );
     }
 
     return $entity;
@@ -503,7 +576,7 @@ sub Addresses {
     my $self = shift;
 
     my %data = ();
-    my $current_user_address = lc $self->CurrentUser->EmailAddress;
+    my $current_user_address = lc($self->CurrentUser->EmailAddress || '');
     foreach my $hdr (@ADDRESS_HEADERS) {
         my @Addresses;
         my $line = $self->GetHeader($hdr);
@@ -531,9 +604,9 @@ sub NiceHeaders {
     my $hdrs = "";
     my @hdrs = $self->_SplitHeaders;
     while (my $str = shift @hdrs) {
-	    next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Bcc|Date|Subject):/i;
-	    $hdrs .= $str . "\n";
-	    $hdrs .= shift( @hdrs ) . "\n" while ($hdrs[0] =~ /^[ \t]+/);
+        next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Bcc|Date|Subject):/i;
+        $hdrs .= $str . "\n";
+        $hdrs .= shift( @hdrs ) . "\n" while ($hdrs[0] =~ /^[ \t]+/);
     }
     return $hdrs;
 }
@@ -710,20 +783,16 @@ sub Encrypt {
     return (0, $self->loc('Permission Denied')) unless $txn->CurrentUserCanSee;
     return (0, $self->loc('Permission Denied'))
         unless $txn->TicketObj->CurrentUserHasRight('ModifyTicket');
-    return (0, $self->loc('GnuPG integration is disabled'))
-        unless RT->Config->Get('GnuPG')->{'Enable'};
+    return (0, $self->loc('Cryptography is disabled'))
+        unless RT->Config->Get('Crypt')->{'Enable'};
     return (0, $self->loc('Attachments encryption is disabled'))
-        unless RT->Config->Get('GnuPG')->{'AllowEncryptDataInDB'};
-
-    require RT::Crypt::GnuPG;
+        unless RT->Config->Get('Crypt')->{'AllowEncryptDataInDB'};
 
     my $type = $self->ContentType;
-    if ( $type =~ /^x-application-rt\/gpg-encrypted/i ) {
+    if ( $type =~ /^x-application-rt\/[^-]+-encrypted/i ) {
         return (1, $self->loc('Already encrypted'));
     } elsif ( $type =~ /^multipart\//i ) {
         return (1, $self->loc('No need to encrypt'));
-    } else {
-        $type = qq{x-application-rt\/gpg-encrypted; original-type="$type"};
     }
 
     my $queue = $txn->TicketObj->QueueObj;
@@ -734,9 +803,9 @@ sub Encrypt {
         RT->Config->Get('CorrespondAddress'),
         RT->Config->Get('CommentAddress'),
     ) {
-        my %res = RT::Crypt::GnuPG::GetKeysInfo( $address, 'private' );
+        my %res = RT::Crypt->GetKeysInfo( Key => $address, Type => 'private' );
         next if $res{'exit_code'} || !$res{'info'};
-        %res = RT::Crypt::GnuPG::GetKeysForEncryption( $address );
+        %res = RT::Crypt->GetKeysForEncryption( $address );
         next if $res{'exit_code'} || !$res{'info'};
         $encrypt_for = $address;
     }
@@ -744,24 +813,26 @@ sub Encrypt {
         return (0, $self->loc('No key suitable for encryption'));
     }
 
-    $self->__Set( Field => 'ContentType', Value => $type );
-    $self->SetHeader( 'Content-Type' => $type );
-
     my $content = $self->Content;
-    my %res = RT::Crypt::GnuPG::SignEncryptContent(
+    my %res = RT::Crypt->SignEncryptContent(
         Content => \$content,
         Sign => 0,
         Encrypt => 1,
         Recipients => [ $encrypt_for ],
     );
     if ( $res{'exit_code'} ) {
-        return (0, $self->loc('GnuPG error. Contact with administrator'));
+        return (0, $self->loc('Encryption error; contact the administrator'));
     }
 
     my ($status, $msg) = $self->__Set( Field => 'Content', Value => $content );
     unless ( $status ) {
         return ($status, $self->loc("Couldn't replace content with encrypted data: [_1]", $msg));
     }
+
+    $type = qq{x-application-rt\/$res{'Protocol'}-encrypted; original-type="$type"};
+    $self->__Set( Field => 'ContentType', Value => $type );
+    $self->SetHeader( 'Content-Type' => $type );
+
     return (1, $self->loc('Successfuly encrypted data'));
 }
 
@@ -772,31 +843,45 @@ sub Decrypt {
     return (0, $self->loc('Permission Denied')) unless $txn->CurrentUserCanSee;
     return (0, $self->loc('Permission Denied'))
         unless $txn->TicketObj->CurrentUserHasRight('ModifyTicket');
-    return (0, $self->loc('GnuPG integration is disabled'))
-        unless RT->Config->Get('GnuPG')->{'Enable'};
-
-    require RT::Crypt::GnuPG;
+    return (0, $self->loc('Cryptography is disabled'))
+        unless RT->Config->Get('Crypt')->{'Enable'};
 
     my $type = $self->ContentType;
-    if ( $type =~ /^x-application-rt\/gpg-encrypted/i ) {
+    my $protocol;
+    if ( $type =~ /^x-application-rt\/([^-]+)-encrypted/i ) {
+        $protocol = $1;
+        $protocol =~ s/gpg/gnupg/; # backwards compatibility
         ($type) = ($type =~ /original-type="(.*)"/i);
         $type ||= 'application/octet-stream';
     } else {
         return (1, $self->loc('Is not encrypted'));
     }
-    $self->__Set( Field => 'ContentType', Value => $type );
-    $self->SetHeader( 'Content-Type' => $type );
+
+    my $queue = $txn->TicketObj->QueueObj;
+    my @addresses =
+        $queue->CorrespondAddress,
+        $queue->CommentAddress,
+        RT->Config->Get('CorrespondAddress'),
+        RT->Config->Get('CommentAddress')
+    ;
 
     my $content = $self->Content;
-    my %res = RT::Crypt::GnuPG::DecryptContent( Content => \$content, );
+    my %res = RT::Crypt->DecryptContent(
+        Protocol => $protocol,
+        Content => \$content,
+        Recipients => \@addresses,
+    );
     if ( $res{'exit_code'} ) {
-        return (0, $self->loc('GnuPG error. Contact with administrator'));
+        return (0, $self->loc('Decryption error; contact the administrator'));
     }
 
     my ($status, $msg) = $self->__Set( Field => 'Content', Value => $content );
     unless ( $status ) {
         return ($status, $self->loc("Couldn't replace content with decrypted data: [_1]", $msg));
     }
+    $self->__Set( Field => 'ContentType', Value => $type );
+    $self->SetHeader( 'Content-Type' => $type );
+
     return (1, $self->loc('Successfuly decrypted data'));
 }
 
@@ -1025,32 +1110,73 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         TransactionId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Parent =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         MessageId =>
-		{read => 1, write => 1, sql_type => 12, length => 160,  is_blob => 0,  is_numeric => 0,  type => 'varchar(160)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 160,  is_blob => 0,  is_numeric => 0,  type => 'varchar(160)', default => ''},
         Subject =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         Filename =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         ContentType =>
-		{read => 1, write => 1, sql_type => 12, length => 80,  is_blob => 0,  is_numeric => 0,  type => 'varchar(80)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 80,  is_blob => 0,  is_numeric => 0,  type => 'varchar(80)', default => ''},
         ContentEncoding =>
-		{read => 1, write => 1, sql_type => 12, length => 80,  is_blob => 0,  is_numeric => 0,  type => 'varchar(80)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 80,  is_blob => 0,  is_numeric => 0,  type => 'varchar(80)', default => ''},
         Content =>
-		{read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'longblob', default => ''},
+                {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'longblob', default => ''},
         Headers =>
-		{read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'longtext', default => ''},
+                {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'longtext', default => ''},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+    $deps->Add( out => $self->TransactionObj );
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+    # Nested attachments
+    my $objs = RT::Attachments->new( $self->CurrentUser );
+    $objs->Limit(
+        FIELD => 'Parent',
+        OPERATOR        => '=',
+        VALUE           => $self->Id
+    );
+    $objs->Limit(
+        FIELD => 'id',
+        OPERATOR        => '!=',
+        VALUE           => $self->Id
+    );
+    push( @$list, $objs );
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+    return $self->SUPER::__DependsOn( %args );
+}
 
 RT::Base->_ImportOverlays();
 

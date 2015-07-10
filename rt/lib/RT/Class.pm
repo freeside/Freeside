@@ -60,6 +60,9 @@ use RT::Articles;
 use RT::ObjectClass;
 use RT::ObjectClasses;
 
+use Role::Basic 'with';
+with "RT::Record::Role::Rights";
+
 sub Table {'Classes'}
 
 =head2 Load IDENTIFIER
@@ -81,94 +84,19 @@ sub Load {
     }
 }
 
-# {{{ This object provides ACLs
-
-use vars qw/$RIGHTS/;
-$RIGHTS = {
-    SeeClass            => 'See that this class exists',               #loc_pair
-    CreateArticle       => 'Create articles in this class',            #loc_pair
-    ShowArticle         => 'See articles in this class',               #loc_pair
-    ShowArticleHistory  => 'See changes to articles in this class',    #loc_pair
-    ModifyArticle       => 'Modify or delete articles in this class',  #loc_pair
-    ModifyArticleTopics => 'Modify topics for articles in this class', #loc_pair
-    AdminClass          => 'Modify metadata and custom fields for this class',              #loc_pair
-    AdminTopics         => 'Modify topic hierarchy associated with this class',             #loc_pair
-    ShowACL             => 'Display Access Control List',              #loc_pair
-    ModifyACL           => 'Create, modify and delete Access Control List entries',         #loc_pair
-    DeleteArticle       => 'Delete articles in this class',            #loc_pair
-};
-
-our $RIGHT_CATEGORIES = {
-    SeeClass            => 'Staff',
-    CreateArticle       => 'Staff',
-    ShowArticle         => 'General',
-    ShowArticleHistory  => 'Staff',
-    ModifyArticle       => 'Staff',
-    ModifyArticleTopics => 'Staff',
-    AdminClass          => 'Admin',
-    AdminTopics         => 'Admin',
-    ShowACL             => 'Admin',
-    ModifyACL           => 'Admin',
-    DeleteArticle       => 'Staff',
-};
-
-# TODO: This should be refactored out into an RT::ACLedObject or something
-# stuff the rights into a hash of rights that can exist.
-
-# Tell RT::ACE that this sort of object can get acls granted
-$RT::ACE::OBJECT_TYPES{'RT::Class'} = 1;
-
-# TODO this is ripe for a refacor, since this is stolen from Queue
-__PACKAGE__->AddRights(%$RIGHTS);
-__PACKAGE__->AddRightCategories(%$RIGHT_CATEGORIES);
-
-=head2 AddRights C<RIGHT>, C<DESCRIPTION> [, ...]
-
-Adds the given rights to the list of possible rights.  This method
-should be called during server startup, not at runtime.
-
-=cut
-
-sub AddRights {
-    my $self = shift;
-    my %new = @_;
-    $RIGHTS = { %$RIGHTS, %new };
-    %RT::ACE::LOWERCASERIGHTNAMES = ( %RT::ACE::LOWERCASERIGHTNAMES,
-                                      map { lc($_) => $_ } keys %new);
-}
-
-=head2 AddRightCategories C<RIGHT>, C<CATEGORY> [, ...]
-
-Adds the given right and category pairs to the list of right categories.  This
-method should be called during server startup, not at runtime.
-
-=cut
-
-sub AddRightCategories {
-    my $self = shift if ref $_[0] or $_[0] eq __PACKAGE__;
-    my %new = @_;
-    $RIGHT_CATEGORIES = { %$RIGHT_CATEGORIES, %new };
-}
-
-=head2 AvailableRights
-
-Returns a hash of available rights for this object. The keys are the right names and the values are a description of what t
-he rights do
-
-=cut
-
-sub AvailableRights {
-    my $self = shift;
-    return ($RIGHTS);
-}
-
-sub RightCategories {
-    return $RIGHT_CATEGORIES;
-}
-
-
-# }}}
-
+__PACKAGE__->AddRight( Staff   => SeeClass            => 'See that this class exists'); # loc
+__PACKAGE__->AddRight( Staff   => CreateArticle       => 'Create articles in this class'); # loc
+__PACKAGE__->AddRight( General => ShowArticle         => 'See articles in this class'); # loc
+__PACKAGE__->AddRight( Staff   => ShowArticleHistory  => 'See changes to articles in this class'); # loc
+__PACKAGE__->AddRight( General => SeeCustomField      => 'View custom field values' ); # loc
+__PACKAGE__->AddRight( Staff   => ModifyArticle       => 'Modify or delete articles in this class'); # loc
+__PACKAGE__->AddRight( Staff   => ModifyArticleTopics => 'Modify topics for articles in this class'); # loc
+__PACKAGE__->AddRight( Staff   => ModifyCustomField   => 'Modify custom field values' ); # loc
+__PACKAGE__->AddRight( Admin   => AdminClass          => 'Modify metadata and custom fields for this class'); # loc
+__PACKAGE__->AddRight( Admin   => AdminTopics         => 'Modify topic hierarchy associated with this class'); # loc
+__PACKAGE__->AddRight( Admin   => ShowACL             => 'Display Access Control List'); # loc
+__PACKAGE__->AddRight( Admin   => ModifyACL           => 'Create, modify and delete Access Control List entries'); # loc
+__PACKAGE__->AddRight( Staff   => DeleteArticle       => 'Delete articles in this class'); # loc
 
 # {{{ Create
 
@@ -254,20 +182,6 @@ sub _Value {
 }
 
 # }}}
-
-sub CurrentUserHasRight {
-    my $self  = shift;
-    my $right = shift;
-
-    return (
-        $self->CurrentUser->HasRight(
-            Right        => $right,
-            Object       => ( $self->Id ? $self : $RT::System ),
-            EquivObjects => [ $RT::System, $RT::System ]
-        )
-    );
-
-}
 
 sub ArticleCustomFields {
     my $self = shift;
@@ -450,7 +364,33 @@ sub RemoveFromObject {
     return ( $oid, $msg );
 }
 
+sub SubjectOverride {
+    my $self = shift;
+    my $override = $self->FirstAttribute('SubjectOverride');
+    return $override ? $override->Content : 0;
+}
 
+sub SetSubjectOverride {
+    my $self = shift;
+    my $override = shift;
+
+    if ( $override == $self->SubjectOverride ) {
+        return (0, "SubjectOverride is already set to that");
+    }
+
+    my $cf = RT::CustomField->new($self->CurrentUser);
+    $cf->Load($override);
+
+    if ( $override ) {
+        my ($ok, $msg) = $self->SetAttribute( Name => 'SubjectOverride', Content => $override );
+        return ($ok, $ok ? $self->loc('Added Subject Override: [_1]', $cf->Name) :
+                           $self->loc('Unable to add Subject Override: [_1] [_2]', $cf->Name, $msg));
+    } else {
+        my ($ok, $msg) = $self->DeleteAttribute('SubjectOverride');
+        return ($ok, $ok ? $self->loc('Removed Subject Override') :
+                           $self->loc('Unable to add Subject Override: [_1] [_2]', $cf->Name, $msg));
+    }
+}
 
 =head2 id
 
@@ -592,28 +532,81 @@ sub _CoreAccessible {
     {
      
         id =>
-		{read => 1, type => 'int(11)', default => ''},
+                {read => 1, type => 'int(11)', default => ''},
         Name => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         Description => 
-		{read => 1, write => 1, type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, type => 'varchar(255)', default => ''},
         SortOrder => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         Disabled => 
-		{read => 1, write => 1, type => 'int(2)', default => '0'},
+                {read => 1, write => 1, type => 'int(2)', default => '0'},
         HotList => 
-		{read => 1, write => 1, type => 'int(2)', default => '0'},
+                {read => 1, write => 1, type => 'int(2)', default => '0'},
         Creator => 
-		{read => 1, auto => 1, type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, type => 'int(11)', default => '0'},
         Created => 
-		{read => 1, auto => 1, type => 'datetime', default => ''},
+                {read => 1, auto => 1, type => 'datetime', default => ''},
         LastUpdatedBy => 
-		{read => 1, auto => 1, type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, type => 'int(11)', default => '0'},
         LastUpdated => 
-		{read => 1, auto => 1, type => 'datetime', default => ''},
+                {read => 1, auto => 1, type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    my $articles = RT::Articles->new( $self->CurrentUser );
+    $articles->Limit( FIELD => "Class", VALUE => $self->Id );
+    $deps->Add( in => $articles );
+
+    my $topics = RT::Topics->new( $self->CurrentUser );
+    $topics->LimitToObject( $self );
+    $deps->Add( in => $topics );
+
+    my $objectclasses = RT::ObjectClasses->new( $self->CurrentUser );
+    $objectclasses->LimitToClass( $self->Id );
+    $deps->Add( in => $objectclasses );
+
+    # Custom Fields on things _in_ this class (CFs on the class itself
+    # have already been dealt with)
+    my $ocfs = RT::ObjectCustomFields->new( $self->CurrentUser );
+    $ocfs->Limit( FIELD           => 'ObjectId',
+                  OPERATOR        => '=',
+                  VALUE           => $self->id,
+                  ENTRYAGGREGATOR => 'OR' );
+    $ocfs->Limit( FIELD           => 'ObjectId',
+                  OPERATOR        => '=',
+                  VALUE           => 0,
+                  ENTRYAGGREGATOR => 'OR' );
+    my $cfs = $ocfs->Join(
+        ALIAS1 => 'main',
+        FIELD1 => 'CustomField',
+        TABLE2 => 'CustomFields',
+        FIELD2 => 'id',
+    );
+    $ocfs->Limit( ALIAS    => $cfs,
+                  FIELD    => 'LookupType',
+                  OPERATOR => 'STARTSWITH',
+                  VALUE    => 'RT::Class-' );
+    $deps->Add( in => $ocfs );
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    $class->SUPER::PreInflate( $importer, $uid, $data );
+
+    return if $importer->MergeBy( "Name", $class, $uid, $data );
+
+    return 1;
+}
 
 RT::Base->_ImportOverlays();
 

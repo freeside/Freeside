@@ -71,15 +71,13 @@ sub Table {'ACL'}
 use strict;
 use warnings;
 
-use RT::Principals;
-use RT::Queues;
-use RT::Groups;
+require RT::Principals;
+require RT::Queues;
+require RT::Groups;
 
-use vars qw (
-  %LOWERCASERIGHTNAMES
-  %OBJECT_TYPES
-  %TICKET_METAPRINCIPALS
-);
+our %RIGHTS;
+
+my (@_ACL_CACHE_HANDLERS);
 
 
 
@@ -90,37 +88,22 @@ use vars qw (
 
 =cut
 
-
-
-
-
-
-%TICKET_METAPRINCIPALS = (
-    Owner     => 'The owner of a ticket',                             # loc_pair
-    Requestor => 'The requestor of a ticket',                         # loc_pair
-    Cc        => 'The CC of a ticket',                                # loc_pair
-    AdminCc   => 'The administrative CC of a ticket',                 # loc_pair
-);
-
-
-
-
 =head2 LoadByValues PARAMHASH
 
 Load an ACE by specifying a paramhash with the following fields:
 
               PrincipalId => undef,
               PrincipalType => undef,
-	      RightName => undef,
+              RightName => undef,
 
         And either:
 
-	      Object => undef,
+              Object => undef,
 
             OR
 
-	      ObjectType => undef,
-	      ObjectId => undef
+              ObjectType => undef,
+              ObjectId => undef
 
 =cut
 
@@ -137,7 +120,7 @@ sub LoadByValues {
     if ( $args{'RightName'} ) {
         my $canonic_name = $self->CanonicalizeRightName( $args{'RightName'} );
         unless ( $canonic_name ) {
-            return ( 0, $self->loc("Invalid right. Couldn't canonicalize right '[_1]'", $args{'RightName'}) );
+            return wantarray ? ( 0, $self->loc("Invalid right. Couldn't canonicalize right '[_1]'", $args{'RightName'}) ) : 0;
         }
         $args{'RightName'} = $canonic_name;
     }
@@ -148,14 +131,14 @@ sub LoadByValues {
                                      $args{'PrincipalType'} );
 
     unless ( $princ_obj->id ) {
-        return ( 0,
+        return wantarray ? ( 0,
                  $self->loc( 'Principal [_1] not found.', $args{'PrincipalId'} )
-        );
+        ) : 0;
     }
 
     my ($object, $object_type, $object_id) = $self->_ParseObjectArg( %args );
     unless( $object ) {
-	return ( 0, $self->loc("System error. Right not granted.") );
+        return wantarray ? ( 0, $self->loc("System error. Right not granted.")) : 0;
     }
 
     $self->LoadByCols( PrincipalId   => $princ_obj->Id,
@@ -166,11 +149,11 @@ sub LoadByValues {
 
     #If we couldn't load it.
     unless ( $self->Id ) {
-        return ( 0, $self->loc("ACE not found") );
+        return wantarray ? ( 0, $self->loc("ACE not found") ) : 0;
     }
 
     # if we could
-    return ( $self->Id, $self->loc("Right Loaded") );
+    return wantarray ? ( $self->Id, $self->loc("Right Loaded") ) : $self->Id;
 
 }
 
@@ -223,7 +206,7 @@ sub Create {
     }
     ($args{'Object'}, $args{'ObjectType'}, $args{'ObjectId'}) = $self->_ParseObjectArg( %args );
     unless( $args{'Object'} ) {
-	return ( 0, $self->loc("System error. Right not granted.") );
+        return ( 0, $self->loc("System error. Right not granted.") );
     }
 
     # Validate the principal
@@ -266,7 +249,7 @@ sub Create {
 
     #check if it's a valid RightName
     if ( $args{'Object'}->can('AvailableRights') ) {
-        my $available = $args{'Object'}->AvailableRights;
+        my $available = $args{'Object'}->AvailableRights($princ_obj);
         unless ( grep $_ eq $args{'RightName'}, map $self->CanonicalizeRightName( $_ ), keys %$available ) {
             $RT::Logger->warning(
                 "Couldn't validate right name '$args{'RightName'}'"
@@ -296,10 +279,12 @@ sub Create {
                                    ObjectId      => $args{'Object'}->id,
                                );
 
-    #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
-    RT::Principal->InvalidateACLCache();
-
     if ( $id ) {
+        RT::ACE->InvalidateCaches(
+            Action      => "Grant",
+            RightName   => $self->RightName,
+            ACE         => $self,
+        );
         return ( $id, $self->loc('Right Granted') );
     }
     else {
@@ -344,12 +329,12 @@ sub _Delete {
 
     $RT::Handle->BeginTransaction() unless $InsideTransaction;
 
+    my $right = $self->RightName;
+
     my ( $val, $msg ) = $self->SUPER::Delete(@_);
 
     if ($val) {
-	#Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
-	# TODO what about the groups key cache?
-	RT::Principal->InvalidateACLCache();
+        RT::ACE->InvalidateCaches( Action => "Revoke", RightName => $right );
         $RT::Handle->Commit() unless $InsideTransaction;
         return ( $val, $self->loc('Right revoked') );
     }
@@ -396,7 +381,67 @@ sub _BootstrapCreate {
 
 }
 
+=head2 InvalidateCaches
 
+Calls any registered ACL cache handlers (see L</RegisterCacheHandler>).
+
+Usually called from L</Create> and L</Delete>.
+
+=cut
+
+sub InvalidateCaches {
+    my $class = shift;
+
+    for my $handler (@_ACL_CACHE_HANDLERS) {
+        next unless ref($handler) eq "CODE";
+        $handler->(@_);
+    }
+}
+
+=head2 RegisterCacheHandler
+
+Class method.  Takes a coderef and adds it to the ACL cache handlers.  These
+handlers are called by L</InvalidateCaches>, usually called itself from
+L</Create> and L</Delete>.
+
+The handlers are passed a hash which may contain any (or none) of these
+optional keys:
+
+=over
+
+=item Action
+
+A string indicating the action that (may have) invalidated the cache.  Expected
+values are currently:
+
+=over
+
+=item Grant
+
+=item Revoke
+
+=back
+
+However, other values may be passed in the future.
+
+=item RightName
+
+The (canonicalized) right being granted or revoked.
+
+=item ACE
+
+The L<RT::ACE> object just created.
+
+=back
+
+Your handler should be flexible enough to account for additional arguments
+being passed in the future.
+
+=cut
+
+sub RegisterCacheHandler {
+    push @_ACL_CACHE_HANDLERS, $_[1];
+}
 
 sub RightName {
     my $self = shift;
@@ -420,10 +465,14 @@ the correct case. If it's not found, will return undef.
 =cut
 
 sub CanonicalizeRightName {
-    my $self  = shift;
-    return $LOWERCASERIGHTNAMES{ lc shift };
+    my $self = shift;
+    my $name = shift;
+    for my $class (sort keys %RIGHTS) {
+        return $RIGHTS{$class}{ lc $name }{Name}
+            if $RIGHTS{$class}{ lc $name };
+    }
+    return undef;
 }
-
 
 
 
@@ -445,7 +494,7 @@ sub Object {
 
     my $appliesto_obj;
 
-    if ($self->__Value('ObjectType') && $OBJECT_TYPES{$self->__Value('ObjectType')} ) {
+    if ($self->__Value('ObjectType') && $self->__Value('ObjectType')->DOES('RT::Record::Role::Rights') ) {
         $appliesto_obj =  $self->__Value('ObjectType')->new($self->CurrentUser);
         unless (ref( $appliesto_obj) eq $self->__Value('ObjectType')) {
             return undef;
@@ -563,21 +612,21 @@ sub _ParseObjectArg {
                  @_ );
 
     if( $args{'Object'} && ($args{'ObjectId'} || $args{'ObjectType'}) ) {
-	$RT::Logger->crit( "Method called with an ObjectType or an ObjectId and Object args" );
-	return ();
+        $RT::Logger->crit( "Method called with an ObjectType or an ObjectId and Object args" );
+        return ();
     } elsif( $args{'Object'} && ref($args{'Object'}) &&  !$args{'Object'}->can('id') ) {
-	$RT::Logger->crit( "Method called called Object that has no id method" );
-	return ();
+        $RT::Logger->crit( "Method called called Object that has no id method" );
+        return ();
     } elsif( $args{'Object'} ) {
-	my $obj = $args{'Object'};
-	return ($obj, ref $obj, $obj->id);
+        my $obj = $args{'Object'};
+        return ($obj, ref $obj, $obj->id);
     } elsif ( $args{'ObjectType'} ) {
-	my $obj =  $args{'ObjectType'}->new( $self->CurrentUser );
-	$obj->Load( $args{'ObjectId'} );
-	return ($obj, ref $obj, $obj->id);
+        my $obj =  $args{'ObjectType'}->new( $self->CurrentUser );
+        $obj->Load( $args{'ObjectId'} );
+        return ($obj, ref $obj, $obj->id);
     } else {
-	$RT::Logger->crit( "Method called with wrong args" );
-	return ();
+        $RT::Logger->crit( "Method called with wrong args" );
+        return ();
     }
 }
 
@@ -722,28 +771,38 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         PrincipalType =>
-		{read => 1, write => 1, sql_type => 12, length => 25,  is_blob => 0,  is_numeric => 0,  type => 'varchar(25)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 25,  is_blob => 0,  is_numeric => 0,  type => 'varchar(25)', default => ''},
         PrincipalId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         RightName =>
-		{read => 1, write => 1, sql_type => 12, length => 25,  is_blob => 0,  is_numeric => 0,  type => 'varchar(25)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 25,  is_blob => 0,  is_numeric => 0,  type => 'varchar(25)', default => ''},
         ObjectType =>
-		{read => 1, write => 1, sql_type => 12, length => 25,  is_blob => 0,  is_numeric => 0,  type => 'varchar(25)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 25,  is_blob => 0,  is_numeric => 0,  type => 'varchar(25)', default => ''},
         ObjectId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->PrincipalObj->Object );
+    $deps->Add( out => $self->Object );
+}
 
 RT::Base->_ImportOverlays();
 

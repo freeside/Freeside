@@ -53,6 +53,7 @@ use warnings;
 
 use base qw(Test::WWW::Mechanize);
 use Scalar::Util qw(weaken);
+use MIME::Base64 qw//;
 
 BEGIN { require RT::Test; }
 require Test::More;
@@ -76,6 +77,8 @@ sub get_ok {
     if ( $url =~ s!^/!! ) {
         $url = $self->rt_base_url . $url;
     }
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $rv = $self->SUPER::get_ok($url, @_);
     Test::More::diag( "Couldn't get $url" ) unless $rv;
     return $rv;
@@ -96,15 +99,25 @@ sub login {
 
     my $url = $self->rt_base_url;
     $self->get($url . "?user=$user;pass=$pass");
-    unless ( $self->status == 200 ) {
-        Test::More::diag( "error: status is ". $self->status );
-        return 0;
-    }
+
+    return 0 unless $self->logged_in_as($user);
+
     unless ( $self->content =~ m/Logout/i ) {
         Test::More::diag("error: page has no Logout");
         return 0;
     }
-    RT::Interface::Web::EscapeUTF8(\$user);
+    return 1;
+}
+
+sub logged_in_as {
+    my $self = shift;
+    my $user = shift || '';
+
+    unless ( $self->status == 200 ) {
+        Test::More::diag( "error: status is ". $self->status );
+        return 0;
+    }
+    RT::Interface::Web::EscapeHTML(\$user);
     unless ( $self->content =~ m{<span class="current-user">\Q$user\E</span>}i ) {
         Test::More::diag("Page has no user name");
         return 0;
@@ -165,7 +178,10 @@ sub goto_create_ticket {
     } elsif ( $queue =~ /^\d+$/ ) {
         $id = $queue;
     } else {
-        die "not yet implemented";
+        my $queue_obj = RT::Queue->new(RT->SystemUser);
+        my ($ok, $msg) = $queue_obj->Load($queue);
+        die "Unable to load queue '$queue': $msg" if !$ok;
+        $id = $queue_obj->id;
     }
 
     $self->get($self->rt_base_url . 'Ticket/Create.html?Queue='.$id);
@@ -323,7 +339,11 @@ sub custom_field_input {
     my $cf_name = shift;
 
     my $cf_obj = RT::CustomField->new( $RT::SystemUser );
-    $cf_obj->LoadByName( Queue => $queue, Name => $cf_name );
+    $cf_obj->LoadByName(
+        Name => $cf_name,
+        LookupType => RT::Ticket->CustomFieldLookupType,
+        ObjectId => $queue,
+    );
     unless ( $cf_obj->id ) {
         Test::More::diag("Can not load custom field '$cf_name' in queue '$queue'");
         return undef;
@@ -331,7 +351,7 @@ sub custom_field_input {
     my $cf_id = $cf_obj->id;
     
     my ($res) =
-        grep /^Object-RT::Ticket-\d*-CustomField-$cf_id-Values?$/,
+        grep /^Object-RT::Ticket-\d*-CustomField(?::\w+)?-$cf_id-Values?$/,
         map $_->name,
         $self->current_form->inputs;
     unless ( $res ) {
@@ -340,6 +360,24 @@ sub custom_field_input {
     }
     return $res;
 }
+
+sub value_name {
+    my $self = shift;
+    my $field = shift;
+
+    my $input = $self->current_form->find_input( $field )
+        or return undef;
+
+    my @names = $input->value_names;
+    return $input->value unless @names;
+
+    my @values = $input->possible_values;
+    for ( my $i = 0; $i < @values; $i++ ) {
+        return $names[ $i ] if $values[ $i ] eq $input->value;
+    }
+    return undef;
+}
+
 
 sub check_links {
     my $self = shift;
@@ -366,6 +404,25 @@ sub check_links {
         return 0;
     }
     return Test::More::ok( 1, "expected links" );
+}
+
+sub auth {
+    my $self = shift;
+    $self->default_header( $self->auth_header(@_) );
+}
+
+sub auth_header {
+    my $self = shift;
+    return Authorization => "Basic " .
+        MIME::Base64::encode( join(":", @_) );
+}
+
+sub dom {
+    my $self = shift;
+    Carp::croak("Can not get DOM, not HTML repsone")
+        unless $self->is_html;
+    require Mojo::DOM;
+    return Mojo::DOM->new( $self->content );
 }
 
 sub DESTROY {

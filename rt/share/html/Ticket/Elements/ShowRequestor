@@ -45,33 +45,28 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+% if ($ShowTickets) {
 <script type="text/javascript">
     jQuery(function() {
-        jQuery("#requestor-accordion").accordion({
-            active: <% $count == 1 ? 0 : 'false' %>,
-            collapsible: true,
-            autoHeight: false
-        });
-
-% if ($ShowTickets) {
         jQuery(".more-about-requestor-tickets").tabs({
             cache: true,
             collapsible: true,
             selected: <% $selected %>
         });
-% }
     });
 </script>
+% }
 
 <&| /Widgets/TitleBox,
     title_raw => loc("More about the requestors"),
     class => 'ticket-info-requestor'
 &>
 
-<div id="requestor-accordion">
+<div id="requestor-accordion" class="user-accordion">
 
 % while ( my $requestor = $people->Next ) {
-  <h3><a href="#"><& /Elements/ShowUser, User => $requestor &></a></h3>
+<h3><a href="#"><& /Elements/ShowUser, User => $requestor, Link => 0 &></a>
+    <a class="user-summary" href="<%RT->Config->Get('WebPath')%>/User/Summary.html?id=<%$requestor->Id%>">User Summary</a></h3>
   <div class="details">
 
 %# Additional information about this user.  Empty by default.
@@ -84,6 +79,8 @@
   <span class="value"><% ($requestor->Comments || loc("No comment entered about this user")) %></span>
 </div>
 % }
+
+% $m->callback( requestor => $requestor, %ARGS, CallbackName => 'AfterComments' );
 
 % if ( $ShowTickets ) {
 <div class="more-about-requestor-tickets ui-tabs" id="more-about-requestor-tickets-<%$requestor->Id%>">
@@ -108,7 +105,7 @@
   <div id="requestor-<%$requestor->Id%>-ticket-tab-default">
     <& $TicketTemplate, Requestor => $requestor &>
 % } else {
-  <div id="requestor-<%$requestor->Id%>-ticket-tab-<% $index++ %>" class="ui-tabs-hide">
+  <div id="requestor-<%$requestor->Id%>-ticket-tab-<% $index++ %>" class="hidden">
     <span class="label"><&|/l&>Loading...</&></span>
 % }
   </div>
@@ -131,14 +128,12 @@
 </div>
 % }
 
-% if ( $has_right_adminusers ) {
-    <a class="modify-user" href="<% RT->Config->Get('WebPath')."/Admin/Users/Modify.html?id=".$requestor->id %>"><&|/l&>Modify this user</&></a>
-% }
-
 %# end of individual requestor details <div>
   </div>
 % }
 %# end of requestors loop
+
+% $m->callback( %ARGS, CallbackName => 'AfterRequestors' );
 
 </div>
 </&>
@@ -167,17 +162,20 @@ my $status_link_text = {Active   => loc('Active Tickets'),
 my $status_order = [qw/Active Inactive All/];
 $m->callback( CallbackName => 'AddStatus', status_link_text => \$status_link_text, status_order => \$status_order );
 
-unless ( $DefaultTicketsTab eq 'None' ) {
+$ShowTickets = 0 if $DefaultTicketsTab eq 'None';
+
+my $TicketTemplate;
+if ($ShowTickets) {
     for (0 .. (@$status_order - 1)) {
         $selected = $_ && last
             if $status_order->[$_] eq $DefaultTicketsTab;
     }
-}
 
-my $TicketTemplate = "ShowRequestorTickets$DefaultTicketsTab";
-$TicketTemplate = "ShowRequestorTicketsActive"
-    unless RT::Interface::Web->ComponentPathIsSafe($TicketTemplate)
-       and $m->comp_exists($TicketTemplate);
+    $TicketTemplate = "ShowRequestorTickets$DefaultTicketsTab";
+    $TicketTemplate = "ShowRequestorTicketsActive"
+        unless RT::Interface::Web->ComponentPathIsSafe($TicketTemplate)
+            and $m->comp_exists($TicketTemplate);
+}
 </%INIT>
 <%ARGS>
 $Ticket=>undef

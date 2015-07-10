@@ -63,11 +63,9 @@ use strict;
 use warnings;
 no warnings 'redefine';
 
-use RT::Record; 
-use RT::Topic;
-
-
 use base qw( RT::Record );
+
+use RT::Topic;
 
 sub _Init {
   my $self = shift; 
@@ -95,18 +93,16 @@ Create takes a hash of values and creates a row in the database:
 
 sub Create {
     my $self = shift;
-    my %args = ( 
+    my %args = (
                 Topic => '0',
                 ObjectType => '',
                 ObjectId => '0',
-
-		  @_);
+                @_);
     $self->SUPER::Create(
                          Topic => $args{'Topic'},
                          ObjectType => $args{'ObjectType'},
                          ObjectId => $args{'ObjectId'},
-);
-
+                     );
 }
 
 
@@ -146,10 +142,10 @@ Returns the Topic Object which has the id returned by Topic
 =cut
 
 sub TopicObj {
-	my $self = shift;
-	my $Topic =  RT::Topic->new($self->CurrentUser);
-	$Topic->Load($self->Topic());
-	return($Topic);
+    my $self = shift;
+    my $Topic =  RT::Topic->new($self->CurrentUser);
+    $Topic->Load($self->Topic());
+    return($Topic);
 }
 
 =head2 ObjectType
@@ -191,18 +187,30 @@ Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
 
 sub _CoreAccessible {
     {
-     
         id =>
-		{read => 1, type => 'int(11)', default => ''},
+                {read => 1, type => 'int(11)', default => ''},
         Topic => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
         ObjectType => 
-		{read => 1, write => 1, type => 'varchar(64)', default => ''},
+                {read => 1, write => 1, type => 'varchar(64)', default => ''},
         ObjectId => 
-		{read => 1, write => 1, type => 'int(11)', default => '0'},
+                {read => 1, write => 1, type => 'int(11)', default => '0'},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->TopicObj );
+
+    my $obj = $self->ObjectType->new( $self->CurrentUser );
+    $obj->Load( $self->ObjectId );
+    $deps->Add( out => $obj );
+}
 
 RT::Base->_ImportOverlays();
 

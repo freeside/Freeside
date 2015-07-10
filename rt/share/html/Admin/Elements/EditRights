@@ -51,8 +51,6 @@ $Principals
 $AddPrincipal => undef
 </%args>
 <%init>
-use Scalar::Util qw(blessed);
-
 # Let callbacks get at principals and context before we do anything with them
 $m->callback( Principals => $Principals, Context => $Context );
 
@@ -94,22 +92,23 @@ if ($anchor =~ /AddPrincipal/) {
       sync_anchor(<% $anchor |n,j %>);
 
       jQuery(".rights-editor").tabs({
-          select: function(ev, ui) {
-              sync_anchor(ui.tab.hash);
-              if ( jQuery(ui.tab).find('input[type=text]').size() > 0 ) {
-                  jQuery(ui.tab).find('input[type=text]:first').focus();
+          beforeActivate: function(ev, ui) {
+              sync_anchor(ui.newPanel.selector);
+              if ( ui.newTab.find('input[type=text]').size() > 0 ) {
+                  ui.newTab.find('input[type=text]:first').focus();
               }
           }
       });
 
       jQuery(".rights-editor .category-tabs").tabs({
-          cookie: { name: "rights-category-tab" /* saves current tab in cookie */ },
-          show: function(ev, ui) {
+          active: jQuery.cookie('rights-category-tab') || 0,
+          activate: function(ev, ui) {
+              jQuery.cookie('rights-category-tab', ui.newTab.index());
               jQuery(".rights-editor .category-tabs").not(this).each(function() {
                   var item     = jQuery(this);
-                  var selected = item.tabs("option", "selected") || 0;
-                  if (selected != ui.index)
-                      item.tabs("select", ui.index);
+                  var selected = item.tabs("option", "active") || 0;
+                  if (selected != ui.newTab.index())
+                      item.tabs("option", "active", ui.newTab.index());
               });
           }
       });
@@ -140,21 +139,23 @@ for my $category (@$Principals) {
     <li class="addprincipal">
       <a href="#acl-AddPrincipal">
         <input type="text" value=""
+            data-autocomplete="<% lc $AddPrincipal eq 'user' ? 'Users' : 'Groups' %>"
+% if ( lc $AddPrincipal eq 'user' ) {
+            data-autocomplete-return="Name"
+            data-autocomplete-privileged="1"
+% }
                name="AddPrincipalForRights-<% lc $AddPrincipal %>"
                id="AddPrincipalForRights-<% lc $AddPrincipal %>" />
         <script type="text/javascript">
         jQuery(function() {
             jQuery("#AddPrincipalForRights-"+<% lc $AddPrincipal |n,j%>).keyup(function(){
                 toggle_addprincipal_validity(this, true);
+            }).keydown(function(event){
+                event.stopPropagation() // Disable tabs keyboard nav
             });
 
-% if (lc $AddPrincipal eq 'group') {
-            jQuery("#AddPrincipalForRights-"+<% lc $AddPrincipal |n,j%>).autocomplete({
-                source: <% RT->Config->Get('WebPath') |n,j%>+"/Helpers/Autocomplete/Groups",
-                select: addprincipal_onselect,
-                change: addprincipal_onchange
-            });
-% }
+            jQuery("#AddPrincipalForRights-"+<% lc $AddPrincipal |n,j%>).on("autocompleteselect", addprincipal_onselect);
+            jQuery("#AddPrincipalForRights-"+<% lc $AddPrincipal |n,j%>).on("autocompletechange", addprincipal_onchange);
         });
         </script>
 % my $type = lc $AddPrincipal eq 'user' ? loc('username') : loc($AddPrincipal);
@@ -180,7 +181,7 @@ for my $category (@$Principals) {
 if ($obj->isa('RT::Group') and $obj->Domain eq 'UserDefined') {
     my $subgroups = $obj->GroupMembersObj( Recursively => 1 );
     $subgroups->LimitToUserDefinedGroups;
-    $subgroups->Limit( FIELD => 'Name', OPERATOR => '!=', VALUE => $obj->Name );
+    $subgroups->Limit( FIELD => 'Name', OPERATOR => '!=', VALUE => $obj->Name, CASESENSITIVE => 0 );
 
     if ( $subgroups->Count ) {
         my $inc = join ", ", map $_->Name, @{$subgroups->ItemsArrayRef};
