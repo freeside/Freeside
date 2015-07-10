@@ -96,16 +96,16 @@ my %default = (
     'with-CORE' => 1,
     'with-CLI' => 1,
     'with-MAILGATE' => 1, 
-    'with-DEV' => @RT_DEVEL_MODE@, 
-    'with-GPG' => @RT_GPG@,
+    'with-DEVELOPER' => @RT_DEVELOPER@,
+    'with-GPG' => @RT_GPG_DEPS@,
+    'with-SMIME' => @RT_SMIME_DEPS@,
     'with-ICAL' => 1,
     'with-SMTP' => 1,
     'with-GRAPHVIZ' => @RT_GRAPHVIZ@,
     'with-GD' => @RT_GD@,
     'with-DASHBOARDS' => 1,
     'with-USERLOGO' => 1,
-    'with-SSL-MAILGATE' => @RT_SSL_MAILGATE@,
-    'with-HTML-DOC' => @RT_DEVEL_MODE@,
+    'with-HTML-DOC' => @RT_DEVELOPER@,
 );
 $args{$_} = $default{$_} foreach grep !exists $args{$_}, keys %default;
 
