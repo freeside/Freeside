@@ -67,11 +67,21 @@ package RT::Ticket;
 
 use strict;
 use warnings;
+use base 'RT::Record';
 
+use Role::Basic 'with';
+
+# SetStatus and _SetStatus are reimplemented below (using other pieces of the
+# role) to deal with ACLs, moving tickets between queues, and automatically
+# setting dates.
+with "RT::Record::Role::Status" => { -excludes => [qw(SetStatus _SetStatus)] },
+     "RT::Record::Role::Links",
+     "RT::Record::Role::Roles";
 
 use RT::Queue;
 use RT::User;
 use RT::Record;
+use RT::Link;
 use RT::Links;
 use RT::Date;
 use RT::CustomFields;
@@ -84,53 +94,24 @@ use RT::URI::freeside;
 use MIME::Entity;
 use Devel::GlobalDestruction;
 
+sub LifecycleColumn { "Queue" }
 
-# A helper table for links mapping to make it easier
-# to build and parse links between tickets
-
-our %LINKTYPEMAP = (
-    MemberOf => { Type => 'MemberOf',
-                  Mode => 'Target', },
-    Parents => { Type => 'MemberOf',
-         Mode => 'Target', },
-    Members => { Type => 'MemberOf',
-                 Mode => 'Base', },
-    Children => { Type => 'MemberOf',
-          Mode => 'Base', },
-    HasMember => { Type => 'MemberOf',
-                   Mode => 'Base', },
-    RefersTo => { Type => 'RefersTo',
-                  Mode => 'Target', },
-    ReferredToBy => { Type => 'RefersTo',
-                      Mode => 'Base', },
-    DependsOn => { Type => 'DependsOn',
-                   Mode => 'Target', },
-    DependedOnBy => { Type => 'DependsOn',
-                      Mode => 'Base', },
-    MergedInto => { Type => 'MergedInto',
-                   Mode => 'Target', },
-
+my %ROLES = (
+    # name    =>  description
+    Owner     => 'The owner of a ticket',                             # loc_pair
+    Requestor => 'The requestor of a ticket',                         # loc_pair
+    Cc        => 'The CC of a ticket',                                # loc_pair
+    AdminCc   => 'The administrative CC of a ticket',                 # loc_pair
 );
 
-
-# A helper table for links mapping to make it easier
-# to build and parse links between tickets
-
-our %LINKDIRMAP = (
-    MemberOf => { Base => 'MemberOf',
-                  Target => 'HasMember', },
-    RefersTo => { Base => 'RefersTo',
-                Target => 'ReferredToBy', },
-    DependsOn => { Base => 'DependsOn',
-                   Target => 'DependedOnBy', },
-    MergedInto => { Base => 'MergedInto',
-                   Target => 'MergedInto', },
-
-);
-
-
-sub LINKTYPEMAP   { return \%LINKTYPEMAP   }
-sub LINKDIRMAP   { return \%LINKDIRMAP   }
+for my $role (sort keys %ROLES) {
+    RT::Ticket->RegisterRole(
+        Name            => $role,
+        EquivClasses    => ['RT::Queue'],
+        ( $role eq "Owner" ? ( Column => "Owner")   : () ),
+        ( $role !~ /Cc/    ? ( ACLOnlyInEquiv => 1) : () ),
+    );
+}
 
 our %MERGE_CACHE = (
     effective => {},
@@ -287,7 +268,7 @@ sub Create {
         $self->CurrentUser->HasRight(
             Right  => 'CreateTicket',
             Object => $QueueObj
-        )
+        ) and $QueueObj->Disabled != 1
       )
     {
         return (
@@ -295,7 +276,7 @@ sub Create {
             $self->loc( "No permission to create tickets in the queue '[_1]'", $QueueObj->Name));
     }
 
-    my $cycle = $QueueObj->Lifecycle;
+    my $cycle = $QueueObj->LifecycleObj;
     unless ( defined $args{'Status'} && length $args{'Status'} ) {
         $args{'Status'} = $cycle->DefaultOnCreate;
     }
@@ -382,90 +363,14 @@ sub Create {
         $Resolved->SetToNow;
     }
 
-    # }}}
-
     # Dealing with time fields
-
     $args{'TimeEstimated'} = 0 unless defined $args{'TimeEstimated'};
     $args{'TimeWorked'}    = 0 unless defined $args{'TimeWorked'};
     $args{'TimeLeft'}      = 0 unless defined $args{'TimeLeft'};
 
-    # }}}
-
-    # Deal with setting the owner
-
-    my $Owner;
-    if ( ref( $args{'Owner'} ) eq 'RT::User' ) {
-        if ( $args{'Owner'}->id ) {
-            $Owner = $args{'Owner'};
-        } else {
-            $RT::Logger->error('Passed an empty RT::User for owner');
-            push @non_fatal_errors,
-                $self->loc("Owner could not be set.") . " ".
-            $self->loc("Invalid value for [_1]",loc('owner'));
-            $Owner = undef;
-        }
-    }
-
-    #If we've been handed something else, try to load the user.
-    elsif ( $args{'Owner'} ) {
-        $Owner = RT::User->new( $self->CurrentUser );
-        $Owner->Load( $args{'Owner'} );
-        if (!$Owner->id) {
-            $Owner->LoadByEmail( $args{'Owner'} )
-        }
-        unless ( $Owner->Id ) {
-            push @non_fatal_errors,
-                $self->loc("Owner could not be set.") . " "
-              . $self->loc( "User '[_1]' could not be found.", $args{'Owner'} );
-            $Owner = undef;
-        }
-    }
-
-    #If we have a proposed owner and they don't have the right
-    #to own a ticket, scream about it and make them not the owner
-   
-    my $DeferOwner;  
-    if ( $Owner && $Owner->Id != RT->Nobody->Id 
-        && !$Owner->HasRight( Object => $QueueObj, Right  => 'OwnTicket' ) )
-    {
-        $DeferOwner = $Owner;
-        $Owner = undef;
-        $RT::Logger->debug('going to deffer setting owner');
-
-    }
-
-    #If we haven't been handed a valid owner, make it nobody.
-    unless ( defined($Owner) && $Owner->Id ) {
-        $Owner = RT::User->new( $self->CurrentUser );
-        $Owner->Load( RT->Nobody->Id );
-    }
-
-    # }}}
-
-# We attempt to load or create each of the people who might have a role for this ticket
-# _outside_ the transaction, so we don't get into ticket creation races
-    foreach my $type ( "Cc", "AdminCc", "Requestor" ) {
-        $args{ $type } = [ $args{ $type } ] unless ref $args{ $type };
-        foreach my $watcher ( splice @{ $args{$type} } ) {
-            next unless $watcher;
-            if ( $watcher =~ /^\d+$/ ) {
-                push @{ $args{$type} }, $watcher;
-            } else {
-                my @addresses = RT::EmailParser->ParseEmailAddress( $watcher );
-                foreach my $address( @addresses ) {
-                    my $user = RT::User->new( RT->SystemUser );
-                    my ($uid, $msg) = $user->LoadOrCreateByEmail( $address );
-                    unless ( $uid ) {
-                        push @non_fatal_errors,
-                            $self->loc("Couldn't load or create user: [_1]", $msg);
-                    } else {
-                        push @{ $args{$type} }, $user->id;
-                    }
-                }
-            }
-        }
-    }
+    # Figure out users for roles
+    my $roles = {};
+    push @non_fatal_errors, $self->_ResolveRoles( $roles, %args );
 
     $args{'Type'} = lc $args{'Type'}
         if $args{'Type'} =~ /^(ticket|approval|reminder)$/i;
@@ -476,7 +381,6 @@ sub Create {
 
     my %params = (
         Queue           => $QueueObj->Id,
-        Owner           => $Owner->Id,
         Subject         => $args{'Subject'},
         InitialPriority => $args{'InitialPriority'},
         FinalPriority   => $args{'FinalPriority'},
@@ -531,7 +435,8 @@ sub Create {
         );
     }
 
-    my $create_groups_ret = $self->_CreateTicketGroups();
+    # Create (empty) role groups
+    my $create_groups_ret = $self->_CreateRoleGroups();
     unless ($create_groups_ret) {
         $RT::Logger->crit( "Couldn't create ticket groups for ticket "
               . $self->Id
@@ -542,52 +447,40 @@ sub Create {
         );
     }
 
-    # Set the owner in the Groups table
-    # We denormalize it into the Ticket table too because doing otherwise would
-    # kill performance, bigtime. It gets kept in lockstep thanks to the magic of transactionalization
-    $self->OwnerGroup->_AddMember(
-        PrincipalId       => $Owner->PrincipalId,
-        InsideTransaction => 1
-    ) unless $DeferOwner;
+    # Codify what it takes to add each kind of group
+    my %acls = (
+        Cc        => sub { 1 },
+        Requestor => sub { 1 },
+        AdminCc   => sub {
+            my $principal = shift;
+            return 1 if $self->CurrentUserHasRight('ModifyTicket');
+            return unless $self->CurrentUserHasRight("WatchAsAdminCc");
+            return unless $principal->id == $self->CurrentUser->PrincipalId;
+            return 1;
+        },
+        Owner     => sub {
+            my $principal = shift;
+            return 1 if $principal->id == RT->Nobody->PrincipalId;
+            return $principal->HasRight( Object => $self, Right => 'OwnTicket' );
+        },
+    );
 
+    # Populate up the role groups.  This call modifies $roles.
+    push @non_fatal_errors, $self->_AddRolesOnCreate( $roles, %acls );
 
-
-    # Deal with setting up watchers
-
-    foreach my $type ( "Cc", "AdminCc", "Requestor" ) {
-        # we know it's an array ref
-        foreach my $watcher ( @{ $args{$type} } ) {
-
-            # Note that we're using AddWatcher, rather than _AddWatcher, as we
-            # actually _want_ that ACL check. Otherwise, random ticket creators
-            # could make themselves adminccs and maybe get ticket rights. that would
-            # be poor
-            my $method = $type eq 'AdminCc'? 'AddWatcher': '_AddWatcher';
-
-            my ($val, $msg) = $self->$method(
-                Type   => $type,
-                PrincipalId => $watcher,
-                Silent => 1,
-            );
-            push @non_fatal_errors, $self->loc("Couldn't set [_1] watcher: [_2]", $type, $msg)
-                unless $val;
-        }
-    } 
-
+    # Squelching
     if ($args{'SquelchMailTo'}) {
        my @squelch = ref( $args{'SquelchMailTo'} ) ? @{ $args{'SquelchMailTo'} }
         : $args{'SquelchMailTo'};
         $self->_SquelchMailTo( @squelch );
     }
 
-
-    # }}}
-
     # Add all the custom fields
-
     foreach my $arg ( keys %args ) {
         next unless $arg =~ /^CustomField-(\d+)$/i;
         my $cfid = $1;
+        my $cf = $self->LoadCustomFieldByIdentifier($cfid);
+        next unless $cf->ObjectTypeFromLookupType($cf->__Value('LookupType'))->isa(ref $self);
 
         foreach my $value (
             UNIVERSAL::isa( $args{$arg} => 'ARRAY' ) ? @{ $args{$arg} } : ( $args{$arg} ) )
@@ -607,8 +500,6 @@ sub Create {
         }
     }
 
-    # }}}
-
     # Deal with setting up links
 
     # TODO: Adding link may fire scrips on other end and those scrips
@@ -621,44 +512,9 @@ sub Create {
     # transaction and only then fire scrips on the other ends of links.
     #
     # //RUZ
-
-    foreach my $type ( keys %LINKTYPEMAP ) {
-        next unless ( defined $args{$type} );
-        foreach my $link (
-            ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) )
-        {
-            my ( $val, $msg, $obj ) = $self->__GetTicketFromURI( URI => $link );
-            unless ($val) {
-                push @non_fatal_errors, $msg;
-                next;
-            }
-
-            # Check rights on the other end of the link if we must
-            # then run _AddLink that doesn't check for ACLs
-            if ( RT->Config->Get( 'StrictLinkACL' ) ) {
-                if ( $obj && !$obj->CurrentUserHasRight('ModifyTicket') ) {
-                    push @non_fatal_errors, $self->loc('Linking. Permission denied');
-                    next;
-                }
-            }
-
-            if ( $obj && lc $obj->Status eq 'deleted' ) {
-                push @non_fatal_errors,
-                  $self->loc("Linking. Can't link to a deleted ticket");
-                next;
-            }
-
-            my ( $wval, $wmsg ) = $self->_AddLink(
-                Type                          => $LINKTYPEMAP{$type}->{'Type'},
-                $LINKTYPEMAP{$type}->{'Mode'} => $link,
-                Silent                        => !$args{'_RecordTransaction'} || $self->Type eq 'reminder',
-                'Silent'. ( $LINKTYPEMAP{$type}->{'Mode'} eq 'Base'? 'Target': 'Base' )
-                                              => 1,
-            );
-
-            push @non_fatal_errors, $wmsg unless ($wval);
-        }
-    }
+    push @non_fatal_errors, $self->_AddLinksOnCreate(\%args, {
+        Silent => !$args{'_RecordTransaction'} || ($self->Type || '') eq 'reminder',
+    });
 
     # }}}
 
@@ -724,26 +580,29 @@ sub Create {
 
     # }}}
 
-    # Now that we've created the ticket and set up its metadata, we can actually go and check OwnTicket on the ticket itself. 
-    # This might be different than before in cases where extensions like RTIR are doing clever things with RT's ACL system
-    if (  $DeferOwner ) { 
-            if (!$DeferOwner->HasRight( Object => $self, Right  => 'OwnTicket')) {
-    
-            $RT::Logger->warning( "User " . $DeferOwner->Name . "(" . $DeferOwner->id 
+    push @non_fatal_errors, $self->_AddLinksOnCreate(\%args, {
+        Silent => !$args{'_RecordTransaction'} || ($self->Type || '') eq 'reminder',
+    });
+
+    # Try to add roles once more.
+    push @non_fatal_errors, $self->_AddRolesOnCreate( $roles, %acls );
+
+    # Anything left is failure of ACLs; Cc and Requestor have no ACLs,
+    # so we don't bother checking them.
+    if (@{ $roles->{Owner} }) {
+        my $owner = $roles->{Owner}[0]->Object;
+        $RT::Logger->warning( "User " . $owner->Name . "(" . $owner->id
                 . ") was proposed as a ticket owner but has no rights to own "
                 . "tickets in " . $QueueObj->Name );
-            push @non_fatal_errors, $self->loc(
-                "Owner '[_1]' does not have rights to own this ticket.",
-                $DeferOwner->Name
-            );
-        } else {
-            $Owner = $DeferOwner;
-            $self->__Set(Field => 'Owner', Value => $Owner->id);
-
-        }
-        $self->OwnerGroup->_AddMember(
-            PrincipalId       => $Owner->PrincipalId,
-            InsideTransaction => 1
+        push @non_fatal_errors, $self->loc(
+            "Owner '[_1]' does not have rights to own this ticket.",
+            $owner->Name
+        );
+    }
+    for my $principal (@{ $roles->{AdminCc} }) {
+        push @non_fatal_errors, $self->loc(
+            "No rights to add '[_1]' as an AdminCc on this ticket",
+            $principal->Object->Name
         );
     }
 
@@ -761,7 +620,6 @@ sub Create {
 
         if ( $self->Id && $Trans ) {
 
-          #$TransObj->UpdateCustomFields(ARGSRef => \%args);
             $TransObj->UpdateCustomFields(%args);
 
             $RT::Logger->info( "Ticket " . $self->Id . " created in queue '" . $QueueObj->Name . "' by " . $self->CurrentUser->Name );
@@ -782,8 +640,6 @@ sub Create {
         }
         $RT::Handle->Commit();
         return ( $self->Id, $TransObj->Id, $ErrStr );
-
-        # }}}
     }
     else {
 
@@ -806,298 +662,6 @@ sub SetType {
     return $self->_Set(Field => 'Type', Value => $value, @_);
 }
 
-
-
-=head2 _Parse822HeadersForAttributes Content
-
-Takes an RFC822 style message and parses its attributes into a hash.
-
-=cut
-
-sub _Parse822HeadersForAttributes {
-    my $self    = shift;
-    my $content = shift;
-    my %args;
-
-    my @lines = ( split ( /\n/, $content ) );
-    while ( defined( my $line = shift @lines ) ) {
-        if ( $line =~ /^(.*?):(?:\s+(.*))?$/ ) {
-            my $value = $2;
-            my $tag   = lc($1);
-
-            $tag =~ s/-//g;
-            if ( defined( $args{$tag} ) )
-            {    #if we're about to get a second value, make it an array
-                $args{$tag} = [ $args{$tag} ];
-            }
-            if ( ref( $args{$tag} ) )
-            {    #If it's an array, we want to push the value
-                push @{ $args{$tag} }, $value;
-            }
-            else {    #if there's nothing there, just set the value
-                $args{$tag} = $value;
-            }
-        } elsif ($line =~ /^$/) {
-
-            #TODO: this won't work, since "" isn't of the form "foo:value"
-
-                while ( defined( my $l = shift @lines ) ) {
-                    push @{ $args{'content'} }, $l;
-                }
-            }
-        
-    }
-
-    foreach my $date (qw(due starts started resolved)) {
-        my $dateobj = RT::Date->new(RT->SystemUser);
-        if ( defined ($args{$date}) and $args{$date} =~ /^\d+$/ ) {
-            $dateobj->Set( Format => 'unix', Value => $args{$date} );
-        }
-        else {
-            $dateobj->Set( Format => 'unknown', Value => $args{$date} );
-        }
-        $args{$date} = $dateobj->ISO;
-    }
-    $args{'mimeobj'} = MIME::Entity->build(
-        Type    => ( $args{'contenttype'} || 'text/plain' ),
-        Charset => "UTF-8",
-        Data    => Encode::encode("UTF-8", ($args{'content'} || ''))
-    );
-
-    return (%args);
-}
-
-
-
-=head2 Import PARAMHASH
-
-Import a ticket. 
-Doesn't create a transaction. 
-Doesn't supply queue defaults, etc.
-
-Returns: TICKETID
-
-=cut
-
-sub Import {
-    my $self = shift;
-    my ( $ErrStr, $QueueObj, $Owner );
-
-    my %args = (
-        id              => undef,
-        EffectiveId     => undef,
-        Queue           => undef,
-        Requestor       => undef,
-        Type            => 'ticket',
-        Owner           => RT->Nobody->Id,
-        Subject         => '[no subject]',
-        InitialPriority => undef,
-        FinalPriority   => undef,
-        Status          => 'new',
-        TimeWorked      => "0",
-        Due             => undef,
-        Created         => undef,
-        Updated         => undef,
-        Resolved        => undef,
-        Told            => undef,
-        @_
-    );
-
-    if ( ( defined( $args{'Queue'} ) ) && ( !ref( $args{'Queue'} ) ) ) {
-        $QueueObj = RT::Queue->new(RT->SystemUser);
-        $QueueObj->Load( $args{'Queue'} );
-
-        #TODO error check this and return 0 if it's not loading properly +++
-    }
-    elsif ( ref( $args{'Queue'} ) eq 'RT::Queue' ) {
-        $QueueObj = RT::Queue->new(RT->SystemUser);
-        $QueueObj->Load( $args{'Queue'}->Id );
-    }
-    else {
-        $RT::Logger->debug(
-            "$self " . $args{'Queue'} . " not a recognised queue object." );
-    }
-
-    #Can't create a ticket without a queue.
-    unless ( defined($QueueObj) and $QueueObj->Id ) {
-        $RT::Logger->debug("$self No queue given for ticket creation.");
-        return ( 0, $self->loc('Could not create ticket. Queue not set') );
-    }
-
-    #Now that we have a queue, Check the ACLS
-    unless (
-        $self->CurrentUser->HasRight(
-            Right    => 'CreateTicket',
-            Object => $QueueObj
-        )
-      )
-    {
-        return ( 0,
-            $self->loc("No permission to create tickets in the queue '[_1]'"
-              , $QueueObj->Name));
-    }
-
-    # Deal with setting the owner
-
-    # Attempt to take user object, user name or user id.
-    # Assign to nobody if lookup fails.
-    if ( defined( $args{'Owner'} ) ) {
-        if ( ref( $args{'Owner'} ) ) {
-            $Owner = $args{'Owner'};
-        }
-        else {
-            $Owner = RT::User->new( $self->CurrentUser );
-            $Owner->Load( $args{'Owner'} );
-            if ( !defined( $Owner->id ) ) {
-                $Owner->Load( RT->Nobody->id );
-            }
-        }
-    }
-
-    #If we have a proposed owner and they don't have the right 
-    #to own a ticket, scream about it and make them not the owner
-    if (
-        ( defined($Owner) )
-        and ( $Owner->Id != RT->Nobody->Id )
-        and (
-            !$Owner->HasRight(
-                Object => $QueueObj,
-                Right    => 'OwnTicket'
-            )
-        )
-      )
-    {
-
-        $RT::Logger->warning( "$self user "
-              . $Owner->Name . "("
-              . $Owner->id
-              . ") was proposed "
-              . "as a ticket owner but has no rights to own "
-              . "tickets in '"
-              . $QueueObj->Name . "'" );
-
-        $Owner = undef;
-    }
-
-    #If we haven't been handed a valid owner, make it nobody.
-    unless ( defined($Owner) ) {
-        $Owner = RT::User->new( $self->CurrentUser );
-        $Owner->Load( RT->Nobody->UserObj->Id );
-    }
-
-    # }}}
-
-    unless ( $self->ValidateStatus( $args{'Status'} ) ) {
-        return ( 0, $self->loc("'[_1]' is an invalid value for status", $args{'Status'}) );
-    }
-
-    $self->{'_AccessibleCache'}{Created}       = { 'read' => 1, 'write' => 1 };
-    $self->{'_AccessibleCache'}{Creator}       = { 'read' => 1, 'auto'  => 1 };
-    $self->{'_AccessibleCache'}{LastUpdated}   = { 'read' => 1, 'write' => 1 };
-    $self->{'_AccessibleCache'}{LastUpdatedBy} = { 'read' => 1, 'auto'  => 1 };
-
-    # If we're coming in with an id, set that now.
-    my $EffectiveId = undef;
-    if ( $args{'id'} ) {
-        $EffectiveId = $args{'id'};
-
-    }
-
-    my $id = $self->SUPER::Create(
-        id              => $args{'id'},
-        EffectiveId     => $EffectiveId,
-        Queue           => $QueueObj->Id,
-        Owner           => $Owner->Id,
-        Subject         => $args{'Subject'},        # loc
-        InitialPriority => $args{'InitialPriority'},    # loc
-        FinalPriority   => $args{'FinalPriority'},    # loc
-        Priority        => $args{'InitialPriority'},    # loc
-        Status          => $args{'Status'},        # loc
-        TimeWorked      => $args{'TimeWorked'},        # loc
-        Type            => $args{'Type'},        # loc
-        Created         => $args{'Created'},        # loc
-        Told            => $args{'Told'},        # loc
-        LastUpdated     => $args{'Updated'},        # loc
-        Resolved        => $args{'Resolved'},        # loc
-        Due             => $args{'Due'},        # loc
-    );
-
-    # If the ticket didn't have an id
-    # Set the ticket's effective ID now that we've created it.
-    if ( $args{'id'} ) {
-        $self->Load( $args{'id'} );
-    }
-    else {
-        my ( $val, $msg ) =
-          $self->__Set( Field => 'EffectiveId', Value => $id );
-
-        unless ($val) {
-            $RT::Logger->err(
-                $self . "->Import couldn't set EffectiveId: $msg" );
-        }
-    }
-
-    my $create_groups_ret = $self->_CreateTicketGroups();
-    unless ($create_groups_ret) {
-        $RT::Logger->crit(
-            "Couldn't create ticket groups for ticket " . $self->Id );
-    }
-
-    $self->OwnerGroup->_AddMember( PrincipalId => $Owner->PrincipalId );
-
-    foreach my $watcher ( @{ $args{'Cc'} } ) {
-        $self->_AddWatcher( Type => 'Cc', Email => $watcher, Silent => 1 );
-    }
-    foreach my $watcher ( @{ $args{'AdminCc'} } ) {
-        $self->_AddWatcher( Type => 'AdminCc', Email => $watcher,
-            Silent => 1 );
-    }
-    foreach my $watcher ( @{ $args{'Requestor'} } ) {
-        $self->_AddWatcher( Type => 'Requestor', Email => $watcher,
-            Silent => 1 );
-    }
-
-    return ( $self->Id, $ErrStr );
-}
-
-
-
-
-=head2 _CreateTicketGroups
-
-Create the ticket groups and links for this ticket. 
-This routine expects to be called from Ticket->Create _inside of a transaction_
-
-It will create four groups for this ticket: Requestor, Cc, AdminCc and Owner.
-
-It will return true on success and undef on failure.
-
-
-=cut
-
-
-sub _CreateTicketGroups {
-    my $self = shift;
-    
-    my @types = (qw(Requestor Owner Cc AdminCc));
-
-    foreach my $type (@types) {
-        my $type_obj = RT::Group->new($self->CurrentUser);
-        my ($id, $msg) = $type_obj->CreateRoleGroup(Domain => 'RT::Ticket-Role',
-                                                       Instance => $self->Id, 
-                                                       Type => $type);
-        unless ($id) {
-            $RT::Logger->error("Couldn't create a ticket group of type '$type' for ticket ".
-                               $self->Id.": ".$msg);     
-            return(undef);
-        }
-     }
-    return(1);
-    
-}
-
-
-
 =head2 OwnerGroup
 
 A constructor which returns an RT::Group object containing the owner of this ticket.
@@ -1106,26 +670,34 @@ A constructor which returns an RT::Group object containing the owner of this tic
 
 sub OwnerGroup {
     my $self = shift;
-    my $owner_obj = RT::Group->new($self->CurrentUser);
-    $owner_obj->LoadTicketRoleGroup( Ticket => $self->Id,  Type => 'Owner');
-    return ($owner_obj);
+    return $self->RoleGroup( 'Owner' );
 }
 
 
+sub _HasModifyWatcherRight {
+    my $self = shift;
+    my ($type, $principal) = @_;
+
+    # ModifyTicket works in any case
+    return 1 if $self->CurrentUserHasRight('ModifyTicket');
+    # If the watcher isn't the current user then the current user has no right
+    return 0 unless $self->CurrentUser->PrincipalId == $principal->id;
+    # If it's an AdminCc and they don't have 'WatchAsAdminCc', bail
+    return 0 if $type eq 'AdminCc' and not $self->CurrentUserHasRight('WatchAsAdminCc');
+    # If it's a Requestor or Cc and they don't have 'Watch', bail
+    return 0 if ($type eq "Cc" or $type eq 'Requestor')
+        and not $self->CurrentUserHasRight('Watch');
+    return 1;
+}
 
 
 =head2 AddWatcher
 
-AddWatcher takes a parameter hash. The keys are as follows:
+Applies access control checking, then calls
+L<RT::Record::Role::Roles/AddRoleMember>.  Additionally, C<Email> is
+accepted as an alternative argument name for C<User>.
 
-Type        One of Requestor, Cc, AdminCc
-
-PrincipalId The RT::Principal id of the user or group that's being added as a watcher
-
-Email       The email address of the new watcher. If a user with this 
-            email address can't be found, a new nonprivileged user will be created.
-
-If the watcher you're trying to set has an RT account, set the PrincipalId paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
+Returns a tuple of (status, message).
 
 =cut
 
@@ -1138,138 +710,26 @@ sub AddWatcher {
         @_
     );
 
-    # ModifyTicket works in any case
-    return $self->_AddWatcher( %args )
-        if $self->CurrentUserHasRight('ModifyTicket');
-    if ( $args{'Email'} ) {
-        my ($addr) = RT::EmailParser->ParseEmailAddress( $args{'Email'} );
-        return (0, $self->loc("Couldn't parse address from '[_1]' string", $args{'Email'} ))
-            unless $addr;
-
-        if ( lc $self->CurrentUser->EmailAddress
-            eq lc RT::User->CanonicalizeEmailAddress( $addr->address ) )
-        {
-            $args{'PrincipalId'} = $self->CurrentUser->id;
-            delete $args{'Email'};
-        }
-    }
-
-    # If the watcher isn't the current user then the current user has no right
-    # bail
-    unless ( $args{'PrincipalId'} && $self->CurrentUser->id == $args{'PrincipalId'} ) {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-
-    #  If it's an AdminCc and they don't have 'WatchAsAdminCc', bail
-    if ( $args{'Type'} eq 'AdminCc' ) {
-        unless ( $self->CurrentUserHasRight('WatchAsAdminCc') ) {
-            return ( 0, $self->loc('Permission Denied') );
-        }
-    }
-
-    #  If it's a Requestor or Cc and they don't have 'Watch', bail
-    elsif ( $args{'Type'} eq 'Cc' || $args{'Type'} eq 'Requestor' ) {
-        unless ( $self->CurrentUserHasRight('Watch') ) {
-            return ( 0, $self->loc('Permission Denied') );
-        }
-    }
-    else {
-        $RT::Logger->warning( "AddWatcher got passed a bogus type");
-        return ( 0, $self->loc('Error in parameters to Ticket->AddWatcher') );
-    }
-
-    return $self->_AddWatcher( %args );
-}
-
-#This contains the meat of AddWatcher. but can be called from a routine like
-# Create, which doesn't need the additional acl check
-sub _AddWatcher {
-    my $self = shift;
-    my %args = (
-        Type   => undef,
-        Silent => undef,
-        PrincipalId => undef,
-        Email => undef,
-        @_
+    $args{ACL} = sub { $self->_HasModifyWatcherRight( @_ ) };
+    $args{User} ||= delete $args{Email};
+    my ($principal, $msg) = $self->AddRoleMember(
+        %args,
+        InsideTransaction => 1,
     );
-
-
-    my $principal = RT::Principal->new($self->CurrentUser);
-    if ($args{'Email'}) {
-        if ( RT::EmailParser->IsRTAddress( $args{'Email'} ) ) {
-            return (0, $self->loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $args{'Email'}, $self->loc($args{'Type'})));
-        }
-        my $user = RT::User->new(RT->SystemUser);
-        my ($pid, $msg) = $user->LoadOrCreateByEmail( $args{'Email'} );
-        $args{'PrincipalId'} = $pid if $pid; 
-    }
-    if ($args{'PrincipalId'}) {
-        $principal->Load($args{'PrincipalId'});
-        if ( $principal->id and $principal->IsUser and my $email = $principal->Object->EmailAddress ) {
-            return (0, $self->loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $email, $self->loc($args{'Type'})))
-                if RT::EmailParser->IsRTAddress( $email );
-
-        }
-    } 
-
- 
-    # If we can't find this watcher, we need to bail.
-    unless ($principal->Id) {
-            $RT::Logger->error("Could not load create a user with the email address '".$args{'Email'}. "' to add as a watcher for ticket ".$self->Id);
-        return(0, $self->loc("Could not find or create that user"));
-    }
-
-
-    my $group = RT::Group->new($self->CurrentUser);
-    $group->LoadTicketRoleGroup(Type => $args{'Type'}, Ticket => $self->Id);
-    unless ($group->id) {
-        return(0,$self->loc("Group not found"));
-    }
-
-    if ( $group->HasMember( $principal)) {
-
-        return ( 0, $self->loc('[_1] is already a [_2] for this ticket',
-                    $principal->Object->Name, $self->loc($args{'Type'})) );
-    }
-
-
-    my ( $m_id, $m_msg ) = $group->_AddMember( PrincipalId => $principal->Id,
-                                               InsideTransaction => 1 );
-    unless ($m_id) {
-        $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id.": ".$m_msg);
-
-        return ( 0, $self->loc('Could not make [_1] a [_2] for this ticket',
-                    $principal->Object->Name, $self->loc($args{'Type'})) );
-    }
-
-    unless ( $args{'Silent'} ) {
-        $self->_NewTransaction(
-            Type     => 'AddWatcher',
-            NewValue => $principal->Id,
-            Field    => $args{'Type'}
-        );
-    }
+    return ( 0, $msg) unless $principal;
 
     return ( 1, $self->loc('Added [_1] as a [_2] for this ticket',
                 $principal->Object->Name, $self->loc($args{'Type'})) );
 }
 
 
+=head2 DeleteWatcher
 
+Applies access control checking, then calls
+L<RT::Record::Role::Roles/DeleteRoleMember>.  Additionally, C<Email> is
+accepted as an alternative argument name for C<User>.
 
-=head2 DeleteWatcher { Type => TYPE, PrincipalId => PRINCIPAL_ID, Email => EMAIL_ADDRESS }
-
-
-Deletes a Ticket watcher.  Takes two arguments:
-
-Type  (one of Requestor,Cc,AdminCc)
-
-and one of
-
-PrincipalId (an RT::Principal Id of the watcher you want to remove)
-    OR
-Email (the email address of an existing wathcer)
-
+Returns a tuple of (status, message).
 
 =cut
 
@@ -1282,102 +742,15 @@ sub DeleteWatcher {
                  Email       => undef,
                  @_ );
 
-    unless ( $args{'PrincipalId'} || $args{'Email'} ) {
-        return ( 0, $self->loc("No principal specified") );
-    }
-    my $principal = RT::Principal->new( $self->CurrentUser );
-    if ( $args{'PrincipalId'} ) {
-
-        $principal->Load( $args{'PrincipalId'} );
-    }
-    else {
-        my $user = RT::User->new( $self->CurrentUser );
-        $user->LoadByEmail( $args{'Email'} );
-        $principal->Load( $user->Id );
-    }
-
-    # If we can't find this watcher, we need to bail.
-    unless ( $principal->Id ) {
-        return ( 0, $self->loc("Could not find that principal") );
-    }
-
-    my $group = RT::Group->new( $self->CurrentUser );
-    $group->LoadTicketRoleGroup( Type => $args{'Type'}, Ticket => $self->Id );
-    unless ( $group->id ) {
-        return ( 0, $self->loc("Group not found") );
-    }
-
-    # Check ACLS
-    #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId == $principal->id ) {
-
-        #  If it's an AdminCc and they don't have
-        #   'WatchAsAdminCc' or 'ModifyTicket', bail
-        if ( $args{'Type'} eq 'AdminCc' ) {
-            unless (    $self->CurrentUserHasRight('ModifyTicket')
-                     or $self->CurrentUserHasRight('WatchAsAdminCc') ) {
-                return ( 0, $self->loc('Permission Denied') );
-            }
-        }
-
-        #  If it's a Requestor or Cc and they don't have
-        #   'Watch' or 'ModifyTicket', bail
-        elsif ( ( $args{'Type'} eq 'Cc' ) or ( $args{'Type'} eq 'Requestor' ) )
-        {
-            unless (    $self->CurrentUserHasRight('ModifyTicket')
-                     or $self->CurrentUserHasRight('Watch') ) {
-                return ( 0, $self->loc('Permission Denied') );
-            }
-        }
-        else {
-            $RT::Logger->warning("$self -> DeleteWatcher got passed a bogus type");
-            return ( 0,
-                     $self->loc('Error in parameters to Ticket->DeleteWatcher') );
-        }
-    }
-
-    # If the watcher isn't the current user
-    # and the current user  doesn't have 'ModifyTicket' bail
-    else {
-        unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-            return ( 0, $self->loc("Permission Denied") );
-        }
-    }
-
-    # }}}
-
-    # see if this user is already a watcher.
-
-    unless ( $group->HasMember($principal) ) {
-        return ( 0,
-                 $self->loc( '[_1] is not a [_2] for this ticket',
-                             $principal->Object->Name, $args{'Type'} ) );
-    }
-
-    my ( $m_id, $m_msg ) = $group->_DeleteMember( $principal->Id );
-    unless ($m_id) {
-        $RT::Logger->error( "Failed to delete "
-                            . $principal->Id
-                            . " as a member of group "
-                            . $group->Id . ": "
-                            . $m_msg );
-
-        return (0,
-                $self->loc(
-                    'Could not remove [_1] as a [_2] for this ticket',
-                    $principal->Object->Name, $args{'Type'} ) );
-    }
-
-    unless ( $args{'Silent'} ) {
-        $self->_NewTransaction( Type     => 'DelWatcher',
-                                OldValue => $principal->Id,
-                                Field    => $args{'Type'} );
-    }
+    $args{ACL} = sub { $self->_HasModifyWatcherRight( @_ ) };
+    $args{User} ||= delete $args{Email};
+    my ($principal, $msg) = $self->DeleteRoleMember( %args );
+    return ( 0, $msg ) unless $principal;
 
     return ( 1,
              $self->loc( "[_1] is no longer a [_2] for this ticket.",
                          $principal->Object->Name,
-                         $args{'Type'} ) );
+                         $self->loc($args{'Type'}) ) );
 }
 
 
@@ -1497,22 +870,23 @@ sub CcAddresses {
 
 
 
-=head2 Requestors
+=head2 Requestor
 
 Takes nothing.
 Returns this ticket's Requestors as an RT::Group object
 
 =cut
 
+sub Requestor {
+    my $self = shift;
+    return RT::Group->new($self->CurrentUser)
+        unless $self->CurrentUserHasRight('ShowTicket');
+    return $self->RoleGroup( 'Requestor' );
+}
+
 sub Requestors {
     my $self = shift;
-
-    my $group = RT::Group->new($self->CurrentUser);
-    if ( $self->CurrentUserHasRight('ShowTicket') ) {
-        $group->LoadTicketRoleGroup(Type => 'Requestor', Ticket => $self->Id);
-    }
-    return ($group);
-
+    return $self->Requestor;
 }
 
 =head2 _Requestors
@@ -1541,12 +915,9 @@ If the user doesn't have "ShowTicket" permission, returns an empty group
 sub Cc {
     my $self = shift;
 
-    my $group = RT::Group->new($self->CurrentUser);
-    if ( $self->CurrentUserHasRight('ShowTicket') ) {
-        $group->LoadTicketRoleGroup(Type => 'Cc', Ticket => $self->Id);
-    }
-    return ($group);
-
+    return RT::Group->new($self->CurrentUser)
+        unless $self->CurrentUserHasRight('ShowTicket');
+    return $self->RoleGroup( 'Cc' );
 }
 
 
@@ -1562,12 +933,9 @@ If the user doesn't have "ShowTicket" permission, returns an empty group
 sub AdminCc {
     my $self = shift;
 
-    my $group = RT::Group->new($self->CurrentUser);
-    if ( $self->CurrentUserHasRight('ShowTicket') ) {
-        $group->LoadTicketRoleGroup(Type => 'AdminCc', Ticket => $self->Id);
-    }
-    return ($group);
-
+    return RT::Group->new($self->CurrentUser)
+        unless $self->CurrentUserHasRight('ShowTicket');
+    return $self->RoleGroup( 'AdminCc' );
 }
 
 
@@ -1599,9 +967,8 @@ sub IsWatcher {
         @_
     );
 
-    # Load the relevant group. 
-    my $group = RT::Group->new($self->CurrentUser);
-    $group->LoadTicketRoleGroup(Type => $args{'Type'}, Ticket => $self->id);
+    # Load the relevant group.
+    my $group = $self->RoleGroup( $args{'Type'} );
 
     # Find the relevant principal.
     if (!$args{PrincipalId} && $args{Email}) {
@@ -1730,16 +1097,12 @@ sub TransactionAddresses {
     $attachments->LimitByTicket( $self->id );
     $attachments->Columns( qw( id Headers TransactionId));
 
-
-    foreach my $type (qw(Create Comment Correspond)) {
-        $attachments->Limit( ALIAS    => $attachments->TransactionAlias,
-                             FIELD    => 'Type',
-                             OPERATOR => '=',
-                             VALUE    => $type,
-                             ENTRYAGGREGATOR => 'OR',
-                             CASESENSITIVE   => 1
-                           );
-    }
+    $attachments->Limit(
+        ALIAS         => $attachments->TransactionAlias,
+        FIELD         => 'Type',
+        OPERATOR      => 'IN',
+        VALUE         => [ qw(Create Comment Correspond) ],
+    );
 
     while ( my $att = $attachments->Next ) {
         foreach my $addrlist ( values %{$att->Addresses } ) {
@@ -1787,94 +1150,26 @@ sub ValidateQueue {
     }
 }
 
-
-
 sub SetQueue {
-    my $self     = shift;
-    my $NewQueue = shift;
+    my $self  = shift;
+    my $value = shift;
 
-    #Redundant. ACL gets checked in _Set;
     unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
         return ( 0, $self->loc("Permission Denied") );
     }
 
-    my $NewQueueObj = RT::Queue->new( $self->CurrentUser );
-    $NewQueueObj->Load($NewQueue);
+    my ($ok, $msg, $status) = $self->_SetLifecycleColumn(
+        Value           => $value,
+        RequireRight    => "CreateTicket"
+    );
 
-    unless ( $NewQueueObj->Id() ) {
-        return ( 0, $self->loc("That queue does not exist") );
-    }
-
-    if ( $NewQueueObj->Id == $self->QueueObj->Id ) {
-        return ( 0, $self->loc('That is the same value') );
-    }
-    unless ( $self->CurrentUser->HasRight( Right    => 'CreateTicket', Object => $NewQueueObj)) {
-        return ( 0, $self->loc("You may not create requests in that queue.") );
-    }
-
-    my $new_status;
-    my $old_lifecycle = $self->QueueObj->Lifecycle;
-    my $new_lifecycle = $NewQueueObj->Lifecycle;
-    if ( $old_lifecycle->Name ne $new_lifecycle->Name ) {
-        unless ( $old_lifecycle->HasMoveMap( $new_lifecycle ) ) {
-            return ( 0, $self->loc("There is no mapping for statuses between these queues. Contact your system administrator.") );
-        }
-        $new_status = $old_lifecycle->MoveMap( $new_lifecycle )->{ lc $self->Status };
-        return ( 0, $self->loc("Mapping between queues' lifecycles is incomplete. Contact your system administrator.") )
-            unless $new_status;
-    }
-
-    if ( $new_status ) {
-        my $clone = RT::Ticket->new( RT->SystemUser );
-        $clone->Load( $self->Id );
-        unless ( $clone->Id ) {
-            return ( 0, $self->loc("Couldn't load copy of ticket #[_1].", $self->Id) );
-        }
-
-        my $now = RT::Date->new( $self->CurrentUser );
-        $now->SetToNow;
-
-        my $old_status = $clone->Status;
-
-        #If we're changing the status from initial in old to not intial in new,
-        # record that we've started
-        if ( $old_lifecycle->IsInitial($old_status) && !$new_lifecycle->IsInitial($new_status)  && $clone->StartedObj->Unix == 0 ) {
-            #Set the Started time to "now"
-            $clone->_Set(
-                Field             => 'Started',
-                Value             => $now->ISO,
-                RecordTransaction => 0
-            );
-        }
-
-        #When we close a ticket, set the 'Resolved' attribute to now.
-        # It's misnamed, but that's just historical.
-        if ( $new_lifecycle->IsInactive($new_status) ) {
-            $clone->_Set(
-                Field             => 'Resolved',
-                Value             => $now->ISO,
-                RecordTransaction => 0,
-            );
-        }
-
-        #Actually update the status
-        my ($val, $msg)= $clone->_Set(
-            Field             => 'Status',
-            Value             => $new_status,
-            RecordTransaction => 0,
-        );
-        $RT::Logger->error( 'Status change failed on queue change: '. $msg )
-            unless $val;
-    }
-
-    my ($status, $msg) = $self->_Set( Field => 'Queue', Value => $NewQueueObj->Id() );
-
-    if ( $status ) {
+    if ($ok) {
         # Clear the queue object cache;
         $self->{_queue_obj} = undef;
+        my $queue = $self->QueueObj;
 
         # Untake the ticket if we have no permissions in the new queue
-        unless ( $self->OwnerObj->HasRight( Right => 'OwnTicket', Object => $NewQueueObj ) ) {
+        unless ($self->OwnerObj->HasRight( Right => 'OwnTicket', Object => $queue )) {
             my $clone = RT::Ticket->new( RT->SystemUser );
             $clone->Load( $self->Id );
             unless ( $clone->Id ) {
@@ -1887,12 +1182,17 @@ sub SetQueue {
         # On queue change, change queue for reminders too
         my $reminder_collection = $self->Reminders->Collection;
         while ( my $reminder = $reminder_collection->Next ) {
-            my ($status, $msg) = $reminder->SetQueue($NewQueue);
+            my ($status, $msg) = $reminder->_Set( Field => 'Queue', Value => $queue->Id(), RecordTransaction => 0 );
             $RT::Logger->error('Queue change failed for reminder #' . $reminder->Id . ': ' . $msg) unless $status;
         }
+
+        # Pick up any changes made by the clones above
+        $self->Load( $self->id );
+        RT->Logger->error("Unable to reload ticket #" . $self->id)
+            unless $self->id;
     }
 
-    return ($status, $msg);
+    return ($ok, $msg);
 }
 
 
@@ -1927,7 +1227,7 @@ sub SetSubject {
 
 Takes nothing. Returns SubjectTag for this ticket. Includes
 queue's subject tag or rtname if that is not set, ticket
-id and braces, for example:
+id and brackets, for example:
 
     [support.example.com #123456]
 
@@ -1970,12 +1270,19 @@ sub DueObj {
 
 =head2 DueAsString
 
-Returns this ticket's due date as a human readable string
+Returns this ticket's due date as a human readable string.
+
+B<DEPRECATED> and will be removed in 4.4; use C<<
+$ticket->DueObj->AsString >> instead.
 
 =cut
 
 sub DueAsString {
     my $self = shift;
+    RT->Deprecated(
+        Instead => "->DueObj->AsString",
+        Remove => "4.4",
+    );
     return $self->DueObj->AsString();
 }
 
@@ -1995,7 +1302,6 @@ sub ResolvedObj {
     return $time;
 }
 
-
 =head2 FirstActiveStatus
 
 Returns the first active status that the ticket could transition to,
@@ -2008,7 +1314,7 @@ This is used in L<RT::Action::AutoOpen>, for instance.
 sub FirstActiveStatus {
     my $self = shift;
 
-    my $lifecycle = $self->QueueObj->Lifecycle;
+    my $lifecycle = $self->LifecycleObj;
     my $status = $self->Status;
     my @active = $lifecycle->Active;
     # no change if no active statuses in the lifecycle
@@ -2033,7 +1339,7 @@ This is used in resolve action in UnsafeEmailCommands, for instance.
 sub FirstInactiveStatus {
     my $self = shift;
 
-    my $lifecycle = $self->QueueObj->Lifecycle;
+    my $lifecycle = $self->LifecycleObj;
     my $status = $self->Status;
     my @inactive = $lifecycle->Inactive;
     # no change if no inactive statuses in the lifecycle
@@ -2071,16 +1377,6 @@ sub SetStarted {
     else {
         $time_obj->SetToNow();
     }
-
-    # We need $TicketAsSystem, in case the current user doesn't have
-    # ShowTicket
-    my $TicketAsSystem = RT::Ticket->new(RT->SystemUser);
-    $TicketAsSystem->Load( $self->Id );
-    # Now that we're starting, open this ticket
-    # TODO: do we really want to force this as policy? it should be a scrip
-    my $next = $TicketAsSystem->FirstActiveStatus;
-
-    $self->SetStatus( $next ) if defined $next;
 
     return ( $self->_Set( Field => 'Started', Value => $time_obj->ISO ) );
 
@@ -2143,12 +1439,17 @@ sub ToldObj {
 
 A convenience method that returns ToldObj->AsString
 
-TODO: This should be deprecated
+B<DEPRECATED> and will be removed in 4.4; use C<<
+$ticket->ToldObj->AsString >> instead.
 
 =cut
 
 sub ToldAsString {
     my $self = shift;
+    RT->Deprecated(
+        Instead => "->ToldObj->AsString",
+        Remove => "4.4",
+    );
     if ( $self->Told ) {
         return $self->ToldObj->AsString();
     }
@@ -2159,39 +1460,45 @@ sub ToldAsString {
 
 
 
-=head2 TimeWorkedAsString
-
-Returns the amount of time worked on this ticket as a Text String
-
-=cut
-
-sub TimeWorkedAsString {
+sub _DurationAsString {
     my $self = shift;
-    my $value = $self->TimeWorked;
-
-    # return the # of minutes worked turned into seconds and written as
-    # a simple text string, this is not really a date object, but if we
-    # diff a number of seconds vs the epoch, we'll get a nice description
-    # of time worked.
+    my $value = shift;
     return "" unless $value;
     return RT::Date->new( $self->CurrentUser )
         ->DurationAsString( $value * 60 );
 }
 
+=head2 TimeWorkedAsString
 
+Returns the amount of time worked on this ticket as a text string.
+
+=cut
+
+sub TimeWorkedAsString {
+    my $self = shift;
+    return $self->_DurationAsString( $self->TimeWorked );
+}
 
 =head2  TimeLeftAsString
 
-Returns the amount of time left on this ticket as a Text String
+Returns the amount of time left on this ticket as a text string.
 
 =cut
 
 sub TimeLeftAsString {
     my $self = shift;
-    my $value = $self->TimeLeft;
-    return "" unless $value;
-    return RT::Date->new( $self->CurrentUser )
-        ->DurationAsString( $value * 60 );
+    return $self->_DurationAsString( $self->TimeLeft );
+}
+
+=head2  TimeEstimatedAsString
+
+Returns the amount of time estimated on this ticket as a text string.
+
+=cut
+
+sub TimeEstimatedAsString {
+    my $self = shift;
+    return $self->_DurationAsString( $self->TimeEstimated );
 }
 
 
@@ -2376,7 +1683,7 @@ sub _RecordNote {
 
     foreach my $argument (qw(Encrypt Sign)) {
         $args{'MIMEObj'}->head->replace(
-            "X-RT-$argument" => Encode::encode( "UTF-8", $args{ $argument } )
+            "X-RT-$argument" => $args{ $argument } ? 1 : 0
         ) if defined $args{ $argument };
     }
 
@@ -2386,7 +1693,7 @@ sub _RecordNote {
     my $org = RT->Config->Get('Organization');
     my $msgid = Encode::decode( "UTF-8", $args{'MIMEObj'}->head->get('Message-ID') );
     unless (defined $msgid && $msgid =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@\Q$org\E>/) {
-        $args{'MIMEObj'}->head->set(
+        $args{'MIMEObj'}->head->replace(
             'RT-Message-ID' => Encode::encode( "UTF-8",
                 RT::Interface::Email::GenMessageId( Ticket => $self )
             )
@@ -2409,7 +1716,12 @@ sub _RecordNote {
         return ( $Trans, $self->loc("Message could not be recorded"), undef );
     }
 
-    return ( $Trans, $self->loc("Message recorded"), $TransObj );
+    if ($args{NoteType} eq "Comment") {
+        $msg = $self->loc("Comments added");
+    } else {
+        $msg = $self->loc("Correspondence added");
+    }
+    return ( $Trans, $msg, $TransObj );
 }
 
 
@@ -2444,6 +1756,7 @@ sub DryRun {
         MIMEObj      => $Message,
         TimeTaken    => $args{'UpdateTimeWorked'},
         DryRun       => 1,
+        SquelchMailTo => $args{'SquelchMailTo'},
     );
     unless ( $Transaction ) {
         $RT::Logger->error("Couldn't fire '$action' action: $Description");
@@ -2517,20 +1830,13 @@ sub _Links {
     }
 
     # Maybe this ticket is a merge ticket
-    #my $limit_on = 'Local'. $field;
+    my $limit_on = 'Local'. $field;
     # at least to myself
     $links->Limit(
-        FIELD           => $field, #$limit_on,
-        OPERATOR        => 'MATCHES',
-        VALUE           => 'fsck.com-rt://%/ticket/'. $self->id,
-        ENTRYAGGREGATOR => 'OR',
+        FIELD           => $limit_on,
+        OPERATOR        => 'IN',
+        VALUE           => [ $self->id, $self->Merged ],
     );
-    $links->Limit(
-        FIELD           => $field, #$limit_on,
-        OPERATOR        => 'MATCHES',
-        VALUE           => 'fsck.com-rt://%/ticket/'. $_,
-        ENTRYAGGREGATOR => 'OR',
-    ) foreach $self->Merged;
     $links->Limit(
         FIELD => 'Type',
         VALUE => $type,
@@ -2538,236 +1844,6 @@ sub _Links {
 
     return $links;
 }
-
-
-
-=head2 DeleteLink
-
-Delete a link. takes a paramhash of Base, Target, Type, Silent,
-SilentBase and SilentTarget. Either Base or Target must be null.
-The null value will be replaced with this ticket's id.
-
-If Silent is true then no transaction would be recorded, in other
-case you can control creation of transactions on both base and
-target with SilentBase and SilentTarget respectively. By default
-both transactions are created.
-
-=cut 
-
-sub DeleteLink {
-    my $self = shift;
-    my %args = (
-        Base   => undef,
-        Target => undef,
-        Type   => undef,
-        Silent => undef,
-        SilentBase   => undef,
-        SilentTarget => undef,
-        @_
-    );
-
-    unless ( $args{'Target'} || $args{'Base'} ) {
-        $RT::Logger->error("Base or Target must be specified");
-        return ( 0, $self->loc('Either base or target must be specified') );
-    }
-
-    #check acls
-    my $right = 0;
-    $right++ if $self->CurrentUserHasRight('ModifyTicket');
-    if ( !$right && RT->Config->Get( 'StrictLinkACL' ) ) {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-
-    # If the other URI is an RT::Ticket, we want to make sure the user
-    # can modify it too...
-    my ($status, $msg, $other_ticket) = $self->__GetTicketFromURI( URI => $args{'Target'} || $args{'Base'} );
-    return (0, $msg) unless $status;
-    if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
-        $right++;
-    }
-    if ( ( !RT->Config->Get( 'StrictLinkACL' ) && $right == 0 ) ||
-         ( RT->Config->Get( 'StrictLinkACL' ) && $right < 2 ) )
-    {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-
-    my ($val, $Msg) = $self->SUPER::_DeleteLink(%args);
-    return ( 0, $Msg ) unless $val;
-
-    return ( $val, $Msg ) if $args{'Silent'};
-
-    my ($direction, $remote_link);
-
-    if ( $args{'Base'} ) {
-        $remote_link = $args{'Base'};
-        $direction = 'Target';
-    }
-    elsif ( $args{'Target'} ) {
-        $remote_link = $args{'Target'};
-        $direction = 'Base';
-    } 
-
-    my $remote_uri = RT::URI->new( $self->CurrentUser );
-    $remote_uri->FromURI( $remote_link );
-
-    unless ( $args{ 'Silent'. $direction } ) {
-        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
-            Type      => 'DeleteLink',
-            Field     => $LINKDIRMAP{$args{'Type'}}->{$direction},
-            OldValue  => $remote_uri->URI || $remote_link,
-            TimeTaken => 0
-        );
-        $RT::Logger->error("Couldn't create transaction: $Msg") unless $Trans;
-    }
-
-    if ( !$args{ 'Silent'. ( $direction eq 'Target'? 'Base': 'Target' ) } && $remote_uri->IsLocal ) {
-        my $OtherObj = $remote_uri->Object;
-        my ( $val, $Msg ) = $OtherObj->_NewTransaction(
-            Type           => 'DeleteLink',
-            Field          => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base}
-                                            : $LINKDIRMAP{$args{'Type'}}->{Target},
-            OldValue       => $self->URI,
-            ActivateScrips => !RT->Config->Get('LinkTransactionsRun1Scrip'),
-            TimeTaken      => 0,
-        );
-        $RT::Logger->error("Couldn't create transaction: $Msg") unless $val;
-    }
-
-    return ( $val, $Msg );
-}
-
-
-
-=head2 AddLink
-
-Takes a paramhash of Type and one of Base or Target. Adds that link to this ticket.
-
-If Silent is true then no transaction would be recorded, in other
-case you can control creation of transactions on both base and
-target with SilentBase and SilentTarget respectively. By default
-both transactions are created.
-
-=cut
-
-sub AddLink {
-    my $self = shift;
-    my %args = ( Target       => '',
-                 Base         => '',
-                 Type         => '',
-                 Silent       => undef,
-                 SilentBase   => undef,
-                 SilentTarget => undef,
-                 @_ );
-
-    unless ( $args{'Target'} || $args{'Base'} ) {
-        $RT::Logger->error("Base or Target must be specified");
-        return ( 0, $self->loc('Either base or target must be specified') );
-    }
-
-    my $right = 0;
-    $right++ if $self->CurrentUserHasRight('ModifyTicket');
-    if ( !$right && RT->Config->Get( 'StrictLinkACL' ) ) {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-
-    # If the other URI is an RT::Ticket, we want to make sure the user
-    # can modify it too...
-    my ($status, $msg, $other_ticket) = $self->__GetTicketFromURI( URI => $args{'Target'} || $args{'Base'} );
-    return (0, $msg) unless $status;
-    if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
-        $right++;
-    }
-    if ( ( !RT->Config->Get( 'StrictLinkACL' ) && $right == 0 ) ||
-         ( RT->Config->Get( 'StrictLinkACL' ) && $right < 2 ) )
-    {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-
-    return ( 0, "Can't link to a deleted ticket" )
-      if $other_ticket && lc $other_ticket->Status eq 'deleted';
-
-    return $self->_AddLink(%args);
-}
-
-sub __GetTicketFromURI {
-    my $self = shift;
-    my %args = ( URI => '', @_ );
-
-    # If the other URI is an RT::Ticket, we want to make sure the user
-    # can modify it too...
-    my $uri_obj = RT::URI->new( $self->CurrentUser );
-    unless ($uri_obj->FromURI( $args{'URI'} )) {
-        my $msg = $self->loc( "Couldn't resolve '[_1]' into a URI.", $args{'URI'} );
-        $RT::Logger->warning( $msg );
-        return( 0, $msg );
-    }
-    my $obj = $uri_obj->Resolver->Object;
-    unless ( UNIVERSAL::isa($obj, 'RT::Ticket') && $obj->id ) {
-        return (1, 'Found not a ticket', undef);
-    }
-    return (1, 'Found ticket', $obj);
-}
-
-=head2 _AddLink  
-
-Private non-acled variant of AddLink so that links can be added during create.
-
-=cut
-
-sub _AddLink {
-    my $self = shift;
-    my %args = ( Target       => '',
-                 Base         => '',
-                 Type         => '',
-                 Silent       => undef,
-                 SilentBase   => undef,
-                 SilentTarget => undef,
-                 @_ );
-
-    my ($val, $msg, $exist) = $self->SUPER::_AddLink(%args);
-    return ($val, $msg) if !$val || $exist;
-    return ($val, $msg) if $args{'Silent'};
-
-    my ($direction, $remote_link);
-    if ( $args{'Target'} ) {
-        $remote_link  = $args{'Target'};
-        $direction    = 'Base';
-    } elsif ( $args{'Base'} ) {
-        $remote_link  = $args{'Base'};
-        $direction    = 'Target';
-    }
-
-    my $remote_uri = RT::URI->new( $self->CurrentUser );
-    $remote_uri->FromURI( $remote_link );
-
-    unless ( $args{ 'Silent'. $direction } ) {
-        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
-            Type      => 'AddLink',
-            Field     => $LINKDIRMAP{$args{'Type'}}->{$direction},
-            NewValue  =>  $remote_uri->URI || $remote_link,
-            TimeTaken => 0
-        );
-        $RT::Logger->error("Couldn't create transaction: $Msg") unless $Trans;
-    }
-
-    if ( !$args{ 'Silent'. ( $direction eq 'Target'? 'Base': 'Target' ) } && $remote_uri->IsLocal ) {
-        my $OtherObj = $remote_uri->Object;
-        my ( $val, $msg ) = $OtherObj->_NewTransaction(
-            Type           => 'AddLink',
-            Field          => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base}
-                                            : $LINKDIRMAP{$args{'Type'}}->{Target},
-            NewValue       => $self->URI,
-            ActivateScrips => !RT->Config->Get('LinkTransactionsRun1Scrip'),
-            TimeTaken      => 0,
-        );
-        $RT::Logger->error("Couldn't create transaction: $msg") unless $val;
-    }
-
-    return ( $val, $msg );
-}
-
-
-
 
 =head2 MergeInto
 
@@ -2792,6 +1868,11 @@ sub MergeInto {
         return ( 0, $self->loc("New ticket doesn't exist") );
     }
 
+    # Can't merge into yourself
+    if ( $MergeInto->Id == $self->Id ) {
+        return ( 0, $self->loc("Can't merge a ticket into itself") );
+    }
+
     # Make sure the current user can modify the new ticket.
     unless ( $MergeInto->CurrentUserHasRight('ModifyTicket') ) {
         return ( 0, $self->loc("Permission Denied") );
@@ -2804,11 +1885,11 @@ sub MergeInto {
 
     $RT::Handle->BeginTransaction();
 
-    $self->_MergeInto( $MergeInto );
+    my ($ok, $msg) = $self->_MergeInto( $MergeInto );
 
-    $RT::Handle->Commit();
+    $RT::Handle->Commit() if $ok;
 
-    return ( 1, $self->loc("Merge Successful") );
+    return ($ok, $msg);
 }
 
 sub _MergeInto {
@@ -2832,8 +1913,13 @@ sub _MergeInto {
         return ( 0, $self->loc("Merge failed. Couldn't set EffectiveId") );
     }
 
+    ( $id_val, $id_msg ) = $self->__Set( Field => 'IsMerged', Value => 1 );
+    unless ($id_val) {
+        $RT::Handle->Rollback();
+        return ( 0, $self->loc("Merge failed. Couldn't set IsMerged") );
+    }
 
-    my $force_status = $self->QueueObj->Lifecycle->DefaultOnMerge;
+    my $force_status = $self->LifecycleObj->DefaultOnMerge;
     if ( $force_status && $force_status ne $self->__Value('Status') ) {
         my ( $status_val, $status_msg )
             = $self->__Set( Field => 'Status', Value => $force_status );
@@ -2899,31 +1985,28 @@ sub _MergeInto {
 
     # Update time fields
     foreach my $type (qw(TimeEstimated TimeWorked TimeLeft)) {
-
-        my $mutator = "Set$type";
-        $MergeInto->$mutator(
-            ( $MergeInto->$type() || 0 ) + ( $self->$type() || 0 ) );
-
+        $MergeInto->_Set(
+            Field => $type,
+            Value => ( $MergeInto->$type() || 0 ) + ( $self->$type() || 0 ),
+            RecordTransaction => 0,
+        );
     }
-#add all of this ticket's watchers to that ticket.
-    foreach my $watcher_type (qw(Requestors Cc AdminCc)) {
 
-        my $people = $self->$watcher_type->MembersObj;
-        my $addwatcher_type =  $watcher_type;
-        $addwatcher_type  =~ s/s$//;
-
+    # add all of this ticket's watchers to that ticket.
+    for my $role ($self->Roles) {
+        next if $self->RoleGroup($role)->SingleMemberRoleGroup;
+        my $people = $self->RoleGroup($role)->MembersObj;
         while ( my $watcher = $people->Next ) {
-            
-           my ($val, $msg) =  $MergeInto->_AddWatcher(
-                Type        => $addwatcher_type,
-                Silent => 1,
-                PrincipalId => $watcher->MemberId
+            my ($val, $msg) =  $MergeInto->AddRoleMember(
+                Type              => $role,
+                Silent            => 1,
+                PrincipalId       => $watcher->MemberId,
+                InsideTransaction => 1,
             );
             unless ($val) {
                 $RT::Logger->debug($msg);
             }
-    }
-
+        }
     }
 
     #find all of the tickets that were merged into this ticket. 
@@ -2946,6 +2029,8 @@ sub _MergeInto {
     $self->AddLink( Type   => 'MergedInto', Target => $MergeInto->Id());
 
     $MergeInto->_SetLastUpdated;    
+
+    return ( 1, $self->loc("Merge Successful") );
 }
 
 =head2 Merged
@@ -2962,11 +2047,11 @@ sub Merged {
         if $MERGE_CACHE{'merged'}{ $id };
 
     my $mergees = RT::Tickets->new( $self->CurrentUser );
-    $mergees->Limit(
+    $mergees->LimitField(
         FIELD    => 'EffectiveId',
         VALUE    => $id,
     );
-    $mergees->Limit(
+    $mergees->LimitField(
         FIELD    => 'id',
         OPERATOR => '!=',
         VALUE    => $id,
@@ -3040,130 +2125,246 @@ sub SetOwner {
 
     my $NewOwnerObj = RT::User->new( $self->CurrentUser );
     $NewOwnerObj->Load( $NewOwner );
-    unless ( $NewOwnerObj->Id ) {
+
+    my ( $val, $msg ) = $self->CurrentUserCanSetOwner(
+                            NewOwnerObj => $NewOwnerObj,
+                            Type        => $Type );
+
+    unless ($val) {
         $RT::Handle->Rollback();
-        return ( 0, $self->loc("That user does not exist") );
+        return ( $val, $msg );
     }
 
-
-    # must have ModifyTicket rights
-    # or TakeTicket/StealTicket and $NewOwner is self
-    # see if it's a take
-    if ( $OldOwnerObj->Id == RT->Nobody->Id ) {
-        unless (    $self->CurrentUserHasRight('ModifyTicket')
-                 || $self->CurrentUserHasRight('TakeTicket') ) {
-            $RT::Handle->Rollback();
-            return ( 0, $self->loc("Permission Denied") );
-        }
-    }
-
-    # see if it's a steal
-    elsif (    $OldOwnerObj->Id != RT->Nobody->Id
-            && $OldOwnerObj->Id != $self->CurrentUser->id ) {
-
-        unless (    $self->CurrentUserHasRight('ModifyTicket')
-                 || $self->CurrentUserHasRight('StealTicket') ) {
-            $RT::Handle->Rollback();
-            return ( 0, $self->loc("Permission Denied") );
-        }
-    }
-    else {
-        unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-            $RT::Handle->Rollback();
-            return ( 0, $self->loc("Permission Denied") );
-        }
-    }
-
-    # If we're not stealing and the ticket has an owner and it's not
-    # the current user
-    if ( $Type ne 'Steal' and $Type ne 'Force'
-         and $OldOwnerObj->Id != RT->Nobody->Id
-         and $OldOwnerObj->Id != $self->CurrentUser->Id )
-    {
-        $RT::Handle->Rollback();
-        return ( 0, $self->loc("You can only take tickets that are unowned") )
-            if $NewOwnerObj->id == $self->CurrentUser->id;
-        return (
-            0,
-            $self->loc("You can only reassign tickets that you own or that are unowned" )
-        );
-    }
-
-    #If we've specified a new owner and that user can't modify the ticket
-    elsif ( !$NewOwnerObj->HasRight( Right => 'OwnTicket', Object => $self ) ) {
-        $RT::Handle->Rollback();
-        return ( 0, $self->loc("That user may not own tickets in that queue") );
-    }
-
-    # If the ticket has an owner and it's the new owner, we don't need
-    # To do anything
-    elsif ( $NewOwnerObj->Id == $OldOwnerObj->Id ) {
-        $RT::Handle->Rollback();
-        return ( 0, $self->loc("That user already owns that ticket") );
-    }
-
-    # Delete the owner in the owner group, then add a new one
-    # TODO: is this safe? it's not how we really want the API to work
-    # for most things, but it's fast.
-    my ( $del_id, $del_msg );
-    for my $owner (@{$self->OwnerGroup->MembersObj->ItemsArrayRef}) {
-        ($del_id, $del_msg) = $owner->Delete();
-        last unless ($del_id);
-    }
-
-    unless ($del_id) {
-        $RT::Handle->Rollback();
-        return ( 0, $self->loc("Could not change owner: [_1]", $del_msg) );
-    }
-
-    my ( $add_id, $add_msg ) = $self->OwnerGroup->_AddMember(
-                                       PrincipalId => $NewOwnerObj->PrincipalId,
-                                       InsideTransaction => 1 );
-    unless ($add_id) {
-        $RT::Handle->Rollback();
-        return ( 0, $self->loc("Could not change owner: [_1]", $add_msg ) );
-    }
-
-    # We call set twice with slightly different arguments, so
-    # as to not have an SQL transaction span two RT transactions
-
-    my ( $val, $msg ) = $self->_Set(
-                      Field             => 'Owner',
-                      RecordTransaction => 0,
-                      Value             => $NewOwnerObj->Id,
-                      TimeTaken         => 0,
-                      TransactionType   => 'Set',
-                      CheckACL          => 0,                  # don't check acl
+    ($val, $msg ) = $self->OwnerGroup->_AddMember(
+        PrincipalId       => $NewOwnerObj->PrincipalId,
+        InsideTransaction => 1,
+        Object            => $self,
     );
-
     unless ($val) {
         $RT::Handle->Rollback;
         return ( 0, $self->loc("Could not change owner: [_1]", $msg) );
     }
 
-    ($val, $msg) = $self->_NewTransaction(
-        Type      => 'Set',
-        Field     => 'Owner',
-        NewValue  => $NewOwnerObj->Id,
-        OldValue  => $OldOwnerObj->Id,
-        TimeTaken => 0,
-    );
-
-    if ( $val ) {
-        $msg = $self->loc( "Owner changed from [_1] to [_2]",
-                           $OldOwnerObj->Name, $NewOwnerObj->Name );
-    }
-    else {
-        $RT::Handle->Rollback();
-        return ( 0, $msg );
-    }
+    $msg = $self->loc( "Owner changed from [_1] to [_2]",
+                       $OldOwnerObj->Name, $NewOwnerObj->Name );
 
     $RT::Handle->Commit();
 
     return ( $val, $msg );
 }
 
+=head2 CurrentUserCanSetOwner
 
+Confirm the current user can set the owner of the current ticket.
+
+There are several different rights to manage owner changes and
+this method evaluates these rights, guided by parameters provided.
+
+This method evaluates these rights in the context of the state of
+the current ticket. For example, it evaluates Take for tickets that
+are owned by Nobody because that is the context appropriate for the
+TakeTicket right. If you need to strictly test a user for a right,
+use HasRight to check for the right directly.
+
+For some custom types of owner changes (C<Take> and C<Steal>), it also
+verifies that those actions are possible given the current ticket owner.
+
+=head3 Rights to Set Owner
+
+The current user can set or change the Owner field in the following
+cases:
+
+=over
+
+=item *
+
+ReassignTicket unconditionally grants the right to set the owner
+to any user who has OwnTicket. This can be used to break an
+Owner lock held by another user (see below) and can be a convenient
+right for managers or administrators who need to assign tickets
+without necessarily owning them.
+
+=item *
+
+ModifyTicket grants the right to set the owner to any user who
+has OwnTicket, provided the ticket is currently owned by the current
+user or is not owned (owned by Nobody). (See the details on the Force
+parameter below for exceptions to this.)
+
+=item *
+
+If the ticket is currently not owned (owned by Nobody),
+TakeTicket is sufficient to set the owner to yourself (but not
+an arbitrary person), but only if you have OwnTicket. It is
+thus a subset of the possible changes provided by ModifyTicket.
+This exists to allow granting TakeTicket freely, and
+the broader ModifyTicket only to Owners.
+
+=item *
+
+If the ticket is currently owned by someone who is not you or
+Nobody, StealTicket is sufficient to set the owner to yourself,
+but only if you have OwnTicket. This is hence non-overlapping
+with the changes provided by ModifyTicket, and is used to break
+a lock held by another user.
+
+=back
+
+=head3 Parameters
+
+This method returns ($result, $message) with $result containing
+true or false indicating if the current user can set owner and $message
+containing a message, typically in the case of a false response.
+
+If called with no parameters, this method determines if the current
+user could set the owner of the current ticket given any
+permutation of the rights described above. This can be useful
+when determining whether to make owner-setting options available
+in the GUI.
+
+This method accepts the following parameters as a paramshash:
+
+=over
+
+=item C<NewOwnerObj>
+
+Optional; an L<RT::User> object representing the proposed new owner of
+the ticket.
+
+=item C<Type>
+
+Optional; the type of set owner operation. Valid values are C<Take>,
+C<Steal>, or C<Force>.  Note that if the type is C<Take>, this method
+will return false if the current user is already the owner; similarly,
+it will return false for C<Steal> if the ticket has no owner or the
+owner is the current user.
+
+=back
+
+As noted above, there are exceptions to the standard ticket-based rights
+described here. The Force option allows for these and is used
+when moving tickets between queues, for reminders (because the full
+owner rights system is too complex for them), and optionally during
+bulk update.
+
+=cut
+
+sub CurrentUserCanSetOwner {
+    my $self = shift;
+    my %args = ( Type => '',
+                 @_);
+    my $OldOwnerObj = $self->OwnerObj;
+
+    $args{NewOwnerObj} ||= $self->CurrentUser->UserObj
+        if $args{Type} eq "Take" or $args{Type} eq "Steal";
+
+    # Confirm rights for new owner if we got one
+    if ( $args{'NewOwnerObj'} ){
+        my ($ok, $message) = $self->_NewOwnerCanOwnTicket($args{'NewOwnerObj'}, $OldOwnerObj);
+        return ($ok, $message) if not $ok;
+    }
+
+    # ReassignTicket allows you to SetOwner, but we also need to check ticket's
+    # current owner for Take and Steal Types
+    return ( 1, undef ) if $self->CurrentUserHasRight('ReassignTicket')
+        && $args{Type} ne 'Take' && $args{Type} ne 'Steal';
+
+    # Ticket is unowned
+    if ( $OldOwnerObj->Id == RT->Nobody->Id ) {
+
+        # Steal is not applicable for unowned tickets.
+        if ( $args{'Type'} eq 'Steal' ){
+            return ( 0, $self->loc("You can only steal a ticket owned by someone else") )
+        }
+
+        # Can set owner to yourself with ModifyTicket, ReassignTicket,
+        # or TakeTicket; in all of these cases, OwnTicket is checked by
+        # _NewOwnerCanOwnTicket above.
+        if ( $args{'Type'} eq 'Take'
+             or ( $args{'NewOwnerObj'}
+                  and $args{'NewOwnerObj'}->id == $self->CurrentUser->id )) {
+            unless (    $self->CurrentUserHasRight('ModifyTicket')
+                     or $self->CurrentUserHasRight('ReassignTicket')
+                     or $self->CurrentUserHasRight('TakeTicket') ) {
+                return ( 0, $self->loc("Permission Denied") );
+            }
+        } else {
+            # Nobody -> someone else requires ModifyTicket or ReassignTicket
+            unless (    $self->CurrentUserHasRight('ModifyTicket')
+                     or $self->CurrentUserHasRight('ReassignTicket') ) {
+                return ( 0, $self->loc("Permission Denied") );
+            }
+        }
+    }
+
+    # Ticket is owned by someone else
+    # Can set owner to yourself with ModifyTicket or StealTicket
+    # and OwnTicket.
+    elsif (    $OldOwnerObj->Id != RT->Nobody->Id
+            && $OldOwnerObj->Id != $self->CurrentUser->id ) {
+
+        unless (    $self->CurrentUserHasRight('ModifyTicket')
+                 || $self->CurrentUserHasRight('ReassignTicket')
+                 || $self->CurrentUserHasRight('StealTicket') ) {
+            return ( 0, $self->loc("Permission Denied") )
+        }
+
+        if ( $args{'Type'} eq 'Steal' || $args{'Type'} eq 'Force' ){
+            return ( 1, undef ) if $self->CurrentUserHasRight('OwnTicket');
+            return ( 0, $self->loc("Permission Denied") );
+        }
+
+        # Not a steal or force
+        if ( $args{'Type'} eq 'Take'
+             or ( $args{'NewOwnerObj'}
+                  and $args{'NewOwnerObj'}->id == $self->CurrentUser->id )) {
+            return ( 0, $self->loc("You can only take tickets that are unowned") );
+        }
+
+        unless ( $self->CurrentUserHasRight('ReassignTicket') )  {
+            return ( 0, $self->loc( "You can only reassign tickets that you own or that are unowned"));
+        }
+
+    }
+    # You own the ticket
+    # Untake falls through to here, so we don't need to explicitly handle that Type
+    else {
+        if ( $args{'Type'} eq 'Take' || $args{'Type'} eq 'Steal' ) {
+            return ( 0, $self->loc("You already own this ticket") );
+        }
+
+        unless ( $self->CurrentUserHasRight('ModifyTicket')
+            || $self->CurrentUserHasRight('ReassignTicket') ) {
+            return ( 0, $self->loc("Permission Denied") );
+        }
+    }
+
+    return ( 1, undef );
+}
+
+# Verify the proposed new owner can own the ticket.
+
+sub _NewOwnerCanOwnTicket {
+    my $self = shift;
+    my $NewOwnerObj = shift;
+    my $OldOwnerObj = shift;
+
+    unless ( $NewOwnerObj->Id ) {
+        return ( 0, $self->loc("That user does not exist") );
+    }
+
+    # The proposed new owner can't own the ticket
+    if ( !$NewOwnerObj->HasRight( Right => 'OwnTicket', Object => $self ) ){
+        return ( 0, $self->loc("That user may not own tickets in that queue") );
+    }
+
+    # Ticket's current owner is the same as the new owner, nothing to do
+    elsif ( $NewOwnerObj->Id == $OldOwnerObj->Id ) {
+        return ( 0, $self->loc("That user already owns that ticket") );
+    }
+
+    return (1, undef);
+}
 
 =head2 Take
 
@@ -3211,46 +2412,13 @@ sub Steal {
 
 }
 
-
-
-
-
-=head2 ValidateStatus STATUS
-
-Takes a string. Returns true if that status is a valid status for this ticket.
-Returns false otherwise.
-
-=cut
-
-sub ValidateStatus {
-    my $self   = shift;
-    my $status = shift;
-
-    #Make sure the status passed in is valid
-    return 1 if $self->QueueObj->IsValidStatus($status);
-
-    my $i = 0;
-    while ( my $caller = (caller($i++))[3] ) {
-        return 1 if $caller eq 'RT::Ticket::SetQueue';
-    }
-
-    return 0;
-}
-
-sub Status {
-    my $self = shift;
-    my $value = $self->_Value( 'Status' );
-    return $value unless $self->QueueObj;
-    return $self->QueueObj->Lifecycle->CanonicalCase( $value );
-}
-
 =head2 SetStatus STATUS
 
-Set this ticket's status. STATUS can be one of: new, open, stalled, resolved, rejected or deleted.
+Set this ticket's status.
 
 Alternatively, you can pass in a list of named parameters (Status => STATUS, Force => FORCE, SetStarted => SETSTARTED ).
 If FORCE is true, ignore unresolved dependencies and force a status change.
-if SETSTARTED is true( it's the default value), set Started to current datetime if Started 
+if SETSTARTED is true (it's the default value), set Started to current datetime if Started 
 is not set and the status is changed from initial to not initial. 
 
 =cut
@@ -3269,27 +2437,36 @@ sub SetStatus {
     # this option was added for rtir initially
     $args{SetStarted} = 1 unless exists $args{SetStarted};
 
+    my ($valid, $msg) = $self->ValidateStatusChange($args{Status});
+    return ($valid, $msg) unless $valid;
 
-    my $lifecycle = $self->QueueObj->Lifecycle;
+    my $lifecycle = $self->LifecycleObj;
 
-    my $new = lc $args{'Status'};
-    unless ( $lifecycle->IsValid( $new ) ) {
-        return (0, $self->loc("Status '[_1]' isn't a valid status for tickets in this queue.", $self->loc($new)));
+    if (   !$args{Force}
+        && !$lifecycle->IsInactive($self->Status)
+        && $lifecycle->IsInactive($args{Status})
+        && $self->HasUnresolvedDependencies )
+    {
+        return ( 0, $self->loc('That ticket has unresolved dependencies') );
     }
 
-    my $old = $self->__Value('Status');
-    unless ( $lifecycle->IsTransition( $old => $new ) ) {
-        return (0, $self->loc("You can't change status from '[_1]' to '[_2]'.", $self->loc($old), $self->loc($new)));
-    }
+    return $self->_SetStatus(
+        Status     => $args{Status},
+        SetStarted => $args{SetStarted},
+    );
+}
 
-    my $check_right = $lifecycle->CheckRight( $old => $new );
-    unless ( $self->CurrentUserHasRight( $check_right ) ) {
-        return ( 0, $self->loc('Permission Denied') );
-    }
-
-    if ( !$args{Force} && $lifecycle->IsInactive( $new ) && $self->HasUnresolvedDependencies) {
-        return (0, $self->loc('That ticket has unresolved dependencies'));
-    }
+sub _SetStatus {
+    my $self = shift;
+    my %args = (
+        Status => undef,
+        SetStarted => 1,
+        RecordTransaction => 1,
+        Lifecycle => $self->LifecycleObj,
+        @_,
+    );
+    $args{Status} = lc $args{Status} if defined $args{Status};
+    $args{NewLifecycle} ||= $args{Lifecycle};
 
     my $now = RT::Date->new( $self->CurrentUser );
     $now->SetToNow();
@@ -3297,9 +2474,14 @@ sub SetStatus {
     my $raw_started = RT::Date->new(RT->SystemUser);
     $raw_started->Set(Format => 'ISO', Value => $self->__Value('Started'));
 
-    #If we're changing the status from new, record that we've started
-    if ( $args{SetStarted} && $lifecycle->IsInitial($old) && !$lifecycle->IsInitial($new) && !$raw_started->Unix) {
-        #Set the Started time to "now"
+    my $old = $self->__Value('Status');
+
+    # If we're changing the status from new, record that we've started
+    if ( $args{SetStarted}
+             && $args{Lifecycle}->IsInitial($old)
+             && !$args{NewLifecycle}->IsInitial($args{Status})
+             && !$raw_started->IsSet) {
+        # Set the Started time to "now"
         $self->_Set(
             Field             => 'Started',
             Value             => $now->ISO,
@@ -3307,9 +2489,9 @@ sub SetStatus {
         );
     }
 
-    #When we close a ticket, set the 'Resolved' attribute to now.
+    # When we close a ticket, set the 'Resolved' attribute to now.
     # It's misnamed, but that's just historical.
-    if ( $lifecycle->IsInactive($new) ) {
+    if ( $args{NewLifecycle}->IsInactive($args{Status}) ) {
         $self->_Set(
             Field             => 'Resolved',
             Value             => $now->ISO,
@@ -3317,18 +2499,30 @@ sub SetStatus {
         );
     }
 
-    #Actually update the status
+    # Actually update the status
     my ($val, $msg)= $self->_Set(
         Field           => 'Status',
-        Value           => $new,
+        Value           => $args{Status},
         TimeTaken       => 0,
         CheckACL        => 0,
         TransactionType => 'Status',
+        RecordTransaction => $args{RecordTransaction},
     );
     return ($val, $msg);
 }
 
+sub SetTimeWorked {
+    my $self = shift;
+    my $value = shift;
 
+    my $taken = ($value||0) - ($self->__Value('TimeWorked')||0);
+
+    return $self->_Set(
+        Field           => 'TimeWorked',
+        Value           => $value,
+        TimeTaken       => $taken,
+    );
+}
 
 =head2 Delete
 
@@ -3338,7 +2532,7 @@ Takes no arguments. Marks this ticket for garbage collection
 
 sub Delete {
     my $self = shift;
-    unless ( $self->QueueObj->Lifecycle->IsValid('deleted') ) {
+    unless ( $self->LifecycleObj->IsValid('deleted') ) {
         return (0, $self->loc('Delete operation is disabled by lifecycle configuration') ); #loc
     }
     return ( $self->SetStatus('deleted') );
@@ -3581,57 +2775,42 @@ sub _Set {
                  Value             => undef,
                  TimeTaken         => 0,
                  RecordTransaction => 1,
-                 UpdateTicket      => 1,
                  CheckACL          => 1,
                  TransactionType   => 'Set',
                  @_ );
 
     if ($args{'CheckACL'}) {
-      unless ( $self->CurrentUserHasRight('ModifyTicket')) {
-          return ( 0, $self->loc("Permission Denied"));
-      }
-   }
-
-    unless ($args{'UpdateTicket'} || $args{'RecordTransaction'}) {
-        $RT::Logger->error("Ticket->_Set called without a mandate to record an update or update the ticket");
-        return(0, $self->loc("Internal Error"));
+        unless ( $self->CurrentUserHasRight('ModifyTicket')) {
+            return ( 0, $self->loc("Permission Denied"));
+        }
     }
 
-    #if the user is trying to modify the record
+    # Avoid ACL loops using _Value
+    my $Old = $self->SUPER::_Value($args{'Field'});
 
-    #Take care of the old value we really don't want to get in an ACL loop.
-    # so ask the super::_Value
-    my $Old = $self->SUPER::_Value("$args{'Field'}");
-    
-    my ($ret, $msg);
-    if ( $args{'UpdateTicket'}  ) {
+    # Set the new value
+    my ( $ret, $msg ) = $self->SUPER::_Set(
+        Field => $args{'Field'},
+        Value => $args{'Value'}
+    );
+    return ( 0, $msg ) unless $ret;
 
-        #Set the new value
-        ( $ret, $msg ) = $self->SUPER::_Set( Field => $args{'Field'},
-                                                Value => $args{'Value'} );
-    
-        #If we can't actually set the field to the value, don't record
-        # a transaction. instead, get out of here.
-        return ( 0, $msg ) unless $ret;
-    }
+    return ( $ret, $msg ) unless $args{'RecordTransaction'};
 
-    if ( $args{'RecordTransaction'} == 1 ) {
+    my $trans;
+    ( $ret, $msg, $trans ) = $self->_NewTransaction(
+        Type      => $args{'TransactionType'},
+        Field     => $args{'Field'},
+        NewValue  => $args{'Value'},
+        OldValue  => $Old,
+        TimeTaken => $args{'TimeTaken'},
+    );
 
-        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
-                                               Type => $args{'TransactionType'},
-                                               Field     => $args{'Field'},
-                                               NewValue  => $args{'Value'},
-                                               OldValue  => $Old,
-                                               TimeTaken => $args{'TimeTaken'},
-        );
-        # Ensure that we can read the transaction, even if the change
-        # just made the ticket unreadable to us
-        $TransObj->{ _object_is_readable } = 1;
-        return ( $Trans, scalar $TransObj->BriefDescription );
-    }
-    else {
-        return ( $ret, $msg );
-    }
+    # Ensure that we can read the transaction, even if the change
+    # just made the ticket unreadable to us
+    $trans->{ _object_is_readable } = 1;
+
+    return ( $ret, scalar $trans->BriefDescription );
 }
 
 
@@ -3665,6 +2844,80 @@ sub _Value {
 
 }
 
+=head2 Attachments
+
+Customization of L<RT::Record/Attachments> for tickets.
+
+=cut
+
+sub Attachments {
+    my $self = shift;
+    my %args = (
+        WithHeaders => 0,
+        WithContent => 0,
+        @_
+    );
+    my $res = RT::Attachments->new( $self->CurrentUser );
+    unless ( $self->CurrentUserHasRight('ShowTicket') ) {
+        $res->Limit(
+            SUBCLAUSE => 'acl',
+            FIELD    => 'id',
+            VALUE    => 0,
+            ENTRYAGGREGATOR => 'AND'
+        );
+        return $res;
+    }
+
+    my @columns = grep { not /^(Headers|Content)$/ }
+                       RT::Attachment->ReadableAttributes;
+    push @columns, 'Headers' if $args{'WithHeaders'};
+    push @columns, 'Content' if $args{'WithContent'};
+
+    $res->Columns( @columns );
+    my $txn_alias = $res->TransactionAlias;
+    $res->Limit(
+        ALIAS => $txn_alias,
+        FIELD => 'ObjectType',
+        VALUE => ref($self),
+    );
+    my $ticket_alias = $res->Join(
+        ALIAS1 => $txn_alias,
+        FIELD1 => 'ObjectId',
+        TABLE2 => 'Tickets',
+        FIELD2 => 'id',
+    );
+    $res->Limit(
+        ALIAS => $ticket_alias,
+        FIELD => 'EffectiveId',
+        VALUE => $self->id,
+    );
+    return $res;
+}
+
+=head2 TextAttachments
+
+Customization of L<RT::Record/TextAttachments> for tickets.
+
+=cut
+
+sub TextAttachments {
+    my $self = shift;
+
+    my $res = $self->SUPER::TextAttachments( @_ );
+    unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
+        # if the user may not see comments do not return them
+        $res->Limit(
+            SUBCLAUSE => 'ACL',
+            ALIAS     => $res->TransactionAlias,
+            FIELD     => 'Type',
+            OPERATOR  => '!=',
+            VALUE     => 'Comment',
+        );
+    }
+
+    return $res;
+}
+
 
 
 =head2 _UpdateTimeTaken
@@ -3677,39 +2930,23 @@ only be called from _NewTransaction
 sub _UpdateTimeTaken {
     my $self    = shift;
     my $Minutes = shift;
-    my ($Total);
+    my %rest    = @_;
 
-    $Total = $self->SUPER::_Value("TimeWorked");
+    if ( my $txn = $rest{'Transaction'} ) {
+        return if $txn->__Value('Type') eq 'Set' && $txn->__Value('Field') eq 'TimeWorked';
+    }
+
+    my $Total = $self->__Value("TimeWorked");
     $Total = ( $Total || 0 ) + ( $Minutes || 0 );
-    $self->SUPER::_Set(
+    $self->_Set(
         Field => "TimeWorked",
-        Value => $Total
+        Value => $Total,
+        RecordTransaction => 0,
+        CheckACL => 0,
     );
 
     return ($Total);
 }
-
-
-
-
-
-=head2 CurrentUserHasRight
-
-  Takes the textual name of a Ticket scoped right (from RT::ACE) and returns
-1 if the user has that right. It returns 0 if the user doesn't have that right.
-
-=cut
-
-sub CurrentUserHasRight {
-    my $self  = shift;
-    my $right = shift;
-
-    return $self->CurrentUser->PrincipalObj->HasRight(
-        Object => $self,
-        Right  => $right,
-    )
-}
-
 
 =head2 CurrentUserCanSee
 
@@ -3719,43 +2956,29 @@ Returns true if the current user can see the ticket, using ShowTicket
 
 sub CurrentUserCanSee {
     my $self = shift;
-    return $self->CurrentUserHasRight('ShowTicket');
-}
+    my ($what, $txn) = @_;
+    return 0 unless $self->CurrentUserHasRight('ShowTicket');
 
-=head2 HasRight
+    return 1 if $what ne "Transaction";
 
- Takes a paramhash with the attributes 'Right' and 'Principal'
-  'Right' is a ticket-scoped textual right from RT::ACE 
-  'Principal' is an RT::User object
-
-  Returns 1 if the principal has the right. Returns undef if not.
-
-=cut
-
-sub HasRight {
-    my $self = shift;
-    my %args = (
-        Right     => undef,
-        Principal => undef,
-        @_
-    );
-
-    unless ( ( defined $args{'Principal'} ) and ( ref( $args{'Principal'} ) ) )
-    {
-        Carp::cluck("Principal attrib undefined for Ticket::HasRight");
-        $RT::Logger->crit("Principal attrib undefined for Ticket::HasRight");
-        return(undef);
+    # If it's a comment, we need to be extra special careful
+    my $type = $txn->__Value('Type');
+    if ( $type eq 'Comment' ) {
+        unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
+            return 0;
+        }
+    } elsif ( $type eq 'CommentEmailRecord' ) {
+        unless ( $self->CurrentUserHasRight('ShowTicketComments')
+            && $self->CurrentUserHasRight('ShowOutgoingEmail') ) {
+            return 0;
+        }
+    } elsif ( $type eq 'EmailRecord' ) {
+        unless ( $self->CurrentUserHasRight('ShowOutgoingEmail') ) {
+            return 0;
+        }
     }
-
-    return (
-        $args{'Principal'}->HasRight(
-            Object => $self,
-            Right     => $args{'Right'}
-          )
-    );
+    return 1;
 }
-
-
 
 =head2 Reminders
 
@@ -3856,8 +3079,12 @@ sub LoadCustomFieldByIdentifier {
 
     my $cf = RT::CustomField->new( $self->CurrentUser );
     $cf->SetContextObject( $self );
-    $cf->LoadByNameAndQueue( Name => $field, Queue => $self->Queue );
-    $cf->LoadByNameAndQueue( Name => $field, Queue => 0 ) unless $cf->id;
+    $cf->LoadByName(
+        Name          => $field,
+        LookupType    => $self->CustomFieldLookupType,
+        ObjectId      => $self->Queue,
+        IncludeGlobal => 1,
+    );
     return $cf;
 }
 
@@ -3890,6 +3117,87 @@ sub ACLEquivalenceObjects {
 
 }
 
+=head2 ModifyLinkRight
+
+=cut
+
+sub ModifyLinkRight { "ModifyTicket" }
+
+=head2 Forward Transaction => undef, To => '', Cc => '', Bcc => ''
+
+Forwards transaction with all attachments as 'message/rfc822'.
+
+=cut
+
+sub Forward {
+    my $self = shift;
+    my %args = (
+        Transaction    => undef,
+        Subject        => '',
+        To             => '',
+        Cc             => '',
+        Bcc            => '',
+        Content        => '',
+        ContentType    => 'text/plain',
+        DryRun         => 0,
+        CommitScrips   => 1,
+        @_
+    );
+
+    unless ( $self->CurrentUserHasRight('ForwardMessage') ) {
+        return ( 0, $self->loc("Permission Denied") );
+    }
+
+    $args{$_} = join ", ", map { $_->format } RT::EmailParser->ParseEmailAddress( $args{$_} || '' ) for qw(To Cc Bcc);
+
+    return (0, $self->loc("Can't forward: no valid email addresses specified") )
+        unless grep {length $args{$_}} qw/To Cc Bcc/;
+
+    my $mime = MIME::Entity->build(
+        Type    => $args{ContentType},
+        Data    => Encode::encode( "UTF-8", $args{Content} ),
+    );
+
+    $mime->head->replace( $_ => Encode::encode('UTF-8',$args{$_} ) )
+      for grep defined $args{$_}, qw(Subject To Cc Bcc);
+    $mime->head->replace(
+        From => Encode::encode( 'UTF-8',
+            RT::Interface::Email::GetForwardFrom(
+                Transaction => $args{Transaction},
+                Ticket      => $self,
+            )
+        )
+    );
+
+    if ($args{'DryRun'}) {
+        $RT::Handle->BeginTransaction();
+        $args{'CommitScrips'} = 0;
+    }
+
+    my ( $ret, $msg ) = $self->_NewTransaction(
+        $args{Transaction}
+        ? (
+            Type  => 'Forward Transaction',
+            Field => $args{Transaction}->id,
+          )
+        : (
+            Type  => 'Forward Ticket',
+            Field => $self->id,
+        ),
+        Data  => join( ', ', grep { length } $args{To}, $args{Cc}, $args{Bcc} ),
+        MIMEObj => $mime,
+        CommitScrips => $args{'CommitScrips'},
+    );
+
+    unless ($ret) {
+        $RT::Logger->error("Failed to create transaction: $msg");
+    }
+
+    if ($args{'DryRun'}) {
+        $RT::Handle->Rollback();
+    }
+    return ( $ret, $self->loc('Message recorded') );
+}
 
 1;
 
@@ -3902,10 +3210,6 @@ Jesse Vincent, jesse@bestpractical.com
 RT
 
 =cut
-
-
-use RT::Queue;
-use base 'RT::Record';
 
 sub Table {'Tickets'}
 
@@ -4324,58 +3628,141 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         EffectiveId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+        IsMerged =>
+                {read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => undef},
         Queue =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Type =>
-		{read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
         IssueStatement =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Resolution =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Owner =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Subject =>
-		{read => 1, write => 1, sql_type => 12, length => 200,  is_blob => 0,  is_numeric => 0,  type => 'varchar(200)', default => '[no subject]'},
+                {read => 1, write => 1, sql_type => 12, length => 200,  is_blob => 0,  is_numeric => 0,  type => 'varchar(200)', default => '[no subject]'},
         InitialPriority =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         FinalPriority =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Priority =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         TimeEstimated =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         TimeWorked =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Status =>
-		{read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
         TimeLeft =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Told =>
-		{read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Starts =>
-		{read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Started =>
-		{read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Due =>
-		{read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Resolved =>
-		{read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, write => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         Disabled =>
-		{read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => '0'},
+                {read => 1, write => 1, sql_type => 5, length => 6,  is_blob => 0,  is_numeric => 1,  type => 'smallint(6)', default => '0'},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    # Links
+    my $links = RT::Links->new( $self->CurrentUser );
+    $links->Limit(
+        SUBCLAUSE       => "either",
+        FIELD           => $_,
+        VALUE           => $self->URI,
+        ENTRYAGGREGATOR => 'OR'
+    ) for qw/Base Target/;
+    $deps->Add( in => $links );
+
+    # Tickets which were merged in
+    my $objs = RT::Tickets->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'EffectiveId', VALUE => $self->Id );
+    $objs->Limit( FIELD => 'id', OPERATOR => '!=', VALUE => $self->Id );
+    $deps->Add( in => $objs );
+
+    # Ticket role groups( Owner, Requestors, Cc, AdminCc )
+    $objs = RT::Groups->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'Domain', VALUE => 'RT::Ticket-Role', CASESENSITIVE => 0 );
+    $objs->Limit( FIELD => 'Instance', VALUE => $self->Id );
+    $deps->Add( in => $objs );
+
+    # Queue
+    $deps->Add( out => $self->QueueObj );
+
+    # Owner
+    $deps->Add( out => $self->OwnerObj );
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# Tickets which were merged in
+    my $objs = RT::Tickets->new( $self->CurrentUser );
+    $objs->{'allow_deleted_search'} = 1;
+    $objs->Limit( FIELD => 'EffectiveId', VALUE => $self->Id );
+    $objs->Limit( FIELD => 'id', OPERATOR => '!=', VALUE => $self->Id );
+    push( @$list, $objs );
+
+# Ticket role groups( Owner, Requestors, Cc, AdminCc )
+    $objs = RT::Groups->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'Domain', VALUE => 'RT::Ticket-Role', CASESENSITIVE => 0 );
+    $objs->Limit( FIELD => 'Instance', VALUE => $self->Id );
+    push( @$list, $objs );
+
+#TODO: Users, Queues if we wish export tool
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'}
+    );
+
+    return $self->SUPER::__DependsOn( %args );
+}
+
+sub Serialize {
+    my $self = shift;
+    my %args = (@_);
+    my %store = $self->SUPER::Serialize(@_);
+
+    my $obj = RT::Ticket->new( RT->SystemUser );
+    $obj->Load( $store{EffectiveId} );
+    $store{EffectiveId} = \($obj->UID);
+
+    return %store;
+}
 
 RT::Base->_ImportOverlays();
 

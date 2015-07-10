@@ -60,13 +60,12 @@ unless ( @fields ) {
             html => '<input name="Subject" value="'.(defined($subject) ? $m->interp->apply_escapes( $subject, 'h' ) : '').'" />',
         },
         {   name => 'Status',
-            comp => '/Elements/SelectStatus',
+            comp => '/Ticket/Elements/SelectStatus',
             args => {
                 Name => 'Status',
-                DefaultLabel => loc("[_1] (Unchanged)",loc($TicketObj->Status)),
-                Default => $defaults{'Status'} || undef,
+                Default => $defaults{'Status'},
+                DefaultFromArgs => 0,
                 TicketObj => $TicketObj,
-                QueueObj => $TicketObj->QueueObj,
                 onchange => 'changeStatus()',
             },
         },
@@ -148,7 +147,7 @@ for my $field (@fields) {
 % }
 % for my $field (@fields) {
  <tr class="<% lc $field->{'name'} %>">\
-<td class="label"><&|/l&><% $field->{'name'} %></&>:</td>\
+<td class="label"><% loc($field->{'name'}) %>:</td>\
 <td class="value"><% $field->{'html'} |n %></td>\
 </tr>
 % }

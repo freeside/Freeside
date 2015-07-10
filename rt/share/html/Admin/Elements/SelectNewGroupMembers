@@ -45,39 +45,43 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+<table>
 % if ( $Show ne 'Groups' ) {
-<label for="<% $Name %>Users"><&|/l&>Add user</&>:</label>
-<input type="text" value="" name="<% $Name %>Users" id="<% $Name %>Users" /><br />
+<tr>
+<td class="label"><label for="<% $Name %>Users"><&|/l&>Add user</&>:</label></td>
+<td>
+<input type="text" value="" name="<% $Name %>Users" id="<% $Name %>Users" data-autocomplete="Users" data-autocomplete-return="Name" data-autocomplete-privileged="1" data-autocomplete-exclude="<% $user_ids |n %>" />
 <script type="text/javascript">
 jQuery(function(){
-    jQuery("#"+<% $Name |n,j%>+"Users").autocomplete({
-        source: <% RT->Config->Get('WebPath') |n,j%>+"/Helpers/Autocomplete/Users?return=Name;privileged=1;exclude="+<% $user_ids |n,u,j %>,
-        // Auto-submit once a user is chosen
-        select: function( event, ui ) {
-            jQuery(event.target).val(ui.item.value);
-            jQuery(event.target).closest("form").submit();
-        }
-    }).addClass("autocompletes-user");
-});
-</script>
-% }
-
-% if ( $Show ne 'Users' ) {
-<label for="<% $Name %>Groups"><&|/l&>Add group</&>:</label>
-<input type="text" value="" name="<% $Name %>Groups" id="<% $Name %>Groups" /><br />
-<script type="text/javascript">
-jQuery(function(){
-    jQuery("#"+<% $Name |n,j%>+"Groups").autocomplete({
-        source: <% RT->Config->Get('WebPath') |n,j%>+"/Helpers/Autocomplete/Groups?exclude="+<% $group_ids |n,u,j %>,
-        // Auto-submit once a user is chosen
-        select: function( event, ui ) {
-            jQuery(event.target).val(ui.item.value);
-            jQuery(event.target).closest("form").submit();
-        }
+    // Auto-submit once a user is chosen
+    jQuery("#"+<% $Name |n,j%>+"Users").on("autocompleteselect", function( event, ui ) {
+        jQuery(event.target).val(ui.item.value);
+        jQuery(event.target).closest("form").submit();
     });
 });
 </script>
+</td>
+</tr>
 % }
+
+% if ( $Show ne 'Users' ) {
+<tr>
+<td class="label"><label for="<% $Name %>Groups"><&|/l&>Add group</&>:</label></td>
+<td>
+<input type="text" value="" name="<% $Name %>Groups" id="<% $Name %>Groups" data-autocomplete="Groups" data-autocomplete-exclude="<% $group_ids |n %>" />
+<script type="text/javascript">
+jQuery(function(){
+    // Auto-submit once a group is chosen
+    jQuery("#"+<% $Name |n,j%>+"Groups").on("autocompleteselect", function( event, ui ) {
+        jQuery(event.target).val(ui.item.value);
+        jQuery(event.target).closest("form").submit();
+    });
+});
+</script>
+</td>
+</tr>
+% }
+</table>
 <%INIT>
 my $user_ids  = join(',', grep { $SkipUsers->{$_} } keys %$SkipUsers);
 my $group_ids = join(',', grep { $SkipGroups->{$_} } keys %$SkipGroups);

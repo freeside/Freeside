@@ -69,7 +69,7 @@ my %squelched = ProcessTransactionSquelching( \%ARGS );
 %                  @{$Object->Scrips->Prepared};
 %     for my $scrip (@scrips) {
           <b><% $scrip->Description || loc('Scrip #[_1]',$scrip->id) %></b><br />
-          <&|/l, loc($scrip->ConditionObj->Name), loc($scrip->ActionObj->Name), loc($scrip->TemplateObj->Name)&>[_1] [_2] with template [_3]</&>
+          <&|/l, loc($scrip->ConditionObj->Name), loc($scrip->ActionObj->Name), loc($scrip->Template)&>[_1] [_2] with template [_3]</&>
           <br />
 %         for my $type (qw(To Cc Bcc)) {
 %             my @addresses =  $scrip->ActionObj->Action->$type();
@@ -88,31 +88,7 @@ my %squelched = ProcessTransactionSquelching( \%ARGS );
               </ul>
 %         }
 %         if (RT->Config->Get('PreviewScripMessages')) {
-              <textarea cols="80" rows="5"><% Encode::decode( "UTF-8", $scrip->ActionObj->TemplateObj->MIMEObj->as_string ) %></textarea>
-%         }
-          <br />
-%     }
-% }
-
-% if ( $Object->Rules ) {
-%     for my $rule (@{$Object->Rules}) {
-%         next unless $rule->{hints} && $rule->{hints}{class} eq 'SendEmail';
-          <b><% $rule->Describe %></b>
-%         my $data = $rule->{hints}{recipients};
-%         for my $type (qw(To Cc Bcc)) {
-%             next unless @{$data->{$type}};
-              <ul>
-%             for my $address (@{$data->{$type}}) {
-                  <li>
-%                 my $checked = not $squelched{$address};
-%                 $m->callback(CallbackName => 'BeforeAddress', Ticket => $TicketObj, Address => Email::Address->parse($address), Type => $type, Checked => \$checked);
-%                 $recips{$address}++;
-                  <b><%loc($type)%></b>: <input type="checkbox" class="checkbox" name="TxnSendMailTo" <% $checked ? 'checked="checked"' : '' |n%> value="<%$address%>" id="TxnSendMailTo-<% $address %>-<% $recips{$address} %>" />
-                  <label for="TxnSendMailTo-<% $address %>-<% $recips{$address} %>"><%$address%></label>
-%                 $m->callback(CallbackName => 'AfterAddress', Ticket => $TicketObj, Address => Email::Address->parse($address), Type => $type);
-                  </li>
-%             }
-              </ul>
+              <textarea cols="80" rows="5"><% Encode::decode( "UTF-8", $scrip->ActionObj->Action->TemplateObj->MIMEObj->as_string )%></textarea>
 %         }
           <br />
 %     }

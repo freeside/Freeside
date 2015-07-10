@@ -3,15 +3,10 @@ use strict;
 use warnings;
 
 use Test::Deep;
-use File::Spec;
-use Test::More tests => 44 + 1; # plus one for warnings check
-use RT::Test ();
-BEGIN {
-    my $shredder_utils = RT::Test::get_relocatable_file('utils.pl',
-        File::Spec->curdir());
-    require $shredder_utils;
-}
+use RT::Test::Shredder tests => 49;
+my $test = "RT::Test::Shredder";
 
+use_ok('RT::Shredder');
 
 use_ok('RT::Shredder::Plugin::Tickets');
 {
@@ -21,8 +16,7 @@ use_ok('RT::Shredder::Plugin::Tickets');
     is(lc $plugin->Type, 'search', 'correct type');
 }
 
-init_db();
-create_savepoint('clean');
+$test->create_savepoint('clean');
 use_ok('RT::Ticket');
 use_ok('RT::Tickets');
 
@@ -59,11 +53,12 @@ use_ok('RT::Tickets');
     ok($has{$pid}, "parent is in the result set");
     ok($has{$cid}, "child is in the result set");
 
-    my $shredder = shredder_new();
+    my $shredder = $test->shredder_new();
     $shredder->PutObjects( Objects => \@objs );
     $shredder->WipeoutAll;
+    $test->db_is_valid;
 }
-cmp_deeply( dump_current_and_savepoint('clean'), "current DB equal to savepoint");
+cmp_deeply( $test->dump_current_and_savepoint('clean'), "current DB equal to savepoint");
 
 { # create parent and child and link them reqursively to check that we don't hang
     my $parent = RT::Ticket->new( RT->SystemUser );
@@ -103,11 +98,12 @@ cmp_deeply( dump_current_and_savepoint('clean'), "current DB equal to savepoint"
     ok($has{$pid}, "parent is in the result set");
     ok($has{$cid}, "child is in the result set");
 
-    my $shredder = shredder_new();
+    my $shredder = $test->shredder_new();
     $shredder->PutObjects( Objects => \@objs );
     $shredder->WipeoutAll;
+    $test->db_is_valid;
 }
-cmp_deeply( dump_current_and_savepoint('clean'), "current DB equal to savepoint");
+cmp_deeply( $test->dump_current_and_savepoint('clean'), "current DB equal to savepoint");
 
 { # create parent and child and check functionality of 'apply_query_to_linked' arg
     my $parent = RT::Ticket->new( RT->SystemUser );
@@ -141,9 +137,10 @@ cmp_deeply( dump_current_and_savepoint('clean'), "current DB equal to savepoint"
     ok(!$has{$cid1}, "first child is in the result set");
     ok($has{$cid2}, "second child is in the result set");
 
-    my $shredder = shredder_new();
+    my $shredder = $test->shredder_new();
     $shredder->PutObjects( Objects => \@objs );
     $shredder->WipeoutAll;
+    $test->db_is_valid;
 
     my $ticket = RT::Ticket->new( RT->SystemUser );
     $ticket->Load( $cid1 );
@@ -151,5 +148,6 @@ cmp_deeply( dump_current_and_savepoint('clean'), "current DB equal to savepoint"
 
     $shredder->PutObjects( Objects => $ticket );
     $shredder->WipeoutAll;
+    $test->db_is_valid;
 }
-cmp_deeply( dump_current_and_savepoint('clean'), "current DB equal to savepoint");
+cmp_deeply( $test->dump_current_and_savepoint('clean'), "current DB equal to savepoint");

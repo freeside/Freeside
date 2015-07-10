@@ -61,7 +61,8 @@ my $SearchParams = { map { $_ => $args->{$_} } @{$self->{SearchFields}} };
 
 if ( my ( $container_object, $search_id ) = _parse_saved_search(
             $args->{'SavedSearchLoad'} || $args->{'SavedChartSearchId'} ) ) {
-    my $search = $container_object->Attributes->WithId($search_id);
+    my $search = RT::Attribute->new( $session{'CurrentUser'} );
+    $search->Load($search_id);
     # We have a $search and now; import the others
     $self->{SearchId} = $args->{'SavedSearchLoad'} ||
         $args->{'SavedChartSearchId'};
@@ -110,7 +111,7 @@ if ( $args->{SavedSearchSave} ) {
         # rename
         $search->SetDescription( $args->{SavedSearchDescription} );
         $search->SetSubValues(%$SearchParams);
-	    push @actions, loc( '[_1] [_2] updated.', loc($self->{SearchType}), $args->{SavedSearchDescription} );
+        push @actions, loc( '[_1] [_2] updated.', loc($self->{SearchType}), $args->{SavedSearchDescription} );
     }
     else {
         # new saved search
@@ -122,7 +123,7 @@ if ( $args->{SavedSearchSave} ) {
             SearchParams => $SearchParams
         );
         if ($ok) {
-	        $self->{CurrentSearch}{Object} = $saved_search->{Attribute};
+            $self->{CurrentSearch}{Object} = $saved_search->{Attribute};
             $self->{SearchId} = $args->{SavedChartSearchId} = 'RT::User-' .
                 $session{CurrentUser}->id . '-SavedSearch-' .
                 $saved_search->Id;

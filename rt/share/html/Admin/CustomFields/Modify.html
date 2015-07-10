@@ -45,7 +45,12 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<& /Admin/Elements/Header, Title => $title &>
+<& /Admin/Elements/Header,
+    Title => $title,
+    Focus => (($added_cfv or $ARGS{FocusAddValue})
+        ? "input[name=CustomField-$id-Value-new-Name]"
+        : undef),
+    &>
 <& /Elements/Tabs &>
 <& /Elements/ListActions, actions => \@results &>
 
@@ -125,7 +130,7 @@
 <i><&|/l&>Some browsers may only load content from the same domain as your RT server.</&></i>
 </div></td></tr>
 
-% if ( $CustomFieldObj->Id && $CustomFieldObj->IsSelectionType && !$CustomFieldObj->IsExternalValues ) {
+% if ( $CustomFieldObj->Id && $CustomFieldObj->IsSelectionType ) {
 <tr class="categoriesbasedon"><td class="label"><&|/l&>Categories are based on</&></td><td>
 <& /Admin/Elements/SelectCustomField,
     Name => "BasedOn",
@@ -150,8 +155,8 @@
 
 <tr><td class="label">&nbsp;</td><td>
 <input type="hidden" class="hidden" name="SetEnabled" value="1" />
-<input type="checkbox" class="checkbox" name="Enabled" value="1" <% $EnabledChecked |n%> />
-<&|/l&>Enabled (Unchecking this box disables this custom field)</&>
+<input type="checkbox" class="checkbox" id="Enabled" name="Enabled" value="1" <% $EnabledChecked |n %> />
+<label for="Enabled"><&|/l&>Enabled (Unchecking this box disables this custom field)</&></label>
 </td></tr>
 
 % $m->callback(CallbackName => 'EndOfTable', CustomField => $CustomFieldObj, CFvalidations => \@CFvalidations);
@@ -170,7 +175,7 @@
 
 </form>
 <%INIT>
-my ($title, @results);
+my ($title, @results, $added_cfv);
 
 my $CustomFieldObj = RT::CustomField->new( $session{'CurrentUser'} );
 
@@ -191,7 +196,7 @@ else {
             LinkValueTo   => $LinkValueTo,
             IncludeContentForValue => $IncludeContentForValue,
             BasedOn       => $BasedOn,
-            Disabled      => !$Enabled,
+            Disabled      => ($Enabled ? 0 : 1),
             NoClone       => !$YesClone,
         );
         if (!$val) {
@@ -306,6 +311,7 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
                 $_ => $ARGS{ $paramtag ."-new-$_" } } qw/ Name Description SortOrder Category/
         );
         push (@results, $msg);
+        $added_cfv = 1 if $id;
 
         my $cfv = RT::CustomFieldValue->new( $session{CurrentUser} );
         $cfv->Load($id);
@@ -314,12 +320,27 @@ CustomFieldObj => $CustomFieldObj, CustomFieldValueObj => $cfv, ARGSRef => \%ARG
     }
 }
 
+if ( $CustomFieldObj->id && $CustomFieldObj->IsOnlyGlobal ) {
+    my ( $ret, $msg );
+    my $object = $CustomFieldObj->RecordClassFromLookupType->new( $session{'CurrentUser'} );
+
+    if ( $CustomFieldObj->Disabled && $CustomFieldObj->IsGlobal ) {
+        ( $ret, $msg ) = $CustomFieldObj->RemoveFromObject($object);
+    }
+    elsif ( !$CustomFieldObj->Disabled && !$CustomFieldObj->IsGlobal ) {
+        ( $ret, $msg ) = $CustomFieldObj->AddToObject($object);
+    }
+
+    # successful msg("object created" or "object deleted ) is useless here
+    push @results, $msg unless $ret;
+}
+
 $id = $CustomFieldObj->id if $CustomFieldObj->id;
 
 # This code does automatic redirection if any updates happen.
 MaybeRedirectForResults(
     Actions     => \@results,
-    Arguments   => { id => $id },
+    Arguments   => { id => $id, FocusAddValue => ($added_cfv ? 1 : 0) },
 ) if $CustomFieldObj->id;
 
 

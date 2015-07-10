@@ -420,7 +420,7 @@ EOF
 diag "Testing preservation of binary attachments";
 {
     # Get a binary blob (Best Practical logo) 
-    my $LOGO_FILE = $RT::MasonComponentRoot .'/NoAuth/images/bpslogo.png';
+    my $LOGO_FILE = $RT::StaticPath .'/images/bpslogo.png';
 
     # Create a mime entity with an attachment
     my $entity = MIME::Entity->build(
@@ -636,13 +636,15 @@ EOF
 close (MAIL);
 is ($? >> 8, 0, "The mail gateway exited normally");
 
+DBIx::SearchBuilder::Record::Cachable->FlushCache;
+
 $tick = RT::Ticket->new(RT->SystemUser);
 $tick->Load( $id );
 is( $tick->Id, $id, 'load correct ticket');
 is( $tick->OwnerObj->EmailAddress, 'root@localhost', 'successfuly take ticket via email');
 
-# check that there is no text transactions writen
-is( $tick->Transactions->Count, 2, 'no superfluous transactions');
+# check that there is no text transactions writen (create + 2 for take)
+is( $tick->Transactions->Count, 3, 'no superfluous transactions');
 
 my $status;
 ($status, $msg) = $tick->SetOwner( RT->Nobody->Id, 'Force' );
@@ -672,8 +674,8 @@ is( $tick->OwnerObj->EmailAddress, 'root@localhost', 'successfuly take ticket vi
 my $txns = $tick->Transactions;
 $txns->Limit( FIELD => 'Type', VALUE => 'Correspond');
 $txns->OrderBy( FIELD => 'id', ORDER => 'DESC' );
-# +1 because of auto open
-is( $tick->Transactions->Count, 6, 'no superfluous transactions');
+# +2 from owner to nobody, +1 because of auto open, +2 from take, +1 from correspond
+is( $tick->Transactions->Count, 9, 'no superfluous transactions');
 is( $txns->First->Subject, "[$RT::rtname \#$id] correspondence", 'successfuly add correspond within take via email' );
 
 $m->no_warnings_ok;
@@ -695,15 +697,16 @@ $tick = RT::Ticket->new(RT->SystemUser);
 $tick->Load( $id );
 is( $tick->Id, $id, 'load correct ticket');
 is( $tick->Status, 'resolved', 'successfuly resolved ticket via email');
-is( $tick->Transactions->Count, 7, 'no superfluous transactions');
+# +1 from resolve
+is( $tick->Transactions->Count, 10, 'no superfluous transactions');
 
 use RT::User;
 my $user = RT::User->new( RT->SystemUser );
 my ($uid) = $user->Create( Name => 'ext-mailgate',
-			   EmailAddress => 'ext-mailgate@localhost',
-			   Privileged => 1,
-			   Password => 'qwe123',
-			 );
+                           EmailAddress => 'ext-mailgate@localhost',
+                           Privileged => 1,
+                           Password => 'qwe123',
+                         );
 ok( $uid, 'user created for ext-mailgate tests' );
 ok( !$user->HasRight( Right => 'OwnTicket', Object => $queue ), "User can't own ticket" );
 
@@ -733,7 +736,7 @@ ok( $status, "successfuly granted right: $msg" );
 my $ace_id = $status;
 ok( $user->HasRight( Right => 'ReplyToTicket', Object => $tick ), "User can reply to ticket" );
 
-$m->next_warning_like(qr/Permission Denied/);
+$m->next_warning_like(qr/That user may not own tickets in that queue/);
 $m->next_warning_like(qr/Could not record email: Ticket not taken/);
 $m->no_leftover_warnings_ok;
 
@@ -752,7 +755,7 @@ DBIx::SearchBuilder::Record::Cachable->FlushCache;
 cmp_ok( $tick->Owner, '!=', $user->id, "we didn't change owner" );
 is( $tick->Transactions->Count, 3, "one transactions added" );
 
-$m->next_warning_like(qr/Permission Denied/);
+$m->next_warning_like(qr/That user may not own tickets in that queue/);
 $m->next_warning_like(qr/Could not record email: Ticket not taken/);
 $m->no_leftover_warnings_ok;
 
@@ -771,7 +774,7 @@ DBIx::SearchBuilder::Record::Cachable->FlushCache;
 cmp_ok( $tick->Owner, '!=', $user->id, "we didn't change owner" );
 is( $tick->Transactions->Count, 3, "no transactions added, user can't take ticket first" );
 
-$m->next_warning_like(qr/Permission Denied/);
+$m->next_warning_like(qr/That user may not own tickets in that queue/);
 $m->next_warning_like(qr/Could not record email: Ticket not taken/);
 $m->no_leftover_warnings_ok;
 
@@ -784,14 +787,14 @@ my $acl = RT::ACL->new(RT->SystemUser);
 $acl->Limit( FIELD => 'RightName', VALUE => 'ReplyToTicket' );
 $acl->LimitToObject( $RT::System );
 while( my $ace = $acl->Next ) {
-	$ace->Delete;
+    $ace->Delete;
 }
 
 ok( !$user->HasRight( Right => 'ReplyToTicket', Object => $tick ), "User can't reply to ticket any more" );
 
 
-my $group = RT::Group->new( RT->SystemUser );
-ok( $group->LoadQueueRoleGroup( Queue => $qid, Type=> 'Owner' ), "load queue owners role group" );
+my $group = $queue->RoleGroup( 'Owner' );
+ok( $group->Id, "load queue owners role group" );
 $ace = RT::ACE->new( RT->SystemUser );
 ($ace_id, $msg) = $group->PrincipalObj->GrantRight( Right => 'ReplyToTicket', Object => $queue );
 ok( $ace_id, "Granted queue owners role group with ReplyToTicket right" );
@@ -816,7 +819,8 @@ DBIx::SearchBuilder::Record::Cachable->FlushCache;
 $tick->Load( $id );
 is( $tick->Owner, $user->id, "we changed owner" );
 ok( $user->HasRight( Right => 'ReplyToTicket', Object => $tick ), "owner can reply to ticket" );
-is( $tick->Transactions->Count, 5, "transactions added" );
+# +2 from take, +1 from correspond
+is( $tick->Transactions->Count, 6, "transactions added" );
 
 $m->no_warnings_ok;
 

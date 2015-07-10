@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use RT::Test nodb => 1, tests => 6;
+use RT::Test nodb => 1, tests => undef;
 
 use_ok('RT::I18N');
 my $test_string    = Encode::decode("UTF-8", 'À');
@@ -19,10 +19,6 @@ local $SIG{__WARN__} = sub {
 };
 
 RT::I18N::SetMIMEEntityToEncoding( $mime, 'iso-8859-1' );
-
-TODO: {
-        local $TODO =
-'need a better approach of encoding converter, should be fixed in 4.2';
 
 # this is a weird behavior for different perl versions, 5.12 warns twice,
 # which is correct since we do the encoding thing twice, for Subject
@@ -44,4 +40,5 @@ is( $subject, $test_string, 'subject is set to iso-8859-1' );
 my $body = Encode::decode( 'iso-8859-1', $mime->stringify_body );
 chomp $body;
 is( $body, $test_string, 'body is set to iso-8859-1' );
-}
+
+done_testing;

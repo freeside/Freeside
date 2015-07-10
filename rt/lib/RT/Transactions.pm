@@ -69,10 +69,9 @@ package RT::Transactions;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::Transaction;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'Transactions'}
 
@@ -85,9 +84,9 @@ sub _Init   {
   
   # By default, order by the date of the transaction, rather than ID.
   $self->OrderByCols( { FIELD => 'Created',
-			ORDER => 'ASC' },
-		      { FIELD => 'id',
-			ORDER => 'ASC' } );
+                        ORDER => 'ASC' },
+                      { FIELD => 'id',
+                        ORDER => 'ASC' } );
 
   return ( $self->SUPER::_Init(@_));
 }
@@ -109,11 +108,10 @@ sub LimitToTicket {
     my $tid  = shift;
 
     unless ( $self->{'tickets_table'} ) {
-        $self->{'tickets_table'} ||= $self->NewAlias('Tickets');
-        $self->Join(
+        $self->{'tickets_table'} ||= $self->Join(
             ALIAS1 => 'main',
             FIELD1 => 'ObjectId',
-            ALIAS2 => $self->{'tickets_table'},
+            TABLE2 => 'Tickets',
             FIELD2 => 'id'
         );
         $self->Limit(
@@ -140,20 +138,6 @@ sub AddRecord {
     return $self->SUPER::AddRecord($record);
 }
 
-
-
-
-
-=head2 NewItem
-
-Returns an empty new RT::Transaction item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Transaction->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

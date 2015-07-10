@@ -45,7 +45,7 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-% my $name = $NamePrefix.$CustomField->Id.'-Values';
+% my $name = $Name || $NamePrefix.$CustomField->Id.'-Values';
 <& /Elements/SelectDate, Name => "$name", current => 0, $KeepValue && $Default ? (Default => $Default) : () &> (<%$DateObj->AsString($KeepValue ? ( Timezone => 'utc' ) : () )%>)
 
 <%INIT>
@@ -59,6 +59,7 @@ $NamePrefix => undef
 $Default => undef
 $Values => undef
 $MaxValues => 1
+$Name => undef
 $Format => 'ISO'
 $KeepValue => undef
 </%ARGS>

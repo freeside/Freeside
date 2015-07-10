@@ -26,7 +26,7 @@ my $cf;
 diag "load and check basic properties of the IP CF" if $ENV{'TEST_VERBOSE'};
 {
     my $cfs = RT::CustomFields->new($RT::SystemUser);
-    $cfs->Limit( FIELD => 'Name', VALUE => 'IP' );
+    $cfs->Limit( FIELD => 'Name', VALUE => 'IP', CASESENSITIVE => 0 );
     is( $cfs->Count, 1, "found one CF with name 'IP'" );
 
     $cf = $cfs->First;
@@ -246,8 +246,8 @@ diag "create a ticket with an IP of abcd:23:: and search for doesn't match 'abcd
         $tickets->FromSQL("id=$id AND CF.{IP} NOT LIKE 'abcd:23'");
     } [qr/not a valid IPAddress/], "caught warning about IPAddress";
 
-    SKIP: {
-        skip "partical ip parse can causes ambiguity", 1;
+    TODO: {
+        local $TODO = "partial ip parse can causes ambiguity";
         is( $tickets->Count, 0, "should not have found the ticket" );
     }
 }

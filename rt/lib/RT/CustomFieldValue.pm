@@ -54,8 +54,8 @@ package RT::CustomFieldValue;
 no warnings qw/redefine/;
 
 
-use RT::CustomField;
 use base 'RT::Record';
+use RT::CustomField;
 
 sub Table {'CustomFieldValues'}
 
@@ -99,37 +99,6 @@ sub Create {
 sub ValidateName {
     return defined $_[1] && length $_[1];
 };
-
-=head2 DeleteCategory
-
-Deletes the category associated with this value
-Returns -1 if there is no Category
-
-=cut
-
-sub DeleteCategory {
-    my $self = shift;
-    my $attr = $self->FirstAttribute('Category') or return (-1,'No Category Set');
-    return $attr->Delete;
-}
-
-=head2 Delete
-
-Make sure we delete our Category when we're deleted
-
-=cut
-
-sub Delete {
-    my $self = shift;
-
-    my ($result, $msg) = $self->DeleteCategory;
-
-    unless ($result) {
-        return ($result, $msg);
-    }
-
-    return $self->SUPER::Delete(@_);
-}
 
 sub _Set { 
     my $self = shift; 
@@ -175,18 +144,37 @@ Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
 (In the database, CustomField will be stored as a int(11).)
 
 
+=head2 SetCustomFieldObj
+
+Store the CustomField object which loaded this CustomFieldValue.
+Passed down from the CustomFieldValues collection in AddRecord.
+
+This object will be transparently returned from CustomFieldObj rather
+than loading from the database.
+
 =cut
 
+sub SetCustomFieldObj {
+    my $self = shift;
+    return $self->{'custom_field'} = shift;
+}
 
 =head2 CustomFieldObj
 
-Returns the CustomField Object which has the id returned by CustomField
+If a CustomField object was stored using SetCustomFieldObj and it is
+the same CustomField stored in the CustomField column, then the stored
+CustomField object (likely passed down from CustomField->Values) will be returned.
 
+Otherwise returns the CustomField Object which has the id returned by CustomField
 
 =cut
 
 sub CustomFieldObj {
     my $self = shift;
+
+    return $self->{custom_field} if $self->{custom_field}
+        and $self->{custom_field}->id == $self->__Value('CustomField');
+
     my $CustomField =  RT::CustomField->new($self->CurrentUser);
     $CustomField->Load($self->__Value('CustomField'));
     return($CustomField);
@@ -329,7 +317,14 @@ sub _CoreAccessible {
 };
 
 
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
 
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->CustomFieldObj );
+}
 
 RT::Base->_ImportOverlays();
 

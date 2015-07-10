@@ -13,8 +13,8 @@ my $template = Encode::decode("UTF-8", "你好 éèà€");
 my $subject  = Encode::decode("UTF-8", "标题");
 my $content  = Encode::decode("UTF-8", "测试");
 {
-    $m->follow_link_ok( { id => 'tools-config-global-templates' },     '-> Templates' );
-    $m->follow_link_ok( { text => 'Autoreply' },     '-> Autoreply' );
+    $m->follow_link_ok( { id => 'admin-global-templates' }, '-> Templates' );
+    $m->follow_link_ok( { text => 'Autoreply in HTML' },    '-> Autoreply in HTML' );
 
     $m->submit_form(
         form_name => 'ModifyTemplate',

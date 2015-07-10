@@ -69,10 +69,9 @@ package RT::CachedGroupMembers;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::CachedGroupMember;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'CachedGroupMembers'}
 
@@ -89,9 +88,10 @@ groups from users for display purposes
 sub LimitToUsers {
     my $self = shift;
 
-    my $principals = $self->NewAlias('Principals');
-    $self->Join( ALIAS1 => 'main', FIELD1 => 'MemberId',
-                 ALIAS2 => $principals, FIELD2 =>'id');
+    my $principals = $self->Join(
+        ALIAS1 => 'main', FIELD1 => 'MemberId',
+        TABLE2 => 'Principals', FIELD2 =>'id'
+    );
 
     $self->Limit(       ALIAS => $principals,
                          FIELD => 'PrincipalType',
@@ -114,9 +114,11 @@ groups from users for display purposes
 sub LimitToGroups {
     my $self = shift;
 
-    my $principals = $self->NewAlias('Principals');
-    $self->Join( ALIAS1 => 'main', FIELD1 => 'MemberId',
-                 ALIAS2 => $principals, FIELD2 =>'id');
+    my $principals = $self->Join(
+        ALIAS1 => 'main', FIELD1 => 'MemberId',
+        TABLE2 => 'Principals', FIELD2 =>'id'
+    );
+
 
     $self->Limit(       ALIAS => $principals,
                          FIELD => 'PrincipalType',
@@ -166,23 +168,13 @@ sub LimitToGroupsWithMember {
                          VALUE => $member || '0',
                          FIELD => 'MemberId',
                          ENTRYAGGREGATOR => 'OR',
-			            QUOTEVALUE => 0
+                         QUOTEVALUE => 0
                          ));
 
 }
 # }}}
 
 
-=head2 NewItem
-
-Returns an empty new RT::CachedGroupMember item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::CachedGroupMember->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

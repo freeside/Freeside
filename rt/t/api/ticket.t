@@ -100,7 +100,7 @@ ok( $t->Create(Queue => 'General', Due => '2002-05-21 00:00:00', ReferredToBy =>
 ok ( my $id = $t->Id, "Got ticket id");
 like ($t->RefersTo->First->Target , qr/fsck.com/, "Got refers to");
 like ($t->ReferredToBy->First->Base , qr/cpan.org/, "Got referredtoby");
-is ($t->ResolvedObj->Unix, 0, "It hasn't been resolved - ". $t->ResolvedObj->Unix);
+ok (!$t->ResolvedObj->IsSet, "It hasn't been resolved");
 
 
 }
@@ -115,8 +115,7 @@ my ($id, $msg) = $ticket->Create(Subject => "Foo",
                 Queue => '1'
                 );
 ok ($id, "Ticket $id was created");
-ok(my $group = RT::Group->new(RT->SystemUser));
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'Requestor'));
+ok(my $group = $ticket->RoleGroup('Requestor'));
 ok ($group->Id, "Found the requestors object for this ticket");
 
 ok(my $jesse = RT::User->new(RT->SystemUser), "Creating a jesse rt::user");
@@ -135,14 +134,11 @@ ok ( ($add_id, $add_msg) = $ticket->DeleteWatcher(Type =>'Requestor', Email => '
 ok (!$ticket->IsWatcher(Type => 'Requestor', PrincipalId => $bob->PrincipalId), "The ticket no longer has bob at fsck.com as a requestor");
 
 
-$group = RT::Group->new(RT->SystemUser);
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'Cc'));
+$group = $ticket->RoleGroup('Cc');
 ok ($group->Id, "Found the cc object for this ticket");
-$group = RT::Group->new(RT->SystemUser);
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'AdminCc'));
+$group = $ticket->RoleGroup('AdminCc');
 ok ($group->Id, "Found the AdminCc object for this ticket");
-$group = RT::Group->new(RT->SystemUser);
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'Owner'));
+$group = $ticket->RoleGroup('Owner');
 ok ($group->Id, "Found the Owner object for this ticket");
 ok($group->HasMember(RT->SystemUser->UserObj->PrincipalObj), "the owner group has the member 'RT_System'");
 
@@ -209,20 +205,32 @@ is ($t1->Requestors->MembersObj->Count, 2);
 
 }
 
+diag "Test owner changes";
 {
 
 my $root = RT::User->new(RT->SystemUser);
 $root->Load('root');
 ok ($root->Id, "Loaded the root user");
 my $t = RT::Ticket->new(RT->SystemUser);
-$t->Load(1);
-$t->SetOwner('root');
+my ($val, $msg) = $t->Create( Subject => 'Owner test 1', Queue => 'General');
+ok( $t->Id, "Created a new ticket with id $val: $msg");
+
+($val, $msg) = $t->SetOwner('bogususer');
+ok( !$val, "Can't set owner to bogus user");
+is( $msg, "That user does not exist", "Got message: $msg");
+
+($val, $msg) = $t->SetOwner('root');
 is ($t->OwnerObj->Name, 'root' , "Root owns the ticket");
+
+($val, $msg) = $t->SetOwner('root');
+ok( !$val, "User already owns ticket");
+is( $msg, "That user already owns that ticket", "Got message: $msg");
+
 $t->Steal();
 is ($t->OwnerObj->id, RT->SystemUser->id , "SystemUser owns the ticket");
 my $txns = RT::Transactions->new(RT->SystemUser);
 $txns->OrderBy(FIELD => 'id', ORDER => 'DESC');
-$txns->Limit(FIELD => 'ObjectId', VALUE => '1');
+$txns->Limit(FIELD => 'ObjectId', VALUE => $t->Id);
 $txns->Limit(FIELD => 'ObjectType', VALUE => 'RT::Ticket');
 $txns->Limit(FIELD => 'Type', OPERATOR => '!=',  VALUE => 'EmailRecord');
 
@@ -230,6 +238,37 @@ my $steal  = $txns->First;
 is($steal->OldValue , $root->Id , "Stolen from root");
 is($steal->NewValue , RT->SystemUser->Id , "Stolen by the systemuser");
 
+ok(my $user1 = RT::User->new(RT->SystemUser), "Creating a user1 rt::user");
+($val, $msg) = $user1->Create(Name => 'User1', EmailAddress => 'user1@example.com');
+ok( $val, "Created new user with id: $val");
+ok( $user1->Id,  "Found the user1 rt user");
+
+my $t1 = RT::Ticket->new($user1);
+($val, $msg) = $t1->Load($t->Id);
+ok( $t1->Id, "Loaded ticket with id $val");
+
+($val, $msg) = $t1->SetOwner('root');
+ok( !$val, "user1 can't set owner to root: $msg");
+is ($t->OwnerObj->id, RT->SystemUser->id , "SystemUser still owns ticket " . $t1->Id);
+
+my $queue = RT::Queue->new(RT->SystemUser);
+$queue->Load("General");
+
+($val, $msg) = $user1->PrincipalObj->GrantRight(
+         Object => $queue, Right => 'ModifyTicket'
+     );
+
+($val, $msg) = $t1->SetOwner('root');
+ok( !$val, "With ModifyTicket user1 can't set owner to root: $msg");
+is ($t->OwnerObj->id, RT->SystemUser->id , "SystemUser still owns ticket " . $t1->Id);
+
+($val, $msg) = $user1->PrincipalObj->GrantRight(
+         Object => $queue, Right => 'ReassignTicket'
+     );
+
+($val, $msg) = $t1->SetOwner('root');
+ok( $val, "With ReassignTicket user1 reassigned ticket " . $t1->Id . " to root: $msg");
+is ($t1->OwnerObj->Name, 'root' , "Root owns ticket " . $t1->Id);
 
 }
 
@@ -250,7 +289,16 @@ like($msg, qr/resolved/i, "Status message is correct");
 ($id, $msg) = $tt->SetStatus('resolved');
 ok(!$id,$msg);
 
+my $dep = RT::Ticket->new( RT->SystemUser );
+my ( $dep_id, undef, $dep_msg ) = $dep->Create(
+    Queue          => 'general',
+    Subject        => 'dep ticket',
+    'DependedOnBy' => $tt->id,
+);
+ok( $dep->id, $dep_msg );
 
+($id, $msg) = $tt->SetStatus('rejected');
+ok( $id, $msg );
 
 }
 

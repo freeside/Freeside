@@ -99,12 +99,16 @@ else {
     if (!keys(%data)) {
         # GET ticket/new: Return a suitable default form.
         # We get defaults from queue/1 (XXX: What if it isn't there?).
-        my $due = RT::Date->new($session{CurrentUser});
         my $queue = RT::Queue->new($session{CurrentUser});
-        my $starts = RT::Date->new($session{CurrentUser});
         $queue->Load(1);
-        $due->SetToNow;
-        $due->AddDays($queue->DefaultDueIn) if $queue->DefaultDueIn;
+
+        my $due;
+        if ($queue->DefaultDueIn) {
+            $due = RT::Date->new($session{CurrentUser});
+            $due->SetToNow;
+            $due->AddDays($queue->DefaultDueIn);
+        }
+        my $starts = RT::Date->new($session{CurrentUser});
         $starts->SetToNow;
 
         return [
@@ -124,8 +128,8 @@ else {
                 InitialPriority  => $queue->InitialPriority,
                 FinalPriority    => $queue->FinalPriority,
                 TimeEstimated    => 0,
-                Starts           => $starts->ISO,
-                Due              => $due->ISO,
+                Starts           => $starts->ISO(Timezone => 'user'),
+                Due              => $due ? $due->ISO(Timezone => 'user') : undef,
                 Attachment       => '',
                 Text             => "",
             },
@@ -153,17 +157,21 @@ else {
                 my $key = $1 || $2;
 
                 my $cf = RT::CustomField->new( $session{CurrentUser} );
-                $cf->LoadByName( Name => $key, Queue => $data{Queue} || $v{Queue} );
-                unless ( $cf->id ) {
-                    $cf->LoadByName( Name => $key, Queue => 0 );
-                }
+                $cf->LoadByName(
+                    Name          => $key,
+                    LookupType    => RT::Ticket->CustomFieldLookupType,
+                    ObjectId      => $data{Queue} || $v{Queue},
+                    IncludeGlobal => 1,
+                );
 
                 if (not $cf->id) {
                     push @comments, "# Invalid custom field name ($key)";
                     delete $data{$k};
                     next;
                 }
-                $v{"CustomField-".$cf->Id()} = delete $data{$k};
+                my $val = delete $data{$k};
+                next unless defined $val && length $val;
+                $v{"CustomField-".$cf->Id()} = $cf->SingleValue ? $val : vsplit($val,1);
             }
             elsif (lc $k eq 'text') {
                 $text = delete $data{$k};
@@ -228,15 +236,15 @@ if (!keys(%data)) {
     my ($time, $key, $val, @data);
 
     push @data, [ id    => "ticket/".$ticket->Id   ];
-    push @data, [ Queue => $ticket->QueueObj->Name ] 
-	if (!%$fields || exists $fields->{lc 'Queue'});
+    push @data, [ Queue => $ticket->QueueObj->Name ]
+        if (!%$fields || exists $fields->{lc 'Queue'});
     push @data, [ Owner => $ticket->OwnerObj->Name ]
-	if (!%$fields || exists $fields->{lc 'Owner'});
+        if (!%$fields || exists $fields->{lc 'Owner'});
     push @data, [ Creator => $ticket->CreatorObj->Name ]
-	if (!%$fields || exists $fields->{lc 'Creator'});
+        if (!%$fields || exists $fields->{lc 'Creator'});
 
     foreach (qw(Subject Status Priority InitialPriority FinalPriority)) {
-	next unless (!%$fields || (exists $fields->{lc $_}));
+        next unless (!%$fields || (exists $fields->{lc $_}));
         push @data, [$_ => $ticket->$_ ];
     }
 
@@ -247,14 +255,14 @@ if (!keys(%data)) {
 
     $time = RT::Date->new ($session{CurrentUser});
     foreach $key (@dates) {
-	next unless (!%$fields || (exists $fields->{lc $key}));
+        next unless (!%$fields || (exists $fields->{lc $key}));
         $time->Set(Format => 'sql', Value => $ticket->$key);
         push @data, [ $key => $time->AsString ];
     }
 
     $time = RT::Date->new ($session{CurrentUser});
     foreach $key (qw(TimeEstimated TimeWorked TimeLeft)) {
-	next unless (!%$fields || (exists $fields->{lc $key}));
+        next unless (!%$fields || (exists $fields->{lc $key}));
         $val = $ticket->$key || 0;
         $val = "$val minutes" if $val;
         push @data, [ $key => $val ];
@@ -276,8 +284,8 @@ if (!keys(%data)) {
         else {
             while (my $v = $vals->Next()) {
                 my $content = $v->Content;
-                $content =~ s/'/\\'/g;
                 if ( $v->Content =~ /,/ ) {
+                    $content =~ s/([\\'])/\\$1/g;
                     push @out, q{'} . $content . q{'};
                 }
                 else {
@@ -380,10 +388,13 @@ else {
             $key = $1 || $2;
 
             my $cf = RT::CustomField->new( $session{CurrentUser} );
-            $cf->LoadByName( Name => $key, Queue => $ticket->Queue );
-            unless ( $cf->id ) {
-                $cf->LoadByName( Name => $key, Queue => 0 );
-            }
+            $cf->ContextObject( $ticket );
+            $cf->LoadByName(
+                Name          => $key,
+                LookupType    => RT::Ticket->CustomFieldLookupType,
+                ObjectId      => $ticket->Queue,
+                IncludeGlobal => 1,
+            );
 
             if (not $cf->id) {
                 $n = 0;
@@ -401,52 +412,12 @@ else {
                     }
                 }
                 elsif ( $cf->SingleValue ) {
-                    my $old = $vals->Next;
-                    if ( $old ) {
-                        if ( $val ne $old->Content ) {
-                            ($n, $s) = $ticket->AddCustomFieldValue(
-                                 Field => $cf, Value => $val );
-                            $s =~ s/^# // if defined $s;
-                        }
-                    }
-                    else {
-                        ($n, $s) = $ticket->AddCustomFieldValue(
-                             Field => $cf, Value => $val );
-                        $s =~ s/^# // if defined $s;
-                    }
+                    ($n, $s) = $ticket->AddCustomFieldValue(
+                         Field => $cf, Value => $val );
+                    $s =~ s/^# // if defined $s;
                 }
                 else {
-                    my @new;
-                    my ( $a, $b ) = split /\s*,\s*/, $val, 2;
-                    while ($a) {
-                        no warnings 'uninitialized';
-                        if ( $a =~ /^'/ ) {
-                            my $s = $a;
-                            while ( $a !~ /'$/ || ( $a !~ /(\\\\)+'$/
-                                            && $a =~ /(\\)+'$/ ) ) {
-                                ( $a, $b ) = split /\s*,\s*/, $b, 2;
-                                $s .= ',' . $a;
-                            }
-                            $s =~ s/^'//;
-                            $s =~ s/'$//;
-                            $s =~ s/\\'/'/g;
-                            push @new, $s;
-                        }
-                        elsif ( $a =~ /^q\{/ ) {
-                            my $s = $a;
-                            while ( $a !~ /\}$/ ) {
-                                ( $a, $b ) = split /\s*,\s*/, $b, 2;
-                                $s .= ',' . $a;
-                            }
-                            $s =~ s/^q\{//;
-                            $s =~ s/\}//;
-                            push @new, $s;
-                        }
-                        else {
-                            push @new, $a;
-                        }
-                        ( $a, $b ) = split /\s*,\s*/, $b, 2;
-                    }
+                    my @new = @{vsplit($val, 1)};
 
                     my %new;
                     $new{$_}++ for @new;

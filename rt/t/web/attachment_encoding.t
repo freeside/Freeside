@@ -86,7 +86,7 @@ diag 'test with attachemnts' if $ENV{TEST_VERBOSE};
         '-> /Ticket/Attachment/...' );
     $m->content_contains( $filename, "has file content $filename" );
 
-    ( $id ) = $m->uri =~ /(\d+)\D+$/;
+    ( $id ) = $m->uri =~ m{/(\d+)/[^/]+$};
     ok( $id, 'found attachment id' );
     $attachment = RT::Attachment->new( $RT::SystemUser );
     ok($attachment->Load($id), "load att $id");

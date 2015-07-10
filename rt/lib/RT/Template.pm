@@ -70,7 +70,9 @@ package RT::Template;
 use strict;
 use warnings;
 
+use base 'RT::Record';
 
+use RT::Queue;
 
 use Text::Template;
 use MIME::Entity;
@@ -151,7 +153,7 @@ Load a template, either by number or by name.
 Note that loading templates by name using this method B<is
 ambiguous>. Several queues may have template with the same name
 and as well global template with the same name may exist.
-Use L</LoadGlobalTemplate> and/or L<LoadQueueTemplate> to get
+Use L</LoadByName>, L</LoadGlobalTemplate> or L<LoadQueueTemplate> to get
 precise result.
 
 =cut
@@ -165,6 +167,37 @@ sub Load {
         return $self->LoadByCol( 'Name', $identifier );
     }
     return $self->LoadById( $identifier );
+}
+
+=head2 LoadByName
+
+Takes Name and Queue arguments. Tries to load queue specific template
+first, then global. If Queue argument is omitted then global template
+is tried, not template with the name in any queue.
+
+=cut
+
+sub LoadByName {
+    my $self = shift;
+    my %args = (
+        Queue => undef,
+        Name  => undef,
+        @_
+    );
+    my $queue = $args{'Queue'};
+    if ( blessed $queue ) {
+        $queue = $queue->id;
+    } elsif ( defined $queue and $queue =~ /\D/ ) {
+        my $tmp = RT::Queue->new( $self->CurrentUser );
+        $tmp->Load($queue);
+        $queue = $tmp->id;
+    }
+
+    return $self->LoadGlobalTemplate( $args{'Name'} ) unless $queue;
+
+    $self->LoadQueueTemplate( Queue => $queue, Name => $args{'Name'} );
+    return $self->id if $self->id;
+    return $self->LoadGlobalTemplate( $args{'Name'} );
 }
 
 =head2 LoadGlobalTemplate NAME
@@ -185,18 +218,7 @@ sub LoadGlobalTemplate {
 Loads the Queue template named NAME for Queue QUEUE.
 
 Note that this method doesn't load a global template with the same name
-if template in the queue doesn't exist. THe following code can be used:
-
-    $template->LoadQueueTemplate( Queue => $queue_id, Name => $template_name );
-    unless ( $template->id ) {
-        $template->LoadGlobalTemplate( $template_name );
-        unless ( $template->id ) {
-            # no template
-            ...
-        }
-    }
-    # ok, template either queue's or global
-    ...
+if template in the queue doesn't exist. Use L</LoadByName>.
 
 =cut
 
@@ -256,6 +278,16 @@ sub Create {
         $args{'Queue'} = $QueueObj->Id;
     }
 
+    return ( undef, $self->loc('Name is required') )
+        unless $args{Name};
+
+    {
+        my $tmp = $self->new( RT->SystemUser );
+        $tmp->LoadByCols( Name => $args{'Name'}, Queue => $args{'Queue'} );
+        return ( undef, $self->loc('A Template with that name already exists') )
+            if $tmp->id;
+    }
+
     my ( $result, $msg ) = $self->SUPER::Create(
         Content     => $args{'Content'},
         Queue       => $args{'Queue'},
@@ -285,7 +317,26 @@ sub Delete {
         return ( 0, $self->loc('Permission Denied') );
     }
 
+    if ( !$self->IsOverride && $self->UsedBy->Count ) {
+        return ( 0, $self->loc('Template is in use') );
+    }
+
     return ( $self->SUPER::Delete(@_) );
+}
+
+=head2 UsedBy
+
+Returns L<RT::Scrips> limitted to scrips that use this template. Takes
+into account that template can be overriden in a queue.
+
+=cut
+
+sub UsedBy {
+    my $self = shift;
+
+    my $scrips = RT::Scrips->new( $self->CurrentUser );
+    $scrips->LimitByTemplate( $self );
+    return $scrips;
 }
 
 =head2 IsEmpty
@@ -301,6 +352,23 @@ sub IsEmpty {
     return 0 if defined $content && length $content;
     return 1;
 }
+
+=head2 IsOverride
+
+Returns true if it's queue specific template and there is global
+template with the same name.
+
+=cut
+
+sub IsOverride {
+    my $self = shift;
+    return 0 unless $self->Queue;
+
+    my $template = RT::Template->new( $self->CurrentUser );
+    $template->LoadGlobalTemplate( $self->Name );
+    return $template->id;
+}
+
 
 =head2 MIMEObj
 
@@ -419,9 +487,6 @@ sub _ParseContent {
     }
 
     my $content = $self->SUPER::_Value('Content');
-    # We need to untaint the content of the template, since we'll be working
-    # with it
-    $content =~ s/^(.*)$/$1/;
 
     $args{'Ticket'} = delete $args{'TicketObj'} if $args{'TicketObj'};
     $args{'Transaction'} = delete $args{'TransactionObj'} if $args{'TransactionObj'};
@@ -571,7 +636,10 @@ sub _MassageSimpleTemplateArgs {
 
         my $cfs = $ticket->CustomFields;
         while (my $cf = $cfs->Next) {
-            $template_args->{"TicketCF" . $cf->Name} = $ticket->CustomFieldValuesAsString($cf->Name);
+            my $simple = $cf->Name;
+            $simple =~ s/\W//g;
+            $template_args->{"TicketCF" . $simple}
+                = $ticket->CustomFieldValuesAsString($cf->Name);
         }
     }
 
@@ -582,7 +650,10 @@ sub _MassageSimpleTemplateArgs {
 
         my $cfs = $txn->CustomFields;
         while (my $cf = $cfs->Next) {
-            $template_args->{"TransactionCF" . $cf->Name} = $txn->CustomFieldValuesAsString($cf->Name);
+            my $simple = $cf->Name;
+            $simple =~ s/\W//g;
+            $template_args->{"TransactionCF" . $simple}
+                = $txn->CustomFieldValuesAsString($cf->Name);
         }
     }
 }
@@ -597,23 +668,16 @@ sub _DowngradeFromHTML {
 
     $orig_entity->head->mime_attr( "Content-Type" => 'text/html' );
     $orig_entity->head->mime_attr( "Content-Type.charset" => 'utf-8' );
+
+    my $body = $new_entity->bodyhandle->as_string;
+    $body = Encode::decode( "UTF-8", $body );
+    my $html = RT::Interface::Email::ConvertHTMLToText( $body );
+    $html = Encode::encode( "UTF-8", $html );
+    return unless defined $html;
+
+    $new_entity->bodyhandle(MIME::Body::InCore->new( \$html ));
+
     $orig_entity->make_multipart('alternative', Force => 1);
-
-    require HTML::FormatText;
-    require HTML::TreeBuilder;
-    # MIME objects are always bytes, not characters
-    my $tree = HTML::TreeBuilder->new_from_content(
-        Encode::decode( 'UTF-8', $new_entity->bodyhandle->as_string)
-    );
-    my $text = HTML::FormatText->new(
-        leftmargin  => 0,
-        rightmargin => 78,
-    )->format( $tree );
-    $text = Encode::encode( "UTF-8", $text );
-
-    $new_entity->bodyhandle(MIME::Body::InCore->new( \$text ));
-    $tree->delete;
-
     $orig_entity->add_part($new_entity, 0); # plain comes before html
     $self->{MIMEObj} = $orig_entity;
 
@@ -629,6 +693,41 @@ Helper function to call the template's queue's CurrentUserHasQueueRight with the
 sub CurrentUserHasQueueRight {
     my $self = shift;
     return ( $self->QueueObj->CurrentUserHasRight(@_) );
+}
+
+=head2 SetQueue
+
+Changing queue is not implemented.
+
+=cut
+
+sub SetQueue {
+    my $self = shift;
+    return ( undef, $self->loc('Changing queue is not implemented') );
+}
+
+=head2 SetName
+
+Change name of the template.
+
+=cut
+
+sub SetName {
+    my $self = shift;
+    my $value = shift;
+
+    return ( undef, $self->loc('Name is required') )
+        unless $value;
+
+    return $self->_Set( Field => 'Name', Value => $value )
+        if lc($self->Name) eq lc($value);
+
+    my $tmp = $self->new( RT->SystemUser );
+    $tmp->LoadByCols( Name => $value, Queue => $self->Queue );
+    return ( undef, $self->loc('A Template with that name already exists') )
+        if $tmp->id;
+
+    return $self->_Set( Field => 'Name', Value => $value );
 }
 
 =head2 SetType
@@ -754,9 +853,6 @@ sub CurrentUserCanRead {
 
 1;
 
-use RT::Queue;
-use base 'RT::Record';
-
 sub Table {'Templates'}
 
 
@@ -799,10 +895,10 @@ Returns the Queue Object which has the id returned by Queue
 =cut
 
 sub QueueObj {
-	my $self = shift;
-	my $Queue =  RT::Queue->new($self->CurrentUser);
-	$Queue->Load($self->__Value('Queue'));
-	return($Queue);
+    my $self = shift;
+    my $Queue =  RT::Queue->new($self->CurrentUser);
+    $Queue->Load($self->__Value('Queue'));
+    return($Queue);
 }
 
 =head2 Name
@@ -854,42 +950,6 @@ Returns the current value of Type.
 Set Type to VALUE.
 Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
 (In the database, Type will be stored as a varchar(16).)
-
-
-=cut
-
-
-=head2 Language
-
-Returns the current value of Language.
-(In the database, Language is stored as varchar(16).)
-
-
-
-=head2 SetLanguage VALUE
-
-
-Set Language to VALUE.
-Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
-(In the database, Language will be stored as a varchar(16).)
-
-
-=cut
-
-
-=head2 TranslationOf
-
-Returns the current value of TranslationOf.
-(In the database, TranslationOf is stored as int(11).)
-
-
-
-=head2 SetTranslationOf VALUE
-
-
-Set TranslationOf to VALUE.
-Returns (1, 'Status message') on success and (0, 'Error Message') on failure.
-(In the database, TranslationOf will be stored as a int(11).)
 
 
 =cut
@@ -954,32 +1014,81 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Queue =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Name =>
-		{read => 1, write => 1, sql_type => 12, length => 200,  is_blob => 0,  is_numeric => 0,  type => 'varchar(200)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 200,  is_blob => 0,  is_numeric => 0,  type => 'varchar(200)', default => ''},
         Description =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         Type =>
-		{read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
-        Language =>
-		{read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
-        TranslationOf =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 12, length => 16,  is_blob => 0,  is_numeric => 0,  type => 'varchar(16)', default => ''},
         Content =>
-		{read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'text', default => ''},
+                {read => 1, write => 1, sql_type => -4, length => 0,  is_blob => 1,  is_numeric => 0,  type => 'text', default => ''},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->QueueObj ) if $self->QueueObj->Id;
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+    my $list = [];
+
+# Scrips
+    push( @$list, $self->UsedBy );
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $list,
+        Shredder => $args{'Shredder'},
+    );
+
+    return $self->SUPER::__DependsOn( %args );
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    $class->SUPER::PreInflate( $importer, $uid, $data );
+
+    my $obj = RT::Template->new( RT->SystemUser );
+    if ($data->{Queue} == 0) {
+        $obj->LoadGlobalTemplate( $data->{Name} );
+    } else {
+        $obj->LoadQueueTemplate( Queue => $data->{Queue}, Name => $data->{Name} );
+    }
+
+    if ($obj->Id) {
+        $importer->Resolve( $uid => ref($obj) => $obj->Id );
+        return;
+    }
+
+    return 1;
+}
 
 RT::Base->_ImportOverlays();
 

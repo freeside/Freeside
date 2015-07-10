@@ -82,9 +82,12 @@ use RT::Attachments;
 use RT::Scrips;
 use RT::Ruleset;
 
-use HTML::FormatText;
-use HTML::TreeBuilder;
+use HTML::FormatText::WithLinks::AndTables;
+use HTML::Scrubber;
 
+# For EscapeHTML() and decode_entities()
+require RT::Interface::Web;
+require HTML::Entities;
 
 sub Table {'Transactions'}
 
@@ -141,11 +144,11 @@ sub Create {
         OldValue  => $args{'OldValue'},
         NewValue  => $args{'NewValue'},
         Created   => $args{'Created'},
-	ObjectType => $args{'ObjectType'},
-	ObjectId => $args{'ObjectId'},
-	ReferenceType => $args{'ReferenceType'},
-	OldReference => $args{'OldReference'},
-	NewReference => $args{'NewReference'},
+        ObjectType => $args{'ObjectType'},
+        ObjectId => $args{'ObjectId'},
+        ReferenceType => $args{'ReferenceType'},
+        OldReference => $args{'OldReference'},
+        NewReference => $args{'NewReference'},
     );
 
     # Parameters passed in during an import that we probably don't want to touch, otherwise
@@ -173,41 +176,47 @@ sub Create {
         Content => RT::User->CanonicalizeEmailAddress($_)
     ) for @{$args{'SquelchMailTo'} || []};
 
-    #Provide a way to turn off scrips if we need to
-        $RT::Logger->debug('About to think about scrips for transaction #' .$self->Id);
-    if ( $args{'ActivateScrips'} and $args{'ObjectType'} eq 'RT::Ticket' ) {
-       $self->{'scrips'} = RT::Scrips->new(RT->SystemUser);
+    my @return = ( $id, $self->loc("Transaction Created") );
 
-        $RT::Logger->debug('About to prepare scrips for transaction #' .$self->Id); 
+    return @return unless $args{'ObjectType'} eq 'RT::Ticket';
 
-        $self->{'scrips'}->Prepare(
-            Stage       => 'TransactionCreate',
-            Type        => $args{'Type'},
-            Ticket      => $args{'ObjectId'},
-            Transaction => $self->id,
-        );
-
-       # Entry point of the rule system
-       my $ticket = RT::Ticket->new(RT->SystemUser);
-       $ticket->Load($args{'ObjectId'});
-       my $txn = RT::Transaction->new($RT::SystemUser);
-       $txn->Load($self->id);
-
-       my $rules = $self->{rules} = RT::Ruleset->FindAllRules(
-            Stage       => 'TransactionCreate',
-            Type        => $args{'Type'},
-            TicketObj   => $ticket,
-            TransactionObj => $txn,
-       );
-
-        if ($args{'CommitScrips'} ) {
-            $RT::Logger->debug('About to commit scrips for transaction #' .$self->Id);
-            $self->{'scrips'}->Commit();
-            RT::Ruleset->CommitRules($rules);
-        }
+    # Provide a way to turn off scrips if we need to
+    unless ( $args{'ActivateScrips'} ) {
+        $RT::Logger->debug('Skipping scrips for transaction #' .$self->Id);
+        return @return;
     }
 
-    return ( $id, $self->loc("Transaction Created") );
+    $self->{'scrips'} = RT::Scrips->new(RT->SystemUser);
+
+    $RT::Logger->debug('About to prepare scrips for transaction #' .$self->Id); 
+
+    $self->{'scrips'}->Prepare(
+        Stage       => 'TransactionCreate',
+        Type        => $args{'Type'},
+        Ticket      => $args{'ObjectId'},
+        Transaction => $self->id,
+    );
+
+   # Entry point of the rule system
+   my $ticket = RT::Ticket->new(RT->SystemUser);
+   $ticket->Load($args{'ObjectId'});
+   my $txn = RT::Transaction->new($RT::SystemUser);
+   $txn->Load($self->id);
+
+   my $rules = $self->{rules} = RT::Ruleset->FindAllRules(
+        Stage       => 'TransactionCreate',
+        Type        => $args{'Type'},
+        TicketObj   => $ticket,
+        TransactionObj => $txn,
+   );
+
+    if ($args{'CommitScrips'} ) {
+        $RT::Logger->debug('About to commit scrips for transaction #' .$self->Id);
+        $self->{'scrips'}->Commit();
+        RT::Ruleset->CommitRules($rules);
+    }
+
+    return @return;
 }
 
 
@@ -339,15 +348,22 @@ sub Content {
         $content = $content_obj->Content ||'';
 
         if ( lc $content_obj->ContentType eq 'text/html' ) {
-            $content =~ s/<p>--\s+<br \/>.*?$//s if $args{'Quote'};
+            $content =~ s/(?:(<\/div>)|<p>|<br\s*\/?>|<div(\s+class="[^"]+")?>)\s*--\s+<br\s*\/?>.*?$/$1/s if $args{'Quote'};
 
             if ($args{Type} ne 'text/html') {
-                my $tree = HTML::TreeBuilder->new_from_content( $content );
-                $content = HTML::FormatText->new(
-                    leftmargin  => 0,
-                    rightmargin => 78,
-                )->format( $tree);
-                $tree->delete;
+                $content = RT::Interface::Email::ConvertHTMLToText($content);
+            } else {
+                # Scrub out <html>, <head>, <meta>, and <body>, and
+                # leave all else untouched.
+                my $scrubber = HTML::Scrubber->new();
+                $scrubber->rules(
+                    html => 0,
+                    head => 0,
+                    meta => 0,
+                    body => 0,
+                );
+                $scrubber->default( 1 => { '*' => 1 } );
+                $content = $scrubber->scrub( $content );
             }
         }
         else {
@@ -357,7 +373,7 @@ sub Content {
                 $content =~ s/&/&#38;/g;
                 $content =~ s/</&lt;/g;
                 $content =~ s/>/&gt;/g;
-                $content = "<pre>$content</pre>";
+                $content = qq|<pre style="white-space: pre-wrap; font-family: monospace;">$content</pre>|;
             }
         }
     }
@@ -368,10 +384,18 @@ sub Content {
     }
 
     if ( $args{'Quote'} ) {
-        $content = $self->ApplyQuoteWrap(content => $content,
-                                         cols    => $args{'Wrap'} );
+        if ($args{Type} eq 'text/html') {
+            $content = '<div class="gmail_quote">'
+                . $self->QuoteHeader
+                . '<br /><blockquote class="gmail_quote" type="cite">'
+                . $content
+                . '</blockquote></div><br /><br />';
+        } else {
+            $content = $self->ApplyQuoteWrap(content => $content,
+                                             cols    => $args{'Wrap'} );
 
-        $content = $self->QuoteHeader . "\n$content\n\n";
+            $content = $self->QuoteHeader . "\n$content\n\n";
+        }
     }
 
     return ($content);
@@ -476,14 +500,14 @@ Returns a hashref of addresses related to this transaction. See L<RT::Attachment
 =cut
 
 sub Addresses {
-	my $self = shift;
+    my $self = shift;
 
-	if (my $attach = $self->Attachments->First) {	
-		return $attach->Addresses;
-	}
-	else {
-		return {};
-	}
+    if (my $attach = $self->Attachments->First) {
+        return $attach->Addresses;
+    }
+    else {
+        return {};
+    }
 
 }
 
@@ -509,8 +533,36 @@ sub ContentObj {
 
     return undef unless ($Attachment);
 
+    my $Attachments = $self->Attachments;
+    while ( my $Attachment = $Attachments->Next ) {
+        if ( my $content = _FindPreferredContentObj( %args, Attachment => $Attachment ) ) {
+            return $content;
+        }
+    }
+
+    # If that fails, return the first top-level textual part which has some content.
+    # We probably really want this to become "recurse, looking for the other type of
+    # displayable".  For now, this maintains backcompat
+    my $all_parts = $self->Attachments;
+    while ( my $part = $all_parts->Next ) {
+        next unless _IsDisplayableTextualContentType($part->ContentType)
+        && $part->Content;
+        return $part;
+    }
+
+    return;
+}
+
+
+sub _FindPreferredContentObj {
+    my %args = @_;
+    my $Attachment = $args{Attachment};
+
+    # If we don't have any content, return undef now.
+    return undef unless $Attachment;
+
     # If it's a textual part, just return the body.
-    if ( RT::I18N::IsTextualContentType($Attachment->ContentType) ) {
+    if ( _IsDisplayableTextualContentType($Attachment->ContentType) ) {
         return ($Attachment);
     }
 
@@ -520,7 +572,7 @@ sub ContentObj {
     elsif ( $Attachment->ContentType =~ m|^multipart/mixed|i ) {
         my $kids = $Attachment->Children;
         while (my $child = $kids->Next) {
-            my $ret =  $self->ContentObj(%args, Attachment => $child);
+            my $ret =  _FindPreferredContentObj(%args, Attachment => $child);
             return $ret if ($ret);
         }
     }
@@ -534,14 +586,28 @@ sub ContentObj {
             if ( my $first = $plain_parts->First ) {
                 return $first;
             }
-        }
+        } else {
+            my $parts = $Attachment->Children;
+            $parts->LimitNotEmpty;
 
-        # If that fails, return the first textual part which has some content.
-        my $all_parts = $self->Attachments;
-        while ( my $part = $all_parts->Next ) {
-            next unless RT::I18N::IsTextualContentType($part->ContentType)
-                        && $part->Content;
-            return $part;
+            # If we actully found a part, return its content
+            while (my $part = $parts->Next) {
+                next unless _IsDisplayableTextualContentType($part->ContentType);
+                return $part;
+            }
+
+        }
+    }
+
+    # If this is a message/rfc822 mail, we need to dig into it in order to find 
+    # the actual textual content
+
+    elsif ( $Attachment->ContentType =~ '^message/rfc822' ) {
+        my $children = $Attachment->Children;
+        while ( my $child = $children->Next ) {
+            if ( my $content = _FindPreferredContentObj( %args, Attachment => $child ) ) {
+                return $content;
+            }
         }
     }
 
@@ -549,6 +615,18 @@ sub ContentObj {
     return (undef);
 }
 
+=head2 _IsDisplayableTextualContentType
+
+We may need to pull this out to another module later, but for now, this
+is better than RT::I18N::IsTextualContentType because that believes that
+a message/rfc822 email is displayable, despite it having no content
+
+=cut
+
+sub _IsDisplayableTextualContentType {
+    my $type = shift;
+    ($type =~ m{^text/(?:plain|html)\b}i) ? 1 : 0;
+}
 
 
 =head2 Subject
@@ -684,105 +762,208 @@ Returns a text string which briefly describes this transaction
 
 =cut
 
-sub BriefDescription {
+{
+    my $scrubber = HTML::Scrubber->new(default => 0); # deny everything
+
+    sub BriefDescription {
+        my $self = shift;
+        my $desc = $self->BriefDescriptionAsHTML;
+           $desc = $scrubber->scrub($desc);
+           $desc = HTML::Entities::decode_entities($desc);
+        return $desc;
+    }
+}
+
+=head2 BriefDescriptionAsHTML
+
+Returns an HTML string which briefly describes this transaction.
+
+=cut
+
+sub BriefDescriptionAsHTML {
     my $self = shift;
 
     unless ( $self->CurrentUserCanSee ) {
         return ( $self->loc("Permission Denied") );
     }
 
-    my $type = $self->Type;    #cache this, rather than calling it 30 times
+    my ($objecttype, $type, $field) = ($self->ObjectType, $self->Type, $self->Field);
 
     unless ( defined $type ) {
         return $self->loc("No transaction type specified");
     }
 
-    my $obj_type = $self->FriendlyObjectType;
+    my ($template, @params);
 
-    if ( $type eq 'Create' ) {
-        return ( $self->loc( "[_1] created", $obj_type ) );
+    my @code = grep { ref eq 'CODE' } map { $_BriefDescriptions{$_} }
+        ( $field
+            ? ("$objecttype-$type-$field", "$type-$field")
+            : () ),
+        "$objecttype-$type", $type;
+
+    if (@code) {
+        ($template, @params) = $code[0]->($self);
     }
-    elsif ( $type eq 'Enabled' ) {
-        return ( $self->loc( "[_1] enabled", $obj_type ) );
+
+    unless ($template) {
+        ($template, @params) = (
+            "Default: [_1]/[_2] changed from [_3] to [_4]", #loc
+            $type,
+            $field,
+            (
+                $self->OldValue
+                ? "'" . $self->OldValue . "'"
+                : $self->loc("(no value)")
+            ),
+            (
+                $self->NewValue
+                ? "'" . $self->NewValue . "'"
+                : $self->loc("(no value)")
+            ),
+        );
     }
-    elsif ( $type eq 'Disabled' ) {
-        return ( $self->loc( "[_1] disabled", $obj_type ) );
+    return $self->loc($template, $self->_ProcessReturnValues(@params));
+}
+
+sub _ProcessReturnValues {
+    my $self   = shift;
+    my @values = @_;
+    return map {
+        if    (ref eq 'ARRAY')  { $_ = join "", $self->_ProcessReturnValues(@$_) }
+        elsif (ref eq 'SCALAR') { $_ = $$_ }
+        else                    { RT::Interface::Web::EscapeHTML(\$_) }
+        $_
+    } @values;
+}
+
+sub _FormatPrincipal {
+    my $self = shift;
+    my $principal = shift;
+    if ($principal->IsUser) {
+        return $self->_FormatUser( $principal->Object );
+    } else {
+        return $self->loc("group [_1]", $principal->Object->Name);
     }
-    elsif ( $type =~ /Status/ ) {
+}
+
+sub _FormatUser {
+    my $self = shift;
+    my $user = shift;
+    return [
+        \'<span class="user" data-replace="user" data-user-id="', $user->id, \'">',
+        $user->Format,
+        \'</span>'
+    ];
+}
+
+%_BriefDescriptions = (
+    Create => sub {
+        my $self = shift;
+        return ( "[_1] created", $self->FriendlyObjectType );   #loc()
+    },
+    Enabled => sub {
+        my $self = shift;
+        return ( "[_1] enabled", $self->FriendlyObjectType );   #loc()
+    },
+    Disabled => sub {
+        my $self = shift;
+        return ( "[_1] disabled", $self->FriendlyObjectType );  #loc()
+    },
+    Status => sub {
+        my $self = shift;
         if ( $self->Field eq 'Status' ) {
             if ( $self->NewValue eq 'deleted' ) {
-                return ( $self->loc( "[_1] deleted", $obj_type ) );
+                return ( "[_1] deleted", $self->FriendlyObjectType );   #loc()
             }
             else {
-                my $canon = $self->Object->can("QueueObj")
-                    ? sub { $self->Object->QueueObj->Lifecycle->CanonicalCase(@_) }
+                my $canon = $self->Object->DOES("RT::Record::Role::Status")
+                    ? sub { $self->Object->LifecycleObj->CanonicalCase(@_) }
                     : sub { return $_[0] };
                 return (
-                    $self->loc(
-                        "Status changed from [_1] to [_2]",
-                        "'" . $self->loc( $canon->($self->OldValue) ) . "'",
-                        "'" . $self->loc( $canon->($self->NewValue) ) . "'"
-                    )
-                );
-
+                    "Status changed from [_1] to [_2]",
+                    "'" . $self->loc( $canon->($self->OldValue) ) . "'",
+                    "'" . $self->loc( $canon->($self->NewValue) ) . "'"
+                );   # loc()
             }
         }
 
         # Generic:
         my $no_value = $self->loc("(no value)");
         return (
-            $self->loc(
-                "[_1] changed from [_2] to [_3]",
-                $self->Field,
-                ( $self->OldValue ? "'" . $self->OldValue . "'" : $no_value ),
-                "'" . $self->NewValue . "'"
-            )
-        );
-    }
-    elsif ( $type =~ /SystemError/ ) {
-        return $self->loc("System error");
-    }
-    elsif ( $type =~ /Forward Transaction/ ) {
-        return $self->loc( "Forwarded Transaction #[_1] to [_2]",
-            $self->Field, $self->Data );
-    }
-    elsif ( $type =~ /Forward Ticket/ ) {
-        return $self->loc( "Forwarded Ticket to [_1]", $self->Data );
-    }
+            "[_1] changed from [_2] to [_3]",
+            $self->Field,
+            ( $self->OldValue ? "'" . $self->OldValue . "'" : $no_value ),
+            "'" . $self->NewValue . "'"
+        ); #loc()
+    },
+    SystemError => sub {
+        my $self = shift;
+        return $self->Data // ("System error"); #loc()
+    },
+    AttachmentTruncate => sub {
+        my $self = shift;
+        if ( defined $self->Data ) {
+            return ( "File '[_1]' truncated because its size ([_2] bytes) exceeded configured maximum size setting ([_3] bytes).",
+                $self->Data, $self->OldValue, $self->NewValue ); #loc()
+        }
+        else {
+            return ( "Content truncated because its size ([_1] bytes) exceeded configured maximum size setting ([_2] bytes).",
+                $self->OldValue, $self->NewValue ); #loc()
+        }
+    },
+    AttachmentDrop => sub {
+        my $self = shift;
+        if ( defined $self->Data ) {
+            return ( "File '[_1]' dropped because its size ([_2] bytes) exceeded configured maximum size setting ([_3] bytes).",
+                $self->Data, $self->OldValue, $self->NewValue ); #loc()
+        }
+        else {
+            return ( "Content dropped because its size ([_1] bytes) exceeded configured maximum size setting ([_2] bytes).",
+                $self->OldValue, $self->NewValue ); #loc()
+        }
+    },
+    AttachmentError => sub {
+        my $self = shift;
+        if ( defined $self->Data ) {
+            return ( "File '[_1]' insert failed. See error log for details.", $self->Data ); #loc()
+        }
+        else {
+            return ( "Content insert failed. See error log for details." ); #loc()
+        }
+    },
+    "Forward Transaction" => sub {
+        my $self = shift;
+        my $recipients = join ", ", map {
+            RT::User->Format( Address => $_, CurrentUser => $self->CurrentUser )
+        } RT::EmailParser->ParseEmailAddress($self->Data);
 
-    if ( my $code = $_BriefDescriptions{$type} ) {
-        return $code->($self);
-    }
+        return ( "Forwarded [_3]Transaction #[_1][_4] to [_2]",
+            $self->Field, $recipients,
+            [\'<a href="#txn-', $self->Field, \'">'], \'</a>'); #loc()
+    },
+    "Forward Ticket" => sub {
+        my $self = shift;
+        my $recipients = join ", ", map {
+            RT::User->Format( Address => $_, CurrentUser => $self->CurrentUser )
+        } RT::EmailParser->ParseEmailAddress($self->Data);
 
-    return $self->loc(
-        "Default: [_1]/[_2] changed from [_3] to [_4]",
-        $type,
-        $self->Field,
-        (
-            $self->OldValue
-            ? "'" . $self->OldValue . "'"
-            : $self->loc("(no value)")
-        ),
-        "'" . $self->NewValue . "'"
-    );
-}
-
-%_BriefDescriptions = (
+        return ( "Forwarded Ticket to [_1]", $recipients ); #loc()
+    },
     CommentEmailRecord => sub {
         my $self = shift;
-        return $self->loc("Outgoing email about a comment recorded");
+        return ("Outgoing email about a comment recorded"); #loc()
     },
     EmailRecord => sub {
         my $self = shift;
-        return $self->loc("Outgoing email recorded");
+        return ("Outgoing email recorded"); #loc()
     },
     Correspond => sub {
         my $self = shift;
-        return $self->loc("Correspondence added");
+        return ("Correspondence added");    #loc()
     },
     Comment => sub {
         my $self = shift;
-        return $self->loc("Comments added");
+        return ("Comments added");          #loc()
     },
     CustomField => sub {
         my $self = shift;
@@ -839,22 +1020,22 @@ sub BriefDescription {
         }
 
         if ( !defined($old) || $old eq '' ) {
-            return $self->loc("[_1] [_2] added", $field, $new);
+            return ("[_1] [_2] added", $field, $new);   #loc()
         }
         elsif ( !defined($new) || $new eq '' ) {
-            return $self->loc("[_1] [_2] deleted", $field, $old);
+            return ("[_1] [_2] deleted", $field, $old); #loc()
         }
         else {
-            return $self->loc("[_1] [_2] changed to [_3]", $field, $old, $new);
+            return ("[_1] [_2] changed to [_3]", $field, $old, $new);   #loc()
         }
     },
     Untake => sub {
         my $self = shift;
-        return $self->loc("Untaken");
+        return ("Untaken"); #loc()
     },
     Take => sub {
         my $self = shift;
-        return $self->loc("Taken");
+        return ("Taken"); #loc()
     },
     Force => sub {
         my $self = shift;
@@ -863,35 +1044,42 @@ sub BriefDescription {
         my $New = RT::User->new( $self->CurrentUser );
         $New->Load( $self->NewValue );
 
-        return $self->loc("Owner forcibly changed from [_1] to [_2]" , $Old->Name , $New->Name);
+        return ("Owner forcibly changed from [_1] to [_2]",
+                map { $self->_FormatUser($_) } $Old, $New);  #loc()
     },
     Steal => sub {
         my $self = shift;
         my $Old = RT::User->new( $self->CurrentUser );
         $Old->Load( $self->OldValue );
-        return $self->loc("Stolen from [_1]",  $Old->Name);
+        return ("Stolen from [_1]", $self->_FormatUser($Old));   #loc()
     },
     Give => sub {
         my $self = shift;
         my $New = RT::User->new( $self->CurrentUser );
         $New->Load( $self->NewValue );
-        return $self->loc( "Given to [_1]",  $New->Name );
+        return ( "Given to [_1]", $self->_FormatUser($New));    #loc()
     },
     AddWatcher => sub {
         my $self = shift;
         my $principal = RT::Principal->new($self->CurrentUser);
         $principal->Load($self->NewValue);
-        return $self->loc( "[_1] [_2] added", $self->Field, $principal->Object->Name);
+        return ( "[_1] [_2] added", $self->loc($self->Field), $self->_FormatPrincipal($principal));    #loc()
     },
     DelWatcher => sub {
         my $self = shift;
         my $principal = RT::Principal->new($self->CurrentUser);
         $principal->Load($self->OldValue);
-        return $self->loc( "[_1] [_2] deleted", $self->Field, $principal->Object->Name);
+        return ( "[_1] [_2] deleted", $self->loc($self->Field), $self->_FormatPrincipal($principal));  #loc()
+    },
+    SetWatcher => sub {
+        my $self = shift;
+        my $principal = RT::Principal->new($self->CurrentUser);
+        $principal->Load($self->NewValue);
+        return ( "[_1] set to [_2]", $self->loc($self->Field), $self->_FormatPrincipal($principal));  #loc()
     },
     Subject => sub {
         my $self = shift;
-        return $self->loc( "Subject changed to [_1]", $self->Data );
+        return ( "Subject changed to [_1]", $self->Data );  #loc()
     },
     AddLink => sub {
         my $self = shift;
@@ -899,36 +1087,40 @@ sub BriefDescription {
         if ( $self->NewValue ) {
             my $URI = RT::URI->new( $self->CurrentUser );
             if ( $URI->FromURI( $self->NewValue ) ) {
-                $value = $URI->Resolver->AsString;
+                $value = [
+                    \'<a href="', $URI->AsHREF, \'">',
+                    $URI->AsString,
+                    \'</a>'
+                ];
             }
             else {
                 $value = $self->NewValue;
             }
+
             if ( $self->Field eq 'DependsOn' ) {
-                return $self->loc( "Dependency on [_1] added", $value );
+                return ( "Dependency on [_1] added", $value );  #loc()
             }
             elsif ( $self->Field eq 'DependedOnBy' ) {
-                return $self->loc( "Dependency by [_1] added", $value );
-
+                return ( "Dependency by [_1] added", $value );  #loc()
             }
             elsif ( $self->Field eq 'RefersTo' ) {
-                return $self->loc( "Reference to [_1] added", $value );
+                return ( "Reference to [_1] added", $value );   #loc()
             }
             elsif ( $self->Field eq 'ReferredToBy' ) {
-                return $self->loc( "Reference by [_1] added", $value );
+                return ( "Reference by [_1] added", $value );   #loc()
             }
             elsif ( $self->Field eq 'MemberOf' ) {
-                return $self->loc( "Membership in [_1] added", $value );
+                return ( "Membership in [_1] added", $value );  #loc()
             }
             elsif ( $self->Field eq 'HasMember' ) {
-                return $self->loc( "Member [_1] added", $value );
+                return ( "Member [_1] added", $value );         #loc()
             }
             elsif ( $self->Field eq 'MergedInto' ) {
-                return $self->loc( "Merged into [_1]", $value );
+                return ( "Merged into [_1]", $value );          #loc()
             }
         }
         else {
-            return ( $self->Data );
+            return ( "[_1]", $self->Data ); #loc()
         }
     },
     DeleteLink => sub {
@@ -936,35 +1128,38 @@ sub BriefDescription {
         my $value;
         if ( $self->OldValue ) {
             my $URI = RT::URI->new( $self->CurrentUser );
-            if ( $URI->FromURI( $self->OldValue ) ){
-                $value = $URI->Resolver->AsString;
+            if ( $URI->FromURI( $self->OldValue ) ) {
+                $value = [
+                    \'<a href="', $URI->AsHREF, \'">',
+                    $URI->AsString,
+                    \'</a>'
+                ];
             }
             else {
                 $value = $self->OldValue;
             }
 
             if ( $self->Field eq 'DependsOn' ) {
-                return $self->loc( "Dependency on [_1] deleted", $value );
+                return ( "Dependency on [_1] deleted", $value );    #loc()
             }
             elsif ( $self->Field eq 'DependedOnBy' ) {
-                return $self->loc( "Dependency by [_1] deleted", $value );
-
+                return ( "Dependency by [_1] deleted", $value );    #loc()
             }
             elsif ( $self->Field eq 'RefersTo' ) {
-                return $self->loc( "Reference to [_1] deleted", $value );
+                return ( "Reference to [_1] deleted", $value );     #loc()
             }
             elsif ( $self->Field eq 'ReferredToBy' ) {
-                return $self->loc( "Reference by [_1] deleted", $value );
+                return ( "Reference by [_1] deleted", $value );     #loc()
             }
             elsif ( $self->Field eq 'MemberOf' ) {
-                return $self->loc( "Membership in [_1] deleted", $value );
+                return ( "Membership in [_1] deleted", $value );    #loc()
             }
             elsif ( $self->Field eq 'HasMember' ) {
-                return $self->loc( "Member [_1] deleted", $value );
+                return ( "Member [_1] deleted", $value );           #loc()
             }
         }
         else {
-            return ( $self->Data );
+            return ( "[_1]", $self->Data ); #loc()
         }
     },
     Told => sub {
@@ -974,26 +1169,26 @@ sub BriefDescription {
             $t1->Set(Format => 'ISO', Value => $self->NewValue);
             my $t2 = RT::Date->new($self->CurrentUser);
             $t2->Set(Format => 'ISO', Value => $self->OldValue);
-            return $self->loc( "[_1] changed from [_2] to [_3]", $self->loc($self->Field), $t2->AsString, $t1->AsString );
+            return ( "[_1] changed from [_2] to [_3]", $self->loc($self->Field), $t2->AsString, $t1->AsString );    #loc()
         }
         else {
-            return $self->loc( "[_1] changed from [_2] to [_3]",
-                               $self->loc($self->Field),
-                               ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")) , "'". $self->NewValue."'" );
+            return ( "[_1] changed from [_2] to [_3]",
+                    $self->loc($self->Field),
+                    ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")) , "'". $self->NewValue."'" );  #loc()
         }
     },
     Set => sub {
         my $self = shift;
         if ( $self->Field eq 'Password' ) {
-            return $self->loc('Password changed');
+            return ('Password changed');    #loc()
         }
         elsif ( $self->Field eq 'Queue' ) {
             my $q1 = RT::Queue->new( $self->CurrentUser );
             $q1->Load( $self->OldValue );
             my $q2 = RT::Queue->new( $self->CurrentUser );
             $q2->Load( $self->NewValue );
-            return $self->loc("[_1] changed from [_2] to [_3]",
-                              $self->loc($self->Field) , $q1->Name , $q2->Name);
+            return ("[_1] changed from [_2] to [_3]",
+                    $self->loc($self->Field) , $q1->Name , $q2->Name);  #loc()
         }
 
         # Write the date/time change at local time:
@@ -1002,7 +1197,7 @@ sub BriefDescription {
             $t1->Set(Format => 'ISO', Value => $self->NewValue);
             my $t2 = RT::Date->new($self->CurrentUser);
             $t2->Set(Format => 'ISO', Value => $self->OldValue);
-            return $self->loc( "[_1] changed from [_2] to [_3]", $self->loc($self->Field), $t2->AsString, $t1->AsString );
+            return ( "[_1] changed from [_2] to [_3]", $self->loc($self->Field), $t2->AsString, $t1->AsString );    #loc()
         }
         elsif ( $self->Field eq 'Owner' ) {
             my $Old = RT::User->new( $self->CurrentUser );
@@ -1012,62 +1207,89 @@ sub BriefDescription {
 
             if ( $Old->id == RT->Nobody->id ) {
                 if ( $New->id == $self->Creator ) {
-                    return $self->loc("Taken");
+                    return ("Taken");   #loc()
                 }
                 else {
-                    return $self->loc( "Given to [_1]",  $New->Name );
+                    return ( "Given to [_1]", $self->_FormatUser($New) );    #loc()
                 }
             }
             else {
                 if ( $New->id == $self->Creator ) {
-                    return $self->loc("Stolen from [_1]",  $Old->Name);
+                    return ("Stolen from [_1]",  $self->_FormatUser($Old) );   #loc()
                 }
                 elsif ( $Old->id == $self->Creator ) {
                     if ( $New->id == RT->Nobody->id ) {
-                        return $self->loc("Untaken");
+                        return ("Untaken"); #loc()
                     }
                     else {
-                        return $self->loc( "Given to [_1]", $New->Name );
+                        return ( "Given to [_1]", $self->_FormatUser($New) ); #loc()
                     }
                 }
                 else {
-                    return $self->loc(
+                    return (
                         "Owner forcibly changed from [_1] to [_2]",
-                        $Old->Name, $New->Name );
+                        map { $self->_FormatUser($_) } $Old, $New
+                    );   #loc()
                 }
             }
         }
         else {
-            return $self->loc( "[_1] changed from [_2] to [_3]",
-                               $self->loc($self->Field),
-                               ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")),
-                               ($self->NewValue? "'".$self->NewValue ."'" : $self->loc("(no value)")));
+            return ( "[_1] changed from [_2] to [_3]",
+                    $self->loc($self->Field),
+                    ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")),
+                    ($self->NewValue? "'".$self->NewValue ."'" : $self->loc("(no value)")));  #loc()
+        }
+    },
+    "Set-TimeWorked" => sub {
+        my $self = shift;
+        my $old  = $self->OldValue || 0;
+        my $new  = $self->NewValue || 0;
+        my $duration = $new - $old;
+        if ($duration < 0) {
+            return ("Adjusted time worked by [quant,_1,minute,minutes]", $duration); # loc()
+        }
+        elsif ($duration < 60) {
+            return ("Worked [quant,_1,minute,minutes]", $duration); # loc()
+        } else {
+            return ("Worked [quant,_1,hour,hours] ([quant,_2,minute,minutes])", sprintf("%.1f", $duration / 60), $duration); # loc()
         }
     },
     PurgeTransaction => sub {
         my $self = shift;
-        return $self->loc("Transaction [_1] purged", $self->Data);
+        return ("Transaction [_1] purged", $self->Data);    #loc()
     },
     AddReminder => sub {
         my $self = shift;
         my $ticket = RT::Ticket->new($self->CurrentUser);
         $ticket->Load($self->NewValue);
-        return $self->loc("Reminder '[_1]' added", $ticket->Subject);
+        my $subject = [
+            \'<a href="', RT->Config->Get('WebPath'),
+            "/Ticket/Reminders.html?id=", $self->ObjectId,
+            "#reminder-", $ticket->id, \'">', $ticket->Subject, \'</a>'
+        ];
+        return ("Reminder '[_1]' added", $subject); #loc()
     },
     OpenReminder => sub {
         my $self = shift;
         my $ticket = RT::Ticket->new($self->CurrentUser);
         $ticket->Load($self->NewValue);
-        return $self->loc("Reminder '[_1]' reopened", $ticket->Subject);
-    
+        my $subject = [
+            \'<a href="', RT->Config->Get('WebPath'),
+            "/Ticket/Reminders.html?id=", $self->ObjectId,
+            "#reminder-", $ticket->id, \'">', $ticket->Subject, \'</a>'
+        ];
+        return ("Reminder '[_1]' reopened", $subject);  #loc()
     },
     ResolveReminder => sub {
         my $self = shift;
         my $ticket = RT::Ticket->new($self->CurrentUser);
         $ticket->Load($self->NewValue);
-        return $self->loc("Reminder '[_1]' completed", $ticket->Subject);
-    
-    
+        my $subject = [
+            \'<a href="', RT->Config->Get('WebPath'),
+            "/Ticket/Reminders.html?id=", $self->ObjectId,
+            "#reminder-", $ticket->id, \'">', $ticket->Subject, \'</a>'
+        ];
+        return ("Reminder '[_1]' completed", $subject); #loc()
     }
 );
 
@@ -1132,23 +1354,6 @@ sub _Value {
 }
 
 
-
-=head2 CurrentUserHasRight RIGHT
-
-Calls $self->CurrentUser->HasQueueRight for the right passed in here.
-passed in here.
-
-=cut
-
-sub CurrentUserHasRight {
-    my $self  = shift;
-    my $right = shift;
-    return $self->CurrentUser->HasRight(
-        Right  => $right,
-        Object => $self->Object
-    );
-}
-
 =head2 CurrentUserCanSee
 
 Returns true if current user has rights to see this particular transaction.
@@ -1157,31 +1362,18 @@ This fact depends on type of the transaction, type of an object the transaction
 is attached to and may be other conditions, so this method is prefered over
 custom implementations.
 
+It always returns true if current user is system user.
+
 =cut
 
 sub CurrentUserCanSee {
     my $self = shift;
 
-    # If it's a comment, we need to be extra special careful
-    my $type = $self->__Value('Type');
-    if ( $type eq 'Comment' ) {
-        unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
-            return 0;
-        }
-    }
-    elsif ( $type eq 'CommentEmailRecord' ) {
-        unless ( $self->CurrentUserHasRight('ShowTicketComments')
-            && $self->CurrentUserHasRight('ShowOutgoingEmail') ) {
-            return 0;
-        }
-    }
-    elsif ( $type eq 'EmailRecord' ) {
-        unless ( $self->CurrentUserHasRight('ShowOutgoingEmail') ) {
-            return 0;
-        }
-    }
+    return 1 if $self->CurrentUser->PrincipalObj->Id == RT->SystemUser->Id;
+
     # Make sure the user can see the custom field before showing that it changed
-    elsif ( $type eq 'CustomField' and my $cf_id = $self->__Value('Field') ) {
+    my $type = $self->__Value('Type');
+    if ( $type eq 'CustomField' and my $cf_id = $self->__Value('Field') ) {
         my $cf = RT::CustomField->new( $self->CurrentUser );
         $cf->SetContextObject( $self->Object );
         $cf->Load( $cf_id );
@@ -1193,7 +1385,7 @@ sub CurrentUserCanSee {
     return 1 if $self->{ _object_is_readable };
 
     # Defer to the object in question
-    return $self->Object->CurrentUserCanSee("Transaction");
+    return $self->Object->CurrentUserCanSee("Transaction", $self);
 }
 
 
@@ -1209,11 +1401,7 @@ sub TicketObj {
 
 sub OldValue {
     my $self = shift;
-    if ( my $type = $self->__Value('ReferenceType')
-         and my $id = $self->__Value('OldReference') )
-    {
-        my $Object = $type->new($self->CurrentUser);
-        $Object->Load( $id );
+    if ( my $Object = $self->OldReferenceObject ) {
         return $Object->Content;
     }
     else {
@@ -1223,11 +1411,7 @@ sub OldValue {
 
 sub NewValue {
     my $self = shift;
-    if ( my $type = $self->__Value('ReferenceType')
-         and my $id = $self->__Value('NewReference') )
-    {
-        my $Object = $type->new($self->CurrentUser);
-        $Object->Load( $id );
+    if ( my $Object = $self->NewReferenceObject ) {
         return $Object->Content;
     }
     else {
@@ -1242,22 +1426,53 @@ sub Object {
     return $Object;
 }
 
+=head2 NewReferenceObject
+
+=head2 OldReferenceObject
+
+Returns an object of the class specified by the column C<ReferenceType> and
+loaded with the id specified by the column C<NewReference> or C<OldReference>.
+C<ReferenceType> is assumed to be an L<RT::Record> subclass.
+
+The object may be unloaded (check C<< $object->id >>) if the reference is
+corrupt (such as if the referenced record was improperly deleted).
+
+Returns undef if either C<ReferenceType> or C<NewReference>/C<OldReference> is
+false.
+
+=cut
+
+sub NewReferenceObject { $_[0]->_ReferenceObject("New") }
+sub OldReferenceObject { $_[0]->_ReferenceObject("Old") }
+
+sub _ReferenceObject {
+    my $self  = shift;
+    my $which = shift;
+    my $type  = $self->__Value("ReferenceType");
+    my $id    = $self->__Value("${which}Reference");
+    return unless $type and $id;
+
+    my $object = $type->new($self->CurrentUser);
+    $object->Load( $id );
+    return $object;
+}
+
 sub FriendlyObjectType {
     my $self = shift;
-    my $type = $self->ObjectType or return undef;
-    $type =~ s/^RT:://;
-    return $self->loc($type);
+    return $self->loc( $self->Object->RecordType );
 }
 
 =head2 UpdateCustomFields
-    
-    Takes a hash of 
 
-    CustomField-<<Id>> => Value
-        or 
+Takes a hash of:
 
-    Object-RT::Transaction-CustomField-<<Id>> => Value parameters to update
-    this transaction's custom fields
+    CustomField-C<Id> => Value
+
+or:
+
+    Object-RT::Transaction-CustomField-C<Id> => Value
+
+parameters to update this transaction's custom fields.
 
 =cut
 
@@ -1269,12 +1484,9 @@ sub UpdateCustomFields {
     # value "ARGSRef", which was a reference to a hash of arguments.
     # This was insane. The next few lines of code preserve that API
     # while giving us something saner.
-
-    # TODO: 3.6: DEPRECATE OLD API
-
-    my $args; 
-
-    if ($args{'ARGSRef'}) { 
+    my $args;
+    if ($args{'ARGSRef'}) {
+        RT->Deprecated( Arguments => "ARGSRef", Remove => "4.4" );
         $args = $args{ARGSRef};
     } else {
         $args = \%args;
@@ -1288,6 +1500,8 @@ sub UpdateCustomFields {
         next if $arg =~ /-TimeUnits$/;
         my $cfid   = $1;
         my $values = $args->{$arg};
+        my $cf = $self->LoadCustomFieldByIdentifier($cfid);
+        next unless $cf->ObjectTypeFromLookupType($cf->__Value('LookupType'))->isa(ref $self);
         foreach
           my $value ( UNIVERSAL::isa( $values, 'ARRAY' ) ? @$values : $values )
         {
@@ -1321,7 +1535,7 @@ sub LoadCustomFieldByIdentifier {
 
     my $CFs = RT::CustomFields->new( $self->CurrentUser );
     $CFs->SetContextObject( $self->Object );
-    $CFs->Limit( FIELD => 'Name', VALUE => $field );
+    $CFs->Limit( FIELD => 'Name', VALUE => $field, CASESENSITIVE => 0 );
     $CFs->LimitToLookupType($self->CustomFieldLookupType);
     $CFs->LimitToGlobalOrObjectId($self->Object->QueueObj->id);
     return $CFs->First || RT::CustomField->new( $self->CurrentUser );
@@ -1694,36 +1908,181 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         ObjectType =>
-		{read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 64,  is_blob => 0,  is_numeric => 0,  type => 'varchar(64)', default => ''},
         ObjectId =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         TimeTaken =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Type =>
-		{read => 1, write => 1, sql_type => 12, length => 20,  is_blob => 0,  is_numeric => 0,  type => 'varchar(20)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 20,  is_blob => 0,  is_numeric => 0,  type => 'varchar(20)', default => ''},
         Field =>
-		{read => 1, write => 1, sql_type => 12, length => 40,  is_blob => 0,  is_numeric => 0,  type => 'varchar(40)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 40,  is_blob => 0,  is_numeric => 0,  type => 'varchar(40)', default => ''},
         OldValue =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         NewValue =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         ReferenceType =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         OldReference =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         NewReference =>
-		{read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Data =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub FindDependencies {
+    my $self = shift;
+    my ($walker, $deps) = @_;
+
+    $self->SUPER::FindDependencies($walker, $deps);
+
+    $deps->Add( out => $self->Object );
+    $deps->Add( in => $self->Attachments );
+
+    my $type = $self->Type;
+    if ($type eq "CustomField") {
+        my $cf = RT::CustomField->new( RT->SystemUser );
+        $cf->Load( $self->Field );
+        $deps->Add( out => $cf );
+    } elsif ($type =~ /^(Take|Untake|Force|Steal|Give)$/) {
+        for my $field (qw/OldValue NewValue/) {
+            my $user = RT::User->new( RT->SystemUser );
+            $user->Load( $self->$field );
+            $deps->Add( out => $user );
+        }
+    } elsif ($type eq "DelWatcher") {
+        my $principal = RT::Principal->new( RT->SystemUser );
+        $principal->Load( $self->OldValue );
+        $deps->Add( out => $principal->Object );
+    } elsif ($type eq "AddWatcher") {
+        my $principal = RT::Principal->new( RT->SystemUser );
+        $principal->Load( $self->NewValue );
+        $deps->Add( out => $principal->Object );
+    } elsif ($type eq "DeleteLink") {
+        if ($self->OldValue) {
+            my $base = RT::URI->new( $self->CurrentUser );
+            $base->FromURI( $self->OldValue );
+            $deps->Add( out => $base->Object ) if $base->Resolver and $base->Object;
+        }
+    } elsif ($type eq "AddLink") {
+        if ($self->NewValue) {
+            my $base = RT::URI->new( $self->CurrentUser );
+            $base->FromURI( $self->NewValue );
+            $deps->Add( out => $base->Object ) if $base->Resolver and $base->Object;
+        }
+    } elsif ($type eq "Set" and $self->Field eq "Queue") {
+        for my $field (qw/OldValue NewValue/) {
+            my $queue = RT::Queue->new( RT->SystemUser );
+            $queue->Load( $self->$field );
+            $deps->Add( out => $queue );
+        }
+    } elsif ($type =~ /^(Add|Open|Resolve)Reminder$/) {
+        my $ticket = RT::Ticket->new( RT->SystemUser );
+        $ticket->Load( $self->NewValue );
+        $deps->Add( out => $ticket );
+    }
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $self->Attachments,
+        Shredder => $args{'Shredder'}
+    );
+
+    return $self->SUPER::__DependsOn( %args );
+}
+
+sub Serialize {
+    my $self = shift;
+    my %args = (@_);
+    my %store = $self->SUPER::Serialize(@_);
+
+    my $type = $store{Type};
+    if ($type eq "CustomField") {
+        my $cf = RT::CustomField->new( RT->SystemUser );
+        $cf->Load( $store{Field} );
+        $store{Field} = \($cf->UID);
+    } elsif ($type =~ /^(Take|Untake|Force|Steal|Give)$/) {
+        for my $field (qw/OldValue NewValue/) {
+            my $user = RT::User->new( RT->SystemUser );
+            $user->Load( $store{$field} );
+            $store{$field} = \($user->UID);
+        }
+    } elsif ($type eq "DelWatcher") {
+        my $principal = RT::Principal->new( RT->SystemUser );
+        $principal->Load( $store{OldValue} );
+        $store{OldValue} = \($principal->UID);
+    } elsif ($type eq "AddWatcher") {
+        my $principal = RT::Principal->new( RT->SystemUser );
+        $principal->Load( $store{NewValue} );
+        $store{NewValue} = \($principal->UID);
+    } elsif ($type eq "DeleteLink") {
+        if ($store{OldValue}) {
+            my $base = RT::URI->new( $self->CurrentUser );
+            $base->FromURI( $store{OldValue} );
+            $store{OldValue} = \($base->Object->UID) if $base->Resolver and $base->Object;
+        }
+    } elsif ($type eq "AddLink") {
+        if ($store{NewValue}) {
+            my $base = RT::URI->new( $self->CurrentUser );
+            $base->FromURI( $store{NewValue} );
+            $store{NewValue} = \($base->Object->UID) if $base->Resolver and $base->Object;
+        }
+    } elsif ($type eq "Set" and $store{Field} eq "Queue") {
+        for my $field (qw/OldValue NewValue/) {
+            my $queue = RT::Queue->new( RT->SystemUser );
+            $queue->Load( $store{$field} );
+            $store{$field} = \($queue->UID);
+        }
+    } elsif ($type =~ /^(Add|Open|Resolve)Reminder$/) {
+        my $ticket = RT::Ticket->new( RT->SystemUser );
+        $ticket->Load( $store{NewValue} );
+        $store{NewValue} = \($ticket->UID);
+    }
+
+    return %store;
+}
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    if ($data->{Object} and ref $data->{Object}) {
+        my $on_uid = ${ $data->{Object} };
+        return if $importer->ShouldSkipTransaction($on_uid);
+    }
+
+    if ($data->{Type} eq "DeleteLink" and ref $data->{OldValue}) {
+        my $uid = ${ $data->{OldValue} };
+        my $obj = $importer->LookupObj( $uid );
+        $data->{OldValue} = $obj->URI;
+    } elsif ($data->{Type} eq "AddLink" and ref $data->{NewValue}) {
+        my $uid = ${ $data->{NewValue} };
+        my $obj = $importer->LookupObj( $uid );
+        $data->{NewValue} = $obj->URI;
+    }
+
+    return $class->SUPER::PreInflate( $importer, $uid, $data );
+}
 
 RT::Base->_ImportOverlays();
 

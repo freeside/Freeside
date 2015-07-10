@@ -75,28 +75,22 @@ use warnings;
 
 use base 'RT::Record';
 
+
 sub Table {'ScripConditions'}
 
-
-
-sub _Init  {
-    my $self = shift; 
-    $self->{'table'} = "ScripConditions";
-    return ($self->SUPER::_Init(@_));
-}
 
 sub _Accessible  {
     my $self = shift;
     my %Cols = ( Name  => 'read',
-		 Description => 'read',
-		 ApplicableTransTypes	 => 'read',
-		 ExecModule  => 'read',
-		 Argument  => 'read',
-		 Creator => 'read/auto',
-		 Created => 'read/auto',
-		 LastUpdatedBy => 'read/auto',
-		 LastUpdated => 'read/auto'
-	       );
+                 Description => 'read',
+                 ApplicableTransTypes => 'read',
+                 ExecModule  => 'read',
+                 Argument  => 'read',
+                 Creator => 'read/auto',
+                 Created => 'read/auto',
+                 LastUpdatedBy => 'read/auto',
+                 LastUpdated => 'read/auto'
+               );
     return($self->SUPER::_Accessible(@_, %Cols));
 }
 
@@ -135,16 +129,16 @@ Loads a condition takes a name or ScripCondition id.
 sub Load  {
     my $self = shift;
     my $identifier = shift;
-    
+
     unless (defined $identifier) {
-	return (undef);
-    }	    
-    
+        return (undef);
+    }
+
     if ($identifier !~ /\D/) {
-	return ($self->SUPER::LoadById($identifier));
+        return ($self->SUPER::LoadById($identifier));
     }
     else {
-	return ($self->LoadByCol('Name', $identifier));
+        return ($self->LoadByCol('Name', $identifier));
     }
 }
 
@@ -160,24 +154,24 @@ Loads the Condition module in question.
 sub LoadCondition  {
     my $self = shift;
     my %args = ( TransactionObj => undef,
-		 TicketObj => undef,
-		 @_ );
-    
-    #TODO: Put this in an eval  
+                 TicketObj => undef,
+                 @_ );
+
+    #TODO: Put this in an eval
     $self->ExecModule =~ /^(\w+)$/;
     my $module = $1;
     my $type = "RT::Condition::". $module;
-    
-    eval "require $type" || die "Require of $type failed.\n$@\n";
-    
-    $self->{'Condition'}  = $type->new ( 'ScripConditionObj' => $self, 
-					 'TicketObj' => $args{'TicketObj'},
-					 'ScripObj' => $args{'ScripObj'},
-					 'TransactionObj' => $args{'TransactionObj'},
-					 'Argument' => $self->Argument,
-				     'ApplicableTransTypes' => $self->ApplicableTransTypes,
-                     CurrentUser => $self->CurrentUser 
-				       );
+
+    $type->require or die "Require of $type condition module failed.\n$@\n";
+
+    $self->{'Condition'}  = $type->new ( 'ScripConditionObj' => $self,
+                                         'TicketObj' => $args{'TicketObj'},
+                                         'ScripObj' => $args{'ScripObj'},
+                                         'TransactionObj' => $args{'TransactionObj'},
+                                         'Argument' => $self->Argument,
+                                         'ApplicableTransTypes' => $self->ApplicableTransTypes,
+                                         CurrentUser => $self->CurrentUser
+                                       );
 }
 
 
@@ -207,16 +201,6 @@ sub IsApplicable  {
     return ($self->{'Condition'}->IsApplicable());
     
 }
-
-
-sub DESTROY {
-    my $self=shift;
-    $self->{'Condition'} = undef;
-}
-
-
-
-
 
 
 
@@ -360,28 +344,59 @@ sub _CoreAccessible {
     {
 
         id =>
-		{read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
+                {read => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => ''},
         Name =>
-		{read => 1, write => 1, sql_type => 12, length => 200,  is_blob => 0,  is_numeric => 0,  type => 'varchar(200)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 200,  is_blob => 0,  is_numeric => 0,  type => 'varchar(200)', default => ''},
         Description =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varchar(255)', default => ''},
         ExecModule =>
-		{read => 1, write => 1, sql_type => 12, length => 60,  is_blob => 0,  is_numeric => 0,  type => 'varchar(60)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 60,  is_blob => 0,  is_numeric => 0,  type => 'varchar(60)', default => ''},
         Argument =>
-		{read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varbinary(255)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 255,  is_blob => 0,  is_numeric => 0,  type => 'varbinary(255)', default => ''},
         ApplicableTransTypes =>
-		{read => 1, write => 1, sql_type => 12, length => 60,  is_blob => 0,  is_numeric => 0,  type => 'varchar(60)', default => ''},
+                {read => 1, write => 1, sql_type => 12, length => 60,  is_blob => 0,  is_numeric => 0,  type => 'varchar(60)', default => ''},
         Creator =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         Created =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
         LastUpdatedBy =>
-		{read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
+                {read => 1, auto => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         LastUpdated =>
-		{read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
+                {read => 1, auto => 1, sql_type => 11, length => 0,  is_blob => 0,  is_numeric => 0,  type => 'datetime', default => ''},
 
  }
 };
+
+sub PreInflate {
+    my $class = shift;
+    my ($importer, $uid, $data) = @_;
+
+    $class->SUPER::PreInflate( $importer, $uid, $data );
+
+    return not $importer->SkipBy( "Name", $class, $uid, $data );
+}
+
+sub __DependsOn {
+    my $self = shift;
+    my %args = (
+        Shredder => undef,
+        Dependencies => undef,
+        @_,
+    );
+    my $deps = $args{'Dependencies'};
+
+# Scrips
+    my $objs = RT::Scrips->new( $self->CurrentUser );
+    $objs->Limit( FIELD => 'ScripCondition', VALUE => $self->Id );
+    $deps->_PushDependencies(
+        BaseObject => $self,
+        Flags => RT::Shredder::Constants::DEPENDS_ON,
+        TargetObjects => $objs,
+        Shredder => $args{'Shredder'}
+    );
+
+    return $self->SUPER::__DependsOn( %args );
+}
 
 RT::Base->_ImportOverlays();
 

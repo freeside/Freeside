@@ -51,37 +51,27 @@ $onload => undef
 </%args>
 
 % for my $jsfile ( @js_files ) {
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/<% $jsfile %>"></script>
+<script type="text/javascript" src="<%RT->Config->Get('WebPath')%><% $jsfile %>"></script>
 % }
 
-% if ( $RichText and RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'}) ) {
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/RichText/ckeditor.js"></script>
-% }
 <script type="text/javascript"><!--
-	jQuery( loadTitleBoxStates );
+jQuery( loadTitleBoxStates );
 % if ( $focus ) {
-    jQuery(function () { focusElementById(<% $focus |n,j%>) });
+    jQuery(function () { jQuery(<% $focus |n,j%>).focus() });
 % }
 % if ( $onload ) {
     jQuery( <% $onload |n %> );
 % }
-
-% if ( $RichText and RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'})) {
-    jQuery().ready(function ()  { ReplaceAllTextareas() });
-% }
 --></script>
-<%ARGS>
-$RichText => 1
-</%ARGS>
 <%INIT>
 
 my @js_files;
 if ( RT->Config->Get('DevelMode') ) {
-    @js_files = RT->Config->Get('JSFiles' );
+    @js_files = map { $_ =~ m{^/} ? $_ : "/static/js/$_" } RT::Interface::Web->JSFiles();
 }
 else {
     my $key = RT::Interface::Web::SquishedJS()->Key;
-    @js_files = "squished-$key.js";
+    @js_files = "/NoAuth/js/squished-$key.js";
 }
 
 </%INIT>

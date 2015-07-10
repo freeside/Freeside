@@ -52,7 +52,7 @@ $order => 'desc'
 $name => undef
 </%args>
 <%init>
-use RT::Search::Googleish;
+use RT::Search::Simple;
 my $query = $ARGS{'query'};
 if ($ARGS{'q'}) {
     my $tickets = RT::Tickets->new( $session{'CurrentUser'} );
@@ -60,7 +60,7 @@ if ($ARGS{'q'}) {
         Argument   => $ARGS{q},
         TicketsObj => $tickets,
     );
-    my $search = RT::Search::Googleish->new(%args);
+    my $search = RT::Search::Simple->new(%args);
     $query = $search->QueryToSQL();
 
 }
@@ -90,11 +90,16 @@ my $search;
         if ( $_->{'Query'} =~ /__Bookmarks__/ ) {
             $_->{'Rows'} = 999;
 
-            # DEPRECATED: will be here for a while up to 3.10/4.0
-            my $bookmarks = $session{'CurrentUser'}->UserObj->FirstAttribute('Bookmarks');
-            $bookmarks = $bookmarks->Content if $bookmarks;
-            $bookmarks ||= {};
-            my $query = join( " OR ", map " id = '$_' ", grep $bookmarks->{$_}, keys %$bookmarks ) || 'id=0';
+            # DEPRECATED: will be here for a while up to 4.4
+            RT->Deprecated(
+                Remove  => "4.4",
+                Instead => "id = '__Bookmarked__'",
+                Message => "The __Bookmarks__ query syntax is deprecated",
+                Object  => $search,
+            );
+
+            my @bookmarks = $session{'CurrentUser'}->UserObj->Bookmarks;
+            my $query = join(" OR ", map " id = '$_' ", @bookmarks ) || 'id=0';
             $_->{'Query'} =~ s/__Bookmarks__/( $query )/g;
         }
     }

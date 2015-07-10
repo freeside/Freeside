@@ -115,10 +115,12 @@ $m->callback( CallbackOnce => 1, CallbackName => 'SetFieldsOnce', Fields => \@fi
 
 my $CustomFields = RT::CustomFields->new( $session{'CurrentUser'});
 foreach my $id (keys %queues) {
-    # Gotta load up the $queue object, since queues get stored by name now. my $id
+    # Gotta load up the $queue object, since queues get stored by name now.
     my $queue = RT::Queue->new($session{'CurrentUser'});
     $queue->Load($id);
-    $CustomFields->LimitToQueue($queue->Id) if $queue->Id;
+    next unless $queue->Id;
+    $CustomFields->LimitToQueue($queue->Id);
+    $CustomFields->SetContextObject( $queue ) if keys %queues == 1;
 }
 $CustomFields->LimitToGlobal;
 
@@ -140,8 +142,7 @@ foreach my $field (@format) {
 
 if ( $RemoveCol ) {
     # we do this regex match to avoid a non-numeric warning
-    my ($index) = $CurrentDisplayColumns =~ /^(\d+)/;
-    my $column = $seen[$index];
+    my ($index) = ($CurrentDisplayColumns // '') =~ /^(\d+)/;
     if ( defined($index) ) {
         delete $seen[$index];
         my @temp = @seen;
@@ -206,7 +207,7 @@ elsif ( $AddCol ) {
     }
 }
 elsif ( $ColUp ) {
-    my $index = $CurrentDisplayColumns;
+    my ($index) = ($CurrentDisplayColumns // '') =~ /^(\d+)/;
     if ( defined $index && ( $index - 1 ) >= 0 ) {
         my $column = $seen[$index];
         $seen[$index]       = $seen[ $index - 1 ];
@@ -215,7 +216,7 @@ elsif ( $ColUp ) {
     }
 }
 elsif ( $ColDown ) {
-    my $index = $CurrentDisplayColumns;
+    my ($index) = ($CurrentDisplayColumns // '') =~ /^(\d+)/;
     if ( defined $index && ( $index + 1 ) < scalar @seen ) {
         my $column = $seen[$index];
         $seen[$index]       = $seen[ $index + 1 ];

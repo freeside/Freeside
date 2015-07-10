@@ -212,9 +212,7 @@ AC_ARG_WITH(rt-group,
 AC_SUBST(RTGROUP)
 
 dnl INSTALL AS ME
-# XXX TODO: The command below to figure out the group brokenly relies on
-# output order (and "id -gn" doesn't work on all platforms).
-my_group=$(groups|cut -f1 -d' ')
+my_group=$($PERL -MPOSIX=getgid -le 'print scalar getgrgid getgid')
 my_user=${USER:-$LOGNAME}
 AC_ARG_WITH(my-user-group,
             AC_HELP_STRING([--with-my-user-group],
@@ -233,37 +231,19 @@ AC_MSG_CHECKING([if database name is set])
                 [ AC_MSG_ERROR([no.  database name is not set]) ]
                )
 
-AS_IF([ test "$DB_TYPE" = "mysql" ],
-      [ AC_MSG_CHECKING([if database name is valid])
-          AS_IF([ echo $DB_DATABASE | $PERL -e 'exit(1) if <> =~ /-/'],
-                [ AC_MSG_RESULT([yes]) ],
-                [ AC_MSG_ERROR([no.  database name ($DB_DATABASE) contains '-' which is not valid for mysql]) ]
-               )
-      ]
-     )
-
-
-dnl Set the value of apachectl
-AC_ARG_WITH(apachectl,
-            AC_HELP_STRING([--with-apachectl],
-                           [instruct RT where to find your apachectl]),
-            APACHECTL=$withval, 
-            APACHECTL=`which apachectl`)
-AC_SUBST(APACHECTL)
-
-dnl RT's "maintainer mode"
-AC_ARG_WITH(devel-mode,[],RT_DEVEL_MODE=$withval,RT_DEVEL_MODE="0")
-AC_ARG_ENABLE(devel-mode,
-            AC_HELP_STRING([--enable-devel-mode],
-                           [Turn on development aids that might hurt you in production]),
-            RT_DEVEL_MODE=$enableval,
-            RT_DEVEL_MODE=$RT_DEVEL_MODE)
-if test "$RT_DEVEL_MODE" = yes; then
-        RT_DEVEL_MODE="1"
+dnl Dependencies for testing and developing RT
+AC_ARG_WITH(developer,[],RT_DEVELOPER=$withval,RT_DEVELOPER="0")
+AC_ARG_ENABLE(developer,
+            AC_HELP_STRING([--enable-developer],
+                           [Add dependencies needed for testing and developing RT]),
+            RT_DEVELOPER=$enableval,
+            RT_DEVELOPER=$RT_DEVELOPER)
+if test "$RT_DEVELOPER" = yes; then
+        RT_DEVELOPER="1"
 else
-        RT_DEVEL_MODE="0"
+        RT_DEVELOPER="0"
 fi
-AC_SUBST(RT_DEVEL_MODE)
+AC_SUBST(RT_DEVELOPER)
 
 dnl RT's GraphViz dependency charts
 AC_CHECK_PROG([RT_GRAPHVIZ], [dot], "yes", "no")
@@ -294,31 +274,55 @@ fi
 AC_SUBST(RT_GD)
 
 dnl RT's GPG support
-AC_CHECK_PROG([RT_GPG], [gpg], "yes", "no")
+AC_CHECK_PROG([RT_GPG_DEPS], [gpg], "yes", "no")
+if test "$RT_GPG_DEPS" = yes; then
+        RT_GPG_DEPS="1"
+else
+        RT_GPG_DEPS="0"
+fi
 AC_ARG_ENABLE(gpg,
             AC_HELP_STRING([--enable-gpg],
                            [Turns on GNU Privacy Guard (GPG) support]),
             RT_GPG=$enableval)
 if test "$RT_GPG" = yes; then
         RT_GPG="1"
+        RT_GPG_DEPS="1"
 else
-        RT_GPG="0"
+        if test "$RT_GPG" = no; then
+                RT_GPG="0"
+                RT_GPG_DEPS="0"
+        else
+                RT_GPG="0"
+        fi
 fi
+AC_SUBST(RT_GPG_DEPS)
 AC_SUBST(RT_GPG)
 
-dnl SSL support for RT's mailgate
-AC_ARG_WITH(ssl-mailgate,[],RT_SSL_MAILGATE=$withval,RT_SSL_MAILGATE="0")
-AC_ARG_ENABLE(ssl-mailgate,
-            AC_HELP_STRING([--enable-ssl-mailgate],
-                           [Turns on support for HTTPS in rt-mailgate]),
-            RT_SSL_MAILGATE=$enableval,
-            RT_SSL_MAILGATE=$RT_SSL_MAILGATE)
-if test "$RT_SSL_MAILGATE" = yes; then
-        RT_SSL_MAILGATE="1"
+
+dnl RT's SMIME support
+AC_CHECK_PROG([RT_SMIME_DEPS], [openssl], "yes", "no")
+if test "$RT_SMIME_DEPS" = yes; then
+        RT_SMIME_DEPS="1"
 else
-        RT_SSL_MAILGATE="0"
+        RT_SMIME_DEPS="0"
 fi
-AC_SUBST(RT_SSL_MAILGATE)
+AC_ARG_ENABLE(smime,
+            AC_HELP_STRING([--enable-smime],
+                           [Turns on Secure MIME (SMIME) support]),
+            RT_SMIME=$enableval)
+if test "$RT_SMIME" = yes; then
+        RT_SMIME="1"
+        RT_SMIME_DEPS="1"
+else
+        if test "$RT_SMIME" = no; then
+                RT_SMIME="0"
+                RT_SMIME_DEPS="0"
+        else
+                RT_SMIME="0"
+        fi
+fi
+AC_SUBST(RT_SMIME_DEPS)
+AC_SUBST(RT_SMIME)
 
 
 dnl This section maps the variable names this script 'natively' generates
@@ -336,6 +340,7 @@ AC_SUBST([RT_DOC_PATH],			${exp_manualdir})
 AC_SUBST([RT_LOCAL_PATH],		${exp_customdir})
 AC_SUBST([RT_LIB_PATH],			${exp_libdir})
 AC_SUBST([RT_LEXICON_PATH],			${exp_lexdir})
+AC_SUBST([RT_STATIC_PATH],			${exp_staticdir})
 AC_SUBST([RT_ETC_PATH],			${exp_sysconfdir})
 AC_SUBST([CONFIG_FILE_PATH],		${exp_sysconfdir})
 AC_SUBST([RT_BIN_PATH],			${exp_bindir})
@@ -350,6 +355,7 @@ AC_SUBST([MASON_HTML_PATH],		${exp_htmldir})
 AC_SUBST([LOCAL_ETC_PATH],		${exp_custometcdir})
 AC_SUBST([MASON_LOCAL_HTML_PATH],	${exp_customhtmldir})
 AC_SUBST([LOCAL_LEXICON_PATH],		${exp_customlexdir})
+AC_SUBST([LOCAL_STATIC_PATH],		${exp_customstaticdir})
 AC_SUBST([LOCAL_LIB_PATH],		${exp_customlibdir})
 AC_SUBST([LOCAL_PLUGIN_PATH],		${exp_customplugindir})
 AC_SUBST([RT_LOG_PATH],			${exp_logfiledir})
@@ -367,6 +373,7 @@ AC_SUBST([RT_VAR_PATH_R],			${exp_prefix}/${exp_localstatedir})
 AC_SUBST([RT_MAN_PATH_R],			${exp_prefix}/${exp_mandir})
 AC_SUBST([RT_FONT_PATH_R],			${exp_prefix}/${exp_fontdir})
 AC_SUBST([RT_LEXICON_PATH_R],			${exp_prefix}/${exp_lexdir})
+AC_SUBST([RT_STATIC_PATH_R],			${exp_prefix}/${exp_staticdir})
 AC_SUBST([RT_PLUGIN_PATH_R],		${exp_prefix}/${exp_plugindir})
 AC_SUBST([MASON_DATA_PATH_R],		${exp_prefix}/${exp_masonstatedir})
 AC_SUBST([MASON_SESSION_PATH_R],		${exp_prefix}/${exp_sessionstatedir})
@@ -374,6 +381,7 @@ AC_SUBST([MASON_HTML_PATH_R],		${exp_prefix}/${exp_htmldir})
 AC_SUBST([LOCAL_ETC_PATH_R],		${exp_prefix}/${exp_custometcdir})
 AC_SUBST([MASON_LOCAL_HTML_PATH_R],	${exp_prefix}/${exp_customhtmldir})
 AC_SUBST([LOCAL_LEXICON_PATH_R],		${exp_prefix}/${exp_customlexdir})
+AC_SUBST([LOCAL_STATIC_PATH_R],		${exp_prefix}/${exp_customstaticdir})
 AC_SUBST([LOCAL_LIB_PATH_R],		${exp_prefix}/${exp_customlibdir})
 AC_SUBST([LOCAL_PLUGIN_PATH_R],		${exp_prefix}/${exp_customplugindir})
 AC_SUBST([RT_LOG_PATH_R],			${exp_prefix}/${exp_logfiledir})
@@ -383,6 +391,7 @@ AC_SUBST([RT_DOC_PATH_R],			${exp_manualdir})
 AC_SUBST([RT_LOCAL_PATH_R],		${exp_customdir})
 AC_SUBST([RT_LIB_PATH_R],			${exp_libdir})
 AC_SUBST([RT_LEXICON_PATH_R],			${exp_lexdir})
+AC_SUBST([RT_STATIC_PATH_R],			${exp_staticdir})
 AC_SUBST([RT_ETC_PATH_R],			${exp_sysconfdir})
 AC_SUBST([RT_PLUGIN_PATH_R],		${exp_plugindir})
 AC_SUBST([CONFIG_FILE_PATH_R],		${exp_sysconfdir})
@@ -397,6 +406,7 @@ AC_SUBST([MASON_HTML_PATH_R],		${exp_htmldir})
 AC_SUBST([LOCAL_ETC_PATH_R],		${exp_custometcdir})
 AC_SUBST([MASON_LOCAL_HTML_PATH_R],	${exp_customhtmldir})
 AC_SUBST([LOCAL_LEXICON_PATH_R],		${exp_customlexdir})
+AC_SUBST([LOCAL_STATIC_PATH_R],		${exp_customstaticdir})
 AC_SUBST([LOCAL_PLUGIN_PATH_R],		${exp_customplugindir})
 AC_SUBST([LOCAL_LIB_PATH_R],		${exp_customlibdir})
 AC_SUBST([RT_LOG_PATH_R],			${exp_logfiledir})
@@ -409,8 +419,13 @@ dnl Binaries that should be +x
 AC_CONFIG_FILES([
                  etc/upgrade/3.8-ical-extension
                  etc/upgrade/4.0-customfield-checkbox-extension
-                 etc/upgrade/split-out-cf-categories
                  etc/upgrade/generate-rtaddressregexp
+                 etc/upgrade/sanity-check-stylesheets
+                 etc/upgrade/shrink-cgm-table
+                 etc/upgrade/shrink-transactions-table
+                 etc/upgrade/split-out-cf-categories
+                 etc/upgrade/switch-templates-to
+                 etc/upgrade/time-worked-history
                  etc/upgrade/upgrade-articles
                  etc/upgrade/vulnerable-passwords
                  sbin/rt-attributes-viewer
@@ -432,6 +447,8 @@ AC_CONFIG_FILES([
                  sbin/standalone_httpd
                  sbin/rt-setup-fulltext-index
                  sbin/rt-fulltext-indexer
+                 sbin/rt-serializer
+                 sbin/rt-importer
                  bin/rt-crontool
                  bin/rt-mailgate
                  bin/rt],

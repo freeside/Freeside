@@ -53,23 +53,23 @@
 <form action="Objects.html" method="post">
 <input type="hidden" class="hidden" name="id" value="<% $id %>" />
 
-% if ( $is_global ) {
+% if ( $CF->IsGlobal ) {
 <h2><&|/l&>Applies to all objects</&></h2>
-<input type="checkbox" name="RemoveCustomField-<% $CF->id %>" value="0" />
-<&|/l&>check this box to remove this Custom Field from all objects and be able to choose specific objects.</&>
+<input type="checkbox" id="RemoveCustomField-<% $CF->id %>" name="RemoveCustomField-<% $CF->id %>" value="0" />
+<label for="RemoveCustomField-<% $CF->id %>"><&|/l&>check this box to remove this Custom Field from all objects and be able to choose specific objects.</&></label>
 % } else {
 <h2><&|/l&>Apply globally</&></h2>
 
-<input type="checkbox" name="AddCustomField-<% $CF->id %>" value="0" />
-<&|/l&>check this box to apply this Custom Field to all objects.</&>
+<input type="checkbox" id="AddCustomField-<% $CF->id %>" name="AddCustomField-<% $CF->id %>" value="0" />
+<label for="AddCustomField-<% $CF->id %>"><&|/l&>check this box to apply this Custom Field to all objects.</&></label>
 
-% unless ( $CF->ApplyGlobally ) {
+% unless ( $CF->IsOnlyGlobal ) {
 <h2><&|/l&>Selected objects</&></h2>
 <& /Elements/CollectionList,
     OrderBy => 'id',
     Order => 'ASC',
     %ARGS,
-    Collection => $applied,
+    Collection => $added,
     Rows => 0,
     Page => 1,
     Format        => $format,
@@ -86,8 +86,8 @@
     OrderBy => 'id',
     Order => 'ASC',
     %ARGS,
-    Collection => $not_applied,
-    Rows => 50,
+    Collection => $not_added,
+    Rows          => $rows,
     Format        => $format,
     DisplayFormat => "'__CheckBox.{AddCustomField-". $CF->id ."}__',". $format,
     AllowSorting  => 1,
@@ -141,16 +141,15 @@ if ( $UpdateObjs ) {
     }
 }
 
-my $is_global = $CF->IsApplied(0);
+my $added = $CF->AddedTo;
+my $not_added = $CF->NotAddedTo;
 
-my $applied = $CF->AppliedTo;
-my $not_applied = $CF->NotAppliedTo;
-
-my $collection_class = ref($applied);
+my $collection_class = ref($added);
 $collection_class =~ s/^RT:://;
 
 my $format = RT->Config->Get('AdminSearchResultFormat')->{$collection_class}
     || '__id__,__Name__';
+my $rows = RT->Config->Get('AdminSearchResultRows')->{$collection_class} || 50;
 
 my $title = loc('Modify associated objects for [_1]', $CF->Name);
 

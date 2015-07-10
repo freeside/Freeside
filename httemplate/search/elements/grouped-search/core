@@ -130,6 +130,15 @@ for my $i (0 .. scalar(@groups) - 1) {
   push @queries, $detail_query;
 }
 
+if ( $opt{show_combined} ) {
+  # set up group 0 as a combined view
+  unshift @groups, $totals;
+  unshift @group_labels, 'All ' . PL($opt{name_singular}) .
+                         ' (' . $totals->num_rows . ')';
+  unshift @group_footers, []; # the total footer will suffice
+  unshift @queries, $base_query->clone;
+}
+
 my @total_footer;
 if ($opt{'total_row'}) {
   for( my $col = 0;

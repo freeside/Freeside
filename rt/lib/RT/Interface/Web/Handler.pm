@@ -54,7 +54,6 @@ use CGI qw/-private_tempfiles/;
 use MIME::Entity;
 use Text::Wrapper;
 use CGI::Cookie;
-use Time::ParseDate;
 use Time::HiRes;
 use HTML::Scrubber;
 use RT::Interface::Web;
@@ -62,6 +61,9 @@ use RT::Interface::Web::Request;
 use File::Path qw( rmtree );
 use File::Glob qw( bsd_glob );
 use File::Spec::Unix;
+use HTTP::Message::PSGI;
+use HTTP::Request;
+use HTTP::Response;
 
 sub DefaultHandlerArgs  { (
     comp_root            => [
@@ -104,7 +106,6 @@ sub InitSessionDir {
 }
 
 
-use UNIVERSAL::require;
 sub NewHandler {
     my $class = shift;
     $class->require or die $!;
@@ -114,7 +115,7 @@ sub NewHandler {
         @_
     );
   
-    $handler->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
+    $handler->interp->set_escape( h => \&RT::Interface::Web::EscapeHTML );
     $handler->interp->set_escape( u => \&RT::Interface::Web::EscapeURI  );
     $handler->interp->set_escape( j => \&RT::Interface::Web::EscapeJS   );
     return($handler);
@@ -154,7 +155,7 @@ and is not recommended to change.
 
 =item Clean up state of RT::Action::SendEmail using 'CleanSlate' method
 
-=item Flush tmp GnuPG key preferences
+=item Flush tmp crypt key preferences
 
 =back
 
@@ -181,10 +182,9 @@ sub CleanupRequest {
     require RT::Action::SendEmail;
     RT::Action::SendEmail->CleanSlate;
     
-    if (RT->Config->Get('GnuPG')->{'Enable'}) {
-        require RT::Crypt::GnuPG;
-        RT::Crypt::GnuPG::UseKeyForEncryption();
-        RT::Crypt::GnuPG::UseKeyForSigning( undef );
+    if (RT->Config->Get('Crypt')->{'Enable'}) {
+        RT::Crypt->UseKeyForEncryption();
+        RT::Crypt->UseKeyForSigning( undef );
     }
 
     %RT::Ticket::MERGE_CACHE = ( effective => {}, merged => {} );
@@ -248,6 +248,7 @@ MODPERL
 
 use RT::Interface::Web::Handler;
 use CGI::Emulate::PSGI;
+use Plack::Builder;
 use Plack::Request;
 use Plack::Response;
 use Plack::Util;
@@ -262,7 +263,7 @@ sub PSGIApp {
 
     $self->InitSessionDir;
 
-    return sub {
+    my $mason = sub {
         my $env = shift;
 
         {
@@ -270,7 +271,14 @@ sub PSGIApp {
             return $self->_psgi_response_cb( $res->finalize ) if $res;
         }
 
-        RT::ConnectToDatabase() unless RT->InstallMode;
+        unless (RT->InstallMode) {
+            unless (eval { RT::ConnectToDatabase() }) {
+                my $res = Plack::Response->new(503);
+                $res->content_type("text/plain");
+                $res->body("Database inaccessible; contact the RT administrator (".RT->Config->Get("OwnerEmail").")");
+                return $self->_psgi_response_cb( $res->finalize, sub { $self->CleanupRequest } );
+            }
+        }
 
         my $req = Plack::Request->new($env);
 
@@ -307,7 +315,59 @@ sub PSGIApp {
                                         sub {
                                             $self->CleanupRequest()
                                         });
-};
+    };
+
+    my $app = $self->StaticWrap($mason);
+    for my $plugin (RT->Config->Get("Plugins")) {
+        my $wrap = $plugin->can("PSGIWrap")
+            or next;
+        $app = $wrap->($plugin, $app);
+    }
+    return $app;
+}
+
+sub StaticWrap {
+    my $self    = shift;
+    my $app     = shift;
+    my $builder = Plack::Builder->new;
+
+    my $headers = RT::Interface::Web::GetStaticHeaders(Time => 'forever');
+
+    for my $static ( RT->Config->Get('StaticRoots') ) {
+        if ( ref $static && ref $static eq 'HASH' ) {
+            $builder->add_middleware(
+                '+RT::Interface::Web::Middleware::StaticHeaders',
+                path => $static->{'path'},
+                headers => $headers,
+            );
+            $builder->add_middleware(
+                'Plack::Middleware::Static',
+                pass_through => 1,
+                %$static
+            );
+        }
+        else {
+            $RT::Logger->error(
+                "Invalid config StaticRoots: item can only be a hashref" );
+        }
+    }
+
+    my $path = sub { s!^/static/!! };
+    $builder->add_middleware(
+        '+RT::Interface::Web::Middleware::StaticHeaders',
+        path => $path,
+        headers => $headers,
+    );
+    for my $root (RT::Interface::Web->StaticRoots) {
+        $builder->add_middleware(
+            'Plack::Middleware::Static',
+            path         => $path,
+            root         => $root,
+            pass_through => 1,
+        );
+    }
+    return $builder->to_app($app);
+}
 
 sub _psgi_response_cb {
     my $self = shift;
@@ -334,7 +394,19 @@ sub _psgi_response_cb {
                      return $_[0];
                  };
              });
-    }
+}
+
+sub GetStatic {
+    my $class  = shift;
+    my $path   = shift;
+    my $static = $class->StaticWrap(
+        # Anything the static wrap doesn't handle gets 404'd.
+        sub { [404, [], []] }
+    );
+    my $response = HTTP::Response->from_psgi(
+        $static->( HTTP::Request->new(GET => $path)->to_psgi )
+    );
+    return $response;
 }
 
 1;
