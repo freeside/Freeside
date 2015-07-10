@@ -85,6 +85,8 @@ sub build_request {
   my @lines = map { $self->build_item($_) }
               $cust_bill->cust_bill_pkg;
 
+  return if !@lines;
+
   my $ClientNumber = $conf->config('suretax-client_number')
     or die "suretax-client_number config required.\n";
   my $ValidationKey = $conf->config('suretax-validation_key')
@@ -306,6 +308,10 @@ sub make_taxlines {
 
   # assemble the request hash
   my $request = $self->build_request;
+  if (!$request) {
+    warn "no taxable items in invoice; skipping SureTax request\n" if $DEBUG;
+    return;
+  }
 
   warn "sending SureTax request\n" if $DEBUG;
   my $request_json = $json->encode($request);
