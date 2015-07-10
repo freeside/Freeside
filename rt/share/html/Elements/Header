@@ -46,11 +46,12 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /elements/header.html, {
-              'title' => $Title,
-              'head'  => $head,
-              'etc'   => $etc,
+              'title'     => $Title,
+              'head'      => $head,
+              'etc'       => $etc,
               #make space for RT menu for now# 'nobr'  => 1,
-              'nocss' => 1,
+              'nocss'     => 1,
+              'no_jquery' => $JavaScript,
           }
 &>
 <%INIT>
@@ -115,9 +116,11 @@ if ( $RSSAutoDiscovery ) {
     $head .= qq(<link rel="alternate" href="$RSSAutoDiscovery" type="application/rss+xml" title="RSS RT Search" />);
 }
 
-my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
-if ($m->comp_exists($stylesheet_plugin) ) {
-    $head .= $m->scomp($stylesheet_plugin);
+if ($JavaScript) {
+    my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
+    if ($m->comp_exists($stylesheet_plugin) ) {
+        $head .= $m->scomp($stylesheet_plugin);
+    }
 }
 
 # $m->callback( %ARGS, CallbackName => 'Head' );
