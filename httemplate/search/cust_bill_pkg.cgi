@@ -186,8 +186,8 @@ my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
 my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
-my @total = ( 'COUNT(*)', 'SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)');
-my @total_desc = ( $money_char.'%.2f total' ); # sprintf strings
+my @total = ( 'COUNT(*)' );
+my @total_desc = ();
 
 my @peritem = ( 'setup', 'recur' );
 my @peritem_desc = ( 'Setup charges', 'Recurring charges' );
@@ -489,14 +489,32 @@ if ( $cgi->param('nottax') ) {
   # setup/recur/usage separation
   my %charges = map { $_ => 1 } split('', $cgi->param('charges') || 'SRU');
 
-  if ( $charges{R} and $charges{U} ) {
+  if ( $charges{S} and $charges{R} and $charges{U} ) {
+    # in this case, show discounts
 
-    # default, don't change @peritem or @total
-    if ( !$charges{S} ) {
-      push @where, 'cust_bill_pkg.recur > 0';
-      $total[1] = "SUM(cust_bill_pkg.recur)";
-      $total_desc[0] = "$money_char%.2f recurring";
-    }
+    $join_pkg .= ' JOIN (
+    SELECT billpkgnum, COALESCE(SUM(amount), 0) AS discounted
+      FROM cust_bill_pkg_discount RIGHT JOIN cust_bill_pkg USING (billpkgnum)
+      GROUP BY billpkgnum
+    ) AS _discount ON (cust_bill_pkg.billpkgnum = _discount.billpkgnum)
+    ';
+    push @select, '_discount.discounted';
+
+    push @peritem, 'discounted';
+    push @peritem_desc, 'Discount';
+    push @total, 'SUM(cust_bill_pkg.setup + cust_bill_pkg.recur + discounted)',
+                 'SUM(discounted)',
+                 'SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)';
+    push @total_desc, "$money_char%.2f gross sales",
+                      "&minus; $money_char%.2f discounted",
+                      "= $money_char%.2f invoiced";
+
+  } elsif ( $charges{R} and $charges{U} ) {
+
+    # hide rows with no recurring fee, and show the sum of recurring fees only
+    push @where, 'cust_bill_pkg.recur > 0';
+    push @total, "SUM(cust_bill_pkg.recur)";
+    push @total_desc, "$money_char%.2f recurring";
 
   } elsif ( $charges{R} and !$charges{U} ) {
 
@@ -505,8 +523,8 @@ if ( $cgi->param('nottax') ) {
     push @select, "($recur_no_usage) AS recur_no_usage";
     $peritem[1] = 'recur_no_usage';
     $peritem_desc[1] = 'Recurring charges (excluding usage)';
-    $total[1] = "SUM($recur_no_usage)";
-    $total_desc[0] = "$money_char%.2f recurring";
+    push @total, "SUM($recur_no_usage)";
+    push @total_desc, "$money_char%.2f recurring";
     if ( !$charges{S} ) {
       push @where, "($recur_no_usage) > 0";
     }
@@ -518,8 +536,8 @@ if ( $cgi->param('nottax') ) {
     # there's already a method named 'usage'
     $peritem[1] = '_usage';
     $peritem_desc[1] = 'Usage charge';
-    $total[1] = "SUM($usage)";
-    $total_desc[0] = "$money_char%.2f usage charges";
+    push @total, "SUM($usage)";
+    push @total_desc, "$money_char%.2f usage charges";
     if ( !$charges{S} ) {
       push @where, "($usage) > 0";
     }
@@ -527,8 +545,8 @@ if ( $cgi->param('nottax') ) {
   } elsif ( $charges{S} ) {
 
     push @where, "cust_bill_pkg.setup > 0";
-    $total[1] = "SUM(cust_bill_pkg.setup)";
-    $total_desc[0] = "$money_char%.2f setup";
+    push @total, "SUM(cust_bill_pkg.setup)";
+    push @total_desc, "$money_char%.2f setup";
 
   } # else huh? you have to have SOME charges
 
@@ -551,10 +569,11 @@ if ( $cgi->param('nottax') ) {
       }
     }
 
-    $total[1] = 'SUM(
+    push @total, 'SUM(
       COALESCE(cust_bill_pkg_tax_rate_location.amount, 
                cust_bill_pkg.setup + cust_bill_pkg.recur)
     )';
+    push @total_desc, "$money_char%.2f total";
 
   } else { # the internal-tax case
 
@@ -564,8 +583,9 @@ if ( $cgi->param('nottax') ) {
     ';
 
     # don't double-count the components of consolidated taxes
-    $total[0] = 'COUNT(DISTINCT cust_bill_pkg.billpkgnum)';
-    $total[1] = 'SUM(cust_bill_pkg_tax_location.amount)';
+    @total = ( 'COUNT(DISTINCT cust_bill_pkg.billpkgnum)',
+               'SUM(cust_bill_pkg_tax_location.amount)' );
+    @total_desc = "$money_char%.2f total";
 
     # taxclass
     if ( $cgi->param('taxclassNULL') ) {

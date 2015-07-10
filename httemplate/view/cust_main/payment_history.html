@@ -151,7 +151,7 @@
 
 %# invoice reports, combined statement
 % if ( $curuser->access_right('List invoices') ) { 
-%   if ( $curuser->access_right('Bulk send customer notices')
+%   if ( $curuser->access_right('Resend invoices')
 %          && $cust_main->invoicing_list_emailonly ) {
 
   <A HREF="<% $p %>misc/email-customer-statement.html?table=cust_main;agent_virt_agentnum=<% $cust_main->agentnum %>;custnum=<% $custnum %>"><% mt('Email statement to this customer') |h %></A>

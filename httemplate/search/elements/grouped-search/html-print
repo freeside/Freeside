@@ -5,7 +5,9 @@ The "printable" view (all groups on one page).
 <%init>
 my %opt = @_;
 
-my $group_info = $m->comp('core', %opt);
+my $group_info = $m->comp('core', %opt,
+  'show_combined' => 0
+);
 my $ncols = scalar(@{ $opt{header} });
 
 my $total_footer = $group_info->{total_footer} || [];

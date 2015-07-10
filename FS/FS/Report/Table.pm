@@ -439,8 +439,8 @@ sub cust_pkg_recur_cost {
 
 =item cust_bill_pkg: the total package charges on invoice line items.
 
-'charges': limit the type of charges included (setup, recur, usage).
-Should be a string containing one or more of 'S', 'R', or 'U'; if 
+'charges': limit the type of charges included (setup, recur, usage, discount).
+Should be a string containing one or more of 'S', 'R', 'U', or 'D'; if 
 unspecified, defaults to all three.
 
 'classnum': limit to this package class.
@@ -470,6 +470,7 @@ sub cust_bill_pkg {
   $sum += $self->cust_bill_pkg_setup(@_) if $charges{S};
   $sum += $self->cust_bill_pkg_recur(@_) if $charges{R};
   $sum += $self->cust_bill_pkg_detail(@_) if $charges{U};
+  $sum += $self->cust_bill_pkg_discount(@_) if $charges{D};
 
   if ($opt{'average_per_cust_pkg'}) {
     my $count = $self->cust_bill_pkg_count_pkgnum(@_);
@@ -656,47 +657,28 @@ sub cust_bill_pkg_detail {
 }
 
 sub cust_bill_pkg_discount {
-  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
-
-  #need to do this the new multi-classnum way if it gets re-enabled
-  #my $where = '';
-  #my $comparison = '';
-  #if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
-  #  if ( $1 == 0 ) {
-  #    $comparison = "IS NULL";
-  #  } else {
-  #    $comparison = "= $1";
-  #  }
-  #
-  #  if ( $opt{'use_override'} ) {
-  #    $where = "(
-  #      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
-  #      override.classnum $comparison AND pkgpart_override IS NOT NULL
-  #    )";
-  #  } else {
-  #    $where = "part_pkg.classnum $comparison";
-  #  }
-  #}
+  my $self = shift;
+  my ($speriod, $eperiod, $agentnum, %opt) = @_;
+  # apply all the same constraints here as for setup/recur
 
   $agentnum ||= $opt{'agentnum'};
 
-  my $total_sql =
-    " SELECT COALESCE( SUM( cust_bill_pkg_discount.amount ), 0 ) ";
+  my @where = (
+    '(pkgnum != 0 OR feepart IS NOT NULL)',
+    $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
+    $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
+  );
 
-  $total_sql .=
-    " FROM cust_bill_pkg_discount
-        LEFT JOIN cust_bill_pkg USING ( billpkgnum )
-        LEFT JOIN cust_bill USING ( invnum )
-        LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
-  #      LEFT JOIN cust_pkg_discount USING ( pkgdiscountnum )
-  #      LEFT JOIN discount USING ( discountnum )
-  #      LEFT JOIN cust_pkg USING ( pkgnum )
-  #      LEFT JOIN part_pkg USING ( pkgpart )
-  #      LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
-  
-  return $self->scalar_sql($total_sql);
+  my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg_discount.amount), 0)
+  FROM cust_bill_pkg_discount
+  JOIN cust_bill_pkg USING (billpkgnum)
+  $cust_bill_pkg_join
+  WHERE " . join(' AND ', grep $_, @where);
 
+  $self->scalar_sql($total_sql);
 }
 
 ##### package churn report #####
