@@ -269,7 +269,6 @@ Crypt::SSLeay
 Getopt::Long
 LWP::Protocol::https
 LWP::UserAgent 6.0
-Mozilla::CA
 Net::SSL
 Pod::Usage
 .
