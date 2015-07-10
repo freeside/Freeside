@@ -7,6 +7,7 @@
 .ticket-info-merge .titlebox-title .widget a,
 .ticket-info-reminders .titlebox-title .widget a,
 .ticket-info-dates .titlebox-title .widget a,
+.ticket-info-customers .titlebox-title .widget a,
 .ticket-info-attachments .titlebox-title .widget a {
     background-position: center -7px
 }
@@ -20,6 +21,7 @@
 .ticket-info-merge .titlebox-title,
 .ticket-info-reminders .titlebox-title,
 .ticket-info-dates .titlebox-title,
+.ticket-info-customers .titlebox-title,
 .ticket-info-attachments .titlebox-title {
     margin-left: 1em
 }
@@ -33,6 +35,7 @@
 .ticket-info-merge .titlebox-title  .left,
 .ticket-info-reminders .titlebox-title  .left,
 .ticket-info-dates .titlebox-title  .left,
+.ticket-info-customers .titlebox-title  .left,
 .ticket-info-attachments .titlebox-title  .left {
     padding-left: 2.25em;
     margin-left: 0;
@@ -43,6 +46,10 @@
     -moz-border-radius-topleft: 0.3em;
     -moz-border-radius-topright: 0.3em;
     border-radius: 0.3em 0.3em 0 0;
+}
+
+.ticket-info-customers .titlebox-title .left {
+  background-color: #7e007f;
 }
 
 .titlebox-title.inverse .left,
