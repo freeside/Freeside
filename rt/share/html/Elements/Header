@@ -46,7 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /elements/header.html, {
-              'title'     => $Title,
+              'title_noescape' => $Title,
               'head'      => $head,
               'etc'       => $etc,
               'nobr'      => 1,
