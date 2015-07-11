@@ -220,13 +220,10 @@ my $cust_main = qsearchs( {
 });
 die "Customer not found!" unless $cust_main;
 
-my $title = encode_entities($cust_main->name);
-$title = '#'. $cust_main->display_custnum. " $title";
-#  if $conf->exists('cust_main-title-display_custnum');
-$title = mt("Customer")." ".$title;
+my $title = mt("Customer").' #'. $cust_main->display_custnum. ': '.
+            encode_entities($cust_main->name);
 
-my @agentnums = $curuser->agentnums;
-if (scalar(@agentnums) > 1 ) {
+if ( $curuser->num_agents ) {
   $title = encode_entities($cust_main->agent->agent). " $title";
 }
 
