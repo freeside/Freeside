@@ -220,13 +220,13 @@ sub calc_cancel {
        and $self->option('bill_recur_on_cancel', 1) ) {
     # run another recurring cycle
     return $self->calc_recur(@_);
-  }
-  elsif ( $conf->exists('bill_usage_on_cancel') # should be a package option?
+  } elsif ( $conf->exists('bill_usage_on_cancel') # should be a package option?
           and $self->can('calc_usage') ) {
     # bill for outstanding usage
     return $self->calc_usage(@_);
+  } else {
+    return 'NOTHING'; # numerically zero, but has special meaning
   }
-  0;
 }
 
 sub calc_remain {

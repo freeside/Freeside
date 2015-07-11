@@ -1107,6 +1107,14 @@ sub _make_lines {
     return "$@ running $method for $cust_pkg\n"
       if ( $@ );
 
+    if ($recur eq 'NOTHING') {
+      # then calc_cancel (or calc_recur but that's not used) has declined to
+      # generate a recurring lineitem at all. treat this as zero, but also 
+      # try not to generate a lineitem.
+      $recur = 0;
+      $lineitems--;
+    }
+
     #base_cancel???
     $unitrecur = $cust_pkg->base_recur( \$sdate ) || $recur; #XXX uuh, better
 
