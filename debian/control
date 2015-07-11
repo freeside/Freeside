@@ -39,14 +39,16 @@ Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libjson-perl,liblingua-en-inflect-perl,liblingua-en-nameparse-perl,
  liblocale-gettext-perl,liblocale-maketext-fuzzy-perl,
  liblocale-maketext-lexicon-perl,liblocale-subcountry-perl,liblog-dispatch-perl,
- libmailtools-perl,libmime-tools-perl,libmodule-versions-report-perl,
+ libmailtools-perl (>=2.12), libmime-tools-perl (>= 5.504),
+ libmodule-versions-report-perl,
  libnet-daemon-perl,libnet-ping-external-perl,libnet-scp-perl,libnet-ssh-perl,
  libnet-whois-raw-perl,libnetaddr-ip-perl,libnumber-format-perl,libpam-modules,
  libpam-runtime,libpaper-utils,libparams-validate-perl,libparse-recdescent-perl,
  libpg-perl,libregexp-common-perl,libspreadsheet-writeexcel-perl,
  libstring-approx-perl,libstring-shellquote-perl,libterm-readkey-perl,
  libtest-inline-perl,libtext-autoformat-perl,libtext-charwidth-perl,
- libtext-csv-perl,libtext-iconv-perl,libtext-quoted-perl,libtext-reform-perl,
+ libtext-csv-perl,libtext-iconv-perl,libtext-quoted-perl (>= 2.07),
+ libtext-reform-perl,
  libtext-template-perl,libtext-wrapi18n-perl,libtext-wrapper-perl,
  libtie-ixhash-perl,libtime-duration-perl,libtime-modules-perl,libtimedate-perl,
  libtree-simple-perl,libuniversal-require-perl,liburi-perl,libwant-perl,
@@ -56,7 +58,6 @@ Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  fonts-dustin,libdatetime-perl,libdatetime-format-strptime-perl,
  libfile-slurp-perl,libspreadsheet-parseexcel-perl,libauthen-passphrase-perl,
  libnet-domain-tld-perl,libbusiness-us-usps-webtools-perl,libxml-simple-perl,
- libemail-sender-perl,libemail-sender-transport-smtp-tls-perl,
  libemail-sender-perl,libemail-sender-transport-smtp-tls-perl,
  libhtml-defang-perl,libdatetime-format-natural-perl,libcgi-pm-perl,
  libfile-sharedir-perl,libmodule-versions-report-perl,libtext-wikiformat-perl,
@@ -72,15 +73,20 @@ Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libregexp-ipv6-perl,libhtml-quoted-perl,libtext-password-pronounceable-perl,
  libconvert-color-perl,liburi-perl,libhtml-rewriteattributes-perl,
  libregexp-common-net-cidr-perl,liblog-dispatch-perl,libdbix-searchbuilder-perl,
- libencode-perl,libhtml-mason-psgihandler-perl,libdate-simple-perl,libsnmp-perl,
+ libencode-perl (>= 2.64),
+ libhtml-mason-psgihandler-perl,libdate-simple-perl,libsnmp-perl,
  libemail-valid-perl,libio-string-perl,libnet-smtp-ssl-perl,
  libgeo-coder-googlev3-perl,libcam-pdf-perl,libnet-openssh-perl,
  libhtml-quoted-perl,libregexp-ipv6-perl,libregexp-common-net-cidr-perl,
- libencode-perl,libexcel-writer-xlsx-perl,libgeo-googleearth-pluggable-perl,
+ libexcel-writer-xlsx-perl,libgeo-googleearth-pluggable-perl,
  libhtml-mason-psgihandler-perl,libdate-simple-perl,libsnmp-perl,
  libemail-valid-perl,libparse-fixedlength-perl,libregexp-common-net-cidr-perl,
  libio-string-perl,libnet-mac-vendor-perl,libnet-https-any-perl,
- libapache2-authcookie-perl,liblocale-currency-format-perl
+ libapache2-authcookie-perl,liblocale-currency-format-perl,
+ libhtml-formattext-withlinks-perl, libemail-address-list-perl (>= 1.897),
+ libsymbol-global-name-perl, libdate-extract-perl, librole-basic-perl,
+ libhtml-formattext-withlinks-andtables-perl, libcrypt-x509-perl,
+ libdata-guid-perl
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
@@ -92,7 +98,8 @@ Package: freeside-webui
 Architecture: all
 Depends: freeside-lib,apache2,apache2-mpm-prefork,apache2-utils,
  libapache-dbi-perl,libapache2-mod-perl2,libapache2-request-perl,
- libapache-session-perl,openssl
+ libapache-session-perl,openssl, libcgi-emulate-psgi-perl,
+ libplack-perl (>= 1.0002)
 Conflicts: apache2-mpm-worker
 Description: Web interface for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
