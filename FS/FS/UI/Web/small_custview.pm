@@ -95,8 +95,12 @@ sub small_custview {
   $html = qq!<A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
 
+  if ( $FS::CurrentUser::CurrentUser->num_agents ) {
+    $html .= encode_entities($cust_main->agent->agent). ' ';
+  }
+
   $html .= 'Customer #<B>'. $cust_main->display_custnum.
-           ': '. encode_entities($cust_main->name). '</B></A>';
+           '</B>: <B>'. encode_entities($cust_main->name). '</B></A>'.
            ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
            ucfirst($cust_main->status). '</FONT></B>';
 

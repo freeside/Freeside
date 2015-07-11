@@ -329,6 +329,22 @@ sub access_usergroup {
 #
 #}
 
+=item num_agents
+
+Returns the number of agents this user can view (via group membership).
+
+=cut
+
+sub num_agents {
+  my $self = shift;
+  $self->scalar_sql(
+    'SELECT COUNT(DISTINCT agentnum) FROM access_usergroup
+                                     JOIN access_groupagent USING ( groupnum )
+       WHERE usernum = ?',
+    $self->usernum,
+  );
+}
+
 =item agentnums 
 
 Returns a list of agentnums this user can view (via group membership).
