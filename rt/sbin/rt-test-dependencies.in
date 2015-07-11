@@ -241,7 +241,6 @@ Module::Refresh 0.03
 Module::Versions::Report 1.05
 Net::CIDR
 Plack 1.0002
-Plack::Handler::Starlet
 Regexp::Common
 Regexp::Common::net::CIDR
 Regexp::IPv6
