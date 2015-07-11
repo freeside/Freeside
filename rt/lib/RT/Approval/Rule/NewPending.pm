@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -75,7 +75,7 @@ sub Commit {
 
     # first txn entry of the approval ticket
     local $self->{TransactionObj} = $to;
-    $self->RunScripAction('Notify Owner', 'New Pending Approval', @_);
+    $self->RunScripAction('Notify Owner and AdminCcs', 'New Pending Approval', @_);
 
     return;
 

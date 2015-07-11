@@ -23,6 +23,8 @@ sub acl {
         Transactions 
         scrips_id_seq
         Scrips 
+        objectscrips_id_seq
+        ObjectScrips
         acl_id_seq
         ACL 
         groupmembers_id_seq
@@ -64,17 +66,14 @@ sub acl {
     # if there's already an rt_user, use it.
     my @row = $dbh->selectrow_array( "SELECT usename FROM pg_user WHERE usename = '$db_user'" );
     unless ( $row[0] ) {
-	 push @acls, "CREATE USER \"$db_user\" WITH PASSWORD '$db_pass' NOCREATEDB NOCREATEUSER;";
+         push @acls, "CREATE USER \"$db_user\" WITH PASSWORD '$db_pass' NOCREATEDB NOCREATEUSER;";
     }
 
-    my $sequence_right
-        = ( $dbh->{pg_server_version} >= 80200 )
-        ? "USAGE, SELECT, UPDATE"
-        : "SELECT, UPDATE";
     foreach my $table (@tables) {
         if ( $table =~ /^[a-z]/ && $table ne 'sessions' ) {
-# table like objectcustomfields_id_s
-            push @acls, "GRANT $sequence_right ON $table TO \"$db_user\";"
+            # Sequences; not all end with _seq because
+            # objectcustomfieldvalues_id_s is too long
+            push @acls, "GRANT USAGE, SELECT, UPDATE ON $table TO \"$db_user\";"
         }
         else {
             push @acls, "GRANT SELECT, INSERT, UPDATE, DELETE ON $table TO \"$db_user\";"

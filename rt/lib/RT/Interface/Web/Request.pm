@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,7 +51,6 @@ package RT::Interface::Web::Request;
 use strict;
 use warnings;
 
-our $VERSION = '0.30';
 use HTML::Mason::PSGIHandler;
 use base qw(HTML::Mason::Request::PSGI);
 use Params::Validate qw(:all);
@@ -64,8 +63,6 @@ sub new {
 
 
 =head2 callback
-
-Method replaces deprecated component C<Element/Callback>.
 
 Takes hash with optional C<CallbackPage>, C<CallbackName>
 and C<CallbackOnce> arguments, other arguments are passed

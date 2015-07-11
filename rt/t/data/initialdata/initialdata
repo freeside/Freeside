@@ -1,0 +1,101 @@
+# Samples of all things we support in initialdata
+
+@Queues = (
+    {
+        Name                => 'Test Queue',
+        CorrespondAddress   => 'help@example.com',
+        CommentAddress      => 'help-comment@example.com',
+    }
+);
+
+@Scrips = (
+    {
+        Description    => 'Test Without Stage',
+        ScripCondition => 'On Resolve',
+        ScripAction    => 'Notify Requestors',
+        Template       => 'Correspondence in HTML',
+    },
+    {
+        Queue          => 'General',
+        Description    => 'Test Without Stage and One Queue',
+        ScripCondition => 'On Resolve',
+        ScripAction    => 'Notify Requestors',
+        Template       => 'Correspondence in HTML',
+    },
+    {
+        Queue          => ['General', 'Test Queue'],
+        Description    => 'Test Without Stage and Two Queues',
+        ScripCondition => 'On Resolve',
+        ScripAction    => 'Notify Requestors',
+        Template       => 'Correspondence in HTML',
+    },
+    {
+        Description    => 'Test TransactionCreate',
+        ScripCondition => 'On Resolve',
+        ScripAction    => 'Notify Requestors',
+        Template       => 'Correspondence in HTML',
+        Stage          => 'TransactionCreate',
+    },
+    {
+        Description    => 'Test TransactionBatch',
+        ScripCondition => 'On Resolve',
+        ScripAction    => 'Notify Requestors',
+        Template       => 'Correspondence in HTML',
+        Stage          => 'TransactionBatch',
+    },
+);
+
+@CustomFields = (
+    {
+        Name        => 'Favorite color',
+        Type        => 'FreeformSingle',
+        LookupType  => 'RT::Queue-RT::Ticket',
+        Queue       => 'Test Queue',
+    },
+);
+
+@Groups = (
+    {
+        Name        => 'Test Employees',
+        Description => 'All of the employees of my company',
+        Attributes  => [
+            {
+                Name        => 'SavedSearch',
+                Description => 'Stalled Tickets in Test Queue',
+                Content     => {
+                    Query   => "Status = 'stalled' AND Queue = 'Test Queue'",
+                    OrderBy => 'id',
+                    Order   => 'DESC'
+                },
+            },
+        ],
+    }
+);
+
+@ACL = (
+    { GroupId       => 'Test Employees',
+      GroupDomain   => 'UserDefined',
+      CF            => 'Favorite Color',
+      Queue         => 'Test Queue',
+      Right         => ['SeeCustomField', 'ModifyCustomField'],
+    },
+);
+
+@Attributes = ({
+    Name        => 'SavedSearch',
+    Description => 'New Tickets in Test Queue',
+    Object      => sub {
+        my $GroupName = 'Test Employees';
+        my $group     = RT::Group->new( RT->SystemUser );
+
+        my( $ret, $msg ) = $group->LoadUserDefinedGroup( $GroupName );
+        die $msg unless $ret;
+
+        return $group;
+    },
+    Content     => {
+        Query   => "Status = 'new' AND Queue = 'Test Queue'",
+        OrderBy => 'id',
+        Order   => 'DESC'
+    },
+});

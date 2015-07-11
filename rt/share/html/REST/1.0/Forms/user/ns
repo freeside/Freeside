@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -57,7 +57,7 @@ my $field = "Name";
 $field = "EmailAddress" if $id =~ /\@/;
 
 my $users = RT::Users->new($session{CurrentUser});
-$users->Limit(FIELD => $field, OPERATOR => '=', VALUE => $id);
+$users->Limit(FIELD => $field, OPERATOR => '=', VALUE => $id, CASESENSITIVE => 0);
 if ($users->Count == 0) {
     return (0, "No user named $id exists.");
 }

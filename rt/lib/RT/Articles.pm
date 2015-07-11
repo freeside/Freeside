@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,33 +64,19 @@ sub _Init {
     return $self->SUPER::_Init( @_ );
 }
 
-=head2 Next
+=head2 AddRecord
 
-Returns the next article that this user can see.
+Overrides the collection to ensure that only Articles the user can see
+are returned.
 
 =cut
 
-sub Next {
+sub AddRecord {
     my $self = shift;
+    my ($record) = @_;
 
-    my $Object = $self->SUPER::Next();
-    if ( ( defined($Object) ) and ( ref($Object) ) ) {
-
-        if ( $Object->CurrentUserHasRight('ShowArticle') ) {
-            return ($Object);
-        }
-
-        #If the user doesn't have the right to show this Object
-        else {
-            return ( $self->Next() );
-        }
-    }
-
-    #if there never was any queue
-    else {
-        return (undef);
-    }
-
+    return unless $record->CurrentUserHasRight('ShowArticle');
+    return $self->SUPER::AddRecord( $record );
 }
 
 =head2 Limit { FIELD  => undef, OPERATOR => '=', VALUE => 'undef'} 
@@ -314,7 +300,8 @@ sub LimitCustomField {
             $self->Limit( ALIAS => $fields,
                           FIELD => 'Name',
                           VALUE => $args{'FIELD'},
-                          ENTRYAGGREGATOR  => 'OR');
+                          ENTRYAGGREGATOR  => 'OR',
+                          CASESENSITIVE => 0);
             $self->Limit(
                 ALIAS => $fields,
                 FIELD => 'LookupType',
@@ -402,15 +389,15 @@ sub LimitCustomField {
 sub LimitTopics {
     my $self   = shift;
     my @topics = @_;
+    return unless @topics;
 
     my $topics = $self->NewAlias('ObjectTopics');
     $self->Limit(
-        ALIAS           => $topics,
-        FIELD           => 'Topic',
-        VALUE           => $_,
-        ENTRYAGGREGATOR => 'OR'
-      )
-      for @topics;
+        ALIAS    => $topics,
+        FIELD    => 'Topic',
+        OPERATOR => 'IN',
+        VALUE    => [ @topics ],
+    );
 
     $self->Limit(
         ALIAS => $topics,
@@ -594,16 +581,10 @@ sub Search {
     }
 
 
-    require Time::ParseDate;
     foreach my $date (qw(Created< Created> LastUpdated< LastUpdated>)) {
         next unless ( $args{$date} );
-        my ($seconds, $error) = Time::ParseDate::parsedate( $args{$date}, FUZZY => 1, PREFER_PAST => 1 );
-        unless ( defined $seconds ) {
-            $RT::Logger->warning(
-                "Couldn't parse date '$args{$date}' by Time::ParseDate" );
-        }
         my $date_obj = RT::Date->new( $self->CurrentUser );
-        $date_obj->Set( Format => 'unix', Value => $seconds );
+        $date_obj->Set( Format => 'unknown', Value => $args{$date} );
         $dates->{$date} = $date_obj;
 
         if ( $date =~ /^(.*?)<$/i ) {
@@ -911,22 +892,6 @@ sub Search {
     return 1;
 }
 
-
-=head2 NewItem
-
-Returns an empty new RT::Article item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Article->new($self->CurrentUser));
-}
-
-
-
 RT::Base->_ImportOverlays();
-
-1;
 
 1;

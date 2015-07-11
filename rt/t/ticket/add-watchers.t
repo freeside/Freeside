@@ -1,4 +1,4 @@
-use RT::Test nodata => 1, tests => 32;
+use RT::Test nodata => 1, tests => 34;
 
 use strict;
 use warnings;
@@ -15,7 +15,7 @@ my $acl = RT::ACL->new(RT->SystemUser);
 $acl->Limit( FIELD => 'RightName', OPERATOR => '!=', VALUE => 'SuperUser' );
 $acl->LimitToObject( RT->System );
 while( my $ace = $acl->Next ) {
-	$ace->Delete;
+    $ace->Delete;
 }
 
 # create new queue to be sure we do not mess with rights
@@ -25,11 +25,12 @@ ok( $queue_id, 'queue created for watcher tests' );
 
 # new privileged user to check rights
 my $user = RT::User->new( RT->SystemUser );
-my ($user_id) = $user->Create( Name => 'watcher'.$$,
-			   EmailAddress => "watcher$$".'@localhost',
-			   Privileged => 1,
-			   Password => 'qwe123',
-			 );
+my ($user_id) = $user->Create(
+    Name => 'watcher'.$$,
+    EmailAddress => "watcher$$".'@localhost',
+    Privileged => 1,
+    Password => 'qwe123',
+);
 my $cu= RT::CurrentUser->new($user);
 
 # make sure user can see tickets in the queue
@@ -85,6 +86,13 @@ ok( $rv, "watcher removed by Email" );
 ok(  $rv, "user can add self as Cc by username" );
 ($rv, $msg) = $ticket2->AddWatcher( Type => 'Requestor', Email => $user->Name );
 ok(  $rv, "user can add self as Requestor by username" );
+
+# Add an email address with a phrase
+($rv, $msg) = $ticket->AddWatcher( Type => 'Cc', Email => q["Foo Bar" <foo@example.com>] );
+ok $rv, "Added email address with phrase" or diag $msg;
+
+my $foo = RT::Test->load_or_create_user( EmailAddress => 'foo@example.com' );
+is $foo->RealName, "Foo Bar", "RealName matches";
 
 # Queue watcher tests
 $principal->RevokeRight( Right => 'Watch'  , Object => $queue );

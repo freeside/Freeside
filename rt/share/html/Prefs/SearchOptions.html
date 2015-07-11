@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -86,8 +86,8 @@ if ($ARGS{'SavePreferences'}) {
 my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};
 
 $Format      ||= $prefs->{'Format'};
-$Order       ||= ($prefs->{'Order'} || 'ASC');
-$OrderBy     ||= ($prefs->{'OrderBy'} || 'id');
+$Order       ||= ($prefs->{'Order'} || RT->Config->Get('DefaultSearchResultOrder'));
+$OrderBy     ||= ($prefs->{'OrderBy'} || RT->Config->Get('DefaultSearchResultOrderBy'));
 ($RowsPerPage =  defined( $prefs->{'RowsPerPage'} ) ? $prefs->{'RowsPerPage'}  : 50) unless defined ($RowsPerPage);
 
 my ( $AvailableColumns, $CurrentFormat );

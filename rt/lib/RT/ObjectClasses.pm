@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -70,17 +70,7 @@ sub LimitToClass {
 
 }
 
-=head2 NewItem
-
-Returns an empty new RT::ObjectClass item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::ObjectClass->new($self->CurrentUser));
-}
-
+sub _SingularClass { "RT::ObjectClass" }
 
 RT::Base->_ImportOverlays();
 

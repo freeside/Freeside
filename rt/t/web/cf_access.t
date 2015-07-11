@@ -5,14 +5,14 @@ use RT::Test tests => 32;
 
 my ($baseurl, $m) = RT::Test->started_ok;
 
-use constant ImageFile => $RT::MasonComponentRoot .'/NoAuth/images/bpslogo.png';
+use constant ImageFile => $RT::StaticPath .'/images/bpslogo.png';
 use constant ImageFileContent => RT::Test->file_content(ImageFile);
 
 ok $m->login, 'logged in';
 
 diag "Create a CF";
 {
-    $m->follow_link( id => 'tools-config-custom-fields-create');
+    $m->follow_link( id => 'admin-custom-fields-create');
 
     # Test form validation
     $m->submit_form(
@@ -94,10 +94,10 @@ diag "apply the CF to General queue";
 my ( $cf, $cfid, $tid );
 {
     $m->title_is(q/Editing CustomField img/, 'admin-cf created');
-    $m->follow_link( id => 'tools-config-queues');
+    $m->follow_link( id => 'admin-queues');
     $m->follow_link( text => 'General' );
     $m->title_is(q/Configuration for queue General/, 'admin-queue: general');
-    $m->follow_link( id => 'page-ticket-custom-fields');
+    $m->follow_link( id => 'page-custom-fields-tickets');
     $m->title_is(q/Custom Fields for queue General/, 'admin-queue: general cfid');
     $m->form_name('EditCustomFields');
 
@@ -215,7 +215,7 @@ diag "create a ticket with an image";
 }
 
 $m->get( $m->rt_base_url );
-$m->follow_link( id => 'search-new');
+$m->follow_link( id => 'search-tickets-new');
 $m->title_is(q/Query Builder/, 'Query building');
 $m->submit_form(
     form_name => "BuildQuery",

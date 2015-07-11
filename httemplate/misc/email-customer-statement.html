@@ -5,13 +5,17 @@
       'no_search_fields'  => [ 'start_date', 'end_date' ],
       'alternate_form'    => $alternate_form,
       'post_search_hook'  => $post_search_hook,
+      'acl'               => $acl,
+      'process_url'       => 'process/email-customer-statement.html',
     )
  %>
 
 <%init>
 
+my $acl = 'Resend invoices';
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+  unless $FS::CurrentUser::CurrentUser->access_right($acl);
 
 my $alternate_form = sub {
   # this could maaaybe be a separate element, for cleanliness

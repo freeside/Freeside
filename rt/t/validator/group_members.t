@@ -2,19 +2,15 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 63;
+use RT::Test tests => undef;
 
-{
-    my ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
-}
+RT::Test->db_is_valid;
 
 {
     my $group = RT::Test->load_or_create_group('test', Members => [] );
     ok $group, "loaded or created a group";
 
-    my ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 }
 
 # G1 -> G2
@@ -28,20 +24,19 @@ use RT::Test tests => 63;
     ok $group2->HasMember( $group1->id ), "has member";
     ok $group2->HasMemberRecursively( $group1->id ), "has member";
 
-    my ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 
     $RT::Handle->dbh->do("DELETE FROM CachedGroupMembers");
     DBIx::SearchBuilder::Record::Cachable->FlushCache;
     ok !$group2->HasMemberRecursively( $group1->id ), "has no member, broken DB";
 
-    ($ecode, $res) = RT::Test->run_validator(resolve => 1);
+    my ($ecode, $res) = RT::Test->run_validator(resolve => 1);
+    isnt($ecode, 0, 'non-zero exit code');
 
     ok $group2->HasMember( $group1->id ), "has member";
     ok $group2->HasMemberRecursively( $group1->id ), "has member";
 
-    ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 }
 
 # G1 <- G2 <- G3 <- G4 <- G5
@@ -61,15 +56,15 @@ use RT::Test tests => 63;
         push @groups, $group;
     }
 
-    my ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 
     $RT::Handle->dbh->do("DELETE FROM CachedGroupMembers");
     DBIx::SearchBuilder::Record::Cachable->FlushCache;
 
     ok !$groups[1]->HasMemberRecursively( $groups[0]->id ), "has no member, broken DB";
 
-    ($ecode, $res) = RT::Test->run_validator(resolve => 1);
+    my ($ecode, $res) = RT::Test->run_validator(resolve => 1);
+    isnt($ecode, 0, 'non-zero exit code');
 
     for ( my $i = 1; $i < @groups; $i++ ) {
         ok $groups[$i]->HasMember( $groups[$i-1]->id ), "has member";
@@ -77,8 +72,7 @@ use RT::Test tests => 63;
             foreach 0..$i-1;
     }
 
-    ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 }
 
 # G1 <- (G2, G3, G4, G5)
@@ -93,8 +87,7 @@ use RT::Test tests => 63;
     my $parent = RT::Test->load_or_create_group( 'test1', Members => \@groups );
     ok $parent, "loaded or created a group";
 
-    my ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 }
 
 # G1 <- (G2, G3, G4) <- G5
@@ -112,8 +105,7 @@ use RT::Test tests => 63;
     my $parent = RT::Test->load_or_create_group( 'test1', Members => \@groups );
     ok $parent, "loaded or created a group";
 
-    my ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 }
 
 # group without principal record and cgm records
@@ -128,8 +120,9 @@ use RT::Test tests => 63;
     DBIx::SearchBuilder::Record::Cachable->FlushCache;
 
     my ($ecode, $res) = RT::Test->run_validator(resolve => 1, timeout => 30);
-    ok $res;
+    isnt($ecode, 0, 'non-zero exit code');
 
-    ($ecode, $res) = RT::Test->run_validator();
-    is $res, '', 'empty result';
+    RT::Test->db_is_valid;
 }
+
+done_testing;

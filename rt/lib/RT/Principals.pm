@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -70,9 +70,9 @@ use strict;
 use warnings;
 
 
-use RT::Principal;
-
 use base 'RT::SearchBuilder';
+
+use RT::Principal;
 
 sub Table { 'Principals'}
 
@@ -82,17 +82,6 @@ sub _Init {
     return ( $self->SUPER::_Init(@_) );
 }
 
-
-=head2 NewItem
-
-Returns an empty new RT::Principal item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Principal->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

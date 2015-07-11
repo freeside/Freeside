@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -76,6 +76,7 @@
       <& /Elements/SelectDate, menu_prefix => 'WillResolve', current => 0 &> (<% $TicketObj->WillResolveObj->AsString %>)
     </td>
   </tr>
+  <& /Elements/EditCustomFields, Object => $TicketObj, Grouping => 'Dates', InTable => 1 &>
 % $m->callback( %ARGS, CallbackName => 'EndOfList', Ticket => $TicketObj );
 </table>
 <%ARGS>

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -132,7 +132,7 @@ sub Run
     }
     return (0, "Internal error: '". $sth->err ."'. Please send bug report.") if $sth->err;
 
-    map { $_ = "RT::Attachment-$_" } @objs;
+    @objs = map {"RT::Attachment-$_"} @objs;
 
     return (1, @objs);
 }

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -67,41 +67,26 @@
 
 package RT::Dashboard;
 
-use RT::SavedSearch;
-
 use strict;
 use warnings;
 
 use base qw/RT::SharedSetting/;
 
+use RT::SavedSearch;
+
 use RT::System;
-RT::System::AddRights(
-    SubscribeDashboard => 'Subscribe to dashboards', #loc_pair
+'RT::System'->AddRight( Staff   => SubscribeDashboard => 'Subscribe to dashboards'); # loc
 
-    SeeDashboard       => 'View system dashboards', #loc_pair
-    CreateDashboard    => 'Create system dashboards', #loc_pair
-    ModifyDashboard    => 'Modify system dashboards', #loc_pair
-    DeleteDashboard    => 'Delete system dashboards', #loc_pair
+'RT::System'->AddRight( General => SeeDashboard       => 'View system dashboards'); # loc
+'RT::System'->AddRight( Admin   => CreateDashboard    => 'Create system dashboards'); # loc
+'RT::System'->AddRight( Admin   => ModifyDashboard    => 'Modify system dashboards'); # loc
+'RT::System'->AddRight( Admin   => DeleteDashboard    => 'Delete system dashboards'); # loc
 
-    SeeOwnDashboard    => 'View personal dashboards', #loc_pair
-    CreateOwnDashboard => 'Create personal dashboards', #loc_pair
-    ModifyOwnDashboard => 'Modify personal dashboards', #loc_pair
-    DeleteOwnDashboard => 'Delete personal dashboards', #loc_pair
-);
+'RT::System'->AddRight( Staff   => SeeOwnDashboard    => 'View personal dashboards'); # loc
+'RT::System'->AddRight( Staff   => CreateOwnDashboard => 'Create personal dashboards'); # loc
+'RT::System'->AddRight( Staff   => ModifyOwnDashboard => 'Modify personal dashboards'); # loc
+'RT::System'->AddRight( Staff   => DeleteOwnDashboard => 'Delete personal dashboards'); # loc
 
-RT::System::AddRightCategories(
-    SubscribeDashboard => 'Staff',
-
-    SeeDashboard       => 'General',
-    CreateDashboard    => 'Admin',
-    ModifyDashboard    => 'Admin',
-    DeleteDashboard    => 'Admin',
-
-    SeeOwnDashboard    => 'Staff',
-    CreateOwnDashboard => 'Staff',
-    ModifyOwnDashboard => 'Staff',
-    DeleteOwnDashboard => 'Staff',
-);
 
 =head2 ObjectName
 
@@ -270,8 +255,7 @@ sub _PrivacyObjects {
 
     my $groups = RT::Groups->new($CurrentUser);
     $groups->LimitToUserDefinedGroups;
-    $groups->WithMember( PrincipalId => $CurrentUser->Id,
-                         Recursively => 1 );
+    $groups->WithCurrentUser;
     push @objects, @{ $groups->ItemsArrayRef };
 
     push @objects, RT::System->new($CurrentUser);
@@ -401,10 +385,7 @@ sub ObjectsForLoading {
         Right             => 'SeeGroupDashboard',
         IncludeSuperusers => $args{IncludeSuperuserGroups},
     );
-    $groups->WithMember(
-        Recursively => 1,
-        PrincipalId => $CurrentUser->UserObj->PrincipalId
-    );
+    $groups->WithCurrentUser;
     my $attrs = $groups->Join(
         ALIAS1 => 'main',
         FIELD1 => 'id',

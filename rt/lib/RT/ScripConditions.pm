@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -70,10 +70,9 @@ package RT::ScripConditions;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::ScripCondition;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'ScripConditions'}
 
@@ -81,30 +80,19 @@ sub LimitToType  {
   my $self = shift;
   my $type = shift;
   $self->Limit (ENTRYAGGREGATOR => 'OR',
-		FIELD => 'Type',
-		VALUE => "$type")
+                FIELD => 'Type',
+                VALUE => "$type")
       if defined $type;
   $self->Limit (ENTRYAGGREGATOR => 'OR',
-		FIELD => 'Type',
-		VALUE => "Correspond")
+                FIELD => 'Type',
+                VALUE => "Correspond")
       if $type eq "Create";
   $self->Limit (ENTRYAGGREGATOR => 'OR',
-		FIELD => 'Type',
-		VALUE => 'any');
-  
+                FIELD => 'Type',
+                VALUE => 'any');
+
 }
 
-
-=head2 NewItem
-
-Returns an empty new RT::ScripCondition item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::ScripCondition->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

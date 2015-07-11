@@ -63,7 +63,7 @@ CREATE TABLE Queues (
   PRIMARY KEY (id)
 
 );
-CREATE UNIQUE INDEX Queues1 ON Queues (Name) ;
+CREATE UNIQUE INDEX Queues1 ON Queues (LOWER(Name)) ;
 
 
 
@@ -144,8 +144,9 @@ CREATE TABLE Groups (
   PRIMARY KEY (id)
 
 );
-CREATE UNIQUE INDEX Groups1 ON Groups (Domain,Instance,Type,id, Name);
-CREATE INDEX Groups2 On Groups  (Type, Instance, Domain);
+CREATE INDEX Groups1 ON Groups (LOWER(Domain), LOWER(Type), Instance);
+CREATE INDEX Groups2 ON Groups (LOWER(Domain), LOWER(Name), Instance);
+CREATE INDEX Groups3 On Groups (Instance);
 
 
 
@@ -225,14 +226,11 @@ CREATE TABLE Scrips (
   Description varchar(255),
   ScripCondition integer NOT NULL DEFAULT 0  ,
   ScripAction integer NOT NULL DEFAULT 0  ,
-  ConditionRules text NULL  ,
-  ActionRules text NULL  ,
   CustomIsApplicableCode text NULL  ,
   CustomPrepareCode text NULL  ,
   CustomCommitCode text NULL  ,
-  Stage varchar(32) NULL  ,
-  Queue integer NOT NULL DEFAULT 0  ,
-  Template integer NOT NULL DEFAULT 0  ,
+  Disabled integer NOT NULL DEFAULT 0 ,
+  Template varchar(200) NOT NULL,
   Creator integer NOT NULL DEFAULT 0  ,
   Created TIMESTAMP NULL  ,
   LastUpdatedBy integer NOT NULL DEFAULT 0  ,
@@ -242,7 +240,24 @@ CREATE TABLE Scrips (
 );
 
 
+CREATE SEQUENCE objectscrips_id_seq;
 
+CREATE TABLE ObjectScrips (
+  id INTEGER DEFAULT nextval('objectscrips_id_seq'),
+  Scrip integer NOT NULL,
+  Stage varchar(32) NOT NULL DEFAULT 'TransactionCreate' ,
+  ObjectId integer NOT NULL,
+  SortOrder integer NOT NULL DEFAULT 0  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
+  Created TIMESTAMP NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  LastUpdated TIMESTAMP NULL  ,
+  PRIMARY KEY (id)
+
+);
+
+CREATE UNIQUE INDEX ObjectScrips1 ON ObjectScrips (ObjectId, Scrip);
 
 
 
@@ -320,9 +335,9 @@ CREATE TABLE CachedGroupMembers (
 
 );
 
-CREATE INDEX CachedGroupMembers2 on CachedGroupMembers (MemberId);
-CREATE INDEX CachedGroupMembers3 on CachedGroupMembers (GroupId);
-CREATE INDEX DisGrouMem  on CachedGroupMembers (GroupId,MemberId,Disabled); 
+CREATE INDEX CachedGroupMembers2 on CachedGroupMembers (MemberId, GroupId, Disabled);
+CREATE INDEX DisGrouMem  on CachedGroupMembers (GroupId,MemberId,Disabled);
+CREATE INDEX CachedGroupMembers3  on CachedGroupMembers (MemberId,ImmediateParentId);
 
 
 
@@ -368,6 +383,7 @@ CREATE TABLE Users (
   Country varchar(50) NULL  ,
   Timezone varchar(50) NULL  ,
   PGPKey text NULL,
+  SMIMECertificate text NULL,
 
   Creator integer NOT NULL DEFAULT 0  ,
   Created TIMESTAMP NULL  ,
@@ -378,8 +394,7 @@ CREATE TABLE Users (
 );
 
 
-CREATE UNIQUE INDEX Users1 ON Users (Name) ;
-CREATE INDEX Users3 ON Users (id, EmailAddress);
+CREATE UNIQUE INDEX Users1 ON Users (LOWER(Name)) ;
 CREATE INDEX Users4 ON Users (EmailAddress);
 
 
@@ -398,6 +413,7 @@ CREATE SEQUENCE tickets_id_seq;
 CREATE TABLE Tickets (
   id INTEGER DEFAULT nextval('tickets_id_seq'),
   EffectiveId integer NOT NULL DEFAULT 0  ,
+  IsMerged smallint NULL DEFAULT NULL ,
   Queue integer NOT NULL DEFAULT 0  ,
   Type varchar(16) NULL  ,
   IssueStatement integer NOT NULL DEFAULT 0  ,
@@ -431,13 +447,6 @@ CREATE TABLE Tickets (
 CREATE INDEX Tickets1 ON Tickets (Queue, Status) ;
 CREATE INDEX Tickets2 ON Tickets (Owner) ;
 CREATE INDEX Tickets3 ON Tickets (EffectiveId) ;
-CREATE INDEX Tickets4 ON Tickets (id, Status) ;
-CREATE INDEX Tickets5 ON Tickets (id, EffectiveId) ;
-
-
-
-
-
 
 
 --
@@ -478,8 +487,6 @@ CREATE TABLE Templates (
   Name varchar(200) NOT NULL  ,
   Description varchar(255) NULL  ,
   Type varchar(16) NULL  ,
-  Language varchar(16) NULL  ,
-  TranslationOf integer NOT NULL DEFAULT 0  ,
   Content text NULL  ,
   LastUpdated TIMESTAMP NULL  ,
   LastUpdatedBy integer NOT NULL DEFAULT 0  ,
@@ -543,7 +550,6 @@ CREATE TABLE CustomFields (
   Type varchar(200) NULL  ,
   RenderType varchar(64) NULL  ,
   MaxValues integer NOT NULL DEFAULT 0  ,
-  Repeated integer NOT NULL DEFAULT 0 , 
   ValuesClass varchar(64) NULL  ,
   BasedOn integer NULL, 
   Pattern varchar(65536) NULL  ,

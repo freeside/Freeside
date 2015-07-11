@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,17 +46,17 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <select class="TimeUnits" id="<% $Name %>" name="<% $Name %>">
-<option value="minutes" <% $HoursDefault ? '' : 'selected="selected"' |n%>>
+<option value="minutes" <% $Default eq 'minutes' ? 'selected="selected"' : '' |n%>>
     <% loc('Minutes') %>
 </option>
-<option value="hours"   <% $HoursDefault ? 'selected="selected"' : '' |n%>>
+<option value="hours"   <% $Default eq 'hours' ? 'selected="selected"' : '' |n%>>
     <% loc('Hours') %>
 </option>
 </select>
 <%INIT>
 $Name .= '-TimeUnits' unless $Name =~ /-TimeUnits$/io;
-my $HoursDefault = RT->Config->Get('DefaultTimeUnitsToHours', $session{'CurrentUser'});
 </%INIT>
 <%ARGS>
 $Name => ''
+$Default => RT->Config->Get('DefaultTimeUnitsToHours', $session{'CurrentUser'}) ? 'hours' : 'minutes'
 </%ARGS>

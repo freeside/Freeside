@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -122,7 +122,7 @@ to this object's CurrentUser->LanguageHandle for localization.
 
 you call it like this:
 
-    $self->loc("I have [quant,_1,concrete mixer].", 6);
+    $self->loc("I have [quant,_1,concrete mixer,concrete mixers].", 6);
 
 In english, this would return:
     I have 6 concrete mixers.

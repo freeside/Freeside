@@ -111,11 +111,11 @@ ok($val,$msg);
 
 # add a comment to ticket
     expect_send("comment -m 'comment-$$' $ticket_id", "Adding a comment...");
-    expect_like(qr/Message recorded/, "Added the comment");
+    expect_like(qr/Comments added/, "Added the comment");
     ### should test to make sure it actually got added
     # add correspondance to ticket (?)
     expect_send("correspond -m 'correspond-$$' $ticket_id", "Adding correspondence...");
-    expect_like(qr/Message recorded/, "Added the correspondence");
+    expect_like(qr/Correspondence added/, "Added the correspondence");
     ### should test to make sure it actually got added
 
     my $test_email = RT::Test::get_relocatable_file('lorem-ipsum',
@@ -124,7 +124,7 @@ ok($val,$msg);
     # text attachment
     check_attachment($test_email);
     # binary attachment
-    check_attachment($RT::MasonComponentRoot.'/NoAuth/images/bpslogo.png');
+    check_attachment($RT::StaticPath . '/images/bpslogo.png');
 
 # change a ticket's Owner
 expect_send("edit ticket/$ticket_id set owner=root", 'Changing owner...');
@@ -158,7 +158,7 @@ expect_send("show ticket/$ticket_id -f queue", 'Verifying change...');
 expect_like(qr/Queue: EditedQueue$$/, 'Verified change');
 # cannot move ticket to a nonexistent queue
 expect_send("edit ticket/$ticket_id set queue=nonexistent-$$", 'Changing to nonexistent queue...');
-expect_like(qr/queue does not exist/i, 'Errored out');
+expect_like(qr/Queue nonexistent-$$ does not exist/i, 'Errored out');
 expect_send("show ticket/$ticket_id -f queue", 'Verifying lack of change...');
 expect_like(qr/Queue: EditedQueue$$/, 'Verified lack of change');
 
@@ -213,7 +213,7 @@ expect_send("edit ticket/$ticket_id set CF-myCF$$=1,2,3", 'Changing CF...');
 expect_like(qr/Ticket $ticket_id updated/, 'Changed cf');
 expect_send("show ticket/$ticket_id -f CF-myCF$$", 'Checking new value');
 expect_like(qr/\QCF.{myCF$$}\E: 1,2,3/i, 'Verified change');
-expect_send("edit ticket/$ticket_id set CF-myCF$$=\"1's,2,3\"", 'Changing CF...');
+expect_send(qq{edit ticket/$ticket_id set CF-myCF$$="1's,2,3"}, 'Changing CF...');
 expect_like(qr/Ticket $ticket_id updated/, 'Changed cf');
 expect_send("show ticket/$ticket_id -f CF-myCF$$", 'Checking new value');
 expect_like(qr/\QCF.{myCF$$}\E: 1's,2,3/i, 'Verified change');
@@ -238,32 +238,85 @@ expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
 expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
 expect_like(qr/\QCF.{MultipleCF$$}\E: b,\s*c,\s*o/i, 'Verified multiple cf change');
 
-expect_send("edit ticket/$ticket_id set CF.{MultipleCF$$}=\"'a,b,c'\" ", 'Changing CF...');
-expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
-expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
-expect_like(qr/\QCF.{MultipleCF$$}\E: 'a,b,c'/i, 'Verified change');
-expect_send("edit ticket/$ticket_id del CF.{MultipleCF$$}=a", 'Changing CF...');
-expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
-expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
-expect_like(qr/\QCF.{MultipleCF$$}\E: 'a,b,c'/i, 'Verified change');
+sub multi_round_trip {
+    my ($op, $value, $regex) = @_;
+    $Test::Builder::Level++;
+    # The outer double quotes are for the argument parsing that the
+    # command-line does; the extra layer of escaping is to for them, as
+    # well.  It is equivilent to the quoting that the shell would
+    # require.
+    my $quoted = $value;
+    $quoted =~ s/(["\\])/\\$1/g;
+    expect_send(qq{edit ticket/$ticket_id $op CF.{MultipleCF$$}="$quoted"}, qq{CF $op $value});
+    expect_like(qr/Ticket $ticket_id updated/,                              qq{Got expected "updated" answer});
+    expect_send(qq{show ticket/$ticket_id -f CF.{MultipleCF$$}},            qq{Sent "show"});
+    expect_like(qr/\QCF.{MultipleCF$$}\E: $regex$/i,                        qq{Answer matches $regex});
+}
 
-expect_send("edit ticket/$ticket_id set CF.{MultipleCF$$}=q{a,b,c}", 'Changing CF...');
-expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
-expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
-expect_like(qr/\QCF.{MultipleCF$$}\E: 'a,b,c'/i, 'Verified change');
-expect_send("edit ticket/$ticket_id del CF.{MultipleCF$$}=a", 'Changing CF...');
-expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
-expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
-expect_like(qr/\QCF.{MultipleCF$$}\E: 'a,b,c'/i, 'Verified change');
-expect_send("edit ticket/$ticket_id del CF.{MultipleCF$$}=\"'a,b,c'\"", 'Changing CF...');
-expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
-expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
-expect_like(qr/\QCF.{MultipleCF$$}\E: \s*$/i, 'Verified change');
+# Test simple quoting
+my $ticket = RT::Ticket->new($RT::SystemUser);
+$ticket->Load($ticket_id);
+multi_round_trip(set => q|'a,b,c'|,  qr/'a,b,c'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1,     "Has only one CF value");
+is($ticket->FirstCustomFieldValue("MultipleCF$$"), q{a,b,c}, "And that CF value is as expected");
 
-expect_send("edit ticket/$ticket_id set CF.{MultipleCF$$}=\"q{1,2's,3}\"", 'Changing CF...');
+multi_round_trip(del => q|a|,        qr/'a,b,c'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1,     "Still has only one CF value");
+is($ticket->FirstCustomFieldValue("MultipleCF$$"), q{a,b,c}, "And that CF value is as expected");
+
+multi_round_trip(set => q|q{a,b,c}|, qr/'a,b,c'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1, "Still has only one CF value");
+is($ticket->FirstCustomFieldValue("MultipleCF$$"), q{a,b,c}, "And that CF value is as expected");
+
+multi_round_trip(del => q|a|,        qr/'a,b,c'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1, "Still has only one CF value");
+is($ticket->FirstCustomFieldValue("MultipleCF$$"), q{a,b,c}, "And that CF value is as expected");
+
+multi_round_trip(del => q|'a,b,c'|,  qr/\s*/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 0, "Now has no CF values");
+
+multi_round_trip(set => q|q{1,2's,3}|, qr/'1,2\\'s,3'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1, "Still has only one CF value");
+is($ticket->FirstCustomFieldValue("MultipleCF$$"), q{1,2's,3}, "And that CF value is as expected");
+
+multi_round_trip(del => q|q{1,2's,3}|, qr/\s*/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 0, "Now has no CF values");
+
+# Test escaping of quotes - generate (foo)(bar') with no escapes
+multi_round_trip(set => q|'foo',bar'|, qr/foo,bar'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 2, "Has two values");
+is($ticket->CustomFieldValues("MultipleCF$$")->First->Content, q|foo|,  "Direct value checks out");
+is($ticket->CustomFieldValues("MultipleCF$$")->Last->Content,  q|bar'|, "Direct value checks out");
+multi_round_trip(del => q|bar'|,       qr/foo/);
+
+# With one \, generate (foo',bar)
+
+# We obviously need two \s in the following q|| string in order to
+# generate a string with one actual \ in it; this causes the string to,
+# in general, have twice as many \s in it as we wish to test.
+multi_round_trip(set => q|'foo\\',bar'|, qr/'foo\\',bar'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1, "Has one value");
+is($ticket->CustomFieldValues("MultipleCF$$")->First->Content, q|foo',bar|,  "Direct value checks out");
+
+# With two \, generate (foo\)(bar')
+multi_round_trip(set => q|'foo\\\\',bar'|, qr/foo\\,bar'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 2, "Has two values");
+is($ticket->CustomFieldValues("MultipleCF$$")->First->Content, q|foo\\|,  "Direct value checks out");
+is($ticket->CustomFieldValues("MultipleCF$$")->Last->Content,  q|bar'|, "Direct value checks out");
+multi_round_trip(del => q|bar'|,           qr/foo\\/);
+
+# With three \, generate (foo\',bar)
+multi_round_trip(set => q|'foo\\\\\\',bar'|, qr/'foo\\\\\\',bar'/);
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 1, "Has one value");
+is($ticket->CustomFieldValues("MultipleCF$$")->First->Content, q|foo\\',bar|,  "Direct value checks out");
+
+# Check that we don't infinite-loop on 'foo'bar,baz; this should be ('foo'bar)(baz)
+expect_send("edit ticket/$ticket_id set CF.{MultipleCF$$}=\"'foo'bar,baz\"", 'Changing CF to have quotes not at commas');
 expect_like(qr/Ticket $ticket_id updated/, 'Changed multiple cf');
-expect_send("show ticket/$ticket_id -f CF.{MultipleCF$$}", 'Checking new value');
-expect_like(qr/\QCF.{MultipleCF$$}\E: '1,2\\'s,3'/i, 'Verified change');
+is($ticket->CustomFieldValues("MultipleCF$$")->Count, 2, "Has two value");
+is($ticket->CustomFieldValues("MultipleCF$$")->First->Content, q|'foo'bar|,  "Direct value checks out");
+is($ticket->CustomFieldValues("MultipleCF$$")->Last->Content, q|baz|,  "Direct value checks out");
+
 
 # ...
 # change a ticket's ...[other properties]...
@@ -401,9 +454,9 @@ expect_send("merge $merge_ticket_B $merge_ticket_A", 'Merging the tickets...');
 expect_like(qr/Merge completed/, 'Merged the tickets');
 
 expect_send("show ticket/$merge_ticket_A/history", 'Checking merge on first ticket');
-expect_like(qr/Merged into ticket #$merge_ticket_A by root/, 'Merge recorded in first ticket');
+expect_like(qr/Merged into #$merge_ticket_A: CLIMergeTest1-$$ by root/, 'Merge recorded in first ticket');
 expect_send("show ticket/$merge_ticket_B/history", 'Checking merge on second ticket');
-expect_like(qr/Merged into ticket #$merge_ticket_A by root/, 'Merge recorded in second ticket');
+expect_like(qr/Merged into #$merge_ticket_A: CLIMergeTest1-$$ by root/, 'Merge recorded in second ticket');
 
 {
     # create a user; give them privileges to take and steal
@@ -522,7 +575,7 @@ sub check_attachment {
     my $attachment_path = shift;
     (my $filename = $attachment_path) =~ s/.*\/(.*)$/$1/;
     expect_send("comment -m 'attach file' -a $attachment_path $ticket_id", "Adding an attachment ($filename)");
-    expect_like(qr/Message recorded/, "Added the attachment");
+    expect_like(qr/Comments added/, "Added the attachment");
     expect_send("show ticket/$ticket_id/attachments","Finding Attachment");
     my $attachment_regex = qr/(\d+):\s+$filename/;
     expect_like($attachment_regex,"Attachment Uploaded");
@@ -536,7 +589,11 @@ sub check_attachment {
     TODO: {
         local $TODO = "Binary PNG content is getting mangled somewhere along the way"
             if $attachment_path =~ /\.png$/;
-        expect_is($attachment_content,"Attachment contains original text");
+        is(
+            MIME::Base64::encode_base64(Test::Expect::before()),
+            MIME::Base64::encode_base64($attachment_content),
+            "Attachment contains original text"
+       );
     }
 }
 

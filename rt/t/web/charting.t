@@ -1,16 +1,10 @@
 use strict;
 use warnings;
 
-BEGIN {
-    require RT::Test;
+use RT::Test tests => undef;
 
-    if (eval { require GD; 1 }) {
-        RT::Test->import(plan => 'no_plan');
-    }
-    else {
-        RT::Test->import(skip_all => 'GD required.');
-    }
-}
+plan skip_all => 'GD required'
+    unless GD->require;
 
 for my $n (1..7) {
     my $ticket = RT::Ticket->new( RT->SystemUser );
@@ -35,8 +29,8 @@ ok( $m->login, "Logged in" );
 
 # Test that defaults work
 $m->get_ok( "/Search/Chart.html?Query=id>0" );
-$m->content_like(qr{<th[^>]*>Queue\s*</th>\s*<th[^>]*>Tickets\s*</th>}, "Grouped by queue");
-$m->content_like(qr{General</a>\s*</td>\s*<td[^>]*>\s*<a[^>]*>7</a>}, "Found results in table");
+$m->content_like(qr{<th[^>]*>Status\s*</th>\s*<th[^>]*>Ticket count\s*</th>}, "Grouped by status");
+$m->content_like(qr{new\s*</th>\s*<td[^>]*>\s*<a[^>]*>7</a>}, "Found results in table");
 $m->content_like(qr{<img src="/Search/Chart\?}, "Found image");
 
 $m->get_ok( "/Search/Chart?Query=id>0" );
@@ -45,35 +39,41 @@ ok( length($m->content), "Has content" );
 
 
 # Group by Queue
-$m->get_ok( "/Search/Chart.html?Query=id>0&PrimaryGroupBy=Queue" );
-$m->content_like(qr{<th[^>]*>Queue\s*</th>\s*<th[^>]*>Tickets\s*</th>}, "Grouped by queue");
-$m->content_like(qr{General</a>\s*</td>\s*<td[^>]*>\s*<a[^>]*>7</a>}, "Found results in table");
+$m->get_ok( "/Search/Chart.html?Query=id>0&GroupBy=Queue" );
+$m->content_like(qr{<th[^>]*>Queue\s*</th>\s*<th[^>]*>Ticket count\s*</th>}, "Grouped by queue");
+$m->content_like(qr{General\s*</th>\s*<td[^>]*>\s*<a[^>]*>7</a>}, "Found results in table");
 $m->content_like(qr{<img src="/Search/Chart\?}, "Found image");
 
-$m->get_ok( "/Search/Chart?Query=id>0&PrimaryGroupBy=Queue" );
+$m->get_ok( "/Search/Chart?Query=id>0&GroupBy=Queue" );
 is( $m->content_type, "image/png" );
 ok( length($m->content), "Has content" );
 
 
 # Group by Requestor email
-$m->get_ok( "/Search/Chart.html?Query=id>0&PrimaryGroupBy=Requestor.EmailAddress" );
-$m->content_like(qr{<th[^>]*>Requestor\.EmailAddress\s*</th>\s*<th[^>]*>Tickets\s*</th>},
+$m->get_ok( "/Search/Chart.html?Query=id>0&GroupBy=Requestor.EmailAddress" );
+$m->content_like(qr{<th[^>]*>Requestor\s+EmailAddress</th>\s*<th[^>]*>Ticket count\s*</th>},
                  "Grouped by requestor");
-$m->content_like(qr{root0\@localhost</a>\s*</td>\s*<td[^>]*>\s*<a[^>]*>3</a>}, "Found results in table");
+$m->content_like(qr{root0\@localhost\s*</th>\s*<td[^>]*>\s*<a[^>]*>3</a>}, "Found results in table");
 $m->content_like(qr{<img src="/Search/Chart\?}, "Found image");
 
-$m->get_ok( "/Search/Chart?Query=id>0&PrimaryGroupBy=Requestor.Email" );
+$m->get_ok( "/Search/Chart?Query=id>0&GroupBy=Requestor.EmailAddress" );
 is( $m->content_type, "image/png" );
 ok( length($m->content), "Has content" );
 
-
 # Group by Requestor phone -- which is bogus, and falls back to queue
-$m->get_ok( "/Search/Chart.html?Query=id>0&PrimaryGroupBy=Requestor.Phone" );
-$m->content_like(qr{General</a>\s*</td>\s*<td[^>]*>\s*<a[^>]*>7</a>},
+
+$m->get_ok( "/Search/Chart.html?Query=id>0&GroupBy=Requestor.Phone" );
+$m->warning_like( qr{'Requestor\.Phone' is not a valid grouping for reports} );
+
+TODO: {
+    local $TODO = "UI should show that it's group by status";
+    $m->content_like(qr{new\s*</th>\s*<td[^>]*>\s*<a[^>]*>7</a>},
                  "Found queue results in table, as a default");
+}
 $m->content_like(qr{<img src="/Search/Chart\?}, "Found image");
 
-$m->get_ok( "/Search/Chart?Query=id>0&PrimaryGroupBy=Requestor.Phone" );
+$m->get_ok( "/Search/Chart?Query=id>0&GroupBy=Requestor.Phone" );
+$m->warning_like( qr{'Requestor\.Phone' is not a valid grouping for reports} );
 is( $m->content_type, "image/png" );
 ok( length($m->content), "Has content" );
 
@@ -93,3 +93,6 @@ $advanced = $m->find_link( text => 'Advanced' )->URI->equery;
 like( $advanced, qr{Query=id%3E0},
       'Advanced link still has Query param with id search'
     );
+
+undef $m;
+done_testing;

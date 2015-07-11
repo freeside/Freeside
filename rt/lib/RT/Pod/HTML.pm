@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -143,6 +143,12 @@ sub resolve_local_link {
     }
     elsif ($name eq 'README') {
         # We process README separately in devel/tools/rt-static-docs
+        $local = $name;
+    }
+    elsif ($name =~ /^UPGRADING.*/) {
+        # If an UPGRADING file is referred to anywhere else (such as
+        # templates.pod) we won't have seen UPGRADING yet and will treat
+        # it as a non-local file.
         $local = $name;
     }
     # These matches handle links that look like filenames, such as those we

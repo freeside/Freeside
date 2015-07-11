@@ -18,9 +18,8 @@ ok( $user_a && $user_a->id, 'loaded or created user' );
 ok( ! $user_a->Privileged, 'user is not privileged' );
 
 # Load Cc group
-my $Cc = RT::Group->new( RT->SystemUser );
-my($ok, $msg) = $Cc->LoadSystemRoleGroup( 'Cc' );
-ok($ok, $msg);
+my $Cc = RT::System->RoleGroup( 'Cc' );
+ok($Cc->id);
 RT::Test->add_rights( { Principal => $Cc, Right => ['ShowTicket'] } );
 
 my ($ticket) = RT::Test->create_ticket(

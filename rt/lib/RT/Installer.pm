@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -129,12 +129,6 @@ my %Meta = (
             Description => 'Database password for RT',                      #loc
             Type        => 'password',
             Hints       => 'The password RT should use to connect to the database.',
-        },
-    },
-    DatabaseRequireSSL => {
-        Widget          => '/Widgets/Form/Boolean',
-        WidgetArguments => {
-            Description => 'Use SSL?',    # loc
         },
     },
     rtname => {
@@ -288,7 +282,9 @@ sub SaveConfig {
             # remove obsolete settings we'll add later
             $content =~ s/^\s* Set \s* \( \s* \$$_ .*$//xm;
 
-            $content .= "Set( \$$_, '$RT::Installer->{InstallConfig}{$_}' );\n";
+            my $value = $RT::Installer->{InstallConfig}{$_};
+            $value =~ s/(['\\])/\\$1/g;
+            $content .= "Set( \$$_, '$value' );\n";
         }
         $content .= "1;\n";
         print $fh $content;

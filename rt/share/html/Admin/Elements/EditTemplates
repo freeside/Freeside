@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -58,6 +58,7 @@
 <& /Elements/CollectionList,
     OrderBy       => 'id',
     Order         => 'ASC',
+    Rows          => $Rows,
     %ARGS,
     DisplayFormat => '__CheckBox.{DeleteTemplates}__,'. $Format,
     Format        => $Format,
@@ -74,6 +75,7 @@
 
 <%INIT>
 $Format ||= RT->Config->Get('AdminSearchResultFormat')->{'Templates'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'Templates'} || 50;
 
 my $QueueObj = RT::Queue->new( $session{'CurrentUser'} );
 $QueueObj->Load( $id ) if $id;
