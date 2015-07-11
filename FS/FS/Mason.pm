@@ -646,7 +646,8 @@ sub mason_interps {
                       [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
                       [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                     ],
-    escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
+    escape_flags => { 'h'         => \&RT::Interface::Web::EscapeHTML,
+                      #u and j aren't used anymore?  :/
                       'u'         => \&RT::Interface::Web::EscapeURI,
                       'j'         => \&RT::Interface::Web::EscapeJS,
                       'js_string' => $js_string_sub,
