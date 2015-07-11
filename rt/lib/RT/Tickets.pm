@@ -1494,12 +1494,12 @@ sub JoinToCustLinks {
             TABLE2 => 'Links',
             FIELD2 => 'LocalBase',
         );
-       $self->SUPER::Limit(
-         LEFTJOIN => $linkalias,
-         FIELD    => 'Base',
-         OPERATOR => 'LIKE',
-         VALUE    => 'fsck.com-rt://%/ticket/%',
-       );
+        $self->SUPER::Limit(
+            LEFTJOIN => $linkalias,
+            FIELD    => 'Base',
+            OPERATOR => 'LIKE',
+            VALUE    => 'fsck.com-rt://%/ticket/%',
+        );
         $self->SUPER::Limit(
             LEFTJOIN => $linkalias,
             FIELD    => 'Type',
@@ -1617,6 +1617,7 @@ sub JoinToCustomerViaService {
 
 sub _FreesideFieldLimit {
     my ( $self, $field, $op, $value, %rest ) = @_;
+
     my $is_negative = 0;
     if ( $op eq '!=' || $op =~ /\bNOT\b/i ) {
         # if the op is negative, do the join as though
@@ -1650,7 +1651,7 @@ sub _FreesideFieldLimit {
 
     # if it's compound, create a join from cust_main or cust_svc to that 
     # table, using custnum or svcnum, and Limit on that table instead.
-    my @_SQLLimit = ();
+    my @Limit = ();
     foreach my $a (@alias) {
       if ( $table2 ) {
           $a = $self->Join(
@@ -1680,8 +1681,8 @@ sub _FreesideFieldLimit {
       # will produce a subclause: "cust_main_1.custnum IS NOT NULL OR 
       # cust_main_2.custnum IS NOT NULL" (or "IS NULL AND..." for a negative
       # query).
-      #$self->_SQLLimit(
-      push @_SQLLimit, {
+      #$self->Limit(
+      push @Limit, {
           %rest,
           ALIAS           => $a,
           FIELD           => $pkey,
@@ -1693,11 +1694,16 @@ sub _FreesideFieldLimit {
       };
     }
 
-    $self->_OpenParen;
-    foreach my $_SQLLimit (@_SQLLimit) {
-      $self->_SQLLimit( %$_SQLLimit);
+
+    #the clauses seem to now auto-paren themselves (correctly!), calling this
+    # inserts "( )" which causes the query to syntax error out
+    #$self->_OpenParen;
+
+    foreach my $Limit (@Limit) {
+      $self->Limit( %$Limit);
     }
-    $self->_CloseParen;
+
+    #$self->_CloseParen;
 
 }
 
