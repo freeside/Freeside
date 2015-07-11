@@ -1,15 +1,12 @@
-
- <% include('email-customers.html',
-      'form_action'       => 'email-customer-statement.html',
-      'title'             => 'Send statement to customer',
-      'no_search_fields'  => [ 'start_date', 'end_date' ],
-      'alternate_form'    => $alternate_form,
-      'post_search_hook'  => $post_search_hook,
-      'acl'               => $acl,
-      'process_url'       => 'process/email-customer-statement.html',
-    )
- %>
-
+<& email-customers.html,
+     'form_action'       => 'email-customer-statement.html',
+     'title'             => 'Send statement to customer',
+     'no_search_fields'  => [ 'start_date', 'end_date' ],
+     'alternate_form'    => $alternate_form,
+     'post_search_hook'  => $post_search_hook,
+     'acl'               => $acl,
+     'process_url'       => 'process/email-customer-statement.html',
+&>
 <%init>
 
 my $acl = 'Resend invoices';

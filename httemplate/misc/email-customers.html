@@ -29,15 +29,14 @@ gets passed options 'conf' and 'search' (a reference to the unfrozen %search has
 should be used to set msgnum or from/subject/html_body cgi params
 
 </%doc>
-
 % if ($popup) {
-<% include('/elements/header-popup.html', $title) %>
+<& /elements/header-popup.html, $title &>
 % } else {
-<% include('/elements/header.html', $title) %>
+<& /elements/header.html, $title &>
 % }
 
 
-<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="POST">
+<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="GET">
 <INPUT TYPE="hidden" NAME="table" VALUE="<% $table %>">
 %# Mixing search params with from address, subject, etc. required special-case
 %# handling of those, risked name conflicts, and caused massive problems with 
@@ -67,7 +66,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 
 % if ( $cgi->param('action') ) {
 
-    <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+    <TABLE CLASS="fsinnerbox">
     <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% $cgi->param('msgnum') %>">
 
 %   if ( $msg_template ) {
@@ -93,6 +92,7 @@ should be used to set msgnum or from/subject/html_body cgi params
       %>
 
       <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $html_body |h %>">
+      <TR><TD COLSPAN=2>&nbsp;</TD></TR>
       <TR>
         <TH ALIGN="right" VALIGN="top">Message (HTML display): </TD>
         <TD CLASS="background" ALIGN="left"><% $html_body %></TD>
@@ -104,10 +104,12 @@ should be used to set msgnum or from/subject/html_body cgi params
 %                       )
 %                     );
       <INPUT TYPE="hidden" NAME="text_body" VALUE="<% $text_body |h %>">
+      <TR><TD COLSPAN=2>&nbsp;</TD></TR>
       <TR>
         <TH ALIGN="right" VALIGN="top">Message (Text display): </TD>
-        <TD CLASS="background" STYLE="background-color:white" ALIGN="left">
-          <a href="javascript:void(0)" onclick="this.style.display='none'; document.getElementById('email-message-text').style.display=''">click to view</a>
+        <TD CLASS="background" ALIGN="left">
+          <a href="javascript:void(0)" ID="email-message-text-view" style="color:#666666" onclick="showtext()">(view)</a>
+          <a href="javascript:void(0)" ID="email-message-text-hide" style="color:#666666; display: none;" onclick="hidetext()">(hide)</a>
           <PRE id="email-message-text" style="display: none;"><% $text_body %></PRE>
         </TD>
       </TR>
@@ -117,6 +119,19 @@ should be used to set msgnum or from/subject/html_body cgi params
 %   if ( $cgi->param('action') eq 'preview' ) {
 
       <SCRIPT>
+
+        function showtext() {
+          $('#email-message-text-view').css('display','none');
+          $('#email-message-text-hide').css('display','');
+          $('#email-message-text').slideDown();
+        }
+
+        function hidetext() {
+          $('#email-message-text-view').css('display','');
+          $('#email-message-text-hide').css('display','none');
+          $('#email-message-text').slideUp();
+        }
+
         function areyousure(href) {
           return confirm("Send this notice to <% ($num_cust > 1) ? "$num_cust customers" : '1 customer' %> ?");
         }
