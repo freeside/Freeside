@@ -509,7 +509,7 @@ if ( -e $addl_handler_use_file ) {
   
   sub include {
     use vars qw($m);
-    #carp #should just switch to <& &> syntax
+    carp 'include deprecated; use an HTML::Mason <& &> style include (or $m->scomp)';
     $m->scomp(@_);
   }
 
