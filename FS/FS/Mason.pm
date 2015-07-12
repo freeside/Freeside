@@ -508,8 +508,8 @@ if ( -e $addl_handler_use_file ) {
   };
   
   sub include {
-    use vars qw($m @CARP_NOT);
-    warn 'include deprecated; use an HTML::Mason <& &> style include (or $m->scomp) at '. $m->callers(1)->path. "\n";
+    use vars qw($m);
+    #warn 'include deprecated; use an HTML::Mason <& &> style include (or $m->scomp) at '. $m->callers(0)->path. "\n";
     $m->scomp(@_);
   }
 
