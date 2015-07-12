@@ -68,7 +68,8 @@ my $onclick =
   "overlib( OLiframeContent($action, $width, $height, '$popup_name', 0, '$scrolling' ), ".
     "CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
     "DRAGGABLE, CLOSECLICK, ".
-    "BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext'".
+    "BGCOLOR, '$color', CGCOLOR, '$color', FGCOLOR, '#f8f8f8', ".
+    "CLOSETEXT, '$closetext'".
     ( $frame ? ", FRAME, $frame" : '' ).
   ");";
   
