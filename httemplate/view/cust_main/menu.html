@@ -1,36 +1,32 @@
 <style type="text/css">
 
 #customer_menu {
-/*  padding: 0;
-  margin: .5em 0 0 0;
-*/
   font-size: smaller;
   border: none;
+  margin-top: .6em;
+  margin-bottom: 16px;
 }
 
 #customer_menu li {
-/*  margin: 0; */
   float: left;
-  padding-left: 0;
-  padding-right: .25em;
-  padding-bottom: 0;
-  padding-top: 0;
+  padding: .25em;
+}
+
+/* #customer_menu .ui-menu-item  */
+#customer_menu > li {
+  background-color: #f8f8f8;
+  padding-left: 0px;
 }
 
 /* #customer_menu .ui-menu-item  */
 #customer_menu > li.ui-state-focus {
   background-color: #f8f8f8;
-  border-top: 1px solid transparent;
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
-  border-bottom: none;
-  margin-bottom: 0px;
+  border: 1px solid transparent;
 }
 
 #customer_menu > li.ui-state-active {
-  border-top: 1px solid transparent;
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
+  background-color: #f8f8f8;
+  border: 1px solid transparent;
 }
 
 #customer_menu > li > a {
@@ -38,8 +34,15 @@
   border-left: 1px solid transparent;
   border-right: 1px solid transparent;
   border-bottom: none;
-  margin-bottom: 0px;
   padding: .5em .75em;
+}
+
+#customer_menu > li.ui-state-active > a {
+
+/* if i could find something light enough that didn't look pink?
+     or is this too visually distracting and not the useful hint i think it is?
+  background: #ED55E7;
+*/
 }
 
 #customer_menu a.current_show {
@@ -48,17 +51,16 @@
   border-top: 1px solid #7e0079;
   border-left: 1px solid #7e0079;
   border-right: 1px solid #7e0079;
-  border-bottom: 1px solid #ffffff;
-  margin-bottom: -1px;
+  border-bottom: 2px solid #ffffff;
+  margin-bottom: -2px;
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
 }
 
 #customer_menu a {
-  display: block;
-
   margin-left: 0;
   margin-right: 1em;
   margin-top: 0;
-  padding: .4em .5em;
   border-top-left-radius: .5em;
   border-top-right-radius: .5em;
 
@@ -106,18 +108,30 @@
 }
 
 #customer_menu ul li.ui-state-active {
-/*  background: #f2c9ec; */
-  border: 1px solid transparent;
+  background: #f8f0fc;
+  border: 1px solid #7e0079;
+  border-radius: 2px;
   margin-right: 1px;
   margin-left: 1px;
 }
 
 #customer_menu a .arrow {
   float: right;
-  margin-top:-.8em;
+  background-image: url("<% $p %>images/arrow.right.black.png");
+  width: 3px;
+  height: 6px;
+  margin-top:4px;
+}
+
+@-moz-document url-prefix() {
+  #customer_menu a .arrow {
+    margin-top:-.8em;
+  }
 }
 
 </style>
+
+<& /elements/one_time_charge_link.html, form_only=>1 &>
 
 <ul id="customer_menu">
 % foreach my $submenu (@processed_menu) {
@@ -137,13 +151,13 @@
 <script type="text/javascript">
 
   $("#customer_menu").menu({
-    position: { my: "left top", at: "left+1 bottom" },
+    position: { my: "left top", at: "left+1 bottom+3" },
     blur: function() {
-      $(this).menu("option", "position", { my:"left top", at:"left+1 bottom" } );
+      $(this).menu("option", "position", { my:"left top", at:"left+1 bottom+3" } );
     },
     focus: function(e,ui) {
       if ($("#customer_menu").get(0) !== $(ui).get(0).item.parent().get(0)) {
-        $(this).menu("option", "position", { my:"left top", at:"right+1 top"} );
+        $(this).menu("option", "position", { my:"left top", at:"right+2 top"} );
       }
     },
   });
@@ -347,6 +361,7 @@ my @menu = (
       content     => sub {
                       include( '/elements/one_time_charge_link.html',
                         custnum => shift->custnum,
+                        no_form => 1,
                       );
                      },
       acl         => 'One-time charge',
@@ -650,7 +665,7 @@ sub entry2link {
     if ( $entry->{submenu} ) {
 
       my $a = '<a href="javascript:void(0);">'. $label.
-              '<img class="arrow" src="'. $p. 'images/arrow.right.black.png">'.
+              '<span class="arrow"></span>'.
               '</a><ul class="customer_subsubmenu">';
       foreach my $submenu (@{ $entry->{submenu} }) {
         $a .= '<li>'. entry2link($submenu, $cust_main, $show), '</li>';
@@ -702,7 +717,7 @@ sub entry2link {
       return qq[ <A HREF="$target">$label</A> ];
 
     } else {
-      die "bad entry $entry in menu: no url, popup or content";
+      die "bad entry ". join(',',%$entry). " in menu: no url, popup or content";
     }
 
 }
