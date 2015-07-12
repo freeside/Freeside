@@ -78,13 +78,13 @@ should be used to set msgnum or from/subject/html_body cgi params
       <& /elements/tr-fixed.html,
                    'field'      => 'from',
                    'label'      => 'From:',
-                   'value' => scalar( $from ),
+                   'value'      => $from,
       &>
 
       <& /elements/tr-fixed.html,
                    'field'      => 'subject',
                    'label'      => 'Subject:',
-                   'value' => scalar( $subject ),
+                   'value'      => $subject,
       &>
 
       <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $html_body |h %>">
