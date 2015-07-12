@@ -51,13 +51,12 @@ should be used to set msgnum or from/subject/html_body cgi params
 
     <FONT SIZE="+2">Sending notice</FONT>
 
-    <% include('/elements/progress-init.html',
+    <& /elements/progress-init.html,
                  'OneTrueForm',
                  [ qw( search table from subject html_body text_body msgnum ) ],
                  $process_url,
                  $pdest,
-              )
-    %>
+    &>
 
 % } elsif ( $cgi->param('action') eq 'preview' ) {
 
@@ -68,7 +67,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 % if ( $cgi->param('action') ) {
 
     <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-    <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% $cgi->param('msgnum') %>">
+    <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% scalar($cgi->param('msgnum')) %>">
 
 %   if ( $msg_template ) {
       <% include('/elements/tr-fixed.html',
@@ -160,12 +159,11 @@ Template:
               'size'  => 20,
           &>&gt;</TD>
  
-    <% include('/elements/tr-input-text.html',
+    <& /elements/tr-input-text.html,
                  'field' => 'subject',
                  'label' => 'Subject:',
                  'size'  => 50,
-              )
-    %>
+    &>
 
     <TR>
       <TD ALIGN="right" VALIGN="top" STYLE="padding-top:3px">Message: </TD>
@@ -193,7 +191,7 @@ Template:
     </SCRIPT>
 % }
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%init>
 
@@ -222,7 +220,7 @@ $pdest->{'url'} = $cgi->param('url') if $url;
 
 my %search;
 if ( $cgi->param('search') ) {
-  %search = %{ thaw(decode_base64($cgi->param('search'))) };
+  %search = %{ thaw(decode_base64( $cgi->param('search') )) };
 }
 else {
   %search = $cgi->Vars;
@@ -267,7 +265,7 @@ if ( $cgi->param('action') eq 'preview' ) {
 
   if ( $cgi->param('msgnum') ) {
     $msg_template = qsearchs('msg_template', 
-                             { msgnum => $cgi->param('msgnum') } )
+                             { msgnum => scalar($cgi->param('msgnum')) } )
         or die "template not found: ".$cgi->param('msgnum');
     $sql_query->{'extra_sql'} .= ' LIMIT 1';
     $sql_query->{'select'} = "$table.*";
