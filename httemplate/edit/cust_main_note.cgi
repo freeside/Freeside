@@ -23,8 +23,12 @@
     join '', split /<br \/>|&nbsp;/, $comment 
     %></TEXTAREA>
 % } else {
-    <& /elements/htmlarea.html, 'field'      => 'comment_html',
-                                'curr_value' => $comment
+    <& /elements/htmlarea.html,
+         'field'      => 'comment_html',
+         'curr_value' => $comment,
+         'config'     => { toolbarStartupExpanded => JSON::false,
+                           height                 => 315,
+                         },
     &>
 % }
 
