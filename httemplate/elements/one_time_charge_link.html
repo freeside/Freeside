@@ -4,13 +4,18 @@ Example:
 
   <& /elements/one_time_charge_link.html,
 
-     #one of these is required
+     #one of these is required (except when form_only is true)
      'custnum'     => $custnum,
      'prospectnum' => $prospectnum,
 
+     'no_form'   => 0,
+     'form_only' => 0,
   &>
 
 </%doc>
+%
+% unless ( $opt{form_only} ) {
+%
 <SCRIPT TYPE="text/javascript">
 
 function taxproductmagic(which) {
@@ -84,7 +89,9 @@ function taxoverridequickchargemagic() {
 }
 
 </SCRIPT>
-
+% }
+%
+% unless ( $opt{no_form} ) {
 <FORM NAME='quickcharge' STYLE="margin:0; padding:0; display:inline">
 % for (qw(
 %   taxproductnum tax_override charge_storage taxproductnum_description
@@ -92,17 +99,19 @@ function taxoverridequickchargemagic() {
     <INPUT NAME="<% $_ %>" ID="<% $_ %>" TYPE="hidden">
 % }
 </FORM>
-
-<% include('/elements/popup_link.html', { 
+% }
+%
+% unless ( $opt{form_only} ) {
+<& /elements/popup_link.html,
      'action'      => $p. 'edit/quick-charge.html?'. $query,
      'label'       => emt('One-time charge'),
      'actionlabel' => emt('One-time charge'),
      'color'       => '#333399',
      'width'       => 763,
      'height'      => 460, #more for more room for lines of add'l description?
-   })
-%>
-
+&>
+% }
+%
 <%init>
 
 my %opt = @_;
