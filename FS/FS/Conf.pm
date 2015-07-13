@@ -3977,7 +3977,7 @@ and customer address. Include units.',
   {
     'key'         => 'batchconfig-nacha-origin_name',
     'section'     => 'billing',
-    'description' => 'Configuration for NACHA batching, Origin name (defaults to company name, but sometimes bank name is needed instead.)'.
+    'description' => 'Configuration for NACHA batching, Origin name (defaults to company name, but sometimes bank name is needed instead.)',
     'type'        => 'text',
   },
 
