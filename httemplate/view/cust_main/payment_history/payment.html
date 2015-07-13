@@ -9,6 +9,7 @@ my $date_format = $opt{'date_format'} || '%m/%d/%Y';
 
 my @cust_bill_pay = $cust_pay->cust_bill_pay;
 my @cust_pay_refund = $cust_pay->cust_pay_refund;
+my $unapplied = $cust_pay->unapplied;
 
 my ($payby,$payinfo) = translate_payinfo($cust_pay);
 my $target = "$payby$payinfo";
@@ -50,6 +51,42 @@ if (    scalar(@cust_bill_pay)   == 0
   $payment = emt("Unapplied Payment by [_1]",$otaker);
   $payment =~ s/$otaker/<i>$otaker<\/i>/ if $italicize_otaker;
   $payment = '<B><FONT COLOR="#FF0000">'.$payment.'</FONT></B>';
+} elsif (    scalar(@cust_bill_pay)   == 1
+          && scalar(@cust_pay_refund) == 0
+          && $unapplied == 0     ) {
+  #applied to one invoice, the usual situation
+  $desc .= ' '. $cust_bill_pay[0]->applied_to_invoice;
+} elsif (    scalar(@cust_bill_pay)   == 0
+          && scalar(@cust_pay_refund) == 1
+          && $unapplied == 0     ) {
+  #applied to one refund
+  $desc .= emt(" refunded on [_1]", time2str($date_format, $cust_pay_refund[0]->_date) );
+} else {
+  #complicated
+  $desc .= '<BR>';
+  foreach my $app ( sort { $a->_date <=> $b->_date }
+                         ( @cust_bill_pay, @cust_pay_refund ) ) {
+    if ( $app->isa('FS::cust_bill_pay') ) {
+      $desc .= '&nbsp;&nbsp;' . $opt{money_char} . $app->amount . ' ' .
+                $app->applied_to_invoice . '<BR>';
+    } elsif ( $app->isa('FS::cust_pay_refund') ) {
+      $desc .= '&nbsp;&nbsp;' .
+               emt("[_1][_2] refunded on [_3]", $opt{money_char}, $app->amount,
+                        time2str($date_format, $app->_date) ) . '<BR>';
+    } else {
+      die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
+    }
+  }
+  if ( $unapplied > 0 ) {
+    $desc .= '&nbsp;&nbsp;'.
+             '<B><FONT COLOR="#FF0000">'.
+             emt("[_1][_2] unapplied", $opt{money_char}, $unapplied).
+             '</FONT></B>';
+    $desc .= '<BR>';
+  }
+}
+
+if ($unapplied > 0) {
   if ( $opt{'Apply payment'} ) {
     if ( $opt{total_owed} > 0 ) {
       $apply = ' ('.
@@ -74,66 +111,24 @@ if (    scalar(@cust_bill_pay)   == 0
                       ).
                ')';
     }
+    $apply .= ' (auto&#8209;apply:&nbsp;'
+           .  ($cust_pay->no_auto_apply ? 'no' : 'yes')
+           .  '&nbsp;|&nbsp;'
+           .  include( '/elements/popup_link.html',
+                          'label'       => emt($cust_pay->no_auto_apply ? 'yes' : 'no'),
+                          'action'      => "${p}edit/process/cust_pay-no_auto_apply.cgi?paynum="
+                                           . $cust_pay->paynum
+                                           . '&no_auto_apply='
+                                           . ($cust_pay->no_auto_apply ? '' : 'Y'),
+                          'actionlabel' => emt('Toggle Auto-Apply'),
+                          'width'       => 392,
+                          'height'      => 200,
+                      )
+           . ')';
+  } else { # end if $opt('Apply payment')
+    $apply .= ' (no auto-apply)' if $cust_pay->no_auto_apply;
   }
-} elsif (    scalar(@cust_bill_pay)   == 1
-          && scalar(@cust_pay_refund) == 0
-          && $cust_pay->unapplied == 0     ) {
-  #applied to one invoice, the usual situation
-  $desc .= ' '. $cust_bill_pay[0]->applied_to_invoice;
-} elsif (    scalar(@cust_bill_pay)   == 0
-          && scalar(@cust_pay_refund) == 1
-          && $cust_pay->unapplied == 0     ) {
-  #applied to one refund
-  $desc .= emt(" refunded on [_1]", time2str($date_format, $cust_pay_refund[0]->_date) );
-} else {
-  #complicated
-  $desc .= '<BR>';
-  foreach my $app ( sort { $a->_date <=> $b->_date }
-                         ( @cust_bill_pay, @cust_pay_refund ) ) {
-    if ( $app->isa('FS::cust_bill_pay') ) {
-      $desc .= '&nbsp;&nbsp;' . $opt{money_char} . $app->amount . ' ' .
-                $app->applied_to_invoice . '<BR>';
-    } elsif ( $app->isa('FS::cust_pay_refund') ) {
-      $desc .= '&nbsp;&nbsp;' .
-               emt("[_1][_2] refunded on [_3]", $opt{money_char}, $app->amount,
-                        time2str($date_format, $app->_date) ) . '<BR>';
-    } else {
-      die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
-    }
-  }
-  if ( $cust_pay->unapplied > 0 ) {
-    $desc .= '&nbsp;&nbsp;'.
-             '<B><FONT COLOR="#FF0000">'.
-             emt("[_1][_2] unapplied", $opt{money_char}, $cust_pay->unapplied).
-             '</FONT></B>';
-    if ( $opt{'Apply payment'} ) {
-      if ( $opt{total_owed} > 0 ) {
-        $apply = ' ('.
-                 include( '/elements/popup_link.html',
-                            'label'      => emt('apply'),
-                            'action'     => "${p}edit/cust_bill_pay.cgi?".
-                                            $cust_pay->paynum,
-                            'actionlabel' => emt('Apply payment'),
-                            %cust_bill_pay_width,
-                            %cust_bill_pay_height,
-                        ).
-                 ')';
-      }
-      if ( $opt{total_unapplied_refunds} > 0 ) {
-        $apply.= ' ('.
-                 include( '/elements/popup_link.html',
-                            'label'      => emt('apply to refund'),
-                            'action'     => "${p}edit/cust_pay_refund.cgi?".
-                                            $cust_pay->paynum,
-                            'actionlabel' => emt('Apply payment to refund'),
-                            'width'      => 392,
-                        ).
-                 ')';
-      }
-    }
-    $desc .= '<BR>';
-  }
-}
+} # end if $unapplied > 0
 
 my $view =
   ' ('. include('/elements/popup_link.html',

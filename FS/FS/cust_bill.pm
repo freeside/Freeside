@@ -913,6 +913,7 @@ sub hide {
 =item apply_payments_and_credits [ OPTION => VALUE ... ]
 
 Applies unapplied payments and credits to this invoice.
+Payments with the no_auto_apply flag set will not be applied.
 
 A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
@@ -939,7 +940,9 @@ sub apply_payments_and_credits {
 
   $self->select_for_update; #mutex
 
-  my @payments = grep { $_->unapplied > 0 } $self->cust_main->cust_pay;
+  my @payments = grep { $_->unapplied > 0 } 
+                   grep { !$_->no_auto_apply }
+                     $self->cust_main->cust_pay;
   my @credits  = grep { $_->credited > 0 } $self->cust_main->cust_credit;
 
   if ( $conf->exists('pkg-balances') ) {
