@@ -2197,6 +2197,7 @@ sub due_cust_event {
 =item apply_payments_and_credits [ OPTION => VALUE ... ]
 
 Applies unapplied payments and credits.
+Payments with the no_auto_apply flag set will not be applied.
 
 In most cases, this new method should be used in place of sequential
 apply_payments and apply_credits methods.
@@ -2339,6 +2340,7 @@ sub apply_credits {
 
 Applies (see L<FS::cust_bill_pay>) unapplied payments (see L<FS::cust_pay>)
 to outstanding invoice balances in chronological order.
+Payments with the no_auto_apply flag set will not be applied.
 
  #and returns the value of any remaining unapplied payments.
 
@@ -2368,7 +2370,7 @@ sub apply_payments {
 
   #return 0 unless
 
-  my @payments = $self->unapplied_cust_pay;
+  my @payments = grep { !$_->no_auto_apply } $self->unapplied_cust_pay;
 
   my @invoices = $self->open_cust_bill;
 

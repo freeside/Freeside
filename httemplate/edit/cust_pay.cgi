@@ -87,15 +87,17 @@
   <TD ALIGN="right"><% mt('Auto-apply to invoices') |h %></TD>
   <TD COLSPAN=2>
     <SELECT NAME="apply">
-      <OPTION VALUE="yes" SELECTED><% mt('yes') |h %> 
-      <OPTION><% mt('no') |h %></SELECT>
-    </TD>
+      <OPTION VALUE="yes" SELECTED><% mt('yes') |h %></OPTION> 
+      <OPTION VALUE=""><% mt('not now') |h %></OPTION>
+      <OPTION VALUE="never"><% mt('never') |h %></OPTION>
+    </SELECT>
+  </TD>
 
 % } elsif ( $link eq 'invnum' ) { 
 
   <TD ALIGN="right"><% mt('Apply to') |h %></TD>
   <TD COLSPAN=2 BGCOLOR="#ffffff">Invoice #<B><% $linknum %></B> only</TD>
-  <INPUT TYPE="hidden" NAME="apply" VALUE="no">
+  <INPUT TYPE="hidden" NAME="apply" VALUE="">
 
 % } 
 </TR>

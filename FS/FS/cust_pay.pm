@@ -116,6 +116,10 @@ books closed flag, empty or `Y'
 
 Desired pkgnum when using experimental package balances.
 
+=item no_auto_apply
+
+Flag to only allow manual application of payment, empty or 'Y'
+
 =item bank
 
 The bank where the payment was deposited.
@@ -539,6 +543,7 @@ sub check {
     || $self->ut_textn('paybatch')
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_flag('no_auto_apply')
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_textn('bank')
     || $self->ut_alphan('depositor')
