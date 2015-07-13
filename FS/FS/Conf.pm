@@ -4006,6 +4006,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'batchconfig-nacha-origin_name',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Origin name (defaults to company name, but sometimes bank name is needed instead.)'.
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'batch-manual_approval',
     'section'     => 'billing',
     'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised unless needed for specific payment processors that provide a report of rejected rather than approved payments.',
