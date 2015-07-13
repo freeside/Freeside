@@ -50,6 +50,7 @@ else {
 my $new = new FS::cust_pay ( {
   $field => $linknum,
   _date  => $_date,
+  no_auto_apply => ($cgi->param('apply') eq 'never') ? 'Y' : '',
   map {
     $_, scalar($cgi->param($_));
   } qw( paid payby payinfo paybatch
