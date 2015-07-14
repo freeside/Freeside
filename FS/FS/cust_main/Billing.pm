@@ -1133,19 +1133,39 @@ sub _make_lines {
         # its frequency
         my $main_pkg_freq = $main_pkg->part_pkg->freq;
         my $supp_pkg_freq = $part_pkg->freq;
-        my $ratio = $supp_pkg_freq / $main_pkg_freq;
-        if ( $ratio != int($ratio) ) {
+        if ( $supp_pkg_freq == 0 or $main_pkg_freq == 0 ) {
           # the UI should prevent setting up packages like this, but just
           # in case
-          return "supplemental package period is not an integer multiple of main  package period";
+          return "unable to calculate supplemental package period ratio";
         }
-        $next_bill = $sdate;
-        for (1..$ratio) {
-          $next_bill = $part_pkg->add_freq( $next_bill, $main_pkg_freq );
+        my $ratio = $supp_pkg_freq / $main_pkg_freq;
+        if ( $ratio == int($ratio) ) {
+          # simple case: main package is X months, supp package is X*A months,
+          # advance supp package to where the main package will be in A cycles.
+          $next_bill = $sdate;
+          for (1..$ratio) {
+            $next_bill = $part_pkg->add_freq( $next_bill, $main_pkg_freq );
+          }
+        } else {
+          # harder case: main package is X months, supp package is Y months.
+          # advance supp package by Y months. then if they're within half a 
+          # month of each other, resync them. this may result in the period
+          # not being exactly Y months.
+          $next_bill = $part_pkg->add_freq( $sdate, $supp_pkg_freq );
+          my $main_next_bill = $main_pkg->bill;
+          if ( $main_pkg->bill <= $time ) {
+            # then the main package has not yet been billed on this cycle;
+            # predict what its bill date will be.
+            $main_next_bill =
+              $part_pkg->add_freq( $main_next_bill, $main_pkg_freq );
+          }
+          if ( abs($main_next_bill - $next_bill) < 86400*15 ) {
+            $next_bill = $main_next_bill;
+          }
         }
 
       } else {
-        # the normal case
+      # the normal case, not a supplemental package
       $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
       return "unparsable frequency: ". $part_pkg->freq
         if $next_bill == -1;
