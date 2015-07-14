@@ -48,8 +48,9 @@
     border-radius: 0.3em 0.3em 0 0;
 }
 
+/* Color the Customers tab */
 .ticket-info-customers .titlebox-title .left {
-  background-color: #7e007f;
+  background-color: #7e007f; color: #fff
 }
 
 .titlebox-title.inverse .left,
