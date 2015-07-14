@@ -232,7 +232,7 @@ sub search_sql_where {
                      ? @{ $param->{'cust_classnum'} }
                      :  ( $param->{'cust_classnum'} );
 
-    @classnum = grep /^(\d*)$/, @classnum;
+    @classnum = grep /^(\d+)$/, @classnum;
 
     if ( @classnum ) {
       push @search, 'COALESCE(cust_main.classnum, 0) IN ('.join(',', @classnum).')';
