@@ -71,18 +71,6 @@ table.rtxcalendar tbody th {
     font-weight: normal;
 }
 
-table.rtxcalendar td.weekly {
-    width: auto;
-}
-
-table.rtxcalendar td.weeklyselectable {
-    width: auto;
-}
-
-table.rtxcalendar td.weeklyselectable:hover {
-    cursor: pointer;
-}
-
 table.rtxcalendar td.offmonth {
     background: #f8f8f8;
     color: #aaa;
@@ -126,6 +114,86 @@ table.rtxcalendar td.controls:hover {
 }
 
 table.rtxcalendar td.labels {
+    background: #eeeeee;
+    width: 1%;
+    border-top: 1px solid #eeeeee;
+    border-left: 1px solid #eeeeee;
+    border-bottom: 1px solid #eeeeee;
+}
+
+
+
+.rtxweeklycalendar .tooltip{position:relative;z-index:1;}
+.rtxweeklycalendar .tooltip:hover{z-index:5;color:#000;}
+.rtxweeklycalendar .tooltip span.tip{display: none; text-align:left;}
+
+.rtxweeklycalendar div.tooltip:hover span.tip{
+display:block;
+position:absolute;
+top:12px; left:24px; width:350px;
+border:1px solid #555;
+background-color:#fff;
+padding: 4px;
+font-size: 0.8em;
+color:#505050;
+}
+
+.rtxweeklycalendar .date {
+  text-align: right;
+  background-color: #f8f8ff;
+  width:100%;
+}
+
+table.rtxweeklycalendar {
+    width:100%;
+    border-collapse: collapse;
+    border: 1px solid #d0d0d0;
+    margin-bottom: 6px;
+}
+
+table.rtxweeklycalendar td {
+    border: 1px solid #d7d7d7;
+    background: #fff;
+    vertical-align: top;
+}
+
+table.rtxweeklycalendar th {
+    border: 1px solid #d7d7d7;
+    background: #eef;
+}
+table.rtxweeklycalendar tbody th {
+    border: 1px solid #d7d7d7;
+    background: #eee;
+    font-weight: normal;
+}
+
+table.rtxweeklycalendar td.weekly {
+    width: auto;
+}
+
+table.rtxweeklycalendar td.weeklyselectable {
+    width: auto;
+}
+
+table.rtxweeklycalendar td.weeklyselectable:hover {
+    cursor: pointer;
+}
+
+table.rtxweeklycalendar td.controls {
+    background: #eeeeee;
+    width: 1%;
+    border-top: 1px solid #eeeeee;
+    border-left: 1px solid #eeeeee;
+    border-bottom: 1px solid #eeeeee;
+    border-right: 1px solid #eeeeee;
+    vertical-align: middle;
+}
+
+table.rtxweeklycalendar td.controls:hover {
+    background-color: #CFDEFF;
+}
+
+table.rtxweeklycalendar td.labels {
     background: #eeeeee;
     width: 1%;
     border-top: 1px solid #eeeeee;
