@@ -127,6 +127,18 @@ part_pkg, will be equal to pkgpart.
 ordered. The package will not start billing or have a setup fee charged 
 until it is manually unsuspended.
 
+=item change_to_pkgpart - When this package is ordered, schedule a future 
+package change. The 'expire_months' field will determine when the package
+change occurs.
+
+=item expire_months - Number of months until this package expires (or changes
+to another package).
+
+=item adjourn_months - Number of months until this package becomes suspended.
+
+=item contract_end_months - Number of months until the package's contract 
+ends.
+
 =back
 
 =head1 METHODS
@@ -722,6 +734,11 @@ sub check {
     || $self->ut_numbern('delay_start')
     || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
+    || $self->ut_numbern('expire_months')
+    || $self->ut_numbern('adjourn_months')
+    || $self->ut_numbern('contract_end_months')
+    || $self->ut_numbern('change_to_pkgpart')
+    || $self->ut_foreign_keyn('change_to_pkgpart', 'part_pkg', 'pkgpart')
     || $self->ut_alphan('agent_pkgpartid')
     || $self->SUPER::check
   ;
@@ -1696,6 +1713,19 @@ for this package.
 Returns the voice usage pools (see L<FS::part_pkg_usage>) defined for 
 this package.
 
+=item change_to_pkg
+
+Returns the automatic transfer target for this package, or an empty string
+if there isn't one.
+
+=cut
+
+sub change_to_pkg {
+  my $self = shift;
+  my $pkgpart = $self->change_to_pkgpart or return '';
+  FS::part_pkg->by_key($pkgpart);
+}
+
 =item _rebless
 
 Reblesses the object into the FS::part_pkg::PLAN class (if available), where
@@ -2202,6 +2232,19 @@ sub queueable_upgrade {
     FS::upgrade_journal->set_done($upgrade);
   }
 
+  # migrate adjourn_months, expire_months, and contract_end_months to 
+  # real fields
+  foreach my $field (qw(adjourn_months expire_months contract_end_months)) {
+    foreach my $option (qsearch('part_pkg_option', { optionname => $field })) {
+      my $part_pkg = $option->part_pkg;
+      my $error = $option->delete;
+      if ( $option->optionvalue and $part_pkg->get($field) eq '' ) {
+        $part_pkg->set($field, $option->optionvalue);
+        $error ||= $part_pkg->replace;
+      }
+      die $error if $error;
+    }
+  }
 }
 
 =item curuser_pkgs_sql

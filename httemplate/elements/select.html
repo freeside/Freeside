@@ -1,3 +1,29 @@
+<%doc>
+<& select.html,
+  # required
+    field       => 'myfield', # NAME property
+    curr_value  => 'foo',
+    labels      => { # or 'option_labels'
+                     'AL' => 'Alabama',
+                     'AK' => 'Alaska',
+                     'AR' => 'Arkansas',
+                   },
+    options     => [ 'AL', 'AK', 'AR' ],
+    curr_value  => $cgi->param('myfield'),
+
+  # recommended    
+    id          => 'myid',    # DOM id
+
+  # optional
+    size        => 1,         # to show multiple rows at once
+    style       => '',        # STYLE property
+    multiple    => 0,
+    disabled    => 0,
+    onchange    => 'do_something()',
+    js_only     => 0,         # disables the whole thing
+&>
+</%doc>
+    
 % unless ( $opt{'js_only'} ) {
 
 <SELECT NAME          = "<% $opt{field} %>"

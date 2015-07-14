@@ -71,9 +71,11 @@
     <& .packagerow, $cust_pkg->change_to_pkg, %iopt, 'change_from' => 1 &>
 % }
 % # include supplemental packages if any
-% $iopt{'supplemental'} = ($iopt{'supplemental'} || 0) + 1;
-% foreach my $supp_pkg ($cust_pkg->supplemental_pkgs) {
-    <& .packagerow, $supp_pkg, %iopt &>
+% if ( $cust_pkg->_supplemental ) {
+%   $iopt{'supplemental'} = ($iopt{'supplemental'} || 0) + 1;
+%   foreach my $supp_pkg (@{ $cust_pkg->_supplemental }) {
+      <& .packagerow, $supp_pkg, %iopt &>
+%   }
 % }
 </%def>
 <%shared>

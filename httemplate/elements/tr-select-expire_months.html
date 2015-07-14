@@ -1,0 +1,10 @@
+<& tr-select-months.html, @_ &>
+<script>
+// disable the pkgpart selector if it's set to zero months
+$().ready(function() {
+  $('#expire_months').on('change', function() {
+    $('#change_to_pkgpart').prop('disabled', this.value == 0);
+  })
+  .trigger('change');
+});
+</script>
