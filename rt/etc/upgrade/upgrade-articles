@@ -56,8 +56,8 @@ use lib "/opt/rt3/lib";
 use RT::Interface::CLI qw(Init);
 Init();
 
- my $db_name = RT->Config->Get('DatabaseName');
- my $db_type = RT->Config->Get('DatabaseType');
+my $db_name = RT->Config->Get('DatabaseName');
+my $db_type = RT->Config->Get('DatabaseType');
 
 my $dbh = $RT::Handle->dbh;
 

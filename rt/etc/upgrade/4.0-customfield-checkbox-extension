@@ -53,7 +53,7 @@ use warnings;
 use lib "/opt/rt3/local/lib";
 use lib "/opt/rt3/lib";
 
-use RT -init
+use RT -init;
 
 $| = 1;
 

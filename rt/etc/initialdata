@@ -247,16 +247,16 @@
     },
 
     #freeside
-    {  Name                 => 'On Custom Field Transaction',
-       Description          => 'When a custom field is changed',
-       ExecModule           => 'CustomFieldTransaction',
-       ApplicableTransTypes => 'Any',
-    },
-    {  Name                 => 'On Custom Field Change',
-       Description          => 'When a custom field is changed to some value',
-       ExecModule           => 'CustomFieldChange',
-       ApplicableTransTypes => 'Any',
-    },
+    #{  Name                 => 'On Custom Field Transaction',
+    #   Description          => 'When a custom field is changed',
+    #   ExecModule           => 'CustomFieldTransaction',
+    #   ApplicableTransTypes => 'Any',
+    #},
+    #{  Name                 => 'On Custom Field Change',
+    #   Description          => 'When a custom field is changed to some value',
+    #   ExecModule           => 'CustomFieldChange',
+    #   ApplicableTransTypes => 'Any',
+    #},
 
 );
 

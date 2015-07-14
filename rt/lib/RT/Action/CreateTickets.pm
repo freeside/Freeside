@@ -733,7 +733,6 @@ sub ParseLines {
         FinalPriority   => $args{'finalpriority'} || 0,
         SquelchMailTo   => $args{'squelchmailto'},
         Type            => $args{'type'},
-        $self->Rules
     );
 
     if ( $args{content} ) {
@@ -1140,7 +1139,10 @@ sub UpdateCustomFields {
         }
 
         foreach my $value (@values) {
-            next unless length($value);
+            next if $ticket->CustomFieldValueIsEmpty(
+                Field => $cf,
+                Value => $value,
+            );
             my ( $val, $msg ) = $ticket->AddCustomFieldValue(
                 Field => $cf,
                 Value => $value
@@ -1212,24 +1214,6 @@ sub PostProcess {
         $ticket->SetStatus( $args{Status} ) if defined $args{Status};
     }
 
-}
-
-sub Options {
-  my $self = shift;
-  my $queues = RT::Queues->new($self->CurrentUser);
-  $queues->UnLimit;
-  my @names;
-  while (my $queue = $queues->Next) {
-    push @names, $queue->Id, $queue->Name;
-  }
-  return (
-    {
-      'name'    => 'Queue',
-      'label'   => 'In queue',
-      'type'    => 'select',
-      'options' => \@names
-    }
-  )
 }
 
 RT::Base->_ImportOverlays();
