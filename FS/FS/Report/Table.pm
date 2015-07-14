@@ -901,6 +901,7 @@ sub with_classnum {
 
   $classnum = [ $classnum ] if !ref($classnum);
   @$classnum = grep /^\d+$/, @$classnum;
+  return '' if !@$classnum;
   my $in = 'IN ('. join(',', @$classnum). ')';
 
   if ( $use_override ) {
