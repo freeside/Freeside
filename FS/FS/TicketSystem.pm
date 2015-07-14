@@ -159,22 +159,29 @@ sub _upgrade_data {
     my $search = $class->new($CurrentUser);
     $search->UnLimit;
     while ( my $item = $search->Next ) {
-      my $ids = $hash->{lc($item->Name)} ||= [];
-      if ( $item->Creator == 1 ) { # RT::SystemUser
-        unshift @$ids, $item->Id;
-      }
-      else {
-        push @$ids, $item->Id;
+      if ( $class =~ /Template/ ) {
+        # template names can be duplicated in different queues, and they are.
+        my $queue = $item->QueueObj->Name || '0';
+        my $subhash = $hash->{$queue} ||= {};
+        $subhash->{lc($item->Name)} = $item->Id;
+      } else {
+        # then duplicate names are allowed; they just have different ids
+        my $ids = $hash->{lc($item->Name)} ||= [];
+        if ( $item->Creator == 1 ) { # RT::SystemUser
+          unshift @$ids, $item->Id;
+        }
+        else {
+          push @$ids, $item->Id;
+        }
       }
     }
   };
 
   my (%condition, %action, %template);
-  &$cachify('RT::ScripConditions', \%condition);
-  &$cachify('RT::ScripActions', \%action);
-  &$cachify('RT::Templates', \%template);
-  # $condition{name} = [ ids... ]
+  &$cachify('RT::ScripConditions', \%condition); # condition name -> [ ids ]
   # with the id of the system-created object first, if there is one
+  &$cachify('RT::ScripActions', \%action); # action name -> [ ids ]
+  &$cachify('RT::Templates', \%template); # queue name -> tmpl name -> id
 
   # ScripConditions
   my $ScripCondition = RT::ScripCondition->new($CurrentUser);
@@ -196,40 +203,50 @@ sub _upgrade_data {
     $action{ lc($ScripAction->Name) } = [ $ScripAction->Id ];
   }
 
+  $DB::single = 1;
   # Templates
   my $Template = RT::Template->new($CurrentUser);
   foreach my $t (@Templates) {
     # $t: Queue, Name, Description, Content
-    next if exists( $template{ lc($t->{Name}) } );
+    next if exists( $template{ $t->{Queue} }->{ lc($t->{Name}) } );
     my ($val, $msg) = $Template->Create( %$t );
     die $msg if !$val;
-    $template{ lc($Template->Name) } = [ $Template->Id ];
+    $template{ $t->{Queue} }->{ lc($Template->Name) } = [ $Template->Id ];
   }
 
   # Scrips
+  # Scrips can no longer be deleted, so we'll count them as existing
+  # if they're applied to the global queue, or if they're not applied to
+  # _any_ queue.
+
   my %scrip; # $scrips{condition}{action}{template} = id
-  my $search = RT::Scrips->new($CurrentUser);
-  $search->Limit(FIELD => 'Queue', VALUE => 0);
-  while (my $item = $search->Next) {
-    my ($c, $a, $t) = map {lc $item->$_->Name} 
-      ('ScripConditionObj', 'ScripActionObj', 'TemplateObj');
-    if ( exists $scrip{$c}{$a} and $item->Creator == 1 ) {
-      warn "Deleting duplicate scrip $c $a [$t]\n";
-      my ($val, $msg) = $item->Delete;
-      warn "error deleting scrip: $msg\n" if !$val;
-    }
-    elsif ( exists $Delete_Scrips{$c}{$a}{$t} and $item->Creator == 1 ) {
-      warn "Deleting obsolete scrip $c $a [$t]\n";
-      my ($val, $msg) = $item->Delete;
-      warn "error deleting scrip: $msg\n" if !$val;
-    }
-    else {
-      $scrip{$c}{$a} = $item->id;
+  foreach my $criterion ('LimitToGlobal', 'LimitToNotAdded') {
+    my $search = RT::Scrips->new($CurrentUser);
+    $search->$criterion;
+
+    while (my $item = $search->Next) {
+      my ($c, $a, $t) = map {lc $item->$_->Name} 
+        ('ScripConditionObj', 'ScripActionObj', 'TemplateObj');
+      if ( exists $scrip{$c}{$a} and $item->Creator == 1 ) {
+        warn "Deleting duplicate scrip $c $a [$t]\n";
+        my ($val, $msg) = $item->Delete;
+        warn "error deleting scrip: $msg\n" if !$val;
+      }
+      elsif ( exists $Delete_Scrips{$c}{$a}{$t} and $item->Creator == 1 ) {
+        warn "Deleting obsolete scrip $c $a [$t]\n";
+        my ($val, $msg) = $item->Delete;
+        warn "error deleting scrip: $msg\n" if !$val;
+      }
+      else {
+        $scrip{$c}{$a} = $item->id;
+      }
     }
   }
+
   my $Scrip = RT::Scrip->new($CurrentUser);
   foreach my $s ( @Scrips ) {
     my $desc = $s->{'Description'};
+    # the condition, action, and template _names_
     my ($c, $a, $t) = map lc,
       @{ $s }{'ScripCondition', 'ScripAction', 'Template'};
 
@@ -245,14 +262,15 @@ sub _upgrade_data {
         warn "ScripAction '$a' not found.\n";
         next;
       }
-      if ( !exists($template{$t}) ) {
+      if ( !exists($template{'0'}{$t}) ) {
+        # a global template with this name has to exist, at least
         warn "Template '$t' not found.\n";
         next;
       }
       my %new_param = (
         ScripCondition => $condition{$c}->[0],
         ScripAction => $action{$a}->[0],
-        Template => $template{$t}->[0],
+        Template => $t, # scrips.template is now the name, not the id
         Queue => 0,
         Description => $desc,
       );
@@ -262,11 +280,13 @@ sub _upgrade_data {
 
     } #if $scrip{...}
     # set the Immutable attribute on them if needed
-    if ( !$Scrip->FirstAttribute('Immutable') ) {
-      my ($val, $msg) =
-        $Scrip->SetAttribute(Name => 'Immutable', Content => '1');
-      die $msg if !$val;
-    }
+    # no longer needed; you can't delete scrips through the UI anyway, only
+    # disable them
+    #if ( !$Scrip->FirstAttribute('Immutable') ) {
+    #  my ($val, $msg) =
+    #    $Scrip->SetAttribute(Name => 'Immutable', Content => '1');
+    #  die $msg if !$val;
+    #}
 
   } #foreach (@Scrips)
 
