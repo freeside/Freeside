@@ -247,6 +247,7 @@ push @fields, sub {
                   $part_pkg->part_pkg_discount;
 
   [
+    # Line 0: Family package link (if applicable)
     ( !$family_pkgpart &&
       $part_pkg->pkgpart == $part_pkg->family_pkgpart ? () : [
       {
@@ -257,13 +258,13 @@ push @fields, sub {
         'link' => $p.'browse/part_pkg.cgi?family='.$part_pkg->family_pkgpart,
       }
     ] ),
-    [
+    [ # Line 1: Plan type (Anniversary, Prorate, Call Rating, etc.)
       { data =>$plan,
         align=>'center',
         colspan=>2,
       },
     ],
-    [
+    [ # Line 2: Setup fee
       { data =>$money_char.
                sprintf('%.2f ', $part_pkg->option('setup_fee') ),
         align=>'right'
@@ -278,7 +279,7 @@ push @fields, sub {
         align=>'left',
       },
     ],
-    [
+    [ # Line 3: Recurring fee
       { data=>(
           $is_recur
             ? $money_char. sprintf('%.2f', $part_pkg->option('recur_fee'))
@@ -288,20 +289,56 @@ push @fields, sub {
         colspan=> ( $is_recur ? 1 : 2 ),
       },
       ( $is_recur
-        ?  { data => ( $is_recur
-               ? ' &nbsp; '. $part_pkg->freq_pretty.
-                 ( $part_pkg->option('recur_fee') == 0
-                     && $part_pkg->recur_show_zero
-                   ? ' (printed on invoices)'
-                   : ''
-                 )
-               : '' ),
+        ?  { data => ' &nbsp; '. $part_pkg->freq_pretty.
+                     ( $part_pkg->option('recur_fee') == 0
+                         && $part_pkg->recur_show_zero
+                       ? ' (printed on invoices)'
+                       : ''
+                     ),
              align=>'left',
            }
         : ()
       ),
     ],
-    (
+    [ { data => '&nbsp;' }, ], # Line 4: empty
+    ( $part_pkg->adjourn_months ? 
+      [ # Line 5: Adjourn months
+        { data => mt('After [quant,_1,month], <strong>suspend</strong> the package.',
+                     $part_pkg->adjourn_months),
+          align => 'left',
+          size  => -1,
+          colspan => 2,
+        }
+      ] : ()
+    ),
+    ( $part_pkg->contract_end_months ? 
+      [ # Line 6: Contract end months
+        { data => mt('After [quant,_1,month], <strong>contract ends</strong>.',
+                     $part_pkg->contract_end_months),
+          align => 'left',
+          size  => -1,
+          colspan => 2,
+        }
+      ] : ()
+    ),
+    ( $part_pkg->expire_months ? 
+      [ # Line 7: Expire months and automatic transfer
+        { data => $part_pkg->change_to_pkgpart ?
+                    mt('After [quant,_1,month], <strong>change to</strong> ',
+                      $part_pkg->expire_months) .
+                    qq(<a href="${p}edit/part_pkg.cgi?) .
+                      $part_pkg->change_to_pkgpart .
+                      qq(">) . $part_pkg->change_to_pkg->pkg . qq(</a>) . '.'
+                  : mt('After [quant,_1,month], <strong>cancel</strong> the package.',
+                     $part_pkg->expire_months)
+          ,
+          align => 'left',
+          size  => -1,
+          colspan => 2,
+        }
+      ] : ()
+    ),
+    ( # Usage prices
       map { my $amount = $_->amount / ($_->target_info->{multiplier} || 1);
             my $label = $_->target_info->{label};
             [
@@ -315,7 +352,8 @@ push @fields, sub {
           }
         $part_pkg->part_pkg_usageprice
     ),
-    ( map { my $dst_pkg = $_->dst_pkg;
+    ( # Supplementals
+      map { my $dst_pkg = $_->dst_pkg;
             [
               { data => 'Supplemental: &nbsp;'.
                         '<A HREF="#'. $dst_pkg->pkgpart . '">' .
@@ -327,7 +365,8 @@ push @fields, sub {
           }
       $part_pkg->supp_part_pkg_link
     ),
-    ( map { 
+    ( # Billing add-ons/bundle packages
+      map { 
             my $dst_pkg = $_->dst_pkg;
             [ 
               { data => 'Add-on:&nbsp;'.$dst_pkg->pkg_comment,
@@ -338,7 +377,8 @@ push @fields, sub {
           }
       $part_pkg->bill_part_pkg_link
     ),
-    ( scalar(@discounts)
+    ( # Discounts available
+      scalar(@discounts)
         ?  [ 
               { data => '<b>Discounts</b>',
                 align=>'center', #?
@@ -360,7 +400,7 @@ push @fields, sub {
           @discounts
         : ()
     ),
-  ];
+  ]; # end of "middle column"
 
 #  $plan_labels{$part_pkg->plan}.'<BR>'.
 #    $money_char.sprintf('%.2f setup<BR>', $part_pkg->option('setup_fee') ).

@@ -1,7 +1,6 @@
-<TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top" <%$style%>>
+<TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top">
+  <% join('', @marker ) %>
   <TABLE CLASS="inv package"> 
-
-
     <TR>
       <TD COLSPAN=2>
         <% $opt{before_pkg_callback}
@@ -107,7 +106,7 @@
 %              ) {
               (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
 %           }
-%         } #!$supplemental
+%         } # a canceled recurring package, or else no_links is in effect
 
         </FONT>
       </TD>
@@ -297,6 +296,7 @@
   </TABLE>
 % }
 
+  <% join('', map '</DIV>', @marker ) %>
 </TD>
 
 <%init>
@@ -317,16 +317,12 @@ my $statedefault   = $opt{'statedefault'}
 # if this package is somehow special
 my $supplemental = $opt{'supplemental'} || 0;
 my $change_from = $opt{'change_from'} || 0;
-my $style = '';
-if ( $supplemental or $change_from ) {
-  $style = 'border-left-width: '.($supplemental + $change_from)*30 . 'px; '.
-           'border-color: ';
-  if ( $supplemental ) {
-    $style .= '#bbbbff';
-  } elsif ( $change_from ) {
-    $style .= '#bbffbb';
-  }
-  $style = qq!STYLE="$style"!;
+my @marker;
+if ( $supplemental ) {
+  push @marker, '<DIV CLASS="package-marker-supplemental">';
+}
+if ( $change_from ) {
+  push @marker, '<DIV CLASS="package-marker-change_from">';
 }
 
 $cust_pkg->pkgnum =~ /^(\d+)$/;

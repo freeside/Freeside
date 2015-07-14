@@ -251,16 +251,50 @@ or contract_end timers to some number of months after the start date
 a delayed setup fee after a period of "free days", will also set the 
 start date to the end of that period.
 
+If the package has an automatic transfer rule (C<change_to_pkgnum>), then
+this will also order the package and set its start date.
+
 =cut
 
 sub set_initial_timers {
   my $self = shift;
   my $part_pkg = $self->part_pkg;
+  my $start = $self->start_date || $self->setup || time;
+
   foreach my $action ( qw(expire adjourn contract_end) ) {
-    my $months = $part_pkg->option("${action}_months",1);
+    my $months = $part_pkg->get("${action}_months");
     if($months and !$self->get($action)) {
-      my $start = $self->start_date || $self->setup || time;
       $self->set($action, $part_pkg->add_freq($start, $months) );
+    }
+  }
+
+  # if this package has an expire date and a change_to_pkgpart, set automatic
+  # package transfer
+  # (but don't call change_later, as that would call $self->replace, and we're
+  # probably in the middle of $self->insert right now)
+  if ( $part_pkg->expire_months and $part_pkg->change_to_pkgpart ) {
+    if ( $self->change_to_pkgnum ) {
+      # this can happen if a package is ordered on hold, scheduled for a 
+      # future change _while on hold_, and then released from hold, causing
+      # the automatic transfer to schedule.
+      #
+      # what's correct behavior in that case? I think it's to disallow
+      # future-changing an on-hold package that has an automatic transfer.
+      # but if we DO get into this situation, let the manual package change
+      # win.
+      warn "pkgnum ".$self->pkgnum.": manual future package change blocks ".
+           "automatic transfer.\n";
+    } else {
+      my $change_to = FS::cust_pkg->new( {
+          start_date  => $self->get('expire'),
+          pkgpart     => $part_pkg->change_to_pkgpart,
+          map { $_ => $self->get($_) }
+            qw( custnum locationnum quantity refnum salesnum contract_end )
+      } );
+      my $error = $change_to->insert;
+
+      return $error if $error;
+      $self->set('change_to_pkgnum', $change_to->pkgnum);
     }
   }
 
@@ -273,6 +307,7 @@ sub set_initial_timers {
   {
     $self->start_date( $part_pkg->default_start_date );
   }
+
   '';
 }
 
@@ -332,9 +367,12 @@ a location change).
 sub insert {
   my( $self, %options ) = @_;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error;
   $error = $self->check_pkgpart unless $options{'allow_pkgpart'};
-  return $error if $error;
 
   my $part_pkg = $self->part_pkg;
 
@@ -359,15 +397,12 @@ sub insert {
       $self->set('start_date', '');
     } else {
       # set expire/adjourn/contract_end timers, and free days, if appropriate
-      $self->set_initial_timers;
+      # and automatic package transfer, which can fail, so capture the result
+      $error = $self->set_initial_timers;
     }
   } # else this is a package change, and shouldn't have "new package" behavior
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  $error = $self->SUPER::insert($options{options} ? %{$options{options}} : ());
+  $error ||= $self->SUPER::insert($options{options} ? %{$options{options}} : ());
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -461,8 +496,25 @@ hide cancelled packages.
 
 =cut
 
+# this is still used internally to abort future package changes, so it 
+# does need to work
+
 sub delete {
   my $self = shift;
+
+  # The following foreign keys to cust_pkg are not cleaned up here, and will
+  # cause package deletion to fail:
+  #
+  # cust_credit.pkgnum and commission_pkgnum (and cust_credit_void)
+  # cust_credit_bill.pkgnum
+  # cust_pay_pending.pkgnum
+  # cust_pay.pkgnum (and cust_pay_void)
+  # cust_bill_pay.pkgnum (wtf, shouldn't reference pkgnum)
+  # cust_pkg_usage.pkgnum
+  # cust_pkg.uncancel_pkgnum, change_pkgnum, main_pkgnum, and change_to_pkgnum
+
+  # cust_svc is handled by canceling the package before deleting it
+  # cust_pkg_option is handled via option_Common
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -499,7 +551,13 @@ sub delete {
     }
   }
 
-  #pkg_referral?
+  foreach my $pkg_referral ( $self->pkg_referral ) {
+    my $error = $pkg_referral->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   my $error = $self->SUPER::delete(@_);
   if ( $error ) {
@@ -807,12 +865,15 @@ sub cancel {
   my( $self, %options ) = @_;
   my $error;
 
-  # pass all suspend/cancel actions to the main package
-  # (unless the pkglinknum has been removed, then the link is defunct and
-  # this package can be canceled on its own)
-  if ( $self->main_pkgnum and $self->pkglinknum and !$options{'from_main'} ) {
-    return $self->main_pkg->cancel(%options);
-  }
+  # supplemental packages can now be separately canceled, though the UI
+  # shouldn't permit it
+  #
+  ## pass all suspend/cancel actions to the main package
+  ## (unless the pkglinknum has been removed, then the link is defunct and
+  ## this package can be canceled on its own)
+  #if ( $self->main_pkgnum and $self->pkglinknum and !$options{'from_main'} ) {
+  #  return $self->main_pkg->cancel(%options);
+  #}
 
   my $conf = new FS::Conf;
 
@@ -936,8 +997,14 @@ sub cancel {
     $hash{main_pkgnum} = '';
   }
 
+  # if there is a future package change scheduled, unlink from it (like
+  # abort_change) first, then delete it.
+  $hash{'change_to_pkgnum'} = '';
+
+  # save the package state
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
+
   if ( $self->change_to_pkgnum ) {
     my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
     $error ||= $change_to->cancel('no_delay_cancel' => 1) || $change_to->delete;
@@ -1285,9 +1352,13 @@ sub suspend {
   my( $self, %options ) = @_;
   my $error;
 
-  # pass all suspend/cancel actions to the main package
+  # supplemental packages still can't be separately suspended, but silently
+  # exit instead of failing or passing the action to the main package (so
+  # that the "Suspend customer" action doesn't trip over the supplemental
+  # packages and die)
+
   if ( $self->main_pkgnum and !$options{'from_main'} ) {
-    return $self->main_pkg->suspend(%options);
+    return;
   }
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -1659,7 +1730,11 @@ sub unsuspend {
 
   if (!$self->setup) {
     # then this package is being released from on-hold status
-    $self->set_initial_timers;
+    $error = $self->set_initial_timers;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   my @labels = ();
@@ -2034,12 +2109,12 @@ sub change {
     # almost. if the new pkgpart specifies start/adjourn/expire timers, 
     # apply those.
     if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
-      $self->set_initial_timers;
+      $error ||= $self->set_initial_timers;
     }
     # but if contract_end was explicitly specified, that overrides all else
     $self->set('contract_end', $opt->{'contract_end'})
       if $opt->{'contract_end'};
-    $error = $self->replace;
+    $error ||= $self->replace;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "modifying package: $error";
@@ -2509,16 +2584,28 @@ Cancels a future package change scheduled by C<change_later>.
 
 sub abort_change {
   my $self = shift;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
   my $pkgnum = $self->change_to_pkgnum;
   my $change_to = FS::cust_pkg->by_key($pkgnum) if $pkgnum;
   my $error;
-  if ( $change_to ) {
-    $error = $change_to->cancel || $change_to->delete;
-    return $error if $error;
-  }
   $self->set('change_to_pkgnum', '');
   $self->set('expire', '');
-  $self->replace;
+  $error = $self->replace;
+  if ( $change_to ) {
+    $error ||= $change_to->cancel || $change_to->delete;
+  }
+
+  if ( $oldAutoCommit ) {
+    if ( $error ) {
+      dbh->rollback;
+    } else {
+      dbh->commit;
+    }
+  }
+
+  return $error;
 }
 
 =item set_quantity QUANTITY
