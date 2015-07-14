@@ -193,19 +193,6 @@ sub IsApplicable  {
   return(undef);
 }
 
-sub Options {
-  my $self = shift;
-  return();
-}
-
-sub Rules {
-  my $self = shift;
-  return () if !$self->ScripObj or !$self->ScripObj->ConditionRules;
-  # By default, option names and values are on consecutive lines.
-  # Override this if you need anything more interesting.
-  return(split "\n", $self->ScripObj->ConditionRules);
-}
-
 sub DESTROY {
     my $self = shift;
 

@@ -172,17 +172,6 @@ sub Prepare  {
 }
 
 
-sub Options {
-  my $self = shift;
-  return();
-}
-
-sub Rules {
-  my $self = shift;
-  return () if !$self->ScripObj or !$self->ScripObj->ActionRules;
-  return(split "\n", $self->ScripObj->ActionRules);
-}
-
 RT::Base->_ImportOverlays();
 
 1;
