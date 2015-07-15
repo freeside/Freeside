@@ -539,6 +539,8 @@ sub new_customer {
             paystart_month paystart_year payissue
             payip
 
+            locale
+
             referral_custnum comments
           )
     ),
@@ -957,6 +959,8 @@ sub new_customer_minimal {
         payinfo paycvv paydate payname paystate paytype
         paystart_month paystart_year payissue
         payip
+
+        locale
       ),
 
   } );
