@@ -141,9 +141,20 @@ $title .= 'Customer Accounting Summary Report';
 
 my @items  = ('netsales', 'cashflow');
 my @params = ( [], [] );
-my $setuprecur = '';
-if ( $cgi->param('setuprecur') ) {
-  $setuprecur = 1;
+my $grossdiscount = $cgi->param('grossdiscount');
+my $setuprecur = $cgi->param('setuprecur');
+if ($setuprecur && $grossdiscount) {
+  #see blocks below for more details on each option
+  @items  = ('gross', 'discounted', 'receipts', 'gross', 'discounted', 'receipts');
+  @params = ( 
+    [ setuprecur => 'setup' ],
+    [ setuprecur => 'setup' ],
+    [ setuprecur => 'setup' ],
+    [ setuprecur => 'recur' ],
+    [ setuprecur => 'recur' ],
+    [ setuprecur => 'recur' ],
+  );
+} elsif ($setuprecur) {
   # instead of 'cashflow' (payments - refunds), use 'receipts'
   # (applied payments), because it's divisible into setup and recur.
   @items = ('netsales', 'receipts', 'netsales', 'receipts');
@@ -153,7 +164,14 @@ if ( $cgi->param('setuprecur') ) {
     [ setuprecur => 'recur' ],
     [ setuprecur => 'recur' ],
   );
+} elsif ($grossdiscount) {
+  # instead of 'netsales' (invoiced - netcredits)
+  # use 'gross' (invoiced + discounted) and 'discounted' (sum of discounts on invoices)
+  @items  = ('gross', 'discounted', 'cashflow');
+  @params = ( [], [], [] );
 }
+
+
 my @labels = ();
 my @cross_params = ();
 
@@ -208,7 +226,7 @@ $cells[0] = [
   { header => 1, rowspan => 2, colspan => ($setuprecur ? 4 : 3) },
   ($setuprecur ? '' : ()),
   map {
-    { header => 1, colspan => 2, value => time2str('%b %Y', $_) },
+    { header => 1, colspan => ($grossdiscount ? 3 : 2), value => time2str('%b %Y', $_) },
     ''
   } @{ $data->{speriod} }
 ];
@@ -218,8 +236,14 @@ $rows[1] = {};
 $cells[1] = [ '',
   ($setuprecur ? '' : ()),
   map { 
-  ( { header => 1, value => mt('Billed') },
-    { header => 1, value => mt('Paid') }
+  ( ($grossdiscount 
+      ? (
+         { header => 1, value => mt('Gross') },
+         { header => 1, value => mt('Discount') }
+      )
+      : { header => 1, value => mt('Billed') } 
+    ),
+    { header => 1, value => mt('Paid') },
   ) } (1..$ncols)
 ];
 
@@ -256,12 +280,12 @@ foreach my $cust_main (@cust_main) { # correspond to cross_params
           header => 1 };
     }
     for my $col (0..$ncols-1) { # the month
-      for my $subcol (0..1) { # the billed/paid axis
-        my $item = $subrow * 2 + $subcol;
+      for my $subcol (0..($grossdiscount ? 2 : 1)) { # the billed/paid or gross/discount/paid axis
+        my $item = $subrow * ($grossdiscount ? 3 : 2) + $subcol;
         my $value = $data->{data}[$item][$col][$row];
         $skip = 0 if abs($value) > 0.005;
         push @thisrow, { value => sprintf('%0.2f', $value), format => 'money' };
-        $total[( ($ncols * $subrow) + $col ) * 2 + $subcol] += $value;
+        $total[( ($ncols * $subrow) + $col ) * ($grossdiscount ? 3 : 2) + $subcol] += $value;
       } #subcol
     } #col
     push @cells, \@thisrow;
@@ -294,8 +318,8 @@ for my $subrow (0..($setuprecur ? 1 : 0)) {
       { value => $subrow ? mt('recurring') : mt('setup'),
         header => 1 };
   }
-  for my $col (0..($ncols * 2)-1) { # month and billed/paid axis
-    my $value = $total[($subrow * $ncols * 2) + $col];
+  for my $col (0..($ncols * ($grossdiscount ? 3 : 2))-1) { # month and billed/paid or gross/discount/paid axis
+    my $value = $total[($subrow * $ncols * ($grossdiscount ? 3 : 2)) + $col];
     push @thisrow, { value => sprintf('%0.2f', $value), format => 'money' };
   }
   push @cells, \@thisrow;
