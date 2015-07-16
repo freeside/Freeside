@@ -271,7 +271,7 @@ if (delete($opt{'email_checkboxes'})) {
     qq!<input type="checkbox" name="custnum" value="$custnum">!;
   };
   $act_align = 'l';
-  push @act_blank, '';
+  push @act_blank, {nodownload => 1};
 }
 
 </%init>
