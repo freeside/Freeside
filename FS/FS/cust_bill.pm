@@ -2974,6 +2974,9 @@ sub process_re_X {
 
 }
 
+# this is called from search/cust_bill.html and given all its search 
+# parameters, so it needs to perform the same search.
+
 sub re_X {
   # spool_invoice ftp_invoice fax_invoice print_invoice
   my($method, $job, %param ) = @_;
@@ -2983,22 +2986,15 @@ sub re_X {
   }
 
   #some false laziness w/search/cust_bill.html
-  my $distinct = '';
-  my $orderby = 'ORDER BY cust_bill._date';
+  $param{'order_by'} = 'cust_bill._date';
 
-  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql_where(\%param);
+  my $query = FS::cust_bill->search(\%param);
+  delete $query->{'count_query'};
+  delete $query->{'count_addl'};
 
-  my $addl_from = 'LEFT JOIN cust_main USING ( custnum )';
-     
-  my @cust_bill = qsearch( {
-    #'select'    => "cust_bill.*",
-    'table'     => 'cust_bill',
-    'addl_from' => $addl_from,
-    'hashref'   => {},
-    'extra_sql' => $extra_sql,
-    'order_by'  => $orderby,
-    'debug' => 1,
-  } );
+  $query->{debug} = 1; # was in here before, is obviously useful  
+
+  my @cust_bill = qsearch( $query );
 
   $method .= '_invoice' unless $method eq 'email' || $method eq 'print';
 
