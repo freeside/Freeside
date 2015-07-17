@@ -1739,6 +1739,7 @@ sub tables_hashref {
         'payunique', 'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
         'closed',    'char', 'NULL', 1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        'no_auto_apply',  'char', 'NULL',       1, '', '', 
         # cash/check deposit info fields
         'bank',       'varchar', 'NULL', $char_d, '', '',
         'depositor',  'varchar', 'NULL', $char_d, '', '',

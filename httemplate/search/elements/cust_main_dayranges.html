@@ -21,7 +21,7 @@ Example:
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
                  'header'      => [
-                                    @act_blank,
+                                    @act_head,
                                     @cust_header,
                                     '0-30',
                                     '30-60',
@@ -248,7 +248,7 @@ if($opt{'payment_links'} && $curuser->access_right('Process payment') && @payby)
                          @payby );
 }
 
-my (@act_blank, @act_fields, $act_align, $html_foot);
+my (@act_head, @act_blank, @act_fields, $act_align, $html_foot);
 if (delete($opt{'email_checkboxes'})) {
   my $email_link = q!var url = toCGIString(); !;
   $email_link   .= q/if (!url) { alert('No customers selected'); return false; }; /;
@@ -271,6 +271,7 @@ if (delete($opt{'email_checkboxes'})) {
     qq!<input type="checkbox" name="custnum" value="$custnum">!;
   };
   $act_align = 'l';
+  push @act_head, {nodownload => 1};
   push @act_blank, '';
 }
 
