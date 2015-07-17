@@ -276,7 +276,7 @@ sub search_sql_where {
     my @owed = ref($param->{owed})
                  ? @{ $param->{owed} }
                  : ($param->{owed});
-    push @search, map { s/^owed/$owed_sql/ } @owed;
+    push @search, map { s/^owed/$owed_sql/; $_ } @owed;
   }
 
   #open/net flags
