@@ -57,7 +57,6 @@ use FS::svc_forward;
 use FS::svc_www;
 use FS::cdr;
 use FS::tower_sector;
-use FS::Misc;
 
 $DEBUG = 0;
 $me = '[FS::svc_acct]';
@@ -729,11 +728,9 @@ sub insert {
       $cust_main->invoicing_list(\@invoicing_list);
     }
 
-    #welcome email/letter
+    #welcome email
     my @welcome_exclude_svcparts = $conf->config('svc_acct_welcome_exclude');
     unless ( grep { $_ eq $self->svcpart } @welcome_exclude_svcparts ) {
-      #indent skips a level for some reason
-        #welcome email
         my $error = '';
         my $msgnum = $conf->config('welcome_msgnum', $agentnum);
         if ( $msgnum ) {
@@ -817,21 +814,7 @@ sub insert {
 
           } # if $welcome_template
         } # if !$msgnum
-        # print welcome letter
-        if ($conf->exists('svc_acct_welcome_letter')) {
-          my $queue = new FS::queue {
-            'job'     => 'FS::svc_acct::process_print_welcome_letter',
-          };
-          $error = $queue->insert(
-            'svcnum'  => $self->svcnum,
-            'template' => 'svc_acct_welcome_letter',
-          );
-          if ($error) {
-            warn "can't send welcome letter: $error";
-          }
-        }
-      #indent skipped a level for some reason
-    } # unless in @welcome_exclude_svcparts
+    }
   } # if $cust_pkg
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -3034,26 +3017,6 @@ sub reached_threshold {
   }else{
     die "unknown op: " . $opt{'op'};
   }
-}
-
-sub process_print_welcome_letter {
-  my %opt = @_;
-
-  my $self = qsearchs('svc_acct', { 'svcnum' => $opt{'svcnum'} } )
-    or die "invalid svc_acct: " . $opt{'svcnum'};
-  my $cust_main = $self->cust_svc->cust_pkg->cust_main;
-
-  my $ps = $cust_main->print_ps('svc_acct_welcome_letter',
-    'extra_fields' => {
-      map { $_ => $self->$_ } $self->fields, # or maybe just username & password?
-    },
-  );
-  my $error = FS::Misc::do_print(
-    [ $ps ],
-    'agentnum' => $cust_main->agentnum,
-  );
-  die $error if $error;
-
 }
 
 =back
