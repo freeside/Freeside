@@ -2595,17 +2595,11 @@ and customer address. Include units.',
     'description' => 'Template to use for welcome messages when a svc_acct record is created.',
     %msg_template_options,
   },
-
-  { 'key'         => 'svc_acct_welcome_letter',
-    'section'     => 'notification',
-    'description' => 'Optional LaTex template for a printed welcome letter when a svc_acct record is created.  Fields from the customer and svc_acct records are available for substitution.',
-    'type'        => 'textarea',
-  },
-
+  
   {
     'key'         => 'svc_acct_welcome_exclude',
     'section'     => 'notification',
-    'description' => 'A list of svc_acct services for which no welcome email or letter is to be sent.',
+    'description' => 'A list of svc_acct services for which no welcome email is to be sent.',
     'type'        => 'select-part_svc',
     'multiple'    => 1,
   },

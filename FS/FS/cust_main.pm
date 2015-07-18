@@ -5138,6 +5138,8 @@ I<extra_fields> - a hashref of name/value pairs which will be substituted
    into the template.  These values may override values mentioned below
    and those from the customer record.
 
+I<template_text> - if present, ignores TEMPLATE_NAME and uses the provided text
+
 The following variables are available in the template instead of or in addition
 to the fields of the customer record.
 
@@ -5153,11 +5155,16 @@ I<$returnaddress> - the return address defaults to invoice_latexreturnaddress or
 sub generate_letter {
   my ($self, $template, %options) = @_;
 
-  return unless $conf->exists($template);
+  warn "Template $template does not exist" && return
+    unless $conf->exists($template) || $options{'template_text'};
+
+  my $template_source = $options{'template_text'} 
+                        ? [ $options{'template_text'} ] 
+                        : [ map "$_\n", $conf->config($template) ];
 
   my $letter_template = new Text::Template
                         ( TYPE       => 'ARRAY',
-                          SOURCE     => [ map "$_\n", $conf->config($template)],
+                          SOURCE     => $template_source,
                           DELIMITERS => [ '[@--', '--@]' ],
                         )
     or die "can't create new Text::Template object: Text::Template::ERROR";
