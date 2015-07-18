@@ -4822,7 +4822,9 @@ sub queueable_print {
   my $self = qsearchs('cust_main', { 'custnum' => $opt{custnum} } )
     or die "invalid customer number: " . $opt{custnum};
 
-  my $error = $self->print( { 'template' => $opt{template} } );
+#do not backport this change to 3.x
+#  my $error = $self->print( { 'template' => $opt{template} } );
+  my $error = $self->print( $opt{'template'} );
   die $error if $error;
 }
 
