@@ -110,6 +110,7 @@ sub ss2clientapi {
   'list_contacts'             => 'MyAccount/contact/list_contacts',
   'edit_contact'              => 'MyAccount/contact/edit_contact',
   'delete_contact'            => 'MyAccount/contact/delete_contact',
+  'new_contact'               => 'MyAccount/contact/new_contact',
 
   'billing_history'           => 'MyAccount/billing_history',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!

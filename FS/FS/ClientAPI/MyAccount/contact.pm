@@ -131,4 +131,25 @@ sub delete_contact {
   return { 'error' => '', };
 }
 
+sub new_contact {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #TODO: add phone numbers too
+  #TODO: specify a classnum by name and/or list_contact_classes method
+
+  my $contact = new FS::contact {
+    'custnum' => $custnum,
+    map { $_ => $p->{$_} }
+      qw( first last emailaddress classnum comment selfservice_access )
+  };
+
+  $contact->change_password_fields($p->{_password}) if length($p->{_password});
+
+  my $error = $contact->insert;
+  return { 'error' => $error, };
+}
+
 1;
