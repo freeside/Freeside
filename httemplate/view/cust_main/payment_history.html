@@ -217,7 +217,7 @@ my %opt = (
         qw( card_refund-days date_format )
   ),
   ( map { $_ => $conf->exists($_) } 
-        qw( deleteinvoices deletepayments deleterefunds pkg-balances
+        qw( deletepayments deleterefunds pkg-balances
             cust_credit_bill_pkg-manual cust_bill_pay_pkg-manual
           )
   ),
@@ -226,7 +226,7 @@ my %opt = (
   #rights
   ( map { $_ => $curuser->access_right($_) }
       (
-        'View invoices', 'Void invoices', 'Unvoid invoices', 'Delete invoices',
+        'View invoices', 'Void invoices', 'Unvoid invoices',
         'Apply payment', 'Refund credit card payment', 'Refund Echeck payment',
         'Credit card void', 'Echeck void', 'Void payments', 'Unvoid payments',
         'Delete payment', 'Unapply payment',
