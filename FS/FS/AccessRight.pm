@@ -184,7 +184,6 @@ tie my %rights, 'Tie::IxHash',
     'Resend invoices', #NEWNEW
     'Void invoices',
     'Unvoid invoices',
-    'Delete invoices',
     'View customer tax exemptions', #yow
     'Edit customer tax exemptions', #NEWNEW
     'Add customer tax adjustment', #new, but no need to phase in
@@ -441,7 +440,6 @@ Most (but not all) right names.
 sub default_superuser_rights {
   my $class = shift;
   my %omit = map { $_=>1 } (
-    'Delete invoices',
     'Delete payment',
     'Delete credit', #?
     'Delete refund', #?
