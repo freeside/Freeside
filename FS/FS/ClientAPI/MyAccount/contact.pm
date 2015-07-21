@@ -129,6 +129,9 @@ sub delete_contact {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
+  return { 'error' => 'Cannot delete the currently-logged in contact.' }
+    if $p->{contactnum} == $session->{contactnum};
+
   my $cust_contact = qsearchs('cust_contact', { contactnum => $p->{contactnum},
                                                 custnum    => $custnum,       })
     or return { 'error' => 'Unknown contactnum' };
