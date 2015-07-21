@@ -49,7 +49,9 @@ use FS::contact;
 use FS::cust_contact;
 use FS::cust_location;
 
-use FS::ClientAPI::MyAccount::quotation; # just for code organization
+# for code organization
+use FS::ClientAPI::MyAccount::contact;
+use FS::ClientAPI::MyAccount::quotation;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
@@ -241,6 +243,8 @@ sub login {
   {
     return { error => 'Incorrect contact password.' }
       unless $contact->authenticate_password($p->{'password'});
+
+    $session->{'contactnum'} = $contact->contactnum;
 
     my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
     if ( scalar(@cust_contact) == 1 ) {
@@ -3000,53 +3004,6 @@ sub myaccount_passwd {
          };
 
 }
-
-#  sub contact_passwd {
-#    my $p = shift;
-#    my($context, $session, $custnum) = _custoragent_session_custnum($p);
-#    return { 'error' => $session } if $context eq 'error';
-#  
-#    return { 'error' => 'Not logged in as a contact.' }
-#      unless $session->{'contactnum'};
-#  
-#    return { 'error' => "New passwords don't match." }
-#      if $p->{'new_password'} ne $p->{'new_password2'};
-#  
-#    return { 'error' => 'Enter new password' }
-#      unless length($p->{'new_password'});
-#  
-#    #my $search = { 'custnum' => $custnum };
-#    #$search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
-#    $custnum =~ /^(\d+)$/ or die "illegal custnum";
-#    my $search = " AND selfservice_access IS NOT NULL ".
-#                 " AND selfservice_access = 'Y' ".
-#                 " AND ( disabled IS NULL OR disabled = '' )".
-#                 " AND custnum IS NOT NULL AND custnum = $1";
-#    $search .= " AND agentnum = ". $session->{'agentnum'} if $context eq 'agent';
-#  
-#    my $contact = qsearchs( {
-#      'table'     => 'contact',
-#      'addl_from' => 'LEFT JOIN cust_main USING ( custnum ) ',
-#      'hashref'   => { 'contactnum' => $session->{'contactnum'}, },
-#      'extra_sql' => $search, #important
-#    } )
-#      or return { 'error' => "Email not found" }; #?  how did we get logged in?
-#                                                  # deleted since then?
-#  
-#    my $error = '';
-#  
-#    # use these svc_acct length restrictions??
-#    my $conf = new FS::Conf;
-#    $error = 'Password too short.'
-#      if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
-#    $error = 'Password too long.'
-#      if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
-#  
-#    $error ||= $contact->change_password($p->{'new_password'});
-#  
-#    return { 'error' => $error, };
-#  
-#  }
 
 sub reset_passwd {
   my $p = shift;
