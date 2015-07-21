@@ -253,7 +253,7 @@ sub void {
     }
   }
 
-  $error = $self->delete;
+  $error = $self->_delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -265,19 +265,22 @@ sub void {
 
 }
 
-=item delete
+# removed docs entirely and renamed method to _delete to further indicate it is
+# internal-only and discourage use
+#
+# =item delete
+# 
+# DO NOT USE THIS METHOD.  Instead, apply a credit against the invoice, or use
+# the B<void> method.
+# 
+# This is only for internal use by V<void>, which is what you should be using.
+# 
+# DO NOT USE THIS METHOD.  Whatever reason you think you have is almost certainly
+# wrong.  Use B<void>, that's what it is for.  Really.  This means you.
+# 
+# =cut
 
-DO NOT USE THIS METHOD.  Instead, apply a credit against the invoice, or use
-the B<void> method.
-
-This is only for internal use by V<void>, which is what you should be using.
-
-DO NOT USE THIS METHOD.  Whatever reason you think you have is almost certainly
-wrong.  Use B<void>, that's what it is for.  Really.  This means you.
-
-=cut
-
-sub delete {
+sub _delete {
   my $self = shift;
   return "Can't delete closed invoice" if $self->closed =~ /^Y/i;
 
