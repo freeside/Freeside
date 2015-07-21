@@ -229,7 +229,8 @@ sub receipts { #net payments
   my $sql = 'SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay';
   if ( $opt{'setuprecur'} ) {
     $sql = 'SELECT SUM('.
-            FS::cust_bill_pkg->paid_sql($speriod, $eperiod, %opt).
+            #in practice, but not appearance, paid_sql accepts end before start
+            FS::cust_bill_pkg->paid_sql($eperiod, $speriod, %opt).
            ') FROM cust_bill_pkg';
   }
 
@@ -275,6 +276,11 @@ sub discounted {
 
   my $sql = 'SELECT SUM(';
   if ($opt{'setuprecur'}) {
+    # (This isn't exact but it works in most cases.)
+    # When splitting into setup/recur values, 
+    # if the discount is allowed to apply to setup fees (discount.setup = 'Y')
+    # then split it between the "setup" and "recurring" rows in proportion to 
+    # the "unitsetup" and "unitrecur" fields of the line item. 
     $sql .= <<EOF;
 CASE
   WHEN discount.setup = 'Y' 
@@ -291,11 +297,15 @@ EOF
     }
     $sql .= ' / (COALESCE(cust_bill_pkg.unitsetup,0) + COALESCE(cust_bill_pkg.unitrecur,0)))';
     $sql .= " * cust_bill_pkg_discount.amount\n";
-    $sql .= <<EOF;
-  ELSE cust_bill_pkg_discount.amount
-END
-EOF
+    # Otherwise, show it all as "recurring"
+    if ($opt{'setuprecur'} eq 'setup') {
+      $sql .= "  ELSE 0\n";
+    } elsif ($opt{'setuprecur'} eq 'recur') {
+      $sql .= "  ELSE cust_bill_pkg_discount.amount\n";
+    }
+    $sql .= "END\n";
   } else {
+    # simple case, no setuprecur
     $sql .= "cust_bill_pkg_discount.amount\n";
   }
   $sql .= <<EOF;
