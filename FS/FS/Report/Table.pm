@@ -229,7 +229,8 @@ sub receipts { #net payments
   my $sql = 'SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay';
   if ( $opt{'setuprecur'} ) {
     $sql = 'SELECT SUM('.
-            FS::cust_bill_pkg->paid_sql($speriod, $eperiod, %opt).
+            #in practice, but not appearance, paid_sql accepts end before start
+            FS::cust_bill_pkg->paid_sql($eperiod, $speriod, %opt).
            ') FROM cust_bill_pkg';
   }
 
@@ -272,17 +273,62 @@ sub netrefunds {
 
 sub discounted {
   my( $self, $speriod, $eperiod, $agentnum, %opt) = @_;
-  $self->scalar_sql('SELECT SUM(cust_bill_pkg_discount.amount)
-    FROM cust_bill_pkg_discount
-      JOIN cust_bill_pkg USING  ( billpkgnum )
-      JOIN cust_bill     USING  ( invnum )
-      JOIN cust_main     USING  ( custnum )
-    WHERE '. $self->in_time_period_and_agent( $speriod,
-                                              $eperiod,
-                                              $agentnum,
-                                              'cust_bill._date'
-                                            ).
-              $self->for_opts(%opt)
+
+  my $sql = 'SELECT SUM(';
+  if ($opt{'setuprecur'}) {
+    # (This isn't exact but it works in most cases.)
+    # When splitting into setup/recur values, 
+    # if the discount is allowed to apply to setup fees (discount.setup = 'Y')
+    # then split it between the "setup" and "recurring" rows in proportion to 
+    # the "unitsetup" and "unitrecur" fields of the line item. 
+    $sql .= <<EOF;
+CASE
+  WHEN discount.setup = 'Y' 
+    AND ((COALESCE(cust_bill_pkg.unitsetup,0) > 0) 
+          OR (COALESCE(cust_bill_pkg.unitrecur,0) > 0))
+  THEN
+EOF
+    if ($opt{'setuprecur'} eq 'setup') {
+      $sql .= '    (COALESCE(cust_bill_pkg.unitsetup,0)';
+    } elsif ($opt{'setuprecur'} eq 'recur') {
+      $sql .= '    (COALESCE(cust_bill_pkg.unitrecur,0)';
+    } else {
+      die 'Unrecognized value for setuprecur';
+    }
+    $sql .= ' / (COALESCE(cust_bill_pkg.unitsetup,0) + COALESCE(cust_bill_pkg.unitrecur,0)))';
+    $sql .= " * cust_bill_pkg_discount.amount\n";
+    # Otherwise, show it all as "recurring"
+    if ($opt{'setuprecur'} eq 'setup') {
+      $sql .= "  ELSE 0\n";
+    } elsif ($opt{'setuprecur'} eq 'recur') {
+      $sql .= "  ELSE cust_bill_pkg_discount.amount\n";
+    }
+    $sql .= "END\n";
+  } else {
+    # simple case, no setuprecur
+    $sql .= "cust_bill_pkg_discount.amount\n";
+  }
+  $sql .= <<EOF;
+) FROM cust_bill_pkg_discount
+  JOIN cust_bill_pkg     USING  ( billpkgnum )
+  JOIN cust_bill         USING  ( invnum )
+  JOIN cust_main         USING  ( custnum )
+EOF
+  if ($opt{'setuprecur'}) {
+    $sql .= <<EOF;
+  JOIN cust_pkg_discount USING ( pkgdiscountnum )
+  LEFT JOIN discount          USING ( discountnum )
+EOF
+  }
+  $self->scalar_sql(
+    $sql 
+    . 'WHERE '
+    . $self->in_time_period_and_agent( $speriod,
+                                       $eperiod,
+                                       $agentnum,
+                                       'cust_bill._date'
+                                      )
+    . $self->for_opts(%opt)
   );
 }
 
