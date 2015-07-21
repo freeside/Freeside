@@ -1353,7 +1353,7 @@ error message, or empty on success.
 =item edit_contact
 
 Updates information for the currently-logged in contact, or (optionally) the
-specified contact
+specified contact.
 
 Takes a hash reference as parameter with the following keys:
 
@@ -1377,6 +1377,22 @@ Returns a hash reference with a single parameter, B<error>, which contains an
 error message, or empty on success.
 
 =item delete_contact
+
+Deletes a contact.  (Note: Cannot at this time delete the currently-logged in
+contact.)
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+=item contactnum
+
+=back
+
+Returns a hash reference with a single parameter, B<error>, which contains an
+error message, or empty on success.
 
 =head2 "MY ACCOUNT" QUOTATION FUNCTIONS
 
