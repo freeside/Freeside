@@ -267,14 +267,13 @@ sub void {
 
 =item delete
 
-This method now works but you probably shouldn't use it.  Instead, apply a
-credit against the invoice, or use the new void method.
+DO NOT USE THIS METHOD.  Instead, apply a credit against the invoice, or use
+the B<void> method.
 
-Using this method to delete invoices outright is really, really bad.  There
-would be no record you ever posted this invoice, and there are no check to
-make sure charged = 0 or that there are no associated cust_bill_pkg records.
+This is only for internal use by V<void>, which is what you should be using.
 
-Really, don't use it.
+DO NOT USE THIS METHOD.  Whatever reason you think you have is almost certainly
+wrong.  Use B<void>, that's what it is for.  Really.  This means you.
 
 =cut
 

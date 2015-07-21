@@ -720,13 +720,6 @@ my $validate_email = sub { $_[0] =~
 @config_items = map { new FS::ConfItem $_ } (
 
   {
-    'key'         => 'address',
-    'section'     => 'deprecated',
-    'description' => 'This configuration option is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.',
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'event_log_level',
     'section'     => 'notification',
     'description' => 'Store events in the internal log if they are at least this severe.  "info" is the default, "debug" is very detailed and noisy.',
@@ -1046,13 +1039,6 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
-    'key'         => 'deleteinvoices',
-    'section'     => 'UI',
-    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would void or apply a credit against the invoice instead.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'deletecredits',
     #not actually deprecated yet
     #'section'     => 'deprecated',
@@ -1066,20 +1052,6 @@ my $validate_email = sub { $_[0] =~
     'key'         => 'deleterefunds',
     'section'     => 'billing',
     'description' => 'Enable deletion of unclosed refunds.  Be very careful!  Only delete refunds that were data-entry errors, not adjustments.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'unapplypayments',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed payments.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'unapplycredits',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed credits.',
     'type'        => 'checkbox',
   },
 
@@ -1670,13 +1642,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'invoice_send_receipts',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and XXXX instead.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'payment_receipt',
     'section'     => 'notification',
     'description' => 'Send payment receipts.',
@@ -1872,13 +1837,6 @@ and customer address. Include units.',
 #    'section'     => 'required',
 #    'description' => 'Directory which contains domain registry information.  Each registry is a directory.',
 #  },
-
-  {
-    'key'         => 'report_template',
-    'section'     => 'deprecated',
-    'description' => 'Deprecated template file for reports.',
-    'type'        => 'textarea',
-  },
 
   {
     'key'         => 'maxsearchrecordsperpage',
@@ -2687,13 +2645,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'paymentforcedtobatch',
-    'section'     => 'deprecated',
-    'description' => 'See batch-enable_payby and realtime-disable_payby.  Used to (for CHEK): Cause per customer payment entry to be forced to a batch processor rather than performed realtime.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'svc_acct-notes',
     'section'     => 'deprecated',
     'description' => 'Extra HTML to be displayed on the Account View screen.',
@@ -2765,13 +2716,6 @@ and customer address. Include units.',
     'description' => "Optional email address to send success/failure message for database dumps.",
     'type'        => 'text',
     'validate'    => $validate_email,
-  },
-
-  {
-    'key'         => 'users-allow_comp',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, enable the <i>Complimentary customer</i> access right instead.  Was: Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
-    'type'        => 'textarea',
   },
 
   {
@@ -3383,27 +3327,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'echeck-void',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'cc-void',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of credit card payments in addition to refunds against the payment gateway',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'unvoid',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable unvoiding of voided payments',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'address1-search',
     'section'     => 'UI',
     'description' => 'Enable the ability to search the address1 field from the quick customer search.  Not recommended in most cases as it tends to bring up too many search results - use explicit address searching from the advanced customer search instead.',
@@ -3430,12 +3353,6 @@ and customer address. Include units.',
     'description' => "Use the agent's master service address as the service address (only ship_address2 can be entered, if blank on the master address).  Useful for multi-tenant applications.",
     'type'        => 'checkbox',
     'per_agent'   => 1,
-  },
-
-  { 'key'         => 'referral_credit',
-    'section'     => 'deprecated',
-    'description' => "Used to enable one-time referral credits in the amount of one month <i>referred</i> customer's recurring fee (irregardless of frequency).  Replace with a billing event on appropriate packages.",
-    'type'        => 'checkbox',
   },
 
   { 'key'         => 'selfservice_server-cache_module',
@@ -5997,48 +5914,6 @@ and customer address. Include units.',
     'description' => 'Default appointment length, in minutes (30 minute granularity).',
     'type'        => 'text',
   },
-
-  { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "bindprimary", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "bindsecondaries", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "bsdshellmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "cyrus", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "cp_app", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "erpcdmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "icradiusmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "icradius_mysqldest", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "icradius_mysqlsource", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "icradius_secrets", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "maildisablecatchall", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "mxmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "nsmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "arecords", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "cnamerecords", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "nismachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "qmailmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "radiusmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "sendmailconfigpath", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "sendmailmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "sendmailrestart", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "shellmachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "shellmachine-useradd", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "shellmachine-userdel", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "shellmachine-usermod", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "shellmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "radiusprepend", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "textradiusprepend", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "username_policy", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "vpopmailmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "vpopmailrestart", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "safe-part_pkg", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "selfservice_server-quiet", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "signup_server-quiet", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "signup_server-email", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "vonage-username", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "vonage-password", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
-  { key => "vonage-fromnumber", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
 
 );
 
