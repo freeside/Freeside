@@ -3,7 +3,6 @@ package FS::ClientAPI::MyAccount::contact;
 use strict;
 use FS::Record qw( qsearchs );
 use FS::cust_main;
-use FS::cust_contact;
 use FS::contact;
 
 sub _custoragent_session_custnum {
