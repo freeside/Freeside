@@ -43,7 +43,7 @@
         'value'      => 1,
         'curr_value' => defined($cgi->param('grossdiscount'))
                         ? scalar($cgi->param('grossdiscount'))
-                        : 1, #default to on in v4
+                        : undef, #default to off in v3
     &>
     
   </TABLE>
