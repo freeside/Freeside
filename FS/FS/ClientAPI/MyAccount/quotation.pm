@@ -5,7 +5,7 @@ use FS::Record qw(qsearch qsearchs);
 use FS::quotation;
 use FS::quotation_pkg;
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 
 sub _custoragent_session_custnum {
   FS::ClientAPI::MyAccount::_custoragent_session_custnum(@_);
