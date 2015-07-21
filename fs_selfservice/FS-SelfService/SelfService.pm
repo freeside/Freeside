@@ -38,6 +38,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'list_contacts'             => 'MyAccount/contact/list_contacts',
   'edit_contact'              => 'MyAccount/contact/edit_contact',
   'delete_contact'            => 'MyAccount/contact/delete_contact',
+  'new_contact'               => 'MyAccount/contact/new_contact',
 
   'billing_history'           => 'MyAccount/billing_history',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
@@ -1394,6 +1395,39 @@ If already logged in as a contact, this is optional.
 =item last
 
 =item emailaddress
+
+=back
+
+Returns a hash reference with a single parameter, B<error>, which contains an
+error message, or empty on success.
+
+=item new_contact
+
+Creates a new contact.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+=item first
+
+=item last
+
+=item emailaddress
+
+=item classnum
+
+Optional contact classnum (TODO: or name)
+
+=item comment
+
+=item selfservice_access
+
+Y to enable self-service access
+
+=item _password
 
 =back
 
