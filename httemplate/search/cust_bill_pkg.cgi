@@ -216,7 +216,7 @@ if ( $conf->exists('enable_taxclasses') ) {
 }
 
 # used in several places
-my $itemdesc = 'COALESCE(part_fee.itemdesc, part_pkg.pkg, cust_bill_pkg.itemdesc)';
+my $itemdesc = 'COALESCE(cust_bill_pkg.itemdesc, part_fee.itemdesc, part_pkg.pkg, cust_bill_pkg.itemdesc)';
 
 # valid in both the tax and non-tax cases
 my $join_cust = 
@@ -291,13 +291,13 @@ if ( $use_override ) {
   $part_pkg = 'override';
 }
 push @select, "$part_pkg.pkgpart", "$part_pkg.pkg";
+push @select, "($itemdesc) AS itemdesc"; # available in all report modes
+
 push @select, "COALESCE($part_pkg.taxclass, part_fee.taxclass) AS taxclass"
   if $conf->exists('enable_taxclasses');
 
 # the non-tax case
 if ( $cgi->param('nottax') ) {
-
-  push @select, "($itemdesc) AS itemdesc";
 
   push @where,
     '(cust_bill_pkg.pkgnum > 0 OR cust_bill_pkg.feepart IS NOT NULL)';
