@@ -73,6 +73,16 @@ tie %options, 'Tie::IxHash',
     type => 'checkbox',
     label => 'Export RADIUS group attributes to this database',
   },
+  'disconnect_ssh' => {
+    label => 'To send a disconnection request to each RADIUS client when modifying, suspending or deleting an account, enter a ssh connection string (username@host) with access to the radclient program',
+  },
+  'disconnect_port' => {
+    label => 'Port to send disconnection requests to, default 1700',
+  },
+  'disconnect_log' => {
+    label => 'Print disconnect output and errors to the queue log (will otherwise fail silently)',
+    type => 'checkbox',
+  },
 ;
 
 $notes1 = <<'END';
@@ -184,6 +194,22 @@ sub _export_replace {
   my $dbh = dbh;
 
   my $jobnum = '';
+
+  # disconnect users before changing username
+  if ($self->option('disconnect_ssh')) {
+    my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'user_disconnect',
+      'disconnect_ssh'    => $self->option('disconnect_ssh'),
+      'svc_acct_username' => $old->username,
+      'disconnect_port'   => $self->option('disconnect_port'),
+      'disconnect_log'    => $self->option('disconnect_log'),
+    );
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+    $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
+  }
+
   if ( $self->export_username($old) ne $self->export_username($new) ) {
     my $usergroup = $self->option('usergroup') || 'usergroup';
     my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'rename',
@@ -191,6 +217,13 @@ sub _export_replace {
     unless ( ref($err_or_queue) ) {
       $dbh->rollback if $oldAutoCommit;
       return $err_or_queue;
+    }
+    if ( $jobnum ) {
+      my $error = $err_or_queue->depend_insert( $jobnum );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
     $jobnum = $err_or_queue->jobnum;
   }
@@ -274,6 +307,23 @@ sub _export_suspend {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $jobnum = '';
+
+  # disconnect users before changing anything
+  if ($self->option('disconnect_ssh')) {
+    my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'user_disconnect',
+      'disconnect_ssh'    => $self->option('disconnect_ssh'),
+      'svc_acct_username' => $svc_acct->username,
+      'disconnect_port'   => $self->option('disconnect_port'),
+      'disconnect_log'    => $self->option('disconnect_log'),
+    );
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+    $jobnum = $err_or_queue->jobnum;
+  }
+
   my @newgroups = $self->suspended_usergroups($svc_acct);
 
   unless (@newgroups) { #don't change password if assigning to a suspended group
@@ -284,7 +334,13 @@ sub _export_suspend {
       $dbh->rollback if $oldAutoCommit;
       return $err_or_queue;
     }
-
+    if ( $jobnum ) {
+      my $error = $err_or_queue->depend_insert( $jobnum );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
 
   my $error =
@@ -345,9 +401,29 @@ sub _export_unsuspend {
 
 sub _export_delete {
   my( $self, $svc_x ) = (shift, shift);
+
+  my $jobnum = '';
+
+  # disconnect users before changing anything
+  if ($self->option('disconnect_ssh')) {
+    my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'user_disconnect',
+      'disconnect_ssh'    => $self->option('disconnect_ssh'),
+      'svc_acct_username' => $svc_x->username,
+      'disconnect_port'   => $self->option('disconnect_port'),
+      'disconnect_log'    => $self->option('disconnect_log'),
+    );
+    return $err_or_queue unless ref($err_or_queue);
+    $jobnum = $err_or_queue->jobnum;
+  }
+
   my $usergroup = $self->option('usergroup') || 'usergroup';
   my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'delete',
     $self->export_username($svc_x), $usergroup );
+  if ( $jobnum ) {
+    my $error = $err_or_queue->depend_insert( $jobnum );
+    return $error if $error;
+  }
+
   ref($err_or_queue) ? '' : $err_or_queue;
 }
 
@@ -1162,6 +1238,53 @@ sub sqlradius_group_replace {
   );
   $sth->execute($new->{'groupname'}, $new->{'priority'}, $old->{'groupname'})
     or die $dbh->errstr;
+}
+
+=item sqlradius_user_disconnect
+
+For a specified user, sends a disconnect request to all nas in the server database.
+
+Accepts L</sqlradius_connect> connection input and the following named parameters:
+
+I<disconnect_ssh> - user@host with access to radclient program (required)
+
+I<svc_acct_username> - the user to be disconnected (required)
+
+I<disconnect_port> - the port (on the nas) to send disconnect requests to (defaults to 1700)
+
+I<disconnect_log> - if true, print disconnect command & output to the error log
+
+Note this is NOT the opposite of sqlradius_connect.
+
+=cut
+
+sub sqlradius_user_disconnect {
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my %opt = @_;
+  # get list of nas
+  my $sth = $dbh->prepare('select nasname, secret from nas') or die $dbh->errstr;
+  $sth->execute() or die $dbh->errstr;
+  my $nas = $sth->fetchall_arrayref({});
+  $sth->finish();
+  $dbh->disconnect();
+  die "No nas found in radius db" unless @$nas;
+  # set up ssh connection
+  eval "use Net::SSH";
+  my $ssh = Net::OpenSSH->new($opt{'disconnect_ssh'});
+  die "Couldn't establish SSH connection: " . $ssh->error
+    if $ssh->error;
+  # send individual disconnect requests
+  my $user = $opt{'svc_acct_username'}; #svc_acct username
+  my $port = $opt{'disconnect_port'} || 1700; #or should we pull this from the db?
+  foreach my $nas (@$nas) {
+    my $nasname = $nas->{'nasname'};
+    my $secret  = $nas->{'secret'};
+    my $command = qq(echo "User-Name=$user" | radclient -r 1 $nasname:$port disconnect '$secret');
+    my ($output, $errput) = $ssh->capture2($command);
+    warn $command . "\n" . $output . $errput . $ssh->error . "\n"
+      if $opt{'disconnect_log'};
+  }
+  return '';
 }
 
 ###
