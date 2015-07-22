@@ -82,7 +82,7 @@ sub list_contacts {
       #TODO: contact phone numbers
       'comment'            => $_->comment,
       'selfservice_access' => $_->selfservice_access,
-      'disabled'           => $contact->disabled,
+      #'disabled'           => $contact->disabled,
     };
   } $cust_main->cust_contact );
 
