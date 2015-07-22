@@ -142,7 +142,8 @@ sub print_template {
   my ($self, $phase, $svc_x) = @_;
   if ($self->option('phase') eq $phase) {
     my $queue = new FS::queue {
-      'job' => 'FS::part_export::print_template::process_print_template',
+      'svcnum' => $svc_x->svcnum,
+      'job'    => 'FS::part_export::print_template::process_print_template',
     };
     my $error = $queue->insert(
       'svcnum'        => $svc_x->svcnum,
