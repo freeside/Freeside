@@ -38,9 +38,9 @@ tie my %options, 'Tie::IxHash',
 
 %info = (
                        #unfortunately, FS::part_svc->svc_tables fails at this point, not sure why
-  'svc'             => [ map { 'svc_'.$_ } qw(
-                           acct domain cert forward mailinglist www broadband cable dsl 
-                           conferencing video dish hardware phone pbx circuit port alarm external)
+  'svc'             => [ qw( svc_acct svc_domain svc_cert svc_forward svc_mailinglist svc_www 
+                             svc_broadband svc_cable svc_dsl svc_conferencing svc_video svc_dish 
+                             svc_hardware svc_phone svc_pbx svc_circuit svc_port svc_alarm svc_external )
                        ],
   'desc'            => 'Print document during service change, for all services',
   'options'         => \%options,
