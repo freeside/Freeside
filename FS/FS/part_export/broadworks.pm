@@ -41,7 +41,8 @@ number, this requires a svc_phone definition and a part_device. The "title"
 field ("external name") of the part_device must be one of the access device
 type names recognized by BroadWorks, such as "Polycom Soundpoint IP 550",
 "SNOM 320", or "Generic SIP Phone".</P>
-<P>
+<P>Each phone service must have a device linked before it will be functional.
+Until then, authentication will be denied.</P>
 END
 );
 
@@ -85,6 +86,11 @@ sub export_replace {
         newUserId => $newUserId
       );
       return $message if !$success;
+
+      if ( my $device = qsearchs('phone_device', { svcnum => $svc_new->svcnum }) ) {
+        # there's a Line/Port configured for the device, and it also needs to be renamed.
+        $error ||= $self->set_endpoint( $newUserId, $self->deviceName($device) );
+      }
     }
 
     if ( $svc_old->phonenum ne $svc_new->phonenum ) {
