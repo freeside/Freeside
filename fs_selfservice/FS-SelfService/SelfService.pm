@@ -1351,6 +1351,46 @@ error message, or empty on success.
 
 =item list_contacts
 
+Takes a hash reference as parameter with a single key, B<session_id>.
+
+Returns a hash reference with two parameters: B<error>, which contains an error
+message, or empty on success, and B<contacts>, a list of contacts.
+
+B<contacts> is an array reference of hash references (i.e. an array of structs,
+ in XML-RPC).  Each hash reference (struct) has the following keys:
+
+=over4
+
+=item contactnum
+
+=item class
+
+Contact class name (contact type).
+
+=item first
+
+First name
+
+=item last
+
+Last name
+
+=item title
+
+Position ("Director of Silly Walks"), NOT honorific ("Mr." or "Mrs.")
+
+=item emailaddress
+
+Comma-separated list of email addresses
+
+=item comment
+
+=item selfservice_access
+
+Y when enabled
+
+=back
+
 =item edit_contact
 
 Updates information for the currently-logged in contact, or (optionally) the
