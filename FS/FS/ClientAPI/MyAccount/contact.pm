@@ -141,7 +141,7 @@ sub delete_contact {
   my $error = $cust_contact->delete;
   return { 'error' => $error } if $error;
 
-  unless ( $contact->cust_contact ) {
+  unless ( $contact->cust_contact || $contact->prospect_contact ) {
     $contact->delete;
   }
 
