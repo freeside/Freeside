@@ -82,7 +82,7 @@ my $post_search_hook = sub {
       'history' => [ 
         $cust_main->payment_history(
           map {
-            $_ => parse_datetime($cgi->param($_))
+            $_ => parse_datetime(scalar($cgi->param($_)))
           }
           qw( start_date end_date ),
         ),
