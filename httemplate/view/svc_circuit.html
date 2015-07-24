@@ -1,8 +1,9 @@
 <& elements/svc_Common.html,
-  'table'        => 'svc_circuit',
-  'labels'       => \%labels,
-  'fields'       => \@fields,
-  'html_foot'    => sub { $self->call_method('.foot', @_) },
+  'table'       => 'svc_circuit',
+  'labels'      => \%labels,
+  'fields'      => \@fields,
+  'html_foot'   => sub { $self->call_method('.foot', @_) },
+  'edit_url'    => $fsurl.'edit/svc_circuit.html?',
 &>
 <%method .foot>
 % my $svc_circuit = shift;
