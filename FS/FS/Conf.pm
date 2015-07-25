@@ -3856,6 +3856,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'batchconfig-RBC-login',
+    'section'     => 'billing',
+    'description' => 'FTPS login for uploading Royal Bank of Canada batches. Two lines: 1. username, 2. password. If not supplied, batches can still be created but not automatically uploaded.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'batchconfig-td_eft1464',
     'section'     => 'billing',
     'description' => 'Configuration for TD Bank EFT1464 batching, seven lines: 1. Originator ID, 2. Datacenter Code, 3. Short name, 4. Long name, 5. Returned payment branch number, 6. Returned payment account, 7. Transaction code.',
