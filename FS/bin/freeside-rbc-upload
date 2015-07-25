@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use DateTime;
+use Net::FTPSSL;
+use File::Temp qw(tempdir);
+use File::Slurp 'write_file';
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch qsearchs);
+use FS::pay_batch;
+use FS::Conf;
+
+use vars qw( $opt_a $opt_v $opt_p );
+getopts('avp:');
+
+sub usage { "
+  Usage:
+    freeside-rbc-upload [ -v ] user batchnum
+    freeside-rbc-upload -a [ -p payby ] [ -v ] user\n
+" }
+
+sub debug {
+  print STDERR $_[0] if $opt_v;
+}
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my @batches; 
+
+# copied from freeside-paymentech-upload, obviously
+if($opt_a) {
+  my %criteria = (status => 'O');
+  $criteria{'payby'} = uc($opt_p) if $opt_p;
+  @batches = qsearch('pay_batch', \%criteria);
+  die "No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n" 
+    if !@batches;
+}
+else {
+  my $batchnum = shift;
+  die &usage if !$batchnum;
+  @batches = qsearchs('pay_batch', { batchnum => $batchnum } );
+  die "Can't find payment batch '$batchnum'\n" if !@batches;
+}
+
+my $conf = new FS::Conf;
+my ($username, $password) = $conf->config('batchconfig-RBC-login');
+
+$username and $password
+  or die "RBC FTP login not configured. Enter your username and password in 'batchconfig-rbc-login'.\n";
+
+my $host = 'ftpssl.rbc.com';
+debug "Connecting to $username\@$host...\n";
+
+my $date = DateTime->now->strftime('%Y%m%d');
+
+my $ftp = Net::FTPSSL->new($host,
+                           Timeout => 30,
+                           Debug => ($opt_v ? 1 : 0),
+                           Croak => 1, # rely on auto-rollback when dbh closes
+                          );
+$ftp->login($username, $password);
+
+my $tmpdir = tempdir( CLEANUP => 1 );
+
+foreach my $pay_batch (@batches) {
+  my $batchnum = $pay_batch->batchnum;
+  my $filename = $date . '.' . sprintf('%06d', $batchnum);
+  debug "Exporting batch $batchnum to $filename\n";
+
+  my $text = $pay_batch->export_batch(format => 'RBC');
+  write_file("$tmpdir/$filename", $text);
+
+  debug "Uploading $filename...";
+  $ftp->put("$tmpdir/$filename", $filename);
+  debug "done.\n";
+}
+
+debug "Finished.\n";
+
+=head1 NAME
+
+freeside-rbc-upload - Transmit a payment batch to RBC via FTP/TLS.
+
+=head1 SYNOPSIS
+
+  freeside-rbc-upload [ -a [ -p PAYBY ] ] [ -v ] user batchnum
+
+=head1 DESCRIPTION
+
+Command line tool to upload a payment batch to the Royal Bank of Canada 
+ACH service. Use L<freeside-rbc-download> to retrieve the response file.
+Options:
+
+-a: Send all open batches, instead of specifying a batchnum.
+
+-p PAYBY: With -a, limit to batches of that payment type, e.g. -p CARD.
+
+-v: Be verbose.
+
+user: freeside username
+
+batchnum: pay_batch primary key
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+

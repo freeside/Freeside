@@ -223,7 +223,9 @@ foreach my $INC (@INC) {
 
 =item import_results OPTION => VALUE, ...
 
-Import batch results.
+Import batch results. Can be called as an instance method, if you want to 
+automatically adjust status on a specific batch, or a class method, if you 
+don't know which batch(es) the results apply to.
 
 Options are:
 
@@ -294,6 +296,8 @@ sub import_results {
   my $declined_condition  = $info->{'declined'};
   my $close_condition     = $info->{'close_condition'};
 
+  my %target_batches; # batches that had at least one payment updated
+
   my $csv = new Text::CSV_XS;
 
   local $SIG{HUP} = 'IGNORE';
@@ -307,13 +311,17 @@ sub import_results {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $reself = $self->select_for_update;
+  if ( ref($self) ) {
+    # if called on a specific pay_batch, check the status of that batch
+    # before continuing
+    my $reself = $self->select_for_update;
 
-  if ( $reself->status ne 'I' 
-      and !$conf->exists('batch-manual_approval') ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "batchnum ". $self->batchnum. "no longer in transit";
-  }
+    if ( $reself->status ne 'I' 
+        and !$conf->exists('batch-manual_approval') ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "batchnum ". $self->batchnum. "no longer in transit";
+    }
+  } # otherwise we can't enforce this constraint. sorry.
 
   my $total = 0;
   my $line;
@@ -359,6 +367,7 @@ sub import_results {
         push @all_values, \@values;
       }
       elsif ($filetype eq 'variable') {
+        # no longer used
         my @values = ( eval { $parse->($self, $line) } );
         if( $@ ) {
           $dbh->rollback if $oldAutoCommit;
@@ -418,6 +427,9 @@ sub import_results {
     unless ( $cust_pay_batch ) {
       return "unknown paybatchnum $hash{'paybatchnum'}\n";
     }
+    # remember that we've touched this batch
+    $target_batches{ $cust_pay_batch->batchnum } = 1;
+
     my $custnum = $cust_pay_batch->custnum,
     my $payby = $cust_pay_batch->payby,
 
@@ -457,21 +469,25 @@ sub import_results {
 
   } # foreach (@all_values)
 
-  my $close = 1;
-  if ( defined($close_condition) ) {
-    # Allow the module to decide whether to close the batch.
-    # $close_condition can also die() to abort the whole import.
-    $close = eval { $close_condition->($self) };
-    if ( $@ ) {
-      $dbh->rollback;
-      die $@;
+  # decide whether to close batches that had payments posted
+  foreach my $batchnum (keys %target_batches) {
+    my $pay_batch = FS::pay_batch->by_key($batchnum);
+    my $close = 1;
+    if ( defined($close_condition) ) {
+      # Allow the module to decide whether to close the batch.
+      # $close_condition can also die() to abort the whole import.
+      $close = eval { $close_condition->($pay_batch) };
+      if ( $@ ) {
+        $dbh->rollback;
+        die $@;
+      }
     }
-  }
-  if ( $close ) {
-    my $error = $self->set_status('R');
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+    if ( $close ) {
+      my $error = $pay_batch->set_status('R');
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
 
