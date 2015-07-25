@@ -10,6 +10,7 @@
                    'Amount',
                    'By',
                    '#',
+                   'Card Type',
 
                    #payment
                    'Date',
@@ -20,6 +21,7 @@
 
                    # line item
                    'Description',
+                   'Package class',
                    'Location',
                    @post_desc_header,
 
@@ -36,7 +38,10 @@
                          $cust_pay->payby =~ /^(CARD|CHEK)$/
                            ? $cust_pay->paymask : $cust_pay->payinfo;
                        },
-
+                   sub { my $cust_pay = shift->cust_bill_pay->cust_pay;
+                         $cust_pay->payby =~ /^CARD$/
+                           ? cardtype($cust_pay->paymask) : '';
+                       },
                    sub { time2str('%b %d %Y', shift->get('cust_pay_date') ) },
                    sub { shift->cust_bill_pay->cust_pay->otaker },
 
@@ -46,6 +51,7 @@
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
                        },
+                   'classname', #package class
                    $location_sub,
                    @post_desc,
                    'invnum',
@@ -55,10 +61,13 @@
                'sort_fields'  => [
                    'paid',
                    '', #payby
+                   '', #payinfo/paymask
+                   '', #cardtype
                    'cust_pay_date',
                    '', #'otaker',
                    '', #amount
                    '', #line item description
+                   '', #package class
                    '', #location
                    @post_desc_null,
                    'invnum',
@@ -74,6 +83,8 @@
                    '',
                    '',
                    '',
+                   '',
+                   '',
                    @post_desc_null,
                    $ilink,
                    $ilink,
@@ -81,11 +92,16 @@
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rcrrlrlllrrcl'.
+               'align' => 'rcrlrlrlll',
+#original value before cardtype & package were added
+#why are there 13 cols?
+#'rcrrlrlllrrcl'.
                           $post_desc_align.
                           'rr'.
                           FS::UI::Web::cust_aligns(),
                'color' => [ 
+                              '',
+                              '',
                               '',
                               '',
                               '',
@@ -100,6 +116,8 @@
                               FS::UI::Web::cust_colors(),
                             ],
                'style' => [ 
+                              '',
+                              '',
                               '',
                               '',
                               '',
@@ -415,6 +433,7 @@ if ( $cgi->param('nottax') ) {
 
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
                  LEFT JOIN part_pkg USING ( pkgpart )
+                 LEFT JOIN pkg_class USING ( classnum )
                  LEFT JOIN part_pkg AS override
                    ON pkgpart_override = override.pkgpart ';
   $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
@@ -454,7 +473,8 @@ if ( $cgi->param('nottax') ) {
   #warn "neither nottax nor istax parameters specified";
   #same as before?
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
-                 LEFT JOIN part_pkg USING ( pkgpart ) ';
+                 LEFT JOIN part_pkg USING ( pkgpart ) 
+                 LEFT JOIN pkg_class USING ( classnum )';
 
 }
 
@@ -477,7 +497,7 @@ my @select = ( 'cust_bill_pay_pkg.*',
                'cust_pay._date AS cust_pay_date',
                'cust_bill._date',
              );
-push @select, 'part_pkg.pkg' unless $cgi->param('istax');
+push @select, 'part_pkg.pkg, pkg_class.classname' unless $cgi->param('istax');
 push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
 
@@ -493,10 +513,10 @@ if ( $conf->exists('enable_taxclasses') && ! $cgi->param('istax') ) {
   push @select, 'part_pkg.taxclass'; # or should this use override?
 }
 
-warn "$join_cust_bill_pkg
-                  $join_pkg
-                  $join_pay
-                  $join_cust";
+#warn "$join_cust_bill_pkg
+#                  $join_pkg
+#                  $join_pay
+#                  $join_cust";
 
 my $query = {
   'table'     => 'cust_bill_pay_pkg',
