@@ -56,7 +56,8 @@ foreach my $column (keys %conds) {
   my $count_query = $h_search->{count_query};
 
   # push a select expression for the total packages with pkgpart=main.pkgpart
-  push @select, "($count_query AND h_cust_pkg.pkgpart = main.pkgpart) AS $column";
+  # (have to quote $column, otherwise mysql thinks before/after are keywords)
+  push @select, "($count_query AND h_cust_pkg.pkgpart = main.pkgpart) AS \"$column\"";
 
   # and query the total packages with pkgpart=any of the main.pkgparts
   my $total = FS::Record->scalar_sql($count_query . 
