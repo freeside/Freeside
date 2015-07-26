@@ -129,7 +129,7 @@ RT_PATH = /opt/rt3
 
 #only used for dev kludge now, not a big deal
 FREESIDE_PATH = `pwd`
-PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.14.2/
+PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.20.2/
 
 VERSION := `grep '^$$VERSION' FS/FS.pm | cut -d\' -f2`
 TAG := freeside_`grep '^$$VERSION' FS/FS.pm | cut -d\' -f2 | perl -pe 's/\./_/g'`
