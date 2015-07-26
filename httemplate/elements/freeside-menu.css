@@ -1,11 +1,9 @@
 input.fsblackbutton {
-	 background-color:#aaaaaa;
+	 background-color:#cccccc;
 	 color: #333333;
 	 border:1px solid #888888;
 
-	 -moz-border-radius: 4px;
-	 -webkit-border-radius: 4px;
-	 border-radius: 4px;
+	 border-radius: 2px;
 
          font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-weight:bold;
@@ -20,17 +18,15 @@ input.fsblackbutton {
 
 input.fsblackbutton:hover,input.fsblackbutton:focus,
 input.fsblackbuttonselected:hover, input.fsblackbuttonselected:focus {
-        background:#aaaaaa;
+        background:#cccccc;
 }
 
 input.fsblackbuttonselected {
-	 background-color:#aaaaaa;
+	 background-color:#cccccc;
 	 color: #7e0079;
 	 border:1px solid #7e0079;
 
-	 -moz-border-radius: 4px;
-	 -webkit-border-radius: 4px;
-	 border-radius: 4px;
+	 border-radius: 2px;
 
          font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-weight:bold;

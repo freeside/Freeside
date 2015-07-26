@@ -1,5 +1,7 @@
 <& /elements/header.html, mt("Process [_1] payment",$type{$payby})  &>
 <& /elements/small_custview.html, $cust_main, '', '', popurl(2) . "view/cust_main.cgi" &>
+<BR>
+
 <FORM NAME="OneTrueForm" ACTION="process/payment.cgi" METHOD="POST" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum"   VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="payby"     VALUE="<% $payby %>">
@@ -8,7 +10,7 @@
 
 <& /elements/init_overlib.html &>
 
-<% ntable('#cccccc') %>
+<TABLE class="fsinnerbox">
 
   <& /elements/tr-amount_fee.html,
        'amount'             => $amount,

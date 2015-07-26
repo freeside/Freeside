@@ -95,8 +95,12 @@ sub small_custview {
   $html = qq!<A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
 
+  if ( $FS::CurrentUser::CurrentUser->num_agents ) {
+    $html .= encode_entities($cust_main->agent->agent). ' ';
+  }
+
   $html .= 'Customer #<B>'. $cust_main->display_custnum.
-           ': '. encode_entities($cust_main->name). '</B></A>';
+           '</B>: <B>'. encode_entities($cust_main->name). '</B></A>'.
            ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
            $cust_main->status_label. '</FONT></B>';
 
@@ -129,9 +133,10 @@ sub small_custview {
     $html .= encode_entities($cust_main->address1). '<BR>';
     $html .= encode_entities($cust_main->address2). '<BR>'
       if $cust_main->address2;
-    $html .= encode_entities($cust_main->city). ', '. $cust_main->state. '  '.
-             $cust_main->zip. '<BR>';
-    $html .= $cust_main->country. '<BR>'
+    $html .= encode_entities($cust_main->city) . ', ' if $cust_main->city;
+    $html .= encode_entities($cust_main->state). '  '.
+             encode_entities($cust_main->zip). '<BR>';
+    $html .= encode_entities($cust_main->country). '<BR>'
       if $cust_main->country && $cust_main->country ne $countrydefault;
 
   }
@@ -162,7 +167,7 @@ sub small_custview {
         $cust_main->ship_company,
         $ship->address1,
         $ship->address2,
-        ($ship->city . ', ' . $ship->state . '  ' . $ship->zip),
+        (($ship->city ? $ship->city . ', ' : '') . $ship->state . '  ' . $ship->zip),
         ($ship->country eq $countrydefault ? '' : $ship->country ),
     );
 

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -579,15 +579,11 @@ sub _ParseMultilineTemplate {
     my %args = (@_);
 
     my $template_id;
-    require Encode;
-    require utf8;
     my ( $queue, $requestor );
         $RT::Logger->debug("Line: ===");
         foreach my $line ( split( /\n/, $args{'Content'} ) ) {
             $line =~ s/\r$//;
-            $RT::Logger->debug( "Line: " . utf8::is_utf8($line)
-                ? Encode::encode_utf8($line)
-                : $line );
+            $RT::Logger->debug( "Line: $line" );
             if ( $line =~ /^===/ ) {
                 if ( $template_id && !$queue && $args{'Queue'} ) {
                     $self->{'templates'}->{$template_id}
@@ -790,10 +786,10 @@ sub ParseLines {
     );
 
     if ( $args{content} ) {
-        my $mimeobj = MIME::Entity->new();
-        $mimeobj->build(
-            Type => $args{'contenttype'} || 'text/plain',
-            Data => $args{'content'}
+        my $mimeobj = MIME::Entity->build(
+            Type    => $args{'contenttype'} || 'text/plain',
+            Charset => 'UTF-8',
+            Data    => [ map {Encode::encode( "UTF-8", $_ )} @{$args{'content'}} ],
         );
         $ticketargs{MIMEObj} = $mimeobj;
         $ticketargs{UpdateType} = $args{'updatetype'} || 'correspond';
@@ -963,6 +959,13 @@ sub GetDeferred {
     my $id        = shift;
     my $links     = shift;
     my $postponed = shift;
+
+    # Unify the aliases for child/parent
+    $args->{$_} = [$args->{$_}]
+        for grep {$args->{$_} and not ref $args->{$_}} qw/members hasmember memberof/;
+    push @{$args->{'children'}}, @{delete $args->{'members'}}   if $args->{'members'};
+    push @{$args->{'children'}}, @{delete $args->{'hasmember'}} if $args->{'hasmember'};
+    push @{$args->{'parents'}},  @{delete $args->{'memberof'}}  if $args->{'memberof'};
 
     # Deferred processing
     push @$links,

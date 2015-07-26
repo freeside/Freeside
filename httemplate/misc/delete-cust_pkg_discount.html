@@ -13,7 +13,7 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 #XXX ACL to remove discounts
 #die "access denied"
-#  unless $curuser->access_right('Delete invoices');
+#  unless $curuser->access_right('Delete discounts');
 
 #untaint pkgdiscountnum
 my($query) = $cgi->keywords;

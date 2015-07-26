@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -54,6 +54,7 @@
 %   } else {
 %       $title = loc("[_1]'s dashboards",$Object->Name);
 %   }
+%   $title =~ s/([\\'])/\\$1/g;
 %   $title = $m->interp->apply_escapes($title, 'h');
 <& /Elements/CollectionList,
     %ARGS,

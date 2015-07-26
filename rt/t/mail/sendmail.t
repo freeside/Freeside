@@ -24,7 +24,7 @@ sub mail_in_ticket {
 
     RT::Test->clean_caught_mails;
     my ($status, $id) = RT::Test->send_via_mailgate( $content );
-    ok( $status, "Fed $filename into mailgate");
+    ok( !$status, "Fed $filename into mailgate");
 
     my $ticket = RT::Ticket->new(RT->SystemUser);
     $ticket->Load($id);
@@ -47,10 +47,28 @@ for my $encoding ('ISO-8859-1', 'UTF-8') {
     like (first_txn($ticket)->Content , qr/H\x{e5}vard/, "It's signed by havard. yay");
 
     is(@mail, 1);
-    like( $mail[0]->head->get('Content-Type') , qr/$encoding/,
-          "Its content type is $encoding" );
-    my $message_as_string = $mail[0]->bodyhandle->as_string();
+    like( $mail[0]->head->get('Content-Type'), qr/multipart\/alternative/,
+          "Its content type is multipart/alternative" );
+
+    # The text/html part is guaranteed to not have had non-latin-1
+    # characters introduced by the HTML-to-text conversion, so it is
+    # guaranteed to be able to be represented in latin-1
+    like( $mail[0]->parts(1)->head->get('Content-Type'), qr/text\/html.+?$encoding/,
+          "Second part's content type is text/html $encoding" );
+    my $message_as_string = $mail[0]->parts(1)->bodyhandle->as_string();
     $message_as_string = Encode::decode($encoding, $message_as_string);
+    like( $message_as_string , qr/H\x{e5}vard/,
+          "The message's content contains havard's name in $encoding");
+
+    # The text/plain part may have utf-8 characters in it.  Accept either encoding.
+    like( $mail[0]->parts(0)->head->get('Content-Type'), qr/text\/plain.+?(ISO-8859-1|UTF-8)/i,
+          "First part's content type is text/plain (ISO-8859-1 or UTF-8)" );
+
+    # Make sure it checks out in whatever encoding it ended up in
+    $mail[0]->parts(0)->head->get('Content-Type') =~ /text\/plain.+?(ISO-8859-1|UTF-8)/i;
+    my $found = $1 || $encoding;
+    $message_as_string = $mail[0]->parts(0)->bodyhandle->as_string();
+    $message_as_string = Encode::decode($found, $message_as_string);
     like( $message_as_string , qr/H\x{e5}vard/,
           "The message's content contains havard's name in $encoding");
 }
@@ -73,8 +91,9 @@ for my $encoding ('ISO-8859-1', 'UTF-8') {
         "Has one attachment, just a text-html");
 
     is(@mail, 1);
-    is( $mail[0]->parts, 0, "generated correspondence mime entity does not have parts");
-    is( $mail[0]->head->mime_type , "text/plain", "The mime type is a plain");
+    is( $mail[0]->parts, 2, "generated correspondence mime entity has parts");
+    is( $mail[0]->parts(0)->head->mime_type , "text/plain", "The first part mime type is a plain");
+    is( $mail[0]->parts(1)->head->mime_type , "text/html", "The second part mime type is an html");
 }
 
 {
@@ -91,7 +110,10 @@ for my $encoding ('ISO-8859-1', 'UTF-8') {
         "Recorded the subject right");
 
     is(@mail, 1);
-    is( $mail[0]->head->mime_type , "text/plain", "The only part is text/plain ");
+    is( $mail[0]->head->mime_type , "multipart/alternative", "The top part is multipart/alternative");
+    is( $mail[0]->parts, 2, "generated correspondnece mime entity has parts");
+    is( $mail[0]->parts(0)->head->mime_type , "text/plain", "The first part is a plain");
+    is( $mail[0]->parts(1)->head->mime_type , "text/html", "The second part is an html");
     like( $mail[0]->head->get("subject"), qr/\Q=?KOI8-R?B?W2V4YW1wbGUuY29tICM2XSBBdXRvUmVwbHk6INTF09Qg1MXT1A==?=\E/,
           "The subject is encoded correctly");
 
@@ -108,7 +130,10 @@ for my $encoding ('ISO-8859-1', 'UTF-8') {
         "Has five attachments, presumably a text-plain and a message RFC 822 and another plain");
 
     is(@mail, 1);
-    is( $mail[0]->head->mime_type , "text/plain", "The outgoing mail is plain text");
+    is( $mail[0]->head->mime_type , "multipart/alternative", "The top part is multipart/alternative");
+    is( $mail[0]->parts, 2, "generated correspondnece mime entity has parts");
+    is( $mail[0]->parts(0)->head->mime_type , "text/plain", "The first part is a plain");
+    is( $mail[0]->parts(1)->head->mime_type , "text/html", "The second part is an html");
 
     my $encoded_subject = $mail[0]->head->get("Subject");
     chomp $encoded_subject;

@@ -24,7 +24,7 @@ if ( ( $ENV{RT_TEST_WEB_HANDLER} || '' ) =~ /^apache(\+mod_perl)?$/
 my $cfid;
 diag "Create a CF";
 {
-    $m->follow_link( id => 'tools-config-custom-fields-create');
+    $m->follow_link( id => 'admin-custom-fields-create');
     $m->submit_form(
         form_name => "ModifyCustomField",
         fields => {
@@ -47,7 +47,7 @@ ok $queue && $queue->id, 'loaded or created queue';
     $m->title_is(q/Admin queues/, 'admin-queues screen');
     $m->follow_link( text => 'General' );
     $m->title_is(q/Configuration for queue General/, 'admin-queue: general');
-    $m->follow_link( text => 'Ticket Custom Fields' );
+    $m->follow_link( id => 'page-custom-fields-tickets' );
     $m->title_is(q/Custom Fields for queue General/, 'admin-queue: general cfid');
 
     $m->form_name('EditCustomFields');
@@ -212,7 +212,7 @@ diag 'check invalid inputs';
 
     my @warnings = $m->get_warnings;
     chomp @warnings;
-    is_deeply( @warnings, q{Couldn't parse date 'foodate' by Time::ParseDate} );
+    is_deeply( [@warnings], [(q{Couldn't parse date 'foodate' by Time::ParseDate})x2] );
 }
 
 diag 'retain values when adding attachments';

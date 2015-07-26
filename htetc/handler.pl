@@ -107,7 +107,6 @@ sub handler
       return -1 if defined( $r->content_type )
                 && $r->content_type !~ m!(^text/|\bxml\b)!io;
 
-
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 

@@ -40,6 +40,7 @@ foreach my $row ( map /^custnum(\d+)$/, keys %$param ) {
                     'payinfo'        => $param->{"payinfo$row"},
                     'discount_term'  => $param->{"discount_term$row"},
                     'paybatch'       => $paybatch,
+                    'no_auto_apply'  => exists($param->{"no_auto_apply$row"}) ? 'Y' : '',
                   }
     if    $param->{"custnum$row"}
        || $param->{"paid$row"}

@@ -34,16 +34,6 @@ tie my %contract_years, 'Tie::IxHash', (
                              'select_options' => \%temporalities,
                            },
 
-    #used in cust_pkg.pm so could add to any price plan
-    'expire_months' => { 'name' => 'Auto-add an expiration date this number of months out',
-                       },
-    'adjourn_months'=> { 'name' => 'Auto-add a suspension date this number of months out',
-                       },
-    'contract_end_months'=> { 
-                        'name' => 'Auto-add a contract end date this number of years out',
-                        'type' => 'select',
-                        'select_options' => \%contract_years,
-                      },
     #used in cust_pkg.pm so could add to any price plan where it made sense
     'start_1st'     => { 'name' => 'Auto-add a start date to the 1st, ignoring the current month.',
                          'type' => 'checkbox',
@@ -85,8 +75,6 @@ tie my %contract_years, 'Tie::IxHash', (
                     },
   },
   'fieldorder' => [ qw( recur_temporality 
-                        expire_months adjourn_months
-                        contract_end_months
                         start_1st
                         sync_bill_date prorate_defer_bill prorate_round_day
                         suspend_bill unsuspend_adjust_bill
@@ -220,13 +208,13 @@ sub calc_cancel {
        and $self->option('bill_recur_on_cancel', 1) ) {
     # run another recurring cycle
     return $self->calc_recur(@_);
-  }
-  elsif ( $conf->exists('bill_usage_on_cancel') # should be a package option?
+  } elsif ( $conf->exists('bill_usage_on_cancel') # should be a package option?
           and $self->can('calc_usage') ) {
     # bill for outstanding usage
     return $self->calc_usage(@_);
+  } else {
+    return 'NOTHING'; # numerically zero, but has special meaning
   }
-  0;
 }
 
 sub calc_remain {

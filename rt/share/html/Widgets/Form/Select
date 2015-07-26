@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -80,11 +80,11 @@ $AlternativeLabel => loc('other...'),
 
 $Multiple         => 0,
 </%ARGS>
-<select name="<% $Name %>">
+<select name="<% $Name %>" <% $Multiple ? 'multiple="multiple"' : '' |n%>>
 
 % if ( $Default ) {
 % my $selected = '';
-% $selected = 'selected="selected"' unless @CurrentValue;
+% $selected = 'selected="selected"' unless $CurrentValue[0];
 <option value="__empty_value__" <% $selected |n %>><% $DefaultLabel %></option>
 % }
 

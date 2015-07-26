@@ -1,5 +1,5 @@
 <TR>
-  <TD VALIGN="top" ALIGN="right"><% mt('Phones') |h %></TD>
+  <TH VALIGN="top" ALIGN="right"><% mt('Phones') |h %></TD>
   <TD COLSPAN=6>
     <TABLE CELLSPACING=0 CELLPADDING=0>
       <TR>
@@ -10,7 +10,7 @@
                  VALUE="<% $cust_main->get($phone) %>"
                  SIZE=18
           >
-          <BR><FONT SIZE=-1><% mt($phone_label{$phone}) |h %></FONT>
+          <BR><FONT SIZE=-1 COLOR="#333333"><% mt($phone_label{$phone}) |h %></FONT>
         </TD>
         <TD>&nbsp;</TD>
 % }

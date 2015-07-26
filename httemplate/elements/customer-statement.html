@@ -1,0 +1,45 @@
+<%doc>
+
+Formats customer payment history into a table.
+
+  include('/elements/customer-statement.html',
+    'history' => \@history
+  );
+
+Option 'history' should be of the form returned by $cust_main->payment_history.
+This element might be used directly by selfservice, so it does not (and should not)
+pull data from the database.
+
+</%doc>
+
+% my $style      = 'text-align: left; margin: 0; padding: 0 1em 0 0;';
+% my $moneystyle = 'text-align: right; margin: 0; padding: 0 1em 0 0;';
+
+<TABLE STYLE="margin: 0;" CELLSPACING="0">
+  <TR>
+    <TH STYLE="<% $style %> background: #ff9999;">Date</TH>
+    <TH STYLE="<% $style %> background: #ff9999;">Description</TH>
+    <TH STYLE="<% $moneystyle %> background: #ff9999;">Amount</TH>
+    <TH STYLE="<% $moneystyle %> background: #ff9999;">Balance</TH>
+  </TR>
+
+% my $col1 = "#ffffff";
+% my $col2 = "#dddddd";
+% my $col = $col1;
+% foreach my $item (@{$opt{'history'}}) {
+  <TR>
+    <TD STYLE="<% $style %> background: <% $col %>;"><% $$item{'date_pretty'} %></TD>
+    <TD STYLE="<% $style %> background: <% $col %>;"><% $$item{'description'} %></TD>
+    <TD STYLE="<% $moneystyle %> background: <% $col %>;"><% $$item{'amount_pretty'} %></TD>
+    <TD STYLE="<% $moneystyle %> background: <% $col %>;"><% $$item{'balance_pretty'} %></TD>
+  </TR>
+%   $col = $col eq $col1 ? $col2 : $col1;
+% }
+
+</TABLE>
+
+<%init>
+my %opt = @_;
+
+die "Invalid type for history" unless ref($opt{'history'}) eq 'ARRAY';
+</%init>

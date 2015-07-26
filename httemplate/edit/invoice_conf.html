@@ -49,6 +49,7 @@ my @fields = (
         'Footer',
         'Summary header',
         'Return address',
+        'Watermark',
         'Small footer',
         'Enable coupon',
       ),
@@ -59,6 +60,7 @@ my @fields = (
       { field => 'latexfooter',         %textarea },
       { field => 'latexsummary',        %textarea },
       { field => 'latexreturnaddress',  %textarea },
+      { field => 'latexwatermark',      %textarea },
       { field => 'latexsmallfooter',    %textarea },
       { field => 'with_latexcoupon', type => 'checkbox', value => 'Y' },
 
@@ -68,6 +70,7 @@ my @fields = (
       { field => 'htmlfooter',          %textarea },
       { field => 'htmlsummary',         %textarea },
       { field => 'htmlreturnaddress',   %textarea },
+      { field => 'htmlwatermark',      %textarea },
       # logo
 
       { type  => 'columnend' },
@@ -87,12 +90,14 @@ my %labels = (
     latexfooter
     latexsummary
     latexreturnaddress
+    latexwatermark
     with_latexcoupon
     latexsmallfooter
     htmlnotes
     htmlfooter
     htmlsummary
     htmlreturnaddress
+    htmlwatermark
   ) ),
 
 ); 

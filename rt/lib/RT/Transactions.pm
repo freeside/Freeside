@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -69,10 +69,9 @@ package RT::Transactions;
 use strict;
 use warnings;
 
+use base 'RT::SearchBuilder';
 
 use RT::Transaction;
-
-use base 'RT::SearchBuilder';
 
 sub Table { 'Transactions'}
 
@@ -85,9 +84,9 @@ sub _Init   {
   
   # By default, order by the date of the transaction, rather than ID.
   $self->OrderByCols( { FIELD => 'Created',
-			ORDER => 'ASC' },
-		      { FIELD => 'id',
-			ORDER => 'ASC' } );
+                        ORDER => 'ASC' },
+                      { FIELD => 'id',
+                        ORDER => 'ASC' } );
 
   return ( $self->SUPER::_Init(@_));
 }
@@ -109,11 +108,10 @@ sub LimitToTicket {
     my $tid  = shift;
 
     unless ( $self->{'tickets_table'} ) {
-        $self->{'tickets_table'} ||= $self->NewAlias('Tickets');
-        $self->Join(
+        $self->{'tickets_table'} ||= $self->Join(
             ALIAS1 => 'main',
             FIELD1 => 'ObjectId',
-            ALIAS2 => $self->{'tickets_table'},
+            TABLE2 => 'Tickets',
             FIELD2 => 'id'
         );
         $self->Limit(
@@ -132,43 +130,14 @@ sub LimitToTicket {
 }
 
 
-sub Next {
+sub AddRecord {
     my $self = shift;
- 	
-    my $Transaction = $self->SUPER::Next();
-    if ((defined($Transaction)) and (ref($Transaction))) {
-    	# If the user can see the transaction's type, then they can 
-	#  see the transaction and we should hand it back.
-	if ($Transaction->Type) {
-	    return($Transaction);
-	}
+    my ($record) = @_;
 
-	#If the user doesn't have the right to show this ticket
-	else {	
-	    return($self->Next());
-	}
-    }
-
-    #if there never was any ticket
-    else {
-	return(undef);
-    }	
+    return unless $record->CurrentUserCanSee;
+    return $self->SUPER::AddRecord($record);
 }
 
-
-
-
-
-=head2 NewItem
-
-Returns an empty new RT::Transaction item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::Transaction->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

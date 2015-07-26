@@ -1,7 +1,7 @@
-<% ntable("#cccccc") %>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
-    <TD ALIGN="right"><% mt('Username') |h %></TD>
+    <TH ALIGN="right"><% mt('Username') |h %></TD>
     <TD>
       <INPUT TYPE      = "text"
              NAME      = "username"
@@ -13,7 +13,7 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right"><% mt('Domain') |h %></TD>
+    <TH ALIGN="right"><% mt('Domain') |h %></TD>
     <TD>
       <SELECT NAME="domsvc">
         <OPTION>(<% mt('none') |h %>)</OPTION>
@@ -22,7 +22,7 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right"><% mt('Password') |h %></TD>
+    <TH ALIGN="right"><% mt('Password') |h %></TD>
     <TD>
       <INPUT TYPE      = "text"
              NAME      = "_password"
@@ -37,7 +37,7 @@
 
 % if ( $opt{'password_verify'} ) {
     <TR>
-      <TD ALIGN="right"><% mt('Re-enter Password') |h %></TD>
+      <TH ALIGN="right"><% mt('Re-enter Password') |h %></TD>
       <TD>
         <INPUT TYPE      = "text"
                NAME      = "_password2"
@@ -50,7 +50,7 @@
 
 % if ( $conf->exists('security_phrase') ) {
     <TR>
-      <TD ALIGN="right"><% mt('Security Phrase') |h %></TD>
+      <TH ALIGN="right"><% mt('Security Phrase') |h %></TD>
       <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $opt{'sec_phrase'} |h %>">
       </TD>
     </TR>
@@ -62,7 +62,7 @@
     <INPUT TYPE="hidden" NAME="popnum" VALUE="">
 % } else {
     <TR>
-      <TD ALIGN="right"><% mt('Access number') |h %></TD>
+      <TH ALIGN="right"><% mt('Access number') |h %></TD>
 %#           XXX should gain "area code" selection and labels on the dropdowns
       <TD><% FS::svc_acct_pop::popselector($opt{'popnum'}) %></TD>
     </TR>

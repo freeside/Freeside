@@ -23,14 +23,10 @@
 	z-index:		9999;
 	visibility:		hidden;
 	border:			1px solid #7e0079;
-	 -moz-border-radius: 4px;
-	 -webkit-border-radius: 4px;
-	 border-radius: 4px;
+	border-radius: 2px;
 	padding:		1px;
 	background:		white;
-        -moz-box-shadow: #000000 1px 1px 4px;
-        -webkit-box-shadow: #000000 1px 1px 4px;
-        box-shadow: #000000 1px 1px 4px;
+        box-shadow: #333333 1px 1px 2px;
 }
 
 .webfx-menu-empty {
@@ -98,7 +94,7 @@
 .webfx-menu-bar {
 	/* background:		rgb(120,172,255);/*rgb(255,128,0);*/
 	/* background:		 #a097ed; */
-	background:		 #cccccc;
+	background:		 #dddddd;
 	/* border:			1px solid #7E0079; */
 	/* border:			1px solid #000000; */
 	/* border: none */
@@ -126,7 +122,7 @@
 	/* IE5.0 Does not paint borders and padding on inline elements without a height/width */
 	height:		expression(constExpression(ie50 ? "17px" : "auto"));
 
-        border: 1px solid #cccccc;
+        border: 1px solid #dddddd;
 
         margin-right: 4px
 

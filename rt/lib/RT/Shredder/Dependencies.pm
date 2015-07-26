@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -107,7 +107,7 @@ sub _PushDependency
             @_
            );
     my $rec = $args{'Shredder'}->PutObject( Object => $args{'TargetObject'} );
-    return if $rec->{'State'} & WIPED; # there is no object anymore
+    return if $rec->{'State'} & RT::Shredder::Constants::WIPED; # there is no object anymore
 
     push @{ $self->{'list'} },
         RT::Shredder::Dependency->new(

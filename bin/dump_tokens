@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_main;
+
+adminsuidsetup shift or die 'usage: dump_tokens username';
+
+foreach my $cust_main ( qsearch({ table     => 'cust_main',
+                                  extra_sql => "WHERE payby IN ('CARD','DCRD')",
+                               })
+) {
+  print $cust_main->custnum. ','. $cust_main->payinfo. "\n";
+}

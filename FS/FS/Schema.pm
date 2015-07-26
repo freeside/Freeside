@@ -2009,7 +2009,7 @@ sub tables_hashref {
         'locationname',    'varchar', 'NULL', $char_d, '', '',
         'address1',        'varchar',     '', $char_d, '', '', 
         'address2',        'varchar', 'NULL', $char_d, '', '', 
-        'city',            'varchar',     '', $char_d, '', '', 
+        'city',            'varchar', 'NULL', $char_d, '', '', 
         'county',          'varchar', 'NULL', $char_d, '', '', 
         'state',           'varchar', 'NULL', $char_d, '', '', 
         'zip',             'varchar', 'NULL',      10, '', '', 
@@ -2431,6 +2431,7 @@ sub tables_hashref {
         'payunique',   'varchar', 'NULL', $char_d, '', '',#separate paybatch "unique" functions from current usage
         'closed',         'char', 'NULL',       1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        'no_auto_apply',  'char', 'NULL',       1, '', '', 
 
         # cash/check deposit info fields
         'bank',        'varchar', 'NULL', $char_d, '', '',
@@ -2639,7 +2640,7 @@ sub tables_hashref {
         'first',         'varchar',     '', $char_d, '', '', 
         'address1',      'varchar',     '', $char_d, '', '', 
         'address2',      'varchar', 'NULL', $char_d, '', '', 
-        'city',          'varchar',     '', $char_d, '', '', 
+        'city',          'varchar', 'NULL', $char_d, '', '', 
         'state',         'varchar', 'NULL', $char_d, '', '', 
         'zip',           'varchar', 'NULL',      10, '', '', 
         'country',          'char',     '',       2, '', '', 
@@ -3197,6 +3198,10 @@ sub tables_hashref {
         'delay_start',   'int',     'NULL', '', '', '',
         'start_on_hold', 'char',    'NULL',  1, '', '',
         'agent_pkgpartid', 'varchar', 'NULL', 20, '', '',
+        'expire_months', 'int',     'NULL', '', '', '',
+        'adjourn_months', 'int',    'NULL', '', '', '',
+        'contract_end_months','int','NULL', '', '', '',
+        'change_to_pkgpart', 'int', 'NULL', '', '', '',
       ],
       'primary_key'  => 'pkgpart',
       'unique'       => [],
@@ -3222,6 +3227,10 @@ sub tables_hashref {
                             references => [ 'pkgpart' ],
                           },
                           { columns    => [ 'family_pkgpart' ],
+                            table      => 'part_pkg',
+                            references => [ 'pkgpart' ],
+                          },
+                          { columns    => [ 'change_to_pkgpart' ],
                             table      => 'part_pkg',
                             references => [ 'pkgpart' ],
                           },
@@ -5734,6 +5743,18 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'access_user_log' => {
+      'columns'      => [
+        'lognum',  'serial', '',        '', '', '',
+        'usernum',    'int', '',        '', '', '',
+        'path',   'varchar', '', 2*$char_d, '', '',
+        '_date',         @date_type,        '', '',
+      ],
+      'primary_key'  => 'lognum',
+      'unique'       => [],
+      'index'        => [ ['usernum'], ['path'], ['_date'] ],
+    },
+
     'sched_item' => {
       'columns' => [
         'itemnum',   'serial',      '', '', '', '', 
@@ -6902,6 +6923,8 @@ sub tables_hashref {
         'latexsmallfooter',     'text',     'NULL', '', '', '',
         'latexreturnaddress',   'text',     'NULL', '', '', '',
         'with_latexcoupon',     'char',     'NULL', '1', '', '',
+        'htmlwatermark',        'text',     'NULL', '', '', '',
+        'latexwatermark',       'text',     'NULL', '', '', '',
         'lpr',                  'varchar',  'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'confnum',

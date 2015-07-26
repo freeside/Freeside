@@ -253,7 +253,7 @@ sub void {
     }
   }
 
-  $error = $self->delete;
+  $error = $self->_delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -265,20 +265,22 @@ sub void {
 
 }
 
-=item delete
+# removed docs entirely and renamed method to _delete to further indicate it is
+# internal-only and discourage use
+#
+# =item delete
+# 
+# DO NOT USE THIS METHOD.  Instead, apply a credit against the invoice, or use
+# the B<void> method.
+# 
+# This is only for internal use by V<void>, which is what you should be using.
+# 
+# DO NOT USE THIS METHOD.  Whatever reason you think you have is almost certainly
+# wrong.  Use B<void>, that's what it is for.  Really.  This means you.
+# 
+# =cut
 
-This method now works but you probably shouldn't use it.  Instead, apply a
-credit against the invoice, or use the new void method.
-
-Using this method to delete invoices outright is really, really bad.  There
-would be no record you ever posted this invoice, and there are no check to
-make sure charged = 0 or that there are no associated cust_bill_pkg records.
-
-Really, don't use it.
-
-=cut
-
-sub delete {
+sub _delete {
   my $self = shift;
   return "Can't delete closed invoice" if $self->closed =~ /^Y/i;
 
@@ -888,6 +890,7 @@ sub hide {
 =item apply_payments_and_credits [ OPTION => VALUE ... ]
 
 Applies unapplied payments and credits to this invoice.
+Payments with the no_auto_apply flag set will not be applied.
 
 A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
@@ -914,7 +917,9 @@ sub apply_payments_and_credits {
 
   $self->select_for_update; #mutex
 
-  my @payments = grep { $_->unapplied > 0 } $self->cust_main->cust_pay;
+  my @payments = grep { $_->unapplied > 0 } 
+                   grep { !$_->no_auto_apply }
+                     $self->cust_main->cust_pay;
   my @credits  = grep { $_->credited > 0 } $self->cust_main->cust_credit;
 
   if ( $conf->exists('pkg-balances') ) {
@@ -2971,6 +2976,9 @@ sub process_re_X {
 
 }
 
+# this is called from search/cust_bill.html and given all its search 
+# parameters, so it needs to perform the same search.
+
 sub re_X {
   # spool_invoice ftp_invoice fax_invoice print_invoice
   my($method, $job, %param ) = @_;
@@ -2980,22 +2988,15 @@ sub re_X {
   }
 
   #some false laziness w/search/cust_bill.html
-  my $distinct = '';
-  my $orderby = 'ORDER BY cust_bill._date';
+  $param{'order_by'} = 'cust_bill._date';
 
-  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql_where(\%param);
+  my $query = FS::cust_bill->search(\%param);
+  delete $query->{'count_query'};
+  delete $query->{'count_addl'};
 
-  my $addl_from = 'LEFT JOIN cust_main USING ( custnum )';
-     
-  my @cust_bill = qsearch( {
-    #'select'    => "cust_bill.*",
-    'table'     => 'cust_bill',
-    'addl_from' => $addl_from,
-    'hashref'   => {},
-    'extra_sql' => $extra_sql,
-    'order_by'  => $orderby,
-    'debug' => 1,
-  } );
+  $query->{debug} = 1; # was in here before, is obviously useful  
+
+  my @cust_bill = qsearch( $query );
 
   $method .= '_invoice' unless $method eq 'email' || $method eq 'print';
 

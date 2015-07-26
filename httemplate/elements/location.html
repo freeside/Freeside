@@ -44,7 +44,7 @@ Example:
 % if ( $label_prefix eq '_location' ) {
 
     <TR>
-      <TD ALIGN="right" ><% $opt{'locationname_label'} || emt('Location ID') %></TD>
+      <TH ALIGN="right" ><% $opt{'locationname_label'} || emt('Location ID') %></TD>
       <TD COLSPAN=7>
         <INPUT TYPE     = "text"
                NAME     = "<%$pre%>locationname"
@@ -81,7 +81,7 @@ Example:
 % if ( ! $opt{'alt_format'} ) { #regular format
 
 <TR>
-      <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" <% $address2_label_style %>>*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" <% $address2_label_style %>><B>Unit&nbsp;#</B></FONT></TD>
+      <TH ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" <% $address2_label_style %>>*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" <% $address2_label_style %>><B>Unit&nbsp;#</B></FONT></TD>
       <TD COLSPAN=7>
         <INPUT TYPE     = "text"
                NAME     = "<%$pre%>address2"
@@ -169,15 +169,14 @@ Example:
 
 
 <TR>
-% if ($conf->exists('city_not_required')) {
-<input type="hidden" name="<% ($select_hash{'prefix'}) ? $select_hash{'prefix'} : '' %>city" value=" "/>
-%} else {
-  <<%$th%> ALIGN="right"><%$r%><% mt('City') |h %></<%$th%>>
+  <<%$th%> ALIGN="right">
+% unless ($conf->exists('cust_main-no_city_in_address')) {
+  <% $r %><% mt('City') |h %>
+% }
+  </<%$th%>>
   <TD WIDTH="1"><% include('/elements/city.html', %select_hash, 'text_style' => \@style ) %></TD>
-
   <<%$th%> ALIGN="right" WIDTH="1" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
   <TD WIDTH="1"><% include('/elements/select-county.html', %select_hash ) %></TD>
-% }
   <<%$th%> ALIGN="right" WIDTH="1"><%$r%><% mt('State') |h %></<%$th%>>
   <TD WIDTH="1">
     <% include('/elements/select-state.html', %select_hash ) %>
@@ -203,7 +202,7 @@ Example:
 
 % if ( $opt{enable_coords} ) {
 <TR>
-  <TD ALIGN="right"><% mt('Latitude') |h %></TD>
+  <TH ALIGN="right"><% mt('Latitude') |h %></TD>
   <TD COLSPAN=7>
     <INPUT TYPE  = "text"
            NAME  = "<%$pre%>latitude"
@@ -212,7 +211,7 @@ Example:
            <% $disabled %>
            <% $style %>
     >
-    <% mt('Longitude') |h %>
+    <FONT SIZE="-1" COLOR="#666666"><% mt('Longitude') |h %></FONT>
     <INPUT TYPE  = "text"
            NAME  = "<%$pre%>longitude"
            ID    = "<%$pre%>longitude"
@@ -234,13 +233,13 @@ Example:
 %
 % if ( $opt{enable_censustract} ) {
 <TR>
-  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TH ALIGN="right">Census&nbsp;tract</TD>
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
            ID="<% $pre %>enter_censustract" 
            NAME="<% $pre %>enter_censustract" 
            VALUE="<% $object->censustract |h %>">
-    <% '(automatic)' %>
+    <FONT SIZE="-1" COLOR="#333333"><% '(automatic)' %></FONT>
   </TD>
 </TR>
 % }
@@ -262,8 +261,9 @@ Example:
 %# For address standardization:
 %# keep a clean copy of the address so we know if we need
 %# to re-standardize
-% foreach (qw(address1 city state country zip latitude
-%             longitude censustract district addr_clean) ) {
+% foreach (qw(locationname address1 city state country zip latitude
+%             longitude censustract district addr_clean
+%             ) ) {
 <& hidden.html, field => 'old_'.$pre.$_, value => $object->get($_) &>
 % }
 %# Placeholders
@@ -290,7 +290,7 @@ Example:
   var clear_coords_on_change = [
     '<%$pre%>address1',
     '<%$pre%>address2',
-    '<%$pre%>city',
+    <% $conf->exists('cust_main-no_city_in_address') ? '' : qq('${pre}city',) %>
     '<%$pre%>state',
     '<%$pre%>zip',
     '<%$pre%>country'

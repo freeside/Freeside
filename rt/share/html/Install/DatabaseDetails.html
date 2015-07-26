@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -105,9 +105,6 @@ unless ( $db_type eq 'SQLite' ) {
     push @Types, 'DatabaseHost', 'DatabasePort', 'DatabaseAdmin',
         'DatabaseAdminPassword', 'DatabaseUser', 'DatabasePassword';
 }
-if ( $db_type eq 'Pg' ) {
-    push @Types, 'DatabaseRequireSSL';
-}
 
 
 if ( $Run ) {
@@ -129,7 +126,6 @@ if ( $Run ) {
 
     my ( $status, $msg ) = RT::Installer->SaveConfig;
     if ( $status ) {
-        delete $INC{'RT_SiteConfig.pm'};
         RT->LoadConfig;
         RT::Handle->FinalizeDatabaseType();
     # dba connect systemdsn

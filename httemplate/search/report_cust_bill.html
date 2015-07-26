@@ -29,8 +29,7 @@
       label         => mt('Customer Class'),
       field         => 'cust_classnum',
       multiple      => 1,
-     'pre_options'  => [ '' => emt('(none)') ],
-     'all_selected' => 1,
+     'pre_options'  => [ 0 => emt('(none)') ],
   &>
 
   </TABLE>
@@ -89,7 +88,12 @@
 <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD><% mt('Show only open invoices') |h %></TD>
-  </TR>
+</TR>
+
+<TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="invoiced" VALUE="1"></TD>
+    <TD><% emt('Exclude discounts from gross amount billed'), %></TD>
+</TR>
 
 % unless ( $custnum ) {
   <TR>

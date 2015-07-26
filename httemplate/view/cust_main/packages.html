@@ -180,8 +180,11 @@ my @packages = $cust_main->all_pkgs( {
   },
 } );
 
+my $is_anything_hidden = 0; # optimization
+
 my %change_to_from; # target pkgnum => current cust_pkg, for future changes
 my %changed_from; # old pkgnum => new cust_pkg, for past changes
+my %supplementals_of; # main pkgnum => arrayref of supplementals
 
 foreach my $cust_pkg ( @packages ) {
   my %hash = $cust_pkg->hash;
@@ -190,18 +193,33 @@ foreach my $cust_pkg ( @packages ) {
   $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
   if ( $cust_pkg->change_to_pkgnum ) {
     $change_to_from{$cust_pkg->change_to_pkgnum} = $cust_pkg;
+    $is_anything_hidden = 1;
   }
   if ( $cust_pkg->change_pkgnum ) {
     $changed_from{$cust_pkg->change_pkgnum} = $cust_pkg;
+    $is_anything_hidden = 1;
+  }
+  if ( $cust_pkg->main_pkgnum ) {
+    $supplementals_of{$cust_pkg->main_pkgnum} ||= [];
+    push @{ $supplementals_of{$cust_pkg->main_pkgnum} }, $cust_pkg;
+    $is_anything_hidden = 1;
   }
 }
 
 # filter out hidden package changes
-if ( keys %change_to_from or keys %changed_from ) {
+if ( $is_anything_hidden ) {
   my @displayable_packages;
   foreach my $cust_pkg (@packages) {
 
-    if ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
+    # if this package has any supplemental packages, it should remember them
+    $cust_pkg->set('_supplemental', $supplementals_of{$cust_pkg->pkgnum});
+
+    if ( $cust_pkg->main_pkgnum ) {
+
+      # it's a supplemental package of something else, and shouldn't be on the
+      # root list
+
+    } elsif ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
 
       # $cust_pkg is an ordered, not-yet-active package change target
       my $change_from = $change_to_from{ $cust_pkg->pkgnum };
@@ -217,7 +235,9 @@ if ( keys %change_to_from or keys %changed_from ) {
       $changed_to->set('changed_from_pkg', $cust_pkg);
 
     } else {
+
       push @displayable_packages, $cust_pkg;
+
     }
 
   }
@@ -252,7 +272,7 @@ $num_old_packages -= scalar(@packages);
 # don't include supplemental packages in this list; they'll be found from
 # their main packages
 # (as will change-target packages)
-@packages = grep !$_->main_pkgnum, @packages;
+####@packages = grep !$_->main_pkgnum, @packages;
 
 foreach my $cust_pkg ( @packages ) {
   $cust_pkg->{'_cust_pkg_discount_active'} =

@@ -347,7 +347,7 @@ sub dest_detail {
       });
     }
 
-    return '' unless $rate_prefix;
+    return $self->default_detail unless $rate_prefix;
 
     $regionnum = $rate_prefix->regionnum;
 

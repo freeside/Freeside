@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -61,7 +61,7 @@ sub quant {
     return $num unless @forms;
     return $forms[3] if !$num && $forms[3];
 
-    return $num .' '. $handle->numerate($num, @forms);
+    return $handle->numf($num) .' '. $handle->numerate($num, @forms);
 }
 
 sub numerate {
@@ -75,7 +75,7 @@ sub numerate {
     } else {
         $form = 2;
     }
-    return $forms[$form];
+    return $forms[$form] || (grep defined, @forms)[0];
 }
 
 RT::Base->_ImportOverlays();

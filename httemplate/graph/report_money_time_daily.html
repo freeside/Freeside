@@ -21,6 +21,18 @@
     'multiple' => 1,
 &>
 
+<tr>
+  <td />
+  <td>
+    <& /elements/checkbox.html,
+      field => 'exclude_discount',
+      value => 1,
+      curr_value => 0,
+    &>
+    <% emt('Exclude discounts from total sales') %>
+  </td>
+</TR>
+
 </TABLE>
 
 <BR><INPUT TYPE="submit" VALUE="Display">

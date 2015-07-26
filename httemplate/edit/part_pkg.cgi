@@ -28,7 +28,7 @@
 
      'onsubmit'              => 'confirm_submit',
 
-     'labels' => { 
+     'labels' => {
                    'pkgpart'          => 'Package Definition',
                    'pkg'              => 'Package',
                    %locale_field_labels,
@@ -69,6 +69,10 @@
                    'supp_dst_pkgpart' => 'When ordering package, also order',
                    'report_option'    => 'Report classes',
                    'delay_start'      => 'Default delay (days)',
+                   'adjourn_months'   => 'Suspend the package after ',
+                   'contract_end_months' => 'Contract ends after ',
+                   'expire_months'    => 'Cancel the package after ',
+                   'change_to_pkgpart'=> 'and replace it with ',
                  },
 
      'fields' => [
@@ -164,6 +168,37 @@
                          sort $conf->config('currencies')
                      ),
 
+                     ( $conf->exists('part_pkg-delay_start')
+                       ? ( { type  => 'tablebreak-tr-title',
+                             value => 'Delayed start',
+                           },
+                           { field => 'delay_start',
+                             type => 'text', size => 6 },
+                         )
+                       : ()
+                     ),
+
+                     { type   => 'tablebreak-tr-title',
+                       value  => 'Limited duration',
+                     },
+                     { field  => 'adjourn_months',
+                       type   => 'select-months',
+                     },
+                     { field  => 'contract_end_months',
+                       type   => 'select-months',
+                     },
+                     { field  => 'expire_months',
+                       type   => 'select-expire_months',
+                     },
+                     { field  => 'change_to_pkgpart',
+                       type   => 'select-part_pkg',
+                       extra_sql  => sub { $pkgpart
+                        ? "AND pkgpart != $pkgpart"
+                        : ''
+                       },
+                       empty_label => 'no package',
+                     },
+
                      #price plan
                      #setup fee
                      #recurring frequency
@@ -200,7 +235,6 @@
                        include_opt_callback =>
                          sub { pkgpart => $_[0]->pkgpart },
                      },
-                      
 
                      { type  => 'tablebreak-tr-title',
                        value => 'Promotions', #better name?
@@ -218,16 +252,6 @@
                        : ( { field=>'setup_cost', type=>'fixed', },
                            { field=>'recur_cost', type=>'fixed', },
                          )
-                     ),
-
-                     ( $conf->exists('part_pkg-delay_start')
-                       ? ( { type  => 'tablebreak-tr-title',
-                             value => 'Delayed start',
-                           },
-                           { field => 'delay_start',
-                             type => 'text', size => 6 },
-                         )
-                       : ()
                      ),
 
                    { type => 'columnnext' },
@@ -1219,6 +1243,11 @@ my $field_callback = sub {
                            };
     $fieldref->{layer_fields} = \%taxproduct_fields;
     $fieldref->{layer_values_callback} = $taxproduct_values;
+  } elsif ($field eq 'taxproductnum') { # part_pkg-taxproduct, new style
+    if ( !$taxproducts ) {
+      # then make the widget go away
+      $fieldref->{type} = 'hidden';
+    }
   }
 };
 

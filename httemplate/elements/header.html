@@ -4,11 +4,12 @@ Example:
 
   <& /elements/header.html',
        {
-         'title'   => 'Title',
-         'menubar' => \@menubar,
-         'etc'     => '', #included in <BODY> tag, for things like onLoad=
-         'head'    => '', #included before closing </HEAD> tag
-         'nobr'    => 0,  #1 for no <BR><BR> after the title
+         'title'     => 'Title',
+         'menubar'   => \@menubar,
+         'etc'       => '', #included in <BODY> tag, for things like onLoad=
+         'head'      => '', #included before closing </HEAD> tag
+         'nobr'      => 0,  #1 for no <BR><BR> after the title
+         'no_jquery' => #for use from RT, which loads its own
        }
   &>
 
@@ -23,7 +24,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% $title %>
+      <% encode_entities($title) || $title_noescape %>
     </TITLE>
     <!-- per RT, to prevent IE compatibility mode -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -42,6 +43,11 @@ Example:
               ) |n
     %>
 
+%   unless ( $no_jquery ) {
+      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
+%   }
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
 
@@ -75,18 +81,18 @@ Example:
 
 %       if ( $mobile ) {
 
-        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#cccccc">
+        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#dddddd">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar.toString());
           </SCRIPT>
         </TD>
-        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#cccccc">
+        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#dddddd">
             <% include('searchbar-combined.html') |n %>
         </TD>
 
 %       } else {
 
-        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#dddddd">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -96,27 +102,27 @@ Example:
 
       <TR CLASS="fssearchbar">
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           <% include('searchbar-prospect.html') |n %>
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           <% include('searchbar-cust_main.html') |n %>
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="center">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="center">
           <% include('searchbar-address2.html') |n %>
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right">
           <% include('searchbar-cust_bill.html') |n %>
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           <% include('searchbar-cust_svc.html') |n %>
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
           <% include('searchbar-ticket.html') |n %>
         </TD>
 %       }
@@ -128,7 +134,7 @@ Example:
 
       <TR CLASS="fsmenubar">
 
-        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#dddddd">
         </TD>
 
       </TR>
@@ -142,7 +148,7 @@ Example:
 
 % if ( $menu_position eq 'left' ) {
 
-        <TD BGCOLOR="#cccccc" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right" CLASS="fsmenubar">
+        <TD BGCOLOR="#dddddd" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right" CLASS="fsmenubar">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -157,6 +163,8 @@ Example:
 
         </TD>
 
+% } else { #$menu_position eq 'top'
+    <BR>
 % }
 %# page content starts here
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
@@ -166,14 +174,14 @@ Example:
           </H1>
 
 % unless ( $nobr ) {
-          <BR><BR>
+          <BR>
 % }
 
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
 <%init>
 
 my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
-my( $nobr, $nocss ) = ( 0, 0 );
+my( $nobr, $nocss, $no_jquery ) = ( 0, 0, 0 );
 
 my $mobile;
 
@@ -181,12 +189,13 @@ if ( ref($_[0]) ) {
   my $opt = shift;
   $title   = $opt->{title};
   $title_noescape = $opt->{title_noescape};
-  $menubar = $opt->{menubar};
-  $etc     = $opt->{etc};
-  $head    = $opt->{head};
-  $nobr    = $opt->{nobr};
-  $nocss   = $opt->{nocss};
-  $mobile  = $opt->{mobile};
+  $menubar    = $opt->{menubar};
+  $etc        = $opt->{etc};
+  $head       = $opt->{head};
+  $nobr       = $opt->{nobr};
+  $nocss      = $opt->{nocss};
+  $mobile     = $opt->{mobile};
+  $no_jquery  = $opt->{no_jquery};
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.

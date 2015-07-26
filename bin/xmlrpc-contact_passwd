@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my( $email, $current_pw, $new_pw ) = @ARGV;
+
+my $uri = new URI 'http://localhost:8080/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $login_result = $server->call(
+  'FS.ClientAPI_XMLRPC.login',
+    'email'    => $email,
+    'password' => $current_pw,
+);
+die $login_result->{'error'}."\n" if $login_result->{'error'};
+
+my $passwd_result = $server->call(
+  'FS.ClientAPI_XMLRPC.contact_passwd',
+    'session_id'   => $login_result->{'session_id'},
+    'new_password' => $new_pw,
+);
+die $passwd_result->{'error'}."\n" if $passwd_result->{'error'};
+
+warn "Password changed.\n";
+
+1;

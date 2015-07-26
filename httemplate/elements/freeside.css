@@ -179,13 +179,11 @@ div.fstabcontainer {
   background-color:#ffffff;
   padding:8px;
   clear: left;
-  border-left: thin solid #CFDEFF;
-  border-right: thin solid #CFDEFF;
-  border-bottom: thin solid #CFDEFF;
+  border-left: thin solid #7e0079;
+  border-right: thin solid #7e0079;
+  border-bottom: thin solid #7e0079;
+  border-top: thin solid #7e0079;
 /*
-  border-left:1px solid #7e0079;
-  border-right:1px solid #7e0079;
-  border-bottom:1px solid #7e0079;
   border-top:1px solid #7e0079;
 */
 }
@@ -230,13 +228,13 @@ div.fstabcontainer {
 .fsinnerbox {
   /* background-color:#cccccc; */
   padding:2px;
-  border: 1px solid #dddddd;
-  border-radius: 2px;
+  border: thin solid #999999;
+  border-radius: .25em;
 }
 
 .fsinnerbox th {
   font-weight:normal;
-  font-size:75%;
+  font-size:80%;
   valign: bottom;
   color: #666666;
 }
@@ -256,6 +254,24 @@ table.grid {
   border-radius: 2px;
 }
 
+tr.row0 {
+  background-color: #eeeeee;
+}
+
+tr.row1 {
+  background-color: #ffffff;
+}
+
+.grid tfoot tr {
+  background-color: #dddddd;
+  font-style: italic;
+}
+
+/* border at the top of the footer, but not between footer rows */
+.grid tfoot tr:first-child td {
+  border-top: 1px dashed black;
+}
+
 th, td {
   vertical-align: top;
 }
@@ -266,12 +282,11 @@ thead th.grid {
   padding-bottom: 2px;
   border: none;
   empty-cells: show;
-  font-weight:normal;
+/*  font-weight:normal; */
   font-size:90%;
   valign: bottom;
-  color: #666666;
-  background: #ffffff;
-  border-bottom: 1px solid #666666;
+/*  color: #666666; */
+  border-bottom: 1px solid #999999;
 }
 
 td.grid {
@@ -302,4 +317,21 @@ td.label {
 .error {
   font-size: large;
   color: #ff0000;
+}
+
+div#overDiv {
+  box-shadow: #333333 1px 1px 2px;
+}
+
+/* view/cust_main/packages/package.html */
+div.package-marker-supplemental {
+  height: 100%;
+  border-left: solid #bbbbff 30px;
+  display: inline-block;
+}
+
+div.package-marker-change_from {
+  height: 100%;
+  border-left: solid #bbffbb 30px;
+  display: inline-block;
 }

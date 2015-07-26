@@ -1,7 +1,7 @@
 % if ( ($curuser->access_right('Edit customer tags') && @part_tag) || $is_report ) {
 
   <TR>
-    <TD ALIGN="right"><% $opt{'label'} || 'Tags' %></TD>
+    <TH ALIGN="right"><% $opt{'label'} || 'Tags' %></TD>
     <TD>
       <% include( '/elements/select-cust_tag.html',
                      'curr_value' => \@curr_tagnum,

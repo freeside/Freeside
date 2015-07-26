@@ -6,7 +6,7 @@ BEGIN {
     sub wanted {
         -f && /\.html$/ && $_ !~ /Logout.html$/ && $File::Find::dir !~ /RichText/;
     }
-    my $tests = 8;
+    my $tests = 7;
     find( sub { wanted() and $tests += 4 }, 'share/html/' );
     plan tests => $tests + 1; # plus one for warnings check
 }
@@ -36,12 +36,10 @@ is($agent->status, 200, "Fetched the page ok");
 $agent->content_contains('Logout', "Found a logout link");
 
 
-find ( sub { wanted() and test_get($agent, $File::Find::name) } , 'share/html/');
+find ( { wanted => sub { wanted() and test_get($agent, $File::Find::name) }, no_chdir => 1 } , 'share/html/');
 
-TODO: {
-    local $TODO = "we spew *lots* of undef warnings";
-    $agent->no_warnings_ok;
-};
+# We expect to spew a lot of warnings; toss them away
+$agent->get_warnings;
 
 sub test_get {
     my $agent = shift;

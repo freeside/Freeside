@@ -100,7 +100,7 @@
 % if ( $location->county ) {
  (<% $location->county |h %> county)\
 % }
-,<% state_label( $location->state, $location->country ) |h %>
+<% ($location->city || $location->county) ? ', ' : ''%><% state_label( $location->state, $location->country ) |h %>
   <% $location->zip %>
 </TD>
 </TR>

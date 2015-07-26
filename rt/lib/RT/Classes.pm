@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,49 +64,22 @@ sub Table {'Classes'}
     return ($self->SUPER::_Init(@_));
  }
 
-=head2 Next
+=head2 AddRecord
 
-Returns the next Object that this user can see.
-
-=cut
-
-sub Next {
-    my $self = shift;
-
-
-    my $Object = $self->SUPER::Next();
-    if ((defined($Object)) and (ref($Object))) {
-   if ( $Object->CurrentUserHasRight('SeeClass') ) {
-        return($Object);
-    }
-
-    #If the user doesn't have the right to show this Object
-    else {
-        return($self->Next());
-    }
-    }
-    #if there never was any Object
-    else {
-    return(undef);
-    }
-
-}
-
-sub ColumnMapClassName {
-    return 'RT__Class';
-}
-
-=head2 NewItem
-
-Returns an empty new RT::Class item
+Overrides the collection to ensure that only Classes the user can
+see are returned.
 
 =cut
 
-sub NewItem {
+sub AddRecord {
     my $self = shift;
-    return(RT::Class->new($self->CurrentUser));
+    my ($record) = @_;
+
+    return unless $record->CurrentUserHasRight('SeeClass');
+    return $self->SUPER::AddRecord( $record );
 }
 
+sub _SingularClass { "RT::Class" }
 
 RT::Base->_ImportOverlays();
 

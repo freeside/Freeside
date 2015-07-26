@@ -37,6 +37,14 @@
         'value' => 1,
     &>
 
+    <& /elements/tr-checkbox.html,
+        'label'      => 'Show Gross &amp; Discounted',
+        'field'      => 'grossdiscount',
+        'value'      => 1,
+        'curr_value' => defined($cgi->param('grossdiscount'))
+                        ? scalar($cgi->param('grossdiscount'))
+                        : 1, #default to on in v4
+    &>
     
   </TABLE>
 

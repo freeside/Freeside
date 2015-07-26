@@ -40,7 +40,7 @@
 % }
 <BR>
 <TABLE> <TR>
-  <TD STYLE="width:650px">
+  <TD>
 %#; padding-right:2px; vertical-align:top">
     <FONT CLASS="fsinnerbox-title"><% mt('Billing address') |h %></FONT>
     <TABLE CLASS="fsinnerbox" WIDTH="100%">
@@ -58,7 +58,7 @@
 </TR>
 <TR><TD STYLE="height:14px"></TD></TR>
 <TR>
-  <TD STYLE="width:650px">
+  <TD>
     <FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
     <INPUT TYPE="checkbox" 
            NAME="same"
@@ -68,8 +68,8 @@
            VALUE="Y"
            <% $has_ship_address ? '' : 'CHECKED' %>
     ><% mt('same as billing address') |h %>
-    <DIV CLASS="fsinnerbox">
-      <TABLE ID="table_ship_location" WIDTH="100%">
+    <DIV ID="div_ship_location">
+      <TABLE WIDTH="100%" CLASS="fsinnerbox">
       <& cust_main/before_ship_location.html, $cust_main &>
       <& /elements/location.html,
           object => $cust_main->ship_location,
@@ -80,13 +80,12 @@
       &>
 % unless ($conf->exists('invoice-ship_address')) { #it's always on, so hide per-cust config
         <TR>
-          <TD>&nbsp;</TD>
-          <TD COLSPAN="7">
+          <TD COLSPAN="8">
             <% include('/elements/checkbox.html',
                  'field'      => 'invoice_ship_address',
                  'value'      => 'Y',
                  'curr_value' => $cust_main->invoice_ship_address,
-                 'postfix'    => emt('included on invoices'),
+                 'postfix'    => emt('Include service address on invoices'),
             ) %>
           </TD>
         </TR>
@@ -96,23 +95,21 @@
   </TD>
 </TR></TABLE>
 
-<SCRIPT>
+<SCRIPT TYPE="text/javascript">
+
 function samechanged(what) {
-%# not display = 'none', because we still want it to take up space
-%#  document.getElementById('table_ship_location').style.visibility = 
-%#    what.checked ? 'hidden' : 'visible';
-  var t1 = document.getElementById('table_ship_location');
   if ( what.checked ) {
-    t1.style.visibility = 'hidden';
-  }
-  else {
-    t1.style.visibility = 'visible'
+    $('#div_ship_location').slideUp();
+  } else {
+    $('#div_ship_location').slideDown();
   }
 }
-//samechanged(document.getElementById('same'));
-</SCRIPT>
 
-<BR>
+% if ( ! $has_ship_address ) {
+  $('#div_ship_location').hide();
+% }
+
+</SCRIPT>
 
 <& cust_main/contacts_new.html, 'cust_main'=>$cust_main, &>
 

@@ -229,7 +229,8 @@ sub receipts { #net payments
   my $sql = 'SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay';
   if ( $opt{'setuprecur'} ) {
     $sql = 'SELECT SUM('.
-            FS::cust_bill_pkg->paid_sql($speriod, $eperiod, %opt).
+            #in practice, but not appearance, paid_sql accepts end before start
+            FS::cust_bill_pkg->paid_sql($eperiod, $speriod, %opt).
            ') FROM cust_bill_pkg';
   }
 
@@ -264,6 +265,81 @@ sub netrefunds {
                                               ).
                $self->for_opts(%opt)
   );
+}
+
+=item discounted: The sum of discounts on invoices in the period.
+
+=cut
+
+sub discounted {
+  my( $self, $speriod, $eperiod, $agentnum, %opt) = @_;
+
+  my $sql = 'SELECT SUM(';
+  if ($opt{'setuprecur'}) {
+    # (This isn't exact but it works in most cases.)
+    # When splitting into setup/recur values, 
+    # if the discount is allowed to apply to setup fees (discount.setup = 'Y')
+    # then split it between the "setup" and "recurring" rows in proportion to 
+    # the "unitsetup" and "unitrecur" fields of the line item. 
+    $sql .= <<EOF;
+CASE
+  WHEN discount.setup = 'Y' 
+    AND ((COALESCE(cust_bill_pkg.unitsetup,0) > 0) 
+          OR (COALESCE(cust_bill_pkg.unitrecur,0) > 0))
+  THEN
+EOF
+    if ($opt{'setuprecur'} eq 'setup') {
+      $sql .= '    (COALESCE(cust_bill_pkg.unitsetup,0)';
+    } elsif ($opt{'setuprecur'} eq 'recur') {
+      $sql .= '    (COALESCE(cust_bill_pkg.unitrecur,0)';
+    } else {
+      die 'Unrecognized value for setuprecur';
+    }
+    $sql .= ' / (COALESCE(cust_bill_pkg.unitsetup,0) + COALESCE(cust_bill_pkg.unitrecur,0)))';
+    $sql .= " * cust_bill_pkg_discount.amount\n";
+    # Otherwise, show it all as "recurring"
+    if ($opt{'setuprecur'} eq 'setup') {
+      $sql .= "  ELSE 0\n";
+    } elsif ($opt{'setuprecur'} eq 'recur') {
+      $sql .= "  ELSE cust_bill_pkg_discount.amount\n";
+    }
+    $sql .= "END\n";
+  } else {
+    # simple case, no setuprecur
+    $sql .= "cust_bill_pkg_discount.amount\n";
+  }
+  $sql .= <<EOF;
+) FROM cust_bill_pkg_discount
+  JOIN cust_bill_pkg     USING  ( billpkgnum )
+  JOIN cust_bill         USING  ( invnum )
+  JOIN cust_main         USING  ( custnum )
+EOF
+  if ($opt{'setuprecur'}) {
+    $sql .= <<EOF;
+  JOIN cust_pkg_discount USING ( pkgdiscountnum )
+  LEFT JOIN discount          USING ( discountnum )
+EOF
+  }
+  $self->scalar_sql(
+    $sql 
+    . 'WHERE '
+    . $self->in_time_period_and_agent( $speriod,
+                                       $eperiod,
+                                       $agentnum,
+                                       'cust_bill._date'
+                                      )
+    . $self->for_opts(%opt)
+  );
+}
+
+=item gross: invoiced + discounted
+
+=cut
+
+sub gross {
+  my( $self, $speriod, $eperiod, $agentnum, %opt) = @_;
+    $self->invoiced(   $speriod, $eperiod, $agentnum, %opt)
+  + $self->discounted( $speriod, $eperiod, $agentnum, %opt);
 }
 
 #XXX docs
@@ -409,8 +485,8 @@ sub cust_pkg_recur_cost {
 
 =item cust_bill_pkg: the total package charges on invoice line items.
 
-'charges': limit the type of charges included (setup, recur, usage).
-Should be a string containing one or more of 'S', 'R', or 'U'; if 
+'charges': limit the type of charges included (setup, recur, usage, discount).
+Should be a string containing one or more of 'S', 'R', 'U', or 'D'; if 
 unspecified, defaults to all three.
 
 'classnum': limit to this package class.
@@ -440,6 +516,7 @@ sub cust_bill_pkg {
   $sum += $self->cust_bill_pkg_setup(@_) if $charges{S};
   $sum += $self->cust_bill_pkg_recur(@_) if $charges{R};
   $sum += $self->cust_bill_pkg_detail(@_) if $charges{U};
+  $sum += $self->cust_bill_pkg_discount(@_) if $charges{D};
 
   if ($opt{'average_per_cust_pkg'}) {
     my $count = $self->cust_bill_pkg_count_pkgnum(@_);
@@ -626,47 +703,28 @@ sub cust_bill_pkg_detail {
 }
 
 sub cust_bill_pkg_discount {
-  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
-
-  #need to do this the new multi-classnum way if it gets re-enabled
-  #my $where = '';
-  #my $comparison = '';
-  #if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
-  #  if ( $1 == 0 ) {
-  #    $comparison = "IS NULL";
-  #  } else {
-  #    $comparison = "= $1";
-  #  }
-  #
-  #  if ( $opt{'use_override'} ) {
-  #    $where = "(
-  #      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
-  #      override.classnum $comparison AND pkgpart_override IS NOT NULL
-  #    )";
-  #  } else {
-  #    $where = "part_pkg.classnum $comparison";
-  #  }
-  #}
+  my $self = shift;
+  my ($speriod, $eperiod, $agentnum, %opt) = @_;
+  # apply all the same constraints here as for setup/recur
 
   $agentnum ||= $opt{'agentnum'};
 
-  my $total_sql =
-    " SELECT COALESCE( SUM( cust_bill_pkg_discount.amount ), 0 ) ";
+  my @where = (
+    '(pkgnum != 0 OR feepart IS NOT NULL)',
+    $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
+    $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
+  );
 
-  $total_sql .=
-    " FROM cust_bill_pkg_discount
-        LEFT JOIN cust_bill_pkg USING ( billpkgnum )
-        LEFT JOIN cust_bill USING ( invnum )
-        LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
-  #      LEFT JOIN cust_pkg_discount USING ( pkgdiscountnum )
-  #      LEFT JOIN discount USING ( discountnum )
-  #      LEFT JOIN cust_pkg USING ( pkgnum )
-  #      LEFT JOIN part_pkg USING ( pkgpart )
-  #      LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
-  
-  return $self->scalar_sql($total_sql);
+  my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg_discount.amount), 0)
+  FROM cust_bill_pkg_discount
+  JOIN cust_bill_pkg USING (billpkgnum)
+  $cust_bill_pkg_join
+  WHERE " . join(' AND ', grep $_, @where);
 
+  $self->scalar_sql($total_sql);
 }
 
 ##### package churn report #####
@@ -889,6 +947,7 @@ sub with_classnum {
 
   $classnum = [ $classnum ] if !ref($classnum);
   @$classnum = grep /^\d+$/, @$classnum;
+  return '' if !@$classnum;
   my $in = 'IN ('. join(',', @$classnum). ')';
 
   if ( $use_override ) {

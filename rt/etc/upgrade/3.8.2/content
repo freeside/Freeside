@@ -1,6 +1,19 @@
-@Initial = (
+use strict;
+use warnings;
+
+our @Initial = (
     sub {
-        $RT::Logger->warning(
+        # We do the delete in pure SQL because Attribute collections
+        # otherwise attempt to hash everything in memory.  As this may
+        # be a large list, do it directly.
+        RT->DatabaseHandle->dbh->do(<<EOSQL);
+            DELETE FROM Attributes
+             WHERE Name = 'DeferredRecipients'
+               AND Content IS NULL;
+EOSQL
+    },
+    sub {
+        RT->Logger->warning(
             "Going to add [OLD] prefix to all templates in approvals queue."
             ." If you have never used approvals, you can safely delete all the"
             ." templates with the [OLD] prefix. Leave the new Approval templates because"
@@ -10,7 +23,7 @@
         my $approvals_q = RT::Queue->new( RT->SystemUser );
         $approvals_q->Load('___Approvals');
         unless ( $approvals_q->id ) {
-            $RT::Logger->error("You have no approvals queue.");
+            RT->Logger->error("You have no approvals queue.");
             return 1;
         }
 
@@ -19,19 +32,32 @@
         while ( my $tmpl = $templates->Next ) {
             my ($status, $msg) = $tmpl->SetName( "[OLD] ". $tmpl->Name );
             unless ( $status ) {
-                $RT::Logger->error("Couldn't rename template #". $tmpl->id .": $msg");
+                RT->Logger->error("Couldn't rename template #". $tmpl->id .": $msg");
             }
         }
         return 1;
     },
-);
-@ACL = (
-    { GroupDomain => 'SystemInternal',
-      GroupType => 'privileged',
-      Right  => 'ShowApprovalsTab', },
+
+    sub {
+        my $group = RT::Group->new( RT->SystemUser );
+        $group->DBIx::SearchBuilder::Record::LoadByCols(
+            Domain => 'SystemInternal',
+            Type   => 'Privileged',
+        );
+        unless ($group->id) {
+            RT->Logger->warn("Failed to load Privilged group");
+            return;
+        }
+        my ( $return, $msg ) = $group->PrincipalObj->GrantRight(
+            Right => 'ShowApprovalsTab',
+            Object => RT->System,
+        );
+        RT->Logger->warn("Failed to grant ShowApprovalsTab right: $msg")
+            unless $return;
+    },
 );
 
-@Templates = (
+our @Templates = (
     {  Queue       => '___Approvals',
        Name        => "New Pending Approval",    # loc
        Description =>
@@ -106,17 +132,17 @@ The ticket has been approved, you may now start to act on it.
     },
 );
 
-@Final = (
+our @Final = (
     sub {
-        $RT::Logger->debug("Going to adjust dashboards");
+        RT->Logger->debug("Going to adjust dashboards");
         my $sys = RT::System->new(RT->SystemUser);
 
         my $attrs = RT::Attributes->new( RT->SystemUser );
-        $attrs->UnLimit;
+        $attrs->Limit( FIELD => "Name", VALUE => "Dashboard");
         my @dashboards = $attrs->Named('Dashboard');
 
         if (@dashboards == 0) {
-            $RT::Logger->debug("You have no dashboards. Skipped.");
+            RT->Logger->debug("You have no dashboards. Skipped.");
             return 1;
         }
 
@@ -140,28 +166,28 @@ The ticket has been approved, you may now start to act on it.
                 };
             }
             my ($status, $msg) = $attr->SetContent( $props );
-            $RT::Logger->error($msg) unless $status;
+            RT->Logger->error($msg) unless $status;
         }
 
-        $RT::Logger->debug("Fixed.");
+        RT->Logger->debug("Fixed.");
         return 1;
     },
     sub {
         my $approvals_q = RT::Queue->new( RT->SystemUser );
         $approvals_q->Load('___Approvals');
         unless ( $approvals_q->id ) {
-            $RT::Logger->error("You have no approvals queue.");
+            RT->Logger->error("You have no approvals queue.");
             return 1;
         }
 
         require File::Temp;
         my ($tmp_fh, $tmp_fn) = File::Temp::tempfile( 'rt-approvals-scrips-XXXX', CLEANUP => 0 );
         unless ( $tmp_fh ) {
-            $RT::Logger->error("Couldn't create temporary file.");
+            RT->Logger->error("Couldn't create temporary file.");
             return 0;
         }
 
-        $RT::Logger->warning(
+        RT->Logger->warning(
             "IMPORTANT: We're going to delete all scrips in Approvals queue"
             ." and save them in '$tmp_fn' file."
         );
@@ -169,17 +195,20 @@ The ticket has been approved, you may now start to act on it.
         require Data::Dumper;
 
         my $scrips = RT::Scrips->new( RT->SystemUser );
-        $scrips->LimitToQueue( $approvals_q->id );
+        $scrips->{'with_disabled_column'} = 0;
+        $scrips->Limit( FIELD => 'Queue', VALUE => $approvals_q->id );
         while ( my $scrip = $scrips->Next ) {
             my %tmp =
-                map { $tmp->{ $_ } = $scrip->_Value( $_ ) }
-                $scrip->ReadableAttributes;
+                map { $_ => $scrip->_Value( $_ ) }
+                qw/id Description ScripCondition ScripAction
+                   CustomIsApplicableCode CustomPrepareCode CustomCommitCode
+                   Stage Queue Template Creator Created LastUpdatedBy LastUpdated/;
 
             print $tmp_fh Data::Dumper::Dumper( \%tmp );
 
-            my ($status, $msg) = $scrip->Delete;
+            my ($status, $msg) = $scrip->DBIx::SearchBuilder::Record::Delete;
             unless ( $status ) {
-                $RT::Logger->error( "Couldn't delete scrip: $msg");
+                RT->Logger->error( "Couldn't delete scrip: $msg");
             }
         }
     },

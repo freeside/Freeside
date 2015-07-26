@@ -101,7 +101,7 @@ my $orderby = $cgi->param('orderby') || 'custnum';
 
 my $sub_cust = sub {
   my $c = qsearchs('cust_main', { custnum => shift->custnum } );
-  return $c ? $c->name : '<FONT COLOR="red"><B>(not found)</B></FONT>';
+  return $c ? encode_entities($c->name) : '<FONT COLOR="red"><B>(not found)</B></FONT>';
 };
 
 my $sub_date = sub {

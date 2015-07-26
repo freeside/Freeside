@@ -5,6 +5,7 @@ use warnings;
 use vars qw( $FSURL $QUERY_STRING );
 use base 'HTML::Mason::Request';
 use FS::Trace;
+use FS::access_user_log;
 
 $FSURL = 'http://Set/FS_Mason_Request_FSURL/in_standalone_mode/';
 $QUERY_STRING = '';
@@ -110,6 +111,10 @@ sub freeside_setup {
       FS::Trace->log('    UTF-8-decoding form data');
       #
       foreach my $param ( $cgi->param ) {
+        
+        #we can't switch to multi_param until we're done supporting deb 7
+        local($CGI::LIST_CONTEXT_WARN) = 0;
+
         my @values = $cgi->param($param);
         next if $cgi->uploadInfo($values[0]);
         #warn $param;
@@ -118,6 +123,8 @@ sub freeside_setup {
       }
 
     }
+
+    FS::access_user_log->insert_new_path( $filename );
 
     FS::Trace->log('    done');
 

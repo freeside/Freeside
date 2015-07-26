@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -69,9 +69,9 @@ package RT::GroupMembers;
 use strict;
 use warnings;
 
-use RT::GroupMember;
-
 use base 'RT::SearchBuilder';
+
+use RT::GroupMember;
 
 sub Table { 'GroupMembers'}
 
@@ -88,9 +88,10 @@ groups from users for display purposes
 sub LimitToUsers {
     my $self = shift;
 
-    my $principals = $self->NewAlias('Principals');
-    $self->Join( ALIAS1 => 'main', FIELD1 => 'MemberId',
-                 ALIAS2 => $principals, FIELD2 =>'id');
+    my $principals = $self->Join(
+        ALIAS1 => 'main', FIELD1 => 'MemberId',
+        TABLE2 => 'Principals', FIELD2 =>'id'
+    );
 
     $self->Limit(       ALIAS => $principals,
                          FIELD => 'PrincipalType',
@@ -113,9 +114,10 @@ groups from users for display purposes
 sub LimitToGroups {
     my $self = shift;
 
-    my $principals = $self->NewAlias('Principals');
-    $self->Join( ALIAS1 => 'main', FIELD1 => 'MemberId',
-                 ALIAS2 => $principals, FIELD2 =>'id');
+    my $principals = $self->Join(
+        ALIAS1 => 'main', FIELD1 => 'MemberId',
+        TABLE2 => 'Principals', FIELD2 =>'id'
+    );
 
     $self->Limit(       ALIAS => $principals,
                          FIELD => 'PrincipalType',
@@ -142,23 +144,11 @@ sub LimitToMembersOfGroup {
                          VALUE => $group,
                          FIELD => 'GroupId',
                          ENTRYAGGREGATOR => 'OR',
-			             QUOTEVALUE => 0
+                         QUOTEVALUE => 0
                          ));
 
 }
 
-
-
-=head2 NewItem
-
-Returns an empty new RT::GroupMember item
-
-=cut
-
-sub NewItem {
-    my $self = shift;
-    return(RT::GroupMember->new($self->CurrentUser));
-}
 RT::Base->_ImportOverlays();
 
 1;

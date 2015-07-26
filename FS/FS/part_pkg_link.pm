@@ -250,12 +250,10 @@ sub check {
     my $dst_pkg = $self->dst_pkg;
     if ( $src_pkg->freq eq '0' and $dst_pkg->freq ne '0' ) {
       return "One-time charges can't have supplemental packages."
-    } elsif ( $dst_pkg->freq ne '0' ) {
-      my $ratio = $dst_pkg->freq / $src_pkg->freq;
-      if ($ratio != int($ratio)) {
-        return "Supplemental package period (pkgpart ".$dst_pkg->pkgpart.
-               ") must be an integer multiple of main package period.";
-      }
+    } elsif ( $dst_pkg->freq == 0 ) {
+      return "The billing period of a supplemental package must be a whole number of months.";
+    } elsif ( $src_pkg->freq == 0 ) {
+      return "To have supplemental packages, the billing period of a package must be a whole number of months.";
     }
   }
 

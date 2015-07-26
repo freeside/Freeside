@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -73,14 +73,16 @@ not only concatenate files, but also minify them
 
 sub Squish {
     my $self    = shift;
-    my $content;
+    my $content = "";
 
-    for my $file ( RT->Config->Get('JSFiles') ) {
-        my $path = "/NoAuth/js/$file";
-        if ( $HTML::Mason::Commands::m->comp_exists($path) ) {
-            $content .= $HTML::Mason::Commands::m->scomp($path);
+    for my $file ( RT::Interface::Web->JSFiles ) {
+        my $uri = $file =~ m{^/} ? $file : "/static/js/$file";
+        my $res = RT::Interface::Web::Handler->GetStatic($uri);
+
+        if ($res->is_success) {
+            $content .= $res->decoded_content;
         } else {
-            RT->Logger->error("Unable to open $path for JS Squishing");
+            RT->Logger->error("Unable to fetch $uri for JS Squishing: " . $res->status_line);
             next;
         }
     }

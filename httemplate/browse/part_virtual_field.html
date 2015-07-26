@@ -30,6 +30,6 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit custom fields');
 
 </%init>

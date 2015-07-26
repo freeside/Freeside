@@ -25,22 +25,28 @@
 
   function rescom_changed(what) {
     if ( what.checked == (what.value == 'Commercial' ) ) {
-      document.getElementById('company_row').style.display = '';
-      document.getElementById('contacts_div').style.display = '';
-      document.getElementById('spouse_row').style.display = 'none';
+      $('#company_label').slideDown();
+      $('#company_input').slideDown();
+      $('#contacts_div').slideDown();
+      $('#spouse_label').slideUp();
+      $('#spouse_last_input').slideUp();
+      $('#spouse_first_input').slideUp();
     } else {
       if ( document.getElementById('company').value.length == 0 ) {
-        document.getElementById('company_row').style.display = 'none';
+        $('#company_label').slideUp();
+        $('#company_input').slideUp();
       }
-      document.getElementById('contacts_div').style.display = 'none';
-      document.getElementById('spouse_row').style.display = '';
+      $('#contacts_div').slideUp();
+      $('#spouse_label').slideDown();
+      $('#spouse_last_input').slideDown();
+      $('#spouse_first_input').slideDown();
     }
   }
 
 
   var ship_locked_agents = <% encode_json(\%ship_locked_agents) %>;
   var ship_fields = [
-    'locationname', 'address1', 'city', 'state', 'zip', 'country', 
+    'locationname', 'address1',<% $conf->exists('cust_main-no_city_in_address') ? '' : q( 'city',) %> 'state', 'zip', 'country', 
     'latitude', 'longitude', 'district'
   ];
 
@@ -50,6 +56,7 @@
 %   # unlock/lock service location
 
     var f = what.form;
+    var was_same = f['same'].checked;
     if ( ship_locked_agents[agentnum] ) {
 %     # For this agent, the service location (except address2)
 %     # should be locked to the agent's location.
@@ -66,16 +73,25 @@
 %     # disabled, then they contain some agent's address, which is 
 %     # no longer meaningful.  So set them back to the customer's 
 %     # current location.
+      var is_same = true;
       for(var i=0; i<ship_fields.length; i++) {
         x = ship_fields[i];
         if ( f['ship_'+x].disabled )  {
           f['ship_'+x].value  = f['old_ship_'+x].value;
         }
         f['ship_'+x].disabled = false;
+        if ( f['bill_'+x].value != f['ship_'+x].value ) {
+          is_same = false;
+        }
       }
+%     # if the customer's current location has the same bill and ship 
+%     # address, then check the box
+      f['same'].checked = is_same;
       f['same'].disabled = false;
     }
-    samechanged(f['same']);
+    if (f['same'].checked != was_same) {
+      samechanged(f['same']);
+    }
 
 %   # update sales dropdown
     salesnum_agentnum_changed(what);
@@ -85,7 +101,13 @@
   <&| /elements/onload.js &>
   rescom_changed(document.getElementById('residential_commercial_Residential'));
   agent_changed(document.getElementById('agentnum'));
-  samechanged(document.getElementById('same'));
+
+  if ( $('#same').prop('checked') ) {
+    $('#div_ship_location').hide();
+  } else {
+    $('#div_ship_location').show();
+  }
+
   </&>
  
 </SCRIPT>
@@ -110,7 +132,7 @@
     <INPUT TYPE="hidden" NAME="agentnum"      ID="agentnum" 
       VALUE="<% $agentnum %>">
     <TR>
-      <TD ALIGN="right"><% mt('Agent') |h %></TD>
+      <TH ALIGN="right"><% mt('Agent') |h %></TD>
       <TD CLASS="fsdisabled"><% $cust_main->agent->agent |h %></TD>
     </TR>
 
@@ -118,7 +140,7 @@
 
   <& /elements/tr-select-agent.html, 
                 'curr_value'    => $cust_main->agentnum,
-                'label'         => "<B>${r}".emt('Agent')."</B>",
+                'label'         => $r. emt('Agent'),
                 'empty_label'   => emt('Select agent'),
                 'disable_empty' => ( $cust_main->agentnum ? 1 : 0 ),
                 'viewall_right' => emt('None'), 
@@ -131,7 +153,7 @@
 % if ( $conf->exists('cust_main-edit_agent_custid') ) {
 
     <TR>
-      <TD ALIGN="right"><% mt('Customer identifier') |h %></TD>
+      <TH ALIGN="right"><% mt('Customer identifier') |h %></TD>
       <TD><INPUT TYPE="text" NAME="agent_custid" VALUE="<% $cust_main->agent_custid %>"></TD>
     </TR>
 
@@ -157,6 +179,7 @@
 %#sales person
 <& /elements/tr-select-sales.html,
      'curr_value' => $cust_main->salesnum,
+     'th' => 1,
 &>
 
 %# referral (advertising source)
@@ -169,7 +192,7 @@
 
   <& /elements/tr-select-part_referral.html,
                 'curr_value' => $refnum,
-                'label'      => "<B>${r}".emt('Advertising source')."</B>"
+                'label'      => $r. emt('Advertising source'),
   &>
 % } 
 
@@ -183,7 +206,7 @@
 %) {
 
   <TR>
-    <TD ALIGN="right"><% mt('Referring customer') |h %></TD>
+    <TH ALIGN="right"><% mt('Referring customer') |h %></TD>
     <TD>
       <A HREF="<% popurl(1) %>/cust_main.cgi?<% $cust_main->referral_custnum %>"><% $cust_main->referral_custnum %>: <% $referring_cust_main->name |h %></A>
     </TD>
@@ -193,7 +216,7 @@
 % } elsif ( ! $conf->exists('disable_customer_referrals') ) { 
 
   <TR>
-    <TD ALIGN="right"><% mt('Referring customer') |h %></TD>
+    <TH ALIGN="right"><% mt('Referring customer') |h %></TD>
     <TD>
       <& /elements/search-cust_main.html,
                     'field_name' => 'referral_custnum',
@@ -284,7 +307,10 @@ foreach (qsearch('agent',{})) {
   my $agent_ship_location = $cust_main->ship_location;
   $ship_locked_agents{$agentnum} = +{
     map { $_ => $agent_ship_location->$_ }
-    qw(locationname address1 city state zip country latitude longitude district)
+    (
+       qw(locationname address1 state zip country latitude longitude district),
+       ($conf->exists('cust_main-no_city_in_address') ? () : 'city')
+    )
   };
 }
 

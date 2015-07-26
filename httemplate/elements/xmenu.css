@@ -28,9 +28,9 @@
 	 border-radius: 4px;
 	padding:		1px;
 	background:		white;
-        -moz-box-shadow: #000000 1px 1px 4px;
-        -webkit-box-shadow: #000000 1px 1px 4px;
-        box-shadow: #000000 1px 1px 4px;
+        -moz-box-shadow: #333333 1px 1px 2px;
+        -webkit-box-shadow: #333333 1px 1px 2px;
+        box-shadow: #333333 1px 1px 2px;
 }
 
 .webfx-menu-empty {
@@ -101,7 +101,7 @@
 
 	/* background:		rgb(120,172,255);/*rgb(255,128,0);*/
 	/* background:		 #a097ed; */
-	background:		 #cccccc;
+	background:		 #dddddd;
 	/* border:			1px solid #7E0079; */
 	/* border:			1px solid #000000; */
 	/* border: none */

@@ -71,9 +71,9 @@ $m->get_ok( $url . '/Search/Build.html' );
 diag "check default statuses, cf and owners";
 my $form = $m->form_name('BuildQuery');
 ok( $form,                                     'found BuildQuery form' );
-ok( $form->find_input("ValueOf'CF.{global_cf}'"), 'found global_cf by default' );
-ok( !$form->find_input("ValueOf'CF.{general_cf}'"), 'no general_cf by default' );
-ok( !$form->find_input("ValueOf'CF.{foo_cf}'"), 'no foo_cf by default' );
+ok( $form->find_input("ValueOfCF.{global_cf}"), 'found global_cf by default' );
+ok( !$form->find_input("ValueOfCF.{general_cf}"), 'no general_cf by default' );
+ok( !$form->find_input("ValueOfCF.{foo_cf}"), 'no foo_cf by default' );
 
 my $status_input = $form->find_input('ValueOfStatus');
 my @statuses     = sort $status_input->possible_values;
@@ -94,9 +94,9 @@ $m->submit_form(
 );
 
 $form = $m->form_name('BuildQuery');
-ok( $form->find_input("ValueOf'CF.{foo_cf}'"), 'found foo_cf' );
-ok( $form->find_input("ValueOf'CF.{global_cf}'"), 'found global_cf' );
-ok( !$form->find_input("ValueOf'CF.{general_cf}'"), 'still no general_cf' );
+ok( $form->find_input("ValueOfCF.{foo_cf}"), 'found foo_cf' );
+ok( $form->find_input("ValueOfCF.{global_cf}"), 'found global_cf' );
+ok( !$form->find_input("ValueOfCF.{general_cf}"), 'still no general_cf' );
 $status_input = $form->find_input('ValueOfStatus');
 @statuses     = sort $status_input->possible_values;
 is_deeply(
@@ -119,9 +119,9 @@ $m->submit_form(
 );
 
 $form = $m->form_name('BuildQuery');
-ok( $form->find_input("ValueOf'CF.{general_cf}'"), 'found general_cf' );
-ok( $form->find_input("ValueOf'CF.{foo_cf}'"), 'found foo_cf' );
-ok( $form->find_input("ValueOf'CF.{global_cf}'"), 'found global_cf' );
+ok( $form->find_input("ValueOfCF.{general_cf}"), 'found general_cf' );
+ok( $form->find_input("ValueOfCF.{foo_cf}"), 'found foo_cf' );
+ok( $form->find_input("ValueOfCF.{global_cf}"), 'found global_cf' );
 $status_input = $form->find_input('ValueOfStatus');
 @statuses     = sort $status_input->possible_values;
 is_deeply(
@@ -144,9 +144,9 @@ $m->submit_form(
 );
 
 $form = $m->form_name('BuildQuery');
-ok( $form->find_input("ValueOf'CF.{global_cf}'"), 'found global_cf' );
-ok( !$form->find_input("ValueOf'CF.{foo_cf}'"), 'no foo_cf' );
-ok( !$form->find_input("ValueOf'CF.{general_cf}'"), 'no general_cf' );
+ok( $form->find_input("ValueOfCF.{global_cf}"), 'found global_cf' );
+ok( !$form->find_input("ValueOfCF.{foo_cf}"), 'no foo_cf' );
+ok( !$form->find_input("ValueOfCF.{general_cf}"), 'no general_cf' );
 $status_input = $form->find_input('ValueOfStatus');
 @statuses     = sort $status_input->possible_values;
 is_deeply(
@@ -166,9 +166,9 @@ $m->submit_form(
     fields => { Query => q{Queue = 'General' OR Queue = 'foo'} },
 );
 $form = $m->form_name('BuildQuery');
-ok( $form->find_input("ValueOf'CF.{general_cf}'"), 'found general_cf' );
-ok( $form->find_input("ValueOf'CF.{foo_cf}'"), 'found foo_cf' );
-ok( $form->find_input("ValueOf'CF.{global_cf}'"), 'found global_cf' );
+ok( $form->find_input("ValueOfCF.{general_cf}"), 'found general_cf' );
+ok( $form->find_input("ValueOfCF.{foo_cf}"), 'found foo_cf' );
+ok( $form->find_input("ValueOfCF.{global_cf}"), 'found global_cf' );
 $status_input = $form->find_input('ValueOfStatus');
 @statuses     = sort $status_input->possible_values;
 is_deeply(

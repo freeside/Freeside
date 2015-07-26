@@ -57,7 +57,7 @@ if ( -e $addl_handler_use_file ) {
   use CGI::Cookie;
   use List::Util qw( max min sum );
   use List::MoreUtils qw( first_index uniq );
-  use Scalar::Util qw( blessed );
+  use Scalar::Util qw( blessed looks_like_number );
   use Data::Dumper;
   use Date::Format;
   use Time::Local;
@@ -155,6 +155,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::Tron qw( tron_lint );
   use FS::Locales;
   use FS::Maketext qw( mt emt js_mt );
+
+  use FS::Query;
 
   use FS::agent;
   use FS::agent_type;
@@ -402,6 +404,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::quotation_pkg_tax;
   use FS::cust_pkg_reason_fee;
   use FS::part_svc_link;
+  use FS::access_user_log;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -430,20 +433,12 @@ if ( -e $addl_handler_use_file ) {
       use RT::CustomFieldValues;
       use RT::ObjectCustomFieldValues;
 
-      #blah.  manually updated from RT::Interface::Web::Handler
-      use RT::Interface::Web;
-      use MIME::Entity;
-      use Text::Wrapper;
-      use Time::ParseDate;
-      use Time::HiRes;
-      use HTML::Scrubber;
+      use RT::Interface::Web::Handler;
 
       #blah.  not even in RT::Interface::Web::Handler, just in 
       #html/NoAuth/css/dhandler and rt-test-dependencies.  ask for it here
       #to throw a real error instead of just a mysterious unstyled RT
       use CSS::Squish 0.06;
-
-      use RT::Interface::Web::Request;
 
       #another undeclared web UI dep (for ticket links graph)
       use IPC::Run::SafeHandles;
@@ -460,6 +455,7 @@ if ( -e $addl_handler_use_file ) {
     die $@ if $@;
   }
 
+  no warnings 'redefine';
   *CGI::redirect = sub {
     my $self = shift;
     my $cookie = '';
@@ -513,7 +509,7 @@ if ( -e $addl_handler_use_file ) {
   
   sub include {
     use vars qw($m);
-    #carp #should just switch to <& &> syntax
+    #warn 'include deprecated; use an HTML::Mason <& &> style include (or $m->scomp) at '. $m->callers(0)->path. "\n";
     $m->scomp(@_);
   }
 
@@ -650,7 +646,8 @@ sub mason_interps {
                       [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
                       [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                     ],
-    escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
+    escape_flags => { 'h'         => \&RT::Interface::Web::EscapeHTML,
+                      #u and j aren't used anymore?  :/
                       'u'         => \&RT::Interface::Web::EscapeURI,
                       'j'         => \&RT::Interface::Web::EscapeJS,
                       'js_string' => $js_string_sub,
