@@ -20,6 +20,10 @@
 %   my $bgcolor = '666666;border-color:#555555';
 %   my $content = '';
 %   my $selectable = 0;
+%   my $draggable_ticketid = 0;
+%   my $draggable_length = 0;
+%   my $droppable = 0;
+%   my $cells = 0;
 %
 %   #white out available times
 %   foreach my $avail ( @{ $schedule{'avail'} } ) {
@@ -44,58 +48,104 @@
 %     $selectable = 0;
 %
 %     if ( $starts >= $tod_row ) { #first row
-%       $content .= ($content?', ':''). $id.
-%                   ': '. FS::sched_avail::pretty_time($starts). '-'.
-%                         FS::sched_avail::pretty_time($due);
+%       $content .= ($content?', ':''). #$id. ': '.
+%                   #false laziness w/xmlhttp-ticket-update.html
+%                   FS::sched_avail::pretty_time($starts). '-'.
+%                   FS::sched_avail::pretty_time($due);
 %                   #'install for custname XX miles away'; #XXX placeholder/more
+%       $draggable_ticketid = $id;
+%       $draggable_length = $due - $starts;
+%
+%       $cells = int( ($due-$starts) / $timestep );
+%       $cells++ if ($due-$starts) % $timestep;
+%       
 %     #} else {
 %     #  $content .= ($content?', ':''). $id;
 %     }
 %   }
+%
+%   my $td_id = 'td_'. $Date->epoch. '_'. $tod_row. '_'. $username;
 
-    <td style="background:#<%$bgcolor%>"
-        class="<% $selectable ? 'weeklyselectable' : 'weekly' %>"
-%#               <%   $is_today     ? 'today'
-%#                  : $is_yesterday ? 'yesterday'
-%#                  : $is_aweekago  ? 'aweekago'
-%#                  : ''
-%#               %>"
+    <td style = "background-color:#<%$bgcolor%>"
+          ID="<% $td_id %>"
+        class = "<% ($selectable && $custnum && $LengthMin) ? 'weeklyselectable' : 'weekly' %>"
+%#                 <%   $is_today     ? 'today'
+%#                    : $is_yesterday ? 'yesterday'
+%#                    : $is_aweekago  ? 'aweekago'
+%#                    : ''
+%#                 %>"
 %     if ( $selectable ) {
 %
-%       #XXX for now, construct a ticket creation URL
-%       # eventually, do much the same, but say "appointment made", show time
-%       # and date, have # options to do things with it? etc.
-%       # then redir back to customer/appointment view i guess
+%       if ( $custnum && $LengthMin ) {
 %
-%       #abstraction is leaking like a sieve... linking back to freeside cust
-%       # (XXX and eventually, package)
-%       my $cust_main = qsearchs('cust_main', { custnum=>$custnum } )
-%         or die "unknown custnum $custnum";
-%       my $Queue = $cust_main->agent->ticketing_queueid || 1; # || $default_queueid;#XXX really, pick pkg_category queue
-%       my $member = "freeside://freeside/cust_main/$custnum";
+%         #XXX for now, construct a ticket creation URL
+%         # eventually, do much the same, but say "appointment made", show time
+%         # and date, have # options to do things with it? etc.
+%         # then redir back to customer/appointment view i guess
 %
-%warn       my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
-%warn       my $Due    = int(($tod_row+$LengthMin)/60). ':'.
-%                    sprintf('%02d',($tod_row+$LengthMin)%60). ':00';
+%         #abstraction is leaking like a sieve... linking back to freeside cust
+%         # (XXX and eventually, package)
+%         my $cust_main = qsearchs('cust_main', { custnum=>$custnum } )
+%           or die "unknown custnum $custnum";
+%         my $Queue = $cust_main->agent->ticketing_queueid || 1; # || $default_queueid;#XXX really, pick pkg_category queue
+%         my $member = "freeside://freeside/cust_main/$custnum";
 %
-%       my $url = $RT::WebPath. '/Ticket/Display.html?id=new'.
-%                 "&Queue=$Queue".
-%                 "&Owner=$username".
-%                 '&Starts='. $Date->strftime('%F').'%20'. $Starts.
-%                 '&Due='.    $Date->strftime('%F').'%20'. $Due.
-%                 '&new-MemberOf='. $member. #XXX uri_escape?
-%                 '&Status=new';
-%                 #'&Requestors='. #XXX Freeside customer requestor(s) (package?
+%warn         my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
+%warn         my $Due    = int(($tod_row+$LengthMin)/60). ':'.
+%                      sprintf('%02d',($tod_row+$LengthMin)%60). ':00';
+%
+%         my $url = $RT::WebPath. '/Ticket/Display.html?id=new'.
+%                   "&Queue=$Queue".
+%                   "&Owner=$username".
+%                   '&Starts='. $Date->strftime('%F').'%20'. $Starts.
+%                   '&Due='.    $Date->strftime('%F').'%20'. $Due.
+%                   '&new-MemberOf='. $member. #XXX uri_escape?
+%                   '&Status=new';
+%                   #'&Requestors='. #XXX Freeside customer requestor(s) (package?
 
-        onmouseover = "boxon(this);"
-        onmouseout  = "boxoff(this);"
-        title       = "<% 'Make appointment for '.
-                            FS::sched_avail::pretty_time($tod_row). '-'.
-                            FS::sched_avail::pretty_time($tod_row+$LengthMin)
-                      %>"
-        onclick     = "window.location.href = '<% $url %>'"
+          onmouseover = "boxon(this);"
+          onmouseout  = "boxoff(this);"
+          title       = "<% 'Make appointment for '.
+                              FS::sched_avail::pretty_time($tod_row). '-'.
+                              FS::sched_avail::pretty_time($tod_row+$LengthMin)
+                        %>"
+          onclick     = "window.location.href = '<% $url %>'"
+%
+%       } else {
+%         $droppable = 1;
+%       }
+%
 %     }
     ><% $content %></td>
+    <SCRIPT TYPE="text/javascript">
+
+      $('#<% $td_id %>').data('username', "<% $username %>");
+      $('#<% $td_id %>').data('starts',   <% $Date->epoch + $tod_row*60 %>);
+      $('#<% $td_id %>').data('epoch',    <% $Date->epoch %>);
+      $('#<% $td_id %>').data('tod_row',  <% $tod_row %>);
+
+%     if ( $droppable ) {
+        $('#<% $td_id %>').droppable({
+          over: boxon_drop,
+          drop: reschedule_appointment,
+          tolerance: 'pointer'
+        });
+%     }
+
+%     if ( $draggable_ticketid ) {
+        $('#<% $td_id %>').draggable({
+          containment: '.titlebox-content',
+%#          revert:      'invalid',
+          revert: true,
+          revertDuration: 0,
+        });
+        $('#<% $td_id %>').data('ticketid', <% $draggable_ticketid %>);
+        $('#<% $td_id %>').data('length',   <% $draggable_length * 60 %>);
+        $('#<% $td_id %>').data('cells',    <% $cells %>);
+        $('#<% $td_id %>').data('bgcolor',  "#<% $bgcolor %>");
+%     }
+
+    </SCRIPT>
 % }
 <%ONCE>
 my $default_slots = RT->Config->Get('CalendarWeeklySlots') || 5;

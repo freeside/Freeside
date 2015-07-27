@@ -454,6 +454,26 @@ $report_menu{'Logs'}           = [ \%report_logs, 'System and email logs' ]
 $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
   if $curuser->access_right('Raw SQL');
 
+tie my %tools_customers, 'Tie::IxHash', ();
+$tools_customers{'Appointments'} = [ $fsurl.'rt/Search/Schedule.html?LengthMin=0', 'View appointment schedule' ]
+  if $curuser->access_right('View appointments');
+$tools_customers{'Attachments'} = [ $fsurl.'browse/cust_attachment.html', 'View customer attachments' ]
+  if !$conf->config('disable_cust_attachment') and $curuser->access_right('View attachments') and $curuser->access_right('Browse attachments');
+$tools_customers{'Customer email settings'} = [ $fsurl.'misc/manage_cust_email.html' ]
+  if $curuser->access_right('Edit customer');
+
+tie my %tools_billing, 'Tie::IxHash', ();
+$tools_billing{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
+  if $curuser->access_right('Post payment batch');
+$tools_billing{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_date;open=1;intransit=1', 'Process credit card and electronic check batches' ]
+  if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
+     && $curuser->access_right('Process batches');
+$tools_billing{'Download invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ]
+  if $curuser->access_right('Process invoice batches')
+  || $curuser->access_right('Process global invoice batches')
+  || $curuser->access_right('Configuration'); #XXX remove in 2.5
+  #now there's a standalone event#if $conf->exists('invoice_print_pdf');
+
 tie my %tools_importing, 'Tie::IxHash',
   'Customers'            => [ $fsurl.'misc/cust_main-import.cgi', '' ],
   'Package definitions'  => [ $fsurl.'misc/part_pkg-import.html', '' ],
@@ -475,9 +495,17 @@ if ( $conf->exists('enable_taxproducts') ) {
   }
 }
 
-tie my %tools_exporting, 'Tie::IxHash',
-  'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
-;
+tie my %tools_misc, 'Tie::IxHash', ();
+$tools_misc{'Bulk DID Orders'} =  [ $fsurl.'browse/did_order.html', 'View/manage bulk DID orders' ]
+  if $curuser->access_right('Import');
+$tools_misc{'Business card scan'} = [ $fsurl.'edit/prospect_main-upload.html' ]
+  if $curuser->access_right('New prospect');
+$tools_misc{'Time Queue'} =  [ $fsurl.'search/report_timeworked.html', 'View pending support time' ]
+  if $curuser->access_right('Time queue');
+
+#tie my %tools_exporting, 'Tie::IxHash',
+#  'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
+#;
 
 tie my %tools_ticketing_articles, 'Tie::IxHash',
   'Overview' => [ $fsurl.'rt/Articles/index.html', '' ],
@@ -495,38 +523,27 @@ tie my %tools_ticketing, 'Tie::IxHash',
 $tools_ticketing{'Cron Tool'} = [ $fsurl.'rt/Developer/CronTool/', '' ]
   if $conf->exists('rt-crontool');
 
-tie my %tools_menu, 'Tie::IxHash', ();
-$tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
-  if $curuser->access_right('Post payment batch');
-$tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_date;open=1;intransit=1', 'Process credit card and electronic check batches' ]
-  if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
-     && $curuser->access_right('Process batches');
-$tools_menu{'Download invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ]
-  if $curuser->access_right('Process invoice batches')
-  || $curuser->access_right('Process global invoice batches')
-  || $curuser->access_right('Configuration'); #XXX remove in 2.5
-  #now there's a standalone event#if $conf->exists('invoice_print_pdf');
-$tools_menu{'Bulk DID Orders'} =  [ $fsurl.'browse/did_order.html', 'View/manage bulk DID orders' ]
-  if $curuser->access_right('Import');
-$tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
+tie my %tools_system, 'Tie::IxHash', ();
+$tools_system{'Status'} = [ $fsurl.'view/Status.html', 'System status' ]
+  if $curuser->access_right('Configuration'); # 'View system status');
+$tools_system{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
+
+tie my %tools_menu, 'Tie::IxHash', ();
+$tools_menu{'Customers'} = [ \%tools_customers, 'Customer tools' ]
+  if keys %tools_customers;
+$tools_menu{'Billing'} = [ \%tools_billing, 'Payment and invoice tools' ]
+  if keys %tools_billing;
 $tools_menu{'Ticketing'} = [ \%tools_ticketing, 'Ticketing tools' ]
   if $conf->config('ticket_system');
-$tools_menu{'Customer email settings'} = [ $fsurl.'misc/manage_cust_email.html' ]
-  if $curuser->access_right('Edit customer');
-$tools_menu{'Business card scan'} = [ $fsurl.'edit/prospect_main-upload.html' ]
-  if $curuser->access_right('New prospect');
-$tools_menu{'Time Queue'} =  [ $fsurl.'search/report_timeworked.html', 'View pending support time' ]
-  if $curuser->access_right('Time queue');
-$tools_menu{'Attachments'} = [ $fsurl.'browse/cust_attachment.html', 'View customer attachments' ]
-  if !$conf->config('disable_cust_attachment') and $curuser->access_right('View attachments') and $curuser->access_right('Browse attachments');
+$tools_menu{'Miscellaneous'} = [ \%tools_misc, '' ]
+  if keys %tools_misc;
 $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
   if $curuser->access_right('Import');
-$tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
-  if $curuser->access_right('Export');
-$tools_menu{'Status'} = [ $fsurl.'view/Status.html', 'System status' ]
-  if $curuser->access_right('Configuration'); # 'View system status');
-
+#$tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
+#  if $curuser->access_right('Export');
+$tools_menu{'System'} = [ \%tools_system, 'System tools' ]
+  if keys %tools_menu;
 
 tie my %config_employees, 'Tie::IxHash',
   'Employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
