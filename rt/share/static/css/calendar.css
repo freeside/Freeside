@@ -201,3 +201,7 @@ table.rtxweeklycalendar td.labels {
     border-bottom: 1px solid #eeeeee;
 }
 
+.ui-effects-transfer {
+  border: 1px solid black;
+}
+
