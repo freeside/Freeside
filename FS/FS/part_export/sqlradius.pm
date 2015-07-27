@@ -80,10 +80,6 @@ tie %options, 'Tie::IxHash',
   'disconnect_port' => {
     label => 'Port to send disconnection requests to, default 1700',
   },
-  'disconnect_ignore_error' => {
-    label => 'Ignore disconnection request errors',
-    type => 'checkbox',
-  },
 ;
 
 $notes1 = <<'END';
@@ -270,7 +266,6 @@ sub _export_replace {
       'disconnect_ssh'    => $self->option('disconnect_ssh'),
       'svc_acct_username' => $old->username,
       'disconnect_port'   => $self->option('disconnect_port'),
-      'ignore_error'      => $self->option('disconnect_ignore_error'),
     );
     unless ( ref($err_or_queue) ) {
       $dbh->rollback if $oldAutoCommit;
@@ -418,7 +413,6 @@ sub _export_delete {
       'disconnect_ssh'    => $self->option('disconnect_ssh'),
       'svc_acct_username' => $svc_x->username,
       'disconnect_port'   => $self->option('disconnect_port'),
-      'ignore_error'      => $self->option('disconnect_ignore_error'),
     );
     return $err_or_queue unless ref($err_or_queue);
     if ( $jobnum ) {
@@ -1258,8 +1252,6 @@ I<svc_acct_username> - the user to be disconnected (required)
 
 I<disconnect_port> - the port (on the nas) to send disconnect requests to (defaults to 1700)
 
-I<ignore_error> - do not die on error with the disconnect request
-
 Note this is NOT the opposite of sqlradius_connect.
 
 =cut
@@ -1294,7 +1286,7 @@ sub sqlradius_user_disconnect {
     if $error && (@$nas > 1);
   $error = "No clients found"
     unless @$nas;
-  die $error if $error && !$opt{'ignore_error'};
+  die $error if $error;
   return '';
 }
 
