@@ -14,8 +14,7 @@ use Date::Parse;
   'header'        => 1,
   'import_fields' => [
 
-	'accountcode',			#Account number
-              skip(2),  		#SERVICE LOC / BILL NUMBER 
+        skip(3),  			#Account number/ SERVICE LOC / BILL NUMBER 
 	sub { my($cdr, $date) = @_;  
 	$date;	
 	}, 				#date 
@@ -38,6 +37,8 @@ use Date::Parse;
 	_cdr_min_parser_maker, 		#MINUTES
 	skip(1),			#AMOUNT
 	'disposition',			#Call Type
+	skip(1),			#Seq
+	'accountcode',			#AcctCode
   ],
 );
 
