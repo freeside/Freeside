@@ -1277,11 +1277,17 @@ sub print_generic {
 
     if ( $multisection ) {
       if ( $taxtotal > 0 ) {
+        # there are taxes, so prepare the section to be displayed.
+        # $taxtotal already includes any line items that were already in the
+        # section (fees, taxes that are charged as packages for some reason).
+        # also set 'summarized' to false so that this isn't a summary-only
+        # section.
         $tax_section->{'subtotal'} = $other_money_char.
                                      sprintf('%.2f', $taxtotal);
         $tax_section->{'pretotal'} = 'New charges sub-total '.
                                      $total->{'total_amount'};
         $tax_section->{'description'} = $self->mt($tax_description);
+        $tax_section->{'summarized'} = '';
 
         # append it if it's not already there
         if ( !grep $tax_section, @sections ) {
@@ -2492,7 +2498,6 @@ sub _items_sections {
       foreach my $sectionname (keys %{ $s->{$locationnum} }) {
         my $section = {
                         'subtotal'    => $s->{$locationnum}{$sectionname},
-                        'post_total'  => $post_total,
                         'sort_weight' => 0,
                       };
         if ( $locationnum ) {
