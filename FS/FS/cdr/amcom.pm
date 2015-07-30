@@ -43,6 +43,7 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
         hour    => $1,
         minute  => $2,
         second  => $3,
+	time_zone => 'local',
       );
       $cdr->set('startdate', $dt->epoch);
     },
