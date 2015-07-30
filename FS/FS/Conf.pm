@@ -832,6 +832,13 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'hashsalt',
+    'section'     => 'billing',
+    'description' => 'Hash salt string (enables hashing of session keys/cookies)',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'encryption',
     'section'     => 'billing',
     'description' => 'Enable encryption of credit cards and echeck numbers',
