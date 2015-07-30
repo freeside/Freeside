@@ -14,6 +14,7 @@
 	                         'Exp',
 	                         'Amount',
 	                         'Status',
+                                 '', # delete link
                                  '', # error_message
 			       ],
               'fields'      => [  'paybatchnum',
@@ -30,10 +31,11 @@
                                   sub {
                                     sprintf('%.02f', $_[0]->amount)
                                   },
-                                  'status',
+                                  sub { $_[0]->display_status },
+                                  $sub_unbatch,
                                   'error_message',
                                 ],
-	      'align'       => 'rrrlllcrll',
+	      'align'       => 'rrrlllcrlll',
 	      'links'       => [ '',
 	                         ["${p}view/cust_bill.cgi?", 'invnum'],
 	                         (["${p}view/cust_main.cgi?", 'custnum']) x 2,
@@ -128,6 +130,36 @@ my $sub_receipt = sub {
     'actionlabel' => emt('Payment Receipt'),
   );
 };
+
+my $sub_unbatch = '';
+if ( ($pay_batch && ($pay_batch->status eq 'O')) 
+  && ( $curuser->access_right('Process batches')
+       || $curuser->access_right('Process global batches') )
+) {
+  $sub_unbatch = sub {
+    my $self = shift;
+    return '' if $self->status; # sanity check, shouldn't happen
+    my $batchnum = $self->batchnum;
+    my $paybatchnum = $self->paybatchnum;
+    my $out = <<EOF;
+<FORM name="delete_cust_pay_batch_$paybatchnum">
+<INPUT TYPE="hidden" name="paybatchnum" value="$paybatchnum">
+</FORM>
+EOF
+    $out .= include('/elements/progress-init.html',
+              "delete_cust_pay_batch_$paybatchnum",
+              [ 'paybatchnum' ],
+              $p.'misc/process/delete-cust_pay_batch.cgi',
+              $p.'search/cust_pay_batch.cgi?' . $cgi->query_string,
+              "paybatchnum$paybatchnum",
+            );
+    my $onclick = 'if ( confirm(\'';
+    $onclick .= emt('Are you sure you want to delete batch payment ') . $self->paybatchnum;
+    $onclick .= emt(' from payment batch ') . $self->batchnum;
+    $onclick .= '\') ) { paybatchnum' . $paybatchnum . 'process() }';
+    return $out . '<A HREF="javascript:void(0)" ONCLICK="' . $onclick . '">delete</A>';
+  };
+}
 
 my $html_init = '';
 if ( $pay_batch ) {

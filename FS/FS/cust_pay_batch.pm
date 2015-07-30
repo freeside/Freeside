@@ -8,6 +8,9 @@ use FS::Record qw(dbh qsearch qsearchs);
 use FS::payinfo_Mixin;
 use FS::cust_main;
 use FS::cust_bill;
+use Storable qw( thaw );
+use MIME::Base64 qw( decode_base64 );
+
 
 @ISA = qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
@@ -472,6 +475,76 @@ sub request_item {
     invoice_number  => $self->invnum,
     %payment,
   );
+}
+
+=item process_unbatch_and_delete
+
+L</unbatch_and_delete> run as a queued job, accepts I<$job> and I<$param>.
+
+=cut
+
+sub process_unbatch_and_delete {
+  my ($job, $param) = @_;
+  $param = thaw(decode_base64($param));
+  my $self = qsearchs('cust_pay_batch',{ 'paybatchnum' => scalar($param->{'paybatchnum'}) })
+    or die 'Could not find paybatchnum ' . $param->{'paybatchnum'};
+  my $error = $self->unbatch_and_delete;
+  die $error if $error;
+  return '';
+}
+
+=item unbatch_and_delete
+
+May only be called on a record with an empty status and an associated
+L<pay_batch> with a status of 'O' (not yet in transit.)  Deletes all associated
+records from L<cust_bill_pay_batch> and then deletes this record.
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub unbatch_and_delete {
+  my $self = shift;
+
+  return 'Cannot unbatch a cust_pay_batch with status ' . $self->status
+    if $self->status;
+
+  my $pay_batch = qsearchs('pay_batch',{ 'batchnum' => $self->batchnum })
+    or return 'Cannot find associated pay_batch record';
+
+  return 'Cannot unbatch from a pay_batch with status ' . $pay_batch->status
+    if $pay_batch->status ne 'O';
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  # have not generated actual payments yet, so should be safe to delete
+  foreach my $cust_bill_pay_batch ( 
+    qsearch('cust_bill_pay_batch',{ 'paybatchnum' => $self->paybatchnum })
+  ) {
+    my $error = $cust_bill_pay_batch->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =back
