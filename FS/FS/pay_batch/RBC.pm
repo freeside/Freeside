@@ -90,7 +90,6 @@ $name = 'RBC';
       my( $hash, $total, $line ) = @_;
       return "Can't process Credit Detail Record, aborting import"
         if ($hash->{'recordtype'} eq '2');
-      $totaloffset = sprintf("%.2f", $totaloffset / 100 );
       $total += $totaloffset;
       $total = sprintf("%.2f", $total);
       # We assume here that this is an 'All Records' or 'Input Records' report.
@@ -109,8 +108,14 @@ $name = 'RBC';
       #we already declined it this run, no takebacks
       if ($declined->{$hash->{'paybatchnum'}}) {
         #file counts this as part of total, but we skip
-        $totaloffset += $hash->{'paid'}
+        $totaloffset += sprintf("%.2f", $hash->{'paid'} / 100 )
           if $hash->{'status'} eq ' '; #false laziness with 'approved' above
+        return 1;
+      }
+      #skipping W for now (maybe it should be declined?)
+      if ($hash->{'status'} eq 'W') {
+        #file counts this as part of total, but we skip
+        $totaloffset += sprintf("%.2f", $hash->{'paid'} / 100 );
         return 1;
       }
       return 
