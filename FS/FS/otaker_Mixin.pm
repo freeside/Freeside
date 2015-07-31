@@ -24,7 +24,15 @@ sub otaker {
     $otaker; #not sure return is used anywhere, but just in case
   } else { #get
     if ( $self->usernum ) {
-      $self->access_user->username;
+      # avoid a common failure mode: this should work even when the table 
+      # isn't foreign-keyed to access_user
+      my $access_user = FS::access_user->by_key($self->usernum);
+      if (!$access_user) {
+        croak "otaker called on ".$self->table."#".
+              $self->get($self->primary_key).
+              " but user does not exist";
+      }
+      return $access_user->username;
     } elsif ( length($self->get('otaker')) ) {
       $self->get('otaker');
     } else {
