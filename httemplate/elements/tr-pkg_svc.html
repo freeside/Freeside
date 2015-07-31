@@ -45,6 +45,12 @@
 %  } else {
 %    $bulk_skip = $pkg_svc->bulk_skip;
 %  }
+%  my $provision_hold = '';
+%  if ( grep { $_ eq "provision_hold$svcpart" } $cgi->param ) {
+%    $provision_hold = $cgi->param("hidden_svc$svcpart");
+%  } else {
+%    $provision_hold = $pkg_svc->provision_hold;
+%  }
 %
 %  my @exports = $pkg_svc->part_svc->part_export;
 %  foreach my $export ( @exports ) {
@@ -70,6 +76,10 @@
 
     <TD ALIGN="center">
       <INPUT TYPE="checkbox" NAME="no_bulk_skip<% $svcpart %>" VALUE="Y"<% $bulk_skip =~ /^Y/i ? '' : ' CHECKED' %>>
+    </TD>
+
+    <TD ALIGN="center">
+      <INPUT TYPE="checkbox" NAME="provision_hold<% $svcpart %>" VALUE="Y"<% $provision_hold =~ /^Y/i ? ' CHECKED' : ''%>>
     </TD>
 
   </TR>
@@ -127,6 +137,7 @@ my $thead =  "\n\n". ntable('#cccccc', 2).
              '<TH BGCOLOR="#dcdcdc">Service</TH>'.
              '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide<BR>from<BR>Invoices</FONT></TH>'.
              '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Bulk<BR>Charge</FONT></TH>'.
+             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hold<BR>Until<BR>Provision</FONT></TH>'.
              '</TR>';
 
 my $part_pkg = $opt{'object'};

@@ -47,6 +47,8 @@ definition includes
 
 =item hidden - 'Y' to hide this service on invoices, null otherwise.
 
+=item provision_hold - 'Y' to release package hold when all services marked with this are provisioned
+
 =back
 
 =head1 METHODS
@@ -107,6 +109,7 @@ sub check {
     || $self->ut_number('svcpart')
     || $self->ut_number('quantity')
     || $self->ut_enum('hidden', [ '', 'Y' ] )
+    || $self->ut_flag('provision_hold')
   ;
   return $error if $error;
 

@@ -3543,6 +3543,7 @@ sub tables_hashref {
         'primary_svc',   'char', 'NULL', 1, '', '', 
         'hidden',        'char', 'NULL', 1, '', '',
         'bulk_skip',     'char', 'NULL', 1, '', '',
+        'provision_hold', 'char', 'NULL', 1, '', '',
       ],
       'primary_key'  => 'pkgsvcnum',
       'unique'       => [ ['pkgpart', 'svcpart'] ],
