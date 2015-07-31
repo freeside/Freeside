@@ -102,6 +102,37 @@ sub table { 'cust_svc'; }
 Adds this service to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+
+  #check if this releases a hold (see FS::pkg_svc provision_hold)
+  $error ||= $self->_provision_hold;
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error if $error
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+
+}
+
 =item delete
 
 Deletes this service from the database.  If there is an error, returns the
@@ -427,6 +458,9 @@ sub replace {
                                   );
     } # if ($svc_x->locationnum)
   } # if this is a location change
+
+  #check if this releases a hold (see FS::pkg_svc provision_hold)
+  $error ||= $new->_provision_hold;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -1204,6 +1238,35 @@ sub smart_search_param {
     'hashref'   => {},
     'extra_sql' => $extra_sql,
   );
+}
+
+# If the associated cust_pkg is 'on hold'
+# and the associated pkg_svc has the provision_hold flag
+# and there are no more available_part_svcs on the cust_pkg similarly flagged,
+# then removes hold from pkg
+# returns $error or '' on success,
+# does not indicate if pkg status was changed
+sub _provision_hold {
+  my $self = shift;
+
+  # check status of cust_pkg
+  my $cust_pkg = $self->cust_pkg;
+  return '' unless $cust_pkg->status eq 'on hold';
+
+  # check flag on this svc
+  # small false laziness with $self->pkg_svc
+  # to avoid looking up cust_pkg twice
+  my $pkg_svc  = qsearchs( 'pkg_svc', {
+    'svcpart' => $self->svcpart,
+    'pkgpart' => $cust_pkg->pkgpart,
+  });
+  return '' unless $pkg_svc->provision_hold;
+
+  # check for any others available with that flag
+  return '' if $cust_pkg->available_part_svc( 'provision_hold' => 1 );
+
+  # conditions met, remove hold
+  return $cust_pkg->unsuspend;
 }
 
 sub _upgrade_data {

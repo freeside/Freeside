@@ -3389,28 +3389,33 @@ Returns a list of FS::part_svc objects representing services included in this
 package but not yet provisioned.  Each FS::part_svc object also has an extra
 field, I<num_avail>, which specifies the number of available services.
 
+Accepts option I<provision_hold>;  if true, only returns part_svc for which the
+associated pkg_svc has the provision_hold flag set.
+
 =cut
 
 sub available_part_svc {
   my $self = shift;
+  my %opt  = @_;
 
   my $pkg_quantity = $self->quantity || 1;
 
   grep { $_->num_avail > 0 }
-    map {
-          my $part_svc = $_->part_svc;
-          $part_svc->{'Hash'}{'num_avail'} = #evil encapsulation-breaking
-            $pkg_quantity * $_->quantity - $self->num_cust_svc($_->svcpart);
+  map {
+    my $part_svc = $_->part_svc;
+    $part_svc->{'Hash'}{'num_avail'} = #evil encapsulation-breaking
+    $pkg_quantity * $_->quantity - $self->num_cust_svc($_->svcpart);
 
-	  # more evil encapsulation breakage
-	  if($part_svc->{'Hash'}{'num_avail'} > 0) {
-	    my @exports = $part_svc->part_export_did;
-	    $part_svc->{'Hash'}{'can_get_dids'} = scalar(@exports);
-	  }
+    # more evil encapsulation breakage
+    if ($part_svc->{'Hash'}{'num_avail'} > 0) {
+      my @exports = $part_svc->part_export_did;
+      $part_svc->{'Hash'}{'can_get_dids'} = scalar(@exports);
+	}
 
-          $part_svc;
-        }
-      $self->part_pkg->pkg_svc;
+    $part_svc;
+  }
+  grep { $opt{'provision_hold'} ? $_->provision_hold : 1 }
+  $self->part_pkg->pkg_svc;
 }
 
 =item part_svc [ OPTION => VALUE ... ]
