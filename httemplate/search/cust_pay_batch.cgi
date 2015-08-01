@@ -31,7 +31,7 @@
                                   sub {
                                     sprintf('%.02f', $_[0]->amount)
                                   },
-                                  sub { $_[0]->display_status },
+                                  'status',
                                   $sub_unbatch,
                                   'error_message',
                                 ],
