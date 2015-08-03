@@ -189,9 +189,9 @@ sub dbdef_dist {
 
   my $tables_hashref_torrus = tables_hashref_torrus();
 
-  #create history tables (false laziness w/create-history-tables)
+  #create history tables
   foreach my $table (
-    grep {    ! /^clientapi_session/
+    grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
            && ! /^legacy_cust_history$/
@@ -3941,6 +3941,19 @@ sub tables_hashref {
       ],
       'primary_key' => 'classnum',
       'unique' => [],
+      'index'  => [],
+    },
+
+    'access_user_session' => {
+      'columns' => [
+        'sessionnum',   'serial',  '',      '', '', '', 
+        'sessionkey',  'varchar',  '', $char_d, '', '',
+        'usernum',         'int',  '',      '', '', '',
+        'start_date', @date_type,               '', '',
+        'last_date',  @date_type,               '', '',
+      ],
+      'primary_key' => 'sessionnum',
+      'unique' => [ [ 'sessionkey' ] ],
       'index'  => [],
     },
 
