@@ -37,15 +37,6 @@ if [ $createdb = YES ]; then
   sudo -u freeside psql freeside -q -f $sharedir/test.sql > /dev/null
 fi
 
-if [ -f /usr/local/etc/freeside/htpasswd ]; then
-  newhtpasswd=htpasswd_`date +%Y%m%d`
-  echo "Renaming htpasswd to $newhtpasswd."
-  sudo mv /usr/local/etc/freeside/htpasswd /usr/local/etc/freeside/$newhtpasswd
-fi
-
-echo "Installing new htpasswd."
-sudo cp $sharedir/htpasswd /usr/local/etc/freeside/htpasswd
-
 newtime=$(sudo -u freeside \
   psql -tc 'SELECT to_timestamp(max(_date) + 86400) FROM cust_bill' \
 )
