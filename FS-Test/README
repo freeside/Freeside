@@ -1,0 +1,91 @@
+FS-Test
+
+INSTALLATION
+
+To install this module, install Freeside as usual. Then run the following 
+commands:
+
+	perl Makefile.PL
+	make
+	make install
+
+INITIALIZATION
+
+Run "freeside-test-start" from an account that can sudo to root. This will
+create a database with the test image and set the system clock to one day
+after the last bill. If there's an existing Freeside database, it will be
+renamed to "freeside_YYYYMMDD" (the current date).
+
+To restore the system clock and put the existing database back in place,
+run "freeside-test-stop".
+
+RUNNING TESTS
+
+"freeside-test-run" is the main test script. Currently there's only one 
+test plan, "ui_tests". freeside-test-run will:
+
+- download all the URLs listed in the test plan into a directory in /tmp
+- compare them to the reference versions with "diff -ur"
+- write the output to "freeside_test.YYYYMMDD.diff"
+- display the results of "diffstat" on that diff
+
+The raw output directory will not be deleted, so you can examine the results
+yourself. This is recommended for files that don't diff nicely like Excel 
+versions of reports and PDF invoices.
+
+UPDATING THE REFERENCE PAGES
+
+The simplest way to update the reference copies of the test pages is
+
+freeside-test-fetch -d ./share/output
+
+(from the FS-Test source directory). If you're installing from a git repo,
+this will overwrite the working tree with the newly downloaded test pages.
+You can then use "git diff" to examine your changes and "git commit" to 
+commit them when you're done.
+
+ADDING NEW TESTS
+
+For UI tests, add the URL, minus the "http://hostname/freeside" prefix,
+to share/ui_tests. Then run freeside-test-fetch to get the reference output
+of the test and copy it to share/output (and add that file to git).
+
+When adding any new test, make sure to _run it twice_ on the same database
+and code version to detect random or time-sensitive variations. These will
+throw false alerts when anyone else uses your test, so you'll need to suppress
+them somehow.
+
+WHAT'S IN THE TEST DATABASE
+
+Two hundred customers with random nonsensical U.S. addresses. One third have
+automatic checking, the rest have credit cards. 10% of the customers have 
+separate billing and service addresses.
+
+Four package definitions (plus the unique "system domain"): annual domain,
+monthly prorated account, monthly prorated broadband service, monthly
+phone. Each package has one service except the phone package, which has a 
+quantity limit of 4. The two monthly prorated packages have setup fees.
+
+Each customer has three of the four packages, started over the period from 
+2015-08-01 to 2016-03-01. Each package has a service configured (with a random
+username, domain name, phone number, or IP address).  Customers were invoiced 
+on the first day of each month during that period.
+
+There's a billing event to run automatic credit card billing on eligible 
+invoices. The configured gateway is Business::OnlinePayment::Dummy, which
+returns success for everything, so customers with credit cards will be fully
+paid.
+
+One user with unlimited access. Username "test", password "test".
+
+There are no cancellations or suspensions, no credits, no taxes, no refunds,
+no discounts, no exports, and no RT tickets.  All of this stuff lies in the
+bright shining future.
+
+If you modify the test database, be sure to update this section also. Also
+update the company name to "Freeside Test X.Y.Z" where X.Y is the Freeside
+version number and Z is the test database version number, and set the same
+value in freeside-test-start so that old test databases aren't used by
+mistake.
+
+
