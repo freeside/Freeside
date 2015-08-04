@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION='3.8.1'
+VERSION='5.0.1'
 
 set -ae
 

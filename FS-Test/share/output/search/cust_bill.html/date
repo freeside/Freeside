@@ -26,7 +26,7 @@
 <SCRIPT TYPE="text/javascript">
 
   function about_freeside() {
-    overlib( OLiframeContent('http://localhost/freeside/docs/about.html', 300, 375, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'About', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#7e0079', CGCOLOR, '#7e0079', CLOSETEXT, 'Close'); 
+    overlib( OLiframeContent('http://localhost/freeside/docs/about.html', 300, 375, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'About', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#7e0079', CGCOLOR, '#7e0079', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); 
   }
 
   webfxMenuImagePath      = "http://localhost/freeside/images/";
@@ -85,6 +85,7 @@ myMenu3.add(new WebFXMenuItem("Signup date report", "http://localhost/freeside/g
 myMenu3.add(new WebFXMenuItem("Advanced customer reports", "http://localhost/freeside/search/report_cust_main.html", "by status, signup date, agent, etc." ));
 myMenu3.add(new WebFXMenuSeparator());
 myMenu3.add(new WebFXMenuItem("Customer contacts", "http://localhost/freeside/search/report_contact.html?link=cust_main", "" ));
+myMenu3.add(new WebFXMenuItem("Customer stored payment information", "http://localhost/freeside/search/report_cust_payby.html", "" ));
 myMenu3.width = 256;
 
 myMenu0.add(new WebFXMenuItem("Customers", null, "Customer reports", myMenu3 ));
@@ -306,72 +307,74 @@ myMenu30.width = 256;
 myMenu0.add(new WebFXMenuItem("Tickets", null, "Ticket reports", myMenu30 ));
 var myMenu32 = new WebFXMenu;
 myMenu32.emptyText = '';
-myMenu32.add(new WebFXMenuItem("Employee Commission Report", "http://localhost/freeside/search/report_employee_commission.html", "" ));
-myMenu32.add(new WebFXMenuItem("Employee Audit Report", "http://localhost/freeside/search/report_employee_audit.html", "Employee audit report" ));
-myMenu32.width = 256;
-
-myMenu0.add(new WebFXMenuItem("Employees", null, "Employee reports", myMenu32 ));
 var myMenu33 = new WebFXMenu;
 myMenu33.emptyText = '';
-myMenu33.add(new WebFXMenuItem("All billing events", "http://localhost/freeside/search/report_cust_event.html", "All billing events for a date range" ));
-myMenu33.add(new WebFXMenuItem("Billing event errors", "http://localhost/freeside/search/report_cust_event.html?failed=1", "Failed credit cards, processor or printer problems, etc." ));
+myMenu33.add(new WebFXMenuItem("Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time.html", "Sales, credits and receipts summary graph" ));
+myMenu33.add(new WebFXMenuItem("Daily Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time_daily.html", "Sales, credits and receipts (broken down by day) summary graph" ));
+myMenu33.add(new WebFXMenuItem("Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg.html", "Sales report and graph (by agent, package class and/or date range)" ));
+myMenu33.add(new WebFXMenuItem("Rated Call Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg_detail.html", "Sales report and graph (by agent, package class, usage class and/or date range)" ));
+myMenu33.add(new WebFXMenuItem("Sales with Advertising Source", "http://localhost/freeside/search/report_cust_bill_pkg_referral.html", "" ));
 myMenu33.width = 256;
 
-myMenu0.add(new WebFXMenuItem("Billing events", null, "Billing events", myMenu33 ));
+myMenu32.add(new WebFXMenuItem("Sales", null, "Sales reports", myMenu33 ));
 var myMenu34 = new WebFXMenu;
 myMenu34.emptyText = '';
-var myMenu35 = new WebFXMenu;
-myMenu35.emptyText = '';
-myMenu35.add(new WebFXMenuItem("Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time.html", "Sales, credits and receipts summary graph" ));
-myMenu35.add(new WebFXMenuItem("Daily Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time_daily.html", "Sales, credits and receipts (broken down by day) summary graph" ));
-myMenu35.add(new WebFXMenuItem("Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg.html", "Sales report and graph (by agent, package class and/or date range)" ));
-myMenu35.add(new WebFXMenuItem("Rated Call Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg_detail.html", "Sales report and graph (by agent, package class, usage class and/or date range)" ));
-myMenu35.add(new WebFXMenuItem("Sales with Advertising Source", "http://localhost/freeside/search/report_cust_bill_pkg_referral.html", "" ));
-myMenu35.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Sales", null, "Sales reports", myMenu35 ));
-var myMenu36 = new WebFXMenu;
-myMenu36.emptyText = '';
-myMenu36.add(new WebFXMenuItem("Credit Report", "http://localhost/freeside/search/report_cust_credit.html", "Credit report (by employee and/or date range)" ));
-myMenu36.add(new WebFXMenuItem("Credit application detail", "http://localhost/freeside/search/report_cust_credit_bill_pkg.html", "Line item application detail" ));
-myMenu36.add(new WebFXMenuItem("Unapplied Credits", "http://localhost/freeside/search/report_cust_credit.html?unapplied=1", "Unapplied credit report (by type and/or date range)" ));
-myMenu36.add(new WebFXMenuItem("Voided Credits", "http://localhost/freeside/search/report_cust_credit_void.html", "Voided credit report (by employee and/or date range)" ));
-myMenu36.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Credits", null, "Credit reports", myMenu36 ));
-var myMenu37 = new WebFXMenu;
-myMenu37.emptyText = '';
-myMenu37.add(new WebFXMenuItem("Refund Report", "http://localhost/freeside/search/report_cust_refund.html", "Refund report (by type and/or date range)" ));
-myMenu37.add(new WebFXMenuItem("Unapplied Refunds", "http://localhost/freeside/search/report_cust_refund.html?unapplied=1", "Unapplied refund report (by type and/or date range)" ));
-myMenu37.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Refunds", null, "Refund reports", myMenu37 ));
-var myMenu38 = new WebFXMenu;
-myMenu38.emptyText = '';
-myMenu38.add(new WebFXMenuItem("Agent Commissions", "http://localhost/freeside/search/report_agent_commission.html", "" ));
-myMenu38.add(new WebFXMenuItem("Agent Commissions Per Package", "http://localhost/freeside/search/report_agent_commission_pkg.html", "" ));
-myMenu38.add(new WebFXMenuItem("Sales Person Commissions", "http://localhost/freeside/search/report_sales_commission.html", "" ));
-myMenu38.add(new WebFXMenuItem("Sales Person Commissions Per Package", "http://localhost/freeside/search/report_sales_commission_pkg.html", "" ));
-myMenu38.add(new WebFXMenuItem("Employee Commissions", "http://localhost/freeside/search/report_employee_commission.html", "" ));
-myMenu38.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Commissions", null, "Commission reports", myMenu38 ));
-myMenu34.add(new WebFXMenuItem("A/R Aging", "http://localhost/freeside/search/report_receivables.html", "Accounts Receivable Aging report" ));
-myMenu34.add(new WebFXMenuItem("Prepaid Income", "http://localhost/freeside/search/report_prepaid_income.html", "Prepaid income (unearned revenue)  report" ));
-myMenu34.add(new WebFXMenuItem("Tax Liability", "http://localhost/freeside/search/report_tax.html", "Tax liability report (internal tax data)" ));
-myMenu34.add(new WebFXMenuItem("E911 Fee Summary", "http://localhost/freeside/search/report_e911.html", "E911 fee summary" ));
-myMenu34.add(new WebFXMenuItem("Customer Accounting Summary", "http://localhost/freeside/search/report_customer_accounting_summary.html", "Customer accounting summary report" ));
+myMenu34.add(new WebFXMenuItem("Agent", "http://localhost/freeside/search/report_agent_commission.html", "" ));
+myMenu34.add(new WebFXMenuItem("Agent per package", "http://localhost/freeside/search/report_agent_commission_pkg.html", "" ));
+myMenu34.add(new WebFXMenuItem("Sales Person", "http://localhost/freeside/search/report_sales_commission.html", "" ));
+myMenu34.add(new WebFXMenuItem("Sales Person per package", "http://localhost/freeside/search/report_sales_commission_pkg.html", "" ));
+myMenu34.add(new WebFXMenuItem("Employee", "http://localhost/freeside/search/report_employee_commission.html", "" ));
 myMenu34.width = 256;
 
-myMenu0.add(new WebFXMenuItem("Financial", null, "Financial reports", myMenu34 ));
+myMenu32.add(new WebFXMenuItem("Commissions", null, "Commission reports", myMenu34 ));
+var myMenu35 = new WebFXMenu;
+myMenu35.emptyText = '';
+myMenu35.add(new WebFXMenuItem("Credit Report", "http://localhost/freeside/search/report_cust_credit.html", "Credit report (by employee and/or date range)" ));
+myMenu35.add(new WebFXMenuItem("Credit package source detail", "http://localhost/freeside/search/report_cust_credit_source_bill_pkg.html", "Line-item detail for triggered package credits" ));
+myMenu35.add(new WebFXMenuItem("Credit application detail", "http://localhost/freeside/search/report_cust_credit_bill_pkg.html", "Line item application detail" ));
+myMenu35.add(new WebFXMenuItem("Unapplied Credits", "http://localhost/freeside/search/report_cust_credit.html?unapplied=1", "Unapplied credit report (by type and/or date range)" ));
+myMenu35.add(new WebFXMenuItem("Voided Credits", "http://localhost/freeside/search/report_cust_credit_void.html", "Voided credit report (by employee and/or date range)" ));
+myMenu35.width = 256;
+
+myMenu32.add(new WebFXMenuItem("Credits", null, "Credit reports", myMenu35 ));
+var myMenu36 = new WebFXMenu;
+myMenu36.emptyText = '';
+myMenu36.add(new WebFXMenuItem("Refund Report", "http://localhost/freeside/search/report_cust_refund.html", "Refund report (by type and/or date range)" ));
+myMenu36.add(new WebFXMenuItem("Unapplied Refunds", "http://localhost/freeside/search/report_cust_refund.html?unapplied=1", "Unapplied refund report (by type and/or date range)" ));
+myMenu36.width = 256;
+
+myMenu32.add(new WebFXMenuItem("Refunds", null, "Refund reports", myMenu36 ));
+myMenu32.add(new WebFXMenuItem("A/R Aging", "http://localhost/freeside/search/report_receivables.html", "Accounts Receivable Aging report" ));
+myMenu32.add(new WebFXMenuItem("Prepaid Income", "http://localhost/freeside/search/report_prepaid_income.html", "Prepaid income (unearned revenue)  report" ));
+myMenu32.add(new WebFXMenuItem("Tax Liability", "http://localhost/freeside/search/report_tax.html", "Tax liability report (internal tax data)" ));
+myMenu32.add(new WebFXMenuItem("E911 Fee Summary", "http://localhost/freeside/search/report_e911.html", "E911 fee summary" ));
+myMenu32.add(new WebFXMenuItem("Customer Accounting Summary", "http://localhost/freeside/search/report_customer_accounting_summary.html", "Customer accounting summary report" ));
+myMenu32.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Financial (Receivables)", null, "Financial reports (Receivables)", myMenu32 ));
+var myMenu37 = new WebFXMenu;
+myMenu37.emptyText = '';
+myMenu37.add(new WebFXMenuItem("Payables summary", "http://localhost/freeside/search/report_vend_main.html", "Payables summary by vendor" ));
+myMenu37.add(new WebFXMenuItem("Payables detail", "http://localhost/freeside/search/report_vend_bill.html", "" ));
+myMenu37.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Financial (Payables)", null, "Financial reports (Payables)", myMenu37 ));
+var myMenu38 = new WebFXMenu;
+myMenu38.emptyText = '';
 var myMenu39 = new WebFXMenu;
 myMenu39.emptyText = '';
-myMenu39.add(new WebFXMenuItem("Credit limit incidents", "http://localhost/freeside/search/report_cust_main_credit_limit.html", "" ));
-myMenu39.add(new WebFXMenuItem("System log", "http://localhost/freeside/search/log.html", "View system events and debugging information." ));
-myMenu39.add(new WebFXMenuItem("Outgoing messages", "http://localhost/freeside/search/cust_msg.html", "View outgoing message log" ));
+myMenu39.add(new WebFXMenuItem("All billing events", "http://localhost/freeside/search/report_cust_event.html", "All billing events for a date range" ));
+myMenu39.add(new WebFXMenuItem("Billing event errors", "http://localhost/freeside/search/report_cust_event.html?failed=1", "Failed credit cards, processor or printer problems, etc." ));
 myMenu39.width = 256;
 
-myMenu0.add(new WebFXMenuItem("Logs", null, "System and email logs", myMenu39 ));
+myMenu38.add(new WebFXMenuItem("Billing events", null, "Billing events", myMenu39 ));
+myMenu38.add(new WebFXMenuItem("Credit limit incidents", "http://localhost/freeside/search/report_cust_main_credit_limit.html", "" ));
+myMenu38.add(new WebFXMenuItem("Employee activity", "http://localhost/freeside/search/report_employee_audit.html", "" ));
+myMenu38.add(new WebFXMenuItem("System log", "http://localhost/freeside/search/log.html", "View system events and debugging information." ));
+myMenu38.add(new WebFXMenuItem("Outgoing messages", "http://localhost/freeside/search/cust_msg.html", "View outgoing message log" ));
+myMenu38.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Logs", null, "System and email logs", myMenu38 ));
 myMenu0.width = 256;
 
           myBar.add(new WebFXMenuButton('Reports', null, 'Lists, reporting and graphing', myMenu0 ));
@@ -379,229 +382,266 @@ myMenu0.width = 256;
 
           var myMenu40 = new WebFXMenu;
 myMenu40.emptyText = '';
-myMenu40.add(new WebFXMenuItem("Quick payment entry", "http://localhost/freeside/misc/batch-cust_pay.html", "Enter multiple payments in a batch" ));
-myMenu40.add(new WebFXMenuItem("Download invoice batches", "http://localhost/freeside/search/bill_batch.cgi", "" ));
-myMenu40.add(new WebFXMenuItem("Bulk DID Orders", "http://localhost/freeside/browse/did_order.html", "View/manage bulk DID orders" ));
-myMenu40.add(new WebFXMenuItem("Job Queue", "http://localhost/freeside/search/queue.html", "View pending job queue" ));
 var myMenu41 = new WebFXMenu;
 myMenu41.emptyText = '';
-var myMenu42 = new WebFXMenu;
-myMenu42.emptyText = '';
-myMenu42.add(new WebFXMenuItem("Overview", "http://localhost/freeside/rt/Articles/index.html", "" ));
-myMenu42.add(new WebFXMenuItem("Search", "http://localhost/freeside/rt/Articles/Article/Search.html", "" ));
-myMenu42.add(new WebFXMenuItem("Topics", "http://localhost/freeside/rt/Articles/Topics.html", "" ));
-myMenu42.width = 256;
-
-myMenu41.add(new WebFXMenuItem("Articles", null, "", myMenu42 ));
-myMenu41.add(new WebFXMenuItem("My Day", "http://localhost/freeside/rt/Tools/MyDay.html", "" ));
-myMenu41.add(new WebFXMenuItem("My Reminders", "http://localhost/freeside/rt/Tools/MyReminders.html", "" ));
-myMenu41.add(new WebFXMenuItem("Offline", "http://localhost/freeside/rt/Tools/Offline.html", "" ));
-myMenu41.add(new WebFXMenuItem("Approval", "http://localhost/freeside/rt/Approvals/", "" ));
+myMenu41.add(new WebFXMenuItem("Appointments", "http://localhost/freeside/rt/Search/Schedule.html?LengthMin=0", "View appointment schedule" ));
+myMenu41.add(new WebFXMenuItem("Attachments", "http://localhost/freeside/browse/cust_attachment.html", "View customer attachments" ));
+myMenu41.add(new WebFXMenuItem("Customer email settings", "http://localhost/freeside/misc/manage_cust_email.html", "" ));
 myMenu41.width = 256;
 
-myMenu40.add(new WebFXMenuItem("Ticketing", null, "Ticketing tools", myMenu41 ));
-myMenu40.add(new WebFXMenuItem("Customer email settings", "http://localhost/freeside/misc/manage_cust_email.html", "" ));
-myMenu40.add(new WebFXMenuItem("Business card scan", "http://localhost/freeside/edit/prospect_main-upload.html", "" ));
-myMenu40.add(new WebFXMenuItem("Attachments", "http://localhost/freeside/browse/cust_attachment.html", "View customer attachments" ));
+myMenu40.add(new WebFXMenuItem("Customers", null, "Customer tools", myMenu41 ));
+var myMenu42 = new WebFXMenu;
+myMenu42.emptyText = '';
+myMenu42.add(new WebFXMenuItem("Quick payment entry", "http://localhost/freeside/misc/batch-cust_pay.html", "Enter multiple payments in a batch" ));
+myMenu42.add(new WebFXMenuItem("Download invoice batches", "http://localhost/freeside/search/bill_batch.cgi", "" ));
+myMenu42.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Billing", null, "Payment and invoice tools", myMenu42 ));
 var myMenu43 = new WebFXMenu;
 myMenu43.emptyText = '';
-myMenu43.add(new WebFXMenuItem("Customers", "http://localhost/freeside/misc/cust_main-import.cgi", "" ));
-myMenu43.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/misc/part_pkg-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Customer packages", "http://localhost/freeside/misc/cust_pkg-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Customer comments", "http://localhost/freeside/misc/cust_main_note-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("One-time charges", "http://localhost/freeside/misc/cust_main-import_charges.cgi", "" ));
-myMenu43.add(new WebFXMenuItem("Payments", "http://localhost/freeside/misc/cust_pay-import.cgi", "" ));
-myMenu43.add(new WebFXMenuItem("Credits", "http://localhost/freeside/misc/cust_credit-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Phone numbers (DIDs)", "http://localhost/freeside/misc/phone_avail-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Call Detail Records (CDRs)", "http://localhost/freeside/misc/cdr-import.html", "" ));
-myMenu43.width = 256;
-
-myMenu40.add(new WebFXMenuItem("Importing", null, "Import tools", myMenu43 ));
 var myMenu44 = new WebFXMenu;
 myMenu44.emptyText = '';
-myMenu44.add(new WebFXMenuItem("Download database dump", "http://localhost/freeside/misc/dump.cgi", "" ));
+myMenu44.add(new WebFXMenuItem("Overview", "http://localhost/freeside/rt/Articles/index.html", "" ));
+myMenu44.add(new WebFXMenuItem("Search", "http://localhost/freeside/rt/Articles/Article/Search.html", "" ));
+myMenu44.add(new WebFXMenuItem("Topics", "http://localhost/freeside/rt/Articles/Topics.html", "" ));
 myMenu44.width = 256;
 
-myMenu40.add(new WebFXMenuItem("Exporting", null, "Export tools", myMenu44 ));
-myMenu40.add(new WebFXMenuItem("Status", "http://localhost/freeside/view/Status.html", "System status" ));
+myMenu43.add(new WebFXMenuItem("Articles", null, "", myMenu44 ));
+myMenu43.add(new WebFXMenuItem("My Day", "http://localhost/freeside/rt/Tools/MyDay.html", "" ));
+myMenu43.add(new WebFXMenuItem("My Reminders", "http://localhost/freeside/rt/Tools/MyReminders.html", "" ));
+myMenu43.add(new WebFXMenuItem("Offline", "http://localhost/freeside/rt/Tools/Offline.html", "" ));
+myMenu43.add(new WebFXMenuItem("Approval", "http://localhost/freeside/rt/Approvals/", "" ));
+myMenu43.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Ticketing", null, "Ticketing tools", myMenu43 ));
+var myMenu45 = new WebFXMenu;
+myMenu45.emptyText = '';
+myMenu45.add(new WebFXMenuItem("Bulk DID Orders", "http://localhost/freeside/browse/did_order.html", "View/manage bulk DID orders" ));
+myMenu45.add(new WebFXMenuItem("Business card scan", "http://localhost/freeside/edit/prospect_main-upload.html", "" ));
+myMenu45.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu45 ));
+var myMenu46 = new WebFXMenu;
+myMenu46.emptyText = '';
+myMenu46.add(new WebFXMenuItem("Customers", "http://localhost/freeside/misc/cust_main-import.cgi", "" ));
+myMenu46.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/misc/part_pkg-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Customer packages", "http://localhost/freeside/misc/cust_pkg-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Customer comments", "http://localhost/freeside/misc/cust_main_note-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("One-time charges", "http://localhost/freeside/misc/cust_main-import_charges.cgi", "" ));
+myMenu46.add(new WebFXMenuItem("Payments", "http://localhost/freeside/misc/cust_pay-import.cgi", "" ));
+myMenu46.add(new WebFXMenuItem("Credits", "http://localhost/freeside/misc/cust_credit-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Phone numbers (DIDs)", "http://localhost/freeside/misc/phone_avail-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Call Detail Records (CDRs)", "http://localhost/freeside/misc/cdr-import.html", "" ));
+myMenu46.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Importing", null, "Import tools", myMenu46 ));
+var myMenu47 = new WebFXMenu;
+myMenu47.emptyText = '';
+myMenu47.add(new WebFXMenuItem("Status", "http://localhost/freeside/view/Status.html", "System status" ));
+myMenu47.add(new WebFXMenuItem("Job Queue", "http://localhost/freeside/search/queue.html", "View pending job queue" ));
+myMenu47.width = 256;
+
+myMenu40.add(new WebFXMenuItem("System", null, "System tools", myMenu47 ));
 myMenu40.width = 256;
 
           myBar.add(new WebFXMenuButton('Tools', null, 'Tools', myMenu40 ));
 
 
-          var myMenu45 = new WebFXMenu;
-myMenu45.emptyText = '';
-myMenu45.add(new WebFXMenuItem("Settings", "http://localhost/freeside/config/config-view.cgi", "" ));
-myMenu45.add(new WebFXMenuSeparator());
-var myMenu46 = new WebFXMenu;
-myMenu46.emptyText = '';
-myMenu46.add(new WebFXMenuItem("Agent types", "http://localhost/freeside/browse/agent_type.cgi", "Agent types define groups of package definitions that you can then assign to particular agents" ));
-myMenu46.add(new WebFXMenuItem("Agents", "http://localhost/freeside/browse/agent.cgi", "Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)" ));
-myMenu46.add(new WebFXMenuItem("Agent payment gateways", "http://localhost/freeside/browse/payment_gateway.html", "Credit card and electronic check processors for agent overrides" ));
-myMenu46.width = 256;
-
-myMenu45.add(new WebFXMenuItem("Companies", null, "", myMenu46 ));
-var myMenu47 = new WebFXMenu;
-myMenu47.emptyText = '';
-myMenu47.add(new WebFXMenuItem("Sales People", "http://localhost/freeside/browse/sales.html", "Sales people bring in new business." ));
-myMenu47.width = 256;
-
-myMenu45.add(new WebFXMenuItem("Sales People", null, "", myMenu47 ));
-var myMenu48 = new WebFXMenu;
+          var myMenu48 = new WebFXMenu;
 myMenu48.emptyText = '';
-myMenu48.add(new WebFXMenuItem("Employees", "http://localhost/freeside/browse/access_user.html", "Setup internal users" ));
-myMenu48.add(new WebFXMenuItem("Employee groups", "http://localhost/freeside/browse/access_group.html", "Employee groups allow you to control access to the backend" ));
-myMenu48.add(new WebFXMenuItem("Installer availability", "http://localhost/freeside/browse/sched_item.html", "Installer availability" ));
-myMenu48.width = 256;
-
-myMenu45.add(new WebFXMenuItem("Employees", null, "", myMenu48 ));
-myMenu45.add(new WebFXMenuSeparator());
+myMenu48.add(new WebFXMenuItem("Settings", "http://localhost/freeside/config/config-view.cgi", "" ));
+myMenu48.add(new WebFXMenuSeparator());
 var myMenu49 = new WebFXMenu;
 myMenu49.emptyText = '';
-myMenu49.add(new WebFXMenuItem("Customer tags", "http://localhost/freeside/browse/part_tag.html", "" ));
-myMenu49.add(new WebFXMenuItem("Customer classes", "http://localhost/freeside/browse/cust_class.html", "Customer classes define groups of customers for reporting." ));
-myMenu49.add(new WebFXMenuItem("Customer categories", "http://localhost/freeside/browse/cust_category.html", "Customer categories define groups of customer classes." ));
-myMenu49.add(new WebFXMenuSeparator());
-myMenu49.add(new WebFXMenuItem("Contact types", "http://localhost/freeside/browse/contact_class.html", "" ));
+myMenu49.add(new WebFXMenuItem("Agent types", "http://localhost/freeside/browse/agent_type.cgi", "Agent types define groups of package definitions that you can then assign to particular agents" ));
+myMenu49.add(new WebFXMenuItem("Agents", "http://localhost/freeside/browse/agent.cgi", "Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)" ));
+myMenu49.add(new WebFXMenuItem("Agent payment gateways", "http://localhost/freeside/browse/payment_gateway.html", "Credit card and electronic check processors for agent overrides" ));
 myMenu49.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Customers", null, "", myMenu49 ));
+myMenu48.add(new WebFXMenuItem("Companies", null, "", myMenu49 ));
 var myMenu50 = new WebFXMenu;
 myMenu50.emptyText = '';
-myMenu50.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/browse/part_pkg.cgi", "One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services" ));
-myMenu50.add(new WebFXMenuItem("Package classes", "http://localhost/freeside/browse/pkg_class.html", "Package classes define groups of packages, for taxation, ordering convenience and reporting." ));
-myMenu50.add(new WebFXMenuItem("Package categories", "http://localhost/freeside/browse/pkg_category.html", "Package categories define groups of package classes, for invoice sections." ));
-myMenu50.add(new WebFXMenuItem("Package report classes", "http://localhost/freeside/browse/part_pkg_report_option.html", "Package classes define optional groups of packages for reporting only." ));
-myMenu50.add(new WebFXMenuItem("Fees", "http://localhost/freeside/browse/part_fee.html", "" ));
-myMenu50.add(new WebFXMenuItem("Discounts", "http://localhost/freeside/browse/discount.html", "" ));
-myMenu50.add(new WebFXMenuItem("Discount classes", "http://localhost/freeside/browse/discount_class.html", "" ));
-var myMenu51 = new WebFXMenu;
-myMenu51.emptyText = '';
-myMenu51.add(new WebFXMenuItem("Cancel reasons", "http://localhost/freeside/browse/reason.html?class=C", "Cancel reasons explain why a service was cancelled." ));
-myMenu51.add(new WebFXMenuItem("Cancel reason types", "http://localhost/freeside/browse/reason_type.html?class=C", "Cancel reason types define groups of reasons." ));
-myMenu51.add(new WebFXMenuItem("Suspend reasons", "http://localhost/freeside/browse/reason.html?class=S", "Suspend reasons explain why a service was suspended." ));
-myMenu51.add(new WebFXMenuItem("Suspend reason types", "http://localhost/freeside/browse/reason_type.html?class=S", "Suspend reason types define groups of reasons." ));
-myMenu51.width = 256;
-
-myMenu50.add(new WebFXMenuItem("Cancel/Suspend Reasons", null, "", myMenu51 ));
+myMenu50.add(new WebFXMenuItem("Sales People", "http://localhost/freeside/browse/sales.html", "Sales people bring in new business." ));
 myMenu50.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Packages", null, "", myMenu50 ));
+myMenu48.add(new WebFXMenuItem("Sales People", null, "", myMenu50 ));
+var myMenu51 = new WebFXMenu;
+myMenu51.emptyText = '';
+myMenu51.add(new WebFXMenuItem("Employees", "http://localhost/freeside/browse/access_user.html", "Setup internal users" ));
+myMenu51.add(new WebFXMenuItem("Employee groups", "http://localhost/freeside/browse/access_group.html", "Employee groups allow you to control access to the backend" ));
+myMenu51.add(new WebFXMenuItem("Installer availability", "http://localhost/freeside/browse/sched_item.html", "Installer availability" ));
+myMenu51.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Employees", null, "", myMenu51 ));
+myMenu48.add(new WebFXMenuSeparator());
 var myMenu52 = new WebFXMenu;
 myMenu52.emptyText = '';
-myMenu52.add(new WebFXMenuItem("Service definitions", "http://localhost/freeside/browse/part_svc.cgi", "Services are items you offer to your customers" ));
-myMenu52.add(new WebFXMenuItem("Service classes", "http://localhost/freeside/browse/part_svc_class.html", "Services classes are user-defined, informational types for services" ));
-myMenu52.add(new WebFXMenuItem("Provisioning exports", "http://localhost/freeside/browse/part_export.cgi", "Provisioning services to external machines, databases and APIs" ));
-var myMenu53 = new WebFXMenu;
-myMenu53.emptyText = '';
-myMenu53.add(new WebFXMenuItem("Access numbers", "http://localhost/freeside/browse/svc_acct_pop.cgi", "Points of Presence" ));
-myMenu53.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Dialup", null, "", myMenu53 ));
-var myMenu54 = new WebFXMenu;
-myMenu54.emptyText = '';
-myMenu54.add(new WebFXMenuItem("Towers", "http://localhost/freeside/browse/tower.html", "Towers and sectors" ));
-myMenu54.add(new WebFXMenuItem("Routers", "http://localhost/freeside/browse/router.cgi", "Broadband access routers" ));
-myMenu54.add(new WebFXMenuItem("Address blocks", "http://localhost/freeside/browse/addr_block.cgi", "Manage address blocks and block assignments to broadband routers" ));
-myMenu54.add(new WebFXMenuItem("Address ranges", "http://localhost/freeside/browse/addr_range.html", "Designate special address ranges" ));
-myMenu54.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Wireless broadband", null, "", myMenu54 ));
-var myMenu55 = new WebFXMenu;
-myMenu55.emptyText = '';
-myMenu55.add(new WebFXMenuItem("View/Edit phone device types", "http://localhost/freeside/browse/part_device.html", "Phone device types" ));
-myMenu55.add(new WebFXMenuItem("View/Edit bulk DID vendors", "http://localhost/freeside/browse/did_vendor.html", "Bulk DID vendors" ));
-myMenu55.add(new WebFXMenuItem("View/Edit Carriers", "http://localhost/freeside/browse/cdr_carrier.html", "Carriers" ));
-myMenu55.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Phone", null, "", myMenu55 ));
-var myMenu56 = new WebFXMenu;
-myMenu56.emptyText = '';
-myMenu56.add(new WebFXMenuItem("RADIUS Groups", "http://localhost/freeside/browse/radius_group.html", "Manage RADIUS groups" ));
-myMenu56.add(new WebFXMenuItem("RADIUS Clients", "http://localhost/freeside/browse/nas.html", "Manage RADIUS clients" ));
-myMenu56.width = 256;
-
-myMenu52.add(new WebFXMenuItem("RADIUS", null, "", myMenu56 ));
-var myMenu57 = new WebFXMenu;
-myMenu57.emptyText = '';
-myMenu57.add(new WebFXMenuItem("Cable providers", "http://localhost/freeside/browse/cable_provider.html", "" ));
-myMenu57.add(new WebFXMenuItem("Cable modem models", "http://localhost/freeside/browse/cable_model.html", "" ));
-myMenu57.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Cable", null, "", myMenu57 ));
-var myMenu58 = new WebFXMenu;
-myMenu58.emptyText = '';
-myMenu58.add(new WebFXMenuItem("Alarm system vendors", "http://localhost/freeside/browse/alarm_system.html", "" ));
-myMenu58.add(new WebFXMenuItem("Alarm system types", "http://localhost/freeside/browse/alarm_type.html", "" ));
-myMenu58.add(new WebFXMenuItem("Alarm central stations", "http://localhost/freeside/browse/alarm_station.html", "" ));
-myMenu58.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Alarm", null, "", myMenu58 ));
-var myMenu59 = new WebFXMenu;
-myMenu59.emptyText = '';
-myMenu59.add(new WebFXMenuItem("Circuit types", "http://localhost/freeside/browse/circuit_type.html", "" ));
-myMenu59.add(new WebFXMenuItem("Circuit providers", "http://localhost/freeside/browse/circuit_provider.html", "" ));
-myMenu59.add(new WebFXMenuItem("Termination types", "http://localhost/freeside/browse/circuit_termination.html", "" ));
-myMenu59.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Circuits", null, "", myMenu59 ));
-myMenu52.add(new WebFXMenuItem("Hardware types", "http://localhost/freeside/browse/hardware_class.html", "Set up hardware type catalog" ));
+myMenu52.add(new WebFXMenuItem("Customer tags", "http://localhost/freeside/browse/part_tag.html", "" ));
+myMenu52.add(new WebFXMenuItem("Customer classes", "http://localhost/freeside/browse/cust_class.html", "Customer classes define groups of customers for reporting." ));
+myMenu52.add(new WebFXMenuItem("Customer categories", "http://localhost/freeside/browse/cust_category.html", "Customer categories define groups of customer classes." ));
+myMenu52.add(new WebFXMenuSeparator());
+myMenu52.add(new WebFXMenuItem("Contact types", "http://localhost/freeside/browse/contact_class.html", "" ));
 myMenu52.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Services", null, "", myMenu52 ));
-myMenu45.add(new WebFXMenuSeparator());
+myMenu48.add(new WebFXMenuItem("Customers", null, "", myMenu52 ));
+var myMenu53 = new WebFXMenu;
+myMenu53.emptyText = '';
+myMenu53.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/browse/part_pkg.cgi", "One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services" ));
+myMenu53.add(new WebFXMenuItem("Package classes", "http://localhost/freeside/browse/pkg_class.html", "Package classes define groups of packages, for taxation, ordering convenience and reporting." ));
+myMenu53.add(new WebFXMenuItem("Package categories", "http://localhost/freeside/browse/pkg_category.html", "Package categories define groups of package classes, for invoice sections." ));
+myMenu53.add(new WebFXMenuItem("Package report classes", "http://localhost/freeside/browse/part_pkg_report_option.html", "Package classes define optional groups of packages for reporting only." ));
+myMenu53.add(new WebFXMenuItem("Fees", "http://localhost/freeside/browse/part_fee.html", "" ));
+myMenu53.add(new WebFXMenuItem("Discounts", "http://localhost/freeside/browse/discount.html", "" ));
+myMenu53.add(new WebFXMenuItem("Discount classes", "http://localhost/freeside/browse/discount_class.html", "" ));
+var myMenu54 = new WebFXMenu;
+myMenu54.emptyText = '';
+myMenu54.add(new WebFXMenuItem("Cancel reasons", "http://localhost/freeside/browse/reason.html?class=C", "Cancel reasons explain why a service was cancelled." ));
+myMenu54.add(new WebFXMenuItem("Cancel reason types", "http://localhost/freeside/browse/reason_type.html?class=C", "Cancel reason types define groups of reasons." ));
+myMenu54.add(new WebFXMenuItem("Suspend reasons", "http://localhost/freeside/browse/reason.html?class=S", "Suspend reasons explain why a service was suspended." ));
+myMenu54.add(new WebFXMenuItem("Suspend reason types", "http://localhost/freeside/browse/reason_type.html?class=S", "Suspend reason types define groups of reasons." ));
+myMenu54.width = 256;
+
+myMenu53.add(new WebFXMenuItem("Cancel/Suspend Reasons", null, "", myMenu54 ));
+myMenu53.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Packages", null, "", myMenu53 ));
+var myMenu55 = new WebFXMenu;
+myMenu55.emptyText = '';
+myMenu55.add(new WebFXMenuItem("Service definitions", "http://localhost/freeside/browse/part_svc.cgi", "Services are items you offer to your customers" ));
+myMenu55.add(new WebFXMenuItem("Service classes", "http://localhost/freeside/browse/part_svc_class.html", "Services classes are user-defined, informational types for services" ));
+myMenu55.add(new WebFXMenuItem("Service dependencies", "http://localhost/freeside/browse/part_svc_link.html", "Services depencies define rules between service definitions" ));
+myMenu55.add(new WebFXMenuItem("Provisioning exports", "http://localhost/freeside/browse/part_export.cgi", "Provisioning services to external machines, databases and APIs" ));
+var myMenu56 = new WebFXMenu;
+myMenu56.emptyText = '';
+myMenu56.add(new WebFXMenuItem("Access numbers", "http://localhost/freeside/browse/svc_acct_pop.cgi", "Points of Presence" ));
+myMenu56.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Dialup", null, "", myMenu56 ));
+var myMenu57 = new WebFXMenu;
+myMenu57.emptyText = '';
+myMenu57.add(new WebFXMenuItem("Towers", "http://localhost/freeside/browse/tower.html", "Towers and sectors" ));
+myMenu57.add(new WebFXMenuItem("Routers", "http://localhost/freeside/browse/router.cgi", "Broadband access routers" ));
+myMenu57.add(new WebFXMenuItem("Address blocks", "http://localhost/freeside/browse/addr_block.cgi", "Manage address blocks and block assignments to broadband routers" ));
+myMenu57.add(new WebFXMenuItem("Address ranges", "http://localhost/freeside/browse/addr_range.html", "Designate special address ranges" ));
+myMenu57.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Wireless broadband", null, "", myMenu57 ));
+var myMenu58 = new WebFXMenu;
+myMenu58.emptyText = '';
+myMenu58.add(new WebFXMenuItem("View/Edit phone device types", "http://localhost/freeside/browse/part_device.html", "Phone device types" ));
+myMenu58.add(new WebFXMenuItem("View/Edit bulk DID vendors", "http://localhost/freeside/browse/did_vendor.html", "Bulk DID vendors" ));
+myMenu58.add(new WebFXMenuItem("View/Edit Carriers", "http://localhost/freeside/browse/cdr_carrier.html", "Carriers" ));
+myMenu58.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Phone", null, "", myMenu58 ));
+var myMenu59 = new WebFXMenu;
+myMenu59.emptyText = '';
+myMenu59.add(new WebFXMenuItem("RADIUS Groups", "http://localhost/freeside/browse/radius_group.html", "Manage RADIUS groups" ));
+myMenu59.add(new WebFXMenuItem("RADIUS Clients", "http://localhost/freeside/browse/nas.html", "Manage RADIUS clients" ));
+myMenu59.width = 256;
+
+myMenu55.add(new WebFXMenuItem("RADIUS", null, "", myMenu59 ));
 var myMenu60 = new WebFXMenu;
 myMenu60.emptyText = '';
-myMenu60.add(new WebFXMenuItem("Billing events", "http://localhost/freeside/browse/part_event.html", "Billing actions for customers, invoices and packages" ));
-myMenu60.add(new WebFXMenuItem("Invoice configurations", "http://localhost/freeside/browse/invoice_conf.html", "Adjust invoice settings for special-purpose notices" ));
-myMenu60.add(new WebFXMenuItem("Invoice templates", "http://localhost/freeside/browse/invoice_template.html", "Edit templates for HTML, plaintext and typeset invoices" ));
-myMenu60.add(new WebFXMenuItem("Prepaid cards", "http://localhost/freeside/search/prepay_credit.html", "View outstanding cards, generate new cards" ));
-var myMenu61 = new WebFXMenu;
-myMenu61.emptyText = '';
-myMenu61.add(new WebFXMenuItem("Rate plans", "http://localhost/freeside/browse/rate.cgi", "Manage rate plans" ));
-myMenu61.add(new WebFXMenuItem("Regions and prefixes", "http://localhost/freeside/browse/rate_region.html", "Manage regions and prefixes" ));
-myMenu61.add(new WebFXMenuItem("Usage classes", "http://localhost/freeside/browse/usage_class.html", "Usage classes define groups of usage for taxation." ));
-myMenu61.add(new WebFXMenuItem("Time periods", "http://localhost/freeside/browse/rate_time.html", "Time periods define days and hours for rate plans" ));
-myMenu61.add(new WebFXMenuItem("Edit rates with Excel", "http://localhost/freeside/misc/rate_edit_excel.html", "Download and edit rates with Excel, then upload changes." ));
-myMenu61.add(new WebFXMenuSeparator());
-myMenu61.add(new WebFXMenuItem("Tiering plans", "http://localhost/freeside/browse/rate_tier.html", "Rating tiers" ));
-myMenu61.width = 256;
-
-myMenu60.add(new WebFXMenuItem("Call rates and regions", null, "Manage rate plans, regions and prefixes for VoIP and call billing", myMenu61 ));
-myMenu60.add(new WebFXMenuItem("Locales and tax rates", "http://localhost/freeside/browse/cust_main_county.cgi", "Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each" ));
-myMenu60.add(new WebFXMenuItem("Tax classes", "http://localhost/freeside/browse/part_pkg_taxclass.html", "Tax classes" ));
-myMenu60.add(new WebFXMenuItem("Credit reasons", "http://localhost/freeside/browse/reason.html?class=R", "Credit reasons explain why a credit was issued." ));
-myMenu60.add(new WebFXMenuItem("Credit reason types", "http://localhost/freeside/browse/reason_type.html?class=R", "Credit reason types define groups of reasons." ));
+myMenu60.add(new WebFXMenuItem("Cable providers", "http://localhost/freeside/browse/cable_provider.html", "" ));
+myMenu60.add(new WebFXMenuItem("Cable modem models", "http://localhost/freeside/browse/cable_model.html", "" ));
 myMenu60.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Billing", null, "", myMenu60 ));
-myMenu45.add(new WebFXMenuSeparator());
+myMenu55.add(new WebFXMenuItem("Cable", null, "", myMenu60 ));
+var myMenu61 = new WebFXMenu;
+myMenu61.emptyText = '';
+myMenu61.add(new WebFXMenuItem("Conferencing types", "http://localhost/freeside/browse/conferencing_type.html", "" ));
+myMenu61.add(new WebFXMenuItem("Quality levels", "http://localhost/freeside/browse/conferencing_quality.html", "" ));
+myMenu61.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Conferencing", null, "", myMenu61 ));
 var myMenu62 = new WebFXMenu;
 myMenu62.emptyText = '';
-myMenu62.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
-myMenu62.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
-myMenu62.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
-myMenu62.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
-myMenu62.add(new WebFXMenuItem("Inventory classes and inventory", "http://localhost/freeside/browse/inventory_class.html", "Setup inventory classes and stock inventory" ));
-myMenu62.add(new WebFXMenuItem("Upload targets", "http://localhost/freeside/browse/upload_target.html", "Billing and payment upload destinations" ));
+myMenu62.add(new WebFXMenuItem("Alarm system vendors", "http://localhost/freeside/browse/alarm_system.html", "" ));
+myMenu62.add(new WebFXMenuItem("Alarm system types", "http://localhost/freeside/browse/alarm_type.html", "" ));
+myMenu62.add(new WebFXMenuItem("Alarm central stations", "http://localhost/freeside/browse/alarm_station.html", "" ));
 myMenu62.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu62 ));
-myMenu45.width = 256;
-
-          myBar.add(new WebFXMenuButton('Configuration', null, 'Configuration and setup', myMenu45 ));
-
-
-          var myMenu63 = new WebFXMenu;
+myMenu55.add(new WebFXMenuItem("Alarm", null, "", myMenu62 ));
+var myMenu63 = new WebFXMenu;
 myMenu63.emptyText = '';
-myMenu63.add(new WebFXMenuItem("Billing documentation", "http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation", "Freeside documentation" ));
-myMenu63.add(new WebFXMenuItem("Ticketing documentation", "http://wiki.bestpractical.com/", "Request Tracker Wiki" ));
-myMenu63.add(new WebFXMenuSeparator());
-myMenu63.add(new WebFXMenuItem("About Freeside v3.8git", "javascript:about_freeside()", "" ));
-myMenu63.add(new WebFXMenuItem("About RT v4.0.23", "http://www.bestpractical.com/rt", "Request Tracker Homepage" ));
+myMenu63.add(new WebFXMenuItem("Circuit types", "http://localhost/freeside/browse/circuit_type.html", "" ));
+myMenu63.add(new WebFXMenuItem("Circuit providers", "http://localhost/freeside/browse/circuit_provider.html", "" ));
+myMenu63.add(new WebFXMenuItem("Termination types", "http://localhost/freeside/browse/circuit_termination.html", "" ));
 myMenu63.width = 256;
 
-          myBar.add(new WebFXMenuButton('Help', null, '', myMenu63 ));
+myMenu55.add(new WebFXMenuItem("Circuits", null, "", myMenu63 ));
+myMenu55.add(new WebFXMenuItem("Hardware types", "http://localhost/freeside/browse/hardware_class.html", "Set up hardware type catalog" ));
+myMenu55.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Services", null, "", myMenu55 ));
+myMenu48.add(new WebFXMenuSeparator());
+var myMenu64 = new WebFXMenu;
+myMenu64.emptyText = '';
+myMenu64.add(new WebFXMenuItem("Vendor classes", "http://localhost/freeside/browse/vend_class.html", "" ));
+myMenu64.add(new WebFXMenuItem("Vendors", "http://localhost/freeside/browse/vend_main.html", "" ));
+myMenu64.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Vendors", null, "", myMenu64 ));
+myMenu48.add(new WebFXMenuSeparator());
+var myMenu65 = new WebFXMenu;
+myMenu65.emptyText = '';
+myMenu65.add(new WebFXMenuItem("Billing events", "http://localhost/freeside/browse/part_event.html", "Billing actions for customers, invoices and packages" ));
+myMenu65.add(new WebFXMenuItem("Invoice configurations", "http://localhost/freeside/browse/invoice_conf.html", "Adjust invoice settings for special-purpose notices" ));
+myMenu65.add(new WebFXMenuItem("Invoice templates", "http://localhost/freeside/browse/invoice_template.html", "Edit templates for HTML, plaintext and typeset invoices" ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Prepaid cards", "http://localhost/freeside/search/prepay_credit.html", "View outstanding cards, generate new cards" ));
+var myMenu66 = new WebFXMenu;
+myMenu66.emptyText = '';
+myMenu66.add(new WebFXMenuItem("Rate plans", "http://localhost/freeside/browse/rate.cgi", "Manage rate plans" ));
+myMenu66.add(new WebFXMenuItem("Regions and prefixes", "http://localhost/freeside/browse/rate_region.html", "Manage regions and prefixes" ));
+myMenu66.add(new WebFXMenuItem("Usage classes", "http://localhost/freeside/browse/usage_class.html", "Usage classes define groups of usage for taxation." ));
+myMenu66.add(new WebFXMenuItem("Time periods", "http://localhost/freeside/browse/rate_time.html", "Time periods define days and hours for rate plans" ));
+myMenu66.add(new WebFXMenuItem("Edit rates with Excel", "http://localhost/freeside/misc/rate_edit_excel.html", "Download and edit rates with Excel, then upload changes." ));
+myMenu66.add(new WebFXMenuSeparator());
+myMenu66.add(new WebFXMenuItem("Tiering plans", "http://localhost/freeside/browse/rate_tier.html", "Rating tiers" ));
+myMenu66.width = 256;
+
+myMenu65.add(new WebFXMenuItem("Call rates and regions", null, "Manage rate plans, regions and prefixes for VoIP and call billing", myMenu66 ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Locales and tax rates", "http://localhost/freeside/browse/cust_main_county.cgi", "Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each" ));
+myMenu65.add(new WebFXMenuItem("Tax classes", "http://localhost/freeside/browse/part_pkg_taxclass.html", "Tax classes" ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Credit reasons", "http://localhost/freeside/browse/reason.html?class=R", "Credit reasons explain why a credit was issued." ));
+myMenu65.add(new WebFXMenuItem("Credit reason types", "http://localhost/freeside/browse/reason_type.html?class=R", "Credit reason types define groups of reasons." ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Refund reasons", "http://localhost/freeside/browse/reason.html?class=F", "Refund reasons explain why a refund was issued." ));
+myMenu65.add(new WebFXMenuItem("Refund reason types", "http://localhost/freeside/browse/reason_type.html?class=F", "Refund reason types define groups of reasons." ));
+myMenu65.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
+myMenu48.add(new WebFXMenuSeparator());
+var myMenu67 = new WebFXMenu;
+myMenu67.emptyText = '';
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
+myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
+myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
+myMenu67.add(new WebFXMenuItem("Inventory classes and inventory", "http://localhost/freeside/browse/inventory_class.html", "Setup inventory classes and stock inventory" ));
+myMenu67.add(new WebFXMenuItem("Upload targets", "http://localhost/freeside/browse/upload_target.html", "Billing and payment upload destinations" ));
+myMenu67.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu67 ));
+myMenu48.width = 256;
+
+          myBar.add(new WebFXMenuButton('Configuration', null, 'Configuration and setup', myMenu48 ));
+
+
+          var myMenu68 = new WebFXMenu;
+myMenu68.emptyText = '';
+myMenu68.add(new WebFXMenuItem("Billing documentation", "http://www.freeside.biz/mediawiki/index.php/Freeside:4:Documentation", "Freeside documentation" ));
+myMenu68.add(new WebFXMenuItem("Ticketing documentation", "http://wiki.bestpractical.com/", "Request Tracker Wiki" ));
+myMenu68.add(new WebFXMenuSeparator());
+myMenu68.add(new WebFXMenuItem("About Freeside v5.0git", "javascript:about_freeside()", "" ));
+myMenu68.add(new WebFXMenuItem("About RT v4.2.11", "http://www.bestpractical.com/rt", "Request Tracker Homepage" ));
+myMenu68.width = 256;
+
+          myBar.add(new WebFXMenuButton('Help', null, '', myMenu68 ));
 
 
   myBar.show( null, 'vertical' );
@@ -612,67 +652,11 @@ myMenu63.width = 256;
 
 
 
+      <link rel="stylesheet" href="http://localhost/freeside/elements/jquery-ui.min.css">
+      <SCRIPT SRC="http://localhost/freeside/elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="http://localhost/freeside/elements/jquery-ui.min.js"></SCRIPT>
     
-    <SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
-
-    <SCRIPT TYPE="text/javascript">
-
-  function logout() {
-    // count args; build URL
-    var url = "http://localhost/freeside/loginout/logout.html";
-
-    var xmlhttp = rs_init_object();
-    xmlhttp.open("GET", url, false, "magic", "notyet");
-    xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
-    xmlhttp.send(null);
-
-    if (xmlhttp.readyState != 4) {
-      alert("Logout failed: readyState is " + xmlhttp.readyState);
-      return;
-    }
-
-    if (xmlhttp.status != 200) {
-      alert("Logout failed: status is " + xmlhttp.status);
-    } else {
-      var data = xmlhttp.responseText;
-      // alert('received response: ' + data);
-      if ( data.indexOf("<b>System error</b>") > -1 ) {
-        var w;
-        if ( w = window.open("about:blank") ) {
-          w.document.write(data);
-        } else {
-          // popup blocking?  should use an overlib popup instead 
-          alert("Error popup disabled; try disabling popup blocking to see");
-        }
-      } else {
-        window.location = "http://localhost/freeside/loginout/logout.html";
-      }
-    }
-  }
-
-</SCRIPT>
-
+    
 
     
 
@@ -682,9 +666,9 @@ myMenu63.width = 256;
       <tr>
         <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="http://localhost/freeside/view/REAL_logo.cgi"></td>
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
-          <font size=6>Freeside Test 3.8.1</font>
+          <font size=6>Freeside Test 5.0.1</font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b>test&nbsp;</b> <FONT SIZE="-2"><a href="javascript:void(0);" onClick="logout();">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="http://localhost/freeside/pref/pref.html" STYLE="color: #000000">Preferences</a>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b>test&nbsp;</b> <FONT SIZE="-2"><a href="http://localhost/freeside/loginout/logout.html">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="http://localhost/freeside/pref/pref.html" STYLE="color: #000000">Preferences</a>
           <BR></FONT>
         </td>
       </tr>
@@ -698,7 +682,7 @@ myMenu63.width = 256;
       <TR CLASS="fsmenubar">
 
 
-        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#dddddd">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -708,7 +692,7 @@ myMenu63.width = 256;
 
       <TR CLASS="fssearchbar">
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           
   <FORM ACTION="http://localhost/freeside/search/prospect_main.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="search_prospect" TYPE="text" VALUE="(name, company or phone)" STYLE="width:155px" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
@@ -729,7 +713,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           
   <FORM ACTION="http://localhost/freeside/search/cust_main.cgi" METHOD="POST" STYLE="margin:0">
     <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or contact phone)" STYLE="width:246px" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
@@ -750,7 +734,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="center">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="center">
           
 <SCRIPT TYPE="text/javascript">
 
@@ -763,7 +747,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right">
           
   <FORM ACTION="http://localhost/freeside/search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
     <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
@@ -784,7 +768,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           
   <FORM ACTION="http://localhost/freeside/search/cust_svc.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="search_svc" TYPE="text" VALUE="(user, email, ip, mac, domain or service phone)" STYLE="width:271px" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
@@ -805,7 +789,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
           
   <FORM ACTION="http://localhost/freeside//rt/index.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="q" TYPE="text" VALUE="(ticket #, subject, email or fulltext:text)" STYLE="width:223px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
@@ -835,13 +819,14 @@ myMenu63.width = 256;
 
       <TR HEIGHT="100%">
 
+    <BR>
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
-          <FONT SIZE=6>
+          <H1>
             Invoice Search Results
-          </FONT>
+          </H1>
 
-          <BR><BR>
+          <BR>
 
           
    <A HREF="javascript:confirm_print_process()" >Print these invoices</A> | <A HREF="javascript:confirm_email_process()" >Email these invoices</A>
@@ -988,7 +973,7 @@ function print_process () {
   var fieldName;
   for (var i = 0; i<document.print_form.elements.length; i++) {
     field  = document.print_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('days') > -1) || (field.name.indexOf('charged') > -1) || (field.name.indexOf('order_by') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1033,32 +1018,9 @@ function print_myCallback( jobnum ) {
 
 
 <FORM NAME="print_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 <INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
+<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 </FORM>
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1168,7 +1130,7 @@ function email_process () {
   var fieldName;
   for (var i = 0; i<document.email_form.elements.length; i++) {
     field  = document.email_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('days') > -1) || (field.name.indexOf('charged') > -1) || (field.name.indexOf('order_by') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1213,32 +1175,9 @@ function email_myCallback( jobnum ) {
 
 
 <FORM NAME="email_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 <INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
+<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 </FORM>
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1348,7 +1287,7 @@ function fax_process () {
   var fieldName;
   for (var i = 0; i<document.fax_form.elements.length; i++) {
     field  = document.fax_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('days') > -1) || (field.name.indexOf('charged') > -1) || (field.name.indexOf('order_by') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1393,32 +1332,9 @@ function fax_myCallback( jobnum ) {
 
 
 <FORM NAME="fax_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 <INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
+<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 </FORM>
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1528,7 +1444,7 @@ function ftp_process () {
   var fieldName;
   for (var i = 0; i<document.ftp_form.elements.length; i++) {
     field  = document.ftp_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('days') > -1) || (field.name.indexOf('charged') > -1) || (field.name.indexOf('order_by') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1573,32 +1489,9 @@ function ftp_myCallback( jobnum ) {
 
 
 <FORM NAME="ftp_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 <INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
+<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 </FORM>
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1708,7 +1601,7 @@ function spool_process () {
   var fieldName;
   for (var i = 0; i<document.spool_form.elements.length; i++) {
     field  = document.spool_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('days') > -1) || (field.name.indexOf('charged') > -1) || (field.name.indexOf('order_by') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1753,9 +1646,8 @@ function spool_myCallback( jobnum ) {
 
 
 <FORM NAME="spool_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 <INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
+<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
 </FORM><SCRIPT TYPE="text/javascript">
 
 function confirm_print_process() {
@@ -1815,7 +1707,8 @@ function confirm_spool_process() {
 
                 <BR>
 
-                      $141620.74 invoiced<BR>
+                      $141620.74 gross sales<BR>
+                      − $0.00 discounted<BR>
                       − $0.00 credited<BR>
                       = $141620.74 net sales<BR>
                       $48352.49 outstanding balance<BR>
