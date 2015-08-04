@@ -14,20 +14,6 @@ if psql -l |grep -q '^ *freeside '; then
   psql postgres -c "ALTER DATABASE freeside RENAME TO $newname"
 fi
 
-if (sudo grep -q '^test:' /usr/local/etc/freeside/htpasswd); then
-  newhtpasswd=htpasswd_test_`date +%Y%m%d`
-  echo "Renaming htpasswd to $newhtpasswd."
-  sudo mv /usr/local/etc/freeside/htpasswd /usr/local/etc/freeside/$newhtpasswd
-  oldhtpasswd=$( cd /usr/local/etc/freeside; \
-                 ls |grep -P 'htpasswd_\d{8}' | \
-                 sort -nr |head -1 )
-  if [ -f $oldhtpasswd ]; then
-    echo "Renaming $oldhtpasswd to htpasswd."
-    sudo mv /usr/local/etc/freeside/$oldhtpasswd \
-      /usr/local/etc/freeside/htpasswd
-  fi
-fi
-
 oldname=$( psql -tl | \
            cut -d '|' -f 1 | \
            tr -d ' ' | \
