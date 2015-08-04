@@ -74,8 +74,16 @@ sub new {
 
   $self->mech( WWW::Mechanize->new( autocheck => 0 ) );
 
-  #freeside v3
-  $self->mech->credentials( $self->user, $self->pass );
+  #freeside v4_
+  my $login = $self->fsurl . '/index.html';
+  $self->mech->get($login)
+    or die "FS::Test->new: couldn't fetch $login";
+  $self->mech->submit_form(
+    with_fields => {
+      credential_0 => $self->user,
+      credential_1 => $self->pass,
+    },
+  );
 
   return $self;
 }

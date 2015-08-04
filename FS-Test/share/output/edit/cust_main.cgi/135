@@ -25,7 +25,7 @@
 <SCRIPT TYPE="text/javascript">
 
   function about_freeside() {
-    overlib( OLiframeContent('http://localhost/freeside/docs/about.html', 300, 375, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'About', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#7e0079', CGCOLOR, '#7e0079', CLOSETEXT, 'Close'); 
+    overlib( OLiframeContent('http://localhost/freeside/docs/about.html', 300, 375, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'About', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#7e0079', CGCOLOR, '#7e0079', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); 
   }
 
   webfxMenuImagePath      = "http://localhost/freeside/images/";
@@ -84,6 +84,7 @@ myMenu3.add(new WebFXMenuItem("Signup date report", "http://localhost/freeside/g
 myMenu3.add(new WebFXMenuItem("Advanced customer reports", "http://localhost/freeside/search/report_cust_main.html", "by status, signup date, agent, etc." ));
 myMenu3.add(new WebFXMenuSeparator());
 myMenu3.add(new WebFXMenuItem("Customer contacts", "http://localhost/freeside/search/report_contact.html?link=cust_main", "" ));
+myMenu3.add(new WebFXMenuItem("Customer stored payment information", "http://localhost/freeside/search/report_cust_payby.html", "" ));
 myMenu3.width = 256;
 
 myMenu0.add(new WebFXMenuItem("Customers", null, "Customer reports", myMenu3 ));
@@ -305,72 +306,74 @@ myMenu30.width = 256;
 myMenu0.add(new WebFXMenuItem("Tickets", null, "Ticket reports", myMenu30 ));
 var myMenu32 = new WebFXMenu;
 myMenu32.emptyText = '';
-myMenu32.add(new WebFXMenuItem("Employee Commission Report", "http://localhost/freeside/search/report_employee_commission.html", "" ));
-myMenu32.add(new WebFXMenuItem("Employee Audit Report", "http://localhost/freeside/search/report_employee_audit.html", "Employee audit report" ));
-myMenu32.width = 256;
-
-myMenu0.add(new WebFXMenuItem("Employees", null, "Employee reports", myMenu32 ));
 var myMenu33 = new WebFXMenu;
 myMenu33.emptyText = '';
-myMenu33.add(new WebFXMenuItem("All billing events", "http://localhost/freeside/search/report_cust_event.html", "All billing events for a date range" ));
-myMenu33.add(new WebFXMenuItem("Billing event errors", "http://localhost/freeside/search/report_cust_event.html?failed=1", "Failed credit cards, processor or printer problems, etc." ));
+myMenu33.add(new WebFXMenuItem("Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time.html", "Sales, credits and receipts summary graph" ));
+myMenu33.add(new WebFXMenuItem("Daily Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time_daily.html", "Sales, credits and receipts (broken down by day) summary graph" ));
+myMenu33.add(new WebFXMenuItem("Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg.html", "Sales report and graph (by agent, package class and/or date range)" ));
+myMenu33.add(new WebFXMenuItem("Rated Call Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg_detail.html", "Sales report and graph (by agent, package class, usage class and/or date range)" ));
+myMenu33.add(new WebFXMenuItem("Sales with Advertising Source", "http://localhost/freeside/search/report_cust_bill_pkg_referral.html", "" ));
 myMenu33.width = 256;
 
-myMenu0.add(new WebFXMenuItem("Billing events", null, "Billing events", myMenu33 ));
+myMenu32.add(new WebFXMenuItem("Sales", null, "Sales reports", myMenu33 ));
 var myMenu34 = new WebFXMenu;
 myMenu34.emptyText = '';
-var myMenu35 = new WebFXMenu;
-myMenu35.emptyText = '';
-myMenu35.add(new WebFXMenuItem("Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time.html", "Sales, credits and receipts summary graph" ));
-myMenu35.add(new WebFXMenuItem("Daily Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time_daily.html", "Sales, credits and receipts (broken down by day) summary graph" ));
-myMenu35.add(new WebFXMenuItem("Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg.html", "Sales report and graph (by agent, package class and/or date range)" ));
-myMenu35.add(new WebFXMenuItem("Rated Call Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg_detail.html", "Sales report and graph (by agent, package class, usage class and/or date range)" ));
-myMenu35.add(new WebFXMenuItem("Sales with Advertising Source", "http://localhost/freeside/search/report_cust_bill_pkg_referral.html", "" ));
-myMenu35.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Sales", null, "Sales reports", myMenu35 ));
-var myMenu36 = new WebFXMenu;
-myMenu36.emptyText = '';
-myMenu36.add(new WebFXMenuItem("Credit Report", "http://localhost/freeside/search/report_cust_credit.html", "Credit report (by employee and/or date range)" ));
-myMenu36.add(new WebFXMenuItem("Credit application detail", "http://localhost/freeside/search/report_cust_credit_bill_pkg.html", "Line item application detail" ));
-myMenu36.add(new WebFXMenuItem("Unapplied Credits", "http://localhost/freeside/search/report_cust_credit.html?unapplied=1", "Unapplied credit report (by type and/or date range)" ));
-myMenu36.add(new WebFXMenuItem("Voided Credits", "http://localhost/freeside/search/report_cust_credit_void.html", "Voided credit report (by employee and/or date range)" ));
-myMenu36.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Credits", null, "Credit reports", myMenu36 ));
-var myMenu37 = new WebFXMenu;
-myMenu37.emptyText = '';
-myMenu37.add(new WebFXMenuItem("Refund Report", "http://localhost/freeside/search/report_cust_refund.html", "Refund report (by type and/or date range)" ));
-myMenu37.add(new WebFXMenuItem("Unapplied Refunds", "http://localhost/freeside/search/report_cust_refund.html?unapplied=1", "Unapplied refund report (by type and/or date range)" ));
-myMenu37.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Refunds", null, "Refund reports", myMenu37 ));
-var myMenu38 = new WebFXMenu;
-myMenu38.emptyText = '';
-myMenu38.add(new WebFXMenuItem("Agent Commissions", "http://localhost/freeside/search/report_agent_commission.html", "" ));
-myMenu38.add(new WebFXMenuItem("Agent Commissions Per Package", "http://localhost/freeside/search/report_agent_commission_pkg.html", "" ));
-myMenu38.add(new WebFXMenuItem("Sales Person Commissions", "http://localhost/freeside/search/report_sales_commission.html", "" ));
-myMenu38.add(new WebFXMenuItem("Sales Person Commissions Per Package", "http://localhost/freeside/search/report_sales_commission_pkg.html", "" ));
-myMenu38.add(new WebFXMenuItem("Employee Commissions", "http://localhost/freeside/search/report_employee_commission.html", "" ));
-myMenu38.width = 256;
-
-myMenu34.add(new WebFXMenuItem("Commissions", null, "Commission reports", myMenu38 ));
-myMenu34.add(new WebFXMenuItem("A/R Aging", "http://localhost/freeside/search/report_receivables.html", "Accounts Receivable Aging report" ));
-myMenu34.add(new WebFXMenuItem("Prepaid Income", "http://localhost/freeside/search/report_prepaid_income.html", "Prepaid income (unearned revenue)  report" ));
-myMenu34.add(new WebFXMenuItem("Tax Liability", "http://localhost/freeside/search/report_tax.html", "Tax liability report (internal tax data)" ));
-myMenu34.add(new WebFXMenuItem("E911 Fee Summary", "http://localhost/freeside/search/report_e911.html", "E911 fee summary" ));
-myMenu34.add(new WebFXMenuItem("Customer Accounting Summary", "http://localhost/freeside/search/report_customer_accounting_summary.html", "Customer accounting summary report" ));
+myMenu34.add(new WebFXMenuItem("Agent", "http://localhost/freeside/search/report_agent_commission.html", "" ));
+myMenu34.add(new WebFXMenuItem("Agent per package", "http://localhost/freeside/search/report_agent_commission_pkg.html", "" ));
+myMenu34.add(new WebFXMenuItem("Sales Person", "http://localhost/freeside/search/report_sales_commission.html", "" ));
+myMenu34.add(new WebFXMenuItem("Sales Person per package", "http://localhost/freeside/search/report_sales_commission_pkg.html", "" ));
+myMenu34.add(new WebFXMenuItem("Employee", "http://localhost/freeside/search/report_employee_commission.html", "" ));
 myMenu34.width = 256;
 
-myMenu0.add(new WebFXMenuItem("Financial", null, "Financial reports", myMenu34 ));
+myMenu32.add(new WebFXMenuItem("Commissions", null, "Commission reports", myMenu34 ));
+var myMenu35 = new WebFXMenu;
+myMenu35.emptyText = '';
+myMenu35.add(new WebFXMenuItem("Credit Report", "http://localhost/freeside/search/report_cust_credit.html", "Credit report (by employee and/or date range)" ));
+myMenu35.add(new WebFXMenuItem("Credit package source detail", "http://localhost/freeside/search/report_cust_credit_source_bill_pkg.html", "Line-item detail for triggered package credits" ));
+myMenu35.add(new WebFXMenuItem("Credit application detail", "http://localhost/freeside/search/report_cust_credit_bill_pkg.html", "Line item application detail" ));
+myMenu35.add(new WebFXMenuItem("Unapplied Credits", "http://localhost/freeside/search/report_cust_credit.html?unapplied=1", "Unapplied credit report (by type and/or date range)" ));
+myMenu35.add(new WebFXMenuItem("Voided Credits", "http://localhost/freeside/search/report_cust_credit_void.html", "Voided credit report (by employee and/or date range)" ));
+myMenu35.width = 256;
+
+myMenu32.add(new WebFXMenuItem("Credits", null, "Credit reports", myMenu35 ));
+var myMenu36 = new WebFXMenu;
+myMenu36.emptyText = '';
+myMenu36.add(new WebFXMenuItem("Refund Report", "http://localhost/freeside/search/report_cust_refund.html", "Refund report (by type and/or date range)" ));
+myMenu36.add(new WebFXMenuItem("Unapplied Refunds", "http://localhost/freeside/search/report_cust_refund.html?unapplied=1", "Unapplied refund report (by type and/or date range)" ));
+myMenu36.width = 256;
+
+myMenu32.add(new WebFXMenuItem("Refunds", null, "Refund reports", myMenu36 ));
+myMenu32.add(new WebFXMenuItem("A/R Aging", "http://localhost/freeside/search/report_receivables.html", "Accounts Receivable Aging report" ));
+myMenu32.add(new WebFXMenuItem("Prepaid Income", "http://localhost/freeside/search/report_prepaid_income.html", "Prepaid income (unearned revenue)  report" ));
+myMenu32.add(new WebFXMenuItem("Tax Liability", "http://localhost/freeside/search/report_tax.html", "Tax liability report (internal tax data)" ));
+myMenu32.add(new WebFXMenuItem("E911 Fee Summary", "http://localhost/freeside/search/report_e911.html", "E911 fee summary" ));
+myMenu32.add(new WebFXMenuItem("Customer Accounting Summary", "http://localhost/freeside/search/report_customer_accounting_summary.html", "Customer accounting summary report" ));
+myMenu32.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Financial (Receivables)", null, "Financial reports (Receivables)", myMenu32 ));
+var myMenu37 = new WebFXMenu;
+myMenu37.emptyText = '';
+myMenu37.add(new WebFXMenuItem("Payables summary", "http://localhost/freeside/search/report_vend_main.html", "Payables summary by vendor" ));
+myMenu37.add(new WebFXMenuItem("Payables detail", "http://localhost/freeside/search/report_vend_bill.html", "" ));
+myMenu37.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Financial (Payables)", null, "Financial reports (Payables)", myMenu37 ));
+var myMenu38 = new WebFXMenu;
+myMenu38.emptyText = '';
 var myMenu39 = new WebFXMenu;
 myMenu39.emptyText = '';
-myMenu39.add(new WebFXMenuItem("Credit limit incidents", "http://localhost/freeside/search/report_cust_main_credit_limit.html", "" ));
-myMenu39.add(new WebFXMenuItem("System log", "http://localhost/freeside/search/log.html", "View system events and debugging information." ));
-myMenu39.add(new WebFXMenuItem("Outgoing messages", "http://localhost/freeside/search/cust_msg.html", "View outgoing message log" ));
+myMenu39.add(new WebFXMenuItem("All billing events", "http://localhost/freeside/search/report_cust_event.html", "All billing events for a date range" ));
+myMenu39.add(new WebFXMenuItem("Billing event errors", "http://localhost/freeside/search/report_cust_event.html?failed=1", "Failed credit cards, processor or printer problems, etc." ));
 myMenu39.width = 256;
 
-myMenu0.add(new WebFXMenuItem("Logs", null, "System and email logs", myMenu39 ));
+myMenu38.add(new WebFXMenuItem("Billing events", null, "Billing events", myMenu39 ));
+myMenu38.add(new WebFXMenuItem("Credit limit incidents", "http://localhost/freeside/search/report_cust_main_credit_limit.html", "" ));
+myMenu38.add(new WebFXMenuItem("Employee activity", "http://localhost/freeside/search/report_employee_audit.html", "" ));
+myMenu38.add(new WebFXMenuItem("System log", "http://localhost/freeside/search/log.html", "View system events and debugging information." ));
+myMenu38.add(new WebFXMenuItem("Outgoing messages", "http://localhost/freeside/search/cust_msg.html", "View outgoing message log" ));
+myMenu38.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Logs", null, "System and email logs", myMenu38 ));
 myMenu0.width = 256;
 
           myBar.add(new WebFXMenuButton('Reports', null, 'Lists, reporting and graphing', myMenu0 ));
@@ -378,229 +381,266 @@ myMenu0.width = 256;
 
           var myMenu40 = new WebFXMenu;
 myMenu40.emptyText = '';
-myMenu40.add(new WebFXMenuItem("Quick payment entry", "http://localhost/freeside/misc/batch-cust_pay.html", "Enter multiple payments in a batch" ));
-myMenu40.add(new WebFXMenuItem("Download invoice batches", "http://localhost/freeside/search/bill_batch.cgi", "" ));
-myMenu40.add(new WebFXMenuItem("Bulk DID Orders", "http://localhost/freeside/browse/did_order.html", "View/manage bulk DID orders" ));
-myMenu40.add(new WebFXMenuItem("Job Queue", "http://localhost/freeside/search/queue.html", "View pending job queue" ));
 var myMenu41 = new WebFXMenu;
 myMenu41.emptyText = '';
-var myMenu42 = new WebFXMenu;
-myMenu42.emptyText = '';
-myMenu42.add(new WebFXMenuItem("Overview", "http://localhost/freeside/rt/Articles/index.html", "" ));
-myMenu42.add(new WebFXMenuItem("Search", "http://localhost/freeside/rt/Articles/Article/Search.html", "" ));
-myMenu42.add(new WebFXMenuItem("Topics", "http://localhost/freeside/rt/Articles/Topics.html", "" ));
-myMenu42.width = 256;
-
-myMenu41.add(new WebFXMenuItem("Articles", null, "", myMenu42 ));
-myMenu41.add(new WebFXMenuItem("My Day", "http://localhost/freeside/rt/Tools/MyDay.html", "" ));
-myMenu41.add(new WebFXMenuItem("My Reminders", "http://localhost/freeside/rt/Tools/MyReminders.html", "" ));
-myMenu41.add(new WebFXMenuItem("Offline", "http://localhost/freeside/rt/Tools/Offline.html", "" ));
-myMenu41.add(new WebFXMenuItem("Approval", "http://localhost/freeside/rt/Approvals/", "" ));
+myMenu41.add(new WebFXMenuItem("Appointments", "http://localhost/freeside/rt/Search/Schedule.html?LengthMin=0", "View appointment schedule" ));
+myMenu41.add(new WebFXMenuItem("Attachments", "http://localhost/freeside/browse/cust_attachment.html", "View customer attachments" ));
+myMenu41.add(new WebFXMenuItem("Customer email settings", "http://localhost/freeside/misc/manage_cust_email.html", "" ));
 myMenu41.width = 256;
 
-myMenu40.add(new WebFXMenuItem("Ticketing", null, "Ticketing tools", myMenu41 ));
-myMenu40.add(new WebFXMenuItem("Customer email settings", "http://localhost/freeside/misc/manage_cust_email.html", "" ));
-myMenu40.add(new WebFXMenuItem("Business card scan", "http://localhost/freeside/edit/prospect_main-upload.html", "" ));
-myMenu40.add(new WebFXMenuItem("Attachments", "http://localhost/freeside/browse/cust_attachment.html", "View customer attachments" ));
+myMenu40.add(new WebFXMenuItem("Customers", null, "Customer tools", myMenu41 ));
+var myMenu42 = new WebFXMenu;
+myMenu42.emptyText = '';
+myMenu42.add(new WebFXMenuItem("Quick payment entry", "http://localhost/freeside/misc/batch-cust_pay.html", "Enter multiple payments in a batch" ));
+myMenu42.add(new WebFXMenuItem("Download invoice batches", "http://localhost/freeside/search/bill_batch.cgi", "" ));
+myMenu42.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Billing", null, "Payment and invoice tools", myMenu42 ));
 var myMenu43 = new WebFXMenu;
 myMenu43.emptyText = '';
-myMenu43.add(new WebFXMenuItem("Customers", "http://localhost/freeside/misc/cust_main-import.cgi", "" ));
-myMenu43.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/misc/part_pkg-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Customer packages", "http://localhost/freeside/misc/cust_pkg-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Customer comments", "http://localhost/freeside/misc/cust_main_note-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("One-time charges", "http://localhost/freeside/misc/cust_main-import_charges.cgi", "" ));
-myMenu43.add(new WebFXMenuItem("Payments", "http://localhost/freeside/misc/cust_pay-import.cgi", "" ));
-myMenu43.add(new WebFXMenuItem("Credits", "http://localhost/freeside/misc/cust_credit-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Phone numbers (DIDs)", "http://localhost/freeside/misc/phone_avail-import.html", "" ));
-myMenu43.add(new WebFXMenuItem("Call Detail Records (CDRs)", "http://localhost/freeside/misc/cdr-import.html", "" ));
-myMenu43.width = 256;
-
-myMenu40.add(new WebFXMenuItem("Importing", null, "Import tools", myMenu43 ));
 var myMenu44 = new WebFXMenu;
 myMenu44.emptyText = '';
-myMenu44.add(new WebFXMenuItem("Download database dump", "http://localhost/freeside/misc/dump.cgi", "" ));
+myMenu44.add(new WebFXMenuItem("Overview", "http://localhost/freeside/rt/Articles/index.html", "" ));
+myMenu44.add(new WebFXMenuItem("Search", "http://localhost/freeside/rt/Articles/Article/Search.html", "" ));
+myMenu44.add(new WebFXMenuItem("Topics", "http://localhost/freeside/rt/Articles/Topics.html", "" ));
 myMenu44.width = 256;
 
-myMenu40.add(new WebFXMenuItem("Exporting", null, "Export tools", myMenu44 ));
-myMenu40.add(new WebFXMenuItem("Status", "http://localhost/freeside/view/Status.html", "System status" ));
+myMenu43.add(new WebFXMenuItem("Articles", null, "", myMenu44 ));
+myMenu43.add(new WebFXMenuItem("My Day", "http://localhost/freeside/rt/Tools/MyDay.html", "" ));
+myMenu43.add(new WebFXMenuItem("My Reminders", "http://localhost/freeside/rt/Tools/MyReminders.html", "" ));
+myMenu43.add(new WebFXMenuItem("Offline", "http://localhost/freeside/rt/Tools/Offline.html", "" ));
+myMenu43.add(new WebFXMenuItem("Approval", "http://localhost/freeside/rt/Approvals/", "" ));
+myMenu43.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Ticketing", null, "Ticketing tools", myMenu43 ));
+var myMenu45 = new WebFXMenu;
+myMenu45.emptyText = '';
+myMenu45.add(new WebFXMenuItem("Bulk DID Orders", "http://localhost/freeside/browse/did_order.html", "View/manage bulk DID orders" ));
+myMenu45.add(new WebFXMenuItem("Business card scan", "http://localhost/freeside/edit/prospect_main-upload.html", "" ));
+myMenu45.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu45 ));
+var myMenu46 = new WebFXMenu;
+myMenu46.emptyText = '';
+myMenu46.add(new WebFXMenuItem("Customers", "http://localhost/freeside/misc/cust_main-import.cgi", "" ));
+myMenu46.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/misc/part_pkg-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Customer packages", "http://localhost/freeside/misc/cust_pkg-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Customer comments", "http://localhost/freeside/misc/cust_main_note-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("One-time charges", "http://localhost/freeside/misc/cust_main-import_charges.cgi", "" ));
+myMenu46.add(new WebFXMenuItem("Payments", "http://localhost/freeside/misc/cust_pay-import.cgi", "" ));
+myMenu46.add(new WebFXMenuItem("Credits", "http://localhost/freeside/misc/cust_credit-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Phone numbers (DIDs)", "http://localhost/freeside/misc/phone_avail-import.html", "" ));
+myMenu46.add(new WebFXMenuItem("Call Detail Records (CDRs)", "http://localhost/freeside/misc/cdr-import.html", "" ));
+myMenu46.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Importing", null, "Import tools", myMenu46 ));
+var myMenu47 = new WebFXMenu;
+myMenu47.emptyText = '';
+myMenu47.add(new WebFXMenuItem("Status", "http://localhost/freeside/view/Status.html", "System status" ));
+myMenu47.add(new WebFXMenuItem("Job Queue", "http://localhost/freeside/search/queue.html", "View pending job queue" ));
+myMenu47.width = 256;
+
+myMenu40.add(new WebFXMenuItem("System", null, "System tools", myMenu47 ));
 myMenu40.width = 256;
 
           myBar.add(new WebFXMenuButton('Tools', null, 'Tools', myMenu40 ));
 
 
-          var myMenu45 = new WebFXMenu;
-myMenu45.emptyText = '';
-myMenu45.add(new WebFXMenuItem("Settings", "http://localhost/freeside/config/config-view.cgi", "" ));
-myMenu45.add(new WebFXMenuSeparator());
-var myMenu46 = new WebFXMenu;
-myMenu46.emptyText = '';
-myMenu46.add(new WebFXMenuItem("Agent types", "http://localhost/freeside/browse/agent_type.cgi", "Agent types define groups of package definitions that you can then assign to particular agents" ));
-myMenu46.add(new WebFXMenuItem("Agents", "http://localhost/freeside/browse/agent.cgi", "Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)" ));
-myMenu46.add(new WebFXMenuItem("Agent payment gateways", "http://localhost/freeside/browse/payment_gateway.html", "Credit card and electronic check processors for agent overrides" ));
-myMenu46.width = 256;
-
-myMenu45.add(new WebFXMenuItem("Companies", null, "", myMenu46 ));
-var myMenu47 = new WebFXMenu;
-myMenu47.emptyText = '';
-myMenu47.add(new WebFXMenuItem("Sales People", "http://localhost/freeside/browse/sales.html", "Sales people bring in new business." ));
-myMenu47.width = 256;
-
-myMenu45.add(new WebFXMenuItem("Sales People", null, "", myMenu47 ));
-var myMenu48 = new WebFXMenu;
+          var myMenu48 = new WebFXMenu;
 myMenu48.emptyText = '';
-myMenu48.add(new WebFXMenuItem("Employees", "http://localhost/freeside/browse/access_user.html", "Setup internal users" ));
-myMenu48.add(new WebFXMenuItem("Employee groups", "http://localhost/freeside/browse/access_group.html", "Employee groups allow you to control access to the backend" ));
-myMenu48.add(new WebFXMenuItem("Installer availability", "http://localhost/freeside/browse/sched_item.html", "Installer availability" ));
-myMenu48.width = 256;
-
-myMenu45.add(new WebFXMenuItem("Employees", null, "", myMenu48 ));
-myMenu45.add(new WebFXMenuSeparator());
+myMenu48.add(new WebFXMenuItem("Settings", "http://localhost/freeside/config/config-view.cgi", "" ));
+myMenu48.add(new WebFXMenuSeparator());
 var myMenu49 = new WebFXMenu;
 myMenu49.emptyText = '';
-myMenu49.add(new WebFXMenuItem("Customer tags", "http://localhost/freeside/browse/part_tag.html", "" ));
-myMenu49.add(new WebFXMenuItem("Customer classes", "http://localhost/freeside/browse/cust_class.html", "Customer classes define groups of customers for reporting." ));
-myMenu49.add(new WebFXMenuItem("Customer categories", "http://localhost/freeside/browse/cust_category.html", "Customer categories define groups of customer classes." ));
-myMenu49.add(new WebFXMenuSeparator());
-myMenu49.add(new WebFXMenuItem("Contact types", "http://localhost/freeside/browse/contact_class.html", "" ));
+myMenu49.add(new WebFXMenuItem("Agent types", "http://localhost/freeside/browse/agent_type.cgi", "Agent types define groups of package definitions that you can then assign to particular agents" ));
+myMenu49.add(new WebFXMenuItem("Agents", "http://localhost/freeside/browse/agent.cgi", "Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)" ));
+myMenu49.add(new WebFXMenuItem("Agent payment gateways", "http://localhost/freeside/browse/payment_gateway.html", "Credit card and electronic check processors for agent overrides" ));
 myMenu49.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Customers", null, "", myMenu49 ));
+myMenu48.add(new WebFXMenuItem("Companies", null, "", myMenu49 ));
 var myMenu50 = new WebFXMenu;
 myMenu50.emptyText = '';
-myMenu50.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/browse/part_pkg.cgi", "One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services" ));
-myMenu50.add(new WebFXMenuItem("Package classes", "http://localhost/freeside/browse/pkg_class.html", "Package classes define groups of packages, for taxation, ordering convenience and reporting." ));
-myMenu50.add(new WebFXMenuItem("Package categories", "http://localhost/freeside/browse/pkg_category.html", "Package categories define groups of package classes, for invoice sections." ));
-myMenu50.add(new WebFXMenuItem("Package report classes", "http://localhost/freeside/browse/part_pkg_report_option.html", "Package classes define optional groups of packages for reporting only." ));
-myMenu50.add(new WebFXMenuItem("Fees", "http://localhost/freeside/browse/part_fee.html", "" ));
-myMenu50.add(new WebFXMenuItem("Discounts", "http://localhost/freeside/browse/discount.html", "" ));
-myMenu50.add(new WebFXMenuItem("Discount classes", "http://localhost/freeside/browse/discount_class.html", "" ));
-var myMenu51 = new WebFXMenu;
-myMenu51.emptyText = '';
-myMenu51.add(new WebFXMenuItem("Cancel reasons", "http://localhost/freeside/browse/reason.html?class=C", "Cancel reasons explain why a service was cancelled." ));
-myMenu51.add(new WebFXMenuItem("Cancel reason types", "http://localhost/freeside/browse/reason_type.html?class=C", "Cancel reason types define groups of reasons." ));
-myMenu51.add(new WebFXMenuItem("Suspend reasons", "http://localhost/freeside/browse/reason.html?class=S", "Suspend reasons explain why a service was suspended." ));
-myMenu51.add(new WebFXMenuItem("Suspend reason types", "http://localhost/freeside/browse/reason_type.html?class=S", "Suspend reason types define groups of reasons." ));
-myMenu51.width = 256;
-
-myMenu50.add(new WebFXMenuItem("Cancel/Suspend Reasons", null, "", myMenu51 ));
+myMenu50.add(new WebFXMenuItem("Sales People", "http://localhost/freeside/browse/sales.html", "Sales people bring in new business." ));
 myMenu50.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Packages", null, "", myMenu50 ));
+myMenu48.add(new WebFXMenuItem("Sales People", null, "", myMenu50 ));
+var myMenu51 = new WebFXMenu;
+myMenu51.emptyText = '';
+myMenu51.add(new WebFXMenuItem("Employees", "http://localhost/freeside/browse/access_user.html", "Setup internal users" ));
+myMenu51.add(new WebFXMenuItem("Employee groups", "http://localhost/freeside/browse/access_group.html", "Employee groups allow you to control access to the backend" ));
+myMenu51.add(new WebFXMenuItem("Installer availability", "http://localhost/freeside/browse/sched_item.html", "Installer availability" ));
+myMenu51.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Employees", null, "", myMenu51 ));
+myMenu48.add(new WebFXMenuSeparator());
 var myMenu52 = new WebFXMenu;
 myMenu52.emptyText = '';
-myMenu52.add(new WebFXMenuItem("Service definitions", "http://localhost/freeside/browse/part_svc.cgi", "Services are items you offer to your customers" ));
-myMenu52.add(new WebFXMenuItem("Service classes", "http://localhost/freeside/browse/part_svc_class.html", "Services classes are user-defined, informational types for services" ));
-myMenu52.add(new WebFXMenuItem("Provisioning exports", "http://localhost/freeside/browse/part_export.cgi", "Provisioning services to external machines, databases and APIs" ));
-var myMenu53 = new WebFXMenu;
-myMenu53.emptyText = '';
-myMenu53.add(new WebFXMenuItem("Access numbers", "http://localhost/freeside/browse/svc_acct_pop.cgi", "Points of Presence" ));
-myMenu53.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Dialup", null, "", myMenu53 ));
-var myMenu54 = new WebFXMenu;
-myMenu54.emptyText = '';
-myMenu54.add(new WebFXMenuItem("Towers", "http://localhost/freeside/browse/tower.html", "Towers and sectors" ));
-myMenu54.add(new WebFXMenuItem("Routers", "http://localhost/freeside/browse/router.cgi", "Broadband access routers" ));
-myMenu54.add(new WebFXMenuItem("Address blocks", "http://localhost/freeside/browse/addr_block.cgi", "Manage address blocks and block assignments to broadband routers" ));
-myMenu54.add(new WebFXMenuItem("Address ranges", "http://localhost/freeside/browse/addr_range.html", "Designate special address ranges" ));
-myMenu54.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Wireless broadband", null, "", myMenu54 ));
-var myMenu55 = new WebFXMenu;
-myMenu55.emptyText = '';
-myMenu55.add(new WebFXMenuItem("View/Edit phone device types", "http://localhost/freeside/browse/part_device.html", "Phone device types" ));
-myMenu55.add(new WebFXMenuItem("View/Edit bulk DID vendors", "http://localhost/freeside/browse/did_vendor.html", "Bulk DID vendors" ));
-myMenu55.add(new WebFXMenuItem("View/Edit Carriers", "http://localhost/freeside/browse/cdr_carrier.html", "Carriers" ));
-myMenu55.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Phone", null, "", myMenu55 ));
-var myMenu56 = new WebFXMenu;
-myMenu56.emptyText = '';
-myMenu56.add(new WebFXMenuItem("RADIUS Groups", "http://localhost/freeside/browse/radius_group.html", "Manage RADIUS groups" ));
-myMenu56.add(new WebFXMenuItem("RADIUS Clients", "http://localhost/freeside/browse/nas.html", "Manage RADIUS clients" ));
-myMenu56.width = 256;
-
-myMenu52.add(new WebFXMenuItem("RADIUS", null, "", myMenu56 ));
-var myMenu57 = new WebFXMenu;
-myMenu57.emptyText = '';
-myMenu57.add(new WebFXMenuItem("Cable providers", "http://localhost/freeside/browse/cable_provider.html", "" ));
-myMenu57.add(new WebFXMenuItem("Cable modem models", "http://localhost/freeside/browse/cable_model.html", "" ));
-myMenu57.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Cable", null, "", myMenu57 ));
-var myMenu58 = new WebFXMenu;
-myMenu58.emptyText = '';
-myMenu58.add(new WebFXMenuItem("Alarm system vendors", "http://localhost/freeside/browse/alarm_system.html", "" ));
-myMenu58.add(new WebFXMenuItem("Alarm system types", "http://localhost/freeside/browse/alarm_type.html", "" ));
-myMenu58.add(new WebFXMenuItem("Alarm central stations", "http://localhost/freeside/browse/alarm_station.html", "" ));
-myMenu58.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Alarm", null, "", myMenu58 ));
-var myMenu59 = new WebFXMenu;
-myMenu59.emptyText = '';
-myMenu59.add(new WebFXMenuItem("Circuit types", "http://localhost/freeside/browse/circuit_type.html", "" ));
-myMenu59.add(new WebFXMenuItem("Circuit providers", "http://localhost/freeside/browse/circuit_provider.html", "" ));
-myMenu59.add(new WebFXMenuItem("Termination types", "http://localhost/freeside/browse/circuit_termination.html", "" ));
-myMenu59.width = 256;
-
-myMenu52.add(new WebFXMenuItem("Circuits", null, "", myMenu59 ));
-myMenu52.add(new WebFXMenuItem("Hardware types", "http://localhost/freeside/browse/hardware_class.html", "Set up hardware type catalog" ));
+myMenu52.add(new WebFXMenuItem("Customer tags", "http://localhost/freeside/browse/part_tag.html", "" ));
+myMenu52.add(new WebFXMenuItem("Customer classes", "http://localhost/freeside/browse/cust_class.html", "Customer classes define groups of customers for reporting." ));
+myMenu52.add(new WebFXMenuItem("Customer categories", "http://localhost/freeside/browse/cust_category.html", "Customer categories define groups of customer classes." ));
+myMenu52.add(new WebFXMenuSeparator());
+myMenu52.add(new WebFXMenuItem("Contact types", "http://localhost/freeside/browse/contact_class.html", "" ));
 myMenu52.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Services", null, "", myMenu52 ));
-myMenu45.add(new WebFXMenuSeparator());
+myMenu48.add(new WebFXMenuItem("Customers", null, "", myMenu52 ));
+var myMenu53 = new WebFXMenu;
+myMenu53.emptyText = '';
+myMenu53.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/browse/part_pkg.cgi", "One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services" ));
+myMenu53.add(new WebFXMenuItem("Package classes", "http://localhost/freeside/browse/pkg_class.html", "Package classes define groups of packages, for taxation, ordering convenience and reporting." ));
+myMenu53.add(new WebFXMenuItem("Package categories", "http://localhost/freeside/browse/pkg_category.html", "Package categories define groups of package classes, for invoice sections." ));
+myMenu53.add(new WebFXMenuItem("Package report classes", "http://localhost/freeside/browse/part_pkg_report_option.html", "Package classes define optional groups of packages for reporting only." ));
+myMenu53.add(new WebFXMenuItem("Fees", "http://localhost/freeside/browse/part_fee.html", "" ));
+myMenu53.add(new WebFXMenuItem("Discounts", "http://localhost/freeside/browse/discount.html", "" ));
+myMenu53.add(new WebFXMenuItem("Discount classes", "http://localhost/freeside/browse/discount_class.html", "" ));
+var myMenu54 = new WebFXMenu;
+myMenu54.emptyText = '';
+myMenu54.add(new WebFXMenuItem("Cancel reasons", "http://localhost/freeside/browse/reason.html?class=C", "Cancel reasons explain why a service was cancelled." ));
+myMenu54.add(new WebFXMenuItem("Cancel reason types", "http://localhost/freeside/browse/reason_type.html?class=C", "Cancel reason types define groups of reasons." ));
+myMenu54.add(new WebFXMenuItem("Suspend reasons", "http://localhost/freeside/browse/reason.html?class=S", "Suspend reasons explain why a service was suspended." ));
+myMenu54.add(new WebFXMenuItem("Suspend reason types", "http://localhost/freeside/browse/reason_type.html?class=S", "Suspend reason types define groups of reasons." ));
+myMenu54.width = 256;
+
+myMenu53.add(new WebFXMenuItem("Cancel/Suspend Reasons", null, "", myMenu54 ));
+myMenu53.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Packages", null, "", myMenu53 ));
+var myMenu55 = new WebFXMenu;
+myMenu55.emptyText = '';
+myMenu55.add(new WebFXMenuItem("Service definitions", "http://localhost/freeside/browse/part_svc.cgi", "Services are items you offer to your customers" ));
+myMenu55.add(new WebFXMenuItem("Service classes", "http://localhost/freeside/browse/part_svc_class.html", "Services classes are user-defined, informational types for services" ));
+myMenu55.add(new WebFXMenuItem("Service dependencies", "http://localhost/freeside/browse/part_svc_link.html", "Services depencies define rules between service definitions" ));
+myMenu55.add(new WebFXMenuItem("Provisioning exports", "http://localhost/freeside/browse/part_export.cgi", "Provisioning services to external machines, databases and APIs" ));
+var myMenu56 = new WebFXMenu;
+myMenu56.emptyText = '';
+myMenu56.add(new WebFXMenuItem("Access numbers", "http://localhost/freeside/browse/svc_acct_pop.cgi", "Points of Presence" ));
+myMenu56.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Dialup", null, "", myMenu56 ));
+var myMenu57 = new WebFXMenu;
+myMenu57.emptyText = '';
+myMenu57.add(new WebFXMenuItem("Towers", "http://localhost/freeside/browse/tower.html", "Towers and sectors" ));
+myMenu57.add(new WebFXMenuItem("Routers", "http://localhost/freeside/browse/router.cgi", "Broadband access routers" ));
+myMenu57.add(new WebFXMenuItem("Address blocks", "http://localhost/freeside/browse/addr_block.cgi", "Manage address blocks and block assignments to broadband routers" ));
+myMenu57.add(new WebFXMenuItem("Address ranges", "http://localhost/freeside/browse/addr_range.html", "Designate special address ranges" ));
+myMenu57.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Wireless broadband", null, "", myMenu57 ));
+var myMenu58 = new WebFXMenu;
+myMenu58.emptyText = '';
+myMenu58.add(new WebFXMenuItem("View/Edit phone device types", "http://localhost/freeside/browse/part_device.html", "Phone device types" ));
+myMenu58.add(new WebFXMenuItem("View/Edit bulk DID vendors", "http://localhost/freeside/browse/did_vendor.html", "Bulk DID vendors" ));
+myMenu58.add(new WebFXMenuItem("View/Edit Carriers", "http://localhost/freeside/browse/cdr_carrier.html", "Carriers" ));
+myMenu58.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Phone", null, "", myMenu58 ));
+var myMenu59 = new WebFXMenu;
+myMenu59.emptyText = '';
+myMenu59.add(new WebFXMenuItem("RADIUS Groups", "http://localhost/freeside/browse/radius_group.html", "Manage RADIUS groups" ));
+myMenu59.add(new WebFXMenuItem("RADIUS Clients", "http://localhost/freeside/browse/nas.html", "Manage RADIUS clients" ));
+myMenu59.width = 256;
+
+myMenu55.add(new WebFXMenuItem("RADIUS", null, "", myMenu59 ));
 var myMenu60 = new WebFXMenu;
 myMenu60.emptyText = '';
-myMenu60.add(new WebFXMenuItem("Billing events", "http://localhost/freeside/browse/part_event.html", "Billing actions for customers, invoices and packages" ));
-myMenu60.add(new WebFXMenuItem("Invoice configurations", "http://localhost/freeside/browse/invoice_conf.html", "Adjust invoice settings for special-purpose notices" ));
-myMenu60.add(new WebFXMenuItem("Invoice templates", "http://localhost/freeside/browse/invoice_template.html", "Edit templates for HTML, plaintext and typeset invoices" ));
-myMenu60.add(new WebFXMenuItem("Prepaid cards", "http://localhost/freeside/search/prepay_credit.html", "View outstanding cards, generate new cards" ));
-var myMenu61 = new WebFXMenu;
-myMenu61.emptyText = '';
-myMenu61.add(new WebFXMenuItem("Rate plans", "http://localhost/freeside/browse/rate.cgi", "Manage rate plans" ));
-myMenu61.add(new WebFXMenuItem("Regions and prefixes", "http://localhost/freeside/browse/rate_region.html", "Manage regions and prefixes" ));
-myMenu61.add(new WebFXMenuItem("Usage classes", "http://localhost/freeside/browse/usage_class.html", "Usage classes define groups of usage for taxation." ));
-myMenu61.add(new WebFXMenuItem("Time periods", "http://localhost/freeside/browse/rate_time.html", "Time periods define days and hours for rate plans" ));
-myMenu61.add(new WebFXMenuItem("Edit rates with Excel", "http://localhost/freeside/misc/rate_edit_excel.html", "Download and edit rates with Excel, then upload changes." ));
-myMenu61.add(new WebFXMenuSeparator());
-myMenu61.add(new WebFXMenuItem("Tiering plans", "http://localhost/freeside/browse/rate_tier.html", "Rating tiers" ));
-myMenu61.width = 256;
-
-myMenu60.add(new WebFXMenuItem("Call rates and regions", null, "Manage rate plans, regions and prefixes for VoIP and call billing", myMenu61 ));
-myMenu60.add(new WebFXMenuItem("Locales and tax rates", "http://localhost/freeside/browse/cust_main_county.cgi", "Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each" ));
-myMenu60.add(new WebFXMenuItem("Tax classes", "http://localhost/freeside/browse/part_pkg_taxclass.html", "Tax classes" ));
-myMenu60.add(new WebFXMenuItem("Credit reasons", "http://localhost/freeside/browse/reason.html?class=R", "Credit reasons explain why a credit was issued." ));
-myMenu60.add(new WebFXMenuItem("Credit reason types", "http://localhost/freeside/browse/reason_type.html?class=R", "Credit reason types define groups of reasons." ));
+myMenu60.add(new WebFXMenuItem("Cable providers", "http://localhost/freeside/browse/cable_provider.html", "" ));
+myMenu60.add(new WebFXMenuItem("Cable modem models", "http://localhost/freeside/browse/cable_model.html", "" ));
 myMenu60.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Billing", null, "", myMenu60 ));
-myMenu45.add(new WebFXMenuSeparator());
+myMenu55.add(new WebFXMenuItem("Cable", null, "", myMenu60 ));
+var myMenu61 = new WebFXMenu;
+myMenu61.emptyText = '';
+myMenu61.add(new WebFXMenuItem("Conferencing types", "http://localhost/freeside/browse/conferencing_type.html", "" ));
+myMenu61.add(new WebFXMenuItem("Quality levels", "http://localhost/freeside/browse/conferencing_quality.html", "" ));
+myMenu61.width = 256;
+
+myMenu55.add(new WebFXMenuItem("Conferencing", null, "", myMenu61 ));
 var myMenu62 = new WebFXMenu;
 myMenu62.emptyText = '';
-myMenu62.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
-myMenu62.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
-myMenu62.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
-myMenu62.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
-myMenu62.add(new WebFXMenuItem("Inventory classes and inventory", "http://localhost/freeside/browse/inventory_class.html", "Setup inventory classes and stock inventory" ));
-myMenu62.add(new WebFXMenuItem("Upload targets", "http://localhost/freeside/browse/upload_target.html", "Billing and payment upload destinations" ));
+myMenu62.add(new WebFXMenuItem("Alarm system vendors", "http://localhost/freeside/browse/alarm_system.html", "" ));
+myMenu62.add(new WebFXMenuItem("Alarm system types", "http://localhost/freeside/browse/alarm_type.html", "" ));
+myMenu62.add(new WebFXMenuItem("Alarm central stations", "http://localhost/freeside/browse/alarm_station.html", "" ));
 myMenu62.width = 256;
 
-myMenu45.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu62 ));
-myMenu45.width = 256;
-
-          myBar.add(new WebFXMenuButton('Configuration', null, 'Configuration and setup', myMenu45 ));
-
-
-          var myMenu63 = new WebFXMenu;
+myMenu55.add(new WebFXMenuItem("Alarm", null, "", myMenu62 ));
+var myMenu63 = new WebFXMenu;
 myMenu63.emptyText = '';
-myMenu63.add(new WebFXMenuItem("Billing documentation", "http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation", "Freeside documentation" ));
-myMenu63.add(new WebFXMenuItem("Ticketing documentation", "http://wiki.bestpractical.com/", "Request Tracker Wiki" ));
-myMenu63.add(new WebFXMenuSeparator());
-myMenu63.add(new WebFXMenuItem("About Freeside v3.8git", "javascript:about_freeside()", "" ));
-myMenu63.add(new WebFXMenuItem("About RT v4.0.23", "http://www.bestpractical.com/rt", "Request Tracker Homepage" ));
+myMenu63.add(new WebFXMenuItem("Circuit types", "http://localhost/freeside/browse/circuit_type.html", "" ));
+myMenu63.add(new WebFXMenuItem("Circuit providers", "http://localhost/freeside/browse/circuit_provider.html", "" ));
+myMenu63.add(new WebFXMenuItem("Termination types", "http://localhost/freeside/browse/circuit_termination.html", "" ));
 myMenu63.width = 256;
 
-          myBar.add(new WebFXMenuButton('Help', null, '', myMenu63 ));
+myMenu55.add(new WebFXMenuItem("Circuits", null, "", myMenu63 ));
+myMenu55.add(new WebFXMenuItem("Hardware types", "http://localhost/freeside/browse/hardware_class.html", "Set up hardware type catalog" ));
+myMenu55.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Services", null, "", myMenu55 ));
+myMenu48.add(new WebFXMenuSeparator());
+var myMenu64 = new WebFXMenu;
+myMenu64.emptyText = '';
+myMenu64.add(new WebFXMenuItem("Vendor classes", "http://localhost/freeside/browse/vend_class.html", "" ));
+myMenu64.add(new WebFXMenuItem("Vendors", "http://localhost/freeside/browse/vend_main.html", "" ));
+myMenu64.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Vendors", null, "", myMenu64 ));
+myMenu48.add(new WebFXMenuSeparator());
+var myMenu65 = new WebFXMenu;
+myMenu65.emptyText = '';
+myMenu65.add(new WebFXMenuItem("Billing events", "http://localhost/freeside/browse/part_event.html", "Billing actions for customers, invoices and packages" ));
+myMenu65.add(new WebFXMenuItem("Invoice configurations", "http://localhost/freeside/browse/invoice_conf.html", "Adjust invoice settings for special-purpose notices" ));
+myMenu65.add(new WebFXMenuItem("Invoice templates", "http://localhost/freeside/browse/invoice_template.html", "Edit templates for HTML, plaintext and typeset invoices" ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Prepaid cards", "http://localhost/freeside/search/prepay_credit.html", "View outstanding cards, generate new cards" ));
+var myMenu66 = new WebFXMenu;
+myMenu66.emptyText = '';
+myMenu66.add(new WebFXMenuItem("Rate plans", "http://localhost/freeside/browse/rate.cgi", "Manage rate plans" ));
+myMenu66.add(new WebFXMenuItem("Regions and prefixes", "http://localhost/freeside/browse/rate_region.html", "Manage regions and prefixes" ));
+myMenu66.add(new WebFXMenuItem("Usage classes", "http://localhost/freeside/browse/usage_class.html", "Usage classes define groups of usage for taxation." ));
+myMenu66.add(new WebFXMenuItem("Time periods", "http://localhost/freeside/browse/rate_time.html", "Time periods define days and hours for rate plans" ));
+myMenu66.add(new WebFXMenuItem("Edit rates with Excel", "http://localhost/freeside/misc/rate_edit_excel.html", "Download and edit rates with Excel, then upload changes." ));
+myMenu66.add(new WebFXMenuSeparator());
+myMenu66.add(new WebFXMenuItem("Tiering plans", "http://localhost/freeside/browse/rate_tier.html", "Rating tiers" ));
+myMenu66.width = 256;
+
+myMenu65.add(new WebFXMenuItem("Call rates and regions", null, "Manage rate plans, regions and prefixes for VoIP and call billing", myMenu66 ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Locales and tax rates", "http://localhost/freeside/browse/cust_main_county.cgi", "Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each" ));
+myMenu65.add(new WebFXMenuItem("Tax classes", "http://localhost/freeside/browse/part_pkg_taxclass.html", "Tax classes" ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Credit reasons", "http://localhost/freeside/browse/reason.html?class=R", "Credit reasons explain why a credit was issued." ));
+myMenu65.add(new WebFXMenuItem("Credit reason types", "http://localhost/freeside/browse/reason_type.html?class=R", "Credit reason types define groups of reasons." ));
+myMenu65.add(new WebFXMenuSeparator());
+myMenu65.add(new WebFXMenuItem("Refund reasons", "http://localhost/freeside/browse/reason.html?class=F", "Refund reasons explain why a refund was issued." ));
+myMenu65.add(new WebFXMenuItem("Refund reason types", "http://localhost/freeside/browse/reason_type.html?class=F", "Refund reason types define groups of reasons." ));
+myMenu65.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
+myMenu48.add(new WebFXMenuSeparator());
+var myMenu67 = new WebFXMenu;
+myMenu67.emptyText = '';
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
+myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
+myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
+myMenu67.add(new WebFXMenuItem("Inventory classes and inventory", "http://localhost/freeside/browse/inventory_class.html", "Setup inventory classes and stock inventory" ));
+myMenu67.add(new WebFXMenuItem("Upload targets", "http://localhost/freeside/browse/upload_target.html", "Billing and payment upload destinations" ));
+myMenu67.width = 256;
+
+myMenu48.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu67 ));
+myMenu48.width = 256;
+
+          myBar.add(new WebFXMenuButton('Configuration', null, 'Configuration and setup', myMenu48 ));
+
+
+          var myMenu68 = new WebFXMenu;
+myMenu68.emptyText = '';
+myMenu68.add(new WebFXMenuItem("Billing documentation", "http://www.freeside.biz/mediawiki/index.php/Freeside:4:Documentation", "Freeside documentation" ));
+myMenu68.add(new WebFXMenuItem("Ticketing documentation", "http://wiki.bestpractical.com/", "Request Tracker Wiki" ));
+myMenu68.add(new WebFXMenuSeparator());
+myMenu68.add(new WebFXMenuItem("About Freeside v5.0git", "javascript:about_freeside()", "" ));
+myMenu68.add(new WebFXMenuItem("About RT v4.2.11", "http://www.bestpractical.com/rt", "Request Tracker Homepage" ));
+myMenu68.width = 256;
+
+          myBar.add(new WebFXMenuButton('Help', null, '', myMenu68 ));
 
 
   myBar.show( null, 'vertical' );
@@ -611,6 +651,9 @@ myMenu63.width = 256;
 
 
 
+      <link rel="stylesheet" href="http://localhost/freeside/elements/jquery-ui.min.css">
+      <SCRIPT SRC="http://localhost/freeside/elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="http://localhost/freeside/elements/jquery-ui.min.js"></SCRIPT>
       <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws.js"></SCRIPT>
   <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws_iframe.js"></SCRIPT>
   <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws_draggable.js"></SCRIPT>
@@ -641,55 +684,18 @@ myMenu63.width = 256;
 
 </SCRIPT>
 
-    <SCRIPT TYPE="text/javascript">
-
-  function logout() {
-    // count args; build URL
-    var url = "http://localhost/freeside/loginout/logout.html";
-
-    var xmlhttp = rs_init_object();
-    xmlhttp.open("GET", url, false, "magic", "notyet");
-    xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
-    xmlhttp.send(null);
-
-    if (xmlhttp.readyState != 4) {
-      alert("Logout failed: readyState is " + xmlhttp.readyState);
-      return;
-    }
-
-    if (xmlhttp.status != 200) {
-      alert("Logout failed: status is " + xmlhttp.status);
-    } else {
-      var data = xmlhttp.responseText;
-      // alert('received response: ' + data);
-      if ( data.indexOf("<b>System error</b>") > -1 ) {
-        var w;
-        if ( w = window.open("about:blank") ) {
-          w.document.write(data);
-        } else {
-          // popup blocking?  should use an overlib popup instead 
-          alert("Error popup disabled; try disabling popup blocking to see");
-        }
-      } else {
-        window.location = "http://localhost/freeside/loginout/logout.html";
-      }
-    }
-  }
-
-</SCRIPT>
-
 
     
 
   </HEAD>
-  <BODY BGCOLOR="#f8f8f8"  onUnload="myclose()" STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
+  <BODY BGCOLOR="#f8f8f8"  STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
       <tr>
         <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="http://localhost/freeside/view/REAL_logo.cgi"></td>
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
-          <font size=6>Freeside Test 3.8.1</font>
+          <font size=6>Freeside Test 5.0.1</font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b>test&nbsp;</b> <FONT SIZE="-2"><a href="javascript:void(0);" onClick="logout();">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="http://localhost/freeside/pref/pref.html" STYLE="color: #000000">Preferences</a>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b>test&nbsp;</b> <FONT SIZE="-2"><a href="http://localhost/freeside/loginout/logout.html">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="http://localhost/freeside/pref/pref.html" STYLE="color: #000000">Preferences</a>
           <BR></FONT>
         </td>
       </tr>
@@ -703,7 +709,7 @@ myMenu63.width = 256;
       <TR CLASS="fsmenubar">
 
 
-        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#dddddd">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -713,7 +719,7 @@ myMenu63.width = 256;
 
       <TR CLASS="fssearchbar">
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           
   <FORM ACTION="http://localhost/freeside/search/prospect_main.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="search_prospect" TYPE="text" VALUE="(name, company or phone)" STYLE="width:155px" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
@@ -734,7 +740,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           
   <FORM ACTION="http://localhost/freeside/search/cust_main.cgi" METHOD="POST" STYLE="margin:0">
     <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or contact phone)" STYLE="width:246px" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
@@ -755,7 +761,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="center">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="center">
           
 <SCRIPT TYPE="text/javascript">
 
@@ -768,7 +774,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right">
           
   <FORM ACTION="http://localhost/freeside/search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
     <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
@@ -789,7 +795,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
           
   <FORM ACTION="http://localhost/freeside/search/cust_svc.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="search_svc" TYPE="text" VALUE="(user, email, ip, mac, domain or service phone)" STYLE="width:271px" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
@@ -810,7 +816,7 @@ myMenu63.width = 256;
 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
           
   <FORM ACTION="http://localhost/freeside//rt/index.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="q" TYPE="text" VALUE="(ticket #, subject, email or fulltext:text)" STYLE="width:223px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
@@ -840,13 +846,14 @@ myMenu63.width = 256;
 
       <TR HEIGHT="100%">
 
+    <BR>
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
-          <FONT SIZE=6>
+          <H1>
             Edit Customer: Olson Inc (Towne, Samara)
-          </FONT>
+          </H1>
 
-          <BR><BR>
+          <BR>
 
           
 
@@ -895,15 +902,21 @@ myMenu63.width = 256;
 
   function rescom_changed(what) {
     if ( what.checked == (what.value == 'Commercial' ) ) {
-      document.getElementById('company_row').style.display = '';
-      document.getElementById('contacts_div').style.display = '';
-      document.getElementById('spouse_row').style.display = 'none';
+      $('#company_label').slideDown();
+      $('#company_input').slideDown();
+      $('#contacts_div').slideDown();
+      $('#spouse_label').slideUp();
+      $('#spouse_last_input').slideUp();
+      $('#spouse_first_input').slideUp();
     } else {
       if ( document.getElementById('company').value.length == 0 ) {
-        document.getElementById('company_row').style.display = 'none';
+        $('#company_label').slideUp();
+        $('#company_input').slideUp();
       }
-      document.getElementById('contacts_div').style.display = 'none';
-      document.getElementById('spouse_row').style.display = '';
+      $('#contacts_div').slideUp();
+      $('#spouse_label').slideDown();
+      $('#spouse_last_input').slideDown();
+      $('#spouse_first_input').slideDown();
     }
   }
 
@@ -919,6 +932,7 @@ myMenu63.width = 256;
 
 
     var f = what.form;
+    var was_same = f['same'].checked;
     if ( ship_locked_agents[agentnum] ) {
       for(var x in ship_locked_agents[agentnum]) {
         f['ship_'+x].value = ship_locked_agents[agentnum][x];
@@ -927,16 +941,23 @@ myMenu63.width = 256;
       f['same'].checked = false;
       f['same'].disabled = true;
     } else {
+      var is_same = true;
       for(var i=0; i<ship_fields.length; i++) {
         x = ship_fields[i];
         if ( f['ship_'+x].disabled )  {
           f['ship_'+x].value  = f['old_ship_'+x].value;
         }
         f['ship_'+x].disabled = false;
+        if ( f['bill_'+x].value != f['ship_'+x].value ) {
+          is_same = false;
+        }
       }
+      f['same'].checked = is_same;
       f['same'].disabled = false;
     }
-    samechanged(f['same']);
+    if (f['same'].checked != was_same) {
+      samechanged(f['same']);
+    }
 
     salesnum_agentnum_changed(what);
 
@@ -946,7 +967,14 @@ myMenu63.width = 256;
   var myonload = function() {
 
   rescom_changed(document.getElementById('residential_commercial_Residential'));
-  agent_changed(document.getElementById('agentnum'))
+  agent_changed(document.getElementById('agentnum'));
+
+  if ( $('#same').prop('checked') ) {
+    $('#div_ship_location').hide();
+  } else {
+    $('#div_ship_location').show();
+  }
+
   
   }
   if ( window.addEventListener ) {
@@ -989,6 +1017,12 @@ myMenu63.width = 256;
 
 
 
+  <INPUT TYPE="hidden" NAME="taxstatusnum" VALUE="">
+
+
+
+
+
   <INPUT TYPE  = "hidden"
          NAME  = "salesnum"
          ID    = "salesnum"
@@ -998,28 +1032,6 @@ myMenu63.width = 256;
       <TR>
       </TR>
 
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1193,7 +1205,7 @@ myMenu63.width = 256;
 
 
   <TR>
-    <TD ALIGN="right">Referring customer</TD>
+    <TH ALIGN="right">Referring customer</TD>
     <TD>
       <INPUT TYPE="hidden" NAME="referral_custnum" ID="referral_custnum" VALUE="">
 
@@ -1213,28 +1225,6 @@ myMenu63.width = 256;
 <SELECT NAME="referral_custnum_select" ID="referral_custnum_select" STYLE="color:#ff0000; display:none" onChange="select_referral_custnum(this);">
 </SELECT>
 
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1483,23 +1473,23 @@ myMenu63.width = 256;
 
 <BR>
 <TABLE> <TR>
-  <TD STYLE="width:650px">
+  <TD>
     <FONT CLASS="fsinnerbox-title">Billing address</FONT>
     <TABLE CLASS="fsinnerbox" WIDTH="100%">
     
 <TR>
-  <TD CLASS="required label">Contact name</TD>
+  <TH CLASS="required label" ALIGN="right">Contact name</TD>
   <TD COLSPAN=6 STYLE="vertical-align:top">
         
-<DIV STYLE="display: inline-block">
+<DIV STYLE="display: inline-block" ID="last_input">
   <INPUT TYPE="text" NAME="last" VALUE="Towne" ,>
-  <BR><FONT SIZE=-1>Last</FONT>
+  <BR><FONT SIZE="-1" COLOR="#333333">Last</FONT>
 </DIV>
 
         
-<DIV STYLE="display: inline-block">
+<DIV STYLE="display: inline-block" ID="first_input">
   <INPUT TYPE="text" NAME="first" VALUE="Samara" >
-  <BR><FONT SIZE=-1>First</FONT>
+  <BR><FONT SIZE="-1" COLOR="#333333">First</FONT>
 </DIV>
 
         <INPUT TYPE="hidden" NAME="ss" VALUE="">
@@ -1507,11 +1497,11 @@ myMenu63.width = 256;
 </TR>
 
 
-  <TR ID="company_row" >
-  <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=6><INPUT TYPE="text" NAME="company" ID="company" SIZE=60
+  <TR ID="company_row">
+  <TH ALIGN="right"><DIV ID="company_label" >Company</DIV></TD>
+  <TD COLSPAN=6><DIV ID="company_input" ><INPUT TYPE="text" NAME="company" ID="company" SIZE=60
              VALUE="Olson Inc">
-  </TD>
+  </DIV></TD>
 </TR>
 
 
@@ -1543,7 +1533,7 @@ myMenu63.width = 256;
 
 
 <TR>
-      <TD ALIGN="right"><FONT ID="bill_address2_required" color="#ff0000" STYLE="visibility:hidden">*</FONT>&nbsp;<FONT ID="bill_address2_label" STYLE="visibility:hidden"><B>Unit&nbsp;#</B></FONT></TD>
+      <TH ALIGN="right"><FONT ID="bill_address2_required" color="#ff0000" STYLE="visibility:hidden">*</FONT>&nbsp;<FONT ID="bill_address2_label" STYLE="visibility:hidden"><B>Unit&nbsp;#</B></FONT></TD>
       <TD COLSPAN=7>
         <INPUT TYPE     = "text"
                NAME     = "bill_address2"
@@ -1566,28 +1556,6 @@ myMenu63.width = 256;
   <TD WIDTH="1">
 
 
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -1994,29 +1962,7 @@ myMenu63.width = 256;
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>&nbsp;Country</TH>
   <TD COLSPAN=6>
-  <SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
-
+  
 
 <SCRIPT TYPE="text/javascript">
 
@@ -3414,7 +3360,7 @@ myMenu63.width = 256;
 </TR>
 
 <TR>
-  <TD ALIGN="right">Latitude</TD>
+  <TH ALIGN="right">Latitude</TD>
   <TD COLSPAN=7>
     <INPUT TYPE  = "text"
            NAME  = "bill_latitude"
@@ -3423,7 +3369,7 @@ myMenu63.width = 256;
            
            
     >
-    Longitude
+    <FONT SIZE="-1" COLOR="#666666">Longitude</FONT>
     <INPUT TYPE  = "text"
            NAME  = "bill_longitude"
            ID    = "bill_longitude"
@@ -3462,13 +3408,13 @@ myMenu63.width = 256;
 
 
 <TR>
-  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TH ALIGN="right">Census&nbsp;tract</TD>
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
            ID="bill_enter_censustract" 
            NAME="bill_enter_censustract" 
            VALUE="">
-    (automatic)
+    <FONT SIZE="-1" COLOR="#333333">(automatic)</FONT>
   </TD>
 </TR>
   <INPUT TYPE  = "hidden"
@@ -3477,6 +3423,13 @@ myMenu63.width = 256;
        VALUE = ""
 >
 
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_locationname"
+       ID    = "old_bill_locationname"
+       VALUE = ""
+>
 
 
 <INPUT TYPE  = "hidden"
@@ -3632,7 +3585,7 @@ myMenu63.width = 256;
 
 
       <TR>
-  <TD VALIGN="top" ALIGN="right">Phones</TD>
+  <TH VALIGN="top" ALIGN="right">Phones</TD>
   <TD COLSPAN=6>
     <TABLE CELLSPACING=0 CELLPADDING=0>
       <TR>
@@ -3642,7 +3595,7 @@ myMenu63.width = 256;
                  VALUE="297-868-7684 x427"
                  SIZE=18
           >
-          <BR><FONT SIZE=-1>Day Phone</FONT>
+          <BR><FONT SIZE=-1 COLOR="#333333">Day Phone</FONT>
         </TD>
         <TD>&nbsp;</TD>
         <TD>
@@ -3651,7 +3604,7 @@ myMenu63.width = 256;
                  VALUE="538-045-0820"
                  SIZE=18
           >
-          <BR><FONT SIZE=-1>Night Phone</FONT>
+          <BR><FONT SIZE=-1 COLOR="#333333">Night Phone</FONT>
         </TD>
         <TD>&nbsp;</TD>
         <TD>
@@ -3660,7 +3613,7 @@ myMenu63.width = 256;
                  VALUE=""
                  SIZE=18
           >
-          <BR><FONT SIZE=-1>Mobile</FONT>
+          <BR><FONT SIZE=-1 COLOR="#333333">Mobile</FONT>
         </TD>
         <TD>&nbsp;</TD>
       </TR>
@@ -3669,7 +3622,7 @@ myMenu63.width = 256;
 </TR>
 
   <TR>
-  <TD ALIGN="right">Fax</TD>
+  <TH ALIGN="right">Fax</TD>
   <TD><INPUT TYPE="text" NAME="fax" VALUE="" SIZE=18></TD>
 </TR>
 
@@ -3681,9 +3634,9 @@ myMenu63.width = 256;
     </TABLE>
   </TD>
 </TR>
-<TR><TD STYLE="height:40px"></TD></TR>
+<TR><TD STYLE="height:14px"></TD></TR>
 <TR>
-  <TD STYLE="width:650px">
+  <TD>
     <FONT CLASS="fsinnerbox-title">Service address</FONT>
     <INPUT TYPE="checkbox" 
            NAME="same"
@@ -3693,8 +3646,8 @@ myMenu63.width = 256;
            VALUE="Y"
            CHECKED
     >same as billing address
-    <DIV CLASS="fsinnerbox">
-      <TABLE ID="table_ship_location" WIDTH="100%">
+    <DIV ID="div_ship_location">
+      <TABLE WIDTH="100%" CLASS="fsinnerbox">
       
       
 
@@ -3724,7 +3677,7 @@ myMenu63.width = 256;
 
 
 <TR>
-      <TD ALIGN="right"><FONT ID="ship_address2_required" color="#ff0000" STYLE="visibility:hidden">*</FONT>&nbsp;<FONT ID="ship_address2_label" STYLE="visibility:hidden"><B>Unit&nbsp;#</B></FONT></TD>
+      <TH ALIGN="right"><FONT ID="ship_address2_required" color="#ff0000" STYLE="visibility:hidden">*</FONT>&nbsp;<FONT ID="ship_address2_label" STYLE="visibility:hidden"><B>Unit&nbsp;#</B></FONT></TD>
       <TD COLSPAN=7>
         <INPUT TYPE     = "text"
                NAME     = "ship_address2"
@@ -3747,28 +3700,6 @@ myMenu63.width = 256;
   <TD WIDTH="1">
 
 
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -4175,29 +4106,7 @@ myMenu63.width = 256;
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>&nbsp;Country</TH>
   <TD COLSPAN=6>
-  <SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
-
+  
 
 <SCRIPT TYPE="text/javascript">
 
@@ -5595,7 +5504,7 @@ myMenu63.width = 256;
 </TR>
 
 <TR>
-  <TD ALIGN="right">Latitude</TD>
+  <TH ALIGN="right">Latitude</TD>
   <TD COLSPAN=7>
     <INPUT TYPE  = "text"
            NAME  = "ship_latitude"
@@ -5604,7 +5513,7 @@ myMenu63.width = 256;
            
            
     >
-    Longitude
+    <FONT SIZE="-1" COLOR="#666666">Longitude</FONT>
     <INPUT TYPE  = "text"
            NAME  = "ship_longitude"
            ID    = "ship_longitude"
@@ -5643,13 +5552,13 @@ myMenu63.width = 256;
 
 
 <TR>
-  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TH ALIGN="right">Census&nbsp;tract</TD>
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
            ID="ship_enter_censustract" 
            NAME="ship_enter_censustract" 
            VALUE="">
-    (automatic)
+    <FONT SIZE="-1" COLOR="#333333">(automatic)</FONT>
   </TD>
 </TR>
   <INPUT TYPE  = "hidden"
@@ -5658,6 +5567,13 @@ myMenu63.width = 256;
        VALUE = ""
 >
 
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_locationname"
+       ID    = "old_ship_locationname"
+       VALUE = ""
+>
 
 
 <INPUT TYPE  = "hidden"
@@ -5830,36 +5746,36 @@ myMenu63.width = 256;
   </TD>
 </TR></TABLE>
 
-<SCRIPT>
+<SCRIPT TYPE="text/javascript">
+
 function samechanged(what) {
-  var t1 = document.getElementById('table_ship_location');
   if ( what.checked ) {
-    t1.style.visibility = 'hidden';
-  }
-  else {
-    t1.style.visibility = 'visible'
+    $('#div_ship_location').slideUp();
+  } else {
+    $('#div_ship_location').slideDown();
   }
 }
-samechanged(document.getElementById('same'));
-</SCRIPT>
 
-<BR>
+  $('#div_ship_location').hide();
+
+</SCRIPT>
 
 <DIV ID="contacts_div" STYLE="display:">
 <BR>
 <FONT CLASS="fsinnerbox-title">Contacts</FONT>
 
-
-<TABLE ID="TableNumber0" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TABLE ID="TableNumber0"
+       CLASS="fsinnerbox"
+>
 
 
       <TR>
 
-  <TD ALIGN  = "right"
+  <TH ALIGN  = "right"
       VALIGN = "top"
       STYLE  = "padding-top: 3px"
       ID     = "contactnum_label0"
-  >Contact</TD>
+  ></TD>
 
 
       <TD COLSPAN="6">
@@ -6024,7 +5940,7 @@ spawn_contactnum(this);"
 
           // change the label on the last entry & add a remove button
           var prev_label = document.getElementById('contactnum_label' + contactnum_fieldnum );
-          prev_label.innerHTML = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this contact" onClick="remove_contactnum(' + contactnum_fieldnum + ');" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px" >&nbsp;Contact';
+          prev_label.innerHTML = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this  " onClick="remove_contactnum(' + contactnum_fieldnum + ');" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px" >&nbsp; ';
 
           contactnum_fieldnum++;
 
@@ -6064,7 +5980,7 @@ spawn_contactnum(this);"
           label_cell.style.borderTop = "1px solid black";
           label_cell.style.paddingTop = "5px";
 
-          label_cell.innerHTML = 'Contact';
+          label_cell.innerHTML = '';
 
           row.appendChild(label_cell);
           
@@ -6114,89 +6030,7 @@ spawn_contactnum(this);"
 
 
 
-  <BR><FONT CLASS="fsinnerbox-title">Billing information</FONT>
-  <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
-
-    <TR>
-      <TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Billing type</TD>
-
   <SCRIPT>
-
-    var mywindow = -1;
-    function myopen(filename,windowname,properties) {
-      myclose();
-      mywindow = window.open(filename,windowname,properties);
-    }
-    function myclose() {
-      if ( mywindow != -1 )
-        mywindow.close();
-      mywindow = -1;
-    }
-
-    var achwindow = -1;
-    function achopen(filename,windowname,properties) {
-      achclose();
-      achwindow = window.open(filename,windowname,properties);
-    }
-    function achclose() {
-      if ( achwindow != -1 )
-        achwindow.close();
-      achwindow = -1;
-    }
-
-    function card_changed(what) {
-      if (
-             what.form.payinfo.value.substring(0, 4) == '4093' 
-          || what.form.payinfo.value.substring(0, 4) == '4911' 
-          || what.form.payinfo.value.substring(0, 4) == '4936' 
-          || what.form.payinfo.value.substring(0, 6) == '564132' 
-          || what.form.payinfo.value.substring(0, 2) == '63' 
-          || what.form.payinfo.value.substring(0, 2) == '67' 
-         )
-      {
-        what.form.paystart_month.disabled = false;
-        what.form.paystart_year.disabled = false;
-        what.form.payissue.disabled = false;
-        what.form.paystart_month.style.backgroundColor = '#ffffff';
-        what.form.paystart_year.style.backgroundColor = '#ffffff';
-        what.form.payissue.style.backgroundColor = '#ffffff';
-        document.getElementById('paystart_label').style.color = '#000000';
-        document.getElementById('payissue_label').style.color = '#000000';
-      } else {
-        what.form.paystart_month.disabled = true;
-        what.form.paystart_year.disabled = true;
-        what.form.payissue.disabled = true;
-        what.form.paystart_month.style.backgroundColor = '#dddddd';
-        what.form.paystart_year.style.backgroundColor = '#dddddd';
-        what.form.payissue.style.backgroundColor = '#dddddd';
-        document.getElementById('paystart_label').style.color = '#999999';
-        document.getElementById('payissue_label').style.color = '#999999';
-      }
-      return true;
-    }
-
-    function init_payauto_changed(){
-        var f = document.getElementById('CARD_payauto');
-        if(f != null) payauto_changed(f);
-        f = document.getElementById('CHEK_payauto');
-        if(f != null) payauto_changed(f);
-    }
-
-    function payauto_changed(payauto_field){
-        var select = (payauto_field.name == 'CARD_payauto') ? 'CARD_billday' : 'CHEK_billday';
-        var span = document.getElementById('td_'+select);
-        select = document.getElementById(select);
-        if (span == null || select == null) return;
-        if(payauto_field.checked) {
-            span.style.color = '#000000';
-            select.disabled = false;
-        }
-        else {
-            span.style.color = '#999999';
-            select.disabled = true;
-            //why? select.selectedIndex = 0;
-        }
-    }
 
     function tax_changed(what) {
       var num = document.getElementById(what.id + '_num'); 
@@ -6209,145 +6043,194 @@ spawn_contactnum(this);"
     
   </SCRIPT>
 
-  
+  <BR><FONT CLASS="fsinnerbox-title">Billing information</FONT>
+
+  <TABLE CLASS="fsinnerbox">
 
 
-  <TD WIDTH="408">
+
+
+      <TR>
+        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="complimentary" VALUE="Y" >Complimentary customer
+      </TR>
+
+
+
+
+      <TR>
+        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" > Tax Exempt</TD>
+      </TR>
+
+
+
+
+
+    <TR>
+      <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" > Postal mail invoices 
+
+      </TD>
+    </TR>
+
+
+
+    <TR>
+      <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" CHECKED> Email invoices 
+
+      </TD>
+    </TR>
+
+   <TR>
+      <TH ALIGN="right" WIDTH="200">
+        Email address(es)
+      </TD>
+      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="">
+      <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" > <FONT SIZE="-1">Do not send notices</FONT>
+      </TD>
+    </TR>
+
+
+    <INPUT TYPE="hidden" NAME="prorate_day" VALUE="">
+
+
+    <TR>
+      <TH ALIGN="right" WIDTH="200">Charge card/e-check on this day of the month </TD>
+      <TD>
+        <SELECT NAME="billday">
+          <OPTION VALUE='1' >1</OPTION><OPTION VALUE='2' >2</OPTION><OPTION VALUE='3' >3</OPTION><OPTION VALUE='4' >4</OPTION><OPTION VALUE='5' >5</OPTION><OPTION VALUE='6' >6</OPTION><OPTION VALUE='7' >7</OPTION><OPTION VALUE='8' >8</OPTION><OPTION VALUE='9' >9</OPTION><OPTION VALUE='10' >10</OPTION><OPTION VALUE='11' >11</OPTION><OPTION VALUE='12' >12</OPTION><OPTION VALUE='13' >13</OPTION><OPTION VALUE='14' >14</OPTION><OPTION VALUE='15' >15</OPTION><OPTION VALUE='16' >16</OPTION><OPTION VALUE='17' >17</OPTION><OPTION VALUE='18' >18</OPTION><OPTION VALUE='19' >19</OPTION><OPTION VALUE='20' >20</OPTION><OPTION VALUE='21' >21</OPTION><OPTION VALUE='22' >22</OPTION><OPTION VALUE='23' >23</OPTION><OPTION VALUE='24' >24</OPTION><OPTION VALUE='25' >25</OPTION><OPTION VALUE='26' >26</OPTION><OPTION VALUE='27' >27</OPTION><OPTION VALUE='28' >28</OPTION>
+        </SELECT>
+      </TD>
+    </TR>
+
+
+
+    <TR>
+      <TH ALIGN="right" WIDTH="200">Invoice terms </TD>
+      <TD WIDTH="408">
+        <SELECT NAME = "invoice_terms"
+        ID   = "invoice_terms"
+        
+>
+# #false laziness w/select-table.html
+
+  <OPTION VALUE="">Default (Payable upon receipt)
+    <OPTION VALUE="Payable upon receipt" >Payable upon receipt
+    <OPTION VALUE="Net 0" >Net 0
+    <OPTION VALUE="Net 3" >Net 3
+    <OPTION VALUE="Net 5" >Net 5
+    <OPTION VALUE="Net 9" >Net 9
+    <OPTION VALUE="Net 10" >Net 10
+    <OPTION VALUE="Net 14" >Net 14
+    <OPTION VALUE="Net 15" >Net 15
+    <OPTION VALUE="Net 18" >Net 18
+    <OPTION VALUE="Net 20" >Net 20
+    <OPTION VALUE="Net 21" >Net 21
+    <OPTION VALUE="Net 25" >Net 25
+    <OPTION VALUE="Net 30" >Net 30
+    <OPTION VALUE="Net 45" >Net 45
+    <OPTION VALUE="Net 60" >Net 60
+    <OPTION VALUE="Net 90" >Net 90
+</SELECT>
+
+      </TD>
+    </TR>
+
+
+    <TR>
+      <TH ALIGN="right" WIDTH="200">Credit limit </TD>
+      <TD WIDTH="408">
         <SCRIPT TYPE="text/javascript">
+function toggle(obj) {
+  obj.form.credit_limit.disabled = obj.checked;
+}
+        </SCRIPT>
+        <INPUT TYPE  = "text"
+               NAME  = "credit_limit"
+               VALUE = "0.00"
+                DISABLED
+        >
+        <INPUT TYPE  = "checkbox"
+               NAME  = "no_credit_limit"
+               VALUE = 1
+               onClick="toggle(this)"
+                CHECKED
+        > <FONT SIZE="-1" COLOR="#333333">
+          Unlimited
+          </FONT> 
+      </TD>
+    </TR>
 
 
-      function paybychanged(what) {
+      <INPUT TYPE="hidden" NAME="spool_cdr" VALUE="">
 
-        init_payauto_changed();
+      <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="">
 
-        var paybylayer = what.options[what.selectedIndex].value;
+      <INPUT TYPE="hidden" NAME="email_csv_cdr" VALUE="">
 
-          if (paybylayer == "CARD" ) {
+       <INPUT TYPE="hidden" NAME="accountcode_cdr" VALUE="">
 
-              document.getElementById('paybydCHEK').style.display = "none";
-              document.getElementById('paybydCHEK').style.zIndex = 0;
-              document.getElementById('paybydLECB').style.display = "none";
-              document.getElementById('paybydLECB').style.zIndex = 0;
-              document.getElementById('paybydBILL').style.display = "none";
-              document.getElementById('paybydBILL').style.zIndex = 0;
-              document.getElementById('paybydCOMP').style.display = "none";
-              document.getElementById('paybydCOMP').style.zIndex = 0;
-
-            document.getElementById('paybydCARD').style.display = "";
-            document.getElementById('paybydCARD').style.zIndex = 1;
-
-          }
-          if (paybylayer == "CHEK" ) {
-
-              document.getElementById('paybydCARD').style.display = "none";
-              document.getElementById('paybydCARD').style.zIndex = 0;
-              document.getElementById('paybydLECB').style.display = "none";
-              document.getElementById('paybydLECB').style.zIndex = 0;
-              document.getElementById('paybydBILL').style.display = "none";
-              document.getElementById('paybydBILL').style.zIndex = 0;
-              document.getElementById('paybydCOMP').style.display = "none";
-              document.getElementById('paybydCOMP').style.zIndex = 0;
-
-            document.getElementById('paybydCHEK').style.display = "";
-            document.getElementById('paybydCHEK').style.zIndex = 1;
-
-          }
-          if (paybylayer == "LECB" ) {
-
-              document.getElementById('paybydCARD').style.display = "none";
-              document.getElementById('paybydCARD').style.zIndex = 0;
-              document.getElementById('paybydCHEK').style.display = "none";
-              document.getElementById('paybydCHEK').style.zIndex = 0;
-              document.getElementById('paybydBILL').style.display = "none";
-              document.getElementById('paybydBILL').style.zIndex = 0;
-              document.getElementById('paybydCOMP').style.display = "none";
-              document.getElementById('paybydCOMP').style.zIndex = 0;
-
-            document.getElementById('paybydLECB').style.display = "";
-            document.getElementById('paybydLECB').style.zIndex = 1;
-
-          }
-          if (paybylayer == "BILL" ) {
-
-              document.getElementById('paybydCARD').style.display = "none";
-              document.getElementById('paybydCARD').style.zIndex = 0;
-              document.getElementById('paybydCHEK').style.display = "none";
-              document.getElementById('paybydCHEK').style.zIndex = 0;
-              document.getElementById('paybydLECB').style.display = "none";
-              document.getElementById('paybydLECB').style.zIndex = 0;
-              document.getElementById('paybydCOMP').style.display = "none";
-              document.getElementById('paybydCOMP').style.zIndex = 0;
-
-            document.getElementById('paybydBILL').style.display = "";
-            document.getElementById('paybydBILL').style.zIndex = 1;
-
-          }
-          if (paybylayer == "COMP" ) {
-
-              document.getElementById('paybydCARD').style.display = "none";
-              document.getElementById('paybydCARD').style.zIndex = 0;
-              document.getElementById('paybydCHEK').style.display = "none";
-              document.getElementById('paybydCHEK').style.zIndex = 0;
-              document.getElementById('paybydLECB').style.display = "none";
-              document.getElementById('paybydLECB').style.zIndex = 0;
-              document.getElementById('paybydBILL').style.display = "none";
-              document.getElementById('paybydBILL').style.zIndex = 0;
-
-            document.getElementById('paybydCOMP').style.display = "";
-            document.getElementById('paybydCOMP').style.zIndex = 1;
-
-          }
-
-        //init_payauto_changed();
-
-      }
-    </SCRIPT>
-
-    <SELECT NAME          = "payby"
-            ID            = "payby"
-            previousValue = "CARD"
-            previousText  = "Credit card"
-            onChange="paybychanged(this);"
-    >
-
-
-        <OPTION VALUE="CARD"
-                 SELECTED
-        >Credit card</OPTION>
-
-
-        <OPTION VALUE="CHEK"
-                
-        >Electronic check</OPTION>
-
-
-        <OPTION VALUE="LECB"
-                
-        >Phone bill billing</OPTION>
-
-
-        <OPTION VALUE="BILL"
-                
-        >Billing</OPTION>
-
-
-        <OPTION VALUE="COMP"
-                
-        >Complimentary</OPTION>
-
-
-    </SELECT>
-
-
-</TD></TR></TABLE>
+      <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="">
 
 
 
-      <DIV ID="paybydCARD"
-           STYLE="display: block; z-index: 1"
-      >
 
-        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Card number </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="412325xxxxxx4150" MAXLENGTH=19 onChange="card_changed(this)" onKeyUp="card_changed(this)"></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Expiration </TD><TD WIDTH="408"><SELECT NAME="CARD_exp_month" SIZE="1" >
+
+  </TABLE>
+  <BR>
+
+  <FONT CLASS="fsinnerbox-title">Payment information</FONT>
+  
+<TABLE ID="TableNumber1"
+       CLASS="fsinnerbox"
+>
+
+
+        <TR>
+
+  <TH ALIGN  = "right"
+      VALIGN = "top"
+      STYLE  = "padding-top: 3px"
+      ID     = "custpaybynum_label0"
+  ><INPUT TYPE="button" VALUE="X" TITLE="Remove this  " onClick="remove_custpaybynum(0);" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px">&nbsp;  </TD>
+
+
+        <TD COLSPAN="6">
+        
+  <INPUT TYPE="hidden" NAME="custpaybynum0" ID="custpaybynum0" VALUE="134">
+
+  <TABLE STYLE="display:inline">
+    <TR>
+
+
+      <TD>
+        <SELECT NAME="custpaybynum0_payby"
+                onChange="custpaybynum0_payby_changed(this)"
+        >
+            <OPTION VALUE="CARD"
+               SELECTED
+            >Credit card
+            <OPTION VALUE="CHEK"
+               
+            >Electronic check
+        </SELECT><BR>
+        <FONT SIZE="-1">Type</FONT>
+      </TD>
+
+
+
+      <TD ID="custpaybynum0_td_payinfo" >
+        <INPUT TYPE      = "text"
+               NAME      = "custpaybynum0_payinfo"
+               ID        = "custpaybynum0_payinfo"
+               SIZE      = 22
+               MAXLENGTH = 19
+               VALUE     = "412325xxxxxx4150"
+               onChange  = ""
+        >
+        <BR><FONT SIZE="-1">Card number</FONT>
+      </TD>
+
+      <TD ID="custpaybynum0_td_paydate" >
+        <SELECT NAME="custpaybynum0_paydate_month" SIZE="1" >
 
 
 
@@ -6376,7 +6259,7 @@ spawn_contactnum(this);"
    <OPTION VALUE="12">12
 
 
-</SELECT>/<SELECT NAME="CARD_exp_year" SIZE="1" >
+</SELECT>/<SELECT NAME="custpaybynum0_paydate_year" SIZE="1" >
 
 
 
@@ -6426,9 +6309,218 @@ spawn_contactnum(this);"
 
 </SELECT>
 
-</TD></TR><TR><TD ALIGN="right" WIDTH="200">CVV2&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</TD><TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_paycvv" VALUE="" SIZE=4 MAXLENGTH=4><TR><TD ALIGN="right" WIDTH="200"><SPAN ID="paystart_label" style="color: #999999">Start date </SPAN></TD><TD WIDTH="408"><SELECT NAME="CARD_paystart_month" SIZE="1" DISABLED style="background-color: #dddddd">
 
-<OPTION VALUE="">
+        <BR><FONT SIZE="-1">Expiration&nbsp;date</FONT>
+      </TD>
+
+      <TD ID="custpaybynum0_td_paycvv" >
+        <INPUT TYPE      = "text"
+               NAME      = "custpaybynum0_paycvv"
+               ID        = "custpaybynum0_paycvv"
+               SIZE      = 2
+               MAXLENGTH = 4
+               VALUE     = ""
+               onChange  = ""
+        >
+        <BR><FONT SIZE="-1">CVV2&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('http://localhost/freeside/docs/cvv2.html', 480, 275, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</FONT>
+      </TD>
+
+      <TD ID="custpaybynum0_td_payname" >
+        <INPUT TYPE     = "text"
+               NAME     = "custpaybynum0_payname"
+               ID       = "custpaybynum0_payname"
+               onChange = ""
+               VALUE     = "Samara Towne"
+        >
+        <BR><FONT SIZE="-1">Exact name on card</FONT>
+      </TD>
+
+
+
+      <TD ID="custpaybynum0_td_paytype" STYLE="display:none">
+        <SELECT NAME="custpaybynum0_paytype">!.
+            <OPTION VALUE=""
+                    SELECTED
+            >
+            <OPTION VALUE="Personal checking"
+                    
+            >Personal checking
+            <OPTION VALUE="Personal savings"
+                    
+            >Personal savings
+            <OPTION VALUE="Business checking"
+                    
+            >Business checking
+            <OPTION VALUE="Business savings"
+                    
+            >Business savings
+        </SELECT>
+        <BR><FONT SIZE="-1">Account type</FONT>
+      </TD>
+
+
+      <TD ID="custpaybynum0_td_payinfo1" STYLE="display:none">
+        <INPUT TYPE = "text"
+               NAME      = "custpaybynum0_payinfo1"
+               ID        = "custpaybynum0_payinfo1"
+               VALUE     = ""
+               SIZE      = 12
+        >
+        <BR><FONT SIZE="-1">Account #&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('http://localhost/freeside/docs/ach.html', 380, 220, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</FONT>
+      </TD>
+
+     <TD ID="custpaybynum0_td_payinfo2" STYLE="display:none">
+        <INPUT TYPE = "text"
+               NAME      = "custpaybynum0_payinfo2"
+               ID        = "custpaybynum0_payinfo2"
+               VALUE     = ""
+               SIZE      = "10"
+               MAXLENGTH = "9"
+        >
+        <BR><FONT SIZE="-1">ABA/Routing #</FONT>
+      </TD>
+
+
+      <TD ID="custpaybynum0_td_payname_CHEK" STYLE="display:none">
+        <INPUT TYPE = "text"
+               NAME      = "custpaybynum0_payname_CHEK"
+               ID        = "custpaybynum0_payname_CHEK"
+               VALUE     = ""
+               SIZE      = "20"
+        >
+        <BR><FONT SIZE="-1">Bank name</FONT>
+      </TD>
+
+
+
+
+      <TD>
+        <SELECT NAME = "custpaybynum0_weight">
+          <OPTION VALUE="">Do not auto-charge
+            <OPTION VALUE="1"
+                    SELECTED
+            >Primary
+            <OPTION VALUE="2"
+                    
+            >Secondary
+            <OPTION VALUE="3"
+                    
+            >Tertiary
+            <OPTION VALUE="4"
+                    
+            >Fourth
+            <OPTION VALUE="5"
+                    
+            >Fifth
+        </SELECT>
+        <BR>
+        <FONT SIZE="-1">Auto-charge</FONT>
+      </TD>
+
+    </TR>
+  </TABLE>
+
+  <SCRIPT TYPE="text/javascript">
+
+    function custpaybynum0_payby_changed(what) {
+      var payby = what.options[what.selectedIndex].value;
+      if ( payby == 'CARD' ) {
+        document.getElementById('custpaybynum0_td_payinfo').style.display = '';
+        document.getElementById('custpaybynum0_td_paydate').style.display = '';
+        document.getElementById('custpaybynum0_td_paycvv').style.display = '';
+        document.getElementById('custpaybynum0_td_payname').style.display = '';
+        document.getElementById('custpaybynum0_td_payinfo1').style.display = 'none';
+        document.getElementById('custpaybynum0_td_payinfo2').style.display = 'none';
+        document.getElementById('custpaybynum0_td_paytype').style.display = 'none';
+        document.getElementById('custpaybynum0_td_payname_CHEK').style.display = 'none';
+        var td_payinfo3 = document.getElementById('custpaybynum0_td_payinfo3');
+        if ( td_payinfo3 ) {
+          td_payinfo3.style.display = 'none';
+        }
+        var td_paystate = document.getElementById('custpaybynum0_td_paystate');
+        if ( td_paystate ) {
+          td_paystate.style.display = 'none';
+        }
+      } else if ( payby == 'CHEK' ) {
+        document.getElementById('custpaybynum0_td_payinfo').style.display = 'none';
+        document.getElementById('custpaybynum0_td_paydate').style.display = 'none';
+        document.getElementById('custpaybynum0_td_paycvv').style.display = 'none';
+        document.getElementById('custpaybynum0_td_payname').style.display = 'none';
+        document.getElementById('custpaybynum0_td_payinfo1').style.display = '';
+        document.getElementById('custpaybynum0_td_payinfo2').style.display = '';
+        document.getElementById('custpaybynum0_td_paytype').style.display = '';
+        document.getElementById('custpaybynum0_td_payname_CHEK').style.display = '';
+        var td_payinfo3 = document.getElementById('custpaybynum0_td_payinfo3');
+        if ( td_payinfo3 ) {
+          td_payinfo3.style.display = '';
+        }
+        var td_paystate = document.getElementById('custpaybynum0_td_paystate');
+        if ( td_paystate ) {
+          td_paystate.style.display = '';
+        }
+      } else {
+        alert( 'unknown payby ' + payby );
+      }
+    }
+
+  </SCRIPT>
+
+        </TD>
+
+
+        </TR>
+
+
+      <TR>
+
+  <TH ALIGN  = "right"
+      VALIGN = "top"
+      STYLE  = "padding-top: 3px; border-top:1px solid black"
+      ID     = "custpaybynum_label1"
+  ></TD>
+
+
+      <TD COLSPAN="6">
+      
+  <INPUT TYPE="hidden" NAME="custpaybynum1" ID="custpaybynum1" VALUE="">
+
+  <TABLE STYLE="display:inline">
+    <TR>
+
+
+      <TD>
+        <SELECT NAME="custpaybynum1_payby"
+                onChange="custpaybynum1_payby_changed(this)"
+        >
+            <OPTION VALUE="CARD"
+               SELECTED
+            >Credit card
+            <OPTION VALUE="CHEK"
+               
+            >Electronic check
+        </SELECT><BR>
+        <FONT SIZE="-1">Type</FONT>
+      </TD>
+
+
+
+      <TD ID="custpaybynum1_td_payinfo" >
+        <INPUT TYPE      = "text"
+               NAME      = "custpaybynum1_payinfo"
+               ID        = "custpaybynum1_payinfo"
+               SIZE      = 22
+               MAXLENGTH = 19
+               VALUE     = ""
+               onChange  = "
+spawn_custpaybynum(this);"
+        >
+        <BR><FONT SIZE="-1">Card number</FONT>
+      </TD>
+
+      <TD ID="custpaybynum1_td_paydate" >
+        <SELECT NAME="custpaybynum1_paydate_month" SIZE="1" >
+
+
 
    <OPTION VALUE="1">01
 
@@ -6455,112 +6547,7 @@ spawn_contactnum(this);"
    <OPTION VALUE="12">12
 
 
-</SELECT>/<SELECT NAME="CARD_paystart_year" SIZE="1" DISABLED style="background-color: #dddddd">
-
-<OPTION VALUE="">
-
-   <OPTION VALUE="2000">2000
-
-   <OPTION VALUE="2001">2001
-
-   <OPTION VALUE="2002">2002
-
-   <OPTION VALUE="2003">2003
-
-   <OPTION VALUE="2004">2004
-
-   <OPTION VALUE="2005">2005
-
-   <OPTION VALUE="2006">2006
-
-   <OPTION VALUE="2007">2007
-
-   <OPTION VALUE="2008">2008
-
-   <OPTION VALUE="2009">2009
-
-   <OPTION VALUE="2010">2010
-
-   <OPTION VALUE="2011">2011
-
-   <OPTION VALUE="2012">2012
-
-   <OPTION VALUE="2013">2013
-
-   <OPTION VALUE="2014">2014
-
-   <OPTION VALUE="2015">2015
-
-   <OPTION VALUE="2016">2016
-
-</SELECT>
-
-<SPAN ID="payissue_label" style="color: #999999">or Issue number </SPAN><INPUT TYPE="text" NAME="CARD_payissue" VALUE="" SIZE=3 MAXLENGTH=2 DISABLED style="background-color: #dddddd"></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Exact name on card </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payname" VALUE="Samara Towne"></TD></TR><TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CARD_payauto" NAME="CARD_payauto" CHECKED> Charge future payments to this credit card automatically</TD></TR></TABLE>
-
-      </DIV>
-
-
-      <DIV ID="paybydCHEK"
-           STYLE="display: none; z-index: 0"
-      >
-
-        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Account number </TD><TD><INPUT TYPE="text" SIZE=12 NAME="CHEK_payinfo1" VALUE=""></TD><TD ALIGN="right">Type</TD><TD><SELECT NAME="CHEK_paytype"><OPTION VALUE="" SELECTED></OPTION><OPTION VALUE="Personal checking" >Personal checking</OPTION><OPTION VALUE="Personal savings" >Personal savings</OPTION><OPTION VALUE="Business checking" >Business checking</OPTION><OPTION VALUE="Business savings" >Business savings</OPTION></SELECT></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;ABA/Routing number </TD><TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="CHEK_payinfo2" VALUE=""> (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</TD></TR><INPUT TYPE="hidden" NAME="CHEK_exp_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037"><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Bank name </TD><TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="CHEK_payname" VALUE=""></TD></TR><INPUT TYPE="hidden" NAME="CHEK_paystate" VALUE=""><TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CHEK_payauto" NAME="CHEK_payauto" CHECKED> Charge future payments to this electronic check automatically</TD></TR></TABLE>
-
-      </DIV>
-
-
-      <DIV ID="paybydLECB"
-           STYLE="display: none; z-index: 0"
-      >
-
-        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Phone number </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16></TD></TR><INPUT TYPE="hidden" NAME="LECB_exp_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_exp_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE=""><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>
-
-      </DIV>
-
-
-      <DIV ID="paybydBILL"
-           STYLE="display: none; z-index: 0"
-      >
-
-        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200">P.O. </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""></TD></TR><INPUT TYPE="hidden" NAME="BILL_exp_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_exp_year" VALUE="2037"><TR><TD ALIGN="right" WIDTH="200">Attention </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payname" VALUE=""></TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>
-
-      </DIV>
-
-
-      <DIV ID="paybydCOMP"
-           STYLE="display: none; z-index: 0"
-      >
-
-        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Approved by </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Expiration </TD><TD WIDTH="408"><SELECT NAME="COMP_exp_month" SIZE="1" >
-
-
-
-   <OPTION VALUE="1">01
-
-   <OPTION VALUE="2">02
-
-   <OPTION VALUE="3">03
-
-   <OPTION VALUE="4">04
-
-   <OPTION VALUE="5">05
-
-   <OPTION VALUE="6">06
-
-   <OPTION VALUE="7">07
-
-   <OPTION VALUE="8">08
-
-   <OPTION VALUE="9">09
-
-   <OPTION VALUE="10">10
-
-   <OPTION VALUE="11">11
-
-   <OPTION VALUE="12">12
-
-
-</SELECT>/<SELECT NAME="COMP_exp_year" SIZE="1" >
+</SELECT>/<SELECT NAME="custpaybynum1_paydate_year" SIZE="1" >
 
 
 
@@ -6610,129 +6597,282 @@ spawn_contactnum(this);"
 
 </SELECT>
 
-</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>
 
-      </DIV>
+        <BR><FONT SIZE="-1">Expiration&nbsp;date</FONT>
+      </TD>
+
+      <TD ID="custpaybynum1_td_paycvv" >
+        <INPUT TYPE      = "text"
+               NAME      = "custpaybynum1_paycvv"
+               ID        = "custpaybynum1_paycvv"
+               SIZE      = 2
+               MAXLENGTH = 4
+               VALUE     = ""
+               onChange  = "
+spawn_custpaybynum(this);"
+        >
+        <BR><FONT SIZE="-1">CVV2&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('http://localhost/freeside/docs/cvv2.html', 480, 275, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</FONT>
+      </TD>
+
+      <TD ID="custpaybynum1_td_payname" >
+        <INPUT TYPE     = "text"
+               NAME     = "custpaybynum1_payname"
+               ID       = "custpaybynum1_payname"
+               onChange = "
+spawn_custpaybynum(this);"
+               VALUE     = ""
+        >
+        <BR><FONT SIZE="-1">Exact name on card</FONT>
+      </TD>
+
+
+
+      <TD ID="custpaybynum1_td_paytype" STYLE="display:none">
+        <SELECT NAME="custpaybynum1_paytype">!.
+            <OPTION VALUE=""
+                    SELECTED
+            >
+            <OPTION VALUE="Personal checking"
+                    
+            >Personal checking
+            <OPTION VALUE="Personal savings"
+                    
+            >Personal savings
+            <OPTION VALUE="Business checking"
+                    
+            >Business checking
+            <OPTION VALUE="Business savings"
+                    
+            >Business savings
+        </SELECT>
+        <BR><FONT SIZE="-1">Account type</FONT>
+      </TD>
+
+
+      <TD ID="custpaybynum1_td_payinfo1" STYLE="display:none">
+        <INPUT TYPE = "text"
+               NAME      = "custpaybynum1_payinfo1"
+               ID        = "custpaybynum1_payinfo1"
+               VALUE     = ""
+               SIZE      = 12
+        >
+        <BR><FONT SIZE="-1">Account #&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('http://localhost/freeside/docs/ach.html', 380, 220, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</FONT>
+      </TD>
+
+     <TD ID="custpaybynum1_td_payinfo2" STYLE="display:none">
+        <INPUT TYPE = "text"
+               NAME      = "custpaybynum1_payinfo2"
+               ID        = "custpaybynum1_payinfo2"
+               VALUE     = ""
+               SIZE      = "10"
+               MAXLENGTH = "9"
+        >
+        <BR><FONT SIZE="-1">ABA/Routing #</FONT>
+      </TD>
+
+
+      <TD ID="custpaybynum1_td_payname_CHEK" STYLE="display:none">
+        <INPUT TYPE = "text"
+               NAME      = "custpaybynum1_payname_CHEK"
+               ID        = "custpaybynum1_payname_CHEK"
+               VALUE     = ""
+               SIZE      = "20"
+        >
+        <BR><FONT SIZE="-1">Bank name</FONT>
+      </TD>
 
 
 
 
-  <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+      <TD>
+        <SELECT NAME = "custpaybynum1_weight">
+          <OPTION VALUE="">Do not auto-charge
+            <OPTION VALUE="1"
+                    
+            >Primary
+            <OPTION VALUE="2"
+                    
+            >Secondary
+            <OPTION VALUE="3"
+                    
+            >Tertiary
+            <OPTION VALUE="4"
+                    
+            >Fourth
+            <OPTION VALUE="5"
+                    
+            >Fifth
+        </SELECT>
+        <BR>
+        <FONT SIZE="-1">Auto-charge</FONT>
+      </TD>
 
-    <TR><TD>&nbsp;</TD></TR>
+    </TR>
+  </TABLE>
+
+  <SCRIPT TYPE="text/javascript">
+
+    function custpaybynum1_payby_changed(what) {
+      var payby = what.options[what.selectedIndex].value;
+      if ( payby == 'CARD' ) {
+        document.getElementById('custpaybynum1_td_payinfo').style.display = '';
+        document.getElementById('custpaybynum1_td_paydate').style.display = '';
+        document.getElementById('custpaybynum1_td_paycvv').style.display = '';
+        document.getElementById('custpaybynum1_td_payname').style.display = '';
+        document.getElementById('custpaybynum1_td_payinfo1').style.display = 'none';
+        document.getElementById('custpaybynum1_td_payinfo2').style.display = 'none';
+        document.getElementById('custpaybynum1_td_paytype').style.display = 'none';
+        document.getElementById('custpaybynum1_td_payname_CHEK').style.display = 'none';
+        var td_payinfo3 = document.getElementById('custpaybynum1_td_payinfo3');
+        if ( td_payinfo3 ) {
+          td_payinfo3.style.display = 'none';
+        }
+        var td_paystate = document.getElementById('custpaybynum1_td_paystate');
+        if ( td_paystate ) {
+          td_paystate.style.display = 'none';
+        }
+      } else if ( payby == 'CHEK' ) {
+        document.getElementById('custpaybynum1_td_payinfo').style.display = 'none';
+        document.getElementById('custpaybynum1_td_paydate').style.display = 'none';
+        document.getElementById('custpaybynum1_td_paycvv').style.display = 'none';
+        document.getElementById('custpaybynum1_td_payname').style.display = 'none';
+        document.getElementById('custpaybynum1_td_payinfo1').style.display = '';
+        document.getElementById('custpaybynum1_td_payinfo2').style.display = '';
+        document.getElementById('custpaybynum1_td_paytype').style.display = '';
+        document.getElementById('custpaybynum1_td_payname_CHEK').style.display = '';
+        var td_payinfo3 = document.getElementById('custpaybynum1_td_payinfo3');
+        if ( td_payinfo3 ) {
+          td_payinfo3.style.display = '';
+        }
+        var td_paystate = document.getElementById('custpaybynum1_td_paystate');
+        if ( td_paystate ) {
+          td_paystate.style.display = '';
+        }
+      } else {
+        alert( 'unknown payby ' + payby );
+      }
+    }
+
+  </SCRIPT>
+
+      </TD>
 
 
-      <TR>
-        <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" > Tax Exempt</TD>
       </TR>
 
 
+      <SCRIPT TYPE="text/javascript">
+
+        var custpaybynum_rownum = 2;
+        var custpaybynum_fieldnum = 1;
+
+        function spawn_custpaybynum(what) {
+
+          // only spawn if we're the last element... return if not
+
+          var field_regex = /(\d+)(_[a-z_]+)?$/;
+          var match = field_regex.exec(what.name);
+          if ( !match ) {
+            alert(what.name + " didn't match for " + what);
+            return;
+          }
+          if ( match[1] != custpaybynum_fieldnum ) {
+            return;
+          }
+
+          // change the label on the last entry & add a remove button
+          var prev_label = document.getElementById('custpaybynum_label' + custpaybynum_fieldnum );
+          prev_label.innerHTML = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this  " onClick="remove_custpaybynum(' + custpaybynum_fieldnum + ');" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px" >&nbsp; ';
+
+          custpaybynum_fieldnum++;
+
+          //get the new widget
 
 
-    <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" > Postal mail invoices 
+          var newrow =  '\n  <INPUT TYPE="hidden" NAME="custpaybynumMAGIC_NUMBER" ID="custpaybynumMAGIC_NUMBER" VALUE="">\n\n  <TABLE STYLE="display:inline">\n    <TR>\n\n\n      <TD>\n        <SELECT NAME="custpaybynumMAGIC_NUMBER_payby"\n                onChange="custpaybynumMAGIC_NUMBER_payby_changed(this)"\n        >\n            <OPTION VALUE="CARD"\n               SELECTED\n            >Credit card\n            <OPTION VALUE="CHEK"\n               \n            >Electronic check\n        </SELECT><BR>\n        <FONT SIZE="-1">Type</FONT>\n      </TD>\n\n\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_payinfo" >\n        <INPUT TYPE      = "text"\n               NAME      = "custpaybynumMAGIC_NUMBER_payinfo"\n               ID        = "custpaybynumMAGIC_NUMBER_payinfo"\n               SIZE      = 22\n               MAXLENGTH = 19\n               VALUE     = ""\n               onChange  = "\nspawn_custpaybynum(this);"\n        >\n        <BR><FONT SIZE="-1">Card number</FONT>\n      </TD>\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_paydate" >\n        <SELECT NAME="custpaybynumMAGIC_NUMBER_paydate_month" SIZE="1" >\n\n\n\n   <OPTION VALUE="1">01\n\n   <OPTION VALUE="2">02\n\n   <OPTION VALUE="3">03\n\n   <OPTION VALUE="4">04\n\n   <OPTION VALUE="5">05\n\n   <OPTION VALUE="6">06\n\n   <OPTION VALUE="7">07\n\n   <OPTION VALUE="8">08\n\n   <OPTION VALUE="9">09\n\n   <OPTION VALUE="10">10\n\n   <OPTION VALUE="11">11\n\n   <OPTION VALUE="12">12\n\n\n</SELECT>/<SELECT NAME="custpaybynumMAGIC_NUMBER_paydate_year" SIZE="1" >\n\n\n\n   <OPTION VALUE="2016">2016\n\n   <OPTION VALUE="2017">2017\n\n   <OPTION VALUE="2018">2018\n\n   <OPTION VALUE="2019">2019\n\n   <OPTION VALUE="2020">2020\n\n   <OPTION VALUE="2021">2021\n\n   <OPTION VALUE="2022">2022\n\n   <OPTION VALUE="2023">2023\n\n   <OPTION VALUE="2024">2024\n\n   <OPTION VALUE="2025">2025\n\n   <OPTION VALUE="2026">2026\n\n   <OPTION VALUE="2027">2027\n\n   <OPTION VALUE="2028">2028\n\n   <OPTION VALUE="2029">2029\n\n   <OPTION VALUE="2030">2030\n\n   <OPTION VALUE="2031">2031\n\n   <OPTION VALUE="2032">2032\n\n   <OPTION VALUE="2033">2033\n\n   <OPTION VALUE="2034">2034\n\n   <OPTION VALUE="2035">2035\n\n   <OPTION VALUE="2036">2036\n\n   <OPTION VALUE="2037">2037\n\n</SELECT>\n\n\n        <BR><FONT SIZE="-1">Expiration&nbsp;date</FONT>\n      </TD>\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_paycvv" >\n        <INPUT TYPE      = "text"\n               NAME      = "custpaybynumMAGIC_NUMBER_paycvv"\n               ID        = "custpaybynumMAGIC_NUMBER_paycvv"\n               SIZE      = 2\n               MAXLENGTH = 4\n               VALUE     = ""\n               onChange  = "\nspawn_custpaybynum(this);"\n        >\n        <BR><FONT SIZE="-1">CVV2&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent(\'http://localhost/freeside/docs/cvv2.html\', 480, 275, \'cvv2_popup\' ), CAPTION, \'CVV2 Help\', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</FONT>\n      </TD>\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_payname" >\n        <INPUT TYPE     = "text"\n               NAME     = "custpaybynumMAGIC_NUMBER_payname"\n               ID       = "custpaybynumMAGIC_NUMBER_payname"\n               onChange = "\nspawn_custpaybynum(this);"\n               VALUE     = ""\n        >\n        <BR><FONT SIZE="-1">Exact name on card</FONT>\n      </TD>\n\n\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_paytype" STYLE="display:none">\n        <SELECT NAME="custpaybynumMAGIC_NUMBER_paytype">!.\n            <OPTION VALUE=""\n                    SELECTED\n            >\n            <OPTION VALUE="Personal checking"\n                    \n            >Personal checking\n            <OPTION VALUE="Personal savings"\n                    \n            >Personal savings\n            <OPTION VALUE="Business checking"\n                    \n            >Business checking\n            <OPTION VALUE="Business savings"\n                    \n            >Business savings\n        </SELECT>\n        <BR><FONT SIZE="-1">Account type</FONT>\n      </TD>\n\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_payinfo1" STYLE="display:none">\n        <INPUT TYPE = "text"\n               NAME      = "custpaybynumMAGIC_NUMBER_payinfo1"\n               ID        = "custpaybynumMAGIC_NUMBER_payinfo1"\n               VALUE     = ""\n               SIZE      = 12\n        >\n        <BR><FONT SIZE="-1">Account #&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent(\'http://localhost/freeside/docs/ach.html\', 380, 220, \'ach_popup\' ), CAPTION, \'ACH Help\', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</FONT>\n      </TD>\n\n     <TD ID="custpaybynumMAGIC_NUMBER_td_payinfo2" STYLE="display:none">\n        <INPUT TYPE = "text"\n               NAME      = "custpaybynumMAGIC_NUMBER_payinfo2"\n               ID        = "custpaybynumMAGIC_NUMBER_payinfo2"\n               VALUE     = ""\n               SIZE      = "10"\n               MAXLENGTH = "9"\n        >\n        <BR><FONT SIZE="-1">ABA/Routing #</FONT>\n      </TD>\n\n\n      <TD ID="custpaybynumMAGIC_NUMBER_td_payname_CHEK" STYLE="display:none">\n        <INPUT TYPE = "text"\n               NAME      = "custpaybynumMAGIC_NUMBER_payname_CHEK"\n               ID        = "custpaybynumMAGIC_NUMBER_payname_CHEK"\n               VALUE     = ""\n               SIZE      = "20"\n        >\n        <BR><FONT SIZE="-1">Bank name</FONT>\n      </TD>\n\n\n\n\n      <TD>\n        <SELECT NAME = "custpaybynumMAGIC_NUMBER_weight">\n          <OPTION VALUE="">Do not auto-charge\n            <OPTION VALUE="1"\n                    \n            >Primary\n            <OPTION VALUE="2"\n                    \n            >Secondary\n            <OPTION VALUE="3"\n                    \n            >Tertiary\n            <OPTION VALUE="4"\n                    \n            >Fourth\n            <OPTION VALUE="5"\n                    \n            >Fifth\n        </SELECT>\n        <BR>\n        <FONT SIZE="-1">Auto-charge</FONT>\n      </TD>\n\n    </TR>\n  </TABLE>\n\n';
 
-      </TD>
-    </TR>
+            var newfunc = '';
 
-    <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_FAX" VALUE="FAX" > Fax invoices 
+          // substitute in the new field name
+          var magic_regex = /MAGIC_NUMBER/g;
+          newrow  = newrow.replace(  magic_regex, custpaybynum_fieldnum );
+          newfunc = newfunc.replace( magic_regex, custpaybynum_fieldnum );
 
-      </TD>
-    </TR>
+          // evaluate new_func
+          if (window.ActiveXObject) {
+            window.execScript(newfunc);
+          } else { /* (window.XMLHttpRequest) */
+            //window.eval(newfunc);
+            setTimeout(newfunc, 0);
+          }
 
+          // add new row
 
-    <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" CHECKED> Email invoices 
+          //hmm, can't use selectlayers after a tablebreak-title for now
+          var table = document.getElementById('TableNumber1');
 
-      </TD>
-    </TR>
+          var row = table.insertRow(custpaybynum_rownum++);
 
-   <TR>
-      <TD ALIGN="right" WIDTH="200">
-        Email address(es)
-      </TD>
-      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="">
-      <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" > Do not send notices
-      </TD>
-    </TR>
+          var label_cell = document.createElement('TD');
 
-    <INPUT TYPE="hidden" NAME="prorate_day" VALUE="">
+          label_cell.id = 'custpaybynum_label' + custpaybynum_fieldnum;
 
-    <TR>
-      <TD ALIGN="right" WIDTH="200">Invoice terms </TD>
-      <TD WIDTH="408">
-        <SELECT NAME = "invoice_terms"
-        ID   = "invoice_terms"
-        
->
-# #false laziness w/select-table.html
+          label_cell.style.textAlign = "right";
+          label_cell.style.verticalAlign = "top";
+          label_cell.style.borderTop = "1px solid black";
+          label_cell.style.paddingTop = "5px";
 
-  <OPTION VALUE="">Default (Payable upon receipt)
-    <OPTION VALUE="Payable upon receipt" >Payable upon receipt
-    <OPTION VALUE="Net 0" >Net 0
-    <OPTION VALUE="Net 3" >Net 3
-    <OPTION VALUE="Net 5" >Net 5
-    <OPTION VALUE="Net 9" >Net 9
-    <OPTION VALUE="Net 10" >Net 10
-    <OPTION VALUE="Net 14" >Net 14
-    <OPTION VALUE="Net 15" >Net 15
-    <OPTION VALUE="Net 18" >Net 18
-    <OPTION VALUE="Net 20" >Net 20
-    <OPTION VALUE="Net 21" >Net 21
-    <OPTION VALUE="Net 25" >Net 25
-    <OPTION VALUE="Net 30" >Net 30
-    <OPTION VALUE="Net 45" >Net 45
-    <OPTION VALUE="Net 60" >Net 60
-    <OPTION VALUE="Net 90" >Net 90
-</SELECT>
+          label_cell.innerHTML = '';
 
-      </TD>
-    </TR>
+          row.appendChild(label_cell);
+          
+          var widget_cell = document.createElement('TD');
 
-    <TR>
-      <TD ALIGN="right" WIDTH="200">Credit limit </TD>
-      <TD WIDTH="408">
-        <SCRIPT TYPE="text/javascript">
-function toggle(obj) {
-  obj.form.credit_limit.disabled = obj.checked;
-}
-        </SCRIPT>
-        <INPUT TYPE  = "text"
-               NAME  = "credit_limit"
-               VALUE = "0.00"
-                DISABLED
-        >
-        <INPUT TYPE  = "checkbox"
-               NAME  = "no_credit_limit"
-               VALUE = 1
-               onClick="toggle(this)"
-                CHECKED
-        > Unlimited 
-      </TD>
-    </TR>
+          widget_cell.style.borderTop = "1px solid black";
+          widget_cell.style.paddingTop = "3px";
+          widget_cell.colSpan = "6";
 
-      <INPUT TYPE="hidden" NAME="spool_cdr" VALUE="">
+          widget_cell.innerHTML = newrow;
 
-      <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="">
-
-      <INPUT TYPE="hidden" NAME="email_csv_cdr" VALUE="">
-
-       <INPUT TYPE="hidden" NAME="accountcode_cdr" VALUE="">
-
-      <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="">
+          row.appendChild(widget_cell);
 
 
-  </TABLE>
 
-  <font color="#ff0000">*</font>&nbsp;required fields 
+        }
 
-<script type="text/javascript">
-    init_payauto_changed();
-</script>
+        function remove_custpaybynum(remove_fieldnum) {
+          //alert("remove custpaybynum " + remove_fieldnum);
+          var select = document.getElementById('custpaybynum' + remove_fieldnum);
+
+          if ( ! select ) {
+            alert("can't find element custpaybynum" + remove_fieldnum);
+            return;
+          }
 
 
-<BR>
+          select.disabled = 'disabled'; // this seems to prevent it from being submitted on tested browsers so far (IE, moz, konq at least)
+          var label_td = document.getElementById('custpaybynum_label' + remove_fieldnum );
+          label_td.parentNode.style.display = 'none';
+
+
+        }
+
+      </SCRIPT>
+
+
+
+
+
+</TABLE>
+
+
+
+
+</DIV>
+
+  
+
+
 
 
 
@@ -6740,48 +6880,8 @@ function toggle(obj) {
 
 <INPUT TYPE="hidden" NAME="usernum" VALUE="3">
 
-    <INPUT TYPE="hidden" NAME="payauto" VALUE="">
-    <INPUT TYPE="hidden" NAME="billday" VALUE="">
-    <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
-    <INPUT TYPE="hidden" NAME="payinfo1" VALUE="">
-    <INPUT TYPE="hidden" NAME="payinfo2" VALUE="">
-    <INPUT TYPE="hidden" NAME="payinfo3" VALUE="">
-    <INPUT TYPE="hidden" NAME="paytype" VALUE="">
-    <INPUT TYPE="hidden" NAME="payname" VALUE="">
-    <INPUT TYPE="hidden" NAME="paystate" VALUE="">
-    <INPUT TYPE="hidden" NAME="exp_month" VALUE="">
-    <INPUT TYPE="hidden" NAME="exp_year" VALUE="">
-    <INPUT TYPE="hidden" NAME="paycvv" VALUE="">
-    <INPUT TYPE="hidden" NAME="paystart_month" VALUE="">
-    <INPUT TYPE="hidden" NAME="paystart_year" VALUE="">
-    <INPUT TYPE="hidden" NAME="payissue" VALUE="">
-    <INPUT TYPE="hidden" NAME="payip" VALUE="">
-    <INPUT TYPE="hidden" NAME="paid" VALUE="">
 
 
-
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -6873,28 +6973,6 @@ function toggle(obj) {
 
 
 <INPUT TYPE="hidden" NAME="duplicate_of_custnum" VALUE="">
-<SCRIPT TYPE="text/javascript">
-
-  function rs_init_object() {
-    var A;
-    try {
-      A=new ActiveXObject("Msxml2.XMLHTTP");
-    } catch (e) {
-      try {
-        A=new ActiveXObject("Microsoft.XMLHTTP");
-      } catch (oc) {
-        A=null;
-      }
-    }
-    if(!A && typeof XMLHttpRequest != "undefined")
-      A = new XMLHttpRequest();
-    if (!A)
-      alert("Can't create XMLHttpRequest object");
-    return A;
-
-  }
-
-</SCRIPT>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -6986,7 +7064,7 @@ function toggle(obj) {
 
 
 <SCRIPT TYPE="text/javascript">
-var fixups = ["copy_payby_fields","standardize_locations","do_submit"];
+var fixups = ["standardize_locations","do_submit"];
 var fixup_position;
 var running = false;
 
@@ -7026,27 +7104,6 @@ function bottomfixup(what) {
 
 function do_submit() {
   document.CustomerForm.submit();
-}
-
-function copy_payby_fields() {
-  var layervars = new Array(
-    'payauto', 'billday',
-    'payinfo', 'payinfo1', 'payinfo2', 'payinfo3', 'paytype',
-    'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
-    'paystart_month', 'paystart_year', 'payissue',
-    'payip',
-    'paid'
-  );
-
-  var cf = document.CustomerForm;
-  var payby = cf.payby.options[cf.payby.selectedIndex].value;
-  for ( f=0; f < layervars.length; f++ ) {
-    var field = layervars[f];
-    copyelement( cf.elements[payby + '_' + field],
-                 cf.elements[field]
-               );
-  }
-  submit_continue();
 }
 
 function status_message(text, caption) {
@@ -7267,11 +7324,7 @@ function update_geocode() {
       prefix = 'bill_';
     }
 
-    //alert(what.options[what.selectedIndex].value);
-    var argsHash = eval('(' + what.options[what.selectedIndex].value + ')');
-    cf.elements[prefix + 'city'].value     = argsHash['city'];
-    setselect(cf.elements[prefix + 'state'], argsHash['state']);
-    cf.elements[prefix + 'zip'].value      = argsHash['zip'];
+    var argsHash = JSON.parse(what.value);
     cf.elements[prefix + 'geocode'].value  = argsHash['geocode'];
     submit_continue();;
 
@@ -7295,28 +7348,6 @@ function setselect(el, value) {
 
 
 
-
-function copyelement(from, to) {
-  if ( from == undefined ) {
-    to.value = '';
-  } else if ( from.type == 'select-one' ) {
-    to.value = from.options[from.selectedIndex].value;
-    //alert(from + " (" + from.type + "): " + to.name + " => (" + from.selectedIndex + ") " + to.value);
-  } else if ( from.type == 'checkbox' ) {
-    if ( from.checked ) {
-      to.value = from.value;
-    } else {
-      to.value = '';
-    }
-  } else {
-    if ( from.value == undefined ) {
-      to.value = '';
-    } else {
-      to.value = from.value;
-    }
-  }
-  //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
-}
 
 function confirm_censustract(pre) {
   var cf = document.CustomerForm;
