@@ -136,7 +136,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::Conf;
   use FS::CGI qw(header menubar table itable ntable idiot
                  eidiot myexit http_header);
-  use FS::UI::Web qw(svc_url);
+  use FS::UI::Web qw(svc_url random_id);
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
   use FS::Msgcat qw(gettext geterror);

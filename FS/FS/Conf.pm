@@ -6071,6 +6071,13 @@ and customer address. Include units.',
   { key => "vonage-password", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "vonage-fromnumber", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
 
+  {
+    'key'         => 'no_random_ids',
+    'section'     => '',
+    'description' => 'Replace random identifiers in UI code with a static string, for repeatable testing. Don\'t use in production.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

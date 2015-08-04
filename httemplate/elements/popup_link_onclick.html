@@ -62,7 +62,7 @@ $scrolling   = $params->{'scrolling'}   if exists $params->{'scrolling'};
 
 #stupid safari is caching the "location" of popup iframs, and submitting them
 #instead of displaying them.  this should prevent that.
-my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
+my $popup_name = 'popup-'.random_id();
 
 my $onclick =
   "overlib( OLiframeContent($action, $width, $height, '$popup_name', 0, '$scrolling' ), ".

@@ -9,7 +9,7 @@
 % }
 % unless ($opt{html_only}) {
 %   my $popup = $fsurl.'misc/part_pkg_fcc_options.html?id=';
-%   my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
+%   my $popup_name = 'popup-'.random_id();
 <SCRIPT TYPE="text/javascript">
 function edit_fcc_options() {
   var id = this.dataset['target'];

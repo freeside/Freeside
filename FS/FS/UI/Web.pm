@@ -15,10 +15,12 @@ use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 #@ISA = qw( FS::UI );
 @ISA = qw( Exporter );
 
-@EXPORT_OK = qw( svc_url );
+@EXPORT_OK = qw( svc_url random_id );
 
 $DEBUG = 0;
 $me = '[FS::UID::Web]';
+
+our $NO_RANDOM_IDS;
 
 ###
 # date parsing
@@ -606,6 +608,35 @@ sub is_mobile {
     return 1;
   }
   return 0;
+}
+
+=item random_id [ DIGITS ]
+
+Returns a random number of length DIGITS, or if unspecified, a long random 
+identifier consisting of the timestamp, process ID, and a random number.
+Anything in the UI that needs a random identifier should use this.
+
+=cut
+
+sub random_id {
+  my $digits = shift;
+  if (!defined $NO_RANDOM_IDS) {
+    my $conf = FS::Conf->new;
+    $NO_RANDOM_IDS = $conf->exists('no_random_ids') ? 1 : 0;
+  }
+  if ( $NO_RANDOM_IDS ) {
+    if ( $digits > 0 ) {
+      return 0;
+    } else {
+      return '0000000000-0000-000000000.000000';
+    }
+  } else {
+    if ($digits > 0) {
+      return int(rand(10 ** $digits));
+    } else {
+      return time . "-$$-" . rand() * 2**32;
+    }
+  }
 }
 
 =back
