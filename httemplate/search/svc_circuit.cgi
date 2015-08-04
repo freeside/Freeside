@@ -3,7 +3,7 @@
   'name'        => 'circuit services',
   'query'       => $query,
   'count_query' => $query->{'count_query'},
-  'redirect'    => [ popurl(2). "view/svc_circuit.html?", 'svcnum' ],
+  'redirect'    => [ popurl(2). "view/svc_circuit.cgi?", 'svcnum' ],
   'header'      => [ '#',
                      'Provider',
                      'Type',
@@ -60,6 +60,6 @@ if ( $cgi->param('magic') eq 'unlinked' ) {
 
 my $query = FS::svc_circuit->search(\%search_hash);
 
-my $link = [ $p.'view/svc_circuit.html?', 'svcnum' ];
+my $link = [ $p.'view/svc_circuit.cgi?', 'svcnum' ];
 
 </%init>
