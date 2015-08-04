@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::Test;
+use Getopt::Std;
+
+my %opt;
+
+my $username = 'test';
+my $password = 'test';
+
+getopts('d:U:', \%opt);
+die usage() unless $opt{d};
+my $test = FS::Test->new( dir => $opt{d} );
+$test->fsurl($opt{U}) if $opt{U};
+
+my $testfile = $test->share_dir . '/ui_tests';
+open my $fh, '<', $testfile
+  or die "Couldn't read tests from '$testfile': $!\n";
+$test->fetch( <$fh> );
+
+sub usage {
+  "Usage: $0 -d directory [ -U base_URI ]\n\n";
+}
+
+=head1 NAME
+
+freeside-test-fetch - download a list of UI pages for testing
+
+=head1 USAGE
+
+freeside-test-fetch -d /tmp/outputdir [ -U http://myserver/freeside ]
+
+=head1 ARGUMENTS
+
+-d: the directory to put the files in. Required.
+
+-U: the URL prefix for the Freeside server. Defaults to
+"http://localhost/freeside".
+
+The list of tests is in the 'ui_tests' file included with FS::Test.
+
+=cut

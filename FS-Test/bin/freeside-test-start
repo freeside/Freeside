@@ -1,0 +1,63 @@
+#!/bin/bash
+
+VERSION='3.8.1'
+
+set -ae
+
+echo "Stopping services."
+sudo service freeside stop
+sudo service apache2 stop
+
+newname=freeside_`date +%Y%m%d`
+sharedir=$(perl -MFS::Test -e "print FS::Test::share_dir()")
+
+# get company_name from existing DB, strip whitespace
+# (if there is no existing DB, continue anyway)
+testdbmarker=$(sudo -u freeside \
+  psql -tc 'select value from conf where name='\'company_name''\' | \
+  sed "s/^ //" \
+  || true
+)
+
+createdb=YES
+
+if psql -l |grep -q '^ *freeside '; then
+  if [ "$testdbmarker" = "Freeside Test $VERSION" ]; then
+    createdb=NO
+    echo "Freeside test database found."
+  else
+    echo "Renaming database to $newname."
+    psql postgres -c "ALTER DATABASE freeside RENAME TO $newname"
+  fi
+fi
+
+if [ $createdb = YES ]; then
+  echo "Creating new database from stock schema."
+  createdb --owner=freeside freeside
+  sudo -u freeside psql freeside -q -f $sharedir/test.sql > /dev/null
+fi
+
+if [ -f /usr/local/etc/freeside/htpasswd ]; then
+  newhtpasswd=htpasswd_`date +%Y%m%d`
+  echo "Renaming htpasswd to $newhtpasswd."
+  sudo mv /usr/local/etc/freeside/htpasswd /usr/local/etc/freeside/$newhtpasswd
+fi
+
+echo "Installing new htpasswd."
+sudo cp $sharedir/htpasswd /usr/local/etc/freeside/htpasswd
+
+newtime=$(sudo -u freeside \
+  psql -tc 'SELECT to_timestamp(max(_date) + 86400) FROM cust_bill' \
+)
+echo "Setting clock to $newtime."
+sudo date -s "$newtime"
+
+#echo "Applying upgrades."
+#sudo -u freeside freeside-upgrade test
+# shouldn't happen automatically
+
+# start Apache on a future date when all of the invoice dates are in the past
+echo "Restarting Apache."
+sudo service apache2 start
+
+echo "Done."

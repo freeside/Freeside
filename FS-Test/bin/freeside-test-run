@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -ae
+
+tempdir=$( mktemp -d freeside-test.XXXX )
+sharedir=$(perl -MFS::Test -e "print FS::Test::share_dir()")
+
+echo "Starting test mode."
+freeside-test-start
+echo "Saving results to $tempdir."
+freeside-test-fetch -d $tempdir
+echo "Exiting test mode."
+freeside-test-stop || true
+
+diffname=freeside-test.`date +%Y%m%d`.diff
+echo "Writing diff to $diffname."
+diff -urb "$tempdir" "$sharedir/output" > $diffname
+diffstat -C $diffname
+

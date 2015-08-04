@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -ae
+
+echo "Stopping Apache."
+sudo service apache2 stop
+
+echo "Resetting clock."
+sudo hwclock --hctosys
+
+newname=freeside_test_`date +%Y%m%d`
+if psql -l |grep -q '^ *freeside '; then
+  echo "Renaming test database to $newname."
+  psql postgres -c "ALTER DATABASE freeside RENAME TO $newname"
+fi
+
+if (sudo grep -q '^test:' /usr/local/etc/freeside/htpasswd); then
+  newhtpasswd=htpasswd_test_`date +%Y%m%d`
+  echo "Renaming htpasswd to $newhtpasswd."
+  sudo mv /usr/local/etc/freeside/htpasswd /usr/local/etc/freeside/$newhtpasswd
+  oldhtpasswd=$( cd /usr/local/etc/freeside; \
+                 ls |grep -P 'htpasswd_\d{8}' | \
+                 sort -nr |head -1 )
+  if [ -f $oldhtpasswd ]; then
+    echo "Renaming $oldhtpasswd to htpasswd."
+    sudo mv /usr/local/etc/freeside/$oldhtpasswd \
+      /usr/local/etc/freeside/htpasswd
+  fi
+fi
+
+oldname=$( psql -tl | \
+           cut -d '|' -f 1 | \
+           tr -d ' ' | \
+           grep -P 'freeside_\d{8}' | \
+           sort -nr | head -1 )
+
+if [ -n "$oldname" ]; then
+  echo "Renaming $oldname to freeside."
+  psql postgres -c "ALTER DATABASE $oldname RENAME TO freeside"
+  echo "Restarting services."
+  sudo service apache2 restart
+  sudo service freeside restart
+fi
+
+echo "Done."
