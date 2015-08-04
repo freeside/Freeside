@@ -527,6 +527,7 @@ sub qsearch {
 
     # Check for encrypted fields and decrypt them.
    ## only in the local copy, not the cached object
+    no warnings 'deprecated'; # XXX silence the warning for now
     if ( $conf_encryption 
          && eval '@FS::'. $table . '::encrypted_fields' ) {
       foreach my $record (@return) {

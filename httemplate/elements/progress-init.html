@@ -170,6 +170,6 @@ $progress_url->query_form(
 
 #stupid safari is caching the "location" of popup iframs, and submitting them
 #instead of displaying them.  this should prevent that.
-my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
+my $popup_name = 'popup-'.random_id();
 
 </%init>

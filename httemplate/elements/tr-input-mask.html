@@ -68,7 +68,7 @@ my $init = 0;
 <%init>
 my %opt = @_;
 # must have a DOM id
-my $id = $opt{id} || sprintf('input%04d',int(rand(10000)));
+my $id = $opt{id} || sprintf('input%04d',random_id(4));
 my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value} || '';
 
 my $clipboard_hack = $FS::CurrentUser::CurrentUser->option('enable_mask_clipboard_hack');

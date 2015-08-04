@@ -38,7 +38,7 @@ my %opt = @_;
 
 my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
 
-my $unum = int(rand(100000));
+my $unum = random_id(5);
 
 my $id = $opt{'id'} || $opt{'field'}.$unum;
 
