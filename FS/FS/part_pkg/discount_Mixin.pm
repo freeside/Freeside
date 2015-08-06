@@ -40,8 +40,8 @@ sub calc_discount {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
   my $conf = new FS::Conf;
 
-  my $br = $self->base_recur_permonth($cust_pkg, $sdate);
-  $br += $param->{'override_charges'} if $param->{'override_charges'};
+  my $br_permonth = $self->base_recur_permonth($cust_pkg, $sdate);
+  $br_permonth += $param->{'override_charges'} if $param->{'override_charges'};
  
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
@@ -83,7 +83,7 @@ sub calc_discount {
     my $amount = 0;
     $amount += $discount->amount
         if $cust_pkg->pkgpart == $param->{'real_pkgpart'};
-    $amount += sprintf('%.2f', $discount->percent * $br / 100 );
+    $amount += sprintf('%.2f', $discount->percent * $br_permonth / 100 );
     my $chg_months = defined($param->{'months'}) ?
                       $param->{'months'} :
                       $cust_pkg->part_pkg->freq;
@@ -133,7 +133,7 @@ sub calc_discount {
         };
       }
 
-      $amount = min($amount, $br);
+      $amount = min($amount, $br_permonth);
       $amount *= $months;
     }
 
@@ -147,9 +147,9 @@ sub calc_discount {
         && !defined $param->{'setup_charge'}
        )
     {
-      $discount_left = $br - $amount;
+      $discount_left = $br_permonth - $amount;
       if ( $discount_left < 0 ) {
-        $amount = $br;
+        $amount = $br_permonth;
         $param->{'discount_left_setup'}{$discount->discountnum} = 
           0 - $discount_left;
       }
@@ -188,7 +188,7 @@ sub calc_discount {
     #}
 
     #push @$details, $d;
-    #push @$details, sprintf( $format, $money_char, $br );
+    #push @$details, sprintf( $format, $money_char, $br_permonth );
 
   }
 
