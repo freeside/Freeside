@@ -74,6 +74,7 @@ FS::UID->install_callback( sub {
   my $nw_coords = $conf->exists('geocode-require_nw_coordinates');
   $lat_lower = $nw_coords ? 1 : -90;
   $lon_upper = $nw_coords ? -1 : 180;
+  $conf_hashsalt             = $conf->config('hashsalt');
 
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
 
