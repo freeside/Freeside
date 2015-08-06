@@ -42,7 +42,10 @@ sub calc_discount {
 
   my $br_permonth = $self->base_recur_permonth($cust_pkg, $sdate);
   $br_permonth += $param->{'override_charges'} if $param->{'override_charges'};
- 
+
+  my $br = $self->base_recur($cust_pkg, $sdate);
+  $br += $param->{'override_charges'} * ($cust_pkg->part_pkg->freq || 0) if $param->{'override_charges'};
+
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
 
@@ -83,7 +86,7 @@ sub calc_discount {
     my $amount = 0;
     $amount += $discount->amount
         if $cust_pkg->pkgpart == $param->{'real_pkgpart'};
-    $amount += sprintf('%.2f', $discount->percent * $br_permonth / 100 );
+    $amount += sprintf('%.2f', $discount->percent * $br_permonth / 100 ); # FIXME: should this use $br / $freq to avoid rounding errors?
     my $chg_months = defined($param->{'months'}) ?
                       $param->{'months'} :
                       $cust_pkg->part_pkg->freq;
@@ -133,8 +136,7 @@ sub calc_discount {
         };
       }
 
-      $amount = min($amount, $br_permonth);
-      $amount *= $months;
+      $amount = min($amount * $months, $br);
     }
 
     $amount = sprintf('%.2f', $amount + 0.00000001 ); #so 1.005 rounds to 1.01
@@ -147,9 +149,9 @@ sub calc_discount {
         && !defined $param->{'setup_charge'}
        )
     {
-      $discount_left = $br_permonth - $amount;
+      $discount_left = $br_permonth - $amount; # FIXME: $amount is no longer permonth at this point!
       if ( $discount_left < 0 ) {
-        $amount = $br_permonth;
+        $amount = $br_permonth; # FIXME: seems like this should *= $months
         $param->{'discount_left_setup'}{$discount->discountnum} = 
           0 - $discount_left;
       }
