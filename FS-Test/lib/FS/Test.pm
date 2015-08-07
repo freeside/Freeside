@@ -124,7 +124,7 @@ sub fetch {
     my $uri = URI->new( $self->fsurl . '/' . $path);
     print $uri->path;
     my $response = $self->mech->get($uri);
-    print " - " . $response->code . "\n";
+    print " - " . $self->mech->status . "\n";
     next unless $response->is_success;
 
     local $CWD;
@@ -147,7 +147,17 @@ sub fetch {
       push @CWD, $dir;
     }
     write_file($file, {binmode => ':utf8'}, $response->decoded_content);
+
+    # Detect Mason errors and make noise about them; they're presumably
+    # _never_ correct.  Mason errors have one convenient property: there's no
+    # <title> element on the page.
+    if ( $self->mech->ct eq 'text/html' and !$self->mech->title ) {
+      print "***error***\n";
+    }
   }
 }
+
+# what we don't do in here is diff the results.
+# Test::HTML::Differences from CPAN would be one way to do that.
 
 1; # End of FS::Test
