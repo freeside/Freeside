@@ -40,8 +40,9 @@ fi
 newtime=$(sudo -u freeside \
   psql -tc 'SELECT to_timestamp(max(_date) + 86400) FROM cust_bill' \
 )
-echo "Setting clock to $newtime."
-sudo date -s "$newtime"
+# no longer needed since we don't run LaTeX in the test script
+#echo "Setting clock to $newtime."
+#sudo date -s "$newtime"
 
 #echo "Applying upgrades."
 #sudo -u freeside freeside-upgrade test
@@ -49,6 +50,6 @@ sudo date -s "$newtime"
 
 # start Apache on a future date when all of the invoice dates are in the past
 echo "Restarting Apache."
-sudo service apache2 start
+sudo faketime "$newtime" apache2ctl start
 
 echo "Done."

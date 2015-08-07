@@ -5,11 +5,12 @@ set -ae
 echo "Stopping Apache."
 sudo service apache2 stop
 
-echo "Resetting clock."
-sudo hwclock --hctosys
-
 newname=freeside_test_`date +%Y%m%d`
 if psql -l |grep -q '^ *freeside '; then
+  if psql -l |grep -q $newname; then
+    echo "Deleting old test database $newname."
+    dropdb "$newname"
+  fi
   echo "Renaming test database to $newname."
   psql postgres -c "ALTER DATABASE freeside RENAME TO $newname"
 fi

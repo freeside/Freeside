@@ -886,12 +886,12 @@ myMenu68.width = 256;
 
                 Download full results<BR>
 
-                as <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=packages.xls">Excel spreadsheet</A><BR>
+                as <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=cust_pkg.pkgnum;_type=packages.xls">Excel spreadsheet</A><BR>
 
-                as <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=csv">CSV file</A><BR>
+                as <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=cust_pkg.pkgnum;_type=csv">CSV file</A><BR>
 
 
-                as <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html-print">printable copy</A>
+                as <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=cust_pkg.pkgnum;_type=html-print">printable copy</A>
 
               </TD>
 
@@ -922,7 +922,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=cust_pkg.pkgnum">#</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=cust_pkg.pkgnum%20DESC;_type=html">#</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1003,7 +1003,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=setup">Setup</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=setup;_type=html">Setup</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1012,7 +1012,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=last_bill">Last bill</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=last_bill;_type=html">Last bill</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1021,7 +1021,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=bill">Next bill</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=bill;_type=html">Next bill</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1030,7 +1030,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=susp">Susp.</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=susp;_type=html">Susp.</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1039,7 +1039,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=change_date">Changed</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=change_date;_type=html">Changed</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1048,7 +1048,7 @@ myMenu68.width = 256;
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;_type=html;order_by=cancel">Cancel</A>
+      <A HREF="http://localhost/freeside/search/cust_pkg_churn.html?agentnum=;status=setup;begin=1438412400;end=1441090800;order_by=cancel;_type=html">Cancel</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1080,15 +1080,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg28#cust_pkg28">28</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg26#cust_pkg26">26</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg28#cust_pkg28">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg26#cust_pkg26">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg28#cust_pkg28">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg26#cust_pkg26">Monthly prorated account</A></TD>
 
 
 
@@ -1104,19 +1104,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 14 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -1124,7 +1120,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -1226,15 +1226,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg26#cust_pkg26">26</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg28#cust_pkg28">28</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg26#cust_pkg26">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg28#cust_pkg28">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg26#cust_pkg26">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=10;show=packages;fragment=cust_pkg28#cust_pkg28">Annual subscription domain</A></TD>
 
 
 
@@ -1250,15 +1250,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
 
 
 
@@ -1266,11 +1266,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 14 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -1299,15 +1299,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg52#cust_pkg52">52</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg50#cust_pkg50">50</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg52#cust_pkg52">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg50#cust_pkg50">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg52#cust_pkg52">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg50#cust_pkg50">Monthly prorated account</A></TD>
 
 
 
@@ -1323,19 +1323,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 08 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -1343,7 +1339,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -1445,15 +1445,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg50#cust_pkg50">50</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg52#cust_pkg52">52</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg50#cust_pkg50">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg52#cust_pkg52">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg50#cust_pkg50">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=18;show=packages;fragment=cust_pkg52#cust_pkg52">Annual subscription domain</A></TD>
 
 
 
@@ -1469,15 +1469,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
 
 
 
@@ -1485,11 +1485,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 08 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -1591,15 +1591,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg73#cust_pkg73">73</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg72#cust_pkg72">72</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg73#cust_pkg73">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg72#cust_pkg72">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg73#cust_pkg73">Monthly prorated broadband</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg72#cust_pkg72">Monthly prorated account</A></TD>
 
 
 
@@ -1615,11 +1615,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
@@ -1664,15 +1664,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg72#cust_pkg72">72</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg73#cust_pkg73">73</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg72#cust_pkg72">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg73#cust_pkg73">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg72#cust_pkg72">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=25;show=packages;fragment=cust_pkg73#cust_pkg73">Monthly prorated broadband</A></TD>
 
 
 
@@ -1688,11 +1688,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
 
 
 
@@ -1810,79 +1810,6 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg85#cust_pkg85">85</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg85#cust_pkg85">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg85#cust_pkg85">Monthly prorated broadband</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 22 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Lehner-Klein (Smitham, Pansy)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg84#cust_pkg84">84</A></TD>
 
 
@@ -1952,19 +1879,19 @@ myMenu68.width = 256;
 
     </TR>
 
-    <TR ID="" CLASS="row0">
+    <TR ID="" CLASS="row1">
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg112#cust_pkg112">112</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg85#cust_pkg85">85</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg112#cust_pkg112">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg85#cust_pkg85">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg112#cust_pkg112">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=29;show=packages;fragment=cust_pkg85#cust_pkg85">Monthly prorated broadband</A></TD>
 
 
 
@@ -1980,15 +1907,88 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 22 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Lehner-Klein (Smitham, Pansy)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg110#cust_pkg110">110</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg110#cust_pkg110">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg110#cust_pkg110">Monthly prorated account</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -1996,11 +1996,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 26 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -2102,88 +2102,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg110#cust_pkg110">110</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg112#cust_pkg112">112</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg110#cust_pkg110">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg112#cust_pkg112">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg110#cust_pkg110">Monthly prorated account</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 26 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Christiansen, Leone</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg126#cust_pkg126">126</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg126#cust_pkg126">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg126#cust_pkg126">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=38;show=packages;fragment=cust_pkg112#cust_pkg112">Annual subscription domain</A></TD>
 
 
 
@@ -2211,11 +2138,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 20 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 26 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 20 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 26 2015</TD>
 
 
 
@@ -2239,80 +2166,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=left >Leannon-Pfannerstill (O&#39;Keefe, Bernie)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg127#cust_pkg127">127</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg127#cust_pkg127">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg127#cust_pkg127">Monthly anniversary phone x4</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$60.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 20 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Feb 20 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 20 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Leannon-Pfannerstill (O&#39;Keefe, Bernie)</TD>
+        <TD CLASS="grid"  ALIGN=left >Christiansen, Leone</TD>
 
 
     </TR>
@@ -2394,15 +2248,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg136#cust_pkg136">136</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg126#cust_pkg126">126</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg136#cust_pkg136">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg126#cust_pkg126">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg136#cust_pkg136">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg126#cust_pkg126">Annual subscription domain</A></TD>
 
 
 
@@ -2430,15 +2284,161 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 12 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 20 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 12 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 20 2015</TD>
 
 
 
         <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Leannon-Pfannerstill (O&#39;Keefe, Bernie)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg127#cust_pkg127">127</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg127#cust_pkg127">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=43;show=packages;fragment=cust_pkg127#cust_pkg127">Monthly anniversary phone x4</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$60.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 20 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Feb 20 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 20 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Leannon-Pfannerstill (O&#39;Keefe, Bernie)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg134#cust_pkg134">134</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg134#cust_pkg134">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg134#cust_pkg134">Monthly prorated account</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 12 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -2540,88 +2540,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg134#cust_pkg134">134</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg136#cust_pkg136">136</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg134#cust_pkg134">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg136#cust_pkg136">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg134#cust_pkg134">Monthly prorated account</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 12 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Steuber, Ryley</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=51;show=packages;fragment=cust_pkg150#cust_pkg150">150</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=51;show=packages;fragment=cust_pkg150#cust_pkg150">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=51;show=packages;fragment=cust_pkg150#cust_pkg150">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=46;show=packages;fragment=cust_pkg136#cust_pkg136">Annual subscription domain</A></TD>
 
 
 
@@ -2649,11 +2576,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 21 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 12 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 21 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 12 2015</TD>
 
 
 
@@ -2677,12 +2604,12 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=left >Medhurst Group (Medhurst, Rafaela)</TD>
+        <TD CLASS="grid"  ALIGN=left >Steuber, Ryley</TD>
 
 
     </TR>
 
-    <TR ID="" CLASS="row0">
+    <TR ID="" CLASS="row1">
 
 
 
@@ -2731,6 +2658,79 @@ myMenu68.width = 256;
 
 
         <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Medhurst Group (Medhurst, Rafaela)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=51;show=packages;fragment=cust_pkg150#cust_pkg150">150</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=51;show=packages;fragment=cust_pkg150#cust_pkg150">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=51;show=packages;fragment=cust_pkg150#cust_pkg150">Annual subscription domain</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 21 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 21 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -2832,15 +2832,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg172#cust_pkg172">172</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg170#cust_pkg170">170</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg172#cust_pkg172">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg170#cust_pkg170">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg172#cust_pkg172">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg170#cust_pkg170">Monthly prorated account</A></TD>
 
 
 
@@ -2856,19 +2856,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 31 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -2876,7 +2872,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -2978,15 +2978,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg170#cust_pkg170">170</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg172#cust_pkg172">172</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg170#cust_pkg170">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg172#cust_pkg172">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg170#cust_pkg170">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=58;show=packages;fragment=cust_pkg172#cust_pkg172">Annual subscription domain</A></TD>
 
 
 
@@ -3002,15 +3002,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
 
 
 
@@ -3018,11 +3018,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 31 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -3051,15 +3051,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg208#cust_pkg208">208</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg206#cust_pkg206">206</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg208#cust_pkg208">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg206#cust_pkg206">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg208#cust_pkg208">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg206#cust_pkg206">Monthly prorated account</A></TD>
 
 
 
@@ -3075,19 +3075,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 19 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -3095,7 +3091,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -3197,15 +3197,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg206#cust_pkg206">206</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg208#cust_pkg208">208</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg206#cust_pkg206">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg208#cust_pkg208">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg206#cust_pkg206">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=70;show=packages;fragment=cust_pkg208#cust_pkg208">Annual subscription domain</A></TD>
 
 
 
@@ -3221,15 +3221,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
 
 
 
@@ -3237,11 +3237,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 19 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -3270,15 +3270,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg220#cust_pkg220">220</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg218#cust_pkg218">218</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg220#cust_pkg220">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg218#cust_pkg218">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg220#cust_pkg220">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg218#cust_pkg218">Monthly prorated account</A></TD>
 
 
 
@@ -3294,19 +3294,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 17 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -3314,7 +3310,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -3416,15 +3416,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg218#cust_pkg218">218</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg220#cust_pkg220">220</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg218#cust_pkg218">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg220#cust_pkg220">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg218#cust_pkg218">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=74;show=packages;fragment=cust_pkg220#cust_pkg220">Annual subscription domain</A></TD>
 
 
 
@@ -3440,15 +3440,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
 
 
 
@@ -3456,11 +3456,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 17 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -3489,15 +3489,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg244#cust_pkg244">244</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg242#cust_pkg242">242</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg244#cust_pkg244">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg242#cust_pkg242">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg244#cust_pkg244">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg242#cust_pkg242">Monthly prorated account</A></TD>
 
 
 
@@ -3513,19 +3513,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 30 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -3533,7 +3529,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -3635,88 +3635,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg242#cust_pkg242">242</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg244#cust_pkg244">244</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg242#cust_pkg242">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg244#cust_pkg244">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg242#cust_pkg242">Monthly prorated account</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 30 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Kessler, Dana</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg246#cust_pkg246">246</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg246#cust_pkg246">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg246#cust_pkg246">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=82;show=packages;fragment=cust_pkg244#cust_pkg244">Annual subscription domain</A></TD>
 
 
 
@@ -3744,11 +3671,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 30 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 30 2015</TD>
 
 
 
@@ -3772,80 +3699,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=left >Jacobson-Gorczany (Vandervort, Kiley)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg247#cust_pkg247">247</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg247#cust_pkg247">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg247#cust_pkg247">Monthly anniversary phone x4</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$60.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Feb 18 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 18 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Jacobson-Gorczany (Vandervort, Kiley)</TD>
+        <TD CLASS="grid"  ALIGN=left >Kessler, Dana</TD>
 
 
     </TR>
@@ -3927,15 +3781,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg258#cust_pkg258">258</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg246#cust_pkg246">246</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg258#cust_pkg258">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg246#cust_pkg246">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg258#cust_pkg258">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg246#cust_pkg246">Annual subscription domain</A></TD>
 
 
 
@@ -3963,11 +3817,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 15 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 15 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
 
 
 
@@ -3991,7 +3845,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=left >Kozey and Sons (Vandervort, Harmon)</TD>
+        <TD CLASS="grid"  ALIGN=left >Jacobson-Gorczany (Vandervort, Kiley)</TD>
 
 
     </TR>
@@ -4000,15 +3854,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg259#cust_pkg259">259</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg247#cust_pkg247">247</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg259#cust_pkg259">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg247#cust_pkg247">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg259#cust_pkg259">Monthly anniversary phone x4</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=83;show=packages;fragment=cust_pkg247#cust_pkg247">Monthly anniversary phone x4</A></TD>
 
 
 
@@ -4036,15 +3890,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 15 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Feb 15 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Feb 18 2016</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 15 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 18 2016</TD>
 
 
 
@@ -4064,7 +3918,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=left >Kozey and Sons (Vandervort, Harmon)</TD>
+        <TD CLASS="grid"  ALIGN=left >Jacobson-Gorczany (Vandervort, Kiley)</TD>
 
 
     </TR>
@@ -4146,6 +4000,225 @@ myMenu68.width = 256;
 
 
 
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg258#cust_pkg258">258</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg258#cust_pkg258">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg258#cust_pkg258">Annual subscription domain</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 15 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 15 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Kozey and Sons (Vandervort, Harmon)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg259#cust_pkg259">259</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg259#cust_pkg259">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=87;show=packages;fragment=cust_pkg259#cust_pkg259">Monthly anniversary phone x4</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$60.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 15 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Feb 15 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 15 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Kozey and Sons (Vandervort, Harmon)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg269#cust_pkg269">269</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg269#cust_pkg269">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg269#cust_pkg269">Monthly prorated broadband</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 19 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Fay and Sons (Gerhold, Thora)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg270#cust_pkg270">270</A></TD>
 
 
@@ -4215,7 +4288,7 @@ myMenu68.width = 256;
 
     </TR>
 
-    <TR ID="" CLASS="row1">
+    <TR ID="" CLASS="row0">
 
 
 
@@ -4264,79 +4337,6 @@ myMenu68.width = 256;
 
 
         <TD CLASS="grid"  ALIGN=right >Mar 19 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Fay and Sons (Gerhold, Thora)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg269#cust_pkg269">269</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg269#cust_pkg269">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=91;show=packages;fragment=cust_pkg269#cust_pkg269">Monthly prorated broadband</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 19 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -4584,79 +4584,6 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg288#cust_pkg288">288</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg288#cust_pkg288">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg288#cust_pkg288">Monthly prorated account</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Braun, Rath and Gutkowski (Wilderman, Reyes)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg287#cust_pkg287">287</A></TD>
 
 
@@ -4702,6 +4629,79 @@ myMenu68.width = 256;
 
 
         <TD CLASS="grid"  ALIGN=right >Mar 18 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Braun, Rath and Gutkowski (Wilderman, Reyes)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg288#cust_pkg288">288</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg288#cust_pkg288">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=97;show=packages;fragment=cust_pkg288#cust_pkg288">Monthly prorated account</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 18 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -4803,79 +4803,6 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg306#cust_pkg306">306</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg306#cust_pkg306">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg306#cust_pkg306">Annual subscription domain</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 08 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 08 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Roberts-Schinner (Flatley, Amelia)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg305#cust_pkg305">305</A></TD>
 
 
@@ -4921,6 +4848,79 @@ myMenu68.width = 256;
 
 
         <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Roberts-Schinner (Flatley, Amelia)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg306#cust_pkg306">306</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg306#cust_pkg306">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=103;show=packages;fragment=cust_pkg306#cust_pkg306">Annual subscription domain</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 08 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 08 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -5022,15 +5022,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg340#cust_pkg340">340</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg338#cust_pkg338">338</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg340#cust_pkg340">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg338#cust_pkg338">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg340#cust_pkg340">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg338#cust_pkg338">Monthly prorated account</A></TD>
 
 
 
@@ -5046,19 +5046,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >annually</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 17 2015</TD>
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
 
 
 
@@ -5066,7 +5062,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -5168,88 +5168,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg338#cust_pkg338">338</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg340#cust_pkg340">340</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg338#cust_pkg338">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg340#cust_pkg340">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg338#cust_pkg338">Monthly prorated account</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 17 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Donnelly, Raleigh</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg354#cust_pkg354">354</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg354#cust_pkg354">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg354#cust_pkg354">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=114;show=packages;fragment=cust_pkg340#cust_pkg340">Annual subscription domain</A></TD>
 
 
 
@@ -5277,11 +5204,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 09 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 17 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 09 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 17 2015</TD>
 
 
 
@@ -5305,80 +5232,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=left >Runolfsson, Roob and Hoppe (Bergstrom, Esteban)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg355#cust_pkg355">355</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg355#cust_pkg355">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg355#cust_pkg355">Monthly anniversary phone x4</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$60.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 09 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Feb 09 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 09 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Runolfsson, Roob and Hoppe (Bergstrom, Esteban)</TD>
+        <TD CLASS="grid"  ALIGN=left >Donnelly, Raleigh</TD>
 
 
     </TR>
@@ -5460,15 +5314,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg412#cust_pkg412">412</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg354#cust_pkg354">354</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg412#cust_pkg412">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg354#cust_pkg354">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg412#cust_pkg412">Annual subscription domain</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg354#cust_pkg354">Annual subscription domain</A></TD>
 
 
 
@@ -5496,15 +5350,161 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 13 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 09 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Aug 13 2015</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 09 2015</TD>
 
 
 
         <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Runolfsson, Roob and Hoppe (Bergstrom, Esteban)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg355#cust_pkg355">355</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg355#cust_pkg355">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=119;show=packages;fragment=cust_pkg355#cust_pkg355">Monthly anniversary phone x4</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$60.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 09 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Feb 09 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 09 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Runolfsson, Roob and Hoppe (Bergstrom, Esteban)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg410#cust_pkg410">410</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg410#cust_pkg410">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg410#cust_pkg410">Monthly prorated account</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 13 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
 
 
 
@@ -5606,15 +5606,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg410#cust_pkg410">410</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg412#cust_pkg412">412</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg410#cust_pkg410">1</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg412#cust_pkg412">1</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg410#cust_pkg410">Monthly prorated account</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=138;show=packages;fragment=cust_pkg412#cust_pkg412">Annual subscription domain</A></TD>
 
 
 
@@ -5630,15 +5630,15 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$20.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$0.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+        <TD CLASS="grid"  ALIGN=right >$25.00</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+        <TD CLASS="grid"  ALIGN=left >annually</TD>
 
 
 
@@ -5646,11 +5646,11 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 13 2015</TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+        <TD CLASS="grid"  ALIGN=right >Aug 01 2016</TD>
 
 
 
@@ -5676,79 +5676,6 @@ myMenu68.width = 256;
     </TR>
 
     <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=157;show=packages;fragment=cust_pkg469#cust_pkg469">469</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=157;show=packages;fragment=cust_pkg469#cust_pkg469">1</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=157;show=packages;fragment=cust_pkg469#cust_pkg469">Monthly prorated broadband</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center >test</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >monthly</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Aug 14 2015</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left >Weimann Inc (Cartwright, Judah)</TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
 
 
 
@@ -5821,7 +5748,7 @@ myMenu68.width = 256;
 
     </TR>
 
-    <TR ID="" CLASS="row1">
+    <TR ID="" CLASS="row0">
 
 
 
@@ -5854,6 +5781,79 @@ myMenu68.width = 256;
 
 
         <TD CLASS="grid"  ALIGN=right >$30.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >monthly</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Aug 14 2015</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Mar 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >Apr 01 2016</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left >Weimann Inc (Cartwright, Judah)</TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=157;show=packages;fragment=cust_pkg469#cust_pkg469">469</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=157;show=packages;fragment=cust_pkg469#cust_pkg469">1</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?custnum=157;show=packages;fragment=cust_pkg469#cust_pkg469">Monthly prorated broadband</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT SIZE="-1" ></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center >test</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$40.00</TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right >$90.00</TD>
 
 
 

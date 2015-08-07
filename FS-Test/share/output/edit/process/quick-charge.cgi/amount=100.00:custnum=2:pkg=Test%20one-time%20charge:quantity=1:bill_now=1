@@ -1,0 +1,328 @@
+
+
+
+<html><body>
+
+<p align="center"><font face="Verdana, Arial, Helvetica, sans-serif"><b>System error</b></font></p>
+<table border="0" cellspacing="0" cellpadding="1">
+ <tr>
+  <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>error:</b>&nbsp;</font></td>
+  <td align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">Error during compilation of /var/www/html/freeside/edit/process/quick-charge.cgi:<br>syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 126, near &quot;)<br>               ( &quot;<br>Global symbol &quot;$amount&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 132.<br>Global symbol &quot;$setup_cost&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 133.<br>Global symbol &quot;$quantity&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 134.<br>Global symbol &quot;$override&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 147.<br>syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 1, near &quot;if&quot;<br>Global symbol &quot;$error&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 1.<br>Global symbol &quot;$error&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 2.<br>syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 4, near &quot;}&quot;<br>  (Might be a runaway multi-line '' string starting on line 3)<br>Global symbol &quot;$message&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 5.<br>syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 10, near &quot;}&quot;<br>  (Might be a runaway multi-line '' string starting on line 5)<br>/var/www/html/freeside/edit/process/quick-charge.cgi has too many errors.<br></font></td>
+ </tr>
+ <tr>
+  <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>context:</b>&nbsp;</font></td>
+  <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">
+   <table border="0" cellpadding="0" cellspacing="0">
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>1:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>% if ( $error ) {</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>2:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>%   $cgi-&gt;param('error', $error );</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>3:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">&lt;% $cgi-&gt;redirect($p.'quick-charge.html?'. $cgi-&gt;query_string) %&gt;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>4:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>% } else {</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>5:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>&lt;% header(emt($message)) %&gt;</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>6:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  &lt;SCRIPT TYPE=&quot;text/javascript&quot;&gt;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>7:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    window.top.location.reload();</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>8:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  &lt;/SCRIPT&gt;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>9:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  &lt;/BODY&gt;&lt;/HTML&gt;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>10:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>% }</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>11:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">&lt;%init&gt;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>12:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>13:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">my $curuser = $FS::CurrentUser::CurrentUser;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>14:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">die &quot;access denied&quot;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>...</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>122:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>123:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  if ( $param-&gt;{'taxclass'} eq '(select)' ) {</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>124:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    $error .= &quot;Must select a tax class.  &quot;</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>125:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">      unless ($conf-&gt;config('tax_data_vendor'))</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>126:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>               ( $override || $param-&gt;{taxproductnum} )</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>127:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">             );</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>128:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    $cgi-&gt;param('taxclass', '');</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>129:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  }</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>130:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>131:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  my %charge = (</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>132:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>    'amount'        =&gt; $amount,</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>133:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>    'setup_cost'    =&gt; $setup_cost,</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>134:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>    'quantity'      =&gt; $quantity,</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>135:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'bill_now'      =&gt; scalar($cgi-&gt;param('bill_now')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>136:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'invoice_terms' =&gt; scalar($cgi-&gt;param('invoice_terms')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>137:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'start_date'    =&gt; ( scalar($cgi-&gt;param('start_date'))</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>138:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">                           ? parse_datetime($cgi-&gt;param('start_date'))</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>...</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>143:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'pkg'           =&gt; scalar($cgi-&gt;param('pkg')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>144:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'setuptax'      =&gt; scalar($cgi-&gt;param('setuptax')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>145:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'taxclass'      =&gt; scalar($cgi-&gt;param('taxclass')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>146:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'taxproductnum' =&gt; scalar($cgi-&gt;param('taxproductnum')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>147:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><font color=red>    'tax_override'  =&gt; $override,</font></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>148:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'classnum'      =&gt; scalar($cgi-&gt;param('classnum')),</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>149:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">    'additional'    =&gt; \@description,</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>150:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">  );</font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>151:</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+    <tr>
+     <td nowrap="nowrap" align="left" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>...</b>&nbsp;</font></td>
+     <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"></font></td>
+    </tr>
+
+
+   </table>
+  </font></td>
+ </tr>
+ <tr>
+  <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2"><b>code stack:</b>&nbsp;</font></td>
+  <td align="left" valign="top" nowrap="nowrap"><font face="Verdana, Arial, Helvetica, sans-serif" size="-2">
+        /usr/share/perl5/HTML/Mason/Interp.pm:453<br>
+        /usr/share/perl5/HTML/Mason/Request.pm:252<br>
+        /usr/share/perl5/HTML/Mason/Request.pm:215<br>
+        /usr/share/perl5/HTML/Mason/ApacheHandler.pm:94<br>
+        /usr/local/share/perl/5.20.2/FS/Mason/Request.pm:37<br>
+        /usr/share/perl5/Class/Container.pm:275<br>
+        /usr/share/perl5/Class/Container.pm:353<br>
+        /usr/share/perl5/HTML/Mason/Interp.pm:351<br>
+        /usr/share/perl5/HTML/Mason/ApacheHandler.pm:874<br>
+        /usr/share/perl5/HTML/Mason/ApacheHandler.pm:828<br>
+        /usr/local/etc/freeside/handler.pl:144<br>
+        -e:0<br>
+  </font></td>
+ </tr>
+</table>
+
+<a href="#raw">raw error</a><br>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+
+<a name="raw"></a>
+
+<pre>Error during compilation of /var/www/html/freeside/edit/process/quick-charge.cgi:
+syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 126, near &quot;)
+               ( &quot;
+Global symbol &quot;$amount&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 132.
+Global symbol &quot;$setup_cost&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 133.
+Global symbol &quot;$quantity&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 134.
+Global symbol &quot;$override&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 147.
+syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 1, near &quot;if&quot;
+Global symbol &quot;$error&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 1.
+Global symbol &quot;$error&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 2.
+syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 4, near &quot;}&quot;
+  (Might be a runaway multi-line '' string starting on line 3)
+Global symbol &quot;$message&quot; requires explicit package name at /var/www/html/freeside/edit/process/quick-charge.cgi line 5.
+syntax error at /var/www/html/freeside/edit/process/quick-charge.cgi line 10, near &quot;}&quot;
+  (Might be a runaway multi-line '' string starting on line 5)
+/var/www/html/freeside/edit/process/quick-charge.cgi has too many errors.
+
+
+Trace begun at /usr/share/perl5/HTML/Mason/Interp.pm line 854
+HTML::Mason::Interp::_compilation_error('HTML::Mason::Interp=HASH(0x7fbd843931b8)', '/var/www/html/freeside/edit/process/quick-charge.cgi', 'HTML::Mason::Exception::Compilation=HASH(0x7fbd8b2466a0)') called at /usr/share/perl5/HTML/Mason/Interp.pm line 453
+HTML::Mason::Interp::load('HTML::Mason::Interp=HASH(0x7fbd843931b8)', '/edit/process/quick-charge.cgi') called at /usr/share/perl5/HTML/Mason/Request.pm line 252
+eval {...} at /usr/share/perl5/HTML/Mason/Request.pm line 235
+HTML::Mason::Request::_initialize('FS::Mason::Request=HASH(0x7fbd8af54d08)') called at /usr/share/perl5/HTML/Mason/Request.pm line 215
+HTML::Mason::Request::new('FS::Mason::Request', 'error_mode', 'output', 'error_format', 'html', 'interp', 'HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'comp', '/edit/process/quick-charge.cgi', 'args', 'ARRAY(0x7fbd8ba9b970)', 'ah', 'HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'apache_req', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)', 'container', 'HASH(0x7fbd8ba9c9b8)') called at /usr/share/perl5/HTML/Mason/ApacheHandler.pm line 94
+HTML::Mason::Request::ApacheHandler::new('FS::Mason::Request', 'error_mode', 'output', 'error_format', 'html', 'interp', 'HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'comp', '/edit/process/quick-charge.cgi', 'args', 'ARRAY(0x7fbd8ba9b970)', 'ah', 'HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'apache_req', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)', 'container', 'HASH(0x7fbd8ba9c9b8)') called at /usr/local/share/perl/5.20.2/FS/Mason/Request.pm line 37
+FS::Mason::Request::new('FS::Mason::Request', 'error_mode', 'output', 'error_format', 'html', 'interp', 'HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'comp', '/edit/process/quick-charge.cgi', 'args', 'ARRAY(0x7fbd8ba9b970)', 'ah', 'HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'apache_req', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)', 'container', 'HASH(0x7fbd8ba9c9b8)') called at /usr/share/perl5/Class/Container.pm line 275
+Class::Container::call_method('HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'request', 'new', 'interp', 'HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'comp', '/edit/process/quick-charge.cgi', 'args', 'ARRAY(0x7fbd8ba9b970)', 'ah', 'HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'apache_req', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)', 'container', 'HASH(0x7fbd8ba9c9b8)') called at /usr/share/perl5/Class/Container.pm line 353
+Class::Container::create_delayed_object('interp', 'HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'comp', '/edit/process/quick-charge.cgi', 'args', 'ARRAY(0x7fbd8ba9b970)', 'ah', 'HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'apache_req', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)', 'container', 'HASH(0x7fbd8ba9c9b8)') called at /usr/share/perl5/HTML/Mason/Interp.pm line 351
+HTML::Mason::Interp::make_request('HTML::Mason::Interp=HASH(0x7fbd843931b8)', 'comp', '/edit/process/quick-charge.cgi', 'args', 'ARRAY(0x7fbd8ba9b970)', 'ah', 'HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'apache_req', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)') called at /usr/share/perl5/HTML/Mason/ApacheHandler.pm line 874
+eval {...} at /usr/share/perl5/HTML/Mason/ApacheHandler.pm line 873
+HTML::Mason::ApacheHandler::prepare_request('HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)') called at /usr/share/perl5/HTML/Mason/ApacheHandler.pm line 828
+HTML::Mason::ApacheHandler::handle_request('HTML::Mason::ApacheHandler=HASH(0x7fbd843be610)', 'Apache2::RequestRec=SCALAR(0x7fbd8b414c40)') called at /usr/local/etc/freeside/handler.pl line 144
+eval {...} at /usr/local/etc/freeside/handler.pl line 144
+HTML::Mason::handler('Apache2::RequestRec=SCALAR(0x7fbd8b414c40)') called at -e line 0
+eval {...} at -e line 0
+</pre>
+
+</body></html>
