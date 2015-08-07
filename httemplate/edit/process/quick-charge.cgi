@@ -122,7 +122,7 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
 
   if ( $param->{'taxclass'} eq '(select)' ) {
     $error .= "Must select a tax class.  "
-      unless ($conf->config('tax_data_vendor'))
+      unless ($conf->config('tax_data_vendor') &&
                ( $override || $param->{taxproductnum} )
              );
     $cgi->param('taxclass', '');
