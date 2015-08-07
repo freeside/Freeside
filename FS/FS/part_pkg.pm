@@ -339,7 +339,7 @@ Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 Currently available options are: I<pkg_svc>, I<hidden_svc>, I<primary_svc>,
-I<bulk_skip>, I<provision_hold> and I<options>
+I<provision_hold> and I<options>
 
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
 values, the appropriate FS::pkg_svc records will be replaced.  I<hidden_svc>
