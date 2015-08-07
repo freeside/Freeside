@@ -121,7 +121,7 @@ sub insert {
   my $error = $self->SUPER::insert;
 
   #check if this releases a hold (see FS::pkg_svc provision_hold)
-  $error ||= $self->_provision_hold;
+  $error ||= $self->_check_provision_hold;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -460,7 +460,7 @@ sub replace {
   } # if this is a location change
 
   #check if this releases a hold (see FS::pkg_svc provision_hold)
-  $error ||= $new->_provision_hold;
+  $error ||= $new->_check_provision_hold;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -1246,7 +1246,7 @@ sub smart_search_param {
 # then removes hold from pkg
 # returns $error or '' on success,
 # does not indicate if pkg status was changed
-sub _provision_hold {
+sub _check_provision_hold {
   my $self = shift;
 
   # check status of cust_pkg
