@@ -3558,6 +3558,23 @@ sub tables_hashref {
                         ],
     },
 
+    'pkg_svc_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '', '', '', 
+        'pkgsvcnum', 'int', '', '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key'  => 'optionnum',
+      'unique'       => [],
+      'index'        => [ [ 'pkgsvcnum' ], [ 'optionname' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'pkgsvcnum' ],
+                            table      => 'part_pkg',
+                          },
+                        ],
+    },
+
     'part_referral' => {
       'columns' => [
         'refnum',   'serial',     '',        '', '', '', 

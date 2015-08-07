@@ -3,6 +3,8 @@ use base qw(FS::Record);
 
 use strict;
 
+use base qw( FS::option_Common FS::m2m_Common );
+
 =head1 NAME
 
 FS::pkg_svc - Object methods for pkg_svc records
