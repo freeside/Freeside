@@ -14,6 +14,6 @@ freeside-test-stop || true
 
 diffname=freeside-test.`date +%Y%m%d`.diff
 echo "Writing diff to $diffname."
-diff -urb "$tempdir" "$sharedir/output" > $diffname
+diff -urb "$sharedir/output" "$tempdir" > $diffname
 diffstat -C $diffname
 

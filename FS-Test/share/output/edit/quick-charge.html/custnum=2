@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+  <HEAD>
+    <TITLE>
+      One-time charge
+    </TITLE>
+    <!-- per RT, to prevent IE compatibility mode -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- The X-UA-Compatible <meta> tag above must be very early in <head> -->
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+    
+  </HEAD>
+  <BODY onload="addRow()" BGCOLOR="#f8f8f8">
+    <link href="http://localhost/freeside/elements/freeside.css" type="text/css" rel="stylesheet">
+    <FONT SIZE=6>
+      <CENTER>One-time charge</CENTER>
+    </FONT>
+    <BR><!--<BR>-->
+
+
+<LINK REL="stylesheet" TYPE="text/css" HREF="http://localhost/freeside/elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/calendar-setup.js"></SCRIPT>
+
+
+
+<SCRIPT TYPE="text/javascript">
+
+function enable_quick_charge (e) {
+
+  if (    document.QuickChargeForm.amount.value
+       && document.QuickChargeForm.pkg.value    ) {
+    document.QuickChargeForm.submit.disabled = false;
+  } else {
+    document.QuickChargeForm.submit.disabled = true;
+  }
+
+    return true;
+
+}
+
+function validate_quick_charge () {
+  var pkg = document.QuickChargeForm.pkg.value;
+  var pkg_regex = /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ ;
+  var amount = document.QuickChargeForm.amount.value;
+  var amount_regex = /^\s*\$?\s*(\d*(\.?\d{1,2}))\s*$/ ;
+  var rval = true;
+
+  if ( ! amount_regex.test(amount) ) {
+    alert('Illegal amount - enter an amount to charge, for example, "5" or "43" or "21.46".');
+    return false;
+  }
+  if ( String(pkg).length < 1 ) {
+    rval = false;
+  }
+  if ( ! pkg_regex.test(pkg) ) {
+    rval = false;
+  }
+  var i=0;
+  for (i=0; i < rownum; i++) {
+    if (! eval('pkg_regex.test(document.QuickChargeForm.description' + i + '.value)')){
+      rval = false;
+      break;
+    }
+  }
+  if (rval == true) {
+    return true;
+  }
+
+  if ( ! pkg ) {
+    alert('Enter a description for the one-time charge');
+    return false;
+  }
+
+  alert('Illegal description - spaces, letters, numbers, and the following punctuation characters are allowed: . , ! ? @ # $ % & ( ) - + ; : ' + "'" + ' " = [ ]' );
+  return false;
+}
+
+function bill_now_changed (what) {
+  var form = what.form;
+  if ( what.checked ) {
+    form.start_date_text.disabled = true;
+    form.start_date.style.backgroundColor = '#dddddd';
+    form.start_date_button.style.display = 'none';
+    form.start_date_button_disabled.style.display = '';
+    form.invoice_terms.disabled = false;
+  } else {
+    form.start_date_text.disabled = false;
+    form.start_date.style.backgroundColor = '#ffffff';
+    form.start_date_button.style.display = '';
+    form.start_date_button_disabled.style.display = 'none';
+    form.invoice_terms.disabled = true;
+  }
+}
+
+</SCRIPT>
+
+<FORM ACTION   = "process/quick-charge.cgi"
+      NAME     = "QuickChargeForm"
+      ID       = "QuickChargeForm"
+      METHOD   = "POST"
+      onSubmit = "document.QuickChargeForm.submit.disabled=true; return validate_quick_charge();"
+>
+
+<INPUT TYPE="hidden" NAME="custnum"     VALUE="2">
+<INPUT TYPE="hidden" NAME="prospectnum" VALUE="">
+<INPUT TYPE="hidden" NAME="quotationnum" VALUE="">
+
+<TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
+
+
+    <TR>
+      <TD ALIGN="right">Amount to charge </TD>
+      <TD>
+        $<INPUT TYPE       = "text"
+                                NAME       = "amount"
+                                SIZE       = 8
+                                VALUE      = ""
+                                onChange   = "return enable_quick_charge(event)"
+                                onKeyPress = "return enable_quick_charge(event)"
+                         >
+      </TD>
+    </TR>
+
+      <TR>
+
+  <TD ALIGN  = "right"
+      VALIGN = "top"
+      STYLE  = "padding-top: 3px"
+      ID     = "_label0"
+  >Cost</TD>
+
+
+
+  <TD   ID="_input0">$<INPUT TYPE  = "text"
+                           NAME  = "setup_cost"
+                           ID    = ""
+                           VALUE = ""
+                           SIZE="8"
+                           
+                           
+                           
+                           
+                           
+                    >
+</TD>
+
+</TR>
+
+ 
+
+    <TR>
+      <TD ALIGN="right">Quantity </TD>
+      <TD>
+        <INPUT TYPE       = "text"
+               NAME       = "quantity"
+               SIZE       = 4
+               VALUE      = "1"
+               onKeyPress = "return enable_quick_charge(event)">
+      </TD>
+    </TR>
+
+
+  <TR>
+    <TD ALIGN="right">Package class</TD>
+    <TD>
+      
+<SELECT 
+        NAME = "classnum"
+        ID   = "classnum"
+        
+        
+        
+>
+
+
+    <OPTION VALUE="">(none)
+
+    <OPTION VALUE="1"
+            
+    >
+     Fees
+
+
+</SELECT>
+
+
+
+    </TD>
+  </TR>
+
+
+
+
+
+    <TR>
+      <TD ALIGN="right">Invoice now</TD>
+      <TD>
+        <INPUT TYPE  = "checkbox"
+               NAME  = "bill_now"
+               VALUE = "1"
+               
+               onClick  = "bill_now_changed(this);"
+               onChange = "bill_now_changed(this);"
+        >
+        with terms 
+        <SELECT NAME = "invoice_terms"
+        ID   = "invoice_terms"
+        DISABLED
+>
+# #false laziness w/select-table.html
+
+  <OPTION VALUE="">Default (Payable upon receipt)
+    <OPTION VALUE="Payable upon receipt" >Payable upon receipt
+    <OPTION VALUE="Net 0" >Net 0
+    <OPTION VALUE="Net 3" >Net 3
+    <OPTION VALUE="Net 5" >Net 5
+    <OPTION VALUE="Net 9" >Net 9
+    <OPTION VALUE="Net 10" >Net 10
+    <OPTION VALUE="Net 14" >Net 14
+    <OPTION VALUE="Net 15" >Net 15
+    <OPTION VALUE="Net 18" >Net 18
+    <OPTION VALUE="Net 20" >Net 20
+    <OPTION VALUE="Net 21" >Net 21
+    <OPTION VALUE="Net 25" >Net 25
+    <OPTION VALUE="Net 30" >Net 30
+    <OPTION VALUE="Net 45" >Net 45
+    <OPTION VALUE="Net 60" >Net 60
+    <OPTION VALUE="Net 90" >Net 90
+</SELECT>
+
+      </TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right">Charge date </TD>
+      <TD>
+        <INPUT TYPE  = "text"
+               NAME  = "start_date"
+               SIZE  = 32
+               ID    = "start_date_text"
+               VALUE = "04/01/2016 00:00:00 -0700 (PDT)"
+               onKeyPress="return enable_quick_charge(event)"
+               
+        >
+        <IMG SRC   = "http://localhost/freeside/images/calendar.png"
+             ID    = "start_date_button"
+             TITLE = "Select date"
+             STYLE = "cursor:pointer"
+        >
+        <IMG SRC   = "http://localhost/freeside/images/calendar-disabled.png"
+             ID    = "start_date_button_disabled"
+             STYLE="display:none"
+        >
+        <FONT SIZE=-1>(leave blank to charge immediately)</FONT>
+      </TD>
+    </TR>
+
+    <SCRIPT TYPE="text/javascript">
+      Calendar.setup({
+        inputField: "start_date_text",
+        ifFormat:   "%m/%d/%Y",
+        button:     "start_date_button",
+        align:      "BR"
+      });
+    </SCRIPT>
+
+<TR>
+
+  <TD ALIGN  = "right"
+      VALIGN = "top"
+      STYLE  = "padding-top: 3px"
+      ID     = "_label0"
+  >Invoice this charge separately</TD>
+
+
+
+  <TD >
+    <INPUT TYPE  = "checkbox"
+                           NAME  = "separate_bill"
+                           ID    = ""
+                           VALUE = "Y"
+                           
+                           
+                           
+                    >
+
+  </TD>
+
+</TR>
+
+
+
+
+    <TR>
+      <TD ALIGN="right">Disable automatic electronic check charge </TD>
+      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+    </TR>
+
+<TR>
+  <TD ALIGN="right">Tax exempt </TD>
+  <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" ></TD>
+</TR>
+
+
+  <INPUT TYPE="hidden" NAME="taxclass" VALUE="">
+
+
+
+  <INPUT TYPE="hidden" NAME="taxproductnum" VALUE="">
+
+
+
+  <INPUT TYPE="hidden" NAME="tax_override" VALUE="">
+
+
+
+
+<TR>
+  <TD ALIGN="right">Description </TD>
+  <TD>
+    <INPUT TYPE       = "text"
+           NAME       = "pkg"
+           SIZE       = "50"
+           MAXLENGTH  = "50"
+           VALUE      = ""
+           onChange   = "return enable_quick_charge(event)"
+           onKeyPress = "return enable_quick_charge(event)"
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TD></TD>
+  <TD><FONT SIZE="-1">Optional additional description (also printed on invoice): </FONT></TD>
+</TR>
+
+
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="Add one-time charge"  DISABLED>
+
+</FORM>
+
+
+<SCRIPT TYPE="text/javascript">
+
+  var rownum = 0;
+
+  function possiblyAddRow(e) {
+
+    if ( ( rownum - this.getAttribute('rownum') ) == 1 ) {
+      addRow();
+    }
+
+      return true;
+
+  }
+
+  function addRow() {
+
+    var table = document.getElementById('QuickChargeTable');
+    var tablebody = table.getElementsByTagName('tbody').item(0);
+
+    var row = document.createElement('TR');
+
+    var empty_cell = document.createElement('TD');
+    row.appendChild(empty_cell);
+
+    var description_cell = document.createElement('TD');
+
+      //var description_input = document.createElement('INPUT');
+      var di = document.createElement('INPUT');
+      di.setAttribute('name', 'description'+rownum);
+      di.setAttribute('id',   'description'+rownum);
+      di.setAttribute('size', 60);
+      di.setAttribute('maxLength', 65);
+      di.setAttribute('rownum',   rownum);
+      di.onkeyup = possiblyAddRow;
+      di.onkeypress = enable_quick_charge;
+      description_cell.appendChild(di);
+
+    row.appendChild(description_cell);
+
+    tablebody.appendChild(row);
+
+    rownum++;
+
+  }
+
+</SCRIPT>
+
+</BODY>
+</HTML>
