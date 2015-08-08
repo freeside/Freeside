@@ -1,0 +1,199 @@
+%%
+%% This is file `background.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% background.dtx  (with options: `package')
+%% 
+%% Copyright (C) 2009, 2012, 2014 Gonzalo Medina (gmedinaar@unal.edu.co)
+%% 
+%% --------------------------------------------------------------------------
+%% 
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2003/12/01 or later.
+%% 
+%% This work has the LPPL maintenance status "maintained".
+%% 
+%% The Current Maintainer of this work is Gonzalo Medina.
+%% 
+%% This work consists of the files background.ins, background.dtx,
+%% and the derived files background.sty and background.pdf.
+%% 
+
+
+
+
+
+
+
+
+
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{background}[2014/03/04 v2.1 background material]
+\@ifpackageloaded{xkeyval}{}{\RequirePackage{xkeyval}}
+\@ifpackageloaded{tikz}{}{\RequirePackage{tikz}}
+\@ifpackageloaded{everypage}{}{\RequirePackage{everypage}}
+\@ifpackageloaded{afterpage}{}{\RequirePackage{afterpage}}
+\DeclareOptionX[BG]<background>{contents}{%
+  \def\Background@Contents{#1}}
+\DeclareOptionX[BG]<background>{color}{%
+  \def\Background@Color{#1}}
+\DeclareOptionX[BG]<background>{angle}{%
+  \def\Background@Angle{#1}}
+\DeclareOptionX[BG]<background>{opacity}{%
+  \def\Background@Opacity{#1}}
+\DeclareOptionX[BG]<background>{scale}{%
+  \def\Background@Scale{#1}}
+\DeclareOptionX[BG]<background>{position}{%
+  \def\Background@Position{#1}}
+\DeclareOptionX[BG]<background>{anchor}{%
+  \def\Background@Anchor{#1}}
+\DeclareOptionX[BG]<background>{nodeanchor}{%
+  \def\Background@NodeAnchor{#1}}
+\DeclareOptionX[BG]<background>{hshift}{%
+  \def\Background@HShift{#1}}
+\DeclareOptionX[BG]<background>{vshift}{%
+  \def\Background@VShift{#1}}
+
+\newif\ifbg@some
+  \bg@somefalse
+
+\define@choicekey+[BG]{background}{pages}[\val\nr]{all,some}{%
+  \ifcase\nr\relax
+    \bg@somefalse
+  \or
+    \bg@sometrue
+  \fi
+}{%
+  \PackageWarning{background}{erroneous input ignored}%
+}
+
+\define@choicekey+[BG]{background}{placement}[\val\nr]{center,bottom,top}{%
+  \ifcase\nr\relax
+    \renewcommand\Background@Position{current page.center}%
+    \renewcommand\Background@Anchor{}%
+    \renewcommand\Background@Angle{60}
+  \or
+    \renewcommand\Background@Position{current page.south}%
+    \renewcommand\Background@Anchor{above}%
+    \renewcommand\Background@Angle{0}%
+  \or
+    \renewcommand\Background@Position{current page.north}%
+    \renewcommand\Background@Anchor{below}%
+    \renewcommand\Background@Angle{0}%
+  \fi
+}{%
+  \PackageWarning{background}{erroneous input ignored}%
+}
+\define@boolkey+[BG]{background}{firstpage}{%
+  \ifBG@background@firstpage
+    \bg@sometrue%
+    \AtBeginDocument{\BgThispage}%
+  \else
+    \bg@somefalse%
+  \fi
+}{%
+  \PackageWarning{background}{erroneous input ignored}%
+}
+
+\DeclareOptionX[BG]<background>{all}{\bg@somefalse}
+\DeclareOptionX[BG]<background>{some}{\bg@sometrue}
+\DeclareOptionX[BG]<background>{center}{%
+  \renewcommand\Background@Position{current page.center}%
+  \renewcommand\Background@Anchor{}%
+  \renewcommand\Background@Angle{60}}
+\DeclareOptionX[BG]<background>{bottom}{%
+  \renewcommand\Background@Position{current page.south}%
+  \renewcommand\Background@Anchor{above}%
+  \renewcommand\Background@Angle{0}%
+  \renewcommand\Background@Scale{8}}
+\DeclareOptionX[BG]<background>{top}{%
+  \renewcommand\Background@Position{current page.north}%
+  \renewcommand\Background@Anchor{below}%
+  \renewcommand\Background@Angle{0}%
+  \renewcommand\Background@Scale{8}}
+
+
+\ExecuteOptions{all,center}
+
+
+\DeclareOptionX*{\PackageWarningNoLine{background}{Option '\CurrentOption' ignored}}
+
+\ExecuteOptionsX[BG]<background>{%
+  firstpage=false,
+  contents=Draft,%
+  color=red!45,%
+  angle=60,%
+  opacity=0.5,%
+  scale=10,%
+  position=current page.center,%
+  anchor={},%
+  nodeanchor={center},%
+  hshift=0pt,%
+  vshift=0pt%
+}
+
+\ProcessOptionsX[BG]<background>
+\DeclareRobustCommand*\backgroundsetup[1]{%
+  \setkeys[BG]{background}{#1}
+}
+
+\newcommand\bg@material{%
+  \begin{tikzpicture}[remember picture,overlay,scale=\Background@Scale]
+  \node[
+    rotate=\Background@Angle,
+    scale=\Background@Scale,
+    opacity=\Background@Opacity,
+    anchor=\Background@NodeAnchor,
+    xshift=\Background@HShift,
+    yshift=\Background@VShift,
+    color=\Background@Color,
+    inner sep=0pt
+    ]
+    at (\Background@Position) [\Background@Anchor]
+      {\Background@Contents};
+  \end{tikzpicture}}%
+\newcommand\BgThispage{\AddThispageHook{\bg@material}}
+
+\newcommand\NoBgThispage{%
+  \let\oldbg@material\bg@material\renewcommand\bg@material{}%
+  \afterpage{\AddEverypageHook{\oldbg@material}}}
+
+\ifbg@some
+  \AddThispageHook{}
+\else
+  \AddEverypageHook{\bg@material}
+\fi
+
+\newcommand\SetBgContents[1]{%
+  \def\Background@Contents{#1}}
+\newcommand\SetBgAngle[1]{%
+  \def\Background@Angle{#1}}
+\newcommand\SetBgColor[1]{%
+  \def\Background@Color{#1}}
+\newcommand\SetBgScale[1]{%
+  \def\Background@Scale{#1}}
+\newcommand\SetBgVshift[1]{%
+  \def\Background@VShift{#1}}
+\newcommand\SetBgHshift[1]{%
+  \def\Background@HShift{#1}}
+\newcommand\SetBgPosition[1]{%
+  \def\Background@Position{#1}}
+\newcommand\SetBgAnchor[1]{%
+  \def\Background@Anchor{#1}}
+\newcommand\SetBgOpacity[1]{%
+  \def\Background@Opacity{#1}}
+
+\let\BgMaterial\bg@material
+
+\AtEndDocument{\clearpage}
+\endinput
+%%
+%% End of file `background.sty'.

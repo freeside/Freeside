@@ -8,16 +8,23 @@ onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="action" VALUE="post_thirdparty_payment">
 <INPUT TYPE="hidden" NAME="payby_method" VALUE="<%= $payby_method %>">
 <TABLE BGCOLOR="#cccccc">
+<%= 
+if ($balance > 0) {
+  $OUT .= <<EOF;
 <TR>
   <TH ALIGN="right">Balance&nbsp;due</TH>
   <TD COLSPAN=7>
-    <SPAN STYLE="background-color: #ffffff;">$<%=sprintf("%.2f", $balance)%>
+    <SPAN STYLE="background-color: #ffffff;">$money_char$balance</SPAN>
   </TD>
 </TR>
+EOF
+} 
+%>
+
 <TR>
   <TH ALIGN="right">Payment&nbsp;amount</TH>
   <TD COLSPAN=7>
-    $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f", $balance)%>">
+    <%= $money_char %><INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%= ($balance > 0) ? $balance : '' %>">
   </TD>
 </TR>
 <TR><TH></TH>

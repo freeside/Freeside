@@ -27,36 +27,14 @@ Examples:
     </TH>
   </TR>
 
-  <TR>
-    <TD ALIGN="right"><% ucfirst(PL($name_singular)) %> of type: </TD>
-    <TD>
-      <SELECT NAME="payby" SIZE=16 MULTIPLE>
-
-%#        <OPTION VALUE=""><% mt('all') |h %></OPTION>
-%#        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
-
-        <OPTION VALUE="CARD-VisaMC" SELECTED><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
-        <OPTION VALUE="CARD-Amex" SELECTED><% mt('credit card (American Express)') |h %></OPTION>
-        <OPTION VALUE="CARD-Discover" SELECTED><% mt('credit card (Discover)') |h %></OPTION>
-        <OPTION VALUE="CARD-Maestro" SELECTED><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
-        <OPTION VALUE="CARD-Tokenized" SELECTED><% mt('credit card (Tokenized)') |h %></OPTION>
-
-        <OPTION VALUE="CHEK" SELECTED><% mt('electronic check / ACH') |h %></OPTION>
-        <OPTION VALUE="BILL" SELECTED><% mt('check') |h %></OPTION>
-        <OPTION VALUE="CASH" SELECTED><% mt('cash') |h %></OPTION>
-        <OPTION VALUE="PPAL" SELECTED><% mt('Paypal') |h %></OPTION>
-        <OPTION VALUE="APPL" SELECTED><% mt('Apple Store') |h %></OPTION>
-        <OPTION VALUE="ANRD" SELECTED><% mt('Android Market') |h %></OPTION>
-
-        <OPTION VALUE="PREP" SELECTED><% mt('prepaid card') |h %></OPTION>
-        <OPTION VALUE="WIRE" SELECTED><% mt('wire transfer') |h %></OPTION>
-        <OPTION VALUE="WEST" SELECTED><% mt('Western Union') |h %></OPTION>
-        <OPTION VALUE="EDI" SELECTED><% mt('Electronic Debit (EDI)') |h %></OPTION>
-        <OPTION VALUE="MCRD" SELECTED><% mt('manual credit card') |h %></OPTION>
-        <OPTION VALUE="MCHK" SELECTED><% mt('manual electronic check') |h %></OPTION>
-      </SELECT>
-    </TD>
-  </TR>
+  <& /elements/tr-select.html,
+    label     => ucfirst(PL($name_singular)) . ' of type:',
+    field     => 'payby',
+    options   => [ keys(\%payby) ],
+    labels    => \%payby,
+    multiple  => 1,
+    size      => 16
+  &>
 
   <TR>
     <TD ALIGN="right"><% mt('Check #:') |h %> </TD>
@@ -137,8 +115,7 @@ Examples:
        'label'        => emt('Customer class'),
        'field'        => 'cust_classnum',
        'multiple'     => 1,
-       'pre_options'  => [ '' => emt('(none)') ],
-       'all_selected' => 1,
+       'pre_options'  => [ 0 => emt('(none)') ],
   &>
 
 </TABLE>
@@ -188,5 +165,27 @@ my $title = $void ? "Voided $name_singular report" :
             $unapplied ? "Unapplied $name_singular report" :
             "\u$name_singular report" ;
 $table .= '_void' if $void;
+
+tie (my %payby, 'Tie::IxHash',
+  'CARD-VisaMC'    => 'credit card (Visa/MasterCard)',
+  'CARD-Amex'      => 'credit card (American Express)',
+  'CARD-Discover'  => 'credit card (Discover)',
+  'CARD-Maestro'   => 'credit card (Maestro/Switch/Solo)',
+  'CARD-Tokenized' => 'credit card (Tokenized)',
+
+  'CHEK'           => 'electronic check / ACH',
+  'BILL'           => 'check',
+  'CASH'           => 'cash',
+  'PPAL'           => 'Paypal',
+  'APPL'           => 'Apple Store',
+  'ANRD'           => 'Android Market',
+
+  'PREP'           => 'prepaid card',
+  'WIRE'           => 'wire transfer',
+  'WEST'           => 'Western Union',
+  'EDI'            => 'Electronic Debit (EDI)',
+  'MCRD'           => 'manual credit card',
+  'MCHK'           => 'manual electronic check',
+);
 
 </%init>

@@ -93,8 +93,12 @@
 % } 
 
 <TR>
+% if ( $location->city ) {
   <TD ALIGN="right"><% mt('City') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $location->city |h %></TD>
+% } else {
+  <TD COLSPAN="2"></TD>
+% }
 % if ( $location->county ) {
     <TD ALIGN="right"><% mt('County') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $location->county |h %></TD>

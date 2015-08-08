@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,33 +64,19 @@ sub _Init {
     return $self->SUPER::_Init( @_ );
 }
 
-=head2 Next
+=head2 AddRecord
 
-Returns the next article that this user can see.
+Overrides the collection to ensure that only Articles the user can see
+are returned.
 
 =cut
 
-sub Next {
+sub AddRecord {
     my $self = shift;
+    my ($record) = @_;
 
-    my $Object = $self->SUPER::Next();
-    if ( ( defined($Object) ) and ( ref($Object) ) ) {
-
-        if ( $Object->CurrentUserHasRight('ShowArticle') ) {
-            return ($Object);
-        }
-
-        #If the user doesn't have the right to show this Object
-        else {
-            return ( $self->Next() );
-        }
-    }
-
-    #if there never was any queue
-    else {
-        return (undef);
-    }
-
+    return unless $record->CurrentUserHasRight('ShowArticle');
+    return $self->SUPER::AddRecord( $record );
 }
 
 =head2 Limit { FIELD  => undef, OPERATOR => '=', VALUE => 'undef'} 

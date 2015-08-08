@@ -32,6 +32,13 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'switch_acct'               => 'MyAccount/switch_acct',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
+
+  'contact_passwd'            => 'MyAccount/contact/contact_passwd',
+  'list_contacts'             => 'MyAccount/contact/list_contacts',
+  'edit_contact'              => 'MyAccount/contact/edit_contact',
+  'delete_contact'            => 'MyAccount/contact/delete_contact',
+  'new_contact'               => 'MyAccount/contact/new_contact',
+
   'billing_history'           => 'MyAccount/billing_history',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',
@@ -507,7 +514,7 @@ Invoice text
 
 =item list_invoices HASHREF
 
-Returns a list of all customer invoices.  Takes a hash references with a single
+Returns a list of all customer invoices.  Takes a hash reference with a single
 key, session_id.
 
 Returns a hash reference with the following keys:
@@ -1195,7 +1202,7 @@ error message on errors.
 
 Provisions an account (svc_acct).
 
-Takes a hash references as parameter with the following keys:
+Takes a hash reference as parameter with the following keys:
 
 =over 4
 
@@ -1223,7 +1230,7 @@ svcpart or service definition to provision
 
 Provisions a phone number (svc_phone).
 
-Takes a hash references as parameter with the following keys:
+Takes a hash reference as parameter with the following keys:
 
 =over 4
 
@@ -1265,7 +1272,7 @@ E911 Address (optional)
 
 Provisions a customer PBX (svc_pbx).
 
-Takes a hash references as parameter with the following keys:
+Takes a hash reference as parameter with the following keys:
 
 =over 4
 
@@ -1297,7 +1304,7 @@ svcpart or service definition to provision
 
 Provisions an external service (svc_external).
 
-Takes a hash references as parameter with the following keys:
+Takes a hash reference as parameter with the following keys:
 
 =over 4
 
@@ -1321,6 +1328,146 @@ svcpart or service definition to provision
 
 =back
 
+=head2 "MY ACCOUNT" CONTACT FUNCTIONS
+
+=over 4
+
+=item contact_passwd
+
+Changes the password for the currently-logged in contact.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+=item new_password
+
+=back
+
+Returns a hash reference with a single parameter, B<error>, which contains an
+error message, or empty on success.
+
+=item list_contacts
+
+Takes a hash reference as parameter with a single key, B<session_id>.
+
+Returns a hash reference with two parameters: B<error>, which contains an error
+message, or empty on success, and B<contacts>, a list of contacts.
+
+B<contacts> is an array reference of hash references (i.e. an array of structs,
+ in XML-RPC).  Each hash reference (struct) has the following keys:
+
+=over4
+
+=item contactnum
+
+=item class
+
+Contact class name (contact type).
+
+=item first
+
+First name
+
+=item last
+
+Last name
+
+=item title
+
+Position ("Director of Silly Walks"), NOT honorific ("Mr." or "Mrs.")
+
+=item emailaddress
+
+Comma-separated list of email addresses
+
+=item comment
+
+=item selfservice_access
+
+Y when enabled
+
+=back
+
+=item edit_contact
+
+Updates information for the currently-logged in contact, or (optionally) the
+specified contact.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+=item contactnum
+
+If already logged in as a contact, this is optional.
+
+=item first
+
+=item last
+
+=item emailaddress
+
+=back
+
+Returns a hash reference with a single parameter, B<error>, which contains an
+error message, or empty on success.
+
+=item new_contact
+
+Creates a new contact.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+=item first
+
+=item last
+
+=item emailaddress
+
+=item classnum
+
+Optional contact classnum (TODO: or name)
+
+=item comment
+
+=item selfservice_access
+
+Y to enable self-service access
+
+=item _password
+
+=back
+
+Returns a hash reference with a single parameter, B<error>, which contains an
+error message, or empty on success.
+
+=item delete_contact
+
+Deletes a contact.  (Note: Cannot at this time delete the currently-logged in
+contact.)
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+=item contactnum
+
+=back
+
+Returns a hash reference with a single parameter, B<error>, which contains an
+error message, or empty on success.
+
 =head2 "MY ACCOUNT" QUOTATION FUNCTIONS
 
 All of these functions require the user to be logged in, and the 'session_id'
@@ -1333,12 +1480,33 @@ key to be included in the argument hashref.`
 Returns a hashref listing this customer's active self-service quotations.
 Contents are:
 
-- 'quotations', an arrayref containing an element for each quotation.
-  - quotationnum, the primary key
-  - _date, the date it was started
-  - num_pkgs, the number of packages
-  - total_setup, the sum of setup fees
-  - total_recur, the sum of recurring charges
+=over 4
+
+=item quotations
+
+an arrayref containing an element for each quotation.
+
+=item quotationnum
+
+the primary key
+
+=item _date
+
+the date it was started
+
+=item num_pkgs
+
+the number of packages
+
+=item total_setup
+
+the sum of setup fees
+
+=item total_recur
+
+the sum of recurring charges
+
+=back
 
 =item quotation_new HASHREF
 

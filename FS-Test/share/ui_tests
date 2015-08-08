@@ -1,0 +1,56 @@
+# reports menu items
+search/cust_main.cgi?browse=last
+search/cust_bill.html?OPEN90_date
+search/cust_bill.html?date
+search/cust_bill.html?magic=_date&agentnum=1&beginning=&ending=10%2F01%2F2015&charged_lt=&charged_gt=200.00&owed_lt=&owed_gt=&open=1
+search/cust_bill_pkg.cgi?agentnum=1&status=&cust_classnum=&beginning=01%2F01%2F2016&ending=01%2F31%2F2016
+search/cust_pay.html?magic=_date&unapplied=0&beginning=01%2F01%2F2016&agentnum=1&order_by=paynum
+graph/cust_pkg.html?start_month=4&start_year=2015&end_month=3&end_year=2016
+search/cust_pkg_churn.html?agentnum=&status=setup&begin=1438412400&end=1441090800&order_by=cust_pkg.pkgnum
+search/cust_pkg.cgi?keywords=pkgnum&order_by=pkgnum
+search/cust_pkg_summary.cgi?beginning=02%2F01%2F2016&ending=02%2F28%2F2016&classnum=0
+search/cust_pkg.cgi?magic=bill&classnum=0&setup_ending=10%2F31%2F2015&pkgpart=5&pkgpart=2&order_by=pkgnum
+search/h_cust_pkg.html?classnum=0&status=active,suspended&date=1454313600&pkgpart=2
+browse/part_svc.cgi?orderby=active
+search/unprovisioned_services.html
+search/svc_acct.cgi?magic=all&sortby=username
+search/svc_domain.cgi?magic=all&sortby=domain
+search/svc_broadband.cgi?magic=advanced&custnum=&agentnum=1&routernum=none&cust_pkg_fields=&cust_fields=&_dummy=1&maxrecords=100&_type=html&offset=0&order_by=ip_addr
+search/svc_phone.cgi?magic=all&sortby=phonenum
+graph/money_time.cgi?start_month=4&start_year=2015&end_month=3&end_year=2016&agentnum=1&cust_classnum=&refnum=1
+graph/money_time_daily.cgi?beginning=01%2F01%2F2016&ending=02%2F28%2F2016&agentnum=1
+graph/cust_bill_pkg.cgi?start_month=4&start_year=2015&end_month=3&end_year=2016&agentnum=1&cust_classnum=&refnum=1&class_mode=pkg&classnum=0&classnum=1&report_optionnum=0&class_agg_break=aggregate&use_setup=1&use_usage=0&use_discount=1
+search/cust_bill_pkg.cgi?nottax=1&charges=S&distribute=0&agentnum=1&refnum=1&use_override=0&classnum=0&classnum=1&begin=1438412400&end=1441090800
+search/cust_bill_pkg.cgi?nottax=1&charges=RU&distribute=0&agentnum=1&refnum=1&use_override=0&classnum=0&classnum=1&begin=1438412400&end=1441090800
+search/cust_bill_pkg.cgi?nottax=1&agentnum=1&refnum=1&classnum=0&classnum=1&begin=1438412400&end=1441090800
+search/report_receivables.cgi?days=0&as_of=03%2F01%2F2016
+
+
+# customer view and related links
+view/cust_main.cgi?135
+edit/cust_main.cgi?135
+edit/cust_main-contacts.html?135
+view/cust_main.cgi?custnum=135&show=packages
+view/svc_acct.cgi?406
+view/svc_domain.cgi?402
+view/svc_phone.cgi?403
+view/svc_broadband.cgi?401
+search/cust_pkg.cgi?magic=bill&custnum=135
+view/cust_main.cgi?custnum=135&show=payment_history
+view/cust_main.cgi?custnum=135&show=change_history
+
+# invoice view
+view/cust_bill.cgi?681
+view/cust_bill-tex.cgi?invnum=681&notice_name=Invoice
+
+# package configuration
+browse/part_pkg.cgi?active=1
+edit/part_pkg.cgi?2
+
+# one-time charge (cust#2)
+edit/quick-charge.html?custnum=2
+edit/process/quick-charge.cgi?amount=100.00&custnum=2&pkg=Test%20one-time%20charge&quantity=1&bill_now=1
+# check that the charge was created and billed
+view/cust_main.cgi?custnum=2&show=packages
+view/cust_main.cgi?custnum=2&show=payment_history
+

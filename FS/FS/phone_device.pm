@@ -92,12 +92,12 @@ sub insert {
   my $dbh = dbh;
 
   my $error = $self->SUPER::insert;
+  $error ||= $self->export('device_insert');
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  $self->export('device_insert');
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -124,9 +124,8 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $self->export('device_delete');
 
-  my $error = $self->SUPER::delete;
+  my $error = $self->export('device_delete') || $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -161,13 +160,13 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->SUPER::replace($old);
+  my $error = $new->SUPER::replace($old)
+              || $new->export('device_replace', $old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  $new->export('device_replace', $old);
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';

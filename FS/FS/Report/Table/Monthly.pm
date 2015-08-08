@@ -182,9 +182,15 @@ sub data {
     push @{$data{label}}, "$smonth/$syear"; # sprintf?
 
     my $speriod = timelocal(0,0,0,1,$smonth-1,$syear);
-    push @{$data{speriod}}, $speriod;
     if ( ++$smonth == 13 ) { $syear++; $smonth=1; }
     my $eperiod = timelocal(0,0,0,1,$smonth-1,$syear);
+    # 12-month mode: show results in a sliding window ending at $eperiod,
+    # but starting 12 months before.
+    if ( $self->{'12mo'}) {
+      $speriod = timelocal(0,0,0,1,$smonth-1,$syear-1);
+    }
+
+    push @{$data{speriod}}, $speriod;
     push @{$data{eperiod}}, $eperiod;
 
     my $col = 0; # a "column" here is the data corresponding to an item

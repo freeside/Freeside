@@ -189,9 +189,9 @@ sub dbdef_dist {
 
   my $tables_hashref_torrus = tables_hashref_torrus();
 
-  #create history tables (false laziness w/create-history-tables)
+  #create history tables
   foreach my $table (
-    grep {    ! /^clientapi_session/
+    grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
            && ! /^legacy_cust_history$/
@@ -1420,7 +1420,7 @@ sub tables_hashref {
         'locationname',    'varchar', 'NULL', $char_d, '', '',
         'address1',        'varchar',     '', $char_d, '', '', 
         'address2',        'varchar', 'NULL', $char_d, '', '', 
-        'city',            'varchar',     '', $char_d, '', '', 
+        'city',            'varchar', 'NULL', $char_d, '', '', 
         'county',          'varchar', 'NULL', $char_d, '', '', 
         'state',           'varchar', 'NULL', $char_d, '', '', 
         'zip',             'varchar', 'NULL',      10, '', '', 
@@ -1739,6 +1739,7 @@ sub tables_hashref {
         'payunique', 'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
         'closed',    'char', 'NULL', 1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        'no_auto_apply',  'char', 'NULL',       1, '', '', 
         # cash/check deposit info fields
         'bank',       'varchar', 'NULL', $char_d, '', '',
         'depositor',  'varchar', 'NULL', $char_d, '', '',
@@ -1868,7 +1869,7 @@ sub tables_hashref {
         'first',    'varchar', '',     $char_d, '', '', 
         'address1', 'varchar', '',     $char_d, '', '', 
         'address2', 'varchar', 'NULL', $char_d, '', '', 
-        'city',     'varchar', '',     $char_d, '', '', 
+        'city',     'varchar', 'NULL',     $char_d, '', '', 
         'state',    'varchar', 'NULL', $char_d, '', '', 
         'zip',      'varchar', 'NULL', 10, '', '', 
         'country',  'char', '',     2, '', '', 
@@ -2404,6 +2405,7 @@ sub tables_hashref {
         'quantity',   'int',    '',   '', '', '', 
         'primary_svc','char', 'NULL',  1, '', '', 
         'hidden',     'char', 'NULL',  1, '', '',
+        'provision_hold', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'pkgsvcnum',
       'unique' => [ ['pkgpart', 'svcpart'] ],
@@ -3943,6 +3945,19 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'access_user_session' => {
+      'columns' => [
+        'sessionnum',   'serial',  '',      '', '', '', 
+        'sessionkey',  'varchar',  '', $char_d, '', '',
+        'usernum',         'int',  '',      '', '', '',
+        'start_date', @date_type,               '', '',
+        'last_date',  @date_type,               '', '',
+      ],
+      'primary_key' => 'sessionnum',
+      'unique' => [ [ 'sessionkey' ] ],
+      'index'  => [],
+    },
+
     'access_user' => {
       'columns' => [
         'usernum',            'serial',      '',      '', '', '',
@@ -4014,6 +4029,18 @@ sub tables_hashref {
       'primary_key' => 'rightnum',
       'unique' => [ [ 'righttype', 'rightobjnum', 'rightname' ] ],
       'index'  => [],
+    },
+
+    'access_user_log' => {
+      'columns'      => [
+        'lognum',  'serial', '',        '', '', '',
+        'usernum',    'int', '',        '', '', '',
+        'path',   'varchar', '', 2*$char_d, '', '',
+        '_date',         @date_type,        '', '',
+      ],
+      'primary_key'  => 'lognum',
+      'unique'       => [],
+      'index'        => [ ['usernum'], ['path'], ['_date'] ],
     },
 
     'sched_item' => {
@@ -4098,6 +4125,7 @@ sub tables_hashref {
         'devicepart', 'serial',  '',      '', '', '',
         'devicename', 'varchar', '', $char_d, '', '',
         'inventory_classnum', 'int', 'NULL', '', '', '',
+        'title',      'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'devicepart',
       'unique' => [ [ 'devicename' ] ], #?
@@ -4712,6 +4740,8 @@ sub tables_hashref {
         'latexsmallfooter',     'text',     'NULL', '', '', '',
         'latexreturnaddress',   'text',     'NULL', '', '', '',
         'with_latexcoupon',     'char',     'NULL', '1', '', '',
+        'htmlwatermark',        'text',     'NULL', '', '', '',
+        'latexwatermark',       'text',     'NULL', '', '', '',
         'lpr',                  'varchar',  'NULL', $char_d, '', '',
       ],
       'primary_key' => 'confnum',

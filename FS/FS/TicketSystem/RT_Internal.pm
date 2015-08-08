@@ -454,22 +454,20 @@ sub get_ticket_object {
   my $self = shift;
   my ($session, %opt) = @_;
   $session = $self->session(shift);
-  my $Ticket = RT::Ticket->new($session->{CurrentUser});
-  $Ticket->Load($opt{'ticket_id'});
-  return if ( !$Ticket->id );
-  my $custnum = $opt{'custnum'};
-  if ( defined($custnum) && $custnum =~ /^\d+$/ ) {
-    # probably the most efficient way to check ticket ownership
-    my $Link = RT::Link->new($session->{CurrentUser});
-    $Link->LoadByCols( LocalBase => $opt{'ticket_id'},
-                       Type      => 'MemberOf',
-                       Target    => "freeside://freeside/cust_main/$custnum",
-                     );
-    return if ( !$Link->id );
+  # use a small search here so we can check ticket ownership
+  my $query;
+  if ( $opt{'ticket_id'} =~ /^(\d+)$/ ) {
+    $query = "id = $1";
+  } else {
+    return;
   }
-  return $Ticket;
+  if ( $opt{'custnum'} =~ /^(\d+)$/ ) {
+    $query .= " AND Customer.number = $1"; # also checks ownership via services
+  }
+  my $Tickets = RT::Tickets->new($session->{CurrentUser});
+  $Tickets->FromSQL($query);
+  return $Tickets->First;
 }
-
 
 =item correspond_ticket SESSION_HASHREF, OPTION => VALUE ...
 

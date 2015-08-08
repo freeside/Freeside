@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -67,8 +67,6 @@ package RT::CustomFields;
 
 use strict;
 use warnings;
-
-use DBIx::SearchBuilder::Unique;
 
 use RT::CustomField;
 
@@ -369,22 +367,20 @@ sub _OCFAlias {
 }
 
 
-=head2 Next
+=head2 AddRecord
 
-Returns the next custom field that this user can see.
+Overrides the collection to ensure that only custom fields the user can
+see are returned; also propagates down the L</ContextObject>.
 
 =cut
 
-sub Next {
+sub AddRecord {
     my $self = shift;
+    my ($record) = @_;
 
-    my $CF = $self->SUPER::Next();
-    return $CF unless $CF;
-
-    $CF->SetContextObject( $self->ContextObject );
-
-    return $self->Next unless $CF->CurrentUserHasRight('SeeCustomField');
-    return $CF;
+    $record->SetContextObject( $self->ContextObject );
+    return unless $record->CurrentUserHasRight('SeeCustomField');
+    return $self->SUPER::AddRecord( $record );
 }
 
 =head2 NewItem

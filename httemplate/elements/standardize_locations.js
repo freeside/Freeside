@@ -13,7 +13,7 @@ function form_address_info() {
 % }
 % for my $pre (@prefixes) {
 %   # normal case
-%   for my $field (qw(address1 address2 city state zip country)) {
+%   for my $field (qw(address1 address2 state zip country), ($conf->exists('cust_main-no_city_in_address') ? () : 'city')) {
     returnobj['<% $pre %><% $field %>'] = cf.elements['<% $pre %><% $field %>'].value;
 %   } #for $field
 %   if ( $withcensus ) {
@@ -145,7 +145,7 @@ function replace_address() {
   var clean = newaddr['<% $pre %>addr_clean'] == 'Y';
   var error = newaddr['<% $pre %>error'];
   if ( clean ) {
-%   foreach my $field (qw(address1 address2 city state zip addr_clean )) {
+%   foreach my $field (qw(address1 address2 state zip addr_clean ),($conf->exists('cust_main-no_city_in_address') ? () : 'city')) {
     cf.elements['<% $pre %><% $field %>'].value = newaddr['<% $pre %><% $field %>'];
 %   } #foreach $field
 

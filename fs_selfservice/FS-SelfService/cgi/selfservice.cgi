@@ -23,6 +23,7 @@ use FS::SelfService qw(
   mason_comp port_graph
   start_thirdparty finish_thirdparty
   reset_passwd check_reset_passwd process_reset_passwd
+  billing_history
 );
 
 $template_dir = '.';
@@ -82,6 +83,7 @@ my @actions = ( qw(
   process_change_password
   customer_suspend_pkg
   process_suspend_pkg
+  history
 ));
 
 my @nologin_actions = (qw(
@@ -339,6 +341,10 @@ sub invoices {
   list_invoices( 'session_id' => $session_id, );
 }
 
+sub history {
+  billing_history( 'session_id' => $session_id, );
+}
+
 sub tktcreate {
   my $customer_info = customer_info( 'session_id' => $session_id );
   return $customer_info if ( $customer_info->{'error'} );
@@ -563,10 +569,15 @@ sub make_payment {
 
   my $payment_info = payment_info( 'session_id' => $session_id );
 
+  my $amount = 
+    ($payment_info->{'balance'} && ($payment_info->{'balance'} > 0))
+    ? $payment_info->{'balance'}
+    : '';
+
   my $tr_amount_fee = mason_comp(
     'session_id' => $session_id,
     'comp'       => '/elements/tr-amount_fee.html',
-    'args'       => [ 'amount' => $payment_info->{'balance'},
+    'args'       => [ 'amount' => $amount,
                     ],
   );
 

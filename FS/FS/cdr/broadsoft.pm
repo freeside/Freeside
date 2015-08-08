@@ -39,7 +39,8 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     skip(17),
     sub { my($cdr, $accountcode) = @_;
     if ($cdr->is_tollfree){
-        $cdr->set('accountcode', $cdr->dst);
+	my $dst = substr($cdr->dst,0,32);
+        $cdr->set('accountcode', $dst);
     } else {
         $cdr->set('accountcode', $accountcode);
     }},

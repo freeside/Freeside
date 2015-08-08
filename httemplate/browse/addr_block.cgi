@@ -1,71 +1,71 @@
-<% include('elements/browse.html',
-                'title'         => 'Address Blocks',
-                'name'          => 'address block',
-                'html_init'     => $html_init,
-                'html_foot'     => $html_foot,
-                'query'         => { 'table'     => 'addr_block',
-                                     'hashref'   => {},
-                                     'extra_sql' => $extra_sql,
-                                     'order_by'  => $order_by,
-                                   },
-                'count_query'   => "SELECT count(*) from addr_block $count_sql",
-                'header'        => [ 'Address Block',
-                                     'Router',
-                                     'Action(s)',
-                                     '',
-                                     '',
-                                     '',
-                                   ],
-                'fields'        => [ 'NetAddr',
-                                     sub { my $block = shift;
-                                           my $router = $block->router;
-                                           my $result = '';
-                                           if ($router) {
-                                             $result .= $router->routername. ' (';
-                                             $result .= scalar($block->svc_broadband). ' services)';
-                                           }
-                                           $result;
-                                         },
-                                     $allocate_text,
-                                     sub { shift->router ? '' : '<FONT SIZE="-2">(split)</FONT>' },
-                                     sub { '<FONT SIZE="-2">('. (shift->manual_flag ? 'allow' : 'prevent'). ' automatic ip assignment)</FONT>' },
-                                     sub { 
-                                        my $block = shift;
-                                        if(!$block->router && scalar($block->svc_broadband) == 0) {
-                                            return '<FONT SIZE="-2">(delete)</FONT>';
-                                        }
-                                        '';
-                                     },
-                                   ],
-                'links'         => [ '',
-                                     '',
-                                     [ 'javascript:void(0)', '' ],
-                                     $split_link,
-                                     $autoassign_link,
-                                     sub {
-                                        my $block = shift;
-                                        if(!$block->router && scalar($block->svc_broadband) == 0) {
-                                            [ "${p}misc/delete-addr_block.html?", 'blocknum' ];
-                                        }
-                                     },
-                                   ],
-                'link_onclicks' => [ '',
-                                     '',
-                                     $allocate_link,
-                                     '',
-                                     '',
-                                   ],
-                'cell_styles'   => [ '',
-                                     '',
-                                     'border-right:none;',
-                                     'border-left:none;',
-                                     '',
-                                   ],
-                'agent_virt'    => 1,
-                'agent_null_right' => 'Broadband global configuration',
-                'agent_pos'     => 1,
-          )
-%>
+<& elements/browse.html,
+     'title'         => 'Address Blocks',
+     'name'          => 'address block',
+     'html_init'     => $html_init,
+     'html_foot'     => $html_foot,
+     'query'         => { 'table'     => 'addr_block',
+                          'hashref'   => {},
+                          'extra_sql' => $extra_sql,
+                          'order_by'  => $order_by,
+                        },
+     'count_query'   => "SELECT count(*) from addr_block $count_sql",
+     'header'        => [ 'Address Block',
+                          'Router',
+                          'Action(s)',
+                          '',
+                          '',
+                          '',
+                        ],
+     'fields'        => [ 'NetAddr',
+                          sub { my $block = shift;
+                                my $router = $block->router;
+                                my $result = '';
+                                if ($router) {
+                                  $result .= $router->routername. ' (';
+                                  $result .= scalar($block->svc_broadband). ' services)';
+                                }
+                                $result;
+                              },
+                          $allocate_text,
+                          sub { shift->router ? '' : '<FONT SIZE="-2">(split)</FONT>' },
+                          sub { '<FONT SIZE="-2">('. (shift->manual_flag ? 'allow' : 'prevent'). ' automatic ip assignment)</FONT>' },
+                          sub { 
+                             my $block = shift;
+                             if(!$block->router && scalar($block->svc_broadband) == 0) {
+                                 return '<FONT SIZE="-2">(delete)</FONT>';
+                             }
+                             '';
+                          },
+                        ],
+     'sort_fields'   => [],
+     'links'         => [ '',
+                          '',
+                          [ 'javascript:void(0)', '' ],
+                          $split_link,
+                          $autoassign_link,
+                          sub {
+                             my $block = shift;
+                             if(!$block->router && scalar($block->svc_broadband) == 0) {
+                                 [ "${p}misc/delete-addr_block.html?", 'blocknum' ];
+                             }
+                          },
+                        ],
+     'link_onclicks' => [ '',
+                          '',
+                          $allocate_link,
+                          '',
+                          '',
+                        ],
+     'cell_styles'   => [ '',
+                          '',
+                          'border-right:none;',
+                          'border-left:none;',
+                          '',
+                        ],
+     'agent_virt'    => 1,
+     'agent_null_right' => 'Broadband global configuration',
+     'agent_pos'     => 1,
+&>
 <%init>
 
 die "access denied"

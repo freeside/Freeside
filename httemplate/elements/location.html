@@ -169,7 +169,11 @@ Example:
 
 
 <TR>
-  <<%$th%> ALIGN="right"><%$r%><% mt('City') |h %></<%$th%>>
+  <<%$th%> ALIGN="right">
+% unless ($conf->exists('cust_main-no_city_in_address')) {
+  <% $r %><% mt('City') |h %>
+% }
+  </<%$th%>>
   <TD WIDTH="1"><% include('/elements/city.html', %select_hash, 'text_style' => \@style ) %></TD>
   <<%$th%> ALIGN="right" WIDTH="1" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
   <TD WIDTH="1"><% include('/elements/select-county.html', %select_hash ) %></TD>
@@ -285,7 +289,7 @@ Example:
   var clear_coords_on_change = [
     '<%$pre%>address1',
     '<%$pre%>address2',
-    '<%$pre%>city',
+    <% $conf->exists('cust_main-no_city_in_address') ? '' : qq('${pre}city',) %>
     '<%$pre%>state',
     '<%$pre%>zip',
     '<%$pre%>country'

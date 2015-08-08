@@ -68,7 +68,7 @@ Address line two (optional)
 
 =item city
 
-City
+City (if cust_main-no_city_in_address config is set when inserting, this will be forced blank)
 
 =item county
 
@@ -147,6 +147,12 @@ sub find_or_insert {
   my @essential = (qw(custnum address1 address2 city county state zip country
     location_number location_type location_kind disabled));
 
+  if ($conf->exists('cust_main-no_city_in_address')) {
+    warn "Warning: passed city to find_or_insert when cust_main-no_city_in_address is configured, ignoring it"
+      if $self->get('city');
+    $self->set('city','');
+  }
+
   # I don't think this is necessary
   #if ( !$self->coord_auto and $self->latitude and $self->longitude ) {
   #  push @essential, qw(latitude longitude);
@@ -201,6 +207,12 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
+
+  if ($conf->exists('cust_main-no_city_in_address')) {
+    warn "Warning: passed city to insert when cust_main-no_city_in_address is configured, ignoring it"
+      if $self->get('city');
+    $self->set('city','');
+  }
 
   if ( $self->censustract ) {
     $self->set('censusyear' => $conf->config('census_year') || 2012);
@@ -266,6 +278,10 @@ sub replace {
   my $self = shift;
   my $old = shift;
   $old ||= $self->replace_old;
+
+  warn "Warning: passed city to replace when cust_main-no_city_in_address is configured"
+    if $conf->exists('cust_main-no_city_in_address') && $self->get('city');
+
   # the following fields are immutable
   foreach (qw(address1 address2 city state zip country)) {
     if ( $self->$_ ne $old->$_ ) {
@@ -325,7 +341,9 @@ sub check {
     || $self->ut_textn('locationname')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
-    || $self->ut_text('city')
+    || ($conf->exists('cust_main-no_city_in_address') 
+        ? $self->ut_textn('city') 
+        : $self->ut_text('city'))
     || $self->ut_textn('county')
     || $self->ut_textn('state')
     || $self->ut_country('country')
@@ -715,58 +733,6 @@ sub cust_main {
   my $self = shift;
   return '' unless $self->custnum;
   qsearchs('cust_main', { 'custnum' => $self->custnum } );
-}
-
-=back
-
-=head1 CLASS METHODS
-
-=item in_county_sql OPTIONS
-
-Returns an SQL expression to test membership in a cust_main_county 
-geographic area.  By default, this requires district, city, county,
-state, and country to match exactly.  Pass "ornull => 1" to allow 
-partial matches where some fields are NULL in the cust_main_county 
-record but not in the location.
-
-Pass "param => 1" to receive a parameterized expression (rather than
-one that requires a join to cust_main_county) and a list of parameter
-names in order.
-
-=cut
-
-sub in_county_sql {
-  # replaces FS::cust_pkg::location_sql
-  my ($class, %opt) = @_;
-  my $ornull = $opt{ornull} ? ' OR ? IS NULL' : '';
-  my $x = $ornull ? 3 : 2;
-  my @fields = (('district') x 3,
-                ('city') x 3,
-                ('county') x $x,
-                ('state') x $x,
-                'country');
-
-  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
-
-  my @where = (
-    "cust_location.district = ? OR ? = '' OR CAST(? AS $text) IS NULL",
-    "cust_location.city     = ? OR ? = '' OR CAST(? AS $text) IS NULL",
-    "cust_location.county   = ? OR (? = '' AND cust_location.county IS NULL) $ornull",
-    "cust_location.state    = ? OR (? = '' AND cust_location.state IS NULL ) $ornull",
-    "cust_location.country = ?"
-  );
-  my $sql = join(' AND ', map "($_)\n", @where);
-  if ( $opt{param} ) {
-    return $sql, @fields;
-  }
-  else {
-    # do the substitution here
-    foreach (@fields) {
-      $sql =~ s/\?/cust_main_county.$_/;
-      $sql =~ s/cust_main_county.$_ = ''/cust_main_county.$_ IS NULL/;
-    }
-    return $sql;
-  }
 }
 
 =back

@@ -679,10 +679,12 @@ invoice_latexfooter
 invoice_latexsmallfooter
 invoice_latexnotes
 invoice_latexcoupon
+invoice_latexwatermark
 invoice_html
 invoice_htmlreturnaddress
 invoice_htmlfooter
 invoice_htmlnotes
+invoice_htmlwatermark
 logo.png
 logo.eps
 );
@@ -776,6 +778,11 @@ sub reason_type_options {
     $type ? $type->type : '';
   }
 }
+
+my $validate_email = sub { $_[0] =~
+                             /^[^@]+\@[[:alnum:]-]+(\.[[:alnum:]-]+)+$/
+                             ? '' : 'Invalid email address';
+                         };
 
 #Billing (81 items)
 #Invoicing (50 items)
@@ -1269,10 +1276,7 @@ sub reason_type_options {
     'description' => 'Return address on email invoices (address only, see invoice_from_name)',
     'type'        => 'text',
     'per_agent'   => 1,
-    'validate'    => sub { $_[0] =~
-                             /^[^@]+\@[[:alnum:]-]+(\.[[:alnum:]-]+)+$/
-                             ? '' : 'Invalid email address';
-                         }
+    'validate'    => $validate_email,
   },
 
   {
@@ -1375,6 +1379,15 @@ sub reason_type_options {
     'section'     => 'invoicing',
     'description' => 'Return address for HTML invoices.  Defaults to the same data in invoice_latexreturnaddress if not specified.',
     'type'        => 'textarea',
+    'per_locale'  => 1,
+  },
+
+  {
+    'key'         => 'invoice_htmlwatermark',
+    'section'     => 'invoicing',
+    'description' => 'Watermark for HTML invoices. Appears in a semitransparent positioned DIV overlaid on the main invoice container.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
     'per_locale'  => 1,
   },
 
@@ -1560,6 +1573,15 @@ and customer address. Include units.',
     'key'         => 'invoice_latexsmallfooter',
     'section'     => 'invoicing',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+    'per_locale'  => 1,
+  },
+
+  {
+    'key'         => 'invoice_latexwatermark',
+    'section'     => 'invoicing',
+    'description' => 'Watermark for LaTeX invoices. See "texdoc background" for information on what this can contain. The content itself should be enclosed in braces, optionally followed by a comma and any formatting options.',
     'type'        => 'textarea',
     'per_agent'   => 1,
     'per_locale'  => 1,
@@ -2762,6 +2784,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'dump-email_to',
+    'section'     => '',
+    'description' => "Optional email address to send success/failure message for database dumps.",
+    'type'        => 'text',
+    'validate'    => $validate_email,
+  },
+
+  {
     'key'         => 'users-allow_comp',
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, enable the <i>Complimentary customer</i> access right instead.  Was: Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
@@ -3940,6 +3970,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'batchconfig-RBC-login',
+    'section'     => 'billing',
+    'description' => 'FTPS login for uploading Royal Bank of Canada batches. Two lines: 1. username, 2. password. If not supplied, batches can still be created but not automatically uploaded.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'batchconfig-td_eft1464',
     'section'     => 'billing',
     'description' => 'Configuration for TD Bank EFT1464 batching, seven lines: 1. Originator ID, 2. Datacenter Code, 3. Short name, 4. Long name, 5. Returned payment branch number, 6. Returned payment account, 7. Transaction code.',
@@ -3972,6 +4009,13 @@ and customer address. Include units.',
     'key'         => 'batchconfig-nacha-origin',
     'section'     => 'billing',
     'description' => 'Configuration for NACHA batching, Origin (your 10-digit company number, IRS tax ID recommended).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batchconfig-nacha-origin_name',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Origin name (defaults to company name, but sometimes bank name is needed instead.)',
     'type'        => 'text',
   },
 
@@ -4529,6 +4573,13 @@ and customer address. Include units.',
     'key'         => 'cust_main-require_censustract',
     'section'     => 'UI',
     'description' => 'Customer is required to have a census tract.  Useful for FCC form 477 reports. See also: cust_main-auto_standardize_address',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-no_city_in_address',
+    'section'     => 'UI',
+    'description' => 'Turn off City for billing & shipping addresses',
     'type'        => 'checkbox',
   },
 
@@ -5720,7 +5771,6 @@ and customer address. Include units.',
     'multiple'    => 1,
     'options_sub' => sub { 
       map { $_ => FS::Locales->description($_) }
-      grep { $_ ne 'en_US' } 
       FS::Locales->locales;
     },
     'option_sub'  => sub { FS::Locales->description(shift) },
@@ -5831,6 +5881,13 @@ and customer address. Include units.',
     'key'         => 'selfservice-hide_cdr_price',
     'section'     => 'self-service',
     'description' => 'Don\'t show the "Price" column on CDRs in self-service.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-enable_payment_without_balance',
+    'section'     => 'self-service',
+    'description' => 'Allow selfservice customers to make payments even if balance is zero or below (resulting in an unapplied payment and negative balance.)',
     'type'        => 'checkbox',
   },
 
@@ -6013,6 +6070,15 @@ and customer address. Include units.',
   { key => "vonage-username", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "vonage-password", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "vonage-fromnumber", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+
+  # for internal use only; test databases should declare this option and
+  # everyone else should pretend it doesn't exist
+  #{
+  #  'key'         => 'no_random_ids',
+  #  'section'     => '',
+  #  'description' => 'Replace random identifiers in UI code with a static string, for repeatable testing. Don\'t use in production.',
+  #  'type'        => 'checkbox',
+  #},
 
 );
 

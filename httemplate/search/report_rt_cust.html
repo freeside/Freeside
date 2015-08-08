@@ -1,0 +1,40 @@
+<& /elements/header.html, 'Time worked per-customer summary' &>
+
+<FORM ACTION="rt_cust.html" METHOD="GET">
+
+<TABLE>
+
+  <& /elements/tr-select-cust_main-status.html,
+                'label' => emt('Status'),
+  &>
+
+  <& /elements/tr-input-beginning_ending.html &>
+
+<!--
+  <& /elements/tr-select.html,
+      label       => 'Time category:',
+      field       => 'category',
+      options     => [ '', 'development', 'support' ],
+      option_labels => { '' => 'all' },
+      curr_value  => 'development',
+  &>
+
+  <& /elements/tr-select-otaker.html &>
+-->
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Search">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+my $conf = new FS::Conf;
+
+</%init>

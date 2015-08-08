@@ -117,6 +117,10 @@ books closed flag, empty or `Y'
 
 Desired pkgnum when using experimental package balances.
 
+=item no_auto_apply
+
+Flag to only allow manual application of payment, empty or 'Y'
+
 =item bank
 
 The bank where the payment was deposited.
@@ -558,6 +562,7 @@ sub check {
     || $self->ut_textn('paybatch')
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_flag('no_auto_apply')
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_textn('bank')
     || $self->ut_alphan('depositor')
@@ -1230,23 +1235,26 @@ sub process_batch_import {
     return %hash;
   };
 
-  my $opt = { 'table'   => 'cust_pay',
-              'params'  => [ '_date', 'agentnum', 'payby', 'paybatch' ],
-                                         #agent_custid isn't a cust_pay field, see hash callback
-              'formats' => { 'simple' => [ qw(custnum agent_custid paid payinfo invnum) ] },
-              'format_types' => { 'simple' => '' }, #force infer from file extension
-              'default_csv' => 1, #if it's not .xls, it'll read as csv, regardless of extension
-              'format_hash_callbacks' => { 'simple' => $hashcb },
-              'postinsert_callback' => sub {
-                 my $cust_pay = shift;
-                 my $cust_main = $cust_pay->cust_main ||
-                   return "can't find customer to which payments apply";
-                 my $error = $cust_main->apply_payments_and_credits;
-                 return $error
-                   ? "can't apply payments to customer ".$cust_pay->custnum."$error"
-                   : '';
-              },
-            };
+  my $opt = {
+    'table'        => 'cust_pay',
+    'params'       => [ '_date', 'agentnum', 'payby', 'paybatch' ],
+                        #agent_custid isn't a cust_pay field, see hash callback
+    'formats'      => { 'simple' =>
+                          [ qw(custnum agent_custid paid payinfo invnum) ] },
+    'format_types' => { 'simple' => '' }, #force infer from file extension
+    'default_csv'  => 1, #if not .xls, will read as csv, regardless of extension
+    'format_hash_callbacks' => { 'simple' => $hashcb },
+    'insert_args_callback'  => sub { ( 'manual'=>1 ) },
+    'postinsert_callback'   => sub {
+      my $cust_pay = shift;
+      my $cust_main = $cust_pay->cust_main
+                        or return "can't find customer to which payments apply";
+      my $error = $cust_main->apply_payments_and_credits;
+      return $error
+               ? "can't apply payments to customer ".$cust_pay->custnum."$error"
+               : '';
+    },
+  };
 
   FS::Record::process_batch_import( $job, $opt, @_ );
 

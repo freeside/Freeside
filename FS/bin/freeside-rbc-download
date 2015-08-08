@@ -1,0 +1,160 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format qw(time2str);
+use File::Temp qw(tempdir); #0.19 for ->newdir() interface, not in 5.10.0
+use Net::FTPSSL;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch qsearchs);
+use FS::pay_batch;
+use FS::Conf;
+
+use vars qw( $opt_v $opt_a $opt_f );
+getopts('va:f:');
+
+#$Net::SFTP::Foreign::debug = -1;
+sub usage { "
+  Usage:
+      freeside-rbc-download [ -v ] [ -a archivedir ] [ -f filename ] user\n
+" }
+
+sub debug {
+  print STDERR $_[0] if $opt_v;
+}
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+if ( $opt_a ) {
+  die "no such directory: $opt_a\n"
+    unless -d $opt_a;
+  die "archive directory $opt_a is not writable by the freeside user\n"
+    unless -w $opt_a;
+}
+
+my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
+
+my $conf = new FS::Conf;
+my ($username, $password) = $conf->config('batchconfig-RBC-login');
+$username and $password
+  or die "RBC FTP login not configured. Enter your username and password in 'batchconfig-rbc-login'.\n";
+
+my $host = 'ftpssl.rbc.com';
+debug "Connecting to $username\@$host...\n";
+
+my $ftp = Net::FTPSSL->new($host,
+                           Timeout => 30,
+                           Debug => ($opt_v ? 1 : 0),
+                           Croak => 1, # rely on auto-rollback when dbh closes
+                          );
+$ftp->login($username, $password);
+
+# directory layout:
+# ~/                          # upload to here
+# ~/inbound
+# ~/inbound/valid             # batches move here while being processed
+# ~/outbound
+# ~/outbound/XXXX             # string of four characters; results arrive here
+
+$ftp->cwd('outbound');
+for my $dir ( $ftp->nlst ) {
+  debug "Entering outbound/$dir\n";
+  $ftp->cwd($dir);
+  FILE: for my $filename ( $ftp->nlst ) {
+    debug "$filename...";
+    # filenames look like "RPT9999X.111".
+    # 9999 is the four-digit report type
+    # X is "P" for production or "T" for test
+    # 111 is the sequential file number
+    if ( $opt_f ) {
+      if ( $filename ne $opt_f ) {
+        debug "is not the requested file.\n";
+        next FILE;
+      }
+      # -f can be used to download/process any file, even one that doesn't fit
+      # the naming rule (e.g. those that are already downloaded).
+    } elsif ( $filename =~ /^RPT(\d{4})[PT]\.\d{3}$/ ) {
+      # fallthrough; don't currently reject files based on RPT type, because
+      # our parser should be able to figure it out
+    } else {
+      debug "skipped.\n";
+      next FILE;
+    }
+
+    debug "downloading.\n";
+    $ftp->get($filename, "$tmpdir/$filename");
+
+    #copy to archive dir
+    if ( $opt_a ) {
+      debug "Copying to archive dir $opt_a\n";
+      system 'cp', "$tmpdir/$filename", $opt_a;
+      warn "failed to copy $tmpdir/$filename to $opt_a: $!\n" if $!;
+    }
+
+    debug "Processing batch...";
+    open(my $fh, '<', "$tmpdir/$filename")
+      or die "couldn't read temp file: $!\n";
+
+    my $error = FS::pay_batch->import_results(
+      filehandle  => $fh,
+      format      => 'RBC',
+    );
+
+    if ( $error ) {
+      die "Processing $filename failed:\n$error\n\n";
+    }
+
+    debug "done.\n";
+  } # FILE
+  $ftp->cdup();
+} # $dir
+
+debug "Finished.\n";
+dbh->commit;
+exit(0);
+
+=head1 NAME
+
+freeside-rbc-download - Retrieve payment batch responses from RBC.
+
+=head1 SYNOPSIS
+
+  freeside-rbc-download [ -v ] [ -f filename ] [ -a archivedir ] user
+
+=head1 DESCRIPTION
+
+Command line tool to download payment batch responses from the Royal Bank of 
+Canada ACH service. These files are fixed-width data files containing some
+combination of valid, returned, or reversed payment records.
+
+By default, the script will download any files with names like "RPT9999X.111"
+where 9999 is a four-digit document type code (like "0900", all records), X is
+the letter "P" for production or "T" for test mode, and 111 is a counter
+incremented with each new response file. After the files are downloaded, RBC's
+server will automatically rename them with the suffix '.downloaded%FTPS' to 
+avoid double-processing them.
+
+
+-v: Be verbose.
+
+-f filename: Download a file with a specific name, instead of all files 
+matching the pattern. This can be used to reprocess a specific file.
+
+-a directory: Archive the files in the specified directory.
+
+user: freeside username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+

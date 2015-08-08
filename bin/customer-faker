@@ -9,18 +9,24 @@ use FS::Record qw(qsearch);
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::svc_acct;
+use FS::svc_phone;
+use FS::svc_domain;
+use FS::svc_broadband;
+use FS::state;
+use Data::Dumper;
+use strict;
 
 my $refnum = 1;
 
 #my @pkgs = ( 4, 5, 6 );
-my $svcpart = 2;
 
 use vars qw( $opt_p $opt_a $opt_k );
 getopts('p:a:k:');
 
 my $agentnum = $opt_a || 1;
 
-my @pkgs = $opt_k ? split(/,\s*/, $opt_k) : ( 2, 3, 4 );
+my @pkgs = split(/,\s*/, $opt_k);
+@pkgs or die &usage;
 
 my $user = shift or die &usage;
 my $num = shift or die &usage;
@@ -29,86 +35,150 @@ adminsuidsetup($user);
 my $onum = $num;
 my $start = time;
 
-my @states = qw( AL AK AS AZ AR CA CO CT DE DC FL GA GU HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND MP OH OK OR PA PR RI SC SD TN TX UT VT VI VA WA WV WI WY );
-#FM MH
+our $faker = Data::Faker->new;
+our @states = map { $_->get('state') } qsearch('state', { country => 'US' });
 
-until ( $num-- <= 0 ) {
+sub location {
+  # yeah, produces cities/states/zip codes that don't match up;
+  # a future version of this might check for that
+  my $tries = 5;
+  my $error;
+  while ($tries--) {
+    # Data::Faker sometimes returns stupid results that don't pass our data
+    # checks. keep trying until it gets it right.
+    my $location = FS::cust_location->new({
+      'address1' => $faker->street_address,
+      'address2' => (rand() < 0.2 ?
+        ($faker->secondary_unit_designator . ' ' . $faker->secondary_unit_number)
+        : ''
+      ),
+      'city'     => $faker->city,
+      'state'    => $states[ int(rand($#states)) ],
+      'zip'      => $faker->us_zip_code,
+      'country'  => 'US',
+      'custnum'  => 1, # just so we can check it
+    });
+    $error = $location->check;
+    if (!$error) {
+      $location->custnum('');
+      return $location;
+    }
+  }
+  die "couldn't create a valid location: $error\n";
+}
 
-  my $faker = new Data::Faker;
+for ( my $num = 0; $num < $onum; $num++ ) {
 
+  print "$num\n";
   my $cust_main = new FS::cust_main {
     'agentnum' => $agentnum,
     'refnum'   => $refnum,
     'first'    => $faker->first_name,
     'last'     => $faker->last_name,
-    'company'  => ( $num % 2 ? $faker->company. ', '. $faker->company_suffix : '' ), #half with companies..
-    'address1' => $faker->street_address,
-    'city'     => 'Tofutown', #missing, so everyone is from tofutown# $faker->city,
-    #'state'    => $faker->us_state_abbr,
-    'state'    => $states[ int(rand($#states)) ],
-    'zip'      => $faker->us_zip_code,
-    'country'  => 'US',
+    'company'  => ( $num % 2 ? $faker->company : '' ), #half with companies..
     'daytime'  => $faker->phone_number,
     'night'    => $faker->phone_number,
-    #forget it, these can have extensions# 'fax'      => ( $num % 2 ? $faker->phone_number : '' ), #ditto
-    #bah, forget shipping addresses
-    'payby'    => 'BILL',
+    'payby'    => '',
     'payip'    => $faker->ip_address,
   };
+  $cust_main->set('bill_location', location());
+  if ( $num % 10 == 0 ) {
+    $cust_main->set('ship_location', location());
+  } else {
+    $cust_main->set('ship_location', $cust_main->get('bill_location'));
+  }
 
-  if ( $opt_p eq 'CARD' || ( !$opt_p && rand() > .33 ) ) {
+  if ( $num % 3 > 0 ) {
     $cust_main->payby('CARD');
     my $cardnum = '4123'. sprintf('%011u', int(rand(100000000000)) );
     $cust_main->payinfo( $cardnum. generate_last_digit($cardnum) );
-    $cust_main->paydate( '2009-05-01' );
-  } elsif ( $opt_p eq 'CHEK' || ( !$opt_p && rand() > .66 ) ) {
+    $cust_main->paydate( '2020-05-01' );
+  } else {
     $cust_main->payby('CHEK');
     my $payinfo = sprintf('%7u@%09u', int(rand(10000000)), int(rand(1000000000)) ); 
     $cust_main->payinfo($payinfo);
-    $cust_main->payname( 'First International Bank of Testing' );
+    $cust_main->payname( 'Bank of Testing' );
   }
 
-  # could insert invoicing_list and other stuff too..  hell, could insert
-  # packages, services, more
-  # but i just wanted 10k customers to test the pager and this was good enough
-  # not anymore, here's some services and packages
-  
+  my $error = $cust_main->insert;
+  die Dumper($cust_main)."\ninserting cust_main:\n$error\n" if $error;
+
+  # scatter start dates within the first 6 months
   my $now = time;
-  my $year = 31556736; #60*60*24*365.24
-  my $setup = $now - int(rand($year));
+  my $period = 60*60*24*180;
+  my $start = $now + int(rand($period));
 
-  my $cust_pkg = new FS::cust_pkg {
-    'pkgpart' => $pkgs[ int(rand(scalar(@pkgs))) ],
+  # give each customer half of the specified set of packages
+  for (my $i = 0; $i <= scalar(@pkgs)/2; $i++) {
 
-    #some dates in here would be nice
-    'setup'      => $setup,
-    #'last_bill'
-    #'bill'
-    #'susp'
-    #'expire'
-    #'cancel'
-  };
+    my $pkgpart = $pkgs[ ($num + $i) % scalar(@pkgs) ],
+    my @svcs;
+    my $cust_pkg = new FS::cust_pkg {
+      'pkgpart'    => $pkgpart,
+      'start_date' => $start,
+    };
+    foreach my $pkg_svc (qsearch('pkg_svc', { pkgpart => $pkgpart,
+                                              quantity => {op => '>', value => 0},
+                                            }))
+    {
+      my $part_svc = $pkg_svc->part_svc;
+      my $svc;
+      if ( $part_svc->svcdb eq 'svc_acct' ) {
+        $svc = new FS::svc_acct {
+          'username' => $faker->username,
+        };
+        $svc->set_password;
 
-  my $svc_acct = new FS::svc_acct {
-    'svcpart'  => $svcpart,
-    'username' => $faker->username,
-  };
+        while ( FS::svc_acct->count('username = ?', $svc->username) ) {
+          my $username = $svc->username;
+          $username++;
+          $svc->username($username);
+        }
+      } elsif ( $part_svc->svcdb eq 'svc_broadband' ) {
+        $svc = new FS::svc_broadband {
+          'ip_addr' => sprintf('10.%u.%u.%u',
+            int(rand(255)),
+            int(rand(255)),
+            int(rand(255))
+          ),
+          'mac_addr' => sprintf('00:00:%02x:%02x:%02x:%02x',
+            int(rand(255)),
+            int(rand(255)),
+            int(rand(255)),
+            int(rand(255))
+          ),
+        };
+      } elsif ( $part_svc->svcdb eq 'svc_phone' ) {
+        my $phonenum = $faker->phone_number;
+        $phonenum =~ s/\D//g;
+        $svc = new FS::svc_phone {
+          'phonenum'  => $phonenum,
+          'pin'       => sprintf('%05u', int(rand(100000))),
+        };
+      } elsif ( $part_svc->svcdb eq 'svc_domain' ) {
+        my $domain;
+        do {
+          $domain = $faker->domain_word . '.com';
+        } until FS::svc_domain->count('domain = ?', $domain) == 0;
+        $svc = new FS::svc_domain {
+          domain => $domain
+        };
+      } else {
+        # unsupported svc_x; do nothing
+        next;
+      }
+      $svc->set('svcpart', $part_svc->svcpart);
+      push @svcs, $svc;
+    } # foreach $pkg_svc
 
-  while ( qsearch( 'svc_acct', { 'username' => $svc_acct->username } ) ) {
-    my $username = $svc_acct->username;
-    $username++;
-    $svc_acct->username($username);
-  }
+    $error = $cust_main->order_pkg(
+      cust_pkg  => $cust_pkg,
+      svcs      => \@svcs,
+    );
+    die Dumper($cust_pkg) . "\ninserting cust_pkg:\n$error\n" if $error;
+  } # package
 
-  use Tie::RefHash;
-  tie my %hash, 'Tie::RefHash',
-    $cust_pkg => [ $svc_acct ],
-  ;
-
-  my $error = $cust_main->insert( \%hash );
-  die $error if $error;
-
-}
+} # customer
 
 my $end = time;
 
@@ -120,5 +190,5 @@ print "$onum customers inserted in $sec seconds ($persec customers/sec)\n";
 #---
 
 sub usage {
-  die "Usage:\n\n  customer-faker [ -p payby ] [ -a agentnum ] [ -k pkgpart,pkgpart,pkgpart... ] user num_fakes\n";
+  die "Usage:\n\n  customer-faker [ -a agentnum ] [ -k pkgpart,pkgpart,pkgpart... ] user num_fakes\n";
 }

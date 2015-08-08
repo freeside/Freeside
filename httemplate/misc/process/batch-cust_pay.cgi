@@ -12,7 +12,8 @@ my $paybatch = time2str('webbatch-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 my @cust_pay = ();
 #my $row = 0;
 #while ( exists($param->{"custnum$row"}) ) {
-for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
+my @invrows = grep(/^invnum\d+\.\d+$/, keys %$param);
+foreach my $row ( map /^custnum(\d+)$/, keys %$param ) {
   my $custnum = $param->{"custnum$row"};
   my $cust_main;
   if ( $custnum =~ /^(\d+)$/ and $1 <= 2147483647 ) {
@@ -39,6 +40,7 @@ for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
                     'payinfo'        => $param->{"payinfo$row"},
                     'discount_term'  => $param->{"discount_term$row"},
                     'paybatch'       => $paybatch,
+                    'no_auto_apply'  => exists($param->{"no_auto_apply$row"}) ? 'Y' : '',
                   }
     if    $param->{"custnum$row"}
        || $param->{"paid$row"}
@@ -48,7 +50,8 @@ for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
 
   # payment applications, if any
   my @cust_bill_pay = ();
-  for ( my $app = 0; exists($param->{"invnum$row.$app"}); $app++ ) {
+  foreach my $app ( sort {$a <=> $b} map /^invnum$row\.(\d+)$/, @invrows ) {
+#  for ( my $app = 0; exists($param->{"invnum$row.$app"}); $app++ ) {
     next if !$param->{"invnum$row.$app"};
     push @cust_bill_pay, new FS::cust_bill_pay {
                             'invnum'  => $param->{"invnum$row.$app"},

@@ -38,9 +38,15 @@ primary key
 
 =item devicename
 
-devicename
+device name (used in Freeside)
 
 =item inventory_classnum
+
+L<FS::inventory_class> used to track inventory of these devices.
+
+=item title
+
+external device name (for export)
 
 =back
 
@@ -105,6 +111,7 @@ sub check {
     $self->ut_numbern('devicepart')
     || $self->ut_text('devicename')
     || $self->ut_foreign_keyn('inventory_classnum', 'inventory_class', 'classnum')
+    || $self->ut_textn('title')
   ;
   return $error if $error;
 

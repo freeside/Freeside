@@ -105,6 +105,13 @@ sub ss2clientapi {
   'switch_acct'               => 'MyAccount/switch_acct',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
+
+  'contact_passwd'            => 'MyAccount/contact/contact_passwd',
+  'list_contacts'             => 'MyAccount/contact/list_contacts',
+  'edit_contact'              => 'MyAccount/contact/edit_contact',
+  'delete_contact'            => 'MyAccount/contact/delete_contact',
+  'new_contact'               => 'MyAccount/contact/new_contact',
+
   'billing_history'           => 'MyAccount/billing_history',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',

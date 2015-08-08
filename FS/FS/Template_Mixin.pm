@@ -818,35 +818,36 @@ sub print_generic {
   my @include = ( [ $tc,        'notes' ],
                   [ 'invoice_', 'footer' ],
                   [ 'invoice_', 'smallfooter', ],
+                  [ 'invoice_', 'watermark' ],
                 );
   push @include, [ $tc,        'coupon', ]
     unless $params{'no_coupon'};
 
   foreach my $i (@include) {
 
+    # load the configuration for this sub-template
+
     my($base, $include) = @$i;
 
     my $inc_file = $conf->key_orbase("$base$format$include", $template);
-    my @inc_src;
 
-    if ( $conf->exists($inc_file, $agentnum)
-         && length( $conf->config($inc_file, $agentnum) ) ) {
+    my @inc_src = $conf->config($inc_file, $agentnum);
+    if (!@inc_src) {
+      my $converter = $convert_maps{$format}{$include};
+      if ( $converter ) {
+        # then attempt to convert LaTeX to the requested format
+        $inc_file = $conf->key_orbase($base.'latex'.$include, $template);
+        @inc_src = &$converter( $conf->config($inc_file, $agentnum) );
+        foreach (@inc_src) {
+          # this isn't included in the convert_maps
+          my ($open, $close) = @{ $delimiters{$format} };
+          s/\[\@--/$open/g;
+          s/--\@\]/$close/g;
+        }
+      }
+    } # else @inc_src is empty and that's fine
 
-      @inc_src = $conf->config($inc_file, $agentnum);
-
-    } else {
-
-      $inc_file = $conf->key_orbase("${base}latex$include", $template);
-
-      my $convert_map = $convert_maps{$format}{$include};
-
-      @inc_src = map { s/\[\@--/$delimiters{$format}[0]/g;
-                       s/--\@\]/$delimiters{$format}[1]/g;
-                       $_;
-                     } 
-                 &$convert_map( $conf->config($inc_file, $agentnum) );
-
-    }
+    # make a Text::Template out of it
 
     my $inc_tt = new Text::Template (
       TYPE       => 'ARRAY',
@@ -859,6 +860,8 @@ sub print_generic {
       warn $error. "Template:\n". join('', map "$_\n", @inc_src);
       die $error;
     }
+
+    # fill in variables
 
     $invoice_data{$include} = $inc_tt->fill_in( HASH => \%invoice_data );
 
@@ -1274,11 +1277,17 @@ sub print_generic {
 
     if ( $multisection ) {
       if ( $taxtotal > 0 ) {
+        # there are taxes, so prepare the section to be displayed.
+        # $taxtotal already includes any line items that were already in the
+        # section (fees, taxes that are charged as packages for some reason).
+        # also set 'summarized' to false so that this isn't a summary-only
+        # section.
         $tax_section->{'subtotal'} = $other_money_char.
                                      sprintf('%.2f', $taxtotal);
         $tax_section->{'pretotal'} = 'New charges sub-total '.
                                      $total->{'total_amount'};
         $tax_section->{'description'} = $self->mt($tax_description);
+        $tax_section->{'summarized'} = '';
 
         # append it if it's not already there
         if ( !grep $tax_section, @sections ) {
@@ -2489,7 +2498,6 @@ sub _items_sections {
       foreach my $sectionname (keys %{ $s->{$locationnum} }) {
         my $section = {
                         'subtotal'    => $s->{$locationnum}{$sectionname},
-                        'post_total'  => $post_total,
                         'sort_weight' => 0,
                       };
         if ( $locationnum ) {

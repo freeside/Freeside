@@ -26,11 +26,30 @@ function warnUnload() {
 }
 window.onbeforeunload = warnUnload;
 
-function add_row_callback(rownum, prefix) {
-  document.getElementById('enable_app'+rownum).disabled = true;
+function add_row_callback(rownum, values) {
+  if (values) {
+    custnum_update_callback(rownum);
+  } else {
+    document.getElementById('enable_app'+rownum).disabled = true;
+  }
 }
 
-function custnum_update_callback(rownum, prefix) {
+function delete_row_callback(rownum) {
+  var i = 0;
+  var delbutton = document.getElementById('delete'+rownum+'.'+i);
+  var delrows = [];
+  while (delbutton) {
+    delrows[i] = delbutton;
+    i++;
+    delbutton = document.getElementById('delete'+rownum+'.'+i);
+  }
+  delrows = delrows.reverse();
+  for (i = 0; i < delrows.length; i++) {
+    delrows[i].onclick();
+  }
+}
+
+function custnum_update_callback(rownum) {
   var custnum = document.getElementById('custnum'+rownum).value;
   // if there is a custnum and more than one open invoice, enable
   // (and check) the box
@@ -39,17 +58,17 @@ function custnum_update_callback(rownum, prefix) {
   enable_app_checkbox.disabled = show_applications;
 
 % if ( $use_discounts ) {
-  select_discount_term(rownum, prefix);
+  select_discount_term(rownum);
 % }
 }
 
-function invnum_update_callback(rownum, prefix) {
-  custnum_update_callback(rownum, prefix);
+function invnum_update_callback(rownum) {
+  custnum_update_callback(rownum);
 }
 
-function select_discount_term(row, prefix) {
-  var custnum_obj = document.getElementById('custnum'+prefix+row);
-  var select_obj = document.getElementById('discount_term'+prefix+row);
+function select_discount_term(row) {
+  var custnum_obj = document.getElementById('custnum'+row);
+  var select_obj = document.getElementById('discount_term'+row);
 
   var value = '';
   if (select_obj.type == 'hidden') {
@@ -313,17 +332,17 @@ function create_application_row(rownum, appnum) {
 
 %# for error handling--ugly, but the alternative is translating the whole 
 %# process of creating rows into Mason
-var row_array = <% encode_json(\@rows) %>;
+var row_obj = <% encode_json(\%rows) %>;
 function preload() {
   var rownum;
   var appnum;
-  for (rownum=0; rownum < row_array.length; rownum++) {
-    if ( row_array[rownum].length ) {
+  for (rownum in row_obj) {
+    if ( row_obj[rownum].length ) {
       var enable = document.getElementById('enable_app'+rownum);
       enable.checked = true;
       var preload_row = function(r) {//continuation from toggle_application_row
-        for (appnum=0; appnum < row_array[r].length; appnum++) {
-          this_app = row_array[r][appnum];
+        for (appnum=0; appnum < row_obj[r].length; appnum++) {
+          this_app = row_obj[r][appnum];
           var x = r + '.' + appnum;
           //set invnum
           var select_invnum = document.getElementById('invnum'+x);
@@ -345,7 +364,7 @@ function preload() {
         } //for appnum
       }; //preload_row function
       toggle_application_row.call(enable, null, preload_row);
-    } // if row_array[rownum].length
+    } // if (row_obj[rownum].length
   } //for rownum
 }
 
@@ -380,6 +399,7 @@ function preload() {
     custnum_update_callback => 'custnum_update_callback',
     invnum_update_callback => 'invnum_update_callback',
     add_row_callback => 'add_row_callback',
+    delete_row_callback => 'delete_row_callback',
 &>
 
 <BR>
@@ -387,13 +407,12 @@ function preload() {
 
 </FORM>
 
-%if ( $cgi->param('error') ) {
-<SCRIPT TYPE="text/javascript">
-%  for ( my $row = 0; defined($cgi->param("custnum$row")); $row++ ) {
-     select_discount_term(<% $row %>, '');
-%  }
-</SCRIPT>
-%}
+% #XXX I think this can go away completely, but need to test with $use_discount
+% ###not perl <SCRIPT TYPE="text/javascript">
+% #foreach my $row ( keys %rows ) {
+% ###not perl   select_discount_term(<% $row %>, '');
+% #}
+% ###not perl </SCRIPT>
 
 <% include('/elements/footer.html') %>
 
@@ -417,6 +436,7 @@ my @footer_align = ( 'r', 'r' );
 my @onchange = ( '', '' );;
 my $use_discounts = '';
 
+# Not entirely sure this works anymore...
 if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
   #push @header, 'Discount';
   push @header, '';
@@ -441,6 +461,16 @@ push @footer, '';
 push @footer_align, '';
 push @onchange, 'toggle_application_row';
 
+push @header, 'No Auto Allocate';
+push @fields, 'no_auto_apply';
+push @types, 'checkbox';
+push @align, 'c';
+push @sizes, '0';
+push @colors, '';
+push @footer, '';
+push @footer_align, '';
+push @onchange, '';
+
 #push @header, 'Error';
 push @header, '';
 push @fields, 'error';
@@ -455,29 +485,31 @@ push @onchange, '';
 $m->comp('/elements/handle_uri_query');
 
 # set up for preloading
-my @rows;
-my @row_errors;
+my %rows;
+my %row_errors;
 if ( $cgi->param('error') ) {
   my $param = $cgi->Vars;
   my $enum = 0; #errors numbered separately
-  for( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
-    $rows[$row] = [];
-    $row_errors[$row] = $param->{"error$enum"};
+  my @invrows = grep /^invnum\d+\.\d+$/, keys %$param; #pare down possibilities
+  foreach my $row ( sort { $a <=> $b } map /^custnum(\d+)$/, keys %$param ) {
+#  for( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
+    $rows{$row} = [];
+    $row_errors{$row} = $param->{"error$enum"};
     $enum++;
-    for( my $app = 0; exists($param->{"invnum$row.$app"}); $app++ ) {
+    foreach my $app ( map /^invnum$row\.(\d+)$/, @invrows ) {
       next if !$param->{"invnum$row.$app"};
       my %this_app = map { $_ => ($param->{$_.$row.'.'.$app} || '') } 
         qw( invnum amount );
       $this_app{'error'} = $param->{"error$enum"} || '';
       $param->{"error$enum"} = ''; # don't pass this error through
-      $rows[$row][$app] = \%this_app;
+      $rows{$row}[$app] = \%this_app;
       $enum++;
     }
   }
-  for( my $row = 0; $row < @row_errors; $row++ ) {
-    $param->{"error$row"} = $row_errors[$row];
+  foreach my $row (keys %rows) {
+    $param->{"error$row"} = $row_errors{$row};
   }
 }
-#warn Dumper {rows => \@rows, row_errors => \@row_errors };
+#warn Dumper {rows => \%rows, row_errors => \%row_errors };
 
 </%init>

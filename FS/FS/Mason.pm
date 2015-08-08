@@ -57,7 +57,7 @@ if ( -e $addl_handler_use_file ) {
   use CGI::Cookie;
   use List::Util qw( max min sum );
   use List::MoreUtils qw( first_index uniq );
-  use Scalar::Util qw( blessed );
+  use Scalar::Util qw( blessed looks_like_number );
   use Data::Dumper;
   use Date::Format;
   use Time::Local;
@@ -136,7 +136,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::Conf;
   use FS::CGI qw(header menubar table itable ntable idiot
                  eidiot myexit http_header);
-  use FS::UI::Web qw(svc_url);
+  use FS::UI::Web qw(svc_url random_id);
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
   use FS::Msgcat qw(gettext geterror);
@@ -154,6 +154,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::Tron qw( tron_lint );
   use FS::Locales;
   use FS::Maketext qw( mt emt js_mt );
+
+  use FS::Query;
 
   use FS::agent;
   use FS::agent_type;
@@ -377,6 +379,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::legacy_cust_history;
   use FS::quotation_pkg_tax;
   use FS::cust_pkg_reason_fee;
+  use FS::access_user_log;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -435,6 +438,7 @@ if ( -e $addl_handler_use_file ) {
     die $@ if $@;
   }
 
+  no warnings 'redefine';
   *CGI::redirect = sub {
     my $self = shift;
     my $cookie = '';

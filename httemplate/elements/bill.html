@@ -45,7 +45,7 @@ my $label     = $opt{'label'};
 # formname no longer needs to be passed from outside, but we still 
 # need one and it needs to be unique
 my $formname  = $opt{'formname'} ||
-                'bill'.sprintf('%04d',int(rand(10000))).$custnum;
+                'bill'.sprintf('%04d',random_id(4)).$custnum;
 my $url       = $opt{'url'} || '';
 my $message   = $opt{'message'} || 'Finished!';
 my $bill_opts = $opt{'bill_opts'} || {};

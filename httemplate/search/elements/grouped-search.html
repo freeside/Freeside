@@ -1,0 +1,49 @@
+<%doc>
+
+<& elements/grouped-search/html,
+
+   # required
+  'title'         => 'Page title',
+  
+  'name_singular' => 'item',
+
+  'query' => {
+                'table'     => 'tablename',
+                'hashref'   => { 'field' => 'value', ... }, # optional
+                'select'    => '*',
+                'addl_from' => '',
+                'extra_sql' => '',
+                #'order_by' is not allowed
+             },
+  'group_column' => 'classnum', # must be a single field
+  # 'group_table' => 'mytable', # optional; defaults to the one in the query
+  'group_label'  => 'classname',
+  'subtotal' => { amount => 'sum(amount)', ... }
+    # The subtotal row will be generated as an FS::* object of the same type
+    # as all the detail rows.
+    # The only fields present will be the grouping column and any subtotals 
+    # defined in 'subtotal'. Key is a field name (in the FS::* object), 
+    # value is an SQL aggregate expression.
+
+    # How to display that object: arrayref of literal strings or coderefs
+    # (the subtotal object will be passed). These will be placed in table
+    # cells, and can contain HTML.
+  'subtotal_row' =>
+    [ 'Total'
+      sub { sprintf('%.2f', $_[0]->amount) },
+    ],
+
+  'order_by' => '_date', # SQL ordering expression for the detail rows
+
+  'header' => [ ... ], # per search.html
+  'fields' => [ ... ],
+
+&>
+</%doc>
+<%init>
+my $type = 'html';
+if ($cgi->param('type') =~ /^(html|html-print|xls)$/) {
+  $type = $1;
+}
+</%init>
+<& "grouped-search/$type", @_ &>

@@ -1,0 +1,12 @@
+<%args>
+$param            # name of the form field containing the classnum
+$field => $param  # SQL field that must match that form field
+</%args>
+<%init>
+my @values = grep /^(\d+)$/, $cgi->param( $param );
+if (@values) {
+  return "COALESCE($field, 0) IN (" . join(',', @values) . ')';
+} else {
+  return;
+}
+</%init>

@@ -47,7 +47,12 @@ $DEBUG = 0;
     my $origin = $1;
 
     my $company = $conf->config('company_name', $pay_batch->agentnum);
-    $company = substr(uc($company). (' 'x23), 0, 23);
+
+    my $origin_name =  $conf->config('batchconfig-nacha-origin_name')
+                    || $company;
+    $origin_name = substr(uc($origin_name). (' 'x23), 0, 23);
+
+    $company = substr(uc($company). (' 'x16), 0, 16);
 
     my $now = time;
 
@@ -78,7 +83,7 @@ $DEBUG = 0;
     '10'.                     #Blocking Factor
     '1'.                      #Format code
     $dest_name.               #Immediate Destination Name / 23 char bank name
-    $company.                 #Immediate Origin Name / 23 char company name
+    $origin_name.             #Immediate Origin Name / 23 char company name
     $refcode. "\n".           #Reference Code (internal/optional)
 
     ###
@@ -88,7 +93,7 @@ $DEBUG = 0;
     '5'.                     #Record Type Code
     '225'.                   #Service Class Code (220 credits only,
                              #                    200 mixed debits & credits)
-    substr($company, 0, 16). #on cust. statements
+    $company.                #on cust. statements
     (' 'x20 ).               #20 char "company internal use if desired"
     $origin.                 #Company Identification (Immediate Origin)
     'PPD'. #others?
@@ -174,6 +179,15 @@ $DEBUG = 0;
 
     my $batchnum = substr( ('0'x7). $pay_batch->batchnum, -7);
 
+    my $lines = $batchcount + 4;
+    my $blocks = int($lines/10);
+    my $fill = '';
+
+    if ( my $remainder = $lines % 10 ) {
+      $blocks++;
+      $fill = ("\n".('9'x94))x( 10 - $remainder );
+    }
+
     warn "building Batch & File Control Records\n" if $DEBUG;
 
     ###
@@ -199,12 +213,18 @@ $DEBUG = 0;
 
     '9'.                                 #Record Type Code
     '000001'.                            #Batch Counter (# of batch header recs)
-    sprintf('%06d', $batchcount + 4).    #num of physical blocks on the file..?
+    sprintf('%06d', $blocks).            #num of physical blocks on the file
     sprintf('%08d', $batchcount).        #total # of entry detail and addenda
     $entry_hash.
     sprintf('%012.0f', $batchtotal * 100). #Debit total
     '000000000000'.                      #Credit total
-    ( ' 'x39 )                           #Reserved / blank
+    ( ' 'x39 ).                          #Reserved / blank
+
+    ###
+    # Pad with 9999 records to blocks of 10
+    ###
+
+    $fill
 
   },
 

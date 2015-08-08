@@ -1,0 +1,14 @@
+<%= include('header', 'Payment History') %>
+
+<%=
+my $out = mason_comp(
+  'session_id' => $session_id,
+  'comp'       => '/elements/customer-statement.html',
+  'args'       => [
+    'history' => \@history,
+  ]
+);
+$out->{'output'} || $out->{'error'};
+%>
+
+<%= include('footer') %>

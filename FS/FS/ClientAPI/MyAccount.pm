@@ -23,7 +23,7 @@ use FS::Conf;
 #use FS::UID qw(dbh);
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::Msgcat qw(gettext);
-use FS::Misc qw(card_types);
+use FS::Misc qw(card_types money_pretty);
 use FS::Misc::DateTime qw(parse_datetime);
 use FS::TicketSystem;
 use FS::ClientAPI_SessionCache;
@@ -48,7 +48,9 @@ use FS::msg_template;
 use FS::contact;
 use FS::cust_location;
 
-use FS::ClientAPI::MyAccount::quotation; # just for code organization
+# for code organization
+use FS::ClientAPI::MyAccount::contact;
+use FS::ClientAPI::MyAccount::quotation;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
@@ -129,7 +131,7 @@ sub skin_info {
       ),
       'menu_disable' => [ $conf->config('selfservice-menu_disable',$agentnum) ],
       ( map { $_ => $conf->exists("selfservice-$_", $agentnum ) }
-        qw( menu_skipblanks menu_skipheadings menu_nounderline no_logo )
+        qw( menu_skipblanks menu_skipheadings menu_nounderline no_logo enable_payment_without_balance )
       ),
       ( map { $_ => scalar($conf->config_binary("selfservice-$_", $agentnum)) }
         qw( title_left_image title_right_image
@@ -241,6 +243,8 @@ sub login {
     return { error => 'Incorrect contact password.' }
       unless $contact->authenticate_password($p->{'password'});
 
+    $session->{'contactnum'} = $contact->contactnum;
+
     $session->{'custnum'} = $contact->custnum;
 
   } else {
@@ -250,16 +254,39 @@ sub login {
     my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
       or return { error => 'Domain '. $p->{'domain'}. ' not found' };
 
-    my $svc_acct = qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
-                                           'domsvc'    => $svc_domain->svcnum, }
-                           );
-    return { error => 'User not found.' } unless $svc_acct;
+    my @svc_acct = qsearch( 'svc_acct', { 'username'  => $p->{'username'},
+                                          'domsvc'    => $svc_domain->svcnum, }
+                          );
 
-    if($conf->exists('selfservice_server-login_svcpart')) {
-	my @svcpart = $conf->config('selfservice_server-login_svcpart');
-	my $svcpart = $svc_acct->cust_svc->svcpart;
-	return { error => 'Invalid user.' } 
-	    unless grep($_ eq $svcpart, @svcpart);
+    if ( $conf->exists('selfservice_server-login_svcpart') ) {
+      my @svcpart = $conf->config('selfservice_server-login_svcpart');
+      @svc_acct = grep { my $svcpart = $_->cust_svc->svcpart;
+                         scalar( grep( $_ eq $svcpart, @svcpart ) );
+                       }
+                    @svc_acct;
+    }
+
+    if ( $conf->exists('selfservice_server-primary_only') ) {
+        @svc_acct =
+          grep {
+            my $cust_svc = $_->cust_svc;
+            $cust_svc->cust_pkg->part_pkg->svcpart([qw( svc_acct svc_phone )])
+              == $cust_svc->svcpart
+          }
+          @svc_acct;
+    }
+
+    return { error => 'User not found.' } unless @svc_acct;
+
+    #return { error => 'Multiple users.' } if scalar(@svc_acct) > 1;
+
+    my $svc_acct = $svc_acct[0];
+
+    if ( $conf->exists('selfservice_server-login_svcpart') ) {
+      my @svcpart = $conf->config('selfservice_server-login_svcpart');
+      my $svcpart = $svc_acct->cust_svc->svcpart;
+      return { error => 'Invalid user.' } 
+        unless grep($_ eq $svcpart, @svcpart);
     }
 
     return { error => 'Incorrect password.' }
@@ -555,6 +582,7 @@ sub customer_info_short {
         $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
                                 : '(none)';
     }
+    $return{balance_pretty} = money_pretty($return{balance});
 
     $return{countrydefault} = scalar($conf->config('countrydefault'));
 
@@ -634,78 +662,22 @@ sub billing_history {
   }
 
   $return{balance} = $cust_main->balance;
+  $return{balance_pretty} = money_pretty($return{balance});
   $return{next_bill_date} = $cust_main->next_bill_date;
   $return{next_bill_date_pretty} =
     $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
                             : '(none)';
 
-  my @history = ();
-
   my $conf = new FS::Conf;
 
-  if ( $conf->exists('selfservice-billing_history-line_items') ) {
+  $return{'history'} = [
+    $cust_main->payment_history(
+      'line_items' => $conf->exists('selfservice-billing_history-line_items'),
+      'reverse_sort' => 1,
+    )
+  ];
 
-    foreach my $cust_bill ( $cust_main->cust_bill ) {
-
-      push @history, {
-        'type'        => 'Line item',
-        'description' => $_->desc( $cust_main->locale ).
-                           ( $_->sdate && $_->edate
-                               ? ' '. time2str('%d-%b-%Y', $_->sdate).
-                                 ' To '. time2str('%d-%b-%Y', $_->edate)
-                               : ''
-                           ),
-        'amount'      => sprintf('%.2f', $_->setup + $_->recur ),
-        'date'        => $cust_bill->_date,
-        'date_pretty' =>  time2str('%m/%d/%Y', $cust_bill->_date ),
-      }
-        foreach $cust_bill->cust_bill_pkg;
-
-    }
-
-  } else {
-
-    push @history, {
-                     'type'        => 'Invoice',
-                     'description' => 'Invoice #'. $_->display_invnum,
-                     'amount'      => sprintf('%.2f', $_->charged ),
-                     'date'        => $_->_date,
-                     'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                   }
-      foreach $cust_main->cust_bill;
-
-  }
-
-  push @history, {
-                   'type'        => 'Payment',
-                   'description' => 'Payment', #XXX type
-                   'amount'      => sprintf('%.2f', 0 - $_->paid ),
-                   'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                 }
-    foreach $cust_main->cust_pay;
-
-  push @history, {
-                   'type'        => 'Credit',
-                   'description' => 'Credit', #more info?
-                   'amount'      => sprintf('%.2f', 0 -$_->amount ),
-                   'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                 }
-    foreach $cust_main->cust_credit;
-
-  push @history, {
-                   'type'        => 'Refund',
-                   'description' => 'Refund', #more info?  type, like payment?
-                   'amount'      => $_->refund,
-                   'date'        => $_->_date,
-                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
-                 }
-    foreach $cust_main->cust_refund;
-
-  @history = sort { $b->{'date'} <=> $a->{'date'} } @history;
-
-  $return{'history'} = \@history;
+  $return{'money_char'} = $conf->config("money_char") || '$',
 
   return \%return;
 
@@ -764,15 +736,15 @@ sub edit_info {
 
     if ( $new->payinfo eq $cust_main->paymask ) {
       $new->payinfo($cust_main->payinfo);
+      $new->paycvv( $p->{'paycvv'} || $cust_main->paycvv );
     } else {
       $new->payinfo($p->{'payinfo'});
+      return { 'error' => 'CVV2 is required' }
+        if ! $p->{'paycvv'} && $conf->exists('selfservice-onfile_require_cvv');
+      $new->paycvv( $p->{'paycvv'} )
     }
 
     $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
-
-    if ( $conf->exists('selfservice-onfile_require_cvv') ){
-      return { 'error' => 'CVV2 is required' } unless $p->{'paycvv'};
-    }
 
   } elsif ( $payby =~ /^(CHEK|DCHK)$/ ) {
 
@@ -2993,53 +2965,6 @@ sub myaccount_passwd {
          };
 
 }
-
-#  sub contact_passwd {
-#    my $p = shift;
-#    my($context, $session, $custnum) = _custoragent_session_custnum($p);
-#    return { 'error' => $session } if $context eq 'error';
-#  
-#    return { 'error' => 'Not logged in as a contact.' }
-#      unless $session->{'contactnum'};
-#  
-#    return { 'error' => "New passwords don't match." }
-#      if $p->{'new_password'} ne $p->{'new_password2'};
-#  
-#    return { 'error' => 'Enter new password' }
-#      unless length($p->{'new_password'});
-#  
-#    #my $search = { 'custnum' => $custnum };
-#    #$search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
-#    $custnum =~ /^(\d+)$/ or die "illegal custnum";
-#    my $search = " AND selfservice_access IS NOT NULL ".
-#                 " AND selfservice_access = 'Y' ".
-#                 " AND ( disabled IS NULL OR disabled = '' )".
-#                 " AND custnum IS NOT NULL AND custnum = $1";
-#    $search .= " AND agentnum = ". $session->{'agentnum'} if $context eq 'agent';
-#  
-#    my $contact = qsearchs( {
-#      'table'     => 'contact',
-#      'addl_from' => 'LEFT JOIN cust_main USING ( custnum ) ',
-#      'hashref'   => { 'contactnum' => $session->{'contactnum'}, },
-#      'extra_sql' => $search, #important
-#    } )
-#      or return { 'error' => "Email not found" }; #?  how did we get logged in?
-#                                                  # deleted since then?
-#  
-#    my $error = '';
-#  
-#    # use these svc_acct length restrictions??
-#    my $conf = new FS::Conf;
-#    $error = 'Password too short.'
-#      if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
-#    $error = 'Password too long.'
-#      if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
-#  
-#    $error ||= $contact->change_password($p->{'new_password'});
-#  
-#    return { 'error' => $error, };
-#  
-#  }
 
 sub reset_passwd {
   my $p = shift;

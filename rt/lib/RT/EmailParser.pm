@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -327,6 +327,8 @@ Returns false, otherwise.
 sub IsRTAddress {
     my $self = shift;
     my $address = shift;
+
+    return undef unless defined($address) and $address =~ /\S/;
 
     if ( my $address_re = RT->Config->Get('RTAddressRegexp') ) {
         return $address =~ /$address_re/i ? 1 : undef;

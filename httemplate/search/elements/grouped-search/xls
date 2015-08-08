@@ -1,0 +1,61 @@
+<%doc>
+
+Excel spreadsheet view.
+
+</%doc>
+<%init>
+my %opt = @_;
+
+my $group_info = $m->comp('core', %opt);
+
+# minor false laziness with search-xls.html
+my $override = '';
+$override = 'XLSX' if grep { $_->num_rows >= 65536 }
+                      @{ $group_info->{groups} };
+
+my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format($override);
+
+my $filename = $opt{'name'} || PL($opt{'name_singular'});
+$filename .= $format->{extension};
+
+http_header('Content-Type' => $format->{mime_type} );
+http_header('Content-Disposition' => qq!attachment;filename="$filename"! );
+$HTML::Mason::Commands::r->headers_out->{'Cache-control'} = 'max-age=0';
+
+my $data = '';
+my $XLS = new IO::Scalar \$data;
+my $workbook = $format->{class}->new($XLS)
+  or die "Error opening Excel file: $!";
+
+my $title = $opt{'title'};
+$title =~ s/[\[\]\:\*\?\/\/]//g;
+$title = substr($title, 0, 31);
+
+for (my $curr_group = 0; $curr_group < $group_info->{num}; $curr_group++) {
+  my $group = $group_info->{groups}[$curr_group];
+  my $query = $group_info->{queries}[$curr_group];
+  my $footer = $group_info->{group_footers}[$curr_group];
+  my $label = $group_info->{group_labels}[$curr_group];
+  # run the query
+  my @rows = $query->qsearch;
+  #warn Dumper(\@rows); #DEBUG
+
+  # pass arrayrefs to write_row to write multiple rows
+  $opt{footer} = [ List::MoreUtils::pairwise { [ $a, $b ] }
+    @$footer,
+    @{$group_info->{total_footer}}
+  ];
+  $m->comp('/search/elements/search-xls.html:worksheet',
+    workbook  => $workbook,
+    title     => $label,
+    header    => $opt{header},
+    opt       => \%opt,
+    rows      => \@rows,
+  );
+}
+
+$workbook->close();
+
+$m->clear_buffer();
+$m->print($data);
+</%init>

@@ -53,6 +53,7 @@ export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
 export APACHE_CONF           := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo "$(TMP)-webui/etc/apache2/conf-available" || echo "$(TMP)-webui/etc/apache2/conf.d")
+export TORRUS_CONF           := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo "$(TMP)-torrus/etc/apache2/conf-available" || echo "$(TMP)-torrus/etc/apache2/conf.d")
 export FREESIDE_RESTART       = /bin/true
 
 #XXX root?
@@ -76,6 +77,8 @@ export FREESIDE_URL           = http://$(HOSTNAME)/freeside/
 # realize it would need to be explicit argh)
 # (but leaving it for now, otherwise can't get RT to put files where we need em)
 export RT_PATH                = $(TMP)/opt/rt3
+
+export TEXMF_PATH             = $(TMP)-lib/usr/local/share/texmf/tex/latex
 
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
@@ -166,9 +169,8 @@ install-stamp: build-stamp
 	$(MAKE) -e DESTDIR=$(TMP)-webui install-docs
 	
 	# Install tex
-	install -D -o freeside -m 444 etc/longtable.sty \
-	$(TMP)-lib/usr/local/share/texmf/tex/latex/longtable.sty
-	texhash $(TMP)-lib/usr/local/share/texmf
+	install -d ${TEXMF_PATH}
+	install -o freeside -m 444 etc/*.sty ${TEXMF_PATH}
 
 	# Create Apache configurations
 	install -d $(APACHE_CONF)
@@ -224,6 +226,19 @@ install-stamp: build-stamp
 
 	install -d ${TMP}-ng-selfservice$(APACHE_DOCUMENT_ROOT)/
 	cp -R ng_selfservice ${TMP}-ng-selfservice$(APACHE_DOCUMENT_ROOT)/ng_selfservice-DIST/
+
+	# Torrus 
+	
+	install -d ${TORRUS_CONF}
+	install -o root -m 755 htetc/freeside-torrus.conf $(TORRUS_CONF)/
+
+	( cd torrus; \
+	torrus_user=freeside var_user=freeside var_group=freeside ./configure; \
+	$(MAKE) -e DESTDIR=${TMP}-torrus/; \
+	$(MAKE) -e DESTDIR=${TMP}-torrus/ install; \
+	perl -p -i -e "\
+	    s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+	" ${TMP}-torrus/usr/local/etc/torrus/conf/torrus-siteconfig.pl )
 
 	#RT Config
 

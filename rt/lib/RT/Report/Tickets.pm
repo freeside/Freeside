@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -273,16 +273,6 @@ sub _FieldToFunction {
         @args{qw(ALIAS FIELD)} = ($u_alias, $column);
     }
     return %args;
-}
-
-
-# Override the AddRecord from DBI::SearchBuilder::Unique. id isn't id here
-# wedon't want to disambiguate all the items with a count of 1.
-sub AddRecord {
-    my $self = shift;
-    my $record = shift;
-    push @{$self->{'items'}}, $record;
-    $self->{'rows'}++;
 }
 
 1;

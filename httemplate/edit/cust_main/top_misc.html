@@ -40,7 +40,7 @@
 
   var ship_locked_agents = <% encode_json(\%ship_locked_agents) %>;
   var ship_fields = [
-    'locationname', 'address1', 'city', 'state', 'zip', 'country', 
+    'locationname', 'address1',<% $conf->exists('cust_main-no_city_in_address') ? '' : q( 'city',) %> 'state', 'zip', 'country', 
     'latitude', 'longitude', 'district'
   ];
 
@@ -276,7 +276,10 @@ foreach (qsearch('agent',{})) {
   my $agent_ship_location = $cust_main->ship_location;
   $ship_locked_agents{$agentnum} = +{
     map { $_ => $agent_ship_location->$_ }
-    qw(locationname address1 city state zip country latitude longitude district)
+    (
+       qw(locationname address1 state zip country latitude longitude district),
+       ($conf->exists('cust_main-no_city_in_address') ? () : 'city')
+    )
   };
 }
 

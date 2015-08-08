@@ -4,6 +4,7 @@
         ID            = "<% $opt{id} %>"
         previousValue = "<% $curr_value %>"
         previousText  = "<% $labels->{$curr_value} || $curr_value %>"
+        <% $multiple %>
         <% $size %>
         <% $style %>
         <% $opt{disabled} %>
@@ -73,5 +74,7 @@ my @style = ref($opt{'style'})
 my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
 
 my $size = $opt{'size'} ? 'SIZE='.$opt{'size'} : '';
+
+my $multiple = $opt{'multiple'} ? 'MULTIPLE' : '';
 
 </%init>

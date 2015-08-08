@@ -56,7 +56,7 @@ if ( $conf->exists('svc_phone-lnp') ) {
 
 $labels{circuit_label} = mt('Circuit');
 push @fields, { field => 'circuit_label',
-                link => [ $p.'view/svc_circuit.html?', 'circuit_svcnum' ]
+                link => [ $p.'view/svc_circuit.cgi?', 'circuit_svcnum' ]
               };
 
 push @fields, 'sip_server';
@@ -146,7 +146,7 @@ my $html_foot = sub {
   ###
 
   $e911.
-  $devices.
+  #$devices.
   $status.
   join(' | ', @links ). '<BR>'.
   join(' | ', @ilinks). '<BR>';

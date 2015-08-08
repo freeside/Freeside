@@ -190,6 +190,12 @@ window.onload = class_mode_changed;
     'onchange'=> 'enable_agent_totals',
 &>
 % }
+<& /elements/tr-select.html,
+    'label'   => 'Discounts',
+    'field'   => 'use_discount',
+    'options' => [ 2, 1 ], # 3.x only: make 2 the default
+    'labels'  => { 1 => 'Separate', 2 => 'Do not show' },
+&>
 
 <TR>
   <TD ALIGN="right">Colors</TD>

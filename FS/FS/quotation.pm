@@ -342,6 +342,29 @@ sub _items_total {
       'total_amount' => sprintf('%.2f',$total_recur),
       'break_after'  => 1,
     };
+    # show 'first payment' line (setup + recur) if there are no prorated 
+    # packages included
+    my $disable_total = 0;
+    foreach my $quotation_pkg ($self->quotation_pkg) {
+      my $part_pkg = $quotation_pkg->part_pkg;
+      if (    $part_pkg->plan =~ /^(prorate|torrus|agent$)/
+           || $part_pkg->option('recur_method') eq 'prorate'
+           || ( $part_pkg->option('sync_bill_date')
+                  && $self->custnum
+                  && $self->cust_main->billing_pkgs #num_billing_pkgs when we have it
+              )
+      ) {
+        $disable_total = 1;
+        last;
+      }
+    }
+    if (!$disable_total) {
+      push @items, {
+        'total_item'   => $self->mt('First payment'),
+        'total_amount' => sprintf('%.2f', $total_setup + $total_recur),
+        'break_after'  => 1,
+      };
+    }
   }
 
   return @items;

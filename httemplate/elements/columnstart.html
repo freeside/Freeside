@@ -10,7 +10,7 @@
 
 Pass 'aligned' => 1 to have corresponding rows in the columns line up.
 </%doc>
-% my $id = sprintf('table%08d', rand(100000000));
+% my $id = sprintf('table%08d', random_id(8));
 <TR>
   <TD CLASS="background" COLSPAN=99>
     <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 id="<%$id%>">

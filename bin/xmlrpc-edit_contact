@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my( $email, $password, $new_email ) = @ARGV;
+
+my $uri = new URI 'http://localhost:8080/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $login_result = $server->call(
+  'FS.ClientAPI_XMLRPC.login',
+    'email'    => $email,
+    'password' => $password,
+);
+die $login_result->{'error'}."\n" if $login_result->{'error'};
+
+my $passwd_result = $server->call(
+  'FS.ClientAPI_XMLRPC.edit_contact',
+    'session_id'   => $login_result->{'session_id'},
+    'emailaddress' => $new_email,
+);
+die $passwd_result->{'error'}."\n" if $passwd_result->{'error'};
+
+warn "Email changed.\n";
+
+1;

@@ -23,6 +23,19 @@
 \usepackage{graphicx}			% required for logo graphic
 \usepackage[utf8]{inputenc}             % multilanguage support
 \usepackage[T1]{fontenc}
+[@-- if ( length($watermark) ) {
+  $OUT .= '
+\usepackage{background}
+\backgroundsetup{
+  placement=center,
+  opacity=0.25,
+  color=black,
+  angle=0,
+  contents=' . $watermark . '
+}';
+}
+'';
+--@]
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
 \addtolength{\hoffset}{-0.6cm}		% left margin on page

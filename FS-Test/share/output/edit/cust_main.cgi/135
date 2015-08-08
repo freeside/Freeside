@@ -1,0 +1,7399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+  <HEAD>
+    <TITLE>
+      Edit Customer: Olson Inc (Towne, Samara)
+    </TITLE>
+    <!-- per RT, to prevent IE compatibility mode -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- The X-UA-Compatible <meta> tag above must be very early in <head> -->
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+
+    <script type="text/javascript" src="http://localhost/freeside/elements/cssexpr.js"></script>
+
+
+  <script type="text/javascript" src="http://localhost/freeside/elements/xmenu.top.js"></script>
+  <link href="http://localhost/freeside/elements/xmenu.top.css" type="text/css" rel="stylesheet">
+
+
+  <link href="http://localhost/freeside/elements/freeside.css" type="text/css" rel="stylesheet">
+  <link href="http://localhost/freeside/elements/freeside-print.css" type="text/css" rel="stylesheet" media="print">
+<link href="http://localhost/freeside/elements/freeside-menu.css" type="text/css" rel="stylesheet">
+
+<SCRIPT TYPE="text/javascript">
+
+  function about_freeside() {
+    overlib( OLiframeContent('http://localhost/freeside/docs/about.html', 300, 375, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'About', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#7e0079', CGCOLOR, '#7e0079', CLOSETEXT, 'Close'); 
+  }
+
+  webfxMenuImagePath      = "http://localhost/freeside/images/";
+  webfxMenuUseHover       = 1;
+  webfxMenuShowTime       = 300;
+  webfxMenuHideTime       = 500;
+
+  var myBar = new WebFXMenuBar;
+
+    
+          myBar.add(new WebFXMenuButton('Billing Main', "http://localhost/freeside/", 'Billing start page' ));
+
+    
+          myBar.add(new WebFXMenuButton('Ticketing Main', "http://localhost/freeside/rt/", 'Ticketing start page' ));
+
+    
+          myBar.add(new WebFXMenuButton('New prospect', "http://localhost/freeside/edit/prospect_main.html", 'Add a new prospect' ));
+
+    
+          myBar.add(new WebFXMenuButton('New customer', "http://localhost/freeside/edit/cust_main.cgi", 'Add a new customer' ));
+
+
+          var myMenu0 = new WebFXMenu;
+myMenu0.emptyText = '';
+var myMenu1 = new WebFXMenu;
+myMenu1.emptyText = '';
+myMenu1.add(new WebFXMenuItem("List prospects", "http://localhost/freeside/search/prospect_main.html", "" ));
+myMenu1.add(new WebFXMenuItem("Advanced prospect reports", "http://localhost/freeside/search/report_prospect_main.html", "" ));
+myMenu1.add(new WebFXMenuSeparator());
+myMenu1.add(new WebFXMenuItem("Prospect contacts", "http://localhost/freeside/search/report_contact.html?link=prospect_main", "" ));
+myMenu1.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Prospects", null, "Prospect reports", myMenu1 ));
+var myMenu2 = new WebFXMenu;
+myMenu2.emptyText = '';
+myMenu2.add(new WebFXMenuItem("List quotations", "http://localhost/freeside/search/quotation.html", "" ));
+myMenu2.add(new WebFXMenuItem("Advanced quotation reports", "http://localhost/freeside/search/report_quotation.html", "" ));
+myMenu2.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Quotations", null, "Quotation reports", myMenu2 ));
+var myMenu3 = new WebFXMenu;
+myMenu3.emptyText = '';
+var myMenu4 = new WebFXMenu;
+myMenu4.emptyText = '';
+myMenu4.add(new WebFXMenuItem("by customer number", "http://localhost/freeside/search/cust_main.cgi?browse=custnum", "" ));
+myMenu4.add(new WebFXMenuItem("by last name", "http://localhost/freeside/search/cust_main.cgi?browse=last", "" ));
+myMenu4.add(new WebFXMenuItem("by company name", "http://localhost/freeside/search/cust_main.cgi?browse=company", "" ));
+myMenu4.add(new WebFXMenuItem("by active trouble tickets", "http://localhost/freeside/search/cust_main.cgi?browse=tickets", "" ));
+myMenu4.width = 256;
+
+myMenu3.add(new WebFXMenuItem("List customers", null, "List customers", myMenu4 ));
+myMenu3.add(new WebFXMenuItem("Zip code distribution", "http://localhost/freeside/search/report_cust_main-zip.html", "Zip codes by number of customers" ));
+myMenu3.add(new WebFXMenuItem("Customer signup report", "http://localhost/freeside/graph/report_cust_signup.html", "New customer signups by date" ));
+myMenu3.add(new WebFXMenuItem("Customer churn report", "http://localhost/freeside/graph/report_cust_churn.html", "New customers, suspensions, and cancellations summary" ));
+myMenu3.add(new WebFXMenuItem("Signup date report", "http://localhost/freeside/graph/report_signupdate.html", "Signup date report (by date of signup)" ));
+myMenu3.add(new WebFXMenuItem("Advanced customer reports", "http://localhost/freeside/search/report_cust_main.html", "by status, signup date, agent, etc." ));
+myMenu3.add(new WebFXMenuSeparator());
+myMenu3.add(new WebFXMenuItem("Customer contacts", "http://localhost/freeside/search/report_contact.html?link=cust_main", "" ));
+myMenu3.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Customers", null, "Customer reports", myMenu3 ));
+var myMenu5 = new WebFXMenu;
+myMenu5.emptyText = '';
+var myMenu6 = new WebFXMenu;
+myMenu6.emptyText = '';
+myMenu6.add(new WebFXMenuItem("All open invoices", "http://localhost/freeside/search/cust_bill.html?OPEN_date", "All invoices with an unpaid balance" ));
+myMenu6.add(new WebFXMenuItem("15 day open invoices", "http://localhost/freeside/search/cust_bill.html?OPEN15_date", "Invoices 15 days or older with an unpaid balance" ));
+myMenu6.add(new WebFXMenuItem("30 day open invoices", "http://localhost/freeside/search/cust_bill.html?OPEN30_date", "Invoices 30 days or older with an unpaid balance" ));
+myMenu6.add(new WebFXMenuItem("60 day open invoices", "http://localhost/freeside/search/cust_bill.html?OPEN60_date", "Invoices 60 days or older with an unpaid balance" ));
+myMenu6.add(new WebFXMenuItem("90 day open invoices", "http://localhost/freeside/search/cust_bill.html?OPEN90_date", "Invoices 90 days or older with an unpaid balance" ));
+myMenu6.add(new WebFXMenuItem("120 day open invoices", "http://localhost/freeside/search/cust_bill.html?OPEN120_date", "Invoices 120 days or older with an unpaid balance" ));
+myMenu6.width = 256;
+
+myMenu5.add(new WebFXMenuItem("Open invoices", null, "Open invoices", myMenu6 ));
+myMenu5.add(new WebFXMenuItem("All invoices", "http://localhost/freeside/search/cust_bill.html?date", "List all invoices" ));
+myMenu5.add(new WebFXMenuItem("Advanced invoice reports", "http://localhost/freeside/search/report_cust_bill.html", "by agent, date range, etc." ));
+myMenu5.add(new WebFXMenuSeparator());
+myMenu5.add(new WebFXMenuItem("Line items", "http://localhost/freeside/search/report_cust_bill_pkg.html", "Individual line item detail" ));
+myMenu5.add(new WebFXMenuItem("Voided invoices", "http://localhost/freeside/search/report_cust_bill_void.html", "Search for voided invoices" ));
+myMenu5.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Invoices", null, "Invoice reports", myMenu5 ));
+var myMenu7 = new WebFXMenu;
+myMenu7.emptyText = '';
+myMenu7.add(new WebFXMenuItem("Discount graph", "http://localhost/freeside/graph/report_cust_bill_pkg_discount.html", "Discount overview per month" ));
+myMenu7.add(new WebFXMenuItem("Discount detail", "http://localhost/freeside/search/report_cust_bill_pkg_discount.html", "Discount report (by employee and/or date range)" ));
+myMenu7.add(new WebFXMenuItem("Package discounts", "http://localhost/freeside/search/report_cust_pkg_discount.html", "Active/inactive discounts by package" ));
+myMenu7.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Discounts", null, "Discount reports", myMenu7 ));
+var myMenu8 = new WebFXMenu;
+myMenu8.emptyText = '';
+myMenu8.add(new WebFXMenuItem("Payments", "http://localhost/freeside/search/report_cust_pay.html", "Payment report (by type and/or date range)" ));
+myMenu8.add(new WebFXMenuItem("Payment application detail", "http://localhost/freeside/search/report_cust_bill_pay_pkg.html", "Line item application detail" ));
+myMenu8.add(new WebFXMenuItem("Pending Payments", "http://localhost/freeside/search/cust_pay_pending.html?magic=_date;statusNOT=done", "Pending real-time payments" ));
+myMenu8.add(new WebFXMenuItem("Unapplied Payments", "http://localhost/freeside/search/report_cust_pay.html?unapplied=1", "Unapplied payment report (by type and/or date range)" ));
+myMenu8.add(new WebFXMenuItem("Voided Payments", "http://localhost/freeside/search/report_cust_pay.html?void=1", "Voided payment report (by type and/or date range)" ));
+myMenu8.add(new WebFXMenuItem("Unapplied Payment Aging", "http://localhost/freeside/search/report_unapplied_cust_pay.html", "Unapplied payment aging report" ));
+myMenu8.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Payments", null, "Payment reports", myMenu8 ));
+var myMenu9 = new WebFXMenu;
+myMenu9.emptyText = '';
+myMenu9.add(new WebFXMenuItem("Package definitions (by # active)", "http://localhost/freeside/browse/part_pkg.cgi?active=1", "Package definitions by number of active packages" ));
+myMenu9.add(new WebFXMenuItem("Package costs", "http://localhost/freeside/graph/report_cust_pkg_cost.html", "Package setup and recurring costs graph" ));
+myMenu9.add(new WebFXMenuSeparator());
+myMenu9.add(new WebFXMenuItem("Package churn", "http://localhost/freeside/graph/report_cust_pkg.html", "Orders, suspensions and cancellations summary graph" ));
+myMenu9.add(new WebFXMenuSeparator());
+myMenu9.add(new WebFXMenuItem("All customer packages", "http://localhost/freeside/search/cust_pkg.cgi?pkgnum", "List all customer packages" ));
+myMenu9.add(new WebFXMenuItem("Package summary", "http://localhost/freeside/search/cust_pkg_summary.html", "Show package sales summary" ));
+myMenu9.add(new WebFXMenuItem("Suspended customer packages", "http://localhost/freeside/search/cust_pkg.cgi?magic=suspended", "List suspended packages" ));
+myMenu9.add(new WebFXMenuItem("Suspension summary", "http://localhost/freeside/search/cust_pkg_susp.html", "Show suspension activity" ));
+myMenu9.add(new WebFXMenuItem("Customer packages with unconfigured services", "http://localhost/freeside/search/cust_pkg.cgi?APKG_pkgnum", "List packages which have provisionable services" ));
+myMenu9.add(new WebFXMenuItem("Advanced package reports", "http://localhost/freeside/search/report_cust_pkg.html", "by agent, date range, status, package definition" ));
+myMenu9.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Packages", null, "Package reports", myMenu9 ));
+var myMenu10 = new WebFXMenu;
+myMenu10.emptyText = '';
+myMenu10.add(new WebFXMenuItem("Service definitions", "http://localhost/freeside/browse/part_svc.cgi?orderby=active", "Service definitions by number of active packages" ));
+myMenu10.add(new WebFXMenuSeparator());
+myMenu10.add(new WebFXMenuItem("Unprovisioned services", "http://localhost/freeside/search/report_unprovisioned_services.html", "Unprovisioned services" ));
+myMenu10.add(new WebFXMenuSeparator());
+var myMenu11 = new WebFXMenu;
+myMenu11.emptyText = '';
+myMenu11.add(new WebFXMenuItem("All accounts by Username", "http://localhost/freeside/search/svc_acct.cgi?magic=all;sortby=username", "" ));
+myMenu11.add(new WebFXMenuItem("All accounts by UID", "http://localhost/freeside/search/svc_acct.cgi?magic=all;sortby=uid", "" ));
+myMenu11.add(new WebFXMenuItem("All accounts with Time Remaining", "http://localhost/freeside/search/svc_acct.cgi?magic=all;sortby=seconds", "" ));
+myMenu11.add(new WebFXMenuItem("All accounts by Last login", "http://localhost/freeside/search/svc_acct.cgi?magic=all;sortby=last_login", "" ));
+myMenu11.add(new WebFXMenuItem("All accounts never logged in", "http://localhost/freeside/search/svc_acct.cgi?magic=nologin;sortby=svcnum", "" ));
+myMenu11.add(new WebFXMenuItem("Advanced account reports", "http://localhost/freeside/search/report_svc_acct.html", "" ));
+myMenu11.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Accounts", null, "Access accounts and mailboxes", myMenu11 ));
+var myMenu12 = new WebFXMenu;
+myMenu12.emptyText = '';
+myMenu12.add(new WebFXMenuItem("All domains", "http://localhost/freeside/search/svc_domain.cgi?magic=all;sortby=domain", "" ));
+myMenu12.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Domains", null, "Domains", myMenu12 ));
+var myMenu13 = new WebFXMenu;
+myMenu13.emptyText = '';
+myMenu13.add(new WebFXMenuItem("All certificates", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_cert;magic=all;sortby=svcnum", "" ));
+myMenu13.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Certificates", null, "Example services", myMenu13 ));
+var myMenu14 = new WebFXMenu;
+myMenu14.emptyText = '';
+myMenu14.add(new WebFXMenuItem("All mail forwards", "http://localhost/freeside/search/svc_forward.cgi?magic=all;sortby=svcnum", "" ));
+myMenu14.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Mail forwards", null, "Mail forwards", myMenu14 ));
+var myMenu15 = new WebFXMenu;
+myMenu15.emptyText = '';
+myMenu15.add(new WebFXMenuItem("All mailing lists", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_mailinglist;magic=all;sortby=svcnum", "" ));
+myMenu15.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Mailing lists", null, "Mailing lists", myMenu15 ));
+var myMenu16 = new WebFXMenu;
+myMenu16.emptyText = '';
+myMenu16.add(new WebFXMenuItem("All virtual hosting services", "http://localhost/freeside/search/svc_www.cgi?magic=all;sortby=svcnum", "" ));
+myMenu16.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Virtual hosting services", null, "Virtual hosting services", myMenu16 ));
+var myMenu17 = new WebFXMenu;
+myMenu17.emptyText = '';
+myMenu17.add(new WebFXMenuItem("All wireless broadband services", "http://localhost/freeside/search/svc_broadband.cgi?magic=all;sortby=svcnum", "" ));
+myMenu17.add(new WebFXMenuItem("Advanced wireless broadband reports", "http://localhost/freeside/search/report_svc_broadband.html", "" ));
+myMenu17.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Wireless broadband services", null, "Fixed wireless broadband services", myMenu17 ));
+var myMenu18 = new WebFXMenu;
+myMenu18.emptyText = '';
+myMenu18.add(new WebFXMenuItem("All cable subscribers by Service", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_cable;magic=all;sortby=svcnum", "" ));
+myMenu18.add(new WebFXMenuItem("All cable subscribers by Serial number", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_cable;magic=all;sortby=serialnum", "" ));
+myMenu18.add(new WebFXMenuItem("All cable subscribers by MAC address", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_cable;magic=all;sortby=mac_addr", "" ));
+myMenu18.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Cable Subscribers", null, "Cable Subscribers", myMenu18 ));
+var myMenu19 = new WebFXMenu;
+myMenu19.emptyText = '';
+myMenu19.add(new WebFXMenuItem("All DSLs", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_dsl;magic=all;sortby=phonenum", "" ));
+myMenu19.add(new WebFXMenuItem("Qualifications", "http://localhost/freeside/search/qual.cgi", "" ));
+myMenu19.width = 256;
+
+myMenu10.add(new WebFXMenuItem("DSLs", null, "DSLs", myMenu19 ));
+var myMenu20 = new WebFXMenu;
+myMenu20.emptyText = '';
+myMenu20.add(new WebFXMenuItem("All dish services", "http://localhost/freeside/search/svc_dish.cgi?magic=all;sortby=svcnum", "" ));
+myMenu20.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Dish services", null, "Dish services", myMenu20 ));
+var myMenu21 = new WebFXMenu;
+myMenu21.emptyText = '';
+myMenu21.add(new WebFXMenuItem("All hardware", "http://localhost/freeside/search/svc_hardware.cgi?magic=all;sortby=svcnum", "" ));
+myMenu21.add(new WebFXMenuItem("Advanced hardware reports", "http://localhost/freeside/search/report_svc_hardware.html", "" ));
+myMenu21.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Hardware", null, "Hardware", myMenu21 ));
+var myMenu22 = new WebFXMenu;
+myMenu22.emptyText = '';
+myMenu22.add(new WebFXMenuItem("All phone numbers", "http://localhost/freeside/search/svc_phone.cgi?magic=all;sortby=phonenum", "" ));
+myMenu22.add(new WebFXMenuItem("Phone numbers' total usage by time period", "http://localhost/freeside/search/report_svc_phone_usage.html", "Total usage (minutes, and amount billed) for the specified time period, per phone number." ));
+myMenu22.add(new WebFXMenuItem("Phone numbers by state", "http://localhost/freeside/search/phone_state.html", "Current or historical phone services broken down by state." ));
+myMenu22.add(new WebFXMenuItem("Advanced phone number reports", "http://localhost/freeside/search/report_svc_phone.html", "" ));
+myMenu22.add(new WebFXMenuItem("Phone number (DID) availability", "http://localhost/freeside/search/report_phone_avail.html", "" ));
+myMenu22.add(new WebFXMenuItem("Inventory/Provisioning Status", "http://localhost/freeside/search/phone_inventory_provisioned.html", "" ));
+myMenu22.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Phone numbers", null, "Phone numbers", myMenu22 ));
+var myMenu23 = new WebFXMenu;
+myMenu23.emptyText = '';
+myMenu23.add(new WebFXMenuItem("All PBXs", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_pbx;magic=all;sortby=svcnum", "" ));
+myMenu23.width = 256;
+
+myMenu10.add(new WebFXMenuItem("PBXs", null, "PBXs", myMenu23 ));
+var myMenu24 = new WebFXMenu;
+myMenu24.emptyText = '';
+myMenu24.add(new WebFXMenuItem("All circuits", "http://localhost/freeside/search/svc_circuit.cgi?magic=all;sortby=svcnum", "" ));
+myMenu24.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Circuits", null, "Voice and data circuit services", myMenu24 ));
+var myMenu25 = new WebFXMenu;
+myMenu25.emptyText = '';
+myMenu25.add(new WebFXMenuItem("All ports", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_port;magic=all;sortby=serviceid", "" ));
+myMenu25.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Ports", null, "Ports", myMenu25 ));
+var myMenu26 = new WebFXMenu;
+myMenu26.emptyText = '';
+myMenu26.add(new WebFXMenuItem("All alarm services", "http://localhost/freeside/search/cust_svc.html?svcdb=svc_alarm;magic=all;sortby=acctnum", "" ));
+myMenu26.width = 256;
+
+myMenu10.add(new WebFXMenuItem("Alarm services", null, "Alarm services", myMenu26 ));
+var myMenu27 = new WebFXMenu;
+myMenu27.emptyText = '';
+myMenu27.add(new WebFXMenuItem("All external services", "http://localhost/freeside/search/svc_external.cgi?magic=all;sortby=id", "" ));
+myMenu27.width = 256;
+
+myMenu10.add(new WebFXMenuItem("External services", null, "External services", myMenu27 ));
+myMenu10.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Services", null, "Services reports", myMenu10 ));
+var myMenu28 = new WebFXMenu;
+myMenu28.emptyText = '';
+myMenu28.add(new WebFXMenuItem("Inventory by agent", "http://localhost/freeside/search/report_agent_inventory.html", "" ));
+myMenu28.add(new WebFXMenuItem("Inventory activity", "http://localhost/freeside/search/report_h_inventory_item.html", "" ));
+myMenu28.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Inventory", null, "Inventory reports", myMenu28 ));
+var myMenu29 = new WebFXMenu;
+myMenu29.emptyText = '';
+myMenu29.add(new WebFXMenuItem("RADIUS sessions", "http://localhost/freeside/search/sqlradius.html", "" ));
+myMenu29.add(new WebFXMenuItem("RADIUS data usage", "http://localhost/freeside/search/report_sqlradius_usage.html", "" ));
+myMenu29.add(new WebFXMenuItem("Call Detail Records (CDRs)", "http://localhost/freeside/search/report_cdr.html", "" ));
+myMenu29.add(new WebFXMenuItem("Unrateable CDRs", "http://localhost/freeside/search/cdr.html?freesidestatus=failed;cdrbatchnum=_ALL_", "" ));
+myMenu29.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Usage", null, "Usage reports", myMenu29 ));
+var myMenu30 = new WebFXMenu;
+myMenu30.emptyText = '';
+var myMenu31 = new WebFXMenu;
+myMenu31.emptyText = '';
+myMenu31.add(new WebFXMenuItem("Tickets per day per Queue", "http://localhost/freeside/rt/RTx/Statistics/CallsQueueDay", "View the number of tickets created, resolved or deleted in a specific Queue, over the requested period of days" ));
+myMenu31.add(new WebFXMenuItem("Ticket status by Queue", "http://localhost/freeside/rt/RTx/Statistics/OpenStalled", "View numbers of new, open and stalled tickets in a selected Queue" ));
+myMenu31.add(new WebFXMenuItem("Tickets per day (multiple Queues)", "http://localhost/freeside/rt/RTx/Statistics/CallsMultiQueue", "View tickets created, resolved or deleted on in one or more Queues over a specified time period" ));
+myMenu31.add(new WebFXMenuItem("Tickets per Day of Week", "http://localhost/freeside/rt/RTx/Statistics/DayOfWeek", "View trends showing when tickets are created, resolved or deleted" ));
+myMenu31.add(new WebFXMenuItem("Time to resolve", "http://localhost/freeside/rt/RTx/Statistics/Resolution", "View how long tickets take to be resolved by Queue" ));
+myMenu31.add(new WebFXMenuItem("Time to resolve (scatter graph)", "http://localhost/freeside/rt/RTx/Statistics/TimeToResolve", "View a detailed scatter graph of time to resolve tickets by Queue" ));
+myMenu31.width = 256;
+
+myMenu30.add(new WebFXMenuItem("Statistics", null, "", myMenu31 ));
+myMenu30.add(new WebFXMenuSeparator());
+myMenu30.add(new WebFXMenuItem("Advanced ticket reports", "http://localhost/freeside/rt/Search/Build.html?NewQuery=1", "List tickets by any criteria" ));
+myMenu30.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Tickets", null, "Ticket reports", myMenu30 ));
+var myMenu32 = new WebFXMenu;
+myMenu32.emptyText = '';
+myMenu32.add(new WebFXMenuItem("Employee Commission Report", "http://localhost/freeside/search/report_employee_commission.html", "" ));
+myMenu32.add(new WebFXMenuItem("Employee Audit Report", "http://localhost/freeside/search/report_employee_audit.html", "Employee audit report" ));
+myMenu32.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Employees", null, "Employee reports", myMenu32 ));
+var myMenu33 = new WebFXMenu;
+myMenu33.emptyText = '';
+myMenu33.add(new WebFXMenuItem("All billing events", "http://localhost/freeside/search/report_cust_event.html", "All billing events for a date range" ));
+myMenu33.add(new WebFXMenuItem("Billing event errors", "http://localhost/freeside/search/report_cust_event.html?failed=1", "Failed credit cards, processor or printer problems, etc." ));
+myMenu33.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Billing events", null, "Billing events", myMenu33 ));
+var myMenu34 = new WebFXMenu;
+myMenu34.emptyText = '';
+var myMenu35 = new WebFXMenu;
+myMenu35.emptyText = '';
+myMenu35.add(new WebFXMenuItem("Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time.html", "Sales, credits and receipts summary graph" ));
+myMenu35.add(new WebFXMenuItem("Daily Sales, Credits and Receipts", "http://localhost/freeside/graph/report_money_time_daily.html", "Sales, credits and receipts (broken down by day) summary graph" ));
+myMenu35.add(new WebFXMenuItem("Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg.html", "Sales report and graph (by agent, package class and/or date range)" ));
+myMenu35.add(new WebFXMenuItem("Rated Call Sales Report", "http://localhost/freeside/graph/report_cust_bill_pkg_detail.html", "Sales report and graph (by agent, package class, usage class and/or date range)" ));
+myMenu35.add(new WebFXMenuItem("Sales with Advertising Source", "http://localhost/freeside/search/report_cust_bill_pkg_referral.html", "" ));
+myMenu35.width = 256;
+
+myMenu34.add(new WebFXMenuItem("Sales", null, "Sales reports", myMenu35 ));
+var myMenu36 = new WebFXMenu;
+myMenu36.emptyText = '';
+myMenu36.add(new WebFXMenuItem("Credit Report", "http://localhost/freeside/search/report_cust_credit.html", "Credit report (by employee and/or date range)" ));
+myMenu36.add(new WebFXMenuItem("Credit application detail", "http://localhost/freeside/search/report_cust_credit_bill_pkg.html", "Line item application detail" ));
+myMenu36.add(new WebFXMenuItem("Unapplied Credits", "http://localhost/freeside/search/report_cust_credit.html?unapplied=1", "Unapplied credit report (by type and/or date range)" ));
+myMenu36.add(new WebFXMenuItem("Voided Credits", "http://localhost/freeside/search/report_cust_credit_void.html", "Voided credit report (by employee and/or date range)" ));
+myMenu36.width = 256;
+
+myMenu34.add(new WebFXMenuItem("Credits", null, "Credit reports", myMenu36 ));
+var myMenu37 = new WebFXMenu;
+myMenu37.emptyText = '';
+myMenu37.add(new WebFXMenuItem("Refund Report", "http://localhost/freeside/search/report_cust_refund.html", "Refund report (by type and/or date range)" ));
+myMenu37.add(new WebFXMenuItem("Unapplied Refunds", "http://localhost/freeside/search/report_cust_refund.html?unapplied=1", "Unapplied refund report (by type and/or date range)" ));
+myMenu37.width = 256;
+
+myMenu34.add(new WebFXMenuItem("Refunds", null, "Refund reports", myMenu37 ));
+var myMenu38 = new WebFXMenu;
+myMenu38.emptyText = '';
+myMenu38.add(new WebFXMenuItem("Agent Commissions", "http://localhost/freeside/search/report_agent_commission.html", "" ));
+myMenu38.add(new WebFXMenuItem("Agent Commissions Per Package", "http://localhost/freeside/search/report_agent_commission_pkg.html", "" ));
+myMenu38.add(new WebFXMenuItem("Sales Person Commissions", "http://localhost/freeside/search/report_sales_commission.html", "" ));
+myMenu38.add(new WebFXMenuItem("Sales Person Commissions Per Package", "http://localhost/freeside/search/report_sales_commission_pkg.html", "" ));
+myMenu38.add(new WebFXMenuItem("Employee Commissions", "http://localhost/freeside/search/report_employee_commission.html", "" ));
+myMenu38.width = 256;
+
+myMenu34.add(new WebFXMenuItem("Commissions", null, "Commission reports", myMenu38 ));
+myMenu34.add(new WebFXMenuItem("A/R Aging", "http://localhost/freeside/search/report_receivables.html", "Accounts Receivable Aging report" ));
+myMenu34.add(new WebFXMenuItem("Prepaid Income", "http://localhost/freeside/search/report_prepaid_income.html", "Prepaid income (unearned revenue)  report" ));
+myMenu34.add(new WebFXMenuItem("Tax Liability", "http://localhost/freeside/search/report_tax.html", "Tax liability report (internal tax data)" ));
+myMenu34.add(new WebFXMenuItem("E911 Fee Summary", "http://localhost/freeside/search/report_e911.html", "E911 fee summary" ));
+myMenu34.add(new WebFXMenuItem("Customer Accounting Summary", "http://localhost/freeside/search/report_customer_accounting_summary.html", "Customer accounting summary report" ));
+myMenu34.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Financial", null, "Financial reports", myMenu34 ));
+var myMenu39 = new WebFXMenu;
+myMenu39.emptyText = '';
+myMenu39.add(new WebFXMenuItem("Credit limit incidents", "http://localhost/freeside/search/report_cust_main_credit_limit.html", "" ));
+myMenu39.add(new WebFXMenuItem("System log", "http://localhost/freeside/search/log.html", "View system events and debugging information." ));
+myMenu39.add(new WebFXMenuItem("Outgoing messages", "http://localhost/freeside/search/cust_msg.html", "View outgoing message log" ));
+myMenu39.width = 256;
+
+myMenu0.add(new WebFXMenuItem("Logs", null, "System and email logs", myMenu39 ));
+myMenu0.width = 256;
+
+          myBar.add(new WebFXMenuButton('Reports', null, 'Lists, reporting and graphing', myMenu0 ));
+
+
+          var myMenu40 = new WebFXMenu;
+myMenu40.emptyText = '';
+myMenu40.add(new WebFXMenuItem("Quick payment entry", "http://localhost/freeside/misc/batch-cust_pay.html", "Enter multiple payments in a batch" ));
+myMenu40.add(new WebFXMenuItem("Download invoice batches", "http://localhost/freeside/search/bill_batch.cgi", "" ));
+myMenu40.add(new WebFXMenuItem("Bulk DID Orders", "http://localhost/freeside/browse/did_order.html", "View/manage bulk DID orders" ));
+myMenu40.add(new WebFXMenuItem("Job Queue", "http://localhost/freeside/search/queue.html", "View pending job queue" ));
+var myMenu41 = new WebFXMenu;
+myMenu41.emptyText = '';
+var myMenu42 = new WebFXMenu;
+myMenu42.emptyText = '';
+myMenu42.add(new WebFXMenuItem("Overview", "http://localhost/freeside/rt/Articles/index.html", "" ));
+myMenu42.add(new WebFXMenuItem("Search", "http://localhost/freeside/rt/Articles/Article/Search.html", "" ));
+myMenu42.add(new WebFXMenuItem("Topics", "http://localhost/freeside/rt/Articles/Topics.html", "" ));
+myMenu42.width = 256;
+
+myMenu41.add(new WebFXMenuItem("Articles", null, "", myMenu42 ));
+myMenu41.add(new WebFXMenuItem("My Day", "http://localhost/freeside/rt/Tools/MyDay.html", "" ));
+myMenu41.add(new WebFXMenuItem("My Reminders", "http://localhost/freeside/rt/Tools/MyReminders.html", "" ));
+myMenu41.add(new WebFXMenuItem("Offline", "http://localhost/freeside/rt/Tools/Offline.html", "" ));
+myMenu41.add(new WebFXMenuItem("Approval", "http://localhost/freeside/rt/Approvals/", "" ));
+myMenu41.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Ticketing", null, "Ticketing tools", myMenu41 ));
+myMenu40.add(new WebFXMenuItem("Customer email settings", "http://localhost/freeside/misc/manage_cust_email.html", "" ));
+myMenu40.add(new WebFXMenuItem("Business card scan", "http://localhost/freeside/edit/prospect_main-upload.html", "" ));
+myMenu40.add(new WebFXMenuItem("Attachments", "http://localhost/freeside/browse/cust_attachment.html", "View customer attachments" ));
+var myMenu43 = new WebFXMenu;
+myMenu43.emptyText = '';
+myMenu43.add(new WebFXMenuItem("Customers", "http://localhost/freeside/misc/cust_main-import.cgi", "" ));
+myMenu43.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/misc/part_pkg-import.html", "" ));
+myMenu43.add(new WebFXMenuItem("Customer packages", "http://localhost/freeside/misc/cust_pkg-import.html", "" ));
+myMenu43.add(new WebFXMenuItem("Customer comments", "http://localhost/freeside/misc/cust_main_note-import.html", "" ));
+myMenu43.add(new WebFXMenuItem("One-time charges", "http://localhost/freeside/misc/cust_main-import_charges.cgi", "" ));
+myMenu43.add(new WebFXMenuItem("Payments", "http://localhost/freeside/misc/cust_pay-import.cgi", "" ));
+myMenu43.add(new WebFXMenuItem("Credits", "http://localhost/freeside/misc/cust_credit-import.html", "" ));
+myMenu43.add(new WebFXMenuItem("Phone numbers (DIDs)", "http://localhost/freeside/misc/phone_avail-import.html", "" ));
+myMenu43.add(new WebFXMenuItem("Call Detail Records (CDRs)", "http://localhost/freeside/misc/cdr-import.html", "" ));
+myMenu43.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Importing", null, "Import tools", myMenu43 ));
+var myMenu44 = new WebFXMenu;
+myMenu44.emptyText = '';
+myMenu44.add(new WebFXMenuItem("Download database dump", "http://localhost/freeside/misc/dump.cgi", "" ));
+myMenu44.width = 256;
+
+myMenu40.add(new WebFXMenuItem("Exporting", null, "Export tools", myMenu44 ));
+myMenu40.add(new WebFXMenuItem("Status", "http://localhost/freeside/view/Status.html", "System status" ));
+myMenu40.width = 256;
+
+          myBar.add(new WebFXMenuButton('Tools', null, 'Tools', myMenu40 ));
+
+
+          var myMenu45 = new WebFXMenu;
+myMenu45.emptyText = '';
+myMenu45.add(new WebFXMenuItem("Settings", "http://localhost/freeside/config/config-view.cgi", "" ));
+myMenu45.add(new WebFXMenuSeparator());
+var myMenu46 = new WebFXMenu;
+myMenu46.emptyText = '';
+myMenu46.add(new WebFXMenuItem("Agent types", "http://localhost/freeside/browse/agent_type.cgi", "Agent types define groups of package definitions that you can then assign to particular agents" ));
+myMenu46.add(new WebFXMenuItem("Agents", "http://localhost/freeside/browse/agent.cgi", "Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)" ));
+myMenu46.add(new WebFXMenuItem("Agent payment gateways", "http://localhost/freeside/browse/payment_gateway.html", "Credit card and electronic check processors for agent overrides" ));
+myMenu46.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Companies", null, "", myMenu46 ));
+var myMenu47 = new WebFXMenu;
+myMenu47.emptyText = '';
+myMenu47.add(new WebFXMenuItem("Sales People", "http://localhost/freeside/browse/sales.html", "Sales people bring in new business." ));
+myMenu47.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Sales People", null, "", myMenu47 ));
+var myMenu48 = new WebFXMenu;
+myMenu48.emptyText = '';
+myMenu48.add(new WebFXMenuItem("Employees", "http://localhost/freeside/browse/access_user.html", "Setup internal users" ));
+myMenu48.add(new WebFXMenuItem("Employee groups", "http://localhost/freeside/browse/access_group.html", "Employee groups allow you to control access to the backend" ));
+myMenu48.add(new WebFXMenuItem("Installer availability", "http://localhost/freeside/browse/sched_item.html", "Installer availability" ));
+myMenu48.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Employees", null, "", myMenu48 ));
+myMenu45.add(new WebFXMenuSeparator());
+var myMenu49 = new WebFXMenu;
+myMenu49.emptyText = '';
+myMenu49.add(new WebFXMenuItem("Customer tags", "http://localhost/freeside/browse/part_tag.html", "" ));
+myMenu49.add(new WebFXMenuItem("Customer classes", "http://localhost/freeside/browse/cust_class.html", "Customer classes define groups of customers for reporting." ));
+myMenu49.add(new WebFXMenuItem("Customer categories", "http://localhost/freeside/browse/cust_category.html", "Customer categories define groups of customer classes." ));
+myMenu49.add(new WebFXMenuSeparator());
+myMenu49.add(new WebFXMenuItem("Contact types", "http://localhost/freeside/browse/contact_class.html", "" ));
+myMenu49.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Customers", null, "", myMenu49 ));
+var myMenu50 = new WebFXMenu;
+myMenu50.emptyText = '';
+myMenu50.add(new WebFXMenuItem("Package definitions", "http://localhost/freeside/browse/part_pkg.cgi", "One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services" ));
+myMenu50.add(new WebFXMenuItem("Package classes", "http://localhost/freeside/browse/pkg_class.html", "Package classes define groups of packages, for taxation, ordering convenience and reporting." ));
+myMenu50.add(new WebFXMenuItem("Package categories", "http://localhost/freeside/browse/pkg_category.html", "Package categories define groups of package classes, for invoice sections." ));
+myMenu50.add(new WebFXMenuItem("Package report classes", "http://localhost/freeside/browse/part_pkg_report_option.html", "Package classes define optional groups of packages for reporting only." ));
+myMenu50.add(new WebFXMenuItem("Fees", "http://localhost/freeside/browse/part_fee.html", "" ));
+myMenu50.add(new WebFXMenuItem("Discounts", "http://localhost/freeside/browse/discount.html", "" ));
+myMenu50.add(new WebFXMenuItem("Discount classes", "http://localhost/freeside/browse/discount_class.html", "" ));
+var myMenu51 = new WebFXMenu;
+myMenu51.emptyText = '';
+myMenu51.add(new WebFXMenuItem("Cancel reasons", "http://localhost/freeside/browse/reason.html?class=C", "Cancel reasons explain why a service was cancelled." ));
+myMenu51.add(new WebFXMenuItem("Cancel reason types", "http://localhost/freeside/browse/reason_type.html?class=C", "Cancel reason types define groups of reasons." ));
+myMenu51.add(new WebFXMenuItem("Suspend reasons", "http://localhost/freeside/browse/reason.html?class=S", "Suspend reasons explain why a service was suspended." ));
+myMenu51.add(new WebFXMenuItem("Suspend reason types", "http://localhost/freeside/browse/reason_type.html?class=S", "Suspend reason types define groups of reasons." ));
+myMenu51.width = 256;
+
+myMenu50.add(new WebFXMenuItem("Cancel/Suspend Reasons", null, "", myMenu51 ));
+myMenu50.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Packages", null, "", myMenu50 ));
+var myMenu52 = new WebFXMenu;
+myMenu52.emptyText = '';
+myMenu52.add(new WebFXMenuItem("Service definitions", "http://localhost/freeside/browse/part_svc.cgi", "Services are items you offer to your customers" ));
+myMenu52.add(new WebFXMenuItem("Service classes", "http://localhost/freeside/browse/part_svc_class.html", "Services classes are user-defined, informational types for services" ));
+myMenu52.add(new WebFXMenuItem("Provisioning exports", "http://localhost/freeside/browse/part_export.cgi", "Provisioning services to external machines, databases and APIs" ));
+var myMenu53 = new WebFXMenu;
+myMenu53.emptyText = '';
+myMenu53.add(new WebFXMenuItem("Access numbers", "http://localhost/freeside/browse/svc_acct_pop.cgi", "Points of Presence" ));
+myMenu53.width = 256;
+
+myMenu52.add(new WebFXMenuItem("Dialup", null, "", myMenu53 ));
+var myMenu54 = new WebFXMenu;
+myMenu54.emptyText = '';
+myMenu54.add(new WebFXMenuItem("Towers", "http://localhost/freeside/browse/tower.html", "Towers and sectors" ));
+myMenu54.add(new WebFXMenuItem("Routers", "http://localhost/freeside/browse/router.cgi", "Broadband access routers" ));
+myMenu54.add(new WebFXMenuItem("Address blocks", "http://localhost/freeside/browse/addr_block.cgi", "Manage address blocks and block assignments to broadband routers" ));
+myMenu54.add(new WebFXMenuItem("Address ranges", "http://localhost/freeside/browse/addr_range.html", "Designate special address ranges" ));
+myMenu54.width = 256;
+
+myMenu52.add(new WebFXMenuItem("Wireless broadband", null, "", myMenu54 ));
+var myMenu55 = new WebFXMenu;
+myMenu55.emptyText = '';
+myMenu55.add(new WebFXMenuItem("View/Edit phone device types", "http://localhost/freeside/browse/part_device.html", "Phone device types" ));
+myMenu55.add(new WebFXMenuItem("View/Edit bulk DID vendors", "http://localhost/freeside/browse/did_vendor.html", "Bulk DID vendors" ));
+myMenu55.add(new WebFXMenuItem("View/Edit Carriers", "http://localhost/freeside/browse/cdr_carrier.html", "Carriers" ));
+myMenu55.width = 256;
+
+myMenu52.add(new WebFXMenuItem("Phone", null, "", myMenu55 ));
+var myMenu56 = new WebFXMenu;
+myMenu56.emptyText = '';
+myMenu56.add(new WebFXMenuItem("RADIUS Groups", "http://localhost/freeside/browse/radius_group.html", "Manage RADIUS groups" ));
+myMenu56.add(new WebFXMenuItem("RADIUS Clients", "http://localhost/freeside/browse/nas.html", "Manage RADIUS clients" ));
+myMenu56.width = 256;
+
+myMenu52.add(new WebFXMenuItem("RADIUS", null, "", myMenu56 ));
+var myMenu57 = new WebFXMenu;
+myMenu57.emptyText = '';
+myMenu57.add(new WebFXMenuItem("Cable providers", "http://localhost/freeside/browse/cable_provider.html", "" ));
+myMenu57.add(new WebFXMenuItem("Cable modem models", "http://localhost/freeside/browse/cable_model.html", "" ));
+myMenu57.width = 256;
+
+myMenu52.add(new WebFXMenuItem("Cable", null, "", myMenu57 ));
+var myMenu58 = new WebFXMenu;
+myMenu58.emptyText = '';
+myMenu58.add(new WebFXMenuItem("Alarm system vendors", "http://localhost/freeside/browse/alarm_system.html", "" ));
+myMenu58.add(new WebFXMenuItem("Alarm system types", "http://localhost/freeside/browse/alarm_type.html", "" ));
+myMenu58.add(new WebFXMenuItem("Alarm central stations", "http://localhost/freeside/browse/alarm_station.html", "" ));
+myMenu58.width = 256;
+
+myMenu52.add(new WebFXMenuItem("Alarm", null, "", myMenu58 ));
+var myMenu59 = new WebFXMenu;
+myMenu59.emptyText = '';
+myMenu59.add(new WebFXMenuItem("Circuit types", "http://localhost/freeside/browse/circuit_type.html", "" ));
+myMenu59.add(new WebFXMenuItem("Circuit providers", "http://localhost/freeside/browse/circuit_provider.html", "" ));
+myMenu59.add(new WebFXMenuItem("Termination types", "http://localhost/freeside/browse/circuit_termination.html", "" ));
+myMenu59.width = 256;
+
+myMenu52.add(new WebFXMenuItem("Circuits", null, "", myMenu59 ));
+myMenu52.add(new WebFXMenuItem("Hardware types", "http://localhost/freeside/browse/hardware_class.html", "Set up hardware type catalog" ));
+myMenu52.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Services", null, "", myMenu52 ));
+myMenu45.add(new WebFXMenuSeparator());
+var myMenu60 = new WebFXMenu;
+myMenu60.emptyText = '';
+myMenu60.add(new WebFXMenuItem("Billing events", "http://localhost/freeside/browse/part_event.html", "Billing actions for customers, invoices and packages" ));
+myMenu60.add(new WebFXMenuItem("Invoice configurations", "http://localhost/freeside/browse/invoice_conf.html", "Adjust invoice settings for special-purpose notices" ));
+myMenu60.add(new WebFXMenuItem("Invoice templates", "http://localhost/freeside/browse/invoice_template.html", "Edit templates for HTML, plaintext and typeset invoices" ));
+myMenu60.add(new WebFXMenuItem("Prepaid cards", "http://localhost/freeside/search/prepay_credit.html", "View outstanding cards, generate new cards" ));
+var myMenu61 = new WebFXMenu;
+myMenu61.emptyText = '';
+myMenu61.add(new WebFXMenuItem("Rate plans", "http://localhost/freeside/browse/rate.cgi", "Manage rate plans" ));
+myMenu61.add(new WebFXMenuItem("Regions and prefixes", "http://localhost/freeside/browse/rate_region.html", "Manage regions and prefixes" ));
+myMenu61.add(new WebFXMenuItem("Usage classes", "http://localhost/freeside/browse/usage_class.html", "Usage classes define groups of usage for taxation." ));
+myMenu61.add(new WebFXMenuItem("Time periods", "http://localhost/freeside/browse/rate_time.html", "Time periods define days and hours for rate plans" ));
+myMenu61.add(new WebFXMenuItem("Edit rates with Excel", "http://localhost/freeside/misc/rate_edit_excel.html", "Download and edit rates with Excel, then upload changes." ));
+myMenu61.add(new WebFXMenuSeparator());
+myMenu61.add(new WebFXMenuItem("Tiering plans", "http://localhost/freeside/browse/rate_tier.html", "Rating tiers" ));
+myMenu61.width = 256;
+
+myMenu60.add(new WebFXMenuItem("Call rates and regions", null, "Manage rate plans, regions and prefixes for VoIP and call billing", myMenu61 ));
+myMenu60.add(new WebFXMenuItem("Locales and tax rates", "http://localhost/freeside/browse/cust_main_county.cgi", "Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each" ));
+myMenu60.add(new WebFXMenuItem("Tax classes", "http://localhost/freeside/browse/part_pkg_taxclass.html", "Tax classes" ));
+myMenu60.add(new WebFXMenuItem("Credit reasons", "http://localhost/freeside/browse/reason.html?class=R", "Credit reasons explain why a credit was issued." ));
+myMenu60.add(new WebFXMenuItem("Credit reason types", "http://localhost/freeside/browse/reason_type.html?class=R", "Credit reason types define groups of reasons." ));
+myMenu60.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Billing", null, "", myMenu60 ));
+myMenu45.add(new WebFXMenuSeparator());
+var myMenu62 = new WebFXMenu;
+myMenu62.emptyText = '';
+myMenu62.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu62.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
+myMenu62.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
+myMenu62.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
+myMenu62.add(new WebFXMenuItem("Inventory classes and inventory", "http://localhost/freeside/browse/inventory_class.html", "Setup inventory classes and stock inventory" ));
+myMenu62.add(new WebFXMenuItem("Upload targets", "http://localhost/freeside/browse/upload_target.html", "Billing and payment upload destinations" ));
+myMenu62.width = 256;
+
+myMenu45.add(new WebFXMenuItem("Miscellaneous", null, "", myMenu62 ));
+myMenu45.width = 256;
+
+          myBar.add(new WebFXMenuButton('Configuration', null, 'Configuration and setup', myMenu45 ));
+
+
+          var myMenu63 = new WebFXMenu;
+myMenu63.emptyText = '';
+myMenu63.add(new WebFXMenuItem("Billing documentation", "http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation", "Freeside documentation" ));
+myMenu63.add(new WebFXMenuItem("Ticketing documentation", "http://wiki.bestpractical.com/", "Request Tracker Wiki" ));
+myMenu63.add(new WebFXMenuSeparator());
+myMenu63.add(new WebFXMenuItem("About Freeside v3.8git", "javascript:about_freeside()", "" ));
+myMenu63.add(new WebFXMenuItem("About RT v4.0.23", "http://www.bestpractical.com/rt", "Request Tracker Homepage" ));
+myMenu63.width = 256;
+
+          myBar.add(new WebFXMenuButton('Help', null, '', myMenu63 ));
+
+
+  myBar.show( null, 'vertical' );
+  myBar.width = 154;
+
+</SCRIPT>
+
+
+
+
+      <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws_iframe.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws_draggable.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/overlibmws_crossframe.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/iframecontentmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="http://localhost/freeside/elements/ajaxcontentmws.js"></SCRIPT>
+
+    <SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+    <SCRIPT TYPE="text/javascript">
+
+  function logout() {
+    // count args; build URL
+    var url = "http://localhost/freeside/loginout/logout.html";
+
+    var xmlhttp = rs_init_object();
+    xmlhttp.open("GET", url, false, "magic", "notyet");
+    xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+    xmlhttp.send(null);
+
+    if (xmlhttp.readyState != 4) {
+      alert("Logout failed: readyState is " + xmlhttp.readyState);
+      return;
+    }
+
+    if (xmlhttp.status != 200) {
+      alert("Logout failed: status is " + xmlhttp.status);
+    } else {
+      var data = xmlhttp.responseText;
+      // alert('received response: ' + data);
+      if ( data.indexOf("<b>System error</b>") > -1 ) {
+        var w;
+        if ( w = window.open("about:blank") ) {
+          w.document.write(data);
+        } else {
+          // popup blocking?  should use an overlib popup instead 
+          alert("Error popup disabled; try disabling popup blocking to see");
+        }
+      } else {
+        window.location = "http://localhost/freeside/loginout/logout.html";
+      }
+    }
+  }
+
+</SCRIPT>
+
+
+    
+
+  </HEAD>
+  <BODY BGCOLOR="#f8f8f8"  onUnload="myclose()" STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
+    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
+      <tr>
+        <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="http://localhost/freeside/view/REAL_logo.cgi"></td>
+        <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
+          <font size=6>Freeside Test 3.8.1</font>
+        </td>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b>test&nbsp;</b> <FONT SIZE="-2"><a href="javascript:void(0);" onClick="logout();">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="http://localhost/freeside/pref/pref.html" STYLE="color: #000000">Preferences</a>
+          <BR></FONT>
+        </td>
+      </tr>
+    </table>
+
+    <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
+
+<link href="http://localhost/freeside/elements/freeside-menu.css" type="text/css" rel="stylesheet">
+
+
+      <TR CLASS="fsmenubar">
+
+
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar);
+          </SCRIPT>
+        </TD>
+
+      </TR>
+
+      <TR CLASS="fssearchbar">
+
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+          
+  <FORM ACTION="http://localhost/freeside/search/prospect_main.html" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="search_prospect" TYPE="text" VALUE="(name, company or phone)" STYLE="width:155px" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
+    <A HREF="http://localhost/freeside/search/report_prospect_main.html" CLASS="fslink" STYLE="font-size: 11px">Adv</A>
+    <INPUT TYPE="submit" VALUE="Search prospects" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px">
+  </FORM>
+  
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_prospect (what) {
+    if ( what.value == '(name, company or phone)' )
+      what.value = '';
+  }
+
+</SCRIPT>
+
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+          
+  <FORM ACTION="http://localhost/freeside/search/cust_main.cgi" METHOD="POST" STYLE="margin:0">
+    <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or contact phone)" STYLE="width:246px" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
+    <A HREF="http://localhost/freeside/search/report_cust_main.html" CLASS="fslink" STYLE="font-size: 11px">Advanced</A>
+    <INPUT TYPE="submit" VALUE="Search customers" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+  </FORM>
+  
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_cust (what) {
+    if ( what.value == '(cust #, name, company or contact phone)' )
+      what.value = '';
+  }
+
+</SCRIPT>
+
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="center">
+          
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_address2 (what) {
+    if ( what.value == '(Unit #)' )
+      what.value = '';
+  }
+
+</SCRIPT>
+
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right">
+          
+  <FORM ACTION="http://localhost/freeside/search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
+    <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
+    <A HREF="http://localhost/freeside/search/report_cust_bill.html" CLASS="fslink" STYLE="font-size: 11px">Adv</A>    <BR>
+    <INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px;margin-top:3px">
+  </FORM>
+  
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_invoice (what) {
+    if ( what.value == '(inv #)' )
+      what.value = '';
+  }
+
+</SCRIPT>
+
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
+          
+  <FORM ACTION="http://localhost/freeside/search/cust_svc.html" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="search_svc" TYPE="text" VALUE="(user, email, ip, mac, domain or service phone)" STYLE="width:271px" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
+    <A NOTYET="http://localhost/freeside/search/svc_Smarter.html" STYLE="color: #cccccc; font-size:11px">Advanced</A>
+    <INPUT TYPE="submit" VALUE="Search services" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+  </FORM>
+  
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_svc (what) {
+    if ( what.value == '(user, email, ip, mac, domain or service phone)' )
+      what.value = '';
+  }
+
+</SCRIPT>
+
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
+          
+  <FORM ACTION="http://localhost/freeside//rt/index.html" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="q" TYPE="text" VALUE="(ticket #, subject, email or fulltext:text)" STYLE="width:223px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
+    <A HREF="http://localhost/freeside//rt/Search/Build.html?NewQuery=1" CLASS="fslink" STYLE="font-size:11px">Advanced</A>
+    <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+  </FORM>
+  
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_ticket (what) {
+    if ( what.value == '(ticket #, subject, email or fulltext:text)' )
+      what.value = '';
+  }
+
+</SCRIPT>
+
+        </TD>
+
+      </TR>
+    </TABLE>
+
+
+
+    <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>
+
+      <TR HEIGHT="100%">
+
+        <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
+
+          <FONT SIZE=6>
+            Edit Customer: Olson Inc (Towne, Samara)
+          </FONT>
+
+          <BR><BR>
+
+          
+
+
+
+
+<FORM NAME   = "CustomerForm"
+      METHOD = "POST"
+      ACTION = "http://localhost/freeside/edit/process/cust_main.cgi"
+>
+
+<INPUT TYPE="hidden" NAME="custnum"     VALUE="135">
+<INPUT TYPE="hidden" NAME="prospectnum" VALUE="">
+
+  Customer #<B>135</B> - 
+  <B><FONT COLOR="#00CC00">
+    Active
+  </FONT></B>
+  <BR><BR>
+
+<FONT CLASS="fsinnerbox-title">Basics</FONT>
+<TABLE CLASS="fsinnerbox">
+
+<TR>
+  <TD ALIGN="right">Residential</TD>
+  <TD><INPUT TYPE     = "radio"
+             NAME     = "residential_commercial"
+             ID       = "residential_commercial_Residential"
+             VALUE    = "Residential"
+             onChange = "rescom_changed(this)"
+       
+  ></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Commercial</TD>
+  <TD><INPUT TYPE     = "radio"
+             NAME     = "residential_commercial"
+             ID       = "residential_commercial_Commercial"
+             VALUE    = "Commercial"
+             onChange = "rescom_changed(this)"
+       CHECKED
+  ></TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+
+  function rescom_changed(what) {
+    if ( what.checked == (what.value == 'Commercial' ) ) {
+      document.getElementById('company_row').style.display = '';
+      document.getElementById('contacts_div').style.display = '';
+      document.getElementById('spouse_row').style.display = 'none';
+    } else {
+      if ( document.getElementById('company').value.length == 0 ) {
+        document.getElementById('company_row').style.display = 'none';
+      }
+      document.getElementById('contacts_div').style.display = 'none';
+      document.getElementById('spouse_row').style.display = '';
+    }
+  }
+
+
+  var ship_locked_agents = {};
+  var ship_fields = [
+    'locationname', 'address1', 'city', 'state', 'zip', 'country', 
+    'latitude', 'longitude', 'district'
+  ];
+
+  function agent_changed(what) {
+    var agentnum = what.value;
+
+
+    var f = what.form;
+    if ( ship_locked_agents[agentnum] ) {
+      for(var x in ship_locked_agents[agentnum]) {
+        f['ship_'+x].value = ship_locked_agents[agentnum][x];
+        f['ship_'+x].disabled = true;
+      }
+      f['same'].checked = false;
+      f['same'].disabled = true;
+    } else {
+      for(var i=0; i<ship_fields.length; i++) {
+        x = ship_fields[i];
+        if ( f['ship_'+x].disabled )  {
+          f['ship_'+x].value  = f['old_ship_'+x].value;
+        }
+        f['ship_'+x].disabled = false;
+      }
+      f['same'].disabled = false;
+    }
+    samechanged(f['same']);
+
+    salesnum_agentnum_changed(what);
+
+  }
+
+  (function() {
+  var myonload = function() {
+
+  rescom_changed(document.getElementById('residential_commercial_Residential'));
+  agent_changed(document.getElementById('agentnum'))
+  
+  }
+  if ( window.addEventListener ) {
+    window.addEventListener('load', myonload);
+  } else if ( window.attachEvent ) {
+    window.attachEvent('onload', myonload);
+  }
+})();
+
+ 
+</SCRIPT>
+
+
+
+
+
+
+
+  
+  <INPUT TYPE  = "hidden"
+         NAME  = "agentnum"
+         ID    = "agentnum"
+         VALUE = "1"
+  >
+
+      <TR>
+      </TR>
+
+
+
+
+
+    <INPUT TYPE="hidden" NAME="agent_custid" VALUE="">
+
+
+
+  <INPUT TYPE="hidden" NAME="classnum" VALUE="">
+
+
+
+
+
+  <INPUT TYPE  = "hidden"
+         NAME  = "salesnum"
+         ID    = "salesnum"
+         VALUE = ""
+  >
+
+      <TR>
+      </TR>
+
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function get_sales() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/sales.cgi?";
+        var a = get_sales.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=get_sales';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+<SCRIPT TYPE="text/javascript">
+
+
+  function salesnum_opt(what, value, text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function salesnum_agentnum_changed(what) {
+    what.form.salesnum.disabled = 'disabled'; //disable sales dropdown
+
+    if ( what.type == 'hidden' ) { 
+      agentnum = what.value;
+    } else {
+      agentnum = what.options[what.selectedIndex].value;
+    }
+
+    function update_salesnum(sales) {
+
+      if ( what.form.salesnum.type == 'hidden' ) {
+        what.form.salesnum.disabled = ''; //re-enable sales dropdown
+        return;
+      }
+
+      // save the current salesnum
+      var salesnum = what.form.salesnum.value;
+
+      // blank the current sales people
+      for ( var i = what.form.salesnum.length; i>= 0; i-- )
+        what.form.salesnum.options[i] = null;
+
+      // add the new sales people
+
+
+        salesnum_opt( what.form.salesnum,
+                          '',
+                          '(none)'
+                        );
+
+      var salesArray = eval('(' + sales + ')' );
+      for ( var s = 0; s < salesArray.length; s=s+2 ) {
+        //surely this should be some kind of JSON structure
+        var salesLabel  = salesArray[s+1];
+        salesnum_opt( what.form.salesnum, salesArray[s], salesLabel );
+      }
+
+      what.form.salesnum.disabled = ''; //re-enable sales dropdown
+
+      //restore salesnum if possible
+      what.form.salesnum.value = salesnum;
+
+    }
+
+    get_sales( agentnum,
+               update_salesnum
+             );
+  }
+
+  (function() {
+  var myonload = function() {
+
+    salesnum_agentnum_changed(document.getElementById('agentnum'));
+  
+  }
+  if ( window.addEventListener ) {
+    window.addEventListener('load', myonload);
+  } else if ( window.attachEvent ) {
+    window.attachEvent('onload', myonload);
+  }
+})();
+
+
+</SCRIPT>
+
+
+
+
+  <INPUT TYPE="hidden" NAME="refnum" VALUE="1">
+
+
+
+
+  <TR>
+    <TD ALIGN="right">Referring customer</TD>
+    <TD>
+      <INPUT TYPE="hidden" NAME="referral_custnum" ID="referral_custnum" VALUE="">
+
+<!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->
+
+<INPUT TYPE = "text"
+       NAME = "referral_custnum_search"
+       ID   = "referral_custnum_search"
+       SIZE = "32"
+       VALUE="(cust #, name or company)"
+       onFocus="clearhint_referral_custnum_search(this);"
+       onClick="clearhint_referral_custnum_search(this);"
+       onChange="smart_referral_custnum_search(this);"
+>
+
+
+<SELECT NAME="referral_custnum_select" ID="referral_custnum_select" STYLE="color:#ff0000; display:none" onChange="select_referral_custnum(this);">
+</SELECT>
+
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function smart_search() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/xmlhttp-cust_main-search.cgi?";
+        var a = smart_search.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=smart_search';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_referral_custnum_search (what) {
+
+    what.style.color = '#000000';
+
+    if ( what.value == '(cust #, name or company)' )
+      what.value = '';
+
+    if ( what.value.indexOf('Customer not found: ') == 0 )
+      what.value = what.value.substr(20);
+
+  }
+
+  var referral_custnum_search_active = false;
+
+  function smart_referral_custnum_search(what) {
+
+    if ( referral_custnum_search_active )
+      return;
+
+    var customer = what.value;
+
+    if ( customer == 'searching...' || customer == ''
+         || customer.indexOf('Customer not found: ') == 0 )
+      return;
+
+    if ( what.getAttribute('magic') == 'nosearch' ) {
+      what.setAttribute('magic', '');
+      return;
+    }
+
+    //what.value = 'searching...'
+    what.disabled = true;
+    what.style.color= '#000000';
+    what.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('referral_custnum_select');
+
+    //alert("search for customer " + customer);
+
+    function referral_custnum_search_update(customers) {
+
+      //alert('customers returned: ' + customers);
+
+      var customerArray = eval('(' + customers + ')');
+
+      what.disabled = false;
+      what.style.backgroundColor = '#ffffff';
+
+      if ( customerArray.length == 0 ) {
+
+        what.form.referral_custnum.value = '';
+
+        what.value = 'Customer not found: ' + what.value;
+        what.style.color = '#ff0000';
+
+        what.style.display = '';
+        customer_select.style.display = 'none';
+
+      } else if ( customerArray.length == 1 ) {
+
+        //alert('one customer found: ' + customerArray[0]);
+
+        what.form.referral_custnum.value = customerArray[0][0];
+        what.value = customerArray[0][1];
+
+        what.style.display = '';
+        customer_select.style.display = 'none';
+
+      } else {
+
+        //alert('multiple customers found, have to create select dropdown');
+
+        //blank the current list
+        for ( var i = customer_select.length; i >= 0; i-- )
+          customer_select.options[i] = null;
+
+        opt(customer_select, '', 'Multiple customers match "' + customer + '" - select one', '#ff0000');
+
+        //add the multiple customers
+        for ( var s = 0; s < customerArray.length; s++ )
+          opt(customer_select, customerArray[s][0], customerArray[s][1], '#000000');
+
+        opt(customer_select, 'cancel', '(Edit search string)', '#000000');
+
+        what.style.display = 'none';
+        customer_select.style.display = '';
+
+      }
+
+      referral_custnum_search_active = false;
+
+    }
+
+    referral_custnum_search_active = true;
+
+    smart_search( customer, referral_custnum_search_update );
+
+
+  }
+
+  function select_referral_custnum (what) {
+
+    var custnum = what.options[what.selectedIndex].value;
+    var customer = what.options[what.selectedIndex].text;
+
+    var customer_obj = document.getElementById('referral_custnum_search');
+
+    if ( custnum == '' ) {
+      //what.style.color = '#ff0000';
+
+    } else if ( custnum == 'cancel' ) {
+
+      customer_obj.style.color = '#000000';
+
+      what.style.display = 'none';
+      customer_obj.style.display = '';
+      customer_obj.focus();
+
+    } else {
+    
+      what.form.referral_custnum.value = custnum;
+
+      customer_obj.value = customer;
+      customer_obj.style.color = '#000000';
+
+      what.style.display = 'none';
+      customer_obj.style.display = '';
+
+    }
+
+  }
+
+  function opt(what,value,text,color) {
+    var optionName = new Option(text, value, false, false);
+    optionName.style.color = color;
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+</SCRIPT>
+
+    </TD>
+  </TR>
+
+
+
+  <INPUT TYPE="hidden" NAME="edit_subject" VALUE="">
+
+  <INPUT TYPE="hidden" NAME="calling_list_exempt" VALUE="">
+
+</TABLE>
+
+
+
+<BR>
+<TABLE> <TR>
+  <TD STYLE="width:650px">
+    <FONT CLASS="fsinnerbox-title">Billing address</FONT>
+    <TABLE CLASS="fsinnerbox" WIDTH="100%">
+    
+<TR>
+  <TD CLASS="required label">Contact name</TD>
+  <TD COLSPAN=6 STYLE="vertical-align:top">
+        
+<DIV STYLE="display: inline-block">
+  <INPUT TYPE="text" NAME="last" VALUE="Towne" ,>
+  <BR><FONT SIZE=-1>Last</FONT>
+</DIV>
+
+        
+<DIV STYLE="display: inline-block">
+  <INPUT TYPE="text" NAME="first" VALUE="Samara" >
+  <BR><FONT SIZE=-1>First</FONT>
+</DIV>
+
+        <INPUT TYPE="hidden" NAME="ss" VALUE="">
+  </TD>
+</TR>
+
+
+  <TR ID="company_row" >
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=6><INPUT TYPE="text" NAME="company" ID="company" SIZE=60
+             VALUE="Olson Inc">
+  </TD>
+</TR>
+
+
+    
+
+    <INPUT TYPE  = "hidden"
+       NAME  = "bill_locationname"
+       ID    = "bill_locationname"
+       VALUE = ""
+>
+
+
+
+
+<TR>
+  <TH STYLE="width:16ex" ALIGN="right"><font color="#ff0000">*</font>&nbsp;Address</TH>
+  <TD COLSPAN=7>
+    <INPUT TYPE     = "text"
+           NAME     = "bill_address1"
+           ID       = "bill_address1"
+           VALUE    = "46706 Kadin Hill #780"
+           SIZE     = 54
+           onChange = ""
+           
+           
+    >
+  </TD>
+</TR>
+
+
+<TR>
+      <TD ALIGN="right"><FONT ID="bill_address2_required" color="#ff0000" STYLE="visibility:hidden">*</FONT>&nbsp;<FONT ID="bill_address2_label" STYLE="visibility:hidden"><B>Unit&nbsp;#</B></FONT></TD>
+      <TD COLSPAN=7>
+        <INPUT TYPE     = "text"
+               NAME     = "bill_address2"
+               ID       = "bill_address2"
+               VALUE    = "Trailer W 2-E"
+               SIZE     = 54
+               onChange = ""
+               
+               
+        >
+      </TD>
+</TR>
+
+
+
+<TR>
+  <TH ALIGN="right">
+  <font color="#ff0000">*</font>&nbsp;City
+  </TH>
+  <TD WIDTH="1">
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function bill_get_cities() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/cities.cgi?";
+        var a = bill_get_cities.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=bill_get_cities';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  var saved_bill_city= 'Owensboro';
+
+  function bill_county_changed(what, callback) {
+
+    what.form.bill_city_select.disabled = 'disabled';
+
+    county  = what.options[what.selectedIndex].value;
+    state   = what.form.bill_state.options[what.form.bill_state.selectedIndex].value;
+    country = what.form.bill_country.options[what.form.bill_country.selectedIndex].value;
+
+    function bill_update_cities(cities) {
+
+      // blank the current city list
+      for ( var i = what.form.bill_city_select.length; i >= 0; i-- )
+          what.form.bill_city_select.options[i] = null;
+
+
+      // add the new cities
+      var citiesArray = eval('(' + cities + ')' );
+
+      for ( var s = 0; s < citiesArray.length; s++ ) {
+          var cityLabel = citiesArray[s];
+          if ( cityLabel == "" )
+              cityLabel = '(n/a)';
+          opt(what.form.bill_city_select, citiesArray[s], cityLabel);
+      }
+
+     if ( citiesArray.length > 1 || (citiesArray[0] && citiesArray[0].length) ){
+        // turn off the text city, turn on the select
+        saved_bill_city = what.form.bill_city.value;
+        bill_city_select_changed(what.form.bill_city_select);
+        what.form.bill_city.style.display = 'none';
+        what.form.bill_city_select.style.display = '';
+      } else if ( what.form.bill_city.style.display == 'none' ) {
+        // turn on the text city, turn off the select
+        what.form.bill_city.value = saved_bill_city;
+        what.form.bill_city.style.display = '';
+        what.form.bill_city_select.style.display = 'none';
+      }
+
+      what.form.bill_city_select.disabled = '';
+
+      //run the callback
+      if ( callback != null )
+        callback();
+    }
+
+    // go get the new cities
+    bill_get_cities( county, state, country, bill_update_cities );
+
+  }
+
+  function bill_city_select_changed(what) {
+    what.form.bill_city.value = what.options[what.selectedIndex].value;
+  }
+
+</SCRIPT>
+
+
+<INPUT TYPE     = "text"
+       NAME     = "bill_city"
+       ID       = "bill_city"
+       VALUE    = "Owensboro"
+       onChange = ""
+       
+       
+>
+
+
+    <SELECT NAME     = "bill_city_select"
+            ID       = "bill_city_select"
+            onChange = "bill_city_select_changed(this); "
+            
+            STYLE="display:none"
+    >
+
+
+
+      <OPTION VALUE=""
+              
+      >
+
+
+    </SELECT>
+
+</TD>
+  <TH ALIGN="right" WIDTH="1" ID="bill_countylabel" STYLE="display:none"><font color="#ff0000">*</font>&nbsp;County</TH>
+  <TD WIDTH="1">
+  <SCRIPT TYPE="text/javascript">
+    function bill_state_changed(what) {
+    }
+  </SCRIPT>
+
+  <SELECT NAME  = "bill_county"
+           ID   = "bill_county"
+          STYLE = "display:none"
+  >
+    <OPTION SELECTED VALUE="">
+  </SELECT>
+
+
+</TD>
+  <TH ALIGN="right" WIDTH="1"><font color="#ff0000">*</font>&nbsp;State</TH>
+  <TD WIDTH="1">
+    
+<SELECT NAME     = "bill_state"
+        ID       = "bill_state"
+        onChange = "bill_state_changed(this); "
+        
+        
+>
+
+
+
+  <OPTION VALUE="AK">AK
+
+
+  <OPTION VALUE="AL">AL
+
+
+  <OPTION VALUE="AR">AR
+
+
+  <OPTION VALUE="AS">AS
+
+
+  <OPTION VALUE="AZ">AZ
+
+
+  <OPTION VALUE="CA">CA
+
+
+  <OPTION VALUE="CO">CO
+
+
+  <OPTION VALUE="CT">CT
+
+
+  <OPTION VALUE="DC">DC
+
+
+  <OPTION VALUE="DE">DE
+
+
+  <OPTION VALUE="FL">FL
+
+
+  <OPTION VALUE="GA">GA
+
+
+  <OPTION VALUE="GU">GU
+
+
+  <OPTION VALUE="HI">HI
+
+
+  <OPTION VALUE="IA">IA
+
+
+  <OPTION VALUE="ID">ID
+
+
+  <OPTION VALUE="IL">IL
+
+
+  <OPTION VALUE="IN">IN
+
+
+  <OPTION VALUE="KS" SELECTED>KS
+
+
+  <OPTION VALUE="KY">KY
+
+
+  <OPTION VALUE="LA">LA
+
+
+  <OPTION VALUE="MA">MA
+
+
+  <OPTION VALUE="MD">MD
+
+
+  <OPTION VALUE="ME">ME
+
+
+  <OPTION VALUE="MI">MI
+
+
+  <OPTION VALUE="MN">MN
+
+
+  <OPTION VALUE="MO">MO
+
+
+  <OPTION VALUE="MP">MP
+
+
+  <OPTION VALUE="MS">MS
+
+
+  <OPTION VALUE="MT">MT
+
+
+  <OPTION VALUE="NC">NC
+
+
+  <OPTION VALUE="ND">ND
+
+
+  <OPTION VALUE="NE">NE
+
+
+  <OPTION VALUE="NH">NH
+
+
+  <OPTION VALUE="NJ">NJ
+
+
+  <OPTION VALUE="NM">NM
+
+
+  <OPTION VALUE="NV">NV
+
+
+  <OPTION VALUE="NY">NY
+
+
+  <OPTION VALUE="OH">OH
+
+
+  <OPTION VALUE="OK">OK
+
+
+  <OPTION VALUE="OR">OR
+
+
+  <OPTION VALUE="PA">PA
+
+
+  <OPTION VALUE="PR">PR
+
+
+  <OPTION VALUE="RI">RI
+
+
+  <OPTION VALUE="SC">SC
+
+
+  <OPTION VALUE="SD">SD
+
+
+  <OPTION VALUE="TN">TN
+
+
+  <OPTION VALUE="TX">TX
+
+
+  <OPTION VALUE="UM">UM
+
+
+  <OPTION VALUE="UT">UT
+
+
+  <OPTION VALUE="VA">VA
+
+
+  <OPTION VALUE="VI">VI
+
+
+  <OPTION VALUE="VT">VT
+
+
+  <OPTION VALUE="WA">WA
+
+
+  <OPTION VALUE="WI">WI
+
+
+  <OPTION VALUE="WV">WV
+
+
+  <OPTION VALUE="WY">WY
+
+
+
+</SELECT>
+
+
+
+  </TD>
+  <TH ALIGN="right" WIDTH="1"><font color="#ff0000">*</font>&nbsp;Zip</TH>
+  <TD>
+    <INPUT TYPE     = "text"
+           NAME     = "bill_zip"
+           ID       = "bill_zip"
+           VALUE    = "69113"
+           SIZE     = 11
+           onChange = ""
+           
+           
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>&nbsp;Country</TH>
+  <TD COLSPAN=6>
+  <SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function bill_get_states() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/states.cgi?";
+        var a = bill_get_states.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=bill_get_states';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+  
+  <SCRIPT TYPE="text/javascript">
+  
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+  
+    function bill_country_changed(what, callback) {
+
+      what.form.bill_state.disabled = 'disabled';
+  
+      country = what.options[what.selectedIndex].value;
+  
+      function bill_update_states(states) {
+  
+        // blank the current state list
+        for ( var i = what.form.bill_state.length; i >= 0; i-- )
+            what.form.bill_state.options[i] = null;
+  
+        // add the new states
+        var statesArray = eval('(' + states + ')' );
+
+        for ( var s = 0; s < statesArray.length; s=s+2 ) {
+            var stateLabel = statesArray[s+1];
+            if ( stateLabel == "" )
+                stateLabel = '(n/a)';
+            opt(what.form.bill_state, statesArray[s], stateLabel);
+        }
+
+        what.form.bill_state.disabled = '';
+  
+        //run the callback
+        if ( callback != null ) {
+          callback();
+        } else {
+          bill_state_changed(what.form.bill_state);
+        }
+      }
+  
+      // go get the new states
+      bill_get_states( country, bill_update_states );
+  
+    }
+  
+  </SCRIPT>
+
+
+<SELECT NAME     = "bill_country"
+        ID       = "bill_country"
+        onChange = "bill_country_changed(this); "
+        
+        
+>
+
+
+
+  <OPTION VALUE="US"
+           SELECTED
+  >United States (US)
+
+
+  <OPTION VALUE="AF"
+          
+  >Afghanistan (AF)
+
+
+  <OPTION VALUE="AX"
+          
+  >Aland Islands (AX)
+
+
+  <OPTION VALUE="AL"
+          
+  >Albania (AL)
+
+
+  <OPTION VALUE="DZ"
+          
+  >Algeria (DZ)
+
+
+  <OPTION VALUE="AS"
+          
+  >American Samoa (AS)
+
+
+  <OPTION VALUE="AD"
+          
+  >Andorra (AD)
+
+
+  <OPTION VALUE="AO"
+          
+  >Angola (AO)
+
+
+  <OPTION VALUE="AI"
+          
+  >Anguilla (AI)
+
+
+  <OPTION VALUE="AQ"
+          
+  >Antarctica (AQ)
+
+
+  <OPTION VALUE="AG"
+          
+  >Antigua and Barbuda (AG)
+
+
+  <OPTION VALUE="AR"
+          
+  >Argentina (AR)
+
+
+  <OPTION VALUE="AM"
+          
+  >Armenia (AM)
+
+
+  <OPTION VALUE="AW"
+          
+  >Aruba (AW)
+
+
+  <OPTION VALUE="AU"
+          
+  >Australia (AU)
+
+
+  <OPTION VALUE="AT"
+          
+  >Austria (AT)
+
+
+  <OPTION VALUE="AZ"
+          
+  >Azerbaijan (AZ)
+
+
+  <OPTION VALUE="BS"
+          
+  >Bahamas (BS)
+
+
+  <OPTION VALUE="BH"
+          
+  >Bahrain (BH)
+
+
+  <OPTION VALUE="BD"
+          
+  >Bangladesh (BD)
+
+
+  <OPTION VALUE="BB"
+          
+  >Barbados (BB)
+
+
+  <OPTION VALUE="BY"
+          
+  >Belarus (BY)
+
+
+  <OPTION VALUE="BE"
+          
+  >Belgium (BE)
+
+
+  <OPTION VALUE="BZ"
+          
+  >Belize (BZ)
+
+
+  <OPTION VALUE="BJ"
+          
+  >Benin (BJ)
+
+
+  <OPTION VALUE="BM"
+          
+  >Bermuda (BM)
+
+
+  <OPTION VALUE="BT"
+          
+  >Bhutan (BT)
+
+
+  <OPTION VALUE="BO"
+          
+  >Bolivia, Plurinational State of (BO)
+
+
+  <OPTION VALUE="BQ"
+          
+  >Bonaire, Sint Eustatius and Saba (BQ)
+
+
+  <OPTION VALUE="BA"
+          
+  >Bosnia and Herzegovina (BA)
+
+
+  <OPTION VALUE="BW"
+          
+  >Botswana (BW)
+
+
+  <OPTION VALUE="BV"
+          
+  >Bouvet Island (BV)
+
+
+  <OPTION VALUE="BR"
+          
+  >Brazil (BR)
+
+
+  <OPTION VALUE="IO"
+          
+  >British Indian Ocean Territory (IO)
+
+
+  <OPTION VALUE="BN"
+          
+  >Brunei Darussalam (BN)
+
+
+  <OPTION VALUE="BG"
+          
+  >Bulgaria (BG)
+
+
+  <OPTION VALUE="BF"
+          
+  >Burkina Faso (BF)
+
+
+  <OPTION VALUE="BI"
+          
+  >Burundi (BI)
+
+
+  <OPTION VALUE="KH"
+          
+  >Cambodia (KH)
+
+
+  <OPTION VALUE="CM"
+          
+  >Cameroon (CM)
+
+
+  <OPTION VALUE="CA"
+          
+  >Canada (CA)
+
+
+  <OPTION VALUE="CV"
+          
+  >Cape Verde (CV)
+
+
+  <OPTION VALUE="KY"
+          
+  >Cayman Islands (KY)
+
+
+  <OPTION VALUE="CF"
+          
+  >Central African Republic (CF)
+
+
+  <OPTION VALUE="TD"
+          
+  >Chad (TD)
+
+
+  <OPTION VALUE="CL"
+          
+  >Chile (CL)
+
+
+  <OPTION VALUE="CN"
+          
+  >China (CN)
+
+
+  <OPTION VALUE="CX"
+          
+  >Christmas Island (CX)
+
+
+  <OPTION VALUE="CC"
+          
+  >Cocos (Keeling) Islands (CC)
+
+
+  <OPTION VALUE="CO"
+          
+  >Colombia (CO)
+
+
+  <OPTION VALUE="KM"
+          
+  >Comoros (KM)
+
+
+  <OPTION VALUE="CG"
+          
+  >Congo (CG)
+
+
+  <OPTION VALUE="CD"
+          
+  >Congo (The Democratic Republic of the) (CD)
+
+
+  <OPTION VALUE="CK"
+          
+  >Cook Islands (CK)
+
+
+  <OPTION VALUE="CR"
+          
+  >Costa Rica (CR)
+
+
+  <OPTION VALUE="CI"
+          
+  >Cote d'Ivoire (CI)
+
+
+  <OPTION VALUE="HR"
+          
+  >Croatia (HR)
+
+
+  <OPTION VALUE="CU"
+          
+  >Cuba (CU)
+
+
+  <OPTION VALUE="CW"
+          
+  >Curacao (CW)
+
+
+  <OPTION VALUE="CY"
+          
+  >Cyprus (CY)
+
+
+  <OPTION VALUE="CZ"
+          
+  >Czech Republic (CZ)
+
+
+  <OPTION VALUE="DK"
+          
+  >Denmark (DK)
+
+
+  <OPTION VALUE="DJ"
+          
+  >Djibouti (DJ)
+
+
+  <OPTION VALUE="DM"
+          
+  >Dominica (DM)
+
+
+  <OPTION VALUE="DO"
+          
+  >Dominican Republic (DO)
+
+
+  <OPTION VALUE="EC"
+          
+  >Ecuador (EC)
+
+
+  <OPTION VALUE="EG"
+          
+  >Egypt (EG)
+
+
+  <OPTION VALUE="SV"
+          
+  >El Salvador (SV)
+
+
+  <OPTION VALUE="GQ"
+          
+  >Equatorial Guinea (GQ)
+
+
+  <OPTION VALUE="ER"
+          
+  >Eritrea (ER)
+
+
+  <OPTION VALUE="EE"
+          
+  >Estonia (EE)
+
+
+  <OPTION VALUE="ET"
+          
+  >Ethiopia (ET)
+
+
+  <OPTION VALUE="FK"
+          
+  >Falkland Islands (The) [Malvinas] (FK)
+
+
+  <OPTION VALUE="FO"
+          
+  >Faroe Islands (FO)
+
+
+  <OPTION VALUE="FJ"
+          
+  >Fiji (FJ)
+
+
+  <OPTION VALUE="FI"
+          
+  >Finland (FI)
+
+
+  <OPTION VALUE="FR"
+          
+  >France (FR)
+
+
+  <OPTION VALUE="GF"
+          
+  >French Guiana (GF)
+
+
+  <OPTION VALUE="PF"
+          
+  >French Polynesia (PF)
+
+
+  <OPTION VALUE="TF"
+          
+  >French Southern Territories (TF)
+
+
+  <OPTION VALUE="GA"
+          
+  >Gabon (GA)
+
+
+  <OPTION VALUE="GM"
+          
+  >Gambia (GM)
+
+
+  <OPTION VALUE="GE"
+          
+  >Georgia (GE)
+
+
+  <OPTION VALUE="DE"
+          
+  >Germany (DE)
+
+
+  <OPTION VALUE="GH"
+          
+  >Ghana (GH)
+
+
+  <OPTION VALUE="GI"
+          
+  >Gibraltar (GI)
+
+
+  <OPTION VALUE="GR"
+          
+  >Greece (GR)
+
+
+  <OPTION VALUE="GL"
+          
+  >Greenland (GL)
+
+
+  <OPTION VALUE="GD"
+          
+  >Grenada (GD)
+
+
+  <OPTION VALUE="GP"
+          
+  >Guadeloupe (GP)
+
+
+  <OPTION VALUE="GU"
+          
+  >Guam (GU)
+
+
+  <OPTION VALUE="GT"
+          
+  >Guatemala (GT)
+
+
+  <OPTION VALUE="GG"
+          
+  >Guernsey (GG)
+
+
+  <OPTION VALUE="GN"
+          
+  >Guinea (GN)
+
+
+  <OPTION VALUE="GW"
+          
+  >Guinea-Bissau (GW)
+
+
+  <OPTION VALUE="GY"
+          
+  >Guyana (GY)
+
+
+  <OPTION VALUE="HT"
+          
+  >Haiti (HT)
+
+
+  <OPTION VALUE="HM"
+          
+  >Heard Island and McDonald Islands (HM)
+
+
+  <OPTION VALUE="VA"
+          
+  >Holy See (The) [Vatican City State] (VA)
+
+
+  <OPTION VALUE="HN"
+          
+  >Honduras (HN)
+
+
+  <OPTION VALUE="HK"
+          
+  >Hong Kong (HK)
+
+
+  <OPTION VALUE="HU"
+          
+  >Hungary (HU)
+
+
+  <OPTION VALUE="IS"
+          
+  >Iceland (IS)
+
+
+  <OPTION VALUE="IN"
+          
+  >India (IN)
+
+
+  <OPTION VALUE="ID"
+          
+  >Indonesia (ID)
+
+
+  <OPTION VALUE="IR"
+          
+  >Iran, The Islamic Republic of (IR)
+
+
+  <OPTION VALUE="IQ"
+          
+  >Iraq (IQ)
+
+
+  <OPTION VALUE="IE"
+          
+  >Ireland (IE)
+
+
+  <OPTION VALUE="IM"
+          
+  >Isle of Man (IM)
+
+
+  <OPTION VALUE="IL"
+          
+  >Israel (IL)
+
+
+  <OPTION VALUE="IT"
+          
+  >Italy (IT)
+
+
+  <OPTION VALUE="JM"
+          
+  >Jamaica (JM)
+
+
+  <OPTION VALUE="JP"
+          
+  >Japan (JP)
+
+
+  <OPTION VALUE="JE"
+          
+  >Jersey (JE)
+
+
+  <OPTION VALUE="JO"
+          
+  >Jordan (JO)
+
+
+  <OPTION VALUE="KZ"
+          
+  >Kazakhstan (KZ)
+
+
+  <OPTION VALUE="KE"
+          
+  >Kenya (KE)
+
+
+  <OPTION VALUE="KI"
+          
+  >Kiribati (KI)
+
+
+  <OPTION VALUE="KP"
+          
+  >Korea, The Democratic People's Republic of (KP)
+
+
+  <OPTION VALUE="KR"
+          
+  >Korea, The Republic of (KR)
+
+
+  <OPTION VALUE="KW"
+          
+  >Kuwait (KW)
+
+
+  <OPTION VALUE="KG"
+          
+  >Kyrgyzstan (KG)
+
+
+  <OPTION VALUE="LA"
+          
+  >Lao People's Democratic Republic (LA)
+
+
+  <OPTION VALUE="LV"
+          
+  >Latvia (LV)
+
+
+  <OPTION VALUE="LB"
+          
+  >Lebanon (LB)
+
+
+  <OPTION VALUE="LS"
+          
+  >Lesotho (LS)
+
+
+  <OPTION VALUE="LR"
+          
+  >Liberia (LR)
+
+
+  <OPTION VALUE="LY"
+          
+  >Libya (LY)
+
+
+  <OPTION VALUE="LI"
+          
+  >Liechtenstein (LI)
+
+
+  <OPTION VALUE="LT"
+          
+  >Lithuania (LT)
+
+
+  <OPTION VALUE="LU"
+          
+  >Luxembourg (LU)
+
+
+  <OPTION VALUE="MO"
+          
+  >Macao (MO)
+
+
+  <OPTION VALUE="MK"
+          
+  >Macedonia, The former Yugoslav Republic of (MK)
+
+
+  <OPTION VALUE="MG"
+          
+  >Madagascar (MG)
+
+
+  <OPTION VALUE="MW"
+          
+  >Malawi (MW)
+
+
+  <OPTION VALUE="MY"
+          
+  >Malaysia (MY)
+
+
+  <OPTION VALUE="MV"
+          
+  >Maldives (MV)
+
+
+  <OPTION VALUE="ML"
+          
+  >Mali (ML)
+
+
+  <OPTION VALUE="MT"
+          
+  >Malta (MT)
+
+
+  <OPTION VALUE="MH"
+          
+  >Marshall Islands (MH)
+
+
+  <OPTION VALUE="MQ"
+          
+  >Martinique (MQ)
+
+
+  <OPTION VALUE="MR"
+          
+  >Mauritania (MR)
+
+
+  <OPTION VALUE="MU"
+          
+  >Mauritius (MU)
+
+
+  <OPTION VALUE="YT"
+          
+  >Mayotte (YT)
+
+
+  <OPTION VALUE="MX"
+          
+  >Mexico (MX)
+
+
+  <OPTION VALUE="FM"
+          
+  >Micronesia, The Federated States of (FM)
+
+
+  <OPTION VALUE="MD"
+          
+  >Moldova, The Republic of (MD)
+
+
+  <OPTION VALUE="MC"
+          
+  >Monaco (MC)
+
+
+  <OPTION VALUE="MN"
+          
+  >Mongolia (MN)
+
+
+  <OPTION VALUE="ME"
+          
+  >Montenegro (ME)
+
+
+  <OPTION VALUE="MS"
+          
+  >Montserrat (MS)
+
+
+  <OPTION VALUE="MA"
+          
+  >Morocco (MA)
+
+
+  <OPTION VALUE="MZ"
+          
+  >Mozambique (MZ)
+
+
+  <OPTION VALUE="MM"
+          
+  >Myanmar (MM)
+
+
+  <OPTION VALUE="NA"
+          
+  >Namibia (NA)
+
+
+  <OPTION VALUE="NR"
+          
+  >Nauru (NR)
+
+
+  <OPTION VALUE="NP"
+          
+  >Nepal (NP)
+
+
+  <OPTION VALUE="NL"
+          
+  >Netherlands (NL)
+
+
+  <OPTION VALUE="NC"
+          
+  >New Caledonia (NC)
+
+
+  <OPTION VALUE="NZ"
+          
+  >New Zealand (NZ)
+
+
+  <OPTION VALUE="NI"
+          
+  >Nicaragua (NI)
+
+
+  <OPTION VALUE="NE"
+          
+  >Niger (NE)
+
+
+  <OPTION VALUE="NG"
+          
+  >Nigeria (NG)
+
+
+  <OPTION VALUE="NU"
+          
+  >Niue (NU)
+
+
+  <OPTION VALUE="NF"
+          
+  >Norfolk Island (NF)
+
+
+  <OPTION VALUE="MP"
+          
+  >Northern Mariana Islands (MP)
+
+
+  <OPTION VALUE="NO"
+          
+  >Norway (NO)
+
+
+  <OPTION VALUE="OM"
+          
+  >Oman (OM)
+
+
+  <OPTION VALUE="PK"
+          
+  >Pakistan (PK)
+
+
+  <OPTION VALUE="PW"
+          
+  >Palau (PW)
+
+
+  <OPTION VALUE="PS"
+          
+  >Palestine, State of (PS)
+
+
+  <OPTION VALUE="PA"
+          
+  >Panama (PA)
+
+
+  <OPTION VALUE="PG"
+          
+  >Papua New Guinea (PG)
+
+
+  <OPTION VALUE="PY"
+          
+  >Paraguay (PY)
+
+
+  <OPTION VALUE="PE"
+          
+  >Peru (PE)
+
+
+  <OPTION VALUE="PH"
+          
+  >Philippines (PH)
+
+
+  <OPTION VALUE="PN"
+          
+  >Pitcairn (PN)
+
+
+  <OPTION VALUE="PL"
+          
+  >Poland (PL)
+
+
+  <OPTION VALUE="PT"
+          
+  >Portugal (PT)
+
+
+  <OPTION VALUE="PR"
+          
+  >Puerto Rico (PR)
+
+
+  <OPTION VALUE="QA"
+          
+  >Qatar (QA)
+
+
+  <OPTION VALUE="RE"
+          
+  >Reunion (RE)
+
+
+  <OPTION VALUE="RO"
+          
+  >Romania (RO)
+
+
+  <OPTION VALUE="RU"
+          
+  >Russian Federation (RU)
+
+
+  <OPTION VALUE="RW"
+          
+  >Rwanda (RW)
+
+
+  <OPTION VALUE="BL"
+          
+  >Saint Barthelemy (BL)
+
+
+  <OPTION VALUE="SH"
+          
+  >Saint Helena, Ascension and Tristan da Cunha (SH)
+
+
+  <OPTION VALUE="KN"
+          
+  >Saint Kitts and Nevis (KN)
+
+
+  <OPTION VALUE="LC"
+          
+  >Saint Lucia (LC)
+
+
+  <OPTION VALUE="MF"
+          
+  >Saint Martin (French part) (MF)
+
+
+  <OPTION VALUE="PM"
+          
+  >Saint Pierre and Miquelon (PM)
+
+
+  <OPTION VALUE="VC"
+          
+  >Saint Vincent and the Grenadines (VC)
+
+
+  <OPTION VALUE="WS"
+          
+  >Samoa (WS)
+
+
+  <OPTION VALUE="SM"
+          
+  >San Marino (SM)
+
+
+  <OPTION VALUE="ST"
+          
+  >Sao Tome and Principe (ST)
+
+
+  <OPTION VALUE="SA"
+          
+  >Saudi Arabia (SA)
+
+
+  <OPTION VALUE="SN"
+          
+  >Senegal (SN)
+
+
+  <OPTION VALUE="RS"
+          
+  >Serbia (RS)
+
+
+  <OPTION VALUE="SC"
+          
+  >Seychelles (SC)
+
+
+  <OPTION VALUE="SL"
+          
+  >Sierra Leone (SL)
+
+
+  <OPTION VALUE="SG"
+          
+  >Singapore (SG)
+
+
+  <OPTION VALUE="SX"
+          
+  >Sint Maarten (Dutch part) (SX)
+
+
+  <OPTION VALUE="SK"
+          
+  >Slovakia (SK)
+
+
+  <OPTION VALUE="SI"
+          
+  >Slovenia (SI)
+
+
+  <OPTION VALUE="SB"
+          
+  >Solomon Islands (SB)
+
+
+  <OPTION VALUE="SO"
+          
+  >Somalia (SO)
+
+
+  <OPTION VALUE="ZA"
+          
+  >South Africa (ZA)
+
+
+  <OPTION VALUE="GS"
+          
+  >South Georgia and the South Sandwich Islands (GS)
+
+
+  <OPTION VALUE="SS"
+          
+  >South Sudan (SS)
+
+
+  <OPTION VALUE="ES"
+          
+  >Spain (ES)
+
+
+  <OPTION VALUE="LK"
+          
+  >Sri Lanka (LK)
+
+
+  <OPTION VALUE="SD"
+          
+  >Sudan (SD)
+
+
+  <OPTION VALUE="SR"
+          
+  >Suriname (SR)
+
+
+  <OPTION VALUE="SJ"
+          
+  >Svalbard and Jan Mayen (SJ)
+
+
+  <OPTION VALUE="SZ"
+          
+  >Swaziland (SZ)
+
+
+  <OPTION VALUE="SE"
+          
+  >Sweden (SE)
+
+
+  <OPTION VALUE="CH"
+          
+  >Switzerland (CH)
+
+
+  <OPTION VALUE="SY"
+          
+  >Syrian Arab Republic (SY)
+
+
+  <OPTION VALUE="TW"
+          
+  >Taiwan (Province of China) (TW)
+
+
+  <OPTION VALUE="TJ"
+          
+  >Tajikistan (TJ)
+
+
+  <OPTION VALUE="TZ"
+          
+  >Tanzania, United Republic of (TZ)
+
+
+  <OPTION VALUE="TH"
+          
+  >Thailand (TH)
+
+
+  <OPTION VALUE="TL"
+          
+  >Timor-Leste (TL)
+
+
+  <OPTION VALUE="TG"
+          
+  >Togo (TG)
+
+
+  <OPTION VALUE="TK"
+          
+  >Tokelau (TK)
+
+
+  <OPTION VALUE="TO"
+          
+  >Tonga (TO)
+
+
+  <OPTION VALUE="TT"
+          
+  >Trinidad and Tobago (TT)
+
+
+  <OPTION VALUE="TN"
+          
+  >Tunisia (TN)
+
+
+  <OPTION VALUE="TR"
+          
+  >Turkey (TR)
+
+
+  <OPTION VALUE="TM"
+          
+  >Turkmenistan (TM)
+
+
+  <OPTION VALUE="TC"
+          
+  >Turks and Caicos Islands (TC)
+
+
+  <OPTION VALUE="TV"
+          
+  >Tuvalu (TV)
+
+
+  <OPTION VALUE="UG"
+          
+  >Uganda (UG)
+
+
+  <OPTION VALUE="UA"
+          
+  >Ukraine (UA)
+
+
+  <OPTION VALUE="AE"
+          
+  >United Arab Emirates (AE)
+
+
+  <OPTION VALUE="GB"
+          
+  >United Kingdom (GB)
+
+
+  <OPTION VALUE="UM"
+          
+  >United States Minor Outlying Islands (UM)
+
+
+  <OPTION VALUE="UY"
+          
+  >Uruguay (UY)
+
+
+  <OPTION VALUE="UZ"
+          
+  >Uzbekistan (UZ)
+
+
+  <OPTION VALUE="VU"
+          
+  >Vanuatu (VU)
+
+
+  <OPTION VALUE="VE"
+          
+  >Venezuela, Bolivarian Republic of  (VE)
+
+
+  <OPTION VALUE="VN"
+          
+  >Viet Nam (VN)
+
+
+  <OPTION VALUE="VG"
+          
+  >Virgin Islands (British) (VG)
+
+
+  <OPTION VALUE="VI"
+          
+  >Virgin Islands (U.S.) (VI)
+
+
+  <OPTION VALUE="WF"
+          
+  >Wallis and Futuna (WF)
+
+
+  <OPTION VALUE="EH"
+          
+  >Western Sahara (EH)
+
+
+  <OPTION VALUE="YE"
+          
+  >Yemen (YE)
+
+
+  <OPTION VALUE="ZM"
+          
+  >Zambia (ZM)
+
+
+  <OPTION VALUE="ZW"
+          
+  >Zimbabwe (ZW)
+
+
+</SELECT>
+
+</TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Latitude</TD>
+  <TD COLSPAN=7>
+    <INPUT TYPE  = "text"
+           NAME  = "bill_latitude"
+           ID    = "bill_latitude"
+           VALUE = "38.5000000"
+           
+           
+    >
+    Longitude
+    <INPUT TYPE  = "text"
+           NAME  = "bill_longitude"
+           ID    = "bill_longitude"
+           VALUE = "-121.5000000"
+           
+           
+    >
+  </TD>
+</TR>
+  <INPUT TYPE  = "hidden"
+       NAME  = "bill_coord_auto"
+       ID    = "bill_coord_auto"
+       VALUE = "Y"
+>
+
+
+  <INPUT TYPE  = "hidden"
+       NAME  = "bill_geocode"
+       ID    = "bill_geocode"
+       VALUE = ""
+>
+
+
+  <INPUT TYPE  = "hidden"
+       NAME  = "bill_censustract"
+       ID    = "bill_censustract"
+       VALUE = ""
+>
+
+
+  <INPUT TYPE  = "hidden"
+       NAME  = "bill_censusyear"
+       ID    = "bill_censusyear"
+       VALUE = ""
+>
+
+
+<TR>
+  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TD COLSPAN=8>
+    <INPUT TYPE="text" SIZE=15
+           ID="bill_enter_censustract" 
+           NAME="bill_enter_censustract" 
+           VALUE="">
+    (automatic)
+  </TD>
+</TR>
+  <INPUT TYPE  = "hidden"
+       NAME  = "bill_district"
+       ID    = "bill_district"
+       VALUE = ""
+>
+
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_address1"
+       ID    = "old_bill_address1"
+       VALUE = "46706 Kadin Hill #780"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_city"
+       ID    = "old_bill_city"
+       VALUE = "Owensboro"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_state"
+       ID    = "old_bill_state"
+       VALUE = "KS"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_country"
+       ID    = "old_bill_country"
+       VALUE = "US"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_zip"
+       ID    = "old_bill_zip"
+       VALUE = "69113"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_latitude"
+       ID    = "old_bill_latitude"
+       VALUE = "38.5000000"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_longitude"
+       ID    = "old_bill_longitude"
+       VALUE = "-121.5000000"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_censustract"
+       ID    = "old_bill_censustract"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_district"
+       ID    = "old_bill_district"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_bill_addr_clean"
+       ID    = "old_bill_addr_clean"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "bill_cachenum"
+       ID    = "bill_cachenum"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "bill_addr_clean"
+       ID    = "bill_addr_clean"
+       VALUE = ""
+>
+
+
+
+<SCRIPT TYPE="text/javascript">
+(function() {
+  var myonload = function() {
+
+  var clear_coords_ids = [
+    'bill_latitude',
+    'bill_longitude',
+    'bill_enter_censustract',
+    'bill_censustract',
+    'bill_district'
+  ];
+  function clear_coords() {
+    for (var i=0; i < clear_coords_ids.length; i++) {
+      var el = document.getElementById(clear_coords_ids[i]);
+      if ( el ) {
+        el.value = '';
+      }
+    }
+  }
+  var clear_coords_on_change = [
+    'bill_address1',
+    'bill_address2',
+    'bill_city',
+    'bill_state',
+    'bill_zip',
+    'bill_country'
+  ];
+  for (var i=0; i < clear_coords_on_change.length; i++) {
+    var el = document.getElementById(clear_coords_on_change[i]);
+    if ( el.addEventListener ) {
+      el.addEventListener('change', clear_coords);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_coords);
+    }
+  }
+  function clear_censustract() {
+    // if the user manually edits the census tract, clear the 'hard' census
+    // tract field so that we can re-verify and present a confirmation popup 
+
+    // get the ID of the hidden censustract field
+    var censustract_id = this.id.replace('enter_', '');
+    var el = document.getElementById(censustract_id);
+    if (el) {
+      el.value = '';
+    }
+  }
+  var el = document.getElementById('bill_enter_censustract');
+  if (el) {
+    if ( el.addEventListener ) {
+      el.addEventListener('change', clear_censustract);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_censustract);
+    }
+  }
+
+
+  }
+  if ( window.addEventListener ) {
+    window.addEventListener('load', myonload);
+  } else if ( window.attachEvent ) {
+    window.attachEvent('onload', myonload);
+  }
+})();
+
+</SCRIPT>
+
+
+      <TR>
+  <TD VALIGN="top" ALIGN="right">Phones</TD>
+  <TD COLSPAN=6>
+    <TABLE CELLSPACING=0 CELLPADDING=0>
+      <TR>
+        <TD>
+          <INPUT TYPE="text"
+                 NAME="daytime"
+                 VALUE="297-868-7684 x427"
+                 SIZE=18
+          >
+          <BR><FONT SIZE=-1>Day Phone</FONT>
+        </TD>
+        <TD>&nbsp;</TD>
+        <TD>
+          <INPUT TYPE="text"
+                 NAME="night"
+                 VALUE="538-045-0820"
+                 SIZE=18
+          >
+          <BR><FONT SIZE=-1>Night Phone</FONT>
+        </TD>
+        <TD>&nbsp;</TD>
+        <TD>
+          <INPUT TYPE="text"
+                 NAME="mobile"
+                 VALUE=""
+                 SIZE=18
+          >
+          <BR><FONT SIZE=-1>Mobile</FONT>
+        </TD>
+        <TD>&nbsp;</TD>
+      </TR>
+    </TABLE>
+  </TD>
+</TR>
+
+  <TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD><INPUT TYPE="text" NAME="fax" VALUE="" SIZE=18></TD>
+</TR>
+
+<INPUT TYPE="hidden" NAME="stateid" VALUE="">
+<INPUT TYPE="hidden" NAME="stateid_state" VALUE="KS">
+
+
+
+    </TABLE>
+  </TD>
+</TR>
+<TR><TD STYLE="height:40px"></TD></TR>
+<TR>
+  <TD STYLE="width:650px">
+    <FONT CLASS="fsinnerbox-title">Service address</FONT>
+    <INPUT TYPE="checkbox" 
+           NAME="same"
+           ID="same"
+           onclick="samechanged(this)"
+           onkeyup="samechanged(this)"
+           VALUE="Y"
+           CHECKED
+    >same as billing address
+    <DIV CLASS="fsinnerbox">
+      <TABLE ID="table_ship_location" WIDTH="100%">
+      
+      
+
+    <INPUT TYPE  = "hidden"
+       NAME  = "ship_locationname"
+       ID    = "ship_locationname"
+       VALUE = ""
+>
+
+
+
+
+<TR>
+  <TH STYLE="width:16ex" ALIGN="right"><font color="#ff0000">*</font>&nbsp;Address</TH>
+  <TD COLSPAN=7>
+    <INPUT TYPE     = "text"
+           NAME     = "ship_address1"
+           ID       = "ship_address1"
+           VALUE    = "46706 Kadin Hill #780"
+           SIZE     = 54
+           onChange = ""
+           
+           
+    >
+  </TD>
+</TR>
+
+
+<TR>
+      <TD ALIGN="right"><FONT ID="ship_address2_required" color="#ff0000" STYLE="visibility:hidden">*</FONT>&nbsp;<FONT ID="ship_address2_label" STYLE="visibility:hidden"><B>Unit&nbsp;#</B></FONT></TD>
+      <TD COLSPAN=7>
+        <INPUT TYPE     = "text"
+               NAME     = "ship_address2"
+               ID       = "ship_address2"
+               VALUE    = "Trailer W 2-E"
+               SIZE     = 54
+               onChange = ""
+               
+               
+        >
+      </TD>
+</TR>
+
+
+
+<TR>
+  <TH ALIGN="right">
+  <font color="#ff0000">*</font>&nbsp;City
+  </TH>
+  <TD WIDTH="1">
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function ship_get_cities() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/cities.cgi?";
+        var a = ship_get_cities.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=ship_get_cities';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  var saved_ship_city= 'Owensboro';
+
+  function ship_county_changed(what, callback) {
+
+    what.form.ship_city_select.disabled = 'disabled';
+
+    county  = what.options[what.selectedIndex].value;
+    state   = what.form.ship_state.options[what.form.ship_state.selectedIndex].value;
+    country = what.form.ship_country.options[what.form.ship_country.selectedIndex].value;
+
+    function ship_update_cities(cities) {
+
+      // blank the current city list
+      for ( var i = what.form.ship_city_select.length; i >= 0; i-- )
+          what.form.ship_city_select.options[i] = null;
+
+
+      // add the new cities
+      var citiesArray = eval('(' + cities + ')' );
+
+      for ( var s = 0; s < citiesArray.length; s++ ) {
+          var cityLabel = citiesArray[s];
+          if ( cityLabel == "" )
+              cityLabel = '(n/a)';
+          opt(what.form.ship_city_select, citiesArray[s], cityLabel);
+      }
+
+     if ( citiesArray.length > 1 || (citiesArray[0] && citiesArray[0].length) ){
+        // turn off the text city, turn on the select
+        saved_ship_city = what.form.ship_city.value;
+        ship_city_select_changed(what.form.ship_city_select);
+        what.form.ship_city.style.display = 'none';
+        what.form.ship_city_select.style.display = '';
+      } else if ( what.form.ship_city.style.display == 'none' ) {
+        // turn on the text city, turn off the select
+        what.form.ship_city.value = saved_ship_city;
+        what.form.ship_city.style.display = '';
+        what.form.ship_city_select.style.display = 'none';
+      }
+
+      what.form.ship_city_select.disabled = '';
+
+      //run the callback
+      if ( callback != null )
+        callback();
+    }
+
+    // go get the new cities
+    ship_get_cities( county, state, country, ship_update_cities );
+
+  }
+
+  function ship_city_select_changed(what) {
+    what.form.ship_city.value = what.options[what.selectedIndex].value;
+  }
+
+</SCRIPT>
+
+
+<INPUT TYPE     = "text"
+       NAME     = "ship_city"
+       ID       = "ship_city"
+       VALUE    = "Owensboro"
+       onChange = ""
+       
+       
+>
+
+
+    <SELECT NAME     = "ship_city_select"
+            ID       = "ship_city_select"
+            onChange = "ship_city_select_changed(this); "
+            
+            STYLE="display:none"
+    >
+
+
+
+      <OPTION VALUE=""
+              
+      >
+
+
+    </SELECT>
+
+</TD>
+  <TH ALIGN="right" WIDTH="1" ID="ship_countylabel" STYLE="display:none"><font color="#ff0000">*</font>&nbsp;County</TH>
+  <TD WIDTH="1">
+  <SCRIPT TYPE="text/javascript">
+    function ship_state_changed(what) {
+    }
+  </SCRIPT>
+
+  <SELECT NAME  = "ship_county"
+           ID   = "ship_county"
+          STYLE = "display:none"
+  >
+    <OPTION SELECTED VALUE="">
+  </SELECT>
+
+
+</TD>
+  <TH ALIGN="right" WIDTH="1"><font color="#ff0000">*</font>&nbsp;State</TH>
+  <TD WIDTH="1">
+    
+<SELECT NAME     = "ship_state"
+        ID       = "ship_state"
+        onChange = "ship_state_changed(this); "
+        
+        
+>
+
+
+
+  <OPTION VALUE="AK">AK
+
+
+  <OPTION VALUE="AL">AL
+
+
+  <OPTION VALUE="AR">AR
+
+
+  <OPTION VALUE="AS">AS
+
+
+  <OPTION VALUE="AZ">AZ
+
+
+  <OPTION VALUE="CA">CA
+
+
+  <OPTION VALUE="CO">CO
+
+
+  <OPTION VALUE="CT">CT
+
+
+  <OPTION VALUE="DC">DC
+
+
+  <OPTION VALUE="DE">DE
+
+
+  <OPTION VALUE="FL">FL
+
+
+  <OPTION VALUE="GA">GA
+
+
+  <OPTION VALUE="GU">GU
+
+
+  <OPTION VALUE="HI">HI
+
+
+  <OPTION VALUE="IA">IA
+
+
+  <OPTION VALUE="ID">ID
+
+
+  <OPTION VALUE="IL">IL
+
+
+  <OPTION VALUE="IN">IN
+
+
+  <OPTION VALUE="KS" SELECTED>KS
+
+
+  <OPTION VALUE="KY">KY
+
+
+  <OPTION VALUE="LA">LA
+
+
+  <OPTION VALUE="MA">MA
+
+
+  <OPTION VALUE="MD">MD
+
+
+  <OPTION VALUE="ME">ME
+
+
+  <OPTION VALUE="MI">MI
+
+
+  <OPTION VALUE="MN">MN
+
+
+  <OPTION VALUE="MO">MO
+
+
+  <OPTION VALUE="MP">MP
+
+
+  <OPTION VALUE="MS">MS
+
+
+  <OPTION VALUE="MT">MT
+
+
+  <OPTION VALUE="NC">NC
+
+
+  <OPTION VALUE="ND">ND
+
+
+  <OPTION VALUE="NE">NE
+
+
+  <OPTION VALUE="NH">NH
+
+
+  <OPTION VALUE="NJ">NJ
+
+
+  <OPTION VALUE="NM">NM
+
+
+  <OPTION VALUE="NV">NV
+
+
+  <OPTION VALUE="NY">NY
+
+
+  <OPTION VALUE="OH">OH
+
+
+  <OPTION VALUE="OK">OK
+
+
+  <OPTION VALUE="OR">OR
+
+
+  <OPTION VALUE="PA">PA
+
+
+  <OPTION VALUE="PR">PR
+
+
+  <OPTION VALUE="RI">RI
+
+
+  <OPTION VALUE="SC">SC
+
+
+  <OPTION VALUE="SD">SD
+
+
+  <OPTION VALUE="TN">TN
+
+
+  <OPTION VALUE="TX">TX
+
+
+  <OPTION VALUE="UM">UM
+
+
+  <OPTION VALUE="UT">UT
+
+
+  <OPTION VALUE="VA">VA
+
+
+  <OPTION VALUE="VI">VI
+
+
+  <OPTION VALUE="VT">VT
+
+
+  <OPTION VALUE="WA">WA
+
+
+  <OPTION VALUE="WI">WI
+
+
+  <OPTION VALUE="WV">WV
+
+
+  <OPTION VALUE="WY">WY
+
+
+
+</SELECT>
+
+
+
+  </TD>
+  <TH ALIGN="right" WIDTH="1"><font color="#ff0000">*</font>&nbsp;Zip</TH>
+  <TD>
+    <INPUT TYPE     = "text"
+           NAME     = "ship_zip"
+           ID       = "ship_zip"
+           VALUE    = "69113"
+           SIZE     = 11
+           onChange = ""
+           
+           
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>&nbsp;Country</TH>
+  <TD COLSPAN=6>
+  <SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function ship_get_states() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/states.cgi?";
+        var a = ship_get_states.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=ship_get_states';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+  
+  <SCRIPT TYPE="text/javascript">
+  
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+  
+    function ship_country_changed(what, callback) {
+
+      what.form.ship_state.disabled = 'disabled';
+  
+      country = what.options[what.selectedIndex].value;
+  
+      function ship_update_states(states) {
+  
+        // blank the current state list
+        for ( var i = what.form.ship_state.length; i >= 0; i-- )
+            what.form.ship_state.options[i] = null;
+  
+        // add the new states
+        var statesArray = eval('(' + states + ')' );
+
+        for ( var s = 0; s < statesArray.length; s=s+2 ) {
+            var stateLabel = statesArray[s+1];
+            if ( stateLabel == "" )
+                stateLabel = '(n/a)';
+            opt(what.form.ship_state, statesArray[s], stateLabel);
+        }
+
+        what.form.ship_state.disabled = '';
+  
+        //run the callback
+        if ( callback != null ) {
+          callback();
+        } else {
+          ship_state_changed(what.form.ship_state);
+        }
+      }
+  
+      // go get the new states
+      ship_get_states( country, ship_update_states );
+  
+    }
+  
+  </SCRIPT>
+
+
+<SELECT NAME     = "ship_country"
+        ID       = "ship_country"
+        onChange = "ship_country_changed(this); "
+        
+        
+>
+
+
+
+  <OPTION VALUE="US"
+           SELECTED
+  >United States (US)
+
+
+  <OPTION VALUE="AF"
+          
+  >Afghanistan (AF)
+
+
+  <OPTION VALUE="AX"
+          
+  >Aland Islands (AX)
+
+
+  <OPTION VALUE="AL"
+          
+  >Albania (AL)
+
+
+  <OPTION VALUE="DZ"
+          
+  >Algeria (DZ)
+
+
+  <OPTION VALUE="AS"
+          
+  >American Samoa (AS)
+
+
+  <OPTION VALUE="AD"
+          
+  >Andorra (AD)
+
+
+  <OPTION VALUE="AO"
+          
+  >Angola (AO)
+
+
+  <OPTION VALUE="AI"
+          
+  >Anguilla (AI)
+
+
+  <OPTION VALUE="AQ"
+          
+  >Antarctica (AQ)
+
+
+  <OPTION VALUE="AG"
+          
+  >Antigua and Barbuda (AG)
+
+
+  <OPTION VALUE="AR"
+          
+  >Argentina (AR)
+
+
+  <OPTION VALUE="AM"
+          
+  >Armenia (AM)
+
+
+  <OPTION VALUE="AW"
+          
+  >Aruba (AW)
+
+
+  <OPTION VALUE="AU"
+          
+  >Australia (AU)
+
+
+  <OPTION VALUE="AT"
+          
+  >Austria (AT)
+
+
+  <OPTION VALUE="AZ"
+          
+  >Azerbaijan (AZ)
+
+
+  <OPTION VALUE="BS"
+          
+  >Bahamas (BS)
+
+
+  <OPTION VALUE="BH"
+          
+  >Bahrain (BH)
+
+
+  <OPTION VALUE="BD"
+          
+  >Bangladesh (BD)
+
+
+  <OPTION VALUE="BB"
+          
+  >Barbados (BB)
+
+
+  <OPTION VALUE="BY"
+          
+  >Belarus (BY)
+
+
+  <OPTION VALUE="BE"
+          
+  >Belgium (BE)
+
+
+  <OPTION VALUE="BZ"
+          
+  >Belize (BZ)
+
+
+  <OPTION VALUE="BJ"
+          
+  >Benin (BJ)
+
+
+  <OPTION VALUE="BM"
+          
+  >Bermuda (BM)
+
+
+  <OPTION VALUE="BT"
+          
+  >Bhutan (BT)
+
+
+  <OPTION VALUE="BO"
+          
+  >Bolivia, Plurinational State of (BO)
+
+
+  <OPTION VALUE="BQ"
+          
+  >Bonaire, Sint Eustatius and Saba (BQ)
+
+
+  <OPTION VALUE="BA"
+          
+  >Bosnia and Herzegovina (BA)
+
+
+  <OPTION VALUE="BW"
+          
+  >Botswana (BW)
+
+
+  <OPTION VALUE="BV"
+          
+  >Bouvet Island (BV)
+
+
+  <OPTION VALUE="BR"
+          
+  >Brazil (BR)
+
+
+  <OPTION VALUE="IO"
+          
+  >British Indian Ocean Territory (IO)
+
+
+  <OPTION VALUE="BN"
+          
+  >Brunei Darussalam (BN)
+
+
+  <OPTION VALUE="BG"
+          
+  >Bulgaria (BG)
+
+
+  <OPTION VALUE="BF"
+          
+  >Burkina Faso (BF)
+
+
+  <OPTION VALUE="BI"
+          
+  >Burundi (BI)
+
+
+  <OPTION VALUE="KH"
+          
+  >Cambodia (KH)
+
+
+  <OPTION VALUE="CM"
+          
+  >Cameroon (CM)
+
+
+  <OPTION VALUE="CA"
+          
+  >Canada (CA)
+
+
+  <OPTION VALUE="CV"
+          
+  >Cape Verde (CV)
+
+
+  <OPTION VALUE="KY"
+          
+  >Cayman Islands (KY)
+
+
+  <OPTION VALUE="CF"
+          
+  >Central African Republic (CF)
+
+
+  <OPTION VALUE="TD"
+          
+  >Chad (TD)
+
+
+  <OPTION VALUE="CL"
+          
+  >Chile (CL)
+
+
+  <OPTION VALUE="CN"
+          
+  >China (CN)
+
+
+  <OPTION VALUE="CX"
+          
+  >Christmas Island (CX)
+
+
+  <OPTION VALUE="CC"
+          
+  >Cocos (Keeling) Islands (CC)
+
+
+  <OPTION VALUE="CO"
+          
+  >Colombia (CO)
+
+
+  <OPTION VALUE="KM"
+          
+  >Comoros (KM)
+
+
+  <OPTION VALUE="CG"
+          
+  >Congo (CG)
+
+
+  <OPTION VALUE="CD"
+          
+  >Congo (The Democratic Republic of the) (CD)
+
+
+  <OPTION VALUE="CK"
+          
+  >Cook Islands (CK)
+
+
+  <OPTION VALUE="CR"
+          
+  >Costa Rica (CR)
+
+
+  <OPTION VALUE="CI"
+          
+  >Cote d'Ivoire (CI)
+
+
+  <OPTION VALUE="HR"
+          
+  >Croatia (HR)
+
+
+  <OPTION VALUE="CU"
+          
+  >Cuba (CU)
+
+
+  <OPTION VALUE="CW"
+          
+  >Curacao (CW)
+
+
+  <OPTION VALUE="CY"
+          
+  >Cyprus (CY)
+
+
+  <OPTION VALUE="CZ"
+          
+  >Czech Republic (CZ)
+
+
+  <OPTION VALUE="DK"
+          
+  >Denmark (DK)
+
+
+  <OPTION VALUE="DJ"
+          
+  >Djibouti (DJ)
+
+
+  <OPTION VALUE="DM"
+          
+  >Dominica (DM)
+
+
+  <OPTION VALUE="DO"
+          
+  >Dominican Republic (DO)
+
+
+  <OPTION VALUE="EC"
+          
+  >Ecuador (EC)
+
+
+  <OPTION VALUE="EG"
+          
+  >Egypt (EG)
+
+
+  <OPTION VALUE="SV"
+          
+  >El Salvador (SV)
+
+
+  <OPTION VALUE="GQ"
+          
+  >Equatorial Guinea (GQ)
+
+
+  <OPTION VALUE="ER"
+          
+  >Eritrea (ER)
+
+
+  <OPTION VALUE="EE"
+          
+  >Estonia (EE)
+
+
+  <OPTION VALUE="ET"
+          
+  >Ethiopia (ET)
+
+
+  <OPTION VALUE="FK"
+          
+  >Falkland Islands (The) [Malvinas] (FK)
+
+
+  <OPTION VALUE="FO"
+          
+  >Faroe Islands (FO)
+
+
+  <OPTION VALUE="FJ"
+          
+  >Fiji (FJ)
+
+
+  <OPTION VALUE="FI"
+          
+  >Finland (FI)
+
+
+  <OPTION VALUE="FR"
+          
+  >France (FR)
+
+
+  <OPTION VALUE="GF"
+          
+  >French Guiana (GF)
+
+
+  <OPTION VALUE="PF"
+          
+  >French Polynesia (PF)
+
+
+  <OPTION VALUE="TF"
+          
+  >French Southern Territories (TF)
+
+
+  <OPTION VALUE="GA"
+          
+  >Gabon (GA)
+
+
+  <OPTION VALUE="GM"
+          
+  >Gambia (GM)
+
+
+  <OPTION VALUE="GE"
+          
+  >Georgia (GE)
+
+
+  <OPTION VALUE="DE"
+          
+  >Germany (DE)
+
+
+  <OPTION VALUE="GH"
+          
+  >Ghana (GH)
+
+
+  <OPTION VALUE="GI"
+          
+  >Gibraltar (GI)
+
+
+  <OPTION VALUE="GR"
+          
+  >Greece (GR)
+
+
+  <OPTION VALUE="GL"
+          
+  >Greenland (GL)
+
+
+  <OPTION VALUE="GD"
+          
+  >Grenada (GD)
+
+
+  <OPTION VALUE="GP"
+          
+  >Guadeloupe (GP)
+
+
+  <OPTION VALUE="GU"
+          
+  >Guam (GU)
+
+
+  <OPTION VALUE="GT"
+          
+  >Guatemala (GT)
+
+
+  <OPTION VALUE="GG"
+          
+  >Guernsey (GG)
+
+
+  <OPTION VALUE="GN"
+          
+  >Guinea (GN)
+
+
+  <OPTION VALUE="GW"
+          
+  >Guinea-Bissau (GW)
+
+
+  <OPTION VALUE="GY"
+          
+  >Guyana (GY)
+
+
+  <OPTION VALUE="HT"
+          
+  >Haiti (HT)
+
+
+  <OPTION VALUE="HM"
+          
+  >Heard Island and McDonald Islands (HM)
+
+
+  <OPTION VALUE="VA"
+          
+  >Holy See (The) [Vatican City State] (VA)
+
+
+  <OPTION VALUE="HN"
+          
+  >Honduras (HN)
+
+
+  <OPTION VALUE="HK"
+          
+  >Hong Kong (HK)
+
+
+  <OPTION VALUE="HU"
+          
+  >Hungary (HU)
+
+
+  <OPTION VALUE="IS"
+          
+  >Iceland (IS)
+
+
+  <OPTION VALUE="IN"
+          
+  >India (IN)
+
+
+  <OPTION VALUE="ID"
+          
+  >Indonesia (ID)
+
+
+  <OPTION VALUE="IR"
+          
+  >Iran, The Islamic Republic of (IR)
+
+
+  <OPTION VALUE="IQ"
+          
+  >Iraq (IQ)
+
+
+  <OPTION VALUE="IE"
+          
+  >Ireland (IE)
+
+
+  <OPTION VALUE="IM"
+          
+  >Isle of Man (IM)
+
+
+  <OPTION VALUE="IL"
+          
+  >Israel (IL)
+
+
+  <OPTION VALUE="IT"
+          
+  >Italy (IT)
+
+
+  <OPTION VALUE="JM"
+          
+  >Jamaica (JM)
+
+
+  <OPTION VALUE="JP"
+          
+  >Japan (JP)
+
+
+  <OPTION VALUE="JE"
+          
+  >Jersey (JE)
+
+
+  <OPTION VALUE="JO"
+          
+  >Jordan (JO)
+
+
+  <OPTION VALUE="KZ"
+          
+  >Kazakhstan (KZ)
+
+
+  <OPTION VALUE="KE"
+          
+  >Kenya (KE)
+
+
+  <OPTION VALUE="KI"
+          
+  >Kiribati (KI)
+
+
+  <OPTION VALUE="KP"
+          
+  >Korea, The Democratic People's Republic of (KP)
+
+
+  <OPTION VALUE="KR"
+          
+  >Korea, The Republic of (KR)
+
+
+  <OPTION VALUE="KW"
+          
+  >Kuwait (KW)
+
+
+  <OPTION VALUE="KG"
+          
+  >Kyrgyzstan (KG)
+
+
+  <OPTION VALUE="LA"
+          
+  >Lao People's Democratic Republic (LA)
+
+
+  <OPTION VALUE="LV"
+          
+  >Latvia (LV)
+
+
+  <OPTION VALUE="LB"
+          
+  >Lebanon (LB)
+
+
+  <OPTION VALUE="LS"
+          
+  >Lesotho (LS)
+
+
+  <OPTION VALUE="LR"
+          
+  >Liberia (LR)
+
+
+  <OPTION VALUE="LY"
+          
+  >Libya (LY)
+
+
+  <OPTION VALUE="LI"
+          
+  >Liechtenstein (LI)
+
+
+  <OPTION VALUE="LT"
+          
+  >Lithuania (LT)
+
+
+  <OPTION VALUE="LU"
+          
+  >Luxembourg (LU)
+
+
+  <OPTION VALUE="MO"
+          
+  >Macao (MO)
+
+
+  <OPTION VALUE="MK"
+          
+  >Macedonia, The former Yugoslav Republic of (MK)
+
+
+  <OPTION VALUE="MG"
+          
+  >Madagascar (MG)
+
+
+  <OPTION VALUE="MW"
+          
+  >Malawi (MW)
+
+
+  <OPTION VALUE="MY"
+          
+  >Malaysia (MY)
+
+
+  <OPTION VALUE="MV"
+          
+  >Maldives (MV)
+
+
+  <OPTION VALUE="ML"
+          
+  >Mali (ML)
+
+
+  <OPTION VALUE="MT"
+          
+  >Malta (MT)
+
+
+  <OPTION VALUE="MH"
+          
+  >Marshall Islands (MH)
+
+
+  <OPTION VALUE="MQ"
+          
+  >Martinique (MQ)
+
+
+  <OPTION VALUE="MR"
+          
+  >Mauritania (MR)
+
+
+  <OPTION VALUE="MU"
+          
+  >Mauritius (MU)
+
+
+  <OPTION VALUE="YT"
+          
+  >Mayotte (YT)
+
+
+  <OPTION VALUE="MX"
+          
+  >Mexico (MX)
+
+
+  <OPTION VALUE="FM"
+          
+  >Micronesia, The Federated States of (FM)
+
+
+  <OPTION VALUE="MD"
+          
+  >Moldova, The Republic of (MD)
+
+
+  <OPTION VALUE="MC"
+          
+  >Monaco (MC)
+
+
+  <OPTION VALUE="MN"
+          
+  >Mongolia (MN)
+
+
+  <OPTION VALUE="ME"
+          
+  >Montenegro (ME)
+
+
+  <OPTION VALUE="MS"
+          
+  >Montserrat (MS)
+
+
+  <OPTION VALUE="MA"
+          
+  >Morocco (MA)
+
+
+  <OPTION VALUE="MZ"
+          
+  >Mozambique (MZ)
+
+
+  <OPTION VALUE="MM"
+          
+  >Myanmar (MM)
+
+
+  <OPTION VALUE="NA"
+          
+  >Namibia (NA)
+
+
+  <OPTION VALUE="NR"
+          
+  >Nauru (NR)
+
+
+  <OPTION VALUE="NP"
+          
+  >Nepal (NP)
+
+
+  <OPTION VALUE="NL"
+          
+  >Netherlands (NL)
+
+
+  <OPTION VALUE="NC"
+          
+  >New Caledonia (NC)
+
+
+  <OPTION VALUE="NZ"
+          
+  >New Zealand (NZ)
+
+
+  <OPTION VALUE="NI"
+          
+  >Nicaragua (NI)
+
+
+  <OPTION VALUE="NE"
+          
+  >Niger (NE)
+
+
+  <OPTION VALUE="NG"
+          
+  >Nigeria (NG)
+
+
+  <OPTION VALUE="NU"
+          
+  >Niue (NU)
+
+
+  <OPTION VALUE="NF"
+          
+  >Norfolk Island (NF)
+
+
+  <OPTION VALUE="MP"
+          
+  >Northern Mariana Islands (MP)
+
+
+  <OPTION VALUE="NO"
+          
+  >Norway (NO)
+
+
+  <OPTION VALUE="OM"
+          
+  >Oman (OM)
+
+
+  <OPTION VALUE="PK"
+          
+  >Pakistan (PK)
+
+
+  <OPTION VALUE="PW"
+          
+  >Palau (PW)
+
+
+  <OPTION VALUE="PS"
+          
+  >Palestine, State of (PS)
+
+
+  <OPTION VALUE="PA"
+          
+  >Panama (PA)
+
+
+  <OPTION VALUE="PG"
+          
+  >Papua New Guinea (PG)
+
+
+  <OPTION VALUE="PY"
+          
+  >Paraguay (PY)
+
+
+  <OPTION VALUE="PE"
+          
+  >Peru (PE)
+
+
+  <OPTION VALUE="PH"
+          
+  >Philippines (PH)
+
+
+  <OPTION VALUE="PN"
+          
+  >Pitcairn (PN)
+
+
+  <OPTION VALUE="PL"
+          
+  >Poland (PL)
+
+
+  <OPTION VALUE="PT"
+          
+  >Portugal (PT)
+
+
+  <OPTION VALUE="PR"
+          
+  >Puerto Rico (PR)
+
+
+  <OPTION VALUE="QA"
+          
+  >Qatar (QA)
+
+
+  <OPTION VALUE="RE"
+          
+  >Reunion (RE)
+
+
+  <OPTION VALUE="RO"
+          
+  >Romania (RO)
+
+
+  <OPTION VALUE="RU"
+          
+  >Russian Federation (RU)
+
+
+  <OPTION VALUE="RW"
+          
+  >Rwanda (RW)
+
+
+  <OPTION VALUE="BL"
+          
+  >Saint Barthelemy (BL)
+
+
+  <OPTION VALUE="SH"
+          
+  >Saint Helena, Ascension and Tristan da Cunha (SH)
+
+
+  <OPTION VALUE="KN"
+          
+  >Saint Kitts and Nevis (KN)
+
+
+  <OPTION VALUE="LC"
+          
+  >Saint Lucia (LC)
+
+
+  <OPTION VALUE="MF"
+          
+  >Saint Martin (French part) (MF)
+
+
+  <OPTION VALUE="PM"
+          
+  >Saint Pierre and Miquelon (PM)
+
+
+  <OPTION VALUE="VC"
+          
+  >Saint Vincent and the Grenadines (VC)
+
+
+  <OPTION VALUE="WS"
+          
+  >Samoa (WS)
+
+
+  <OPTION VALUE="SM"
+          
+  >San Marino (SM)
+
+
+  <OPTION VALUE="ST"
+          
+  >Sao Tome and Principe (ST)
+
+
+  <OPTION VALUE="SA"
+          
+  >Saudi Arabia (SA)
+
+
+  <OPTION VALUE="SN"
+          
+  >Senegal (SN)
+
+
+  <OPTION VALUE="RS"
+          
+  >Serbia (RS)
+
+
+  <OPTION VALUE="SC"
+          
+  >Seychelles (SC)
+
+
+  <OPTION VALUE="SL"
+          
+  >Sierra Leone (SL)
+
+
+  <OPTION VALUE="SG"
+          
+  >Singapore (SG)
+
+
+  <OPTION VALUE="SX"
+          
+  >Sint Maarten (Dutch part) (SX)
+
+
+  <OPTION VALUE="SK"
+          
+  >Slovakia (SK)
+
+
+  <OPTION VALUE="SI"
+          
+  >Slovenia (SI)
+
+
+  <OPTION VALUE="SB"
+          
+  >Solomon Islands (SB)
+
+
+  <OPTION VALUE="SO"
+          
+  >Somalia (SO)
+
+
+  <OPTION VALUE="ZA"
+          
+  >South Africa (ZA)
+
+
+  <OPTION VALUE="GS"
+          
+  >South Georgia and the South Sandwich Islands (GS)
+
+
+  <OPTION VALUE="SS"
+          
+  >South Sudan (SS)
+
+
+  <OPTION VALUE="ES"
+          
+  >Spain (ES)
+
+
+  <OPTION VALUE="LK"
+          
+  >Sri Lanka (LK)
+
+
+  <OPTION VALUE="SD"
+          
+  >Sudan (SD)
+
+
+  <OPTION VALUE="SR"
+          
+  >Suriname (SR)
+
+
+  <OPTION VALUE="SJ"
+          
+  >Svalbard and Jan Mayen (SJ)
+
+
+  <OPTION VALUE="SZ"
+          
+  >Swaziland (SZ)
+
+
+  <OPTION VALUE="SE"
+          
+  >Sweden (SE)
+
+
+  <OPTION VALUE="CH"
+          
+  >Switzerland (CH)
+
+
+  <OPTION VALUE="SY"
+          
+  >Syrian Arab Republic (SY)
+
+
+  <OPTION VALUE="TW"
+          
+  >Taiwan (Province of China) (TW)
+
+
+  <OPTION VALUE="TJ"
+          
+  >Tajikistan (TJ)
+
+
+  <OPTION VALUE="TZ"
+          
+  >Tanzania, United Republic of (TZ)
+
+
+  <OPTION VALUE="TH"
+          
+  >Thailand (TH)
+
+
+  <OPTION VALUE="TL"
+          
+  >Timor-Leste (TL)
+
+
+  <OPTION VALUE="TG"
+          
+  >Togo (TG)
+
+
+  <OPTION VALUE="TK"
+          
+  >Tokelau (TK)
+
+
+  <OPTION VALUE="TO"
+          
+  >Tonga (TO)
+
+
+  <OPTION VALUE="TT"
+          
+  >Trinidad and Tobago (TT)
+
+
+  <OPTION VALUE="TN"
+          
+  >Tunisia (TN)
+
+
+  <OPTION VALUE="TR"
+          
+  >Turkey (TR)
+
+
+  <OPTION VALUE="TM"
+          
+  >Turkmenistan (TM)
+
+
+  <OPTION VALUE="TC"
+          
+  >Turks and Caicos Islands (TC)
+
+
+  <OPTION VALUE="TV"
+          
+  >Tuvalu (TV)
+
+
+  <OPTION VALUE="UG"
+          
+  >Uganda (UG)
+
+
+  <OPTION VALUE="UA"
+          
+  >Ukraine (UA)
+
+
+  <OPTION VALUE="AE"
+          
+  >United Arab Emirates (AE)
+
+
+  <OPTION VALUE="GB"
+          
+  >United Kingdom (GB)
+
+
+  <OPTION VALUE="UM"
+          
+  >United States Minor Outlying Islands (UM)
+
+
+  <OPTION VALUE="UY"
+          
+  >Uruguay (UY)
+
+
+  <OPTION VALUE="UZ"
+          
+  >Uzbekistan (UZ)
+
+
+  <OPTION VALUE="VU"
+          
+  >Vanuatu (VU)
+
+
+  <OPTION VALUE="VE"
+          
+  >Venezuela, Bolivarian Republic of  (VE)
+
+
+  <OPTION VALUE="VN"
+          
+  >Viet Nam (VN)
+
+
+  <OPTION VALUE="VG"
+          
+  >Virgin Islands (British) (VG)
+
+
+  <OPTION VALUE="VI"
+          
+  >Virgin Islands (U.S.) (VI)
+
+
+  <OPTION VALUE="WF"
+          
+  >Wallis and Futuna (WF)
+
+
+  <OPTION VALUE="EH"
+          
+  >Western Sahara (EH)
+
+
+  <OPTION VALUE="YE"
+          
+  >Yemen (YE)
+
+
+  <OPTION VALUE="ZM"
+          
+  >Zambia (ZM)
+
+
+  <OPTION VALUE="ZW"
+          
+  >Zimbabwe (ZW)
+
+
+</SELECT>
+
+</TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Latitude</TD>
+  <TD COLSPAN=7>
+    <INPUT TYPE  = "text"
+           NAME  = "ship_latitude"
+           ID    = "ship_latitude"
+           VALUE = "38.5000000"
+           
+           
+    >
+    Longitude
+    <INPUT TYPE  = "text"
+           NAME  = "ship_longitude"
+           ID    = "ship_longitude"
+           VALUE = "-121.5000000"
+           
+           
+    >
+  </TD>
+</TR>
+  <INPUT TYPE  = "hidden"
+       NAME  = "ship_coord_auto"
+       ID    = "ship_coord_auto"
+       VALUE = "Y"
+>
+
+
+  <INPUT TYPE  = "hidden"
+       NAME  = "ship_geocode"
+       ID    = "ship_geocode"
+       VALUE = ""
+>
+
+
+  <INPUT TYPE  = "hidden"
+       NAME  = "ship_censustract"
+       ID    = "ship_censustract"
+       VALUE = ""
+>
+
+
+  <INPUT TYPE  = "hidden"
+       NAME  = "ship_censusyear"
+       ID    = "ship_censusyear"
+       VALUE = ""
+>
+
+
+<TR>
+  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TD COLSPAN=8>
+    <INPUT TYPE="text" SIZE=15
+           ID="ship_enter_censustract" 
+           NAME="ship_enter_censustract" 
+           VALUE="">
+    (automatic)
+  </TD>
+</TR>
+  <INPUT TYPE  = "hidden"
+       NAME  = "ship_district"
+       ID    = "ship_district"
+       VALUE = ""
+>
+
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_address1"
+       ID    = "old_ship_address1"
+       VALUE = "46706 Kadin Hill #780"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_city"
+       ID    = "old_ship_city"
+       VALUE = "Owensboro"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_state"
+       ID    = "old_ship_state"
+       VALUE = "KS"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_country"
+       ID    = "old_ship_country"
+       VALUE = "US"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_zip"
+       ID    = "old_ship_zip"
+       VALUE = "69113"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_latitude"
+       ID    = "old_ship_latitude"
+       VALUE = "38.5000000"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_longitude"
+       ID    = "old_ship_longitude"
+       VALUE = "-121.5000000"
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_censustract"
+       ID    = "old_ship_censustract"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_district"
+       ID    = "old_ship_district"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "old_ship_addr_clean"
+       ID    = "old_ship_addr_clean"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "ship_cachenum"
+       ID    = "ship_cachenum"
+       VALUE = ""
+>
+
+
+<INPUT TYPE  = "hidden"
+       NAME  = "ship_addr_clean"
+       ID    = "ship_addr_clean"
+       VALUE = ""
+>
+
+
+
+<SCRIPT TYPE="text/javascript">
+(function() {
+  var myonload = function() {
+
+  var clear_coords_ids = [
+    'ship_latitude',
+    'ship_longitude',
+    'ship_enter_censustract',
+    'ship_censustract',
+    'ship_district'
+  ];
+  function clear_coords() {
+    for (var i=0; i < clear_coords_ids.length; i++) {
+      var el = document.getElementById(clear_coords_ids[i]);
+      if ( el ) {
+        el.value = '';
+      }
+    }
+  }
+  var clear_coords_on_change = [
+    'ship_address1',
+    'ship_address2',
+    'ship_city',
+    'ship_state',
+    'ship_zip',
+    'ship_country'
+  ];
+  for (var i=0; i < clear_coords_on_change.length; i++) {
+    var el = document.getElementById(clear_coords_on_change[i]);
+    if ( el.addEventListener ) {
+      el.addEventListener('change', clear_coords);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_coords);
+    }
+  }
+  function clear_censustract() {
+    // if the user manually edits the census tract, clear the 'hard' census
+    // tract field so that we can re-verify and present a confirmation popup 
+
+    // get the ID of the hidden censustract field
+    var censustract_id = this.id.replace('enter_', '');
+    var el = document.getElementById(censustract_id);
+    if (el) {
+      el.value = '';
+    }
+  }
+  var el = document.getElementById('ship_enter_censustract');
+  if (el) {
+    if ( el.addEventListener ) {
+      el.addEventListener('change', clear_censustract);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_censustract);
+    }
+  }
+
+
+  }
+  if ( window.addEventListener ) {
+    window.addEventListener('load', myonload);
+  } else if ( window.attachEvent ) {
+    window.attachEvent('onload', myonload);
+  }
+})();
+
+</SCRIPT>
+
+
+        <TR>
+          <TD COLSPAN="8">
+            <INPUT TYPE  = "checkbox"
+                           NAME  = "invoice_ship_address"
+                           ID    = ""
+                           VALUE = "Y"
+                           
+                           
+                           
+                    >Include service address on invoices
+
+          </TD>
+        </TR>
+      </TABLE>
+    </DIV>
+  </TD>
+</TR></TABLE>
+
+<SCRIPT>
+function samechanged(what) {
+  var t1 = document.getElementById('table_ship_location');
+  if ( what.checked ) {
+    t1.style.visibility = 'hidden';
+  }
+  else {
+    t1.style.visibility = 'visible'
+  }
+}
+samechanged(document.getElementById('same'));
+</SCRIPT>
+
+<BR>
+
+<DIV ID="contacts_div" STYLE="display:">
+<BR>
+<FONT CLASS="fsinnerbox-title">Contacts</FONT>
+
+
+<TABLE ID="TableNumber0" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+
+      <TR>
+
+  <TD ALIGN  = "right"
+      VALIGN = "top"
+      STYLE  = "padding-top: 3px"
+      ID     = "contactnum_label0"
+  >Contact</TD>
+
+
+      <TD COLSPAN="6">
+      
+  <INPUT TYPE="hidden" NAME="contactnum0" ID="contactnum0" VALUE="">
+
+  <TABLE STYLE="display:inline">
+    <TR>
+        <TD>
+          <SELECT NAME="contactnum0_classnum" onChange="
+spawn_contactnum(this);">
+            <OPTION VALUE="">
+              <OPTION VALUE="1"
+                 
+              >Service
+          </SELECT><BR>
+          <FONT SIZE="-1">Type</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_first"
+                   ID    = "contactnum0_first"
+                   SIZE  = "14"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">First name</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_last"
+                   ID    = "contactnum0_last"
+                   SIZE  = "14"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Last name</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_title"
+                   ID    = "contactnum0_title"
+                   SIZE  = "12"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Title/Position</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_emailaddress"
+                   ID    = "contactnum0_emailaddress"
+                   SIZE  = "14"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Email</FONT>
+        </TD>
+
+        <TD>
+            <SELECT NAME = "contactnum0_selfservice_access"
+                    ID   = "contactnum0_selfservice_access"
+            >
+              <OPTION VALUE="">Disabled
+            </SELECT>
+
+          <BR>
+          <FONT SIZE="-1">Self-service</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_phonetypenum1"
+                   ID    = "contactnum0_phonetypenum1"
+                   SIZE  = "15"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Work phone</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_phonetypenum3"
+                   ID    = "contactnum0_phonetypenum3"
+                   SIZE  = "10"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Mobile phone</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_phonetypenum4"
+                   ID    = "contactnum0_phonetypenum4"
+                   SIZE  = "10"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Fax phone</FONT>
+        </TD>
+
+        <TD>
+            <INPUT TYPE  = "text"
+                   NAME  = "contactnum0_comment"
+                   ID    = "contactnum0_comment"
+                   SIZE  = "14"
+                   VALUE = ""
+                   onChange="
+spawn_contactnum(this);"
+            >
+          <BR>
+          <FONT SIZE="-1">Comment</FONT>
+        </TD>
+    </TR>
+  </TABLE>
+
+
+      </TD>
+
+
+      </TR>
+
+
+      <SCRIPT TYPE="text/javascript">
+
+        var contactnum_rownum = 1;
+        var contactnum_fieldnum = 0;
+
+        function spawn_contactnum(what) {
+
+          // only spawn if we're the last element... return if not
+
+          var field_regex = /(\d+)(_[a-z_]+)?$/;
+          var match = field_regex.exec(what.name);
+          if ( !match ) {
+            alert(what.name + " didn't match for " + what);
+            return;
+          }
+          if ( match[1] != contactnum_fieldnum ) {
+            return;
+          }
+
+          // change the label on the last entry & add a remove button
+          var prev_label = document.getElementById('contactnum_label' + contactnum_fieldnum );
+          prev_label.innerHTML = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this contact" onClick="remove_contactnum(' + contactnum_fieldnum + ');" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px" >&nbsp;Contact';
+
+          contactnum_fieldnum++;
+
+          //get the new widget
+
+
+          var newrow =  '\n  <INPUT TYPE="hidden" NAME="contactnumMAGIC_NUMBER" ID="contactnumMAGIC_NUMBER" VALUE="">\n\n  <TABLE STYLE="display:inline">\n    <TR>\n        <TD>\n          <SELECT NAME="contactnumMAGIC_NUMBER_classnum" onChange="\nspawn_contactnum(this);">\n            <OPTION VALUE="">\n              <OPTION VALUE="1"\n                 \n              >Service\n          </SELECT><BR>\n          <FONT SIZE="-1">Type</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_first"\n                   ID    = "contactnumMAGIC_NUMBER_first"\n                   SIZE  = "14"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">First name</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_last"\n                   ID    = "contactnumMAGIC_NUMBER_last"\n                   SIZE  = "14"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Last name</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_title"\n                   ID    = "contactnumMAGIC_NUMBER_title"\n                   SIZE  = "12"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Title/Position</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_emailaddress"\n                   ID    = "contactnumMAGIC_NUMBER_emailaddress"\n                   SIZE  = "14"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Email</FONT>\n        </TD>\n\n        <TD>\n            <SELECT NAME = "contactnumMAGIC_NUMBER_selfservice_access"\n                    ID   = "contactnumMAGIC_NUMBER_selfservice_access"\n            >\n              <OPTION VALUE="">Disabled\n            </SELECT>\n\n          <BR>\n          <FONT SIZE="-1">Self-service</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_phonetypenum1"\n                   ID    = "contactnumMAGIC_NUMBER_phonetypenum1"\n                   SIZE  = "15"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Work phone</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_phonetypenum3"\n                   ID    = "contactnumMAGIC_NUMBER_phonetypenum3"\n                   SIZE  = "10"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Mobile phone</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_phonetypenum4"\n                   ID    = "contactnumMAGIC_NUMBER_phonetypenum4"\n                   SIZE  = "10"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Fax phone</FONT>\n        </TD>\n\n        <TD>\n            <INPUT TYPE  = "text"\n                   NAME  = "contactnumMAGIC_NUMBER_comment"\n                   ID    = "contactnumMAGIC_NUMBER_comment"\n                   SIZE  = "14"\n                   VALUE = ""\n                   onChange="\nspawn_contactnum(this);"\n            >\n          <BR>\n          <FONT SIZE="-1">Comment</FONT>\n        </TD>\n    </TR>\n  </TABLE>\n\n';
+
+            var newfunc = '';
+
+          // substitute in the new field name
+          var magic_regex = /MAGIC_NUMBER/g;
+          newrow  = newrow.replace(  magic_regex, contactnum_fieldnum );
+          newfunc = newfunc.replace( magic_regex, contactnum_fieldnum );
+
+          // evaluate new_func
+          if (window.ActiveXObject) {
+            window.execScript(newfunc);
+          } else { /* (window.XMLHttpRequest) */
+            //window.eval(newfunc);
+            setTimeout(newfunc, 0);
+          }
+
+          // add new row
+
+          //hmm, can't use selectlayers after a tablebreak-title for now
+          var table = document.getElementById('TableNumber0');
+
+          var row = table.insertRow(contactnum_rownum++);
+
+          var label_cell = document.createElement('TD');
+
+          label_cell.id = 'contactnum_label' + contactnum_fieldnum;
+
+          label_cell.style.textAlign = "right";
+          label_cell.style.verticalAlign = "top";
+          label_cell.style.borderTop = "1px solid black";
+          label_cell.style.paddingTop = "5px";
+
+          label_cell.innerHTML = 'Contact';
+
+          row.appendChild(label_cell);
+          
+          var widget_cell = document.createElement('TD');
+
+          widget_cell.style.borderTop = "1px solid black";
+          widget_cell.style.paddingTop = "3px";
+          widget_cell.colSpan = "6";
+
+          widget_cell.innerHTML = newrow;
+
+          row.appendChild(widget_cell);
+
+
+
+        }
+
+        function remove_contactnum(remove_fieldnum) {
+          //alert("remove contactnum " + remove_fieldnum);
+          var select = document.getElementById('contactnum' + remove_fieldnum);
+
+          if ( ! select ) {
+            alert("can't find element contactnum" + remove_fieldnum);
+            return;
+          }
+
+
+          select.disabled = 'disabled'; // this seems to prevent it from being submitted on tested browsers so far (IE, moz, konq at least)
+          var label_td = document.getElementById('contactnum_label' + remove_fieldnum );
+          label_td.parentNode.style.display = 'none';
+
+
+        }
+
+      </SCRIPT>
+
+
+
+
+
+</TABLE>
+
+
+
+
+</DIV>
+
+
+
+  <BR><FONT CLASS="fsinnerbox-title">Billing information</FONT>
+  <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+    <TR>
+      <TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Billing type</TD>
+
+  <SCRIPT>
+
+    var mywindow = -1;
+    function myopen(filename,windowname,properties) {
+      myclose();
+      mywindow = window.open(filename,windowname,properties);
+    }
+    function myclose() {
+      if ( mywindow != -1 )
+        mywindow.close();
+      mywindow = -1;
+    }
+
+    var achwindow = -1;
+    function achopen(filename,windowname,properties) {
+      achclose();
+      achwindow = window.open(filename,windowname,properties);
+    }
+    function achclose() {
+      if ( achwindow != -1 )
+        achwindow.close();
+      achwindow = -1;
+    }
+
+    function card_changed(what) {
+      if (
+             what.form.payinfo.value.substring(0, 4) == '4093' 
+          || what.form.payinfo.value.substring(0, 4) == '4911' 
+          || what.form.payinfo.value.substring(0, 4) == '4936' 
+          || what.form.payinfo.value.substring(0, 6) == '564132' 
+          || what.form.payinfo.value.substring(0, 2) == '63' 
+          || what.form.payinfo.value.substring(0, 2) == '67' 
+         )
+      {
+        what.form.paystart_month.disabled = false;
+        what.form.paystart_year.disabled = false;
+        what.form.payissue.disabled = false;
+        what.form.paystart_month.style.backgroundColor = '#ffffff';
+        what.form.paystart_year.style.backgroundColor = '#ffffff';
+        what.form.payissue.style.backgroundColor = '#ffffff';
+        document.getElementById('paystart_label').style.color = '#000000';
+        document.getElementById('payissue_label').style.color = '#000000';
+      } else {
+        what.form.paystart_month.disabled = true;
+        what.form.paystart_year.disabled = true;
+        what.form.payissue.disabled = true;
+        what.form.paystart_month.style.backgroundColor = '#dddddd';
+        what.form.paystart_year.style.backgroundColor = '#dddddd';
+        what.form.payissue.style.backgroundColor = '#dddddd';
+        document.getElementById('paystart_label').style.color = '#999999';
+        document.getElementById('payissue_label').style.color = '#999999';
+      }
+      return true;
+    }
+
+    function init_payauto_changed(){
+        var f = document.getElementById('CARD_payauto');
+        if(f != null) payauto_changed(f);
+        f = document.getElementById('CHEK_payauto');
+        if(f != null) payauto_changed(f);
+    }
+
+    function payauto_changed(payauto_field){
+        var select = (payauto_field.name == 'CARD_payauto') ? 'CARD_billday' : 'CHEK_billday';
+        var span = document.getElementById('td_'+select);
+        select = document.getElementById(select);
+        if (span == null || select == null) return;
+        if(payauto_field.checked) {
+            span.style.color = '#000000';
+            select.disabled = false;
+        }
+        else {
+            span.style.color = '#999999';
+            select.disabled = true;
+            //why? select.selectedIndex = 0;
+        }
+    }
+
+    function tax_changed(what) {
+      var num = document.getElementById(what.id + '_num'); 
+      if ( what.checked ) {
+        num.disabled = false;
+      } else {
+        num.disabled = true;
+      }
+    }
+    
+  </SCRIPT>
+
+  
+
+
+  <TD WIDTH="408">
+        <SCRIPT TYPE="text/javascript">
+
+
+      function paybychanged(what) {
+
+        init_payauto_changed();
+
+        var paybylayer = what.options[what.selectedIndex].value;
+
+          if (paybylayer == "CARD" ) {
+
+              document.getElementById('paybydCHEK').style.display = "none";
+              document.getElementById('paybydCHEK').style.zIndex = 0;
+              document.getElementById('paybydLECB').style.display = "none";
+              document.getElementById('paybydLECB').style.zIndex = 0;
+              document.getElementById('paybydBILL').style.display = "none";
+              document.getElementById('paybydBILL').style.zIndex = 0;
+              document.getElementById('paybydCOMP').style.display = "none";
+              document.getElementById('paybydCOMP').style.zIndex = 0;
+
+            document.getElementById('paybydCARD').style.display = "";
+            document.getElementById('paybydCARD').style.zIndex = 1;
+
+          }
+          if (paybylayer == "CHEK" ) {
+
+              document.getElementById('paybydCARD').style.display = "none";
+              document.getElementById('paybydCARD').style.zIndex = 0;
+              document.getElementById('paybydLECB').style.display = "none";
+              document.getElementById('paybydLECB').style.zIndex = 0;
+              document.getElementById('paybydBILL').style.display = "none";
+              document.getElementById('paybydBILL').style.zIndex = 0;
+              document.getElementById('paybydCOMP').style.display = "none";
+              document.getElementById('paybydCOMP').style.zIndex = 0;
+
+            document.getElementById('paybydCHEK').style.display = "";
+            document.getElementById('paybydCHEK').style.zIndex = 1;
+
+          }
+          if (paybylayer == "LECB" ) {
+
+              document.getElementById('paybydCARD').style.display = "none";
+              document.getElementById('paybydCARD').style.zIndex = 0;
+              document.getElementById('paybydCHEK').style.display = "none";
+              document.getElementById('paybydCHEK').style.zIndex = 0;
+              document.getElementById('paybydBILL').style.display = "none";
+              document.getElementById('paybydBILL').style.zIndex = 0;
+              document.getElementById('paybydCOMP').style.display = "none";
+              document.getElementById('paybydCOMP').style.zIndex = 0;
+
+            document.getElementById('paybydLECB').style.display = "";
+            document.getElementById('paybydLECB').style.zIndex = 1;
+
+          }
+          if (paybylayer == "BILL" ) {
+
+              document.getElementById('paybydCARD').style.display = "none";
+              document.getElementById('paybydCARD').style.zIndex = 0;
+              document.getElementById('paybydCHEK').style.display = "none";
+              document.getElementById('paybydCHEK').style.zIndex = 0;
+              document.getElementById('paybydLECB').style.display = "none";
+              document.getElementById('paybydLECB').style.zIndex = 0;
+              document.getElementById('paybydCOMP').style.display = "none";
+              document.getElementById('paybydCOMP').style.zIndex = 0;
+
+            document.getElementById('paybydBILL').style.display = "";
+            document.getElementById('paybydBILL').style.zIndex = 1;
+
+          }
+          if (paybylayer == "COMP" ) {
+
+              document.getElementById('paybydCARD').style.display = "none";
+              document.getElementById('paybydCARD').style.zIndex = 0;
+              document.getElementById('paybydCHEK').style.display = "none";
+              document.getElementById('paybydCHEK').style.zIndex = 0;
+              document.getElementById('paybydLECB').style.display = "none";
+              document.getElementById('paybydLECB').style.zIndex = 0;
+              document.getElementById('paybydBILL').style.display = "none";
+              document.getElementById('paybydBILL').style.zIndex = 0;
+
+            document.getElementById('paybydCOMP').style.display = "";
+            document.getElementById('paybydCOMP').style.zIndex = 1;
+
+          }
+
+        //init_payauto_changed();
+
+      }
+    </SCRIPT>
+
+    <SELECT NAME          = "payby"
+            ID            = "payby"
+            previousValue = "CARD"
+            previousText  = "Credit card"
+            onChange="paybychanged(this);"
+    >
+
+
+        <OPTION VALUE="CARD"
+                 SELECTED
+        >Credit card</OPTION>
+
+
+        <OPTION VALUE="CHEK"
+                
+        >Electronic check</OPTION>
+
+
+        <OPTION VALUE="LECB"
+                
+        >Phone bill billing</OPTION>
+
+
+        <OPTION VALUE="BILL"
+                
+        >Billing</OPTION>
+
+
+        <OPTION VALUE="COMP"
+                
+        >Complimentary</OPTION>
+
+
+    </SELECT>
+
+
+</TD></TR></TABLE>
+
+
+
+      <DIV ID="paybydCARD"
+           STYLE="display: block; z-index: 1"
+      >
+
+        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Card number </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="412325xxxxxx4150" MAXLENGTH=19 onChange="card_changed(this)" onKeyUp="card_changed(this)"></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Expiration </TD><TD WIDTH="408"><SELECT NAME="CARD_exp_month" SIZE="1" >
+
+
+
+   <OPTION VALUE="1">01
+
+   <OPTION VALUE="2">02
+
+   <OPTION VALUE="3">03
+
+   <OPTION VALUE="4">04
+
+   <OPTION SELECTED VALUE="5">05
+
+   <OPTION VALUE="6">06
+
+   <OPTION VALUE="7">07
+
+   <OPTION VALUE="8">08
+
+   <OPTION VALUE="9">09
+
+   <OPTION VALUE="10">10
+
+   <OPTION VALUE="11">11
+
+   <OPTION VALUE="12">12
+
+
+</SELECT>/<SELECT NAME="CARD_exp_year" SIZE="1" >
+
+
+
+   <OPTION VALUE="2016">2016
+
+   <OPTION VALUE="2017">2017
+
+   <OPTION VALUE="2018">2018
+
+   <OPTION VALUE="2019">2019
+
+   <OPTION SELECTED VALUE="2020">2020
+
+   <OPTION VALUE="2021">2021
+
+   <OPTION VALUE="2022">2022
+
+   <OPTION VALUE="2023">2023
+
+   <OPTION VALUE="2024">2024
+
+   <OPTION VALUE="2025">2025
+
+   <OPTION VALUE="2026">2026
+
+   <OPTION VALUE="2027">2027
+
+   <OPTION VALUE="2028">2028
+
+   <OPTION VALUE="2029">2029
+
+   <OPTION VALUE="2030">2030
+
+   <OPTION VALUE="2031">2031
+
+   <OPTION VALUE="2032">2032
+
+   <OPTION VALUE="2033">2033
+
+   <OPTION VALUE="2034">2034
+
+   <OPTION VALUE="2035">2035
+
+   <OPTION VALUE="2036">2036
+
+   <OPTION VALUE="2037">2037
+
+</SELECT>
+
+</TD></TR><TR><TD ALIGN="right" WIDTH="200">CVV2&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</TD><TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_paycvv" VALUE="" SIZE=4 MAXLENGTH=4><TR><TD ALIGN="right" WIDTH="200"><SPAN ID="paystart_label" style="color: #999999">Start date </SPAN></TD><TD WIDTH="408"><SELECT NAME="CARD_paystart_month" SIZE="1" DISABLED style="background-color: #dddddd">
+
+<OPTION VALUE="">
+
+   <OPTION VALUE="1">01
+
+   <OPTION VALUE="2">02
+
+   <OPTION VALUE="3">03
+
+   <OPTION VALUE="4">04
+
+   <OPTION VALUE="5">05
+
+   <OPTION VALUE="6">06
+
+   <OPTION VALUE="7">07
+
+   <OPTION VALUE="8">08
+
+   <OPTION VALUE="9">09
+
+   <OPTION VALUE="10">10
+
+   <OPTION VALUE="11">11
+
+   <OPTION VALUE="12">12
+
+
+</SELECT>/<SELECT NAME="CARD_paystart_year" SIZE="1" DISABLED style="background-color: #dddddd">
+
+<OPTION VALUE="">
+
+   <OPTION VALUE="2000">2000
+
+   <OPTION VALUE="2001">2001
+
+   <OPTION VALUE="2002">2002
+
+   <OPTION VALUE="2003">2003
+
+   <OPTION VALUE="2004">2004
+
+   <OPTION VALUE="2005">2005
+
+   <OPTION VALUE="2006">2006
+
+   <OPTION VALUE="2007">2007
+
+   <OPTION VALUE="2008">2008
+
+   <OPTION VALUE="2009">2009
+
+   <OPTION VALUE="2010">2010
+
+   <OPTION VALUE="2011">2011
+
+   <OPTION VALUE="2012">2012
+
+   <OPTION VALUE="2013">2013
+
+   <OPTION VALUE="2014">2014
+
+   <OPTION VALUE="2015">2015
+
+   <OPTION VALUE="2016">2016
+
+</SELECT>
+
+<SPAN ID="payissue_label" style="color: #999999">or Issue number </SPAN><INPUT TYPE="text" NAME="CARD_payissue" VALUE="" SIZE=3 MAXLENGTH=2 DISABLED style="background-color: #dddddd"></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Exact name on card </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payname" VALUE="Samara Towne"></TD></TR><TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CARD_payauto" NAME="CARD_payauto" CHECKED> Charge future payments to this credit card automatically</TD></TR></TABLE>
+
+      </DIV>
+
+
+      <DIV ID="paybydCHEK"
+           STYLE="display: none; z-index: 0"
+      >
+
+        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Account number </TD><TD><INPUT TYPE="text" SIZE=12 NAME="CHEK_payinfo1" VALUE=""></TD><TD ALIGN="right">Type</TD><TD><SELECT NAME="CHEK_paytype"><OPTION VALUE="" SELECTED></OPTION><OPTION VALUE="Personal checking" >Personal checking</OPTION><OPTION VALUE="Personal savings" >Personal savings</OPTION><OPTION VALUE="Business checking" >Business checking</OPTION><OPTION VALUE="Business savings" >Business savings</OPTION></SELECT></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;ABA/Routing number </TD><TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="CHEK_payinfo2" VALUE=""> (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)</TD></TR><INPUT TYPE="hidden" NAME="CHEK_exp_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037"><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Bank name </TD><TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="CHEK_payname" VALUE=""></TD></TR><INPUT TYPE="hidden" NAME="CHEK_paystate" VALUE=""><TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CHEK_payauto" NAME="CHEK_payauto" CHECKED> Charge future payments to this electronic check automatically</TD></TR></TABLE>
+
+      </DIV>
+
+
+      <DIV ID="paybydLECB"
+           STYLE="display: none; z-index: 0"
+      >
+
+        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Phone number </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16></TD></TR><INPUT TYPE="hidden" NAME="LECB_exp_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_exp_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE=""><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>
+
+      </DIV>
+
+
+      <DIV ID="paybydBILL"
+           STYLE="display: none; z-index: 0"
+      >
+
+        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200">P.O. </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""></TD></TR><INPUT TYPE="hidden" NAME="BILL_exp_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_exp_year" VALUE="2037"><TR><TD ALIGN="right" WIDTH="200">Attention </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payname" VALUE=""></TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>
+
+      </DIV>
+
+
+      <DIV ID="paybydCOMP"
+           STYLE="display: none; z-index: 0"
+      >
+
+        <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Approved by </TD><TD WIDTH="408"><INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""></TD></TR><TR><TD ALIGN="right" WIDTH="200"><font color="#ff0000">*</font>&nbsp;Expiration </TD><TD WIDTH="408"><SELECT NAME="COMP_exp_month" SIZE="1" >
+
+
+
+   <OPTION VALUE="1">01
+
+   <OPTION VALUE="2">02
+
+   <OPTION VALUE="3">03
+
+   <OPTION VALUE="4">04
+
+   <OPTION VALUE="5">05
+
+   <OPTION VALUE="6">06
+
+   <OPTION VALUE="7">07
+
+   <OPTION VALUE="8">08
+
+   <OPTION VALUE="9">09
+
+   <OPTION VALUE="10">10
+
+   <OPTION VALUE="11">11
+
+   <OPTION VALUE="12">12
+
+
+</SELECT>/<SELECT NAME="COMP_exp_year" SIZE="1" >
+
+
+
+   <OPTION VALUE="2016">2016
+
+   <OPTION VALUE="2017">2017
+
+   <OPTION VALUE="2018">2018
+
+   <OPTION VALUE="2019">2019
+
+   <OPTION VALUE="2020">2020
+
+   <OPTION VALUE="2021">2021
+
+   <OPTION VALUE="2022">2022
+
+   <OPTION VALUE="2023">2023
+
+   <OPTION VALUE="2024">2024
+
+   <OPTION VALUE="2025">2025
+
+   <OPTION VALUE="2026">2026
+
+   <OPTION VALUE="2027">2027
+
+   <OPTION VALUE="2028">2028
+
+   <OPTION VALUE="2029">2029
+
+   <OPTION VALUE="2030">2030
+
+   <OPTION VALUE="2031">2031
+
+   <OPTION VALUE="2032">2032
+
+   <OPTION VALUE="2033">2033
+
+   <OPTION VALUE="2034">2034
+
+   <OPTION VALUE="2035">2035
+
+   <OPTION VALUE="2036">2036
+
+   <OPTION VALUE="2037">2037
+
+</SELECT>
+
+</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR><TR><TD>&nbsp;</TD></TR></TABLE>
+
+      </DIV>
+
+
+
+
+  <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+    <TR><TD>&nbsp;</TD></TR>
+
+
+      <TR>
+        <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" > Tax Exempt</TD>
+      </TR>
+
+
+
+
+    <TR>
+      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" > Postal mail invoices 
+
+      </TD>
+    </TR>
+
+    <TR>
+      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_FAX" VALUE="FAX" > Fax invoices 
+
+      </TD>
+    </TR>
+
+
+    <TR>
+      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" CHECKED> Email invoices 
+
+      </TD>
+    </TR>
+
+   <TR>
+      <TD ALIGN="right" WIDTH="200">
+        Email address(es)
+      </TD>
+      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="">
+      <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" > Do not send notices
+      </TD>
+    </TR>
+
+    <INPUT TYPE="hidden" NAME="prorate_day" VALUE="">
+
+    <TR>
+      <TD ALIGN="right" WIDTH="200">Invoice terms </TD>
+      <TD WIDTH="408">
+        <SELECT NAME = "invoice_terms"
+        ID   = "invoice_terms"
+        
+>
+# #false laziness w/select-table.html
+
+  <OPTION VALUE="">Default (Payable upon receipt)
+    <OPTION VALUE="Payable upon receipt" >Payable upon receipt
+    <OPTION VALUE="Net 0" >Net 0
+    <OPTION VALUE="Net 3" >Net 3
+    <OPTION VALUE="Net 5" >Net 5
+    <OPTION VALUE="Net 9" >Net 9
+    <OPTION VALUE="Net 10" >Net 10
+    <OPTION VALUE="Net 14" >Net 14
+    <OPTION VALUE="Net 15" >Net 15
+    <OPTION VALUE="Net 18" >Net 18
+    <OPTION VALUE="Net 20" >Net 20
+    <OPTION VALUE="Net 21" >Net 21
+    <OPTION VALUE="Net 25" >Net 25
+    <OPTION VALUE="Net 30" >Net 30
+    <OPTION VALUE="Net 45" >Net 45
+    <OPTION VALUE="Net 60" >Net 60
+    <OPTION VALUE="Net 90" >Net 90
+</SELECT>
+
+      </TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" WIDTH="200">Credit limit </TD>
+      <TD WIDTH="408">
+        <SCRIPT TYPE="text/javascript">
+function toggle(obj) {
+  obj.form.credit_limit.disabled = obj.checked;
+}
+        </SCRIPT>
+        <INPUT TYPE  = "text"
+               NAME  = "credit_limit"
+               VALUE = "0.00"
+                DISABLED
+        >
+        <INPUT TYPE  = "checkbox"
+               NAME  = "no_credit_limit"
+               VALUE = 1
+               onClick="toggle(this)"
+                CHECKED
+        > Unlimited 
+      </TD>
+    </TR>
+
+      <INPUT TYPE="hidden" NAME="spool_cdr" VALUE="">
+
+      <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="">
+
+      <INPUT TYPE="hidden" NAME="email_csv_cdr" VALUE="">
+
+       <INPUT TYPE="hidden" NAME="accountcode_cdr" VALUE="">
+
+      <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="">
+
+
+  </TABLE>
+
+  <font color="#ff0000">*</font>&nbsp;required fields 
+
+<script type="text/javascript">
+    init_payauto_changed();
+</script>
+
+
+<BR>
+
+
+
+<INPUT TYPE="hidden" NAME="locationnum" VALUE="">
+
+<INPUT TYPE="hidden" NAME="usernum" VALUE="3">
+
+    <INPUT TYPE="hidden" NAME="payauto" VALUE="">
+    <INPUT TYPE="hidden" NAME="billday" VALUE="">
+    <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
+    <INPUT TYPE="hidden" NAME="payinfo1" VALUE="">
+    <INPUT TYPE="hidden" NAME="payinfo2" VALUE="">
+    <INPUT TYPE="hidden" NAME="payinfo3" VALUE="">
+    <INPUT TYPE="hidden" NAME="paytype" VALUE="">
+    <INPUT TYPE="hidden" NAME="payname" VALUE="">
+    <INPUT TYPE="hidden" NAME="paystate" VALUE="">
+    <INPUT TYPE="hidden" NAME="exp_month" VALUE="">
+    <INPUT TYPE="hidden" NAME="exp_year" VALUE="">
+    <INPUT TYPE="hidden" NAME="paycvv" VALUE="">
+    <INPUT TYPE="hidden" NAME="paystart_month" VALUE="">
+    <INPUT TYPE="hidden" NAME="paystart_year" VALUE="">
+    <INPUT TYPE="hidden" NAME="payissue" VALUE="">
+    <INPUT TYPE="hidden" NAME="payip" VALUE="">
+    <INPUT TYPE="hidden" NAME="paid" VALUE="">
+
+
+
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function address_standardize() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/xmlhttp-address_standardize.html";
+        var a = address_standardize.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=address_standardize';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'POST' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('POST ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("POST", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'POST' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+
+<INPUT TYPE="hidden" NAME="duplicate_of_custnum" VALUE="">
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+
+
+    function duplicates_form() {
+        // count args; build URL
+        var url = "http://localhost/freeside/misc/xmlhttp-cust_main-duplicates.html?";
+        var a = duplicates_form.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=duplicates_form';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
+            len = args.length
+        } else {
+            args = a;
+            len = args.length - 1;
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
+
+        if ( 'GET' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('GET ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("GET", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
+            } else {
+              var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
+              if ( data.indexOf("<b>System error</b>") > -1 ) {
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
+              }
+            }
+        }
+
+        if ( 'GET' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+
+</SCRIPT>
+
+
+<SCRIPT TYPE="text/javascript">
+var fixups = ["copy_payby_fields","standardize_locations","do_submit"];
+var fixup_position;
+var running = false;
+
+(function() {
+  var myonload = function() {
+
+submit_abort();
+
+  }
+  if ( window.addEventListener ) {
+    window.addEventListener('load', myonload);
+  } else if ( window.attachEvent ) {
+    window.attachEvent('onload', myonload);
+  }
+})();
+
+
+function submit_continue() {
+  if ( running ) {
+    window[ fixups[fixup_position++] ].call();
+  }
+}
+
+function submit_abort() {
+  running = false;
+  fixup_position = 0;
+  document.CustomerForm.submitButton.disabled = false;
+  cClick();
+}
+
+function bottomfixup(what) {
+  fixup_position = 0;
+  document.CustomerForm.submitButton.disabled = true;
+  running = true;
+  submit_continue();
+}
+
+function do_submit() {
+  document.CustomerForm.submit();
+}
+
+function copy_payby_fields() {
+  var layervars = new Array(
+    'payauto', 'billday',
+    'payinfo', 'payinfo1', 'payinfo2', 'payinfo3', 'paytype',
+    'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
+    'paystart_month', 'paystart_year', 'payissue',
+    'payip',
+    'paid'
+  );
+
+  var cf = document.CustomerForm;
+  var payby = cf.payby.options[cf.payby.selectedIndex].value;
+  for ( f=0; f < layervars.length; f++ ) {
+    var field = layervars[f];
+    copyelement( cf.elements[payby + '_' + field],
+                 cf.elements[field]
+               );
+  }
+  submit_continue();
+}
+
+function status_message(text, caption) {
+  text = '<P STYLE="position:absolute; top:50%; margin-top:-1em; width:100%; text-align:center"><B><FONT SIZE="+1">' + text + '</FONT></B></P>';
+  caption = caption || 'Please wait...';
+  overlib(text, WIDTH, 444, HEIGHT, 168, CAPTION, caption, STICKY, AUTOSTATUSCAP, CLOSECLICK, MIDX, 0, MIDY, 0);
+}
+
+function form_address_info() {
+  var cf = document.CustomerForm;
+
+  var returnobj = { billship: 1 };
+  returnobj['same'] = cf.elements['same'].checked;
+    returnobj['bill_address1'] = cf.elements['bill_address1'].value;
+    returnobj['bill_address2'] = cf.elements['bill_address2'].value;
+    returnobj['bill_state'] = cf.elements['bill_state'].value;
+    returnobj['bill_zip'] = cf.elements['bill_zip'].value;
+    returnobj['bill_country'] = cf.elements['bill_country'].value;
+    returnobj['bill_city'] = cf.elements['bill_city'].value;
+    returnobj['bill_censustract'] = cf.elements['bill_enter_censustract'].value;
+    returnobj['ship_address1'] = cf.elements['ship_address1'].value;
+    returnobj['ship_address2'] = cf.elements['ship_address2'].value;
+    returnobj['ship_state'] = cf.elements['ship_state'].value;
+    returnobj['ship_zip'] = cf.elements['ship_zip'].value;
+    returnobj['ship_country'] = cf.elements['ship_country'].value;
+    returnobj['ship_city'] = cf.elements['ship_city'].value;
+    returnobj['ship_censustract'] = cf.elements['ship_enter_censustract'].value;
+
+  return returnobj;
+}
+
+function standardize_locations() {
+
+  var cf = document.CustomerForm;
+  var address_info = form_address_info();
+
+  var changed = false; // have any of the address fields been changed?
+
+// clear coord_auto fields if the user has changed the coordinates
+
+  if ( cf.elements['bill_latitude'].value != cf.elements['old_bill_latitude'].value ) {
+    cf.elements['bill_coord_auto'].value = '';
+  }
+
+
+  if ( cf.elements['bill_longitude'].value != cf.elements['old_bill_longitude'].value ) {
+    cf.elements['bill_coord_auto'].value = '';
+  }
+
+  // but if the coordinates have been set to null, turn coord_auto on 
+  // and standardize
+  if ( cf.elements['bill_latitude'].value == '' &&
+       cf.elements['bill_longitude'].value == '' ) {
+    cf.elements['bill_coord_auto'].value = 'Y';
+    changed = true;
+  }
+  // standardize if the old address wasn't clean
+  if ( cf.elements['bill_addr_clean'].value == '' ) {
+    changed = true;
+  }
+
+  if ( cf.elements['ship_latitude'].value != cf.elements['old_ship_latitude'].value ) {
+    cf.elements['ship_coord_auto'].value = '';
+  }
+
+
+  if ( cf.elements['ship_longitude'].value != cf.elements['old_ship_longitude'].value ) {
+    cf.elements['ship_coord_auto'].value = '';
+  }
+
+  // but if the coordinates have been set to null, turn coord_auto on 
+  // and standardize
+  if ( cf.elements['ship_latitude'].value == '' &&
+       cf.elements['ship_longitude'].value == '' ) {
+    cf.elements['ship_coord_auto'].value = 'Y';
+    changed = true;
+  }
+  // standardize if the old address wasn't clean
+  if ( cf.elements['ship_addr_clean'].value == '' ) {
+    changed = true;
+  }
+
+  // or if it was clean but has been changed
+  for (var key in address_info) {
+    var old_el = cf.elements['old_'+key];
+    if ( old_el && address_info[key] != old_el.value ) {
+      changed = true;
+      break;
+    }
+  }
+
+
+  if ( !changed && 1 ) {
+    if ( address_info['same'] ) {
+      cf.elements['bill_censustract'].value =
+        address_info['bill_censustract'];
+    } else {
+      cf.elements['ship_censustract'].value =
+        address_info['ship_censustract'];
+    }
+  }
+
+
+  post_standardization();
+
+}
+
+var returned;
+
+function confirm_standardize(arg) {
+  // contains 'old', which was what we sent, and 'new', which is what came
+  // back, including any errors
+  returned = JSON.parse(arg);
+
+  if ( 0 ) {
+
+    replace_address(); // with the contents of returned['new']
+  
+  } else if ( returned['all_same'] ) {
+
+    // then all entered address fields are correct
+    // but we still need to set the lat/long fields and addr_clean
+    status_message('Verified');
+    replace_address();
+
+  } else {
+
+    var querystring = encodeURIComponent( JSON.stringify(returned) );
+    // confirmation popup: knows to call replace_address(), 
+    // post_standardization(), or submit_abort() depending on the 
+    // user's choice.
+    OLpostAJAX(
+        'http://localhost/freeside//misc/confirm-address_standardize.html', 
+        'q='+querystring,
+        function() {
+          overlib( OLresponseAJAX, CAPTION, 'Address standardization', STICKY, 
+            AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 
+            576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', 
+            TEXTSIZE, 3 );
+        }, 0);
+
+  }
+}
+
+function replace_address() {
+
+  var newaddr = returned['new'];
+
+  var cf = document.CustomerForm;
+  var clean = newaddr['bill_addr_clean'] == 'Y';
+  var error = newaddr['bill_error'];
+  if ( clean ) {
+    cf.elements['bill_address1'].value = newaddr['bill_address1'];
+    cf.elements['bill_address2'].value = newaddr['bill_address2'];
+    cf.elements['bill_state'].value = newaddr['bill_state'];
+    cf.elements['bill_zip'].value = newaddr['bill_zip'];
+    cf.elements['bill_addr_clean'].value = newaddr['bill_addr_clean'];
+    cf.elements['bill_city'].value = newaddr['bill_city'];
+
+    if ( cf.elements['bill_coord_auto'].value ) {
+      cf.elements['bill_latitude'].value  = newaddr['bill_latitude'];
+      cf.elements['bill_longitude'].value = newaddr['bill_longitude'];
+    }
+    if ( clean && newaddr['bill_censustract'] ) {
+      cf.elements['bill_censustract'].value = newaddr['bill_censustract'];
+    }
+  } // if clean
+  var clean = newaddr['ship_addr_clean'] == 'Y';
+  var error = newaddr['ship_error'];
+  if ( clean ) {
+    cf.elements['ship_address1'].value = newaddr['ship_address1'];
+    cf.elements['ship_address2'].value = newaddr['ship_address2'];
+    cf.elements['ship_state'].value = newaddr['ship_state'];
+    cf.elements['ship_zip'].value = newaddr['ship_zip'];
+    cf.elements['ship_addr_clean'].value = newaddr['ship_addr_clean'];
+    cf.elements['ship_city'].value = newaddr['ship_city'];
+
+    if ( cf.elements['ship_coord_auto'].value ) {
+      cf.elements['ship_latitude'].value  = newaddr['ship_latitude'];
+      cf.elements['ship_longitude'].value = newaddr['ship_longitude'];
+    }
+    if ( clean && newaddr['ship_censustract'] ) {
+      cf.elements['ship_censustract'].value = newaddr['ship_censustract'];
+    }
+  } // if clean
+
+  post_standardization();
+
+}
+
+function confirm_manual_address() {
+  var cf = document.CustomerForm;
+  cf.elements['bill_censustract'].value =
+    cf.elements['bill_enter_censustract'].value;
+  cf.elements['ship_censustract'].value =
+    cf.elements['ship_enter_censustract'].value;
+  post_standardization();
+}
+
+function post_standardization() {
+
+
+  submit_continue();;
+
+
+}
+
+function update_geocode() {
+
+  //yay closures
+  set_geocode = function (what) {
+
+    var cf = document.CustomerForm;
+    var prefix = 'bill_';
+    if ( cf.elements['same']
+      && cf.elements['same'].checked
+      && prefix == 'ship_' ) {
+      prefix = 'bill_';
+    }
+
+    //alert(what.options[what.selectedIndex].value);
+    var argsHash = eval('(' + what.options[what.selectedIndex].value + ')');
+    cf.elements[prefix + 'city'].value     = argsHash['city'];
+    setselect(cf.elements[prefix + 'state'], argsHash['state']);
+    cf.elements[prefix + 'zip'].value      = argsHash['zip'];
+    cf.elements[prefix + 'geocode'].value  = argsHash['geocode'];
+    submit_continue();;
+
+  }
+
+  // popup a chooser
+
+  overlib( OLresponseAJAX, CAPTION, 'Select tax location', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, WIDTH, 576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+
+}
+
+function setselect(el, value) {
+
+  for ( var s = 0; s < el.options.length; s++ ) {
+     if ( el.options[s].value == value ) {
+       el.selectedIndex = s;
+     }
+  }
+
+}
+
+
+
+
+function copyelement(from, to) {
+  if ( from == undefined ) {
+    to.value = '';
+  } else if ( from.type == 'select-one' ) {
+    to.value = from.options[from.selectedIndex].value;
+    //alert(from + " (" + from.type + "): " + to.name + " => (" + from.selectedIndex + ") " + to.value);
+  } else if ( from.type == 'checkbox' ) {
+    if ( from.checked ) {
+      to.value = from.value;
+    } else {
+      to.value = '';
+    }
+  } else {
+    if ( from.value == undefined ) {
+      to.value = '';
+    } else {
+      to.value = from.value;
+    }
+  }
+  //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
+}
+
+function confirm_censustract(pre) {
+  var cf = document.CustomerForm;
+  if ( cf.elements[pre+'censustract'].value == '' ) {
+    var address_info = form_address_info();
+    address_info[pre+'latitude']  = cf.elements[pre+'latitude'].value;
+    address_info[pre+'longitude'] = cf.elements[pre+'longitude'].value;
+    address_info['prefix'] = pre;
+    OLpostAJAX(
+        'http://localhost/freeside//misc/confirm-censustract.html',
+        'q=' + encodeURIComponent(JSON.stringify(address_info)),
+        function() {
+          if ( OLresponseAJAX ) {
+            overlib( OLresponseAJAX, CAPTION, 'Confirm censustract', STICKY,
+              AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH,
+              576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399',
+              TEXTSIZE, 3 );
+          } else
+            submit_continue();
+        },
+        0);
+  } else submit_continue();
+}
+function confirm_censustract_bill() {
+  confirm_censustract('bill_');
+}
+
+function confirm_censustract_ship() {
+  var cf = document.CustomerForm;
+  if ( cf.elements['same'].checked ) {
+    submit_continue();
+  } else {
+    confirm_censustract('ship_');
+  }
+}
+
+function set_censustract(tract, year, pre) {
+  var cf = document.CustomerForm;
+  cf.elements[pre + 'censustract'].value = tract;
+  cf.elements[pre + 'censusyear'].value = year;
+  submit_continue();
+}
+
+function check_unique() {
+  var search_hash = {};
+
+  duplicates_form(JSON.stringify(search_hash), confirm_unique);
+}
+
+function confirm_unique(arg) {
+  if ( arg.match(/\S/) ) {
+  overlib( arg, CAPTION, 'Duplicate customer', STICKY, AUTOSTATUSCAP, 
+      CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 
+      268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+  } else { // no duplicates
+    submit_continue();
+  }
+}
+
+
+</SCRIPT>
+
+
+<BR>
+<INPUT TYPE    = "button"
+       NAME    = "submitButton"
+       ID      = "submitButton"
+       VALUE   = "Apply changes"
+       onClick = "this.disabled=true; bottomfixup(this.form);"
+>
+<BR><BR>
+</FORM>
+
+        </TD>
+      </TR>
+    </TABLE>
+  </BODY>
+</HTML>
+
+
