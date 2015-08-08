@@ -1235,7 +1235,7 @@ sub process_batch_import {
     'format_types' => { 'simple' => '' }, #force infer from file extension
     'default_csv'  => 1, #if not .xls, will read as csv, regardless of extension
     'format_hash_callbacks' => { 'simple' => $hashcb },
-    'insert_args_callback'  => sub { ( 'manual'=>1 ) },
+    'insert_args_callback'  => sub { ( 'manual'=>1 ); },
     'postinsert_callback'   => sub {
       my $cust_pay = shift;
       my $cust_main = $cust_pay->cust_main
