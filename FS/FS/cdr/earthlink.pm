@@ -3,10 +3,12 @@ package FS::cdr::earthlink;
 use strict;
 use vars qw( @ISA %info $date);
 use Time::Local;
-use FS::cdr qw(_cdr_date_parser_maker _cdr_min_parser_maker);
+use FS::cdr qw(_cdr_min_parser_maker);
 use Date::Parse;
 
 @ISA = qw(FS::cdr);
+
+my ($tmp_mday, $tmp_mon, $tmp_year);
 
 %info = (
   'name'          => 'Earthlink',
@@ -15,14 +17,30 @@ use Date::Parse;
   'import_fields' => [
 
         skip(3),  			#Account number/ SERVICE LOC / BILL NUMBER 
-	sub { my($cdr, $date) = @_;  
-	$date;	
-	}, 				#date 
+        sub { my($cdr, $date) = @_;
+        $date =~ /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+        or die "unparseable date: $date";
+        ($tmp_mon, $tmp_mday, $tmp_year) = ($1, $2, $3);
+        }, 				#date 	    
 	sub { my($cdr, $time) = @_;
+        	  $time =~ /^(\d{1,2}):(\d{1,2}):(\d{1,2}) (AM|PM)$/
+            	  or die "unparsable time: $time"; #maybe we shouldn't die...
+	  my $hour = $1;
+          $hour += 12 if $4 eq 'PM' && $hour != 12;
+          $hour = 0 if $4 eq 'AM' && $hour == 12;
 
-	my $datetime = $date. " ". $time;
-	$cdr->set('startdate', $datetime );
-        },              		#time
+	     my $dt = DateTime->new(
+        	year    => $tmp_year,
+        	month   => $tmp_mon,
+        	day     => $tmp_mday,
+        	hour    => $hour,
+        	minute  => $2,
+        	second  => $3,
+        	time_zone => 'local',
+      );
+	      $cdr->set('startdate', $dt->epoch);
+
+        },
         skip(1),                        #TollFreeNumber
 	sub { my($cdr, $src) = @_;	
 	$src =~ s/\D//g;
