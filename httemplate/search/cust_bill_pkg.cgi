@@ -629,18 +629,6 @@ if ( $cgi->param('nottax') ) {
     }
   }
 
-  # classnum (of underlying package)
-  # not specified: all classes
-  # 0: empty class
-  # N: classnum
-  if ( grep { $_ eq 'classnum' } $cgi->param ) {
-    my @classnums = grep /^\d+$/, $cgi->param('classnum');
-    push @where, "COALESCE(part_fee.classnum, $part_pkg.classnum, 0) IN ( ".
-                     join(',', @classnums ).
-                 ' )'
-      if @classnums;
-  }
-
 } # nottax / istax
 
 
