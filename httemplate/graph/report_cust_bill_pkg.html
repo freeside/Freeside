@@ -165,7 +165,6 @@ window.onload = class_mode_changed;
 
 </TR>
 
-
 <TR>
   <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
 </TR>
@@ -193,6 +192,12 @@ window.onload = class_mode_changed;
 <& /elements/tr-select.html,
     'label'   => 'Discounts',
     'field'   => 'use_discount',
+    'options' => [ 1, 2 ],
+    'labels'  => { 1 => 'Separate', 2 => 'Do not show' },
+&>
+<& /elements/tr-select.html,
+    'label'   => 'Taxes',
+    'field'   => 'use_taxes',
     'options' => [ 1, 2 ],
     'labels'  => { 1 => 'Separate', 2 => 'Do not show' },
 &>

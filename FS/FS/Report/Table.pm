@@ -485,9 +485,9 @@ sub cust_pkg_recur_cost {
 
 =item cust_bill_pkg: the total package charges on invoice line items.
 
-'charges': limit the type of charges included (setup, recur, usage, discount).
-Should be a string containing one or more of 'S', 'R', 'U', or 'D'; if 
-unspecified, defaults to all three.
+'charges': limit the type of charges included (setup, recur, usage, discount, taxes).
+Should be a string containing one or more of 'S', 'R', or 'U'; or 'D' or 'T' (discount
+and taxes should not be combined with the others.)  If unspecified, defaults to 'SRU'.
 
 'classnum': limit to this package class.
 
@@ -517,6 +517,7 @@ sub cust_bill_pkg {
   $sum += $self->cust_bill_pkg_recur(@_) if $charges{R};
   $sum += $self->cust_bill_pkg_detail(@_) if $charges{U};
   $sum += $self->cust_bill_pkg_discount(@_) if $charges{D};
+  $sum += $self->cust_bill_pkg_taxes(@_) if $charges{T};
 
   if ($opt{'average_per_cust_pkg'}) {
     my $count = $self->cust_bill_pkg_count_pkgnum(@_);
@@ -723,6 +724,31 @@ sub cust_bill_pkg_discount {
   JOIN cust_bill_pkg USING (billpkgnum)
   $cust_bill_pkg_join
   WHERE " . join(' AND ', grep $_, @where);
+
+  $self->scalar_sql($total_sql);
+}
+
+sub cust_bill_pkg_taxes {
+  my $self = shift;
+  my ($speriod, $eperiod, $agentnum, %opt) = @_;
+
+  $agentnum ||= $opt{'agentnum'};
+
+  my @where = (
+    '(cust_bill_pkg.pkgnum != 0 OR feepart IS NOT NULL)',
+    $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
+    $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
+  );
+
+  my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg_tax_location.amount),0)
+    FROM cust_bill_pkg
+    $cust_bill_pkg_join
+    LEFT JOIN cust_bill_pkg_tax_location 
+      ON (cust_bill_pkg.billpkgnum = cust_bill_pkg_tax_location.taxable_billpkgnum)
+    WHERE " . join(' AND ', grep $_, @where);
 
   $self->scalar_sql($total_sql);
 }
