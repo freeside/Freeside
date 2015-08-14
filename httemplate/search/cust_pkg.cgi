@@ -310,11 +310,14 @@ my $process_svc_labels = sub {
       foreach ( map { [ $_->label ] } @{ $part_svc->cust_pkg_svc } ) {
         push @out, [ 
         { 'data' => $_->[0]. ':',
-          'align'=> 'right', },
+          'align'=> 'right',
+        },
+
         { 'data' => $_->[1],
           'align'=> 'left',
-          'link' => $p. 'view/' .
-          $_->[2]. '.cgi?'. $_->[3], },
+          'link' => $p. 'view/cust_svc.cgi?' . $_->[3],
+        },
+
         ];
       }
     }
