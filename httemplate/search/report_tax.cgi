@@ -32,6 +32,8 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
     <TH ROWSPAN=3>Tax credited</TH>
     <TH ROWSPAN=3></TH>
     <TH ROWSPAN=3>Net tax due</TH>
+    <TH ROWSPAN=3></TH>
+    <TH ROWSPAN=3>Tax collected</TH>
   </TR>
 
   <TR>
@@ -131,13 +133,16 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   # credited tax
     <TD CLASS="bigmath"> &minus; </TD>
     <TD>
-      <A HREF="<% $creditlink . $rowlink %>">
+%#      <A HREF="<% $creditlink . $rowlink %>"> currently broken
         <% $money_sprintf->( $row->{credit} ) %>
-      </A>
+%#      </A>
     </TD>
 %   # net tax due
     <TD CLASS="bigmath"> = </TD>
     <TD><% $money_sprintf->( $row->{tax} - $row->{credit} ) %></TD>
+%   # tax collected
+    <TD>&nbsp;</TD>
+    <TD><% $money_sprintf->( $row->{tax_paid} ) %></TD>
   </TR>
 %   $rownum++;
 %   $prev_row = $row;
@@ -218,12 +223,12 @@ if ( $params{agentnum} ) {
 my $saleslink  = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1";
 my $taxlink    = $p. "search/cust_bill_pkg.cgi?$dateagentlink;istax=1";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
-my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
-
-if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
-  $creditlink =~ s/begin/credit_begin/;
-  $creditlink =~ s/end/credit_end/;
-}
+#my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
+#if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
+#  $creditlink =~ s/begin/credit_begin/;
+#  $creditlink =~ s/end/credit_end/;
+#}
+my $creditlink = ''; # disabled until we find a sane way to do this
 
 my %pkgclass_name = map { $_->classnum, $_->classname } qsearch('pkg_class');
 $pkgclass_name{''} = 'Unclassified';

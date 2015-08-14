@@ -436,6 +436,15 @@ if ( $cgi->param('nottax') ) {
       $join_pkg .= " LEFT JOIN ($exempt_sub) AS item_exempt
       USING (billpkgnum)";
     }
+
+    # This is the only place we should attempt to show credits on here:
+    # the total of credit applications to the line item.
+
+    my $credit_sub = 'SELECT SUM(amount) AS credit_amount, billpkgnum
+    FROM cust_credit_bill_pkg GROUP BY billpkgnum';
+
+    $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
+    ON (cust_bill_pkg.billpkgnum = item_credit.billpkgnum)";
    
     if ( @tax_where or $cgi->param('taxable') ) {
       # process tax restrictions
@@ -552,60 +561,118 @@ if ( $cgi->param('nottax') ) {
 
 } elsif ( $cgi->param('istax') ) {
 
-  @peritem = ( 'setup' ); # taxes only have setup
-  @peritem_desc = ( 'Tax charge' );
+  # ensure that it is a tax:
+  push @where, 'cust_bill_pkg.pkgnum = 0',
+               'cust_bill_pkg.feepart IS NULL';
 
-  push @where, 'cust_bill_pkg.pkgnum = 0';
+  # We MUST NOT join cust_bill_pkg to any table that it's 1:many to.
+  # Otherwise we get duplication of the cust_bill_pkg records, 
+  # inaccurate totals, nonsensical paging behavior, etc.
+  # We CAN safely join it to a subquery that has unique billpkgnums, and 
+  # that's what we'll do.
+
+  my $tax_subquery;
+  my @tax_where;
 
   # tax location when using tax_rate_location
   if ( $cgi->param('vendortax') ) {
 
-    $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
-                 ' LEFT JOIN tax_rate_location USING ( taxratelocationnum )';
+    $tax_subquery = '
+      SELECT billpkgnum, SUM(amount) as tax_total
+      FROM cust_bill_pkg_tax_rate_location AS tax
+        JOIN tax_rate_location USING (taxratelocationnum)
+    ';
     foreach (qw( state county city locationtaxid)) {
       if ( scalar($cgi->param($_)) ) {
         my $place = dbh->quote( $cgi->param($_) );
-        push @where, "tax_rate_location.$_ = $place";
+        push @tax_where, "tax_rate_location.$_ = $place";
       }
     }
 
-    push @total, 'SUM(
-      COALESCE(cust_bill_pkg_tax_rate_location.amount, 
-               cust_bill_pkg.setup + cust_bill_pkg.recur)
-    )';
-    push @total_desc, "$money_char%.2f total";
-
   } else { # the internal-tax case
 
-    $join_pkg .= '
-      LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
-      JOIN cust_main_county           USING (taxnum)
-    ';
+    my $tax_select = 'SELECT tax.billpkgnum, SUM(tax.amount) as tax_total';
+    my $tax_from = ' FROM cust_bill_pkg_tax_location AS tax JOIN cust_main_county USING (taxnum)';
 
-    # don't double-count the components of consolidated taxes
-    @total = ( 'COUNT(DISTINCT cust_bill_pkg.billpkgnum)',
-               'SUM(cust_bill_pkg_tax_location.amount)' );
-    @total_desc = "$money_char%.2f total";
+    # package classnum
+    if ( grep { $_ eq 'classnum' } $cgi->param ) {
+      my @classnums = grep /^\d*$/, $cgi->param('classnum');
+      $tax_from .= '
+        JOIN cust_bill_pkg AS taxed_item
+          ON (tax.taxable_billpkgnum = taxed_item.billpkgnum)
+        LEFT JOIN cust_pkg AS taxed_pkg ON (taxed_item.pkgnum = taxed_pkg.pkgnum)
+        LEFT JOIN part_pkg AS taxed_part_pkg ON (taxed_pkg.pkgpart = taxed_part_pkg.pkgpart)
+        LEFT JOIN part_fee AS taxed_part_fee ON (taxed_item.feepart = taxed_part_fee.feepart)
+      ';
+      push @tax_where,
+        "COALESCE(taxed_part_pkg.classnum, taxed_part_fee.classnum,0) IN ( ".
+                       join(',', @classnums ).
+                   ' )'
+        if @classnums;
+    }
 
     # taxclass
     if ( $cgi->param('taxclassNULL') ) {
-      push @where, 'cust_main_county.taxclass IS NULL';
+      push @tax_where, 'cust_main_county.taxclass IS NULL';
     }
 
     # taxname
     if ( $cgi->param('taxnameNULL') ) {
-      push @where, 'cust_main_county.taxname IS NULL OR '.
+      push @tax_where, 'cust_main_county.taxname IS NULL OR '.
                    'cust_main_county.taxname = \'Tax\'';
     } elsif ( $cgi->param('taxname') ) {
-      push @where, 'cust_main_county.taxname = '.
+      push @tax_where, 'cust_main_county.taxname = '.
                     dbh->quote($cgi->param('taxname'));
     }
 
-    # specific taxnums
-    if ( $cgi->param('taxnum') =~ /^([0-9,]+)$/ ) {
-      push @where, "cust_main_county.taxnum IN ($1)";
+    # itemdesc, for breakdown from the vendor tax report
+    # (is this even used? vendor tax report shouldn't use cust_bill_pkg.cgi)
+    if ( $cgi->param('itemdesc') ) {
+      if ( $cgi->param('itemdesc') eq 'Tax' ) {
+        push @where, "($itemdesc = 'Tax' OR $itemdesc is null)";
+      } else {
+        push @where, "$itemdesc = ". dbh->quote($cgi->param('itemdesc'));
+      }
     }
-  } # the normal case
+
+    # specific taxnums (the usual way)
+    if ( $cgi->param('taxnum') =~ /^([\d,]+)$/) {
+      push @tax_where, "cust_main_county.taxnum IN ($1)";
+    }
+
+    $tax_subquery = "$tax_select $tax_from";
+
+  } # end of internal-tax case
+
+  if (@tax_where) {
+    $tax_subquery .= '
+      WHERE ' . join(' AND ', map "($_)", @tax_where);
+  }
+  $tax_subquery .= ' GROUP BY tax.billpkgnum ';
+
+  # now join THAT into the main report
+  # (inner join, so that tax line items that don't match the tax_where 
+  # conditions don't appear in the output.)
+
+  $join_pkg .= " JOIN ($tax_subquery) AS _istax USING (billpkgnum) ";
+
+  push @select, 'tax_total';
+
+  @peritem = ( 'setup' ); # total tax on the invoice, not just the filtered tax
+  @peritem_desc = ( 'Tax charge' );
+
+  @total = ( 'COUNT(cust_bill_pkg.billpkgnum)',
+             'SUM(cust_bill_pkg.setup)' );
+  @total_desc = ( "$money_char%.2f total tax" );
+
+  if ( @tax_where ) {
+    # then also show the filtered tax
+    push @peritem, 'tax_total';
+    push @peritem_desc, 'Tax in category';
+    push @total, 'SUM(tax_total)';
+    push @total_desc, "$money_char%.2f tax in this category";
+    # would also be nice to include a line explaining what the category is
+  }
 
   # report group (itemdesc)
   if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
@@ -620,15 +687,6 @@ if ( $cgi->param('nottax') ) {
     }
   }
 
-  # itemdesc, for breakdown from the vendor tax report
-  if ( $cgi->param('itemdesc') ) {
-    if ( $cgi->param('itemdesc') eq 'Tax' ) {
-      push @where, "($itemdesc = 'Tax' OR $itemdesc is null)";
-    } else {
-      push @where, "$itemdesc = ". dbh->quote($cgi->param('itemdesc'));
-    }
-  }
-
 } # nottax / istax
 
 
@@ -638,87 +696,6 @@ my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount)
                    WHERE cust_bill_pkg.billpkgnum = cust_bill_pay_pkg.billpkgnum
               ";
 push @select, "($pay_sub) AS pay_amount";
-
-
-# credit
-if ( $cgi->param('credit') ) {
-
-  my $credit_where;
-
-  my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'credit');
-  $credit_where = "WHERE cust_credit_bill._date >= $cr_begin " .
-                  "AND cust_credit_bill._date <= $cr_end";
-
-  my $credit_sub;
-
-  if ( $cgi->param('istax') ) {
-    # then we need to group/join by billpkgtaxlocationnum, to get only the 
-    # relevant part of partial taxes
-    my $credit_sub = "SELECT SUM(cust_credit_bill_pkg.amount) AS credit_amount,
-      reason.reason as reason_text, access_user.username AS username_text,
-      billpkgtaxlocationnum, billpkgnum
-    FROM cust_credit_bill_pkg
-      JOIN cust_credit_bill USING (creditbillnum)
-      JOIN cust_credit USING (crednum)
-      LEFT JOIN reason USING (reasonnum)
-      LEFT JOIN access_user USING (usernum)
-    $credit_where
-    GROUP BY billpkgnum, billpkgtaxlocationnum, reason.reason, 
-      access_user.username";
-
-    if ( $cgi->param('out') ) {
-
-      # find credits that are applied to the line items, but not to 
-      # a cust_bill_pkg_tax_location link
-      $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
-        USING (billpkgnum)";
-      push @where, 'item_credit.billpkgtaxlocationnum IS NULL';
-
-    } else {
-
-      # find credits that are applied to the CBPTL links that are 
-      # considered "interesting" by the report criteria
-      $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
-        USING (billpkgtaxlocationnum)";
-
-    }
-
-  } else {
-    # then only group by billpkgnum
-    my $credit_sub = "SELECT SUM(cust_credit_bill_pkg.amount) AS credit_amount,
-      reason.reason as reason_text, access_user.username AS username_text,
-      billpkgnum
-    FROM cust_credit_bill_pkg
-      JOIN cust_credit_bill USING (creditbillnum)
-      JOIN cust_credit USING (crednum)
-      LEFT JOIN reason USING (reasonnum)
-      LEFT JOIN access_user USING (usernum)
-    $credit_where
-    GROUP BY billpkgnum, reason.reason, access_user.username";
-    $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit USING (billpkgnum)";
-  }
-
-  push @where,    'item_credit.billpkgnum IS NOT NULL';
-  push @select,   'item_credit.credit_amount',
-                  'item_credit.username_text',
-                  'item_credit.reason_text';
-  push @peritem,  'credit_amount', 'username_text', 'reason_text';
-  push @peritem_desc, 'Credited', 'By', 'Reason';
-  push @total,    'SUM(credit_amount)';
-  push @total_desc, "$money_char%.2f credited";
-
-} else {
-
-  #still want a credit total column
-
-  my $credit_sub = "
-    SELECT SUM(cust_credit_bill_pkg.amount)
-      FROM cust_credit_bill_pkg
-        WHERE cust_bill_pkg.billpkgnum = cust_credit_bill_pkg.billpkgnum
-  ";
-  push @select, "($credit_sub) AS credit_amount";
-
-}
 
 push @select, 'cust_main.custnum', FS::UI::Web::cust_sql_fields();
 
