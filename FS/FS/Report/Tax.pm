@@ -52,9 +52,10 @@ sub report_internal {
   }
 
   # %breakdown: short name => field identifier
+  # null classnum should remain null, not be converted to zero
   %breakdown = (
     'taxclass'  => 'cust_main_county.taxclass',
-    'pkgclass'  => 'part_pkg.classnum',
+    'pkgclass'  => 'COALESCE(part_fee.classnum,part_pkg.classnum)',
     'city'      => 'cust_main_county.city',
     'district'  => 'cust_main_county.district',
     'state'     => 'cust_main_county.state',
@@ -69,7 +70,8 @@ sub report_internal {
 
   my $join_cust_pkg = $join_cust.
                       ' LEFT JOIN cust_pkg      USING ( pkgnum  )
-                        LEFT JOIN part_pkg      USING ( pkgpart ) ';
+                        LEFT JOIN part_pkg      USING ( pkgpart )
+                        LEFT JOIN part_fee      USING ( feepart ) ';
 
   my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg "; 
 
@@ -239,7 +241,7 @@ sub report_internal {
   # there isn't one for 'sales', because we calculate sales by adding up 
   # the taxable and exempt columns.
   
-  # TAX QUERIES (billed tax, credited tax)
+  # TAX QUERIES (billed tax, credited tax, collected tax)
   # -----------
 
   # sum of billed tax:
@@ -252,14 +254,16 @@ sub report_internal {
   if ( $breakdown{pkgclass} ) {
     # If we're not grouping by package class, this is unnecessary, and
     # probably really expensive.
+    # Remember that fees also have package classes.
     $taxfrom .= "
                   LEFT JOIN cust_bill_pkg AS taxable
                     ON (cust_bill_pkg_tax_location.taxable_billpkgnum = taxable.billpkgnum)
                   LEFT JOIN cust_pkg ON (taxable.pkgnum = cust_pkg.pkgnum)
-                  LEFT JOIN part_pkg USING (pkgpart)";
+                  LEFT JOIN part_pkg USING (pkgpart)
+                  LEFT JOIN part_fee ON (taxable.feepart = part_fee.feepart) ";
   }
 
-  my $istax = "cust_bill_pkg.pkgnum = 0";
+  my $istax = "cust_bill_pkg.pkgnum = 0 and cust_bill_pkg.feepart is null";
 
   $sql{tax} = "$select SUM(cust_bill_pkg_tax_location.amount)
                $taxfrom
@@ -272,8 +276,8 @@ sub report_internal {
                $group_all";
 
   # sum of credits applied against billed tax
-  # ($creditfrom includes join of taxable item to part_pkg if with_pkgclass
-  # is on)
+  # ($creditfrom includes join of taxable item to part_pkg/part_fee if 
+  # with_pkgclass is on)
   my $creditfrom = $taxfrom .
     ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)' .
     ' JOIN cust_credit_bill     USING (creditbillnum)';
@@ -296,6 +300,27 @@ sub report_internal {
                   $creditwhere AND $istax
                   $group_all";
 
+  # sum of tax paid
+  # this suffers from the same ambiguity as anything else that applies 
+  # received payments to specific packages, but in reality the discrepancy
+  # should be minimal since people either pay their bill or don't.
+  # the join is on billpkgtaxlocationnum to avoid cross-producting.
+ 
+  my $paidfrom = $taxfrom .
+    ' JOIN cust_bill_pay_pkg'.
+    ' ON (cust_bill_pay_pkg.billpkgtaxlocationnum ='.
+    ' cust_bill_pkg_tax_location.billpkgtaxlocationnum)';
+
+  $sql{tax_paid} = "$select SUM(cust_bill_pay_pkg.amount)
+                    $paidfrom
+                    $where AND $istax
+                    $group";
+
+  $all_sql{tax_paid} = "$select_all SUM(cust_bill_pay_pkg.amount)
+                    $paidfrom
+                    $where AND $istax
+                    $group_all";
+
   my %data;
   my %total;
   # note that we use keys(%sql) here and keys(%all_sql) later. nothing
@@ -303,7 +328,7 @@ sub report_internal {
   # as for the individual category queries
   foreach my $k (keys(%sql)) {
     my $stmt = $sql{$k};
-    warn "\n".uc($k).":\n".$stmt."\n" if $DEBUG;
+    warn "\n".uc($k).":\n".$stmt."\n" if $DEBUG > 1;
     my $sth = dbh->prepare($stmt);
     # eight columns: pkgclass, taxclass, state, county, city, district
     # taxnums (comma separated), value
@@ -322,7 +347,7 @@ sub report_internal {
       push @$bin, [ $k, $row->[6], $row->[7] ];
     }
   }
-  warn "DATA:\n".Dumper(\%data) if $DEBUG > 1;
+  warn "DATA:\n".Dumper(\%data) if $DEBUG;
 
   foreach my $k (keys %all_sql) {
     warn "\nTOTAL ".uc($k).":\n".$all_sql{$k}."\n" if $DEBUG;
