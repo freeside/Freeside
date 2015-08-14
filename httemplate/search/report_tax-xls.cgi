@@ -146,7 +146,7 @@ my $colhead = $format[0]->{colhead};
 # print header
 $ws->merge_range($y, 1, $y, 5, 'Sales', $colhead);
 $ws->merge_range($y, 6, $y+1, 8, 'Rate', $colhead);
-$ws->merge_range($y, 9, $y, 14, 'Tax', $colhead);
+$ws->merge_range($y, 9, $y, 15, 'Tax', $colhead);
 
 $y++;
 $colhead = $format[0]->{colhead_small};
@@ -156,16 +156,17 @@ $ws->write($y, 9, 'Estimated', $colhead);
 $ws->write($y, 10, 'Invoiced', $colhead);
 $ws->write($y, 12, 'Credited', $colhead);
 $ws->write($y, 14, 'Net due',  $colhead);
+$ws->write($y, 15, 'Collected',$colhead);
 $y++;
 
 # print data
-my $rownum = 0;
+my $rownum = 1;
 my $prev_row = { pkgclass => 'DUMMY PKGCLASS' };
 
 foreach my $row (@rows) {
   $x = 0;
   if ( $row->{pkgclass} ne $prev_row->{pkgclass} ) {
-    $rownum = 0;
+    $rownum = 1;
     if ( $params{breakdown}->{pkgclass} ) {
       $ws->merge_range($y, 0, $y, 14,
         $pkgclass_name{$row->{pkgclass}},
@@ -206,6 +207,8 @@ foreach my $row (@rows) {
   $ws->write_string($y, $x, " = ", $f->{bigmath});
   $x++;
   $ws->write($y, $x, $row->{tax} - $row->{credit}, $f->{currency});
+  $x++;
+  $ws->write($y, $x, $row->{tax_paid} || 0, $f->{currency});
 
   $rownum++;
   $y++;
