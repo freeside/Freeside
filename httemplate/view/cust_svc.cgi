@@ -1,4 +1,4 @@
-<% $cgi->redirect(popurl(1)."$svcdb.cgi?". $svcnum ) %>
+<% $cgi->redirect($url) %>
 <%init>
 
 #needed here?  we're just redirecting.  i guess it could reveal the svcdb of a
@@ -18,6 +18,12 @@ my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unknown svcpart" unless $part_svc;
 
 my $svcdb = $part_svc->svcdb;
+my $url = svc_url(
+            'm' => $m,
+            'action'  => 'view',
+            'svcdb'   => $svcdb,
+            'query'   => $svcnum,
+          );
 
 </%init>
 
