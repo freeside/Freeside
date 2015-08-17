@@ -44,8 +44,8 @@
                    @currency,
                    'invnum',
                    '_date',
-                   '', #'pay_amount',
-                   '', #'credit_amount',
+                   'pay_amount',
+                   'credit_amount',
                    FS::UI::Web::cust_sort_fields(),
                  ],
                  'links'       => [
@@ -461,15 +461,6 @@ if ( $cgi->param('nottax') ) {
 
     }
 
-    # This is the only place we should attempt to show credits on here:
-    # the total of credit applications to the line item.
-
-    my $credit_sub = 'SELECT SUM(amount) AS credit_amount, billpkgnum
-    FROM cust_credit_bill_pkg GROUP BY billpkgnum';
-
-    $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
-    ON (cust_bill_pkg.billpkgnum = item_credit.billpkgnum)";
-   
     if ( @tax_where or $cgi->param('taxable') ) {
       # process tax restrictions
       unshift @tax_where,
@@ -704,7 +695,15 @@ my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount)
               ";
 push @select, "($pay_sub) AS pay_amount";
 
+#total credits
+my $credit_sub = 'SELECT SUM(amount) AS credit_amount, billpkgnum
+                  FROM cust_credit_bill_pkg GROUP BY billpkgnum';
 
+$join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
+  ON (cust_bill_pkg.billpkgnum = item_credit.billpkgnum)";
+push @select, 'credit_amount';
+
+# standard customer fields
 push @select, 'cust_main.custnum', FS::UI::Web::cust_sql_fields();
 
 #salesnum
