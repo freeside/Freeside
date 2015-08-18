@@ -27,6 +27,7 @@
      'no_submit'        => $no_submit,
 &>
 <%init>
+use FS::template_image;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -345,10 +346,16 @@ function areyousure(url, message) {
 <TD valign="top"><FORM name="dummy">
 Substitutions: '
 . $widget->html .
-'<BR>Click links to insert.
-<BR>Enclose substitutions and other Perl expressions in braces:
+'<P>Click above links to insert substitution code.</P>
+<P>
+Enclose substitutions and other Perl expressions in braces:
 <BR>{ $name } = ExampleCo (Smith, John)
 <BR>{ time2str("%D", time) } = '.time2str("%D", time).'
+</P>';
+$sidebar .= include('/elements/template_image-dialog.html',
+              'callback' => 'insertHtml'
+            );
+$sidebar .= '<P><A HREF="javascript:insertImageDialog()">Insert Uploaded Image</A></P>
 </FONT></TD>
 ';
 
