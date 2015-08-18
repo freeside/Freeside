@@ -28,6 +28,7 @@ my @menubar = ();
 if ( $curuser->access_right(['Edit templates', 'Edit global templates']) ) {
   push @menubar, 'Add a new template' => $p.'edit/msg_template.html';
 }
+push @menubar, 'View template images' => $p.'browse/template_image.html';
 
 my $link = [ "${p}edit/msg_template.html?msgnum=", 'msgnum' ];
 
@@ -52,7 +53,7 @@ my $disable_link = sub {
     action      => $p.'misc/disable-msg_template.cgi?msgnum=' .
                      $template->msgnum .
                      ($template->disabled ? ';enable=1' : ''),
-    actionlabel => 'Disable lemplate',
+    actionlabel => 'Disable template',
   );
 };
 

@@ -204,6 +204,7 @@ sub dbdef_dist {
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
            && ! /^cacti_page$/
+           && ! /^template_image$/
          }
       $dbdef->tables
   ) {
@@ -6348,6 +6349,19 @@ sub tables_hashref {
                             table      => 'msg_template',
                           },
                         ],
+    },
+
+    'template_image' => {
+      'columns' => [
+        'imgnum',     'serial',     '',      '', '', '',
+        'name',      'varchar',     '', $char_d, '', '',
+        'agentnum',      'int', 'NULL',      '', '', '',
+        'mime_type', 'varchar',     '', $char_d, '', '',
+        'base64',       'text',     '',      '', '', '',
+      ],
+      'primary_key'  => 'imgnum',
+      'unique'       => [ ],
+      'index'        => [ ['name'], ['agentnum'] ],
     },
 
     'cust_msg' => {

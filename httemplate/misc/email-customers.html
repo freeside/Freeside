@@ -36,7 +36,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 % }
 
 
-<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="GET">
+<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="POST">
 <INPUT TYPE="hidden" NAME="table" VALUE="<% $table %>">
 %# Mixing search params with from address, subject, etc. required special-case
 %# handling of those, risked name conflicts, and caused massive problems with 
