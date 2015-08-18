@@ -54,7 +54,6 @@ $Format => undef
 #Callbacks
 $WriteHeader => sub { $RT::Logger->error('WriteHeader callback required'); '' }
 $WriteRow    => sub { $RT::Logger->error('WriteRow callback required'); '' }
-$FormatDate  => sub { $_[0]->AsString }
 </%ARGS>
 <%INIT>
 
@@ -146,7 +145,6 @@ while ( my $Ticket = $Tickets->Next()) {
             push @out, ProcessColumnMapValue(
                 $ColumnMap->{$col}{'value'},
                 Arguments => [ $Ticket, $row ],
-                FormatDate => $FormatDate,
             );
         } #foreach $subcol
         $value = join('', '<span>', @out, '</span>');
