@@ -118,11 +118,11 @@ my $WriteRow = sub {
     $row++;
 };
 
-my $FormatDate = sub {
+$m->notes('FormatDate', sub {
     my $DateObj = shift;
     return '' if $DateObj->Unix == 0;
     return time2str('%Y-%m-%dT%H:%M', $DateObj->Unix);
-};
+});
 
 # Write everything to the worksheet
 $m->comp('Elements/ResultsStructuredView',
@@ -132,7 +132,6 @@ $m->comp('Elements/ResultsStructuredView',
           Format        => $Format,
           WriteHeader   => $WriteHeader,
           WriteRow      => $WriteRow,
-          FormatDate    => $FormatDate,
 );
 
 # Set column widths

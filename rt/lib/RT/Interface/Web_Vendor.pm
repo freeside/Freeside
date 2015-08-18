@@ -423,12 +423,13 @@ sub ProcessColumnMapValue {
     my $value = shift;
     my %args = ( Arguments => [],
                  Escape => 1,
-                 FormatDate => \&default_FormatDate,
                  @_ );
+
+    my $FormatDate = $m->notes('FormatDate') || \&default_FormatDate;
 
     if ( ref $value ) {
         if ( ref $value eq 'RT::Date' ) {
-            return $args{FormatDate}->($value);
+            return $FormatDate->($value);
         } elsif ( UNIVERSAL::isa( $value, 'CODE' ) ) {
             my @tmp = $value->( @{ $args{'Arguments'} } );
             return ProcessColumnMapValue( ( @tmp > 1 ? \@tmp : $tmp[0] ), %args );
