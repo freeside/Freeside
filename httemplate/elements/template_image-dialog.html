@@ -1,0 +1,279 @@
+<%doc>
+
+Creates a jquery dialog box that opens when javascript function insertImageDialog
+is called, allows user to select an image and specify attributes for it, then passes 
+img tag with base64 encoded data url to a callback javascript function.
+
+Accepts the following options:
+
+callback - pass the html for the selected img to this javascript function;
+if omitted, will only include fields for viewing/uploading image
+
+url - to redirect to after upload, otherwise just refreshes dialog window
+
+</%doc>
+
+<% include('/elements/xmlhttp.html',
+        'url'  => $p.'misc/xmlhttp-template_image.cgi',
+        'subs' => [ 'get_template_image' ],
+   ) %>
+
+<DIV ID="insert_image_dialog" title="Template Images">
+
+<TABLE BORDER="0" STYLE="width: 100%"><TR><TD>
+
+<FORM ID="insert_image_form">
+
+<% &ntable("#cccccc", 2) %>
+
+  <TR>
+    <TH>Image</TH>
+    <TD>
+      <SELECT ID="insert_image_imgnum" ONCHANGE="insertImageDialog($('#insert_image_imgnum').val())">
+        <OPTION VALUE="">(select an image)</OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+% if ($opt{'callback'}) {
+  <TR>
+    <TH>Width</TH>
+    <TD><INPUT TYPE="text" SIZE="5" ID="insert_image_width" ONCHANGE="previewInsertImage()"></TD>
+  </TR>
+  <TR>
+    <TH>Height</TH>
+    <TD><INPUT TYPE="text" SIZE="5" ID="insert_image_height" ONCHANGE="previewInsertImage()"></TD>
+  </TR>
+  <TR>
+    <TH>Align</TH>
+    <TD>
+      <SELECT ID="insert_image_float" ONCHANGE="previewInsertImage()">
+        <OPTION VALUE="none">inline</OPTION>
+        <OPTION VALUE="left">left</OPTION>
+        <OPTION VALUE="right">right</OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+  <TR>
+    <TH>Alt Text</TH>
+    <TD><INPUT TYPE="text" SIZE="20" ID="insert_image_alt" ONCHANGE="previewInsertImage()"></TD>
+  </TR>
+  <TR>
+    <TD COLSPAN="2" ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE="button" ID="insert_image_button" VALUE="Insert Image" ONCLICK="insertImage()">
+    </TD>
+  </TR>
+% } # if $opt{'callback'}
+
+</TABLE>
+
+</FORM>
+
+% if ($canedit) {
+
+<P><B><% emt('Upload New Image') %></B></P>
+
+<% include('/elements/form-file_upload.html',
+     'name'      => 'TemplateImageUploadForm',
+     'id'        => 'TemplateImageUploadForm',
+     'action'    => $p.'misc/process/template_image-upload.cgi',
+     'num_files' => 1,
+     'fields'    => [ 'name', 'agentnum' ],
+     'url'       => $opt{'url'} || 'javascript:refreshImageList(1)',
+   )
+ %>
+
+ <% &ntable("#cccccc", 2) %>
+
+  <% include( '/elements/tr-input-text.html',
+                'field' => 'name',
+                'label' => 'Name',
+                'required' => 1,
+                'id' => 'upload_form_name',
+            )
+  %>
+
+  <% include( '/elements/tr-select-agent.html',
+                 'label'       => "<B>Agent</B>",
+                 'empty_label' => 'Select agent',
+                 'agent_virt'  => 1,
+                 'agent_null_right' => 'Edit global templates',
+             )
+  %>
+
+  <% include( '/elements/tr-file-upload.html',
+                'field' => 'file',
+                'label' => 'File',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN="2" ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             NAME    = "submitButton"
+             ID      = "submitButton"
+             VALUE   = "Upload image"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+% } #if canedit
+
+</TD><TD width="100%">
+
+<DIV ID="insert_image_preview_box">
+  <P><B><% emt('Image Preview') %></B></P>
+  <SPAN ID="insert_image_loading"><B>(<% emt('Loading image...') %>)</B></SPAN>
+  <IMG SRC="" ID="insert_image_preview">
+</DIV>
+
+</TD></TR></TABLE>
+</DIV>
+
+<SCRIPT>
+
+// initialize & close dialog window, initialize imgobj cache && image list
+$( '#insert_image_dialog' ).dialog({
+  width: 800,
+  height: 550,
+  resizable: true,
+  autoOpen: false,
+});
+var imgobj = new Object;
+refreshImageList(0);
+
+// this is the main func to invoke from links outside this file.
+// opens dialog if needed
+// updates dialog with passed imgnum
+// caches image info through an xmlhttp request if needed
+// pass 'upload' as imgnum for upload-only view
+function insertImageDialog (imgnum) {
+  if (imgnum == 'upload') {
+    $('#insert_image_form').hide();
+    $('#insert_image_preview_box').hide();
+    imgnum = undefined;
+  } else {
+    $('#insert_image_form').show();
+    $('#insert_image_preview_box').show();
+  }
+  if (imgnum && !imgobj[imgnum]) {
+    clearInsertImageDialog();
+    $('#insert_image_loading').show();
+    $('#insert_image_imgnum').val(imgnum);
+    get_template_image('imgnum',imgnum,
+      function (result) {
+        var images = JSON.parse(result) || [];
+        for (i = 0; i < images.length; i++) {
+          imgobj[images[i].imgnum] = images[i];
+        }
+        updateInsertImageDialog();
+      }
+    );
+  } else if (imgnum) {
+    $('#insert_image_imgnum').val(imgnum);
+    updateInsertImageDialog();
+  } else {
+    clearInsertImageDialog();
+  }
+  if (!$( '#insert_image_dialog' ).dialog( 'isOpen' )) {
+    $( '#insert_image_dialog' ).dialog( 'open' );
+  }
+}
+
+// sets dialog values to a default "Loading..." state, including imgnum
+function clearInsertImageDialog () {
+  $('#insert_image_imgnum').val('');
+  $('#insert_image_preview').attr('src','');
+  $('#insert_image_loading').hide();
+}
+
+// updates preview src from cache based on imgnum from form
+// then calls previewInsertImage
+function updateInsertImageDialog () {
+  var imgnum = $('#insert_image_imgnum').val();
+  $('#insert_image_loading').hide();
+  $('#insert_image_preview').attr('src',imgobj[imgnum].src);
+  previewInsertImage();
+}
+
+// updates preview width/height/alt/float based on current form values
+function previewInsertImage () {
+  $('#insert_image_preview').css('width',$('#insert_image_width').val());
+  $('#insert_image_preview').css('height',$('#insert_image_height').val());
+  $('#insert_image_preview').css('float',$('#insert_image_float').val());
+  $('#insert_image_preview').attr('alt',$('#insert_image_alt').val());
+}
+
+// constructs html based on the form contents,
+// passes it to callback & closes dialog
+function insertImage() {
+  var imgnum = $('#insert_image_imgnum').val();
+  if (!(imgnum && imgobj[imgnum])) {
+    return '';
+  }
+  var width = $('#insert_image_width').val() || '';
+  var height = $('#insert_image_height').val() || '';
+  var alt = $('#insert_image_alt').val() || '';
+  var float = $('#insert_image_float').val();
+  var imgtag = '<IMG SRC="' + imgobj[imgnum].src + '"';
+  if (width) {
+    imgtag += ' WIDTH="' + width + '"';
+  }
+  if (height) {
+    imgtag += ' HEIGHT="' + height + '"';
+  }
+  if (alt) {
+    imgtag += ' ALT="' + alt + '"';
+  }
+  if (float) {
+    imgtag += ' STYLE="float: ' + float + '"';
+  }
+  imgtag += '>';
+  <% $opt{'callback'} %>(imgtag);
+  $( '#insert_image_dialog' ).dialog( 'close' );
+}
+
+// uses xmlhttp request to initialize image list & refresh it after uploads
+function refreshImageList (fromupload) {
+  get_template_image('no_src','1',
+    function (result) {
+      if (fromupload) {
+        $("#TemplateImageUploadForm")[0].reset();
+      }
+      var images = JSON.parse(result) || [];
+      var latest;
+      for (i = 0; i < images.length; i++) {
+        if ( $("#insert_image_imgnum option[value='" + images[i].imgnum + "']").length == 0 ) {
+          $("#insert_image_imgnum").append('<OPTION VALUE="'+images[i].imgnum+'">'+images[i].name+'</OPTION>');
+          latest = images[i].imgnum;
+        }
+      }
+      if (fromupload) {
+        location.hash = "insert_image_dialog";
+        if (latest) {
+          // small risk of a race condition with other newly-uploaded images,
+          // but does no real damage (our image still shows up in the list)
+          insertImageDialog(latest);
+        }
+      }
+    }
+  );
+}
+
+</SCRIPT>
+
+<%init>
+my %opt = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View templates', 'View global templates',
+                                  'Edit templates', 'Edit global templates', ]);
+
+my $canedit = $curuser->access_right([ 'Edit templates', 'Edit global templates' ]);
+</%init>
+
