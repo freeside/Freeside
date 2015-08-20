@@ -13,6 +13,7 @@
                                'Date',
                                'Status',
                                'Account', # unless $hashref->{'svcnum'}
+                               'Employee',
                                '', # checkbox column
                              ],
                  'fields' => [
@@ -75,6 +76,11 @@
                                  } else {
                                    '';
                                  }
+                               },
+                               sub {
+                                 my $queue = shift;
+                                 my $access_user = $queue->access_user;
+                                 return $access_user ? $access_user->username : '';
                                },
                                sub {
                                  my $queue = shift;
