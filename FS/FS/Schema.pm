@@ -2962,6 +2962,7 @@ sub tables_hashref {
         'custnum',        'int', 'NULL',      '', '', '',
         'secure',        'char', 'NULL',       1, '', '',
         'priority',       'int', 'NULL',      '', '', '',
+        'usernum',        'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'jobnum',
       'unique'      => [],

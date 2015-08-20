@@ -98,6 +98,10 @@ Optional link to customer (see L<FS::cust_main>).
 Secure flag, 'Y' indicates that when using encryption, the job needs to be
 run on a machine with the private key.
 
+=item usernum
+
+For access_user that created the job
+
 =cut
 
 =back
@@ -151,6 +155,8 @@ sub insert {
   }
 
   $self->custnum( $args{'custnum'} ) if $args{'custnum'};
+
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   my $error = $self->SUPER::insert;
   if ( $error ) {
@@ -263,6 +269,7 @@ sub check {
     || $self->ut_enum('status',['', qw( new locked failed done )])
     || $self->ut_anything('statustext')
     || $self->ut_numbern('svcnum')
+    || $self->ut_foreign_keyn('usernum', 'access_user', 'usernum')
   ;
   return $error if $error;
 
@@ -397,6 +404,20 @@ sub update_statustext {
   #return $error if $error;
   #$self->statustext($statustext);
   #'';
+}
+
+=item access_user
+
+Returns FS::access_user object (if any) associated with this user.
+
+Returns nothing if not found.
+
+=cut
+
+sub access_user {
+  my $self = shift;
+  my $usernum = $self->usernum || return ();
+  return qsearchs('access_user',{ 'usernum' => $usernum }) || ();
 }
 
 =back
