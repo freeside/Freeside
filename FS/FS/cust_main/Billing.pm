@@ -813,53 +813,53 @@ sub bill {
 sub _omit_zero_value_bundles {
   my @in = @_;
 
-  my @cust_bill_pkg = ();
-  my @cust_bill_pkg_bundle = ();
-  my $sum = 0;
-  my $discount_show_always = 0;
+  my @out = ();
+  my @bundle = ();
+  my $discount_show_always = $conf->exists('discount-show-always');
+  my $show_this = 0;
+
+  # this is a pack-and-deliver pattern. every time there's a cust_bill_pkg
+  # _without_ pkgpart_override, that's the start of the new bundle. if there's
+  # an existing bundle, and it contains a nonzero amount (or a zero amount 
+  # that's displayable anyway), push all line items in the bundle.
 
   foreach my $cust_bill_pkg ( @in ) {
 
-    $discount_show_always = ($cust_bill_pkg->get('discounts')
-				&& scalar(@{$cust_bill_pkg->get('discounts')})
-				&& $conf->exists('discount-show-always'));
-
-    warn "  pkgnum ". $cust_bill_pkg->pkgnum. " sum $sum, ".
-         "setup_show_zero ". $cust_bill_pkg->setup_show_zero.
-         "recur_show_zero ". $cust_bill_pkg->recur_show_zero. "\n"
-      if $DEBUG > 0;
-
-    if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
-      push @cust_bill_pkg, @cust_bill_pkg_bundle 
-        if $sum > 0
-        || ($sum == 0 && (    $discount_show_always
-                           || grep {$_->recur_show_zero || $_->setup_show_zero}
-                                   @cust_bill_pkg_bundle
-                         )
-           );
-      @cust_bill_pkg_bundle = ();
-      $sum = 0;
+    if (scalar(@bundle) and !$cust_bill_pkg->pkgpart_override) {
+      # ship out this bundle and reset it
+      if ( $show_this ) {
+        push @out, @bundle;
+      }
+      @bundle = ();
+      $show_this = 0;
     }
 
-    $sum += $cust_bill_pkg->setup + $cust_bill_pkg->recur;
-    push @cust_bill_pkg_bundle, $cust_bill_pkg;
+    # add this item to the current bundle
+    push @bundle, $cust_bill_pkg;
 
+    # determine if it makes the bundle displayable
+    if (   $cust_bill_pkg->setup > 0
+        or $cust_bill_pkg->recur > 0
+        or $cust_bill_pkg->setup_show_zero
+        or $cust_bill_pkg->recur_show_zero
+        or ($discount_show_always 
+          and scalar(@{ $cust_bill_pkg->get('discounts')}) 
+          )
+    ) {
+      $show_this++;
+    }
   }
 
-  push @cust_bill_pkg, @cust_bill_pkg_bundle
-    if $sum > 0
-    || ($sum == 0 && (    $discount_show_always
-                       || grep {$_->recur_show_zero || $_->setup_show_zero}
-                               @cust_bill_pkg_bundle
-                     )
-       );
+  # last bundle
+  if ( $show_this) {
+    push @out, @bundle;
+  }
 
   warn "  _omit_zero_value_bundles: ". scalar(@in).
-       '->'. scalar(@cust_bill_pkg). "\n" #. Dumper(@cust_bill_pkg). "\n"
+       '->'. scalar(@out). "\n" #. Dumper(@out). "\n"
     if $DEBUG > 2;
 
-  (@cust_bill_pkg);
-
+  @out;
 }
 
 =item calculate_taxes LINEITEMREF TAXHASHREF INVOICE_TIME
