@@ -3007,7 +3007,9 @@ sub _items_cust_bill_pkg {
   }
   my $summary_page = $opt{summary_page} || ''; #unused
   my $multisection = defined($category) || defined($locationnum);
-  my $discount_show_always = 0;
+  # this variable is the value of the config setting, not whether it applies
+  # to this particular line item.
+  my $discount_show_always = $conf->exists('discount-show-always');
 
   my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 40;
 
@@ -3047,11 +3049,13 @@ sub _items_cust_bill_pkg {
         if (exists($_->{unit_amount})) {
           $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} );
         }
-        push @b, { %$_ }
-          if $_->{amount} != 0
-          || $discount_show_always
-          || ( ! $_->{_is_setup} && $_->{recur_show_zero} )
-          || (   $_->{_is_setup} && $_->{setup_show_zero} )
+        push @b, { %$_ };
+        # we already decided to create this display line; don't reconsider it
+        # now.
+        #  if $_->{amount} != 0
+        #  || $discount_show_always
+        #  || ( ! $_->{_is_setup} && $_->{recur_show_zero} )
+        #  || (   $_->{_is_setup} && $_->{setup_show_zero} )
         ;
         $_ = undef;
       }
@@ -3178,6 +3182,7 @@ sub _items_cust_bill_pkg {
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
                   || $cust_bill_pkg->setup_show_zero
+                  || ($discount_show_always and $cust_bill_pkg->unitsetup > 0)
                 )
            )
          {
@@ -3185,10 +3190,12 @@ sub _items_cust_bill_pkg {
           warn "$me _items_cust_bill_pkg adding setup\n"
             if $DEBUG > 1;
 
+          # append the word 'Setup' to the setup line if there's going to be
+          # a recur line for the same package (i.e. not a one-time charge) 
           my $description = $desc;
           $description .= ' Setup'
             if $cust_bill_pkg->recur != 0
-            || $discount_show_always
+            || ($discount_show_always and $cust_bill_pkg->unitrecur > 0)
             || $cust_bill_pkg->recur_show_zero;
 
           $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
@@ -3252,11 +3259,18 @@ sub _items_cust_bill_pkg {
 
         }
 
+        # should we show a recur line?
+        # if type eq 'S', then NO, because we've been told not to.
+        # otherwise, show the recur line if:
+        # - there's a recurring charge
+        # - or recur_show_zero is on
+        # - or there's a positive unitrecur (so it's been discounted to zero)
+        #   and discount-show-always is on
         if (    ( !$type || $type eq 'R' || $type eq 'U' )
              && (
                      $cust_bill_pkg->recur != 0
-                  || $cust_bill_pkg->setup == 0
-                  || $discount_show_always
+                  || !defined($s)
+                  || ($discount_show_always and $cust_bill_pkg->unitrecur > 0)
                   || $cust_bill_pkg->recur_show_zero
                 )
            )
@@ -3498,9 +3512,6 @@ sub _items_cust_bill_pkg {
 
     } # foreach $display
 
-    $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
-                                && $conf->exists('discount-show-always'));
-
   }
 
   foreach ( $s, $r, ($opt{skip_usage} ? () : $u ), $d ) {
@@ -3512,11 +3523,11 @@ sub _items_cust_bill_pkg {
         $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} );
       }
 
-      push @b, { %$_ }
-        if $_->{amount} != 0
-        || $discount_show_always
-        || ( ! $_->{_is_setup} && $_->{recur_show_zero} )
-        || (   $_->{_is_setup} && $_->{setup_show_zero} )
+      push @b, { %$_ };
+      #if $_->{amount} != 0
+      #  || $discount_show_always
+      #  || ( ! $_->{_is_setup} && $_->{recur_show_zero} )
+      #  || (   $_->{_is_setup} && $_->{setup_show_zero} )
     }
   }
 
