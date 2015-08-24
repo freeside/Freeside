@@ -406,20 +406,19 @@ sub update_statustext {
   #'';
 }
 
-# not needed in 4
-#=item access_user
-#
-#Returns FS::access_user object (if any) associated with this user.
-#
-#Returns nothing if not found.
-#
-#=cut
-#
-#sub access_user {
-#  my $self = shift;
-#  my $usernum = $self->usernum || return ();
-#  return qsearchs('access_user',{ 'usernum' => $usernum }) || ();
-#}
+=item access_user
+
+Returns FS::access_user object (if any) associated with this user.
+
+Returns nothing if not found.
+
+=cut
+
+sub access_user {
+  my $self = shift;
+  my $usernum = $self->usernum || return ();
+  return qsearchs('access_user',{ 'usernum' => $usernum }) || ();
+}
 
 =back
 
