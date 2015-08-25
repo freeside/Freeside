@@ -10,13 +10,13 @@ use FS::Record qw(qsearch qsearchs);
 use FS::pay_batch;
 use FS::Conf;
 
-use vars qw( $opt_v $opt_a $opt_f );
-getopts('va:f:');
+use vars qw( $opt_v $opt_a $opt_f $opt_n );
+getopts('va:f:n');
 
 #$Net::SFTP::Foreign::debug = -1;
 sub usage { "
   Usage:
-      freeside-rbc-download [ -v ] [ -a archivedir ] [ -f filename ] user\n
+      freeside-rbc-download [ -v ] [ -n ] [ -a archivedir ] [ -f filename ] user\n
 " }
 
 sub debug {
@@ -102,6 +102,7 @@ for my $dir ( $ftp->nlst ) {
     my $error = FS::pay_batch->import_results(
       filehandle  => $fh,
       format      => 'RBC',
+      no_close    => ($opt_n ? 1 : 0),
     );
 
     if ( $error ) {
@@ -145,6 +146,8 @@ avoid double-processing them.
 matching the pattern. This can be used to reprocess a specific file.
 
 -a directory: Archive the files in the specified directory.
+
+-n: Do not try to close batches after applying results.
 
 user: freeside username
 

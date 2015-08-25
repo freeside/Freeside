@@ -236,6 +236,8 @@ I<format> - an L<FS::pay_batch> module
 I<gateway> - an L<FS::payment_gateway> object for a batch gateway.  This 
 takes precedence over I<format>.
 
+I<no_close> - do not try to close batches
+
 Supported format keys (defined in the specified FS::pay_batch module) are:
 
 I<filetype> - required, can be CSV, fixed, variable, XML
@@ -470,26 +472,28 @@ sub import_results {
   } # foreach (@all_values)
 
   # decide whether to close batches that had payments posted
-  foreach my $batchnum (keys %target_batches) {
-    my $pay_batch = FS::pay_batch->by_key($batchnum);
-    my $close = 1;
-    if ( defined($close_condition) ) {
-      # Allow the module to decide whether to close the batch.
-      # $close_condition can also die() to abort the whole import.
-      $close = eval { $close_condition->($pay_batch) };
-      if ( $@ ) {
-        $dbh->rollback;
-        die $@;
+  if ( !$param->{no_close} ) {
+    foreach my $batchnum (keys %target_batches) {
+      my $pay_batch = FS::pay_batch->by_key($batchnum);
+      my $close = 1;
+      if ( defined($close_condition) ) {
+        # Allow the module to decide whether to close the batch.
+        # $close_condition can also die() to abort the whole import.
+        $close = eval { $close_condition->($pay_batch) };
+        if ( $@ ) {
+          $dbh->rollback;
+          die $@;
+        }
       }
-    }
-    if ( $close ) {
-      my $error = $pay_batch->set_status('R');
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+      if ( $close ) {
+        my $error = $pay_batch->set_status('R');
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
-    }
-  }
+    } # foreach $batchnum
+  } # if (!$param->{no_close})
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
