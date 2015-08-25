@@ -218,13 +218,12 @@ while (1) {
       # don't put @args in the log, may expose passwords
       $log->info('starting job ('.$ljob->job.')');
       warn 'running "&'. $ljob->job. '('. join(', ', @args). ")\n" if $DEBUG;
-      # switch user only if a job user is available
-      my $oldCurrentUser = $FS::CurrentUser::CurrentUser;
-      my $jobuser = $ljob->access_user;
-      local $FS::CurrentUser::CurrentUser = $jobuser if $jobuser;
       local $FS::UID::AutoCommit = 0; # so that we can clean up failures
-      eval $eval; #throw away return value?  suppose so
-      $FS::CurrentUser::CurrentUser = $oldCurrentUser if $jobuser;
+      do {
+        # switch user only if a job user is available
+        local $FS::CurrentUser::CurrentUser = $ljob->access_user || $FS::CurrentUser::CurrentUser;
+        eval $eval; #throw away return value?  suppose so
+      };
       if ( $@ ) {
         dbh->rollback;
         my %hash = $ljob->hash;
