@@ -5,6 +5,7 @@
                  'disableable' => 1,
                  'disabled_statuspos' => 2,
                  'query'       => { 'table'     => 'pkg_class',
+                                    'addl_from' => ' LEFT JOIN pkg_category USING (categorynum)',
                                     'hashref'   => {},
                                     'order_by' => 'ORDER BY classnum',
                                   },
