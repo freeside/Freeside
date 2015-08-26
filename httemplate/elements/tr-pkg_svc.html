@@ -97,6 +97,9 @@ function provision_hold_check () {
     for (i = 0; i < provision_hold_td.length; i++) {
       provision_hold_td[i].style.display = start_on_hold.checked ? '' : 'none';
     }
+    for (i = 0; i < provision_hold_input.length; i++) {
+      provision_hold_input[i].disabled = start_on_hold.checked ? false : true;
+    }
   }
 }
 function provision_hold_init () {
