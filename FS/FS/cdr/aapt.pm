@@ -77,7 +77,7 @@ my %UNIT_SCALE = ( #Table 2.1.4
     'calltypenum',          # usage ID (CUSG)
     sub {                   # ID type
       my ($cdr, $data, $conf, $param) = @_;
-      if ($data != 1) {
+      if ($data !~ /(1|50)/) {
         warn "AAPT: service ID type is not telephone number.\n";
         $param->{skiprow} = 1;
       }
