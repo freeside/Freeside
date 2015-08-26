@@ -1,8 +1,13 @@
 <TR>
   <TD CLASS="background" COLSPAN=99>
 
+<SCRIPT>
+var provision_hold_td = [];
+var provision_hold_input = [];
+</SCRIPT>
+
 <% itable('', 4, 1) %><TR><TD VALIGN="top">
-<% $thead %>
+<% pkg_svc_thead() %>
 
 %foreach my $part_svc ( @part_svc ) {
 %  my $svcpart = $part_svc->svcpart;
@@ -61,23 +66,51 @@
       <INPUT TYPE="checkbox" NAME="hidden<% $svcpart %>" VALUE="Y"<% $pkg_svc->hidden =~ /^Y/i ? ' CHECKED' : ''%>>
     </TD>
 
-    <TD ALIGN="center">
-      <INPUT TYPE="checkbox" NAME="provision_hold<% $svcpart %>" VALUE="Y"<% $provision_hold =~ /^Y/i ? ' CHECKED' : ''%>>
+    <TD ALIGN="center" ID="td_provision_hold<% $svcpart %>">
+      <INPUT TYPE="checkbox" ID="input_provision_hold<% $svcpart %>" NAME="provision_hold<% $svcpart %>" VALUE="Y"<% $provision_hold =~ /^Y/i ? ' CHECKED' : ''%>>
     </TD>
+<SCRIPT>
+provision_hold_td.push(document.getElementById('td_provision_hold<% $svcpart %>'));
+provision_hold_input.push(document.getElementById('input_provision_hold<% $svcpart %>'));
+</SCRIPT>
 
   </TR>
 % foreach ( 1 .. $columns-1 ) {
 %       if ( $count == int( $_ * scalar(@part_svc) / $columns ) ) { 
 %  
 
-         </TABLE></TD><TD VALIGN="top"><% $thead %>
+         </TABLE></TD><TD VALIGN="top"><% pkg_svc_thead() %>
 %   }
 %     }
 %     $count++;
 %  
-% } 
+% } # foreach $part_svc
 
 </TR></TABLE></TD></TR></TABLE>
+
+<SCRIPT>
+// start_on_hold from edit/part_pkg.cgi
+// toggles display of provision_hold checkboxes when that changes
+function provision_hold_check () {
+  var start_on_hold = document.getElementById('start_on_hold');
+  if (start_on_hold) {
+    for (i = 0; i < provision_hold_td.length; i++) {
+      provision_hold_td[i].style.display = start_on_hold.checked ? '' : 'none';
+    }
+    for (i = 0; i < provision_hold_input.length; i++) {
+      provision_hold_input[i].disabled = start_on_hold.checked ? false : true;
+    }
+  }
+}
+function provision_hold_init () {
+  var start_on_hold = document.getElementById('start_on_hold');
+  if (start_on_hold) {
+    start_on_hold.onchange = provision_hold_check;
+    provision_hold_check();
+  }
+}
+provision_hold_init();
+</SCRIPT>
 
 % if ( scalar(@possible_exports) > 0 || scalar(@mapped_exports) > 0 ) {
    <TABLE><TR>
@@ -113,13 +146,20 @@
 my %opt = @_;
 my $cgi = $opt{'cgi'};
 
-my $thead =  "\n\n". ntable('#cccccc', 2).
-             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
-             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-2>Primary</FONT></TH>'.
-             '<TH BGCOLOR="#dcdcdc">Service</TH>'.
-             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide</FONT></TH>'.
-             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hold<BR>Until<BR>Provision</FONT></TH>'.
-             '</TR>';
+my $thead_count = 0;
+sub pkg_svc_thead {
+  $thead_count += 1;
+  return "\n\n". ntable('#cccccc', 2).
+         '<TR>'.
+         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
+         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'.
+         '<TH BGCOLOR="#dcdcdc">Service</TH>'.
+         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide<BR>from<BR>Invoices</FONT></TH>'.
+         '<TH BGCOLOR="#dcdcdc" ID="th_provision_hold' . $thead_count . '"><FONT SIZE=-1>Remove Hold After Provisioning</FONT></TH>'.
+         '</TR>'.
+         qq!<SCRIPT>provision_hold_td.push(document.getElementById('th_provision_hold$thead_count'))</SCRIPT>!;
+;
+}
 
 my $part_pkg = $opt{'object'};
 my $pkgpart = $part_pkg->pkgpart;
