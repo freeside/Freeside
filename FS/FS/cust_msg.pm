@@ -45,7 +45,7 @@ from FS::Record.  The following fields are currently supported:
 
 =item header - message header
 
-=item body - message body
+=item body - message body (as a complete MIME document)
 
 =item error - Email::Sender error message (or null for success)
 
@@ -150,9 +150,26 @@ sub check {
   $self->SUPER::check;
 }
 
+=item send
+
+Sends the message through its parent L<FS::msg_template>. Returns an error
+message on error, or an empty string.
+
+=cut
+
+sub send {
+  my $self = shift;
+  my $msg_template = $self->msg_template
+    or return 'message was created without a template object';
+  $msg_template->send_prepared($self);
+}
+
 =item entity
 
 Returns the complete message as a L<MIME::Entity>.
+
+XXX this only works if the message in fact contains a MIME entity. Messages
+created by external APIs may not look like that.
 
 =item parts
 

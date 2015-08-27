@@ -6320,8 +6320,11 @@ sub tables_hashref {
         'mime_type', 'varchar',     '', $char_d, '', '',
         'body',         'blob', 'NULL',      '', '', '',
         'disabled',     'char', 'NULL',       1, '', '', 
+          # migrate these to msg_template_email
         'from_addr', 'varchar', 'NULL',     255, '', '',
         'bcc_addr',  'varchar', 'NULL',     255, '', '',
+          # change to not null on v5
+        'msgclass',  'varchar', 'NULL',      16, '', '',
       ],
       'primary_key'  => 'msgnum',
       'unique'       => [ ],
@@ -6329,6 +6332,26 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
                             table      => 'agent',
+                          },
+                        ],
+    },
+
+    'msg_template_http' => {
+      'columns' => [
+        'num',          'serial',     '',      '', '', '',
+        'msgnum',          'int',     '',      '', '', '',
+        'prepare_url', 'varchar', 'NULL',     255, '', '',
+        'send_url',    'varchar', 'NULL',     255, '', '',
+        'username',    'varchar', 'NULL', $char_d, '', '',
+        'password',    'varchar', 'NULL', $char_d, '', '',
+        'content',        'text', 'NULL',      '', '', '',
+      ],
+      'primary_key'  => 'num',
+      'unique'       => [ [ 'msgnum' ], ],
+      'index'        => [ ],
+      'foreign_keys' => [
+                          { columns    => [ 'msgnum' ],
+                            table      => 'msg_template',
                           },
                         ],
     },
