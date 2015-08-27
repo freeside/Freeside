@@ -1,168 +1,161 @@
-package FS::msg_template;
-use base qw( FS::Record );
+package FS::msg_template::email;
+use base qw( FS::msg_template );
 
 use strict;
 use vars qw( $DEBUG $conf );
 
+# stuff needed for template generation
+use Date::Format qw( time2str );
+use File::Temp;
+use IPC::Run qw(run);
+use Text::Template;
+
+use HTML::Entities qw( decode_entities encode_entities ) ;
+use HTML::FormatText;
+use HTML::TreeBuilder;
+use Encode;
+
+# needed to send email
+use FS::Misc qw( generate_email );
 use FS::Conf;
+use Email::Sender::Simple qw( sendmail );
+
 use FS::Record qw( qsearch qsearchs );
 
-use FS::cust_msg;
+# needed to manage template_content objects
 use FS::template_content;
+use FS::UID qw( dbh );
+
+use FS::cust_msg;
 
 FS::UID->install_callback( sub { $conf = new FS::Conf; } );
 
-$DEBUG=0;
+our $DEBUG = 1;
+our $me = '[FS::msg_template::email]';
 
 =head1 NAME
 
-FS::msg_template - Object methods for msg_template records
-
-=head1 SYNOPSIS
-
-  use FS::msg_template;
-
-  $record = new FS::msg_template \%hash;
-  $record = new FS::msg_template { 'column' => 'value' };
-
-  $error = $record->insert;
-
-  $error = $new_record->replace($old_record);
-
-  $error = $record->delete;
-
-  $error = $record->check;
+FS::msg_template::email - Construct email notices with Text::Template.
 
 =head1 DESCRIPTION
 
-An FS::msg_template object represents a customer message template.
-FS::msg_template inherits from FS::Record.  The following fields are currently
-supported:
+FS::msg_template::email is a message processor in which the template contains 
+L<Text::Template> strings for the message subject line and body, and the 
+message is delivered by email.
 
-=over 4
-
-=item msgnum - primary key
-
-=item msgname - Name of the template.  This will appear in the user interface;
-if it needs to be localized for some users, add it to the message catalog.
-
-=item msgclass - The L<FS::msg_template> subclass that this should belong to.
-Defaults to 'email'.
-
-=item agentnum - Agent associated with this template.  Can be NULL for a 
-global template.
-
-=item mime_type - MIME type.  Defaults to text/html.
-
-=item from_addr - Source email address.
-
-=item bcc_addr - Bcc all mail to this address.
-
-=item disabled - disabled ('Y' or NULL).
-
-=back
+Currently the C<from_addr> and C<bcc_addr> fields used by this processor are
+in the main msg_template table.
 
 =head1 METHODS
 
 =over 4
-
-=item new HASHREF
-
-Creates a new template.  To add the template to the database, see L<"insert">.
-
-Note that this stores the hash reference, not a distinct copy of the hash it
-points to.  You can ask the object for a copy with the I<hash> method.
-
-=cut
-
-# the new method can be inherited from FS::Record, if a table method is defined
-
-sub table { 'msg_template'; }
-
-sub _rebless {
-  my $self = shift;
-  my $class = 'FS::msg_template::' . $self->msgclass;
-  eval "use $class;";
-  bless($self, $class) unless $@;
-  $self;
-}
 
 =item insert [ CONTENT ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-# inherited
-
-=item delete
-
-Delete this record from the database.
+A default (no locale) L<FS::template_content> object will be created.  CONTENT 
+is an optional hash containing 'subject' and 'body' for this object.
 
 =cut
 
-# inherited
+sub insert {
+  my $self = shift;
+  my %content = @_;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( !$error ) {
+    $content{'msgnum'} = $self->msgnum;
+    $content{'subject'} ||= '';
+    $content{'body'} ||= '';
+    my $template_content = new FS::template_content (\%content);
+    $error = $template_content->insert;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
 
 =item replace [ OLD_RECORD ] [ CONTENT ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+CONTENT is an optional hash containing 'subject', 'body', and 'locale'.  If 
+supplied, an L<FS::template_content> object will be created (or modified, if 
+one already exists for this locale).
+
 =cut
 
-# inherited
-
-sub replace_check {
+sub replace {
   my $self = shift;
-  my $old = $self->replace_old;
-  # don't allow changing msgclass, except null to not-null (for upgrade)
-  if ( $old->msgclass ) {
-    if ( !$self->msgclass ) {
-      $self->set('msgclass', $old->msgclass);
-    } else {
-      return "Can't change message template class from ".$old->msgclass.
-             " to ".$self->msgclass.".";
+  my $old = ( ref($_[0]) and $_[0]->isa('FS::Record') ) 
+              ? shift
+              : $self->replace_old;
+  my %content = @_;
+  
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace($old);
+
+  if ( !$error and %content ) {
+    $content{'locale'} ||= '';
+    my $new_content = qsearchs('template_content', {
+                        'msgnum' => $self->msgnum,
+                        'locale' => $content{'locale'},
+                      } );
+    if ( $new_content ) {
+      $new_content->subject($content{'subject'});
+      $new_content->body($content{'body'});
+      $error = $new_content->replace;
+    }
+    else {
+      $content{'msgnum'} = $self->msgnum;
+      $new_content = new FS::template_content \%content;
+      $error = $new_content->insert;
     }
   }
-  '';
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  warn "committing FS::msg_template->replace\n" if $DEBUG and $oldAutoCommit;
+  $dbh->commit if $oldAutoCommit;
+  return;
 }
 
-=item check
+=item content_locales
 
-Checks all fields to make sure this is a valid template.  If there is
-an error, returns the error, otherwise returns false.  Called by the insert
-and replace methods.
+Returns a hashref of the L<FS::template_content> objects attached to 
+this template, with the locale as key.
 
 =cut
 
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
-
-sub check {
+sub content_locales {
   my $self = shift;
-
-  my $error = 
-    $self->ut_numbern('msgnum')
-    || $self->ut_text('msgname')
-    || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
-    || $self->ut_textn('mime_type')
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
-    || $self->ut_textn('from_addr')
-    || $self->ut_textn('bcc_addr')
-    # fine for now, but change this to some kind of dynamic check if we
-    # ever have more than two msgclasses
-    || $self->ut_enum('msgclass', [ qw(email http) ]),
-  ;
-  return $error if $error;
-
-  $self->mime_type('text/html') unless $self->mime_type;
-
-  $self->SUPER::check;
+  return $self->{'_content_locales'} ||= +{
+    map { $_->locale , $_ } 
+    qsearch('template_content', { 'msgnum' => $self->msgnum })
+  };
 }
 
 =item prepare OPTION => VALUE
 
-Fills in the template and returns an L<FS::cust_msg> object, containing the
-message to be sent.  This method must be provided by the subclass.
+Fills in the template and returns an L<FS::cust_msg> object.
 
 Options are passed as a list of name/value pairs:
 
@@ -201,93 +194,240 @@ invoicing_list addresses.  Multiple addresses may be comma-separated.
 
 A hash reference of additional substitutions
 
+=item msgtype
+
+A string identifying the kind of message this is. Currently can be "invoice", 
+"receipt", "admin", or null. Expand this list as necessary.
+
 =back
 
 =cut
 
 sub prepare {
-  die "unimplemented";
-}
 
-=item prepare_substitutions OPTION => VALUE ...
-
-Takes the same arguments as L</prepare>, and returns a hashref of the 
-substitution variables.
-
-=cut
-
-sub prepare_substitutions {
   my( $self, %opt ) = @_;
 
   my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
   my $object = $opt{'object'} or die 'object required';
 
-  warn "preparing substitutions for '".$self->msgname."'\n"
+  my $hashref = $self->prepare_substitutions(%opt);
+
+  # localization
+  my $locale = $cust_main && $cust_main->locale || '';
+  warn "no locale for cust#".$cust_main->custnum."; using default content\n"
+    if $DEBUG and $cust_main && !$locale;
+  my $content = $self->content($locale);
+
+  warn "preparing template '".$self->msgname."\n"
     if $DEBUG;
 
-  my $subs = $self->substitutions;
+  $_ = encode_entities($_ || '') foreach values(%$hashref);
 
   ###
-  # create substitution table
-  ###  
-  my %hash;
-  my @objects = ();
-  push @objects, $cust_main if $cust_main;
-  my @prefixes = ('');
-  my $svc;
-  if( ref $object ) {
-    if( ref($object) eq 'ARRAY' ) {
-      # [new, old], for provisioning tickets
-      push @objects, $object->[0], $object->[1];
-      push @prefixes, 'new_', 'old_';
-      $svc = $object->[0] if $object->[0]->isa('FS::svc_Common');
-    }
-    else {
-      push @objects, $object;
-      push @prefixes, '';
-      $svc = $object if $object->isa('FS::svc_Common');
-    }
-  }
-  if( $svc ) {
-    push @objects, $svc->cust_svc->cust_pkg;
-    push @prefixes, '';
+  # clean up template
+  ###
+  my $subject_tmpl = new Text::Template (
+    TYPE   => 'STRING',
+    SOURCE => $content->subject,
+  );
+
+  warn "$me filling in subject template\n" if $DEBUG;
+  my $subject = $subject_tmpl->fill_in( HASH => $hashref );
+
+  my $body = $content->body;
+  my ($skin, $guts) = eviscerate($body);
+  @$guts = map { 
+    $_ = decode_entities($_); # turn all punctuation back into itself
+    s/\r//gs;           # remove \r's
+    s/<br[^>]*>/\n/gsi; # and <br /> tags
+    s/<p>/\n/gsi;       # and <p>
+    s/<\/p>//gsi;       # and </p>
+    s/\240/ /gs;        # and &nbsp;
+    $_
+  } @$guts;
+  
+  $body = '{ use Date::Format qw(time2str); "" }';
+  while(@$skin || @$guts) {
+    $body .= shift(@$skin) || '';
+    $body .= shift(@$guts) || '';
   }
 
-  foreach my $obj (@objects) {
-    my $prefix = shift @prefixes;
-    foreach my $name (@{ $subs->{$obj->table} }) {
-      if(!ref($name)) {
-        # simple case
-        $hash{$prefix.$name} = $obj->$name();
-      }
-      elsif( ref($name) eq 'ARRAY' ) {
-        # [ foo => sub { ... } ]
-        $hash{$prefix.($name->[0])} = $name->[1]->($obj);
-      }
-      else {
-        warn "bad msg_template substitution: '$name'\n";
-        #skip it?
-      } 
-    } 
+  ###
+  # fill-in
+  ###
+
+  my $body_tmpl = new Text::Template (
+    TYPE          => 'STRING',
+    SOURCE        => $body,
+  );
+  
+  warn "$me filling in body template\n" if $DEBUG;
+  $body = $body_tmpl->fill_in( HASH => $hashref );
+
+  ###
+  # and email
+  ###
+
+  my @to;
+  if ( exists($opt{'to'}) ) {
+    @to = split(/\s*,\s*/, $opt{'to'});
+  } elsif ( $cust_main ) {
+    @to = $cust_main->invoicing_list_emailonly;
+  } else {
+    die 'no To: address or cust_main object specified';
+  }
+
+  my $from_addr = $self->from_addr;
+
+  if ( !$from_addr ) {
+
+    my $agentnum = $cust_main ? $cust_main->agentnum : '';
+
+    if ( $opt{'from_config'} ) {
+      $from_addr = $conf->config($opt{'from_config'}, $agentnum);
+    }
+    $from_addr ||= $conf->invoice_from_full($agentnum);
+  }
+
+  my $text_body = encode('UTF-8',
+                  HTML::FormatText->new(leftmargin => 0, rightmargin => 70)
+                      ->format( HTML::TreeBuilder->new_from_content($body) )
+                  );
+
+  warn "$me constructing MIME entities\n" if $DEBUG;
+  my %email = generate_email(
+    'from'      => $from_addr,
+    'to'        => \@to,
+    'bcc'       => $self->bcc_addr || undef,
+    'subject'   => $subject,
+    'html_body' => $body,
+    'text_body' => $text_body,
+  );
+
+  warn "$me creating message headers\n" if $DEBUG;
+  my $env_from = $from_addr;
+  $env_from =~ s/^\s*//; $env_from =~ s/\s*$//;
+  if ( $env_from =~ /^(.*)\s*<(.*@.*)>$/ ) {
+    # a common idiom
+    $env_from = $2;
   } 
+  
+  my $domain;
+  if ( $env_from =~ /\@([\w\.\-]+)/ ) {
+    $domain = $1;
+  } else {
+    warn 'no domain found in invoice from address '. $env_from .
+         '; constructing Message-ID (and saying HELO) @example.com'; 
+    $domain = 'example.com';
+  } 
+  my $message_id = join('.', rand()*(2**32), $$, time). "\@$domain";
 
-  if ( $opt{substitutions} ) {
-    $hash{$_} = $opt{substitutions}->{$_} foreach keys %{$opt{substitutions}};
+  my $time = time;
+  my $message = MIME::Entity->build(
+    'From'        => $from_addr,
+    'To'          => join(', ', @to),
+    'Sender'      => $from_addr,
+    'Reply-To'    => $from_addr,
+    'Date'        => time2str("%a, %d %b %Y %X %z", $time),
+    'Subject'     => Encode::encode('MIME-Header', $subject),
+    'Message-ID'  => "<$message_id>",
+    'Encoding'    => '7bit',
+    'Type'        => 'multipart/related',
+  );
+
+  #$message->head->replace('Content-type',
+  #  'multipart/related; '.
+  #  'boundary="' . $message->head->multipart_boundary . '"; ' .
+  #  'type=multipart/alternative'
+  #);
+  
+  # XXX a facility to attach additional parts is necessary at some point
+  foreach my $part (@{ $email{mimeparts} }) {
+    warn "$me appending part ".$part->mime_type."\n" if $DEBUG;
+    $message->add_part( $part );
   }
 
-  return \%hash;
+  # effective To: address (not in headers)
+  push @to, $self->bcc_addr if $self->bcc_addr;
+  my $env_to = join(', ', @to);
+
+  my $cust_msg = FS::cust_msg->new({
+      'custnum'   => $cust_main->custnum,
+      'msgnum'    => $self->msgnum,
+      '_date'     => $time,
+      'env_from'  => $env_from,
+      'env_to'    => $env_to,
+      'header'    => $message->header_as_string,
+      'body'      => $message->body_as_string,
+      'error'     => '',
+      'status'    => 'prepared',
+      'msgtype'   => ($opt{'msgtype'} || ''),
+  });
+
+  return $cust_msg;
 }
 
-=item send OPTION => VALUE ...
+=item send_prepared CUST_MSG
 
-Creates a message with L</prepare> (taking all the same options) and sends it.
+Takes the CUST_MSG object and sends it to its recipient.
 
 =cut
 
-sub send {
+sub send_prepared {
   my $self = shift;
-  my $cust_msg = $self->prepare(@_);
-  $self->send_prepared($cust_msg);
+  my $cust_msg = shift or die "cust_msg required";
+
+  my $domain = 'example.com';
+  if ( $cust_msg->env_from =~ /\@([\w\.\-]+)/ ) {
+    $domain = $1;
+  }
+
+  my @to = split(/\s*,\s*/, $cust_msg->env_to);
+
+  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
+                   'helo' => $domain );
+
+  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
+  $smtp_opt{'port'} = $port;
+  
+  my $transport;
+  if ( defined($enc) && $enc eq 'starttls' ) {
+    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
+    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
+  } else {
+    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);     
+    } 
+    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
+    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
+  }
+
+  warn "$me sending message\n" if $DEBUG;
+  my $message = join("\n\n", $cust_msg->header, $cust_msg->body);
+  local $@;
+  eval {
+    sendmail( $message, { transport => $transport,
+                          from      => $cust_msg->env_from,
+                          to        => \@to })
+  };
+  my $error = '';
+  if(ref($@) and $@->isa('Email::Sender::Failure')) {
+    $error = $@->code.' ' if $@->code;
+    $error .= $@->message;
+  }
+  else {
+    $error = $@;
+  }
+
+  $cust_msg->set('error', $error);
+  $cust_msg->set('status', $error ? 'failed' : 'sent');
+  if ( $cust_msg->custmsgnum ) {
+    $cust_msg->replace;
+  } else {
+    $cust_msg->insert;
+  }
+
+  $error;
 }
 
 =item render OPTION => VALUE ...
@@ -298,9 +438,6 @@ name of the PDF file.
 Options are as for 'prepare', but 'from' and 'to' are meaningless.
 
 =cut
-
-# XXX not sure where this ends up post-refactoring--a separate template
-# class? it doesn't use the same rendering OR output machinery as ::email
 
 # will also have options to set paper size, margins, etc.
 
@@ -353,6 +490,8 @@ my $usage_warning = sub {
   }
   return ['', '', ''];
 };
+
+#my $conf = new FS::Conf;
 
 #return contexts and fill-in values
 # If you add anything, be sure to add a description in 
@@ -531,11 +670,19 @@ sub substitutions {
 
 =item content LOCALE
 
-Stub, returns nothing.
+Returns the L<FS::template_content> object appropriate to LOCALE, if there 
+is one.  If not, returns the one with a NULL locale.
 
 =cut
 
-sub content {}
+sub content {
+  my $self = shift;
+  my $locale = shift;
+  qsearchs('template_content', 
+            { 'msgnum' => $self->msgnum, 'locale' => $locale }) || 
+  qsearchs('template_content',
+            { 'msgnum' => $self->msgnum, 'locale' => '' });
+}
 
 =item agent
 
@@ -664,14 +811,8 @@ sub _upgrade_data {
       }
       $content{body} = $body;
       $msg_template->set('body', '');
-      my $error = $msg_template->replace(%content);
-      die $error if $error;
-    }
 
-    if ( !$msg_template->msgclass ) {
-      # set default message class
-      $msg_template->set('msgclass', 'email');
-      my $error = $msg_template->replace;
+      my $error = $msg_template->replace(%content);
       die $error if $error;
     }
   }
@@ -704,6 +845,56 @@ sub _populate_initial_data { #class method
   
   }
 
+}
+
+sub eviscerate {
+  # Every bit as pleasant as it sounds.
+  #
+  # We do this because Text::Template::Preprocess doesn't
+  # actually work.  It runs the entire template through 
+  # the preprocessor, instead of the code segments.  Which 
+  # is a shame, because Text::Template already contains
+  # the code to do this operation.
+  my $body = shift;
+  my (@outside, @inside);
+  my $depth = 0;
+  my $chunk = '';
+  while($body || $chunk) {
+    my ($first, $delim, $rest);
+    # put all leading non-delimiters into $first
+    ($first, $rest) =
+        ($body =~ /^((?:\\[{}]|[^{}])*)(.*)$/s);
+    $chunk .= $first;
+    # put a leading delimiter into $delim if there is one
+    ($delim, $rest) =
+      ($rest =~ /^([{}]?)(.*)$/s);
+
+    if( $delim eq '{' ) {
+      $chunk .= '{';
+      if( $depth == 0 ) {
+        push @outside, $chunk;
+        $chunk = '';
+      }
+      $depth++;
+    }
+    elsif( $delim eq '}' ) {
+      $depth--;
+      if( $depth == 0 ) {
+        push @inside, $chunk;
+        $chunk = '';
+      }
+      $chunk .= '}';
+    }
+    else {
+      # no more delimiters
+      if( $depth == 0 ) {
+        push @outside, $chunk . $rest;
+      } # else ? something wrong
+      last;
+    }
+    $body = $rest;
+  }
+  (\@outside, \@inside);
 }
 
 =back
