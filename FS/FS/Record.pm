@@ -22,6 +22,7 @@ use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
 #use FS::Conf; #dependency loop bs, in install_callback below instead
+use Digest::SHA qw(sha256_hex);
 
 use FS::part_virtual_field;
 
@@ -59,6 +60,7 @@ our $conf_encryption = '';
 our $conf_encryptionmodule = '';
 our $conf_encryptionpublickey = '';
 our $conf_encryptionprivatekey = '';
+our $conf_hashsalt = '';
 FS::UID->install_callback( sub {
 
   eval "use FS::Conf;";
@@ -72,6 +74,7 @@ FS::UID->install_callback( sub {
   my $nw_coords = $conf->exists('geocode-require_nw_coordinates');
   $lat_lower = $nw_coords ? 1 : -90;
   $lon_upper = $nw_coords ? -1 : 180;
+  $conf_hashsalt             = $conf->config('hashsalt');
 
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
 
@@ -430,6 +433,18 @@ sub qsearch {
     ) {
 
       my $value = $record->{$field};
+      # If searching for the user session, search for SHA256'ed
+      # (Also works for other ::hashed_fields ...)
+      if (   $conf_hashsalt
+          && defined(eval '@FS::'. $stable . '::hashed_fields')
+          && scalar( eval '@FS::'. $stable . '::hashed_fields')
+      ) {
+        foreach my $hashed_field_name (eval '@FS::'. $stable . '::hashed_fields') {
+          next if $hashed_field_name ne $field; # continue if this isn't a hashed field
+          $value = sha256_hex($value.$conf_hashsalt);
+        }
+      }
+
       my $op = (ref($value) && $value->{op}) ? $value->{op} : '=';
       $value = $value->{'value'} if ref($value);
       my $type = dbdef->table($table)->column($field)->type;
@@ -1300,9 +1315,9 @@ sub insert {
   my $table = $self->table;
   
   # Encrypt before the database
-  if (    defined(eval '@FS::'. $table . '::encrypted_fields')
+  if (    $conf_encryption
+       && defined(eval '@FS::'. $table . '::encrypted_fields')
        && scalar( eval '@FS::'. $table . '::encrypted_fields')
-       && $conf_encryption
   ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       next if $field eq 'payinfo' 
@@ -1312,6 +1327,17 @@ sub insert {
                 && !grep { $self->payby eq $_ } @encrypt_payby;
       $saved->{$field} = $self->getfield($field);
       $self->setfield($field, $self->encrypt($self->getfield($field)));
+    }
+  }
+
+  # SHA256 before the database
+  if (    $conf_hashsalt
+       && defined(eval '@FS::'. $table . '::hashed_fields')
+       && scalar( eval '@FS::'. $table . '::hashed_fields')
+  ) {
+    foreach my $field (eval '@FS::'. $table . '::hashed_fields') {
+      $saved->{$field} = $self->getfield($field);
+      $self->setfield($field, sha256_hex($self->getfield($field).$conf_hashsalt));
     }
   }
 

@@ -3,6 +3,8 @@ use base qw( FS::Record );
 
 use strict;
 
+our @hashed_fields = ('sessionkey');
+
 =head1 NAME
 
 FS::access_user_session - Object methods for access_user_session records
