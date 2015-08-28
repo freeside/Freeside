@@ -154,18 +154,19 @@ if ( $apply && $opt{'pkg-balances'} && $cust_pay->pkgnum ) {
 
 my $refund = '';
 my $refund_days = $opt{'card_refund-days'} || 120;
-my $refund_right = '';
-$refund_right = 'Refund credit card payment' if $cust_pay->payby eq 'CARD';
-$refund_right = 'Refund Echeck payment'      if $cust_pay->payby eq 'CHEK';
+my @refund_right = grep { $opt{$_} } $FS::CurrentUser::CurrentUser->refund_rights($cust_pay->payby);
 if (    $cust_pay->closed !~ /^Y/i
-     && $cust_pay->payby =~ /^(CARD|CHEK)$/
+     && $cust_pay->payby =~ /^(CARD|CHEK|BILL)$/
      && time-$cust_pay->_date < $refund_days*86400
      && $cust_pay->unrefunded > 0
-     && $opt{$refund_right}
+     && scalar(@refund_right)
 ) {
+  my $refundtitle = ($cust_pay->payby =~ /^(CARD|CHEK)$/)
+            ? emt('Send a refund for this payment to the payment gateway')
+            : emt('Record a refund for this payment');
   $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
             qq!paynum=!. $cust_pay->paynum. '"'.
-            qq! TITLE="! .emt('Send a refund for this payment to the payment gateway') 
+            qq! TITLE="! . $refundtitle
             . '">' . emt('refund') . '</A>)';
 }
 
