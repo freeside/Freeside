@@ -492,7 +492,7 @@ sub send_prepared {
   }
 
   warn "$me sending message\n" if $DEBUG;
-  my $message = join("\n\n", $cust_msg->header, $cust_msg->body);
+  my $message = join("\n", $cust_msg->header, $cust_msg->body);
   local $@;
   eval {
     sendmail( $message, { transport => $transport,
