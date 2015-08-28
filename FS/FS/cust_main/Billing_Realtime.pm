@@ -1649,6 +1649,7 @@ sub realtime_refund_bop {
 
   $order_number = $refund->order_number if $refund->can('order_number');
 
+  # change this to just use $cust_pay->delete_cust_bill_pay?
   while ( $cust_pay && $cust_pay->unapplied < $amount ) {
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
     last unless @cust_bill_pay;

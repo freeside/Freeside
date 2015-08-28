@@ -587,6 +587,43 @@ sub access_right {
 
 }
 
+=item refund_rights PAYBY
+
+Accepts payment $payby (BILL,CASH,MCRD,MCHK,CARD,CHEK) and returns a
+list of the refund rights associated with that $payby.
+
+Returns empty list if $payby wasn't recognized.
+
+=cut
+
+sub refund_rights {
+  my $self = shift;
+  my $payby = shift;
+  my @rights = ();
+  push @rights, 'Post refund'                if $payby =~ /^(BILL|CASH|MCRD|MCHK)$/;
+  push @rights, 'Post check refund'          if $payby eq 'BILL';
+  push @rights, 'Post cash refund '          if $payby eq 'CASH';
+  push @rights, 'Refund payment'             if $payby =~ /^(CARD|CHEK)$/;
+  push @rights, 'Refund credit card payment' if $payby eq 'CARD';
+  push @rights, 'Refund Echeck payment'      if $payby eq 'CHEK';
+  return @rights;
+}
+
+=item refund_access_right PAYBY
+
+Returns true if user has L</access_right> for any L</refund_rights>
+for the specified payby.
+
+=cut
+
+sub refund_access_right {
+  my $self = shift;
+  my $payby = shift;
+  my @rights = $self->refund_rights($payby);
+  return '' unless @rights;
+  return $self->access_right(\@rights);
+}
+
 =item default_customer_view
 
 Returns the default customer view for this user, from the 
