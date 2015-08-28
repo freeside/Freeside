@@ -150,6 +150,11 @@ window.onload = function() {
   <TD><INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"></TD>
 <TR>
 
+<TR>
+  <TD ALIGN="right">Service Comment</TD>
+  <TD><INPUT TYPE="text" NAME="comment" VALUE="<% $hashref->{comment} %>"></TD>
+<TR>
+
 <& /elements/tr-select-part_svc_class.html, curr_value=>$hashref->{classnum} &>
 
 <TR>
@@ -244,7 +249,7 @@ my $widget = new HTML::Widgets::SelectLayers(
   #'form_action'    => 'process/part_svc.cgi',
   'form_action'    => 'part_svc.cgi', #self
   'form_elements'  => [qw( svc svcpart classnum selfservice_access
-                           disabled preserve
+                           disabled preserve comment
                       )],
   'html_between'   => $help,
   'layer_callback' => sub {

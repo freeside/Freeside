@@ -3580,6 +3580,7 @@ sub tables_hashref {
       'columns' => [
         'svcpart',             'serial',     '',        '', '', '', 
         'svc',                'varchar',     '',   $char_d, '', '', 
+        'comment',            'varchar', 'NULL', $char_d, '', '',
         'svcdb',              'varchar',     '',   $char_d, '', '', 
         'disabled',              'char', 'NULL',         1, '', '', 
         'preserve',              'char', 'NULL',         1, '', '',
