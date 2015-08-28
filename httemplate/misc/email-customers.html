@@ -1,10 +1,11 @@
 <%doc>
 
-Allows emailing one or more customers, based on a search for customers.  Search can
-be specified either through cust_main fields as cgi params, or through a base64 encoded
-frozen hash in the 'search' cgi param.  Form allows selecting an existing msg_template,
-or creating a custom message, and shows a preview of the message before sending.
-If linked to as a popup, include the cgi parameter 'popup' for proper header handling.
+Allows emailing one or more customers, based on a search for customers.
+Search can be specified either through cust_main fields as cgi params, or
+through a base64 encoded frozen hash in the 'search' cgi param.  Form allows
+selecting an existing msg_template, or creating a custom message, and shows a
+preview of the message before sending.  If linked to as a popup, include the
+cgi parameter 'popup' for proper header handling.
 
 This may also be used as an element in other pages, enabling you to provide an
 alternate initial form while using this for search freezing/thawing and 
@@ -21,12 +22,13 @@ title - the title of the page
 no_search_fields - arrayref of additional fields that are not search parameters
 
 alternate_form - subroutine that returns alternate html for the initial form,
-replaces msgnum/from/subject/html_body/action inputs and submit button,
-not used if an action is specified
+replaces msgnum/from/subject/html_body/action inputs and submit button, not
+used if an action is specified
 
-post_search_hook - sub hook for additional processing after search has been processed from cgi,
-gets passed options 'conf' and 'search' (a reference to the unfrozen %search hash),
-should be used to set msgnum or from/subject/html_body cgi params
+post_search_hook - sub hook for additional processing after search has been
+processed from cgi, gets passed options 'conf' and 'search' (a reference to
+the unfrozen %search hash), should be used to set msgnum or
+from/subject/html_body cgi params
 
 </%doc>
 % if ($popup) {
@@ -288,8 +290,13 @@ if ( $cgi->param('action') eq 'preview' ) {
       'cust_main' => $cust,
       'object' => $object,
     );
-    my %message = $msg_template->prepare(%msgopts);
-    ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
+
+    my $cust_msg = $msg_template->prepare(%msgopts);
+    $from = $cust_msg->env_from;
+    $html_body = $cust_msg->preview;
+    if ( $cust_msg->header =~ /^subject: (.*)/mi ) {
+      $subject = $1;
+    }
   }
 }
 

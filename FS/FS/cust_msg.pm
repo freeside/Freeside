@@ -47,7 +47,11 @@ from FS::Record.  The following fields are currently supported:
 
 =item body - message body (as a complete MIME document)
 
+=item preview - HTML fragment to show as a preview of the message
+
 =item error - Email::Sender error message (or null for success)
+
+=item status - "prepared", "sent", or "failed"
 
 =back
 
@@ -137,6 +141,7 @@ sub check {
     || $self->ut_textn('env_to')
     || $self->ut_anything('header')
     || $self->ut_anything('body')
+    || $self->ut_anything('preview')
     || $self->ut_enum('status', \@statuses)
     || $self->ut_textn('error')
     || $self->ut_enum('msgtype', [  '',
@@ -159,8 +164,9 @@ message on error, or an empty string.
 
 sub send {
   my $self = shift;
-  my $msg_template = $self->msg_template
-    or return 'message was created without a template object';
+  # it's still allowed to have cust_msgs without message templates, but only 
+  # for email.
+  my $msg_template = $self->msg_template || 'FS::msg_template::email';
   $msg_template->send_prepared($self);
 }
 

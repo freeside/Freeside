@@ -10,6 +10,8 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cust_msg;
 use FS::template_content;
 
+use Date::Format qw(time2str);
+
 FS::UID->install_callback( sub { $conf = new FS::Conf; } );
 
 $DEBUG=0;
