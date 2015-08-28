@@ -6400,6 +6400,7 @@ sub tables_hashref {
         'error',     'varchar', 'NULL',    255, '', '',
         'status',    'varchar',     '',$char_d, '', '',
         'msgtype',   'varchar', 'NULL',     16, '', '',
+        'preview',      'text', 'NULL',     '', '', '',
       ],
       'primary_key'  => 'custmsgnum',
       'unique'       => [ ],

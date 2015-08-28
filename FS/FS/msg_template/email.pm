@@ -26,11 +26,12 @@ use FS::Record qw( qsearch qsearchs );
 use FS::template_content;
 use FS::UID qw( dbh );
 
+# needed to manage prepared messages
 use FS::cust_msg;
 
 FS::UID->install_callback( sub { $conf = new FS::Conf; } );
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 our $me = '[FS::msg_template::email]';
 
 =head1 NAME
@@ -362,72 +363,10 @@ sub prepare {
       'error'     => '',
       'status'    => 'prepared',
       'msgtype'   => ($opt{'msgtype'} || ''),
+      'preview'   => $body, # html content only
   });
 
   return $cust_msg;
-}
-
-=item send_prepared CUST_MSG
-
-Takes the CUST_MSG object and sends it to its recipient.
-
-=cut
-
-sub send_prepared {
-  my $self = shift;
-  my $cust_msg = shift or die "cust_msg required";
-
-  my $domain = 'example.com';
-  if ( $cust_msg->env_from =~ /\@([\w\.\-]+)/ ) {
-    $domain = $1;
-  }
-
-  my @to = split(/\s*,\s*/, $cust_msg->env_to);
-
-  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
-                   'helo' => $domain );
-
-  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
-  $smtp_opt{'port'} = $port;
-  
-  my $transport;
-  if ( defined($enc) && $enc eq 'starttls' ) {
-    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
-    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
-  } else {
-    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
-      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);     
-    } 
-    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
-    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
-  }
-
-  warn "$me sending message\n" if $DEBUG;
-  my $message = join("\n\n", $cust_msg->header, $cust_msg->body);
-  local $@;
-  eval {
-    sendmail( $message, { transport => $transport,
-                          from      => $cust_msg->env_from,
-                          to        => \@to })
-  };
-  my $error = '';
-  if(ref($@) and $@->isa('Email::Sender::Failure')) {
-    $error = $@->code.' ' if $@->code;
-    $error .= $@->message;
-  }
-  else {
-    $error = $@;
-  }
-
-  $cust_msg->set('error', $error);
-  $cust_msg->set('status', $error ? 'failed' : 'sent');
-  if ( $cust_msg->custmsgnum ) {
-    $cust_msg->replace;
-  } else {
-    $cust_msg->insert;
-  }
-
-  $error;
 }
 
 =item render OPTION => VALUE ...
@@ -491,183 +430,6 @@ my $usage_warning = sub {
   return ['', '', ''];
 };
 
-#my $conf = new FS::Conf;
-
-#return contexts and fill-in values
-# If you add anything, be sure to add a description in 
-# httemplate/edit/msg_template.html.
-sub substitutions {
-  { 'cust_main' => [qw(
-      display_custnum agentnum agent_name
-
-      last first company
-      name name_short contact contact_firstlast
-      address1 address2 city county state zip
-      country
-      daytime night mobile fax
-
-      has_ship_address
-      ship_name ship_name_short ship_contact ship_contact_firstlast
-      ship_address1 ship_address2 ship_city ship_county ship_state ship_zip
-      ship_country
-
-      paymask payname paytype payip
-      num_cancelled_pkgs num_ncancelled_pkgs num_pkgs
-      classname categoryname
-      balance
-      credit_limit
-      invoicing_list_emailonly
-      cust_status ucfirst_cust_status cust_statuscolor cust_status_label
-
-      signupdate dundate
-      packages recurdates
-      ),
-      [ invoicing_email => sub { shift->invoicing_list_emailonly_scalar } ],
-      #compatibility: obsolete ship_ fields - use the non-ship versions
-      map (
-        { my $field = $_;
-          [ "ship_$field"   => sub { shift->$field } ]
-        }
-        qw( last first company daytime night fax )
-      ),
-      # ship_name, ship_name_short, ship_contact, ship_contact_firstlast
-      # still work, though
-      [ expdate           => sub { shift->paydate_epoch } ], #compatibility
-      [ signupdate_ymd    => sub { $ymd->(shift->signupdate) } ],
-      [ dundate_ymd       => sub { $ymd->(shift->dundate) } ],
-      [ paydate_my        => sub { sprintf('%02d/%04d', shift->paydate_monthyear) } ],
-      [ otaker_first      => sub { shift->access_user->first } ],
-      [ otaker_last       => sub { shift->access_user->last } ],
-      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
-      [ company_name      => sub { 
-          $conf->config('company_name', shift->agentnum) 
-        } ],
-      [ company_address   => sub {
-          $conf->config('company_address', shift->agentnum)
-        } ],
-      [ company_phonenum  => sub {
-          $conf->config('company_phonenum', shift->agentnum)
-        } ],
-      [ selfservice_server_base_url => sub { 
-          $conf->config('selfservice_server-base_url') #, shift->agentnum) 
-        } ],
-    ],
-    # next_bill_date
-    'cust_pkg'  => [qw( 
-      pkgnum pkg_label pkg_label_long
-      location_label
-      status statuscolor
-    
-      start_date setup bill last_bill 
-      adjourn susp expire 
-      labels_short
-      ),
-      [ pkg               => sub { shift->part_pkg->pkg } ],
-      [ pkg_category      => sub { shift->part_pkg->categoryname } ],
-      [ pkg_class         => sub { shift->part_pkg->classname } ],
-      [ cancel            => sub { shift->getfield('cancel') } ], # grrr...
-      [ start_ymd         => sub { $ymd->(shift->getfield('start_date')) } ],
-      [ setup_ymd         => sub { $ymd->(shift->getfield('setup')) } ],
-      [ next_bill_ymd     => sub { $ymd->(shift->getfield('bill')) } ],
-      [ last_bill_ymd     => sub { $ymd->(shift->getfield('last_bill')) } ],
-      [ adjourn_ymd       => sub { $ymd->(shift->getfield('adjourn')) } ],
-      [ susp_ymd          => sub { $ymd->(shift->getfield('susp')) } ],
-      [ expire_ymd        => sub { $ymd->(shift->getfield('expire')) } ],
-      [ cancel_ymd        => sub { $ymd->(shift->getfield('cancel')) } ],
-
-      # not necessarily correct for non-flat packages
-      [ setup_fee         => sub { shift->part_pkg->option('setup_fee') } ],
-      [ recur_fee         => sub { shift->part_pkg->option('recur_fee') } ],
-
-      [ freq_pretty       => sub { shift->part_pkg->freq_pretty } ],
-
-    ],
-    'cust_bill' => [qw(
-      invnum
-      _date
-      _date_pretty
-      due_date
-    ),
-      [ due_date2str      => sub { shift->due_date2str('short') } ],
-    ],
-    #XXX not really thinking about cust_bill substitutions quite yet
-    
-    # for welcome and limit warning messages
-    'svc_acct' => [qw(
-      svcnum
-      username
-      domain
-      ),
-      [ password          => sub { shift->getfield('_password') } ],
-      [ column            => sub { &$usage_warning(shift)->[0] } ],
-      [ amount            => sub { &$usage_warning(shift)->[1] } ],
-      [ threshold         => sub { &$usage_warning(shift)->[2] } ],
-    ],
-    'svc_domain' => [qw(
-      svcnum
-      domain
-      ),
-      [ registrar         => sub {
-          my $registrar = qsearchs('registrar', 
-            { registrarnum => shift->registrarnum} );
-          $registrar ? $registrar->registrarname : ''
-        }
-      ],
-      [ catchall          => sub { 
-          my $svc_acct = qsearchs('svc_acct', { svcnum => shift->catchall });
-          $svc_acct ? $svc_acct->email : ''
-        }
-      ],
-    ],
-    'svc_phone' => [qw(
-      svcnum
-      phonenum
-      countrycode
-      domain
-      )
-    ],
-    'svc_broadband' => [qw(
-      svcnum
-      speed_up
-      speed_down
-      ip_addr
-      mac_addr
-      )
-    ],
-    # for payment receipts
-    'cust_pay' => [qw(
-      paynum
-      _date
-      ),
-      [ paid              => sub { sprintf("%.2f", shift->paid) } ],
-      # overrides the one in cust_main in cases where a cust_pay is passed
-      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
-      [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
-      [ payinfo           => sub { 
-          my $cust_pay = shift;
-          ($cust_pay->payby eq 'CARD' || $cust_pay->payby eq 'CHEK') ?
-            $cust_pay->paymask : $cust_pay->decrypt($cust_pay->payinfo)
-        } ],
-    ],
-    # for payment decline messages
-    # try to support all cust_pay fields
-    # 'error' is a special case, it contains the raw error from the gateway
-    'cust_pay_pending' => [qw(
-      _date
-      error
-      ),
-      [ paid              => sub { sprintf("%.2f", shift->paid) } ],
-      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
-      [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
-      [ payinfo           => sub {
-          my $pending = shift;
-          ($pending->payby eq 'CARD' || $pending->payby eq 'CHEK') ?
-            $pending->paymask : $pending->decrypt($pending->payinfo)
-        } ],
-    ],
-  };
-}
-
 =item content LOCALE
 
 Returns the L<FS::template_content> object appropriate to LOCALE, if there 
@@ -684,168 +446,84 @@ sub content {
             { 'msgnum' => $self->msgnum, 'locale' => '' });
 }
 
-=item agent
+=cut
 
-Returns the L<FS::agent> object for this template.
+=back
+
+=head2 CLASS METHODS
+
+=over 4
+
+=item send_prepared CUST_MSG
+
+Takes the CUST_MSG object and sends it to its recipient. This is a class 
+method because everything needed to send the message is stored in the 
+CUST_MSG already.
 
 =cut
 
-sub _upgrade_data {
-  my ($self, %opts) = @_;
+sub send_prepared {
+  my $self = shift;
+  my $cust_msg = shift or die "cust_msg required";
 
-  ###
-  # First move any historical templates in config to real message templates
-  ###
-
-  my @fixes = (
-    [ 'alerter_msgnum',  'alerter_template',   '',               '', '' ],
-    [ 'cancel_msgnum',   'cancelmessage',      'cancelsubject',  '', '' ],
-    [ 'decline_msgnum',  'declinetemplate',    '',               '', '' ],
-    [ 'impending_recur_msgnum', 'impending_recur_template', '',  '', 'impending_recur_bcc' ],
-    [ 'payment_receipt_msgnum', 'payment_receipt_email', '',     '', '' ],
-    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from', '' ],
-    [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', '' ],
-  );
- 
-  my @agentnums = ('', map {$_->agentnum} qsearch('agent', {}));
-  foreach my $agentnum (@agentnums) {
-    foreach (@fixes) {
-      my ($newname, $oldname, $subject, $from, $bcc) = @$_;
-      if ($conf->exists($oldname, $agentnum)) {
-        my $new = new FS::msg_template({
-          'msgname'   => $oldname,
-          'agentnum'  => $agentnum,
-          'from_addr' => ($from && $conf->config($from, $agentnum)) || '',
-          'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
-          'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
-          'mime_type' => 'text/html',
-          'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
-        });
-        my $error = $new->insert;
-        die $error if $error;
-        $conf->set($newname, $new->msgnum, $agentnum);
-        $conf->delete($oldname, $agentnum);
-        $conf->delete($from, $agentnum) if $from;
-        $conf->delete($subject, $agentnum) if $subject;
-      }
-    }
-
-    if ( $conf->exists('alert_expiration', $agentnum) ) {
-      my $msgnum = $conf->exists('alerter_msgnum', $agentnum);
-      my $template = FS::msg_template->by_key($msgnum) if $msgnum;
-      if (!$template) {
-        warn "template for alerter_msgnum $msgnum not found\n";
-        next;
-      }
-      # this is now a set of billing events
-      foreach my $days (30, 15, 5) {
-        my $event = FS::part_event->new({
-            'agentnum'    => $agentnum,
-            'event'       => "Card expiration warning - $days days",
-            'eventtable'  => 'cust_main',
-            'check_freq'  => '1d',
-            'action'      => 'notice',
-            'disabled'    => 'Y', #initialize first
-        });
-        my $error = $event->insert( 'msgnum' => $msgnum );
-        if ($error) {
-          warn "error creating expiration alert event:\n$error\n\n";
-          next;
-        }
-        # make it work like before:
-        # only send each warning once before the card expires,
-        # only warn active customers,
-        # only warn customers with CARD/DCRD,
-        # only warn customers who get email invoices
-        my %conds = (
-          'once_every'          => { 'run_delay' => '30d' },
-          'cust_paydate_within' => { 'within' => $days.'d' },
-          'cust_status'         => { 'status' => { 'active' => 1 } },
-          'payby'               => { 'payby'  => { 'CARD' => 1,
-                                                   'DCRD' => 1, }
-                                   },
-          'message_email'       => {},
-        );
-        foreach (keys %conds) {
-          my $condition = FS::part_event_condition->new({
-              'conditionname' => $_,
-              'eventpart'     => $event->eventpart,
-          });
-          $error = $condition->insert( %{ $conds{$_} });
-          if ( $error ) {
-            warn "error creating expiration alert event:\n$error\n\n";
-            next;
-          }
-        }
-        $error = $event->initialize;
-        if ( $error ) {
-          warn "expiration alert event was created, but not initialized:\n$error\n\n";
-        }
-      } # foreach $days
-      $conf->delete('alerter_msgnum', $agentnum);
-      $conf->delete('alert_expiration', $agentnum);
-
-    } # if alerter_msgnum
-
+  my $domain = 'example.com';
+  if ( $cust_msg->env_from =~ /\@([\w\.\-]+)/ ) {
+    $domain = $1;
   }
 
-  ###
-  # Move subject and body from msg_template to template_content
-  ###
+  my @to = split(/\s*,\s*/, $cust_msg->env_to);
 
-  foreach my $msg_template ( qsearch('msg_template', {}) ) {
-    if ( $msg_template->subject || $msg_template->body ) {
-      # create new default content
-      my %content;
-      $content{subject} = $msg_template->subject;
-      $msg_template->set('subject', '');
+  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
+                   'helo' => $domain );
 
-      # work around obscure Pg/DBD bug
-      # https://rt.cpan.org/Public/Bug/Display.html?id=60200
-      # (though the right fix is to upgrade DBD)
-      my $body = $msg_template->body;
-      if ( $body =~ /^x([0-9a-f]+)$/ ) {
-        # there should be no real message templates that look like that
-        warn "converting template body to TEXT\n";
-        $body = pack('H*', $1);
-      }
-      $content{body} = $body;
-      $msg_template->set('body', '');
-
-      my $error = $msg_template->replace(%content);
-      die $error if $error;
-    }
-  }
-
-  ###
-  # Add new-style default templates if missing
-  ###
-  $self->_populate_initial_data;
-
-}
-
-sub _populate_initial_data { #class method
-  #my($class, %opts) = @_;
-  #my $class = shift;
-
-  eval "use FS::msg_template::InitialData;";
-  die $@ if $@;
-
-  my $initial_data = FS::msg_template::InitialData->_initial_data;
-
-  foreach my $hash ( @$initial_data ) {
-
-    next if $hash->{_conf} && $conf->config( $hash->{_conf} );
-
-    my $msg_template = new FS::msg_template($hash);
-    my $error = $msg_template->insert( @{ $hash->{_insert_args} || [] } );
-    die $error if $error;
-
-    $conf->set( $hash->{_conf}, $msg_template->msgnum ) if $hash->{_conf};
+  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
+  $smtp_opt{'port'} = $port;
   
+  my $transport;
+  if ( defined($enc) && $enc eq 'starttls' ) {
+    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
+    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
+  } else {
+    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);     
+    } 
+    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
+    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
   }
 
+  warn "$me sending message\n" if $DEBUG;
+  my $message = join("\n\n", $cust_msg->header, $cust_msg->body);
+  local $@;
+  eval {
+    sendmail( $message, { transport => $transport,
+                          from      => $cust_msg->env_from,
+                          to        => \@to })
+  };
+  my $error = '';
+  if(ref($@) and $@->isa('Email::Sender::Failure')) {
+    $error = $@->code.' ' if $@->code;
+    $error .= $@->message;
+  }
+  else {
+    $error = $@;
+  }
+
+  $cust_msg->set('error', $error);
+  $cust_msg->set('status', $error ? 'failed' : 'sent');
+  if ( $cust_msg->custmsgnum ) {
+    $cust_msg->replace;
+  } else {
+    $cust_msg->insert;
+  }
+
+  $error;
 }
+
+=back
+
+=cut
+
+# internal use only
 
 sub eviscerate {
   # Every bit as pleasant as it sounds.
@@ -896,8 +574,6 @@ sub eviscerate {
   }
   (\@outside, \@inside);
 }
-
-=back
 
 =head1 BUGS
 

@@ -445,6 +445,10 @@ sub email_search_result {
   my $success = 0;
   my %sent_to = ();
 
+  if ( !$msg_template ) {
+    # XXX create on the fly
+  }
+
   #eventually order+limit magic to reduce memory use?
   foreach my $obj ( qsearch($sql_query) ) {
 
@@ -459,36 +463,19 @@ sub email_search_result {
     }
 
     my $cust_main = $obj->cust_main;
-    tie my %message, 'Tie::IxHash';
     if ( !$cust_main ) { 
       next; # unlinked object; nothing else we can do
     }
 
-    if ( $msg_template ) {
-      # Now supports other context objects.
-      %message = $msg_template->prepare(
-        'cust_main' => $cust_main,
-        'object'    => $obj,
-      );
-    }
-    else {
-      my @to = $cust_main->invoicing_list_emailonly;
-      next if !@to;
-
-      %message = (
-        'from'      => $from,
-        'to'        => \@to,
-        'subject'   => $subject,
-        'html_body' => $html_body,
-        'text_body' => $text_body,
-        'custnum'   => $cust_main->custnum,
-      );
-    } #if $msg_template
+    my $cust_msg = $msg_template->prepare(
+      'cust_main' => $cust_main,
+      'object'    => $obj,
+    );
 
     # For non-cust_main searches, we avoid duplicates based on message
-    # body text.  
+    # body text.
     my $unique = $cust_main->custnum;
-    $unique .= sha1($message{'text_body'}) if $class ne 'FS::cust_main';
+    $unique .= sha1($cust_msg->text_body) if $class ne 'FS::cust_main';
     if( $sent_to{$unique} ) {
       # avoid duplicates
       $dups++;
@@ -497,18 +484,20 @@ sub email_search_result {
 
     $sent_to{$unique} = 1;
     
-    $error = send_email( generate_email( %message ) );
+    $error = $cust_msg->send;
 
     if($error) {
       # queue the sending of this message so that the user can see what we
       # tried to do, and retry if desired
+      # (note the cust_msg itself also now has a status of 'failed'; that's 
+      # fine, as it will get its status reset if we retry the job)
       my $queue = new FS::queue {
-        'job'        => 'FS::Misc::process_send_email',
+        'job'        => 'FS::cust_msg::process_send',
         'custnum'    => $cust_main->custnum,
         'status'     => 'failed',
         'statustext' => $error,
       };
-      $queue->insert(%message);
+      $queue->insert($cust_msg->custmsgnum);
       push @retry_jobs, $queue;
     }
     else {
