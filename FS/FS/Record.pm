@@ -1300,8 +1300,7 @@ sub insert {
   my $table = $self->table;
   
   # Encrypt before the database
-  if (    defined(eval '@FS::'. $table . '::encrypted_fields')
-       && scalar( eval '@FS::'. $table . '::encrypted_fields')
+  if (    scalar( eval '@FS::'. $table . '::encrypted_fields')
        && $conf_encryption
   ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
@@ -1543,9 +1542,8 @@ sub replace {
   
   # Encrypt for replace
   my $saved = {};
-  if (    $conf_encryption
-       && defined(eval '@FS::'. $new->table . '::encrypted_fields')
-       && scalar( eval '@FS::'. $new->table . '::encrypted_fields')
+  if (    scalar( eval '@FS::'. $new->table . '::encrypted_fields')
+       && $conf_encryption
   ) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
       next if $field eq 'payinfo' 
