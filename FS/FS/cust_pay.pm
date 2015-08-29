@@ -833,6 +833,102 @@ sub amount {
   $self->paid();
 }
 
+=item delete_cust_bill_pay OPTIONS
+
+Deletes all associated cust_bill_pay records.
+
+If option 'unapplied' is a specified, only deletes until
+this object's 'unapplied' value is >= the specified amount.  
+(Deletes in order returned by L</cust_bill_pay>.)
+
+=cut
+
+sub delete_cust_bill_pay {
+  my $self = shift;
+  my %opt = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $unapplied = $self->unapplied; #only need to look it up once
+
+  my $error = '';
+
+  # Maybe we should reverse the order these get deleted in?
+  # ie delete newest first?
+  # keeping consistent with how bop refunds work, for now...
+  foreach my $cust_bill_pay ( $self->cust_bill_pay ) {
+    last if $opt{'unapplied'} && ($unapplied > $opt{'unapplied'});
+    $unapplied += $cust_bill_pay->amount;
+    $error = $cust_bill_pay->delete;
+    last if $error;
+  }
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '';
+}
+
+=item refund HASHREF
+
+Accepts input for creating a new FS::cust_refund object.
+Unapplies payment from invoices up to the amount of the refund,
+creates the refund and applies payment to refund.  Allows entire
+process to be handled in one transaction.
+
+Causes a fatal error if called on CARD or CHEK payments.
+
+=cut
+
+sub refund {
+  my $self = shift;
+  my $hash = shift;
+  die "Cannot call cust_pay->refund on " . $self->payby
+    if grep { $_ eq $self->payby } qw(CARD CHEK);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->delete_cust_bill_pay('amount' => $hash->{'amount'});
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $hash->{'paynum'} = $self->paynum;
+  my $new = new FS::cust_refund ( $hash );
+  $error = $new->insert;
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '';
+}
+
 =back
 
 =head1 CLASS METHODS

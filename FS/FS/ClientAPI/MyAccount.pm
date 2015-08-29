@@ -2989,7 +2989,7 @@ sub reset_passwd {
     my($username, $domain) = split('@', $p->{'email'});
     my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
     if ( $svc_domain ) {
-      $svc_acct = qsearchs('svc_acct', { 'username' => $p->{'username'},
+      $svc_acct = qsearchs('svc_acct', { 'username' => $username,
                                          'domsvc'   => $svc_domain->svcnum  }
                           );
       if ( $svc_acct ) {
@@ -3074,7 +3074,7 @@ sub reset_passwd {
 
     my $reset_session = {
       'svcnum'   => $svc_acct->svcnum,
-      'agentnum' =>
+      'agentnum' => $svc_acct->cust_main->agentnum,
     };
 
     my $timeout = '1 hour'; #?
