@@ -35,6 +35,12 @@ FS::msg_template - Object methods for msg_template records
 
   $error = $record->check;
 
+=head1 NOTE
+
+This uses a table-per-subclass ORM strategy, which is a somewhat cleaner
+version of what we do elsewhere with _option tables. We could easily extract 
+that functionality into a base class, or even into FS::Record itself.
+
 =head1 DESCRIPTION
 
 An FS::msg_template object represents a customer message template.
@@ -81,12 +87,35 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'msg_template'; }
 
+sub extension_table { ''; } # subclasses don't HAVE to have extensions
+
 sub _rebless {
   my $self = shift;
   my $class = 'FS::msg_template::' . $self->msgclass;
   eval "use $class;";
   bless($self, $class) unless $@;
+
+  # merge in the extension fields
+  if ( $self->msgnum and $self->extension_table ) {
+    my $extension = $self->_extension;
+    if ( $extension ) {
+      $self->{Hash} = { $self->hash, $extension->hash };
+    }
+  }
+
   $self;
+}
+
+# Returns the subclass-specific extension record for this object. For internal
+# use only; everyone else is supposed to think of this as a single record.
+
+sub _extension {
+  my $self = shift;
+  if ( $self->extension_table and $self->msgnum ) {
+    local $FS::Record::nowarn_classload = 1;
+    return qsearchs($self->extension_table, { msgnum => $self->msgnum });
+  }
+  return;
 }
 
 =item insert [ CONTENT ]
@@ -94,7 +123,30 @@ sub _rebless {
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-# inherited
+=cut
+
+sub insert {
+  my $self = shift;
+  $self->_rebless;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error = $self->SUPER::insert;
+  # calling _extension at this point makes it copy the msgnum, so links work
+  if ( $self->extension_table ) {
+    local $FS::Record::nowarn_classload = 1;
+    my $extension = FS::Record->new($self->extension_table, { $self->hash });
+    $error ||= $extension->insert;
+  }
+
+  if ( $error ) {
+    dbh->rollback if $oldAutoCommit;
+  } else {
+    dbh->commit if $oldAutoCommit;
+  }
+  $error;
+}
 
 =item delete
 
@@ -102,16 +154,56 @@ Delete this record from the database.
 
 =cut
 
-# inherited
+sub delete {
+  my $self = shift;
 
-=item replace [ OLD_RECORD ] [ CONTENT ]
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error;
+  my $extension = $self->_extension;
+  if ( $extension ) {
+    $error = $extension->delete;
+  }
+
+  $error ||= $self->SUPER::delete;
+
+  if ( $error ) {
+    dbh->rollback if $oldAutoCommit;
+  } else {
+    dbh->commit if $oldAutoCommit;
+  }
+  $error;
+}
+
+=item replace [ OLD_RECORD ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 =cut
 
-# inherited
+sub replace {
+  my $new = shift;
+  my $old = shift || $new->replace_old;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error = $new->SUPER::replace($old, @_);
+
+  my $extension = $new->_extension;
+  if ( $extension ) {
+    $error ||= $extension->replace;
+  }
+
+  if ( $error ) {
+    dbh->rollback if $oldAutoCommit;
+  } else {
+    dbh->commit if $oldAutoCommit;
+  }
+  $error;
+}
 
 sub replace_check {
   my $self = shift;
