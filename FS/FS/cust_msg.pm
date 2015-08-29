@@ -205,6 +205,25 @@ sub parts {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4
+
+=item process_send CUSTMSGNUM
+
+Given a C<cust_msg.custmsgnum> value, sends the message. It must already
+have been prepared (via L<FS::msg_template/prepare>).
+
+=cut
+
+sub process_send {
+  my $custmsgnum = shift;
+  my $cust_msg = FS::cust_msg->by_key($custmsgnum)
+    or die "cust_msg #$custmsgnum not found";
+  my $error = $cust_msg->send;
+  die $error if $error;
+}
+
 =head1 SEE ALSO
 
 L<FS::msg_template>, L<FS::cust_main>, L<FS::Record>.
