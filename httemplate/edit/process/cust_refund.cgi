@@ -12,7 +12,7 @@
 
     </BODY></HTML>
 %  } else {
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum;show=payment_history") %>
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?custnum=$custnum;show=payment_history") %>
 %  }
 %}
 <%init>
