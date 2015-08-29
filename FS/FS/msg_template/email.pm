@@ -448,17 +448,10 @@ sub content {
 
 =cut
 
-=back
-
-=head2 CLASS METHODS
-
-=over 4
-
 =item send_prepared CUST_MSG
 
-Takes the CUST_MSG object and sends it to its recipient. This is a class 
-method because everything needed to send the message is stored in the 
-CUST_MSG already.
+Takes the CUST_MSG object and sends it to its recipient. The "smtpmachine"
+configuration option will be used to find the outgoing mail server.
 
 =cut
 
