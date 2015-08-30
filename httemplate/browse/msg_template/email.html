@@ -1,9 +1,9 @@
-<% include( 'elements/browse.html',
+<& /browse/elements/browse.html,
               'title'         => 'Message templates',
               'name_singular' => 'template',
               'menubar'       => \@menubar,
-              'query'         => { 'table' => 'msg_template', },
-              'count_query'   => 'SELECT COUNT(*) FROM msg_template',
+              'query'         => $query,
+              'count_query'   => $count_query,
               'disableable'   => 1,
               'disabled_statuspos' => (scalar(@locales) + 3),
               'agent_virt'         => 1,
@@ -14,8 +14,7 @@
               'links'       => [ $link, @locale_links, '' ],
               'link_onclicks' => [ '', map('', @locale_links), $disable_link ],
               'cell_style'    => [ '', '', map ($locale_style, @locales), $locale_style ],
-          )
-%>
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -26,11 +25,21 @@ die "access denied"
 
 my @menubar = ();
 if ( $curuser->access_right(['Edit templates', 'Edit global templates']) ) {
-  push @menubar, 'Add a new template' => $p.'edit/msg_template.html';
+  push @menubar, 'Add a new template' => $fsurl.'edit/msg_template/email.html';
 }
-push @menubar, 'View template images' => $p.'browse/template_image.html';
+push @menubar, 'Template images' => $fsurl.'browse/template_image.html';
 
-my $link = [ "${p}edit/msg_template.html?msgnum=", 'msgnum' ];
+push @menubar, 'External message interfaces' => $fsurl.'browse/msg_template/http.html';
+
+my $query = {
+  'table'   => 'msg_template',
+  'select'  => '*',
+  'hashref' => { 'msgclass' => 'email' },
+};
+
+my $count_query = "SELECT COUNT(*) FROM msg_template WHERE msgclass = 'email'";
+
+my $link = [ $fsurl.'edit/msg_template/email.html?msgnum=', 'msgnum' ];
 
 my $locale_style = 'font-size:0.8em; padding:3px';
 
@@ -43,14 +52,14 @@ foreach my $l ( FS::Locales->locales ) {
   };
   push @locale_links, sub {
     my $content = $_[0]->content_locales->{$l} or return '';
-    [ "${p}edit/msg_template.html?locale=$l;msgnum=", 'msgnum' ];
+    [ $fsurl."edit/msg_template/email.html?locale=$l;msgnum=", 'msgnum' ];
   };
 }
 
 my $disable_link = sub {
   my $template = shift;
   include('/elements/popup_link_onclick.html',
-    action      => $p.'misc/disable-msg_template.cgi?msgnum=' .
+    action      => $fsurl.'misc/disable-msg_template.cgi?msgnum=' .
                      $template->msgnum .
                      ($template->disabled ? ';enable=1' : ''),
     actionlabel => 'Disable template',

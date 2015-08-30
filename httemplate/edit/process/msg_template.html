@@ -1,7 +1,7 @@
 <% include( 'elements/process.html',  
               'table'       => 'msg_template',
-              'viewall_dir' => 'browse',
-              #'popup_reload'=> 1,
+              'fields'      => $fields,
+              'viewall_url' => "browse/msg_template/$msgclass.html",
               'debug'       => 0,
               'precheck_callback' => \&precheck_callback,
               'args_callback' => \&args_callback,
@@ -11,9 +11,21 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right(['Edit templates','Edit global templates']);
 
+my $msgclass = 'email';
+if ( $cgi->param('msgclass') =~ /^(\w+)$/ ) {
+  $msgclass = $1;
+}
+
+my $fields = [ fields('msg_template') ];
+my $class = "FS::msg_template::$msgclass";
+eval "use $class;";
+if ( $class->extension_table ) {
+  push @$fields, fields($class->extension_table);
+}
+
 sub precheck_callback {
   my $cgi = shift;
-  # validate some fields
+  # validate locale field (for email-type records)
   $cgi->param('locale') =~ /^(\w*)$/;
   my $locale = $1;
   return mt('Language required') if $locale eq 'new'; # the user didn't choose

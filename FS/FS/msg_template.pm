@@ -5,7 +5,7 @@ use strict;
 use vars qw( $DEBUG $conf );
 
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 
 use FS::cust_msg;
 use FS::template_content;
@@ -95,11 +95,16 @@ sub _rebless {
   eval "use $class;";
   bless($self, $class) unless $@;
 
-  # merge in the extension fields
+  # merge in the extension fields (but let fields in $self override them)
+  # except don't ever override the extension's primary key, it's immutable
   if ( $self->msgnum and $self->extension_table ) {
     my $extension = $self->_extension;
     if ( $extension ) {
-      $self->{Hash} = { $self->hash, $extension->hash };
+      my $ext_key = $extension->get($extension->primary_key);
+      $self->{Hash} = { $extension->hash,
+                        $self->hash,
+                        $extension->primary_key => $ext_key
+                      };
     }
   }
 
@@ -194,6 +199,8 @@ sub replace {
 
   my $extension = $new->_extension;
   if ( $extension ) {
+    # merge changes into the extension record and replace it
+    $extension->{Hash} = { $extension->hash, $new->hash };
     $error ||= $extension->replace;
   }
 
@@ -212,7 +219,7 @@ sub replace_check {
   if ( $old->msgclass ) {
     if ( !$self->msgclass ) {
       $self->set('msgclass', $old->msgclass);
-    } else {
+    } elsif ( $old->msgclass ne $self->msgclass ) {
       return "Can't change message template class from ".$old->msgclass.
              " to ".$self->msgclass.".";
     }
