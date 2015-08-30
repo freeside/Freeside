@@ -348,8 +348,8 @@ if ( $opt{'disableable'} ) {
       sub { shift->disabled ? 'FF0000'   : '00CC00'; };
     splice @{ $opt{'links'}  }, $pos, 0, ''
       if $opt{'links'};
-    splice @{ $opt{'link_onlicks'}  }, $pos, 0, ''
-      if $opt{'link_onlicks'};
+    splice @{ $opt{'link_onclicks'}  }, $pos, 0, ''
+      if $opt{'link_onclicks'};
   }
 
   #add show/hide disabled links
