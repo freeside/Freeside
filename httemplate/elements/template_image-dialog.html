@@ -14,7 +14,7 @@ url - to redirect to after upload, otherwise just refreshes dialog window
 </%doc>
 
 <% include('/elements/xmlhttp.html',
-        'url'  => $p.'misc/xmlhttp-template_image.cgi',
+        'url'  => $fsurl.'misc/xmlhttp-template_image.cgi',
         'subs' => [ 'get_template_image' ],
    ) %>
 
@@ -75,7 +75,7 @@ url - to redirect to after upload, otherwise just refreshes dialog window
 <% include('/elements/form-file_upload.html',
      'name'      => 'TemplateImageUploadForm',
      'id'        => 'TemplateImageUploadForm',
-     'action'    => $p.'misc/process/template_image-upload.cgi',
+     'action'    => $fsurl.'misc/process/template_image-upload.cgi',
      'num_files' => 1,
      'fields'    => [ 'name', 'agentnum' ],
      'url'       => $opt{'url'} || 'javascript:refreshImageList(1)',

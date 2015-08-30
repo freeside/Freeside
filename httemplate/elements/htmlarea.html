@@ -12,7 +12,7 @@ Example:
 </%doc>
 
 % #init
-<SCRIPT TYPE="text/javascript" src="<% $p %>elements/ckeditor/ckeditor.js">
+<SCRIPT TYPE="text/javascript" src="<% $fsurl %>elements/ckeditor/ckeditor.js">
 </SCRIPT>
 
 % #editor
@@ -35,7 +35,7 @@ my $config = {
   'skin'                => 'kama',
   'toolbarCanCollapse'  => JSON::true,
   'removePlugins'       => 'elementspath',
-  'basePath'            => $p.'elements/ckeditor/',
+  'basePath'            => $fsurl.'elements/ckeditor/',
   'enterMode'           => 2,
   %{ $opt{config} || {} },
 };
