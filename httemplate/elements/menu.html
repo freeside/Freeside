@@ -767,7 +767,7 @@ tie my %config_nms, 'Tie::IxHash',
 ;
 
 tie my %config_misc, 'Tie::IxHash';
-$config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
+$config_misc{'Message templates'} = [ $fsurl.'browse/msg_template/email.html', 'Templates for customer notices' ]
   if $curuser->access_right(['View templates', 'View global templates',
                              'Edit templates', 'Edit global templates', ]);
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]

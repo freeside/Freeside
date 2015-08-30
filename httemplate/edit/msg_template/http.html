@@ -1,0 +1,82 @@
+<& /edit/elements/edit.html,
+    'post_url'         => $fsurl.'edit/process/msg_template.html', 
+    'name_singular'    => 'message interface',
+    'table'            => 'msg_template',
+    'viewall_dir'      => 'browse',
+    'agent_virt'       => 1,
+    'agent_null'       => 1,
+    'agent_null_right' => [ 'View global templates', 'Edit global templates' ],
+
+    'fields'           => [], # callback takes care of this
+    'new_callback'     => $edit_callback,
+    'edit_callback'    => $edit_callback,
+    'error_callback'   => $edit_callback,
+    'labels'           => \%labels,
+    'no_submit'        => $no_submit,
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View templates', 'View global templates',
+                                  'Edit templates', 'Edit global templates',
+                               ]);
+
+my %labels = (
+  'msgnum'      => 'Template', # it's still a template number
+  'agentnum'    => 'Agent',
+  'msgname'     => 'Interface name',
+  'prepare_url' => 'Prepare URL',
+  'send_url'    => 'Send URL',
+  'username'    => 'HTTP username',
+  'password'    => 'HTTP password',
+  'content'     => 'Additional POST content',
+);
+
+my $no_submit = 0;
+
+my $edit_callback = sub {
+  my ($cgi, $msg_template, $fields, $opt) = @_;
+  if ( $curuser->access_right('Edit global templates') 
+     || (    $curuser->access_right('Edit templates')
+          && $msg_template
+          && $msg_template->agentnum
+          && $curuser->agentnums_href->{$msg_template->agentnum}
+        )
+  ) {
+    @$fields = (
+        { field => 'msgclass',
+          type  => 'hidden',
+          value => 'http',
+        },
+        { field => 'agentnum',
+          type  => 'select-agent',
+        },
+        { field => 'msgname',   size=>60, required => 1 },
+        { field => 'prepare_url', size=>60, required => 1 },
+        { field => 'send_url',  size=>60, required => 1 },
+        { field => 'username', size=>20 },
+        { field => 'password', size=>20 },
+        { field => 'content', type => 'textarea' },
+    );
+  } else { #readonly
+
+    $no_submit = 1;
+
+    @$fields = (
+        { field => 'agentnum',
+          type  => 'select-agent',
+          fixed => 1,
+        },
+        { field => 'msgname',   type => 'fixed', },
+        { field => 'prepare_url', type => 'fixed', },
+        { field => 'send_url',  type => 'fixed', },
+        { field => 'username',  type => 'fixed', },
+        { field => 'password',  type => 'fixed', },
+        { field => 'content', type => 'fixed' },
+    );
+
+  }
+};
+
+</%init>
