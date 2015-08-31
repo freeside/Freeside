@@ -416,7 +416,7 @@ sub check {
   $error=
     $self->ut_numbern('svcpart')
     || $self->ut_text('svc')
-    || $self->ut_text('comment')
+    || $self->ut_textn('comment')
     || $self->ut_alpha('svcdb')
     || $self->ut_flag('disabled')
     || $self->ut_flag('preserve')
