@@ -1,7 +1,7 @@
 # reports menu items
 search/cust_main.cgi?browse=last
-search/cust_bill.html?OPEN90_date
-search/cust_bill.html?date
+search/cust_bill.html?keywords=OPEN90_date:order_by=invnum
+search/cust_bill.html?keywords=date:order_by=invnum
 search/cust_bill.html?magic=_date&agentnum=1&beginning=&ending=10%2F01%2F2015&charged_lt=&charged_gt=200.00&owed_lt=&owed_gt=&open=1
 search/cust_bill_pkg.cgi?agentnum=1&status=&cust_classnum=&beginning=01%2F01%2F2016&ending=01%2F31%2F2016
 search/cust_pay.html?magic=_date&unapplied=0&beginning=01%2F01%2F2016&agentnum=1&order_by=paynum

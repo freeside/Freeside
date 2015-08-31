@@ -24,9 +24,6 @@ oldname=$( psql -tl | \
 if [ -n "$oldname" ]; then
   echo "Renaming $oldname to freeside."
   psql postgres -c "ALTER DATABASE $oldname RENAME TO freeside"
-  echo "Restarting services."
-  sudo service apache2 restart
-  sudo service freeside restart
 fi
 
 echo "Done."

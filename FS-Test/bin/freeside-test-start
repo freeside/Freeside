@@ -4,12 +4,15 @@ VERSION='5.0.1'
 
 set -ae
 
+# get the parent directory of bin/(this script)
+testroot=$( dirname ${BASH_SOURCE[0]} )
+testroot=$( cd $testroot; cd ..; pwd )
+
 echo "Stopping services."
 sudo service freeside stop
 sudo service apache2 stop
 
 newname=freeside_`date +%Y%m%d`
-sharedir=$(perl -MFS::Test -e "print FS::Test::share_dir()")
 
 # get company_name from existing DB, strip whitespace
 # (if there is no existing DB, continue anyway)
@@ -34,7 +37,7 @@ fi
 if [ $createdb = YES ]; then
   echo "Creating new database from stock schema."
   createdb --owner=freeside freeside
-  sudo -u freeside psql freeside -q -f $sharedir/test.sql > /dev/null
+  sudo -u freeside psql freeside -q -f $testroot/share/test.sql > /dev/null
 fi
 
 newtime=$(sudo -u freeside \
