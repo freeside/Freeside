@@ -3,7 +3,7 @@ use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
 use vars qw( $DEBUG );
-use Carp qw( confess );
+use Carp qw( carp confess );
 use Business::CreditCard 0.28;
 use FS::Record qw(dbh qsearch qsearchs);
 
@@ -500,6 +500,19 @@ sub unbatch_and_delete {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+=item cust_bill
+
+Returns the invoice linked to this batched payment. Deprecated, will be 
+removed.
+
+=cut
+
+sub cust_bill {
+  carp "FS::cust_pay_batch->cust_bill is deprecated";
+  my $self = shift;
+  $self->invnum ? qsearchs('cust_bill', { invnum => $self->invnum }) : '';
 }
 
 =back

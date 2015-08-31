@@ -297,13 +297,13 @@ sub _delete {
 
   foreach my $table (qw(
     cust_credit_bill
-    cust_bill_pay
-    cust_pay_batch
     cust_bill_pay_batch
+    cust_bill_pay
     cust_bill_batch
     cust_bill_pkg
   )) {
     #cust_event # problematic
+    #cust_pay_batch # unnecessary
 
     foreach my $linked ( $self->$table() ) {
       my $error = $linked->delete;
@@ -2913,6 +2913,18 @@ sub call_details {
   ( $header, grep { $_ ne $header } @details );
 }
 
+=item cust_pay_batch
+
+Returns all L<FS::cust_pay_batch> records linked to this invoice. Deprecated,
+will be removed.
+
+=cut
+
+sub cust_pay_batch {
+  carp "FS::cust_bill->cust_pay_batch is deprecated";
+  my $self = shift;
+  qsearch('cust_pay_batch', { 'invnum' => $self->invnum });
+}
 
 =back
 
