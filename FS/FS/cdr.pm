@@ -1463,7 +1463,7 @@ as keys (for use with part_pkg::voip_cdr) and "pretty" format names as values.
 sub invoice_formats {
   map { ($_ => $export_names{$_}->{'name'}) }
     grep { $export_names{$_}->{'invoice_header'} }
-    keys %export_names;
+    sort keys %export_names;
 }
 
 =item invoice_header FORMAT
