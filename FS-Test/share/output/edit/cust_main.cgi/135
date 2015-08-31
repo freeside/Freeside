@@ -2168,6 +2168,11 @@ myMenu63.width = 256;
   >United States (US)
 
 
+  <OPTION VALUE="SS"
+          
+  > (SS)
+
+
   <OPTION VALUE="AF"
           
   >Afghanistan (AF)
@@ -2305,7 +2310,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="BQ"
           
-  >Bonaire, Sint Eustatius and Saba (BQ)
+  >Bonaire, Saint Eustatius and Saba (BQ)
 
 
   <OPTION VALUE="BA"
@@ -2425,7 +2430,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="CD"
           
-  >Congo (The Democratic Republic of the) (CD)
+  >Congo, The Democratic Republic of the (CD)
 
 
   <OPTION VALUE="CK"
@@ -2525,7 +2530,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="FK"
           
-  >Falkland Islands (The) [Malvinas] (FK)
+  >Falkland Islands (Malvinas) (FK)
 
 
   <OPTION VALUE="FO"
@@ -2650,12 +2655,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="HM"
           
-  >Heard Island and McDonald Islands (HM)
+  >Heard Island and Mcdonald Islands (HM)
 
 
   <OPTION VALUE="VA"
           
-  >Holy See (The) [Vatican City State] (VA)
+  >Holy See (Vatican City State) (VA)
 
 
   <OPTION VALUE="HN"
@@ -2690,7 +2695,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="IR"
           
-  >Iran, The Islamic Republic of (IR)
+  >Iran, Islamic Republic of (IR)
 
 
   <OPTION VALUE="IQ"
@@ -2755,12 +2760,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="KP"
           
-  >Korea, The Democratic People's Republic of (KP)
+  >Korea, Democratic People's Republic of (KP)
 
 
   <OPTION VALUE="KR"
           
-  >Korea, The Republic of (KR)
+  >Korea, Republic of (KR)
 
 
   <OPTION VALUE="KW"
@@ -2800,7 +2805,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="LY"
           
-  >Libya (LY)
+  >Libyan Arab Jamahiriya (LY)
 
 
   <OPTION VALUE="LI"
@@ -2825,7 +2830,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="MK"
           
-  >Macedonia, The former Yugoslav Republic of (MK)
+  >Macedonia, The Former Yugoslav Republic of (MK)
 
 
   <OPTION VALUE="MG"
@@ -2890,12 +2895,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="FM"
           
-  >Micronesia, The Federated States of (FM)
+  >Micronesia, Federated States of (FM)
 
 
   <OPTION VALUE="MD"
           
-  >Moldova, The Republic of (MD)
+  >Moldova, Republic of (MD)
 
 
   <OPTION VALUE="MC"
@@ -3015,7 +3020,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="PS"
           
-  >Palestine, State of (PS)
+  >Palestinian Territory, Occupied (PS)
 
 
   <OPTION VALUE="PA"
@@ -3203,11 +3208,6 @@ myMenu63.width = 256;
   >South Georgia and the South Sandwich Islands (GS)
 
 
-  <OPTION VALUE="SS"
-          
-  >South Sudan (SS)
-
-
   <OPTION VALUE="ES"
           
   >Spain (ES)
@@ -3255,7 +3255,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="TW"
           
-  >Taiwan (Province of China) (TW)
+  >Taiwan, Province of China (TW)
 
 
   <OPTION VALUE="TJ"
@@ -3365,7 +3365,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="VE"
           
-  >Venezuela, Bolivarian Republic of  (VE)
+  >Venezuela, Bolivarian Republic of (VE)
 
 
   <OPTION VALUE="VN"
@@ -3375,12 +3375,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="VG"
           
-  >Virgin Islands (British) (VG)
+  >Virgin Islands, British (VG)
 
 
   <OPTION VALUE="VI"
           
-  >Virgin Islands (U.S.) (VI)
+  >Virgin Islands, U.S. (VI)
 
 
   <OPTION VALUE="WF"
@@ -4349,6 +4349,11 @@ myMenu63.width = 256;
   >United States (US)
 
 
+  <OPTION VALUE="SS"
+          
+  > (SS)
+
+
   <OPTION VALUE="AF"
           
   >Afghanistan (AF)
@@ -4486,7 +4491,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="BQ"
           
-  >Bonaire, Sint Eustatius and Saba (BQ)
+  >Bonaire, Saint Eustatius and Saba (BQ)
 
 
   <OPTION VALUE="BA"
@@ -4606,7 +4611,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="CD"
           
-  >Congo (The Democratic Republic of the) (CD)
+  >Congo, The Democratic Republic of the (CD)
 
 
   <OPTION VALUE="CK"
@@ -4706,7 +4711,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="FK"
           
-  >Falkland Islands (The) [Malvinas] (FK)
+  >Falkland Islands (Malvinas) (FK)
 
 
   <OPTION VALUE="FO"
@@ -4831,12 +4836,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="HM"
           
-  >Heard Island and McDonald Islands (HM)
+  >Heard Island and Mcdonald Islands (HM)
 
 
   <OPTION VALUE="VA"
           
-  >Holy See (The) [Vatican City State] (VA)
+  >Holy See (Vatican City State) (VA)
 
 
   <OPTION VALUE="HN"
@@ -4871,7 +4876,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="IR"
           
-  >Iran, The Islamic Republic of (IR)
+  >Iran, Islamic Republic of (IR)
 
 
   <OPTION VALUE="IQ"
@@ -4936,12 +4941,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="KP"
           
-  >Korea, The Democratic People's Republic of (KP)
+  >Korea, Democratic People's Republic of (KP)
 
 
   <OPTION VALUE="KR"
           
-  >Korea, The Republic of (KR)
+  >Korea, Republic of (KR)
 
 
   <OPTION VALUE="KW"
@@ -4981,7 +4986,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="LY"
           
-  >Libya (LY)
+  >Libyan Arab Jamahiriya (LY)
 
 
   <OPTION VALUE="LI"
@@ -5006,7 +5011,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="MK"
           
-  >Macedonia, The former Yugoslav Republic of (MK)
+  >Macedonia, The Former Yugoslav Republic of (MK)
 
 
   <OPTION VALUE="MG"
@@ -5071,12 +5076,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="FM"
           
-  >Micronesia, The Federated States of (FM)
+  >Micronesia, Federated States of (FM)
 
 
   <OPTION VALUE="MD"
           
-  >Moldova, The Republic of (MD)
+  >Moldova, Republic of (MD)
 
 
   <OPTION VALUE="MC"
@@ -5196,7 +5201,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="PS"
           
-  >Palestine, State of (PS)
+  >Palestinian Territory, Occupied (PS)
 
 
   <OPTION VALUE="PA"
@@ -5384,11 +5389,6 @@ myMenu63.width = 256;
   >South Georgia and the South Sandwich Islands (GS)
 
 
-  <OPTION VALUE="SS"
-          
-  >South Sudan (SS)
-
-
   <OPTION VALUE="ES"
           
   >Spain (ES)
@@ -5436,7 +5436,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="TW"
           
-  >Taiwan (Province of China) (TW)
+  >Taiwan, Province of China (TW)
 
 
   <OPTION VALUE="TJ"
@@ -5546,7 +5546,7 @@ myMenu63.width = 256;
 
   <OPTION VALUE="VE"
           
-  >Venezuela, Bolivarian Republic of  (VE)
+  >Venezuela, Bolivarian Republic of (VE)
 
 
   <OPTION VALUE="VN"
@@ -5556,12 +5556,12 @@ myMenu63.width = 256;
 
   <OPTION VALUE="VG"
           
-  >Virgin Islands (British) (VG)
+  >Virgin Islands, British (VG)
 
 
   <OPTION VALUE="VI"
           
-  >Virgin Islands (U.S.) (VI)
+  >Virgin Islands, U.S. (VI)
 
 
   <OPTION VALUE="WF"
