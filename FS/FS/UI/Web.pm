@@ -623,6 +623,7 @@ sub random_id {
   if (!defined $NO_RANDOM_IDS) {
     my $conf = FS::Conf->new;
     $NO_RANDOM_IDS = $conf->exists('no_random_ids') ? 1 : 0;
+    warn "TEST MODE--RANDOM ID NUMBERS DISABLED\n" if $NO_RANDOM_IDS;
   }
   if ( $NO_RANDOM_IDS ) {
     if ( $digits > 0 ) {
