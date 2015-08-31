@@ -537,6 +537,7 @@ push @fields,
                                 },
                               ];
                             }
+                        sort
                         grep { $options{$_} =~ /\S/ } 
                         grep { $_ !~ /^(setup|recur)_fee$/ 
                                and $_ !~ /^report_option_\d+$/ }
