@@ -4,14 +4,15 @@ use 5.006;
 use strict;
 use warnings FATAL => 'all';
 
-use File::ShareDir 'dist_dir';
+#use File::ShareDir 'dist_dir';
 use WWW::Mechanize;
 use File::chdir;
 use URI;
 use File::Slurp qw(write_file);
 use Class::Accessor 'antlers';
+use File::Spec;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -29,7 +30,11 @@ database image, the test plan, and probably other stuff.
 =cut
 
 sub share_dir {
-  dist_dir('FS-Test')
+#  dist_dir('FS-Test')
+#  we no longer install this anywhere
+  my @dirs = File::Spec->splitdir(File::Spec->rel2abs(__FILE__));
+  splice @dirs, -3; # lib/FS/Test.pm
+  File::Spec->catdir( @dirs, 'share' );
 }
 
 =item new OPTIONS
