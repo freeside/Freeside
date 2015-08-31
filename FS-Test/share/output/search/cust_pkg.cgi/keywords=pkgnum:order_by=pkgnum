@@ -618,7 +618,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -1274,7 +1274,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?1">example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?1">example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -1375,7 +1375,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?2">berta@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?2">berta@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -1476,7 +1476,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?3">IP:10.212.50.247, MAC:0000911C4815</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?3">IP:10.212.50.247, MAC:0000911C4815</A></td></tr></table></TD>
 
 
     </TR>
@@ -1577,7 +1577,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?4">waters-turner.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?4">waters-turner.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -1678,7 +1678,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?5">IP:10.127.31.117, MAC:0000A3E013D7</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?5">IP:10.127.31.117, MAC:0000A3E013D7</A></td></tr></table></TD>
 
 
     </TR>
@@ -1779,7 +1779,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?6">ziemann-dietrich.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?6">ziemann-dietrich.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -1880,7 +1880,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?7">19671718037</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?7">19671718037</A></td></tr></table></TD>
 
 
     </TR>
@@ -1981,7 +1981,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?8">watsica-llc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?8">watsica-llc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -2082,7 +2082,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?9">337448915280026</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?9">337448915280026</A></td></tr></table></TD>
 
 
     </TR>
@@ -2183,7 +2183,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?10">sherwood@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?10">sherwood@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -2284,7 +2284,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?11">7941182146</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?11">7941182146</A></td></tr></table></TD>
 
 
     </TR>
@@ -2385,7 +2385,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?12">rashad@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?12">rashad@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -2486,7 +2486,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?13">IP:10.4.160.230, MAC:0000D12765F4</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?13">IP:10.4.160.230, MAC:0000D12765F4</A></td></tr></table></TD>
 
 
     </TR>
@@ -2587,7 +2587,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?14">doris@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?14">doris@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -2688,7 +2688,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?15">IP:10.203.139.97, MAC:0000FA2C8FB1</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?15">IP:10.203.139.97, MAC:0000FA2C8FB1</A></td></tr></table></TD>
 
 
     </TR>
@@ -2789,7 +2789,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?16">hane-llc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?16">hane-llc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -2890,7 +2890,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?17">IP:10.75.143.4, MAC:0000EE773AA3</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?17">IP:10.75.143.4, MAC:0000EE773AA3</A></td></tr></table></TD>
 
 
     </TR>
@@ -2991,7 +2991,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?18">will-schmitt-and-buckridge.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?18">will-schmitt-and-buckridge.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -3092,7 +3092,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?19">507789172836615</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?19">507789172836615</A></td></tr></table></TD>
 
 
     </TR>
@@ -3193,7 +3193,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?20">hagenes-mclaughlin-and-fadel.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?20">hagenes-mclaughlin-and-fadel.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -3294,7 +3294,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?21">402545251883238</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?21">402545251883238</A></td></tr></table></TD>
 
 
     </TR>
@@ -3395,7 +3395,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?22">hilario@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?22">hilario@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -3496,7 +3496,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?23">5204979036</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?23">5204979036</A></td></tr></table></TD>
 
 
     </TR>
@@ -3597,7 +3597,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?24">lennie@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?24">lennie@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -3698,7 +3698,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?25">IP:10.2.159.93, MAC:0000BEEA3257</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?25">IP:10.2.159.93, MAC:0000BEEA3257</A></td></tr></table></TD>
 
 
     </TR>
@@ -3799,7 +3799,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?26">travis@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?26">travis@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -3900,7 +3900,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?27">IP:10.147.177.86, MAC:0000E5156362</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?27">IP:10.147.177.86, MAC:0000E5156362</A></td></tr></table></TD>
 
 
     </TR>
@@ -4001,7 +4001,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?28">watsica-sauer-and-braun.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?28">watsica-sauer-and-braun.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -4102,7 +4102,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?29">IP:10.61.84.169, MAC:000069394AF2</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?29">IP:10.61.84.169, MAC:000069394AF2</A></td></tr></table></TD>
 
 
     </TR>
@@ -4203,7 +4203,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?30">greenholt-parisian.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?30">greenholt-parisian.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -4304,7 +4304,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?31">2103459718</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?31">2103459718</A></td></tr></table></TD>
 
 
     </TR>
@@ -4405,7 +4405,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?32">corkery-hackett-and-franecki.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?32">corkery-hackett-and-franecki.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -4506,7 +4506,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?33">14745441565</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?33">14745441565</A></td></tr></table></TD>
 
 
     </TR>
@@ -4607,7 +4607,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?34">william@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?34">william@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -4708,7 +4708,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?35">4609716945803</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?35">4609716945803</A></td></tr></table></TD>
 
 
     </TR>
@@ -4809,7 +4809,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?36">richmond@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?36">richmond@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -4910,7 +4910,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?37">IP:10.229.63.194, MAC:00004D3E8513</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?37">IP:10.229.63.194, MAC:00004D3E8513</A></td></tr></table></TD>
 
 
     </TR>
@@ -5011,7 +5011,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?38">samir@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?38">samir@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -5112,7 +5112,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?39">IP:10.188.48.84, MAC:000036BEDE13</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?39">IP:10.188.48.84, MAC:000036BEDE13</A></td></tr></table></TD>
 
 
     </TR>
@@ -5213,7 +5213,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?40">ullrich-kilback.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?40">ullrich-kilback.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -5314,7 +5314,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?41">IP:10.225.235.123, MAC:00003C2A1764</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?41">IP:10.225.235.123, MAC:00003C2A1764</A></td></tr></table></TD>
 
 
     </TR>
@@ -5415,7 +5415,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?42">crooks-collins.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?42">crooks-collins.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -5516,7 +5516,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?43">7315522562</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?43">7315522562</A></td></tr></table></TD>
 
 
     </TR>
@@ -5617,7 +5617,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?44">kuhn-llc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?44">kuhn-llc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -5718,7 +5718,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?45">5473351513</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?45">5473351513</A></td></tr></table></TD>
 
 
     </TR>
@@ -5819,7 +5819,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?46">walton@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?46">walton@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -5920,7 +5920,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?47">580124349433539</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?47">580124349433539</A></td></tr></table></TD>
 
 
     </TR>
@@ -6021,7 +6021,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?48">nigel@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?48">nigel@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -6122,7 +6122,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?49">IP:10.189.193.93, MAC:000043D6F9E3</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?49">IP:10.189.193.93, MAC:000043D6F9E3</A></td></tr></table></TD>
 
 
     </TR>
@@ -6223,7 +6223,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?50">sammy@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?50">sammy@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -6324,7 +6324,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?51">IP:10.44.211.87, MAC:00008BCF4552</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?51">IP:10.44.211.87, MAC:00008BCF4552</A></td></tr></table></TD>
 
 
     </TR>
@@ -6425,7 +6425,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?52">hansen-kilback.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?52">hansen-kilback.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -6526,7 +6526,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?53">IP:10.116.203.5, MAC:00005AFAF158</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?53">IP:10.116.203.5, MAC:00005AFAF158</A></td></tr></table></TD>
 
 
     </TR>
@@ -6627,7 +6627,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?54">klocko-inc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?54">klocko-inc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -6728,7 +6728,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?55">47925781188566</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?55">47925781188566</A></td></tr></table></TD>
 
 
     </TR>
@@ -6829,7 +6829,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?56">ward-murphy-and-wisozk.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?56">ward-murphy-and-wisozk.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -6930,7 +6930,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?57">215984572910627</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?57">215984572910627</A></td></tr></table></TD>
 
 
     </TR>
@@ -7031,7 +7031,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?58">linwood@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?58">linwood@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -7132,7 +7132,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?59">5055483796977</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?59">5055483796977</A></td></tr></table></TD>
 
 
     </TR>
@@ -7233,7 +7233,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?60">esperanza@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?60">esperanza@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -7334,7 +7334,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?61">IP:10.178.209.2, MAC:00009245E1CE</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?61">IP:10.178.209.2, MAC:00009245E1CE</A></td></tr></table></TD>
 
 
     </TR>
@@ -7435,7 +7435,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?62">branson@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?62">branson@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -7536,7 +7536,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?63">IP:10.86.8.116, MAC:00009D2D385F</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?63">IP:10.86.8.116, MAC:00009D2D385F</A></td></tr></table></TD>
 
 
     </TR>
@@ -7637,7 +7637,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?64">okeefe-stracke.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?64">okeefe-stracke.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -7738,7 +7738,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?65">IP:10.166.5.138, MAC:000020A5C9AB</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?65">IP:10.166.5.138, MAC:000020A5C9AB</A></td></tr></table></TD>
 
 
     </TR>
@@ -7839,7 +7839,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?66">murazik-padberg-and-dibbert.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?66">murazik-padberg-and-dibbert.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -7940,7 +7940,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?67">510207687452209</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?67">510207687452209</A></td></tr></table></TD>
 
 
     </TR>
@@ -8041,7 +8041,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?68">rodriguez-llc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?68">rodriguez-llc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -8142,7 +8142,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?69">19732087174151</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?69">19732087174151</A></td></tr></table></TD>
 
 
     </TR>
@@ -8243,7 +8243,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?70">victor@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?70">victor@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -8344,7 +8344,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?71">99158298078002</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?71">99158298078002</A></td></tr></table></TD>
 
 
     </TR>
@@ -8445,7 +8445,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?72">ryleigh@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?72">ryleigh@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -8546,7 +8546,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?73">IP:10.223.20.110, MAC:0000B618A255</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?73">IP:10.223.20.110, MAC:0000B618A255</A></td></tr></table></TD>
 
 
     </TR>
@@ -8647,7 +8647,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?74">citlalli@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?74">citlalli@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -8748,7 +8748,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?75">IP:10.181.162.31, MAC:0000A7F64E79</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?75">IP:10.181.162.31, MAC:0000A7F64E79</A></td></tr></table></TD>
 
 
     </TR>
@@ -8849,7 +8849,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?76">gorczany-weimann.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?76">gorczany-weimann.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -8950,7 +8950,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?77">IP:10.30.204.50, MAC:000097EB747A</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?77">IP:10.30.204.50, MAC:000097EB747A</A></td></tr></table></TD>
 
 
     </TR>
@@ -9051,7 +9051,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?78">ward-buckridge.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?78">ward-buckridge.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -9152,7 +9152,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?79">8935173249</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?79">8935173249</A></td></tr></table></TD>
 
 
     </TR>
@@ -9253,7 +9253,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?80">treutel-llc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?80">treutel-llc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -9354,7 +9354,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?81">152553597965486</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?81">152553597965486</A></td></tr></table></TD>
 
 
     </TR>
@@ -9455,7 +9455,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?82">lenora@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?82">lenora@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -9556,7 +9556,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?83">114180154577357</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?83">114180154577357</A></td></tr></table></TD>
 
 
     </TR>
@@ -9657,7 +9657,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?84">nyasia@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?84">nyasia@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -9758,7 +9758,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?85">IP:10.171.182.118, MAC:00003EE1A6D7</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?85">IP:10.171.182.118, MAC:00003EE1A6D7</A></td></tr></table></TD>
 
 
     </TR>
@@ -9859,7 +9859,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?86">alden@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?86">alden@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -9960,7 +9960,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?87">IP:10.79.94.0, MAC:00008A11465E</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?87">IP:10.79.94.0, MAC:00008A11465E</A></td></tr></table></TD>
 
 
     </TR>
@@ -10061,7 +10061,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?88">baumbach-llc.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?88">baumbach-llc.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -10162,7 +10162,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?89">IP:10.74.128.210, MAC:00009E471138</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?89">IP:10.74.128.210, MAC:00009E471138</A></td></tr></table></TD>
 
 
     </TR>
@@ -10263,7 +10263,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?90">kessler-larson-and-bauch.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?90">kessler-larson-and-bauch.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -10364,7 +10364,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?91">1535633738761521</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?91">1535633738761521</A></td></tr></table></TD>
 
 
     </TR>
@@ -10465,7 +10465,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?92">moen-kovacek.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?92">moen-kovacek.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -10566,7 +10566,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?93">7091741436337</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?93">7091741436337</A></td></tr></table></TD>
 
 
     </TR>
@@ -10667,7 +10667,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?94">sally@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?94">sally@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -10768,7 +10768,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?95">1076194311</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?95">1076194311</A></td></tr></table></TD>
 
 
     </TR>
@@ -10869,7 +10869,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?96">drew@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?96">drew@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -10970,7 +10970,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?97">IP:10.72.141.97, MAC:000086A32C19</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?97">IP:10.72.141.97, MAC:000086A32C19</A></td></tr></table></TD>
 
 
     </TR>
@@ -11071,7 +11071,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_acct.cgi?98">nils@example.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_acct:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?98">nils@example.com</A></td></tr></table></TD>
 
 
     </TR>
@@ -11172,7 +11172,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?99">IP:10.229.201.34, MAC:0000494CF06C</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?99">IP:10.229.201.34, MAC:0000494CF06C</A></td></tr></table></TD>
 
 
     </TR>
@@ -11273,7 +11273,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?100">marvin-and-sons.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?100">marvin-and-sons.com</A></td></tr></table></TD>
 
 
     </TR>

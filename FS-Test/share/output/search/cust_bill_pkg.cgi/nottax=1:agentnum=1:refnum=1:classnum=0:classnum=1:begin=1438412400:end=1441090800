@@ -618,7 +618,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -988,7 +988,7 @@ myMenu68.width = 256;
         
 
     >
-      Paid
+      <A HREF="http://localhost/freeside/search/cust_bill_pkg.cgi?nottax=1;agentnum=1;refnum=1;classnum=0;classnum=1;begin=1438412400;end=1441090800;_type=html;order_by=pay_amount">Paid</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -997,7 +997,7 @@ myMenu68.width = 256;
         
 
     >
-      Credited
+      <A HREF="http://localhost/freeside/search/cust_bill_pkg.cgi?nottax=1;agentnum=1;refnum=1;classnum=0;classnum=1;begin=1438412400;end=1441090800;_type=html;order_by=credit_amount">Credited</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
