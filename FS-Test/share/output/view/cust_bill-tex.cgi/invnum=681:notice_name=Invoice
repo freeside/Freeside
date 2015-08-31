@@ -81,7 +81,7 @@
 \begin{tabular}{ll}
 \returninset
 \begin{tabular}{ll}
-  \makebox{ \includegraphics{/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cust_bill.681.aSksR2dX.eps}} & 
+  \makebox{ \includegraphics{/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cust_bill.681.XoeuvJBe.eps}} & 
   \begin{minipage}[b]{5.5cm}
 Freeside Test 5.0.1\\*
 1234 Example Lane\\*
@@ -142,7 +142,7 @@ Freeside Test 5.0.1
     \returninset
     \makebox{
       \begin{tabular}{ll}
-        \includegraphics{/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cust_bill.681.aSksR2dX.eps} & 
+        \includegraphics{/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cust_bill.681.XoeuvJBe.eps} & 
         \begin{minipage}[b]{5.5cm}
 Freeside Test 5.0.1\\*
 1234 Example Lane\\*
@@ -152,7 +152,7 @@ Exampleton, CA~~54321\\*
     }
   }
   { % ... pages
-    %\includegraphics{/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cust_bill.681.aSksR2dX.eps}	% Uncomment if you want the logo on all pages.
+    %\includegraphics{/usr/local/etc/freeside/cache.DBI:Pg:dbname=freeside/cust_bill.681.XoeuvJBe.eps}	% Uncomment if you want the logo on all pages.
   }
 }
 

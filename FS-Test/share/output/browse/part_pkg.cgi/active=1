@@ -618,7 +618,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -1131,7 +1131,7 @@ function filter_change() {  window.location = 'http://localhost/freeside/browse/
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr></table></TD>
 
 
 
@@ -1185,7 +1185,7 @@ function filter_change() {  window.location = 'http://localhost/freeside/browse/
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr></table></TD>
 
 
 

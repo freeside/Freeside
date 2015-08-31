@@ -617,7 +617,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -2365,6 +2365,216 @@ function clearhint_search_cust_svc(obj, str) {
 </TR>
 
 
+
+
+    </TABLE>
+  </TD>
+
+
+  </TR>
+
+    
+  <!--pkgnum: 602-->
+  <TR CLASS="row1">
+    <TD CLASS="inv package" BGCOLOR="" VALIGN="top">
+  
+  <TABLE CLASS="inv package"> 
+    <TR>
+      <TD COLSPAN=2>
+        
+        <A NAME="cust_pkg602"
+           ID  ="cust_pkg602"
+        ><B>Test one-time charge</B></A>
+         - 
+        $100.00 - $100.00 one-time
+      </TD>
+    </TR>
+
+
+    <TR>
+      <TD COLSPAN=2>
+        <FONT SIZE=-1>
+
+                (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/edit/quick-charge.html?change_pkgnum=602;pkgnum=602', 690, 440, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Modify package 602', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Modify&nbsp;one-time&nbsp;charge</A>&nbsp;)
+              (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/edit/cust_pkg_discount.html?pkgnum=602', 616, 336, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Discount package 602', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Discount</A>&nbsp;)
+          <BR>
+
+        </FONT>
+      </TD>
+    </TR>
+
+
+    <TR>
+      <TD COLSPAN=2>
+
+
+
+      </TD>
+    </TR>
+
+
+    <TR>
+      <TD COLSPAN=2>
+
+
+        <FONT SIZE="-1">
+          (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/edit/cust_pkg_salesnum.html?;pkgnum=602', 390, 220, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Change package 602', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Change&nbsp;sales&nbsp;person</A>&nbsp;)
+        </FONT>
+
+      </TD>
+    </TR>
+
+
+
+      <TR>
+
+          <TD>
+              <FONT SIZE="-1">
+                (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/edit/cust_pkg_detail.html?pkgnum=602;detailtype=I', 763, 336, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Add invoice details', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Add&nbsp;invoice&nbsp;details</A>&nbsp;)
+              </FONT>
+          </TD>
+
+          <TD>
+              <FONT SIZE="-1">
+                (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/edit/cust_pkg_detail.html?pkgnum=602;detailtype=C', 763, 336, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Add comments', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Add&nbsp;comments</A>&nbsp;)
+              </FONT>
+          </TD>
+
+      </TR>
+
+
+  </TABLE>
+
+
+  
+</TD>
+
+
+    <TD CLASS="inv" BGCOLOR="" VALIGN="top">
+  <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+
+
+    <TR><TD WIDTH="" ALIGN="right">Ordered&nbsp;</TD><TD align="left"><B>Mar</B></TD><TD align="right"><B>&nbsp;2nd,</B></TD><TD align="right"><B>&nbsp;2016</B></TD></TR>
+
+
+          <TR><TD COLSPAN=4 >One-time charge</TD></TR>
+
+          <TR><TD WIDTH="" ALIGN="right">Billed&nbsp;</TD><TD align="left"><B>Mar</B></TD><TD align="right"><B>&nbsp;2nd,</B></TD><TD align="right"><B>&nbsp;2016</B></TD></TR>
+
+          
+
+          
+
+          
+
+          
+
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+
+  </TABLE>
+</TD>
+
+    <TD CLASS="inv" BGCOLOR="" WIDTH="20%" VALIGN="top">
+          <FONT SIZE=-1>
+      (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/misc/change_pkg_contact.html?pkgnum=602', 616, 192, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Add contact package 602', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Add&nbsp;contact</A>&nbsp;)
+    </FONT>
+    <BR>
+
+              <DIV STYLE="font-style: italic; font-size: small">
+
+      Default service location<BR>24866 VonRueden Roads<BR>Floor 94 X<BR>Crown Point CT 59629-7714
+
+          <BR>
+          <FONT SIZE=-1>
+          38.5000000, -121.5000000
+          
+
+<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/view/map.html?name=Oswald%20Schowalter%3A%20Test%20one-time%20charge;lat=38.5000000;lon=-121.5000000', 763, 575, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Oswald Schowalter: Test one-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>map</A>
+
+  <A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/view/directions.html?origin=1234%20Example%20Lane%2CExampleton%2C%20CA%20%2054321;name=Oswald%20Schowalter%3A%20Test%20one-time%20charge;lat=38.5000000;lon=-121.5000000', 763, 575, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Oswald Schowalter: Test one-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>directions</A>
+
+<A HREF="http://localhost/freeside/view/kml.cgi?name=Oswald%20Schowalter%3A%20Test%20one-time%20charge;lat=38.5000000;lon=-121.5000000">earth</A>
+
+
+          </FONT>
+
+      </DIV>
+
+  <BR>
+  <FONT SIZE=-1>
+      (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/misc/change_pkg.cgi?locationnum=-1;pkgpart=6;address1=;address2=;city=;county=;state=;zip=;country=;pkgnum=602', 960, 490, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Change package 602', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Change&nbsp;location</A>&nbsp;)
+        (&nbsp;<A HREF="javascript:void(0);"
+   onClick="overlib( OLiframeContent('http://localhost/freeside/edit/cust_location.cgi?locationnum=3', 700, 355, 'popup-0000000000-0000-000000000.000000', 0, 'auto' ), CAPTION, 'Edit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8', CLOSETEXT, 'Close'); return false;"
+   
+   
+   
+>Edit&nbsp;location</A>&nbsp;)
+  </FONT>
+
+    </TD>
+    
+  <TD CLASS="inv" BGCOLOR="">
+    <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=2 WIDTH="100%">
+    <SCRIPT TYPE="text/javascript">
+function clearhint_search_cust_svc(obj, str) {
+  if (obj.value == str) obj.value = '';
+}
+    </SCRIPT>
 
 
     </TABLE>

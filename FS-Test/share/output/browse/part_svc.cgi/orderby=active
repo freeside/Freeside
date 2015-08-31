@@ -617,7 +617,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -962,7 +962,7 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">sec_phrase</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">blocknum</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee"></TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
@@ -974,56 +974,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">popnum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Access number</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">sectornum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Tower sector</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">uid</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">UID</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">gid</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">GID</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">finger</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Real name</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">cf_privatekey</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee"></TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1036,66 +988,6 @@ function part_export_areyousure(href) {
      </TR><TR>
      <TD CLASS="grid" BGCOLOR="#eeeeee">dir</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Home directory</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">shell</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Shell</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">quota</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Quota</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">slipip</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">IP address</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">routernum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee"></TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">blocknum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee"></TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1119,6 +1011,30 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">finger</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Real name</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">gid</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">GID</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
      <TD CLASS="grid" BGCOLOR="#eeeeee">pbxsvc</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">PBX</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
@@ -1131,8 +1047,92 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">cf_privatekey</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">popnum</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Access number</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">quota</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Quota</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">routernum</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee"></TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">sec_phrase</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee"></TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">sectornum</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Tower sector</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">shell</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Shell</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">slipip</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">IP address</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">uid</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">UID</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1188,8 +1188,20 @@ function part_export_areyousure(href) {
 
 
      
-     <TD CLASS="grid" BGCOLOR="#ffffff">suffix</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">au_eligibility_type</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">AU Eligibility Type</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">au_registrant_name</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">AU Registrant Name</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1201,66 +1213,6 @@ function part_export_areyousure(href) {
 
      </TR><TR>
      <TD CLASS="grid" BGCOLOR="#ffffff">catchall</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">quota</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Quota</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">registrarnum</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">registrarkey</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">setup_date</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">renewal_interval</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
@@ -1284,8 +1236,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">au_registrant_name</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">AU Registrant Name</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">quota</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Quota</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1296,8 +1248,56 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">au_eligibility_type</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">AU Eligibility Type</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">registrarkey</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">registrarnum</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">renewal_interval</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">setup_date</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">suffix</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff"></TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1341,8 +1341,8 @@ function part_export_areyousure(href) {
 
 
      
-     <TD CLASS="grid" BGCOLOR="#eeeeee">description</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Descriptive label</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">altitude</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Altitude</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1353,8 +1353,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">routernum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Router/block</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">authkey</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Authentication key</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1377,44 +1377,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">sectornum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Tower/sector</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">speed_up</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Upload speed (Kbps)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            1024
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">speed_down</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Download speed (Kbps)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            1024
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">authkey</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Authentication key</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">description</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Descriptive label</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1449,30 +1413,6 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">altitude</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Altitude</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">vlan_profile</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">VLAN profile</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">
-     </TD>
-
-     </TR><TR>
      <TD CLASS="grid" BGCOLOR="#eeeeee">performance_profile</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Peformance Profile</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
@@ -1497,8 +1437,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">radio_serialnum</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Radio Serial Number</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">poe_location</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">POE Location</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1521,8 +1461,20 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">poe_location</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">POE Location</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">radio_serialnum</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Radio Serial Number</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">routernum</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Router/block</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1545,8 +1497,20 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">suid</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">SUID</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">sectornum</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Tower/sector</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">serviceid</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Torrus serviceid</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1569,8 +1533,44 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">serviceid</TD>
-     <TD CLASS="grid" BGCOLOR="#eeeeee">Torrus serviceid</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">speed_down</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Download speed (Kbps)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            1024
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">speed_up</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Upload speed (Kbps)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            1024
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">suid</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">SUID</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">vlan_profile</TD>
+     <TD CLASS="grid" BGCOLOR="#eeeeee">VLAN profile</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#eeeeee">
 
@@ -1614,8 +1614,8 @@ function part_export_areyousure(href) {
 
 
      
-     <TD CLASS="grid" BGCOLOR="#ffffff">countrycode</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Country code</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">circuit_svcnum</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Circuit</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1626,36 +1626,12 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">sim_imsi</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">IMSI</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">countrycode</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Country code</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">phone_name</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Name</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">pbxsvc</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">PBX</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
+            1
 
      </TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
@@ -1674,8 +1650,20 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">forwarddst</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Forward Destination</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">e911_class</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">E911 Service Class</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">e911_type</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">E911 Service Type</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1698,32 +1686,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">lnp_status</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">LNP Status</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">portable</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Portable?</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-
-            
-
-     </TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">
-     </TD>
-
-     </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">lrn</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">LRN</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">forwarddst</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Forward Destination</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1794,8 +1758,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">sms_carrierid</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">SMS Carrier</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">lnp_status</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">LNP Status</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1806,8 +1770,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">sms_account</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">SMS Carrier Account</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">lrn</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">LRN</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1830,8 +1794,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">e911_class</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">E911 Service Class</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">pbxsvc</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">PBX</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1842,8 +1806,8 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">e911_type</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">E911 Service Type</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">phone_name</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Name</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
@@ -1854,12 +1818,24 @@ function part_export_areyousure(href) {
      </TD>
 
      </TR><TR>
-     <TD CLASS="grid" BGCOLOR="#ffffff">circuit_svcnum</TD>
-     <TD CLASS="grid" BGCOLOR="#ffffff">Circuit</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">portable</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Portable?</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
-            1
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">sim_imsi</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">IMSI</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
 
      </TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
@@ -1868,6 +1844,30 @@ function part_export_areyousure(href) {
      </TR><TR>
      <TD CLASS="grid" BGCOLOR="#ffffff">sip_server</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">SIP Host</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">sms_account</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">SMS Carrier Account</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+
+            
+
+     </TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">
+     </TD>
+
+     </TR><TR>
+     <TD CLASS="grid" BGCOLOR="#ffffff">sms_carrierid</TD>
+     <TD CLASS="grid" BGCOLOR="#ffffff">SMS Carrier</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">Fixed (unchangeable)</TD>
      <TD CLASS="grid" BGCOLOR="#ffffff">
 
