@@ -37,7 +37,13 @@ sub tower_sector_sql {
       my $in = join(',', map { /^(\d+)$/ ? $1 : () } @$value);
       my @orwhere;
       push @orwhere, "tower_sector.$field IN ($in)" if $in;
-      push @orwhere, "tower_sector.$field IS NULL" if grep /^none$/, @$value;
+      if ( grep /^none$/, @$value ) {
+        # then allow this field to be null
+        push @orwhere, "tower_sector.$field IS NULL";
+        # and if this field is the sector, also allow the default sector
+        # on the tower
+        push @orwhere, "sectorname = '_default'" if $field eq 'sectornum';
+      }
       push @where, '( '.join(' OR ', @orwhere).' )';
     }
     elsif ( $value =~ /^(\d+)$/ ) {
