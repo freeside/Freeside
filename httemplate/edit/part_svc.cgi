@@ -235,7 +235,7 @@ unless ( $hashref->{svcpart} ) {
                   );
 }
 
-tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), @dbs;
+tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), sort @dbs;
 my $widget = new HTML::Widgets::SelectLayers(
   #'selected_layer' => $p_svcdb,
   'selected_layer' => $hashref->{svcdb} || 'svc_acct',
