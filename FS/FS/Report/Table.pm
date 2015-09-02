@@ -753,6 +753,33 @@ sub cust_bill_pkg_taxes {
   $self->scalar_sql($total_sql);
 }
 
+#all credits applied to matching pkg line items (ie not taxes or fees)
+
+sub cust_bill_pkg_credits {
+  my $self = shift;
+  my ($speriod, $eperiod, $agentnum, %opt) = @_;
+
+  $agentnum ||= $opt{'agentnum'};
+
+  my @where = (
+    '(cust_bill_pkg.pkgnum != 0 OR feepart IS NOT NULL)',
+    $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option(%opt),
+    $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
+    $self->with_refnum(%opt),
+    $self->with_cust_classnum(%opt)
+  );
+
+  my $total_sql = "SELECT COALESCE(SUM(cust_credit_bill_pkg.amount),0)
+    FROM cust_bill_pkg
+    $cust_bill_pkg_join
+    LEFT JOIN cust_credit_bill_pkg 
+      USING ( billpkgnum )
+    WHERE " . join(' AND ', grep $_, @where);
+
+  $self->scalar_sql($total_sql);
+}
+
 ##### package churn report #####
 
 =item active_pkg: The number of packages that were active at the start of 
