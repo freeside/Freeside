@@ -34,7 +34,7 @@ our @EXPORT_OK = qw(
   dbh fields hfields qsearch qsearchs dbdef jsearch
   str2time_sql str2time_sql_closing regexp_sql not_regexp_sql
   concat_sql group_concat_sql
-  midnight_sql
+  midnight_sql fk_methods_init
 );
 
 our $DEBUG = 0;
@@ -82,9 +82,7 @@ FS::UID->install_callback( sub {
     eval "sub PG_BYTEA { die 'guru meditation #9: calling PG_BYTEA when not running Pg?'; }";
   }
 
-  foreach my $table ( dbdef->tables ) {
-    $fk_method_cache{$table} = fk_methods($table);
-  }
+  fk_methods_init();
 
 } );
 
@@ -1011,7 +1009,7 @@ sub AUTOLOAD {
     unless blessed($self) && $self->can('setfield');
 
   #$fk_method_cache{$self->table} ||= fk_methods($self->table);
-  if ( exists($fk_method_cache{$self->table}->{$field}) ) {
+  if ( exists($fk_method_cache{$self->table}) && exists($fk_method_cache{$self->table}->{$field}) ) {
 
     my $fk_info = $fk_method_cache{$self->table}->{$field};
     my $method = $fk_info->{method} || 'qsearchs';
@@ -1055,6 +1053,17 @@ sub AUTOLOAD {
 #    $_[0]->getfield($field);
 #  }    
 #}
+
+sub fk_methods_init {
+  my $cache_cnt = scalar keys %fk_method_cache;
+  if ($cache_cnt < 500) { # There should be over 500 entries in this, if not someone improperly initialized something
+    warn "$me fk_method_cache partially initialized" if $cache_cnt; # shouldn't happen, but if someone uses the cache improperly it can.
+    warn "$me building fk_method_cache" if $DEBUG;
+    foreach my $table ( dbdef->tables ) {
+      $fk_method_cache{$table} = fk_methods($table);
+    }
+  }
+}
 
 sub fk_methods {
   my $table = shift;
