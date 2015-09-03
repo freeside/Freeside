@@ -753,7 +753,7 @@ sub cust_bill_pkg_taxes {
   $self->scalar_sql($total_sql);
 }
 
-#all credits applied to matching pkg line items (ie not taxes or fees)
+#all credits applied to matching pkg line items (ie not taxes)
 
 sub cust_bill_pkg_credits {
   my $self = shift;
