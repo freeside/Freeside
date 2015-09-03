@@ -101,6 +101,10 @@ function select_discount_term(row) {
 
 var invoices_for_row = new Object;
 
+var preloading = 0; // the number of preloading threads currently running
+
+// callback from toggle_application_row: we've received a list of
+// the customer's open invoices. store them.
 function update_invoices(rownum, invoices) {
   invoices_for_row[rownum] = new Object;
   // only called before create_application_row
@@ -113,6 +117,12 @@ function toggle_application_row(ev, next) {
   if (!next) next = function(){}; //optional continuation
   var rownum = this.getAttribute('rownum');
   if ( this.checked ) {
+    // the user has opted to apply the payment to specific invoices.
+    // - lock the customer
+    // - fetch the list of open invoices
+    // - create a row to select an invoice
+    // - then optionally call "next", with this as the invocant
+    //   and the rownum as argument; we use this to preload rows.
     var custnum = document.getElementById('custnum'+rownum).value;
     if (!custnum) return;
     lock_payment_row(rownum, true);
@@ -124,6 +134,9 @@ function toggle_application_row(ev, next) {
       }
     );
   } else {
+    // the user has opted not to do that.
+    // - remove all application rows
+    // - unlock the customer
     var row = document.getElementById('row'+rownum);
     var table_rows = row.parentNode.rows;
     for (i = row.sectionRowIndex; i < table_rows.count; i++) {
@@ -183,6 +196,16 @@ function amount_unapplied(rownum) {
 
 var change_app_amount;
 
+// the user has chosen an invoice. the previously chosen invoice is still
+// in curr_invoice
+// - if there is a value there, put it back on the invoices_for_row list for
+// this customer.
+// - then _remove_ the newly chosen invoice from that list.
+// - find the "owed" element for this application row and set its value to the
+// amount owed on that invoice.
+// - find the "amount" element for this application row and set its value to
+// either "owed" or the remaining payment amount, whichever is less.
+// - call change_app_amount() on that element.
 function choose_app_invnum() {
   var rownum = this.getAttribute('rownum');
   var appnum = this.getAttribute('appnum');
@@ -210,8 +233,10 @@ function choose_app_invnum() {
   }
 }
 
+// the invoice selector has gained focus. clear its list of options, and
+// replace them with the list of open invoices (from invoices_for_row).
+// if there's already a selected invoice, prepend that to the list.
 function focus_app_invnum() {
-% # invoice numbers just display as invoice numbers
   var rownum = this.getAttribute('rownum');
   var add_opt = function(obj, value, label) {
     var o = document.createElement('OPTION');
@@ -233,14 +258,15 @@ function focus_app_invnum() {
   }
 }
 
+// an application amount has been changed. if there's any unapplied payment
+// amount, and any remaining invoices_for_row, add a blank application row.
+// (but don't do this while preloading; it will unconditionally add enough
+// rows to show all the attempted applications)
 function change_app_amount() {
   var rownum = this.getAttribute('rownum');
   var appnum = this.getAttribute('appnum');
-%# maybe some kind of warning if amount_unapplied < 0?
-%# only spawn a new application row if there are open invoices left,
-%# and this is the highest-numbered application row for the customer,
-%# and the sum of the applied amounts is < the amount of the payment,
-  if ( Object.keys(invoices_for_row[rownum]).length > 0
+  if ( preloading == 0
+       && Object.keys(invoices_for_row[rownum]).length > 0
        && !document.getElementById( 'row'+rownum+'.'+(parseInt(appnum) + 1) )
        && amount_unapplied(rownum) > 0 ) {
 
@@ -248,6 +274,9 @@ function change_app_amount() {
   }
 }
 
+// we're creating a payment application row.
+// create the following elements: <TR>, <TD>s, "Apply to invoice" caption,
+// invnum selector, "owed" display, amount input box, delete button.
 function create_application_row(rownum, appnum) {
   var payment_row = document.getElementById('row'+rownum);
   var tr_app = document.createElement('TR');
@@ -341,29 +370,45 @@ function preload() {
       var enable = document.getElementById('enable_app'+rownum);
       enable.checked = true;
       var preload_row = function(r) {//continuation from toggle_application_row
-        for (appnum=0; appnum < row_obj[r].length; appnum++) {
-          this_app = row_obj[r][appnum];
-          var x = r + '.' + appnum;
-          //set invnum
-          var select_invnum = document.getElementById('invnum'+x);
-          focus_app_invnum.call(select_invnum);
-          for (i=0; i<select_invnum.options.length; i++) {
-            if (select_invnum.options[i].value == this_app.invnum) {
-              select_invnum.selectedIndex = i;
-            }
-          }
-          choose_app_invnum.call(select_invnum);
-          //set amount
-          var input_amount = document.getElementById('amount'+x);
-          input_amount.value = this_app.amount;
 
-          //set error
-          var span_error = document.getElementById('error'+x);
-          span_error.innerHTML = this_app.error;
-          change_app_amount.call(input_amount); //creates next row
-        } //for appnum
+        preloading++;
+
+        try {
+          for (appnum=0; appnum < row_obj[r].length; appnum++) {
+            this_app = row_obj[r][appnum];
+            var x = r + '.' + appnum;
+            //set invnum
+            var select_invnum = document.getElementById('invnum'+x);
+            focus_app_invnum.call(select_invnum);
+            for (i=0; i<select_invnum.options.length; i++) {
+              if (select_invnum.options[i].value == this_app.invnum) {
+                select_invnum.selectedIndex = i;
+              }
+            }
+            choose_app_invnum.call(select_invnum);
+            //set amount
+            var input_amount = document.getElementById('amount'+x);
+            input_amount.value = this_app.amount;
+
+            //set error
+            var span_error = document.getElementById('error'+x);
+            span_error.innerHTML = this_app.error;
+
+            // create another row (unconditionally)
+            create_application_row(r, appnum + 1);
+
+          } //for appnum
+
+        } finally {
+          preloading--;
+        }
+
       }; //preload_row function
+
+      // enable application rows on the selected customer. this creates
+      // the first row, then kicks off preloading.      
       toggle_application_row.call(enable, null, preload_row);
+
     } // if (row_obj[rownum].length
   } //for rownum
 }
