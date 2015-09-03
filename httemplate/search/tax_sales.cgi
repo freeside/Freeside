@@ -1,11 +1,13 @@
 
 <% include('/graph/elements/report.html',
-     'title' => 'Monthly Sales Tax Report',
-     'items' => \@row_labels,
-     'data'  => \@rowdata,
+     'title'      => 'Monthly Sales and Taxes Report',
+     'items'      => \@row_labels,
+     'data'       => \@rowdata,
      'row_labels' => \@row_labels,
-     'colors' => [],
+     'colors'     => \@rowcolors,
+     'bgcolors'   => \@rowbgcolors,
      'col_labels' => \@col_labels,
+     'graph_type' => 'none',
    ) %>
 
 <%init>
@@ -139,20 +141,32 @@ while ($countdate < $enddate) {
 # put the data in the order we want it
 my @row_labels;
 my @rowdata;
+my @rowcolors;
+my @rowbgcolors;
+my $pkgcount = 0; #for colors
 foreach my $classname (@pkg_classname,@taxnames) {
+  my $istax = ($pkgcount++ < @pkg_classname) ? 0 : 1;
   my @classlabels = ();
   my @classdata = ();
+  my @classcolors = ();
+  my @classbgcolors = ();
   my $hasdata = 0;
   foreach my $item ( qw( invoiced credited ) ) {
     my $rowlabel = $classname . ' ' . $item;
-    my $rowdata = $data->{$rowlabel};
+    my $rowdata  = $data->{$rowlabel};
+    my $rowcolor = $istax ? '0000ff' : '000000';
+    my $rowbgcolor  = ($item eq 'credited') ? 'cccccc' : 'ffffff';
     $hasdata = 1 if grep { $_ } @$rowdata;
     push(@classlabels,$rowlabel);
     push(@classdata,$rowdata);
+    push(@classcolors,$rowcolor);
+    push(@classbgcolors,$rowbgcolor);
   }
   next unless $hasdata; # don't include class if it has no data in time range
   push(@row_labels,@classlabels);
   push(@rowdata,@classdata);
+  push(@rowcolors,@classcolors);
+  push(@rowbgcolors,@classbgcolors);
 }
 
 </%init>
