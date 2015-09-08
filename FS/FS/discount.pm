@@ -196,7 +196,13 @@ sub description {
 
   ( my $months = $self->months ) =~ s/\.0+$//;
   $months =~ s/(\.\d*[1-9])0+$/$1/;
-  $desc .= " for $months months" if $months;
+  if ($months) {
+    if ($months == 1) {
+      $desc .= " for 1 month";
+    } else {
+      $desc .= " for $months months";
+    }
+  }
 
   $desc .= ', applies to setup' if $self->setup;
 
