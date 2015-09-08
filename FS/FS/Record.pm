@@ -3,7 +3,7 @@ use base qw( Exporter );
 
 use strict;
 use vars qw( $AUTOLOAD
-             %virtual_fields_cache %fk_method_cache
+             %virtual_fields_cache %fk_method_cache $fk_table_cache
              $money_char $lat_lower $lon_upper
            );
 use Carp qw(carp cluck croak confess);
@@ -1102,11 +1102,15 @@ sub fk_methods {
   #  (alas.  why we're cached.  still, might this loop better be done once at
   #   schema load time insetad of every time we AUTOLOAD a method on a new
   #   class?)
-  foreach my $f_table ( dbdef->tables ) {
-    foreach my $fk (dbdef->table($f_table)->foreign_keys) {
-
-      next unless $fk->table eq $table;
-
+  if (! defined $fk_table_cache) {
+    foreach my $f_table ( dbdef->tables ) {
+      foreach my $fk (dbdef->table($f_table)->foreign_keys) {
+        push @{$fk_table_cache->{$fk->table}},[$f_table,$fk];
+      }
+    }
+  }
+  foreach my $fks (@{$fk_table_cache->{$table}}) {
+      my ($f_table,$fk) = @$fks;
       my $method = '';
       if ( scalar( @{$fk->columns} ) == 1 ) {
         if (    ! defined($fk->references)
@@ -1129,9 +1133,6 @@ sub fk_methods {
         }
 
       }
-
-    }
-
   }
 
   \%hash;
