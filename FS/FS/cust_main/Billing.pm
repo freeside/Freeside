@@ -880,6 +880,7 @@ sub bill {
 }
 
 #discard bundled packages of 0 value
+# XXX we should reconsider whether we even need this
 sub _omit_zero_value_bundles {
   my @in = @_;
 
@@ -888,11 +889,20 @@ sub _omit_zero_value_bundles {
   my $discount_show_always = $conf->exists('discount-show-always');
   my $show_this = 0;
 
+  # Sort @in the same way we do during invoice rendering, so we can identify
+  # bundles.  See FS::Template_Mixin::_items_nontax.
+  @in = sort { $a->pkgnum <=> $b->pkgnum        or
+               $a->sdate  <=> $b->sdate         or
+               ($a->pkgpart_override ? 0 : -1)  or
+               ($b->pkgpart_override ? 0 : 1)   or
+               $b->hidden cmp $a->hidden        or
+               $a->pkgpart_override <=> $b->pkgpart_override
+             } @in;
+
   # this is a pack-and-deliver pattern. every time there's a cust_bill_pkg
   # _without_ pkgpart_override, that's the start of the new bundle. if there's
   # an existing bundle, and it contains a nonzero amount (or a zero amount 
   # that's displayable anyway), push all line items in the bundle.
-
   foreach my $cust_bill_pkg ( @in ) {
 
     if (scalar(@bundle) and !$cust_bill_pkg->pkgpart_override) {
