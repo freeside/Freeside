@@ -20,6 +20,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+local($FS::Record::qsearch_qualify_columns) = 1;
+
 my $conf = new FS::Conf;
 
 my $html_init = 
