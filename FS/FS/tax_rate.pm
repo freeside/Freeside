@@ -2287,7 +2287,7 @@ EOF
   my $dropstring = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/report.';
   $reportname =~ s/^$dropstring//;
 
-  my $reporturl = "%%%ROOTURL%%%/misc/queued_report?report=$reportname";
+  my $reporturl = "%%%ROOTURL%%%/misc/queued_report.html?report=$reportname";
   die "<a href=$reporturl>view</a>\n";
 
 }
