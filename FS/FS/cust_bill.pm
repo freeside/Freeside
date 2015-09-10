@@ -2699,10 +2699,12 @@ sub _items_usage_class_summary {
   my %opt = @_;
 
   my $escape = $opt{escape} || sub { $_[0] };
+  my $money_char = $opt{money_char};
   my $invnum = $self->invnum;
   my @classes = qsearch({
       'table'     => 'usage_class',
-      'select'    => 'classnum, classname, SUM(amount) AS amount',
+      'select'    => 'classnum, classname, SUM(amount) AS amount,'.
+                     ' COUNT(*) AS calls, SUM(duration) AS duration',
       'addl_from' => ' LEFT JOIN cust_bill_pkg_detail USING (classnum)' .
                      ' LEFT JOIN cust_bill_pkg USING (billpkgnum)',
       'extra_sql' => " WHERE cust_bill_pkg.invnum = $invnum".
@@ -2713,17 +2715,21 @@ sub _items_usage_class_summary {
   my @l;
   my $section = {
     description   => &{$escape}($self->mt('Usage Summary')),
-    no_subtotal   => 1,
     usage_section => 1,
+    subtotal      => 0,
   };
   foreach my $class (@classes) {
+    $section->{subtotal} += $class->get('amount');
     push @l, {
       'description'     => &{$escape}($class->classname),
-      'amount'          => sprintf('%.2f', $class->amount),
+      'amount'          => $money_char.sprintf('%.2f', $class->get('amount')),
+      'quantity'        => $class->get('calls'),
+      'duration'        => $class->get('duration'),
       'usage_classnum'  => $class->classnum,
       'section'         => $section,
     };
   }
+  $section->{subtotal} = $money_char.sprintf('%.2f', $section->{subtotal});
   return @l;
 }
 

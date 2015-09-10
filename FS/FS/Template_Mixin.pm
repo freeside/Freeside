@@ -1518,7 +1518,7 @@ sub print_generic {
   # usage subtotals
   if ( $conf->exists('usage_class_summary')
        and $self->can('_items_usage_class_summary') ) {
-    my @usage_subtotals = $self->_items_usage_class_summary(escape => $escape_function);
+    my @usage_subtotals = $self->_items_usage_class_summary(escape => $escape_function, 'money_char' => $other_money_char);
     if ( @usage_subtotals ) {
       unshift @sections, $usage_subtotals[0]->{section}; # do not summarize
       unshift @detail_items, @usage_subtotals;
