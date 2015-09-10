@@ -3,7 +3,7 @@ package Torrus::Renderer::Freeside;
 use strict;
 use warnings;
 use base 'Torrus::Freeside';
-use FS::UID qw(cgisuidsetup);
+use FS::UID qw(setcgi adminsuidsetup);
 use FS::TicketSystem;
 
 our $cgi = '';
@@ -15,7 +15,9 @@ sub freesideSetup {
 
   $cgi = $Torrus::CGI::q;
 
-  cgisuidsetup($cgi);
+  setcgi($cgi);
+
+  adminsuidsetup;
   FS::TicketSystem->init();
 
 }
