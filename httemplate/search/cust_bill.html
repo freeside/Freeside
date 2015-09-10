@@ -197,7 +197,7 @@ my $html_init = join("\n", map {
  ( my $action = $_ ) =~ s/_$//;
  include('/elements/progress-init.html',
            $_.'form',
-           [ keys %search ],
+           [ sort keys %search ],
            "../misc/${_}invoices.cgi",
            { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
            $_, #key
@@ -207,7 +207,7 @@ my $html_init = join("\n", map {
          my @values = ref($search{$f}) ? @{ $search{$f} } : $search{$f};
          map qq!<INPUT TYPE="hidden" NAME="$f" VALUE="$_">!, @values;
        }
-       keys %search
+       sort keys %search
  ),
  qq!</FORM>!
 } qw( print_ email_ fax_ ftp_ spool_ ) ). 

@@ -12,7 +12,7 @@
     table       => 'tower',
     name_col    => 'towername',
     id          => 'towernum',
-    field       => 'dummy_towernum',
+    field       => 'towernum',
     onchange    => 'change_towernum(this.value);',
     element_etc => 'STYLE="vertical-align:top"',
 &>
@@ -63,5 +63,5 @@ foreach my $towernum (keys %sectors_of) {
   }
 }
 
-my $empty_label = $opt{'empty_label'} || 'Include services with no tower/sector';
+my $empty_label = $opt{'empty_label'} || 'Include services with no sector';
 </%init>

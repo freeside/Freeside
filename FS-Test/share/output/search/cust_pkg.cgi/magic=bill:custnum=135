@@ -859,7 +859,7 @@ myMenu63.width = 256;
    
    
    
->Change&nbsp;these&nbsp;packages</A><BR><A HREF="http://localhost/freeside/misc/email-customers.html?table=cust_pkg&agent_virt_agentnum=&custnum=135&query=0&magic=bill">Email a notice to these customers</A>
+>Change&nbsp;these&nbsp;packages</A><BR><A HREF="http://localhost/freeside/misc/email-customers.html?table=cust_pkg&agent_virt_agentnum=&custnum=135&magic=bill&query=0">Email a notice to these customers</A>
 
 <BR><BR>
 
@@ -1235,7 +1235,7 @@ myMenu63.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?403">152300260278657</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?403">152300260278657</A></td></tr></table></TD>
 
 
     </TR>
@@ -1336,7 +1336,7 @@ myMenu63.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?401">IP:10.98.22.188, MAC:00007E436BF5</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?401">IP:10.98.22.188, MAC:00007E436BF5</A></td></tr></table></TD>
 
 
     </TR>
@@ -1437,7 +1437,7 @@ myMenu63.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?402">botsford-mueller.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?402">botsford-mueller.com</A></td></tr></table></TD>
 
 
     </TR>

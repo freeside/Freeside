@@ -995,7 +995,7 @@ myMenu63.width = 256;
         
 
     >
-      Paid
+      <A HREF="http://localhost/freeside/search/cust_bill_pkg.cgi?agentnum=1;status=;cust_classnum=;beginning=01%2F01%2F2016;ending=01%2F31%2F2016;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=pay_amount">Paid</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1004,7 +1004,7 @@ myMenu63.width = 256;
         
 
     >
-      Credited
+      <A HREF="http://localhost/freeside/search/cust_bill_pkg.cgi?agentnum=1;status=;cust_classnum=;beginning=01%2F01%2F2016;ending=01%2F31%2F2016;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=credit_amount">Credited</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"

@@ -389,6 +389,8 @@ if( $curuser->access_right('Financial reports') ) {
   $report_financial{'Tax Liability (vendor tax data)'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor tax data)' ]
     if $taxproducts;
 
+  $report_financial{'Monthly Sales and Taxes'} = [$fsurl.'search/tax_sales.html', 'Monthly sales and taxes report'];
+
   # most sites don't need this but there isn't really a config to enable it
   $report_financial{'E911 Fee Summary'} = [ $fsurl.'search/report_e911.html', 'E911 fee summary' ];
 

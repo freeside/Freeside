@@ -1004,11 +1004,11 @@ function changepw406_toggle(val) {
 function updateTicketLink() {
   var link = document.getElementById('CreateTicketLink');
   var selector = document.getElementById('Queue')
-  link.href = "http://localhost/freeside//rt/Ticket/Create.html?new-MemberOf=freeside://freeside/cust_svc/406;Requestors=;Queue=" + selector.options[selector.selectedIndex].value;
+  link.href = "http://localhost/freeside//rt/Ticket/Create.html?Requestors=;new-MemberOf=freeside://freeside/cust_svc/406;Queue=" + selector.options[selector.selectedIndex].value;
 }
 </SCRIPT>
 <A NAME="tickets"><FONT CLASS="fsinnerbox-title">Tickets</FONT></A>
-<A id="CreateTicketLink" HREF="http://localhost/freeside//rt/Ticket/Create.html?Requestors=&Queue=1&new-MemberOf=freeside%3A%2F%2Ffreeside%2Fcust_svc%2F406">Create new ticket</A>
+<A id="CreateTicketLink" HREF="http://localhost/freeside//rt/Ticket/Create.html?Queue=1&new-MemberOf=freeside%3A%2F%2Ffreeside%2Fcust_svc%2F406&Requestors=">Create new ticket</A>
  in queue
 <SELECT NAME="Queue" id="Queue" onchange="updateTicketLink()">
 </SELECT>

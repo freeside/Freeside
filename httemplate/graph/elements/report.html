@@ -11,6 +11,7 @@ Example:
     #these run parallel to items, and can be given as hashes
     'row_labels'      => \@row_labels,    #required
     'colors'          => \@colors,        #required
+    'bgcolors'        => \@bgcolors,      #optional
     'graph_labels'    => \@graph_labels,  #defaults to row_labels
 
     'links'           => \@links,         #optional
@@ -22,7 +23,7 @@ Example:
 
     #optional
     'nototal'         => 1,
-    'graph_type'      => 'LinesPoints',
+    'graph_type'      => 'LinesPoints',   #can be 'none' for no graph
     'bottom_total'    => 1,
     'sprintf'         => '%u', #sprintf format, overrides default %.2f
     'disable_money'   => 1,
@@ -231,7 +232,8 @@ any delimiter and linked from the elements in @data.
 % foreach my $row ( @items ) {
 % #make a style
 %   my $color = shift @{ $opt{'colors'} };
-%   push @styles, ".i$i { text-align: right; color: #$color; }";
+%   my $bgcolor = $opt{'bgcolors'} ? (shift @{ $opt{'bgcolors'} }) : 'ffffff';
+%   push @styles, ".i$i { text-align: right; color: #$color; background: #$bgcolor; }";
 % #create the data row
 %   my $links = shift @{$opt{'links'}} || [''];
 %   my $link_prefix = shift @$links;

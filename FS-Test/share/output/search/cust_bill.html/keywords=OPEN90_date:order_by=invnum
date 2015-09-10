@@ -988,7 +988,7 @@ function print_process () {
   var fieldName;
   for (var i = 0; i<document.print_form.elements.length; i++) {
     field  = document.print_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('charged') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1033,9 +1033,6 @@ function print_myCallback( jobnum ) {
 
 
 <FORM NAME="print_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
-<INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
 </FORM>
 <SCRIPT TYPE="text/javascript">
 
@@ -1168,7 +1165,7 @@ function email_process () {
   var fieldName;
   for (var i = 0; i<document.email_form.elements.length; i++) {
     field  = document.email_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('charged') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1213,9 +1210,6 @@ function email_myCallback( jobnum ) {
 
 
 <FORM NAME="email_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
-<INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
 </FORM>
 <SCRIPT TYPE="text/javascript">
 
@@ -1348,7 +1342,7 @@ function fax_process () {
   var fieldName;
   for (var i = 0; i<document.fax_form.elements.length; i++) {
     field  = document.fax_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('charged') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1393,9 +1387,6 @@ function fax_myCallback( jobnum ) {
 
 
 <FORM NAME="fax_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
-<INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
 </FORM>
 <SCRIPT TYPE="text/javascript">
 
@@ -1528,7 +1519,7 @@ function ftp_process () {
   var fieldName;
   for (var i = 0; i<document.ftp_form.elements.length; i++) {
     field  = document.ftp_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('charged') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1573,9 +1564,6 @@ function ftp_myCallback( jobnum ) {
 
 
 <FORM NAME="ftp_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
-<INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
 </FORM>
 <SCRIPT TYPE="text/javascript">
 
@@ -1708,7 +1696,7 @@ function spool_process () {
   var fieldName;
   for (var i = 0; i<document.spool_form.elements.length; i++) {
     field  = document.spool_form.elements[i];
-    if ( (field.name.indexOf('order_by') > -1) || (field.name.indexOf('days') > -1) || (field.name.indexOf('invoiced') > -1) || (field.name.indexOf('owed') > -1) || (field.name.indexOf('charged') > -1)
+    if ( (field.name.indexOf('charged') > -1) || (field.name.indexOf('owed') > -1)
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -1753,9 +1741,6 @@ function spool_myCallback( jobnum ) {
 
 
 <FORM NAME="spool_form">
-<INPUT TYPE="hidden" NAME="order_by" VALUE="cust_bill._date">
-<INPUT TYPE="hidden" NAME="days" VALUE="">
-<INPUT TYPE="hidden" NAME="invoiced" VALUE="1">
 </FORM><SCRIPT TYPE="text/javascript">
 
 function confirm_print_process() {
@@ -1803,7 +1788,7 @@ function confirm_spool_process() {
                   1584 total invoices
 
 
-                  ( show <SELECT NAME="maxrecords" onChange="window.location = 'http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=' + this.options[this.selectedIndex].value;">
+                  ( show <SELECT NAME="maxrecords" onChange="window.location = 'http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=' + this.options[this.selectedIndex].value;">
 
                   <OPTION VALUE="100" SELECTED>100</OPTION>
                   <OPTION VALUE="500" >500</OPTION>
@@ -1815,7 +1800,8 @@ function confirm_spool_process() {
 
                 <BR>
 
-                      $141620.74 invoiced<BR>
+                      $141620.74 gross sales<BR>
+                      − $0.00 discounted<BR>
                       − $0.00 credited<BR>
                       = $141620.74 net sales<BR>
                       $48352.49 outstanding balance<BR>
@@ -1828,12 +1814,12 @@ function confirm_spool_process() {
 
                 Download full results<BR>
 
-                as <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=invoices.xls">Excel spreadsheet</A><BR>
+                as <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=invoices.xls">Excel spreadsheet</A><BR>
 
-                as <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=csv">CSV file</A><BR>
+                as <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=csv">CSV file</A><BR>
 
 
-                as <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html-print">printable copy</A>
+                as <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html-print">printable copy</A>
 
               </TD>
 
@@ -1846,45 +1832,45 @@ function confirm_spool_process() {
         <FONT SIZE="+2">1</FONT>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=100">2</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=100">2</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=200">3</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=200">3</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=300">4</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=300">4</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=400">5</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=400">5</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=500">6</A>
-
-          ...
-
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=700">8</A>
-
-
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=800">9</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=500">6</A>
 
           ...
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1000">11</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=700">8</A>
+
+
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=800">9</A>
 
           ...
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1200">13</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1000">11</A>
+
+          ...
+
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1200">13</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1300">14</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1300">14</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1400">15</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1400">15</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1500">16</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1500">16</A>
 
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=100"><B><FONT SIZE="+1">Next</FONT></B></A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=100"><B><FONT SIZE="+1">Next</FONT></B></A>
 
 
 
@@ -1907,7 +1893,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=COALESCE%28%20agent_invid%2C%20invnum%20%29">Invoice #</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=COALESCE%28%20agent_invid%2C%20invnum%20%29">Invoice #</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1916,7 +1902,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=gross">Gross Amount</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=gross">Gross Amount</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1925,7 +1911,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=discounted">Discount</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=discounted">Discount</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1934,7 +1920,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=credited">Credits</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=credited">Credits</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1943,7 +1929,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=net">Net Amount</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=net">Net Amount</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1952,7 +1938,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=owed">Balance</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=owed">Balance</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -1961,7 +1947,7 @@ function confirm_spool_process() {
         
 
     >
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=_date">Date</A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=0;order_by=_date">Date</A>
     </TH>
     <TH CLASS   = "grid"
         BGCOLOR = "#cccccc"
@@ -2526,6 +2512,47 @@ function confirm_spool_process() {
 
 
 
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">16</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$162.74</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$162.74</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">Aug 19 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?91">Fay and Sons (Gerhold, Thora)</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?14">14</A></TD>
 
 
@@ -2563,7 +2590,7 @@ function confirm_spool_process() {
 
     </TR>
 
-    <TR ID="" CLASS="row0">
+    <TR ID="" CLASS="row1">
 
 
 
@@ -2600,47 +2627,6 @@ function confirm_spool_process() {
 
 
         <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?70">Brown, Danial</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">16</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$162.74</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$162.74</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?16">Aug 19 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?91">Fay and Sons (Gerhold, Thora)</A></TD>
 
 
     </TR>
@@ -2854,47 +2840,6 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">23</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$105.97</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$105.97</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$105.97</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">Aug 31 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?176">Waters, Godfrey</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?22">22</A></TD>
 
 
@@ -2928,6 +2873,47 @@ function confirm_spool_process() {
 
 
         <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?58">Schultz, Colten</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">23</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$105.97</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$105.97</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">$105.97</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?23">Aug 31 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?176">Waters, Godfrey</A></TD>
 
 
     </TR>
@@ -2977,6 +2963,88 @@ function confirm_spool_process() {
 
 
 
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">33</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">Sep 01 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?74">Boyer, Lamont</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">36</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">Sep 01 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?82">Kessler, Dana</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?45">45</A></TD>
 
 
@@ -3018,31 +3086,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">28</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">35</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">Sep 01 2015</A></TD>
 
 
 
@@ -3050,7 +3118,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?43">Leannon-Pfannerstill (O&#39;Keefe, Bernie)</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?83">Jacobson-Gorczany (Vandervort, Kiley)</A></TD>
 
 
     </TR>
@@ -3059,31 +3127,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">27</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">24</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">Sep 01 2015</A></TD>
 
 
 
@@ -3091,7 +3159,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?25">Kuhlman-Huels (Parisian, Cristopher)</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?10">Grady, Aniya</A></TD>
 
 
     </TR>
@@ -3141,47 +3209,6 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">32</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$120.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$120.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">Sep 01 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?58">Schultz, Colten</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?26">26</A></TD>
 
 
@@ -3219,76 +3246,35 @@ function confirm_spool_process() {
 
     </TR>
 
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">46</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$30.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$30.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$30.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">Sep 01 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?176">Waters, Godfrey</A></TD>
-
-
-    </TR>
-
     <TR ID="" CLASS="row1">
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">33</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">42</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?33">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">Sep 01 2015</A></TD>
 
 
 
@@ -3296,7 +3282,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?74">Boyer, Lamont</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?114">Donnelly, Raleigh</A></TD>
 
 
     </TR>
@@ -3305,31 +3291,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">35</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">29</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?35">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">Sep 01 2015</A></TD>
 
 
 
@@ -3337,7 +3323,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?83">Jacobson-Gorczany (Vandervort, Kiley)</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?38">Christiansen, Leone</A></TD>
 
 
     </TR>
@@ -3346,31 +3332,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">30</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">27</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?27">Sep 01 2015</A></TD>
 
 
 
@@ -3378,7 +3364,89 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?46">Steuber, Ryley</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?25">Kuhlman-Huels (Parisian, Cristopher)</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">38</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$90.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$90.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">Sep 01 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?91">Fay and Sons (Gerhold, Thora)</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">32</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$120.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?32">Sep 01 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?58">Schultz, Colten</A></TD>
 
 
     </TR>
@@ -3428,31 +3496,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">44</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">40</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">Sep 01 2015</A></TD>
 
 
 
@@ -3460,7 +3528,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?138">Leuschke, Edd</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?97">Braun, Rath and Gutkowski (Wilderman, Reyes)</A></TD>
 
 
     </TR>
@@ -3510,31 +3578,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">38</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">46</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$30.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$30.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">$30.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?38">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?46">Sep 01 2015</A></TD>
 
 
 
@@ -3542,7 +3610,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?91">Fay and Sons (Gerhold, Thora)</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?176">Waters, Godfrey</A></TD>
 
 
     </TR>
@@ -3551,72 +3619,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">40</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">30</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?40">Sep 01 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?97">Braun, Rath and Gutkowski (Wilderman, Reyes)</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">41</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$90.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$90.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?30">Sep 01 2015</A></TD>
 
 
 
@@ -3624,48 +3651,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?103">Roberts-Schinner (Flatley, Amelia)</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">29</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$120.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$120.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">$120.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?29">Sep 01 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?38">Christiansen, Leone</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?46">Steuber, Ryley</A></TD>
 
 
     </TR>
@@ -3756,31 +3742,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">36</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">44</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?36">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?44">Sep 01 2015</A></TD>
 
 
 
@@ -3788,7 +3774,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?82">Kessler, Dana</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?138">Leuschke, Edd</A></TD>
 
 
     </TR>
@@ -3797,31 +3783,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">24</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">28</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?24">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?28">Sep 01 2015</A></TD>
 
 
 
@@ -3829,7 +3815,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?10">Grady, Aniya</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?43">Leannon-Pfannerstill (O&#39;Keefe, Bernie)</A></TD>
 
 
     </TR>
@@ -3838,31 +3824,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">42</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">41</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?42">Sep 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?41">Sep 01 2015</A></TD>
 
 
 
@@ -3870,7 +3856,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?114">Donnelly, Raleigh</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?103">Roberts-Schinner (Flatley, Amelia)</A></TD>
 
 
     </TR>
@@ -4617,47 +4603,6 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">66</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$60.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$60.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">Sep 18 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?97">Braun, Rath and Gutkowski (Wilderman, Reyes)</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?65">65</A></TD>
 
 
@@ -4691,6 +4636,47 @@ function confirm_spool_process() {
 
 
         <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?83">Jacobson-Gorczany (Vandervort, Kiley)</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">66</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$60.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$60.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?66">Sep 18 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?97">Braun, Rath and Gutkowski (Wilderman, Reyes)</A></TD>
 
 
     </TR>
@@ -5027,6 +5013,47 @@ function confirm_spool_process() {
 
 
 
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">76</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$60.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$60.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">Sep 21 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?51">Medhurst Group (Medhurst, Rafaela)</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?75">75</A></TD>
 
 
@@ -5064,7 +5091,7 @@ function confirm_spool_process() {
 
     </TR>
 
-    <TR ID="" CLASS="row1">
+    <TR ID="" CLASS="row0">
 
 
 
@@ -5105,7 +5132,7 @@ function confirm_spool_process() {
 
     </TR>
 
-    <TR ID="" CLASS="row0">
+    <TR ID="" CLASS="row1">
 
 
 
@@ -5142,47 +5169,6 @@ function confirm_spool_process() {
 
 
         <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?52">Frami, Gayle</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">76</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$60.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$60.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?76">Sep 21 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?51">Medhurst Group (Medhurst, Rafaela)</A></TD>
 
 
     </TR>
@@ -5478,47 +5464,6 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">86</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$101.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$101.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$101.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">Sep 27 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?98">Gleichner, Delmer</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row0">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?87">87</A></TD>
 
 
@@ -5552,6 +5497,47 @@ function confirm_spool_process() {
 
 
         <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?189">Rodriguez-Ebert (Bergstrom, Cecilia)</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">86</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$101.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$101.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">$101.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?86">Sep 27 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?98">Gleichner, Delmer</A></TD>
 
 
     </TR>
@@ -5601,47 +5587,6 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">88</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$108.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$108.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$108.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">Sep 28 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?8">Douglas, Willow</A></TD>
-
-
-    </TR>
-
-    <TR ID="" CLASS="row1">
-
-
-
         <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?89">89</A></TD>
 
 
@@ -5675,6 +5620,47 @@ function confirm_spool_process() {
 
 
         <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?30">Toy, Bethany</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">88</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$108.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$108.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">$108.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?88">Sep 28 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?8">Douglas, Willow</A></TD>
 
 
     </TR>
@@ -5929,31 +5915,31 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">121</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">153</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$120.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$90.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">Oct 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">Oct 01 2015</A></TD>
 
 
 
@@ -5961,12 +5947,53 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?69">Moore-Cummerata (DuBuque, Russ)</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?179">Conn-McLaughlin (O&#39;Connell, Gayle)</A></TD>
 
 
     </TR>
 
     <TR ID="" CLASS="row1">
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">151</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">$30.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">$0.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">$30.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">$30.00</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?151">Oct 01 2015</A></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
+
+
+
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?176">Waters, Godfrey</A></TD>
+
+
+    </TR>
+
+    <TR ID="" CLASS="row0">
 
 
 
@@ -6007,76 +6034,35 @@ function confirm_spool_process() {
 
     </TR>
 
-    <TR ID="" CLASS="row0">
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">147</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">$90.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">$0.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">$90.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">$90.00</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?147">Oct 01 2015</A></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=center ><FONT COLOR=#00CC00 ><b>Active</b></FONT></TD>
-
-
-
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?155">Boyle-Schmeler (Maggio, Fay)</A></TD>
-
-
-    </TR>
-
     <TR ID="" CLASS="row1">
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">153</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">121</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$0.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$120.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">$90.00</A></TD>
+        <TD CLASS="grid"  ALIGN=right ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">$0.00</A></TD>
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?153">Oct 01 2015</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_bill.cgi?121">Oct 01 2015</A></TD>
 
 
 
@@ -6084,7 +6070,7 @@ function confirm_spool_process() {
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?179">Conn-McLaughlin (O&#39;Connell, Gayle)</A></TD>
+        <TD CLASS="grid"  ALIGN=left ><A HREF="http://localhost/freeside/view/cust_main.cgi?69">Moore-Cummerata (DuBuque, Russ)</A></TD>
 
 
     </TR>
@@ -6099,45 +6085,45 @@ function confirm_spool_process() {
         <FONT SIZE="+2">1</FONT>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=100">2</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=100">2</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=200">3</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=200">3</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=300">4</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=300">4</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=400">5</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=400">5</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=500">6</A>
-
-          ...
-
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=700">8</A>
-
-
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=800">9</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=500">6</A>
 
           ...
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1000">11</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=700">8</A>
+
+
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=800">9</A>
 
           ...
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1200">13</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1000">11</A>
+
+          ...
+
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1200">13</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1300">14</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1300">14</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1400">15</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1400">15</A>
 
 
-        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=1500">16</A>
+        <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=1500">16</A>
 
-      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=date;_dummy=1;maxrecords=100;_type=html;offset=100"><B><FONT SIZE="+1">Next</FONT></B></A>
+      <A HREF="http://localhost/freeside/search/cust_bill.html?keywords=OPEN90_date%3Aorder_by%3Dinvnum;_dummy=1;maxrecords=100;_type=html;offset=100"><B><FONT SIZE="+1">Next</FONT></B></A>
 
 
   

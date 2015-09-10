@@ -161,7 +161,7 @@ function part_export_areyousure(href) {
 %     }
 %   
 %     my($n1)='';
-%     foreach my $field ( @fields ) {
+%     foreach my $field ( sort @fields ) {
 %
 %       #a few lines of false laziness w/edit/part_svc.cgi
 %       my $def = FS::part_svc->svc_table_fields($svcdb)->{$field};

@@ -10,7 +10,8 @@ die "'table' required" if !$table;
 die "'search_hash' required" if !$search_hash;
 
 my $uri = new URI;
-$uri->query_form($search_hash);
+my @params = map { $_, $search_hash->{$_} } sort keys %$search_hash;
+$uri->query_form(@params);
 my $query = $uri->query;
 my $label = ($opt{'label'} || 'Email a notice to these customers');
 </%init>

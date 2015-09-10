@@ -36,7 +36,7 @@ use base 'FS::part_pkg::flat';
   },
   'fieldorder' => [ 'cutoff_day', 'prorate_defer_bill', 'prorate_round_day', 'prorate_verbose' ],
   'freq' => 'm',
-  'weight' => 20,
+  'weight' => 23,
 );
 
 my %freq_max_days = ( # the length of the shortest period of each cycle type

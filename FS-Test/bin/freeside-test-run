@@ -2,18 +2,20 @@
 
 set -ae
 
-tempdir=$( mktemp -d freeside-test.XXXX )
-sharedir=$(perl -MFS::Test -e "print FS::Test::share_dir()")
+tempdir=$( mktemp -d --tmpdir freeside-test.XXXX )
+# get the parent directory of bin/(this script)
+testroot=$( dirname ${BASH_SOURCE[0]} )
+testroot=$( cd $testroot; cd ..; pwd )
 
 echo "Starting test mode."
-freeside-test-start
+$testroot/bin/freeside-test-start
 echo "Saving results to $tempdir."
-freeside-test-fetch -d $tempdir
+$testroot/bin/freeside-test-fetch -d $tempdir
 echo "Exiting test mode."
-freeside-test-stop || true
+$testroot/bin/freeside-test-stop || true
 
 diffname=freeside-test.`date +%Y%m%d`.diff
 echo "Writing diff to $diffname."
-diff -urb "$sharedir/output" "$tempdir" > $diffname
+diff -urb "$testroot/share/output" "$tempdir" > $diffname
 diffstat -C $diffname
 

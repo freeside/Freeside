@@ -1124,7 +1124,7 @@ function filter_change() {  window.location = 'http://localhost/freeside/browse/
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr></table></TD>
 
 
 
@@ -1178,7 +1178,7 @@ function filter_change() {  window.location = 'http://localhost/freeside/browse/
 
 
 
-        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=left ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">cutoff_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_round_day: </td><TD ALIGN="left">1</td></tr><tr><TD ALIGN="right">prorate_verbose: </td><TD ALIGN="left">1</td></tr></table></TD>
 
 
 

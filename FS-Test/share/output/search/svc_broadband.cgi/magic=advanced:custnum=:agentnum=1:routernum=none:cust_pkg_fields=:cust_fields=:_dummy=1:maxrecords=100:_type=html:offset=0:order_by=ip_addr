@@ -854,7 +854,7 @@ myMenu63.width = 256;
 
 
 
-        <A HREF="http://localhost/freeside/misc/email-customers.html?table=svc_broadband&agent_virt_agentnum=&routernum=none&agentnum=1">Email a notice to these customers</A>
+        <A HREF="http://localhost/freeside/misc/email-customers.html?table=svc_broadband&agent_virt_agentnum=&agentnum=1&routernum=none">Email a notice to these customers</A>
 
 
 
