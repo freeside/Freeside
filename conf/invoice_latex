@@ -376,7 +376,7 @@
             {' . $line->{'description'} . '}
             {' . $line->{'quantity'} . '}
             {' . $minutes . 'm ' . $seconds . 's' . '}
-            {' . '\dollar' . $line->{'amount'} . '}';
+            {' . $line->{'amount'} . '}';
         } else {
           $OUT .= '\FSdesc'.
                   '{}'.
