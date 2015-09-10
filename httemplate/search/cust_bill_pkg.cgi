@@ -580,6 +580,16 @@ if ( $cgi->param('nottax') ) {
       }
     }
 
+    # itemdesc, for breakdown from the vendor tax report
+    # (this is definitely used)
+    if ( $cgi->param('itemdesc') ) {
+      if ( $cgi->param('itemdesc') eq 'Tax' ) {
+        push @where, "($itemdesc = 'Tax' OR $itemdesc is null)";
+      } else {
+        push @where, "$itemdesc = ". dbh->quote($cgi->param('itemdesc'));
+      }
+    }
+
   } else { # the internal-tax case
 
     my $tax_select = 'SELECT tax.billpkgnum, SUM(tax.amount) as tax_total';
