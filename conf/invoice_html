@@ -176,15 +176,28 @@
             $OUT .= $header;
             $columncount = scalar(my @array = split /<\/th><th/i, $header);
           } else {
-            $OUT .=  '<th align="center"></th>'.
-                     '<th align="left">' . emt('Description') . '</th>'.
-                     ( $unitprices 
-                       ? '<th align="right">' . emt('Unit Price') . '</th>'.
-                         '<th align="right">' . emt('Quantity') . '</th>'
-                        : '' ).
-                     '<th align="right">' . emt('Amount') . '</th>';
+            my @headings = ( '', 'Description', 'Amount' );
+            my @aligns = ( 'center', 'left', 'right' );
+            if ( $unitprices ) {
+              splice @headings, 2, 0, 'Unit Price', 'Quantity';
+              splice @aligns,   2, 0, 'right', 'right';
+            }
+            if ( $section->{usage_section} ) {
+              @headings = ( '', 'Description', 'Calls', 'Duration', 'Amount' );
+              @aligns = ( '', 'left', 'right', 'right', 'right' );
+              $columncount = 5;
+            }
+
+            while ( @headings ) {
+              my $heading = shift @headings;
+              $heading = emt($heading) if $heading;
+              my $align = shift @aligns;
+              $OUT .= '
+                <th align="' . $align . '">' . $heading . '</th>';
+            }
           }
-            $OUT .= '</tr>';
+
+          $OUT .= '</tr>';
 
           my $lastref = 0;
           foreach my $line (
@@ -197,6 +210,17 @@
             if ( $section->{description_generator} ) {
               $OUT .= '<tr class="invoice_desc' .
                       &{$section->{description_generator}}($line);
+            } elsif ( $section->{usage_section} ) {
+              my $minutes = sprintf('%d', $line->{'duration'} / 60);
+              my $seconds = $line->{'duration'} % 60;
+              $OUT .= '
+                <tr class="invoice_desc_more">
+                  <td></td>
+                  <td align="left">' . $line->{'description'} . '</td>
+                  <td align="right">' . $line->{'quantity'} . '</td>
+                  <td align="right">' . $minutes . 'm ' . $seconds . 's' . '</td>
+                  <td align="right">' . $line->{'amount'} . '</td>
+                </tr>';
             } else {
               my $class = 'invoice_desc_more';
               if ( ($line->{'ref'} || 0) ne $lastref ) {
@@ -257,7 +281,7 @@
             }
             $OUT .= '</tr>';
           }
-        } 
+        } # if !$section->{summarized}
         if ($section->{'posttotal'}) {
           $OUT .= '<tr><td align="right" colspan='. $columncount. '>';
           $OUT .=
