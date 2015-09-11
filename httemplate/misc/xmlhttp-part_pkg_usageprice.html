@@ -1,24 +1,32 @@
 <% encode_json( \@return ) %>\
 <%init>
 
-my( $pkgpart ) = $cgi->param('arg');
+my( $pkgpart, $pkgnum ) = $cgi->param('arg');
 
 #could worry about agent-virting this so you can't see the add-on pricing of
 # other agents, but not a real-world big worry
 
 my $part_pkg = qsearchs( 'part_pkg', { pkgpart=>$pkgpart } );
 
+my %curr_quantity;
+if ($pkgnum) {
+  my $cust_pkg = qsearchs( 'cust_pkg', { pkgnum=>$pkgnum } );
+  %curr_quantity = map { $_->usagepricepart, $_->quantity } $cust_pkg->cust_pkg_usageprice;
+}
+
 my $num = 0;
 
-my @return = map { 
+# probably don't need to be returning js_only anymore?
+my @return = ($pkgpart, map { 
+                   my $usagepricepart = $_->usagepricepart;
                    my @inc = ('/elements/cust_pkg_usageprice.html',
-                                'usagepricepart' => $_->usagepricepart,
+                                'usagepricepart' => $usagepricepart,
                              );
-
+                   push(@inc,'curr_quantity',($curr_quantity{$usagepricepart} || 0));
                    ( include(@inc, field=>'usagepricenum'.$num, html_only=>1 ),
                      include(@inc, field=>'usagepricenum'.$num++, js_only=>1 ),
                    );
                  }
-               $part_pkg->part_pkg_usageprice;
+               $part_pkg->part_pkg_usageprice);
 
 </%init>

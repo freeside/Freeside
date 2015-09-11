@@ -2296,9 +2296,15 @@ sub change {
     }
   }
 
-  # transfer usage pricing add-ons, if we're not changing pkgpart
-  if ( $same_pkgpart ) {
-    foreach my $old_cust_pkg_usageprice ($self->cust_pkg_usageprice) {
+  # transfer usage pricing add-ons, if we're not changing pkgpart or if they were specified
+  if ( $same_pkgpart || $opt->{'cust_pkg_usageprice'}) {
+    my @old_cust_pkg_usageprice;
+    if ($opt->{'cust_pkg_usageprice'}) {
+      @old_cust_pkg_usageprice = @{ $opt->{'cust_pkg_usageprice'} };
+    } else {
+      @old_cust_pkg_usageprice = $self->cust_pkg_usageprice;
+    }
+    foreach my $old_cust_pkg_usageprice (@old_cust_pkg_usageprice) {
       my $new_cust_pkg_usageprice = new FS::cust_pkg_usageprice {
         'pkgnum'         => $cust_pkg->pkgnum,
         'usagepricepart' => $old_cust_pkg_usageprice->usagepricepart,
