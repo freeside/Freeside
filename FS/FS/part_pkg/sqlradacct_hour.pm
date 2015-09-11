@@ -105,7 +105,18 @@ sub calc_recur {
                                                       'AcctOutputOctets' )
                / BU;
 
-  my $total = $input + $output - $self->option('recur_included_total');
+  my $included_total = $self->option('recur_included_total') || 0;
+  my $addoncharge = 0;
+  foreach my $cust_pkg_usageprice ($cust_pkg->cust_pkg_usageprice) {
+    my $part_pkg_usageprice = $cust_pkg_usageprice->part_pkg_usageprice;
+    $included_total += $cust_pkg_usageprice->quantity * $part_pkg_usageprice->amount;
+    $addoncharge += $cust_pkg_usageprice->price;
+  }
+  my $raw_total = $input + $output;
+  push(@$details,sprintf( "%.3f %ss included, %.3f %ss used", $included_total, BA, $raw_total, BA ))
+    if $included_total;
+
+  my $total = $input + $output - $included_total;
   $total = 0 if $total < 0;
   $input = $input - $self->option('recur_included_input');
   $input = 0 if $input < 0;
@@ -153,7 +164,7 @@ sub calc_recur {
                    sprintf('%.1f', $hours). " hours: $hourscharge";
   }
 
-  my $charges = $hourscharge + $inputcharge + $outputcharge + $totalcharge;
+  my $charges = $hourscharge + $inputcharge + $outputcharge + $totalcharge + $addoncharge;
   if ( $self->option('global_cap') && $charges > $self->option('global_cap') ) {
     $charges = $self->option('global_cap');
     push @$details, "Usage charges capped at: $charges";

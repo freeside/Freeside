@@ -163,6 +163,11 @@ sub apply {
   #this has no multiplication involved, its just a set only
   #} elsif ( $target eq 'svc_conferencing.confqualitynum' ) {
 
+  
+  } elsif ( $target eq 'sqlradacct_hour.recur_included_total' ) {
+
+    $error = "Cannot call apply on target $target";
+
   }
 
   if ( $error ) {

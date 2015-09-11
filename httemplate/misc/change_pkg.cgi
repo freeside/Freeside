@@ -19,13 +19,13 @@
 
   <& /elements/tr-select-cust-part_pkg.html,
                'pre_label'  => emt('New'),
-               'curr_value' => scalar($cgi->param('pkgpart')),
+               'curr_value' => scalar($cgi->param('pkgpart')) || $cust_pkg->pkgpart,
                'classnum'   => $part_pkg->classnum,
                'cust_main'  => $cust_main,
   &>
 
   <& /elements/tr-input-pkg-quantity.html,
-               'curr_value' => $cust_pkg->quantity
+               'curr_value' => scalar($cgi->param('quantity')) || $cust_pkg->quantity
   &>
 
 % if ($use_contract_end) {
@@ -39,6 +39,11 @@
 </TABLE>
 <BR>
 
+<% include('/misc/cust_pkg_usageprice.html',
+     'pkgpart' => (scalar($cgi->param('pkgpart')) || $cust_pkg->pkgpart),
+     'pkgnum'  => ($cust_pkg->change_to_pkgnum || $pkgnum),
+   ) %>
+<BR>
 
 <FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
 <% ntable('#cccccc') %>
@@ -49,8 +54,16 @@
       document.getElementById('start_date_text').disabled = !enable;
       document.getElementById('start_date_button').style.display = 
         (enable ? '' : 'none');
-      document.getElementById('start_date_button_disabled').style.display =
-        (enable ? 'none' : '');
+      if (document.getElementById('start_date_button_disabled')) { // does this ever exist anymore?
+        document.getElementById('start_date_button_disabled').style.display =
+          (enable ? 'none' : '');
+      }
+      if (enable) {
+        usageprice_disable(1);
+      } else {
+        var form = document.OrderPkgForm;
+        usageprice_disable(0,form.pkgpart.options[form.pkgpart.selectedIndex].value);
+      }
     }
     <&| /elements/onload.js &>
       delay_changed();
@@ -96,7 +109,7 @@
        TYPE    = "button"
        VALUE   = "<% mt("Change package") |h %>"
        onClick = "this.disabled=true; standardize_new_location();"
-       <% scalar($cgi->param('pkgpart')) ? '' : 'DISABLED' %>
+       <% #scalar($cgi->param('pkgpart')) ? '' : 'DISABLED' %>
 >
 
 </FORM>

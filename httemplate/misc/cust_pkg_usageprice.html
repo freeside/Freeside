@@ -1,0 +1,121 @@
+<%doc>
+Sets up the xmlhttp, javascript and initial (empty) table for selecting cust_pkg_usageprice.
+Available values are based on pkgpart, and can be updated when changing pkgpart
+by passing the new pkgpart to the following javascript:
+
+  usageprice_pkg_changed( pkgpart, pkgnum )
+
+The pkgnum input is optional, and will be used to set initial selected values.
+
+If pkgpart is passed as an option to this element, will run usageprice_pkg_changed
+once to initialize table;  pkgnum can be passed as an option along with this.
+
+You can disable usageprice selection temporarily (remove the fields from the form)
+with the javascript usageprice_disable(1), and restore it with usageprice_disable(0,pkgnum).
+While disabled, calling usageprice_pkg_changed will have no effect.
+</%doc>
+
+<& /elements/xmlhttp.html,
+              'url'  => $p.'misc/xmlhttp-part_pkg_usageprice.html',
+              'subs' => [ 'get_part_pkg_usageprice' ],
+&>
+
+<FONT CLASS = "fsinnerbox-title" 
+      ID    = "cust_pkg_usageprice_title"
+      STYLE = "display:none"
+><% mt('Usage add-ons') |h %></FONT>
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 ID="cust_pkg_usageprice_table">
+
+</TABLE>
+
+<SCRIPT>
+
+var usagepriceCache = {};
+var usagepriceDisabled = 0;
+
+function usageprice_disable (disabled, pkgpart) {
+  if (disabled) {
+    usageprice_pkg_changed(0);
+    usagepriceDisabled = 1;
+  } else {
+    usagepriceDisabled = 0;
+    usageprice_pkg_changed(pkgpart);
+  }
+}
+
+// main function to invoke when pkgpart changes
+function usageprice_pkg_changed (pkgpart, pkgnum) {
+  if (usagepriceDisabled) return;
+  clear_part_pkg_usageprice();
+
+  if (pkgpart) {
+    if (usagepriceCache[pkgpart]) {
+      update_part_pkg_usageprice(pkgpart);
+    } else {
+      get_part_pkg_usageprice( pkgpart || 0, pkgnum || 0, download_part_pkg_usageprice );
+    }
+  }
+}
+
+// removes table rows & hides table title
+function clear_part_pkg_usageprice () {
+  var table = document.getElementById('cust_pkg_usageprice_table');
+  for ( var r = table.rows.length - 1; r >= 0; r-- ) {
+    table.deleteRow(r);
+  }
+  document.getElementById('cust_pkg_usageprice_title').style.display = 'none';
+}
+
+// catches response from xmlhttp request, updates cache & calls update function
+function download_part_pkg_usageprice (part_pkg_usageprice) {
+  var usagepriceArray = JSON.parse(part_pkg_usageprice);
+  var pkgpart = usagepriceArray[0];
+  usagepriceCache[pkgpart] = usagepriceArray;
+  update_part_pkg_usageprice(pkgpart);
+}
+
+// updates from cache
+function update_part_pkg_usageprice (pkgpart) {
+  if (usagepriceDisabled) return;
+  clear_part_pkg_usageprice();
+
+  var usagepriceArray = usagepriceCache[pkgpart];
+  var table = document.getElementById('cust_pkg_usageprice_table');
+
+  // add the new usage price rows
+  var rownum = 0;
+  for ( var s = 1; s < usagepriceArray.length; s=s+2 ) {
+    var html = usagepriceArray[s];
+    var javascript = usagepriceArray[s+1];
+
+    var row = table.insertRow(rownum++);
+
+    var widget_cell = document.createElement('TD');
+    widget_cell.style.paddingTop = "3px";
+    widget_cell.colSpan = "2";
+    widget_cell.innerHTML = html;
+    row.appendChild(widget_cell);
+
+  }
+
+  if ( rownum > 0 ) {
+    document.getElementById('cust_pkg_usageprice_title').style.display = '';
+  } else {
+    document.getElementById('cust_pkg_usageprice_title').style.display = 'none';
+  }
+
+}
+
+% if ($opt{'pkgpart'}) {
+<&| /elements/onload.js &>
+usageprice_pkg_changed(<% $opt{'pkgpart'} %>, <% $opt{'pkgnum'} %>);
+</&>
+% }
+
+</SCRIPT>
+
+<%init>
+my %opt = @_;
+</%init>
+
+

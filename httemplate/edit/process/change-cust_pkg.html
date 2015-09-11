@@ -59,6 +59,40 @@ unless ($error) {
       $error = $cust_pkg->change_later(\%change);
     }
   } else {
+
+    # for now, can't change usageprice with change_later
+    my @old_cust_pkg_usageprice = $cust_pkg->cust_pkg_usageprice;
+
+    # build new usageprice array
+    # false laziness with /edit/process/quick-cust_pkg.cgi
+    my @cust_pkg_usageprice = ();
+    foreach my $quantity_param ( grep { $cgi->param($_) && $cgi->param($_) > 0 }
+                                   grep /^usagepricenum(\d+)_quantity$/,
+                                     $cgi->param
+                               )
+    {
+      $quantity_param =~ /^usagepricenum(\d+)_quantity$/ or die 'unpossible';
+      my $num = $1;
+      push @cust_pkg_usageprice, new FS::cust_pkg_usageprice {
+        usagepricepart => scalar($cgi->param("usagepricenum${num}_usagepricepart")),
+        quantity       => scalar($cgi->param($quantity_param)),
+      };
+    }
+
+    # Need to figure out if usagepricepart quantities changed
+    my %oldup = map { $_->usagepricepart, $_->quantity } @old_cust_pkg_usageprice;
+    my %newup = map { $_->usagepricepart, $_->quantity } @cust_pkg_usageprice;
+    my $usagechanged = 0;
+    foreach my $up (keys %oldup) {
+      last if $usagechanged;
+      $usagechanged = 1 unless $oldup{$up} == $newup{$up};
+    }
+    foreach my $up (keys %newup) {
+      last if $usagechanged;
+      $usagechanged = 1 unless $oldup{$up} == $newup{$up};
+    }
+    $change{'cust_pkg_usageprice'} = \@cust_pkg_usageprice;
+
     # special case: if there's a package change scheduled, and it matches
     # the parameters the user requested this time, then change to the existing
     # future package.
@@ -68,12 +102,13 @@ unless ($error) {
         $change_to->pkgpart      == $change{'pkgpart'} and
         $change_to->locationnum  == $change{'locationnum'} and
         $change_to->quantity     == $change{'quantity'} and
-        $change_to->contract_end == $change{'contract_end'}
+        $change_to->contract_end == $change{'contract_end'} and
+        !$usagechanged
       ) {
         %change = ( 'cust_pkg' => $change_to );
       }
     }
-    
+
     # do a package change right now
     my $pkg_or_error = $cust_pkg->change( \%change );
     $error = ref($pkg_or_error) ? '' : $pkg_or_error;
