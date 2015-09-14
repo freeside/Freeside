@@ -11,6 +11,7 @@
 <& /elements/select-table.html,
     table       => 'tower',
     name_col    => 'towername',
+    hashref     => { 'disabled' => '', },
     id          => 'towernum',
     field       => 'towernum',
     onchange    => 'change_towernum(this.value);',
