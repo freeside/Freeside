@@ -12,7 +12,6 @@ die "access denied"
 
 my $set_default_detail = sub {
   my ($cgi, $rate_detail) = @_;
-warn Dumper $rate_detail;
   if (!$rate_detail->dest_regionnum) {
     # then this is a global default rate
     my $rate = $rate_detail->rate;
