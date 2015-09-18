@@ -796,3 +796,5 @@ FS/h_svc_circuit.pm
 FS/FeeOrigin_Mixin.pm
 FS/cust_pkg_reason_fee.pm
 t/cust_pkg_reason_fee.t
+FS/report_batch.pm
+t/report_batch.t

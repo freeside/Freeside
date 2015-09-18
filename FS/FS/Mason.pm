@@ -380,6 +380,10 @@ if ( -e $addl_handler_use_file ) {
   use FS::quotation_pkg_tax;
   use FS::cust_pkg_reason_fee;
   use FS::access_user_log;
+  use FS::report_batch;
+  use FS::report_batch;
+  use FS::report_batch;
+  use FS::report_batch;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

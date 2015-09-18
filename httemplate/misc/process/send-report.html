@@ -1,0 +1,7 @@
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Send reports to customers');
+
+my $server = FS::UI::Web::JSRPC->new('FS::report_batch::process_send_report', $cgi);
+</%init>
+<% $server->process %>

@@ -144,11 +144,12 @@ include('/elements/select.html',
 include('/elements/select.html',
   'field' => 'msgtype',
   'curr_value' => $cgi->param('msgtype') || '',
-  'options' => [ '', 'invoice', 'receipt', 'admin' ],
+  'options' => [ '', 'invoice', 'receipt', 'admin', 'report' ],
   'labels'  => { ''         => '(any)',
                  'invoice'  => 'Invoices',
                  'receipt'  => 'Receipts',
                  'admin'    => 'Admin notices',
+                 'report'   => 'Reports',
                },
 ) .
 '</TD>

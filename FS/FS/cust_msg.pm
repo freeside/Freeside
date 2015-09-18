@@ -143,6 +143,7 @@ sub check {
                                     'invoice',
                                     'receipt',
                                     'admin',
+                                    'report',
                                  ])
   ;
   return $error if $error;
