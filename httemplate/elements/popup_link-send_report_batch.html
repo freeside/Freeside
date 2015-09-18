@@ -1,0 +1,28 @@
+<%doc>
+
+Example:
+
+<& /elements/popup_link-send_report_batch.html,
+  reportname => 'sales_commission_pkg',
+  label => 'Click here to send reports by email',
+&>
+</%doc>
+<& /elements/popup_link.html, $params &>\
+<%init>
+
+my $params = { 'closetext' => emt('Close') };
+
+if (ref($_[0]) eq 'HASH') {
+  $params = { %$params, %{ $_[0] } };
+} else {
+  $params = { %$params, @_ };
+}
+
+$params->{'label'} ||= emt('Send reports by email');
+$params->{'actionlabel'} ||= emt('Send reports');
+#$params->{'width'} ||= 350;
+$params->{'height'} ||= 650;
+
+$params->{'action'} = $fsurl. 'misc/send-report.html?reportname='. $params->{'reportname'};
+
+</%init>

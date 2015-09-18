@@ -1124,7 +1124,10 @@ sub tax_locationnum {
   if ( $self->pkgnum ) { # normal sales
     return $self->cust_pkg->tax_locationnum;
   } elsif ( $self->feepart ) { # fees
-    return $self->cust_bill->cust_main->ship_locationnum;
+    my $custnum = $self->fee_origin->custnum;
+    if ( $custnum ) {
+      return FS::cust_main->by_key($custnum)->ship_locationnum;
+    }
   } else { # taxes
     return '';
   }
@@ -1135,7 +1138,10 @@ sub tax_location {
   if ( $self->pkgnum ) { # normal sales
     return $self->cust_pkg->tax_location;
   } elsif ( $self->feepart ) { # fees
-    return $self->cust_bill->cust_main->ship_location;
+    my $custnum = $self->fee_origin->custnum;
+    if ( $custnum ) {
+      return FS::cust_main->by_key($custnum)->ship_location;
+    }
   } else { # taxes
     return;
   }

@@ -7124,6 +7124,37 @@ sub tables_hashref {
                         ],
     },
 
+    'report_batch' => {
+      'columns' => [
+        'reportbatchnum', 'serial',      '',  '', '', '',
+        'reportname',     'varchar',     '', 255, '', '',
+        'agentnum',           'int', 'NULL',  '', '', '',
+        'send_date',     @date_type,              '', '',
+        'sdate',         @date_type,              '', '',
+        'edate',         @date_type,              '', '',
+        'usernum',            'int', 'NULL',  '', '', '',
+        'msgnum',             'int', 'NULL',  '', '', '',
+        # add report params here as necessary
+      ],
+      'primary_key' => 'reportbatchnum',
+      'unique' => [],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns    => [ 'agentnum' ],
+                            table      => 'agent',
+                            references => [ 'agentnum' ],
+                          },
+                          { columns    => [ 'usernum' ],
+                            table      => 'access_user',
+                            references => [ 'usernum' ],
+                          },
+                          { columns    => [ 'msgnum' ],
+                            table      => 'msg_template',
+                            references => [ 'msgnum' ],
+                          },
+                        ],
+    },
+
     # name type nullability length default local
 
     #'new_table' => {

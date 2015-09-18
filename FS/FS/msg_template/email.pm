@@ -200,6 +200,12 @@ A hash reference of additional substitutions
 A string identifying the kind of message this is. Currently can be "invoice", 
 "receipt", "admin", or null. Expand this list as necessary.
 
+=item override_content
+
+A string to use as the HTML body; if specified, replaces the entire
+body of the message. This should be used ONLY by L<FS::report_batch> and may
+go away in the future.
+
 =back
 
 =cut
@@ -264,6 +270,12 @@ sub prepare {
   
   warn "$me filling in body template\n" if $DEBUG;
   $body = $body_tmpl->fill_in( HASH => $hashref );
+
+  # override $body if requested
+  if ( $opt{'override_content'} ) {
+    warn "$me overriding template body with requested content" if $DEBUG;
+    $body = $opt{'override_content'};
+  }
 
   ###
   # and email
