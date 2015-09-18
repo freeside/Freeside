@@ -850,3 +850,11 @@ FS/part_svc_link.pm
 t/part_svc_link.t
 FS/access_user_log.pm
 t/access_user_log.t
+FS/report_batch.pm
+t/report_batch.t
+FS/report_batch.pm
+t/report_batch.t
+FS/report_batch.pm
+t/report_batch.t
+FS/report_batch.pm
+t/report_batch.t
