@@ -22,7 +22,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
   <THEAD>
   <TR>
     <TH ROWSPAN=3></TH>
-    <TH COLSPAN=5>Sales</TH>
+    <TH COLSPAN=6>Sales</TH>
     <TH ROWSPAN=3></TH>
     <TH ROWSPAN=3>Rate</TH>
     <TH ROWSPAN=3></TH>
@@ -41,6 +41,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
     <TH ROWSPAN=1>Non-taxable</TH>
     <TH ROWSPAN=1>Non-taxable</TH>
     <TH ROWSPAN=1>Non-taxable</TH>
+    <TH ROWSPAN=2>Credited</TH>
     <TH ROWSPAN=2>Taxable</TH>
   </TR>
 
@@ -73,10 +74,19 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   } # if $row->{pkgclass} ne ...
 
 %   # construct base links that limit to the tax rates described by this row
+%   # cust_bill_pkg.cgi wants a list of specific taxnums (and package class)
+%   # cust_credit_bill_pkg.html wants a geographic scope (and package class)
 %   my $rowlink = ';taxnum=' . $row->{taxnums};
+%   my $rowregion = '';
+%   foreach my $loc (qw(state county city district)) {
+%     if ( $row->{$loc} ) {
+%       $rowregion .= ";$loc=" . uri_escape($row->{$loc});
+%     }
+%   }
 %   # and also the package class, if we're limiting package class
 %   if ( $params{breakdown}->{pkgclass} ) {
 %     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
+%     $rowregion .= ';classnum=' . ($row->{pkgclass} || 0);
 %   }
 %
 %   if ( $row->{total} ) {
@@ -109,14 +119,20 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
         <% $money_sprintf->( $row->{exempt_monthly} ) %>
       </A>
     </TD>
+%   # credited sales
+    <TD>
+      <A HREF="<% $salescreditlink . $rowregion %>">
+        <% $money_sprintf->( $row->{sales_credited} ) %>
+      </A>
+    </TD>
+    <TD CLASS="bigmath"> &times; </TD>
+    <TD><% $row->{rate} %></TD>
 %   # taxable sales
     <TD>
       <A HREF="<% $saleslink . $rowlink . ";taxable=1" %>">
         <% $money_sprintf->( $row->{taxable} ) %>
       </A>
     </TD>
-    <TD CLASS="bigmath"> &times; </TD>
-    <TD><% $row->{rate} %></TD>
 %   # estimated tax
     <TD CLASS="bigmath"> = </TD>
     <TD>
@@ -134,12 +150,12 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
     <TD CLASS="bigmath"> &minus; </TD>
     <TD>
 %#      <A HREF="<% $creditlink . $rowlink %>"> currently broken
-        <% $money_sprintf->( $row->{credit} ) %>
+        <% $money_sprintf->( $row->{tax_credited} ) %>
 %#      </A>
     </TD>
 %   # net tax due
     <TD CLASS="bigmath"> = </TD>
-    <TD><% $money_sprintf->( $row->{tax} - $row->{credit} ) %></TD>
+    <TD><% $money_sprintf->( $row->{tax} - $row->{tax_credited} ) %></TD>
 %   # tax collected
     <TD>&nbsp;</TD>
     <TD><% $money_sprintf->( $row->{tax_paid} ) %></TD>
@@ -223,6 +239,11 @@ if ( $params{agentnum} ) {
 my $saleslink  = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1";
 my $taxlink    = $p. "search/cust_bill_pkg.cgi?$dateagentlink;istax=1";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
+my $salescreditlink = $p. "search/cust_credit_bill_pkg.html?$dateagentlink;nottax=1";
+if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
+  $salescreditlink =~ s/begin/credit_begin/;
+  $salescreditlink =~ s/end/credit_end/;
+}
 #my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
 #if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
 #  $creditlink =~ s/begin/credit_begin/;

@@ -182,26 +182,92 @@ sub report_internal {
   $all_sql{exempt_monthly} = $all_exempt;
   $all_sql{exempt_monthly} =~ s/EXEMPT_WHERE/exempt_monthly = 'Y'/;
 
-  # taxable sales
-  $sql{taxable} = "$select
-    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+  # credits applied to taxable sales
+  # Note that negative exemptions (from exempt sales being credited) are NOT
+  # counted when calculating the exempt amount. (See above.) Therefore we need
+  # to NOT include any credits against exempt sales in this amount, either.
+  # These two subqueries implement that. They have joins to cust_credit_bill
+  # and cust_bill so that credits can be filtered by application date if
+  # requested.
+
+  # Each row here is the sum of credits applied to a line item.
+  my $sales_credit =
+    "SELECT billpkgnum, SUM(cust_credit_bill_pkg.amount) AS credited
+    FROM cust_credit_bill_pkg
+    JOIN cust_credit_bill USING (creditbillnum)
+    JOIN cust_bill USING (invnum)
+    WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending
+    GROUP BY billpkgnum
+    ";
+
+  # Each row here is the sum of negative exemptions applied to a combination
+  # of line item and tax definition.
+  my $exempt_credit =
+    "SELECT cust_credit_bill_pkg.billpkgnum, taxnum,
+      0 - SUM(cust_tax_exempt_pkg.amount) AS exempt_credited
+    FROM cust_credit_bill_pkg
+    LEFT JOIN cust_tax_exempt_pkg USING (creditbillpkgnum)
+    JOIN cust_credit_bill USING (creditbillnum)
+    JOIN cust_bill USING (invnum)
+    WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending
+    GROUP BY cust_credit_bill_pkg.billpkgnum, taxnum
+    ";
+  
+  if ( $opt{credit_date} eq 'cust_credit_bill' ) {
+    $sales_credit =~ s/cust_bill._date/cust_credit_bill._date/g;
+    $exempt_credit =~ s/cust_bill._date/cust_credit_bill._date/g;
+  }
+
+  $sql{sales_credited} = "$select
+    SUM(COALESCE(credited, 0) - COALESCE(exempt_credited, 0))
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  $all_sql{sales_credited} = "$select_all
+    SUM(COALESCE(credited, 0) - COALESCE(exempt_credited, 0))
+    FROM cust_main_county
+    JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  # taxable sales
+  $sql{taxable} = "$select
+    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+    )
+    FROM cust_main_county
+    JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group";
 
   $all_sql{taxable} = "$select_all
-    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+    )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group_all";
 
@@ -211,27 +277,35 @@ sub report_internal {
   # estimated tax (taxable * rate)
   $sql{estimated} = "$select
     SUM(cust_main_county.tax / 100 * 
-      (cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+      (cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+      )
     )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group";
 
   $all_sql{estimated} = "$select_all
     SUM(cust_main_county.tax / 100 * 
-      (cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+      (cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+      )
     )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group_all";
 
@@ -290,12 +364,12 @@ sub report_internal {
     $creditwhere     =~ s/cust_bill._date/cust_credit_bill._date/g;
   }
 
-  $sql{credit} = "$select SUM(cust_credit_bill_pkg.amount)
+  $sql{tax_credited} = "$select SUM(cust_credit_bill_pkg.amount)
                   $creditfrom
                   $creditwhere AND $istax
                   $group";
 
-  $all_sql{credit} = "$select_all SUM(cust_credit_bill_pkg.amount)
+  $all_sql{tax_credited} = "$select_all SUM(cust_credit_bill_pkg.amount)
                   $creditfrom
                   $creditwhere AND $istax
                   $group_all";
