@@ -44,7 +44,7 @@
 %       'hashref'   => { 'custnum' => $cust_main->custnum, },
 %       'extra_sql' => 'AND ( cancel IS NULL OR cancel = 0 )
 %                       AND freq = '. dbh->quote($freq),
-%       'order_by'  => 'ORDER BY pkgnum', # to ensure old pkgs come before change_to_pkg
+%       'order_by'  => 'ORDER BY COALESCE(start_date,0), pkgnum', # to ensure old pkgs come before change_to_pkg
 %     }) or next;
 % 
 %     my $freq_pretty = $cust_pkg[0]->part_pkg->freq_pretty;
