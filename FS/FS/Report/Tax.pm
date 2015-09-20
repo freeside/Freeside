@@ -557,6 +557,7 @@ sub table {
       # and calculate row totals
       $this_row{sales} = sprintf('%.2f',
                           $this_row{taxable} +
+                          $this_row{sales_credited} +
                           $this_row{exempt_cust} +
                           $this_row{exempt_pkg} + 
                           $this_row{exempt_monthly}
