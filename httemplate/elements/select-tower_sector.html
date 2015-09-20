@@ -2,6 +2,8 @@
 <& /elements/select-table.html,
     table       => 'tower_sector',
     name_col    => 'description',
+    addl_from   => 'JOIN tower USING (towernum)',
+    extra_sql   => q(WHERE disabled = '' OR disabled IS NULL),
     order_by    => 'ORDER BY towernum,sectorname',
     empty_label => ' ',
     @_ 
