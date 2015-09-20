@@ -44,11 +44,13 @@
 %       'hashref'   => { 'custnum' => $cust_main->custnum, },
 %       'extra_sql' => 'AND ( cancel IS NULL OR cancel = 0 )
 %                       AND freq = '. dbh->quote($freq),
+%       'order_by'  => 'ORDER BY COALESCE(start_date,0), pkgnum', # to ensure old pkgs come before change_to_pkg
 %     }) or next;
 % 
 %     my $freq_pretty = $cust_pkg[0]->part_pkg->freq_pretty;
 %
 %     my $amount = 0;
+%     my $skip_pkg = {};
 %     foreach my $cust_pkg (@cust_pkg) {
 %       my $part_pkg = $cust_pkg->part_pkg;
 %       next if $cust_pkg->susp
@@ -56,6 +58,15 @@
 %            && ( ! $part_pkg->option('suspend_bill')
 %                 || $cust_pkg->option('no_suspend_bill')
 %               );
+%
+%       #pkg change handling
+%       next if $skip_pkg->{$cust_pkg->pkgnum};
+%       if ($cust_pkg->change_to_pkgnum) {
+%         #if change is on or before next bill date, use new pkg
+%         next if $cust_pkg->expire <= $cust_pkg->bill;
+%         #if change is after next bill date, use old (this) pkg
+%         $skip_pkg->{$cust_pkg->change_to_pkgnum} = 1;
+%       }
 %
 %       my $pkg_amount = 0;
 %
