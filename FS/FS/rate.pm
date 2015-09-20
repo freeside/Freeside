@@ -469,11 +469,8 @@ sub process {
     warn "$rate replacing $old (". $param->{'ratenum'}. ")\n" if $DEBUG;
 
     my @param = ( 'job'=>$job );
-    if ($param->{'preserve_rate_detail'}) {
-      $rate->default_detailnum($old->default_detailnum);
-    } else {
-      push @param, 'rate_detail'=>\@rate_detail;
-    }
+    
+    $rate->default_detailnum($old->default_detailnum);
 
     $error = $rate->replace( $old, @param );
 
