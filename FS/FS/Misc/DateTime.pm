@@ -6,9 +6,10 @@ use Carp;
 use Time::Local;
 use Date::Parse;
 use DateTime::Format::Natural;
+use Date::Format;
 use FS::Conf;
 
-@EXPORT_OK = qw( parse_datetime day_end );
+@EXPORT_OK = qw( parse_datetime day_end iso8601 );
 
 =head1 NAME
 
@@ -65,11 +66,22 @@ same date but 23:59:59 for the time.
 =cut
 
 sub day_end {
-    my $time = shift;
+  my $time = shift;
 
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-        localtime($time);
-    timelocal(59,59,23,$mday,$mon,$year);
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+      localtime($time);
+  timelocal(59,59,23,$mday,$mon,$year);
+}
+
+=item iso8601 TIME
+
+Parses time as an integer UNIX timestamp and returns the ISO 8601 formatted
+date and time.
+
+=cut
+
+sub iso8601 {
+  time2str('%Y-%m-%dT%T', @_);
 }
 
 =back

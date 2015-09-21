@@ -409,6 +409,22 @@ sub insert {
     warn "can't send payment receipt/statement: $error" if $error;
   }
 
+  #run payment events immediately
+  my $due_cust_event = $self->cust_main->due_cust_event(
+    'eventtable'  => 'cust_pay',
+    'objects'     => [ $self ],
+  );
+  if ( !ref($due_cust_event) ) {
+    warn "Error searching for cust_pay billing events: $due_cust_event\n";
+  } else {
+    foreach my $cust_event (@$due_cust_event) {
+      next unless $cust_event->test_conditions;
+      if ( my $error = $cust_event->do_event() ) {
+        warn "Error running cust_pay billing event: $error\n";
+      }
+    }
+  }
+
   '';
 
 }
