@@ -183,7 +183,8 @@ sub check {
     $self->ut_numbern('optionnum')
     || $self->ut_foreign_key('eventpart', 'part_event', 'eventpart' )
     || $self->ut_text('optionname')
-    || $self->ut_textn('optionvalue')
+    #|| $self->ut_textn('optionvalue')
+    || $self->ut_anything('optionvalue') #http.pm content has \n
   ;
   return $error if $error;
 

@@ -384,6 +384,7 @@ sub eventtable_labels {
     'cust_pkg'       => 'Package',
     'cust_bill'      => 'Invoice',
     'cust_main'      => 'Customer',
+    'cust_pay'       => 'Payment',
     'cust_pay_batch' => 'Batch payment',
     'cust_statement' => 'Statement',  #too general a name here? "Invoice group"?
     'svc_acct'       => 'Login service',
@@ -423,6 +424,7 @@ sub eventtable_pkey {
     'cust_main'      => 'custnum',
     'cust_bill'      => 'invnum',
     'cust_pkg'       => 'pkgnum',
+    'cust_pay'       => 'paynum',
     'cust_pay_batch' => 'paybatchnum',
     'cust_statement' => 'statementnum',
     'svc_acct'       => 'svcnum',
