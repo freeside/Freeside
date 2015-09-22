@@ -10,10 +10,10 @@ use Time::Local;
 use Text::CSV_XS;
 use Date::Parse qw(str2time);
 use Business::CreditCard qw(cardtype);
-use FS::Misc qw(send_email); # for error notification
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::Conf;
 use FS::cust_pay;
+use FS::Log;
 
 =head1 NAME
 
@@ -567,8 +567,8 @@ sub import_from_gateway {
   );
 
   my @item_errors;
-  my $mail_on_error = $conf->config('batch-errors_to');
-  if ( $mail_on_error ) {
+  my $errors_not_fatal = $conf->config('batch-errors_not_fatal');
+  if ( $errors_not_fatal ) {
     # construct error trap
     $proc_opt{'on_parse_error'} = sub {
       my ($self, $line, $error) = @_;
@@ -801,15 +801,10 @@ sub import_from_gateway {
       "Errors during batch import: ".scalar(@item_errors),
       @item_errors
     );
-    if ( $mail_on_error ) {
-      my $subject = "Batch import errors"; #?
-      my $body = "Import from gateway ".$gateway->label."\n".$error_text;
-      send_email(
-        to      => $mail_on_error,
-        from    => $conf->invoice_from_full(),
-        subject => $subject,
-        body    => $body,
-      );
+    if ( $errors_not_fatal ) {
+      my $message = "Import from gateway ".$gateway->label." errors: ".$error_text;
+      my $log = FS::Log->new('FS::pay_batch::import_from_gateway');
+      $log->error($message);
     } else {
       # Bail out.
       $dbh->rollback if $oldAutoCommit;

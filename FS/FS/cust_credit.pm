@@ -9,7 +9,6 @@ use vars qw( $conf $unsuspendauto $me $DEBUG
 use List::Util qw( min );
 use Date::Format;
 use FS::UID qw( dbh );
-use FS::Misc qw(send_email);
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::CurrentUser;
 use FS::cust_pkg;
@@ -277,35 +276,6 @@ sub delete {
     return $error;
   }
 
-  if ( !$opt{void} and $conf->config('deletecredits') ne '' ) {
-
-    my $cust_main = $self->cust_main;
-
-    my $error = send_email(
-      'from'    => $conf->invoice_from_full($self->cust_main->agentnum),
-                                 #invoice_from??? well as good as any
-      'to'      => $conf->config('deletecredits'),
-      'subject' => 'FREESIDE NOTIFICATION: Credit deleted',
-      'body'    => [
-        "This is an automatic message from your Freeside installation\n",
-        "informing you that the following credit has been deleted:\n",
-        "\n",
-        'crednum: '. $self->crednum. "\n",
-        'custnum: '. $self->custnum.
-          " (". $cust_main->last. ", ". $cust_main->first. ")\n",
-        'amount: $'. sprintf("%.2f", $self->amount). "\n",
-        'date: '. time2str("%a %b %e %T %Y", $self->_date). "\n",
-        'reason: '. $self->reason. "\n",
-      ],
-    );
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't send credit deletion notification: $error";
-    }
-
-  }
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -415,7 +385,7 @@ sub void {
     return $error;
   }
 
-  $error = $self->delete(void => 1); # suppress deletecredits warning
+  $error = $self->delete();
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
