@@ -79,10 +79,6 @@ pay_batch_receive(%opt);
 use FS::Cron::export_batch qw(export_batch_submit);
 export_batch_submit(%opt);
 
-#you can skip this by not having the config
-use FS::Cron::agent_email qw(agent_email);
-agent_email(%opt);
-
 #clears out cacti imports & deletes select database cache files
 use FS::Cron::cleanup qw( cleanup cleanup_before_backup );
 cleanup_before_backup();

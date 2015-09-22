@@ -154,6 +154,12 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set('previous_balance-exclude_from_total', '');
   }
 
+  # switch from specifying an email address to boolean check
+  if ( $conf->exists('batch-errors_to') ) {
+    $conf->touch('batch-errors_not_fatal');
+    $conf->delete('batch-errors_to');
+  }
+
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
 }

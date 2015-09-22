@@ -1039,16 +1039,6 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
-    'key'         => 'deletecredits',
-    #not actually deprecated yet
-    #'section'     => 'deprecated',
-    #'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
-    'section'     => '',
-    'description' => 'One or more comma-separated email addresses to be notified when a credit is deleted.',
-    'type'        => [qw( checkbox text )],
-  },
-
-  {
     'key'         => 'deleterefunds',
     'section'     => 'billing',
     'description' => 'Enable deletion of unclosed refunds.  Be very careful!  Only delete refunds that were data-entry errors, not adjustments.',
@@ -2628,14 +2618,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'dump-email_to',
-    'section'     => '',
-    'description' => "Optional email address to send success/failure message for database dumps.",
-    'type'        => 'text',
-    'validate'    => $validate_email,
-  },
-
-  {
     'key'         => 'credit_card-recurring_billing_flag',
     'section'     => 'billing',
     'description' => 'This controls when the system passes the "recurring_billing" flag on credit card transactions.  If supported by your processor (and the Business::OnlinePayment processor module), passing the flag indicates this is a recurring transaction and may turn off the CVV requirement. ',
@@ -3732,11 +3714,12 @@ and customer address. Include units.',
     'select_enum' => [ 'approve', 'decline' ],
   },
 
+  # replaces batch-errors_to (sent email on error)
   {
-    'key'         => 'batch-errors_to',
+    'key'         => 'batch-errors_not_fatal',
     'section'     => 'billing',
-    'description' => 'Email errors when processing batches to this address.  If unspecified, batch processing will stop immediately on error.',
-    'type'        => 'text',
+    'description' => 'If checked, when importing batches from a gateway, item errors will be recorded in the system log without aborting processing.  If unchecked, batch processing will fail on error.',
+    'type'        => 'checkbox',
   },
 
   #lists could be auto-generated from pay_batch info
@@ -4594,13 +4577,6 @@ and customer address. Include units.',
     'type'        => 'text',
   },
   
-  {
-    'key'         => 'email_report-subject',
-    'section'     => '',
-    'description' => 'Subject for reports emailed by freeside-fetch.  Defaults to "Freeside report".',
-    'type'        => 'text',
-  },
-
   {
     'key'         => 'selfservice-head',
     'section'     => 'self-service',
@@ -5725,13 +5701,6 @@ and customer address. Include units.',
       'XLS' => 'XLS (Excel 97/2000/XP)',
       'XLSX' => 'XLSX (Excel 2007+)',
     ],
-  },
-
-  {
-    'key'         => 'agent-email_day',
-    'section'     => '',
-    'description' => 'On this day of each month, agents with master customer records containing email addresses will be emailed a list of their customers and balances.',
-    'type'        => 'text',
   },
 
   {
