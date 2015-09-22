@@ -22,8 +22,12 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
       my ($cdr, $field, $conf, $hashref) = @_;
       $hashref->{skiprow} = 1 unless $field eq 'DCR';
     },
-    '',           # 2. BWGroupID (centrex group)
-    '',           # 3. BWGroupNumber
+    'accountcode',# 2. BWGroupID (centrex group)
+    sub {         # 3. BWGroupNumber
+      my ($cdr, $field) = @_; #, $conf, $hashref) = @_;
+      $cdr->charged_party($field)
+        if $cdr->accountcode eq '' && $field =~ /^(1800|1300)/;
+    },
     'uniqueid',   # 4. Record ID
     'dcontext',   # 5. Call Category (LOCAL, NATIONAL, FREECALL, MOBILE)
     sub {         # 6. Start Date (DDMMYYYY
