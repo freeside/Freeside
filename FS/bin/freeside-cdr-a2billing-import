@@ -91,7 +91,7 @@ my %disposition = (
 );
 
 my @cols = (
-  'cc_call.id as id', 'cc_card.username as username',
+  "$table.id as id", 'cc_card.username as username',
   qw( sessionid
       starttime stoptime sessiontime real_sessiontime
       terminatecauseid
@@ -101,6 +101,7 @@ my @cols = (
 );
 
 my $sql = 'SELECT '.join(',', @cols). " FROM $table".
+  " LEFT JOIN cc_card ON ( $table.card_id = cc_card.id ) ".
   ' WHERE freesidestatus IS NULL' .
   ($start && " AND starttime >= '$start'") .
   ($end   && " AND starttime <  '$end'") ;
