@@ -2355,13 +2355,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'declinetemplate',
-    'section'     => 'deprecated',
-    'description' => 'Template file for credit card and electronic check decline emails.',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'emaildecline',
     'section'     => 'notification',
     'description' => 'Enable emailing of credit card and electronic check decline notices.',
@@ -2382,20 +2375,6 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'Template to use for cancellation emails.',
     %msg_template_options,
-  },
-
-  {
-    'key'         => 'cancelmessage',
-    'section'     => 'deprecated',
-    'description' => 'Template file for cancellation emails.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'cancelsubject',
-    'section'     => 'deprecated',
-    'description' => 'Subject line for cancellation emails.',
-    'type'        => 'text',
   },
 
   {
@@ -2522,86 +2501,17 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'welcome_email',
-    'section'     => 'deprecated',
-    'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.',
-    'type'        => 'textarea',
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'welcome_email-from',
-    'section'     => 'deprecated',
-    'description' => 'From: address header for welcome email',
-    'type'        => 'text',
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'welcome_email-subject',
-    'section'     => 'deprecated',
-    'description' => 'Subject: header for welcome email',
-    'type'        => 'text',
-    'per_agent'   => 1,
-  },
-  
-  {
-    'key'         => 'welcome_email-mimetype',
-    'section'     => 'deprecated',
-    'description' => 'MIME type for welcome email',
-    'type'        => 'select',
-    'select_enum' => [ 'text/plain', 'text/html' ],
-    'per_agent'   => 1,
-  },
-
-  {
     'key'         => 'welcome_letter',
     'section'     => '',
     'description' => 'Optional LaTex template file for a printed welcome letter.  A welcome letter is printed the first time a cust_pkg record is created.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation and the billing documentation for details on the template substitution language.  A variable exists for each fieldname in the customer record (<code>$first, $last, etc</code>).  The following additional variables are available<ul><li><code>$payby</code> - a friendler represenation of the field<li><code>$payinfo</code> - the masked payment information<li><code>$expdate</code> - the time at which the payment method expires (a UNIX timestamp)<li><code>$returnaddress</code> - the invoice return address for this customer\'s agent</ul>',
     'type'        => 'textarea',
   },
 
-#  {
-#    'key'         => 'warning_msgnum',
-#    'section'     => 'notification',
-#    'description' => 'Template to use for warning messages, sent to the customer email invoice destination(s) when a svc_acct record has its usage drop below a threshold.',
-#    %msg_template_options,
-#  },
-
   {
-    'key'         => 'warning_email',
+    'key'         => 'threshold_warning_msgnum',
     'section'     => 'notification',
-    'description' => 'Template file for warning email.  Warning emails are sent to the customer email invoice destination(s) each time a svc_acct record has its usage drop below a threshold or 0.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available<ul><li><code>$username</code> <li><code>$password</code> <li><code>$first</code> <li><code>$last</code> <li><code>$pkg</code> <li><code>$column</code> <li><code>$amount</code> <li><code>$threshold</code></ul>',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'warning_email-from',
-    'section'     => 'notification',
-    'description' => 'From: address header for warning email',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'warning_email-cc',
-    'section'     => 'notification',
-    'description' => 'Additional recipient(s) (comma separated) for warning email when remaining usage reaches zero.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'warning_email-subject',
-    'section'     => 'notification',
-    'description' => 'Subject: header for warning email',
-    'type'        => 'text',
-  },
-  
-  {
-    'key'         => 'warning_email-mimetype',
-    'section'     => 'notification',
-    'description' => 'MIME type for warning email',
-    'type'        => 'select',
-    'select_enum' => [ 'text/plain', 'text/html' ],
+    'description' => 'Template to use for warning messages sent to the customer email invoice destination(s) when a svc_acct record has its usage drop below a threshold.  Extra substitutions available: $column, $amount, $threshold',
+    %msg_template_options,
   },
 
   {
@@ -4062,14 +3972,6 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'Template to use for alerts about first-time recurring billing.',
     %msg_template_options,
-  },
-
-  {
-    'key'         => 'impending_recur_template',
-    'section'     => 'deprecated',
-    'description' => 'Template file for alerts about looming first time recurrant billing.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitition language.  Also see packages with a <a href="../browse/part_pkg.cgi">flat price plan</a>  The following variables are available<ul><li><code>$packages</code> allowing <code>$packages->[0]</code> thru <code>$packages->[n]</code> <li><code>$package</code> the first package, same as <code>$packages->[0]</code> <li><code>$recurdates</code> allowing <code>$recurdates->[0]</code> thru <code>$recurdates->[n]</code> <li><code>$recurdate</code> the first recurdate, same as <code>$recurdate->[0]</code> <li><code>$first</code> <li><code>$last</code></ul>',
-# <li><code>$payby</code> <li><code>$expdate</code> most likely only confuse
-    'type'        => 'textarea',
   },
 
   {
