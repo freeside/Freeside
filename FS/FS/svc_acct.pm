@@ -17,8 +17,7 @@ use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $username_slash $username_equals $username_pound
              $username_exclamation
              $password_noampersand $password_noexclamation
-             $warning_template $warning_from $warning_subject $warning_mimetype
-             $warning_cc
+             $warning_msgnum
              $smtpmachine
              $radius_password $radius_ip
              $dirhash
@@ -90,22 +89,7 @@ FS::UID->install_callback( sub {
   $password_noampersand = $conf->exists('password-noexclamation');
   $password_noexclamation = $conf->exists('password-noexclamation');
   $dirhash = $conf->config('dirhash') || 0;
-  if ( $conf->exists('warning_email') ) {
-    $warning_template = new Text::Template (
-      TYPE   => 'ARRAY',
-      SOURCE => [ map "$_\n", $conf->config('warning_email') ]
-    ) or warn "can't create warning email template: $Text::Template::ERROR";
-    $warning_from = $conf->config('warning_email-from'); # || 'your-isp-is-dum'
-    $warning_subject = $conf->config('warning_email-subject') || 'Warning';
-    $warning_mimetype = $conf->config('warning_email-mimetype') || 'text/plain';
-    $warning_cc = $conf->config('warning_email-cc');
-  } else {
-    $warning_template = '';
-    $warning_from = '';
-    $warning_subject = '';
-    $warning_mimetype = '';
-    $warning_cc = '';
-  }
+  $warning_msgnum = $conf->config('threshold_warning_msgnum');
   $smtpmachine = $conf->config('smtpmachine');
   $radius_password = $conf->config('radius-password') || 'Password';
   $radius_ip = $conf->config('radius-ip') || 'Framed-IP-Address';
@@ -737,83 +721,8 @@ sub insert {
           my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
           $error = $msg_template->send('cust_main' => $cust_main,
                                        'object'    => $self);
+          #should this do something on error?
         }
-        else { #!$msgnum
-          my ($to,$welcome_template,$welcome_from,$welcome_subject,$welcome_subject_template,$welcome_mimetype)
-            = ('','','','','','');
-
-          if ( $conf->exists('welcome_email', $agentnum) ) {
-            $welcome_template = new Text::Template (
-              TYPE   => 'ARRAY',
-              SOURCE => [ map "$_\n", $conf->config('welcome_email', $agentnum) ]
-            ) or warn "can't create welcome email template: $Text::Template::ERROR";
-            $welcome_from = $conf->config('welcome_email-from', $agentnum);
-              # || 'your-isp-is-dum'
-            $welcome_subject = $conf->config('welcome_email-subject', $agentnum)
-              || 'Welcome';
-            $welcome_subject_template = new Text::Template (
-              TYPE   => 'STRING',
-              SOURCE => $welcome_subject,
-            ) or warn "can't create welcome email subject template: $Text::Template::ERROR";
-            $welcome_mimetype = $conf->config('welcome_email-mimetype', $agentnum)
-              || 'text/plain';
-          }
-          if ( $welcome_template ) {
-            my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
-            if ( $to ) {
-
-              my %hash = (
-                           'custnum'  => $self->custnum,
-                           'username' => $self->username,
-                           'password' => $self->_password,
-                           'first'    => $cust_main->first,
-                           'last'     => $cust_main->getfield('last'),
-                           'pkg'      => $cust_pkg->part_pkg->pkg,
-                         );
-              my $wqueue = new FS::queue {
-                'svcnum' => $self->svcnum,
-                'job'    => 'FS::svc_acct::send_email'
-              };
-              my $error = $wqueue->insert(
-                'to'       => $to,
-                'from'     => $welcome_from,
-                'subject'  => $welcome_subject_template->fill_in( HASH => \%hash, ),
-                'mimetype' => $welcome_mimetype,
-                'body'     => $welcome_template->fill_in( HASH => \%hash, ),
-              );
-              if ( $error ) {
-                $dbh->rollback if $oldAutoCommit;
-                return "error queuing welcome email: $error";
-              }
-
-              if ( $options{'depend_jobnum'} ) {
-                warn "$me depend_jobnum found; adding to welcome email dependancies"
-                  if $DEBUG;
-                if ( ref($options{'depend_jobnum'}) ) {
-                  warn "$me adding jobs ". join(', ', @{$options{'depend_jobnum'}} ).
-                       "to welcome email dependancies"
-                    if $DEBUG;
-                  push @jobnums, @{ $options{'depend_jobnum'} };
-                } else {
-                  warn "$me adding job $options{'depend_jobnum'} ".
-                       "to welcome email dependancies"
-                    if $DEBUG;
-                  push @jobnums, $options{'depend_jobnum'};
-                }
-              }
-
-              foreach my $jobnum ( @jobnums ) {
-                my $error = $wqueue->depend_insert($jobnum);
-                if ( $error ) {
-                  $dbh->rollback if $oldAutoCommit;
-                  return "error queuing welcome email job dependancy: $error";
-                }
-              }
-
-            }
-
-          } # if $welcome_template
-        } # if !$msgnum
     }
   } # if $cust_pkg
 
@@ -2119,23 +2028,17 @@ sub _op_usage {
     }
   }
 
-  if ($warning_template && &{$op2warncondition{$op}}($self, $column, $amount)) {
+  if ($warning_msgnum && &{$op2warncondition{$op}}($self, $column, $amount)) {
     my $wqueue = new FS::queue {
       'svcnum' => $self->svcnum,
       'job'    => 'FS::svc_acct::reached_threshold',
     };
 
-    my $to = '';
-    if ($op eq '-'){
-      $to = $warning_cc if &{$op2condition{$op}}($self, $column, $amount);
-    }
-
     # x_threshold race
     my $error = $wqueue->insert(
       'svcnum' => $self->svcnum,
       'op'     => $op,
-      'column' => $column,
-      'to'     => $to,
+      'column' => $column
     );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -2834,32 +2737,6 @@ sub _search_svc {
 
 =over 4
 
-=item send_email
-
-This is the FS::svc_acct job-queue-able version.  It still uses
-FS::Misc::send_email under-the-hood.
-
-=cut
-
-sub send_email {
-  my %opt = @_;
-
-  eval "use FS::Misc qw(send_email)";
-  die $@ if $@;
-
-  $opt{mimetype} ||= 'text/plain';
-  $opt{mimetype} .= '; charset="iso-8859-1"' unless $opt{mimetype} =~ /charset/;
-
-  my $error = send_email(
-    'from'         => $opt{from},
-    'to'           => $opt{to},
-    'subject'      => $opt{subject},
-    'content-type' => $opt{mimetype},
-    'body'         => [ map "$_\n", split("\n", $opt{body}) ],
-  );
-  die $error if $error;
-}
-
 =item check_and_rebuild_fuzzyfiles
 
 =cut
@@ -2973,46 +2850,33 @@ sub reached_threshold {
     my $error = $svc_acct->replace;
     die $error if $error; # email next time, i guess
 
-    if ( $warning_template ) {
-      eval "use FS::Misc qw(send_email)";
-      die $@ if $@;
+    if ( $warning_msgnum ) {
 
-      my $cust_pkg  = $svc_acct->cust_svc->cust_pkg;
-      my $cust_main = $cust_pkg->cust_main;
+      my $msg_template = qsearchs('msg_template',{ msgnum => $warning_msgnum });
+      die "Could not load template for threshold_warning_msgnum ($warning_msgnum)" unless $msg_template;
 
-      my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } 
-                               $cust_main->invoicing_list,
-                               ($opt{'to'} ? $opt{'to'} : ())
-                   );
+      my $cust_main = $svc_acct->cust_svc->cust_pkg->cust_main;
 
-      my $mimetype = $warning_mimetype;
-      $mimetype .= '; charset="iso-8859-1"' unless $opt{mimetype} =~ /charset/;
+      my $to = join(', ', $cust_main->invoicing_list_emailonly );
 
-      my $body       =  $warning_template->fill_in( HASH => {
-                        'custnum'   => $cust_main->custnum,
-                        'username'  => $svc_acct->username,
-                        'password'  => $svc_acct->_password,
-                        'first'     => $cust_main->first,
-                        'last'      => $cust_main->getfield('last'),
-                        'pkg'       => $cust_pkg->part_pkg->pkg,
-                        'column'    => $opt{'column'},
-                        'amount'    => $opt{'column'} =~/bytes/
-                                       ? FS::UI::bytecount::display_bytecount($svc_acct->getfield($opt{'column'}))
-                                       : $svc_acct->getfield($opt{'column'}),
-                        'threshold' => $opt{'column'} =~/bytes/
-                                       ? FS::UI::bytecount::display_bytecount($threshold)
-                                       : $threshold,
-                      } );
-
-
-      my $error = send_email(
-        'from'         => $warning_from,
-        'to'           => $to,
-        'subject'      => $warning_subject,
-        'content-type' => $mimetype,
-        'body'         => [ map "$_\n", split("\n", $body) ],
+      my $error = $msg_template->send(
+        cust_main     => $cust_main,
+        object        => $svc_acct,
+        to            => $to,
+        substitutions => {
+          # have to override these, because we changed threshold above
+          'column'    => $opt{'column'},
+          'amount'    => $opt{'column'} =~/bytes/
+                         ? FS::UI::bytecount::display_bytecount($svc_acct->getfield($opt{'column'}))
+                         : $svc_acct->getfield($opt{'column'}),
+          'threshold' => $opt{'column'} =~/bytes/
+                         ? FS::UI::bytecount::display_bytecount($threshold)
+                         : $threshold,
+        },
       );
-      die $error if $error;
+
+      die "Error sending threshold warning email: $error" if $error;
+
     }
   }else{
     die "unknown op: " . $opt{'op'};

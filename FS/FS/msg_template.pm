@@ -96,6 +96,7 @@ sub _rebless {
   my $class = 'FS::msg_template::' . $self->msgclass;
   eval "use $class;";
   bless($self, $class) unless $@;
+  warn "Error loading msg_template msgclass: " . $@ if $@; #or die?
 
   # merge in the extension fields (but let fields in $self override them)
   # except don't ever override the extension's primary key, it's immutable
@@ -671,20 +672,22 @@ sub _upgrade_data {
     [ 'decline_msgnum',  'declinetemplate',    '',               '', '' ],
     [ 'impending_recur_msgnum', 'impending_recur_template', '',  '', 'impending_recur_bcc' ],
     [ 'payment_receipt_msgnum', 'payment_receipt_email', '',     '', '' ],
-    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from', '' ],
-    [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', '' ],
+    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from', '', 'welcome_email-mimetype' ],
+    [ 'threshold_warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', 'warning_email-cc', 'warning_email-mimetype' ],
   );
  
   my @agentnums = ('', map {$_->agentnum} qsearch('agent', {}));
   foreach my $agentnum (@agentnums) {
     foreach (@fixes) {
-      my ($newname, $oldname, $subject, $from, $bcc) = @$_;
+      my ($newname, $oldname, $subject, $from, $bcc, $mimetype) = @$_;
+      
       if ($conf->exists($oldname, $agentnum)) {
         my $new = new FS::msg_template({
+          'msgclass'  => 'email',
           'msgname'   => $oldname,
           'agentnum'  => $agentnum,
           'from_addr' => ($from && $conf->config($from, $agentnum)) || '',
-          'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
+          'bcc_addr'  => ($bcc && $conf->config($bcc, $agentnum)) || '',
           'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
           'mime_type' => 'text/html',
           'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
@@ -695,6 +698,8 @@ sub _upgrade_data {
         $conf->delete($oldname, $agentnum);
         $conf->delete($from, $agentnum) if $from;
         $conf->delete($subject, $agentnum) if $subject;
+        $conf->delete($bcc, $agentnum) if $bcc;
+        $conf->delete($mimetype, $agentnum) if $mimetype;
       }
     }
 

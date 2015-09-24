@@ -8,7 +8,6 @@ use Data::Dumper;
 use Business::CreditCard 0.28;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
-use FS::Misc qw( send_email );
 use FS::payby;
 use FS::cust_pay;
 use FS::cust_pay_pending;
@@ -1124,31 +1123,7 @@ sub _realtime_bop_result {
         $error = $msg_template->send( 'cust_main' => $self,
                                       'object'    => $cust_pay_pending );
       }
-      else { #!$msgnum
 
-        my @templ = $conf->config('declinetemplate');
-        my $template = new Text::Template (
-          TYPE   => 'ARRAY',
-          SOURCE => [ map "$_\n", @templ ],
-        ) or return "($perror) can't create template: $Text::Template::ERROR";
-        $template->compile()
-          or return "($perror) can't compile template: $Text::Template::ERROR";
-
-        my $templ_hash = {
-          'company_name'    =>
-            scalar( $conf->config('company_name', $self->agentnum ) ),
-          'company_address' =>
-            join("\n", $conf->config('company_address', $self->agentnum ) ),
-          'error'           => $transaction->error_message,
-        };
-
-        my $error = send_email(
-          'from'    => $conf->invoice_from_full( $self->agentnum ),
-          'to'      => [ grep { $_ ne 'POST' } $self->invoicing_list ],
-          'subject' => 'Your payment could not be processed',
-          'body'    => [ $template->fill_in(HASH => $templ_hash) ],
-        );
-      }
 
       $perror .= " (also received error sending decline notification: $error)"
         if $error;
