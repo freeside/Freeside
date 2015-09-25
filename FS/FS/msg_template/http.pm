@@ -61,7 +61,7 @@ sub prepare {
   };
   # put override content _somewhere_ so it can be used
   if ( $opt{'override_content'} ) {
-    $document{'content'} = $opt{'override_content'};
+    $document->{'content'} = $opt{'override_content'};
   }
 
   my $request_content = $json->encode($document);

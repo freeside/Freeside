@@ -837,6 +837,7 @@ sub send_reset_email {
   #die "selfservice-password_reset_msgnum unset" unless $msgnum;
   return { 'error' => "selfservice-password_reset_msgnum unset" } unless $msgnum;
   my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
+  return { 'error' => "selfservice-password_reset_msgnum cannot be loaded" } unless $msg_template;
   my %msg_template = (
     'to'            => join(',', map $_->emailaddress, @contact_email ),
     'cust_main'     => $cust_main,
@@ -846,11 +847,14 @@ sub send_reset_email {
 
   if ( $opt{'queue'} ) { #or should queueing just be the default?
 
+    my $cust_msg = $msg_template->prepare( %msg_template );
+    my $error = $cust_msg->insert;
+    return { 'error' => $error } if $error;
     my $queue = new FS::queue {
-      'job'     => 'FS::Misc::process_send_email',
+      'job'     => 'FS::cust_msg::process_send',
       'custnum' => $cust_main ? $cust_main->custnum : '',
     };
-    $queue->insert( $msg_template->prepare( %msg_template ) );
+    $queue->insert( $cust_msg->custmsgnum );
 
   } else {
 

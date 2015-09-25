@@ -1663,13 +1663,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'payment_receipt_email',
-    'section'     => 'deprecated',
-    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.',
-    'type'        => [qw( checkbox textarea )],
-  },
-
-  {
     'key'         => 'payment_receipt-trigger',
     'section'     => 'notification',
     'description' => 'When payment receipts are triggered.  Defaults to when payment is made.',
