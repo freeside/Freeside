@@ -672,72 +672,31 @@ sub send_receipt {
       my %substitutions = ();
       $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
 
-      my $queue = new FS::queue {
-        'job'     => 'FS::Misc::process_send_email',
-        'paynum'  => $self->paynum,
-        'custnum' => $cust_main->custnum,
-      };
-      $error = $queue->insert(
-        FS::msg_template->by_key($msgnum)->prepare(
+      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
+      unless ($msg_template) {
+        warn "send_receipt could not load msg_template";
+        return;
+      }
+
+      my $cust_msg = $msg_template->prepare(
           'cust_main'     => $cust_main,
           'object'        => $self,
           'from_config'   => 'payment_receipt_from',
           'substitutions' => \%substitutions,
-        ),
-        'msgtype' => 'receipt', # override msg_template's default
+          'msgtype'       => 'receipt',
       );
-
-    } elsif ( $conf->exists('payment_receipt_email') ) {
-
-      my $receipt_template = new Text::Template (
-        TYPE   => 'ARRAY',
-        SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
-      ) or do {
-        warn "can't create payment receipt template: $Text::Template::ERROR";
-        return '';
-      };
-
-      my $payby = $self->payby;
-      my $payinfo = $self->payinfo;
-      $payby =~ s/^BILL$/Check/ if $payinfo;
-      if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
-        $payinfo = $self->paymask
-      } else {
-        $payinfo = $self->decrypt($payinfo);
-      }
-      $payby =~ s/^CHEK$/Electronic check/;
-
-      my %fill_in = (
-        'date'         => time2str("%a %B %o, %Y", $self->_date),
-        'name'         => $cust_main->name,
-        'paynum'       => $self->paynum,
-        'paid'         => sprintf("%.2f", $self->paid),
-        'payby'        => ucfirst(lc($payby)),
-        'payinfo'      => $payinfo,
-        'balance'      => $cust_main->balance,
-        'company_name' => $conf->config('company_name', $cust_main->agentnum),
-      );
-
-      $fill_in{'invnum'} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
-
-      if ( $opt->{'cust_pkg'} ) {
-        $fill_in{'pkg'} = $opt->{'cust_pkg'}->part_pkg->pkg;
-        #setup date, other things?
+      $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
+      if ($error) {
+        warn "send_receipt: $error";
+        return;
       }
 
       my $queue = new FS::queue {
-        'job'     => 'FS::Misc::process_send_generated_email',
+        'job'     => 'FS::cust_msg::process_send',
         'paynum'  => $self->paynum,
         'custnum' => $cust_main->custnum,
-        'msgtype' => 'receipt',
       };
-      $error = $queue->insert(
-        'from'    => $conf->invoice_from_full( $cust_main->agentnum ),
-                                   #invoice_from??? well as good as any
-        'to'      => \@invoicing_list,
-        'subject' => 'Payment receipt',
-        'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
-      );
+      $error = $queue->insert( $cust_msg->custmsgnum );
 
     } else {
 

@@ -414,34 +414,6 @@ sub generate_email {
 
 }
 
-=item process_send_email OPTION => VALUE ...
-
-Takes arguments as per generate_email() and sends the message.  This 
-will die on any error and can be used in the job queue.
-
-=cut
-
-sub process_send_email {
-  my %message = @_;
-  my $error = send_email(generate_email(%message));
-  die "$error\n" if $error;
-  '';
-}
-
-=item process_send_generated_email OPTION => VALUE ...
-
-Takes arguments as per send_email() and sends the message.  This 
-will die on any error and can be used in the job queue.
-
-=cut
-
-sub process_send_generated_email {
-  my %args = @_;
-  my $error = send_email(%args);
-  die "$error\n" if $error;
-  '';
-}
-
 =item send_fax OPTION => VALUE ...
 
 Options:
