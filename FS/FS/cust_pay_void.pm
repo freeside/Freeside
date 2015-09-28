@@ -1,6 +1,6 @@
 package FS::cust_pay_void; 
 use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
-             FS::Record );
+             FS::reason_Mixin FS::Record );
 
 use strict;
 use vars qw( @encrypted_fields $otaker_upgrade_kludge );
@@ -88,7 +88,9 @@ Desired pkgnum when using experimental package balances.
 
 =item void_date
 
-=item reason
+=item reason - a freeform string (deprecated)
+
+=item reasonnum - Reason for voiding the payment (see L<FS::reson>)
 
 =back
 
@@ -189,6 +191,7 @@ sub check {
     || $self->ut_numbern('void_date')
     || $self->ut_textn('reason')
     || $self->payinfo_check
+    || $self->ut_foreign_keyn('reasonnum', 'reason', 'reasonnum')
   ;
   return $error if $error;
 
@@ -221,9 +224,17 @@ sub void_access_user {
   qsearchs('access_user', { 'usernum' => $self->void_usernum } );
 }
 
+=item reason
+
+Returns the text of the associated void reason (see L<FS::reason>) for this.
+
+=cut
+
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
+
+  $class->_upgrade_reasonnum(%opts);
 
   my $sql = "SELECT usernum FROM access_user WHERE username = ( SELECT history_user FROM h_cust_pay_void WHERE paynum = ? AND history_action = 'insert' ORDER BY history_date LIMIT 1 ) ";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
