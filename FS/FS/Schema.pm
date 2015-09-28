@@ -2505,6 +2505,7 @@ sub tables_hashref {
         #void fields
         'void_date',  @date_type,                  '', '', 
         'reason',      'varchar', 'NULL', $char_d, '', '', 
+        'reasonnum',       'int', 'NULL',      '', '', '', 
         'void_usernum',    'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'paynum',
@@ -2525,6 +2526,9 @@ sub tables_hashref {
                           },
                           { columns    => [ 'gatewaynum' ],
                             table      => 'payment_gateway',
+                          },
+                          { columns    => [ 'reasonnum' ],
+                            table      => 'reason',
                           },
                           { columns    => [ 'void_usernum' ],
                             table      => 'access_user',

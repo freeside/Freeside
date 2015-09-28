@@ -2,9 +2,9 @@ package FS::cust_pay;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
-             FS::Record );
+             FS::reason_Mixin FS::Record);
 use vars qw( $DEBUG $me $conf @encrypted_fields
-             $unsuspendauto $ignore_noapply 
+             $unsuspendauto $ignore_noapply
            );
 use Date::Format;
 use Business::CreditCard;
@@ -24,6 +24,8 @@ use FS::cust_pkg;
 use FS::cust_pay_void;
 use FS::upgrade_journal;
 use FS::Cursor;
+use FS::reason;
+use FS::reason_type;
 
 $DEBUG = 0;
 
@@ -438,6 +440,15 @@ adds a record of the voided payment to the FS::cust_pay_void table.
 
 sub void {
   my $self = shift;
+  my $reason = shift;
+
+  unless (ref($reason) || !$reason) {
+    $reason = FS::reason->new_or_existing(
+      'class'  => 'X',
+      'type'   => 'Void payment',
+      'reason' => $reason
+    );
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -453,7 +464,7 @@ sub void {
   my $cust_pay_void = new FS::cust_pay_void ( {
     map { $_ => $self->get($_) } $self->fields
   } );
-  $cust_pay_void->reason(shift) if scalar(@_);
+  $cust_pay_void->reasonnum($reason->reasonnum) if $reason;
   my $error = $cust_pay_void->insert;
 
   my $cust_pay_pending =
@@ -1063,6 +1074,8 @@ sub _upgrade_data {  #class method
   my ($class, %opt) = @_;
 
   warn "$me upgrading $class\n" if $DEBUG;
+
+  $class->_upgrade_reasonnum(%opt);
 
   local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
 
