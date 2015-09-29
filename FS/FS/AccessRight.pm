@@ -184,7 +184,6 @@ tie my %rights, 'Tie::IxHash',
     'Resend invoices', #NEWNEW
     'Void invoices',
     'Unvoid invoices',
-    'Delete invoices',
     'View customer tax exemptions', #yow
     'Edit customer tax exemptions', #NEWNEW
     'Add customer tax adjustment', #new, but no need to phase in
