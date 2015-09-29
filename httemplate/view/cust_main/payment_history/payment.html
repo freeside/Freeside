@@ -1,5 +1,5 @@
 <% $payment. ' '.  $info. $desc.
-   $view. $change_pkg. $apply. $refund. $void. $delete. $unapply
+   $view. $change_pkg. $apply. $refund. $void. $unapply
 %>
 <%init>
 
@@ -184,16 +184,6 @@ $void = areyousure_link("${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
        || ( $cust_pay->payby eq 'CHEK'          && $opt{'Echeck void'}      )
        || ( $cust_pay->payby !~ /^(CARD|CHEK)$/ && $opt{'Void payments'}    )
      );
-
-my $delete = '';
-$delete = areyousure_link("${p}misc/delete-cust_pay.cgi?".$cust_pay->paynum,
-                            emt('Are you sure you want to delete this payment?'),
-                            emt('Delete this payment from the database completely - not recommended'),
-                            emt('delete')
-                         )
-  if $cust_pay->closed !~ /^Y/i
-  && $opt{'deletepayments'}
-  && $opt{'Delete payment'};
 
 my $unapply = '';
 $unapply = areyousure_link("${p}misc/unapply-cust_pay.cgi?".$cust_pay->paynum,
