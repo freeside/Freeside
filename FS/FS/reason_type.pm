@@ -11,7 +11,7 @@ our %class_name = (
   'R' => 'credit',
   'S' => 'suspend',
   'F' => 'refund',
-  'X' => 'void credit',
+  'X' => 'void', # credit/invoice/payment
 );
 
 our %class_purpose = (  
