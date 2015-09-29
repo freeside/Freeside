@@ -135,6 +135,45 @@ $cgi->param('discount_term') =~ /^(\d*)$/
   or errorpage("illegal discount_term");
 my $discount_term = $1;
 
+# save first, for proper tokenization later
+if ( $cgi->param('save') ) {
+  my $new = new FS::cust_main { $cust_main->hash };
+  if ( $payby eq 'CARD' ) { 
+    $new->set( 'payby' => ( $cgi->param('auto') ? 'CARD' : 'DCRD' ) );
+  } elsif ( $payby eq 'CHEK' ) {
+    $new->set( 'payby' => ( $cgi->param('auto') ? 'CHEK' : 'DCHK' ) );
+  } else {
+    die "unknown payby $payby";
+  }
+  $new->payinfo($payinfo); #to properly set paymask
+  $new->set( 'paydate' => "$year-$month-01" );
+  $new->set( 'payname' => $payname );
+
+  #false laziness w/FS:;cust_main::realtime_bop - check both to make sure
+  # working correctly
+  if ( $payby eq 'CARD' &&
+       grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save') ) {
+    $new->set( 'paycvv' => $paycvv );
+  } else {
+    $new->set( 'paycvv' => '');
+  }
+
+  if ( $payby eq 'CARD' ) {
+    my $bill_location = FS::cust_location->new;
+    $bill_location->set( $_ => $cgi->param($_) )
+      foreach @{$payby2fields{$payby}};
+    $new->set('bill_location' => $bill_location);
+    # will do nothing if the fields are all unchanged
+  } else {
+    $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
+  }
+
+  my $error = $new->replace($cust_main);
+  errorpage("error saving info, payment not processed: $error")
+    if $error;
+  $cust_main = $new;
+}
+
 my $error = '';
 my $paynum = '';
 if ( $cgi->param('batch') ) {
@@ -188,44 +227,6 @@ if ( $cgi->param('batch') ) {
 
   $cust_main->apply_payments;
 
-}
-
-if ( $cgi->param('save') ) {
-  my $new = new FS::cust_main { $cust_main->hash };
-  if ( $payby eq 'CARD' ) { 
-    $new->set( 'payby' => ( $cgi->param('auto') ? 'CARD' : 'DCRD' ) );
-  } elsif ( $payby eq 'CHEK' ) {
-    $new->set( 'payby' => ( $cgi->param('auto') ? 'CHEK' : 'DCHK' ) );
-  } else {
-    die "unknown payby $payby";
-  }
-  $new->set( 'payinfo' => $cust_main->card_token || $payinfo );
-  $new->set( 'paydate' => "$year-$month-01" );
-  $new->set( 'payname' => $payname );
-
-  #false laziness w/FS:;cust_main::realtime_bop - check both to make sure
-  # working correctly
-  if ( $payby eq 'CARD' &&
-       grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save') ) {
-    $new->set( 'paycvv' => $paycvv );
-  } else {
-    $new->set( 'paycvv' => '');
-  }
-
-  if ( $payby eq 'CARD' ) {
-    my $bill_location = FS::cust_location->new;
-    $bill_location->set( $_ => $cgi->param($_) )
-      foreach @{$payby2fields{$payby}};
-    $new->set('bill_location' => $bill_location);
-    # will do nothing if the fields are all unchanged
-  } else {
-    $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
-  }
-
-  my $error = $new->replace($cust_main);
-  errorpage("payment processed successfully, but error saving info: $error")
-    if $error;
-  $cust_main = $new;
 }
 
 #success!
