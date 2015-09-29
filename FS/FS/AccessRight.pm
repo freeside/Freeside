@@ -210,7 +210,6 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Process payment', desc=>'Process credit card or e-check payments' },
     'Process credit card payment',
     'Process Echeck payment',
-    { rightname=>'Delete payment', desc=>'Enable deletion of unclosed payments. Be very careful!  Only delete payments that were data-entry errors, not adjustments.' }, #aka. deletepayments Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.
   ],
   
   ###
@@ -224,7 +223,6 @@ tie my %rights, 'Tie::IxHash',
     'Void credit', #NEWER than things marked NEWNEWNEW
     'Unvoid credit', #NEWER than things marked NEWNEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
-    { rightname=>'Delete credit', desc=>'Enable deletion of unclosed credits. Be very careful!  Only delete credits that were data-entry errors, not adjustments.' }, #aka. deletecredits Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
     'View refunds',
     { rightname=>'Post refund', desc=>'Enable posting of check and cash refunds.' },
     'Post check refund',
@@ -442,9 +440,6 @@ Most (but not all) right names.
 sub default_superuser_rights {
   my $class = shift;
   my %omit = map { $_=>1 } (
-    'Delete invoices',
-    'Delete payment',
-    'Delete credit', #?
     'Delete refund', #?
     'Edit customer package dates',
     'Time queue',
