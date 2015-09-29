@@ -24,7 +24,7 @@ This module implements a backend API for advanced back-office integration.
 In contrast to the self-service API, which authenticates an end-user and offers
 functionality to that end user, the backend API performs a simple shared-secret
 authentication and offers full, administrator functionality, enabling
-integration with other back-office systems.  Only ccess this API from a secure 
+integration with other back-office systems.  Only access this API from a secure 
 network from other backoffice machines. DON'T use this API to create customer 
 portal functionality.
 
