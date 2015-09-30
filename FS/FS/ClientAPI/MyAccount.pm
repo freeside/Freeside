@@ -1107,6 +1107,45 @@ sub do_process_payment {
 
   my $payby = delete $validate->{'payby'};
 
+  if ( $validate->{'save'} ) {
+    my $new = new FS::cust_main { $cust_main->hash };
+    if ($payby eq 'CARD' || $payby eq 'DCRD') {
+      $new->set( $_ => $validate->{$_} )
+        foreach qw( payname paystart_month paystart_year payissue payip );
+      $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
+
+      my $bill_location = FS::cust_location->new({
+          map { $_ => $validate->{$_} } 
+          qw(address1 address2 city state country zip)
+      }); # county?
+      $new->set('bill_location' => $bill_location);
+      # but don't allow the service address to change this way.
+
+    } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
+      $new->set( $_ => $validate->{$_} )
+        foreach qw( payname payip paytype paystate
+                    stateid stateid_state );
+      $new->set( 'payby' => $validate->{'auto'} ? 'CHEK' : 'DCHK' );
+    }
+    $new->payinfo( $validate->{'payinfo'} ); #to properly set paymask
+    $new->set( 'paydate' => $validate->{'paydate'} );
+    my $error = $new->replace($cust_main);
+    if ( $error ) {
+      #no, this causes customers to process their payments again
+      #return { 'error' => $error };
+      #XXX just warn verosely for now so i can figure out how these happen in
+      # the first place, eventually should redirect them to the "change
+      #address" page but indicate if the payment processed?
+      delete($validate->{'payinfo'}); #don't want to log this!
+      warn "WARNING: error changing customer info when processing payment (not returning to customer as a processing error): $error\n".
+           "NEW: ". Dumper($new)."\n".
+           "OLD: ". Dumper($cust_main)."\n".
+           "PACKET: ". Dumper($validate)."\n";
+    } else {
+      $cust_main = $new;
+    }
+  }
+
   my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
     'quiet'       => 1,
     'manual'      => 1,
@@ -1137,46 +1176,6 @@ sub do_process_payment {
   }
 
   $cust_main->apply_payments;
-
-  if ( $validate->{'save'} ) {
-    my $new = new FS::cust_main { $cust_main->hash };
-    if ($payby eq 'CARD' || $payby eq 'DCRD') {
-      $new->set( $_ => $validate->{$_} )
-        foreach qw( payname paystart_month paystart_year payissue payip );
-      $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
-
-      my $bill_location = FS::cust_location->new({
-          map { $_ => $validate->{$_} } 
-          qw(address1 address2 city state country zip)
-      }); # county?
-      $new->set('bill_location' => $bill_location);
-      # but don't allow the service address to change this way.
-
-    } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
-      $new->set( $_ => $validate->{$_} )
-        foreach qw( payname payip paytype paystate
-                    stateid stateid_state );
-      $new->set( 'payby' => $validate->{'auto'} ? 'CHEK' : 'DCHK' );
-    }
-    $new->set( 'payinfo' => $cust_main->card_token || $validate->{'payinfo'} );
-    $new->set( 'paydate' => $validate->{'paydate'} );
-    my $error = $new->replace($cust_main);
-    if ( $error ) {
-      #no, this causes customers to process their payments again
-      #return { 'error' => $error };
-      #XXX just warn verosely for now so i can figure out how these happen in
-      # the first place, eventually should redirect them to the "change
-      #address" page but indicate the payment did process??
-      delete($validate->{'payinfo'}); #don't want to log this!
-      warn "WARNING: error changing customer info when processing payment (not returning to customer as a processing error): $error\n".
-           "NEW: ". Dumper($new)."\n".
-           "OLD: ". Dumper($cust_main)."\n".
-           "PACKET: ". Dumper($validate)."\n";
-    #} else {
-      #not needed...
-      #$cust_main = $new;
-    }
-  }
 
   my $cust_pay = '';
   my $receipt_html = '';
