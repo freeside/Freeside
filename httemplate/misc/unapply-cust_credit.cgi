@@ -1,4 +1,4 @@
-<% $cgi->redirect($p. "view/cust_main.cgi?". $custnum) %>
+<% $cgi->redirect($p. "view/cust_main.cgi?custnum=". $custnum. ";show=payment_history") %>
 <%init>
 
 die "access denied"
