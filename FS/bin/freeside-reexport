@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw($opt_s $opt_u $opt_p);
+use vars qw($opt_s $opt_u $opt_p $opt_e);
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
@@ -22,7 +22,7 @@ if ( $export_x =~ /^(\d+)$/ ) {
     or die "no exports of type $export_x found\n";
 }
 
-getopts('s:u:p:');
+getopts('s:u:p:e:');
 
 my @svc_x = ();
 if ( $opt_s ) {
@@ -38,16 +38,20 @@ if ( $opt_s ) {
   die "no services with svcpart $opt_p found\n" unless @svc_x;
 }
 
+$opt_e ||= 'insert';
+die &usage unless grep { $_ eq $opt_e } qw( insert replace delete suspend unsuspend );
+my $method = 'export_' . $opt_e;
+
 foreach my $part_export ( @part_export ) {
   foreach my $svc_x ( @svc_x ) {
-    my $error = $part_export->export_insert($svc_x);
+    my $error = $part_export->$method($svc_x,$svc_x);
     die $error if $error;
   }
 }
 
 
 sub usage {
-  die "Usage:\n\n  freeside-reexport user exportnum|exporttype [ -s svcnum | -u username | -p svcpart ]\n";
+  return "Usage:\n\n  freeside-reexport user exportnum|exporttype [ -s svcnum | -u username | -p svcpart ] [ -e insert|replace|delete|suspend|unsuspend ]\n";
 }
 
 =head1 NAME
@@ -56,12 +60,13 @@ freeside-reexport - Command line tool to re-trigger export jobs for existing ser
 
 =head1 SYNOPSIS
 
-  freeside-reexport user exportnum|exporttype [ -s svcnum | -u username | -p svcpart ]
+  freeside-reexport user exportnum|exporttype [ -s svcnum | -u username | -p svcpart ] [ -e insert|replace|delete|suspend|unsuspend ]
 
 =head1 DESCRIPTION
 
   Re-queues the export job for the specified exportnum or exporttype(s) and
-  specified service (selected by svcnum or username).
+  specified service (selected by svcnum, username or svcpart).  Optionally 
+  specify the phase of export using the -e flag (default is insert.)
 
 =head1 SEE ALSO
 
