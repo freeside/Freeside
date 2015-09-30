@@ -1,5 +1,5 @@
 package FS::cust_bill_pkg_void;
-use base qw( FS::TemplateItem_Mixin FS::Record );
+use base qw( FS::TemplateItem_Mixin FS::reason_Mixin FS::Record );
 
 use strict;
 use FS::Record qw( qsearch qsearchs dbh fields );
@@ -104,6 +104,13 @@ unitrecur
 
 hidden
 
+=item reason 
+
+freeform string (deprecated)
+
+=item reasonnum 
+
+reason for voiding the payment (see L<FS::reson>)
 
 =back
 
@@ -133,6 +140,10 @@ sub discount_table          { 'cust_bill_pkg_discount_void'; }
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
+
+=item reason
+
+Returns the text of the associated void reason (see L<FS::reason>) for this.
 
 =item unvoid 
 
@@ -242,6 +253,8 @@ sub check {
     || $self->ut_moneyn('unitrecur')
     || $self->ut_enum('hidden', [ '', 'Y' ])
     || $self->ut_numbern('feepart')
+    || $self->ut_textn('reason')
+    || $self->ut_foreign_keyn('reasonnum', 'reason', 'reasonnum')
   ;
   return $error if $error;
 

@@ -1,5 +1,6 @@
 package FS::cust_bill_void;
-use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record );
+use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin
+             FS::reason_Mixin FS::Record );
 
 use strict;
 use FS::Record qw( qsearch qsearchs dbh fields );
@@ -82,9 +83,13 @@ promised_date
 
 void_date
 
-=item reason
+=item reason 
 
-reason
+freeform string (deprecated)
+
+=item reasonnum 
+
+reason for voiding the payment (see L<FS::reson>)
 
 =item void_usernum
 
@@ -216,6 +221,7 @@ sub check {
     || $self->ut_numbern('void_date')
     || $self->ut_textn('reason')
     || $self->ut_numbern('void_usernum')
+    || $self->ut_foreign_keyn('reasonnum', 'reason', 'reasonnum')
   ;
   return $error if $error;
 
@@ -258,6 +264,10 @@ sub void_access_user {
 =item cust_main
 
 =item cust_bill_pkg
+
+=item reason
+
+Returns the text of the associated void reason (see L<FS::reason>) for this.
 
 =cut
 
