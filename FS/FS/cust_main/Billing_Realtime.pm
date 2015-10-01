@@ -766,8 +766,6 @@ sub realtime_bop {
 
   if ( $transaction->can('card_token') && $transaction->card_token ) {
 
-    $self->card_token($transaction->card_token);
-
     if ( $options{'payinfo'} eq $self->payinfo ) {
       $self->payinfo($transaction->card_token);
       my $error = $self->replace;
