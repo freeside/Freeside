@@ -1,0 +1,127 @@
+<%init>
+my %opt = @_;
+my $field = $opt{'field'};
+my $id = $opt{'id'} || $opt{'field'};
+my $div_id = "div_$id";
+
+my $vertices_json = $opt{'curr_value'} || '[]';
+</%init>
+<& hidden.html, %opt &>
+<div id="<% $div_id %>" style="height: 600px; width: 600px"></div>
+
+<script src="https://maps.googleapis.com/maps/api/js?libraries=drawing"></script>
+<script>
+var map;
+var drawingManager;
+
+function updateFormInput(event) {
+  var path = window.polygon.getPath();
+  var vertices = []; // array of arrays, geoJSON style
+  for (var i =0; i < path.getLength(); i++) {
+    var xy = path.getAt(i);
+    vertices[i] = [ xy.lat(), xy.lng() ];
+  }
+  console.log(vertices); //XXX
+  $('#<% $field %>').prop('value', JSON.stringify(vertices));
+}
+
+$(function() {
+  mapOptions = {
+    zoom: 4,
+    center: {lat: 39.40114, lng: -96.57127}, // continental U.S.
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    panControl: true,
+    scaleControl: true,
+    streetViewControl: false,
+  };
+  map = new google.maps.Map($('#<% $div_id %>')[0], mapOptions);
+
+  var polygonComplete = function(p) {
+    window.polygon = p;
+    if (drawingManager) {
+      drawingManager.setDrawingMode(null);
+      drawingManager.setOptions({ drawingControl: false });
+    }
+    // double click to delete a vertex (so long as it remains a polygon)
+    p.addListener('dblclick', function (mev) {
+      if (mev.vertex != null && window.polygon.getPath().length > 3) {
+        p.getPath().removeAt(mev.vertex);
+      }
+    });
+    // any time the polygon is modified, update the vertex list
+    p.getPath().addListener('set_at', updateFormInput);
+    p.getPath().addListener('insert_at', updateFormInput);
+    p.getPath().addListener('remove_at', updateFormInput);
+
+    // and also now
+    updateFormInput();
+  };
+
+  var polygonOptions = {
+    fillColor: '#0000a0',
+    fillOpacity: 0.2,
+    strokeColor: '#0000a0',
+    strokeWeight: 2,
+    clickable: false,
+    editable: true,
+    zIndex: 1,
+    map: map,
+  };
+
+  var vertex_array = <% $vertices_json %>;
+  if ( vertex_array.length > 2 ) {
+    // then we already have a polygon. make it acceptable to google maps,
+    // and also create a bounding box for it and fit the map to that.
+
+    var path = [];
+    var bounds = new google.maps.LatLngBounds();
+    for (var i = 0; i < vertex_array.length; i++) {
+      var xy = new google.maps.LatLng(vertex_array[i][0], vertex_array[i][1]);
+      path.push(xy);
+      bounds.extend(xy);
+    }
+
+    polygonOptions.paths = [ path ];
+    polygonComplete(new google.maps.Polygon(polygonOptions));
+    map.fitBounds(bounds);
+
+  } else {
+    // there are no vertices, or not enough to make a polygon, so 
+    // enable drawing mode to create a new one
+
+    drawingManager = new google.maps.drawing.DrawingManager({
+      drawingMode: google.maps.drawing.OverlayType.POLYGON,
+      drawingControl: true,
+      drawingControlOptions: {
+        position: google.maps.ControlPosition.TOP_CENTER,
+        drawingModes: [
+          google.maps.drawing.OverlayType.POLYGON,
+        ]
+      },
+      polygonOptions: polygonOptions,
+    });
+
+    // after a single polygon is drawn: remember it, add a listener to let
+    // nodes be deleted, and exit drawing mode
+    drawingManager.addListener('polygoncomplete', polygonComplete);
+    drawingManager.setMap(map);
+
+    // center the map on the user (for lack of a better choice)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        var pos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        map.setCenter(pos);
+        map.setZoom(12);
+      });
+    } // on error, or if geolocation isn't available, do nothing
+  }
+
+});
+
+    </script>
+  </body>
+</html>

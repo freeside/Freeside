@@ -17,6 +17,7 @@
                         'Market',
                         'Advertised Mbps',
                         'Contractual Mbps',
+                        'Vertices',
                         'Census blocks',
                      ],
   fields          => [  'zonenum',
@@ -42,6 +43,9 @@
                               )
                             },
                         sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                            },
+                        sub { my $self = shift;
                               FS::deploy_zone_block->count('zonenum = '.$self->zonenum)
                             },
                      ],
@@ -53,7 +57,7 @@
                        '(cir_speed_down, cir_speed_up)',
                      ],
   links           => [  $link_fixed, $link_fixed, ],
-  align           => 'clllllr',
+  align           => 'cllllrr',
   nohtmlheader    => 1,
   disable_maxselect => 1,
   disable_total     => 1,

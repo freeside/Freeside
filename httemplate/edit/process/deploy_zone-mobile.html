@@ -2,8 +2,25 @@
     error_redirect => popurl(2).'deploy_zone-mobile.html',
     table       => 'deploy_zone',
     viewall_dir => 'browse',
-    process_o2m => 
+    precheck_callback => $precheck_callback,
+    process_o2m =>
       { 'table'  => 'deploy_zone_vertex',
                      'fields' => [qw( latitude longitude )]
       },
 &>
+<%init>
+my $precheck_callback = sub {
+  # convert the vertex list into a process_o2m-style parameter list
+  if ( $cgi->param('vertices') ) {
+    my $vertices = decode_json($cgi->param('vertices'));
+    my $i = 0;
+    foreach (@$vertices) {
+      $cgi->param("vertexnum${i}", '');
+      $cgi->param("vertexnum${i}_latitude", $_->[0]);
+      $cgi->param("vertexnum${i}_longitude", $_->[1]);
+      $i++;
+    }
+  }
+  '';
+};
+</%init>
