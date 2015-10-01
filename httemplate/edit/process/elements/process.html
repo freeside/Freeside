@@ -160,7 +160,26 @@ process();
 </script>
 <& /elements/footer.html &>
 
-%} elsif ( $opt{'popup_reload'} ) {
+% } elsif ( $opt{'progress_init'} ) {
+%   # some false laziness with the above
+%   my ($form_name, $job_fields) = @{ $opt{'progress_init'} };
+<form name="<% $form_name %>">
+%   foreach my $field (@$job_fields) {
+  <input type="hidden" name="<% $field %>" value="<% $cgi->param($field) |h %>">
+%   }
+<& /elements/progress-init.html,
+  @{ $opt{'progress_init'} }
+&>
+<input type="submit" style="display:none">
+</form>
+<script>
+<&| /elements/onload.js &>
+process();
+</&>
+</script>
+<& /elements/footer.html &>
+
+% } elsif ( $opt{'popup_reload'} ) {
 
   <% include('/elements/header-popup.html', $opt{'popup_reload'} ) %>
 

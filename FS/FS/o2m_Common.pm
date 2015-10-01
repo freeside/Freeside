@@ -35,11 +35,19 @@ Available options:
 
 table (required) - Table into which the records are inserted.
 
-num_col (optional) - Column in table which links to the primary key of the base table.  If not specified, it is assumed this has the same name.
+fields (required) - Arrayref of the field names in the "many" table.
 
-params (required) - Hashref of keys and values, often passed as C<scalar($cgi->Vars)> from a form.
+params (required) - Hashref of keys and values, often passed as
+C<scalar($cgi->Vars)> from a form. This will be scanned for keys of the form
+"pkeyNN" (where pkey is the primary key column name, and NN is an integer).
+Each of these designates one record in the "many" table. The contents of
+that record will be taken from other parameters with the names
+"pkeyNN_myfield" (where myfield is one of the fields in the 'fields'
+array).
 
-fields (required) - Arrayref of field names for each record in table.  Pulled from params as "pkeyNN_field" where pkey is table's primary key and NN is the entry's numeric identifier.
+num_col (optional) - Name of the foreign key column in the "many" table, which
+links to the primary key of the base table. If not specified, it is assumed
+this has the same name as in the base table.
 
 =cut
 
