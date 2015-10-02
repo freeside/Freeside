@@ -1230,7 +1230,14 @@ sub _make_lines {
         return "$@ running calc_setup for $cust_pkg\n"
           if $@;
 
-        $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+        # Only increment unitsetup here if there IS a setup fee.
+        # prorate_defer_bill may cause calc_setup on a setup-stage package
+        # to return zero, and the setup fee to be charged later. (This happens
+        # when it's first billed on the prorate cutoff day. RT#31276.)
+        if ( $setup ) {
+          $unitsetup = $cust_pkg->base_setup()
+                         || $setup; #XXX uuh
+        }
     }
 
     $cust_pkg->setfield('setup', $time)
@@ -1369,7 +1376,7 @@ sub _make_lines {
       # Add an additional setup fee at the billing stage.
       # Used for prorate_defer_bill.
       $setup += $param{'setup_fee'};
-      $unitsetup += $param{'setup_fee'};
+      $unitsetup = $cust_pkg->base_setup();
       $lineitems++;
     }
 
