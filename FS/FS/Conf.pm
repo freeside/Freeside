@@ -4178,7 +4178,7 @@ and customer address. Include units.',
   {
     'key'         => 'disable_previous_balance',
     'section'     => 'invoicing',
-    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices.',
+    'description' => 'Show new charges only; do not list previous invoices, payments, or credits on the invoice.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
