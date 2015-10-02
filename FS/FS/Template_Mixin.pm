@@ -684,7 +684,12 @@ sub print_generic {
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   #my $balance_due = $self->owed + $pr_total - $cr_total;
-  my $balance_due = $self->owed + $pr_total;
+  my $balance_due = $self->owed;
+  if ( $self->enable_previous ) {
+    $balance_due += $pr_total;
+  }
+  # otherwise the previous balance is not shown, so including it in the
+  # balance due is just confusing
 
   # the sum of amount owed on all invoices
   # (this is used in the summary & on the payment coupon)
