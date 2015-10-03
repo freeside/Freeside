@@ -125,14 +125,14 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
         <% $money_sprintf->( $row->{sales_credited} ) %>
       </A>
     </TD>
-    <TD CLASS="bigmath"> &times; </TD>
-    <TD><% $row->{rate} %></TD>
 %   # taxable sales
     <TD>
       <A HREF="<% $saleslink . $rowlink . ";taxable=1" %>">
         <% $money_sprintf->( $row->{taxable} ) %>
       </A>
     </TD>
+    <TD CLASS="bigmath"> &times; </TD>
+    <TD><% $row->{rate} %></TD>
 %   # estimated tax
     <TD CLASS="bigmath"> = </TD>
     <TD>
