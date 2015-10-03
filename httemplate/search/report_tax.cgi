@@ -77,7 +77,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   # cust_bill_pkg.cgi wants a list of specific taxnums (and package class)
 %   # cust_credit_bill_pkg.html wants a geographic scope (and package class)
 %   my $rowlink = ';taxnum=' . $row->{taxnums};
-%   my $rowregion = '';
+%   my $rowregion = ';country=' . $cgi->param('country');
 %   foreach my $loc (qw(state county city district)) {
 %     if ( $row->{$loc} ) {
 %       $rowregion .= ";$loc=" . uri_escape($row->{$loc});
@@ -88,6 +88,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
 %     $rowregion .= ';classnum=' . ($row->{pkgclass} || 0);
 %   }
+%warn $rowregion;
 %
 %   if ( $row->{total} ) {
   </TBODY><TBODY CLASS="total">
