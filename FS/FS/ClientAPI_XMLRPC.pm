@@ -30,6 +30,7 @@ L<FS::SelfService::XMLRPC>, L<FS::SelfService>
 use strict;
 
 use vars qw($DEBUG $AUTOLOAD);
+use Encode;
 use FS::XMLRPC_Lite; #XMLRPC::Lite, for XMLRPC::Data
 use FS::ClientAPI;
 
@@ -67,12 +68,17 @@ sub AUTOLOAD {
 
     shift; #discard package name;
 
+
     #$call = "FS::SelfService::$call";
     #no strict 'refs';
     #&{$call}(@_);
     #FS::ClientAPI->dispatch($autoload->{$call}, @_);
 
-    my $return = FS::ClientAPI->dispatch($autoload->{$call}, { @_ } );
+    my %hash = @_;
+    #XXX doesn't handle multi-level data structs
+    $hash{$_} = decode(utf8=>$hash{$_}) foreach keys %hash;
+
+    my $return = FS::ClientAPI->dispatch($autoload->{$call}, \%hash );
 
     if ( exists($typefix{$call}) ) {
       my $typefix = $typefix{$call};
@@ -85,7 +91,7 @@ sub AUTOLOAD {
 
     $return;
 
-  }else{
+  } else {
     die "No such procedure: $call";
   }
 }
