@@ -2836,8 +2836,7 @@ sub _items_total {
   my ($previous_charges_desc, $new_charges_desc, $new_charges_amount);
 
   if ( $conf->exists('previous_balance-exclude_from_total') ) {
-    # can we do some caching on this stuff? it's going to change infrequently
-    # in production
+    # if enabled, specifically add a line for the previous balance total
     $previous_charges_desc = $self->mt(
       $conf->config('previous_balance-text') || 'Previous Balance'
     );
@@ -2849,6 +2848,12 @@ sub _items_total {
           total_amount  => sprintf('%.2f',$pr_total)
         };
     }
+  }
+
+  if (   $conf->exists('previous_balance-exclude_from_total')
+      or !$self->enable_previous ) {
+    # show new charges only
+
     $new_charges_desc = $self->mt(
       $conf->config('previous_balance-text-total_new_charges')
        || 'Total New Charges'
@@ -2857,9 +2862,14 @@ sub _items_total {
     $new_charges_amount = $self->charged;
 
   } else {
+    # show new charges + previous invoice total
 
     $new_charges_desc = $self->mt('Total Charges');
-    $new_charges_amount = sprintf('%.2f',$self->charged + $pr_total);
+    if ( $self->enable_previous ) {
+      $new_charges_amount = sprintf('%.2f', $self->charged + $pr_total);
+    } else {
+      $new_charges_amount = sprintf('%.2f', $self->charged);
+    }
 
   }
 

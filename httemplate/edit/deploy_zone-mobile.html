@@ -49,14 +49,21 @@
         'adv_speed_down',
         'adv_speed_up',
         { type => 'tablebreak-tr-title', value => 'Footprint'},
-        { field => 'vertexnum',
-          type              => 'deploy_zone_vertex',
-          o2m_table         => 'deploy_zone_vertex',
-          m2_label          => ' ',
-          m2_error_callback => $m2_error_callback,
-        },
-    ],
+        { field               => 'vertices',
+          type                => 'polygon',
+          curr_value_callback => sub {
+            my ($cgi, $object) = @_;
+            $cgi->param('vertices') || $object->vertices_json;
+          },
+        }
 
+#        { field => 'vertexnum',
+#          type              => 'deploy_zone_vertex',
+#          o2m_table         => 'deploy_zone_vertex',
+#          m2_label          => ' ',
+#          m2_error_callback => $m2_error_callback,
+#        },
+    ],
 &>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;

@@ -54,29 +54,36 @@
           value => 'Contractually guaranteed speed (Mbps)' },
         'cir_speed_down',
         'cir_speed_up',
-
-        { type => 'tablebreak-tr-title', value => 'Census blocks'},
-        { field => 'file',
-          type  => 'file-upload',
-        },
-        { field => 'format',
-          type  => 'hidden',
-          value => 'plain',
-        },
-        { field => 'censusyear',
-          type  => 'select',
-          options => [ '', qw( 2013 2012 2011 ) ],
-        },
-
-        { type => 'tablebreak-tr-title', value => '', },
-        { field => 'blocknum',
-          type              => 'deploy_zone_block',
-          o2m_table         => 'deploy_zone_block',
-          m2_label          => ' ',
-          m2_error_callback => $m2_error_callback,
-        },
+        { type => 'tablebreak-tr-title', value => 'Footprint'},
+        { field               => 'vertices',
+          type                => 'polygon',
+          curr_value_callback => sub {
+            my ($cgi, $object) = @_;
+            $cgi->param('vertices') || $object->vertices_json;
+          },
+        }
+#
+#        { type => 'tablebreak-tr-title', value => 'Census blocks'},
+#        { field => 'file',
+#          type  => 'file-upload',
+#        },
+#        { field => 'format',
+#          type  => 'hidden',
+#          value => 'plain',
+#        },
+#        { field => 'censusyear',
+#          type  => 'hidden',
+#          options => [ '', qw( 2013 2012 2011 ) ],
+#        },
+#
+#        { type => 'tablebreak-tr-title', value => '', },
+#        { field => 'blocknum',
+#          type              => 'deploy_zone_block',
+#          o2m_table         => 'deploy_zone_block',
+#          m2_label          => ' ',
+#          m2_error_callback => $m2_error_callback,
+#        },
     ],
-
 &>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -90,22 +97,22 @@ my $technology_labels = FS::part_pkg_fcc_option->technology_labels;
 my $media_types = FS::part_pkg_fcc_option->media_types;
 delete $media_types->{'Mobile Wireless'}; # cause this is the fixed zone page
 
-my $m2_error_callback = sub {
-  my ($cgi, $deploy_zone) = @_;
-  my @blocknums = grep {
-    /^blocknum\d+/ and length($cgi->param($_.'_censusblock'))
-  } $cgi->param;
-
-  sort { $a->censusblock <=> $b->censusblock }
-  map {
-    my $k = $_;
-    FS::deploy_zone_block->new({
-      blocknum    => scalar($cgi->param($k)),
-      zonenum     => $deploy_zone->zonenum,
-      censusblock => scalar($cgi->param($k.'_censusblock')),
-      censusyear  => scalar($cgi->param($k.'_censusyear')),
-    })
-  } @blocknums;
-};
+#my $m2_error_callback = sub {
+#  my ($cgi, $deploy_zone) = @_;
+#  my @blocknums = grep {
+#    /^blocknum\d+/ and length($cgi->param($_.'_censusblock'))
+#  } $cgi->param;
+#
+#  sort { $a->censusblock <=> $b->censusblock }
+#  map {
+#    my $k = $_;
+#    FS::deploy_zone_block->new({
+#      blocknum    => scalar($cgi->param($k)),
+#      zonenum     => $deploy_zone->zonenum,
+#      censusblock => scalar($cgi->param($k.'_censusblock')),
+#      censusyear  => scalar($cgi->param($k.'_censusyear')),
+#    })
+#  } @blocknums;
+#};
 
 </%init>

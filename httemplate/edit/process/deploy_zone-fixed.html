@@ -3,12 +3,31 @@
     error_redirect => popurl(2).'deploy_zone-fixed.html',
     table       => 'deploy_zone',
     viewall_dir => 'browse',
-    process_o2m => {
-      'table'  => 'deploy_zone_block',
-      'fields' => [qw( censusblock censusyear )]
-    },
-    process_upload => {
-      'process' => 'misc/process/deploy_zone-import.html',
-      'fields' => [qw( censusyear format )],
-    },
+    precheck_callback => $precheck_callback,
+    process_o2m =>
+      { 'table'  => 'deploy_zone_vertex',
+                     'fields' => [qw( latitude longitude )]
+      },
+    progress_init => [
+      'PostForm',
+      [ 'zonenum' ],
+      $fsurl.'misc/process/deploy_zone-block_lookup.cgi',
+      $fsurl.'browse/deploy_zone.html',
+    ],
 &>
+<%init>
+my $precheck_callback = sub {
+  # convert the vertex list into a process_o2m-style parameter list
+  if ( $cgi->param('vertices') ) {
+    my $vertices = decode_json($cgi->param('vertices'));
+    my $i = 0;
+    foreach (@$vertices) {
+      $cgi->param("vertexnum${i}", '');
+      $cgi->param("vertexnum${i}_latitude", $_->[0]);
+      $cgi->param("vertexnum${i}_longitude", $_->[1]);
+      $i++;
+    }
+  }
+  '';
+};
+</%init>

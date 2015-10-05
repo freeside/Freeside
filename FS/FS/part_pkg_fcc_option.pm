@@ -148,7 +148,7 @@ tie our %spectrum_labels, 'Tie::IxHash', (
   95 => 'Wireless Communications Service (WCS) Band',
   96 => 'Broadband Radio Service/Educational Broadband Service Band',
   97 => 'Satellite (e.g. L-band, Big LEO, Little LEO)',
-  98 => 'Unlicensed (including broadcast television “white spaces”) Bands',
+  98 => 'Unlicensed (including broadcast television "white spaces") Bands',
   99 => '600 MHz',
   100 => 'H Block',
   101 => 'Advanced Wireless Services (AWS) 3 Band',
