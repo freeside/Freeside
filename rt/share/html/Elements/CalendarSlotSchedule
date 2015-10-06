@@ -48,10 +48,16 @@
 %     $selectable = 0;
 %
 %     if ( $starts >= $tod_row ) { #first row
+%
+%       #false laziness w/misc/xmlhttp-ticket-update.html & CalendarDaySchedule
+%       my %hash = $m->comp('/Ticket/Elements/Customers', Ticket => $t);
+%       my @cust_main = values( %{$hash{cust_main}} );
+%
 %       $content .= ($content?', ':''). #$id. ': '.
 %                   #false laziness w/xmlhttp-ticket-update.html
 %                   FS::sched_avail::pretty_time($starts). '-'.
-%                   FS::sched_avail::pretty_time($due);
+%                   FS::sched_avail::pretty_time($due).
+%                   ': '. encode_entities($cust_main[0]->_FreesideURILabel);
 %                   #'install for custname XX miles away'; #XXX placeholder/more
 %       $draggable_ticketid = $id;
 %       $draggable_length = $due - $starts;
