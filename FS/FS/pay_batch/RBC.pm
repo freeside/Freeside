@@ -66,7 +66,7 @@ $name = 'RBC';
   },
   'approved'    => sub { 
       my $hash = shift;
-      $hash->{'status'} eq ' '
+      ($hash->{'status'} eq ' ') || ($hash->{'status'} eq 'W');
   },
   'declined'    => sub {
       my $hash = shift;
@@ -125,12 +125,6 @@ $name = 'RBC';
         #file counts this as part of total, but we skip
         $totaloffset += sprintf("%.2f", $hash->{'paid'} / 100 )
           if $hash->{'status'} eq ' '; #false laziness with 'approved' above
-        return 1;
-      }
-      #skipping W for now (maybe it should be declined?)
-      if ($hash->{'status'} eq 'W') {
-        #file counts this as part of total, but we skip
-        $totaloffset += sprintf("%.2f", $hash->{'paid'} / 100 );
         return 1;
       }
       return 
