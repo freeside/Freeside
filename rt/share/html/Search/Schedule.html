@@ -202,7 +202,7 @@
      @_,
      Query       => "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
                      AND ( Type = 'reminder' OR 'Type' = 'ticket' )
-                     AND Queue.id = $queueid ",
+                     AND Queue = $queueid ",
      slots       => scalar(@usernames),
      Embed       => 'Schedule.html',
      DimPast     => 1,
