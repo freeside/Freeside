@@ -31,8 +31,13 @@ $CurrentUser => undef
 %     my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
 %     my $s = int(($starts-$stime)/10);
 %     my $e = int(($due-$stime)/10)-1;
+
+%     #false laziness w/misc/xmlhttp-ticket-update.html & CalendarSlotSchedule
+%     my %hash = $m->comp('/Ticket/Elements/Customers', Ticket => $t);
+%     my @cust_main = values( %{$hash{cust_main}} );
+
       <AREA
-         onmouseover = "overlib('<%$id%>: <% FS::sched_avail::pretty_time($starts). '-'. FS::sched_avail::pretty_time($due) %><BR>XX miles away<BR>more info', WRAP, BGCOLOR, '#000000', FGCOLOR, '#<%$col%>')"
+         onmouseover = "overlib('<% FS::sched_avail::pretty_time($starts). '-'. FS::sched_avail::pretty_time($due) %><BR>' + <% $cust_main[0]->_FreesideURILabel |js_string %>, WRAP, BGCOLOR, '#000000', FGCOLOR, '#<%$col%>')"
          onmouseout  = "nd(); return true;"
          shape       = "rect"
          coords      = "<%$s%>,0,<%$e%>,<%$height%>"
