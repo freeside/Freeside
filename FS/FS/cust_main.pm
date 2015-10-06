@@ -4053,6 +4053,30 @@ sub tickets {
   (@tickets);
 }
 
+=item appointments [ STATUS ]
+
+Returns an array of hashes representing the customer's RT tickets which
+are appointments.
+
+=cut
+
+sub appointments {
+  my $self = shift;
+  my $status = ( @_ && $_[0] ) ? shift : '';
+
+  return () unless $conf->config('ticket_system');
+
+  my $queueid = $conf->config('ticket_system-appointment-queueid');
+
+  @{ FS::TicketSystem->customer_tickets( $self->custnum,
+                                         99,
+                                         undef,
+                                         $status,
+                                         $queueid,
+                                       )
+  };
+}
+
 # Return services representing svc_accts in customer support packages
 sub support_services {
   my $self = shift;
