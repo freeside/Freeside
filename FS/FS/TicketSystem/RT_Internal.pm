@@ -111,7 +111,7 @@ properly.
 # create an RT::Tickets object for a specified custnum or svcnum
 
 sub _tickets_search {
-  my( $self, $type, $number, $limit, $priority, $status ) = @_;
+  my( $self, $type, $number, $limit, $priority, $status, $queueid ) = @_;
 
   $type =~ /^Customer|Service$/ or die "invalid type: $type";
   $number =~ /^\d+$/ or die "invalid custnum/svcnum: $number";
@@ -158,6 +158,8 @@ sub _tickets_search {
   $rtql .= ' AND ( '.
                       join(' OR ', map { "Status = '$_'" } @statuses).
                ' ) ';
+
+  $rtql .= " AND Queue = $queueid " if $queueid;
 
   warn "$me _customer_tickets_search:\n$rtql\n" if $DEBUG;
   $Tickets->FromSQL($rtql);
