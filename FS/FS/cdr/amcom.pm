@@ -4,6 +4,8 @@ use strict;
 use base qw( FS::cdr );
 use vars qw( %info );
 use DateTime;
+use FS::Record qw( qsearchs );
+use FS::cdr_type;
 
 my ($tmp_mday, $tmp_mon, $tmp_year);
 
@@ -29,7 +31,14 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
         if $cdr->accountcode eq '' && $field =~ /^(1800|1300)/;
     },
     'uniqueid',   # 4. Record ID
-    'dcontext',   # 5. Call Category (LOCAL, NATIONAL, FREECALL, MOBILE)
+    sub {	   # 5. Call Category (LOCAL, NATIONAL, FREECALL, MOBILE)
+      my ($cdr, $data) = @_;
+      $data ||= 'none';
+
+      my $cdr_type = qsearchs('cdr_type', { 'cdrtypename' => $data } );
+      $cdr->set('cdrtypenum', $cdr_type->cdrtypenum) if $cdr_type;
+      $cdr->set('dcontext', $data);  
+    },
     sub {         # 6. Start Date (DDMMYYYY
       my ($cdr, $date) = @_;
       $date =~ /^(\d{2})(\d{2})(\d{4})$/
