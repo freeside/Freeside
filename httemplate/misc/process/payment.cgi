@@ -74,11 +74,13 @@ $cgi->param('balance') =~ /^\s*(\-?\s*\d*(\.\d\d)?)\s*$/
 my $balance = $1;
 
 my $payinfo;
+my $paymask; # override only used by loaded cust payinfo, only implemented for realtime processing
 my $paycvv = '';
 if ( $payby eq 'CHEK' ) {
 
   if ($cgi->param('payinfo1') =~ /xx/i || $cgi->param('payinfo2') =~ /xx/i ) {
     $payinfo = $cust_main->payinfo;
+    $paymask = $cust_main->paymask;
   } else {
     $cgi->param('payinfo1') =~ /^(\d+)$/
       or errorpage("Illegal account number ". $cgi->param('payinfo1'));
@@ -99,6 +101,7 @@ if ( $payby eq 'CHEK' ) {
   $payinfo = $cgi->param('payinfo');
   if ($payinfo eq $cust_main->paymask) {
     $payinfo = $cust_main->payinfo;
+    $paymask = $cust_main->paymask;
   }
   $payinfo =~ s/\D//g;
   $payinfo =~ /^(\d{13,16}|\d{8,9})$/
@@ -145,7 +148,8 @@ if ( $cgi->param('save') ) {
   } else {
     die "unknown payby $payby";
   }
-  $new->payinfo($payinfo); #to properly set paymask
+  $new->payinfo($payinfo);             # sets default paymask, but not if it's already tokenized
+  $new->paymask($paymask) if $paymask; # in case it's been tokenized, override with loaded paymask
   $new->set( 'paydate' => "$year-$month-01" );
   $new->set( 'payname' => $payname );
 
@@ -199,6 +203,7 @@ if ( $cgi->param('batch') ) {
     'manual'     => 1,
     'balance'    => $balance,
     'payinfo'    => $payinfo,
+    'paymask'    => $paymask,
     'paydate'    => "$year-$month-01",
     'payname'    => $payname,
     'payunique'  => $payunique,
