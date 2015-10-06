@@ -623,6 +623,7 @@ sub realtime_bop {
     '_date'             => '',
     'payby'             => $bop_method2payby{$options{method}},
     'payinfo'           => $options{payinfo},
+    'paymask'           => $options{paymask},
     'paydate'           => $paydate,
     'recurring_billing' => $content{recurring_billing},
     'pkgnum'            => $options{'pkgnum'},
