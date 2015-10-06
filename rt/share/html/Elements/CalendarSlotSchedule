@@ -87,7 +87,11 @@
 %         # (XXX and eventually, package)
 %         my $cust_main = qsearchs('cust_main', { custnum=>$custnum } )
 %           or die "unknown custnum $custnum";
-%         my $Queue = $cust_main->agent->ticketing_queueid || 1; # || $default_queueid;#XXX really, pick pkg_category queue
+%
+%         my $conf = new FS::Conf;
+%         my $Queue = $conf->config('ticket_system-appointment-queueid')
+%           or die "ticket_system-appointment-queueid configuration not set";
+%
 %         my $member = "freeside://freeside/cust_main/$custnum";
 %
 %warn         my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
