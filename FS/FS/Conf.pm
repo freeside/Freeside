@@ -3390,6 +3390,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ticket_system-appointment-custom_field',
+    'section'     => 'ticketing',
+    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'ticket_system-escalation',
     'section'     => 'ticketing',
     'description' => 'Enable priority escalation of tickets as part of daily batch processing.',
