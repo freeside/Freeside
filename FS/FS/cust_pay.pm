@@ -1013,7 +1013,7 @@ sub batch_insert {
       }
 
     } elsif ( !$error ) { #normal case: apply payments as usual
-      $cust_pay->cust_main->apply_payments;
+      $cust_pay->cust_main->apply_payments( 'manual'=>1 );
     }
 
   }
@@ -1361,7 +1361,7 @@ sub process_batch_import {
       my $cust_pay = shift;
       my $cust_main = $cust_pay->cust_main
                         or return "can't find customer to which payments apply";
-      my $error = $cust_main->apply_payments_and_credits;
+      my $error = $cust_main->apply_payments_and_credits( 'manual'=>1 );
       return $error
                ? "can't apply payments to customer ".$cust_pay->custnum."$error"
                : '';
