@@ -3,6 +3,7 @@ package FS::msg_template::InitialData;
 sub _initial_data {
   [
     { msgname   => 'Password reset',
+      msgclass  => 'email',
       mime_type => 'text/html', #multipart/alternative with a text part?
                                   # cranky mutt/pine users like me are rare
 
