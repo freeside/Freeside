@@ -99,6 +99,7 @@ $id => undef
 $TicketObj => undef
 $ShowHeaders => 0
 $ForceShowHistory => 0
+$RedirectToBasics => 0
 </%ARGS>
 
 <%INIT>
@@ -217,6 +218,7 @@ $m->callback(
 );
 
 # This code does automatic redirection if any updates happen. 
+$m->notes('RedirectToBasics' => 1) if $RedirectToBasics;
 my $path = '/Ticket/'. ( $m->notes('RedirectToBasics') ? 'Modify.html'
                                                        : 'Display.html' );
 MaybeRedirectForResults(
