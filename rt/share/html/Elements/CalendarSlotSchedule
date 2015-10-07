@@ -9,6 +9,7 @@
   $LengthMin => $default_timestep
   $custnum   => undef
   $pkgnum    => undef
+  $RedirectToBasics => 0
 </%ARGS>
 % foreach my $username ( @username ) {
 %
@@ -118,7 +119,8 @@
 %                   '&Starts='. $Date->strftime('%F').'%20'. $Starts.
 %                   '&Due='.    $Date->strftime('%F').'%20'. $Due.
 %                   '&new-MemberOf='. $member. #XXX uri_escape?
-%                   '&Status=new';
+%                   '&Status=new'.
+%                   '&RedirectToBasics='.$RedirectToBasics;
 %                   #'&Requestors='. #XXX Freeside customer requestor(s) (package?
 
           onmouseover = "boxon(this);"
