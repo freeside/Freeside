@@ -66,7 +66,9 @@ global template.
 
 =item bcc_addr - Bcc all mail to this address.
 
-=item disabled - disabled ('Y' or NULL).
+=item disabled - disabled (NULL for not-disabled and selectable, 'D' for a
+draft of a one-time message, 'C' for a completed one-time message, 'Y' for a
+normal template disabled by user action).
 
 =back
 
@@ -246,7 +248,7 @@ sub check {
     || $self->ut_text('msgname')
     || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
     || $self->ut_textn('mime_type')
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_enum('disabled', [ '', 'Y', 'D', 'S' ] )
     || $self->ut_textn('from_addr')
     || $self->ut_textn('bcc_addr')
     # fine for now, but change this to some kind of dynamic check if we
