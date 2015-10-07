@@ -426,6 +426,18 @@ sub email_search_result {
   if ( $msgnum ) {
     $msg_template = qsearchs('msg_template', { msgnum => $msgnum } )
       or die "msgnum $msgnum not found\n";
+  } else {
+    $msg_template = FS::msg_template->new({
+        from_addr => $from,
+        msgname   => $subject, # maybe a timestamp also?
+        disabled  => 'D', # 'D'raft
+        # msgclass, maybe
+    });
+    $error = $msg_template->insert(
+      subject => $subject,
+      body    => $html_body,
+    );
+    return "$error (when creating draft template)" if $error;
   }
 
   my $sql_query = $class->search($param->{'search'});
@@ -446,7 +458,7 @@ sub email_search_result {
   my %sent_to = ();
 
   if ( !$msg_template ) {
-    # XXX create on the fly
+    die "email_search_result now requires a msg_template";
   }
 
   #eventually order+limit magic to reduce memory use?
@@ -515,6 +527,14 @@ sub email_search_result {
       return "multiple failures: '$error'\n";
     }
   } # foreach $obj
+
+  # if the message template was created as "draft", change its status to
+  # "completed"
+  if ($msg_template->disabled eq 'D') {
+    $msg_template->set('disabled' => 'C');
+    my $error = $msg_template->replace;
+    warn "$error (setting draft message template status)" if $error;
+  }
 
   if(@retry_jobs) {
     # fail the job, but with a status message that makes it clear
