@@ -344,6 +344,11 @@ sub upgrade_data {
     #customer credits
     'cust_credit' => [],
 
+    # reason / void_reason migration to reasonnum / void_reasonnum
+    'cust_credit_void' => [],
+    'cust_bill_void' => [],
+    'cust_bill_pkg_void' => [],
+
     #duplicate history records
     'h_cust_svc'  => [],
 
