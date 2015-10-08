@@ -27,7 +27,7 @@ if ( $cust_bill->closed !~ /^Y/i && $opt{'Void invoices'} ) {
   $void =
     ' ('. include('/elements/popup_link.html',
                     'label'     => emt('void'),
-                    'action'    => "${p}misc/void-cust_bill.html?;invnum=".
+                    'action'    => "${p}misc/void-cust_bill.cgi?;invnum=".
                                     $cust_bill->invnum,
                     'actionlabel' => emt('Void Invoice'),
                  ).
