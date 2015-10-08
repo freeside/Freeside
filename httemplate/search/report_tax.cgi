@@ -18,6 +18,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 .bigmath { font-size: large; font-weight: bold; font: sans-serif; text-align: center }
 .total { font-style: italic }
 </STYLE>
+
 <& /elements/table-grid.html &>
   <THEAD>
   <TR>
@@ -88,7 +89,6 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
 %     $rowregion .= ';classnum=' . ($row->{pkgclass} || 0);
 %   }
-%warn $rowregion;
 %
 %   if ( $row->{total} ) {
   </TBODY><TBODY CLASS="total">
@@ -182,6 +182,90 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
   </TBODY>
 % }
 </TABLE>
+
+<BR>
+<& /elements/table-grid.html &>
+  <THEAD>
+  <TR>
+    <TH ROwSPAN=2></TH>
+    <TH ROWSPAN=2>Total credits</TH>
+    <TH COLSPAN=3>Applied to</TH>
+  </TR>
+  <TR STYLE="font-size: small">
+    <TH>Taxable sales</TH>
+    <TH>Tax-exempt sales</TH>
+    <TH>Taxes</TH>
+  </TR>
+  </THEAD>
+
+% $rownum = 0;
+% $prev_row = { pkgclass => 'DUMMY PKGCLASS' };
+
+  <TBODY>
+% # mostly duplicates the stuff above...
+% # but putting it all in one giant table is no good
+% foreach my $row (@rows) {
+%   if ( $row->{pkgclass} ne $prev_row->{pkgclass} ) {
+%     if ( $rownum > 0 ) { # start a new section
+%       $rownum = 0;
+  </TBODY><TBODY>
+%     }
+%     if ( $params{breakdown}->{pkgclass} ) { # and caption the new section
+  <TR>
+    <TD COLSPAN=5 CLASS="sectionhead">
+      <% $pkgclass_name{$row->{pkgclass}} %>
+    </TD>
+  </TR>
+%     }
+%   } # if $row->{pkgclass} ne ...
+
+%   my $rowlink = ';taxnum=' . $row->{taxnums};
+%   my $rowregion = ';country=' . $cgi->param('country');
+%   foreach my $loc (qw(state county city district)) {
+%     if ( $row->{$loc} ) {
+%       $rowregion .= ";$loc=" . uri_escape($row->{$loc});
+%     }
+%   }
+%   if ( $params{breakdown}->{pkgclass} ) {
+%     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
+%     $rowregion .= ';classnum=' . ($row->{pkgclass} || 0);
+%   }
+%
+%   if ( $row->{total} ) {
+  </TBODY><TBODY CLASS="total">
+%   }
+  <TR CLASS="row<% $rownum % 2 %>">
+    <TD CLASS="rowhead"><% $row->{label} |h %></TD>
+    <TD>
+%   # Total credits
+      <% $money_sprintf->( $row->{credits} ) %>
+    </TD>
+%   # Credits to taxable sales
+    <TD>
+      <A HREF="<% $salescreditlink . $rowregion %>">
+        <% $money_sprintf->( $row->{sales_credited} ) %>
+      </A>
+    </TD>
+%   # ... to exempt sales (link is the same, it shows both exempt and taxable)
+    <TD>
+      <A HREF="<% $salescreditlink . $rowregion %>">
+        <% $money_sprintf->( $row->{exempt_credited} ) %>
+      </A>
+    </TD>
+%   # ... to taxes
+    <TD>
+%#      <A HREF="<% $creditlink . $rowlink %>"> currently broken
+        <% $money_sprintf->( $row->{tax_credited} ) %>
+%#      </A>
+    </TD>
+  </TR>
+%   $rownum++;
+%   $prev_row = $row;
+% } # foreach my $row
+% # no "out of taxable region" for credits (yet)
+  </TBODY>
+</TABLE>
+
 
 <& /elements/footer.html &>
 <%init>

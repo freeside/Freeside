@@ -122,7 +122,7 @@ my %default = (
   border    => 1,
 );
 my @widths = ( #ick
-  30, (13) x 5, 3, 7.5, 3, 11, 11, 3, 11, 3, 11
+  30, (13) x 6, 3, 7.5, 3, 11, 11, 3, 11, 3, 11
 );
 
 my @format = ( {}, {}, {} ); # white row, gray row, yellow (totals) row
@@ -134,29 +134,34 @@ foreach (keys(%formatdef)) {
                                            italic   => 1,
                                            %f);
 }
-my $ws = $workbook->add_worksheet('taxreport');
+my $ws = $workbook->add_worksheet('Sales and Tax');
 
 # main title
 $ws->merge_range(0, 0, 0, 14, $report->title, $format[0]->{title});
+$ws->set_row(0, 30);
 # excel position
 my $x = 0;
 my $y = 2;
 
 my $colhead = $format[0]->{colhead};
 # print header
-$ws->merge_range($y, 1, $y, 5, 'Sales', $colhead);
-$ws->merge_range($y, 6, $y+1, 8, 'Rate', $colhead);
-$ws->merge_range($y, 9, $y, 15, 'Tax', $colhead);
+$ws->merge_range($y, 1, $y, 6, 'Sales', $colhead);
+$ws->merge_range($y, 7, $y+1, 9, 'Rate', $colhead);
+$ws->merge_range($y, 10, $y, 16, 'Tax', $colhead);
 
 $y++;
 $colhead = $format[0]->{colhead_small};
-$ws->write($y, 1, [ 'Total', 'Exempt customer', 'Exempt package', 'Monthly exemption',
+$ws->write($y, 1, [ 'Total',
+                    'Exempt customer',
+                    'Exempt package',
+                    'Monthly exemption',
+                    'Credited',
                     'Taxable' ], $colhead);
-$ws->write($y, 9, 'Estimated', $colhead);
-$ws->write($y, 10, 'Invoiced', $colhead);
-$ws->write($y, 12, 'Credited', $colhead);
-$ws->write($y, 14, 'Net due',  $colhead);
-$ws->write($y, 15, 'Collected',$colhead);
+$ws->write($y, 10, 'Estimated', $colhead);
+$ws->write($y, 11, 'Invoiced', $colhead);
+$ws->write($y, 13, 'Credited', $colhead);
+$ws->write($y, 15, 'Net due',  $colhead);
+$ws->write($y, 16, 'Collected',$colhead);
 $y++;
 
 # print data
@@ -168,7 +173,7 @@ foreach my $row (@rows) {
   if ( $row->{pkgclass} ne $prev_row->{pkgclass} ) {
     $rownum = 1;
     if ( $params{breakdown}->{pkgclass} ) {
-      $ws->merge_range($y, 0, $y, 14,
+      $ws->merge_range($y, 0, $y, 15,
         $pkgclass_name{$row->{pkgclass}},
         $format[0]->{sectionhead}
       );
@@ -182,7 +187,7 @@ foreach my $row (@rows) {
   }
   $ws->write($y, $x, $row->{label}, $f->{rowhead});
   $x++;
-  foreach (qw(sales exempt_cust exempt_pkg exempt_monthly taxable)) {
+  foreach (qw(sales exempt_cust exempt_pkg exempt_monthly sales_credited taxable)) {
     $ws->write($y, $x, $row->{$_} || 0, $f->{currency});
     $x++;
   }
@@ -228,6 +233,69 @@ if ( $report->{outside} > 0 ) {
 for my $x (0..scalar(@widths)-1) {
   $ws->set_column($x, $x, $widths[$x]);
 }
+
+# do the same for the credit worksheet
+$ws = $workbook->add_worksheet('Credits');
+
+my $title = $report->title;
+$title =~ s/Tax Report/Credits/;
+# main title
+$ws->merge_range(0, 0, 0, 14, $title, $format[0]->{title});
+$ws->set_row(0, 30); # height
+# excel position
+$x = 0;
+$y = 2;
+
+$colhead = $format[0]->{colhead};
+# print header
+$ws->merge_range($y, 1, $y+1, 1, 'Total', $colhead);
+$ws->merge_range($y, 2, $y, 4, 'Applied to', $colhead);
+
+$y++;
+$colhead = $format[0]->{colhead_small};
+$ws->write($y, 2, [ 'Taxable sales',
+                    'Tax-exempt sales',
+                    'Taxes'
+                  ], $colhead);
+$y++;
+
+# print data
+$rownum = 1;
+$prev_row = { pkgclass => 'DUMMY PKGCLASS' };
+
+foreach my $row (@rows) {
+  $x = 0;
+  if ( $row->{pkgclass} ne $prev_row->{pkgclass} ) {
+    $rownum = 1;
+    if ( $params{breakdown}->{pkgclass} ) {
+      $ws->merge_range($y, 0, $y, 4,
+        $pkgclass_name{$row->{pkgclass}},
+        $format[0]->{sectionhead}
+      );
+      $y++;
+    }
+  }
+  # pick a format set
+  my $f = $format[$rownum % 2];
+  if ( $row->{total} ) {
+    $f = $format[2];
+  }
+  $ws->write($y, $x, $row->{label}, $f->{rowhead});
+  $x++;
+  foreach (qw(credits sales_credited exempt_credited tax_credited)) {
+    $ws->write($y, $x, $row->{$_} || 0, $f->{currency});
+    $x++;
+  }
+
+  $rownum++;
+  $y++;
+  $prev_row = $row;
+}
+
+for my $x (0..4) {
+  $ws->set_column($x, $x, $widths[$x]);
+}
+
 
 $workbook->close;
 
