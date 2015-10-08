@@ -39,52 +39,64 @@ sub reason {
 # FS::reason->new_or_existing
  
 # Used by FS::Upgrade to migrate reason text fields to reasonnum.
-sub _upgrade_reasonnum {  # class method
-  my $class = shift;
-  my $table = $class->table;
+sub _upgrade_reasonnum {    # class method
+    my $class = shift;
+    my $table = $class->table;
 
-  if (   defined dbdef->table($table)->column('reason')
-      && defined dbdef->table($table)->column('reasonnum') )
-  {
-
-    warn "$me Checking for unmigrated reasons\n" if $DEBUG;
-
-    my @legacy_reason_records = qsearch(
+    for my $fieldname (qw(reason void_reason)) {
+        if (   defined dbdef->table($table)->column($fieldname)
+            && defined dbdef->table($table)->column( $fieldname . 'num' ) )
         {
-            'table'     => $table,
-            'hashref'   => {},
-            'extra_sql' => 'WHERE reason IS NOT NULL',
+
+            warn "$me Checking for unmigrated reasons\n" if $DEBUG;
+
+            my @legacy_reason_records = qsearch(
+                {
+                    'table'     => $table,
+                    'hashref'   => {},
+                    'extra_sql' => 'WHERE ' . $fieldname . ' IS NOT NULL',
+                }
+            );
+
+            if (
+                scalar(
+                    grep { $_->getfield($fieldname) =~ /\S/ }
+                      @legacy_reason_records
+                )
+              )
+            {
+                warn "$me Found unmigrated reasons\n" if $DEBUG;
+
+                my $reason_type =
+                  _upgrade_get_legacy_reason_type( $class, $table );
+                my $noreason = _upgrade_get_no_reason( $class, $reason_type );
+
+                foreach my $record_to_upgrade (@legacy_reason_records) {
+                    my $reason = $record_to_upgrade->getfield($fieldname);
+                    warn "Contemplating reason $reason\n" if $DEBUG > 1;
+                    if ( $reason =~ /\S/ ) {
+                        my $reason =
+                          _upgrade_get_reason( $class, $reason, $reason_type );
+                        $record_to_upgrade->set( $fieldname . 'num',
+                            $reason->reasonnum );
+                    }
+                    else {
+                        $record_to_upgrade->set( $fieldname . 'num',
+                            $noreason->reasonnum );
+                    }
+
+                    $record_to_upgrade->setfield( $fieldname, '' );
+                    my $error = $record_to_upgrade->replace;
+
+                    my $primary_key = $record_to_upgrade->primary_key;
+                    warn "*** WARNING: error replacing $fieldname in $class "
+                      . $record_to_upgrade->get($primary_key)
+                      . ": $error ***\n"
+                      if $error;
+                }
+            }
         }
-    );
-
-    if (scalar(grep { $_->getfield('reason') =~ /\S/ } @legacy_reason_records)) {
-      warn "$me Found unmigrated reasons\n" if $DEBUG;
-
-      my $reason_type = _upgrade_get_legacy_reason_type($class, $table);
-      my $noreason = _upgrade_get_no_reason($class, $reason_type);
-
-      foreach my $record_to_upgrade (@legacy_reason_records) {
-          my $reason = $record_to_upgrade->getfield('reason');
-          warn "Contemplating reason $reason\n" if $DEBUG > 1;
-          if ( $reason =~ /\S/ ) {
-              my $reason = _upgrade_get_reason( $class, $reason, $reason_type );
-              $record_to_upgrade->reasonnum( $reason->reasonnum );
-          }
-          else {
-              $record_to_upgrade->reasonnum( $noreason->reasonnum );
-          }
-
-          $record_to_upgrade->setfield( 'reason', '' );
-          my $error = $record_to_upgrade->replace;
-
-          my $primary_key = $record_to_upgrade->primary_key;
-          warn "*** WARNING: error replacing reason in $class "
-            . $record_to_upgrade->get($primary_key)
-            . ": $error ***\n"
-            if $error;
-       }
     }
-  }
 }
 
 # _upgrade_get_legacy_reason_type is class method supposed to be used only

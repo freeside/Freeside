@@ -2,11 +2,15 @@ package FS::cust_credit_void;
 use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::reason_Mixin FS::Record );
 
 use strict;
+use vars qw( $me $DEBUG );
 use FS::Record qw(qsearchs); # qsearch qsearchs);
 use FS::CurrentUser;
 use FS::access_user;
 use FS::cust_credit;
 use FS::UID qw( dbh );
+
+$me = '[ FS::cust_credit_void ]';
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -188,6 +192,17 @@ sub void_reason {
   }
 
   return $reason_text;
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {    # class method
+    my ( $class, %opts ) = @_;
+
+    warn "$me upgrading $class\n" if $DEBUG;
+
+    $class->_upgrade_reasonnum(%opts);
 }
 
 =back

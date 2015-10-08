@@ -2,6 +2,7 @@ package FS::cust_bill_pkg_void;
 use base qw( FS::TemplateItem_Mixin FS::reason_Mixin FS::Record );
 
 use strict;
+use vars qw( $me $DEBUG );
 use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::cust_bill_void;
 use FS::cust_bill_pkg_detail;
@@ -12,6 +13,9 @@ use FS::cust_bill_pkg_fee;
 use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_tax_exempt_pkg;
+
+$me = '[ FS::cust_bill_pkg_void ]';
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -277,6 +281,18 @@ sub cust_bill {
 sub cust_bill_pkg_fee {
   my $self = shift;
   qsearch( 'cust_bill_pkg_fee_void', { 'billpkgnum' => $self->billpkgnum } );
+}
+
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  $class->_upgrade_reasonnum(%opts);
 }
 
 =back
