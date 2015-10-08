@@ -118,7 +118,7 @@ tie my %label, 'Tie::IxHash',
 
 my $first = 0;
 foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
-  next if $phone_type->typename eq 'Home';
+  next if $phone_type->typename =~ /^(Home|Fax)$/;
   my $f = 'phonetypenum'.$phone_type->phonetypenum;
   $label{$f} = $phone_type->typename. ' phone';
   $size{$f} = $first++ ? 10 : 15;
