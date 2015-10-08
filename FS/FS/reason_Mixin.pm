@@ -6,18 +6,21 @@ use FS::Record qw( qsearch qsearchs dbdef );
 use FS::access_user;
 use FS::UID qw( dbh );
 use FS::reason;
+use FS::reason_type;
 
 our $DEBUG = 0;
 our $me = '[FS::reason_Mixin]';
 
 =item reason
 
-Returns the text of the associated reason (see L<FS::reason>) for this credit.
+Returns the text of the associated reason (see L<FS::reason>) for this credit /
+voided payment / voided invoice.
 
 =cut
 
 sub reason {
-  my ($self, $value, %options) = @_;
+  my $self = shift;
+
   my $reason_text;
   if ( $self->reasonnum ) {
     my $reason = FS::reason->by_key($self->reasonnum);
@@ -40,57 +43,101 @@ sub _upgrade_reasonnum {  # class method
   my $class = shift;
   my $table = $class->table;
 
-  if (defined dbdef->table($table)->column('reason')) {
+  if (   defined dbdef->table($table)->column('reason')
+      && defined dbdef->table($table)->column('reasonnum') )
+  {
 
     warn "$me Checking for unmigrated reasons\n" if $DEBUG;
 
-    my @cust_refunds = qsearch({ 'table'     => $table,
-                                 'hashref'   => {},
-                                 'extra_sql' => 'WHERE reason IS NOT NULL',
-                              });
-
-    if (scalar(grep { $_->getfield('reason') =~ /\S/ } @cust_refunds)) {
-      warn "$me Found unmigrated reasons\n" if $DEBUG;
-      my $hashref = { 'class' => 'F', 'type' => 'Legacy' };
-      my $reason_type = qsearchs( 'reason_type', $hashref );
-      unless ($reason_type) {
-        $reason_type  = new FS::reason_type( $hashref );
-        my $error   = $reason_type->insert();
-        die "$class had error inserting FS::reason_type into database: $error\n"
-          if $error;
-      }
-
-      $hashref = { 'reason_type' => $reason_type->typenum,
-                   'reason' => '(none)'
-                 };
-      my $noreason = qsearchs( 'reason', $hashref );
-      unless ($noreason) {
-        $hashref->{'disabled'} = 'Y';
-        $noreason = new FS::reason( $hashref );
-        my $error  = $noreason->insert();
-        die "can't insert legacy reason '(none)' into database: $error\n"
-          if $error;
-      }
-
-      foreach my $cust_refund ( @cust_refunds ) {
-        my $reason = $cust_refund->getfield('reason');
-        warn "Contemplating reason $reason\n" if $DEBUG > 1;
-        if ($reason =~ /\S/) {
-          $cust_refund->reason($reason, 'reason_type' => $reason_type->typenum)
-            or die "can't insert legacy reason $reason into database\n";
-        }else{
-          $cust_refund->reasonnum($noreason->reasonnum);
+    my @legacy_reason_records = qsearch(
+        {
+            'table'     => $table,
+            'hashref'   => {},
+            'extra_sql' => 'WHERE reason IS NOT NULL',
         }
+    );
 
-        $cust_refund->setfield('reason', '');
-        my $error = $cust_refund->replace;
+    if (scalar(grep { $_->getfield('reason') =~ /\S/ } @legacy_reason_records)) {
+      warn "$me Found unmigrated reasons\n" if $DEBUG;
 
-        warn "*** WARNING: error replacing reason in $class ".
-             $cust_refund->refundnum. ": $error ***\n"
-          if $error;
-      }
+      my $reason_type = _upgrade_get_legacy_reason_type($class, $table);
+      my $noreason = _upgrade_get_no_reason($class, $reason_type);
+
+      foreach my $record_to_upgrade (@legacy_reason_records) {
+          my $reason = $record_to_upgrade->getfield('reason');
+          warn "Contemplating reason $reason\n" if $DEBUG > 1;
+          if ( $reason =~ /\S/ ) {
+              my $reason = _upgrade_get_reason( $class, $reason, $reason_type );
+              $record_to_upgrade->reasonnum( $reason->reasonnum );
+          }
+          else {
+              $record_to_upgrade->reasonnum( $noreason->reasonnum );
+          }
+
+          $record_to_upgrade->setfield( 'reason', '' );
+          my $error = $record_to_upgrade->replace;
+
+          my $primary_key = $record_to_upgrade->primary_key;
+          warn "*** WARNING: error replacing reason in $class "
+            . $record_to_upgrade->get($primary_key)
+            . ": $error ***\n"
+            if $error;
+       }
     }
   }
+}
+
+# _upgrade_get_legacy_reason_type is class method supposed to be used only
+# within the reason_Mixin class which will either find or create a reason_type
+sub _upgrade_get_legacy_reason_type {
+ 
+    my $class = shift;
+    my $table = shift;
+
+    my $reason_class =
+      ( $table =~ /void/ ) ? 'X' : 'F';    # see FS::reason_type (%class_name)
+    my $reason_type_params = { 'class' => $reason_class, 'type' => 'Legacy' };
+    my $reason_type = qsearchs( 'reason_type', $reason_type_params );
+    unless ($reason_type) {
+        $reason_type = new FS::reason_type($reason_type_params);
+        my $error = $reason_type->insert();
+        die "$class had error inserting FS::reason_type into database: $error\n"
+           if $error;
+    }
+    return $reason_type;
+}
+
+# _upgrade_get_no_reason is class method supposed to be used only within the
+# reason_Mixin class which will either find or create a default (no reason)
+# reason
+sub _upgrade_get_no_reason {
+
+    my $class       = shift;
+    my $reason_type = shift;
+    return _upgrade_get_reason( $class, '(none)', $reason_type );
+}
+
+# _upgrade_get_reason is class method supposed to be used only within the
+# reason_Mixin class which will either find or create a reason
+sub _upgrade_get_reason {
+
+    my $class       = shift;
+    my $reason_text = shift;
+    my $reason_type = shift;
+
+    my $reason_params = {
+        'reason_type' => $reason_type->typenum,
+        'reason'      => $reason_text
+    };
+    my $reason = qsearchs( 'reason', $reason_params );
+    unless ($reason) {
+        $reason_params->{'disabled'} = 'Y';
+        $reason = new FS::reason($reason_params);
+        my $error = $reason->insert();
+        die "can't insert legacy reason '$reason_text' into database: $error\n"
+           if $error;
+     }
+    return $reason;
 }
 
 1;
