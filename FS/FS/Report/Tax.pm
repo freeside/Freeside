@@ -240,6 +240,25 @@ sub report_internal {
     $group
     ";
 
+  # also include the exempt-sales credit amount, for the credit report
+  $sql{exempt_credited} = "$select
+    SUM(COALESCE(exempt_credited, 0))
+    FROM cust_main_county
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  $all_sql{exempt_credited} = "$select_all
+    SUM(COALESCE(exempt_credited, 0))
+    FROM cust_main_county
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
   # taxable sales
   $sql{taxable} = "$select
     SUM(cust_bill_pkg.setup + cust_bill_pkg.recur
@@ -339,12 +358,12 @@ sub report_internal {
 
   my $istax = "cust_bill_pkg.pkgnum = 0 and cust_bill_pkg.feepart is null";
 
-  $sql{tax} = "$select SUM(cust_bill_pkg_tax_location.amount)
+  $sql{tax} = "$select COALESCE(SUM(cust_bill_pkg_tax_location.amount),0)
                $taxfrom
                $where AND $istax
                $group";
 
-  $all_sql{tax} = "$select_all SUM(cust_bill_pkg_tax_location.amount)
+  $all_sql{tax} = "$select_all COALESCE(SUM(cust_bill_pkg_tax_location.amount),0)
                $taxfrom
                $where AND $istax
                $group_all";
@@ -364,12 +383,12 @@ sub report_internal {
     $creditwhere     =~ s/cust_bill._date/cust_credit_bill._date/g;
   }
 
-  $sql{tax_credited} = "$select SUM(cust_credit_bill_pkg.amount)
+  $sql{tax_credited} = "$select COALESCE(SUM(cust_credit_bill_pkg.amount),0)
                   $creditfrom
                   $creditwhere AND $istax
                   $group";
 
-  $all_sql{tax_credited} = "$select_all SUM(cust_credit_bill_pkg.amount)
+  $all_sql{tax_credited} = "$select_all COALESCE(SUM(cust_credit_bill_pkg.amount),0)
                   $creditfrom
                   $creditwhere AND $istax
                   $group_all";
@@ -385,12 +404,12 @@ sub report_internal {
     ' ON (cust_bill_pay_pkg.billpkgtaxlocationnum ='.
     ' cust_bill_pkg_tax_location.billpkgtaxlocationnum)';
 
-  $sql{tax_paid} = "$select SUM(cust_bill_pay_pkg.amount)
+  $sql{tax_paid} = "$select COALESCE(SUM(cust_bill_pay_pkg.amount),0)
                     $paidfrom
                     $where AND $istax
                     $group";
 
-  $all_sql{tax_paid} = "$select_all SUM(cust_bill_pay_pkg.amount)
+  $all_sql{tax_paid} = "$select_all COALESCE(SUM(cust_bill_pay_pkg.amount),0)
                     $paidfrom
                     $where AND $istax
                     $group_all";
@@ -561,6 +580,11 @@ sub table {
                           $this_row{exempt_cust} +
                           $this_row{exempt_pkg} + 
                           $this_row{exempt_monthly}
+                        );
+      $this_row{credits} = sprintf('%.2f',
+                          $this_row{sales_credited} +
+                          $this_row{exempt_credited} +
+                          $this_row{tax_credited}
                         );
       # and give it a label
       if ( $this_row{total} ) {

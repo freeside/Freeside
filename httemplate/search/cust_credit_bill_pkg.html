@@ -3,11 +3,12 @@
               'name_singular' => 'credit application',
               'query'         => $query,
               'count_query'   => $count_query,
-               'count_addl'   => [ $money_char. '%.2f total', ],
+               'count_addl'   => \@count_addl,
                'header'       => [
                    #'#',
 
                    'Amount',
+                   'Tax exempt',
 
                    #credit
                    'Date',
@@ -26,7 +27,9 @@
                ],
                'fields'       => [
                    #'creditbillpkgnum',
-                   sub { sprintf($money_char.'%.2f', shift->amount ) },
+                  sub { sprintf($money_char.'%.2f', shift->amount ) },
+
+                  sub { sprintf($money_char.'%.2f', shift->get('exempt_credited') ) },
 
                    sub { time2str('%b %d %Y', shift->get('cust_credit_date') ) },
                    sub { shift->cust_credit_bill->cust_credit->otaker },
@@ -44,6 +47,7 @@
                ],
                'sort_fields'  => [
                    'amount',
+                   'exempt_credited',
                    'cust_credit_date',
                    '', #'otaker',
                    '', #reason
@@ -61,6 +65,7 @@
                    '',
                    '',
                    '',
+                   '',
                    @post_desc_null,
                    $ilink,
                    $ilink,
@@ -68,11 +73,12 @@
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rrllll'.
+               'align' => 'rrrllll'.
                           $post_desc_align.
                           'rr'.
                           FS::UI::Web::cust_aligns(),
-               'color' => [ 
+               'color' => [
+                              '',
                               '',
                               '',
                               '',
@@ -85,6 +91,7 @@
                               FS::UI::Web::cust_colors(),
                             ],
                'style' => [ 
+                              '',
                               '',
                               '',
                               '',
@@ -286,7 +293,6 @@ if ( $cgi->param('out') ) {
     #}
 
     push @where, $loc_sql;
-warn $loc_sql;
   }
    
   my($title, $name);
@@ -393,6 +399,9 @@ if ( $cgi->param('cust_tax') ) {
 
 my $count_query = "SELECT COUNT(DISTINCT creditbillpkgnum),
                           SUM(cust_credit_bill_pkg.amount)";
+if ( $cgi->param('nottax') ) {
+  $count_query .= ", SUM(exempt_credited)";
+}
 
 my $join_cust =
   '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum )'.
@@ -405,6 +414,21 @@ my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum )';
 
 if ( $cgi->param('nottax') ) {
 
+  # There can be multiple cust_tax_exempt_pkg records with the same
+  # creditbillpkgnum iff the line item is exempt from multiple taxes.
+  # They will all have the same amount, except in the case where there are
+  # different exemption types and so the exemption amounts are different.
+  # In that case, show the amount of the largest exemption.
+
+  $join_cust_bill_pkg .= '
+    LEFT JOIN(
+      SELECT creditbillpkgnum,
+        MAX(0 - cust_tax_exempt_pkg.amount) AS exempt_credited
+      FROM cust_tax_exempt_pkg
+      WHERE creditbillpkgnum IS NOT NULL
+      GROUP BY creditbillpkgnum
+    ) AS exempt_credit USING (creditbillpkgnum)
+  ';
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
                  LEFT JOIN part_pkg USING ( pkgpart )
                  LEFT JOIN part_pkg AS override
@@ -471,6 +495,12 @@ my @select = ( 'cust_credit_bill_pkg.*',
 push @select, 'part_pkg.pkg' unless $cgi->param('istax');
 push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
+
+if ( $cgi->param('istax') ) {
+  push @select, 'NULL AS exempt_credited'; # just display zero
+} elsif ( $cgi->param('nottax') ) {
+  push @select, 'exempt_credited';
+}
 
 my @post_desc_header = ();
 my @post_desc = ();
@@ -554,5 +584,14 @@ my $location_sub = sub {
   }
 
 };
+
+my @count_addl = ( $money_char. '%.2f total', );
+if ( $cgi->param('nottax') ) {
+  push @count_addl, ( $money_char. '%.2f tax exempt' );
+}
+
+if ( $cgi->param('debug') ) {
+  warn "\nQUERY:\n" . Dumper($query) . "\nCOUNT_QUERY:\n$count_query\n\n";
+}
 
 </%init>
