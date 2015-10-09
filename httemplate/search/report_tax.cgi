@@ -319,6 +319,7 @@ my $salescreditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1;cred
 if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
   $salescreditlink =~ s/begin/credit_begin/;
   $salescreditlink =~ s/end/credit_end/;
+  $saleslink .= ";credit_begin=$beginning;credit_end=$ending";
 }
 #my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
 #if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
