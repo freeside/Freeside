@@ -705,9 +705,16 @@ my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount)
               ";
 push @select, "($pay_sub) AS pay_amount";
 
-#total credits
-my $credit_sub = 'SELECT SUM(amount) AS credit_amount, billpkgnum
-                  FROM cust_credit_bill_pkg GROUP BY billpkgnum';
+# showing credited amount, optionally with date filtering
+my $credit_where = '';
+if ( $cgi->param('credit_begin') or $cgi->param('credit_end') ) {
+  my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'credit');
+  $credit_where = "WHERE cust_credit_bill._date >= $cr_begin " .
+                  "AND cust_credit_bill._date <= $cr_end";
+}
+
+my $credit_sub = "SELECT SUM(amount) AS credit_amount, billpkgnum
+                  FROM cust_credit_bill_pkg $credit_where GROUP BY billpkgnum";
 
 $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
   ON (cust_bill_pkg.billpkgnum = item_credit.billpkgnum)";
@@ -737,6 +744,10 @@ if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
   $cgi->param('classnum', 0) unless $cgi->param('classnum');
 }
 
+#credit flag (include only those that have credit(s) applied)
+if ( $cgi->param('credit') ) {
+  push @where, 'credit_amount > 0';
+}
 
 my $where = join(' AND ', @where);
 $where &&= "WHERE $where";
@@ -775,7 +786,13 @@ my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 my $pay_link    = ''; #[, 'billpkgnum', ];
-my $credit_link = [ "${p}search/cust_credit_bill_pkg.html?billpkgnum=", 'billpkgnum', ];
+my $credit_param = '';
+foreach ('credit_begin', 'credit_end') {
+  if ( $cgi->param($_) ) {
+    $credit_param .= "$_=" . $cgi->param($_) . ';';
+  }
+}
+my $credit_link = [ "${p}search/cust_credit_bill_pkg.html?${credit_param}billpkgnum=", 'billpkgnum', ];
 
 warn "\n\nQUERY:\n".Dumper($query)."\n\nCOUNT_QUERY:\n$count_query\n\n"
   if $cgi->param('debug');

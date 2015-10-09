@@ -375,7 +375,7 @@ if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ && $cgi->param('istax') ) {
   
 }
 
-push @where, 'cust_bill_pkg.pkgnum != 0' if $cgi->param('nottax');
+push @where, '(cust_bill_pkg.pkgnum != 0 OR cust_bill_pkg.feepart is not null)' if $cgi->param('nottax');
 push @where, 'cust_bill_pkg.pkgnum  = 0' if $cgi->param('istax');
 
 if ( $cgi->param('cust_tax') ) {
