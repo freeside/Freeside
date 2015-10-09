@@ -713,8 +713,11 @@ if ( $cgi->param('credit_begin') or $cgi->param('credit_end') ) {
                   "AND cust_credit_bill._date <= $cr_end";
 }
 
-my $credit_sub = "SELECT SUM(amount) AS credit_amount, billpkgnum
-                  FROM cust_credit_bill_pkg $credit_where GROUP BY billpkgnum";
+my $credit_sub = "SELECT SUM(cust_credit_bill_pkg.amount) AS credit_amount, billpkgnum
+                  FROM cust_credit_bill_pkg
+                  JOIN cust_credit_bill USING (creditbillnum)
+                  $credit_where
+                  GROUP BY billpkgnum";
 
 $join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit
   ON (cust_bill_pkg.billpkgnum = item_credit.billpkgnum)";
