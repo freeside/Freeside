@@ -165,3 +165,9 @@ share/html/Search/Elements/PickBasics
 lib/RT/CustomField.pm
 share/html/Admin/CustomFields/Modify.html
 share/html/Ticket/Create.html
+
+#allow RedirectToBasics to be set from schedule-appointments, RT#38481
+share/html/Search/Schedule.html
+share/html/Elements/CalendarSlotSchedule
+share/html/Ticket/Display.html
+
