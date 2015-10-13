@@ -184,6 +184,16 @@ push @fields, 'payby_payinfo_pretty',
 push @link_onclicks, $sub_receipt, '';
 push @sort_fields, 'paysort', $amount_field;
 
+if ($opt{'show_card_type'}) {
+  push @header, emt('Card Type');
+  $align .= 'r';
+  push @links, '';
+  push @fields, sub { 
+    (($_[0]->payby eq 'CARD') && ($_[0]->paymask !~ /N\/A/)) ? cardtype($_[0]->paymask) : ''
+  };
+  push @sort_fields, '';
+}
+
 if ( $unapplied ) {
   push @header, emt('Unapplied');
   $align .= 'r';

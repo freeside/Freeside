@@ -74,11 +74,13 @@ $cgi->param('balance') =~ /^\s*(\-?\s*\d*(\.\d\d)?)\s*$/
 my $balance = $1;
 
 my $payinfo;
+my $paymask; # override only used by loaded cust payinfo, only implemented for realtime processing
 my $paycvv = '';
 if ( $payby eq 'CHEK' ) {
 
   if ($cgi->param('payinfo1') =~ /xx/i || $cgi->param('payinfo2') =~ /xx/i ) {
     $payinfo = $cust_main->payinfo;
+    $paymask = $cust_main->paymask;
   } else {
     $cgi->param('payinfo1') =~ /^(\d+)$/
       or errorpage("Illegal account number ". $cgi->param('payinfo1'));
@@ -99,6 +101,7 @@ if ( $payby eq 'CHEK' ) {
   $payinfo = $cgi->param('payinfo');
   if ($payinfo eq $cust_main->paymask) {
     $payinfo = $cust_main->payinfo;
+    $paymask = $cust_main->paymask;
   }
   $payinfo =~ s/\D//g;
   $payinfo =~ /^(\d{13,16}|\d{8,9})$/
@@ -135,6 +138,46 @@ $cgi->param('discount_term') =~ /^(\d*)$/
   or errorpage("illegal discount_term");
 my $discount_term = $1;
 
+# save first, for proper tokenization later
+if ( $cgi->param('save') ) {
+  my $new = new FS::cust_main { $cust_main->hash };
+  if ( $payby eq 'CARD' ) { 
+    $new->set( 'payby' => ( $cgi->param('auto') ? 'CARD' : 'DCRD' ) );
+  } elsif ( $payby eq 'CHEK' ) {
+    $new->set( 'payby' => ( $cgi->param('auto') ? 'CHEK' : 'DCHK' ) );
+  } else {
+    die "unknown payby $payby";
+  }
+  $new->payinfo($payinfo);             # sets default paymask, but not if it's already tokenized
+  $new->paymask($paymask) if $paymask; # in case it's been tokenized, override with loaded paymask
+  $new->set( 'paydate' => "$year-$month-01" );
+  $new->set( 'payname' => $payname );
+
+  #false laziness w/FS:;cust_main::realtime_bop - check both to make sure
+  # working correctly
+  if ( $payby eq 'CARD' &&
+       grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save') ) {
+    $new->set( 'paycvv' => $paycvv );
+  } else {
+    $new->set( 'paycvv' => '');
+  }
+
+  if ( $payby eq 'CARD' ) {
+    my $bill_location = FS::cust_location->new;
+    $bill_location->set( $_ => $cgi->param($_) )
+      foreach @{$payby2fields{$payby}};
+    $new->set('bill_location' => $bill_location);
+    # will do nothing if the fields are all unchanged
+  } else {
+    $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
+  }
+
+  my $error = $new->replace($cust_main);
+  errorpage("error saving info, payment not processed: $error")
+    if $error;
+  $cust_main = $new;
+}
+
 my $error = '';
 my $paynum = '';
 if ( $cgi->param('batch') ) {
@@ -160,6 +203,7 @@ if ( $cgi->param('batch') ) {
     'manual'     => 1,
     'balance'    => $balance,
     'payinfo'    => $payinfo,
+    'paymask'    => $paymask,
     'paydate'    => "$year-$month-01",
     'payname'    => $payname,
     'payunique'  => $payunique,
@@ -188,44 +232,6 @@ if ( $cgi->param('batch') ) {
 
   $cust_main->apply_payments;
 
-}
-
-if ( $cgi->param('save') ) {
-  my $new = new FS::cust_main { $cust_main->hash };
-  if ( $payby eq 'CARD' ) { 
-    $new->set( 'payby' => ( $cgi->param('auto') ? 'CARD' : 'DCRD' ) );
-  } elsif ( $payby eq 'CHEK' ) {
-    $new->set( 'payby' => ( $cgi->param('auto') ? 'CHEK' : 'DCHK' ) );
-  } else {
-    die "unknown payby $payby";
-  }
-  $new->set( 'payinfo' => $cust_main->card_token || $payinfo );
-  $new->set( 'paydate' => "$year-$month-01" );
-  $new->set( 'payname' => $payname );
-
-  #false laziness w/FS:;cust_main::realtime_bop - check both to make sure
-  # working correctly
-  if ( $payby eq 'CARD' &&
-       grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save') ) {
-    $new->set( 'paycvv' => $paycvv );
-  } else {
-    $new->set( 'paycvv' => '');
-  }
-
-  if ( $payby eq 'CARD' ) {
-    my $bill_location = FS::cust_location->new;
-    $bill_location->set( $_ => $cgi->param($_) )
-      foreach @{$payby2fields{$payby}};
-    $new->set('bill_location' => $bill_location);
-    # will do nothing if the fields are all unchanged
-  } else {
-    $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
-  }
-
-  my $error = $new->replace($cust_main);
-  errorpage("payment processed successfully, but error saving info: $error")
-    if $error;
-  $cust_main = $new;
 }
 
 #success!

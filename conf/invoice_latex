@@ -196,7 +196,20 @@
   \hline
 }
 
-% ...description...
+\newcommand{\FSusagehead}{
+  \hline
+  \rule{0pt}{2.5ex}
+  \makebox[1.4cm]{} &
+  \multicolumn{4}{l}{
+    \makebox[\FSdescriptionlength][l]{\textbf{[@-- emt('Description') --@]}}
+  } &
+  \textbf{~~[@-- emt('Calls') --@]} &
+  \textbf{~~[@-- emt('Duration') --@]} &
+  \textbf{~~[@-- emt('Amount') --@]} \\
+  \hline
+}
+
+}% ...description...
 \newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
   \multicolumn{[@-- $unitprices ? '4' : '6' --@]}{l}{\textbf{#2}} &
@@ -217,6 +230,15 @@
   & \multicolumn{6}{l}{#1} & #2\\
 }
 
+% ...usage class summary
+\newcommand{\FSusagedesc}[4]{
+  \multicolumn{1}{c}{\rule{0pt}{2.5ex}} &
+  \multicolumn{4}{l}{\textbf{#1}} &
+  \multicolumn{1}{r}{\textbf{#2}} &
+  \multicolumn{1}{r}{\textbf{#3}} &
+  \multicolumn{1}{r}{\textbf{#4}}
+  \\
+}
 
 \begin{document}
 %	Headers and footers defined for the first page
@@ -289,6 +311,8 @@
       $OUT .= '}\\\\';
       if ($section->{header_generator}) {
         $OUT .= &{$section->{header_generator}}();
+      } elsif ( $section->{usage_section} ) {
+        $OUT .= '\FSusagehead';
       } else {
         $OUT .= '\FShead';
       }
@@ -296,6 +320,8 @@
       $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}'.emt('Continued from previous page').'}\\\\';
       if ($section->{header_generator}) {
         $OUT .= &{$section->{header_generator}}();
+      } elsif ( $section->{usage_section} ) {
+        $OUT .= '\FSusagehead';
       } else {
         $OUT .= '\FShead';
       }
@@ -343,6 +369,14 @@
         $OUT .= "\\hline\n" if (($line->{'ref'} || 0) ne $lastref);
         if ($section->{description_generator}) {
           $OUT .= &{$section->{description_generator}}($line);
+        } elsif ($section->{usage_section}) {
+          my $minutes = sprintf('%d', $line->{'duration'} / 60);
+          my $seconds = $line->{'duration'} % 60;
+          $OUT .= '\FSusagedesc
+            {' . $line->{'description'} . '}
+            {' . $line->{'quantity'} . '}
+            {' . $minutes . 'm ' . $seconds . 's' . '}
+            {' . $line->{'amount'} . '}';
         } else {
           $OUT .= '\FSdesc'.
                   '{}'.

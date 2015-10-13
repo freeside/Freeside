@@ -2,42 +2,36 @@ FS-Test
 
 INSTALLATION
 
-To install this module, install Freeside as usual. Then run the following 
-commands:
-
-	perl Makefile.PL
-	make
-	make install
-
-INITIALIZATION
-
-Run "freeside-test-start" from an account that can sudo to root. This will
-create a database with the test image and set the system clock to one day
-after the last bill. If there's an existing Freeside database, it will be
-renamed to "freeside_YYYYMMDD" (the current date).
-
-To restore the system clock and put the existing database back in place,
-run "freeside-test-stop".
+This module no longer needs to be installed. Run it directly from the source
+tree.
 
 RUNNING TESTS
 
-"freeside-test-run" is the main test script. Currently there's only one 
-test plan, "ui_tests". freeside-test-run will:
+"freeside-test-run" is the main test script. Currently there's only one test
+plan, "ui_tests". freeside-test-run will:
 
 - download all the URLs listed in the test plan into a directory in /tmp
 - compare them to the reference versions with "diff -ur"
 - write the output to "freeside_test.YYYYMMDD.diff"
-- display the results of "diffstat" on that diff
 
 The raw output directory will not be deleted, so you can examine the results
-yourself. This is recommended for files that don't diff nicely like Excel 
-versions of reports and PDF invoices.
+yourself.
+
+If you want to do anything with the database besides compare the test results
+to reference, run "freeside-test-start" by hand first. This will create a
+database with the test image and start Apache with a fake time of one day after
+the last bill. If there's an existing Freeside database, it will be renamed to
+"freeside_YYYYMMDD" (the current date).
+
+To put the existing database back in place, run "freeside-test-stop", then
+restart Apache and any Freeside services.
 
 UPDATING THE REFERENCE PAGES
 
 The simplest way to update the reference copies of the test pages is
 
-freeside-test-fetch -d ./share/output
+bin/freeside-test-start
+bin/freeside-test-fetch -d ./share/output
 
 (from the FS-Test source directory). If you're installing from a git repo,
 this will overwrite the working tree with the newly downloaded test pages.

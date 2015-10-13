@@ -1,5 +1,4 @@
 <% include('elements/monthly.html',
-   #Dumper(
                 'title'        => $title,
                 'graph_type'   => $graph_type,
                 'items'        => \@items,
@@ -28,6 +27,7 @@ my $bottom_link = "$link;";
 my $use_usage = $cgi->param('use_usage') || 0;
 my $use_setup = $cgi->param('use_setup') || 0;
 my $use_discount = $cgi->param('use_discount') || 2;
+my $use_taxes = $cgi->param('use_taxes') || 0;
 
 my $use_override         = $cgi->param('use_override')         ? 1 : 0;
 my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
@@ -50,6 +50,7 @@ my %charge_labels = (
   'R'  => 'recurring',
   'U'  => 'usage',
   'D'  => 'discount',
+  'T'  => 'taxes',
 );
 
 #XXX or virtual
@@ -194,8 +195,14 @@ if ( $use_discount == 1 ) {
   push @components, 'D';
 } # else leave discounts off entirely; never combine them with setup/recur
 
+# could in theory combine with setup/recur/usage,
+# but would require reverse engineering the tax calculation
+if ( $use_taxes == 1 ) {
+  push @components, 'T';
+} 
+
 # Categorization of line items goes
-# Agent -> Referral -> Package class -> Component (setup/recur/usage)
+# Agent -> Referral -> Package class -> Component (setup/recur/usage/discount/taxes)
 # If per-agent totals are enabled, they go under the Agent level.
 # There aren't any other kinds of subtotals.
 
@@ -255,6 +262,8 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
         if ( $component eq 'D' ) {
           # discounts ignore 'charges' and 'distribute'
           $row_link = "${p}search/cust_bill_pkg_discount.html?";
+        } elsif ( $component eq 'T' ) {
+          $row_link = "${p}search/cust_bill_pkg.cgi?istax=1;";
         }
 
         $row_link .=  ($all_agent ? '' : "agentnum=$row_agentnum;").
@@ -314,6 +323,8 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
           if ( $component eq 'D' ) {
             # discounts ignore 'charges' and 'distribute'
             $row_link ="${p}search/cust_bill_pkg_discount.html?";
+          } elsif ( $component eq 'T' ) {
+            $row_link = "${p}search/cust_bill_pkg.cgi?istax=1;";
           }
 
           $row_link .= ($all_agent ? '' : "agentnum=$row_agentnum;").
@@ -386,9 +397,8 @@ foreach my $agent ( $all_agent || $sel_agent || $FS::CurrentUser::CurrentUser->a
 
   $anum++;
 
-}
+} # foreach $agent
 
-#use Data::Dumper;
 if ( $cgi->param('debug') == 1 ) {
   $FS::Report::Table::DEBUG = 1;
 }

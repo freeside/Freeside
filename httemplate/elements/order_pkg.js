@@ -1,10 +1,12 @@
 function pkg_changed () {
   var form = document.OrderPkgForm;
   var discountnum = form.discountnum;
+  var opt = form.pkgpart.options[form.pkgpart.selectedIndex];
+
+  usageprice_pkg_changed( opt.value );
 
   if ( form.pkgpart.selectedIndex > 0 ) {
 
-    var opt = form.pkgpart.options[form.pkgpart.selectedIndex];
     var date_button = document.getElementById('start_date_button');
     var date_button_disabled = document.getElementById('start_date_disabled');
     var date_text = document.getElementById('start_date_text');
@@ -68,77 +70,13 @@ function pkg_changed () {
       }
     }
 
-    get_part_pkg_usageprice( opt.value, update_part_pkg_usageprice );
-
   } else {
     form.submitButton.disabled = true;
     if ( discountnum ) { form.discountnum.disabled = true; }
     discountnum_changed(form.discountnum);
   }
-}
-
-function update_part_pkg_usageprice(part_pkg_usageprice) {
-
-  var table = document.getElementById('cust_pkg_usageprice_table');
-
-  // black the current usage price rows
-  for ( var r = table.rows.length - 1; r >= 0; r-- ) {
-    table.deleteRow(r);
-  }
-
-  // add the new usage price rows
-  var rownum = 0;
-  var usagepriceArray = eval('(' + part_pkg_usageprice + ')' );
-  for ( var s = 0; s < usagepriceArray.length; s=s+2 ) {
-    //surely this should be some kind of JSON structure
-    var html       = usagepriceArray[s+0];
-    var javascript = usagepriceArray[s+1];
-
-    // a lot like ("inspiried by") edit/elements/edit.html function spawn_<%$field%>
-
-    // XXX evaluate the javascript
-    //if (window.ActiveXObject) {
-    //  window.execScript(newfunc);
-    //} else { /* (window.XMLHttpRequest) */
-    //  //window.eval(newfunc);
-    //  setTimeout(newfunc, 0);
-    //}
-
-    var row = table.insertRow(rownum++);
-
-    //var label_cell = document.createElement('TD');
-
-    //label_cell.id = '<% $field %>_label' + <%$field%>_fieldnum;
-
-    //label_cell.style.textAlign = "right";
-    //label_cell.style.verticalAlign = "top";
-    //label_cell.style.borderTop = "1px solid black";
-    //label_cell.style.paddingTop = "5px";
-
-    //label_cell.innerHTML = '<% $label %>';
-
-    //row.appendChild(label_cell);
-          
-    var widget_cell = document.createElement('TD');
-
-    //widget_cell.style.borderTop = "1px solid black";
-    widget_cell.style.paddingTop = "3px";
-    widget_cell.colSpan = "2";
-
-    widget_cell.innerHTML = html;
-
-    row.appendChild(widget_cell);
-
-  }
-
-  if ( rownum > 0 ) {
-    document.getElementById('cust_pkg_usageprice_title').style.display = '';
-  } else {
-    document.getElementById('cust_pkg_usageprice_title').style.display = 'none';
-  }
 
 }
-
 
 function standardize_new_location() {
   var form = document.OrderPkgForm;

@@ -13,7 +13,6 @@ use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
 use FS::UID qw( dbh driver_name );
-use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs fields );
 use FS::CurrentUser;
 use FS::cust_svc;
@@ -1056,16 +1055,6 @@ sub cancel {
       my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
       $error = $msg_template->send( 'cust_main' => $self->cust_main,
                                     'object'    => $self );
-    }
-    else {
-      $error = send_email(
-        'from'    => $conf->invoice_from_full( $self->cust_main->agentnum ),
-        'to'      => \@invoicing_list,
-        'subject' => ( $conf->config('cancelsubject') || 'Cancellation Notice' ),
-        'body'    => [ map "$_\n", $conf->config('cancelmessage') ],
-        'custnum' => $self->custnum,
-        'msgtype' => '', #admin?
-      );
     }
     #should this do something on errors?
   }
@@ -2296,9 +2285,15 @@ sub change {
     }
   }
 
-  # transfer usage pricing add-ons, if we're not changing pkgpart
-  if ( $same_pkgpart ) {
-    foreach my $old_cust_pkg_usageprice ($self->cust_pkg_usageprice) {
+  # transfer usage pricing add-ons, if we're not changing pkgpart or if they were specified
+  if ( $same_pkgpart || $opt->{'cust_pkg_usageprice'}) {
+    my @old_cust_pkg_usageprice;
+    if ($opt->{'cust_pkg_usageprice'}) {
+      @old_cust_pkg_usageprice = @{ $opt->{'cust_pkg_usageprice'} };
+    } else {
+      @old_cust_pkg_usageprice = $self->cust_pkg_usageprice;
+    }
+    foreach my $old_cust_pkg_usageprice (@old_cust_pkg_usageprice) {
       my $new_cust_pkg_usageprice = new FS::cust_pkg_usageprice {
         'pkgnum'         => $cust_pkg->pkgnum,
         'usagepricepart' => $old_cust_pkg_usageprice->usagepricepart,

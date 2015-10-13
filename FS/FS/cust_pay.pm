@@ -409,6 +409,22 @@ sub insert {
     warn "can't send payment receipt/statement: $error" if $error;
   }
 
+  #run payment events immediately
+  my $due_cust_event = $self->cust_main->due_cust_event(
+    'eventtable'  => 'cust_pay',
+    'objects'     => [ $self ],
+  );
+  if ( !ref($due_cust_event) ) {
+    warn "Error searching for cust_pay billing events: $due_cust_event\n";
+  } else {
+    foreach my $cust_event (@$due_cust_event) {
+      next unless $cust_event->test_conditions;
+      if ( my $error = $cust_event->do_event() ) {
+        warn "Error running cust_pay billing event: $error\n";
+      }
+    }
+  }
+
   '';
 
 }
@@ -645,72 +661,31 @@ sub send_receipt {
       my %substitutions = ();
       $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
 
-      my $queue = new FS::queue {
-        'job'     => 'FS::Misc::process_send_email',
-        'paynum'  => $self->paynum,
-        'custnum' => $cust_main->custnum,
-      };
-      $error = $queue->insert(
-        FS::msg_template->by_key($msgnum)->prepare(
+      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
+      unless ($msg_template) {
+        warn "send_receipt could not load msg_template";
+        return;
+      }
+
+      my $cust_msg = $msg_template->prepare(
           'cust_main'     => $cust_main,
           'object'        => $self,
           'from_config'   => 'payment_receipt_from',
           'substitutions' => \%substitutions,
-        ),
-        'msgtype' => 'receipt', # override msg_template's default
+          'msgtype'       => 'receipt',
       );
-
-    } elsif ( $conf->exists('payment_receipt_email') ) {
-
-      my $receipt_template = new Text::Template (
-        TYPE   => 'ARRAY',
-        SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
-      ) or do {
-        warn "can't create payment receipt template: $Text::Template::ERROR";
-        return '';
-      };
-
-      my $payby = $self->payby;
-      my $payinfo = $self->payinfo;
-      $payby =~ s/^BILL$/Check/ if $payinfo;
-      if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
-        $payinfo = $self->paymask
-      } else {
-        $payinfo = $self->decrypt($payinfo);
-      }
-      $payby =~ s/^CHEK$/Electronic check/;
-
-      my %fill_in = (
-        'date'         => time2str("%a %B %o, %Y", $self->_date),
-        'name'         => $cust_main->name,
-        'paynum'       => $self->paynum,
-        'paid'         => sprintf("%.2f", $self->paid),
-        'payby'        => ucfirst(lc($payby)),
-        'payinfo'      => $payinfo,
-        'balance'      => $cust_main->balance,
-        'company_name' => $conf->config('company_name', $cust_main->agentnum),
-      );
-
-      $fill_in{'invnum'} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
-
-      if ( $opt->{'cust_pkg'} ) {
-        $fill_in{'pkg'} = $opt->{'cust_pkg'}->part_pkg->pkg;
-        #setup date, other things?
+      $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
+      if ($error) {
+        warn "send_receipt: $error";
+        return;
       }
 
       my $queue = new FS::queue {
-        'job'     => 'FS::Misc::process_send_generated_email',
+        'job'     => 'FS::cust_msg::process_send',
         'paynum'  => $self->paynum,
         'custnum' => $cust_main->custnum,
-        'msgtype' => 'receipt',
       };
-      $error = $queue->insert(
-        'from'    => $conf->invoice_from_full( $cust_main->agentnum ),
-                                   #invoice_from??? well as good as any
-        'to'      => \@invoicing_list,
-        'subject' => 'Payment receipt',
-        'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
-      );
+      $error = $queue->insert( $cust_msg->custmsgnum );
 
     } else {
 
@@ -821,6 +796,102 @@ sub amount {
   $self->paid();
 }
 
+=item delete_cust_bill_pay OPTIONS
+
+Deletes all associated cust_bill_pay records.
+
+If option 'unapplied' is a specified, only deletes until
+this object's 'unapplied' value is >= the specified amount.  
+(Deletes in order returned by L</cust_bill_pay>.)
+
+=cut
+
+sub delete_cust_bill_pay {
+  my $self = shift;
+  my %opt = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $unapplied = $self->unapplied; #only need to look it up once
+
+  my $error = '';
+
+  # Maybe we should reverse the order these get deleted in?
+  # ie delete newest first?
+  # keeping consistent with how bop refunds work, for now...
+  foreach my $cust_bill_pay ( $self->cust_bill_pay ) {
+    last if $opt{'unapplied'} && ($unapplied > $opt{'unapplied'});
+    $unapplied += $cust_bill_pay->amount;
+    $error = $cust_bill_pay->delete;
+    last if $error;
+  }
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '';
+}
+
+=item refund HASHREF
+
+Accepts input for creating a new FS::cust_refund object.
+Unapplies payment from invoices up to the amount of the refund,
+creates the refund and applies payment to refund.  Allows entire
+process to be handled in one transaction.
+
+Causes a fatal error if called on CARD or CHEK payments.
+
+=cut
+
+sub refund {
+  my $self = shift;
+  my $hash = shift;
+  die "Cannot call cust_pay->refund on " . $self->payby
+    if grep { $_ eq $self->payby } qw(CARD CHEK);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->delete_cust_bill_pay('amount' => $hash->{'amount'});
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $hash->{'paynum'} = $self->paynum;
+  my $new = new FS::cust_refund ( $hash );
+  $error = $new->insert;
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '';
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -889,7 +960,7 @@ sub batch_insert {
       }
 
     } elsif ( !$error ) { #normal case: apply payments as usual
-      $cust_pay->cust_main->apply_payments;
+      $cust_pay->cust_main->apply_payments( 'manual'=>1 );
     }
 
   }
@@ -1240,7 +1311,7 @@ sub process_batch_import {
       my $cust_pay = shift;
       my $cust_main = $cust_pay->cust_main
                         or return "can't find customer to which payments apply";
-      my $error = $cust_main->apply_payments_and_credits;
+      my $error = $cust_main->apply_payments_and_credits( 'manual'=>1 );
       return $error
                ? "can't apply payments to customer ".$cust_pay->custnum."$error"
                : '';

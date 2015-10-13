@@ -315,22 +315,22 @@ sub href_params_new_ticket {
   my $subtype = $object->table;
   my $pkey = $object->get($object->primary_key);
 
-  my %param = (
+  my @param = (
     'Queue'       => ($cust_main->agent->ticketing_queueid || $default_queueid),
     'new-MemberOf'=> "freeside://freeside/$subtype/$pkey",
     'Requestors'  => $requestors,
   );
 
-  ( $self->baseurl.'Ticket/Create.html', %param );
+  ( $self->baseurl.'Ticket/Create.html', @param );
 }
 
 sub href_new_ticket {
   my $self = shift;
 
-  my( $base, %param ) = $self->href_params_new_ticket(@_);
+  my( $base, @param ) = $self->href_params_new_ticket(@_);
 
   my $uri = new URI $base;
-  $uri->query_form(%param);
+  $uri->query_form(@param);
   $uri;
 
 }

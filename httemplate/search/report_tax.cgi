@@ -18,11 +18,12 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 .bigmath { font-size: large; font-weight: bold; font: sans-serif; text-align: center }
 .total { font-style: italic }
 </STYLE>
+
 <& /elements/table-grid.html &>
   <THEAD>
   <TR>
     <TH ROWSPAN=3></TH>
-    <TH COLSPAN=5>Sales</TH>
+    <TH COLSPAN=6>Sales</TH>
     <TH ROWSPAN=3></TH>
     <TH ROWSPAN=3>Rate</TH>
     <TH ROWSPAN=3></TH>
@@ -32,6 +33,8 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
     <TH ROWSPAN=3>Tax credited</TH>
     <TH ROWSPAN=3></TH>
     <TH ROWSPAN=3>Net tax due</TH>
+    <TH ROWSPAN=3></TH>
+    <TH ROWSPAN=3>Tax collected</TH>
   </TR>
 
   <TR>
@@ -39,6 +42,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
     <TH ROWSPAN=1>Non-taxable</TH>
     <TH ROWSPAN=1>Non-taxable</TH>
     <TH ROWSPAN=1>Non-taxable</TH>
+    <TH ROWSPAN=2>Credited</TH>
     <TH ROWSPAN=2>Taxable</TH>
   </TR>
 
@@ -71,10 +75,20 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   } # if $row->{pkgclass} ne ...
 
 %   # construct base links that limit to the tax rates described by this row
+%   # cust_bill_pkg.cgi wants a list of specific taxnums (and package class)
+%   # cust_credit_bill_pkg.html wants a geographic scope (and package class)
 %   my $rowlink = ';taxnum=' . $row->{taxnums};
+% # DON'T EVER USE THIS
+% #  my $rowregion = ';country=' . $cgi->param('country');
+% #  foreach my $loc (qw(state county city district)) {
+% #    if ( $row->{$loc} ) {
+% #      $rowregion .= ";$loc=" . uri_escape($row->{$loc});
+% #    }
+% #  }
 %   # and also the package class, if we're limiting package class
 %   if ( $params{breakdown}->{pkgclass} ) {
 %     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
+% #    $rowregion .= ';classnum=' . ($row->{pkgclass} || 0);
 %   }
 %
 %   if ( $row->{total} ) {
@@ -107,6 +121,12 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
         <% $money_sprintf->( $row->{exempt_monthly} ) %>
       </A>
     </TD>
+%   # credited sales
+    <TD>
+      <A HREF="<% $salescreditlink . $rowlink %>">
+        <% $money_sprintf->( $row->{sales_credited} ) %>
+      </A>
+    </TD>
 %   # taxable sales
     <TD>
       <A HREF="<% $saleslink . $rowlink . ";taxable=1" %>">
@@ -131,13 +151,16 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   # credited tax
     <TD CLASS="bigmath"> &minus; </TD>
     <TD>
-      <A HREF="<% $creditlink . $rowlink %>">
-        <% $money_sprintf->( $row->{credit} ) %>
-      </A>
+%#      <A HREF="<% $creditlink . $rowlink %>"> currently broken
+        <% $money_sprintf->( $row->{tax_credited} ) %>
+%#      </A>
     </TD>
 %   # net tax due
     <TD CLASS="bigmath"> = </TD>
-    <TD><% $money_sprintf->( $row->{tax} - $row->{credit} ) %></TD>
+    <TD><% $money_sprintf->( $row->{tax} - $row->{tax_credited} ) %></TD>
+%   # tax collected
+    <TD>&nbsp;</TD>
+    <TD><% $money_sprintf->( $row->{tax_paid} ) %></TD>
   </TR>
 %   $rownum++;
 %   $prev_row = $row;
@@ -160,6 +183,80 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
   </TBODY>
 % }
 </TABLE>
+
+<BR>
+<& /elements/table-grid.html &>
+  <THEAD>
+  <TR>
+    <TH ROwSPAN=2></TH>
+    <TH ROWSPAN=2>Total credits</TH>
+    <TH COLSPAN=3>Applied to</TH>
+  </TR>
+  <TR STYLE="font-size: small">
+    <TH>Taxable sales</TH>
+    <TH>Tax-exempt sales</TH>
+    <TH>Taxes</TH>
+  </TR>
+  </THEAD>
+
+% $rownum = 0;
+% $prev_row = { pkgclass => 'DUMMY PKGCLASS' };
+
+  <TBODY>
+% # mostly duplicates the stuff above...
+% # but putting it all in one giant table is no good
+% foreach my $row (@rows) {
+%   if ( $row->{pkgclass} ne $prev_row->{pkgclass} ) {
+%     if ( $rownum > 0 ) { # start a new section
+%       $rownum = 0;
+  </TBODY><TBODY>
+%     }
+%     if ( $params{breakdown}->{pkgclass} ) { # and caption the new section
+  <TR>
+    <TD COLSPAN=5 CLASS="sectionhead">
+      <% $pkgclass_name{$row->{pkgclass}} %>
+    </TD>
+  </TR>
+%     }
+%   } # if $row->{pkgclass} ne ...
+
+%   my $rowlink = ';taxnum=' . $row->{taxnums};
+%
+%   if ( $row->{total} ) {
+  </TBODY><TBODY CLASS="total">
+%   }
+  <TR CLASS="row<% $rownum % 2 %>">
+    <TD CLASS="rowhead"><% $row->{label} |h %></TD>
+    <TD>
+%   # Total credits
+      <% $money_sprintf->( $row->{credits} ) %>
+    </TD>
+%   # Credits to taxable sales
+    <TD>
+      <A HREF="<% $salescreditlink . $rowlink %>">
+        <% $money_sprintf->( $row->{sales_credited} ) %>
+      </A>
+    </TD>
+%   # ... to exempt sales (link is the same, it shows both exempt and taxable)
+    <TD>
+      <A HREF="<% $salescreditlink . $rowlink %>">
+        <% $money_sprintf->( $row->{exempt_credited} ) %>
+      </A>
+    </TD>
+%   # ... to taxes
+    <TD>
+%#      <A HREF="<% $creditlink . $rowlink %>"> currently broken
+        <% $money_sprintf->( $row->{tax_credited} ) %>
+%#      </A>
+    </TD>
+  </TR>
+%   $rownum++;
+%   $prev_row = $row;
+% } # foreach my $row
+% # no "out of taxable region" for credits (yet)
+  </TBODY>
+</TABLE>
+
 
 <& /elements/footer.html &>
 <%init>
@@ -218,12 +315,18 @@ if ( $params{agentnum} ) {
 my $saleslink  = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1";
 my $taxlink    = $p. "search/cust_bill_pkg.cgi?$dateagentlink;istax=1";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
-my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
-
+my $salescreditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;nottax=1;credit=1";
 if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
-  $creditlink =~ s/begin/credit_begin/;
-  $creditlink =~ s/end/credit_end/;
+  $salescreditlink =~ s/begin/credit_begin/;
+  $salescreditlink =~ s/end/credit_end/;
+  $saleslink .= ";credit_begin=$beginning;credit_end=$ending";
 }
+#my $creditlink = $p. "search/cust_bill_pkg.cgi?$dateagentlink;credit=1;istax=1";
+#if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
+#  $creditlink =~ s/begin/credit_begin/;
+#  $creditlink =~ s/end/credit_end/;
+#}
+my $creditlink = ''; # disabled until we find a sane way to do this
 
 my %pkgclass_name = map { $_->classnum, $_->classname } qsearch('pkg_class');
 $pkgclass_name{''} = 'Unclassified';

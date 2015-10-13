@@ -5,11 +5,6 @@
    }
 &>
 
-<& /elements/xmlhttp.html,
-              'url'  => $p.'misc/xmlhttp-part_pkg_usageprice.html',
-              'subs' => [ 'get_part_pkg_usageprice' ],
-&>
-
 <& /elements/init_calendar.html &>
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
@@ -121,19 +116,9 @@
 
 </TABLE><BR>
 
-%#so:
-%# - hide until you selecdt a pacakge with add-ons
-%# -lookup and display the available add-ons when 
-%# -add them to the (recur if there is one, otherwise setup) price and display magically like processing fees do on edit/cust_pay.cgi
-
-%# better label?
-<FONT CLASS = "fsinnerbox-title" 
-      ID    = "cust_pkg_usageprice_title"
-      STYLE = "display:none"
-><% mt('Usage add-ons') |h %></FONT>
-<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 ID="cust_pkg_usageprice_table">
-
-</TABLE>
+<% include('/misc/cust_pkg_usageprice.html',
+     'pkgpart' => $pkgpart
+   ) %>
 <BR>
 
 % my $discount_cust_pkg = $curuser->access_right('Discount customer package');

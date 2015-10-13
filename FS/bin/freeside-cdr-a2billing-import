@@ -90,15 +90,18 @@ my %disposition = (
   9 => 'INVALIDARGS',
 );
 
-my @cols = ( qw(
-  id sessionid
-  starttime stoptime sessiontime real_sessiontime
-  terminatecauseid
-  calledstation src
-  id_tariffplan id_ratecard sessionbill
-) );
+my @cols = (
+  "$table.id as id", 'cc_card.username as username',
+  qw( sessionid
+      starttime stoptime sessiontime real_sessiontime
+      terminatecauseid
+      calledstation src
+      id_tariffplan id_ratecard sessionbill
+    )
+);
 
 my $sql = 'SELECT '.join(',', @cols). " FROM $table".
+  " LEFT JOIN cc_card ON ( $table.card_id = cc_card.id ) ".
   ' WHERE freesidestatus IS NULL' .
   ($start && " AND starttime >= '$start'") .
   ($end   && " AND starttime <  '$end'") ;
@@ -128,6 +131,7 @@ while ( $row = $sth->fetchrow_hashref ) {
     billsec             => $row->{real_sessiontime},
     dst                 => $row->{calledstation},
     src                 => $row->{src},
+    charged_party       => $row->{username},
     upstream_rateplanid => $row->{id_tariffplan},
     upstream_rateid     => $row->{id_ratecard}, # I think?
     upstream_price      => $row->{sessionbill},
@@ -153,7 +157,7 @@ $mysql->disconnect;
 
 sub usage {
   "Usage: 
-  cdr-a2billing.import
+  freeside-cdr-a2billing-import
       [ -H host ]
       -D database
       -U user
@@ -162,3 +166,44 @@ sub usage {
       freesideuser
 ";
 }
+
+=head1 NAME
+
+freeside-cdr-a2billing-import - Download CDRs from an A2Billing MySQL database
+
+=head1 SYNOPSIS
+
+  freeside-cdr-a2billing-import [ -H host ] -D database -U user -P password
+    [ -T tablename ]
+    [ -s start ] [ -e end ] [ -c cdrtypenum ]
+    freesideuser
+
+-H: database hostname
+
+-D: database name
+
+-U: database username
+
+-P: database password
+
+-T: table to import, defaults to cc_call
+
+-s: start date, e.g. 4/20/2015
+
+-e: end date, e.g. 12/25/2015
+
+-c: cdrtypenum to set, defaults to none
+
+freesideuser: freeside username
+
+=head1 DESCRIPTION
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cdr>
+
+=cut
+
+1;

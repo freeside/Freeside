@@ -618,7 +618,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -1242,7 +1242,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_phone.cgi?403">152300260278657</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_phone:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?403">152300260278657</A></td></tr></table></TD>
 
 
     </TR>
@@ -1343,7 +1343,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_broadband.cgi?401">IP:10.98.22.188, MAC:00007E436BF5</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_broadband:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?401">IP:10.98.22.188, MAC:00007E436BF5</A></td></tr></table></TD>
 
 
     </TR>
@@ -1444,7 +1444,7 @@ myMenu68.width = 256;
 
 
 
-        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/svc_domain.cgi?402">botsford-mueller.com</A></td></tr></table></TD>
+        <TD CLASS="grid"  ALIGN=right ><TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%"><tr><TD ALIGN="right">Test svc_domain:</td><TD ALIGN="left"><A HREF="http://localhost/freeside/view/cust_svc.cgi?402">botsford-mueller.com</A></td></tr></table></TD>
 
 
     </TR>

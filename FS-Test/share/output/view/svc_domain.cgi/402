@@ -618,7 +618,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -1025,11 +1025,11 @@ Service #<B>402</B>
 function updateTicketLink() {
   var link = document.getElementById('CreateTicketLink');
   var selector = document.getElementById('Queue')
-  link.href = "http://localhost/freeside//rt/Ticket/Create.html?new-MemberOf=freeside://freeside/cust_svc/402;Requestors=;Queue=" + selector.options[selector.selectedIndex].value;
+  link.href = "http://localhost/freeside//rt/Ticket/Create.html?Requestors=;new-MemberOf=freeside://freeside/cust_svc/402;Queue=" + selector.options[selector.selectedIndex].value;
 }
 </SCRIPT>
 <A NAME="tickets"><FONT CLASS="fsinnerbox-title">Tickets</FONT></A>
-<A id="CreateTicketLink" HREF="http://localhost/freeside//rt/Ticket/Create.html?Requestors=&Queue=1&new-MemberOf=freeside%3A%2F%2Ffreeside%2Fcust_svc%2F402">Create new ticket</A>
+<A id="CreateTicketLink" HREF="http://localhost/freeside//rt/Ticket/Create.html?Requestors=&new-MemberOf=freeside%3A%2F%2Ffreeside%2Fcust_svc%2F402&Queue=1">Create new ticket</A>
  in queue
 <SELECT NAME="Queue" id="Queue" onchange="updateTicketLink()">
 </SELECT>

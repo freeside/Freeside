@@ -1039,16 +1039,6 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
-    'key'         => 'deletecredits',
-    #not actually deprecated yet
-    #'section'     => 'deprecated',
-    #'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
-    'section'     => '',
-    'description' => 'One or more comma-separated email addresses to be notified when a credit is deleted.',
-    'type'        => [qw( checkbox text )],
-  },
-
-  {
     'key'         => 'deleterefunds',
     'section'     => 'billing',
     'description' => 'Enable deletion of unclosed refunds.  Be very careful!  Only delete refunds that were data-entry errors, not adjustments.',
@@ -1547,7 +1537,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'per_agent'   => 1,
     'select_enum' => [ 
-      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 5', 'Net 9', 'Net 10', 'Net 14', 
+      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 5', 'Net 7', 'Net 9', 'Net 10', 'Net 14', 
       'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
       'Net 60', 'Net 90'
     ], },
@@ -1670,13 +1660,6 @@ and customer address. Include units.',
     'description' => 'From: address for payment receipts, if not specified in the template.',
     'type'        => 'text',
     'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'payment_receipt_email',
-    'section'     => 'deprecated',
-    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.',
-    'type'        => [qw( checkbox textarea )],
   },
 
   {
@@ -2365,13 +2348,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'declinetemplate',
-    'section'     => 'deprecated',
-    'description' => 'Template file for credit card and electronic check decline emails.',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'emaildecline',
     'section'     => 'notification',
     'description' => 'Enable emailing of credit card and electronic check decline notices.',
@@ -2392,20 +2368,6 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'Template to use for cancellation emails.',
     %msg_template_options,
-  },
-
-  {
-    'key'         => 'cancelmessage',
-    'section'     => 'deprecated',
-    'description' => 'Template file for cancellation emails.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'cancelsubject',
-    'section'     => 'deprecated',
-    'description' => 'Subject line for cancellation emails.',
-    'type'        => 'text',
   },
 
   {
@@ -2532,86 +2494,17 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'welcome_email',
-    'section'     => 'deprecated',
-    'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.',
-    'type'        => 'textarea',
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'welcome_email-from',
-    'section'     => 'deprecated',
-    'description' => 'From: address header for welcome email',
-    'type'        => 'text',
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'welcome_email-subject',
-    'section'     => 'deprecated',
-    'description' => 'Subject: header for welcome email',
-    'type'        => 'text',
-    'per_agent'   => 1,
-  },
-  
-  {
-    'key'         => 'welcome_email-mimetype',
-    'section'     => 'deprecated',
-    'description' => 'MIME type for welcome email',
-    'type'        => 'select',
-    'select_enum' => [ 'text/plain', 'text/html' ],
-    'per_agent'   => 1,
-  },
-
-  {
     'key'         => 'welcome_letter',
     'section'     => '',
     'description' => 'Optional LaTex template file for a printed welcome letter.  A welcome letter is printed the first time a cust_pkg record is created.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation and the billing documentation for details on the template substitution language.  A variable exists for each fieldname in the customer record (<code>$first, $last, etc</code>).  The following additional variables are available<ul><li><code>$payby</code> - a friendler represenation of the field<li><code>$payinfo</code> - the masked payment information<li><code>$expdate</code> - the time at which the payment method expires (a UNIX timestamp)<li><code>$returnaddress</code> - the invoice return address for this customer\'s agent</ul>',
     'type'        => 'textarea',
   },
 
-#  {
-#    'key'         => 'warning_msgnum',
-#    'section'     => 'notification',
-#    'description' => 'Template to use for warning messages, sent to the customer email invoice destination(s) when a svc_acct record has its usage drop below a threshold.',
-#    %msg_template_options,
-#  },
-
   {
-    'key'         => 'warning_email',
+    'key'         => 'threshold_warning_msgnum',
     'section'     => 'notification',
-    'description' => 'Template file for warning email.  Warning emails are sent to the customer email invoice destination(s) each time a svc_acct record has its usage drop below a threshold or 0.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available<ul><li><code>$username</code> <li><code>$password</code> <li><code>$first</code> <li><code>$last</code> <li><code>$pkg</code> <li><code>$column</code> <li><code>$amount</code> <li><code>$threshold</code></ul>',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'warning_email-from',
-    'section'     => 'notification',
-    'description' => 'From: address header for warning email',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'warning_email-cc',
-    'section'     => 'notification',
-    'description' => 'Additional recipient(s) (comma separated) for warning email when remaining usage reaches zero.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'warning_email-subject',
-    'section'     => 'notification',
-    'description' => 'Subject: header for warning email',
-    'type'        => 'text',
-  },
-  
-  {
-    'key'         => 'warning_email-mimetype',
-    'section'     => 'notification',
-    'description' => 'MIME type for warning email',
-    'type'        => 'select',
-    'select_enum' => [ 'text/plain', 'text/html' ],
+    'description' => 'Template to use for warning messages sent to the customer email invoice destination(s) when a svc_acct record has its usage drop below a threshold.  Extra substitutions available: $column, $amount, $threshold',
+    %msg_template_options,
   },
 
   {
@@ -2619,7 +2512,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD DCRD CHEK DCHK CASH WEST MCRD MCHK PPAL) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK BILL CASH WEST MCRD MCHK PPAL) ],
   },
 
   {
@@ -2708,14 +2601,6 @@ and customer address. Include units.',
     'section'     => '',
     'description' => "Optional PGP public key user or key id for database dumps.  The public key should exist on the freeside user's public keyring, and the gpg binary and GnuPG perl module should be installed.",
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'dump-email_to',
-    'section'     => '',
-    'description' => "Optional email address to send success/failure message for database dumps.",
-    'type'        => 'text',
-    'validate'    => $validate_email,
   },
 
   {
@@ -3189,12 +3074,14 @@ and customer address. Include units.',
                            }
                          },
   },
+
   {
     'key'         => 'ticket_system-force_default_queueid',
     'section'     => 'ticketing',
     'description' => 'Disallow queue selection when creating new tickets from customer view.',
     'type'        => 'checkbox',
   },
+
   {
     'key'         => 'ticket_system-selfservice_queueid',
     'section'     => 'ticketing',
@@ -3270,6 +3157,41 @@ and customer address. Include units.',
     'section'     => 'ticketing',
     'description' => 'Allow customers to edit ticket subjects through selfservice.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'ticket_system-appointment-queueid',
+    'section'     => 'ticketing',
+    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    #false laziness w/above
+    'type'        => 'select-sub',
+    'options_sub' => sub {
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             eval "use FS::TicketSystem;";
+                             die $@ if $@;
+                             FS::TicketSystem->queues();
+                           } else {
+                             ();
+                           }
+                         },
+    'option_sub'  => sub { 
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             eval "use FS::TicketSystem;";
+                             die $@ if $@;
+                             FS::TicketSystem->queue(shift);
+                           } else {
+                             '';
+                           }
+                         },
+  },
+
+  {
+    'key'         => 'ticket_system-appointment-custom_field',
+    'section'     => 'ticketing',
+    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    'type'        => 'text',
   },
 
   {
@@ -3778,11 +3700,12 @@ and customer address. Include units.',
     'select_enum' => [ 'approve', 'decline' ],
   },
 
+  # replaces batch-errors_to (sent email on error)
   {
-    'key'         => 'batch-errors_to',
+    'key'         => 'batch-errors_not_fatal',
     'section'     => 'billing',
-    'description' => 'Email errors when processing batches to this address.  If unspecified, batch processing will stop immediately on error.',
-    'type'        => 'text',
+    'description' => 'If checked, when importing batches from a gateway, item errors will be recorded in the system log without aborting processing.  If unchecked, batch processing will fail on error.',
+    'type'        => 'checkbox',
   },
 
   #lists could be auto-generated from pay_batch info
@@ -4082,14 +4005,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'impending_recur_template',
-    'section'     => 'deprecated',
-    'description' => 'Template file for alerts about looming first time recurrant billing.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitition language.  Also see packages with a <a href="../browse/part_pkg.cgi">flat price plan</a>  The following variables are available<ul><li><code>$packages</code> allowing <code>$packages->[0]</code> thru <code>$packages->[n]</code> <li><code>$package</code> the first package, same as <code>$packages->[0]</code> <li><code>$recurdates</code> allowing <code>$recurdates->[0]</code> thru <code>$recurdates->[n]</code> <li><code>$recurdate</code> the first recurdate, same as <code>$recurdate->[0]</code> <li><code>$first</code> <li><code>$last</code></ul>',
-# <li><code>$payby</code> <li><code>$expdate</code> most likely only confuse
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'logo.png',
     'section'     => 'UI',  #'invoicing' ?
     'description' => 'Company logo for HTML invoices and the backoffice interface, in PNG format.  Suggested size somewhere near 92x62.',
@@ -4300,7 +4215,7 @@ and customer address. Include units.',
   {
     'key'         => 'disable_previous_balance',
     'section'     => 'invoicing',
-    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices.',
+    'description' => 'Show new charges only; do not list previous invoices, payments, or credits on the invoice.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -4647,13 +4562,6 @@ and customer address. Include units.',
     'type'        => 'text',
   },
   
-  {
-    'key'         => 'email_report-subject',
-    'section'     => '',
-    'description' => 'Subject for reports emailed by freeside-fetch.  Defaults to "Freeside report".',
-    'type'        => 'text',
-  },
-
   {
     'key'         => 'selfservice-head',
     'section'     => 'self-service',
@@ -5778,13 +5686,6 @@ and customer address. Include units.',
       'XLS' => 'XLS (Excel 97/2000/XP)',
       'XLSX' => 'XLSX (Excel 2007+)',
     ],
-  },
-
-  {
-    'key'         => 'agent-email_day',
-    'section'     => '',
-    'description' => 'On this day of each month, agents with master customer records containing email addresses will be emailed a list of their customers and balances.',
-    'type'        => 'text',
   },
 
   {

@@ -239,7 +239,11 @@ sub payby_payinfo_pretty {
   my $locale = shift;
   my $lh = FS::L10N->get_handle($locale);
   if ( $self->payby eq 'CARD' ) {
-    $lh->maketext('Card #') . $self->paymask;
+    if ($self->paymask =~ /tokenized/) {
+      $lh->maketext('Tokenized Card');
+    } else {
+      $lh->maketext('Card #') . $self->paymask;
+    }
   } elsif ( $self->payby eq 'CHEK' ) {
 
     #false laziness w/view/cust_main/payment_history.html::translate_payinfo

@@ -49,7 +49,11 @@
  my $content = $Object->Content;
  my $DateObj = RT::Date->new ( $session{'CurrentUser'} );
  $DateObj->Set( Format => 'ISO', Value => $content );
- $content = $DateObj->AsString;
+ if ($m->notes('FormatDate')) {
+   $content = $m->notes('FormatDate')->($DateObj);
+ } else {
+   $content = $DateObj->AsString;
+ }
 </%INIT>
 <%$content|n%>
 <%ARGS>

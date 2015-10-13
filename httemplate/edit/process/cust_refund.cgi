@@ -12,7 +12,7 @@
 
     </BODY></HTML>
 %  } else {
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum") %>
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?custnum=$custnum;show=payment_history") %>
 %  }
 %}
 <%init>
@@ -30,16 +30,8 @@ my $link    = $cgi->param('popup') ? 'popup' : '';
 
 my $payby = $cgi->param('payby');
 
-my @rights = ();
-push @rights, 'Post refund'                if $payby =~ /^(BILL|CASH|MCRD|MCHK)$/;
-push @rights, 'Post check refund'          if $payby eq 'BILL';
-push @rights, 'Post cash refund '          if $payby eq 'CASH';
-push @rights, 'Refund payment'             if $payby =~ /^(CARD|CHEK)$/;
-push @rights, 'Refund credit card payment' if $payby eq 'CARD';
-push @rights, 'Refund Echeck payment'      if $payby eq 'CHEK';
-
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right(\@rights);
+  unless $FS::CurrentUser::CurrentUser->refund_access_right($payby);
 
 $cgi->param('reasonnum') =~ /^(-?\d+)$/ or die "Illegal reasonnum";
 my ($reasonnum, $error) = $m->comp('/misc/process/elements/reason');
@@ -63,12 +55,19 @@ if ( $error ) {
                                                   'reason' => $reason,
                                                   %options );
 } else {
-  my $new = new FS::cust_refund ( {
-    map {
-      $_, scalar($cgi->param($_));
-    } fields('cust_refund') #huh? , 'paynum' )
-  } );
-  $error = $new->insert;
+  my %hash = map {
+    $_, scalar($cgi->param($_))
+  } fields('cust_refund');
+  my $paynum = $cgi->param('paynum');
+  $paynum =~ /^(\d*)$/ or die "Illegal paynum!";
+  if ($paynum) {
+    my $cust_pay = qsearchs('cust_pay',{ 'paynum' => $paynum });
+    die "Could not find paynum $paynum" unless $cust_pay;
+    $error = $cust_pay->refund(\%hash);
+  } else {
+    my $new = new FS::cust_refund ( \%hash );
+    $error = $new->insert;
+  }
 }
 
 </%init>

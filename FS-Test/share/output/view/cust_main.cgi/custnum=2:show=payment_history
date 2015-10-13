@@ -617,7 +617,7 @@ myMenu48.add(new WebFXMenuItem("Billing", null, "", myMenu65 ));
 myMenu48.add(new WebFXMenuSeparator());
 var myMenu67 = new WebFXMenu;
 myMenu67.emptyText = '';
-myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template.html", "Templates for customer notices" ));
+myMenu67.add(new WebFXMenuItem("Message templates", "http://localhost/freeside/browse/msg_template/email.html", "Templates for customer notices" ));
 myMenu67.add(new WebFXMenuItem("Advertising sources", "http://localhost/freeside/browse/part_referral.html", "Where a customer heard about your service." ));
 myMenu67.add(new WebFXMenuItem("Custom fields", "http://localhost/freeside/browse/part_virtual_field.html", "Locally defined fields" ));
 myMenu67.add(new WebFXMenuItem("Translation strings", "http://localhost/freeside/browse/msgcat.html", "Translations and other customizable labels for each locale" ));
@@ -1616,6 +1616,35 @@ function areyousure(href, message) {
     </TD>
     <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="#ffffff">
       $774.03
+    </TD>
+  </TR>
+
+
+  <TR >
+    <TD VALIGN="top" CLASS="grid" BGCOLOR="#eeeeee">
+
+      03/02/2016
+
+      </FONT>
+    </TD>
+    <TD CLASS="grid" BGCOLOR="#eeeeee">
+      <A HREF="http://localhost/freeside/view/cust_bill.cgi?1585"><B><FONT SIZE="+1" COLOR="#FF0000">Open Invoice #1585 (Balance 100.00)</FONT></B></A>
+
+    </TD>
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="#eeeeee">
+      $100.00
+    </TD>
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="#eeeeee">
+      
+    </TD>
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="#eeeeee">
+      
+    </TD>
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="#eeeeee">
+      
+    </TD>
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="#eeeeee">
+      $874.03
     </TD>
   </TR>
 

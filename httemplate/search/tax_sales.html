@@ -1,0 +1,35 @@
+<% include('/elements/header.html', 'Monthly Sales and Taxes Report' ) %>
+
+<FORM ACTION="tax_sales.cgi" METHOD="GET">
+
+<TABLE>
+
+  <% include('/elements/tr-select-from_to.html') %>
+
+  <% include('/elements/tr-select.html',
+      'label'         => 'Country',
+      'field'         => 'country',
+      'options'       => \@countries,
+      'curr_value'    => ($conf->config('countrydefault') || 'US'),
+     ) %>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+
+# false laziness w report_tax.html, put this in FS::Report::Tax?
+my $sth = dbh->prepare('SELECT DISTINCT(country) FROM cust_location');
+$sth->execute or die $sth->errstr;
+my @countries = map { $_->[0] } @{ $sth->fetchall_arrayref };
+
+</%init>

@@ -45,9 +45,13 @@ from FS::Record.  The following fields are currently supported:
 
 =item header - message header
 
-=item body - message body
+=item body - message body (as a complete MIME document)
+
+=item preview - HTML fragment to show as a preview of the message
 
 =item error - Email::Sender error message (or null for success)
+
+=item status - "prepared", "sent", or "failed"
 
 =back
 
@@ -137,12 +141,14 @@ sub check {
     || $self->ut_textn('env_to')
     || $self->ut_anything('header')
     || $self->ut_anything('body')
+    || $self->ut_anything('preview')
     || $self->ut_enum('status', \@statuses)
     || $self->ut_textn('error')
     || $self->ut_enum('msgtype', [  '',
                                     'invoice',
                                     'receipt',
                                     'admin',
+                                    'report',
                                  ])
   ;
   return $error if $error;
@@ -150,9 +156,27 @@ sub check {
   $self->SUPER::check;
 }
 
+=item send
+
+Sends the message through its parent L<FS::msg_template>. Returns an error
+message on error, or an empty string.
+
+=cut
+
+sub send {
+  my $self = shift;
+  # it's still allowed to have cust_msgs without message templates, but only 
+  # for email.
+  my $msg_template = $self->msg_template || 'FS::msg_template::email';
+  $msg_template->send_prepared($self);
+}
+
 =item entity
 
 Returns the complete message as a L<MIME::Entity>.
+
+XXX this only works if the message in fact contains a MIME entity. Messages
+created by external APIs may not look like that.
 
 =item parts
 
@@ -181,6 +205,25 @@ sub parts {
 }
 
 =back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item process_send CUSTMSGNUM
+
+Given a C<cust_msg.custmsgnum> value, sends the message. It must already
+have been prepared (via L<FS::msg_template/prepare>).
+
+=cut
+
+sub process_send {
+  my $custmsgnum = shift;
+  my $cust_msg = FS::cust_msg->by_key($custmsgnum)
+    or die "cust_msg #$custmsgnum not found";
+  my $error = $cust_msg->send;
+  die $error if $error;
+}
 
 =head1 SEE ALSO
 

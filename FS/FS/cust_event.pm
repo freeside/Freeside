@@ -9,6 +9,7 @@ use FS::Record qw( qsearch qsearchs dbdef );
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_bill;
+use FS::cust_pay;
 use FS::svc_acct;
 
 $DEBUG = 0;
@@ -302,14 +303,16 @@ sub join_sql {
        JOIN part_event USING ( eventpart )
   LEFT JOIN cust_bill ON ( eventtable = 'cust_bill' AND tablenum = invnum  )
   LEFT JOIN cust_pkg  ON ( eventtable = 'cust_pkg'  AND tablenum = pkgnum  )
-
+  LEFT JOIN cust_pay  ON ( eventtable = 'cust_pay'  AND tablenum = paynum  )
   LEFT JOIN cust_svc  ON ( eventtable = 'svc_acct'  AND tablenum = svcnum  )
   LEFT JOIN cust_pkg AS cust_pkg_for_svc ON ( cust_svc.pkgnum = cust_pkg_for_svc.pkgnum )
-  LEFT JOIN cust_main ON (    ( eventtable = 'cust_main' AND tablenum = cust_main.custnum )
-                           OR ( eventtable = 'cust_bill' AND cust_bill.custnum = cust_main.custnum )
-                           OR ( eventtable = 'cust_pkg'  AND cust_pkg.custnum  = cust_main.custnum )
-                           OR ( eventtable = 'svc_acct'  AND cust_pkg_for_svc.custnum  = cust_main.custnum )
-                         )
+  LEFT JOIN cust_main ON (
+       ( eventtable = 'cust_main' AND tablenum = cust_main.custnum )
+    OR ( eventtable = 'cust_bill' AND cust_bill.custnum = cust_main.custnum )
+    OR ( eventtable = 'cust_pkg'  AND cust_pkg.custnum  = cust_main.custnum )
+    OR ( eventtable = 'cust_pay'  AND cust_pay.custnum  = cust_main.custnum )
+    OR ( eventtable = 'svc_acct'  AND cust_pkg_for_svc.custnum  = cust_main.custnum )
+  )
   ";
 
 }
@@ -386,6 +389,11 @@ sub search_sql_where {
 
   if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
     push @search, "part_event.eventtable = 'cust_pkg'",
+                  "tablenum = '$1'";
+  }
+
+  if ( $param->{'paynum'} =~ /^(\d+)$/ ) {
+    push @search, "part_event.eventtable = 'cust_pay'",
                   "tablenum = '$1'";
   }
 

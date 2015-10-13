@@ -1,12 +1,17 @@
 %# still not a good way to do rows grouped by some field in a search.html 
 %# report
+%# (there is now, but we're not yet sponsored to switch this over to it)
 % if ( $type eq 'xls' ) {
 <% $data %>\
 % } else {
+%   if ( $type eq 'html-print' ) {
+<& /elements/header-popup.html, $title &>
+%   } else {
 <& /elements/header.html, $title &>
 <P ALIGN="right" CLASS="noprint">
 Download full results<BR>
 as <A HREF="<% $cgi->self_url %>;_type=xls">Excel spreadsheet</A></P>
+%   }
 <BR>
 <STYLE TYPE="text/css">
 td.cust_head {
@@ -22,12 +27,14 @@ td.money:before { content: '<% $money_char %>'; }
 .row1 { background-color: #ffffff; }
 </STYLE>
 <& /elements/table-grid.html &>
+<THEAD>
   <TR STYLE="background-color: #cccccc">
     <TH CLASS="grid">Package</TH>
     <TH CLASS="grid">Sales</TH>
     <TH CLASS="grid">Percentage</TH>
     <TH CLASS="grid">Commission</TH>
   </TR>
+</THEAD>
 % my ($custnum, $sales, $commission, $row, $bgcolor) = (0, 0, 0, 0);
 % foreach my $cust_pkg ( @cust_pkg ) {
 %   if ( $custnum ne $cust_pkg->custnum ) {

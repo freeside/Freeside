@@ -7,6 +7,5 @@ $opt{labels} = { '' => '',
                  map { $_ => emt('[quant,_1,month]', $_) } 1 .. $max
                };
 
-warn Dumper(\%opt);
 </%init>
 <& tr-select.html, %opt &>

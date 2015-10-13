@@ -111,15 +111,6 @@ END
       $error = $msg_template->send('cust_main' => $cust_main,
                                    'object'    => $cust_main);
     }
-    else {
-      $error = $cust_main->notify( 'impending_recur_template',
-                          'extra_fields' => { 'packages'   => \@packages,
-                                              'recurdates' => \@recurdates,
-                                              'package'    => $packages[0],
-                                              'recurdate'  => $recurdates[0],
-                                            },
-                        );
-    } #if $msgnum
     warn "Error notifying, custnum ". $cust_main->custnum. ": $error" if $error;
 
     unless ($error) { 

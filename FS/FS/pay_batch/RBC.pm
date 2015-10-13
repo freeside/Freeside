@@ -5,6 +5,7 @@ use vars qw(@ISA %import_info %export_info $name);
 use Date::Format 'time2str';
 use FS::Conf;
 use Encode 'encode';
+use feature 'state';
 
 my $conf;
 my ($client_num, $shortname, $longname, $trans_code, $testmode, $i, $declined, $totaloffset);
@@ -30,9 +31,10 @@ $name = 'RBC';
   'filetype'    => 'fixed',
   #this only really applies to Debit Detail, but we otherwise only need first char
   'formatre'    => 
-  '^(.).{18}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
+  '^(.).{3}(.{10}).{5}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
   'fields' => [ qw(
     recordtype
+    clientnum
     batchnum
     subtype
     paybatchnum
@@ -43,15 +45,28 @@ $name = 'RBC';
     status
     ) ],
   'hook' => sub {
-      my $hash = shift;
-      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
-      $hash->{'_date'} = time;
-      $hash->{'payinfo'} =~ s/^(\S+).*/$1/; # these often have trailing spaces
-      $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
+    # pull client_num from config and check it against what's in the batch
+    state $clientnum ||= do {
+      my $conf = FS::Conf->new;
+      my @config = $conf->config("batchconfig-RBC");
+      $config[0];
+    };
+
+    my $hash = shift;
+    $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
+    $hash->{'_date'} = time;
+    $hash->{'payinfo'} =~ s/^(\S+).*/$1/; # these often have trailing spaces
+    $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
+
+    if ( $clientnum and $hash->{clientnum} ne $clientnum ) {
+      die "RBC client number in batch (".$hash->{clientnum}.") does not ".
+        "match configuration.\n";
+    }
+    '';
   },
   'approved'    => sub { 
       my $hash = shift;
-      $hash->{'status'} eq ' '
+      ($hash->{'status'} eq ' ') || ($hash->{'status'} eq 'W');
   },
   'declined'    => sub {
       my $hash = shift;
@@ -110,12 +125,6 @@ $name = 'RBC';
         #file counts this as part of total, but we skip
         $totaloffset += sprintf("%.2f", $hash->{'paid'} / 100 )
           if $hash->{'status'} eq ' '; #false laziness with 'approved' above
-        return 1;
-      }
-      #skipping W for now (maybe it should be declined?)
-      if ($hash->{'status'} eq 'W') {
-        #file counts this as part of total, but we skip
-        $totaloffset += sprintf("%.2f", $hash->{'paid'} / 100 );
         return 1;
       }
       return 

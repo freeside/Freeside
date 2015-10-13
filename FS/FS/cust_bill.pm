@@ -297,13 +297,13 @@ sub _delete {
 
   foreach my $table (qw(
     cust_credit_bill
-    cust_bill_pay
-    cust_pay_batch
     cust_bill_pay_batch
+    cust_bill_pay
     cust_bill_batch
     cust_bill_pkg
   )) {
     #cust_event # problematic
+    #cust_pay_batch # unnecessary
 
     foreach my $linked ( $self->$table() ) {
       my $error = $linked->delete;
@@ -2661,10 +2661,12 @@ sub _items_usage_class_summary {
   my %opt = @_;
 
   my $escape = $opt{escape} || sub { $_[0] };
+  my $money_char = $opt{money_char};
   my $invnum = $self->invnum;
   my @classes = qsearch({
       'table'     => 'usage_class',
-      'select'    => 'classnum, classname, SUM(amount) AS amount',
+      'select'    => 'classnum, classname, SUM(amount) AS amount,'.
+                     ' COUNT(*) AS calls, SUM(duration) AS duration',
       'addl_from' => ' LEFT JOIN cust_bill_pkg_detail USING (classnum)' .
                      ' LEFT JOIN cust_bill_pkg USING (billpkgnum)',
       'extra_sql' => " WHERE cust_bill_pkg.invnum = $invnum".
@@ -2675,17 +2677,21 @@ sub _items_usage_class_summary {
   my @l;
   my $section = {
     description   => &{$escape}($self->mt('Usage Summary')),
-    no_subtotal   => 1,
     usage_section => 1,
+    subtotal      => 0,
   };
   foreach my $class (@classes) {
+    $section->{subtotal} += $class->get('amount');
     push @l, {
       'description'     => &{$escape}($class->classname),
-      'amount'          => sprintf('%.2f', $class->amount),
+      'amount'          => $money_char.sprintf('%.2f', $class->get('amount')),
+      'quantity'        => $class->get('calls'),
+      'duration'        => $class->get('duration'),
       'usage_classnum'  => $class->classnum,
       'section'         => $section,
     };
   }
+  $section->{subtotal} = $money_char.sprintf('%.2f', $section->{subtotal});
   return @l;
 }
 
@@ -2830,8 +2836,7 @@ sub _items_total {
   my ($previous_charges_desc, $new_charges_desc, $new_charges_amount);
 
   if ( $conf->exists('previous_balance-exclude_from_total') ) {
-    # can we do some caching on this stuff? it's going to change infrequently
-    # in production
+    # if enabled, specifically add a line for the previous balance total
     $previous_charges_desc = $self->mt(
       $conf->config('previous_balance-text') || 'Previous Balance'
     );
@@ -2843,6 +2848,12 @@ sub _items_total {
           total_amount  => sprintf('%.2f',$pr_total)
         };
     }
+  }
+
+  if (   $conf->exists('previous_balance-exclude_from_total')
+      or !$self->enable_previous ) {
+    # show new charges only
+
     $new_charges_desc = $self->mt(
       $conf->config('previous_balance-text-total_new_charges')
        || 'Total New Charges'
@@ -2851,9 +2862,14 @@ sub _items_total {
     $new_charges_amount = $self->charged;
 
   } else {
+    # show new charges + previous invoice total
 
     $new_charges_desc = $self->mt('Total Charges');
-    $new_charges_amount = sprintf('%.2f',$self->charged + $pr_total);
+    if ( $self->enable_previous ) {
+      $new_charges_amount = sprintf('%.2f', $self->charged + $pr_total);
+    } else {
+      $new_charges_amount = sprintf('%.2f', $self->charged);
+    }
 
   }
 
@@ -2913,6 +2929,18 @@ sub call_details {
   ( $header, grep { $_ ne $header } @details );
 }
 
+=item cust_pay_batch
+
+Returns all L<FS::cust_pay_batch> records linked to this invoice. Deprecated,
+will be removed.
+
+=cut
+
+sub cust_pay_batch {
+  carp "FS::cust_bill->cust_pay_batch is deprecated";
+  my $self = shift;
+  qsearch('cust_pay_batch', { 'invnum' => $self->invnum });
+}
 
 =back
 

@@ -201,8 +201,8 @@
 <& /Search/Calendar.html,
      @_,
      Query       => "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
-                     AND ( Type = 'reminder' OR 'Type' = 'ticket' )",
-                    #XXX and we have the magic custom field
+                     AND ( Type = 'reminder' OR 'Type' = 'ticket' )
+                     AND Queue = $queueid ",
      slots       => scalar(@usernames),
      Embed       => 'Schedule.html',
      DimPast     => 1,
@@ -212,6 +212,7 @@
                       #oops, more freeside abstraction-leaking
                       custnum   => $ARGS{custnum},
                       pkgnum    => $ARGS{pkgnum},
+                      RedirectToBasics => $ARGS{RedirectToBasics},
                     ],
 &>
 
@@ -221,6 +222,11 @@ my $timestep =  RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
 
 </%ONCE>
 <%init>
+
+#abstraction-leaking
+my $conf = new FS::Conf;
+my $queueid = $conf->config('ticket_system-appointment-queueid')
+  or die "ticket_system-appointment-queueid configuration not set";
 
 my @files = ();
 #if ( ! $initialized ) {

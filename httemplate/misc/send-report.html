@@ -1,0 +1,166 @@
+<%doc>
+
+Parameters:
+
+- reportname: the report name (per FS::report_batch)
+
+</%doc>
+<& /elements/header-popup.html, { title => $report_info->{name} } &>
+<script type="text/javascript">
+
+$().ready(function() {
+  var agent_info = <% encode_json(\%agent) %>;
+
+  $('#agentnum').on('change', function() {
+    var agentnum = this.value;
+    if ( agent_info[agentnum] ) {
+      $('#msgnum').prop('value',         agent_info[agentnum]['msgnum']);
+      $('#beginning_text').prop('value', agent_info[agentnum]['beginning']);
+      $('#ending_text').prop('value',    agent_info[agentnum]['ending']);
+    } else {
+      $('#msgnum').prop('value',         '');
+      $('#beginning_text').prop('value', '');
+      $('#ending_text').prop('value',    '');
+    }
+  });
+
+  $('#agentnum').trigger('change');
+
+});
+
+</script>
+<FORM NAME="OneTrueForm" ACTION="process/send-report.html" METHOD="POST">
+
+<table class="inv">
+  <input type="hidden" name="reportname" value="<% $cgi->param('reportname') |h %>">
+
+  <& /elements/tr-select-agent.html &>
+
+  <& /elements/tr-td-label.html, label => emt('Message template') &>
+    <TD>
+      <& /elements/select-msg_template.html, field => 'msgnum' &>
+    </TD>
+  </TR>
+
+  <& /elements/tr-input-beginning_ending.html &>
+
+  <& /elements/progress-init.html,
+    'OneTrueForm',
+    [ qw( reportname msgnum agentnum beginning ending ) ],
+    $p.'misc/process/send-report.html',
+    { message => 'Reports sent',
+      url => $cgi->referer }
+  &>
+
+</table>
+
+<INPUT TYPE="button" onclick="process()" VALUE="<% emt('Send reports') %>" />
+</FORM>
+
+<style>
+table.grid {
+  border-collapse: collapse;
+  margin-top: 1ex;
+  margin-left: auto;
+  margin-right: auto;
+}
+.grid caption {
+  font-weight: bold;
+  margin-bottom: 0.5ex;
+}
+.grid th,td {
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 2px;
+  border: none;
+  empty-cells: show;
+}
+.grid th {
+  border-bottom: 1px solid #999999;
+  font-size: 90%;
+  vertical-align: bottom;
+}
+</style>
+
+% if ( @report_history ) {
+<hr>
+<table class="grid">
+<caption><% emt('Report history') %></caption>
+<thead>
+  <th>Agent</th>
+  <th>Sent on</th>
+  <th colspan=2>Date range</th>
+  <th>User</th>
+</thead>
+<tbody>
+%   my $row = 0;
+%   foreach my $report (@report_history) {
+%   my $agent = ($report->agentnum ?
+%                 $report->agent->agent : 'All agents');
+  <tr class="row<% $row % 2 %>">
+    <td><% $agent %></td>
+    <td><% time2str($date_format, $report->send_date) %></td>
+    <td><% time2str($date_format, $report->sdate) %></td>
+    <td><% time2str($date_format, $report->edate) %></td>
+    <td><% $report->access_user->username %></td>
+  </tr>
+%   $row++;
+%   }
+</tbody>
+</table>
+% }
+
+<& /elements/footer.html &>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Send reports to customers');
+
+$cgi->param('reportname') =~ /^(\w+)$/
+  or die "bad reportname";
+my $reportname = $1;
+my $report_info = $FS::report_batch::sendable_reports{$reportname}
+  or die "bad reportname";
+
+my $date_format = FS::Conf->new->config('date_format') || '%x';
+
+my @report_history = qsearch({
+  table     => 'report_batch',
+  hashref   => { reportname => $reportname },
+  order_by  => ' ORDER BY send_date DESC',
+});
+
+# defaults per agent that could be selected for the report
+my %agent;
+
+foreach my $report ( @report_history ) {
+  my $agentnum = $report->agentnum;
+  next if $agent{$agentnum};
+
+  # estimate the width of the report period, in months
+  my $last_sdate = DateTime->from_epoch( epoch => $report->sdate );
+  my $last_edate = DateTime->from_epoch( epoch => $report->edate );
+
+  my $days = $last_sdate->delta_days( $last_edate )->delta_days;
+  my $months = sprintf('%.0f', $days / 6) / 5;
+
+  my $next_sdate = $last_edate->clone->add(days => 1);
+  my $next_edate = $next_sdate->clone;
+  if ( $months >= 1 ) { # then treat as an interval in months
+    $next_edate->add( months => sprintf('%.0f', $months) );
+    $next_edate->subtract(days => 1);
+  } else { # treat as a number of days
+    $next_edate->add( days => $days );
+  }
+
+  my $name = $agentnum ? FS::agent->by_key($agentnum)->agent : 'All agents';
+  $agent{$agentnum} = {
+    name      => $name,
+    beginning => $next_sdate->strftime($date_format),
+    ending    => $next_edate->strftime($date_format),
+    msgnum    => $report->msgnum,
+  };
+}
+
+</%init>

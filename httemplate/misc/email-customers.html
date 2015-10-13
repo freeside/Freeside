@@ -1,10 +1,11 @@
 <%doc>
 
-Allows emailing one or more customers, based on a search for customers.  Search can
-be specified either through cust_main fields as cgi params, or through a base64 encoded
-frozen hash in the 'search' cgi param.  Form allows selecting an existing msg_template,
-or creating a custom message, and shows a preview of the message before sending.
-If linked to as a popup, include the cgi parameter 'popup' for proper header handling.
+Allows emailing one or more customers, based on a search for customers.
+Search can be specified either through cust_main fields as cgi params, or
+through a base64 encoded frozen hash in the 'search' cgi param.  Form allows
+selecting an existing msg_template, or creating a custom message, and shows a
+preview of the message before sending.  If linked to as a popup, include the
+cgi parameter 'popup' for proper header handling.
 
 This may also be used as an element in other pages, enabling you to provide an
 alternate initial form while using this for search freezing/thawing and 
@@ -21,12 +22,13 @@ title - the title of the page
 no_search_fields - arrayref of additional fields that are not search parameters
 
 alternate_form - subroutine that returns alternate html for the initial form,
-replaces msgnum/from/subject/html_body/action inputs and submit button,
-not used if an action is specified
+replaces msgnum/from/subject/body/action inputs and submit button, not
+used if an action is specified
 
-post_search_hook - sub hook for additional processing after search has been processed from cgi,
-gets passed options 'conf' and 'search' (a reference to the unfrozen %search hash),
-should be used to set msgnum or from/subject/html_body cgi params
+post_search_hook - sub hook for additional processing after search has been
+processed from cgi, gets passed options 'conf' and 'search' (a reference to
+the unfrozen %search hash), should be used to set msgnum or
+from/subject/body cgi params
 
 </%doc>
 % if ($popup) {
@@ -35,8 +37,9 @@ should be used to set msgnum or from/subject/html_body cgi params
 <& /elements/header.html, $title &>
 % }
 
+<& /elements/error.html &>
 
-<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="GET">
+<FORM NAME="OneTrueForm" ACTION="<% $form_action %>" METHOD="POST">
 <INPUT TYPE="hidden" NAME="table" VALUE="<% $table %>">
 %# Mixing search params with from address, subject, etc. required special-case
 %# handling of those, risked name conflicts, and caused massive problems with 
@@ -46,48 +49,40 @@ should be used to set msgnum or from/subject/html_body cgi params
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
 <INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
 
-% if ( $cgi->param('action') eq 'send' ) { 
+% if ( $cgi->param('preview') ) {
+%   # preview mode: at this point we have a msg_template (either "real" or
+%   # draft) and $html_body and $text_body contain the preview message.
+%   # give the user a chance to back out (by going back to edit mode).
 
-    <FONT SIZE="+2">Sending notice</FONT>
-
+    <FONT SIZE="+2">Preview notice</FONT>
     <& /elements/progress-init.html,
                  'OneTrueForm',
-                 [ qw( search table from subject html_body text_body msgnum ) ],
+                 [ qw( search table msgnum ) ],
                  $process_url,
                  $pdest,
     &>
 
-% } elsif ( $cgi->param('action') eq 'preview' ) {
-
-    <FONT SIZE="+2">Preview notice</FONT>
-
-% }
-
-% if ( $cgi->param('action') ) {
-
     <TABLE CLASS="fsinnerbox">
-    <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% scalar($cgi->param('msgnum')) %>">
+    <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% $msg_template->msgnum %>">
+%   # kludge these through hidden inputs because they're not really part
+%   # of the template, but should be sticky during draft editing
+    <INPUT TYPE="hidden" NAME="from_name" VALUE="<% $cgi->param('from_name') %>">
+    <INPUT TYPE="hidden" NAME="from_addr" VALUE="<% $cgi->param('from_addr') %>">
 
-%   if ( $msg_template ) {
-      <& /elements/tr-fixed.html,
-                   'label'      => 'Template:',
-                   'value'      => $msg_template->msgname,
-      &>
-% }
+%   if ( !$msg_template->disabled ) {
+      <& /elements/tr-td-label.html, 'label' => 'Template:' &>
+        <td><% $msg_template->msgname |h %></td>
+      </tr>
+%   }
 
-      <& /elements/tr-fixed.html,
-                   'field'      => 'from',
-                   'label'      => 'From:',
-                   'value'      => $from,
-      &>
+      <& /elements/tr-td-label.html, 'label' => 'From:' &>
+        <td><% $from |h %></td>
+      </tr>
 
-      <& /elements/tr-fixed.html,
-                   'field'      => 'subject',
-                   'label'      => 'Subject:',
-                   'value'      => $subject,
-      &>
+      <& /elements/tr-td-label.html, 'label' => 'Subject:' &>
+        <td><% $subject |h %></td>
+      </tr>
 
-      <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $html_body |h %>">
       <TR><TD COLSPAN=2>&nbsp;</TD></TR>
       <TR>
         <TH ALIGN="right" VALIGN="top">Message (HTML display): </TD>
@@ -99,7 +94,6 @@ should be used to set msgnum or from/subject/html_body cgi params
 %                         $html_body
 %                       )
 %                     );
-      <INPUT TYPE="hidden" NAME="text_body" VALUE="<% $text_body |h %>">
       <TR><TD COLSPAN=2>&nbsp;</TD></TR>
       <TR>
         <TH ALIGN="right" VALIGN="top">Message (Text display): </TD>
@@ -112,38 +106,37 @@ should be used to set msgnum or from/subject/html_body cgi params
 
     </TABLE>
 
-%   if ( $cgi->param('action') eq 'preview' ) {
+    <SCRIPT>
 
-      <SCRIPT>
+      function showtext() {
+        $('#email-message-text-view').css('display','none');
+        $('#email-message-text-hide').css('display','');
+        $('#email-message-text').slideDown();
+      }
 
-        function showtext() {
-          $('#email-message-text-view').css('display','none');
-          $('#email-message-text-hide').css('display','');
-          $('#email-message-text').slideDown();
+      function hidetext() {
+        $('#email-message-text-view').css('display','');
+        $('#email-message-text-hide').css('display','none');
+        $('#email-message-text').slideUp();
+      }
+
+      function areyousure(href) {
+        if (confirm("Send this notice to <% ($num_cust > 1) ? "$num_cust customers" : '1 customer' %> ?")) {
+          process();
         }
+      }
+    </SCRIPT>
 
-        function hidetext() {
-          $('#email-message-text-view').css('display','');
-          $('#email-message-text-hide').css('display','none');
-          $('#email-message-text').slideUp();
-        }
-
-        function areyousure(href) {
-          return confirm("Send this notice to <% ($num_cust > 1) ? "$num_cust customers" : '1 customer' %> ?");
-        }
-      </SCRIPT>
-
-      <BR>
-      <INPUT TYPE="hidden" NAME="action" VALUE="send">
-      <INPUT TYPE="submit" VALUE="Send notice" onClick="return areyousure()">
-    
-%   }
+    <BR>
+    <INPUT TYPE="submit" NAME="edit" VALUE="Edit">
+    <INPUT TYPE="button" VALUE="Send notice" onClick="areyousure()">
 
 % } elsif ($opt{'alternate_form'}) {
 
 <% &{$opt{'alternate_form'}}() %>
 
 % } else {
+%   # Edit mode.
 
 <SCRIPT TYPE="text/javascript">
 function toggle(obj) {
@@ -151,11 +144,20 @@ function toggle(obj) {
 }
 
 </SCRIPT>
+% if ( $msg_template and $msg_template->disabled ) {
+%   # if we've already established a draft template, don't let msgnum be changed
+    <& /elements/hidden.html,
+      field => 'msgnum',
+      curr_value => ($cgi->param('msgnum') || ''),
+    &>
+% } else {
 Template: 
     <& /elements/select-msg_template.html,
-         onchange => 'toggle(this)',
+        onchange   => 'toggle(this)',
+        curr_value => ($cgi->param('msgnum') || ''),
     &>
     <BR>
+% }
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%" id="table_no_template">
     <& /elements/tr-td-label.html, 'label' => 'From:' &>
       <TD><& /elements/input-text.html,
@@ -163,45 +165,40 @@ Template:
               'value' => $conf->config('invoice_from_name', $agent_virt_agentnum) ||
                          $conf->config('company_name', $agent_virt_agentnum), #?
               'size'  => 20,
+              'curr_value' => $cgi->param('from_name'),
           &>&nbsp;&lt;\
           <& /elements/input-text.html,
               'field' => 'from_addr',
               'type'  => 'email', # HTML5, woot
               'value' => $conf->config('invoice_from', $agent_virt_agentnum),
               'size'  => 20,
+              'curr_value' => $cgi->param('from_addr'),
           &>&gt;</TD>
  
     <& /elements/tr-input-text.html,
                  'field' => 'subject',
                  'label' => 'Subject:',
                  'size'  => 50,
+                 'curr_value' => $subject,
     &>
 
     <TR>
       <TD ALIGN="right" VALIGN="top" STYLE="padding-top:3px">Message: </TD>
       <TD><& /elements/htmlarea.html, 
-               'field' => 'html_body',
+               'field' => 'body',
                'width' => 763,
+               'curr_value' => $body,
           &>
       </TD>
     </TR>
 
   </TABLE>
 
-%#Substitution vars:
-
-    <INPUT TYPE="hidden" NAME="action" VALUE="preview">
-    <INPUT TYPE="submit" VALUE="Preview notice">
+  <INPUT TYPE="submit" NAME="preview" VALUE="Preview notice">
 
 % } #end not action or alternate form
 
 </FORM>
-
-% if ( $cgi->param('action') eq 'send' ) {
-    <SCRIPT TYPE="text/javascript">
-      process();
-    </SCRIPT>
-% }
 
 <& /elements/footer.html &>
 
@@ -215,7 +212,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right($opt{'acl'});
 
 my $conf = FS::Conf->new;
-my @no_search_fields = qw( action table from subject html_body text_body popup url );
+my @no_search_fields = qw( table from subject html_body text_body popup url );
 
 my $form_action = $opt{'form_action'} || 'email-customers.html';
 my $process_url = $opt{'process_url'} || 'process/email-customers.html';
@@ -259,12 +256,26 @@ if ( $cgi->param('from') ) {
   $from = $cgi->param('from_addr');
 }
 
-my $subject = $cgi->param('subject') || '';
-my $html_body = $cgi->param('html_body') || '';
-
 my $msg_template = '';
+if ( $cgi->param('msgnum') =~ /^(\d+)$/ ) {
+  $msg_template = FS::msg_template->by_key($1)
+    or die "template not found: ".$cgi->param('msgnum');
+}
 
-if ( $cgi->param('action') eq 'preview' ) {
+my $subject = $cgi->param('subject');
+my $body = $cgi->param('body');
+my ($html_body, $text_body);
+
+if ( !$cgi->param('preview') ) {
+
+  # edit mode: initialize the fields from the saved draft, if there is one
+  if ( $msg_template and $msg_template->disabled eq 'D' ) {
+    my $content = $msg_template->content(''); # no localization on these yet
+    $subject ||= $content->subject;
+    $body ||= $content->body;
+  }
+
+} else {
 
   my $sql_query = "FS::$table"->search(\%search);
   my $count_query = delete($sql_query->{'count_query'});
@@ -275,10 +286,40 @@ if ( $cgi->param('action') eq 'preview' ) {
   my $count_arrayref = $count_sth->fetchrow_arrayref;
   $num_cust = $count_arrayref->[0];
 
-  if ( $cgi->param('msgnum') ) {
-    $msg_template = qsearchs('msg_template', 
-                             { msgnum => scalar($cgi->param('msgnum')) } )
-        or die "template not found: ".$cgi->param('msgnum');
+  if ( !$msg_template or $msg_template->disabled eq 'D' ) {
+    # then this is a one-off template; edit it in place
+    my $subject = $cgi->param('subject') || '';
+    my $body = $cgi->param('body') || '';
+
+    # create a draft template
+    $msg_template ||= FS::msg_template->new({
+      msgclass  => 'email',
+      disabled  => 'D',
+    });
+    # anyone have a better idea for msgname?
+    $msg_template->set('msgname' => "Notice " . DateTime->now->iso8601);
+    $msg_template->set('from_addr' => $from);
+    my %content = (
+      subject => $subject,
+      body    => $body,
+    );
+    my $error;
+    if ( $msg_template->msgnum ) {
+      $error = $msg_template->replace(%content);
+    } else {
+      $error = $msg_template->insert(%content);
+    }
+
+    if ( $error ) {
+      $cgi->param('error', $error);
+      $cgi->delete('preview'); # don't go on to preview stage yet
+      undef $msg_template;
+    }
+  }
+  # unless creating the msg_template failed, we now have one, so construct a
+  # preview message from the first customer/whatever in the search results
+
+  if ( $msg_template ) { 
     $sql_query->{'extra_sql'} .= ' LIMIT 1';
     $sql_query->{'select'} = "$table.*";
     $sql_query->{'order_by'} = '';
@@ -288,8 +329,13 @@ if ( $cgi->param('action') eq 'preview' ) {
       'cust_main' => $cust,
       'object' => $object,
     );
-    my %message = $msg_template->prepare(%msgopts);
-    ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
+
+    my $cust_msg = $msg_template->prepare(%msgopts);
+    $from = $cust_msg->env_from;
+    $html_body = $cust_msg->preview;
+    if ( $cust_msg->header =~ /^subject: (.*)/mi ) {
+      $subject = $1;
+    }
   }
 }
 

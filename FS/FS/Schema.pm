@@ -204,6 +204,7 @@ sub dbdef_dist {
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
            && ! /^cacti_page$/
+           && ! /^template_image$/
          }
       $dbdef->tables
   ) {
@@ -4332,6 +4333,7 @@ sub tables_hashref {
         'custnum',        'int', 'NULL',      '', '', '',
         'secure',        'char', 'NULL',       1, '', '',
         'priority',       'int', 'NULL',      '', '', '',
+        'usernum',        'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'jobnum',
       'unique'       => [],
@@ -4344,6 +4346,9 @@ sub tables_hashref {
 #                          },
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
+                          },
+                          { columns    => [ 'usernum' ],
+                            table      => 'access_user',
                           },
                         ],
     },
@@ -6315,8 +6320,11 @@ sub tables_hashref {
         'mime_type', 'varchar',     '', $char_d, '', '',
         'body',         'blob', 'NULL',      '', '', '',
         'disabled',     'char', 'NULL',       1, '', '', 
+          # migrate these to msg_template_email
         'from_addr', 'varchar', 'NULL',     255, '', '',
         'bcc_addr',  'varchar', 'NULL',     255, '', '',
+          # change to not null on v5
+        'msgclass',  'varchar', 'NULL',      16, '', '',
       ],
       'primary_key'  => 'msgnum',
       'unique'       => [ ],
@@ -6324,6 +6332,26 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
                             table      => 'agent',
+                          },
+                        ],
+    },
+
+    'msg_template_http' => {
+      'columns' => [
+        'num',          'serial',     '',      '', '', '',
+        'msgnum',          'int',     '',      '', '', '',
+        'prepare_url', 'varchar', 'NULL',     255, '', '',
+        'send_url',    'varchar', 'NULL',     255, '', '',
+        'username',    'varchar', 'NULL', $char_d, '', '',
+        'password',    'varchar', 'NULL', $char_d, '', '',
+        'content',        'text', 'NULL',      '', '', '',
+      ],
+      'primary_key'  => 'num',
+      'unique'       => [ [ 'msgnum' ], ],
+      'index'        => [ ],
+      'foreign_keys' => [
+                          { columns    => [ 'msgnum' ],
+                            table      => 'msg_template',
                           },
                         ],
     },
@@ -6346,6 +6374,19 @@ sub tables_hashref {
                         ],
     },
 
+    'template_image' => {
+      'columns' => [
+        'imgnum',     'serial',     '',      '', '', '',
+        'name',      'varchar',     '', $char_d, '', '',
+        'agentnum',      'int', 'NULL',      '', '', '',
+        'mime_type', 'varchar',     '', $char_d, '', '',
+        'base64',       'text',     '',      '', '', '',
+      ],
+      'primary_key'  => 'imgnum',
+      'unique'       => [ ],
+      'index'        => [ ['name'], ['agentnum'] ],
+    },
+
     'cust_msg' => {
       'columns' => [
         'custmsgnum', 'serial',     '',     '', '', '',
@@ -6359,6 +6400,7 @@ sub tables_hashref {
         'error',     'varchar', 'NULL',    255, '', '',
         'status',    'varchar',     '',$char_d, '', '',
         'msgtype',   'varchar', 'NULL',     16, '', '',
+        'preview',      'text', 'NULL',     '', '', '',
       ],
       'primary_key'  => 'custmsgnum',
       'unique'       => [ ],
@@ -6996,6 +7038,7 @@ sub tables_hashref {
         'zonenum',        'serial',  '',     '',      '', '',
         'description',    'char',    'NULL', $char_d, '', '',
         'agentnum',       'int',     '',     '',      '', '',
+        'censusyear',     'char',    'NULL', 4,      '', '',
         'dbaname',        'char',    'NULL', $char_d, '', '',
         'zonetype',       'char',    '',     1,       '', '',
         'technology',     'int',     '',     '',      '', '',
@@ -7027,7 +7070,7 @@ sub tables_hashref {
         'blocknum',       'serial',  '',     '',      '', '',
         'zonenum',        'int',     '',     '',      '', '',
         'censusblock',    'char',    '',     15,      '', '',
-        'censusyear',     'char',    '',      4,      '', '',
+        'censusyear',     'char','NULL',      4,      '', '',
       ],
       'primary_key' => 'blocknum',
       'unique' => [],
@@ -7078,6 +7121,37 @@ sub tables_hashref {
                           { columns    => [ 'exportnum' ],
                             table      => 'part_export',
                             references => [ 'exportnum' ],
+                          },
+                        ],
+    },
+
+    'report_batch' => {
+      'columns' => [
+        'reportbatchnum', 'serial',      '',  '', '', '',
+        'reportname',     'varchar',     '', 255, '', '',
+        'agentnum',           'int', 'NULL',  '', '', '',
+        'send_date',     @date_type,              '', '',
+        'sdate',         @date_type,              '', '',
+        'edate',         @date_type,              '', '',
+        'usernum',            'int', 'NULL',  '', '', '',
+        'msgnum',             'int', 'NULL',  '', '', '',
+        # add report params here as necessary
+      ],
+      'primary_key' => 'reportbatchnum',
+      'unique' => [],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns    => [ 'agentnum' ],
+                            table      => 'agent',
+                            references => [ 'agentnum' ],
+                          },
+                          { columns    => [ 'usernum' ],
+                            table      => 'access_user',
+                            references => [ 'usernum' ],
+                          },
+                          { columns    => [ 'msgnum' ],
+                            table      => 'msg_template',
+                            references => [ 'msgnum' ],
                           },
                         ],
     },

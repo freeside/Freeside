@@ -6,7 +6,7 @@ function updateTicketLink() {
   link.href = "<% $new_base.'?'.
     join(';', map(
       { ($_ eq 'Queue') ? () : "$_=$new_param{$_}"}
-    keys %new_param),'Queue=') %>" + selector.options[selector.selectedIndex].value;
+    sort keys %new_param),'Queue=') %>" + selector.options[selector.selectedIndex].value;
 }
 </SCRIPT>
 <A NAME="tickets"><FONT CLASS="fsinnerbox-title">Tickets</FONT></A>

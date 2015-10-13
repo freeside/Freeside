@@ -32,7 +32,7 @@ use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Cursor;
-use FS::Misc qw( generate_email send_email generate_ps do_print money_pretty );
+use FS::Misc qw( generate_ps do_print money_pretty );
 use FS::Msgcat qw(gettext);
 use FS::CurrentUser;
 use FS::TicketSystem;
@@ -4053,6 +4053,30 @@ sub tickets {
   (@tickets);
 }
 
+=item appointments [ STATUS ]
+
+Returns an array of hashes representing the customer's RT tickets which
+are appointments.
+
+=cut
+
+sub appointments {
+  my $self = shift;
+  my $status = ( @_ && $_[0] ) ? shift : '';
+
+  return () unless $conf->config('ticket_system');
+
+  my $queueid = $conf->config('ticket_system-appointment-queueid');
+
+  @{ FS::TicketSystem->customer_tickets( $self->custnum,
+                                         99,
+                                         undef,
+                                         $status,
+                                         $queueid,
+                                       )
+  };
+}
+
 # Return services representing svc_accts in customer support packages
 sub support_services {
   my $self = shift;
@@ -4574,102 +4598,102 @@ sub search {
 
 =over 4
 
-=item notify CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
+#=item notify CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
 
-Deprecated.  Use event notification and message templates 
-(L<FS::msg_template>) instead.
+#Deprecated.  Use event notification and message templates 
+#(L<FS::msg_template>) instead.
 
-Sends a templated email notification to the customer (see L<Text::Template>).
+#Sends a templated email notification to the customer (see L<Text::Template>).
 
-OPTIONS is a hash and may include
+#OPTIONS is a hash and may include
 
-I<from> - the email sender (default is invoice_from)
+#I<from> - the email sender (default is invoice_from)
 
-I<to> - comma-separated scalar or arrayref of recipients 
-   (default is invoicing_list)
+#I<to> - comma-separated scalar or arrayref of recipients 
+#   (default is invoicing_list)
 
-I<subject> - The subject line of the sent email notification
-   (default is "Notice from company_name")
+#I<subject> - The subject line of the sent email notification
+#   (default is "Notice from company_name")
 
-I<extra_fields> - a hashref of name/value pairs which will be substituted
-   into the template
+#I<extra_fields> - a hashref of name/value pairs which will be substituted
+#   into the template
 
-The following variables are vavailable in the template.
+#The following variables are vavailable in the template.
 
-I<$first> - the customer first name
-I<$last> - the customer last name
-I<$company> - the customer company
-I<$payby> - a description of the method of payment for the customer
-            # would be nice to use FS::payby::shortname
-I<$payinfo> - the account information used to collect for this customer
-I<$expdate> - the expiration of the customer payment in seconds from epoch
+#I<$first> - the customer first name
+#I<$last> - the customer last name
+#I<$company> - the customer company
+#I<$payby> - a description of the method of payment for the customer
+#            # would be nice to use FS::payby::shortname
+#I<$payinfo> - the account information used to collect for this customer
+#I<$expdate> - the expiration of the customer payment in seconds from epoch
 
-=cut
+#=cut
 
-sub notify {
-  my ($self, $template, %options) = @_;
+#sub notify {
+#  my ($self, $template, %options) = @_;
 
-  return unless $conf->exists($template);
+#  return unless $conf->exists($template);
 
-  my $from = $conf->invoice_from_full($self->agentnum)
-    if $conf->exists('invoice_from', $self->agentnum);
-  $from = $options{from} if exists($options{from});
+#  my $from = $conf->invoice_from_full($self->agentnum)
+#    if $conf->exists('invoice_from', $self->agentnum);
+#  $from = $options{from} if exists($options{from});
 
-  my $to = join(',', $self->invoicing_list_emailonly);
-  $to = $options{to} if exists($options{to});
-  
-  my $subject = "Notice from " . $conf->config('company_name', $self->agentnum)
-    if $conf->exists('company_name', $self->agentnum);
-  $subject = $options{subject} if exists($options{subject});
+#  my $to = join(',', $self->invoicing_list_emailonly);
+#  $to = $options{to} if exists($options{to});
+#  
+#  my $subject = "Notice from " . $conf->config('company_name', $self->agentnum)
+#    if $conf->exists('company_name', $self->agentnum);
+#  $subject = $options{subject} if exists($options{subject});
 
-  my $notify_template = new Text::Template (TYPE => 'ARRAY',
-                                            SOURCE => [ map "$_\n",
-                                              $conf->config($template)]
-                                           )
-    or die "can't create new Text::Template object: Text::Template::ERROR";
-  $notify_template->compile()
-    or die "can't compile template: Text::Template::ERROR";
+#  my $notify_template = new Text::Template (TYPE => 'ARRAY',
+#                                            SOURCE => [ map "$_\n",
+#                                              $conf->config($template)]
+#                                           )
+#    or die "can't create new Text::Template object: Text::Template::ERROR";
+#  $notify_template->compile()
+#    or die "can't compile template: Text::Template::ERROR";
 
-  $FS::notify_template::_template::company_name =
-    $conf->config('company_name', $self->agentnum);
-  $FS::notify_template::_template::company_address =
-    join("\n", $conf->config('company_address', $self->agentnum) ). "\n";
+#  $FS::notify_template::_template::company_name =
+#    $conf->config('company_name', $self->agentnum);
+#  $FS::notify_template::_template::company_address =
+#    join("\n", $conf->config('company_address', $self->agentnum) ). "\n";
 
-  my $paydate = $self->paydate || '2037-12-31';
-  $FS::notify_template::_template::first = $self->first;
-  $FS::notify_template::_template::last = $self->last;
-  $FS::notify_template::_template::company = $self->company;
-  $FS::notify_template::_template::payinfo = $self->mask_payinfo;
-  my $payby = $self->payby;
-  my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
-  my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
+#  my $paydate = $self->paydate || '2037-12-31';
+#  $FS::notify_template::_template::first = $self->first;
+#  $FS::notify_template::_template::last = $self->last;
+#  $FS::notify_template::_template::company = $self->company;
+#  $FS::notify_template::_template::payinfo = $self->mask_payinfo;
+#  my $payby = $self->payby;
+#  my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
+#  my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
 
-  #credit cards expire at the end of the month/year of their exp date
-  if ($payby eq 'CARD' || $payby eq 'DCRD') {
-    $FS::notify_template::_template::payby = 'credit card';
-    ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
-    $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
-    $expire_time--;
-  }elsif ($payby eq 'COMP') {
-    $FS::notify_template::_template::payby = 'complimentary account';
-  }else{
-    $FS::notify_template::_template::payby = 'current method';
-  }
-  $FS::notify_template::_template::expdate = $expire_time;
+#  #credit cards expire at the end of the month/year of their exp date
+#  if ($payby eq 'CARD' || $payby eq 'DCRD') {
+#    $FS::notify_template::_template::payby = 'credit card';
+#    ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
+#    $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
+#    $expire_time--;
+#  }elsif ($payby eq 'COMP') {
+#    $FS::notify_template::_template::payby = 'complimentary account';
+#  }else{
+#    $FS::notify_template::_template::payby = 'current method';
+#  }
+#  $FS::notify_template::_template::expdate = $expire_time;
 
-  for (keys %{$options{extra_fields}}){
-    no strict "refs";
-    ${"FS::notify_template::_template::$_"} = $options{extra_fields}->{$_};
-  }
+#  for (keys %{$options{extra_fields}}){
+#    no strict "refs";
+#    ${"FS::notify_template::_template::$_"} = $options{extra_fields}->{$_};
+#  }
 
-  send_email(from => $from,
-             to => $to,
-             subject => $subject,
-             body => $notify_template->fill_in( PACKAGE =>
-                                                'FS::notify_template::_template'                                              ),
-            );
+#  send_email(from => $from,
+#             to => $to,
+#             subject => $subject,
+#             body => $notify_template->fill_in( PACKAGE =>
+#                                                'FS::notify_template::_template'                                              ),
+#            );
 
-}
+#}
 
 =item generate_letter CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
 

@@ -43,10 +43,6 @@ L<FS::deploy_zone> foreign key for the zone.
 
 U.S. census block number (15 digits).
 
-=item censusyear
-
-The year of the census map where the block appeared or was last verified.
-
 =back
 
 =head1 METHODS
@@ -107,7 +103,6 @@ sub check {
     $self->ut_numbern('blocknum')
     || $self->ut_number('zonenum')
     || $self->ut_number('censusblock')
-    || $self->ut_number('censusyear')
   ;
   return $error if $error;
 

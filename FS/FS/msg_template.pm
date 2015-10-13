@@ -4,24 +4,13 @@ use base qw( FS::Record );
 use strict;
 use vars qw( $DEBUG $conf );
 
-use Date::Format qw( time2str );
-use File::Temp;
-use IPC::Run qw(run);
-use Text::Template;
-
-use HTML::Entities qw( decode_entities encode_entities ) ;
-use HTML::FormatText;
-use HTML::TreeBuilder;
-use Encode;
-
-use FS::Misc qw( generate_email send_email do_print );
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs );
-use FS::UID qw( dbh );
+use FS::Record qw( qsearch qsearchs dbh );
 
-use FS::cust_main;
 use FS::cust_msg;
 use FS::template_content;
+
+use Date::Format qw(time2str);
 
 FS::UID->install_callback( sub { $conf = new FS::Conf; } );
 
@@ -46,6 +35,12 @@ FS::msg_template - Object methods for msg_template records
 
   $error = $record->check;
 
+=head1 NOTE
+
+This uses a table-per-subclass ORM strategy, which is a somewhat cleaner
+version of what we do elsewhere with _option tables. We could easily extract 
+that functionality into a base class, or even into FS::Record itself.
+
 =head1 DESCRIPTION
 
 An FS::msg_template object represents a customer message template.
@@ -59,6 +54,9 @@ supported:
 =item msgname - Name of the template.  This will appear in the user interface;
 if it needs to be localized for some users, add it to the message catalog.
 
+=item msgclass - The L<FS::msg_template> subclass that this should belong to.
+Defaults to 'email'.
+
 =item agentnum - Agent associated with this template.  Can be NULL for a 
 global template.
 
@@ -66,7 +64,11 @@ global template.
 
 =item from_addr - Source email address.
 
-=item disabled - disabled ('Y' or NULL).
+=item bcc_addr - Bcc all mail to this address.
+
+=item disabled - disabled (NULL for not-disabled and selectable, 'D' for a
+draft of a one-time message, 'C' for a completed one-time message, 'Y' for a
+normal template disabled by user action).
 
 =back
 
@@ -87,40 +89,71 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'msg_template'; }
 
+sub extension_table { ''; } # subclasses don't HAVE to have extensions
+
+sub _rebless {
+  my $self = shift;
+  my $class = 'FS::msg_template::' . $self->msgclass;
+  eval "use $class;";
+  bless($self, $class) unless $@;
+  warn "Error loading msg_template msgclass: " . $@ if $@; #or die?
+
+  # merge in the extension fields (but let fields in $self override them)
+  # except don't ever override the extension's primary key, it's immutable
+  if ( $self->msgnum and $self->extension_table ) {
+    my $extension = $self->_extension;
+    if ( $extension ) {
+      my $ext_key = $extension->get($extension->primary_key);
+      $self->{Hash} = { $extension->hash,
+                        $self->hash,
+                        $extension->primary_key => $ext_key
+                      };
+    }
+  }
+
+  $self;
+}
+
+# Returns the subclass-specific extension record for this object. For internal
+# use only; everyone else is supposed to think of this as a single record.
+
+sub _extension {
+  my $self = shift;
+  if ( $self->extension_table and $self->msgnum ) {
+    local $FS::Record::nowarn_classload = 1;
+    return qsearchs($self->extension_table, { msgnum => $self->msgnum });
+  }
+  return;
+}
+
 =item insert [ CONTENT ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-A default (no locale) L<FS::template_content> object will be created.  CONTENT 
-is an optional hash containing 'subject' and 'body' for this object.
-
 =cut
 
 sub insert {
   my $self = shift;
-  my %content = @_;
+  $self->_rebless;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
 
   my $error = $self->SUPER::insert;
-  if ( !$error ) {
-    $content{'msgnum'} = $self->msgnum;
-    $content{'subject'} ||= '';
-    $content{'body'} ||= '';
-    my $template_content = new FS::template_content (\%content);
-    $error = $template_content->insert;
+  # calling _extension at this point makes it copy the msgnum, so links work
+  if ( $self->extension_table ) {
+    local $FS::Record::nowarn_classload = 1;
+    my $extension = FS::Record->new($self->extension_table, { $self->hash });
+    $error ||= $extension->insert;
   }
 
   if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
+    dbh->rollback if $oldAutoCommit;
+  } else {
+    dbh->commit if $oldAutoCommit;
   }
-
-  $dbh->commit if $oldAutoCommit;
-  return;
+  $error;
 }
 
 =item delete
@@ -129,61 +162,73 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
 
-=item replace [ OLD_RECORD ] [ CONTENT ]
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error;
+  my $extension = $self->_extension;
+  if ( $extension ) {
+    $error = $extension->delete;
+  }
+
+  $error ||= $self->SUPER::delete;
+
+  if ( $error ) {
+    dbh->rollback if $oldAutoCommit;
+  } else {
+    dbh->commit if $oldAutoCommit;
+  }
+  $error;
+}
+
+=item replace [ OLD_RECORD ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-CONTENT is an optional hash containing 'subject', 'body', and 'locale'.  If 
-supplied, an L<FS::template_content> object will be created (or modified, if 
-one already exists for this locale).
-
 =cut
 
 sub replace {
-  my $self = shift;
-  my $old = ( ref($_[0]) and $_[0]->isa('FS::Record') ) 
-              ? shift
-              : $self->replace_old;
-  my %content = @_;
-  
+  my $new = shift;
+  my $old = shift || $new->replace_old;
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
 
-  my $error = $self->SUPER::replace($old);
+  my $error = $new->SUPER::replace($old, @_);
 
-  if ( !$error and %content ) {
-    $content{'locale'} ||= '';
-    my $new_content = qsearchs('template_content', {
-                        'msgnum' => $self->msgnum,
-                        'locale' => $content{'locale'},
-                      } );
-    if ( $new_content ) {
-      $new_content->subject($content{'subject'});
-      $new_content->body($content{'body'});
-      $error = $new_content->replace;
-    }
-    else {
-      $content{'msgnum'} = $self->msgnum;
-      $new_content = new FS::template_content \%content;
-      $error = $new_content->insert;
-    }
+  my $extension = $new->_extension;
+  if ( $extension ) {
+    # merge changes into the extension record and replace it
+    $extension->{Hash} = { $extension->hash, $new->hash };
+    $error ||= $extension->replace;
   }
 
   if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
+    dbh->rollback if $oldAutoCommit;
+  } else {
+    dbh->commit if $oldAutoCommit;
   }
-
-  warn "committing FS::msg_template->replace\n" if $DEBUG and $oldAutoCommit;
-  $dbh->commit if $oldAutoCommit;
-  return;
+  $error;
 }
-    
 
+sub replace_check {
+  my $self = shift;
+  my $old = $self->replace_old;
+  # don't allow changing msgclass, except null to not-null (for upgrade)
+  if ( $old->msgclass ) {
+    if ( !$self->msgclass ) {
+      $self->set('msgclass', $old->msgclass);
+    } elsif ( $old->msgclass ne $self->msgclass ) {
+      return "Can't change message template class from ".$old->msgclass.
+             " to ".$self->msgclass.".";
+    }
+  }
+  '';
+}
 
 =item check
 
@@ -204,8 +249,12 @@ sub check {
     || $self->ut_text('msgname')
     || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
     || $self->ut_textn('mime_type')
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_enum('disabled', [ '', 'Y', 'D', 'S' ] )
     || $self->ut_textn('from_addr')
+    || $self->ut_textn('bcc_addr')
+    # fine for now, but change this to some kind of dynamic check if we
+    # ever have more than two msgclasses
+    || $self->ut_enum('msgclass', [ qw(email http) ]),
   ;
   return $error if $error;
 
@@ -214,25 +263,10 @@ sub check {
   $self->SUPER::check;
 }
 
-=item content_locales
-
-Returns a hashref of the L<FS::template_content> objects attached to 
-this template, with the locale as key.
-
-=cut
-
-sub content_locales {
-  my $self = shift;
-  return $self->{'_content_locales'} ||= +{
-    map { $_->locale , $_ } 
-    qsearch('template_content', { 'msgnum' => $self->msgnum })
-  };
-}
-
 =item prepare OPTION => VALUE
 
-Fills in the template and returns a hash of the 'from' address, 'to' 
-addresses, subject line, and body.
+Fills in the template and returns an L<FS::cust_msg> object, containing the
+message to be sent.  This method must be provided by the subclass.
 
 Options are passed as a list of name/value pairs:
 
@@ -276,18 +310,23 @@ A hash reference of additional substitutions
 =cut
 
 sub prepare {
+  die "unimplemented";
+}
+
+=item prepare_substitutions OPTION => VALUE ...
+
+Takes the same arguments as L</prepare>, and returns a hashref of the 
+substitution variables.
+
+=cut
+
+sub prepare_substitutions {
   my( $self, %opt ) = @_;
 
   my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
   my $object = $opt{'object'} or die 'object required';
 
-  # localization
-  my $locale = $cust_main && $cust_main->locale || '';
-  warn "no locale for cust#".$cust_main->custnum."; using default content\n"
-    if $DEBUG and $cust_main && !$locale;
-  my $content = $self->content($locale);
-
-  warn "preparing template '".$self->msgname."\n"
+  warn "preparing substitutions for '".$self->msgname."'\n"
     if $DEBUG;
 
   my $subs = $self->substitutions;
@@ -340,110 +379,19 @@ sub prepare {
     $hash{$_} = $opt{substitutions}->{$_} foreach keys %{$opt{substitutions}};
   }
 
-  $_ = encode_entities($_ || '') foreach values(%hash);
-
-  ###
-  # clean up template
-  ###
-  my $subject_tmpl = new Text::Template (
-    TYPE   => 'STRING',
-    SOURCE => $content->subject,
-  );
-  my $subject = $subject_tmpl->fill_in( HASH => \%hash );
-
-  my $body = $content->body;
-  my ($skin, $guts) = eviscerate($body);
-  @$guts = map { 
-    $_ = decode_entities($_); # turn all punctuation back into itself
-    s/\r//gs;           # remove \r's
-    s/<br[^>]*>/\n/gsi; # and <br /> tags
-    s/<p>/\n/gsi;       # and <p>
-    s/<\/p>//gsi;       # and </p>
-    s/\240/ /gs;        # and &nbsp;
-    $_
-  } @$guts;
-  
-  $body = '{ use Date::Format qw(time2str); "" }';
-  while(@$skin || @$guts) {
-    $body .= shift(@$skin) || '';
-    $body .= shift(@$guts) || '';
-  }
-
-  ###
-  # fill-in
-  ###
-
-  my $body_tmpl = new Text::Template (
-    TYPE          => 'STRING',
-    SOURCE        => $body,
-  );
-
-  $body = $body_tmpl->fill_in( HASH => \%hash );
-
-  ###
-  # and email
-  ###
-
-  my @to;
-  if ( exists($opt{'to'}) ) {
-    @to = split(/\s*,\s*/, $opt{'to'});
-  } elsif ( $cust_main ) {
-    @to = $cust_main->invoicing_list_emailonly;
-  } else {
-    die 'no To: address or cust_main object specified';
-  }
-
-  my $from_addr = $self->from_addr;
-
-  if ( !$from_addr ) {
-
-    my $agentnum = $cust_main ? $cust_main->agentnum : '';
-
-    if ( $opt{'from_config'} ) {
-      $from_addr = $conf->config($opt{'from_config'}, $agentnum);
-    }
-    $from_addr ||= $conf->invoice_from_full($agentnum);
-  }
-#  my @cust_msg = ();
-#  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {
-#    my $cust_msg = FS::cust_msg->new({
-#        'custnum' => $cust_main->custnum,
-#        'msgnum'  => $self->msgnum,
-#        'status'  => 'prepared',
-#      });
-#    $cust_msg->insert;
-#    @cust_msg = ('cust_msg' => $cust_msg);
-#  }
-
-  my $text_body = encode('UTF-8',
-                  HTML::FormatText->new(leftmargin => 0, rightmargin => 70)
-                      ->format( HTML::TreeBuilder->new_from_content($body) )
-                  );
-  (
-    'custnum'   => ( $cust_main ? $cust_main->custnum : ''),
-    'msgnum'    => $self->msgnum,
-    'from'      => $from_addr,
-    'to'        => \@to,
-    'bcc'       => $self->bcc_addr || undef,
-    'subject'   => $subject,
-    'html_body' => $body,
-    'text_body' => $text_body
-  );
-
+  return \%hash;
 }
 
-=item send OPTION => VALUE
+=item send OPTION => VALUE ...
 
-Fills in the template and sends it to the customer.  Options are as for 
-'prepare'.
+Creates a message with L</prepare> (taking all the same options) and sends it.
 
 =cut
 
-# broken out from prepare() in case we want to queue the sending,
-# preview it, etc.
 sub send {
   my $self = shift;
-  send_email(generate_email($self->prepare(@_)));
+  my $cust_msg = $self->prepare(@_);
+  $self->send_prepared($cust_msg);
 }
 
 =item render OPTION => VALUE ...
@@ -454,6 +402,9 @@ name of the PDF file.
 Options are as for 'prepare', but 'from' and 'to' are meaningless.
 
 =cut
+
+# XXX not sure where this ends up post-refactoring--a separate template
+# class? it doesn't use the same rendering OR output machinery as ::email
 
 # will also have options to set paper size, margins, etc.
 
@@ -506,8 +457,6 @@ my $usage_warning = sub {
   }
   return ['', '', ''];
 };
-
-#my $conf = new FS::Conf;
 
 #return contexts and fill-in values
 # If you add anything, be sure to add a description in 
@@ -686,19 +635,11 @@ sub substitutions {
 
 =item content LOCALE
 
-Returns the L<FS::template_content> object appropriate to LOCALE, if there 
-is one.  If not, returns the one with a NULL locale.
+Stub, returns nothing.
 
 =cut
 
-sub content {
-  my $self = shift;
-  my $locale = shift;
-  qsearchs('template_content', 
-            { 'msgnum' => $self->msgnum, 'locale' => $locale }) || 
-  qsearchs('template_content',
-            { 'msgnum' => $self->msgnum, 'locale' => '' });
-}
+sub content {}
 
 =item agent
 
@@ -719,20 +660,22 @@ sub _upgrade_data {
     [ 'decline_msgnum',  'declinetemplate',    '',               '', '' ],
     [ 'impending_recur_msgnum', 'impending_recur_template', '',  '', 'impending_recur_bcc' ],
     [ 'payment_receipt_msgnum', 'payment_receipt_email', '',     '', '' ],
-    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from', '' ],
-    [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', '' ],
+    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from', '', 'welcome_email-mimetype' ],
+    [ 'threshold_warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', 'warning_email-cc', 'warning_email-mimetype' ],
   );
  
   my @agentnums = ('', map {$_->agentnum} qsearch('agent', {}));
   foreach my $agentnum (@agentnums) {
     foreach (@fixes) {
-      my ($newname, $oldname, $subject, $from, $bcc) = @$_;
+      my ($newname, $oldname, $subject, $from, $bcc, $mimetype) = @$_;
+      
       if ($conf->exists($oldname, $agentnum)) {
         my $new = new FS::msg_template({
+          'msgclass'  => 'email',
           'msgname'   => $oldname,
           'agentnum'  => $agentnum,
           'from_addr' => ($from && $conf->config($from, $agentnum)) || '',
-          'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
+          'bcc_addr'  => ($bcc && $conf->config($bcc, $agentnum)) || '',
           'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
           'mime_type' => 'text/html',
           'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
@@ -743,6 +686,8 @@ sub _upgrade_data {
         $conf->delete($oldname, $agentnum);
         $conf->delete($from, $agentnum) if $from;
         $conf->delete($subject, $agentnum) if $subject;
+        $conf->delete($bcc, $agentnum) if $bcc;
+        $conf->delete($mimetype, $agentnum) if $mimetype;
       }
     }
 
@@ -827,8 +772,14 @@ sub _upgrade_data {
       }
       $content{body} = $body;
       $msg_template->set('body', '');
-
       my $error = $msg_template->replace(%content);
+      die $error if $error;
+    }
+
+    if ( !$msg_template->msgclass ) {
+      # set default message class
+      $msg_template->set('msgclass', 'email');
+      my $error = $msg_template->replace;
       die $error if $error;
     }
   }
@@ -861,56 +812,6 @@ sub _populate_initial_data { #class method
   
   }
 
-}
-
-sub eviscerate {
-  # Every bit as pleasant as it sounds.
-  #
-  # We do this because Text::Template::Preprocess doesn't
-  # actually work.  It runs the entire template through 
-  # the preprocessor, instead of the code segments.  Which 
-  # is a shame, because Text::Template already contains
-  # the code to do this operation.
-  my $body = shift;
-  my (@outside, @inside);
-  my $depth = 0;
-  my $chunk = '';
-  while($body || $chunk) {
-    my ($first, $delim, $rest);
-    # put all leading non-delimiters into $first
-    ($first, $rest) =
-        ($body =~ /^((?:\\[{}]|[^{}])*)(.*)$/s);
-    $chunk .= $first;
-    # put a leading delimiter into $delim if there is one
-    ($delim, $rest) =
-      ($rest =~ /^([{}]?)(.*)$/s);
-
-    if( $delim eq '{' ) {
-      $chunk .= '{';
-      if( $depth == 0 ) {
-        push @outside, $chunk;
-        $chunk = '';
-      }
-      $depth++;
-    }
-    elsif( $delim eq '}' ) {
-      $depth--;
-      if( $depth == 0 ) {
-        push @inside, $chunk;
-        $chunk = '';
-      }
-      $chunk .= '}';
-    }
-    else {
-      # no more delimiters
-      if( $depth == 0 ) {
-        push @outside, $chunk . $rest;
-      } # else ? something wrong
-      last;
-    }
-    $body = $rest;
-  }
-  (\@outside, \@inside);
 }
 
 =back

@@ -23,15 +23,16 @@
         >
 %         my $info = $part_pkg_usageprice->target_info;
 %         my $amount = $part_pkg_usageprice->amount / ($info->{multiplier}||1);
-          <OPTION VALUE="">Additional <% $info->{label} %>
+          <OPTION VALUE="">Additional <% $info->{label} %></OPTION>
 %         for (1..100) { #100?  arbitrary.
-            <OPTION VALUE="<% $_ %>"><%
+%           my $selected = ($opt{'curr_quantity'} == $_) ? ' SELECTED' : '';
+            <OPTION VALUE="<% $_ %>"<% $selected %>><%
               $money_char. sprintf('%.2f', $_ * $part_pkg_usageprice->price ).
               ' '.
               'for'. #( $part_pkg_usageprice->action eq 'increment' ? 'per' : 'for' ).
               ' '.
               ( $_ * $amount ). ' '. $info->{label}
-            %>
+            %></OPTION>
 %         }
         </SELECT>
       </TD>
@@ -41,8 +42,6 @@
 
 % }
 <%init>
-
-#my $targets = FS::part_pkg_usageprice->targets;
 
 my( %opt ) = @_;
 

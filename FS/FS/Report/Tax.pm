@@ -52,9 +52,10 @@ sub report_internal {
   }
 
   # %breakdown: short name => field identifier
+  # null classnum should remain null, not be converted to zero
   %breakdown = (
     'taxclass'  => 'cust_main_county.taxclass',
-    'pkgclass'  => 'part_pkg.classnum',
+    'pkgclass'  => 'COALESCE(part_fee.classnum,part_pkg.classnum)',
     'city'      => 'cust_main_county.city',
     'district'  => 'cust_main_county.district',
     'state'     => 'cust_main_county.state',
@@ -69,7 +70,8 @@ sub report_internal {
 
   my $join_cust_pkg = $join_cust.
                       ' LEFT JOIN cust_pkg      USING ( pkgnum  )
-                        LEFT JOIN part_pkg      USING ( pkgpart ) ';
+                        LEFT JOIN part_pkg      USING ( pkgpart )
+                        LEFT JOIN part_fee      USING ( feepart ) ';
 
   my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg "; 
 
@@ -180,26 +182,111 @@ sub report_internal {
   $all_sql{exempt_monthly} = $all_exempt;
   $all_sql{exempt_monthly} =~ s/EXEMPT_WHERE/exempt_monthly = 'Y'/;
 
-  # taxable sales
-  $sql{taxable} = "$select
-    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+  # credits applied to taxable sales
+  # Note that negative exemptions (from exempt sales being credited) are NOT
+  # counted when calculating the exempt amount. (See above.) Therefore we need
+  # to NOT include any credits against exempt sales in this amount, either.
+  # These two subqueries implement that. They have joins to cust_credit_bill
+  # and cust_bill so that credits can be filtered by application date if
+  # requested.
+
+  # Each row here is the sum of credits applied to a line item.
+  my $sales_credit =
+    "SELECT billpkgnum, SUM(cust_credit_bill_pkg.amount) AS credited
+    FROM cust_credit_bill_pkg
+    JOIN cust_credit_bill USING (creditbillnum)
+    JOIN cust_bill USING (invnum)
+    WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending
+    GROUP BY billpkgnum
+    ";
+
+  # Each row here is the sum of negative exemptions applied to a combination
+  # of line item and tax definition.
+  my $exempt_credit =
+    "SELECT cust_credit_bill_pkg.billpkgnum, taxnum,
+      0 - SUM(cust_tax_exempt_pkg.amount) AS exempt_credited
+    FROM cust_credit_bill_pkg
+    LEFT JOIN cust_tax_exempt_pkg USING (creditbillpkgnum)
+    JOIN cust_credit_bill USING (creditbillnum)
+    JOIN cust_bill USING (invnum)
+    WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending
+    GROUP BY cust_credit_bill_pkg.billpkgnum, taxnum
+    ";
+  
+  if ( $opt{credit_date} eq 'cust_credit_bill' ) {
+    $sales_credit =~ s/cust_bill._date/cust_credit_bill._date/g;
+    $exempt_credit =~ s/cust_bill._date/cust_credit_bill._date/g;
+  }
+
+  $sql{sales_credited} = "$select
+    SUM(COALESCE(credited, 0) - COALESCE(exempt_credited, 0))
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  $all_sql{sales_credited} = "$select_all
+    SUM(COALESCE(credited, 0) - COALESCE(exempt_credited, 0))
+    FROM cust_main_county
+    JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  # also include the exempt-sales credit amount, for the credit report
+  $sql{exempt_credited} = "$select
+    SUM(COALESCE(exempt_credited, 0))
+    FROM cust_main_county
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  $all_sql{exempt_credited} = "$select_all
+    SUM(COALESCE(exempt_credited, 0))
+    FROM cust_main_county
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    $join_cust_pkg $where AND $nottax
+    $group
+    ";
+
+  # taxable sales
+  $sql{taxable} = "$select
+    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+    )
+    FROM cust_main_county
+    JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
+    JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group";
 
   $all_sql{taxable} = "$select_all
-    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+    SUM(cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+    )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group_all";
 
@@ -209,27 +296,35 @@ sub report_internal {
   # estimated tax (taxable * rate)
   $sql{estimated} = "$select
     SUM(cust_main_county.tax / 100 * 
-      (cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+      (cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+      )
     )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group";
 
   $all_sql{estimated} = "$select_all
     SUM(cust_main_county.tax / 100 * 
-      (cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
+      (cust_bill_pkg.setup + cust_bill_pkg.recur
+      - COALESCE(exempt_charged, 0)
+      - COALESCE(credited, 0)
+      + COALESCE(exempt_credited, 0)
+      )
     )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
-    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-      ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
-          AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
+    LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
+    LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
+    LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax 
     $group_all";
 
@@ -239,7 +334,7 @@ sub report_internal {
   # there isn't one for 'sales', because we calculate sales by adding up 
   # the taxable and exempt columns.
   
-  # TAX QUERIES (billed tax, credited tax)
+  # TAX QUERIES (billed tax, credited tax, collected tax)
   # -----------
 
   # sum of billed tax:
@@ -252,28 +347,30 @@ sub report_internal {
   if ( $breakdown{pkgclass} ) {
     # If we're not grouping by package class, this is unnecessary, and
     # probably really expensive.
+    # Remember that fees also have package classes.
     $taxfrom .= "
                   LEFT JOIN cust_bill_pkg AS taxable
                     ON (cust_bill_pkg_tax_location.taxable_billpkgnum = taxable.billpkgnum)
                   LEFT JOIN cust_pkg ON (taxable.pkgnum = cust_pkg.pkgnum)
-                  LEFT JOIN part_pkg USING (pkgpart)";
+                  LEFT JOIN part_pkg USING (pkgpart)
+                  LEFT JOIN part_fee ON (taxable.feepart = part_fee.feepart) ";
   }
 
-  my $istax = "cust_bill_pkg.pkgnum = 0";
+  my $istax = "cust_bill_pkg.pkgnum = 0 and cust_bill_pkg.feepart is null";
 
-  $sql{tax} = "$select SUM(cust_bill_pkg_tax_location.amount)
+  $sql{tax} = "$select COALESCE(SUM(cust_bill_pkg_tax_location.amount),0)
                $taxfrom
                $where AND $istax
                $group";
 
-  $all_sql{tax} = "$select_all SUM(cust_bill_pkg_tax_location.amount)
+  $all_sql{tax} = "$select_all COALESCE(SUM(cust_bill_pkg_tax_location.amount),0)
                $taxfrom
                $where AND $istax
                $group_all";
 
   # sum of credits applied against billed tax
-  # ($creditfrom includes join of taxable item to part_pkg if with_pkgclass
-  # is on)
+  # ($creditfrom includes join of taxable item to part_pkg/part_fee if 
+  # with_pkgclass is on)
   my $creditfrom = $taxfrom .
     ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)' .
     ' JOIN cust_credit_bill     USING (creditbillnum)';
@@ -286,15 +383,36 @@ sub report_internal {
     $creditwhere     =~ s/cust_bill._date/cust_credit_bill._date/g;
   }
 
-  $sql{credit} = "$select SUM(cust_credit_bill_pkg.amount)
+  $sql{tax_credited} = "$select COALESCE(SUM(cust_credit_bill_pkg.amount),0)
                   $creditfrom
                   $creditwhere AND $istax
                   $group";
 
-  $all_sql{credit} = "$select_all SUM(cust_credit_bill_pkg.amount)
+  $all_sql{tax_credited} = "$select_all COALESCE(SUM(cust_credit_bill_pkg.amount),0)
                   $creditfrom
                   $creditwhere AND $istax
                   $group_all";
+
+  # sum of tax paid
+  # this suffers from the same ambiguity as anything else that applies 
+  # received payments to specific packages, but in reality the discrepancy
+  # should be minimal since people either pay their bill or don't.
+  # the join is on billpkgtaxlocationnum to avoid cross-producting.
+ 
+  my $paidfrom = $taxfrom .
+    ' JOIN cust_bill_pay_pkg'.
+    ' ON (cust_bill_pay_pkg.billpkgtaxlocationnum ='.
+    ' cust_bill_pkg_tax_location.billpkgtaxlocationnum)';
+
+  $sql{tax_paid} = "$select COALESCE(SUM(cust_bill_pay_pkg.amount),0)
+                    $paidfrom
+                    $where AND $istax
+                    $group";
+
+  $all_sql{tax_paid} = "$select_all COALESCE(SUM(cust_bill_pay_pkg.amount),0)
+                    $paidfrom
+                    $where AND $istax
+                    $group_all";
 
   my %data;
   my %total;
@@ -303,7 +421,7 @@ sub report_internal {
   # as for the individual category queries
   foreach my $k (keys(%sql)) {
     my $stmt = $sql{$k};
-    warn "\n".uc($k).":\n".$stmt."\n" if $DEBUG;
+    warn "\n".uc($k).":\n".$stmt."\n" if $DEBUG > 1;
     my $sth = dbh->prepare($stmt);
     # eight columns: pkgclass, taxclass, state, county, city, district
     # taxnums (comma separated), value
@@ -322,7 +440,7 @@ sub report_internal {
       push @$bin, [ $k, $row->[6], $row->[7] ];
     }
   }
-  warn "DATA:\n".Dumper(\%data) if $DEBUG > 1;
+  warn "DATA:\n".Dumper(\%data) if $DEBUG;
 
   foreach my $k (keys %all_sql) {
     warn "\nTOTAL ".uc($k).":\n".$all_sql{$k}."\n" if $DEBUG;
@@ -458,9 +576,15 @@ sub table {
       # and calculate row totals
       $this_row{sales} = sprintf('%.2f',
                           $this_row{taxable} +
+                          $this_row{sales_credited} +
                           $this_row{exempt_cust} +
                           $this_row{exempt_pkg} + 
                           $this_row{exempt_monthly}
+                        );
+      $this_row{credits} = sprintf('%.2f',
+                          $this_row{sales_credited} +
+                          $this_row{exempt_credited} +
+                          $this_row{tax_credited}
                         );
       # and give it a label
       if ( $this_row{total} ) {

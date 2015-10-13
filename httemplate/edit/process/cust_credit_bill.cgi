@@ -12,8 +12,7 @@ die "access denied"
 
 if ( $cgi->param('src_amount') ) {
   die "access denied"
-    unless ( $FS::CurrentUser::CurrentUser->access_right('Post credit') &&
-           $FS::CurrentUser::CurrentUser->access_right('Delete credit') );
+    unless $FS::CurrentUser::CurrentUser->access_right('Post credit')
 }
 
 </%init>

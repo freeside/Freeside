@@ -8,7 +8,6 @@ use Data::Dumper;
 use Business::CreditCard 0.28;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
-use FS::Misc qw( send_email );
 use FS::payby;
 use FS::cust_pay;
 use FS::cust_pay_pending;
@@ -623,6 +622,7 @@ sub realtime_bop {
     '_date'             => '',
     'payby'             => $bop_method2payby{$options{method}},
     'payinfo'           => $options{payinfo},
+    'paymask'           => $options{paymask},
     'paydate'           => $paydate,
     'recurring_billing' => $content{recurring_billing},
     'pkgnum'            => $options{'pkgnum'},
@@ -766,8 +766,6 @@ sub realtime_bop {
 
   if ( $transaction->can('card_token') && $transaction->card_token ) {
 
-    $self->card_token($transaction->card_token);
-
     if ( $options{'payinfo'} eq $self->payinfo ) {
       $self->payinfo($transaction->card_token);
       my $error = $self->replace;
@@ -890,6 +888,7 @@ sub _realtime_bop_result {
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
+       'paymask'  => $options{'paymask'},
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
        'discount_term'  => $options{'discount_term'},
@@ -1121,31 +1120,7 @@ sub _realtime_bop_result {
         $error = $msg_template->send( 'cust_main' => $self,
                                       'object'    => $cust_pay_pending );
       }
-      else { #!$msgnum
 
-        my @templ = $conf->config('declinetemplate');
-        my $template = new Text::Template (
-          TYPE   => 'ARRAY',
-          SOURCE => [ map "$_\n", @templ ],
-        ) or return "($perror) can't create template: $Text::Template::ERROR";
-        $template->compile()
-          or return "($perror) can't compile template: $Text::Template::ERROR";
-
-        my $templ_hash = {
-          'company_name'    =>
-            scalar( $conf->config('company_name', $self->agentnum ) ),
-          'company_address' =>
-            join("\n", $conf->config('company_address', $self->agentnum ) ),
-          'error'           => $transaction->error_message,
-        };
-
-        my $error = send_email(
-          'from'    => $conf->invoice_from_full( $self->agentnum ),
-          'to'      => [ grep { $_ ne 'POST' } $self->invoicing_list ],
-          'subject' => 'Your payment could not be processed',
-          'body'    => [ $template->fill_in(HASH => $templ_hash) ],
-        );
-      }
 
       $perror .= " (also received error sending decline notification: $error)"
         if $error;
@@ -1649,6 +1624,7 @@ sub realtime_refund_bop {
 
   $order_number = $refund->order_number if $refund->can('order_number');
 
+  # change this to just use $cust_pay->delete_cust_bill_pay?
   while ( $cust_pay && $cust_pay->unapplied < $amount ) {
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
     last unless @cust_bill_pay;

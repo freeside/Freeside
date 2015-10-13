@@ -14,7 +14,7 @@
 <% ntable("#cccccc", 2) %>
 <TR>
   <TD ALIGN="right">Reason</TD>
-  <TD><INPUT TYPE="text" NAME="reason" VALUE="<% $cgi->param('reason') |h %>"></TD>
+  <TD><INPUT TYPE="text" NAME="reason" VALUE="<% scalar($cgi->param('reason')) |h %>"></TD>
 </TR>
 
 </TABLE>

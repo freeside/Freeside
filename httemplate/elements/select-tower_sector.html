@@ -2,6 +2,8 @@
 <& /elements/select-table.html,
     table       => 'tower_sector',
     name_col    => 'description',
+    addl_from   => 'JOIN tower USING (towernum)',
+    extra_sql   => q(WHERE disabled = '' OR disabled IS NULL),
     order_by    => 'ORDER BY towernum,sectorname',
     empty_label => ' ',
     @_ 
@@ -11,8 +13,9 @@
 <& /elements/select-table.html,
     table       => 'tower',
     name_col    => 'towername',
+    hashref     => { 'disabled' => '', },
     id          => 'towernum',
-    field       => 'dummy_towernum',
+    field       => 'towernum',
     onchange    => 'change_towernum(this.value);',
     element_etc => 'STYLE="vertical-align:top"',
 &>
@@ -63,5 +66,5 @@ foreach my $towernum (keys %sectors_of) {
   }
 }
 
-my $empty_label = $opt{'empty_label'} || 'Include services with no tower/sector';
+my $empty_label = $opt{'empty_label'} || 'Include services with no sector';
 </%init>

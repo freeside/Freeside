@@ -9,6 +9,7 @@
   $LengthMin => $default_timestep
   $custnum   => undef
   $pkgnum    => undef
+  $RedirectToBasics => 0
 </%ARGS>
 % foreach my $username ( @username ) {
 %
@@ -48,10 +49,16 @@
 %     $selectable = 0;
 %
 %     if ( $starts >= $tod_row ) { #first row
+%
+%       #false laziness w/misc/xmlhttp-ticket-update.html & CalendarDaySchedule
+%       my %hash = $m->comp('/Ticket/Elements/Customers', Ticket => $t);
+%       my @cust_main = values( %{$hash{cust_main}} );
+%
 %       $content .= ($content?', ':''). #$id. ': '.
 %                   #false laziness w/xmlhttp-ticket-update.html
 %                   FS::sched_avail::pretty_time($starts). '-'.
-%                   FS::sched_avail::pretty_time($due);
+%                   FS::sched_avail::pretty_time($due).
+%                   ': '. encode_entities($cust_main[0]->_FreesideURILabel);
 %                   #'install for custname XX miles away'; #XXX placeholder/more
 %       $draggable_ticketid = $id;
 %       $draggable_length = $due - $starts;
@@ -87,7 +94,11 @@
 %         # (XXX and eventually, package)
 %         my $cust_main = qsearchs('cust_main', { custnum=>$custnum } )
 %           or die "unknown custnum $custnum";
-%         my $Queue = $cust_main->agent->ticketing_queueid || 1; # || $default_queueid;#XXX really, pick pkg_category queue
+%
+%         my $conf = new FS::Conf;
+%         my $Queue = $conf->config('ticket_system-appointment-queueid')
+%           or die "ticket_system-appointment-queueid configuration not set";
+%
 %         my $member = "freeside://freeside/cust_main/$custnum";
 %
 %warn         my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
@@ -100,7 +111,8 @@
 %                   '&Starts='. $Date->strftime('%F').'%20'. $Starts.
 %                   '&Due='.    $Date->strftime('%F').'%20'. $Due.
 %                   '&new-MemberOf='. $member. #XXX uri_escape?
-%                   '&Status=new';
+%                   '&Status=new'.
+%                   '&RedirectToBasics='.$RedirectToBasics;
 %                   #'&Requestors='. #XXX Freeside customer requestor(s) (package?
 
           onmouseover = "boxon(this);"

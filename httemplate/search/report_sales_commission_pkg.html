@@ -1,5 +1,15 @@
 <& /elements/header.html, 'Sales commission report per package' &>
 
+% if ($FS::CurrentUser::CurrentUser->access_right('Send reports to customers'))
+%   {
+<P>
+<& /elements/popup_link-send_report_batch.html,
+    reportname => 'sales_commission_pkg',
+    label => emt('Send these reports by email'),
+&>
+</P>
+% } 
+
 <FORM ACTION="sales_commission_pkg.html">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>

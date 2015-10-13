@@ -111,12 +111,45 @@ sub check {
     || $self->ut_enum('action', [ 'increment', 'set' ])
     || $self->ut_enum('target', [ 'svc_acct.totalbytes', 'svc_acct.seconds',
                                   'svc_conferencing.participants',
-                                  'svc_conferencing.confqualitynum'
+#                                  'svc_conferencing.confqualitynum',
+                                  'sqlradacct_hour.recur_included_total'
                                 ]
                      )
     || $self->ut_text('amount')
   ;
   return $error if $error;
+
+  #Check target against package
+  #UI doesn't currently prevent these from happing,
+  #so keep error messages informative
+  my $part_pkg = $self->part_pkg;
+  my $target = $self->target;
+  my $label = $self->target_info->{'label'};
+  my ($needs_svcdb, $needs_plan);
+  if ( $target =~ /^svc_acct.(\w+)$/ ) {
+    $needs_svcdb = 'svc_acct';
+  } elsif ( $target eq 'svc_conferencing.participants' ) {
+    $needs_svcdb = 'svc_conferencing';
+  } elsif ( $target =~ /^sqlradacct_hour.(\w+)$/ ) {
+    $needs_plan = 'sqlradacct_hour';
+  }
+  if ($needs_svcdb) {
+    my $has_svcdb = 0;
+    foreach my $pkg_svc ($part_pkg->pkg_svc) {
+      next unless $pkg_svc->quantity;
+      my $svcdb = $pkg_svc->part_svc->svcdb;
+      $has_svcdb = 1
+        if $svcdb eq $needs_svcdb;
+      last if $has_svcdb;
+    }
+    return "Usage pricing add-on \'$label\' can only be used on packages with at least one $needs_svcdb service.\n"
+      unless $has_svcdb;
+  }
+  if ($needs_plan) {
+    return "Usage pricing add-on \'$label\' can only be used on packages with pricing plan \'" . 
+           FS::part_pkg->plan_info->{$needs_plan}->{'shortname'} . "\'\n"
+      unless ref($part_pkg) eq 'FS::part_pkg::' . $needs_plan;
+  }
 
   $self->SUPER::check;
 }
@@ -147,10 +180,10 @@ sub targets {
     #'svc_acct.totalbytes' => { label      => 'Megabytes',
     #                           multiplier => 1048576,
     #                         },
-    'svc_acct.totalbytes' => { label      => 'Gigabytes',
+    'svc_acct.totalbytes' => { label      => 'Total Gigabytes',
                                multiplier => 1073741824,
                              },
-    'svc_acct.seconds' => { label      => 'Hours',
+    'svc_acct.seconds' => { label      => 'Total Hours',
                             multiplier => 3600,
                           },
     'svc_conferencing.participants' => { label     => 'Conference Participants',
@@ -160,6 +193,11 @@ sub targets {
   #  and then value comes from a select, not a text field
   #  'svc_conferencing.confqualitynum' => { label => 'Conference Quality',
   #                                        },
+
+    # this bypasses usual apply methods, handled entirely in sqlradacct_hour
+    'sqlradacct_hour.recur_included_total' => { label => 'Included Gigabytes',
+                                                multiplier => 1 }, #recur_included_total is stored in GB
+ 
   ;
 
   \%targets;

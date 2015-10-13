@@ -1,8 +1,14 @@
 #!/usr/bin/perl
 
 use strict;
-use FS::Test;
 use Getopt::Std;
+use File::Spec;
+
+my @dirs = File::Spec->splitdir(File::Spec->rel2abs(__FILE__));
+splice @dirs, -2; # bin/freeside-test-run
+push @INC, File::Spec->catdir( @dirs, 'lib' );
+eval "use FS::Test;";
+die $@ if $@;
 
 my %opt;
 

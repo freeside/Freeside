@@ -1,0 +1,68 @@
+<% include('/elements/init_overlib.html') %>
+
+<% include( 'elements/browse.html',
+              'title'         => 'Template images',
+              'name_singular' => 'image',
+              'menubar'       => \@menubar,
+              'query'         => { 'table' => 'template_image', },
+              'count_query'   => 'SELECT COUNT(*) FROM template_image',
+              'agent_virt'         => 1,
+              'agent_null_right'   => ['View global templates','Edit global templates'],
+              'agent_pos'          => 1,
+              'header'      => [ 'Name', '', '' ],
+              'fields'      => [ 'name', $tag, $delete_text ],
+              'links'       => [ '', '', '' ],
+              'cell_style'    => [ '', '', '' ],
+          )
+%>
+
+<% include('/elements/template_image-dialog.html',
+     'url' => $p.'browse/template_image.html'
+   ) %>
+
+<%init>
+use FS::template_image;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View templates', 'View global templates',
+                                  'Edit templates', 'Edit global templates', ]);
+
+my $canedit = $curuser->access_right(['Edit templates', 'Edit global templates']);
+
+my @menubar = ();
+if ($canedit) {
+  push @menubar, 'Upload a new image' => 'javascript:insertImageDialog(\'upload\')';
+}
+push @menubar, ( 'View message templates' => $p.'browse/msg_template.html' );
+
+my $tag = sub { qq!<A HREF="javascript:insertImageDialog(! . $_[0]->imgnum . qq!)">view</A>! };
+
+my $delete_text = $canedit ? sub {
+  my $image = shift;
+  my $imgnum = $image->imgnum;
+  unless ($image->agentnum) {
+    unless ($FS::CurrentUser::CurrentUser->access_right('Edit global templates')) {
+      return '';
+    }
+  }
+  my $out = <<EOF;
+<FORM name="delete_template_image_$imgnum">
+<INPUT TYPE="hidden" name="imgnum" value="$imgnum">
+</FORM>
+EOF
+  $out .= include('/elements/progress-init.html',
+            "delete_template_image_$imgnum",
+            [ 'imgnum' ],
+            $p.'misc/process/template_image-delete.cgi',
+            $p.'browse/template_image.html',
+            "imgnum$imgnum",
+          );
+  my $onclick = 'if ( confirm(\'';
+  $onclick .= emt('Are you sure you want to delete template image ') . $imgnum;
+  $onclick .= '\') ) { imgnum' . $imgnum . 'process() }';
+  return $out . '<A HREF="javascript:void(0)" ONCLICK="' . $onclick . '">delete</A>';
+} : '';
+
+</%init>

@@ -1,0 +1,66 @@
+<% encode_json($return) %>\
+<%init>
+
+my $id       = $cgi->param('id');
+my $starts   = $cgi->param('starts');
+my $due      = $cgi->param('due');
+my $username = $cgi->param('username');
+
+my $ticket = FS::TicketSystem->get_ticket_object( \%session, ticket_id=>$id );
+
+#hmm, this should happen in a single transaction and either commit or rollback,
+# but in reality failures "Don't Happen" so its not like a ticket gets
+# half changed
+
+my $return;
+if ( $ticket ) {
+
+  my($orv, $omsg) = $ticket->SetOwner( $username, 'Steal' );
+  $orv = 1 if ! $orv && $omsg =~ /already owns/i;
+
+  if ( $orv ) {
+
+    my $date = RT::Date->new( $session{CurrentUser} );
+    $date->Set( Format=>'unix', Value=>$starts, );
+    my($srv, $smsg) = $ticket->SetStarts( $date->ISO );
+
+    my $ddate;
+    unless ( ! $srv ) {
+      $ddate = RT::Date->new( $session{CurrentUser} );
+      $ddate->Set( Format=>'unix', Value=>$due, );
+      my($drv, $dmsg) = $ticket->SetDue( $ddate->ISO );
+      #XXX lame
+    }
+
+    if ( $srv ) {
+
+      my ($sm, $sh) = ( $date->Localtime('user'))[1,2];
+      my ($em, $eh) = ($ddate->Localtime('user'))[1,2];
+
+      #false laziness w/CalendarSlotSchedule and CalendarDaySchedule
+      my %hash = $m->comp('/rt/Ticket/Elements/Customers', Ticket => $ticket);
+      my @cust_main = values( %{$hash{cust_main}} );
+
+      $return = { 'error'       => '',
+                  #'starts'      => $starts,
+                  #'due'         => $due,
+                  #'username'    => $username,
+                                   #false laziness w/CalendarSlotSchedule
+                  'sched_label' =>
+                     FS::sched_avail::pretty_time($sh*60+$sm). '-'.
+                     FS::sched_avail::pretty_time($eh*60+$em). ': '.
+                     $cust_main[0]->_FreesideURILabel,
+                };
+    } else {
+      $return = { 'error' => $smsg };
+    }
+
+  } else {
+    $return = { 'error' => $omsg };
+  }
+
+} else {
+  $return = { 'error' => 'Unknown ticket id' };
+}
+
+</%init>

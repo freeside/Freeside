@@ -12,7 +12,8 @@ my $custnum = encode_entities( $cgi->param('custnum') );
 
 my $query = join('&', map "username=$_", @username).
             "&LengthMin=$LengthMin".
-            "&custnum=$custnum";
+            "&custnum=$custnum".
+            "&RedirectToBasics=1";
             #XXX '&pkgnum=$pkgnum";need to be for specific package/location, not just for a customer... default to active(/ordered) package in a pkg_class w/ticketing_queueid, otherwise, a popup?  we're getting complicated like form-creat_ticket.html
 
 my $url = $p. 'rt/Search/Schedule.html?'. $query;

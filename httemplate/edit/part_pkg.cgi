@@ -989,9 +989,13 @@ my $html_bottom = sub {
    #$html .= '</SELECT></TD></TR>';
   
     my $href = $plans{$layer}->{'fields'};
-    my @fields = exists($plans{$layer}->{'fieldorder'})
-                   ? @{$plans{$layer}->{'fieldorder'}}
-                   : keys %{ $href };
+    my @fields;
+    if ( $plans{$layer}->{'fieldorder'} ) {
+      @fields = @{ $plans{$layer}->{'fieldorder'} };
+    } else {
+      warn "FS::part_pkg::$layer has no fieldorder.\n";
+      @fields = keys %$href;
+    }
     
     # hash of dependencies for each of the Pricing Plan fields.
     # make sure NOT to use double-quotes inside the 'msg' value.
@@ -1015,7 +1019,7 @@ my $html_bottom = sub {
             }
         }
     };
-    
+
     foreach my $field ( grep $_ !~ /^(setup|recur)_fee$/, @fields ) {
   
       if(!exists($href->{$field})) {
@@ -1029,7 +1033,8 @@ my $html_bottom = sub {
         next if !$display;
       }
 
-      $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
+      $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>
+      ';
   
       my $format = sub { shift };
       $format = $href->{$field}{'format'} if exists($href->{$field}{'format'});
@@ -1128,9 +1133,11 @@ my $html_bottom = sub {
       $html .= '</TD></TR>';
     }
     $html .= '</TABLE>';
-  
-    $html .= qq(<INPUT TYPE="hidden" NAME="${layer}__OPTIONS" VALUE=").
-             join(',', keys %{ $href } ). '">';
+ 
+    $html .= include('/elements/hidden.html',
+                field => $layer.'__OPTIONS',
+                value => join(',', @fields)
+             );
   
     $html;
   
