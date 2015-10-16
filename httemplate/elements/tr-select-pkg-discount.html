@@ -1,0 +1,196 @@
+<%doc>
+
+In order_pkg.html or similar:
+
+<& /elements/tr-select-pkg-discount.html,
+  curr_value_setup => ($cgi->param('setup_discountnum') || ''),
+  curr_value_recur => ($cgi->param('recur_discountnum') || ''),
+  disable_setup    => 0,
+  disable_recur    => 0,
+&>
+
+This provides the following:
+- If the user can waive setup fees or apply a discount, they get a 
+  select box for the setup discount, with "Waive setup fee" as an option.
+- If they can custom discount, they will also get "Custom discount" as an
+  option. If selected, this will show fields to enter the custom discount
+  amount/percentage.
+- If they can waive setup fees but NOT apply a discount, they only get a
+  checkbox to waive setup fee.
+- Same for recurring fee, but without the "waive setup fee" stuff, obviously.
+- Custom recurring discounts also have an option for a duration in months.
+
+"disable_setup" locks the setup discount, but will still show a static
+description if curr_value_setup is set. Likewise "disable_recur".
+
+</%doc>
+% # SETUP DISCOUNT
+
+% # select-discount knows about the "custom discount" ACL
+% if ( $curuser->access_right('Discount customer package')
+%      and !$opt{disable_setup} )
+% {
+%   my $pre_options = [ '' => '(none)' ];
+%   if ( $curuser->access_right('Waive setup fee') ) {
+%     push @$pre_options, -2 => 'Waive setup fee';
+%   }
+<& tr-td-label.html, label => emt('Setup fee') &>
+  <td>
+    <& select-discount.html,
+      field       => 'setup_discountnum',
+      id          => 'setup_discountnum',
+      hashref     =>  { disabled => '',
+                        setup    => 'Y'
+                      },
+      extra_sql   =>  ' AND (percent > 0 OR months = 1)',
+      curr_value  => $opt{'curr_value_setup'},
+      disable_empty => 1,
+      pre_options => $pre_options,
+    &>
+  </td>
+</tr>
+% # custom discount
+<tr class="setup_discount_custom">
+  <td></td>
+  <td>Amount <% $money_char %>
+    <& input-text.html,
+      field       => 'setup_discountnum_amount',
+      curr_value  => ($cgi->param('setup_discountnum_amount') || ''),
+      size        => 5,
+    &>
+  or percentage
+    <& input-text.html,
+      field       => 'setup_discountnum_percent',
+      curr_value  => ($cgi->param('setup_discountnum_percent') || ''),
+      size        => 5,
+    &> %
+  </td>
+</tr>
+
+% } elsif ( $curuser->access_right('Waive setup fee')
+%           and !$opt{disable_setup} )
+% {
+
+<& tr-td-label.html, label => emt('Waive setup fee') &>
+  <td>
+  <& checkbox.html,
+      field       => 'setup_discountnum',
+      id          => 'setup_discountnum',
+      value       => '-2',
+      curr_value  => $opt{'curr_value_setup'},
+  &>
+  </td>
+</tr>
+
+% } elsif ( $opt{'curr_value_setup'} ) { # user can't do anything
+%
+%   my $discount = FS::discount->by_key($opt{'curr_value_setup'});
+
+  <INPUT TYPE="hidden" NAME="setup_discountnum" VALUE="<% $opt{curr_value_setup} %>">
+
+  <% $discount->description_short %>
+
+% }
+
+% # RECUR DISCOUNT
+
+% if ( $curuser->access_right('Discount customer package')
+%      and !$opt{disable_recur} ) {
+
+<& tr-td-label.html, label => emt('Recurring fee') &>
+  <td>
+    <& select-discount.html,
+      field       => 'recur_discountnum',
+      id          => 'recur_discountnum',
+      hashref     =>  { disabled => '' },
+      curr_value  => $opt{'curr_value_recur'},
+    &>
+
+  </td>
+</tr>
+% # custom discount
+<tr class="recur_discount_custom">
+  <td></td>
+  <td>Amount <% $money_char %>
+    <& input-text.html,
+      field       => 'recur_discountnum_amount',
+      curr_value  => ($cgi->param('recur_discountnum_amount') || ''),
+      size        => 5,
+    &>
+  or percentage
+    <& input-text.html,
+      field       => 'recur_discountnum_percent',
+      curr_value  => ($cgi->param('recur_discountnum_percent') || ''),
+      size        => 5,
+    &> %
+  </td>
+</tr>
+<tr class="recur_discount_custom">
+  <td></td>
+  <td>Expires after
+    <& /elements/select-months.html,
+      field       => 'recur_discountnum_months',
+      curr_value  => ($cgi->param('recur_discountnum_months') || ''),
+    &>
+  </td>
+</tr>
+
+% } elsif ( $opt{'curr_value_recur'} ) {
+%
+%   my $discount = FS::discount->by_key($opt{'curr_value_recur'});
+
+  <INPUT TYPE="hidden" NAME="recur_discountnum" VALUE="<% $opt{curr_value_recur} %>">
+
+  <% $discount->description %>
+
+% }
+
+<SCRIPT TYPE="text/javascript">
+$(document).ready(function() {
+  ['setup', 'recur'].forEach(function(x) {
+    var discountnum = $('#'+x+'_discountnum');
+
+    // if it's been set to a custom discount, show custom discount inputs
+    var discountnum_changed = function() {
+      var val = this.value;
+      var custom = $('.'+x+'_discount_custom');
+      if ( val == -1 ) {
+        custom.show();
+      } else {
+        custom.hide();
+      }
+    };
+
+    discountnum.on('change', discountnum_changed);
+    discountnum.trigger('change');
+
+    // if amount contains a value, disable percent, and vice versa
+    var amount_percent_keyup = function(event) {
+      var other = event.data;
+      if (this.value.length > 0) {
+        other.disabled = true;
+      } else {
+        other.disabled = false;
+      }
+    };
+    var amount = $('#'+x+'_discountnum_amount');
+    var percent = $('#'+x+'_discountnum_percent');
+    amount.on('keyup', percent, amount_percent_keyup);
+    percent.on('keyup', amount, amount_percent_keyup);
+
+    amount.trigger('keyup');
+    percent.trigger('keyup');
+  });
+});
+</script>
+<%init>
+
+my %opt = (
+  'curr_value_setup' => ($cgi->param('setup_discountnum') || ''),
+  'curr_value_recur' => ($cgi->param('recur_discountnum') || ''),
+  @_
+);
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $money_char = FS::Conf->new->config('money_char') || '$';
+
+</%init>

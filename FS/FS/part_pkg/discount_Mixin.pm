@@ -50,6 +50,9 @@ sub calc_discount {
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
 
+  # discount setup/recur splitting DOES NOT TOUCH THIS YET.
+  # we need some kind of monitoring to see who if anyone still uses term
+  # discounts.
   if ( $param->{freq_override} ) {
     # When a customer pays for more than one month at a time to receive a 
     # term discount, freq_override is set to the number of months.
@@ -80,6 +83,13 @@ sub calc_discount {
   }
 
   my @cust_pkg_discount = $cust_pkg->cust_pkg_discount_active;
+
+  if ( defined $param->{'setup_charge'} ) {
+    @cust_pkg_discount = grep { $_->setuprecur eq 'setup' } @cust_pkg_discount;
+  } else {
+    @cust_pkg_discount = grep { $_->setuprecur eq 'recur' } @cust_pkg_discount;
+  }
+    
   foreach my $cust_pkg_discount ( @cust_pkg_discount ) {
     my $discount_left;
     my $discount = $cust_pkg_discount->discount;
@@ -115,23 +125,17 @@ sub calc_discount {
         # if it's a flat amount discount for other than one month:
         # - skip the discount. unsure, leaving it alone for now.
 
-        next unless $discount->setup;
-
         $months = 0; # never count a setup discount as a month of discount
                      # (the recur discount in the same month should do it)
 
         if ( $discount->percent > 0 ) {
             $amount = $discount->percent * $param->{'setup_charge'} / 100;
-        } elsif ( $discount->amount > 0 && ($discount->months || 0) == 1) {
+        } elsif ( $discount->amount > 0 ) {
             # apply the discount amount, up to a maximum of the setup charge
             $amount = min($discount->amount, $param->{'setup_charge'});
             $discount_left = sprintf('%.2f', $discount->amount - $amount);
             # transfer remainder of discount, if any, to recur
             $param->{'discount_left_recur'}{$discount->discountnum} = $discount_left;
-        } else {
-          # I guess we don't allow multiple-month flat amount discounts to
-          # apply to setup?
-            next; 
         }
 
     } else {
@@ -180,20 +184,27 @@ sub calc_discount {
       #    recur discount is zero. 
       #}
 
-      # transfer remainder of discount, if any, to setup
-      # this is used when the recur phase wants to add a setup fee
+      # Transfer remainder of discount, if any, to setup
+      # This is used when the recur phase wants to add a setup fee
       # (prorate_defer_bill): the "discount_left_setup" amount will
-      # be subtracted in _make_lines.
-      if ( $discount->setup && $discount->amount > 0
-          && ($discount->months || 0) != 1
-         )
+      # be subtracted in _make_lines. 
+      if ( $discount->amount > 0 && ($discount->months || 0) != 1 )
       {
-        # $amount is no longer permonth at this point! correct. very good.
-        $discount_left = $amount - $recur_charge; # backward, as above
-        if ( $discount_left > 0 ) {
-          $amount = $recur_charge;
-          $param->{'discount_left_setup'}{$discount->discountnum} = 
-            0 - $discount_left;
+        # make sure there is a setup discount with this discountnum
+        # on the same package.
+        if ( qsearchs('cust_pkg_discount', {
+              pkgnum      => $cust_pkg->pkgnum,
+              discountnum => $discount->discountnum,
+              setuprecur  => 'setup'
+            }) )
+        {
+          # $amount is no longer permonth at this point! correct. very good.
+          $discount_left = $amount - $recur_charge; # backward, as above
+          if ( $discount_left > 0 ) {
+            $amount = $recur_charge;
+            $param->{'discount_left_setup'}{$discount->discountnum} = 
+              0 - $discount_left;
+          }
         }
       }
 
@@ -210,7 +221,7 @@ sub calc_discount {
         };
       }
 
-    }
+    } # else not 'setup_charge'
 
     $amount = sprintf('%.2f', $amount + 0.00000001 ); #so 1.005 rounds to 1.01
 
@@ -221,7 +232,7 @@ sub calc_discount {
       'pkgdiscountnum' => $cust_pkg_discount->pkgdiscountnum,
       'amount'         => $amount,
       'months'         => $months,
-      # XXX should have a 'setuprecur'
+      # 'setuprecur' is implied by the cust_pkg_discount link
     };
     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
     $tot_discount += $amount;

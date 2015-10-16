@@ -127,22 +127,7 @@
 % if ( $discount_cust_pkg || $waive_setup_fee ) {
   <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
   <% ntable("#cccccc") %>
-
-%   if ( $waive_setup_fee ) {
-      <TR>
-        <TH ALIGN="right"><% mt('Waive setup fee') |h %> </TH>
-        <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="waive_setup" VALUE="Y"></TD>
-      </TR>
-%   }
-
-%   if ( $discount_cust_pkg ) {
-      <& /elements/tr-select-discount.html,
-               'element_etc' => 'DISABLED',
-               'colspan'     => 7,
-               'cgi'         => $cgi,
-      &>
-%   }
-
+    <& /elements/tr-select-pkg-discount.html &>
   </TABLE><BR>
 
 % }

@@ -135,10 +135,36 @@ Returns a string describing the discount (for use on an invoice).
 sub description {
   my $self = shift;
   my $discount = $self->cust_pkg_discount->discount;
+
+  if ( $self->months == 0 ) {
+    # then this is a setup discount
+    my $desc = $discount->name;
+    if ( $desc ) {
+      $desc .= ': ';
+    } else {
+      $desc = $self->mt('Setup discount of ');
+    }
+    if ( (my $percent = $discount->percent) > 0 ) {
+      $percent = sprintf('%.1f', $percent) if $percent > int($percent);
+      $percent =~ s/\.0+$//;
+      $desc .= $percent . '%';
+    } else {
+      # note "$self->amount", not $discount->amount. if a flat discount
+      # is applied to the setup fee, show the amount actually discounted.
+      # we might do this for all types of discounts.
+      my $money_char = FS::Conf->new->config('money_char') || '$';
+      $desc .= $money_char . sprintf('%.2f', $self->amount);
+    }
+  
+    # don't show "/month", months remaining or used, etc., as for setup
+    # discounts it doesn't matter.
+    return $desc;
+  }
+
   my $desc = $discount->description_short;
   $desc .= $self->mt(' each') if $self->cust_bill_pkg->quantity > 1;
 
-  if ($discount->months) {
+  if ( $discount->months and $self->months > 0 ) {
     # calculate months remaining on this cust_pkg_discount after this invoice
     my $date = $self->cust_bill_pkg->cust_bill->_date;
     my $used = FS::Record->scalar_sql(
@@ -152,7 +178,7 @@ sub description {
     $used ||= 0;
     my $remaining = sprintf('%.2f', $discount->months - $used);
     $desc .= $self->mt(' for [quant,_1,month] ([quant,_2,month] remaining)',
-              $self->months,
+              sprintf('%.2f', $self->months),
               $remaining
              );
   }

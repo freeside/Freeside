@@ -18,9 +18,7 @@
                                      sub { ucfirst( shift->status ) },
                                      sub { shift->discount->description },
                                      sub { shift->discount->classname },
-                                     sub { my $m = shift->months_used;
-                                           $m =~ /\./ ? sprintf('%.2f',$m) : $m;
-                                         },
+                                     $months_used_sub,
                                      'otaker',
                                      'pkg',
                                      \&FS::UI::Web::cust_fields,
@@ -165,4 +163,9 @@ my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 my $conf = new FS::Conf;
 
+my $months_used_sub = sub {
+  my $cust_pkg_discount = shift;
+  return 'Setup only' if $cust_pkg_discount->setuprecur eq 'setup';
+  return sprintf('%.2f', $cust_pkg_discount->months_used);
+};
 </%init>

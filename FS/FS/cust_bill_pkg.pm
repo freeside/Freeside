@@ -820,6 +820,8 @@ quantity.
 
 sub _item_discount {
   my $self = shift;
+  my %options = @_;
+
   my @pkg_discounts = $self->pkg_discount;
   return if @pkg_discounts == 0;
   # special case: if there are old "discount details" on this line item, don't
@@ -832,7 +834,8 @@ sub _item_discount {
   my $d = {
     _is_discount    => 1,
     description     => $self->mt('Discount'),
-    amount          => 0,
+    setup_amount    => 0,
+    recur_amount    => 0,
     ext_description => \@ext,
     pkgpart         => $self->pkgpart,
     feepart         => $self->feepart,
@@ -840,9 +843,11 @@ sub _item_discount {
   };
   foreach my $pkg_discount (@pkg_discounts) {
     push @ext, $pkg_discount->description;
-    $d->{amount} -= $pkg_discount->amount;
+    my $setuprecur = $pkg_discount->cust_pkg_discount->setuprecur;
+    $d->{$setuprecur.'_amount'} -= $pkg_discount->amount;
   } 
-  $d->{amount} *= $self->quantity || 1;
+  $d->{setup_amount} *= $self->quantity || 1; # ??
+  $d->{recur_amount} *= $self->quantity || 1; # ??
   
   return $d;
 }

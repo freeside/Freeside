@@ -197,7 +197,7 @@ sub order_pkg {
         map { $_ => $cust_pkg->$_() }
           qw( pkgbatch
               start_date order_date expire adjourn contract_end
-              refnum discountnum waive_setup
+              refnum setup_discountnum recur_discountnum waive_setup
             )
     });
     $error = $self->order_pkg('cust_pkg'    => $pkg,
