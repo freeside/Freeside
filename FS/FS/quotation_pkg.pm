@@ -5,6 +5,7 @@ use strict;
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::part_pkg;
 use FS::quotation_pkg_discount; #so its loaded when TemplateItem_Mixin needs it
+use FS::quotation_pkg_detail;
 use List::Util qw(sum);
 
 =head1 NAME
@@ -101,6 +102,20 @@ sub display_table         { 'quotation_pkg'; }
 
 sub discount_table        { 'quotation_pkg_discount'; }
 
+# detail table uses non-quotation fieldnames, see billpkgnum below
+sub detail_table          { 'quotation_pkg_detail'; }
+
+=item billpkgnum
+
+Sets/returns quotationpkgnum, for ease of integration with TemplateItem_Mixin::details
+
+=cut
+
+sub billpkgnum {
+  my $self = shift;
+  $self->quotationpkgnum(@_);
+}
+
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
@@ -145,15 +160,21 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
 
+  my $error = $self->delete_details;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   foreach ($self->quotation_pkg_discount, $self->quotation_pkg_tax) {
-    my $error = $_->delete;
+    $error = $_->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error . ' (deleting discount)';
     }
   }
 
-  my $error = $self->SUPER::delete;
+  $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -346,6 +367,69 @@ sub part_pkg_currency_option {
   }
 }
 
+=item delete_details
+
+Deletes all quotation_pkgs_details associated with this pkg (see L<FS::quotation_pkg_detail>).
+
+=cut
+
+sub delete_details {
+  my $self = shift;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $detail ( qsearch('quotation_pkg_detail',{ 'billpkgnum' => $self->quotationpkgnum }) ) {
+    my $error = $detail->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error removing old detail: $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item set_details [ DETAIL, DETAIL, ... ]
+
+Sets quotation details for this package (see L<FS::quotation_pkg_detail>).
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub set_details {
+  my( $self, @details ) = @_;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->delete_details;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $detail ( @details ) {
+    my $quotation_pkg_detail = new FS::quotation_pkg_detail {
+      'billpkgnum' => $self->quotationpkgnum,
+      'detail'     => $detail,
+    };
+    $error = $quotation_pkg_detail->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error adding new detail: $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item cust_bill_pkg_display [ type => TYPE ]
 
