@@ -1383,6 +1383,24 @@ sub tables_hashref {
       'index' => [ ['pkgpart'], ],
     },
 
+    'quotation_pkg_detail' => {
+      'columns' => [
+        'detailnum', 'serial', '', '', '', '', 
+        'billpkgnum', 'int', '', '', '', '',        # actually links to quotationpkgnum
+        'format',  'char', 'NULL', 1, '', '',       # not used for anything
+        'detail',  'varchar', '', 255, '', '',
+      ],
+      'primary_key'  => 'detailnum',
+      'unique'       => [],
+      'index'        => [ [ 'billpkgnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'billpkgnum' ],
+                            table      => 'quotation_pkg',
+                            references => [ 'quotationpkgnum' ],
+                          },
+                        ],
+    },
+
     'quotation_pkg_discount' => {
       'columns' => [
         'quotationpkgdiscountnum', 'serial', '', '', '', '',

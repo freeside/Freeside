@@ -88,6 +88,8 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 #die "access denied"
 #  unless $curuser->access_right('View quotations');
 
+my $can_generate_quotation = $curuser->access_right('Generate quotation');
+
 my $quotationnum;
 my($query) = $cgi->keywords;
 if ( $query =~ /^(\d+)$/ ) {
@@ -114,11 +116,23 @@ my $link = "quotationnum=$quotationnum";
 #$link .= ';notice_name='. $notice_name if $notice_name;
 
 my $preref_callback = sub {
-  areyousure_link("${p}misc/delete-quotation_pkg.html?". shift->quotationpkgnum,
+  my $quotation_pkg = shift;
+  $can_generate_quotation ?
+  areyousure_link("${p}misc/delete-quotation_pkg.html?". $quotation_pkg->quotationpkgnum,
                   emt('Are you sure you want to remove this package from the quotation?'),
                   emt('Remove this package'), #tooltip
                   qq(<img src="${p}images/cross.png">), #link
-                 );
+                 ) .
+  include('/elements/popup_link.html',
+    action      => "${p}edit/quotation_pkg_detail.html?pkgnum=" .
+                   $quotation_pkg->quotationpkgnum,
+    html_label  => qq(<IMG SRC="${p}images/Actions-document-edit-icon.png">),
+    title       => emt('Edit quotation details'),
+    actionlabel => emt('Edit quotation details'),
+    color       => '#333399',
+    width       => 763,
+  )
+  : '';
 };
 
 sub areyousure_link {
