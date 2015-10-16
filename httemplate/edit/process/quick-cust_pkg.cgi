@@ -79,9 +79,6 @@ my $contactnum = $1;
 $cgi->param('locationnum') =~ /^(\-?\d*)$/
   or die 'illegal locationnum '. $cgi->param('locationnum');
 my $locationnum = $1;
-$cgi->param('discountnum') =~ /^(\-?\d*)$/
-  or die 'illegal discountnum '. $cgi->param('discountnum');
-my $discountnum = $1;
 
 # for going right to a provision service after ordering a package
 my( $svcpart, $part_svc ) = ( '', '' );
@@ -114,19 +111,29 @@ my %hash = (
     'refnum'               => $refnum,
     'contactnum'           => $contactnum,
     'locationnum'          => $locationnum,
-    'discountnum'          => $discountnum,
-    #for the create a new discount case
-    'discountnum__type'    => scalar($cgi->param('discountnum__type')),
-    'discountnum_amount'   => scalar($cgi->param('discountnum_amount')),
-    'discountnum_percent'  => scalar($cgi->param('discountnum_percent')),
-    'discountnum_months'   => scalar($cgi->param('discountnum_months')),
-    'discountnum_setup'    => scalar($cgi->param('discountnum_setup')),
     'contract_end'         => ( scalar($cgi->param('contract_end'))
                                   ? parse_datetime($cgi->param('contract_end'))
                                   : ''
                               ),
-     'waive_setup'         => ( $cgi->param('waive_setup') eq 'Y' ? 'Y' : '' ),
 );
+
+if ( $cgi->param('setup_discountnum') =~ /^(-?\d+)$/ ) { 
+  if ( $1 == -2 ) {
+    $hash{waive_setup} = 'Y';
+  } else {
+    $hash{setup_discountnum} = $1;
+    $hash{setup_discountnum_amount} = $cgi->param('setup_discountnum_amount');
+    $hash{setup_discountnum_percent} = $cgi->param('setup_discountnum_percent');
+  }
+}
+
+if ( $cgi->param('recur_discountnum') =~ /^(-?\d+)$/ ) { 
+  $hash{recur_discountnum} = $1;
+  $hash{recur_discountnum_amount} = $cgi->param('recur_discountnum_amount');
+  $hash{recur_discountnum_percent} = $cgi->param('recur_discountnum_percent');
+  $hash{recur_discountnum_months} = $cgi->param('recur_discountnum_months');
+}
+
 $hash{'custnum'} = $cust_main->custnum if $cust_main;
 
 if ( $cgi->param('start') eq 'on_hold' ) {

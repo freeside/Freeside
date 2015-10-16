@@ -2888,6 +2888,7 @@ sub tables_hashref {
         'otaker',        'varchar', 'NULL',    32, '', '', 
         'usernum',           'int', 'NULL',    '', '', '',
         'disabled',         'char', 'NULL',     1, '', '', 
+        'setuprecur',       'char', 'NULL',     5, '', '',
       ],
       'primary_key'  => 'pkgdiscountnum',
       'unique'       => [],

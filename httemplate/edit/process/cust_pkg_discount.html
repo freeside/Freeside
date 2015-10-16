@@ -14,9 +14,8 @@
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-
-die "access denied"
-  unless $curuser->access_right('Discount customer package');
+my $can_discount = $curuser->access_right('Discount customer package');
+my $can_waive_setup = $curuser->access_right('Waive setup fee');
 
 #this search is really for security wrt agent virt...
 #maybe move it to the cust_pkg_discount->insert call?
@@ -29,20 +28,81 @@ my $cust_pkg = qsearchs({
 });
 die 'unknown pkgnum' unless $cust_pkg;
 
-my $cust_pkg_discount = new FS::cust_pkg_discount {
-  'pkgnum'      => $cust_pkg->pkgnum,
-  'discountnum' => scalar($cgi->param('discountnum')),
-  'months_used' => 0,
-  'end_date'    => '', #XXX
-  #for the create a new discount case
-  '_type'       => scalar($cgi->param('discountnum__type')),
-  'amount'      => scalar($cgi->param('discountnum_amount')),
-  'percent'     => scalar($cgi->param('discountnum_percent')),
-  'months'      => scalar($cgi->param('discountnum_months')),
-  'setup'       => scalar($cgi->param('discountnum_setup')),
-  #'linked'       => scalar($cgi->param('discountnum_linked')),
-  #'disabled'    => $self->discountnum_disabled,
-};
-my $error = $cust_pkg_discount->insert;
+my $error;
+my %discountnum = (setup => '', recur => '');
+if ( $cgi->param('setup_discountnum') == -2 ) {
+
+  die "access denied" unless $can_waive_setup; # UI protects against this
+  # waive setup fee (not really a discount but treated as one in the UI)
+  if ( !$cust_pkg->get('setup') and !$cust_pkg->waive_setup ) {
+    $cust_pkg->set('waive_setup' => 'Y');
+    $error = $cust_pkg->replace;
+  }
+
+} else {
+  if ( $cgi->param('setup_discountnum') =~ /^(-?\d+)$/ ) {
+    $discountnum{setup} = $1;
+  }
+  if ( $cust_pkg->waive_setup ) {
+    $cust_pkg->set('waive_setup', '');
+    $error = $cust_pkg->replace;
+  }
+}
+
+if ( $cgi->param('recur_discountnum') =~ /^(-?\d+)$/ ) {
+
+  $discountnum{recur} = $1;
+
+}
+
+my @active_discounts = $cust_pkg->cust_pkg_discount_active;
+
+foreach my $setuprecur (qw(setup recur)) {
+
+  if ( $cust_pkg->get('setup') and $setuprecur eq 'setup' ) {
+    # no point allowing setup discounts to be edited for a previously setup
+    # package
+    next;
+  }
+
+  my ($active) = grep { $_->setuprecur eq $setuprecur } @active_discounts;
+
+  if ( $active ) {
+    if ( $active->discount ne $discountnum{$setuprecur} ) {
+      $active->set('disabled' => 'Y');
+      $error ||= $active->replace;
+      undef $active;
+    } else {
+      # it's the same discountnum; don't touch it
+      next;
+    }
+  }
+
+  if ( $discountnum{$setuprecur} ) {
+    die "access_denied" unless $can_discount;
+    my $cust_pkg_discount = FS::cust_pkg_discount->new({
+      'pkgnum'      => $cust_pkg->pkgnum,
+      'discountnum' => $discountnum{$setuprecur},
+      'setuprecur'  => $setuprecur,
+      'months_used' => 0,
+      'end_date'    => '', #XXX
+      #for the create a new discount case
+      '_type'       => scalar($cgi->param($setuprecur.'_discountnum__type')),
+      'amount'      => scalar($cgi->param($setuprecur.'_discountnum_amount')),
+      'percent'     => scalar($cgi->param($setuprecur.'_discountnum_percent')),
+    });
+    if ( $setuprecur eq 'setup' ) {
+      $cust_pkg_discount->set('setup' => 'Y');
+      $cust_pkg_discount->set('months' => 1);
+    } else {
+      if ( $cgi->param($setuprecur.'_discountnum_months') =~ /^(\w+)$/ ) {
+        $cust_pkg_discount->set('months' => $1);
+      }
+    }
+
+    $error ||= $cust_pkg_discount->insert;
+
+  }
+} # foreach $setuprecur
 
 </%init>

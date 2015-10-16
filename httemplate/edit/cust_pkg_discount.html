@@ -1,18 +1,5 @@
-<% include('/elements/header-popup.html', "Discount Package") %>
-
-<SCRIPT TYPE="text/javascript">
-
-  function enable_discount_pkg () {
-    if ( document.DiscountPkgForm.discountnum.selectedIndex > 0 ) {
-      document.DiscountPkgForm.submit.disabled = false;
-    } else {
-      document.DiscountPkgForm.submit.disabled = true;
-    }
-  }
-
-</SCRIPT>
-
-<% include('/elements/error.html') %>
+<& /elements/header-popup.html, "Discount Package" &>
+<& /elements/error.html &>
 
 <FORM NAME="DiscountPkgForm" ACTION="<% $p %>edit/process/cust_pkg_discount.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
@@ -26,17 +13,17 @@
     </TD>
   </TR>
 
-<% include('/elements/tr-select-discount.html',
-             'empty_label' => ( $pkgdiscountnum ? '' : 'Select discount' ),
-             'onchange'    => 'enable_discount_pkg()',
-             'cgi'         => $cgi,
-          )
-%>
-
+<& /elements/tr-select-pkg-discount.html,
+  curr_value_setup  => $setup_discountnum,
+  curr_value_recur  => $recur_discountnum,
+  disable_setup     => $disable_setup,
+  disable_recur     => $disable_recur,
+&>
+  
 </TABLE>
 
 <BR>
-<INPUT NAME="submit" TYPE="submit" VALUE="Discount package" <% $pkgdiscountnum ? '' : 'DISABLED' %>>
+<INPUT NAME="submit" TYPE="submit" VALUE="Discount package">
 
 </FORM>
 </BODY>
@@ -44,14 +31,13 @@
 
 <%init>
 
-#some false laziness w/misc/change_pkg.cgi
-
 my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Discount customer package');
+  unless $curuser->access_right([ 'Discount customer package',
+                                  'Waive setup fee']);
 
 my $pkgnum = scalar($cgi->param('pkgnum'));
 $pkgnum =~ /^(\d+)$/ or die "illegal pkgnum $pkgnum";
@@ -67,10 +53,30 @@ my $cust_pkg =
     'extra_sql' => ' AND '. $curuser->agentnums_sql,
   }) or die "unknown pkgnum $pkgnum";
 
-#my $cust_main = $cust_pkg->cust_main
-#  or die "can't get cust_main record for custnum ". $cust_pkg->custnum.
-#         " ( pkgnum ". cust_pkg->pkgnum. ")";
-
 my $part_pkg = $cust_pkg->part_pkg;
+
+my @discounts = $cust_pkg->cust_pkg_discount_active;
+my ($setup_discountnum, $recur_discountnum);
+foreach (@discounts) {
+  if ( $_->setuprecur eq 'setup') {
+    die "multiple setup discounts on pkg#$pkgnum" if $setup_discountnum;
+    $setup_discountnum = $_->discountnum;
+  } elsif ( $_->setuprecur eq 'recur' ) {
+    die "multiple setup discounts on pkg#$pkgnum" if $recur_discountnum;
+    $recur_discountnum = $_->discountnum;
+  }
+}
+if ( $cust_pkg->waive_setup ) {
+  $setup_discountnum = -2;
+}
+
+my $disable_setup = 1;
+if ( !$cust_pkg->get('setup') and $cust_pkg->base_setup > 0 ) {
+  $disable_setup = 0;
+}
+my $disable_recur = 1;
+if ( $cust_pkg->base_recur > 0 ) {
+  $disable_recur = 0;
+}
 
 </%init>

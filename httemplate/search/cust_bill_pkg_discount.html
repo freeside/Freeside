@@ -20,9 +20,7 @@
                    sub { $_[0]->cust_pkg_discount->discount->description },
                    sub { $_[0]->cust_pkg_discount->discount->classname },
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
-                   sub { my $m = shift->months;
-                         $m =~ /\./ ? sprintf('%.2f', $m) : $m;
-                       },
+                   $months_sub,
                    'pkg',#sub { $_[0]->cust_bill_pkg->cust_pkg->part_pkg->pkg },
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
@@ -217,5 +215,12 @@ my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+
+my $months_sub = sub {
+  my $cust_bill_pkg_discount = shift;
+  return 'Setup'
+    if $cust_bill_pkg_discount->cust_pkg_discount->setuprecur eq 'setup';
+  sprintf('%.2f', $cust_bill_pkg_discount->months);
+};
 
 </%init>
