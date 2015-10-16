@@ -972,11 +972,12 @@ sub _items_pkg {
 
   foreach my $quotation_pkg (@pkgs) {
     my $part_pkg = $quotation_pkg->part_pkg;
+    my @details = $quotation_pkg->details;
     my $setuprecur;
     my $this_item = {
       'pkgnum'          => $quotation_pkg->quotationpkgnum,
       'description'     => $quotation_pkg->desc($locale),
-      'ext_description' => [],
+      'ext_description' => \@details,
       'quantity'        => $quotation_pkg->quantity,
     };
     if ($freq eq '0') {
