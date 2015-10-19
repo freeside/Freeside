@@ -572,7 +572,7 @@ sub _web_external_auth {
 
           # now get user specific information, to better create our user.
           my $new_user_info
-              = RT::Interface::Web::WebExternalAutoInfo($user);
+              = RT::Interface::Web::WebRemoteUserAutocreateInfo($user);
 
           # set the attributes that have been defined.
           # FIXME: this is a horrible kludge. I'm sure there's something cleaner
