@@ -25,9 +25,9 @@ Set($Organization, '%%%RT_DOMAIN%%%');
 
 Set($Timezone, '%%%RT_TIMEZONE%%%');
 
-Set($WebExternalAuth, 1);
+Set($WebRemoteUserAuth, 1);
 Set($WebFallbackToInternal, 1); #no
-Set($WebExternalAuto, 1);
+Set($WebRemoteUserAutocreate, 1);
 
 $RT::URI::freeside::IntegrationType = 'Internal';
 $RT::URI::freeside::URL = '%%%FREESIDE_URL%%%';
