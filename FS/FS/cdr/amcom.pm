@@ -27,8 +27,11 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
     'accountcode',# 2. BWGroupID (centrex group)
     sub {         # 3. BWGroupNumber
       my ($cdr, $field) = @_; #, $conf, $hashref) = @_;
-      $cdr->charged_party($field)
-        if $cdr->accountcode eq '' && $field =~ /^(1800|1300)/;
+
+        if ($cdr->accountcode eq '' && $field =~ /^(1800|1300)/){
+	$cdr->charged_party($field);
+	$cdr->accountcode($field);
+	}
     },
     'uniqueid',   # 4. Record ID
     sub {	   # 5. Call Category (LOCAL, NATIONAL, FREECALL, MOBILE)
