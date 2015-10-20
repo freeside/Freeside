@@ -37,6 +37,8 @@ use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 use FS::discount_plan;
 use FS::cust_bill_void;
+use FS::reason;
+use FS::reason_type;
 use FS::L10N;
 
 $DEBUG = 0;
@@ -212,7 +214,7 @@ sub insert {
 
 }
 
-=item void
+=item void [ REASON ]
 
 Voids this invoice: deletes the invoice and adds a record of the voided invoice
 to the FS::cust_bill_void table (and related tables starting from
@@ -223,6 +225,14 @@ FS::cust_bill_pkg_void).
 sub void {
   my $self = shift;
   my $reason = scalar(@_) ? shift : '';
+
+  unless (ref($reason) || !$reason) {
+    $reason = FS::reason->new_or_existing(
+      'class'  => 'X',
+      'type'   => 'Void invoice',
+      'reason' => $reason
+    );
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -238,7 +248,7 @@ sub void {
   my $cust_bill_void = new FS::cust_bill_void ( {
     map { $_ => $self->get($_) } $self->fields
   } );
-  $cust_bill_void->reason($reason);
+  $cust_bill_void->reasonnum($reason->reasonnum) if $reason;
   my $error = $cust_bill_void->insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;

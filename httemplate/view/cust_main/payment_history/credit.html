@@ -130,7 +130,7 @@ my $void = '';
 $void = ' ('.
                include( '/elements/popup_link.html',
                     'label'    => emt('void'),
-                    'action'   => "${p}misc/void-cust_credit.html?".
+                    'action'   => "${p}misc/void-cust_credit.cgi?".
                                   $cust_credit->crednum,
                     'actionlabel' => emt('Void credit'),
                 ).

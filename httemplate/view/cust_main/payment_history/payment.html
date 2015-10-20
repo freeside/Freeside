@@ -1,5 +1,5 @@
 <% $payment. ' '.  $info. $desc.
-   $view. $change_pkg. $apply. $refund. $void. $unapply
+   $view. $change_pkg. $apply. $refund. $void. $delete. $unapply
 %>
 <%init>
 
@@ -154,36 +154,47 @@ if ( $apply && $opt{'pkg-balances'} && $cust_pay->pkgnum ) {
 
 my $refund = '';
 my $refund_days = $opt{'card_refund-days'} || 120;
-my @refund_right = grep { $opt{$_} } $FS::CurrentUser::CurrentUser->refund_rights($cust_pay->payby);
+my $refund_right = '';
+$refund_right = 'Refund credit card payment' if $cust_pay->payby eq 'CARD';
+$refund_right = 'Refund Echeck payment'      if $cust_pay->payby eq 'CHEK';
 if (    $cust_pay->closed !~ /^Y/i
-     && $cust_pay->payby =~ /^(CARD|CHEK|BILL)$/
+     && $cust_pay->payby =~ /^(CARD|CHEK)$/
      && time-$cust_pay->_date < $refund_days*86400
      && $cust_pay->unrefunded > 0
-     && scalar(@refund_right)
+     && $opt{$refund_right}
 ) {
-  my $refundtitle = ($cust_pay->payby =~ /^(CARD|CHEK)$/)
-            ? emt('Send a refund for this payment to the payment gateway')
-            : emt('Record a refund for this payment');
   $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
             qq!paynum=!. $cust_pay->paynum. '"'.
-            qq! TITLE="! . $refundtitle
+            qq! TITLE="! .emt('Send a refund for this payment to the payment gateway') 
             . '">' . emt('refund') . '</A>)';
 }
 
 my $void = '';
-my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK)$/
+my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK|TOKN)$/
               ? ' (' . emt('do not send anything to the payment gateway').')'
               : '';
-$void = areyousure_link("${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
-                        emt('Are you sure you want to void this payment?'),
-                        emt('Void this payment from the database') . $voidmsg,
-                        emt('void')
-                       )
+$void = ' ('.
+               include( '/elements/popup_link.html',
+                    'label'    => emt('void'),
+                    'action'   => "${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
+                    'actionlabel' => emt('Void payment'),
+                ).
+          ')'
   if $cust_pay->closed !~ /^Y/i
   && (    ( $cust_pay->payby eq 'CARD'          && $opt{'Credit card void'} )
        || ( $cust_pay->payby eq 'CHEK'          && $opt{'Echeck void'}      )
        || ( $cust_pay->payby !~ /^(CARD|CHEK)$/ && $opt{'Void payments'}    )
      );
+
+my $delete = '';
+$delete = areyousure_link("${p}misc/delete-cust_pay.cgi?".$cust_pay->paynum,
+                            emt('Are you sure you want to delete this payment?'),
+                            emt('Delete this payment from the database completely - not recommended'),
+                            emt('delete')
+                         )
+  if $cust_pay->closed !~ /^Y/i
+  && $opt{'deletepayments'}
+  && $opt{'Delete payment'};
 
 my $unapply = '';
 $unapply = areyousure_link("${p}misc/unapply-cust_pay.cgi?".$cust_pay->paynum,

@@ -1,12 +1,17 @@
 package FS::cust_bill_void;
-use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record );
+use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin
+             FS::reason_Mixin FS::Record );
 
 use strict;
+use vars qw( $me $DEBUG );
 use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::cust_statement;
 use FS::access_user;
 use FS::cust_bill_pkg_void;
 use FS::cust_bill;
+
+$me = '[ FS::cust_bill_void ]';
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -82,9 +87,13 @@ promised_date
 
 void_date
 
-=item reason
+=item reason 
 
-reason
+freeform string (deprecated)
+
+=item reasonnum 
+
+reason for voiding the payment (see L<FS::reson>)
 
 =item void_usernum
 
@@ -216,6 +225,7 @@ sub check {
     || $self->ut_numbern('void_date')
     || $self->ut_textn('reason')
     || $self->ut_numbern('void_usernum')
+    || $self->ut_foreign_keyn('reasonnum', 'reason', 'reasonnum')
   ;
   return $error if $error;
 
@@ -258,6 +268,10 @@ sub void_access_user {
 =item cust_main
 
 =item cust_bill_pkg
+
+=item reason
+
+Returns the text of the associated void reason (see L<FS::reason>) for this.
 
 =cut
 
@@ -338,6 +352,17 @@ sub search_sql_where {
 =cut
 
 sub enable_previous { 0 }
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  $class->_upgrade_reasonnum(%opts);
+}
 
 =back
 
