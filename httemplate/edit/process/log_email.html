@@ -1,0 +1,18 @@
+<% include('elements/process.html',
+    'table' => 'log_email',
+    %processopts
+   ) %>
+<%init>
+
+my %opts = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View system logs', 'Configuration' ]);
+
+my %processopts = $opts{'popup'}
+  ? ( 'popup_reload' => 'Logging email added' )
+  : ( 'redirect' => $fsurl.'browse/log_email.html?' ); # id will be needlessly appended, should be harmless
+
+</%init>

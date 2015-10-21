@@ -1,6 +1,7 @@
 <& elements/search.html, 
   'title'         => 'System Log',
   'name_singular' => 'event',
+  'menubar'       => \@menubar,
   'html_init'     => include('.head'),
   'query'         => $query,
   'count_query'   => $count_query,
@@ -203,6 +204,9 @@ my @contexts = ('', sort FS::log_context->contexts);
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right([ 'View system logs', 'Configuration' ]);
+
+my @menubar = ();
+push @menubar, qq(<A HREF="${fsurl}browse/log_email.html" STYLE="text-decoration: underline;">Configure conditions for sending email when logging</A>),
 
 $cgi->param('min_level', 0) unless defined($cgi->param('min_level'));
 $cgi->param('max_level', 7) unless defined($cgi->param('max_level'));

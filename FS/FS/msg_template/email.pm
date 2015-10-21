@@ -164,7 +164,7 @@ Options are passed as a list of name/value pairs:
 
 =item cust_main
 
-Customer object (required).
+Customer object
 
 =item object
 
@@ -215,7 +215,7 @@ sub prepare {
   my( $self, %opt ) = @_;
 
   my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
-  my $object = $opt{'object'} or die 'object required';
+  my $object = $opt{'object'}; # or die 'object required';
 
   my $hashref = $self->prepare_substitutions(%opt);
 
@@ -365,7 +365,7 @@ sub prepare {
   my $env_to = join(', ', @to);
 
   my $cust_msg = FS::cust_msg->new({
-      'custnum'   => $cust_main->custnum,
+      'custnum'   => $cust_main ? $cust_main->custnum : '',
       'msgnum'    => $self->msgnum,
       '_date'     => $time,
       'env_from'  => $env_from,

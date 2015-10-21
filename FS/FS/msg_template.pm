@@ -274,7 +274,7 @@ Options are passed as a list of name/value pairs:
 
 =item cust_main
 
-Customer object (required).
+Customer object
 
 =item object
 
@@ -324,7 +324,7 @@ sub prepare_substitutions {
   my( $self, %opt ) = @_;
 
   my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
-  my $object = $opt{'object'} or die 'object required';
+  my $object = $opt{'object'}; # or die 'object required';
 
   warn "preparing substitutions for '".$self->msgname."'\n"
     if $DEBUG;
