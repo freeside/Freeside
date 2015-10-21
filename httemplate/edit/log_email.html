@@ -1,0 +1,45 @@
+<% include( 'elements/edit.html',
+              'name_singular' => 'log email condition',
+              'table'  => 'log_email',
+              'fields' => [
+                            { 'field' => 'context',
+                              'type' => 'select',
+                              'options' => [ '', @contexts ],
+                              'labels' => { '' => '(all)', map { $_ => $_ } @contexts },
+                              'curr_value' => scalar($cgi->param('context')),
+                            },
+                            { 'field' => 'min_level',
+                              'type'  => 'select',
+                              'options' => [ 0..7 ],
+                              'labels' => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+                              'curr_value' => scalar($cgi->param('min_level')),
+                            },
+                            'to_addr',
+                            { 'field' => 'msgnum',
+                              'type' => 'select-msg_template',
+                              'empty_label' => 'Select template',
+                              'required' => 1,
+                            },
+                          ],
+              'labels' => { 
+                            'context' => 'Context',
+                            'min_level' => 'Min. Level',
+                            'to_addr' => 'To',
+                            'msgnum' => 'Message',
+                          },
+              'viewall_dir' => 'browse',
+              'popup' => $opts{'popup'},
+              'form_init' => $opts{'popup'} ? q(<INPUT TYPE="hidden" NAME="popup" VALUE="1">) : '',
+           )
+%>
+<%once>
+my @contexts = sort FS::log_context->contexts;
+</%once>
+<%init>
+
+my %opts = @_;
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right([ 'View system logs', 'Configuration' ]);
+
+</%init>

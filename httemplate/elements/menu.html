@@ -787,6 +787,10 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
 $config_misc{'Upload targets'} = [ $fsurl.'browse/upload_target.html', 'Billing and payment upload destinations' ]
   if $curuser->access_right('Configuration');
 
+$config_misc{'System log emails'} = [ $fsurl.'browse/log_email.html', 'Configure conditions for sending email when logging' ]
+  if $curuser->access_right('View system logs')
+  || $curuser->access_right('Configuration');
+
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {
   %config_menu = (

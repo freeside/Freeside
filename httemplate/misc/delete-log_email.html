@@ -1,0 +1,20 @@
+% if ($error) {
+<P STYLE="color: red"><% $error %></P>
+% } else {
+<H1>Log email condition deleted</H1>
+<SCRIPT>
+window.top.location.reload();
+</SCRIPT>
+% }
+
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right([ 'View system logs', 'Configuration' ]);
+
+my $logemailnum = $cgi->param('logemailnum');
+$logemailnum =~ /^\d+$/ or die "bad logemailnum '$logemailnum'";
+my $log_email = FS::log_email->by_key($logemailnum)
+  or die "logemailnum '$logemailnum' not found";
+my $error = $log_email->delete;
+</%init>
+

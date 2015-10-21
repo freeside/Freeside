@@ -6563,6 +6563,25 @@ sub tables_hashref {
                         ],
     },
 
+    'log_email' => {
+      'columns' => [
+        'logemailnum', 'serial', '', '', '', '',
+        'context', 'varchar', 'NULL', $char_d, '', '',
+        'min_level', 'int',  'NULL', '', '', '',
+        'msgnum', 'int', '',  '', '', '',
+        'to_addr', 'varchar', 'NULL',     255, '', '',
+      ],
+      'primary_key'  => 'logemailnum',
+      'unique'       => [],
+      'index'        => [ ['context'], ['min_level'] ],
+      'foreign_keys' => [
+                          { columns    => [ 'msgnum' ],
+                            table      => 'msg_template',
+                            references => [ 'msgnum' ],
+                          },
+                        ],
+    },
+
     'svc_alarm' => {
       'columns' => [
 #       name               type        null   length   default local
