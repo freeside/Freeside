@@ -5,6 +5,7 @@ use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::UID qw( dbh driver_name );
 use FS::log_context;
+use FS::log_email;
 
 =head1 NAME
 
@@ -71,6 +72,8 @@ otherwise returns false.
 
 CONTEXT may be a list of context tags to attach to this record.
 
+Will send emails according to the conditions in L<FS::log_email>.
+
 =cut
 
 sub insert {
@@ -78,6 +81,7 @@ sub insert {
   my $self = shift;
   my $error = $self->SUPER::insert;
   return $error if $error;
+  my $contexts = {}; #for quick checks when sending emails
   foreach ( @_ ) {
     my $context = FS::log_context->new({
         'lognum'  => $self->lognum,
@@ -85,11 +89,40 @@ sub insert {
     });
     $error = $context->insert;
     return $error if $error;
+    $contexts->{$_} = 1;
+  }
+  foreach my $log_email (
+    qsearch('log_email',
+      {
+        'disabled' => '',
+        'min_level' => {
+          'op' => '<=',
+          'value' => $self->level,
+        },
+      }
+    )
+  ) {
+    # shouldn't be a lot of these, so not packing this into the qsearch
+    next if $log_email->context && !$contexts->{$log_email->context};
+    my $msg_template = qsearchs('msg_template',{ 'msgnum' => $log_email->msgnum });
+    unless ($msg_template) {
+      warn "Could not send email when logging, could not load message template for logemailnum " . $log_email->logemailnum;
+      next;
+    }
+    my $emailerror = $msg_template->send(
+      'to'            => $log_email->to_addr,
+      'substitutions' => {
+        'loglevel'   => $FS::Log::LEVELS[$self->level], # which has hopefully been loaded...
+        'logcontext' => $log_email->context, # use the one that triggered the email
+        'logmessage' => $self->message,
+      },
+    );
+    warn "Could not send email when logging: $emailerror" if $emailerror;
   }
   '';
 }
 
-# the insert method can be inherited from FS::Record
+# these methods can be inherited from FS::Record
 
 sub delete  { die "Log entries can't be modified." };
 

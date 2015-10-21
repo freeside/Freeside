@@ -239,7 +239,7 @@ Options are passed as a list of name/value pairs:
 
 =item cust_main
 
-Customer object (required).
+Customer object
 
 =item object
 
@@ -277,8 +277,8 @@ A hash reference of additional substitutions
 sub prepare {
   my( $self, %opt ) = @_;
 
-  my $cust_main = $opt{'cust_main'} or die 'cust_main required';
-  my $object = $opt{'object'} or die 'object required';
+  my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
+  my $object = $opt{'object'}; # or die 'object required';
 
   # localization
   my $locale = $cust_main->locale || '';

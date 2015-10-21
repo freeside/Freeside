@@ -1,0 +1,92 @@
+<% include('/elements/init_overlib.html') %>
+<% include('/browse/elements/browse.html',
+     'title'         => 'Log email condition configuration',
+     'name_singular' => 'condition',
+     'html_init'     => '<P STYLE="margin-top: 0">'
+                        . $add_condition_link
+                        . ' | '
+                        . $system_log_link
+                        . '</P>'
+                        . '<SCRIPT>'
+                        . $areyousure
+                        . '</SCRIPT>',
+     'query'         => $query,
+     'count_query'   => $count_query,
+     'header'      => [ '#',
+                        'Context', 
+                        'Min. Level', 
+                        'Template', 
+                        'To',
+                        '',
+                      ],
+     'fields'      => [ 'logemailnum',
+                        sub { $_[0]->context || '(all)' },
+                        sub { $FS::Log::LEVELS[$_[0]->min_level] },
+                        'msgname',
+                        'to_addr',
+                        $actions,
+                      ],
+     'sort_fields' => [ 'logemailnum',
+                        'context',
+                        'min_level',
+                        'msgname',
+                        'to_addr',
+                        '',
+                      ],
+     'links'       => [ $editlink,
+                        $editlink,
+                        $editlink,
+                        $editlink,
+                        $editlink,
+                        '',
+                      ],
+
+   ) %>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View system logs', 'Configuration' ]);
+
+my $add_condition_link = include('/elements/popup_link.html',
+  'action' => $p.'edit/log_email.html?popup=1',
+  'label'  => 'Add log email condition',
+  'actionlabel' => 'Add log email condition',
+);
+
+my $system_log_link = qq(<A HREF="${p}search/log.html">System Log</A>);
+
+my $query = {
+  'table'   => 'log_email',
+  'select'  => '*',
+  'addl_from' => 'LEFT JOIN msg_template USING (msgnum)',
+  'hashref' => { },
+};
+
+my $count_query = "SELECT COUNT(*) FROM log_email";
+
+my $actions = sub {
+  my $log_email = shift;
+  my $logemailnum = $log_email->logemailnum;
+  qq!<A HREF="javascript:areyousure_delete_log_email($logemailnum)">(delete)</A>!;
+};
+
+my $areyousure_onclick = include('/elements/popup_link_onclick.html',
+  'js_action' => q(') . $p . q(misc/delete-log_email.html?logemailnum=' + logemailnum),
+  'actionlabel' => 'Delete log email condition',
+);
+
+my $areyousure = <<EOF;
+function areyousure_delete_log_email(logemailnum) {
+  if (confirm('Are you sure you want to delete log email condition #'+logemailnum+'?')) {
+${areyousure_onclick}
+  }
+}
+EOF
+
+my $editlink = [ $p.'edit/log_email.html?logemailnum=', 'logemailnum' ];
+
+</%init>
+

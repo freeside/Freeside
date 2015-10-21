@@ -1,0 +1,12 @@
+<% include('/elements/tr-td-label.html',
+     'label'    => $opt{'label'} || 'Message template: ',
+     'required' => $opt{'required'} ) %>
+  <TD><% include('select-msg_template.html', %opt) %></TD>
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+</%init>
+
