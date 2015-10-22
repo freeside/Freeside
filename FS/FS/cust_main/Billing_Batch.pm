@@ -57,10 +57,22 @@ sub batch_card {
   }
   
   my $invnum = delete $options{invnum};
-  my $payby = $options{payby} || $self->payby;  #still dubious
+
+  #false laziness with Billing_Realtime
+  my @cust_payby = qsearch({
+    'table'     => 'cust_payby',
+    'hashref'   => { 'custnum' => $self->custnum, },
+    'extra_sql' => " AND payby IN ( 'CARD', 'CHEK' ) ",
+    'order_by'  => 'ORDER BY weight ASC',
+  });
+
+  # batch can't try out every one like realtime, just use first one
+  my $cust_payby = $cust_payby[0] || $self; # somewhat dubious
+                                                   
+  my $payby = $options{payby} || $cust_payby->payby;
 
   if ($options{'realtime'}) {
-    return $self->realtime_bop( FS::payby->payby2bop($self->payby),
+    return $self->realtime_bop( FS::payby->payby2bop($payby),
                                 $amount,
                                 %options,
                               );
@@ -120,10 +132,10 @@ sub batch_card {
     'state'    => $options{state}    || $loc->state,
     'zip'      => $options{zip}      || $loc->zip,
     'country'  => $options{country}  || $loc->country,
-    'payby'    => $options{payby}    || $self->payby,
-    'payinfo'  => $options{payinfo}  || $self->payinfo,
-    'exp'      => $options{paydate}  || $self->paydate,
-    'payname'  => $options{payname}  || $self->payname,
+    'payby'    => $options{payby}    || $cust_payby->payby,
+    'payinfo'  => $options{payinfo}  || $cust_payby->payinfo,
+    'exp'      => $options{paydate}  || $cust_payby->paydate,
+    'payname'  => $options{payname}  || $cust_payby->payname,
     'amount'   => $amount,                         # consolidating
   } );
   
