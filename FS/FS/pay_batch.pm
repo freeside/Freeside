@@ -903,8 +903,6 @@ sub prepare_for_export {
   my $status = $self->status;
   if ($status eq 'O') {
     $first_download = 1;
-    my $error = $self->set_status('I');
-    return "error updating pay_batch status: $error\n" if $error;
   } elsif ($status eq 'I' && $curuser->access_right('Reprocess batches')) {
     $first_download = 0;
   } elsif ($status eq 'R' && 
@@ -938,7 +936,7 @@ sub prepare_for_export {
 
       my $balance = $cust_pay_batch->cust_main->balance;
       if ($balance <= 0) { # then don't charge this customer
-        my $error = $cust_pay_batch->delete;
+        my $error = $cust_pay_batch->unbatch_and_delete;
         return $error if $error;
       } elsif ($balance < $cust_pay_batch->amount) {
         # reduce the charge to the remaining balance
@@ -948,6 +946,20 @@ sub prepare_for_export {
       }
       # else $balance >= $cust_pay_batch->amount
     }
+
+    # we might end up removing all cust_pay_batch above...
+    # probably the better way to handle this is to commit that removal,
+    # but no time to trace code & test that right now
+    #
+    # additionally, UI currently allows hand-deletion of all payments from a batch, meaning
+    # it's possible to try and process an empty batch...this is where we catch
+    # such an attempt, though it probably shouldn't be possible in the first place
+    return "Batch is empty" unless $self->cust_pay_batch;
+
+    #need to do this after unbatch_and_delete
+    my $error = $self->set_status('I');
+    return "error updating pay_batch status: $error\n" if $error;
+
   } #if $first_download
 
   '';
