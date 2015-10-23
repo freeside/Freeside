@@ -132,6 +132,7 @@ sub check {
     || $self->ut_foreign_key('ratenum', 'rate', 'ratenum')
     || $self->ut_foreign_keyn('orig_regionnum', 'rate_region', 'regionnum' )
     || $self->ut_foreign_keyn('dest_regionnum', 'rate_region', 'regionnum' )
+    || $self->ut_foreign_keyn('cdrtypenum', 'cdr_type', 'cdrtypenum' )
     || $self->ut_number('min_included')
 
     #|| $self->ut_money('min_charge')
@@ -194,6 +195,8 @@ sub dest_regionname {
   my $self = shift;
   my $dest_region = $self->dest_region;
   $dest_region ? $dest_region->regionname : 'Global default';
+    # should be 'Anywhere' or something, to indicate that it's the
+    # cross-region default
 }
 
 =item dest_prefixes_short
@@ -230,7 +233,7 @@ associated with this rate plan.
 
 sub rate_time_name {
   my $self = shift;
-  $self->ratetimenum ? $self->rate_time->ratetimename : '(default)';
+  $self->ratetimenum ? $self->rate_time->ratetimename : '(any time)';
 }
 
 =item classname

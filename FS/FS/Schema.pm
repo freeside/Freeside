@@ -1962,6 +1962,24 @@ sub tables_hashref {
                         ],
     },
 
+    'quotation_pkg_detail' => {
+      'columns' => [
+        'detailnum', 'serial', '', '', '', '', 
+        'billpkgnum', 'int', '', '', '', '',        # actually links to quotationpkgnum
+        'format',  'char', 'NULL', 1, '', '',       # not used for anything
+        'detail',  'varchar', '', 255, '', '',
+      ],
+      'primary_key'  => 'detailnum',
+      'unique'       => [],
+      'index'        => [ [ 'billpkgnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'billpkgnum' ],
+                            table      => 'quotation_pkg',
+                            references => [ 'quotationpkgnum' ],
+                          },
+                        ],
+    },
+
     'quotation_pkg_discount' => {
       'columns' => [
         'quotationpkgdiscountnum', 'serial', '', '', '', '',
@@ -2888,6 +2906,7 @@ sub tables_hashref {
         'otaker',        'varchar', 'NULL',    32, '', '', 
         'usernum',           'int', 'NULL',    '', '', '',
         'disabled',         'char', 'NULL',     1, '', '', 
+        'setuprecur',       'char', 'NULL',     5, '', '',
       ],
       'primary_key'  => 'pkgdiscountnum',
       'unique'       => [],
@@ -6540,6 +6559,25 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'lognum' ],
                             table      => 'log',
+                          },
+                        ],
+    },
+
+    'log_email' => {
+      'columns' => [
+        'logemailnum', 'serial', '', '', '', '',
+        'context', 'varchar', 'NULL', $char_d, '', '',
+        'min_level', 'int',  'NULL', '', '', '',
+        'msgnum', 'int', '',  '', '', '',
+        'to_addr', 'varchar', 'NULL',     255, '', '',
+      ],
+      'primary_key'  => 'logemailnum',
+      'unique'       => [],
+      'index'        => [ ['context'], ['min_level'] ],
+      'foreign_keys' => [
+                          { columns    => [ 'msgnum' ],
+                            table      => 'msg_template',
+                            references => [ 'msgnum' ],
                           },
                         ],
     },

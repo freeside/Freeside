@@ -14,8 +14,8 @@ $DEBUG = 0;
 $me = '[FS::part_pkg::agent]';
 
 %info = (
-  'name'      => 'Wholesale bulk billing, for master customers of an agent.',
-  'shortname' => 'Wholesale bulk billing for agent',
+  'name'      => 'Wholesale billing based on package prices, for master customers of an agent.',
+  'shortname' => 'Wholesale billing for agent (package prices)',
   'inherit_fields' => [qw( prorate global_Mixin)],
   'fields' => {
     #'recur_method'  => { 'name' => 'Recurring fee method',
@@ -94,12 +94,13 @@ sub calc_recur {
         if $DEBUG;
 
       #make sure setup dates are filled in
-      my $error = $cust_main->bill; #options don't propogate from freeside-daily
+      my $error = $cust_main->bill( time => $$sdate );
       die "Error pre-billing agent customer: $error" if $error;
 
       my @cust_pkg = grep { my $setup  = $_->get('setup');
                             my $cancel = $_->get('cancel');
 
+                            #$setup <= $$sdate  # ?
                             $setup < $$sdate  # END
                             && ( ! $cancel || $cancel > $last_bill ) #START
                           }

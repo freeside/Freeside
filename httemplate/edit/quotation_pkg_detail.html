@@ -5,21 +5,11 @@
 
 %# <% include('/elements/error.html') %>
 
-<FORM ACTION="process/cust_pkg_detail.html" NAME="DetailForm" ID="DetailForm" METHOD="POST">
+<FORM ACTION="process/quotation_pkg_detail.html" NAME="DetailForm" ID="DetailForm" METHOD="POST">
 
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
-<INPUT TYPE="hidden" NAME="detailtype" VALUE="<% $detailtype %>">
 
 <TABLE ID="DetailTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=1 STYLE="background-color: #cccccc">
-
-% if ( $curuser->option('show_pkgnum') ) {
-
-    <TR>
-      <TD ALIGN="right">Package #</TD>
-      <TD BGCOLOR="#ffffff"><% $pkgnum %></TD>
-    </TR>
-
-% }
 
   <TR>
     <TD ALIGN="right">Package</TD>
@@ -32,12 +22,7 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right">Status</TD>
-    <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_pkg->statuscolor %>"><B><% ucfirst($cust_pkg->status) %></B></FONT></TD>
-  </TR>
-
-  <TR>
-    <TD COLSPAN=2><% ucfirst($name{$detailtype}) %>: </TD>
+    <TD COLSPAN=2>Detail: </TD>
   </TR>
 
 % my $row = 0;
@@ -46,7 +31,7 @@
     <TR>
       <TD></TD>
       <TD>
-        <INPUT TYPE="text" NAME="detail<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $_->detail |h %>" rownum="<% $row++ %>" onkeyup="possiblyAddRow" onchange="possiblyAddRow" >
+        <INPUT TYPE="text" NAME="detail<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $_ |h %>" rownum="<% $row++ %>" onkeyup="possiblyAddRow" onchange="possiblyAddrow">
       </TD>
     </TR>
 
@@ -60,6 +45,7 @@
 </FORM>
 
 <SCRIPT TYPE="text/javascript">
+% # abject false laziness with edit/cust_pkg_detail.html
 
   var rownum = <% $row %>;
 
@@ -105,39 +91,26 @@
 </HTML>
 <%init>
 
-my %access_right = (
-  'I' => 'Edit customer package invoice details', 
-  'C' => 'Edit customer package comments',
-);
-
-my %name = (
-  'I' => 'invoice details',
-  'C' => 'package comments',
-);
-
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-$cgi->param('detailtype') =~ /^(\w)$/ or die 'illegal detailtype';
-my $detailtype = $1;
-
-my $right = $access_right{$detailtype};
 die "access denied"
-  unless $curuser->access_right($right);
+  unless $curuser->access_right('Generate quotation');
 
 $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'illegal pkgnum';
 my $pkgnum = $1;
 
-my $cust_pkg = qsearchs({
-  'table'     => 'cust_pkg',
-  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
-  'hashref'   => { 'pkgnum' => $pkgnum },
+my $quotation_pkg = qsearchs({
+  'table'     => 'quotation_pkg',
+  'addl_from' => 'LEFT JOIN quotation USING ( quotationnum )'.
+                 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'quotationpkgnum' => $pkgnum },
   'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
 
-my $part_pkg = $cust_pkg->part_pkg;
+my $part_pkg = $quotation_pkg->part_pkg;
 
-my @details = $cust_pkg->cust_pkg_detail($detailtype);
+my @details = $quotation_pkg->details;
 
-my $title = ( scalar(@details) ? 'Edit ' : 'Add ' ). $name{$detailtype};
+my $title = ( scalar(@details) ? 'Edit ' : 'Add ' ). 'Quotation Details';
 
 </%init>

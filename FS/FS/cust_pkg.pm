@@ -425,7 +425,7 @@ sub insert {
     }
   }
 
-  if ( $self->discountnum ) {
+  if ( $self->setup_discountnum || $self->recur_discountnum ) {
     my $error = $self->insert_discount();
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -4318,13 +4318,10 @@ sub insert_reason {
 Associates this package with a discount (see L<FS::cust_pkg_discount>, possibly
 inserting a new discount on the fly (see L<FS::discount>).
 
-Available options are:
-
-=over 4
-
-=item discountnum
-
-=back
+This will look at the cust_pkg for a pseudo-field named "setup_discountnum",
+and if present, will create a setup discount. If the discountnum is -1,
+a new discount definition will be inserted using the value in
+"setup_discountnum_amount" or "setup_discountnum_percent". Likewise for recur.
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -4334,21 +4331,29 @@ sub insert_discount {
   #my ($self, %options) = @_;
   my $self = shift;
 
-  my $cust_pkg_discount = new FS::cust_pkg_discount {
-    'pkgnum'      => $self->pkgnum,
-    'discountnum' => $self->discountnum,
-    'months_used' => 0,
-    'end_date'    => '', #XXX
-    #for the create a new discount case
-    '_type'       => $self->discountnum__type,
-    'amount'      => $self->discountnum_amount,
-    'percent'     => $self->discountnum_percent,
-    'months'      => $self->discountnum_months,
-    'setup'      => $self->discountnum_setup,
-    #'disabled'    => $self->discountnum_disabled,
-  };
+  foreach my $x (qw(setup recur)) {
+    if ( my $discountnum = $self->get("${x}_discountnum") ) {
+      my $cust_pkg_discount = FS::cust_pkg_discount->new( {
+        'pkgnum'      => $self->pkgnum,
+        'discountnum' => $discountnum,
+        'setuprecur'  => $x,
+        'months_used' => 0,
+        'end_date'    => '', #XXX
+        #for the create a new discount case
+        'amount'      => $self->get("${x}_discountnum_amount"),
+        'percent'     => $self->get("${x}_discountnum_percent"),
+        'months'      => $self->get("${x}_discountnum_months"),
+      } );
+      if ( $x eq 'setup' ) {
+        $cust_pkg_discount->setup('Y');
+        $cust_pkg_discount->months('');
+      }
+      my $error = $cust_pkg_discount->insert;
+      return $error if $error;
+    }
+  }
 
-  $cust_pkg_discount->insert;
+  '';
 }
 
 =item set_usage USAGE_VALUE_HASHREF 

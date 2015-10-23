@@ -284,7 +284,8 @@ sub send_email {
         'status'    => ($error ? 'failed' : 'sent'),
         'msgtype'   => $options{'msgtype'},
     });
-    $cust_msg->insert; # ignore errors
+    my $log_error = $cust_msg->insert;
+    warn "Error logging message: $log_error\n" if $log_error; # at least warn
   }
   $error;
    

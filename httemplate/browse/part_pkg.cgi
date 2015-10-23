@@ -88,6 +88,14 @@ if ( $cgi->param('missing_recur_fee') ) {
                            )";
 }
 
+if ( $cgi->param('ratenum') =~ /^(\d+)$/ ) {
+  push @where, "EXISTS( SELECT 1 FROM part_pkg_option
+                          WHERE optionname LIKE '%ratenum'
+                            AND optionvalue = '$1'
+                            AND part_pkg_option.pkgpart = part_pkg.pkgpart
+                      )";
+}
+
 if ( $cgi->param('family') =~ /^(\d+)$/ ) {
   $family_pkgpart = $1;
   push @where, "family_pkgpart = $1";

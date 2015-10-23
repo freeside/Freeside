@@ -888,6 +888,7 @@ sub _realtime_bop_result {
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
+       'paymask'  => $options{'paymask'},
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
        'discount_term'  => $options{'discount_term'},

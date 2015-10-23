@@ -59,6 +59,9 @@ end_date
 
 order taker, see L<FS::access_user>
 
+=item setuprecur
+
+whether this discount applies to setup fees or recurring fees
 
 =back
 
@@ -125,11 +128,29 @@ sub check {
     || $self->ut_alphan('otaker')
     || $self->ut_numbern('usernum')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_enum('setuprecur', [ 'setup', 'recur' ] )
   ;
   return $error if $error;
 
-  return "Discount does not apply to setup fees, and package has no recurring"
-    if ! $self->discount->setup && $self->cust_pkg->part_pkg->freq =~ /^0/;
+  my $cust_pkg = $self->cust_pkg;
+  my $discount = $self->discount;
+  if ( $self->setuprecur eq 'setup' ) {
+    if ( !$discount->setup ) {
+      # UI prevents this, and historical discounts should never have it either
+      return "Discount #".$self->discountnum." can't be applied to setup fees.";
+    } elsif ( $cust_pkg->base_setup == 0 ) {
+      # and this
+      return "Can't apply setup discount to a package with no setup fee.";
+    }
+    # else we're good. do NOT disallow applying setup discounts when the
+    # setup date is already set; upgrades use that.
+  } else {
+    if ( $self->cust_pkg->base_recur == 0 ) {
+      return "Can't apply recur discount to a package with no recurring fee.";
+    } elsif ( $cust_pkg->part_pkg->freq eq '0' ) {
+      return "Can't apply recur discount to a one-time charge.";
+    }
+  }
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
@@ -205,6 +226,45 @@ sub status {
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
   $class->_upgrade_otaker(%opts);
+
+  # #14092: set setuprecur field on discounts. if we get one that applies to
+  # both setup and recur, split it into two discounts.
+  my $search = FS::Cursor->new({
+      table   => 'cust_pkg_discount',
+      hashref => { setuprecur => '' }
+  });
+  while ( my $cust_pkg_discount = $search->fetch ) {
+    my $discount = $cust_pkg_discount->discount;
+    my $cust_pkg = $cust_pkg_discount->cust_pkg;
+    # 1. Does it apply to the setup fee?
+    # Yes, if: the discount applies to setup fees generally, and the package
+    # has a setup fee.
+    # No, if: the discount is a flat amount, and is not first-month only.
+    if ( $discount->setup
+        and $cust_pkg->base_setup > 0
+        and ($discount->amount == 0 or $discount->months == 1)
+       )
+    {
+      # then clone this discount into a new one
+      my $setup_discount = FS::cust_pkg_discount->new({
+          $cust_pkg_discount->hash,
+          setuprecur      => 'setup',
+          pkgdiscountnum  => ''
+      });
+      my $error = $setup_discount->insert;
+      die "$error (migrating cust_pkg_discount to setup discount)" if $error;
+    }
+    # 2. Does it apply to the recur fee?
+    # Yes, if: the package has a recur fee.
+    if ( $cust_pkg->base_recur > 0 ) {
+      # then modify this discount in place
+      $cust_pkg_discount->set('setuprecur' => 'recur');
+      my $error = $cust_pkg_discount->replace;
+      die "$error (migrating cust_pkg_discount)" if $error;
+    }
+    # not in here yet: splitting the cust_bill_pkg_discount records.
+    # (not really necessary)
+  }
 }
 
 =back

@@ -3050,6 +3050,9 @@ sub _items_cust_bill_pkg {
     # if the current line item is waiting to go out, and the one we're about
     # to start is not bundled, then push out the current one and start a new
     # one.
+    if ( $d ) {
+      $d->{amount} = $d->{setup_amount} + $d->{recur_amount};
+    }
     foreach ( $s, $r, ($opt{skip_usage} ? () : $u ), $d ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
         $_->{amount}      = sprintf( "%.2f", $_->{amount} );
@@ -3485,7 +3488,8 @@ sub _items_cust_bill_pkg {
           # $item_discount->{amount} is negative
 
           if ( $d and $cust_bill_pkg->hidden ) {
-            $d->{amount}      += $item_discount->{amount};
+            $d->{setup_amount} += $item_discount->{setup_amount};
+            $d->{recur_amount} += $item_discount->{recur_amount};
           } else {
             $d = $item_discount;
             $_ = &{$escape_function}($_) foreach @{ $d->{ext_description} };
@@ -3493,33 +3497,20 @@ sub _items_cust_bill_pkg {
 
           # update the active line (before the discount) to show the 
           # original price (whether this is a hidden line or not)
-          #
-          # quotation discounts keep track of setup and recur; invoice 
-          # discounts currently don't
-          if ( exists $item_discount->{setup_amount} ) {
 
-            $s->{amount} -= $item_discount->{setup_amount} if $s;
-            $r->{amount} -= $item_discount->{recur_amount} if $r;
-
-          } else {
-
-            # $active_line is the line item hashref for the line that will
-            # show the original price
-            # (use the recur or single line for the package, unless we're 
-            # showing a setup line for a package with no recurring fee)
-            my $active_line = $r;
-            if ( $type eq 'S' ) {
-              $active_line = $s;
-            }
-            $active_line->{amount} -= $item_discount->{amount};
-
-          }
+          $s->{amount} -= $item_discount->{setup_amount} if $s;
+          $r->{amount} -= $item_discount->{recur_amount} if $r;
 
         } # if there are any discounts
       } # if this is an appropriate place to show discounts
 
     } # foreach $display
 
+  }
+
+  # discount amount is internally split up
+  if ( $d ) {
+    $d->{amount} = $d->{setup_amount} + $d->{recur_amount};
   }
 
   foreach ( $s, $r, ($opt{skip_usage} ? () : $u ), $d ) {

@@ -1,11 +1,5 @@
-<%init>
-my %opt = @_;
-$opt{id} ||= $opt{field}; # should be the default everywhere
-my $max = $opt{max} || 36;
-$opt{options} = [ '', 1 .. $max ];
-$opt{labels} = { '' => '',
-                 map { $_ => emt('[quant,_1,month]', $_) } 1 .. $max
-               };
-
-</%init>
-<& tr-select.html, %opt &>
+<& tr-td-label.html, @_ &>
+  <td>
+    <& select-months.html, @_ &>
+  </td>
+</tr>
