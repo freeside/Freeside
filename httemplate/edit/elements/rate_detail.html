@@ -61,18 +61,18 @@ with row headers showing the region name and prefixes.
 %   $row++;
 % }# foreach @rate_region
 % if ( !$opt{regionnum} ) {
-%# global default
+%   # global default for this cdrtypenum
 <TR>
   <TD COLSPAN=2 STYLE="padding-top: 10px">
     <B>Global default</B> (for calls not matching any prefix)
   </TD>
   <TD STYLE="padding-top: 10px">
-%   # default rate: set a null region
+%   # default rate: set a null region for this cdr type
     <B>
     <& .detail_box,
-      detail      => $rate->default_detail,
+      detail      => $rate->default_detail($cdrtypenum),
       ratetimenum => '',
-      cdrtypenum  => '',
+      cdrtypenum  => $cdrtypenum,
       regionnum   => '',
       ratenum     => $rate->ratenum
     &>
