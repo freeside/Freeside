@@ -67,7 +67,7 @@
                ID        = "<%$id%>_paycvv"
                SIZE      = 2
                MAXLENGTH = 4
-               VALUE     = "<% $cgi->param($name.'_paycvv') %>"
+               VALUE     = "<% scalar($cgi->param($name.'_paycvv')) %>"
                onChange  = "<% $onchange %>"
         >
         <BR><FONT SIZE="-1"><% mt('CVV2') |h %>&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%$p%>docs/cvv2.html', 480, 275, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)</FONT>
