@@ -1,7 +1,7 @@
 <% encode_json( \@return ) %>\
 <%init>
 
-my( $agentnum ) = $cgi->param('arg');
+my $agentnum = scalar($cgi->param('arg'));
 
 my %hash = ( 'disabled' => '' );
 if ( $agentnum > 0 ) {
