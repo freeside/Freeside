@@ -54,6 +54,8 @@ it may still be processed under a different pricing addon package), or be
 marked as 'skipped', or throw a fatal error, depending on the setting of 
 the 'ignore_unrateable' package option.
 
+Deprecated; we now find the default detail by its lack of regionnum.
+
 =item 
 
 =back
@@ -347,7 +349,11 @@ sub dest_detail {
       });
     }
 
-    return $self->default_detail unless $rate_prefix;
+    if ( !$rate_prefix ) {
+      # then this call doesn't match any known region; just return the
+      # appropriate anywhere rate
+      return $self->default_detail($cdrtypenum) || $self->default_detail('');
+    }
 
     $regionnum = $rate_prefix->regionnum;
 
@@ -365,7 +371,14 @@ sub dest_detail {
       %hash,
       'cdrtypenum' => $cdrtypenum
     });
-  # find all rates maching ratenum, regionnum and null cdrtypenum
+  # failing that, return the global default for this plan with the correct
+  # cdrtypenum (skips weektime processing)
+  if ( !@details and $cdrtypenum ) {
+    my $detail = $self->default_detail($cdrtypenum);
+    return $detail if $detail;
+  }
+  # failing that, find all rates maching ratenum, regionnum and null cdrtypenum
+  # (these can have weektime stuff)
   if ( !@details and $cdrtypenum ) {
     @details = qsearch( 'rate_detail', {
         %hash,
@@ -391,7 +404,7 @@ sub dest_detail {
     return $_ if $_->ratetimenum eq '';
   }
   # if still nothing, return the global default rate for this plan
-  return $self->default_detail;
+  return $self->default_detail('');
 }
 
 =item rate_detail
@@ -400,16 +413,24 @@ Returns all region-specific details  (see L<FS::rate_detail>) for this rate.
 
 =back
 
-=item default_detail
+=item default_detail [ CDRTYPENUM ]
 
-Returns the default rate detail, if there is one.
+Returns the default rate detail for CDRTYPENUM (or for null CDR type, if not
+specified).
 
 =cut
 
 sub default_detail {
   my $self = shift;
-  $self->default_detailnum ?
-    FS::rate_detail->by_key($self->default_detailnum) : ''
+  my $cdrtypenum = shift || '';
+#  $self->default_detailnum ?
+#    FS::rate_detail->by_key($self->default_detailnum) : ''
+  qsearchs( 'rate_detail', {
+      ratenum         => $self->ratenum,
+      cdrtypenum      => $cdrtypenum,
+      dest_regionnum  => '',
+      orig_regionnum  => '',
+  }) || '';
 }
 
 =head1 SUBROUTINES

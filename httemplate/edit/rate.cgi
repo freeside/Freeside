@@ -1,7 +1,11 @@
-<% include("/elements/header.html","$action Rate plan", menubar(
+<& /elements/header.html,
+  "$action Rate plan",
+  menubar(
       'View all rate plans' => "${p}browse/rate.cgi",
-    ))
-%>
+      'View packages that use this plan' => "${p}browse/part_pkg.cgi?ratenum="
+                                            . $rate->ratenum,
+  )
+&>
 
 <% include('/elements/progress-init.html',
               'OneTrueForm',
