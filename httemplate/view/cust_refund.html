@@ -2,7 +2,12 @@
 
   <& /elements/header-popup.html, mt('Refund Receipt') &>
 
-  <CENTER><A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A></CENTER><BR>
+  <DIV ALIGN="center">
+    <A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A>
+%   if ( $cust_main->invoicing_list_emailonly ) {
+    | <A HREF="javascript:self.location = '<% $email_link %>'"><% mt('Email') |h %></A>
+%   }
+  </DIV>
 
 % } elsif ( $link eq 'print' ) { 
 
@@ -16,6 +21,12 @@
   %>
   <BR><BR>
 
+% } elsif ( $link eq 'email' ) {
+%  if ( $email_error ) {
+      <& /elements/header-popup.html, mt("Error re-emailing receipt: [_1]", $email_error) &>
+%  } else {
+      <& /elements/header-popup.html, mt("Re-emailed receipt") &>
+%  }
 % } else { 
 
   <& /elements/header.html, mt('Refund Receipt'), menubar(
@@ -26,7 +37,7 @@
 
 % }
 
-% unless ($link eq 'popup' ) {
+% unless ($link =~ /^(popup|email)$/ ) {
   <& /elements/small_custview.html,
                $custnum,
                scalar($conf->config('countrydefault')),
@@ -91,9 +102,14 @@
     window.print();
   </SCRIPT>
 
-% }
+% } elsif ( $link eq 'email' ) {
 
-% if ( $link =~ /^(popup|print)$/ ) { 
+    <SCRIPT TYPE="text/javascript">
+      window.top.location.reload();
+    </SCRIPT>
+
+% }
+% if ( $link =~ /^(popup|print|email)$/ ) { 
     </BODY>
   </HTML>
 % } else {
@@ -125,15 +141,25 @@ my $cust_refund = qsearchs({
 });
 die "Refund #$refundnum not found!" unless $cust_refund;
 
+my $cust_main = $cust_refund->cust_main;
+
 my $pr_link = "${p}view/cust_refund.html?link=print;refundnum=$refundnum";
+my $email_link = "${p}view/cust_refund.html?link=email;refundnum=$refundnum";
 
 my $custnum = $cust_refund->custnum;
-my $display_custnum = $cust_refund->cust_main->display_custnum;
+my $display_custnum = $cust_main->display_custnum;
 
 my $conf = new FS::Conf;
 
 my $money_char = $conf->config('money_char') || '$';
 
 tie my %payby, 'Tie::IxHash', FS::payby->payby2longname;
+
+my $email_error;
+
+if ( $link eq 'email' ) {
+    $email_error = $cust_refund->send_receipt( 'cust_main' => $cust_main );
+    warn "can't send refund receipt: $email_error" if $email_error;
+}
 
 </%init>

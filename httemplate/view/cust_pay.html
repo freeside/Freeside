@@ -3,8 +3,10 @@
   <& /elements/header-popup.html, mt("$thing Receipt") &>
 
   <div align="center">
-    <A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A> | 
-    <A HREF="javascript:self.location = '<% $email_link %>'"><% mt('Re-email') |h %></A>
+    <A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A>
+%   if ( $cust_main->invoicing_list_emailonly ) {
+    | <A HREF="javascript:self.location = '<% $email_link %>'"><% mt('Re-email') |h %></A>
+%   }
   </div><BR>
 
 % } elsif ( $link eq 'print' ) { 
@@ -180,11 +182,13 @@ my $cust_pay = qsearchs({
 });
 die "$thing #$paynum not found!" unless $cust_pay;
 
+my $cust_main = $cust_pay->cust_main;
+
 my $pr_link = "${p}view/cust_pay.html?link=print;paynum=$paynum;void=$void";
 my $email_link = "${p}view/cust_pay.html?link=email;paynum=$paynum;void=$void";
 
 my $custnum = $cust_pay->custnum;
-my $display_custnum = $cust_pay->cust_main->display_custnum;
+my $display_custnum = $cust_main->display_custnum;
 
 my $conf = new FS::Conf;
 
@@ -195,8 +199,9 @@ tie my %payby, 'Tie::IxHash', FS::payby->payby2longname;
 my $email_error;
 
 if ( $link eq 'email' ) {
-    my $email_error = $cust_pay->send_receipt(
-	'manual' => 1,
+    $email_error = $cust_pay->send_receipt(
+      'manual' => 1,
+      'cust_main' => $cust_main,
     );
 
     warn "can't send payment receipt/statement: $email_error" if $email_error;
