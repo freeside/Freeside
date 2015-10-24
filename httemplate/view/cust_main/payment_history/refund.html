@@ -1,6 +1,6 @@
 <% $refund %> 
 (<% "$payby$payinfo" %>)
-<% "$view$delete" %>
+<% "$view$email$delete" %>
 <%init>
 
 my( $cust_refund, %opt ) = @_;
@@ -25,6 +25,13 @@ my $view =
                   'actionlabel' => emt('Payment Receipt'),
                ).
    ')';
+
+my $email = $opt{'has_email_address'} ? 
+  q! (<A HREF="javascript:void(0)" ONCLICK="areyousure_popup('Send email receipt for refund to customer?','!.
+  "${p}view/cust_refund.html?link=email;refundnum=".
+  $cust_refund->refundnum.
+  q!','Email Refund Receipt')" TITLE="Send email receipt">email&nbsp;receipt</A>)!
+  : '';
 
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_refund.cgi?".$cust_refund->refundnum,

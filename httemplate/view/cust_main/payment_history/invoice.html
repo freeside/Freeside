@@ -1,4 +1,4 @@
-<% $link %><% $invoice %><% $link ? '</A>' : '' %><% "$void$delete$under" %>
+<% $link %><% $invoice %><% $link ? '</A>' : '' %><% "$email$void$delete$under" %>
 <%init>
 
 my( $cust_bill, %opt ) = @_;
@@ -41,6 +41,15 @@ $delete = areyousure_link("${p}misc/delete-cust_bill.html?$invnum",
                             emt('delete')
                         )
     if ( $opt{'deleteinvoices'} && $opt{'Delete invoices'} );
+
+my $email = ($opt{'has_email_address'} && $opt{'Resend invoices'}) ? 
+  q! (<A HREF="javascript:void(0)" ONCLICK="areyousure_popup('Send email receipt for invoice #!.
+  $cust_bill->invnum.
+  q! to customer?','!.
+  "${p}misc/send-invoice.cgi?method=email;notice_name=Invoice;popup=1;invnum=".
+  $cust_bill->invnum.
+  q!','Email Invoice Receipt')" TITLE="Send email receipt">email&nbsp;receipt</A>)!
+  : '';
 
 my $events = '';
 if ( $cust_bill->num_cust_event

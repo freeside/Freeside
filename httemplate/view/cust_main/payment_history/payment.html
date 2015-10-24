@@ -1,5 +1,5 @@
 <% $payment. ' '.  $info. $desc.
-   $view. $change_pkg. $apply. $refund. $void. $delete. $unapply
+   $view. $email. $change_pkg. $apply. $refund. $void. $delete. $unapply
 %>
 <%init>
 
@@ -138,6 +138,13 @@ my $view =
                   'actionlabel' => emt('Payment Receipt'),
                ).
    ')';
+
+my $email = $opt{'has_email_address'} ? 
+  q! (<A HREF="javascript:void(0)" ONCLICK="areyousure_popup('Send email receipt for payment to customer?','!.
+  "${p}view/cust_pay.html?link=email;paynum=".
+  $cust_pay->paynum.
+  q!','Email Payment Receipt')" TITLE="Send email receipt">email&nbsp;receipt</A>)!
+  : '';
 
 my $change_pkg = '';
 if ( $apply && $opt{'pkg-balances'} && $cust_pay->pkgnum ) {
