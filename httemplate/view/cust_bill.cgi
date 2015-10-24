@@ -19,7 +19,6 @@ function areyousure(href, message) {
 % }
 
 % if ( $cust_bill->owed > 0
-%      && scalar( grep $payby{$_}, qw(BILL CASH WEST MCRD MCHK) )
 %      && $curuser->access_right(['Post payment', 'Post check payment', 'Post cash payment'])
 %      && ! $conf->exists('pkg-balances')
 %    )
@@ -28,30 +27,30 @@ function areyousure(href, message) {
 
       <% mt('Post') |h %> 
 
-%     if ( $payby{'BILL'} && $curuser->access_right(['Post payment', 'Post check payment']) ) { 
+%     if ( $curuser->access_right(['Post payment', 'Post check payment']) ) { 
           <% $s++ ? ' | ' : '' %>
           <A HREF="<% $p %>edit/cust_pay.cgi?payby=BILL;invnum=<% $invnum %>"><% mt('check') |h %></A>
 %     } 
 
-%     if ( $payby{'CASH'} && $curuser->access_right(['Post payment', 'Post cash payment']) ) { 
+%     if ( $curuser->access_right(['Post payment', 'Post cash payment']) ) { 
           <% $s++ ? ' | ' : '' %>
           <A HREF="<% $p %>edit/cust_pay.cgi?payby=CASH;invnum=<% $invnum %>"><% mt('cash') |h %></A>
 %     } 
 
-%     if ( $payby{'WEST'} && $curuser->access_right(['Post payment']) ) { 
-          <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;invnum=<% $invnum %>"><% mt('Western Union') |h %></A>
-%     } 
-
-%     if ( $payby{'MCRD'} && $curuser->access_right(['Post payment']) ) { 
-          <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>"><% mt('manual credit card') |h %></A>
-%     } 
-
-%     if ( $payby{'MCHK'} && $curuser->access_right(['Post payment']) ) { 
-          <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCHK;invnum=<% $invnum %>"><% mt('manual electronic check') |h %></A>
-%     } 
+%#  %     if ( $payby{'WEST'} && $curuser->access_right(['Post payment']) ) { 
+%#            <% $s++ ? ' | ' : '' %>
+%#            <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;invnum=<% $invnum %>"><% mt('Western Union') |h %></A>
+%#  %     } 
+%#  
+%#  %     if ( $payby{'MCRD'} && $curuser->access_right(['Post payment']) ) { 
+%#            <% $s++ ? ' | ' : '' %>
+%#            <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>"><% mt('manual credit card') |h %></A>
+%#  %     } 
+%#  
+%#  %     if ( $payby{'MCHK'} && $curuser->access_right(['Post payment']) ) { 
+%#            <% $s++ ? ' | ' : '' %>
+%#            <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCHK;invnum=<% $invnum %>"><% mt('manual electronic check') |h %></A>
+%#  %     } 
 
       <% mt('payment against this invoice') |h %><BR><BR>
 
@@ -166,11 +165,6 @@ my %opt = (
 );
 
 $opt{'barcode_img'} = 1 if $conf->exists('invoice-barcode');
-
-my @payby =  grep /\w/, $conf->config('payby');
-@payby = (qw( CARD DCRD CHEK DCHK BILL CASH ))
-  unless @payby;
-my %payby = map { $_=>1 } @payby;
 
 my $cust_bill = qsearchs({
   'select'    => 'cust_bill.*',
