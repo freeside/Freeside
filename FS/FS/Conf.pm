@@ -1692,6 +1692,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'refund_receipt_msgnum',
+    'section'     => 'notification',
+    'description' => 'Template to use for manual refund receipts.',
+    %msg_template_options,
+  },
+  
+  {
     'key'         => 'trigger_export_insert_on_payment',
     'section'     => 'billing',
     'description' => 'Enable exports on payment application.',

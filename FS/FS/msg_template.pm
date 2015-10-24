@@ -613,6 +613,18 @@ sub substitutions {
             $cust_pay->paymask : $cust_pay->decrypt($cust_pay->payinfo)
         } ],
     ],
+    # for refund receipts
+    'cust_refund' => [
+      'refundnum',
+      [ refund            => sub { sprintf("%.2f", shift->refund) } ],
+      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
+      [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
+      [ payinfo           => sub { 
+          my $cust_refund = shift;
+          ($cust_refund->payby eq 'CARD' || $cust_refund->payby eq 'CHEK') ?
+            $cust_refund->paymask : $cust_refund->decrypt($cust_refund->payinfo)
+        } ],
+    ],
     # for payment decline messages
     # try to support all cust_pay fields
     # 'error' is a special case, it contains the raw error from the gateway
