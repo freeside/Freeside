@@ -370,6 +370,59 @@ sub unapplied {
   sprintf("%.2f", $amount );
 }
 
+=item send_receipt HASHREF | OPTION => VALUE ...
+
+Sends a payment receipt for this payment.
+
+refund_receipt_msgnum must be configured.
+
+Available options:
+
+=over 4
+
+=item cust_main
+
+Customer (FS::cust_main) object (for efficiency).
+
+=cut
+
+=back
+
+=cut
+
+sub send_receipt {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  my $cust_main = $opt->{'cust_main'} || $self->cust_main;
+
+  my $conf = new FS::Conf;
+  
+  my $msgnum = $conf->config('refund_receipt_msgnum', $cust_main->agentnum);
+  return "No refund_receipt_msgnum configured" unless $msgnum;
+
+  my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
+  return "Could not load template"
+    unless $msg_template;
+
+  my $cust_msg = $msg_template->prepare(
+    'cust_main'     => $cust_main,
+    'object'        => $self,
+    'msgtype'       => 'receipt',
+  );
+  return 'Error preparing message' unless $cust_msg;
+  my $error = $cust_msg->insert;
+  return $error if $error;
+
+  my $queue = new FS::queue {
+    'job'     => 'FS::cust_msg::process_send',
+    'custnum' => $cust_main->custnum,
+  };
+  $error = $queue->insert( $cust_msg->custmsgnum );
+
+  return $error;
+}
+
 =back
 
 =head1 CLASS METHODS

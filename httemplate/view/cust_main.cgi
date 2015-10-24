@@ -35,6 +35,14 @@ function areyousure(href, message) {
   if (confirm(message) == true)
     window.location.href = href;
 }
+function areyousure_popup(message, action, actionlabel) {
+  if (confirm(message) == true) {
+<% include('/elements/popup_link_onclick.html',
+     'js_action' => 'action',
+     'js_actionlabel' => 'actionlabel',
+   ) %>
+  }
+}
 </SCRIPT>
 
 <br>

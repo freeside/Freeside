@@ -237,7 +237,7 @@ sub report_internal {
     LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
     LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
     $join_cust_pkg $where AND $nottax
-    $group
+    $group_all
     ";
 
   # also include the exempt-sales credit amount, for the credit report
@@ -256,7 +256,7 @@ sub report_internal {
     LEFT JOIN ($exempt_credit) AS exempt_credit USING (taxnum)
     JOIN cust_bill_pkg USING (billpkgnum)
     $join_cust_pkg $where AND $nottax
-    $group
+    $group_all
     ";
 
   # taxable sales

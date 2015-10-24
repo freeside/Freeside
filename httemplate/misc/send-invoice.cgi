@@ -1,4 +1,12 @@
-% if ( $error ) {
+% if ($cgi->param('popup')) {
+%   my $title = $error ? 'Error sending invoice email' : 'Invoice email sent';
+<% include('/elements/header-popup.html', $title ) %>
+<DIV STYLE="text-align: center;">
+<SPAN STYLE="color: red; font-weight: bold;"><% $error %></SPAN><BR>
+<BUTTON TYPE="button" onClick="parent.cClick();">Close</BUTTON>
+</DIV>
+<% include('/elements/footer.html') %>
+% } elsif ( $error ) {
 %   errorpage($error);
 % } else {
 <% $cgi->redirect("${p}view/cust_main.cgi?$custnum") %>
