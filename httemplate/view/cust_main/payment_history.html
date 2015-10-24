@@ -220,7 +220,7 @@ my %opt = (
   #rights
   ( map { $_ => $curuser->access_right($_) }
       (
-        'View invoices', 'Void invoices', 'Unvoid invoices',
+        'View invoices', 'Void invoices', 'Unvoid invoices', 'Resend invoices',
         'Apply payment', 'Refund credit card payment', 'Refund Echeck payment',
         'Post refund', 'Post check refund', 'Post cash refund ', 'Refund payment',
         'Credit card void', 'Echeck void', 'Void payments', 'Unvoid payments',
@@ -234,6 +234,7 @@ my %opt = (
   #customer information
   'total_owed'              => $cust_main->total_owed,
   'total_unapplied_refunds' => $cust_main->total_unapplied_refunds,
+  'has_email_address'       => scalar($cust_main->invoicing_list_emailonly),
 );
 
 $opt{'date_format'} ||= '%m/%d/%Y';
