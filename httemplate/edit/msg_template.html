@@ -296,6 +296,13 @@ my %substitutions = (
     '$payinfo'        => 'Card/account# (masked)',
     '$error'          => 'Decline reason',
   ],
+  'cust_refund'  => [
+    '$refundnum'      => 'Refund#',
+    '$refund'         => 'Refund Amount',
+    '$payby'          => 'Refund method',
+    '$date'           => 'Refund date',
+    '$payinfo'        => 'Card/account# (masked)',
+  ],
 );
 
 tie my %sections, 'Tie::IxHash', (
@@ -303,6 +310,7 @@ tie my %sections, 'Tie::IxHash', (
 'service'   => 'Service address',
 'cust_main' => 'Customer status and payment info',
 'cust_pkg'  => 'Package fields',
+'cust_refund' => 'Refund fields',
 'cust_bill' => 'Invoice fields',
 'cust_pay'  => 'Payment fields',
 'svc_acct'  => 'Login service fields',
