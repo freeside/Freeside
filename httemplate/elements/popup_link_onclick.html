@@ -9,12 +9,13 @@ Example:
     #required
     'action'         => 'content.html', # uri for content of popup
 
-    #alternately, use instead of action
-    'js_action'      => 'url',          # javascript variable or expression
-   
     #strongly recommended
     'actionlabel     => 'You clicked',  # popup title
    
+    #alternately, use instead of action, values will be passed unquoted to overlib
+    'js_action'      => 'url',          # javascript variable or expression
+    'js_actionlabel' => 'actionlabel',  # javascript variable or expression   
+
     #opt
     'width'          => 540,
     'height'         => 336,
@@ -50,9 +51,10 @@ if (ref($_[0]) eq 'HASH') {
   $params = { @_ };
 }
 
-$action      = q(') . $params->{'action'} . q(') if exists $params->{'action'};
+$action      = q(') . $params->{'action'} . q(');
 $action      = $params->{'js_action'}   if exists $params->{'js_action'};
-$actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
+$actionlabel = q(') . $params->{'actionlabel'} . q(');
+$actionlabel = $params->{'js_actionlabel'} if exists $params->{'js_actionlabel'};
 $width       = $params->{'width'}       if exists $params->{'width'};
 $height      = $params->{'height'}      if exists $params->{'height'};
 $color       = $params->{'color'}       if exists $params->{'color'};
@@ -66,7 +68,7 @@ my $popup_name = 'popup-'.random_id();
 
 my $onclick =
   "overlib( OLiframeContent($action, $width, $height, '$popup_name', 0, '$scrolling' ), ".
-    "CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
+    "CAPTION, $actionlabel, STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
     "DRAGGABLE, CLOSECLICK, ".
     "BGCOLOR, '$color', CGCOLOR, '$color', FGCOLOR, '#f8f8f8', ".
     "CLOSETEXT, '$closetext'".
