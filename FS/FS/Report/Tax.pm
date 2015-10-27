@@ -475,11 +475,7 @@ sub report_internal {
   if ( $agentnum ) {
     $outside_where .= " AND cust_main.agentnum = $agentnum";
   }
-  my $sql_outside = "SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
-    FROM cust_bill_pkg
-    $join_cust_pkg
-    $outside_where
-    AND $nottax
+  $outside_where .= "
     AND NOT EXISTS(
       SELECT 1 FROM cust_tax_exempt_pkg
         JOIN cust_main_county USING (taxnum)
@@ -492,10 +488,37 @@ sub report_internal {
         JOIN cust_main_county USING (taxnum)
         WHERE cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg.billpkgnum
           AND COALESCE(cust_main_county.taxname,'Tax') = $taxname
+    )";
+  my $sql_outside = "SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
+    FROM cust_bill_pkg
+    $join_cust_pkg
+    $outside_where
+    AND $nottax
+  ";
+  warn "\nOUT_SALES:\n$sql_outside\n" if $DEBUG;
+  my $out_sales = FS::Record->scalar_sql($sql_outside);
+
+  # and out-of-region credit applications, also (excluding those applied
+  # to out-of-region sales _or taxes_)
+  if ( $opt{credit_date} eq 'cust_credit_bill' ) {
+    $outside_where     =~ s/cust_bill._date/cust_credit_bill._date/g;
+  }
+
+  $sql_outside = "SELECT SUM(cust_credit_bill_pkg.amount)
+    FROM cust_credit_bill_pkg
+    JOIN cust_bill_pkg USING (billpkgnum)
+    $join_cust_pkg
+    JOIN cust_credit_bill USING (creditbillnum)
+    $outside_where
+    AND NOT EXISTS(
+      SELECT 1 FROM cust_bill_pkg_tax_location
+        JOIN cust_main_county USING (taxnum)
+        WHERE cust_bill_pkg_tax_location.billpkgnum = cust_bill_pkg.billpkgnum
+          AND COALESCE(cust_main_county.taxname,'Tax') = $taxname
     )
   ";
-  warn "\nOUTSIDE:\n$sql_outside\n" if $DEBUG;
-  my $total_outside = FS::Record->scalar_sql($sql_outside);
+  warn "\nOUT_CREDIT:\n$sql_outside\n" if $DEBUG;
+  my $out_credit = FS::Record->scalar_sql($sql_outside);
 
   my %taxrates;
   foreach my $tax (
@@ -509,11 +532,12 @@ sub report_internal {
 
   # return the data
   bless {
-    'opt'       => \%opt,
-    'data'      => \%data,
-    'total'     => \%total,
-    'taxrates'  => \%taxrates,
-    'outside'   => $total_outside,
+    'opt'         => \%opt,
+    'data'        => \%data,
+    'total'       => \%total,
+    'taxrates'    => \%taxrates,
+    'out_sales'   => $out_sales,
+    'out_credit'  => $out_credit,
   }, $class;
 }
 

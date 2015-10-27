@@ -221,11 +221,11 @@ foreach my $row (@rows) {
 }
 
 # at the end of everything
-if ( $report->{outside} > 0 ) {
+if ( $report->{out_sales} > 0 ) {
   my $f = $format[0];
   $ws->set_row($y, 30); # height
   $ws->write($y, 0, mt('Out of taxable region'), $f->{rowhead_outside});
-  $ws->write($y, 1, $report->{outside}, $f->{currency_outside});
+  $ws->write($y, 1, $report->{out_sales}, $f->{currency_outside});
   $y++;
 }
 
@@ -291,6 +291,15 @@ foreach my $row (@rows) {
   $y++;
   $prev_row = $row;
 }
+
+if ( $report->{out_credit} > 0 ) {
+  my $f = $format[0];
+  $ws->set_row($y, 30); # height
+  $ws->write($y, 0, mt('Out of taxable region'), $f->{rowhead_outside});
+  $ws->write($y, 1, $report->{out_credit}, $f->{currency_outside});
+  $y++;
+}
+
 
 for my $x (0..4) {
   $ws->set_column($x, $x, $widths[$x]);

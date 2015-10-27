@@ -167,7 +167,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 % } # foreach my $row
 % # at the end of everything
   </TBODY>
-% if ( $report->{outside} > 0 ) {
+% if ( $report->{out_sales} > 0 ) {
   <TBODY CLASS="total" STYLE="background-color: #cccccc; line-height: 3">
     <TR>
       <TD CLASS="rowhead">
@@ -175,7 +175,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
       </TD>
       <TD STYLE="text-align: right">
         <A HREF="<% $saleslink %>;out=1;taxname=<% encode_entities($params{'taxname'}) %>">
-          <% $money_sprintf->( $report->{outside } ) %>
+          <% $money_sprintf->( $report->{out_sales } ) %>
         </A>
       </TD>
       <TD COLSPAN=0></TD>
@@ -253,7 +253,28 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   $rownum++;
 %   $prev_row = $row;
 % } # foreach my $row
-% # no "out of taxable region" for credits (yet)
+% # "out of taxable region" for credits (there is a need for it)
+% if ( $report->{out_credit} > 0 ) {
+%   my $creditlink = "cust_credit_bill_pkg.html?out=1;$dateagentlink";
+%   if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
+%     $creditlink =~ s/begin/credit_begin/;
+%     $creditlink =~ s/end/credit_end/;
+%   }
+%   $creditlink .= ";taxname=" . encode_entities($params{'taxname'});
+  <TBODY CLASS="total" STYLE="background-color: #cccccc; line-height: 3">
+    <TR>
+      <TD CLASS="rowhead">
+        <% emt('Out of taxable region') %>
+      </TD>
+      <TD STYLE="text-align: right">
+        <A HREF="<% $creditlink %>">
+          <% $money_sprintf->( $report->{out_credit } ) %>
+        </A>
+      </TD>
+      <TD COLSPAN=0></TD>
+    </TR>
+  </TBODY>
+% }
   </TBODY>
 </TABLE>
 
