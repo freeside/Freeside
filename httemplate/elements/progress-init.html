@@ -161,7 +161,7 @@ if ( ref($url_or_message) ) { #its a message or something
   %dest_info = ( 'url' => $url_or_message );
 }
 
-my $progress_url = URI->new($fsurl.'elements/progress-popup.html');
+my $progress_url = URI->new($fsurl.'misc/progress-popup.html');
 $progress_url->query_form(
   'jobnum'    => '_JOBNUM_',
   'formname'  => $formname,
