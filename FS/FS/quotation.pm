@@ -260,6 +260,7 @@ sub _items_sections {
   my %opt = @_;
   my $escape = $opt{escape}; # the only one we care about
 
+  my %show; # package frequency => 1 if there's anything to display
   my %subtotals = (); # package frequency => subtotal
   my $disable_total = 0;
   foreach my $pkg ($self->quotation_pkg) {
@@ -267,6 +268,8 @@ sub _items_sections {
     my $part_pkg = $pkg->part_pkg;
 
     my $recur_freq = $part_pkg->freq;
+    $show{$recur_freq} = 1 if $pkg->unitrecur > 0;
+    $show{0} = 1 if $pkg->unitsetup > 0;
     ($subtotals{0} ||= 0) += $pkg->setup + $pkg->setup_tax;
     ($subtotals{$recur_freq} ||= 0) += $pkg->recur + $pkg->recur_tax;
 
@@ -288,7 +291,8 @@ sub _items_sections {
   my $no_recurring = 0;
   foreach my $freq (keys %subtotals) {
 
-    next if $subtotals{$freq} == 0;
+    #next if $subtotals{$freq} == 0;
+    next if !$show{$freq};
 
     my $weight = 
       List::MoreUtils::first_index { $_ eq $freq } @pkg_freq_order;
@@ -405,10 +409,10 @@ sub order {
       $cust_pkg->set( $_, $quotation_pkg->get($_) );
     }
 
-    # currently only one discount each
-    my ($pkg_discount) = $quotation_pkg->quotation_pkg_discount;
-    if ( $pkg_discount ) {
-      $cust_pkg->set('discountnum', $pkg_discount->discountnum);
+    # can now have two discounts each (setup and recur)
+    foreach my $pkg_discount ($quotation_pkg->quotation_pkg_discount) {
+      my $field = $pkg_discount->setuprecur . '_discountnum';
+      $cust_pkg->set($field, $pkg_discount->discountnum);
     }
 
     $all_cust_pkg{$cust_pkg} = []; # no services
@@ -685,7 +689,7 @@ sub estimate {
   }
 
   my %quotation_pkg_tax; # quotationpkgnum => tax name => quotation_pkg_tax obj
-  my %quotation_pkg_discount; # quotationpkgnum => quotation_pkg_discount obj
+  my %quotation_pkg_discount; # quotationpkgnum => setuprecur => quotation_pkg_discount obj
 
   for (my $i = 0; $i < scalar(@return_bill); $i++) {
     my $this_bill = $return_bill[$i]->[0];
@@ -725,25 +729,25 @@ sub estimate {
 
       # discounts
       if ( $cust_bill_pkg->get('discounts') ) {
+        # discount records are generated as (setup, recur).
+        # well, not always, sometimes it's just (recur), but fixing this
+        # is horribly invasive.
         my $discount = $cust_bill_pkg->get('discounts')->[0];
+
         if ( $discount ) {
-          # discount records are generated as (setup, recur).
-          # well, not always, sometimes it's just (recur), but fixing this
-          # is horribly invasive.
-          my $qpd = $quotation_pkg_discount{$quotationpkgnum}
+          # find the quotation_pkg_discount record for this billing pass...
+          my $setuprecur = $i ? 'recur' : 'setup';
+          my $qpd = $quotation_pkg_discount{$quotationpkgnum}{$setuprecur}
                 ||= qsearchs('quotation_pkg_discount', {
-                    'quotationpkgnum' => $quotationpkgnum
+                    'quotationpkgnum' => $quotationpkgnum,
+                    'setuprecur'      => $setuprecur,
                     });
 
           if (!$qpd) { #can't happen
-            warn "$me simulated bill returned a discount but no discount is in effect.\n";
+            warn "$me simulated bill returned a $setuprecur discount but no discount is in effect.\n";
           }
-          if ($discount and $qpd) {
-            if ( $i == 0 ) {
-              $qpd->set('setup_amount', $discount->amount);
-            } else {
-              $qpd->set('recur_amount', $discount->amount);
-            }
+          if ($qpd) {
+            $qpd->set('amount', $discount->amount);
           }
         }
       } # end of discount stuff
@@ -812,10 +816,13 @@ sub estimate {
     return "$error (recording estimate for ".$quotation_pkg->part_pkg->pkg.")"
       if $error;
   }
-  foreach my $quotation_pkg_discount (values %quotation_pkg_discount) {
-    $error = $quotation_pkg_discount->replace;
-    return "$error (recording estimated discount)"
-      if $error;
+  foreach (values %quotation_pkg_discount) {
+    # { setup => one, recur => another }
+    foreach my $quotation_pkg_discount (values %$_) {
+      $error = $quotation_pkg_discount->replace;
+      return "$error (recording estimated discount)"
+        if $error;
+    }
   }
   foreach my $quotation_pkg_tax (map { values %$_ } values %quotation_pkg_tax) {
     $error = $quotation_pkg_tax->insert;

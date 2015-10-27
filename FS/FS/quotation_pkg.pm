@@ -117,8 +117,8 @@ sub insert {
 
   my $error = $self->SUPER::insert;
 
-  if ( !$error and $self->discountnum ) {
-    warn "inserting discount #".$self->discountnum."\n";
+  if ( !$error and ($self->setup_discountnum || $self->recur_discountnum) ) {
+      #warn "inserting discount\n";
     $error = $self->insert_discount;
     $error .= ' (setting discount)' if $error;
   }
@@ -241,28 +241,37 @@ sub insert_discount {
   #my ($self, %options) = @_;
   my $self = shift;
 
-  my $quotation_pkg_discount = FS::quotation_pkg_discount->new( {
-    'quotationpkgnum' => $self->quotationpkgnum,
-    'discountnum'     => $self->discountnum,
-    #for the create a new discount case
-    '_type'           => $self->discountnum__type,
-    'amount'      => $self->discountnum_amount,
-    'percent'     => $self->discountnum_percent,
-    'months'      => $self->discountnum_months,
-    'setup'       => $self->discountnum_setup,
-  } );
-
-  $quotation_pkg_discount->insert;
+  foreach my $x (qw(setup recur)) {
+    if ( my $discountnum = $self->get("${x}_discountnum") ) {
+      my $cust_pkg_discount = FS::quotation_pkg_discount->new( { 
+        'quotationpkgnum' => $self->quotationpkgnum,
+        'discountnum' => $discountnum,
+        'setuprecur'  => $x,
+        #for the create a new discount case
+        'amount'      => $self->get("${x}_discountnum_amount"),
+        'percent'     => $self->get("${x}_discountnum_percent"),
+        'months'      => $self->get("${x}_discountnum_months"),
+      } );
+      if ( $x eq 'setup' ) {
+        $cust_pkg_discount->setup('Y');
+        $cust_pkg_discount->months('');
+      } 
+      my $error = $cust_pkg_discount->insert;
+      return $error if $error;
+    } 
+  } 
 }
 
 sub _item_discount {
   my $self = shift;
   my %options = @_;
   my $setuprecur = $options{'setuprecur'};
+  # a little different from cust_bill_pkg::_item_discount, in that this one
+  # is asked specifically whether to show setup or recur discounts (because
+  # on the quotation they're separate sections entirely)
 
-  # kind of silly treating this as multiple records, but it works, and will
-  # work if we allow multiple discounts at some point
-  my @pkg_discounts = $self->pkg_discount;
+  my @pkg_discounts = grep { $_->setuprecur eq $setuprecur }
+                        $self->pkg_discount;
   return if @pkg_discounts == 0;
   
   my @ext;
@@ -275,7 +284,7 @@ sub _item_discount {
   };
   foreach my $pkg_discount (@pkg_discounts) {
     push @ext, $pkg_discount->description;
-    my $amount = $pkg_discount->get($setuprecur.'_amount');
+    my $amount = $pkg_discount->get('amount');
     $d->{amount} -= $amount;
   }
   $d->{amount} = sprintf('%.2f', $d->{amount} * $self->quantity);
@@ -285,8 +294,12 @@ sub _item_discount {
 
 sub setup {
   my $self = shift;
-  ($self->unitsetup - sum(0, map { $_->setup_amount } $self->pkg_discount))
-    * ($self->quantity || 1);
+  return '0.00' if $self->waive_setup eq 'Y';;
+  my $discount_amount = sum(0, map { $_->amount }
+                               grep { $_->setuprecur eq 'setup' }
+                               $self->pkg_discount
+                           );
+  ($self->unitsetup - $discount_amount) * ($self->quantity || 1);
 
 }
 
@@ -297,8 +310,12 @@ sub setup_tax {
 
 sub recur {
   my $self = shift;
-  ($self->unitrecur - sum(0, map { $_->recur_amount } $self->pkg_discount))
-    * ($self->quantity || 1)
+  my $discount_amount = sum(0, map { $_->amount }
+                               grep { $_->setuprecur eq 'recur' }
+                               $self->pkg_discount
+                           );
+  ($self->unitrecur - $discount_amount) * ($self->quantity || 1);
+
 }
 
 sub recur_tax {
