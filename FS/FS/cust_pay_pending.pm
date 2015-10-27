@@ -393,6 +393,8 @@ sub approve {
       warn $e;
       return $e;
     }
+    
+    $self->set('jobnum','');
   }
 
   if ( $opt{'paynum_ref'} ) {

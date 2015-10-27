@@ -956,6 +956,8 @@ sub _realtime_bop_result {
          return $e;
        }
 
+       $cust_pay_pending->set('jobnum','');
+
     }
     
     if ( $options{'paynum_ref'} ) {
@@ -1064,8 +1066,9 @@ sub _realtime_bop_result {
        if ( $placeholder ) {
          my $error = $placeholder->depended_delete;
          $error ||= $placeholder->delete;
+         $cust_pay_pending->set('jobnum','');
          warn "error removing provisioning jobs after declined paypendingnum ".
-           $cust_pay_pending->paypendingnum. ": $error\n";
+           $cust_pay_pending->paypendingnum. ": $error\n" if $error;
        } else {
          my $e = "error finding job $jobnum for declined paypendingnum ".
               $cust_pay_pending->paypendingnum. "\n";
