@@ -2564,7 +2564,13 @@ sub batch_card {
   }else{
     $amount = sprintf("%.2f", $self->balance - $self->in_transit_payments);
   }
-  return '' unless $amount > 0;
+  if ($amount <= 0) {
+    warn(sprintf("Customer balance %.2f - in transit amount %.2f is <= 0.\n",
+        $self->balance,
+        $self->in_transit_payments
+    ));
+    return;
+  }
   
   my $invnum = delete $options{invnum};
   my $payby = $options{payby} || $self->payby;  #still dubious
@@ -2974,6 +2980,7 @@ sub in_transit_payments {
     foreach my $cust_pay_batch ( qsearch('cust_pay_batch', {
       'batchnum' => $pay_batch->batchnum,
       'custnum' => $self->custnum,
+      'status'  => '',
     } ) ) {
       $in_transit_payments += $cust_pay_batch->amount;
     }
