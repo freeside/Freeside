@@ -206,9 +206,27 @@ sub delete {
     }
   }
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_pay_pending (qsearch('cust_pay_pending',{ jobnum => $self->jobnum })) {
+    $cust_pay_pending->set('jobnum','');
+    my $error = $cust_pay_pending->replace();
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->SUPER::delete;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
   
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
   unlink $reportname if $reportname;
 
   '';
