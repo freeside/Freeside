@@ -244,16 +244,12 @@ sub rooturl {
   $url_string =~
     s{
        /
-       (browse|config|docs|edit|graph|misc|search|view|loginout|pref|elements|rt|torrus)
+       (browse|config|docs|edit|graph|misc|search|view|loginout|pref|rt|torrus)
        (/process)?
        ([\w\-\.\/]*)
        $
      }
      {}x;
-
-  #elements because of progress-popup.html... 
-  #XXX remove anything from elements that is called directly & prevent
-  #those pages from being served up
 
   $url_string .= '/' unless $url_string =~ /\/$/;
 
