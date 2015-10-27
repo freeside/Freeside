@@ -793,7 +793,11 @@ sub new_customer {
 
     #warn "$me Billing customer...\n" if $Debug;
 
-    my $bill_error = $cust_main->bill( 'depend_jobnum'=>$placeholder->jobnum );
+    my @cust_bill;
+    my $bill_error = $cust_main->bill(
+      'depend_jobnum' => $placeholder->jobnum,
+      'return_bill'   => \@cust_bill,
+    );
     #warn "$me error billing new customer: $bill_error"
     #  if $bill_error;
 
@@ -828,11 +832,11 @@ sub new_customer {
 
     if ( $cust_main->balance > 0 ) {
 
-      #this makes sense.  credit is "un-doing" the invoice
-      $cust_main->credit( $cust_main->balance, 'signup server decline',
-                          'reason_type' => $conf->config('signup_credit_type'),
-                        );
-      $cust_main->apply_credits;
+      #this used to apply a credit, but now we can void invoices...
+      foreach my $cust_bill (@cust_bill) {
+        my $voiderror = $cust_bill->void();
+        warn "Error voiding cust bill after decline: $voiderror";
+      }
 
       #should check list for errors...
       #$cust_main->suspend;
