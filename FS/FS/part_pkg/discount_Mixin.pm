@@ -145,7 +145,7 @@ sub calc_discount {
       # XXX it would be more accurate for calc_recur to just _tell us_ what
       # it's going to charge
 
-      my $recur_charge = $br * ($cust_pkg->quantity || 1) * $chg_months / $self->freq;
+      my $recur_charge = $br * $chg_months / $self->freq;
       # round this, because the real recur charge is rounded
       $recur_charge = sprintf('%.2f', $recur_charge);
 
