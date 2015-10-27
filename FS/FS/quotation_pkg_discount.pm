@@ -45,14 +45,14 @@ for.
 
 discountnum (L<FS::discount>)
 
-=item setup_amount
+=item setuprecur
 
-Amount that will be discounted from setup fees, per package quantity.
+Whether this is a setup or recur discount.
 
-=item recur_amount
+=item amount
 
-Amount that will be discounted from recurring fees in the first billing
-cycle, per package quantity.
+Amount that will be discounted from either setup or recur fees, per package 
+quantity.
 
 =back
 
@@ -106,8 +106,8 @@ sub check {
     $self->ut_numbern('quotationpkgdiscountnum')
     || $self->ut_foreign_key('quotationpkgnum', 'quotation_pkg', 'quotationpkgnum' )
     || $self->ut_foreign_key('discountnum', 'discount', 'discountnum' )
-    || $self->ut_moneyn('setup_amount')
-    || $self->ut_moneyn('recur_amount')
+    || $self->ut_enum('setuprecur', ['setup', 'recur'])
+    || $self->ut_moneyn('amount')
   ;
   return $error if $error;
 
