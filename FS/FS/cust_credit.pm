@@ -40,7 +40,6 @@ $FS::UID::callback{'FS::cust_credit'} = sub {
 
 our %reasontype_map = ( 'referral_credit_type' => 'Referral Credit',
                         'cancel_credit_type'   => 'Cancellation Credit',
-                        'signup_credit_type'   => 'Self-Service Credit',
                       );
 
 =head1 NAME
