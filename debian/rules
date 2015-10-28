@@ -266,6 +266,7 @@ install-stamp: build-stamp
 	install -d $(RT_PATH)/share
 
 	( cd rt; $(MAKE) config-install dirs files-install fixperms instruct )
+	cp -r ${RT_PATH}/share/static/images ${FREESIDE_DOCUMENT_ROOT}/rt/NoAuth/
 	
 	##hack the build dir out of RT.  yeah, sucky.
 
