@@ -526,6 +526,13 @@ sub pkg_status_row_discount {
 
   my $html;
 
+  if ( $cust_pkg->waive_setup ) {
+    my $label = '<SPAN STYLE="font-size: small;font-weight: bold">' .
+                 emt('Setup fee waived') .
+                 '</SPAN>';
+    $html .= pkg_status_row_colspan( $cust_pkg, $label, '', %opt );
+  }
+
   foreach my $cust_pkg_discount (@{ $cust_pkg->{_cust_pkg_discount_active} }) {
 
     my $discount = $cust_pkg_discount->discount;
@@ -537,7 +544,6 @@ sub pkg_status_row_discount {
       $label .= emt('Recurring Discount');
     }
     $label .= '</B>: '. $discount->description;
-    warn Dumper $cust_pkg_discount;
     if ( $discount->months > 0 and $cust_pkg_discount->months_used > 0 ) {
       my $remaining = $discount->months - $cust_pkg_discount->months_used;
       $remaining = sprintf('%.2f', $remaining) if $remaining =~ /\./;

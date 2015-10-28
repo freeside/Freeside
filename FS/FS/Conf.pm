@@ -4176,9 +4176,10 @@ and customer address. Include units.',
     reason_type_options('R'),
   },
 
+  # was only used to negate invoices during signup when card was declined, now we just void
   {
     'key'         => 'signup_credit_type',
-    'section'     => 'billing', #self-service?
+    'section'     => 'deprecated', #self-service?
     'description' => 'The group to use for new, automatically generated credit reasons resulting from signup and self-service declines.',
     reason_type_options('R'),
   },

@@ -2424,7 +2424,7 @@ sub change_pkg {
 
   if ( $conf->exists('signup_server-realtime') ) {
 
-    my $bill_error = _do_bop_realtime( $cust_main, $status, 'no_credit'=>1 );
+    my $bill_error = _do_bop_realtime( $cust_main, $status, 'no_invoice_void'=>1 );
 
     if ($bill_error) {
       $err_or_cust_pkg->suspend;
@@ -2500,8 +2500,12 @@ sub _do_bop_realtime {
 
     my $old_balance = $cust_main->balance;
 
-    my $bill_error =    $cust_main->bill
-                     || $cust_main->apply_payments_and_credits;
+    my @cust_bill;
+    my $bill_error = $cust_main->bill(
+      'return_bill'   => \@cust_bill,
+    );
+
+    $bill_error ||= $cust_main->apply_payments_and_credits;
 
     $bill_error ||= $cust_main->realtime_collect('selfservice' => 1)
       if $cust_main->payby =~ /^(CARD|CHEK)$/;
@@ -2513,14 +2517,14 @@ sub _do_bop_realtime {
             )
        )
     {
-      unless ( $opt{'no_credit'} ) {
-        #this makes sense.  credit is "un-doing" the invoice
-        my $conf = new FS::Conf;
-        $cust_main->credit( sprintf("%.2f", $cust_main->balance-$old_balance ),
-                            'self-service decline',
-                            reason_type=>$conf->config('signup_credit_type'),
-                          );
-        $cust_main->apply_credits( 'order' => 'newest' );
+      unless ( $opt{'no_invoice_void'} ) {
+
+        #this used to apply a credit, but now we can void invoices...
+        foreach my $cust_bill (@cust_bill) {
+          my $voiderror = $cust_bill->void();
+          warn "Error voiding cust bill after decline: $voiderror";
+        }
+
       }
 
       return { 'error' => '_decline', 'bill_error' => $bill_error };
