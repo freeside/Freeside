@@ -2,7 +2,7 @@
 
 % #XXX actually, the action needs to repace the top-level window with this
 % #$params->{'action'} = $p. 'rt/Search/Schedule.html?'. $query;
-<FORM NAME="appointment_form" METHOD="POST" ACTION="<% $p %>elements/schedule-appointment.html">
+<FORM NAME="appointment_form" METHOD="POST" ACTION="<% $p %>misc/schedule-appointment.html">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cgi->param('custnum') |h %>">
 
