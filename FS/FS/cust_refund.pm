@@ -377,20 +377,17 @@ sub send_receipt {
   return "Could not load template"
     unless $msg_template;
 
-  my $cust_msg = $msg_template->prepare(
-    'cust_main'     => $cust_main,
-    'object'        => $self,
-    'msgtype'       => 'receipt',
-  );
-  return 'Error preparing message' unless $cust_msg;
-  my $error = $cust_msg->insert;
-  return $error if $error;
-
   my $queue = new FS::queue {
-    'job'     => 'FS::cust_msg::process_send',
+    'job'     => 'FS::Misc::process_send_email',
     'custnum' => $cust_main->custnum,
   };
-  $error = $queue->insert( $cust_msg->custmsgnum );
+  my $error = $queue->insert(
+    FS::msg_template->by_key($msgnum)->prepare(
+      'cust_main'     => $cust_main,
+      'object'        => $self,
+    ),
+    'msgtype' => 'receipt', # override msg_template's default
+  );
 
   return $error;
 }
