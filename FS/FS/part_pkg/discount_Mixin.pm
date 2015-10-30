@@ -4,6 +4,7 @@ use strict;
 use vars qw( %info );
 use Time::Local qw( timelocal );
 use List::Util  qw( min );
+use FS::Record qw( qsearchs );
 use FS::cust_pkg;
 use FS::cust_bill_pkg_discount;
 
