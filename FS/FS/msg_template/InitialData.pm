@@ -21,6 +21,23 @@ If you did not request this password reset, you may safely ignore and delete thi
 END
                       ],
     },
+    { msgname   => 'Refund receipt',
+      msgclass  => 'email',
+      mime_type => 'text/html',
+      _conf        => 'refund_receipt_msgnum',
+      _insert_args => [ subject => '{ $company_name } refund receipt',
+                        body    => <<'END',
+Dear {$first} {$last},<BR>
+<BR>
+The following refund has been applied to your account.<BR>
+<BR>
+Refund ID: {$refundnum}<BR>
+Date:      {$date}<BR>
+Amount:    {$refund}<BR>
+
+END
+                      ],
+    },
   ];
 }
 
