@@ -11,11 +11,19 @@ use FS::Record qw(qsearch qsearchs);
 use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::Conf;
+use FS::Log;
 
 use vars qw( $opt_a $opt_t $opt_v $opt_p );
 getopts('avtp:');
 
 #$Net::SFTP::Foreign::debug = -1;
+
+sub log_and_die {
+  my $message = shift;
+  my $log = FS::Log->new('freeside-paymenttech-upload');
+  $log->error($message);
+  die $message; 
+}
 
 sub usage { "
   Usage:
@@ -26,7 +34,7 @@ sub usage { "
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
-my $zip_check = `which zip` or die "can't find zip executable\n";
+my $zip_check = `which zip` or log_and_die("can't find zip executable\n");
 
 my @batches; 
 
@@ -34,21 +42,21 @@ if($opt_a) {
   my %criteria = (status => 'O');
   $criteria{'payby'} = uc($opt_p) if $opt_p;
   @batches = qsearch('pay_batch', \%criteria);
-  die "No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n" 
+  log_and_die("No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n")
     if !@batches;
 }
 else {
   my $batchnum = shift;
-  die &usage if !$batchnum;
+  log_and_die("batchnum not passed\n".&usage) if !$batchnum;
   @batches = qsearchs('pay_batch', { batchnum => $batchnum } );
-  die "Can't find payment batch '$batchnum'\n" if !@batches;
+  log_and_die("Can't find payment batch '$batchnum'\n") if !@batches;
 }
 
 my $conf = new FS::Conf;
 my @batchconf = $conf->config('batchconfig-paymentech');
 # BIN, terminalID, merchantID, username, password
-my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
-my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
+my $username = $batchconf[3] or log_and_die("no Paymentech batch username configured\n");
+my $password = $batchconf[4] or log_and_die("no Paymentech batch password configured\n");
 
 #my $tmpdir = File::Temp->newdir();
 my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
@@ -61,7 +69,7 @@ foreach my $pay_batch (@batches) {
   print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
   my $text = $pay_batch->export_batch(format => 'paymentech');
   $text =~ s!<fileID>FILEID</fileID>!<fileID>$filename</fileID>! 
-    or die "couldn't find FILEID tag\n";
+    or log_and_die("couldn't find FILEID tag\n");
   open OUT, ">$tmpdir/$filename.xml";
   print OUT $text;
   close OUT;
@@ -69,7 +77,7 @@ foreach my $pay_batch (@batches) {
   system('zip', '-P', $password, '-q', '-j',
            "$tmpdir/$filename.zip", "$tmpdir/$filename.xml");
 
-  die "failed to create zip file\n" if (! -f "$tmpdir/$filename.zip" );
+  log_and_die("failed to create zip file\n") if (! -f "$tmpdir/$filename.zip" );
   push @filenames, $filename;
 }
 
@@ -77,17 +85,26 @@ my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net'
                    : 'orbitalbatch.paymentech.net');
 print STDERR "Connecting to $username\@$host...\n" if $opt_v;
 
-my $sftp = Net::SFTP::Foreign->new( host => $host,
-                                    user => $username,
-                                    password => $password,
-                                    timeout => 30,
-                                    );
-die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" 
+my $sftp;
+my $ssh_retry      = 25;   # number of times to try connection, needs to be >= 1
+my $ssh_retry_wait = 60*5; # seconds to wait between tries
+while ($ssh_retry > 0) {
+  $sftp = Net::SFTP::Foreign->new( host => $host,
+                                   user => $username,
+                                   password => $password,
+                                   timeout => 30,
+                                 );
+  last unless $sftp->error;
+  $ssh_retry -= 1;
+  sleep($ssh_retry_wait) if $ssh_retry > 0;
+}
+
+log_and_die("failed to connect to '$username\@$host'\n(".$sftp->error.")\n")
     if $sftp->error;
 
 foreach my $filename (@filenames) {
   $sftp->put("$tmpdir/$filename.zip", "$filename.zip")
-    or die "failed to upload file (".$sftp->error.")\n";
+    or log_and_die("failed to upload file (".$sftp->error.")\n");
 }
 
 print STDERR "Finished!\n" if $opt_v;

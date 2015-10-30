@@ -11,11 +11,20 @@ use FS::Record qw(qsearch qsearchs);
 use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::Conf;
+use FS::Log;
 
 use vars qw( $opt_t $opt_v $opt_a );
 getopts('vta:');
 
 #$Net::SFTP::Foreign::debug = -1;
+
+sub log_and_die {
+  my $message = shift;
+  my $log = FS::Log->new('freeside-paymenttech-download');
+  $log->error($message);
+  die $message; 
+}
+
 sub usage { "
   Usage:
       freeside-paymentech-download [ -v ] [ -t ] [ -a archivedir ] user\n
@@ -25,13 +34,13 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 if ( $opt_a ) {
-  die "no such directory: $opt_a\n"
+  log_and_die("no such directory: $opt_a\n")
     unless -d $opt_a;
-  die "archive directory $opt_a is not writable by the freeside user\n"
+  log_and_die("archive directory $opt_a is not writable by the freeside user\n")
     unless -w $opt_a;
 }
 
-my $unzip_check = `which unzip` or die "can't find unzip executable\n";
+my $unzip_check = `which unzip` or log_and_die("can't find unzip executable\n");
 
 #my $tmpdir = File::Temp->newdir();
 my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
@@ -39,22 +48,31 @@ my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
 my $conf = new FS::Conf;
 my @batchconf = $conf->config('batchconfig-paymentech');
 # BIN, terminalID, merchantID, username, password
-my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
-my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
+my $username = $batchconf[3] or log_and_die("no Paymentech batch username configured\n");
+my $password = $batchconf[4] or log_and_die("no Paymentech batch password configured\n");
 
 my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net'
                    : 'orbitalbatch.paymentech.net');
 print STDERR "Connecting to $username\@$host...\n" if $opt_v;
 
-my $sftp = Net::SFTP::Foreign->new( host => $host,
-                                    user => $username,
-                                    password => $password,
-                                    timeout => 30,
-                                    );
-die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+my $sftp;
+my $ssh_retry      = 25;   # number of times to try connection, needs to be >= 1
+my $ssh_retry_wait = 60*5; # seconds to wait between tries
+while ($ssh_retry > 0) {
+  $sftp = Net::SFTP::Foreign->new( host => $host,
+                                   user => $username,
+                                   password => $password,
+                                   timeout => 30,
+                                 );
+  last unless $sftp->error;
+  $ssh_retry -= 1;
+  sleep($ssh_retry_wait) if $ssh_retry > 0;
+}
+
+log_and_die("failed to connect to '$username\@$host'\n(".$sftp->error.")\n") if $sftp->error;
 
 my @files = map { $_->{filename} } @{ $sftp->ls('.', wanted => qr/_resp\.zip$/) };
-die "no response files found\n" if !@files;
+log_and_die("no response files found\n") if !@files;
 
 BATCH: foreach my $filename (@files) {
 
