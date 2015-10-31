@@ -38,6 +38,10 @@ Usage:
       <% FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc) %>
 %   }
     </B>
+%   if ($part_svc->svcdb eq 'svc_circuit') {
+      <BR>Provider:&nbsp;<% $svc_x->circuit_provider->provider %>
+      <BR>Type:&nbsp;<% $svc_x->circuit_type->typename %>
+%   }
 %   if ( $opt{after_svc_callback} ) {
       <% &{ $opt{after_svc_callback} }( $cust_svc ) %>
 %   }
