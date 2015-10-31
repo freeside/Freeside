@@ -1205,9 +1205,10 @@ sub smart_search_param {
   my @or = 
       map { my $table = $_;
             my $search_sql = "FS::$table"->search_sql($string);
+            my $addl_from = "FS::$table"->search_sql_addl_from();
 
             "SELECT $table.svcnum AS svcnum, '$table' AS svcdb ".
-            "FROM $table WHERE $search_sql";
+            "FROM $table $addl_from WHERE $search_sql";
           }
       FS::part_svc->svc_tables;
 
