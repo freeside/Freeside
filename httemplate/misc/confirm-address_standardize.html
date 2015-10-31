@@ -1,8 +1,15 @@
 <STYLE type="text/css">
-th { line-height: 150% }
+th { line-height: 150%;
+  width: 45%;
+}
+.td_radio {
+  width: 5%;
+  vertical-align: middle;
+  text-align: center;
+}
 </STYLE>
 <CENTER><BR><B>
-% if ( $new{bill_error} or $new{ship_error} ) {
+% if ( $is_error ) {
 Address standardization error
 % }
 % else {
@@ -10,24 +17,26 @@ Confirm address standardization
 % }
 
 </B><BR><BR>
+<FORM ID="confirm_replace_form">
 <TABLE WIDTH="100%">
-% my @prefixes = ('');
-% if ( $old{same} ) {
-%   @prefixes = ('bill_');
-% } elsif ( $old{billship} ) {
-%   @prefixes = ('bill_', 'ship_');
-% }
 % for my $pre (@prefixes) {
 %   my $name = $pre eq 'bill_' ? 'billing' : 'service';
+%   my $rows = 5;
 %   if ( $new{$pre.'error'} ) {
   <TR>
-    <TH>Entered <%$name%> address</TH>
+    <TD ROWSPAN=<% $rows %> CLASS="td_radio">
+        <INPUT TYPE="radio" NAME="<% $pre %>replace" VALUE="" CHECKED="Y">
+    </TD>
+    <TH>Entered <%$name%> address
+    </TH>
+    <TH></TH>
+    <TD CLASS="td_radio"></TD>
   </TR>
-%     if ( $old{$pre.'company'} ) {
   <TR>
+%     if ( $old{$pre.'company'} ) {
     <TD><% $old{$pre.'company'} %></TD>
-  </TR>
 %     }
+  </TR>
   <TR>
     <TD><% $old{$pre.'address1'} %></TD>
     <TD ROWSPAN=3><FONT COLOR="#ff0000"><B><% $new{$pre.'error'} %></B></FONT></TD>
@@ -39,9 +48,16 @@ Confirm address standardization
     <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
   </TR>
 %   } else { # not an error
+%     $rows++ if !$new{$pre.'addr_clean'};
   <TR>
+    <TD ROWSPAN=<% $rows %> CLASS="td_radio">
+      <INPUT TYPE="radio" NAME="<% $pre %>replace" VALUE="">
+    </TD>
     <TH>Entered <%$name%> address</TH>
     <TH>Standardized <%$name%> address</TH>
+    <TD ROWSPAN=<% $rows %> CLASS="td_radio">
+      <INPUT TYPE="radio" NAME="<% $pre %>replace" VALUE="Y" CHECKED="Y">
+    </TD>
   </TR>
 %   if ( !$new{$pre.'addr_clean'} ) {
   <TR>
@@ -75,11 +91,16 @@ Confirm address standardization
 %# only do this part if address standardization provided a censustract
 % my $pre = $old{same} ? 'bill_' : 'ship_';
 % my $censustract = $new{$pre.'censustract'};
-% my $census_error = $new{$pre.'census_error'};
 % if ( $censustract ) {
   <TR>
+    <TD ROWSPAN=2 CLASS="td_radio">
+      <INPUT TYPE="radio" NAME="census_replace" VALUE="" <% $census_error ? 'CHECKED="Y"' : '' %>>
+    </TD>
     <TH>Entered census tract</TH>
     <TH>Calculated census tract</TH>
+    <TD ROWSPAN=2 CLASS="td_radio">
+      <INPUT TYPE="radio" NAME="census_replace" VALUE="Y" <% $census_error ? '' : 'CHECKED="Y"' %>>
+    </TD>
   </TR>
   <TR>
     <TD><% $old{$pre.'censustract'} %></TD>
@@ -93,35 +114,21 @@ Confirm address standardization
   </TR>
 % } #if censustract
 
-% if ( grep {$new{$_.'error'}} @prefixes ) {
   <TR>
-    <TD ALIGN="center">
-    <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address();">
-      <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered <%$addresses%>
-    </BUTTON></TD>
-    <TD ALIGN="center">
-    <BUTTON TYPE="button" STYLE="width:205px" onclick="submit_abort();">
-      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
-    </BUTTON></TD>
-  </TR>
-% } else {
-  <TR>
-    <TD ALIGN="center">
-    <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address();">
-      <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered <%$addresses%>
-    </BUTTON></TD>
+    <TD> </TD>
     <TD ALIGN="center">
     <BUTTON TYPE="button" STYLE="width:205px" onclick="replace_address();">
-      <IMG SRC="<%$p%>images/tick.png" ALT=""> Use standardized <%$addresses%>
+      <IMG SRC="<%$p%>images/<% $is_error ? 'error.png' : 'tick.png' %>"
+           ALT=""> Use selected <%$addresses%>
     </BUTTON></TD>
-  </TR>
-  <TR ALIGN="center"><TD COLSPAN=2>
+    <TD ALIGN="center">
     <BUTTON TYPE="button" STYLE="width:205px" onclick="submit_abort();">
       <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
-    </BUTTON>
-  </TD></TR>
+    </BUTTON></TD>
+    <TD> </TD>
+  </TR>
 </TABLE>
-% } # !error
+</FORM>
 <%init>
 
 # slightly weird interface...
@@ -131,5 +138,15 @@ my %old = %{ $q->{old} };
 my %new = %{ $q->{new} };
 
 my $addresses = $old{billship} ? 'addresses' : 'address';
+
+my @prefixes = ('');
+if ( $old{same} ) {
+  @prefixes = ('bill_');
+} elsif ( $old{billship} ) {
+  @prefixes = ('bill_', 'ship_');
+}
+
+my $census_error = $new{'census_error'};
+my $is_error = $census_error || grep { $new{$_.'error'} } @prefixes;
 
 </%init>
