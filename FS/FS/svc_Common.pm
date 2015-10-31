@@ -1358,6 +1358,9 @@ sub search_sql {
   #my( $class, $string ) = @_;
   '1 = 0'; #false
 }
+sub search_sql_addl_from {
+  '';
+}
 
 =item search HASHREF
 
