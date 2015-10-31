@@ -129,7 +129,7 @@ function confirm_standardize(arg) {
         function() {
           overlib( OLresponseAJAX, CAPTION, 'Address standardization', STICKY, 
             AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 
-            576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', 
+            650, HEIGHT, 368, BGCOLOR, '#333399', CGCOLOR, '#333399', 
             TEXTSIZE, 3 );
         }, 0);
 
@@ -141,10 +141,15 @@ function replace_address() {
   var newaddr = returned['new'];
 
   var cf = document.<% $formname %>;
+  var crf = document.forms['confirm_replace_form'];
 %  foreach my $pre (@prefixes) {
   var clean = newaddr['<% $pre %>addr_clean'] == 'Y';
+  var replace = true; // auto_standardize_address won't load the form, so just do it
+  if ( crf && crf['<% $pre %>replace'] ) {
+    replace = crf['<% $pre %>replace'].value == 'Y';
+  }
   var error = newaddr['<% $pre %>error'];
-  if ( clean ) {
+  if ( clean && replace ) {
 %   foreach my $field (qw(address1 address2 state zip addr_clean ),($conf->exists('cust_main-no_city_in_address') ? () : 'city')) {
     cf.elements['<% $pre %><% $field %>'].value = newaddr['<% $pre %><% $field %>'];
 %   } #foreach $field
@@ -154,7 +159,12 @@ function replace_address() {
       cf.elements['<% $pre %>longitude'].value = newaddr['<% $pre %>longitude'];
     }
 %   if ( $withcensus ) {
-    if ( clean && newaddr['<% $pre %>censustract'] ) {
+    var census_replace = true;
+    if ( crf && crf['census_replace'] ) {
+      census_replace = crf['census_replace'].value == 'Y';
+    }
+
+    if ( clean && census_replace && newaddr['<% $pre %>censustract'] ) {
       cf.elements['<% $pre %>censustract'].value = newaddr['<% $pre %>censustract'];
     }
 %   } #if $withcensus
