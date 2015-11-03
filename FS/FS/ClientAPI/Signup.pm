@@ -26,6 +26,7 @@ use FS::reg_code;
 use FS::payby;
 use FS::banned_pay;
 use FS::part_tag;
+use FS::cust_payby;
 
 $DEBUG = 1;
 $me = '[FS::ClientAPI::Signup]';
@@ -175,7 +176,7 @@ sub signup_info {
       'nomadix'            => $conf->exists('signup_server-nomadix'),
       'payby'              => [ $conf->config('signup_server-payby') ],
       'card_types'         => card_types(),
-      'paytypes'           => [ @FS::cust_main::paytypes ],
+      'paytypes'           => [ FS::cust_payby->paytypes ],
       'cvv_enabled'        => 1,
       'require_cvv'        => $conf->exists('signup-require_cvv'),
       'stateid_enabled'    => $conf->exists('show_stateid'),
@@ -533,19 +534,26 @@ sub new_customer {
     ( map { $_ => $packet->{$_} } qw(
             salesnum
             ss stateid stateid_state
-
-            payby
-            payinfo paycvv paydate payname paystate paytype
-            paystart_month paystart_year payissue
-            payip
-
             locale
-
             referral_custnum comments
           )
     ),
 
   );
+
+  my %insert_options = ();
+  if ( $packet->{payby} =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
+    $insert_options{cust_payby} = [
+      new FS::cust_payby {
+        map { $_ => $packet->{$_} } qw(
+          payby
+          payinfo paycvv paydate payname paystate paytype
+          paystart_month paystart_year payissue
+          payip
+        ),
+      }
+    ];
+  }
 
   my $template_custnum = $conf->config('signup_server-prepaid-template-custnum');
   my $cust_main;
@@ -643,8 +651,6 @@ sub new_customer {
   my @invoicing_list = $packet->{'invoicing_list'}
                          ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
                          : ();
-
-  my %insert_options = ();
 
   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
   my @tax_exempt = grep { $packet->{"tax_$_"} eq 'Y' } @exempt_groups;
@@ -948,15 +954,24 @@ sub new_customer_minimal {
         last first company daytime night fax mobile
         ss stateid stateid_state
 
-        payby
-        payinfo paycvv paydate payname paystate paytype
-        paystart_month paystart_year payissue
-        payip
-
         locale
       ),
 
   } );
+
+  my %opt = ();
+  if ( $packet->{payby} =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
+    $opt{cust_payby} = [
+      new FS::cust_payby {
+        map { $_ => $packet->{$_} } qw(
+          payby
+          payinfo paycvv paydate payname paystate paytype
+          paystart_month paystart_year payissue
+          payip
+        ),
+      }
+    ];
+  }
 
   if ( grep length($packet->{$_}), FS::cust_main->location_fields ) {
     my $bill_hash;
@@ -1041,7 +1056,6 @@ sub new_customer_minimal {
 
   }
 
-  my %opt = ();
   if ( $invoicing_list[0] && $packet->{'_password'} ) {
     $opt{'contact'} = [
       new FS::contact { 'first'        => $cust_main->first,
