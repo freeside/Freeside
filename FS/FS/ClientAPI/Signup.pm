@@ -830,8 +830,8 @@ sub new_customer {
 
       #this used to apply a credit, but now we can void invoices...
       foreach my $cust_bill (@cust_bill) {
-        my $voiderror = $cust_bill->void();
-        warn "Error voiding cust bill after decline: $voiderror";
+        my $voiderror = $cust_bill->void('automatic payment failed');
+        warn "Error voiding cust bill after decline: $voiderror" if $voiderror;
       }
 
       #should check list for errors...

@@ -18,6 +18,8 @@ my @contexts = ( qw(
   queue
   upgrade
   upgrade_taxable_billpkgnum
+  freeside-paymentech-upload
+  freeside-paymentech-download
 ) );
 
 =head1 NAME

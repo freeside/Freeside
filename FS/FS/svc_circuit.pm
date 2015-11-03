@@ -218,6 +218,20 @@ sub label {
   $self->get('circuit_id');
 }
 
+sub search_sql {
+  my ($class, $string) = @_;
+  my @where = ();
+  push @where, 'LOWER(svc_circuit.circuit_id) = \''.lc($string).'\'';
+  push @where, 'LOWER(circuit_provider.provider) = \''.lc($string).'\'';
+  push @where, 'LOWER(circuit_type.typename) = \''.lc($string).'\'';
+  '(' . join(' OR ', @where) . ')';
+}
+
+sub search_sql_addl_from {
+  'LEFT JOIN circuit_provider USING ( providernum ) '.
+  'LEFT JOIN circuit_type USING ( typenum )';
+}
+
 =back
 
 =head1 SEE ALSO

@@ -207,11 +207,11 @@ foreach my $row (@rows) {
   $x++;
   $ws->write_string($y, $x, " \N{U+2212} ", $f->{bigmath}); # MINUS SIGN
   $x++;
-  $ws->write($y, $x, $row->{credit} || 0, $f->{currency});
+  $ws->write($y, $x, $row->{tax_credited} || 0, $f->{currency});
   $x++;
   $ws->write_string($y, $x, " = ", $f->{bigmath});
   $x++;
-  $ws->write($y, $x, $row->{tax} - $row->{credit}, $f->{currency});
+  $ws->write($y, $x, $row->{tax} - $row->{tax_credited}, $f->{currency});
   $x++;
   $ws->write($y, $x, $row->{tax_paid} || 0, $f->{currency});
 
