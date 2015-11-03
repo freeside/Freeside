@@ -712,6 +712,8 @@ sub print_generic {
       # "balance_date_range" unfortunately is unsuitable for this, since it
       # cares about application dates.  We want to know the sum of all 
       # _top-level transactions_ dated before the last invoice.
+      #
+      # still do this for the "Previous Balance" line of the summary block
       my @sql =
         map "$_ WHERE _date <= ? AND custnum = ?", (
           "SELECT      COALESCE( SUM(charged), 0 ) FROM cust_bill",
@@ -744,19 +746,31 @@ sub print_generic {
       # longer stored in the database)
       $invoice_data{'true_previous_balance'} = $last_bill_balance;
 
-      # the change in balance from immediately after that invoice
-      # to immediately before this one
-      my $before_this_bill_balance = 0;
+      # Now, get all applications of credits/payments dated on or after the
+      # previous bill, to invoices before the current bill. (The
+      # credit/payment date restriction prevents these from intersecting
+      # the "Previous Balance" set.)
+      # These are "adjustments". The past due balance will be shown as
+      # Previous Balance - Adjustments.
+      my $adjustments = 0;
+      @sql = map {
+        "SELECT COALESCE(SUM(y.amount),0) FROM $_ JOIN cust_bill USING (invnum)
+         WHERE cust_bill._date < ?
+           AND x._date >= ?
+           AND cust_bill.custnum = ?"
+        } "cust_credit AS x JOIN cust_credit_bill y USING (crednum)",
+          "cust_pay    AS x JOIN cust_bill_pay    y USING (paynum)"
+      ;
       foreach (@sql) {
         my $delta = FS::Record->scalar_sql(
           $_,
-          $self->_date - 1,
+          $self->_date,
+          $last_bill->_date,
           $self->custnum,
         );
-        $before_this_bill_balance += $delta;
+        $adjustments += $delta;
       }
-      $invoice_data{'balance_adjustments'} =
-        sprintf("%.2f", $last_bill_balance - $before_this_bill_balance);
+      $invoice_data{'balance_adjustments'} = sprintf("%.2f", $adjustments);
 
       warn sprintf("BALANCE ADJUSTMENTS: %.2f\n\n",
                    $invoice_data{'balance_adjustments'}
