@@ -599,7 +599,18 @@ sub insert {
   warn "  setting cust_payby\n"
     if $DEBUG > 1;
 
-  if ( my $cust_payby_params = delete $options{'cust_payby_params'} ) {
+  if ( $options{cust_payby} ) {
+
+    foreach my $cust_payby ( @{ $options{cust_payby} } ) {
+      $cust_payby->custnum($self->custnum);
+      my $error = $cust_payby->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+  } elsif ( my $cust_payby_params = delete $options{'cust_payby_params'} ) {
 
     my $error = $self->process_o2m(
       'table'         => 'cust_payby',
