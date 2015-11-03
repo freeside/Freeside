@@ -24,8 +24,9 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentname = $agent->agentname;
 }
 
-if ( $cgi->param('taxname') =~ /^([\w ]+)$/ ) {
-  $params{taxname} = $1;
+# allow anything in here; FS::Report::Tax will treat it as unsafe
+if ( length($cgi->param('taxname')) ) {
+  $params{taxname} = $cgi->param('taxname');
 } else {
   die "taxname required";
 }
