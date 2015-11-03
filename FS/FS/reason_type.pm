@@ -19,7 +19,7 @@ our %class_purpose = (
   'R' => 'explain why a customer was credited',
   'S' => 'explain why a customer package was suspended',
   'F' => 'explain why a customer was refunded',
-  'X' => 'explain why a credit was voided',
+  'X' => 'explain why a transaction was voided',
 );
 
 =head1 NAME
