@@ -17,7 +17,7 @@ function areyousure(href, message) {
     <& /elements/popup_link.html,
       'label'       => emt('Void this invoice'),
       'actionlabel' => emt('Void this invoice'),
-      'action'      => $p.'misc/void-cust_bill.cgi?invnum='.$invnum,
+      'action'      => $p.'misc/void-cust_bill.html?invnum='.$invnum,
     &>
 %   }
 %   if ( $can_void and $can_delete ) {
