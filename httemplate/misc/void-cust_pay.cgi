@@ -18,7 +18,7 @@
 <TABLE BGCOLOR="#cccccc" BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
-             'reason_class'   => 'X',
+             'reason_class'   => 'P',
              'cgi'            => $cgi
 &>
 </TABLE>

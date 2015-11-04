@@ -14,7 +14,8 @@ our $me = '[FS::reason_Mixin]';
 =item reason
 
 Returns the text of the associated reason (see L<FS::reason>) for this credit /
-voided payment / voided invoice.
+voided payment / voided invoice. This can no longer be used to set the
+(deprecated) free-text "reason" field; see L<FS::reason/new_or_existing>.
 
 =cut
 
@@ -35,15 +36,33 @@ sub reason {
   return $reason_text;
 }
 
-# it was a mistake to allow setting the reason this way; use 
-# FS::reason->new_or_existing
- 
 # Used by FS::Upgrade to migrate reason text fields to reasonnum.
+# Note that any new tables that get reasonnum fields do NOT need to be
+# added here unless they have previously had a free-text "reason" field.
+
 sub _upgrade_reasonnum {    # class method
     my $class = shift;
     my $table = $class->table;
 
+    my $reason_class;
+    if ( $table eq 'cust_bill' or $table eq 'cust_bill_pkg' ) {
+      $reason_class = 'I';
+    } elsif ( $table eq 'cust_pay' ) {
+      $reason_class = 'P';
+    } elsif ( $table eq 'cust_refund' ) {
+      $reason_class = 'F';
+    } elsif ( $table eq 'cust_credit' ) {
+      $reason_class = 'R';
+    } else {
+      die "don't know the reason class to use for upgrading $table";
+    }
+
     for my $fieldname (qw(reason void_reason)) {
+
+        if ( $table eq 'cust_credit' and $fieldname eq 'void_reason' ) {
+            $reason_class = 'X';
+        }
+
         if (   defined dbdef->table($table)->column($fieldname)
             && defined dbdef->table($table)->column( $fieldname . 'num' ) )
         {

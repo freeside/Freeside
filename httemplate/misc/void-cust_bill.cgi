@@ -14,7 +14,7 @@
 <% ntable("#cccccc", 2) %>
 <& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
-             'reason_class'   => 'X',
+             'reason_class'   => 'I',
              'cgi'            => $cgi
 &>
 
