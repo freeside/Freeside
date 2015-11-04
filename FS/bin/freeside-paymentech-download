@@ -20,7 +20,7 @@ getopts('vta:');
 
 sub log_and_die {
   my $message = shift;
-  my $log = FS::Log->new('freeside-paymenttech-download');
+  my $log = FS::Log->new('freeside-paymentech-download');
   $log->error($message);
   die $message; 
 }
