@@ -266,7 +266,10 @@ sub _bop_defaults {
     }
   }
 
-  $options->{payinfo} = $self->payinfo unless exists( $options->{payinfo} );
+  unless ( exists( $options->{'payinfo'} ) ) {
+    $options->{'payinfo'} = $self->payinfo;
+    $options->{'paymask'} = $self->paymask;
+  }
 
   # Default invoice number if the customer has exactly one open invoice.
   if( ! $options->{'invnum'} ) {
