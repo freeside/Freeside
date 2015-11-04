@@ -20,7 +20,7 @@ getopts('avtp:');
 
 sub log_and_die {
   my $message = shift;
-  my $log = FS::Log->new('freeside-paymenttech-upload');
+  my $log = FS::Log->new('freeside-paymentech-upload');
   $log->error($message);
   die $message; 
 }
