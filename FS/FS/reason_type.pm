@@ -3,17 +3,18 @@ package FS::reason_type;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use Tie::IxHash;
 
 @ISA = qw(FS::Record);
 
-tie our %class_name, Tie::IxHash, (  
+tie our %class_name, 'Tie::IxHash', (  
   'C' => 'cancel',
   'R' => 'credit',
   'S' => 'suspend',
   'F' => 'refund',
-  'X' => 'void credit',
-  'I' => 'void invoice',
-  'P' => 'void payment',
+  'X' => 'credit void',
+  'I' => 'invoice void',
+  'P' => 'payment void',
 );
 
 our %class_purpose = (  

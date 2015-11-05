@@ -45,13 +45,13 @@ sub _upgrade_reasonnum {    # class method
     my $table = $class->table;
 
     my $reason_class;
-    if ( $table eq 'cust_bill' or $table eq 'cust_bill_pkg' ) {
+    if ( $table =~ /^cust_bill/ ) { # also includes cust_bill_pkg
       $reason_class = 'I';
-    } elsif ( $table eq 'cust_pay' ) {
+    } elsif ( $table =~ /^cust_pay/ ) {
       $reason_class = 'P';
     } elsif ( $table eq 'cust_refund' ) {
       $reason_class = 'F';
-    } elsif ( $table eq 'cust_credit' ) {
+    } elsif ( $table =~ /^cust_credit/ ) {
       $reason_class = 'R';
     } else {
       die "don't know the reason class to use for upgrading $table";
@@ -59,7 +59,7 @@ sub _upgrade_reasonnum {    # class method
 
     for my $fieldname (qw(reason void_reason)) {
 
-        if ( $table eq 'cust_credit' and $fieldname eq 'void_reason' ) {
+        if ( $table =~ /^cust_credit/ and $fieldname eq 'void_reason' ) {
             $reason_class = 'X';
         }
 
@@ -77,25 +77,23 @@ sub _upgrade_reasonnum {    # class method
                 }
             );
 
-            if (
-                scalar(
-                    grep { $_->getfield($fieldname) =~ /\S/ }
-                      @legacy_reason_records
-                )
-              )
-            {
+            if ( @legacy_reason_records ) {
+
                 warn "$me Found unmigrated reasons\n" if $DEBUG;
 
                 my $reason_type =
-                  _upgrade_get_legacy_reason_type( $class, $table );
-                my $noreason = _upgrade_get_no_reason( $class, $reason_type );
+                  $class->_upgrade_get_legacy_reason_type( $reason_class );
+                # XXX "noreason" does not actually work, because we limited to
+                # "reason is not null" above. Records where the reason string
+                # is null will end up with a reasonnum of null also.
+                my $noreason = $class->_upgrade_get_no_reason( $reason_type );
 
                 foreach my $record_to_upgrade (@legacy_reason_records) {
                     my $reason = $record_to_upgrade->getfield($fieldname);
                     warn "Contemplating reason $reason\n" if $DEBUG > 1;
                     if ( $reason =~ /\S/ ) {
                         my $reason =
-                          _upgrade_get_reason( $class, $reason, $reason_type );
+                          $class->_upgrade_get_reason( $reason, $reason_type );
                         $record_to_upgrade->set( $fieldname . 'num',
                             $reason->reasonnum );
                     }
@@ -118,15 +116,14 @@ sub _upgrade_reasonnum {    # class method
     }
 }
 
+# internal methods for upgrade
+
 # _upgrade_get_legacy_reason_type is class method supposed to be used only
 # within the reason_Mixin class which will either find or create a reason_type
 sub _upgrade_get_legacy_reason_type {
  
     my $class = shift;
-    my $table = shift;
-
-    my $reason_class =
-      ( $table =~ /void/ ) ? 'X' : 'F';    # see FS::reason_type (%class_name)
+    my $reason_class = shift;
     my $reason_type_params = { 'class' => $reason_class, 'type' => 'Legacy' };
     my $reason_type = qsearchs( 'reason_type', $reason_type_params );
     unless ($reason_type) {
@@ -145,7 +142,7 @@ sub _upgrade_get_no_reason {
 
     my $class       = shift;
     my $reason_type = shift;
-    return _upgrade_get_reason( $class, '(none)', $reason_type );
+    return $class->_upgrade_get_reason( '(none)', $reason_type );
 }
 
 # _upgrade_get_reason is class method supposed to be used only within the

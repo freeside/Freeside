@@ -234,6 +234,8 @@ Returns the text of the associated void reason (see L<FS::reason>) for this.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
 
+  local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
+
   $class->_upgrade_reasonnum(%opts);
 
   my $sql = "SELECT usernum FROM access_user WHERE username = ( SELECT history_user FROM h_cust_pay_void WHERE paynum = ? AND history_action = 'insert' ORDER BY history_date LIMIT 1 ) ";
