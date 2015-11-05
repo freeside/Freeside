@@ -11,7 +11,7 @@ our %class_name = (
   'R' => 'credit',
   'S' => 'suspend',
   'F' => 'refund',
-  'X' => 'void credit',
+  'X' => 'void', # credit/invoice/payment
 );
 
 our %class_purpose = (  
@@ -19,7 +19,7 @@ our %class_purpose = (
   'R' => 'explain why a customer was credited',
   'S' => 'explain why a customer package was suspended',
   'F' => 'explain why a customer was refunded',
-  'X' => 'explain why a credit was voided',
+  'X' => 'explain why a transaction was voided',
 );
 
 =head1 NAME

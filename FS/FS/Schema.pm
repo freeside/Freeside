@@ -735,8 +735,9 @@ sub tables_hashref {
 
         #void fields
         'void_date', @date_type, '', '', 
-        'reason',    'varchar',   'NULL', $char_d, '', '', 
-        'void_usernum',   'int', 'NULL', '', '', '',
+        'reason',     'varchar', 'NULL', $char_d, '', '', 
+        'reasonnum',      'int', 'NULL',      '', '', '',
+        'void_usernum',   'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'invnum',
       'unique'       => [ [ 'custnum', 'agent_invid' ] ], #agentnum?  huh
@@ -749,6 +750,9 @@ sub tables_hashref {
                           },
                           { columns    => [ 'statementnum' ],
                             table      => 'cust_statement', #_void? both?
+                          },
+                          { columns    => [ 'reasonnum' ],
+                            table      => 'reason',
                           },
                           { columns    => [ 'void_usernum' ],
                             table      => 'access_user',
@@ -1197,8 +1201,9 @@ sub tables_hashref {
         'feepart',              'int', 'NULL',      '', '', '',
         #void fields
         'void_date', @date_type, '', '', 
-        'reason',    'varchar',   'NULL', $char_d, '', '', 
-        'void_usernum',   'int', 'NULL', '', '', '',
+        'reason',     'varchar', 'NULL', $char_d, '', '', 
+        'reasonnum',      'int', 'NULL',      '', '', '',
+        'void_usernum',   'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'billpkgnum',
       'unique'       => [],
@@ -1208,6 +1213,9 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'invnum' ],
                             table      => 'cust_bill_void',
+                          },
+                          { columns    => [ 'reasonnum' ],
+                            table      => 'reason',
                           },
                           #pkgnum 0 and -1 are used for special things
                           #{ columns    => [ 'pkgnum' ],
@@ -2523,6 +2531,7 @@ sub tables_hashref {
         #void fields
         'void_date',  @date_type,                  '', '', 
         'reason',      'varchar', 'NULL', $char_d, '', '', 
+        'reasonnum',       'int', 'NULL',      '', '', '', 
         'void_usernum',    'int', 'NULL',      '', '', '',
       ],
       'primary_key'  => 'paynum',
@@ -2543,6 +2552,9 @@ sub tables_hashref {
                           },
                           { columns    => [ 'gatewaynum' ],
                             table      => 'payment_gateway',
+                          },
+                          { columns    => [ 'reasonnum' ],
+                            table      => 'reason',
                           },
                           { columns    => [ 'void_usernum' ],
                             table      => 'access_user',

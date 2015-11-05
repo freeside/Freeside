@@ -232,7 +232,7 @@ tie my %rights, 'Tie::IxHash',
     'Refund Echeck payment',
     'Delete refund', #NEW
     'Add on-the-fly credit reason', #NEW
-    'Add on-the-fly void credit reason',
+    'Add on-the-fly void reason',
     'Add on-the-fly refund reason', #NEW
   ],
   

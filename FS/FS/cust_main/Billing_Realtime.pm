@@ -267,7 +267,10 @@ sub _bop_defaults {
     }
   }
 
-  $options->{payinfo} = $self->payinfo unless exists( $options->{payinfo} );
+  unless ( exists( $options->{'payinfo'} ) ) {
+    $options->{'payinfo'} = $self->payinfo;
+    $options->{'paymask'} = $self->paymask;
+  }
 
   # Default invoice number if the customer has exactly one open invoice.
   if( ! $options->{'invnum'} ) {
@@ -889,7 +892,7 @@ sub _realtime_bop_result {
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
-       'paymask'  => $options{'paymask'},
+       'paymask'  => $options{'paymask'} || $cust_pay_pending->paymask,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
        'discount_term'  => $options{'discount_term'},

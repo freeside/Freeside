@@ -377,7 +377,7 @@ sub void {
   my $cust_credit_void = new FS::cust_credit_void ( {
       map { $_ => $self->get($_) } $self->fields
     } );
-  $cust_credit_void->set('void_reasonnum', $reason->reasonnum);
+  $cust_credit_void->set('void_reasonnum', $reason->reasonnum) if $reason;
   my $error = $cust_credit_void->insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;

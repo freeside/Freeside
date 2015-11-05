@@ -251,9 +251,7 @@ sub _upgrade_data { # class method
     'List customers' => 'List contacts',
     'Backdate payment' => 'Backdate credit',
     'Generate quotation' => 'Disable quotation',
-    'Void credit' => 'Void credit',
-    'Unvoid credit' => 'Unvoid credit',
-    'Add on-the-fly void credit reason' => 'Add on-the-fly void credit reason',
+    'Add on-the-fly void credit reason' => 'Add on-the-fly void reason',
     '_ALL' => 'Employee preference telephony integration',
   );
 

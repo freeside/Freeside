@@ -169,8 +169,9 @@ if (    $cust_pay->closed !~ /^Y/i
      && scalar(@refund_right)
 ) {
   my $refundtitle = ($cust_pay->payby =~ /^(CARD|CHEK)$/)
-            ? emt('Send a refund for this payment to the payment gateway')
-            : emt('Record a refund for this payment');
+           ? emt('Send a refund for this payment to the payment gateway')
+           : emt('Record a refund for this payment');
+
   $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
             qq!paynum=!. $cust_pay->paynum. '"'.
             qq! TITLE="! . $refundtitle
@@ -178,14 +179,17 @@ if (    $cust_pay->closed !~ /^Y/i
 }
 
 my $void = '';
-my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK)$/
+# note: "TOKN" is not yet supported in stock freeside
+my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK|TOKN)$/
               ? ' (' . emt('do not send anything to the payment gateway').')'
               : '';
-$void = areyousure_link("${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
-                        emt('Are you sure you want to void this payment?'),
-                        emt('Void this payment from the database') . $voidmsg,
-                        emt('void')
-                       )
+$void = ' ('.
+               include( '/elements/popup_link.html',
+                    'label'    => emt('void'),
+                    'action'   => "${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
+                    'actionlabel' => emt('Void payment'),
+                ).
+          ')'
   if $cust_pay->closed !~ /^Y/i
   && (    ( $cust_pay->payby eq 'CARD'          && $opt{'Credit card void'} )
        || ( $cust_pay->payby eq 'CHEK'          && $opt{'Echeck void'}      )

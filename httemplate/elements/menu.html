@@ -721,6 +721,10 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'separator5'} = ''; #its a separator!
   $config_billing{'Refund reasons'}  = [ $fsurl.'browse/reason.html?class=F', 'Refund reasons explain why a refund was issued.' ];
   $config_billing{'Refund reason types'}  = [ $fsurl.'browse/reason_type.html?class=F', 'Refund reason types define groups of reasons.' ];
+
+  $config_billing{'separator6'} = ''; #its a separator!
+  $config_billing{'Void reasons'}  = [ $fsurl.'browse/reason.html?class=X', 'Void reasons explain why a void was issued.' ];
+  $config_billing{'Void reason types'}  = [ $fsurl.'browse/reason_type.html?class=X', 'Void reason types define groups of reasons.' ];
 }
 
 #XXX also to be unified
