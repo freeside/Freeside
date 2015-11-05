@@ -11,6 +11,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::payby;
 use FS::cust_pay;
 use FS::cust_pay_pending;
+use FS::cust_bill_pay;
 use FS::cust_refund;
 use FS::banned_pay;
 
@@ -266,7 +267,10 @@ sub _bop_defaults {
     }
   }
 
-  $options->{payinfo} = $self->payinfo unless exists( $options->{payinfo} );
+  unless ( exists( $options->{'payinfo'} ) ) {
+    $options->{'payinfo'} = $self->payinfo;
+    $options->{'paymask'} = $self->paymask;
+  }
 
   # Default invoice number if the customer has exactly one open invoice.
   if( ! $options->{'invnum'} ) {
@@ -888,7 +892,7 @@ sub _realtime_bop_result {
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
-       'paymask'  => $options{'paymask'},
+       'paymask'  => $options{'paymask'} || $cust_pay_pending->paymask,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
        'discount_term'  => $options{'discount_term'},
@@ -1366,6 +1370,8 @@ sub realtime_refund_bop {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
+  my %content = ();
+
   ###
   # look up the original payment and optionally a gateway for that payment
   ###
@@ -1383,6 +1389,9 @@ sub realtime_refund_bop {
     $cust_pay = qsearchs('cust_pay', { paynum=>$options{'paynum'} } )
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
+
+    my @cust_bill_pay = qsearch('cust_bill_pay', { paynum=>$cust_pay->paynum });
+    $content{'invoice_number'} = $cust_bill_pay[0]->invnum if @cust_bill_pay;
 
     if ( $cust_pay->get('processor') ) {
       ($gatewaynum, $processor, $auth, $order_number) =
@@ -1456,7 +1465,8 @@ sub realtime_refund_bop {
   eval "use $namespace";  
   die $@ if $@;
 
-  my %content = (
+  %content = (
+    %content,
     'type'           => $options{method},
     'login'          => $login,
     'password'       => $password,
