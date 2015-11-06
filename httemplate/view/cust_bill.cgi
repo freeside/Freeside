@@ -9,13 +9,30 @@ function areyousure(href, message) {
 }
 </SCRIPT>
 
-% if ( !$cust_bill->closed && $curuser->access_right('Void invoices') ) {
+% if ( !$cust_bill->closed ) { # otherwise allow no changes
+%   my $can_delete = $conf->exists('deleteinvoices')
+%                    && $curuser->access_right('Delete invoices');
+%   my $can_void = $curuser->access_right('Void invoices');
+%   if ( $can_void ) {
     <& /elements/popup_link.html,
       'label'       => emt('Void this invoice'),
       'actionlabel' => emt('Void this invoice'),
       'action'      => $p.'misc/void-cust_bill.html?invnum='.$invnum,
     &>
-    <BR><BR>
+%   }
+%   if ( $can_void and $can_delete ) {
+  &nbsp;|&nbsp;
+%   }
+%   if ( $can_delete ) {
+    <A href="" onclick="areyousure(\
+      '<%$p%>misc/delete-cust_bill.html?<% $invnum %>',\
+      <% mt('Are you sure you want to delete this invoice?') |js_string %>)"\
+    TITLE = "<% mt('Delete this invoice from the database completely') |h %>">\
+    <% emt('Delete this invoice') |h %></A>
+%   }
+%   if ( $can_void or $can_delete ) {
+  <BR><BR>
+%   }
 % }
 
 % if ( $cust_bill->owed > 0

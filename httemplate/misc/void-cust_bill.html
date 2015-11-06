@@ -12,10 +12,11 @@
 <INPUT TYPE="hidden" NAME="invnum" VALUE="<% $invnum %>">
 
 <% ntable("#cccccc", 2) %>
-<TR>
-  <TD ALIGN="right">Reason</TD>
-  <TD><INPUT TYPE="text" NAME="reason" VALUE="<% scalar($cgi->param('reason')) |h %>"></TD>
-</TR>
+<& /elements/tr-select-reason.html,
+             'field'          => 'reasonnum',
+             'reason_class'   => 'I',
+             'cgi'            => $cgi
+&>
 
 </TABLE>
 

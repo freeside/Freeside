@@ -621,10 +621,8 @@ $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'S
   if $curuser->access_right('Configuration');
 
 tie my %config_pkg_reason, 'Tie::IxHash',
-  'Cancel reasons' => [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ],
-  'Cancel reason types' => [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons.' ],
-  'Suspend reasons' => [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ],
-  'Suspend reason types' => [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons.' ],
+  'Cancel reasons' => [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reasons explain why a service was cancelled.' ],
+  'Suspend reasons' => [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reasons explain why a service was suspended.' ],
 ;
 
 tie my %config_pkg, 'Tie::IxHash', ();
@@ -715,12 +713,13 @@ if ( $curuser->access_right('Configuration') ) {
   }
 
   $config_billing{'separator4'} = ''; #its a separator!
-  $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
-  $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons.' ];
+  $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reasons explain why a credit was issued.' ];
   
-  $config_billing{'separator5'} = ''; #its a separator!
-  $config_billing{'Refund reasons'}  = [ $fsurl.'browse/reason.html?class=F', 'Refund reasons explain why a refund was issued.' ];
-  $config_billing{'Refund reason types'}  = [ $fsurl.'browse/reason_type.html?class=F', 'Refund reason types define groups of reasons.' ];
+  $config_billing{'Refund reasons'}  = [ $fsurl.'browse/reason_type.html?class=F', 'Refund reasons explain why a refund was issued.' ];
+
+  $config_billing{'Invoice void reasons'}  = [ $fsurl.'browse/reason_type.html?class=I', 'Invoice void reasons explain why an invoice was voided.' ];
+  $config_billing{'Payment void reasons'}  = [ $fsurl.'browse/reason_type.html?class=P', 'Payment void reasons explain why a payment was voided.' ];
+  $config_billing{'Credit void reasons'}  = [ $fsurl.'browse/reason_type.html?class=X', 'Credit void reasons explain why a credit was voided.' ];
 }
 
 #XXX also to be unified

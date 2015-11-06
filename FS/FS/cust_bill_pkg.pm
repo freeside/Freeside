@@ -26,6 +26,8 @@ use FS::cust_bill_pkg_tax_location_void;
 use FS::cust_bill_pkg_tax_rate_location_void;
 use FS::cust_tax_exempt_pkg_void;
 use FS::cust_bill_pkg_fee_void;
+use FS::reason;
+use FS::reason_type;
 
 use FS::Cursor;
 
@@ -322,7 +324,7 @@ sub insert {
 
 }
 
-=item void
+=item void [ REASON ]
 
 Voids this line item: deletes the line item and adds a record of the voided
 line item to the FS::cust_bill_pkg_void table (and related tables).
@@ -332,6 +334,14 @@ line item to the FS::cust_bill_pkg_void table (and related tables).
 sub void {
   my $self = shift;
   my $reason = scalar(@_) ? shift : '';
+
+  unless (ref($reason) || !$reason) {
+    $reason = FS::reason->new_or_existing(
+      'class'  => 'X',
+      'type'   => 'Void invoice',
+      'reason' => $reason
+    );
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -347,7 +357,7 @@ sub void {
   my $cust_bill_pkg_void = new FS::cust_bill_pkg_void ( {
     map { $_ => $self->get($_) } $self->fields
   } );
-  $cust_bill_pkg_void->reason($reason);
+  $cust_bill_pkg_void->reasonnum($reason->reasonnum) if $reason;
   my $error = $cust_bill_pkg_void->insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
