@@ -123,17 +123,13 @@ sub calc_discount {
 
         if ( $discount->percent > 0 ) {
             $amount = $discount->percent * $param->{'setup_charge'} / 100;
-        } elsif ( $discount->amount > 0 && ($discount->months || 0) == 1) {
+        } elsif ( $discount->amount > 0 ) {
             # apply the discount amount, up to a maximum of the setup charge
             $amount = min($discount->amount, $param->{'setup_charge'});
             $discount_left = sprintf('%.2f', $discount->amount - $amount);
             # transfer remainder of discount, if any, to recur
             $param->{'discount_left_recur'}{$discount->discountnum} = $discount_left;
-        } else {
-          # I guess we don't allow multiple-month flat amount discounts to
-          # apply to setup?
-            next; 
-        }
+        } 
 
     } else {
       

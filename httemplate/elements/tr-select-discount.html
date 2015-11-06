@@ -53,6 +53,13 @@
             )
   %>
 
+% if ( $opt{'setup_only'} ) {
+  <& /elements/hidden.html,
+    'field' => $name.'_setup',
+    'id'    => $name.'_setup',
+    'value' => 'Y'
+  &>
+% } else { # normal case, allow the user to choose
   <% include( '/elements/tr-input-text.html',
                 'label'   => '<B>Discount duration (months)</B>',
                 'field'   => $name. '_months',
@@ -73,6 +80,7 @@
                 'colspan'    => $opt{'colspan'},
             )
   %>
+% }
 
 %#  <% include( '/elements/tr-checkbox.html',
 %#                'label'     => '<B>Apply discount to add-on packages</B>',

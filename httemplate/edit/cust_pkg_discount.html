@@ -30,6 +30,7 @@
              'empty_label' => ( $pkgdiscountnum ? '' : 'Select discount' ),
              'onchange'    => 'enable_discount_pkg()',
              'cgi'         => $cgi,
+             'setup_only'  => $setup_only,
           )
 %>
 
@@ -72,5 +73,6 @@ my $cust_pkg =
 #         " ( pkgnum ". cust_pkg->pkgnum. ")";
 
 my $part_pkg = $cust_pkg->part_pkg;
+my $setup_only = ($part_pkg->freq eq '0') ? 1 : 0;
 
 </%init>
