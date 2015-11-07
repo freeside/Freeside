@@ -12,13 +12,13 @@
 
 <P ALIGN="center"><B><% mt('Void this payment?') |h %></B>
 
-<FORM action="<% ${p} %>misc/void-cust_pay.cgi">
+<FORM action="<% ${p} %>misc/void-cust_pay.html">
 <INPUT TYPE="hidden" NAME="paynum" VALUE="<% $paynum %>">
 
 <TABLE BGCOLOR="#cccccc" BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
 <& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
-             'reason_class'   => 'X',
+             'reason_class'   => 'P',
              'cgi'            => $cgi
 &>
 </TABLE>

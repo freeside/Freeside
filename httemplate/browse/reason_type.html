@@ -1,31 +1,32 @@
-<% include( 'elements/browse.html',
-                 'title'       => ucfirst($classname) . " Reason Types",
-                 'menubar'     => [ ucfirst($classname) . " reasons" =>
-		                     $p.'browse/reason.html?class=' .  $class,
-                                  ],
-                 'html_init'   => $html_init,
-                 'name'        => $classname . " reason types",
-                 'query'       => { 'table'     => 'reason_type',
-                                    'hashref'   => {},
-                                    'extra_sql' => $where_clause .
-				                   'ORDER BY typenum',
-                                  },
-                 'count_query' => $count_query,
-                 'header'      => [ '#',
-                                    ucfirst($classname) . ' Reason Type',
-                                    ucfirst($classname) . ' Reasons',
-                                  ],
-                 'fields'      => [ 'typenum',
-                                    'type',
-                                    $reasons_sub,
-                                  ],
-                 'links'       => [ $link,
-                                    $link,
-                                    '',
-                                  ],
-             )
-%>
+<& elements/browse.html,
+  'title'       => ucwords($classname) . " Reasons",
+  'html_init'   => $html_init,
+  'name'        => $classname . " reason types",
+  'query'       => { 'table'     => 'reason_type',
+                    'hashref'   => {},
+                    'extra_sql' => $where_clause .
+                                   'ORDER BY typenum',
+                  },
+  'count_query' => $count_query,
+  'header'      => [ '#',
+                    ucwords($classname) . ' Reason Type',
+                    ucwords($classname) . ' Reasons',
+                  ],
+  'fields'      => [ 'typenum',
+                    'type',
+                    $reasons_sub,
+                  ],
+  'links'       => [ $link,
+                    $link,
+                    '',
+                  ],
+  'disable_total' => 1,
+&>
 <%init>
+
+sub ucwords {
+  join(' ', map ucfirst($_), split(/ /, shift));
+}
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
@@ -33,17 +34,29 @@ die "access denied"
 $cgi->param('class') =~ /^(\w)$/ or die "illegal class";
 my $class=$1;
 
-my $classname = $FS::reason_type::class_name{$class};
+my $classname = ucfirst($FS::reason_type::class_name{$class});
 
-my $html_init = ucfirst($classname) .
-  " reason types allow groups of $classname reasons for reporting purposes." .
-  qq!<BR><BR><A HREF="${p}edit/reason_type.html?class=$class"><I>Add a ! .
-  $classname . " reason type</I></A><BR><BR>";
+my $html_init = 'Reasons: ' .
+  include('/elements/menubar.html',
+    map {
+      ucfirst($FS::reason_type::class_name{$_}),
+      $p.'browse/reason_type.html?class=' .  $_
+    } keys (%FS::reason_type::class_name)
+  );
+
+$html_init .= '<BR><P>' .
+  $classname . ' reasons ' .
+  $FS::reason_type::class_purpose{$class} .
+  '. Reason types allow reasons to be grouped for reporting purposes.' .
+  qq!<BR><BR><A HREF="${p}edit/reason_type.html?class=$class"><I>! .
+  ($classname =~ /^[aeiou]/i ? 'Add an ' : 'Add a ') .
+  lc($classname) . ' reason type</I></A>'.
+  '</P>';
 
 my $reasons_sub = sub {
   my $reason_type = shift;
 
-  [ map {
+  [ ( map {
           [
             {
               'data'  => $_->reason,
@@ -53,7 +66,15 @@ my $reasons_sub = sub {
             },
           ];
         }
-    $reason_type->enabled_reasons,
+    $reason_type->enabled_reasons ),
+    [
+      {
+        'data'  => '(add)',
+        'align' => 'left',
+        'link'  => $p. "edit/reason.html?class=$class",
+        'data_style' => 'i',
+      }
+    ]
 
   ];
   

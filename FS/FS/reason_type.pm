@@ -3,15 +3,18 @@ package FS::reason_type;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use Tie::IxHash;
 
 @ISA = qw(FS::Record);
 
-our %class_name = (  
+tie our %class_name, 'Tie::IxHash', (  
   'C' => 'cancel',
   'R' => 'credit',
   'S' => 'suspend',
   'F' => 'refund',
-  'X' => 'void', # credit/invoice/payment
+  'X' => 'credit void',
+  'I' => 'invoice void',
+  'P' => 'payment void',
 );
 
 our %class_purpose = (  
@@ -19,7 +22,19 @@ our %class_purpose = (
   'R' => 'explain why a customer was credited',
   'S' => 'explain why a customer package was suspended',
   'F' => 'explain why a customer was refunded',
-  'X' => 'explain why a transaction was voided',
+  'X' => 'explain why a credit was voided',
+  'I' => 'explain why an invoice was voided',
+  'P' => 'explain why a payment was voided',
+);
+
+our %class_add_access_right = (
+  'C' => 'Add on-the-fly cancel reason',
+  'R' => 'Add on-the-fly credit reason',
+  'S' => 'Add on-the-fly suspend reason',
+  'F' => 'Add on-the-fly refund reason',
+  'X' => 'Add on-the-fly void reason',
+  'I' => 'Add on-the-fly void reason',
+  'P' => 'Add on-the-fly void reason',
 );
 
 =head1 NAME
@@ -50,7 +65,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item typenum - primary key
 
-=item class - currently 'C', 'R', 'S', 'F' or 'X' for cancel, credit, suspend, refund or void credit 
+=item class - one of the keys of %class_name
 
 =item type - name of the type of reason
 

@@ -6,8 +6,7 @@ Example:
 
     #required 
     'field'         => 'reasonnum',
-    'reason_class'  => 'C', # currently 'C', 'R', 'F', 'S' or 'X'
-                           # for cancel, credit, refund, suspend or void credit
+    'reason_class'  => 'C', # one of those in %FS::reason_type::class_name
 
     #recommended
     'cgi' => $cgi, #easiest way for things to be properly "sticky" on errors
@@ -189,20 +188,8 @@ if ( $opt{'cgi'} ) {
 my $id = $opt{'id'} || $name;
 $id =~ s/\./_/g; # for edit/part_event
 
-my $add_access_right;
-if ($class eq 'C') {
-  $add_access_right = 'Add on-the-fly cancel reason';
-} elsif ($class eq 'S') {
-  $add_access_right = 'Add on-the-fly suspend reason';
-} elsif ($class eq 'R') {
-  $add_access_right = 'Add on-the-fly credit reason';
-} elsif ($class eq 'F') {
-  $add_access_right = 'Add on-the-fly refund reason';
-} elsif ($class eq 'X') {
-  $add_access_right = 'Add on-the-fly void reason';
-} else {
-  die "illegal class: $class";
-}
+my $add_access_right = $FS::reason_type::class_add_access_right{$class}
+  or die "unknown class: $class";
 
 my @reasons = qsearch({
   'table'           => 'reason',

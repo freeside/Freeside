@@ -186,7 +186,7 @@ my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK|TOKN)$/
 $void = ' ('.
                include( '/elements/popup_link.html',
                     'label'    => emt('void'),
-                    'action'   => "${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
+                    'action'   => "${p}misc/void-cust_pay.html?".$cust_pay->paynum,
                     'actionlabel' => emt('Void payment'),
                 ).
           ')'
