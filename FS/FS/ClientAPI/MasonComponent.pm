@@ -21,6 +21,7 @@ my %allowed_comps = map { $_=>1 } qw(
   /misc/phonenums.cgi
   /misc/states.cgi
   /misc/counties.cgi
+  /misc/cities.cgi
   /misc/svc_acct-domains.cgi
   /misc/part_svc-columns.cgi
   /edit/elements/svc_forward.html
