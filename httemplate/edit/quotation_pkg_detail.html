@@ -21,15 +21,11 @@
     <TD BGCOLOR="#ffffff"><% $part_pkg->comment |h %></TD>
   </TR>
 
-  <TR>
-    <TD COLSPAN=2>Detail: </TD>
-  </TR>
-
 % my $row = 0;
 % for ( @details ) { 
 
     <TR>
-      <TD></TD>
+      <TD ALIGN="right"><% $row ? '' : 'Detail' %></TD>
       <TD>
         <INPUT TYPE="text" NAME="detail<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $_ |h %>" rownum="<% $row++ %>" onkeyup="possiblyAddRow" onchange="possiblyAddrow">
       </TD>
@@ -63,6 +59,10 @@
     var row = document.createElement('TR');
 
     var empty_cell = document.createElement('TD');
+    if (!rownum) {
+      empty_cell.innerHTML = 'Detail:'
+      empty_cell.style.textAlign = 'right';
+    }
     row.appendChild(empty_cell);
 
     var detail_cell = document.createElement('TD');
