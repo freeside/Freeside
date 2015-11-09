@@ -34,10 +34,9 @@ currently supported:
 
 primary key
 
-=item billpkgnum
+=item quotationpkgnum
 
-named thusly for quick compatability with L<FS::TemplateItem_Mixin>,
-actually the quotationpkgnum for the relevant L<FS::quotation_pkg>
+for the relevant L<FS::quotation_pkg>
 
 =item detail
 
@@ -108,7 +107,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('detailnum')
-    || $self->ut_foreign_key('billpkgnum', 'quotation_pkg', 'quotationpkgnum')
+    || $self->ut_foreign_key('quotationpkgnum', 'quotation_pkg', 'quotationpkgnum')
     || $self->ut_text('detail')
   ;
   return $error if $error;
