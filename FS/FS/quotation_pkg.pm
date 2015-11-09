@@ -101,20 +101,7 @@ sub display_table         { 'quotation_pkg'; }
 #                                                 #  (for invoice display order)
 
 sub discount_table        { 'quotation_pkg_discount'; }
-
-# detail table uses non-quotation fieldnames, see billpkgnum below
 sub detail_table          { 'quotation_pkg_detail'; }
-
-=item billpkgnum
-
-Sets/returns quotationpkgnum, for ease of integration with TemplateItem_Mixin::details
-
-=cut
-
-sub billpkgnum {
-  my $self = shift;
-  $self->quotationpkgnum(@_);
-}
 
 =item insert
 
@@ -380,7 +367,7 @@ sub delete_details {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  foreach my $detail ( qsearch('quotation_pkg_detail',{ 'billpkgnum' => $self->quotationpkgnum }) ) {
+  foreach my $detail ( qsearch('quotation_pkg_detail',{ 'quotationpkgnum' => $self->quotationpkgnum }) ) {
     my $error = $detail->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -416,8 +403,8 @@ sub set_details {
 
   foreach my $detail ( @details ) {
     my $quotation_pkg_detail = new FS::quotation_pkg_detail {
-      'billpkgnum' => $self->quotationpkgnum,
-      'detail'     => $detail,
+      'quotationpkgnum' => $self->quotationpkgnum,
+      'detail' => $detail,
     };
     $error = $quotation_pkg_detail->insert;
     if ( $error ) {
@@ -429,6 +416,10 @@ sub set_details {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+sub details_header {
+  return ();
 }
 
 =item cust_bill_pkg_display [ type => TYPE ]

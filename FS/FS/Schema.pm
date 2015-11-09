@@ -1973,7 +1973,7 @@ sub tables_hashref {
     'quotation_pkg_detail' => {
       'columns' => [
         'detailnum', 'serial', '', '', '', '', 
-        'billpkgnum', 'int', '', '', '', '',        # actually links to quotationpkgnum
+        'quotationpkgnum', 'int', '', '', '', '',
         'format',  'char', 'NULL', 1, '', '',       # not used for anything
         'detail',  'varchar', '', 255, '', '',
       ],
@@ -1981,7 +1981,7 @@ sub tables_hashref {
       'unique'       => [],
       'index'        => [ [ 'billpkgnum' ] ],
       'foreign_keys' => [
-                          { columns    => [ 'billpkgnum' ],
+                          { columns    => [ 'quotationpkgnum' ],
                             table      => 'quotation_pkg',
                             references => [ 'quotationpkgnum' ],
                           },

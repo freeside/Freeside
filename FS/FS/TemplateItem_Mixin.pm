@@ -175,6 +175,7 @@ sub details {
   my $escape_function = $opt{escape_function} || sub { shift };
 
   my $csv = new Text::CSV_XS;
+  my $key = $self->primary_key;
 
   if ( $opt{format_function} ) {
 
@@ -189,14 +190,14 @@ sub details {
           )
         }
       qsearch ({ 'table'    => $self->detail_table,
-                 'hashref'  => { 'billpkgnum' => $self->billpkgnum },
+                 'hashref'  => { $key => $self->get($key) },
                  'order_by' => 'ORDER BY detailnum',
               });
 
   } elsif ( $opt{'no_usage'} ) {
 
     my $sql = "SELECT detail FROM ". $self->detail_table.
-              "  WHERE billpkgnum = ". $self->billpkgnum.
+              "  WHERE " . $key . " = ". $self->get($key).
               "    AND ( format IS NULL OR format != 'C' ) ".
               "  ORDER BY detailnum";
     my $sth = dbh->prepare($sql) or die dbh->errstr;
@@ -251,7 +252,7 @@ sub details {
     }
 
     my $sql = "SELECT format, detail FROM ". $self->detail_table.
-              "  WHERE billpkgnum = ". $self->billpkgnum.
+              "  WHERE " . $key . " = ". $self->get($key).
               "  ORDER BY detailnum";
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
