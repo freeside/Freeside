@@ -508,6 +508,17 @@ my $usage_warning = sub {
 # If you add anything, be sure to add a description in 
 # httemplate/edit/msg_template.html.
 sub substitutions {
+  my $payinfo_sub = sub { 
+    my $obj = shift;
+    ($obj->payby eq 'CARD' || $obj->payby eq 'CHEK')
+    ? $obj->paymask 
+    : $obj->decrypt($obj->payinfo)
+  };
+  my $payinfo_end = sub {
+    my $obj = shift;
+    my $payinfo = &$payinfo_sub($obj);
+    substr($payinfo, -4);
+  };
   { 'cust_main' => [qw(
       display_custnum agentnum agent_name
 
@@ -654,11 +665,8 @@ sub substitutions {
       # overrides the one in cust_main in cases where a cust_pay is passed
       [ payby             => sub { FS::payby->shortname(shift->payby) } ],
       [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
-      [ payinfo           => sub { 
-          my $cust_pay = shift;
-          ($cust_pay->payby eq 'CARD' || $cust_pay->payby eq 'CHEK') ?
-            $cust_pay->paymask : $cust_pay->decrypt($cust_pay->payinfo)
-        } ],
+      [ 'payinfo' => $payinfo_sub ],
+      [ 'payinfo_end' => $payinfo_end ],
     ],
     # for refund receipts
     'cust_refund' => [
@@ -666,11 +674,8 @@ sub substitutions {
       [ refund            => sub { sprintf("%.2f", shift->refund) } ],
       [ payby             => sub { FS::payby->shortname(shift->payby) } ],
       [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
-      [ payinfo           => sub { 
-          my $cust_refund = shift;
-          ($cust_refund->payby eq 'CARD' || $cust_refund->payby eq 'CHEK') ?
-            $cust_refund->paymask : $cust_refund->decrypt($cust_refund->payinfo)
-        } ],
+      [ 'payinfo' => $payinfo_sub ],
+      [ 'payinfo_end' => $payinfo_end ],
     ],
     # for payment decline messages
     # try to support all cust_pay fields
@@ -682,11 +687,8 @@ sub substitutions {
       [ paid              => sub { sprintf("%.2f", shift->paid) } ],
       [ payby             => sub { FS::payby->shortname(shift->payby) } ],
       [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
-      [ payinfo           => sub {
-          my $pending = shift;
-          ($pending->payby eq 'CARD' || $pending->payby eq 'CHEK') ?
-            $pending->paymask : $pending->decrypt($pending->payinfo)
-        } ],
+      [ 'payinfo' => $payinfo_sub ],
+      [ 'payinfo_end' => $payinfo_end ],
     ],
   };
 }
