@@ -5679,6 +5679,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-announcement',
+    'section'     => 'self-service',
+    'description' => 'HTML announcement to display to all authenticated users on account overview page',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'logout-timeout',
     'section'     => 'UI',
     'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
