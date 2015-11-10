@@ -634,6 +634,11 @@ sub customer_info_short {
 
   }
 
+  # this is here because this routine is called by both fs_ and ng_ main pages, where it appears
+  # it is not customer-specific, though it is only shown to authenticated customers
+  # it is not currently agent-specific, though at some point it might be
+  $return{'announcement'} = join(' ',$conf->config('selfservice-announcement')) || '';
+
   return { 'error'          => '',
            'custnum'        => $custnum,
            %return,
