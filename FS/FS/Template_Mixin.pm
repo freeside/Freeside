@@ -3141,6 +3141,8 @@ sub _items_cust_bill_pkg {
         # quotation_pkgs are never fees, so don't worry about the case where
         # part_pkg is undefined
 
+        my @details = $cust_bill_pkg->details;
+
         # and I guess they're never bundled either?
         if ( $cust_bill_pkg->setup != 0 ) {
           my $description = $desc;
@@ -3156,6 +3158,7 @@ sub _items_cust_bill_pkg {
             'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
             'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitsetup),
             'quantity'    => $cust_bill_pkg->quantity,
+            'ext_description' => \@details,
             'preref_html' => ( $opt{preref_callback}
                                  ? &{ $opt{preref_callback} }( $cust_bill_pkg )
                                  : ''
@@ -3170,6 +3173,7 @@ sub _items_cust_bill_pkg {
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
             'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitrecur),
             'quantity'    => $cust_bill_pkg->quantity,
+            'ext_description' => \@details,
            'preref_html'  => ( $opt{preref_callback}
                                  ? &{ $opt{preref_callback} }( $cust_bill_pkg )
                                  : ''
