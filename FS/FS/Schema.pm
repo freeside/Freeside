@@ -1392,7 +1392,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'detailnum',
       'unique'       => [],
-      'index'        => [ [ 'billpkgnum' ] ],
+      'index'        => [ [ 'quotationpkgnum' ] ],
       'foreign_keys' => [
                           { columns    => [ 'quotationpkgnum' ],
                             table      => 'quotation_pkg',
