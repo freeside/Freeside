@@ -39,8 +39,14 @@ Usage:
 %   }
     </B>
 %   if ($part_svc->svcdb eq 'svc_circuit') {
-      <BR>Provider:&nbsp;<% $svc_x->circuit_provider->provider %>
-      <BR>Type:&nbsp;<% $svc_x->circuit_type->typename %>
+%     my $provider = qsearchs('circuit_provider', { 'providernum' => $svc_x->providernum });
+%     my $ctype    = qsearchs('circuit_type', { 'typenum' => $svc_x->typenum });
+%     if ($provider) {
+      <BR>Provider:&nbsp;<% $provider->provider %>
+%     }
+%     if ($ctype) {
+      <BR>Type:&nbsp;<% $ctype->typename %>
+%     }
 %   }
 %   if ( $opt{after_svc_callback} ) {
       <% &{ $opt{after_svc_callback} }( $cust_svc ) %>
