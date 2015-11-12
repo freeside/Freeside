@@ -90,8 +90,11 @@ sub discount_terms {
 
   my @discount_pkgs = $self->_discount_pkgs_and_bill;
   shift @discount_pkgs; #discard bill;
-  
-  map { $terms{$_->months} = 1 }
+
+  # convert @discount_pkgs (the list of packages that have available discounts)
+  # to a list of distinct term lengths in months, and strip any decimal places
+  # from the number of months, not that it should have any 
+  map { $terms{sprintf('%.0f', $_->months)} = 1 }
     grep { $_->months && $_->months > 1 }
     map { $_->discount }
     map { $_->part_pkg->part_pkg_discount }
