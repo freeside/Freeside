@@ -1183,7 +1183,8 @@ sub _make_lines {
       } else {
       # the normal case, not a supplemental package
       $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
-      return "unparsable frequency: ". $part_pkg->freq
+      return "unparsable frequency: ".
+        ($options{freq_override} || $part_pkg->freq)
         if $next_bill == -1;
       }  
   
