@@ -798,3 +798,5 @@ FS/cust_pkg_reason_fee.pm
 t/cust_pkg_reason_fee.t
 FS/report_batch.pm
 t/report_batch.t
+FS/password_history.pm
+t/password_history.t

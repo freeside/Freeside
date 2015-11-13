@@ -2947,13 +2947,15 @@ sub myaccount_passwd {
         )
     && ! $svc_acct->check_password($p->{'old_password'});
 
+    # should move password length checks into is_password_allowed
   $error = 'Password too short.'
     if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
   $error = 'Password too long.'
     if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
 
-  $svc_acct->set_password($p->{'new_password'});
-  $error ||= $svc_acct->replace();
+  $error ||= $svc_acct->is_password_allowed($p->{'new_password'})
+         ||  $svc_acct->set_password($p->{'new_password'})
+         ||  $svc_acct->replace();
 
   #regular pw change in self-service should change contact pw too, otherwise its
   #way too confusing.  hell its confusing they're separate at all, but alas.
@@ -3217,8 +3219,9 @@ sub process_reset_passwd {
 
   if ( $svc_acct ) {
 
-    $svc_acct->set_password($p->{'new_password'});
-    my $error = $svc_acct->replace();
+    my $error ||= $svc_acct->is_password_allowed($p->{'new_password'})
+              ||  $svc_acct->set_password($p->{'new_password'})
+              ||  $svc_acct->replace();
 
     return { %$info, 'error' => $error } if $error;
 

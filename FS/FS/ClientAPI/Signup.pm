@@ -698,6 +698,9 @@ sub new_customer {
         map { $_ => $packet->{$_} }
           qw( username _password sec_phrase popnum domsvc ),
       };
+      
+      my $error = $svc->is_password_allowed($packet->{_password});
+      return { error => $error } if $error;
 
       my @acct_snarf;
       my $snarfnum = 1;

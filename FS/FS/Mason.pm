@@ -384,6 +384,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::report_batch;
   use FS::report_batch;
   use FS::report_batch;
+  use FS::password_history;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

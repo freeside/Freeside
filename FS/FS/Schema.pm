@@ -4904,6 +4904,52 @@ sub tables_hashref {
                         ],
     },
 
+    'password_history' => {
+      'columns' => [
+        'passwordnum',        'serial',  '',          '', '', '',
+        '_password',          'varchar', 'NULL', $char_d, '', '',
+        'encryption_method',  'varchar', 'NULL', $char_d, '', '',
+        'created',   @date_type,   '', '',
+        # each table that needs password history gets a column here, and
+        # an entry in foreign_keys.
+        'svc_acct__svcnum',     'int', 'NULL', '', '', '',
+        'svc_dsl__svcnum',      'int', 'NULL', '', '', '',
+        'svc_alarm__svcnum',    'int', 'NULL', '', '', '',
+        'agent__agentnum',      'int', 'NULL', '', '', '',
+        'contact__contactnum',  'int', 'NULL', '', '', '',
+        'access_user__usernum', 'int', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'passwordnum',
+      'unique' => [],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns     => [ 'svc_acct__svcnum' ],
+                            table       => 'svc_acct',
+                            references  => [ 'svcnum' ],
+                          },
+                          { columns     => [ 'svc_dsl__svcnum' ],
+                            table       => 'svc_dsl',
+                            references  => [ 'svcnum' ],
+                          },
+                          { columns     => [ 'svc_alarm__svcnum' ],
+                            table       => 'svc_alarm',
+                            references  => [ 'svcnum' ],
+                          },
+                          { columns    => [ 'agent__agentnum' ],
+                            table      => 'agent',
+                            references => [ 'agentnum' ],
+                          },
+                          { columns    => [ 'contact__contactnum' ],
+                            table      => 'contact',
+                            references => [ 'contactnum' ],
+                          },
+                          { columns    => [ 'access_user__usernum' ],
+                            table      => 'access_user',
+                            references => [ 'usernum' ],
+                          },
+                        ],
+    },
+
     # name type nullability length default local
 
     #'new_table' => {

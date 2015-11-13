@@ -7,7 +7,11 @@ use base qw( FS::svc_Domain_Mixin
              FS::svc_Radius_Mixin
              FS::svc_Tower_Mixin
              FS::svc_IP_Mixin
-             FS::svc_Common );
+             FS::Password_Mixin
+             FS::svc_Common
+           );
+
+use strict;
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
@@ -701,6 +705,9 @@ sub insert {
     'child_objects' => $self->child_objects,
     %options,
   );
+
+  $error ||= $self->insert_password_history;
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -985,6 +992,12 @@ sub replace {
   my $dbh = dbh;
 
   $error = $new->SUPER::replace($old, @_); # usergroup here
+
+  # don't need to record this unless the password was changed
+  if ( $old->_password ne $new->_password ) {
+    $error ||= $new->insert_password_history;
+  }
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error if $error;
