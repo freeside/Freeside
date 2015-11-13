@@ -858,3 +858,5 @@ FS/report_batch.pm
 t/report_batch.t
 FS/report_batch.pm
 t/report_batch.t
+FS/password_history.pm
+t/password_history.t

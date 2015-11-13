@@ -1305,13 +1305,11 @@ C<print-cf> specifies oe or more consolidation functions, separated by comma.
 The result of the rendering is the text line with the output values
 separated by colon (:).
 
-=back
-
 =item * C<disable-legend>, C<disable-title>, C<disable-vertical-label>
 
 When set to C<yes>, the corresponding elements of the graph are not displayed.
 
-
+=back
 
 =head3 Styling Profiles
 

@@ -3000,9 +3000,6 @@ location (whichever is defined).
 multisection: a flag indicating that this is a multisection invoice,
 which does something complicated.
 
-preref_callback: coderef run for each line item, code should return HTML to be
-displayed before that line item (quotations only)
-
 Returns a list of hashrefs, each of which may contain:
 
 pkgnum, description, amount, unit_amount, quantity, pkgpart, _is_setup, and 
@@ -3139,51 +3136,7 @@ sub _items_cust_bill_pkg {
                           'no_usage'        => $opt{'no_usage'},
                         );
 
-      if ( ref($cust_bill_pkg) eq 'FS::quotation_pkg' ) {
-        # XXX this should be pulled out into quotation_pkg
-
-        warn "$me _items_cust_bill_pkg cust_bill_pkg is quotation_pkg\n"
-          if $DEBUG > 1;
-        # quotation_pkgs are never fees, so don't worry about the case where
-        # part_pkg is undefined
-
-        # and I guess they're never bundled either?
-        if ( $cust_bill_pkg->setup != 0 ) {
-          my $description = $desc;
-          $description .= ' Setup'
-            if $cust_bill_pkg->recur != 0
-            || $discount_show_always
-            || $cust_bill_pkg->recur_show_zero;
-          #push @b, {
-          # keep it consistent, please
-          $s = {
-            'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
-            'description' => $description,
-            'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
-            'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitsetup),
-            'quantity'    => $cust_bill_pkg->quantity,
-            'preref_html' => ( $opt{preref_callback}
-                                 ? &{ $opt{preref_callback} }( $cust_bill_pkg )
-                                 : ''
-                             ),
-          };
-        }
-        if ( $cust_bill_pkg->recur != 0 ) {
-          #push @b, {
-          $r = {
-            'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
-            'description' => "$desc (". $cust_bill_pkg->part_pkg->freq_pretty.")",
-            'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
-            'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitrecur),
-            'quantity'    => $cust_bill_pkg->quantity,
-           'preref_html'  => ( $opt{preref_callback}
-                                 ? &{ $opt{preref_callback} }( $cust_bill_pkg )
-                                 : ''
-                             ),
-          };
-        }
-
-      } elsif ( $cust_bill_pkg->pkgnum > 0 ) {
+      if ( $cust_bill_pkg->pkgnum > 0 ) {
         # a "normal" package line item (not a quotation, not a fee, not a tax)
 
         warn "$me _items_cust_bill_pkg cust_bill_pkg is non-tax\n"
@@ -3483,7 +3436,7 @@ sub _items_cust_bill_pkg {
                                            + $cust_bill_pkg->recur)
         };
 
-      } # if quotation / package line item / other line item
+      } # if package line item / other line item
 
       # decide whether to show active discounts here
       if (

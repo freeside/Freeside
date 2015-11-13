@@ -17,13 +17,15 @@ extract($customer_info);
 
 ?>
 
-Hello <? echo htmlspecialchars($name); ?><BR><BR>
+<P>Hello <? echo htmlspecialchars($name); ?></P>
 
 <? if ( $signupdate_pretty ) { ?>
-  Thank you for being a customer since <? echo $signupdate_pretty; ?><BR><BR>
+  <P>Thank you for being a customer since <? echo $signupdate_pretty; ?></P>
 <? } ?>
 
-Your current balance is: <B>$<? echo $balance ?></B><BR><BR>
+<P>Your current balance is: <B>$<? echo $balance ?></B></P>
+
+<? echo $announcement ?>
 
 <!--
 your open invoices if you have any & payment link if you have one.  more insistant if you're late?

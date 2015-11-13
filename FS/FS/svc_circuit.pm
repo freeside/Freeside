@@ -6,7 +6,7 @@ use base qw(
   FS::MAC_Mixin
   FS::svc_Common
 );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::circuit_provider;
 use FS::circuit_type;
 use FS::circuit_termination;
@@ -221,9 +221,9 @@ sub label {
 sub search_sql {
   my ($class, $string) = @_;
   my @where = ();
-  push @where, 'LOWER(svc_circuit.circuit_id) = \''.lc($string).'\'';
-  push @where, 'LOWER(circuit_provider.provider) = \''.lc($string).'\'';
-  push @where, 'LOWER(circuit_type.typename) = \''.lc($string).'\'';
+  push @where, 'LOWER(svc_circuit.circuit_id) = ' . dbh->quote($string);
+  push @where, 'LOWER(circuit_provider.provider) = ' . dbh->quote($string);
+  push @where, 'LOWER(circuit_type.typename) = ' . dbh->quote($string);
   '(' . join(' OR ', @where) . ')';
 }
 

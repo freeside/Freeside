@@ -55,8 +55,9 @@ Hello <%= $name %>!<BR><BR>
   } else {
     $OUT .= '<P>You have no outstanding invoices.</P>';
   }
-
 %>
+
+<%= $announcement || '' %>
 
 <%=
   if ( @support_services ) {
