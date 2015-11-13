@@ -4,6 +4,7 @@ use strict;
 use base 'FS::part_export';
 use vars qw( %info );
 use String::ShellQuote;
+use Net::OpenSSH;
 
 #tie my %options, 'Tie::IxHash';
 #;
@@ -21,8 +22,6 @@ sub rebless { shift; }
 sub _export_insert {
   my($self, $svc_acct) = (shift, shift);
 
-  eval "use Net::OpenSSH;";
-  return $@ if $@;
 
   open my $def_in, '<', '/dev/null' or die "unable to open /dev/null";
   my $ssh = Net::OpenSSH->new( $self->machine,
@@ -60,9 +59,6 @@ sub _export_delete {
   my( $self, $svc_acct ) = (shift, shift);
 
   #well, we're just going to disable them for now, but there you go
-
-  eval "use Net::OpenSSH;";
-  return $@ if $@;
 
   open my $def_in, '<', '/dev/null' or die "unable to open /dev/null";
   my $ssh = Net::OpenSSH->new( $self->machine,
