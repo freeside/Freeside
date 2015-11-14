@@ -4,7 +4,7 @@ use FS::Record qw(qsearch);
 use FS::Conf;
 use FS::password_history;
 use Authen::Passphrase;
-# use Authen::Passphrase::BlowfishCrypt; # ha ha, no.
+use Authen::Passphrase::BlowfishCrypt;
 # https://rt.cpan.org/Ticket/Display.html?id=72743
 
 our $DEBUG = 1;
@@ -12,7 +12,7 @@ our $conf;
 FS::UID->install_callback( sub {
     $conf = FS::Conf->new;
     # this is safe
-    eval "use Authen::Passphrase::BlowfishCrypt;";
+    #eval "use Authen::Passphrase::BlowfishCrypt;";
 });
 
 our $me = '[' . __PACKAGE__ . ']';

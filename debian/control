@@ -78,7 +78,8 @@ Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libexcel-writer-xlsx-perl,libgeo-googleearth-pluggable-perl,
  libhtml-mason-psgihandler-perl,libdate-simple-perl,libsnmp-perl,
  libemail-valid-perl,libparse-fixedlength-perl,libregexp-common-net-cidr-perl,
- libio-string-perl,libnet-mac-vendor-perl,libnet-https-any-perl
+ libio-string-perl,libnet-mac-vendor-perl,libnet-https-any-perl,
+ libparams-classify-perl (>= 0.013-5.1)
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
