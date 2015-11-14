@@ -87,7 +87,7 @@ Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libemail-address-list-perl,
  libsymbol-global-name-perl, libdate-extract-perl, librole-basic-perl,
  libhtml-formattext-withlinks-andtables-perl, libcrypt-x509-perl,
- libdata-guid-perl
+ libdata-guid-perl, libparams-classify-perl (>= 0.013-5.1)
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
