@@ -161,13 +161,9 @@ Accepts an arrayref of reason objects, to be merged into this reason.
 Reasons must all have the same reason_type class as this one.
 Matching reasonnums will be replaced in the following tables:
 
-  cust_bill_void
-  cust_bill_pkg_void
   cust_credit
   cust_credit_void
-  cust_pay_void
   cust_pkg_reason
-  cust_refund
 
 =cut
 
@@ -195,13 +191,9 @@ sub merge {
     $error = "Mismatched reason type class"    
       unless $reason->reasontype->class eq $class;
     foreach my $table ( qw(
-      cust_bill_void
-      cust_bill_pkg_void
       cust_credit
       cust_credit_void
-      cust_pay_void
       cust_pkg_reason
-      cust_refund
     )) {
       last if $error;
       my @fields = ('reasonnum');
