@@ -155,6 +155,80 @@ sub reasontype {
   qsearchs( 'reason_type', { 'typenum' => shift->reason_type } );
 }
 
+=item merge
+
+Accepts an arrayref of reason objects, to be merged into this reason.
+Reasons must all have the same reason_type class as this one.
+Matching reasonnums will be replaced in the following tables:
+
+  cust_bill_void
+  cust_bill_pkg_void
+  cust_credit
+  cust_credit_void
+  cust_pay_void
+  cust_pkg_reason
+  cust_refund
+
+=cut
+
+sub merge {
+  my ($self,$reasons) = @_;
+  return "Bad input for merge" unless ref($reasons) eq 'ARRAY';
+
+  my $class = $self->reasontype->class;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error;
+  foreach my $reason (@$reasons) {
+    last if $error;
+    next if $reason->reasonnum eq $self->reasonnum;
+    $error = "Mismatched reason type class"    
+      unless $reason->reasontype->class eq $class;
+    foreach my $table ( qw(
+      cust_bill_void
+      cust_bill_pkg_void
+      cust_credit
+      cust_credit_void
+      cust_pay_void
+      cust_pkg_reason
+      cust_refund
+    )) {
+      last if $error;
+      my @fields = ('reasonnum');
+      push(@fields, 'void_reasonnum') if $table eq 'cust_credit_void';
+      foreach my $field (@fields) {
+        last if $error;
+        foreach my $obj ( qsearch($table,{ $field => $reason->reasonnum }) ) {
+          last if $error;
+          $obj->set($field,$self->reasonnum);
+          $error = $obj->replace;
+        }
+      }
+    }
+    $error ||= $reason->delete;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
 =back
 
 =head1 CLASS METHODS

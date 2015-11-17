@@ -11,6 +11,7 @@
                     },
                   ],
                   filter        => '.name = "pkgpart"', # see below
+                  minboxes      => 2, #will remove checkboxes if there aren't at least this many
                ),
 &>
 
@@ -67,6 +68,14 @@ for (var i = 0; i < inputs.length; i++) {
   }
 }
 %# avoid the need for "$areboxes" late-evaluation hackery
+% if ($opt{'minboxes'}) {
+if ( checkboxes.length < <% $opt{'minboxes'} %> ) {
+  for (i = 0; i < checkboxes.length; i++) {
+    checkboxes[i].parentNode.removeChild(checkboxes[i]);
+  }
+  checkboxes = [];
+}
+% }
 if ( checkboxes.length == 0 ) {
   document.getElementById('checkbox_footer').style.display = 'none';
 }
