@@ -325,14 +325,7 @@ a better explanation of this, but until then, here's an example:
   );
   $cust_main->insert( \%hash );
 
-INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
-be set as the invoicing list (see L<"invoicing_list">).  Errors return as
-expected and rollback the entire transaction; it is not necessary to call 
-check_invoicing_list first.  The invoicing_list is set after the records in the
-CUST_PKG_HASHREF above are inserted, so it is now possible to set an
-invoicing_list destination to the newly-created svc_acct.  Here's an example:
-
-  $cust_main->insert( {}, [ $email, 'POST' ] );
+INVOICING_LIST_ARYREF: No longer supported.
 
 Currently available options are: I<depend_jobnum>, I<noexport>,
 I<tax_exemption>, I<prospectnum>, I<contact> and I<contact_params>.
@@ -352,8 +345,8 @@ created and inserted.
 
 If I<prospectnum> is set, moves contacts and locations from that prospect.
 
-If I<contact> is set to an arrayref of FS::contact objects, inserts those
-new contacts with this new customer.
+If I<contact> is set to an arrayref of FS::contact objects, those will be
+inserted.
 
 If I<contact_params> is set to a hashref of CGI parameters (and I<contact> is
 unset), inserts those new contacts with this new customer.  Handles CGI
@@ -368,7 +361,10 @@ for an "m2" multiple entry field as passed by edit/cust_main.cgi
 sub insert {
   my $self = shift;
   my $cust_pkgs = @_ ? shift : {};
-  my $invoicing_list = @_ ? shift : '';
+  my $invoicing_list = $_[0];
+  if ( $invoicing_list and ref($invoicing_list) eq 'ARRAY' ) {
+    shift;
+  }
   my %options = @_;
   warn "$me insert called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
@@ -495,19 +491,6 @@ sub insert {
     }
   }
 
-  warn "  setting invoicing list\n"
-    if $DEBUG > 1;
-
-  if ( $invoicing_list ) {
-    $error = $self->check_invoicing_list( $invoicing_list );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      #return "checking invoicing_list (transaction rolled back): $error";
-      return $error;
-    }
-    $self->invoicing_list( $invoicing_list );
-  }
-
   warn "  setting customer tags\n"
     if $DEBUG > 1;
 
@@ -594,6 +577,27 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+  }
+  
+  if ( $invoicing_list ) {
+    warn "FS::cust_main::insert setting invoice destinations via invoicing_list\n"
+      if $DEBUG;
+
+    # okay, for now we'll still allow setting the contact this way
+    $invoicing_list = join(',', @$invoicing_list) if ref $invoicing_list;
+    my $contact = FS::contact->new({
+      'custnum'       => $self->get('custnum'),
+      'last'          => $self->get('last'),
+      'first'         => $self->get('first'),
+      'emailaddress'  => $invoicing_list,
+      'invoice_dest'  => 'Y',
+    });
+    my $error = $contact->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
   }
 
   warn "  setting cust_payby\n"
@@ -1274,12 +1278,9 @@ To change the customer's address, set the pseudo-fields C<bill_location> and
 C<ship_location>.  The address will still only change if at least one of the
 address fields differs from the existing values.
 
-INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
-be set as the invoicing list (see L<"invoicing_list">).  Errors return as
-expected and rollback the entire transaction; it is not necessary to call 
-check_invoicing_list first.  Here's an example:
-
-  $new_cust_main->replace( $old_cust_main, [ $email, 'POST' ] );
+INVOICING_LIST_ARYREF: If you pass an arrayref to this method, it will be
+set as the contact email address for a default contact with the same name as
+the customer.
 
 Currently available options are: I<tax_exemption>.
 
@@ -1347,6 +1348,45 @@ sub replace {
     $self->set($l.'num', $new_loc->locationnum);
   } #for $l
 
+  if ( @param && ref($param[0]) eq 'ARRAY' ) { # INVOICING_LIST_ARYREF
+    my $invoicing_list = shift @param;
+    my $email = '';
+    foreach (@$invoicing_list) {
+      if ($_ eq 'POST') {
+        $self->set('postal_invoice', 'Y');
+      } else {
+        $email .= ',' if length($email);
+        $email .= $_;
+      }
+    }
+    my @contacts = map { $_->contact } $self->cust_contact;
+    # if possible, use a contact that matches the customer's name
+    my ($contact) = grep { $_->first eq $old->get('first') and
+                           $_->last  eq $old->get('last') }
+                    @contacts;
+    $contact ||= FS::contact->new({
+        'custnum'       => $self->custnum,
+        'locationnum'   => $self->get('bill_locationnum'),
+    });
+    $contact->set('last', $self->get('last'));
+    $contact->set('first', $self->get('first'));
+    $contact->set('emailaddress', $email);
+    $contact->set('invoice_dest', 'Y');
+
+    my $error;
+    if ( $contact->contactnum ) {
+      $error = $contact->replace;
+    } elsif ( length($email) ) { # don't create a new contact if email is empty
+      $error = $contact->insert;
+    }
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
   # replace the customer record
   my $error = $self->SUPER::replace($old);
 
@@ -1374,16 +1414,6 @@ sub replace {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-  }
-
-  if ( @param && ref($param[0]) eq 'ARRAY' ) { # INVOICING_LIST_ARYREF
-    my $invoicing_list = shift @param;
-    $error = $self->check_invoicing_list( $invoicing_list );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-    $self->invoicing_list( $invoicing_list );
   }
 
   if ( $self->exists('tagnum') ) { #so we don't delete these on edit by accident
@@ -1605,6 +1635,7 @@ sub check {
     || $self->ut_alphan('po_number')
     || $self->ut_enum('complimentary', [ '', 'Y' ])
     || $self->ut_flag('invoice_ship_address')
+    || $self->ut_flag('invoice_dest')
   ;
 
   foreach (qw(company ship_company)) {
@@ -2814,18 +2845,10 @@ sub tax_exemption {
 
 =item cust_main_exemption
 
-=item invoicing_list [ ARRAYREF ]
+=item invoicing_list
 
-If an arguement is given, sets these email addresses as invoice recipients
-(see L<FS::cust_main_invoice>).  Errors are not fatal and are not reported
-(except as warnings), so use check_invoicing_list first.
-
-Returns a list of email addresses (with svcnum entries expanded).
-
-Note: You can clear the invoicing list by passing an empty ARRAYREF.  You can
-check it without disturbing anything by passing nothing.
-
-This interface may change in the future.
+Returns a list of email addresses (with svcnum entries expanded), and the word
+'POST' if the customer receives postal invoices.
 
 =cut
 
@@ -2833,47 +2856,13 @@ sub invoicing_list {
   my( $self, $arrayref ) = @_;
 
   if ( $arrayref ) {
-    my @cust_main_invoice;
-    if ( $self->custnum ) {
-      @cust_main_invoice = 
-        qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
-    } else {
-      @cust_main_invoice = ();
-    }
-    foreach my $cust_main_invoice ( @cust_main_invoice ) {
-      #warn $cust_main_invoice->destnum;
-      unless ( grep { $cust_main_invoice->address eq $_ } @{$arrayref} ) {
-        #warn $cust_main_invoice->destnum;
-        my $error = $cust_main_invoice->delete;
-        warn $error if $error;
-      }
-    }
-    if ( $self->custnum ) {
-      @cust_main_invoice = 
-        qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
-    } else {
-      @cust_main_invoice = ();
-    }
-    my %seen = map { $_->address => 1 } @cust_main_invoice;
-    foreach my $address ( @{$arrayref} ) {
-      next if exists $seen{$address} && $seen{$address};
-      $seen{$address} = 1;
-      my $cust_main_invoice = new FS::cust_main_invoice ( {
-        'custnum' => $self->custnum,
-        'dest'    => $address,
-      } );
-      my $error = $cust_main_invoice->insert;
-      warn $error if $error;
-    }
+    warn "FS::cust_main::invoicing_list(ARRAY) is no longer supported.";
   }
   
-  if ( $self->custnum ) {
-    map { $_->address }
-      qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
-  } else {
-    ();
-  }
+  my @emails = $self->invoicing_list_emailonly;
+  push @emails, 'POST' if $self->get('postal_invoice');
 
+  @emails;
 }
 
 =item check_invoicing_list ARRAYREF
@@ -2911,18 +2900,6 @@ sub check_invoicing_list {
   '';
 }
 
-=item set_default_invoicing_list
-
-Sets the invoicing list to all accounts associated with this customer,
-overwriting any previous invoicing list.
-
-=cut
-
-sub set_default_invoicing_list {
-  my $self = shift;
-  $self->invoicing_list($self->all_emails);
-}
-
 =item all_emails
 
 Returns the email addresses of all accounts provisioned for this customer.
@@ -2952,10 +2929,11 @@ to receive postal invoices, does nothing.
 
 sub invoicing_list_addpost {
   my $self = shift;
-  return if grep { $_ eq 'POST' } $self->invoicing_list;
-  my @invoicing_list = $self->invoicing_list;
-  push @invoicing_list, 'POST';
-  $self->invoicing_list(\@invoicing_list);
+  if ( $self->get('postal_invoice') eq '' ) {
+    $self->set('postal_invoice', 'Y');
+    my $error = $self->replace;
+    warn $error if $error; # should fail harder, but this is traditional
+  }
 }
 
 =item invoicing_list_emailonly
@@ -2969,7 +2947,16 @@ sub invoicing_list_emailonly {
   my $self = shift;
   warn "$me invoicing_list_emailonly called"
     if $DEBUG;
-  grep { $_ !~ /^([A-Z]+)$/ } $self->invoicing_list;
+  return () if !$self->custnum; # not yet inserted
+  return map { $_->emailaddress }
+    qsearch({
+        table     => 'cust_contact',
+        select    => 'emailaddress',
+        addl_from => ' JOIN contact USING (contactnum) '.
+                     ' JOIN contact_email USING (contactnum)',
+        hashref   => { 'custnum' => $self->custnum, },
+        extra_sql => q( AND invoice_dest = 'Y'),
+    });
 }
 
 =item invoicing_list_emailonly_scalar

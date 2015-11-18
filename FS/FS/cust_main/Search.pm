@@ -531,10 +531,12 @@ sub email_search {
       if $DEBUG;
 
     push @cust_main,
-      map $_->cust_main,
+      map { $_->cust_main }
+      map { $_->cust_contact }
+      map { $_->contact }
           qsearch( {
-                     'table'     => 'cust_main_invoice',
-                     'hashref'   => { 'dest' => $email },
+                     'table'     => 'contact_email',
+                     'hashref'   => { 'emailaddress' => $email },
                    }
                  );
 
@@ -808,30 +810,24 @@ sub search {
   ##
 
   push @where,
-    'EXISTS ( SELECT 1 FROM cust_main_invoice
-                WHERE cust_main_invoice.custnum = cust_main.custnum
-                  AND length(dest) > 5
-            )'  # AND dest LIKE '%@%'
+    'EXISTS ( SELECT 1 FROM contact_email
+                JOIN cust_contact USING (contactnum)
+                WHERE cust_contact.custnum = cust_main.custnum
+            )'
     if $params->{'with_email'};
 
   ##
   # "with postal mail invoices" checkbox
   ##
 
-  push @where,
-    "EXISTS ( SELECT 1 FROM cust_main_invoice
-                WHERE cust_main_invoice.custnum = cust_main.custnum
-                  AND dest = 'POST' )"
+  push @where, "cust_main.postal_invoice = 'Y'"
     if $params->{'POST'};
 
   ##
   # "without postal mail invoices" checkbox
   ##
 
-  push @where,
-    "NOT EXISTS ( SELECT 1 FROM cust_main_invoice
-                    WHERE cust_main_invoice.custnum = cust_main.custnum
-                      AND dest = 'POST' )"
+  push @where, "cust_main.postal_invoice IS NULL"
     if $params->{'no_POST'};
 
   ##

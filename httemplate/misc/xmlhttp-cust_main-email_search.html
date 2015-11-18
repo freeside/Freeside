@@ -6,14 +6,14 @@ die 'access denied'
 my $sub = $cgi->param('sub');
 my $email = $cgi->param('arg');
 my @where = (
-  "cust_main_invoice.dest != 'POST'",
-  "cust_main_invoice.dest LIKE ".dbh->quote('%'.$email.'%'),
+  'contact_email.emailaddress LIKE '.dbh->quote('%'.$email.'%'),
   $FS::CurrentUser::CurrentUser->agentnums_sql(table => 'cust_main'),
 );
 my @cust_main = qsearch({
   'table'     => 'cust_main',
-  'select'    => 'cust_main.*, cust_main_invoice.dest',
-  'addl_from' => 'JOIN cust_main_invoice USING (custnum)',
+  'select'    => 'cust_main.*',
+  'addl_from' => ' JOIN cust_contact USING (custnum) '.
+                 ' JOIN contact_email USING (contactnum)',
   'extra_sql' => 'WHERE '.join(' AND ', @where),
 });
 

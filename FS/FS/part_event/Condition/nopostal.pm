@@ -10,17 +10,13 @@ sub condition {
   my( $self, $object ) = @_;
   my $cust_main = $self->cust_main($object);
 
-  scalar( grep { $_ eq 'POST' } $cust_main->invoicing_list ) ? 0 : 1;
+  $cust_main->postal_invoice eq '';
 }
 
 sub condition_sql {
   my( $self, $table ) = @_;
 
-  " NOT EXISTS( SELECT 1 FROM cust_main_invoice
-              WHERE cust_main_invoice.custnum = cust_main.custnum
-                AND cust_main_invoice.dest    = 'POST'
-          )
-  ";
+  " cust_main.postal_invoice IS NULL ";
 }
 
 1;

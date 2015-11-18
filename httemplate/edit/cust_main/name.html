@@ -29,19 +29,18 @@
 </TR>
 % }
 
-% if ( $conf->exists('cust-email-high-visibility') ) {
 <TR>
-  <TH ALIGN="right" CLASS="
+  <TH ALIGN="right">
+    <SPAN ID="invoice_email_label" CLASS="
     <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum)
         ? 'required label'
-        : 'label' %>">Email address(es)
-  </TD>
-  <TD BGCOLOR="#FFFF00">
-    <INPUT TYPE="text" NAME="invoicing_list" 
+        : 'label' %>">Email address(es)</SPAN>
+  </TH>
+  <TD>
+    <INPUT TYPE="text" NAME="invoice_email"  ID="invoice_email_input"
            VALUE="<% $cust_main->invoicing_list_emailonly_scalar %>">
   </TD>
 </TR>
-% }
 <%init>
 my $cust_main = shift;
 my $agentnum = $cust_main->agentnum if $cust_main->custnum;

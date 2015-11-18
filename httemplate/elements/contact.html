@@ -59,13 +59,22 @@
 %               }
 %             }
             </SELECT>
-
+%         } elsif ( $field eq 'invoice_dest' ) {
+%           my $curr_value = $cgi->param($name . '_' . $field);
+%           $curr_value = $value if !defined($curr_value);
+            <& select.html,
+                field         => $name . '_' . $field,
+                curr_value    => $curr_value,
+                options       => [ '', 'Y' ],
+                option_labels => { '' => 'no', 'Y' => 'yes' },
+                style         => 'width: 100%',
+            &>
 %         } else {
             <INPUT TYPE  = "text"
                    NAME  = "<%$name%>_<%$field%>"
                    ID    = "<%$id%>_<%$field%>"
                    SIZE  = "<% $size{$field} || 14 %>"
-                   VALUE = "<% scalar($cgi->param($name."_$field"))
+                   VALUE = "<% scalar($cgi->param($name . '_' . $field))
                                || $value |h %>"
                    <% $onchange %>
             >
@@ -130,6 +139,7 @@ tie my %label, 'Tie::IxHash',
   'last'               => 'Last name',
   'title'              => 'Title/Position',
   'emailaddress'       => 'Email',
+  'invoice_dest'       => 'Send invoices',
   'selfservice_access' => 'Self-service'
 ;
 

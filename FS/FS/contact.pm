@@ -6,6 +6,7 @@ use vars qw( $skip_fuzzyfiles );
 use Carp;
 use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::Cursor;
 use FS::contact_phone;
 use FS::contact_email;
 use FS::queue;
@@ -88,6 +89,9 @@ empty or bcrypt
 
 disabled
 
+=item invoice_dest
+
+empty, or 'Y' if email invoices should be sent to this contact
 
 =back
 
@@ -110,6 +114,25 @@ sub table { 'contact'; }
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
+
+If the object has an C<emailaddress> field, L<FS::contact_email> records will
+be created for each (comma-separated) email address in that field. If any of
+these coincide with an existing email address, this contact will be merged with
+the contact with that address.
+
+Then, if the object has any fields named C<phonetypenumN> an
+L<FS::contact_phone> record will be created for each of them. Those fields
+should contain phone numbers of the appropriate types (where N is the key of
+an L<FS::phone_type> record identifying the type of number: daytime, night,
+etc.).
+
+After inserting the record, if the object has a 'custnum' or 'prospectnum'
+field, an L<FS::cust_contact> or L<FS::prospect_contact> record will be
+created to link the contact to the customer. The following fields will also
+be included in that record, if they are set on the object:
+- classnum
+- comment
+- selfservice_access
 
 =cut
 
@@ -643,6 +666,7 @@ sub check {
     || $self->ut_textn('_password')
     || $self->ut_enum('_password_encoding', [ '', 'bcrypt'])
     || $self->ut_enum('disabled', [ '', 'Y' ])
+    || $self->ut_flag('invoice_dest')
   ;
   return $error if $error;
 
@@ -886,6 +910,7 @@ sub cgi_contact_fields {
 
   my @contact_fields = qw(
     classnum first last title comment emailaddress selfservice_access
+    invoice_dest
   );
 
   push @contact_fields, 'phonetypenum'. $_->phonetypenum
@@ -898,6 +923,32 @@ sub cgi_contact_fields {
 use FS::upgrade_journal;
 sub _upgrade_data { #class method
   my ($class, %opts) = @_;
+
+  # always migrate cust_main_invoice records over
+  local $FS::cust_main::import = 1; # override require_phone and such
+  my $search = FS::Cursor->new('cust_main_invoice', {});
+  while (my $cust_main_invoice = $search->fetch) {
+    my $custnum = $cust_main_invoice->custnum;
+    my $dest = $cust_main_invoice->dest;
+    my $cust_main = $cust_main_invoice->cust_main;
+
+    if ( $dest =~ /^\d+$/ ) {
+      my $svc_acct = FS::svc_acct->by_key($dest);
+      die "custnum $custnum, invoice destination svcnum $svc_acct does not exist\n"
+        if !$svc_acct;
+      $dest = $svc_acct->email;
+    }
+
+    my $error = $cust_main->replace( [ $dest ] );
+
+    if ( $error ) {
+      die "custnum $custnum, invoice destination $dest, creating contact: $error\n";
+    }
+
+    $error = $cust_main_invoice->delete;
+    die "custnum $custnum, cleaning up cust_main_invoice: $error\n" if $error;
+
+  } # while $search->fetch
 
   unless ( FS::upgrade_journal->is_done('contact__DUPEMAIL') ) {
 
