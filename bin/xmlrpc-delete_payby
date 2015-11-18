@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my( $email, $password, $custpaybynum ) = @ARGV;
+die "Usage: xmlrpc-delete_payby email password custpaybynum\n"
+  unless $email && length($password) && $custpaybynum;
+
+my $uri = new URI 'http://localhost:8080/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $login_result = $server->call(
+  'FS.ClientAPI_XMLRPC.login',
+    'email'    => $email,
+    'password' => $password,
+);
+die $login_result->{'error'}."\n" if $login_result->{'error'};
+
+my $list_result = $server->call(
+  'FS.ClientAPI_XMLRPC.delete_payby',
+    'session_id'   => $login_result->{'session_id'},
+    'custpaybynum' => $custpaybynum,
+);
+die $list_result->{'error'}."\n" if $list_result->{'error'};
+
+#print Dumper($list_result);
+print "Successfully deleted\n";
+
+1;

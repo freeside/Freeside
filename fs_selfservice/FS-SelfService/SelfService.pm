@@ -48,6 +48,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'legacy_invoice_pdf'        => 'MyAccount/legacy_invoice_pdf',
   'invoice_logo'              => 'MyAccount/invoice_logo',
   'list_invoices'             => 'MyAccount/list_invoices', #?
+  'list_payby'                => 'MyAccount/list_payby',
+  'insert_payby'              => 'MyAccount/insert_payby',
+  'delete_payby'              => 'MyAccount/delete_payby', 
   'cancel'                    => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'              => 'MyAccount/payment_info',
   'payment_info_renew_info'   => 'MyAccount/payment_info_renew_info',
@@ -566,6 +569,120 @@ Invoice date, in UNIX epoch time
 =back
 
 =back
+
+=item list_payby HASHREF
+
+Returns a list of all stored customer payment information (credit cards and
+electronic check accounts).  Takes a hash reference with a single key,
+session_id.
+
+Returns a hash reference with the following keys:
+
+=over 4
+
+=item error
+
+Empty on success, or an error message on errors
+
+=item payby
+
+Reference to array of hash references with the following keys:
+
+=over 4
+
+=item custpaybynum
+
+=item weight
+
+Numeric weighting.  Stored payment information with a lower weight is attempted
+first.
+
+=item payby
+
+CARD (Automatic credit card), CHEK (Automatic electronic check), DCRD
+(on-demand credit card) or DCHK (on-demand electronic check).
+
+=item paymask
+
+Masked credit card number (or, masked account and routing numbers)
+
+=item paydate
+
+Credit card expiration date
+
+=item payname
+
+Exact name on card (or bank name, for electronic checks)
+
+=item paystate
+
+For electronic checks, bank state
+
+=item paytype
+
+For electronic checks, account type (Personal/Business, Checking/Savings)
+
+=back
+
+=back
+
+=item insert_payby HASHREF
+
+Adds new stored payment information for this customer.  Takes a hash reference
+with the following keys:
+
+=over 4
+
+=item session_id
+
+=item weight
+
+Numeric weighting.  Stored payment information with a lower weight is attempted
+first.
+
+=item payby
+
+CARD (Automatic credit card), CHEK (Automatic electronic check), DCRD
+(on-demand credit card) or DCHK (on-demand electronic check).
+
+=item payinfo
+
+Credit card number (or electronic check "account@routing")
+
+=item paycvv
+
+CVV2 number / security code
+
+=item paydate
+
+Credit card expiration date
+
+=item payname
+
+Exact name on card (or bank name, for electronic checks)
+
+=item paystate
+
+For electronic checks, bank state
+
+=item paytype
+
+For electronic checks, account type (i.e. "Personal Savings", "Personal Checking", "Business Checking")A
+
+=item payip
+
+Optional IP address from which payment was submitted
+
+=back
+
+If there is an error, returns a hash reference with a single key, B<error>,
+otherwise returns a hash reference with a single key, B<custpaybynum>.
+
+=item delete_payby HASHREF
+
+Removes stored payment information.  Takes a hash reference with two keys,
+B<session_id> and B<custpaybynum>.  Returns a hash reference with a single key,
+B<error>, which is an error message or empty for successful removal.
 
 =item cancel HASHREF
 

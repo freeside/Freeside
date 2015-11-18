@@ -127,6 +127,9 @@ sub ss2clientapi {
   'legacy_invoice_pdf'        => 'MyAccount/legacy_invoice_pdf',
   'invoice_logo'              => 'MyAccount/invoice_logo',
   'list_invoices'             => 'MyAccount/list_invoices', #?
+  'list_payby'                => 'MyAccount/list_payby',
+  'insert_payby'              => 'MyAccount/insert_payby',
+  'delete_payby'              => 'MyAccount/delete_payby',
   'cancel'                    => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'              => 'MyAccount/payment_info',
   'payment_info_renew_info'   => 'MyAccount/payment_info_renew_info',
