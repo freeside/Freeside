@@ -61,8 +61,7 @@ use vars qw( @cust_main_editable_fields @location_editable_fields );
 @cust_main_editable_fields = qw(
   first last company daytime night fax mobile
   locale
-  payby payinfo payname paystart_month paystart_year payissue payip
-  ss paytype paystate stateid stateid_state
+  ss stateid stateid_state
 );
 @location_editable_fields = qw(
   address1 address2 city county state zip country
@@ -627,8 +626,6 @@ sub customer_info_short {
     $return{'last'} = $cust_main->get('last');
     $return{name}   = $cust_main->first. ' '. $cust_main->get('last');
 
-    $return{payby} = $cust_main->payby;
-
     #none of these are terribly expensive if we want 'em...
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
@@ -641,11 +638,6 @@ sub customer_info_short {
         if $cust_main->ship_locationnum;
     }
  
-    if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-      $return{payinfo} = $cust_main->paymask;
-      @return{'month', 'year'} = $cust_main->paydate_monthyear;
-    }
-    
     my @invoicing_list = $cust_main->invoicing_list;
     $return{'invoicing_list'} =
       join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
@@ -761,54 +753,7 @@ sub edit_info {
   # but if it hasn't been passed in at all, leave ship_location alone--
   # DON'T change it to match bill_location.
 
-  my $payby = '';
-  if (exists($p->{'payby'})) {
-    $p->{'payby'} =~ /^([A-Z]{4})$/
-      or return { 'error' => "illegal_payby " . $p->{'payby'} };
-    $payby = $1;
-  }
-
   my $conf = new FS::Conf;
-
-  if ( $payby =~ /^(CARD|DCRD)$/ ) {
-
-    $new->paydate($p->{'year'}. '-'. $p->{'month'}. '-01');
-
-    if ( $new->payinfo eq $cust_main->paymask ) {
-      $new->payinfo($cust_main->payinfo);
-      $new->paycvv( $p->{'paycvv'} || $cust_main->paycvv );
-    } else {
-      $new->payinfo($p->{'payinfo'});
-      return { 'error' => 'CVV2 is required' }
-        if ! $p->{'paycvv'} && $conf->exists('selfservice-onfile_require_cvv');
-      $new->paycvv( $p->{'paycvv'} )
-    }
-
-    $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
-
-  } elsif ( $payby =~ /^(CHEK|DCHK)$/ ) {
-
-    my $payinfo;
-    $p->{'payinfo1'} =~ /^([\dx]+)$/
-      or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
-    my $payinfo1 = $1;
-     $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
-      or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
-    my $payinfo2 = $1;
-    $payinfo = $payinfo1. '@'. $payinfo2;
-
-    $new->payinfo( ($payinfo eq $cust_main->paymask)
-                     ? $cust_main->payinfo
-                     : $payinfo
-                 );
-
-    $new->set( 'payby' => $p->{'auto'} ? 'CHEK' : 'DCHK' );
-
-  } elsif ( $payby =~ /^(BILL)$/ ) {
-    #no-op
-  } elsif ( $payby ) {  #notyet ready
-    return { 'error' => "unknown payby $payby" };
-  }
 
   my @invoicing_list;
   if ( exists $p->{'invoicing_list'} || exists $p->{'postal_invoicing'} ) {
@@ -905,31 +850,30 @@ sub payment_info {
 
   $return{balance} = $cust_main->balance; #XXX pkg-balances?
 
-  $return{payname} = $cust_main->payname
-                     || ( $cust_main->first. ' '. $cust_main->get('last') );
-
   $return{$_} = $cust_main->bill_location->get($_) 
     for qw(address1 address2 city state zip);
 
-  $return{payby} = $cust_main->payby;
-  $return{stateid_state} = $cust_main->stateid_state;
-
-  if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    $return{card_type} = cardtype($cust_main->payinfo);
-    $return{payinfo} = $cust_main->paymask;
-
-    @return{'month', 'year'} = $cust_main->paydate_monthyear;
-
-  }
-
-  if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-    my ($payinfo1, $payinfo2) = split '@', $cust_main->paymask;
-    $return{payinfo1} = $payinfo1;
-    $return{payinfo2} = $payinfo2;
-    $return{paytype}  = $cust_main->paytype;
-    $return{paystate} = $cust_main->paystate;
-    $return{payname}  = $cust_main->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
-  }
+  #XXX look for stored cust_payby info
+  #
+  # $return{payname} = $cust_main->payname
+  #                    || ( $cust_main->first. ' '. $cust_main->get('last') );
+  #
+  #if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+  #  $return{card_type} = cardtype($cust_main->payinfo);
+  #  $return{payinfo} = $cust_main->paymask;
+  #
+  #  @return{'month', 'year'} = $cust_main->paydate_monthyear;
+  #
+  #}
+  #
+  #if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
+  #  my ($payinfo1, $payinfo2) = split '@', $cust_main->paymask;
+  #  $return{payinfo1} = $payinfo1;
+  #  $return{payinfo2} = $payinfo2;
+  #  $return{paytype}  = $cust_main->paytype;
+  #  $return{paystate} = $cust_main->paystate;
+  #  $return{payname}  = $cust_main->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
+  #}
 
   if ( $conf->config('prepayment_discounts-credit_type') ) {
     #need to eval?
@@ -1550,7 +1494,6 @@ sub invoice_logo {
          };
 }
 
-
 sub list_invoices {
   my $p = shift;
   my $session = _cache->get($p->{'session_id'})
@@ -1608,6 +1551,79 @@ sub list_invoices {
                   @legacy_cust_bill
             ],
           };
+}
+
+sub list_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  return {
+    'payby' => [ map {
+                       my $cust_payby = $_;
+                       +{
+                          map { $_ => $cust_payby->$_ }
+                            qw( custpaybynum weight payby paymask paydate
+                                payname paystate paytype
+                              )
+                        };
+                     }
+                   $cust_main->cust_payby
+               ],
+  };
+}
+
+sub insert_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #XXX payinfo1 + payinfo2 for CHEK?
+  #or take the opportunity to use separate, more well- named fields?
+  # my $payinfo;
+  # $p->{'payinfo1'} =~ /^([\dx]+)$/
+  #   or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+  # my $payinfo1 = $1;
+  #  $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
+  #   or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+  # my $payinfo2 = $1;
+  # $payinfo = $payinfo1. '@'. $payinfo2;
+
+  my $cust_payby = new FS::cust_payby {
+    'custnum' => $custnum,
+    map { $_ => $p->{$_} } qw( weight payby payinfo paycvv paydate payname
+                               paystate paytype payip 
+                             ),
+  };
+
+  my $error = $cust_payby->insert;
+  if ( $error ) {
+    return { 'error' => $error };
+  } else {
+    return { 'custpaybynum' => $cust_payby->custpaybynum };
+  }
+  
+}
+
+sub delete_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_payby = qsearchs('cust_payby', {
+                              'custnum'      => $custnum,
+                              'custpaybynum' => $p->{'custpaybynum'},
+                           })
+    or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  return { 'error' => $cust_payby->delete };
+
 }
 
 sub cancel {
@@ -2503,39 +2519,36 @@ sub order_recharge {
 sub _do_bop_realtime {
   my ($cust_main, $status, %opt) = @_;
 
-    my $old_balance = $cust_main->balance;
+  my $old_balance = $cust_main->balance;
 
-    my @cust_bill;
-    my $bill_error = $cust_main->bill(
-      'return_bill'   => \@cust_bill,
-    );
+  my @cust_bill;
+  my $bill_error = $cust_main->bill(
+    'return_bill'   => \@cust_bill,
+  );
 
-    $bill_error ||= $cust_main->apply_payments_and_credits;
+  $bill_error ||= $cust_main->apply_payments_and_credits;
 
-    $bill_error ||= $cust_main->realtime_collect('selfservice' => 1)
-      if $cust_main->payby =~ /^(CARD|CHEK)$/;
+  $bill_error ||= $cust_main->realtime_collect('selfservice' => 1);
 
-    if (    $cust_main->balance > $old_balance
-         && $cust_main->balance > 0
-         && ( $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/
-                || $status eq 'suspended'
-            )
-       )
-    {
-      unless ( $opt{'no_invoice_void'} ) {
+  if (    $cust_main->balance > $old_balance
+       && $cust_main->balance > 0
+       && ( $cust_main->has_cust_payby_auto || $status eq 'suspended' )
+     )
+  {
+    unless ( $opt{'no_invoice_void'} ) {
 
-        #this used to apply a credit, but now we can void invoices...
-        foreach my $cust_bill (@cust_bill) {
-          my $voiderror = $cust_bill->void('automatic payment failed');
-          warn "Error voiding cust bill after decline: $voiderror" if $voiderror;
-        }
-
+      #this used to apply a credit, but now we can void invoices...
+      foreach my $cust_bill (@cust_bill) {
+        my $voiderror = $cust_bill->void('automatic payment failed');
+        warn "Error voiding cust bill after decline: $voiderror" if $voiderror;
       }
 
-      return { 'error' => '_decline', 'bill_error' => $bill_error };
     }
 
-    '';
+    return { 'error' => '_decline', 'bill_error' => $bill_error };
+  }
+
+  '';
 }
 
 sub renew_info {

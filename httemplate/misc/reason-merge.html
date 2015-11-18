@@ -1,9 +1,7 @@
 % if ($success) {
 <% include('/elements/header-popup.html', 'Reason Merge Success') %>
 <SCRIPT>
-<!-- 
 window.top.location.reload()
--->
 </SCRIPT>
 % } else {
 <% include('/elements/header-popup.html', 'Merge Reasons') %>
@@ -72,7 +70,7 @@ if ($cgi->param('process_merge') && !$error) {
     $error = $destreason->merge(\@reasons);
     $success = 1 unless $error;
   } else {
-    $error = "No desitation reason selected.";
+    $error = "No destination reason selected.";
   }
 }
 

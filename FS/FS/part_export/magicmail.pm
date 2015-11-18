@@ -53,20 +53,22 @@ L</Error Methods>.  Use L</error> to retrieve this message.
 use vars qw( %info );
 
 tie my %options, 'Tie::IxHash',
-  'client_id'       => { label => 'API Client ID',
-                         default => '' },
-  'client_password' => { label => 'API Client Password',
-                         default => '' },
-  'account_prefix'  => { label => 'Account Prefix',
-                         default => 'FREESIDE' },
-  'package'         => { label => 'Package',
-                         default => 'EMAIL' },
-  'port'            => { label => 'Port',
-                         default => 443 },
-  'autopurge'       => { type => 'checkbox',
-                         label => 'Auto purge user/account on unprovision' },
-  'debug'           => { type => 'checkbox',
-                         label => 'Enable debug warnings' },
+  'client_id'        => { label => 'API Client ID',
+                          default => '' },
+  'client_password'  => { label => 'API Client Password',
+                          default => '' },
+  'account_prefix'   => { label => 'Account Prefix',
+                          default => 'FREESIDE' },
+  'package'          => { label => 'Package',
+                          default => 'EMAIL' },
+  'port'             => { label => 'Port',
+                          default => 443 },
+  'autopurge'        => { type => 'checkbox',
+                          label => 'Auto purge user/account on unprovision' },
+  'use_agent_custid' => { type => 'checkbox',
+                          label => 'Use agent_custid for Magicmail account_id when available' },
+  'debug'            => { type => 'checkbox',
+                          label => 'Enable debug warnings' },
 ;
 
 %info = (
@@ -397,7 +399,11 @@ Returns MagicMail account_id for this customer under this export.
 sub cust_account_id {
   my ($self, $in) = @_;
   my $cust_main = ref($in) eq 'FS::cust_main' ? $in : $in->cust_main;
-  return $self->option('account_prefix') . $cust_main->custnum;
+  return $self->option('account_prefix').
+         ( ($self->option('use_agent_custid') && $cust_main->agent_custid)
+             ? $cust_main->agent_custid
+             : $cust_main->custnum
+         );
 }
 
 =head2 cust_magic_services
