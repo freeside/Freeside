@@ -82,7 +82,7 @@ if (     $cgi->param('clear_password') eq '*HIDDEN*'
   die "fatal: no previous account to recall hidden password from!" unless $old;
 } else {
   my $newpass = $cgi->param('clear_password');
-  if ( ! $old->check_password($newpass) ) {
+  if ( !$old or ! $old->check_password($newpass) ) {
     # then the password is being changed
     $error ||= $new->is_password_allowed($newpass)
            ||  $new->set_password($newpass);
