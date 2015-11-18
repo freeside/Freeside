@@ -1,0 +1,77 @@
+% if ($success) {
+<% include('/elements/header-popup.html', 'Reason Merge Success') %>
+<SCRIPT>
+window.top.location.reload()
+</SCRIPT>
+% } else {
+<% include('/elements/header-popup.html', 'Merge Reasons') %>
+%   if ($error) {
+<P STYLE="color: red;"><% emt($error) %></P>
+%   }
+%   if (@reasons > 1) {
+<P>
+The following reasons will be merged into one.
+Please select one reason to merge the others into.
+</P>
+<FORM METHOD="POST" ACTION="<% "${p}misc/reason-merge.html" %>">
+<P>
+%     foreach my $reason (@reasons) {
+<INPUT TYPE="hidden" NAME="reasonnum" VALUE="<% $reason->reasonnum %>">
+<INPUT TYPE="radio" NAME="destreasonnum" VALUE="<% $reason->reasonnum %>">
+<% $reason->reason %><BR>
+%     }
+<P>
+<P>Caution: merging reasons cannot be undone!</P>
+<P><INPUT TYPE="submit" NAME="process_merge" value="Merge"></P>
+</FORM>
+%   } else {
+<BUTTON TYPE="button" onClick="parent.cClick();">Close</BUTTON>
+%   }
+% }
+
+<%init>
+my @reasonnums = $cgi->param('reasonnum');
+my $destreasonnum = $cgi->param('destreasonnum');
+
+my $error;
+my $class;
+my @reasons;
+my $destreason;
+foreach my $reasonnum (@reasonnums) {
+  unless ($reasonnum =~ /^\d+$/) {
+    $error = "Invalid reasonnum $reasonnum.";
+    last;
+  }
+  my $reason = qsearchs('reason',{ 'reasonnum' => $reasonnum });
+  unless ($reason) {
+    $error = "Reason $reasonnum could not be loaded.";
+    last;
+  }
+  my $reasontype = $reason->reasontype;
+  $class ||= $reasontype->class;
+  if ($class ne $reasontype->class) {
+    $error = "Selected reasons must have the same reason type class.";
+    last;
+  }
+  push(@reasons, $reason);
+  $destreason = $reason if $reasonnum eq $destreasonnum;
+}
+
+unless ($error) {
+  $error = "No reasons selected." unless @reasons;
+  $error = "Select two or more reasons to merge." unless @reasons > 1;
+}
+
+@reasons = () if $error;
+
+my $success = 0;
+if ($cgi->param('process_merge') && !$error) {
+  if ($destreason) {
+    $error = $destreason->merge(\@reasons);
+    $success = 1 unless $error;
+  } else {
+    $error = "No destination reason selected.";
+  }
+}
+
+</%init>

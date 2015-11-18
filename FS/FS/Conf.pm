@@ -4053,6 +4053,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'password-no_reuse',
+    'section'     => 'password',
+    'description' => 'Minimum number of password changes before a password can be reused. By default, passwords can be reused without restriction.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'datavolume-forcemegabytes',
     'section'     => 'UI',
     'description' => 'All data volumes are expressed in megabytes',
@@ -5676,6 +5683,13 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Allow selfservice customers to make payments even if balance is zero or below (resulting in an unapplied payment and negative balance.)',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-announcement',
+    'section'     => 'self-service',
+    'description' => 'HTML announcement to display to all authenticated users on account overview page',
+    'type'        => 'textarea',
   },
 
   {

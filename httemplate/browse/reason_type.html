@@ -21,6 +21,8 @@
                     '',
                   ],
   'disable_total' => 1,
+  'html_form'   => qq!<FORM ACTION="${p}misc/reason_merge.html" METHOD="POST">!,
+  'html_foot'   => $html_foot,
 &>
 <%init>
 
@@ -44,7 +46,8 @@ my $html_init = 'Reasons: ' .
     } keys (%FS::reason_type::class_name)
   );
 
-$html_init .= '<BR><P>' .
+$html_init .= include('/elements/init_overlib.html').
+  '<BR><P>' .
   $classname . ' reasons ' .
   $FS::reason_type::class_purpose{$class} .
   '. Reason types allow reasons to be grouped for reporting purposes.' .
@@ -64,6 +67,10 @@ my $reasons_sub = sub {
               'link'  => $p. "edit/reason.html?class=$class&reasonnum=".
                              $_->reasonnum,
             },
+            {
+              'data'  => q!<INPUT TYPE="checkbox" NAME="reasonnum" VALUE="! . $_->reasonnum . q!">!,
+              'align' => 'right',
+            },
           ];
         }
     $reason_type->enabled_reasons ),
@@ -73,7 +80,8 @@ my $reasons_sub = sub {
         'align' => 'left',
         'link'  => $p. "edit/reason.html?class=$class",
         'data_style' => 'i',
-      }
+      },
+      { 'data'  => '' },
     ]
 
   ];
@@ -85,5 +93,14 @@ my $count_query = 'SELECT COUNT(*) FROM reason_type ';
 $count_query .= $where_clause;
 
 my $link = [ $p.'edit/reason_type.html?class='.$class.'&typenum=', 'typenum' ];
+
+my $html_foot = include('/search/elements/checkbox-foot.html',
+  onclick  => include( '/elements/popup_link_onclick.html',
+                js_action   => q!'! . "${p}misc/reason-merge.html?" . q!' + toCGIString()!,
+                actionlabel => 'Merge reasons',
+              ),
+  label    => 'merge selected reasons',
+  minboxes => 2,
+) . '</FORM>';
 
 </%init>

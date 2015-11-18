@@ -18,6 +18,8 @@
                  'fields'      => \@fields,
                  'links'       => \@links,
                  'align'       => $align,
+                 'html_form'   => qq!<FORM ACTION="${p}misc/reason_merge.html" METHOD="POST">!,
+                 'html_foot'   => $html_foot,
              )
 %>
 <%init>
@@ -31,7 +33,8 @@ my $class = $1;
 my $classname = $FS::reason_type::class_name{$class};
 my $classpurpose = $FS::reason_type::class_purpose{$class};
 
-my $html_init = ucfirst($classname).  " reasons $classpurpose.<BR><BR>".
+my $html_init = include('/elements/init_overlib.html').
+ucfirst($classname).  " reasons $classpurpose.<BR><BR>".
 qq!<A HREF="${p}edit/reason.html?class=$class">!.
 "<I>Add a $classname reason</I></A><BR><BR>";
 
@@ -107,5 +110,22 @@ if ( $class eq 'S' ) {
   $align .= 'cl';
 }
 
+# reason merge handling
+push @header, '';
+push @fields, sub {
+  my $reason = shift;
+  my $reasonnum = $reason->reasonnum;
+  qq!<INPUT TYPE="checkbox" NAME="reasonnum" VALUE="$reasonnum">!;
+};
+push @links, '';
+$align .= 'l';
+my $html_foot = include('/search/elements/checkbox-foot.html',
+  onclick  => include( '/elements/popup_link_onclick.html',
+                js_action   => q!'! . "${p}misc/reason-merge.html?" . q!' + toCGIString()!,
+                actionlabel => 'Merge reasons',
+              ),
+  label    => 'merge selected reasons',
+  minboxes => 2,
+) . '</FORM>';
 
 </%init>

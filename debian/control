@@ -3,7 +3,7 @@ Section: misc
 Priority: extra
 Maintainer: Ivan Kohler <ivan-debian@420.am>
 Uploaders: Jeremy Davis <jeremyd@freeside.biz>
-Build-Depends: debhelper (>= 5), perl (>= 5.8)
+Build-Depends: debhelper (>= 5), perl (>= 5.8), torrus-common
 Standards-Version: 3.7.2
 Homepage: http://www.freeside.biz/freeside
 
@@ -87,7 +87,7 @@ Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libemail-address-list-perl,
  libsymbol-global-name-perl, libdate-extract-perl, librole-basic-perl,
  libhtml-formattext-withlinks-andtables-perl, libcrypt-x509-perl,
- libdata-guid-perl
+ libdata-guid-perl, libparams-classify-perl (>= 0.013-5.1)
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.

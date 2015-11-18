@@ -43,11 +43,13 @@ my @menubar = ( 'Add a new router', "${p2}edit/router.cgi" );
 
 if ($cgi->param('hidecustomerrouters') eq '1') {
   $extra_sql = 'WHERE svcnum > 0';
-  $cgi->param('hidecustomerrouters', 0);
+  $cgi->delete('hidecustomerrouters');
   push @menubar, 'Show customer routers', $cgi->self_url();
+  $cgi->param('hidecustomerrouters', 1);
 } else {
   $cgi->param('hidecustomerrouters', 1);
   push @menubar, 'Hide customer routers', $cgi->self_url();
+  $cgi->delete('hidecustomerrouters');
 }
 
 my $count_sql = $extra_sql.  ( $extra_sql =~ /WHERE/ ? ' AND' : 'WHERE' ).
