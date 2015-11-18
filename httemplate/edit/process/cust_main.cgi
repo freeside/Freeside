@@ -29,10 +29,12 @@ $cgi->param('tax','') unless defined $cgi->param('tax');
 
 $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
-my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
-push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
-push @invoicing_list, 'FAX' if $cgi->param('invoicing_list_FAX');
-$cgi->param('invoicing_list', join(',', @invoicing_list) );
+#my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
+#push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
+#push @invoicing_list, 'FAX' if $cgi->param('invoicing_list_FAX');
+#$cgi->param('invoicing_list', join(',', @invoicing_list) );
+
+my $agentnum = $cgi->param('agentnum');
 
 # is this actually used?  if so, we need to clone locations...
 # but I can't find anything that sets this parameter to a non-empty value
@@ -78,7 +80,7 @@ my $new = new FS::cust_main ( {
   map { ( "ship_$_", '' ) } (FS::cust_main->location_fields)
 } );
 
-$new->invoice_noemail( ($cgi->param('invoice_email') eq 'Y') ? '' : 'Y' );
+warn Dumper( $new ) if $DEBUG > 1;
 
 if ( $duplicate_of ) {
   # then negate all changes to the customer; the only change we should
@@ -156,6 +158,36 @@ if ( $curuser->access_right('Edit customer tax exemptions') ) {
 
 $options{'contact_params'} = scalar($cgi->Vars);
 $options{'cust_payby_params'} = scalar($cgi->Vars);
+
+my $email;
+
+if ( $cgi->param('residential_commercial') eq 'Residential' ) {
+
+  $email = $cgi->param('invoice_email') || '';
+  if ( length($email) == 0 and $conf->exists('cust_main-require_invoicing_list_email', $agentnum) ) {
+    $error = 'Email address required';
+  }
+
+  # XXX really should include the phone numbers in here also
+
+} else {
+
+  # contact UI is enabled; everything will be passed through via
+  # contact_params
+  if ($conf->exists('cust_main-require_invoicing_list_email', $agentnum)) {
+    my $has_email = 0;
+    foreach my $prefix (grep /^contactnum\d+$/, $cgi->param) {
+      if ( length($cgi->param($prefix . '_emailaddress'))
+           and $cgi->param($prefix . '_invoice_dest') ) {
+        $has_email = 1;
+        last;
+      }
+    }
+    $error = "At least one contact must receive email invoices"
+      unless $has_email;
+  }
+
+}
 
 #perhaps this stuff should go to cust_main.pm
 if ( $new->custnum eq '' or $duplicate_of ) {
@@ -263,7 +295,8 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   }
   else {
     # create the customer
-    $error ||= $new->insert( \%hash, \@invoicing_list,
+    $error ||= $new->insert( \%hash,
+                             [ $email ],
                              %options,
                              prospectnum => scalar($cgi->param('prospectnum')),
                            );
@@ -296,16 +329,14 @@ if ( $new->custnum eq '' or $duplicate_of ) {
     $new->signupdate($old->signupdate);
   }
 
-  warn "$me calling $new -> replace( $old, \ @invoicing_list )" if $DEBUG;
+  warn "$me calling $new -> replace( $old )" if $DEBUG;
   local($FS::cust_main::DEBUG) = $DEBUG if $DEBUG;
   local($FS::Record::DEBUG)    = $DEBUG if $DEBUG;
 
   local($Data::Dumper::Sortkeys) = 1;
   warn Dumper({ new => $new, old => $old }) if $DEBUG;
 
-  $error ||= $new->replace( $old, \@invoicing_list,
-                            %options,
-                          );
+  $error ||= $new->replace( $old, [ $email ], %options );
 
   warn "$me returned from replace" if $DEBUG;
   

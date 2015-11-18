@@ -25,9 +25,13 @@
 
 %   if ( $curuser->access_right('Complimentary customer') ) {
 
-      <TR>
-        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="complimentary" VALUE="Y" <% $cust_main->complimentary eq "Y" ? 'CHECKED' : '' %>>Complimentary customer
-      </TR>
+    <& /elements/tr-checkbox.html,
+      field       => 'complimentary',
+      label       => emt('Complimentary customer'),
+      value       => 'Y',
+      curr_value  => $cust_main->complimentary,
+      box_first   => 1,
+    &>
 
 %   } else {
 
@@ -51,9 +55,13 @@
 
 %   } else {
 
-      <TR>
-        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
-      </TR>
+    <& /elements/tr-checkbox.html,
+      field       => 'tax',
+      label       => emt('Tax Exempt' . (scalar(@exempt_groups) ? '(all taxes)' : '') ),
+      value       => 'Y',
+      curr_value  => $cust_main->tax,
+      box_first   => 1,
+    &>
 
 %   }
 
@@ -66,7 +74,7 @@
           <TD STYLE="white-space:nowrap">&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" ID="tax_<% $exempt_group %>" VALUE="Y" <% $checked ? 'CHECKED' : '' %> onChange="tax_changed(this)"> Tax Exempt (<% $exempt_group %> taxes)</TD>
           <TD> - Exemption number <INPUT TYPE="text" NAME="tax_<% $exempt_group %>_num" ID="tax_<% $exempt_group %>_num" VALUE="<% $cgi->param("tax_$exempt_group".'_num') || ( $cust_main_exemption ? $cust_main_exemption->exempt_number : '' ) |h %>" <% $checked ? '' : 'DISABLED' %>></TD>
         </TR>
-%     }
+%     } #"
 %   }
 
 %   ###
@@ -75,18 +83,13 @@
 
 % unless ( $conf->exists('emailinvoiceonly') ) {
 
-    <TR>
-      <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" <%
-
-        ( grep { $_ eq 'POST' } @invoicing_list )
-
-          ? 'CHECKED'
-          : ''
-
-        %>> <% mt('Postal mail invoices') |h %> 
-
-      </TD>
-    </TR>
+    <& /elements/tr-checkbox.html,
+      field       => 'postal_invoice',
+      label       => emt('Postal mail invoices'),
+      value       => 'Y',
+      curr_value  => $cust_main->postal_invoice,
+      box_first   => 1,
+    &>
 
 % }
 
@@ -94,33 +97,21 @@
 %   # email invoices
 %   ###
 
-    <TR>
-      <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" <%
+    <& /elements/tr-checkbox.html,
+      field       => 'invoice_noemail',
+      label       => emt('Do not send email invoices'),
+      value       => 'Y',
+      curr_value  => $cust_main->invoice_noemail,
+      box_first   => 1,
+    &>
 
-        ( $cust_main->invoice_noemail eq 'Y' )
-          ? ''
-          : 'CHECKED'
-
-        %>> <% mt('Email invoices') |h %> 
-
-      </TD>
-    </TR>
-
-% unless ( $conf->exists('cust-email-high-visibility')) {
-   <TR>
-      <TH ALIGN="right" WIDTH="200">
-        <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
-            ? $r : '' %>Email address(es)
-      </TD>
-      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>">
-      <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" <%
-        ( $cust_main->message_noemail eq 'Y' )
-          ? 'CHECKED'
-          : ''
-        %>> <FONT SIZE="-1"><% emt('Do not send notices') %></FONT>
-      </TD>
-    </TR>
-% }
+    <& /elements/tr-checkbox.html,
+      field       => 'message_noemail',
+      label       => emt('Do not send other email notices'),
+      value       => 'Y',
+      curr_value  => $cust_main->message_noemail,
+      box_first   => 1,
+    &>
 
 %   ###
 %   # prorate_day

@@ -3,6 +3,7 @@
      'error_redirect' => popurl(3). 'edit/cust_main-contacts.html?',
      'agent_virt'     => 1,
      'skip_process'   => 1, #we don't want to make any changes to cust_main
+     'precheck_callback' => $precheck_callback,
      'process_o2m' => {
        'table'  => 'contact',
        'fields' => FS::contact->cgi_contact_fields,
@@ -10,3 +11,22 @@
      'redirect' => popurl(3). 'view/cust_main.cgi?',
    )
 %>
+<%init>
+my $precheck_callback = sub {
+  my $cgi = shift;
+  my $conf = FS::Conf->new;
+  if ( $conf->exists('cust_main-require_invoicing_list_email') ) {
+    my $has_email = 0;
+    foreach my $prefix (grep /^contactnum\d+$/, $cgi->param) {
+      if ( length($cgi->param($prefix . '_emailaddress'))
+           and $cgi->param($prefix . '_invoice_dest') ) {
+        $has_email = 1;
+        last;
+      }
+    }
+    return "At least one contact must receive email invoices"
+      unless $has_email;
+  }
+  '';
+};
+</%init>

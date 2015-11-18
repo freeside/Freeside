@@ -9,13 +9,26 @@ Example:
   &>
 
 </%doc>
-<% include('tr-td-label.html', @_ ) %>
+% if ( $opt{'box_first'} ) {
+  <TR>
+    <TH COLSPAN="<% $opt{'colspan'} || 2 %>"
+      VALIGN = "<% $opt{'valign'} || 'top' %>"
+      STYLE  = "<% $style %>"
+      ID     = "<% $opt{label_id} || $opt{id}. '_label0' %>"
+    >
+      <& checkbox.html, @_ &>
+      <% $required %><% $opt{label} %>
+    </TH>
+  </TR>
+% } else {
+<& tr-td-label.html, @_ &>
 
   <TD <% $style %>>
     <% include('checkbox.html', @_) %>
   </TD>
 
 </TR>
+% }
 
 <%init>
 
@@ -25,6 +38,12 @@ my $onchange = $opt{'onchange'}
                  ? 'onChange="'. $opt{'onchange'}. '(this)"'
                  : '';
 
-my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+my $style = 'text-align: left; padding-top: 3px';
+$style .= '; '. $opt{'cell_style'} if $opt{'cell_style'};
+
+my $required = $opt{'required'} ? '<font color="#ff0000">*</font>&nbsp;' : '';
+if ($required) {
+  $style .= ';font-weight: bold';
+}
 
 </%init>

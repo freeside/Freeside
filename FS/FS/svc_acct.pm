@@ -44,7 +44,6 @@ use FS::PagedSearch qw( psearch ); # XXX in v4, replace with FS::Cursor
 use FS::part_pkg;
 use FS::part_svc;
 use FS::svc_acct_pop;
-use FS::cust_main_invoice;
 use FS::svc_domain;
 use FS::svc_pbx;
 use FS::raddb;
@@ -711,9 +710,37 @@ sub insert {
         || $conf->exists('emailinvoiceauto')
         && ! $cust_main->invoicing_list_emailonly
        ) {
-      my @invoicing_list = $cust_main->invoicing_list;
-      push @invoicing_list, $self->email;
-      $cust_main->invoicing_list(\@invoicing_list);
+
+      # slight false laziness w/ edit/process/cust_main.cgi...
+      # and also slightly arbitrary behavior.
+      # if the "real name" of this account matches the first + last name
+      # of a contact, attach the email address to that person.
+      my @contacts = map { $_->contact } $cust_main->cust_contact;
+      my $myname = $self->get('finger');
+      my ($contact) =
+        grep { $_->get('first') . ' ' . $_->get('last') eq $myname } @contacts;
+      # otherwise just pick the first one
+      $contact ||= $contacts[0];
+      # if there is one
+      $contact ||= FS::contact->new({
+          'custnum'       => $cust_main->get('custnum'),
+          'locationnum'   => $cust_main->get('bill_locationnum'),
+          'last'          => $cust_main->get('last'),
+          'first'         => $cust_main->get('first'),
+      });
+      $contact->set('emailaddress', $self->email);
+      $contact->set('invoice_dest', 'Y');
+
+      if ( $contact->get('contactnum') ) {
+        $error = $contact->replace;
+      } else {
+        $error = $contact->insert;
+      }
+
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "creating invoice destination contact: $error";
+      }
     }
 
     #welcome email
@@ -799,23 +826,6 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-
-  foreach my $cust_main_invoice (
-    qsearch( 'cust_main_invoice', { 'dest' => $self->svcnum } )
-  ) {
-    unless ( defined($cust_main_invoice) ) {
-      warn "WARNING: something's wrong with qsearch";
-      next;
-    }
-    my %hash = $cust_main_invoice->hash;
-    $hash{'dest'} = $self->email;
-    my $new = new FS::cust_main_invoice \%hash;
-    my $error = $new->replace($cust_main_invoice);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
 
   foreach my $svc_domain (
     qsearch( 'svc_domain', { 'catchall' => $self->svcnum } )

@@ -47,17 +47,23 @@ if ( $r->method eq 'GET' ) {
     if ( $cgi->param('cust_main_invoice_dest') ) {
       my $dest = dbh->quote(scalar($cgi->param('cust_main_invoice_dest')));
       $extra_sql = "
-        WHERE EXISTS ( SELECT 1 FROM cust_main_invoice
-                         WHERE cust_main.custnum = cust_main_invoice.custnum
-                           AND dest = $dest
+        WHERE EXISTS ( SELECT 1 FROM cust_contact
+                         JOIN contact USING (contactnum)
+                         JOIN contact_email USING (contactnum)
+                         WHERE cust_main.custnum = cust_contact.custnum
+                           AND contact.invoice_dest = 'Y'
+                           AND contact_email.emailaddress = $dest
                      )
       ";
     } elsif ( $cgi->param('cust_main_invoice_dest_substring') ) {
       my $dest = dbh->quote('%'. scalar($cgi->param('cust_main_invoice_dest_substring')). '%');
       $extra_sql = "
-        WHERE EXISTS ( SELECT 1 FROM cust_main_invoice
-                         WHERE cust_main.custnum = cust_main_invoice.custnum
-                           AND dest ILIKE $dest
+        WHERE EXISTS ( SELECT 1 FROM cust_contact
+                         JOIN contact USING (contactnum)
+                         JOIN contact_email USING (contactnum)
+                         WHERE cust_main.custnum = cust_contact.custnum
+                           AND contact.invoice_dest = 'Y'
+                           AND contact_email.emailaddress ILIKE $dest
                      )
       ";
     }

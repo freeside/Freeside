@@ -11,6 +11,11 @@ use FS::Msgcat qw(gettext);
 
 FS::cust_main_invoice - Object methods for cust_main_invoice records
 
+=head1 ANNOUNCEMENT
+
+This is deprecated in version 4. Instead, contacts with the "invoice_dest"
+attribute should be used.
+
 =head1 SYNOPSIS
 
   use FS::cust_main_invoice;
