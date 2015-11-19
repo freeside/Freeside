@@ -29,14 +29,19 @@ Import a file containing customer packages.
       <SELECT NAME="format">
         <OPTION VALUE="default" SELECTED>Default
         <OPTION VALUE="default-agent_custid">Default with agent_custid
+        <OPTION VALUE="default-locationnum">Default with existing location
         <OPTION VALUE="all_dates">All dates
         <OPTION VALUE="all_dates-agent_custid">All dates with agent_custid
+        <OPTION VALUE="all_dates-locationnum">All dates with existing location
         <OPTION VALUE="svc_acct">Account service
         <OPTION VALUE="svc_acct-agent_custid">Account service with agent_custid
+        <OPTION VALUE="svc_acct-locationnum">Account service with existing location
         <OPTION VALUE="svc_phone">Phone service
         <OPTION VALUE="svc_phone-agent_custid">Phone service with agent_custid
+        <OPTION VALUE="svc_phone-locationnum">Phone service with existing location
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external-agent_custid">External service with agent_custid
+        <OPTION VALUE="svc_external-locationnum">External service with existing location
         <OPTION VALUE="location">Location
         <OPTION VALUE="location-agent_custid">Location with agent_custid
         <OPTION VALUE="location-agent_custid-agent_pkgid">Location with agent_custid and agent_pkgid
@@ -73,10 +78,16 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <b>Default with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire</i>
 <BR><BR>
 
+<b>Default with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire</i>
+<BR><BR>
+
 <b>All dates</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, order_date, start_date, setup, bill, last_bill, susp, adjourn, resume, cancel, expire, contract_end, dundate</i>
 <BR><BR>
 
 <b>All dates with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, order_date, start_date, setup, bill, last_bill, susp, adjourn, resume, cancel, expire, contract_end, dundate</i>
+<BR><BR>
+
+<b>All dates with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, order_date, start_date, setup, bill, last_bill, susp, adjourn, resume, cancel, expire, contract_end, dundate</i>
 <BR><BR>
 
 <b>Account service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
@@ -85,16 +96,25 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <b>Account service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
 <BR><BR>
 
+<b>Account service with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
+<BR><BR>
+
 <b>Phone sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
 <BR><BR>
 
 <b>Phone service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
 <BR><BR>
 
+<b>Phone sevice with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
+<BR><BR>
+
 <b>External sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>
 <BR><BR>
 
 <b>External service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>
+<BR><BR>
+
+<b>External sevice with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>
 <BR><BR>
 
 <b>Location</b> format has the following field order: <i>custnum<%$req%>,
@@ -160,6 +180,8 @@ Field information:
   <li><i>id</i>: External service id, integer
 
   <li><i>title</i>: External service identifier, text
+
+  <li><i>locationnum</i>: Existing location (cust_location.locationnum)
 
   <li><i>address1</i>: Service address, number and street, text
 
