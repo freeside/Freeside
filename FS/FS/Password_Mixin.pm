@@ -105,7 +105,16 @@ sub insert_password_history {
   my $password = $self->_password;
   my $auth;
 
-  if ( $encoding eq 'bcrypt' or $encoding eq 'crypt' ) {
+  if ( $encoding eq 'bcrypt' ) {
+    # our format, used for contact and access_user passwords
+    my ($cost, $salt, $hash) = split(',', $password);
+    $auth = Authen::Passphrase::BlowfishCrypt->new(
+      cost        => $cost,
+      salt_base64 => $salt,
+      hash_base64 => $hash,
+    );
+
+  } elsif ( $encoding eq 'crypt' ) {
 
     # it's smart enough to figure this out
     $auth = Authen::Passphrase->from_crypt($password);
