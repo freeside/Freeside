@@ -6,8 +6,6 @@ my $mw_username = 'ivan';
 chomp( my $mw_password = `cat .mw-password` );
 
 my $site_perl = "./FS";
-#my $html = "Freeside:1.7:Documentation:Developer";
-#my $html = "Freeside:1.9:Documentation:Developer";
 my $html = "Freeside:4:Documentation:Developer";
 
 foreach my $dir (
