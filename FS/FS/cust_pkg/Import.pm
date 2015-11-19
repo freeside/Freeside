@@ -209,6 +209,11 @@ sub batch_import {
     @fields = ( 'custnum' );
   }
 
+  if ( $format =~ /^(.*)-locationnum$/ ) {
+    $format = $1;
+    push @fields, 'locationnum';
+  }
+
   push @fields, ( 'pkgpart', 'discountnum' );
 
   my @date_fields = ();
