@@ -32,6 +32,8 @@ sub contact_passwd {
   $error = 'Password too long.'
     if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
 
+  $error ||= $contact->is_password_allowed($p->{'new_password'});
+
   $error ||= $contact->change_password($p->{'new_password'});
 
   return { 'error' => $error };

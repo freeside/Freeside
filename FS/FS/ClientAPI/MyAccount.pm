@@ -2964,6 +2964,8 @@ sub myaccount_passwd {
   my $contact = FS::contact->by_selfservice_email($svc_acct->email);
   if ( $contact && $contact->custnum == $custnum ) {
     #svc_acct was successful but this one returns an error?  "shouldn't happen"
+    #don't recheck is_password_allowed here; if the svc_acct password was
+    #legal, that's good enough
     $error ||= $contact->change_password($p->{'new_password'});
   }
 
@@ -3235,7 +3237,8 @@ sub process_reset_passwd {
 
   if ( $contact ) {
 
-    my $error = $contact->change_password($p->{'new_password'});
+    my $error = $contact->is_password_allowed($p->{'new_password'})
+            ||  $contact->change_password($p->{'new_password'});
 
     return { %$info, 'error' => $error }; # if $error;
 
