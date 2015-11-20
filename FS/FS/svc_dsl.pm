@@ -1,10 +1,11 @@
 package FS::svc_dsl;
-use base qw(FS::svc_Common);
+use base qw(FS::Password_Mixin
+            FS::svc_Common);
 
 use strict;
 use vars qw( $conf $DEBUG $me );
 use FS::UID;
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::svc_Common;
 use FS::dsl_note;
 use FS::qual;
@@ -211,7 +212,25 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error = $self->SUPER::insert(@_);
+  if ( length($self->password) ) {
+    $error ||= $self->insert_password_history;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  '';
+}
 
 =item delete
 
@@ -227,6 +246,27 @@ Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 =cut
+
+sub replace {
+  my $new = shift;
+  my $old = shift || $new->replace_old;
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error = $new->SUPER::replace($old, @_);
+  if ( $old->password ne $new->password ) {
+    $error ||= $new->insert_password_history;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  '';
+}
 
 # the replace method can be inherited from FS::Record
 
@@ -316,6 +356,15 @@ sub predelete_hook {
     }
     '';
 }
+
+# password_history compatibility
+
+sub _password {
+  my $self = shift;
+  $self->get('password');
+}
+
+sub _password_encoding { 'plain'; }
 
 =back
 
