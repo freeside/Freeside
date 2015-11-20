@@ -7,13 +7,7 @@ use Authen::Passphrase;
 use Authen::Passphrase::BlowfishCrypt;
 # https://rt.cpan.org/Ticket/Display.html?id=72743
 
-our $DEBUG = 1;
-our $conf;
-FS::UID->install_callback( sub {
-    $conf = FS::Conf->new;
-    # this is safe
-    #eval "use Authen::Passphrase::BlowfishCrypt;";
-});
+our $DEBUG = 0;
 
 our $me = '[' . __PACKAGE__ . ']';
 
@@ -46,9 +40,10 @@ sub is_password_allowed {
 
   # check length and complexity here
 
-  if ( $conf->config('password-no_reuse') =~ /^(\d+)$/ ) {
+  my $no_reuse = 3;
+  # allow override here if we really must
 
-    my $no_reuse = $1;
+  if ( $no_reuse > 0 ) {
 
     # "the last N" passwords includes the current password and the N-1
     # passwords before that.
