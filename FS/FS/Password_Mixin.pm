@@ -7,7 +7,7 @@ use Authen::Passphrase;
 use Authen::Passphrase::BlowfishCrypt;
 # https://rt.cpan.org/Ticket/Display.html?id=72743
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 our $conf;
 FS::UID->install_callback( sub {
     $conf = FS::Conf->new;
