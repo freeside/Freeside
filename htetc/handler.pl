@@ -10,6 +10,12 @@ use FS::Conf;
 
 $FS::Conf::conf_cache_enabled = 1; # enable FS::Conf caching for performance
 
+# Preload to share in mod_perl parent for performance
+use FS::UID qw(load_schema);
+load_schema();
+use FS::Record qw(fk_methods_init);
+fk_methods_init;
+
 if ( %%%RT_ENABLED%%% ) {
 
   require RT;
