@@ -50,7 +50,12 @@
      'required' => $part_svc->part_svc_column('_password')->required ) %>
   <TD>
     <INPUT TYPE="text" ID="clear_password" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
-    <& /elements/random_pass.html, 'clear_password' &>
+    <& /elements/random_pass.html, 'clear_password' &><BR>
+    <DIV ID="clear_password_result" STYLE="font-size: smaller"></DIV>
+    <& '/elements/validate_password.html', 
+         'fieldid' => 'clear_password',
+         'svcnum' => $svcnum 
+    &>
   </TD>
 </TR>
 %}else{
