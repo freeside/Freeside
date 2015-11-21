@@ -6,6 +6,7 @@ use FS::password_history;
 use Authen::Passphrase;
 use Authen::Passphrase::BlowfishCrypt;
 # https://rt.cpan.org/Ticket/Display.html?id=72743
+use Data::Password qw(:all);
 
 our $DEBUG = 0;
 our $conf;
@@ -44,7 +45,34 @@ sub is_password_allowed {
   my $self = shift;
   my $password = shift;
 
-  # check length and complexity here
+  # basic checks using Data::Password;
+  # options for Data::Password
+  $DICTIONARY = 4;   # minimum length of disallowed words
+  $MINLEN = $conf->config('passwordmin') || 6;
+  $MAXLEN = $conf->config('passwordmax') || 8;
+  $GROUPS = 4;       # must have all 4 'character groups': numbers, symbols, uppercase, lowercase
+  # other options use the defaults listed below:
+  # $FOLLOWING = 3;    # disallows more than 3 chars in a row, by alphabet or keyboard (ie abcd or asdf)
+  # $SKIPCHAR = undef; # set to true to skip checking for bad characters
+  # # lists of disallowed words
+  # @DICTIONARIES = qw( /usr/share/dict/web2 /usr/share/dict/words /usr/share/dict/linux.words );
+
+  my $error = IsBadPassword($password);
+  $error = 'must contain at least one each of numbers, symbols, and lowercase and uppercase letters'
+    if $error eq 'contains less than 4 character groups'; # avoid confusion
+  $error = 'Invalid password - ' . $error if $error;
+  return $error if $error;
+
+  #check against known usernames
+  my @disallowed_names = $self->password_disallowed_names;
+  foreach my $noname (@disallowed_names) {
+    if ($password =~ /$noname/i) {
+      #keeping message ambiguous to avoid leaking personal info
+      return 'Password contains a disallowed word';
+    }
+  }
+
+  return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
 
   if ( $conf->config('password-no_reuse') =~ /^(\d+)$/ ) {
 
@@ -78,6 +106,17 @@ sub is_password_allowed {
   } # end of no_reuse checking
 
   '';
+}
+
+=item password_disallowed_names
+
+Override to return a list additional words (eg usernames) not
+to be used by passwords on this service.
+
+=cut
+
+sub password_disallowed_names {
+  return ();
 }
 
 =item password_history_key
