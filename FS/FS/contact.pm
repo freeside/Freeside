@@ -1,5 +1,6 @@
 package FS::contact;
-use base qw( FS::Record );
+use base qw( FS::Password_Mixin
+             FS::Record );
 
 use strict;
 use vars qw( $skip_fuzzyfiles );
@@ -129,6 +130,8 @@ sub insert {
   my $dbh = dbh;
 
   my $error = $self->SUPER::insert;
+  $error ||= $self->insert_password_history;
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -268,6 +271,9 @@ sub replace {
   my $dbh = dbh;
 
   my $error = $self->SUPER::replace($old);
+  if ( $old->_password ne $self->_password ) {
+    $error ||= $self->insert_password_history;
+  }
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -607,8 +613,21 @@ sub authenticate_password {
 
 }
 
+=item change_password NEW_PASSWORD
+
+Changes the contact's selfservice access password to NEW_PASSWORD. This does
+not check password policy rules (see C<is_password_allowed>) and will return
+an error only if editing the record fails for some reason.
+
+If NEW_PASSWORD is the same as the existing password, this does nothing.
+
+=cut
+
 sub change_password {
   my($self, $new_password) = @_;
+
+  # do nothing if the password is unchanged
+  return if $self->authenticate_password($new_password);
 
   $self->change_password_fields( $new_password );
 

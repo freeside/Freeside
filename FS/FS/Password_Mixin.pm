@@ -7,7 +7,7 @@ use Authen::Passphrase;
 use Authen::Passphrase::BlowfishCrypt;
 # https://rt.cpan.org/Ticket/Display.html?id=72743
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 our $conf;
 FS::UID->install_callback( sub {
     $conf = FS::Conf->new;
@@ -105,7 +105,16 @@ sub insert_password_history {
   my $password = $self->_password;
   my $auth;
 
-  if ( $encoding eq 'bcrypt' or $encoding eq 'crypt' ) {
+  if ( $encoding eq 'bcrypt' ) {
+    # our format, used for contact and access_user passwords
+    my ($cost, $salt, $hash) = split(',', $password);
+    $auth = Authen::Passphrase::BlowfishCrypt->new(
+      cost        => $cost,
+      salt_base64 => $salt,
+      hash_base64 => $hash,
+    );
+
+  } elsif ( $encoding eq 'crypt' ) {
 
     # it's smart enough to figure this out
     $auth = Authen::Passphrase->from_crypt($password);
@@ -119,7 +128,9 @@ sub insert_password_history {
       $auth = $self->_blowfishcrypt( $auth->passphrase );
     }
   
-  } elsif ( $encoding eq 'plain' ) {
+  } else {
+    warn "unrecognized password encoding '$encoding'; treating as plain text"
+      unless $encoding eq 'plain';
 
     $auth = $self->_blowfishcrypt( $password );
 
