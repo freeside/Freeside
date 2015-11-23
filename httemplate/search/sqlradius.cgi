@@ -1,4 +1,4 @@
-<% include( '/elements/header.html', 'RADIUS Sessions') %>
+<& /elements/header.html, 'RADIUS Sessions' &>
 
 % ###
 % # and finally, display the thing
@@ -19,7 +19,7 @@
       <% $part_export->machine ? ' to '. $part_export->machine : '' |h %>
     </FONT><BR>
 
-    <% include( '/elements/table-grid.html' ) %>
+    <& /elements/table-grid.html &>
 %   my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor;
@@ -245,6 +245,8 @@ my $user_format = sub {
 
   }
 
+  $user = encode_entities($user);
+
   if ( $svc ) { 
 
     #i should use svc_link, but that's expensive per-user
@@ -267,7 +269,7 @@ my $customer_format = sub {
   my $cust_main = $cust_pkg->cust_main;
 
   qq!<A HREF="${p}view/cust_main.cgi?!. $cust_main->custnum. '">'.
-    $cust_pkg->cust_main->name. '</A>';
+    encode_entities($cust_pkg->cust_main->name). '</A>';
 };
 
 my $time_format = sub {
@@ -302,11 +304,26 @@ my $duration_format = sub {
 
 my $octets_format = sub {
   my $octets = shift;
-  my $megs = $octets / 1048576;
-  sprintf('<B>%.3f</B>&nbsp;megs', $megs);
-  #my $gigs = $octets / 1073741824
-  #sprintf('<B>%.3f</B> gigabytes', $gigs);
+  #my $megs = $octets / 1048576;
+  #sprintf('<B>%.3f</B>&nbsp;megs', $megs);
+  my $gigs = $octets / 1073741824;
+  sprintf('<B>%.3f</B>&nbsp;gigs', $gigs);
 };
+
+my $mac_format = sub {
+  my $value = shift;
+  if (     $value =~ /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i
+       and my $vendor = Net::MAC::Vendor::lookup($1)
+     )
+  {
+    return encode_entities($value).
+           ' <span style="white-space: nowrap">('.
+             encode_entities($vendor->[0]).
+           ')</span>';
+  }
+  length($value) ? encode_entities($value) : '&nbsp';
+};
+
 
 ###
 # the fields
@@ -314,129 +331,113 @@ my $octets_format = sub {
 
 my %fields;
 if ( $summarize ) {
-tie %fields, 'Tie::IxHash', 
-  'username'          => {
-                           name    => 'User',
-                           attrib  => 'UserName',
-                           fmt     => $user_format,
-                           align   => 'left',
-                         },
-  'dummy'             => {
-                           name    => 'Customer',
-                           attrib  => '',
-                           fmt     => $customer_format,
-                           align   => 'left',
-                         },
-  'acctsessiontime'   => {
-                           name    => 'Duration',
-                           attrib  => 'Acct-Session-Time',
-                           fmt     => $duration_format,
-                           align   => 'right',
-                         },
-  'acctinputoctets'   => {
-                           name    => 'Upload', # (from user)',
-                           attrib  => 'Acct-Input-Octets',
-                           fmt     => $octets_format,
-                           align   => 'right',
-                         },
-  'acctoutputoctets'  => {
-                           name    => 'Download', # (to user)',
-                           attrib  => 'Acct-Output-Octets',
-                           fmt     => $octets_format,
-                           align   => 'right',
-                         },
-;
-} else {
-tie %fields, 'Tie::IxHash',
-  'username'          => {
-                           name    => 'User',
-                           attrib  => 'UserName',
-                           fmt     => $user_format,
-                           align   => 'left',
-                         },
-  'realm'             => {
-                           name    => 'Realm',
-                           attrib  => 'Realm',
-                           align   => 'left',
-                         },
-  'dummy'             => {
-                           name    => 'Customer',
-                           attrib  => '',
-                           fmt     => $customer_format,
-                           align   => 'left',
-                         },
-  'framedipaddress'   => {
-                           name    => 'IP&nbsp;Address',
-                           attrib  => 'Framed-IP-Address',
-                           fmt     => sub { my $ip = shift;
-                                            length($ip) ? $ip : '&nbsp';
-                                          },
-                           align   => 'right',
-                         },
-  'callingstationid'  => {
-                           name    => 'Source&nbsp;or&nbsp;MAC',
-                           attrib  => 'Calling-Station-Id',
-                           fmt     => sub {
-                             my $src = shift;
-                             if ( $src =~
-                                    /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i ) {
-                               return $src. ' ('.
-                                        (Net::MAC::Vendor::lookup($1))->[0].
-                                      ')';
 
-                             }
-                             length($src) ? $src : '&nbsp';
+  tie %fields, 'Tie::IxHash', 
+    'username'          => {
+                             name    => 'User',
+                             attrib  => 'UserName',
+                             fmt     => $user_format,
+                             align   => 'left',
                            },
-                           align   => 'right',
-                         },
-  'calledstationid'   => {
-                           name    => 'Destination',
-                           attrib  => 'Called-Station-ID',
-                           fmt     => sub {
-                             my $dst = shift;
-                             if ( $dst =~
-                                    /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i ) {
-                               return $dst. ' ('.
-                                        (Net::MAC::Vendor::lookup($1))->[0].
-                                      ')';
-                             }
-                             length($dst) ? $dst : '&nbsp';
+    'dummy'             => {
+                             name    => 'Customer',
+                             attrib  => '',
+                             fmt     => $customer_format,
+                             align   => 'left',
                            },
-                           align   => 'left',
-                       },
-  'acctstarttime'     => {
-                           name    => 'Start&nbsp;time',
-                           attrib  => 'Acct-Start-Time',
-                           fmt     => $time_format,
-                           align   => 'left',
+    'acctsessiontime'   => {
+                             name    => 'Duration',
+                             attrib  => 'Acct-Session-Time',
+                             fmt     => $duration_format,
+                             align   => 'right',
+                           },
+    'acctinputoctets'   => {
+                             name    => 'Upload', # (from user)',
+                             attrib  => 'Acct-Input-Octets',
+                             fmt     => $octets_format,
+                             align   => 'right',
+                           },
+    'acctoutputoctets'  => {
+                             name    => 'Download', # (to user)',
+                             attrib  => 'Acct-Output-Octets',
+                             fmt     => $octets_format,
+                             align   => 'right',
+                           },
+  ;
+
+} else {
+
+  tie %fields, 'Tie::IxHash',
+    'username'          => {
+                             name    => 'User',
+                             attrib  => 'UserName',
+                             fmt     => $user_format,
+                             align   => 'left',
+                           },
+    'realm'             => {
+                             name    => 'Realm',
+                             attrib  => 'Realm',
+                             align   => 'left',
+                           },
+    'dummy'             => {
+                             name    => 'Customer',
+                             attrib  => '',
+                             fmt     => $customer_format,
+                             align   => 'left',
+                           },
+    'framedipaddress'   => {
+                             name    => 'IP&nbsp;Address',
+                             attrib  => 'Framed-IP-Address',
+                             fmt     => sub { my $ip = shift;
+                                              length($ip) ? $ip : '&nbsp';
+                                            },
+                             align   => 'right',
+                           },
+    'callingstationid'  => {
+                             name    => 'Source&nbsp;or&nbsp;MAC',
+                             attrib  => 'Calling-Station-Id',
+                             fmt     => $mac_format,
+                             align   => 'right',
+                           },
+    'calledstationid'   => {
+                             name    => 'Destination',
+                             attrib  => 'Called-Station-ID',
+                             fmt     => $mac_format,
+                             align   => 'left',
                          },
-  'acctstoptime'      => {
-                           name    => 'End&nbsp;time',
-                           attrib  => 'Acct-Stop-Time',
-                           fmt     => $time_format_or_open,
-                           align   => 'left',
-                         },
-  'acctsessiontime'   => {
-                           name    => 'Duration',
-                           attrib  => 'Acct-Session-Time',
-                           fmt     => $duration_format,
-                           align   => 'right',
-                         },
-  'acctinputoctets'   => {
-                           name    => 'Upload', # (from user)',
-                           attrib  => 'Acct-Input-Octets',
-                           fmt     => $octets_format,
-                           align   => 'right',
-                         },
-  'acctoutputoctets'  => {
-                           name    => 'Download', # (to user)',
-                           attrib  => 'Acct-Output-Octets',
-                           fmt     => $octets_format,
-                           align   => 'right',
-                         },
-;
+    'acctstarttime'     => {
+                             name    => 'Start&nbsp;time',
+                             attrib  => 'Acct-Start-Time',
+                             fmt     => $time_format,
+                             align   => 'left',
+                           },
+    'acctstoptime'      => {
+                             name    => 'End&nbsp;time',
+                             attrib  => 'Acct-Stop-Time',
+                             fmt     => $time_format_or_open,
+                             align   => 'left',
+                           },
+    'acctsessiontime'   => {
+                             name    => 'Duration',
+                             attrib  => 'Acct-Session-Time',
+                             fmt     => $duration_format,
+                             align   => 'right',
+                           },
+    'acctinputoctets'   => {
+                             name    => 'Upload', # (from user)',
+                             attrib  => 'Acct-Input-Octets',
+                             fmt     => $octets_format,
+                             align   => 'right',
+                           },
+    'acctoutputoctets'  => {
+                             name    => 'Download', # (to user)',
+                             attrib  => 'Acct-Output-Octets',
+                             fmt     => $octets_format,
+                             align   => 'right',
+                           },
+  ;
 }
-$fields{$_}->{fmt} ||= sub { length($_[0]) ? shift : '&nbsp'; }
+$fields{$_}->{fmt} ||= sub { length($_[0]) ? encode_entities(shift) : '&nbsp'; }
   foreach keys %fields;
 
 </%init>
