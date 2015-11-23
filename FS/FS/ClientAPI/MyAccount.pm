@@ -2995,12 +2995,6 @@ sub myaccount_passwd {
         )
     && ! $svc_acct->check_password($p->{'old_password'});
 
-    # should move password length checks into is_password_allowed
-  $error = 'Password too short.'
-    if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
-  $error = 'Password too long.'
-    if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
-
   $error ||= $svc_acct->is_password_allowed($p->{'new_password'})
          ||  $svc_acct->set_password($p->{'new_password'})
          ||  $svc_acct->replace();
@@ -3017,6 +3011,8 @@ sub myaccount_passwd {
                            )
   ) {
     #svc_acct was successful but this one returns an error?  "shouldn't happen"
+    #don't recheck is_password_allowed here; if the svc_acct password was
+    #legal, that's good enough
     $error ||= $contact->change_password($p->{'new_password'});
   }
 
@@ -3298,7 +3294,8 @@ sub process_reset_passwd {
 
   if ( $contact ) {
 
-    my $error = $contact->change_password($p->{'new_password'});
+    my $error = $contact->is_password_allowed($p->{'new_password'})
+            ||  $contact->change_password($p->{'new_password'});
 
     return { %$info, 'error' => $error }; # if $error;
 

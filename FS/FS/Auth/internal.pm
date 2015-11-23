@@ -47,6 +47,9 @@ sub autocreate { 0; }
 sub change_password {
   my($self, $access_user, $new_password) = @_;
 
+  # do nothing if the password is unchanged
+  return if $self->authenticate( $access_user, $new_password );
+
   $self->change_password_fields( $access_user, $new_password );
 
   $access_user->replace;

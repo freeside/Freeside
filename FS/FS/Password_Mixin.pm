@@ -6,13 +6,12 @@ use FS::password_history;
 use Authen::Passphrase;
 use Authen::Passphrase::BlowfishCrypt;
 # https://rt.cpan.org/Ticket/Display.html?id=72743
+use Data::Password qw(:all);
 
-our $DEBUG = 1;
+our $DEBUG = 0;
 our $conf;
 FS::UID->install_callback( sub {
-    $conf = FS::Conf->new;
-    # this is safe
-    #eval "use Authen::Passphrase::BlowfishCrypt;";
+  $conf = FS::Conf->new;
 });
 
 our $me = '[' . __PACKAGE__ . ']';
@@ -44,11 +43,39 @@ sub is_password_allowed {
   my $self = shift;
   my $password = shift;
 
-  # check length and complexity here
+  # basic checks using Data::Password;
+  # options for Data::Password
+  $DICTIONARY = 4;   # minimum length of disallowed words
+  $MINLEN = $conf->config('passwordmin') || 6;
+  $MAXLEN = $conf->config('passwordmax') || 8;
+  $GROUPS = 4;       # must have all 4 'character groups': numbers, symbols, uppercase, lowercase
+  # other options use the defaults listed below:
+  # $FOLLOWING = 3;    # disallows more than 3 chars in a row, by alphabet or keyboard (ie abcd or asdf)
+  # $SKIPCHAR = undef; # set to true to skip checking for bad characters
+  # # lists of disallowed words
+  # @DICTIONARIES = qw( /usr/share/dict/web2 /usr/share/dict/words /usr/share/dict/linux.words );
 
-  if ( $conf->config('password-no_reuse') =~ /^(\d+)$/ ) {
+  my $error = IsBadPassword($password);
+  $error = 'must contain at least one each of numbers, symbols, and lowercase and uppercase letters'
+    if $error eq 'contains less than 4 character groups'; # avoid confusion
+  $error = 'Invalid password - ' . $error if $error;
+  return $error if $error;
 
-    my $no_reuse = $1;
+  #check against known usernames
+  my @disallowed_names = $self->password_disallowed_names;
+  foreach my $noname (@disallowed_names) {
+    if ($password =~ /$noname/i) {
+      #keeping message ambiguous to avoid leaking personal info
+      return 'Password contains a disallowed word';
+    }
+  }
+
+  return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
+
+  my $no_reuse = 3;
+  # allow override here if we really must
+
+  if ( $no_reuse > 0 ) {
 
     # "the last N" passwords includes the current password and the N-1
     # passwords before that.
@@ -80,6 +107,17 @@ sub is_password_allowed {
   '';
 }
 
+=item password_disallowed_names
+
+Override to return a list additional words (eg usernames) not
+to be used by passwords on this service.
+
+=cut
+
+sub password_disallowed_names {
+  return ();
+}
+
 =item password_history_key
 
 Returns the name of the field in L<FS::password_history> that's the foreign
@@ -105,7 +143,16 @@ sub insert_password_history {
   my $password = $self->_password;
   my $auth;
 
-  if ( $encoding eq 'bcrypt' or $encoding eq 'crypt' ) {
+  if ( $encoding eq 'bcrypt' ) {
+    # our format, used for contact and access_user passwords
+    my ($cost, $salt, $hash) = split(',', $password);
+    $auth = Authen::Passphrase::BlowfishCrypt->new(
+      cost        => $cost,
+      salt_base64 => $salt,
+      hash_base64 => $hash,
+    );
+
+  } elsif ( $encoding eq 'crypt' ) {
 
     # it's smart enough to figure this out
     $auth = Authen::Passphrase->from_crypt($password);
@@ -119,7 +166,9 @@ sub insert_password_history {
       $auth = $self->_blowfishcrypt( $auth->passphrase );
     }
   
-  } elsif ( $encoding eq 'plain' ) {
+  } else {
+    warn "unrecognized password encoding '$encoding'; treating as plain text"
+      unless $encoding eq 'plain';
 
     $auth = $self->_blowfishcrypt( $password );
 

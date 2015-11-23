@@ -4052,13 +4052,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
-  {
-    'key'         => 'password-no_reuse',
-    'section'     => 'password',
-    'description' => 'Minimum number of password changes before a password can be reused. By default, passwords can be reused without restriction.',
-    'type'        => 'text',
-  },
-
+#  {
+#    'key'         => 'password-no_reuse',
+#    'section'     => 'password',
+#    'description' => 'Minimum number of password changes before a password can be reused. By default, passwords can be reused without restriction.',
+#    'type'        => 'text',
+#  },
+#
   {
     'key'         => 'datavolume-forcemegabytes',
     'section'     => 'UI',

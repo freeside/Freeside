@@ -1,10 +1,25 @@
 <% include( 'elements/svc_Common.html',
                'table'    => 'svc_dsl',
+               'precheck_callback' => $precheck_callback,
            )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+my $precheck_callback = sub {
+  my $cgi = shift;
+  my $svcnum = $cgi->param('svcnum');
+  my $error = '';
+  if ( $svcnum ) {
+    my $old = FS::svc_dsl->by_key($svcnum);
+    my $newpass = $cgi->param('password');
+    if ( $old and $newpass ne $old->password ) {
+      $error ||= $old->is_password_allowed($newpass);
+    }
+  }
+  $error;
+};
 
 </%init>
