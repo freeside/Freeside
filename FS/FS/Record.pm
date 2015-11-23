@@ -2975,7 +2975,6 @@ May not be null.
 
 sub ut_name {
   my( $self, $field ) = @_;
-#  warn "ut_name allowed alphanumerics: +(sort grep /\w/, map { chr() } 0..255), "\n";
   $self->getfield($field) =~ /^([\p{Word} \,\.\-\']+)$/
     or return gettext('illegal_name'). " $field: ". $self->getfield($field);
   my $name = $1;
