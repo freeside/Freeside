@@ -1,5 +1,7 @@
 package FS::access_user;
-use base qw( FS::m2m_Common FS::option_Common ); 
+use base qw( FS::Password_Mixin
+             FS::m2m_Common
+             FS::option_Common ); 
 
 use strict;
 use vars qw( $DEBUG $me );
@@ -125,6 +127,9 @@ sub insert {
   }
 
   $error = $self->SUPER::insert(@_);
+  if ( $self->_password ) {
+    $error ||= $self->insert_password_history;
+  }
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
@@ -200,6 +205,9 @@ sub replace {
        );
 
   my $error = $new->SUPER::replace($old, @_);
+  if ( $old->_password ne $new->_password ) {
+    $error ||= $new->insert_password_history;
+  }
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
@@ -698,6 +706,12 @@ sub is_system_user {
 }
 
 =item change_password NEW_PASSWORD
+
+Changes the user's password to NEW_PASSWORD. This does not check password
+policy rules (see C<is_password_allowed>) and will return an error only if
+editing the user's record fails for some reason.
+
+If NEW_PASSWORD is the same as the existing password, this does nothing.
 
 =cut
 

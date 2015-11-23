@@ -7,6 +7,8 @@
 % }
 <%init>
 
+my $access_user = $FS::CurrentUser::CurrentUser;
+
 if ( FS::Conf->new->exists('disable_acl_changes') ) {
   errorpage("Preference changes disabled in public demo");
   die "shouldn't be reached";
@@ -19,28 +21,26 @@ if ( FS::Auth->auth_class->can('change_password')
             qw(_password new_password new_password2)
    ) {
 
-  if ( $cgi->param('new_password') ne $cgi->param('new_password2') ) {
+  my $oldpass = $cgi->param('_password');
+  my $newpass = $cgi->param('new_password');
+
+  if ( $newpass ne $cgi->param('new_password2') ) {
     $error = "New passwords don't match";
 
-  } elsif ( ! length($cgi->param('new_password')) ) {
+  } elsif ( ! length($newpass) ) {
     $error = 'No new password entered';
 
-  } elsif ( ! FS::Auth->authenticate( $FS::CurrentUser::CurrentUser,
-                                      scalar($cgi->param('_password')) )
-          ) {
+  } elsif ( ! FS::Auth->authenticate( $access_user, $oldpass ) ) {
     $error = 'Current password incorrect; password not changed';
 
   } else {
 
-    $error = $FS::CurrentUser::CurrentUser->change_password(
-      scalar($cgi->param('new_password'))
-    );
+    $error = $access_user->is_password_allowed($newpass)
+          || $access_user->change_password($newpass);
 
   }
 
 }
-
-my $access_user = $FS::CurrentUser::CurrentUser;
 
 #well, if you got your password change wrong, you don't get anything else
 #changed right now.  but it should be sticky on the form

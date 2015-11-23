@@ -43,7 +43,8 @@ sub post_new_object_callback {
 
   if ( length($cgi->param('_password')) ) {
     my $password = scalar($cgi->param('_password'));
-    $access_user->change_password_fields($password);
+    my $error = $access_user->is_password_allowed($password)
+             || $access_user->change_password($password);
   }
 
 }
