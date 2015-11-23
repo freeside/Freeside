@@ -39,6 +39,9 @@ Import a file containing customer packages.
         <OPTION VALUE="svc_phone">Phone service
         <OPTION VALUE="svc_phone-agent_custid">Phone service with agent_custid
         <OPTION VALUE="svc_phone-locationnum">Phone service with existing location
+        <OPTION VALUE="bulk_svc_phone">Bulk phone service
+        <OPTION VALUE="bulk_svc_phone-agent_custid">Bulk phone service with agent_custid
+        <OPTION VALUE="bulk_svc_phone-locationnum">Bulk phone service with existing location
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external-agent_custid">External service with agent_custid
         <OPTION VALUE="svc_external-locationnum">External service with existing location
@@ -106,6 +109,15 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>Phone sevice with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
+<BR><BR>
+
+<b>Bulk phone sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, start_phonenum-end_phonenum, sip_password, pin</i>
+<BR><BR>
+
+<b>Bulk phone service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, start_phonenum-end_phonenum, sip_password, pin</i>
+<BR><BR>
+
+<b>Bulk phone sevice with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, start_phonenum-end_phonenum, sip_password, pin</i>
 <BR><BR>
 
 <b>External sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>

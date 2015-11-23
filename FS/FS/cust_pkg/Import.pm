@@ -214,6 +214,52 @@ sub batch_import {
     push @fields, 'locationnum';
   }
 
+  if ( $format =~ /^bulk_(.*)$/ ) {
+
+    $format = $1;
+
+    $opt->{'postinsert_callback'} = sub {
+      my( $record, $param ) = @_;
+
+      my $formatfields = _formatfields;
+      foreach my $svc_x ( grep /^svc/, keys %$formatfields ) {
+
+        my $ff = $formatfields->{$svc_x};
+
+        if ( grep $param->{"$svc_x.$_"}, @$ff ) {
+
+          $param->{'svc_phone.phonenum'} =~ /^\s*(\d+)\s*\-\s*(\d+)\s*$/
+            or return 'Enter a phone number range, with dash as the separator';
+          my($start, $end) = ($1, $2);
+          if ( length($end) < length($start) ) {
+            $end = substr($start, 0, length($start) - length($end) ). $end;
+          }
+
+          foreach my $phonenum ( "$start" .. "$end" ) {
+
+            my $svc = "FS::$svc_x"->new( {
+              'pkgnum'  => $record->pkgnum,
+              'svcpart' => $record->part_pkg->svcpart($svc_x),
+              map { $_ => $param->{"$svc_x.$_"} } @$ff
+            } );
+
+            $svc->phonenum($phonenum);
+            #$svc->set_default_and_fixed;
+            my $error = $svc->insert;
+            return "error inserting service: $error" if $error;
+
+          }
+
+        }
+
+      }
+
+      return ''; #no error
+
+    };
+
+  }
+
   push @fields, ( 'pkgpart', 'discountnum' );
 
   my @date_fields = ();
