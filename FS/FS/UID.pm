@@ -14,7 +14,7 @@ use IO::File;
 use FS::CurrentUser;
 
 @EXPORT_OK = qw( checkeuid checkruid cgi setcgi adminsuidsetup forksuidsetup
-                 preuser_setup
+                 preuser_setup load_schema
                  getotaker dbh datasrc getsecrets driver_name myconnect
                );
 
@@ -113,6 +113,14 @@ sub env_setup {
 
 }
 
+sub load_schema {
+  warn "$me loading schema\n" if $DEBUG;
+  getsecrets() unless $datasrc;
+  use FS::Schema qw(reload_dbdef dbdef);
+  reload_dbdef("$conf_dir/dbdef.$datasrc")
+    unless $FS::Schema::setup_hack;
+}
+
 sub db_setup {
   croak "Not running uid freeside (\$>=$>, \$<=$<)\n" unless checkeuid();
 
@@ -121,10 +129,7 @@ sub db_setup {
 
   warn "$me forksuidsetup connected to database with handle $dbh\n" if $DEBUG;
 
-  warn "$me forksuidsetup loading schema\n" if $DEBUG;
-  use FS::Schema qw(reload_dbdef dbdef);
-  reload_dbdef("$conf_dir/dbdef.$datasrc")
-    unless $FS::Schema::setup_hack;
+  load_schema();
 
   warn "$me forksuidsetup deciding upon config system to use\n" if $DEBUG;
 
