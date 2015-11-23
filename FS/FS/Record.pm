@@ -3,7 +3,7 @@ use base qw( Exporter );
 
 use strict;
 use vars qw( $AUTOLOAD
-             %virtual_fields_cache %fk_method_cache
+             %virtual_fields_cache %fk_method_cache $fk_table_cache
              $money_char $lat_lower $lon_upper
            );
 use Carp qw(carp cluck croak confess);
@@ -34,7 +34,7 @@ our @EXPORT_OK = qw(
   dbh fields hfields qsearch qsearchs dbdef jsearch
   str2time_sql str2time_sql_closing regexp_sql not_regexp_sql
   concat_sql group_concat_sql
-  midnight_sql
+  midnight_sql fk_methods_init
 );
 
 our $DEBUG = 0;
@@ -82,9 +82,7 @@ FS::UID->install_callback( sub {
     eval "sub PG_BYTEA { die 'guru meditation #9: calling PG_BYTEA when not running Pg?'; }";
   }
 
-  foreach my $table ( dbdef->tables ) {
-    $fk_method_cache{$table} = fk_methods($table);
-  }
+  #fk_methods_init();
 
 } );
 
@@ -988,7 +986,7 @@ sub exists {
   exists($self->{Hash}->{$field});
 }
 
-=item AUTLOADED METHODS
+=item AUTOLOADED METHODS
 
 $record->column is a synonym for $record->get('column');
 
@@ -1010,10 +1008,8 @@ sub AUTOLOAD {
   confess "errant AUTOLOAD $field for $self (arg $value)"
     unless blessed($self) && $self->can('setfield');
 
-  #$fk_method_cache{$self->table} ||= fk_methods($self->table);
-  if ( exists($fk_method_cache{$self->table}->{$field}) ) {
+  if ( my $fk_info = get_fk_method($self->table, $field) ) {
 
-    my $fk_info = $fk_method_cache{$self->table}->{$field};
     my $method = $fk_info->{method} || 'qsearchs';
     my $table = $fk_info->{table} || $field;
     my $column = $fk_info->{column};
@@ -1056,6 +1052,37 @@ sub AUTOLOAD {
 #  }    
 #}
 
+# get_fk_method(TABLE, FIELD)
+# Internal subroutine for fetching the foreign key descriptor for TABLE.FIELD
+# if there is one. If not, returns undef.
+# This will initialize fk_method_cache if it hasn't happened yet. It is the
+# _only_ allowed way to access the contents of %fk_method_cache.
+
+# if we wanted to be even more efficient we'd create the fk methods in the
+# symbol table instead of relying on AUTOLOAD every time
+
+sub get_fk_method {
+  my ($table, $field) = @_;
+
+  # maybe should only load one table at a time?
+  fk_methods_init() unless exists($fk_method_cache{$table});
+
+  if ( exists($fk_method_cache{$table}) and
+       exists($fk_method_cache{$table}{$field}) ) {
+    return $fk_method_cache{$table}{$field};
+  } else {
+    return undef;
+  }
+
+}
+
+sub fk_methods_init {
+  warn "[fk_methods_init]\n";
+  foreach my $table ( dbdef->tables ) {
+    $fk_method_cache{$table} = fk_methods($table);
+  }
+}
+
 sub fk_methods {
   my $table = shift;
 
@@ -1093,11 +1120,15 @@ sub fk_methods {
   #  (alas.  why we're cached.  still, might this loop better be done once at
   #   schema load time insetad of every time we AUTOLOAD a method on a new
   #   class?)
-  foreach my $f_table ( dbdef->tables ) {
-    foreach my $fk (dbdef->table($f_table)->foreign_keys) {
-
-      next unless $fk->table eq $table;
-
+  if (! defined $fk_table_cache) {
+    foreach my $f_table ( dbdef->tables ) {
+      foreach my $fk (dbdef->table($f_table)->foreign_keys) {
+        push @{$fk_table_cache->{$fk->table}},[$f_table,$fk];
+      }
+    }
+  }
+  foreach my $fks (@{$fk_table_cache->{$table}}) {
+      my ($f_table,$fk) = @$fks;
       my $method = '';
       if ( scalar( @{$fk->columns} ) == 1 ) {
         if (    ! defined($fk->references)
@@ -1120,9 +1151,6 @@ sub fk_methods {
         }
 
       }
-
-    }
-
   }
 
   \%hash;
