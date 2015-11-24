@@ -14,12 +14,12 @@
        { 'field'       => 'agentnum',
          'type'        => 'select-agent',
          'empty_label' => 'Select agent',
-         'colspan'     => 7,
+         'colspan'     => 10,
        },
        { 'field'       => 'refnum',
          'type'        => 'select-part_referral',
          'empty_label' => 'Select advertising source',
-         'colspan'     => 7,
+         'colspan'     => 10,
        },
        { 'field'    => 'residential_commercial',
          'type'     => 'radio',
@@ -29,12 +29,14 @@
        { 'field'    => 'company',
          'type'     => 'text',
          'size'     => 50,
-         'colspan'  => 7,
+         'colspan'  => 10,
        },
        { 'field'             => 'contactnum',
          'type'              => 'contact',
-         'colspan'           => 7,
-         'o2m_table'      => 'contact',
+         'colspan'           => 10,
+	 'prospectnum'	     => $prospectnum,
+         'm2m_method'      => 'prospect_contact',
+         'm2m_dstcol'       => 'contactnum',
          'm2_label'       => 'Contact',
          'm2_error_callback' => $m2_error_callback,
 
@@ -74,6 +76,7 @@ if ( $cgi->param('error') ) {
     unless $curuser->access_right(($prospectnum ? 'Edit' : 'New'). ' prospect');
 
 } elsif ( $cgi->keywords ) { #editing
+    $prospectnum = ($cgi->keywords)[0] if ( ($cgi->keywords)[0] );
 
   die "access denied"
     unless $curuser->access_right('Edit prospect');
