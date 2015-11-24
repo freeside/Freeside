@@ -211,6 +211,8 @@ sub CustomerResolver {
 sub CustomerInfo {
   my $self = shift;
   $self = $self->CustomerResolver;
+  return $self->{CustomerInfo} if $self->{CustomerInfo};
+
   my $rec = $self->_FreesideGetRecord() if $self;
   if (!$rec) {
     # AsStringLong will report an error;
@@ -232,7 +234,11 @@ sub CustomerInfo {
   my $referral = qsearchs('part_referral', { refnum => $cust_main->refnum });
   my @part_tags = $cust_main->part_tag;
 
-  return $self->{CustomerInfo} ||= {
+  my @lf = $cust_main->location_fields;
+  my $bill_location = $cust_main->bill_location;
+  my $ship_location = $cust_main->ship_location;
+
+  my $info = {
     %$rec,
 
     AgentName     => ($agent ? ($agent->agentnum.': '.$agent->agent) : ''),
@@ -246,7 +252,17 @@ sub CustomerInfo {
     Referral      => ($referral ? $referral->referral : ''),
     InvoiceEmail  => $cust_main->invoicing_list_emailonly_scalar,
     BillingType   => FS::payby->longname($cust_main->payby),
+  };
+
+  foreach my $field (@lf) {
+    $info->{"bill_$field"} = $bill_location->get($field);
+    $info->{"ship_$field"} = $ship_location->get($field);
   }
+  $info->{"bill_location"} = $bill_location->location_label(no_prefix => 1);
+  $info->{"ship_location"} = $ship_location->location_label(no_prefix => 1);
+
+
+  return $self->{CustomerInfo} = $info;
 }
 
 sub ServiceInfo {
