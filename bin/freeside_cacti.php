@@ -31,22 +31,11 @@ if (!isset($_SERVER["argv"][0]) || isset($_SERVER['REQUEST_METHOD'])  || isset($
 /* We are not talking to the browser */
 $no_http_headers = true;
 
-/* 
-Currently, only drop-device and get-graphs is actually being used by Freeside integration,
-but keeping commented out code for potential future development.
-*/
-
-include(dirname(__FILE__)."/../site/include/global.php");
-include_once($config["base_path"]."/lib/api_device.php");
-include_once($config["base_path"]."/lib/api_automation_tools.php");
-include_once($config["base_path"]."/lib/api_data_source.php");
-include_once($config["base_path"]."/lib/api_graph.php");
-include_once($config["base_path"]."/lib/functions.php");
-
 /* process calling arguments */
 $action = '';
 $ip = '';
 $host_template = '';
+$include_path = "../site/include/";
 $delete_graphs = FALSE;
 $parms = $_SERVER["argv"];
 array_shift($parms);
@@ -77,6 +66,9 @@ if (sizeof($parms)) {
 		case "--delete-graphs":
 			$delete_graphs = TRUE;
 			break;
+		case "--include-path":
+			$include_path = trim($value);
+			break;
 		case "--version":
 		case "-V":
 		case "-H":
@@ -89,6 +81,17 @@ if (sizeof($parms)) {
 } else {
   die(default_die());
 }
+
+$include_path = dirname(__FILE__).'/'.$include_path.'/global.php';
+if (!file_exists($include_path)) {
+  die("File " . $include_path . "/global.php not found (check include_path in freeside export config)");
+}
+include($include_path);
+include_once($config["base_path"]."/lib/api_device.php");
+include_once($config["base_path"]."/lib/api_automation_tools.php");
+include_once($config["base_path"]."/lib/api_data_source.php");
+include_once($config["base_path"]."/lib/api_graph.php");
+include_once($config["base_path"]."/lib/functions.php");
 
 /* Now take an action */
 switch ($action) {

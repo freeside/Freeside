@@ -55,6 +55,8 @@ tie my %options, 'Tie::IxHash',
   'delete_graphs'     => { label   => 'Delete associated graphs and data sources when unprovisioning', 
                            type    => 'checkbox',
                          },
+  'include_path'      => { label   => 'Path to cacti include dir (relative to script_path)',
+                           default => '../site/include/' },
   'cacti_graph_template_id'  => { 
     'label'    => 'Graph Template',
     'type'     => 'custom',
@@ -193,6 +195,7 @@ sub _delete_queue {
     'hostname'      => $svc_broadband->ip_addr,
     'script_path'   => $self->option('script_path'),
     'delete_graphs' => $self->option('delete_graphs'),
+    'include_path'  => $self->option('include_path'),
   );
   return ($queue,$error);
 }
@@ -251,6 +254,8 @@ sub ssh_insert {
        . trailslash($opt{'script_path'}) 
        . q(freeside_cacti.php --get-graph-templates --host-template=)
        . $opt{'template_id'};
+  $cmd .= q( --include-path=') . $self->option('include_path') . q(')
+    if $self->option('include_path');
   my $ginfo = { map { $_ ? ($_ => undef) : () } split(/\n/,ssh_cmd(%opt, 'command' => $cmd)) };
 
   # Add extra config info
@@ -343,6 +348,8 @@ sub ssh_delete {
           . q(');
   $cmd .= q( --delete-graphs)
     if $opt{'delete_graphs'};
+  $cmd .= q( --include-path=') . $opt{'include_path'} . q(')
+    if $opt{'include_path'};
   my $response = ssh_cmd(%opt, 'command' => $cmd);
   die "Error removing from cacti: " . $response
     if $response;
@@ -420,6 +427,8 @@ sub process_graphs {
           . q(freeside_cacti.php --get-graphs --ip=')
           . $svc->ip_addr
           . q(');
+  $cmd .= q( --include-path=') . $self->option('include_path') . q(')
+    if $self->option('include_path');
   my @graphs = map { [ split(/\t/,$_) ] } 
                  split(/\n/, ssh_cmd(
                    'host'          => $self->machine,
@@ -501,7 +510,7 @@ sub process_graphs {
       }
       unlink($thumbfile);
     } else {
-      $svchtml .= qq(<P STYLE="color: #FF0000">File $thumbfile does not exist, skipping</P>);
+      $svchtml .= qq(<P STYLE="color: #FF0000">Error loading graph: $$graph[0]</P>);
     }
     $job->update_statustext(49 + int($i / @graphs) * 50);
   }
