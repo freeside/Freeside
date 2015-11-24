@@ -1076,7 +1076,7 @@ sub get_fk_method {
 }
 
 sub fk_methods_init {
-  warn "[fk_methods_init]\n";
+  warn "[fk_methods_init]\n" if $DEBUG;
   foreach my $table ( dbdef->tables ) {
     $fk_method_cache{$table} = fk_methods($table);
   }
