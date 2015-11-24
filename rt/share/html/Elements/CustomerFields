@@ -90,16 +90,29 @@ my @customer_fields = ( # ordered
     # query/sort needed?
   },
   {
+    Name    => 'BillingAddress',
+    Label   => 'Billing Address',
+    Display => 'bill_location',
+  },
+  {
+    Name    => 'StreetAddress1',
+    Label   => 'Street Address',
+    Display => 'bill_address1',
+  },
+  {
+    Name    => 'StreetAddress2',
+    Label   => '',
+    Display => 'bill_address2',
+  },
+  {
     Name    => 'City',
     Label   => 'City',
-    Display => 'city',
-    OrderBy => 'Customer.city',
+    Display => 'bill_city',
   },
   {
     Name    => 'State',
     Label   => 'State',
-    Display => 'state',
-    OrderBy => 'Customer.state',
+    Display => 'bill_state',
   },
   {
     Name    => 'CustomerTags',
