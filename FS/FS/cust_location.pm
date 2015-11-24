@@ -641,6 +641,11 @@ Prospect object (see L<FS::prospect_main>)
 
 String used to join location elements
 
+=item no_prefix
+
+Don't label the default service location as "Default service location".
+May become the default at some point.
+
 =back
 
 =cut
@@ -650,6 +655,7 @@ sub location_label {
 
   my $prefix = $self->label_prefix;
   $prefix .= ($opt{join_string} ||  ': ') if $prefix;
+  $prefix = '' if $opt{'no_prefix'};
 
   $prefix . $self->SUPER::location_label(%opt);
 }
