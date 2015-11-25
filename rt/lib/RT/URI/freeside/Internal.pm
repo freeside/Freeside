@@ -210,8 +210,8 @@ sub CustomerResolver {
 
 sub CustomerInfo {
   my $self = shift;
-  $self = $self->CustomerResolver;
   return $self->{CustomerInfo} if $self->{CustomerInfo};
+  $self = $self->CustomerResolver;
 
   my $rec = $self->_FreesideGetRecord() if $self;
   if (!$rec) {
@@ -261,23 +261,33 @@ sub CustomerInfo {
   $info->{"bill_location"} = $bill_location->location_label(no_prefix => 1);
   $info->{"ship_location"} = $ship_location->location_label(no_prefix => 1);
 
-
   return $self->{CustomerInfo} = $info;
 }
 
 sub ServiceInfo {
   my $self = shift;
   $self->{fstable} eq 'cust_svc' or return;
+  return $self->{ServiceInfo} if $self->{ServiceInfo};
+
   my $rec = $self->_FreesideGetRecord() or return;
   my $cust_svc = $rec->{'_object'};
   my $svc_x = $cust_svc->svc_x;
   my $part_svc = $cust_svc->part_svc;
-  return $self->{ServiceInfo} ||= {
+  my $locationnum = $cust_svc->cust_pkg->locationnum;
+  my $cust_location = qsearchs('cust_location', { locationnum => $locationnum});
+  my @lf = FS::cust_main->location_fields;
+
+  # location fields are not prefixed
+  my $info = {
     $cust_svc->hash,
     $svc_x->hash,
+    $cust_location->hash,
     ServiceType => $part_svc->svc,
     Label => $self->AsString,
-  }
+  };
+  $info->{'location'} = $cust_location->location_label(no_prefix => 1);
+
+  return $self->{ServiceInfo} = $info;
 }
 
 1;
