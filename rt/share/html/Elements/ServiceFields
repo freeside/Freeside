@@ -43,6 +43,11 @@ my @service_fields = ( # ordered
     OrderBy => 'Service.svcpart',
   },
   {
+    Name    => 'ServiceLocation',
+    Label   => 'Service Location',
+    Display => svc_location_attribute('location'),
+  },
+  {
     Name    => 'ServiceKey', # loosely corresponds to smartsearch/label field
     Label   => '',
     # not displayable
@@ -112,6 +117,37 @@ sub svc_info_attribute {
         my @return;
         foreach my $s (ticket_svc_resolvers($Ticket)) {
             push @return, $s->ServiceInfo->{$attribute}, '<BR>';
+        }
+        pop @return; #trailing <BR>
+        @return;
+    };
+}
+
+sub svc_location_attribute {
+    # Tricky: if the ticket is linked to a service, we want to return the
+    # service's location, but if it's not, we want to return the customer's
+    # default service location.
+    # If it's linked to Customer A and also to Service A, it should return
+    # Service A's location (and not Customer A's default service location).
+    # But if it's linked to Service A and also to Customer B, then what? We
+    # can't satisfy all the constraints here.
+    my $attribute = shift;
+    sub {
+        my @return;
+        my $Ticket = shift;
+        my @svc_resolvers = ticket_svc_resolvers($Ticket);
+        if (@svc_resolvers) {
+          warn '#' . $Ticket->id . ", service attribute $attribute\n";
+            foreach my $s (@svc_resolvers) {
+                push @return, $s->ServiceInfo->{$attribute}, '<BR>';
+            }
+        } else {
+          warn '#' . $Ticket->id . ", customer attribute ship_$attribute\n";
+            my @cust_resolvers = map $_->TargetURI->Resolver,
+                                 @{ $Ticket->Customers->ItemsArrayRef };
+            foreach my $c (@cust_resolvers) {
+                push @return, $c->CustomerInfo->{"ship_$attribute"}, '<BR>';
+            }
         }
         pop @return; #trailing <BR>
         @return;
