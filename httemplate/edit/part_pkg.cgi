@@ -297,7 +297,7 @@
                      { field=>'agent_pkgpartid', type=>'text', size=>21 },
 
                      { type  => 'tablebreak-tr-title',
-                       value => 'Line-item revenue recogition', #better name?
+                       value => 'Line-item revenue recognition', #better name?
                      },
                      { field=>'pay_weight',    type=>'text', size=>6 },
                      { field=>'credit_weight', type=>'text', size=>6 },
