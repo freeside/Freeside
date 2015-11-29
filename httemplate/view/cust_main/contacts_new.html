@@ -78,7 +78,6 @@ my @cust_contacts = $cust_main->cust_contact;
 
 # residential customers have a default "invisible" contact, but if they
 # somehow get more than one contact, show them
-my $display = (length($cust_main->residential_commercial) > 0)
-              or ( scalar(@cust_contacts) > 1 );
+my $display = scalar(@cust_contacts) > 1;
 
 </%init>
