@@ -38,6 +38,9 @@ use FS::sales;
 # for modify_charge
 use FS::cust_credit;
 
+# temporary fix; remove this once (un)suspend admin notices are cleaned up
+use FS::Misc qw(send_email);
+
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
 # because they load configuration by setting FS::UID::callback (see TODO)
