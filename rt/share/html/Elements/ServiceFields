@@ -137,12 +137,10 @@ sub svc_location_attribute {
         my $Ticket = shift;
         my @svc_resolvers = ticket_svc_resolvers($Ticket);
         if (@svc_resolvers) {
-          warn '#' . $Ticket->id . ", service attribute $attribute\n";
             foreach my $s (@svc_resolvers) {
                 push @return, $s->ServiceInfo->{$attribute}, '<BR>';
             }
         } else {
-          warn '#' . $Ticket->id . ", customer attribute ship_$attribute\n";
             my @cust_resolvers = map $_->TargetURI->Resolver,
                                  @{ $Ticket->Customers->ItemsArrayRef };
             foreach my $c (@cust_resolvers) {
@@ -156,8 +154,6 @@ sub svc_location_attribute {
 
 </%once>
 <%init>
-use Data::Dumper;
-#warn Dumper(\@service_fields);
 
 my $arg = shift;
 if ( $arg eq 'Names' ) {
