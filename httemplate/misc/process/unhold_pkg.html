@@ -1,0 +1,54 @@
+<& /elements/header-popup.html &>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY>
+</HTML>
+<%init>
+
+warn Dumper +{$cgi->Vars}; # XXX
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Unsuspend customer package');
+
+$cgi->param('pkgnum') =~ /^(\d+)$/
+  or die "illegal pkgnum";
+my $pkgnum = $1;
+
+my $cust_pkg = qsearchs({
+  table     => 'cust_pkg',
+  addl_from => ' JOIN cust_main USING (custnum) ',
+  hashref   => { 'pkgnum' => $pkgnum },
+  extra_sql => ' AND '. $curuser->agentnums_sql,
+}) or die "Unknown pkgnum: $pkgnum";
+
+my $cust_main = $cust_pkg->cust_main;
+
+my $error;
+my $start_date;
+if ( $cgi->param('when') eq 'now' ) {
+  # start it the next time billing runs
+  $start_date = '';
+} elsif ( $cgi->param('when') eq 'next_bill_date' ) {
+  $start_date = $cust_main->next_bill_date;
+} elsif ( $cgi->param('when') eq 'date' ) {
+  $start_date = parse_datetime($cgi->param('start_date'));
+}
+
+# In this process, always unsuspend the package _now_ but with a future start
+# date, rather than set a resume date. (There is some semantic overlap between
+# them, yes.)
+
+if ( $cust_pkg->setup or !$cust_pkg->susp ) {
+  $error = 'This package is '. $cust_pkg->status . ', not on hold.';
+} else {
+  $cust_pkg->set('start_date', $start_date);
+  $error = $cust_pkg->unsuspend;
+}
+
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect($fsurl.'misc/unhold_pkg.html?', $cgi->query_string);
+}
+</%init>
