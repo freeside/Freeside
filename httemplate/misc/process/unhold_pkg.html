@@ -6,8 +6,6 @@
 </HTML>
 <%init>
 
-warn Dumper +{$cgi->Vars}; # XXX
-
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('Unsuspend customer package');
