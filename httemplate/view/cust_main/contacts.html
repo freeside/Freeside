@@ -43,15 +43,36 @@
                     $cust_main->spouse_last, $cust_main->spouse_first) %>
     </TD>
   </TR>
-% }
-%   if ( $conf->exists('cust-email-high-visibility') ) {
+%   }
+%
+%   # invoicing email
+%   if ( scalar(@invoicing_list) == 1 ) { # typical individual user; show here
   <TR>
-    <TH ALIGN="right"><% mt('Email address(es)') |h %></TH>
-    <TD BGCOLOR="#ffff00">
-      <% $cust_main->invoicing_list_emailonly_scalar || $no %>
+    <TH ALIGN="right"><% mt('Email address') |h %></TH>
+    <TD>
+      <% $invoicing_list[0] %>
     </TD>
   </TR>
-%   }
+%   } elsif ( scalar(@invoicing_list) > 1 ) {
+%   # business customer with a contact list
+%   # show nothing here
+%
+%   } else { # there is no invoice email for them
+  <TR>
+    <TH ALIGN="right"><% mt('Email address') |h %></TH>
+%     if ( !$cust_main->postal_invoice or
+%          $conf->exists('cust_main-require_invoicing_list_email',
+%                        $cust_main->agentnum)
+%     ) {
+%       # we need a contact email for this customer (either because that's
+%       # policy, or because otherwise they won't receive invoices) but we
+%       # don't have one.
+    <TD CLASS="error"><% emt('none') %></TD>
+%     } else {
+    <TD><% emt('no') %></TD>
+%     }
+%   } # end of invoicing email
+ 
 %   if ( $cust_main->company ) {
   <TR>
     <TH ALIGN="right"><% mt('Company') |h %></TH>
@@ -195,8 +216,6 @@ my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_st
 
 my $cust_main = shift;
 my $conf = new FS::Conf;
-my @invoicing_list = $cust_main->invoicing_list;
-my $no = emt('no');
+my @invoicing_list = $cust_main->invoicing_list_emailonly;
 
 </%init>
-

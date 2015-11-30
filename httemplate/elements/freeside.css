@@ -319,6 +319,12 @@ td.label {
   color: #ff0000;
 }
 
+table .error {
+  font-weight: bold;
+  font-size: medium;
+  color: #ff0000;
+}
+
 div#overDiv {
   box-shadow: #333333 1px 1px 2px;
 }
