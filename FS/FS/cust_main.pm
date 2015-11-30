@@ -361,9 +361,10 @@ for an "m2" multiple entry field as passed by edit/cust_main.cgi
 sub insert {
   my $self = shift;
   my $cust_pkgs = @_ ? shift : {};
-  my $invoicing_list = $_[0];
-  if ( $invoicing_list and ref($invoicing_list) eq 'ARRAY' ) {
-    shift;
+  my $invoicing_list;
+  if ( $_[0] and ref($_[0]) eq 'ARRAY' ) {
+    warn "cust_main::insert using deprecated invoicing list argument";
+    $invoicing_list = shift;
   }
   my %options = @_;
   warn "$me insert called with options ".
@@ -555,6 +556,25 @@ sub insert {
   warn "  setting contacts\n"
     if $DEBUG > 1;
 
+  $invoicing_list ||= $options{'invoicing_list'};
+  if ( $invoicing_list ) {
+
+    $invoicing_list = join(',', @$invoicing_list) if ref $invoicing_list;
+    my $contact = FS::contact->new({
+      'custnum'       => $self->get('custnum'),
+      'last'          => $self->get('last'),
+      'first'         => $self->get('first'),
+      'emailaddress'  => $invoicing_list,
+      'invoice_dest'  => 'Y',
+    });
+    my $error = $contact->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
   if ( my $contact = delete $options{'contact'} ) {
 
     foreach my $c ( @$contact ) {
@@ -577,27 +597,6 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-  }
-  
-  if ( $invoicing_list ) {
-    warn "FS::cust_main::insert setting invoice destinations via invoicing_list\n"
-      if $DEBUG;
-
-    # okay, for now we'll still allow setting the contact this way
-    $invoicing_list = join(',', @$invoicing_list) if ref $invoicing_list;
-    my $contact = FS::contact->new({
-      'custnum'       => $self->get('custnum'),
-      'last'          => $self->get('last'),
-      'first'         => $self->get('first'),
-      'emailaddress'  => $invoicing_list,
-      'invoice_dest'  => 'Y',
-    });
-    my $error = $contact->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-
   }
 
   warn "  setting cust_payby\n"
@@ -1282,11 +1281,20 @@ INVOICING_LIST_ARYREF: If you pass an arrayref to this method, it will be
 set as the contact email address for a default contact with the same name as
 the customer.
 
-Currently available options are: I<tax_exemption>.
+Currently available options are: I<tax_exemption>, I<cust_payby_params>, 
+I<contact_params>, I<invoicing_list>.
 
 The I<tax_exemption> option can be set to an arrayref of tax names or a hashref
 of tax names and exemption numbers.  FS::cust_main_exemption records will be
 deleted and inserted as appropriate.
+
+I<cust_payby_params> and I<contact_params> can be hashrefs of named parameter
+groups (describing the customer's payment methods and contacts, respectively)
+in the style supported by L<FS::o2m_Common/process_o2m>. See L<FS::cust_payby>
+and L<FS::contact> for the fields these can contain.
+
+I<invoicing_list> is a synonym for the INVOICING_LIST_ARYREF parameter, and
+should be used instead if possible.
 
 =cut
 
@@ -1348,8 +1356,17 @@ sub replace {
     $self->set($l.'num', $new_loc->locationnum);
   } #for $l
 
+  my $invoicing_list;
   if ( @param && ref($param[0]) eq 'ARRAY' ) { # INVOICING_LIST_ARYREF
-    my $invoicing_list = shift @param;
+    warn "cust_main::replace: using deprecated invoicing list argument";
+    $invoicing_list = shift @param;
+  }
+
+  my %options = @param;
+
+  $invoicing_list ||= $options{invoicing_list};
+
+  if ( $invoicing_list ) {
     my $email = '';
     foreach (@$invoicing_list) {
       if ($_ eq 'POST') {
@@ -1438,8 +1455,6 @@ sub replace {
 
   }
 
-  my %options = @param;
-
   my $tax_exemption = delete $options{'tax_exemption'};
   if ( $tax_exemption ) {
 
@@ -1489,6 +1504,24 @@ sub replace {
       'fields'        => FS::cust_payby->cgi_cust_payby_fields,
       'params'        => $cust_payby_params,
       'hash_callback' => \&FS::cust_payby::cgi_hash_callback,
+    );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  if ( my $contact_params = delete $options{'contact_params'} ) {
+
+    # this can potentially replace contacts that were created by the
+    # invoicing list argument, but the UI shouldn't allow both of them
+    # to be specified
+
+    my $error = $self->process_o2m(
+      'table'         => 'contact',
+      'fields'        => FS::contact->cgi_contact_fields,
+      'params'        => $contact_params,
     );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;

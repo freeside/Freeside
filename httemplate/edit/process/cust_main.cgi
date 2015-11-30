@@ -156,24 +156,23 @@ if ( $curuser->access_right('Edit customer tax exemptions') ) {
   };
 }
 
-$options{'contact_params'} = scalar($cgi->Vars);
 $options{'cust_payby_params'} = scalar($cgi->Vars);
-
-my $email;
 
 if ( $cgi->param('residential_commercial') eq 'Residential' ) {
 
-  $email = $cgi->param('invoice_email') || '';
+  my $email = $cgi->param('invoice_email') || '';
   if ( length($email) == 0 and $conf->exists('cust_main-require_invoicing_list_email', $agentnum) ) {
     $error = 'Email address required';
   }
 
+  $options{'invoicing_list'} = [ $email ];
   # XXX really should include the phone numbers in here also
 
 } else {
 
-  # contact UI is enabled; everything will be passed through via
-  # contact_params
+  # contact UI is enabled
+  $options{'contact_params'} = scalar($cgi->Vars);
+
   if ($conf->exists('cust_main-require_invoicing_list_email', $agentnum)) {
     my $has_email = 0;
     foreach my $prefix (grep /^contactnum\d+$/, $cgi->param) {
@@ -296,7 +295,6 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   else {
     # create the customer
     $error ||= $new->insert( \%hash,
-                             [ $email ],
                              %options,
                              prospectnum => scalar($cgi->param('prospectnum')),
                            );
@@ -334,9 +332,9 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   local($FS::Record::DEBUG)    = $DEBUG if $DEBUG;
 
   local($Data::Dumper::Sortkeys) = 1;
-  warn Dumper({ new => $new, old => $old }) if $DEBUG;
+  warn Dumper({ new => $new, old => $old, options => \%options}) if $DEBUG;
 
-  $error ||= $new->replace( $old, [ $email ], %options );
+  $error ||= $new->replace( $old, %options );
 
   warn "$me returned from replace" if $DEBUG;
   
