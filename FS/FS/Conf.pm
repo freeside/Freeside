@@ -5537,13 +5537,6 @@ and customer address. Include units.',
   },
   
   {
-    'key'         => 'cust-email-high-visibility',
-    'section'     => 'UI',
-    'description' => 'Move the invoicing e-mail address field to the top of the billing address section and highlight it.',
-    'type'        => 'checkbox',
-  },
-  
-  {
     'key'         => 'cust-edit-alt-field-order',
     'section'     => 'UI',
     'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',

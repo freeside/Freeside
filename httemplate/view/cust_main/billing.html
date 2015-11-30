@@ -1,6 +1,8 @@
 <FONT CLASS="fsinnerbox-title"><% mt('Billing information') |h %></FONT>
 % my $yes = emt('yes');
 % my $no = emt('no');
+% my $allowed = emt('allowed');
+% my $refused = emt('refused');
 
 <TABLE CLASS="fsinnerbox">
 
@@ -162,34 +164,36 @@
 % }
 <TR>
   <TH ALIGN="right"><% mt('Postal mail invoices') |h %></TH>
-  <TD>
-    <% ( grep { $_ eq 'POST' } @invoicing_list )
-         ? $yes. ( $cust_main->invoice_attn
+% if ( $cust_main->postal_invoice ) {
+  <TD><% $yes .  ( $cust_main->invoice_attn
                      ? ', attn: '. $cust_main->invoice_attn
                      : ''
-                 )
-         : $no
-    %>
+                 ) %>
+  </TD>
+% } elsif ( $cust_main->invoice_noemail
+%           or scalar(@invoicing_list) == 0 ) {
+%   # alert the user that this customer has no way to receive an invoice
+  <TD CLASS="error"><% $no %></TD>
+% } else {
+  <TD><% $no %></TD>
+% }
   </TD>
 </TR>
 <TR>
   <TH ALIGN="right"><% mt('Email invoices') |h %></TH>
-  <TD>
-    <% $cust_main->invoice_noemail ? $no : $yes %>
-  </TD>
-</TR>
-% unless ( $conf->exists('cust-email-high-visibility')) {
-<TR>
-  <TH ALIGN="right"><% mt('Email address(es)') |h %></TH>
-  <TD>
-    <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
-%   if ( $cust_main->message_noemail ) {
-    <BR>
-    <SPAN STYLE="font-size: small"><% emt('(do not send notices)') %></SPAN>
-%   }
-  </TD>
-</TR>
+% if ( $cust_main->invoice_noemail and ! $cust_main->postal_invoice ) {
+%   # as above, warn if the customer refuses both email and postal invoices
+  <TD CLASS="error"><% $refused %></TD>
+% } else {
+  <TD><% $cust_main->invoice_noemail ? $refused : $allowed %></TD>
 % }
+</TR>
+<TR>
+  <TH ALIGN="right"><% mt('Other email notices') |h %></TH>
+  <TD>
+    <% $cust_main->message_noemail ? $refused : $allowed %>
+  </TD>
+</TR>
 <TR>
   <TH ALIGN="right"><% mt('Invoice terms') |h %></TH>
   <TD>
@@ -272,7 +276,7 @@
 <%init>
 
 my( $cust_main ) = @_;
-my @invoicing_list = $cust_main->invoicing_list;
+my @invoicing_list = $cust_main->invoicing_list_emailonly;
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
