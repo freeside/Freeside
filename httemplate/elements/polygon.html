@@ -10,7 +10,7 @@ my $vertices_json = $opt{'curr_value'} || '[]';
 <div id="<% $div_id %>" style="height: 600px; width: 600px"></div>
 
 <script src="<% $fsurl %>elements/jquery.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?libraries=drawing"></script>
+<script src="https://maps.googleapis.com/maps/api/js?libraries=drawing&v=2"></script>
 <script>
 var map;
 var drawingManager;
@@ -22,7 +22,7 @@ function updateFormInput(event) {
     var xy = path.getAt(i);
     vertices[i] = [ xy.lat(), xy.lng() ];
   }
-  console.log(vertices); //XXX
+  if (console) console.log(vertices); //XXX
   $('#<% $field %>').prop('value', JSON.stringify(vertices));
 }
 
