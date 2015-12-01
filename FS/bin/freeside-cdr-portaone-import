@@ -1,0 +1,186 @@
+#!/usr/bin/perl
+
+use strict;
+
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
+use Getopt::Long;
+use JSON;
+use Net::HTTPS::Any qw(https_post);
+
+use FS::Record qw(qsearchs dbh);
+use FS::UID qw(adminsuidsetup);
+
+sub usage {
+  "Usage:
+freeside-cdr-portaone-import -h 'your.domain.com:443' -u switchusername -p switchpass 
+  [-s startdate] [-e enddate] [-v] freesideuser
+";
+}
+
+my ($host,$username,$password,$startdate,$enddate,$verbose);
+GetOptions(
+  "enddate=s"   => \$enddate,
+  "host=s"      => \$host,
+  "password=s"  => \$password,
+  "startdate=s" => \$startdate,
+  "username=s"  => \$username,
+  "verbose"     => \$verbose,
+);
+
+my $fsuser = $ARGV[-1];
+
+die usage() unless $host && $password && $username && $fsuser;
+
+adminsuidsetup($fsuser);
+
+my $port = 443;
+if ($host =~ /^(.*)\:(.*)$/) {
+  $host = $1;
+  $port = $2;
+}
+
+if ($startdate) {
+  $startdate = str2time($startdate) or die "Can't parse startdate $startdate";
+  $startdate = time2str("%Y-%m-%d %H:%M:%S",$startdate);
+}
+unless ($startdate) {
+  my $lastbatch = qsearchs({
+    'table'     => 'cdr_batch',
+    'hashref'   => { 'cdrbatch' => {op=>'like', value=>'portaone-import%'}},
+    'order_by'  => 'ORDER BY _date DESC LIMIT 1',
+  });
+  $startdate = time2str("%Y-%m-%d %H:%M:%S", $lastbatch->_date + 1) if $lastbatch;
+}
+$startdate ||= '2010-01-01 00:00:00'; #seems decently in the past
+
+my $now = time;
+if ($enddate) {
+  $enddate = str2time($enddate) or die "Can't parse enddate $enddate";
+  $now = $enddate;
+  $enddate = time2str("%Y-%m-%d %H:%M:%S",$enddate);
+}
+$enddate ||= time2str("%Y-%m-%d %H:%M:%S",$now);
+
+print "Downloading records from $startdate to $enddate\n" if $verbose;
+
+my $auth_info; # needs to be declared undef for call_api
+$auth_info = call_api('Session','login',{
+  'login'    => $username,
+  'password' => $password,
+});
+
+my $results = {};
+my $custlist = call_api('Customer','get_customer_list');
+my @custnum = map { $_->{'i_customer'} } @{$custlist->{'customer_list'}};
+foreach my $custnum (@custnum) {
+  print "Processing customer $custnum\n" if $verbose;
+  my $xdrs = call_api('Customer','get_customer_xdrs',{
+    'i_customer' => $custnum,
+    'from_date'  => $startdate,
+    'to_date'    => $enddate,
+    'cdr_entity' => 'C', # can also be 'A', or blank for both
+  });
+  my @xdrs = @{$xdrs->{'xdr_list'}};
+  print scalar(@xdrs) . " xdrs retrieved\n" if $verbose;
+  $results->{$custnum} = \@xdrs;
+}
+
+call_api('Session','logout',$auth_info);
+
+$FS::UID::AutoCommit = 0;
+
+my $cdr_batch = new FS::cdr_batch({ 
+  'cdrbatch' => 'portaone-import-'. time2str('%Y/%m/%d-%T',$now),
+  '_date'    => $now,
+});
+my $error = $cdr_batch->insert;
+if ($error) {
+  dbh->rollback;
+  die "Error inserting batch: $error";
+}
+
+foreach my $custnum (keys %$results) {
+  foreach my $xdr (@{$results->{$custnum}}) {
+    my $cdr = FS::cdr->new ({
+      'cdrbatchnum' => $cdr_batch->cdrbatchnum,
+      'acctid'      => $xdr->{'i_xdr'}, #???
+      'accountcode' => $xdr->{'account_id'}, #???
+      'startdate'   => $xdr->{'unix_connect_time'},
+      'enddate'     => $xdr->{'unix_disconnect_time'},
+
+### XXX NEED TO MAP FIELDS:
+#i_xdr                     int      The unique ID of the xdr record
+#account_id	               int      The unique ID of the account database record
+#CLI                       string   Calling Line Identification
+#CLD                       string   Called Line Identification
+#charged_amount            float    Amount charged
+#charged_quantity          int      Units charged
+#country                   string   Country
+#subdivision               string   Country subdivision
+#description               string   Destination description
+#disconnect_cause          string   The code of disconnect cause
+#bill_status               string   Call bill status
+#disconnect_reason         string   Call disconnect reason
+#connect_time              dateTime Call connect time
+#unix_connect_time         int      Call connect time (expressed in Unix time format - seconds since epoch)
+#disconnect_time           dateTime Call disconnect time 
+#unix_disconnect_time      int      Call disconnect time i_xdr                     int      The unique ID of the xdr record
+#account_id	              int      The unique ID of the account database record
+#CLI                       string   Calling Line Identification
+#CLD                       string   Called Line Identification
+#charged_amount            float    Amount charged
+#charged_quantity          int      Units charged
+#country                   string   Country
+#subdivision               string   Country subdivision
+#description               string   Destination description
+#disconnect_cause          string   The code of disconnect cause
+#bill_status               string   Call bill status
+#disconnect_reason         string   Call disconnect reason
+#connect_time              dateTime Call connect time
+#unix_connect_time         int      Call connect time (expressed in Unix time format - seconds since epoch)
+#disconnect_time           dateTime Call disconnect time 
+#unix_disconnect_time      int      Call disconnect time (expressed in Unix time format - seconds since epoch)
+#bill_time                 dateTime Call bill time 
+#bit_flags                 int      Extended information how the service was used; the integer field that should be treated as a bit-map. Each currently used bit is listed in the Transaction_Flag_Types table (bit_offset indicates position)
+#call_recording_url        string   Path to recorded .wav files
+#call_recording_server_url string   URL to the recording server (expressed in Unix time format - seconds since epoch)
+#bill_time                 dateTime Call bill time 
+#bit_flags                 int      Extended information how the service was used; the integer field that should be treated as a bit-map. Each currently used bit is listed in the Transaction_Flag_Types table (bit_offset indicates position)
+#call_recording_url        string   Path to recorded .wav files
+#call_recording_server_url string   URL to the recording server 
+
+    });
+    $error = $cdr->insert;
+    if ($error) {
+      dbh->rollback;
+      die "Error inserting cdr: $error";
+    }
+  } #foreach $xdr
+} #foreach $custnum
+
+dbh->commit;
+
+exit;
+
+sub call_api {
+  my ($service,$method,$params) = @_;
+  my %auth_info = $auth_info ? ('auth_info' => encode_json($auth_info)) : ();
+  $params ||= {};
+  print "Calling $service/$method...\n" if $verbose;
+  my ( $page, $response, %reply_headers ) = https_post(
+    'host'    => $host,
+    'port'    => $port,
+    'path'    => '/rest/'.$service.'/'.$method.'/',
+    'args'    => [ %auth_info, 'params' => encode_json($params) ],
+  );
+  return decode_json($page) if $response eq '200 OK';
+  if ($response =~ /^500/) {
+    my $error = decode_json($page);
+    die "Server returned error during $service/$method: ".$error->{'faultstring'}
+      if $error->{'faultcode'};
+  }
+  die "Bad response from server during $service/$method: $response";
+}
+
+
