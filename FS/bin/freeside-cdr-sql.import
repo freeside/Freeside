@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $DEBUG );
+use Date::Parse 'str2time';
+use Date::Format 'time2str';
+use FS::UID qw(adminsuidsetup dbh);
+use FS::cdr;
+use DBI;
+use Getopt::Std;
+
+my %opt;
+getopts('e:H:U:P:D:T:', \%opt);
+my $user = shift or die &usage;
+
+my $engine = $opt{e} || 'mysql';
+
+my $dsn = "dbi:$engine";
+$dsn .= ":database=$opt{D}" if $opt{D};
+$dsn .= ":host=$opt{H}" if $opt{H};
+
+my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
+  or die $DBI::errstr;
+
+adminsuidsetup $user;
+
+my $fsdbh = FS::UID::dbh;
+
+# check for existence of freesidestatus
+my $table = $opt{T} || 'cdr';
+my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
+if( ! @$status ) {
+  print "Adding freesidestatus column...\n";
+  $dbi->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
+    or die $dbi->errstr;
+}
+else {
+  print "freesidestatus column present\n";
+}
+
+my @cols = ( qw( 
+calldate clid src dst dcontext channel lastapp lastdata duration 
+    billsec disposition amaflags accountcode uniqueid userfield) );
+my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
+my $sth = $sql->prepare($sql);
+$sth->execute;
+print "Importing ".$sth->rows." records...\n";
+
+my $cdr_batch = new FS::cdr_batch({ 
+    'cdrbatch' => 'sql-import-'. time2str('%Y/%m/%d-%T',time),
+  });
+my $error = $cdr_batch->insert;
+die $error if $error;
+my $cdrbatchnum = $cdr_batch->cdrbatchnum;
+my $imports = 0;
+my $updates = 0;
+
+my $row;
+while ( $row = $sth->fetchrow_hashref ) {
+  my $cdr = FS::cdr->new($row);
+  $cdr->startdate(str2time($cdr->calldate));
+  $cdr->cdrbatchnum($cdrbatchnum);
+  my $error = $cdr->insert;
+  if($error) {
+    print "failed import: $error\n";
+  }
+  else {
+    $imports++;
+    if( $dbi->do("UPDATE cdr SET freesidestatus = 'done' 
+        WHERE calldate = ? AND src = ? AND dst = ?",
+                undef,
+                $row->{'calldate'},
+                $row->{'src'},
+                $row->{'dst'},
+
+      ) ) {
+        $updates++;
+    }
+    else {
+      print "failed to set status: ".$dbi->errstr."\n";
+    }
+  }
+}
+print "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
+$dbi->disconnect;
+
+sub usage {
+  "Usage: \n  freeside-cdr-sql.import\n\t-e mysql|Pg|... [ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+}
+
