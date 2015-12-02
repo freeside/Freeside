@@ -85,6 +85,21 @@ print "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
 $dbi->disconnect;
 
 sub usage {
-  "Usage: \n  freeside-cdr-sql.import\n\t-e mysql|Pg|... [ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+  "Usage: \n  freeside-cdr-asterisk_sql\n\t-e mysql|Pg|... [ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
 }
 
+=head1 NAME
+
+freeside-cdr-asterisk_sql - Import CDRs from an Asterisk SQL database
+
+=head1 SYNOPSIS
+
+  freeside-cdr-asterisk_sql -e mysql|Pg|... [ -H host ] -D database -U user -P password freesideuser
+
+=head1 DESCRIPTION
+
+Imports CDR records from an Asterisk SQL database.
+
+=cut
+
+1;
