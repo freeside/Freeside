@@ -1,2 +1,2 @@
 #!/bin/sh
-freeside-cdr-sql.import -e mysql "$@"
+freeside-cdr-asterisk_sql -e mysql "$@"
