@@ -2775,29 +2775,22 @@ sub virtual_maildir {
   $self->domain. '/maildirs/'. $self->username. '/';
 }
 
-=item password_disallowed_names
+=item password_svc_check
 
 Override, for L<FS::Password_Mixin>.  Not really intended for other use.
 
 =cut
 
-sub password_disallowed_names {
-  my $self = shift;
-  my $dbh = dbh;
-  my $results = {};
-  foreach my $field ( qw( username finger ) ) {
-    my $sql = 'SELECT DISTINCT '.$field.' FROM svc_acct';
-    my $sth = $dbh->prepare($sql)
-      or die "Error preparing $sql: ". $dbh->errstr;
-    $sth->execute()
-      or die "Error executing $sql: ". $sth->errstr;
-    foreach my $row (@{$sth->fetchall_arrayref}, $self->get($field)) {
-      foreach my $word (split(/\s+/,$$row[0])) {
-        $results->{lc($word)} = 1;
+sub password_svc_check {
+  my ($self, $password) = @_;
+  foreach my $field ( qw(username finger) ) {
+    foreach my $word (split(/\W+/,$self->get($field))) {
+      if ($password =~ /$word/i) {
+        return qq(Password contains account information '$word');
       }
     }
   }
-  return keys %$results;
+  return '';
 }
 
 =back

@@ -63,14 +63,9 @@ sub is_password_allowed {
   $error = 'Invalid password - ' . $error if $error;
   return $error if $error;
 
-  #check against known usernames
-  my @disallowed_names = $self->password_disallowed_names;
-  foreach my $noname (@disallowed_names) {
-    if ($password =~ /$noname/i) {
-      #keeping message ambiguous to avoid leaking personal info
-      return 'Password contains a disallowed word';
-    }
-  }
+  #check against service fields
+  $error = $self->password_svc_check($password);
+  return $error if $error;
 
   return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
 
@@ -108,15 +103,15 @@ sub is_password_allowed {
   '';
 }
 
-=item password_disallowed_names
+=item password_svc_check
 
-Override to return a list additional words (eg usernames) not
-to be used by passwords on this service.
+Override to run additional service-specific password checks.
 
 =cut
 
-sub password_disallowed_names {
-  return ();
+sub password_svc_check {
+  my ($self, $password) = @_;
+  return '';
 }
 
 =item password_history_key
