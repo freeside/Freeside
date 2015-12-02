@@ -508,3 +508,31 @@ use FS::SelfService qw( regionselector expselect popselector domainselector
                         didselector
                       );
 
+sub add_password_validation {
+  my $fieldid = shift;
+  my $out = '';
+  if ((-e './send_xmlhttp.html') && (-e './add_password_validation.html')) {
+    my $template = new Text::Template( TYPE   => 'FILE',
+                                       SOURCE => "./send_xmlhttp.html",
+                                       DELIMITERS => [ '<%=', '%>' ],
+                                       UNTAINT => 1,                   
+                                     )
+      or die $Text::Template::ERROR;
+    $out .= $template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi' );
+    $template = new Text::Template( TYPE   => 'FILE',
+                                       SOURCE => "./add_password_validation.html",
+                                       DELIMITERS => [ '<%=', '%>' ],
+                                       UNTAINT => 1,                   
+                                     )
+      or die $Text::Template::ERROR;
+    $out .= $template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi' );
+    $out .= <<ENDOUT;
+<SCRIPT>
+add_password_validation('$fieldid');
+</SCRIPT>
+ENDOUT
+  }
+  return $out;
+}
+
+

@@ -3245,6 +3245,45 @@ sub process_reset_passwd {
 
 }
 
+sub validate_passwd {
+  my $p = shift;
+
+  my %result;
+  %result = ( 'fieldid' => $p->{'fieldid'} )
+    if $p->{'fieldid'} =~ /^\w+$/;
+
+  return { %result, 'password_invalid' => 'Enter new password' }
+    unless length($p->{'check_password'});
+
+  my $svc_acct;
+  if ($p->{'svcnum'}) {
+    # false laziness with myaccount_passwd
+    my($context, $session, $custnum) = _custoragent_session_custnum($p);
+    return { %result, 'error' => $session } if $context eq 'error';
+
+    $custnum =~ /^(\d+)$/ or die "illegal custnum";
+    my $search = " AND custnum = $1";
+    $search .= " AND agentnum = ". $session->{'agentnum'} if $context eq 'agent';
+
+    $svc_acct = qsearchs( {
+      'table'     => 'svc_acct',
+      'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                     'LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                     'LEFT JOIN cust_main USING ( custnum ) ',
+      'hashref'   => { 'svcnum' => $p->{'svcnum'}, },
+      'extra_sql' => $search, #important
+    } )
+      or return { %result, 'error' => "Service not found" };
+    # end false laziness
+  }
+
+  $svc_acct ||= new FS::svc_acct {};
+
+  my $error = $svc_acct->is_password_allowed($p->{'check_password'});
+  return { %result, 'password_invalid' => $error } if $error;
+  return { %result, 'password_valid' => 1 };
+}
+
 sub list_tickets {
   my $p = shift;
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
