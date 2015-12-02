@@ -22,7 +22,7 @@ Description: Billing and trouble ticketing for service providers
 
 Package: freeside-lib
 Architecture: all
-Depends: gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
+Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libbusiness-creditcard-perl,libcache-cache-perl,
  libcache-simple-timedexpiry-perl,libchart-perl,libclass-container-perl,
  libclass-data-inheritable-perl,libclass-returnvalue-perl,libcolor-scheme-perl,
