@@ -336,7 +336,8 @@ HTML::Widgets::SelectLayers->new(
 <FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><FONT SIZE="+1"><B>First package</B></FONT>
 <INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
 <INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
-<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<DIV STYLE="background: <%= $box_bgcolor %>; width: 100%">
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0>
 <TR>
   <TD COLSPAN=2><SELECT NAME="pkgpart">
 
@@ -383,7 +384,15 @@ ENDOUT
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
+  <TD>
+    <INPUT ID="new_password" TYPE="password" NAME="_password" VALUE="$_password">
+    <DIV ID="new_password_result"></DIV>
+ENDOUT
+
+   $OUT .= add_password_validation('new_password');
+
+   $OUT .= <<ENDOUT;
+  </TD>
 </TR>
 <TR>
   <TD ALIGN="right">Re-enter Password</TD>
@@ -433,6 +442,7 @@ NOMADIX
 %>
 
 </TABLE>
+</DIV>
 
 <%= 
 if ( @optional_packages ) { 

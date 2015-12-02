@@ -23,6 +23,7 @@ use FS::SelfService qw(
   mason_comp port_graph
   start_thirdparty finish_thirdparty
   reset_passwd check_reset_passwd process_reset_passwd
+  validate_passwd
   billing_history
 );
 
@@ -85,6 +86,7 @@ my @actions = ( qw(
   process_suspend_pkg
   switch_cust
   history
+  validate_password
 ));
 
 my @nologin_actions = (qw(
@@ -109,7 +111,6 @@ if ( $cgi->param('action') =~ /^process_forgot_password_session_(\w+)$/ ) {
     warn "WARNING: unrecognized action '$1'\n";
   }
 }
-
 unless ( $nologin_actions{$action} ) {
 
   my %cookies = CGI::Cookie->fetch;
@@ -1121,6 +1122,14 @@ sub do_process_forgot_password {
     map { $_ => scalar($cgi->param($_)) }
       qw( session_id new_password new_password2 )
   );
+}
+
+sub validate_password {
+  validate_passwd(
+    'session_id' => $session_id,
+    map { $_ => scalar($cgi->param($_)) }
+      qw( fieldid svcnum check_password )
+  )
 }
 
 #--
