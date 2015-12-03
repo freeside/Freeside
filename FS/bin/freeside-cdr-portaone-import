@@ -62,6 +62,19 @@ if ($enddate) {
 }
 $enddate ||= time2str("%Y-%m-%d %H:%M:%S",$now);
 
+
+$FS::UID::AutoCommit = 0;
+
+my $cdr_batch = new FS::cdr_batch({ 
+  'cdrbatch' => 'portaone-import-'. time2str('%Y/%m/%d-%T',$now),
+  '_date'    => $now,
+});
+my $error = $cdr_batch->insert;
+if ($error) {
+  dbh->rollback;
+  die "Error creating batch: $error";
+}
+
 print "Downloading records from $startdate to $enddate\n" if $verbose;
 
 my $auth_info; # needs to be declared undef for call_api
@@ -74,58 +87,61 @@ my $results = {};
 my $custlist = call_api('Customer','get_customer_list');
 my @custnum = map { $_->{'i_customer'} } @{$custlist->{'customer_list'}};
 foreach my $custnum (@custnum) {
-  print "Processing customer $custnum\n" if $verbose;
-  my $xdrs = call_api('Customer','get_customer_xdrs',{
-    'i_customer' => $custnum,
-    'from_date'  => $startdate,
-    'to_date'    => $enddate,
-    'cdr_entity' => 'C', # can also be 'A', or blank for both
-  });
-  my @xdrs = @{$xdrs->{'xdr_list'}};
-  print scalar(@xdrs) . " xdrs retrieved\n" if $verbose;
-  $results->{$custnum} = \@xdrs;
-}
+  print "Retrieving for customer $custnum\n" if $verbose;
+  my $step = 500; # too many records was crashing server, so we request in chunks
+  my $lastcount = $step; # to get the while loop rolling
+  my $totalcount = 0; # for verbose display only
+  my $offset = 0;
+  while ($lastcount == $step) {
+    my $xdrs = call_api('Customer','get_customer_xdrs',{
+      'i_customer' => $custnum,
+      'from_date'  => $startdate,
+      'to_date'    => $enddate,
+      'cdr_entity' => 'A',
+      'limit'      => $step,
+      'offset'     => $offset,
+    });
+    my @xdrs = @{$xdrs->{'xdr_list'}};
+    print "Inserting ".@xdrs." records\n" if $verbose && @xdrs;
+    foreach my $xdr (@xdrs) {
+      my $desc = $xdr->{'country'};
+      if ($xdr->{'subdivision'}) {
+        $desc = ', ' . $desc if $desc;
+        $desc = $xdr->{'subdivision'} . $desc;
+      }
+      if ($xdr->{'description'}) {
+        $desc = ' (' . $desc . ')' if $desc;
+        $desc = $xdr->{'description'} . $desc;
+      }
+      my $cdr = FS::cdr->new ({
+        'cdrbatchnum'             => $cdr_batch->cdrbatchnum,
+        'uniqueid'                => $xdr->{'i_xdr'},
+        'src'                     => $xdr->{'CLI'},
+        'dst'                     => $xdr->{'CLD'},
+        'upstream_price'          => $xdr->{'charged_amount'},
+        'startdate'               => $xdr->{'unix_connect_time'},
+        'enddate'                 => $xdr->{'unix_disconnect_time'},
+        'accountcode'             => $xdr->{'account_id'},
+        'billsec'                 => $xdr->{'charged_quantity'},
+        'upstream_dst_regionname' => $desc,
+      });
+      $error = $cdr->insert;
+      if ($error) {
+        dbh->rollback;
+        die "Error inserting cdr: $error";
+      }
+    } #foreach $xdr
+    $totalcount += @xdrs;
+    $lastcount = @xdrs;
+    $offset += $step;
+  } #while $lastcount == $step
+  print scalar($totalcount) . " xdrs retrieved\n" if $verbose;
+} #foreach $custnum
 
 call_api('Session','logout',$auth_info);
 
-$FS::UID::AutoCommit = 0;
-
-my $cdr_batch = new FS::cdr_batch({ 
-  'cdrbatch' => 'portaone-import-'. time2str('%Y/%m/%d-%T',$now),
-  '_date'    => $now,
-});
-my $error = $cdr_batch->insert;
-if ($error) {
-  dbh->rollback;
-  die "Error inserting batch: $error";
-}
-
-foreach my $custnum (keys %$results) {
-  foreach my $xdr (@{$results->{$custnum}}) {
-    my $cdr = FS::cdr->new ({
-      'cdrbatchnum' => $cdr_batch->cdrbatchnum,
-      'acctid'      => $xdr->{'i_xdr'}, #???
-      'accountcode' => $xdr->{'account_id'}, #???
-      'startdate'   => $xdr->{'unix_connect_time'},
-      'enddate'     => $xdr->{'unix_disconnect_time'},
-
-### XXX NEED TO MAP FIELDS:
+### Full list of fields returned by API:
 #i_xdr                     int      The unique ID of the xdr record
-#account_id	               int      The unique ID of the account database record
-#CLI                       string   Calling Line Identification
-#CLD                       string   Called Line Identification
-#charged_amount            float    Amount charged
-#charged_quantity          int      Units charged
-#country                   string   Country
-#subdivision               string   Country subdivision
-#description               string   Destination description
-#disconnect_cause          string   The code of disconnect cause
-#bill_status               string   Call bill status
-#disconnect_reason         string   Call disconnect reason
-#connect_time              dateTime Call connect time
-#unix_connect_time         int      Call connect time (expressed in Unix time format - seconds since epoch)
-#disconnect_time           dateTime Call disconnect time 
-#unix_disconnect_time      int      Call disconnect time i_xdr                     int      The unique ID of the xdr record
 #account_id	              int      The unique ID of the account database record
 #CLI                       string   Calling Line Identification
 #CLD                       string   Called Line Identification
@@ -144,20 +160,7 @@ foreach my $custnum (keys %$results) {
 #bill_time                 dateTime Call bill time 
 #bit_flags                 int      Extended information how the service was used; the integer field that should be treated as a bit-map. Each currently used bit is listed in the Transaction_Flag_Types table (bit_offset indicates position)
 #call_recording_url        string   Path to recorded .wav files
-#call_recording_server_url string   URL to the recording server (expressed in Unix time format - seconds since epoch)
-#bill_time                 dateTime Call bill time 
-#bit_flags                 int      Extended information how the service was used; the integer field that should be treated as a bit-map. Each currently used bit is listed in the Transaction_Flag_Types table (bit_offset indicates position)
-#call_recording_url        string   Path to recorded .wav files
 #call_recording_server_url string   URL to the recording server 
-
-    });
-    $error = $cdr->insert;
-    if ($error) {
-      dbh->rollback;
-      die "Error inserting cdr: $error";
-    }
-  } #foreach $xdr
-} #foreach $custnum
 
 dbh->commit;
 
@@ -167,7 +170,7 @@ sub call_api {
   my ($service,$method,$params) = @_;
   my %auth_info = $auth_info ? ('auth_info' => encode_json($auth_info)) : ();
   $params ||= {};
-  print "Calling $service/$method...\n" if $verbose;
+  print "Calling $service/$method\n" if $verbose;
   my ( $page, $response, %reply_headers ) = https_post(
     'host'    => $host,
     'port'    => $port,
@@ -175,6 +178,7 @@ sub call_api {
     'args'    => [ %auth_info, 'params' => encode_json($params) ],
   );
   return decode_json($page) if $response eq '200 OK';
+  dbh->rollback;
   if ($response =~ /^500/) {
     my $error = decode_json($page);
     die "Server returned error during $service/$method: ".$error->{'faultstring'}
