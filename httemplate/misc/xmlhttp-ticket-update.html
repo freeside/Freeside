@@ -16,13 +16,14 @@ my $return;
 if ( $ticket ) {
 
   my($orv, $omsg) = $ticket->SetOwner( $username, 'Steal' );
-  $orv = 1 if ! $orv && $omsg =~ /already owns/i;
+  $orv = 1 if ! $orv && $omsg =~ /already own/i;
 
   if ( $orv ) {
 
     my $date = RT::Date->new( $session{CurrentUser} );
     $date->Set( Format=>'unix', Value=>$starts, );
     my($srv, $smsg) = $ticket->SetStarts( $date->ISO );
+    $srv = 1 if ! $srv && /already the current value/i;
 
     my $ddate;
     unless ( ! $srv ) {
