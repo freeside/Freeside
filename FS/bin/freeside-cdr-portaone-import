@@ -7,9 +7,12 @@ use Date::Parse 'str2time';
 use Getopt::Long;
 use JSON;
 use Net::HTTPS::Any qw(https_post);
+use Time::Local;
 
 use FS::Record qw(qsearchs dbh);
 use FS::UID qw(adminsuidsetup);
+use FS::cdr;
+use FS::cdr_batch;
 
 sub usage {
   "Usage:
@@ -54,7 +57,8 @@ unless ($startdate) {
 }
 $startdate ||= '2010-01-01 00:00:00'; #seems decently in the past
 
-my $now = time;
+my @now = localtime();
+my $now = timelocal(0,0,0,$now[3],$now[4],$now[5]); #most recent midnight
 if ($enddate) {
   $enddate = str2time($enddate) or die "Can't parse enddate $enddate";
   $now = $enddate;
@@ -65,8 +69,11 @@ $enddate ||= time2str("%Y-%m-%d %H:%M:%S",$now);
 
 $FS::UID::AutoCommit = 0;
 
+my $cdrbatchname = 'portaone-import-'. time2str('%Y/%m/%d-%T',$now);
+die "Batch $cdrbatchname already exists, please specify a different end date.  " . usage()
+  if FS::cdr_batch->row_exists('cdrbatch = ?', $cdrbatchname);
 my $cdr_batch = new FS::cdr_batch({ 
-  'cdrbatch' => 'portaone-import-'. time2str('%Y/%m/%d-%T',$now),
+  'cdrbatch' => $cdrbatchname,
   '_date'    => $now,
 });
 my $error = $cdr_batch->insert;
@@ -102,8 +109,13 @@ foreach my $custnum (@custnum) {
       'offset'     => $offset,
     });
     my @xdrs = @{$xdrs->{'xdr_list'}};
-    print "Inserting ".@xdrs." records\n" if $verbose && @xdrs;
+    print "Retrieved ".@xdrs." records\n" if $verbose && @xdrs;
+    my $skipped = 0; # for verbose display only
     foreach my $xdr (@xdrs) {
+      if ( FS::cdr->row_exists('uniqueid = ?', $xdr->{'i_xdr'}) ) {
+        $skipped += 1;
+        next;
+      }
       my $desc = $xdr->{'country'};
       if ($xdr->{'subdivision'}) {
         $desc = ', ' . $desc if $desc;
@@ -131,11 +143,12 @@ foreach my $custnum (@custnum) {
         die "Error inserting cdr: $error";
       }
     } #foreach $xdr
-    $totalcount += @xdrs;
+    print "Skipped $skipped duplicate records\n" if $verbose && $skipped;
+    $totalcount += @xdrs - $skipped;
     $lastcount = @xdrs;
     $offset += $step;
   } #while $lastcount == $step
-  print scalar($totalcount) . " xdrs retrieved\n" if $verbose;
+  print scalar($totalcount) . " records inserted\n" if $verbose;
 } #foreach $custnum
 
 call_api('Session','logout',$auth_info);
