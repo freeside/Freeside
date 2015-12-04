@@ -3,7 +3,7 @@ package FS::geocode_Mixin;
 use strict;
 use vars qw( $DEBUG $me );
 use Carp;
-use Locale::Country;
+use Locale::Country ();
 use Geo::Coder::Googlev3; #compile time for now, until others are supported
 use FS::Record qw( qsearchs qsearch );
 use FS::Conf;
@@ -126,25 +126,41 @@ sub location_label {
       $notfirst++;
     }
   }
-  $line .= $separator. &$escape(code2country($self->country))
+  $line .= $separator. &$escape($self->country_full)
     if $self->country ne $cydefault;
 
   $line;
 }
 
-=item set_coord [ PREFIX ]
+=item country_full
+
+Returns the full country name.
+
+=cut
+
+sub country_full {
+  my $self = shift;
+  $self->code2country($self->country);
+}
+
+sub code2country {
+  my( $self, $country ) = @_;
+
+  #a hash?  not expecting an explosion of business from unrecognized countries..
+  return 'KKTC' if $country eq 'XC';
+                                           
+  Locale::Country::code2country($country);
+}
+
+=item set_coord
 
 Look up the coordinates of the location using (currently) the Google Maps
 API and set the 'latitude' and 'longitude' fields accordingly.
-
-PREFIX, if specified, will be prepended to all location field names,
-including latitude and longitude.
 
 =cut
 
 sub set_coord {
   my $self = shift;
-  my $pre = scalar(@_) ? shift : '';
 
   #my $module = FS::Conf->new->config('geocode_module') || 'Geo::Coder::Googlev3';
 
@@ -152,11 +168,11 @@ sub set_coord {
 
   my $location = eval {
     $geocoder->geocode( location =>
-      $self->get($pre.'address1'). ','.
-      ( $self->get($pre.'address2') ? $self->get($pre.'address2').',' : '' ).
-      $self->get($pre.'city'). ','.
-      $self->get($pre.'state'). ','.
-      code2country($self->get($pre.'country'))
+      $self->get('address1'). ','.
+      ( $self->get('address2') ? $self->get('address2').',' : '' ).
+      $self->get('city'). ','.
+      $self->get('state'). ','.
+      $self->country_full
     );
   };
   if ( $@ ) {
@@ -166,9 +182,9 @@ sub set_coord {
 
   my $geo_loc = $location->{'geometry'}{'location'} or return;
   if ( $geo_loc->{'lat'} && $geo_loc->{'lng'} ) {
-    $self->set($pre.'latitude',  $geo_loc->{'lat'} );
-    $self->set($pre.'longitude', $geo_loc->{'lng'} );
-    $self->set($pre.'coord_auto', 'Y');
+    $self->set('latitude',  $geo_loc->{'lat'} );
+    $self->set('longitude', $geo_loc->{'lng'} );
+    $self->set('coord_auto', 'Y');
   }
 
 }
