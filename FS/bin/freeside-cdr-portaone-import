@@ -53,7 +53,7 @@ unless ($startdate) {
     'hashref'   => { 'cdrbatch' => {op=>'like', value=>'portaone-import%'}},
     'order_by'  => 'ORDER BY _date DESC LIMIT 1',
   });
-  $startdate = time2str("%Y-%m-%d %H:%M:%S", $lastbatch->_date + 1) if $lastbatch;
+  $startdate = time2str("%Y-%m-%d %H:%M:%S", $lastbatch->_date) if $lastbatch;
 }
 $startdate ||= '2010-01-01 00:00:00'; #seems decently in the past
 
