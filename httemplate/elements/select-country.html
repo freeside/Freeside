@@ -98,7 +98,7 @@ Example:
 
   <OPTION VALUE="<% $country |h %>"
           <% $country eq $opt{'country'} ? ' SELECTED' : '' %>
-  ><% code2country($country). " ($country)" %>
+  ><% FS::geocode_Mixin->code2country($country). " ($country)" %>
 
 % } 
 
@@ -130,7 +130,7 @@ my $default = $conf->config('countrydefault') || 'US';
 
 my @all_countries = ( 
                       sort {    ($b eq $default) <=> ($a eq $default)
-                             or code2country($a) cmp code2country($b)
+                             or FS::geocode_Mixin->code2country($a) cmp FS::geocode_Mixin->code2country($b)
                            }
                       map  { $_->country } 
                            qsearch({

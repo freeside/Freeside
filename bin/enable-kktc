@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+
+use FS::UID qw( adminsuidsetup );
+use FS::cust_main_county;
+use FS::Setup;
+
+adminsuidsetup shift or die "Usage: enable-kktc username\n";
+
+my %states = (
+      'Gazimagosa' => 'Gazimagosa',
+      'Girne'      => 'Girne',
+      'Guzelyurt'  => 'Guzelyurt',
+      'Iskele'     => 'Iskele',
+      'Lefkosa'    => 'Lefkosa',
+);
+
+foreach my $state ( keys %states ) {
+  FS::Setup::_add_locale( country=>'XC', state=>$state );
+}
+
+1;

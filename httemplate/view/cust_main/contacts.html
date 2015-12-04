@@ -122,12 +122,12 @@
  (<% $location->county |h %> county)\
 % }
 <% ($location->city || $location->county) ? ', ' : ''%><% state_label( $location->state, $location->country ) |h %>
-  <% $location->zip %>
+  <% $location->zip |h %>
 </TD>
 </TR>
 <TR>
   <TH></TH>
-  <TD><% code2country( $location->country ) %></TD>
+  <TD><% $location->country_full |h %></TD>
 </TR>
 
 % if ( $location->latitude && $location->longitude ) {

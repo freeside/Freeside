@@ -13,7 +13,6 @@ use Date::Language;
 use Text::Template 1.20;
 use File::Temp 0.14;
 use HTML::Entities;
-use Locale::Country;
 use Cwd;
 use FS::UID;
 use FS::Misc qw( send_email );
@@ -648,7 +647,7 @@ sub print_generic {
   if ( $cust_main->country eq $countrydefault ) {
     $invoice_data{'country'} = '';
   } else {
-    $invoice_data{'country'} = &$escape_function(code2country($cust_main->country));
+    $invoice_data{'country'} = &$escape_function($cust_main->bill_country_full);
   }
 
   my @address = ();

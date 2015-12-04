@@ -510,6 +510,9 @@ use Locale::SubCountry;
 sub states_hash {
   my($country) = @_;
 
+  #a hash?  not expecting an explosion of business from unrecognized countries..
+  return states_hash_nosubcountry($country) if $country eq 'XC';
+
   my @states = 
 #     sort
      map { s/[\n\r]//g; $_; }
@@ -529,6 +532,27 @@ sub states_hash {
   map  { ( $_->[0] => $_->[1] ) }
   sort { $a->[1] cmp $b->[1] }
   map  { [ $_ => state_label($_, $subcountry) ] }
+       @states;
+}
+
+sub states_hash_nosubcountry {
+  my($country) = @_;
+
+  my @states = 
+#     sort
+     map { s/[\n\r]//g; $_; }
+     map { $_->state; }
+         qsearch({ 
+                   'select'    => 'state',
+                   'table'     => 'cust_main_county',
+                   'hashref'   => { 'country' => $country },
+                   'extra_sql' => 'GROUP BY state',
+                });
+
+  #"i see your schwartz is as big as mine!"
+  map  { ( $_->[0] => $_->[1] ) }
+  sort { $a->[1] cmp $b->[1] }
+  map  { [ $_ => $_ ] }
        @states;
 }
 
