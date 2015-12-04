@@ -109,7 +109,7 @@ my @cust_main_county =
       @taxnum;
 
 my %seen_country = {};
-my @countries = map  code2country($_)."&nbsp;($_)",
+my @countries = map  FS::geocode_Mixin->code2country($_)."&nbsp;($_)",
                 grep !$seen_country{$_}++,
                 map  $_->country,
                      @cust_main_county;

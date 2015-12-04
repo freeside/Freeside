@@ -5,7 +5,6 @@ use strict;
 use vars qw( $import $DEBUG $conf $label_prefix );
 use Data::Dumper;
 use Date::Format qw( time2str );
-use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
@@ -406,14 +405,11 @@ sub check {
 
 =item country_full
 
-Returns this locations's full country name
+Returns this location's full country name
 
 =cut
 
-sub country_full {
-  my $self = shift;
-  code2country($self->country);
-}
+#moved to geocode_Mixin.pm
 
 =item line
 

@@ -456,7 +456,7 @@ my %seen_county = ();
 my @fields = (
   sub { my $country = shift->country;
         return '' if $seen_country{$country}++;
-        code2country($country). "&nbsp;($country)";
+        FS::geocode_Mixin->code2country($country). "&nbsp;($country)";
       },
 
   #state

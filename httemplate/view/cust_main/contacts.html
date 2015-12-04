@@ -106,11 +106,11 @@
   <TD ALIGN="right"><% mt('State') |h %></TD>
   <TD BGCOLOR="#ffffff"><% state_label( $location->state, $location->country ) |h %></TD>
   <TD ALIGN="right"><% mt('Zip') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $location->zip %></TD>
+  <TD BGCOLOR="#ffffff"><% $location->zip |h %></TD>
 </TR>
 <TR>
   <TD ALIGN="right"><% mt('Country') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% code2country( $location->country ) %></TD>
+  <TD BGCOLOR="#ffffff"><% $location->country_full |h %></TD>
 </TR>
 
 % if ( $location->latitude && $location->longitude ) {

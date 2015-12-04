@@ -33,7 +33,6 @@ use Date::Format;
 #use Date::Manip;
 use File::Temp; #qw( tempfile );
 use Business::CreditCard 0.28;
-use Locale::Country;
 use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Misc qw( generate_email send_email generate_ps do_print money_pretty );
@@ -4221,26 +4220,14 @@ sub ship_contact_firstlast {
   $contact->get('first') . ' '. $contact->get('last');
 }
 
-#XXX this doesn't work in 3.x+
-#=item country_full
-#
-#Returns this customer's full country name
-#
-#=cut
-#
-#sub country_full {
-#  my $self = shift;
-#  code2country($self->country);
-#}
-
 sub bill_country_full {
   my $self = shift;
-  code2country($self->bill_location->country);
+  $self->bill_location->country_full;
 }
 
 sub ship_country_full {
   my $self = shift;
-  code2country($self->ship_location->country);
+  $self->ship_location->country_full;
 }
 
 =item county_state_county [ PREFIX ]
