@@ -5,6 +5,6 @@ my %opt = @_;
 
 my $value = $opt{'curr_value'} || $opt{'value'};
 
-$opt{'formatted_value'} = code2country($value). " ($value)";
+$opt{'formatted_value'} = FS::geocode_Mixin->code2country($value). " ($value)";
 
 </%init>
