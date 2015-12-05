@@ -547,7 +547,7 @@ sub pkg_status_row_discount {
     if ( $discount->months > 0 and $cust_pkg_discount->months_used > 0 ) {
       my $remaining = $discount->months - $cust_pkg_discount->months_used;
       $remaining = sprintf('%.2f', $remaining) if $remaining =~ /\./;
-      $label .= <br> . emt("([_1] months remaining)",$remaining);
+      $label .= <br> . emt(" ([quant,_1,month,months] remaining)",$remaining);
     }
     $label .= '</SPAN>';
 
