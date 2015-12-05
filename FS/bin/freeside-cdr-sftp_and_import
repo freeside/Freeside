@@ -203,7 +203,7 @@ freeside-cdr-sftp_and_import - Download CDR files from a remote server via SFTP
 
 =head1 SYNOPSIS
 
-  cdr.sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
+  freeside-cdr-sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
     [ -a ] [ -g ] [ -s ] [ -c cdrtypenum ] user format [sftpuser@]servername
 
