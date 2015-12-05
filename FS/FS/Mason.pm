@@ -121,6 +121,7 @@ if ( -e $addl_handler_use_file ) {
   use HTML::Widgets::SelectLayers 0.07; #should go away in favor of
                                         #selectlayers.html
   use Locale::Country;
+  #use FS::geocode_Mixin; #for its code2country
   use Locale::Currency;
   use Locale::Currency::Format;
   use Business::US::USPS::WebTools::AddressStandardization;
