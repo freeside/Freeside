@@ -134,11 +134,12 @@ sub calc_discount {
     } else {
       
       # we are calculating a recurring fee discount. estimate the recurring
-      # fee:
-      # XXX it would be more accurate for calc_recur to just _tell us_ what
-      # it's going to charge
+      # fee. Note we use $months here rather than $chg_months so that if the
+      # remaining discount amount is for less time than the package period,
+      # the "estimated recurring fee" is only for as long as the discount
+      # lasts.
 
-      my $recur_charge = $br * $chg_months / $self->freq;
+      my $recur_charge = $br * $months / $self->freq;
       # round this, because the real recur charge is rounded
       $recur_charge = sprintf('%.2f', $recur_charge);
 
@@ -218,7 +219,7 @@ sub calc_discount {
       'pkgdiscountnum' => $cust_pkg_discount->pkgdiscountnum,
       'amount'         => $amount,
       'months'         => $months,
-      # XXX should have a 'setuprecur'
+      # XXX should have a 'setuprecur' (and on 4.x, it does)
     };
     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
     $tot_discount += $amount;
