@@ -175,7 +175,7 @@
 %         #remove their droppable
           $('#'+n_td_id).droppable('destroy');
           if ( d == 0 ) {
-            $('#'+n_td_id).text(label);
+            $('#'+n_td_id).html(label + ' <A HREF="<%$RT::WebPath%>/Ticket/Display.html?id=' + ticketid + '">view</A>' );
 %           #(and make the top draggable, so we could do it all over again)
             $('#'+n_td_id).draggable({
               containment: '.titlebox-content',

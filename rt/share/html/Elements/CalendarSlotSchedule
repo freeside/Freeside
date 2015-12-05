@@ -20,6 +20,7 @@
 %
 %   my $bgcolor = '666666;border-color:#555555';
 %   my $content = '';
+%   my $link = '';
 %   my $selectable = 0;
 %   my $draggable_ticketid = 0;
 %   my $draggable_length = 0;
@@ -60,6 +61,7 @@
 %                   FS::sched_avail::pretty_time($due).
 %                   ': '. $cust_main[0]->_FreesideURILabel;
 %                   #'install for custname XX miles away'; #XXX placeholder/more
+%       $link = qq( <A HREF="$RT::WebPath/Ticket/Display.html?id=$id">view</A>);
 %       $draggable_ticketid = $id;
 %       $draggable_length = $due - $starts;
 %
@@ -128,7 +130,7 @@
 %       }
 %
 %     }
-    ><% $content |h %></td>
+    ><% $content |h %><% $link |n %></td>
     <SCRIPT TYPE="text/javascript">
 
       $('#<% $td_id %>').data('username', "<% $username %>");
