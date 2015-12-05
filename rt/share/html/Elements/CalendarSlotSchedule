@@ -57,7 +57,7 @@
 %                   #false laziness w/xmlhttp-ticket-update.html
 %                   FS::sched_avail::pretty_time($starts). '-'.
 %                   FS::sched_avail::pretty_time($due).
-%                   ': '. encode_entities($cust_main[0]->_FreesideURILabel);
+%                   ': '. $cust_main[0]->_FreesideURILabel;
 %                   #'install for custname XX miles away'; #XXX placeholder/more
 %       $draggable_ticketid = $id;
 %       $draggable_length = $due - $starts;
@@ -126,7 +126,7 @@
 %       }
 %
 %     }
-    ><% $content %></td>
+    ><% $content |h %></td>
     <SCRIPT TYPE="text/javascript">
 
       $('#<% $td_id %>').data('username', "<% $username %>");
