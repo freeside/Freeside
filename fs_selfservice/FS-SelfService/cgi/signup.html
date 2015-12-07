@@ -386,12 +386,12 @@ ENDOUT
   <TD ALIGN="right">Password</TD>
   <TD>
     <INPUT ID="new_password" TYPE="password" NAME="_password" VALUE="$_password">
-    <DIV ID="new_password_result"></DIV>
-ENDOUT
-
-   $OUT .= add_password_validation('new_password');
-
-   $OUT .= <<ENDOUT;
+    <SPAN ID="new_password_result"></SPAN>
+    <SCRIPT SRC="send_xmlhttp.js"></SCRIPT>
+    <SCRIPT SRC="add_password_validation.js"></SCRIPT>
+    <SCRIPT>
+    add_password_validation('new_password',true);
+    </SCRIPT>
   </TD>
 </TR>
 <TR>

@@ -2686,6 +2686,7 @@ sub password_svc_check {
   my ($self, $password) = @_;
   foreach my $field ( qw(username finger) ) {
     foreach my $word (split(/\W+/,$self->get($field))) {
+      next unless length($word) > 2;
       if ($password =~ /$word/i) {
         return qq(Password contains account information '$word');
       }

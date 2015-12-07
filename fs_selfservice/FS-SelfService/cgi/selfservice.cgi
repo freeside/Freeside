@@ -95,6 +95,7 @@ my @nologin_actions = (qw(
   process_forgot_password
   do_process_forgot_password
   process_forgot_password_session
+  validate_password_nologin
 ));
 push @actions, @nologin_actions;
 my %nologin_actions = map { $_=>1 } @nologin_actions;
@@ -1129,6 +1130,14 @@ sub validate_password {
     'session_id' => $session_id,
     map { $_ => scalar($cgi->param($_)) }
       qw( fieldid svcnum check_password )
+  )
+}
+
+sub validate_password_nologin {
+  $action = 'validate_password'; #use same landing page
+  validate_passwd(
+    map { $_ => scalar($cgi->param($_)) }
+      qw( fieldid check_password )
   )
 }
 
