@@ -341,7 +341,12 @@ if ( $cgi->param('browse')
     if ( $query eq 'custnum' ) {
       if ( $conf->exists('cust_main-default_agent_custid') ) {
         $sortby=\*display_custnum_sort;
-        $orderby = "ORDER BY CASE WHEN agent_custid IS NOT NULL AND agent_custid != '' THEN CAST(agent_custid AS BIGINT) ELSE custnum END";
+        $orderby = "ORDER BY CASE WHEN agent_custid IS NOT NULL
+                                   AND agent_custid != ''
+                                   AND agent_custid ". regexp_sql. " '^[0-9]+\$'
+                             THEN CAST(agent_custid AS BIGINT)
+                             ELSE custnum
+                             END";
       } else {
         $sortby=\*custnum_sort;
         $orderby = "ORDER BY custnum";
