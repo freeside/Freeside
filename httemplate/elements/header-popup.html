@@ -20,7 +20,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% $title |h %>
+      <% encode_entities($title) || $title_noescape |n %>
     </TITLE>
     <!-- per RT, to prevent IE compatibility mode -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -28,14 +28,16 @@ Example:
     <META HTTP-Equiv="Cache-Control" Content="no-cache">
     <META HTTP-Equiv="Pragma" Content="no-cache">
     <META HTTP-Equiv="Expires" Content="0"> 
-    <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
-    <% $head %>
+%   unless ( $no_jquery ) {
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+%   }
+    <% $head |n %>
   </HEAD>
-  <BODY <% $etc %>>
+  <BODY <% $etc |n %>>
     <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
-% if ( $title ) {
+% if ( $title || $title_noescape ) {
     <FONT SIZE=6>
-      <CENTER><% $title |h %></CENTER>
+      <CENTER><% encode_entities($title) || $title_noescape |n %></CENTER>
     </FONT>
 % }
 % unless ( $nobr ) {
@@ -43,17 +45,18 @@ Example:
 % }
 <%init>
 
-my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
-#my( $nobr, $nocss ) = ( 0, 0 );
-my $nobr = 0;
+my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
+my( $nobr, $no_jquery ) = ( 0, 0 );
 if ( ref($_[0]) ) {
   my $opt = shift;
-  $title   = $opt->{title};
-  $menubar = $opt->{menubar};
-  $etc     = $opt->{etc};
-  $head    = $opt->{head};
-  $nobr    = $opt->{nobr};
-#  $nocss   = $opt->{nocss};
+  $title          = $opt->{title};
+  $title_noescape = $opt->{title_noescape};
+  $menubar        = $opt->{menubar};
+  $etc            = $opt->{etc};
+  $head           = $opt->{head};
+  $nobr           = $opt->{nobr};
+  #$nocss          = $opt->{nocss};
+  $no_jquery      = $opt->{no_jquery};
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
