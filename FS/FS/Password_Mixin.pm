@@ -69,6 +69,29 @@ sub is_password_allowed {
 
   return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
 
+  #check against customer fields
+  my $cust_main = $self->cust_main;
+  if ($cust_main) {
+    my @words;
+    # words from cust_main
+    foreach my $field ( qw( last first daytime night fax mobile ) ) {
+        push @words, split(/\W/,$cust_main->get($field));
+    }
+    # words from cust_location
+    foreach my $loc ($cust_main->cust_location) {
+      foreach my $field ( qw(address1 address2 city county state zip) ) {
+        push @words, split(/\W/,$loc->get($field));
+      }
+    }
+    # do the actual checking
+    foreach my $word (@words) {
+      next unless length($word) > 2;
+      if ($password =~ /$word/i) {
+        return qq(Password contains account information '$word');
+      }
+    }
+  }
+
   if ( $conf->config('password-no_reuse') =~ /^(\d+)$/ ) {
 
     my $no_reuse = $1;

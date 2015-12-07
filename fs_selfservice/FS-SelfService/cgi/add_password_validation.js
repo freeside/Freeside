@@ -1,5 +1,4 @@
-<SCRIPT>
-function add_password_validation (fieldid) {
+function add_password_validation (fieldid,nologin) {
   var inputfield = document.getElementById(fieldid);
   inputfield.onchange = function () {
     var fieldid = this.id+'_result';
@@ -11,19 +10,22 @@ function add_password_validation (fieldid) {
     }
     if (this.value) {
       resultfield.innerHTML = '<SPAN STYLE="color: blue;">Validating password...</SPAN>';
+      var action = nologin ? 'validate_password_nologin' : 'validate_password';
       send_xmlhttp('selfservice.cgi',
-        ['action','validate_password','fieldid',fieldid,'svcnum',svcnum,'check_password',this.value],
+        ['action',action,'fieldid',fieldid,'svcnum',svcnum,'check_password',this.value],
         function (result) {
           result = JSON.parse(result);
           var resultfield = document.getElementById(result.fieldid);
           if (resultfield) {
+            var errorimg = '<IMG SRC="images/error.png" style="width: 1em; display: inline-block; padding-right: .5em">';
+            var validimg = '<IMG SRC="images/tick.png" style="width: 1em; display: inline-block; padding-right: .5em">';
             if (result.valid) {
-              resultfield.innerHTML = '<SPAN STYLE="color: green;">Password valid!</SPAN>';
+              resultfield.innerHTML = validimg+'<SPAN STYLE="color: green;">Password valid!</SPAN>';
             } else if (result.error) {
-              resultfield.innerHTML = '<SPAN STYLE="color: red;">'+result.error+'</SPAN>';
+              resultfield.innerHTML = errorimg+'<SPAN STYLE="color: red;">'+result.error+'</SPAN>';
             } else {
               result.syserror = result.syserror || 'Server error';
-              resultfield.innerHTML = '<SPAN STYLE="color: red;">'+result.syserror+'</SPAN>';
+              resultfield.innerHTML = errorimg+'<SPAN STYLE="color: red;">'+result.syserror+'</SPAN>';
             }
           }
         }
@@ -33,4 +35,4 @@ function add_password_validation (fieldid) {
     }
   };
 }
-</SCRIPT>
+

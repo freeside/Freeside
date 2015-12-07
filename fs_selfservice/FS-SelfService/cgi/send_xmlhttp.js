@@ -1,4 +1,3 @@
-<SCRIPT>
 function rs_init_object () {
   var A;
   try {
@@ -41,5 +40,4 @@ function send_xmlhttp (url,args,callback) {
   xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   xmlhttp.send(content);
 }
-</SCRIPT>
 
