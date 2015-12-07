@@ -175,7 +175,18 @@
 %         #remove their droppable
           $('#'+n_td_id).droppable('destroy');
           if ( d == 0 ) {
-            $('#'+n_td_id).html(label + ' <A HREF="<%$RT::WebPath%>/Ticket/Display.html?id=' + ticketid + '">view</A>' );
+            var title = 
+              label +
+              ' <A HREF="<%$RT::WebPath%>/Ticket/Display.html?id=' + ticketid + '" target="_blank">view</A> ' +
+              <% include('/elements/popup_link.html',
+                   action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id=__MAGIC_TICKET_ID__',
+                   label =>'edit',
+                   actionlabel => 'Edit appointment',
+                   height      => 436, # better: A + B * (num_custom_fields)
+                 ) |n,js_string
+              %>;
+            title = title.replace( /__MAGIC_TICKET_ID__/, ticketid );
+            $('#'+n_td_id).html( title );
 %           #(and make the top draggable, so we could do it all over again)
             $('#'+n_td_id).draggable({
               containment: '.titlebox-content',

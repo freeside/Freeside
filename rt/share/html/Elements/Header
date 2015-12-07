@@ -45,6 +45,17 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+% if ( $Popup ) {
+<& /elements/header-popup.html, {
+              'title_noescape' => $Title,
+              'head'      => $head,
+              'etc'       => $etc,
+              'nobr'      => 1,
+              #'nocss'     => 1,
+              'no_jquery' => $JavaScript,
+          }
+&>
+% } else {
 <& /elements/header.html, {
               'title'     => $Title,
               'head'      => $head,
@@ -54,6 +65,7 @@
               'no_jquery' => $JavaScript,
           }
 &>
+% }
 <%INIT>
 #for "Site CSS from theme editor" below
 #use Scalar::Util qw(blessed);
@@ -161,4 +173,5 @@ $SkipDoctype => 0
 $RichText => 1
 $BodyClass => undef
 $JavaScript => 1
+$Popup => 0
 </%ARGS>
