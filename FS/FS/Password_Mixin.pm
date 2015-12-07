@@ -67,6 +67,40 @@ sub is_password_allowed {
 
   return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
 
+  #check against customer fields
+  my $cust_main = $self->cust_main;
+  if ($cust_main) {
+    my @words;
+    # words from cust_main
+    foreach my $field ( qw( last first daytime night fax mobile ) ) {
+        push @words, split(/\W/,$cust_main->get($field));
+    }
+    # words from cust_location
+    foreach my $loc ($cust_main->cust_location) {
+      foreach my $field ( qw(address1 address2 city county state zip) ) {
+        push @words, split(/\W/,$loc->get($field));
+      }
+    }
+    # words from cust_contact & contact_phone
+    foreach my $contact (map { $_->contact } $cust_main->cust_contact) {
+      foreach my $field ( qw(last first) ) {
+        push @words, split(/\W/,$contact->get($field));
+      }
+      # not hugely useful right now, hyphenless stored values longer than password max,
+      # but max will probably be increased eventually...
+      foreach my $phone ( qsearch('contact_phone', {'contactnum' => $contact->contactnum}) ) {
+        push @words, split(/\W/,$phone->get('phonenum'));
+      }
+    }
+    # do the actual checking
+    foreach my $word (@words) {
+      next unless length($word) > 2;
+      if ($password =~ /$word/i) {
+        return qq(Password contains account information '$word');
+      }
+    }
+  }
+
   my $no_reuse = 3;
   # allow override here if we really must
 
