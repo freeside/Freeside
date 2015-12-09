@@ -14,8 +14,8 @@ getopts('H:U:P:D:T:', \%opt);
 my $user = shift or die &usage;
 
 my $dsn = 'dbi:mysql';
-$dsn .= ":database=$opt{D}" if $opt{D};
-$dsn .= ":host=$opt{H}" if $opt{H};
+$dsn .= ":database=$opt{D}"; # if $opt{D};
+$dsn .= ";host=$opt{H}" if $opt{H};
 
 my $mysql = DBI->connect($dsn, $opt{U}, $opt{P}) 
   or die $DBI::errstr;
