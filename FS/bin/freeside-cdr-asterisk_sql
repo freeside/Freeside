@@ -16,8 +16,8 @@ my $user = shift or die &usage;
 my $engine = $opt{e} || 'mysql';
 
 my $dsn = "dbi:$engine";
-$dsn .= ":database=$opt{D}" if $opt{D};
-$dsn .= ":host=$opt{H}" if $opt{H};
+$dsn .= ":database=$opt{D}"; # if $opt{D};
+$dsn .= ";host=$opt{H}" if $opt{H};
 
 my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
   or die $DBI::errstr;
