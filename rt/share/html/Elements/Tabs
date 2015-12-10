@@ -289,6 +289,8 @@ my $build_admin_menu = sub {
                 my $txn_cfs = $queue->child( 'transaction-custom-fields' => title => loc('Transaction Custom Fields'),
                     path => '/Admin/Queues/CustomFields.html?SubType=RT::Ticket-RT::Transaction&id='.$id );
 
+                $queue->child( 'tasks' => title => loc('Subtasks'), path => "Admin/Queues/Tasks.html?Queue=".$id );
+
                 $queue->child( 'group-rights' => title => loc('Group Rights'), path => "/Admin/Queues/GroupRights.html?id=".$id );
                 $queue->child( 'user-rights' => title => loc('User Rights'), path => "/Admin/Queues/UserRights.html?id=" . $id );
                 $queue->child( 'history' => title => loc('History'), path => "/Admin/Queues/History.html?id=" . $id );
