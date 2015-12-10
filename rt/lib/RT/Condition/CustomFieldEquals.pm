@@ -28,9 +28,10 @@ sub IsApplicable {
     if ($trans->Type eq 'CustomField') {
         my $cf = RT::CustomField->new($self->CurrentUser);
         $cf->Load($field);
-        return $trans->Field == $cf->Id
-               and ($trans->NewValue eq $value)
-               and ($trans->OldValue ne $value)
+        return (   $trans->Field == $cf->Id
+               and $trans->NewValue eq $value
+               and $trans->OldValue ne $value
+               );
     }
     return undef;
 }
