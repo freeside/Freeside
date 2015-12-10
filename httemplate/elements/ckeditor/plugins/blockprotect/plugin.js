@@ -134,7 +134,7 @@
                           } // elements
                         });
 
-                        editor.on( 'afterInsertHtml', function( evt ) {
+                        editor.on( 'insertHtml', function( evt ) {
                           // if this leaves an open SPAN, move the cursor
                           // to after it
                           var range = editor.getSelection().getRanges()[0];
@@ -144,7 +144,8 @@
                             range.collapse();
                             editor.getSelection().selectRanges([ range ]);
                           }
-                        });
+                        }, null, null, 30);
+                        // actually inserting the HTML happens at priority 10.
 
                 } // afterInit
         }); // plugins.add
