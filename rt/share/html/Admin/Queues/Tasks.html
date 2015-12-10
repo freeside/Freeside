@@ -92,7 +92,7 @@ my $title = loc("Set up subtasks for queue [_1]", $QueueObj->Name);
 
 my $TEMPLATE_NAME = '[Subtask]';
 my $SCRIPCONDITION_NAME = '[Subtask] Queue='.$Queue;
-my $SUBJECT_PREFIX = q({ $Tickets{'TOP'}->Subject }-);
+my $SUBJECT_PREFIX = q({ $TOP->Subject }-);
 
 my ($Scrip, $ScripCondition, $Template, $CustomField);
 
@@ -112,7 +112,7 @@ $Scrip = RT::Scrip->new($RT::SystemUser);
 {
   my $Scrips = RT::Scrips->new($RT::SystemUser);
   $Scrips->LimitToQueue($Queue);
-  $Scrips->Limit( FIELD => 'Template', VALUE => $TEMPLATE_NAME );
+  $Scrips->Limit( FIELD => 'Template', VALUE => $Template->Id );
   if ( $Scrips->Count > 0 ) {
     $Scrip = $Scrips->First;
   }
@@ -138,12 +138,13 @@ if ( $ARGS{task_id} ) { # actually contains numeric indices
     my %task_opts = map { $_ => $ARGS{$_} }
                     grep /^$task_id-/, keys(%ARGS);
     my $task_content = "===Create-Ticket: $task_id
+CF-$cfname:" . q[
 Depended-On-By: TOP
-CF-$cfname: 
-";
-    # any other static content can go here, but we always want the child
-    # ticket relationship, and we want to force the ConditionCF to be empty
-    # to avoid recursion.
+Owner: { $TOP->Owner }
+{ join("\n", map { "Requestor: $_" }
+  $TOP->Requestors->MemberEmailAddresses) }
+];
+    # any other attributes to put on subtask tickets should go here also.
 
     my $has_content = 0;
 
@@ -171,7 +172,6 @@ CF-$cfname:
       $new_content .= $task_content;
     }
   }
-  warn "NEW CONTENT:\n$new_content\n\n"; # XXX
 
   if ( ! $Template->Id ) {
     my ( $val, $msg ) = $Template->Create(
@@ -252,12 +252,10 @@ my $Action = $action_class->new(
   CurrentUser    => $session{'CurrentUser'},
 );
 # this will populate $Action with the 'create_tickets' hash
-warn $Template->Content;
 $Action->Parse(
   Content         => $Template->Content,
   _ActiveContent  => 0,
 );
-warn Dumper \$Action;
 my @task_ids;
 @task_ids = @{ $Action->{create_tickets} } if exists $Action->{create_tickets};
 
