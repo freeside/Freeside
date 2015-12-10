@@ -1,0 +1,68 @@
+<%doc>
+Adds a link to display snmp statistics based on broadband_snmp_get export config.
+Performs necessary checks such that, if no such exports are configured for the passed 
+service, returns blank space (ie may be safely invoked even if no exports are configured.)
+
+  <& '/elements/broadband_snmp_get-dialog.html', svc => $svc &>
+
+</%doc>
+% if (@snmp) {
+<& '/elements/xmlhttp.html',
+   'url'  => $fsurl.'misc/xmlhttp-broadband_snmp_get.cgi',
+   'subs' => [ 'broadband_snmp_get_request' ]
+ &>
+<SCRIPT>
+function broadband_snmp_get (svcnum) {
+  var jqd = $( '#broadband_snmp_get_dialog' );
+  if (!jqd.dialog( 'isOpen' )) {
+    jqd.dialog( 'open' );
+  }
+  document.getElementById('broadband_snmp_get_dialog').innerHTML = '<B>Loading...</B>';
+  broadband_snmp_get_request('svcnum',svcnum,
+    function (result) {
+      var objects = JSON.parse(result) || [];
+      if (objects.length) {
+        var table = document.createElement('table');
+        for (i = 0; i < objects.length; i++) {
+          var row = document.createElement('tr');
+          var obj = objects[i];
+          if (obj.error) {
+            var cell = document.createElement('td');
+            cell.colSpan = '2';
+            cell.innerHTML = obj['error'];
+            row.appendChild(cell);
+          } else {
+              var cell = document.createElement('td');
+              cell.innerHTML = obj['label'];
+              row.appendChild(cell);
+              cell = document.createElement('td');
+              cell.innerHTML = obj['value'];
+              row.appendChild(cell);
+          }
+          table.appendChild(row);
+        }
+        var dialog = document.getElementById('broadband_snmp_get_dialog');
+        dialog.innerHTML = '';
+        dialog.appendChild(table);
+      }  // if objects.length
+    }  // function
+  ); // broadband_snmp_get_request
+} // broadband_snmp_get
+</SCRIPT>
+<SPAN ID="broadband_snmp_get_dialog"></SPAN>
+<SPAN ID="broadband_snmp_get_link">
+<A HREF="javascript: void(0)" onclick="broadband_snmp_get('<% $svcnum %>')">(snmp)</A>
+</SPAN>
+<SCRIPT>
+$( '#broadband_snmp_get_dialog' ).dialog({
+  position: { my: "left top", at: "left top", of: "#broadband_snmp_get_link" },
+  autoOpen: false,
+  title: 'SNMP',
+});
+</SCRIPT>
+% } #if @snmp
+<%init>
+my(%opt) = @_;
+my @snmp = $opt{'svc'}->cust_svc->part_svc->part_export('broadband_snmp_get');
+my $svcnum = $opt{'svc'}->svcnum;
+</%init>
