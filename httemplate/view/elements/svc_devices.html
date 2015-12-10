@@ -63,7 +63,8 @@
             <% $td %><% $device->part_device->devicename |h %></TD>
 %         }
           <% $td %><% $device->mac_addr_pretty %>
-                 (<% (Net::MAC::Vendor::lookup($device->mac_addr_formatted('U',':')))->[0] %>)
+%                my $vendor = Net::MAC::Vendor::lookup($device->mac_addr_formatted('U',':'));
+                 (<% $vendor ? $vendor->[0] : '' %>)
           </TD>
           <% $td %><% $export_links %></TD>
           <% $td %>(
