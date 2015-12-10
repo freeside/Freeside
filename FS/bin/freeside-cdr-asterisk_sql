@@ -26,16 +26,18 @@ adminsuidsetup $user;
 
 my $fsdbh = FS::UID::dbh;
 
-# check for existence of freesidestatus
 my $table = $opt{T} || 'cdr';
-my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
-if( ! @$status ) {
-  print "Adding freesidestatus column...\n";
-  $dbi->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
-    or die $dbi->errstr;
-}
-else {
-  print "freesidestatus column present\n";
+
+# check for existence of freesidestatus
+if ( $engine =~ /^mysql/ ) {
+  my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
+  if( ! @$status ) {
+    print "Adding freesidestatus column...\n";
+    $dbi->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
+      or die $dbi->errstr;
+  } else {
+    print "freesidestatus column present\n";
+  }
 }
 
 my @cols = ( qw( 
