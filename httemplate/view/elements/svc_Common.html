@@ -283,8 +283,8 @@ my $format_field = sub {
   } elsif ( $type eq 'checkbox' ) {
     $value = $value eq 'Y' ? emt('Yes') : emt('No');
   } elsif ( $type =~ /(input-)?mac_addr/ and $value =~ /\w/) {
-    my $vendor = Net::MAC::Vendor::lookup($value)->[0];
-    $value .= " ($vendor)" if $vendor;
+    my $vendor = Net::MAC::Vendor::lookup($value);
+    $value .= ' ('. $vendor->[0]. ')' if $vendor;
     $value = $m->scomp('/elements/mac_addr.html', $value);
   }
 
