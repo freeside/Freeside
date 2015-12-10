@@ -1,0 +1,269 @@
+<& /Admin/Elements/Header, Title => $title &>
+<& /Elements/Tabs &>
+<& /Elements/ListActions, actions => \@results &>
+
+<form action="Tasks.html" method="post">
+<input type="hidden" name="Queue" value="<% $Queue %>" />
+<h2>
+  <label for="ConditionCF"><&|/l&>Enabled if</&>:</label>
+% if ( $PossibleCustomFields->Count > 0 ) {
+  <select name="ConditionCF">
+%   while ( my $thiscf = $PossibleCustomFields->Next ) {
+    <option value="<% $thiscf->Id %>" <% $thiscf->Id == $cfid ? 'selected' : '' %>><% $thiscf->Name %></option>
+%   }
+  </select>
+  <label for="ConditionValue"><&|/l&>equals</&></label>
+  <input name="ConditionValue" value="<% $cfvalue %>" />
+% } else {
+  <select name="no_cfs" disabled>
+    <option value="1">(no custom fields defined)</option>
+  </select>
+% }
+</h2>
+<table>
+% my (@links, @postponed); # not really used here
+% my $idx = 1;
+% foreach my $task_id (@task_ids, 'new') {
+%   # simulate creating the tickets, but don't evaluate any perl inclusions
+%   # in the content (_ActiveContent => 0 earlier)
+%   my ($ticket, $ticketargs);
+%   if ( $task_id eq 'new' ) {
+%     $ticket = RT::Ticket->new($session{'CurrentUser'});
+%     $ticketargs = {
+%       Queue => $Queue,
+%       # any other defaults make sense here?
+%     };
+%   } else {
+%     ($ticket, $ticketargs) =
+%       $Action->ParseLines($task_id, \@links, \@postponed);
+%   }
+%   my $subject = $ticketargs->{Subject};
+%   my $subjectprefix = 0;
+%   if ( $subject =~ s/^\Q$SUBJECT_PREFIX\E// ) {
+%     $subjectprefix = 1;
+%   }
+
+  <tr>
+    <td colspan="2">
+      <h2>
+      <label for="task_id"><&|/l&>Task #</&><% $idx %>
+% # each time these are edited, replace all task IDs with sequential numbers.
+% # no point in letting them be anything else, at least yet.
+      <input type="hidden" name="task_id" value="<% $idx %>">
+      </h2>
+    </td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Subject</&>:</td>
+    <td class="value">
+      <input name="<% $idx %>-Subject" value="<% $subject |h %>" />
+      <input type="checkbox" name="<% $idx %>-SubjectPrefix" <% $subjectprefix ? 'checked' : '' %> /> <&|/l&>Prefix with main subject</&>
+    </td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>In queue</&>:</td>
+    <td class="value"><& /Elements/SelectQueue,
+      Name => "$idx-Queue",
+      ShowNullOption => 0,
+      Default => ($ticketargs->{Queue} || $Queue),
+    &></td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Content</&>:</td>
+    <td class="value"><textarea name="<% $idx %>-Content" rows="10" cols="80" wrap="soft"><%
+    ( $ticketargs->{MIMEObj} ? $ticketargs->{MIMEObj}->body_as_string : '' )
+    %></textarea>
+    </td>
+  </tr>
+
+%   $idx++;
+% }
+</table>
+<& /Elements/Submit, Label => 'Save Changes' &>
+</form>
+<%init>
+my @results;
+
+my $QueueObj = RT::Queue->new($session{'CurrentUser'});
+$QueueObj->Load($Queue);
+Abort(loc("Queue [_1] not found",$Queue)) unless $QueueObj->Id;
+
+my $title = loc("Set up subtasks for queue [_1]", $QueueObj->Name);
+
+my $TEMPLATE_NAME = '[Subtask]';
+my $SCRIPCONDITION_NAME = '[Subtask] Queue='.$Queue;
+my $SUBJECT_PREFIX = q({ $Tickets{'TOP'}->Subject }-);
+
+my ($Scrip, $ScripCondition, $Template, $CustomField);
+
+# SystemUser for the scrip so that the user doesn't need ACLs to edit scrips
+# as such.  all the scrip parameters are hardcoded anyway...
+
+$ScripCondition = RT::ScripCondition->new($RT::SystemUser);
+$ScripCondition->LoadByCol('Name', $SCRIPCONDITION_NAME);
+
+$Template = RT::Template->new($session{'CurrentUser'});
+$Template->LoadByName(
+  Name  => $TEMPLATE_NAME,
+  Queue => $Queue,
+);
+
+$Scrip = RT::Scrip->new($RT::SystemUser);
+{
+  my $Scrips = RT::Scrips->new($RT::SystemUser);
+  $Scrips->LimitToQueue($Queue);
+  $Scrips->Limit( FIELD => 'Template', VALUE => $TEMPLATE_NAME );
+  if ( $Scrips->Count > 0 ) {
+    $Scrip = $Scrips->First;
+  }
+}
+
+# The CF name to test, and the value it must have to trigger the scrip.
+my $cfid = $ARGS{ConditionCF};
+my $cfvalue = $ARGS{ConditionValue};
+$CustomField = RT::CustomField->new($session{'CurrentUser'});
+if ( $cfid ) {
+  $CustomField->Load($cfid);
+}
+my $cfname = $CustomField->Name;
+
+# if there's input from the form, process it into a new template content
+my $new_content = '';
+
+if ( $ARGS{task_id} ) { # actually contains numeric indices
+  my @task_ids = $ARGS{task_id};
+  @task_ids = @{ $task_ids[0] } if ref($task_ids[0]);
+  foreach my $task_id (@task_ids) {
+    # find the inputs for this task_id
+    my %task_opts = map { $_ => $ARGS{$_} }
+                    grep /^$task_id-/, keys(%ARGS);
+    my $task_content = "===Create-Ticket: $task_id
+Depended-On-By: TOP
+CF-$cfname: 
+";
+    # any other static content can go here, but we always want the child
+    # ticket relationship, and we want to force the ConditionCF to be empty
+    # to avoid recursion.
+
+    my $has_content = 0;
+
+    # special case: automate prefixing the main ticket subject
+    if ( $task_opts{"$task_id-SubjectPrefix"} ) {
+      $task_opts{"$task_id-Subject"} =
+        $SUBJECT_PREFIX . $task_opts{"$task_id-Subject"};
+    }
+    
+    foreach my $key (sort keys %task_opts) {
+      $key =~ /^$task_id-(.*)/;
+      my $tag = $1;
+      my $value = $task_opts{$key};
+      $value =~ s/^\s*//;
+      $value =~ s/\s*$//;
+      $value =~ s/\r//g;
+      $task_content .= "$tag: $value\n";
+      # only create a task if the ticket has non-whitespace content
+      if ( lc($tag) eq 'content' and length($value) > 0 ) {
+        $task_content .= "ENDOFCONTENT\n";
+        $has_content = 1;
+      }
+    }
+    if ( $has_content ) {
+      $new_content .= $task_content;
+    }
+  }
+  warn "NEW CONTENT:\n$new_content\n\n"; # XXX
+
+  if ( ! $Template->Id ) {
+    my ( $val, $msg ) = $Template->Create(
+      Queue           => $Queue,
+      Name            => $TEMPLATE_NAME,
+      Description     => 'Subtask tickets',
+      Type            => 'Perl',
+      Content         => $new_content,
+    );
+    if (!$val) {
+      push @results, loc("Could not create template: [_1]", $msg);
+    } else {
+      push @results, loc("Template created");
+    }
+  } elsif ( $Template->Content ne $new_content ) { # template needs updating
+    my ( $val, $msg ) = $Template->SetContent($new_content);
+    if (!$val) {
+      push @results, loc("Could not update template: [_1]", $msg);
+    } else {
+      push @results, loc("Template updated");
+    }
+  }
+
+  # Set up ScripCondition
+  if ( !$cfname ) {
+    push @results, loc("No custom field selected");
+  } elsif ( length($cfvalue) == 0 ) {
+    push @results, loc("Custom field value is required");
+  } elsif ( ! $ScripCondition->Id ) {
+    my ( $val, $msg ) = $ScripCondition->Create(
+      Name            => $SCRIPCONDITION_NAME,
+      Description     => "When CF.[$cfname] equals '$cfvalue'",
+      ExecModule      => 'CustomFieldEquals',
+      Argument        => "$cfname=$cfvalue",
+      ApplicableTransTypes => 'Any',
+    );
+    if (!$val) {
+      push @results, loc("Could not create custom field condition: [_1]", $msg);
+    } else {
+      push @results, loc("Custom field condition created");
+    }
+  } elsif ( $ScripCondition->Argument ne "$cfname=$cfvalue" ) {
+    my ( $val, $msg ) = $ScripCondition->SetArgument("$cfname=$cfvalue");
+    if (!$val) {
+      push @results, loc("Could not set custom field condition: [_1]", $msg);
+    } else {
+      push @results, loc("Custom field condition set");
+    }
+  }
+
+  # Set up Scrip
+  if ( $Template->Id and ! $Scrip->Id ) {
+    my ($val, $msg) = $Scrip->Create(
+      Queue           => $Queue,
+      Template        => $Template->Id,
+      Description     => 'Create subtasks for ' . $QueueObj->Name,
+      ScripCondition  => $ScripCondition->Id,
+      ScripAction     => 'Create Tickets',
+    );
+    if (!$val) {
+      push @results, loc("Could not create scrip: [_1]", $msg);
+    } else {
+      push @results, loc("Scrip created");
+    }
+  } # else don't need to create the scrip
+
+  # even if $new_content is empty, there's no harm in letting the scrip and
+  # template exist with empty content. they just won't do anything.
+}
+
+# CHANGES HAVE BEEN SAVED.
+# Now prepare to (re-)display the form.
+
+# ask RT::Action::CreateTickets how it will parse the template
+my $action_class = 'RT::Action::CreateTickets';
+$action_class->require;
+my $Action = $action_class->new(
+  CurrentUser    => $session{'CurrentUser'},
+);
+# this will populate $Action with the 'create_tickets' hash
+warn $Template->Content;
+$Action->Parse(
+  Content         => $Template->Content,
+  _ActiveContent  => 0,
+);
+warn Dumper \$Action;
+my @task_ids;
+@task_ids = @{ $Action->{create_tickets} } if exists $Action->{create_tickets};
+
+my $PossibleCustomFields = $QueueObj->TicketCustomFields;
+
+</%init>
+<%ARGS>
+$Queue => undef         #queue id
+</%ARGS>
