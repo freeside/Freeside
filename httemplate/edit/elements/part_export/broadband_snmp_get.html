@@ -1,0 +1,77 @@
+<%doc>
+Quite a bit of false laziness with edit/elements/part_export/broadband_snmp.html
+</%doc>
+<& head.html, %opt &>
+<INPUT TYPE="hidden" NAME="options" VALUE="snmp_community,snmp_version,snmp_timeout">
+<& /elements/tr-select.html,
+  label   => 'SNMP version',
+  field   => 'snmp_version',
+  options => [ '1', '2c' ],
+  curr_value => $part_export->option('version') 
+&>
+<& /elements/tr-input-text.html,
+  label   => 'Community',
+  field   => 'snmp_community',
+  curr_value  => $part_export->option('community') || $opt{'export_info'}->{'options'}->{'snmp_community'}->{'default'},
+&>
+<& /elements/tr-input-text.html,
+  label   => 'Timeout (seconds)',
+  field   => 'snmp_timeout',
+  curr_value  => $part_export->option('timeout') || $opt{'export_info'}->{'options'}->{'snmp_timeout'}->{'default'},
+&>
+</TABLE>
+<script type="text/javascript">
+function open_select_mib_get(obj) {
+  nd(1); // if there's already one open, close it
+  var rownum = obj.rownum;
+  var curr_oid = obj.form.elements['snmp_oid' + rownum].value || '';
+  var url = '<%$fsurl%>misc/select-mib-popup.html?' +
+            'callback=receive_mib_get;' +
+            'arg=' + rownum +
+            ';curr_value=' + curr_oid;
+  overlib(
+    OLiframeContent(url, 550, 450, '<% $popup_name %>', 0, 'auto'),
+    CAPTION, 'Select MIB object', STICKY, AUTOSTATUSCAP,
+    MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK,
+    BGCOLOR, '#333399', CGCOLOR, '#333399',
+    CLOSETEXT, 'Close'
+  );
+}
+function receive_mib_get(obj, rownum) {
+  var oidfield = document.getElementById('snmp_oid'+rownum);
+  oidfield.value = obj.fullname;
+  oidfield.onchange();
+}
+</script>
+
+<table bgcolor="#cccccc" border=0 cellspacing=3>
+<TR><TH>Object ID</TH></TR>
+<TR id="broadband_snmp_get_template">
+  <TD>
+    <INPUT NAME="oid" ID="oid" SIZE="54">
+    <INPUT TYPE="button" VALUE="..." ID="openselector" onclick="open_select_mib_get(this)">
+  </TD>
+</TR>
+<& /elements/auto-table.html,
+  template_row  => 'broadband_snmp_get_template',
+  fieldorder    => ['oid'],
+  data          => \@data,
+  table         => 'snmp',
+&>
+<INPUT TYPE="hidden" NAME="multi_options" VALUE="snmp_oid">
+<& foot.html, %opt &>
+<%init>
+my %opt = @_;
+
+my $part_export = $opt{part_export} || FS::part_export->new;
+
+my @oids    = split("\n", $part_export->option('snmp_oid'));
+
+my @data;
+while (@oids) {
+  my @thisrow = (shift(@oids));
+  push @data, \@thisrow if grep length($_), @thisrow;
+}
+
+my $popup_name = 'popup-'.time."-$$-".rand() * 2**32;
+</%init>
