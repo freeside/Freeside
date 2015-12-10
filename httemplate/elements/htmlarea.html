@@ -20,7 +20,8 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
-  CKEDITOR.replace('<% $opt{'field'} %>',
+  var <% $opt{'field'} %>_editor =
+    CKEDITOR.replace('<% $opt{'field'} %>',
                    <% encode_json($config) %>
   );
 
