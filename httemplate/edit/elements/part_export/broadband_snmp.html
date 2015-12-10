@@ -11,7 +11,7 @@
 <& /elements/tr-input-text.html,
   label   => 'Community',
   field   => 'community',
-  curr_value  => $part_export->option('community'),
+  curr_value  => $part_export->option('community') || $opt{'export_info'}->{'options'}->{'community'}->{'default'},
 &>
 <& /elements/tr-checkbox.html,
   label   => 'Send IP address changes to new address',
@@ -30,7 +30,7 @@ function open_select_mib(obj) {
   nd(1); // if there's already one open, close it
   var rownum = obj.rownum;
   var curr_oid = obj.form.elements['oid' + rownum].value || '';
-  var url = '<%$fsurl%>/elements/select-mib-popup.html?' +
+  var url = '<%$fsurl%>misc/select-mib-popup.html?' +
             'callback=receive_mib;' +
             'arg=' + rownum +
             ';curr_value=' + curr_oid;
@@ -45,8 +45,10 @@ function open_select_mib(obj) {
 function receive_mib(obj, rownum) {
   //console.log(JSON.stringify(obj));
   // we don't really need the numeric OID or any of the other properties
-  document.getElementById('oid'+rownum).value = obj.fullname;
+  var oidfield =   document.getElementById('oid'+rownum);
+  oidfield.value = obj.fullname;
   document.getElementById('datatype'+rownum).value = obj.type;
+  oidfield.onchange(); //should be same as datatype, only need to run one
 }
 </script>
 

@@ -72,6 +72,7 @@ sub ip_addr {
   my $out = $ip_addr;
   $out .= ' (' . include('/elements/popup_link-ping.html', ip => $ip_addr) . ')'
     if $ip_addr;
+  $out .= include('/elements/broadband_snmp_get-dialog.html', svc => $svc);
   if ($svc->cust_svc->part_svc->part_export('cacti')) {
     $out .= ' (<A HREF="'
          .  popurl(2)
