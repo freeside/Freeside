@@ -8,9 +8,10 @@ my $vertices_json = $opt{'curr_value'} || '[]';
 </%init>
 <& hidden.html, %opt &>
 <div id="<% $div_id %>" style="height: 600px; width: 600px"></div>
+<div id="<% $div_id %>_hint" style="width: 100%; border: 2px solid black; text-align: center; box-sizing: border-box; padding: 4px">&nbsp;</div>
 
 <script src="<% $fsurl %>elements/jquery.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?libraries=drawing&v=2"></script>
+<script src="https://maps.googleapis.com/maps/api/js?libraries=drawing&v=3.22"></script>
 <script>
 var map;
 var drawingManager;
@@ -35,7 +36,13 @@ $(function() {
     scaleControl: true,
     streetViewControl: false,
   };
-  map = new google.maps.Map($('#<% $div_id %>')[0], mapOptions);
+  var div_map = $('#<% $div_id %>');
+  var div_hint = $('#<% $div_id %>_hint');
+  map = new google.maps.Map(div_map[0], mapOptions);
+
+  var set_hint = function(txt) {
+    div_hint.text(txt);
+  }
 
   var polygonComplete = function(p) {
     window.polygon = p;
@@ -56,6 +63,9 @@ $(function() {
 
     // and also now
     updateFormInput();
+
+    set_hint('Edit the zone by dragging the markers. Double-click to remove a vertex.');
+
   };
 
   var polygonOptions = {
@@ -119,6 +129,8 @@ $(function() {
         map.setZoom(12);
       });
     } // on error, or if geolocation isn't available, do nothing
+
+    set_hint('Click to place the corners of the zone.');
   }
 
 });
