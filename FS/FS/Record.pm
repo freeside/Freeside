@@ -1583,18 +1583,6 @@ sub replace {
     }
   }
 
-  # SHA256 hash for replace
-  $saved = {};
-  if (    $conf_hashsalt
-       && defined(eval '@FS::'. $new->table . '::hashed_fields')
-       && scalar( eval '@FS::'. $new->table . '::hashed_fields')
-  ) {
-    foreach my $field (eval '@FS::'. $new->table . '::hashed_fields') {
-      $saved->{$field} = $new->getfield($field);
-      $new->setfield($field, sha256_hex($new->getfield($field).$conf_hashsalt));
-    }
-  }
-
   #my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
   my %diff = map { ($new->getfield($_) ne $old->getfield($_))
                    ? ($_, $new->getfield($_)) : () } $old->fields;

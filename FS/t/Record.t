@@ -4,7 +4,7 @@ use FS::Conf;
 use Data::Dumper qw( Dumper );
 use FS::UID qw( adminsuidsetup );
 use Digest::SHA qw(sha256_hex);
-use Test::More tests => 26;
+use Test::More tests => 11;
 
 # Stock freeside does equivalent of the following
 BEGIN { use_ok('FS::Record') }
@@ -23,7 +23,7 @@ USAGE
 }
 
 SKIP: {
-    skip 'test(s) if not run as freeside user or if DB adminuser unspecified', 25 
+    skip 'test(s) if not run as freeside user or if DB adminuser unspecified', 10 
         if ($< != $freeside_uid) || !length($adminuser);
 
     require_ok('FS::access_user_session');
@@ -47,19 +47,6 @@ SKIP: {
     ok(scalar @records == 1,'qsearch finds single matching record just inserted');
     cmp_ok($records[0]->sessionkey,'eq',$cookie,'Unhashed sessionkey matches');
 
-    my $record2 = new FS::access_user_session { # Record 2 will replace record 1
-        usernum => 3,
-        sessionkey => $cookie,
-        start_date => 2,
-        sessionnum => $record1->{'Hash'}->{'sessionnum'},	
-    };
-    $error = $record2->replace($record1);
-    ok(!$error, 'Replace unhashed record in access_user_session with different start_date') or diag explain $error,$record2,$record1;
-    @records = FS::Record::qsearch( access_user_session => { sessionkey => $cookie } );
-    ok(scalar @records == 1,'qsearch finds single matching record just replaced');
-    cmp_ok($records[0]->sessionkey,'eq',$cookie,'Unhashed sessionkey matches after replacing');
-    cmp_ok($records[0]->start_date,'==',2,'Replaced record has new start_date');
-
     # 2. First salt
     local $FS::Record::conf_hashsalt = 'test it'; 
     my $saltrecord1 = new FS::access_user_session {
@@ -75,19 +62,6 @@ SKIP: {
     ok(scalar @records == 1,'qsearch finds single matching record just inserted with first salt');
     cmp_ok($records[0]->sessionkey,'eq',$shacookie1,'First salted sessionkey matches');
 
-    my $saltrecord2 = new FS::access_user_session {
-        usernum => 3,
-        sessionkey => $cookie,
-        start_date => 2,	# Increment start date for replace
-        sessionnum => $saltrecord1->{'Hash'}->{'sessionnum'},	
-    };
-    $error = $saltrecord2->replace($saltrecord1);
-    ok(!$error, 'Replace hashed record (salted with 1st salt) in access_user_session with different start_date') or diag explain $error,$saltrecord2,$saltrecord1;
-    @records = FS::Record::qsearch( access_user_session => { sessionkey => $cookie } );
-    ok(scalar @records == 1,'qsearch finds single matching record (salted with 1st salt) just replaced');
-    cmp_ok($records[0]->sessionkey,'eq',$shacookie1,'First Hashed sessionkey matches');
-    cmp_ok($records[0]->start_date,'==',2,'Replaced record has new start date');
-
     # 3. Salt no. 2
     local $FS::Record::conf_hashsalt = 'test it2'; 
     my $salt2record1 = new FS::access_user_session {
@@ -102,34 +76,5 @@ SKIP: {
     @records = FS::Record::qsearch( access_user_session => { sessionkey => $cookie } );
     ok(scalar @records == 1,'qsearch finds single matching record (salted with 2nd salt) just inserted with second salt');
     cmp_ok($records[0]->sessionkey,'eq',$shacookie2,'Second salted sessionkey matches (salted with 2nd salt) matches');
-
-    my $salt2record2 = new FS::access_user_session {
-        usernum => 3,
-        sessionkey => $cookie,
-        start_date => 2,	# Increment start date for replace
-        sessionnum => $salt2record1->{'Hash'}->{'sessionnum'},	
-    };
-    $error = $salt2record2->replace($salt2record1);
-    ok(!$error, 'Replace 2nd hashed record (salted with 2nd salt) access_user_session with different start_date') or diag explain $error,$salt2record2,$salt2record1;
-    @records = FS::Record::qsearch( access_user_session => { sessionkey => $cookie } );
-    ok(scalar @records == 1,'qsearch finds single matching record (salted with 2nd salt) just replaced');
-    cmp_ok($records[0]->sessionkey,'eq',$shacookie2,'2nd hashed cookie matches');
-    cmp_ok($records[0]->start_date,'==',2,'Replaced record has new start date');
-
-    # 4. No salt ... again
-    # Update the unsalted (unhashed) record in step 1. 
-    local $FS::Record::conf_hashsalt = ''; 
-    my $record3 = new FS::access_user_session {
-        usernum => 3,
-        sessionkey => $cookie,
-        start_date => 4,	# Increment start date for replace
-        sessionnum => $record1->{'Hash'}->{'sessionnum'},	
-    };
-    $error = $record3->replace($record2);
-    ok(!$error, 'Replace unhashed record (2nd time around) in access_user_session with different start_date') or diag explain $error,$record3,$record2;
-    @records = FS::Record::qsearch( access_user_session => { sessionkey => $cookie } );
-    cmp_ok($records[0]->sessionkey,'eq',$cookie,'2nd time around, able to replace original plain cookie/sessionnum');
-    cmp_ok($records[0]->start_date,'==',4,'2nd time around, replaced record has even newer start_date');
-
 }
 
