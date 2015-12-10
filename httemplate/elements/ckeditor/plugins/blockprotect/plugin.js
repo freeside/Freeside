@@ -133,7 +133,20 @@
                             } // span function
                           } // elements
                         });
-                }
+
+                        editor.on( 'afterInsertHtml', function( evt ) {
+                          // if this leaves an open SPAN, move the cursor
+                          // to after it
+                          var range = editor.getSelection().getRanges()[0];
+                          var ec = range.endContainer;
+                          if ( ec.hasClass('cke_blockprotect') ) {
+                            range.setEndAfter(ec);
+                            range.collapse();
+                            editor.getSelection().selectRanges([ range ]);
+                          }
+                        });
+
+                } // afterInit
         }); // plugins.add
 }) ();
 
