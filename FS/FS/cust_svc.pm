@@ -1252,7 +1252,7 @@ sub _check_provision_hold {
 
   # check status of cust_pkg
   my $cust_pkg = $self->cust_pkg;
-  return '' unless $cust_pkg->status eq 'on hold';
+  return '' unless $cust_pkg && $cust_pkg->status eq 'on hold';
 
   # check flag on this svc
   # small false laziness with $self->pkg_svc
