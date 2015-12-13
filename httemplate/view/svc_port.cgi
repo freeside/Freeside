@@ -42,9 +42,16 @@ my $html_foot = sub {
     my $url = $nms->port_graphs_link($svc_port->serviceid);
     my $link = $url ? qq(<A HREF="$url">Torrus Graphs</A><BR><BR>) : '';
 
-    if($start && $end) {
-	$graph = "<BR><BR><IMG SRC=${p}/view/port_graph.html?svcnum=$svcnum;".
-		"start=".str2time("$start 00:00:00").";end=".str2time("$end 23:59:59").">";
+    if ( $start && $end ) {
+        my($s, $e) = ($start, $end);
+        if ( $date_format eq '%d/%m/%Y' ) {
+          $start =~ /^\s*(\d+)\D+(\d+)\D+(\d+)\s*$/ and $s = "$2/$1/$3";
+          $end   =~ /^\s*(\d+)\D+(\d+)\D+(\d+)\s*$/ and $e = "$2/$1/$3";
+        }
+        $graph = "<BR><BR><IMG SRC=${p}/view/port_graph.html?svcnum=$svcnum".
+                                  ";start=".str2time("$s 00:00:00").
+                                  ";end=".  str2time("$e 23:59:59").
+                         ">";
     }
 
     return '
