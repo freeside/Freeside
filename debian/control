@@ -133,7 +133,7 @@ Description: Integrated network monitoring and billing
 
 Package: freeside-selfservice-ui
 Architecture: all
-Depends: freeside-selfservice-lib,apache2-suexec-custom,apache2
+Depends: freeside-selfservice-lib,apache2-suexec-custom,libjson-perl,apache2
 Description: Self-service portal html/cgi filesfor Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
  .

@@ -77,8 +77,7 @@ if ( -e $addl_handler_use_file ) {
   use HTML::TableExtract qw(tree);
   use HTML::FormatText;
   use HTML::Defang;
-#  use JSON::XS;        ! Maintainers deployed app-breaking defaults,
-  use Cpanel::JSON::XS; # this is considered safe compatible drop-in replacement
+  use Cpanel::JSON::XS;
 #  use XMLRPC::Transport::HTTP;
 #  use XMLRPC::Lite; # for XMLRPC::Serializer
   use MIME::Base64;

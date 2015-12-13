@@ -6,7 +6,7 @@ use vars qw( $me );
 use IO::Socket::SSL;
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use FS::Misc::DateTime qw( iso8601 );
 
 $me = '[FS::part_event::Action::http]';

@@ -7,7 +7,7 @@ use Tie::IxHash;
 use LWP::UserAgent;
 use URI;
 use URI::Escape;
-use JSON;
+use Cpanel::JSON::XS;
 use HTTP::Request::Common;
 use Cache::FileCache;
 use FS::Record qw(dbh);

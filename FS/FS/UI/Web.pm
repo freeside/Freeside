@@ -739,8 +739,7 @@ use vars qw($DEBUG);
 use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
-#use JSON::XS;        ! maintainers deployed app breaking changes
-use Cpanel::JSON::XS; # safe, compatible drop-in replacement
+use Cpanel::JSON::XS;
 use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs);
 use FS::queue;

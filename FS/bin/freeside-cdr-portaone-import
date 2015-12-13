@@ -5,7 +5,7 @@ use strict;
 use Date::Format 'time2str';
 use Date::Parse 'str2time';
 use Getopt::Long;
-use JSON;
+use Cpanel::JSON::XS;
 use Net::HTTPS::Any qw(https_post);
 use Time::Local;
 

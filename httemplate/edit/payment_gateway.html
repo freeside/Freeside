@@ -39,7 +39,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $json = JSON::XS->new;
+my $json = Cpanel::JSON::XS->new;
 $json->canonical(1);
 my %modules = (
   'Business::OnlinePayment' => [
