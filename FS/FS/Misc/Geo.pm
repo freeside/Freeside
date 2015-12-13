@@ -7,7 +7,7 @@ use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common qw( GET POST );
 use HTML::TokeParser;
-use JSON;
+use Cpanel::JSON::XS;
 use URI::Escape 3.31;
 use Data::Dumper;
 use FS::Conf;

@@ -8,11 +8,11 @@ use FS::cust_pkg;
 use FS::cust_location;
 use FS::cust_bill_pkg;
 use FS::tax_rate;
-use JSON;
+use Cpanel::JSON::XS;
 use Geo::StreetAddress::US;
 
 our $DEBUG = 0;
-our $json = JSON->new->pretty(1);
+our $json = Cpanel::JSON::XS->new->pretty(1);
 
 our $conf;
 

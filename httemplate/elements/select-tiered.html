@@ -124,7 +124,7 @@ my %opt = @_;
 my $pre = $opt{prefix} || '';
 my $tiers = $opt{tiers} or die "no tiers defined";
 
-my $json = JSON::XS->new();
+my $json = Cpanel::JSON::XS->new();
 $json->canonical;
 
 my $i;

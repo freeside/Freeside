@@ -6,7 +6,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 use Storable qw(thaw);
 use MIME::Base64;
 
-use JSON qw(encode_json decode_json) ;
+use Cpanel::JSON::XS;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 

@@ -7,7 +7,7 @@ use Tie::IxHash;
 use URI::Escape;
 use LWP::UserAgent;
 use URI::Escape;
-use JSON;
+use Cpanel::JSON::XS;
 
 use FS::Record qw( qsearch qsearchs );
 
@@ -214,7 +214,7 @@ sub insert_gateway {
   my $content = {
     ContactIPAddress  => $svc_x->ip_addr,
     ContactPort       => 5060,
-    IPMatchRequired   => JSON::true,
+    IPMatchRequired   => Cpanel::JSON::XS::true,
     SipDomainName     => $self->option('proxy'),
     SipTrunkType      => $self->option('trunktype'),
     SipUsername       => $trunknum,
@@ -270,7 +270,7 @@ sub insert_trunk {
   my $endpoint = "SipTrunks";
   my $content = {
     Account           => $self->option('username'),
-    Enabled           => JSON::true,
+    Enabled           => Cpanel::JSON::XS::true,
     Label             => $svc_x->phone_name_or_cust,
     Locale            => $locales{$self->option('locale')},
     MaxChannels       => $svc_x->max_simultaneous,
@@ -325,7 +325,7 @@ sub replace_trunk {
   my $self = FS::part_export->by_key($exportnum);
   my $svc_x = FS::svc_phone->by_key($svcnum);
 
-  my $enabled = JSON::is_bool( $self->cust_svc->cust_pkg->susp == 0 );
+  my $enabled = Cpanel::JSON::XS::is_bool( $self->cust_svc->cust_pkg->susp == 0 );
 
   my $phonenum = $svc_x->phonenum;
   my $endpoint = "SipTrunks/$phonenum";
@@ -398,7 +398,7 @@ sub replace_gateway {
     ContactIPAddress  => $svc_x->ip_addr,
     ContactPort       => 5060,
     ID                => $binding_id,
-    IPMatchRequired   => JSON::true,
+    IPMatchRequired   => Cpanel::JSON::XS::true,
     Name              => $binding_name,
     SipDomainName     => $self->option('proxy'),
     SipTrunkType      => $self->option('trunktype'),
@@ -606,7 +606,7 @@ have a 'Message' element.
 sub api_request {
   my $self = shift;
   my ($method, $endpoint, $content) = @_;
-  my $json = JSON->new->canonical(1); # hash keys are ordered
+  my $json = Cpanel::JSON::XS->new->canonical(1); # hash keys are ordered
 
   $DEBUG ||= 1 if $self->option('debug');
 

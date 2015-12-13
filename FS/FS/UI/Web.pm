@@ -655,7 +655,7 @@ use vars qw($DEBUG);
 use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use FS::CurrentUser;
 use FS::Record qw(qsearchs);
 use FS::queue;

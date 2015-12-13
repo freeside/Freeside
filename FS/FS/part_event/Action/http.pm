@@ -1,11 +1,15 @@
 package FS::part_event::Action::http;
+use base qw( FS::part_event::Action );
 
 use strict;
-use base qw( FS::part_event::Action );
+use vars qw( $me );
+use Data::Dumper;
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use FS::Misc::DateTime qw( iso8601 );
+
+$me = '[FS::part_event::Action::http]';
 
 #sub description { 'Send an HTTP or HTTPS GET or POST request'; }
 sub description { 'Send an HTTP or HTTPS POST request'; }
@@ -37,6 +41,10 @@ sub option_fields {
                          type  => 'textarea',
                        },
     #'response_error_param' => 'Response error parameter',
+    'debug'         => { label => 'Enable debugging',
+                         type  => 'checkbox',
+                         value => 1,
+                       },
   );
 }
 
@@ -73,6 +81,9 @@ sub do_action {
     Content      => $content,
   );
 
+  if ( $self->option('debug') ) {
+    
+  }
   my $response = $ua->request($req);
 
   die $response->status_line if $response->is_error;

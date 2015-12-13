@@ -4,7 +4,7 @@ use strict;
 use base 'FS::TaxEngine';
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbh);
-use JSON;
+use Cpanel::JSON::XS;
 use XML::Simple qw(XMLin);
 use LWP::UserAgent;
 use HTTP::Request::Common;
@@ -14,7 +14,7 @@ our $DEBUG = 1; # prints progress messages
 #   $DEBUG = 2; # prints decoded request and response (noisy, be careful)
 #   $DEBUG = 3; # prints raw response from the API, ridiculously unreadable
 
-our $json = JSON->new->pretty(1);
+our $json = Cpanel::JSON::XS->new->pretty(1);
 
 our %taxproduct_cache;
 

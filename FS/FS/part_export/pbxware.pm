@@ -5,7 +5,7 @@ use strict;
 
 use Tie::IxHash;
 use LWP::UserAgent;
-use JSON;
+use Cpanel::JSON::XS;
 use HTTP::Request::Common;
 use Digest::MD5 qw(md5_hex);
 use FS::Record qw(dbh);

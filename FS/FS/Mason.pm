@@ -77,7 +77,7 @@ if ( -e $addl_handler_use_file ) {
   use HTML::TableExtract qw(tree);
   use HTML::FormatText;
   use HTML::Defang;
-  use JSON::XS;
+  use Cpanel::JSON::XS;
   use MIME::Base64;
   use IO::Handle;
   use IO::File;

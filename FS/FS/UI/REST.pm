@@ -3,7 +3,7 @@ use base qw( Exporter );
 
 use strict;
 use vars qw( @EXPORT_OK );
-use JSON::XS;
+use Cpanel::JSON::XS;
 use FS::UID qw( adminsuidsetup );
 use FS::Conf;
 
