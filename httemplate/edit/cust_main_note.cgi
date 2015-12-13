@@ -26,7 +26,7 @@
     <& /elements/htmlarea.html,
          'field'      => 'comment_html',
          'curr_value' => $comment,
-         'config'     => { toolbarStartupExpanded => JSON::false,
+         'config'     => { toolbarStartupExpanded => Cpanel::JSON::XS::false,
                            height                 => 315,
                          },
     &>

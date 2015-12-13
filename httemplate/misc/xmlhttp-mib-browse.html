@@ -1,5 +1,5 @@
 %#<% Data::Format::HTML->new->format($index{by_path}) %>
-% my $json = "JSON"->new->canonical;
+% my $json = Cpanel::JSON::XS->new->canonical;
 <% $json->encode($result) %>
 <%init>
 #<%once>  #enable me in production

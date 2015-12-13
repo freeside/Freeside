@@ -7,7 +7,7 @@ use vars qw( $DEBUG $conf );
 # needed to talk to the external service
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use JSON;
+use Cpanel::JSON::XS;
 
 # needed to manage prepared messages
 use FS::cust_msg;
@@ -45,7 +45,7 @@ sub prepare {
 
   my( $self, %opt ) = @_;
 
-  my $json = JSON->new->canonical(1);
+  my $json = Cpanel::JSON::XS->new->canonical(1);
 
   my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
   my $object = $opt{'object'} or die 'object required';
