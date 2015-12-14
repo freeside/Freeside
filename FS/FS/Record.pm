@@ -22,7 +22,7 @@ use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
 #use FS::Conf; #dependency loop bs, in install_callback below instead
-use Digest::SHA qw(sha256_hex);
+use Digest::SHA qw(sha512_hex);
 
 use FS::part_virtual_field;
 
@@ -433,7 +433,7 @@ sub qsearch {
     ) {
 
       my $value = $record->{$field};
-      # If searching for the user session, search for SHA256'ed
+      # If searching for the user session, search for SHA512'ed
       # (Also works for other ::hashed_fields ...)
       if (   $conf_hashsalt
           && defined(eval '@FS::'. $stable . '::hashed_fields')
@@ -441,7 +441,7 @@ sub qsearch {
       ) {
         foreach my $hashed_field_name (eval '@FS::'. $stable . '::hashed_fields') {
           next if $hashed_field_name ne $field; # continue if this isn't a hashed field
-          $value = sha256_hex($value.$conf_hashsalt);
+          $value = sha512_hex($value.$conf_hashsalt);
         }
       }
 
@@ -1329,14 +1329,14 @@ sub insert {
     }
   }
 
-  # SHA256 before the database
+  # SHA512 before the database
   if (    $conf_hashsalt
        && defined(eval '@FS::'. $table . '::hashed_fields')
        && scalar( eval '@FS::'. $table . '::hashed_fields')
   ) {
     foreach my $field (eval '@FS::'. $table . '::hashed_fields') {
       $saved->{$field} = $self->getfield($field);
-      $self->setfield($field, sha256_hex($self->getfield($field).$conf_hashsalt));
+      $self->setfield($field, sha512_hex($self->getfield($field).$conf_hashsalt));
     }
   }
 
