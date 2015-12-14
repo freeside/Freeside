@@ -2134,7 +2134,8 @@ sub tables_hashref {
         'refund',       @money_type, '', '', 
         'otaker',       'varchar',   'NULL',   32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',
-        'reason',       'varchar',   '',   $char_d, '', '', 
+        'reason',       'varchar',   'NULL',   $char_d, '', '', 
+        'reasonnum',   'int', 'NULL', '', '', '',
         'payby',        'char',   '',     4, '', '', # CARD/BILL/COMP, should
                                                      # be index into payby
                                                      # table eventually

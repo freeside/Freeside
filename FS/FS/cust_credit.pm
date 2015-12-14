@@ -1,7 +1,9 @@
 package FS::cust_credit;
 
 use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::reason_Mixin
+             FS::Record );
+
 use vars qw( $conf $unsuspendauto $me $DEBUG
              $otaker_upgrade_kludge $ignore_empty_reasonnum
            );
@@ -155,16 +157,23 @@ sub insert {
   my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
   my $old_balance = $cust_main->balance;
 
-  unless ($self->reasonnum) {
-    my $result = $self->reason( $self->getfield('reason'),
-                                exists($options{ 'reason_type' })
-                                  ? ('reason_type' => $options{ 'reason_type' })
-                                  : (),
-                              );
-    unless($result) {
+  if (!$self->reasonnum) {
+    my $reason_text = $self->get('reason')
+      or return "reason text or existing reason required";
+    my $reason_type = $options{'reason_type'}
+      or return "reason type required";
+
+    local $@;
+    my $reason = FS::reason->new_or_existing(
+      reason => $reason_text,
+      type   => $reason_type,
+      class  => 'R',
+    );
+    if ($@) {
       $dbh->rollback if $oldAutoCommit;
-      return "failed to set reason for $me"; #: ". $dbh->errstr;
+      return "failed to set credit reason: $@";
     }
+    $self->set('reasonnum', $reason->reasonnum);
   }
 
   $self->setfield('reason', '');
@@ -460,57 +469,11 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
-
 =item reason
 
 Returns the text of the associated reason (see L<FS::reason>) for this credit.
 
 =cut
-
-sub reason {
-  my ($self, $value, %options) = @_;
-  my $dbh = dbh;
-  my $reason;
-  my $typenum = $options{'reason_type'};
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;  # this should already be in
-  local $FS::UID::AutoCommit = 0;            # a transaction if it matters
-
-  if ( defined( $value ) ) {
-    my $hashref = { 'reason' => $value };
-    $hashref->{'reason_type'} = $typenum if $typenum;
-    my $addl_from = "LEFT JOIN reason_type ON ( reason_type = typenum ) ";
-    my $extra_sql = " AND reason_type.class='R'"; 
-
-    $reason = qsearchs( { 'table'     => 'reason',
-                          'hashref'   => $hashref,
-                          'addl_from' => $addl_from,
-                          'extra_sql' => $extra_sql,
-                       } );
-
-    if (!$reason && $typenum) {
-      $reason = new FS::reason( { 'reason_type' => $typenum,
-                                  'reason' => $value,
-                                  'disabled' => 'Y', 
-                              } );
-      my $error = $reason->insert;
-      if ( $error ) {
-        warn "error inserting reason: $error\n";
-        $reason = undef;
-      }
-    }
-
-    $self->reasonnum($reason ? $reason->reasonnum : '') ;
-    warn "$me reason used in set mode with non-existant reason -- clearing"
-      unless $reason;
-  }
-  $reason = qsearchs( 'reason', { 'reasonnum' => $self->reasonnum } );
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  ( $reason ? $reason->reason : '' ).
-  ( $self->addlinfo ? ' '.$self->addlinfo : '' );
-}
 
 # _upgrade_data
 #
@@ -521,56 +484,9 @@ sub _upgrade_data {  # class method
 
   warn "$me upgrading $class\n" if $DEBUG;
 
+  $class->_upgrade_reasonnum(%opts);
+
   if (defined dbdef->table($class->table)->column('reason')) {
-
-    warn "$me Checking for unmigrated reasons\n" if $DEBUG;
-
-    my @cust_credits = qsearch({ 'table'     => $class->table,
-                                 'hashref'   => {},
-                                 'extra_sql' => 'WHERE reason IS NOT NULL',
-                              });
-
-    if (scalar(grep { $_->getfield('reason') =~ /\S/ } @cust_credits)) {
-      warn "$me Found unmigrated reasons\n" if $DEBUG;
-      my $hashref = { 'class' => 'R', 'type' => 'Legacy' };
-      my $reason_type = qsearchs( 'reason_type', $hashref );
-      unless ($reason_type) {
-        $reason_type  = new FS::reason_type( $hashref );
-        my $error   = $reason_type->insert();
-        die "$class had error inserting FS::reason_type into database: $error\n"
-          if $error;
-      }
-
-      $hashref = { 'reason_type' => $reason_type->typenum,
-                   'reason' => '(none)'
-                 };
-      my $noreason = qsearchs( 'reason', $hashref );
-      unless ($noreason) {
-        $hashref->{'disabled'} = 'Y';
-        $noreason = new FS::reason( $hashref );
-        my $error  = $noreason->insert();
-        die "can't insert legacy reason '(none)' into database: $error\n"
-          if $error;
-      }
-
-      foreach my $cust_credit ( @cust_credits ) {
-        my $reason = $cust_credit->getfield('reason');
-        warn "Contemplating reason $reason\n" if $DEBUG > 1;
-        if ($reason =~ /\S/) {
-          $cust_credit->reason($reason, 'reason_type' => $reason_type->typenum)
-            or die "can't insert legacy reason $reason into database\n";
-        }else{
-          $cust_credit->reasonnum($noreason->reasonnum);
-        }
-
-        $cust_credit->setfield('reason', '');
-        my $error = $cust_credit->replace;
-
-        warn "*** WARNING: error replacing reason in $class ".
-             $cust_credit->crednum. ": $error ***\n"
-          if $error;
-      }
-    }
 
     warn "$me Ensuring existance of auto reasons\n" if $DEBUG;
 

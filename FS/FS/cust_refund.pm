@@ -2,8 +2,8 @@ package FS::cust_refund;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
-             FS::Record );
-use vars qw( @encrypted_fields );
+             FS::reason_Mixin FS::Record );
+use vars qw( @encrypted_fields $me $DEBUG $ignore_empty_reasonnum );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw( qsearch qsearchs dbh );
@@ -12,6 +12,13 @@ use FS::cust_credit;
 use FS::cust_credit_refund;
 use FS::cust_pay_refund;
 use FS::cust_main;
+use FS::reason_type;
+use FS::reason;
+
+$me = '[ FS::cust_refund ]';
+$DEBUG = 0;
+
+$ignore_empty_reasonnum = 0;
 
 @encrypted_fields = ('payinfo');
 sub nohistory_fields { ('payinfo'); }
@@ -57,7 +64,11 @@ Amount of the refund
 
 =item reason
 
-Reason for the refund
+Text stating the reason for the refund ( deprecated )
+
+=item reasonnum
+
+Reason (see L<FS::reason>)
 
 =item _date
 
@@ -120,7 +131,7 @@ amount of the refund will be created.  In both cases, custnum is optional.
 =cut
 
 sub insert {
-  my $self = shift;
+  my ($self, %options) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -132,6 +143,20 @@ sub insert {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  unless ($self->reasonnum) {
+    my $result = $self->reason( $self->getfield('reason'),
+                                exists($options{ 'reason_type' })
+                                  ? ('reason_type' => $options{ 'reason_type' })
+                                  : (),
+                              );
+    unless($result) {
+      $dbh->rollback if $oldAutoCommit;
+      return "failed to set reason for $me"; #: ". $dbh->errstr;
+    }
+  }
+
+  $self->setfield('reason', '');
 
   if ( $self->crednum ) {
     my $cust_credit = qsearchs('cust_credit', { 'crednum' => $self->crednum } )
@@ -275,11 +300,15 @@ sub check {
     || $self->ut_numbern('custnum')
     || $self->ut_money('refund')
     || $self->ut_alphan('otaker')
-    || $self->ut_text('reason')
+    || $self->ut_textn('reason')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
     || $self->ut_enum('closed', [ '', 'Y' ])
   ;
+  return $error if $error;
+
+  my $method = $ignore_empty_reasonnum ? 'ut_foreign_keyn' : 'ut_foreign_key';
+  $error = $self->$method('reasonnum', 'reason', 'reasonnum');
   return $error if $error;
 
   return "refund must be > 0 " if $self->refund <= 0;
@@ -428,9 +457,61 @@ sub unapplied_sql {
 
 }
 
+=item reason
+
+Returns the text of the associated reason (see L<FS::reason>) for this credit.
+
+=cut
+
+sub reason {
+  my ($self, $value, %options) = @_;
+  my $dbh = dbh;
+  my $reason;
+  my $typenum = $options{'reason_type'};
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;  # this should already be in
+  local $FS::UID::AutoCommit = 0;            # a transaction if it matters
+
+  if ( defined( $value ) ) {
+    my $hashref = { 'reason' => $value };
+    $hashref->{'reason_type'} = $typenum if $typenum;
+    my $addl_from = "LEFT JOIN reason_type ON ( reason_type = typenum ) ";
+    my $extra_sql = " AND reason_type.class='F'";
+
+    $reason = qsearchs( { 'table'     => 'reason',
+                          'hashref'   => $hashref,
+                          'addl_from' => $addl_from,
+                          'extra_sql' => $extra_sql,
+                       } );
+
+    if (!$reason && $typenum) {
+      $reason = new FS::reason( { 'reason_type' => $typenum,
+                                  'reason' => $value,
+                                  'disabled' => 'Y',
+                              } );
+      my $error = $reason->insert;
+      if ( $error ) {
+        warn "error inserting reason: $error\n";
+        $reason = undef;
+      }
+    }
+
+    $self->reasonnum($reason ? $reason->reasonnum : '') ;
+    warn "$me reason used in set mode with non-existant reason -- clearing"
+      unless $reason;
+  }
+  $reason = qsearchs( 'reason', { 'reasonnum' => $self->reasonnum } );
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ( $reason ? $reason->reason : '' ).
+  ( $self->addlinfo ? ' '.$self->addlinfo : '' );
+}
+
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
+  $class->_upgrade_reasonnum(%opts);
   $class->_upgrade_otaker(%opts);
 }
 
