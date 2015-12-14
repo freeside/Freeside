@@ -156,6 +156,22 @@ If you need to continue using the old Form 477 report, turn on the
 
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
+  # generate initial hashsalt (for sessionkeys) if it doesn't exist already
+  my @conf_hashsalt_key = grep { /^hashsalt$/ } map { $_->{'key'} } @FS::Conf::config_items;
+  if (scalar(@conf_hashsalt_key)) { # using hash salts
+    my $hashsalt_entry = qsearchs('conf', { 'name' => 'hashsalt'});
+    unless ($hashsalt_entry) {
+      my $salt_length = int(rand(26)) + 25;  # between 25 an 50 inclusive
+      my @chars = ("A" .. "Z", "a" .. "z", 0 .. 9, qw(! $ % ^ *) );
+      my $init_salt = join("", @chars[ map { rand @chars } ( 1 .. $salt_length ) ]);
+      my $hs = new FS::conf {
+        'name'  => 'hashsalt',
+        'value' => $init_salt,
+      };
+      my $ret = $hs->insert;
+      warn "Unable to insert default hash salt for session keys\n" if $ret;
+    }
+  }
 }
 
 sub upgrade_overlimit_groups {
