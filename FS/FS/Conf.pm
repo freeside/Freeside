@@ -834,7 +834,7 @@ my $validate_email = sub { $_[0] =~
   {
     'key'         => 'hashsalt',
     'section'     => 'billing',
-    'description' => 'Hash salt string (enables hashing of session keys/cookies)',
+    'description' => 'Hash salt string enables hashing of session keys/cookies. Changing salt string will force a new login for all sessions in progress.',
     'type'        => 'text',
   },
 
