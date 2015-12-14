@@ -161,7 +161,7 @@ If you need to continue using the old Form 477 report, turn on the
   if (scalar(@conf_hashsalt_key)) { # using hash salts
     my $hashsalt_entry = qsearchs('conf', { 'name' => 'hashsalt'});
     unless ($hashsalt_entry) {
-      my $salt_length = int(rand(26)) + 25;  # between 25 an 50 inclusive
+      my $salt_length = int(rand(26)) + 25;  # between 25 and 50 inclusive
       my @chars = ("A" .. "Z", "a" .. "z", 0 .. 9, qw(! $ % ^ *) );
       my $init_salt = join("", @chars[ map { rand @chars } ( 1 .. $salt_length ) ]);
       my $hs = new FS::conf {
