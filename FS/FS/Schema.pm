@@ -5623,7 +5623,7 @@ sub tables_hashref {
     'access_user_session' => {
       'columns' => [
         'sessionnum',   'serial',  '',      '', '', '', 
-        'sessionkey',  'varchar',  '', $char_d, '', '',
+        'sessionkey',  'varchar',  '',     128, '', '',
         'usernum',         'int',  '',      '', '', '',
         'start_date', @date_type,               '', '',
         'last_date',  @date_type,               '', '',
