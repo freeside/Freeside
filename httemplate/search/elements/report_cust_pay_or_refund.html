@@ -23,7 +23,7 @@ Examples:
 
   <TR>
     <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1"><% mt('Payment search options') |h %></FONT>
+      <FONT SIZE="+1"><% mt('[_1] search options', ucfirst($name_singular)) |h %></FONT>
     </TH>
   </TR>
 
@@ -50,6 +50,20 @@ Examples:
   </TR>
 
   <& /elements/tr-select-user.html &>
+
+% if ( $has_reason ) {
+%   # limit to reasons that are in use for the table being reported on
+%   # (maybe order by count(*) desc?)
+  <& /elements/tr-select-table.html,
+    label       => emt('Reason'),
+    field       => 'reasonnum',
+    id          => 'reasonnum',
+    table       => 'reason',
+    name_col    => 'reason',
+    extra_sql   => " WHERE EXISTS(SELECT 1 FROM $table WHERE $table.reasonnum = reason.reasonnum) ",
+    empty_label => emt('any'),
+  &>
+% }
 
   <TR>
     <TD ALIGN="right" VALIGN="center"><% mt(ucfirst($name_singular). ' date') |h %></TD>
@@ -165,6 +179,8 @@ my $title = $void ? "Voided $name_singular report" :
             $unapplied ? "Unapplied $name_singular report" :
             "\u$name_singular report" ;
 $table .= '_void' if $void;
+
+my $has_reason = dbdef->table($table)->column('reasonnum');
 
 tie (my %payby, 'Tie::IxHash',
   'CARD-VisaMC'    => 'credit card (Visa/MasterCard)',
