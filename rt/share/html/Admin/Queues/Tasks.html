@@ -4,22 +4,6 @@
 
 <form action="Tasks.html" method="post">
 <input type="hidden" name="Queue" value="<% $Queue %>" />
-<h2>
-  <label for="ConditionCF"><&|/l&>Enabled if</&>:</label>
-% if ( $PossibleCustomFields->Count > 0 ) {
-  <select name="ConditionCF">
-%   while ( my $thiscf = $PossibleCustomFields->Next ) {
-    <option value="<% $thiscf->Id %>" <% $thiscf->Id == $cfid ? 'selected' : '' %>><% $thiscf->Name %></option>
-%   }
-  </select>
-  <label for="ConditionValue"><&|/l&>equals</&></label>
-  <input name="ConditionValue" value="<% $cfvalue %>" />
-% } else {
-  <select name="no_cfs" disabled>
-    <option value="1">(no custom fields defined)</option>
-  </select>
-% }
-</h2>
 <table>
 % my (@links, @postponed); # not really used here
 % my $idx = 1;
@@ -93,6 +77,7 @@ my $title = loc("Set up subtasks for queue [_1]", $QueueObj->Name);
 my $TEMPLATE_NAME = '[Subtask]';
 my $SCRIPCONDITION_NAME = '[Subtask] Queue='.$Queue;
 my $SUBJECT_PREFIX = q({ $TOP->Subject }-);
+my $CUSTOMFIELD_NAME = 'Create subtasks';
 
 my ($Scrip, $ScripCondition, $Template, $CustomField);
 
@@ -118,14 +103,11 @@ $Scrip = RT::Scrip->new($RT::SystemUser);
   }
 }
 
-# The CF name to test, and the value it must have to trigger the scrip.
-my $cfid = $ARGS{ConditionCF};
-my $cfvalue = $ARGS{ConditionValue};
-$CustomField = RT::CustomField->new($session{'CurrentUser'});
-if ( $cfid ) {
-  $CustomField->Load($cfid);
-}
-my $cfname = $CustomField->Name;
+my $CustomField = RT::CustomField->new($RT::SystemUser);
+$CustomField->LoadByName(
+  Name        => $CUSTOMFIELD_NAME,
+  LookupType  => 'RT::Queue-RT::Ticket',
+);
 
 # if there's input from the form, process it into a new template content
 my $new_content = '';
@@ -138,7 +120,7 @@ if ( $ARGS{task_id} ) { # actually contains numeric indices
     my %task_opts = map { $_ => $ARGS{$_} }
                     grep /^$task_id-/, keys(%ARGS);
     my $task_content = "===Create-Ticket: $task_id
-CF-$cfname:" . q[
+CF-$CUSTOMFIELD_NAME" . q[
 Depended-On-By: TOP
 Owner: { $TOP->Owner }
 { join("\n", map { "Requestor: $_" }
@@ -173,6 +155,45 @@ Owner: { $TOP->Owner }
     }
   }
 
+  # set up custom field, if necessary
+  if ( ! $CustomField->Id ) {
+    # should be RenderType 'Checkbox', but there isn't one yet...
+    my ($val, $msg) = $CustomField->Create(
+      Name          => $CUSTOMFIELD_NAME,
+      Type          => 'Select',
+      MaxValues     => 1,
+      LookupType    => 'RT::Queue-RT::Ticket',
+      Description   => 'Start subtasks for this ticket',
+      RenderType    => 'Dropdown',
+    );
+    if ($val) {
+      # should be impossible for this to fail
+      ($val, $msg) = $CustomField->AddValue(Name => 'Yes');
+    }
+    if (!$val) {
+      push @results, loc("Could not create ticket custom field: [_1]", $msg);
+    } else {
+      push @results, loc("Custom field created");
+    }
+  }
+
+  # apply CF to the queue, iff there are any tasks set up
+  if ( length($new_content) and ! $CustomField->IsApplied($Queue) ) {
+    my ($val, $msg) = $CustomField->AddToObject($QueueObj);
+    if (!$val) {
+      push @results, loc("Could not apply custom field to this queue: [_1]", $msg);
+    } else {
+      push @results, loc("Applied custom field to this queue");
+    }
+  } elsif ( ! length($new_content) and $CustomField->IsApplied($Queue) ) {
+    my ($val, $msg) = $CustomField->RemoveFromObject($QueueObj);
+    if (!$val) {
+      push @results, loc("Could not remove custom field from this queue: [_1]", $msg);
+    } else {
+      push @results, loc("Removed custom field from this queue");
+    }
+  }
+
   if ( ! $Template->Id ) {
     my ( $val, $msg ) = $Template->Create(
       Queue           => $Queue,
@@ -196,16 +217,12 @@ Owner: { $TOP->Owner }
   }
 
   # Set up ScripCondition
-  if ( !$cfname ) {
-    push @results, loc("No custom field selected");
-  } elsif ( length($cfvalue) == 0 ) {
-    push @results, loc("Custom field value is required");
-  } elsif ( ! $ScripCondition->Id ) {
+  if ( ! $ScripCondition->Id ) {
     my ( $val, $msg ) = $ScripCondition->Create(
       Name            => $SCRIPCONDITION_NAME,
-      Description     => "When CF.[$cfname] equals '$cfvalue'",
+      Description     => "When CF.[$CUSTOMFIELD_NAME] equals 'Yes'",
       ExecModule      => 'CustomFieldEquals',
-      Argument        => "$cfname=$cfvalue",
+      Argument        => "$CUSTOMFIELD_NAME=Yes",
       ApplicableTransTypes => 'Any',
     );
     if (!$val) {
@@ -213,8 +230,8 @@ Owner: { $TOP->Owner }
     } else {
       push @results, loc("Custom field condition created");
     }
-  } elsif ( $ScripCondition->Argument ne "$cfname=$cfvalue" ) {
-    my ( $val, $msg ) = $ScripCondition->SetArgument("$cfname=$cfvalue");
+  } elsif ( $ScripCondition->Argument ne "$CUSTOMFIELD_NAME=Yes" ) {
+    my ( $val, $msg ) = $ScripCondition->SetArgument("$CUSTOMFIELD_NAME=Yes");
     if (!$val) {
       push @results, loc("Could not set custom field condition: [_1]", $msg);
     } else {
@@ -258,8 +275,6 @@ $Action->Parse(
 );
 my @task_ids;
 @task_ids = @{ $Action->{create_tickets} } if exists $Action->{create_tickets};
-
-my $PossibleCustomFields = $QueueObj->TicketCustomFields;
 
 </%init>
 <%ARGS>
