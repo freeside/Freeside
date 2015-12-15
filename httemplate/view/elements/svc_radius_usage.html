@@ -27,8 +27,8 @@
 %  ) / 1073741824;
 %
 %  my $last_mac = $svc->attribute_last_sqlradacct( 'CallingStationId' );
-%  if (    $last_mac =~ /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i
-%       && my $vendor = Net::MAC::Vendor::lookup($1)
+%  if (     $last_mac =~ /^\s*(([\dA-F]{2}[\-:]){5}[\dA-F]{2})/i
+%       and my $vendor = Net::MAC::Vendor::lookup($1)
 %     )
 %  {
 %    $last_mac .= ' ('. $vendor->[0]. ')';
