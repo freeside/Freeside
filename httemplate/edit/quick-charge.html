@@ -1,5 +1,5 @@
 <& /elements/header-popup.html, mt('One-time charge'), '',
-            ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
+            ( ($quotationnum || $cgi->param('error')) ? '' : 'onload="addRow()"' ),
 &>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
@@ -327,13 +327,14 @@ function bill_now_changed (what) {
   </TD>
 </TR>
 
+% my $row = 0;
+% unless ($quotationnum) {
 <TR>
   <TD></TD>
   <TD><FONT SIZE="-1"><% mt('Optional additional description (also printed on invoice):') |h %> </FONT></TD>
 </TR>
 
-% my $row = 0;
-% foreach (@description) {
+%   foreach (@description) {
     <TR>
       <TD></TD>
       <TD>
@@ -348,8 +349,9 @@ function bill_now_changed (what) {
         >
       </TD>
     </TR>
-% $row++;
-% } 
+%     $row++;
+%   }
+% }
 
 
 </TABLE>
