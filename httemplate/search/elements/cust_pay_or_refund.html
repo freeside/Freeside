@@ -26,6 +26,7 @@ Examples:
                'html_init'      => '',
                'addl_header'    => [],
                'addl_fields'    => [],
+               'addl_sort_fields' => [],
                'redirect_empty' => $redirect_empty,
           )
 
@@ -79,6 +80,8 @@ die "access denied"
   unless $curuser->access_right('Financial reports');
 
 my $table = $opt{'table'} || 'cust_'.$opt{'thing'};
+
+my $has_reason = dbdef->table($table)->column('reasonnum') ? 1 : 0;
 
 my $amount_field = $opt{'amount_field'};
 my $name_singular = $opt{'name_singular'};
@@ -217,6 +220,7 @@ unless ( $opt{'disable_by'} ) {
                       $o = 'customer self-service' if $o eq 'fs_selfservice';
                       $o;
                     };
+  push @sort_fields, '';
 }
 
 if ( $tax_names ) {
@@ -233,6 +237,7 @@ if ( $tax_names ) {
                                    split('\|', shift->tax_names)
                            );
                     };
+  push @sort_fields, '', '';
 }
 
 push @header, FS::UI::Web::cust_header();
@@ -242,11 +247,14 @@ push @links, map { $_ ne 'Cust. Status' ? $cust_link : '' }
 my @color = ( ( map '', @fields ), FS::UI::Web::cust_colors() );
 my @style = ( ( map '', @fields ), FS::UI::Web::cust_styles() );
 push @fields, \&FS::UI::Web::cust_fields;
+push @sort_fields, FS::UI::Web::cust_sort_fields;
 
 push @header, @{ $opt{'addl_header'} }
   if $opt{'addl_header'};
 push @fields, @{ $opt{'addl_fields'} }
   if $opt{'addl_fields'};
+push @sort_fields, @{ $opt{'addl_sort_fields'} }
+  if $opt{'addl_sort_fields'};
 
 my( $count_query, $sql_query, @count_addl );
 if ( $cgi->param('magic') ) {
@@ -432,6 +440,7 @@ if ( $cgi->param('magic') ) {
       push @search, "($table.auth LIKE '$1%') OR ($table.order_number LIKE '$1%')";
       push @fields, 'auth', 'order_number';
       push @header, 'Auth #', 'Transaction #';
+      push @sort_fields, '', '';
       $align .= 'rr';
 
     }
@@ -512,6 +521,18 @@ if ( $cgi->param('magic') ) {
 
   my $addl_from = FS::UI::Web::join_cust_main($table);
   my $group_by = '';
+
+  # reasons, for refunds and voided payments
+  if ( $has_reason ) {
+    push @select, "reason.reason";
+    $addl_from .= " LEFT JOIN reason USING (reasonnum)\n";
+    push @fields, 'reason';
+    push @sort_fields, 'reason.reason';
+    push @header, emt('Reason');
+    if ( $cgi->param('reasonnum') =~ /^(\d+)$/ ) {
+      push @search, "COALESCE(reasonnum, 0) = $1";
+    }
+  }
 
   if ( $cgi->param('tax_names') ) {
     if ( dbh->{Driver}->{Name} =~ /^Pg/i ) {
