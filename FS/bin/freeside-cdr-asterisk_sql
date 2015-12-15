@@ -44,7 +44,7 @@ my @cols = ( qw(
 calldate clid src dst dcontext channel lastapp lastdata duration 
     billsec disposition amaflags accountcode uniqueid userfield) );
 my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
-my $sth = $sql->prepare($sql);
+my $sth = $dbi->prepare($sql);
 $sth->execute;
 print "Importing ".$sth->rows." records...\n";
 
