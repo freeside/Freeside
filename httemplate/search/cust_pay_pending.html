@@ -9,6 +9,7 @@
                 'addl_fields'   => [ sub { time2str('%r', shift->_date ) },
                                      $status_sub,
                                    ],
+                'addl_sort_fields' => [ 'status' ],
                 'redirect_empty' => $redirect_empty,
 &>
 <%init>
