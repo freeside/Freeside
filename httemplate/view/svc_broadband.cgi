@@ -72,7 +72,6 @@ sub ip_addr {
   my $out = $ip_addr;
   $out .= ' (' . include('/elements/popup_link-ping.html', ip => $ip_addr) . ')'
     if $ip_addr;
-  $out .= include('/elements/broadband_snmp_get-dialog.html', svc => $svc);
   if ($svc->cust_svc->part_svc->part_export('cacti')) {
     $out .= ' (<A HREF="'
          .  popurl(2)
@@ -84,6 +83,7 @@ sub ip_addr {
     $out .= '<br>Netmask: ' . $addr_block->NetAddr->mask .
             '<br>Gateway: ' . $addr_block->ip_gateway;
   }
+  $out .= include('/elements/broadband_snmp_get.html', svc => $svc);
   $out;
 }
 

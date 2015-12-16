@@ -1,9 +1,10 @@
 <%doc>
-Adds a link to display snmp statistics based on broadband_snmp_get export config.
-Performs necessary checks such that, if no such exports are configured for the passed 
-service, returns blank space (ie may be safely invoked even if no exports are configured.)
+Adds a table to display dynamically loaded snmp statistics based on broadband_snmp_get 
+export config.  Performs necessary checks such that, if no such exports are configured 
+for the passed service, returns blank space (ie may be safely invoked even if no exports 
+are configured.)
 
-  <& '/elements/broadband_snmp_get-dialog.html', svc => $svc &>
+  <& '/elements/broadband_snmp_get.html', svc => $svc &>
 
 </%doc>
 % if (@snmp) {
@@ -11,13 +12,10 @@ service, returns blank space (ie may be safely invoked even if no exports are co
    'url'  => $fsurl.'misc/xmlhttp-broadband_snmp_get.cgi',
    'subs' => [ 'broadband_snmp_get_request' ]
  &>
+<DIV ID="broadband_snmp_get"></DIV>
 <SCRIPT>
 function broadband_snmp_get (svcnum) {
-  var jqd = $( '#broadband_snmp_get_dialog' );
-  if (!jqd.dialog( 'isOpen' )) {
-    jqd.dialog( 'open' );
-  }
-  document.getElementById('broadband_snmp_get_dialog').innerHTML = '<B>Loading...</B>';
+  document.getElementById('broadband_snmp_get').innerHTML = 'Loading SNMP...';
   broadband_snmp_get_request('svcnum',svcnum,
     function (result) {
       var objects = JSON.parse(result) || [];
@@ -41,24 +39,14 @@ function broadband_snmp_get (svcnum) {
           }
           table.appendChild(row);
         }
-        var dialog = document.getElementById('broadband_snmp_get_dialog');
-        dialog.innerHTML = '';
-        dialog.appendChild(table);
+        var resultblock = document.getElementById('broadband_snmp_get');
+        resultblock.innerHTML = '';
+        resultblock.appendChild(table);
       }  // if objects.length
     }  // function
   ); // broadband_snmp_get_request
 } // broadband_snmp_get
-</SCRIPT>
-<SPAN ID="broadband_snmp_get_dialog"></SPAN>
-<SPAN ID="broadband_snmp_get_link">
-<A HREF="javascript: void(0)" onclick="broadband_snmp_get('<% $svcnum %>')">(snmp)</A>
-</SPAN>
-<SCRIPT>
-$( '#broadband_snmp_get_dialog' ).dialog({
-  position: { my: "left top", at: "left top", of: "#broadband_snmp_get_link" },
-  autoOpen: false,
-  title: 'SNMP',
-});
+broadband_snmp_get('<% $svcnum %>');
 </SCRIPT>
 % } #if @snmp
 <%init>
