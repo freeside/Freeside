@@ -328,6 +328,8 @@ function bill_now_changed (what) {
 </TR>
 
 % my $row = 0;
+% # quotation details are handled by quotation_pkg_detail records, added via link from view/quotation.html
+% # the details below get attached to the part_pkg record, and there's no way to edit that from quotations
 % unless ($quotationnum) {
 <TR>
   <TD></TD>
