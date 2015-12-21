@@ -1,0 +1,24 @@
+<& elements/edit.html,
+  'popup'         => 1,
+  'table'         => 'fiber_olt',
+  'name_singular' => 'OLT',
+  'labels'        => \%labels,
+  'fields'        => \@fields,
+&>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @fields = (
+  'oltname',
+  'serial',
+  { field => 'disabled', type => 'checkbox', value => 'Y' }
+);
+
+my %labels = (
+  'oltnum' => '',
+  'oltname' => 'Name',
+  'serial'  => 'Serial',
+  'disabled' => 'Disabled',
+);
+</%init>

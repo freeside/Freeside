@@ -1,0 +1,36 @@
+<& elements/svc_Common.html,
+  'table'             => 'svc_fiber',
+  'fields'            => \@fields,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+my $conf = new FS::Conf;
+
+my @fields = (
+  { field     => 'oltnum',
+    type      => 'select-table',
+    table     => 'fiber_olt',
+    name_col  => 'oltname',
+    hashref   => { disabled => '' },
+    disable_empty => 1,
+  },
+  { field     => 'shelf' },
+  { field     => 'card'  },
+  { field     => 'olt_port' },
+  { field     => 'ont_id'   },
+  { field     => 'ont_typenum',
+    type      => 'select-hardware_type'
+  },
+  { field     => 'ont_serial' },
+  { field     => 'ont_port' },
+  { field     => 'vlan' },
+  { field     => 'signal' },
+  { field     => 'speed_down' },
+  { field     => 'speed_up' },
+  { field     => 'ont_install', size => 50 },
+);
+
+</%init>

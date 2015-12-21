@@ -227,10 +227,12 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
-  $report_svc{"Advanced $lcsname reports"} = 
+  if ( $curuser->access_right("Services: $name: Advanced search")
+    && $svcdb =~ /^svc_(acct|broadband|hardware|phone|fiber)$/ ) {
+
+    $report_svc{"Advanced $lcsname reports"} = 
       [ $fsurl."search/report_$svcdb.html", '' ]
-    if $svcdb =~ /^svc_(acct|broadband|hardware|phone)$/
-    && $curuser->access_right("Services: $name: Advanced search");
+  }
 
   if ( $svcdb eq 'svc_phone' ) {
 
@@ -594,6 +596,10 @@ tie my %config_circuit, 'Tie::IxHash',
   'Termination types' => [ $fsurl.'browse/circuit_termination.html',  '' ],
 ;
 
+tie my %config_fiber, 'Tie::IxHash',
+  'OLTs' => [ $fsurl.'browse/fiber_olt.html', '' ],
+;
+
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
@@ -616,6 +622,8 @@ $config_export_svc{'Conferencing'} = [ \%config_conferencing, '' ]
 $config_export_svc{'Alarm'} = [ \%config_alarm, '' ]
   if $curuser->access_right(['Alarm configuration', 'Alarm global configuration']);
 $config_export_svc{'Circuits'} = [ \%config_circuit, '' ]
+  if $curuser->access_right('Configuration');
+$config_export_svc{'Fiber'} = [ \%config_fiber, '' ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
   if $curuser->access_right('Configuration');

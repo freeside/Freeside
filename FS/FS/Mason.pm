@@ -411,6 +411,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::report_batch;
   use FS::report_batch;
   use FS::password_history;
+  use FS::svc_fiber;
+  use FS::fiber_olt;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
