@@ -4707,6 +4707,125 @@ sub tables_hashref {
       'unique'      => [],
       'index'       => [ [ 'providernum' ], [ 'typenum' ] ],
     },
+
+    'svc_fiber' => {
+      'columns' => [
+        'svcnum',         'int',     '',      '', '', '',
+        'oltnum',         'int', 'NULL',      '', '', '',
+        'shelf',          'int', 'NULL',      '', '', '',
+        'card',           'int', 'NULL',      '', '', '',
+        'olt_port',       'int', 'NULL',      '', '', '',
+        'ont_id',         'int', 'NULL',      '', '', '',
+        'ont_typenum',    'int', 'NULL',      '', '', '',
+        'ont_serial', 'varchar', 'NULL', $char_d, '', '',
+        'ont_port',   'varchar', 'NULL',      16, '', '',
+        'vlan',           'int', 'NULL',      '', '', '',
+        'signal',         'int', 'NULL',      '', '', '',
+        'speed_up',       'int', 'NULL',      '', '', '',
+        'speed_down',     'int', 'NULL',      '', '', '',
+        'ont_install','varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique'      => [ ],
+      'index'       => [ [ 'ont_serial' ] ],
+    },
+
+    'fiber_olt' => {
+      'columns' => [
+        'oltnum',   'serial', '',       '', '', '',
+        'oltname', 'varchar', '',  $char_d, '', '',
+        'serial',  'varchar', '',  $char_d, '', '',
+        'disabled',   'char', 'NULL',    1, '', '',
+      ],
+      'primary_key' => 'oltnum',
+      'unique' => [ ],
+      'index'  => [ ],
+    },
+
+    'vend_main' => {
+      'columns' => [
+        'vendnum',   'serial',     '',      '', '', '',
+        'vendname', 'varchar',     '', $char_d, '', '',
+        'classnum',     'int',     '',      '', '', '',
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key'  => 'vendnum',
+      'unique'       => [ ['vendname', 'disabled'] ],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'classnum' ],
+                            table      => 'vend_class',
+                          },
+                        ],
+    },
+
+    'vend_class' => {
+      'columns' => [
+        'classnum',     'serial',     '',      '', '', '', 
+        'classname',   'varchar',     '', $char_d, '', '', 
+        'disabled',       'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique'      => [],
+      'index'       => [ ['disabled'] ],
+    },
+
+    'vend_bill' => {
+      'columns' => [
+        'vendbillnum',    'serial',     '',      '', '', '', 
+        'vendnum',           'int',     '',      '', '', '', 
+        #'_date',        @date_type,                  '', '', 
+        '_date',     'int', '', '',                   '', '', 
+        'charged',     @money_type,                  '', '', 
+      ],
+      'primary_key'  => 'vendbillnum',
+      'unique'       => [],
+      'index'        => [ ['vendnum'], ['_date'], ],
+      'foreign_keys' => [
+                          { columns    => [ 'vendnum' ],
+                            table      => 'vend_main',
+                          },
+                        ],
+    },
+
+    'vend_pay' => {
+      'columns' => [
+        'vendpaynum',   'serial',    '',       '', '', '',
+        'vendnum',         'int',    '',       '', '', '', 
+        #'_date',     @date_type,                   '', '', 
+        '_date',     'int', '', '',                   '', '', 
+        'paid',      @money_type,                  '', '', 
+      ],
+      'primary_key'  => 'vendpaynum',
+      'unique'       => [],
+      'index'        => [ [ 'vendnum' ], [ '_date' ], ],
+      'foreign_keys' => [
+                          { columns    => [ 'vendnum' ],
+                            table      => 'vend_main',
+                          },
+                        ],
+    },
+
+    'vend_bill_pay' => {
+      'columns' => [
+        'vendbillpaynum', 'serial',     '',   '', '', '', 
+        'vendbillnum',       'int',     '',   '', '', '', 
+        'vendpaynum',        'int',     '',   '', '', '', 
+        'amount',  @money_type, '', '', 
+        #? '_date',   @date_type, '', '', 
+      ],
+      'primary_key'  => 'vendbillpaynum',
+      'unique'       => [],
+      'index'        => [ [ 'vendbillnum' ], [ 'vendpaynum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'vendbillnum' ],
+                            table      => 'vend_bill',
+                          },
+                          { columns    => [ 'vendpaynum' ],
+                            table      => 'vend_pay',
+                          },
+                        ],
+    },
     %{ tables_hashref_torrus() },
 
     # tables of ours for doing torrus virtual port combining

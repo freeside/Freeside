@@ -1,0 +1,69 @@
+<& elements/svc_Common.html,
+  'title'       => 'Fiber Search Results',
+  'name'        => 'fiber services',
+  'query'       => $query,
+  'count_query' => $query->{'count_query'},
+  'redirect'    => $link,
+  'header'      => [ '#',
+                     'OLT',
+                     'Shelf/Card/Port',
+                     'ONT',
+                     'Model',
+                     'Serial',
+                     FS::UI::Web::cust_header($cgi->param('cust_fields')),
+                   ],
+  'fields'      => [ 'svcnum',
+                     'oltname',
+                     sub { my $svc = shift;
+                           join('-', $svc->shelf, $svc->card, $svc->olt_port)
+                     },
+                     'ont_id',
+                     'ont_description',
+                     'ont_serial',
+                     \&FS::UI::Web::cust_fields,
+                   ],
+  'links'       => [ $link,
+                     '',
+                     '',
+                     $link,
+                     $link,
+                     $link,
+                     FS::UI::Web::cust_links($cgi->param('cust_fields')),
+                   ],
+  'align'       => 'rlllll'.  FS::UI::Web::cust_aligns(),
+  'color'       => [ 
+                     ('') x 6,
+                     FS::UI::Web::cust_colors(),
+                   ],
+  'style'       => [ 
+                     ('') x 6,
+                     FS::UI::Web::cust_styles(),
+                   ],
+
+&>
+<%init>
+
+die "access denied" unless
+  $FS::CurrentUser::CurrentUser->access_right([ 'Services: Fiber',
+                                                'List services'
+                                              ]);
+
+my $conf = new FS::Conf;
+
+my %search_hash;
+if ( $cgi->param('magic') eq 'unlinked' ) {
+  %search_hash = ( 'unlinked' => 1 );
+} else {
+  foreach (qw( custnum agentnum svcpart cust_fields
+               ont_typenum oltnum shelf olt_port card vlan )) {
+    $search_hash{$_} = $cgi->param($_) if defined($cgi->param($_));
+  }
+}
+
+my $query = FS::svc_fiber->search(\%search_hash);
+$query->{addl_from} .= ' LEFT JOIN fiber_olt USING (oltnum) ';
+$query->{select} .= ', oltname';
+
+my $link = [ $p.'view/svc_fiber.cgi?', 'svcnum' ];
+
+</%init>
