@@ -6851,6 +6851,52 @@ sub tables_hashref {
       ],
     },
 
+    'svc_fiber' => {
+      'columns' => [
+        'svcnum',         'int',     '',      '', '', '',
+        'oltnum',         'int', 'NULL',      '', '', '',
+        'shelf',          'int', 'NULL',      '', '', '',
+        'card',           'int', 'NULL',      '', '', '',
+        'olt_port',       'int', 'NULL',      '', '', '',
+        'ont_id',         'int', 'NULL',      '', '', '',
+        'ont_typenum',    'int', 'NULL',      '', '', '',
+        'ont_serial', 'varchar', 'NULL', $char_d, '', '',
+        'ont_port',   'varchar', 'NULL',      16, '', '',
+        'vlan',           'int', 'NULL',      '', '', '',
+        'signal',         'int', 'NULL',      '', '', '',
+        'speed_up',       'int', 'NULL',      '', '', '',
+        'speed_down',     'int', 'NULL',      '', '', '',
+        'ont_install','varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique'      => [ ],
+      'index'       => [ [ 'ont_serial' ] ],
+      'foreign_keys' => [
+                          { columns => [ 'svcnum' ],
+                            table   => 'cust_svc',
+                          },
+                          { columns => [ 'oltnum' ],
+                            table   => 'fiber_olt',
+                          },
+                          { columns => [ 'ont_typenum' ],
+                            table   => 'hardware_type',
+                            references => [ 'typenum' ],
+                          },
+                        ],
+    },
+
+    'fiber_olt' => {
+      'columns' => [
+        'oltnum',   'serial', '',       '', '', '',
+        'oltname', 'varchar', '',  $char_d, '', '',
+        'serial',  'varchar', '',  $char_d, '', '',
+        'disabled',   'char', 'NULL',    1, '', '',
+      ],
+      'primary_key' => 'oltnum',
+      'unique' => [ ],
+      'index'  => [ ],
+    },
+
     'vend_main' => {
       'columns' => [
         'vendnum',   'serial',     '',      '', '', '',

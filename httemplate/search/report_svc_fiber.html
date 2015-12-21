@@ -1,0 +1,47 @@
+<& /elements/header.html, $title &>
+
+<FORM ACTION="svc_fiber.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+    <& /elements/tr-select-table.html,
+      label     => 'OLT',
+      table     => 'fiber_olt',
+      name_col  => 'oltname',
+    &>
+    <& /elements/tr-input-text.html, field => 'shelf', label => 'Shelf' &>
+    <& /elements/tr-input-text.html, field => 'card',  label => 'Card' &>
+    <& /elements/tr-input-text.html, field => 'olt_port', label => 'Port' &>
+
+    <& /elements/tr-td-label.html, label => 'ONT model' &>
+      <TD>
+      <& /elements/select-hardware_type.html,
+          'empty_label' => '(all)'
+       &>
+      </TD>
+    </TR>
+
+    <& /elements/tr-input-text.html, field => 'ont_serial', label => 'Serial number' &>
+    <& /elements/tr-input-text.html, field => 'vlan', label => 'VLAN' &>
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Search">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Services: Fiber');
+
+my $title = 'Search Fiber Services';
+
+my @olts = qsearch('fiber_olt', {});
+
+</%init>
+
