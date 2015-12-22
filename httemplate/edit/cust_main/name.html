@@ -37,9 +37,19 @@
         : 'label' %>">Email address(es)
   </TD>
   <TD BGCOLOR="#FFFF00">
+    <SPAN STYLE="width: 200px">
     <INPUT TYPE="text" NAME="invoicing_list" 
            VALUE="<% $cust_main->invoicing_list_emailonly_scalar %>">
+    </SPAN>
   </TD>
+  <TD COLSPAN="5">
+    <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" <%
+        ( $cust_main->message_noemail eq 'Y' )
+          ? 'CHECKED'
+          : ''
+        %>> <% emt('Do not send notices') %>
+  </TD>
+
 </TR>
 % }
 <%init>
