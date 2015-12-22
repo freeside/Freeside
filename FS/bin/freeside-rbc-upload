@@ -70,6 +70,10 @@ foreach my $pay_batch (@batches) {
   debug "Exporting batch $batchnum to $filename\n";
 
   my $text = $pay_batch->export_batch(format => 'RBC');
+  unless ($text) {
+    print STDERR "Batch is empty, resolving..." if $opt_v;
+    next;
+  }
   write_file("$tmpdir/$filename", $text);
 
   debug "Uploading $filename...";

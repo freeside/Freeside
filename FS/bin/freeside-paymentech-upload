@@ -68,6 +68,10 @@ foreach my $pay_batch (@batches) {
   my $filename = sprintf('%06d',$batchnum) . '-' .time2str('%Y%m%d%H%M%S', time);
   print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
   my $text = $pay_batch->export_batch(format => 'paymentech');
+  unless ($text) {
+    print STDERR "Batch is empty, resolving..." if $opt_v;
+    next;
+  }
   $text =~ s!<fileID>FILEID</fileID>!<fileID>$filename</fileID>! 
     or log_and_die("couldn't find FILEID tag\n");
   open OUT, ">$tmpdir/$filename.xml";
@@ -80,6 +84,7 @@ foreach my $pay_batch (@batches) {
   log_and_die("failed to create zip file\n") if (! -f "$tmpdir/$filename.zip" );
   push @filenames, $filename;
 }
+log_and_die("All batches empty\n") if !@filenames;
 
 my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net'
                    : 'orbitalbatch.paymentech.net');
