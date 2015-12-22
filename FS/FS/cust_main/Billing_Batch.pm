@@ -23,8 +23,6 @@ Options may include:
 B<amount>: the amount to be paid; defaults to the customer's balance minus
 any payments in transit.
 
-B<payby>: the payment method; defaults to cust_main.payby
-
 B<realtime>: runs this as a realtime payment instead of adding it to a 
 batch.  Deprecated.
 
@@ -34,8 +32,9 @@ B<address1>, B<address2>, B<city>, B<state>, B<zip>, B<country>: sets
 the billing address for the payment; defaults to the customer's billing
 location.
 
-B<payinfo>, B<paydate>, B<payname>: sets the payment account, expiration
-date, and name; defaults to those fields in cust_main.
+B<payby>, B<payinfo>, B<paydate>, B<payname>: sets the payment method, 
+payment account, expiration date, and name; defaults to those fields 
+in cust_main.
 
 =cut
 
@@ -58,6 +57,13 @@ sub batch_card {
   
   my $invnum = delete $options{invnum};
 
+  #pay fields should all come from either cust_payby or options, not both
+  #  in theory, could just pass payby, and use it to select cust_payby,
+  #  but nothing currently needs that, so not implementing it now
+  die "Incomplete payment details" 
+    if  ($options{payby} || $options{payinfo} || $options{paydate} || $options{payname})
+    && !($options{payby} && $options{payinfo} && $options{paydate} && $options{payname});
+
   #false laziness with Billing_Realtime
   my @cust_payby = qsearch({
     'table'     => 'cust_payby',
@@ -67,7 +73,10 @@ sub batch_card {
   });
 
   # batch can't try out every one like realtime, just use first one
-  my $cust_payby = $cust_payby[0] || $self; # somewhat dubious
+  my $cust_payby = $cust_payby[0];
+
+  die "No customer payment info found"
+    unless $options{payinfo} || $cust_payby;
                                                    
   my $payby = $options{payby} || $cust_payby->payby;
 
