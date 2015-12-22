@@ -59,8 +59,10 @@ my $conf = new FS::Conf;
 my $title = 'Outgoing Message Log';
 
 #here is the agent virtualization
-my $agentnums_sql =
-  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql(
+  'table' => 'cust_main',
+  'null_right' => [ 'View system logs', 'Configuration' ],
+);
 
 my @where = ( $agentnums_sql );
 
