@@ -11,6 +11,7 @@ use JSON;
 use URI::Escape 3.31;
 use Data::Dumper;
 use FS::Conf;
+use FS::Log;
 use Locale::Country;
 
 FS::UID->install_callback( sub {
@@ -300,6 +301,8 @@ sub standardize_usps {
 sub standardize_uscensus {
   my $self = shift;
   my $location = shift;
+  my $log = FS::Log->new('FS::Misc::Geo::standardize_uscensus');
+  $log->debug(join("\n", @{$location}{'address1', 'city', 'state', 'zip'}));
 
   eval "use Geo::USCensus::Geocoding";
   die $@ if $@;
@@ -322,6 +325,7 @@ sub standardize_uscensus {
   my $result = Geo::USCensus::Geocoding->query($request);
   if ( $result->is_match ) {
     # unfortunately we get the address back as a single line
+    $log->debug($result->address);
     if ($result->address =~ /^(.*), (.*), ([A-Z]{2}), (\d{5}.*)$/) {
       return +{
         address1    => $1,
@@ -341,8 +345,8 @@ sub standardize_uscensus {
   } elsif ( $result->match_level ) {
     die "Geocoding did not find a matching address.\n";
   } else {
-    warn Dumper($result) if $DEBUG;
-    die $result->error_message;
+    $log->error($result->error_message);
+    return; # for internal errors, don't return anything
   }
 }
 

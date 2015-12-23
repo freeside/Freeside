@@ -114,7 +114,12 @@ function confirm_standardize(arg) {
 
     // then all entered address fields are correct
     // but we still need to set the lat/long fields and addr_clean
-    status_message('Verified');
+
+    if ( returned['addr_clean'] ) {
+      status_message('Verified');
+    } else {
+      status_message('Unverified');
+    }
     replace_address();
 
   } else {
