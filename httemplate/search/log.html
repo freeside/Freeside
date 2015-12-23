@@ -138,7 +138,7 @@ my $tt_sub = sub {
   return '' if @context == 1 and length($log->message) <= 60;
   my $html = '<DIV CLASS="tooltip">'.(shift @context).'</DIV>';
   my $pre = '&#8627;';
-  foreach (@context, $log->message) {
+  foreach (map encode_entities($_), @context, $log->message) {
     $html .= "<DIV>$pre$_</DIV>";
     $pre = '&nbsp;&nbsp;&nbsp;'.$pre;
   }

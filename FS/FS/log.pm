@@ -148,7 +148,7 @@ sub check {
     || $self->ut_textn('tablename')
     || $self->ut_numbern('tablenum')
     || $self->ut_number('level')
-    || $self->ut_text('message')
+    || $self->ut_anything('message')
   ;
   return $error if $error;
 
