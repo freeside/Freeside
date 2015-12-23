@@ -140,7 +140,7 @@ Returns the full country name.
 
 sub country_full {
   my $self = shift;
-  $self->code2country($self->country);
+  $self->code2country($self->get('country'));
 }
 
 sub code2country {
