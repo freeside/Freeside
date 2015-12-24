@@ -803,6 +803,25 @@ sub _upgrade_data {
   ###
   $self->_populate_initial_data;
 
+  ### Fix dump-email_to (needs to happen after _populate_initial_data)
+  if ($conf->config('dump-email_to')) {
+    # anyone who still uses dump-email_to should have just had this created
+    my ($msg_template) = qsearch('msg_template',{ msgname => 'System log' });
+    if ($msg_template) {
+      eval "use FS::log_email;";
+      die $@ if $@;
+      my $log_email = new FS::log_email {
+        'context' => 'Cron::backup',
+        'min_level' => 1,
+        'msgnum' => $msg_template->msgnum,
+        'to_addr' => $conf->config('dump-email_to'),
+      };
+      my $error = $log_email->insert;
+      die $error if $error;
+      $conf->delete('dump-email_to');
+    }
+  }
+
 }
 
 sub _populate_initial_data { #class method
@@ -811,18 +830,22 @@ sub _populate_initial_data { #class method
 
   eval "use FS::msg_template::InitialData;";
   die $@ if $@;
+  eval "use FS::upgrade_journal;";
+  die $@ if $@;
 
   my $initial_data = FS::msg_template::InitialData->_initial_data;
 
   foreach my $hash ( @$initial_data ) {
 
     next if $hash->{_conf} && $conf->config( $hash->{_conf} );
+    next if $hash->{_upgrade_journal} && FS::upgrade_journal->is_done( $hash->{_upgrade_journal} );
 
     my $msg_template = new FS::msg_template($hash);
     my $error = $msg_template->insert( @{ $hash->{_insert_args} || [] } );
     die $error if $error;
 
     $conf->set( $hash->{_conf}, $msg_template->msgnum ) if $hash->{_conf};
+    FS::upgrade_journal->set_done( $hash->{_upgrade_journal} );
   
   }
 

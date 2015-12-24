@@ -18,6 +18,7 @@
                             { 'field' => 'msgnum',
                               'type' => 'select-msg_template',
                               'empty_label' => 'Select template',
+                              'value' => $msgnum,
                               'required' => 1,
                             },
                           ],
@@ -41,5 +42,15 @@ my %opts = @_;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right([ 'View system logs', 'Configuration' ]);
+
+my $msgnum = $cgi->param('msgnum');
+unless ($msgnum) {
+  my ($msg_template) = qsearch('msg_template',{ msgname => 'System log' });
+  # doesn't seem worth having a config just for the default selected template
+  # if they've deleted the system-generated one, just default to empty "Select template"
+  if ($msg_template) {
+    $msgnum = $msg_template->msgnum;
+  }
+}
 
 </%init>
