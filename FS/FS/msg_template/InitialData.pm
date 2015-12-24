@@ -45,8 +45,8 @@ END
       _upgrade_journal => 'system_log_email_template',
       _insert_args => [ subject => '{ $company_name } system log',
                         body    => <<'END',
-Level: {$loglevel}<BR>
-Context: {$logcontext}<BR>
+Level: {$loglevel}<BR>
+Context: {$logcontext}<BR>
 <BR>
 {$logmessage}<BR>
 
