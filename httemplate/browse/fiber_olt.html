@@ -1,0 +1,11 @@
+<& elements/browse-simple.html,
+  'table'               => 'fiber_olt',
+  'title'               => 'Fiber service OLTs',
+  'menubar'             => [ ],
+  'name_singular'       => 'OLT',
+  'acl'                 => 'Configuration',
+# overrides
+  'disabled_statuspos' => 3,
+  'header' => [ '#',      'Name',     'Serial' ],
+  'fields' => [ 'oltnum', 'oltname',  'serial' ],
+&>

@@ -110,6 +110,7 @@ sub insert {
       next;
     }
     my $emailerror = $msg_template->send(
+      'msgtype'       => 'admin',
       'to'            => $log_email->to_addr,
       'substitutions' => {
         'loglevel'   => $FS::Log::LEVELS[$self->level], # which has hopefully been loaded...
@@ -147,7 +148,7 @@ sub check {
     || $self->ut_textn('tablename')
     || $self->ut_numbern('tablenum')
     || $self->ut_number('level')
-    || $self->ut_text('message')
+    || $self->ut_anything('message')
   ;
   return $error if $error;
 

@@ -30,8 +30,7 @@ tie my %options, 'Tie::IxHash',
   'options' => \%options,
   'no_machine' => 1,
   'notes'   => <<'END',
-Use this export to configure the community and object ids for displaying realtime 
-SNMP data from the service IP address when viewing a provisioned service.  Timeout is
+Display broadband service status information via SNMP.  Timeout is
 per object, and should be small enough for realtime use.  This export takes no action 
 during provisioning itself;  it is expected that snmp will be separately
 configured on the service machine.

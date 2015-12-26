@@ -888,7 +888,8 @@ Prepare the batch to be exported.  This will:
   increment expiration dates that are in the past.
 - If this is the first download for this batch, adjust payment amounts to 
   not be greater than the customer's current balance.  If the customer's 
-  balance is zero, the entry will be removed.
+  balance is zero, the entry will be removed (caution: all cust_pay_batch
+  entries might be removed!)
 
 Use this within a transaction.
 
@@ -947,15 +948,6 @@ sub prepare_for_export {
       # else $balance >= $cust_pay_batch->amount
     }
 
-    # we might end up removing all cust_pay_batch above...
-    # probably the better way to handle this is to commit that removal,
-    # but no time to trace code & test that right now
-    #
-    # additionally, UI currently allows hand-deletion of all payments from a batch, meaning
-    # it's possible to try and process an empty batch...this is where we catch
-    # such an attempt, though it probably shouldn't be possible in the first place
-    return "Batch is empty" unless $self->cust_pay_batch;
-
     #need to do this after unbatch_and_delete
     my $error = $self->set_status('I');
     return "error updating pay_batch status: $error\n" if $error;
@@ -972,6 +964,10 @@ module, in which case the configuration options are in 'batchconfig-FORMAT'.
 
 Alternatively, GATEWAY can be an L<FS::payment_gateway> object set to a
 L<Business::BatchPayment> module.
+
+Returns the text of the batch.  If batch contains no cust_pay_batch entries
+(or has them all removed by L</prepare_for_export>) then the batch will be 
+resolved and a blank string will be returned.  All other errors are fatal.
 
 =cut
 
@@ -1008,6 +1004,12 @@ sub export_batch {
   my $batchcount = 0;
 
   my @cust_pay_batch = $self->cust_pay_batch;
+  unless (@cust_pay_batch) {
+    # if it's empty, just resolve the batch
+    $self->set_status('R');
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+  }
 
   my $delim = exists($info->{'delimiter'}) ? $info->{'delimiter'} : "\n";
 
@@ -1052,6 +1054,10 @@ that gateway via Business::BatchPayment. OPTIONS may include:
 
 - file: override the default transport and write to this file (name or handle)
 
+If batch contains no cust_pay_batch entries (or has them all removed by 
+L</prepare_for_export>) then nothing will be transported (or written to 
+the override file) and the batch will be resolved.
+
 =cut
 
 sub export_to_gateway {
@@ -1072,6 +1078,13 @@ sub export_to_gateway {
   my $processor = $gateway->batch_processor(%proc_opt);
 
   my @items = map { $_->request_item } $self->cust_pay_batch;
+  unless (@items) {
+    # if it's empty, just resolve the batch
+    $self->set_status('R');
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+  }
+
   my $batch = Business::BatchPayment->create(Batch =>
     batch_id  => $self->batchnum,
     items     => \@items

@@ -999,9 +999,10 @@ sub _make_lines {
   #   - it doesn't already HAVE a setup date
   #   - or a start date in the future
   #   - and it's not suspended
+  # - and it doesn't have an expire date in the past
   #
-  # The last condition used to check the "disable_setup_suspended" option but 
-  # that's obsolete. We now never set the setup date on a suspended package.
+  # The "disable_setup_suspended" option is now obsolete; we never set the
+  # setup date on a suspended package.
   if (     ! $options{recurring_only}
        and ! $options{cancel}
        and ( $options{'resetup'}
@@ -1012,6 +1013,8 @@ sub _make_lines {
                   && ( ! $cust_pkg->getfield('susp') )
                 )
            )
+       and ( ! $cust_pkg->expire
+             || $cust_pkg->expire > $cmp_time )
      )
   {
     
@@ -1059,6 +1062,20 @@ sub _make_lines {
   my $recur_billed_currency = '';
   my $recur_billed_amount = 0;
   my $sdate;
+  # Conditions for billing the recurring fee:
+  # - the package doesn't have a future start date
+  # - and it's not suspended
+  #   - unless suspend_bill is enabled on the package or package def
+  #     - but still not, if the package is on hold
+  #   - or it's suspended for a delayed cancellation
+  # - and its next bill date is in the past
+  #   - or it doesn't have a next bill date yet
+  #   - or it's a one-time charge
+  #   - or it's a CDR plan with the "bill_every_call" option
+  #   - or it's being canceled
+  # - and it doesn't have an expire date in the past (this can happen with
+  #   advance billing)
+  #   - again, unless it's being canceled
   if (     ! $cust_pkg->start_date
        and 
            ( ! $cust_pkg->susp
@@ -1077,6 +1094,12 @@ sub _make_lines {
                && $part_pkg->option('bill_every_call')
             )
          || $options{cancel}
+
+       and
+          ( ! $cust_pkg->expire
+            || $cust_pkg->expire > $cmp_time
+            || $options{cancel}
+          )
   ) {
 
     # XXX should this be a package event?  probably.  events are called
