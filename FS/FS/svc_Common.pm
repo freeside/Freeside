@@ -1154,7 +1154,9 @@ Runs the provided export hook (i.e. "suspend", "unsuspend") for this service.
 sub export {
   my( $self, $method ) = ( shift, shift );
 
+  # $method must start with export_, $action must be the part after that
   $method = "export_$method" unless $method =~ /^export_/;
+  my ($action) = $method =~ /^export_(\w+)/;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1171,6 +1173,7 @@ sub export {
   unless ( $noexport_hack ) {
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
       next unless $part_export->can($method);
+      next if $part_export->get("no_$action"); # currently only 'no_suspend'
       my $error = $part_export->$method($self, @_);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;

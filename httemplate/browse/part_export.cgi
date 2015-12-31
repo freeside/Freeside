@@ -38,6 +38,11 @@ function part_export_areyousure(href) {
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
         <% $part_export->label_html %>
         (<A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<% $p %>misc/delete-part_export.cgi?<% $part_export->exportnum %>')">delete</A>)
+%       if ( $part_export->no_suspend ) {
+        <P STYLE="position: absolute">
+        This export will not suspend services.
+        </P>
+%       }
 %       if ( my @actions = $part_export->actions ) {
         <P STYLE="position: absolute">
         Management:
