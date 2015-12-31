@@ -285,6 +285,11 @@ my $widget = new HTML::Widgets::SelectLayers(
       $html .= '</TD></TR>';
     }
 
+    $html .= '<TR><TD ALIGN="right">Do not suspend services</TD>' .
+                '<TD><INPUT TYPE="checkbox" NAME="no_suspend" VALUE="Y"';
+    $html .= ' CHECKED' if $part_export->no_suspend eq 'Y';
+    $html .= '></TD></TR>';
+
     $html .= '</TABLE>';
 
     # false laziness with config_element above

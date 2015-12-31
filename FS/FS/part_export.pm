@@ -59,6 +59,12 @@ fields are currently supported:
 
 =item nodomain - blank or "Y" : usernames are exported to this service with no domain
 
+=item default_machine - For exports that require a machine to be selected for
+each service (see L<FS::svc_export_machine>), the one to use as the default.
+
+=item no_suspend - Don't export service suspensions. In the future there may
+be "no_*" options for the other service actions.
+
 =back
 
 =head1 METHODS
@@ -334,6 +340,7 @@ sub check {
     || $self->ut_textn('exportname')
     || $self->ut_domainn('machine')
     || $self->ut_alpha('exporttype')
+    || $self->ut_flag('no_suspend')
   ;
 
   if ( $self->machine eq '_SVC_MACHINE' ) {

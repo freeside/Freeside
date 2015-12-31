@@ -3059,6 +3059,8 @@ sub tables_hashref {
         'exporttype', 'varchar',     '', $char_d, '', '', 
         'nodomain',      'char', 'NULL',       1, '', '', 
         'default_machine','int', 'NULL',      '', '', '',
+        'no_suspend',    'char', 'NULL',       1, '', '',
+        # could also have 'no_insert', 'no_replace', etc.
       ],
       'primary_key' => 'exportnum',
       'unique'      => [],
