@@ -136,7 +136,7 @@
 %     if ( $change_from ) { # future change
 %
           <% pkg_status_row_colspan( $cust_pkg, emt('Waiting for package change'), '', %opt ) %>
-          <% pkg_status_row( $cust_pkg,
+          <% pkg_status_row_if( $cust_pkg,
                              emt('Will be activated on'),
                              'start_date',
                              %opt ) %>
@@ -284,8 +284,9 @@
 %               }
 %           }
 
-%           if ( !$supplemental ) {
-%           # suspension actions--always available
+%           if ( !$supplemental and !$change_from ) {
+%           # suspension actions--always available for a package that's
+%           # independently active
 %             if ( $curuser->access_right('Suspend customer package') ) {
                 (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
 %             }
