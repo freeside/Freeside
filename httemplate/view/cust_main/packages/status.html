@@ -133,7 +133,7 @@
 %     if ( $change_from ) { # future change
 %
           <% pkg_status_row_colspan( $cust_pkg, emt('Waiting for package change'), '', %opt ) %>
-          <% pkg_status_row( $cust_pkg,
+          <% pkg_status_row_if( $cust_pkg,
                              emt('Will be activated on'),
                              'start_date',
                              %opt ) %>
@@ -277,15 +277,17 @@
 %               }
 %           }
 
-%           # suspension actions--always available
-%           if ( $curuser->access_right('Suspend customer package') ) { 
-              (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
-%           } 
-%           if ( $curuser->access_right('Suspend customer package later') ) { 
-              (&nbsp;<% pkg_adjourn_link($cust_pkg) %>&nbsp;)
-%           } 
-%           if ( $curuser->access_right('Delay suspension events') ) { 
-              (&nbsp;<% pkg_delay_link($cust_pkg) %>&nbsp;)
+%           if ( !$change_from ) {
+%             # suspension actions--always available
+%             if ( $curuser->access_right('Suspend customer package') ) { 
+                (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
+%             } 
+%             if ( $curuser->access_right('Suspend customer package later') ) { 
+                (&nbsp;<% pkg_adjourn_link($cust_pkg) %>&nbsp;)
+%             } 
+%             if ( $curuser->access_right('Delay suspension events') ) { 
+                (&nbsp;<% pkg_delay_link($cust_pkg) %>&nbsp;)
+%             }
 %           }
 %
 %           if ( $change_from or $cust_pkg->change_to_pkgnum ) {
