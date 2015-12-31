@@ -284,9 +284,8 @@
 %               }
 %           }
 
-%           if ( !$supplemental and !$change_from ) {
-%           # suspension actions--always available for a package that's
-%           # independently active
+%           if ( !$supplemental ) {
+%           # suspension actions--always available
 %             if ( $curuser->access_right('Suspend customer package') ) {
                 (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
 %             }
