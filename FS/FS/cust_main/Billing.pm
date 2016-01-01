@@ -1042,10 +1042,15 @@ sub _make_lines {
         }
     }
 
-    $cust_pkg->setfield('setup', $time)
-      unless $cust_pkg->setup;
-          #do need it, but it won't get written to the db
-          #|| $cust_pkg->pkgpart != $real_pkgpart;
+    if ( $cust_pkg->get('setup') ) {
+      # don't change it
+    } elsif ( $cust_pkg->get('start_date') ) {
+      # this allows start_date to be used to set the first bill date
+      $cust_pkg->set('setup', $cust_pkg->get('start_date'));
+    } else {
+      # if unspecified, start it right now
+      $cust_pkg->set('setup', $time);
+    }
 
     $cust_pkg->setfield('start_date', '')
       if $cust_pkg->start_date;

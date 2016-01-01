@@ -1,0 +1,99 @@
+<& /elements/header-popup.html, mt($title) &>
+
+<& /elements/error.html &>
+
+% # only slightly different from unhold_pkg.
+<FORM NAME="MyForm" ACTION="process/change_pkg_start.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+
+<BR>
+<% emt('Start billing [_1]', $part_pkg->pkg_comment(cust_pkg => $cust_pkg)) %>
+<UL STYLE="padding-left: 3ex; list-style: none; background-color: #cccccc">
+<LI>
+  <& /elements/radio.html,
+    field => 'when',
+    id    => 'when_now',
+    value => 'now',
+    curr_value => $when,
+  &>
+  <label for="when_now"><% emt('Immediately') %></label>
+</LI>
+% if ( $next_bill_date ) {
+<LI>
+  <& /elements/radio.html,
+    field => 'when',
+    id    => 'when_next_bill_date',
+    value => 'next_bill_date',
+    curr_value => $when,
+  &>
+  <label for="when_next_bill_date">
+    <% emt('On the next bill date: [_1]', 
+      time2str($date_format, $next_bill_date) ) %>
+  </label>
+</LI>
+% }
+<LI>
+<& /elements/radio.html,
+  field => 'when',
+  id    => 'when_date',
+  value => 'date',
+  curr_value => $when,
+&>
+<label for="when_date"> <% emt('On this date:') %> </label>
+<& /elements/input-date-field.html,
+  { name  => 'start_date',
+    value => $cgi->param('start_date') || $cust_pkg->start_date,
+  }
+&>
+</LI>
+</UL>
+<INPUT TYPE="submit" NAME="submit" VALUE="<% emt('Set start date') %>">
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Change package start date');
+
+my $pkgnum;
+if ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  $pkgnum = $1;
+} else {
+  die "illegal query ". $cgi->keywords;
+}
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my $title = 'Start billing package';
+
+my $cust_pkg = qsearchs({
+  table     => 'cust_pkg',
+  addl_from => ' JOIN cust_main USING (custnum) ',
+  hashref   => { 'pkgnum' => $pkgnum },
+  extra_sql => ' AND '. $curuser->agentnums_sql,
+}) or die "Unknown pkgnum: $pkgnum";
+
+my $next_bill_date = $cust_pkg->cust_main->next_bill_date;
+
+my $part_pkg = $cust_pkg->part_pkg;
+
+# defaults:
+# sticky on error, then the existing start date if any, then the customer's
+# next bill date, and if none of those, default to now
+my $when = $cgi->param('when');
+
+if (!$when) {
+  if ($cust_pkg->start_date) {
+    $when = 'date';
+  } elsif ($next_bill_date) {
+    $when = 'next_bill_date';
+  } else {
+    $when = 'now';
+  }
+}
+</%init>

@@ -175,7 +175,7 @@
           </TR>
 %         }
 
-%       } else { 
+%       } else { # recurring package, not yet billed
 
           <% pkg_status_row_colspan($cust_pkg, emt("Not yet billed ($billed_or_prepaid [_1])", myfreq($part_pkg) ), '', %opt ) %>
 
@@ -188,6 +188,21 @@
           <% pkg_status_row_if($cust_pkg, emt('Start billing'), 'start_date', %opt) %>
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
+%         if ( !$opt{no_links}
+%               and !$change_from
+%               and !$supplemental # can be changed from its main package
+%               and $curuser->access_right('Change package start date') )
+%         {
+
+        <TR>
+          <TD COLSPAN=<%$opt{colspan}%>>
+            <FONT SIZE=-1>
+            (&nbsp;<% pkg_change_start_link($cust_pkg) %>&nbsp;)
+            </FONT>
+          </TD>
+        </TR>
+%         }
+          
 %       } 
 %
 %     } else { #setup
@@ -722,6 +737,18 @@ sub pkg_change_later_link {
     'cust_pkg'    => $cust_pkg,
     'width'       => 960,
     'height'      => 490,
+  )
+}
+
+sub pkg_change_start_link {
+  my $cust_pkg = shift;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p . 'misc/change_pkg_start.html?',
+    'label'       => emt('Set start date'),
+    'actionlabel' => emt('Set start of billing for'),
+    'cust_pkg'    => $cust_pkg,
+    'width'       => 510,
+    'height'      => 310,
   )
 }
 
