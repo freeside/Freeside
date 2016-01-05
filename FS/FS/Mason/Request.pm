@@ -65,6 +65,10 @@ sub freeside_setup {
             if fileno(STDOUT) != 1;
     }
 
+    FS::Trace->log('    adding headers');
+    #frame-ancestors not supported by all the major browsers yet
+    $HTML::Mason::Commands::r->header_out( 'X-Frame-Options', 'SAMEORIGIN' );
+
     if ( $filename =~ qr(/REST/\d+\.\d+/NoAuth/) ) {
 
       FS::Trace->log('    handling RT REST/NoAuth file');
