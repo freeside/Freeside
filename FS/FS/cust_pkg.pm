@@ -2959,6 +2959,20 @@ sub calc_recur {
   $self->part_pkg->calc_recur($self, @_);
 }
 
+=item base_setup
+
+Returns the base setup fee (per unit) of this package, from the package
+definition.
+
+=cut
+
+# minimal version for 3.x; in 4.x this can invoke currency conversion
+
+sub base_setup {
+  my $self = shift;
+  $self->part_pkg->unit_setup($self);
+}
+
 =item base_recur
 
 Calls the I<base_recur> of the FS::part_pkg object associated with this billing
