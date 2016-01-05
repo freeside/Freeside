@@ -845,7 +845,7 @@ sub _populate_initial_data { #class method
     die $error if $error;
 
     $conf->set( $hash->{_conf}, $msg_template->msgnum ) if $hash->{_conf};
-    FS::upgrade_journal->set_done( $hash->{_upgrade_journal} );
+    FS::upgrade_journal->set_done( $hash->{_upgrade_journal} ) if $hash->{_upgrade_journal};
   
   }
 
