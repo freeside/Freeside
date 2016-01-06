@@ -553,7 +553,7 @@ my $ulen =
   : dbdef->table('svc_acct')->column('username')->length;
 my $ulen2 = $ulen+2;
 
-my $pmax = max($conf->config('passwordmax') || 13);
+my $pmax = max($conf->config('passwordmax') || 12);
 my $pmax2 = $pmax+2;
 
 my $p1 = popurl(1);

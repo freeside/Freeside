@@ -47,7 +47,7 @@ sub is_password_allowed {
   # options for Data::Password
   $DICTIONARY = 4;   # minimum length of disallowed words
   $MINLEN = $conf->config('passwordmin') || 6;
-  $MAXLEN = $conf->config('passwordmax') || 8;
+  $MAXLEN = $conf->config('passwordmax') || 12;
   $GROUPS = 4;       # must have all 4 'character groups': numbers, symbols, uppercase, lowercase
   # other options use the defaults listed below:
   # $FOLLOWING = 3;    # disallows more than 3 chars in a row, by alphabet or keyboard (ie abcd or asdf)

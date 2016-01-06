@@ -78,7 +78,7 @@ my $conf = new FS::Conf;
 
 my $ulen = dbdef->table('svc_acct')->column('username')->length;
 my $ulen2 = $ulen+2;
-my $passwordmax = $conf->config('passwordmax') || 8;
+my $passwordmax = $conf->config('passwordmax') || 12;
 my $pmax2 = $passwordmax + 2;
 
 </%init>
