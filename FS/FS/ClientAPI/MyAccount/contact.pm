@@ -26,12 +26,7 @@ sub contact_passwd {
 
   my $error = '';
 
-  # use these svc_acct length restrictions??
-  my $conf = new FS::Conf;
-  $error = 'Password too short.'
-    if length($p->{'new_password'}) < ($conf->config('passwordmin') || 6);
-  $error = 'Password too long.'
-    if length($p->{'new_password'}) > ($conf->config('passwordmax') || 8);
+  # length checks now in is_password_allowed
 
   $error ||= $contact->is_password_allowed($p->{'new_password'});
 
