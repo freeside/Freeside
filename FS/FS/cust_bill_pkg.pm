@@ -338,7 +338,7 @@ sub void {
   unless (ref($reason) || !$reason) {
     $reason = FS::reason->new_or_existing(
       'class'  => 'I',
-      'type'   => 'Void invoice',
+      'type'   => 'Invoice void',
       'reason' => $reason
     );
   }
