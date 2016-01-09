@@ -51,7 +51,7 @@ if ( $r->method eq 'GET' ) {
                          JOIN contact USING (contactnum)
                          JOIN contact_email USING (contactnum)
                          WHERE cust_main.custnum = cust_contact.custnum
-                           AND contact.invoice_dest = 'Y'
+                           AND cust_contact.invoice_dest = 'Y'
                            AND contact_email.emailaddress = $dest
                      )
       ";
@@ -62,7 +62,7 @@ if ( $r->method eq 'GET' ) {
                          JOIN contact USING (contactnum)
                          JOIN contact_email USING (contactnum)
                          WHERE cust_main.custnum = cust_contact.custnum
-                           AND contact.invoice_dest = 'Y'
+                           AND cust_contact.invoice_dest = 'Y'
                            AND contact_email.emailaddress ILIKE $dest
                      )
       ";

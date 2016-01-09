@@ -90,10 +90,6 @@ empty or bcrypt
 
 disabled
 
-=item invoice_dest
-
-empty, or 'Y' if email invoices should be sent to this contact
-
 =back
 
 =head1 METHODS
@@ -134,6 +130,7 @@ be included in that record, if they are set on the object:
 - classnum
 - comment
 - selfservice_access
+- invoice_dest
 
 =cut
 
@@ -157,7 +154,7 @@ sub insert {
   $self->custnum('');
 
   my %link_hash = ();
-  for (qw( classnum comment selfservice_access )) {
+  for (qw( classnum comment selfservice_access invoice_dest )) {
     $link_hash{$_} = $self->get($_);
     $self->$_('');
   }
@@ -425,7 +422,7 @@ sub replace {
   $self->custnum('');
 
   my %link_hash = ();
-  for (qw( classnum comment selfservice_access )) {
+  for (qw( classnum comment selfservice_access invoice_dest )) {
     $link_hash{$_} = $self->get($_);
     $self->$_('');
   }
@@ -674,7 +671,6 @@ sub check {
     || $self->ut_textn('_password')
     || $self->ut_enum('_password_encoding', [ '', 'bcrypt'])
     || $self->ut_enum('disabled', [ '', 'Y' ])
-    || $self->ut_flag('invoice_dest')
   ;
   return $error if $error;
 
@@ -960,7 +956,7 @@ sub _upgrade_data { #class method
       $dest = $svc_acct->email;
     }
 
-    my $error = $cust_main->replace( [ $dest ] );
+    my $error = $cust_main->replace( invoicing_list => [ $dest ] );
 
     if ( $error ) {
       die "custnum $custnum, invoice destination $dest, creating contact: $error\n";
@@ -971,14 +967,14 @@ sub _upgrade_data { #class method
 
   } # while $search->fetch
 
-  unless ( FS::upgrade_journal->is_done('contact__DUPEMAIL') ) {
+  unless ( FS::upgrade_journal->is_done('contact_invoice_dest') ) {
 
     foreach my $contact (qsearch('contact', {})) {
       my $error = $contact->replace;
       die $error if $error;
     }
 
-    FS::upgrade_journal->set_done('contact__DUPEMAIL');
+    FS::upgrade_journal->set_done('contact_invoice_dest');
   }
 
 }

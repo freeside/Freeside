@@ -165,7 +165,7 @@ if ( $cgi->param('residential_commercial') eq 'Residential' ) {
     $error = 'Email address required';
   }
 
-  $options{'invoicing_list'} = [ $email ];
+  $options{'invoicing_list'} = [ split(/\s*,\s*/, $email) ];
   # XXX really should include the phone numbers in here also
 
 } else {

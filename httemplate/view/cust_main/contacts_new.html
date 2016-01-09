@@ -31,7 +31,7 @@
 
 %       my @contact_email = $contact->contact_email;
         <%$td%><% join(', ', map $_->emailaddress, @contact_email) %></TD>
-        <%$td%><% $contact->invoice_dest eq 'Y' ? 'Yes' : 'No' %></TD>
+        <%$td%><% $cust_contact->invoice_dest eq 'Y' ? 'Yes' : 'No' %></TD>
         <%$td%>
 %         if ( $cust_contact->selfservice_access ) {
             Enabled
