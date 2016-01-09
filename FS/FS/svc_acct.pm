@@ -713,14 +713,21 @@ sub insert {
 
       # slight false laziness w/ edit/process/cust_main.cgi...
       # and also slightly arbitrary behavior.
-      # if the "real name" of this account matches the first + last name
-      # of a contact, attach the email address to that person.
-      my @contacts = map { $_->contact } $cust_main->cust_contact;
-      my $myname = $self->get('finger');
-      my ($contact) =
-        grep { $_->get('first') . ' ' . $_->get('last') eq $myname } @contacts;
-      # otherwise just pick the first one
-      $contact ||= $contacts[0];
+      #
+      # this will never happen but check it anyway
+      my ($contact) = map { $_->contact }
+        qsearch('contact_email', { emailaddress => $self->email });
+
+      if (!$contact) {
+        # if the "real name" of this account matches the first + last name
+        # of a contact, attach the email address to that person.
+        my @contacts = map { $_->contact } $cust_main->cust_contact;
+        my $myname = $self->get('finger');
+        my ($contact) =
+          grep { $_->get('first') . ' ' . $_->get('last') eq $myname } @contacts;
+        # otherwise just pick the first one
+        $contact = $contacts[0];
+      }
       # if there is one
       $contact ||= FS::contact->new({
           'custnum'       => $cust_main->get('custnum'),

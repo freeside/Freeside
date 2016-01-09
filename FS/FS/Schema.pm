@@ -1755,6 +1755,7 @@ sub tables_hashref {
         'classnum',              'int', 'NULL',  '', '', '',
         'comment',           'varchar', 'NULL', 255, '', '',
         'selfservice_access',   'char', 'NULL',   1, '', '',
+        'invoice_dest',         'char', 'NULL',       1, '', '',
       ],
       'primary_key'  => 'custcontactnum',
       'unique'       => [ [ 'custnum', 'contactnum' ], ],

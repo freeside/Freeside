@@ -55,6 +55,10 @@ comment
 
 empty or Y
 
+=item invoice_dest
+
+'Y' if the customer should get invoices sent to this address, null if not
+
 =back
 
 =head1 METHODS
@@ -114,6 +118,7 @@ sub check {
     || $self->ut_numbern('classnum')
     || $self->ut_textn('comment')
     || $self->ut_enum('selfservice_access', [ '', 'Y' ])
+    || $self->ut_flag('invoice_dest')
   ;
   return $error if $error;
 

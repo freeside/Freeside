@@ -558,13 +558,42 @@ sub insert {
   $invoicing_list ||= $options{'invoicing_list'};
   if ( $invoicing_list ) {
 
-    $invoicing_list = join(',', @$invoicing_list) if ref $invoicing_list;
+    $invoicing_list = [ $invoicing_list ] if !ref($invoicing_list);
+
+    my $email = '';
+    foreach my $dest (@$invoicing_list ) {
+      if ($dest eq 'POST') {
+        $self->set('postal_invoice', 'Y');
+      } else {
+
+        my $contact_email = qsearchs('contact_email', { emailaddress => $dest });
+        if ( $contact_email ) {
+          my $cust_contact = FS::cust_contact->new({
+              contactnum    => $contact_email->contactnum,
+              custnum       => $self->custnum,
+          });
+          $cust_contact->set('invoice_dest', 'Y');
+          my $error = $cust_contact->contactnum ?
+                        $cust_contact->replace : $cust_contact->insert;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return "$error (linking to email address $dest)";
+          }
+
+        } else {
+          # this email address is not yet linked to any contact
+          $email .= ',' if length($email);
+          $email .= $dest;
+        }
+      }
+    }
+
     my $contact = FS::contact->new({
       'custnum'       => $self->get('custnum'),
       'last'          => $self->get('last'),
       'first'         => $self->get('first'),
-      'emailaddress'  => $invoicing_list,
-      'invoice_dest'  => 'Y',
+      'emailaddress'  => $email,
+      'invoice_dest'  => 'Y', # yes, you can set this via the contact
     });
     my $error = $contact->insert;
     if ( $error ) {
@@ -1365,40 +1394,106 @@ sub replace {
 
   $invoicing_list ||= $options{invoicing_list};
 
+  my @contacts = map { $_->contact } $self->cust_contact;
+  # find a contact that matches the customer's name
+  my ($implicit_contact) = grep { $_->first eq $old->get('first')
+                              and $_->last  eq $old->get('last') }
+                            @contacts;
+  $implicit_contact ||= FS::contact->new({
+      'custnum'       => $self->custnum,
+      'locationnum'   => $self->get('bill_locationnum'),
+  });
+
+  # for any of these that are already contact emails, link to the existing
+  # contact
   if ( $invoicing_list ) {
     my $email = '';
-    foreach (@$invoicing_list) {
-      if ($_ eq 'POST') {
-        $self->set('postal_invoice', 'Y');
-      } else {
-        $email .= ',' if length($email);
-        $email .= $_;
+
+    # kind of like process_m2m on these, except:
+    # - the other side is two tables in a join
+    # - and we might have to create new contact_emails
+    # - and possibly a new contact
+    # 
+    # Find existing invoice emails that aren't on the implicit contact.
+    # Any of these that are not on the new invoicing list will be removed.
+    my %old_email_cust_contact;
+    foreach my $cust_contact ($self->cust_contact) {
+      next if !$cust_contact->invoice_dest;
+      next if $cust_contact->contactnum == ($implicit_contact->contactnum || 0);
+
+      foreach my $contact_email ($cust_contact->contact->contact_email) {
+        $old_email_cust_contact{ $contact_email->emailaddress } = $cust_contact;
       }
     }
-    my @contacts = map { $_->contact } $self->cust_contact;
-    # if possible, use a contact that matches the customer's name
-    my ($contact) = grep { $_->first eq $old->get('first') and
-                           $_->last  eq $old->get('last') }
-                    @contacts;
-    $contact ||= FS::contact->new({
-        'custnum'       => $self->custnum,
-        'locationnum'   => $self->get('bill_locationnum'),
-    });
-    $contact->set('last', $self->get('last'));
-    $contact->set('first', $self->get('first'));
-    $contact->set('emailaddress', $email);
-    $contact->set('invoice_dest', 'Y');
+
+    foreach my $dest (@$invoicing_list) {
+
+      if ($dest eq 'POST') {
+
+        $self->set('postal_invoice', 'Y');
+
+      } elsif ( exists($old_email_cust_contact{$dest}) ) {
+
+        delete $old_email_cust_contact{$dest}; # don't need to remove it, then
+
+      } else {
+
+        # See if it belongs to some other contact; if so, link it.
+        my $contact_email = qsearchs('contact_email', { emailaddress => $dest });
+        if ( $contact_email
+             and $contact_email->contactnum != ($implicit_contact->contactnum || 0) ) {
+          my $cust_contact = qsearchs('cust_contact', {
+              contactnum  => $contact_email->contactnum,
+              custnum     => $self->custnum,
+          }) || FS::cust_contact->new({
+              contactnum    => $contact_email->contactnum,
+              custnum       => $self->custnum,
+          });
+          $cust_contact->set('invoice_dest', 'Y');
+          my $error = $cust_contact->custcontactnum ?
+                        $cust_contact->replace : $cust_contact->insert;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return "$error (linking to email address $dest)";
+          }
+
+        } else {
+          # This email address is not yet linked to any contact, so it will
+          # be added to the implicit contact.
+          $email .= ',' if length($email);
+          $email .= $dest;
+        }
+      }
+    }
+
+    foreach my $remove_dest (keys %old_email_cust_contact) {
+      my $cust_contact = $old_email_cust_contact{$remove_dest};
+      # These were not in the list of requested destinations, so take them off.
+      $cust_contact->set('invoice_dest', '');
+      my $error = $cust_contact->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "$error (unlinking email address $remove_dest)";
+      }
+    }
+
+    # make sure it keeps up with the changed customer name, if any
+    $implicit_contact->set('last', $self->get('last'));
+    $implicit_contact->set('first', $self->get('first'));
+    $implicit_contact->set('emailaddress', $email);
+    $implicit_contact->set('invoice_dest', 'Y');
+    $implicit_contact->set('custnum', $self->custnum);
 
     my $error;
-    if ( $contact->contactnum ) {
-      $error = $contact->replace;
-    } elsif ( length($email) ) { # don't create a new contact if email is empty
-      $error = $contact->insert;
+    if ( $implicit_contact->contactnum ) {
+      $error = $implicit_contact->replace;
+    } elsif ( length($email) ) { # don't create a new contact if not needed
+      $error = $implicit_contact->insert;
     }
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "$error (adding email address $email)";
     }
 
   }
@@ -2987,7 +3082,7 @@ sub invoicing_list_emailonly {
         addl_from => ' JOIN contact USING (contactnum) '.
                      ' JOIN contact_email USING (contactnum)',
         hashref   => { 'custnum' => $self->custnum, },
-        extra_sql => q( AND invoice_dest = 'Y'),
+        extra_sql => q( AND cust_contact.invoice_dest = 'Y'),
     });
 }
 

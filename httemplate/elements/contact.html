@@ -40,7 +40,9 @@
 %         }
 %       } elsif ( $field eq 'emailaddress' ) {
 %         $value = join(', ', map $_->emailaddress, $contact->contact_email);
-%       } elsif ( $field eq 'selfservice_access' || $field eq 'comment' ) {
+%       } elsif ( $field eq 'selfservice_access'
+%              or $field eq 'comment'
+%              or $field eq 'invoice_dest' ) {
 %         $value = $X_contact->get($field);
 %       } else {
 %         $value = $contact->get($field);
