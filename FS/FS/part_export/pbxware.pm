@@ -168,6 +168,10 @@ sub api_request {
   my $self = shift;
   my ($method, $content) = @_;
   $DEBUG ||= 1 if $self->option('debug');
+
+# kludge to curb excessive paranoia in LWP 6.0+
+local $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
+
   my $url = 'https://' . $self->machine;
   my $request = POST($url,
     [ %$content,
