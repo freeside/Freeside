@@ -12,6 +12,11 @@ use FS::export_svc;
 use FS::cust_svc;
 use FS::part_svc_class;
 
+FS::UID->install_callback(sub {
+    # preload the cache and make sure all modules load
+    my $svc_defs = FS::part_svc->_svc_defs;
+});
+
 $DEBUG = 0;
 
 =head1 NAME
@@ -649,8 +654,16 @@ sub _svc_defs {
         next;
       }
       $info{$mod} = $info;
+
+      # all svc_* modules are required to have h_svc_* modules for invoice
+      # display. check for them as early as possible.
+      eval "use FS::h_$mod;";
+      if ( $@ ) {
+        die "couldn't load history record module h_$mod: $@\n";
+      }
     }
   }
+
 
   tie my %svc_defs, 'Tie::IxHash', 
     map  { $_ => $info{$_}->{'fields'} }
