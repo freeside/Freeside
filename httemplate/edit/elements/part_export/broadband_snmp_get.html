@@ -7,17 +7,17 @@ Quite a bit of false laziness with edit/elements/part_export/broadband_snmp.html
   label   => 'SNMP version',
   field   => 'snmp_version',
   options => [ '1', '2c' ],
-  curr_value => $part_export->option('version') 
+  curr_value => $curr_value->{'snmp_version'} 
 &>
 <& /elements/tr-input-text.html,
   label   => 'Community',
   field   => 'snmp_community',
-  curr_value  => $part_export->option('community') || $opt{'export_info'}->{'options'}->{'snmp_community'}->{'default'},
+  curr_value  => $curr_value->{'snmp_community'},
 &>
 <& /elements/tr-input-text.html,
   label   => 'Timeout (seconds)',
   field   => 'snmp_timeout',
-  curr_value  => $part_export->option('timeout') || $opt{'export_info'}->{'options'}->{'snmp_timeout'}->{'default'},
+  curr_value  => $curr_value->{'snmp_timeout'},
 &>
 </TABLE>
 <script type="text/javascript">
@@ -64,6 +64,13 @@ function receive_mib_get(obj, rownum) {
 my %opt = @_;
 
 my $part_export = $opt{part_export} || FS::part_export->new;
+
+my $curr_value = {};
+foreach my $field ( qw(snmp_version snmp_community snmp_timeout) ) {
+  $curr_value->{$field} = ($opt{'part_export'} && $opt{'part_export'}->exportnum)
+                          ? $part_export->option($field) 
+                          : $opt{'export_info'}->{'options'}->{$field}->{'default'};
+}
 
 my @oids    = split("\n", $part_export->option('snmp_oid'));
 
