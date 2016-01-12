@@ -103,7 +103,8 @@ Depends: freeside-lib,apache2,apache2-mpm-prefork,apache2-utils,
  libapache-dbi-perl,libapache2-mod-perl2,libapache2-request-perl,
  libapache-session-perl,openssl, libcgi-emulate-psgi-perl,
  libplack-perl (>= 1.0002)
-Conflicts: apache2-mpm-worker, libev-perl
+Conflicts: apache2-mpm-worker
+Breaks: libev-perl
 Description: Web interface for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
  .
