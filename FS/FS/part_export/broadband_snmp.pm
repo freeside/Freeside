@@ -55,8 +55,10 @@ tie my %options, 'Tie::IxHash',
   'weight'  => 10,
   'notes'   => <<'END'
 Send one or more SNMP SET requests to the IP address registered to the service.
-The value may interpolate fields from svc_broadband by prefixing the field 
-name with <b>$</b>, or <b>$new_</b> and <b>$old_</b> for replace operations.
+The value may interpolate fields from svc_broadband, cust_location, or
+cust_main by prefixing the field name with <b>$</b>. For replace operations,
+svc_broadband fields may be prefixed with <b>$new_</b> and <b>$old_</b>
+(e.g. "$old_mac_addr").
 END
 );
 
@@ -159,6 +161,10 @@ sub substitute {
   # accepts old_ and new_ for replace actions, like shellcommands
   my $self = shift;
   my ($value, $svc_new, $svc_old) = @_;
+
+  my $location = $svc_new->cust_svc->cust_pkg->cust_location;
+  my $cust_main = $location->cust_main;
+
   foreach my $field ( $svc_new->fields ) {
     my $new_val = $svc_new->$field;
     $value =~ s/\$(new_)?$field/$new_val/g;
@@ -167,6 +173,21 @@ sub substitute {
       $value =~ s/\$old_$field/$old_val/g;
     }
   }
+
+  # we don't yet have export_relocate hooks in here, so there's no old/new
+  # cust_location. do cust_location before cust_main, since cust_main has
+  # a bunch of empty fields with the same names.
+  
+  foreach my $field ( $location->fields ) {
+    my $curr_val = $location->get($field);
+    $value =~ s/\$$field/$curr_val/g;
+  }
+
+  foreach my $field ( $cust_main->fields ) {
+    my $curr_val = $cust_main->get($field);
+    $value =~ s/\$$field/$curr_val/g;
+  }
+
   $value;
 }
 
