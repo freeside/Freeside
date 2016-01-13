@@ -12,8 +12,21 @@ my $precheck_callback = sub {
   my $cgi = shift;
   my $svcnum = $cgi->param('svcnum');
   my $error = '';
+  my $old;
+  my $part_svc;
+
   if ( $svcnum ) {
-    my $old = FS::svc_dsl->by_key($svcnum);
+    $old = FS::svc_dsl->by_key($svcnum);
+    $part_svc = $old->part_svc;
+  } else {
+    my $svcpart = $cgi->param('svcpart') or die "svcpart required";
+    $part_svc = FS::part_svc->by_key($svcpart);
+  }
+  my $psc = $part_svc->part_svc_column('password');
+  if ( $psc->columnflag eq 'F' ) {
+    # enforce it here and skip password validation
+    $cgi->param('password', $psc->columnvalue;
+  } else {
     my $newpass = $cgi->param('password');
     if ( $old and $newpass ne $old->password ) {
       $error ||= $old->is_password_allowed($newpass);

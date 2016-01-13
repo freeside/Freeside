@@ -35,7 +35,7 @@ message on failure, an empty string on success.
 This MUST NOT be called from check(). It should be called by the office UI,
 self-service ClientAPI, or other I<user-interactive> code that processes a
 password change, and only if the user has taken some action with the intent
-of changing the password.
+of setting the password.
 
 =cut
 
