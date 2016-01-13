@@ -76,17 +76,30 @@ if ( $cgi->param('captcha_response') ) {
   }
 }
 
-$new->_password($old->_password) if $old;
-if (     $cgi->param('clear_password') eq '*HIDDEN*'
-      || $cgi->param('clear_password') =~ /^\(.* encrypted\)$/ ) {
-  die "fatal: no previous account to recall hidden password from!" unless $old;
+# check whether the password is set as "fixed" in the service def. if so,
+# ignore the password that was submitted and use the fixed value.
+
+my $psc = $part_svc->part_svc_column('_password');
+if ( $psc->columnflag eq 'F' ) {
+
+  $new->set('_password', $psc->columnvalue);
+
 } else {
-  my $newpass = $cgi->param('clear_password');
-  if ( !$old or ! $old->check_password($newpass) ) {
-    # then the password is being changed
-    $error ||= $new->is_password_allowed($newpass)
-           ||  $new->set_password($newpass);
+
+  $new->_password($old->_password) if $old;
+  if (     $cgi->param('clear_password') eq '*HIDDEN*'
+        || $cgi->param('clear_password') =~ /^\(.* encrypted\)$/ ) {
+    die "fatal: no previous account to recall hidden password from!"
+      unless $old;
+  } else {
+    my $newpass = $cgi->param('clear_password');
+    if ( !$old or ! $old->check_password($newpass) ) {
+      # then the password is being changed
+      $error ||= $new->is_password_allowed($newpass)
+             ||  $new->set_password($newpass);
+    }
   }
+
 }
 
 if ( ! $error ) {
