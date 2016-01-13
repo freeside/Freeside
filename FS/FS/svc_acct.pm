@@ -297,7 +297,7 @@ sub table_info {
                          disable_inventory => 1,
                        },
         '_password' => { label => 'Password',
-                         required => 1
+          #required => 1
                        },
         'gid'       => {
                          label    => 'GID',

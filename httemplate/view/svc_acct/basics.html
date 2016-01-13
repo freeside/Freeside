@@ -33,22 +33,29 @@
 %   $password = '';
 %   $show_pw .= '<I>('. mt('hidden') .')</I>';
 % }
+% my $psc = $part_svc->part_svc_column('_password');
+% if ( $psc->columnflag eq 'F' and $psc->columnvalue eq '' ) {
+%   # show nothing
+% } else {
 <TR>
   <TD ALIGN="right"><% mt('Password') %></TD>
   <TD STYLE="background-color: #ffffff; white-space: nowrap">
   <% $show_pw %>
-% my $curuser = $FS::CurrentUser::CurrentUser;
-% if ( $curuser->access_right('Provision customer service') or
-%     ($curuser->access_right('Edit password') and
-%      ! $part_svc->restrict_edit_password) )
-% {
+%   my $curuser = $FS::CurrentUser::CurrentUser;
+%   if ( $curuser->access_right('Provision customer service') or
+%       ($curuser->access_right('Edit password') and
+%       ! $part_svc->restrict_edit_password)
+%        and $psc->columnflag ne 'F'
+%      )
+%   {
   <& /elements/change_password.html,
       'svc_acct'    => $svc_acct,
       'curr_value'  => $password,
   &>
-% }
+%   }
   </TD>
 </TR>
+% }
 
 % if ( $conf->exists('security_phrase') ) {
   <& /view/elements/tr.html, label=>mt('Security phrase'), value=>$svc_acct->sec_phrase &>
