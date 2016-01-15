@@ -41,6 +41,7 @@ if ( $receipt_html ) { ?>
 
   $payment_info = $freeside->payment_info( array(
     'session_id' => $_COOKIE['session_id'],
+    'payment_payby' => 'CHEK',
   ) );
 
   if ( isset($payment_info['error']) && $payment_info['error'] ) {
