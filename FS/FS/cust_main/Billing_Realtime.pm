@@ -56,12 +56,7 @@ sub realtime_cust_payby {
 
   $options{amount} = $self->balance unless exists( $options{amount} );
 
-  my @cust_payby = qsearch({
-    'table'     => 'cust_payby',
-    'hashref'   => { 'custnum' => $self->custnum, },
-    'extra_sql' => " AND payby IN ( 'CARD', 'CHEK' ) ",
-    'order_by'  => 'ORDER BY weight ASC',
-  });
+  my @cust_payby = $self->cust_payby('CARD','CHEK');
                                                    
   my $error;
   foreach my $cust_payby (@cust_payby) {
@@ -752,8 +747,7 @@ sub realtime_bop {
   # remove paycvv after initial transaction
   ###
 
-  #false laziness w/misc/process/payment.cgi - check both to make sure working
-  # correctly
+  # compare to FS::cust_main::save_cust_payby - check both to make sure working correctly
   if ( length($self->paycvv)
        && ! grep { $_ eq cardtype($options{payinfo}) } $conf->config('cvv-save')
   ) {

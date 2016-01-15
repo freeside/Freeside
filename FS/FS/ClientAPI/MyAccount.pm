@@ -853,27 +853,33 @@ sub payment_info {
   $return{$_} = $cust_main->bill_location->get($_) 
     for qw(address1 address2 city state zip);
 
-  #XXX look for stored cust_payby info
-  #
-  # $return{payname} = $cust_main->payname
-  #                    || ( $cust_main->first. ' '. $cust_main->get('last') );
-  #
-  #if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-  #  $return{card_type} = cardtype($cust_main->payinfo);
-  #  $return{payinfo} = $cust_main->paymask;
-  #
-  #  @return{'month', 'year'} = $cust_main->paydate_monthyear;
-  #
-  #}
-  #
-  #if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-  #  my ($payinfo1, $payinfo2) = split '@', $cust_main->paymask;
-  #  $return{payinfo1} = $payinfo1;
-  #  $return{payinfo2} = $payinfo2;
-  #  $return{paytype}  = $cust_main->paytype;
-  #  $return{paystate} = $cust_main->paystate;
-  #  $return{payname}  = $cust_main->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
-  #}
+  # look for stored cust_payby info
+  #   only if we've been given a clear payment_payby (to avoid payname conflicts)
+  if ($p->{'payment_payby'} =~ /^(CARD|CHEK)$/) {
+    my @search_payby = ($p->{'payment_payby'} eq 'CARD') ? ('CARD','DCRD') : ('CHEK','DCHK');
+    my ($cust_payby) = $cust_main->cust_payby(@search_payby);
+    if ($cust_payby) {
+      $return{payname} = $cust_payby->payname
+                         || ( $cust_main->first. ' '. $cust_main->get('last') );
+
+      if ( $cust_payby->payby =~ /^(CARD|DCRD)$/ ) {
+        $return{card_type} = cardtype($cust_payby->payinfo);
+        $return{payinfo} = $cust_payby->paymask;
+
+        @return{'month', 'year'} = $cust_payby->paydate_monthyear;
+
+      }
+
+      if ( $cust_payby->payby =~ /^(CHEK|DCHK)$/ ) {
+        my ($payinfo1, $payinfo2) = split '@', $cust_payby->paymask;
+        $return{payinfo1} = $payinfo1;
+        $return{payinfo2} = $payinfo2;
+        $return{paytype}  = $cust_payby->paytype;
+        $return{paystate} = $cust_payby->paystate;
+        $return{payname}  = $cust_payby->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
+      }
+    }
+  }
 
   if ( $conf->config('prepayment_discounts-credit_type') ) {
     #need to eval?
@@ -961,8 +967,12 @@ sub validate_payment {
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
 
-    $payinfo = $cust_main->payinfo
-      if $cust_main->paymask eq $payinfo;
+    foreach my $cust_payby ($cust_main->cust_payby('CHEK','DCHK')) {
+      if ( $cust_payby->paymask eq $payinfo ) {
+        $payinfo = $cust_payby->payinfo;
+        last;
+      }
+    }
    
   } elsif ( $payby eq 'CARD' || $payby eq 'DCRD' ) {
    
@@ -972,9 +982,12 @@ sub validate_payment {
 
     #more intelligent matching will be needed here if you change
     #card_masking_method and don't remove existing paymasks
-    if ( $cust_main->paymask eq $payinfo ) {
-      $payinfo = $cust_main->payinfo;
-      $onfile = 1;
+    foreach my $cust_payby ($cust_main->cust_payby('CARD','DCRD')) {
+      if ( $cust_payby->paymask eq $payinfo ) {
+        $payinfo = $cust_payby->payinfo;
+        $onfile = 1;
+        last;
+      }
     }
 
     $payinfo =~ s/\D//g;
@@ -1092,28 +1105,33 @@ sub do_process_payment {
   my $payby = delete $validate->{'payby'};
 
   if ( $validate->{'save'} ) {
-    my $new = new FS::cust_main { $cust_main->hash };
-    if ($payby eq 'CARD' || $payby eq 'DCRD') {
-      $new->set( $_ => $validate->{$_} )
-        foreach qw( payname paystart_month paystart_year payissue payip );
-      $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
 
+    my %saveopt;
+    foreach my $field ( qw( auto payinfo paymask payname payip ) ) {
+      $saveopt{$field} = $validate->{$field};
+    }
+
+    if ( $payby eq 'CARD' ) {
       my $bill_location = FS::cust_location->new({
           map { $_ => $validate->{$_} } 
           qw(address1 address2 city state country zip)
-      }); # county?
-      $new->set('bill_location' => $bill_location);
-      # but don't allow the service address to change this way.
-
-    } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
-      $new->set( $_ => $validate->{$_} )
-        foreach qw( payname payip paytype paystate
-                    stateid stateid_state );
-      $new->set( 'payby' => $validate->{'auto'} ? 'CHEK' : 'DCHK' );
+      });
+      $saveopt{'bill_location'} = $bill_location;
+      foreach my $field ( qw( paydate paystart_month paystart_year payissue ) ) {
+        $saveopt{$field} = $validate->{$field};
+      }
+    } else {
+      # stateid/stateid_state won't be saved, might be broken as of 4.x
+      foreach my $field ( qw( paytype paystate ) ) {
+        $saveopt{$field} = $validate->{$field};
+      }
     }
-    $new->payinfo( $validate->{'payinfo'} ); #to properly set paymask
-    $new->set( 'paydate' => $validate->{'paydate'} );
-    my $error = $new->replace($cust_main);
+
+    my $error = $cust_main->save_cust_payby(
+      'payment_payby' => $payby,
+      %saveopt
+    );
+
     if ( $error ) {
       #no, this causes customers to process their payments again
       #return { 'error' => $error };
@@ -1122,11 +1140,10 @@ sub do_process_payment {
       #address" page but indicate if the payment processed?
       delete($validate->{'payinfo'}); #don't want to log this!
       warn "WARNING: error changing customer info when processing payment (not returning to customer as a processing error): $error\n".
-           "NEW: ". Dumper($new)."\n".
-           "OLD: ". Dumper($cust_main)."\n".
+           "PAYBY: $payby\n".
+           "SAVEOPT: ".Dumper(\%saveopt)."\n".
+           "CUST_MAIN: ". Dumper($cust_main)."\n".
            "PACKET: ". Dumper($validate)."\n";
-    } else {
-      $cust_main = $new;
     }
   }
 

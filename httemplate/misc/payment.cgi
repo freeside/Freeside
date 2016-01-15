@@ -33,15 +33,22 @@
     &>
 % }
 
+% my $auto = 0;
 % if ( $payby eq 'CARD' ) {
 %
 %   my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
 %   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
-%   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-%     $payinfo = $cust_main->paymask;
-%     $paycvv = $cust_main->paycvv;
-%     ( $month, $year ) = $cust_main->paydate_monthyear;
-%     $payname = $cust_main->payname if $cust_main->payname;
+%   my $location = $cust_main->bill_location;
+%
+%   #auto-fill with the highest weighted match
+%   my ($cust_payby) = $cust_main->cust_payby('CARD','DCRD');
+%   if ($cust_payby) {
+%     $payinfo = $cust_payby->paymask;
+%     $paycvv  = $cust_payby->paycvv;
+%     ( $month, $year ) = $cust_payby->paydate_monthyear;
+%     $payname = $cust_payby->payname if $cust_payby->payname;
+%     $location = $cust_payby->cust_location || $location;
+%     $auto = 1 if $cust_payby->payby eq 'CARD';
 %   }
 
     <TR>
@@ -87,7 +94,7 @@
     </TR>
 
     <& /elements/location.html,
-                  'object'         => $cust_main->bill_location,
+                  'object'         => $location,
                   'no_asterisks'   => 1,
                   'address1_label' => emt('Card billing address'),
     &>
@@ -97,16 +104,19 @@
 %   my( $account, $aba, $branch, $payname, $ss, $paytype, $paystate,
 %       $stateid, $stateid_state )
 %     = ( '', '', '', '', '', '', '', '', '' );
-%   if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-%     $cust_main->paymask =~ /^([\dx]+)\@([\d\.x]*)$/i
-%       or die "unparsable payinfo ". $cust_main->payinfo;
+%   my ($cust_payby) = $cust_main->cust_payby('CHEK','DCHK');
+%   if ($cust_payby) {
+%     $cust_payby->paymask =~ /^([\dx]+)\@([\d\.x]*)$/i
+%       or die "unparsable paymask ". $cust_payby->paymask;
 %     ($account, $aba) = ($1, $2);
 %     ($branch,$aba) = split('\.',$aba)
 %       if $conf->config('echeck-country') eq 'CA';
-%     $payname = $cust_main->payname;
+%     $payname = $cust_payby->payname;
+%     $paytype = $cust_payby->getfield('paytype');
+%     $paystate = $cust_payby->getfield('paystate');
+%     $auto = 1 if $cust_payby->payby eq 'CHEK';
+%     # these values aren't in cust_payby, but maybe should be...
 %     $ss = $cust_main->ss;
-%     $paytype = $cust_main->getfield('paytype');
-%     $paystate = $cust_main->getfield('paystate');
 %     $stateid = $cust_main->getfield('stateid');
 %     $stateid_state = $cust_main->getfield('stateid_state');
 %   }
@@ -228,7 +238,7 @@
 
 <TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox"<% ( ( $payby eq 'CARD' && $cust_main->payby ne 'DCRD' ) || ( $payby eq 'CHEK' && $cust_main->payby eq 'CHEK' ) ) ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
+    <INPUT TYPE="checkbox"<% $auto ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
     <% mt("Charge future payments to this [_1] automatically",$type{$payby}) |h %> 
   </TD>
 </TR>
@@ -259,10 +269,6 @@ my $custnum = $1;
 
 my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
 die "unknown custnum $custnum" unless $cust_main;
-
-my $location = $cust_main->bill_location;
-# no proper error handling on this anyway, but when we have it,
-# remember to repopulate fields in $location
 
 my $balance = $cust_main->balance;
 

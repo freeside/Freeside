@@ -2,6 +2,7 @@ package FS::cust_payby;
 use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
+use Scalar::Util qw( blessed );
 use Digest::SHA qw( sha512_base64 );
 use Business::CreditCard qw( validate cardtype );
 use FS::UID qw( dbh );
@@ -202,8 +203,7 @@ sub replace {
           )
      )
   {
-warn $self->payinfo;
-warn $old->payinfo;
+
     $self->payinfo($old->payinfo);
 
   } elsif ( $self->payby =~ /^(CHEK|DCHK)$/ && $self->payinfo =~ /xx/ ) {

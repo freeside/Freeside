@@ -76,11 +76,29 @@ my $balance = $1;
 my $payinfo;
 my $paymask; # override only used by loaded cust payinfo, only implemented for realtime processing
 my $paycvv = '';
+my $loaded_cust_payby;
 if ( $payby eq 'CHEK' ) {
 
   if ($cgi->param('payinfo1') =~ /xx/i || $cgi->param('payinfo2') =~ /xx/i ) {
-    $payinfo = $cust_main->payinfo;
-    $paymask = $cust_main->paymask;
+
+    my $search_paymask = $cgi->param('payinfo1') . '@' . $cgi->param('payinfo2');
+    $search_paymask .= '.' . $cgi->param('payinfo3')
+      if $conf->config('echeck-country') eq 'CA';
+
+    #paymask might not be saved in database, need to run paymask method for any potential match
+    foreach my $search_cust_payby ($cust_main->cust_payby('CHEK','DCHK')) {
+      if ($search_paymask eq $search_cust_payby->paymask) {
+        # if there are multiple matches, assume for now that it's the first one returned,
+        # since that's what auto-fills; it's unlikely a masked number would be entered by hand,
+        # but it's very likely users will just click-through what's been auto-filled
+        $loaded_cust_payby = $search_cust_payby;
+        last;
+      }
+    }
+    errorpage("Masked payinfo not found") unless $loaded_cust_payby;
+    $payinfo = $loaded_cust_payby->payinfo;
+    $paymask = $loaded_cust_payby->paymask;
+
   } else {
     $cgi->param('payinfo1') =~ /^(\d+)$/
       or errorpage("Illegal account number ". $cgi->param('payinfo1'));
@@ -99,10 +117,22 @@ if ( $payby eq 'CHEK' ) {
 } elsif ( $payby eq 'CARD' ) {
 
   $payinfo = $cgi->param('payinfo');
-  if ($payinfo eq $cust_main->paymask) {
-    $payinfo = $cust_main->payinfo;
-    $paymask = $cust_main->paymask;
+  if ($payinfo =~ /xx/i) {
+
+    #paymask might not be saved in database, need to run paymask method for any potential match
+    foreach my $search_cust_payby ($cust_main->cust_payby('CARD','DCRD')) {
+      if ($payinfo eq $search_cust_payby->paymask) {
+        $loaded_cust_payby = $search_cust_payby;
+        last;
+      }
+    }
+
+    errorpage("Masked payinfo not found") unless $loaded_cust_payby;
+    $payinfo = $loaded_cust_payby->payinfo;
+    $paymask = $loaded_cust_payby->paymask;
+
   }
+
   $payinfo =~ s/\D//g;
   $payinfo =~ /^(\d{13,16}|\d{8,9})$/
     or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
@@ -114,7 +144,7 @@ if ( $payby eq 'CHEK' ) {
     if $payinfo !~ /^99\d{14}$/ #token
     && cardtype($payinfo) eq "Unknown";
 
-  if ( defined $cust_main->dbdef_table->column('paycvv') ) {
+  if ( defined $cust_main->dbdef_table->column('paycvv') ) { #is this test necessary anymore?
     if ( length($cgi->param('paycvv') ) ) {
       if ( cardtype($payinfo) eq 'American Express card' ) {
         $cgi->param('paycvv') =~ /^(\d{4})$/
@@ -140,42 +170,31 @@ my $discount_term = $1;
 
 # save first, for proper tokenization later
 if ( $cgi->param('save') ) {
-  my $new = new FS::cust_main { $cust_main->hash };
-  if ( $payby eq 'CARD' ) { 
-    $new->set( 'payby' => ( $cgi->param('auto') ? 'CARD' : 'DCRD' ) );
-  } elsif ( $payby eq 'CHEK' ) {
-    $new->set( 'payby' => ( $cgi->param('auto') ? 'CHEK' : 'DCHK' ) );
-  } else {
-    die "unknown payby $payby";
-  }
-  $new->payinfo($payinfo);             # sets default paymask, but not if it's already tokenized
-  $new->paymask($paymask) if $paymask; # in case it's been tokenized, override with loaded paymask
-  $new->set( 'paydate' => "$year-$month-01" );
-  $new->set( 'payname' => $payname );
 
-  #false laziness w/FS:;cust_main::realtime_bop - check both to make sure
-  # working correctly
-  if ( $payby eq 'CARD' &&
-       grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save') ) {
-    $new->set( 'paycvv' => $paycvv );
-  } else {
-    $new->set( 'paycvv' => '');
-  }
-
+  my %saveopt;
   if ( $payby eq 'CARD' ) {
     my $bill_location = FS::cust_location->new;
     $bill_location->set( $_ => $cgi->param($_) )
       foreach @{$payby2fields{$payby}};
-    $new->set('bill_location' => $bill_location);
-    # will do nothing if the fields are all unchanged
+    $saveopt{'bill_location'} = $bill_location;
+    $saveopt{'paycvv'} = $paycvv; # save_cust_payby contains conf logic for when to use this
+    $saveopt{'paydate'} = "$year-$month-01";
   } else {
-    $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
+    # ss/stateid/stateid_state won't be saved, but should be harmless to pass
+    %saveopt = map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}};
   }
 
-  my $error = $new->replace($cust_main);
+  my $error = $cust_main->save_cust_payby(
+    'payment_payby' => $payby,
+    'auto'          => scalar($cgi->param('auto')),
+    'payinfo'       => $payinfo,
+    'paymask'       => $paymask,
+    'payname'       => $payname,
+    %saveopt
+  );
+
   errorpage("error saving info, payment not processed: $error")
-    if $error;
-  $cust_main = $new;
+    if $error;	
 }
 
 my $error = '';
