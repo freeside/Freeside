@@ -330,6 +330,24 @@ sub display_status {
   }
 }
 
+=item paydate_monthyear
+
+Returns a two-element list consisting of the month and year of this customer's
+paydate (credit card expiration date for CARD customers)
+
+=cut
+
+sub paydate_monthyear {
+  my $self = shift;
+  if ( $self->paydate  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #Pg date format
+    ( $2, $1 );
+  } elsif ( $self->paydate =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+    ( $1, $3 );
+  } else {
+    ('', '');
+  }
+}
+
 =back
 
 =head1 BUGS

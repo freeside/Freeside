@@ -583,7 +583,7 @@ sub process_order_recharge {
 
 sub make_payment {
 
-  my $payment_info = payment_info( 'session_id' => $session_id );
+  my $payment_info = payment_info( 'session_id' => $session_id, 'payment_payby' => 'CARD' );
 
   my $amount = 
     ($payment_info->{'balance'} && ($payment_info->{'balance'} > 0))
@@ -704,7 +704,7 @@ sub payment_results {
 }
 
 sub make_ach_payment {
-  payment_info( 'session_id' => $session_id );
+  payment_info( 'session_id' => $session_id, 'payment_payby' => 'CHEK' );
 }
 
 sub ach_payment_results {

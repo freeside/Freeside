@@ -65,12 +65,7 @@ sub batch_card {
     && !($options{payby} && $options{payinfo} && $options{paydate} && $options{payname});
 
   #false laziness with Billing_Realtime
-  my @cust_payby = qsearch({
-    'table'     => 'cust_payby',
-    'hashref'   => { 'custnum' => $self->custnum, },
-    'extra_sql' => " AND payby IN ( 'CARD', 'CHEK' ) ",
-    'order_by'  => 'ORDER BY weight ASC',
-  });
+  my @cust_payby = $self->cust_payby('CARD','CHEK');
 
   # batch can't try out every one like realtime, just use first one
   my $cust_payby = $cust_payby[0];

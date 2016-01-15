@@ -2169,20 +2169,34 @@ sub cust_contact {
   qsearch('cust_contact', { 'custnum' => $self->custnum } );
 }
 
-=item cust_payby
+=item cust_payby PAYBY
 
 Returns all payment methods (see L<FS::cust_payby>) for this customer.
+
+If one or more PAYBY are specified, returns only payment methods for specified PAYBY.
+Does not validate PAYBY--do not pass tainted values.
 
 =cut
 
 sub cust_payby {
   my $self = shift;
-  qsearch({
+  my @payby = @_;
+  my $search = {
     'table'    => 'cust_payby',
     'hashref'  => { 'custnum' => $self->custnum },
     'order_by' => "ORDER BY payby IN ('CARD','CHEK') DESC, weight ASC",
-  });
+  };
+  $search->{'extra_sql'} = ' AND payby IN ( ' . join(',', map { "'$_'" } @payby) . ' ) '
+    if @payby;
+
+  qsearch($search);
 }
+
+=item has_cust_payby_auto
+
+Returns true if customer has an automatic payment method ('CARD' or 'CHEK')
+
+=cut
 
 sub has_cust_payby_auto {
   my $self = shift;
@@ -2883,24 +2897,6 @@ sub payment_info {
 
   %return;
 
-}
-
-=item paydate_monthyear
-
-Returns a two-element list consisting of the month and year of this customer's
-paydate (credit card expiration date for CARD customers)
-
-=cut
-
-sub paydate_monthyear {
-  my $self = shift;
-  if ( $self->paydate  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #Pg date format
-    ( $2, $1 );
-  } elsif ( $self->paydate =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-    ( $1, $3 );
-  } else {
-    ('', '');
-  }
 }
 
 =item paydate_epoch
@@ -4404,6 +4400,246 @@ sub payment_history {
   @out = reverse @history if $$opt{'reverse_sort'};
 
   return @out;
+}
+
+=item save_cust_payby
+
+Saves a new cust_payby for this customer, replacing an existing entry only
+in select circumstances.  Does not validate input.
+
+If auto is specified, marks this as the customer's primary method (weight 1) 
+and changes existing primary methods for that payby to secondary methods (weight 2.)
+If bill_location is specified with auto, also sets location in cust_main.
+
+Will not insert complete duplicates of existing records, or records in which the
+only difference from an existing record is to turn off automatic payment (will
+return without error.)  Will replace existing records in which the only difference 
+is to add a value to a previously empty preserved field and/or turn on automatic payment.
+Fields marked as preserved are optional, and existing values will not be overwritten with 
+blanks when replacing.
+
+Accepts the following named parameters:
+
+payment_payby - either CARD or CHEK
+
+auto - save as an automatic payment type (CARD/CHEK if true, DCRD/DCHK if false)
+
+payinfo - required
+
+paymask - optional, but should be specified for anything that might be tokenized, will be preserved when replacing
+
+payname - required
+
+payip - optional, will be preserved when replacing
+
+paydate - CARD only, required
+
+bill_location - CARD only, required, FS::cust_location object
+
+paystart_month - CARD only, optional, will be preserved when replacing
+
+paystart_year - CARD only, optional, will be preserved when replacing
+
+payissue - CARD only, optional, will be preserved when replacing
+
+paycvv - CARD only, only used if conf cvv-save is set appropriately
+
+paytype - CHEK only
+
+paystate - CHEK only
+
+=cut
+
+#The code for this option is in place, but it's not currently used
+#
+# replace - existing cust_payby object to be replaced (must match custnum)
+
+# stateid/stateid_state/ss are not currently supported in cust_payby,
+# might not even work properly in 4.x, but will need to work here if ever added
+
+sub save_cust_payby {
+  my $self = shift;
+  my %opt = @_;
+
+  my $old = $opt{'replace'};
+  my $new = new FS::cust_payby { $old ? $old->hash : () };
+  return "Customer number does not match" if $new->custnum and $new->custnum != $self->custnum;
+  $new->set( 'custnum' => $self->custnum );
+
+  my $payby = $opt{'payment_payby'};
+  return "Bad payby" unless grep(/^$payby$/,('CARD','CHEK'));
+
+  # don't allow turning off auto when replacing
+  $opt{'auto'} ||= 1 if $old and $old->payby !~ /^D/;
+
+  my @check_existing; # payby relevant to this payment_payby
+
+  # set payby based on auto
+  if ( $payby eq 'CARD' ) { 
+    $new->set( 'payby' => ( $opt{'auto'} ? 'CARD' : 'DCRD' ) );
+    @check_existing = qw( CARD DCRD );
+  } elsif ( $payby eq 'CHEK' ) {
+    $new->set( 'payby' => ( $opt{'auto'} ? 'CHEK' : 'DCHK' ) );
+    @check_existing = qw( CHEK DCHK );
+  }
+
+  # every automatic payment type added here will be marked primary
+  $new->set( 'weight' => $opt{'auto'} ? 1 : '' );
+
+  # basic fields
+  $new->payinfo($opt{'payinfo'}); # sets default paymask, but not if it's already tokenized
+  $new->paymask($opt{'paymask'}) if $opt{'paymask'}; # in case it's been tokenized, override with loaded paymask
+  $new->set( 'payname' => $opt{'payname'} );
+  $new->set( 'payip' => $opt{'payip'} ); # will be preserved below
+
+  my $conf = new FS::Conf;
+
+  # compare to FS::cust_main::realtime_bop - check both to make sure working correctly
+  if ( $payby eq 'CARD' &&
+       grep { $_ eq cardtype($opt{'payinfo'}) } $conf->config('cvv-save') ) {
+    $new->set( 'paycvv' => $opt{'paycvv'} );
+  } else {
+    $new->set( 'paycvv' => '');
+  }
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  # set fields specific to payment_payby
+  if ( $payby eq 'CARD' ) {
+    if ($opt{'bill_location'}) {
+      $opt{'bill_location'}->set('custnum' => $self->custnum);
+      my $error = $opt{'bill_location'}->find_or_insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+      $new->set( 'locationnum' => $opt{'bill_location'}->locationnum );
+    }
+    foreach my $field ( qw( paydate paystart_month paystart_year payissue ) ) {
+      $new->set( $field => $opt{$field} );
+    }
+  } else {
+    foreach my $field ( qw(paytype paystate) ) {
+      $new->set( $field => $opt{$field} );
+    }
+  }
+
+  # other cust_payby to compare this to
+  my @existing = $self->cust_payby(@check_existing);
+
+  # fields that can overwrite blanks with values, but not values with blanks
+  my @preserve = qw( paymask locationnum paystart_month paystart_year payissue payip );
+
+  my $skip_cust_payby = 0; # true if we don't need to save or reweight cust_payby
+  unless ($old) {
+    # generally, we don't want to overwrite existing cust_payby with this,
+    # but we can replace if we're only marking it auto or adding a preserved field
+    # and we can avoid saving a total duplicate or merely turning off auto
+PAYBYLOOP:
+    foreach my $cust_payby (@existing) {
+      # check fields that absolutely should not change
+      foreach my $field ($new->fields) {
+        next if grep(/^$field$/, qw( custpaybynum payby weight ) );
+        next if grep(/^$field$/, @preserve );
+        next PAYBYLOOP unless $new->get($field) eq $cust_payby->get($field);
+      }
+      # now check fields that can replace if one value is blank
+      my $replace = 0;
+      foreach my $field (@preserve) {
+        if (
+          ( $new->get($field) and !$cust_payby->get($field) ) or
+          ( $cust_payby->get($field) and !$new->get($field) )
+        ) {
+          # prevention of overwriting values with blanks happens farther below
+          $replace = 1;
+        } elsif ( $new->get($field) ne $cust_payby->get($field) ) {
+          next PAYBYLOOP;
+        }
+      }
+      unless ( $replace ) {
+        # nearly identical, now check weight
+        if ($new->get('weight') eq $cust_payby->get('weight') or !$new->get('weight')) {
+          # ignore identical cust_payby, and ignore attempts to turn off auto
+          # no need to save or re-weight cust_payby (but still need to update/commit $self)
+          $skip_cust_payby = 1;
+          last PAYBYLOOP;
+        }
+        # otherwise, only change is to mark this as primary
+      }
+      # if we got this far, we're definitely replacing
+      $old = $cust_payby;
+      last PAYBYLOOP;
+    }
+  }
+
+  if ($old) {
+    $new->set( 'custpaybynum' => $old->custpaybynum );
+    # don't turn off automatic payment (but allow it to be turned on)
+    if ($new->payby =~ /^D/ and $new->payby ne $old->payby) {
+      $opt{'auto'} = 1;
+      $new->set( 'payby' => $old->payby );
+      $new->set( 'weight' => 1 );
+    }
+    # make sure we're not overwriting values with blanks
+    foreach my $field (@preserve) {
+      if ( $old->get($field) and !$new->get($field) ) {
+        $new->set( $field => $old->get($field) );
+      }
+    }
+  }
+
+  # only overwrite cust_main bill_location if auto
+  if ($opt{'auto'} && $opt{'bill_location'}) {
+    $self->set('bill_location' => $opt{'bill_location'});
+    my $error = $self->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  # done with everything except reweighting and saving cust_payby
+  # still need to commit changes to cust_main and cust_location
+  if ($skip_cust_payby) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+  }
+
+  # re-weight existing primary cust_pay for this payby
+  if ($opt{'auto'}) {
+    foreach my $cust_payby (@existing) {
+      # relies on cust_payby return order
+      last unless $cust_payby->payby !~ /^D/;
+      last if $cust_payby->weight > 1;
+      next if $new->custpaybynum eq $cust_payby->custpaybynum;
+      $cust_payby->set( 'weight' => 2 );
+      my $error = $cust_payby->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error reweighting cust_payby: $error";
+      }
+    }
+  }
+
+  # finally, save cust_payby
+  my $error = $old ? $new->replace($old) : $new->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =back
