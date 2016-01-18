@@ -2617,7 +2617,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_hash' => [
                        'actual_oncard' => 'Default/classic behavior: set the flag if a customer has actual previous charges on the card.',
-		       'transaction_is_recur' => 'Set the flag if the transaction itself is recurring, irregardless of previous charges on the card.',
+		       'transaction_is_recur' => 'Set the flag if the transaction itself is recurring, regardless of previous charges on the card.',
                      ],
   },
 
