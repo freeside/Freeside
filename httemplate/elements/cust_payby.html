@@ -11,7 +11,8 @@
 
       <TD>
         <SELECT NAME="<%$name%>_payby"
-                onChange="<%$name%>_payby_changed(this)"
+                ID="<%$id%>_payby"
+                onChange="payby_changed(this)"
         >
 %         foreach my $payby (@payby) {
             <OPTION VALUE="<% $payby %>"
@@ -218,45 +219,48 @@
 % unless ( $opt{'html_only'} ) {
   <SCRIPT TYPE="text/javascript">
 
-    function <%$name%>_payby_changed(what) {
+    function payby_changed(what) {
+      var field_match = what.id.match(/(.*)_payby$/);
+      var field_id = field_match[1];
       var payby = what.options[what.selectedIndex].value;
       if ( payby == 'CARD' ) {
-        document.getElementById('<%$id%>_td_payinfo').style.display = '';
-        document.getElementById('<%$id%>_td_paydate').style.display = '';
-        document.getElementById('<%$id%>_td_paycvv').style.display = '';
-        document.getElementById('<%$id%>_td_payname').style.display = '';
-        document.getElementById('<%$id%>_td_payinfo1').style.display = 'none';
-        document.getElementById('<%$id%>_td_payinfo2').style.display = 'none';
-        document.getElementById('<%$id%>_td_paytype').style.display = 'none';
-        document.getElementById('<%$id%>_td_payname_CHEK').style.display = 'none';
-        var td_payinfo3 = document.getElementById('<%$id%>_td_payinfo3');
+        document.getElementById(field_id+'_td_payinfo').style.display = '';
+        document.getElementById(field_id+'_td_paydate').style.display = '';
+        document.getElementById(field_id+'_td_paycvv').style.display = '';
+        document.getElementById(field_id+'_td_payname').style.display = '';
+        document.getElementById(field_id+'_td_payinfo1').style.display = 'none';
+        document.getElementById(field_id+'_td_payinfo2').style.display = 'none';
+        document.getElementById(field_id+'_td_paytype').style.display = 'none';
+        document.getElementById(field_id+'_td_payname_CHEK').style.display = 'none';
+        var td_payinfo3 = document.getElementById(field_id+'_td_payinfo3');
         if ( td_payinfo3 ) {
           td_payinfo3.style.display = 'none';
         }
-        var td_paystate = document.getElementById('<%$id%>_td_paystate');
+        var td_paystate = document.getElementById(field_id+'_td_paystate');
         if ( td_paystate ) {
           td_paystate.style.display = 'none';
         }
       } else if ( payby == 'CHEK' ) {
-        document.getElementById('<%$id%>_td_payinfo').style.display = 'none';
-        document.getElementById('<%$id%>_td_paydate').style.display = 'none';
-        document.getElementById('<%$id%>_td_paycvv').style.display = 'none';
-        document.getElementById('<%$id%>_td_payname').style.display = 'none';
-        document.getElementById('<%$id%>_td_payinfo1').style.display = '';
-        document.getElementById('<%$id%>_td_payinfo2').style.display = '';
-        document.getElementById('<%$id%>_td_paytype').style.display = '';
-        document.getElementById('<%$id%>_td_payname_CHEK').style.display = '';
-        var td_payinfo3 = document.getElementById('<%$id%>_td_payinfo3');
+        document.getElementById(field_id+'_td_payinfo').style.display = 'none';
+        document.getElementById(field_id+'_td_paydate').style.display = 'none';
+        document.getElementById(field_id+'_td_paycvv').style.display = 'none';
+        document.getElementById(field_id+'_td_payname').style.display = 'none';
+        document.getElementById(field_id+'_td_payinfo1').style.display = '';
+        document.getElementById(field_id+'_td_payinfo2').style.display = '';
+        document.getElementById(field_id+'_td_paytype').style.display = '';
+        document.getElementById(field_id+'_td_payname_CHEK').style.display = '';
+        var td_payinfo3 = document.getElementById(field_id+'_td_payinfo3');
         if ( td_payinfo3 ) {
           td_payinfo3.style.display = '';
         }
-        var td_paystate = document.getElementById('<%$id%>_td_paystate');
+        var td_paystate = document.getElementById(field_id+'_td_paystate');
         if ( td_paystate ) {
           td_paystate.style.display = '';
         }
       } else {
         alert( 'unknown payby ' + payby );
       }
+      spawn_custpaybynum(what);
     }
 
   </SCRIPT>

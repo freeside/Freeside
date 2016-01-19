@@ -115,7 +115,6 @@ function samechanged(what) {
 
 %# billing info
 <& cust_main/billing.html, $cust_main,
-               'payinfo'        => $payinfo,
                'invoicing_list' => \@invoicing_list,
 &>
 
@@ -186,7 +185,7 @@ my $conf = new FS::Conf;
 
 #get record
 
-my($custnum, $cust_main, $ss, $stateid, $payinfo, @invoicing_list);
+my($custnum, $cust_main, $ss, $stateid, @invoicing_list);
 my $pkgpart_svcpart = ''; #first_pkg
 my($username, $password, $popnum, $saved_domsvc) = ( '', '', 0, 0 ); #svc_acct
 my %svc_phone = ();
@@ -234,7 +233,6 @@ if ( $cgi->param('error') ) {
   $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
   $ss = $cust_main->ss;           # don't mask an entered value on errors
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
-  $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
 
   $cust_main->national_id( $cgi->param('national_id1') || $cgi->param('national_id2') );
 
@@ -282,7 +280,6 @@ if ( $cgi->param('error') ) {
   @invoicing_list = $cust_main->invoicing_list;
   $ss = $conf->exists('unmask_ss') ? $cust_main->ss : $cust_main->masked('ss');
   $stateid = $cust_main->masked('stateid');
-  $payinfo = $cust_main->paymask;
 
 } else { #new customer
 
@@ -298,7 +295,6 @@ if ( $cgi->param('error') ) {
     unless $conf->exists('disablepostalinvoicedefault');
   $ss = '';
   $stateid = '';
-  $payinfo = '';
 
   $cgi->param('tagnum', FS::part_tag->default_tags);
 

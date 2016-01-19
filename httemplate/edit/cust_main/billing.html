@@ -326,7 +326,6 @@ function toggle(obj) {
 
 my( $cust_main, %options ) = @_;
 my @invoicing_list = @{ $options{'invoicing_list'} };
-my $payinfo = $options{'payinfo'};
 my $conf = new FS::Conf;
 
 my $money_char = $conf->config('money_char') || '$';
