@@ -1752,7 +1752,7 @@ and customer address. Include units.',
   {
     'key'         => 'passwordmax',
     'section'     => 'password',
-    'description' => 'Maximum password length (default 8) (don\'t set this over 12 if you need to import or export crypt() passwords)',
+    'description' => 'Maximum password length (default 12) (don\'t set this over 12 if you need to import or export crypt() passwords)',
     'type'        => 'text',
   },
 
