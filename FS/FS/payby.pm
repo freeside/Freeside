@@ -100,6 +100,12 @@ tie %hash, 'Tie::IxHash',
     longname  => 'Western Union',
     cust_main => '', #this is a payment type only
   },
+  'IDTP' => {
+    tinyname  => 'IDT',
+    shortname => 'IDT Payment Services',
+    longname  => 'IDT Payment Services',
+    cust_main => '', #this is a payment type only
+  },
   'MCRD' => { #not the same as DCRD
     tinyname  => 'card',
     shortname => 'Manual credit card', # initial payment, then billing
