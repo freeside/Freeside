@@ -33,7 +33,7 @@ Examples:
     options   => [ keys(\%payby) ],
     labels    => \%payby,
     multiple  => 1,
-    size      => 16
+    size      => 18,
   &>
 
   <TR>
@@ -199,6 +199,7 @@ tie (my %payby, 'Tie::IxHash',
   'PREP'           => 'prepaid card',
   'WIRE'           => 'wire transfer',
   'WEST'           => 'Western Union',
+  'IDTP'           => 'IDT Payment Services',
   'EDI'            => 'Electronic Debit (EDI)',
   'MCRD'           => 'manual credit card',
   'MCHK'           => 'manual electronic check',
