@@ -111,7 +111,7 @@ sub process_o2m {
                  map { $_ => $opt{'params'}->{$add_param."_$_"} }
                      @{ $opt{'fields'} }
                );
-    &{ $opt{'hash_callback'} }( \%hash ) if $opt{'hash_callback'};
+    &{ $opt{'hash_callback'} }( \%hash, $old_obj ) if $opt{'hash_callback'};
     #next unless grep { $_ =~ /\S/ } values %hash;
 
     my $new_obj = "FS::$table"->new( { %$hashref, %hash } );

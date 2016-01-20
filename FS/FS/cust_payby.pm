@@ -577,15 +577,20 @@ sub cgi_cust_payby_fields {
        payinfo1 payinfo2 payinfo3 paytype paystate payname_CHEK )];
 }
 
-=item cgi_hash_callback HASHREF
+=item cgi_hash_callback HASHREF OLD
 
 Subroutine (not a class or object method).  Processes a hash reference
 of web interface contet (transfers the data from pseudo-fields to real fields).
+
+If OLD object is passed, also preserves locationnum, paystart_month, paystart_year,
+payissue and payip.  If the new field is blank but the old is not, the old field 
+will be preserved.
 
 =cut
 
 sub cgi_hash_callback {
   my $hashref = shift;
+  my $old = shift;
 
   my %noauto = (
     'CARD' => 'DCRD',
@@ -618,6 +623,14 @@ sub cgi_hash_callback {
   }
 
   $hashref->{paydate}= $hashref->{paydate_month}. '-'. $hashref->{paydate_year};
+
+  if ($old) {
+    foreach my $field ( qw(locationnum paystart_month paystart_year payissue payip) ) {
+      next if $hashref->{$field};
+      next unless $old->get($field);
+      $hashref->{$field} = $old->get($field);
+    }
+  }
 
 }
 
