@@ -61,15 +61,15 @@ Configuration for realtime snmp requests to svc_broadband IP address
 
 =item snmp_results SVC
 
-Request statistics from SVC ip address.  Returns an array of hashes with keys 
+Request statistics from SVC ip address.  Returns an array of hashrefs with keys 
 
-objectID
+error - error message
 
-label
+objectID - dotted decimal fully qualified OID
 
-value
+label - leaf textual identifier (e.g., 'sysDescr')
 
-error - error when attempting to load this object
+values - arrayref of arrayrefs describing values, [<obj>, <iid>, <val>, <type>]
 
 =cut
 
@@ -78,7 +78,7 @@ sub snmp_results {
   my $host = $svc->ip_addr;
   my $comm = $self->option('snmp_community');
   my $vers = $self->option('snmp_version');
-  my $time = ($self->option('snmp_timeout') || 1) * 1000;
+  my $time = ($self->option('snmp_timeout') || 1) * 1000000;
   my @oids = split("\n", $self->option('snmp_oid'));
   my %connect = (
     'DestHost'  => $host,
@@ -92,13 +92,33 @@ sub snmp_results {
   my @out;
   foreach my $oid (@oids) {
     $oid = $SNMP::MIB{$oid}->{'objectID'} if $SNMP::MIB{$oid};
-    my $value = $snmp->get($oid.'.0');
-    if ($snmp->{'ErrorStr'}) {
-      push @out, { 'error' => $snmp->{'ErrorStr'} };
+    my @values;
+    if ($vers eq '1') {
+      my $varbind = new SNMP::Varbind [$oid];
+      my $max = 1000; #sanity check
+      while ($max > 0 and $snmp->getnext($varbind)) {
+        last if $snmp->{'ErrorStr'};
+        last unless $SNMP::MIB{$varbind->[0]}; # does this happen?
+        my $nextoid = $SNMP::MIB{$varbind->[0]}->{'objectID'};
+        last unless $nextoid =~ /^$oid/;
+        $max--;
+        push @values, new SNMP::Varbind [ @$varbind ];
+      }
+    } else {
+      # not clear on what max-repeaters (25) does, plucked value from example code
+      # but based on testing, it isn't capping number of returned values
+      @values = $snmp->bulkwalk(0,25,$oid);
+    }
+    if ($snmp->{'ErrorStr'} || !@values) {
+      push @out, { 'error' => $snmp->{'ErrorStr'} || 'No values retrieved' };
       next;
     }
-    my %result = map { $_ => $SNMP::MIB{$oid}{$_} } qw( objectID label value );
-    $result{'value'} = $value;
+    my %result = map { $_ => $SNMP::MIB{$oid}{$_} } qw( objectID label );
+    # unbless @values, for ease of JSON encoding
+    $result{'values'} = [];
+    foreach my $value (@values) {
+      push @{$result{'values'}}, [ map { $_ } @$value ];
+    }
     push @out, \%result;
   }
   return @out;      
