@@ -22,22 +22,29 @@ function broadband_snmp_get (svcnum) {
       if (objects.length) {
         var table = document.createElement('table');
         for (i = 0; i < objects.length; i++) {
-          var row = document.createElement('tr');
           var obj = objects[i];
           if (obj.error) {
+            var row = document.createElement('tr');
             var cell = document.createElement('td');
             cell.colSpan = '2';
             cell.innerHTML = obj['error'];
             row.appendChild(cell);
+            table.appendChild(row);
           } else {
+            for (j = 0; j < obj['values'].length; j++) {
+              var row = document.createElement('tr');
+              var value = obj['values'][j];
+              var label = (obj['values'].length > 1) ? (value[0] + '.' + value[1]) : obj['label'];
               var cell = document.createElement('td');
-              cell.innerHTML = obj['label'];
+              cell.innerHTML = label;
               row.appendChild(cell);
               cell = document.createElement('td');
-              cell.innerHTML = obj['value'];
+              cell.innerHTML = value[2];
+              cell.style.paddingLeft = '3em';
               row.appendChild(cell);
+              table.appendChild(row);
+            }
           }
-          table.appendChild(row);
         }
         var resultblock = document.getElementById('broadband_snmp_get');
         resultblock.innerHTML = '';
