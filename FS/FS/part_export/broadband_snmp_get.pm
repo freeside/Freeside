@@ -96,18 +96,19 @@ sub snmp_results {
     if ($vers eq '1') {
       my $varbind = new SNMP::Varbind [$oid];
       my $max = 1000; #sanity check
-      while ($max > 0 and $snmp->getnext($varbind)) {
+      while ($max > 0 and defined($snmp->getnext($varbind))) {
         last if $snmp->{'ErrorStr'};
         last unless $SNMP::MIB{$varbind->[0]}; # does this happen?
         my $nextoid = $SNMP::MIB{$varbind->[0]}->{'objectID'};
         last unless $nextoid =~ /^$oid/;
         $max--;
-        push @values, new SNMP::Varbind [ @$varbind ];
+        push @values, [ @$varbind ];
       }
     } else {
       # not clear on what max-repeaters (25) does, plucked value from example code
       # but based on testing, it isn't capping number of returned values
-      @values = $snmp->bulkwalk(0,25,$oid);
+      my ($values) = $snmp->bulkwalk(0,25,$oid);
+      @values = @$values if $values;
     }
     if ($snmp->{'ErrorStr'} || !@values) {
       push @out, { 'error' => $snmp->{'ErrorStr'} || 'No values retrieved' };
