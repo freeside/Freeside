@@ -275,6 +275,8 @@ sub taxline {
   my $taxable_cents = 0;
   my $tax_cents = 0;
 
+  my $round_per_line_item = $conf->exists('tax-round_per_line_item');
+
   my $cust_bill = $taxables->[0]->cust_bill;
   my $custnum   = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
   my $invoice_time = $cust_bill ? $cust_bill->_date : $opt{'invoice_time'};
@@ -450,7 +452,16 @@ sub taxline {
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
     next if $taxable_charged == 0;
 
-    my $this_tax_cents = int($taxable_charged * $self->tax);
+    my $this_tax_cents = $taxable_charged * $self->tax;
+    if ( $round_per_line_item ) {
+      # Round the tax to the nearest cent for each line item, instead of
+      # across the whole invoice.
+      $this_tax_cents = sprintf('%.0f', $this_tax_cents);
+    } else {
+      # Otherwise truncate it so that rounding error is always positive.
+      $this_tax_cents = int($this_tax_cents);
+    }
+
     my $location = FS::cust_bill_pkg_tax_location->new({
         'taxnum'      => $self->taxnum,
         'taxtype'     => ref($self),
@@ -465,12 +476,19 @@ sub taxline {
     $taxable_cents += $taxable_charged;
     $tax_cents += $this_tax_cents;
   } #foreach $cust_bill_pkg
-  
-  # now round and distribute
+ 
+  # calculate tax and rounding error for the whole group
   my $extra_cents = sprintf('%.2f', $taxable_cents * $self->tax / 100) * 100
                     - $tax_cents;
   # make sure we have an integer
   $extra_cents = sprintf('%.0f', $extra_cents);
+
+  # if we're rounding per item, then ignore that and don't distribute any
+  # extra cents.
+  if ( $round_per_line_item ) {
+    $extra_cents = 0;
+  }
+
   if ( $extra_cents < 0 ) {
     die "nonsense extra_cents value $extra_cents";
   }
