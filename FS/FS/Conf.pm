@@ -5165,6 +5165,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'tax-round_per_line_item',
+    'section'     => 'billing',
+    'description' => 'Calculate tax and round to the nearest cent for each line item, rather than for the whole invoice.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-default_view',
     'section'     => 'UI',
     'description' => 'Default customer view, for users who have not selected a default view in their preferences.',
