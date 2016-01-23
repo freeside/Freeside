@@ -3,10 +3,12 @@ package FS::part_event::Action::pkg_discount;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description { "Discount unsuspended customer packages (monthly recurring only)"; }
+sub description { "Discount unsuspended package(s) (monthly recurring only)"; }
 
 sub eventtable_hashref {
-  { 'cust_main' => 1 };
+  { 'cust_main' => 1,
+    'cust_pkg'  => 1,
+  };
 }
 
 sub event_stage { 'pre-bill'; }
@@ -42,12 +44,28 @@ sub do_action {
   my $cust_main = $self->cust_main($object);
   my %if_pkgpart = map { $_=>1 } split(/\s*,\s*/, $self->option('if_pkgpart') );
   my $allpkgs = (keys %if_pkgpart) ? 0 : 1;
-  my @cust_pkg = grep { ( $allpkgs || $if_pkgpart{ $_->pkgpart } ) 
-                          && $_->part_pkg->freq
-                          #can remove after fixing discount bug with non-monthly pkgs
-                          && ( $_->part_pkg->freq =~ /^\d+$/) } 
-                      $cust_main->unsuspended_pkgs;
-  return 'No qualifying packages' unless @cust_pkg;
+
+  my @cust_pkg = ();
+  if ( $object->table eq 'cust_pkg' ) {
+
+    return 'Package is suspended' if $object->susp;
+    return 'Package not selected'
+      if ! $allpkgs && ! $if_pkgpart{ $object->pkgpart };
+    return 'Package frequency not monthly or a multiple'
+      if $object->part_pkg->freq !~ /^\d+$/;
+
+    @cust_pkg = ( $object );
+
+  } else {
+
+    @cust_pkg = grep { ( $allpkgs || $if_pkgpart{ $_->pkgpart } ) 
+                         && $_->part_pkg->freq
+                         #remove after fixing discount bug with non-monthly pkgs
+                         && ( $_->part_pkg->freq =~ /^\d+$/) } 
+                     $cust_main->unsuspended_pkgs;
+    return 'No qualifying packages' unless @cust_pkg;
+
+  }
 
   my $gotit = 0;
   foreach my $cust_pkg (@cust_pkg) {
