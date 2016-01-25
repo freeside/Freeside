@@ -2683,6 +2683,7 @@ sub tables_hashref {
         #'exp',          @date_type,                  '', '',
         'exp',           'varchar', 'NULL',      11, '', '', 
         'payname',       'varchar', 'NULL', $char_d, '', '', 
+        'paytype',       'varchar', 'NULL', $char_d, '', '', 
         'amount',      @money_type,                  '', '', 
         'currency',         'char', 'NULL',       3, '', '',
         'status',        'varchar', 'NULL', $char_d, '', '', 

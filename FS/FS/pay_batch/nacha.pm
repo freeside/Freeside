@@ -136,8 +136,9 @@ $DEBUG = 0;
 
     #XXX paytype should actually be in the batch, but this will do for now
     #27 checking debit, 37 savings debit
-    my $transaction_code = ( $cust_main->paytype =~ /savings/i ? '37' : '27' );
+    my $transaction_code = ( $cust_pay_batch->paytype =~ /savings/i ? '37' : '27' );
 
+    # not $self->payname?
     my $cust_name = substr($cust_main->name. (' 'x22), 0, 22);
     $i++;
     my $tracenum = $dest. substr(('0'x7). $i, -6);
