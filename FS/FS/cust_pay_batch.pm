@@ -63,6 +63,8 @@ following fields are currently supported:
 
 =item payname - name on card 
 
+=item paytype - account type ((personal|business) (checking|savings))
+
 =item first - name 
 
 =item last - name 
@@ -155,6 +157,18 @@ sub check {
 
   $error = $self->payinfo_check();
   return $error if $error;
+
+  if ( $self->payby eq 'CHEK' ) {
+    # because '' is on the list of paytypes:
+    my $paytype = $self->paytype or return "Bank account type required";
+    if (grep { $_ eq $paytype} FS::cust_payby->paytypes) {
+      #ok
+    } else {
+      return "Bank account type '$paytype' is not allowed"
+    }
+  } else {
+    $self->set('paytype', '');
+  }
 
   if ( $self->exp eq '' ) {
     return "Expiration date required"
@@ -408,10 +422,21 @@ sub request_item {
     $self->payinfo =~ /(\d+)@(\d+)/; # or else what?
     $payment{account_number} = $1;
     $payment{routing_code} = $2;
-    $payment{account_type} = $cust_main->paytype;
+    $payment{account_type} = $self->paytype;
     # XXX what if this isn't their regular payment method?
   } else {
     die "unsupported BatchPayment method: ".$pay_batch->payby;
+  }
+
+  my $recurring;
+  if ( $cust_main->status =~ /^active|suspended|ordered$/ ) {
+    if ( $self->payinfo_used ) {
+      $recurring = 'S'; # subsequent
+    } else {
+      $recurring = 'F'; # first use
+    }
+  } else {
+    $recurring = 'N'; # non-recurring
   }
 
   Business::BatchPayment->create(Item =>
@@ -429,6 +454,7 @@ sub request_item {
     ( map { $_ => $location->$_ } qw(address2 city state country zip) ),
     
     invoice_number  => $self->invnum,
+    recurring_billing => $recurring,
     %payment,
   );
 }

@@ -128,7 +128,7 @@ my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
         ) : (
           ecpCheckRT      => ($_->payinfo =~ /@(\d+)/),
           ecpCheckDDA     => ($_->payinfo =~ /(\d+)@/),
-          ecpBankAcctType => $paytype{lc($_->cust_main->paytype)},
+          ecpBankAcctType => $paytype{lc($_->paytype)},
           ecpDelvMethod   => 'A',
         ),
         avsZip          => bytes_substr($_->zip,      0, 10),

@@ -5482,6 +5482,20 @@ sub _upgrade_data { #class method
 
       }
 
+      # at the time we do this, also migrate paytype into cust_pay_batch
+      # so that batches that are open before the migration can still be 
+      # processed
+      my @cust_pay_batch = qsearch('cust_pay_batch', {
+          'custnum' => $cust_main->custnum,
+          'payby'   => 'CHEK',
+          'paytype' => '',
+      });
+      foreach my $cust_pay_batch (@cust_pay_batch) {
+        $cust_pay_batch->set('paytype', $cust_main->get('paytype'));
+        my $error = $cust_pay_batch->replace;
+        die "$error (setting cust_pay_batch.paytype)" if $error;
+      }
+
       $cust_main->complimentary('Y') if $cust_main->payby eq 'COMP';
 
       $cust_main->invoice_attn( $cust_main->payname )

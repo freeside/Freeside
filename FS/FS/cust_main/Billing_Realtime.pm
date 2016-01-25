@@ -185,6 +185,15 @@ A third-party transaction will return a hashref containing:
 =cut
 
 # some helper routines
+#
+# _bop_recurring_billing: Checks whether this payment should have the 
+# recurring_billing flag used by some B:OP interfaces (IPPay, PlugnPay,
+# vSecure, etc.). This works in two different modes:
+# - actual_oncard (default): treat the payment as recurring if the customer
+#   has made a payment using this card before.
+# - transaction_is_recur: treat the payment as recurring if the invoice
+#   being paid has any recurring package charges.
+
 sub _bop_recurring_billing {
   my( $self, %opt ) = @_;
 
