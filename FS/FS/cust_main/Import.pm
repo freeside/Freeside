@@ -400,11 +400,23 @@ sub batch_import {
     }
 
     if ( defined $cust_main{'payinfo'} && length $cust_main{'payinfo'} ) {
-      $cust_main{'payby'} = 'CARD';
-      if ($cust_main{'payinfo'} =~ /\s*([AD]?)(.*)\s*$/) {
-        $cust_main{'payby'} = 'DCRD' if $1 eq 'D';
-        $cust_main{'payinfo'} = $2;
+
+      if ( $cust_main{'payinfo'} =~ /^\s*(\d+\@[\d\.]+)\s*$/ ) {
+
+        $cust_main{'payby'}   = 'CHEK';
+        $cust_main{'payinfo'} = $1;
+
+      } else {
+
+        $cust_main{'payby'} = 'CARD';
+
+        if ($cust_main{'payinfo'} =~ /^\s*([AD]?)(.*)\s*$/) {
+          $cust_main{'payby'} = 'DCRD' if $1 eq 'D';
+          $cust_main{'payinfo'} = $2;
+        }
+
       }
+
     }
 
     $cust_main{$_} = parse_datetime($cust_main{$_})
