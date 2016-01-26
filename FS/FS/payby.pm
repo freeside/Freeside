@@ -41,6 +41,8 @@ Payment types.
 # - a customer saved payment type (cust_payby.payby)
 # - a payment or refund type (cust_pay.payby, cust_pay_batch.payby, cust_refund.payby)
 
+# customer methods that start with 'D' will be interpreted as on-demand
+
 tie %hash, 'Tie::IxHash',
   'CARD' => {
     tinyname  => 'card',

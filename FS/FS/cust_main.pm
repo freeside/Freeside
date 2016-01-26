@@ -2174,7 +2174,7 @@ sub cust_contact {
 Returns all payment methods (see L<FS::cust_payby>) for this customer.
 
 If one or more PAYBY are specified, returns only payment methods for specified PAYBY.
-Does not validate PAYBY--do not pass tainted values.
+Does not validate PAYBY.
 
 =cut
 
@@ -2186,7 +2186,7 @@ sub cust_payby {
     'hashref'  => { 'custnum' => $self->custnum },
     'order_by' => "ORDER BY payby IN ('CARD','CHEK') DESC, weight ASC",
   };
-  $search->{'extra_sql'} = ' AND payby IN ( ' . join(',', map { "'$_'" } @payby) . ' ) '
+  $search->{'extra_sql'} = ' AND payby IN ( ' . join(',', map { dbh->quote($_) } @payby) . ' ) '
     if @payby;
 
   qsearch($search);

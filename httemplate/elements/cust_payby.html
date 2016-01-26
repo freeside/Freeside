@@ -216,7 +216,7 @@
   </TABLE>
 
 % }
-% unless ( $opt{'html_only'} ) {
+% unless ( $opt{'html_only'} || $payby_changed_init ) {
   <SCRIPT TYPE="text/javascript">
 
     function payby_changed(what) {
@@ -264,7 +264,11 @@
     }
 
   </SCRIPT>
+%   $payby_changed_init = 1;
 % }
+<%once>
+my $payby_changed_init = 0;
+</%once>
 <%init>
 
 my( %opt ) = @_;
