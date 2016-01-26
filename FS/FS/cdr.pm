@@ -216,6 +216,7 @@ sub table_info {
         #'upstream_rateplanid'   => '',
         #'ratedetailnum'         => '',
         'rated_price'           => 'Rated price',
+        'rated_cost'            => 'Rated cost',
         #'distance'              => '',
         #'islocal'               => '',
         #'calltypenum'           => '',
@@ -468,7 +469,9 @@ Sets the status and rated price.
 
 Available options are: inbound, rated_pretty_dst, rated_regionname,
 rated_seconds, rated_minutes, rated_granularity, rated_ratedetailnum,
-rated_classnum, rated_ratename.
+rated_classnum, rated_ratename, and set_rate_cost (if true, will set
+a recalculated L</rate_cost> in the rated_cost field after the other
+fields are set; does not work with inbound.)
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -506,6 +509,8 @@ sub set_status_and_rated_price {
         qw( pretty_dst regionname seconds minutes granularity
             ratedetailnum classnum ratename );
     $self->svcnum($svcnum) if $svcnum;
+    $self->rated_cost($self->rate_cost) if $opt{'set_rate_cost'};
+
     return $self->replace();
 
   }
@@ -1005,6 +1010,7 @@ sub rate_prefix {
     'rated_ratedetailnum' => $rate_detail->ratedetailnum,
     'rated_classnum'      => $rate_detail->classnum, #rated_ratedetailnum?
     'rated_ratename'      => $ratename, #not rate_detail - Intrastate/Interstate
+    'set_rate_cost'       => 1,
   );
 
 }

@@ -5491,6 +5491,7 @@ sub tables_hashref {
         'rated_ratedetailnum',        'int', 'NULL',      '', '', '',
         'rated_classnum',             'int', 'NULL',      '', '', '', 
         'rated_ratename',         'varchar', 'NULL', $char_d, '', '', 
+        'rated_cost',            'decimal', 'NULL',  '10,4', '', '',
 
         'carrierid',               'bigint', 'NULL',      '', '', '',
 

@@ -599,12 +599,26 @@ sub _cust_bill_pkg_recurring {
       $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, $_date);
   }
 
+  if ( $opt{'custnum'} =~ /^(\d+)$/ ) {
+    push @where, "(cust_main.custnum = $1)";
+  }
+
   return "
   FROM $cust_bill_pkg 
   $cust_bill_pkg_join
   WHERE ".join(' AND ', grep $_, @where);
 
 }
+
+=item cust_bill_pkg_recur: the total recur charges
+
+Most arguments as for C<cust_bill_pkg>, plus:
+
+'custnum': limit to this customer
+
+'cost': if true, return total recur costs instead
+
+=cut
 
 sub cust_bill_pkg_recur {
   my $self = shift;
@@ -632,9 +646,11 @@ sub cust_bill_pkg_recur {
       ($cust_bill_pkg.edate - $cust_bill_pkg.sdate)";
   }
 
-  my $total_sql = 
-    "SELECT COALESCE(SUM(($cust_bill_pkg.recur - $item_usage) $recur_fraction),0)" .
-    $self->_cust_bill_pkg_recurring(@_);
+  my $total_sql = $opt{'cost'}
+    ? "SELECT SUM(part_pkg.recur_cost)"
+    : "SELECT COALESCE(SUM(($cust_bill_pkg.recur - $item_usage) $recur_fraction),0)";
+
+  $total_sql .= $self->_cust_bill_pkg_recurring(@_);
 
   $self->scalar_sql($total_sql);
 }
@@ -650,9 +666,13 @@ sub cust_bill_pkg_count_pkgnum {
 
 =item cust_bill_pkg_detail: the total usage charges in detail lines.
 
-Arguments as for C<cust_bill_pkg>, plus:
+Most arguments as for C<cust_bill_pkg>, plus:
 
 'usageclass': limit to this usage class number.
+
+'custnum': limit to this customer
+
+'cost': if true, return total usage costs instead
 
 =cut
 
@@ -686,7 +706,16 @@ sub cust_bill_pkg_detail {
     );
   }
 
+  if ( $opt{'custnum'} =~ /^(\d+)$/ ) {
+    push @where, "(cust_main.custnum = $1)";
+  }
+
   my $total_sql = " SELECT SUM(cust_bill_pkg_detail.amount) ";
+  my $extra_join = '';
+  if ($opt{'cost'}) {
+    $extra_join = "   JOIN cdr USING ( detailnum ) ";
+    $total_sql  = " SELECT SUM(cdr.rated_cost) ";
+  }
 
   $total_sql .=
     " FROM cust_bill_pkg_detail
@@ -696,8 +725,9 @@ sub cust_bill_pkg_detail {
         LEFT JOIN cust_pkg ON cust_bill_pkg.pkgnum = cust_pkg.pkgnum
         LEFT JOIN part_pkg USING ( pkgpart )
         LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
-        LEFT JOIN part_fee USING ( feepart )
-      WHERE ".join( ' AND ', grep $_, @where );
+        LEFT JOIN part_fee USING ( feepart ) 
+    ".$extra_join.
+    " WHERE ".join( ' AND ', grep $_, @where );
 
   $self->scalar_sql($total_sql);
   
