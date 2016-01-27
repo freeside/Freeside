@@ -1,5 +1,5 @@
 package FS::agent;
-use base qw( FS::m2m_Common FS::m2name_Common FS::Record );
+use base qw( FS::Commission_Mixin FS::m2m_Common FS::m2name_Common FS::Record );
 
 use strict;
 use vars qw( @ISA );
