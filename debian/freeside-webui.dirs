@@ -1,2 +1,2 @@
-/var/www
-/usr/local/etc/freeside/profile
+var/www
+usr/local/etc/freeside/profile
