@@ -190,7 +190,7 @@ sub check {
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_numbern('void_date')
     || $self->ut_textn('reason')
-    || $self->payinfo_check
+    # || $self->payinfo_check #we'd rather void what we have than fail on this
     || $self->ut_foreign_keyn('reasonnum', 'reason', 'reasonnum')
   ;
   return $error if $error;
