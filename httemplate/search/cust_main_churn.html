@@ -33,6 +33,16 @@
     'e_suspended',
     'e_cancelled',
   ],
+  'sort_fields' => [
+    'custnum',
+    FS::UI::Web::cust_sql_fields,
+    's_active',
+    's_suspended',
+    's_cancelled',
+    'e_active',
+    'e_suspended',
+    'e_cancelled',
+  ],
   'color' => [
     '',
     FS::UI::Web::cust_colors(),
@@ -77,13 +87,20 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/) {
 
 # can't use this directly as it doesn't have any cust_main fields.
 my $churn = FS::cust_main::Status->churn_sql($speriod, $eperiod);
+my $select = join(',',
+  'churn.*',
+  'cust_main.*',
+  FS::UI::Web::cust_sql_fields()
+);
 
+my $addl_from = " JOIN ($churn) AS churn USING (custnum) ".
+                FS::UI::Web::join_cust_main('cust_main.custnum') ;
 my $query = {
   'table'     => 'cust_main',
-  'select'    => 'cust_main.*, churn.*',
-  'addl_from' => " JOIN ($churn) AS churn USING (custnum) ",
+  'select'    => $select,
+  'addl_from' => $addl_from,
 };
-my $count_query = "SELECT COUNT(*) FROM cust_main JOIN ($churn) AS churn USING (custnum)";
+my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from";
 my @where;
 
 my $status = $cgi->param('status');
