@@ -45,13 +45,7 @@ if ( -e $addl_handler_use_file ) {
 
   use strict;
   use vars qw( %session );
-  use CGI 3.29 qw(-private_tempfiles); #3.29 to fix RT attachment problems
-
-  #breaks quick payment entry
-  #http://rt.cpan.org/Public/Bug/Display.html?id=37365
-  die "CGI.pm v3.38 is broken, use any other version >= 3.29".
-      " (Debian 5.0?  aptitude remove libcgi-pm-perl)"
-    if $CGI::VERSION == 3.38;
+  use CGI 3.39 qw(-private_tempfiles); #3.39 for cpan#37365
 
   #use CGI::Carp qw(fatalsToBrowser);
   use CGI::Cookie;
