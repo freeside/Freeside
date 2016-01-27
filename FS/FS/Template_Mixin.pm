@@ -886,13 +886,15 @@ sub print_generic {
       if ($format eq 'latex');
   }
 
-  # let invoices use either of these as needed
-  $invoice_data{'po_num'} = ($cust_main->payby eq 'BILL') 
-    ? $cust_main->payinfo : '';
-  $invoice_data{'po_line'} = 
-    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
-      ? &$escape_function($self->mt("Purchase Order #").$cust_main->payinfo)
-      : $nbsp;
+# if (well, probably when) we still need PO numbers in the brave new world of
+# 4.x, then we'll have to add them back as their own customer fields
+#  # let invoices use either of these as needed
+#  $invoice_data{'po_num'} = ($cust_main->payby eq 'BILL') 
+#    ? $cust_main->payinfo : '';
+#  $invoice_data{'po_line'} = 
+#    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
+#      ? &$escape_function($self->mt("Purchase Order #").$cust_main->payinfo)
+#      : $nbsp;
 
   my %money_chars = ( 'latex'    => '',
                       'html'     => $conf->config('money_char') || '$',
