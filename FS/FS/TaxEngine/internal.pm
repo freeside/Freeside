@@ -266,7 +266,7 @@ sub taxline {
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
     next if $taxable_charged == 0;
 
-    my $this_tax_cents = $taxable_charged * $self->tax;
+    my $this_tax_cents = $taxable_charged * $tax_object->tax;
     if ( $round_per_line_item ) {
       # Round the tax to the nearest cent for each line item, instead of
       # across the whole invoice.
