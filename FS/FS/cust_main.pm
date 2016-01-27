@@ -31,7 +31,7 @@ use Business::CreditCard 0.28;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Cursor;
-use FS::Misc qw( generate_ps do_print money_pretty );
+use FS::Misc qw( generate_ps do_print money_pretty card_types );
 use FS::Msgcat qw(gettext);
 use FS::CurrentUser;
 use FS::TicketSystem;
@@ -468,7 +468,8 @@ sub insert {
   $self->auto_agent_custid()
     if $conf->config('cust_main-auto_agent_custid') && ! $self->agent_custid;
 
-  my $error = $self->SUPER::insert;
+  my $error =  $self->check_payinfo_cardtype
+            || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     #return "inserting cust_main record (transaction rolled back): $error";
@@ -1354,6 +1355,14 @@ sub replace {
          || $old->payby  =~ /^(CHEK|DCHK)$/ && $self->payby =~ /^(CHEK|DCHK)$/ )
     && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
 
+  if (    $self->payby =~ /^(CARD|DCRD)$/
+       && $old->payinfo ne $self->payinfo
+       && $old->paymask ne $self->paymask )
+  {
+    my $error = $self->check_payinfo_cardtype;
+    return $error if $error;
+  }
+
   return "Invoicing locale is required"
     if $old->locale
     && ! $self->locale
@@ -2090,6 +2099,25 @@ sub check {
     if $DEBUG > 2;
 
   $self->SUPER::check;
+}
+
+sub check_payinfo_cardtype {
+  my $self = shift;
+
+  return '' unless $self->payby =~ /^(CARD|CHEK)$/;
+
+  my $payinfo = $self->payinfo;
+  $payinfo =~ s/\D//g;
+
+  return '' if $payinfo =~ /^99\d{14}$/; #token
+
+  my %bop_card_types = map { $_=>1 } values %{ card_types() };
+  my $cardtype = cardtype($payinfo);
+
+  return "$cardtype not accepted" unless $bop_card_types{$cardtype};
+
+  '';
+
 }
 
 =item replace_check
