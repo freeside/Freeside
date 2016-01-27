@@ -7,6 +7,7 @@ use Digest::SHA qw( sha512_base64 );
 use Business::CreditCard qw( validate cardtype );
 use FS::UID qw( dbh );
 use FS::Msgcat qw( gettext );
+use FS::Misc qw( card_types );
 use FS::Record; #qw( qsearch qsearchs );
 use FS::payby;
 use FS::cust_main;
@@ -154,7 +155,8 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::insert;
+  my $error =  $self->check_payinfo_cardtype
+            || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -227,6 +229,14 @@ sub replace {
     if (    $old->payby  =~ /^(CARD|DCRD)$/ && $self->payby =~ /^(CARD|DCRD)$/
          || $old->payby  =~ /^(CHEK|DCHK)$/ && $self->payby =~ /^(CHEK|DCHK)$/ )
     && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
+
+  if (    $self->payby =~ /^(CARD|DCRD)$/
+       && $old->payinfo ne $self->payinfo
+       && $old->paymask ne $self->paymask )
+  {
+    my $error = $self->check_payinfo_cardtype;
+    return $error if $error;
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -481,6 +491,23 @@ sub check {
   ###
 
   $self->SUPER::check;
+}
+
+sub check_payinfo_cardtype {
+  my $self = shift;
+
+  my $payinfo = $self->payinfo;
+  $payinfo =~ s/\D//g;
+
+  return '' if $payinfo =~ /^99\d{14}$/; #token
+
+  my %bop_card_types = map { $_=>1 } values %{ card_types() };
+  my $cardtype = cardtype($payinfo);
+
+  return "$cardtype not accepted" unless $bop_card_types{$cardtype};
+
+  '';
+
 }
 
 sub _banned_pay_hashref {
