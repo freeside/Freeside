@@ -138,6 +138,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::Msgcat qw(gettext geterror);
   use FS::Misc qw( send_email send_fax ocr_image
                    states_hash counties cities state_label
+                   card_types
                  );
   use FS::Misc::eps2png qw( eps2png );
   use FS::Report::FCC_477;

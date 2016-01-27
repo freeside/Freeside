@@ -135,14 +135,22 @@ if ( $payby eq 'CHEK' ) {
 
   $payinfo =~ s/\D//g;
   $payinfo =~ /^(\d{13,16}|\d{8,9})$/
-    or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
+    or errorpage(gettext('invalid_card'));
   $payinfo = $1;
   validate($payinfo)
-    or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
+    or errorpage(gettext('invalid_card'));
 
-  errorpage(gettext('unknown_card_type'))
-    if $payinfo !~ /^99\d{14}$/ #token
-    && cardtype($payinfo) eq "Unknown";
+  unless ( $self->payinfo =~ /^99\d{14}$/ ) { #token
+
+    my $cardtype = cardtype($payinfo);
+
+    errorpage(gettext('unknown_card_type'))
+      if $cardtype eq "Unknown";
+
+    my %bop_card_types = map { $_=>1 } values %{ card_types() };
+    errorpage("$cardtype not accepted") unless $bop_card_types{$cardtype};
+
+  }
 
   if ( defined $cust_main->dbdef_table->column('paycvv') ) { #is this test necessary anymore?
     if ( length($cgi->param('paycvv') ) ) {
