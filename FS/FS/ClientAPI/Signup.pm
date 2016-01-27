@@ -645,9 +645,6 @@ sub new_customer {
     && ! $cust_main->paycvv
     && $conf->exists('signup-require_cvv');
 
-  $cust_main->payinfo($cust_main->daytime)
-    if $cust_main->payby eq 'LECB' && ! $cust_main->payinfo;
-
   my @invoicing_list = $packet->{'invoicing_list'}
                          ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
                          : ();
