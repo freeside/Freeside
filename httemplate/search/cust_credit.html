@@ -56,32 +56,58 @@ if ($unapplied) {
 push @header, emt('Date'), 
               emt('By'),
               emt('Reason'),
-              FS::UI::Web::cust_header(),
               ;
 push @fields, sub { time2str('%b %d %Y', shift->_date ) },
               'otaker',
               'reason',
-              \&FS::UI::Web::cust_fields,
               ;
-push @sort_fields, '_date', 'otaker', 'reason', FS::UI::Web::cust_sort_fields();
-$align .= 'rll'.FS::UI::Web::cust_aligns();
+push @sort_fields, '_date', 'otaker', 'reason';
+$align .= 'rll';
 push @links,  '',
               '',
               '',
-              ( map { $_ ne 'Cust. Status' ? $clink : '' }
-                         FS::UI::Web::cust_header()
-                   ),
               ;
 push @color,  '',
               '',
               '',
-              FS::UI::Web::cust_colors(),
               ;
 push @style,  '',
               '',
               '',
-              FS::UI::Web::cust_styles(),
               ;
+
+# insert customer email after 'Reason' if this is a commission report
+if ( $cgi->param('commission_salesnum') or $cgi->param('commission_agentnum') ) {
+  my $sub_customer_email = sub {
+    my $cust_credit = shift;
+    return '' unless $cust_credit->eventnum;
+    my $cust_event = FS::cust_event->by_key($cust_credit->eventnum)
+      or return '';
+    my $cust_X = $cust_event->cust_X or return '';
+    my $cust_main = $cust_X->cust_main or return '';
+    my ($email) = $cust_main->invoicing_list_emailonly;
+    return encode_entities("<$email>") if length($email);
+    '';
+  };
+  push @header, '';
+  push @fields, $sub_customer_email;
+  push @sort_fields, '';
+  $align .= 'l';
+  push @links, '';
+  push @color, '';
+  push @style, '';
+}
+
+# cust fields
+push @header, FS::UI::Web::cust_header();
+push @fields, \&FS::UI::Web::cust_fields;
+push @sort_fields, FS::UI::Web::cust_sort_fields;
+$align .= FS::UI::Web::cust_aligns();
+push @links, map { $_ ne 'Cust. Status' ? $clink : '' }
+                         FS::UI::Web::cust_header();
+push @color, FS::UI::Web::cust_colors();
+push @style, FS::UI::Web::cust_styles();
+
 
 my @search = ();
 my $addl_from = '';
