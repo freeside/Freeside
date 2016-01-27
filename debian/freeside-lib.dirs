@@ -1,4 +1,2 @@
-/usr/share/perl5/
-/usr/bin
-/usr/local/etc/freeside/default_conf
-/opt/rt3
+usr/local/etc/freeside/default_conf
+opt/rt3
