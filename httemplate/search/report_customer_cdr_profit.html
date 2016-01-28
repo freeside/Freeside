@@ -1,6 +1,6 @@
-<% include('/elements/header.html', 'Customer Usage Profit/Loss Report' ) %>
+<% include('/elements/header.html', 'Customer CDRs Profit/Loss Report' ) %>
 
-<FORM ACTION="customer_usage_profit.html" METHOD="GET">
+<FORM ACTION="customer_cdr_profit.html" METHOD="GET">
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -24,6 +24,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports')
+      && $FS::CurrentUser::CurrentUser->access_right('List rating data');
 
 </%init>

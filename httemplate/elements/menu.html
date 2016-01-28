@@ -290,6 +290,8 @@ $report_rating{'Call Detail Records (CDRs)'} = [ $fsurl.'search/report_cdr.html'
   if $curuser->access_right("Usage: Call Detail Records (CDRs)");
 $report_rating{'Unrateable CDRs'} = [ $fsurl.'search/cdr.html?freesidestatus=failed;cdrbatchnum=_ALL_' ]
   if $curuser->access_right("Usage: Unrateable CDRs");
+$report_rating{'Customer CDRs Profit/Loss'} = [ $fsurl.'search/report_customer_cdr_profit.html', 'Profit/loss from customer CDRs' ]
+  if $curuser->access_right('Financial reports');
 if ( $curuser->access_right("Usage: Time worked") ) {
   $report_rating{'Time worked'} = [ $fsurl.'search/report_rt_transaction.html', '' ];
   $report_rating{'Time worked summary per ticket'} = [ $fsurl.'search/report_rt_ticket.html', '' ];
@@ -397,8 +399,6 @@ if( $curuser->access_right('Financial reports') ) {
   $report_financial{'E911 Fee Summary'} = [ $fsurl.'search/report_e911.html', 'E911 fee summary' ];
 
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
-
-  $report_financial{'Customer Usage Profit/Loss'} = [ $fsurl.'search/report_customer_usage_profit.html', 'Customer usage profit/loss' ];
 
 } elsif($curuser->access_right('Receivables report')) {
 
