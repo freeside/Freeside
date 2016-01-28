@@ -67,7 +67,7 @@
       #warn "writing ".xl_rowcol_to_cell($r, $c)."\n";
         $worksheet->write( $r, $c, $cell->{value}, $format{$f} );
       }
-      $c++;
+      $c += $cell->{colspan} || 1;
     } #$cell
   $r++;
   } #$row
@@ -119,7 +119,8 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports')
+      && $FS::CurrentUser::CurrentUser->access_right('List rating data');
 
 my ($agentnum,$sel_agent);
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -129,7 +130,7 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
 
-$title .= 'Customer Usage Profit/Loss Report';
+$title .= 'Customer CDRs Profit/Loss Report';
 
 my @items  = ('cust_bill_pkg_recur', 'cust_bill_pkg_recur', 'cust_bill_pkg_detail', 'cust_bill_pkg_detail' );
 my @params = ( [], [ 'cost' => 1 ], [], [ 'cost' => 1 ] );
