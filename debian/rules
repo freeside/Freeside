@@ -48,7 +48,7 @@ export MASON_HANDLER=$(TMP)-webui/usr/local/etc/freeside/handler.pl
 
 export APACHE_VERSION        := $(shell /usr/sbin/apache2 -v | grep -q '\/2\.4\.' && echo '2.4' || echo '2')
 export APACHE_DOCUMENT_ROOT  := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html' || echo '/var/www')
-export FREESIDE_DOCUMENT_ROOT = $(TMP)$(APACHE_DOCUMENT_ROOT)/freeside
+export FREESIDE_DOCUMENT_ROOT = $(TMP)-webui$(APACHE_DOCUMENT_ROOT)/freeside
 export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
