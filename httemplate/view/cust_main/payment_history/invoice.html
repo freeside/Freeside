@@ -40,7 +40,7 @@ my $email = ($opt{'has_email_address'} && $opt{'Resend invoices'}) ?
   q! to customer?','!.
   "${p}misc/send-invoice.cgi?method=email;notice_name=Invoice;popup=1;invnum=".
   $cust_bill->invnum.
-  q!','Email Invoice Receipt')" TITLE="Send email invoice">email&nbsp;invoice</A>)!
+  q!','Email Invoice Receipt')" TITLE="Send email invoice">email</A>)!
   : '';
 
 my $events = '';
