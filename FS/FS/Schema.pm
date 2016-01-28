@@ -56,6 +56,7 @@ sub reload_dbdef {
     warn "[debug]$me re-using cached dbdef for $file\n" if $DEBUG;
   }
   $dbdef = $dbdef_cache{$file};
+  FS::Record::fk_methods_init();
 }
 
 =item dbdef
