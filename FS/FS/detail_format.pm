@@ -178,6 +178,7 @@ Takes a single CDR and returns an invoice detail to describe it.
 
 By default, this maps the following fields from the CDR:
 
+acctid            => acctid
 rated_price       => amount
 rated_classnum    => classnum
 rated_seconds     => duration
@@ -208,6 +209,7 @@ sub single_detail {
   $price = 0 if $cdr->freesidestatus eq 'no-charge';
 
   FS::cust_bill_pkg_detail->new( {
+      'acctid'      => $cdr->acctid,
       'amount'      => $price,
       'classnum'    => $cdr->rated_classnum,
       'duration'    => $cdr->rated_seconds,

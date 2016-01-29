@@ -3844,6 +3844,9 @@ sub tables_hashref {
         #new
         'cdrbatchnum',      'int',    'NULL',      '', '', '',
 
+        # FK to cust_bill_pkg_detail; having a value here absolutely means
+        # that the CDR appears on an invoice
+        'detailnum',     'bigint',    'NULL',      '', '', '',
       ],
       'primary_key' => 'acctid',
       'unique' => [],

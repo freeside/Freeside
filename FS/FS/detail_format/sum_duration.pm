@@ -24,6 +24,7 @@ sub header_detail {
 sub append {
   my $self = shift;
   my $svcnums = ($self->{svcnums} ||= {});
+  my $acctids = ($self->{acctids} ||= []);
   foreach my $cdr (@_) {
     my $object = $self->{inbound} ? $cdr->cdr_termination(1) : $cdr;
     my $svcnum = $object->svcnum; # yes, $object->svcnum.
@@ -34,6 +35,8 @@ sub append {
     $subtotal->{duration} += $object->rated_seconds;
     $subtotal->{amount} += $object->rated_price
       if $object->freesidestatus ne 'no-charge';
+
+    push @$acctids, $cdr->acctid;
   }
 }
 
@@ -70,6 +73,7 @@ sub finish {
         startdate   => '', #could use the earliest startdate in the bunch?
         regionname  => '', #no, we're using prefix instead
         detail      => $self->csv->string,
+        acctid      => $self->{acctids},
     });
   } #foreach $svcnum
 

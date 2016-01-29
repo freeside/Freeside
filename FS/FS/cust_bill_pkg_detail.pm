@@ -86,14 +86,51 @@ sub table { 'cust_bill_pkg_detail'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+  my $error = $self->SUPER::insert(@_);
+  return $error if $error;
+
+  # link CDRs
+  my $acctids = $self->get('acctid') or return '';
+  $acctids = [ $acctids ] unless ref $acctids;
+  foreach my $acctid ( @$acctids ) {
+    my $cdr = FS::cdr->by_key($acctid);
+    $cdr->set('detailnum', $self->detailnum);
+    $error = $cdr->replace;
+    # this should never happen
+    return "error linking CDR #$acctid: $error" if $error;
+  }
+  '';
+}
+
 =item delete
 
 Delete this record from the database.
+
+=cut
+
+sub delete {
+  my $self = shift;
+  my $error = $self->SUPER::delete;
+  return $error if $error;
+  foreach my $cdr (qsearch('cdr', { detailnum => $self->detailnum })) {
+    $cdr->set('detailnum', '');
+    $error = $cdr->replace;
+    return "error unlinking CDR #" . $cdr->acctid . ": $error" if $error;
+  }
+}
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+=cut
+
+# the replace method can be inherited from FS::Record (doesn't touch CDRs)
 
 =item check
 
