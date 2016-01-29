@@ -56,18 +56,25 @@ $disable_agentcheck = 0;
 
 $upgrade = 0; #go away after setup+start dates cleaned up for old customers
 
+sub _simplecache {
+  my( $self, $hashref ) = @_;
+  if ( $hashref->{'pkg'} ) {
+    $self->{'_pkgpart'} = FS::part_pkg->new($hashref);
+  }
+}
+
 sub _cache {
   my $self = shift;
   my ( $hashref, $cache ) = @_;
-  #if ( $hashref->{'pkgpart'} ) {
-  if ( $hashref->{'pkg'} ) {
-    # #@{ $self->{'_pkgnum'} } = ();
-    # my $subcache = $cache->subcache('pkgpart', 'part_pkg');
-    # $self->{'_pkgpart'} = $subcache;
-    # #push @{ $self->{'_pkgnum'} },
-    #   FS::part_pkg->new_or_cached($hashref, $subcache);
-    $self->{'_pkgpart'} = FS::part_pkg->new($hashref);
-  }
+#  #if ( $hashref->{'pkgpart'} ) {
+#  if ( $hashref->{'pkg'} ) {
+#    # #@{ $self->{'_pkgnum'} } = ();
+#    # my $subcache = $cache->subcache('pkgpart', 'part_pkg');
+#    # $self->{'_pkgpart'} = $subcache;
+#    # #push @{ $self->{'_pkgnum'} },
+#    #   FS::part_pkg->new_or_cached($hashref, $subcache);
+#    $self->{'_pkgpart'} = FS::part_pkg->new($hashref);
+#  }
   if ( exists $hashref->{'svcnum'} ) {
     #@{ $self->{'_pkgnum'} } = ();
     my $subcache = $cache->subcache('svcnum', 'cust_svc', $hashref->{pkgnum});

@@ -561,6 +561,9 @@ is specified as B<0>, returns the number of unlinked customer services.
 sub num_cust_svc {
   my $self = shift;
 
+  return $self->{Hash}{num_cust_svc}
+    if !@_ && exists($self->{Hash}{num_cust_svc});
+
   my @param = ( $self->svcpart );
 
   my( $join, $and ) = ( '', '' );
