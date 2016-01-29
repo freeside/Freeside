@@ -252,12 +252,14 @@ sub send_email {
     $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
     $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
   }
-  
+
   push @to, $options{bcc} if defined($options{bcc});
+  # make sure 
+  my @env_to = split(/\s*,\s*/, join(', ', @to));
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
                               from      => $from,
-                              to        => \@to }) };
+                              to        => \@env_to }) };
 
   my $error = '';
   if(ref($@) and $@->isa('Email::Sender::Failure')) {
