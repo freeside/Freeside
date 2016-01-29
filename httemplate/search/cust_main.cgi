@@ -119,9 +119,11 @@
 %    foreach my $cust_pkg ( @{$all_pkgs{$custnum}} ) {
 %      my %cust_svc_by_svcpart;
 %      my $rows = 0;
-%      foreach my $part_svc ( $cust_pkg->part_svc ) {
+%      foreach my $part_svc (
+%        $cust_pkg->part_svc( summarize_size=>$large_pkg_size )
+%      ) {
 %        my $svcpart = $part_svc->svcpart;
-%        my $num_cust_svc = $cust_pkg->num_cust_svc($svcpart);
+%        my $num_cust_svc = $part_svc->num_cust_svc;
 %        if ( $large_pkg_size > 0 and $num_cust_svc >= $large_pkg_size ) {
 %          # don't retrieve the cust_svc records, just stash the 
 %          # part_svc and num_cust_svc for later
@@ -130,7 +132,7 @@
 %          $rows += 2;
 %        }
 %        elsif ( $num_cust_svc ) {
-%          $cust_svc_by_svcpart{$svcpart} = [ $cust_pkg->cust_svc($svcpart) ];
+%          $cust_svc_by_svcpart{$svcpart} = $part_svc->cust_pkg_svc;
 %          $rows += $num_cust_svc;
 %        } #if summarize
 %      } #foreach $part_svc
@@ -479,7 +481,7 @@ if ( $cgi->param('browse')
     );
   }
 
-  @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
+  @cust_main = grep { $_->num_ncancelled_pkgs || ! $_->num_pkgs } @cust_main
     if ! $cgi->param('cancelled')
        && (
          $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
@@ -491,12 +493,30 @@ if ( $cgi->param('browse')
   @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
 }
 
-my %all_pkgs;
-if ( $conf->exists('hidecancelledpackages' ) ) {
-  %all_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
-} else {
-  %all_pkgs = map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
-}
+my $pkgs_method = $conf->exists('hidecancelledpackages')
+                    ? 'ncancelled_pkgs'
+                    : 'all_pkgs';
+
+#false laziness w/httemplate/view/cust_main/packages.html
+my $select = '*, setup_option.optionvalue AS _opt_setup_fee, '.
+                'recur_option.optionvalue AS _opt_recur_fee',
+my $addl_from = qq{
+    LEFT JOIN part_pkg USING ( pkgpart )
+    LEFT JOIN part_pkg_option AS setup_option
+      ON (     cust_pkg.pkgpart = setup_option.pkgpart
+           AND setup_option.optionname = 'setup_fee' )
+    LEFT JOIN part_pkg_option AS recur_option
+      ON (     cust_pkg.pkgpart = recur_option.pkgpart
+           AND recur_option.optionname = 'recur_fee' )
+};
+
+my %all_pkgs = map { $_->custnum =>
+                       [ $_->$pkgs_method({ select    => $select,
+                                            addl_from => $addl_from,
+                                         })
+                       ];
+                   }
+                 @cust_main;
 
 sub last_sort {
   lc($a->getfield('last')) cmp lc($b->getfield('last'))

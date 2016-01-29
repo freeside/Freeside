@@ -199,6 +199,7 @@ sub new {
 
   $self->{'modified'} = 0;
 
+  $self->_simplecache($self->{'Hash'})  if $self->can('_simplecache');
   $self->_cache($self->{'Hash'}, shift) if $self->can('_cache') && @_;
 
   $self;
