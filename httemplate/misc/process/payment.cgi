@@ -198,7 +198,6 @@ if ( $cgi->param('save') ) {
     'payinfo'       => $payinfo,
     'paymask'       => $paymask,
     'payname'       => $payname,
-    'paytype        => $paytype,
     %saveopt
   );
 
