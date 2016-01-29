@@ -28,4 +28,4 @@ cd ..
 	#ln -s /var/www/signup/signup.cgi /var/www/signup/index.cgi || true
 
 
-chmod 755 /var/www/selfservice/*.cgi
+chmod 755 /var/www/html/selfservice/*.cgi
