@@ -286,10 +286,15 @@ sub replace {
   warn "Warning: passed city to replace when cust_main-no_city_in_address is configured"
     if $conf->exists('cust_main-no_city_in_address') && $self->get('city');
 
-  # the following fields are immutable
-  foreach (qw(address1 address2 city state zip country)) {
-    if ( $self->$_ ne $old->$_ ) {
-      return "can't change cust_location field $_";
+  # the following fields are immutable if this is a customer location. if
+  # it's a prospect location, then there are no active packages, no billing
+  # history, no taxes, and in general no reason to keep the old location
+  # around.
+  if ( $self->custnum ) {
+    foreach (qw(address1 address2 city state zip country)) {
+      if ( $self->$_ ne $old->$_ ) {
+        return "can't change cust_location field $_";
+      }
     }
   }
 
