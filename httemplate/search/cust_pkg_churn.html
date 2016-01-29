@@ -146,6 +146,7 @@ if ($pkg_query->{extra_sql}) {
 $extra_sql .= join(' AND ', @where);
 
 my $sql_query = {
+  'select'    => $pkg_query->{select},
   'table'     => $table,
   'addl_from' => $from,
   'extra_sql' => $extra_sql,
