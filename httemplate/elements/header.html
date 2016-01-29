@@ -24,7 +24,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% encode_entities($title) || $title_noescape %>
+      <% encode_entities($title) || $title_noescape |n %>
     </TITLE>
     <!-- per RT, to prevent IE compatibility mode -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
