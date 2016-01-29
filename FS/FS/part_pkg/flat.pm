@@ -127,8 +127,11 @@ sub calc_setup {
 
 sub base_setup {
   my($self, $cust_pkg, $sdate, $details ) = @_;
-
-  $self->option('setup_fee') || 0;
+  ( exists( $self->{'Hash'}{'_opt_setup_fee'} )
+      ? $self->{'Hash'}{'_opt_setup_fee'}
+      : $self->option('setup_fee', 1) 
+  )
+    || 0;
 }
 
 sub calc_recur {
@@ -181,7 +184,11 @@ sub cutoff_day {
 
 sub base_recur {
   my($self, $cust_pkg, $sdate) = @_;
-  $self->option('recur_fee', 1) || 0;
+  ( exists( $self->{'Hash'}{'_opt_recur_fee'} )
+      ? $self->{'Hash'}{'_opt_recur_fee'}
+      : $self->option('recur_fee', 1) 
+  )
+    || 0;
 }
 
 sub base_recur_permonth {
