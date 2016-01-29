@@ -110,7 +110,7 @@ if ( $payby eq 'CHEK' ) {
   validate($payinfo)
     or errorpage(gettext('invalid_card'));
 
-  unless ( $self->payinfo =~ /^99\d{14}$/ ) { #token
+  unless ( $payinfo =~ /^99\d{14}$/ ) { #token
 
     my $cardtype = cardtype($payinfo);
 
