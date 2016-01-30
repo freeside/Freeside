@@ -21,6 +21,20 @@
     <TD BGCOLOR="#ffffff"><% $part_pkg->comment |h %></TD>
   </TR>
 
+  <TR>
+    <TD></TD>
+    <TD>
+      <SELECT NAME="copy_on_order">
+        <OPTION VALUE=""<% $copy_on_order ? '' : ' SELECTED' %>>
+          <% emt('Details will only appear on quotation') %>
+        </OPTION>
+        <OPTION VALUE="Y"<% $copy_on_order ? ' SELECTED' : '' %>>
+          <% emt('Copy details to invoice when placing order') %>
+        </OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+
 % my $row = 0;
 % for ( @details ) { 
 
@@ -110,6 +124,21 @@ my $quotation_pkg = qsearchs({
 my $part_pkg = $quotation_pkg->part_pkg;
 
 my @details = $quotation_pkg->details;
+
+my $copy_on_order = 0;
+if (@details) {
+
+  # currently, they should either all have this flag, or none
+  # but just in case, erring on the side of not copying to invoice 
+  #   unless every existing detail has copy_on_order
+  # (anyway, user has to submit change, this is just for autofill)
+
+  my @quotation_pkg_detail = $quotation_pkg->quotation_pkg_detail;
+  my @copy_on_order = grep { $_->copy_on_order } @quotation_pkg_detail;
+  $copy_on_order = 1 if @copy_on_order;
+  my @no_copy_on_order = grep { !$_->copy_on_order } @quotation_pkg_detail;
+  $copy_on_order = 0 if @no_copy_on_order;  
+}
 
 my $title = ( scalar(@details) ? 'Edit ' : 'Add ' ). 'Quotation Details';
 

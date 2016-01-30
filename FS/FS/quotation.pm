@@ -399,11 +399,17 @@ as ordered.
 sub order {
   my $self = shift;
   my $pkgnum_map = shift || {};
+  my $details_map = {};
 
   tie my %all_cust_pkg, 'Tie::RefHash';
   foreach my $quotation_pkg ($self->quotation_pkg) {
     my $cust_pkg = FS::cust_pkg->new;
     $pkgnum_map->{ $quotation_pkg->quotationpkgnum } = $cust_pkg;
+
+    # details will be copied below, after package is ordered
+    $details_map->{ $quotation_pkg->quotationpkgnum } = [ 
+      map { $_->copy_on_order ? $_->detail : () } $quotation_pkg->quotation_pkg_detail
+    ];
 
     foreach (qw(pkgpart locationnum start_date contract_end quantity waive_setup)) {
       $cust_pkg->set( $_, $quotation_pkg->get($_) );
@@ -418,15 +424,45 @@ sub order {
     $all_cust_pkg{$cust_pkg} = []; # no services
   }
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error = $self->cust_main->order_pkgs( \%all_cust_pkg );
   
+  unless ($error) {
+    # copy details (copy_on_order filtering handled above)
+    foreach my $quotationpkgnum (keys %$details_map) {
+      next unless @{$details_map->{$quotationpkgnum}};
+      $error = $pkgnum_map->{$quotationpkgnum}->set_cust_pkg_detail(
+        'I',
+        @{$details_map->{$quotationpkgnum}}
+      );
+      last if $error;
+    }
+  }
+
   foreach my $quotationpkgnum (keys %$pkgnum_map) {
     # convert the objects to just pkgnums
     my $cust_pkg = $pkgnum_map->{$quotationpkgnum};
     $pkgnum_map->{$quotationpkgnum} = $cust_pkg->pkgnum;
   }
 
-  $error;
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+
 }
 
 =item charge
