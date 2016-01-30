@@ -560,6 +560,39 @@ sub paydate_mon_year {
 
 }
 
+=item label
+
+Returns a one line text label for this payment type.
+
+=cut
+
+my %weight = (
+  1 => 'Primary',
+  2 => 'Secondary',
+  3 => 'Tertiary',
+  4 => 'Fourth',
+  5 => 'Fifth',
+  6 => 'Sixth',
+  7 => 'Seventh',
+);
+
+sub label {
+  my $self = shift;
+
+  my $name = $self->payby =~ /^(CARD|DCRD)$/
+              && cardtype($self->paymask) || FS::payby->shortname($self->payby);
+
+  ( $self->payby =~ /^(CARD|CHEK)$/  ? $weight{$self->weight}. ' automatic '
+                                     : 'Manual '
+  ).
+  "$name: ". $self->paymask.
+  ( $self->payby =~ /^(CARD|DCRD)$/
+      ? ' Exp '. join('/', $self->paydate_mon_year)
+      : ''
+  );
+
+}
+
 =item realtime_bop
 
 =cut

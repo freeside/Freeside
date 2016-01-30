@@ -23,14 +23,21 @@ die "access denied" unless $curuser->access_right('Process payment');
 
 my $conf = new FS::Conf;
 
+##
+# info for all payments, stored or unstored
+##
+
 #some false laziness w/MyAccount::process_payment
 
 $cgi->param('custnum') =~ /^(\d+)$/
   or die "illegal custnum ". $cgi->param('custnum');
 my $custnum = $1;
 
-my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
-die "unknown custnum $custnum" unless $cust_main;
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+}) or die "unknown custnum $custnum";
 
 $cgi->param('amount') =~ /^\s*(\d*(\.\d\d)?)\s*$/
   or errorpage("illegal amount ". $cgi->param('amount'));
@@ -41,14 +48,6 @@ if ( $cgi->param('fee') =~ /^\s*(\d*(\.\d\d)?)\s*$/ ) {
   my $fee = $1;
   $amount = sprintf('%.2f', $amount + $fee);
 }
-
-$cgi->param('year') =~ /^(\d+)$/
-  or errorpage("illegal year ". $cgi->param('year'));
-my $year = $1;
-
-$cgi->param('month') =~ /^(\d+)$/
-  or errorpage("illegal month ". $cgi->param('month'));
-my $month = $1;
 
 $cgi->param('payby') =~ /^(CARD|CHEK)$/
   or errorpage("illegal payby ". $cgi->param('payby'));
@@ -61,10 +60,6 @@ my %type = ( 'CARD' => 'credit card',
              'CHEK' => 'electronic check (ACH)',
            );
 
-$cgi->param('payname') =~ /^([\w \,\.\-\']+)$/
-  or errorpage(gettext('illegal_name'). " payname: ". $cgi->param('payname'));
-my $payname = $1;
-
 $cgi->param('payunique') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
   or errorpage(gettext('illegal_text'). " payunique: ". $cgi->param('payunique'));
 my $payunique = $1;
@@ -73,33 +68,48 @@ $cgi->param('balance') =~ /^\s*(\-?\s*\d*(\.\d\d)?)\s*$/
   or errorpage("illegal balance");
 my $balance = $1;
 
-my $payinfo;
-my $paymask; # override only used by loaded cust payinfo, only implemented for realtime processing
-my $paycvv = '';
-my $loaded_cust_payby;
-if ( $payby eq 'CHEK' ) {
+$cgi->param('discount_term') =~ /^(\d*)$/
+  or errorpage("illegal discount_term");
+my $discount_term = $1;
 
-  if ($cgi->param('payinfo1') =~ /xx/i || $cgi->param('payinfo2') =~ /xx/i ) {
+my( $payinfo, $paycvv, $month, $year, $payname );
+my $paymask = '';
+if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
-    my $search_paymask = $cgi->param('payinfo1') . '@' . $cgi->param('payinfo2');
-    $search_paymask .= '.' . $cgi->param('payinfo3')
-      if $conf->config('echeck-country') eq 'CA';
+  ##
+  # use stored cust_payby info
+  ##
 
-    #paymask might not be saved in database, need to run paymask method for any potential match
-    foreach my $search_cust_payby ($cust_main->cust_payby('CHEK','DCHK')) {
-      if ($search_paymask eq $search_cust_payby->paymask) {
-        # if there are multiple matches, assume for now that it's the first one returned,
-        # since that's what auto-fills; it's unlikely a masked number would be entered by hand,
-        # but it's very likely users will just click-through what's been auto-filled
-        $loaded_cust_payby = $search_cust_payby;
-        last;
-      }
-    }
-    errorpage("Masked payinfo not found") unless $loaded_cust_payby;
-    $payinfo = $loaded_cust_payby->payinfo;
-    $paymask = $loaded_cust_payby->paymask;
+  my $cust_payby = qsearchs('cust_payby', { custnum      => $custnum,
+                                            custpaybynum => $custpaybynum, } )
+    or die "unknown custpaybynum $custpaybynum";
 
-  } else {
+  $payinfo = $cust_payby->payinfo;
+  $paymask = $cust_payby->paymask;
+  $paycvv = '';
+  ( $month, $year ) = $cust_payby->paydate_mon_year;
+  $payname = $cust_payby->payname;
+
+} else {
+
+  ##
+  # use new info
+  ##
+
+  $cgi->param('year') =~ /^(\d+)$/
+    or errorpage("illegal year ". $cgi->param('year'));
+  $year = $1;
+
+  $cgi->param('month') =~ /^(\d+)$/
+    or errorpage("illegal month ". $cgi->param('month'));
+  $month = $1;
+
+  $cgi->param('payname') =~ /^([\w \,\.\-\']+)$/
+    or errorpage(gettext('illegal_name'). " payname: ". $cgi->param('payname'));
+  $payname = $1;
+
+  if ( $payby eq 'CHEK' ) {
+
     $cgi->param('payinfo1') =~ /^(\d+)$/
       or errorpage("Illegal account number ". $cgi->param('payinfo1'));
     my $payinfo1 = $1;
@@ -112,47 +122,30 @@ if ( $payby eq 'CHEK' ) {
       $payinfo2 = "$1.$payinfo2";
     }
     $payinfo = $payinfo1. '@'. $payinfo2;
-  }
 
-} elsif ( $payby eq 'CARD' ) {
+  } elsif ( $payby eq 'CARD' ) {
 
-  $payinfo = $cgi->param('payinfo');
-  if ($payinfo =~ /xx/i) {
+    $payinfo = $cgi->param('payinfo');
 
-    #paymask might not be saved in database, need to run paymask method for any potential match
-    foreach my $search_cust_payby ($cust_main->cust_payby('CARD','DCRD')) {
-      if ($payinfo eq $search_cust_payby->paymask) {
-        $loaded_cust_payby = $search_cust_payby;
-        last;
-      }
+    $payinfo =~ s/\D//g;
+    $payinfo =~ /^(\d{13,16}|\d{8,9})$/
+      or errorpage(gettext('invalid_card'));
+    $payinfo = $1;
+    validate($payinfo)
+      or errorpage(gettext('invalid_card'));
+
+    unless ( $payinfo =~ /^99\d{14}$/ ) { #token
+
+      my $cardtype = cardtype($payinfo);
+
+      errorpage(gettext('unknown_card_type'))
+        if $cardtype eq "Unknown";
+
+      my %bop_card_types = map { $_=>1 } values %{ card_types() };
+      errorpage("$cardtype not accepted") unless $bop_card_types{$cardtype};
+
     }
 
-    errorpage("Masked payinfo not found") unless $loaded_cust_payby;
-    $payinfo = $loaded_cust_payby->payinfo;
-    $paymask = $loaded_cust_payby->paymask;
-
-  }
-
-  $payinfo =~ s/\D//g;
-  $payinfo =~ /^(\d{13,16}|\d{8,9})$/
-    or errorpage(gettext('invalid_card'));
-  $payinfo = $1;
-  validate($payinfo)
-    or errorpage(gettext('invalid_card'));
-
-  unless ( $payinfo =~ /^99\d{14}$/ ) { #token
-
-    my $cardtype = cardtype($payinfo);
-
-    errorpage(gettext('unknown_card_type'))
-      if $cardtype eq "Unknown";
-
-    my %bop_card_types = map { $_=>1 } values %{ card_types() };
-    errorpage("$cardtype not accepted") unless $bop_card_types{$cardtype};
-
-  }
-
-  if ( defined $cust_main->dbdef_table->column('paycvv') ) { #is this test necessary anymore?
     if ( length($cgi->param('paycvv') ) ) {
       if ( cardtype($payinfo) eq 'American Express card' ) {
         $cgi->param('paycvv') =~ /^(\d{4})$/
@@ -163,47 +156,48 @@ if ( $payby eq 'CHEK' ) {
           or errorpage("CVV2 (CVC2/CID) is three digits.");
         $paycvv = $1;
       }
-    }elsif( $conf->exists('backoffice-require_cvv') ){
+    } elsif ( $conf->exists('backoffice-require_cvv') ){
       errorpage("CVV2 is required");
     }
-  }
 
-} else {
-  die "unknown payby $payby";
-}
-
-$cgi->param('discount_term') =~ /^(\d*)$/
-  or errorpage("illegal discount_term");
-my $discount_term = $1;
-
-# save first, for proper tokenization later
-if ( $cgi->param('save') ) {
-
-  my %saveopt;
-  if ( $payby eq 'CARD' ) {
-    my $bill_location = FS::cust_location->new;
-    $bill_location->set( $_ => $cgi->param($_) )
-      foreach @{$payby2fields{$payby}};
-    $saveopt{'bill_location'} = $bill_location;
-    $saveopt{'paycvv'} = $paycvv; # save_cust_payby contains conf logic for when to use this
-    $saveopt{'paydate'} = "$year-$month-01";
   } else {
-    # ss/stateid/stateid_state won't be saved, but should be harmless to pass
-    %saveopt = map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}};
+    die "unknown payby $payby";
   }
 
-  my $error = $cust_main->save_cust_payby(
-    'payment_payby' => $payby,
-    'auto'          => scalar($cgi->param('auto')),
-    'payinfo'       => $payinfo,
-    'paymask'       => $paymask,
-    'payname'       => $payname,
-    %saveopt
-  );
+  # save first, for proper tokenization later
+  if ( $cgi->param('save') ) {
 
-  errorpage("error saving info, payment not processed: $error")
-    if $error;	
+    my %saveopt;
+    if ( $payby eq 'CARD' ) {
+      my $bill_location = FS::cust_location->new;
+      $bill_location->set( $_ => $cgi->param($_) )
+        foreach @{$payby2fields{$payby}};
+      $saveopt{'bill_location'} = $bill_location;
+      $saveopt{'paycvv'} = $paycvv; # save_cust_payby contains conf logic for when to use this
+      $saveopt{'paydate'} = "$year-$month-01";
+    } else {
+      # ss/stateid/stateid_state won't be saved, but should be harmless to pass
+      %saveopt = map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}};
+    }
+
+    my $error = $cust_main->save_cust_payby(
+      'payment_payby' => $payby,
+      'auto'          => scalar($cgi->param('auto')),
+      'weight'        => scalar($cgi->param('weight')),
+      'payinfo'       => $payinfo,
+      'payname'       => $payname,
+      %saveopt
+    );
+
+    errorpage("error saving info, payment not processed: $error")
+      if $error;	
+  }
+
 }
+
+##
+# now run the payment
+##
 
 my $error = '';
 my $paynum = '';
@@ -218,7 +212,7 @@ if ( $cgi->param('batch') ) {
                                      'payinfo'  => $payinfo,
                                      'paydate'  => "$year-$month-01",
                                      'payname'  => $payname,
-                                     map { $_ => $cgi->param($_) } 
+                                     map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}
                                    );
   errorpage($error) if $error;
@@ -237,7 +231,7 @@ if ( $cgi->param('batch') ) {
     'paycvv'     => $paycvv,
     'paynum_ref' => \$paynum,
     'discount_term' => $discount_term,
-    map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
+    map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;
 
@@ -261,6 +255,8 @@ if ( $cgi->param('batch') ) {
 
 }
 
-#success!
+##
+# success!  step 3: profit!
+##
 
 </%init>

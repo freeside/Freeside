@@ -33,23 +33,57 @@
     &>
 % }
 
+<SCRIPT TYPE="text/javascript">
+  function cust_payby_changed (what) {
+    var custpaybynum = what.options[what.selectedIndex].value
+    if ( custpaybynum == '' || custpaybynum == '0' ) {
+       //what.form.payinfo.disabled = false;
+       $('#cust_payby').slideDown();
+    } else {
+       //what.form.payinfo.value = '';
+       //what.form.payinfo.disabled = true;
+       $('#cust_payby').slideUp();
+    }
+  }
+</SCRIPT>
+
+% #can't quite handle CARD/CHEK on the same page yet, but very close
+% #does it make sense from a UI/usability perspective?
+%
+% my @cust_payby = ();
+% if ( $payby eq 'CARD' ) {
+%   @cust_payby = $cust_main->cust_payby('CARD','DCRD');
+% } elsif ( $payby eq 'CHEK' ) {
+%   @cust_payby = $cust_main->cust_payby('CHEK','DCHK');
+% } else {
+%   die "unknown payby $payby";
+% }
+%
+% my $custpaybynum = length(scalar($cgi->param('custpaybynum')))
+%                      ? scalar($cgi->param('custpaybynum'))
+%                      : scalar(@cust_payby) && $cust_payby[0]->custpaybynum;
+
+<& /elements/tr-select-cust_payby.html,
+     'cust_payby' => \@cust_payby,
+     'curr_value' => $custpaybynum,
+     'onchange'   => 'cust_payby_changed(this)',
+&>
+
+</TABLE>
+<BR>
+<DIV ID="cust_payby"
+  <% $custpaybynum ? 'STYLE="display:none"'
+                   : ''
+  %>
+>
+<TABLE class="fsinnerbox">
+
 % my $auto = 0;
 % if ( $payby eq 'CARD' ) {
 %
 %   my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
 %   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
 %   my $location = $cust_main->bill_location;
-%
-%   #auto-fill with the highest weighted match
-%   my ($cust_payby) = $cust_main->cust_payby('CARD','DCRD');
-%   if ($cust_payby) {
-%     $payinfo = $cust_payby->paymask;
-%     $paycvv  = $cust_payby->paycvv;
-%     ( $month, $year ) = $cust_payby->paydate_monthyear;
-%     $payname = $cust_payby->payname if $cust_payby->payname;
-%     $location = $cust_payby->cust_location || $location;
-%     $auto = 1 if $cust_payby->payby eq 'CARD';
-%   }
 
     <TR>
       <TH ALIGN="right"><% mt('Card number') |h %></TH>
@@ -104,22 +138,6 @@
 %   my( $account, $aba, $branch, $payname, $ss, $paytype, $paystate,
 %       $stateid, $stateid_state )
 %     = ( '', '', '', '', '', '', '', '', '' );
-%   my ($cust_payby) = $cust_main->cust_payby('CHEK','DCHK');
-%   if ($cust_payby) {
-%     $cust_payby->paymask =~ /^([\dx]+)\@([\d\.x]*)$/i
-%       or die "unparsable paymask ". $cust_payby->paymask;
-%     ($account, $aba) = ($1, $2);
-%     ($branch,$aba) = split('\.',$aba)
-%       if $conf->config('echeck-country') eq 'CA';
-%     $payname = $cust_payby->payname;
-%     $paytype = $cust_payby->getfield('paytype');
-%     $paystate = $cust_payby->getfield('paystate');
-%     $auto = 1 if $cust_payby->payby eq 'CHEK';
-%     # these values aren't in cust_payby, but maybe should be...
-%     $ss = $cust_main->ss;
-%     $stateid = $cust_main->getfield('stateid');
-%     $stateid_state = $cust_main->getfield('stateid_state');
-%   }
 %
 %  #false laziness w/{edit,view}/cust_main/billing.html
 %  my $routing_label = $conf->config('echeck-country') eq 'US'
@@ -210,7 +228,7 @@
 
 
 <TR>
-  <TD COLSPAN=2>
+  <TD COLSPAN=8>
     <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
     <% mt('Remember this information') |h %>
   </TD>
@@ -237,19 +255,43 @@
 % }
 
 <TR>
-  <TD COLSPAN=2>
+  <TD COLSPAN=8>
     <INPUT TYPE="checkbox"<% $auto ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
     <% mt("Charge future payments to this [_1] automatically",$type{$payby}) |h %> 
+% if ( @cust_payby ) {
+    <% mt('as') |h %>
+    <SELECT NAME="weight">
+%     for ( 1 .. 1+scalar(grep { $_->payby =~ /^(CARD|CHEK)$/ } @cust_payby) ) {
+        <OPTION VALUE="<%$_%>"><% mt( $weight{$_} ) |h %>
+%     }
+    </SELECT>
+% } else {
+    <INPUT TYPE="hidden" NAME="weight" VALUE="1">
+% }
   </TD>
 </TR>
 
 </TABLE>
+</DIV>
 
 <BR>
 <INPUT TYPE="submit" NAME="process" VALUE="<% mt('Process payment') |h %>">
 </FORM>
 
 <& /elements/footer.html &>
+<%once>
+
+my %weight = (
+  1 => 'Primary',
+  2 => 'Secondary',
+  3 => 'Tertiary',
+  4 => 'Fourth',
+  5 => 'Fifth',
+  6 => 'Sixth',
+  7 => 'Seventh',
+);
+
+</%once>
 <%init>
 
 die "access denied"

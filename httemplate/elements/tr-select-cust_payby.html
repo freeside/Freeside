@@ -1,0 +1,31 @@
+% if ( scalar(@{ $opt{'cust_payby'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'custpaybynum' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TH ALIGN="right"><% $opt{'label'} || 'Payment via' %></TD>
+    <TD>
+      <% include( '/elements/select-cust_payby.html',
+                    'curr_value' => $custpaybynum,
+                    %opt
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+my $custpaybynum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'cust_payby'} ||= [ qsearch( 'cust_payby', { custnum  => $opt{custnum},
+                                                  disabled => '',
+                                                }
+                                )
+                       ];
+
+</%init>
