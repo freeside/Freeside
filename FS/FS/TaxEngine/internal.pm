@@ -243,7 +243,9 @@ sub taxline {
               exempt_monthly  => 'Y',
               year            => $year,
               month           => $mon,
+              taxnum          => $tax_object->taxnum,
             });
+
           $taxable_charged -= $addl;
         }
         # if they're using multiple months of exemption for a multi-month
@@ -257,10 +259,23 @@ sub taxline {
       }
     } # if exempt_amount
 
-    $_->taxnum($tax_object->taxnum) foreach @new_exemptions;
-
     # attach them to the line item
-    push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, @new_exemptions;
+    foreach my $ex (@new_exemptions) {
+
+      if ( $cust_bill_pkg->billpkgnum ) {
+        # the exempted item is already inserted (it should be, these days) so
+        # insert the exemption record now:
+        $ex->set('billpkgnum', $cust_bill_pkg->billpkgnum);
+        my $error = $ex->insert;
+        return "inserting tax exemption record: $error" if $error;
+
+      } else {
+        # defer it until the item is inserted
+        push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, $ex;
+      }
+    }
+
+    # and remember we've used the exemption
     push @existing_exemptions, @new_exemptions;
 
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
