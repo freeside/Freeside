@@ -40,6 +40,9 @@ for ( my $row = 0; exists($param->{"detail$row"}); $row++ ) {
     if $param->{"detail$row"} =~ /\S/;
 }
 
-my $error = $quotation_pkg->set_details(@details);
+my $error = $quotation_pkg->set_details( 
+              details => \@details,
+              copy_on_order => scalar($cgi->param('copy_on_order')) ? 'Y' : ''
+            );
 
 </%init>

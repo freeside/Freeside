@@ -42,6 +42,10 @@ for the relevant L<FS::quotation_pkg>
 
 detail text
 
+=item copy_on_order
+
+flag, indicates detail should be copied over when ordering
+
 =cut
 
 # 'format' field isn't used, there for TemplateItem_Mixin
@@ -109,6 +113,7 @@ sub check {
     $self->ut_numbern('detailnum')
     || $self->ut_foreign_key('quotationpkgnum', 'quotation_pkg', 'quotationpkgnum')
     || $self->ut_text('detail')
+    || $self->ut_flag('copy_on_order')
   ;
   return $error if $error;
 

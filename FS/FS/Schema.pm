@@ -1980,6 +1980,7 @@ sub tables_hashref {
         'quotationpkgnum', 'int', '', '', '', '',
         'format',  'char', 'NULL', 1, '', '',       # not used for anything
         'detail',  'varchar', '', 255, '', '',
+        'copy_on_order',        'char', 'NULL',  1, '', '', # 'Y' to copy when ordering
       ],
       'primary_key'  => 'detailnum',
       'unique'       => [],

@@ -380,16 +380,27 @@ sub delete_details {
 
 }
 
-=item set_details [ DETAIL, DETAIL, ... ]
+=item set_details PARAM
 
-Sets quotation details for this package (see L<FS::quotation_pkg_detail>).
+Sets new quotation details for this package (see L<FS::quotation_pkg_detail>),
+removing existing details.
+
+Recognizes the following parameters:
+
+details - arrayref of strings, one for each new detail
+
+copy_on_order - if true, sets copy_on_order flag on new details
 
 If there is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub set_details {
-  my( $self, @details ) = @_;
+  my $self = shift;
+  my %opt = @_;
+
+  $opt{'details'} ||= [];
+  my @details = @{$opt{'details'}};
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -405,6 +416,7 @@ sub set_details {
     my $quotation_pkg_detail = new FS::quotation_pkg_detail {
       'quotationpkgnum' => $self->quotationpkgnum,
       'detail' => $detail,
+      'copy_on_order' => $opt{'copy_on_order'} ? 'Y' : '',
     };
     $error = $quotation_pkg_detail->insert;
     if ( $error ) {
