@@ -4435,8 +4435,10 @@ sub payment_history {
 Saves a new cust_payby for this customer, replacing an existing entry only
 in select circumstances.  Does not validate input.
 
-If auto is specified, marks this as the customer's primary method (weight 1) 
-and changes existing primary methods for that payby to secondary methods (weight 2.)
+If auto is specified, marks this as the customer's primary method, or the 
+specified weight.  Existing payment methods have their weight incremented as
+appropriate.
+
 If bill_location is specified with auto, also sets location in cust_main.
 
 Will not insert complete duplicates of existing records, or records in which the
@@ -4448,39 +4450,77 @@ blanks when replacing.
 
 Accepts the following named parameters:
 
-payment_payby - either CARD or CHEK
+=over 4
 
-auto - save as an automatic payment type (CARD/CHEK if true, DCRD/DCHK if false)
+=item payment_payby
 
-payinfo - required
+either CARD or CHEK
 
-paymask - optional, but should be specified for anything that might be tokenized, will be preserved when replacing
+=item auto
 
-payname - required
+save as an automatic payment type (CARD/CHEK if true, DCRD/DCHK if false)
 
-payip - optional, will be preserved when replacing
+=item weight
 
-paydate - CARD only, required
+optional, set higher than 1 for secondary, etc.
 
-bill_location - CARD only, required, FS::cust_location object
+=item payinfo
 
-paystart_month - CARD only, optional, will be preserved when replacing
+required
 
-paystart_year - CARD only, optional, will be preserved when replacing
+=item paymask
 
-payissue - CARD only, optional, will be preserved when replacing
+optional, but should be specified for anything that might be tokenized, will be preserved when replacing
 
-paycvv - CARD only, only used if conf cvv-save is set appropriately
+=item payname
 
-paytype - CHEK only
+required
 
-paystate - CHEK only
+=item payip
+
+optional, will be preserved when replacing
+
+=item paydate
+
+CARD only, required
+
+=item bill_location
+
+CARD only, required, FS::cust_location object
+
+=item paystart_month
+
+CARD only, optional, will be preserved when replacing
+
+=item paystart_year
+
+CARD only, optional, will be preserved when replacing
+
+=item payissue
+
+CARD only, optional, will be preserved when replacing
+
+=item paycvv
+
+CARD only, only used if conf cvv-save is set appropriately
+
+=item paytype
+
+CHEK only
+
+=item paystate
+
+CHEK only
+
+=back
 
 =cut
 
 #The code for this option is in place, but it's not currently used
 #
-# replace - existing cust_payby object to be replaced (must match custnum)
+# =item replace
+#
+# existing cust_payby object to be replaced (must match custnum)
 
 # stateid/stateid_state/ss are not currently supported in cust_payby,
 # might not even work properly in 4.x, but will need to work here if ever added
@@ -4511,8 +4551,7 @@ sub save_cust_payby {
     @check_existing = qw( CHEK DCHK );
   }
 
-  # every automatic payment type added here will be marked primary
-  $new->set( 'weight' => $opt{'auto'} ? 1 : '' );
+  $new->set( 'weight' => $opt{'auto'} ? $opt{'weight'} : '' );
 
   # basic fields
   $new->payinfo($opt{'payinfo'}); # sets default paymask, but not if it's already tokenized
@@ -4606,7 +4645,7 @@ PAYBYLOOP:
       # if we got this far, we're definitely replacing
       $old = $cust_payby;
       last PAYBYLOOP;
-    }
+    } #PAYBYLOOP
   }
 
   if ($old) {
@@ -4649,7 +4688,8 @@ PAYBYLOOP:
       last unless $cust_payby->payby !~ /^D/;
       last if $cust_payby->weight > 1;
       next if $new->custpaybynum eq $cust_payby->custpaybynum;
-      $cust_payby->set( 'weight' => 2 );
+      next if $cust_payby->weight < ($opt{'weight'} || 1);
+      $cust_payby->weight( $cust_payby->weight + 1 );
       my $error = $cust_payby->replace;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;

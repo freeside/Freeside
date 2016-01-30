@@ -1,0 +1,23 @@
+<% include( '/elements/select-table.html',
+                 'table'         => 'cust_payby',
+                 'name_col'      => 'label',
+                 'value'         => $custpaybynum,
+                 'disable_empty' => 1,
+                 'post_options'  => [ '0' => 'Enter new payment information' ],
+                 'hashref'       => { 'custnum'  => $opt{'custnum'},
+                                      'disabled' => '',
+                                    },
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+my $custpaybynum = $opt{'curr_value'} || $opt{'value'};
+
+if ( $opt{'cust_payby'} ) {
+  $opt{'records'} = delete $opt{'cust_payby'};
+  $opt{'presorted'} = 1 if ! exists($opt{'presorted'});
+}
+
+</%init>
