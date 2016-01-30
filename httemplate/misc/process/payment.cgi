@@ -199,7 +199,7 @@ if ( $cgi->param('batch') ) {
                                      'payinfo'  => $payinfo,
                                      'paydate'  => "$year-$month-01",
                                      'payname'  => $payname,
-                                     map { $_ => $cgi->param($_) } 
+                                     map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}
                                    );
   errorpage($error) if $error;
@@ -218,7 +218,7 @@ if ( $cgi->param('batch') ) {
     'paycvv'     => $paycvv,
     'paynum_ref' => \$paynum,
     'discount_term' => $discount_term,
-    map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
+    map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;
 
