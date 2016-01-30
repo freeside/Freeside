@@ -273,12 +273,12 @@ install-stamp: build-stamp
 	perl -p -i -e "\
 	s'${TMP}(-webui|-lib)''g;\
 	s'${TMP}''g;\
-	" ${TMP}/opt/rt3/etc/*.pm \
-		${TMP}/opt/rt3/lib/*.pm \
-		${TMP}/opt/rt3/lib/RT/*.pm \
-		${TMP}/opt/rt3/etc/upgrade/* \
-		${TMP}/opt/rt3/sbin/* \
-		${TMP}/opt/rt3/bin/* \
+	" ${TMP}(-lib)?/opt/rt3/etc/*.pm \
+		${TMP}(-lib)?/opt/rt3/lib/*.pm \
+		${TMP}(-lib)?/opt/rt3/lib/RT/*.pm \
+		${TMP}(-lib)?/opt/rt3/etc/upgrade/* \
+		${TMP}(-lib)?/opt/rt3/sbin/* \
+		${TMP}(-lib)?/opt/rt3/bin/* \
 
 	# Default RT Settings
 	perl -p -i -e "\
@@ -299,7 +299,7 @@ binary-indep: build install
 	dh_testroot
 	dh_installdeb install
 	dh_installdocs #freeside.docs README AGPL
-	dh_installexamples eg/* bin
+	dh_installexamples eg/* bin/*
 #	dh_installmenu
 	dh_installdebconf	
 #	dh_installlogrotate	
