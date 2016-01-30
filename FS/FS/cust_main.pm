@@ -11,7 +11,7 @@ use base qw( FS::cust_main::Packages
              FS::cust_main::Credit_Limit
              FS::cust_main::Merge
              FS::cust_main::API
-             FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
+             FS::otaker_Mixin FS::cust_main_Mixin
              FS::geocode_Mixin FS::Quotable_Mixin FS::Sales_Mixin
              FS::o2m_Common
              FS::Record
@@ -1851,238 +1851,6 @@ sub check {
   
   }
 
-  ### start of stuff moved to cust_payby
-  # then mostly kept here to support upgrades (can remove in 5.x)
-  #  but modified to allow everything to be empty
-
-  if ( $self->payby ) {
-    FS::payby->can_payby($self->table, $self->payby)
-      or return "Illegal payby: ". $self->payby;
-  } else {
-    $self->payby('');
-  }
-
-  $error =    $self->ut_numbern('paystart_month')
-           || $self->ut_numbern('paystart_year')
-           || $self->ut_numbern('payissue')
-           || $self->ut_textn('paytype')
-  ;
-  return $error if $error;
-
-  if ( $self->payip eq '' ) {
-    $self->payip('');
-  } else {
-    $error = $self->ut_ip('payip');
-    return $error if $error;
-  }
-
-  # If it is encrypted and the private key is not availaible then we can't
-  # check the credit card.
-  my $check_payinfo = ! $self->is_encrypted($self->payinfo);
-
-  # Need some kind of global flag to accept invalid cards, for testing
-  # on scrubbed data.
-  if ( !$import && !$ignore_invalid_card && $check_payinfo && 
-    $self->payby =~ /^(CARD|DCRD)$/ ) {
-
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $payinfo =~ /^(\d{13,16}|\d{8,9})$/
-      or return gettext('invalid_card'); # . ": ". $self->payinfo;
-    $payinfo = $1;
-    $self->payinfo($payinfo);
-    validate($payinfo)
-      or return gettext('invalid_card'); # . ": ". $self->payinfo;
-
-    return gettext('unknown_card_type')
-      if $self->payinfo !~ /^99\d{14}$/ #token
-      && cardtype($self->payinfo) eq "Unknown";
-
-    unless ( $ignore_banned_card ) {
-      my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
-      if ( $ban ) {
-        if ( $ban->bantype eq 'warn' ) {
-          #or others depending on value of $ban->reason ?
-          return '_duplicate_card'.
-                 ': disabled from'. time2str('%a %h %o at %r', $ban->_date).
-                 ' until '.         time2str('%a %h %o at %r', $ban->_end_date).
-                 ' (ban# '. $ban->bannum. ')'
-            unless $self->override_ban_warn;
-        } else {
-          return 'Banned credit card: banned on '.
-                 time2str('%a %h %o at %r', $ban->_date).
-                 ' by '. $ban->otaker.
-                 ' (ban# '. $ban->bannum. ')';
-        }
-      }
-    }
-
-    if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
-      if ( cardtype($self->payinfo) eq 'American Express card' ) {
-        $self->paycvv =~ /^(\d{4})$/
-          or return "CVV2 (CID) for American Express cards is four digits.";
-        $self->paycvv($1);
-      } else {
-        $self->paycvv =~ /^(\d{3})$/
-          or return "CVV2 (CVC2/CID) is three digits.";
-        $self->paycvv($1);
-      }
-    } else {
-      $self->paycvv('');
-    }
-
-    my $cardtype = cardtype($payinfo);
-    if ( $cardtype =~ /^(Switch|Solo)$/i ) {
-
-      return "Start date or issue number is required for $cardtype cards"
-        unless $self->paystart_month && $self->paystart_year or $self->payissue;
-
-      return "Start month must be between 1 and 12"
-        if $self->paystart_month
-           and $self->paystart_month < 1 || $self->paystart_month > 12;
-
-      return "Start year must be 1990 or later"
-        if $self->paystart_year
-           and $self->paystart_year < 1990;
-
-      return "Issue number must be beween 1 and 99"
-        if $self->payissue
-          and $self->payissue < 1 || $self->payissue > 99;
-
-    } else {
-      $self->paystart_month('');
-      $self->paystart_year('');
-      $self->payissue('');
-    }
-
-  } elsif ( !$ignore_invalid_card && $check_payinfo && 
-    $self->payby =~ /^(CHEK|DCHK)$/ ) {
-
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/[^\d\@\.]//g;
-    if ( $conf->config('echeck-country') eq 'CA' ) {
-      $payinfo =~ /^(\d+)\@(\d{5})\.(\d{3})$/
-        or return 'invalid echeck account@branch.bank';
-      $payinfo = "$1\@$2.$3";
-    } elsif ( $conf->config('echeck-country') eq 'US' ) {
-      $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
-      $payinfo = "$1\@$2";
-    } else {
-      $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@routing';
-      $payinfo = "$1\@$2";
-    }
-    $self->payinfo($payinfo);
-    $self->paycvv('');
-
-    unless ( $ignore_banned_card ) {
-      my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
-      if ( $ban ) {
-        if ( $ban->bantype eq 'warn' ) {
-          #or others depending on value of $ban->reason ?
-          return '_duplicate_ach' unless $self->override_ban_warn;
-        } else {
-          return 'Banned ACH account: banned on '.
-                 time2str('%a %h %o at %r', $ban->_date).
-                 ' by '. $ban->otaker.
-                 ' (ban# '. $ban->bannum. ')';
-        }
-      }
-    }
-
-  } elsif ( $self->payby eq 'LECB' ) {
-
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $payinfo =~ /^1?(\d{10})$/ or return 'invalid btn billing telephone number';
-    $payinfo = $1;
-    $self->payinfo($payinfo);
-    $self->paycvv('');
-
-  } elsif ( $self->payby eq 'BILL' ) {
-
-    $error = $self->ut_textn('payinfo');
-    return "Illegal P.O. number: ". $self->payinfo if $error;
-    $self->paycvv('');
-
-  } elsif ( $self->payby eq 'COMP' ) {
-
-    my $curuser = $FS::CurrentUser::CurrentUser;
-    if (    ! $self->custnum
-         && ! $curuser->access_right('Complimentary customer')
-       )
-    {
-      return "You are not permitted to create complimentary accounts."
-    }
-
-    $error = $self->ut_textn('payinfo');
-    return "Illegal comp account issuer: ". $self->payinfo if $error;
-    $self->paycvv('');
-
-  } elsif ( $self->payby eq 'PREPAY' ) {
-
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\W//g; #anything else would just confuse things
-    $self->payinfo($payinfo);
-    $error = $self->ut_alpha('payinfo');
-    return "Illegal prepayment identifier: ". $self->payinfo if $error;
-    return "Unknown prepayment identifier"
-      unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
-    $self->paycvv('');
-
-  }
-
-  return "You are not permitted to create complimentary accounts."
-    if ! $self->custnum
-    && $self->complimentary eq 'Y'
-    && ! $FS::CurrentUser::CurrentUser->access_right('Complimentary customer');
-
-  if ( $self->paydate eq '' || $self->paydate eq '-' ) {
-    return "Expiration date required"
-      # shouldn't payinfo_check do this?
-      unless ! $self->payby
-            || $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|PPAL)$/;
-    $self->paydate('');
-  } else {
-    my( $m, $y );
-    if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
-      ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
-    } elsif ( $self->paydate =~ /^19(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
-      ( $m, $y ) = ( $2, "19$1" );
-    } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
-      ( $m, $y ) = ( $3, "20$2" );
-    } else {
-      return "Illegal expiration date: ". $self->paydate;
-    }
-    $m = sprintf('%02d',$m);
-    $self->paydate("$y-$m-01");
-    my($nowm,$nowy)=(localtime(time))[4,5]; $nowm++; $nowy+=1900;
-    return gettext('expired_card')
-      if !$import
-      && !$ignore_expired_card 
-      && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
-  }
-
-  if ( $self->payname eq '' && $self->payby !~ /^(CHEK|DCHK)$/ &&
-       ( ! $conf->exists('require_cardname')
-         || $self->payby !~ /^(CARD|DCRD)$/  ) 
-  ) {
-    $self->payname( $self->first. " ". $self->getfield('last') );
-  } else {
-
-    if ( $self->payby =~ /^(CHEK|DCHK)$/ ) {
-      $self->payname =~ /^([\w \,\.\-\']*)$/
-        or return gettext('illegal_name'). " payname: ". $self->payname;
-      $self->payname($1);
-    } else {
-      $self->payname =~ /^([\w \,\.\-\'\&]*)$/
-        or return gettext('illegal_name'). " payname: ". $self->payname;
-      $self->payname($1);
-    }
-
-  }
-
-  ### end of stuff moved to cust_payby
-
   return "Please select an invoicing locale"
     if ! $self->locale
     && ! $self->custnum
@@ -2410,6 +2178,8 @@ sub cancel {
 }
 
 sub _banned_pay_hashref {
+  die 'cust_main->_banned_pay_hashref deprecated';
+
   my $self = shift;
 
   my %payby2ban = (
@@ -2560,6 +2330,7 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub remove_cvv {
+  die 'cust_main->remove_cvv deprecated';
   my $self = shift;
   my $sth = dbh->prepare("UPDATE cust_main SET paycvv = '' WHERE custnum = ?")
     or return dbh->errstr;
@@ -2886,6 +2657,7 @@ For electronic check transactions:
 
 =cut
 
+#XXX i need to be updated for 4.x+
 sub payment_info {
   my $self = shift;
 
@@ -2936,6 +2708,7 @@ Returns 0 if the paydate is empty or set to the far future.
 
 =cut
 
+#XXX i need to be updated for 4.x+
 sub paydate_epoch {
   my $self = shift;
   my ($month, $year) = $self->paydate_monthyear;
@@ -2960,6 +2733,7 @@ as a number of seconds.
 
 =cut
 
+# XXX i need to be updated for 4.x+
 # Special expiration date behavior for non-CARD/DCRD customers has been 
 # carefully preserved.  Do we really use that?
 sub paydate_epoch_sql {
@@ -5015,103 +4789,6 @@ sub search {
 
 =over 4
 
-#=item notify CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
-
-#Deprecated.  Use event notification and message templates 
-#(L<FS::msg_template>) instead.
-
-#Sends a templated email notification to the customer (see L<Text::Template>).
-
-#OPTIONS is a hash and may include
-
-#I<from> - the email sender (default is invoice_from)
-
-#I<to> - comma-separated scalar or arrayref of recipients 
-#   (default is invoicing_list)
-
-#I<subject> - The subject line of the sent email notification
-#   (default is "Notice from company_name")
-
-#I<extra_fields> - a hashref of name/value pairs which will be substituted
-#   into the template
-
-#The following variables are vavailable in the template.
-
-#I<$first> - the customer first name
-#I<$last> - the customer last name
-#I<$company> - the customer company
-#I<$payby> - a description of the method of payment for the customer
-#            # would be nice to use FS::payby::shortname
-#I<$payinfo> - the account information used to collect for this customer
-#I<$expdate> - the expiration of the customer payment in seconds from epoch
-
-#=cut
-
-#sub notify {
-#  my ($self, $template, %options) = @_;
-
-#  return unless $conf->exists($template);
-
-#  my $from = $conf->invoice_from_full($self->agentnum)
-#    if $conf->exists('invoice_from', $self->agentnum);
-#  $from = $options{from} if exists($options{from});
-
-#  my $to = join(',', $self->invoicing_list_emailonly);
-#  $to = $options{to} if exists($options{to});
-#  
-#  my $subject = "Notice from " . $conf->config('company_name', $self->agentnum)
-#    if $conf->exists('company_name', $self->agentnum);
-#  $subject = $options{subject} if exists($options{subject});
-
-#  my $notify_template = new Text::Template (TYPE => 'ARRAY',
-#                                            SOURCE => [ map "$_\n",
-#                                              $conf->config($template)]
-#                                           )
-#    or die "can't create new Text::Template object: Text::Template::ERROR";
-#  $notify_template->compile()
-#    or die "can't compile template: Text::Template::ERROR";
-
-#  $FS::notify_template::_template::company_name =
-#    $conf->config('company_name', $self->agentnum);
-#  $FS::notify_template::_template::company_address =
-#    join("\n", $conf->config('company_address', $self->agentnum) ). "\n";
-
-#  my $paydate = $self->paydate || '2037-12-31';
-#  $FS::notify_template::_template::first = $self->first;
-#  $FS::notify_template::_template::last = $self->last;
-#  $FS::notify_template::_template::company = $self->company;
-#  $FS::notify_template::_template::payinfo = $self->mask_payinfo;
-#  my $payby = $self->payby;
-#  my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
-#  my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
-
-#  #credit cards expire at the end of the month/year of their exp date
-#  if ($payby eq 'CARD' || $payby eq 'DCRD') {
-#    $FS::notify_template::_template::payby = 'credit card';
-#    ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
-#    $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
-#    $expire_time--;
-#  }elsif ($payby eq 'COMP') {
-#    $FS::notify_template::_template::payby = 'complimentary account';
-#  }else{
-#    $FS::notify_template::_template::payby = 'current method';
-#  }
-#  $FS::notify_template::_template::expdate = $expire_time;
-
-#  for (keys %{$options{extra_fields}}){
-#    no strict "refs";
-#    ${"FS::notify_template::_template::$_"} = $options{extra_fields}->{$_};
-#  }
-
-#  send_email(from => $from,
-#             to => $to,
-#             subject => $subject,
-#             body => $notify_template->fill_in( PACKAGE =>
-#                                                'FS::notify_template::_template'                                              ),
-#            );
-
-#}
-
 =item generate_letter CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
 
 Generates a templated notification to the customer (see L<Text::Template>).
@@ -5127,10 +4804,6 @@ I<template_text> - if present, ignores TEMPLATE_NAME and uses the provided text
 The following variables are available in the template instead of or in addition
 to the fields of the customer record.
 
-I<$payby> - a description of the method of payment for the customer
-            # would be nice to use FS::payby::shortname
-I<$payinfo> - the masked account information used to collect for this customer
-I<$expdate> - the expiration of the customer payment method in seconds from epoch
 I<$returnaddress> - the return address defaults to invoice_latexreturnaddress or company_address
 
 =cut
@@ -5157,27 +4830,6 @@ sub generate_letter {
     or die "can't compile template: Text::Template::ERROR";
 
   my %letter_data = map { $_ => $self->$_ } $self->fields;
-  $letter_data{payinfo} = $self->mask_payinfo;
-
-  #my $paydate = $self->paydate || '2037-12-31';
-  my $paydate = $self->paydate =~ /^\S+$/ ? $self->paydate : '2037-12-31';
-
-  my $payby = $self->payby;
-  my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
-  my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
-
-  #credit cards expire at the end of the month/year of their exp date
-  if ($payby eq 'CARD' || $payby eq 'DCRD') {
-    $letter_data{payby} = 'credit card';
-    ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
-    $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
-    $expire_time--;
-  }elsif ($payby eq 'COMP') {
-    $letter_data{payby} = 'complimentary account';
-  }else{
-    $letter_data{payby} = 'current method';
-  }
-  $letter_data{expdate} = $expire_time;
 
   for (keys %{$options{extra_fields}}){
     $letter_data{$_} = $options{extra_fields}->{$_};
@@ -5449,38 +5101,13 @@ sub process_bill_and_collect {
 sub _upgrade_data { #class method
   my ($class, %opts) = @_;
 
-  my @statements = (
-    'UPDATE h_cust_main SET paycvv = NULL WHERE paycvv IS NOT NULL',
-  );
+  my @statements = ();
 
   #this seems to be the only expensive one.. why does it take so long?
   unless ( FS::upgrade_journal->is_done('cust_main__signupdate') ) {
     push @statements,
       'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL';
     FS::upgrade_journal->set_done('cust_main__signupdate');
-  }
-
-  unless ( FS::upgrade_journal->is_done('cust_main__paydate') ) {
-
-    # fix yyyy-m-dd formatted paydates
-    if ( driver_name =~ /^mysql/i ) {
-      push @statements,
-      "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
-    } else { # the SQL standard
-      push @statements, 
-      "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
-    }
-    FS::upgrade_journal->set_done('cust_main__paydate');
-  }
-
-  unless ( FS::upgrade_journal->is_done('cust_main__payinfo') ) {
-
-    push @statements, #fix the weird BILL with a cc# in payinfo problem
-      #DCRD to be safe
-      "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
-
-    FS::upgrade_journal->set_done('cust_main__payinfo');
-    
   }
 
   my $t = time;
@@ -5603,12 +5230,7 @@ card types.
 
 No multiple currency support (probably a larger project than just this module).
 
-payinfo_masked false laziness with cust_pay.pm and cust_refund.pm
-
 Birthdates rely on negative epoch values.
-
-The payby for card/check batches is broken.  With mixed batching, bad
-things will happen.
 
 B<collect> I<invoice_time> should be renamed I<time>, like B<bill>.
 

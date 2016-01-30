@@ -1610,21 +1610,6 @@ sub tables_hashref {
         'ship_mobile',   'varchar', 'NULL', 12, '', '', 
         'currency',         'char', 'NULL',  3, '', '',
 
-        #deprecated, info moved to cust_payby
-        'payby',    'char', 'NULL',     4, '', '', 
-        'payinfo',  'varchar', 'NULL', 512, '', '', 
-        'paycvv',   'varchar', 'NULL', 512, '', '', 
-        'paymask', 'varchar', 'NULL', $char_d, '', '', 
-        #'paydate',  @date_type, '', '', 
-        'paydate',  'varchar', 'NULL', 10, '', '', 
-        'paystart_month', 'int', 'NULL', '', '', '', 
-        'paystart_year',  'int', 'NULL', '', '', '', 
-        'payissue', 'varchar', 'NULL', 2, '', '', 
-        'payname',  'varchar', 'NULL', 2*$char_d, '', '', 
-        'paystate', 'varchar', 'NULL', $char_d, '', '', 
-        'paytype',  'varchar', 'NULL', $char_d, '', '', 
-        'payip',    'varchar', 'NULL', 15, '', '', 
-
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
         'censusyear', 'char', 'NULL', 4, '', '',
