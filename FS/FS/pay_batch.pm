@@ -614,7 +614,8 @@ sub import_from_gateway {
       my $error;
 
       my $paybatch = $gateway->gatewaynum .  '-' .  $gateway->gateway_module .
-        ':' . $item->authorization .  ':' . $item->order_number;
+        ':' . ($item->authorization || '') .
+        ':' . ($item->order_number || '');
 
       if ( $batch->incoming ) {
         # This is a one-way batch.
