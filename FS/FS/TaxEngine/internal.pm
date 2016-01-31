@@ -243,7 +243,6 @@ sub taxline {
               exempt_monthly  => 'Y',
               year            => $year,
               month           => $mon,
-              taxnum          => $tax_object->taxnum,
             });
 
           $taxable_charged -= $addl;
@@ -261,6 +260,8 @@ sub taxline {
 
     # attach them to the line item
     foreach my $ex (@new_exemptions) {
+
+      $ex->set('taxnum', $taxnum);
 
       if ( $cust_bill_pkg->billpkgnum ) {
         # the exempted item is already inserted (it should be, these days) so
