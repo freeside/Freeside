@@ -65,11 +65,8 @@ my @links = (
 
 my $align = 'rll';
 
-if ( $class eq 'S' ) {
-  push @header,
-    'Credit unused service',
-    'Suspension fee',
-  ;
+if ( $class eq 'S' or $class eq 'C' ) {
+  push @header, 'Credit unused service';
   push @fields,
     sub {
       my $reason = shift;
@@ -78,7 +75,12 @@ if ( $class eq 'S' ) {
       } else {
         return '<SPAN STYLE="background-color:#ff0000">NO</SPAN>';
       }
-    },
+    };
+  $align .= 'c';
+}
+if ( $class eq 'S' ) {
+  push @header, 'Suspension fee';
+  push @fields,
     sub {
       my $reason = shift;
       my $feepart = $reason->feepart;
@@ -107,7 +109,7 @@ if ( $class eq 'S' ) {
       $text .= '</FONT>';
     }
   ;
-  $align .= 'cl';
+  $align .= 'l';
 }
 
 # reason merge handling
