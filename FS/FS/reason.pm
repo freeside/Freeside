@@ -56,7 +56,7 @@ suspensions but not others. DEPRECATED.
 whether to bill the unsuspend package immediately ('') or to wait until 
 the customer's next invoice ('Y').
 
-=item unused_credit - 'Y' or ''. For suspension reasons only (for now).
+=item unused_credit - 'Y' or ''. For suspension or cancellation reasons.
 If enabled, the customer will be credited for their remaining time on 
 suspension.
 
@@ -125,21 +125,28 @@ sub check {
   ;
   return $error if $error;
 
-  if ( $self->reasontype->class eq 'S' ) {
+  my $class = $self->reasontype->class;
+
+  if ( $class eq 'S' ) {
     $error = $self->ut_numbern('unsuspend_pkgpart')
           || $self->ut_foreign_keyn('unsuspend_pkgpart', 'part_pkg', 'pkgpart')
           || $self->ut_flag('unsuspend_hold')
-          || $self->ut_flag('unused_credit')
           || $self->ut_foreign_keyn('feepart', 'part_fee', 'feepart')
           || $self->ut_flag('fee_on_unsuspend')
           || $self->ut_flag('fee_hold')
     ;
     return $error if $error;
   } else {
-    foreach (qw(unsuspend_pkgpart unsuspend_hold unused_credit feepart
+    foreach (qw(unsuspend_pkgpart unsuspend_hold feepart
                 fee_on_unsuspend fee_hold)) {
       $self->set($_ => '');
     }
+  }
+
+  if ( $class eq 'S' or $class eq 'C' ) {
+    $error = $self->ut_flag('unused_credit');
+  } else {
+    $self->set('unused_credit', '');
   }
 
   $self->SUPER::check;
