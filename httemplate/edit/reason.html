@@ -65,12 +65,14 @@ my @fields = (
   },
 );
 
-if ( $class eq 'S' ) {
+if ( $class eq 'S' or $class eq 'C' ) {
   push @fields,
     { 'field'     => 'unused_credit',
       'type'      => 'checkbox',
       'value'     => 'Y',
-    }, 
+    };
+}
+if ( $class eq 'S' ) {
     { 'type' => 'tablebreak-tr-title' },
     { 'field'     => 'feepart',
       'type'      => 'select-table',
