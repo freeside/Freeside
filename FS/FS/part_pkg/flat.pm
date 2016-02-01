@@ -247,7 +247,6 @@ sub calc_remain {
   foreach my $cust_bill_pkg ( 
     qsearch('cust_bill_pkg', { 
       pkgnum => $cust_pkg->pkgnum,
-      sdate => {op => '<' , value => $time},
       edate => {op => '>=', value => $time},
       recur => {op => '>' , value => 0},
     })
@@ -259,8 +258,17 @@ sub calc_remain {
       $edate = $self->add_freq($cust_bill_pkg->sdate);
     }
 
-    my $amount = ($cust_bill_pkg->recur - $cust_bill_pkg->usage) * 
-                 ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
+    # this will also get any package charges that are _entirely_ after the
+    # cancellation date (can happen with advance billing). in that case,
+    # use the entire recurring charge:
+    my $amount = $cust_bill_pkg->recur - $cust_bill_pkg->usage;
+
+    # but if the cancellation happens during the interval, prorate it:
+    # (XXX obey prorate_round_day here?)
+    if ( $cust_bill_pkg->sdate < $time ) {
+      $amount = $amount * ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
+    }
+
     $credit += $amount;
 
     push @{ $options{'cust_credit_source_bill_pkg'} },
