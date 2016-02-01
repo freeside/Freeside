@@ -297,7 +297,7 @@ sub upgrade {
   # decrypt inadvertantly-encrypted payinfo where payby != CARD,DCRD,CHEK,DCHK
   # kind of a weird spot for this, but it's better than duplicating
   # all this code in each class...
-  my @decrypt_tables = qw( cust_main cust_pay_void cust_pay cust_refund cust_pay_pending );
+  my @decrypt_tables = qw( cust_payby cust_pay_void cust_pay cust_refund cust_pay_pending );
   foreach my $table ( @decrypt_tables ) {
       my @objects = qsearch({
         'table'     => $table,

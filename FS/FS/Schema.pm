@@ -1652,7 +1652,6 @@ sub tables_hashref {
                           ['agentnum'], ['refnum'], ['classnum'], ['usernum'],
                           [ 'custbatch' ],
                           [ 'referral_custnum' ],
-                          [ 'payby' ], [ 'paydate' ],
                           [ 'archived' ],
                           [ 'ship_locationnum' ],
                           [ 'bill_locationnum' ],
