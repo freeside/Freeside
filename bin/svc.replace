@@ -12,6 +12,7 @@ my $svcpart = shift or die &usage;
 
 foreach my $cust_svc ( qsearch('cust_svc', { 'svcpart'=>$svcpart } ) ) {
   my $svc_x = $cust_svc->svc_x;
+  $svc_x->setfixed;
   my $error = $svc_x->replace;
   warn "$error\n" if $error
 }
