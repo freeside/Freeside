@@ -160,6 +160,11 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('batch-errors_to');
   }
 
+  if ( $conf->exists('voip-cust_email_csv_cdr') ) {
+    $conf->set('voip_cdr_email_attach', 'csv');
+    $conf->delete('voip-cust_email_csv_cdr') ;
+  }
+
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
 }
