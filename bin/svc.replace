@@ -1,0 +1,21 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch );
+use FS::cust_svc;
+
+my $user = shift or die &usage;
+adminsuidsetup;
+
+my $svcpart = shift or die &usage;
+
+foreach my $cust_svc ( qsearch('cust_svc', { 'svcpart'=>$svcpart } ) ) {
+  my $svc_x = $cust_svc->svc_x;
+  my $error = $svc_x->replace;
+  warn "$error\n" if $error
+}
+
+sub usage {
+  die "Usage\n\n svc.replace user svcpart\n";
+}
