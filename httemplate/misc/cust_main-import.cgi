@@ -33,6 +33,7 @@ Import a file containing customer records.
         <OPTION VALUE="extended-plus_options">Extended + options
         <OPTION VALUE="extended-plus_company">Extended plus company
         <OPTION VALUE="extended-plus_company_and_options">Extended plus company and options
+        <OPTION VALUE="svc_broadband">Wireless broadband service
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external_svc_phone">External service and phone service
         <OPTION VALUE="birthdates-acct_phone_hardware">Birthdates and account, phone and hardware services
@@ -100,6 +101,9 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>Extended plus company and options </b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password, options</i>
+<BR><BR>
+
+<b>Wireless broadband service</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, ip_addr, mac_addr, sectornum</i>
 <BR><BR>
 
 <b>External service</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, id, title</i>
