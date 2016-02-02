@@ -11,6 +11,7 @@ use FS::UID qw( dbh );
 use FS::Record qw( qsearchs );
 use FS::cust_main;
 use FS::svc_acct;
+use FS::svc_broadband;
 use FS::svc_external;
 use FS::svc_phone;
 use FS::svc_hardware;
@@ -186,6 +187,18 @@ sub batch_import {
                   customer_options
                 );
     $payby = 'BILL';
+ } elsif ( $format =~ /^svc_broadband/ ) {
+    @fields = qw( agent_custid refnum
+                  last first company address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart cust_pkg.bill
+                );
+    push @fields, map "svc_broadband.$_", qw( ip_addr mac_addr sectornum );
+    $payby = 'BILL';
  } elsif ( $format =~ /^svc_external/ ) {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -343,6 +356,10 @@ sub batch_import {
 
         $svc_x{$1} = shift @columns;
 
+      } elsif ( $field =~ /^svc_broadband\.(ip_addr|mac_addr|sectornum)$/ ) {
+
+        $svc_x{$1} = shift @columns;
+
       } elsif ( $field =~ /^svc_external\.(id|title)$/ ) {
 
         $svc_x{$1} = shift @columns;
@@ -454,6 +471,8 @@ sub batch_import {
         $svcdb = 'svc_acct';
       } elsif ( $svc_x{'id'} || $svc_x{'title'} ) {
         $svcdb = 'svc_external';
+      } elsif ( $svc_x{ip_addr} || $svc_x{mac_addr} ) {
+        $svcdb = 'svc_broadband';
       }
 
       my $svc_phone = '';
