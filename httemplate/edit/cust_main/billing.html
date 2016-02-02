@@ -234,7 +234,7 @@ function toggle(obj) {
       <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="<% $cust_main->squelch_cdr %>">
 % }
 
-% if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
+% if ( $conf->config('voip-cdr_email_attach') ) { 
       <TR>
        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="email_csv_cdr" VALUE="Y" <% $cust_main->email_csv_cdr eq "Y" ? 'CHECKED' : '' %>> <% mt('Attach CDRs as CSV to emailed invoices') |h %></TD>
       </TR>

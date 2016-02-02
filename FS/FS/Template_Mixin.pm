@@ -12,6 +12,8 @@ use Date::Format;
 use Date::Language;
 use Text::Template 1.20;
 use File::Temp 0.14;
+use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
+use IO::Scalar;
 use HTML::Entities;
 use Cwd;
 use FS::UID;
@@ -2255,15 +2257,41 @@ sub generate_email {
   my @otherparts = ();
   if ( ref($self) eq 'FS::cust_bill' && $cust_main->email_csv_cdr ) {
 
-    push @otherparts, build MIME::Entity
-      'Type'        => 'text/csv',
-      'Encoding'    => '7bit',
-      'Data'        => [ map { "$_\n" }
-                           $self->call_details('prepend_billed_number' => 1)
-                       ],
-      'Disposition' => 'attachment',
-      'Filename'    => 'usage-'. $self->invnum. '.csv',
-    ;
+    if ( $conf->exists('voip-cust_email_csv_cdr_zip') ) {
+
+      my $data = join('', map "$_\n",
+                   $self->call_details(prepend_billed_number=>1)
+                 );
+
+      my $zip = new Archive::Zip;
+      my $file = $zip->addString( $data, 'usage-'.$self->invnum.'.csv' );
+      $file->desiredCompressionMethod( COMPRESSION_DEFLATED );
+
+      my $zipdata = '';
+      my $SH = IO::Scalar->new(\$zipdata);
+      my $status = $zip->writeToFileHandle($SH);
+      die "Error zipping CDR attachment: $!" unless $status == AZ_OK;
+
+      push @otherparts, build MIME::Entity
+        'Type'       => 'application/zip',
+        'Encoding'   => 'base64',
+        'Data'       => $zipdata,
+        'Filename'    => 'usage-'. $self->invnum. '.zip',
+      ;
+
+    } else {
+ 
+      push @otherparts, build MIME::Entity
+        'Type'        => 'text/csv',
+        'Encoding'    => '7bit',
+        'Data'        => [ map { "$_\n" }
+                             $self->call_details('prepend_billed_number' => 1)
+                         ],
+        'Disposition' => 'attachment',
+        'Filename'    => 'usage-'. $self->invnum. '.csv',
+      ;
+
+    }
 
   }
 

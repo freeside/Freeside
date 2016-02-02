@@ -3549,15 +3549,26 @@ and customer address. Include units.',
   {
     'key'         => 'voip-cdr_email',
     'section'     => 'telephony',
-    'description' => 'Include the call details on emailed invoices (and HTML invoices viewed in the backend), even if the customer is configured for not printing them on the invoices.',
+    'description' => 'Include the call details inline on emailed invoices (and HTML invoices viewed in the backend), even if the customer is configured for not printing them on the invoices.  Useful for including these details in electronic delivery but omitting them when printing.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'voip-cust_email_csv_cdr',
-    'section'     => 'telephony',
-    'description' => 'Enable the per-customer option for including CDR information as a CSV attachment on emailed invoices.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated, see voip-cdr_email_attach instead.  Used to enable the per-customer option for including CDR information as a CSV attachment on emailed invoices.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'voip-cdr_email_attach',
+    'section'     => 'telephony',
+    'description' => 'Enable the per-customer option for including CDR information as an attachment on emailed invoices.',
+    'type'        => 'select',
+    'select_hash' => [ ''    => 'Disabled',
+                       'csv' => 'Text (CSV) attachment',
+                       'zip' => 'Zip attachment',
+                     ],
   },
 
   {

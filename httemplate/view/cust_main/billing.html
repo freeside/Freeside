@@ -242,7 +242,7 @@
    </TR>
 % }
 
-% if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
+% if ( $conf->config('voip-cdr_email_attach') ) { 
   <TR>
     <TH ALIGN="right"><% mt('Email CDRs as CSV') |h %></TH>
     <TD><% $cust_main->email_csv_cdr ? $yes : $no %></TD>
