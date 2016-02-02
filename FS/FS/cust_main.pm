@@ -2104,7 +2104,7 @@ sub check {
 sub check_payinfo_cardtype {
   my $self = shift;
 
-  return '' unless $self->payby =~ /^(CARD|CHEK)$/;
+  return '' unless $self->payby =~ /^(CARD|DCRD)$/;
 
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
