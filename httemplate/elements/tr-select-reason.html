@@ -120,6 +120,13 @@ Example:
       &>
 %   } # scalar(@types)
 
+%   if ( $class eq 'C' ) {
+      <& tr-checkbox.html,
+        label => 'Credit the unused portion of service when canceling',
+        field => $id.'_new_unused_credit',
+        value => 'Y'
+      &>
+%   }
 %   if ( $class eq 'S' ) {
       <& tr-checkbox.html,
         label => 'Credit the unused portion of service when suspending',

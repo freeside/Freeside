@@ -239,24 +239,33 @@ sub calc_remain {
   # Use sdate < $time and edate >= $time because when billing on 
   # cancellation, edate = $time.
   my $credit = 0;
-  foreach my $item ( 
+  foreach my $cust_bill_pkg ( 
     qsearch('cust_bill_pkg', { 
       pkgnum => $cust_pkg->pkgnum,
-      sdate => {op => '<' , value => $time},
       edate => {op => '>=', value => $time},
       recur => {op => '>' , value => 0},
     })
   ) {
     # hack to deal with the weird behavior of edate on package cancellation
-    my $edate = $item->edate;
+    my $edate = $cust_bill_pkg->edate;
     if ( $self->recur_temporality eq 'preceding' ) {
-      $edate = $self->add_freq($item->sdate);
+      $edate = $self->add_freq($cust_bill_pkg->sdate);
     }
-    $credit += ($item->recur - $item->usage) * 
-               ($edate - $time) / ($edate - $item->sdate);
+
+    # this will also get any package charges that are _entirely_ after the
+    # cancellation date (can happen with advance billing). in that case,
+    # use the entire recurring charge:
+    my $amount = $cust_bill_pkg->recur - $cust_bill_pkg->usage;
+
+    # but if the cancellation happens during the interval, prorate it:
+    # (XXX obey prorate_round_day here?)
+    if ( $cust_bill_pkg->sdate < $time ) {
+      $amount = $amount * ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
+    }
+
+    $credit += $amount;
   } 
   sprintf('%.2f', $credit);
-  #sprintf("%.2f", $self->base_recur($cust_pkg, \$time) * ( $next_bill - $time ) / $freq_sec );
 
 }
 

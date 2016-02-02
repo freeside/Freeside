@@ -919,13 +919,28 @@ sub cancel {
     }
   }
 
+  # if a reasonnum was passed, get the actual reason object so we can check
+  # unused_credit
+
+  my $reason;
+  if ($options{'reason'} =~ /^\d+$/) {
+    $reason = FS::reason->by_key($options{'reason'});
+  }
+
   unless ($date) {
-    # credit remaining time if appropriate
+    # credit remaining time if any of these are true:
+    # - unused_credit => 1 was passed (this happens when canceling a package
+    #   for a package change when unused_credit_change is set)
+    # - no unused_credit option, and there is a cancel reason, and the cancel
+    #   reason says to credit the package
+    # - no unused_credit option, and the package definition says to credit the
+    #   package on cancellation
     my $do_credit;
     if ( exists($options{'unused_credit'}) ) {
       $do_credit = $options{'unused_credit'};
-    }
-    else {
+    } elsif ( defined($reason) && $reason->unused_credit ) {
+      $do_credit = 1;
+    } else {
       $do_credit = $self->part_pkg->option('unused_credit_cancel', 1);
     }
     if ( $do_credit ) {
