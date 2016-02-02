@@ -145,6 +145,11 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set('previous_balance-exclude_from_total', '');
   }
 
+  if ( $conf->exists('voip-cust_email_csv_cdr') ) {
+    $conf->set('voip_cdr_email_attach', 'csv');
+    $conf->delete('voip-cust_email_csv_cdr') ;
+  }
+
 }
 
 sub upgrade_overlimit_groups {
