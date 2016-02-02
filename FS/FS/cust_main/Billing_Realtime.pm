@@ -1311,14 +1311,14 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 
 Available methods are: I<CC>, I<ECHECK> and I<LEC>
 
-Available options are: I<amount>, I<reason>, I<paynum>, I<paydate>
+Available options are: I<amount>, I<reasonnum>, I<paynum>, I<paydate>
 
 Most gateways require a reference to an original payment transaction to refund,
 so you probably need to specify a I<paynum>.
 
 I<amount> defaults to the original amount of the payment if not specified.
 
-I<reason> specifies a reason for the refund.
+I<reasonnum> specifies a reason for the refund.
 
 I<paydate> specifies the expiration date for a credit card overriding the
 value from the customer record or the payment record. Specified as yyyy-mm-dd
@@ -1354,6 +1354,27 @@ sub realtime_refund_bop {
     my $method = shift;
     %options = @_;
     $options{method} = $method;
+  }
+
+  my ($reason, $reason_text);
+  if ( $options{'reasonnum'} ) {
+    # do this here, because we need the plain text reason string in case we
+    # void the payment
+    $reason = FS::reason->by_key($options{'reasonnum'});
+    $reason_text = $reason->reason;
+  } else {
+    # support old 'reason' string parameter in case it's still used,
+    # or else set a default
+    $reason_text = $options{'reason'} || 'card or ACH refund';
+    local $@;
+    $reason = FS::reason->new_or_existing(
+      reason  => $reason_text,
+      type    => 'Refund reason',
+      class   => 'F',
+    );
+    if ($@) {
+      return "failed to add refund reason: $@";
+    }
   }
 
   if ( $DEBUG ) {
@@ -1523,7 +1544,7 @@ sub realtime_refund_bop {
       if $conf->exists('business-onlinepayment-test_transaction');
     $void->submit();
     if ( $void->is_success ) {
-      my $error = $cust_pay->void($options{'reason'});
+      my $error = $cust_pay->void($reason_text);
       if ( $error ) {
         # gah, even with transactions.
         my $e = 'WARNING: Card/ACH voided but database not updated - '.
@@ -1648,7 +1669,7 @@ sub realtime_refund_bop {
     '_date'    => '',
     'payby'    => $bop_method2payby{$options{method}},
     'payinfo'  => $payinfo,
-    'reason'   => $options{'reason'} || 'card or ACH refund',
+    'reasonnum'   => $reason->reasonnum,
     'gatewaynum'    => $gatewaynum, # may be null
     'processor'     => $processor,
     'auth'          => $refund->authorization,

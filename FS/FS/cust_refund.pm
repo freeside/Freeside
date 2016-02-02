@@ -145,18 +145,20 @@ sub insert {
   my $dbh = dbh;
 
   unless ($self->reasonnum) {
-    my $result = $self->reason( $self->getfield('reason'),
-                                exists($options{ 'reason_type' })
-                                  ? ('reason_type' => $options{ 'reason_type' })
-                                  : (),
-                              );
-    unless($result) {
-      $dbh->rollback if $oldAutoCommit;
-      return "failed to set reason for $me"; #: ". $dbh->errstr;
+    local $@;
+    if ( $self->get('reason') ) {
+      my $reason = FS::reason->new_or_existing(
+        reason  => $self->get('reason'),
+        class   => 'F',
+        type    => 'Refund reason',
+      );
+      if ($@) {
+        return "failed to add refund reason: $@";
+      }
+      $self->set('reasonnum', $reason->get('reasonnum'));
+      $self->set('reason', '');
     }
   }
-
-  $self->setfield('reason', '');
 
   if ( $self->crednum ) {
     my $cust_credit = qsearchs('cust_credit', { 'crednum' => $self->crednum } )

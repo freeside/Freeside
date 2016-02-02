@@ -47,12 +47,11 @@ if ( $error ) {
   my $refund = "$1$2";
   $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
   my $paynum = $1;
-  my $reason = $cgi->param('reason');
   my $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
   $options{'paydate'} = $paydate if $paydate =~ /^\d{2,4}-\d{1,2}-01$/;
   $error = $cust_main->realtime_refund_bop( $bop, 'amount' => $refund,
                                                   'paynum' => $paynum,
-                                                  'reason' => $reason,
+                                                  'reasonnum' => $reasonnum,
                                                   %options );
 } else {
   my %hash = map {
