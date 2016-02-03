@@ -98,9 +98,14 @@ my $squished = RT->Config->Get('DevelMode') ? '' : '-squished';
 
 $head .= qq(<link rel="shortcut icon" href="${WebImagesURL}favicon.png" type="image/png" />\n);
 for my $cssfile ( @css_files ) {
+<<<<<<< HEAD
   $head .= qq(<link rel="stylesheet" href="$WebPath/NoAuth/css/$cssfile" type="text/css" media="all" />\n);
 }
 $head .= qq(<link rel="stylesheet" href="$WebPath/NoAuth/css/print.css" type="text/css" media="print" />\n);
+=======
+  $head .= qq(<link rel="stylesheet" href="$WebPath$cssfile" type="text/css" media="all" />\n);
+}
+>>>>>>> 9c67763... merge RT 4.2.11 and Header changes to disable RT javascript, RT#34237
 
 for (keys %{$LinkRel || {}}) {
   $head .= qq(<link rel="$_" href="$WebPath) . $LinkRel->{$_} . '" />';
@@ -154,4 +159,6 @@ $LinkRel => undef
 $JavaScript => 1
 $SkipDoctype => 0
 $RichText => 1
+$BodyClass => undef
+$JavaScript => 1
 </%ARGS>
