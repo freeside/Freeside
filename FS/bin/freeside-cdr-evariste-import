@@ -1,0 +1,127 @@
+#!/usr/bin/perl
+
+use strict;
+
+use DBI;
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
+use Getopt::Long;
+
+use FS::Record qw(qsearchs dbh);
+use FS::UID qw(adminsuidsetup);
+use FS::cdr;
+use FS::cdr_batch;
+use Time::Local;
+
+sub usage {
+  "Import cdrs from an Evariste CSRP postgres database.
+
+Date range defaults from the enddate of the last evariste import 
+batch to the most recent midnight.  Imports cdrs for calls that 
+ended on or after startdate, before enddate.
+
+Usage:
+freeside-cdr-evariste -d database -h host -u dbusername -p dbpass
+  [-s startdate] [-e enddate] freesideuser
+";
+}
+
+my ($db,$host,$username,$password,$startdate,$enddate,$verbose);
+GetOptions(
+  "db=s"        => \$db,
+  "enddate=s"   => \$enddate,
+  "host=s"      => \$host,
+  "password=s"  => \$password,
+  "startdate=s" => \$startdate,
+  "username=s"  => \$username
+);
+
+my $fsuser = $ARGV[-1];
+
+die usage() unless $db && $host && $password && $username && $fsuser;
+
+adminsuidsetup($fsuser);
+
+if ($startdate) {
+  $startdate = str2time($startdate) or die "Can't parse startdate $startdate";
+  $startdate = time2str("%Y-%m-%d %H:%M:%S",$startdate);
+}
+unless ($startdate) {
+  my $lastbatch = qsearchs({
+    'table'     => 'cdr_batch',
+    'hashref'   => { 'cdrbatch' => {op=>'like', value=>"evariste-import-$host-$db\%"}},
+    'order_by'  => 'ORDER BY _date DESC LIMIT 1',
+  });
+  $startdate = time2str("%Y-%m-%d %H:%M:%S", $lastbatch->_date) if $lastbatch;
+}
+$startdate ||= '2010-01-01 00:00:00'; #seems decently in the past
+
+my @now = localtime();
+my $now = timelocal(0,0,0,$now[3],$now[4],$now[5]); #most recent midnight
+if ($enddate) {
+  $enddate = str2time($enddate) or die "Can't parse enddate $enddate";
+  $now = $enddate;
+  $enddate = time2str("%Y-%m-%d %H:%M:%S",$enddate);
+}
+$enddate ||= time2str("%Y-%m-%d %H:%M:%S",$now);
+
+my $cdbh = DBI->connect("dbi:Pg:database=$db;host=$host", $username, $password) 
+  or die $DBI::errstr;
+
+# selecting by end_time rather than start_time 
+# so we don't lose records between batches
+my $csth = $cdbh->prepare('SELECT c.*, cp.* FROM cdr c
+LEFT JOIN cdr_rate_postproc cp ON cp.cdr_id = c.id
+WHERE end_time >= ? AND end_time < ?')
+  or die $cdbh->errstr;
+
+$csth->execute($startdate,$enddate)
+  or die $csth->errstr;
+
+$FS::UID::AutoCommit = 0;
+
+my $cdrbatchname = "evariste-import-$host-$db-". time2str('%Y/%m/%d-%T',$now);
+die "Batch $cdrbatchname already exists, please specify a different end date. \n\n" . usage()
+  if FS::cdr_batch->row_exists('cdrbatch = ?', $cdrbatchname);
+my $cdr_batch = new FS::cdr_batch({ 
+  'cdrbatch' => $cdrbatchname,
+  '_date'    => $now,
+});
+my $error = $cdr_batch->insert;
+if ($error) {
+  dbh->rollback;
+  die "Error creating batch: $error";
+}
+
+while (my $row = $csth->fetchrow_hashref) {
+  next if FS::cdr->row_exists('uniqueid = ?', $row->{'id'});
+  my $cdr = FS::cdr->new ({
+    # from cdr table
+    'cdrbatchnum'             => $cdr_batch->cdrbatchnum,
+    'uniqueid'                => $row->{'cdr_id'},
+    'src'                     => $row->{'src'},
+    'dst'                     => $row->{'dest'},
+    'startdate'               => str2time($row->{'start_time'}),
+    'answerdate'              => str2time($row->{'answer_time'}),
+    'enddate'                 => str2time($row->{'end_time'}),
+    'duration'                => $row->{'duration_sec'},
+    'accountcode'             => $row->{'customer_id'},
+    # from cdr_rate_postproc table
+    'billsec'                 => $row->{'rate_bill_sec'},
+    'upstream_price'          => $row->{'rate_cost_net'},
+  });
+  $error = $cdr->insert;
+  if ($error) {
+    dbh->rollback or die dbh->errstr;
+    die "Error inserting cdr: $error";
+  }
+}
+
+$csth->finish;
+
+dbh->commit or die dbh->errstr;
+
+exit;
+
+
+
