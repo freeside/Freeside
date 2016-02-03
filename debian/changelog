@@ -1,8 +1,8 @@
-freeside (3.4~20140918-1) UNRELEASED; urgency=low
+freeside (5.0~20160202-1) UNRELEASED; urgency=low
 
-  * Complete packaging.
+  * 5.x test release
 
- -- Jeremy Davis <jeremyd-debian@freeside.biz>  Thu, 18 Feb 2014 15:50:36 -0500
+ -- Ivan Kohler <ivan-debian@420.am>  Tue, 02 Feb 2016 19:46:56 -0800
 
 freeside (3.0~20130205-1) UNRELEASED; urgency=low
 
