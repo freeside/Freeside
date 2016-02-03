@@ -127,16 +127,17 @@ Description: Self-service portal for Freeside billing and trouble ticketing
  .
  This package provides the libraries needed for the self-service portal.
 
-Package: freeside-rt
-Architecture: all
-Depends: freeside-webui,freeside-lib
-Recommends:
-Description: Integrated trouble ticketing and billing
- Request Tracker (RT) is a ticketing system which enables a group of people to
- intelligently and efficiently manage tasks, issues and requests.
- .
- This package is the integrated RT component of Freeside, a customer tracking,
- billing and trouble ticketing application.
+#not yet a separate package
+#Package: freeside-rt
+#Architecture: all
+#Depends: freeside-webui,freeside-lib
+#Recommends:
+#Description: Integrated trouble ticketing and billing
+# Request Tracker (RT) is a ticketing system which enables a group of people to
+# intelligently and efficiently manage tasks, issues and requests.
+# .
+# This package is the integrated RT component of Freeside, a customer tracking,
+# billing and trouble ticketing application.
 
 Package: freeside-torrus
 Architecture: all
