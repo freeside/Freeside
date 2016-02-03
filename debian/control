@@ -3,9 +3,14 @@ Section: misc
 Priority: extra
 Maintainer: Ivan Kohler <ivan-debian@420.am>
 Uploaders: Jeremy Davis <jeremyd@freeside.biz>
-Build-Depends: debhelper (>= 5), perl (>= 5.8), torrus-common
 Standards-Version: 3.7.2
 Homepage: http://www.freeside.biz/freeside
+Build-Depends: debhelper (>=5), perl (>=5.8),
+ rrdtool,librrds-perl, libxml-libxml-perl, libberkeleydb-perl,
+ libtemplate-perl, libproc-daemon-perl, libnet-snmp-perl,
+ libapache-session-perl, libjson-perl, libdbix-abstract-perl,
+ libdbix-sequence-perl, librrds-perl, apache2, texlive-binaries,
+ autotools-dev, liburi-perl, db-util, libtimedate-perl, libcgi-fast-perl
 
 Package: freeside
 Architecture: all
@@ -113,9 +118,10 @@ Description: Self-service portal for Freeside billing and trouble ticketing
 
 Package: freeside-torrus
 Architecture: all
-Depends: freeside-webui,freeside-lib,rrdtool,librrds-perl,libxml-libxml-perl,
- libberkeleydb-perl,libtemplate-perl,libproc-daemon-perl,libnet-snmp-perl,
- libapache-session-perl,libjson-perl,libdbix-abstract-perl,libdbix-sequence-perl
+Depends: freeside-webui,freeside-lib,rrdtool,librrds-perl,
+ libxml-libxml-perl, libberkeleydb-perl, libtemplate-perl, 
+ libproc-daemon-perl,libnet-snmp-perl, libapache-session-perl, libjson-perl,
+ libdbix-abstract-perl, libdbix-sequence-perl, librrds-perl
 Recommends:
 Description: Integrated network monitoring and billing
  Torrus is a network monitoring system (NMS) for discovering and monitoring routers, switches and other network equipment with SNMP.
