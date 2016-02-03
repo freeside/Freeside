@@ -122,6 +122,17 @@ Description: Self-service portal for Freeside billing and trouble ticketing
  .
  This package provides the libraries needed for the self-service portal.
 
+Package: freeside-rt
+Architecture: all
+Depends: freeside-webui,freeside-lib
+Recommends:
+Description: Integrated trouble ticketing and billing
+ Request Tracker (RT) is a ticketing system which enables a group of people to
+ intelligently and efficiently manage tasks, issues and requests.
+ .
+ This package is the integrated RT component of Freeside, a customer tracking,
+ billing and trouble ticketing application.
+
 Package: freeside-torrus
 Architecture: all
 Depends: freeside-webui,freeside-lib,rrdtool,librrds-perl,libxml-libxml-perl,
@@ -129,7 +140,11 @@ Depends: freeside-webui,freeside-lib,rrdtool,librrds-perl,libxml-libxml-perl,
  libapache-session-perl,libjson-perl,libdbix-abstract-perl,libdbix-sequence-perl
 Recommends:
 Description: Integrated network monitoring and billing
- Torrus is a network monitoring system (NMS) for discovering and monitoring routers, switches and other network equipment with SNMP.
+ Torrus is a network monitoring system (NMS) for discovering and monitoring
+ routers, switches and other network equipment with SNMP.
+ .
+ This package is the integrated Torrus component of Freeside, a customer
+ tracking, billing and trouble ticketing application.
 
 Package: freeside-selfservice-ui
 Architecture: all

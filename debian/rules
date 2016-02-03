@@ -273,12 +273,12 @@ install-stamp: build-stamp
 	perl -p -i -e "\
 	s'${TMP}(-webui|-lib)''g;\
 	s'${TMP}''g;\
-	" ${TMP}(-lib)?/opt/rt3/etc/*.pm \
-		${TMP}(-lib)?/opt/rt3/lib/*.pm \
-		${TMP}(-lib)?/opt/rt3/lib/RT/*.pm \
-		${TMP}(-lib)?/opt/rt3/etc/upgrade/* \
-		${TMP}(-lib)?/opt/rt3/sbin/* \
-		${TMP}(-lib)?/opt/rt3/bin/* \
+	" ${TMP}-lib/opt/rt3/etc/*.pm \
+		${TMP}-lib/opt/rt3/lib/*.pm \
+		${TMP}-lib/opt/rt3/lib/RT/*.pm \
+		${TMP}-lib/opt/rt3/etc/upgrade/* \
+		${TMP}-lib/opt/rt3/sbin/* \
+		${TMP}-lib/opt/rt3/bin/* \
 
 	# Default RT Settings
 	perl -p -i -e "\
