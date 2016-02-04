@@ -501,8 +501,13 @@ my $pkgs_method = $conf->exists('hidecancelledpackages')
                     : 'all_pkgs';
 
 #false laziness w/httemplate/view/cust_main/packages.html
-my $select = '*, setup_option.optionvalue AS _opt_setup_fee, '.
-                'recur_option.optionvalue AS _opt_recur_fee',
+my $select = join(',',
+               'cust_pkg.*',
+               'part_pkg.*',
+               'setup_option.optionvalue AS _opt_setup_fee',
+               'recur_option.optionvalue AS _opt_recur_fee',
+             );
+
 my $addl_from = qq{
     LEFT JOIN part_pkg USING ( pkgpart )
     LEFT JOIN part_pkg_option AS setup_option
