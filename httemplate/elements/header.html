@@ -42,6 +42,12 @@ Example:
               ) |n
     %>
 
+%   if ( $jquery ) {
+      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
+%   }
+
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
     <% include('logout.html') |n %>
@@ -181,6 +187,7 @@ Example:
 
 my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
 my( $nobr, $nocss ) = ( 0, 0 );
+my $jquery = 0;
 
 my $mobile;
 
@@ -193,6 +200,7 @@ if ( ref($_[0]) ) {
   $nobr    = $opt->{nobr};
   $nocss   = $opt->{nocss};
   $mobile  = $opt->{mobile};
+  $jquery  = $opt->{jquery};
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
