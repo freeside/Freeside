@@ -400,7 +400,7 @@ create-rt: configure-rt
 
 install-rt: 
 	if [ ${RT_ENABLED} -eq 1 ]; then ( cd rt; make install ); fi
-	if [ ${RT_ENABLED} -eq 1 ]; then cp -r ${RT_PATH}/share/static/images ${FREESIDE_DOCUMENT_ROOT}/rt/NoAuth/ ;fi
+	if [ ${RT_ENABLED} -eq 1 ]; then cp -r rt/share/static/images ${FREESIDE_DOCUMENT_ROOT}/rt/NoAuth/ ;fi
 	if [ ${RT_ENABLED} -eq 1 ]; then perl -p -i -e "\
 	  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
 	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
