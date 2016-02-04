@@ -5,7 +5,7 @@ use vars qw( $opt_d $opt_s $opt_q $opt_v $opt_r $opt_c $opt_j $opt_a );
 use vars qw( $DEBUG $DRY_RUN );
 use Getopt::Std;
 use DBD::Pg qw(:async); #for -a
-use DBIx::DBSchema 0.31; #0.39
+use DBIx::DBSchema 0.46;
 use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
