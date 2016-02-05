@@ -4270,6 +4270,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'password-insecure',
+    'section'     => 'password',
+    'description' => 'Disable all password security checks and allow entry of insecure passwords.  NOT RECOMMENDED.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'datavolume-forcemegabytes',
     'section'     => 'UI',
     'description' => 'All data volumes are expressed in megabytes',

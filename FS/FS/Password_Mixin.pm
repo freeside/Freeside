@@ -45,6 +45,9 @@ sub is_password_allowed {
   my $self = shift;
   my $password = shift;
 
+  my $cust_main = $self->cust_main;
+  return '' if $cust_main && $conf->config_bool('password-insecure', $cust_main->agentnum);
+
   # basic checks using Data::Password;
   # options for Data::Password
   $DICTIONARY = 4;   # minimum length of disallowed words
@@ -70,7 +73,6 @@ sub is_password_allowed {
   return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
 
   #check against customer fields
-  my $cust_main = $self->cust_main;
   if ($cust_main) {
     my @words;
     # words from cust_main
