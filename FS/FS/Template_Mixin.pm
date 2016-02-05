@@ -2257,7 +2257,7 @@ sub generate_email {
   my @otherparts = ();
   if ( ref($self) eq 'FS::cust_bill' && $cust_main->email_csv_cdr ) {
 
-    if ( $conf->exists('voip-cust_email_csv_cdr_zip') ) {
+    if ( $conf->config('voip-cdr_email_attach') eq 'zip' ) {
 
       my $data = join('', map "$_\n",
                    $self->call_details(prepend_billed_number=>1)
@@ -2273,13 +2273,14 @@ sub generate_email {
       die "Error zipping CDR attachment: $!" unless $status == AZ_OK;
 
       push @otherparts, build MIME::Entity
-        'Type'       => 'application/zip',
-        'Encoding'   => 'base64',
-        'Data'       => $zipdata,
+        'Type'        => 'application/zip',
+        'Encoding'    => 'base64',
+        'Data'        => $zipdata,
+        'Disposition' => 'attachment',
         'Filename'    => 'usage-'. $self->invnum. '.zip',
       ;
 
-    } else {
+    } else { # } elsif ( $conf->config('voip-cdr_email_attach') eq 'csv' ) {
  
       push @otherparts, build MIME::Entity
         'Type'        => 'text/csv',
