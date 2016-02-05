@@ -1,3 +1,9 @@
+freeside (3.9) UNRELEASED; urgency=low
+
+  * Stable version of freeside.
+
+ -- Jeremy Davis <jeremyd-debian@freeside.biz>  Fri, 05 Feb 2016 02:07:21 -0500
+
 freeside (3.9git~20160120-1) UNRELEASED; urgency=low
 
   * Testing version of freeside.
