@@ -682,7 +682,7 @@ sub pkg_resume_link {
 
 sub pkg_unhold_link {
   include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/unhold_pkg.html?',
+             'action'      => $p. 'misc/unhold_pkg.html',
              'label'       => emt('Start billing'),
              'actionlabel' => emt('Start billing'),
              'color'       => '#00CC00',
@@ -731,7 +731,7 @@ sub pkg_expire_link {
 sub pkg_change_later_link {
   my $cust_pkg = shift;
   include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p . 'misc/change_pkg.cgi?',
+    'action'      => $p . 'misc/change_pkg.cgi',
     'label'       => emt('Reschedule'),
     'actionlabel' => emt('Edit scheduled change for'),
     'cust_pkg'    => $cust_pkg,
@@ -743,7 +743,7 @@ sub pkg_change_later_link {
 sub pkg_change_start_link {
   my $cust_pkg = shift;
   include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p . 'misc/change_pkg_start.html?',
+    'action'      => $p . 'misc/change_pkg_start.html',
     'label'       => emt('Set start date'),
     'actionlabel' => emt('Set start of billing for'),
     'cust_pkg'    => $cust_pkg,
