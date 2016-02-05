@@ -5,15 +5,15 @@ function pkg_changed () {
 
   usageprice_pkg_changed( opt.value );
 
+  var date_button = document.getElementById('start_date_button');
+  var date_button_disabled = document.getElementById('start_date_disabled');
+  var date_text = document.getElementById('start_date_text');
+
+  var radio_now = document.getElementById('start_now');
+  var radio_on_hold = document.getElementById('start_on_hold');
+  var radio_on_date = document.getElementById('start_on_date');
+
   if ( form.pkgpart.selectedIndex > 0 ) {
-
-    var date_button = document.getElementById('start_date_button');
-    var date_button_disabled = document.getElementById('start_date_disabled');
-    var date_text = document.getElementById('start_date_text');
-
-    var radio_now = document.getElementById('start_now');
-    var radio_on_hold = document.getElementById('start_on_hold');
-    var radio_on_date = document.getElementById('start_on_date');
 
     form.submitButton.disabled = false;
     if ( discountnum ) {
@@ -39,8 +39,9 @@ function pkg_changed () {
       date_button_disabled.style.display = 'none';
       if ( radio_on_date ) {
         // un-disable all the buttons that might get disabled
-        radio_on_date.disabled = false;
         radio_now.disabled = false;
+        radio_on_hold.disabled = false;
+        radio_on_date.disabled = false;
         // if a start date has been entered, assume the user wants it
         if ( form.start_date_text.value.length > 0 ) {
           radio_now.checked = false;
@@ -72,6 +73,15 @@ function pkg_changed () {
 
   } else {
     form.submitButton.disabled = true;
+
+    date_text.style.backgroundColor = '#dddddd';
+    date_text.disabled = true;
+    date_button.style.display = 'none';
+    date_button_disabled.style.display = '';
+    radio_now.disabled = true;
+    radio_on_date.disabled = true;
+    radio_on_hold.disabled = true;
+
     if ( discountnum ) { form.discountnum.disabled = true; }
     discountnum_changed(form.discountnum);
   }
