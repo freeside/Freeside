@@ -34,18 +34,18 @@ Confirm address standardization
   </TR>
   <TR>
 %     if ( $old{$pre.'company'} ) {
-    <TD><% $old{$pre.'company'} %></TD>
+    <TD><% $old{$pre.'company'} |h %></TD>
 %     }
   </TR>
   <TR>
-    <TD><% $old{$pre.'address1'} %></TD>
+    <TD><% $old{$pre.'address1'} |h %></TD>
     <TD ROWSPAN=3><FONT COLOR="#ff0000"><B><% $new{$pre.'error'} %></B></FONT></TD>
   </TR>
   <TR>
-    <TD><% $old{$pre.'address2'} %></TD>
+    <TD><% $old{$pre.'address2'} |h %></TD>
   </TR>
   <TR>
-    <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
+    <TD><% $old{$pre.'city'} |h %>, <% $old{$pre.'state'} |h %>  <% $old{$pre.'zip'} |h %></TD>
   </TR>
 %   } else { # not an error
 %     $rows++ if !$new{$pre.'addr_clean'};
@@ -68,21 +68,21 @@ Confirm address standardization
   <TR>
 %     if ( $old{$pre.'company'} ) {
   <TR>
-    <TD><% $old{$pre.'company'} %></TD>
-    <TD><% $new{$pre.'company'} %></TD>
+    <TD><% $old{$pre.'company'} |h %></TD>
+    <TD><% $new{$pre.'company'} |h %></TD>
   </TR>
 %     }
   <TR>
-    <TD><% $old{$pre.'address1'} %></TD>
-    <TD><% $new{$pre.'address1'} %></TD>
+    <TD><% $old{$pre.'address1'} |h %></TD>
+    <TD><% $new{$pre.'address1'} |h %></TD>
   </TR>
   <TR>
-    <TD><% $old{$pre.'address2'} %></TD>
-    <TD><% $new{$pre.'address2'} %></TD>
+    <TD><% $old{$pre.'address2'} |h %></TD>
+    <TD><% $new{$pre.'address2'} |h %></TD>
   </TR>
   <TR>
-    <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
-    <TD><% $new{$pre.'city'} %>, <% $new{$pre.'state'} %>  <% $new{$pre.'zip'} %></TD>
+    <TD><% $old{$pre.'city'} |h %>, <% $old{$pre.'state'} |h %>  <% $old{$pre.'zip'} |h %></TD>
+    <TD><% $new{$pre.'city'} |h %>, <% $new{$pre.'state'} |h %>  <% $new{$pre.'zip'} |h %></TD>
   </TR>
 
 %   } # if error
