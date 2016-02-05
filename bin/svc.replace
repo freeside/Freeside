@@ -6,7 +6,7 @@ use FS::Record qw( qsearch );
 use FS::cust_svc;
 
 my $user = shift or die &usage;
-adminsuidsetup;
+adminsuidsetup $user;
 
 my $svcpart = shift or die &usage;
 
