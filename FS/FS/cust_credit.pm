@@ -739,19 +739,31 @@ sub calculate_tax_adjustment {
     $cust_bill{ $invnum}->custnum == $arg{custnum}
       or die "lineitem #$billpkgnum not found\n";
 
-    # calculate credit ratio.
-    # (First deduct any existing credits applied to this line item, to avoid
-    # rounding errors.)
-    my $charged = $cust_bill_pkg->get($setuprecur);
-    my $previously_credited =
-      $cust_bill_pkg->credited( '', '', setuprecur => $setuprecur) || 0;
+    # tax_Xlocation records don't distinguish setup and recur, so calculate
+    # the fraction of setup+recur (after deducting credits) that's setup. This
+    # will also be the fraction of tax (after deducting credits) that's tax on
+    # setup.
+    my ($setup, $recur);
+    $setup = $cust_bill_pkg->get('setup') || 0;
+    if ($setup) {
+      $setup -= $cust_bill_pkg->credited('', '', setuprecur => 'setup') || 0;
+    }
+    $recur = $cust_bill_pkg->get('recur') || 0;
+    if ($recur) {
+      $recur -= $cust_bill_pkg->credited('', '', setuprecur => 'recur') || 0;
+    }
+    my $setup_ratio = $setup / ($setup + $recur);
 
-    $charged -= $previously_credited;
+    # Calculate the fraction of tax to credit: it's the fraction of this charge
+    # (either setup or recur) that's being credited.
+    my $charged = ($setuprecur eq 'setup') ? $setup : $recur;
+    next if $charged == 0; # shouldn't happen, but still...
+
     if ($charged < $amount) {
       $error = "invoice #$invnum: tried to credit $amount, but only $charged was charged";
       last;
     }
-    my $ratio = $amount / $charged;
+    my $credit_ratio = $amount / $charged;
 
     # gather taxes that apply to the selected item
     foreach my $table (
@@ -766,7 +778,16 @@ sub calculate_tax_adjustment {
         foreach ($tax_link->cust_credit_bill_pkg) {
           $tax_amount -= $_->amount;
         }
-        my $tax_credit = sprintf('%.2f', $tax_amount * $ratio);
+        # split tax amount based on setuprecur
+        # (this method ensures that, if you credit both setup and recur tax,
+        # it always equals the entire tax despite any rounding)
+        my $setup_tax = sprintf('%.2f', $tax_amount * $setup_ratio);
+        if ( $setuprecur eq 'setup' ) {
+          $tax_amount = $setup_tax;
+        } else {
+          $tax_amount = $tax_amount - $setup_tax;
+        }
+        my $tax_credit = sprintf('%.2f', $tax_amount * $credit_ratio);
         my $pkey = $tax_link->get($tax_link->primary_key);
         push @taxlines, {
           table   => $table,
