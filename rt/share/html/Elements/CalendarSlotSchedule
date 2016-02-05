@@ -109,8 +109,8 @@
 %
 %         my $member = "freeside://freeside/cust_main/$custnum";
 %
-%warn         my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
-%warn         my $Due    = int(($tod_row+$LengthMin)/60). ':'.
+%         my $Starts = int($tod_row/60). ':'. sprintf('%02d',$tod_row%60). ':00';
+%         my $Due    = int(($tod_row+$LengthMin)/60). ':'.
 %                      sprintf('%02d',($tod_row+$LengthMin)%60). ':00';
 %
 %         my $url = $RT::WebPath. '/Ticket/Display.html?id=new'.
