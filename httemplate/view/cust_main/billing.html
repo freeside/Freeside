@@ -385,9 +385,9 @@
    </TR>
 % }
 
-% if ( $conf->config('voip-cdr_email_attach') ) { 
+% if ( my $attach = $conf->config('voip-cdr_email_attach') ) { 
   <TR>
-    <TD ALIGN="right"><% mt('Email CDRs as CSV') |h %></TD>
+    <TD ALIGN="right"><% mt('Email CDRs as '.uc($attach)) |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->email_csv_cdr ? $yes : $no %></TD>
   </TR>
 % } 
