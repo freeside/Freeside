@@ -903,6 +903,58 @@ sub refund {
   return '';
 }
 
+### refund_to_unapply/unapply_refund false laziness with FS::cust_credit
+
+=item refund_to_unapply
+
+Returns L<FS::cust_pay_refund> objects that will be deleted by L</unapply_refund>
+(all currently applied refunds that aren't closed.)
+Returns empty list if payment itself is closed.
+
+=cut
+
+sub refund_to_unapply {
+  my $self = shift;
+  return () if $self->closed;
+  qsearch({
+    'table'   => 'cust_pay_refund',
+    'hashref' => { 'paynum' => $self->paynum },
+    'addl_from' => 'LEFT JOIN cust_refund USING (refundnum)',
+    'extra_sql' => "AND (cust_refund.closed = '' OR cust_refund.closed IS NULL)",
+  });
+}
+
+=item unapply_refund
+
+Deletes all objects returned by L</refund_to_unapply>.
+
+=cut
+
+sub unapply_refund {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  foreach my $cust_pay_refund ($self->refund_to_unapply) {
+    my $error = $cust_pay_refund->delete;
+    if ($error) {
+      dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  dbh->commit or die dbh->errstr if $oldAutoCommit;
+  return '';
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -990,7 +1042,7 @@ sub batch_insert {
 
 Returns an SQL fragment to retreive the unapplied amount.
 
-=cut 
+=cut
 
 sub unapplied_sql {
   my ($class, $start, $end) = @_;

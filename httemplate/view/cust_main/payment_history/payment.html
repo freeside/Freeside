@@ -197,13 +197,21 @@ $void = ' ('.
      );
 
 my $unapply = '';
-$unapply = areyousure_link("${p}misc/unapply-cust_pay.cgi?".$cust_pay->paynum,
-                            emt('Are you sure you want to unapply this payment?'),
-                            emt('Keep this payment, but dissociate it from the invoices it is currently applied against'),
-                            emt('unapply')
-                          )
-  if $cust_pay->closed !~ /^Y/i
-  && scalar(@cust_bill_pay)           
-  && $opt{'Unapply payment'};
+if ($opt{'Unapply payment'} && !$cust_pay->closed) {
+  my $refund_to_unapply = $cust_pay->refund_to_unapply;
+  my $usepre = $refund_to_unapply && @cust_bill_pay;
+  $unapply = areyousure_link("${p}misc/unapply-cust_pay.cgi?".$cust_pay->paynum,
+                              emt('Are you sure you want to unapply this payment from invoices?'),
+                              emt('Keep this payment, but dissociate it from the invoices it is currently applied against'),
+                              emt('unapply') . ($usepre ? '&nbsp;' . emt('invoices') : '')
+                            )
+    if @cust_bill_pay;
+  $unapply .= areyousure_link("${p}misc/unapply-cust_pay_refund.cgi?".$cust_pay->paynum,
+                               emt('Are you sure you want to unapply this payment from refunds?'),
+                               emt('Keep this payment, but dissociate it from the refunds it is currently applied to'),
+                               emt('unapply') . ($usepre ? '&nbsp;' . emt('refunds') : '')
+                             )
+    if $refund_to_unapply;
+}
 
 </%init>

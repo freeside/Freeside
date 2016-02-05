@@ -139,14 +139,23 @@ $void = ' ('.
   && $opt{'Void credit'};
 
 my $unapply = '';
-$unapply = areyousure_link("${p}misc/unapply-cust_credit.cgi?".$cust_credit->crednum,
-                            emt('Are you sure you want to unapply this credit?'),
-                            '',
-                            emt('unapply')
-                          )
-  if $cust_credit->closed !~ /^Y/i
-  && scalar(@cust_credit_bill)
-  && $opt{'Unapply credit'};
+
+if ($opt{'Unapply credit'} && !$cust_credit->closed) {
+  my $refund_to_unapply = $cust_credit->refund_to_unapply;
+  my $usepre = $refund_to_unapply && @cust_credit_bill;
+  $unapply = areyousure_link("${p}misc/unapply-cust_credit.cgi?".$cust_credit->crednum,
+                              emt('Are you sure you want to unapply this credit from invoices?'),
+                              emt('Keep this credit, but dissociate it from the invoices it is currently applied against'),
+                              emt('unapply') . ($usepre ? '&nbsp;' . emt('invoices') : '')
+                            )
+    if @cust_credit_bill;
+  $unapply .= areyousure_link("${p}misc/unapply-cust_credit_refund.cgi?".$cust_credit->crednum,
+                               emt('Are you sure you want to unapply this credit from refunds?'),
+                               emt('Keep this credit, but dissociate it from the refunds it is currently applied to'),
+                               emt('unapply') . ($usepre ? '&nbsp;' . emt('refunds') : '')
+                             )
+    if $refund_to_unapply;
+}
 
 my $reason = $cust_credit->reason;
 $reason = $reason ? " ($reason)" : '';
