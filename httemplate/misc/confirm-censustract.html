@@ -13,8 +13,8 @@ Census tract error
 Confirm census tract
 % }
 </B><BR>
-<% $location{address1} %> <% $location{address2} %><BR>
-<% $location{city} %>, <% $location{state} %> <% $location{zip} %><BR>
+<% $location{address1} |h %> <% $location{address2} |h %><BR>
+<% $location{city} |h %>, <% $location{state} |h %> <% $location{zip} |h %><BR>
 <BR>
 % my $querystring = "census_year=$year&latitude=".$cache->get('latitude').'&longitude='.$cache->get('longitude');
 <A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
