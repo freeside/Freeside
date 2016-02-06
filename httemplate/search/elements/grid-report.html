@@ -5,6 +5,9 @@ which the user can request as an Excel spreadsheet. /elements/header.html
 and /elements/footer.html are included automatically, so don't include them
 again.
 
+This element defines "total", "shaded", and "totalshaded" CSS classes. For
+anything else, insert a <style> element via the 'head' argument.
+
 Usage:
 
 <& elements/grid-report.html,
@@ -21,7 +24,7 @@ Usage:
         header => 1,
         rowspan => 2,
         colspan => 3,
-        class => 'highlight',
+        class => 'shaded',
       },
       ...
     ],
@@ -144,7 +147,6 @@ Usage:
 <P ALIGN="right" CLASS="noprint">
 Download full reports<BR>
 as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
-% # as <A HREF="<% "$myself;_type=csv" %>">CSV file</A> # is this still needed?
 </P>
 <style type="text/css">
 .report * {
@@ -155,9 +157,9 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 .report td {
   text-align: right;
 }
-.total * { background-color: #f5f6be; }
-.shaded * { background-color: #c8c8c8; }
-.totalshaded * { background-color: #bfc094; }
+.total { background-color: #f5f6be; }
+.shaded { background-color: #c8c8c8; }
+.totalshaded { background-color: #bfc094; }
 </style>
 <table class="report" width="100%" cellspacing=0>
 % foreach my $rowinfo (@rows) {
