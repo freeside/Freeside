@@ -56,7 +56,7 @@ if ( ref($_[0]) ) {
   $head           = $opt->{head};
   $nobr           = $opt->{nobr};
   #$nocss          = $opt->{nocss};
-  $no_jquery      = $opt->{no_jquery};
+  $no_jquery      = exists($opt->{no_jquery}) ? $opt->{no_jquery} : 1; #v3 only, 0 on v4+
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
