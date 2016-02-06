@@ -1,121 +1,11 @@
-% if ( $cgi->param('_type') =~ /(xls)$/ ) {
-<%perl>
-  # egregious false laziness w/ search/report_tax-xls.cgi
-  my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format;
-  my $filename = $cgi->url(-relative => 1);
-  $filename =~ s/\.html$//;
-  $filename .= $format->{extension};
-  http_header('Content-Type' => $format->{mime_type});
-  http_header('Content-Disposition' => qq!attachment;filename="$filename"!);
-
-  my $output = '';
-  my $XLS = IO::String->new($output);
-  my $workbook = $format->{class}->new($XLS)
-    or die "Error opening .xls file: $!";
-
-  my $worksheet = $workbook->add_worksheet('Summary');
-
-  my %format = (
-    header => {
-      size      => 11,
-      bold      => 1,
-      align     => 'center',
-      valign    => 'vcenter',
-      text_wrap => 1,
-    },
-    money => {
-      size      => 11,
-      align     => 'right',
-      valign    => 'bottom',
-      num_format=> 8,
-    },
-    '' => {},
-  );
-  my %default = (
-      font      => 'Calibri',
-      border    => 1,
-  );
-  foreach (keys %format) {
-    my %f = (%default, %{$format{$_}});
-    $format{$_} = $workbook->add_format(%f);
-    $format{"m_$_"} = $workbook->add_format(%f);
-  }
-
-  my ($r, $c) = (0, 0);
-  for my $row (@rows) {
-    $c = 0;
-    my $thisrow = shift @cells;
-    for my $cell (@$thisrow) {
-      if (!ref($cell)) {
-        # placeholder, so increment $c so that we write to the correct place
-        $c++;
-        next;
-      }
-      # format name
-      my $f = '';
-      $f = 'header' if $row->{header} or $cell->{header};
-      $f = 'money' if $cell->{format} eq 'money';
-      if ( $cell->{rowspan} > 1 or $cell->{colspan} > 1 ) {
-        my $range = xl_range_formula(
-          'Summary',
-          $r, $r - 1 + ($cell->{rowspan} || 1),
-          $c, $c - 1 + ($cell->{colspan} || 1)
-        );
-        #warn "merging $range\n";
-        $worksheet->merge_range($range, $cell->{value}, $format{"m_$f"});
-      } else {
-      #warn "writing ".xl_rowcol_to_cell($r, $c)."\n";
-        $worksheet->write( $r, $c, $cell->{value}, $format{$f} );
-      }
-      $c += $cell->{colspan} || 1;
-    } #$cell
-  $r++;
-  } #$row
-  $workbook->close;
-
-  http_header('Content-Length' => length($output));
-  $m->print($output);
-</%perl>
-% } else {
-<& /elements/header.html, $title &>
-% my $myself = $cgi->self_url;
-<P ALIGN="right" CLASS="noprint">
-Download full reports<BR>
-as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A>
-</P>
-<style type="text/css">
-.report * {
-  background-color: #f8f8f8;
-  border: 1px solid #999999;
-  padding: 2px;
-}
-.report td {
-  text-align: right;
-}
-.total { background-color: #f5f6be; }
-.shaded { background-color: #c8c8c8; }
-.totalshaded { background-color: #bfc094; }
-</style>
-<table class="report" width="100%" cellspacing=0>
-% foreach my $rowinfo (@rows) {
-  <tr<% $rowinfo->{class} ? ' class="'.$rowinfo->{class}.'"' : ''%>>
-%   my $thisrow = shift @cells;
-%   foreach my $cell (@$thisrow) {
-%     next if !ref($cell); # placeholders
-%     my $td = $cell->{header} ? 'th' : 'td';
-%     my $style = '';
-%     $style .= ' class="'.$cell->{class}.'"' if $cell->{class};
-%     $style .= " rowspan=".$cell->{rowspan} if $cell->{rowspan} > 1;
-%     $style .= " colspan=".$cell->{colspan} if $cell->{colspan} > 1;
-%     $style .= ' style="color: red"' if $cell->{value} < 0;
-      <<%$td%><%$style%>><% $cell->{value} |h %></<%$td%>>
-%   }
-  </tr>
-% }
-</table>
-
-<& /elements/footer.html &>
-% }
+<& elements/grid-report.html,
+  title => $title,
+  rows  => \@rows,
+  cells => \@cells,
+  head  => $head,
+  # would be better handled with Mason inheritance? consider this. easy enough
+  # to change it at this point.
+&>
 <%init>
 
 die "access denied"
@@ -213,7 +103,11 @@ foreach my $cust_main (@cust_main) { # correspond to cross_params
     for my $item (0..3) { # recur/recur_cost/usage/usage_cost
       my $value = $data->{data}[$item][$col][$row];
       $skip = 0 if abs($value) > 0.005;
-      push @thisrow, { value => sprintf('%0.2f', $value), format => 'money' };
+      push @thisrow, {
+        value => sprintf('%0.2f', $value),
+        format => 'money',
+        class => ($value < 0 ? 'negative' : ''),
+      };
       $total[$col * 5 + $item] += $value;
       $profit += (($item % 2) ? -1 : 1) * $value;
     } #item
@@ -250,4 +144,9 @@ for my $col (0..($ncols * 5)-1) { # month and recur/recur_cost/usage/usage_cost/
 }
 push @cells, \@thisrow;
 
+my $head = q[
+<style>
+  .negative { color: red }
+</style>
+];
 </%init>
