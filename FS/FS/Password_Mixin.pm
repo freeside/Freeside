@@ -43,6 +43,16 @@ sub is_password_allowed {
   my $self = shift;
   my $password = shift;
 
+  my $cust_main = $self->cust_main;
+
+  # workaround for non-inserted services
+  if ( !$cust_main and $self->get('pkgnum') ) {
+    my $cust_pkg = FS::cust_pkg->by_key($self->get('pkgnum'));
+    $cust_main = $cust_pkg->cust_main if $cust_pkg;
+  }
+  warn "is_password_allowed: no customer could be identified" if !$cust_main;
+  return '' if $cust_main && $conf->config_bool('password-insecure', $cust_main->agentnum);
+
   # basic checks using Data::Password;
   # options for Data::Password
   $DICTIONARY = 4;   # minimum length of disallowed words
