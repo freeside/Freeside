@@ -52,9 +52,10 @@
     <INPUT TYPE="text" ID="clear_password" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
     <& /elements/random_pass.html, 'clear_password' &><BR>
     <DIV ID="clear_password_result" STYLE="font-size: smaller"></DIV>
-    <& '/elements/validate_password.html', 
-         'fieldid' => 'clear_password',
-         'svcnum' => $svcnum 
+    <& /elements/validate_password.html, 
+        'fieldid' => 'clear_password',
+        'svcnum' => $svcnum ,
+        'pkgnum' => $pkgnum,
     &>
   </TD>
 </TR>
