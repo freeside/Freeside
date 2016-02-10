@@ -1,6 +1,6 @@
 package FS::Maketext;
-
 use base qw( Exporter );
+
 use FS::CurrentUser;
 use FS::Conf;
 use FS::L10N;
@@ -9,6 +9,13 @@ use HTML::Entities qw( encode_entities );
 our @EXPORT_OK = qw( mt emt js_mt );
 
 our $lh;
+
+our $locale;
+#ask FS::UID to run this stuff for us later
+FS::UID->install_callback( sub { 
+  my $conf = new FS::Conf;
+  $locale = $conf->config('locale');
+});
 
 sub mt {
   return '' if $_[0] eq '';
@@ -32,8 +39,8 @@ sub js_mt {
 }
 
 sub lh {
-  my $locale =  $FS::CurrentUser::CurrentUser->option('locale')
-             || FS::Conf->new->config('locale')
+  my $locale =  $FS::CurrentUser::CurrentUser->locale
+             || $locale
              || 'en_US';
   $locale =~ s/_/-/g;
   FS::L10N->get_handle($locale) || die "Unknown locale $locale";

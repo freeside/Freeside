@@ -731,6 +731,17 @@ sub change_password_fields {
   FS::Auth->auth_class->change_password_fields( @_ );
 }
 
+=item locale
+
+=cut
+
+sub locale {
+  my $self = shift;
+  return $self->{_locale} if exists($self->{_locale});
+warn "access_user->locale called\n";
+  $self->{_locale} = $self->option('locale');
+}
+
 =back
 
 =head1 BUGS

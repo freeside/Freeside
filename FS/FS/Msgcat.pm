@@ -61,7 +61,7 @@ sub _gettext {
   return '' unless defined($msgcode) && length($msgcode) > 0;
 
   my $locale =  (@_ && shift)
-             || $FS::CurrentUser::CurrentUser->option('locale')
+             || $FS::CurrentUser::CurrentUser->locale
              || $def_locale;
 
   return $cache{$locale}->{$msgcode} if exists $cache{$locale}->{$msgcode};
