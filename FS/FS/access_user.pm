@@ -738,7 +738,6 @@ sub change_password_fields {
 sub locale {
   my $self = shift;
   return $self->{_locale} if exists($self->{_locale});
-warn "access_user->locale called\n";
   $self->{_locale} = $self->option('locale');
 }
 

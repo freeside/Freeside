@@ -168,7 +168,7 @@ sub handler
 #    }
 
     FS::access_user_log->insert_new_path( $r->filename, time-$start_time );
-\
+
     FS::Trace->log('done');
 
     FS::Trace->dumpfile( "%%%FREESIDE_EXPORT%%%/profile/$$.".time,
