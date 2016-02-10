@@ -98,14 +98,16 @@ while (my $row = $csth->fetchrow_hashref) {
   my $cdr = FS::cdr->new ({
     # from cdr table
     'cdrbatchnum'             => $cdr_batch->cdrbatchnum,
-    'uniqueid'                => $row->{'cdr_id'},
+    'uniqueid'                => $row->{'id'},
     'src'                     => $row->{'src'},
     'dst'                     => $row->{'dest'},
-    'startdate'               => str2time($row->{'start_time'}),
-    'answerdate'              => str2time($row->{'answer_time'}),
-    'enddate'                 => str2time($row->{'end_time'}),
+    'startdate'               => int(str2time($row->{'start_time'})),
+    'answerdate'              => int(str2time($row->{'answer_time'})),
+    'enddate'                 => int(str2time($row->{'end_time'})),
     'duration'                => $row->{'duration_sec'},
     'accountcode'             => $row->{'customer_id'},
+    'src_ip_addr'             => $row->{'src_ip'},
+    'dst_ip_addr'             => $row->{'dest_ip'},
     # from cdr_rate_postproc table
     'billsec'                 => $row->{'rate_bill_sec'},
     'upstream_price'          => $row->{'rate_cost_net'},
