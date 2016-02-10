@@ -2,7 +2,9 @@ package FS::part_pkg;
 use base qw( FS::m2m_Common FS::o2m_Common FS::option_Common );
 
 use strict;
-use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
+use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack
+             $cache_enabled %cache_link %cache_pkg_svc
+           );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
 use DateTime;
@@ -30,8 +32,13 @@ use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
 
 $DEBUG = 0;
+
 $setup_hack = 0;
 $skip_pkg_svc_hack = 0;
+
+$cache_enabled = 0;
+%cache_link = ();
+%cache_pkg_svc = ();
 
 =head1 NAME
 
@@ -963,6 +970,9 @@ sub type_pkgs {
 sub pkg_svc {
   my $self = shift;
 
+  return @{ $cache_pkg_svc{$self->pkgpart} }
+    if $cache_enabled && $cache_pkg_svc{$self->pkgpart};
+
 #  #sort { $b->primary cmp $a->primary } 
 #    grep { $_->quantity }
 #      qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
@@ -987,7 +997,11 @@ sub pkg_svc {
     }
   }
 
-  values(%pkg_svc);
+  my @pkg_svc = values(%pkg_svc);
+
+  $cache_pkg_svc{$self->pkgpart} = \@pkg_svc if $cache_enabled;
+
+  @pkg_svc;
 
 }
 
@@ -1273,8 +1287,7 @@ sub option {
     return $self->hashref->{"_$opt"};
   }
 
-  cluck "$self -> option: searching for $opt"
-    if $DEBUG;
+  cluck "$self -> option: searching for $opt" if $DEBUG;
   my $part_pkg_option =
     qsearchs('part_pkg_option', {
       pkgpart    => $self->pkgpart,
@@ -1354,14 +1367,25 @@ sub supp_part_pkg_link {
 
 sub _part_pkg_link {
   my( $self, $type ) = @_;
-  qsearch({ table    => 'part_pkg_link',
-            hashref  => { 'src_pkgpart' => $self->pkgpart,
-                          'link_type'   => $type,
-                          #protection against infinite recursive links
-                          'dst_pkgpart' => { op=>'!=', value=> $self->pkgpart },
-                        },
-            order_by => "ORDER BY hidden",
-         });
+
+  return @{ $cache_link{$type}->{$self->pkgpart} }
+    if $cache_enabled && $cache_link{$type}->{$self->pkgpart};
+
+  cluck $type.'_part_pkg_link called' if $DEBUG;
+
+  my @ppl = 
+    qsearch({ table    => 'part_pkg_link',
+              hashref  => { src_pkgpart => $self->pkgpart,
+                            link_type   => $type,
+                            #protection against infinite recursive links
+                            dst_pkgpart => { op=>'!=', value=> $self->pkgpart },
+                          },
+              order_by => "ORDER BY hidden",
+           });
+
+  $cache_link{$type}->{$self->pkgpart} = \@ppl if $cache_enabled;
+
+  return @ppl;
 }
 
 sub self_and_bill_linked {

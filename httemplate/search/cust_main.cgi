@@ -119,6 +119,7 @@
 %    foreach my $cust_pkg ( @{$all_pkgs{$custnum}} ) {
 %      my %cust_svc_by_svcpart;
 %      my $rows = 0;
+%      local($FS::part_pkg::cache_enabled) = 1; #for $cust_pkg->part_svc
 %      foreach my $part_svc (
 %        $cust_pkg->part_svc( summarize_size=>$large_pkg_size )
 %      ) {
