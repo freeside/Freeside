@@ -48,6 +48,7 @@ path
 
 _date
 
+=item render_seconds
 
 =back
 
@@ -73,14 +74,15 @@ Adds a log entry for PATH for the current user and timestamp.
 =cut
 
 sub insert_new_path {
-  my( $class, $path ) = @_;
+  my( $class, $path, $render_seconds ) = @_;
 
   return '' unless defined $FS::CurrentUser::CurrentUser;
 
   my $self = $class->new( {
-    'usernum' => $FS::CurrentUser::CurrentUser->usernum,
-    'path'    => $path,
-    '_date'   => time,
+    'usernum'        => $FS::CurrentUser::CurrentUser->usernum,
+    'path'           => $path,
+    '_date'          => time,
+    'render_seconds' => $render_seconds,
   } );
 
   my $error = $self->insert;
@@ -118,6 +120,7 @@ sub check {
     || $self->ut_foreign_key('usernum', 'access_user', 'usernum')
     || $self->ut_text('path')
     || $self->ut_number('_date')
+    || $self->ut_numbern('render_seconds')
   ;
   return $error if $error;
 

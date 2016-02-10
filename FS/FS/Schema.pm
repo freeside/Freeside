@@ -5791,10 +5791,11 @@ sub tables_hashref {
 
     'access_user_log' => {
       'columns'      => [
-        'lognum',  'serial', '',        '', '', '',
-        'usernum',    'int', '',        '', '', '',
-        'path',   'varchar', '', 2*$char_d, '', '',
-        '_date',         @date_type,        '', '',
+        'lognum',          'serial',     '',        '', '', '',
+        'usernum',            'int',     '',        '', '', '',
+        'path',           'varchar',     '', 2*$char_d, '', '',
+        '_date',                   @date_type,          '', '',
+        'render_seconds',     'int', 'NULL',        '', '', '',
       ],
       'primary_key'  => 'lognum',
       'unique'       => [],

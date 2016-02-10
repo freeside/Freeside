@@ -4,8 +4,8 @@ use strict;
 use warnings;
 use vars qw( $FSURL $QUERY_STRING );
 use base 'HTML::Mason::Request';
+use IO::Handle;
 use FS::Trace;
-use FS::access_user_log;
 
 $FSURL = 'http://Set/FS_Mason_Request_FSURL/in_standalone_mode/';
 $QUERY_STRING = '';
@@ -46,12 +46,11 @@ my $protect_fds;
 sub freeside_setup {
     my( $class, $filename, $mode ) = @_;
 
-    FS::Trace->log('    protecting fds');
-
     #from rt/bin/webmux.pl(.in)
     if ( !$protect_fds && $ENV{'MOD_PERL'} && exists $ENV{'MOD_PERL_API_VERSION'}
         && $ENV{'MOD_PERL_API_VERSION'} >= 2
     ) {
+        FS::Trace->log('    protecting fds');
         # under mod_perl2, STDIN and STDOUT get closed and re-opened,
         # however they are not on FD 0 and 1.  In this case, the next
         # socket that gets opened will occupy one of these FDs, and make
@@ -129,8 +128,6 @@ sub freeside_setup {
       }
 
     }
-
-    FS::access_user_log->insert_new_path( $filename );
 
     FS::Trace->log('    done');
 
