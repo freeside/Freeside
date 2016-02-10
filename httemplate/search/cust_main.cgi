@@ -237,7 +237,7 @@
 %      my $part_pkg = $_->part_pkg;
 %
 %      my $pkg_comment = $part_pkg->pkg_comment( cust_pkg=>$_, nopkgpart=>1 );
-%      my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+%      my $show = $default_customer_view =~ /^(jumbo|packages)$/
 %                   ? ''
 %                   : ';show=packages';
 %      my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
@@ -319,6 +319,8 @@ my $conf = new FS::Conf;
 my $maxrecords = $conf->config('maxsearchrecordsperpage');
 # summarize more than this many services of the same svcpart
 my $large_pkg_size = $conf->config('cust_pkg-large_pkg_size') || 0;
+
+my $default_customer_view = $curuser->default_customer_view;
 
 my $limit = '';
 $limit .= "LIMIT $maxrecords" if $maxrecords;
