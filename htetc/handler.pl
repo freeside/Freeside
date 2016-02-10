@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use FS::Mason qw( mason_interps );
 use FS::Trace;
+use FS::access_user_log;
 use FS::Conf;
 
 $FS::Conf::conf_cache_enabled = 1; # enable FS::Conf caching for performance
@@ -64,6 +65,8 @@ sub handler
 {
     #($r) = @_;
     my $r = shift;
+
+    my $start_time = time;
 
     FS::Trace->log('protecting fds');
 
@@ -164,6 +167,8 @@ sub handler
 #       );
 #    }
 
+    FS::access_user_log->insert_new_path( $r->filename, time-$start_time );
+\
     FS::Trace->log('done');
 
     FS::Trace->dumpfile( "%%%FREESIDE_EXPORT%%%/profile/$$.".time,
