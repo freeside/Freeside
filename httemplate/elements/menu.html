@@ -528,6 +528,8 @@ $tools_system{'Status'} = [ $fsurl.'view/Status.html', 'System status' ]
   if $curuser->access_right('Configuration'); # 'View system status');
 $tools_system{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
+$tools_system{'Access log statistics'} = [ $fsurl.'search/report_access_user_log.html?group_by=path', '' ]
+  if $curuser->access_right('Configuration'); # 'View profiling data');
 
 tie my %tools_menu, 'Tie::IxHash', ();
 $tools_menu{'Customers'} = [ \%tools_customers, 'Customer tools' ]
