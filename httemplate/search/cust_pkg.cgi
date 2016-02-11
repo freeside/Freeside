@@ -44,7 +44,7 @@
                         },
                     sub { my $c = shift;
                           sprintf( $money_char.'%.2f',
-                                   $c->part_pkg->base_recur($c)
+                                   $c->base_recur
                                  );
                         },
                     sub { FS::part_pkg::freq_pretty(shift); },
