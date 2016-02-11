@@ -56,9 +56,11 @@ $disable_agentcheck = 0;
 
 $upgrade = 0; #go away after setup+start dates cleaned up for old customers
 
+our $cache_enabled = 0;
+
 sub _simplecache {
   my( $self, $hashref ) = @_;
-  if ( $hashref->{'pkg'} ) {
+  if ( $cache_enabled && $hashref->{'pkg'} && $hashref->{'plan'} ) {
     $self->{'_pkgpart'} = FS::part_pkg->new($hashref);
   }
 }

@@ -518,6 +518,7 @@ my $addl_from = qq{
            AND recur_option.optionname = 'recur_fee' )
 };
 
+local($FS::cust_pkg::cache_enabled) = 1; #for $cust_pkg->part_pkg
 my %all_pkgs = map { $_->custnum =>
                        [ $_->$pkgs_method({ select    => $select,
                                             addl_from => $addl_from,
