@@ -43,7 +43,7 @@ my $dsth = dbh->prepare("DELETE FROM cust_main_invoice WHERE dest != 'POST'")
   or die dbh->errstr;
 $dsth->execute or die $dsth->errstr;
 
-foreach my $table (qw( cust_main
+foreach my $table (qw( cust_main cust_payby
                        cust_pay_pending cust_pay cust_pay_void cust_pay_batch
                        cust_refund
 )) {
