@@ -5502,7 +5502,8 @@ sub _upgrade_data { #class method
     local(@encrypted_fields) = ();
 
     local($FS::cust_payby::ignore_expired_card) = 1;
-    local($FS::cust_payby::ignore_banned_card) = 1;
+    local($FS::cust_payby::ignore_banned_card)  = 1;
+    local($FS::cust_payby::ignore_cardtype)     = 1;
 
     my @payfields = qw( payby payinfo paycvv paymask
                         paydate paystart_month paystart_year payissue
@@ -5524,7 +5525,6 @@ sub _upgrade_data { #class method
           map { $_ => $cust_main->$_(); } @payfields
         };
 
-        local($FS::cust_payby::ignore_cardtype) = 1;
         my $error = $cust_payby->insert;
         die $error if $error;
 
