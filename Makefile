@@ -195,7 +195,7 @@ install-docs: docs
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
 	rm -rf ${MASONDATA}/*
-	chown -R freeside ${MASONDATA}
+	chown -f -R freeside ${MASONDATA} || true
 
 dev-docs:
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
