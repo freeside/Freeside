@@ -194,8 +194,7 @@ install-docs: docs
 	" ${MASON_HANDLER} || true
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
-	rm -rf ${MASONDATA}
-	mkdir ${MASONDATA}
+	rm -rf ${MASONDATA}/*
 	chown -R freeside ${MASONDATA}
 
 dev-docs:

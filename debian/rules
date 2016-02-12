@@ -134,7 +134,6 @@ install-stamp: build-stamp
 	install -d $(TMP)-webui/usr/local/etc/freeside/
 	install -d $(TMP)-webui/etc/insserv/overrides/
 	install -d $(TMP)/usr/local/etc/freeside/
-	install -d $(TMP)-webui/usr/local/etc/freeside/masondata #MASONDATA
 #	install -d $(TMP)-lib/usr/bin
 
 	( cd FS/ && $(MAKE) -e DESTDIR=${TMP}-lib install)
