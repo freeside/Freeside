@@ -363,17 +363,12 @@ sub _upgrade_data { #class method
 
     my $payby = $part_event_condition->option('payby');
 
-    if ( scalar( keys %$payby ) == 1 ) {
+    if (    scalar( keys %$payby ) == 1 && ( $payby->{CARD} || $payby->{CHEK} )
+         or scalar( keys %$payby ) == 2 && ( $payby->{CARD} && $payby->{CHEK} )
+       )
+    {
 
-      if ( $payby->{'CARD'} ) {
-
-        $part_event_condition->conditionname('has_cust_payby_auto');
-
-      } elsif ( $payby->{'CHEK'} ) {
-
-        $part_event_condition->conditionname('has_cust_payby_auto');
-
-      }
+      $part_event_condition->conditionname('has_cust_payby_auto');
 
     } elsif ( $payby->{'BILL'} && ! $payby->{'CARD'} && ! $payby->{'CHEK'} ) {
 
