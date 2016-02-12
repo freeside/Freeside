@@ -19,6 +19,7 @@ sub nohistory_fields { ('payinfo', 'paycvv'); }
 our $ignore_expired_card = 0;
 our $ignore_banned_card = 0;
 our $ignore_invalid_card = 0;
+our $ignore_cardtype = 0;
 
 our $conf;
 install_callback FS::UID sub { 
@@ -495,6 +496,8 @@ sub check {
 
 sub check_payinfo_cardtype {
   my $self = shift;
+
+  return '' if $ignore_cardtype;
 
   return '' unless $self->payby =~ /^(CARD|CHEK)$/;
 
