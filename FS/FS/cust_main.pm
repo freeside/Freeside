@@ -5496,27 +5496,6 @@ sub _upgrade_data { #class method
   local($skip_fuzzyfiles) = 1;
   local($import) = 1; #prevent automatic geocoding (need its own variable?)
 
-  FS::cust_main::Location->_upgrade_data(%opts);
-
-  unless ( FS::upgrade_journal->is_done('cust_main__trimspaces') ) {
-
-    foreach my $cust_main ( qsearch({
-      'table'     => 'cust_main', 
-      'hashref'   => {},
-      'extra_sql' => 'WHERE '.
-                       join(' OR ',
-                         map "$_ LIKE ' %' OR $_ LIKE '% ' OR $_ LIKE '%  %'",
-                           qw( first last company )
-                       ),
-    }) ) {
-      my $error = $cust_main->replace;
-      die $error if $error;
-    }
-
-    FS::upgrade_journal->set_done('cust_main__trimspaces');
-
-  }
-
   unless ( FS::upgrade_journal->is_done('cust_main__cust_payby') ) {
 
     #we don't want to decrypt them, just stuff them as-is into cust_payby
@@ -5545,6 +5524,7 @@ sub _upgrade_data { #class method
           map { $_ => $cust_main->$_(); } @payfields
         };
 
+        local($FS::cust_payby::ignore_cardtype) = 1;
         my $error = $cust_payby->insert;
         die $error if $error;
 
@@ -5580,6 +5560,27 @@ sub _upgrade_data { #class method
     };
 
     FS::upgrade_journal->set_done('cust_main__cust_payby');
+  }
+
+  FS::cust_main::Location->_upgrade_data(%opts);
+
+  unless ( FS::upgrade_journal->is_done('cust_main__trimspaces') ) {
+
+    foreach my $cust_main ( qsearch({
+      'table'     => 'cust_main', 
+      'hashref'   => {},
+      'extra_sql' => 'WHERE '.
+                       join(' OR ',
+                         map "$_ LIKE ' %' OR $_ LIKE '% ' OR $_ LIKE '%  %'",
+                           qw( first last company )
+                       ),
+    }) ) {
+      my $error = $cust_main->replace;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('cust_main__trimspaces');
+
   }
 
   $class->_upgrade_otaker(%opts);
