@@ -1,13 +1,11 @@
 package FS::part_event_condition;
+use base qw( FS::option_Common );
 
 use strict;
-use vars qw( @ISA $DEBUG @SKIP_CONDITION_SQL );
+use vars qw( $DEBUG @SKIP_CONDITION_SQL );
 use FS::UID qw( dbh driver_name );
-use FS::Record qw( qsearch qsearchs );
-use FS::option_Common;
 use FS::part_event; #for order_conditions_sql...
 
-@ISA = qw( FS::option_Common ); # FS::Record );
 $DEBUG = 0;
 
 @SKIP_CONDITION_SQL = ();
@@ -351,45 +349,6 @@ sub order_conditions_sql {
   );
 
   "ORDER BY $order_by";
-
-}
-
-sub _upgrade_data { #class method
-  my ($class, %opts) = @_;
-
-  foreach my $part_event_condition (
-    qsearch('part_event_condition', { 'conditionname' => 'payby' } )
-  ) {
-
-    my $payby = $part_event_condition->option('payby');
-
-    if ( scalar( keys %$payby ) == 1 ) {
-
-      if ( $payby->{'CARD'} ) {
-
-        $part_event_condition->conditionname('has_cust_payby_auto');
-
-      } elsif ( $payby->{'CHEK'} ) {
-
-        $part_event_condition->conditionname('has_cust_payby_auto');
-
-      }
-
-    } elsif ( $payby->{'BILL'} && ! $payby->{'CARD'} && ! $payby->{'CHEK'} ) {
-
-      $part_event_condition->conditionname('hasnt_cust_payby_auto');
-
-    } else {
-
-      die 'Unable to automatically convert payby condition for event #'.
-          $part_event_condition->eventpart. "\n";
-
-    }
-
-    my $error = $part_event_condition->replace;
-    die $error if $error;
-
-  }
 
 }
 
