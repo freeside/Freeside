@@ -1,7 +1,7 @@
 package FS::part_event;
+use base qw( FS::m2name_Common FS::option_Common );
 
 use strict;
-use base qw( FS::m2name_Common FS::option_Common );
 use vars qw( $DEBUG );
 use Carp qw(confess);
 use FS::Record qw( dbh qsearch qsearchs );
@@ -604,22 +604,6 @@ sub process_initialize {
       qsearchs('part_event', { eventpart => $opt{'eventpart'}})
         or die "eventpart '$opt{eventpart}' not found!\n";
   $part_event->initialize;
-}
-
-sub _upgrade_data { #class method
-  my ($class, %opts) = @_;
-
-  foreach my $part_event (
-    qsearch('part_event', { 'action' => 'cust_bill_realtime_card' }),
-    qsearch('part_event', { 'action' => 'cust_bill_realtime_check' }),
-  ) {
-
-    $part_event->action('realtime_auto');
-    my $error = $part_event->replace;
-    die $error if $error;
-
-  }
-     
 }
 
 =back
