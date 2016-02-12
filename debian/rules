@@ -299,7 +299,7 @@ binary-indep: build install
 	dh_testroot
 	dh_installdeb install
 	dh_installdocs #freeside.docs README AGPL
-	dh_installexamples eg/* bin/*
+	dh_installexamples eg bin
 #	dh_installmenu
 	dh_installdebconf	
 #	dh_installlogrotate	
