@@ -23,13 +23,13 @@ getopts('h');
 
 adminsuidsetup shift;
 
+#  payment_gateway
+#  payment_gateway_option
+#  agent_payment_gateway
 foreach my $table (qw(
-  part_export
-  part_export_option
   export_svc
-  payment_gateway
-  payment_gateway_option
-  agent_payment_gateway
+  part_export_option
+  part_export
   queue
   queue_arg
 )) {
