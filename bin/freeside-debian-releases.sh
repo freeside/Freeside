@@ -38,7 +38,7 @@ fi
 
 # Add the build information to changelog
 
-dch -b --newversion $GIT_VERSION~$DATE "Auto-Build"
+dch -b --newversion $GIT_VERSION-$DATE "Auto-Build"
 
 # Using pbuilder and pdebuild in chroot instead of building directly : dpkg-buildpackage -b -rfakeroot -uc -us
 
