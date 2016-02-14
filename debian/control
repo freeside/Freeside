@@ -17,7 +17,7 @@ Architecture: all
 Pre-Depends: freeside-lib
 # dbconfig-common
 Depends: ${perl:Depends}, ${shlibs:Depends}, ${misc:Depends}, freeside-webui,
- debconf, cron, openbsd-inetd, tcpd, undersmtpd, ssmtp, freeside-lib (>= 4.0~git20160211)
+ debconf, cron, openbsd-inetd, tcpd, undersmtpd, ssmtp, freeside-lib (>= 4.0~git-20160211)
 Description: Billing and trouble ticketing for service providers
  Freeside is a web-based billing, trouble ticketing and network monitoring
  application.  It includes features for ISPs and WISPs, hosting providers and
