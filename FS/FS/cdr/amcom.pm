@@ -2,9 +2,9 @@ package FS::cdr::amcom;
 
 use strict;
 use base qw( FS::cdr );
-use vars qw( %info %cdrtypes);
+use vars qw( %info );
 use DateTime;
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearchs );
 use FS::cdr_type;
 
 my ($tmp_mday, $tmp_mon, $tmp_year);
@@ -16,12 +16,6 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
   'type'          => 'csv',
   'sep_char'      => ',',
   'disabled'      => 0,
-  'header_buffer' => sub {
-
-	%cdrtypes = ( map { $_->cdrtypename => $_->cdrtypenum }
-                             qsearch('cdr_type', {})
-            );
-    },
 
   #listref of what to do with each field from the CDR, in order
   'import_fields' => [
@@ -43,7 +37,9 @@ my ($tmp_mday, $tmp_mon, $tmp_year);
     sub {	   # 5. Call Category (LOCAL, NATIONAL, FREECALL, MOBILE)
       my ($cdr, $data) = @_;
       $data ||= 'none';
-      $cdr->cdrtypenum($cdrtypes{$data} || '');
+
+      my $cdr_type = qsearchs('cdr_type', { 'cdrtypename' => $data } );
+      $cdr->set('cdrtypenum', $cdr_type->cdrtypenum) if $cdr_type;      
       $cdr->set('dcontext', $data);  
     },
     sub {         # 6. Start Date (DDMMYYYY
