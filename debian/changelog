@@ -1,8 +1,12 @@
-freeside (3.4~20140918-1) UNRELEASED; urgency=low
+freeside (4.0-1) unstable; urgency=low
 
+  [ Jeremy Davis ]
   * Complete packaging.
 
- -- Jeremy Davis <jeremyd-debian@freeside.biz>  Thu, 18 Feb 2014 15:50:36 -0500
+  [ Ivan Kohler ]
+  * 4.0
+
+ -- Ivan Kohler <ivan-debian@420.am>  Tue, 16 Feb 2016 23:03:03 -0800
 
 freeside (3.0~20130205-1) UNRELEASED; urgency=low
 
