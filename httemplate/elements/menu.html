@@ -454,6 +454,10 @@ $report_menu{'Logs'}           = [ \%report_logs, 'System and email logs' ]
 $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
   if $curuser->access_right('Raw SQL');
 
+tie my %tools_customers, 'Tie::IxHash', ();
+$tools_customers{'Appointments'} = [ $fsurl.'rt/Search/Schedule.html?LengthMin=0', 'View appointment schedule' ]
+  if $curuser->access_right('View appointments');
+
 tie my %tools_importing, 'Tie::IxHash',
   'Customers'            => [ $fsurl.'misc/cust_main-import.cgi', '' ],
   'Package definitions'  => [ $fsurl.'misc/part_pkg-import.html', '' ],
@@ -496,6 +500,8 @@ $tools_ticketing{'Cron Tool'} = [ $fsurl.'rt/Developer/CronTool/', '' ]
   if $conf->exists('rt-crontool');
 
 tie my %tools_menu, 'Tie::IxHash', ();
+$tools_menu{'Customers'} = [ \%tools_customers, 'Customer tools' ]
+  if keys %tools_customers;
 $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
   if $curuser->access_right('Post payment batch');
 $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_date;open=1;intransit=1', 'Process credit card and electronic check batches' ]

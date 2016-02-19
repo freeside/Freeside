@@ -9,6 +9,7 @@ Example:
              'etc'     => '', #included in <BODY> tag, for things like onLoad=
              'head'    => '', #included before closing </HEAD> tag
              'nobr'    => 0,  #1 for no <BR><BR> after the title
+             'no_jquery' => #for use from RT, which loads its own
            }
          );
 
@@ -23,7 +24,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% $title |h %>
+      <% encode_entities($title) || $title_noescape |n %>
     </TITLE>
     <!-- per RT, to prevent IE compatibility mode -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -41,6 +42,12 @@ Example:
                             'mobile'           => $mobile,
               ) |n
     %>
+
+%   unless ( $no_jquery ) {
+      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
+%   }
 
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
@@ -169,7 +176,7 @@ Example:
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
-            <% $title |h %>
+            <% $title_noescape || encode_entities($title) %>
           </FONT>
 
 % unless ( $nobr ) {
@@ -179,20 +186,22 @@ Example:
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
 <%init>
 
-my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
-my( $nobr, $nocss ) = ( 0, 0 );
+my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
+my( $nobr, $nocss, $no_jquery ) = ( 0, 0, 0 );
 
 my $mobile;
 
 if ( ref($_[0]) ) {
   my $opt = shift;
   $title   = $opt->{title};
-  $menubar = $opt->{menubar};
-  $etc     = $opt->{etc};
-  $head    = $opt->{head};
-  $nobr    = $opt->{nobr};
-  $nocss   = $opt->{nocss};
-  $mobile  = $opt->{mobile};
+  $title_noescape = $opt->{title_noescape};
+  $menubar    = $opt->{menubar};
+  $etc        = $opt->{etc};
+  $head       = $opt->{head};
+  $nobr       = $opt->{nobr};
+  $nocss      = $opt->{nocss};
+  $mobile     = $opt->{mobile};
+  $no_jquery  = exists($opt->{no_jquery}) ? $opt->{no_jquery} : 1; #v3 only, 0 on v4+
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.

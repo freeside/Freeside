@@ -45,14 +45,27 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<& /elements/header.html, {
-              'title' => $Title,
-              'head'  => $head,
-              'etc'   => $etc,
-              #make space for RT menu for now# 'nobr'  => 1,
-              'nocss' => 1,
+% if ( $Popup ) {
+<& /elements/header-popup.html, {
+              'title_noescape' => $Title,
+              'head'      => $head,
+              'etc'       => $etc,
+              'nobr'      => 1,
+              #'nocss'     => 1,
+              'no_jquery' => $JavaScript,
           }
 &>
+% } else {
+<& /elements/header.html, {
+              'title_noescape' => $Title,
+              'head'      => $head,
+              'etc'       => $etc,
+              #make space for RT menu for now# 'nobr'  => 1,
+              'nocss'     => 1,
+              'no_jquery' => $JavaScript,
+          }
+&>
+% }
 <%INIT>
 #for "Site CSS from theme editor" below
 #use Scalar::Util qw(blessed);
@@ -113,9 +126,11 @@ if ($JavaScript) {
     $head .= $m->scomp('HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText );
 }
 
-my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
-if ($m->comp_exists($stylesheet_plugin) ) {
-    $head .= $m->scomp($stylesheet_plugin);
+if ($JavaScript) {
+    my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
+    if ($m->comp_exists($stylesheet_plugin) ) {
+        $head .= $m->scomp($stylesheet_plugin);
+    }
 }
 
 #<!-- Site CSS from theme editor -->
@@ -151,4 +166,5 @@ $LinkRel => undef
 $JavaScript => 1
 $SkipDoctype => 0
 $RichText => 1
+$Popup => 0
 </%ARGS>

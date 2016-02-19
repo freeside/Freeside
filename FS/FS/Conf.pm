@@ -3276,12 +3276,14 @@ and customer address. Include units.',
                            }
                          },
   },
+
   {
     'key'         => 'ticket_system-force_default_queueid',
     'section'     => 'ticketing',
     'description' => 'Disallow queue selection when creating new tickets from customer view.',
     'type'        => 'checkbox',
   },
+
   {
     'key'         => 'ticket_system-selfservice_queueid',
     'section'     => 'ticketing',
@@ -3357,6 +3359,41 @@ and customer address. Include units.',
     'section'     => 'ticketing',
     'description' => 'Allow customers to edit ticket subjects through selfservice.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'ticket_system-appointment-queueid',
+    'section'     => 'ticketing',
+    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    #false laziness w/above
+    'type'        => 'select-sub',
+    'options_sub' => sub {
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             eval "use FS::TicketSystem;";
+                             die $@ if $@;
+                             FS::TicketSystem->queues();
+                           } else {
+                             ();
+                           }
+                         },
+    'option_sub'  => sub { 
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             eval "use FS::TicketSystem;";
+                             die $@ if $@;
+                             FS::TicketSystem->queue(shift);
+                           } else {
+                             '';
+                           }
+                         },
+  },
+
+  {
+    'key'         => 'ticket_system-appointment-custom_field',
+    'section'     => 'ticketing',
+    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    'type'        => 'text',
   },
 
   {

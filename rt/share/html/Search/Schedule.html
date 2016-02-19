@@ -1,13 +1,8 @@
-<& /Elements/Header, Title => 'Schedule' &>
-
-%#init_overlib.html
-%foreach my $file (@files) {
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/<%$file%>.js"></SCRIPT>
-%}
-
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/jquery.js"></SCRIPT>
+<& /Elements/Header, Title => 'Schedule', JavaScript => 0 &>
 
 <SCRIPT TYPE="text/javascript">
+
+% if ( $cells ) {
 
   function boxon(what) {
     var $this = $(what);
@@ -48,13 +43,206 @@
     }
   }
 
+
+% }
+
+% # it would be better if we had draggable-specific droppables, but this will prevent overlap for now...
+  function can_drop ($where, cells) {
+    for (var c=0; c < cells; c++) {
+      if (!$where.is('.ui-droppable')) {
+        return false;
+      }
+      var rownum = $where.parent().prevAll('tr').length;
+      var colnum = $where.prevAll('td').length;
+      $where = $where.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
+    }
+    return true;
+  }
+
+  var drag_cells = 0;
+  var drag_hi;
+
+  // on drag stop (regardless of if it was dropped)
+  function clear_drag_hi () {
+    if ( drag_hi ) {
+      boxoff_do(drag_hi);
+      drag_hi = undefined;
+    }
+  }
+
+  // on drag over
+  function boxon_drop(event, ui) {
+    //var $this = $(what);
+    var $this = $(this);
+
+    drag_cells = ui.draggable.data('cells');
+
+    clear_drag_hi();
+
+    if (!can_drop($this, drag_cells)) return;
+
+    drag_hi = $this;
+
+    for ( var c=0; c < drag_cells; c++) {
+
+      /* well, its not exactly what i want, would prefer if it could properly
+         mouse in-out, but this sorta helps for now?
+         revisit when everthing else is working */
+/*      $this.effect("highlight", {}, 1500); */
+
+      $this.css('background-color', '#ffffdd');
+      if ( c == 0 ) {
+        $this.css('border-top', '1px double black');
+        $this.css('border-left', '1px double black');
+        $this.css('border-right', '1px solid black');
+      } else if ( c == (drag_cells-1) ) {
+        $this.css('border-left', '1px double black');
+        $this.css('border-right', '1px solid black');
+        $this.css('border-bottom', '1px solid black');
+      } else {
+        $this.css('border-left', '1px double black');
+        $this.css('border-right', '1px solid black');
+      }
+
+      var rownum = $this.parent().prevAll('tr').length;
+      var colnum = $this.prevAll('td').length;
+      $this = $this.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
+    }
+
+
+  }
+
+  // clears highlighted box, used by clear_hi_drag (drag stop event)
+  function boxoff_do(what) {
+
+    var $this = what;
+
+    for ( var c=0; c < drag_cells; c++) {
+
+      //$this.css('background-color', '');
+      //$this.css('border', ''); //IE8 woes, removes cell borders
+      $this.removeAttr('style'); //slightly "flashy" on cell changes under IE8
+                                 //but at least it doesn't remove cell borders
+
+      var rownum = $this.parent().prevAll('tr').length;
+      var colnum = $this.prevAll('td').length;
+      $this = $this.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
+    }
+  }
+
+  // drop event
+  function reschedule_appointment( event, ui ) {
+
+    var $this = $(this);
+
+    if (!can_drop($this, ui.draggable.data('cells'))) return;
+
+%   #get the ticket number and appointment length (from the draggable object)
+    var ticketid = ui.draggable.data('ticketid');
+    var length   = ui.draggable.data('length');
+    var bgcolor  = ui.draggable.data('bgcolor');
+
+%   #and.. the new date and time, and username (from the droppable object)
+    var starts   = $this.data('starts');
+    var username = $this.data('username');
+
+    var due = parseInt(starts) + parseInt(length);
+
+    var n_epoch        = $this.data('epoch');
+    var n_st_tod_row   = $this.data('tod_row');
+
+    var draggable = ui.draggable;
+    var droppable = $this;
+    draggable.effect( "transfer", { to: droppable }, 420 );
+
+%   #tell the backend to reschedule it
+    var url = "<% popurl(3) %>misc/xmlhttp-ticket-update.html?" +
+              "id=" + ticketid + ";starts=" + starts + ";due=" + due +
+              ";username=" + username;
+
+    $.getJSON( url, function( data ) {
+      if ( data.error && data.error.length ) {
+%       #error?  "that shouldn't happen" but should display 
+        alert(data.error);
+%       #XX and should revert the dragable...
+      } else {
+
+        //draggable.effect( "transfer", { to: droppable }, 1000 );
+
+        var label = data.sched_label;
+
+%       #remove the old appointment entirely
+        var epoch        = ui.draggable.data('epoch');
+        var st_tod_row   = ui.draggable.data('tod_row');
+        var old_username = ui.draggable.data('username');
+        var cells        = ui.draggable.data('cells');
+        for ( var c=0; c < cells; c++) {
+          var tod_row = parseInt(st_tod_row) + (c * <%$timestep%>);
+          var td_id = 'td_' + epoch +
+                      '_' + String( tod_row ) +
+                      '_' + old_username;
+          $('#'+td_id).css('background-color', '#FFFFFF');
+          $('#'+td_id).text('');
+%         #(and make those boxes droppable)
+          $('#'+td_id).droppable({
+            over: boxon_drop,
+            drop: reschedule_appointment,
+            tolerance: 'pointer'
+          });
+        }
+
+%       #maybe use that animation which shows the box from point A to B
+
+        clear_drag_hi();
+        for ( var d=0; d < cells; d++) {
+          var n_tod_row = parseInt(n_st_tod_row) + (d * <%$timestep%>);
+          var n_td_id = 'td_' + n_epoch +
+                        '_' + String( n_tod_row ) +
+                        '_' + username;
+          $('#'+n_td_id).css('background-color', bgcolor);
+%         #remove their droppable
+          $('#'+n_td_id).droppable('destroy');
+          if ( d == 0 ) {
+            var title = 
+              label +
+              ' <A HREF="<%$RT::WebPath%>/Ticket/Display.html?id=' + ticketid + '" target="_blank">view</A> ' +
+              <% include('/elements/popup_link.html',
+                   action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id=__MAGIC_TICKET_ID__',
+                   label =>'edit',
+                   actionlabel => 'Edit appointment',
+                   height      => 436, # better: A + B * (num_custom_fields)
+                 ) |n,js_string
+              %>;
+            title = title.replace( /__MAGIC_TICKET_ID__/, ticketid );
+            $('#'+n_td_id).html( title );
+%           #(and make the top draggable, so we could do it all over again)
+            $('#'+n_td_id).draggable({
+              containment: '.titlebox-content',
+%#              revert:      'invalid',
+              revert: true,
+              revertDuration: 0,
+              stop: clear_drag_hi,
+            });
+            $('#'+n_td_id).data('ticketid', ticketid );
+            $('#'+n_td_id).data('length',   length );
+            $('#'+n_td_id).data('cells',    cells );
+            $('#'+n_td_id).data('bgcolor',  bgcolor );
+          }
+        }
+
+      }
+
+    });
+
+  }
+
 </SCRIPT>
 
 <& /Search/Calendar.html,
      @_,
      Query       => "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
-                     AND ( Type = 'reminder' OR 'Type' = 'ticket' )",
-                    #XXX and we have the magic custom field
+                     AND ( Type = 'reminder' OR 'Type' = 'ticket' )
+                     AND Queue = $queueid ",
      slots       => scalar(@usernames),
      Embed       => 'Schedule.html',
      DimPast     => 1,
@@ -64,6 +252,7 @@
                       #oops, more freeside abstraction-leaking
                       custnum   => $ARGS{custnum},
                       pkgnum    => $ARGS{pkgnum},
+                      RedirectToBasics => $ARGS{RedirectToBasics},
                     ],
 &>
 
@@ -73,6 +262,11 @@ my $timestep =  RT->Config->Get('CalendarWeeklySizeMin') || 30; #1/2h
 
 </%ONCE>
 <%init>
+
+#abstraction-leaking
+my $conf = new FS::Conf;
+my $queueid = $conf->config('ticket_system-appointment-queueid')
+  or die "ticket_system-appointment-queueid configuration not set";
 
 my @files = ();
 #if ( ! $initialized ) {
@@ -86,9 +280,13 @@ if ( ref($ARGS{username}) ) {
 } elsif ( $ARGS{username} ) {
   @usernames = ( $ARGS{username} );
 } else {
-  #XXX shouldn't even get offered the link in the first place rather than perl
-  # barf, but this is better than erroring out later or empty @username
-  die "Can't schedule an appointment - no employees are configured as installers";
+  #look them up ourslves... again, more FS abstraction-leaking, but 
+  # we want to link to the schedule view, and better than doing this every
+  # menu render
+  use FS::Record qw( qsearch );
+  use FS::sched_item;
+  my @sched_item = qsearch('sched_item', { 'disabled' => '', });
+  @usernames = map $_->access_user->username, @sched_item;
 }
 
 ( my $LengthMin = $ARGS{LengthMin} ) =~ /^\d+$/ or die 'non-numeric LengthMin';
