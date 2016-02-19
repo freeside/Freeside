@@ -1300,13 +1300,19 @@ sub _upgrade_data {
     my $svcdb = $cust_svc->part_svc->svcdb;
     $h_search{'hashref'}{'svcnum'} = $svcnum;
     $h_search{'table'} = "h_$svcdb";
-    my $h_svc_x = qsearchs(\%h_search)
-      or next;
-    my $class = "FS::$svcdb";
-    my $new_svc_x = $class->new({ $h_svc_x->hash });
-    my $error = $new_svc_x->insert;
-    warn "error repairing svcnum $svcnum ($svcdb) from history:\n$error\n"
-      if $error;
+    my $h_svc_x = qsearchs(\%h_search);
+    if ( $h_svc_x ) {
+      my $class = "FS::$svcdb";
+      my $new_svc_x = $class->new({ $h_svc_x->hash });
+      my $error = $new_svc_x->insert;
+      warn "error repairing svcnum $svcnum ($svcdb) from history:\n$error\n"
+        if $error;
+    } else {
+      # can't be fixed, so remove the dangling cust_svc to avoid breaking
+      # stuff
+      my $error = $cust_svc->delete;
+      warn "error cleaning up missing svcnum $svcnum ($svcdb):\n$error\n";
+    }
   }
 
   '';
