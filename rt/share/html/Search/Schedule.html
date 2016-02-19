@@ -46,17 +46,41 @@
 
 % }
 
+% # it would be better if we had draggable-specific droppables, but this will prevent overlap for now...
+  function can_drop ($where, cells) {
+    for (var c=0; c < cells; c++) {
+      if (!$where.is('.ui-droppable')) {
+        return false;
+      }
+      var rownum = $where.parent().prevAll('tr').length;
+      var colnum = $where.prevAll('td').length;
+      $where = $where.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
+    }
+    return true;
+  }
+
   var drag_cells = 0;
   var drag_hi;
+
+  // on drag stop (regardless of if it was dropped)
+  function clear_drag_hi () {
+    if ( drag_hi ) {
+      boxoff_do(drag_hi);
+      drag_hi = undefined;
+    }
+  }
+
+  // on drag over
   function boxon_drop(event, ui) {
     //var $this = $(what);
     var $this = $(this);
 
     drag_cells = ui.draggable.data('cells');
 
-    if ( drag_hi ) {
-      boxoff_do(drag_hi);
-    }
+    clear_drag_hi();
+
+    if (!can_drop($this, drag_cells)) return;
+
     drag_hi = $this;
 
     for ( var c=0; c < drag_cells; c++) {
@@ -88,6 +112,7 @@
 
   }
 
+  // clears highlighted box, used by clear_hi_drag (drag stop event)
   function boxoff_do(what) {
 
     var $this = what;
@@ -105,7 +130,12 @@
     }
   }
 
+  // drop event
   function reschedule_appointment( event, ui ) {
+
+    var $this = $(this);
+
+    if (!can_drop($this, ui.draggable.data('cells'))) return;
 
 %   #get the ticket number and appointment length (from the draggable object)
     var ticketid = ui.draggable.data('ticketid');
@@ -113,16 +143,16 @@
     var bgcolor  = ui.draggable.data('bgcolor');
 
 %   #and.. the new date and time, and username (from the droppable object)
-    var starts   = $(this).data('starts');
-    var username = $(this).data('username');
+    var starts   = $this.data('starts');
+    var username = $this.data('username');
 
     var due = parseInt(starts) + parseInt(length);
 
-    var n_epoch        = $(this).data('epoch');
-    var n_st_tod_row   = $(this).data('tod_row');
+    var n_epoch        = $this.data('epoch');
+    var n_st_tod_row   = $this.data('tod_row');
 
     var draggable = ui.draggable;
-    var droppable = $(this);
+    var droppable = $this;
     draggable.effect( "transfer", { to: droppable }, 420 );
 
 %   #tell the backend to reschedule it
@@ -163,9 +193,7 @@
 
 %       #maybe use that animation which shows the box from point A to B
 
-        if ( drag_hi ) {
-          boxoff_do(drag_hi);
-        }
+        clear_drag_hi();
         for ( var d=0; d < cells; d++) {
           var n_tod_row = parseInt(n_st_tod_row) + (d * <%$timestep%>);
           var n_td_id = 'td_' + n_epoch +
@@ -193,6 +221,7 @@
 %#              revert:      'invalid',
               revert: true,
               revertDuration: 0,
+              stop: clear_drag_hi,
             });
             $('#'+n_td_id).data('ticketid', ticketid );
             $('#'+n_td_id).data('length',   length );

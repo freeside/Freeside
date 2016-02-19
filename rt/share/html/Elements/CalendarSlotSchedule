@@ -158,6 +158,7 @@
 %#          revert:      'invalid',
           revert: true,
           revertDuration: 0,
+          stop: clear_drag_hi,
         });
         $('#<% $td_id %>').data('ticketid', <% $draggable_ticketid %>);
         $('#<% $td_id %>').data('length',   <% $draggable_length * 60 %>);
