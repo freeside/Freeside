@@ -444,7 +444,7 @@ sub void {
 
   unless (ref($reason) || !$reason) {
     $reason = FS::reason->new_or_existing(
-      'class'  => 'X',
+      'class'  => 'P',
       'type'   => 'Void payment',
       'reason' => $reason
     );
@@ -920,7 +920,7 @@ sub refund_to_unapply {
     'table'   => 'cust_pay_refund',
     'hashref' => { 'paynum' => $self->paynum },
     'addl_from' => 'LEFT JOIN cust_refund USING (refundnum)',
-    'extra_sql' => "AND (cust_refund.closed = '' OR cust_refund.closed IS NULL)",
+    'extra_sql' => "AND cust_refund.closed IS NULL AND cust_refund.source_paynum IS NULL",
   });
 }
 

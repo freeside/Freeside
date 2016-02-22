@@ -3061,6 +3061,7 @@ sub tables_hashref {
 	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',     'varchar',   'NULL', $char_d, '', '', 
         'closed',    'char', 'NULL', 1, '', '', 
+        'source_paynum', 'int', 'NULL', '', '', '', # link to cust_payby, to prevent unapply of gateway-generated refunds
         # credit card/EFT fields (formerly in paybatch)
         'gatewaynum',     'int', 'NULL', '', '', '', # payment_gateway FK
         'processor',  'varchar', 'NULL', $char_d, '', '', # module name
@@ -3082,6 +3083,10 @@ sub tables_hashref {
                           },
                           { columns    => [ 'gatewaynum' ],
                             table      => 'payment_gateway',
+                          },
+                          { columns    => [ 'source_paynum' ],
+                            table      => 'cust_pay',
+                            references => [ 'paynum' ],
                           },
                         ],
     },

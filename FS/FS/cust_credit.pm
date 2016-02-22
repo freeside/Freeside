@@ -1045,7 +1045,7 @@ sub refund_to_unapply {
     'table'   => 'cust_credit_refund',
     'hashref' => { 'crednum' => $self->crednum },
     'addl_from' => 'LEFT JOIN cust_refund USING (refundnum)',
-    'extra_sql' => "AND (cust_refund.closed = '' OR cust_refund.closed IS NULL)",
+    'extra_sql' => "AND cust_refund.closed IS NULL AND cust_refund.source_paynum IS NULL",
   });
 }
 
