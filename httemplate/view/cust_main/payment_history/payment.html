@@ -103,7 +103,7 @@ if ($unapplied > 0) {
     if ( $opt{total_unapplied_refunds} > 0 ) {
       $apply.= ' ('.
                include( '/elements/popup_link.html',
-                          'label'       => emt('apply to refund'),
+                          'label'       => emt('apply refund'),
                           'action'      => "${p}edit/cust_pay_refund.cgi?".
                                            $cust_pay->paynum,
                           'actionlabel' => emt('Apply payment to refund'),
@@ -204,20 +204,18 @@ $delete = areyousure_link("${p}misc/delete-cust_pay.cgi?".$cust_pay->paynum,
 
 my $unapply = '';
 if ($opt{'Unapply payment'} && !$cust_pay->closed) {
-  my $refund_to_unapply = $cust_pay->refund_to_unapply;
-  my $usepre = $refund_to_unapply && @cust_bill_pay;
   $unapply = areyousure_link("${p}misc/unapply-cust_pay.cgi?".$cust_pay->paynum,
                               emt('Are you sure you want to unapply this payment from invoices?'),
                               emt('Keep this payment, but dissociate it from the invoices it is currently applied against'),
-                              emt('unapply') . ($usepre ? '&nbsp;' . emt('invoices') : '')
+                              emt('unapply')
                             )
     if @cust_bill_pay;
   $unapply .= areyousure_link("${p}misc/unapply-cust_pay_refund.cgi?".$cust_pay->paynum,
                                emt('Are you sure you want to unapply this payment from refunds?'),
                                emt('Keep this payment, but dissociate it from the refunds it is currently applied to'),
-                               emt('unapply') . ($usepre ? '&nbsp;' . emt('refunds') : '')
+                               emt('unapply refunds')
                              )
-    if $refund_to_unapply;
+    if $cust_pay->refund_to_unapply;
 }
 
 </%init>

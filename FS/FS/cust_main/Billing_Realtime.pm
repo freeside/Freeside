@@ -1382,6 +1382,8 @@ sub realtime_refund_bop {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
+  return "No reason specified" unless $options{'reasonnum'} =~ /^\d+$/;
+
   my %content = ();
 
   ###
@@ -1665,6 +1667,7 @@ sub realtime_refund_bop {
   my $cust_refund = new FS::cust_refund ( {
     'custnum'  => $self->custnum,
     'paynum'   => $options{'paynum'},
+    'source_paynum' => $options{'paynum'},
     'refund'   => $amount,
     '_date'    => '',
     'payby'    => $bop_method2payby{$options{method}},
@@ -1678,6 +1681,7 @@ sub realtime_refund_bop {
   my $error = $cust_refund->insert;
   if ( $error ) {
     $cust_refund->paynum(''); #try again with no specific paynum
+    $cust_refund->source_paynum('');
     my $error2 = $cust_refund->insert;
     if ( $error2 ) {
       # gah, even with transactions.

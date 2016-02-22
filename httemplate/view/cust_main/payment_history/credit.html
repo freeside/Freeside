@@ -45,7 +45,7 @@ if (    scalar(@cust_credit_bill)   == 0
     if ( $opt{total_unapplied_refunds} > 0 ) {
       $apply.= ' ('.
                include( '/elements/popup_link.html',
-                          'label'    => emt('apply to refund'),
+                          'label'    => emt('apply refund'),
                           'action'   => "${p}edit/cust_credit_refund.cgi?".
                                         $cust_credit->crednum,
                           'actionlabel' => emt('Apply credit to refund'),
@@ -100,7 +100,7 @@ if (    scalar(@cust_credit_bill)   == 0
       if ( $opt{total_unapplied_refunds} > 0 ) {
         $apply.= ' ('.
                  include( '/elements/popup_link.html',
-                            'label'       => emt('apply to refund'),
+                            'label'       => emt('apply refund'),
                             'action'      => "${p}edit/cust_credit_refund.cgi?".
                                              $cust_credit->crednum,
                             'actionlabel' => emt('Apply credit to refund'),
@@ -150,20 +150,18 @@ $delete = areyousure_link("${p}misc/delete-cust_credit.cgi?".$cust_credit->credn
 my $unapply = '';
 
 if ($opt{'Unapply credit'} && !$cust_credit->closed) {
-  my $refund_to_unapply = $cust_credit->refund_to_unapply;
-  my $usepre = $refund_to_unapply && @cust_credit_bill;
   $unapply = areyousure_link("${p}misc/unapply-cust_credit.cgi?".$cust_credit->crednum,
                               emt('Are you sure you want to unapply this credit from invoices?'),
                               emt('Keep this credit, but dissociate it from the invoices it is currently applied against'),
-                              emt('unapply') . ($usepre ? '&nbsp;' . emt('invoices') : '')
+                              emt('unapply')
                             )
     if @cust_credit_bill;
   $unapply .= areyousure_link("${p}misc/unapply-cust_credit_refund.cgi?".$cust_credit->crednum,
                                emt('Are you sure you want to unapply this credit from refunds?'),
                                emt('Keep this credit, but dissociate it from the refunds it is currently applied to'),
-                               emt('unapply') . ($usepre ? '&nbsp;' . emt('refunds') : '')
+                               emt('unapply refunds')
                              )
-    if $refund_to_unapply;
+    if $cust_credit->refund_to_unapply;
 }
 
 my $reason = $cust_credit->reason;

@@ -158,6 +158,7 @@ sub insert {
       $self->set('reasonnum', $reason->get('reasonnum'));
       $self->set('reason', '');
     }
+    $self->set('reasonnum', $reason->reasonnum);
   }
 
   if ( $self->crednum ) {
@@ -306,6 +307,7 @@ sub check {
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_foreign_keyn('source_paynum', 'cust_pay', 'paynum')
   ;
   return $error if $error;
 
