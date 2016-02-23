@@ -5537,6 +5537,7 @@ sub tables_hashref {
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ], [ 'cdrbatchnum' ],
                    [ 'src_ip_addr' ], [ 'dst_ip_addr' ], [ 'dst_term' ],
+                   [ 'detailnum' ],
                  ],
       #no FKs on cdr table... choosing not to throw errors no matter what's
       # thrown in here.  better to have the data.
