@@ -158,7 +158,6 @@ sub insert {
       $self->set('reasonnum', $reason->get('reasonnum'));
       $self->set('reason', '');
     }
-    $self->set('reasonnum', $reason->reasonnum);
   }
 
   if ( $self->crednum ) {

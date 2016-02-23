@@ -1382,8 +1382,6 @@ sub realtime_refund_bop {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
-  return "No reason specified" unless $options{'reasonnum'} =~ /^\d+$/;
-
   my %content = ();
 
   ###
