@@ -137,8 +137,17 @@ sub build_item {
   my @items;
   my $recur_without_usage = $cust_bill_pkg->recur;
 
+  # use the _configured_ tax location as 'Zipcode' (respecting 
+  # tax-ship_address and tax-pkg_address configs)
   my $location = $cust_bill_pkg->tax_location;
-  my ($svc_zip, $svc_plus4) = split('-', $location->zip);
+  my ($zip, $plus4) = split('-', $location->zip);
+
+  # and the _real_ location as 'P2PZipcode'
+  my $svc_location = $location;
+  if ( $cust_bill_pkg->pkgnum ) {
+    $svc_location = $cust_bill_pkg->cust_pkg->cust_location;
+  }
+  my ($svc_zip, $svc_plus4) = split('-', $svc_location->zip);
 
   my $startdate =
     DateTime->from_epoch( epoch => $cust_bill->_date )->strftime('%m-%d-%Y');
@@ -150,8 +159,8 @@ sub build_item {
     'OrigNumber'      => '',
     'TermNumber'      => '',
     'BillToNumber'    => '',
-    'Zipcode'         => $self->{bill_zip},
-    'Plus4'           => ($self->{bill_plus4} ||= '0000'),
+    'Zipcode'         => $zip,
+    'Plus4'           => ($plus4 ||= '0000'),
     'P2PZipcode'      => $svc_zip,
     'P2PPlus4'        => ($svc_plus4 ||= '0000'),
     # we don't support Order Placement/Approval zip codes
@@ -204,14 +213,6 @@ sub build_item {
     while ( my $cdr = $cdrs->fetch ) {
       my $calldate =
         DateTime->from_epoch( epoch => $cdr->startdate )->strftime('%m-%d-%Y');
-      # determine the tax situs rule; it's different (probably more accurate) 
-      # if the call has PSTN phone numbers at both ends
-      my $tsr = $TSR_CALL_OTHER;
-      if ( $cdr->charged_party =~ /^\d{10}$/ and
-           $cdr->src           =~ /^\d{10}$/ and
-           $cdr->dst           =~ /^\d{10}$/ ) {
-        $tsr = $TSR_CALL_NPANXX;
-      }
       my %hash = (
         %base_item,
         'LineNumber'      => 'C' . $cdr->acctid,
@@ -222,9 +223,21 @@ sub build_item {
         'Revenue'         => $cdr->rated_price, # 4 decimal places
         'Units'           => 0, # right?
         'CallDuration'    => $cdr->duration,
-        'TaxSitusRule'    => $tsr,
+        'TaxSitusRule'    => $TSR_CALL_OTHER,
         'TransTypeCode'   => $taxproduct,
       );
+      # determine the tax situs rule; it's different (probably more accurate) 
+      # if the call has PSTN phone numbers at both ends
+      if ( $cdr->charged_party =~ /^\d{10}$/ and
+           $cdr->src           =~ /^\d{10}$/ and
+           $cdr->dst           =~ /^\d{10}$/ and
+           !$cdr->is_tollfree ) {
+        $hash{TaxSitusRule} = $TSR_CALL_NPANXX;
+        $hash{OrigNumber}   = $cdr->src;
+        $hash{TermNumber}   = $cdr->dst;
+        $hash{BillToNumber} = $cdr->charged_party;
+      }
+
       push @items, \%hash;
 
     } # while ($cdrs->fetch)
