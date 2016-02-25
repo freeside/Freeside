@@ -28,6 +28,7 @@ use Date::Format;
 #use Date::Manip;
 use File::Temp; #qw( tempfile );
 use Business::CreditCard 0.28;
+use List::Util qw(min);
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Cursor;
@@ -2701,63 +2702,33 @@ sub payment_info {
 
 =item paydate_epoch
 
-Returns the exact time in seconds corresponding to the payment method 
-expiration date.  For CARD/DCRD customers this is the end of the month;
-for others (COMP is the only other payby that uses paydate) it's the start.
-Returns 0 if the paydate is empty or set to the far future.
+Returns the next payment expiration date for this customer. If they have no
+payment methods that will expire, returns 0.
 
 =cut
 
-#XXX i need to be updated for 4.x+
 sub paydate_epoch {
   my $self = shift;
-  my ($month, $year) = $self->paydate_monthyear;
-  return 0 if !$year or $year >= 2037;
-  if ( $self->payby eq 'CARD' or $self->payby eq 'DCRD' ) {
-    $month++;
-    if ( $month == 13 ) {
-      $month = 1;
-      $year++;
-    }
-    return timelocal(0,0,0,1,$month-1,$year) - 1;
-  }
-  else {
-    return timelocal(0,0,0,1,$month-1,$year);
-  }
+  # filter out the ones that individually return 0, but then return 0 if
+  # there are no results
+  my @epochs = grep { $_ > 0 } map { $_->paydate_epoch } $self->cust_payby;
+  min( @epochs ) || 0;
 }
 
 =item paydate_epoch_sql
 
-Class method.  Returns an SQL expression to obtain the payment expiration date
-as a number of seconds.
+Returns an SQL expression to get the next payment expiration date for a
+customer. Returns 2143260000 (2037-12-01) if there are no payment expiration
+dates, so that it's safe to test for "will it expire before date X" for any
+date up to then.
 
 =cut
 
-# XXX i need to be updated for 4.x+
-# Special expiration date behavior for non-CARD/DCRD customers has been 
-# carefully preserved.  Do we really use that?
 sub paydate_epoch_sql {
   my $class = shift;
-  my $table = shift || 'cust_main';
-  my ($case1, $case2);
-  if ( driver_name eq 'Pg' ) {
-    $case1 = "EXTRACT( EPOCH FROM CAST( $table.paydate AS TIMESTAMP ) + INTERVAL '1 month') - 1";
-    $case2 = "EXTRACT( EPOCH FROM CAST( $table.paydate AS TIMESTAMP ) )";
-  }
-  elsif ( lc(driver_name) eq 'mysql' ) {
-    $case1 = "UNIX_TIMESTAMP( DATE_ADD( CAST( $table.paydate AS DATETIME ), INTERVAL 1 month ) ) - 1";
-    $case2 = "UNIX_TIMESTAMP( CAST( $table.paydate AS DATETIME ) )";
-  }
-  else { return '' }
-  return "CASE WHEN $table.payby IN('CARD','DCRD') 
-  THEN ($case1)
-  ELSE ($case2)
-  END"
+  my $paydate = FS::cust_payby->paydate_epoch_sql;
+  "(SELECT COALESCE(MIN($paydate), 2143260000) FROM cust_payby WHERE cust_payby.custnum = cust_main.custnum)";
 }
-
-=item tax_exemption TAXNAME
-
-=cut
 
 sub tax_exemption {
   my( $self, $taxname ) = @_;
