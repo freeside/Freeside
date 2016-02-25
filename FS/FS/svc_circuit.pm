@@ -221,9 +221,9 @@ sub label {
 sub search_sql {
   my ($class, $string) = @_;
   my @where = ();
-  push @where, 'LOWER(svc_circuit.circuit_id) = ' . dbh->quote($string);
-  push @where, 'LOWER(circuit_provider.provider) = ' . dbh->quote($string);
-  push @where, 'LOWER(circuit_type.typename) = ' . dbh->quote($string);
+  push @where, 'LOWER(svc_circuit.circuit_id) = LOWER(' . dbh->quote($string) . ')';
+  push @where, 'LOWER(circuit_provider.provider) = LOWER(' . dbh->quote($string) . ')';
+  push @where, 'LOWER(circuit_type.typename) = LOWER(' . dbh->quote($string) . ')';
   '(' . join(' OR ', @where) . ')';
 }
 
