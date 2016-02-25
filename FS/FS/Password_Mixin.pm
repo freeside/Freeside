@@ -214,6 +214,26 @@ sub insert_password_history {
 
 }
 
+=item delete_password_history;
+
+Removes all password history records attached to this object, in preparation
+to delete the object.
+
+=cut
+
+sub delete_password_history {
+  my $self = shift;
+  my @records = qsearch('password_history', {
+      $self->password_history_key => $self->get($self->primary_key)
+  });
+  my $error = '';
+  foreach (@records) {
+    $error ||= $_->delete;
+  }
+  return $error . ' (clearing password history)' if $error;
+  '';
+}
+
 =item _blowfishcrypt PASSWORD
 
 For internal use: takes PASSWORD and returns a new

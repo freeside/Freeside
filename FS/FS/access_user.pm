@@ -173,7 +173,8 @@ sub delete {
   my $dbh = dbh;
 
   my $error =
-       $self->SUPER::delete(@_)
+       $self->delete_password_history
+    || $self->SUPER::delete(@_)
     || $self->htpasswd_kludge('-D')
   ;
 

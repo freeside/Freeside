@@ -233,7 +233,8 @@ sub delete {
     }
   }
 
-  my $error = $self->SUPER::delete;
+  my $error = $self->delete_password_history
+           || $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
