@@ -24,7 +24,7 @@ my $pkgpart = delete($opt{pkgpart});
 my %pkg_options;
 if ($pkgpart) {
   my $part_pkg = FS::part_pkg->by_key($pkgpart);
-  my %pkg_options = $part_pkg->options;
+  %pkg_options = $part_pkg->options;
   $pkg_options{'usage_taxproductnum_'} = $part_pkg->taxproductnum;
 }
 
