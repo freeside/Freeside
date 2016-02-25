@@ -129,9 +129,13 @@ specified invoice.  If the customer has exactly one open invoice, that
 invoice number will be assumed.  If you don't specify an I<invnum> you might 
 want to call the B<apply_payments> method or set the I<apply> option.
 
+I<no_invnum> can be set to true to prevent that default invnum from being set.
+
 I<apply> can be set to true to run B<apply_payments_and_credits> on success.
 
-I<no_auto_apply> can be set to true to prevent resulting payment from being automatically applied.
+I<no_auto_apply> can be set to true to set that flag on the resulting payment
+(prevents payment from being applied by B<apply_payments> or B<apply_payments_and_credits>,
+but will still be applied if I<invnum> exists...use with I<no_invnum> for intended effect.)
 
 I<quiet> can be set true to surpress email decline notices.
 
@@ -245,7 +249,7 @@ sub _bop_defaults {
   }
 
   # Default invoice number if the customer has exactly one open invoice.
-  if( ! $options->{'invnum'} ) {
+  unless ( $options->{'invnum'} || $options->{'no_invnum'} ) {
     $options->{'invnum'} = '';
     my @open = $self->open_cust_bill;
     $options->{'invnum'} = $open[0]->invnum if scalar(@open) == 1;

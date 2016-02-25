@@ -219,6 +219,7 @@ if ( $cgi->param('batch') ) {
     'paynum_ref' => \$paynum,
     'discount_term' => $discount_term,
     'no_auto_apply' => ($cgi->param('apply') eq 'never') ? 'Y' : '',
+    'no_invnum'     => 1,
     map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;
