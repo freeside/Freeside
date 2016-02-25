@@ -204,11 +204,13 @@
   </TD>
 </TR>
 
+% my $disallow_no_auto_apply = 0;
 % if ( $conf->exists("batch-enable")
 %      || grep $payby eq $_, $conf->config('batch-enable_payby')
 %    ) {
 %
 %     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
+%       $disallow_no_auto_apply = 1;
 
           <INPUT TYPE="hidden" NAME="batch" VALUE="1">
 
@@ -216,7 +218,7 @@
 
           <TR>
             <TD COLSPAN=2>
-              <INPUT TYPE="checkbox" NAME="batch" VALUE="1">
+              <INPUT TYPE="checkbox" NAME="batch" VALUE="1" ID="batch_checkbox" ONCHANGE="change_batch_checkbox()">
               <% mt('Add to current batch') |h %> 
             </TD>
           </TR>
@@ -230,6 +232,35 @@
     <% mt("Charge future payments to this [_1] automatically",$type{$payby}) |h %> 
   </TD>
 </TR>
+
+% unless ($disallow_no_auto_apply) {
+%   # false laziness with edit/cust_pay.cgi
+
+<TR ID="apply_box_row">
+  <TD COLSPAN=2>
+    <% mt('Auto-apply to invoices') |h %>
+    <SELECT NAME="apply" ID="apply_box">
+      <OPTION VALUE="yes" SELECTED><% mt('yes') |h %></OPTION> 
+      <OPTION VALUE=""><% mt('not now') |h %></OPTION>
+      <OPTION VALUE="never"><% mt('never') |h %></OPTION>
+    </SELECT>
+  </TD>
+</TR>
+
+% # this can go away if no_auto_apply handling gets added to batch payment processing
+<SCRIPT>
+function change_batch_checkbox () {
+  if (document.getElementById('batch_checkbox').checked) {
+    document.getElementById('apply_box').disabled = true;
+    document.getElementById('apply_box_row').style.display = 'none';
+  } else {
+    document.getElementById('apply_box').disabled = false;
+    document.getElementById('apply_box_row').style.display = '';
+  }
+}
+</SCRIPT>
+
+% }
 
 </TABLE>
 
