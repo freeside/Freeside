@@ -847,7 +847,8 @@ sub delete {
     }
   }
 
-  my $error = $self->SUPER::delete; # usergroup here
+  my $error = $self->delete_password_history
+           || $self->SUPER::delete; # usergroup here
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

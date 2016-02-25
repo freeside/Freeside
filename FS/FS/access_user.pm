@@ -161,7 +161,8 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::delete(@_);
+  my $error = $self->delete_password_history
+           || $self->SUPER::delete(@_);
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
