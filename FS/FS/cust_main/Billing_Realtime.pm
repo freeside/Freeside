@@ -154,7 +154,9 @@ specified invoice.  If the customer has exactly one open invoice, that
 invoice number will be assumed.  If you don't specify an I<invnum> you might 
 want to call the B<apply_payments> method or set the I<apply> option.
 
-I<apply> can be set to true to apply a resulting payment.
+I<apply> can be set to true to run B<apply_payments_and_credits> on success.
+
+I<no_auto_apply> can be set to true to prevent resulting payment from being automatically applied.
 
 I<quiet> can be set true to surpress email decline notices.
 
@@ -903,7 +905,7 @@ sub _realtime_bop_result {
        'processor'      => $payment_gateway->gateway_module,
        'auth'           => $transaction->authorization,
        'order_number'   => $order_number || '',
-
+       'no_auto_apply'  => $options{'no_auto_apply'} ? 'Y' : '',
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )
