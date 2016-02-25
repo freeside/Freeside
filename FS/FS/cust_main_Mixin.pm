@@ -313,8 +313,6 @@ in HASHREF.  Valid parameters are:
 
 =item status
 
-=item payby
-
 =back
 
 =cut
@@ -337,15 +335,6 @@ sub cust_search_sql {
   if ( grep { $param->{'status'} eq $_ } FS::cust_main->statuses() ) {
     my $method = $param->{'status'}. '_sql';
     push @search, $class->$method();
-  }
-
-  #payby
-  my @payby = ref($param->{'payby'})
-                ? @{ $param->{'payby'} }
-                : split(',', $param->{'payby'});
-  @payby = grep /^([A-Z]{4})$/, @payby;
-  if ( @payby ) {
-    push @search, 'cust_main.payby IN ('. join(',', map "'$_'", @payby). ')';
   }
 
   #here is the agent virtualization
@@ -556,9 +545,6 @@ sub process_email_search_result {
 
   $param->{'search'} = thaw(decode_base64($param->{'search'}))
     or die "process_email_search_result requires search params.\n";
-
-#  $param->{'payby'} = [ split(/\0/, $param->{'payby'}) ]
-#    unless ref($param->{'payby'});
 
   my $table = $param->{'table'} 
     or die "process_email_search_result requires table.\n";
