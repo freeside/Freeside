@@ -231,6 +231,7 @@ if ( $cgi->param('batch') ) {
     'paycvv'     => $paycvv,
     'paynum_ref' => \$paynum,
     'discount_term' => $discount_term,
+    'no_auto_apply' => ($cgi->param('apply') eq 'never') ? 'Y' : '',
     map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;
@@ -251,7 +252,7 @@ if ( $cgi->param('batch') ) {
 
   }
 
-  $cust_main->apply_payments;
+  $cust_main->apply_payments if ($cgi->param('apply') eq 'yes');
 
 }
 

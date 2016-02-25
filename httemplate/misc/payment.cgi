@@ -33,6 +33,57 @@
     &>
 % }
 
+% my $disallow_no_auto_apply = 0;
+% if ( $conf->exists("batch-enable")
+%      || grep $payby eq $_, $conf->config('batch-enable_payby')
+%    ) {
+%
+%     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
+%       $disallow_no_auto_apply = 1;
+
+          <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+
+%     } else {
+
+          <TR>
+            <TH ALIGN="right">&nbsp;&nbsp;&nbsp;<% mt('Add to current batch') |h %></TH>
+            <TD>
+              <INPUT TYPE="checkbox" NAME="batch" VALUE="1" ID="batch_checkbox" ONCHANGE="change_batch_checkbox()">
+            </TD>
+          </TR>
+
+%     }
+% }
+
+% unless ($disallow_no_auto_apply) {
+%   # false laziness with edit/cust_pay.cgi
+
+<TR ID="apply_box_row">
+  <TH ALIGN="right"><% mt('Auto-apply to invoices') |h %></TH>
+  <TD COLSPAN=2>
+    <SELECT NAME="apply" ID="apply_box">
+      <OPTION VALUE="yes" SELECTED><% mt('yes') |h %></OPTION> 
+      <OPTION VALUE=""><% mt('not now') |h %></OPTION>
+      <OPTION VALUE="never"><% mt('never') |h %></OPTION>
+    </SELECT>
+  </TD>
+</TR>
+
+% # this can go away if no_auto_apply handling gets added to batch payment processing
+<SCRIPT>
+function change_batch_checkbox () {
+  if (document.getElementById('batch_checkbox').checked) {
+    document.getElementById('apply_box').disabled = true;
+    document.getElementById('apply_box_row').style.display = 'none';
+  } else {
+    document.getElementById('apply_box').disabled = false;
+    document.getElementById('apply_box_row').style.display = '';
+  }
+}
+</SCRIPT>
+
+% }
+
 <SCRIPT TYPE="text/javascript">
   function cust_payby_changed (what) {
     var custpaybynum = what.options[what.selectedIndex].value
@@ -233,26 +284,6 @@
     <% mt('Remember this information') |h %>
   </TD>
 </TR>
-
-% if ( $conf->exists("batch-enable")
-%      || grep $payby eq $_, $conf->config('batch-enable_payby')
-%    ) {
-%
-%     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
-
-          <INPUT TYPE="hidden" NAME="batch" VALUE="1">
-
-%     } else {
-
-          <TR>
-            <TD COLSPAN=2>
-              <INPUT TYPE="checkbox" NAME="batch" VALUE="1">
-              <% mt('Add to current batch') |h %> 
-            </TD>
-          </TR>
-
-%     }
-% }
 
 <TR>
   <TD COLSPAN=8>
