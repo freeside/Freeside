@@ -60,7 +60,7 @@
 
 <TR ID="apply_box_row">
   <TH ALIGN="right"><% mt('Auto-apply to invoices') |h %></TH>
-  <TD COLSPAN=2>
+  <TD>
     <SELECT NAME="apply" ID="apply_box">
       <OPTION VALUE="yes" SELECTED><% mt('yes') |h %></OPTION> 
       <OPTION VALUE=""><% mt('not now') |h %></OPTION>
