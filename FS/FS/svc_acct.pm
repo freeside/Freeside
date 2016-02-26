@@ -847,6 +847,17 @@ sub delete {
     }
   }
 
+  foreach my $svc_phone (
+    qsearch( 'svc_phone', { 'forward_svcnum' => $self->svcnum })
+  ) {
+    $svc_phone->set('forward_svcnum', '');
+    my $error = $svc_phone->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->delete_password_history
            || $self->SUPER::delete; # usergroup here
   if ( $error ) {

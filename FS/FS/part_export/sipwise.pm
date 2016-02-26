@@ -5,7 +5,6 @@ use strict;
 
 use FS::Record qw(qsearch qsearchs dbh);
 use Tie::IxHash;
-use Carp;
 use LWP::UserAgent;
 use URI;
 use Cpanel::JSON::XS;
@@ -13,6 +12,7 @@ use HTTP::Request::Common qw(GET POST PUT DELETE);
 use FS::Misc::DateTime qw(parse_datetime);
 use DateTime;
 use Number::Phone;
+use Try::Tiny;
 
 our $me = '[sipwise]';
 our $DEBUG = 2;
@@ -34,7 +34,7 @@ tie my %options, 'Tie::IxHash',
 
 tie my %roles, 'Tie::IxHash',
   'subscriber'    => {  label     => 'Subscriber',
-                        svcdb     => 'svc_phone',
+                        svcdb     => 'svc_acct',
                         multiple  => 1,
                      },
   'did'           => {  label     => 'DID',
@@ -44,7 +44,7 @@ tie my %roles, 'Tie::IxHash',
 ;
 
 our %info = (
-  'svc'      => [qw( svc_phone )],
+  'svc'      => [qw( svc_acct svc_phone )],
   'desc'     => 'Provision to a Sipwise sip:provider server',
   'options'  => \%options,
   'roles'    => \%roles,
@@ -52,12 +52,12 @@ our %info = (
 <P>Export to a <b>sip:provider</b> server.</P>
 <P>This requires two service definitions to be configured on the same package:
   <OL>
-    <LI>A phone service for a SIP client account ("subscriber"). The
-    <i>phonenum</i> will be the SIP username. The <i>domsvc</i> should point
+    <LI>An account service for a SIP client account ("subscriber"). The
+    <i>username</i> will be the SIP username. The <i>domsvc</i> should point
     to a domain service to use as the SIP domain name.</LI>
     <LI>A phone service for a DID. The <i>phonenum</i> here will be a PSTN
-    number. The <i>forwarddst</i> field should be set to the SIP username
-    of the subscriber who should receive calls directed to this number.</LI>
+    number. The <i>forward_svcnum</i> field should be set to the account that
+    will receive calls at this number.
   </OL>
 </P>
 <P>Export options:
@@ -68,63 +68,61 @@ END
 sub export_insert {
   my($self, $svc_x) = (shift, shift);
 
-  local $@;
+  my $error;
   my $role = $self->svc_role($svc_x);
   if ( $role eq 'subscriber' ) {
 
-    eval { $self->insert_subscriber($svc_x) };
-    return "$me $@" if $@;
+    try { $self->insert_subscriber($svc_x) }
+    catch { $error = $_ };
 
   } elsif ( $role eq 'did' ) {
 
-    # only export the DID if it's set to forward to somewhere...
-    return if $svc_x->forwarddst eq '';
-    my $subscriber = qsearchs('svc_phone', { phonenum => $svc_x->forwarddst });
-    # and there is a service for the forwarding destination...
-    return if !$subscriber;
-    # and that service is managed by this export.
-    return if !$self->svc_role($subscriber);
-
-    eval { $self->replace_subscriber($subscriber) };
-    return "$me $@" if $@;
+    try { $self->export_did($svc_x) }
+    catch { $error = $_ };
 
   }
+  return "$me $error" if $error;
   '';
 }
 
 sub export_replace {
   my ($self, $svc_new, $svc_old) = @_;
   my $role = $self->svc_role($svc_new);
-  local $@;
+
+  my $error;
   if ( $role eq 'subscriber' ) {
-    eval { $self->replace_subscriber($svc_new, $svc_old) };
+
+    try { $self->replace_subscriber($svc_new, $svc_old) }
+    catch { $error = $_ };
+
   } elsif ( $role eq 'did' ) {
-    eval { $self->replace_did($svc_new, $svc_old) };
+
+    try { $self->export_did($svc_new, $svc_old) }
+    catch { $error = $_ };
+
   }
-  return "$me $@" if $@;
+  return "$me $error" if $error;
   '';
 }
 
 sub export_delete {
   my ($self, $svc_x) = (shift, shift);
   my $role = $self->svc_role($svc_x);
-  local $@;
+  my $error;
+
   if ( $role eq 'subscriber' ) {
 
     # no need to remove DIDs from it, just drop the subscriber record
-    eval { $self->delete_subscriber($svc_x) };
+    try { $self->delete_subscriber($svc_x) }
+    catch { $error = $_ };
 
   } elsif ( $role eq 'did' ) {
 
-    return if !$svc_x->forwarddst;
-    my $subscriber = qsearchs('svc_phone', { phonenum => $svc_x->forwarddst });
-    return if !$subscriber;
-    return if !$self->svc_role($subscriber);
- 
-    eval { $self->delete_did($svc_x, $subscriber) };
+    try { $self->export_did($svc_x) }
+    catch { $error = $_ };
 
   }
-  return "$me $@" if $@;
+  return "$me $error" if $error;
   '';
 }
 
@@ -194,7 +192,7 @@ sub find_or_create_customer {
     ]
   );
   if (!$billing_profile) {
-    croak "can't find billing profile '". $self->option('billing_profile') . "'";
+    die "can't find billing profile '". $self->option('billing_profile') . "'\n";
   }
   my $bpid = $billing_profile->{id};
 
@@ -255,6 +253,41 @@ sub find_or_create_domain {
   );
 }
 
+########
+# DIDS #
+########
+
+=item acct_for_did SVC_PHONE
+
+Returns the subscriber svc_acct linked to SVC_PHONE.
+
+=cut
+
+sub acct_for_did {
+  my $self = shift;
+  my $svc_phone = shift;
+  my $svcnum = $svc_phone->forward_svcnum or return;
+  my $svc_acct = FS::svc_acct->by_key($svcnum) or return;
+  $self->svc_role($svc_acct) eq 'subscriber' or return;
+  $svc_acct;
+}
+
+=item export_did NEW, OLD
+
+Refreshes the subscriber information for the service the DID was linked to
+previously, and the one it's linked to now.
+
+=cut
+
+sub export_did {
+  my $self = shift;
+  my ($new, $old) = @_;
+  if ( $old and $new->forward_svcnum ne $old->forward_svcnum ) {
+    $self->replace_subscriber( $self->acct_for_did($old) );
+  }
+  $self->replace_subscriber( $self->acct_for_did($new) );
+}
+
 ###############
 # SUBSCRIBERS #
 ###############
@@ -270,7 +303,7 @@ sub get_subscriber {
   my $svc = shift;
 
   my $svcnum = $svc->svcnum;
-  my $svcid = "svc_phone#$svcnum";
+  my $svcid = "svc#$svcnum";
 
   my $pkgnum = $svc->cust_svc->pkgnum;
   my $custid = "cust_pkg#$pkgnum";
@@ -291,12 +324,11 @@ sub did_numbers_for_svc {
   my $self = shift;
   my $svc = shift;
   my @numbers;
-  my @possible_dids = qsearch({
+  my @dids = qsearch({
       'table'     => 'svc_phone',
-      'hashref'   => { 'forwarddst' => $svc->phonenum },
-      'order_by'  => ' ORDER BY phonenum'
+      'hashref'   => { 'forward_svcnum' => $svc->svcnum }
   });
-  foreach my $did (@possible_dids) {
+  foreach my $did (@dids) {
     # only include them if they're interesting to this export
     if ( $self->svc_role($did) eq 'did' ) {
       my $phonenum;
@@ -308,7 +340,7 @@ sub did_numbers_for_svc {
         $phonenum = Number::Phone->new($country, $did->phonenum);
       }
       if (!$phonenum) {
-        croak "Can't process phonenum ".$did->countrycode . $did->phonenum;
+        die "Can't process phonenum ".$did->countrycode . $did->phonenum . "\n";
       }
       push @numbers,
         { 'cc' => $phonenum->country_code,
@@ -325,7 +357,7 @@ sub insert_subscriber {
   my $svc = shift;
 
   my $cust = $self->find_or_create_customer($svc);
-  my $svcid = "svc_phone#" . $svc->svcnum;
+  my $svcid = "svc#" . $svc->svcnum;
   my $status = $svc->cust_svc->cust_pkg->susp ? 'locked' : 'active';
   my $domain = $self->find_or_create_domain($svc->domain);
 
@@ -336,14 +368,13 @@ sub insert_subscriber {
     {
       'alias_numbers'   => \@numbers,
       'customer_id'     => $cust->{id},
-      'display_name'    => $svc->phone_name,
+      'display_name'    => $svc->finger,
       'domain_id'       => $domain->{id},
-      'email'           => $svc->email,
       'external_id'     => $svcid,
-      'password'        => $svc->sip_password,
+      'password'        => $svc->_password,
       'primary_number'  => $first_number,
       'status'          => $status,
-      'username'        => $svc->phonenum,
+      'username'        => $svc->username,
     }
   );
 }
@@ -351,8 +382,8 @@ sub insert_subscriber {
 sub replace_subscriber {
   my $self = shift;
   my $svc = shift;
-  my $old = shift;
-  my $svcid = "svc_phone#" . $svc->svcnum;
+  my $old = shift || $svc->replace_old;
+  my $svcid = "svc#" . $svc->svcnum;
 
   my $cust = $self->find_or_create_customer($svc);
   my $status = $svc->cust_svc->cust_pkg->susp ? 'locked' : 'active';
@@ -365,7 +396,7 @@ sub replace_subscriber {
 
   if ( $subscriber ) {
     my $id = $subscriber->{id};
-    if ( $svc->phonenum ne $old->phonenum ) {
+    if ( $svc->username ne $old->username ) {
       # have to delete and recreate
       $self->api_delete("subscribers/$id");
       $self->insert_subscriber($svc);
@@ -374,14 +405,14 @@ sub replace_subscriber {
         {
           'alias_numbers'   => \@numbers,
           'customer_id'     => $cust->{id},
-          'display_name'    => $svc->phone_name,
+          'display_name'    => $svc->finger,
           'domain_id'       => $domain->{id},
           'email'           => $svc->email,
           'external_id'     => $svcid,
-          'password'        => $svc->sip_password,
+          'password'        => $svc->_password,
           'primary_number'  => $first_number,
           'status'          => $status,
-          'username'        => $svc->phonenum,
+          'username'        => $svc->username,
         }
       );
     }
@@ -394,7 +425,7 @@ sub replace_subscriber {
 sub delete_subscriber {
   my $self = shift;
   my $svc = shift;
-  my $svcid = "svc_phone#" . $svc->svcnum;
+  my $svcid = "svc#" . $svc->svcnum;
   my $pkgnum = $svc->cust_svc->pkgnum;
   my $custid = "cust_pkg#$pkgnum";
 
@@ -490,7 +521,7 @@ sub api_create {
   if ( $result->{location} ) {
     return $self->api_request('GET', $result->{location});
   } else {
-    croak $result->{message};
+    die $result->{message} . "\n";
   }
 }
 
@@ -508,7 +539,7 @@ sub api_update {
   my ($endpoint, $content) = @_;
   my $result = $self->api_request('PUT', $endpoint, $content);
   if ( $result->{message} ) {
-    croak $result->{message};
+    die $result->{message} . "\n";
   }
   return;
 }
@@ -529,7 +560,7 @@ sub api_delete {
     warn "$me api_delete $endpoint: does not exist\n";
     return;
   } elsif ( $result->{message} ) {
-    croak $result->{message};
+    die $result->{message} . "\n";
   }
   return;
 }
@@ -591,7 +622,7 @@ sub api_request {
     if ( $@ ) {
       # then it can't be parsed; probably a low-level error of some kind.
       warn "$me Parse error.\n".$response->content."\n\n";
-      croak $response->content;
+      die "$me Parse error:".$response->content . "\n";
     }
   }
   if ( $response->header('Location') ) {
