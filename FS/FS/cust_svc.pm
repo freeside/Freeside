@@ -601,7 +601,11 @@ link_type.
 sub part_svc_link {
   my $self = shift;
   my $agentnum = $self->pkgnum ? $self->cust_pkg->cust_main->agentnum : '';
-  FS::part_svc_link->by_agentnum($agentnum, src_svcpart=>$self->svcpart, @_);
+  FS::part_svc_link->by_agentnum($agentnum,
+    src_svcpart=>$self->svcpart,
+    disabled   => '',
+    @_
+  );
 }
 
 =item display_svcnum 
