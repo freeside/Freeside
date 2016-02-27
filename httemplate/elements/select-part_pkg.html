@@ -9,6 +9,8 @@ Example:
   
     #opt
     'part_pkg'   => \@records,
+    'showdisabled' => 1, #defaults to 0, shows disabled if true
+    'toggle_disabled' => 1, #implies showdisabled, adds js to toggle display of disabled
 
     #select-table.html options
   )
@@ -23,14 +25,53 @@ Example:
      'empty_label'    => 'Select package', #should this be the default?
      'label_callback' => $opt{'label_callback'} || sub { shift->pkg_comment_only },
      'hashref'        => \%hash,
+     $opt{'toggle_disabled'} ? (
+       'extra_option_attributes' => [ 'disabled' ],
+       'hidden_sub' => sub { my $rec = shift; $rec->disabled; },
+     ) : (),
      %opt,
 &>
+
+% if ($opt{'toggle_disabled'}) {
+%   unless ($toggle_disabled_init) {
+%     $toggle_disabled_init = 1;
+
+<SCRIPT>
+function toggle_disabled (id, disabled_on) {
+  var selectbox = document.getElementById(id);
+  for (var i = 0; i < selectbox.length; i++) {
+    var optionbox = selectbox.options[i];
+    if (optionbox.getAttribute('data-disabled')) {
+      optionbox.hidden = (disabled_on || optionbox.selected) ? false : true;
+    }
+  }
+  var switchlink = document.getElementById(id+'_switch');
+  switchlink.innerHTML = disabled_on ? '<% emt("hide disabled packages") %>' : '<% emt("show disabled packages") %>';
+  switchlink.onclick = function () { toggle_disabled(id, disabled_on ? 0 : 1) };
+}
+</SCRIPT>
+
+%   } # unless $toggle_disabled_init
+
+<BR><A 
+  HREF="javascript:void(0)"
+  STYLE="font-size: smaller"
+  ONCLICK="toggle_disabled('<% $opt{'id'} %>',1)"
+  ID="<% $opt{'id'} %>_switch"><% emt("show disabled packages") %></A>
+
+% } # if $opt{'toggle_disabled'}
+
+<%shared>
+my $toggle_disabled_init = 0;
+</%shared>
 <%init>
  
 my( %opt ) = @_;
 
 $opt{'records'} = delete $opt{'part_pkg'}
   if $opt{'part_pkg'};
+
+$opt{'showdisabled'} = 1 if $opt{'toggle_disabled'};
 
 my %hash = ();
 $hash{'disabled'} = '' unless $opt{'showdisabled'};

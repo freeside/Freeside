@@ -51,9 +51,12 @@ Example:
                             #<SELECT> element
     'onchange'       => '', #javascript code
 
-    #params (well, a param) controlling the <OPTION>s
+    #params controlling the <OPTION>s
     'extra_option_attributes' => [ 'field' ], #field or method in $table objects
                                               #(are prefixed w/data- per HTML5)
+    'hidden_sub' => sub { my $rec = shift; $rec->disabled; }, #sets option hidden att if true
+                                                              #won't hide selected options
+                                                              #hidden att not supported IE < 11
 
     #special return options
     'js_only'      => 0, #set true to return only the JS portions (i.e. nothing)
@@ -108,8 +111,10 @@ Example:
 %     $selected =    ( ref($value) && $value->{$recvalue} )
 %                 || ( $value && $value eq $recvalue ); #not == because of value_col
 %   }
+%   $opt{'hidden_sub'} ||= sub { 0 };
     <OPTION VALUE="<% $recvalue %>"
             <% $selected ? ' SELECTED' : '' %>
+            <% (&{$opt{'hidden_sub'}}($record) && !$selected) ? ' hidden' : '' %>
 %           foreach my $att ( @{ $opt{'extra_option_attributes'} } ) {
               data-<% $att %>="<% $record->$att() |h %>"
 %           }

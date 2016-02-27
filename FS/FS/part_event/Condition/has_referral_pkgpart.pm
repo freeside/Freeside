@@ -13,6 +13,7 @@ sub option_fields {
     'if_pkgpart' => { 'label'    => 'Only packages: ',
                       'type'     => 'select-part_pkg',
                       'multiple' => 1,
+                      'toggle_disabled' => 1,
                     },
   );
 }
