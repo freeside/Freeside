@@ -93,9 +93,14 @@ Voicemail PIN
 
 Optional svcnum from svc_pbx
 
+=item forward_svcnum
+
+Forward destination, if it's another service. Some exports use this
+configuration.
+
 =item forwarddst
 
-Forwarding destination
+Forwarding destination, if it's not a service.
 
 =item email
 
@@ -225,6 +230,9 @@ sub table_info {
 	'forwarddst' => {	label => 'Forward Destination', 
 				%dis2,
 			},
+        'forward_svcnum' => {   label => 'Route to service',
+                                %dis2,
+                            },
 	'email' => {		label => 'Email',
 				%dis2,
 		    },
@@ -529,7 +537,9 @@ sub check {
     || $self->ut_alphan('sms_account')
     || $self->ut_numbern('max_simultaneous')
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
-    || $self->ut_numbern('forwarddst')
+    || $self->ut_numbern('forward_svcnum')
+    || $self->ut_foreign_keyn('forward_svcnum', 'cust_svc', 'svcnum')
+    || $self->ut_textn('forwarddst')
     || $self->ut_textn('email')
     || $self->ut_numbern('lrn')
     || $self->ut_numbern('lnp_desired_due_date')

@@ -847,6 +847,17 @@ sub delete {
     }
   }
 
+  foreach my $svc_phone (
+    qsearch( 'svc_phone', { 'forward_svcnum' => $self->svcnum })
+  ) {
+    $svc_phone->set('forward_svcnum', '');
+    my $error = $svc_phone->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->delete_password_history
            || $self->SUPER::delete; # usergroup here
   if ( $error ) {
@@ -2308,8 +2319,8 @@ sub last_login_text {
 
 Returns a paged search (L<FS::PagedSearch>) for Call Detail Records
 associated with this service. For svc_acct, "associated with" means that
-either the "src" or the "charged_party" field of the CDR matches the
-"username" field of the service.
+either the "src" or the "charged_party" field of the CDR matches either
+the "username" field of the service or the username@domain label.
 
 =cut
 
@@ -2320,6 +2331,7 @@ sub psearch_cdrs {
   my @where;
 
   my $did = dbh->quote($self->username);
+  my $diddomain = dbh->quote($self->label);
 
   my $prefix = $options{'default_prefix'} || ''; #convergent.au '+61'
   my $prefixdid = dbh->quote($prefix . $self->username);
@@ -2335,12 +2347,16 @@ sub psearch_cdrs {
   if (!$options{'disable_charged_party'}) {
     push @orwhere,
       "charged_party = $did",
-      "charged_party = $prefixdid";
+      "charged_party = $prefixdid",
+      "charged_party = $diddomain"
+      ;
   }
   if (!$options{'disable_src'}) {
     push @orwhere,
       "src = $did AND charged_party IS NULL",
-      "src = $prefixdid AND charged_party IS NULL";
+      "src = $prefixdid AND charged_party IS NULL",
+      "src = $diddomain AND charged_party IS NULL"
+      ;
   }
   push @where, '(' . join(' OR ', @orwhere) . ')';
 
