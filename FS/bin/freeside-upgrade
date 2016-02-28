@@ -181,6 +181,9 @@ unless ( driver_name =~ /^mysql/i ) {
 
 if ( $opt_c ) {
 
+  #can always add it back for 4.x->4.x if we need it
+  die "FATAL: -c removed: cdr / h_cdr upgrade is required for 4.x\n";
+
   @statements =
     grep { $_ !~ /^ *ALTER +TABLE +(h_)?cdr /i }
          @statements;
@@ -430,7 +433,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -c ] [ -s ] [ -j ] [ -a ] user\n"; 
+  die "Usage:\n  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -s ] [ -j ] [ -a ] user\n"; 
 }
 
 =head1 NAME
@@ -439,7 +442,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -c ] [ -s ] [ -j ] [ -a ]
+  freeside-upgrade [ -d ] [ -q | -v ] [ -r ] [ -s ] [ -j ] [ -a ]
 
 =head1 DESCRIPTION
 
@@ -469,8 +472,6 @@ Also performs other upgrade functions:
 
   [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
           databases may be inaccessible.
-
-  [ -c ]: Skip cdr and h_cdr updates.
 
   [ -j ]: Run certain upgrades asychronously from the job queue.  Currently 
           used only for the 2.x -> 3.x cust_location, cust_pay and part_pkg
