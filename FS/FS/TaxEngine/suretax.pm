@@ -216,9 +216,9 @@ sub build_item {
       my %hash = (
         %base_item,
         'LineNumber'      => 'C' . $cdr->acctid,
-        'OrigNumber'      => $cdr->src,
-        'TermNumber'      => $cdr->dst,
-        'BillToNumber'    => $cdr->charged_party,
+        'OrigNumber'      => '',
+        'TermNumber'      => '',
+        'BillToNumber'    => '',
         'TransDate'       => $calldate,
         'Revenue'         => $cdr->rated_price, # 4 decimal places
         'Units'           => 0, # right?
@@ -258,11 +258,13 @@ sub build_item {
         if !$taxproduct;
 
     my $tsr = $TSR_GENERAL;
+    # when billing on cancellation there are no units
+    my $units = $self->{cancel} ? 0 : $cust_bill_pkg->units;
     my %hash = (
       %base_item,
       'LineNumber'      => 'R' . $billpkgnum,
       'Revenue'         => $recur_without_usage, # 4 decimal places
-      'Units'           => $cust_bill_pkg->units,
+      'Units'           => $units,
       'TaxSitusRule'    => $tsr,
       'TransTypeCode'   => $taxproduct,
     );
