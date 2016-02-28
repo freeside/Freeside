@@ -83,9 +83,9 @@ Deletes this payment application, unless the closed flag for the parent payment
 sub delete {
   my $self = shift;
   return "Can't delete application for closed payment"
-    if $self->cust_pay->closed =~ /^Y/i;
+    if $self->cust_pay && $self->cust_pay->closed =~ /^Y/i;
   return "Can't delete application for closed invoice"
-    if $self->cust_bill->closed =~ /^Y/i;
+    if $self->cust_bill && $self->cust_bill->closed =~ /^Y/i;
   $self->SUPER::delete(@_);
 }
 
