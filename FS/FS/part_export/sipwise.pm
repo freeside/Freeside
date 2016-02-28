@@ -27,7 +27,7 @@ tie my %options, 'Tie::IxHash',
     default           => 'default',
   },
   'subscriber_profile_set' => {
-    label             => 'Subscriber profile set name',
+    label             => 'Subscriber profile set name (optional)',
   },
   'reseller_id'     => { label => 'Reseller ID' },
   'ssl_no_verify'   => { label => 'Skip SSL certificate validation',
@@ -62,8 +62,6 @@ our %info = (
     number. The <i>forward_svcnum</i> field should be set to the account that
     will receive calls at this number.
   </OL>
-</P>
-<P>Export options:
 </P>
 END
 );
