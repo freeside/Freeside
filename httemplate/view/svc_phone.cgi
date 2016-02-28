@@ -18,6 +18,23 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
 
 my @fields = qw( countrycode phonenum sim_imsi );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
+
+$labels{forward_svcnum} = mt('Route to service');
+push @fields, { field => 'forward_svcnum',
+                link => [ $p.'view/cust_svc.cgi?', 'forward_svcnum' ],
+                value_callback => sub {
+                  my $self = shift;
+                  if ($self->forward_svcnum) {
+                    my $cust_svc = FS::cust_svc->by_key($self->forward_svcnum);
+                    if ( $cust_svc ) {
+                      return $cust_svc->svc_x->label;
+                    }
+                  }
+                  '';
+                },
+              };
+
+
 push @fields, qw( pbx_title );
 $labels{pbx_title} = 'PBX';
 

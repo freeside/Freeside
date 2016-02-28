@@ -60,6 +60,9 @@ my $begin_callback = sub {
                 type  => 'text',
                 maxlength => $conf->config('svc_phone-phone_name-max_length'),
               },
+              { field => 'forward_svcnum',
+                type  => 'select-svc_phone-forward',
+              },
 	      'forwarddst',
 	      'email',
 

@@ -1,0 +1,50 @@
+% if ( $hide ) {
+  <tr style="display: none"><td>
+  <INPUT TYPE="hidden" NAME="<% $opt{field} %>" VALUE="<% $opt{curr_value}%>">
+  </td></tr>
+% } else {
+  <& tr-select-table.html,
+    'table'       => 'svc_acct', # for now
+    'name_col'    => 'email',
+    'order_by'    => 'order by username',
+    'empty_label' => ' ',
+    %select_hash,
+    %opt
+  &>
+% } 
+<%init>
+
+my %opt = @_;
+my $pkgnum = $opt{pkgnum};
+my $svcpart = $opt{svcpart};
+
+my $field = $opt{'field'} ||= 'forward_svcnum';
+
+my $part_svc = FS::part_svc->by_key($svcpart);
+# kludgey assumptions for now:
+# - this is only used to route DIDs to their real destinations
+# - which is a svc_acct
+# - in the same package (part_export::svc_with_role assumes this)
+# - and shares an export
+
+my $cust_pkg = FS::cust_pkg->by_key($pkgnum);
+my @svcparts;
+foreach my $part_export ( $part_svc->part_export ) {
+  foreach my $export_svc ( $part_export->export_svc ) {
+    push @svcparts, $export_svc->svcpart;
+  }
+}
+
+$pkgnum =~ /^(\d+)$/ or die "bad pkgnum $pkgnum";
+
+my %select_hash = (
+  'addl_from' => ' JOIN cust_svc USING (svcnum) ',
+  'extra_sql' => "WHERE pkgnum = $pkgnum AND svcpart IN(".
+    join(',', @svcparts) . ")"
+);
+
+my $hide = 0;
+$hide = 1 if $part_svc->part_svc_column($field) eq 'F';
+$hide = 1 if !@svcparts;
+
+</%init>

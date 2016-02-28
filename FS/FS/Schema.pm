@@ -4111,6 +4111,7 @@ sub tables_hashref {
         'pbxsvc',                         'int', 'NULL',      '', '', '',
         'domsvc',                         'int', 'NULL',      '', '', '', 
         'locationnum',                    'int', 'NULL',      '', '', '',
+        'forward_svcnum',                 'int', 'NULL',      '', '', '',
         'forwarddst',                 'varchar', 'NULL',      15, '', '', 
         'email',                      'varchar', 'NULL',     255, '', '', 
         'lnp_status',                 'varchar', 'NULL', $char_d, '', '',
