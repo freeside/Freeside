@@ -15,7 +15,7 @@ use Number::Phone;
 use Try::Tiny;
 
 our $me = '[sipwise]';
-our $DEBUG = 2;
+our $DEBUG = 0;
 
 tie my %options, 'Tie::IxHash',
   'port'            => { label => 'Port' },
@@ -23,8 +23,11 @@ tie my %options, 'Tie::IxHash',
   'password'        => { label => 'API password', },
   'debug'           => { label => 'Enable debugging', type => 'checkbox', value => 1 },
   'billing_profile' => {
-    label             => 'Billing profile',
-    default           => 'default', # that's what it's called
+    label             => 'Billing profile handle',
+    default           => 'default',
+  },
+  'subscriber_profile_set' => {
+    label             => 'Subscriber profile set name',
   },
   'reseller_id'     => { label => 'Reseller ID' },
   'ssl_no_verify'   => { label => 'Skip SSL certificate validation',
@@ -68,6 +71,7 @@ END
 sub export_insert {
   my($self, $svc_x) = (shift, shift);
 
+  local $SIG{__DIE__};
   my $error;
   my $role = $self->svc_role($svc_x);
   if ( $role eq 'subscriber' ) {
@@ -87,6 +91,8 @@ sub export_insert {
 
 sub export_replace {
   my ($self, $svc_new, $svc_old) = @_;
+  local $SIG{__DIE__};
+
   my $role = $self->svc_role($svc_new);
 
   my $error;
@@ -107,6 +113,8 @@ sub export_replace {
 
 sub export_delete {
   my ($self, $svc_x) = (shift, shift);
+  local $SIG{__DIE__};
+
   my $role = $self->svc_role($svc_x);
   my $error;
 
@@ -126,14 +134,17 @@ sub export_delete {
   '';
 }
 
-# XXX NOT DONE YET
+# logic to set subscribers to locked/active is in replace_subscriber
+
 sub export_suspend {
   my $self = shift;
   my $svc_x = shift;
   my $role = $self->svc_role($svc_x);
-  return if $role ne 'subacct'; # can't suspend DIDs directly
-
-  my $error = $self->replace_subacct($svc_x, $svc_x); # will disable it
+  my $error;
+  if ( $role eq 'subscriber' ) {
+    try { $self->replace_subscriber($svc_x, $svc_x) }
+    catch { $error = $_ };
+  }
   return "$me $error" if $error;
   '';
 }
@@ -142,10 +153,12 @@ sub export_unsuspend {
   my $self = shift;
   my $svc_x = shift;
   my $role = $self->svc_role($svc_x);
-  return if $role ne 'subacct'; # can't suspend DIDs directly
-
-  $svc_x->set('unsuspended', 1); # hack to tell replace_subacct to do it
-  my $error = $self->replace_subacct($svc_x, $svc_x); #same
+  my $error;
+  if ( $role eq 'subscriber' ) {
+    $svc_x->set('unsuspended', 1);
+    try { $self->replace_subscriber($svc_x, $svc_x) }
+    catch { $error = $_ };
+  }
   return "$me $error" if $error;
   '';
 }
@@ -182,6 +195,7 @@ sub find_or_create_customer {
   my $cust_main = $cust_pkg->cust_main;
   my $cust_location = $cust_pkg->cust_location;
   my ($email) = $cust_main->invoicing_list_emailonly;
+  die "Customer contact email required\n" if !$email;
   my $custid = 'cust_pkg#' . $cust_pkg->pkgnum;
 
   # find the billing profile
@@ -283,9 +297,11 @@ sub export_did {
   my $self = shift;
   my ($new, $old) = @_;
   if ( $old and $new->forward_svcnum ne $old->forward_svcnum ) {
-    $self->replace_subscriber( $self->acct_for_did($old) );
+    my $old_svc_acct = $self->acct_for_did($old);
+    $self->replace_subscriber( $old_svc_acct ) if $old_svc_acct;
   }
-  $self->replace_subscriber( $self->acct_for_did($new) );
+  my $new_svc_acct = $self->acct_for_did($new);
+  $self->replace_subscriber( $new_svc_acct ) if $new_svc_acct;
 }
 
 ###############
@@ -352,6 +368,18 @@ sub did_numbers_for_svc {
   @numbers;
 }
 
+sub get_subscriber_profile_set_id {
+  my $self = shift;
+  if ( my $setname = $self->option('subscriber_profile_set') ) {
+    my ($set) = $self->api_query('subscriberprofilesets',
+      [ name => $setname ]
+    );
+    die "Subscriber profile set '$setname' not found" unless $set;
+    return $set->{id};
+  }
+  '';
+}
+
 sub insert_subscriber {
   my $self = shift;
   my $svc = shift;
@@ -359,11 +387,13 @@ sub insert_subscriber {
   my $cust = $self->find_or_create_customer($svc);
   my $svcid = "svc#" . $svc->svcnum;
   my $status = $svc->cust_svc->cust_pkg->susp ? 'locked' : 'active';
+  $status = 'active' if $svc->get('unsuspended');
   my $domain = $self->find_or_create_domain($svc->domain);
 
   my @numbers = $self->did_numbers_for_svc($svc);
   my $first_number = shift @numbers;
 
+  my $profile_set_id = $self->get_subscriber_profile_set_id;
   my $subscriber = $self->api_create('subscribers',
     {
       'alias_numbers'   => \@numbers,
@@ -373,6 +403,7 @@ sub insert_subscriber {
       'external_id'     => $svcid,
       'password'        => $svc->_password,
       'primary_number'  => $first_number,
+      'profile_set_id'  => $profile_set_id,
       'status'          => $status,
       'username'        => $svc->username,
     }
@@ -387,6 +418,7 @@ sub replace_subscriber {
 
   my $cust = $self->find_or_create_customer($svc);
   my $status = $svc->cust_svc->cust_pkg->susp ? 'locked' : 'active';
+  $status = 'active' if $svc->get('unsuspended');
   my $domain = $self->find_or_create_domain($svc->domain);
   
   my @numbers = $self->did_numbers_for_svc($svc);
@@ -401,6 +433,7 @@ sub replace_subscriber {
       $self->api_delete("subscribers/$id");
       $self->insert_subscriber($svc);
     } else {
+      my $profile_set_id = $self->get_subscriber_profile_set_id;
       $self->api_update("subscribers/$id",
         {
           'alias_numbers'   => \@numbers,
@@ -411,6 +444,7 @@ sub replace_subscriber {
           'external_id'     => $svcid,
           'password'        => $svc->_password,
           'primary_number'  => $first_number,
+          'profile_set_id'  => $profile_set_id,
           'status'          => $status,
           'username'        => $svc->username,
         }
@@ -462,6 +496,124 @@ sub delete_subscriber {
   }
 }
 
+################
+# CALL DETAILS #
+################
+
+=item import_cdrs START, END
+
+Retrieves CDRs for calls in the date range from START to END and inserts them
+as a CDR batch. On success, returns a new cdr_batch object. On failure,
+returns an error message. If there are no new CDRs, returns nothing.
+
+=cut
+
+sub import_cdrs {
+  my ($self, $start, $end) = @_;
+  $start ||= 0;
+  $end ||= time;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  
+  ($start, $end) = ($end, $start) if $end < $start;
+  $start = DateTime->from_epoch(epoch => $start, time_zone => 'local');
+  $end = DateTime->from_epoch(epoch => $end, time_zone => 'local');
+  $end->subtract(seconds => 1); # filter by >= and <= only, so...
+
+  # a little different from the usual: we have to fetch these subscriber by
+  # subscriber, not all at once.
+  my @svcs = qsearch({
+      'table'     => 'svc_acct',
+      'addl_from' => ' JOIN cust_svc USING (svcnum)' .
+                     ' JOIN export_svc USING (svcpart)',
+      'extra_sql' => ' WHERE export_svc.role = \'subscriber\''.
+                     ' AND export_svc.exportnum = '.$self->exportnum
+  });
+  my $cdr_batch;
+  my @args = ( 'start_ge' => $start->iso8601,
+               'start_le' => $end->iso8601,
+              );
+
+  my $error;
+  SVC: foreach my $svc (@svcs) {
+    my $subscriber = $self->get_subscriber($svc);
+    if (!$subscriber) {
+      warn "$me user ".$svc->label." is not configured on the SIP server.\n";
+      next;
+    }
+    my $id = $subscriber->{id};
+    my @calls;
+    try {
+      # alias_field tells "calllists" which field from the source and
+      # destination to use as the "own_cli" and "other_cli" of the call.
+      # "user" = username@domain.
+      @calls = $self->api_query('calllists', [
+          'subscriber_id' => $id,
+          'alias_field'   => 'user',
+          @args
+      ]);
+    } catch {
+      $error = "$me $_ (retrieving records for ".$svc->label.")";
+    };
+
+    if (@calls and !$cdr_batch) {
+      # create a cdr_batch if needed
+      my $cdrbatchname = 'sipwise-' . $self->exportnum . '-' . $end->epoch;
+      $cdr_batch = FS::cdr_batch->new({ cdrbatch => $cdrbatchname });
+      $error = $cdr_batch->insert;
+    }
+
+    last SVC if $error;
+
+    foreach my $c (@calls) {
+      # avoid double-importing
+      my $uniqueid = $c->{call_id};
+      if ( FS::cdr->row_exists("uniqueid = ?", $uniqueid) ) {
+        warn "skipped call with uniqueid = '$uniqueid' (already imported)\n"
+          if $DEBUG;
+        next;
+      }
+      my $src = $c->{own_cli};
+      my $dst = $c->{other_cli};
+      if ( $c->{direction} eq 'in' ) { # then reverse them
+        ($src, $dst) = ($dst, $src);
+      }
+      # parse duration from H:MM:SS format
+      my $duration;
+      if ( $c->{duration} =~ /^(\d+):(\d+):(\d+)$/ ) {
+        $duration = $3 + (60 * $2) + (3600 * $1);
+      } else {
+        $error = "call $uniqueid: unparseable duration '".$c->{duration}."'";
+      }
+
+      # use the username@domain label for src and/or dst if possible
+      my $cdr = FS::cdr->new({
+          uniqueid        => $uniqueid,
+          upstream_price  => $c->{customer_cost},
+          startdate       => parse_datetime($c->{start_time}),
+          disposition     => $c->{status},
+          duration        => $duration,
+          billsec         => $duration,
+          src             => $src,
+          dst             => $dst,
+      });
+      $error ||= $cdr->insert;
+      last SVC if $error;
+    }
+  } # foreach $svc
+
+  if ( $error ) {
+    dbh->rollback if $oldAutoCommit;
+    return $error;
+  } elsif ( $cdr_batch ) {
+    dbh->commit if $oldAutoCommit;
+    return $cdr_batch;
+  } else { # no CDRs
+    return;
+  }
+}
+
 ##############
 # API ACCESS #
 ##############
@@ -484,6 +636,8 @@ sub api_query {
   if ( ref $content eq 'HASH' ) {
     $content = [ %$content ];
   }
+  my $page = 1;
+  push @$content, ('rows' => 100, 'page' => 1); # 'page' is always last
   my $result = $self->api_request('GET', $resource, $content);
   my @records;
   # depaginate
@@ -494,8 +648,14 @@ sub api_query {
       push @records, $things;
     }
     if ( my $linknext = $result->{_links}{next} ) {
-      warn "$me continued at $linknext\n" if $DEBUG;
-      $result = $self->api_request('GET', $linknext);
+      # unfortunately their HAL isn't entirely functional
+      # it returns "next" links that contain "page" and "rows" but no other
+      # parameters. so just count the pages:
+      $page++;
+      $content->[-1] = $page;
+
+      warn "$me continued: $page\n" if $DEBUG;
+      $result = $self->api_request('GET', $resource, $content);
     } else {
       last;
     }
