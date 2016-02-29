@@ -25,6 +25,7 @@ my $invnum      = $cgi->param('invnum');
 my $template    = $cgi->param('template');
 my $notice_name = $cgi->param('notice_name') if $cgi->param('notice_name');
 my $method      = $cgi->param('method');
+my $no_coupon   = $cgi->param('no_coupon');
 my $mode;
 if ( $cgi->param('mode') =~ /^(\d+)$/ ) {
   $mode = $1;
@@ -42,6 +43,7 @@ $cust_bill->set('mode' => $mode) if $mode;
 #these methods die instead of return errors, so, handle that without a backtrace
 eval { $cust_bill->$method({ 'template'    => $template,
                              'notice_name' => $notice_name,
+                             'no_coupon'   => $no_coupon,
                           }); 
      };
 my $error = $@;
