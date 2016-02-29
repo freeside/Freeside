@@ -13,7 +13,7 @@ use File::Copy qw(copy);
 use Text::CSV;
 
 my %opt;
-getopts('va:P:C:e:', \%opt);
+getopts('vqa:P:C:e:', \%opt);
 
 # Product codes that are subject to flat rate E911 charges.  For these 
 # products, the'quantity' field represents the number of lines.
@@ -31,6 +31,7 @@ sub HELP_MESSAGE { '
   Usage:
       freeside-ipifony-download 
         [ -v ]
+        [ -q ]
         [ -a archivedir ]
         [ -P port ]
         [ -C category ]
@@ -201,10 +202,12 @@ FILE: foreach my $filename (@$files) {
       amount      => $hash{unit_price},
       quantity    => $hash{quantity},
       start_date  => $cust_main->get('charge_date'),
-      pkg         => $hash{date_desc} .
-                   ' (' . $hash{quantity} . ' @ $' . $hash{unit_price} . ' ea)',
+      pkg         => $hash{date_desc},
       taxclass    => $TAXCLASSES{ $hash{taxclass} },
     );
+    if ( $opt{q} ) {
+      $charge_opt{pkg} .= ' (' . $hash{quantity} . ' @ $' . $hash{unit_price} . ' ea)';
+    }
     if (my $classname = $hash{classname}) {
       if (!exists($classnum_of{$classname}) ) {
         # then look it up
@@ -292,6 +295,7 @@ freeside-ipifony-download - Download and import invoice items from IPifony.
 
       freeside-ipifony-download 
         [ -v ]
+        [ -q ]
         [ -a archivedir ]
         [ -P port ]
         [ -C category ]
@@ -311,6 +315,8 @@ I<hostname>: the SFTP server.
 =head1 OPTIONAL PARAMETERS
 
 -v: Be verbose.
+
+-q: Include the quantity and unit price in the charge description.
 
 -a I<archivedir>: Save a copy of the downloaded file to I<archivedir>.
 
