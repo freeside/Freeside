@@ -1,5 +1,6 @@
 % if ( $agentnum ) {
-<% $cgi->redirect($sales_link->[0] . $agentnum) %>
+%   my $url = 'agent_pkg_class.html?' . $cgi->query_string;
+<% $cgi->redirect($url) %>
 % } else {
 <& elements/commission.html,
   'title'         => $title,
