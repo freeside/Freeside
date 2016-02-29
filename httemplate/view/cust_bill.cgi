@@ -110,21 +110,25 @@ function areyousure(href, message) {
 
 % } 
 
-% if ( $conf->exists('invoice_latex') ) { 
+% my $br = 0;
+% if ( $conf->exists('invoice_latex') ) {
 
   <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
-  <BR><BR>
+
+%   $br++;
 % } 
 
-% my $br = 0;
-% if ( $cust_bill->num_cust_event ) { $br++;
-<A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>">( <% mt('View invoice events') |h %> )</A> 
+% if ( $cust_bill->num_cust_event ) {
+<% $br ? '|' : '' %>
+<A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>"><% mt('View invoice events') |h %></A> 
+%   $br++;
 % }
 
 % my @modes = grep {! $_->disabled} 
 %   $cust_bill->cust_main->agent->invoice_modes;
-% if ( @modes ) {
-( <% mt('View as:') %>
+% if ( @modes || $include_statement_template ) {
+<% $br ? '|' : '' %>
+<% mt('View as:') %>
 <FORM STYLE="display:inline" ACTION="<% $cgi->url %>" METHOD="GET">
 <INPUT NAME="invnum" VALUE="<% $invnum %>" TYPE="hidden">
 <& /elements/select-table.html,
@@ -135,16 +139,18 @@ function areyousure(href, message) {
   name_col    => 'modename',
   onchange    => 'change_invoice_mode',
   empty_label => '(default)',
-&> )
+  $include_statement_template ? (
+    'post_options' => [ 'statement', '(statement)' ]
+  ) : ()
+&>
 <SCRIPT TYPE="text/javascript">
 function change_invoice_mode(obj) {
   obj.form.submit();
 }
 </SCRIPT>
-% $br++;
 % }
 
-<% $br ? '<BR><BR>' : '' %>
+<BR><BR>
 
 % if ( $conf->exists('invoice_html') && ! $cgi->param('plaintext') ) { 
   <% join('', $cust_bill->print_html(\%opt) ) %>
@@ -162,7 +168,7 @@ die "access denied"
 
 my $conf = FS::Conf->new;
 
-my( $invnum, $mode, $template, $notice_name );
+my( $invnum, $mode, $template, $notice_name, $no_coupon );
 my($query) = $cgi->keywords;
 if ( $query =~ /^((.+)-)?(\d+)$/ ) {
   $template = $2;
@@ -174,6 +180,15 @@ if ( $query =~ /^((.+)-)?(\d+)$/ ) {
   $notice_name = $cgi->param('notice_name');
   $mode = $cgi->param('mode');
 }
+
+if ($mode eq 'statement') {
+  $mode = undef;
+  $template = 'statement';
+  $notice_name = 'Statement';
+  $no_coupon = 1;
+}
+
+my $include_statement_template = $conf->config('payment_receipt_statement_mode') ? 0 : 1;
 
 my %opt = (
   'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
@@ -208,5 +223,6 @@ my $link = "invnum=$invnum";
 $link .= ';mode=' . $mode if $mode;
 $link .= ';template='. uri_escape($template) if $template;
 $link .= ';notice_name='. $notice_name if $notice_name;
+$link .= ';no_coupon=1' if $no_coupon;
 
 </%init>
