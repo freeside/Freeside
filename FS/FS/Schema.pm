@@ -2256,6 +2256,7 @@ sub tables_hashref {
         'taxname',  'varchar', 'NULL', $char_d, '', '', 
         'setuptax',    'char', 'NULL',       1, '', '', # Y = setup tax exempt
         'recurtax',    'char', 'NULL',       1, '', '', # Y = recur tax exempt
+        'source',   'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'taxnum',
       'unique' => [],

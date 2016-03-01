@@ -12,6 +12,7 @@ use FS::cust_pkg;
 use FS::part_pkg;
 use FS::cust_tax_exempt;
 use FS::cust_tax_exempt_pkg;
+use FS::upgrade_journal;
 
 @EXPORT_OK = qw( regionselector );
 
@@ -78,6 +79,9 @@ currently supported:
 
 =item recurtax - if 'Y', this tax does not apply to recurring fees
 
+=item source - the tax lookup method that created this tax record. For records
+created manually, this will be null.
+
 =back
 
 =head1 METHODS
@@ -132,6 +136,7 @@ sub check {
     || $self->ut_textn('taxname')
     || $self->ut_enum('setuptax', [ '', 'Y' ] )
     || $self->ut_enum('recurtax', [ '', 'Y' ] )
+    || $self->ut_textn('source')
     || $self->SUPER::check
     ;
 
@@ -672,6 +677,31 @@ END
 
   ($county_html, $state_html, $country_html);
 
+}
+
+sub _upgrade_data {
+  my $class = shift;
+  # assume taxes in Washington with district numbers, and null name, or 
+  # named 'sales tax', are looked up via the wa_sales method. mark them.
+  my $journal = 'cust_main_county__source_wa_sales';
+  if (!FS::upgrade_journal->is_done($journal)) {
+    my @taxes = qsearch({
+        'table'     => 'cust_main_county',
+        'extra_sql' => " WHERE tax > 0 AND country = 'US' AND state = 'WA'".
+                       " AND district IS NOT NULL AND ( taxname IS NULL OR ".
+                       " taxname ~* 'sales tax' )",
+    });
+    if ( @taxes ) {
+      warn "Flagging Washington state sales taxes: ".scalar(@taxes)." records.\n";
+      foreach (@taxes) {
+        $_->set('source', 'wa_sales');
+        my $error = $_->replace;
+        die $error if $error;
+      }
+    }
+    FS::upgrade_journal->set_done($journal);
+  }
+  '';
 }
 
 =back

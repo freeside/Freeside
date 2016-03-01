@@ -248,6 +248,8 @@ Queueable function to update the tax district code using the selected method
 
 =cut
 
+# this is run from the job queue so I'm not transactionizing it.
+
 sub process_district_update {
   my $class = shift;
   my $id = shift;
@@ -273,15 +275,20 @@ sub process_district_update {
 
     my %hash = map { $_ => $tax_info->{$_} } 
       qw( district city county state country );
-    $hash{'taxname'} = '';
+    $hash{'source'} = $method; # apply the update only to taxes we maintain
 
-    my $old = qsearchs('cust_main_county', \%hash);
-    if ( $old ) {
-      my $new = new FS::cust_main_county { $old->hash, %$tax_info };
-      warn "updating tax rate for district ".$tax_info->{'district'} if $DEBUG;
-      $error = $new->replace($old);
-    }
-    else {
+    my @old = qsearch('cust_main_county', \%hash);
+    if ( @old ) {
+      foreach my $cust_main_county (@old) {
+        warn "updating tax rate #".$cust_main_county->taxnum.
+          " for district ".$tax_info->{'district'} if $DEBUG;
+        # update the tax rate only
+        $cust_main_county->set('tax', $tax_info->{'tax'});
+        $error ||= $cust_main_county->replace;
+      }
+    } else {
+      # make a new tax record, and mark it so we can find it later
+      $tax_info->{'source'} = $method;
       my $new = new FS::cust_main_county $tax_info;
       warn "creating tax rate for district ".$tax_info->{'district'} if $DEBUG;
       $error = $new->insert;

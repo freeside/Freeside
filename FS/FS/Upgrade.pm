@@ -452,6 +452,9 @@ sub upgrade_data {
 
     #populate tax statuses
     'tax_status' => [],
+
+    #mark certain taxes as system-maintained
+    'cust_main_county' => [],
   ;
 
   \%hash;
