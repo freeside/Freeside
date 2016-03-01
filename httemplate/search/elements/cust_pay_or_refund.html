@@ -58,12 +58,12 @@ Examples:
 
                 'group_column'   => 'payby',
                 'group_label'    => 'payby_name',
-                'subtotal'       => { $opt{name_verb} => "sum($amount_field)" },
+                'subtotal'       => { $opt{amount_field} => "sum($amount_field)" },
                 'subtotal_row'   => [ 'Subtotal',
                                       sub { sprintf($money, $_[0]->$amount_field) },
                                     ],
                 'total_row'      => [ '<B>Total</B>',
-                                      sub { sprintf("<B>$money</B>", $_[0]->$amount_field) },
+                                      sub { warn Dumper @_; sprintf("<B>$money</B>", $_[0]->$amount_field) },
                                     ],
                 'show_combined'  => 1,
 &>
