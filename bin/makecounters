@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw( adminsuidsetup driver_name );
+use FS::Record qw( dbdef );
+
+my $user = shift or die;
+my $dbh = adminsuidsetup $user;
+
+my $schema = dbdef();
+
+my @tables = scalar(@ARGV)
+               ? @ARGV
+               : grep { ! /^h_/ } $schema->tables;
+
+foreach my $table ( @tables ) {
+  my $tableobj = $schema->table($table)
+    or die "unknown table $table (did you run dbdef-create?)\n";
+
+  my $primary_key = $tableobj->primary_key;
+  next unless $primary_key;
+
+  my $col = $tableobj->column($primary_key);
+
+#warn "$table ". $col->type;
+#warn "$table ". $col->default;
+
+  next if uc($col->type) eq 'SERIAL'
+           || ( driver_name eq 'Pg'
+                  && defined($col->default)
+                  && $col->quoted_default =~ /^nextval\(/i
+              )
+           || ( driver_name eq 'mysql'
+                  && defined($col->local)
+                  && $col->local =~ /AUTO_INCREMENT/i
+              );
+
+  my $value = FS::Record->scalar_sql("SELECT max($primary_key) FROM $table")
+    or next;
+
+  warn "setting counter for $table to $value\n";
+  open(FILE, ">/usr/local/etc/freeside/counters.DBI:Pg:dbname=freeside/$table.$primary_key")
+    or die $!;
+  print FILE "#COUNTER-1.0\n$value\n";
+  close FILE or die $!;
+
+}
