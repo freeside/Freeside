@@ -3364,7 +3364,7 @@ and customer address. Include units.',
   {
     'key'         => 'ticket_system-appointment-queueid',
     'section'     => 'ticketing',
-    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    'description' => 'Ticketing queue to use for appointments.',
     #false laziness w/above
     'type'        => 'select-sub',
     'options_sub' => sub {
@@ -3392,7 +3392,7 @@ and customer address. Include units.',
   {
     'key'         => 'ticket_system-appointment-custom_field',
     'section'     => 'ticketing',
-    'description' => 'Custom field from the ticketing system to use as an appointment classification.',
+    'description' => 'Ticketing custom field to use as an appointment classification.',
     'type'        => 'text',
   },
 
