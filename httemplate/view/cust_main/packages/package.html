@@ -429,19 +429,25 @@ sub pkg_event_link {
 
 # figure out if this user will be able to edit either the setup or recurring
 # discounts for this package
-my $can_discount_pkg = (
-  $part_pkg->can_discount
-  and
-  ( ( $curuser->access_right(['Discount customer package', 'Waive setup fee'])
-      and $cust_pkg->base_setup > 0
-      and !$cust_pkg->setup
-    )
-   or
-    ( $curuser->access_right('Discount customer package')
-      and $cust_pkg->base_recur > 0
-      and $cust_pkg->freq ne '0'
-    )
-  )
-);
+my $can_discount_pkg = 0;
+
+if ( $part_pkg->can_discount ) {
+  #looking these up individually uses the ACL cache and is a big win for lots
+  # of packages
+  my $discount = $curuser->access_right('Discount customer package');
+  my $waive    = $curuser->access_right('Waive setup fee');
+
+  $can_discount_pkg = 
+    (   ($discount || $waive) 
+          && $cust_pkg->base_setup > 0
+          && !$cust_pkg->setup
+     or
+        ( $discount
+          && $cust_pkg->base_recur > 0
+          && $cust_pkg->freq ne '0'
+        )
+    );
+
+}
 
 </%init>
