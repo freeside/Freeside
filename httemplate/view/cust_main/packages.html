@@ -102,17 +102,34 @@ if ( el ) el.scrollIntoView(true);
 
  <% mt('cancelled packages') |h %></a> )
 % } 
-% if ( $num_old_packages ) {
-%   $cgi->param('showoldpackages', 1);
-    ( <a href="<% $cgi->self_url %>"><% mt('show old packages') |h %></a> )
-% } elsif ( $cgi->param('showoldpackages') ) {
+
+% if ( $cgi->param('showoldpackages') ) {
 %   $cgi->param('showoldpackages', 0);
     ( <a href="<% $cgi->self_url %>"><% mt('hide old packages') |h %></a> )
+%   $cgi->param('showoldpackages', 1);
+% } else {
+%   $cgi->param('showoldpackages', 1);
+    ( <a href="<% $cgi->self_url %>"><% mt('show old packages') |h %></a> )
+%   $cgi->param('showoldpackages', 0);
 % }
 
     </TD>
 
   </TR>
+
+% my $pager = include('/elements/pager.html',
+%                       offset     => $offset,
+%                       num_rows   => scalar(@packages),
+%                       total      => $num_pkgs,
+%                       maxrecords => $maxrecords,
+%             );
+% if ( $num_pkgs > $maxrecords ) {
+  <TR>
+    <TD COLSPAN=2>
+      <% $pager %>
+    </TD>
+  </TR>
+% }
 
   <TR>
     <TD COLSPAN=2>
@@ -130,6 +147,14 @@ if ( el ) el.scrollIntoView(true);
 
     </TD>
   </TR>
+
+% if ( $num_pkgs > $maxrecords ) {
+  <TR>
+    <TD COLSPAN=2>
+      <% $pager %>
+    </TD>
+  </TR>
+% }
 
 </TABLE>
 <%init>
@@ -167,7 +192,31 @@ my $group_by =
 my $num_svcs = '( SELECT COUNT(*) FROM cust_svc '.
                '    WHERE cust_svc.pkgnum = cust_pkg.pkgnum ) AS num_svcs';
 
-# don't exclude cancelled packages at this stage
+my $extra_sql =
+  ' AND main_pkgnum IS NULL '.      # supplemental package of something else
+  ' AND change_to_pkgnum IS NULL '. # ordered, not-yet-active change target
+  ' AND change_pkgnum IS NULL ';    # canceled package changed into another
+
+unless ( $cgi->param('showoldpackages') ) {
+  my $years = $conf->config('cust_main-packages-years') || 2;
+  my $then = time - $years * 31556926; #60*60*24*365.2422 is close enough
+
+  $extra_sql .= " AND (
+       ( part_pkg.freq  =  '0' AND ( setup  IS NULL OR setup  > $then ) )
+    OR ( part_pkg.freq != '0'  AND ( cancel IS NULL OR cancel > $then ) )
+    OR EXISTS ( SELECT 1 FROM cust_svc WHERE cust_svc.pkgnum = cust_pkg.pkgnum )
+  )";
+}
+
+my $num_method = $hide_cancelled ? 'ncancelled_pkgs' : 'all_pkgs';
+my $num_pkgs = $cust_main->$num_method({ 
+  'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
+  'extra_sql' => $extra_sql,
+});
+
+my $maxrecords = 10;
+my $offset = $cgi->param('offset') =~ /^(\d+)$/ ? $1 : 0;
+
 my @packages = $cust_main->all_pkgs( {
   'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
   'addl_from' => qq{
@@ -179,105 +228,40 @@ my @packages = $cust_main->all_pkgs( {
       ON (     cust_pkg.pkgpart = recur_option.pkgpart
            AND recur_option.optionname = 'recur_fee' )
   },
+  'extra_sql' => $extra_sql,
+  'order_by'  => "ORDER BY pkgnum ASC LIMIT $maxrecords OFFSET $offset",
 } );
-
-my $is_anything_hidden = 0; # optimization
-
-my %change_to_from; # target pkgnum => current cust_pkg, for future changes
-my %changed_from; # old pkgnum => new cust_pkg, for past changes
-my %supplementals_of; # main pkgnum => arrayref of supplementals
 
 foreach my $cust_pkg ( @packages ) {
   my %hash = $cust_pkg->hash;
   my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
                  grep { /^part_pkg_/ } keys %hash;
   $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
-  if ( $cust_pkg->change_to_pkgnum ) {
-    $change_to_from{$cust_pkg->change_to_pkgnum} = $cust_pkg;
-    $is_anything_hidden = 1;
+
+  #arrayref of supplementals
+  $cust_pkg->set('_supplemental', [
+    qsearch('cust_pkg', { main_pkgnum=>$cust_pkg->pkgnum })
+  ] );
+
+  #for future changes
+  my $change_to =
+    qsearchs('cust_pkg', { change_to_pkgnum=>$cust_pkg->pkgnum });
+  if ( $change_to ) {
+    $change_to->set('change_from_pkg', $cust_pkg);
+    $cust_pkg->set('change_to_pkg', $change_to);
   }
-  if ( $cust_pkg->change_pkgnum ) {
-    $changed_from{$cust_pkg->change_pkgnum} = $cust_pkg;
-    $is_anything_hidden = 1;
+
+  #for past changes
+  my $changed_from =
+    qsearchs('cust_pkg', { change_pkgnum=>$cust_pkg->pkgnum });
+  if ( $changed_from ) {
+    $changed_from->set('changed_to_pkg', $cust_pkg);
+    $cust_pkg->set('changed_from_pkg', $changed_from);
   }
-  if ( $cust_pkg->main_pkgnum ) {
-    $supplementals_of{$cust_pkg->main_pkgnum} ||= [];
-    push @{ $supplementals_of{$cust_pkg->main_pkgnum} }, $cust_pkg;
-    $is_anything_hidden = 1;
-  }
-}
 
-# filter out hidden package changes
-if ( $is_anything_hidden ) {
-  my @displayable_packages;
-  foreach my $cust_pkg (@packages) {
-
-    # if this package has any supplemental packages, it should remember them
-    $cust_pkg->set('_supplemental', $supplementals_of{$cust_pkg->pkgnum});
-
-    if ( $cust_pkg->main_pkgnum ) {
-
-      # it's a supplemental package of something else, and shouldn't be on the
-      # root list
-
-    } elsif ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
-
-      # $cust_pkg is an ordered, not-yet-active package change target
-      my $change_from = $change_to_from{ $cust_pkg->pkgnum };
-      $cust_pkg->set('change_from_pkg', $change_from);
-      $change_from->set('change_to_pkg', $cust_pkg);
-
-    } elsif ( exists( $changed_from{$cust_pkg->pkgnum} ) ) {
-
-      # $cust_pkg is a canceled package changed into another packge
-      # hide it under the destination package's history
-      my $changed_to = $changed_from{$cust_pkg->pkgnum};
-      $cust_pkg->set('changed_to_pkg', $changed_to);
-      $changed_to->set('changed_from_pkg', $cust_pkg);
-
-    } else {
-
-      push @displayable_packages, $cust_pkg;
-
-    }
-
-  }
-  @packages = @displayable_packages;
-}
-
-# filter all cancelled packages if the user wants
-if ( $hide_cancelled ) {
-  @packages = grep { !$_->get('cancel') } @packages;
-}
-
-# filter out 'old' packages
-my $num_old_packages = scalar(@packages);
-
-unless ( $cgi->param('showoldpackages') ) {
-  my $years = $conf->config('cust_main-packages-years') || 2;
-  my $then = time - $years * 31556926; #60*60*24*365.2422 is close enough
-
-  my %hide = ( 'cancelled'       => 'cancel',
-               'one-time charge' => 'setup',
-             );
-
-  @packages =
-    grep { !exists($hide{$_->status}) or $_->get($hide{$_->status}) > $then
-           or $_->num_svcs #don't hide packages w/services
-         }
-         @packages;
-}
-
-$num_old_packages -= scalar(@packages);
-
-# don't include supplemental packages in this list; they'll be found from
-# their main packages
-# (as will change-target packages)
-####@packages = grep !$_->main_pkgnum, @packages;
-
-foreach my $cust_pkg ( @packages ) {
   $cust_pkg->{'_cust_pkg_discount_active'} =
    [ $cust_pkg->cust_pkg_discount_active ];
+
 }
 
 </%init>

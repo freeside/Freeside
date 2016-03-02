@@ -629,29 +629,55 @@ customer.
 =cut
 
 sub num_cancelled_pkgs {
-  shift->num_pkgs("cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0");
+  my $self = shift;
+  my $opt = shift || {};
+  $opt->{extra_sql} .= ' AND ' if $opt->{extra_sql};
+  $opt->{extra_sql} .= "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
+  $self->num_pkgs($opt);
 }
 
 sub num_ncancelled_pkgs {
-  shift->num_pkgs("( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )");
+  my $self = shift;
+  my $opt = shift || {};
+  $opt->{extra_sql} .= ' AND ' if $opt->{extra_sql};
+  $opt->{extra_sql} .= "( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )";
+  $self->num_pkgs($opt);
 }
 
 sub num_suspended_pkgs {
-  shift->num_pkgs("     ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-                    AND cust_pkg.susp IS NOT NULL AND cust_pkg.susp != 0   ");
+  my $self = shift;
+  my $opt = shift || {};
+  $opt->{extra_sql} .= ' AND ' if $opt->{extra_sql};
+  $opt->{extra_sql} .= "    ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+                        AND cust_pkg.susp IS NOT NULL AND cust_pkg.susp != 0  ";
+  $self->num_pkgs($opt);
 }
 
 sub num_unsuspended_pkgs {
-  shift->num_pkgs("     ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-                    AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 ) ");
+  my $self = shift;
+  my $opt = shift || {};
+  $opt->{extra_sql} .= ' AND ' if $opt->{extra_sql};
+  $opt->{extra_sql} .= "    ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+                        AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )";
+  $self->num_pkgs($opt);
 }
 
 sub num_pkgs {
   my( $self ) = shift;
-  my $sql = scalar(@_) ? shift : '';
+  my $addl_from = '';
+  my $sql = '';
+  if ( @_ ) {
+    if ( ref($_[0]) ) {
+      my $opt = shift;
+      $sql       = $opt->{extra_sql} if exists($opt->{extra_sql});
+      $addl_from = $opt->{addl_from} if exists($opt->{addl_from});
+    } else {
+      $sql = shift;
+    }
+  }
   $sql = "AND $sql" if $sql && $sql !~ /^\s*$/ && $sql !~ /^\s*AND/i;
   my $sth = dbh->prepare(
-    "SELECT COUNT(*) FROM cust_pkg WHERE custnum = ? $sql"
+    "SELECT COUNT(*) FROM cust_pkg $addl_from WHERE custnum = ? $sql"
   ) or die dbh->errstr;
   $sth->execute($self->custnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
