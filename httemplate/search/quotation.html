@@ -15,6 +15,8 @@
                                            emt('Date'),
                                            emt('Prospect'),
                                            emt('Customer'),
+                                           emt('Confidence'),
+                                           emt('Close date'),
                                          ],
                  'fields'             => [
                    'quotationnum',
@@ -27,6 +29,10 @@
                    sub { my $cust_main = shift->cust_main;
                          $cust_main ? $cust_main->name : '';
                        },
+                   'confidence',
+                   sub { my $quot = shift;
+                         $quot->close_date ? time2str('%b %d %Y', $quot->close_date) : '';
+                       },
                    #\&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields'        => [
@@ -36,8 +42,10 @@
                    '_date',
                    '',
                    '',
+                   'confidence',
+                   'close_date',
                  ],
-                 'align' => 'rrrrll', #.FS::UI::Web::cust_aligns(),
+                 'align' => 'rrrrllrr', #.FS::UI::Web::cust_aligns(),
                  'links' => [
                    $link,
                    $link,
@@ -45,6 +53,8 @@
                    $link,
                    $prospect_link,
                    $cust_link,
+                   $link,
+                   $link,
                    #( map { $_ ne 'Cust. Status' ? $cust_link : '' }
                    #      FS::UI::Web::cust_header()
                    #),

@@ -7,13 +7,17 @@
                                 'prospectnum'  => 'Prospect',
                                 'custnum'      => 'Customer',
                                 '_date'        => 'Date',
-                                'disabled'     => 'Disabled',
+                                'close_date'   => 'Close Date',
+                                'confidence'   => 'Confidence',
+                                ($can_disable ? ('disabled'     => 'Disabled') : ()),
                               },
                  'fields'  => [
                    { field=>'prospectnum', type=>'fixed-prospect_main' },
                    { field=>'custnum',     type=>'fixed-cust_main' },
                    { field=>'_date',       type=>'fixed-date' },
-                   { field=>'disabled',    type=>'checkbox', value=>'Y'},
+                   { field=>'close_date',  type=>'input-date-field' },
+                   { field=>'confidence',  type=>'text', size=>6 },
+                   ($can_disable ? { field=>'disabled',    type=>'checkbox', value=>'Y'} : ()),
                               ],
                  #XXX some way to disable the "view all"
                  'new_callback' => sub { my( $cgi, $quotation) = @_;
@@ -27,5 +31,7 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Generate quotation');
+
+my $can_disable = $FS::CurrentUser::CurrentUser->access_right('Disable quotation');
 
 </%init>

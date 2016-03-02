@@ -1909,6 +1909,8 @@ sub tables_hashref {
         '_date',        @date_type,             '', '', 
         'disabled',         'char', 'NULL',  1, '', '', 
         'usernum',           'int', 'NULL', '', '', '',
+        'close_date',   @date_type,             '', '', 
+        'confidence',        'int', 'NULL', '', '', '',
         #'total',      @money_type,       '', '', 
         #'quotation_term', 'varchar', 'NULL', $char_d, '', '',
       ],
