@@ -65,6 +65,13 @@ disabled
 
 usernum
 
+=item close_date
+
+projected date when the quotation will be closed
+
+=item confidence
+
+projected confidence (expressed as integer) that quotation will close
 
 =back
 
@@ -117,6 +124,8 @@ sub check {
     || $self->ut_numbern('_date')
     || $self->ut_enum('disabled', [ '', 'Y' ])
     || $self->ut_numbern('usernum')
+    || $self->ut_numbern('close_date')
+    || $self->ut_numbern('confidence')
   ;
   return $error if $error;
 

@@ -11,20 +11,31 @@ function areyousure(href, message) {
 
 % unless ( $quotation->disabled eq 'Y' ) {
 
+%   my $inrow = 0;
 %   if ( $curuser->access_right('Order customer package') ) {
       <& /elements/order_pkg_link.html,
            'label'       => emt('Add package'),
            'actionlabel' => emt('Add package'),
            map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
       &>
+%     $inrow++;
 %   }
 
 %   if ( $curuser->access_right('One-time charge') ) {
-      | <& /elements/one_time_charge_link.html,
+      <% $inrow ? ' | ' : '' %>
+      <& /elements/one_time_charge_link.html,
              map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
         &>
+%     $inrow++;
 %   }
-      <BR><BR>
+
+%   if ( $can_generate_quotation ) {
+      <% $inrow ? ' | ' : '' %>
+      <A HREF="<%$p%>edit/quotation.html?quotationnum=<% $quotation->quotationnum %>">Edit quotation fields</A>
+%     $inrow++;
+%   }
+
+    <% $inrow ? '<BR><BR>' : '' %>
 
 %   if ( 1 ) { #if ( $curuser->access_right('Send quotations') )
 
@@ -72,6 +83,22 @@ function areyousure(href, message) {
   <BR><BR>
 % }
 
+
+% my $close_date = $quotation->close_date;
+% my $confidence = $quotation->confidence;
+% if ($close_date or length($confidence)) {
+<TABLE>
+%   if ($close_date) {
+<TR>
+  <TH STYLE="text-align: right;">Close Date:</TH>
+  <TD><% time2str($conf->config('date_format') || '%m/%d/%Y',$close_date) %></TD>
+</TR>
+%   }
+%   if (length($confidence)) {
+<TR><TH STYLE="text-align: right;">Confidence:</TH><TD><% $confidence %></TD></TR>
+%   }
+</TABLE>
+% }
 
 % if ( $conf->exists('quotation_html') ) { 
     <% join('', $quotation->print_html( preref_callback=>$preref_callback )) %>

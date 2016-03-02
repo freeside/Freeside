@@ -8,4 +8,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Generate quotation');
 
+my $close_date = $cgi->param('close_date');
+$close_date = parse_datetime($close_date);
+$cgi->param('close_date',$close_date);
+
 </%init>
