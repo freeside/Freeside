@@ -9,9 +9,9 @@
     </TD>
     <TD>
 %     if ( $pkgpart_change and $location_change ) {
-      <% emt('Package type and location change') %>
+      <% emt('Package and location change') %>
 %     } elsif ( $pkgpart_change ) {
-      <% emt('Package type change') %>
+      <% emt('Package change') %>
 %     } elsif ( $location_change ) {
       <% emt('Location change') %>
 %     } else { # in case the package was somehow replaced with itself
