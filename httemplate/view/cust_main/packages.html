@@ -192,25 +192,35 @@ my $group_by =
 my $num_svcs = '( SELECT COUNT(*) FROM cust_svc '.
                '    WHERE cust_svc.pkgnum = cust_pkg.pkgnum ) AS num_svcs';
 
+my $addl_from = '
+  LEFT JOIN part_pkg USING ( pkgpart )
+  LEFT JOIN cust_pkg AS chgto   ON ( chgto.change_to_pkgnum = cust_pkg.pkgnum )
+  LEFT JOIN cust_pkg AS chgfrom ON ( chgfrom.change_pkgnum  = cust_pkg.pkgnum )
+';
+
 my $extra_sql =
-  ' AND main_pkgnum IS NULL '.      # supplemental package of something else
-  ' AND change_to_pkgnum IS NULL '. # ordered, not-yet-active change target
-  ' AND change_pkgnum IS NULL ';    # canceled package changed into another
+  ' AND cust_pkg.main_pkgnum IS NULL '. # supplemental package of something else
+  ' AND chgto.pkgnum IS NULL '. # ordered, not-yet-active change target
+  ' AND chgfrom.pkgnum IS NULL ';    # canceled package changed into another
 
 unless ( $cgi->param('showoldpackages') ) {
   my $years = $conf->config('cust_main-packages-years') || 2;
   my $then = time - $years * 31556926; #60*60*24*365.2422 is close enough
 
   $extra_sql .= " AND (
-       ( part_pkg.freq  =  '0' AND ( setup  IS NULL OR setup  > $then ) )
-    OR ( part_pkg.freq != '0'  AND ( cancel IS NULL OR cancel > $then ) )
+       ( part_pkg.freq  =  '0'
+           AND ( cust_pkg.setup  IS NULL OR cust_pkg.setup  > $then )
+       )
+    OR ( part_pkg.freq != '0'
+          AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel > $then )
+       )
     OR EXISTS ( SELECT 1 FROM cust_svc WHERE cust_svc.pkgnum = cust_pkg.pkgnum )
   )";
 }
 
 my $num_method = $hide_cancelled ? 'ncancelled_pkgs' : 'all_pkgs';
 my $num_pkgs = $cust_main->$num_method({ 
-  'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
+  'addl_from' => $addl_from,
   'extra_sql' => $extra_sql,
 });
 
@@ -219,20 +229,20 @@ my $offset = $cgi->param('offset') =~ /^(\d+)$/ ? $1 : 0;
 
 my @packages = $cust_main->all_pkgs( {
   'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
-  'addl_from' => qq{
-    LEFT JOIN part_pkg USING ( pkgpart )
+  'addl_from' => $addl_from. "
     LEFT JOIN part_pkg_option AS setup_option
       ON (     cust_pkg.pkgpart = setup_option.pkgpart
            AND setup_option.optionname = 'setup_fee' )
     LEFT JOIN part_pkg_option AS recur_option
       ON (     cust_pkg.pkgpart = recur_option.pkgpart
            AND recur_option.optionname = 'recur_fee' )
-  },
+  ",
   'extra_sql' => $extra_sql,
   'order_by'  => "ORDER BY pkgnum ASC LIMIT $maxrecords OFFSET $offset",
 } );
 
 foreach my $cust_pkg ( @packages ) {
+
   my %hash = $cust_pkg->hash;
   my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
                  grep { /^part_pkg_/ } keys %hash;
@@ -244,23 +254,33 @@ foreach my $cust_pkg ( @packages ) {
   ] );
 
   #for future changes
-  my $change_to =
-    qsearchs('cust_pkg', { change_to_pkgnum=>$cust_pkg->pkgnum });
-  if ( $change_to ) {
-    $change_to->set('change_from_pkg', $cust_pkg);
+  if ( $cust_pkg->change_to_pkgnum ) {
+    my $change_to =
+      qsearchs('cust_pkg', { pkgnum=>$cust_pkg->change_to_pkgnum });
     $cust_pkg->set('change_to_pkg', $change_to);
+    $change_to->set('change_from_pkg', $cust_pkg);
   }
 
   #for past changes
-  my $changed_from =
-    qsearchs('cust_pkg', { change_pkgnum=>$cust_pkg->pkgnum });
-  if ( $changed_from ) {
-    $changed_from->set('changed_to_pkg', $cust_pkg);
-    $cust_pkg->set('changed_from_pkg', $changed_from);
-  }
+  setfrom($cust_pkg);
 
   $cust_pkg->{'_cust_pkg_discount_active'} =
    [ $cust_pkg->cust_pkg_discount_active ];
+
+}
+
+sub setfrom {
+  my $cust_pkg = shift;
+
+  if ( $cust_pkg->change_pkgnum ) {
+    my $changed_from =
+      qsearchs('cust_pkg', { pkgnum=>$cust_pkg->change_pkgnum });
+    $cust_pkg->set('changed_from_pkg', $changed_from);
+    $changed_from->set('changed_to_pkg', $cust_pkg);
+
+    setfrom($changed_from);
+
+  }
 
 }
 
