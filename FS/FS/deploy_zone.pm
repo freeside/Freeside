@@ -383,7 +383,7 @@ sub process_block_lookup {
     returnGeometry  => 'false',
     orderByFields   => 'OID',
   );
-  my $url = 'http://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/12/query';
+  my $url = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/12/query';
   my $ua = LWP::UserAgent->new;
 
   # first find out how many of these we're dealing with
