@@ -10,7 +10,9 @@ Example:
     #opt
     'part_pkg'   => \@records,
     'showdisabled' => 1, #defaults to 0, shows disabled if true
-    'toggle_disabled' => 1, #implies showdisabled, adds js to toggle display of disabled
+    'toggle_disabled' => 1, #adds js to toggle display of disabled
+                            #currently cannot be used with many other options
+                            #currently must be used with multiple or disable_empty
 
     #select-table.html options
   )
@@ -25,10 +27,6 @@ Example:
      'empty_label'    => 'Select package', #should this be the default?
      'label_callback' => $opt{'label_callback'} || sub { shift->pkg_comment_only },
      'hashref'        => \%hash,
-     $opt{'toggle_disabled'} ? (
-       'extra_option_attributes' => [ 'disabled' ],
-       'hidden_sub' => sub { my $rec = shift; $rec->disabled; },
-     ) : (),
      %opt,
 &>
 
@@ -36,18 +34,58 @@ Example:
 %   unless ($toggle_disabled_init) {
 %     $toggle_disabled_init = 1;
 
+<% include('/elements/xmlhttp.html',
+        'url'  => $fsurl.'misc/xmlhttp-part_pkg.cgi',
+        'subs' => [ 'load_part_pkg' ],
+   ) %>
+
 <SCRIPT>
-function toggle_disabled (id, disabled_on) {
+var toggle_disabled_part_pkg_list = undefined;
+function toggle_disabled_part_pkg (id,showdisabled,noload) {
+  // remove link text, only put it back if this works
+  var trigger = document.getElementById(id+'_switch');
+  trigger.innerHTML = '';
+  // if needed, load pkg_list before trying again
+  var pkg_list = toggle_disabled_part_pkg_list;
+  if (!pkg_list && !noload) {
+    load_part_pkg(
+      function (result) {
+        result = JSON.parse(result);
+        if (result) {
+          toggle_disabled_part_pkg_list = result;
+          toggle_disabled_part_pkg(id,showdisabled,true);
+        } else {
+          console.log('Error loading pkg list');
+        }
+      }
+    );
+    return;
+  }
+  if (!(pkg_list && pkg_list.length)) {
+    console.log('Cannot load pkg list, or pkg list empty');
+    return;
+  }
+  // remove all existing options, tracking which are selected
   var selectbox = document.getElementById(id);
-  for (var i = 0; i < selectbox.length; i++) {
-    var optionbox = selectbox.options[i];
-    if (optionbox.getAttribute('data-disabled')) {
-      optionbox.hidden = (disabled_on || optionbox.selected) ? false : true;
+  var selected = {};
+  for (var i = selectbox.length - 1; i >= 0; i--) {
+    var nextopt = selectbox.options[i];
+    selected[nextopt.value] = nextopt.selected;
+    nextopt.parentNode.removeChild(nextopt);
+  }
+  // regenerate options list from pkg list
+  for (var i = 0; i < pkg_list.length; i++) {
+    var pkginfo = pkg_list[i];
+    if (showdisabled || selected[pkginfo.pkgpart] || !pkginfo.disabled) {
+      var newopt = document.createElement('option');
+      newopt.value = pkginfo.pkgpart;
+      newopt.label = pkginfo.label;
+      newopt.selected = selected[newopt.value] ? true : false;
+      selectbox.appendChild(newopt);
     }
   }
-  var switchlink = document.getElementById(id+'_switch');
-  switchlink.innerHTML = disabled_on ? '<% emt("hide disabled packages") %>' : '<% emt("show disabled packages") %>';
-  switchlink.onclick = function () { toggle_disabled(id, disabled_on ? 0 : 1) };
+  trigger.innerHTML = showdisabled ? '<% $hidetext %>' : '<% $showtext %>';
+  trigger.onclick = function () { toggle_disabled_part_pkg(id,(showdisabled ? 0 : 1)) };
 }
 </SCRIPT>
 
@@ -56,8 +94,8 @@ function toggle_disabled (id, disabled_on) {
 <BR><A 
   HREF="javascript:void(0)"
   STYLE="font-size: smaller"
-  ONCLICK="toggle_disabled('<% $opt{'id'} %>',1)"
-  ID="<% $opt{'id'} %>_switch"><% emt("show disabled packages") %></A>
+  ONCLICK="toggle_disabled_part_pkg('<% $opt{'id'} %>',<% $showdisabled ? '0' : '1' %>)"
+  ID="<% $opt{'id'} %>_switch"><% $showdisabled ? $hidetext : $showtext %></A>
 
 % } # if $opt{'toggle_disabled'}
 
@@ -68,13 +106,42 @@ my $toggle_disabled_init = 0;
  
 my( %opt ) = @_;
 
+# toggle_disabled relies on matching search/label options with xmlhttp-part_pkg
+# it would be difficult to handle these in the current xmlhttp implementation
+# this is defensive coding, not a guarantee it'll work with options not listed here
+if ($opt{'toggle_disabled'}) {
+  foreach my $someopt ( qw(
+    records
+    part_pkg
+    table
+    agent_virt
+    agent_null
+    agent_null_right
+    name_col
+    label_callback
+    hashref
+    extra_sql
+    addl_from
+    order_by
+    pre_options
+    post_options
+  ) ) {
+    die "Cannot use toggle_disabled with $someopt"
+      if exists $opt{$someopt};
+  }
+}
+
+# this would be fairly easy to implement, but not needed right now
+die 'Use of toggle_disabled without multiple or disable_empty has not been implemented'
+  if $opt{'toggle_disabled'} && !($opt{'multiple'} || $opt{'disable_empty'});
+
 $opt{'records'} = delete $opt{'part_pkg'}
   if $opt{'part_pkg'};
 
-$opt{'showdisabled'} = 1 if $opt{'toggle_disabled'};
+my $showdisabled = $opt{'showdisabled'};
 
 my %hash = ();
-$hash{'disabled'} = '' unless $opt{'showdisabled'};
+$hash{'disabled'} = '' unless $showdisabled;
 
 if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
   if ( $opt{'classnum'} > 0 ) {
@@ -84,7 +151,14 @@ if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
   } #else -1 or not specified, all classes, so don't set classnum
 }
 
+# currently can't handle this, either
+die 'Use of toggle_disabled with classnum has not been implemented'
+  if exists $hash{'classnum'};
+
 $opt{'extra_sql'} .= ( keys(%hash) ? ' AND ' : ' WHERE ' ).
                      FS::part_pkg->curuser_pkgs_sql;
+
+my $showtext = emt("show disabled packages");
+my $hidetext = emt("hide disabled packages");
 
 </%init>
