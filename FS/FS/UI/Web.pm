@@ -377,7 +377,7 @@ sub cust_sql_fields {
     push @fields, $field if (grep { $_ eq $field } @cust_fields);
   }
   push @fields, "payby AS cust_payby"
-    if grep { 'cust_payby' eq $field } @cust_fields;
+    if grep { $_ eq 'cust_payby' } @cust_fields;
   push @fields, 'agent_custid';
 
   my @extra_fields = ();
