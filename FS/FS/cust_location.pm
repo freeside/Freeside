@@ -660,7 +660,7 @@ May become the default at some point.
 sub location_label {
   my( $self, %opt ) = @_;
 
-  my $prefix = $self->label_prefix;
+  my $prefix = $self->label_prefix(%opt);
   $prefix .= ($opt{join_string} ||  ': ') if $prefix;
   $prefix = '' if $opt{'no_prefix'};
 
