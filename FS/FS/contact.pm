@@ -741,6 +741,12 @@ sub firstlast {
 #  $contact_class->classname;
 #}
 
+#autoloaded by FK in 4.x, but not during the upgrade
+sub contact_email {
+  my $self = shift;
+  qsearch('contact_email', { 'contactnum' => $self->contactnum } );
+}
+
 =item by_selfservice_email EMAILADDRESS
 
 Alternate search constructor (class method).  Given an email address,
