@@ -618,7 +618,36 @@ undef if no billing package has a next bill date.
 
 sub next_bill_date {
   my $self = shift;
-  min( map $_->get('bill'), grep $_->get('bill'), $self->billing_pkgs );
+
+#  super inefficient with lots of packages
+#  min( map $_->get('bill'), grep $_->get('bill'), $self->billing_pkgs );
+
+  my $custnum = $self->custnum;
+
+  $self->scalar_sql("
+    SELECT MIN(bill) FROM cust_pkg
+      LEFT JOIN cust_pkg_option AS cust_suspend_bill_option
+        ON (     cust_pkg.pkgnum = cust_suspend_bill_option.pkgnum
+             AND cust_suspend_bill_option.optionname = 'suspend_bill' )
+      LEFT JOIN cust_pkg_option AS cust_no_suspend_bill_option
+        ON (     cust_pkg.pkgnum = cust_no_suspend_bill_option.pkgnum
+             AND cust_no_suspend_bill_option.optionname = 'no_suspend_bill' )
+      LEFT JOIN part_pkg USING (pkgpart)
+        LEFT JOIN part_pkg_option AS part_suspend_bill_option
+          ON (     part_pkg.pkgpart = part_suspend_bill_option.pkgpart
+               AND part_suspend_bill_option.optionname = 'suspend_bill' )
+    WHERE custnum = $custnum
+      AND bill IS NOT NULL AND bill != 0
+      AND ( cancel IS NULL OR cancel = 0 )
+      AND part_pkg.freq != '' AND part_pkg.freq != '0'
+      AND (    ( susp IS NULL OR susp = 0 )
+            OR COALESCE(cust_suspend_bill_option.optionvalue,'0') = '1'
+            OR (     COALESCE(part_suspend_bill_option.optionvalue,'0') = '1'
+                 AND COALESCE(cust_no_suspend_bill_option.optionvalue,'0') = '0'
+               )
+          )
+  ");
+
 }
 
 =item num_cancelled_pkgs
