@@ -970,6 +970,8 @@ sub _upgrade_data { #class method
 
   unless ( FS::upgrade_journal->is_done('contact_invoice_dest') ) {
 
+    local($skip_fuzzyfiles) = 1;
+
     foreach my $contact (qsearch('contact', {})) {
       my $error = $contact->replace;
       die $error if $error;
