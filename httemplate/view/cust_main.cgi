@@ -54,9 +54,6 @@ function areyousure_popup(message, action, actionlabel) {
 % if ( $view eq 'basics' ) {
 
 % my $br = 0;
-% if ( $curuser->access_right('Order customer package') && $conf->exists('cust_main-enable_order_package') ) {
-  | <& /elements/order_pkg_link.html, 'cust_main'=>$cust_main &>
-% }
 
 % if ( $conf->config('cust_main-external_links') ) {
     <% $br++ ? ' | ' : '' %>
