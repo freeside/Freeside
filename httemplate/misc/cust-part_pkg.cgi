@@ -23,7 +23,10 @@ if ( $classnum > 0 ) {
 } #else -1, all classes, so don't set classnum
 
 my @part_pkg = qsearch({
+  'select'    => 'part_pkg.*, setup_option.optionvalue AS _setup_fee,
+                              recur_option.optionvalue AS _recur_fee',
   'table'     => 'part_pkg',
+  'addl_from' => FS::part_pkg->join_options_sql,
   'hashref'   => \%hash,
   'extra_sql' =>
     ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql( 'null'=>1 ).
