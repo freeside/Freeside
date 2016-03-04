@@ -182,6 +182,7 @@ if ( $opt{'records'} ) {
     unless $opt{'presorted'};
 } else {
   @records = qsearch( {
+    'select'    => $opt{'select'} || '*',
     'table'     => $opt{'table'},
     'addl_from' => $opt{'addl_from'},
     'hashref'   => $hashref,

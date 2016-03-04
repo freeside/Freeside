@@ -155,6 +155,11 @@ if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
 die 'Use of toggle_disabled with classnum has not been implemented'
   if exists $hash{'classnum'};
 
+$opt{'select'} = 'part_pkg.*, setup_option.optionvalue AS _setup_fee,
+                              recur_option.optionvalue AS _recur_fee'
+  unless $opt{'select'};
+$opt{'addl_from'} .= FS::part_pkg->join_options_sql;
+
 $opt{'extra_sql'} .= ( keys(%hash) ? ' AND ' : ' WHERE ' ).
                      FS::part_pkg->curuser_pkgs_sql;
 

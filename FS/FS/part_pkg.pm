@@ -2332,6 +2332,26 @@ sub _pkgs_sql {
 
 }
 
+=item join_options_sql
+
+Returns an SQL fragment for JOINing the part_pkg_option records for this
+package's setup_fee and recur_fee (as setup_option and recur_option,
+respectively).  Useful for optimization.
+
+=cut
+
+sub join_options_sql {
+  #my $class = shift;
+  "
+    LEFT JOIN part_pkg_option AS setup_option
+      ON (     part_pkg.pkgpart = setup_option.pkgpart
+           AND setup_option.optionname = 'setup_fee' )
+    LEFT JOIN part_pkg_option AS recur_option
+      ON (     part_pkg.pkgpart = recur_option.pkgpart
+           AND recur_option.optionname = 'recur_fee' )
+  ";
+}
+
 =back
 
 =head1 SUBROUTINES
