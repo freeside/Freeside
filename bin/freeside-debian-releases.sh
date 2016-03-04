@@ -27,7 +27,9 @@ rm -fr $DIR/freeside/debian/freeside-ng-selfservice.conffiles
 
 # Pull any changes
 cd $DIR/freeside
-STATUS=`git pull`
+git checkout -- debian/changelog
+git pull
+#STATUS=`git pull`
 
 #Assign the proper config files for freeside-ng-selfservice
 if [ $DISTRO = "wheezy" ]; then
