@@ -94,7 +94,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libsymbol-global-name-perl, libdate-extract-perl, librole-basic-perl,
  libhtml-formattext-withlinks-andtables-perl, libcrypt-x509-perl,
  libdata-guid-perl, libparams-classify-perl (>= 0.013-5.1),
- libcpanel-json-xs-perl, libarchive-zip-perl
+ libcpanel-json-xs-perl, libarchive-zip-perl,
  libtry-tiny-perl, libnumber-phone-perl
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
