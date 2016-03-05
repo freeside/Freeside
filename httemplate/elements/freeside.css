@@ -179,13 +179,11 @@ div.fstabcontainer {
   background-color:#ffffff;
   padding:8px;
   clear: left;
-  border-left: thin solid #CFDEFF;
-  border-right: thin solid #CFDEFF;
-  border-bottom: thin solid #CFDEFF;
+  border-left: thin solid #7e0079;
+  border-right: thin solid #7e0079;
+  border-bottom: thin solid #7e0079;
+  border-top: thin solid #7e0079;
 /*
-  border-left:1px solid #7e0079;
-  border-right:1px solid #7e0079;
-  border-bottom:1px solid #7e0079;
   border-top:1px solid #7e0079;
 */
 }
