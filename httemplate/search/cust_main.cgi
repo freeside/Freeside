@@ -4,6 +4,7 @@
 %  } else {
     <% $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum) %>
 %  }
+%  $m->abort;
 %} elsif ( scalar(@cust_main) == 0 ) {
 %  errorpage(emt("No matching customers found!"));
 % } # errorpage quits, so we don't need an 'else' below
@@ -496,36 +497,34 @@ if ( $cgi->param('browse')
   @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
 }
 
-my $pkgs_method = $conf->exists('hidecancelledpackages')
-                    ? 'ncancelled_pkgs'
-                    : 'all_pkgs';
+my %all_pkgs = ();
+if ( scalar(@cust_main) > 1 || $cgi->param('referral_custnum') ) {
 
-#false laziness w/httemplate/view/cust_main/packages.html
-my $select = join(',',
-               'cust_pkg.*',
-               'part_pkg.*',
-               'setup_option.optionvalue AS _opt_setup_fee',
-               'recur_option.optionvalue AS _opt_recur_fee',
-             );
+  my $pkgs_method = $conf->exists('hidecancelledpackages')
+                      ? 'ncancelled_pkgs'
+                      : 'all_pkgs';
 
-my $addl_from = qq{
-    LEFT JOIN part_pkg USING ( pkgpart )
-    LEFT JOIN part_pkg_option AS setup_option
-      ON (     cust_pkg.pkgpart = setup_option.pkgpart
-           AND setup_option.optionname = 'setup_fee' )
-    LEFT JOIN part_pkg_option AS recur_option
-      ON (     cust_pkg.pkgpart = recur_option.pkgpart
-           AND recur_option.optionname = 'recur_fee' )
-};
+  #false laziness w/httemplate/view/cust_main/packages.html
+  my $select = join(',',
+                 'cust_pkg.*',
+                 'part_pkg.*',
+                 'setup_option.optionvalue AS _opt_setup_fee',
+                 'recur_option.optionvalue AS _opt_recur_fee',
+               );
 
-local($FS::cust_pkg::cache_enabled) = 1; #for $cust_pkg->part_pkg
-my %all_pkgs = map { $_->custnum =>
-                       [ $_->$pkgs_method({ select    => $select,
-                                            addl_from => $addl_from,
-                                         })
-                       ];
-                   }
-                 @cust_main;
+  my $addl_from = ' LEFT JOIN part_pkg USING ( pkgpart ) '.
+                  FS::part_pkg->join_options_sql;
+
+  local($FS::cust_pkg::cache_enabled) = 1; #for $cust_pkg->part_pkg
+  %all_pkgs = map { $_->custnum =>
+                      [ $_->$pkgs_method({ select    => $select,
+                                           addl_from => $addl_from,
+                                        })
+                      ];
+                  }
+                @cust_main;
+
+}
 
 sub last_sort {
   lc($a->getfield('last')) cmp lc($b->getfield('last'))
