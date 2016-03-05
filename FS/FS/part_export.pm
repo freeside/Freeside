@@ -715,8 +715,12 @@ actual DIDs except at the lowest level.
 Generally, 'state' alone will return an array of area codes or region names
 in the state.
 
-'state' and 'areacode' together will return an array of exchanges (NXX
-prefixes), or for some exports, an array of ratecenter names.
+'state' and 'areacode' together will return an array of either:
+- exchange strings of the form "New York (212-555-XXXX)"
+- ratecenter names of the form "New York, NY"
+
+These strings are sent back to the UI and offered as options so that the user
+can choose the local calling area they like.
 
 'areacode' and 'exchange', or 'state' and 'ratecenter', or 'region' by itself
 will return an array of actual DID numbers.

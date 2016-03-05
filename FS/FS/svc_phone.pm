@@ -271,7 +271,7 @@ sub table_info {
                         },
         'sip_server'  => {
                                 label => 'SIP Host',
-                                %dis2,
+                                disable_inventory => 1,
                          },
     },
   };
