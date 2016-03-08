@@ -93,12 +93,11 @@ FS::UID->install_callback( sub {
   $smtpmachine = $conf->config('smtpmachine');
   $radius_password = $conf->config('radius-password') || 'Password';
   $radius_ip = $conf->config('radius-ip') || 'Framed-IP-Address';
-  @pw_set = ( 'A'..'Z' ) if $conf->exists('password-generated-allcaps');
+  @pw_set = FS::svc_acct->pw_set;
 }
 );
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
-@pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '.', ',' );
 
 sub _cache {
   my $self = shift;

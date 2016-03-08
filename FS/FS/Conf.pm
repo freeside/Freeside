@@ -4043,10 +4043,10 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'password-generated-allcaps',
+    'key'         => 'password-generated-characters',
     'section'     => 'password',
-    'description' => 'Causes passwords automatically generated to consist entirely of capital letters',
-    'type'        => 'checkbox',
+    'description' => 'Set of characters to use when generating random passwords. This must contain at least one lowercase letter, uppercase letter, digit, and punctuation mark.',
+    'type'        => 'textarea',
   },
 
 #  {

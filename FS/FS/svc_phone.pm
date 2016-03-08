@@ -16,6 +16,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::PagedSearch qw( psearch );
 use FS::Msgcat qw(gettext);
+use FS::Password_Mixin; # for pw_set
 use FS::part_svc;
 use FS::svc_pbx;
 use FS::svc_domain;
@@ -25,15 +26,13 @@ use FS::phone_avail;
 $me = '[' . __PACKAGE__ . ']';
 $DEBUG = 0;
 
-#avoid l 1 and o O 0
-@pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
-
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $phone_name_max = $conf->config('svc_phone-phone_name-max_length');
   $passwordmin = $conf->config('sip_passwordmin') || 0;
   $passwordmax = $conf->config('sip_passwordmax') || 80;
+  @pw_set = FS::Password_Mixin->pw_set;
 }
 );
 

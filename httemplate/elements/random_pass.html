@@ -1,16 +1,16 @@
 <INPUT TYPE="button" VALUE="<% emt($label) %>" onclick="randomPass()">
 <SCRIPT TYPE="text/javascript">
 function randomPass() {
-  var lower='<% join('', 'a'..'z') %>';
-  var upper='<% join('', 'A'..'Z') %>';
-  var number='<% join('', '0'..'9') %>';
-  var symbol='`~!@#$%^&*-_=+:;<>,.?';
-  var pw_set=lower+upper+number+symbol;
+  var pw_set = <% $pw_set |js_string %>;
+  var lower = <% $lower |js_string %>;
+  var upper = <% $upper |js_string %>;
+  var digit = <% $digit |js_string %>;
+  var punct = <% $punct |js_string %>;
   var pass=[];
   pass.push(lower.charAt(Math.floor(Math.random() * lower.length)));
-  pass.push(upper.charAt(Math.floor(Math.random() * lower.length)));
-  pass.push(number.charAt(Math.floor(Math.random() * number.length)));
-  pass.push(symbol.charAt(Math.floor(Math.random() * symbol.length)));
+  pass.push(upper.charAt(Math.floor(Math.random() * upper.length)));
+  pass.push(digit.charAt(Math.floor(Math.random() * digit.length)));
+  pass.push(punct.charAt(Math.floor(Math.random() * punct.length)));
   var i=0;
   while(i < 4) {
     i++;
@@ -24,4 +24,10 @@ function randomPass() {
 <%init>
 my $id = shift;
 my $label = shift || 'Generate';
+my $pw_set = join('', FS::Password_Mixin->pw_set);
+my $lower = join('', $pw_set =~ /[[:lower:]]/g);
+my $upper = join('', $pw_set =~ /[[:upper:]]/g);
+my $digit = join('', $pw_set =~ /[[:digit:]]/g);
+my $punct = join('', $pw_set =~ /[[:punct:]]/g);
+
 </%init>
