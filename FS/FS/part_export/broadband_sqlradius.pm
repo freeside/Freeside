@@ -6,15 +6,19 @@ use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( dbh str2time_sql ); #qsearch qsearchs );
 use FS::part_export::sqlradius qw(sqlradius_connect);
+use FS::Password_Mixin;
 use NEXT;
 
-FS::UID->install_callback(sub { $conf = new FS::Conf });
+FS::UID->install_callback(
+  sub {
+    $conf = new FS::Conf;
+    @pw_set = FS::Password_Mixin->pw_set;
+  }
+);
 
 @ISA = qw(FS::part_export::sqlradius);
 
 $DEBUG = 0;
-
-@pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '.', ',' );
 
 tie %options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
