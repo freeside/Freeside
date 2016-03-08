@@ -125,6 +125,7 @@ if ($opt{'toggle_disabled'}) {
     order_by
     pre_options
     post_options
+    select
   ) ) {
     die "Cannot use toggle_disabled with $someopt"
       if exists $opt{$someopt};
@@ -154,6 +155,9 @@ if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
 # currently can't handle this, either
 die 'Use of toggle_disabled with classnum has not been implemented'
   if exists $hash{'classnum'};
+
+# CAUTION: For proper functioning of toggle_disabled,
+# please ensure changes to default options are synced with misc/xmlhttp-part_pkg.cgi
 
 $opt{'select'} = 'part_pkg.*, setup_option.optionvalue AS _setup_fee,
                               recur_option.optionvalue AS _recur_fee'
