@@ -277,9 +277,10 @@ sub pw_set {
       && $pw_set =~ /[[:digit:]]/
       && $pw_set =~ /[[:punct:]]/ ) {
       @pw_set = split('', $pw_set);
+    } else {
+      warn "password-generated-characters set is insufficient; using default.";
+      @pw_set = split('', 'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789()#.,');
     }
-    warn "password-generated-characters set is insufficient; using default.";
-    @pw_set = split('', 'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789()#.,');
   }
   return @pw_set;
 }
