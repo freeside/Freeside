@@ -79,7 +79,7 @@ function toggle_disabled_part_pkg (id,showdisabled,noload) {
     if (showdisabled || selected[pkginfo.pkgpart] || !pkginfo.disabled) {
       var newopt = document.createElement('option');
       newopt.value = pkginfo.pkgpart;
-      newopt.label = pkginfo.label;
+      newopt.text = pkginfo.label;
       newopt.selected = selected[newopt.value] ? true : false;
       selectbox.appendChild(newopt);
     }
