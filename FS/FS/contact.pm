@@ -951,6 +951,7 @@ sub _upgrade_data { #class method
   # always migrate cust_main_invoice records over
   local $FS::cust_main::import = 1; # override require_phone and such
   my $search = FS::Cursor->new('cust_main_invoice', {});
+  my %custnum_dest;
   while (my $cust_main_invoice = $search->fetch) {
     my $custnum = $cust_main_invoice->custnum;
     my $dest = $cust_main_invoice->dest;
@@ -962,17 +963,22 @@ sub _upgrade_data { #class method
         if !$svc_acct;
       $dest = $svc_acct->email;
     }
+    push @{ $custnum_dest{$custnum} ||= [] }, $dest;
 
-    my $error = $cust_main->replace( invoicing_list => [ $dest ] );
-
+    my $error = $cust_main_invoice->delete;
     if ( $error ) {
-      die "custnum $custnum, invoice destination $dest, creating contact: $error\n";
+      die "custnum $custnum, cleaning up cust_main_invoice: $error\n";
     }
+  }
 
-    $error = $cust_main_invoice->delete;
-    die "custnum $custnum, cleaning up cust_main_invoice: $error\n" if $error;
-
-  } # while $search->fetch
+  foreach my $custnum (keys %custnum_dest) {
+    my $dests = $custnum_dest{$custnum};
+    my $cust_main = FS::cust_main->by_key($custnum);
+    my $error = $cust_main->replace( invoicing_list => $dests );
+    if ( $error ) {
+      die "custnum $custnum, creating contact: $error\n";
+    }
+  }
 
   unless ( FS::upgrade_journal->is_done('contact_invoice_dest') ) {
 
