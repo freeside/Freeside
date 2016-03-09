@@ -44,6 +44,7 @@ table.hiddenrows {
 }
 
 </STYLE>
+
 % # activate rolldown buttons for hidden package blocks
 <SCRIPT TYPE="text/javascript">
 function toggle_rolldown() {
@@ -79,10 +80,71 @@ for (var i = 0; i < all_buttons.length; i++) {
 if ( el ) el.scrollIntoView(true);
 </&>
 </SCRIPT>
+
 <TABLE>
   <TR>
     <TD ALIGN="left" VALIGN="top">
 
+% my $br = 0;
+
+% if ( $total_pkgs > $maxrecords ) {
+
+%   if ( 1 ) { #FS::pkg_class->num_pkg_class ) {
+      <% $br++ ? ' | ' : '' %>
+      Class: <& /elements/select-cust-pkg_class.html,
+                  curr_value  => scalar($cgi->param('classnum')),
+                  onchange    => 'classnum_changed(this);',
+                  pre_options => [ '-1' => 'all',
+                                    '0' => '(none)',
+                                 ],
+             &>
+%   }
+
+    <% $br++ ? ' | ' : '' %>
+    Status: <& /elements/select-cust_pkg-status.html,
+                 curr_value => scalar($cgi->param('status')),
+                 onchange   => 'status_changed(this);',
+            &>
+
+%   if ( 1 ) { #$cust_main->num_cust_location ) {
+      <% $br++ ? ' | ' : '' %>
+      Location: <& /elements/select-cust_location.html,
+                     cust_main   => $cust_main,
+                     curr_value  => scalar($cgi->param('locationnum')),
+                     addnew      => 0,
+                     onchange    => 'locationnum_changed(this);',
+                     pre_options => [ '-1' => 'all', ],
+                &>
+%   }
+
+  <SCRIPT TYPE="text/javascript">
+
+    function classnum_changed(what) {
+%     my $classnum = $cgi->param('classnum');
+%     $cgi->delete('classnum');
+      window.location = '<% $cgi->self_url %>;classnum=' + what.options[what.selectedIndex].value;
+%     $cgi->param('classnum', $classnum);
+    }
+
+    function status_changed(what) {
+%     my $status = $cgi->param('status');
+%     $cgi->delete('status');
+      window.location = '<% $cgi->self_url %>;status=' + what.options[what.selectedIndex].value;
+%     $cgi->param('status', $status);
+    }
+
+    function locationnum_changed(what) {
+%     my $locationnum = $cgi->param('locationnum');
+%     $cgi->delete('locationnum');
+      window.location = '<% $cgi->self_url %>;locationnum=' + what.options[what.selectedIndex].value;
+%     $cgi->param('locationnum', $locationnum);
+    }
+    
+  </SCRIPT>
+
+% }
+
+<% $br++ ? ' | ' : '' %>
 % if ( $cust_main->num_cancelled_pkgs ) {
 %     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
 %          || ( $conf->exists('hidecancelledpackages')
@@ -92,24 +154,25 @@ if ( el ) el.scrollIntoView(true);
 %     {
 %       my $prev = $cgi->param('showcancelledpackages');
 %       $cgi->param('showcancelledpackages', 1);
-  ( <a href="<% $cgi->self_url %>"><% mt('show') |h %> 
+  <a href="<% $cgi->self_url %>"><% mt('show') |h %> 
 %       $cgi->param('showcancelledpackages', $prev);
 %   } else {
 %       $cgi->param('showcancelledpackages', 0);
-  ( <a href="<% $cgi->self_url %>"><% mt('hide') |h %> 
+  <a href="<% $cgi->self_url %>"><% mt('hide') |h %> 
 %       $cgi->param('showcancelledpackages', 1);
 %   } 
 
- <% mt('cancelled packages') |h %></a> )
+ <% mt('cancelled packages') |h %></a>
 % } 
 
+<% $br++ ? ' | ' : '' %>
 % if ( $cgi->param('showoldpackages') ) {
 %   $cgi->param('showoldpackages', 0);
-    ( <a href="<% $cgi->self_url %>"><% mt('hide old packages') |h %></a> )
+    <a href="<% $cgi->self_url %>"><% mt('hide old packages') |h %></a>
 %   $cgi->param('showoldpackages', 1);
 % } else {
 %   $cgi->param('showoldpackages', 1);
-    ( <a href="<% $cgi->self_url %>"><% mt('show old packages') |h %></a> )
+    <a href="<% $cgi->self_url %>"><% mt('show old packages') |h %></a>
 %   $cgi->param('showoldpackages', 0);
 % }
 
@@ -217,6 +280,27 @@ unless ( $cgi->param('showoldpackages') ) {
     OR EXISTS ( SELECT 1 FROM cust_svc WHERE cust_svc.pkgnum = cust_pkg.pkgnum )
   )";
 }
+
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  my $classnum = $1;
+  if ( $classnum == 0 ) {
+    $extra_sql .= " AND part_pkg.classnum IS NULL ";
+  } else {
+    $extra_sql .= " AND part_pkg.classnum = $classnum ";
+  }
+}
+
+if ( $cgi->param('status') =~ /^([\w ]+)$/ ) {
+  my $status = $1;
+  $extra_sql .= ' AND '. FS::cust_pkg->status_sql. " = '$status' ";
+}
+
+if ( $cgi->param('locationnum') =~ /^(\d+)$/ ) {
+  my $locationnum = $1;
+  $extra_sql .= " AND cust_pkg.locationnum = $locationnum ";
+}
+
+my $total_pkgs = $cust_main->all_pkgs;
 
 my $num_method = $hide_cancelled ? 'ncancelled_pkgs' : 'all_pkgs';
 my $num_pkgs = $cust_main->$num_method({ 

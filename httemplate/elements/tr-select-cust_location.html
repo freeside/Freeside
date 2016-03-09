@@ -183,33 +183,14 @@ Example:
 <TR>
   <<%$th%> ALIGN="right"><% $opt{'label'} || emt('Service location') %></<%$th%>>
   <TD COLSPAN=7>
-    <SELECT NAME     = "locationnum"
-            ID       = "locationnum"
-            onchange = "locationnum_changed(this);"
-    >
-% if ( $cust_main ) {
-      <OPTION VALUE="<% $cust_main->ship_locationnum %>"><% $opt{'empty_label'} || '(default service address)' |h %>
-% }
-% if ( $opt{'is_optional'} ) {
-    <OPTION VALUE="-2" <% $locationnum == -2 ? 'SELECTED' : ''%>><% $opt{'optional_label'} || '(not required)' |h %>
-% }
-%
-%     foreach my $loc ( @cust_location ) {
-%       # don't show the ship_location redundantly
-%       next if $cust_main && $cust_main->ship_locationnum == $loc->locationnum;
-        <OPTION VALUE="<% $loc->locationnum %>"
-                <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
-        ><% $loc->line( cust_main      => $cust_main,
-                        countrydefault => $countrydefault,
-                      )
-         |h %>
-%     }
-%     if ( $addnew ) {
-        <OPTION VALUE="-1"
-                <% $locationnum == -1 ? 'SELECTED' : '' %>
-        >Add new location
-%     }
-    </SELECT>
+
+    <& /elements/select-cust_location.html,
+         %opt,
+         'curr_value'    => $locationnum,
+         'cust_location' => \@cust_location,
+         'onchange'      => 'locationnum_changed(this);',
+    &>
+
   </TD>
 </TR>
 

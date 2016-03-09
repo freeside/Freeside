@@ -159,7 +159,7 @@ my $key = $opt{'value_col'} || $dbdef_table->primary_key;
 
 my $name_col = $opt{'name_col'};
 
-my $value = $opt{'curr_value'} || $opt{'value'};
+my $value = exists($opt{'curr_value'}) ? $opt{'curr_value'} : $opt{'value'};
 $value = [ split(/\s*,\s*/, $value) ] if $opt{'multiple'} && $value =~ /,/;
 
 #my $addl_from = $opt{'addl_from'} || '';
