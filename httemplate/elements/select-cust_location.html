@@ -1,0 +1,65 @@
+<SELECT NAME     = "locationnum"
+        ID       = "locationnum"
+%     if ( $opt{onchange} ) {
+        onchange = "<% $opt{onchange} %>"
+%     }
+    >
+
+% #false laziness w/select-table.html
+% my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();
+% while ( @pre_options ) { 
+%   my $pre_opt   = shift(@pre_options);
+%   my $pre_label = shift(@pre_options);
+%   my $selected = #$opt{'all_selected'}
+%                  # || ( ref($locationnum) && $locationnum->{$pre_opt} )
+%                  # ||
+%                       ( $locationnum eq $pre_opt );
+    <OPTION VALUE="<% $pre_opt %>"
+            <% $selected ? 'SELECTED' : '' %>
+    ><% $pre_label %>
+% } 
+
+% if ( $cust_main ) {
+%   my $selected = ( $locationnum == $cust_main->ship_locationnum );
+    <OPTION VALUE="<% $cust_main->ship_locationnum %>"
+            <% $selected ? 'SELECTED' : '' %>
+    ><% $opt{'empty_label'} || '(default service address)' |h %>
+% }
+
+% if ( $opt{'is_optional'} ) {
+  <OPTION VALUE="-2" <% $locationnum == -2 ? 'SELECTED' : ''%>><% $opt{'optional_label'} || '(not required)' |h %>
+% }
+
+% foreach my $loc ( @{ $opt{cust_location} } ) {
+%   # don't show the ship_location redundantly
+%   next if $cust_main && $cust_main->ship_locationnum == $loc->locationnum;
+    <OPTION VALUE="<% $loc->locationnum %>"
+            <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
+    ><% $loc->line( cust_main      => $cust_main,
+                    countrydefault => $countrydefault,
+                  )
+     |h %>
+% }
+
+% if ( $addnew ) {
+    <OPTION VALUE="-1"
+            <% $locationnum == -1 ? 'SELECTED' : '' %>
+    >Add new location
+% }
+
+</SELECT>
+<%init>
+
+my $conf = new FS::Conf;
+my $countrydefault = $conf->config('countrydefault') || 'US';
+
+my %opt = @_;
+my $cust_main     = $opt{'cust_main'};
+my $locationnum   = $opt{'curr_value'};
+
+$opt{'cust_location'} ||= [ $cust_main ? $cust_main->cust_location : () ];
+
+my $addnew = exists($opt{addnew}) ? $opt{addnew}
+                                  : $cust_main ? 1 : ( $locationnum>0 ? 0 : 1 );
+
+</%init>
