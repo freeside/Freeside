@@ -193,7 +193,7 @@
                      { field  => 'change_to_pkgpart',
                        type   => 'select-part_pkg',
                        extra_sql  => sub { $pkgpart
-                        ? "AND pkgpart != $pkgpart"
+                        ? "AND part_pkg.pkgpart != $pkgpart"
                         : ''
                        },
                        empty_label => 'no package',
@@ -351,7 +351,7 @@
                    { 'field'      => 'bill_dst_pkgpart',
                      'type'       => 'select-part_pkg',
                      'extra_sql'  => sub { $pkgpart
-                                            ? "AND pkgpart != $pkgpart"
+                                            ? "AND part_pkg.pkgpart != $pkgpart"
                                             : ''
                                          },
                      'label_callback' => sub { shift->pkg_comment_only },
@@ -378,7 +378,7 @@
                      'label'      => 'Also include services from package: ',
                      'type'       => 'select-part_pkg',
                      'extra_sql'  => sub { $pkgpart
-                                            ? "AND pkgpart != $pkgpart"
+                                            ? "AND part_pkg.pkgpart != $pkgpart"
                                             : ''
                                          },
                      'label_callback' => sub { shift->pkg_comment_only },
