@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::cust_main_invoice;
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::cust_main;
+use Date::Parse 'str2time';
+use strict;
+
+my $usage = "usage: contact-upgrade-fix-multiple <user> <upgrade date>\n";
+
+my $user = shift or die $usage;
+adminsuidsetup($user);
+local $FS::UID::AutoCommit = 0;
+
+my $date = shift;
+my $timestamp = str2time($date) or die $usage;
+# safety
+die "upgrade date is before the 4.0 release, must be incorrect.\n$usage"
+  if $timestamp < 1455609600;
+
+my $search = {
+  'table'     => 'h_cust_main_invoice',
+  'hashref'   => {
+    'history_date'    => { op => '>=', value => $timestamp },
+    'history_action'  => 'delete',
+    'dest'            => { op => '!=', value => 'POST' },
+  }
+};
+
+# find deleted cust_main_invoice records
+my %custnum_dest;
+foreach my $deleted (qsearch $search) {
+  my $custnum = $deleted->custnum;
+  push @{ $custnum_dest{$custnum} ||= [] }, $deleted->dest;
+}
+
+# find those customers
+while (my ($custnum, $dests) = each(%custnum_dest)) {
+  my $cust_main = FS::cust_main->by_key($custnum);
+  # filter out the email(s) that the customer already has
+  my @curr_dest = $cust_main->invoicing_list_email;
+  my @new_dest = @curr_dest;
+  print "cust#$custnum\n";
+  foreach my $email ( @$dests ) {
+    print "      $email: ";
+    if ( grep { $_ eq $email } @curr_dest ) {
+      print "skipped.\n";
+      next;
+    }
+    print "appending.\n";
+    push @new_dest, $email;
+  }
+  my $error = $cust_main->replace( invoicing_list => \@new_dest );
+  die $error if $error;
+}
+
+dbh->commit;
+print "Done.\n";
+
