@@ -154,7 +154,7 @@ if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
 
 # currently can't handle this, either
 die 'Use of toggle_disabled with classnum has not been implemented'
-  if exists $hash{'classnum'};
+  if $opt{'toggle_disabled'} && exists($hash{'classnum'});
 
 # CAUTION: For proper functioning of toggle_disabled,
 # please ensure changes to default options are synced with misc/xmlhttp-part_pkg.cgi
