@@ -7,10 +7,11 @@
 <%init>
 
 my @fields = (
+  'circuit_id',
   { field     => 'oltnum',
     type      => 'select-table',
     table     => 'fiber_olt',
-    name_col  => 'oltname',
+    name_col  => 'description',
   },
   'shelf',
   'card',

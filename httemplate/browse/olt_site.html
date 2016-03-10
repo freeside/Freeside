@@ -1,0 +1,12 @@
+<& elements/browse-simple.html,
+  'table'               => 'olt_site',
+  'title'               => 'Fiber OLT markets and sites',
+  'menubar'             => [ 'View OLTs' => 'fiber_olt.html' ],
+  'name_singular'       => 'site',
+  'acl'                 => 'Configuration',
+# overrides
+  'disabled_statuspos' => '',
+  'disableable'        => 0,
+  'header' => [ '#',      'Market', 'Site', ],
+  'fields' => [ 'sitenum', 'market', 'site', ],
+&>

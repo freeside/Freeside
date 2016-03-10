@@ -4,6 +4,7 @@ use base qw( FS::Record );
 use strict;
 use FS::Record qw( qsearch qsearchs );
 use FS::svc_fiber;
+use FS::olt_site;
 
 =head1 NAME
 
@@ -37,6 +38,8 @@ FS::Record.  The following fields are currently supported:
 =item oltname - name of this device
 
 =item serial - serial number
+
+=item sitenum - the L<FS::olt_site> where this OLT is installed
 
 =item disabled - set to 'Y' to make this OLT unavailable for new connections
 
@@ -88,11 +91,38 @@ sub check {
     $self->ut_numbern('oltnum')
     || $self->ut_text('oltname')
     || $self->ut_text('serial')
+    || $self->ut_foreign_keyn('sitenum', 'olt_site', 'sitenum')
     || $self->ut_flag('disabled')
   ;
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item site_description
+
+Returns the OLT's site description.
+
+=cut
+
+sub site_description {
+  my $self = shift;
+  return '' if !$self->sitenum;
+  my $olt_site = FS::olt_site->by_key($self->sitenum);
+  return $olt_site->description;
+}
+
+=item description
+
+Returns the OLT's site name and unit name.
+
+=cut
+
+sub description {
+  my $self = shift;
+  my $desc = $self->oltname;
+  $desc = $self->site_description . '/' . $desc if $self->sitenum;
+  return $desc;
 }
 
 # 3.x stub
@@ -106,7 +136,7 @@ sub svc_fiber {
 
 =head1 SEE ALSO
 
-L<FS::svc_fiber>, L<FS::Record>
+L<FS::svc_fiber>, L<FS::olt_site>, L<FS::Record>
 
 =cut
 

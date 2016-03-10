@@ -1,0 +1,31 @@
+<& /elements/tr-td-label.html, %opt &>
+  <td>
+    <table class="inv">
+      <tr>
+        <th>FDU#</th>
+        <td><input name="<% $field %>_fdu" value="<% $fdu |h %>" SIZE="1"></td>
+        <th>FAT#</th>
+        <td><input name="<% $field %>_fat" value="<% $fat |h %>" SIZE="1">
+            <input name="<% $field %>_subfat" value="<% $subfat |h %>" SIZE="1">
+        </td>
+        <th>Port#</th>
+        <td><input name="<% $field %>_port" value="<% $port |h %>" SIZE="1"></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<%doc>
+Supports a circuit ID of the form
+FDU# (digit), FAT# (digit), SubFAT (letter), Port# (numeric)
+May support other formats in the future, or just a free text field.
+</%doc>
+<%init>
+my %opt = @_;
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+my ($fdu, $fat, $port) = split('/', $value);
+my $subfat = '';
+if ( $fat =~ /[A-Z]$/i ) {
+  $subfat = substr($fat, -1, 1, '');
+}
+my $field = $opt{'field'} || 'circuit_id';
+</%init>

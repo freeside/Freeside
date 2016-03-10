@@ -388,6 +388,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::password_history;
   use FS::svc_fiber;
   use FS::fiber_olt;
+  use FS::olt_site;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
