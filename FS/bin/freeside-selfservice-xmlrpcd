@@ -313,6 +313,9 @@ sub client_got_request {
 
     $soap->request($request);
     $soap->handle;
+
+    $FS::UID::dbh->commit() if $FS::UID::dbh; #XXX handle commit error
+
     my $response = $soap->response;
 
     $heap->{client}->put($response);
