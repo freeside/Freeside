@@ -27,7 +27,7 @@
                          $prospect_main ? $prospect_main->name : '';
                        },
                    sub { my $cust_main = shift->cust_main;
-                         $cust_main ? $cust_main->name : '';
+                         $cust_main ? encode_entities($cust_main->name) : '';
                        },
                    'confidence',
                    sub { my $quot = shift;
