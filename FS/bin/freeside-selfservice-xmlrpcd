@@ -44,6 +44,8 @@ daemon_run( 'port' => 8080, 'handle_request' =>
     $soap->request($request);
     $soap->handle;
 
+    $FS::UID::dbh->commit() if $FS::UID::dbh; #XXX handle commit error
+
     return $soap->response;
   }
 );
