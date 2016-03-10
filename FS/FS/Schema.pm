@@ -6927,7 +6927,7 @@ sub tables_hashref {
       'columns' => [
         'oltnum',   'serial', '',       '', '', '',
         'oltname', 'varchar', '',  $char_d, '', '',
-        'sitenum',     'int', '',       '', '', '',
+        'sitenum',     'int', 'NULL',   '', '', '',
         'serial',  'varchar', '',  $char_d, '', '',
         'disabled',   'char', 'NULL',    1, '', '',
       ],
