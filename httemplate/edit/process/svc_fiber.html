@@ -2,10 +2,22 @@
     table       => 'svc_fiber',
     edit_ext    => 'html',
     redirect    => popurl(3)."view/svc_fiber.cgi?",
+    precheck_callback => $precheck_callback,
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+my $precheck_callback = sub {
+  my $cgi = shift;
+  # recombine fdu/fat/subfat/port
+  my $circuit_id = $cgi->param('circuit_id_fdu') . '/' .
+                   $cgi->param('circuit_id_fat') . $cgi->param('circuit_id_subfat') . '/' .
+                   $cgi->param('circuit_id_port');
+  $cgi->param('circuit_id', $circuit_id);
+  $cgi->delete(qw( circuit_id_fdu circuit_id_fat circuit_id_subfat circuit_id_port ));
+  '';
+};
 
 </%init>

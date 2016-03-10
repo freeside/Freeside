@@ -108,6 +108,13 @@ sub table_info {
                           'disable_inventory' => 1,
                           'disable_select'    => 1,
                          },
+      # ODN circuit
+      'circuit_id'    => {
+                          'label' => 'ODN circuit',
+                          'type'  => 'input-fiber_circuit',
+                          'disable_inventory' => 1,
+                          'disable_select'    => 1,
+                         },
       # ONT stuff
       'ont_id'        => {
                           'label' => 'ONT #',
@@ -180,15 +187,14 @@ sub search_sql {
 
 =item label
 
-Returns a description of this fiber service containing the OLT name and
-port location, and the ONT serial number.
+Returns a description of this fiber service containing the circuit ID
+and the ONT serial number.
 
 =cut
 
 sub label {
   my $self = shift;
-  $self->ont_serial . ' @ ' . $self->fiber_olt->oltname . ' ' .
-  join('-', $self->shelf, $self->card, $self->olt_port);
+  $self->ont_serial . ' @ ' . $self->circuit_id;
 }
 
 # nothing special for insert, delete, or replace
@@ -247,12 +253,14 @@ sub check {
     || $self->ut_alphan('ont_serial')
     || $self->ut_alphan('ont_port')
     || $self->ut_numbern('vlan')
-    || $self->ut_snumbern('signal')
+    || $self->ut_sfloatn('signal')
     || $self->ut_numbern('speed_up')
     || $self->ut_numbern('speed_down')
     || $self->ut_textn('ont_install')
   ;
   return $error if $error;
+
+  $self->set('signal', sprintf('%.2f', $self->get('signal')));
 
   $self->SUPER::check;
 }

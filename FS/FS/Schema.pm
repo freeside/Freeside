@@ -6899,8 +6899,9 @@ sub tables_hashref {
         'ont_typenum',    'int', 'NULL',      '', '', '',
         'ont_serial', 'varchar', 'NULL', $char_d, '', '',
         'ont_port',   'varchar', 'NULL',      16, '', '',
+        'circuit_id', 'varchar', 'NULL', $char_d, '', '',
         'vlan',           'int', 'NULL',      '', '', '',
-        'signal',         'int', 'NULL',      '', '', '',
+        'signal',     'decimal', 'NULL',  '10,2', '', '',
         'speed_up',       'int', 'NULL',      '', '', '',
         'speed_down',     'int', 'NULL',      '', '', '',
         'ont_install','varchar', 'NULL', $char_d, '', '',
@@ -6926,13 +6927,34 @@ sub tables_hashref {
       'columns' => [
         'oltnum',   'serial', '',       '', '', '',
         'oltname', 'varchar', '',  $char_d, '', '',
+        'sitenum',     'int', '',       '', '', '',
         'serial',  'varchar', '',  $char_d, '', '',
         'disabled',   'char', 'NULL',    1, '', '',
       ],
       'primary_key' => 'oltnum',
       'unique' => [ ],
       'index'  => [ ],
+      'foreign_keys' => [
+                          { columns => [ 'sitenum' ],
+                            table   => 'olt_site',
+                          },
+                        ],
     },
+
+    'olt_site' => {
+      'columns' => [
+        'sitenum',  'serial', '',      '', '', '',
+        'market',  'varchar', '', $char_d, '', '',
+        'site',    'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'sitenum',
+      'unique' => [ [ 'market', 'site' ] ],
+      'index' => [ ],
+    },
+
+
+
+
 
     'vend_main' => {
       'columns' => [
