@@ -16,12 +16,14 @@ use FS::cdr_batch;
 
 sub usage {
   "Usage:
+freeside-cdr-portaone-import -x exportnum [-s startdate] [-e enddate] [-v] freesideuser
+
 freeside-cdr-portaone-import -h 'your.domain.com:443' -u switchusername -p switchpass 
   [-s startdate] [-e enddate] [-v] freesideuser
 ";
 }
 
-my ($host,$username,$password,$startdate,$enddate,$verbose);
+my ($host,$username,$password,$startdate,$enddate,$verbose,$exportnum);
 GetOptions(
   "enddate=s"   => \$enddate,
   "host=s"      => \$host,
@@ -29,11 +31,12 @@ GetOptions(
   "startdate=s" => \$startdate,
   "username=s"  => \$username,
   "verbose"     => \$verbose,
+  "x=s"         => \$exportnum,
 );
 
 my $fsuser = $ARGV[-1];
 
-die usage() unless $host && $password && $username && $fsuser;
+die usage() unless $fsuser;
 
 adminsuidsetup($fsuser);
 
@@ -42,6 +45,19 @@ if ($host =~ /^(.*)\:(.*)$/) {
   $host = $1;
   $port = $2;
 }
+
+if ($exportnum) {
+  my $export = qsearchs('part_export', { 'exportnum' => $exportnum });
+  die "Export not found" unless $export;
+  $host = $export->machine;
+  $port = $export->option('port');
+  $username = $export->option('username');
+  $password = $export->option('password');
+  die "Auth info not fully specified in export"
+    unless $host && $port && $username && $password;
+}
+
+die usage() unless $host && $password && $username;
 
 if ($startdate) {
   $startdate = str2time($startdate) or die "Can't parse startdate $startdate";

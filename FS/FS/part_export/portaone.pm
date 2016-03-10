@@ -23,12 +23,6 @@ PortaOne integration for Freeside
 
 This export offers basic svc_phone provisioning for PortaOne.
 
-During insert, this will add customers to portaone if they do not yet exist,
-using the customer prefix + custnum as the customer name.  An account will
-be created for the service and assigned to the customer, using account prefix
-+ svcnum as the account id.  During replace, the customer info will be updated
-if it already exists in the system.
-
 This module also provides generic methods for working through the L</PortaOne API>.
 
 =cut
@@ -42,10 +36,10 @@ tie my %options, 'Tie::IxHash',
                           default => '' },
   'port'             => { label => 'Port',
                           default => 443 },
-  'account_prefix'   => { label => 'Account ID Prefix',
-                          default => 'FREESIDE_CUST' },
-  'customer_prefix'  => { label => 'Customer Name Prefix',
-                          default => 'FREESIDE_SVC' },
+  'account_id'       => { label => 'Account ID',
+                          default => 'FREESIDE CUST $custnum' },
+  'customer_name'    => { label => 'Customer Name',
+                          default => 'FREESIDE SVC $svcnum' },
   'debug'            => { type => 'checkbox',
                           label => 'Enable debug warnings' },
 ;
@@ -56,12 +50,25 @@ tie my %options, 'Tie::IxHash',
   'options'         => \%options,
   'notes'           => <<'END',
 During insert, this will add customers to portaone if they do not yet exist,
-using the customer prefix + custnum as the customer name.  An account will
-be created for the service and assigned to the customer, using account prefix
-+ svcnum as the account id.  During replace, the customer info will be updated
-if it already exists in the system.
+using the "Customer Name" option with substitutions from the customer record 
+in freeside.  If option "Account ID" is also specified, an account will be 
+created for the service and assigned to the customer, using substitutions
+from the phone service record in freeside.
+
+During replace, if a matching account id for the old service can be found,
+the existing customer and account will be updated.  Otherwise, if a matching 
+customer name is found, the info for that customer will be updated.  
+Otherwise, nothing will be updated during replace.
+
+Use caution to avoid name/id conflicts when introducing this export to a portaone 
+system with existing customers/accounts.
 END
 );
+
+### NOTE:  If we provision DIDs, conflicts with existing data and changes
+### to the name/id scheme will be non-issues, as we can load DID by number 
+### and then load account/customer from there, but provisioning DIDs has
+### not yet been implemented....
 
 sub _export_insert {
   my ($self, $svc_phone) = @_;
@@ -71,22 +78,18 @@ sub _export_insert {
   return "Could not load service customer" unless $cust_main;
   my $conf = new FS::Conf;
 
+  # make sure customer name is configured
+  my $customer_name = $self->portaone_customer_name($cust_main);
+  return "No customer name configured, nothing to export"
+    unless $customer_name;
+
   # initialize api session
   $self->api_login;
   return $self->api_error if $self->api_error;
 
-  # load DID, abort if it is already assigned
-#  my $number_info = $self->api_call('DID','get_number_info',{
-#    'number' => $svc_phone->countrycode . $svc_phone->phonenum
-#  },'number_info');
-#  return $self->api_error if $self->api_error;
-#  return "Number is already assigned" if $number_info->{'i_account'};
-
-  # reserve DID
-
   # check if customer already exists
   my $customer_info = $self->api_call('Customer','get_customer_info',{
-    'name' => $self->option('customer_prefix') . $cust_main->custnum,
+    'name' => $customer_name,
   },'customer_info');
   my $i_customer = $customer_info ? $customer_info->{'i_customer'} : undef;
 
@@ -97,44 +100,54 @@ sub _export_insert {
   unless ($i_customer) {
     $i_customer = $self->api_call('Customer','add_customer',{
       'customer_info' => {
-        'name' => $self->option('customer_prefix') . $cust_main->custnum,
+        'name' => $customer_name,
         'iso_4217' => ($conf->config('currency') || 'USD'),
       }
     },'i_customer');
-    return $self->api_error if $self->api_error;
-    return "Error creating customer" unless $i_customer;
+    return $self->api_error_logout if $self->api_error;
+    unless ($i_customer) {
+      $self->api_logout;
+      return "Error creating customer";
+    }
   }
 
-  # check if account already exists
-  my $account_info = $self->api_call('Account','get_account_info',{
-    'id' => $self->option('account_prefix') . $svc_phone->svcnum,
-  },'account_info');
+  # export account if account id is configured
+  my $account_id = $self->portaone_account_id($svc_phone);
+  if ($account_id) {
+    # check if account already exists
+    my $account_info = $self->api_call('Account','get_account_info',{
+      'id' => $account_id,
+    },'account_info');
 
-  my $i_account;
-  if ($account_info) {
-    # there shouldn't be any time account already exists on insert,
-    # but if custnum & svcnum match, should be safe to run with it
-    return "Account " . $svc_phone->svcnum . " already exists"
-      unless $account_info->{'i_customer'} eq $i_customer;
-    $i_account = $account_info->{'i_account'};
-  } else {
-    # normal case--insert account for this service
-    $i_account = $self->api_call('Account','add_account',{
-      'account_info' => {
-        'id' => $self->option('account_prefix') . $svc_phone->svcnum,
-        'i_customer' => $i_customer,
-        'iso_4217' => ($conf->config('currency') || 'USD'),
+    my $i_account;
+    if ($account_info) {
+      # there shouldn't be any time account already exists on insert,
+      # but if custnum matches, should be safe to run with it
+      unless ($account_info->{'i_customer'} eq $i_customer) {
+        $self->api_logout;
+        return "Account $account_id already exists";
       }
-    },'i_account');
-    return $self->api_error if $self->api_error;
+      $i_account = $account_info->{'i_account'};
+    } else {
+      # normal case--insert account for this service
+      $i_account = $self->api_call('Account','add_account',{
+        'account_info' => {
+          'id' => $self->portaone_account_id($svc_phone),
+          'i_customer' => $i_customer,
+          'iso_4217' => ($conf->config('currency') || 'USD'),
+        }
+      },'i_account');
+      return $self->api_error_logout if $self->api_error;
+    }
+    unless ($i_account) {
+      $self->api_logout;
+      return "Error creating account";
+    }
   }
-  return "Error creating account" unless $i_account;
-
-  # assign DID to account
 
   # update customer, including name
   $self->api_update_customer($i_customer,$cust_main);
-  return $self->api_error if $self->api_error;
+  return $self->api_error_logout if $self->api_error;
 
   # end api session
   return $self->api_logout;
@@ -152,23 +165,41 @@ sub _export_replace {
   $self->api_login;
   return $self->api_error if $self->api_error;
 
-  # check for existing customer
-  #   should be loading this from DID...
-  my $customer_info = $self->api_call('Customer','get_customer_info',{
-    'name' => $cust_main->custnum,
-  },'customer_info');
-  my $i_customer = $customer_info ? $customer_info->{'i_customer'} : undef;
+  # if we ever provision DIDs, we should load from DID rather than account
 
-  return "Customer not found in portaone" unless $i_customer;
+  # check for existing account
+  my $account_id = $self->portaone_account_id($svc_phone_old);
+  my $account_info = $self->api_call('Account','get_account_info',{
+    'id' => $account_id,
+  },'account_info');
+  my $i_account = $account_info ? $account_info->{'i_account'} : undef;
 
-  # if did changed
-  #   make sure new did is available, reserve
-  #   release old did from account
-  #   assign new did to account
+  # if account exists, use account customer
+  my $i_customer;
+  if ($account_info) {
+    $i_account  = $account_info->{'i_account'};
+    $i_customer = $account_info->{'i_customer'};
+  # otherwise, check for existing customer
+  } else {
+    my $customer_name = $self->portaone_customer_name($cust_main);
+    my $customer_info = $self->api_call('Customer','get_customer_info',{
+      'name' => $customer_name,
+    },'customer_info');
+    $i_customer = $customer_info ? $customer_info->{'i_customer'} : undef;
+  }
+
+  unless ($i_customer) {
+    $self->api_logout;
+    return "Neither customer nor account found in portaone";
+  }
 
   # update customer info
-  $self->api_update_customer($i_customer,$cust_main);
-  return $self->api_error if $self->api_error;
+  $self->api_update_customer($i_customer,$cust_main) if $i_customer;
+  return $self->api_error_logout if $self->api_error;
+
+  # update account info
+  $self->api_update_account($i_account,$svc_phone) if $i_account;
+  return $self->api_error_logout if $self->api_error;
 
   # end api session
   return $self->api_logout();
@@ -198,12 +229,11 @@ set in the export options.
 	die $export->api_error if $export->api_error;
 
 	my $customer_info = $export->api_call('Customer','get_customer_info',{
-      'name' => $export->option('customer_prefix') . $cust_main->custnum,
+      'name' => $export->portaone_customer_name($cust_main),
     },'customer_info');
-	die $export->api_error if $export->api_error;
+	die $export->api_error_logout if $export->api_error;
 
-	$export->api_logout;
-	die $export->api_error if $export->api_error;
+	return $export->api_logout;
 
 =cut
 
@@ -272,6 +302,21 @@ sub api_error {
   return $self->{'__portaone_error'} || '';
 }
 
+=head2 api_error_logout
+
+Attempts L</api_logout>, but returns L</api_error> message from
+before logout was attempted.  Useful for logging out
+properly after an error.
+
+=cut
+
+sub api_error_logout {
+  my $self = shift;
+  my $error = $self->api_error;
+  $self->api_logout;
+  return $error;
+}
+
 =head2 api_login
 
 Initializes an api session using the credentials for this export.
@@ -305,6 +350,34 @@ sub api_logout {
   return $self->api_error;
 }
 
+=head2 api_update_account
+
+Accepts I<$i_account> and I<$svc_phone>.  Updates the account
+specified by I<$i_account> with the current values of I<$svc_phone>
+(currently only updates account_id.)
+Always returns empty.  Retrieve error messages using L</api_error>.
+
+=cut
+
+sub api_update_account {
+  my ($self,$i_account,$svc_phone) = @_;
+  my $newid = $self->portaone_account_id($svc_phone);
+  unless ($newid) {
+    $self->{'__portaone_error'} = "Error loading account id during update_account";
+    return;
+  }
+  my $updated_account = $self->api_call('Account','update_account',{
+    'account_info' => {
+      'i_account' => $i_account,
+      'id' => $newid,
+    },
+  },'i_account');
+  return if $self->api_error;
+  $self->{'__portaone_error'} = "Account updated, but account id mismatch detected"
+    unless $updated_account eq $i_account; # should never happen
+  return;
+}
+
 =head2 api_update_customer
 
 Accepts I<$i_customer> and I<$cust_main>.  Updates the customer
@@ -320,22 +393,70 @@ sub api_update_customer {
     $self->{'__portaone_error'} = "Could not load customer location";
     return;
   }
+  my $newname = $self->portaone_customer_name($cust_main);
+  unless ($newname) {
+    $self->{'__portaone_error'} = "Error loading customer name during update_customer";
+    return;
+  }
   my $updated_customer = $self->api_call('Customer','update_customer',{
-    'i_customer' => $i_customer,
-    'companyname' => $cust_main->company,
-    'firstname' => $cust_main->first,
-    'lastname' => $cust_main->last,
-    'baddr1' => $location->address1,
-    'baddr2' => $location->address2,
-    'city' => $location->city,
-    'state' => $location->state,
-    'zip' => $location->zip,
-    'country' => $location->country,
-    # could also add contact phones & email here
+    'customer_info' => {
+      'i_customer' => $i_customer,
+      'name' => $newname,
+      'companyname' => $cust_main->company,
+      'firstname' => $cust_main->first,
+      'lastname' => $cust_main->last,
+      'baddr1' => $location->address1,
+      'baddr2' => $location->address2,
+      'city' => $location->city,
+      'state' => $location->state,
+      'zip' => $location->zip,
+      'country' => $location->country,
+      # could also add contact phones & email here
+    },
   },'i_customer');
+  return if $self->api_error;
   $self->{'__portaone_error'} = "Customer updated, but custnum mismatch detected"
-    unless $updated_customer eq $i_customer;
+    unless $updated_customer eq $i_customer; # should never happen
   return;
+}
+
+sub _substitute {
+  my ($self, $string, @objects) = @_;
+  return '' unless $string;
+  foreach my $object (@objects) {
+    next unless $object;
+    foreach my $field ($object->fields) {
+      next unless $field;
+      my $value = $object->get($field);
+      $string =~ s/\$$field/$value/g;
+    }
+  }
+  # strip leading/trailing whitespace
+  $string =~ s/^\s//g;
+  $string =~ s/\s$//g;
+  return $string;
+}
+
+=head2 portaone_customer_name
+
+Accepts I<$cust_main> and returns customer name with substitutions.
+
+=cut
+
+sub portaone_customer_name {
+  my ($self, $cust_main) = @_;
+  $self->_substitute($self->option('customer_name'),$cust_main);
+}
+
+=head2 portaone_account_id
+
+Accepts I<$svc_phone> and returns account id with substitutions.
+
+=cut
+
+sub portaone_account_id {
+  my ($self, $svc_phone) = @_;
+  $self->_substitute($self->option('account_id'),$svc_phone);
 }
 
 =head1 SEE ALSO
