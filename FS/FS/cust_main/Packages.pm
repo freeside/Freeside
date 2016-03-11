@@ -74,6 +74,14 @@ Optional subject for a ticket created and attached to this customer
 
 Optional queue name for ticket additions
 
+=item invoice_details
+
+Optional arrayref of invoice detail strings to add (creates cust_pkg_detail detailtype 'I')
+
+=item package_comments
+
+Optional arrayref of package comment strings to add (creates cust_pkg_detail detailtype 'C')
+
 =back
 
 =cut
@@ -206,6 +214,22 @@ sub order_pkg {
       $dbh->rollback if $oldAutoCommit;
       return "inserting supplemental package: $error";
     }
+  }
+
+  # add details/comments
+  if ($opt->{'invoice_details'}) {
+    $error = $cust_pkg->set_cust_pkg_detail('I', @{$opt->{'invoice_details'}});
+  }
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "setting invoice details: $error";
+  }
+  if ($opt->{'package_comments'}) {
+    $error = $cust_pkg->set_cust_pkg_detail('C', @{$opt->{'package_comments'}});
+  }
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "setting package comments: $error";
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

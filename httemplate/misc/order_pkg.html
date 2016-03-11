@@ -197,6 +197,52 @@
 
 % }
 
+% if ($quotationnum) {
+<BR>
+<FONT CLASS="fsinnerbox-title"><% mt('Quotation details') |h %></FONT>
+<TABLE ID="QuotationDetailTable" BORDER="0" BGCOLOR="#cccccc">
+  <TR>
+    <TD></TD>
+    <TD>
+      <SELECT NAME="copy_on_order">
+        <OPTION VALUE=""<% $copy_on_order ? '' : ' SELECTED' %>>
+          <% emt('Details will only appear on quotation') %>
+        </OPTION>
+        <OPTION VALUE="Y"<% $copy_on_order ? ' SELECTED' : '' %>>
+          <% emt('Copy details to invoice when placing order') %>
+        </OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+<& /edit/elements/detail-table.html, 
+     id      => 'QuotationDetailTable',
+     details => $details->{'quotation_detail'},
+     field   => 'quotation_detail',
+ &>
+</TABLE>
+% } else {
+<BR>
+<FONT CLASS="fsinnerbox-title"><% mt('Invoice details') |h %></FONT>
+<TABLE ID="InvoiceDetailTable" BORDER="0" BGCOLOR="#cccccc">
+<& /edit/elements/detail-table.html, 
+     id      => 'InvoiceDetailTable',
+     details => $details->{'invoice_detail'},
+     field   => 'invoice_detail',
+ &>
+</TABLE>
+
+<BR>
+<FONT CLASS="fsinnerbox-title"><% mt('Package comments') |h %></FONT>
+<TABLE ID="PackageCommentTable" BORDER="0" BGCOLOR="#cccccc">
+<& /edit/elements/detail-table.html, 
+     id      => 'PackageCommentTable',
+     details => $details->{'package_comment'},
+     field   => 'package_comment',
+ &>
+</TABLE>
+% }
+
+
 <BR>
 % my $onclick = $cgi->param('lock_locationnum')
 %                 ? 'document.OrderPkgForm.submit()'
@@ -245,6 +291,23 @@ my $quotationnum = '';
 if ( $cgi->param('quotationnum') =~ /^(\d+)$/ ) {
   $quotationnum = $1;
 }
+
+my $details = {
+  'invoice_detail' => [],
+  'package_comment' => [],
+  'quotation_detail' => [],
+};
+foreach my $field ( $cgi->param ) {
+  foreach my $detailtype ( keys %$details ) {
+    if ($field =~ /^$detailtype(\d+)$/) {
+      $details->{$detailtype}->[$1] = $cgi->param($field);
+    }
+  }
+}
+foreach my $detailtype ( keys %$details ) {
+  @{ $details->{$detailtype} } = grep { length($_) } @{ $details->{$detailtype} };
+}
+my $copy_on_order = $cgi->param('copy_on_order');
 
 die 'no custnum or prospectnum' unless $cust_main || $prospect_main;
 

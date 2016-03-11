@@ -1,9 +1,4 @@
-<% include("/elements/header-popup.html", $title, '',
-            ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
-          )
-%>
-
-%# <% include('/elements/error.html') %>
+<& /elements/header-popup.html, $title &>
 
 <FORM ACTION="process/cust_pkg_detail.html" NAME="DetailForm" ID="DetailForm" METHOD="POST">
 
@@ -40,17 +35,10 @@
     <TD COLSPAN=2><% ucfirst($name{$detailtype}) %>: </TD>
   </TR>
 
-% my $row = 0;
-% for ( @details ) { 
-
-    <TR>
-      <TD></TD>
-      <TD>
-        <INPUT TYPE="text" NAME="detail<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $_->detail |h %>" rownum="<% $row++ %>" onkeyup="possiblyAddRow" onchange="possiblyAddRow" >
-      </TD>
-    </TR>
-
-% } 
+<& elements/detail-table.html, 
+     id      => 'DetailTable',
+     details => \@details,
+ &>
 
 </TABLE>
 
@@ -58,48 +46,6 @@
 <INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% $title %>">
 
 </FORM>
-
-<SCRIPT TYPE="text/javascript">
-
-  var rownum = <% $row %>;
-
-  function possiblyAddRow() {
-    if ( ( rownum - this.getAttribute('rownum') ) == 1 ) {
-      addRow();
-    }
-  }
-
-  function addRow() {
-
-    var table = document.getElementById('DetailTable');
-    var tablebody = table.getElementsByTagName('tbody').item(0);
-
-    var row = document.createElement('TR');
-
-    var empty_cell = document.createElement('TD');
-    row.appendChild(empty_cell);
-
-    var detail_cell = document.createElement('TD');
-
-      var detail_input = document.createElement('INPUT');
-      detail_input.setAttribute('name', 'detail'+rownum);
-      detail_input.setAttribute('id',   'detail'+rownum);
-      detail_input.setAttribute('size', 60);
-      detail_input.setAttribute('maxLength', 65);
-      detail_input.setAttribute('rownum',   rownum);
-      detail_input.onkeyup = possiblyAddRow;
-      detail_input.onchange = possiblyAddRow;
-      detail_cell.appendChild(detail_input);
-
-    row.appendChild(detail_cell);
-
-    tablebody.appendChild(row);
-
-    rownum++;
-
-  }
-
-</SCRIPT>
 
 </BODY>
 </HTML>
@@ -136,7 +82,7 @@ my $cust_pkg = qsearchs({
 
 my $part_pkg = $cust_pkg->part_pkg;
 
-my @details = $cust_pkg->cust_pkg_detail($detailtype);
+my @details = map { $_->detail } $cust_pkg->cust_pkg_detail($detailtype);
 
 my $title = ( scalar(@details) ? 'Edit ' : 'Add ' ). $name{$detailtype};
 
