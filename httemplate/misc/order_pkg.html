@@ -136,9 +136,10 @@
 
 </TABLE><BR>
 
-<% include('/misc/cust_pkg_usageprice.html',
+<& /misc/cust_pkg_usageprice.html,
      'pkgpart' => $pkgpart
-   ) %>
+&>
+
 <BR>
 
 % my $discount_cust_pkg = $curuser->access_right('Discount customer package');
