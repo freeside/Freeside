@@ -106,7 +106,11 @@ sub detail_table          { 'quotation_pkg_detail'; }
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
-otherwise returns false.
+otherwise returns false.  Accepts the following options:
+
+quotation_details - optional arrayref of detail strings to add (creates quotation_pkg_detail records)
+
+copy_on_order - value for this field when creating quotation_pkg_detail records (same for all details)
 
 =cut
 
@@ -128,10 +132,22 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
-  } else {
-    $dbh->commit if $oldAutoCommit;
-    return '';
   }
+
+  if ($options{'quotation_details'}) {
+    $error = $self->set_details(
+                details => $options{'quotation_details'},
+                copy_on_order => $options{'copy_on_order'} ? 'Y' : '',
+             );
+    if ( $error ) {
+      $error .= ' (setting details)';
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return '';
 }
 
 =item delete
