@@ -159,14 +159,38 @@ foreach my $quantity_param ( grep { $cgi->param($_) && $cgi->param($_) > 0 }
 }
 $hash{cust_pkg_usageprice} = \@cust_pkg_usageprice;
 
+# extract details (false laziness with /misc/order_pkg.html)
+my $details = {
+  'invoice_detail' => [],
+  'package_comment' => [],
+  'quotation_detail' => [],
+};
+foreach my $field ( $cgi->param ) {
+  foreach my $detailtype ( keys %$details ) {
+    if ($field =~ /^$detailtype(\d+)$/) {
+      $details->{$detailtype}->[$1] = $cgi->param($field);
+    }
+  }
+}
+foreach my $detailtype ( keys %$details ) {
+  @{ $details->{$detailtype} } = grep { length($_) } @{ $details->{$detailtype} };
+}
+
 if ( $quotationnum ) {
 
   $quotation_pkg = new FS::quotation_pkg \%hash;
   $quotation_pkg->quotationnum($quotationnum);
   $quotation_pkg->prospectnum($prospect_main->prospectnum) if $prospect_main;
 
+  my %opt = @{ $details->{'quotation_detail'} }
+  ? (
+    quotation_details => $details->{'quotation_detail'},
+    copy_on_order     => scalar($cgi->param('copy_on_order')) ? 'Y' : '',
+  )
+  : ();
+
   #XXX handle new location
-  $error = $quotation_pkg->insert;
+  $error = $quotation_pkg->insert(%opt);
 
 } else {
 
@@ -193,6 +217,9 @@ if ( $quotationnum ) {
   } else {
     $opt{'locationnum'} = $locationnum;
   }
+
+  $opt{'invoice_details'} = $details->{'invoice_detail'} if @{ $details->{'invoice_detail'} };
+  $opt{'package_comments'} = $details->{'package_comment'} if @{ $details->{'package_comment'} };
 
   $error = $cust_main->order_pkg( \%opt );
 

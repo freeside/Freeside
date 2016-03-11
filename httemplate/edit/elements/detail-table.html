@@ -1,0 +1,85 @@
+<%doc>
+Common code for editing invoice/quotation details/comments.
+
+Expects to be the last element in a two-column table with specified id
+
+  <& /edit/elements/detail-table.html, 
+       id      => 'element_id', # required
+       details => \@details,    # plain text strings, existing details
+       label   => 'Comments',   # optional, shows on first row only
+       field   => 'comment',    # input field name/id, appended with rownum, default 'detail'
+  &>
+
+</%doc>
+
+<SCRIPT>
+% unless ($detail_table_init) {
+%   $detail_table_init = 1;
+
+  var detail_table_info = {};
+  detail_table_info.rownum = {};
+  detail_table_info.label  = {};
+  detail_table_info.field  = {};
+
+  function possiblyAddDetailRow(tableid,rownum) {
+    if (( detail_table_info.rownum[tableid] - rownum == 1 ) || !detail_table_info.rownum[tableid]) {
+      addDetailRow(tableid);
+    }
+  }
+
+  function addDetailRow(tableid,newtext) {
+
+    var table = document.getElementById(tableid);
+    var newrownum = detail_table_info.rownum[tableid];
+    var newfield  = detail_table_info.field[tableid] + newrownum;
+
+    var row = document.createElement('TR');
+
+    var empty_cell = document.createElement('TD');
+    if (!newrownum) {
+      empty_cell.innerHTML = detail_table_info.label[tableid];
+      empty_cell.style.textAlign = 'right';
+    }
+    row.appendChild(empty_cell);
+
+    var detail_cell = document.createElement('TD');
+
+    var detail_input = document.createElement('INPUT');
+    detail_input.setAttribute('name', newfield);
+    detail_input.setAttribute('id',   newfield);
+    detail_input.setAttribute('size', 60);
+    detail_input.setAttribute('maxLength', 65);
+    detail_input.onkeyup = function () { possiblyAddDetailRow(tableid,newrownum) };
+    detail_input.onchange = function () { possiblyAddDetailRow(tableid,newrownum) };
+    detail_input.value = newtext || '';
+    detail_cell.appendChild(detail_input);
+
+    row.appendChild(detail_cell);
+
+    table.appendChild(row);
+
+    detail_table_info.rownum[tableid]++;
+
+  }
+% } # end init
+  detail_table_info.label['<% $id %>'] = '<% emt($label) %>';
+  detail_table_info.field['<% $id %>'] = '<% $field %>';
+  detail_table_info.rownum['<% $id %>'] = 0;
+% foreach my $detail ( @details ) { 
+  addDetailRow('<% $id %>','<% $detail %>');
+% } 
+</SCRIPT>
+
+<%shared>
+my $detail_table_init = 0;
+</%shared>
+<%init>
+my %opt = @_;
+
+my @details = $opt{'details'} ? @{ $opt{'details'} } : ();
+push(@details,'') if $details[$#details] || !@details;
+my $id = $opt{'id'} or die "No id specified";
+my $label = $opt{'label'} || '';
+my $field = $opt{'field'} || 'detail';
+
+</%init>
