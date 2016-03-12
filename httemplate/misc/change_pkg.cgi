@@ -39,11 +39,10 @@
 </TABLE>
 <BR>
 
-<% include('/misc/cust_pkg_usageprice.html',
+<& /elements/table-cust_pkg_usageprice.html,
      'pkgpart' => (scalar($cgi->param('pkgpart')) || $cust_pkg->pkgpart),
      'pkgnum'  => ($cust_pkg->change_to_pkgnum || $pkgnum),
-   ) %>
-<BR>
+&>
 
 <FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
 <% ntable('#cccccc') %>

@@ -136,11 +136,9 @@
 
 </TABLE><BR>
 
-<& /misc/cust_pkg_usageprice.html,
+<& /elements/table-cust_pkg_usageprice.html,
      'pkgpart' => $pkgpart
 &>
-
-<BR>
 
 % my $discount_cust_pkg = $curuser->access_right('Discount customer package');
 % my $waive_setup_fee   = $curuser->access_right('Waive setup fee');
