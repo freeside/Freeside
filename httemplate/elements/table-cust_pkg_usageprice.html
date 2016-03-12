@@ -27,6 +27,7 @@ While disabled, calling usageprice_pkg_changed will have no effect.
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 ID="cust_pkg_usageprice_table">
 
 </TABLE>
+<BR ID="cust_pkg_usageprice_br" STYLE="display:none">
 
 <SCRIPT>
 
@@ -64,6 +65,7 @@ function clear_part_pkg_usageprice () {
     table.deleteRow(r);
   }
   document.getElementById('cust_pkg_usageprice_title').style.display = 'none';
+  document.getElementById('cust_pkg_usageprice_br').style.display = 'none';
 }
 
 // catches response from xmlhttp request, updates cache & calls update function
@@ -100,8 +102,10 @@ function update_part_pkg_usageprice (pkgpart) {
 
   if ( rownum > 0 ) {
     document.getElementById('cust_pkg_usageprice_title').style.display = '';
+    document.getElementById('cust_pkg_usageprice_br').style.display = '';
   } else {
     document.getElementById('cust_pkg_usageprice_title').style.display = 'none';
+    document.getElementById('cust_pkg_usageprice_br').style.display = 'none';
   }
 
 }
