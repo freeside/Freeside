@@ -434,7 +434,7 @@ sub all_pkgs {
   my $self = shift;
   my $extra_qsearch = ref($_[0]) ? shift : { @_ };
 
-  return $self->num_pkgs unless wantarray || keys %$extra_qsearch;
+  return $self->num_pkgs($extra_qsearch) unless wantarray;
 
   my @cust_pkg = ();
   if ( $self->{'_pkgnum'} && ! keys %$extra_qsearch ) {
@@ -464,11 +464,11 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 
 sub ncancelled_pkgs {
   my $self = shift;
-  my $extra_qsearch = ref($_[0]) ? shift : {};
+  my $extra_qsearch = ref($_[0]) ? shift : { @_ };
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  return $self->num_ncancelled_pkgs unless wantarray;
+  return $self->num_ncancelled_pkgs($extra_qsearch) unless wantarray;
 
   my @cust_pkg = ();
   if ( $self->{'_pkgnum'} ) {

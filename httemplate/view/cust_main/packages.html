@@ -302,8 +302,8 @@ if ( $cgi->param('locationnum') =~ /^(\d+)$/ ) {
 
 my $total_pkgs = $cust_main->all_pkgs;
 
-my $num_method = $hide_cancelled ? 'ncancelled_pkgs' : 'all_pkgs';
-my $num_pkgs = $cust_main->$num_method({ 
+my $method = $hide_cancelled ? 'ncancelled_pkgs' : 'all_pkgs';
+my $num_pkgs = $cust_main->$method({ 
   'addl_from' => $addl_from,
   'extra_sql' => $extra_sql,
 });
@@ -311,7 +311,7 @@ my $num_pkgs = $cust_main->$num_method({
 my $maxrecords = 10;
 my $offset = $cgi->param('offset') =~ /^(\d+)$/ ? $1 : 0;
 
-my @packages = $cust_main->all_pkgs( {
+my @packages = $cust_main->$method( {
   'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
   'addl_from' => $addl_from. "
     LEFT JOIN part_pkg_option AS setup_option
