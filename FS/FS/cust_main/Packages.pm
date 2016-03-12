@@ -730,7 +730,7 @@ sub num_pkgs {
   }
   $sql = "AND $sql" if $sql && $sql !~ /^\s*$/ && $sql !~ /^\s*AND/i;
   my $sth = dbh->prepare(
-    "SELECT COUNT(*) FROM cust_pkg $addl_from WHERE custnum = ? $sql"
+    "SELECT COUNT(*) FROM cust_pkg $addl_from WHERE cust_pkg.custnum = ? $sql"
   ) or die dbh->errstr;
   $sth->execute($self->custnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
