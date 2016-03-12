@@ -139,7 +139,7 @@ if ( el ) el.scrollIntoView(true);
       window.location = '<% $cgi->self_url %>;locationnum=' + what.options[what.selectedIndex].value;
 %     $cgi->param('locationnum', $locationnum);
     }
-    
+
   </SCRIPT>
 
 % }
@@ -310,6 +310,7 @@ my $num_pkgs = $cust_main->$method({
 
 my $maxrecords = 10;
 my $offset = $cgi->param('offset') =~ /^(\d+)$/ ? $1 : 0;
+$cgi->delete('offset');
 
 my @packages = $cust_main->$method( {
   'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
