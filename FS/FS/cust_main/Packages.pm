@@ -485,7 +485,8 @@ sub ncancelled_pkgs {
          $self->custnum. "\n"
       if $DEBUG > 1;
 
-    $extra_qsearch->{'extra_sql'} .= ' AND ( cancel IS NULL OR cancel = 0 ) ';
+    $extra_qsearch->{'extra_sql'} .=
+      ' AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 ) ';
 
     @cust_pkg = $self->_cust_pkg($extra_qsearch);
 
