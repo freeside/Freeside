@@ -26,6 +26,4 @@ my @return = map {
   }
 } @records;
 
-print STDERR Dumper(\@return);
-
 </%init>
