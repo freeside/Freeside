@@ -122,6 +122,8 @@ sub realtime_collect {
   }
 
   $options{amount} = $self->balance unless exists( $options{amount} );
+  return '' unless $options{amount} > 0;
+
   $options{method} = FS::payby->payby2bop($self->payby)
     unless exists( $options{method} );
 
