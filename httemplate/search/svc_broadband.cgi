@@ -121,5 +121,9 @@ my $html_init = include('/elements/email-link.html',
                   'search_hash' => \%search_hash,
                   'table' => 'svc_broadband' 
                 );
+$html_init .= ' | ' .
+  '<a href="' .
+  $fsurl . 'search/svc_broadband-map.html?' . $cgi->query_string .
+  '">' . emt('View a map of these services') . '</a>';
 
 </%init>

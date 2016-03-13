@@ -1,0 +1,123 @@
+<%args>
+@features
+</%args>
+<%doc>
+Generic Google Maps front end.
+
+<& /elements/gmap.html,
+  features => [
+    { id => 'svc_acct/12',
+      geometry => {
+        type        => 'Point',
+        coordinates => [ -86, 40 ], # optionally altitude as the third coord
+      },
+      properties => {
+        # see https://developers.google.com/maps/documentation/javascript/3.exp/reference#Data.StyleOptions
+        style => {
+          icon => {
+            scale => 4,
+            fillColor => 'orange',
+          }
+        },
+        # content of popup info box (might AJAX this later)
+        content => '<a href="view/svc_acct.cgi?12">username@example.com</a>',
+      }
+    }, # end of feature
+  ],
+&>
+
+</%doc>
+<%init>
+foreach (@features) {
+  $_->{type} = 'Feature';
+  # any other per-feature massaging can go here
+}
+my $tree = {
+  type => 'FeatureCollection',
+  features => \@features
+};
+
+</%init>
+<div id="map_canvas"></div>
+
+<style type="text/css">
+html { height: 100% }
+
+body { height: 100%; margin: 0px; padding: 0px }
+
+#map_canvas { height: 100%; }
+</style>
+
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3">
+</script>
+
+<script type="text/javascript">
+
+var data_geojson = <% encode_json($tree) %>;
+
+var baseStyle = {
+  clickable: true,
+  icon: {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 4,
+    fillColor: 'green',
+    fillOpacity: 1,
+    strokeColor: 'black',
+    strokeWeight: 1,
+  },
+};
+
+var featureStyle = function(feature) {
+  // jQuery.extend(): merge properties of objects
+  // 'true' makes it a deep copy; start the merge with {} so that
+  // baseStyle doesn't get overwritten
+  return $.extend(true, {}, baseStyle, feature.getProperty('style'));
+};
+
+var map;
+function initMap() {
+  var canvas = $('#map_canvas');
+  map = new google.maps.Map(canvas[0], { zoom: 6 });
+  try {
+    map.data.addGeoJson(data_geojson);
+  } catch(ex) {
+    console.log(ex.toString);
+    debugger;
+  }
+
+  // construct bounds around all of the features
+  var bounds = new google.maps.LatLngBounds;
+  map.data.forEach(function(feature) {
+    var g = feature.getGeometry();
+    if (g.getType() == 'Point') {
+      bounds.extend(g.get());
+    } else if (g.getArray) {
+      g.getArray().forEach(function(point) { bounds.extend(point); });
+    }
+  });
+
+  map.fitBounds(bounds);
+  map.data.setStyle(featureStyle);
+
+  var info = new google.maps.InfoWindow;
+  map.data.addListener('click', function(ev) {
+    var feature = ev.feature;
+    if ( feature.getGeometry().getType() == 'Point' ) {
+      // then pop up an info box with the feature content
+      info.close();
+      info.setPosition(feature.getGeometry().get());
+      info.setContent(feature.getProperty('content'));
+      info.open(map);
+    }
+
+    // snap to feature ROI if it has one
+    if ( feature.getProperty('bounds') ) {
+      map.fitBounds( feature.getProperty('bounds') );
+    }
+
+  }); // addListener()
+}
+
+$().ready( initMap );
+</script>
+
