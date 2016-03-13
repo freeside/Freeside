@@ -1,0 +1,178 @@
+<& /elements/header.html, 'Broadband Search Results' &>
+  
+<& elements/gmap.html, features => \@features &>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied" unless
+  $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my $conf = new FS::Conf;
+
+my @features; # geoJSON structure
+
+# accept all the search logic from svc_broadband.cgi...
+my %search_hash;
+if ( $cgi->param('magic') eq 'unlinked' ) {
+  %search_hash = ( 'unlinked' => 1 );
+} else {
+  foreach (qw( custnum agentnum svcpart cust_fields )) {
+    $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+  }
+  foreach (qw(pkgpart routernum towernum sectornum)) {
+    $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
+  }
+}
+
+if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+  $search_hash{'order_by'} = "ORDER BY $1";
+}
+
+my $sql_query = FS::svc_broadband->search(\%search_hash);
+
+my %routerbyblock = ();
+
+my @rows = qsearch($sql_query);
+my %sectors;
+my %towers;
+my %tower_coord;
+my %tower_bounds;
+foreach my $svc_broadband (@rows) {
+  # don't try to show it if coords aren't set
+  next if !$svc_broadband->latitude || !$svc_broadband->longitude;
+  # coerce coordinates to numbers
+  my @coord = (
+    $svc_broadband->longitude + 0,
+    $svc_broadband->latitude + 0,
+  );
+  push @coord, $svc_broadband->altitude + 0
+    if length($svc_broadband->altitude); # it's optional
+
+  push @features,
+  {
+    id        => 'svc_broadband/'.$svc_broadband->svcnum,
+    geometry  => {
+      type        => 'Point',
+      coordinates => \@coord,
+    },
+    properties => {
+      content => include('.svc_broadband', $svc_broadband),
+    },
+  };
+  # look up tower location and draw connecting line
+  next if !$svc_broadband->sectornum;
+  my $sector = $sectors{$svc_broadband->sectornum} ||= $svc_broadband->tower_sector;
+  my $towernum = $sector->towernum;
+  my $tower = $towers{$towernum};
+
+  if (!$tower) {
+    $tower = $towers{$towernum} = $sector->tower;
+    $tower_coord{$towernum} =
+      [ $tower->longitude + 0,
+        $tower->latitude + 0,
+        ($tower->altitude || 0) + 0,
+      ];
+
+  }
+
+  my $tower = $towers{$towernum};
+  if ( $tower->latitude and $tower->longitude ) {
+    push @features,
+    {
+      geometry => {
+        type        => 'LineString',
+        coordinates => [ \@coord, $tower_coord{$towernum} ],
+      },
+      properties  => {
+        style       => {
+          strokeColor  => ($tower->color || 'green'),
+          strokeWeight => 2,
+        },
+      },
+    };
+
+    # also extend tower's ROI to include this point
+    # (this is experimental; might get better results using the centroid of
+    # all connected services or something)
+    my $bounds = $tower_bounds{$towernum} ||= {
+      east => $tower->longitude,
+      west => $tower->longitude,
+      north => $tower->latitude,
+      south => $tower->latitude,
+    };
+    if ($coord[0] > $bounds->{east}) {
+      $bounds->{east} = $coord[0];
+    } elsif ($coord[0] < $bounds->{west}) {
+      $bounds->{west} = $coord[0];
+    }
+    if ($coord[1] > $bounds->{north}) {
+      $bounds->{north} = $coord[1]
+    } elsif ($coord[1] < $bounds->{south}) {
+      $bounds->{south} = $coord[1]
+    }
+
+  } # if tower has coords
+} # foreach $svc_broadband
+
+foreach my $tower (values(%towers)) {
+  my $towernum = $tower->towernum;
+  my $bounds = $tower_bounds{$towernum};
+  # add some padding for easier reading
+  my $dx = 0.1 * ($bounds->{east} - $bounds->{west});
+  my $dy = 0.1 * ($bounds->{north} - $bounds->{south});
+  $bounds->{east} += $dx; 
+  $bounds->{west} -= $dx;
+  $bounds->{north} += $dy;
+  $bounds->{south} -= $dy;
+  push @features,
+  {
+    id        => 'tower/'.$towernum,
+    geometry  => {
+      type        => 'Point',
+      coordinates => $tower_coord{$towernum},
+    },
+    properties => {
+      style     => {
+        icon => {
+          path        => undef,
+          url         => $fsurl.'images/jcartier-antenna-square-21x51.png',
+          anchor      => { x => 10, y => 4 }
+        },
+      },
+      content   => include('.tower', $tower),
+      bounds    => $tower_bounds{$towernum},
+    },
+  };
+}
+
+</%init>
+<%def .svc_broadband>
+% my $svc = shift;
+% my @label = $svc->cust_svc->label;
+<H3>
+  <a target="_blank" href="<% $fsurl %>view/svc_broadband.cgi?<% $svc->svcnum %>">
+    <% $label[0] |h %> #<% $svc->svcnum %> | <% $label[1] %>
+  </a>
+</H3>
+% my $cust_main = $svc->cust_main;
+<a target="_blank" href="<% $fsurl %>view/cust_main.cgi?<% $cust_main->custnum %>">
+<& /elements/small_custview.html, {
+  cust_main => $svc->cust_main,
+  #url => $fsurl.'view/cust_main.cgi',
+} &>
+</a>
+</%def>
+<%def .tower>
+% my $tower = shift;
+% my $can_edit = $FS::CurrentUser::CurrentUser->access_right('Configuration');
+<H3>
+% if ( $can_edit ) {
+  <a target="_blank" href="<% $fsurl %>edit/tower.html?<% $tower->towernum %>">
+% }
+Tower #<% $tower->towernum %> | <% $tower->towername %>
+% if ( $can_edit ) {
+  </a>
+% }
+</H3>
+</%def>
