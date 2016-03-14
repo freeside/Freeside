@@ -29,9 +29,11 @@
                    sub { my $cust_main = shift->cust_main;
                          $cust_main ? encode_entities($cust_main->name) : '';
                        },
-                   'confidence',
-                   sub { my $quot = shift;
-                         $quot->close_date ? time2str('%b %d %Y', $quot->close_date) : '';
+                   sub { my $quotation = shift;
+                         length($quotation->confidence) ? $quotation->confidence . '%' : '';
+                       },
+                   sub { my $quotation = shift;
+                         $quotation->close_date ? time2str('%b %d %Y', $quotation->close_date) : '';
                        },
                    #\&FS::UI::Web::cust_fields,
                  ],

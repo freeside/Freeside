@@ -138,6 +138,9 @@ sub check {
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
+  return 'confidence must be an integer between 1 and 100'
+    if length($self->confidence) && (($self->confidence < 1) || ($self->confidence > 100));
+
   return 'prospectnum or custnum must be specified'
     if ! $self->prospectnum
     && ! $self->custnum;
