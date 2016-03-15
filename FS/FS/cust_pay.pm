@@ -4,7 +4,7 @@ use strict;
 use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
              FS::Record );
 use vars qw( $DEBUG $me $conf @encrypted_fields
-             $unsuspendauto $ignore_noapply 
+             $ignore_noapply
            );
 use Date::Format;
 use Business::CreditCard;
@@ -35,7 +35,6 @@ $ignore_noapply = 0;
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
-  $unsuspendauto = $conf->exists('unsuspendauto');
 } );
 
 @encrypted_fields = ('payinfo');
@@ -341,16 +340,8 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  #false laziness w/ cust_credit::insert
-  if ( $unsuspendauto && $old_balance && $cust_main->balance <= 0 ) {
-    my @errors = $cust_main->unsuspend;
-    #return 
-    # side-fx with nested transactions?  upstack rolls back?
-    warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
-         join(' / ', @errors)
-      if @errors;
-  }
-  #eslaf
+  # possibly trigger package unsuspend, doesn't abort transaction on failure
+  $self->unsuspend_balance if $old_balance;
 
   #bill setup fees for voip_cdr bill_every_call packages
   #some false laziness w/search in freeside-cdrd
@@ -1251,6 +1242,15 @@ sub _upgrade_data {  #class method
       process_upgrade_paybatch();
     }
   }
+
+  # unsuspendauto upgrade
+  # could just as easily go in cust_credit, or even cust_bill or cust_main
+  # but here works
+  if ($conf->exists('unsuspendauto') && !$conf->config('unsuspend_balance')) {
+    $conf->set('unsuspend_balance','Zero');
+    $conf->delete('unsuspendauto');
+  }
+
 }
 
 sub process_upgrade_paybatch {

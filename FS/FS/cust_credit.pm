@@ -4,7 +4,7 @@ use strict;
 use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::reason_Mixin
              FS::Record );
 
-use vars qw( $conf $unsuspendauto $me $DEBUG
+use vars qw( $conf $me $DEBUG
              $otaker_upgrade_kludge $ignore_empty_reasonnum
            );
 use List::Util qw( min );
@@ -37,7 +37,6 @@ $ignore_empty_reasonnum = 0;
 $FS::UID::callback{'FS::cust_credit'} = sub { 
 
   $conf = new FS::Conf;
-  $unsuspendauto = $conf->exists('unsuspendauto');
 
 };
 
@@ -186,16 +185,8 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  #false laziness w/ cust_pay::insert
-  if ( $unsuspendauto && $old_balance && $cust_main->balance <= 0 ) {
-    my @errors = $cust_main->unsuspend;
-    #return 
-    # side-fx with nested transactions?  upstack rolls back?
-    warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
-         join(' / ', @errors)
-      if @errors;
-  }
-  #eslaf
+  # possibly trigger package unsuspend, doesn't abort transaction on failure
+  $self->unsuspend_balance if $old_balance;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 

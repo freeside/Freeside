@@ -645,6 +645,45 @@ sub time2str_local {
   $string;
 }
 
+=item unsuspend_balance
+
+If conf I<unsuspend_balance> is set and customer's current balance is
+beneath the set threshold, unsuspends customer packages.
+
+=cut
+
+sub unsuspend_balance {
+  my $self = shift;
+  my $cust_main = $self->cust_main;
+  my $conf = $self->conf;
+  my $setting = $conf->config('unsuspend_balance');
+  my $maxbalance;
+  if ($setting eq 'Zero') {
+    $maxbalance = 0;
+  } elsif ($setting eq 'Latest invoice charges') {
+    my @cust_bill = $cust_main->cust_bill();
+    my $cust_bill = $cust_bill[-1]; #always want the most recent one
+    return unless $cust_bill;
+    $maxbalance = $cust_bill->charged || 0;
+  } elsif (length($setting)) {
+    warn "Unrecognized unsuspend_balance setting $setting";
+    return;
+  } else {
+    return;
+  }
+  my $balance = $cust_main->balance || 0;
+  if ($balance <= $maxbalance) {
+    # or should this be 
+    # my @errors = grep { ($_->get('setup')) && $_->unsuspend } $cust_main->unflagged_suspended_pkgs;
+    my @errors = $cust_main->unsuspend;
+    # side-fx with nested transactions?  upstack rolls back?
+    warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
+         join(' / ', @errors)
+      if @errors;
+  }
+  return;
+}
+
 =back
 
 =head1 BUGS

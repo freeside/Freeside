@@ -2101,10 +2101,13 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'unsuspendauto',
+    'key'         => 'unsuspend_balance',
     'section'     => 'billing',
-    'description' => 'Enables the automatic unsuspension of suspended packages when a customer\'s balance due changes from positive to zero or negative as the result of a payment or credit',
-    'type'        => 'checkbox',
+    'description' => 'Enables the automatic unsuspension of suspended packages when a customer\'s balance due is at or below the specified amount after a payment or credit',
+    'type'        => 'select',
+    'select_enum' => [ 
+      '', 'Zero', 'Latest invoice charges'
+    ],
   },
 
   {
