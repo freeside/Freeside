@@ -753,13 +753,6 @@ sub check {
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
-  if ( $self->dbdef_table->column('manual_flag') ) {
-    $self->manual_flag('') if $self->manual_flag eq ' ';
-    $self->manual_flag =~ /^([01]?)$/
-      or return "Illegal manual_flag ". $self->manual_flag;
-    $self->manual_flag($1);
-  }
-
   $self->SUPER::check;
 }
 
@@ -1153,7 +1146,7 @@ sub uncancel {
       setup
       susp adjourn resume expire start_date contract_end dundate
       change_date change_pkgpart change_locationnum
-      manual_flag no_auto separate_bill quantity agent_pkgid 
+      no_auto separate_bill quantity agent_pkgid 
       recur_show_zero setup_show_zero
     ),
   };

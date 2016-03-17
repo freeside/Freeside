@@ -557,22 +557,6 @@ sub suspended_pkgs {
   grep { $_->susp } $self->ncancelled_pkgs;
 }
 
-### This appears to be unused, will be going away
-#
-#=item unflagged_suspended_pkgs
-#
-#Returns all unflagged suspended packages (see L<FS::cust_pkg>) for this
-#customer (thouse packages without the `manual_flag' set).
-#
-#=cut
-
-sub unflagged_suspended_pkgs {
-  my $self = shift;
-  return $self->suspended_pkgs
-    unless dbdef->table('cust_pkg')->column('manual_flag');
-  grep { ! $_->manual_flag } $self->suspended_pkgs;
-}
-
 =item unsuspended_pkgs
 
 Returns all unsuspended (and uncancelled) packages (see L<FS::cust_pkg>) for
