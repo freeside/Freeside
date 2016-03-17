@@ -189,11 +189,6 @@ date
 
 order taker (see L<FS::access_user>)
 
-=item manual_flag
-
-If this field is set to 1, disables the automatic
-unsuspension of this package when using the B<unsuspendauto> config option.
-
 =item quantity
 
 If not set, defaults to 1
