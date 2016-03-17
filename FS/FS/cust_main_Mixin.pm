@@ -673,8 +673,6 @@ sub unsuspend_balance {
   }
   my $balance = $cust_main->balance || 0;
   if ($balance <= $maxbalance) {
-    # or should this be 
-    # my @errors = grep { ($_->get('setup')) && $_->unsuspend } $cust_main->unflagged_suspended_pkgs;
     my @errors = $cust_main->unsuspend;
     # side-fx with nested transactions?  upstack rolls back?
     warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
