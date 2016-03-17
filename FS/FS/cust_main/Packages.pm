@@ -532,12 +532,14 @@ sub suspended_pkgs {
   grep { $_->susp } $self->ncancelled_pkgs;
 }
 
-=item unflagged_suspended_pkgs
-
-Returns all unflagged suspended packages (see L<FS::cust_pkg>) for this
-customer (thouse packages without the `manual_flag' set).
-
-=cut
+### This appears to be unused, will be going away
+#
+#=item unflagged_suspended_pkgs
+#
+#Returns all unflagged suspended packages (see L<FS::cust_pkg>) for this
+#customer (thouse packages without the `manual_flag' set).
+#
+#=cut
 
 sub unflagged_suspended_pkgs {
   my $self = shift;
