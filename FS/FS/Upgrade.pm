@@ -171,6 +171,11 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set('password-generated-characters', $pw_set);
   }
 
+  if ($conf->exists('unsuspendauto') && !$conf->config('unsuspend_balance')) {
+    $conf->set('unsuspend_balance','Zero');
+    $conf->delete('unsuspendauto');
+  }
+
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
 }

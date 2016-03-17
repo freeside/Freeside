@@ -1205,15 +1205,6 @@ sub _upgrade_data {  #class method
       process_upgrade_paybatch();
     }
   }
-
-  # unsuspendauto upgrade
-  # could just as easily go in cust_credit, or even cust_bill or cust_main
-  # but here works
-  if ($conf->exists('unsuspendauto') && !$conf->config('unsuspend_balance')) {
-    $conf->set('unsuspend_balance','Zero');
-    $conf->delete('unsuspendauto');
-  }
-
 }
 
 sub process_upgrade_paybatch {
