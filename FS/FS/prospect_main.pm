@@ -288,8 +288,13 @@ Returns the locations (see L<FS::cust_location>) associated with this prospect.
 
 sub cust_location {
   my $self = shift;
-  qsearch( 'cust_location', { 'prospectnum' => $self->prospectnum,
-                              'custnum'     => '' } );
+  qsearch({
+    'table'   => 'cust_location',
+    'hashref' => { 'prospectnum' => $self->prospectnum,
+                   'custnum'     => '',
+                 },
+    'order_by' => 'ORDER BY country, LOWER(state), LOWER(city), LOWER(county), LOWER(address1), LOWER(address2)',
+  });
 }
 
 =item qual

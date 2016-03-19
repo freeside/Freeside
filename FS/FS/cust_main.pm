@@ -2183,8 +2183,13 @@ Returns all locations (see L<FS::cust_location>) for this customer.
 
 sub cust_location {
   my $self = shift;
-  qsearch('cust_location', { 'custnum'     => $self->custnum,
-                             'prospectnum' => '' } );
+  qsearch({
+    'table'   => 'cust_location',
+    'hashref' => { 'custnum'     => $self->custnum,
+                   'prospectnum' => '',
+                 },
+    'order_by' => 'ORDER BY country, LOWER(state), LOWER(city), LOWER(county), LOWER(address1), LOWER(address2)',
+  });
 }
 
 =item cust_contact
@@ -3592,9 +3597,12 @@ Returns all the credits (see L<FS::cust_credit>) for this customer.
 
 sub cust_credit {
   my $self = shift;
-  map { $_ } #return $self->num_cust_credit unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_credit', { 'custnum' => $self->custnum } )
+
+  #return $self->num_cust_credit unless wantarray;
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->_date <=> $b->_date }
+      qsearch( 'cust_credit', { 'custnum' => $self->custnum } )
 }
 
 =item cust_credit_pkgnum
