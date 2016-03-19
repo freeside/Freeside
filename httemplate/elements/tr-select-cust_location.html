@@ -271,7 +271,9 @@ my $location_sort = sub {
   #enabled w/label_prefix _location #    $a->locationname cmp $b->locationname
                                     # or 
         $a->country   cmp $b->country
+  or lc($a->state)    cmp lc($b->state)
   or lc($a->city)     cmp lc($b->city)
+  or lc($a->county)   cmp lc($b->county)
   or lc($a->address1) cmp lc($b->address1)
   or lc($a->address2) cmp lc($b->address2)
 };
