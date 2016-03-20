@@ -1,0 +1,6 @@
+LOAD DATABASE
+  FROM mysql://freeside@/freeside
+  INTO postgresql://freeside@/freeside
+WITH include drop, create tables, reset sequences, create indexes
+CAST type varbinary to varchar
+;
