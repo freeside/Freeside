@@ -1,20 +1,17 @@
 package FS::cust_main::Status;
 
 use strict;
-use vars qw( $conf ); # $module ); #$DEBUG $me );
+use vars qw( $conf $module ); #$DEBUG $me );
+use Tie::IxHash;
 use FS::UID;
 use FS::cust_pkg;
-
-#use Tie::IxHash;
-
-use FS::UID qw( getotaker dbh driver_name );
 
 #$DEBUG = 0;
 #$me = '[FS::cust_main::Status]';
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
-  #$module = $conf->config('cust_main-status_module') || 'Classic';
+  $module = $conf->config('cust_main-status_module') || 'Classic';
 };
 
 =head1 NAME
@@ -42,8 +39,6 @@ sub statuscolors {
   #my $self = shift; #i guess i'm a class method
 
   my %statuscolors;
-
-  my $module = $conf->config('cust_main-status_module') || 'Classic';
 
   if ( $module eq 'Classic' ) {
     tie %statuscolors, 'Tie::IxHash',
@@ -89,8 +84,6 @@ sub cancelled_sql {
             )
     AND 0 < ( $select_count_pkgs AND $cancelled_sql   )
   ";
-
-  my $module = $conf->config('cust_main-status_module') || 'Classic';
 
   if ( $module eq 'Classic' ) {
     $sql .=
