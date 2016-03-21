@@ -163,8 +163,8 @@ sub check {
     || $self->ut_foreign_keyn('providernum', 'cable_provider', 'providernum')
     || $self->ut_alphan('ordernum')
     || $self->ut_foreign_key('modelnum', 'cable_model', 'modelnum')
-    || $self->ut_alpha('serialnum')
-    || $self->ut_mac_addr('mac_addr')
+    || $self->ut_alphan('serialnum')
+    || $self->ut_mac_addrn('mac_addr')
   ;
   return $error if $error;
 
@@ -177,16 +177,20 @@ sub _check_duplicate {
   # Not reliable checks because the table isn't locked, but that's why we have
   # unique indices.  These are just to give friendlier error messages.
 
-  my @dup_mac;
-  @dup_mac = $self->find_duplicates('global', 'mac_addr');
-  if ( @dup_mac ) {
-    return "MAC address in use (svcnum ".$dup_mac[0]->svcnum.")";
+  if ( $self->mac_addr ) {
+    my @dup_mac;
+    @dup_mac = $self->find_duplicates('global', 'mac_addr');
+    if ( @dup_mac ) {
+      return "MAC address in use (svcnum ".$dup_mac[0]->svcnum.")";
+    }
   }
 
-  my @dup_serial;
-  @dup_serial = $self->find_duplicates('global', 'serialnum');
-  if ( @dup_serial ) {
-    return "Serial number in use (svcnum ".$dup_serial[0]->svcnum.")";
+  if ( $self->serialnum ) {
+    my @dup_serial;
+    @dup_serial = $self->find_duplicates('global', 'serialnum');
+    if ( @dup_serial ) {
+      return "Serial number in use (svcnum ".$dup_serial[0]->svcnum.")";
+    }
   }
 
   '';
