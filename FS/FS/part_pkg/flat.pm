@@ -5,13 +5,22 @@ use base qw( FS::part_pkg::prorate_Mixin
            );
 
 use strict;
-use vars qw( %info %usage_recharge_fields @usage_recharge_fieldorder );
+use vars qw( $conf $money_char %info
+             %usage_recharge_fields @usage_recharge_fieldorder
+           );
+use FS::UID;
 use FS::Record qw( qsearch );
 use FS::cust_credit_source_bill_pkg;
 use Tie::IxHash;
 use List::Util qw( min );
 use FS::UI::bytecount;
 use FS::Conf;
+
+#ask FS::UID to run this stuff for us later
+FS::UID->install_callback( sub {
+  $conf = new FS::Conf;
+  $money_char = $conf->config('money_char') || '$';
+});
 
 tie my %temporalities, 'Tie::IxHash',
   'upcoming'  => "Upcoming (future)",
@@ -86,20 +95,20 @@ tie my %contract_years, 'Tie::IxHash', (
 );
 
 sub price_info {
-    my $self = shift;
-    my %opt = @_;
-    my $conf = new FS::Conf;
-    my $money_char = $conf->config('money_char') || '$';
-    my $setup = $opt{cust_pkg} ? $self->base_setup( $opt{cust_pkg} )
-                               : ($self->option('setup_fee') || 0);
-    my $recur = $opt{cust_pkg} ? $self->base_recur( $opt{cust_pkg} )
-                               : ($self->option('recur_fee', 1) || 0);
-    $recur += $self->usageprice_recur( $opt{cust_pkg} ) if $opt{cust_pkg};
-    my $str = '';
-    $str = $money_char . $setup . ($recur ? ' setup' : ' one-time') if $setup;
-    $str .= ', ' if ($setup && $recur);
-    $str .= $money_char. $recur. '/'. $self->freq_pretty if $recur;
-    $str;
+  my $self = shift;
+  my %opt = @_;
+
+  my $setup = $opt{cust_pkg} ? $self->base_setup( $opt{cust_pkg} )
+                             : ($self->option('setup_fee') || 0);
+  my $recur = $opt{cust_pkg} ? $self->base_recur( $opt{cust_pkg} )
+                             : ($self->option('recur_fee', 1) || 0);
+  $recur += $self->usageprice_recur( $opt{cust_pkg} ) if $opt{cust_pkg};
+
+  my $str = '';
+  $str = $money_char . $setup . ($recur ? ' setup' : ' one-time') if $setup;
+  $str .= ', ' if ($setup && $recur);
+  $str .= $money_char. $recur. '/'. $self->freq_pretty if $recur;
+  $str;
 }
 
 sub calc_setup {
@@ -210,7 +219,6 @@ sub usageprice_recur {
 
 sub calc_cancel {
   my $self = shift;
-  my $conf = new FS::Conf;
   if ( $self->recur_temporality eq 'preceding'
        and $self->option('bill_recur_on_cancel', 1) ) {
     # run another recurring cycle
