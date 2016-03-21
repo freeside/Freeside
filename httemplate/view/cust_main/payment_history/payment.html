@@ -103,7 +103,8 @@ if ($unapplied > 0) {
     if ( $opt{total_unapplied_refunds} > 0 ) {
       $apply.= ' ('.
                include( '/elements/popup_link.html',
-                          'label'       => emt('apply').'&nbsp;'.emt('refund'),
+                          'label'       => emt('apply refund'),
+                          'style'       => 'white-space: nowrap',
                           'action'      => "${p}edit/cust_pay_refund.cgi?".
                                            $cust_pay->paynum,
                           'actionlabel' => emt('Apply payment to refund'),
@@ -207,7 +208,7 @@ if ($opt{'Unapply payment'} && !$cust_pay->closed) {
   $unapply .= areyousure_link("${p}misc/unapply-cust_pay_refund.cgi?".$cust_pay->paynum,
                                emt('Are you sure you want to unapply this payment from refunds?'),
                                emt('Keep this payment, but dissociate it from the refunds it is currently applied to'),
-                               emt('unapply').'&nbsp;'.emt('refunds')
+                               emt('unapply refunds')
                              )
     if $cust_pay->refund_to_unapply;
 }
