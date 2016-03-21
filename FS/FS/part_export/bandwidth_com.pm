@@ -427,6 +427,7 @@ sub host {
   $self->{_host} ||= do {
     my $host = 'dashboard.bandwidth.com';
     $host = "test.$host" if $self->option('test');
+    $host;
   };
 }
 
