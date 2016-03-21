@@ -98,12 +98,16 @@ our @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
 
 our $conf;
+our $default_agent_custid;
+our $custnum_display_length;
 #ask FS::UID to run this stuff for us later
 #$FS::UID::callback{'FS::cust_main'} = sub { 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
   #yes, need it for stuff below (prolly should be cached)
-  $ignore_invalid_card = $conf->exists('allow_invalid_cards');
+  $ignore_invalid_card    = $conf->exists('allow_invalid_cards');
+  $default_agent_custid   = $conf->exists('cust_main-default_agent_custid');
+  $custnum_display_length = $conf->config('cust_main-custnum-display_length');
 };
 
 sub _cache {
@@ -3584,34 +3588,16 @@ cust_main-default_agent_custid is set and it has a value, custnum otherwise.
 sub display_custnum {
   my $self = shift;
 
-  my $prefix = $conf->config('cust_main-custnum-display_prefix', $self->agentnum) || '';
-  if ( my $special = $conf->config('cust_main-custnum-display_special') ) {
-    if ( $special eq 'CoStAg' ) {
-      $prefix = uc( join('',
-        $self->country,
-        ($self->state =~ /^(..)/),
-        $prefix || ($self->agent->agent =~ /^(..)/)
-      ) );
-    }
-    elsif ( $special eq 'CoStCl' ) {
-      $prefix = uc( join('',
-        $self->country,
-        ($self->state =~ /^(..)/),
-        ($self->classnum ? $self->cust_class->classname =~ /^(..)/ : '__')
-      ) );
-    }
-    # add any others here if needed
-  }
+  return $self->agent_custid
+    if $default_agent_custid && $self->agent_custid;
 
-  my $length = $conf->config('cust_main-custnum-display_length');
-  if ( $conf->exists('cust_main-default_agent_custid') && $self->agent_custid ){
-    return $self->agent_custid;
-  } elsif ( $prefix ) {
-    $length = 8 if !defined($length);
+  my $prefix = $conf->config('cust_main-custnum-display_prefix', $self->agentnum) || '';
+
+  if ( $prefix ) {
     return $prefix . 
-           sprintf('%0'.$length.'d', $self->custnum)
-  } elsif ( $length ) {
-    return sprintf('%0'.$length.'d', $self->custnum);
+           sprintf('%0'.($custnum_display_length||8).'d', $self->custnum)
+  } elsif ( $custnum_display_length ) {
+    return sprintf('%0'.$custnum_display_length.'d', $self->custnum);
   } else {
     return $self->custnum;
   }
