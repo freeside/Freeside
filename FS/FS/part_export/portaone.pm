@@ -4,6 +4,7 @@ use strict;
 
 use base qw( FS::part_export );
 
+use Date::Format 'time2str';
 use JSON::XS;
 use Net::HTTPS::Any qw(https_post);
 
@@ -40,6 +41,7 @@ tie my %options, 'Tie::IxHash',
                           default => 'FREESIDE CUST $custnum' },
   'account_id'       => { label => 'Account ID',
                           default => 'FREESIDE SVC $svcnum' },
+  'product_id'       => { label => 'Account Product ID' },
   'debug'            => { type => 'checkbox',
                           label => 'Enable debug warnings' },
 ;
@@ -51,9 +53,9 @@ tie my %options, 'Tie::IxHash',
   'notes'           => <<'END',
 During insert, this will add customers to portaone if they do not yet exist,
 using the "Customer Name" option with substitutions from the customer record 
-in freeside.  If option "Account ID" is also specified, an account will be 
-created for the service and assigned to the customer, using substitutions
-from the phone service record in freeside.
+in freeside.  If options "Account ID" and "Account Product ID" are also specified,
+an account will be created for the service and assigned to the customer, using 
+substitutions from the phone service record in freeside for the Account ID.
 
 During replace, if a matching account id for the old service can be found,
 the existing customer and account will be updated.  Otherwise, if a matching 
@@ -113,7 +115,8 @@ sub _export_insert {
 
   # export account if account id is configured
   my $account_id = $self->portaone_account_id($svc_phone);
-  if ($account_id) {
+  my $product_id = $self->option('product_id');
+  if ($account_id && $product_id) {
     # check if account already exists
     my $account_info = $self->api_call('Account','get_account_info',{
       'id' => $account_id,
@@ -132,9 +135,12 @@ sub _export_insert {
       # normal case--insert account for this service
       $i_account = $self->api_call('Account','add_account',{
         'account_info' => {
-          'id' => $self->portaone_account_id($svc_phone),
+          'id' => $account_id,
           'i_customer' => $i_customer,
           'iso_4217' => ($conf->config('currency') || 'USD'),
+          'i_product' => $product_id,
+          'activation_date' => time2str("%Y-%m-%d %H:%M:%S",time),
+          'billing_model'   => 1, # '1' for credit, '-1' for debit, could make this an export option
         }
       },'i_account');
       return $self->api_error_logout if $self->api_error;
@@ -179,6 +185,10 @@ sub _export_replace {
   if ($account_info) {
     $i_account  = $account_info->{'i_account'};
     $i_customer = $account_info->{'i_customer'};
+    # if nothing changed, no need to update account
+    $i_account = undef
+      if ($account_info->{'i_product'} eq $self->option('product_id'))
+         && ($account_id eq $self->portaone_account_id($svc_phone));
   # otherwise, check for existing customer
   } else {
     my $customer_name = $self->portaone_customer_name($cust_main);
@@ -370,6 +380,7 @@ sub api_update_account {
     'account_info' => {
       'i_account' => $i_account,
       'id' => $newid,
+      'i_product' => $self->option('product_id'),
     },
   },'i_account');
   return if $self->api_error;
