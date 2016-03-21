@@ -23,8 +23,7 @@ my $method = $conf->config('tax_district_method')
 
 my %limit;
 %limit = ( district => '' ) if $opt{'n'};
-my @location = qsearch( 'cust_main', \%limit ),
-               qsearch( 'cust_location', { disabled => '', %limit } );
+my @location = qsearch( 'cust_location', { disabled => '', %limit } );
 
 # breaking the rules somewhat by modifying cust_location records in place 
 # instead of doing a proper package change, but we're not changing the 
@@ -36,10 +35,8 @@ foreach my $location (@location) {
   my $job = FS::queue->new({
       job => 'FS::geocode_Mixin::process_district_update'
     });
-  my $class = ref($location);
-  my $id = $class eq 'FS::cust_main' ? 
-                                  $location->custnum : 
-                                  $location->locationnum;
+  my $class = 'FS::cust_location';
+  my $id = $location->locationnum;
   $error = $job->insert($class, $id);
   if ( $error ) {
     $dbh->rollback;
