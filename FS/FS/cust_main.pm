@@ -104,7 +104,6 @@ our $custnum_display_length;
 #$FS::UID::callback{'FS::cust_main'} = sub { 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
-  #yes, need it for stuff below (prolly should be cached)
   $ignore_invalid_card    = $conf->exists('allow_invalid_cards');
   $default_agent_custid   = $conf->exists('cust_main-default_agent_custid');
   $custnum_display_length = $conf->config('cust_main-custnum-display_length');
