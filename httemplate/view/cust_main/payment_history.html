@@ -479,7 +479,7 @@ sub translate_payinfo {
 
 sub areyousure_link {
     my ($url,$msg,$title,$label) = (shift,shift,shift,shift);
-    ' (<A HREF="javascript:areyousure(\''.$url.'\',\''.$msg.'\')" TITLE="'.$title.'">'.$label.'</A>)';
+    ' (<A HREF="javascript:areyousure(\''.$url.'\',\''.$msg.'\')" TITLE="'.$title.'" STYLE="white-space: nowrap;">'.$label.'</A>)';
 }
 
 </%init>
