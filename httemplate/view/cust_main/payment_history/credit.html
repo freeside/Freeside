@@ -45,7 +45,8 @@ if (    scalar(@cust_credit_bill)   == 0
     if ( $opt{total_unapplied_refunds} > 0 ) {
       $apply.= ' ('.
                include( '/elements/popup_link.html',
-                          'label'    => emt('apply').'&nbsp;'.emt('refund'),
+                          'label'    => emt('apply refund'),
+                          'style'    => 'white-space: nowrap',
                           'action'   => "${p}edit/cust_credit_refund.cgi?".
                                         $cust_credit->crednum,
                           'actionlabel' => emt('Apply credit to refund'),
@@ -100,7 +101,8 @@ if (    scalar(@cust_credit_bill)   == 0
       if ( $opt{total_unapplied_refunds} > 0 ) {
         $apply.= ' ('.
                  include( '/elements/popup_link.html',
-                            'label'       => emt('apply').'&nbsp;'.emt('refund'),
+                            'label'       => emt('apply refund'),
+                            'style'       => 'white-space: nowrap',
                             'action'      => "${p}edit/cust_credit_refund.cgi?".
                                              $cust_credit->crednum,
                             'actionlabel' => emt('Apply credit to refund'),
@@ -159,7 +161,7 @@ if ($opt{'Unapply credit'} && !$cust_credit->closed) {
   $unapply .= areyousure_link("${p}misc/unapply-cust_credit_refund.cgi?".$cust_credit->crednum,
                                emt('Are you sure you want to unapply this credit from refunds?'),
                                emt('Keep this credit, but dissociate it from the refunds it is currently applied to'),
-                               emt('unapply').'&nbsp;'.emt('refunds')
+                               emt('unapply refunds')
                              )
     if $cust_credit->refund_to_unapply;
 }
