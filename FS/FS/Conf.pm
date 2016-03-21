@@ -4731,7 +4731,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-default_agent_custid',
     'section'     => 'UI',
-    'description' => 'Display the agent_custid field when available instead of the custnum field.',
+    'description' => 'Display the agent_custid field when available instead of the custnum field.  Restart Apache after changing.',
     'type'        => 'checkbox',
   },
 
@@ -4768,19 +4768,9 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_main-custnum-display_special',
-    'section'     => 'UI',
-    'description' => 'Use this customer number prefix format',
-    'type'        => 'select',
-    'select_hash' => [ '' => '',
-                       'CoStAg' => 'CoStAg (country, state, agent name or display_prefix)',
-                       'CoStCl' => 'CoStCl (country, state, class name)' ],
-  },
-
-  {
     'key'         => 'cust_main-custnum-display_length',
     'section'     => 'UI',
-    'description' => 'Zero fill the customer number to this many digits for display purposes.',
+    'description' => 'Zero fill the customer number to this many digits for display purposes.  Restart Apache after changing.',
     'type'        => 'text',
   },
 
