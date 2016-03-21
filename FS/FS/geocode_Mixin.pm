@@ -279,9 +279,42 @@ sub process_district_update {
 
     my @old = qsearch('cust_main_county', \%hash);
     if ( @old ) {
+      # prune any duplicates rather than updating them
+      my %keep; # key => cust_main_county record
       foreach my $cust_main_county (@old) {
+        my $key = join('.', $cust_main_county->city ,
+                            $cust_main_county->district ,
+                            $cust_main_county->taxclass
+                      );
+        if ( exists $keep{$key} ) {
+          my $disable_this = $cust_main_county;
+          # prefer records that have a tax name
+          if ( $cust_main_county->taxname and not $keep{$key}->taxname ) {
+            $disable_this = $keep{$key};
+            $keep{$key} = $cust_main_county;
+          }
+          # disable by setting the rate to zero, and setting source to null
+          # so it doesn't get auto-updated in the future. don't actually 
+          # delete it, that produces orphan records
+          warn "disabling tax rate #" .
+            $disable_this->taxnum .
+            " because it's a duplicate for $key\n"
+            if $DEBUG;
+          # by setting its rate to zero, and never updating
+          # it again
+          $disable_this->set('tax' => 0);
+          $disable_this->set('source' => '');
+          $error = $disable_this->replace;
+          die $error if $error;
+        }
+
+        $keep{$key} ||= $cust_main_county;
+
+      }
+      foreach my $key (keys %keep) {
+        my $cust_main_county = $keep{$key};
         warn "updating tax rate #".$cust_main_county->taxnum.
-          " for district ".$tax_info->{'district'} if $DEBUG;
+          " for $key" if $DEBUG;
         # update the tax rate only
         $cust_main_county->set('tax', $tax_info->{'tax'});
         $error ||= $cust_main_county->replace;
