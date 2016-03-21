@@ -5570,7 +5570,7 @@ and customer address. Include units.',
   {
     'key'         => 'translate-auto-insert',
     'section'     => '',
-    'description' => 'Auto-insert untranslated strings for selected non-en_US locales with their default/en_US values.  Do not turn this on unless translating the interface into a new language.',
+    'description' => 'Auto-insert untranslated strings for selected non-en_US locales with their default/en_US values.  Do not turn this on unless translating the interface into a new language.  Restart Apache after changing.',
     'type'        => 'select',
     'multiple'    => 1,
     'select_enum' => [ grep { $_ ne 'en_US' } FS::Locales::locales ],
