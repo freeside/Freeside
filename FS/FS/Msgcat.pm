@@ -1,7 +1,7 @@
 package FS::Msgcat;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $def_locale $debug );
+use vars qw( @ISA @EXPORT_OK $conf $def_locale $debug @translate_auto_insert );
 use Exporter;
 use FS::UID;
 #use FS::Record qw( qsearchs ); # wtf?  won't import...
@@ -17,7 +17,8 @@ FS::UID->install_callback( sub {
   die $@ if $@;
   $conf = new FS::Conf;
   $def_locale = $conf->config('locale') || 'en_US';
-  $debug = $conf->exists('show-msgcat-codes')
+  $debug = $conf->exists('show-msgcat-codes');
+  @translate_auto_insert = $conf->config('translate-auto-insert');
 });
 
 =head1 NAME
@@ -77,7 +78,6 @@ sub _gettext {
       unless $locale eq 'en_US';
     $cache{$locale}->{$msgcode} = $msgcode;
 
-    my @translate_auto_insert = $conf->config('translate-auto-insert');
     if ( $locale ne 'en_US' && grep { $_ eq $locale } @translate_auto_insert ) {
 
         # :(
