@@ -2579,6 +2579,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'radius-canopy',
+    'section'     => '',
+    'description' => 'Enable RADIUS attributes for Cambium (formerly Motorola) Canopy (Motorola-Canopy-Gateway).',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_broadband-radius',
     'section'     => '',
     'description' => 'Enable RADIUS groups for broadband services.',
