@@ -1,9 +1,10 @@
 package FS::svc_IP_Mixin;
+use base 'FS::IP_Mixin';
 
 use strict;
-use base 'FS::IP_Mixin';
-use FS::Record qw(qsearchs qsearch);
 use NEXT;
+use FS::Record qw(qsearchs qsearch);
+use FS::Conf;
 
 =item addr_block
 
@@ -183,16 +184,18 @@ means "Framed-Route" if there's an attached router.
 
 sub radius_reply {
   my $self = shift;
-  my %reply;
-  my ($block) = $self->attached_block;
-  if ( $block ) {
+  my %reply = ();
+  if ( my $block = $self->attached_block ) {
     # block routed over dynamic IP: "192.168.100.0/29 0.0.0.0 1"
     # or
     # block routed over fixed IP: "192.168.100.0/29 192.168.100.1 1"
     # (the "1" at the end is the route metric)
-    $reply{'Framed-Route'} =
-    $block->cidr . ' ' .
-    ($self->ip_addr || '0.0.0.0') . ' 1';
+    $reply{'Framed-Route'} = $block->cidr . ' ' .
+                             ($self->ip_addr || '0.0.0.0') . ' 1';
+
+    $reply{'Motorola-Canopy-Gateway'} = $block->ip_gateway
+      if FS::Conf->new->exists('radius-canopy');
+    
   }
   %reply;
 }
