@@ -270,7 +270,7 @@ sub pw_set {
   # ASCII alphabet, minus easily confused stuff (l, o, O, 0, 1)
   # and plus some "safe" punctuation
   split('',
-    'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789()#.,[]-_=+'
+    'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789#.,[]-_=+'
   );
 
 }
