@@ -422,7 +422,7 @@ sub prepare {
     'bcc'  => $self->bcc_addr || undef,
     'subject'   => $subject,
     'html_body' => $body,
-    'text_body' => $text_body
+    'text_body' => $text_body,
   );
 
 }
@@ -430,7 +430,8 @@ sub prepare {
 =item send OPTION => VALUE
 
 Fills in the template and sends it to the customer.  Options are as for 
-'prepare'.
+'prepare', plus 'attach', a L<MIME::Entity> (or arrayref of them) to attach
+to the message.
 
 =cut
 
@@ -438,7 +439,20 @@ Fills in the template and sends it to the customer.  Options are as for
 # preview it, etc.
 sub send {
   my $self = shift;
-  send_email(generate_email($self->prepare(@_)));
+  my %opt = @_;
+
+  my %email = generate_email($self->prepare(%opt));
+  if ( $opt{'attach'} ) {
+    my @attach;
+    if (ref($opt{'attach'}) eq 'ARRAY') {
+      @attach = @{ $opt{'attach'} };
+    } else {
+      @attach = $opt{'attach'};
+    }
+    push @{ $email{mimeparts} }, @attach;
+  }
+
+  send_email(%email);
 }
 
 =item render OPTION => VALUE ...
