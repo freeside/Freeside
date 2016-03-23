@@ -26,7 +26,7 @@ sub option_fields {
   );
 }
 
-sub default_weight { 56; } #?
+sub default_weight { 58; }
 
 sub do_action {
   my( $self, $object ) = @_;
