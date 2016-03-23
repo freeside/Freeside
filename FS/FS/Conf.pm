@@ -4052,13 +4052,15 @@ and customer address. Include units.',
     'select_enum' => [ '1 hour', '2 hours', '4 hours', '8 hours', '1 day', '1 week', ],
   },
 
-  {
-    'key'         => 'password-generated-characters',
-    'section'     => 'password',
-    'description' => 'Set of characters to use when generating random passwords. This must contain at least one lowercase letter, uppercase letter, digit, and punctuation mark.',
-    'type'        => 'textarea',
-  },
+  # 3.x-only options for a more tolerant password policy
 
+#  {
+#    'key'         => 'password-generated-characters',
+#    'section'     => 'password',
+#    'description' => 'Set of characters to use when generating random passwords. This must contain at least one lowercase letter, uppercase letter, digit, and punctuation mark.',
+#    'type'        => 'textarea',
+#  },
+#
 #  {
 #    'key'         => 'password-no_reuse',
 #    'section'     => 'password',

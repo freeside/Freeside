@@ -165,12 +165,6 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('voip-cust_email_csv_cdr') ;
   }
 
-  if ( !$conf->config('password-generated-characters') ) {
-    my $pw_set = 
-      'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789()#.,' ;
-    $conf->set('password-generated-characters', $pw_set);
-  }
-
   if ($conf->exists('unsuspendauto') && !$conf->config('unsuspend_balance')) {
     $conf->set('unsuspend_balance','Zero');
     $conf->delete('unsuspendauto');

@@ -14,8 +14,6 @@ FS::UID->install_callback( sub {
   $conf = FS::Conf->new;
 });
 
-our @pw_set;
-
 our $me = '[' . __PACKAGE__ . ']';
 
 our $BLOWFISH_COST = 10;
@@ -262,27 +260,19 @@ sub _blowfishcrypt {
 
 =item pw_set
 
-Returns the list of characters allowed in random passwords (from the
-C<password-generated-characters> config).
+Returns the list of characters allowed in random passwords. This is now
+hardcoded.
 
 =cut
 
 sub pw_set {
-  my $class = shift;
-  if (!@pw_set) {
-    my $pw_set = $conf->config('password-generated-characters');
-    $pw_set =~ s/\s//g; # don't ever allow whitespace
-    if ( $pw_set =~ /[[:lower:]]/
-      && $pw_set =~ /[[:upper:]]/
-      && $pw_set =~ /[[:digit:]]/
-      && $pw_set =~ /[[:punct:]]/ ) {
-      @pw_set = split('', $pw_set);
-    } else {
-      warn "password-generated-characters set is insufficient; using default.";
-      @pw_set = split('', 'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789()#.,');
-    }
-  }
-  return @pw_set;
+
+  # ASCII alphabet, minus easily confused stuff (l, o, O, 0, 1)
+  # and plus some "safe" punctuation
+  split('',
+    'abcdefghijkmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ23456789()#.,[]-_=+'
+  );
+
 }
 
 =back
