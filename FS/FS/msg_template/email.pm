@@ -206,6 +206,12 @@ A string to use as the HTML body; if specified, replaces the entire
 body of the message. This should be used ONLY by L<FS::report_batch> and may
 go away in the future.
 
+=item attach
+
+A L<MIME::Entity> (or arrayref of them) to attach to the message.
+
+=cut
+
 =back
 
 =cut
@@ -348,13 +354,24 @@ sub prepare {
     'Type'        => 'multipart/related',
   );
 
+  if ( $opt{'attach'} ) {
+    my @attach;
+    if (ref $opt{'attach'} eq 'ARRAY') {
+      @attach = @{ $opt{'attach'} };
+    } else {
+      @attach = $opt{'attach'};
+    }
+    foreach (@attach) {
+      $message->add_part($_);
+    }
+  }
+
   #$message->head->replace('Content-type',
   #  'multipart/related; '.
   #  'boundary="' . $message->head->multipart_boundary . '"; ' .
   #  'type=multipart/alternative'
   #);
-  
-  # XXX a facility to attach additional parts is necessary at some point
+
   foreach my $part (@{ $email{mimeparts} }) {
     warn "$me appending part ".$part->mime_type."\n" if $DEBUG;
     $message->add_part( $part );
