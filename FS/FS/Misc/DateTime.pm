@@ -81,7 +81,7 @@ date and time.
 =cut
 
 sub iso8601 {
-  time2str('%Y-%m-%dT%T', @_);
+  time2str('%Y-%m-%dT%T', shift);
 }
 
 =back
