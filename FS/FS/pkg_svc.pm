@@ -1,12 +1,19 @@
 package FS::pkg_svc;
+use base qw(FS::Record);
 
 use strict;
-use vars qw( @ISA );
 use FS::Record qw( qsearchs );
 use FS::part_pkg;
 use FS::part_svc;
 
-@ISA = qw( FS::Record );
+our $cache_enabled = 0;
+
+sub _simplecache {
+  my( $self, $hashref ) = @_;
+  if ( $cache_enabled && $hashref->{'svc'} ) {
+    $self->{'_svcpart'} = FS::part_svc->new($hashref);
+  }
+}
 
 =head1 NAME
 
@@ -148,6 +155,7 @@ Returns the FS::part_svc object (see L<FS::part_svc>).
 
 sub part_svc {
   my $self = shift;
+  return $self->{_svcpart} if $self->{_svcpart};
   qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
 }
 
