@@ -2,6 +2,17 @@ package FS::pkg_svc;
 use base qw(FS::Record);
 
 use strict;
+use FS::Record qw( qsearchs );
+use FS::part_svc;
+
+our $cache_enabled = 0;
+
+sub _simplecache {
+  my( $self, $hashref ) = @_;
+  if ( $cache_enabled && $hashref->{'svc'} ) {
+    $self->{'_svcpart'} = FS::part_svc->new($hashref);
+  }
+}
 
 =head1 NAME
 
@@ -131,6 +142,14 @@ Returns the FS::part_pkg object (see L<FS::part_pkg>).
 =item part_svc
 
 Returns the FS::part_svc object (see L<FS::part_svc>).
+
+=cut
+
+sub part_svc {
+  my $self = shift;
+  return $self->{_svcpart} if $self->{_svcpart};
+  qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+}
 
 =back
 
