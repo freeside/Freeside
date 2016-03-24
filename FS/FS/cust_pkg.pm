@@ -3268,16 +3268,15 @@ sub cust_svc_unsorted_arrayref {
   }
 
   my %search = (
-    'table'   => 'cust_svc',
-    'hashref' => { 'pkgnum' => $self->pkgnum },
+    'select'    => 'cust_svc.*, part_svc.*',
+    'table'     => 'cust_svc',
+    'hashref'   => { 'pkgnum' => $self->pkgnum },
+    'addl_from' => 'LEFT JOIN part_svc USING ( svcpart )',
   );
-  if ( $opt{svcpart} ) {
-    $search{hashref}->{svcpart} = $opt{'svcpart'};
-  }
-  if ( $opt{'svcdb'} ) {
-    $search{addl_from} = ' LEFT JOIN part_svc USING ( svcpart ) ';
-    $search{extra_sql} = ' AND svcdb = '. dbh->quote( $opt{'svcdb'} );
-  }
+  $search{hashref}->{svcpart} = $opt{svcpart}
+    if $opt{svcpart};
+  $search{extra_sql} = ' AND svcdb = '. dbh->quote( $opt{svcdb} )
+    if $opt{svcdb};
 
   [ qsearch(\%search) ];
 

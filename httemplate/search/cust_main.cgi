@@ -121,6 +121,8 @@
 %      my %cust_svc_by_svcpart;
 %      my $rows = 0;
 %      local($FS::part_pkg::cache_enabled) = 1; #for $cust_pkg->part_svc
+%      local($FS::cust_svc::cache_enabled) = 1; #for $cust_svc->part_svc
+%      local($FS::pkg_svc::cache_enabled) = 1; #for $pkg_svc->part_svc
 %      foreach my $part_svc (
 %        $cust_pkg->part_svc( summarize_size=>$large_pkg_size )
 %      ) {
@@ -281,12 +283,13 @@
 %         }
 %         elsif ( scalar @$these ) { # do not summarize
 %           foreach my $cust_svc ( @$these ) {
+%             my $part_svc = $cust_svc->part_svc;
           <% $n2 %>
             <% $td %>
-                <% FS::UI::Web::svc_link($m, $cust_svc->part_svc, $cust_svc) %>
+                <% FS::UI::Web::svc_link($m, $part_svc, $cust_svc) %>
             </TD> 
             <% $td %>
-                <% FS::UI::Web::svc_label_link($m, $cust_svc->part_svc, $cust_svc) %>
+                <% FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc) %>
             </TD>
 %             $n2="</TR><TR>";
 %           } #foreach $cust_svc
@@ -517,8 +520,9 @@ if ( scalar(@cust_main) > 1 || $cgi->param('referral_custnum') ) {
 
   local($FS::cust_pkg::cache_enabled) = 1; #for $cust_pkg->part_pkg
   %all_pkgs = map { $_->custnum =>
-                      [ $_->$pkgs_method({ select    => $select,
-                                           addl_from => $addl_from,
+                      [ $_->$pkgs_method({ select          => $select,
+                                           addl_from       => $addl_from,
+                                           skip_label_sort => 1,
                                         })
                       ];
                   }

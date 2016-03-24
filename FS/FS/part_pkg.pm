@@ -1119,14 +1119,11 @@ sub pkg_svc {
 #      qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
 
   my $opt = ref($_[0]) ? $_[0] : { @_ };
-  my %pkg_svc = map  { $_->svcpart => $_ }
-                grep { $_->quantity }
-                qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+  my %pkg_svc = map  { $_->svcpart => $_ } $self->_pkg_svc;
 
   unless ( $opt->{disable_linked} ) {
     foreach my $dst_pkg ( map $_->dst_pkg, $self->svc_part_pkg_link ) {
-      my @pkg_svc = grep { $_->quantity }
-                    qsearch( 'pkg_svc', { pkgpart=>$dst_pkg->pkgpart } );
+      my @pkg_svc = $dst_pkg->_pkg_svc;
       foreach my $pkg_svc ( @pkg_svc ) {
         if ( $pkg_svc{$pkg_svc->svcpart} ) {
           my $quantity = $pkg_svc{$pkg_svc->svcpart}->quantity;
@@ -1144,6 +1141,17 @@ sub pkg_svc {
 
   @pkg_svc;
 
+}
+
+sub _pkg_svc {
+  my $self = shift;
+  grep { $_->quantity }
+    qsearch({
+      'select'    => 'pkg_svc.*, part_svc.*',
+      'table'     => 'pkg_svc',
+      'addl_from' => 'LEFT JOIN part_svc USING ( svcpart )',
+      'hashref'   => { 'pkgpart' => $self->pkgpart },
+    });
 }
 
 =item svcpart [ SVCDB ]
