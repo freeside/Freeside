@@ -194,10 +194,9 @@ sub dbdef_dist {
     grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
-           && ! /^legacy_cust_history$/
+           && ! /^(legacy_cust_history|cacti_page|access_user_log)$/
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
-           && ! /^cacti_page$/
          }
       $dbdef->tables
   ) {
