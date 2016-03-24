@@ -2,7 +2,7 @@ package FS::cust_svc;
 
 use strict;
 use vars qw( @ISA $DEBUG $me $ignore_quantity $conf $ticket_system );
-use Carp;
+use Carp qw(cluck);
 #use Scalar::Util qw( blessed );
 use List::Util qw( max );
 use FS::Conf;
@@ -31,6 +31,15 @@ FS::UID->install_callback( sub {
   $conf = new FS::Conf;
   $ticket_system = $conf->config('ticket_system')
 });
+
+our $cache_enabled = 0;
+
+sub _simplecache {
+  my( $self, $hashref ) = @_;
+  if ( $cache_enabled && $hashref->{'svc'} ) {
+    $self->{'_svcpart'} = FS::part_svc->new($hashref);
+  }
+}
 
 sub _cache {
   my $self = shift;
@@ -492,9 +501,9 @@ L<FS::part_svc>).
 
 sub part_svc {
   my $self = shift;
-  $self->{'_svcpart'}
-    ? $self->{'_svcpart'}
-    : qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+  return $self->{_svcpart} if $self->{_svcpart};
+  cluck 'cust_svc->part_svc called' if $DEBUG;
+  qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
 }
 
 =item cust_pkg

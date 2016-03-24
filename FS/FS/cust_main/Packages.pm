@@ -1,7 +1,7 @@
 package FS::cust_main::Packages;
 
 use strict;
-use vars qw( $DEBUG $me );
+use vars qw( $DEBUG $me $skip_label_sort );
 use List::Util qw( min );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
@@ -12,6 +12,7 @@ use FS::cust_location; #
 
 $DEBUG = 0;
 $me = '[FS::cust_main::Packages]';
+$skip_label_sort = 0;
 
 =head1 NAME
 
@@ -419,7 +420,9 @@ sub all_pkgs {
     @cust_pkg = $self->_cust_pkg($extra_qsearch);
   }
 
+  local($skip_label_sort) = 1 if $extra_qsearch->{skip_label_sort};
   map { $_ } sort sort_packages @cust_pkg;
+
 }
 
 =item cust_pkg
@@ -467,6 +470,7 @@ sub ncancelled_pkgs {
 
   }
 
+  local($skip_label_sort) = 1 if $extra_qsearch->{skip_label_sort};
   sort sort_packages @cust_pkg;
 
 }
@@ -509,7 +513,8 @@ sub sort_packages {
     return 0  if !$a_num_cust_svc && !$b_num_cust_svc;
     return -1 if  $a_num_cust_svc && !$b_num_cust_svc;
     return 1  if !$a_num_cust_svc &&  $b_num_cust_svc;
-    return 0 if $a_num_cust_svc + $b_num_cust_svc > 20; #for perf, just give up
+    return 0 if $skip_label_sort
+             || $a_num_cust_svc + $b_num_cust_svc > 20; #for perf, just give up
     my @a_cust_svc = $a->cust_svc_unsorted;
     my @b_cust_svc = $b->cust_svc_unsorted;
     return 0  if !scalar(@a_cust_svc) && !scalar(@b_cust_svc);
