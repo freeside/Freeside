@@ -1416,9 +1416,8 @@ sub option {
   my( $self, $opt, $ornull ) = @_;
 
   #cache: was pulled up in the original part_pkg query
-  if ( $opt =~ /^(setup|recur)_fee$/ && defined($self->hashref->{"_$opt"}) ) {
-    return $self->hashref->{"_$opt"};
-  }
+  return $self->hashref->{"_opt_$opt"}
+    if exists $self->hashref->{"_opt_$opt"};
 
   cluck "$self -> option: searching for $opt" if $DEBUG;
   my $part_pkg_option =
