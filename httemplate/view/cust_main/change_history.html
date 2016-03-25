@@ -51,19 +51,24 @@ tie my %tables, 'Tie::IxHash',
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
 my $svc_join = "JOIN cust_svc USING ( svcnum ) $pkg_join";
 
+my @svc_tables = qw(
+  svc_acct
+  svc_domain
+  svc_www
+  svc_forward
+  svc_broadband
+  svc_external
+  svc_phone
+  svc_cable
+);
+
 my %table_join = (
-  'svc_acct'         => $svc_join,
   'radius_usergroup' => $svc_join,
-  'svc_domain'       => $svc_join,
-  'svc_www'          => $svc_join,
-  'svc_forward'      => $svc_join,
-  'svc_broadband'    => $svc_join,
-  'svc_external'     => $svc_join,
-  'svc_phone'        => $svc_join,
-  'svc_cable'        => $svc_join,
   'phone_device'     => $svc_join,
   'cust_pkg_discount'=> $pkg_join,
 );
+
+%table_join = (%table_join, map { $_ => $svc_join } @svc_tables);
 
 
 # cust_main
@@ -134,6 +139,7 @@ my $newer_than = int( time - $years * 31556736 ); #60*60*24*365.24
 
 local($FS::Record::nowarn_classload) = 1;
 
+my %foundsvcs;
 foreach my $table ( keys %tables ) {
   my @items = qsearch({
     'table'     => "h_$table",
@@ -141,8 +147,50 @@ foreach my $table ( keys %tables ) {
     'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than }, },
     'extra_sql' => ' AND custnum = '. $cust_main->custnum,
   });
+  %foundsvcs = (%foundsvcs, map { $_->svcnum => 1 } @items)
+    if $table =~ /^svc/;
   push @history, @items;
 }
+
+### Load svcs that are no longer linked (cust_svc has been deleted)
+
+# get list of all svcs for this customer from h_cust_svc
+# could also load svcdb here by joining to part_svc on svcpart,
+#   but it would spoil database optimizations on this lookup
+my @svcnumobj = qsearch({
+  'select' => 'DISTINCT svcnum',
+  'hashref'   => { 'custnum' => $cust_main->custnum,
+                   'history_date' =>  { op=>'>=', value=>$newer_than } },
+  'table'  => 'h_cust_svc',
+  'addl_from' => 'JOIN cust_pkg USING (pkgnum)',
+});
+
+# now grab those svcs explicitly 
+foreach my $svcnum ( map { $_->get('svcnum') } @svcnumobj ) {
+  # can skip the services we already found
+  next if $foundsvcs{$svcnum};
+  # grab any given h_cust_svc record for this svcnum to get svcdb
+  my $svcdbobj = qsearchs({
+    'select' => 'svcdb',
+    'hashref' => { svcnum => $svcnum },
+    'table'  => 'h_cust_svc',
+    'addl_from' => 'JOIN part_svc USING (svcpart)',
+    'extra_sql' => 'LIMIT 1',
+  });
+  unless ($svcdbobj && $svcdbobj->get('svcdb')) {
+    # don't think this ever happens, but just in case, don't break history page over it
+    warn "Could not load svcdb for svcnum $svcnum";
+    next;
+  }
+  my @items = qsearch({
+    'table'     => "h_".$svcdbobj->get('svcdb'),
+    'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than },
+                     'svcnum' => $svcnum },
+  });
+  push @history, @items;
+}
+
+## legacy history
 
 my @legacy_items = qsearch({
   'table'     => 'legacy_cust_history',
