@@ -16,6 +16,7 @@ use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
 use FS::UI::Web;
+use FS::export_cust_svc;
 
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
