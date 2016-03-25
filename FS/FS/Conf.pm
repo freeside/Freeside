@@ -3958,7 +3958,14 @@ and customer address. Include units.',
   {
     'key'         => 'support-key',
     'section'     => '',
-    'description' => 'A support key enables access to commercial services delivered over the network, such as the payroll module, access to the internal ticket system, priority support and optional backups.',
+    'description' => 'A support key enables access to commercial services delivered over the network, such as address normalization and invoice printing.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'freesideinc-webservice-svcpart',
+    'section'     => '',
+    'description' => 'Do not set this.',
     'type'        => 'text',
   },
 

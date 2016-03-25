@@ -213,6 +213,8 @@ sub ss2clientapi {
   'quotation_add_pkg'         => 'MyAccount/quotation/quotation_add_pkg',
   'quotation_remove_pkg'      => 'MyAccount/quotation/quotation_remove_pkg',
   'quotation_order'           => 'MyAccount/quotation/quotation_order',
+
+  'freesideinc_service'       => 'Freeside/freesideinc_service',
   };
 }
 
