@@ -169,6 +169,17 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  # delete associated export_cust_svc
+  foreach my $export_cust_svc (
+    qsearch('export_cust_svc',{ 'svcnum' => $self->svcnum })
+  ) {
+    my $error = $export_cust_svc->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
