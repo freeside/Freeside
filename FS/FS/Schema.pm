@@ -5103,6 +5103,29 @@ sub tables_hashref {
                         ],
     },
 
+    'webservice_log' => {
+      'columns' => [
+        'webservicelognum',    'serial',      '',      '', '', '', #big? hubrus
+        'svcnum',                 'int',  'NULL',      '', '', '', #just in case
+        'custnum',                'int',      '',      '', '', '',
+        'method',             'varchar',      '', $char_d, '', '',
+        'quantity',               'int',      '',      '', '', '', #i.e. pages
+        '_date',             @date_type,                   '', '',
+        'status',             'varchar',  'NULL', $char_d, '', '', 
+        'rated_price',        'decimal',  'NULL',  '10,2', '', '',
+      ],
+      'primary_key'  => 'webservicelognum',
+      'unique'       => [],
+      'index'        => [ ['custnum'], ['status'] ],
+      'foreign_keys' => [
+                          { columns => [ 'custnum' ],
+                            table   => 'cust_main',
+                          },
+                          #no FK on svcnum... we don't want to purge these on
+                          # service deletion
+                        ],
+    },
+
     # name type nullability length default local
 
     #'new_table' => {

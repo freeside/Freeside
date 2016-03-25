@@ -134,6 +134,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'quotation_remove_pkg'      => 'MyAccount/quotation/quotation_remove_pkg',
   'quotation_order'           => 'MyAccount/quotation/quotation_order',
 
+  'freesideinc_service'       => 'Freeside/freesideinc_service',
+
 );
 @EXPORT_OK = (
   keys(%autoload),
