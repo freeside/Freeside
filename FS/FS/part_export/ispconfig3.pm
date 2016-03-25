@@ -141,21 +141,22 @@ sub _mail_user_params {
 
 sub _export_insert {
   my ($self, $svc_acct) = @_;
+  return $self->api_error || 'Error logging in'
+    unless $self->api_login;
   my $params = $self->_mail_user_params($svc_acct);
-  $self->api_login;
   my $remoteid = $self->api_call('mail_user_add',$self->option('client_id'),$params);
   return $self->api_error_logout if $self->api_error;
   my $error = $self->set_remoteid($svc_acct,$remoteid);
   $error = "Remote system updated, but error setting remoteid ($remoteid): $error"
     if $error;
   $self->api_logout;
-  $error ||= "Systems updated, but error logging out: ".$self->api_error
-    if $self->api_error;
   return $error;
 }
 
 sub _export_replace {
   my ($self, $svc_acct, $svc_acct_old) = @_;
+  return $self->api_error || 'Error logging in'
+    unless $self->api_login;
   my $remoteid = $self->get_remoteid($svc_acct_old);
   return "Could not load remoteid for old service" unless $remoteid;
   my $params = $self->_mail_user_params($svc_acct);
@@ -170,23 +171,32 @@ sub _export_replace {
       if $error;
   }
   $self->api_logout;
-  $error ||= "Systems updated, but error logging out: ".$self->api_error
-    if $self->api_error;
   return $error;
 }
 
 sub _export_delete {
   my ($self, $svc_acct) = @_;
+  return $self->api_error || 'Error logging in'
+    unless $self->api_login;
   my $remoteid = $self->get_remoteid($svc_acct);
-  return "Could not load remoteid for old service" unless $remoteid;
+  #don't abort deletion--
+  #  might have been provisioned before export was implemented,
+  #  still need to be able to delete from freeside
+  unless ($remoteid) {
+    warn "Could not load remoteid for svcnum ".$svc_acct->svcnum.", unprovisioning anyway";
+    return '';
+  }
   #API docs claim "Returns the number of deleted records"
   my $success = $self->api_call('mail_user_delete',$remoteid);
   return $self->api_error_logout if $self->api_error;
-  my $error = $success ? '' : "Server returned no records deleted";
+  #don't abort deletion--
+  #  if it's already been deleted remotely,
+  #  still need to be able to delete from freeside
+  warn "Server returned no records deleted for svcnum ".$svc_acct->svcnum.
+       " remoteid $remoteid, unprovisioning anyway"
+    unless $success;
   $self->api_logout;
-  $error ||= "Systems updated, but error logging out: ".$self->api_error
-    if $self->api_error;
-  return $error;
+  return '';
 }
 
 sub _export_suspend {
@@ -219,7 +229,6 @@ automatically.  Must run L</api_login> first.
 
 sub api_call {
   my ($self,$method,@params) = @_;
-  $self->{'__ispconfig_response'} = undef;
   # This does get used by api_login,
   # to retrieve the session id after it sets the client,
   # so we only check for existence of client,
@@ -244,7 +253,6 @@ sub api_call {
   $self->{'__ispconfig_error'} = $response->fault
                                ? "Error from server: " . $response->faultstring
                                : '';
-  $self->{'__ispconfig_response'} = $response;
   return $response->result;
 }
 
