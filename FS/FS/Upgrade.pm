@@ -203,8 +203,9 @@ sub upgrade_overlimit_groups {
 sub upgrade_invoice_from {
   my ($conf, $agentnum, $agentonly) = @_;
   if (
-      (!$conf->exists('invoice_from_name',$agentnum,$agentonly)) && 
-      ($conf->config('invoice_from',$agentnum,$agentonly) =~ /\<(.*)\>/)
+          ! $conf->exists('invoice_from_name',$agentnum,$agentonly)
+       && $conf->exists('invoice_from',$agentnum,$agentonly)
+       && $conf->config('invoice_from',$agentnum,$agentonly) =~ /\<(.*)\>/
   ) {
     my $realemail = $1;
     $realemail =~ s/^\s*//; # remove leading spaces
