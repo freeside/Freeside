@@ -10,6 +10,7 @@ use FS::part_svc;
 use FS::part_export_option;
 use FS::part_export_machine;
 use FS::svc_export_machine;
+use FS::export_cust_svc;
 
 #for export modules, though they should probably just use it themselves
 use FS::queue;
@@ -161,6 +162,17 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  # delete associated export_cust_svc
+  foreach my $export_cust_svc ( 
+    qsearch('export_cust_svc',{ 'exportnum' => $self->exportnum })
+  ) {
+    my $error = $export_cust_svc->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   # clean up export_nas records
   my $error = $self->process_m2m(
@@ -635,6 +647,81 @@ sub _export_unsuspend {
   my $svc_x = shift;
   my $old = $svc_x->clone_kludge_unsuspend;
   $self->_export_replace( $svc_x, $old );
+}
+
+=item get_remoteid SVC
+
+Returns the remote id for this export for the given service.
+
+=cut
+
+sub get_remoteid {
+  my ($self, $svc_x) = @_;
+
+  my $export_cust_svc = qsearchs('export_cust_svc',{
+    'exportnum' => $self->exportnum,
+    'svcnum' => $svc_x->svcnum
+  });
+
+  return $export_cust_svc ? $export_cust_svc->remoteid : '';
+}
+
+=item set_remoteid SVC VALUE
+
+Sets the remote id for this export for the given service.
+See L<FS::export_cust_svc>.
+
+If value is true, inserts or updates export_cust_svc record.
+If value is false, deletes any existing record.
+
+Returns error message, blank on success.
+
+=cut
+
+sub set_remoteid {
+  my ($self, $svc_x, $value) = @_;
+
+  my $export_cust_svc = qsearchs('export_cust_svc',{
+    'exportnum' => $self->exportnum,
+    'svcnum' => $svc_x->svcnum
+  });
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = '';
+  if ($value) {
+    if ($export_cust_svc) {
+      $export_cust_svc->set('remoteid',$value);
+      $error = $export_cust_svc->replace;
+    } else {
+      $export_cust_svc = new FS::export_cust_svc {
+        'exportnum' => $self->exportnum,
+        'svcnum' => $svc_x->svcnum,
+        'remoteid' => $value
+      };
+      $error = $export_cust_svc->insert;
+    }
+  } else {
+    if ($export_cust_svc) {
+      $error = $export_cust_svc->delete;
+    } #otherwise, it already doesn't exist
+  }
+
+  if ($oldAutoCommit) {
+    $dbh->rollback if $error;
+    $dbh->commit unless $error;
+  }
+
+  return $error;  
 }
 
 =item export_links SVC_OBJECT ARRAYREF

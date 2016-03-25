@@ -16,6 +16,7 @@ use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
 use FS::UI::Web;
+use FS::export_cust_svc;
 
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
@@ -168,6 +169,17 @@ sub delete {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  # delete associated export_cust_svc
+  foreach my $export_cust_svc (
+    qsearch('export_cust_svc',{ 'svcnum' => $self->svcnum })
+  ) {
+    my $error = $export_cust_svc->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   my $error = $self->SUPER::delete;
   if ( $error ) {
