@@ -4,7 +4,7 @@ use strict;
 use base qw( FS::part_event::Action );
 use LWP::UserAgent;
 use HTTP::Request::Common qw( POST );
-use JSON::XS; #use Cpanel::JSON::XS;
+use Cpanel::JSON::XS;
 use CAM::PDF;
 use FS::Conf;
 
@@ -78,12 +78,8 @@ sub do_action {
     'company_email'    => scalar($conf->config('invoice_from', $agentnum)),
 
     #to:
-    'name'             => ( $cust_main->payname
-                              && $cust_main->payby !~ /^(CARD|DCRD|CHEK|DCHK)$/
-                                ? $cust_main->payname
-                                : $cust_main->contact_firstlast
-                          )
-    #'name'             => $cust_main->invoice_attn || $cust_main->contact_firstlast,
+    'name'             => $cust_main->invoice_attn
+                            || $cust_main->contact_firstlast,
     'address1'         => $bill_location->address1,
     'address2'         => $bill_location->address2,
     'city'             => $bill_location->city,
@@ -101,6 +97,7 @@ sub do_action {
 
   die $content->{error}."\n"
     if $content->{error};
+
 }
 
 1;
