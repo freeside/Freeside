@@ -642,6 +642,42 @@ sub standardize_melissa {
   }
 }
 
+sub standardize_freeside {
+  my $class = shift;
+  my $location = shift;
+
+  my $url = 'https://ws.freeside.biz/normalize';
+
+  #free freeside.biz normalization only for US
+  if ( $location->{country} ne 'US' ) {
+    # soft failure
+    #why? something else could have cleaned it $location->{addr_clean} = '';
+    return $location;
+  }
+
+  my $ua = LWP::UserAgent->new( 'ssl_opts' => { 'verify_hostname'=>0 });
+  my $response = $ua->request( POST $url, [
+    'support-key' => scalar($conf->config('support-key')),
+    %$location,
+  ]);
+
+  die "Address normalization error: ". $response->message
+    unless $response->is_success;
+
+  local $@;
+  my $content = eval { decode_json($response->content) };
+  die "Address normalization JSON error : $@\n" if $@;
+
+  die $content->{error}."\n"
+    if $content->{error};
+
+  { 'addr_clean' => 'Y',
+    map { $_ => $content->{$_} }
+      qw( address1 address2 city state zip country )
+  };
+
+}
+
 =back
 
 =cut
