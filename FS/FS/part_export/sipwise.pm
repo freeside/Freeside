@@ -7,7 +7,7 @@ use FS::Record qw(qsearch qsearchs dbh);
 use Tie::IxHash;
 use LWP::UserAgent;
 use URI;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use HTTP::Request::Common qw(GET POST PUT DELETE);
 use FS::Misc::DateTime qw(parse_datetime);
 use DateTime;
