@@ -8,7 +8,7 @@ use FS::svc_external;
 use FS::webservice_log;
 
 #$DEBUG = 0;
-#$me = '[FS::ClientAPI::PrepaidPhone]';
+#$me = '[FS::ClientAPI:Freeside]';
 
 # inputs:
 #   support-key
@@ -17,6 +17,7 @@ use FS::webservice_log;
 #
 # returns:
 #   error (empty, or error message)
+#   custnum
 
 sub freesideinc_service {
   my $packet = shift;
@@ -36,8 +37,12 @@ sub freesideinc_service {
                      '_password' => $_password,
                    },
     'extra_sql' => "AND svcpart = $svcpart",
-  })
-    or return { 'error' => 'bad support-key' };
+  });
+  unless ( $svc_external ) {
+    warn "bad support-key for $username from $ENV{REMOTE_IP}\n";
+    sleep 5; #ideally also rate-limit and eventually ban their IP
+    return { 'error' => 'bad support-key' };
+  }
 
   #XXX check if some customers can use some API calls, rate-limiting, etc.
   # but for now, everybody can use everything
