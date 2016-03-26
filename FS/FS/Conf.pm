@@ -4341,6 +4341,7 @@ and customer address. Include units.',
                        'usps'     => 'U.S. Postal Service',
                        'tomtom'   => 'TomTom',
                        'melissa'  => 'Melissa WebSmart',
+                       'freeside' => 'Freeside web service (support contract required)',
                      ],
   },
 
