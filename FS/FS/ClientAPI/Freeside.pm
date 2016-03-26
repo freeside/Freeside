@@ -30,12 +30,12 @@ sub freesideinc_service {
   my($username, $_password) = ($1,$2);
 
   my $svc_external = qsearchs({
-    'table'     => 'svc_external',
+    'table'     => 'svc_acct',
     'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum )',
     'hashref'   => { 'username'  => $username,
                      '_password' => $_password,
                    },
-    'extra_sql' => " AND svcpart = $svcpart",
+    'extra_sql' => "AND svcpart = $svcpart",
   })
     or return { 'error' => 'bad support-key' };
 
@@ -43,8 +43,9 @@ sub freesideinc_service {
   # but for now, everybody can use everything
 
   #record it happened
+  my $custnum = $svc_external->cust_svc->cust_pkg->custnum;
   my $webservice_log = new FS::webservice_log {
-    'custnum'  => $svc_external->cust_svc->cust_pkg->custnum,
+    'custnum'  => $custnum,
     'svcnum'   => $svc_external->svcnum,
     'method'   => $packet->{'method'},
     'quantity' => $packet->{'quantity'} || 1,
@@ -52,8 +53,9 @@ sub freesideinc_service {
   my $error = $webservice_log->insert;
   return { 'error' => $error } if $error;
 
-  return { 'error' => '' };
-
+  return { 'error'   => '',
+           'custnum' => $custnum,
+         };
 }
 
 1;
