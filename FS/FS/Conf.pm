@@ -4598,6 +4598,7 @@ and customer address. Include units.',
                        'ezlocate' => 'EZLocate',
                        'tomtom'   => 'TomTom',
                        'melissa'  => 'Melissa WebSmart',
+                       'freeside' => 'Freeside web service (support contract required)',
                      ],
   },
 
