@@ -24,10 +24,9 @@ sub do_action {
 
   $cust_bill->set('mode' => $self->option('modenum'));
 
-  my $error = $cust_bill->postal_mail_fsinc;
-  die $error if $error;
+  my $letter_id = $cust_bill->postal_mail_fsinc;
 
-  #TODO: get some kind of letter ID back we can later retreive a status on
+  #TODO: store this so we can query for a status later
 }
 
 1;
