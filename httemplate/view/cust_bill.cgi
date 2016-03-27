@@ -98,7 +98,10 @@ function areyousure(href, message) {
         <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Print this invoice') |h %></A>
 % }
 
-% if ( $curuser->access_right('Print and mail invoices') ) {
+% if ( $conf->exists('support-key')
+%        && $curuser->access_right('Print and mail invoices')
+%    )
+% {
         | <& /elements/popup_link.html,
                'action'      => $p."misc/post_fsinc-invoice.cgi?$link",
                'label'       => 'Print and mail this invoice online',
