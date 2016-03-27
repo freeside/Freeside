@@ -256,6 +256,7 @@ sub _upgrade_data { # class method
     'Add on-the-fly void credit reason' => 'Add on-the-fly void credit reason',
     '_ALL' => 'Employee preference telephony integration',
     'Edit customer package dates' => 'Change package start date', #4.x
+    'Resend invoices' => 'Print and mail invoices',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

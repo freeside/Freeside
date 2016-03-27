@@ -183,6 +183,7 @@ tie my %rights, 'Tie::IxHash',
   'Customer invoice / financial info rights' => [
     'View invoices',
     'Resend invoices', #NEWNEW
+    { rightname=>'Print and mail invoices', desc=>"Print and mail via Freeside's web service", }, ##NEWER than NEWNEWNEW
     'Void invoices',
     'Unvoid invoices',
     'View customer tax exemptions', #yow
