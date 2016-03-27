@@ -1666,6 +1666,13 @@ sub print_generic {
 
   } else { # this is where we actually create the invoice
 
+    if ( $params{no_addresses} ) {
+      delete $invoice_data{$_} foreach qw(
+        payname company address1 address2 city state zip country
+      );
+      $invoice_data{returnaddress} = '~';
+    }
+
     warn "filling in template for invoice ". $self->invnum. "\n"
       if $DEBUG;
     warn join("\n", map " $_ => ". $invoice_data{$_}, keys %invoice_data). "\n"
@@ -2383,7 +2390,7 @@ sub postal_mail_fsinc {
     die "Unparsable company_address; contact support\@freeside.biz\n";
   }
 
-  my $file = $self->print_pdf(%opt);
+  my $file = $self->print_pdf(%opt, 'no_addresses' => 1);
   my $pages = CAM::PDF->new($file)->numPages;
 
   my $ua = LWP::UserAgent->new( 'ssl_opts' => { 'verify_hostname'=>0 });
