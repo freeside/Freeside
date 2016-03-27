@@ -23,6 +23,7 @@ if ( $old{same} ) {
   @prefixes = ('bill_', 'ship_');
 }
 my $all_same = 1;
+my $all_clean = 1;
 foreach my $pre ( @prefixes ) {
 
   my $location = {
@@ -48,8 +49,13 @@ foreach my $pre ( @prefixes ) {
                      $old{$pre.'censustract'} ne $new{$pre.'censustract'} );
 
   $all_same = 0 if $new{$pre.'error'};
+
+  $all_clean = 0 if !$new{$pre.'addr_clean'};
 }
 
-my $return = { old => \%old, new => \%new, all_same => $all_same };
+my $return = { old => \%old,
+               new => \%new,
+               all_same => $all_same,
+               all_clean => $all_clean };
 warn "result:\n".encode_json($return) if $DEBUG;
 </%init>
