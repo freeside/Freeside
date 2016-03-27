@@ -96,8 +96,18 @@ function areyousure(href, message) {
 % }
 
 % if ( $curuser->access_right('Resend invoices') ) {
+        <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Print this invoice') |h %></A>
+% }
 
-    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
+% if ( $curuser->access_right('Print and mail invoices') ) {
+        | <& /elements/popup_link.html,
+               'action'      => $p."misc/post_fsinc-invoice.cgi?$link",
+               'label'       => 'Print and mail this invoice online',
+               'actionlabel' => 'Invoice printing and mailing',
+          &>
+% }
+
+% if ( $curuser->access_right('Resend invoices') ) {
 
 %   if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
         | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>"><% mt('Re-email this invoice') |h %></A>
@@ -107,8 +117,11 @@ function areyousure(href, message) {
         | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>"><% mt('Re-fax this invoice') |h %></A>
 %   } 
 
-    <BR><BR>
+% }
 
+% if (    $curuser->access_right('Resend invoices')
+%      || $curuser->access_right('Print and mail invoices') ) {
+        <BR><BR>
 % } 
 
 % my $br = 0;
