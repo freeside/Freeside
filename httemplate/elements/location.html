@@ -245,13 +245,13 @@ Example:
 % }
 % if ( $opt{enable_district} and $conf->config('tax_district_method') ) {
   <TR>
-    <TD ALIGN="right">Tax&nbsp;district</TD>
+    <TH ALIGN="right">Tax&nbsp;district</TH>
     <TD COLSPAN=8>
       <INPUT TYPE="text" SIZE=15
              NAME="<%$pre%>district" 
              ID="<%$pre%>district"
              VALUE="<% $object->district |h %>">
-    <% '(automatic)' %>
+    <FONT SIZE="-1" COLOR="#333333"><% '(automatic)' %></FONT>
     </TD>
   </TR>
 % } else {

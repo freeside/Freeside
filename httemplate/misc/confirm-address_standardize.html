@@ -7,6 +7,9 @@ th { line-height: 150%;
   vertical-align: middle;
   text-align: center;
 }
+button {
+  width: 215px;
+}
 </STYLE>
 <CENTER><BR><B>
 % if ( $is_error ) {
@@ -23,9 +26,13 @@ Confirm address standardization
 %   my $name = $pre eq 'bill_' ? 'billing' : 'service';
 %   my $rows = 5;
 %   if ( $new{$pre.'error'} ) {
+%     # Standardization returned an error, so the user can either "continue
+%     # without replacing" (replace = "") or "abort".
   <TR>
     <TD ROWSPAN=<% $rows %> CLASS="td_radio">
+%       if ( $show_radio ) {
         <INPUT TYPE="radio" NAME="<% $pre %>replace" VALUE="" CHECKED="Y">
+%       } # else confirm_manual_address will be called
     </TD>
     <TH>Entered <%$name%> address
     </TH>
@@ -51,15 +58,19 @@ Confirm address standardization
 %     $rows++ if !$new{$pre.'addr_clean'};
   <TR>
     <TD ROWSPAN=<% $rows %> CLASS="td_radio">
+%     if ( $show_radio ) {
       <INPUT TYPE="radio" NAME="<% $pre %>replace" VALUE="">
+%     }
     </TD>
     <TH>Entered <%$name%> address</TH>
     <TH>Standardized <%$name%> address</TH>
     <TD ROWSPAN=<% $rows %> CLASS="td_radio">
+%     if ( $show_radio ) {
       <INPUT TYPE="radio" NAME="<% $pre %>replace" VALUE="Y" CHECKED="Y">
+%     }
     </TD>
   </TR>
-%   if ( !$new{$pre.'addr_clean'} ) {
+%   if ( !$new{$pre.'addr_clean'} ) { # we incremented $rows to fit this in
   <TR>
     <TD></TD>
     <TH STYLE="font-size:smaller;color:#ff0000">(unverified)</TH>
@@ -88,18 +99,24 @@ Confirm address standardization
 %   } # if error
 % } # for $pre
 
-%# only do this part if address standardization provided a censustract
-% my $pre = $old{same} ? 'bill_' : 'ship_';
+% # the prefix for the censustract
+% my $pre = $old{billship} ?
+%             ( $old{same} ? 'bill_'  : 'ship_' ) :
+%             '';
 % my $censustract = $new{$pre.'censustract'};
 % if ( $censustract ) {
   <TR>
     <TD ROWSPAN=2 CLASS="td_radio">
+%     if ( $show_radio ) {
       <INPUT TYPE="radio" NAME="census_replace" VALUE="" <% $census_error ? 'CHECKED="Y"' : '' %>>
+%     }
     </TD>
     <TH>Entered census tract</TH>
     <TH>Calculated census tract</TH>
     <TD ROWSPAN=2 CLASS="td_radio">
+%     if ( $show_radio ) {
       <INPUT TYPE="radio" NAME="census_replace" VALUE="Y" <% $census_error ? '' : 'CHECKED="Y"' %>>
+%     }
     </TD>
   </TR>
   <TR>
@@ -115,17 +132,40 @@ Confirm address standardization
 % } #if censustract
 
   <TR>
-    <TD> </TD>
-    <TD ALIGN="center">
-    <BUTTON TYPE="button" STYLE="width:205px" onclick="replace_address();">
+% if ( $show_radio ) {
+%   # One button: "use selected address(es)".
+    <TD ALIGN="center" COLSPAN=4>
+      <BUTTON TYPE="button" onclick="replace_address();">
       <IMG SRC="<%$p%>images/<% $is_error ? 'error.png' : 'tick.png' %>"
-           ALT=""> Use selected <%$addresses%>
-    </BUTTON></TD>
-    <TD ALIGN="center">
-    <BUTTON TYPE="button" STYLE="width:205px" onclick="submit_abort();">
-      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
-    </BUTTON></TD>
+           ALT="">
+             Use selected <%$addresses%>
+      </BUTTON>
+    </TD>
+% } else {
+%   # Two buttons: "use entered address", and "use selected address"
+%   # and empty columns before and after
     <TD> </TD>
+    <TD ALIGN="center">
+      <BUTTON TYPE="button" onclick="confirm_manual_address();">
+        <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered <%$addresses%>
+      </BUTTON>
+    </TD>
+%   # disable the button if standardization completely failed
+    <TD ALIGN="center">
+      <BUTTON TYPE="button" onclick="replace_address();" <% $failed ? 'DISABLED' : '' %>>
+        <IMG SRC="<%$p%>images/tick.png" ALT=""> Use standardized <%$addresses%>
+      </BUTTON>
+    </TD>
+    <TD> </TD>
+% }
+  </TR>
+% # always provide a cancel button
+  <TR>
+    <TD ALIGN="center" COLSPAN=4>
+      <BUTTON TYPE="button" onclick="submit_abort();">
+        <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+      </BUTTON>
+    </TD>
   </TR>
 </TABLE>
 </FORM>
@@ -138,15 +178,43 @@ my %old = %{ $q->{old} };
 my %new = %{ $q->{new} };
 
 my $addresses = $old{billship} ? 'addresses' : 'address';
+my $show_radio = 0;
+my $failed = 0; # true if standardization returned no addresses
 
 my @prefixes = ('');
+
 if ( $old{same} ) {
+
+  # Then there are bill and ship addresses and they're the same. Treat
+  # bill_error as a failure, and let the user accept or reject the whole
+  # standardization.
+
   @prefixes = ('bill_');
+  $failed = 1 if $new{'bill_error'};
+
 } elsif ( $old{billship} ) {
+
+  # There are separate bill and ship addresses. Treat error in both as a
+  # failure. Otherwise, at least one of them has a choice between entered
+  # and standardized address, so let the user choose.
+
   @prefixes = ('bill_', 'ship_');
+  if ( $new{'bill_error'} and $new{'ship_error'} ) {
+    $failed = 1;
+  } else {
+    $show_radio = 1;
+  }
+
+} else {
+
+  # There are no bill/ship addresses (this is used for package locations).
+  # Treat like the first case but without the bill_ prefix.
+  @prefixes = ('');
+  $failed = 1 if $new{'error'};
+
 }
 
-my $census_error = $new{'census_error'};
+my $census_error = $new{'census_error'}; # seems to be unused
 my $is_error = $census_error || grep { $new{$_.'error'} } @prefixes;
 
 </%init>
