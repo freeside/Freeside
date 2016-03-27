@@ -51,8 +51,8 @@
 
   <table class="invoice_header" width="100%">
     <tr>
-     <td><img src="<%= $cid ? "cid:$cid" : "cust_bill-logo.cgi?invnum=$invnum;template=$template" %>"></td>
      <td align="left"><%= $returnaddress %></td>
+     <td align="left"><img src="<%= $cid ? "cid:$cid" : "cust_bill-logo.cgi?invnum=$invnum;template=$template" %>"></td>
       <td align="right">
         <table CLASS="invoice_headerright" cellspacing=0>
           <tr>
@@ -83,9 +83,11 @@
         </table>
       </td>
     </tr>
+  </table>
 
+  <table class="invoice_header" width="100%">
     <tr>
-      <td>
+      <td WIDTH="10%">
       </td>
       <td align="left">
         <b><%= $payname %></b><BR>

@@ -1442,8 +1442,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexverticalreturnaddress',
-    'section'     => 'invoicing',
-    'description' => 'Place the return address under the company logo rather than beside it.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated.  With old invoice_latex template, places the return address under the company logo rather than beside it.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },

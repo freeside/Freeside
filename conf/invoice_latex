@@ -39,7 +39,7 @@
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
 \addtolength{\hoffset}{-0.6cm}		% left margin on page
-\addtolength{\topmargin}{[@-- defined($topmargin) ? $topmargin : '-1.25cm' --@]}
+\addtolength{\topmargin}{[@-- defined($topmargin) ? $topmargin : '-1.00cm' --@]}
 \setlength{\headheight}{2.0cm} 		% height of header
 \setlength{\headsep}{[@-- defined($headsep) ? $headsep : '1.0cm' --@]}
 \setlength{\footskip}{1.0cm}		% bottom of footer from bottom of text
@@ -124,10 +124,10 @@
     \returninset
     \makebox{
       \begin{tabular}{ll}
-        \includegraphics{[@-- $logo_file --@]} & [@-- $verticalreturnaddress ? '\\\\' : '' --@]
         \begin{minipage}[b]{5.5cm}
 [@-- $returnaddress --@]
-        \end{minipage}\\
+        \end{minipage} &
+        \includegraphics{[@-- $logo_file --@]}\\
       \end{tabular}
     }
   }
