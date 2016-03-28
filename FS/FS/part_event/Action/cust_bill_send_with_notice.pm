@@ -30,10 +30,10 @@ sub option_fields {
 sub default_weight { 56; }
 
 sub do_action {
-  my( $self, $cust_bill, %opt ) = @_;
+  my( $self, $cust_bill, $cust_event ) = @_;
 
   $cust_bill->set('mode' => $self->option('modenum'));
-  my %args = ( 'time' => $opt{'time'} );
+  my %args = ( 'time' => $cust_event->_date );
   my $mimepart = MIME::Entity->build( $cust_bill->mimebuild_pdf(\%args) );
   my $msgnum = $self->option('msgnum');
   my $msg_template = FS::msg_template->by_key($msgnum)
