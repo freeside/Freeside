@@ -2352,12 +2352,18 @@ sub mimebuild_pdf {
   );
 }
 
+=item postal_mail_fsinc
 
+Sends this invoice to the Freeside Internet Services, Inc. print and mail
+service.
+
+=cut
 
 use CAM::PDF;
 use LWP::UserAgent;
 use HTTP::Request::Common qw( POST );
 use JSON::XS;
+use MIME::Base64;
 sub postal_mail_fsinc {
   my ( $self, %opt ) = @_;
 
@@ -2389,6 +2395,7 @@ sub postal_mail_fsinc {
   } else {
     die "Unparsable company_address; contact support\@freeside.biz\n";
   }
+  $company_city =~ s/,$//;
 
   my $file = $self->print_pdf(%opt, 'no_addresses' => 1);
   my $pages = CAM::PDF->new($file)->numPages;
@@ -2396,7 +2403,7 @@ sub postal_mail_fsinc {
   my $ua = LWP::UserAgent->new( 'ssl_opts' => { 'verify_hostname'=>0 });
   my $response = $ua->request( POST $url, [
     'support-key'      => scalar($conf->config('support-key')),
-    'file'             => $file,
+    'file'             => encode_base64($file),
     'pages'            => $pages,
 
     #from:
@@ -2434,28 +2441,11 @@ sub postal_mail_fsinc {
 
   die $content->{error}."\n"
     if $content->{error};
-}
 
-1;
-    'address1'         => $bill_location->address1,
-    'address2'         => $bill_location->address2,
-    'city'             => $bill_location->city,
-    'state'            => $bill_location->state,
-    'zip'              => $bill_location->zip,
-    'country'          => $bill_location->country,
-  ]);
+  #TODO: store this so we can query for a status later
+  warn "Invoice printed, ID ". $content->{id}. "\n";
 
-  die "Print connection error: ". $response->message
-    unless $response->is_success;
-
-  local $@;
-  my $content = eval { decode_json($response->content) };
-  die "Print JSON error : $@\n" if $@;
-
-  die $content->{error}."\n"
-    if $content->{error};
-
-  #TODO: get some kind of letter ID back we can later retreive a status on
+  $content->{id};
 }
 
 =item _items_sections OPTIONS
