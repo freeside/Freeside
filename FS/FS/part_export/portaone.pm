@@ -139,7 +139,7 @@ sub _export_insert {
           'i_customer' => $i_customer,
           'iso_4217' => ($conf->config('currency') || 'USD'),
           'i_product' => $product_id,
-          'activation_date' => time2str("%Y-%m-%d %H:%M:%S",time),
+          'activation_date' => time2str("%Y-%m-%d",time),
           'billing_model'   => 1, # '1' for credit, '-1' for debit, could make this an export option
         }
       },'i_account');
