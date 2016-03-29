@@ -1,4 +1,4 @@
-<% encode_json(\@phonenums) %>\
+<% encode_json({ error => $error, phonenums => \@phonenums}) %>\
 <%init>
 
 my( $exchangestring, $svcpart ) = $cgi->param('arg');
@@ -7,6 +7,7 @@ my $part_svc = qsearchs('part_svc', { 'svcpart'=>$svcpart } );
 die "unknown svcpart $svcpart" unless $part_svc;
 
 my @phonenums = ();
+my $error;
 
 if ( $exchangestring ) {
 
@@ -35,8 +36,12 @@ if ( $exchangestring ) {
       $opts{'exchange'} = $exchange;
   }
 
-  my $something = $export->get_dids(%opts);
-  @phonenums = @{ $something };
+  local $@;
+  local $SIG{__DIE__};
+  my $something = eval { $export->get_dids(%opts) };
+  $error = $@;
+
+  @phonenums = @{ $something } if $something;
 
 }
 

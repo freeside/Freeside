@@ -17,7 +17,8 @@ if ( scalar(@exports) > 1 ) {
   die "no DID providing export attached to svcpart $svcpart";
 }
 my $export = $exports[0];
-    
+
+# XXX no error handling
 my $phonenums = $export->get_dids( map { $_ => scalar($cgi->param($_)) }
                                      qw( ratecenter state areacode exchange )
                                  );

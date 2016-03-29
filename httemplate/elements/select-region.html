@@ -27,6 +27,7 @@
 
     function <% $opt{'prefix'} %>update_regions(regions) {
 
+      var reply = JSON.parse(regions);
       // blank the current region
       for ( var i = what.form.<% $opt{'prefix'} %>region.length; i >= 0; i-- )
           what.form.<% $opt{'prefix'} %>region.options[i] = null;
@@ -42,7 +43,7 @@
 %     }
 
       // add the new regions
-      var regionArray = eval('(' + regions + ')' );
+      var regionArray = reply.regions;
       for ( var s = 0; s < regionArray.length; s++ ) {
           var regionLabel = regionArray[s];
           if ( regionLabel == "" )
@@ -57,6 +58,11 @@
       } else {
         var regionerror = document.getElementById('<% $opt{'prefix'} %>regionerror');
         regionerror.style.display = 'inline';
+        if ( reply.error ) {
+          regionerror.textContent = reply.error;
+        } else {
+          regionerror.textContent = 'Select a different state';
+        }
       }
 
       //run the callback
@@ -73,7 +79,7 @@
 
 <DIV ID="<% $opt{'prefix'} %>regionwait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding regions</B></DIV>
 
-<DIV ID="<% $opt{'prefix'} %>regionerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different state</B></DIV>
+<DIV ID="<% $opt{'prefix'} %>regionerror" STYLE="display:none; font-weight: bold"><IMG SRC="<%$fsurl%>images/cross.png"></DIV>
 
 <SELECT NAME="<% $opt{'prefix'} %>region" onChange="<% $opt{'prefix'} %>region_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
   <OPTION VALUE="">Select region</OPTION>

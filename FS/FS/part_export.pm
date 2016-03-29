@@ -804,6 +804,8 @@ will return an array of actual DID numbers.
 Passing 'tollfree' with a true value will override the whole hierarchy and
 return an array of tollfree numbers.
 
+C<get_dids> methods should report errors via die().
+
 =cut
 
 # no stub; can('get_dids') should return false by default
