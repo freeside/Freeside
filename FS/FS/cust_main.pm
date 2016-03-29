@@ -4031,13 +4031,17 @@ sub status { shift->cust_status(@_); }
 
 sub cust_status {
   my $self = shift;
+  return $self->hashref->{cust_status} if $self->hashref->{cust_status};
   for my $status ( FS::cust_main->statuses() ) {
     my $method = $status.'_sql';
     my $numnum = ( my $sql = $self->$method() ) =~ s/cust_main\.custnum/?/g;
     my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
     $sth->execute( ($self->custnum) x $numnum )
       or die "Error executing 'SELECT $sql': ". $sth->errstr;
-    return $status if $sth->fetchrow_arrayref->[0];
+    if ( $sth->fetchrow_arrayref->[0] ) {
+      $self->hashref->{cust_status} = $status;
+      return $status;
+    }
   }
 }
 
