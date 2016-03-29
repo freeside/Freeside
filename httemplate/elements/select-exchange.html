@@ -27,6 +27,7 @@
 
     function <% $opt{'prefix'} %>update_exchanges(exchanges) {
 
+      var reply = JSON.parse(exchanges);
       // blank the current exchange
       for ( var i = what.form.<% $opt{'prefix'} %>exchange.length; i >= 0; i-- )
           what.form.<% $opt{'prefix'} %>exchange.options[i] = null;
@@ -42,7 +43,7 @@
 %     }
 
       // add the new exchanges
-      var exchangeArray = eval('(' + exchanges + ')' );
+      var exchangeArray = reply.exchanges;
       for ( var s = 0; s < exchangeArray.length; s++ ) {
           var exchangeLabel = exchangeArray[s];
           if ( exchangeLabel == "" )
@@ -57,6 +58,12 @@
       } else {
         var exchangeerror = document.getElementById('<% $opt{'prefix'} %>exchangeerror');
         exchangeerror.style.display = 'inline';
+        if ( reply.error ) {
+          exchangeerror.textContent = reply.error;
+        } else {
+          exchangeerror.textContent = 'Select a different area code';
+        }
+
       }
 
       //run the callback
@@ -73,7 +80,7 @@
 
 <DIV ID="exchangewait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding cities / exchanges</B></DIV>
 
-<DIV ID="exchangeerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different area code</B></DIV>
+<DIV ID="exchangeerror" STYLE="display:none; font-weight: bold"><IMG SRC="<%$fsurl%>images/cross.png"></DIV>
 
 <SELECT NAME="<% $opt{'prefix'} %>exchange" onChange="<% $opt{'prefix'} %>exchange_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
   <OPTION VALUE="">Select city / exchange</OPTION>

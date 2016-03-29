@@ -151,43 +151,46 @@ sub can_get_dids { 1 }
 sub get_dids_npa_select { 1 }
 
 sub get_dids {
-  local $SIG{__DIE__};
 
   my $self = shift;
   my %opt = @_;
 
   my ($exportnum) = $self->exportnum =~ /^(\d+)$/;
 
-  return [] if $opt{'tollfree'}; # we'll come back to this
+  try {
+    return [] if $opt{'tollfree'}; # we'll come back to this
 
-  my ($state, $npa, $nxx) = @opt{'state', 'areacode', 'exchange'};
+    my ($state, $npa, $nxx) = @opt{'state', 'areacode', 'exchange'};
 
-  if ( $nxx ) {
+    if ( $nxx ) {
 
-    die "areacode required\n" unless $npa;
-    my $limit = $self->option('num_dids') || 20;
-    my $result = $self->api_get('availableNumbers', [
-        'npaNxx'    => $npa.$nxx,
-        'quantity'  => $limit,
-        'LCA'       => 'false',
-        # find only those that match the NPA-NXX, not those thought to be in
-        # the same local calling area. though that might be useful.
-    ]);
-    return [ $result->findnodes('//TelephoneNumber')->to_literal_list ];
+      die "areacode required\n" unless $npa;
+      my $limit = $self->option('num_dids') || 20;
+      my $result = $self->api_get('availableNumbers', [
+          'npaNxx'    => $npa.$nxx,
+          'quantity'  => $limit,
+          'LCA'       => 'false',
+          # find only those that match the NPA-NXX, not those thought to be in
+          # the same local calling area. though that might be useful.
+      ]);
+      return [ $result->findnodes('//TelephoneNumber')->to_literal_list ];
 
-  } elsif ( $npa ) {
+    } elsif ( $npa ) {
 
-    return $self->npanxx_cache($npa);
+      return $self->npanxx_cache($npa);
 
-  } elsif ( $state ) {
+    } elsif ( $state ) {
 
-    return $self->npa_cache($state);
+      return $self->npa_cache($state);
 
-  } else { # something's wrong
+    } else { # something's wrong
 
-    warn "get_dids called with no arguments";
-    return [];
+      warn "get_dids called with no arguments";
+      return [];
 
+    }
+  } catch {
+    die "$me $_\n";
   }
 
 }
