@@ -743,9 +743,9 @@ sub firstlast {
 
 =item by_selfservice_email EMAILADDRESS
 
-Alternate search constructor (class method).  Given an email address,
-returns the contact for that address, or the empty string if no contact
-has that email address.
+Alternate search constructor (class method).  Given an email address, returns
+the contact for that address. If that contact doesn't have selfservice access,
+or there isn't one, returns the empty string.
 
 =cut
 
@@ -756,7 +756,8 @@ sub by_selfservice_email {
     'table'     => 'contact_email',
     'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
     'hashref'   => { 'emailaddress' => $email, },
-    'extra_sql' => " AND ( disabled IS NULL OR disabled = '' )",
+    'extra_sql' => " AND ( contact.disabled IS NULL ) ".
+                   " AND ( contact.selfservice_access = 'Y' )",
   }) or return '';
 
   $contact_email->contact;
@@ -877,9 +878,9 @@ sub send_reset_email {
   my $agentnum = $cust_main ? $cust_main->agentnum : '';
   my $msgnum = $conf->config('selfservice-password_reset_msgnum', $agentnum);
   #die "selfservice-password_reset_msgnum unset" unless $msgnum;
-  return { 'error' => "selfservice-password_reset_msgnum unset" } unless $msgnum;
+  return "selfservice-password_reset_msgnum unset" unless $msgnum;
   my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
-  return { 'error' => "selfservice-password_reset_msgnum cannot be loaded" } unless $msg_template;
+  return "selfservice-password_reset_msgnum cannot be loaded" unless $msg_template;
   my %msg_template = (
     'to'            => join(',', map $_->emailaddress, @contact_email ),
     'cust_main'     => $cust_main,
@@ -891,7 +892,7 @@ sub send_reset_email {
 
     my $cust_msg = $msg_template->prepare( %msg_template );
     my $error = $cust_msg->insert;
-    return { 'error' => $error } if $error;
+    return $error if $error;
     my $queue = new FS::queue {
       'job'     => 'FS::cust_msg::process_send',
       'custnum' => $cust_main ? $cust_main->custnum : '',
