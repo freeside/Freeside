@@ -61,13 +61,14 @@
 %                   FS::sched_avail::pretty_time($due).
 %                   ': '. $cust_main[0]->_FreesideURILabel;
 %                   #'install for custname XX miles away'; #XXX placeholder/more
-%       $link = qq( <A HREF="$RT::WebPath/Ticket/Display.html?id=$id" target="_blank">view</A> ).
-%               include('/elements/popup_link.html',
-%                         action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id='.$id,
-%                         label =>'edit',
-%                         actionlabel => 'Edit appointment',
-%                         height      => 436, # better: A + B * (num_custom_fields)
-%                      );
+%       $link = qq( <A HREF="$RT::WebPath/Ticket/Display.html?id=$id" target="_blank">view</A> );
+%#needs higher version of rt
+%#             . include('/elements/popup_link.html',
+%#                         action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id='.$id,
+%#                         label =>'edit',
+%#                         actionlabel => 'Edit appointment',
+%#                         height      => 436, # better: A + B * (num_custom_fields)
+%#                      );
 %       $draggable_ticketid = $id;
 %       $draggable_length = $due - $starts;
 %
