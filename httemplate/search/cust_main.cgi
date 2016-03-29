@@ -119,11 +119,18 @@
 %    foreach my $cust_pkg ( @{$all_pkgs{$custnum}} ) {
 %      my %cust_svc_by_svcpart;
 %      my $rows = 0;
-%      local($FS::part_pkg::cache_enabled) = 1; #for $cust_pkg->part_svc
+%      #local($FS::part_pkg::cache_enabled) = 1; #for $cust_pkg->part_svc
 %      local($FS::cust_svc::cache_enabled) = 1; #for $cust_svc->part_svc
-%      local($FS::pkg_svc::cache_enabled) = 1; #for $pkg_svc->part_svc
+%      #local($FS::pkg_svc::cache_enabled) = 1; #for $pkg_svc->part_svc
 %      foreach my $part_svc (
-%        $cust_pkg->part_svc( summarize_size=>$large_pkg_size )
+%        #$cust_pkg->part_svc( summarize_size=>$large_pkg_size )
+%        qsearch({
+%          'select'      => 'part_svc.*, COUNT(*) AS num_cust_svc',
+%          'table'       => 'part_svc', 
+%          'addl_from'   => 'LEFT JOIN cust_svc USING ( svcpart )',
+%          'extra_sql'   => 'WHERE pkgnum = ? GROUP BY part_svc.svcpart',
+%          'extra_param' => [ [$cust_pkg->pkgnum,'int'] ],
+%        })
 %      ) {
 %        my $svcpart = $part_svc->svcpart;
 %        my $num_cust_svc = $part_svc->num_cust_svc;
@@ -135,7 +142,9 @@
 %          $rows += 2;
 %        }
 %        elsif ( $num_cust_svc ) {
-%          $cust_svc_by_svcpart{$svcpart} = $part_svc->cust_pkg_svc;
+%          #$cust_svc_by_svcpart{$svcpart} = $part_svc->cust_pkg_svc;
+%          #further optimization opportunities: don't need to re-pull in another $part_svc object, sorting this is expensive, etc.
+%          $cust_svc_by_svcpart{$svcpart} = [ $cust_pkg->cust_svc($part_svc->svcpart) ];
 %          $rows += $num_cust_svc;
 %        } #if summarize
 %      } #foreach $part_svc
@@ -235,6 +244,7 @@
 
 %    my $n1 = '';
 %    foreach ( @{$all_pkgs{$custnum}} ) {
+%      local($FS::cust_svc::cache_enabled) = 1; #for $cust_svc->part_svc
 %      my $pkgnum = $_->pkgnum;
 %      my $part_pkg = $_->part_pkg;
 %
