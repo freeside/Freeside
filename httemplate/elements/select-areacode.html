@@ -28,6 +28,7 @@
 
     function <% $opt{'prefix'} %>update_areacodes(areacodes) {
 
+      var reply = JSON.parse(areacodes);
       // blank the current areacode
       for ( var i = what.form.<% $opt{'prefix'} %>areacode.length; i >= 0; i-- )
           what.form.<% $opt{'prefix'} %>areacode.options[i] = null;
@@ -47,7 +48,7 @@
 %     }
 
       // add the new areacodes
-      var areacodeArray = eval('(' + areacodes + ')' );
+      var areacodeArray = reply.areacodes;
       for ( var s = 0; s < areacodeArray.length; s++ ) {
           var areacodeLabel = areacodeArray[s];
           if ( areacodeLabel == "" )
@@ -62,6 +63,11 @@
       } else {
         var areacodeerror = document.getElementById('<% $opt{'prefix'} %>areacodeerror');
         areacodeerror.style.display = 'inline';
+        if ( reply.error ) {
+          areacodeerror.textContent = reply.error;
+        } else {
+          areacodeerror.textContent = 'Select a different state';
+        }
       }
 
       //run the callback
@@ -78,7 +84,7 @@
 
 <DIV ID="areacodewait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding area codes</B></DIV>
 
-<DIV ID="areacodeerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different state</B></DIV>
+<DIV ID="areacodeerror" STYLE="display:none; font-weight: bold"><IMG SRC="<%$fsurl%>images/cross.png"></DIV>
 
 <SELECT NAME="<% $opt{'prefix'} %>areacode" onChange="<% $opt{'prefix'} %>areacode_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
   <OPTION VALUE="">Select area code</OPTION>

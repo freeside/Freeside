@@ -1,4 +1,4 @@
-<% encode_json(\@areacodes) %>\
+<% encode_json({ error => $error, areacodes => \@areacodes}) %>\
 <%init>
 
 my( $state, $svcpart ) = $cgi->param('arg');
@@ -7,6 +7,8 @@ my $part_svc = qsearchs('part_svc', { 'svcpart'=>$svcpart } );
 die "unknown svcpart $svcpart" unless $part_svc;
 
 my @areacodes = ();
+my $error;
+
 if ( $state ) {
 
   my @exports = $part_svc->part_export_did;
@@ -17,9 +19,12 @@ if ( $state ) {
   }
   my $export = $exports[0];
 
-  my $something = $export->get_dids('state'=>$state);
+  local $@;
+  local $SIG{__DIE__};
+  my $something = eval { $export->get_dids('state'=>$state) };
+  $error = $@;
 
-  @areacodes = @{ $something };
+  @areacodes = @{ $something } if $something;
 
 }
 
