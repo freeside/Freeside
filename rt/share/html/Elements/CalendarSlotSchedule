@@ -11,6 +11,7 @@
   $pkgnum    => undef
   $RedirectToBasics => 0
 </%ARGS>
+% my $scheduling = ($custnum && $LengthMin) ? 1 : 0;
 % foreach my $username ( @username ) {
 %
 %   my %schedule = UserDaySchedule( username => $username,
@@ -18,20 +19,22 @@
 %                                   Tickets  => \@Tickets,
 %                                 );
 %
-%   my $bgcolor = '666666;border-color:#555555';
+%   my $bgcolor = '#666666';
+%   my $border = '1px solid #555555';
 %   my $content = '';
-%   my $link = '';
-%   my $selectable = 0;
-%   my $draggable_ticketid = 0;
+%   my $selectable = 0; # can we schedule a new appointment
+%   my $ticketid = 0;
 %   my $draggable_length = 0;
-%   my $droppable = 0;
-%   my $cells = 0;
+%   my $droppable = 0; # can we reschedule an appointment here
+%   my $cells = 0; # total cell count for appointment
+%   my $offset = 0; # position of cell in appointment
 %
 %   #white out available times
 %   foreach my $avail ( @{ $schedule{'avail'} } ) {
 %     my( $start, $end ) = @$avail;
 %     next if $start >= ($tod_row+$timestep) || $end <= $tod_row;
-%     $bgcolor = 'FFFFFF';
+%     $bgcolor = '#FFFFFF';
+%     $border = '1px solid #D7D7D7';
 %     $selectable = 1
 %       if $LengthMin <= $end - $tod_row  #the slot is long enough
 %       && ! grep { $_ > $tod_row && $LengthMin > $_ - $tod_row }
@@ -39,15 +42,23 @@
 %   }
 %
 %   #block out / show / color code existing appointments
-%   #my %line = ();
 %   foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
 %
 %     my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
 %
+%     # misleading loop--at most one id will pass this test
 %     next if $starts >= ($tod_row+$timestep) || $due <= $tod_row;
 %
-%     $bgcolor = $col;
+%     $ticketid = $id;
+%     $bgcolor = '#'.$col;
+%     $border = '1px solid #D7D7D7';
+%     # can't schedule a new appointment
 %     $selectable = 0;
+%     # but can reschedule a ticket overlapping its old slot (filtered by can_drop)
+%     $droppable = 1 unless $scheduling;
+%     $draggable_length = $due - $starts;
+%     $cells = int( ($due-$starts) / $timestep );
+%     $cells++ if ($due-$starts) % $timestep;
 %
 %     if ( $starts >= $tod_row ) { #first row
 %
@@ -55,35 +66,23 @@
 %       my %hash = $m->comp('/Ticket/Elements/Customers', Ticket => $t);
 %       my @cust_main = values( %{$hash{cust_main}} );
 %
-%       $content .= ($content?', ':''). #$id. ': '.
-%                   #false laziness w/xmlhttp-ticket-update.html
-%                   FS::sched_avail::pretty_time($starts). '-'.
+%       #false laziness w/xmlhttp-ticket-update.html
+%       $content .= FS::sched_avail::pretty_time($starts). '-'.
 %                   FS::sched_avail::pretty_time($due).
 %                   ': '. $cust_main[0]->_FreesideURILabel;
 %                   #'install for custname XX miles away'; #XXX placeholder/more
-%       $link = qq( <A HREF="$RT::WebPath/Ticket/Display.html?id=$id" target="_blank">view</A> ).
-%               include('/elements/popup_link.html',
-%                         action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id='.$id,
-%                         label =>'edit',
-%                         actionlabel => 'Edit appointment',
-%                         height      => 436, # better: A + B * (num_custom_fields)
-%                      );
-%       $draggable_ticketid = $id;
-%       $draggable_length = $due - $starts;
 %
-%       $cells = int( ($due-$starts) / $timestep );
-%       $cells++ if ($due-$starts) % $timestep;
-%       
-%     #} else {
-%     #  $content .= ($content?', ':''). $id;
+%     } else {
+%       $offset = int( ($tod_row - $starts) / $timestep );
+%       $offset++ if ($tod_row - $starts) % $timestep;
 %     }
 %   }
 %
 %   my $td_id = 'td_'. $Date->epoch. '_'. $tod_row. '_'. $username;
 
-    <td style = "background-color:#<%$bgcolor%>"
+    <td style = "background-color: <% $bgcolor %>; border: <% $border %>"
           ID="<% $td_id %>"
-        class = "<% ($selectable && $custnum && $LengthMin) ? 'weeklyselectable' : 'weekly' %>"
+        class = "<% ($selectable && $scheduling) ? 'weeklyselectable' : 'weekly' %>"
 %#                 <%   $is_today     ? 'today'
 %#                    : $is_yesterday ? 'yesterday'
 %#                    : $is_aweekago  ? 'aweekago'
@@ -91,7 +90,8 @@
 %#                 %>"
 %     if ( $selectable ) {
 %
-%       if ( $custnum && $LengthMin ) {
+%       # Scheduling a new appointment
+%       if ( $scheduling ) {
 %
 %         #XXX for now, construct a ticket creation URL
 %         # eventually, do much the same, but say "appointment made", show time
@@ -131,39 +131,41 @@
                         %>"
           onclick     = "window.location.href = '<% $url %>'"
 %
+%       # If not scheduling, allow drag-and-drop rescheduling
 %       } else {
 %         $droppable = 1;
 %       }
 %
 %     }
-    ><% $content |h %><% $link |n %></td>
+    ><% $content |h %></td>
     <SCRIPT TYPE="text/javascript">
 
-      $('#<% $td_id %>').data('username', "<% $username %>");
-      $('#<% $td_id %>').data('starts',   <% $Date->epoch + $tod_row*60 %>);
-      $('#<% $td_id %>').data('epoch',    <% $Date->epoch %>);
-      $('#<% $td_id %>').data('tod_row',  <% $tod_row %>);
+      var $cell_<% $td_id %> = $('#<% $td_id %>');
+      $cell_<% $td_id %>.data('username', "<% $username %>");
+      $cell_<% $td_id %>.data('starts',   <% $Date->epoch + $tod_row*60 %>);
+      $cell_<% $td_id %>.data('epoch',    <% $Date->epoch %>);
+      $cell_<% $td_id %>.data('tod_row',  <% $tod_row %>);
 
-%     if ( $droppable ) {
-        $('#<% $td_id %>').droppable({
-          over: boxon_drop,
-          drop: reschedule_appointment,
-          tolerance: 'pointer'
-        });
+%     if ($selectable) {
+      set_schedulable_cell($cell_<% $td_id %>);
 %     }
 
-%     if ( $draggable_ticketid ) {
-        $('#<% $td_id %>').draggable({
-          containment: '.titlebox-content',
-%#          revert:      'invalid',
-          revert: true,
-          revertDuration: 0,
-          stop: clear_drag_hi,
-        });
-        $('#<% $td_id %>').data('ticketid', <% $draggable_ticketid %>);
-        $('#<% $td_id %>').data('length',   <% $draggable_length * 60 %>);
-        $('#<% $td_id %>').data('cells',    <% $cells %>);
-        $('#<% $td_id %>').data('bgcolor',  "#<% $bgcolor %>");
+%     if ($ticketid) {
+      set_appointment_cell(
+        $cell_<% $td_id %>,
+        <% $ticketid |js_string %>,
+        <% $bgcolor |n,js_string %>,
+        <% $content |n,js_string %>,
+        <% $draggable_length * 60 %>,
+        <% $cells %>,
+        <% $offset %>
+      );
+%     }
+%     if ( $droppable ) {
+%       if ( $draggable_length ) {
+      set_draggable_cell($cell_<% $td_id %>);
+%       }
+      set_droppable_cell($cell_<% $td_id %>);
 %     }
 
     </SCRIPT>
