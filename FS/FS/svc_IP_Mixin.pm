@@ -5,6 +5,8 @@ use strict;
 use NEXT;
 use FS::Record qw(qsearchs qsearch);
 use FS::Conf;
+use FS::router;
+use FS::part_svc_router;
 
 =item addr_block
 
@@ -192,9 +194,21 @@ sub radius_reply {
     # (the "1" at the end is the route metric)
     $reply{'Framed-Route'} = $block->cidr . ' ' .
                              ($self->ip_addr || '0.0.0.0') . ' 1';
+  }
 
-    $reply{'Motorola-Canopy-Gateway'} = $block->ip_gateway
-      if FS::Conf->new->exists('radius-canopy');
+  if ( $self->router_routernum && FS::Conf->new->exists('radius-canopy') ) {
+ 
+    my @addr_block =
+      qsearch('addr_block', { routernum => $self->router_routernum } );
+    if ( @addr_block ) {
+
+      #?
+      warn "Multiple address blocks attached to this service's router; using first"
+        if scalar(@addr_block) > 1;
+
+      $reply{'Motorola-Canopy-Gateway'} = $addr_block[0]->ip_gateway
+
+    }
     
   }
   %reply;
