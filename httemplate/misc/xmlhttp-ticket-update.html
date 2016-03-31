@@ -8,14 +8,12 @@ my $username = $cgi->param('username');
 
 my $ticket = FS::TicketSystem->get_ticket_object( \%session, ticket_id=>$id );
 
-#hmm, this should happen in a single transaction and either commit or rollback,
-# but in reality failures "Don't Happen" so its not like a ticket gets
-# half changed
+#hmm, this should happen in a single transaction and either commit or rollback
 
 my $return;
 if ( $ticket ) {
 
-  my($orv, $omsg) = $ticket->SetOwner( $username, 'Steal' );
+  my($orv, $omsg) = $ticket->SetOwner( $username );
   $orv = 1 if ! $orv && $omsg =~ /already own/i;
 
   if ( $orv ) {
