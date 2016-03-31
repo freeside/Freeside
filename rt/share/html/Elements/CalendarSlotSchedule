@@ -21,7 +21,7 @@
 %
 %   my $bgcolor = '#666666';
 %   my $border = '1px solid #555555';
-%   my $content = '';
+%   my $label = '';
 %   my $selectable = 0; # can we schedule a new appointment
 %   my $ticketid = 0;
 %   my $draggable_length = 0;
@@ -42,12 +42,19 @@
 %   }
 %
 %   #block out / show / color code existing appointments
+%   my $maxstarts = 0;
 %   foreach my $id ( keys %{ $schedule{'scheduled'} } ) {
 %
 %     my( $starts, $due, $col, $t ) = @{ $schedule{'scheduled'}->{$id} };
 %
-%     # misleading loop--at most one id will pass this test
+%     # misleading loop--at most one id should pass this test
 %     next if $starts >= ($tod_row+$timestep) || $due <= $tod_row;
+%
+%     # but, if for any reason a scheduling conflict occurs, 
+%     # use the later starting one to minimize UI conflicts--
+%     #   not to imply that this scenario has been tested or should ever happen!!!
+%     next if $starts < $maxstarts;
+%     $maxstarts = $starts;
 %
 %     $ticketid = $id;
 %     $bgcolor = '#'.$col;
@@ -60,22 +67,18 @@
 %     $cells = int( ($due-$starts) / $timestep );
 %     $cells++ if ($due-$starts) % $timestep;
 %
-%     if ( $starts >= $tod_row ) { #first row
+%     #false laziness w/misc/xmlhttp-ticket-update.html & CalendarDaySchedule
+%     my %hash = $m->comp('/Ticket/Elements/Customers', Ticket => $t);
+%     my @cust_main = values( %{$hash{cust_main}} );
 %
-%       #false laziness w/misc/xmlhttp-ticket-update.html & CalendarDaySchedule
-%       my %hash = $m->comp('/Ticket/Elements/Customers', Ticket => $t);
-%       my @cust_main = values( %{$hash{cust_main}} );
+%     #false laziness w/xmlhttp-ticket-update.html
+%     $label .= FS::sched_avail::pretty_time($starts). '-'.
+%               FS::sched_avail::pretty_time($due).
+%               ': '. $cust_main[0]->_FreesideURILabel;
+%               #'install for custname XX miles away'; #XXX placeholder/more
 %
-%       #false laziness w/xmlhttp-ticket-update.html
-%       $content .= FS::sched_avail::pretty_time($starts). '-'.
-%                   FS::sched_avail::pretty_time($due).
-%                   ': '. $cust_main[0]->_FreesideURILabel;
-%                   #'install for custname XX miles away'; #XXX placeholder/more
-%
-%     } else {
-%       $offset = int( ($tod_row - $starts) / $timestep );
-%       $offset++ if ($tod_row - $starts) % $timestep;
-%     }
+%     $offset = int( ($tod_row - $starts) / $timestep );
+%     $offset++ if ($tod_row - $starts) % $timestep;
 %   }
 %
 %   my $td_id = 'td_'. $Date->epoch. '_'. $tod_row. '_'. $username;
@@ -137,7 +140,7 @@
 %       }
 %
 %     }
-    ><% $content |h %></td>
+    ></td>
     <SCRIPT TYPE="text/javascript">
 
       var $cell_<% $td_id %> = $('#<% $td_id %>');
@@ -155,7 +158,7 @@
         $cell_<% $td_id %>,
         <% $ticketid |js_string %>,
         <% $bgcolor |n,js_string %>,
-        <% $content |n,js_string %>,
+        <% $label |n,js_string %>,
         <% $draggable_length * 60 %>,
         <% $cells %>,
         <% $offset %>

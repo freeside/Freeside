@@ -24,8 +24,6 @@
   // sets cell data and appearance as an appointment
   function set_appointment_cell ($cell,ticketid,bgcolor,label,length,cells,offset) {
     $cell.data('bgcolor',  bgcolor );
-    $cell.css('background-color', bgcolor);
-    $cell.css('border',  '1px solid #D7D7D7' );
     $cell.data('ticketid', ticketid );
     $cell.data('length',   length );
     $cell.data('cells',    cells );
