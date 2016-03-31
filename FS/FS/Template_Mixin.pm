@@ -2116,13 +2116,22 @@ sub generate_email {
 
       my $msg_template = FS::msg_template->by_key($msgnum)
         or die "${tc}email_pdf_msgnum $msgnum not found\n";
-      my %prepared = $msg_template->prepare(
+      my $cust_msg = $msg_template->prepare(
         cust_main => $self->cust_main,
-        object    => $self
+        object    => $self,
+        msgtype   => 'invoice',
       );
 
-      @text = split(/(?=\n)/, $prepared{'text_body'});
-      $html = $prepared{'html_body'};
+      # XXX hack to make this work in the new cust_msg era; consider replacing
+      # with cust_bill_send_with_notice events.
+      my @parts = $cust_msg->parts;
+      foreach my $part (@parts) { # will only have two parts, normally
+        if ( $part->mime_type eq 'text/plain' ) {
+          @text = @{ $part->body };
+        } elsif ( $part->mime_type eq 'text/html' ) {
+          $html = $part->bodyhandle->as_string;
+        }
+      }
 
     } elsif ( my @note = $conf->config($tc.'email_pdf_note') ) {
 
