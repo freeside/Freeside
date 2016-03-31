@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearchs );
+use FS::cust_pay;
+use FS::part_event;
+
+my $eventpart = 3; #dev server
+
+adminsuidsetup shift or die &usage;
+
+my $cust_pay = qsearchs('cust_pay', { 'paynum' => shift } )
+  or die "Unknown paynum\n";
+
+my $part_event = qsearchs('part_event', { 'eventpart' => $eventpart } )
+  or die "unknown eventnum $eventpart\n";
+
+my $cust_event = $part_event->new_cust_event($cust_pay);
+
+my $error = $cust_event->do_event();
+if ( $error ) {
+  warn "$error\n";
+} else {
+  warn $part_event->event. " event run\n";
+}
+
+sub usage {
+  "Usage:\n\npayment_received-event employee_username paynum\n";
+}
+
+1;

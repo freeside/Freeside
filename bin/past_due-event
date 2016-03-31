@@ -1,0 +1,41 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearchs );
+use FS::cust_bill;
+use FS::part_event;
+
+adminsuidsetup shift or die &usage;
+
+my $cust_bill = qsearchs('cust_bill', { 'invnum' => shift } )
+  or die "Unknown invnum\n";
+
+my $days = shift;
+
+my %days2eventpart = ( #dev server
+  1 => 2,
+  3 => 9,
+  5 => 10,
+  7 => 11,
+ 10 => 12,
+);
+
+#based on event name :/ good enough for this test
+my $part_event = qsearchs('part_event', { 'eventpart' => $days2eventpart{$days} } )
+  or die "unknown event for $days days\n";
+
+my $cust_event = $part_event->new_cust_event($cust_bill);
+
+my $error = $cust_event->do_event();
+if ( $error ) {
+  warn "$error\n";
+} else {
+  warn $part_event->event. " event run\n";
+}
+
+sub usage {
+  "Usage:\n\npast_due-event employee_username custnum days\n";
+}
+
+1;
