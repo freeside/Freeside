@@ -187,14 +187,15 @@ sub search_sql {
 
 =item label
 
-Returns a description of this fiber service containing the circuit ID
-and the ONT serial number.
+Returns a description of this fiber service containing the ONT serial number
+and the OLT name and port location.
 
 =cut
 
 sub label {
   my $self = shift;
-  $self->ont_serial . ' @ ' . $self->circuit_id;
+  $self->ont_serial . ' @ ' . $self->fiber_olt->description . ' ' .
+  join('-', $self->shelf, $self->card, $self->olt_port);
 }
 
 # nothing special for insert, delete, or replace
