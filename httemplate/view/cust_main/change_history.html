@@ -159,10 +159,10 @@ foreach my $table ( keys %tables ) {
 #   but it would spoil database optimizations on this lookup
 my @svcnumobj = qsearch({
   'select' => 'DISTINCT svcnum',
-  'hashref'   => { 'custnum' => $cust_main->custnum,
-                   'history_date' =>  { op=>'>=', value=>$newer_than } },
+  'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than } },
   'table'  => 'h_cust_svc',
   'addl_from' => 'JOIN cust_pkg USING (pkgnum)',
+  'extra_sql' => ' AND custnum = '. $cust_main->custnum,
 });
 
 # now grab those svcs explicitly 
