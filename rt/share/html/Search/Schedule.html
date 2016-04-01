@@ -2,11 +2,26 @@
 
 <SCRIPT TYPE="text/javascript">
 
+  // sets cell content and bgcolor in a div, for use as a draggable
+  //   (draggable tds have border problems on FF/IE)
+  function set_cell_div ($cell,content,bgcolor) {
+    var $div = $cell.data('div');
+    if (!$div) {
+      $div = $(document.createElement('div'));
+      $div.data('cell',$cell);
+      $cell.data('div',$div);
+      $cell.append($div);
+    }
+    $div.css('width','100%');
+    $div.css('background-color', bgcolor);
+    $div.html(content || '&nbsp;');
+  }
+
   // gives cell the appearance dictated by its data
   function set_data_cell ($cell) {
     $cell.css('border',  '1px solid #D7D7D7' );
     $cell.css('background-color', $cell.data('bgcolor'));
-    $cell.html($cell.data('content'));
+    set_cell_div($cell,$cell.data('content'),$cell.data('bgcolor'));
   }
 
   // sets cell data and appearance to schedulable
@@ -56,6 +71,7 @@
     for ( var c=0; c < <%$cells%>; c++) {
 
       $this.css('background-color', '#ffffdd');
+      set_cell_div($this,'','#ffffdd');
       if ( c == 0 ) {
         $this.css('border-top', '1px double black');
       }
@@ -75,6 +91,7 @@
     var $this = $(what);
     for ( var c=0; c < <%$cells%>; c++) {
       $this.css('background-color', '#ffffff');
+      set_cell_div($this,'','#ffffff');
       $this.css('border', '1px solid #D7D7D7'); //watch out in IE8 woes, empty string removes cell borders
       var rownum = $this.parent().prevAll('tr').length;
       var colnum = $this.prevAll('td').length;
@@ -90,14 +107,19 @@
   // ticket-dependant test if we can drop here
   // prevent overlap with other appointments, while allowing appointment to overlap itself
   function can_drop ($where, ui) {
-    var cells = ui.draggable.data('cells');
-    var ticketid = ui.draggable.data('ticketid');
+    var cells = ui.draggable.data('cell').data('cells');
+    var ticketid = ui.draggable.data('cell').data('ticketid');
     for (var c=0; c < cells; c++) {
       if (!$where.is('.ui-droppable')) {
         return false;
       }
-      if ($where.data('ticketid') && ($where.data('ticketid') != ticketid)) {
-        return false;
+      if ($where.data('ticketid')) {
+        if ($where.data('ticketid') != ticketid) {
+          return false;
+        }
+        if ($where.data('offset') == c) { // don't reschedule in the same slot
+          return false;
+        }
       }
       var rownum = $where.parent().prevAll('tr').length;
       var colnum = $where.prevAll('td').length;
@@ -117,12 +139,14 @@
 
   // makes cell draggable (able to be rescheduled)
   function set_draggable_cell ($cell) {
-    $cell.draggable({
+    var $div = $cell.data('div');
+    $div.draggable({
       containment: '.titlebox-content',
       revert: true,
       revertDuration: 0,
       start: appointment_drag_start,
       stop: appointment_drag_stop,
+      zIndex: 10,
     });
   }
 
@@ -130,7 +154,7 @@
   function set_white_cell ($cell) {
     $cell.css('border',  '1px solid #D7D7D7' );
     $cell.css('background-color', '#FFFFFF');
-    $cell.html('');
+    set_cell_div($cell,'','#FFFFFF');
   }
 
   // track drag highlighting
@@ -142,6 +166,7 @@
       for ( var c=0; c < cells; c++) {
         if (drag_hi.data('isdragging')) {
           drag_hi.css('border',  '1px solid #D7D7D7' );
+          drag_hi.css('background-color',  '#FFFFFF' );
         } else {
           set_white_cell(drag_hi);
         }
@@ -156,9 +181,9 @@
   // drag start event
   function appointment_drag_start(event, ui) {
     var $this = $(this);
-    // cell that's actually dragging
-    $this.html($this.data('label'));
-    $this.css('z-index',10);
+    // cell that's dragging
+    $this = $this.data('cell');
+    set_cell_div($this,$this.data('label'),$this.data('bgcolor'));
     $this.data('isdragging',true);
     var offset = $this.data('offset');
     var cells  = $this.data('cells');
@@ -168,7 +193,11 @@
     $this = $this.parent().parent().children('tr').eq(rownum-offset).children('td').eq(colnum);
     // loop through all cells in appointment
     for ( var c=0; c < cells; c++) {
-      if (c != offset) set_white_cell($this);
+      if ($this.data('isdragging')) {
+        $this.css('background-color', '#FFFFFF');
+      } else {
+        set_white_cell($this);
+      }
       var rownum = $this.parent().prevAll('tr').length;
       var colnum = $this.prevAll('td').length;
       $this = $this.parent().parent().children('tr').eq(rownum+1).children('td').eq(colnum);
@@ -178,10 +207,10 @@
   // drag stop event
   function appointment_drag_stop(event, ui) {
     var $this = $(this);
-    // the cell that was dragging
+    // cell that's dragging
+    $this = $this.data('cell');
     var cells = $this.data('cells');
     clear_drag_hi(cells);
-    $this.css('z-index','initial');
     $this.data('isdragging',false);
     var offset = $this.data('offset');
     // jump to first cell in appointment
@@ -199,17 +228,20 @@
 
   // drag over event
   function appointment_drag_over(event, ui) {
-    // the cell that is dragging
-    var cells = ui.draggable.data('cells');
-	// the droppable cell that you're over
+    // the cell that's dragging
+    var cells = ui.draggable.data('cell').data('cells');
+    // the droppable cell that you're over
     var $this = $(this);
     clear_drag_hi(cells);
     if (!can_drop($this, ui)) return;
     drag_hi = $this;
     // loop through potential appointment cells
     for ( var c=0; c < cells; c++) {
+      $this.css('background-color', '#ffffdd');
       if ( !$this.data('isdragging')) {
-        $this.css('background-color', '#ffffdd');
+        set_cell_div($this,'','#ffffdd');
+      } else {
+        $this.css('background-color','#ffffdd');
       }
       if ( c == 0 ) {
         $this.css('border-top', '1px double black');
@@ -228,16 +260,17 @@
   // drop event
   function reschedule_appointment( event, ui ) {
 
+	// the droppable cell that you're over
     var $this = $(this);
 
     if (!can_drop($this, ui)) return;
 
 %   #get the ticket number and appointment length (from the draggable object)
-    var draggable = ui.draggable;
-    var ticketid = draggable.data('ticketid');
-    var length   = draggable.data('length');
-    var bgcolor  = draggable.data('bgcolor');
-    var offset   = draggable.data('offset');
+    var dragcell = ui.draggable.data('cell');
+    var ticketid = dragcell.data('ticketid');
+    var length   = dragcell.data('length');
+    var bgcolor  = dragcell.data('bgcolor');
+    var offset   = dragcell.data('offset');
 
 %   #and.. the new date and time, and username (from the droppable object)
     var starts   = $this.data('starts');
@@ -247,7 +280,7 @@
     var n_st_tod_row   = $this.data('tod_row');
 
     var droppable = $this;
-    draggable.effect( "transfer", { to: droppable }, 420 );
+    ui.draggable.effect( "transfer", { to: droppable }, 420 );
 
 %   #tell the backend to reschedule it
     var url = "<% popurl(3) %>misc/xmlhttp-ticket-update.html?" +
@@ -264,23 +297,23 @@
         var label = data.sched_label;
 
         // jump to first cell in appointment
-        var rownum = draggable.parent().prevAll('tr').length;
-        var colnum = draggable.prevAll('td').length;
-        draggable = draggable.parent().parent().children('tr').eq(rownum-offset).children('td').eq(colnum);
+        var rownum = dragcell.parent().prevAll('tr').length;
+        var colnum = dragcell.prevAll('td').length;
+        dragcell = dragcell.parent().parent().children('tr').eq(rownum-offset).children('td').eq(colnum);
 
         // remove old appointment entirely
-        var epoch        = draggable.data('epoch');
-        var st_tod_row   = draggable.data('tod_row');
-        var old_username = draggable.data('username');
-        var cells        = draggable.data('cells');
+        var epoch        = dragcell.data('epoch');
+        var st_tod_row   = dragcell.data('tod_row');
+        var old_username = dragcell.data('username');
+        var cells        = dragcell.data('cells');
         for ( var c=0; c < cells; c++) {
           var tod_row = parseInt(st_tod_row) + (c * <%$timestep%>);
           var td_id = 'td_' + epoch +
                       '_' + String( tod_row ) +
                       '_' + old_username;
           var $cell = $('#'+td_id);
+          $cell.data('div').draggable('destroy');
           set_schedulable_cell($cell);
-          $cell.draggable('destroy');
           set_droppable_cell($cell);
         }
 
