@@ -5,6 +5,7 @@ use strict;
 
 use FS::Record qw(qsearch qsearchs dbh);
 use Tie::IxHash;
+use IO::Socket::SSL;
 use LWP::UserAgent;
 use URI;
 use Cpanel::JSON::XS;
@@ -801,7 +802,10 @@ sub ua {
   $self->{_ua} ||= do {
     my @opt;
     if ( $self->option('ssl_no_verify') ) {
-      push @opt, ssl_opts => { verify_hostname => 0 };
+      push @opt, ssl_opts => {
+                   verify_hostname => 0,
+                   SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+                 };
     }
     my $ua = LWP::UserAgent->new(@opt);
     $ua->credentials(

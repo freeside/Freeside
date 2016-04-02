@@ -6,6 +6,7 @@ use vars qw( $DEBUG @EXPORT_OK $conf );
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common qw( GET POST );
+use IO::Socket::SSL;
 use HTML::TokeParser;
 use Cpanel::JSON::XS;
 use URI::Escape 3.31;
@@ -655,7 +656,12 @@ sub standardize_freeside {
     return $location;
   }
 
-  my $ua = LWP::UserAgent->new( 'ssl_opts' => { 'verify_hostname'=>0 });
+  my $ua = LWP::UserAgent->new(
+             'ssl_opts' => {
+               verify_hostname => 0,
+               SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+             },
+           );
   my $response = $ua->request( POST $url, [
     'support-key' => scalar($conf->config('support-key')),
     %$location,
@@ -666,7 +672,10 @@ sub standardize_freeside {
 
   local $@;
   my $content = eval { decode_json($response->content) };
-  die "Address normalization JSON error : $@\n" if $@;
+  if ( $@ ) {
+    warn $response->content;
+    die "Address normalization JSON error : $@\n";
+  }
 
   die $content->{error}."\n"
     if $content->{error};

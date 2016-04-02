@@ -6,6 +6,7 @@ use base qw( FS::part_export );
 
 use Data::Dumper;
 use SOAP::Lite;
+use IO::Socket::SSL;
 
 =pod
 
@@ -299,7 +300,12 @@ sub api_login {
   }
   $self->{'__ispconfig_session'} = undef;
   $self->{'__ispconfig_client'} =
-    SOAP::Lite->proxy($self->option('soap_location'), ssl_opts => [ verify_hostname => 0 ] )
+    SOAP::Lite->proxy( $self->option('soap_location'),
+                         ssl_opts => [
+                           verify_hostname => 0,
+                           SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+                         ]
+                     )
     || undef;
   unless ($self->{'__ispconfig_client'}) {
     $self->{'__ispconfig_error'} = 'Error creating SOAP client';
