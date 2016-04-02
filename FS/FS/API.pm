@@ -43,7 +43,7 @@ in plaintext.
 Adds a new payment to a customers account. Takes a list of keys and values as
 paramters with the following keys:
 
-=over 5
+=over 4
 
 =item secret
 
@@ -91,9 +91,7 @@ Example:
 #enter cash payment
 sub insert_payment {
   my($class, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   #less "raw" than this?  we are the backoffice API, and aren't worried
   # about version migration ala cust_main/cust_location here
@@ -107,19 +105,12 @@ sub insert_payment {
 # pass the phone number ( from svc_phone ) 
 sub insert_payment_phonenum {
   my($class, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
-
   $class->_by_phonenum('insert_payment', %opt);
-
 }
 
 sub _by_phonenum {
   my($class, $method, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   my $phonenum = delete $opt{'phonenum'};
 
@@ -132,7 +123,6 @@ sub _by_phonenum {
   $opt{'custnum'} = $cust_pkg->custnum;
 
   $class->$method(%opt);
-
 }
 
 =item insert_credit OPTION => VALUE, ...
@@ -183,11 +173,9 @@ Example:
 #Enter credit
 sub insert_credit {
   my($class, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
-  $opt{'reasonnum'} ||= $conf->config('api_credit_reason');
+  $opt{'reasonnum'} ||= FS::Conf->new->config('api_credit_reason');
 
   #less "raw" than this?  we are the backoffice API, and aren't worried
   # about version migration ala cust_main/cust_location here
@@ -201,12 +189,38 @@ sub insert_credit {
 # pass the phone number ( from svc_phone ) 
 sub insert_credit_phonenum {
   my($class, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
-
   $class->_by_phonenum('insert_credit', %opt);
+}
 
+=item apply_payments_and_credits
+
+Applies payments and credits for this customer.  Takes a list of keys and
+values as parameter with the following keys:
+
+=over 4
+
+=item secret
+
+API secret
+
+=item custnum
+
+Customer number
+
+=back
+
+=cut
+
+#apply payments and credits
+sub apply_payments_and_credits {
+  my($class, %opt) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
+    or return { 'error' => 'Unknown custnum' };
+
+  my $error = $cust_main->apply_payments_and_credits( 'manual'=>1 );
+  return { 'error'  => $error, };
 }
 
 =item insert_refund OPTION => VALUE, ...
@@ -238,9 +252,7 @@ Example:
 #Enter cash refund.
 sub insert_refund {
   my($class, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   # when github pull request #24 is merged,
   #  will have to change over to default reasonnum like credit
@@ -259,12 +271,7 @@ sub insert_refund {
 # pass the phone number ( from svc_phone ) 
 sub insert_refund_phonenum {
   my($class, %opt) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
-
   $class->_by_phonenum('insert_refund', %opt);
-
 }
 
 #---
@@ -397,16 +404,13 @@ Referring customer number
 
 sub new_customer {
   my( $class, %opt ) = @_;
-
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   #default agentnum like signup_server-default_agentnum?
   #$opt{agentnum} ||= $conf->config('signup_server-default_agentnum');
  
   #same for refnum like signup_server-default_refnum
-  $opt{refnum} ||= $conf->config('signup_server-default_refnum');
+  $opt{refnum} ||= FS::Conf->new->config('signup_server-default_refnum');
 
   $class->API_insert( %opt );
 }
@@ -505,10 +509,7 @@ Agent number
 
 sub update_customer {
   my( $class, %opt ) = @_;
-
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   FS::cust_main->API_update( %opt );
 }
@@ -522,9 +523,7 @@ parameters with the following keys: custnum, secret
 
 sub customer_info {
   my( $class, %opt ) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
     or return { 'error' => 'Unknown custnum' };
@@ -545,9 +544,7 @@ and values as paramters with the following keys: custnum, secret
 
 sub location_info {
   my( $class, %opt ) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   my @cust_location = qsearch('cust_location', { 'custnum' => $opt{custnum} });
 
@@ -584,9 +581,7 @@ Customer number (required)
 
 sub bill_now {
   my( $class, %opt ) = @_;
-  my $conf = new FS::Conf;
-  return { 'error' => 'Incorrect shared secret' }
-    unless $opt{secret} eq $conf->config('api_shared_secret');
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
 
   my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
     or return { 'error' => 'Unknown custnum' };
@@ -602,7 +597,19 @@ sub bill_now {
 }
 
 
-#Advertising sources?
+#next.. Advertising sources?
 
+
+##
+# helper subroutines
+##
+
+sub _check_shared_secret {
+  shift eq FS::Conf->new->config('api_shared_secret');
+}
+
+sub _shared_secret_error {
+  return { 'error' => 'Incorrect shared secret' };
+}
 
 1;
