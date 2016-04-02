@@ -147,6 +147,10 @@ sub print_latex {
   $template ||= $self->_agent_template
     if $self->can('_agent_template');
 
+  #the new way
+  $self->set('mode', $params{mode})
+    if $params{mode};
+
   my $pkey = $self->primary_key;
   my $tmp_template = $self->table. '.'. $self->$pkey. '.XXXXXXXX';
 
