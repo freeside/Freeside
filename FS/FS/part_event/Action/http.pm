@@ -2,6 +2,7 @@ package FS::part_event::Action::http;
 
 use strict;
 use base qw( FS::part_event::Action );
+use IO::Socket::SSL;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use JSON::XS;
@@ -60,10 +61,17 @@ sub do_action {
       ( $field, $value );
     } split(/\n/, $self->option('content') );
 
+  if ( $self->option('debug') ) {
+    warn "[$me] $_: ". $content{$_}. "\n" foreach keys %content;
+  }
+
   my $content = encode_json( \%content );
 
   my @lwp_opts = ();
-  push @lwp_opts, 'ssl_opts'=>{ 'verify_hostname'=>0 }
+  push @lwp_opts, 'ssl_opts' => {
+                    verify_hostname => 0,
+                    SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+                  }
     if $self->option('ssl_no_verify');
   my $ua = LWP::UserAgent->new(@lwp_opts);
 

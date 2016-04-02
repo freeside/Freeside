@@ -3,6 +3,9 @@ package FS::part_export::http;
 use base qw( FS::part_export );
 use vars qw( %options %info );
 use Tie::IxHash;
+use LWP::UserAgent;
+use HTTP::Request::Common qw( POST );
+use IO::Socket::SSL;
 
 tie %options, 'Tie::IxHash',
   'method' => { label   =>'Method',
@@ -149,13 +152,12 @@ sub http {
 
   $method = lc($method);
 
-  eval "use LWP::UserAgent;";
-  die "using LWP::UserAgent: $@" if $@;
-  eval "use HTTP::Request::Common;";
-  die "using HTTP::Request::Common: $@" if $@;
-
   my @lwp_opts = ();
-  push @lwp_opts, 'ssl_opts'=>{ 'verify_hostname'=>0 } if $ssl_no_verify;
+  push @lwp_opts, 'ssl_opts' => {
+                    verify_hostname => 0,
+                    SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+                  }
+    if $ssl_no_verify;
   my $ua = LWP::UserAgent->new(@lwp_opts);
 
   #my $response = $ua->$method(

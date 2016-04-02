@@ -2360,6 +2360,7 @@ service.
 =cut
 
 use CAM::PDF;
+use IO::Socket::SSL;
 use LWP::UserAgent;
 use HTTP::Request::Common qw( POST );
 use JSON::XS;
@@ -2400,7 +2401,12 @@ sub postal_mail_fsinc {
   my $file = $self->print_pdf(%opt, 'no_addresses' => 1);
   my $pages = CAM::PDF->new($file)->numPages;
 
-  my $ua = LWP::UserAgent->new( 'ssl_opts' => { 'verify_hostname'=>0 });
+  my $ua = LWP::UserAgent->new(
+    'ssl_opts' => { 
+      verify_hostname => 0,
+      SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+    }
+  );
   my $response = $ua->request( POST $url, [
     'support-key'      => scalar($conf->config('support-key')),
     'file'             => encode_base64($file),
