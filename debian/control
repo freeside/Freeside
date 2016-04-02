@@ -87,7 +87,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libexcel-writer-xlsx-perl,libgeo-googleearth-pluggable-perl,
  libhtml-mason-psgihandler-perl,libdate-simple-perl,libsnmp-perl,
  libparse-fixedlength-perl,libregexp-common-net-cidr-perl,
- libio-string-perl,libnet-mac-vendor-perl,libnet-https-any-perl,
+ libnet-mac-vendor-perl,libnet-https-any-perl,
  libapache2-authcookie-perl,liblocale-currency-format-perl,
  libhtml-formattext-withlinks-perl, libemail-address-perl (>= 1.897),
  libemail-address-list-perl,
@@ -96,7 +96,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libdata-guid-perl, libparams-classify-perl (>= 0.013-5.1),
  libcpanel-json-xs-perl, libarchive-zip-perl,
  libtry-tiny-perl, libnumber-phone-perl, libxml-libxml-simple-perl,
- libxml-writer-perl
+ libxml-writer-perl, libio-socket-ssl-perl
 Conflicts: libparams-classify-perl (>= 0.013-6)
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
