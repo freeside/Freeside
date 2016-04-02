@@ -15,6 +15,7 @@ use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
 use FS::UI::Web;
+use FS::export_cust_svc;
 
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
@@ -158,8 +159,35 @@ sub delete {
   my $cust_pkg = $self->cust_pkg;
   my $custnum = $cust_pkg->custnum if $cust_pkg;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  # delete associated export_cust_svc
+  foreach my $export_cust_svc (
+    qsearch('export_cust_svc',{ 'svcnum' => $self->svcnum })
+  ) {
+    my $error = $export_cust_svc->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->SUPER::delete;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   if ( $ticket_system eq 'RT_Internal' ) {
     unless ( $rt_session ) {

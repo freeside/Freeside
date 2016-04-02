@@ -3044,6 +3044,26 @@ sub tables_hashref {
       'index'       => [ [ 'exportnum' ], [ 'svcpart' ] ],
     },
 
+    'export_cust_svc' => {
+      'columns' => [
+        'exportcustsvcnum', 'serial', '', '', '', '', 
+        'exportnum', 'int', '', '', '', '', 
+        'svcnum', 'int', '', '', '', '', 
+        'remoteid', 'varchar', '', 512, '', '', 
+      ],
+      'primary_key'  => 'exportcustsvcnum',
+      'unique'       => [ [ 'exportnum', 'svcnum' ] ],
+      'index'        => [ [ 'exportnum', 'svcnum' ] ],
+      'foreign_keys' => [
+                          { columns    => [ 'exportnum' ],
+                            table      => 'part_export',
+                          },
+                          { columns    => [ 'svcnum' ],
+                            table      => 'cust_svc',
+                          },
+                        ],
+    },
+
     'export_device' => {
       'columns' => [
         'exportdevicenum' => 'serial', '', '', '', '', 
