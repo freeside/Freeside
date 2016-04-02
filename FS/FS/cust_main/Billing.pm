@@ -1474,9 +1474,9 @@ sub _make_lines {
       my $cust_bill_pkg = new FS::cust_bill_pkg {
         'pkgnum'    => $cust_pkg->pkgnum,
         'setup'     => $setup,
-        'unitsetup' => $unitsetup,
+        'unitsetup' => sprintf('%.2f', $unitsetup),
         'recur'     => $recur,
-        'unitrecur' => $unitrecur,
+        'unitrecur' => sprintf('%.2f', $unitrecur),
         'quantity'  => $cust_pkg->quantity,
         'details'   => \@details,
         'discounts' => [ @setup_discounts, @recur_discounts ],
