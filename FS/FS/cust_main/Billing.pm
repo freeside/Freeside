@@ -1305,11 +1305,11 @@ sub _make_lines {
       my $cust_bill_pkg = new FS::cust_bill_pkg {
         'pkgnum'                => $cust_pkg->pkgnum,
         'setup'                 => $setup,
-        'unitsetup'             => $unitsetup,
+        'unitsetup'             => sprintf('%.2f', $unitsetup),
         'setup_billed_currency' => $setup_billed_currency,
         'setup_billed_amount'   => $setup_billed_amount,
         'recur'                 => $recur,
-        'unitrecur'             => $unitrecur,
+        'unitrecur'             => sprintf('%.2f', $unitrecur),
         'recur_billed_currency' => $recur_billed_currency,
         'recur_billed_amount'   => $recur_billed_amount,
         'quantity'              => $cust_pkg->quantity,
