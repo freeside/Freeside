@@ -4,7 +4,7 @@ use strict;
 #use vars qw($DEBUG $me);
 use FS::Record qw(qsearchs);
 use FS::Conf;
-use FS::svc_external;
+use FS::svc_acct;
 use FS::webservice_log;
 
 #$DEBUG = 0;
@@ -30,7 +30,7 @@ sub freesideinc_service {
     or return { 'error' => 'bad support-key' };
   my($username, $_password) = ($1,$2);
 
-  my $svc_external = qsearchs({
+  my $svc_acct = qsearchs({
     'table'     => 'svc_acct',
     'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum )',
     'hashref'   => { 'username'  => $username,
@@ -38,7 +38,7 @@ sub freesideinc_service {
                    },
     'extra_sql' => "AND svcpart = $svcpart",
   });
-  unless ( $svc_external ) {
+  unless ( $svc_acct ) {
     warn "bad support-key for $username from $ENV{REMOTE_IP}\n";
     sleep 5; #ideally also rate-limit and eventually ban their IP
     return { 'error' => 'bad support-key' };
@@ -48,10 +48,10 @@ sub freesideinc_service {
   # but for now, everybody can use everything
 
   #record it happened
-  my $custnum = $svc_external->cust_svc->cust_pkg->custnum;
+  my $custnum = $svc_acct->cust_svc->cust_pkg->custnum;
   my $webservice_log = new FS::webservice_log {
     'custnum'  => $custnum,
-    'svcnum'   => $svc_external->svcnum,
+    'svcnum'   => $svc_acct->svcnum,
     'method'   => $packet->{'method'},
     'quantity' => $packet->{'quantity'} || 1,
   };
