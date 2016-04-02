@@ -1115,9 +1115,8 @@ sub queueable_email {
   my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
     or die "invalid invoice number: " . $opt{invnum};
 
-  if ( $opt{mode} ) {
-    $self->set('mode', $opt{mode});
-  }
+  $self->set('mode', $opt{mode})
+    if $opt{mode};
 
   my %args = map {$_ => $opt{$_}} 
              grep { $opt{$_} }
@@ -1258,6 +1257,10 @@ sub batch_invoice {
       batchnum => $bill_batch->batchnum,
       invnum   => $self->invnum,
   });
+  if ( $self->mode ) {
+    $opt->{mode} ||= $self->mode;
+    $opt->{mode} = $opt->{mode}->modenum if ref $opt->{mode};
+  }
   return $cust_bill_batch->insert($opt);
 }
 
