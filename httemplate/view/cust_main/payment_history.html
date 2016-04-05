@@ -136,28 +136,42 @@
 
 % if ( $item->{'balance_forward'} ) {
 <& .balance_forward_row, $item->{'balance'}, $item->{'date'} &>
-% } 
+% }
 %} # foreach $item
+
+% if ( $old_history ) {
+<& .hide_history_row, $old_history++ &>
+% }
 
 </TABLE>
     </TD>
   </TR>
 </TABLE>
 
+<SCRIPT SRC="<% $fsurl %>elements/page_pref.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">
 
-function show_history () {
-  //alert('showing history!');
-
+function show_history(show) { // but don't update pref
   var balance_forward_row = document.getElementById('balance_forward_row');
 
-  balance_forward_row.style.display = 'none';
+  balance_forward_row.style.display = show ? 'none' : '';
   for ( var i = 0; i < <% $old_history %>; i++ ) {
     var oldRow = document.getElementById('old_history'+i);
-    oldRow.style.display = '';
+    oldRow.style.display = show ? '' : 'none';
   }
-
 }
+
+function update_show_history (show) {
+
+  show = show ? 1 : 0;
+  show_history(show);
+  // update user pref (blind post, don't care about the output here)
+  set_page_pref('expand_old_history', '<% $custnum %>', show);
+}
+
+$().ready(function() {
+  show_history(<% get_page_pref('expand_old_history', $custnum) %>);
+});
 
 </SCRIPT>
 <%def .balance_forward_row>
@@ -171,7 +185,7 @@ function show_history () {
 
      <TD CLASS="grid" BGCOLOR="#dddddd">
        <I><% mt("Starting balance on [_1]", time2str($date_format, $date) ) |h %></I>
-       (<A HREF="javascript:void(0);" onClick="show_history();"><% mt('show prior history') |h %></A>)
+       (<A HREF="javascript:void(0);" onClick="update_show_history(true);"><% mt('show prior history') |h %></A>)
      </TD>
 
      <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
@@ -182,6 +196,17 @@ function show_history () {
 
    </TR>
 </%def>
+<%def .hide_history_row>
+%  my $num = shift;
+  <TR ID="old_history<% $num %>" STYLE="display: none">
+    <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+    <TD CLASS="grid" BGCOLOR="#dddddd">
+      <I>(<A HREF="#" onclick="update_show_history(false)"><% mt('hide prior history') |h %></A>)</I>
+    </TD>
+    <TD CLASS="grid" BGCOLOR="#dddddd" COLSPAN=5></TD>
+  </TR>
+</%def>
+
 <%shared>
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
