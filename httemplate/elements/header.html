@@ -61,6 +61,12 @@ Example:
 
     <% $head |n %>
 
+%# announce our base path, and the Mason comp path of this page
+  <script type="text/javascript">
+  window.fsurl = <% $fsurl |js_string %>;
+  window.request_comp_path = <% $m->request_comp->path |js_string %>;
+  </script>
+
   </HEAD>
   <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
@@ -184,6 +190,7 @@ Example:
 % }
 
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
+
 <%init>
 
 my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
@@ -231,4 +238,5 @@ if ( scalar(@agentnums) == 1 ) {
   $company_name = $conf->config('company_name');
   $company_url  = $conf->config('company_url');
 }
+
 </%init>

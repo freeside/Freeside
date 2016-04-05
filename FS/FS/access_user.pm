@@ -759,6 +759,78 @@ sub locale {
   $self->{_locale} = $self->option('locale');
 }
 
+=item get_page_pref PATH, NAME, TABLENUM
+
+Returns the user's page preference named NAME for the page at PATH. If the
+page is a view or edit page or otherwise shows a single record at a time,
+it should use TABLENUM to tell which record the preference is for.
+
+=cut
+
+sub get_page_pref {
+  my $self = shift;
+  my ($path, $prefname, $tablenum) = @_;
+  $tablenum ||= '';
+  
+  my $access_user_page_pref = qsearchs('access_user_page_pref', {
+      path      => $path,
+      usernum   => $self->usernum,
+      tablenum  => $tablenum,
+      prefname  => $prefname,
+  }); 
+  $access_user_page_pref ? $access_user_page_pref->prefvalue : '';
+} 
+
+=item set_page_pref PATH, NAME, TABLENUM, VALUE
+
+Sets the user's page preference named NAME for the page at PATH. Use TABLENUM
+as for get_page_pref.
+
+=cut
+
+sub set_page_pref {
+  my $self = shift;
+  my ($path, $prefname, $tablenum, $prefvalue) = @_;
+  $tablenum ||= '';
+  
+  my $error;
+  my $access_user_page_pref = qsearchs('access_user_page_pref', {
+      path      => $path,
+      usernum   => $self->usernum,
+      tablenum  => $tablenum,
+      prefname  => $prefname,
+  });
+  if ( $access_user_page_pref ) { 
+    if ( $prefvalue eq $access_user_page_pref->get('prefvalue') ) {
+      return '';
+    }
+    if ( length($prefvalue) > 0 ) {
+      $access_user_page_pref->set('prefvalue', $prefvalue);
+      $error = $access_user_page_pref->replace;
+      $error .= " (updating $prefname)" if $error;
+    } else { 
+      $error = $access_user_page_pref->delete;
+      $error .= " (removing $prefname)" if $error;
+    }
+  } else {
+    if ( length($prefvalue) > 0 ) {
+      $access_user_page_pref = FS::access_user_page_pref->new({
+          path      => $path,
+          usernum   => $self->usernum,
+          tablenum  => $tablenum,
+          prefname  => $prefname,
+          prefvalue => $prefvalue,
+      });
+      $error = $access_user_page_pref->insert;
+      $error .= " (creating $prefname)" if $error;
+    } else { 
+      return '';
+    }
+  }
+
+  return $error;
+}
+
 =back
 
 =head1 BUGS

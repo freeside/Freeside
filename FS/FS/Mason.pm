@@ -136,7 +136,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::Conf;
   use FS::CGI qw(header menubar table itable ntable idiot
                  eidiot myexit http_header);
-  use FS::UI::Web qw(svc_url random_id);
+  use FS::UI::Web qw(svc_url random_id
+                  get_page_pref  set_page_pref);
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
   use FS::Msgcat qw(gettext geterror);
@@ -389,6 +390,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::svc_fiber;
   use FS::fiber_olt;
   use FS::olt_site;
+  use FS::access_user_page_pref;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

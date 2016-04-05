@@ -806,3 +806,5 @@ FS/olt_site.pm
 t/olt_site.t
 FS/webservice_log.pm
 t/webservice_log.t
+FS/access_user_page_pref.pm
+t/access_user_page_pref.t
