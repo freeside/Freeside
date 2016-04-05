@@ -205,15 +205,14 @@
           if ( d == 0 ) {
             var title = 
               label +
-              ' <A HREF="<%$RT::WebPath%>/Ticket/Display.html?id=' + ticketid + '" target="_blank">view</A> ';
-%#needs higher version of RT
-%#          + <% include('/elements/popup_link.html',
-%#                   action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id=__MAGIC_TICKET_ID__',
-%#                   label =>'edit',
-%#                   actionlabel => 'Edit appointment',
-%#                   height      => 436, # better: A + B * (num_custom_fields)
-%#                 ) |n,js_string
-%#              %>;
+              ' <A HREF="<%$RT::WebPath%>/Ticket/Display.html?id=' + ticketid + '" target="_blank">view</A> ' +
+              <% include('/elements/popup_link.html',
+                   action=>$RT::WebPath.'/Ticket/ModifyCustomFieldsPopup.html?id=__MAGIC_TICKET_ID__',
+                   label =>'edit',
+                   actionlabel => 'Edit appointment',
+                   height      => 436, # better: A + B * (num_custom_fields)
+                 ) |n,js_string
+              %>;
             title = title.replace( /__MAGIC_TICKET_ID__/, ticketid );
             $('#'+n_td_id).html( title );
 %           #(and make the top draggable, so we could do it all over again)
