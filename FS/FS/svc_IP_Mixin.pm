@@ -186,7 +186,9 @@ means "Framed-Route" if there's an attached router.
 
 sub radius_reply {
   my $self = shift;
+
   my %reply = ();
+
   if ( my $block = $self->attached_block ) {
     # block routed over dynamic IP: "192.168.100.0/29 0.0.0.0 1"
     # or
@@ -196,21 +198,9 @@ sub radius_reply {
                              ($self->ip_addr || '0.0.0.0') . ' 1';
   }
 
-  if ( $self->router_routernum && FS::Conf->new->exists('radius-canopy') ) {
- 
-    my @addr_block =
-      qsearch('addr_block', { routernum => $self->router_routernum } );
-    if ( @addr_block ) {
+  $reply{'Motorola-Canopy-Gateway'} = $self->addr_block->ip_gateway
+    if FS::Conf->new->exists('radius-canopy') && $self->addr_block;
 
-      #?
-      warn "Multiple address blocks attached to this service's router; using first"
-        if scalar(@addr_block) > 1;
-
-      $reply{'Motorola-Canopy-Gateway'} = $addr_block[0]->ip_gateway
-
-    }
-    
-  }
   %reply;
 }
 
