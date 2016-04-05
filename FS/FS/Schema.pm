@@ -5829,6 +5829,26 @@ sub tables_hashref {
       'index'        => [ ['usernum'], ['path'], ['_date'] ],
     },
 
+    'access_user_page_pref' => {
+      'columns'     => [
+        'prefnum'     =>  'serial',     '',      '', '', '',
+        'usernum'     =>     'int',     '',      '', '', '',
+        'path'        =>    'text',     '',      '', '', '',
+        'tablenum'    =>     'int', 'NULL',      '', '', '',
+        '_date'       =>    @date_type,              '', '',
+        'prefname'    =>    'varchar',  '', $char_d, '', '',
+        'prefvalue'   =>    'text',     '',      '', '', '',
+      ],
+      'primary_key' => 'prefnum',
+      'unique'      => [ [ 'usernum', 'path', 'tablenum', 'prefname' ] ],
+      'index'       => [],
+      'foreign_keys' => [
+                          { columns   => [ 'usernum' ],
+                            table     => 'access_user'
+                          },
+                        ],
+    },
+
     'sched_item' => {
       'columns' => [
         'itemnum',   'serial',      '', '', '', '', 
