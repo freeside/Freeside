@@ -1,0 +1,12 @@
+<%init>
+my $path = $cgi->param('path');
+my $name = $cgi->param('name');
+my $tablenum = $cgi->param('num') || '';
+my $value = $cgi->param('value');
+
+my $error = $FS::CurrentUser::CurrentUser->set_page_pref($path, $name, $tablenum, $value);
+my $result = { 'error' => $error }; # in case someone cares
+
+http_header('Content-Type', 'application/json');
+</%init>
+<% encode_json($result) %>

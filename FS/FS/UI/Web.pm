@@ -15,7 +15,7 @@ use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 #@ISA = qw( FS::UI );
 @ISA = qw( Exporter );
 
-@EXPORT_OK = qw( svc_url random_id );
+@EXPORT_OK = qw( get_page_pref set_page_pref svc_url random_id );
 
 $DEBUG = 0;
 $me = '[FS::UID::Web]';
@@ -23,8 +23,78 @@ $me = '[FS::UID::Web]';
 our $NO_RANDOM_IDS;
 
 ###
+# user prefs
+###
+
+=item get_page_pref NAME, TABLENUM
+
+Returns the user's page preference named NAME for the current page. If the
+page is a view or edit page or otherwise shows a single record at a time,
+it should use TABLENUM to link the preference to that record.
+
+=cut
+
+sub get_page_pref {
+  my ($prefname, $tablenum) = @_;
+
+  my $m = $HTML::Mason::Commands::m
+    or die "can't get page pref when running outside the UI";
+  # what's more useful: to tie prefs to the base_comp (usually where
+  # code is executing right now), or to the request_comp (approximately the
+  # one in the URL)? not sure.
+  $FS::CurrentUser::CurrentUser->get_page_pref( $m->request_comp->path,
+                                                $prefname,
+                                                $tablenum
+                                              );
+}
+
+=item set_page_pref NAME, TABLENUM, VALUE
+
+Sets the user's page preference named NAME for the current page. Use TABLENUM
+as for get_page_pref.
+
+If VALUE is an empty string, the preference will be deleted (and
+C<get_page_pref> will return an empty string).
+
+  my $mypref = set_page_pref('mypref', '', 100);
+
+=cut
+
+sub set_page_pref {
+  my ($prefname, $tablenum, $prefvalue) = @_;
+
+  my $m = $HTML::Mason::Commands::m
+    or die "can't set page pref when running outside the UI";
+  $FS::CurrentUser::CurrentUser->set_page_pref( $m->request_comp->path,
+                                                $prefname,
+                                                $tablenum,
+                                                $prefvalue );
+}
+
+###
 # date parsing
 ###
+
+=item parse_beginning_ending CGI [, PREFIX ]
+
+Parses a beginning/ending date range, as used on many reports. This function
+recognizes two sets of CGI params: "begin" and "end", the integer timestamp
+values, and "beginning" and "ending", the user-readable date fields.
+
+If "begin" contains an integer, that's passed through as the beginning date.
+Otherwise, "beginning" is passed to L<DateTime::Format::Natural> and turned
+into an integer. If this fails or it doesn't have a value, zero is used as the
+beginning date.
+
+The same happens for "end" and "ending", except that if "ending" contains a
+date without a time, it gets moved to the end of that day, and if there's no
+value, the value returned is the highest unsigned 32-bit time value (some time
+in 2037).
+
+PREFIX is optionally a string to prepend (with '_' as a delimiter) to the form
+field names.
+
+=cut
 
 use Date::Parse;
 sub parse_beginning_ending {
