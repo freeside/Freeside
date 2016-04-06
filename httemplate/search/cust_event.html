@@ -152,7 +152,12 @@ die "access denied"
               || $cgi->param('pkgnum')  =~ /^(\d+)$/
             );
 
-my $title = $cgi->param('failed') ? 'Failed billing events' : 'Billing events';
+my @statuses = $cgi->param('event_status');
+my $title = 'Billing events';
+if ( $statuses[0] eq 'failed' and !defined($statuses[1]) ) {
+  # tweak the title if we're showing only failed events
+  $title = 'Failed billing events';
+}
 
 my %search = ();
 
@@ -161,6 +166,7 @@ for my $param (@scalars) {
   $search{$param} = scalar( $cgi->param($param) )
     if $cgi->param($param);
 }
+$search{event_status} = \@statuses;
 
 #lists
 my @lists = qw( payby eventpart );
