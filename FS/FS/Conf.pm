@@ -4813,11 +4813,11 @@ and customer address. Include units.',
   {
     'key'         => 'part_pkg-delay_cancel-days',
     'section'     => '',
-    'description' => 'Expire packages in this many days when using delay_cancel (default is 1)',
+    'description' => 'Number of days to suspend when using automatic suspension period before cancel (default is 1)',
     'type'        => 'text',
     'validate'    => sub { (($_[0] =~ /^\d*$/) && (($_[0] eq '') || $_[0]))
-                           ? 'Must specify an integer number of days'
-                           : '' }
+                           ? ''
+                           : 'Must specify an integer number of days' }
   },
 
   {
