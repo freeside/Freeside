@@ -1269,7 +1269,7 @@ following keys:
 =item bill_date
 
 (Future) Bill date.  Indicates a future date for which billing could be run.
-Specified as a integer UNIX timestamp.  Pass this value to the B<order_renew>
+Specified as an integer UNIX timestamp.  Pass this value to the B<order_renew>
 function.
 
 =item bill_date_pretty
@@ -1285,7 +1285,7 @@ Base amount which will be charged if renewed early as of this date.
 
 Renewal date; i.e. even-futher future date at which the customer will be paid
 through if the early renewal is completed with the given B<bill-date>.
-Specified as a integer UNIX timestamp.
+Specified as an integer UNIX timestamp.
 
 =item renew_date_pretty
 
@@ -1345,6 +1345,11 @@ Session identifier
 =item pkgpart
 
 pkgpart of package to cancel
+
+=item date
+
+Optional date, for future cancellation (expiration) instead of immediate
+cancellation.  Specified as an integer UNIX timestamp ("epoch time").
 
 =back
 
