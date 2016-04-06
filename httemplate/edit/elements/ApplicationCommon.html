@@ -158,6 +158,7 @@ function changed(what) {
 %           }
 %           $desc .= ' (default)';
 %         }
+%         $total_owed = sprintf('%.2f', $total_owed + 0.00000001 ); #so 1.005 rounds to 1.01
 %         if ( $total_owed > 0 ) {
             <% &{$row_generator}($key, $cbp, $desc, $total_owed, $amount, '') %>
 %         }
