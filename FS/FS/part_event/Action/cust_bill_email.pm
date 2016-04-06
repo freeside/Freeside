@@ -20,12 +20,18 @@ sub option_fields {
 sub default_weight { 51; }
 
 sub do_action {
-  my( $self, $cust_bill ) = @_;
+  my( $self, $cust_bill, $cust_event ) = @_;
 
   my $cust_main = $cust_bill->cust_main;
 
   $cust_bill->set('mode' => $self->option('modenum'));
-  $cust_bill->email unless $cust_main->invoice_noemail;
+  if ( $cust_main->invoice_noemail ) {
+    # what about if the customer has no email dest?
+    $cust_event->set('no_action', 'Y');
+    return "customer has invoice_noemail flag";
+  } else {
+    $cust_bill->email;
+  }
 }
 
 1;

@@ -54,6 +54,13 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item statustext - additional status detail (i.e. error or progress message)
 
+=item no_action - 'Y' if the event action wasn't performed. Some actions
+contain an internal check to see if the action is going to be impossible (for
+example, emailing a notice to a customer who has no email address), and if so,
+won't attempt the action. It shouldn't be reported as a failure because
+there's no need to retry it. However, the action should set no_action = 'Y'
+so that there's a record.
+
 =back
 
 =head1 METHODS
@@ -141,6 +148,7 @@ sub check {
     || $self->ut_number('_date')
     || $self->ut_enum('status', [qw( new locked done failed initial)])
     || $self->ut_anything('statustext')
+    || $self->ut_flag('no_action')
   ;
   return $error if $error;
 
@@ -372,11 +380,46 @@ sub search_sql_where {
     push @search, "cust_event._date <= $1";
   }
 
-  if ( $param->{'failed'} ) {
-    push @search, "statustext != ''",
-                  "statustext IS NOT NULL",
-                  "statustext != 'N/A'";
-  }
+  #if ( $param->{'failed'} ) {
+  #  push @search, "statustext != ''",
+  #                "statustext IS NOT NULL",
+  #                "statustext != 'N/A'";
+  #}
+  # huh?
+
+  if ( $param->{'event_status'} ) {
+
+    my @status;
+    my ($done_Y, $done_N);
+    foreach (@{ $param->{'event_status'} }) {
+      if ($_ eq 'done_Y') {
+        $done_Y = 1;
+      } elsif ( $_ eq 'done_N' ) {
+        $done_N = 1;
+      } else {
+        push @status, $_;
+      }
+    }
+    if ( $done_Y or $done_N ) {
+      push @status, 'done';
+    }
+    if ( @status ) {
+      push @search, "cust_event.status IN(" .
+                    join(',', map "'$_'", @status) .
+                    ')';
+    }
+
+    if ( $done_Y and not $done_N ) {
+      push @search, "cust_event.no_action IS NULL";
+    } elsif ( $done_N and not $done_Y ) {
+      push @search, "cust_event.no_action = 'Y'";
+    } # else they're both true, so don't add a constraint, or both false,
+      # and it doesn't matter.
+
+  } # event_status
+
+  # always hide initialization
+  push @search, 'cust_event.status != \'initial\'';
 
   if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
     push @search, "cust_main.custnum = '$1'";
