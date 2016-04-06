@@ -12,7 +12,7 @@
     <% small_custview($custnum, $conf->config('countrydefault')) %>
 % } 
 
-<FORM NAME="PaymentForm" ACTION="<% popurl(1) %>process/cust_pay.cgi" METHOD=POST onSubmit="document.PaymentForm.submit.disabled=true">
+<FORM NAME="PaymentForm" ACTION="<% popurl(1) %>process/cust_pay.cgi" METHOD=POST onSubmit="document.PaymentForm.submitButton.disabled=true">
 <INPUT TYPE="hidden" NAME="link" VALUE="<% $link %>">
 <INPUT TYPE="hidden" NAME="linknum" VALUE="<% $linknum %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
@@ -114,7 +114,7 @@
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="<% mt('Post payment') |h %>">
+<INPUT NAME="submitButton" TYPE="submit" VALUE="<% mt('Post payment') |h %>">
 
 </FORM>
 
