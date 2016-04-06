@@ -2671,19 +2671,18 @@ sub cancel_pkg {
     or return { 'error' => "Can't resume session" }; #better error message
 
   my $custnum = $session->{'custnum'};
-
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
   my $pkgnum = $p->{'pkgnum'};
-
   my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
                                         'pkgnum'  => $pkgnum,   } )
     or return { 'error' => "unknown pkgnum $pkgnum" };
 
-  my $error = $cust_pkg->cancel('quiet' => 1);
+  my $error = $cust_pkg->cancel( 'quiet' => 1,
+                                 'date'  => $p->{'date'},
+                               );
   return { 'error' => $error };
-
 }
 
 sub provision_phone {
