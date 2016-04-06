@@ -141,6 +141,7 @@ sub _export_insert {
           'i_product' => $product_id,
           'activation_date' => time2str("%Y-%m-%d",time),
           'billing_model'   => 1, # '1' for credit, '-1' for debit, could make this an export option
+          'h323_password'   => $svc_phone->sip_password,
         }
       },'i_account');
       return $self->api_error_logout if $self->api_error;
@@ -381,6 +382,7 @@ sub api_update_account {
       'i_account' => $i_account,
       'id' => $newid,
       'i_product' => $self->option('product_id'),
+      'h323_password' => $svc_phone->sip_password,
     },
   },'i_account');
   return if $self->api_error;
