@@ -41,7 +41,7 @@ tie my %a2billing_simultaccess, 'Tie::IxHash', (
       'type' => 'checkbox',
     },
     'delay_cancel' => {
-      'name' => 'Automatic suspension period before cancelling',
+      'name' => 'Automatic suspension period before cancelling (configuration setting part_pkg-delay_cancel-days)',
       'type' => 'checkbox',
     },
 
