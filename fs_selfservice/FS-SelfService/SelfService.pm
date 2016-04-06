@@ -1094,13 +1094,22 @@ Optional locationnum for this package order, for existing locations.
 Or, for new locations, pass the following fields: address1*, address2, city*,
 county, state*, zip*, country.  (* = required in this case)
 
+(None of this is required at all if you are just ordering a package
+at the customer's existing default service location.)
+
 =item address1
 
-=item address 2
+=item address2
 
 =item city
 
-=item 
+=item county
+
+=item state
+
+=item zip
+
+=item country
 
 =item svcpart
 
@@ -1503,7 +1512,7 @@ message, or empty on success, and B<contacts>, a list of contacts.
 B<contacts> is an array reference of hash references (i.e. an array of structs,
  in XML-RPC).  Each hash reference (struct) has the following keys:
 
-=over4
+=over 4
 
 =item contactnum
 
@@ -1611,6 +1620,8 @@ Takes a hash reference as parameter with the following keys:
 
 Returns a hash reference with a single parameter, B<error>, which contains an
 error message, or empty on success.
+
+=back
 
 =head2 "MY ACCOUNT" QUOTATION FUNCTIONS
 
@@ -1754,8 +1765,6 @@ Removes a package from a quotation. Takes the following arguments:
 =back
 
 Returns 'error' => a string, which will be empty on success.
-
-=back
 
 =item quotation_order HASHREF
 
