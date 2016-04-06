@@ -21,7 +21,8 @@ Examples:
 </%doc>
 %if ( $error ) {
 %  $cgi->param('error', $error);
-<% $cgi->redirect(popurl(2). $opt{error_redirect}. '?'. $cgi->query_string ) %>
+%  my $query = $m->scomp('/elements/create_uri_query');
+<% $cgi->redirect(popurl(2). $opt{error_redirect}. "?$query") %>
 %} else {
 <% header("$src_thing application$to sucessful") %>
   <SCRIPT TYPE="text/javascript">

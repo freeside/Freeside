@@ -3,46 +3,45 @@
 Examples:
 
   #cust_bill_pay
-  include('elements/ApplicationCommon.html',
-    'form_action' => 'process/cust_bill_pay.cgi', 
+  <& elements/ApplicationCommon.html,
+    'form_action' => 'process/cust_bill_pay.cgi, 
     'src_table'   => 'cust_pay',
     'src_thing'   => 'payment',
     'dst_table'   => 'cust_bill',
     'dst_thing'   => 'invoice',
-  )
+  &>
 
   #cust_credit_bill
-  include('elements/ApplicationCommon.html',
-    'form_action' => 'process/cust_credit_bill.cgi',
+  <& elements/ApplicationCommon.html',
+    'form_action' => 'process/cust_credit_bill.cgi,
     'src_table'   => 'cust_credit',
     'src_thing'   => 'credit',
     'dst_table'   => 'cust_bill',
     'dst_thing'   => 'invoice',
-  )
+  &>
 
   #cust_pay_refund
-  include('elements/ApplicationCommon.html',
-    'form_action' => 'process/cust_pay_refund.cgi',
+  <& elements/ApplicationCommon.html',
+    'form_action' => 'process/cust_pay_refund.cgi,
     'src_table'   => 'cust_pay',
     'src_thing'   => 'payment',
     'dst_table'   => 'cust_refund',
     'dst_thing'   => 'refund',
-  )
+  &>
 
   #cust_credit_refund
-  include('elements/ApplicationCommon.html',
+  <& elements/ApplicationCommon.html,
     'form_action' => 'process/cust_credit_refund.cgi',
     'src_table'   => 'cust_credit',
     'src_thing'   => 'credit',
     'dst_table'   => 'cust_refund',
     'dst_thing'   => 'refund',
-  )
+  &>
 
 </%doc>
+<& /elements/header-popup.html, "Apply $src_thing$to", '', 'onLoad="myOnLoadFunction();"' &>
 
-<% include('/elements/header-popup.html', "Apply $src_thing$to", '', 'onLoad="myOnLoadFunction();"') %>
-
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <P ID="ErrorMessage"></P>
 <FORM ACTION="<% $p1. $opt{'form_action'} %>" NAME="ApplicationForm" ID="ApplicationForm" METHOD=POST>
@@ -213,11 +212,10 @@ Apply to:
     </TR>
   </TABLE>
 </CENTER>
-<% include( '/elements/xmlhttp.html',
+<& /elements/xmlhttp.html,
             'url' =>  $p.'misc/xmlhttp-calculate_taxes.html',
             'subs' => [ 'calculate_taxes' ],
-          )
- %>
+&>
 <SCRIPT TYPE="text/javascript">
 
 function show_taxes(arg) {
@@ -393,8 +391,7 @@ function myOnLoadFunction () {
 
 </SCRIPT>
 
-<% include('/elements/footer.html') %>
-
+<& /elements/footer-popup.html &>
 <%init>
 
 my %opt = @_;
@@ -427,6 +424,8 @@ $can_change_credit = 1
      );
 
 my $to = $dst_table eq 'cust_refund' ? ' to Refund' : '';
+
+$m->comp('/elements/handle_uri_query');
 
 my($src_pkeyvalue, $amount, $dst_pkeyvalue, $src_amount);
 if ( $cgi->param('error') ) {
