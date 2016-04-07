@@ -5,7 +5,6 @@
 %>
 
     <FORM ACTION="cust_event.html" METHOD="GET">
-    <INPUT TYPE="hidden" NAME="failed" VALUE="<% $cgi->param('failed') ? 1 : 0 %>">
     <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
       <TR>
@@ -15,7 +14,8 @@
       <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
 
       <% include( '/elements/tr-select-cust_main-status.html',
-                    'label' => 'Status'
+                    'label' => 'Customer status',
+                    # this field is just called 'status'
                 )
       %>
 
@@ -33,6 +33,34 @@
                     'all_selected' => 1,
                 )
       %>
+
+%     if ( $cgi->param('failed') ) {
+      <& /elements/tr-fixed.html,
+        'label'         => 'Event status',
+        'field'         => 'event_status',
+        'curr_value'    => 'failed',
+        'formatted_value' => 'Failed',
+      &>
+%     } else {
+
+% # 'initial' is not on here, since nobody needs to see it. also,
+% # 'done_Y' and 'done_N' are shorthand for "done, and no_action
+% # is null" and "done, and no_action = 'Y'".
+      <& /elements/tr-select.html,
+        'label'         => 'Event status',
+        'field'         => 'event_status',
+        'multiple'      => 1,
+        'all_selected'  => 1,
+        'size'          => 5,
+        'options'       => [ qw( done_Y done_N failed new locked ) ],
+        'option_labels' => { done_Y => 'Completed',
+                             done_N => 'Completed, no action taken',
+                             failed => 'Failed',
+                             new    => 'Not yet processed',
+                             locked => 'Running',
+                           },
+      &>
+%     }
 
       <% include( '/elements/tr-input-beginning_ending.html' ) %>
 
