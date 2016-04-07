@@ -3605,11 +3605,6 @@ sub adjust_ticket_priority {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  # temporary instrumentation for RT#39536
-    local $DEBUG = 1;
-    local $FS::TicketSystem::RT_Internal::DEBUG = 1;
-    warn "[adjust_ticket_priority]\n" . Dumper($p->{'values'}) . "\n\n";
-
 #  warn "$me adjust_ticket_priority: initializing ticket system\n" if $DEBUG;
 #  FS::TicketSystem->init;
   my $ss_priority = FS::TicketSystem->selfservice_priority;
