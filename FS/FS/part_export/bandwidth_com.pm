@@ -56,6 +56,16 @@ with this IP address exists, one will be created.</P>
 <P>If you are operating a central SIP gateway to receive traffic for all (or
 a subset of) customers, you should configure a phone service with a fixed
 value, or a list of fixed values, for the sip_server field.</P>
+<P>To find your account ID and site ID:
+  <UL>
+  <LI>Login to <a target="_blank" href="https://dashboard.bandwidth.com">the Dashboard.
+  </a></LI>
+  <LI>Under "Your subaccounts", find the subaccount (site) that you want to use
+  for exported DIDs. Click the "manage sub-account" link.</LI>
+  <LI>Look at the URL. It will end in <i>{"a":xxxxxxx,"s":yyyy}</i>.</LI>
+  <LI>Your account ID is <i>xxxxxxx</i>, and the site ID is <i>yyyy</i>.</LI>
+  </UL>
+</P>
 END
 );
 
