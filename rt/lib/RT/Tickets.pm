@@ -2277,7 +2277,7 @@ sub _FreesideFieldLimit {
 
     # if it's compound, create a join from cust_main or cust_svc to that 
     # table, using custnum or svcnum, and Limit on that table instead.
-    my @_SQLLimit = ();
+    my @Limit = ();
     foreach my $a (@alias) {
       if ( $table2 ) {
           $a = $self->Join(
@@ -2307,8 +2307,12 @@ sub _FreesideFieldLimit {
       # will produce a subclause: "cust_main_1.custnum IS NOT NULL OR 
       # cust_main_2.custnum IS NOT NULL" (or "IS NULL AND..." for a negative
       # query).
-      #$self->_SQLLimit(
-      push @_SQLLimit, {
+      # This requires the ENTRYAGGREGATOR to be OR for positive queries
+      # (where a matching customer exists), but ONLY between these two
+      # constraints and NOT with anything else in the query, hence the
+      # subclause.
+
+      push @Limit, {
           %rest,
           ALIAS           => $a,
           FIELD           => $pkey,
@@ -2320,11 +2324,10 @@ sub _FreesideFieldLimit {
       };
     }
 
-    $self->_OpenParen;
-    foreach my $_SQLLimit (@_SQLLimit) {
-      $self->_SQLLimit( %$_SQLLimit);
+    foreach (@Limit) {
+      # _SQLLimit would force SUBCLAUSE to 'ticketsql'; bypass it
+      $self->SUPER::Limit( %$_ );
     }
-    $self->_CloseParen;
 
 }
 
