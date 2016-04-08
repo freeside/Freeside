@@ -2115,7 +2115,7 @@ sub change {
 
   my $time = time;
 
-  $hash{'setup'} = $time if $self->setup;
+  $hash{'setup'} = $time if $self->get('setup');
 
   $hash{'change_date'} = $time;
   $hash{"change_$_"}  = $self->$_()
@@ -2136,16 +2136,18 @@ sub change {
   my $unused_credit = 0;
   my $keep_dates = $opt->{'keep_dates'};
 
-  # Special case.  If the pkgpart is changing, and the customer is
-  # going to be credited for remaining time, don't keep setup, bill, 
-  # or last_bill dates, and DO pass the flag to cancel() to credit 
-  # the customer.
+  # Special case.  If the pkgpart is changing, and the customer is going to be
+  # credited for remaining time, don't keep setup, bill, or last_bill dates,
+  # and DO pass the flag to cancel() to credit the customer.  If the old
+  # package had a setup date, set the new package's setup to the package
+  # change date so that it has the same status as before.
   if ( $opt->{'pkgpart'} 
        and $opt->{'pkgpart'} != $self->pkgpart
        and $self->part_pkg->option('unused_credit_change', 1) ) {
     $unused_credit = 1;
     $keep_dates = 0;
-    $hash{$_} = '' foreach qw(setup bill last_bill);
+    $hash{'last_bill'} = '';
+    $hash{'bill'} = '';
   }
 
   if ( $keep_dates ) {
