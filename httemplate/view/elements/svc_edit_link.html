@@ -1,18 +1,18 @@
-% if ( $cancel_date ) {
-<I><% mt("Canceled [_1]", time2str('%b %o %Y', $cancel_date) ) |h %></I>
-% } else {
 <SCRIPT>
 function areyousure_delete() {
   if (confirm(<% mt('Permanently delete this service?') |js_string %>) == true)
     window.location.href = '<% $cancel_url %>';
 }
 </SCRIPT>
+% if ( $cancel_date ) {
+| <I><% mt("Canceled [_1]", time2str('%b %o %Y', $cancel_date) ) |h %></I>
+% } else {
 %   if ( $curuser->access_right('Provision customer service') ) {
 | <A HREF="<% $edit_url %>"><% mt("Edit this [_1]", $label) |h %></A>
 %   }
-%   if ( $curuser->access_right('Unprovision customer service') ) {
+% }
+% if ( $curuser->access_right('Unprovision customer service') ) {
 | <A HREF="javascript:areyousure_delete()"><% mt('Unprovision this Service') |h %></A>
-%   }
 % }
 <& /elements/manage_device_link.html, 
 	'svc' => $svc_x,
