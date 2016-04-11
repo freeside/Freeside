@@ -8,6 +8,7 @@
                                     'Service',
                                     'Zone',
                                     'User',
+                                    emt('Pkg. Status'),
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [ 'svcnum',
@@ -20,22 +21,31 @@
                                             ? $svc_acct->email
                                             : '';
                                         },
+                                    sub {
+                                      $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                                      $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status
+                                    },
                                     \&FS::UI::Web::cust_fields,
                                   ],
                  'links'       => [ $link,
                                     $link,
                                     '',
                                     $ulink,
+                                    '', # pkg status
                                     ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                           FS::UI::Web::cust_header()
                                     ),
                                   ],
-                 'align' => 'rlll'. FS::UI::Web::cust_aligns(),
+                 'align' => 'rlllr'. FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               '',
                               '',
                               '',
                               '',
+                              sub {
+                                my $c = FS::cust_pkg::statuscolors;
+                                $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
+                              }, # pkg status
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
@@ -43,6 +53,7 @@
                               '',
                               '',
                               '',
+                              'b',
                               FS::UI::Web::cust_styles(),
                             ],
              
@@ -51,6 +62,8 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my %cust_pkg_cache;
 
 #my $conf = new FS::Conf;
 
@@ -68,6 +81,13 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
 } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
   push @extra_sql, "svcpart = $1";
+  if (defined($cgi->param('cancelled'))) {
+    if ($cgi->param('cancelled')) {
+      push @extra_sql, "cust_pkg.cancel IS NOT NULL";
+    } else {
+      push @extra_sql, "cust_pkg.cancel IS NULL";
+    }
+  }
 }
 
 my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.

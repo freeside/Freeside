@@ -10,6 +10,7 @@
                      'Termination',
                      'Circuit ID',
                      'IP Address',
+                     emt('Pkg. Status'),
                      FS::UI::Web::cust_header($cgi->param('cust_fields')),
                    ],
   'fields'      => [ 'svcnum',
@@ -18,6 +19,10 @@
                      'termination',
                      'circuit_id',
                      'ip_addr',
+                     sub {
+                       $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                       $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status
+                     },
                      \&FS::UI::Web::cust_fields,
                    ],
   'links'       => [ $link,
@@ -26,15 +31,21 @@
                      '',
                      $link,
                      $link,
+                     '', # pkg status
                      FS::UI::Web::cust_links($cgi->param('cust_fields')),
                    ],
-  'align'       => 'rlllll'.  FS::UI::Web::cust_aligns(),
+  'align'       => 'rlllllr'.  FS::UI::Web::cust_aligns(),
   'color'       => [ 
                      ('') x 6,
+                     sub {
+                       my $c = FS::cust_pkg::statuscolors;
+                       $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
+                     }, # pkg status
                      FS::UI::Web::cust_colors(),
                    ],
   'style'       => [ 
                      ('') x 6,
+                     'b',
                      FS::UI::Web::cust_styles(),
                    ],
 
@@ -43,6 +54,8 @@
 
 die "access denied" unless
   $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my %cust_pkg_cache;
 
 my $conf = new FS::Conf;
 
@@ -55,6 +68,9 @@ if ( $cgi->param('magic') eq 'unlinked' ) {
   }
   foreach (qw(pkgpart routernum towernum sectornum)) {
     $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
+  }
+  if ( defined($cgi->param('cancelled')) ) {
+    $search_hash{'cancelled'} = $cgi->param('cancelled') ? 1 : 0;
   }
 }
 

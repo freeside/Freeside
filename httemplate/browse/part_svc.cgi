@@ -119,9 +119,13 @@ function part_export_areyousure(href) {
       <% $svcdb %></TD>
 
     <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <FONT COLOR="#00CC00"><B><% $num_active_cust_svc{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_active_cust_svc{$part_svc->svcpart} ? svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart ) : '<A NAME="zero">' %>active</A>
-
-% if ( $num_active_cust_svc{$part_svc->svcpart} ) { 
+% my $svcurl_active = svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart . "&cancelled=0");
+% my $svcurl_cancel = svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart . "&cancelled=1");
+      <FONT COLOR="#00CC00"><B><% $num_cust_svc_active{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_cust_svc_active{$part_svc->svcpart} ? $svcurl_active : '' %>active<% $num_cust_svc_active{$part_svc->svcpart} ? '</A>' : '' %>
+% if ( $num_cust_svc_cancelled{$part_svc->svcpart} ) { 
+        <BR><FONT COLOR="#FF0000"><B><% $num_cust_svc_cancelled{$part_svc->svcpart} %></B></FONT>&nbsp;<% $svcurl_cancel %>cancelled</A>
+% }
+% if ( $num_cust_svc{$part_svc->svcpart} ) { 
         <BR><FONT SIZE="-1">[ <A HREF="<%$p%>edit/bulk-cust_svc.html?svcpart=<% $part_svc->svcpart %>">change</A> ]</FONT>
 % } 
 
@@ -245,11 +249,25 @@ my @part_svc =
     qsearch('part_svc', \%search );
 my $total = scalar(@part_svc);
 
-my %num_active_cust_svc = map { $_->svcpart => $_->num_cust_svc } @part_svc;
+## The Active/Cancelled distinction is a bit awkward,
+## active currently includes unattached and suspended services,
+## but we've previously referred to EVERY existing cust_svc as "Active",
+## and we don't really want to know numbers by individual package status,
+## so for now the UI will distinguish these as "Active" and "Cancelled",
+## but please let's not go so far as to introduce the idea of "Service Status"
+
+my %num_cust_svc_active;
+my %num_cust_svc_cancelled;
+my %num_cust_svc;
+foreach my $part_svc (@part_svc) {
+  $num_cust_svc{$part_svc->svcpart} = $part_svc->num_cust_svc;
+  $num_cust_svc_cancelled{$part_svc->svcpart} = $part_svc->num_cust_svc_cancelled;
+  $num_cust_svc_active{$part_svc->svcpart} = $num_cust_svc{$part_svc->svcpart} - $num_cust_svc_cancelled{$part_svc->svcpart};
+}
 
 if ( $cgi->param('orderby') eq 'active' ) {
-  @part_svc = sort { $num_active_cust_svc{$b->svcpart} <=>
-                     $num_active_cust_svc{$a->svcpart}     } @part_svc;
+  @part_svc = sort { $num_cust_svc{$b->svcpart} <=>
+                     $num_cust_svc{$a->svcpart}     } @part_svc;
 } elsif ( $cgi->param('orderby') eq 'svc' ) { 
   @part_svc = sort { lc($a->svc) cmp lc($b->svc) } @part_svc;
 }
