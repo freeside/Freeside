@@ -586,6 +586,26 @@ sub num_cust_svc {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item num_cust_svc_cancelled
+
+Returns the number of associated customer services that are
+attached to cancelled packages.
+
+=cut
+
+sub num_cust_svc_cancelled {
+  my $self = shift;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM cust_svc
+     LEFT JOIN cust_pkg USING ( pkgnum )
+     WHERE svcpart = ?
+     AND cust_pkg.cancel IS NOT NULL"
+  ) or die dbh->errstr;
+  $sth->execute($self->svcpart)
+    or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
 =item svc_x
 
 Returns a list of associated FS::svc_* records.

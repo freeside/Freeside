@@ -10,6 +10,7 @@
                                  'Router',
                                  @tower_header,
                                  'IP Address',
+                                 emt('Pkg. Status'),
                                  FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                ],
               'fields'      => [ 'svcnum',
@@ -20,6 +21,10 @@
                                  },
                                  @tower_fields,
                                  'ip_addr',
+                                 sub {
+                                   $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                                   $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status
+                                 },
                                  \&FS::UI::Web::cust_fields,
                                ],
               'links'       => [ $link,
@@ -27,11 +32,12 @@
                                  '', #$link_router,
                                  (map '', @tower_fields),
                                  $link,
+                                 '', # pkg status
                                  ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                        FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                  ),
                                ],
-              'align'       => 'rll'.('r' x @tower_fields).'r'.
+              'align'       => 'rll'.('r' x @tower_fields).'rr'.
                                 FS::UI::Web::cust_aligns(),
               'color'       => [ 
                                  '',
@@ -39,6 +45,10 @@
                                  '',
                                  (map '', @tower_fields),
                                  '',
+                                 sub {
+                                   my $c = FS::cust_pkg::statuscolors;
+                                   $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
+                                 }, # pkg status
                                  FS::UI::Web::cust_colors(),
                                ],
               'style'       => [ 
@@ -47,6 +57,7 @@
                                  '',
                                  (map '', @tower_fields),
                                  '',
+                                 'b',
                                  FS::UI::Web::cust_styles(),
                                ],
           
@@ -55,6 +66,8 @@
 
 die "access denied" unless
   $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my %cust_pkg_cache;
 
 my $conf = new FS::Conf;
 
@@ -67,6 +80,9 @@ if ( $cgi->param('magic') eq 'unlinked' ) {
   }
   foreach (qw(pkgpart routernum towernum sectornum)) {
     $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
+  }
+  if ( defined($cgi->param('cancelled')) ) {
+    $search_hash{'cancelled'} = $cgi->param('cancelled') ? 1 : 0;
   }
 }
 

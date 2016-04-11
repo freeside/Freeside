@@ -12,6 +12,7 @@
                                      'Hardware addr.',
                                      'IP addr.',
                                      'Smartcard',
+                                     emt('Pkg. Status'),
                                      FS::UI::Web::cust_header(),
                                    ],
             'fields'            => [ 'svcnum',
@@ -22,23 +23,35 @@
                                      'display_hw_addr',
                                      'ip_addr',
                                      'smartcard',
+                                     sub {
+                                       $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                                       $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status
+                                     },
                                      \&FS::UI::Web::cust_fields,
                                    ],
             'links'             => [ ($link_svc) x 8,
+                                     '', # pkg status
                                      ( map { $_ ne 'Cust. Status' ? 
                                                 $link_cust : '' }
                                        FS::UI::Web::cust_header() )
                                    ],
-            'align'             => 'rlllllll' . FS::UI::Web::cust_aligns(),
+            'align'             => 'rlllllllr' . FS::UI::Web::cust_aligns(),
             'color'             => [ ('') x 8,
-                                      FS::UI::Web::cust_colors() ],
+                                     sub {
+                                       my $c = FS::cust_pkg::statuscolors;
+                                       $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
+                                     }, # pkg status
+                                     FS::UI::Web::cust_colors() ],
             'style'             => [ $svc_cancel_style, ('') x 7,
-                                      FS::UI::Web::cust_styles() ],
+                                     'b',
+                                     FS::UI::Web::cust_styles() ],
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my %cust_pkg_cache;
 
 my $addl_from = '
  LEFT JOIN cust_svc  USING ( svcnum  )
@@ -93,6 +106,13 @@ if ( $cgi->param('typenum') =~ /^(\d+)$/ ) {
 
 if ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
   push @extra_sql, "cust_svc.svcpart = $1";
+  if (defined($cgi->param('cancelled'))) {
+    if ($cgi->param('cancelled')) {
+      push @extra_sql, "cust_pkg.cancel IS NOT NULL";
+    } else {
+      push @extra_sql, "cust_pkg.cancel IS NULL";
+    }
+  }
 }
 
 my ($orderby) = $cgi->param('orderby') =~ /^(\w+( ASC| DESC)?)$/i;

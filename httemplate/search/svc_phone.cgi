@@ -9,6 +9,7 @@
                                           'Country code',
                                           'Phone number',
                                           @header,
+                                          emt('Pkg. Status'),
                                           FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                         ],
                  'fields'            => [ 'svcnum',
@@ -16,6 +17,10 @@
                                           'countrycode',
                                           'phonenum',
                                           @fields,
+                                          sub {
+                                            $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                                            $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status
+                                          },
                                           \&FS::UI::Web::cust_fields,
                                         ],
                  'links'             => [ $link,
@@ -23,12 +28,14 @@
                                           $link,
                                           $link,
                                           ( map '', @header ),
+                                          '', # pkg status
                                           ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                                 FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                           ),
                                         ],
                  'align' => 'rlrr'.
                             join('', map 'r', @header).
+                            'r'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               '',
@@ -36,6 +43,10 @@
                               '',
                               '',
                               ( map '', @header ),
+                              sub {
+                                my $c = FS::cust_pkg::statuscolors;
+                                $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
+                              }, # pkg status
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
@@ -44,6 +55,7 @@
                               '',
                               '',
                               ( map '', @header ),
+                              'b',
                               FS::UI::Web::cust_styles(),
                             ],
               
@@ -52,6 +64,8 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my %cust_pkg_cache;
 
 my $conf = new FS::Conf;
 
@@ -132,6 +146,9 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
 } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
   $search_hash{'svcpart'} = [ $1 ];
+  if ( defined($cgi->param('cancelled')) ) {
+    $search_hash{'cancelled'} = $cgi->param('cancelled') ? 1 : 0;
+  }
 } else {
   $cgi->param('phonenum') =~ /^([\d\- ]+)$/; 
   my $phonenum = $1;

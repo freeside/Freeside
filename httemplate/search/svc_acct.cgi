@@ -59,6 +59,8 @@ my $curuser =  $FS::CurrentUser::CurrentUser;
 
 die "access denied" unless $curuser->access_right('List services');
 
+my %cust_pkg_cache;
+
 my $link      = [ "${p}view/svc_acct.cgi?",   'svcnum'  ];
 my $link_cust = sub {
   my $svc_acct = shift;
@@ -130,6 +132,7 @@ for (qw( towernum sectornum )) {
 my $timepermonth = '';
 
 my $orderby = 'ORDER BY svcnum';
+my $addl_from = '';
 if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   $search_hash{'unlinked'} = 1
@@ -281,6 +284,9 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 } elsif ( $cgi->param('svcpart') ) {
   $orderby = "ORDER BY uid";
   #$orderby = "ORDER BY svcnum";
+  if ( defined($cgi->param('cancelled')) ) {
+    $search_hash{'cancelled'} = $cgi->param('cancelled') ? 1 : 0;
+  }
 } else {
   $orderby = "ORDER BY uid";
 
@@ -347,6 +353,19 @@ foreach my $pkg_field ( @pkg_fields ) {
   
 }
 
+push @header, emt('Pkg. Status');
+push @fields, sub {
+  $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+  $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status;
+};
+push @links, '';
+$align .= 'r';
+push @color, sub {
+  my $c = FS::cust_pkg::statuscolors;
+  $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
+};
+push @style, 'b';
+
 push @header, FS::UI::Web::cust_header($cgi->param('cust_fields'));
 push @fields, \&FS::UI::Web::cust_fields,
 push @links, map { $_ ne 'Cust. Status' ? $link_cust : '' }
@@ -357,6 +376,7 @@ push @style, FS::UI::Web::cust_styles();
 
 $search_hash{'order_by'} = $orderby;
 $search_hash{'where'} = \@extra_sql;
+$search_hash{'addl_from'} = $addl_from;
 
 my $sql_query = FS::svc_acct->search(\%search_hash);
 my $count_query = delete($sql_query->{'count_query'});
