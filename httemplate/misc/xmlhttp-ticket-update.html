@@ -13,7 +13,13 @@ my $ticket = FS::TicketSystem->get_ticket_object( \%session, ticket_id=>$id );
 my $return;
 if ( $ticket ) {
 
-  my($orv, $omsg) = $ticket->SetOwner( $username );
+  my $curowner = $ticket->OwnerObj->Name;
+  my($orv, $omsg);
+  if (( $curowner eq $FS::CurrentUser::CurrentUser->username ) or ( $curowner eq 'nobody' )) {
+    ($orv, $omsg) = $ticket->SetOwner( $username );
+  } else {
+    ($orv, $omsg) = $ticket->SetOwner( $username, 'Steal' );
+  }
   $orv = 1 if ! $orv && $omsg =~ /already own/i;
 
   if ( $orv ) {
