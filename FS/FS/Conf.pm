@@ -2106,7 +2106,7 @@ and customer address. Include units.',
     'description' => 'Enables the automatic unsuspension of suspended packages when a customer\'s balance due is at or below the specified amount after a payment or credit',
     'type'        => 'select',
     'select_enum' => [ 
-      '', 'Zero', 'Latest invoice charges'
+      '', 'Zero', 'Latest invoice charges', 'Charges not past due'
     ],
   },
 
