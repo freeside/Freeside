@@ -669,11 +669,25 @@ sub unsuspend_balance {
   my $maxbalance;
   if ($setting eq 'Zero') {
     $maxbalance = 0;
+
+  # kind of a pain to load/check all cust_bill instead of just open ones,
+  # but if for some reason payment gets applied to later bills before
+  # earlier ones, we still want to consider the later ones as allowable balance
   } elsif ($setting eq 'Latest invoice charges') {
     my @cust_bill = $cust_main->cust_bill();
     my $cust_bill = $cust_bill[-1]; #always want the most recent one
-    return unless $cust_bill;
-    $maxbalance = $cust_bill->charged || 0;
+    if ($cust_bill) {
+      $maxbalance = $cust_bill->charged || 0;
+    } else {
+      $maxbalance = 0;
+    }
+  } elsif ($setting eq 'Charges not past due') {
+    my $now = time;
+    $maxbalance = 0;
+    foreach my $cust_bill ($cust_main->cust_bill()) {
+      next unless $now <= ($cust_bill->due_date || $cust_bill->_date);
+      $maxbalance += $cust_bill->charged || 0;
+    }
   } elsif (length($setting)) {
     warn "Unrecognized unsuspend_balance setting $setting";
     return;
