@@ -7,9 +7,9 @@
 function enable_tax_adjustment () {
   if (    document.TaxAdjustmentForm.amount.value
        && document.TaxAdjustmentForm.taxname.selectedIndex > 0  ) {
-    document.TaxAdjustmentForm.submit.disabled = false;
+    document.TaxAdjustmentForm.submitButton.disabled = false;
   } else {
-    document.TaxAdjustmentForm.submit.disabled = true;
+    document.TaxAdjustmentForm.submitButton.disabled = true;
   }
 }
 
@@ -34,7 +34,7 @@ function validate_tax_adjustment () {
 
 </SCRIPT>
 
-<FORM ACTION="process/cust_tax_adjustment.html" NAME="TaxAdjustmentForm" ID="TaxAdjustmentForm" METHOD="POST" onsubmit="document.TaxAdjustmentForm.submit.disabled=true;return validate_tax_adjustment();">
+<FORM ACTION="process/cust_tax_adjustment.html" NAME="TaxAdjustmentForm" ID="TaxAdjustmentForm" METHOD="POST" onsubmit="document.TaxAdjustmentForm.submitButton.disabled=true;return validate_tax_adjustment();">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
@@ -69,7 +69,7 @@ function validate_tax_adjustment () {
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="Add tax adjustment" <% $cgi->param('error') ? '' :' DISABLED' %>>
+<INPUT TYPE="submit" ID="submit" NAME="submitButton" VALUE="Add tax adjustment" <% $cgi->param('error') ? '' :' DISABLED' %>>
 
 </FORM>
 

@@ -31,9 +31,9 @@
 </TABLE>
 <BR>
 
-<INPUT NAME="submit" TYPE="button" VALUE="<% 
+<INPUT NAME="submitButton" TYPE="button" VALUE="<% 
   $rate->ratenum ? "Apply changes" : "Add rate plan"
-%>" onClick="document.OneTrueForm.submit.disabled=true; process();">
+%>" onClick="document.OneTrueForm.submitButton.disabled=true; process();">
 </FORM>
 
 % if($rate->ratenum) {

@@ -2,7 +2,7 @@
 
 <% include('/elements/error.html') %>
 
-<FORM ACTION="<%popurl(1)%>process/prepay_credit.cgi" METHOD="POST" NAME="OneTrueForm" onSubmit="document.OneTrueForm.submit.disabled=true">
+<FORM ACTION="<%popurl(1)%>process/prepay_credit.cgi" METHOD="POST" NAME="OneTrueForm" onSubmit="document.OneTrueForm.submitButton.disabled=true">
 
 Generate
 <INPUT TYPE="text" NAME="num" VALUE="<% $cgi->param('num') || '(quantity)' |h %>" SIZE=10 MAXLENGTH=10 onFocus="if ( this.value == '(quantity)' ) { this.value = ''; }">
@@ -74,7 +74,7 @@ $<INPUT TYPE="text" NAME="amount" SIZE=8 MAXLENGTH=7 VALUE="<% $cgi->param('amou
 </TD></TR>
 </TABLE>
 <BR><BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="Generate" onSubmit="this.disabled = true">
+<INPUT TYPE="submit" NAME="submitButton" VALUE="Generate" onSubmit="this.disabled = true">
 
 </FORM>
 

@@ -17,7 +17,7 @@
 <SCRIPT TYPE="text/javascript">
 function warnUnload() {
   if(document.getElementById("OneTrueTable").rows.length > 3 &&
-     !document.OneTrueForm.btnsubmit.disabled) {
+     !document.OneTrueForm.submitButton.disabled) {
     return "The current batch will be lost.";
   }
   else {
@@ -421,7 +421,7 @@ function preload() {
            )
 %>
 
-<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.btnsubmit.disabled=true;window.onbeforeunload = null;">
+<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.submitButton.disabled=true;window.onbeforeunload = null;">
 
 <!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
 <& /elements/xmlhttp.html,
@@ -448,7 +448,7 @@ function preload() {
 &>
 
 <BR>
-<INPUT TYPE="button" VALUE="Post payment batch" name="btnsubmit" onclick="window.onbeforeunload = null; document.OneTrueForm.submit(); this.disabled = true;">
+<INPUT TYPE="button" VALUE="Post payment batch" name="submitButton" onclick="window.onbeforeunload = null; document.OneTrueForm.submit(); this.disabled = true;">
 
 </FORM>
 
