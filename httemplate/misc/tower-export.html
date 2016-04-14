@@ -1,0 +1,36 @@
+<%init>
+# currently, browse/tower just shows all towers, so do the same here
+my @towers = qsearch({ table => 'tower' });
+http_header('Content-Type' => 'text/csv');
+http_header('Content-Disposition' => 'attachment;filename=towers.csv');
+if ( $cgi->param('format') eq 'tc' ) {
+  # towercoverage.com format: not a true CSV, no quoting (so no way to include
+  # commas in any field, so we strip them)
+
+  # lat/long are signed decimals, northeast positive
+  # height is in meters
+  # Description/Group are not necessary
+  # sector/antenna information (orientation, beamwidth, gain, frequency,
+  # etc.) is in what TC calls a "Coverage", which can't be edited this way.
+  my $text = "SiteName,Latitude,Longitude,Description,Group,Height\n";
+
+  foreach my $tower (@towers) {
+    next if ( !$tower->latitude or !$tower->longitude );
+
+    my $name = $tower->towername;
+    my $height = ( ($tower->altitude || 0 ) + ($tower->height || 0) ) / 3.28;
+    $name =~ s(,)( )g;
+    $text .= join(',',
+      $name,
+      $tower->latitude,
+      $tower->longitude,
+      '',
+      '',
+      $height,
+    ) . "\n";
+  }
+  $m->print($text);
+} else {
+  die('unknown format '.$cgi->param('format'));
+}
+</%init>
