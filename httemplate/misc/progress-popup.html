@@ -58,8 +58,8 @@ function updateStatus( status_statustext ) {
     document.getElementById("progress_jobnum").innerHTML = '';
 
 %   unless ( $url ) {
-        if ( parent.document.<%$formname%>.submit.disabled == true ) {
-          parent.document.<%$formname%>.submit.disabled=false;
+        if ( parent.document.<%$formname%>.submitButton.disabled == true ) {
+          parent.document.<%$formname%>.submitButton.disabled=false;
         }
 %   }
 
@@ -93,8 +93,8 @@ function updateStatus( status_statustext ) {
     document.getElementById("progress_bar").innerHTML = '';
     document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="<% $onClick %>">';
     document.getElementById("progress_jobnum").innerHTML = '';
-    if ( parent.document.<%$formname%>.submit.disabled == true ) {
-      parent.document.<%$formname%>.submit.disabled=false;
+    if ( parent.document.<%$formname%>.submitButton.disabled == true ) {
+      parent.document.<%$formname%>.submitButton.disabled=false;
     }
   } else {
     alert('XXX unknown status returned from server: ' + status);

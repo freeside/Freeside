@@ -190,7 +190,7 @@
 %      $row++;
 %    }
      </TABLE>
-     <INPUT TYPE="submit" NAME="submit" ID="importsubmit" VALUE="Import notes">
+     <INPUT TYPE="submit" NAME="submitButton" ID="importsubmit" VALUE="Import notes">
      <INPUT TYPE="checkbox" NAME="preview" onchange="previewChanged(this);">
      Preview mode
 %  } else {

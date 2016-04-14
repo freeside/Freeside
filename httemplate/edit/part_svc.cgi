@@ -37,7 +37,7 @@
 </STYLE>
 <SCRIPT TYPE="text/javascript">
 function fixup_submit(layer) {
-  document.forms[layer].submit.disabled = true;
+  document.forms[layer].submitButton.disabled = true;
   fixup(document.forms[layer]);
   window[layer+'process'].call();
 }
