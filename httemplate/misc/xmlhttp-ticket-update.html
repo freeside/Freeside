@@ -46,15 +46,18 @@ if ( $ticket ) {
       my %hash = $m->comp('/rt/Ticket/Elements/Customers', Ticket => $ticket);
       my @cust_main = values( %{$hash{cust_main}} );
 
+      my $timelabel = FS::sched_avail::pretty_time($sh*60+$sm). '-'.
+                      FS::sched_avail::pretty_time($eh*60+$em);
+      my $titlelabel = encode_entities($cust_main[0]->_FreesideURILabel);
+
       $return = { 'error'       => '',
                   #'starts'      => $starts,
                   #'due'         => $due,
                   #'username'    => $username,
                                    #false laziness w/CalendarSlotSchedule
-                  'sched_label' =>
-                     FS::sched_avail::pretty_time($sh*60+$sm). '-'.
-                     FS::sched_avail::pretty_time($eh*60+$em). ': '.
-                     encode_entities($cust_main[0]->_FreesideURILabel),
+                  'sched_label' => $timelabel . ': ' . $titlelabel,
+                  'sched_label_time' => $timelabel,
+                  'sched_label_title' => $titlelabel,
                 };
     } else {
       $return = { 'error' => $smsg };
