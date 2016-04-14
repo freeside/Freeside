@@ -10,7 +10,7 @@
     <% small_custview($custnum, $conf->config('countrydefault')) %>
 % } 
 
-<FORM NAME="RefundForm" ACTION="<% $p1 %>process/cust_refund.cgi" METHOD=POST onSubmit="document.RefundForm.submit.disabled=true">
+<FORM NAME="RefundForm" ACTION="<% $p1 %>process/cust_refund.cgi" METHOD=POST onSubmit="document.RefundForm.submitButton.disabled=true">
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $link %>">
 <INPUT TYPE="hidden" NAME="refundnum" VALUE="">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
@@ -116,7 +116,7 @@
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" ID="confirm_refund_button" VALUE="<% mt('Post refund') |h %>" DISABLED>
+<INPUT TYPE="submit" NAME="submitButton" ID="confirm_refund_button" VALUE="<% mt('Post refund') |h %>" DISABLED>
 
 </FORM>
 

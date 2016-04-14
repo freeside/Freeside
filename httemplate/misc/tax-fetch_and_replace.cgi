@@ -29,8 +29,9 @@ Replace tax data.
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
+             NAME    = "submitButton"
              VALUE   = "Download and Import"
-             onClick = "document.TaxRateImport.submit.disabled=true; process();"
+             onClick = "document.TaxRateImport.submitButton.disabled=true; process();"
       >
     </TD>
   </TR>
