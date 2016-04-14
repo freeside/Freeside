@@ -1389,7 +1389,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexextracouponspace',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon.  Include units.  Default is 3.6cm',
+    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon.  Include units.  Default is 2.7 inches.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1401,7 +1401,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexcouponfootsep',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice separation between tear off coupon and footer. Include units.',
+    'description' => 'Optional LaTeX invoice separation between bottom of coupon address and footer. Include units. Default is 0.2 inches.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1413,7 +1413,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexcouponamountenclosedsep',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice separation between total due and amount enclosed line. Include units.',
+    'description' => 'Optional LaTeX invoice separation between total due and amount enclosed line. Include units. Default is 2.25 em.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1424,7 +1424,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexcoupontoaddresssep',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice separation between invoice data and the to address (usually invoice_latexreturnaddress).  Include units.',
+    'description' => 'Optional LaTeX invoice separation between invoice data and the address (usually invoice_latexreturnaddress).  Include units. Default is 1 inch.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
