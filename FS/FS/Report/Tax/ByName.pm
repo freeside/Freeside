@@ -1,4 +1,4 @@
-package FS::Report::Tax;
+package FS::Report::Tax::ByName;
 
 use strict;
 use vars qw($DEBUG);
@@ -9,10 +9,12 @@ use Data::Dumper;
 
 $DEBUG = 0;
 
-=item report_internal OPTIONS
+=item report OPTIONS
 
 Constructor.  Generates a tax report using the internal tax rate system 
-(L<FS::cust_main_county>).
+(L<FS::cust_main_county>), showing all taxes with a specified tax name,
+broken down by state/county. Optionally, the taxes can be broken down further
+by city/district, tax class, or package class.
 
 Required parameters:
 
@@ -22,20 +24,21 @@ Required parameters:
 
 Optional parameters:
 - agentnum: limit to this agentnum.num.
-- breakdown: hashref of the fields to group by.  Keys can be 'city', 'district',
-  'pkgclass', or 'taxclass'; values should be true.
+- breakdown: hashref of the fields to group by.  Keys can be 'city',
+'district', 'pkgclass', or 'taxclass'; values should be true.
+- total_only: don't run the tax group queries, only the totals queries.
+Returns one row, except in the unlikely event you're using breakdown by
+package class.
 - debug: sets the debug level.  1 will warn the data collected for the report;
-  2 will also warn all of the SQL statements.
+2 will also warn all of the SQL statements.
 
 =cut
 
-sub report_internal {
+sub report {
   my $class = shift;
   my %opt = @_;
 
   $DEBUG ||= $opt{debug};
-
-  my $conf = new FS::Conf;
 
   my($beginning, $ending) = @opt{'beginning', 'ending'};
 

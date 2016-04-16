@@ -113,7 +113,7 @@ while ($countdate < $enddate) {
   # run a report for each tax name
   foreach my $taxname (@taxnames) {
     $params{'taxname'} = $taxname;
-    my $report = FS::Report::Tax->report_internal(%params);
+    my $report = FS::Report::Tax::ByName->report(%params);
 
     # extract totals from report, kinda awkward
     my $pkgclass = ''; # this will get more complicated if we breakdown by pkgclass

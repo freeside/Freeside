@@ -13,9 +13,7 @@ my %params = (
   beginning => $beginning,
   ending    => $ending,
 );
-$params{country} = $cgi->param('country');
 $params{debug}   = $DEBUG;
-$params{breakdown} = { map { $_ => 1 } $cgi->param('breakdown') };
 
 my $agentname;
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -24,15 +22,38 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentname = $agent->agentname;
 }
 
-# allow anything in here; FS::Report::Tax will treat it as unsafe
-if ( length($cgi->param('taxname')) ) {
-  $params{taxname} = $cgi->param('taxname');
+# credit date behavior: limit by the date of the credit application, or
+# the invoice?
+if ( $cgi->param('credit_date') eq 'cust_credit_bill' ) {
+  $params{credit_date} = 'cust_credit_bill';
 } else {
-  die "taxname required";
+  $params{credit_date} = 'cust_bill';
+}
+
+my $all = $cgi->param('all');
+my $report_class;
+
+if ( $all ) {
+  $report_class = 'FS::Report::Tax::All';
+} else {
+  $report_class = 'FS::Report::Tax::ByName';
+  $params{country} = $cgi->param('country');
+  $params{breakdown} = { map { $_ => 1 } $cgi->param('breakdown') };
+
+  # allow anything in here; FS::Report::Tax will treat it as unsafe
+  if ( length($cgi->param('taxname')) ) {
+    $params{taxname} = $cgi->param('taxname');
+  } else {
+    die "taxname required";
+  }
+}
+
+if ($DEBUG) {
+  warn "REPORT: $report_class\nPARAMS:\n".Dumper(\%params)."\n\n";
 }
 
 # generate the report
-my $report = FS::Report::Tax->report_internal(%params);
+my $report = $report_class->report(%params);
 my @rows = $report->table; # array of hashrefs
 
 my %pkgclass_name = map { $_->classnum, $_->classname } qsearch('pkg_class');
