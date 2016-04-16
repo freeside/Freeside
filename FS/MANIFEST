@@ -54,6 +54,8 @@ FS/Report.pm
 FS/Report/FCC_477.pm
 FS/Report/Table.pm
 FS/Report/Table/Monthly.pm
+FS/Report/Tax/All.pm
+FS/Report/Tax/ByName.pm
 FS/SearchCache.pm
 FS/UI/Web.pm
 FS/UID.pm

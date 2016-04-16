@@ -78,14 +78,6 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   # cust_bill_pkg.cgi wants a list of specific taxnums (and package class)
 %   # cust_credit_bill_pkg.html wants a geographic scope (and package class)
 %   my $rowlink = ';taxnum=' . $row->{taxnums};
-% # DON'T EVER USE THIS
-% #  my $rowregion = ';country=' . $cgi->param('country');
-% #  foreach my $loc (qw(state county city district)) {
-% #    if ( $row->{$loc} ) {
-% #      $rowregion .= ";$loc=" . uri_escape($row->{$loc});
-% #    }
-% #  }
-%   # and also the package class, if we're limiting package class
 %   if ( $params{breakdown}->{pkgclass} ) {
 %     $rowlink .= ';classnum=' . ($row->{pkgclass} || 0);
 % #    $rowregion .= ';classnum=' . ($row->{pkgclass} || 0);
@@ -96,7 +88,26 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   }
   <TR CLASS="row<% $rownum % 2 %>">
 %   # Row label
-    <TD CLASS="rowhead"><% $row->{label} |h %></TD>
+%   # Special: If this report is showing all taxes, link the row label to
+%   # the detailed tax report for that taxname/country.
+    <TD CLASS="rowhead">
+%   if ( $all ) {
+%     my $newcgi = CGI->new($cgi);
+%     $newcgi->delete('all');
+%     $newcgi->param('country', $row->{country});
+%     $newcgi->param('taxname', $row->{taxname});
+%     $newcgi->param('breakdown', qw(city district));
+
+      <A HREF="<% encode_entities( $newcgi->self_url ) %>">
+        <% $row->{label} |h %>
+      </A>
+
+%   } else { # on the per-taxname report, just show the label with no link
+
+        <% $row->{label} |h %>
+
+%   }
+    </TD>
     <TD>
 %   # Total sales
       <A HREF="<% $saleslink . $rowlink %>">
@@ -167,7 +178,8 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 % } # foreach my $row
 % # at the end of everything
   </TBODY>
-% if ( $report->{out_sales} > 0 ) {
+% # the all-taxes report doesn't have "out of region"
+% if ( !$all and $report->{out_sales} > 0 ) {
   <TBODY CLASS="total" STYLE="background-color: #cccccc; line-height: 3">
     <TR>
       <TD CLASS="rowhead">
@@ -175,7 +187,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
       </TD>
       <TD STYLE="text-align: right">
         <A HREF="<% $saleslink %>;out=1;taxname=<% encode_entities($params{'taxname'}) %>">
-          <% $money_sprintf->( $report->{out_sales } ) %>
+          <% $money_sprintf->( $report->{out_sales} ) %>
         </A>
       </TD>
       <TD COLSPAN=0></TD>
@@ -254,7 +266,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
 %   $prev_row = $row;
 % } # foreach my $row
 % # "out of taxable region" for credits (there is a need for it)
-% if ( $report->{out_credit} > 0 ) {
+% if ( !$all and $report->{out_credit} > 0 ) {
 %   my $creditlink = "cust_credit_bill_pkg.html?out=1;$dateagentlink";
 %   if ( $params{'credit_date'} eq 'cust_credit_bill' ) {
 %     $creditlink =~ s/begin/credit_begin/;
@@ -268,7 +280,7 @@ TD.rowhead { font-weight: bold; text-align: left; padding: 0px 3px }
       </TD>
       <TD STYLE="text-align: right">
         <A HREF="<% $creditlink %>">
-          <% $money_sprintf->( $report->{out_credit } ) %>
+          <% $money_sprintf->( $report->{out_credit} ) %>
         </A>
       </TD>
       <TD COLSPAN=0></TD>
@@ -295,33 +307,48 @@ my %params = (
   beginning => $beginning,
   ending    => $ending,
 );
-$params{country} = $cgi->param('country');
 $params{debug}   = $DEBUG;
-$params{breakdown} = { map { $_ => 1 } $cgi->param('breakdown') };
-
 my $agentname;
+
+# filter by agentnum
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   my $agent = FS::agent->by_key($1) or die "unknown agentnum $1";
   $params{agentnum} = $1;
   $agentname = $agent->agentname;
 }
 
-# allow anything in here; FS::Report::Tax will treat it as unsafe
-if ( length($cgi->param('taxname')) ) {
-  $params{taxname} = $cgi->param('taxname');
-} else {
-  die "taxname required";
-}
-
+# credit date behavior: limit by the date of the credit application, or
+# the invoice?
 if ( $cgi->param('credit_date') eq 'cust_credit_bill' ) {
   $params{credit_date} = 'cust_credit_bill';
 } else {
   $params{credit_date} = 'cust_bill';
 }
 
-warn "PARAMS:\n".Dumper(\%params)."\n\n" if $DEBUG;
+my $all = $cgi->param('all');
+my $report_class;
 
-my $report = FS::Report::Tax->report_internal(%params);
+if ( $all ) {
+  # then show the master report, no country, no taxname, no breakdown
+  $report_class = 'FS::Report::Tax::All';
+} else {
+  $report_class = 'FS::Report::Tax::ByName';
+  $params{country} = $cgi->param('country');
+  $params{breakdown} = { map { $_ => 1 } $cgi->param('breakdown') };
+
+  # allow anything in here; FS::Report::Tax will treat it as unsafe
+  if ( length($cgi->param('taxname')) ) {
+    $params{taxname} = $cgi->param('taxname');
+  } else {
+    die "taxname required";
+  }
+}
+
+if ($DEBUG) {
+  warn "REPORT: $report_class\nPARAMS:\n".Dumper(\%params)."\n\n";
+}
+
+my $report = $report_class->report(%params);
 my @rows = $report->table; # array of hashrefs
 
 my $money_char = $conf->config('money_char') || '$';
