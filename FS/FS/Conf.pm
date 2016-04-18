@@ -5306,7 +5306,7 @@ and customer address. Include units.',
       my @part_export =
         map { qsearch( 'part_export', {exporttype => $_ } ) }
           keys %{FS::part_export::export_info('cust_main')};
-      map { $_->exportnum => $_->exporttype.' to '.$_->machine } @part_export;
+      map { $_->exportnum => $_->exportname } @part_export;
     },
     'option_sub'  => sub {
       require FS::Record;
@@ -5315,7 +5315,7 @@ and customer address. Include units.',
         'part_export', { 'exportnum' => shift }
       );
       $part_export
-        ? $part_export->exporttype.' to '.$part_export->machine
+        ? $part_export->exportname
         : '';
     },
   },
@@ -5324,7 +5324,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_location-exports',
     'section'     => '',
-    'description' => 'Export(s) to call on cust_location insert, modification and deletion.',
+    'description' => 'Export(s) to call on cust_location insert or modification',
     'type'        => 'select-sub',
     'multiple'    => 1,
     'options_sub' => sub {
