@@ -397,6 +397,21 @@ sub insert {
 
   my $conf = new FS::Conf;
 
+  if ($self->locationnum) {
+    my @part_export =
+      map qsearch( 'part_export', {exportnum=>$_} ),
+        $conf->config('cust_location-exports'); #, $agentnum
+
+    foreach my $part_export ( @part_export ) {
+      my $error = $part_export->export_pkg_location($self); #, @$export_args);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
   if ( $conf->config('ticket_system') && $options{ticket_subject} ) {
 
     #this init stuff is still inefficient, but at least its limited to 
@@ -639,6 +654,24 @@ sub replace {
     if ( $s_error ) {
       $dbh->rollback if $oldAutoCommit;
       return $s_error;
+    }
+  }
+
+  # also run exports if removing locationnum?
+  #   doesn't seem to happen, and we don't export blank locationnum on insert...
+  if ($new->locationnum and ($new->locationnum != $old->locationnum)) {
+    my $conf = new FS::Conf;
+    my @part_export =
+      map qsearch( 'part_export', {exportnum=>$_} ),
+        $conf->config('cust_location-exports'); #, $agentnum
+
+    foreach my $part_export ( @part_export ) {
+      my $error = $part_export->export_pkg_location($new); #, @$export_args);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
     }
   }
 
