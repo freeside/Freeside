@@ -111,7 +111,7 @@ $html_foot .= include( '/elements/select-agent.html',
                          'agent_null_right' => 'Broadband global configuration',
                      );
 $html_foot .= qq(
-  <INPUT TYPE="submit" NAME="submitButton" VALUE="Add">
+  <INPUT TYPE="submit" NAME="submit" VALUE="Add">
   </FORM>
 );
 

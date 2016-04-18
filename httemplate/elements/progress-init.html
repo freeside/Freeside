@@ -92,8 +92,8 @@ function <%$key%>process () {
 
   //alert('<%$key%>process for form <%$formname%>');
 
-  if ( document.<%$formname%>.submitButton.disabled == false ) {
-    document.<%$formname%>.submitButton.disabled=true;
+  if ( document.<%$formname%>.submit.disabled == false ) {
+    document.<%$formname%>.submit.disabled=true;
   }
 
   overlib( 'Submitting job to server...', WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );

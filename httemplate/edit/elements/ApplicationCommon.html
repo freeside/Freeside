@@ -103,7 +103,7 @@ function changed(what) {
   dst = what.options[what.selectedIndex].value;
 
   if ( dst == '' ) {
-    what.form.submitButton.disabled=true;
+    what.form.submit.disabled=true;
 %if ($use_sub_dst_thing && $src_pkey eq 'crednum') {
     what.form.tax_button.disabled=true;
     what.form.clear_button.disabled=true;
@@ -111,7 +111,7 @@ function changed(what) {
     return true;
   }
 
-  what.form.submitButton.disabled=false;
+  what.form.submit.disabled=false;
 %if ($use_sub_dst_thing && $src_pkey eq 'crednum') {
   what.form.tax_button.disabled=false;
   what.form.clear_button.disabled=false;
@@ -373,7 +373,7 @@ function src_amount_changed () {
 <BR>
 <CENTER><INPUT TYPE="submit"
                VALUE="Apply"
-               NAME="submitButton"
+               NAME="submit"
                ID="submit"
 % if ($use_sub_dst_thing && $can_change_credit) {
                onClick="src_amount_changed()"
