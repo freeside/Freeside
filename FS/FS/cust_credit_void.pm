@@ -1,7 +1,7 @@
 package FS::cust_credit_void; 
 
 use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::reason_Mixin FS::Record );
 use FS::Record qw(qsearch qsearchs dbh fields);
 use FS::CurrentUser;
 use FS::access_user;

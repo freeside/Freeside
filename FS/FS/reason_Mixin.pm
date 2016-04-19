@@ -22,18 +22,35 @@ voided payment / voided invoice. This can no longer be used to set the
 sub reason {
   my $self = shift;
 
-  my $reason_text;
-  if ( $self->reasonnum ) {
-    my $reason = FS::reason->by_key($self->reasonnum);
-    $reason_text = $reason->reason;
-  } else { # in case one of these somehow still exists
-    $reason_text = $self->get('reason');
-  }
+  my $reason_text = $self->reason_only;
+
   if ( $self->get('addlinfo') ) {
     $reason_text .= ' ' . $self->get('addlinfo');
   }
 
   return $reason_text;
+}
+
+=item reason_only
+
+Returns only the text of the associated reason,
+absent any addlinfo that is included by L</reason>.
+(Currently only affects credit and credit void reasons.)
+
+=cut
+
+# a bit awkward, but much easier to invoke this in the few reports
+# that need separate fields than to update every place
+# that displays them together
+
+sub reason_only {
+  my $self = shift;
+  if ( $self->reasonnum ) {
+    my $reason = FS::reason->by_key($self->reasonnum);
+    return $reason->reason;
+  } else { # in case one of these somehow still exists
+    return $self->get('reason');
+  }
 }
 
 # Used by FS::Upgrade to migrate reason text fields to reasonnum.

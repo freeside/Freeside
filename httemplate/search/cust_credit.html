@@ -56,22 +56,27 @@ if ($unapplied) {
 push @header, emt('Date'), 
               emt('By'),
               emt('Reason'),
+              emt('Info'),
               ;
 push @fields, sub { time2str('%b %d %Y', shift->_date ) },
               'otaker',
-              'reason',
+              'reason_only',
+              'addlinfo',
               ;
-push @sort_fields, '_date', 'otaker', 'reason';
-$align .= 'rll';
+push @sort_fields, '_date', 'otaker', 'reasonnum', 'addlinfo';
+$align .= 'rlll';
 push @links,  '',
+              '',
               '',
               '',
               ;
 push @color,  '',
               '',
               '',
+              '',
               ;
 push @style,  '',
+              '',
               '',
               '',
               ;
