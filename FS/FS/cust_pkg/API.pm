@@ -19,7 +19,7 @@ sub API_change {
   my %opt = @_;
 
   return { 'error' => 'Cannot change canceled package' }
-    if $self->cancel;
+    if $self->get('cancel');
 
   my %changeopt;
 

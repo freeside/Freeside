@@ -776,7 +776,7 @@ containing the new values.
 =cut
 
 sub change_package_location {
-  my $self = shift;
+  my $class = shift;
   my %opt  = @_;
   return _shared_secret_error() unless _check_shared_secret($opt{'secret'});
 
@@ -784,13 +784,10 @@ sub change_package_location {
     or return { 'error' => 'Unknown pkgnum' };
 
   my %changeopt;
-  $changeopt{'pkgnum'} = $pkgnum;
 
-  my $cust_location = FS::cust_location->new({
-    'custnum' => $cust_pkg->custnum,
-    %location_hash,
-  });
-  $changeopt{'cust_location'} = $cust_location;
+  foreach my $field ('locationnum',FS::cust_location::API::API_editable_fields()) {
+    $changeopt{$field} = $opt{$field} if $opt{$field};
+  }
 
   $cust_pkg->API_change(%changeopt);
 }
