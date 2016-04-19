@@ -722,7 +722,7 @@ sub label_prefix {
   $prefix;
 }
 
-=item county_state_county
+=item county_state_country
 
 Returns a string consisting of just the county, state and country.
 

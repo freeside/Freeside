@@ -1,5 +1,5 @@
 package FS::cust_pkg;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
+use base qw( FS::cust_pkg::API FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common );
 
