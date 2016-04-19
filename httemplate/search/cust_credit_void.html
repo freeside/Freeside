@@ -47,6 +47,7 @@ push @header, emt('Void Date'),
               emt('Date'), 
               emt('By'),
               emt('Reason'),
+              emt('Info'),
               FS::UI::Web::cust_header(),
               ;
 push @fields, sub { time2str('%b %d %Y', shift->void_date ) },
@@ -54,7 +55,8 @@ push @fields, sub { time2str('%b %d %Y', shift->void_date ) },
               'void_reason',
               sub { time2str('%b %d %Y', shift->_date ) },
               'otaker',
-              'reason',
+              'reason_only',
+              'addlinfo',
               \&FS::UI::Web::cust_fields,
               ;
 push @sort_fields, 'void_date',
@@ -63,9 +65,11 @@ push @sort_fields, 'void_date',
                    '_date',
                    'usernum',                     #ditto
                    'reasonnum, reason',           #ditto 
+                   'addlinfo',
                    FS::UI::Web::cust_sort_fields();
-$align .= 'rllrll'.FS::UI::Web::cust_aligns();
+$align .= 'rllrlll'.FS::UI::Web::cust_aligns();
 push @links,  '',
+              '',
               '',
               '',
               '',
@@ -81,9 +85,11 @@ push @color,  '',
               '',
               '',
               '',
+              '',
               FS::UI::Web::cust_colors(),
               ;
 push @style,  '',
+              '',
               '',
               '',
               '',
