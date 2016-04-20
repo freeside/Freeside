@@ -2,7 +2,7 @@
 
 <% include('/elements/error.html') %>
 
-<FORM NAME="OneTrueForm" METHOD="POST" ACTION="process/email-quotation.html" onSubmit="document.OneTrueForm.submitButton.disabled=true; document.OneTrueForm.submitButton.style.display='none'; document.getElementById('emailingwait').style.display='';">
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="process/email-quotation.html" onSubmit="document.OneTrueForm.submit.disabled=true; document.OneTrueForm.submit.style.display='none'; document.getElementById('emailingwait').style.display='';">
 <INPUT TYPE="hidden" NAME="quotationnum" VALUE="<% $quotationnum %>">
 
 <% ntable("#cccccc", 2) %>
@@ -46,7 +46,7 @@
 
 <CENTER>
 % if ( $emails ) {
-  <BUTTON TYPE="submit" NAME="submitButton" ID="submit">Email quotation</BUTTON>
+  <BUTTON TYPE="submit" NAME="submit" ID="submit">Email quotation</BUTTON>
   <DIV ID="emailingwait" STYLE="display:none">
     <IMG SRC="<%$p%>images/wait-orange.gif"> <B>Sending...</B>
   </DIV>

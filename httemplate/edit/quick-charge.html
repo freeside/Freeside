@@ -15,9 +15,9 @@ function enable_quick_charge (e) {
 
   if (    document.QuickChargeForm.amount.value
        && document.QuickChargeForm.pkg.value    ) {
-    document.QuickChargeForm.submitButton.disabled = false;
+    document.QuickChargeForm.submit.disabled = false;
   } else {
-    document.QuickChargeForm.submitButton.disabled = true;
+    document.QuickChargeForm.submit.disabled = true;
   }
 
 % if ( $curuser->option('disable_enter_submit_onetimecharge') ) {
@@ -97,7 +97,7 @@ function bill_now_changed (what) {
       NAME     = "QuickChargeForm"
       ID       = "QuickChargeForm"
       METHOD   = "POST"
-      onSubmit = "document.QuickChargeForm.submitButton.disabled=true; return validate_quick_charge();"
+      onSubmit = "document.QuickChargeForm.submit.disabled=true; return validate_quick_charge();"
 >
 
 <INPUT TYPE="hidden" NAME="custnum"     VALUE="<% $cust_main ? $cust_main->custnum : '' %>">
@@ -362,7 +362,7 @@ function bill_now_changed (what) {
 % my $label = $cust_pkg
 %             ? emt('Modify one-time charge')
 %             : emt('Add one-time charge');
-<INPUT TYPE="submit" ID="submit" NAME="submitButton" VALUE="<% $label %>" \
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% $label %>" \
 <% ($cgi->param('error') || $cust_pkg) ? '' :' DISABLED' %>>
 
 </FORM>

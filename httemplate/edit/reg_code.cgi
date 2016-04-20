@@ -2,7 +2,7 @@
 
 <% include('/elements/error.html') %>
 
-<FORM ACTION="<%popurl(1)%>process/reg_code.cgi" METHOD="POST" NAME="OneTrueForm" onSubmit="document.OneTrueForm.submitButton.disabled=true">
+<FORM ACTION="<%popurl(1)%>process/reg_code.cgi" METHOD="POST" NAME="OneTrueForm" onSubmit="document.OneTrueForm.submit.disabled=true">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agent->agentnum %>">
 
 Generate
@@ -25,7 +25,7 @@ registration codes for <B><% $agent->agent %></B> allowing the following package
 
 
 <BR>
-<INPUT TYPE="submit" NAME="submitButton" VALUE="Generate">
+<INPUT TYPE="submit" NAME="submit" VALUE="Generate">
 
 </FORM>
 
