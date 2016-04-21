@@ -4,7 +4,6 @@ use strict;
 use FS::Conf;
 use FS::part_tag;
 use FS::Record qw( qsearchs );
-use FS::cust_location::API;
 
 =item API_getinfo FIELD => VALUE, ...
 
@@ -23,7 +22,9 @@ use vars qw(
 );
 #  locale
 #  ss stateid stateid_state
-@location_editable_fields = FS::cust_location::API::API_editable_fields();
+@location_editable_fields = qw(
+  address1 address2 city county state zip country
+);
 
 sub API_getinfo {
   my( $self, %opt ) = @_;
