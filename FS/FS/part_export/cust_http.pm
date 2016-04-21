@@ -55,7 +55,7 @@ tie %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'     => [qw( cust_main cust_location )],
+  'svc'     => [qw( cust_main )],
   'desc'    => 'Send an HTTP or HTTPS GET or POST request, for customers.',
   'options' => \%options,
   'no_machine' => 1,
