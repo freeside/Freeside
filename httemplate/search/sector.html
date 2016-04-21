@@ -1,0 +1,85 @@
+<& /elements/header.html, {
+  'title'       => 'Sector coverage maps',
+  }
+&>
+<style>
+  a.createmap {
+    font-weight: bold;
+    color: blue;
+  }
+  a.viewmap {
+    font-weight: bold;
+    color: green;
+  }
+</style>
+<table class="grid">
+  <thead>
+    <tr>
+      <th>Tower / sector</th>
+      <th colspan=3>
+    </tr>
+  </thead>
+  <tbody>
+% foreach my $sector (@sectors) {
+%   my $sectornum = $sector->sectornum;
+  <tr>
+    <td>
+      <a href="<% $fsurl %>edit/tower.html?<% $sector->towernum |h %>">
+        <% $sector->description |h %>
+      </a>
+    </td>
+
+%     my @need_fields = $sector->need_fields_for_coverage;
+%     if ( @need_fields ) {
+    <td>Need fields:</td>
+    <td>
+        <% join('<br>', @need_fields) %>
+    </td>
+%     } else {
+    <td colspan="2" style="text-align: center">
+%       my $text = 'Create map';
+%       if ( length($sector->image) > 0 ) {
+%         $text = 'Reprocess';
+%       }
+        <form name="create_<% $sectornum |h %>">
+        <input type="hidden" name="sectornum" value="<% $sectornum |h %>">
+        <& /elements/progress-init.html,
+          'create_'.$sectornum,
+          [ 'sectornum' ],
+          $fsurl.'misc/sector-create_map.html',
+          { 'message' => 'Map generated' },
+          "sector$sectornum"
+        &>
+        <a class="createmap" href="#" onclick="sector<% $sectornum %>process()">
+          <% $text %>
+        </a>
+%     }
+    </td>
+    <td>
+%   if ( length($sector->image) > 0 ) {
+      <a class="viewmap" href="<% $fsurl %>search/svc_broadband-map.html?sectornum=<% $sectornum %>">
+        View map
+      </a>
+%   }
+    </td>
+  </tr>
+% } # foreach $sector
+  </tbody>
+</table>
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $query = {
+  table   => 'tower_sector',
+  select  => 'tower_sector.*,
+              tower.latitude, tower.longitude, tower.color, tower.towername',
+  extra_sql => ' WHERE tower.disabled is null',
+  addl_from => ' JOIN tower USING (towernum)',
+  order_by  => ' ORDER BY towername, sectorname',
+};
+
+my @sectors = qsearch($query);
+</%init>

@@ -1,0 +1,10 @@
+<% $server->process %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration'); # ???
+
+my $server =
+  new FS::UI::Web::JSRPC 'FS::tower_sector::process_generate_coverage', $cgi;
+
+</%init>

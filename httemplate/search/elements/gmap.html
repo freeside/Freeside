@@ -1,5 +1,6 @@
 <%args>
 @features
+@overlays
 </%args>
 <%doc>
 Generic Google Maps front end.
@@ -23,6 +24,14 @@ Generic Google Maps front end.
         content => '<a href="view/svc_acct.cgi?12">username@example.com</a>',
       }
     }, # end of feature
+  ],
+  overlays => [
+    { url => 'https://localhost/freeside/view/sector_overlay-png.html?102',
+      west  => -130.0,
+      east  => -128.0,
+      south => 10.0,
+      north => 12.0,
+    }, # make a ground overlay
   ],
 &>
 
@@ -54,6 +63,7 @@ body { height: 100%; margin: 0px; padding: 0px }
 <script type="text/javascript">
 
 var data_geojson = <% encode_json($tree) %>;
+var data_overlays = <% encode_json(\@overlays) %>;
 
 var baseStyle = {
   clickable: true,
@@ -75,6 +85,7 @@ var featureStyle = function(feature) {
 };
 
 var map;
+var overlays;
 function initMap() {
   var canvas = $('#map_canvas');
   map = new google.maps.Map(canvas[0], { zoom: 6 });
@@ -116,6 +127,14 @@ function initMap() {
     }
 
   }); // addListener()
+
+  data_overlays.forEach(function(x) {
+    var url = x.url;
+    delete x.url;
+    var overlay = new google.maps.GroundOverlay( url, x );
+    overlay.setMap(map);
+    overlays.push(overlay); 
+  });
 }
 
 $().ready( initMap );

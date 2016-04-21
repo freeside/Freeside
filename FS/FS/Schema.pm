@@ -4845,9 +4845,16 @@ sub tables_hashref {
         'freq_mhz',         'int', 'NULL',      '', '', '',
         'direction',        'int', 'NULL',      '', '', '',
         'width',            'int', 'NULL',      '', '', '',
-        #downtilt etc? rfpath has profile files for devices/antennas you upload?
         'sector_range', 'decimal', 'NULL',      '', '', '',  #?
-      ],
+        'downtilt',     'decimal', 'NULL',      '', '', '',
+        'v_width',          'int', 'NULL',      '', '', '',
+        'margin',       'decimal', 'NULL',     '', '', '',
+        'image',           'blob', 'NULL',     '', '', '',
+        'west',         'decimal', 'NULL', '10,7', '', '',
+        'east',         'decimal', 'NULL', '10,7', '', '',
+        'south',        'decimal', 'NULL', '10,7', '', '',
+        'north',        'decimal', 'NULL', '10,7', '', '',
+     ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
       'index'        => [ [ 'towernum' ] ],

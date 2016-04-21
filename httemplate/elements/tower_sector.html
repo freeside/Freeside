@@ -56,8 +56,11 @@ tie my %label, 'Tie::IxHash',
   'height'       => 'Height',
   'freq_mhz'     => 'Freq. (MHz)',
   'direction'    => 'Direction', # or a button to set these to 0 for omni
-  'width'        => 'Width',     #
+  'downtilt'     => 'Downtilt',
+  'width'        => 'Horiz. width',
+  'v_width'      => 'Vert. width',
   'sector_range' => 'Range',
+  'margin'       => 'Signal margin (dB)',
 ;
 
 my @fields = keys %label;

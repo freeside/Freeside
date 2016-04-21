@@ -1,6 +1,6 @@
 <& /elements/header.html, 'Broadband Search Results' &>
   
-<& elements/gmap.html, features => \@features &>
+<& elements/gmap.html, features => \@features, overlays => \@overlays &>
 
 <& /elements/footer.html &>
 <%init>
@@ -76,7 +76,6 @@ foreach my $svc_broadband (@rows) {
 
   }
 
-  my $tower = $towers{$towernum};
   if ( $tower->latitude and $tower->longitude ) {
     push @features,
     {
@@ -145,6 +144,19 @@ foreach my $tower (values(%towers)) {
     },
   };
 }
+
+my @overlays;
+foreach my $sector (values %sectors) {
+  if ( length($sector->image) > 0 ) {
+    push @overlays,
+      { url => $fsurl.'view/sector_map-png.cgi?' . $sector->sectornum,
+        west => $sector->west,
+        east => $sector->east,
+        south => $sector->south,
+        north => $sector->north,
+      };
+  };
+};
 
 </%init>
 <%def .svc_broadband>
