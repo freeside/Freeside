@@ -2,8 +2,6 @@ package FS::cust_pkg::API;
 
 use strict;
 
-use FS::cust_location::API;
-
 sub API_getinfo {
   my $self = shift;
 
@@ -25,7 +23,23 @@ sub API_change {
 
   # update location--accepts raw fields OR location
   my %location_hash;
-  foreach my $field (FS::cust_location::API::API_editable_fields()) {
+  foreach my $field ( qw(
+    locationname
+    address1
+    address2
+    city
+    county
+    state
+    zip
+    addr_clean
+    country
+    censustract
+    censusyear
+    location_type
+    location_number
+    location_kind
+    incorporated
+  ) ) {
     $location_hash{$field} = $opt{$field} if $opt{$field};
   }
   return { 'error' => 'Cannot pass both locationnum and location fields' }

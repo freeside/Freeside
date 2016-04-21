@@ -755,6 +755,8 @@ secret
 
 locationnum - pass this, or the following keys (don't pass both)
 
+locationname
+
 address1
 
 address2
@@ -767,7 +769,21 @@ state
 
 zip
 
+addr_clean
+
 country
+
+censustract
+
+censusyear
+
+location_type
+
+location_number
+
+location_kind
+
+incorporated
 
 On error, returns a hashref with an 'error' key.
 On success, returns a hashref with 'pkgnum' and 'locationnum' keys,
@@ -785,7 +801,24 @@ sub change_package_location {
 
   my %changeopt;
 
-  foreach my $field ('locationnum',FS::cust_location::API::API_editable_fields()) {
+  foreach my $field ( qw(
+    locationnum
+    locationname
+    address1
+    address2
+    city
+    county
+    state
+    zip
+    addr_clean
+    country
+    censustract
+    censusyear
+    location_type
+    location_number
+    location_kind
+    incorporated
+  )) {
     $changeopt{$field} = $opt{$field} if $opt{$field};
   }
 
