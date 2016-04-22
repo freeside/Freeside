@@ -148,13 +148,13 @@ foreach my $tower (values(%towers)) {
 my @overlays;
 foreach my $sector (values %sectors) {
   if ( length($sector->image) > 0 ) {
-    push @overlays,
-      { url => $fsurl.'view/sector_map-png.cgi?' . $sector->sectornum,
-        west => $sector->west,
-        east => $sector->east,
-        south => $sector->south,
-        north => $sector->north,
-      };
+    my $o = {
+      url => $fsurl.'view/sector_map-png.cgi?' . $sector->sectornum
+    };
+    foreach (qw(south north west east)) {
+      $o->{$_} = $sector->get($_) + 0;
+    }
+    push @overlays, $o;
   };
 };
 

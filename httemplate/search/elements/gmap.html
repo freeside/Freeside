@@ -26,7 +26,7 @@ Generic Google Maps front end.
     }, # end of feature
   ],
   overlays => [
-    { url => 'https://localhost/freeside/view/sector_overlay-png.html?102',
+    { url => 'https://localhost/freeside/view/sector_map-png.html?102',
       west  => -130.0,
       east  => -128.0,
       south => 10.0,
@@ -85,7 +85,7 @@ var featureStyle = function(feature) {
 };
 
 var map;
-var overlays;
+var overlays = [];
 function initMap() {
   var canvas = $('#map_canvas');
   map = new google.maps.Map(canvas[0], { zoom: 6 });
@@ -133,6 +133,7 @@ function initMap() {
     delete x.url;
     var overlay = new google.maps.GroundOverlay( url, x );
     overlay.setMap(map);
+    overlay.setOpacity(0.4);
     overlays.push(overlay); 
   });
 }

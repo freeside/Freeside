@@ -11,8 +11,24 @@
     font-weight: bold;
     color: green;
   }
+  .grid th {
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-bottom: 2px;
+    border: none;
+    empty-cells: show;
+    font-size:90%;
+    border-bottom: 1px solid #999999;
+  }
+  .grid td {
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-bottom: 2px;
+    border: none;
+    empty-cells: show;
+  }
 </style>
-<table class="grid">
+<table class="grid" style="border-spacing: 0px">
   <thead>
     <tr>
       <th>Tower / sector</th>
@@ -20,9 +36,10 @@
     </tr>
   </thead>
   <tbody>
+% my $row = 0;
 % foreach my $sector (@sectors) {
 %   my $sectornum = $sector->sectornum;
-  <tr>
+  <tr class="row<% $row % 2 %>">
     <td>
       <a href="<% $fsurl %>edit/tower.html?<% $sector->towernum |h %>">
         <% $sector->description |h %>
@@ -47,7 +64,8 @@
           'create_'.$sectornum,
           [ 'sectornum' ],
           $fsurl.'misc/sector-create_map.html',
-          { 'message' => 'Map generated' },
+          { 'message' => 'Map generated',
+            'url' => $cgi->self_url },
           "sector$sectornum"
         &>
         <a class="createmap" href="#" onclick="sector<% $sectornum %>process()">
@@ -58,11 +76,12 @@
     <td>
 %   if ( length($sector->image) > 0 ) {
       <a class="viewmap" href="<% $fsurl %>search/svc_broadband-map.html?sectornum=<% $sectornum %>">
-        View map
+        View map&mdash;<% $sector->margin %>dB margin
       </a>
 %   }
     </td>
   </tr>
+%   $row++;
 % } # foreach $sector
   </tbody>
 </table>
