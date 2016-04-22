@@ -406,7 +406,8 @@ sub lineitem {
 
   # if this is a percentage fee and has line item fractions,
   # adjust them to be proportional and to add up correctly.
-  if ( @item_base ) {
+  # don't try this if we're charging on a zero-amount set of line items.
+  if ( scalar(@item_base) > 0 and $total_base > 0 ) {
     my $cents = $amount * 100;
     # not necessarily the same as percent
     my $multiplier = $amount / $total_base;
