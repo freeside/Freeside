@@ -1,6 +1,7 @@
 package FS::tower_sector;
 
 use Class::Load qw(load_class);
+use File::Path qw(make_path);
 use Data::Dumper;
 
 use strict;
@@ -270,13 +271,17 @@ PARAMS must include 'sectornum'.
 sub process_generate_coverage {
   my $job = shift;
   my $param = shift;
-  warn Dumper($param);
-  $job->update_statustext('0,generating map');
+  $job->update_statustext('0,generating map') if $job;
   my $sectornum = $param->{sectornum};
-  my $sector = FS::tower_sector->by_key($sectornum);
+  my $sector = FS::tower_sector->by_key($sectornum)
+    or die "sector $sectornum does not exist";
   my $tower = $sector->tower;
 
   load_class('Map::Splat');
+  # since this is still experimental, put it somewhere we can find later
+  my $workdir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/" .
+                "generate_coverage/sector$sectornum-". time;
+  make_path($workdir);
   my $splat = Map::Splat->new(
     lon         => $tower->longitude,
     lat         => $tower->latitude,
@@ -288,6 +293,7 @@ sub process_generate_coverage {
     v_width     => $sector->v_width,
     max_loss    => $sector->margin,
     min_loss    => $sector->margin - 80,
+    dir         => $workdir,
   );
   $splat->calculate;
 
