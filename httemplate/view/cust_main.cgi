@@ -225,16 +225,19 @@ my $cust_main = qsearchs( {
 });
 die "Customer not found!" unless $cust_main;
 
-my $title = mt("Customer").' #'. $cust_main->display_custnum. ': '.
-            encode_entities($cust_main->name);
+my $title = mt("Customer").' #'. $cust_main->display_custnum. ': ';
+my $title_noescape = $title. encode_entities($cust_main->name);
+$title .= $cust_main->name;
 
 if ( $curuser->num_agents ) {
-  $title = encode_entities($cust_main->agent->agent). " $title";
+  $title_noescape =
+    encode_entities($cust_main->agent->agent). " $title_noescape";
+  $title = $cust_main->agent->agent. " $title";
 }
 
 my $status = $cust_main->status_label;
 $status .= ' (Cancelled)' if $cust_main->is_status_delay_cancel;
-my $title_noescape = $title. ' (<B><FONT COLOR="#'. $cust_main->statuscolor. '">'. $status.  '</FONT></B>)';
+$title_noescape .= ' (<B><FONT COLOR="#'. $cust_main->statuscolor. '">'. $status.  '</FONT></B>)';
 $title .= " ($status)";
 
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
