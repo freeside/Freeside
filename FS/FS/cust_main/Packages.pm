@@ -475,6 +475,26 @@ sub ncancelled_pkgs {
 
 }
 
+=item cancelled_pkgs [ EXTRA_QSEARCH_PARAMS_HASHREF ]
+
+Returns all cancelled packages (see L<FS::cust_pkg>) for this customer.
+
+=cut
+
+sub cancelled_pkgs {
+  my $self = shift;
+  my $extra_qsearch = ref($_[0]) ? shift : { @_ };
+
+  return $self->num_cancelled_pkgs($extra_qsearch) unless wantarray;
+
+  $extra_qsearch->{'extra_sql'} .=
+    ' AND cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel > 0 ';
+
+  local($skip_label_sort) = 1 if $extra_qsearch->{skip_label_sort};
+
+  sort sort_packages $self->_cust_pkg($extra_qsearch);
+}
+
 sub _cust_pkg {
   my $self = shift;
   my $extra_qsearch = ref($_[0]) ? shift : {};
