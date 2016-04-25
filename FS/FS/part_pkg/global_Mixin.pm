@@ -19,10 +19,10 @@ sub validate_moneyn {
   my ($option, $valref) = @_;
   if ( $$valref eq '' ) {
     return '';
-  } elsif ( $$valref =~ /^\s*(\-)?\s*(\d*)(\.\d{1})\s*$/ ) {
+  } elsif ( $$valref =~ /^\s*(\d*)(\.\d{1})\s*$/ ) {
     #handle one decimal place without barfing out
     $$valref = ( ($1||''). ($2||''). ($3.'0') ) || 0;
-  } elsif ( $$valref =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/ ) {
+  } elsif ( $$valref =~ /^\s*(\d*)(\.\d{2})?\s*$/ ) {
     $$valref = ( ($1||''). ($2||''). ($3||'') ) || 0;
   } else {
     return "Illegal (money) $option: ". $$valref;
