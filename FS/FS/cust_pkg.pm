@@ -442,6 +442,21 @@ sub insert {
 
   my $conf = new FS::Conf;
 
+  if ($self->locationnum) {
+    my @part_export =
+      map qsearch( 'part_export', {exportnum=>$_} ),
+        $conf->config('cust_location-exports'); #, $agentnum
+
+    foreach my $part_export ( @part_export ) {
+      my $error = $part_export->export_pkg_location($self); #, @$export_args);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
   if ( ! $import && $conf->config('ticket_system') && $options{ticket_subject} ) {
 
     #this init stuff is still inefficient, but at least its limited to 
@@ -693,6 +708,24 @@ sub replace {
     if ( $s_error ) {
       $dbh->rollback if $oldAutoCommit;
       return $s_error;
+    }
+  }
+
+  # also run exports if removing locationnum?
+  #   doesn't seem to happen, and we don't export blank locationnum on insert...
+  if ($new->locationnum and ($new->locationnum != $old->locationnum)) {
+    my $conf = new FS::Conf;
+    my @part_export =
+      map qsearch( 'part_export', {exportnum=>$_} ),
+        $conf->config('cust_location-exports'); #, $agentnum
+
+    foreach my $part_export ( @part_export ) {
+      my $error = $part_export->export_pkg_location($new); #, @$export_args);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
     }
   }
 
@@ -2132,7 +2165,7 @@ sub change {
 
   my $time = time;
 
-  $hash{'setup'} = $time if $self->setup;
+  $hash{'setup'} = $time if $self->get('setup');
 
   $hash{'change_date'} = $time;
   $hash{"change_$_"}  = $self->$_()
@@ -2153,16 +2186,18 @@ sub change {
   my $unused_credit = 0;
   my $keep_dates = $opt->{'keep_dates'};
 
-  # Special case.  If the pkgpart is changing, and the customer is
-  # going to be credited for remaining time, don't keep setup, bill, 
-  # or last_bill dates, and DO pass the flag to cancel() to credit 
-  # the customer.
+  # Special case.  If the pkgpart is changing, and the customer is going to be
+  # credited for remaining time, don't keep setup, bill, or last_bill dates,
+  # and DO pass the flag to cancel() to credit the customer.  If the old
+  # package had a setup date, set the new package's setup to the package
+  # change date so that it has the same status as before.
   if ( $opt->{'pkgpart'} 
        and $opt->{'pkgpart'} != $self->pkgpart
        and $self->part_pkg->option('unused_credit_change', 1) ) {
     $unused_credit = 1;
     $keep_dates = 0;
-    $hash{$_} = '' foreach qw(setup bill last_bill);
+    $hash{'last_bill'} = '';
+    $hash{'bill'} = '';
   }
 
   if ( $keep_dates ) {

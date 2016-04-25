@@ -63,7 +63,7 @@ Examples:
                                       sub { sprintf($money, $_[0]->$amount_field) },
                                     ],
                 'total_row'      => [ '<B>Total</B>',
-                                      sub { warn Dumper @_; sprintf("<B>$money</B>", $_[0]->$amount_field) },
+                                      sub { sprintf("<B>$money</B>", $_[0]->$amount_field) },
                                     ],
                 'show_combined'  => 1,
 &>

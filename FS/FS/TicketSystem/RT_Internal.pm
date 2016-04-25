@@ -468,9 +468,6 @@ sub get_ticket_object {
   }
   my $Tickets = RT::Tickets->new($session->{CurrentUser});
   $Tickets->FromSQL($query);
-  if ( $DEBUG ) { # temporary for RT#39536
-    warn "[get_ticket_object] " . $Tickets->BuildSelectQuery . "\n\n";
-  }
   return $Tickets->First;
 }
 

@@ -18,7 +18,14 @@ for use in view/cust_main.
 %   }
   </B></TD>
 </TR>
-%# no action links, the service is canceled
+%# no action links except unprovision, the service is canceled
+% if ( $curuser->access_right('Unprovision customer service') && ! $opt{no_links} ) {
+<TR>
+  <TD COLSPAN="2" ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px; padding-top:0px">
+    <FONT SIZE="-2">(&nbsp;<% $svc_unprovision_link %>&nbsp;)</FONT>
+  </TD>
+</TR>
+% }
 
 <%init>
 my %opt = @_;
@@ -28,5 +35,10 @@ my $cust_svc = $opt{'cust_svc'};
 my $part_svc = $opt{'part_svc'} || $cust_svc->part_svc;
 my $cust_pkg = $opt{'cust_pkg'} || $cust_svc->cust_pkg;
 my $svc_x = $cust_svc->svc_x;
+
+my $svc_unprovision_link = 
+  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?! .
+  $cust_svc->svcnum .
+  qq!', '!.emt('Permanently unprovision and delete this service?').qq!')">!.emt('Unprovision').'</A>';
 
 </%init>

@@ -8,6 +8,20 @@
 
   <& /elements/tr-input-beginning_ending.html &>
 
+  <tr>
+    <td></td>
+    <td colspan=2 style="font-weight: bold">
+      <& /elements/radio.html,
+        'field' => 'all',
+        'value' => 1,
+        'curr_value' => 1,
+      &> All taxes
+      <& /elements/radio.html,
+        'field' => 'all',
+        'value' => 0,
+      &> A specific tax
+    </td>
+  </tr>
   <& /elements/tr-select.html,
     'label'         => 'Country',
     'field'         => 'country',
@@ -48,6 +62,21 @@
 <BR><INPUT TYPE="submit" VALUE="Get Report">
 
 </FORM>
+
+<script>
+$(document).ready(function() {
+  $('[name=all]').on('change', function(ev) {
+    // disable country/taxname/breakdown if 'all' = 1
+    if (this.checked) {
+      var disabled = (this.value == 1);
+      $('[name=country').prop('disabled', disabled);
+      $('[name=taxname').prop('disabled', disabled);
+      $('[name=breakdown').prop('disabled', disabled);
+    }
+  });
+  $('[name=all]').change();
+});
+</script>
 
 <% include('/elements/footer.html') %>
 <%init>

@@ -12,9 +12,10 @@
       $cell.data('div',$div);
       $cell.append($div);
     }
+    $div.css('white-space','nowrap');
     $div.css('width','100%');
     $div.css('background-color', bgcolor);
-    $div.html(content || '&nbsp;');
+    $div.html(content || '&nbsp;<br>&nbsp;<br>&nbsp;');
   }
 
   // gives cell the appearance dictated by its data
@@ -37,12 +38,13 @@
   }
 
   // sets cell data and appearance as an appointment
-  function set_appointment_cell ($cell,ticketid,bgcolor,label,length,cells,offset) {
+  function set_appointment_cell ($cell,ticketid,bgcolor,labeltime,labeltitle,length,cells,offset) {
     $cell.data('bgcolor',  bgcolor );
     $cell.data('ticketid', ticketid );
     $cell.data('length',   length );
     $cell.data('cells',    cells );
     $cell.data('offset',   offset );
+    var label = labeltime + ' <br>' + labeltitle + ' <br>';
     $cell.data('label',  label );
     $cell.data('content', '');
     if ( offset == 0 ) { // first row
@@ -295,6 +297,8 @@
       } else {
 
         var label = data.sched_label;
+        var labeltime = data.sched_label_time;
+        var labeltitle = data.sched_label_title;
 
         // jump to first cell in appointment
         var rownum = dragcell.parent().prevAll('tr').length;
@@ -325,7 +329,7 @@
                         '_' + String( n_tod_row ) +
                         '_' + username;
           var $cell = $('#'+n_td_id);
-          set_appointment_cell($cell,ticketid,bgcolor,label,length,cells,d);
+          set_appointment_cell($cell,ticketid,bgcolor,labeltime,labeltitle,length,cells,d);
           set_draggable_cell($cell);
           set_droppable_cell($cell);
         }

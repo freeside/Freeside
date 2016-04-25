@@ -1389,7 +1389,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexextracouponspace',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon.  Include units.  Default is 3.6cm',
+    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon.  Include units.  Default is 2.7 inches.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1401,7 +1401,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexcouponfootsep',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice separation between tear off coupon and footer. Include units.',
+    'description' => 'Optional LaTeX invoice separation between bottom of coupon address and footer. Include units. Default is 0.2 inches.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1413,7 +1413,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexcouponamountenclosedsep',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice separation between total due and amount enclosed line. Include units.',
+    'description' => 'Optional LaTeX invoice separation between total due and amount enclosed line. Include units. Default is 2.25 em.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1424,7 +1424,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexcoupontoaddresssep',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice separation between invoice data and the to address (usually invoice_latexreturnaddress).  Include units.',
+    'description' => 'Optional LaTeX invoice separation between invoice data and the address (usually invoice_latexreturnaddress).  Include units. Default is 1 inch.',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1972,7 +1972,7 @@ and customer address. Include units.',
     'description' => 'Enables the automatic unsuspension of suspended packages when a customer\'s balance due is at or below the specified amount after a payment or credit',
     'type'        => 'select',
     'select_enum' => [ 
-      '', 'Zero', 'Latest invoice charges'
+      '', 'Zero', 'Latest invoice charges', 'Charges not past due'
     ],
   },
 
@@ -5306,7 +5306,7 @@ and customer address. Include units.',
       my @part_export =
         map { qsearch( 'part_export', {exporttype => $_ } ) }
           keys %{FS::part_export::export_info('cust_main')};
-      map { $_->exportnum => $_->exporttype.' to '.$_->machine } @part_export;
+      map { $_->exportnum => $_->exportname } @part_export;
     },
     'option_sub'  => sub {
       require FS::Record;
@@ -5315,7 +5315,7 @@ and customer address. Include units.',
         'part_export', { 'exportnum' => shift }
       );
       $part_export
-        ? $part_export->exporttype.' to '.$part_export->machine
+        ? $part_export->exportname
         : '';
     },
   },
@@ -5324,7 +5324,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_location-exports',
     'section'     => '',
-    'description' => 'Export(s) to call on cust_location insert, modification and deletion.',
+    'description' => 'Export(s) to call on cust_location insert or modification',
     'type'        => 'select-sub',
     'multiple'    => 1,
     'options_sub' => sub {
@@ -5333,7 +5333,7 @@ and customer address. Include units.',
       my @part_export =
         map { qsearch( 'part_export', {exporttype => $_ } ) }
           keys %{FS::part_export::export_info('cust_location')};
-      map { $_->exportnum => $_->exporttype.' to '.$_->machine } @part_export;
+      map { $_->exportnum => $_->exportname } @part_export;
     },
     'option_sub'  => sub {
       require FS::Record;
@@ -5342,7 +5342,7 @@ and customer address. Include units.',
         'part_export', { 'exportnum' => shift }
       );
       $part_export
-        ? $part_export->exporttype.' to '.$part_export->machine
+        ? $part_export->exportname
         : '';
     },
   },

@@ -14,6 +14,7 @@
                    'Date',
                    'By',
                    'Reason',
+                   'Info',
 
                    # line item
                    'Description',
@@ -33,7 +34,8 @@
 
                    sub { time2str('%b %d %Y', shift->get('cust_credit_date') ) },
                    sub { shift->cust_credit_bill->cust_credit->otaker },
-                   sub { shift->cust_credit_bill->cust_credit->reason },
+                   sub { shift->cust_credit_bill->cust_credit->reason_only },
+                   sub { shift->cust_credit_bill->cust_credit->addlinfo },
 
                    sub { $_[0]->pkgnum > 0
                            ? $_[0]->get('pkg')      # possibly use override.pkg
@@ -51,6 +53,7 @@
                    'cust_credit_date',
                    '', #'otaker',
                    '', #reason
+                   '', #addlinfo
                    '', #line item description
                    '', #location
                    @post_desc_null,
@@ -66,6 +69,7 @@
                    '',
                    '',
                    '',
+                   '',
                    @post_desc_null,
                    $ilink,
                    $ilink,
@@ -73,11 +77,12 @@
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rrrllll'.
+               'align' => 'rrrlllll'.
                           $post_desc_align.
                           'rr'.
                           FS::UI::Web::cust_aligns(),
                'color' => [
+                              '',
                               '',
                               '',
                               '',
@@ -91,6 +96,7 @@
                               FS::UI::Web::cust_colors(),
                             ],
                'style' => [ 
+                              '',
                               '',
                               '',
                               '',

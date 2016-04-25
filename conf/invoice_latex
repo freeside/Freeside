@@ -66,7 +66,7 @@
   }
 }
 
-\newcommand{\extracouponspace}{[@-- defined($extracouponspace) ? $extracouponspace : '3.6cm' --@]}
+\newcommand{\extracouponspace}{[@-- defined($extracouponspace) ? $extracouponspace : '2.7in' --@]}
 
 % Adjust the inset of the mailing address
 \newcommand{\addressinset}[1][]{\hspace{1.0cm}}
@@ -95,7 +95,9 @@
     $OUT .= '\vspace{-\extracouponspace}';
     $OUT .= '\rule[0.5em]{\textwidth}{\footrulewidth}\\\\';
     $OUT .= $coupon;
-    $OUT .= '\vspace{'. $couponfootsep. '}' if defined($couponfootsep);
+    $OUT .= '\vspace{'.
+      (defined($couponfootsep) ? $couponfootsep : '0.2in') .
+      '}';
   }
   '';
 --@] [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
@@ -209,7 +211,7 @@
   \hline
 }
 
-}% ...description...
+% ...description...
 \newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
   \multicolumn{[@-- $unitprices ? '4' : '6' --@]}{l}{\textbf{#2}} &

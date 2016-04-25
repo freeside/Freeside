@@ -249,19 +249,21 @@ sub insert {
   # cust_location exports
   #my $export_args = $options{'export_args'} || [];
 
-  my @part_export =
-    map qsearch( 'part_export', {exportnum=>$_} ),
-      $conf->config('cust_location-exports'); #, $agentnum
+  # don't export custnum_pending cases, let follow-up replace handle that
+  if ($self->custnum || $self->prospectnum) {
+    my @part_export =
+      map qsearch( 'part_export', {exportnum=>$_} ),
+        $conf->config('cust_location-exports'); #, $agentnum
 
-  foreach my $part_export ( @part_export ) {
-    my $error = $part_export->export_insert($self); #, @$export_args);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "exporting to ". $part_export->exporttype.
-             " (transaction rolled back): $error";
+    foreach my $part_export ( @part_export ) {
+      my $error = $part_export->export_insert($self); #, @$export_args);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
     }
   }
-
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -311,19 +313,21 @@ sub replace {
   # cust_location exports
   #my $export_args = $options{'export_args'} || [];
 
-  my @part_export =
-    map qsearch( 'part_export', {exportnum=>$_} ),
-      $conf->config('cust_location-exports'); #, $agentnum
+  # don't export custnum_pending cases, let follow-up replace handle that
+  if ($self->custnum || $self->prospectnum) {
+    my @part_export =
+      map qsearch( 'part_export', {exportnum=>$_} ),
+        $conf->config('cust_location-exports'); #, $agentnum
 
-  foreach my $part_export ( @part_export ) {
-    my $error = $part_export->export_replace($self, $old); #, @$export_args);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "exporting to ". $part_export->exporttype.
-             " (transaction rolled back): $error";
+    foreach my $part_export ( @part_export ) {
+      my $error = $part_export->export_replace($self, $old); #, @$export_args);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
     }
   }
-
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -724,7 +728,7 @@ sub label_prefix {
   $prefix;
 }
 
-=item county_state_county
+=item county_state_country
 
 Returns a string consisting of just the county, state and country.
 

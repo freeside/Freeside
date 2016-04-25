@@ -21,7 +21,8 @@
 %
 %   my $bgcolor = '#666666';
 %   my $border = '1px solid #555555';
-%   my $label = '';
+%   my $label_time = '';
+%   my $label_title = '';
 %   my $selectable = 0; # can we schedule a new appointment
 %   my $ticketid = 0;
 %   my $draggable_length = 0;
@@ -72,10 +73,10 @@
 %     my @cust_main = values( %{$hash{cust_main}} );
 %
 %     #false laziness w/xmlhttp-ticket-update.html
-%     $label .= FS::sched_avail::pretty_time($starts). '-'.
-%               FS::sched_avail::pretty_time($due).
-%               ': '. $cust_main[0]->_FreesideURILabel;
-%               #'install for custname XX miles away'; #XXX placeholder/more
+%     $label_time = FS::sched_avail::pretty_time($starts). '-'.
+%                   FS::sched_avail::pretty_time($due);
+%     $label_title = $cust_main[0]->_FreesideURILabel;
+%     #'install for custname XX miles away'; #XXX placeholder/more
 %
 %     $offset = int( ($tod_row - $starts) / $timestep );
 %     $offset++ if ($tod_row - $starts) % $timestep;
@@ -158,7 +159,8 @@
         $cell_<% $td_id %>,
         <% $ticketid |js_string %>,
         <% $bgcolor |n,js_string %>,
-        <% $label |n,js_string %>,
+        <% $label_time |n,js_string %>,
+        <% $label_title |n,js_string %>,
         <% $draggable_length * 60 %>,
         <% $cells %>,
         <% $offset %>

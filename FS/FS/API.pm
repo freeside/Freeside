@@ -8,6 +8,7 @@ use FS::cust_location;
 use FS::cust_pay;
 use FS::cust_credit;
 use FS::cust_refund;
+use FS::cust_pkg;
 
 =head1 NAME
 
@@ -554,6 +555,87 @@ sub location_info {
   );
 
   return \%return;
+}
+
+=item change_package_location
+
+Updates package location. Takes a list of keys and values 
+as paramters with the following keys: 
+
+pkgnum
+
+secret
+
+locationnum - pass this, or the following keys (don't pass both)
+
+locationname
+
+address1
+
+address2
+
+city
+
+county
+
+state
+
+zip
+
+addr_clean
+
+country
+
+censustract
+
+censusyear
+
+location_type
+
+location_number
+
+location_kind
+
+incorporated
+
+On error, returns a hashref with an 'error' key.
+On success, returns a hashref with 'pkgnum' and 'locationnum' keys,
+containing the new values.
+
+=cut
+
+sub change_package_location {
+  my $class = shift;
+  my %opt  = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{'secret'});
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $opt{'pkgnum'} })
+    or return { 'error' => 'Unknown pkgnum' };
+
+  my %changeopt;
+
+  foreach my $field ( qw(
+    locationnum
+    locationname
+    address1
+    address2
+    city
+    county
+    state
+    zip
+    addr_clean
+    country
+    censustract
+    censusyear
+    location_type
+    location_number
+    location_kind
+    incorporated
+  )) {
+    $changeopt{$field} = $opt{$field} if $opt{$field};
+  }
+
+  $cust_pkg->API_change(%changeopt);
 }
 
 =item bill_now OPTION => VALUE, ...

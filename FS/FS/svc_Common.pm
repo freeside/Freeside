@@ -1387,11 +1387,17 @@ Parameters:
 
 =item order_by
 
+=item cancelled - if true, only returns svcs attached to cancelled pkgs;
+if defined and false, only returns svcs not attached to cancelled packages
+
 =back
 
 =cut
 
-# svc_broadband::search should eventually use this instead
+### Don't call the 'cancelled' option 'Service Status'
+### There is no such thing
+### See cautionary note in httemplate/browse/part_svc.cgi
+
 sub search {
   my ($class, $params) = @_;
 
@@ -1493,6 +1499,14 @@ sub search {
   if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
     push @from, ' LEFT JOIN export_svc USING ( svcpart )';
     push @where, "exportnum = $1";
+  }
+
+  if ( defined($params->{'cancelled'}) ) {
+    if ($params->{'cancelled'}) {
+      push @where, "cust_pkg.cancel IS NOT NULL";
+    } else {
+      push @where, "cust_pkg.cancel IS NULL";
+    }
   }
 
 #  # sector and tower
