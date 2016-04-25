@@ -1072,6 +1072,10 @@ Number of total bytes gained by recharge
 
 Orders a package for this customer.
 
+If signup_server-realtime is set, bills the new package, attemps to collect
+payment and (for auto-payment customers) cancels the package if the payment is
+declined.
+
 Takes a hash reference as parameter with the following keys:
 
 =over 4
@@ -1087,6 +1091,11 @@ Package to order (see L<FS::part_pkg>).
 =item quantity
 
 Quantity for this package order (default 1).
+
+=item run_bill_events
+
+If true, runs billing events for the customer after ordering and billing the
+package (signup_server-realtime must be set).
 
 =item locationnum
 
