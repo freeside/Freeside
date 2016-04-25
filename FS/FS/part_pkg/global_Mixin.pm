@@ -14,16 +14,35 @@ tie my %a2billing_simultaccess, 'Tie::IxHash', (
   1 => 'Enabled',
 );
 
+# much false laziness with FS::Record::ut_money
+sub validate_moneyn {
+  my ($option, $valref) = @_;
+  if ( $$valref eq '' ) {
+    return '';
+  } elsif ( $$valref =~ /^\s*(\-)?\s*(\d*)(\.\d{1})\s*$/ ) {
+    #handle one decimal place without barfing out
+    $$valref = ( ($1||''). ($2||''). ($3.'0') ) || 0;
+  } elsif ( $$valref =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/ ) {
+    $$valref = ( ($1||''). ($2||''). ($3||'') ) || 0;
+  } else {
+    return "Illegal (money) $option: ". $$valref;
+  }
+  return '';
+}
+
+
 %info = (
   'disabled' => 1,
   'fields' => {
     'setup_fee' => { 
       'name' => 'Setup fee for this package',
       'default' => 0,
+      'validate' => \&validate_moneyn,
     },
     'recur_fee' => { 
       'name' => 'Recurring fee for this package',
       'default' => 0,
+      'validate' => \&validate_moneyn,
     },
     'unused_credit_cancel' => {
       'name' => 'Credit the customer for the unused portion of service at '.
