@@ -2410,7 +2410,7 @@ sub order_pkg {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
-    my $bill_error = _do_bop_realtime( $cust_main, $status );
+    my $bill_error = _do_bop_realtime( $cust_main, $status, 'collect'=>$p->{run_bill_events} );
 
     if ($bill_error) {
       $cust_pkg->cancel('quiet'=>1);
@@ -2563,6 +2563,12 @@ sub _do_bop_realtime {
     }
 
     return { 'error' => '_decline', 'bill_error' => $bill_error };
+  }
+
+  if ( $opt{'collect'} ) {
+    my $collect_error = $cust_main->collect();
+    return { 'error' => '_decline', 'bill_error' => $collect_error }
+     if $collect_error; #?
   }
 
   '';
