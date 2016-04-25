@@ -8,15 +8,16 @@ use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 use FS::part_pkg_option;
 
-getopts('rp:o:v:t:');
+getopts('rm:p:o:v:t:sSzZ');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
 
-my %plan;
-%plan = ( 'plan' => $opt_p ) if $opt_p;
+my %search = ();
+$search{'plan'} = $opt_p if $opt_p;
+$search{'comment'} = $opt_m if $opt_m;
 
-foreach my $part_pkg ( qsearch('part_pkg',\%plan) ) {
+foreach my $part_pkg ( qsearch('part_pkg',\%search) ) {
   next if ! $part_pkg->freq && $opt_r;
 
   if ( $opt_o ) {
@@ -43,9 +44,14 @@ foreach my $part_pkg ( qsearch('part_pkg',\%plan) ) {
 
   }
 
-  if ( $opt_t ) {
+  if ( $opt_t || $opt_s || $opt_S || $opt_z || $opt_Z ) {
 
-    $part_pkg->taxclass($opt_t);
+    $part_pkg->taxclass($opt_t) if $opt_t;
+    $part_pkg->setup_show_zero('') if $opt_s;
+    $part_pkg->setup_show_zero('Y') if $opt_S;
+    $part_pkg->recur_show_zero('') if $opt_z;
+    $part_pkg->recur_show_zero('Y') if $opt_Z;
+
     my $error = $part_pkg->replace;
 
   }
@@ -53,7 +59,7 @@ foreach my $part_pkg ( qsearch('part_pkg',\%plan) ) {
 }
 
 sub usage {
-  die "usage: part_pkg-bulk_change [ -r ] [ -o option_name -v option_value ] [ -t new_taxclass ] employee_username\n";
+  die "usage: part_pkg-bulk_change [ -r ] [ -p plan ] [ -m comment ] [ -o option_name -v option_value ] [ -t new_taxclass ] [ -s | -S ] [ -z | -Z ] employee_username\n";
 }
 
 =head1 NAME
@@ -62,7 +68,7 @@ cust_main-bulk_change
 
 =head1 SYNOPSIS
 
-  part_pkg-bulk_change [ -r ] [ -o option_name -v option_value ] [ -t new_taxclass ] employee_username
+  part_pkg-bulk_change [ -r ] [ -p plan ] [ -m comment ] [ -o option_name -v option_value ] [ -t new_taxclass ] [ -s | -S ] [ -z | -Z ] employee_username
 
 =head1 DESCRIPTION
 
@@ -72,6 +78,10 @@ Search options:
 
 -r: recurring package definitions only
 
+-p: packages with this price plan only
+
+-m: packages with this comment only
+
 Change options:
 
 -o: part_pkg_option optionname
@@ -79,6 +89,14 @@ Change options:
 -v: part_pkg_option optionvalue
 
 -t: new taxclass
+
+-s: Turn off "Show zero setup"
+
+-S: Turn on "Show zero setup"
+
+-z: Turn off "Show zero recurring"
+
+-Z: Turn on "Show zero recurring"
 
 employee_username
 
