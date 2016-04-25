@@ -719,6 +719,8 @@ sub setx {
 sub part_svc {
   my $self = shift;
 
+  cluck 'svc_X->part_svc called' if $DEBUG;
+
   #get part_svc
   my $svcpart;
   if ( $self->get('svcpart') ) {
