@@ -4,7 +4,7 @@ use base qw( FS::part_event::Condition );
 use strict;
 
 sub description {
-  'Customer has cancelled package with class';
+  'Customer has canceled package with class';
 }
 
 sub eventtable_hashref {
