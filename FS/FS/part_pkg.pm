@@ -770,6 +770,32 @@ sub check {
   '';
 }
 
+=item check_options
+
+For a passed I<$options> hashref, validates any options that
+have 'validate' subroutines defined (I<$options> values might
+be altered.)  Returns error message, or empty string if valid.
+
+Invoked by L</insert> and L</replace> via the equivalent
+methods in L<FS::option_Common>.
+
+=cut
+
+sub check_options {
+  my ($self,$options) = @_;
+  foreach my $option (keys %$options) {
+    if (exists $plans{ $self->plan }->{fields}->{$option}) {
+      if (exists($plans{$self->plan}->{fields}->{$option}->{'validate'})) {
+        # pass option name for use in error message
+        # pass a reference to the $options value, so it can be cleaned up
+        my $error = &{$plans{$self->plan}->{fields}->{$option}->{'validate'}}($option,\($options->{$option}));
+        return $error if $error;
+      }
+    } # else "option does not exist" error?
+  }
+  return '';
+}
+
 =item check_pkg_svc
 
 Checks pkg_svc records as a whole (for part_svc_link dependencies).
