@@ -2342,7 +2342,7 @@ sub order_pkg {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
-    my $bill_error = _do_bop_realtime( $cust_main, $status );
+    my $bill_error = _do_bop_realtime( $cust_main, $status, 'collect'=>$p->{run_bill_events} );
 
     if ($bill_error) {
       $cust_pkg->cancel('quiet'=>1);
@@ -2468,39 +2468,45 @@ sub order_recharge {
 sub _do_bop_realtime {
   my ($cust_main, $status, %opt) = @_;
 
-    my $old_balance = $cust_main->balance;
+  my $old_balance = $cust_main->balance;
 
-    my @cust_bill;
-    my $bill_error = $cust_main->bill(
-      'return_bill'   => \@cust_bill,
-    );
+  my @cust_bill;
+  my $bill_error = $cust_main->bill(
+    'return_bill'   => \@cust_bill,
+  );
 
-    $bill_error ||= $cust_main->apply_payments_and_credits;
+  $bill_error ||= $cust_main->apply_payments_and_credits;
 
-    $bill_error ||= $cust_main->realtime_collect('selfservice' => 1)
-      if $cust_main->payby =~ /^(CARD|CHEK)$/;
+  $bill_error ||= $cust_main->realtime_collect('selfservice' => 1)
+    if $cust_main->payby =~ /^(CARD|CHEK)$/;
 
-    if (    $cust_main->balance > $old_balance
-         && $cust_main->balance > 0
-         && ( $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/
-                || $status eq 'suspended'
-            )
-       )
-    {
-      unless ( $opt{'no_invoice_void'} ) {
+  if (    $cust_main->balance > $old_balance
+       && $cust_main->balance > 0
+       && ( $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/
+              || $status eq 'suspended'
+          )
+     )
+  {
+    unless ( $opt{'no_invoice_void'} ) {
 
-        #this used to apply a credit, but now we can void invoices...
-        foreach my $cust_bill (@cust_bill) {
-          my $voiderror = $cust_bill->void('automatic payment failed');
-          warn "Error voiding cust bill after decline: $voiderror" if $voiderror;
-        }
-
+      #this used to apply a credit, but now we can void invoices...
+      foreach my $cust_bill (@cust_bill) {
+        my $voiderror = $cust_bill->void('automatic payment failed');
+        warn "Error voiding cust bill after decline: $voiderror" if $voiderror;
       }
 
-      return { 'error' => '_decline', 'bill_error' => $bill_error };
     }
 
-    '';
+    return { 'error' => '_decline', 'bill_error' => $bill_error };
+  }
+
+  if ( $opt{'collect'} ) {
+    my $collect_error = $cust_main->collect();
+    return { 'error' => '_decline', 'bill_error' => $collect_error }
+     if $collect_error; #?
+  }
+
+  '';
 }
 
 sub renew_info {
