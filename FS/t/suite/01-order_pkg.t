@@ -16,7 +16,7 @@ my $form = $FS->form('OrderPkgForm');
 # behavior visible).
 
 my %params = (
-  pkgpart                 => 5,
+  pkgpart                 => 2,
   quantity                => 1,
   start                   => 'on_date',
   start_date              => '03/20/2016',
