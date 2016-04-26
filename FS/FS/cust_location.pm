@@ -375,10 +375,12 @@ sub check {
     $self->censustract("$1.$2");
   }
 
-  if ( $conf->exists('cust_main-require_address2') and 
-       !$self->ship_address2 =~ /\S/ ) {
-    return "Unit # is required";
-  }
+  #yikes... this is ancient, pre-dates cust_location and will be harder to
+  # implement now... how do we know this location is a service location from
+  # here and not a billing? we can't just check locationnums, we might be new :/
+  return "Unit # is required"
+    if $conf->exists('cust_main-require_address2')
+    && ! $self->address2 =~ /\S/;
 
   # tricky...we have to allow for the customer to not be inserted yet
   return "No prospect or customer!" unless $self->prospectnum 

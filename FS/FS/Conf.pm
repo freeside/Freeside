@@ -3498,7 +3498,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-require_address2',
     'section'     => 'UI',
-    'description' => 'Second address field is required (on service address only, if billing and service addresses differ).  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search',
+    'description' => 'Second address field is required.  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search', # service address only part not working in the modern world, see #41184  (on service address only, if billing and service addresses differ)
     'type'        => 'checkbox',
   },
 
