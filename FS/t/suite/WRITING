@@ -1,0 +1,93 @@
+WRITING TESTS
+
+Load the test database (kept in FS-Test/share/test.sql for now). This has
+a large set of customers in a known initial state.  You can login through
+the web interface as "admin"/"admin" to examine the state of things and plan
+your test.
+
+The test scripts now have access to BOTH sides of the web interface, so you
+can create an object through the UI and then examine its internal
+properties, etc.
+
+  use Test::More tests => 1;
+  use FS::Test;
+  my $FS = FS::Test->new;
+
+$FS has qsearch and qsearchs methods for finding objects directly. You can
+do anything with those objects that Freeside backend code could normally do.
+For example, this will bill a customer:
+
+  my $cust = $FS->qsearchs('cust_main', { custnum => 52 });
+  my $error = $cust->bill;
+
+TESTING UI INTERACTION
+
+To fetch a page from the UI, use the post() method:
+
+  $FS->post('/view/cust_main.cgi?52');
+  ok( $FS->error eq '', 'fetched customer view' ) or diag($FS->error);
+  ok( $FS->page =~ /Customer, New/, 'customer is named "Customer, New"' );
+
+To simulate a user filling in and submitting a form, first fetch the form,
+and select it by name:
+
+  $FS->post('/edit/svc_acct.cgi?98');
+  my $form = $FS->form('OneTrueForm');
+
+then fill it in and submit it:
+
+  $form->value('clear_password', '1234abcd');
+  $FS->post($form);
+
+and examine the result:
+
+  my $svc_acct = $FS->qsearch('svc_acct', { svcnum => 98 });
+  ok( $svc_acct->_password eq '1234abcd', 'password was changed' );
+
+TESTING UI FLOW (EDIT/PROCESS/VIEW SEQUENCE)
+
+Forms for editing records will post to a processing page. $FS->post($form)
+handles this. The processing page will usually redirect back to the view
+page on success, and back to the edit form with an error on failure.
+Determine which kind of redirect it is. If it's a redirect to the edit form,
+you need to follow it to report the error.
+
+  if ( $FS->redirect =~ m[^/view/svc_acct.cgi] ) {
+
+    pass('redirected to view page');
+
+  } elsif ( $FS->redirect =~ m[^/edit/svc_acct.cgi] ) {
+
+    fail('redirected back to edit form');
+    $FS->post($FS->redirect);
+    diag($FS->error);
+
+  } else {
+
+    fail('unsure what happened');
+    diag($FS->page);
+
+  }
+
+RUNNING TESTS AT A SPECIFIC DATE
+
+Important for testing package billing. Test::MockTime provides the
+set_fixed_time() function, which will freeze the time returned by the time()
+function at a specific value. I recommend giving it a unix timestamp rather
+than a date string to avoid any confusion about time zones.
+
+Note that FS::Cron::bill and some other parts of the system look at the $^T
+variable (the time that the current program started running). You can
+override that by just assigning to the variable.
+
+Customers in the test database are billed up through Mar 1 2016. This will
+bill a customer for the next month after that:
+
+  use Test::MockTime qw(set_fixed_time);
+  use Date::Parse qw(str2time);
+
+  my $cust = $FS->qsearchs('cust_main', { custnum => 52 });
+  set_fixed_time( str2time('2016-04-01') );
+  $cust->bill;
+
+

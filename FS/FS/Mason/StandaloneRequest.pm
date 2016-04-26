@@ -20,4 +20,13 @@ sub new {
 
 }
 
+# fake this up for UI testing
+sub redirect {
+  my $self = shift;
+  if (scalar(@_)) {
+    $self->{_redirect} = shift;
+  }
+  return $self->{_redirect};
+}
+
 1;
