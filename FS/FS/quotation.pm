@@ -280,8 +280,8 @@ sub _items_sections {
     my $part_pkg = $pkg->part_pkg;
 
     my $recur_freq = $part_pkg->freq;
-    $show{$recur_freq} = 1 if $pkg->unitrecur > 0;
-    $show{0} = 1 if $pkg->unitsetup > 0;
+    $show{$recur_freq} = 1 if $pkg->unitrecur > 0 or $part_pkg->recur_show_zero;
+    $show{0} = 1 if $pkg->unitsetup > 0 or $part_pkg->setup_show_zero;
     ($subtotals{0} ||= 0) += $pkg->setup + $pkg->setup_tax;
     ($subtotals{$recur_freq} ||= 0) += $pkg->recur + $pkg->recur_tax;
 
@@ -1053,7 +1053,11 @@ sub _items_pkg {
       $quotation_pkg->get('unit'.$setuprecur));
     $this_item->{'amount'} = sprintf('%.2f', $this_item->{'unit_amount'}
                                              * $quotation_pkg->quantity);
-    next if $this_item->{'amount'} == 0;
+    next if $this_item->{'amount'} == 0 and !(
+      $setuprecur eq 'setup'
+      ? $part_pkg->setup_show_zero
+      : $part_pkg->recur_show_zero
+    );
 
     if ( $preref ) {
       $this_item->{'preref_html'} = &$preref($quotation_pkg);
