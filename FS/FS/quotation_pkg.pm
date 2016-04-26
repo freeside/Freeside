@@ -384,10 +384,20 @@ sub setup {
     * ($self->quantity || 1);
 }
 
+sub setup_show_zero {
+  my $self = shift;
+  return $self->part_pkg->setup_show_zero;
+}
+
 sub recur {
   my $self = shift;
   ($self->unitrecur - sum(0, map { $_->recur_amount } $self->pkg_discount))
     * ($self->quantity || 1);
+}
+
+sub recur_show_zero {
+  my $self = shift;
+  return $self->part_pkg->recur_show_zero;
 }
 
 =item delete_details
