@@ -23,8 +23,9 @@ ok($error eq '', "billed on $date") or diag($error);
 my $cust_bill = $return[0];
 isa_ok($cust_bill, 'FS::cust_bill');
 
-# $60/month * (30 days - 19 days)/30 days = $42
-ok( $cust_bill->charged == 42.00, 'prorated first month correctly' );
+# Apr 1 - Mar 20 = 12 days
+# 12/31 * $30 = 11.61 recurring, + 20.00 setup
+ok( $cust_bill->charged == 31.61, 'prorated first month correctly' );
 
 # the package bill date should now be 2016-04-01
 my @lineitems = $cust_bill->cust_bill_pkg;
