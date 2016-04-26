@@ -1,10 +1,11 @@
+% my $error = shift;
+% $m->notes('error', $error);
 <& /elements/header.html, mt("Error") &>
 
 % while (@_) {
 
-<P><FONT SIZE="+1" COLOR="#ff0000"><% shift |h %></FONT>
+<P><FONT SIZE="+1" COLOR="#ff0000"><% $error |h %></FONT>
 
 %}
-
 % $m->flush_buffer();
 % $HTML::Mason::Commands::m->abort();

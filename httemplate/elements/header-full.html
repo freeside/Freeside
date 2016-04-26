@@ -1,0 +1,236 @@
+<%doc>
+
+Example:
+
+  <& /elements/header.html',
+       {
+         'title'     => 'Title',
+         'menubar'   => \@menubar,
+         'etc'       => '', #included in <BODY> tag, for things like onLoad=
+         'head'      => '', #included before closing </HEAD> tag
+         'nobr'      => 0,  #1 for no <BR><BR> after the title
+         'no_jquery' => #for use from RT, which loads its own
+       }
+  &>
+
+  %#old-style
+  <& /elements/header.html, 'Title', $menubar, $etc, $head &>
+
+</%doc>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+%#<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+%# above is what RT declares, should we switch now? hopefully no glitches result
+%# or just fuck it, XHTML died anyway, HTML 5 or bust?
+<HTML>
+  <HEAD>
+    <TITLE>
+      <% encode_entities($title) || $title_noescape |n %>
+    </TITLE>
+    <!-- per RT, to prevent IE compatibility mode -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- The X-UA-Compatible <meta> tag above must be very early in <head> -->
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+% if ( $mobile ) {
+    <META NAME="viewport" content="width=device-width height=device-height user-scalable=yes">
+% }
+
+    <% include('menu.html', 'freeside_baseurl' => $fsurl,
+                            'position'         => $menu_position,
+                            'nocss'            => $nocss,
+                            'mobile'           => $mobile,
+              ) |n
+    %>
+
+%   unless ( $no_jquery ) {
+      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
+%   }
+    <% include('init_overlib.html') |n %>
+    <% include('rs_init_object.html') |n %>
+
+    <% $head |n %>
+
+%# announce our base path, and the Mason comp path of this page
+  <script type="text/javascript">
+  window.fsurl = <% $fsurl |js_string %>;
+  window.request_comp_path = <% $m->request_comp->path |js_string %>;
+  </script>
+
+  </HEAD>
+  <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
+    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
+      <tr>
+        <td BGCOLOR="#ffffff"><% $company_url ? qq(<A HREF="$company_url">) : '' |n %><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"><% $company_url ? '</A>' : '' |n %></td>
+        <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
+          <font size=6><% $company_name || 'ExampleCo' %></font>
+        </td>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% $FS::CurrentUser::CurrentUser->username |h %>&nbsp;</b> <FONT SIZE="-2"><a href="<%$fsurl%>loginout/logout.html">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
+%         if ( $conf->config("ticket_system")
+%              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
+            | <a href="<%$fsurl%>rt/Prefs/Other.html" STYLE="color: #000000">Ticketing preferences</a>
+%         }
+          <BR></FONT>
+        </td>
+      </tr>
+    </table>
+
+    <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
+
+<link href="<%$fsurl%>elements/freeside-menu.css" type="text/css" rel="stylesheet">
+
+% if ( $menu_position eq 'top' ) {
+
+      <TR CLASS="fsmenubar">
+
+%       if ( $mobile ) {
+
+        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#dddddd">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar.toString());
+          </SCRIPT>
+        </TD>
+        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#dddddd">
+            <% include('searchbar-combined.html') |n %>
+        </TD>
+
+%       } else {
+
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#dddddd">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar);
+          </SCRIPT>
+        </TD>
+
+      </TR>
+
+      <TR CLASS="fssearchbar">
+
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
+          <% include('searchbar-prospect.html') |n %>
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
+          <% include('searchbar-cust_main.html') |n %>
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="center">
+          <% include('searchbar-address2.html') |n %>
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right">
+          <% include('searchbar-cust_bill.html') |n %>
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px">
+          <% include('searchbar-cust_svc.html') |n %>
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#dddddd" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
+          <% include('searchbar-ticket.html') |n %>
+        </TD>
+%       }
+
+      </TR>
+    </TABLE>
+
+% } else { #$menu_position eq 'left'
+
+      <TR CLASS="fsmenubar">
+
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#dddddd">
+        </TD>
+
+      </TR>
+
+% }
+
+
+    <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>
+
+      <TR HEIGHT="100%">
+
+% if ( $menu_position eq 'left' ) {
+
+        <TD BGCOLOR="#dddddd" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right" CLASS="fsmenubar">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar);
+          </SCRIPT>
+
+          <BR>
+          <% include('searchbar-prospect.html') |n %>
+          <% include('searchbar-cust_main.html') |n %>
+          <% include('searchbar-address2.html') |n %>
+          <% include('searchbar-cust_bill.html') |n %>
+          <% include('searchbar-cust_svc.html') |n %>
+          <% include('searchbar-ticket.html') |n %>
+
+        </TD>
+
+% } else { #$menu_position eq 'top'
+    <BR>
+% }
+%# page content starts here
+        <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
+
+          <H1>
+            <% $title_noescape || encode_entities($title) %>
+          </H1>
+
+% unless ( $nobr ) {
+          <BR>
+% }
+
+          <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
+
+<%init>
+
+my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
+my( $nobr, $nocss, $no_jquery ) = ( 0, 0, 0 );
+
+my $mobile;
+
+if ( ref($_[0]) ) {
+  my $opt = shift;
+  $title   = $opt->{title};
+  $title_noescape = $opt->{title_noescape};
+  $menubar    = $opt->{menubar};
+  $etc        = $opt->{etc};
+  $head       = $opt->{head};
+  $nobr       = $opt->{nobr};
+  $nocss      = $opt->{nocss};
+  $mobile     = $opt->{mobile};
+  $no_jquery  = $opt->{no_jquery};
+} else {
+  ($title, $menubar) = ( shift, shift );
+  $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+  $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+}
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position')
+                    || 'top'; #new default for 1.9
+
+if ( !defined($mobile) ) {
+  $mobile = $curuser->option('mobile_menu',1) && FS::UI::Web::is_mobile();
+}
+if ( $cgi->param('mobile') =~ /^(\d)$/ ) { # allow client to override
+  $mobile = $1;
+}
+
+my($company_name, $company_url);
+my @agentnums = $curuser->agentnums;
+if ( scalar(@agentnums) == 1 ) {
+  $company_name = $conf->config('company_name', $agentnums[0] );
+  $company_url  = $conf->config('company_url',  $agentnums[0] );
+} else {
+  $company_name = $conf->config('company_name');
+  $company_url  = $conf->config('company_url');
+}
+
+</%init>
