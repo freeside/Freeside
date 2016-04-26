@@ -327,6 +327,11 @@ sub setup {
 
 }
 
+sub setup_show_zero {
+  my $self = shift;
+  return $self->part_pkg->setup_show_zero;
+}
+
 sub setup_tax {
   my $self = shift;
   sum(0, map { $_->setup_amount } $self->quotation_pkg_tax);
@@ -340,6 +345,11 @@ sub recur {
                            );
   ($self->unitrecur - $discount_amount) * ($self->quantity || 1);
 
+}
+
+sub recur_show_zero {
+  my $self = shift;
+  return $self->part_pkg->recur_show_zero;
 }
 
 sub recur_tax {
