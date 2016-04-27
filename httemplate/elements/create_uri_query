@@ -18,7 +18,7 @@ my $query = $cgi->query_string;
 
 if ( length($query) > 1920 || $opt{secure} ) { #stupid IE 2083 URL limit
 
-  my $session = random_id(9);
+  my $session = int(rand(4294967296)); #XXX
   my $pref = new FS::access_user_pref({
     'usernum'    => $FS::CurrentUser::CurrentUser->usernum,
     'prefname'   => "redirect$session",
