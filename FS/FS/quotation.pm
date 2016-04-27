@@ -313,6 +313,17 @@ sub _items_total {
   });
 
   my $total_setup = $self->total_setup;
+  my $total_recur = $self->total_recur;
+  my $setup_show = $total_setup > 0 ? 1 : 0;
+  my $recur_show = $total_recur > 0 ? 1 : 0;
+  unless ($setup_show && $recur_show) {
+    foreach my $quotation_pkg ($self->quotation_pkg) {
+      $setup_show = 1 if !$setup_show and $quotation_pkg->setup_show_zero;
+      $recur_show = 1 if !$recur_show and $quotation_pkg->recur_show_zero;
+      last if $setup_show && $recur_show;
+    }
+  }
+
   foreach my $pkg_tax (@setup_tax) {
     if ($pkg_tax->setup_amount > 0) {
       $total_setup += $pkg_tax->setup_amount;
@@ -323,9 +334,9 @@ sub _items_total {
     }
   }
 
-  if ( $total_setup > 0 ) {
+  if ( $setup_show ) {
     push @items, {
-      'total_item'   => $self->mt( $self->total_recur > 0 ? 'Total Setup' : 'Total' ),
+      'total_item'   => $self->mt( $recur_show ? 'Total Setup' : 'Total' ),
       'total_amount' => sprintf('%.2f',$total_setup),
       'break_after'  => ( scalar(@recur_tax) ? 1 : 0 )
     };
@@ -333,7 +344,6 @@ sub _items_total {
 
   #could/should add up the different recurring frequencies on lines of their own
   # but this will cover the 95% cases for now
-  my $total_recur = $self->total_recur;
   # label these with the frequency
   foreach my $pkg_tax (@recur_tax) {
     if ($pkg_tax->recur_amount > 0) {
@@ -348,7 +358,7 @@ sub _items_total {
     }
   }
 
-  if ( $total_recur > 0 ) {
+  if ( $recur_show ) {
     push @items, {
       'total_item'   => $self->mt('Total Recurring'),
       'total_amount' => sprintf('%.2f',$total_recur),

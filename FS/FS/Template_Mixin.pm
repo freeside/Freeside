@@ -3285,7 +3285,7 @@ sub _items_cust_bill_pkg {
         my @details = $cust_bill_pkg->details;
 
         # and I guess they're never bundled either?
-        if ( $cust_bill_pkg->setup != 0 ) {
+        if (( $cust_bill_pkg->setup != 0 ) || ( $cust_bill_pkg->setup_show_zero )) {
           my $description = $desc;
           $description .= ' Setup'
             if $cust_bill_pkg->recur != 0
@@ -3306,7 +3306,7 @@ sub _items_cust_bill_pkg {
                              ),
           };
         }
-        if ( $cust_bill_pkg->recur != 0 ) {
+        if (( $cust_bill_pkg->recur != 0 ) || ( $cust_bill_pkg->recur_show_zero )) {
           #push @b, {
           $r = {
             'pkgnum'      => $cust_bill_pkg->pkgpart, #so it displays in Ref
