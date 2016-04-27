@@ -40,6 +40,8 @@
 %     $paycvv = $cust_main->paycvv;
 %     ( $month, $year ) = $cust_main->paydate_monthyear;
 %     $payname = $cust_main->payname if $cust_main->payname;
+%   } elsif ($disable_payauto_default) {
+%     $auto = 0;
 %   }
 
     <TR>
@@ -48,7 +50,7 @@
         <TABLE>
           <TR>
             <TD>
-              <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"> </TD>
+              <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"<% ($auto && $disable_payauto_default) ? $possibly_uncheck_auto : '' %>> </TD>
             <TH><% mt('Exp.') |h %></TH>
             <TD>
               <SELECT NAME="month">
@@ -107,6 +109,8 @@
 %     $paystate = $cust_main->getfield('paystate');
 %     $stateid = $cust_main->getfield('stateid');
 %     $stateid_state = $cust_main->getfield('stateid_state');
+%   } elsif ($disable_payauto_default) {
+%     $auto = 0;
 %   }
 %
 %  #false laziness w/{edit,view}/cust_main/billing.html
@@ -120,14 +124,14 @@
     <INPUT TYPE="hidden" NAME="year" VALUE="2037">
     <TR>
       <TD ALIGN="right"><% mt('Account number') |h %></TD>
-      <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$account%>"></TD>
+      <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$account%>"<% ($auto && $disable_payauto_default) ? $possibly_uncheck_auto : '' %>></TD>
       <TD ALIGN="right"><% mt('Type') |h %></TD>
       <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
     </TR>
     <TR>
       <TD ALIGN="right"><% mt($routing_label) |h %></TD>
       <TD>
-        <INPUT TYPE="text" SIZE="<% $routing_size %>" MAXLENGTH="<% $routing_maxlength %>" NAME="payinfo2" VALUE="<%$aba%>">
+        <INPUT TYPE="text" SIZE="<% $routing_size %>" MAXLENGTH="<% $routing_maxlength %>" NAME="payinfo2" VALUE="<%$aba%>"<% ($auto && $disable_payauto_default) ? $possibly_uncheck_auto : '' %>>
         (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
       </TD>
     </TR>
@@ -135,7 +139,7 @@
       <TR>
         <TD ALIGN="right"><% mt('Branch number') |h %></TD>
         <TD>
-          <INPUT TYPE="text" NAME="payinfo3" VALUE="<%$branch%>" SIZE=6 MAXLENGTH=5>
+          <INPUT TYPE="text" NAME="payinfo3" VALUE="<%$branch%>" SIZE=6 MAXLENGTH=5<% ($auto && $disable_payauto_default) ? $possibly_uncheck_auto : '' %>>
         </TD>
       </TR>
 %   }
@@ -228,7 +232,7 @@
 
 <TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox"<% ( ( $payby eq 'CARD' && $cust_main->payby ne 'DCRD' ) || ( $payby eq 'CHEK' && $cust_main->payby eq 'CHEK' ) ) ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
+    <INPUT ID="auto_checkbox" TYPE="checkbox"<% $auto ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
     <% mt("Charge future payments to this [_1] automatically",$type{$payby}) |h %> 
   </TD>
 </TR>
@@ -260,6 +264,18 @@ function change_batch_checkbox () {
 }
 </SCRIPT>
 
+% }
+
+% if ($auto && $disable_payauto_default) {
+<SCRIPT>
+var unchecked_auto = false;
+function possibly_uncheck_auto () {
+  if (!unchecked_auto) {
+    unchecked_auto = true;
+    document.getElementById('auto_checkbox').checked = false;
+  }
+}
+</SCRIPT>
 % }
 
 </TABLE>
@@ -298,6 +314,10 @@ my $balance = $cust_main->balance;
 my $payinfo = '';
 
 my $conf = new FS::Conf;
+
+my $auto = ( ( $payby eq 'CARD' && $cust_main->payby ne 'DCRD' ) || ( $payby eq 'CHEK' && $cust_main->payby eq 'CHEK' ) ) ? 1 : 0;
+my $disable_payauto_default = $conf->exists('disable_payauto_default');
+my $possibly_uncheck_auto = ' ONCHANGE="possibly_uncheck_auto()"';
 
 #false laziness w/selfservice make_payment.html shortcut for one-country
 my %states = map { $_->state => 1 }
