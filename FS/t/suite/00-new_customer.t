@@ -36,13 +36,13 @@ my %params = (
   billday                 => '1',
   no_credit_limit         => 1,
   # payment method
-  custpaybynum0_payby         => 'CARD',
-  custpaybynum0_payinfo       => '4012888888881881',
-  custpaybynum0_paydate_month => '12',
-  custpaybynum0_paydate_year  => '2020',
-  custpaybynum0_paycvv        => '123',
-  custpaybynum0_payname       => '',
-  custpaybynum0_weight        => 1,
+  payby      => 'CARD',
+  payinfo    => '4012888888881881',
+  exp_month  => '12',
+  exp_year   => '2020',
+  paycvv     => '123',
+  payname    => '',
+  weight     => 1,
 );
 foreach (keys %params) {
   $form->value($_, $params{$_});
