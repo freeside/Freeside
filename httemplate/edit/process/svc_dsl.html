@@ -25,7 +25,7 @@ my $precheck_callback = sub {
   my $psc = $part_svc->part_svc_column('password');
   if ( $psc->columnflag eq 'F' ) {
     # enforce it here and skip password validation
-    $cgi->param('password', $psc->columnvalue;
+    $cgi->param('password', $psc->columnvalue);
   } else {
     my $newpass = $cgi->param('password');
     if ( $old and $newpass ne $old->password ) {
