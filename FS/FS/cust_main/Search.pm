@@ -1059,6 +1059,10 @@ sub search {
       'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
   }
 
+  # always make referral available in results
+  #   (maybe we should be using FS::UI::Web::join_cust_main instead?)
+  $addl_from .= ' LEFT JOIN part_referral ON (cust_main.refnum = part_referral.refnum) ';
+
   my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from $extra_sql";
 
   my @select = (
