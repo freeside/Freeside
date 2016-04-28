@@ -54,6 +54,7 @@ sub is_password_allowed {
     my $cust_pkg = FS::cust_pkg->by_key($self->get('pkgnum'));
     $cust_main = $cust_pkg->cust_main if $cust_pkg;
   }
+  # selfservice signup invokes this without customer, but it checks this conf separately
   warn "is_password_allowed: no customer could be identified" if !$cust_main;
   return '' if $cust_main && $conf->config_bool('password-insecure', $cust_main->agentnum);
 

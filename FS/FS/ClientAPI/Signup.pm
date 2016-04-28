@@ -700,6 +700,7 @@ sub new_customer {
       };
       
       my $error = $svc->is_password_allowed($packet->{_password});
+      $error = '' if $conf->config_bool('password-insecure', $agentnum);
       return { error => $error } if $error;
 
       my @acct_snarf;

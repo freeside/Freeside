@@ -1123,7 +1123,7 @@ sub validate_password_nologin {
   $action = 'validate_password'; #use same landing page
   validate_passwd(
     map { $_ => scalar($cgi->param($_)) }
-      qw( fieldid check_password )
+      qw( fieldid check_password agentnum )
   )
 }
 

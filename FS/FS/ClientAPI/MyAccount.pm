@@ -3282,6 +3282,13 @@ sub validate_passwd {
     # end false laziness
   }
 
+  unless ($svc_acct) {
+    my $conf = new FS::Conf;
+    my $agentnum = $p->{'agentnum'};
+    return { %result, 'password_valid' => 1 }
+      if $conf->config_bool('password-insecure', $p->{'agentnum'});
+  }
+
   $svc_acct ||= new FS::svc_acct {};
 
   my $error = $svc_acct->is_password_allowed($p->{'check_password'});
