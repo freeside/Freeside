@@ -55,7 +55,8 @@ sub is_password_allowed {
     $cust_main = $cust_pkg->cust_main if $cust_pkg;
   }
   warn "is_password_allowed: no customer could be identified" if !$cust_main;
-  return '' if $cust_main && $conf->config_bool('password-insecure', $cust_main->agentnum);
+  my $agentnum = $cust_main ? $cust_main->agentnum : undef; #selfservice signup has non-inserted pkg, no workaround
+  return '' if $conf->config_bool('password-insecure', $agentnum);
 
   # basic checks using Data::Password;
   # options for Data::Password
