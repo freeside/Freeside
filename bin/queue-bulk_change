@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+use strict;
+#use Getopt::Std;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch qsearchs );
+use FS::queue_arg;
+use FS::queue;
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+my $from = shift or &usage;
+my $to = shift or &usage;
+
+foreach my $queue_arg ( qsearch('queue_arg', { 'arg' => $from, } ) ) {
+
+  $queue_arg->arg($to);
+  my $error = $queue_arg->replace;
+  die $error if $error;
+
+  #not on 3.x my $queue = $queue_arg->queue; 
+  my $queue = qsearchs( 'queue', { 'jobnum' => $queue_arg->jobnum } );
+  if ( $queue->status eq 'failed' ) {
+    $queue->status('new');
+    my $error = $queue->replace;
+    die $error if $error;
+  }
+
+}
+
+sub usage {
+  die "usage: queue-bulk_chage employee_username from_arg to_arg\n";
+}
