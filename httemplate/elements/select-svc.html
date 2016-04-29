@@ -1,0 +1,73 @@
+<%init>
+my %opt = @_;
+my $svcdb = $opt{table};
+my $field = $opt{field} || 'svcnum';
+my $id = $opt{id} || $opt{field};
+my $curr_value = [ split(',', $opt{curr_value} || '') ];
+my $label = $opt{name_col} || 'label';
+
+# cut-down, jquerified version of select-tiered
+# XXX do we need to agent-virt this? edit/part_svc is Configuration-access.
+my @part_svc = qsearch('part_svc', {
+  disabled  => '',
+  svcdb     => $svcdb
+});
+my %labels; # service labels, of some kind
+my %values; # svcnums
+my (@all_l, @all_v);
+foreach my $part_svc (@part_svc) {
+  my (@l, @v);
+  foreach my $svc_x (qsearch({
+    'table'       => 'cust_svc',
+    'addl_from'   => " JOIN $svcdb USING (svcnum)",
+    'select'      => "$svcdb.*, cust_svc.svcpart",
+    'hashref'     => { 'svcpart' => $part_svc->svcpart },
+  }))
+  {
+    push @l, $svc_x->$label;
+    push @all_l, $svc_x->$label;
+    push @v, $svc_x->svcnum;
+    push @all_v, $svc_x->svcnum;
+  }
+  $labels{ $part_svc->svcpart } = \@l;
+  $values{ $part_svc->svcpart } = \@v;
+}
+$labels{ '' } = \@all_l;
+$values{ '' } = \@all_v;
+
+</%init>
+<& /elements/select-table.html,
+  'table'       => 'part_svc',
+  'records'     => \@part_svc,
+  'id'          => $id.'_svcpart',
+  'name_col'    => 'svc',
+  'empty_label' => 'any',
+  'curr_value'  => '',
+  'field'       => $id.'_svcpart', # avoid confusion with any other field
+&>
+<BR>
+<& /elements/select.html,
+  %opt,
+  'field'       => $field,
+  'id'          => $id,
+&>
+<script>
+$().ready(function() {
+  var labels = <% encode_json(\%labels) %>;
+  var values = <% encode_json(\%values) %>;
+  var select_svcpart = $('#<% $id.'_svcpart' %>');
+  var select_svcnum = $('#<% $id %>');
+  var onchange_svcpart = function() {
+    var l = labels[ this.value ];
+    var v = values[ this.value ];
+    select_svcnum.empty();
+    for (var i = 0; i < v.length; i++) {
+      var opt = $('<option />').val(v[i]).text(l[i]);
+      select_svcnum.append(opt);
+    }
+  };
+  select_svcpart.on('change', onchange_svcpart);
+  select_svcpart.change();
+  select_svcnum.val(<% encode_json($curr_value) %>);
+});
+</script>
