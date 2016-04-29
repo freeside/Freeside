@@ -21,6 +21,7 @@
     disabled    => 0,
     onchange    => 'do_something()',
     js_only     => 0,         # disables the whole thing
+    element_etc => '',        # anything else to put in the <select> tag
 &>
 </%doc>
     
@@ -35,6 +36,7 @@
         <% $style %>
         <% $opt{disabled} %>
         <% $onchange %>
+        <% $opt{'element_etc'} %>
 >
 
 % if ( $opt{options} ) {

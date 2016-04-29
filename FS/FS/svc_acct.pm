@@ -316,6 +316,7 @@ sub table_info {
         'domsvc'    => {
                          label     => 'Domain',
                          type      => 'select',
+                         select_svc => 1,
                          select_table => 'svc_domain',
                          select_key   => 'svcnum',
                          select_label => 'domain',
