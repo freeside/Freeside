@@ -132,7 +132,10 @@ my %communigate_fields = (
 %   } elsif ( $def->{'type'} eq 'select' ) {
 %
 %     if ( $def->{'select_table'} ) {
-      <& /elements/select-table.html,
+%       # set the 'select_svc' flag to enable two-step selection of services
+%       my $comp = '/elements/select-table.html';
+%       $comp = '/elements/select-svc.html' if $def->{'select_svc'};
+      <& $comp,
           'field'       => $name,
           'id'          => $name.'_select',
           'table'       => $def->{'select_table'},
