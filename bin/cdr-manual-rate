@@ -1,0 +1,158 @@
+#!/usr/bin/perl
+
+use FS::Record qw(qsearch qsearchs);
+use FS::Misc::Getopt;
+use FS::cdr;
+use FS::Cursor;
+our %opt;
+
+getopts('f:');
+
+unless ($opt{f}) {
+  die "
+  Usage:
+  cdr-manual-rate -f freesidestatus [ -s startdate ] [ -e enddate ] user
+";
+}
+
+$FS::UID::AutoCommit = 1; # because partial completion of this is useful
+
+my $where_date;
+if ($opt{start}) {
+  $where_date = " AND startdate >= $opt{start} ";
+}
+if ($opt{end}) {
+  $where_date .= " AND startdate < $opt{end} ";
+}
+
+my $cursor = FS::Cursor->new({
+    'table'     => 'cdr',
+    'hashref'   => { freesidestatus => $opt{f} },
+    'extra_sql' => $where_date,
+});
+
+our %svc_phone = (); # phonenum => svc_phone
+our %pkgnum = ();    # phonenum => pkgnum
+our %cust_pkg = ();  # pkgnum   => cust_pkg
+our %pkgpart = ();   # phonenum => pkgpart
+our %part_pkg = ();  # pkgpart  => part_pkg
+
+# some stats
+my $total = 0;
+my $success = 0;
+my $notfound = 0;
+my $failed = 0;
+
+while (my $cdr = $cursor->fetch) {
+
+    $total++;
+    my $cdrdesc = "CDR ". $cdr->acctid.", ".$cdr->src." -> ".$cdr->dst;
+
+    # borrow CDR-to-package matching code from cdrrated...
+    my $number = $cdr->charged_party || $cdr->src;
+
+    # strip the prefix from the number
+    my $prefix = '+1'; #$options{'default_prefix'};
+
+    $number = substr($number, length($prefix))
+      if $prefix eq substr($number, 0, length($prefix));
+    if ( $prefix && $prefix =~ /^\+(\d+)$/ ) {
+      $prefix = $1;
+      $number = substr($number, length($prefix))
+        if $prefix eq substr($number, 0, length($prefix));
+    }
+
+    # find a svc_phone that matches it
+    unless ( $svc_phone{$number} ) {
+      #only phone number matching supported right now
+      my $svc_phone = qsearchs('svc_phone', { 'phonenum' => $number } );
+      unless ( $svc_phone ) {
+        warn "can't find a phone service for $cdrdesc\n";
+        $notfound++;
+        next;
+      }
+
+      $svc_phone{$number} = $svc_phone;
+
+    }
+
+    # find the pkgnum
+    unless ( $pkgnum{$number} ) {
+
+      my $cust_pkg = $svc_phone{$number}->cust_svc->cust_pkg;
+      if (!$cust_pkg) {
+        warn "can't find a package for $cdrdesc\n";
+        $notfound++;
+        next;
+      }
+      $pkgnum{$number} = $cust_pkg->pkgnum;
+      $cust_pkg{$cust_pkg->pkgnum} ||= $cust_pkg;
+
+    }
+
+    unless ( $pkgpart{$number} ) {
+      #get the package, search through the part_pkg and linked for a voip_cdr def w/matching cdrtypenum (or no use_cdrtypenum)
+      my $cust_pkg = $cust_pkg{$pkgnum{$number}};
+      my @part_pkg;
+      foreach ($cust_pkg->part_pkg->self_and_bill_linked) {
+        if ($_->plan eq 'voip_cdr'
+                 && ( ! length($_->option_cacheable('use_cdrtypenum'))
+                      || $_->option_cacheable('use_cdrtypenum')
+                           eq $cdr->cdrtypenum #eq otherwise 0 matches ''
+                    )
+                 && ( ! length($_->option_cacheable('ignore_cdrtypenum'))
+                      || $_->option_cacheable('ignore_cdrtypenum')
+                           ne $cdr->cdrtypenum #ne otherwise 0 matches ''
+                    )
+
+        ) {
+          push @part_pkg, $_;
+        }
+      }
+
+      if (!@part_pkg) {
+        warn "can't find a voip_cdr package definition for $cdrdesc\n";
+        $notfound++;
+        next;
+      } elsif (scalar(@part_pkg) > 1) {
+        warn "found more than one package that could rate $cdrdesc\n";
+        $notfound++;
+        next;
+      }
+
+      $pkgpart{$number} = $part_pkg[0]->pkgpart;
+      $part_pkg{ $part_pkg[0]->pkgpart } ||= $part_pkg[0];
+
+    } # unless $pkgpart{$number}
+
+    # now actually rate the call. ignore included minutes, since that's a
+    # property of the billing cycle and this call isn't part of a billing
+    # cycle.
+    my $error = $cdr->rate(
+      'part_pkg'  => $part_pkg{ $pkgpart{$number} },
+      'cust_pkg'  => $cust_pkg{ $pkgnum{$number} },
+      'svcnum'    => $svc_phone{$number}->svcnum,
+    );
+    if ( $error ) {
+      warn "can't rate $cdrdesc: $error\n";
+      $failed++;
+      next;
+    }
+    $error = $cdr->set_status('done');
+    if ( $error ) {
+      # don't know how this would happen...
+      warn "can't set status on $cdrdesc: $error\n";
+      $failed++;
+      next;
+    }
+
+    $success++;
+}
+
+print "
+Total CDRs:             $total
+Incomplete information: $notfound
+Failed rating:          $failed
+Successfully rated:     $success
+";
+
