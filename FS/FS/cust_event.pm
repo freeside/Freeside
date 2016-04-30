@@ -13,7 +13,7 @@ use FS::cust_bill;
 use FS::cust_pay;
 use FS::svc_acct;
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::cust_event]';
 
 =head1 NAME
@@ -399,11 +399,14 @@ sub search_sql_where {
   #}
   # huh?
 
-  if ( $param->{'event_status'} ) {
-
+  my @event_status = ref($param->{'event_status'})
+                    ? @{ $param->{'event_status'} }
+                    : split(',', $param->{'event_status'});
+  if ( @event_status ) {
     my @status;
+
     my ($done_Y, $done_N);
-    foreach (@{ $param->{'event_status'} }) {
+    foreach (@event_status) {
       if ($_ eq 'done_Y') {
         $done_Y = 1;
       } elsif ( $_ eq 'done_N' ) {
