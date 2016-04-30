@@ -1,6 +1,6 @@
 <& elements/search.html,
                  'title'       => $title,
-                 'html_init'   => $html_init,
+                 'html_init'   => include('.init'),
                  'menubar'     => $menubar,
                  'name'        => 'billing events',
                  'query'       => $sql_query,
@@ -140,6 +140,11 @@ my $trigger_link = sub {
 };
 
 </%once>
+<%shared>
+my @scalars = qw( agentnum status custnum invnum pkgnum failed );
+my @lists = qw( eventpart event_status );
+my %search;
+</%shared>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -159,17 +164,12 @@ if ( $statuses[0] eq 'failed' and !defined($statuses[1]) ) {
   $title = 'Failed billing events';
 }
 
-my %search = ();
-
-my @scalars = qw( agentnum status custnum invnum pkgnum failed );
 for my $param (@scalars) {
   $search{$param} = scalar( $cgi->param($param) )
     if $cgi->param($param);
 }
-$search{event_status} = \@statuses;
 
 #lists
-my @lists = qw( eventpart );
 foreach my $param (@lists) {
   $search{$param} = [ $cgi->param($param) ];
 }
@@ -209,55 +209,6 @@ my $count_sql = "SELECT COUNT(*) FROM cust_event $join $where";
 
 my $conf = new FS::Conf;
 
-my @params = ( @scalars, qw( beginning ending ) );
-
-my $html_init = join("\n", map {
-  ( my $action = $_ ) =~ s/_$//;
-  include('/elements/progress-init.html',
-            $_.'form',
-            [ 'action', @params ],
-            "../misc/${_}events.cgi",
-            { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
-            $_, #key
-         ),
-  qq!<FORM NAME="${_}form">!,
-  qq!<INPUT TYPE="hidden" NAME="action" VALUE="$_">!, #not used though
-  ( map { my $value = encode_entities( $search{$_} );
-          qq(<INPUT TYPE="hidden" NAME="$_" VALUE="$value">);
-        }
-        @params #keys %search
-  ),
-  ( map { my $value = encode_entities( join(',', @{ $search{$_} } ) );
-          qq(<INPUT TYPE="hidden" NAME="$_" VALUE="$value">);
-        }
-        @lists
-  ),
-  qq!</FORM>!
-} qw( print_ email_ fax_ ) ).
-
-'<SCRIPT TYPE="text/javascript">
-
-function confirm_print_process() {
-  if ( ! confirm("Are you sure you want to reprint these invoices?") ) {
-    return;
-  }
-  print_process();
-}
-function confirm_email_process() {
-  if ( ! confirm("Are you sure you want to re-email these invoices?") ) {
-    return;
-  }
-  email_process();
-}
-function confirm_fax_process() {
-  if ( ! confirm("Are you sure you want to re-fax these invoices?") ) {
-    return;
-  }
-  fax_process();
-}
-
-</SCRIPT>';
-
 my $menubar = [];
 
 if ( $curuser->access_right('Resend invoices') ) {
@@ -282,3 +233,46 @@ my $link_cust = sub {
 };
 
 </%init>
+<%def .init>
+% # action is part of the target URL, don't need to pass it as a param
+% foreach my $action (qw(print email fax)) {
+<& /elements/progress-init.html,
+  $action.'_form',
+  [ @scalars, @lists, 'beginning', 'ending' ],
+  "../misc/${action}_events.cgi",
+  { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
+  $action.'_', #key
+&>
+<FORM NAME="<% $action %>_form">
+%   foreach my $param (@scalars, 'beginning', 'ending') {
+  <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $search{$param} |h %>">
+%   }
+%   foreach my $param (@lists) {
+%     foreach my $value (@{ $search{$param} }) {
+  <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $value |h %>">
+%     }
+%   }
+</FORM>
+% } # foreach $action
+<SCRIPT TYPE="text/javascript">
+
+function confirm_print_process() {
+  if ( ! confirm("Are you sure you want to reprint these invoices?") ) {
+    return;
+  }
+  print_process();
+}
+function confirm_email_process() {
+  if ( ! confirm("Are you sure you want to re-email these invoices?") ) {
+    return;
+  }
+  email_process();
+}
+function confirm_fax_process() {
+  if ( ! confirm("Are you sure you want to re-fax these invoices?") ) {
+    return;
+  }
+  fax_process();
+}
+</SCRIPT>
+</%def>
