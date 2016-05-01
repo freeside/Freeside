@@ -383,6 +383,12 @@ HTML body
 
 Text body
 
+=item to_contact_classnum
+
+The customer contact class (or classes, as a comma-separated list) to send
+the message to. If unspecified, will be sent to any contacts that are marked
+as invoice destinations (the equivalent of specifying 'invoice').
+
 =back
 
 Returns an error message, or false for success.
@@ -406,6 +412,7 @@ sub email_search_result {
   my $subject = delete $param->{subject};
   my $html_body = delete $param->{html_body};
   my $text_body = delete $param->{text_body};
+  my $to_contact_classnum = delete $param->{to_contact_classnum};
   my $error = '';
 
   my $job = delete $param->{'job'}
@@ -471,6 +478,7 @@ sub email_search_result {
     my $cust_msg = $msg_template->prepare(
       'cust_main' => $cust_main,
       'object'    => $obj,
+      'to_contact_classnum' => $to_contact_classnum,
     );
 
     # For non-cust_main searches, we avoid duplicates based on message
