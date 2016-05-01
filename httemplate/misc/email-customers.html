@@ -6,8 +6,8 @@ frozen hash in the 'search' cgi param.  Form allows selecting an existing msg_te
 or creating a custom message, and shows a preview of the message before sending.
 If linked to as a popup, include the cgi parameter 'popup' for proper header handling.
 
-This may also be used as an element in other pages, enabling you to provide an
-alternate initial form while using this for search freezing/thawing and 
+This may also be used as an element in other pages, enabling you to provide
+an alternate initial form while using this for search freezing/thawing and 
 preview/send actions, with the following options:
 
 acl - the access right to use (defaults to 'Bulk send customer notices')
@@ -46,6 +46,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 <INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
 <INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
+<INPUT TYPE="hidden" NAME="to_contact_classnum" VALUE="<% join(',', @contact_classnum) %>">
 
 % if ( $cgi->param('action') eq 'send' ) { 
 
@@ -53,7 +54,8 @@ should be used to set msgnum or from/subject/html_body cgi params
 
     <& /elements/progress-init.html,
                  'OneTrueForm',
-                 [ qw( search table from subject html_body text_body msgnum ) ],
+                 [ qw( search table from subject html_body text_body
+                        msgnum to_contact_classnum ) ],
                  $process_url,
                  $pdest,
     &>
@@ -68,7 +70,6 @@ should be used to set msgnum or from/subject/html_body cgi params
 
     <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
     <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% scalar($cgi->param('msgnum')) %>">
-
 %   if ( $msg_template ) {
       <% include('/elements/tr-fixed.html',
                    'label'      => 'Template:',
@@ -83,6 +84,10 @@ should be used to set msgnum or from/subject/html_body cgi params
                    'value'      => $from,
                 )
       %>
+
+      <& /elements/tr-td-label.html, 'label' => 'To contacts:' &>
+        <td><% join('<BR>', @contact_classname) %></td>
+      </tr>
 
       <% include('/elements/tr-fixed.html',
                    'field'      => 'subject',
@@ -144,6 +149,21 @@ Template:
          onchange => 'toggle(this)',
     &>
     <BR>
+% }
+% # select destination contact classes
+Send to contacts:
+  <& /elements/checkboxes.html,
+    'style'               => 'display: inline; vertical-align: top',
+    'disable_links'       => 1,
+    'names_list'          => \@contact_checkboxes,
+    'element_name_prefix' => 'contact_class_',
+    'checked_callback'    => sub {
+      my($cgi, $name) = @_;
+      $name eq 'invoice' #others default to unchecked
+    },
+  &>
+<BR>
+% # if sending a one-off message, show a form to edit it
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%" id="table_no_template">
     <& /elements/tr-td-label.html, 'label' => 'From:' &>
       <TD><& /elements/input-text.html,
@@ -250,6 +270,12 @@ if ( $cgi->param('from') ) {
 my $subject = $cgi->param('subject') || '';
 my $html_body = $cgi->param('html_body') || '';
 
+my @contact_classnum;
+my @contact_classname;
+
+my $subject = $cgi->param('subject');
+my $body = $cgi->param('body');
+
 my $msg_template = '';
 
 if ( $cgi->param('action') eq 'preview' ) {
@@ -279,6 +305,28 @@ if ( $cgi->param('action') eq 'preview' ) {
     my %message = $msg_template->prepare(%msgopts);
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
+
+  # contact_class_X params
+  foreach my $param ( $cgi->multi_param ) {
+    if ( $param =~ /^contact_class_(\w+)$/ ) {
+      push @contact_classnum, $1;
+      if ( $1 eq 'invoice' ) {
+        push @contact_classname, 'Invoice recipients';
+      } else {
+        my $contact_class = FS::contact_class->by_key($1);
+        push @contact_classname, encode_entities($contact_class->classname);
+      }
+    }
+  }
 }
 
+my @contact_checkboxes = (
+  [ 'invoice' => { label => 'Invoice recipients' } ]
+);
+foreach my $class (qsearch('contact_class', { disabled => '' })) {
+  push @contact_checkboxes, [
+    $class->classnum,
+    { label => $class->classname }
+  ];
+}
 </%init>

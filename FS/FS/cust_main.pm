@@ -3363,6 +3363,73 @@ sub invoicing_list_emailonly_scalar {
   join(', ', $self->invoicing_list_emailonly);
 }
 
+=item contact_list [ CLASSNUM, ... ]
+
+Returns a list of contacts (L<FS::contact> objects) for the customer. If
+a list of contact classnums is given, returns only contacts in those
+classes. If the pseudo-classnum 'invoice' is given, returns contacts that
+are marked as invoice destinations. If '0' is given, also returns contacts
+with no class.
+
+If no arguments are given, returns all contacts for the customer.
+
+=cut
+
+sub contact_list {
+  my $self = shift;
+  my $search = {
+    table       => 'contact',
+    select      => 'contact.*, cust_contact.invoice_dest',
+    addl_from   => ' JOIN cust_contact USING (contactnum)',
+    extra_sql   => ' WHERE cust_contact.custnum = '.$self->custnum,
+  };
+
+  my @orwhere;
+  my @classnums;
+  foreach (@_) {
+    if ( $_ eq 'invoice' ) {
+      push @orwhere, 'cust_contact.invoice_dest = \'Y\'';
+    } elsif ( $_ eq '0' ) {
+      push @orwhere, 'cust_contact.classnum is null';
+    } elsif ( /^\d+$/ ) {
+      push @classnums, $_;
+    } else {
+      die "bad classnum argument '$_'";
+    }
+  }
+
+  if (@classnums) {
+    push @orwhere, 'cust_contact.classnum IN ('.join(',', @classnums).')';
+  }
+  if (@orwhere) {
+    $search->{extra_sql} .= ' AND (' .
+                            join(' OR ', map "( $_ )", @orwhere) .
+                            ')';
+  }
+
+  qsearch($search);
+}
+
+=item contact_list_email [ CLASSNUM, ... ]
+
+Same as L</contact_list>, but returns email destinations instead of contact
+objects.
+
+=cut
+
+sub contact_list_email {
+  my $self = shift;
+  my @contacts = $self->contact_list(@_);
+  my @emails;
+  foreach my $contact (@contacts) {
+    foreach my $contact_email ($contact->contact_email) {
+      push @emails,
+        $contact->firstlast . ' <' . $contact_email->emailaddress . '>';
+    }
+  }
+  @emails;
+}
+
 =item referral_custnum_cust_main
 
 Returns the customer who referred this customer (or the empty string, if

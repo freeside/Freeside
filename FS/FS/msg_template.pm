@@ -383,12 +383,26 @@ sub prepare {
 
   my @to;
   if ( exists($opt{'to'}) ) {
+
     @to = split(/\s*,\s*/, $opt{'to'});
+
+  } elsif ( $cust_main ) {
+
+    my @classes;
+    if ( $opt{'to_contact_classnum'} ) {
+      my $classnum = $opt{'to_contact_classnum'};
+      @classes = ref($classnum) ? @$classnum : split(',', $classnum);
+    }
+    if (!@classes) {
+      @classes = ( 'invoice' );
+    }
+    @to = $cust_main->contact_list_email(@classes);
+
+  } else {
+
+    die 'no To: address or cust_main object specified';
+
   }
-  else {
-    @to = $cust_main->invoicing_list_emailonly;
-  }
-  # no warning when preparing with no destination
 
   my $from_addr = $self->from_addr;
 
