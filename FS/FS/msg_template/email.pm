@@ -289,9 +289,25 @@ sub prepare {
 
   my @to;
   if ( exists($opt{'to'}) ) {
+
     @to = split(/\s*,\s*/, $opt{'to'});
+
   } elsif ( $cust_main ) {
-    @to = $cust_main->invoicing_list_emailonly;
+
+    if ( $opt{'to_contact_classnum'} ) {
+
+      my $classnum = $opt{'to_contact_classnum'};
+      my @classes = ref($classnum) ? @$classnum : split(',', $classnum);
+      if ( !@classes ) {
+        # traditional behavior: send to invoice email destinations (only)
+        @classes = ( 'invoice' );
+      }
+      @to = $cust_main->contact_list_email(@classes);
+      # not guaranteed to produce contacts, but then customers aren't
+      # guaranteed to have email addresses on file. in that case, env_to
+      # will be null and sending this message will fail.
+    }
+
   } else {
     die 'no To: address or cust_main object specified';
   }
@@ -324,13 +340,16 @@ sub prepare {
   );
 
   warn "$me creating message headers\n" if $DEBUG;
+  # strip display-name from envelope addresses
+  # (use Email::Address for this? it chokes on non-ASCII characters in
+  # the display-name, which is not great for us)
   my $env_from = $from_addr;
-  $env_from =~ s/^\s*//; $env_from =~ s/\s*$//;
-  if ( $env_from =~ /^(.*)\s*<(.*@.*)>$/ ) {
-    # a common idiom
-    $env_from = $2;
-  } 
-  
+  foreach ($env_from, @to) {
+    s/^\s*//;
+    s/\s*$//;
+    s/^(.*)\s*<(.*@.*)>$/$2/;
+  }
+
   my $domain;
   if ( $env_from =~ /\@([\w\.\-]+)/ ) {
     $domain = $1;
