@@ -1627,6 +1627,22 @@ sub insert_payby {
   
 }
 
+sub verify_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_payby = qsearchs('cust_payby', {
+                              'custnum'      => $custnum,
+                              'custpaybynum' => $p->{'custpaybynum'},
+                           })
+    or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  return { 'error' => $cust_payby->verify };
+  
+}
+
 sub delete_payby {
   my $p = shift;
 
