@@ -1056,6 +1056,13 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'business-onlinepayment-verification',
+    'section'     => 'billing',
+    'description' => 'Run a $1 authorization (followed by a void) to verify new credit card information.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'currency',
     'section'     => 'billing',
     'description' => 'Currency',
