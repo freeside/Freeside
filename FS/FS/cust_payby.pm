@@ -237,6 +237,11 @@ sub replace {
   {
     my $error = $self->check_payinfo_cardtype;
     return $error if $error;
+
+    if ( $conf->exists('business-onlinepayment-verification') ) {
+      $error = $self->verify;
+      return $error if $error;
+    }
   }
 
   local $SIG{HUP} = 'IGNORE';
@@ -489,7 +494,11 @@ sub check {
 
   }
 
-  ###
+  if ( ! $self->custpaybynum
+       && $conf->exists('business-onlinepayment-verification') ) {
+    $error = $self->verify;
+    return $error if $error;
+  }
 
   $self->SUPER::check;
 }
@@ -611,6 +620,30 @@ sub realtime_bop {
   }
 
   $self->cust_main->realtime_bop({
+    'method' => FS::payby->payby2bop( $self->payby ),
+    %opt,
+  });
+
+}
+
+=item verify 
+
+=cut
+
+sub verify {
+  my $self = shift;
+  return '' unless $self->payby =~ /^(CARD|DCRD)$/;
+
+  my %opt = ();
+
+  $opt{$_} = $self->$_() for qw( payinfo payname paydate );
+
+  if ( $self->locationnum ) {
+    my $cust_location = $self->cust_location;
+    $opt{$_} = $cust_location->$_() for qw( address1 address2 city state zip );
+  }
+
+  $self->cust_main->realtime_verify_bop({
     'method' => FS::payby->payby2bop( $self->payby ),
     %opt,
   });
