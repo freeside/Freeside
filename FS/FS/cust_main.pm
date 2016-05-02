@@ -1538,6 +1538,11 @@ sub replace {
   {
     my $error = $self->check_payinfo_cardtype;
     return $error if $error;
+
+    if ( $conf->exists('business-onlinepayment-verification') ) {
+      $error = $self->realtime_verify_bop({ 'method'=>'CC' });
+      return $error if $error;
+    }
   }
 
   return "Invoicing locale is required"

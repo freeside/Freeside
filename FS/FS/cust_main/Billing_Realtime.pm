@@ -1758,7 +1758,7 @@ sub realtime_verify_bop {
 
   my $ban = FS::banned_pay->ban_search(
     'payby'   => $bop_method2payby{'CC'},
-    'payinfo' => $options{payinfo},
+    'payinfo' => $options{payinfo} || $self->payinfo,
   );
   return "Banned credit card" if $ban && $ban->bantype ne 'warn';
 
@@ -1787,7 +1787,7 @@ sub realtime_verify_bop {
 
     if ( $options{method} eq 'CC' ) {
 
-      $content{card_number} = $options{payinfo};
+      $content{card_number} = $options{payinfo} || $self->payinfo;
       $paydate = exists($options{'paydate'})
                       ? $options{'paydate'}
                       : $self->paydate;
@@ -1860,8 +1860,8 @@ sub realtime_verify_bop {
     'paid'              => '1.00',
     '_date'             => '',
     'payby'             => $bop_method2payby{'CC'},
-    'payinfo'           => $options{payinfo},
-    'paymask'           => $options{paymask},
+    'payinfo'           => $options{payinfo} || $self->payinfo,
+    'paymask'           => $options{paymask} || $self->paymask,
     'paydate'           => $paydate,
     #'recurring_billing' => $content{recurring_billing},
     'pkgnum'            => $options{'pkgnum'},
