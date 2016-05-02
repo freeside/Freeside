@@ -73,14 +73,14 @@ sub realtime_cust_payby {
 =item realtime_collect [ OPTION => VALUE ... ]
 
 Attempt to collect the customer's current balance with a realtime credit 
-card, electronic check, or phone bill transaction (see realtime_bop() below).
+card or electronic check transaction (see realtime_bop() below).
 
 Returns the result of realtime_bop(): nothing, an error message, or a 
 hashref of state information for a third-party transaction.
 
 Available options are: I<method>, I<amount>, I<description>, I<invnum>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>, I<pkgnum>
 
-I<method> is one of: I<CC>, I<ECHECK> and I<LEC>.  If none is specified
+I<method> is one of: I<CC> or I<ECHECK>.  If none is specified
 then it is deduced from the customer record.
 
 If no I<amount> is specified, then the customer balance is used.
@@ -133,13 +133,13 @@ sub realtime_collect {
 
 =item realtime_bop { [ ARG => VALUE ... ] }
 
-Runs a realtime credit card, ACH (electronic check) or phone bill transaction
+Runs a realtime credit card or ACH (electronic check) transaction
 via a Business::OnlinePayment realtime gateway.  See
 L<http://420.am/business-onlinepayment> for supported gateways.
 
 Required arguments in the hashref are I<method>, and I<amount>
 
-Available methods are: I<CC>, I<ECHECK>, I<LEC>, and I<PAYPAL>
+Available methods are: I<CC>, I<ECHECK>, or I<PAYPAL>
 
 Available optional arguments are: I<description>, I<invnum>, I<apply>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>
 
@@ -358,7 +358,6 @@ sub _bop_content {
 my %bop_method2payby = (
   'CC'     => 'CARD',
   'ECHECK' => 'CHEK',
-  'LEC'    => 'LECB',
   'PAYPAL' => 'PPAL',
 );
 
@@ -575,8 +574,6 @@ sub realtime_bop {
                                  ? $options{'ss'}
                                  : $self->ss;
 
-    } elsif ( $options{method} eq 'LEC' ) {
-      $content{phone} = $options{payinfo};
     } else {
       die "unknown method ". $options{method};
     }
@@ -870,8 +867,8 @@ sub fake_bop {
 
 # item _realtime_bop_result CUST_PAY_PENDING, BOP_OBJECT [ OPTION => VALUE ... ]
 # 
-# Wraps up processing of a realtime credit card, ACH (electronic check) or
-# phone bill transaction.
+# Wraps up processing of a realtime credit card or ACH (electronic check)
+# transaction.
 
 sub _realtime_bop_result {
   my( $self, $cust_pay_pending, $transaction, %options ) = @_;
@@ -1167,8 +1164,8 @@ sub _realtime_bop_result {
 
 =item realtime_botpp_capture CUST_PAY_PENDING [ OPTION => VALUE ... ]
 
-Verifies successful third party processing of a realtime credit card,
-ACH (electronic check) or phone bill transaction via a
+Verifies successful third party processing of a realtime credit card or
+ACH (electronic check) transaction via a
 Business::OnlineThirdPartyPayment realtime gateway.  See
 L<http://420.am/business-onlinethirdpartypayment> for supported gateways.
 
@@ -1325,11 +1322,11 @@ sub default_payment_gateway {
 
 =item realtime_refund_bop METHOD [ OPTION => VALUE ... ]
 
-Refunds a realtime credit card, ACH (electronic check) or phone bill transaction
+Refunds a realtime credit card or ACH (electronic check) transaction
 via a Business::OnlinePayment realtime gateway.  See
 L<http://420.am/business-onlinepayment> for supported gateways.
 
-Available methods are: I<CC>, I<ECHECK> and I<LEC>
+Available methods are: I<CC> or I<ECHECK>
 
 Available options are: I<amount>, I<reasonnum>, I<paynum>, I<paydate>
 
@@ -1623,8 +1620,7 @@ sub realtime_refund_bop {
     $content{account_name} = $payname;
     $content{customer_org} = $self->company ? 'B' : 'I';
     $content{customer_ssn} = $self->ss;
-  } elsif ( $options{method} eq 'LEC' ) {
-    $content{phone} = $payinfo = $self->payinfo;
+
   }
 
   #then try refund
@@ -1695,6 +1691,301 @@ sub realtime_refund_bop {
   }
 
   ''; #no error
+
+}
+
+=item realtime_verify_bop [ OPTION => VALUE ... ]
+
+Runs an authorization-only transaction for $1 against this credit card (if
+successful, immediatly reverses the authorization).
+
+Returns the empty string if the authorization was sucessful, or an error
+message otherwise.
+
+I<payinfo>
+
+I<payname>
+
+I<paydate> specifies the expiration date for a credit card overriding the
+value from the customer record or the payment record. Specified as yyyy-mm-dd
+
+#The additional options I<address1>, I<address2>, I<city>, I<state>,
+#I<zip> are also available.  Any of these options,
+#if set, will override the value from the customer record.
+
+=cut
+
+#Available methods are: I<CC> or I<ECHECK>
+
+#some false laziness w/realtime_bop and realtime_refund_bop, not enough to make
+#it worth merging but some useful small subs should be pulled out
+sub realtime_verify_bop {
+  my $self = shift;
+
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+
+  my %options = ();
+  if (ref($_[0]) eq 'HASH') {
+    %options = %{$_[0]};
+  } else {
+    %options = @_;
+  }
+
+  if ( $DEBUG ) {
+    warn "$me realtime_verify_bop\n";
+    warn "  $_ => $options{$_}\n" foreach keys %options;
+  }
+
+  ###
+  # select a gateway
+  ###
+
+  my $payment_gateway =  $self->_payment_gateway( \%options );
+  my $namespace = $payment_gateway->gateway_namespace;
+
+  eval "use $namespace";  
+  die $@ if $@;
+
+  ###
+  # check for banned credit card/ACH
+  ###
+
+  my $ban = FS::banned_pay->ban_search(
+    'payby'   => $bop_method2payby{'CC'},
+    'payinfo' => $options{payinfo},
+  );
+  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
+
+  ###
+  # massage data
+  ###
+
+  my $bop_content = $self->_bop_content(\%options);
+  return $bop_content unless ref($bop_content);
+
+  my @invoicing_list = $self->invoicing_list_emailonly;
+  if ( $conf->exists('emailinvoiceautoalways')
+       || $conf->exists('emailinvoiceauto') && ! @invoicing_list
+       || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
+    push @invoicing_list, $self->all_emails;
+  }
+
+  my $email = ($conf->exists('business-onlinepayment-email-override'))
+              ? $conf->config('business-onlinepayment-email-override')
+              : $invoicing_list[0];
+
+  my $paydate = '';
+  my %content = ();
+
+  if ( $namespace eq 'Business::OnlinePayment' ) {
+
+    if ( $options{method} eq 'CC' ) {
+
+      $content{card_number} = $options{payinfo};
+      $paydate = exists($options{'paydate'})
+                      ? $options{'paydate'}
+                      : $self->paydate;
+      $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+      $content{expiration} = "$2/$1";
+
+      my $paycvv = exists($options{'paycvv'})
+                     ? $options{'paycvv'}
+                     : $self->paycvv;
+      $content{cvv2} = $paycvv
+        if length($paycvv);
+
+      my $paystart_month = exists($options{'paystart_month'})
+                             ? $options{'paystart_month'}
+                             : $self->paystart_month;
+
+      my $paystart_year  = exists($options{'paystart_year'})
+                             ? $options{'paystart_year'}
+                             : $self->paystart_year;
+
+      $content{card_start} = "$paystart_month/$paystart_year"
+        if $paystart_month && $paystart_year;
+
+      my $payissue       = exists($options{'payissue'})
+                             ? $options{'payissue'}
+                             : $self->payissue;
+      $content{issue_number} = $payissue if $payissue;
+
+    } elsif ( $options{method} eq 'ECHECK' ){
+
+      #nop for checks (though it shouldn't be called...)
+
+    } else {
+      die "unknown method ". $options{method};
+    }
+
+  } elsif ( $namespace eq 'Business::OnlineThirdPartyPayment' ) {
+    #move along
+  } else {
+    die "unknown namespace $namespace";
+  }
+
+  ###
+  # run transaction(s)
+  ###
+
+  warn "claiming mutex on customer ". $self->custnum. "\n" if $DEBUG > 1;
+  $self->select_for_update; #mutex ... just until we get our pending record in
+  warn "obtained mutex on customer ". $self->custnum. "\n" if $DEBUG > 1;
+
+  #the checks here are intended to catch concurrent payments
+  #double-form-submission prevention is taken care of in cust_pay_pending::check
+
+  #also check and make sure there aren't *other* pending payments for this cust
+
+  my @pending = qsearch('cust_pay_pending', {
+    'custnum' => $self->custnum,
+    'status'  => { op=>'!=', value=>'done' } 
+  });
+
+  return "A payment is already being processed for this customer (".
+         join(', ', map 'paypendingnum '. $_->paypendingnum, @pending ).
+         "); verification transaction aborted."
+    if scalar(@pending);
+
+  #okay, good to go, if we're a duplicate, cust_pay_pending will kick us out
+
+  my $cust_pay_pending = new FS::cust_pay_pending {
+    'custnum'           => $self->custnum,
+    'paid'              => '1.00',
+    '_date'             => '',
+    'payby'             => $bop_method2payby{'CC'},
+    'payinfo'           => $options{payinfo},
+    'paymask'           => $options{paymask},
+    'paydate'           => $paydate,
+    #'recurring_billing' => $content{recurring_billing},
+    'pkgnum'            => $options{'pkgnum'},
+    'status'            => 'new',
+    'gatewaynum'        => $payment_gateway->gatewaynum || '',
+    'session_id'        => $options{session_id} || '',
+    #'jobnum'            => $options{depend_jobnum} || '',
+  };
+  $cust_pay_pending->payunique( $options{payunique} )
+    if defined($options{payunique}) && length($options{payunique});
+
+  warn "inserting cust_pay_pending record for customer ". $self->custnum. "\n"
+    if $DEBUG > 1;
+  my $cpp_new_err = $cust_pay_pending->insert; #mutex lost when this is inserted
+  return $cpp_new_err if $cpp_new_err;
+
+  warn "inserted cust_pay_pending record for customer ". $self->custnum. "\n"
+    if $DEBUG > 1;
+  warn Dumper($cust_pay_pending) if $DEBUG > 2;
+
+  my $transaction = new $namespace( $payment_gateway->gateway_module,
+                                    $self->_bop_options(\%options),
+                                  );
+
+  $transaction->content(
+    'type'           => 'CC',
+    $self->_bop_auth(\%options),          
+    'action'         => 'Authorization Only',
+    'description'    => $options{'description'},
+    'amount'         => '1.00',
+    #'invoice_number' => $options{'invnum'},
+    'customer_id'    => $self->custnum,
+    %$bop_content,
+    'reference'      => $cust_pay_pending->paypendingnum, #for now
+    'callback_url'   => $payment_gateway->gateway_callback_url,
+    'cancel_url'     => $payment_gateway->gateway_cancel_url,
+    'email'          => $email,
+    %content, #after
+  );
+
+  $cust_pay_pending->status('pending');
+  my $cpp_pending_err = $cust_pay_pending->replace;
+  return $cpp_pending_err if $cpp_pending_err;
+
+  warn Dumper($transaction) if $DEBUG > 2;
+
+  unless ( $BOP_TESTING ) {
+    $transaction->test_transaction(1)
+      if $conf->exists('business-onlinepayment-test_transaction');
+    $transaction->submit();
+  } else {
+    if ( $BOP_TESTING_SUCCESS ) {
+      $transaction->is_success(1);
+      $transaction->authorization('fake auth');
+    } else {
+      $transaction->is_success(0);
+      $transaction->error_message('fake failure');
+    }
+  }
+
+  if ( $transaction->is_success() ) {
+
+    $cust_pay_pending->status('authorized');
+    my $cpp_authorized_err = $cust_pay_pending->replace;
+    return $cpp_authorized_err if $cpp_authorized_err;
+
+    my $auth = $transaction->authorization;
+    my $ordernum = $transaction->can('order_number')
+                   ? $transaction->order_number
+                   : '';
+
+    my $reverse = new $namespace( $payment_gateway->gateway_module,
+                                  $self->_bop_options(\%options),
+                                );
+
+    $reverse->content( 'action'        => 'Reverse Authorization',
+
+                       # B:OP
+                       'authorization' => $transaction->authorization,
+                       'order_number'  => $ordernum,
+
+                       # vsecure
+                       'result_code'   => $transaction->result_code,
+                       'txn_date'      => $transaction->txn_date,
+
+                       %content,
+                     );
+    $reverse->test_transaction(1)
+      if $conf->exists('business-onlinepayment-test_transaction');
+    $reverse->submit();
+
+    if ( $reverse->is_success ) {
+
+      $cust_pay_pending->status('done');
+      my $cpp_authorized_err = $cust_pay_pending->replace;
+      return $cpp_authorized_err if $cpp_authorized_err;
+
+    } else {
+
+      my $e = "Authorization successful but reversal failed, custnum #".
+              $self->custnum. ': '.  $reverse->result_code.
+              ": ". $reverse->error_message;
+      warn $e;
+      return $e;
+
+    }
+
+  }
+
+  ###
+  # Tokenize
+  ###
+
+  if ( $transaction->can('card_token') && $transaction->card_token ) {
+
+    if ( $options{'payinfo'} eq $self->payinfo ) {
+      $self->payinfo($transaction->card_token);
+      my $error = $self->replace;
+      if ( $error ) {
+        warn "WARNING: error storing token: $error, but proceeding anyway\n";
+      }
+    }
+
+  }
+
+  ###
+  # result handling
+  ###
+
+  $transaction->is_success() ? '' : $transaction->error_message();
 
 }
 
