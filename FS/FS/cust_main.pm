@@ -542,6 +542,16 @@ sub insert {
 
   }
 
+  # validate card (needs custnum already set)
+  if ( $self->payby =~ /^(CARD|DCRD)$/
+       && $conf->exists('business-onlinepayment-verification') ) {
+    $error = $self->realtime_verify_bop({ 'method'=>'CC' });
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   warn "  setting contacts\n"
     if $DEBUG > 1;
 
@@ -1540,6 +1550,20 @@ sub replace {
     return $error if $error;
 
     if ( $conf->exists('business-onlinepayment-verification') ) {
+      #need to standardize paydate for this, false laziness with check
+      my( $m, $y );
+      if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
+        ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
+      } elsif ( $self->paydate =~ /^19(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+        ( $m, $y ) = ( $2, "19$1" );
+      } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+        ( $m, $y ) = ( $3, "20$2" );
+      } else {
+        return "Illegal expiration date: ". $self->paydate;
+      }
+      $m = sprintf('%02d',$m);
+      $self->paydate("$y-$m-01");
+
       $error = $self->realtime_verify_bop({ 'method'=>'CC' });
       return $error if $error;
     }
