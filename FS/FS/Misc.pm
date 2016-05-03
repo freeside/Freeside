@@ -256,6 +256,13 @@ sub send_email {
   push @to, $options{bcc} if defined($options{bcc});
   # make sure 
   my @env_to = split(/\s*,\s*/, join(', ', @to));
+  # strip display-name from envelope addresses
+  foreach (@env_to) {
+    s/^\s*//;
+    s/\s*$//;
+    s/^(.*)\s*<(.*@.*)>$/$2/;
+  }
+
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
                               from      => $from,

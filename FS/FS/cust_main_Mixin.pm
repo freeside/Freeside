@@ -469,9 +469,8 @@ sub email_search_result {
       # 3.x: false laziness with msg_template.pm; on 4.x, all email notices
       # are generated from templates and this case goes away
       my @classes;
-      if ( $opt{'to_contact_classnum'} ) {
-        my $classnum = $opt{'to_contact_classnum'};
-        @classes = ref($classnum) ? @$classnum : split(',', $classnum);
+      if ( $to_contact_classnum ) {
+        @classes = ref($to_contact_classnum) ? @$to_contact_classnum : split(',', $to_contact_classnum);
       }
       if (!@classes) {
         @classes = ( 'invoice' );

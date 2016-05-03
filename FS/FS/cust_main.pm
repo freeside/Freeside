@@ -3367,9 +3367,7 @@ sub invoicing_list_emailonly_scalar {
 
 Returns a list of contacts (L<FS::contact> objects) for the customer. If
 a list of contact classnums is given, returns only contacts in those
-classes. If the pseudo-classnum 'invoice' is given, returns contacts that
-are marked as invoice destinations. If '0' is given, also returns contacts
-with no class.
+classes. If '0' is given, also returns contacts with no class.
 
 If no arguments are given, returns all contacts for the customer.
 
@@ -3379,18 +3377,15 @@ sub contact_list {
   my $self = shift;
   my $search = {
     table       => 'contact',
-    select      => 'contact.*, cust_contact.invoice_dest',
-    addl_from   => ' JOIN cust_contact USING (contactnum)',
-    extra_sql   => ' WHERE cust_contact.custnum = '.$self->custnum,
+    select      => 'contact.*',
+    extra_sql   => ' WHERE contact.custnum = '.$self->custnum,
   };
 
   my @orwhere;
   my @classnums;
   foreach (@_) {
-    if ( $_ eq 'invoice' ) {
-      push @orwhere, 'cust_contact.invoice_dest = \'Y\'';
-    } elsif ( $_ eq '0' ) {
-      push @orwhere, 'cust_contact.classnum is null';
+    if ( $_ eq '0' ) {
+      push @orwhere, 'contact.classnum is null';
     } elsif ( /^\d+$/ ) {
       push @classnums, $_;
     } else {
@@ -3399,7 +3394,7 @@ sub contact_list {
   }
 
   if (@classnums) {
-    push @orwhere, 'cust_contact.classnum IN ('.join(',', @classnums).')';
+    push @orwhere, 'contact.classnum IN ('.join(',', @classnums).')';
   }
   if (@orwhere) {
     $search->{extra_sql} .= ' AND (' .
@@ -3413,21 +3408,44 @@ sub contact_list {
 =item contact_list_email [ CLASSNUM, ... ]
 
 Same as L</contact_list>, but returns email destinations instead of contact
-objects.
+objects. Also accepts 'invoice' as an argument, in which case this will also
+return the invoice email address if any.
 
 =cut
 
 sub contact_list_email {
   my $self = shift;
-  my @contacts = $self->contact_list(@_);
-  my @emails;
-  foreach my $contact (@contacts) {
-    foreach my $contact_email ($contact->contact_email) {
-      push @emails,
-        $contact->firstlast . ' <' . $contact_email->emailaddress . '>';
+  my @classnums;
+  my $and_invoice;
+  foreach (@_) {
+    if (/^invoice$/) {
+      $and_invoice = 1;
+    } else {
+      push @classnums, $_;
     }
   }
-  @emails;
+  my %emails;
+  # if the only argument passed was 'invoice' then no classnums are
+  # intended, so skip this.
+  if ( @classnums ) {
+    my @contacts = $self->contact_list(@classnums);
+    foreach my $contact (@contacts) {
+      foreach my $contact_email ($contact->contact_email) {
+        # unlike on 4.x, we have a separate list of invoice email
+        # destinations.
+        # make sure they're not redundant with contact emails
+        my $dest = $contact->firstlast . ' <' . $contact_email->emailaddress . '>';
+        $emails{ $contact_email->emailaddress } = $dest;
+      }
+    }
+  }
+  if ( $and_invoice ) {
+    foreach my $email ($self->invoicing_list_emailonly) {
+      my $dest = $self->name_short . ' <' . $email . '>';
+      $emails{ $email } ||= $dest;
+    }
+  }
+  values %emails;
 }
 
 =item referral_custnum_cust_main

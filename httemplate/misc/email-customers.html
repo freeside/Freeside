@@ -46,10 +46,10 @@ should be used to set msgnum or from/subject/html_body cgi params
 <INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
 <INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
-<INPUT TYPE="hidden" NAME="to_contact_classnum" VALUE="<% join(',', @contact_classnum) %>">
 
 % if ( $cgi->param('action') eq 'send' ) { 
 
+    <INPUT TYPE="hidden" NAME="to_contact_classnum" VALUE="<% $cgi->param('to_contact_classnum') %>">
     <FONT SIZE="+2">Sending notice</FONT>
 
     <& /elements/progress-init.html,
@@ -62,6 +62,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 
 % } elsif ( $cgi->param('action') eq 'preview' ) {
 
+    <INPUT TYPE="hidden" NAME="to_contact_classnum" VALUE="<% join(',', @contact_classnum) %>">
     <FONT SIZE="+2">Preview notice</FONT>
 
 % }
@@ -149,7 +150,6 @@ Template:
          onchange => 'toggle(this)',
     &>
     <BR>
-% }
 % # select destination contact classes
 Send to contacts:
   <& /elements/checkboxes.html,
@@ -306,8 +306,8 @@ if ( $cgi->param('action') eq 'preview' ) {
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
 
-  # contact_class_X params
-  foreach my $param ( $cgi->multi_param ) {
+  # contact_class_X params in preview
+  foreach my $param ( $cgi->param ) {
     if ( $param =~ /^contact_class_(\w+)$/ ) {
       push @contact_classnum, $1;
       if ( $1 eq 'invoice' ) {
@@ -318,8 +318,10 @@ if ( $cgi->param('action') eq 'preview' ) {
       }
     }
   }
+
 }
 
+# and set up contact checkboxes for edit mode
 my @contact_checkboxes = (
   [ 'invoice' => { label => 'Invoice recipients' } ]
 );
