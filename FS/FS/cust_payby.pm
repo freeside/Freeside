@@ -636,7 +636,21 @@ sub verify {
 
   my %opt = ();
 
-  $opt{$_} = $self->$_() for qw( payinfo payname paydate );
+  # false laziness with check
+  my( $m, $y );
+  if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
+    ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
+  } elsif ( $self->paydate =~ /^19(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+    ( $m, $y ) = ( $2, "19$1" );
+  } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+    ( $m, $y ) = ( $3, "20$2" );
+  } else {
+    return "Illegal expiration date: ". $self->paydate;
+  }
+  $m = sprintf('%02d',$m);
+  $opt{paydate} = "$y-$m-01";
+
+  $opt{$_} = $self->$_() for qw( payinfo payname paycvv );
 
   if ( $self->locationnum ) {
     my $cust_location = $self->cust_location;
