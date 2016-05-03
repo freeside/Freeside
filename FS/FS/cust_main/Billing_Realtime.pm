@@ -1932,8 +1932,10 @@ sub realtime_verify_bop {
                                 );
 
     $reverse->content( 'action'        => 'Reverse Authorization',
+                       $self->_bop_auth(\%options),          
 
                        # B:OP
+                       'amount'        => '1.00',
                        'authorization' => $transaction->authorization,
                        'order_number'  => $ordernum,
 
