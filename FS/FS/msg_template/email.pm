@@ -294,19 +294,14 @@ sub prepare {
 
   } elsif ( $cust_main ) {
 
-    if ( $opt{'to_contact_classnum'} ) {
-
-      my $classnum = $opt{'to_contact_classnum'};
-      my @classes = ref($classnum) ? @$classnum : split(',', $classnum);
-      if ( !@classes ) {
-        # traditional behavior: send to invoice email destinations (only)
-        @classes = ( 'invoice' );
-      }
-      @to = $cust_main->contact_list_email(@classes);
-      # not guaranteed to produce contacts, but then customers aren't
-      # guaranteed to have email addresses on file. in that case, env_to
-      # will be null and sending this message will fail.
-    }
+    my $classnum = $opt{'to_contact_classnum'} || '';
+    my @classes = ref($classnum) ? @$classnum : split(',', $classnum);
+    # traditional behavior: send to all invoice recipients
+    @classes = ('invoice') unless @classes;
+    @to = $cust_main->contact_list_email(@classes);
+    # not guaranteed to produce contacts, but then customers aren't
+    # guaranteed to have email addresses on file. in that case, env_to
+    # will be null and sending this message will fail.
 
   } else {
     die 'no To: address or cust_main object specified';
