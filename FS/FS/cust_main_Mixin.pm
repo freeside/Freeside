@@ -380,6 +380,12 @@ HTML body
 
 Text body
 
+=item to_contact_classnum
+
+The customer contact class (or classes, as a comma-separated list) to send
+the message to. If unspecified, will be sent to any contacts that are marked
+as invoice destinations (the equivalent of specifying 'invoice').
+
 =back
 
 Returns an error message, or false for success.
@@ -403,6 +409,7 @@ sub email_search_result {
   my $subject = delete $param->{subject};
   my $html_body = delete $param->{html_body};
   my $text_body = delete $param->{text_body};
+  my $to_contact_classnum = delete $param->{to_contact_classnum};
   my $error = '';
 
   my $job = delete $param->{'job'}
@@ -455,10 +462,20 @@ sub email_search_result {
       %message = $msg_template->prepare(
         'cust_main' => $cust_main,
         'object'    => $obj,
+        'to_contact_classnum' => $to_contact_classnum,
       );
-    }
-    else {
-      my @to = $cust_main->invoicing_list_emailonly;
+
+    } else {
+      # 3.x: false laziness with msg_template.pm; on 4.x, all email notices
+      # are generated from templates and this case goes away
+      my @classes;
+      if ( $to_contact_classnum ) {
+        @classes = ref($to_contact_classnum) ? @$to_contact_classnum : split(',', $to_contact_classnum);
+      }
+      if (!@classes) {
+        @classes = ( 'invoice' );
+      }
+      my @to = $cust_main->contact_list_email(@classes);
       next if !@to;
 
       %message = (

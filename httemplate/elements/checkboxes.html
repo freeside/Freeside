@@ -27,7 +27,7 @@ Example:
 
 </%doc>
 
-<TABLE CELLSPACING=0 CELLPADDING=0>
+<TABLE CELLSPACING=0 CELLPADDING=0 <% $style %>>
 
 % unless ( $opt{'disable_links'} ) {
 
@@ -108,4 +108,8 @@ $opt{'error_checked_callback'} ||= sub {
   $cgi->param($opt{'element_name_prefix'}. $name );
 };
 
+my $style = '';
+if ($opt{'style'}) {
+  $style = 'STYLE="' . $opt{'style'} . '"';
+}
 </%init>

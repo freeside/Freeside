@@ -542,6 +542,16 @@ sub insert {
 
   }
 
+  # validate card (needs custnum already set)
+  if ( $self->payby =~ /^(CARD|DCRD)$/
+       && $conf->exists('business-onlinepayment-verification') ) {
+    $error = $self->realtime_verify_bop({ 'method'=>'CC' });
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   warn "  setting contacts\n"
     if $DEBUG > 1;
 
@@ -1540,6 +1550,20 @@ sub replace {
     return $error if $error;
 
     if ( $conf->exists('business-onlinepayment-verification') ) {
+      #need to standardize paydate for this, false laziness with check
+      my( $m, $y );
+      if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
+        ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
+      } elsif ( $self->paydate =~ /^19(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+        ( $m, $y ) = ( $2, "19$1" );
+      } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+        ( $m, $y ) = ( $3, "20$2" );
+      } else {
+        return "Illegal expiration date: ". $self->paydate;
+      }
+      $m = sprintf('%02d',$m);
+      $self->paydate("$y-$m-01");
+
       $error = $self->realtime_verify_bop({ 'method'=>'CC' });
       return $error if $error;
     }
@@ -3366,6 +3390,91 @@ sub invoicing_list_emailonly_scalar {
   warn "$me invoicing_list_emailonly_scalar called"
     if $DEBUG;
   join(', ', $self->invoicing_list_emailonly);
+}
+
+=item contact_list [ CLASSNUM, ... ]
+
+Returns a list of contacts (L<FS::contact> objects) for the customer. If
+a list of contact classnums is given, returns only contacts in those
+classes. If '0' is given, also returns contacts with no class.
+
+If no arguments are given, returns all contacts for the customer.
+
+=cut
+
+sub contact_list {
+  my $self = shift;
+  my $search = {
+    table       => 'contact',
+    select      => 'contact.*',
+    extra_sql   => ' WHERE contact.custnum = '.$self->custnum,
+  };
+
+  my @orwhere;
+  my @classnums;
+  foreach (@_) {
+    if ( $_ eq '0' ) {
+      push @orwhere, 'contact.classnum is null';
+    } elsif ( /^\d+$/ ) {
+      push @classnums, $_;
+    } else {
+      die "bad classnum argument '$_'";
+    }
+  }
+
+  if (@classnums) {
+    push @orwhere, 'contact.classnum IN ('.join(',', @classnums).')';
+  }
+  if (@orwhere) {
+    $search->{extra_sql} .= ' AND (' .
+                            join(' OR ', map "( $_ )", @orwhere) .
+                            ')';
+  }
+
+  qsearch($search);
+}
+
+=item contact_list_email [ CLASSNUM, ... ]
+
+Same as L</contact_list>, but returns email destinations instead of contact
+objects. Also accepts 'invoice' as an argument, in which case this will also
+return the invoice email address if any.
+
+=cut
+
+sub contact_list_email {
+  my $self = shift;
+  my @classnums;
+  my $and_invoice;
+  foreach (@_) {
+    if (/^invoice$/) {
+      $and_invoice = 1;
+    } else {
+      push @classnums, $_;
+    }
+  }
+  my %emails;
+  # if the only argument passed was 'invoice' then no classnums are
+  # intended, so skip this.
+  if ( @classnums ) {
+    my @contacts = $self->contact_list(@classnums);
+    foreach my $contact (@contacts) {
+      foreach my $contact_email ($contact->contact_email) {
+        # unlike on 4.x, we have a separate list of invoice email
+        # destinations.
+        # make sure they're not redundant with contact emails
+        my $dest = $contact->firstlast . ' <' . $contact_email->emailaddress . '>';
+        $emails{ $contact_email->emailaddress } = $dest;
+      }
+    }
+  }
+  if ( $and_invoice ) {
+    foreach my $email ($self->invoicing_list_emailonly) {
+      my $dest = $self->name_short . ' <' . $email . '>';
+      $emails{ $email } ||= $dest;
+    }
+  }
+  values %emails;
 }
 
 =item referral_custnum_cust_main
