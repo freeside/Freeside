@@ -1971,6 +1971,17 @@ sub realtime_verify_bop {
 
     }
 
+  } else { # is not success
+
+    # status is 'done' not 'declined', as in _realtime_bop_result
+    $cust_pay_pending->status('done');
+    $cust_pay_pending->statustext( $transaction->error_message || 'Unknown error' );
+    # could also record failure_status here,
+    #   but it's not supported by B::OP::vSecureProcessing...
+    #   need a B::OP module with (reverse) auth only to test it with
+    my $cpp_declined_err = $cust_pay_pending->replace;
+    return $cpp_declined_err if $cpp_declined_err;
+
   }
 
   ###
