@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_r $opt_p $opt_o $opt_v $opt_t $opt_s $opt_S $opt_z $opt_Z );
+use vars qw( $opt_r $opt_m $opt_p $opt_o $opt_v $opt_t $opt_s $opt_S $opt_z $opt_Z );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
