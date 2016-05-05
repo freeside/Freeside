@@ -522,6 +522,8 @@ sub realtime_bop {
           ? uc($options{'paytype'})
           : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
 
+      $content{company} = $self->company if $self->company;
+
       if ( $content{account_type} =~ /BUSINESS/i && $self->company ) {
         $content{account_name} = $self->company;
       } else {
