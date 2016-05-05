@@ -1,10 +1,10 @@
-% my $error = shift;
+% my $error = $_[0];
 % $m->notes('error', $error);
 <& /elements/header.html, mt("Error") &>
 
 % while (@_) {
 
-<P><FONT SIZE="+1" COLOR="#ff0000"><% $error |h %></FONT>
+<P><FONT SIZE="+1" COLOR="#ff0000"><% shift |h %></FONT>
 
 %}
 % $m->flush_buffer();
