@@ -67,11 +67,11 @@ FS::UID->install_callback( sub {
   @shells = $conf->config('shells');
   $usernamemin = $conf->config('usernamemin') || 2;
   $usernamemax = $conf->config('usernamemax');
-  $passwordmin = $conf->config('passwordmin'); # || 6;
-  #blank->6, keep 0
+  $passwordmin = $conf->config('passwordmin');
+  #blank->8, keep 0
   $passwordmin = ( defined($passwordmin) && $passwordmin =~ /\d+/ )
                    ? $passwordmin
-                   : 6;
+                   : 8;
   $passwordmax = $conf->config('passwordmax') || 12;
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
