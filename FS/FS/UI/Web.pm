@@ -346,7 +346,6 @@ sub cust_header {
     'Payment Type'             => 'cust_payby',
     'Current Balance'          => 'current_balance',
     'Agent Cust#'              => 'agent_custid',
-    'Advertising Source'       => 'referral',
   );
   $header2method{'Cust#'} = 'display_custnum'
     if $conf->exists('cust_main-default_agent_custid');
@@ -456,9 +455,6 @@ sub cust_sql_fields {
     push @extra_fields, FS::cust_main->balance_sql . " AS current_balance";
   }
 
-  push @extra_fields, 'part_referral.referral AS referral'
-    if grep { $_ eq 'referral' } @cust_fields;
-
   map("cust_main.$_", @fields), @location_fields, @extra_fields;
 }
 
@@ -521,10 +517,6 @@ sub join_cust_main {
 
     $sql .= ' LEFT JOIN cust_location ship_location'.
             " ON (ship_location.locationnum = $location_table.$locationnum) ";
-  }
-
-  if ( !@cust_fields or grep { $_ eq 'referral' } @cust_fields ) {
-    $sql .= ' LEFT JOIN part_referral ON (cust_main.refnum = part_referral.refnum) ';
   }
 
   $sql;
