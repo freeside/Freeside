@@ -1067,6 +1067,9 @@ sub _make_lines {
   my $recur_billed_currency = '';
   my $recur_billed_amount = 0;
   my $sdate;
+
+  my $override_quantity;
+
   # Conditions for billing the recurring fee:
   # - the package doesn't have a future start date
   # - and it's not suspended
@@ -1167,6 +1170,10 @@ sub _make_lines {
       $recur_billed_amount   = delete $param{'billed_amount'};
     }
 
+    if ( $param{'override_quantity'} ) {
+      $override_quantity = $param{'override_quantity'};
+    }
+
     if ( $increment_next_bill ) {
 
       my $next_bill;
@@ -1241,7 +1248,7 @@ sub _make_lines {
         }
     }
 
-  }
+  } # end of recurring fee
 
   warn "\$setup is undefined" unless defined($setup);
   warn "\$recur is undefined" unless defined($recur);
@@ -1312,7 +1319,7 @@ sub _make_lines {
         'unitrecur'             => sprintf('%.2f', $unitrecur),
         'recur_billed_currency' => $recur_billed_currency,
         'recur_billed_amount'   => $recur_billed_amount,
-        'quantity'              => $cust_pkg->quantity,
+        'quantity'              => $override_quantity || $cust_pkg->quantity,
         'details'               => \@details,
         'discounts'             => [ @setup_discounts, @recur_discounts ],
         'hidden'                => $part_pkg->hidden,
