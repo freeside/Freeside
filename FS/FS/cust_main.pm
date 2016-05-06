@@ -4600,7 +4600,10 @@ sub save_cust_payby {
 
   # compare to FS::cust_main::realtime_bop - check both to make sure working correctly
   if ( $payby eq 'CARD' &&
-       grep { $_ eq cardtype($opt{'payinfo'}) } $conf->config('cvv-save') ) {
+       ( (grep { $_ eq cardtype($opt{'payinfo'}) } $conf->config('cvv-save')) 
+         || $conf->exists('business-onlinepayment-verification') 
+       )
+  ) {
     $new->set( 'paycvv' => $opt{'paycvv'} );
   } else {
     $new->set( 'paycvv' => '');
