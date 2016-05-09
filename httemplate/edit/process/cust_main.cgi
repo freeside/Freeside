@@ -76,8 +76,8 @@ if ( ($cgi->param('same') || '') eq 'Y' ) {
 # but explicitly avoid setting ship_ fields
 
 my $new = new FS::cust_main ( {
-  map { ( $_, scalar($cgi->param($_)) ) } (fields('cust_main')),
-  map { ( "ship_$_", '' ) } (FS::cust_main->location_fields)
+  (map { ( $_, scalar($cgi->param($_)) ) } (fields('cust_main'))),
+  (map { ( "ship_$_", '' ) } (FS::cust_main->location_fields))
 } );
 
 warn Dumper( $new ) if $DEBUG > 1;
