@@ -700,12 +700,20 @@ sub address2search {
       or errorpage(emt("Illegal address2"));
   my $address2 = $1;
 
-  push @cust_main, qsearch( 'cust_main',
-                            { 'address2' => { 'op'    => 'ILIKE',
-                                              'value' => $address2 } } );
-  push @cust_main, qsearch( 'cust_main',
-                            { 'ship_address2' => { 'op'    => 'ILIKE',
-                                                   'value' => $address2 } } );
+  # matching at the start or end of an address, but not in the middle
+  my @where;
+  foreach my $toggle (0,1) {
+    push @where, 'LOWER(cust_location.address2) LIKE LOWER('
+                 . dbh->quote($toggle ? $address2 . '%' : '%' . $address2)
+                 . ')';
+  }
+
+  push @cust_main, qsearch({
+    'debug'     => 1,
+    'table'     => 'cust_main',
+    'addl_from' => 'JOIN cust_location ON (cust_location.locationnum IN (cust_main.bill_locationnum, cust_main.ship_locationnum))',
+    'extra_sql' => 'WHERE ' . join(' OR ',@where),
+  });
 
   \@cust_main;
 }
