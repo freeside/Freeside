@@ -18,12 +18,11 @@ use FS::cdr qw(_cdr_date_parser_maker);
         'src',          # caller
         'dst',          # called
         skip(2),        # reason
-			# call id
+                        # call id
         _cdr_date_parser_maker('startdate'),       # time
         'billsec',      # duration
-        skip(3),        # ringtime
-                        # status
-                        # resller_charge
+        skip(2),        # ringtime
+                        # reseller_charge
        'upstream_price',# customer_charge
   ],
 );
