@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use FS::Misc::Getopt;
+use FS::Record qw(qsearch qsearchs dbh);
+
+getopts('cpifXr:');
+my $dbh = dbh;
+$FS::UID::AutoCommit = 0;
+
+sub usage() {
+  "Usage: bulk_void  -s start -e end
+                  -r void_reason
+                  { -c | -p | -i }
+                  [ -X ]
+                  <user>
+-s, -e: date range (required)
+-r: void reason text (required)
+-c, -p, -i, -f: void credits, payments, invoices
+-X: commit changes
+";
+}
+
+if (!$opt{start} or !$opt{end} or !$opt{r}) {
+  die usage;
+}
+
+print "DRY RUN--changes will not be committed.\n" unless $opt{X};
+
+my $date = " WHERE _date >= $opt{start} AND _date <= $opt{end}";
+
+my %tables = (
+  c => 'cust_credit',
+  p => 'cust_pay',
+  i => 'cust_bill',
+);
+
+my $reason = $opt{r};
+
+foreach my $k (keys %tables) {
+  next unless $opt{$k};
+  my $table = $tables{$k};
+  debug("$table:");
+  my $done_count = 0;
+  my $error_count = 0;
+
+  my $cursor = FS::Cursor->new({
+    table     => $table,
+    extra_sql => $date,
+  });
+  my $error;
+  while (my $record = $cursor->fetch) {
+    $error = $record->void($reason);
+    if ( $error ) {
+      $error = "$table #" . $record->get($record->primary_key) . ": $error";
+      print "$error\n";
+      $error_count++;
+      if ( $opt{X} ) {
+        $dbh->rollback;
+        exit(1);
+      }
+    } else {
+      $done_count++;
+    }
+  }
+  print " $table voided: $done_count\n errors: $error_count\n";
+}
+
+if ( $opt{X} ) {
+  $dbh->commit;
+  print "Committed changes.\n";
+} else {
+  $dbh->rollback;
+  print "Reverted changes.\n";
+}
+
