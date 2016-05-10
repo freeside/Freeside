@@ -6,13 +6,10 @@
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cgi->param('custnum') |h %>">
 
-% my @sched_item = qsearch('sched_item', { 'disabled' => '', });
-% my @username = map $_->access_user->username, @sched_item;
-% foreach my $username (@username) { 
-  <INPUT TYPE="hidden" NAME="username" VALUE="<% $username |h %>">
-% }
-
-Length: 
+<TABLE>
+<TR>
+<TD STYLE="text-align: right">Length:</TD>
+<TD>
 <SELECT NAME="LengthMin">
 %  for ( my $hours = .5; $hours < 10.5; $hours += .5 ) {
 %    my $min = $hours * 60;
@@ -21,9 +18,26 @@ Length:
      ><% $hours %> hour<% $hours > 1 ? 's' : '' %>
 %  }
 </SELECT>
-<BR>
-<BR>
+</TD>
+</TR>
 
+% my @sched_item = qsearch('sched_item', { 'disabled' => '', });
+% my @username = map $_->access_user->username, @sched_item;
+
+<TR>
+<TD STYLE="text-align: right">Installer:</TD>
+<TD>
+<SELECT NAME="username" ID="username_select" MULTIPLE>
+% foreach my $username (@username) { 
+  <OPTION SELECTED><% $username |h %></OPTION>
+% }
+</SELECT>
+</TD>
+</TR>
+
+</TABLE>
+
+<BR>
 <INPUT TYPE="submit" VALUE="Schedule appointment">
 
 </FORM>
