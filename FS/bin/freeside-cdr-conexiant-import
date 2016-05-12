@@ -1,0 +1,127 @@
+#!/usr/bin/perl
+
+use strict;
+
+use Cpanel::JSON::XS;
+use Getopt::Long;
+use LWP::UserAgent;
+use MIME::Base64;
+use Net::HTTPS::Any qw(https_post https_get);
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::cdr;
+use FS::cdr_batch;
+
+sub usage {
+"Usage:
+freeside-cdr-conexiant-import -h -u username -p apikey [-v] freesideuser
+
+Downloads any existing CDR files with the BilledCallsOnly flag and 
+imports records that have not been imported yet.  Silently skips 
+records that have already been imported.
+";
+}
+
+# should really be using a module for this
+`which unzip` or die "can't find unzip executable";
+
+my ($username,$password,$verbose);
+GetOptions(
+  "password=s"  => \$password,
+  "username=s"  => \$username,
+  "verbose"     => \$verbose,
+);
+
+my $fsuser = $ARGV[-1];
+
+die usage() unless $fsuser;
+
+adminsuidsetup($fsuser);
+
+my ( $page, $response, %reply_headers ) = https_post(
+  'host'    => 'api.conexiant.net',
+  'port'    => '443',
+  'path'    => '/v1/Cdrs/SearchCdrsDownloads',
+  'headers' => {
+    'Authorization' => 'Basic ' . MIME::Base64::encode("$username:$password",'')
+  },
+  'content' => '{}',
+);
+
+die "Bad response from conexiant server: $response"
+  unless $response =~ /^200/;
+
+my $result = decode_json($page);
+
+die "Error from conexiant: " . ($result->{'ErrorInfo'} || 'No error message')
+  unless $result->{'Success'};
+
+my $files = $result->{'Data'}->{'Result'};
+
+die "Unexpected results from conexiant, not an array"
+  unless ref($files) eq 'ARRAY';
+
+my $dir = $FS::UID::cache_dir. "/cache.". $FS::UID::datasrc;
+my $ua  = LWP::UserAgent->new;
+
+# Download files are created automatically at regular frequent intervals,
+# but they contain overlapping data.
+#
+# FS::cdr::conexiant automatically skips previously imported cdrs,
+# though if it does so for all records in a file, 
+# then batch_import thinks the file is empty
+foreach my $file (@$files) {
+  next unless $file->{'BilledCallsOnly'};
+  my $cdrbatch = 'conexiant-' . $file->{'Identifier'};
+  # files that were "empty" will unfortunately be re-downloaded,
+  # but the alternative is to leave an excess of empty batches in system,
+  # and re-downloading is harmless (all files expire after 48 hours anyway)
+  if (qsearchs('cdr_batch',{ 'cdrbatch' => $cdrbatch })) {
+    print "$cdrbatch already imported\n" if $verbose;
+    next;
+  }
+  if ($verbose) {
+    print "Downloading $cdrbatch\n".
+          "  Created ".$file->{'CreatedOn'}."\n".
+          "  Start   ".$file->{'QueryStart'}."\n".
+          "  End     ".$file->{'QueryEnd'}."\n".
+          "  Link    ".$file->{'ValidLink'}."\n";
+  }
+  my $zfh = new File::Temp( TEMPLATE => 'conexiant.XXXXXXXX',
+                           SUFFIX   => '.zip',
+                           DIR      => $dir,
+                         )
+    or die "can't open temporary file to store download: $!\n";
+  my $cfh = new File::Temp( TEMPLATE => 'conexiant.XXXXXXXX',
+                           SUFFIX   => '.csv',
+                           DIR      => $dir,
+                         )
+    or die "can't open temporary file to unzip download: $!\n";
+  # yeah, these files ain't secured in any way
+  my $response = $ua->get($file->{'ValidLink'}, ':content_file' => $zfh->filename);
+  unless ($response->is_success) {
+    die "Error downloading $cdrbatch: ".$response->status_line;
+  }
+  my $zfilename = $zfh->filename;
+  print $cfh `unzip -p $zfilename 'Conexiant Cdrs.csv'`;
+  seek($cfh,0,0);
+  print "Importing batch $cdrbatch\n" if $verbose;
+  my $error = FS::cdr::batch_import({
+    'batch_namevalue' => $cdrbatch,
+    'file'            => $cfh->filename,
+    'format'          => 'conexiant'
+  });
+  if ($error eq 'Empty file!') {
+    print "File contains no new cdrs, no batch created\n" if $verbose;
+    $error = '';
+  } elsif ($verbose && !$error) {
+    print "File successfully imported\n";
+  }
+  die "Error importing $cdrbatch: $error" if $error;
+}
+
+exit;
+
+
+
