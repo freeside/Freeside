@@ -174,7 +174,7 @@ sub cutoff_day {
   my $cust_pkg = shift;
   if ( $self->option('sync_bill_date',1) ) {
     my $next_bill = $cust_pkg->cust_main->next_bill_date;
-    if ( defined($next_bill) ) {
+    if ( $next_bill ) {
       # careful here. if the prorate calculation is going to round to 
       # the nearest day, this needs to always return the same result
       if ( $self->option('prorate_round_day', 1) ) {
