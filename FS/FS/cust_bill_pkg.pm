@@ -1101,17 +1101,34 @@ sub cust_bill_pkg_tax_Xlocation {
 
 =item recur_show_zero
 
+Whether to show a zero recurring amount. This is true if the package or its
+definition has the recur_show_zero flag, and the recurring fee is actually
+zero for this period.
+
 =cut
 
-sub recur_show_zero { shift->_X_show_zero('recur'); }
-sub setup_show_zero { shift->_X_show_zero('setup'); }
-
-sub _X_show_zero {
+sub recur_show_zero {
   my( $self, $what ) = @_;
 
-  return 0 unless $self->$what() == 0 && $self->pkgnum;
+  return 0 unless $self->get('recur') == 0 && $self->pkgnum;
 
-  $self->cust_pkg->_X_show_zero($what);
+  $self->cust_pkg->_X_show_zero('recur');
+}
+
+=item setup_show_zero
+
+Whether to show a zero setup charge. This requires the package or its
+definition to have the setup_show_zero flag, but it also returns false if
+the package's setup date is before this line item's start date.
+
+=cut
+
+sub setup_show_zero {
+  my $self = shift;
+  return 0 unless $self->get('setup') == 0 && $self->pkgnum;
+  my $cust_pkg = $self->cust_pkg;
+  return 0 if ( $self->sdate || 0 ) > ( $cust_pkg->setup || 0 );
+  return $cust_pkg->_X_show_zero('setup');
 }
 
 =item credited [ BEFORE, AFTER, OPTIONS ]
