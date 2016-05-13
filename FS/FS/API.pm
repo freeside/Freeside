@@ -65,6 +65,10 @@ Amount paid
 
 Option date for payment
 
+=item order_number
+
+Optional order number
+
 =back
 
 Example:
@@ -77,6 +81,7 @@ Example:
 
     #optional
     '_date'   => 1397977200, #UNIX timestamp
+    'order_number' => '12345',
   );
 
   if ( $result->{'error'} ) {
