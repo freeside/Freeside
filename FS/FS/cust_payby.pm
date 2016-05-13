@@ -831,6 +831,9 @@ sub search_sql {
       ' LEFT JOIN cust_location AS '.$pre.'location '.
       'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
   }
+  # always make referral available in results
+  #   (maybe we should be using FS::UI::Web::join_cust_main instead?)
+  $addl_from .= ' LEFT JOIN (select refnum, referral from part_referral) AS part_referral_x ON (cust_main.refnum = part_referral_x.refnum) ';
 
   my $count_query = "SELECT COUNT(*) FROM cust_payby $addl_from $extra_sql";
 
