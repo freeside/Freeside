@@ -196,10 +196,6 @@ sub replace {
               ? shift
               : $self->replace_old;
 
-  if ( length($old->paycvv) && $self->paycvv =~ /^\s*[\*x]*\s*$/ ) {
-    $self->paycvv($old->paycvv);
-  }
-
   if ( $self->payby =~ /^(CARD|DCRD)$/
        && (    $self->payinfo =~ /xx/
             || $self->payinfo =~ /^\s*N\/A\s+\(tokenized\)\s*$/
@@ -219,6 +215,17 @@ sub replace {
     $new_account = $old_account if $new_account =~ /xx/;
     $new_aba     = $old_aba     if $new_aba     =~ /xx/;
     $self->payinfo($new_account.'@'.$new_aba);
+  }
+
+  # don't preserve paycvv if it was passed blank and payinfo changed
+  unless ( $self->payby =~ /^(CARD|DCRD)$/
+       && $old->payinfo ne $self->payinfo
+       && $old->paymask ne $self->paymask
+       && $self->paycvv =~ /^\s*$/ )
+  {
+    if ( length($old->paycvv) && $self->paycvv =~ /^\s*[\*x]*\s*$/ ) {
+      $self->paycvv($old->paycvv);
+    }
   }
 
   local($ignore_expired_card) = 1
@@ -831,6 +838,9 @@ sub search_sql {
       ' LEFT JOIN cust_location AS '.$pre.'location '.
       'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
   }
+  # always make referral available in results
+  #   (maybe we should be using FS::UI::Web::join_cust_main instead?)
+  $addl_from .= ' LEFT JOIN (select refnum, referral from part_referral) AS part_referral_x ON (cust_main.refnum = part_referral_x.refnum) ';
 
   my $count_query = "SELECT COUNT(*) FROM cust_payby $addl_from $extra_sql";
 
