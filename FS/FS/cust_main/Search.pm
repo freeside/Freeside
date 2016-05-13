@@ -620,10 +620,6 @@ listref (list returned by FS::UI::Web::parse_lt_gt($cgi, 'current_balance'))
 
 bool
 
-=item select_referral
-
-bool, join to part_referral and select part_referral.referral
-
 =back
 
 =cut
@@ -1031,13 +1027,6 @@ sub search {
   my(@extra_headers) = ();
   my(@extra_fields)  = ();
 
-  if ($params->{'select_referral'}) {
-    $addl_from .= ' LEFT JOIN part_referral ON ( cust_main.refnum = part_referral.refnum ) ';
-    push @select, 'part_referral.referral';
-    push @extra_headers, 'Advertising Source';
-    push @extra_fields, 'referral';
-  }
-    
   if ($params->{'flattened_pkgs'}) {
 
     #my $pkg_join = '';
