@@ -2152,6 +2152,7 @@ sub batch_import {
   #my $job     = $param->{job};
   my $line;
   my $imported = 0;
+  my $unique_skip = 0; #lines skipped because they're already in the system
   my( $last, $min_sec ) = ( time, 5 ); #progressbar foo
   while (1) {
 
@@ -2254,6 +2255,7 @@ sub batch_import {
       }
       last if exists( $param->{skiprow} );
     }
+    $unique_skip++ if $param->{unique_skip}; #line is already in the system
     next if exists( $param->{skiprow} );
 
     if ( $preinsert_callback ) {
@@ -2299,7 +2301,8 @@ sub batch_import {
 
   unless ( $imported || $param->{empty_ok} ) {
     $dbh->rollback if $oldAutoCommit;
-    return "Empty file!";
+    # freeside-cdr-conexiant-import is sensitive to the text of this message
+    return $unique_skip ? "All records in file were previously imported" : "Empty file!";
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
