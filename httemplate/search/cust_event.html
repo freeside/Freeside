@@ -157,7 +157,7 @@ die "access denied"
               || $cgi->param('pkgnum')  =~ /^(\d+)$/
             );
 
-my @statuses = $cgi->multi_param('event_status');
+my @statuses = $cgi->param('event_status');
 my $title = 'Billing events';
 if ( $statuses[0] eq 'failed' and !defined($statuses[1]) ) {
   # tweak the title if we're showing only failed events
