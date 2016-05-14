@@ -60,7 +60,7 @@ sub is_password_allowed {
 
   # basic checks using Data::Password;
   # options for Data::Password
-  $DICTIONARY = 4;   # minimum length of disallowed words
+  $DICTIONARY = 0;   # minimum length of disallowed words, false value disables dictionary checking
   $MINLEN = $conf->config('passwordmin') || 6;
   $MAXLEN = $conf->config('passwordmax') || 8;
   $GROUPS = 4;       # must have all 4 'character groups': numbers, symbols, uppercase, lowercase
@@ -70,9 +70,23 @@ sub is_password_allowed {
   # # lists of disallowed words
   # @DICTIONARIES = qw( /usr/share/dict/web2 /usr/share/dict/words /usr/share/dict/linux.words );
 
+  # first, no dictionary checking but require 4 char groups
   my $error = IsBadPassword($password);
-  $error = 'must contain at least one each of numbers, symbols, and lowercase and uppercase letters'
-    if $error eq 'contains less than 4 character groups'; # avoid confusion
+
+  # but they can get away with 3 char groups, so long as they're not using a word
+  if ($error eq 'contains less than 4 character groups') {
+    $DICTIONARY = 4; # default from Data::Password is 5
+    $GROUPS = 3;
+    $error = IsBadPassword($password);
+    # take note--we never actually report dictionary word errors;
+    # 4 char groups is the rule, 3 char groups and no dictionary words is an acceptable exception
+    $error = 'should contain at least one each of numbers, symbols, lowercase and uppercase letters'
+      if $error;
+  }
+
+  # maybe also at some point add an exception for any passwords of sufficient length,
+  # see https://xkcd.com/936/
+
   $error = 'Invalid password - ' . $error if $error;
   return $error if $error;
 
