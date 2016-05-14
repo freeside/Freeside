@@ -15,9 +15,10 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     skip(3),               #LookupError,Direction,LegType
     sub {                  #CallId
       my($cdr,$value,$conf,$param) = @_;
+      #filter out already-imported cdrs here
       if (qsearchs('cdr',{'uniqueid' => $value})) {
         $param->{'skiprow'} = 1;
-        $param->{'empty_ok'} = 1;
+        $param->{'unique_skip'} = 1; #tell batch_import why we're skipping
       } else {
         $cdr->uniqueid($value);
       }

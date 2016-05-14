@@ -2463,7 +2463,7 @@ sub tables_hashref {
         'gatewaynum',      'int', 'NULL',      '', '', '', # payment_gateway FK
         'processor',   'varchar', 'NULL', $char_d, '', '', # module name
         'auth',        'varchar', 'NULL',      16, '', '', # CC auth number
-        'order_number','varchar', 'NULL', $char_d, '', '', # transaction number
+        'order_number','varchar', 'NULL', 256, '', '', # transaction number
       ],
       'primary_key'  => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
@@ -2517,7 +2517,7 @@ sub tables_hashref {
         'gatewaynum',      'int', 'NULL',      '', '', '', # payment_gateway FK
         'processor',   'varchar', 'NULL', $char_d, '', '', # module name
         'auth',        'varchar', 'NULL',      16, '', '', # CC auth number
-        'order_number','varchar', 'NULL', $char_d, '', '', # transaction number
+        'order_number','varchar', 'NULL', 256, '', '', # transaction number
 
         #void fields
         'void_date',  @date_type,                  '', '', 

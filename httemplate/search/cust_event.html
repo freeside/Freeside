@@ -157,7 +157,7 @@ die "access denied"
               || $cgi->param('pkgnum')  =~ /^(\d+)$/
             );
 
-my @statuses = $cgi->multi_param('event_status');
+my @statuses = $cgi->param('event_status');
 my $title = 'Billing events';
 if ( $statuses[0] eq 'failed' and !defined($statuses[1]) ) {
   # tweak the title if we're showing only failed events
@@ -181,12 +181,16 @@ $search{'ending'}    = $ending;
 my $where = ' WHERE '. FS::cust_event->search_sql_where( \%search );
 
 my $join = FS::cust_event->join_sql() .
+  # warning: does not show the true service address for package events.
+  # the query to do that would be painfully slow.
   'LEFT JOIN cust_location bill_location '.
   'ON (cust_main.bill_locationnum = bill_location.locationnum) '.
   'LEFT JOIN cust_location ship_location '.
-  'ON (cust_main.ship_locationnum = ship_location.locationnum)';
-  # warning: does not show the true service address for package events.
-  # the query to do that would be painfully slow.
+  'ON (cust_main.ship_locationnum = ship_location.locationnum)'.
+  # include link to referral in case it's in cust-fields
+  #   (maybe we should be using FS::UI::Web::join_cust_main instead?)
+  'LEFT JOIN (select refnum, referral from part_referral) AS part_referral_x '.
+  'ON (cust_main.refnum = part_referral_x.refnum) ';
 
 my $sql_query = {
   'table'     => 'cust_event',

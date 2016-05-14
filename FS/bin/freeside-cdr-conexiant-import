@@ -68,13 +68,11 @@ my $ua  = LWP::UserAgent->new;
 # Download files are created automatically at regular frequent intervals,
 # but they contain overlapping data.
 #
-# FS::cdr::conexiant automatically skips previously imported cdrs,
-# though if it does so for all records in a file, 
-# then batch_import thinks the file is empty
+# FS::cdr::conexiant automatically skips previously imported cdrs
 foreach my $file (@$files) {
   next unless $file->{'BilledCallsOnly'};
   my $cdrbatch = 'conexiant-' . $file->{'Identifier'};
-  # files that were "empty" will unfortunately be re-downloaded,
+  # files that contained no new records will unfortunately be re-downloaded,
   # but the alternative is to leave an excess of empty batches in system,
   # and re-downloading is harmless (all files expire after 48 hours anyway)
   if (qsearchs('cdr_batch',{ 'cdrbatch' => $cdrbatch })) {
@@ -113,6 +111,9 @@ foreach my $file (@$files) {
     'format'          => 'conexiant'
   });
   if ($error eq 'Empty file!') {
+    print "File contains no records\n" if $verbose;
+    $error = '';
+  } elsif ($error eq "All records in file were previously imported") {
     print "File contains no new cdrs, no batch created\n" if $verbose;
     $error = '';
   } elsif ($verbose && !$error) {
