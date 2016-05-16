@@ -149,7 +149,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
 #                                    'type' => 'checkbox',
 #                                  },
 
-    'international_prefix' => { 'name'    => 'Destination prefix for international CDR records',
+    'international_prefix' => { 'name'    => 'Destination prefix for international CDR records (or "none" for no prefix)',
                                 'default' => '011',
                               },
 
