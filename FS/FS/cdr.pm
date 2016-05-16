@@ -546,6 +546,9 @@ sub parse_number {
 
   my $field = $options{column} || 'dst';
   my $intl = $options{international_prefix} || '011';
+  # Still, don't break anyone's CDR rating if they have an empty string in
+  # there. Require an explicit statement that there's no prefix.
+  $intl = '' if lc($intl) eq 'none';
   my $countrycode = '';
   my $number = $self->$field();
 
