@@ -24,9 +24,9 @@ use FS::part_pkg::flat;
                           'type' => 'checkbox',
                         },
     'prorate_round_day'=> {
-                          'name' => 'Round the prorated period to the nearest '.
-                                    'full day',
-                          'type' => 'checkbox',
+                          'name' => 'Round the prorated period',
+                          'type' => 'select',
+                          'select_options' => \%FS::part_pkg::prorate_Mixin::prorate_round_day_opts,
                         },
     'prorate_defer_bill'=> {
                         'name' => 'Defer the first bill until the billing day',
