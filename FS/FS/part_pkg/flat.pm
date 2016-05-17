@@ -58,8 +58,9 @@ tie my %contract_years, 'Tie::IxHash', (
                         },
     'prorate_round_day' => {
                           'name' => 'When synchronizing, round the prorated '.
-                                    'period to the nearest full day',
-                          'type' => 'checkbox',
+                                    'period',
+                          'type' => 'select',
+                          'select_options' => \%FS::part_pkg::prorate_Mixin::prorate_round_day_opts,
                         },
     'add_full_period' => { 'disabled' => 1 }, # doesn't make sense with sync?
 

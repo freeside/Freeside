@@ -6,6 +6,13 @@ use Time::Local qw( timelocal timelocal_nocheck );
 use Date::Format qw( time2str );
 use List::Util qw( min );
 
+tie our %prorate_round_day_opts, 'Tie::IxHash',
+  0   => 'no',
+  1   => 'to the nearest day',
+  2   => 'up to a full day',
+  3   => 'down to a full day',
+;
+
 %info = ( 
   'disabled'  => 1,
   # define all fields that are referenced in this code
@@ -16,8 +23,9 @@ use List::Util qw( min );
                 'type' => 'checkbox',
     },
     'prorate_round_day' => { 
-                'name' => 'When prorating, round to the nearest full day',
-                'type' => 'checkbox',
+                'name' => 'When prorating, round the prorated period',
+                'type' => 'select',
+                'select_options' => \%prorate_round_day_opts,
     },
     'prorate_defer_bill' => {
                 'name' => 'When prorating, defer the first bill until the '.
@@ -219,7 +227,8 @@ sub _endpoints {
 
   # only works for freq >= 1 month; probably can't be fixed
   my ($sec, $min, $hour, $mday, $mon, $year) = (localtime($mnow))[0..5];
-  if( $self->option('prorate_round_day',1) ) {
+  my $rounding_mode = $self->option('prorate_round_day',1);
+  if ( $rounding_mode == 1 ) {
     # If the time is 12:00-23:59, move to the next day by adding 18 
     # hours to $mnow.  Because of DST this can end up from 05:00 to 18:59
     # but it's always within the next day.
@@ -228,6 +237,19 @@ sub _endpoints {
     ($mday,$mon,$year) = (localtime($mnow))[3..5];
     # Then set $mnow to midnight on that day.
     $mnow = timelocal(0,0,0,$mday,$mon,$year);
+  } elsif ( $rounding_mode == 2 ) {
+    # Move the time back to midnight. This increases the length of the
+    # prorate interval.
+    $mnow = timelocal(0,0,0,$mday,$mon,$year);
+    ($mday,$mon,$year) = (localtime($mnow))[3..5];
+  } elsif ( $rounding_mode == 3 ) {
+    # If the time is after midnight, move it forward to the next midnight.
+    # This decreases the length of the prorate interval.
+    if ( $sec > 0 or $min > 0 or $hour > 0 ) {
+      # move to one second before midnight, then tick forward
+      $mnow = timelocal(59,59,23,$mday,$mon,$year) + 1;
+      ($mday,$mon,$year) = (localtime($mnow))[3..5];
+    }
   }
   my $mend;
   my $mstart;
