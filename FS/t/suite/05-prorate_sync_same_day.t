@@ -54,6 +54,7 @@ foreach my $prorate_mode (1, 2, 3) {
       last          => 'Customer',
       first         => 'Sync bill date',
       invoice_email => 'newcustomer@fake.freeside.biz',
+      payby         => 'BILL',
       bill_location => $location,
       ship_location => $location,
   });
