@@ -3870,9 +3870,12 @@ sub tables_hashref {
       'unique'       => [],
       'index'        => [ ['svcnum', 'transaction_id'] ],
       'foreign_keys' => [
-                          { columns    => [ 'svcnum' ],
-                            table      => 'svc_acct', #'cust_svc',
-                          },
+                          # problems w/deleted services, and as per below, this
+                          # is our internal hack, not a customer-facing feature
+                          #{ columns    => [ 'svcnum' ],
+                          #  table      => 'svc_acct', #'cust_svc',
+                          #},
+
                           # 1. RT tables aren't part of our data structure, so
                           #     we can't make sure Queue is created already
                           # 2. This is our internal hack for time tracking, not
