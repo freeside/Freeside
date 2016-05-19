@@ -1772,7 +1772,7 @@ sub check {
     || $self->ut_flag('message_noemail')
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
     || $self->ut_currencyn('currency')
-    || $self->ut_alphan('po_number')
+    || $self->ut_textn('po_number')
     || $self->ut_enum('complimentary', [ '', 'Y' ])
     || $self->ut_flag('invoice_ship_address')
     || $self->ut_flag('invoice_dest')
