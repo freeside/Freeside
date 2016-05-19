@@ -160,6 +160,29 @@ sub password_equals {
 
 }
 
+sub _upgrade_schema {
+  # clean up history records where linked_acct has gone away
+  my @where;
+  for my $fk ( grep /__/, __PACKAGE__->dbdef_table->columns ) {
+    my ($table, $key) = split(/__/, $fk);
+    push @where, "
+      ( $fk IS NOT NULL AND NOT EXISTS(SELECT 1 FROM $table WHERE $table.$key = $fk) )";
+  }
+  my @recs = qsearch({
+      'table'     => 'password_history',
+      'extra_sql' => ' WHERE ' . join(' AND ', @where),
+  });
+  my $error;
+  if (@recs) {
+    warn "Removing unattached password_history records (".scalar(@recs).").\n";
+    foreach my $password_history (@recs) {
+      $error = $password_history->delete;
+      die $error if $error;
+    }
+  }
+  '';
+}
+
 =back
 
 =head1 BUGS
