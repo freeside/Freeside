@@ -1063,7 +1063,7 @@ sub print_generic {
   # start setting up summary subtotals
   my @summary_subtotals;
   my $method = $conf->config('summary_subtotals_method');
-  if ( $method and $method ne $conf->config($tc.'sections_method') ) {
+  if ( ( ref($self) ne 'FS::quotation' ) and $method and $method ne $conf->config($tc.'sections_method') ) {
     # then re-section them by the correct method
     my %section_method = ( by_category => 1 );
     if ( $conf->config('summary_subtotals_method') eq 'location' ) {
