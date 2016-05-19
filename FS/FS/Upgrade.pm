@@ -523,7 +523,9 @@ sub upgrade_schema_data {
     'cust_bill_pkg_detail' => [],
     #add necessary columns to RT schema
     'TicketSystem' => [],
-
+    #remove possible dangling records
+    'password_history' => [],
+    'cust_pay_pending' => [],
   ;
 
   \%hash;
