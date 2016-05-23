@@ -82,7 +82,7 @@
                 (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
 %             } 
 %
-%             if ( $curuser->access_right('Edit customer package dates') ) {
+%             if ( $curuser->access_right('Edit customer package dates') or $curuser->access_right('Change package contract end date') ) {
 %               $br=1;
                 (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
 %             } 

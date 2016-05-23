@@ -14,12 +14,16 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Edit customer package dates');
+  unless $curuser->access_right('Edit customer package dates')
+      or $curuser->access_right('Change package contract end date');
+
+my $contract_only = $curuser->access_right('Edit customer package dates') ? 0 : 1;
+$contract_only = 1 if $cgi->param('contract_only');
 
 my $pkgnum = $cgi->param('pkgnum') or die;
 my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 my %hash = $old->hash;
-foreach ( qw( start_date setup bill last_bill contract_end ) ) {
+foreach ( $contract_only ? qw( contract_end ) : qw( start_date setup bill last_bill contract_end ) ) {
   if ( $cgi->param($_) =~ /^(\d+)$/ ) {
     $hash{$_} = $1;
   } else {
@@ -36,11 +40,11 @@ $error = $new->replace($old);
 if (!$error) {
   my @supp_pkgs = $old->supplemental_pkgs;
   foreach $new (@supp_pkgs) {
-    foreach ( qw( start_date setup contract_end ) ) {
+    foreach ( $contract_only ? qw( contract_end ) : qw( start_date setup contract_end ) ) {
       # propagate these to supplementals
       $new->set($_, $hash{$_});
     }
-    if ( $hash{'bill'} ne $old->get('bill') ) {
+    if (( $hash{'bill'} ne $old->get('bill') ) && !$contract_only ) {
       if ( $hash{'bill'} and $old->get('bill') ) {
         # adjust by the same interval
         my $diff = $hash{'bill'} - $old->get('bill');

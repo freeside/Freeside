@@ -154,6 +154,7 @@ tie my %rights, 'Tie::IxHash',
     'View appointments', #NEWNEW
     'Make appointment',
     'View package definition costs', #NEWNEW
+    'Change package contract end date',
   ],
   
   ###

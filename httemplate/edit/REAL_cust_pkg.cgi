@@ -35,6 +35,11 @@ function confirm_changes() {
 <FORM NAME="formname" ACTION="process/REAL_cust_pkg.cgi" METHOD="POST">
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 
+% if ($contract_only) {
+  <INPUT TYPE="hidden" ID="contract_only_text" NAME="contract_only" VALUE="1">
+  <SCRIPT>submit_fields.push('contract_only');</SCRIPT>
+% }
+
 % # raw error from below
 % if ( $error ) { 
   <FONT SIZE="+1" COLOR="#ff0000">Error: <% $error %></FONT>
@@ -124,8 +129,10 @@ function confirm_changes() {
 % my $value = $cust_pkg->get($column);
 % $value = $value ? time2str($format, $value) : "";
 %
+% if ($contract_only and $column ne 'contract_end') {
+  <& .row_display, %ARGS &>
 % # if_primary for the dates that can't be edited on supplemental packages
-% if ($if_primary and $cust_pkg->main_pkgnum) {
+% } elsif ($if_primary and $cust_pkg->main_pkgnum) {
   <INPUT TYPE="hidden" ID="<%$column%>_text" VALUE="<% $cust_pkg->get($column) %>">
   <SCRIPT>submit_fields.push('<%$column%>');</SCRIPT>
   <& .row_display, %ARGS &>
@@ -198,12 +205,15 @@ my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $format = $date_format. ' %T'; # %z (%Z)';
 
+my $contract_only = $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates') ? 0 : 1;
+
 </%shared>
 <%init>
 
+# see $contract_only in shared block above
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates');
-
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates')
+      or $FS::CurrentUser::CurrentUser->access_right('Change package contract end date');
 
 my $error = '';
 my( $pkgnum, $cust_pkg );
