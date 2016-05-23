@@ -153,7 +153,7 @@ tie my %rights, 'Tie::IxHash',
     'Make appointment',
     'View package definition costs', #NEWNEW
     'Change package start date',
-    'Add/remove package contract end date',
+    'Change package contract end date',
   ],
   
   ###
