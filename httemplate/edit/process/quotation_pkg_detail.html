@@ -26,7 +26,15 @@ my $quotation_pkg = qsearchs({
                  'LEFT JOIN cust_main USING ( custnum )',
   'hashref'   => { 'quotationpkgnum' => $pkgnum },
   'extra_sql' => ' AND '. $curuser->agentnums_sql,
+})
+|| qsearchs({
+  'table'     => 'quotation_pkg',
+  'addl_from' => 'LEFT JOIN quotation USING ( quotationnum )'.
+                 'LEFT JOIN prospect_main USING ( prospectnum )',
+  'hashref'   => { 'quotationpkgnum' => $pkgnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
+
 
 my @orig_details = $quotation_pkg->details();
 
