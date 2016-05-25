@@ -1,0 +1,156 @@
+%# false laziness with Results.html; basically this is the same thing but with
+%# a hardcoded RT::Tickets object instead of a Query param
+
+<& /Elements/Header, Title => $title,
+    Refresh => $refresh,
+    LinkRel => \%link_rel &>
+
+% $m->callback( ARGSRef => \%ARGS, Format => \$Format, CallbackName => 'BeforeResults' );
+
+<& /Elements/CollectionList, 
+    Class => 'RT::Tickets',
+    Collection => $session{tickets},
+    TotalFound => $ticketcount,
+    AllowSorting => 1,
+    OrderBy => $OrderBy,
+    Order => $Order,
+    Rows => $Rows,
+    Page => $Page,
+    Format => $Format,
+    BaseURL => $BaseURL,
+    SavedSearchId => $ARGS{'SavedSearchId'},
+    SavedChartSearchId => $ARGS{'SavedChartSearchId'},
+    PassArguments => [qw(Format Rows Page Order OrderBy SavedSearchId SavedChartSearchId)],
+&>
+% $m->callback( ARGSRef => \%ARGS, CallbackName => 'AfterResults' );
+
+% my %hiddens = (Format => $Format, Rows => $Rows, OrderBy => $OrderBy, Order => $Order, HideResults => $HideResults, Page => $Page, SavedChartSearchId => $SavedChartSearchId );
+<div align="right" class="refresh">
+<form method="get" action="<%RT->Config->Get('WebPath')%>/Search/UnrepliedTickets.html">
+% foreach my $key (keys(%hiddens)) {
+<input type="hidden" class="hidden" name="<%$key%>" value="<% defined($hiddens{$key})?$hiddens{$key}:'' %>" />
+% }
+<& /Elements/Refresh, Name => 'TicketsRefreshInterval', Default => $session{'tickets_refresh_interval'}||RT->Config->Get('SearchResultsRefreshInterval', $session{'CurrentUser'}) &>
+<input type="submit" class="button" value="<&|/l&>Change</&>" />
+</form>
+</div>
+<%INIT>
+$m->callback( ARGSRef => \%ARGS, CallbackName => 'Initial' );
+
+# Read from user preferences
+my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};
+
+# These variables are what define a search_hash; this is also
+# where we give sane defaults.
+$Format      ||= $prefs->{'Format'} || RT->Config->Get('DefaultSearchResultFormat');
+$Order       ||= $prefs->{'Order'} || RT->Config->Get('DefaultSearchResultOrder');
+$OrderBy     ||= $prefs->{'OrderBy'} || RT->Config->Get('DefaultSearchResultOrderBy');
+
+# In this case the search UI isn't available, so trust the defaults.
+
+# Some forms pass in "RowsPerPage" rather than "Rows"
+# We call it RowsPerPage everywhere else.
+
+if ( defined $prefs->{'RowsPerPage'} ) {
+    $Rows = $prefs->{'RowsPerPage'};
+} else {
+    $Rows = 50;
+}
+$Page = 1 unless $Page && $Page > 0;
+
+use RT::Search::UnrepliedTickets;
+
+$session{'i'}++;
+$session{'tickets'} = RT::Tickets->new($session{'CurrentUser'}) ;
+my $search = RT::Search::UnrepliedTickets->new( TicketsObj => $session{'tickets'} );
+$search->Prepare;
+
+if ($OrderBy =~ /\|/) {
+    # Multiple Sorts
+    my @OrderBy = split /\|/,$OrderBy;
+    my @Order = split /\|/,$Order;
+    $session{'tickets'}->OrderByCols(
+        map { { FIELD => $OrderBy[$_], ORDER => $Order[$_] } } ( 0
+        .. $#OrderBy ) );; 
+} else {
+    $session{'tickets'}->OrderBy(FIELD => $OrderBy, ORDER => $Order); 
+}
+$session{'tickets'}->RowsPerPage( $Rows ) if $Rows;
+$session{'tickets'}->GotoPage( $Page - 1 );
+
+# use this to set a CSRF token applying to the search, so that the user can come
+# back to this page without triggering a referrer check
+$session{'CurrentSearchHash'} = {
+    Format      => $Format,
+    Page        => $Page,
+    Order       => $Order,
+    OrderBy     => $OrderBy,
+    RowsPerPage => $Rows
+};
+
+
+my $ticketcount = $session{tickets}->CountAll();
+my $title = loc('New activity on [quant,_1,ticket,tickets]', $ticketcount);
+
+# pass this through on pagination links
+my $QueryString = "?".$m->comp('/Elements/QueryString',
+                               Format => $Format,
+                               Rows => $Rows,
+                               OrderBy => $OrderBy,
+                               Order => $Order,
+                               Page => $Page);
+
+if ($ARGS{'TicketsRefreshInterval'}) {
+    $session{'tickets_refresh_interval'} = $ARGS{'TicketsRefreshInterval'};
+}
+
+my $refresh = $session{'tickets_refresh_interval'}
+    || RT->Config->Get('SearchResultsRefreshInterval', $session{'CurrentUser'} );
+
+# Check $m->request_args, not $DECODED_ARGS, to avoid creating a new CSRF token on each refresh
+if (RT->Config->Get('RestrictReferrer') and $refresh and not $m->request_args->{CSRF_Token}) {
+    my $token = RT::Interface::Web::StoreRequestToken( $session{'CurrentSearchHash'} );
+    $m->notes->{RefreshURL} = RT->Config->Get('WebURL')
+        . "Search/UnrepliedTickets.html?CSRF_Token="
+            . $token;
+}
+
+my %link_rel;
+my $genpage = sub {
+    return $m->comp(
+        '/Elements/QueryString',
+        Format  => $Format,
+        Rows    => $Rows,
+        OrderBy => $OrderBy,
+        Order   => $Order,
+        Page    => shift(@_),
+    );
+};
+
+if ( RT->Config->Get('SearchResultsAutoRedirect') && $ticketcount == 1 &&
+    $session{tickets}->First ) {
+# $ticketcount is not always precise unless $UseSQLForACLChecks is set to true,
+# check $session{tickets}->First here is to make sure the ticket is there.
+    RT::Interface::Web::Redirect( RT->Config->Get('WebURL')
+            ."Ticket/Display.html?id=". $session{tickets}->First->id );
+}
+
+my $BaseURL = RT->Config->Get('WebPath')."/Search/UnrepliedTickets.html?";
+$link_rel{first} = $BaseURL . $genpage->(1)         if $Page > 1;
+$link_rel{prev}  = $BaseURL . $genpage->($Page - 1) if $Page > 1;
+$link_rel{next}  = $BaseURL . $genpage->($Page + 1) if ($Page * $Rows) < $ticketcount;
+$link_rel{last}  = $BaseURL . $genpage->(POSIX::ceil($ticketcount/$Rows)) if $Rows and ($Page * $Rows) < $ticketcount;
+</%INIT>
+<%CLEANUP>
+$session{'tickets'}->PrepForSerialization();
+</%CLEANUP>
+<%ARGS>
+$HideResults => 0
+$Rows => undef
+$Page => 1
+$OrderBy => undef
+$Order => undef
+$SavedSearchId => undef
+$SavedChartSearchId => undef
+$Format => undef
+</%ARGS>
