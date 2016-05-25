@@ -1,0 +1,37 @@
+% if ($enabled) {
+<style>
+.dot {
+  border-radius: 50%;
+  border: 1px solid black;
+  width: 1ex;
+  height: 1ex;
+  display: inline-block;
+}
+</style>
+<div style="font-weight: bold; vertical-align: bottom; text-align: left">
+%   if ( $UnrepliedTickets->Count > 0 ) {
+  <a href="<% $fsurl %>rt/Search/UnrepliedTickets.html">
+    <div class="dot" style="background-color: green"></div>
+    <% emt('New activity on [quant,_1,ticket]', $UnrepliedTickets->Count) %>
+  </a>
+%   } else {
+  <% emt('No new activity on tickets') %>
+%   }
+</div>
+% }
+<%init>
+use Class::Load 'load_class';
+
+my $enabled = $FS::TicketSystem::system eq 'RT_Internal';
+my $UnrepliedTickets;
+if ($enabled) {
+  my $class = 'RT::Search::UnrepliedTickets';
+  load_class($class);
+  my $session = FS::TicketSystem->session;
+  my $CurrentUser = $session->{CurrentUser};
+  $UnrepliedTickets = RT::Tickets->new($CurrentUser);
+  my $search = $class->new(TicketsObj => $UnrepliedTickets);
+warn Dumper $search;
+  $search->Prepare;
+}
+</%init>
