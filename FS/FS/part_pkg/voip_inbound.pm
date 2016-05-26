@@ -214,6 +214,7 @@ sub calc_usage {
 #  my $downstream_cdr = '';
 
   my $included_min  = $self->option('min_included', 1) || 0;
+  $included_min *= ($cust_pkg->quantity || 1);
   my $use_duration  = $self->option('use_duration');
   my $output_format = $self->option('output_format', 1) || 'default';
 
