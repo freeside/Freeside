@@ -30,28 +30,39 @@ sub Prepare  {
   my $self = shift;
 
   my $TicketsObj = $self->TicketsObj;
-  $TicketsObj->Limit(
+  # bypass the pre-RT-4.2 TicketRestrictions stuff and just use SearchBuilder
+  $TicketsObj->RT::SearchBuilder::Limit(
     FIELD => 'Owner',
     VALUE => $TicketsObj->CurrentUser->id
   );
-  $TicketsObj->Limit(
+  $TicketsObj->RT::SearchBuilder::Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
     VALUE => 'resolved'
   );
   my $txn_alias = $TicketsObj->JoinTransactions;
-  $TicketsObj->Limit(
+  $TicketsObj->RT::SearchBuilder::Limit(
     ALIAS => $txn_alias,
     FIELD => 'Created',
     OPERATOR => '>',
     VALUE => 'COALESCE(main.Told,\'1970-01-01\')',
     QUOTEVALUE => 0,
   );
-  $TicketsObj->Limit(
+  $TicketsObj->RT::SearchBuilder::Limit(
     ALIAS => $txn_alias,
     FIELD => 'Type',
-    OPERATOR => 'IN',
-    VALUE => [ 'Correspond', 'Create' ],
+    OPERATOR => '=',
+    VALUE => 'Correspond',
+    SUBCLAUSE => 'transactiontype',
+    ENTRYAGGREGATOR => 'OR',
+  );
+  $TicketsObj->RT::SearchBuilder::Limit(
+    ALIAS => $txn_alias,
+    FIELD => 'Type',
+    OPERATOR => '=',
+    VALUE => 'Create',
+    SUBCLAUSE => 'transactiontype',
+    ENTRYAGGREGATOR => 'OR',
   );
 
   return(1);
