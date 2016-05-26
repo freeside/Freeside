@@ -81,6 +81,7 @@ sub calc_usage {
     && ( $last_bill eq '' || $last_bill == 0 );
 
   my $included_min    = $self->option('min_included', 1) || 0;
+  $included_min *= ($cust_pkg->quantity || 1);
   my $cdr_svc_method  = $self->option('cdr_svc_method',1)||'svc_phone.phonenum';
   my $cdr_inout       = ($cdr_svc_method eq 'svc_phone.phonenum')
                           && $self->option('cdr_inout',1)
