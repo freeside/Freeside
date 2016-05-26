@@ -131,7 +131,8 @@ sub calc_recur {
       # find the price and add detail to the invoice
       ###
 
-      $included_min{$regionnum} = $rate_detail->min_included
+      $included_min{$regionnum} =
+          ($rate_detail->min_included * $cust_pkg->quantity || 1)
         unless exists $included_min{$regionnum};
 
       my $granularity = $rate_detail->sec_granularity;
