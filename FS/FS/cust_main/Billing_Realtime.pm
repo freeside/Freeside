@@ -1967,6 +1967,102 @@ sub realtime_verify_bop {
 
     }
 
+    ### Address Verification ###
+    #
+    # Single-letter codes vary by cardtype.
+    #
+    # Erring on the side of accepting cards if avs is not available,
+    # only rejecting if avs occurred and there's been an explicit mismatch
+    #
+    # Charts below taken from vSecure documentation,
+    #    shows codes for Amex/Dscv/MC/Visa
+    #
+    # ACCEPTABLE AVS RESPONSES:
+    # Both Address and 5-digit postal code match Y A Y Y
+    # Both address and 9-digit postal code match Y A X Y
+    # United Kingdom – Address and postal code match _ _ _ F
+    # International transaction – Address and postal code match _ _ _ D/M
+    #
+    # ACCEPTABLE, BUT ISSUE A WARNING:
+    # Ineligible transaction; or message contains a content error _ _ _ E
+    # System unavailable; retry R U R R
+    # Information unavailable U W U U
+    # Issuer does not support AVS S U S S
+    # AVS is not applicable _ _ _ S
+    # Incompatible formats – Not verified _ _ _ C
+    # Incompatible formats – Address not verified; postal code matches _ _ _ P
+    # International transaction – address not verified _ G _ G/I
+    #
+    # UNACCEPTABLE AVS RESPONSES:
+    # Only Address matches A Y A A
+    # Only 5-digit postal code matches Z Z Z Z
+    # Only 9-digit postal code matches Z Z W W
+    # Neither address nor postal code matches N N N N
+
+    if (my $avscode = uc($transaction->avs_code)) {
+      # map codes to accept/warn/reject
+      my $avs = {
+        'American Express card' => {
+          'A' => 'r',
+          'N' => 'r',
+          'R' => 'w',
+          'S' => 'w',
+          'U' => 'w',
+          'Y' => 'a',
+          'Z' => 'r',
+        },
+        'Discover card' => {
+          'A' => 'a',
+          'G' => 'w',
+          'N' => 'r',
+          'U' => 'w',
+          'W' => 'w',
+          'Y' => 'r',
+          'Z' => 'r',
+        },
+        'MasterCard' => {
+          'A' => 'r',
+          'N' => 'r',
+          'R' => 'w',
+          'S' => 'w',
+          'U' => 'w',
+          'W' => 'r',
+          'X' => 'a',
+          'Y' => 'a',
+          'Z' => 'r',
+        },
+        'VISA card' => {
+          'A' => 'r',
+          'C' => 'w',
+          'D' => 'a',
+          'E' => 'w',
+          'F' => 'a',
+          'G' => 'w',
+          'I' => 'w',
+          'M' => 'a',
+          'N' => 'r',
+          'P' => 'w',
+          'R' => 'w',
+          'S' => 'w',
+          'U' => 'w',
+          'W' => 'r',
+          'Y' => 'a',
+          'Z' => 'r',
+        },
+      };
+      my $cardtype = cardtype($content{card_number});
+      if ($avs->{$cardtype}) {
+        my $avsact = $avs->{$cardtype}->{$avscode};
+        if ($avsact eq 'r') {
+          return "AVS code verification failed, cardtype $cardtype, code $avscode";
+        } elsif ($avsact eq 'w') {
+          warn "AVS code verification did not occur, cardtype $cardtype, code $avscode";
+        } elsif (!$avsact) {
+          warn "AVS code verification did not occur, unknown avscode, cardtype $cardtype, code $avscode";
+        } # else $avsact eq 'a'
+      } # else $cardtype avs handling not implemented
+    } # else !$transaction->avs_code
+
   } else { # is not success
 
     # status is 'done' not 'declined', as in _realtime_bop_result
