@@ -947,7 +947,17 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
   'on correspond' => {
     'notify requestors and ccs' => { 'correspondence' => 1 },
     'notify other recipients'   => { 'correspondence' => 1 },
-  }
+    # RT 4.2
+    # superseded by "notify owner and adminccs"
+    'notify adminccs'           => { 'admin correspondence' => 1 },
+    # superseded by "open inactive tickets"
+    'open tickets'              => { 'blank' => 1 },
+  },
+  'on create' => {
+    # RT 4.2
+    # superseded by "notify owner and adminccs"
+    'notify adminccs'           => { 'transaction' => 1 },
+  },
 );
 
 # -*- perl -*-
