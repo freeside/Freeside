@@ -1924,6 +1924,8 @@ sub realtime_verify_bop {
     }
   }
 
+  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_verify_bop');
+
   if ( $transaction->is_success() ) {
 
     $cust_pay_pending->status('authorized');
@@ -1968,6 +1970,7 @@ sub realtime_verify_bop {
       my $e = "Authorization successful but reversal failed, custnum #".
               $self->custnum. ': '.  $reverse->result_code.
               ": ". $reverse->error_message;
+      $log->warning($e);
       warn $e;
       return $e;
 
@@ -2006,6 +2009,7 @@ sub realtime_verify_bop {
     # Neither address nor postal code matches N N N N
 
     if (my $avscode = uc($transaction->avs_code)) {
+
       # map codes to accept/warn/reject
       my $avs = {
         'American Express card' => {
@@ -2059,13 +2063,18 @@ sub realtime_verify_bop {
       my $cardtype = cardtype($content{card_number});
       if ($avs->{$cardtype}) {
         my $avsact = $avs->{$cardtype}->{$avscode};
+        my $warning = '';
         if ($avsact eq 'r') {
           return "AVS code verification failed, cardtype $cardtype, code $avscode";
         } elsif ($avsact eq 'w') {
-          warn "AVS code verification did not occur, cardtype $cardtype, code $avscode";
+          $warning = "AVS did not occur, cardtype $cardtype, code $avscode";
         } elsif (!$avsact) {
-          warn "AVS code verification did not occur, unknown avscode, cardtype $cardtype, code $avscode";
+          $warning = "AVS code unknown, cardtype $cardtype, code $avscode";
         } # else $avsact eq 'a'
+        if ($warning) {
+          $log->warning($warning);
+          warn $warning;
+        }
       } # else $cardtype avs handling not implemented
     } # else !$transaction->avs_code
 
@@ -2092,7 +2101,9 @@ sub realtime_verify_bop {
       $self->payinfo($transaction->card_token);
       my $error = $self->replace;
       if ( $error ) {
-        warn "WARNING: error storing token: $error, but proceeding anyway\n";
+        my $warning = "WARNING: error storing token: $error, but proceeding anyway\n";
+        $log->warning($warning);
+        warn $warning;
       }
     }
 
