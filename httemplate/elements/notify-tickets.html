@@ -31,7 +31,6 @@ if ($enabled) {
   my $CurrentUser = $session->{CurrentUser};
   $UnrepliedTickets = RT::Tickets->new($CurrentUser);
   my $search = $class->new(TicketsObj => $UnrepliedTickets);
-warn Dumper $search;
   $search->Prepare;
 }
 </%init>
