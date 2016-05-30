@@ -235,4 +235,35 @@ sub qsearchs {
   FS::Record::qsearchs(@_);
 }
 
+=item new_customer FIRSTNAME
+
+Returns an L<FS::cust_main> object full of default test data, ready to be inserted.
+This doesn't insert the customer, because you might want to change some things first.
+FIRSTNAME is recommended so you know which test the customer was used for.
+
+=cut
+
+sub new_customer {
+  my $self = shift;
+  my $first = shift || 'No Name';
+  my $location = FS::cust_location->new({
+      address1  => '123 Example Street',
+      city      => 'Sacramento',
+      state     => 'CA',
+      country   => 'US',
+      zip       => '94901',
+  });
+  my $cust = FS::cust_main->new({
+      agentnum      => 1,
+      refnum        => 1,
+      last          => 'Customer',
+      first         => $first,
+      invoice_email => 'newcustomer@fake.freeside.biz',
+      payby         => 'BILL',
+      bill_location => $location,
+      ship_location => $location,
+  });
+  $cust;
+}
+
 1; # End of FS::Test
