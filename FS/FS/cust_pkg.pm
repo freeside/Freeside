@@ -2544,6 +2544,16 @@ sub change_later {
     return "start_date $date is in the past";
   }
 
+  # If the user entered a new location, set it up now.
+  if ( $opt->{'cust_location'} ) {
+    $error = $opt->{'cust_location'}->find_or_insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "creating location record: $error";
+    }
+    $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
+  }
+
   if ( $self->change_to_pkgnum ) {
     my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
     my $new_pkgpart = $opt->{'pkgpart'}
