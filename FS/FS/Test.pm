@@ -259,7 +259,6 @@ sub new_customer {
       last          => 'Customer',
       first         => $first,
       invoice_email => 'newcustomer@fake.freeside.biz',
-      payby         => 'BILL',
       bill_location => $location,
       ship_location => $location,
   });
