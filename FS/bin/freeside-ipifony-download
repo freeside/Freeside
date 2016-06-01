@@ -13,7 +13,7 @@ use File::Copy qw(copy);
 use Text::CSV;
 
 my %opt;
-getopts('vqa:P:C:e:', \%opt);
+getopts('vqNa:P:C:e:', \%opt);
 
 # Product codes that are subject to flat rate E911 charges.  For these 
 # products, the'quantity' field represents the number of lines.
@@ -32,6 +32,7 @@ sub HELP_MESSAGE { '
       freeside-ipifony-download 
         [ -v ]
         [ -q ]
+        [ -N ]
         [ -a archivedir ]
         [ -P port ]
         [ -C category ]
@@ -192,7 +193,8 @@ FILE: foreach my $filename (@$files) {
     if ( $next_bill_date ) {
       my ($bill_month, $bill_year) = (localtime($next_bill_date))[4, 5];
       my ($this_month, $this_year) = (localtime(time))[4, 5];
-      if ( $this_month == $bill_month and $this_year == $bill_year ) {
+      if ( $opt{N} or 
+           $this_month == $bill_month and $this_year == $bill_year ) {
         $cust_main->set('charge_date', $next_bill_date);
       }
     }
@@ -296,6 +298,7 @@ freeside-ipifony-download - Download and import invoice items from IPifony.
       freeside-ipifony-download 
         [ -v ]
         [ -q ]
+        [ -N ]
         [ -a archivedir ]
         [ -P port ]
         [ -C category ]
@@ -312,11 +315,18 @@ have an authorization key to connect as that user.
 
 I<hostname>: the SFTP server.
 
+I<path>: the path on the server to the working directory. The working
+directory is the one containing the "ready/" and "done/" subdirectories.
+
 =head1 OPTIONAL PARAMETERS
 
 -v: Be verbose.
 
 -q: Include the quantity and unit price in the charge description.
+
+-N: Always bill the charges on the customer's next bill date, if they have
+one. Otherwise, charges will be billed on the next bill date only if it's
+within the current calendar month.
 
 -a I<archivedir>: Save a copy of the downloaded file to I<archivedir>.
 
