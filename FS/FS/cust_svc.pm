@@ -709,13 +709,12 @@ sub seconds_since { 'internal session db deprecated'; };
 
 =item seconds_since_sqlradacct TIMESTAMP_START TIMESTAMP_END
 
-See L<FS::svc_acct/seconds_since_sqlradacct>.  Equivalent to
-$cust_svc->svc_x->seconds_since_sqlradacct, but more efficient.  Meaningless
-for records where B<svcdb> is not "svc_acct".
+Equivalent to $cust_svc->svc_x->seconds_since_sqlradacct, but 
+more efficient.  Meaningless for records where B<svcdb> is not 
+svc_acct or svc_broadband.
 
 =cut
 
-#note: implementation here, POD in FS::svc_acct
 sub seconds_since_sqlradacct {
   my($self, $start, $end) = @_;
 
@@ -854,12 +853,11 @@ sub seconds_since_sqlradacct {
 =item attribute_since_sqlradacct TIMESTAMP_START TIMESTAMP_END ATTRIBUTE
 
 See L<FS::svc_acct/attribute_since_sqlradacct>.  Equivalent to
-$cust_svc->svc_x->attribute_since_sqlradacct, but more efficient.  Meaningless
-for records where B<svcdb> is not "svc_acct".
+$cust_svc->svc_x->attribute_since_sqlradacct, but more efficient.
+Meaningless for records where B<svcdb> is not svc_acct or svc_broadband.
 
 =cut
 
-#note: implementation here, POD in FS::svc_acct
 #(false laziness w/seconds_since_sqlradacct above)
 sub attribute_since_sqlradacct {
   my($self, $start, $end, $attrib) = @_;

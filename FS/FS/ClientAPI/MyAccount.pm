@@ -1772,6 +1772,20 @@ sub list_svcs {
 
     # would it make sense to put this in a svc_* method?
 
+    if (!$hide_usage and grep(/^$svcdb$/, qw(svc_acct svc_broadband)) and $part_svc->part_export_usage) {
+      my $last_bill = $cust_pkg->last_bill || 0;
+      my $now = time;
+      my $up_used = $cust_svc->attribute_since_sqlradacct($last_bill,$now,'AcctInputOctets');
+      my $down_used = $cust_svc->attribute_since_sqlradacct($last_bill,$now,'AcctOutputOctets');
+      %hash = (
+        %hash,
+        'seconds_used'    => $cust_svc->seconds_since_sqlradacct($last_bill,$now),
+        'upbytes_used'    => display_bytecount($up_used),
+        'downbytes_used'  => display_bytecount($down_used),
+        'totalbytes_used' => display_bytecount($up_used + $down_used)
+      );
+    }
+
     if ( $svcdb eq 'svc_acct' ) {
       foreach (qw(username email finger seconds)) {
         $hash{$_} = $svc_x->$_;
