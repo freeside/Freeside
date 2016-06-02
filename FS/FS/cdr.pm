@@ -1264,6 +1264,10 @@ my %export_names = (
     'name'           => 'Number of calls, one line per service',
     'invoice_header' => 'Caller,Rate,Messages,Price',
   },
+  'sum_duration' => {
+    'name'           => 'Summary, one line per service',
+    'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
+  },
   'sum_duration_prefix' => {
     'name'           => 'Summary, one line per destination prefix',
     'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
@@ -1271,6 +1275,10 @@ my %export_names = (
   'sum_count_class' => {
     'name'           => 'Summary, one line per usage class',
     'invoice_header' => 'Caller,Class,Calls,Price',
+  },
+  'sum_duration_accountcode' => {
+    'name'           => 'Summary, one line per accountcode',
+    'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
   },
 );
 
