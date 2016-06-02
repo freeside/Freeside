@@ -510,11 +510,8 @@ sub realtime_bop {
       $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
 
-      my $paycvv = exists($options{'paycvv'})
-                     ? $options{'paycvv'}
-                     : $self->paycvv;
-      $content{cvv2} = $paycvv
-        if length($paycvv);
+      $content{cvv2} = $options{'paycvv'}
+        if length($options{'paycvv'});
 
       my $paystart_month = exists($options{'paystart_month'})
                              ? $options{'paystart_month'}
@@ -764,10 +761,10 @@ sub realtime_bop {
   ###
 
   # compare to FS::cust_main::save_cust_payby - check both to make sure working correctly
-  if ( length($self->paycvv)
+  if ( length($options{'paycvv'})
        && ! grep { $_ eq cardtype($options{payinfo}) } $conf->config('cvv-save')
   ) {
-    my $error = $self->remove_cvv;
+    my $error = $self->remove_cvv_from_cust_payby($options{payinfo});
     if ( $error ) {
       warn "WARNING: error removing cvv: $error\n";
     }
@@ -1790,11 +1787,8 @@ sub realtime_verify_bop {
       $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
 
-      my $paycvv = exists($options{'paycvv'})
-                     ? $options{'paycvv'}
-                     : $self->paycvv;
-      $content{cvv2} = $paycvv
-        if length($paycvv);
+      $content{cvv2} = $options{'paycvv'}
+        if length($options{'paycvv'});
 
       my $paystart_month = exists($options{'paystart_month'})
                              ? $options{'paystart_month'}
