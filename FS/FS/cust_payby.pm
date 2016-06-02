@@ -217,14 +217,14 @@ sub replace {
     $self->payinfo($new_account.'@'.$new_aba);
   }
 
-  # don't preserve paycvv if it was passed blank and payinfo changed
-  unless ( $self->payby =~ /^(CARD|DCRD)$/
-       && $old->payinfo ne $self->payinfo
-       && $old->paymask ne $self->paymask
-       && $self->paycvv =~ /^\s*$/ )
-  {
-    if ( length($old->paycvv) && $self->paycvv =~ /^\s*[\*x]*\s*$/ ) {
+  # only unmask paycvv if payinfo stayed the same
+  if ( $self->payby =~ /^(CARD|DCRD)$/ and $self->paycvv =~ /^\s*[\*x]+\s*$/ ) {
+    if ( $old->payinfo eq $self->payinfo
+         && $old->paymask eq $self->paymask
+    ) {
       $self->paycvv($old->paycvv);
+    } else {
+      $self->paycvv('');
     }
   }
 

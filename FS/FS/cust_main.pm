@@ -2568,6 +2568,8 @@ Removes the I<paycvv> field from the database directly.
 
 If there is an error, returns the error, otherwise returns false.
 
+DEPRECATED.  Use L</remove_cvv_from_cust_payby> instead.
+
 =cut
 
 sub remove_cvv {
@@ -4750,6 +4752,33 @@ PAYBYLOOP:
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+=item remove_cvv_from_cust_payby PAYINFO
+
+Removes paycvv from associated cust_payby with matching PAYINFO.
+
+=cut
+
+sub remove_cvv_from_cust_payby {
+  my ($self,$payinfo) = @_;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_payby ( qsearch('cust_payby',{ custnum => $self->custnum }) ) {
+    next unless $cust_payby->payinfo eq $payinfo; # can't qsearch on payinfo
+    $cust_payby->paycvv('');
+    my $error = $cust_payby->replace;
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 =back
