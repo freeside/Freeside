@@ -14,6 +14,7 @@
 
                    #payment
                    'Date',
+                   'Order Number',
                    'By',
 
                    #application
@@ -43,6 +44,7 @@
                            ? cardtype($cust_pay->paymask) : '';
                        },
                    sub { time2str('%b %d %Y', shift->get('cust_pay_date') ) },
+                   sub { shift->cust_bill_pay->cust_pay->order_number },
                    sub { shift->cust_bill_pay->cust_pay->otaker },
 
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
@@ -64,6 +66,7 @@
                    '', #payinfo/paymask
                    '', #cardtype
                    'cust_pay_date',
+                   '', #order_number
                    '', #'otaker',
                    '', #amount
                    '', #line item description
@@ -85,6 +88,7 @@
                    '',
                    '',
                    '',
+                   '',
                    @post_desc_null,
                    $ilink,
                    $ilink,
@@ -92,7 +96,7 @@
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rcrlrlrlll',
+               'align' => 'rcrlrrlrlll',
 #original value before cardtype & package were added
 #why are there 13 cols?
 #'rcrrlrlllrrcl'.
@@ -110,12 +114,14 @@
                               '',
                               '',
                               '',
+                              '',
                               @post_desc_null,
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
                             ],
                'style' => [ 
+                              '',
                               '',
                               '',
                               '',
