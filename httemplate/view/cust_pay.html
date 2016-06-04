@@ -91,13 +91,14 @@
       <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->auth %></B></TD>
     </TR>
 
-%   if ( $cust_pay->order_number ) {
-      <TR>
-        <TD ALIGN="right"><% mt('Order #') |h %></TD>
-        <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->order_number %></B></TD>
-      </TR>
-%   }
+% }
 
+% # API allows setting this for any payby
+% if ( $cust_pay->order_number ) {
+    <TR>
+      <TD ALIGN="right"><% mt('Order #') |h %></TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->order_number %></B></TD>
+    </TR>
 % }
 
 % if ( $cust_pay->payby eq 'CASH' && $cust_pay->payinfo ) {
