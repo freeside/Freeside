@@ -1361,6 +1361,7 @@ sub _make_lines {
 
     if ( $param{'override_quantity'} ) {
       $override_quantity = $param{'override_quantity'};
+      $unitrecur = $recur / $override_quantity;
     }
 
     if ( $increment_next_bill ) {
