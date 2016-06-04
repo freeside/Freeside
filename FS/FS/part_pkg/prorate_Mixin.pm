@@ -191,22 +191,35 @@ sub prorate_setup {
   my $self = shift;
   my ($cust_pkg, $sdate) = @_;
   my @cutoff_days = $self->cutoff_day($cust_pkg);
-  if ( ! $cust_pkg->bill
-      and $self->option('prorate_defer_bill',1)
-      and @cutoff_days
-  ) {
-    my ($mnow, $mend, $mstart) = $self->_endpoints($sdate, @cutoff_days);
-    # If today is the cutoff day, set the next bill and setup both to 
-    # midnight today, so that the customer will be billed normally for a 
-    # month starting today.
-    if ( $mnow - $mstart < 86400 ) {
-      $cust_pkg->setup($mstart);
-      $cust_pkg->bill($mstart);
+  if ( @cutoff_days and $self->option('prorate_defer_bill', 1) ) {
+    if ( $cust_pkg->setup ) {
+      # Setup date is already set. Then we're being called indirectly via calc_prorate
+      # to calculate the deferred setup fee. Allow that to happen normally.
+      return 0;
+    } else {
+      # We're going to set the setup date (so that the deferred billing knows when
+      # the package started) and suppress charging the setup fee.
+      if ( $cust_pkg->bill ) {
+        # For some reason (probably user override), the bill date has been set even
+        # though the package isn't billing yet. Start billing as though that was the
+        # start date.
+        $sdate = $cust_pkg->bill;
+        $cust_pkg->setup($cust_pkg->bill);
+      }
+      # Now figure the start and end of the period that contains the start date.
+      my ($mnow, $mend, $mstart) = $self->_endpoints($sdate, @cutoff_days);
+      # If today is the cutoff day, set the next bill and setup both to 
+      # midnight today, so that the customer will be billed normally for a 
+      # month starting today.
+      if ( $mnow - $mstart < 86400 ) {
+        $cust_pkg->setup($mstart);
+        $cust_pkg->bill($mstart);
+      }
+      else {
+        $cust_pkg->bill($mend);
+      }
+      return 1;
     }
-    else {
-      $cust_pkg->bill($mend);
-    }
-    return 1;
   }
   return 0;
 }

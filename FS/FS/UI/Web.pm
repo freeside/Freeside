@@ -343,7 +343,8 @@ sub cust_header {
     '(service) Latitude'       => 'ship_latitude',
     '(service) Longitude'      => 'ship_longitude',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
-    'Payment Type'             => 'cust_payby',
+# FS::Upgrade::upgrade_config removes this from existing cust-fields settings
+#    'Payment Type'             => 'cust_payby',
     'Current Balance'          => 'current_balance',
     'Agent Cust#'              => 'agent_custid',
     'Advertising Source'       => 'referral',
@@ -447,8 +448,6 @@ sub cust_sql_fields {
   foreach my $field (qw(daytime night mobile fax )) {
     push @fields, $field if (grep { $_ eq $field } @cust_fields);
   }
-  push @fields, "payby AS cust_payby"
-    if grep { $_ eq 'cust_payby' } @cust_fields;
   push @fields, 'agent_custid';
 
   my @extra_fields = ();

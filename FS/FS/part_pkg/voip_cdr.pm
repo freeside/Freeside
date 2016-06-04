@@ -401,8 +401,10 @@ sub calc_usage {
   my $included_min = $self->option('min_included', 1) || 0;
     #single price rating
     #or region group
+  $included_min *= ($cust_pkg->quantity || 1);
 
   my $included_calls = $self->option('calls_included', 1) || 0;
+  $included_calls *= ($cust_pkg->quantity || 1);
 
   my $cdr_svc_method    = $self->option('cdr_svc_method',1)||'svc_phone.phonenum';
   my $rating_method     = $self->option('rating_method') || 'prefix';
@@ -664,7 +666,8 @@ sub reset_usage {
                 FS::cust_pkg_usage->new({
                     'pkgnum'        => $cust_pkg->pkgnum,
                     'pkgusagepart'  => $part,
-                    'minutes'       => $part_pkg_usage->minutes,
+                    'minutes'       => $part_pkg_usage->minutes *
+                                        ($cust_pkg->quantity || 1),
                 });
     foreach my $cdr_usage (
       qsearch('cdr_cust_pkg_usage', {'cdrusagenum' => $usage->cdrusagenum})

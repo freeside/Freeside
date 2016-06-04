@@ -170,6 +170,14 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('unsuspendauto');
   }
 
+  if ($conf->config('cust-fields') =~ / \| Payment Type/) {
+    my $cust_fields = $conf->config('cust-fields');
+    # so we can potentially use 'Payment Types' or somesuch in the future
+    $cust_fields =~ s/ \| Payment Type( \|)/$1/;
+    $cust_fields =~ s/ \| Payment Type$//;
+    $conf->set('cust-fields',$cust_fields);
+  }
+
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
 }
@@ -523,7 +531,9 @@ sub upgrade_schema_data {
     'cust_bill_pkg_detail' => [],
     #add necessary columns to RT schema
     'TicketSystem' => [],
-
+    #remove possible dangling records
+    'password_history' => [],
+    'cust_pay_pending' => [],
   ;
 
   \%hash;

@@ -86,7 +86,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
   $payinfo = $cust_payby->payinfo;
   $paymask = $cust_payby->paymask;
-  $paycvv = '';
+  $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
   ( $month, $year ) = $cust_payby->paydate_mon_year;
   $payname = $cust_payby->payname;
 

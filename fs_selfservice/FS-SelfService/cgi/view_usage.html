@@ -1,21 +1,27 @@
 <%= $url = "$selfurl?action=";
     %by_pkg_label = (); # not used yet, but I'm sure it will be...
-    @svc_acct = ();
     @svc_phone = ();
     @svc_port = ();
     @svc_pbx = ();
+    @bytes_svcs = (); # contains svc_acct and svc_broadband
+    @bytes_cols = qw(seconds_used seconds upbytes_used upbytes downbytes_used downbytes totalbytes_used totalbytes);
+    %bytes_show = map { $_ => 0 } @bytes_cols;
 
-    foreach (@svcs) {
-      $by_pkg_label{ $_->{pkg_label} } ||= [];
-      push @{ $by_pkg_label{ $_->{pkg_label} } }, $_;
-      if ( $_->{svcdb} eq 'svc_acct' ) {
-        push @svc_acct, $_;
-      } elsif ( $_->{svcdb} eq 'svc_phone' ) {
-        push @svc_phone, $_;
-      } elsif ( $_->{svcdb} eq 'svc_port' ) {
-        push @svc_port, $_;
-      } elsif ( $_->{svcdb} eq 'svc_pbx' ) {
-        push @svc_pbx, $_;
+    foreach my $svc (@svcs) {
+      $by_pkg_label{ $svc->{pkg_label} } ||= [];
+      push @{ $by_pkg_label{ $svc->{pkg_label} } }, $svc;
+
+      if (( $svc->{svcdb} eq 'svc_acct' ) || ( $svc->{svcdb} eq 'svc_broadband' )) {
+        foreach my $field (@bytes_cols) {
+          $bytes_show{$field} = 1 if length($svc->{$field}) or (($field !~ /_used$/) && $svc->{'recharge_'.$field});
+        }
+        push @bytes_svcs, $svc;
+      } elsif ( $svc->{svcdb} eq 'svc_phone' ) {
+        push @svc_phone, $svc;
+      } elsif ( $svc->{svcdb} eq 'svc_port' ) {
+        push @svc_port, $svc;
+      } elsif ( $svc->{svcdb} eq 'svc_pbx' ) {
+        push @svc_pbx, $svc;
       }
     }
     '';
@@ -26,56 +32,52 @@
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
 } ''; %>
 
-<%= if ( @svc_acct ) {
-      $OUT.= '<TABLE BGCOLOR="#cccccc">
-                <TR>
-                  <TH ALIGN="left">Account</TH>
-                  <TH ALIGN="right">Time remaining</TH>
-                  <TH ALIGN="right">Upload remaining</TH>
-                  <TH ALIGN="right">Download remaining</TH>
-                  <TH ALIGN="right">Total remaining</TH>
-                </TR>';
-    } else {
-      $OUT .= '';
+<%= if ( @bytes_svcs ) {
+      $OUT .= '<TABLE BGCOLOR="#cccccc"><TR>';
+      $OUT .= '<TH ALIGN="left">Account</TH>';
+      $OUT .= '<TH ALIGN="right">Time used</TH>' if $bytes_show{'seconds_used'};
+      $OUT .= '<TH ALIGN="right">Time remaining</TH>' if $bytes_show{'seconds'};
+      $OUT .= '<TH ALIGN="right">Upload used</TH>' if $bytes_show{'upbytes_used'};
+      $OUT .= '<TH ALIGN="right">Upload remaining</TH>' if $bytes_show{'upbytes'};
+      $OUT .= '<TH ALIGN="right">Download used</TH>' if $bytes_show{'downbytes_used'};
+      $OUT .= '<TH ALIGN="right">Download remaining</TH>' if $bytes_show{'downbytes'};
+      $OUT .= '<TH ALIGN="right">Total used</TH>' if $bytes_show{'totalbytes_used'};
+      $OUT .= '<TH ALIGN="right">Total remaining</TH>' if $bytes_show{'totalbytes'};
+      $OUT .= '</TR>';
     }
 %>
 
-<%= foreach my $svc ( @svc_acct ) {
-      my $link = "${url}view_usage_details;".
-        "svcnum=$svc->{'svcnum'};beginning=0;ending=0";
+<%= foreach my $svc ( @bytes_svcs ) {
+    my $link = "${url}view_usage_details;".
+      "svcnum=$svc->{'svcnum'};beginning=0;ending=0";
     my $username = $svc->{'value'};
     $username =~ s/@.*?$//g if $view_usage_nodomain;
-  $OUT .= '<TR><TD>';
-    $OUT .= qq!<A HREF="$link">!. $svc->{'label'}. ': '. $username .'</A>';
-    $OUT .= '</TD><TD ALIGN="right">';
-    $OUT .= $svc->{'seconds'};
-    $OUT .= '</TD><TD ALIGN="right">';
-    $OUT .=  $svc->{'upbytes'};
-    $OUT .= '</TD><TD ALIGN="right">';
-    $OUT .= $svc->{'downbytes'};
-    $OUT .= '</TD><TD ALIGN="right">';
-    $OUT .= $svc->{'totalbytes'};
-  $OUT .= '</TD></TR>';
+    $OUT .= '<TR>';
+    $OUT .= '<TD>' . qq!<A HREF="$link">!. $svc->{'label'}. ': '. $username .'</A></TD>';
+    foreach my $field (@bytes_cols) {
+      $OUT .= '<TD ALIGN="right">' . $svc->{$field} . '</TD>' if $bytes_show{$field};
+    }
     if ( $svc->{'recharge_amount'} ) {
       my $link = "${url}process_order_recharge;".
                  "svcnum=$svc->{'svcnum'}";
-    $OUT .= '<TR><TD ALIGN="right">';
+      $OUT .= '<TR><TD ALIGN="right">';
       $OUT .= qq!<A HREF="$link">!.'Recharge for $';
       $OUT .= $svc->{'recharge_amount'} . '</A> with';
-      $OUT .= '</TD><TD ALIGN="right">';
-      $OUT .= $svc->{'recharge_seconds'} if $svc->{'recharge_seconds'};
-      $OUT .= '</TD><TD ALIGN="right">';
-      $OUT .=  $svc->{'recharge_upbytes'} if $svc->{'recharge_upbytes'};
-      $OUT .= '</TD><TD ALIGN="right">';
-      $OUT .= $svc->{'recharge_downbytes'} if $svc->{'recharge_downbytes'};
-      $OUT .= '</TD><TD ALIGN="right">';
-      $OUT .= $svc->{'recharge_totalbytes'} if $svc->{'recharge_totalbytes'};
-    $OUT .= '</TD></TR>';
+      $OUT .= '</TD>';
+      foreach my $field ( qw(seconds upbytes downbytes totalbytes) ) {
+        $OUT .= '<TD></TD>' if $bytes_show{$field.'_used'};
+        if ($bytes_show{$field}) {
+          $OUT .= '<TD ALIGN="right">';
+          $OUT .= $svc->{'recharge_'.$field} if $svc->{'recharge_'.$field};
+          $OUT .= '</TD>';
+        }
+      }
+      $OUT .= '</TR>';
     }
   }
 %>
 
-<%= scalar(@svc_acct) ? '</TABLE><BR><BR>' : '' %>
+<%= scalar(@bytes_svcs) ? '</TABLE><BR><BR>' : '' %>
 
 <%= if ( @svc_phone or @svc_pbx ) {
       %any = ();

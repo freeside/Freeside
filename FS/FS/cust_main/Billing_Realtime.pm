@@ -510,11 +510,8 @@ sub realtime_bop {
       $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
 
-      my $paycvv = exists($options{'paycvv'})
-                     ? $options{'paycvv'}
-                     : $self->paycvv;
-      $content{cvv2} = $paycvv
-        if length($paycvv);
+      $content{cvv2} = $options{'paycvv'}
+        if length($options{'paycvv'});
 
       my $paystart_month = exists($options{'paystart_month'})
                              ? $options{'paystart_month'}
@@ -764,10 +761,10 @@ sub realtime_bop {
   ###
 
   # compare to FS::cust_main::save_cust_payby - check both to make sure working correctly
-  if ( length($self->paycvv)
+  if ( length($options{'paycvv'})
        && ! grep { $_ eq cardtype($options{payinfo}) } $conf->config('cvv-save')
   ) {
-    my $error = $self->remove_cvv;
+    my $error = $self->remove_cvv_from_cust_payby($options{payinfo});
     if ( $error ) {
       warn "WARNING: error removing cvv: $error\n";
     }
@@ -1790,11 +1787,8 @@ sub realtime_verify_bop {
       $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
 
-      my $paycvv = exists($options{'paycvv'})
-                     ? $options{'paycvv'}
-                     : $self->paycvv;
-      $content{cvv2} = $paycvv
-        if length($paycvv);
+      $content{cvv2} = $options{'paycvv'}
+        if length($options{'paycvv'});
 
       my $paystart_month = exists($options{'paystart_month'})
                              ? $options{'paystart_month'}
@@ -1918,6 +1912,8 @@ sub realtime_verify_bop {
     }
   }
 
+  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_verify_bop');
+
   if ( $transaction->is_success() ) {
 
     $cust_pay_pending->status('authorized');
@@ -1962,10 +1958,113 @@ sub realtime_verify_bop {
       my $e = "Authorization successful but reversal failed, custnum #".
               $self->custnum. ': '.  $reverse->result_code.
               ": ". $reverse->error_message;
+      $log->warning($e);
       warn $e;
       return $e;
 
     }
+
+    ### Address Verification ###
+    #
+    # Single-letter codes vary by cardtype.
+    #
+    # Erring on the side of accepting cards if avs is not available,
+    # only rejecting if avs occurred and there's been an explicit mismatch
+    #
+    # Charts below taken from vSecure documentation,
+    #    shows codes for Amex/Dscv/MC/Visa
+    #
+    # ACCEPTABLE AVS RESPONSES:
+    # Both Address and 5-digit postal code match Y A Y Y
+    # Both address and 9-digit postal code match Y A X Y
+    # United Kingdom – Address and postal code match _ _ _ F
+    # International transaction – Address and postal code match _ _ _ D/M
+    #
+    # ACCEPTABLE, BUT ISSUE A WARNING:
+    # Ineligible transaction; or message contains a content error _ _ _ E
+    # System unavailable; retry R U R R
+    # Information unavailable U W U U
+    # Issuer does not support AVS S U S S
+    # AVS is not applicable _ _ _ S
+    # Incompatible formats – Not verified _ _ _ C
+    # Incompatible formats – Address not verified; postal code matches _ _ _ P
+    # International transaction – address not verified _ G _ G/I
+    #
+    # UNACCEPTABLE AVS RESPONSES:
+    # Only Address matches A Y A A
+    # Only 5-digit postal code matches Z Z Z Z
+    # Only 9-digit postal code matches Z Z W W
+    # Neither address nor postal code matches N N N N
+
+    if (my $avscode = uc($transaction->avs_code)) {
+
+      # map codes to accept/warn/reject
+      my $avs = {
+        'American Express card' => {
+          'A' => 'r',
+          'N' => 'r',
+          'R' => 'w',
+          'S' => 'w',
+          'U' => 'w',
+          'Y' => 'a',
+          'Z' => 'r',
+        },
+        'Discover card' => {
+          'A' => 'a',
+          'G' => 'w',
+          'N' => 'r',
+          'U' => 'w',
+          'W' => 'w',
+          'Y' => 'r',
+          'Z' => 'r',
+        },
+        'MasterCard' => {
+          'A' => 'r',
+          'N' => 'r',
+          'R' => 'w',
+          'S' => 'w',
+          'U' => 'w',
+          'W' => 'r',
+          'X' => 'a',
+          'Y' => 'a',
+          'Z' => 'r',
+        },
+        'VISA card' => {
+          'A' => 'r',
+          'C' => 'w',
+          'D' => 'a',
+          'E' => 'w',
+          'F' => 'a',
+          'G' => 'w',
+          'I' => 'w',
+          'M' => 'a',
+          'N' => 'r',
+          'P' => 'w',
+          'R' => 'w',
+          'S' => 'w',
+          'U' => 'w',
+          'W' => 'r',
+          'Y' => 'a',
+          'Z' => 'r',
+        },
+      };
+      my $cardtype = cardtype($content{card_number});
+      if ($avs->{$cardtype}) {
+        my $avsact = $avs->{$cardtype}->{$avscode};
+        my $warning = '';
+        if ($avsact eq 'r') {
+          return "AVS code verification failed, cardtype $cardtype, code $avscode";
+        } elsif ($avsact eq 'w') {
+          $warning = "AVS did not occur, cardtype $cardtype, code $avscode";
+        } elsif (!$avsact) {
+          $warning = "AVS code unknown, cardtype $cardtype, code $avscode";
+        } # else $avsact eq 'a'
+        if ($warning) {
+          $log->warning($warning);
+          warn $warning;
+        }
+      } # else $cardtype avs handling not implemented
+    } # else !$transaction->avs_code
 
   } else { # is not success
 
@@ -1990,7 +2089,9 @@ sub realtime_verify_bop {
       $self->payinfo($transaction->card_token);
       my $error = $self->replace;
       if ( $error ) {
-        warn "WARNING: error storing token: $error, but proceeding anyway\n";
+        my $warning = "WARNING: error storing token: $error, but proceeding anyway\n";
+        $log->warning($warning);
+        warn $warning;
       }
     }
 

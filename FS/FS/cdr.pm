@@ -927,8 +927,10 @@ sub rate_prefix {
 
       # by default, set the included minutes for this region/time to
       # what's in the rate_detail
-      $included_min->{$regionnum}{$ratetimenum} = $rate_detail->min_included
-        unless exists $included_min->{$regionnum}{$ratetimenum};
+      if (!exists( $included_min->{$regionnum}{$ratetimenum} )) {
+        $included_min->{$regionnum}{$ratetimenum} =
+          ($rate_detail->min_included * $cust_pkg->quantity || 1);
+      }
 
       if ( $included_min->{$regionnum}{$ratetimenum} >= $minutes ) {
         $charge_sec = 0;
@@ -1262,6 +1264,10 @@ my %export_names = (
     'name'           => 'Number of calls, one line per service',
     'invoice_header' => 'Caller,Rate,Messages,Price',
   },
+  'sum_duration' => {
+    'name'           => 'Summary, one line per service',
+    'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
+  },
   'sum_duration_prefix' => {
     'name'           => 'Summary, one line per destination prefix',
     'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
@@ -1269,6 +1275,10 @@ my %export_names = (
   'sum_count_class' => {
     'name'           => 'Summary, one line per usage class',
     'invoice_header' => 'Caller,Class,Calls,Price',
+  },
+  'sum_duration_accountcode' => {
+    'name'           => 'Summary, one line per accountcode',
+    'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
   },
 );
 
