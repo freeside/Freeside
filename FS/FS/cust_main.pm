@@ -2223,7 +2223,9 @@ sub cust_payby {
     'hashref'  => { 'custnum' => $self->custnum },
     'order_by' => "ORDER BY payby IN ('CARD','CHEK') DESC, weight ASC",
   };
-  $search->{'extra_sql'} = ' AND payby IN ( ' . join(',', map { dbh->quote($_) } @payby) . ' ) '
+  $search->{'extra_sql'} = ' AND payby IN ( '.
+                               join(',', map dbh->quote($_), @payby).
+                             ' ) '
     if @payby;
 
   qsearch($search);
