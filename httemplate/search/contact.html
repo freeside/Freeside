@@ -22,6 +22,12 @@ push @select, map "contact.$_", qw( first last title );
 my %hash = ();
 my $addl_from = '';
 
+my $email_sub = sub {
+  my $contact = shift;
+  my @contact_email = $contact->contact_email;
+  join(', ', map $_->emailaddress, @contact_email);
+};
+
 my $link; #for closure in this sub, we'll define it later
 my $contact_classname_sub = sub {
   my $contact = shift;
@@ -37,9 +43,9 @@ my $contact_classname_sub = sub {
   $X_contact->contact_classname;
 };
 
-my @header = ( 'First', 'Last', 'Title', 'Type' );
-my @fields = ( 'first', 'last', 'title', $contact_classname_sub );
-my @links = ( '', '', '', '', );
+my @header = ( 'First', 'Last', 'Title', 'Email', 'Type' );
+my @fields = ( 'first', 'last', 'title', $email_sub, $contact_classname_sub );
+my @links = ( '', '', '', '', '', );
 
 my $company_link = '';
 
