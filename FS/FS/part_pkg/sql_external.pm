@@ -96,8 +96,7 @@ sub calc_recur {
             die "sql_external query returned non-numeric amount: $row->{amount}";
           }
         }
-        if (exists $row->{quantity}) {
-          $quantity ||= 0;
+        if (defined $row->{quantity}) {
           if ( $row->{quantity} eq '' ) {
             # treat as zero
           } elsif ( $row->{quantity} =~ /^\d+$/ ) {
