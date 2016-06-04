@@ -30,11 +30,24 @@ sub condition {
 
   my $cust_main = $self->cust_main($object);
 
+  #handle multiple (HASH) type options migrated from a v3 payby.pm condition
+  # (and maybe we should be a select-multiple or checkbox-multiple too?)
+  my @payby = ();
+  my $payby = $self->option('payby');
+  if ( ref($payby) ) {
+    @payby = keys %$payby;
+  } elsif ( $payby ) {
+    @payby = ( $payby );
+  }
+
   scalar( qsearch({ 
     'table'     => 'cust_payby',
     'hashref'   => { 'custnum' => $cust_main->custnum,
-                     'payby'   => $self->option('payby')
+                     #'payby'   => $self->option('payby')
                    },
+    'extra_sql' => 'AND payby IN ( '.
+                     join(',', map dbh->quote($_), @payby).
+                   ' ) ',
     'order_by'  => 'LIMIT 1',
   }) );
 
