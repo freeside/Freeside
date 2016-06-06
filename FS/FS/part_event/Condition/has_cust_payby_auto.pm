@@ -4,7 +4,7 @@ use base qw( FS::part_event::Condition );
 use strict;
 use Tie::IxHash;
 use FS::payby;
-use FS::Record qw(qsearch);
+use FS::Record qw( qsearch dbh );
 
 sub description {
   'Customer has automatic payment information';
