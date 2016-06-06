@@ -715,6 +715,9 @@ sub cgi_hash_callback {
     'CARD' => 'DCRD',
     'CHEK' => 'DCHK',
   );
+  # the payby selector gives the choice of CARD or CHEK (or others, but
+  # those are the ones with auto and on-demand versions). if the user didn't
+  # choose a weight, then they mean DCRD/DCHK.
   $hashref->{payby} = $noauto{$hashref->{payby}}
     if ! $hashref->{weight} && exists $noauto{$hashref->{payby}};
 

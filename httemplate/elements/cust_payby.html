@@ -298,8 +298,17 @@ if ( $curr_value ) {
   $cust_payby = new FS::cust_payby {};
 }
 my $sel_payby = $cgi->param($name.'_payby') || $cust_payby->payby;
-$sel_payby = 'CARD' if $sel_payby eq 'DCRD' || $sel_payby eq '';
-$sel_payby = 'CHEK' if $sel_payby eq 'DCHK';
+# convert DCRD to CARD + no weight, and the same for DCHK/CHEK
+if ($sel_payby eq 'DCRD') {
+  $sel_payby = 'CARD';
+  $cust_payby->weight('');
+} elsif ($sel_payby eq 'DCHK') {
+  $sel_payby = 'CHEK';
+  $cust_payby->weight('');
+} elsif (!$sel_payby) {
+  # default
+  $sel_payby = 'CARD';
+}
 
 my @payby = FS::payby->cust_payby;
 my %conf_payby = map { $_=>1 } $conf->config('payby');
