@@ -112,10 +112,10 @@ sub table { 'contact'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-If the object has an C<emailaddress> field, L<FS::contact_email> records will
-be created for each (comma-separated) email address in that field. If any of
-these coincide with an existing email address, this contact will be merged with
-the contact with that address.
+If the object has an C<emailaddress> field, L<FS::contact_email> records
+will be created for each (comma-separated) email address in that field. If
+any of these coincide with an existing email address, this contact will be
+merged with the contact with that address.
 
 Then, if the object has any fields named C<phonetypenumN> an
 L<FS::contact_phone> record will be created for each of them. Those fields
@@ -206,6 +206,10 @@ sub insert {
   }
 
   my $cust_contact = '';
+  # if $self->custnum was set, then the customer-specific properties
+  # (custnum, classnum, invoice_dest, selfservice_access, comment) are in
+  # pseudo-fields, and are now in %link_hash. otherwise, ignore all those
+  # fields.
   if ( $custnum ) {
     my %hash = ( 'contactnum' => $self->contactnum,
                  'custnum'    => $custnum,
@@ -337,6 +341,8 @@ sub delete {
     }
   }
 
+  # if $self->custnum was set, then we're removing the contact from this
+  # customer.
   if ( $self->custnum ) {
     my $cust_contact = qsearchs('cust_contact', {
                          'contactnum'  => $self->contactnum,
@@ -438,6 +444,10 @@ sub replace {
   }
 
   my $cust_contact = '';
+  # if $self->custnum was set, then the customer-specific properties
+  # (custnum, classnum, invoice_dest, selfservice_access, comment) are in
+  # pseudo-fields, and are now in %link_hash. otherwise, ignore all those
+  # fields.
   if ( $custnum ) {
     my %hash = ( 'contactnum' => $self->contactnum,
                  'custnum'    => $custnum,
@@ -943,6 +953,20 @@ use FS::upgrade_journal;
 sub _upgrade_data { #class method
   my ($class, %opts) = @_;
 
+  # before anything else, migrate contact.custnum to cust_contact records
+  unless ( FS::upgrade_journal->is_done('contact_invoice_dest') ) {
+
+    local($skip_fuzzyfiles) = 1;
+
+    foreach my $contact (qsearch('contact', {})) {
+      my $error = $contact->replace;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('contact_invoice_dest');
+  }
+
+
   # always migrate cust_main_invoice records over
   local $FS::cust_main::import = 1; # override require_phone and such
   my $search = FS::Cursor->new('cust_main_invoice', {});
@@ -973,18 +997,6 @@ sub _upgrade_data { #class method
     if ( $error ) {
       die "custnum $custnum, creating contact: $error\n";
     }
-  }
-
-  unless ( FS::upgrade_journal->is_done('contact_invoice_dest') ) {
-
-    local($skip_fuzzyfiles) = 1;
-
-    foreach my $contact (qsearch('contact', {})) {
-      my $error = $contact->replace;
-      die $error if $error;
-    }
-
-    FS::upgrade_journal->set_done('contact_invoice_dest');
   }
 
 }
