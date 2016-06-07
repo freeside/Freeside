@@ -2,6 +2,7 @@ package FS::access_user_log;
 use base qw( FS::Record );
 
 use strict;
+use FS::UID qw( dbh );
 #use FS::Record qw( qsearch qsearchs );
 use FS::CurrentUser;
 
@@ -84,6 +85,11 @@ sub insert_new_path {
     '_date'          => time,
     'render_seconds' => $render_seconds,
   } );
+
+  #so we can still log pages after a transaction-aborting SQL error (and then
+  # show the # error page)
+  local($FS::UID::dbh) = dbh->clone;
+    #if current transaction is aborted (if we had a way to check for it)
 
   my $error = $self->insert;
   die $error if $error;
