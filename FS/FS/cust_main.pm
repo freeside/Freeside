@@ -2126,18 +2126,7 @@ sub suspend_unless_pkgpart {
 =item cancel [ OPTION => VALUE ... ]
 
 Cancels all uncancelled packages (see L<FS::cust_pkg>) for this customer.
-
-Available options are:
-
-=over 4
-
-=item quiet - can be set true to supress email cancellation notices.
-
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
-
-=item ban - can be set true to ban this customer's credit card or ACH information, if present.
-
-=item nobill - can be set true to skip billing if it might otherwise be done.
+The cancellation time will be now.
 
 =back
 
@@ -2145,17 +2134,48 @@ Always returns a list: an empty list on success or a list of errors.
 
 =cut
 
-# nb that dates are not specified as valid options to this method
-
 sub cancel {
+  my $self = shift;
+  my %opt = @_;
+  warn "$me cancel called on customer ". $self->custnum. " with options ".
+       join(', ', map { "$_: $opt{$_}" } keys %opt ). "\n"
+    if $DEBUG;
+  my @pkgs = $self->ncancelled_pkgs;
+
+  $self->cancel_pkgs( %opt, 'cust_pkg' => \@pkgs );
+}
+
+=item cancel_pkgs OPTIONS
+
+Cancels a specified list of packages. OPTIONS can include:
+
+=over 4
+
+=item cust_pkg - an arrayref of the packages. Required.
+
+=item time - the cancellation time, used to calculate final bills and
+unused-time credits if any. Will be passed through to the bill() and
+FS::cust_pkg::cancel() methods.
+
+=item quiet - can be set true to supress email cancellation notices.
+
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=item cust_pkg_reason - can be an arrayref of L<FS::cust_pkg_reason> objects
+for the individual packages, parallel to the C<cust_pkg> argument. The
+reason and reason_otaker arguments will be taken from those objects.
+
+=item ban - can be set true to ban this customer's credit card or ACH information, if present.
+
+=item nobill - can be set true to skip billing if it might otherwise be done.
+
+=cut
+
+sub cancel_pkgs {
   my( $self, %opt ) = @_;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
-
-  warn "$me cancel called on customer ". $self->custnum. " with options ".
-       join(', ', map { "$_: $opt{$_}" } keys %opt ). "\n"
-    if $DEBUG;
 
   return ( 'access denied' )
     unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
@@ -2181,15 +2201,17 @@ sub cancel {
 
   }
 
-  my @pkgs = $self->ncancelled_pkgs;
+  my @pkgs = @{ delete $opt{'cust_pkg'} };
+  my $cancel_time = $opt{'time'} || time;
 
   # bill all packages first, so we don't lose usage, service counts for
   # bulk billing, etc.
   if ( !$opt{nobill} && $conf->exists('bill_usage_on_cancel') ) {
     $opt{nobill} = 1;
-    my $error = $self->bill( pkg_list => [ @pkgs ], cancel => 1 );
+    my $error = $self->bill( 'pkg_list' => [ @pkgs ],
+                             'cancel'   => 1,
+                             'time'     => $cancel_time );
     if ($error) {
-      # we should return an error and exit in this case, yes?
       warn "Error billing during cancel, custnum ". $self->custnum. ": $error";
       dbh->rollback if $oldAutoCommit;
       return ( "Error billing during cancellation: $error" );
@@ -2202,8 +2224,7 @@ sub cancel {
   my @sorted_cust_svc =
     map  { $_->[0] }
     sort { $a->[1] <=> $b->[1] }
-    map  { [ $_, $_->svc_x ? $_->svc_x->table_info->{'cancel_weight'} : -1 ]; }
-    @cust_svc
+    map  { [ $_, $_->svc_x ? $_->svc_x->table_info->{'cancel_weight'} : -1 ]; } @cust_svc
   ;
   warn "$me removing ".scalar(@sorted_cust_svc)." service(s) for customer ".
     $self->custnum."\n"
@@ -2215,7 +2236,6 @@ sub cancel {
     push @errors, $error if $error;
   }
   if (@errors) {
-    # then we won't get to the point of canceling packages
     dbh->rollback if $oldAutoCommit;
     return @errors;
   }
@@ -2224,7 +2244,21 @@ sub cancel {
     $self->custnum. "\n"
     if $DEBUG;
 
-  @errors = grep { $_ } map { $_->cancel(%opt) } @pkgs;
+  my @cprs;
+  if ($opt{'cust_pkg_reason'}) {
+    @cprs = @{ delete $opt{'cust_pkg_reason'} };
+  }
+  foreach (@pkgs) {
+    my %lopt = %opt;
+    if (@cprs) {
+      my $cpr = shift @cprs;
+      $lopt{'reason'}        = $cpr->reasonnum;
+      $lopt{'reason_otaker'} = $cpr->otaker;
+    }
+    my $error = $_->cancel(%lopt);
+    push @errors, 'pkgnum '.$_->pkgnum.': '.$error if $error;
+  }
+
   if (@errors) {
     dbh->rollback if $oldAutoCommit;
     return @errors;
