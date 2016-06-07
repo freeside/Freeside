@@ -2406,7 +2406,10 @@ reason and reason_otaker arguments will be taken from those objects.
 sub cancel_pkgs {
   my( $self, %opt ) = @_;
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
+  # we're going to cancel services, which is not reversible
+  die "cancel_pkgs cannot be run inside a transaction"
+    if $FS::UID::AutoCommit == 0;
+
   local $FS::UID::AutoCommit = 0;
 
   return ( 'access denied' )
@@ -2425,7 +2428,7 @@ sub cancel_pkgs {
       my $ban = new FS::banned_pay $cust_payby->_new_banned_pay_hashref;
       my $error = $ban->insert;
       if ($error) {
-        dbh->rollback if $oldAutoCommit;
+        dbh->rollback;
         return ( $error );
       }
 
@@ -2445,13 +2448,16 @@ sub cancel_pkgs {
                              'time'     => $cancel_time );
     if ($error) {
       warn "Error billing during cancel, custnum ". $self->custnum. ": $error";
-      dbh->rollback if $oldAutoCommit;
+      dbh->rollback;
       return ( "Error billing during cancellation: $error" );
     }
   }
+  dbh->commit;
 
+  $FS::UID::AutoCommit = 1;
   my @errors;
-  # now cancel all services, the same way we would for individual packages
+  # now cancel all services, the same way we would for individual packages.
+  # if any of them fail, cancel the rest anyway.
   my @cust_svc = map { $_->cust_svc } @pkgs;
   my @sorted_cust_svc =
     map  { $_->[0] }
@@ -2468,7 +2474,6 @@ sub cancel_pkgs {
     push @errors, $error if $error;
   }
   if (@errors) {
-    dbh->rollback if $oldAutoCommit;
     return @errors;
   }
 
@@ -2491,12 +2496,7 @@ sub cancel_pkgs {
     push @errors, 'pkgnum '.$_->pkgnum.': '.$error if $error;
   }
 
-  if (@errors) {
-    dbh->rollback if $oldAutoCommit;
-    return @errors;
-  }
-
-  return;
+  return @errors;
 }
 
 sub _banned_pay_hashref {
