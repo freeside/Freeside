@@ -224,7 +224,7 @@ my @menu = (
     },
     {
       label       => 'Cancel',
-      popup       => "misc/suspend_cust.html?custnum=$custnum",
+      popup       => "misc/cancel_cust.html?custnum=$custnum",
       acl         => 'Cancel customer',
       condition   => sub { shift->ncancelled_pkgs > 0 },
       actionlabel => 'Confirm Cancellation',
