@@ -555,7 +555,10 @@ sub insert {
         return $error;
       }
     }
-
+    # since we set invoice_dest on all migrated prospect contacts (for now),
+    # don't process invoicing_list.
+    delete $options{'invoicing_list'};
+    $invoicing_list = undef;
   }
 
   warn "  setting contacts\n"
@@ -579,8 +582,7 @@ sub insert {
               custnum       => $self->custnum,
           });
           $cust_contact->set('invoice_dest', 'Y');
-          my $error = $cust_contact->contactnum ?
-                        $cust_contact->replace : $cust_contact->insert;
+          my $error = $cust_contact->insert;
           if ( $error ) {
             $dbh->rollback if $oldAutoCommit;
             return "$error (linking to email address $dest)";
