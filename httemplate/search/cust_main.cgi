@@ -128,7 +128,10 @@
 %          'select'      => 'part_svc.*, COUNT(*) AS num_cust_svc',
 %          'table'       => 'part_svc', 
 %          'addl_from'   => 'LEFT JOIN cust_svc USING ( svcpart )',
-%          'extra_sql'   => 'WHERE pkgnum = ? GROUP BY part_svc.svcpart',
+%          'extra_sql'   => 'WHERE pkgnum = ? '.
+%                           ' GROUP BY '. join(', ',
+%                             map "part_svc.$_", fields('part_svc')
+%                           ),
 %          'extra_param' => [ [$cust_pkg->pkgnum,'int'] ],
 %        })
 %      ) {
