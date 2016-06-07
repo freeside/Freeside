@@ -532,6 +532,7 @@ sub insert {
     foreach my $prospect_contact ( $prospect_main->prospect_contact ) {
       my $cust_contact = new FS::cust_contact {
         'custnum' => $self->custnum,
+        'invoice_dest' => 'Y', # invoice_dest currently not set for prospect contacts
         map { $_ => $prospect_contact->$_() } qw( contactnum classnum comment )
       };
       my $error =  $cust_contact->insert

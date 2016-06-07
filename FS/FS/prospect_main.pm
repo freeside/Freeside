@@ -352,9 +352,6 @@ sub convert_cust_main {
 
   my @contact = map $_->contact, $self->prospect_contact;
 
-  #XXX define one contact type as "billing", then we could pick just that one
-  my @invoicing_list = map $_->emailaddress, map $_->contact_email, @contact;
-
   #XXX i'm not compatible with cust_main-require_phone (which is kind of a
   # pre-contact thing anyway)
 
@@ -379,7 +376,7 @@ sub convert_cust_main {
   #$cust_main->payby('BILL');
   #$cust_main->paydate('12/2037');
 
-  $cust_main->insert( {}, \@invoicing_list,
+  $cust_main->insert( {},
     'prospectnum' => $self->prospectnum,
   )
     or $cust_main;
