@@ -202,6 +202,9 @@ sub cancel_expired_pkgs {
 
   my @errors = ();
 
+  my @really_cancel_pkgs;
+  my @cancel_reasons;
+
   CUST_PKG: foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
     my $error;
@@ -219,14 +222,22 @@ sub cancel_expired_pkgs {
       $error = '' if ref $error eq 'FS::cust_pkg';
 
     } else { # just cancel it
-       $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
-                                           'reason_otaker' => $cpr->otaker,
-                                           'time'          => $time,
-                                         )
-                                       : ()
-                                 );
+
+      push @really_cancel_pkgs, $cust_pkg;
+      push @cancel_reasons, $cpr;
+
     }
-    push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
+  }
+
+  if (@really_cancel_pkgs) {
+
+    my %cancel_opt = ( 'cust_pkg' => \@really_cancel_pkgs,
+                       'cust_pkg_reason' => \@cancel_reasons,
+                       'time' => $time,
+                     );
+
+    push @errors, $self->cancel_pkgs(%cancel_opt);
+
   }
 
   join(' / ', @errors);
