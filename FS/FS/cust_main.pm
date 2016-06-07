@@ -2382,6 +2382,9 @@ Always returns a list: an empty list on success or a list of errors.
 sub cancel {
   my( $self, %opt ) = @_;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
   warn "$me cancel called on customer ". $self->custnum. " with options ".
        join(', ', map { "$_: $opt{$_}" } keys %opt ). "\n"
     if $DEBUG;
@@ -2401,7 +2404,10 @@ sub cancel {
 
       my $ban = new FS::banned_pay $cust_payby->_new_banned_pay_hashref;
       my $error = $ban->insert;
-      return ( $error ) if $error;
+      if ($error) {
+        dbh->rollback if $oldAutoCommit;
+        return ( $error );
+      }
 
     }
 
@@ -2409,18 +2415,54 @@ sub cancel {
 
   my @pkgs = $self->ncancelled_pkgs;
 
+  # bill all packages first, so we don't lose usage, service counts for
+  # bulk billing, etc.
   if ( !$opt{nobill} && $conf->exists('bill_usage_on_cancel') ) {
     $opt{nobill} = 1;
     my $error = $self->bill( pkg_list => [ @pkgs ], cancel => 1 );
-    warn "Error billing during cancel, custnum ". $self->custnum. ": $error"
-      if $error;
+    if ($error) {
+      # we should return an error and exit in this case, yes?
+      warn "Error billing during cancel, custnum ". $self->custnum. ": $error";
+      dbh->rollback if $oldAutoCommit;
+      return ( "Error billing during cancellation: $error" );
+    }
   }
 
-  warn "$me cancelling ". scalar($self->ncancelled_pkgs). "/".
-       scalar(@pkgs). " packages for customer ". $self->custnum. "\n"
+  my @errors;
+  # now cancel all services, the same way we would for individual packages
+  my @cust_svc = map { $_->cust_svc } @pkgs;
+  my @sorted_cust_svc =
+    map  { $_->[0] }
+    sort { $a->[1] <=> $b->[1] }
+    map  { [ $_, $_->svc_x ? $_->svc_x->table_info->{'cancel_weight'} : -1 ]; }
+    @cust_svc
+  ;
+  warn "$me removing ".scalar(@sorted_cust_svc)." service(s) for customer ".
+    $self->custnum."\n"
+    if $DEBUG;
+  foreach my $cust_svc (@sorted_cust_svc) {
+    my $part_svc = $cust_svc->part_svc;
+    next if ( defined($part_svc) and $part_svc->preserve );
+    my $error = $cust_svc->cancel; # immediate cancel, no date option
+    push @errors, $error if $error;
+  }
+  if (@errors) {
+    # then we won't get to the point of canceling packages
+    dbh->rollback if $oldAutoCommit;
+    return @errors;
+  }
+
+  warn "$me cancelling ". scalar(@pkgs) ." package(s) for customer ".
+    $self->custnum. "\n"
     if $DEBUG;
 
-  grep { $_ } map { $_->cancel(%opt) } $self->ncancelled_pkgs;
+  @errors = grep { $_ } map { $_->cancel(%opt) } @pkgs;
+  if (@errors) {
+    dbh->rollback if $oldAutoCommit;
+    return @errors;
+  }
+
+  return;
 }
 
 sub _banned_pay_hashref {
