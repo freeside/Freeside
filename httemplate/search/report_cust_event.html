@@ -44,16 +44,18 @@
 %     } else {
 
 % # 'initial' is not on here, since nobody needs to see it. also,
-% # 'done_Y' and 'done_N' are shorthand for "done, and no_action
-% # is null" and "done, and no_action = 'Y'".
+% # 'done_Y' = "done, and no_action is null, and statustext is null"
+% # 'done_S' = "done, and no_action is null, and statustext is not null"
+% # 'done_N' = "done, and no_action = 'Y'".
       <& /elements/tr-select.html,
         'label'         => 'Event status',
         'field'         => 'event_status',
         'multiple'      => 1,
         'all_selected'  => 1,
         'size'          => 5,
-        'options'       => [ qw( done_Y done_N failed new locked ) ],
-        'option_labels' => { done_Y => 'Completed',
+        'options'       => [ qw( done_Y done_S done_N failed new locked ) ],
+        'option_labels' => { done_Y => 'Completed normally',
+                             done_S => 'Completed, with an error',
                              done_N => 'Completed, no action taken',
                              failed => 'Failed',
                              new    => 'Not yet processed',

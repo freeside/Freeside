@@ -253,7 +253,13 @@ sub do_event {
     $statustext = "Error running ". $part_event->action. " action: $@";
   } elsif ( $error ) {
     $status = 'done';
-    $statustext = $error;
+    if ( $error eq 'N/A' ) {
+      # archaic way to indicate no-op completion of spool_csv (and maybe
+      # other events)?
+      $self->no_action('Y');
+    } else {
+      $statustext = $error;
+    }
   } else {
     $status = 'done';
   }
@@ -405,17 +411,22 @@ sub search_sql_where {
   if ( @event_status ) {
     my @status;
 
-    my ($done_Y, $done_N);
+    my ($done_Y, $done_N, $done_S);
+    # done_Y: action was taken
+    # done_N: action was not taken
+    # done_S: status message returned
     foreach (@event_status) {
       if ($_ eq 'done_Y') {
         $done_Y = 1;
       } elsif ( $_ eq 'done_N' ) {
         $done_N = 1;
+      } elsif ( $_ eq 'done_S' ) {
+        $done_S = 1;
       } else {
         push @status, $_;
       }
     }
-    if ( $done_Y or $done_N ) {
+    if ( $done_Y or $done_N or $done_S ) {
       push @status, 'done';
     }
     if ( @status ) {
@@ -424,12 +435,23 @@ sub search_sql_where {
                     ')';
     }
 
-    if ( $done_Y and not $done_N ) {
-      push @search, "cust_event.no_action IS NULL";
-    } elsif ( $done_N and not $done_Y ) {
-      push @search, "cust_event.no_action = 'Y'";
-    } # else they're both true, so don't add a constraint, or both false,
-      # and it doesn't matter.
+    # done_S status should include only those where statustext is not null,
+    # and done_Y should include only those where it is.
+    if ( $done_Y and $done_N and $done_S ) {
+      # then not necessary
+    } else {
+      my @done_status;
+      if ( $done_Y ) {
+        push @done_status, "(cust_event.no_action IS NULL AND cust_event.statustext IS NULL)";
+      }
+      if ( $done_N ) {
+        push @done_status, "(cust_event.no_action = 'Y')";
+      }
+      if ( $done_S ) {
+        push @done_status, "(cust_event.no_action IS NULL AND cust_event.statustext IS NOT NULL)";
+      }
+      push @search, join(' OR ', @done_status) if @done_status;
+    }
 
   } # event_status
 

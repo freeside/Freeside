@@ -325,13 +325,6 @@ $report_employees{'Employee Audit Report'} = [ $fsurl.'search/report_employee_au
   if $curuser->access_right('Employees: Audit Report');
 ;
 
-tie my %report_bill_event, 'Tie::IxHash',
-  'All billing events' => [ $fsurl.'search/report_cust_event.html', 'All billing events for a date range' ],
-  'Billing event errors' => [ $fsurl.'search/report_cust_event.html?failed=1', 'Failed credit cards, processor or printer problems, etc.' ],
-#  'All invoice events' => [ $fsurl.'search/cust_bill_event.html', 'Reports on deprecated, old-style invoice events for a date range' ],
-#  'Invoice event errors' => [ $fsurl.'search/cust_bill_event.html?failed=1', 'Reports on deprecated, old-style events for failed credit cards, processor or printer problems, etc.' ],
-;
-
 tie my %report_payments, 'Tie::IxHash',
   'Payments' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
   'Payment application detail' => [ $fsurl.'search/report_cust_bill_pay_pkg.html', 'Line item application detail' ],
@@ -444,7 +437,7 @@ $report_menu{'Tickets'}        = [ \%report_ticketing, 'Ticket reports' ]
   ;#&& FS::TicketSystem->access_right(\%session, 'Something');
 $report_menu{'Employees'}      =  [ \%report_employees, 'Employee reports'  ]
   if keys %report_employees;
-$report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
+$report_menu{'Billing events'} =  [ $fsurl.'search/report_cust_event.html', 'Search billing events by date and status' ]
   if $curuser->access_right('Billing event reports');
 $report_menu{'Financial'}      = [ \%report_financial, 'Financial reports' ]
   if $curuser->access_right('Financial reports') 
