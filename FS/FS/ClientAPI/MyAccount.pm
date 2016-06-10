@@ -1835,6 +1835,7 @@ sub list_svcs {
   #              @svc_x;
 
   my @svcs; # stuff to return to the client
+  my %bytes_used_total; # for _used columns only
   foreach my $cust_svc (@cust_svc) {
     my $svc_x = $cust_svc->svc_x;
     my($label, $value) = $cust_svc->label;
@@ -1868,6 +1869,10 @@ sub list_svcs {
         'downbytes_used'  => display_bytecount($down_used),
         'totalbytes_used' => display_bytecount($up_used + $down_used)
       );
+      $bytes_used_total{'seconds_used'} += $hash{'seconds_used'};
+      $bytes_used_total{'upbytes_used'} += $up_used;
+      $bytes_used_total{'downbytes_used'} += $down_used;
+      $bytes_used_total{'totalbytes_used'} += $up_used + $down_used;
     }
 
     if ( $svcdb eq 'svc_acct' ) {
@@ -1942,12 +1947,19 @@ sub list_svcs {
     push @svcs, \%hash;
   } # foreach $cust_svc
 
+  foreach my $field (keys %bytes_used_total) {
+    if ($field =~ /bytes/) {
+      $bytes_used_total{$field} = display_bytecount($bytes_used_total{$field});
+    }
+  }
+
   return { 
     'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
     'date_format' => $conf->config('date_format') || '%m/%d/%Y',
     'view_usage_nodomain' => $conf->exists('selfservice-view_usage_nodomain'),
     'svcs'     => \@svcs,
+    'bytes_used_total' => \%bytes_used_total,
     'usage_pools' => [
       map { $usage_pools{$_} }
       sort { $a cmp $b }
