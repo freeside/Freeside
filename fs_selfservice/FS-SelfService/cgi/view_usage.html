@@ -75,6 +75,18 @@
       $OUT .= '</TR>';
     }
   }
+  if ((@bytes_svcs > 1) and (grep { $bytes_show{$_.'_used'} } qw(seconds upbytes downbytes totalbytes) )) {
+    $OUT .= '<TR>';
+    $OUT .= '<TH align="left">Total Used</TH>';
+    foreach my $field (@bytes_cols) {
+      if ($bytes_show{$field}) {
+        $OUT .= '<TD ALIGN="right">';
+        $OUT .= $bytes_used_total{$field} || '0' if $field =~ /_used$/;
+        $OUT .= '</TD>';
+      }
+    }
+    $OUT .= '</TR>';
+  }    
 %>
 
 <%= scalar(@bytes_svcs) ? '</TABLE><BR><BR>' : '' %>

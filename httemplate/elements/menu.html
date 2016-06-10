@@ -320,7 +320,6 @@ tie my %report_ticketing, 'Tie::IxHash',
 ;
 
 tie my %report_bill_event, 'Tie::IxHash',
-  'All billing events' => [ $fsurl.'search/report_cust_event.html', 'All billing events for a date range' ],
   'Billing event errors' => [ $fsurl.'search/report_cust_event.html?failed=1', 'Failed credit cards, processor or printer problems, etc.' ],
 ;
 
@@ -404,7 +403,7 @@ tie my %report_payable, 'Tie::IxHash',
 ;
 
 tie my %report_logs, 'Tie::IxHash';
-$report_logs{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
+$report_logs{'Billing events'} =  [ $fsurl.'search/report_cust_event.html', 'Search billing events by date and status' ]
   if $curuser->access_right('Billing event reports');
 $report_logs{'Credit limit incidents'} = [ $fsurl.'search/report_cust_main_credit_limit.html', '' ]
   if $curuser->access_right('List rating data');

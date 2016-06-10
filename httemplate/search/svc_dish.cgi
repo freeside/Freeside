@@ -15,6 +15,7 @@
                                     'acctnum',
                                     sub {
                                       $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                                      return '' unless $cust_pkg_cache{$_[0]->svcnum};
                                       $cust_pkg_cache{$_[0]->svcnum}->ucfirst_status
                                     },
                                     \&FS::UI::Web::cust_fields,
@@ -33,6 +34,8 @@
                               '',
                               '',
                               sub {
+                                $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
+                                return '' unless $cust_pkg_cache{$_[0]->svcnum};
                                 my $c = FS::cust_pkg::statuscolors;
                                 $c->{$cust_pkg_cache{$_[0]->svcnum}->status };
                               }, # pkg status
