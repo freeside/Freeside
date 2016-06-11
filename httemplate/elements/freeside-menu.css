@@ -142,3 +142,13 @@ a:visited:hover.fsdarkbutton {
          overflow:visible;
 }
 
+
+/* elements/notify-tickets.html is in the menu area */
+.dot {
+  border-radius: 50%;
+  border: 1px solid black;
+  width: 1ex;
+  height: 1ex;
+  display: inline-block;
+  margin-top: 0.3ex;
+}
