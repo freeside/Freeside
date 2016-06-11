@@ -240,7 +240,8 @@ sub service_tickets  {
 sub _ticket_info {
   # Takes an RT::Ticket; returns a hashref of the ticket's fields, including 
   # custom fields.  Also returns custom and selfservice priority values as 
-  # _custom_priority and _selfservice_priority.
+  # _custom_priority and _selfservice_priority, and the IsUnreplied property
+  # as is_unreplied.
   my $t = shift;
 
   my $custom_priority = 
@@ -265,6 +266,7 @@ sub _ticket_info {
   if ( $ss_priority ) {
     $ticket_info{'_selfservice_priority'} = $ticket_info{"CF.{$ss_priority}"};
   }
+  $ticket_info{'is_unreplied'} = $t->IsUnreplied;
   my $svcnums = [ 
     map { $_->Target =~ /cust_svc\/(\d+)/; $1 } 
         @{ $t->Services->ItemsArrayRef }
