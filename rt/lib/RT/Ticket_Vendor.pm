@@ -92,5 +92,28 @@ sub WillResolveAsString {
   return $self->WillResolveObj->AsString();
 }
 
+=head2 IsUnreplied
+
+Returns true if there's a Correspond or Create transaction more recent than
+the Told date of this ticket (or the ticket has no Told date) and the ticket
+is not rejected or resolved.
+
+=cut
+
+sub IsUnreplied {
+  my $self = shift;
+  return 0 if $self->Status eq 'resolved'
+           or $self->Status eq 'rejected';
+
+  my $Told = $self->Told || '1970-01-01';
+  my $Txns = $self->Transactions;
+  $Txns->Limit(FIELD => 'Type',
+               OPERATOR => 'IN',
+               VALUE => [ 'Correspond', 'Create' ]);
+  $Txns->Limit(FIELD => 'Created',
+               OPERATOR => '>',
+               VALUE => $Told);
+  $Txns->Count ? 1 : 0;
+}
 
 1;

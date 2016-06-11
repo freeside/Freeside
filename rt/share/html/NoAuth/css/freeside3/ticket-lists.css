@@ -99,8 +99,18 @@ tr.collection-as-table+tr.collection-as-table th {
 
 }
 
-
-
+tr.unreplied-ticket > :first-child::before {
+  /* green dot */
+    border: 1px solid black;
+    border-radius: 50%;
+    display: inline-block;
+    height: 1ex;
+    width: 1ex;
+    float: left;
+    content: '';
+    margin-top: 1ex;
+    background-color: green;
+}
 
 table.queue-summary td {
   background: #efefef;
