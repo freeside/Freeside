@@ -6,9 +6,9 @@
 
 =head1 DESCRIPTION
 
-Find all unresolved tickets owned by the current user where the last correspondence
-from a requestor (or ticket creation) is more recent than the last
-correspondence from a non-requestor (if there is any).
+Find all unresolved tickets owned by the current user where the last
+correspondence from a requestor (or ticket creation) is more recent than the
+last correspondence from a non-requestor (if there is any).
 
 =head1 METHODS
 
@@ -39,6 +39,11 @@ sub Prepare  {
     FIELD => 'Status',
     OPERATOR => '!=',
     VALUE => 'resolved'
+  );
+  $TicketsObj->Limit(
+    FIELD => 'Status',
+    OPERATOR => '!=',
+    VALUE => 'rejected',
   );
   my $txn_alias = $TicketsObj->JoinTransactions;
   $TicketsObj->RT::SearchBuilder::Limit(
