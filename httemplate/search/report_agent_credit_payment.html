@@ -1,0 +1,30 @@
+<& /elements/header.html, 'Package Agent Credits and Payments' &>
+
+<P>Shows agent commission credits, and payments applied to invoices for packages that triggered those credits.</P>
+
+<FORM ACTION="agent_credit_payment.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <& /elements/tr-select-agent.html,
+         'curr_value'    => scalar( $cgi->param('agentnum') ),
+         'label'         => 'Agent ',
+         'disable_empty' => 0,
+    &>
+
+    <& /elements/tr-input-beginning_ending.html &>
+    
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

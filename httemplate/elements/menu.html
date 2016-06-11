@@ -368,6 +368,7 @@ tie my %report_commissions, 'Tie::IxHash',
 ;
 $report_commissions{'Employee Commissions'} = [ $fsurl.'search/report_employee_commission.html', '' ]
   if $curuser->access_right('Employees: Commission Report');
+$report_commissions{'Agent Credits and Payments'} = [ $fsurl.'search/report_agent_credit_payment.html' ];
 
 tie my %report_financial, 'Tie::IxHash';
 if( $curuser->access_right('Financial reports') ) {
