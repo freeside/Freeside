@@ -81,6 +81,20 @@ table.collection-as-table.chart th {
     border-bottom: 2px solid #ccc
 }
 
+tr.unreplied-ticket > :first-child::before {
+  /* green dot */
+    border: 1px solid black;
+    border-radius: 50%;
+    display: inline-block;
+    height: 1ex;
+    width: 1ex;
+    float: left;
+    content: '';
+    margin-top: 0 auto;
+    margin-bottom: 0 auto;
+    background-color: green;
+}
+
 table.queue-summary td {
     background: #efefef;
     border-bottom: 1px solid #ccc;
