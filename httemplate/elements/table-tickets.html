@@ -14,6 +14,7 @@ View
 
 <THEAD>
 <TR>
+  <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('#') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Subject') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
@@ -41,6 +42,16 @@ View
 
   <TR>
   
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+%     if ( $ticket->{is_unreplied} ) {
+        <A CLASS="dot" STYLE="background-color: green" HREF=<%$href%>>
+%     } else {
+%       # placeholder
+        <A CLASS="dot" STYLE="visibility: hidden" HREF=<%$href%>>
+%     }
+      </A>
+    </TD>
+
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <A HREF=<%$href%>><% $ticket->{id} %></A>
     </TD>
