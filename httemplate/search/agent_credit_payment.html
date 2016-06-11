@@ -1,0 +1,155 @@
+<& elements/grid-report.html,
+    title => $title.'Package Agent Credits and Payments',
+    rows  => $rows,
+	cells => $cells,
+    head  => <<END,
+<P>Shows agent commission credits, and payments applied to invoices for packages that triggered those credits.</P>
+<STYLE SCOPED>
+td.creditcell { background-color: #ffff99; }
+td.paycell    { background-color: #66ff66; }
+</STYLE>
+END
+&>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Financial reports');
+
+my $extra_sql = '';
+
+# search for agent
+my ($agentnum,$sel_agent);
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  $sel_agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  die "agentnum $agentnum not found!" unless $sel_agent;
+  $extra_sql .= "  AND cust_credit.commission_agentnum = $agentnum\n";
+}
+my $title = $sel_agent ? $sel_agent->agent.' ' : '';
+
+# search for credits in time period (applied to payments in $query)
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+$extra_sql .= "  AND cust_credit._date >= $beginning\n";
+$extra_sql .= "  AND cust_credit._date <= $ending\n";
+
+# agent virtualization
+my $agentnums_sql = $curuser->agentnums_sql( table => 'agent' );
+
+my $join = <<END;
+  LEFT JOIN agent ON ( cust_credit.commission_agentnum = agent.agentnum )
+  LEFT JOIN cust_pkg ON ( cust_credit.commission_pkgnum = cust_pkg.pkgnum )
+  LEFT JOIN part_pkg ON ( cust_pkg.pkgpart = part_pkg.pkgpart )
+END
+
+my $query = <<END;
+SELECT DISTINCT
+  agent,
+  cust_pkg.custnum AS xcustnum,
+  cust_credit.commission_pkgnum AS xpkgnum,
+  pkg,
+  'cust_pay' AS xtable,
+  cust_pay.paynum AS xnum,
+  to_timestamp(cust_pay._date) AS xdate,
+  cust_pay.paid AS xamount,
+  cust_pay.order_number AS order_number
+FROM cust_pay
+  INNER JOIN cust_bill_pay ON ( cust_pay.paynum = cust_bill_pay.paynum )
+  INNER JOIN cust_bill_pkg ON ( cust_bill_pay.invnum = cust_bill_pkg.invnum )
+  INNER JOIN cust_credit ON ( cust_bill_pkg.pkgnum = cust_credit.commission_pkgnum )
+$join
+WHERE cust_credit.commission_pkgnum IS NOT NULL
+  AND cust_pay._date >= $beginning
+  AND cust_pay._date <= $ending
+  AND $agentnums_sql
+$extra_sql
+UNION
+SELECT DISTINCT
+  agent,
+  cust_pkg.custnum AS xcustnum,
+  cust_credit.commission_pkgnum AS xpkgnum,
+  pkg,
+  'cust_credit' AS xtable,
+  cust_credit.crednum AS xnum,
+  to_timestamp(cust_credit._date) AS xdate,
+  cust_credit.amount AS xamount,
+  '' AS order_number
+FROM cust_credit
+$join
+WHERE cust_credit.commission_pkgnum is not null
+  AND $agentnums_sql
+$extra_sql
+ORDER BY agent, xcustnum, xpkgnum, xdate
+END
+
+my $sth = dbh->prepare($query) or die dbh->errstr;
+$sth->execute() or die $sth->errstr;
+
+my $cells = [];
+my $rows  = [];
+my $agentstack = [];
+my $custstack = [];
+my $pkgstack = [];
+my ($prev_agent,$count_agent,$prev_cust,$count_cust,$prev_pkg,$count_pkg);
+while (my $row = $sth->fetchrow_arrayref) {
+  my @row = @$row;
+  my $curr_agent = shift @row;
+  my $curr_cust  = shift @row;
+  my $curr_pkg   = (shift @row) . ': ' . (shift @row);
+
+  if ($curr_pkg eq $prev_pkg) {
+    $count_pkg += 1;
+  } else {
+    unshift @{$$pkgstack[0]}, { value => $prev_pkg, rowspan => $count_pkg } if @$pkgstack;;
+    push @$custstack, @$pkgstack;
+    $pkgstack = [];
+    $count_pkg = 1;
+  }
+  $prev_pkg = $curr_pkg;
+
+  if ($curr_cust eq $prev_cust) {
+    $count_cust += 1;
+  } else {
+    if (@$custstack) {
+      my $cust_main = qsearchs('cust_main',{ custnum => $prev_cust });
+      unshift @{$$custstack[0]}, { value => $cust_main->name, rowspan => $count_cust } if @$custstack;;
+    }
+    push @$agentstack, @$custstack;
+    $custstack = [];
+    $count_cust = 1;
+  }
+  $prev_cust = $curr_cust;
+
+  if ($curr_agent eq $prev_agent) {
+    $count_agent += 1;
+  } else {
+    unshift @{$$agentstack[0]}, { value => $prev_agent, rowspan => $count_agent } if @$agentstack;;
+    push @$cells, @$agentstack;
+    $agentstack = [];
+    $count_agent = 1;
+  }
+  $prev_agent = $curr_agent;
+
+  my %coloropts = ($row[0] eq 'cust_credit') ? ( 'class' => 'creditcell' ) : ( 'class' => 'paycell' );
+  push @$pkgstack, [ map { { value => $_, %coloropts } } @row ];
+}
+
+unshift @{$$pkgstack[0]}, { value => $prev_pkg, rowspan => $count_pkg } if @$pkgstack;;
+push @$custstack, @$pkgstack;
+if (@$custstack) {
+  my $cust_main = qsearchs('cust_main',{ custnum => $prev_cust });
+  unshift @{$$custstack[0]}, { value => $cust_main->name, rowspan => $count_cust } if @$custstack;;
+}
+push @$agentstack, @$custstack;
+unshift @{$$agentstack[0]}, { value => $prev_agent, rowspan => $count_agent } if @$agentstack;;
+push @$cells, @$agentstack;
+
+$sth->finish;
+
+my $rows  = [ map { {} } @$cells ];
+
+unshift @$cells, [ map { { value => $_, header => 1 } } ('Agent','Customer','Package','Table','#','Date','Amount','Order Number') ];
+unshift @$rows, { header => 1 };
+
+</%init>
