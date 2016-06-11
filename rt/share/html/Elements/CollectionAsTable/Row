@@ -57,6 +57,11 @@ $Class     => 'RT__Ticket'
 $Classes => ''
 </%ARGS>
 <%init>
+# it's a hack, but it has to be applied in every ticket search regardless
+# of format, so...
+if ( $record and $record->isa('RT::Ticket') and $record->IsUnreplied ) {
+  $Classes .= ' unreplied-ticket';
+}
 $m->out(  '<tr class="' . $Classes . ' '
         . ( $Warning ? 'warnline' : $i % 2 ? 'oddline' : 'evenline' ) . '" >'
         . "\n" );
