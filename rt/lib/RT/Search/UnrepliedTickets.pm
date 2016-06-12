@@ -31,16 +31,21 @@ sub Prepare  {
 
   my $TicketsObj = $self->TicketsObj;
   # bypass the pre-RT-4.2 TicketRestrictions stuff and just use SearchBuilder
-  $TicketsObj->RT::SearchBuilder::Limit(
-    FIELD => 'Owner',
-    VALUE => $TicketsObj->CurrentUser->id
-  );
+
+  # if SystemUser does this search (as in QueueSummaryByLifecycle), they
+  # should get all tickets regardless of ownership
+  if ($TicketsObj->CurrentUser->id != RT->SystemUser->id) {
+    $TicketsObj->RT::SearchBuilder::Limit(
+      FIELD => 'Owner',
+      VALUE => $TicketsObj->CurrentUser->id
+    );
+  }
   $TicketsObj->RT::SearchBuilder::Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
     VALUE => 'resolved'
   );
-  $TicketsObj->Limit(
+  $TicketsObj->RT::SearchBuilder::Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
     VALUE => 'rejected',

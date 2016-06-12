@@ -108,7 +108,7 @@ tr.unreplied-ticket > :first-child::before {
     width: 1ex;
     float: left;
     content: '';
-    margin-top: 1ex;
+    margin-right: 1ex;
     background-color: green;
 }
 
