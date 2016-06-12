@@ -30,10 +30,14 @@ sub Prepare  {
   my $self = shift;
 
   my $TicketsObj = $self->TicketsObj;
-  $TicketsObj->Limit(
-    FIELD => 'Owner',
-    VALUE => $TicketsObj->CurrentUser->id
-  );
+  # if SystemUser does this search (as in QueueSummaryByLifecycle), they
+  # should get all tickets regardless of ownership
+  if ($TicketsObj->CurrentUser->id != RT->SystemUser->id) {
+    $TicketsObj->Limit(
+      FIELD => 'Owner',
+      VALUE => $TicketsObj->CurrentUser->id
+    );
+  }
   $TicketsObj->Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
