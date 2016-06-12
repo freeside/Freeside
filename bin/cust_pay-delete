@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch );
+use FS::cust_pay;
+
+adminsuidsetup shift or die usage();
+
+my $custnum = shift or die usage();
+
+my $paid = shift or die usage();
+
+my $min_paynum = shift or die usage();
+
+my @cust_pay = qsearch({
+  'table'   => 'cust_pay',
+  'hashref' => { 'custnum' => $custnum,
+                 'paid'    => $paid,
+                 'paynum'  => { op=>'>=', value=>$min_paynum, },
+                 'payinfo' => '',
+               },
+});
+
+die "Delete ". scalar(@cust_pay). " payments?\n";
+
+#foreach my $cust_pay (@cust_pay) {
+#  my $error = $cust_pay->delete;
+#  die $error if $error;
+#}
+
+sub usage {
+  "Usage: cust_pay delete username custnum paid min_paynum\n";
+}
