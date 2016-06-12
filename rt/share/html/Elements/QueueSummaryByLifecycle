@@ -66,9 +66,13 @@ for my $queue (@queues) {
     next if lc($queue->{Lifecycle} || '') ne lc $lifecycle->Name;
 
     $i++;
-</%PERL>
-<tr class="<% $i%2 ? 'oddline' : 'evenline'%>" >
 
+    my $classes = $i%2 ? 'oddline' : 'evenline';
+    $classes .= ' unreplied-ticket' if $queue->{Unreplied} > 0;
+</%PERL>
+<tr class="<% $classes %>">
+
+<td></td>
 <td>
     <a href="<% $link_all->($queue, \@cur_statuses) %>" title="<% $queue->{Description} %>"><% $queue->{Name} %></a>
 </td>
@@ -132,6 +136,24 @@ my %lifecycle;
 for my $queue (@queues) {
     my $cycle = RT::Lifecycle->Load( Name => $queue->{'Lifecycle'} );
     $lifecycle{ lc $cycle->Name } = $cycle;
+}
+
+use RT::Search::UnrepliedTickets;
+my $Tickets = RT::Tickets->new( RT->SystemUser );
+my $Search = RT::Search::UnrepliedTickets->new( TicketsObj => $Tickets );
+$Search->Prepare;
+
+for my $queue (@queues) {
+    my $cycle = RT::Lifecycle->Load( Name => $queue->{'Lifecycle'} );
+    $lifecycle{ lc $cycle->Name } = $cycle;
+
+    # show whether there are unreplied tickets
+    # somewhat inefficient but we only use the count query
+    my $tix = $Tickets->Clone;
+    $tix->Limit(FIELD => 'Queue',
+                OPERATOR => '=',
+                VALUE => $queue->{id});
+    $queue->{Unreplied} = $tix->Count;
 }
 
 unless (@statuses) {
