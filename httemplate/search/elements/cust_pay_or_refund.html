@@ -354,6 +354,7 @@ if ( $cgi->param('magic') ) {
               "   OR substring($table.payinfo from 1 for 2) $similar_to '2[3-6]' ".
               "   OR substring($table.payinfo from 1 for 3) $similar_to '27[0-1]' ".
               "   OR substring($table.payinfo from 1 for 4) = '2720' ".
+              "   OR substring($table.payinfo from 1 for 3) = '2[2-7]x' ".
               " ) ";
 
           } elsif ( $cardtype eq 'Amex' ) {
@@ -369,38 +370,52 @@ if ( $cgi->param('magic') ) {
 
             $search =
               " (    substring($table.payinfo from 1 for 4 ) = '6011'  ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '60x'   ".
               "   OR substring($table.payinfo from 1 for 2 ) = '65'    ".
-              "   OR substring($table.payinfo from 1 for 3 ) = '300'   ". # diner's 300-305
+
+              # diner's 300-305 / 3095
+              "   OR substring($table.payinfo from 1 for 3 ) = '300'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '301'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '302'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '303'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '304'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '305'   ".
-              "   OR substring($table.payinfo from 1 for 4 ) = '3095'  ". # diner's 3095
-              "   OR substring($table.payinfo from 1 for 2 ) = '36'    ". # diner's 36, 38, 39
+              "   OR substring($table.payinfo from 1 for 4 ) = '3095'  ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '30x'   ".
+
+              # diner's 36, 38, 39
+              "   OR substring($table.payinfo from 1 for 2 ) = '36'    ".
               "   OR substring($table.payinfo from 1 for 2 ) = '38'    ".
               "   OR substring($table.payinfo from 1 for 2 ) = '39'    ".
+
               "   OR substring($table.payinfo from 1 for 3 ) = '644'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '645'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '646'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '647'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '648'   ".
               "   OR substring($table.payinfo from 1 for 3 ) = '649'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '64x'   ".
+
+              # JCB cards in the 3528-3589 range identified as Discover inside US & territories (NOT Canada)
               ( $country =~ /^(US|PR|VI|MP|PW|GU)$/
-               ?" OR substring($table.payinfo from 1 for 4 ) = '3528'  ". # JCB cards in the 3528-3589 range identified as Discover inside US & territories (NOT Canada)
+               ?" OR substring($table.payinfo from 1 for 4 ) = '3528'  ".
                 " OR substring($table.payinfo from 1 for 4 ) = '3529'  ".
                 " OR substring($table.payinfo from 1 for 3 ) = '353'   ".
                 " OR substring($table.payinfo from 1 for 3 ) = '354'   ".
                 " OR substring($table.payinfo from 1 for 3 ) = '355'   ".
                 " OR substring($table.payinfo from 1 for 3 ) = '356'   ".
                 " OR substring($table.payinfo from 1 for 3 ) = '357'   ".
-                " OR substring($table.payinfo from 1 for 3 ) = '358'   "
+                " OR substring($table.payinfo from 1 for 3 ) = '358'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '35x'   "
                :""
               ).
+
+              #China Union Pay processed as Discover in US, Mexico and Caribbean
               ( $country =~ /^(US|MX|AI|AG|AW|BS|BB|BM|BQ|VG|KY|CW|DM|DO|GD|GP|JM|MQ|MS|BL|KN|LC|VC|MF|SX|TT|TC)$/
-               ?" OR substring($table.payinfo from 1 for 3 ) $similar_to '62[24-68]'   " #China Union Pay processed as Discover outside CN
+               ?" OR substring($table.payinfo from 1 for 3 ) $similar_to '62[24-68x]'   "
                :""
               ).
+
               " ) ";
 
           } elsif ( $cardtype eq 'Maestro' ) {
