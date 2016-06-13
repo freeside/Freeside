@@ -72,7 +72,6 @@ for my $queue (@queues) {
 </%PERL>
 <tr class="<% $classes %>">
 
-<td></td>
 <td>
     <a href="<% $link_all->($queue, \@cur_statuses) %>" title="<% $queue->{Description} %>"><% $queue->{Name} %></a>
 </td>
@@ -144,9 +143,6 @@ my $Search = RT::Search::UnrepliedTickets->new( TicketsObj => $Tickets );
 $Search->Prepare;
 
 for my $queue (@queues) {
-    my $cycle = RT::Lifecycle->Load( Name => $queue->{'Lifecycle'} );
-    $lifecycle{ lc $cycle->Name } = $cycle;
-
     # show whether there are unreplied tickets
     # somewhat inefficient but we only use the count query
     my $tix = $Tickets->Clone;
