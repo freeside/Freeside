@@ -120,7 +120,13 @@ my $updates = 0;
 
 my $row;
 while ( $row = $sth->fetchrow_hashref ) {
-  $row->{calledstation} =~ s/^1//;
+  my $dst = $row->{calledstation};
+  my $dst_ip_addr = '';
+  if ($dst =~ m[^SIP/(\d+)@(.*)$] ) {
+    $dst = $1;
+    $dst_ip_addr = $2;
+  }
+  $dst =~ s/^1//;
   $row->{src} =~ s/^1//;
   my $cdr = FS::cdr->new ({
     uniqueid            => $row->{sessionid},
@@ -129,8 +135,10 @@ while ( $row = $sth->fetchrow_hashref ) {
     enddate             => time2str($row->{stoptime}),
     duration            => $row->{sessiontime},
     billsec             => $row->{real_sessiontime},
-    dst                 => $row->{calledstation},
+    dst                 => $dst,
     src                 => $row->{src},
+    dst_ip_addr         => $dst_ip_addr,
+    dstchannel          => $row->{calledstation},
     charged_party       => $row->{username},
     upstream_rateplanid => $row->{id_tariffplan},
     upstream_rateid     => $row->{id_ratecard}, # I think?
