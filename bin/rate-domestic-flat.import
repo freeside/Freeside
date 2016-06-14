@@ -1,0 +1,105 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV;
+use FS::Misc::Getopt;
+use FS::Record qw(qsearchs qsearch dbh);
+use FS::rate;
+use FS::rate_region;
+use FS::rate_prefix;
+use FS::rate_detail;
+
+our %opt;
+getopts('r:g:'); # ratename, granularity
+
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $file = shift or usage();
+open my $in, '<', $file or die "$file: $!\n";
+my $csv = Text::CSV->new({ binary => 1, auto_diag => 2 });
+# set header row
+$csv->column_names($csv->getline($in));
+# Format:
+# Destination (regionname)
+# BilledPrefix (prefix)
+# RetailRate (per minute)
+
+my $error;
+
+my $granularity = $opt{g} || 1;
+
+usage() unless $opt{r};
+my $rate = qsearchs('rate', { 'ratename' => $opt{r} });
+if (!$rate) {
+  $rate = FS::rate->new({ 'ratename' => $opt{r} });
+  $error = $rate->insert;
+  die $error if $error;
+}
+
+while (my $row = $csv->getline_hr($in)) {
+  print $csv->string;
+
+  my $region = qsearchs('rate_region', {
+      'regionname' => $row->{'Destination'}
+  });
+  if (!$region) {
+    $region = FS::rate_region->new({
+      'regionname' => $row->{'Destination'}
+    });
+    $error = $region->insert;
+    die $error if $error;
+  }
+
+  my $prefix = $row->{'BilledPrefix'};
+  $prefix =~ s/^1//;
+
+  my %prefix = (
+      'countrycode' => '1',
+      'npa'         => $prefix,
+  );
+  my $rate_prefix = qsearchs('rate_prefix', \%prefix);
+  if (!$rate_prefix) {
+    $rate_prefix = FS::rate_prefix->new(\%prefix);
+    $rate_prefix->set('regionnum', $region->regionnum);
+    $error = $rate_prefix->insert;
+  } else {
+    $rate_prefix->set('regionnum', $region->regionnum);
+    $error = $rate_prefix->replace;
+  }
+  die $error if $error;
+
+  # enough to identify the detail
+  my %detail = (
+    'ratenum'         => $rate->ratenum,
+    'dest_regionnum'  => $region->regionnum,
+    'cdrtypenum'      => '',
+    'ratetimenum'     => '',
+  );
+  my $dest_detail = qsearchs('rate_detail', \%detail);
+  # ProfileRate is 5 decimal places, same as rate_detail.min_charge
+  if (!$dest_detail) {
+    $dest_detail = FS::rate_detail->new({
+        %detail,
+        'min_included'    => 0,
+        'min_charge'      => $row->{RetailRate},
+        'sec_granularity' => $granularity,
+    });
+    $error = $dest_detail->insert;
+  } else {
+    local $FS::Record::nowarn_identical = 1;
+    $dest_detail->set('min_charge' => $row->{RetailRate});
+    $error = $dest_detail->replace;
+  }
+  die $error if $error;
+}
+dbh->commit;
+print "Finished.\n";
+
+
+sub usage {
+  die "Usage: rate-intl.import -r ratename
+                             [ -g granularity ]
+                              <user> <file>.csv\n\n";
+}
+
