@@ -5036,6 +5036,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-intl_to_domestic_rewrite',
+    'section'     => 'telephony',
+    'description' => 'Strip the "011" international prefix from CDR destination numbers if the rest of the number is 7 digits or shorter, and so probably does not contain a country code.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cdr-gsm_tap3-sender',
     'section'     => 'telephony',
     'description' => 'GSM TAP3 Sender network (5 letter code)',
