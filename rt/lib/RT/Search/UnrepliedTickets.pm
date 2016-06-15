@@ -43,11 +43,13 @@ sub Prepare  {
   $TicketsObj->RT::SearchBuilder::Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
+    ENTRYAGGREGATOR => 'AND',
     VALUE => 'resolved'
   );
   $TicketsObj->RT::SearchBuilder::Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
+    ENTRYAGGREGATOR => 'AND',
     VALUE => 'rejected',
   );
   my $txn_alias = $TicketsObj->JoinTransactions;
