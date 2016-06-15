@@ -41,11 +41,13 @@ sub Prepare  {
   $TicketsObj->Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
+    ENTRYAGGREGATOR => 'AND',
     VALUE => 'resolved'
   );
   $TicketsObj->Limit(
     FIELD => 'Status',
     OPERATOR => '!=',
+    ENTRYAGGREGATOR => 'AND',
     VALUE => 'rejected',
   );
   my $txn_alias = $TicketsObj->JoinTransactions;
