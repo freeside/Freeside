@@ -62,7 +62,7 @@
   &>
 % }
 
-% if ( $method eq 'adjourn' || $method eq 'suspend' ) {
+% if (( $method eq 'adjourn' || $method eq 'suspend' ) && $curuser->access_right('Customize billing during suspension')) {
     <TR><TD COLSPAN=2>
 %   if ( $part_pkg->option('suspend_bill', 1) ) {
       <& /elements/checkbox.html, name=>'no_suspend_bill', value=>'Y' &>
