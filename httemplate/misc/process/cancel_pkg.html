@@ -33,8 +33,10 @@ $method =~ /^(cancel|expire|suspend|adjourn|resume|uncancel)$/
 $method = $1;
 my $past_method = $past{$method};
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right($right{$method});
+  unless $curuser->access_right($right{$method});
 
 #untaint pkgnum
 my $pkgnum = $cgi->param('pkgnum');
@@ -60,7 +62,8 @@ if ( $method eq 'suspend' ) { #or 'adjourn'
 
   $options = { map { $_ => scalar($cgi->param($_)) }
                  qw( suspend_bill no_suspend_bill )
-             };
+             }
+    if $curuser->access_right('Customize billing during suspension');
 }
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
