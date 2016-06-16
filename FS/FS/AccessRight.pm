@@ -145,6 +145,7 @@ tie my %rights, 'Tie::IxHash',
     'Cancel customer package later',
     'Un-cancel customer package',
     'Delay suspension events',
+    'Customize billing during suspension',
     'Add on-the-fly cancel reason', #NEW
     'Add on-the-fly suspend reason', #NEW
     'Edit customer package invoice details', #NEW
