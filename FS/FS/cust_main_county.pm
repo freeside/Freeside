@@ -277,7 +277,7 @@ sub taxline {
   my $dbh = dbh;
 
   my $name = $self->taxname || 'Tax';
-  my $taxable_cents = 0;
+  my $taxable_total = 0;
   my $tax_cents = 0;
 
   my $round_per_line_item = $conf->exists('tax-round_per_line_item');
@@ -478,15 +478,18 @@ sub taxline {
     });
     push @tax_location, $location;
 
-    $taxable_cents += $taxable_charged;
+    $taxable_total += $taxable_charged;
     $tax_cents += $this_tax_cents;
   } #foreach $cust_bill_pkg
- 
-  # calculate tax and rounding error for the whole group
-  my $extra_cents = sprintf('%.2f', $taxable_cents * $self->tax / 100) * 100
-                    - $tax_cents;
-  # make sure we have an integer
-  $extra_cents = sprintf('%.0f', $extra_cents);
+
+
+  # calculate tax and rounding error for the whole group: total taxable
+  # amount times tax rate (as cents per dollar), minus the tax already
+  # charged
+  # and force 0.5 to round up
+  my $extra_cents = sprintf('%.0f',
+    ($taxable_total * $self->tax) - $tax_cents + 0.00000001
+  );
 
   # if we're rounding per item, then ignore that and don't distribute any
   # extra cents.
