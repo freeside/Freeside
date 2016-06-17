@@ -81,15 +81,16 @@ sub insert {
   my $self = shift;
   my $error = $self->SUPER::insert;
   return $error if $error;
-  my $contexts = {}; #for quick checks when sending emails
-  foreach ( @_ ) {
+  my $contexts = {};       # for quick checks when sending emails
+  my $context_height = @_; # also for email check
+  foreach ( @_ ) { # ordered from least to most specific
     my $context = FS::log_context->new({
         'lognum'  => $self->lognum,
         'context' => $_
     });
     $error = $context->insert;
     return $error if $error;
-    $contexts->{$_} = 1;
+    $contexts->{$_} = $context_height--;
   }
   foreach my $log_email (
     qsearch('log_email',
@@ -102,8 +103,9 @@ sub insert {
       }
     )
   ) {
-    # shouldn't be a lot of these, so not packing this into the qsearch
+    # shouldn't be a lot of log_email records, so not packing these checks into the qsearch
     next if $log_email->context && !$contexts->{$log_email->context};
+    next if $log_email->context_height && ($contexts->{$log_email->context} > $log_email->context_height);
     my $msg_template = qsearchs('msg_template',{ 'msgnum' => $log_email->msgnum });
     unless ($msg_template) {
       warn "Could not send email when logging, could not load message template for logemailnum " . $log_email->logemailnum;
@@ -346,9 +348,16 @@ sub search {
 
   if ( $params->{'context'} ) {
     my $quoted = dbh->quote($params->{'context'});
-    push @where, 
-      "EXISTS(SELECT 1 FROM log_context WHERE log.lognum = log_context.lognum ".
-      "AND log_context.context = $quoted)";
+    if ( $params->{'context_height'} =~ /^\d+$/ ) {
+      my $subq = 'SELECT context FROM log_context WHERE log.lognum = log_context.lognum'.
+                 ' ORDER BY logcontextnum DESC LIMIT '.$params->{'context_height'};
+      push @where,
+        "EXISTS(SELECT 1 FROM ($subq) AS log_context_x WHERE log_context_x.context = $quoted)";
+    } else {
+      push @where, 
+        "EXISTS(SELECT 1 FROM log_context WHERE log.lognum = log_context.lognum ".
+        "AND log_context.context = $quoted)";
+    }
   }
 
   # agent virtualization
