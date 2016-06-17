@@ -8,6 +8,12 @@
                               'labels' => { '' => '(all)', map { $_ => $_ } @contexts },
                               'curr_value' => scalar($cgi->param('context')),
                             },
+                            { 'field' => 'context_height',
+                              'type' => 'checkbox',
+                              'postfix' => 'Only match most specific context',
+                              'value' => 1,
+                              'curr_value' => scalar($cgi->param('context_height')),
+                            },
                             { 'field' => 'min_level',
                               'type'  => 'select',
                               'options' => [ 0..7 ],
@@ -24,6 +30,7 @@
                           ],
               'labels' => { 
                             'context' => 'Context',
+                            'context_height' => '',
                             'min_level' => 'Min. Level',
                             'to_addr' => 'To',
                             'msgnum' => 'Message',
@@ -44,6 +51,10 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right([ 'View system logs', 'Configuration' ]);
 
 my $msgnum = $cgi->param('msgnum');
+
+# XXX This attempt to set a default message isn't working, not sure why
+#     $msgnum gets set correctly, but isn't selected in the popup window...fix later
+
 unless ($msgnum) {
   my ($msg_template) = qsearch('msg_template',{ msgname => 'System log' });
   # doesn't seem worth having a config just for the default selected template
