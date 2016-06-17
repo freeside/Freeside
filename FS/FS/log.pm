@@ -312,9 +312,16 @@ sub search {
 
   if ( $params->{'context'} ) {
     my $quoted = dbh->quote($params->{'context'});
-    push @where, 
-      "EXISTS(SELECT 1 FROM log_context WHERE log.lognum = log_context.lognum ".
-      "AND log_context.context = $quoted)";
+    if ( $params->{'context_height'} =~ /^\d+$/ ) {
+      my $subq = 'SELECT context FROM log_context WHERE log.lognum = log_context.lognum'.
+                 ' ORDER BY logcontextnum DESC LIMIT '.$params->{'context_height'};
+      push @where,
+        "EXISTS(SELECT 1 FROM ($subq) AS log_context_x WHERE log_context_x.context = $quoted)";
+    } else {
+      push @where, 
+        "EXISTS(SELECT 1 FROM log_context WHERE log.lognum = log_context.lognum ".
+        "AND log_context.context = $quoted)";
+    }
   }
 
   # agent virtualization

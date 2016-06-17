@@ -100,6 +100,12 @@ a:visited {text-decoration: none}
       labels => { map {$_, $_} @contexts },
       curr_value => ($cgi->param('context') || ''),
     &>
+    <BR><& /elements/checkbox.html,
+      'field' => 'context_height',
+      'postfix' => 'Only match most specific context',
+      'value' => 1,
+      'curr_value' => scalar($cgi->param('context_height')),
+    &>
   </TD>
 </TR>
 <TR>
@@ -210,7 +216,7 @@ $cgi->param('max_level', 7) unless defined($cgi->param('max_level'));
 my %search = ();
 $search{'date'} = [ FS::UI::Web::parse_beginning_ending($cgi) ];
 $search{'level'} = [ $cgi->param('min_level'), $cgi->param('max_level') ];
-foreach my $param (qw(agentnum context tablename tablenum custnum message)) {
+foreach my $param (qw(agentnum context context_height tablename tablenum custnum message)) {
   if ( $cgi->param($param) ) {
     $search{$param} = $cgi->param($param);
   }
