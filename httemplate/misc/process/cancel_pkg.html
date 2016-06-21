@@ -85,6 +85,8 @@ my $bill =
 
 my $svc_fatal = ( $cgi->param('svc_not_fatal') ne 'Y' );
 
+my $only_svcnum = ($method eq 'uncancel') ? [ $cgi->param('only_svcnum') ] : undef;
+
 $error ||=  $cust_pkg->$method( 'reason'      => $reasonnum,
                                 'date'        => $date,
                                 'resume_date' => $resume_date,
@@ -92,6 +94,7 @@ $error ||=  $cust_pkg->$method( 'reason'      => $reasonnum,
                                 'bill'        => $bill,
                                 'svc_fatal'   => $svc_fatal,
                                 'options'     => $options,
+                                'only_svcnum' => $only_svcnum,
                               );
 
 if ($error) {
