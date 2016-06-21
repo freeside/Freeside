@@ -1163,8 +1163,8 @@ sub uncancel_svc_x {
 
 =item uncancel_svc_summary
 
-Returns an array of hashrefs, one for each service that could be 
-successfully reprovisioned by L</uncancel>, with the following keys:
+Returns an array of hashrefs, one for each service that could 
+potentially be reprovisioned by L</uncancel>, with the following keys:
 
 svcpart
 
