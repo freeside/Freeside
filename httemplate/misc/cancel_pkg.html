@@ -45,12 +45,38 @@
   } &>
 
   <& /elements/tr-checkbox.html,
-       'label'  => mt("Uncancel even if a service can't be re-provisioned"),
+       'label'  => mt("Uncancel even if service reprovisioning fails"),
        'field'  => 'svc_not_fatal',
        'value'  => 'Y',
   &>
 
 %   $date_init = 1;
+%   my @uncancel_svcs = sort { $b->{'reprovisionable'} <=> $a->{'reprovisionable'} }
+%                       sort { $a->{'svcpart'} <=> $b->{'svcpart'} } 
+%                       $cust_pkg->uncancel_svc_summary();
+%   if (@uncancel_svcs) {
+<TR><TD COLSPAN="2">&nbsp;</TD></TR>
+<TR><TH ALIGN="right"><% emt("Re-provision the following services") %></TH><TD></TD>
+%     foreach my $uncancel_svc (@uncancel_svcs) {
+%       my $uncancel_curr_value = $uncancel_svc->{'uncancel_svcnum'};
+%       my $uncancel_disabled = '';
+%       if ($cgi->param('error')) {
+%         $uncancel_curr_value = '' unless grep { $_ == $uncancel_svc->{'_uncancel_svcnum'} } $cgi->param('only_svcnum');
+%       }
+%       unless ($uncancel_svc->{'reprovisionable'}) {
+%         $uncancel_curr_value = '';
+%         $uncancel_disabled = 1;
+%       }
+  <& /elements/tr-checkbox.html,
+       'label'  => $uncancel_svc->{'svc'} . ': ' . $uncancel_svc->{'label'},
+       'field'  => 'only_svcnum',
+       'value'  => $uncancel_svc->{'uncancel_svcnum'},
+       'curr_value' => $uncancel_curr_value,
+       'disabled'   => $uncancel_disabled,
+       'cell_style' => 'font-weight: normal;'
+  &>
+%     }
+%   }
 % }
 
 % unless ( $method eq 'resume' || $method eq 'uncancel' ) {
