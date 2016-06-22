@@ -10,6 +10,7 @@ my @contexts = ( qw(
   FS::cust_main::Billing::bill_and_collect
   FS::cust_main::Billing::bill
   FS::cust_main::Billing_Realtime::realtime_verify_bop
+  FS::part_pkg
   FS::Misc::Geo::standardize_uscensus
   Cron::bill
   Cron::upload

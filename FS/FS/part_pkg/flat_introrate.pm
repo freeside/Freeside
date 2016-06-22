@@ -4,6 +4,8 @@ use base qw( FS::part_pkg::flat );
 use strict;
 use vars qw( %info );
 
+use FS::Log;
+
 %info = (
   'name' => 'Introductory price for X months, then flat rate,'.
             'relative to setup date (anniversary billing)',
@@ -30,7 +32,10 @@ sub base_recur {
 
   my ($duration) = ($self->option('intro_duration') =~ /^\s*(\d+)\s*$/);
   unless (length($duration)) {
-    die "Invalid intro_duration: " . $self->option('intro_duration');
+    my $log = FS::Log->new('FS::part_pkg');
+    $log->warning("Invalid intro_duration '".$self->option('intro_duration')."' on pkgpart ".$self->pkgpart
+                .", defaulting to 0, check package definition");
+    $duration = 0;
   }
   my $intro_end = $self->add_freq($cust_pkg->setup, $duration);
 
