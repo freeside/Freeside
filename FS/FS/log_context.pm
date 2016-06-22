@@ -11,6 +11,7 @@ my @contexts = ( qw(
   FS::cust_main::Billing::bill
   FS::cust_main::Billing_Realtime::realtime_verify_bop
   FS::pay_batch::import_from_gateway
+  FS::part_pkg
   FS::Misc::Geo::standardize_uscensus
   Cron::bill
   Cron::backup
