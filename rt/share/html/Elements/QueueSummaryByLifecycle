@@ -143,7 +143,8 @@ for my $queue (@queues) {
     # show whether there are unreplied tickets
     # somewhat inefficient but we only use the count query
     my $tix = $Tickets->Clone;
-    $tix->Limit(FIELD => 'Queue',
+    $tix->_SQLLimit(
+                FIELD => 'Queue',
                 OPERATOR => '=',
                 VALUE => $queue->{id});
     $queue->{Unreplied} = $tix->Count;
