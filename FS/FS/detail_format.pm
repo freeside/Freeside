@@ -168,7 +168,7 @@ sub header {
   my $self = shift;
 
   FS::cust_bill_pkg_detail->new(
-    { 'format' => 'C', 'detail' => $self->mt($self->header_detail) }
+    { 'format' => 'C', 'detail' => $self->header_detail }
   )
 }
 
@@ -270,10 +270,7 @@ sub time2str_local {
   $self->{_dh}->time2str(@_);
 }
 
-sub mt {
-  my $self = shift;
-  $self->{_lh}->maketext(@_);
-}
+# header strings are now localized in FS::TemplateItem_Mixin::detail
 
 #imitate previous behavior for now
 
