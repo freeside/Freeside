@@ -3,7 +3,7 @@
      table         => 'msgcat',
      fields        => [ { field=>'msgcode', type=>'fixed' },
                         { field=>'locale',  type=>'fixed' },
-                        'msg',
+                        { field => 'msg', type => 'text', size => 60 },
                       ],
      labels        => { 'msgnum'  => 'String',
                         'msgcode' => 'Code',

@@ -258,14 +258,25 @@ sub details {
     $sth->execute or die $sth->errstr;
 
     #avoid the fetchall_arrayref and loop for less memory usage?
+    # probably should use a cursor...
 
-    map { (defined($_->[0]) && $_->[0] eq 'C')
-            ? &{$format_sub}(      $_->[1] )
-            : &{$escape_function}( $_->[1] );
+    my @return;
+    my $head = 1;
+    map {
+      my $row = $_;
+      if (defined($row->[0]) and $row->[0] eq 'C') {
+        if ($head) {
+          # first CSV row = the format header; localize it but not the others
+          $row->[1] = $self->mt($row->[1]);
+          $head = 0;
         }
-      @{ $sth->fetchall_arrayref };
+        &{$format_sub}($row->[1]);
+      } else {
+        &{$escape_function}($row->[1]);
+      }
+    } @{ $sth->fetchall_arrayref };
 
-  }
+  } #!$opt{format_function}
 
 }
 
