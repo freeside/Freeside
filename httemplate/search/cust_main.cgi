@@ -503,7 +503,7 @@ if ( $cgi->param('browse')
     );
   }
 
-  @cust_main = grep { $_->num_ncancelled_pkgs || ! $_->num_pkgs } @cust_main
+  @cust_main = grep { $_->status ne 'cancelled' } @cust_main
     if ! $cgi->param('cancelled')
        && (
          $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
