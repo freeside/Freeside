@@ -4997,15 +4997,10 @@ Returns an SQL expression identifying un-cancelled cust_main records.
 =cut
 
 sub uncancelled_sql { uncancel_sql(@_); }
-sub uncancel_sql { "
-  ( 0 < ( $select_count_pkgs
-                   AND ( cust_pkg.cancel IS NULL
-                         OR cust_pkg.cancel = 0
-                       )
-        )
-    OR 0 = ( $select_count_pkgs )
-  )
-"; }
+sub uncancel_sql {
+  my $self = shift;
+  "( NOT (".$self->cancelled_sql.") )"; #sensitive to cust_main-status_module
+}
 
 =item balance_sql
 
