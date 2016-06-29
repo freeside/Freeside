@@ -663,7 +663,7 @@ sub unsuspend_balance {
   my $self = shift;
   my $cust_main = $self->cust_main;
   my $conf = $self->conf;
-  my $setting = $conf->config('unsuspend_balance');
+  my $setting = $conf->config('unsuspend_balance') or return;
   my $maxbalance;
   if ($setting eq 'Zero') {
     $maxbalance = 0;
