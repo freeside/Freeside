@@ -61,76 +61,37 @@ $start = time;
 
 my @bugfix = ();
 
-if (dbdef->table('cust_main')->column('agent_custid') && ! $opt_s) { 
-  push @bugfix,
-    "UPDATE cust_main SET agent_custid = NULL where agent_custid = ''";
-
-  push @bugfix,
-    "UPDATE h_cust_main SET agent_custid = NULL where agent_custid = ''"
-      if (dbdef->table('h_cust_main')); 
-}
-
-if ( dbdef->table('cgp_rule_condition') &&
-     dbdef->table('cgp_rule_condition')->column('condition') 
-   )
-{
-  push @bugfix,
-   "ALTER TABLE ${_}cgp_rule_condition RENAME COLUMN condition TO conditionname"
-      for '', 'h_';
-
-}
-
-if ( dbdef->table('areacode') and
-     dbdef->table('areacode')->primary_key eq 'code' )
-{
-  if ( driver_name =~ /^mysql/i ) {
-    push @bugfix, 
-      'ALTER TABLE areacode DROP PRIMARY KEY',
-      'ALTER TABLE areacode ADD COLUMN (areanum int auto_increment primary key)';
-  }
-  else {
-    push @bugfix, 'ALTER TABLE areacode DROP CONSTRAINT areacode_pkey';
-  }
-}
-
-if ( dbdef->table('upgrade_journal') ) {
-  if ( driver_name =~ /^Pg/i ) {
-    push @bugfix, "
-      SELECT SETVAL( 'upgrade_journal_upgradenum_seq',
-                     ( SELECT MAX(upgradenum) FROM upgrade_journal )
-                   )
-    ";
-  #MySQL can't do this in a statement so have to do it manually
-  #} elsif ( driver_name =~ /^mysql/i ) {
-  #  push @bugfix, "
-  #     ALTER TABLE upgrade_journal AUTO_INCREMENT =
-  #                 ( ( SELECT MAX(upgradenum) FROM upgrade_journal ) + 1 )
-  #  ";
-  }
-}
-
 if ( $DRY_RUN ) {
-  print
-    join(";\n", @bugfix ). ";\n";
-} elsif ( @bugfix ) {
-
+  print join(";\n", @bugfix ). ";\n";
+} else {
   foreach my $statement ( @bugfix ) {
     warn "$statement\n";
     $dbh->do( $statement )
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
+}
 
+###
+# Fixes before schema upgrade
+###
+# this isn't actually the main schema upgrade, this calls _upgrade_schema
+# in any class that has it
+if ( $DRY_RUN ) {
+  #XXX no dry run for upgrade_schema stuff yet.
+  # looking at the code some are a mix of SQL statements and our methods, icky.
+  # its not like dry run is 100% anyway, all sort of other later upgrade tasks
+  # aren't printed either
+} else {
   upgrade_schema(%upgrade_opts);
 
   dbdef_create($dbh, $dbdef_file);
   delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
   reload_dbdef($dbdef_file);
-
 }
 
-#you should have run fs-migrate-part_svc ages ago, when you upgraded
-#from 1.3 to 1.4... if not, it needs to be hooked into -upgrade here or
-#you'll lose all the part_svc settings it migrates to part_svc_column
+###
+# Now here is the main/automatic schema upgrade via DBIx::DBSchema
+###
 
 my $conf = new FS::Conf;
 
@@ -144,10 +105,12 @@ my @statements = dbdef->sql_update_schema( $dbdef_dist,
                                            { 'nullify_default' => 1, },
                                          );
 
-#### NEW CUSTOM FIELDS:
+###
+# New custom fields
+###
 # 1. prevent new custom field columns from being dropped by upgrade
 # 2. migrate old virtual fields to real fields (new custom fields)
-####
+
 my $cfsth = $dbh->prepare("SELECT * FROM part_virtual_field") 
                                                          or die $dbh->errstr;
 $cfsth->execute or die $cfsth->errstr;
@@ -167,6 +130,10 @@ while ( $cf = $cfsth->fetchrow_hashref ) {
      unless (dbdef->table("h_$tbl") && dbdef->table("h_$tbl")->column("cf_$name"));
 }
 warn "Custom fields schema upgrade completed";
+
+###
+# Other stuff
+###
 
 @statements = 
   grep { $_ !~ /^CREATE +INDEX +h_queue/i } #useless, holds up queue insertion
@@ -194,13 +161,22 @@ if ( $opt_c ) {
 
 }
 
-my $MAX_HANDLES; # undef for now, set it if you want a limit
+
+###
+# Now run the @statements
+###
 
 if ( $DRY_RUN ) {
   print
     join(";\n", @statements ). ";\n";
   exit;
 } elsif ( $opt_a ) {
+
+  ###
+  # -a: Run schema changes in parallel (Pg only).
+  ###
+
+  my $MAX_HANDLES; # undef for now, set it if you want a limit
 
   my @phases = map { [] } 0..4;
   my $fsupgrade_idx = 1;
@@ -293,7 +269,13 @@ if ( $DRY_RUN ) {
 #  $start = time;
 
 #  dbdef->update_schema( dbdef_dist(datasrc), $dbh );
-} else { # normal case, run statements sequentially
+
+} else {
+
+  ###
+  # normal case, run statements sequentially
+  ###
+
   foreach my $statement ( @statements ) {
     warn "$statement\n";
     $dbh->do( $statement )
