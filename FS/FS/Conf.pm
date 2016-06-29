@@ -1011,7 +1011,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'countrydefault',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',
     'type'        => 'text',
   },
@@ -1186,7 +1186,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'quotation_from',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'Return address on email quotations',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -1204,7 +1204,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'quotation_subject',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'Subject: header on email quotations.  Defaults to "Quotation".', #  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
     'type'        => 'text',
     #'per_agent'   => 1,
@@ -1235,7 +1235,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'quotation_html',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'HTML template for quotations.',
 
     'type'        => 'textarea',
@@ -1294,7 +1294,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'quotation_latex',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'LaTeX template for typeset PostScript quotations.',
     'type'        => 'textarea',
   },
@@ -1359,7 +1359,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'quotation_latexnotes',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'Notes section for LaTeX typeset PostScript quotations.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1490,7 +1490,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'quotation_email_pdf',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'Send PDF quotations as an attachment to emailed quotations.  By default, includes the HTML quotation as the email body, unless quotation_email_pdf_note is set.',
     'type'        => 'checkbox'
   },
@@ -1511,7 +1511,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'quotation_email_pdf_note',
-    'section'     => '',
+    'section'     => 'quotations',
     'description' => 'If defined, this text will replace the default HTML quotation as the body of emailed PDF quotations.',
     'type'        => 'textarea'
   },
@@ -1697,7 +1697,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'lpr',
-    'section'     => 'required',
+    'section'     => 'important',
     'description' => 'Print command for paper invoices, for example `lpr -h\'',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -1727,7 +1727,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'money_char',
-    'section'     => '',
+    'section'     => 'localization',
     'description' => 'Currency symbol - defaults to `$\'',
     'type'        => 'text',
   },
@@ -1900,21 +1900,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'smtp-username',
-    'section'     => '',
+    'section'     => 'notification',
     'description' => 'Optional SMTP username for Freeside\'s outgoing mail',
     'type'        => 'text',
   },
 
   {
     'key'         => 'smtp-password',
-    'section'     => '',
+    'section'     => 'notification',
     'description' => 'Optional SMTP password for Freeside\'s outgoing mail',
     'type'        => 'text',
   },
 
   {
     'key'         => 'smtp-encryption',
-    'section'     => '',
+    'section'     => 'notification',
     'description' => 'Optional SMTP encryption method.  The STARTTLS methods require smtp-username and smtp-password to be set.',
     'type'        => 'select',
     'select_hash' => [ '25'           => 'None (port 25)',
@@ -1968,7 +1968,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'statedefault',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Default state or province (if not supplied, the default is `CA\')',
     'type'        => 'text',
   },
@@ -2113,7 +2113,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'national_id-country',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Track a national identification number, for specific countries.',
     'type'        => 'select',
     'select_enum' => [ '', 'MY' ],
@@ -2163,7 +2163,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'locale',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Default locale',
     'type'        => 'select-sub',
     'options_sub' => sub {
@@ -3266,7 +3266,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'company_phonenum',
-    'section'     => 'notification',
+    'section'     => 'important',
     'description' => 'Your company phone number',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4034,7 +4034,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'logo.png',
-    'section'     => 'UI',  #'invoicing' ?
+    'section'     => 'important',  #'invoicing' ?
     'description' => 'Company logo for HTML invoices and the backoffice interface, in PNG format.  Suggested size somewhere near 92x62.',
     'type'        => 'image',
     'per_agent'   => 1, #XXX just view/logo.cgi, which is for the global
@@ -4431,15 +4431,15 @@ and customer address. Include units.',
 
   {
     'key'         => 'company_latitude',
-    'section'     => 'UI',
-    'description' => 'Your company latitude (-90 through 90)',
+    'section'     => 'taxation',
+    'description' => 'For Avalara taxation, your company latitude (-90 through 90)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'company_longitude',
-    'section'     => 'UI',
-    'description' => 'Your company longitude (-180 thru 180)',
+    'section'     => 'taxation',
+    'description' => 'For Avalara taxation, your company longitude (-180 thru 180)',
     'type'        => 'text',
   },
 
@@ -5580,7 +5580,7 @@ and customer address. Include units.',
   
   {
     'key'         => 'available-locales',
-    'section'     => '',
+    'section'     => 'localization',
     'description' => 'Limit available locales (employee preferences, per-customer locale selection, etc.) to a particular set.',
     'type'        => 'select-sub',
     'multiple'    => 1,
@@ -5600,7 +5600,7 @@ and customer address. Include units.',
   
   {
     'key'         => 'translate-auto-insert',
-    'section'     => '',
+    'section'     => 'localization',
     'description' => 'Auto-insert untranslated strings for selected non-en_US locales with their default/en_US values.  Do not turn this on unless translating the interface into a new language.  Restart Apache after changing.',
     'type'        => 'select',
     'multiple'    => 1,
