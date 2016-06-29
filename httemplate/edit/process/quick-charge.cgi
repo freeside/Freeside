@@ -1,13 +1,4 @@
-% if ( $error ) {
-%   $cgi->param('error', $error );
-<% $cgi->redirect($p.'quick-charge.html?'. $cgi->query_string) %>
-% } else {
-<% header(emt($message)) %>
-  <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
-  </SCRIPT>
-  </BODY></HTML>
-% }
+<% $cgi->redirect($redirect) %>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -155,6 +146,16 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
     $error ||= $cust_main->charge( \%charge );
   }
 
+}
+
+my $redirect;
+if ( $error ) {
+  $cgi->param('error', $error );
+  $redirect = $p.'quick-charge.html?'. $cgi->query_string;
+} elsif ( $quotation ) {
+  $redirect = $fsurl.'view/quotation.html?' . $quotation->quotationnum;
+} else {
+  $redirect = $fsurl.'view/cust_main.cgi?custnum=' . $cust_main->custnum . ';show=last';
 }
 
 </%init>
