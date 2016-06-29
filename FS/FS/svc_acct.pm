@@ -750,18 +750,6 @@ sub insert {
       }
     }
 
-    #welcome email
-    my @welcome_exclude_svcparts = $conf->config('svc_acct_welcome_exclude');
-    unless ( grep { $_ eq $self->svcpart } @welcome_exclude_svcparts ) {
-        my $error = '';
-        my $msgnum = $conf->config('welcome_msgnum', $agentnum);
-        if ( $msgnum ) {
-          my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
-          $error = $msg_template->send('cust_main' => $cust_main,
-                                       'object'    => $self);
-          #should this do something on error?
-        }
-    }
   } # if $cust_pkg
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
