@@ -2,6 +2,7 @@ package FS::part_pkg::prorate_Mixin;
 
 use strict;
 use vars qw( %info );
+use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use Date::Format qw( time2str );
 use List::Util qw( min );
