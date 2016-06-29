@@ -185,7 +185,10 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values: ',
     },
 
-    'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values: ',
+    'skip_dcontext' => { 'name' => 'Do not charge for CDRs where dcontext is set to any of these (comma-separated) values: ',
+                       },
+
+    'skip_dcontext_suffix' => { 'name' => 'Do not charge for CDRs where dcontext ends with: ',
                        },
 
     'skip_dstchannel_prefix' => { 'name' => 'Do not charge for CDRs where the dstchannel starts with:',
@@ -587,6 +590,11 @@ sub check_chargable {
   return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
     if $self->option_cacheable('skip_dcontext') =~ /\S/
     && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
+
+  my $len_suffix = length($self->option_cacheable('skip_dcontext_suffix'));
+  return "dcontext ends with ". $self->option_cacheable('skip_dcontext_suffix')
+    if $len_suffix
+    && substr($cdr->dcontext,-$len_suffix,$len_suffix) eq $self->option_cacheable('skip_dcontext_suffix');
 
   my $len_prefix = length($self->option_cacheable('skip_dstchannel_prefix'));
   return "dstchannel starts with ". $self->option_cacheable('skip_dstchannel_prefix')
