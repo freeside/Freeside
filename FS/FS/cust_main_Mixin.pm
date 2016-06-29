@@ -210,19 +210,9 @@ a customer.
 sub cust_status {
   my $self = shift;
   return $self->cust_unlinked_msg unless $self->cust_linked;
-
-  #FS::cust_main::status($self)
-  #false laziness w/actual cust_main::status
-  # (make sure FS::cust_main methods are called)
-  for my $status (qw( prospect active inactive suspended cancelled )) {
-    my $method = $status.'_sql';
-    my $sql = FS::cust_main->$method();;
-    my $numnum = ( $sql =~ s/cust_main\.custnum/?/g );
-    my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
-    $sth->execute( ($self->custnum) x $numnum )
-      or die "Error executing 'SELECT $sql': ". $sth->errstr;
-    return $status if $sth->fetchrow_arrayref->[0];
-  }
+  my $cust_main = $self->cust_main;
+  return $self->cust_unlinked_msg unless $cust_main;
+  return $cust_main->cust_status;
 }
 
 =item ucfirst_cust_status
@@ -673,7 +663,7 @@ sub unsuspend_balance {
   my $self = shift;
   my $cust_main = $self->cust_main;
   my $conf = $self->conf;
-  my $setting = $conf->config('unsuspend_balance');
+  my $setting = $conf->config('unsuspend_balance') or return;
   my $maxbalance;
   if ($setting eq 'Zero') {
     $maxbalance = 0;

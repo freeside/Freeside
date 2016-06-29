@@ -292,6 +292,33 @@ sub _upgrade_data { # class method
 
   }
 
+  # some false laziness with @onetime above,
+  # but for use when multiple old acls trigger a single new acl
+  # (keys/values reversed from @onetime, expects arrayref value)
+  my @onetime_bynew = (
+    'Customize billing during suspension' => [ 'Suspend customer package', 'Suspend customer package later' ],
+  );
+  while ( @onetime_bynew ) {
+    my( $new_acl, $old_acl ) = splice(@onetime_bynew, 0, 2);
+    ( my $journal = 'ACL_'.lc($new_acl) ) =~ s/\W/_/g;
+    next if FS::upgrade_journal->is_done($journal);
+    # grant $new_acl to all groups who have one of @old_acl
+    for my $group (@all_groups) {
+      next unless grep { $group->access_right($_) } @$old_acl;
+      next if     $group->access_right($new_acl);
+      my $access_right = FS::access_right->new( {
+          'righttype'   => 'FS::access_group',
+          'rightobjnum' => $group->groupnum,
+          'rightname'   => $new_acl,
+      } );
+      my $error = $access_right->insert;
+      die $error if $error;
+    }
+    
+    FS::upgrade_journal->set_done($journal);
+
+  }
+
   ### ACL_download_report_data
   if ( !FS::upgrade_journal->is_done('ACL_download_report_data') ) {
 

@@ -16,9 +16,6 @@
   'nohtmlheader'   => 1,
   'disable_total'  => 1,
 &>
-<style>
-input { float: right}
-</style>
 <script src="<% $fsurl %>elements/jquery.js"></script>
 <script>
 var category_labels = <% encode_json(\%category_labels) %>;
@@ -69,20 +66,31 @@ function select_taxproduct(taxproductnum, description) {
 }
   
 </script>  
-<DIV STYLE="width: 50%">
+<BR>
 <FORM NAME="myform">
-  <label for="new_taxproduct">New tax product code</label>
-  <input type="text" size="6" name="new_taxproduct" id="new_taxproduct">
-  <br>
-  <label for="new_category_desc">Category</label>
-  <input type="text" name="new_category_desc" id="new_category_desc" disabled=1>
-  <br>
-  <label for="new_taxproduct_desc">Product</label>
-  <input type="text" name="new_taxproduct_desc" id="new_taxproduct_desc">
-  <br>
+  <FONT SIZE="+1"><B><% emt('Add tax product') %></B></FONT>
+  <% ntable('#cccccc', 2) %>
+    <& /elements/tr-input-text.html,
+      'label'     => emt('Product code'),
+      'field'     => 'new_taxproduct',
+      'id'        => 'new_taxproduct',
+      'size'      => 6,
+      'maxlength' => 6,
+    &>
+    <& /elements/tr-input-text.html,
+      'label'     => emt('Category'),
+      'field'     => 'new_category_desc',
+      'id'        => 'new_category_desc',
+      'disabled'  => 1
+    &>
+    <& /elements/tr-input-text.html,
+      'label'     => emt('Product'),
+      'field'     => 'new_taxproduct_desc',
+      'id'        => 'new_taxproduct_desc',
+    &>
+  </table>
   <input type="button" id="new_taxproduct_submit" disabled=1 value="Add">
 </FORM>
-</DIV>
 <%shared>
 # populate dropdown
 

@@ -6635,6 +6635,7 @@ sub tables_hashref {
         'min_level', 'int',  'NULL', '', '', '',
         'msgnum', 'int', '',  '', '', '',
         'to_addr', 'varchar', 'NULL',     255, '', '',
+        'context_height',  'int', 'NULL', '', '', '', 
       ],
       'primary_key'  => 'logemailnum',
       'unique'       => [],

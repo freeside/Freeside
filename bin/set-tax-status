@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+use FS::Misc::Getopt;
+use FS::cust_main;
+use FS::Record qw(qsearch dbh);
+use FS::Conf;
+getopts('');
+
+my $conf = FS::Conf->new;
+if ( $conf->config('tax_data_vendor') ne 'suretax' ) {
+  die "This script is for Suretax only.";
+}
+
+$FS::UID::AutoCommit = 0;
+local $FS::cust_main::ignore_expired_card = 1;
+local $FS::cust_main::ignore_invalid_card = 1;
+local $FS::cust_main::import = 1;
+
+my %taxstatusnum = map {
+  $_->taxstatus => $_->taxstatusnum
+} qsearch('tax_status', { data_vendor => 'suretax' });
+
+foreach my $cust_main (qsearch('cust_main', { taxstatusnum => '' })) {
+  my $status = length($cust_main->company) ? 'B' : 'R';
+  print $cust_main->custnum . "\t" .
+        $cust_main->name_short . "\t" .
+        $status . "\n";
+  $cust_main->set('taxstatusnum', $taxstatusnum{ $status });
+  my $error = $cust_main->replace;
+  die $error if $error;
+}
+
+warn "Finished.\n";
+dbh->commit;

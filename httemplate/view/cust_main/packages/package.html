@@ -350,14 +350,8 @@ sub pkg_change_link {
 sub onetime_change_link {
   my $cust_pkg = shift;
   my $pkgnum = $cust_pkg->pkgnum;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p. "edit/quick-charge.html?change_pkgnum=$pkgnum",
-    'label'       => emt('Modify one-time charge'),
-    'actionlabel' => emt('Modify'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 690,
-    'height'      => 440,
-  );
+  '<A HREF="' . $fsurl . "edit/quick-charge.html?change_pkgnum=$pkgnum" .
+  '">' . emt('Modify one-time charge') . '</A>'
 }
 
 sub pkg_change_location_link {

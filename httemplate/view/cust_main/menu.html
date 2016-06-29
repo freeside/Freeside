@@ -131,8 +131,6 @@
 
 </style>
 
-<& /elements/one_time_charge_link.html, form_only=>1 &>
-
 <ul id="customer_menu">
 % foreach my $submenu (@processed_menu) {
   <li>
@@ -358,12 +356,7 @@ my @menu = (
     {
       # it's just a popup, but there's some freaky CCH tax stuff in it
       label       => 'One-time charge',
-      content     => sub {
-                      include( '/elements/one_time_charge_link.html',
-                        custnum => shift->custnum,
-                        no_form => 1,
-                      );
-                     },
+      url         => "edit/quick-charge.html?custnum=$custnum",
       acl         => 'One-time charge',
     },
     {
