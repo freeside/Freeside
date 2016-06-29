@@ -23,9 +23,13 @@ function areyousure(href, message) {
 
 %   if ( $curuser->access_right('One-time charge') ) {
       <% $inrow ? ' | ' : '' %>
-      <& /elements/one_time_charge_link.html,
-             map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
-        &>
+%     my $query = 'quotationnum=' . $quotation->get('quotationnum');
+%     if ($quotation->custnum) {
+%       $query .= ';custnum=' . $quotation->custnum;
+%     } else {
+%       $query .= ';prospectnum=' . $quotation->prospectnum;
+%     }
+      <A HREF="<% $fsurl . 'edit/quick-charge.html?' . $query %>"><% emt('One-time charge') %></A>
 %     $inrow++;
 %   }
 

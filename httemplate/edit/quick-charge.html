@@ -1,4 +1,4 @@
-<& /elements/header-popup.html, mt('One-time charge'), '',
+<& /elements/header.html, mt('One-time charge'), '',
             ( ($quotationnum || $cgi->param('error')) ? '' : 'onload="addRow()"' ),
 &>
 
@@ -93,6 +93,18 @@ function bill_now_changed (what) {
 
 </SCRIPT>
 
+<P>
+% if ( $cust_main ) {
+<& /elements/small_custview.html,
+             $cust_main->custnum,
+             scalar($conf->config('countrydefault')),
+             1, #no balance
+&>
+% } else {
+<& /elements/small_prospect_view.html, $prospect_main &>
+% }
+</P>
+
 <FORM ACTION   = "process/quick-charge.cgi"
       NAME     = "QuickChargeForm"
       ID       = "QuickChargeForm"
@@ -183,7 +195,10 @@ function bill_now_changed (what) {
 
       <& /elements/tr-select-taxclass.html, 'curr_value' => $part_pkg->get('taxclass')  &>
 
-      <& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $part_pkg->get('taxproductnum')  &>
+      <& /elements/tr-select-taxproduct.html,
+        'label' => emt('Tax product'),
+        'curr_value' => $part_pkg->get('taxproductnum')
+      &>
 % }
 
 % } else { # new one-time charge
@@ -307,9 +322,14 @@ function bill_now_changed (what) {
 
 <& /elements/tr-select-taxclass.html, 'curr_value' => $cgi->param('taxclass')  &>
 
-<& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $cgi->param('taxproductnum')  &>
+<& /elements/tr-select-taxproduct.html,
+  'label' => emt('Tax product'),
+  'curr_value' => $cgi->param('taxproductnum')
+&>
 
-<& /elements/tr-select-taxoverride.html, 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override')  &>
+<& /elements/tr-select-taxoverride.html,
+  'curr_value' => $cgi->param('tax_override')
+&>
 
 % } # if !$cust_pkg
 
