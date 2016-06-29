@@ -262,6 +262,15 @@ $views{$conf->config('cust_main-custom_title') || emt('Custom')} =  'custom'
 my %viewname = reverse %views;
 
 my $view =  $cgi->param('show') || $curuser->default_customer_view;
+
+if ($view eq 'last') {
+  # something took us away from the page and is now bouncing back
+  $view = get_page_pref('last_view', $custnum);
+} else {
+  # remember which view is open so we _can_ bounce back
+  set_page_pref('last_view', $custnum, $view);
+}
+
 $view = 'basics' if $view eq 'jumbo';
 
 my $ie_compat = $conf->config('ie-compatibility_mode');
