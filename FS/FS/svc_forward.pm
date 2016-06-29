@@ -141,67 +141,12 @@ If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
 jobnums), all provisioning jobs will have a dependancy on the supplied
 jobnum(s) (they will not run until the specific job(s) complete(s)).
 
-=cut
-
-sub insert {
-  my $self = shift;
-  my $error;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  $error = $self->SUPER::insert(@_);
-  if ($error) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  ''; #no error
-
-}
-
 =item delete
 
 Deletes this mail forwarding alias from the database.  If there is an error,
 returns the error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
-
-=cut
-
-sub delete {
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::Autocommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->SUPER::delete(@_);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
-}
-
 
 =item replace OLD_RECORD
 
@@ -221,25 +166,7 @@ sub replace {
     return "Can't change both source and destination of a mail forward!"
   }
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $new->SUPER::replace($old, @_);
-  if ($error) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
+  $new->SUPER::replace($old, @_);
 }
 
 =item suspend
