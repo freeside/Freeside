@@ -107,51 +107,14 @@ otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
-=cut
-
-sub insert {
-  my $self = shift;
-  my $error;
-
-  $error = $self->SUPER::insert;
-  return $error if $error;
-
-  '';
-}
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-sub delete {
-  my $self = shift;
-  my $error;
-
-  $error = $self->SUPER::delete;
-  return $error if $error;
-
-  '';
-}
-
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my ( $new, $old ) = ( shift, shift );
-  my $error;
-
-  $error = $new->SUPER::replace($old);
-  return $error if $error;
-
-  '';
-}
 
 =item suspend
 
