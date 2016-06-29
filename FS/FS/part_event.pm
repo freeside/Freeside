@@ -387,7 +387,7 @@ sub eventtable_labels {
     'cust_pay'       => 'Payment',
     'cust_pay_batch' => 'Batch payment',
     'cust_statement' => 'Statement',  #too general a name here? "Invoice group"?
-    'svc_acct'       => 'Login service',
+    'svc_acct'       => 'Account service (svc_acct)',
   ;
 
   \%hash
