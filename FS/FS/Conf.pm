@@ -2498,14 +2498,14 @@ and customer address. Include units.',
   {
     'key'         => 'welcome_msgnum',
     'section'     => 'notification',
-    'description' => 'Template to use for welcome messages when a svc_acct record is created.',
+    'description' => 'Deprecated; use a billing event instead.  Used to be the template to use for welcome messages when a svc_acct record is created.',
     %msg_template_options,
   },
   
   {
     'key'         => 'svc_acct_welcome_exclude',
     'section'     => 'notification',
-    'description' => 'A list of svc_acct services for which no welcome email is to be sent.',
+    'description' => 'Deprecated; use a billing event instead.  A list of svc_acct services for which no welcome email is to be sent.',
     'type'        => 'select-part_svc',
     'multiple'    => 1,
   },
