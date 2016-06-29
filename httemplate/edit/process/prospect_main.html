@@ -1,5 +1,6 @@
 <% include('elements/process.html',
      'table'          => 'prospect_main',
+     'precheck_callback' => $precheck,
      'args_callback'  => $args_callback,
      'agent_virt'     => 1,
      'process_o2m' => {
@@ -10,6 +11,16 @@
    )
 %>
 <%init>
+
+my $precheck = sub {
+  my $cgi = shift;
+  my $vendor = FS::Conf->new->config('tax_data_vendor');
+  if ( $vendor eq 'avalara' or $vendor eq 'suretax' ) {
+    if ( ! $cgi->param('taxstatusnum') ) {
+      return 'Tax status required';
+    }
+  }
+};
 
 my $args_callback = sub {
   my( $cgi, $object ) = @_;
