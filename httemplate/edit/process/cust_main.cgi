@@ -188,6 +188,15 @@ if ( $cgi->param('residential_commercial') eq 'Residential' ) {
 
 }
 
+# kind of a hack, but some tax data vendors require a status and others
+# don't.
+my $vendor = $conf->config('tax_data_vendor');
+if ( $vendor eq 'avalara' or $vendor eq 'suretax' ) {
+  if ( ! $cgi->param('taxstatusnum') ) {
+    $error ||= 'Tax status required';
+  }
+}
+
 #perhaps this stuff should go to cust_main.pm
 if ( $new->custnum eq '' or $duplicate_of ) {
 
