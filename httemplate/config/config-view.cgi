@@ -7,7 +7,7 @@ Click on a configuration value to change it.
 %
 %   if ( $cgi->param('showagent') ) {
 %     $cgi->param('showagent', 0);
-      ( <a href="<% $cgi->self_url %>">hide agent overrides</a> )
+      ( <a href="<% $cgi->self_url %>">show global configuration</a> )
 %     $cgi->param('showagent', 1);
 %   } else {
 %     $cgi->param('showagent', 1);
@@ -58,16 +58,20 @@ invoice language options:
 
 % foreach my $section (@sections) {
 
-    <A NAME="<% $section || 'unclassified' %>"></A>
+    <A NAME="<% $section || 'misc' %>"></A>
     <FONT SIZE="-2">
 
 %   foreach my $nav_section (@sections) {
 %
 %     if ( $section eq $nav_section ) { 
-        [<A NAME="not<% $nav_section || 'unclassified' %>" style="background-color: #cccccc"><% ucfirst($nav_section || 'unclassified') %></A>]
+        <A NAME="not<% $nav_section || 'misc' %>" style="background-color: #cccccc"><% section_title($nav_section) %></A>
 %     } else { 
-        [<A HREF="#<% $nav_section || 'unclassified' %>"><% ucfirst($nav_section || 'unclassified') %></A>]
+        <A HREF="#<% $nav_section || 'misc' %>"><% section_title($nav_section) %></A>
 %     } 
+%
+%     unless ( $nav_section eq $sections[-1] ) {
+        | 
+%     }
 %
 %   } 
 
@@ -75,7 +79,7 @@ invoice language options:
   <TABLE BGCOLOR="#cccccc" BORDER=1 CELLSPACING=0 CELLPADDING=0 BORDERCOLOR="#999999">
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">
-      <% ucfirst($section || 'unclassified') %>
+      <% section_title($section) %>
 %     if ( $curuser->option('show_confitem_counts') ) {
         (<% scalar( @{ $section_items{$section} } ) %> items)
 %     }
@@ -114,7 +118,10 @@ invoice language options:
 %   foreach my $agent ( @agents ) {
 %     my $agentnum = $agent ? $agent->agentnum : '';
 %
-%     next if $section eq 'deprecated' && ! $conf->exists($i->key, $agentnum);
+%     next if $section eq 'deprecated'
+%          && (    ! $conf->exists($i->key, $agentnum)
+%               || $conf->config($i->key, $agentnum) eq ''
+%             );
 %
 %     my $label = $i->key;
 %     $label = '['. $agent->agent. "] $label"
@@ -125,16 +132,20 @@ invoice language options:
 %       ";agentnum=$agentnum" . ($locale ? ";locale=$locale" : '');
 
     <tr>
-      <td><% include('/elements/popup_link.html',
-                       'action'      => $action,
-                       'width'       => $width,
-                       'height'      => $height,
-                       'actionlabel' => 'Enter configuration value',
-                       'label'       => "<b>$label</b>",
-                       'aname'       => $i->key, #agentnum
-                                                 # if $cgi->param('showagent')?
+%     unless ( $cgi->param('showagent') ) {
+        <td><% include('/elements/popup_link.html',
+                         'action'      => $action,
+                         'width'       => $width,
+                         'height'      => $height,
+                         'actionlabel' => 'Enter configuration value',
+                         'label'       => "<b>$label</b>",
+                         'aname'       => $i->key,
                     )
-          %>: <% $i->description %>
+          %>: 
+%     } else {
+        <td><b><% $label %></b>:
+%     }
+                <% $i->description %>
 %       if ( $agent && $cgi->param('showagent') ) {
 %         my $confnum = $conf->conf( $i->key, $agent->agentnum, 1 )->confnum;
           (<A HREF="javascript:areyousure('delete this agent override', 'config-delete.cgi?confnum=<% $confnum %>;redirect=config_view_showagent')">delete agent override</A>)
@@ -292,7 +303,7 @@ invoice language options:
 % if ( @add_agents ) {
 
   <tr>
-    <td>
+    <td COLSPAN=2>
       <FORM>
       Add <b><% $i->key %></b> override for
         <% include('/elements/select-agent.html',
@@ -403,23 +414,36 @@ if ( $cgi->param('locale') =~ /^\w+_\w+$/ ) {
 } elsif ($page_agent) {
   $title = 'Agent Configuration for '. $page_agent->agent;
   $title .= ", $locale_desc" if $locale;
+} elsif ( $cgi->param('showagent') ) {
+  $title = 'Agent Configuration Overrides'
 } else {
   $title = 'Global Configuration';
 }
 
+my $show_over = $page_agent || $cgi->param('showagent');
+
 my @config_items = grep { !defined($locale) or $_->per_locale }
-                   grep { $page_agent ? $_->per_agent : 1 }
-                   grep { $page_agent ? 1 : !$_->agentonly }
+                   grep { $show_over ? $_->per_agent : 1 }
+                   grep { $show_over ? 1 : !$_->agentonly }
                         $conf->config_items; 
 
 my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
 my %deleteable = map { $_ => 1 } @deleteable;
 
 my @sections = (qw(
-    required important billing taxation invoicing quotations notification UI
-    API self-service ticketing network_monitoring username password session
-    shell BIND telephony
-  ), '', 'deprecated'
+    important
+    billing payments payment_batching credit_cards e-checks taxation
+    packages suspension cancellation
+    printing print_services
+      invoicing invoice_email invoice_balances invoice_templates quotations 
+    notification UI addresses customer_number customer_fields reporting
+    localization scalability backup
+    signup self-service self-service_skinning
+    API ticketing appointments network_monitoring
+    services
+      username password
+      telephony RADIUS wireless_broadband shell BIND hosting
+  ), '', qw( development deprecated )
 );
 
 my %section_items = ();
@@ -432,6 +456,12 @@ foreach my $section (@sections) {
 my @all_agents = ();
 if ( $cgi->param('showagent') ) {
   @all_agents = qsearch('agent', { 'disabled' => '' } );
+}
+
+sub section_title {
+  my $sec = ucfirst(shift || 'misc');
+  $sec =~ s/_/ /;
+  $sec;
 }
 
 </%init>

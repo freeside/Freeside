@@ -1,7 +1,7 @@
 package FS::session;
 
 use strict;
-use vars qw( @ISA $conf $start $stop );
+use vars qw( @ISA $conf );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearchs );
 use FS::svc_acct;
@@ -12,8 +12,6 @@ use FS::nas;
 
 $FS::UID::callback{'FS::session'} = sub {
   $conf = new FS::Conf;
-  $start = $conf->exists('session-start') ? $conf->config('session-start') : '';
-  $stop = $conf->exists('session-stop') ? $conf->config('session-stop') : '';
 };
 
 =head1 NAME
@@ -126,7 +124,6 @@ sub insert {
   my $nas = qsearchs('nas',{'nasnum'=>$port->nasnum});
     #kcuy
   my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
-  system( eval qq("$start") ) if $start;
   
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -186,7 +183,6 @@ sub replace {
   my $nas = qsearchs('nas',{'nasnum'=>$port->nasnum});
     #kcuy
   my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
-  system( eval qq("$stop") ) if $stop;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
