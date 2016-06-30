@@ -737,29 +737,6 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
-    'key'         => 'alert_expiration',
-    'section'     => 'deprecated',
-    'description' => 'Enable alerts about credit card expiration.  This is obsolete and no longer works.',
-    'type'        => 'checkbox',
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'alerter_template',
-    'section'     => 'deprecated',
-    'description' => 'Template file for billing method expiration alerts (i.e. expiring credit cards).',
-    'type'        => 'textarea',
-    'per_agent'   => 1,
-  },
-  
-  {
-    'key'         => 'alerter_msgnum',
-    'section'     => 'deprecated',
-    'description' => 'Template to use for credit card expiration alerts.',
-    %msg_template_options,
-  },
-
-  {
     'key'         => 'part_pkg-lineage',
     'section'     => 'packages',
     'description' => 'When editing a package definition, if setup or recur fees are changed, create a new package rather than changing the existing package.',
@@ -3566,13 +3543,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'voip-cust_email_csv_cdr',
-    'section'     => 'deprecated',
-    'description' => 'Deprecated, see voip-cdr_email_attach instead.  Used to enable the per-customer option for including CDR information as a CSV attachment on emailed invoices.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'voip-cdr_email_attach',
     'section'     => 'telephony',
     'description' => 'Enable the per-customer option for including CDR information as an attachment on emailed invoices.',
@@ -4191,21 +4161,6 @@ and customer address. Include units.',
     'key'         => 'suspend_credit_type',
     'section'     => 'suspension',
     'description' => 'The group to use for new, automatically generated credit reasons resulting from package suspension.',
-    reason_type_options('R'),
-  },
-
-  {
-    'key'         => 'referral_credit_type',
-    'section'     => 'deprecated',
-    'description' => 'Used to be the group to use for new, automatically generated credit reasons resulting from referrals.  Now set in a package billing event for the referral.',
-    reason_type_options('R'),
-  },
-
-  # was only used to negate invoices during signup when card was declined, now we just void
-  {
-    'key'         => 'signup_credit_type',
-    'section'     => 'deprecated', #self-service?
-    'description' => 'The group to use for new, automatically generated credit reasons resulting from signup and self-service declines.',
     reason_type_options('R'),
   },
 
@@ -5155,13 +5110,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'tax-cust_exempt-groups-require_individual_nums',
-    'section'     => 'deprecated',
-    'description' => 'Deprecated: see tax-cust_exempt-groups-number_requirement',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'tax-cust_exempt-groups-num_req',
     'section'     => 'taxation',
     'description' => 'When using tax-cust_exempt-groups, control whether individual tax exemption numbers are required for exemption from different taxes.',
@@ -5534,13 +5482,6 @@ and customer address. Include units.',
     'key'         => 'payment-history-report',
     'section'     => 'deprecated',
     'description' => 'Show a link to the raw database payment history report in the Reports menu.  DO NOT ENABLE THIS for modern installations.',
-    'type'        => 'checkbox',
-  },
-  
-  {
-    'key'         => 'svc_broadband-require-nw-coordinates',
-    'section'     => 'deprecated',
-    'description' => 'Deprecated; see geocode-require_nw_coordinates instead',
     'type'        => 'checkbox',
   },
   
