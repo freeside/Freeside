@@ -336,7 +336,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        use_cdrtypenum ignore_cdrtypenum
                        use_calltypenum ignore_calltypenum
                        ignore_disposition disposition_in
-                       skip_dcontext skip_dst_prefix 
+                       skip_dcontext skip_dcontext_suffix skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
                        accountcode_tollfree_ratenum accountcode_tollfree_field
