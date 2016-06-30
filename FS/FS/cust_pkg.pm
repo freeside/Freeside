@@ -1312,14 +1312,15 @@ sub uncancel {
 
 =item unexpire
 
-Cancels any pending expiration (sets the expire field to null).
+Cancels any pending expiration (sets the expire field to null)
+for this package and any supplemental packages.
 
 If there is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub unexpire {
-  my( $self, %options ) = @_;
+  my( $self ) = @_;
   my $error;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -1347,6 +1348,14 @@ sub unexpire {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->unexpire;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "unexpiring supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -1956,14 +1965,15 @@ sub unsuspend {
 
 =item unadjourn
 
-Cancels any pending suspension (sets the adjourn field to null).
+Cancels any pending suspension (sets the adjourn field to null)
+for this package and any supplemental packages.
 
 If there is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub unadjourn {
-  my( $self, %options ) = @_;
+  my( $self ) = @_;
   my $error;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -1998,6 +2008,14 @@ sub unadjourn {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->unadjourn;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "unadjourning supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
