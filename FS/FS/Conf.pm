@@ -5447,7 +5447,7 @@ and customer address. Include units.',
   {
     'key'         => 'tax-cust_exempt-groups-require_individual_nums',
     'section'     => 'deprecated',
-    'description' => 'Deprecated: see tax-cust_exempt-groups-number_requirement',
+    'description' => 'Deprecated: see tax-cust_exempt-groups-num_req',
     'type'        => 'checkbox',
   },
 
