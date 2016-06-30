@@ -145,8 +145,6 @@ sub signup_info {
 
       'security_phrase' => $conf->exists('security_phrase'),
 
-      'nomadix' => $conf->exists('signup_server-nomadix'),
-
       'payby' => [ $conf->config('signup_server-payby') ],
 
       'payby_longname' => [ map { FS::payby->longname($_) } 
@@ -173,7 +171,6 @@ sub signup_info {
 
       'agentnum2part_pkg'  => $agentnum2part_pkg,
       'svc_acct_pop'       => [ map $_->hashref, qsearch('svc_acct_pop',{} ) ],
-      'nomadix'            => $conf->exists('signup_server-nomadix'),
       'payby'              => [ $conf->config('signup_server-payby') ],
       'card_types'         => card_types(),
       'paytypes'           => [ FS::cust_payby->paytypes ],

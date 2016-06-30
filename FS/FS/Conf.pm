@@ -533,17 +533,18 @@ sub config_items {
 
 =item invoice_from_full [ AGENTNUM ]
 
-Returns values of invoice_from and invoice_from_name, appropriately combined
-based on their current values.
+Returns values of invoice_from and invoice_from_name (or, if that is not
+defined, company_name), appropriately combined based on their current values.
 
 =cut
 
 sub invoice_from_full {
   my ($self, $agentnum) = @_;
-  return $self->config('invoice_from_name', $agentnum ) ?
-         $self->config('invoice_from_name', $agentnum ) . ' <' .
-         $self->config('invoice_from', $agentnum ) . '>' :
-         $self->config('invoice_from', $agentnum );
+
+  (    $self->config('invoice_from_name', $agentnum)
+    || $self->config('company_name', $agentnum)
+  ).
+  ' <'. $self->config('invoice_from', $agentnum ). '>';
 }
 
 =back
@@ -760,7 +761,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'part_pkg-lineage',
-    'section'     => '',
+    'section'     => 'packages',
     'description' => 'When editing a package definition, if setup or recur fees are changed, create a new package rather than changing the existing package.',
     'type'        => 'checkbox',
   },
@@ -770,7 +771,7 @@ my $validate_email = sub { $_[0] =~
     #not actually deprecated yet
     #'section'     => 'deprecated',
     #'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the current IP address to assign to new virtual hosts',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'IP address to assign to new virtual hosts',
     'type'        => 'text',
   },
@@ -784,35 +785,35 @@ my $validate_email = sub { $_[0] =~
   
   {
     'key'         => 'credit-card-surcharge-percentage',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'discount-show-always',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Generate a line item on an invoice even when a package is discounted 100%',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'discount-show_available',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Show available prepayment discounts on invoices.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice-barcode',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Display a barcode on HTML and PDF invoices',
     'type'        => 'checkbox',
   },
   
   {
     'key'         => 'cust_main-select-billday',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'When used with a specific billing event, allows the selection of the day of month on which to charge credit card / bank account automatically, on a per-customer basis',
     'type'        => 'checkbox',
   },
@@ -833,14 +834,14 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'encryption',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Enable encryption of credit cards and echeck numbers',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'encryptionmodule',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Use which module for encryption?',
     'type'        => 'select',
     'select_enum' => [ '', 'Crypt::OpenSSL::RSA', ],
@@ -848,21 +849,21 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'encryptionpublickey',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Encryption public key',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'encryptionprivatekey',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Encryption private key',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'billco-url',
-    'section'     => 'billing',
+    'section'     => 'print_services',
     'description' => 'The url to use for performing uploads to the invoice mailing service.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -870,7 +871,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'billco-username',
-    'section'     => 'billing',
+    'section'     => 'print_services',
     'description' => 'The login name to use for uploads to the invoice mailing service.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -879,7 +880,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'billco-password',
-    'section'     => 'billing',
+    'section'     => 'print_services',
     'description' => 'The password to use for uploads to the invoice mailing service.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -888,7 +889,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'billco-clicode',
-    'section'     => 'billing',
+    'section'     => 'print_services',
     'description' => 'The clicode to use for uploads to the invoice mailing service.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -896,7 +897,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'billco-account_num',
-    'section'     => 'billing',
+    'section'     => 'print_services',
     'description' => 'The data to place in the "Transaction Account No" / "TRACCTNUM" field.',
     'type'        => 'select',
     'select_hash' => [
@@ -915,21 +916,21 @@ my $validate_email = sub { $_[0] =~
   
   {
     'key'         => 'business-onlinepayment',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => '<a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support, at least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.  For more detailed information and examples see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation:Administration:Real-time_Processing">real-time credit card processing documentation</a>.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'business-onlinepayment-ach',
-    'section'     => 'billing',
+    'section'     => 'e-checks',
     'description' => 'Alternate <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support for ACH transactions (defaults to regular <b>business-onlinepayment</b>).  At least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'business-onlinepayment-namespace',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Specifies which perl module namespace (which group of collection routines) is used by default.',
     'type'        => 'select',
     'select_hash' => [
@@ -940,35 +941,35 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'business-onlinepayment-description',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'String passed as the description field to <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a>.  Evaluated as a double-quoted perl string, with the following variables available: <code>$agent</code> (the agent name), and <code>$pkgs</code> (a comma-separated list of packages for which these charges apply - not available in all situations)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'business-onlinepayment-email-override',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Email address used instead of customer email address when submitting a BOP transaction.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'business-onlinepayment-email_customer',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Controls the "email_customer" flag used by some Business::OnlinePayment processors to enable customer receipts.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'business-onlinepayment-test_transaction',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Turns on the Business::OnlinePayment test_transaction flag.  Note that not all gateway modules support this flag; if yours does not, transactions will still be sent live.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'business-onlinepayment-currency',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Currency parameter for Business::OnlinePayment transactions.',
     'type'        => 'select',
     'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD ) ],
@@ -976,14 +977,14 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'business-onlinepayment-verification',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Run a $1 authorization (followed by a void) to verify new credit card information.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'currency',
-    'section'     => 'billing',
+    'section'     => 'localization',
     'description' => 'Main accounting currency',
     'type'        => 'select',
     'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ) ],
@@ -991,7 +992,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'currencies',
-    'section'     => 'billing',
+    'section'     => 'localization',
     'description' => 'Additional accepted currencies',
     'type'        => 'select-sub',
     'multiple'    => 1,
@@ -1004,7 +1005,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'business-batchpayment-test_transaction',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Turns on the Business::BatchPayment test_mode flag.  Note that not all gateway modules support this flag; if yours does not, using the batch gateway will fail.',
     'type'        => 'checkbox',
   },
@@ -1018,7 +1019,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'date_format',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Format for displaying dates',
     'type'        => 'select',
     'select_hash' => [
@@ -1032,7 +1033,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'date_format_long',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Verbose format for displaying dates',
     'type'        => 'select',
     'select_hash' => [
@@ -1061,35 +1062,35 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'disable_cust_attachment',
-    'section'     => '',
+    'section'     => 'notes',
     'description' => 'Disable customer file attachments',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'max_attachment_size',
-    'section'     => '',
+    'section'     => 'notes',
     'description' => 'Maximum size for customer file attachments (leave blank for unlimited)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'disable_customer_referrals',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Disable new customer-to-customer referrals in the web interface',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'editreferrals',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Enable advertising source modification for existing customers',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceonly',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Disables postal mail invoices',
     'type'        => 'checkbox',
   },
@@ -1103,56 +1104,56 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'emailinvoiceauto',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Automatically adds new accounts to the email invoice list',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceautoalways',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Automatically adds new accounts to the email invoice list even when the list contains email addresses',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoice-apostrophe',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Allows the apostrophe (single quote) character in the email addresses in the email invoice list.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-ip_addr',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Enable IP address management on login services like for broadband services.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'exclude_ip_addr',
-    'section'     => '',
-    'description' => 'Exclude these from the list of available broadband service IP addresses. (One per line)',
+    'section'     => 'services',
+    'description' => 'Exclude these from the list of available IP addresses. (One per line)',
     'type'        => 'textarea',
   },
   
   {
     'key'         => 'auto_router',
-    'section'     => '',
+    'section'     => 'wireless_broadband',
     'description' => 'Automatically choose the correct router/block based on supplied ip address when possible while provisioning broadband services',
     'type'        => 'checkbox',
   },
   
   {
     'key'         => 'hidecancelledpackages',
-    'section'     => 'UI',
+    'section'     => 'cancellation',
     'description' => 'Prevent cancelled packages from showing up in listings (though they will still be in the database)',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'hidecancelledcustomers',
-    'section'     => 'UI',
+    'section'     => 'cancellation',
     'description' => 'Prevent customers with only cancelled packages from showing up in listings (though they will still be in the database)',
     'type'        => 'checkbox',
   },
@@ -1166,8 +1167,8 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_from',
-    'section'     => 'required',
-    'description' => 'Return address on email invoices (address only, see invoice_from_name)',
+    'section'     => 'important',
+    'description' => 'Return address on email invoices ("user@domain" only)',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => $validate_email,
@@ -1175,7 +1176,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_from_name',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Return name on email invoices (set address in invoice_from)',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -1195,7 +1196,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_subject',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Subject: header on email invoices.  Defaults to "Invoice".  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -1220,14 +1221,14 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_template',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_html',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
 
     'type'        => 'textarea',
@@ -1243,7 +1244,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_htmlnotes',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Notes section for HTML invoices.  Defaults to the same data in invoice_latexnotes if not specified.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1252,7 +1253,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_htmlfooter',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Footer for HTML invoices.  Defaults to the same data in invoice_latexfooter if not specified.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1261,7 +1262,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_htmlsummary',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Summary initial page for HTML invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1270,7 +1271,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_htmlreturnaddress',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Return address for HTML invoices.  Defaults to the same data in invoice_latexreturnaddress if not specified.',
     'type'        => 'textarea',
     'per_locale'  => 1,
@@ -1278,7 +1279,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_htmlwatermark',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Watermark for HTML invoices. Appears in a semitransparent positioned DIV overlaid on the main invoice container.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1287,7 +1288,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'invoice_latex',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
@@ -1350,7 +1351,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexnotes',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1368,7 +1369,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexfooter',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Footer for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1377,7 +1378,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexsummary',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Summary initial page for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1386,7 +1387,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexcoupon',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Remittance coupon for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1442,7 +1443,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexreturnaddress',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Return address for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
   },
@@ -1465,7 +1466,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexsmallfooter',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_templates',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1474,7 +1475,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_latexwatermark',
-    'section'     => 'invoicing',
+    'section'     => 'invocie_templates',
     'description' => 'Watermark for LaTeX invoices. See "texdoc background" for information on what this can contain. The content itself should be enclosed in braces, optionally followed by a comma and any formatting options.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1483,7 +1484,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_email_pdf',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Send PDF invoice as an attachment to emailed invoices.  By default, includes the HTML invoice as the email body, unless invoice_email_pdf_note is set.',
     'type'        => 'checkbox'
   },
@@ -1497,14 +1498,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_email_pdf_msgnum',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'Message template to send as the text and HTML part of PDF invoices. If not selected, a text and HTML version of the invoice will be sent.',
     %msg_template_options,
   },
 
   {
     'key'         => 'invoice_email_pdf_note',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'If defined, this text will replace the default HTML invoice as the body of emailed PDF invoices.',
     'type'        => 'textarea'
   },
@@ -1518,21 +1519,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'invoice_print_pdf',
-    'section'     => 'invoicing',
+    'section'     => 'printing',
     'description' => 'For all invoice print operations, store postal invoices for download in PDF format rather than printing them directly.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice_print_pdf-spoolagent',
-    'section'     => 'invoicing',
+    'section'     => 'printing',
     'description' => 'Store postal invoices PDF downloads in per-agent spools.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice_print_pdf-duplex',
-    'section'     => 'invoicing',
+    'section'     => 'printing',
     'description' => 'Insert blank pages so that spooled invoices are each an even number of pages.  Use this for double-sided printing.',
     'type'        => 'checkbox',
   },
@@ -1551,7 +1552,7 @@ and customer address. Include units.',
 
   { 
     'key'         => 'invoice_show_prior_due_date',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show previous invoice due dates when showing prior balances.  Default is to show invoice date.',
     'type'        => 'checkbox',
   },
@@ -1566,7 +1567,7 @@ and customer address. Include units.',
 
   { 
     'key'         => 'invoice_include_aging',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show an aging line after the prior balance section.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
@@ -1598,29 +1599,29 @@ and customer address. Include units.',
 
   {
     'key'         => 'usage_class_summary',
-    'section'     => 'invoicing',
-    'description' => 'Summarize total usage by usage class in a separate section.',
+    'section'     => 'telephony',
+    'description' => 'On invoices, summarize total usage by usage class in a separate section',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'usage_class_as_a_section',
-    'section'     => 'invoicing',
-    'description' => 'Split usage into sections and label according to usage class name when enabled.  Only valid when invoice_sections is enabled.',
+    'section'     => 'telephony',
+    'description' => 'On invoices, split usage into sections and label according to usage class name when enabled.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'phone_usage_class_summary',
-    'section'     => 'invoicing',
-    'description' => 'Summarize usage per DID by usage class and display all CDRs together regardless of usage class. Only valid when svc_phone_sections is enabled.',
+    'section'     => 'telephony',
+    'description' => 'On invoices, summarize usage per DID by usage class and display all CDRs together regardless of usage class. Only valid when svc_phone_sections is enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'svc_phone_sections',
-    'section'     => 'invoicing',
-    'description' => 'Create a section for each svc_phone when enabled.  Only valid when invoice_sections is enabled.',
+    'section'     => 'telephony',
+    'description' => 'On invoices, create a section for each svc_phone when enabled.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
 
@@ -1633,8 +1634,8 @@ and customer address. Include units.',
 
   { 
     'key'         => 'separate_usage',
-    'section'     => 'invoicing',
-    'description' => 'Split the rated call usage into a separate line from the recurring charges.',
+    'section'     => 'telephony',
+    'description' => 'On invoices, split the rated call usage into a separate line from the recurring charges.',
     'type'        => 'checkbox',
   },
 
@@ -1690,14 +1691,14 @@ and customer address. Include units.',
   
   {
     'key'         => 'trigger_export_insert_on_payment',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'Enable exports on payment application.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'lpr',
-    'section'     => 'important',
+    'section'     => 'printing',
     'description' => 'Print command for paper invoices, for example `lpr -h\'',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -1705,21 +1706,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'lpr-postscript_prefix',
-    'section'     => 'billing',
+    'section'     => 'printing',
     'description' => 'Raw printer commands prepended to the beginning of postscript print jobs (evaluated as a double-quoted perl string - backslash escapes are available)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'lpr-postscript_suffix',
-    'section'     => 'billing',
+    'section'     => 'printing',
     'description' => 'Raw printer commands added to the end of postscript print jobs (evaluated as a double-quoted perl string - backslash escapes are available)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'papersize',
-    'section'     => 'billing',
+    'section'     => 'printing',
     'description' => 'Invoice paper size.  Default is "letter" (U.S. standard).  The LaTeX template must be configured to match this size.',
     'type'        => 'select',
     'select_enum' => [ qw(letter a4) ],
@@ -1811,7 +1812,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'referraldefault',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Default referral, specified by refnum',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
@@ -1829,37 +1830,31 @@ and customer address. Include units.',
 			 },
   },
 
-#  {
-#    'key'         => 'registries',
-#    'section'     => 'required',
-#    'description' => 'Directory which contains domain registry information.  Each registry is a directory.',
-#  },
-
   {
     'key'         => 'maxsearchrecordsperpage',
-    'section'     => 'UI',
+    'section'     => 'reporting',
     'description' => 'If set, number of search records to return per page.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'disable_maxselect',
-    'section'     => 'UI',
+    'section'     => 'reporting',
     'description' => 'Prevent changing the number of records per page.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'session-start',
-    'section'     => 'session',
-    'description' => 'If defined, the command which is executed on the Freeside machine when a session begins.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',
+    'section'     => 'deprecated',
+    'description' => 'Used to define the command which is executed on the Freeside machine when a session begins.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'session-stop',
-    'section'     => 'session',
-    'description' => 'If defined, the command which is executed on the Freeside machine when a session ends.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',
+    'section'     => 'deprecated',
+    'description' => 'Used to define the command which is executed on the Freeside machine when a session ends.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',
     'type'        => 'text',
   },
 
@@ -1872,28 +1867,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'showpasswords',
-    'section'     => 'UI',
+    'section'     => 'password',
     'description' => 'Display unencrypted user passwords in the backend (employee) web interface',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'report-showpasswords',
-    'section'     => 'UI',
+    'section'     => 'password',
     'description' => 'This is a terrible idea.  Do not enable it.  STRONGLY NOT RECOMMENDED.  Enables display of passwords on services reports.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signupurl',
-    'section'     => 'UI',
-    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
+    'section'     => 'signup',
+    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to self-signup with the appropriate customer as referral',
     'type'        => 'text',
   },
 
   {
     'key'         => 'smtpmachine',
-    'section'     => 'required',
+    'section'     => 'important',
     'description' => 'SMTP relay for Freeside\'s outgoing mail',
     'type'        => 'text',
   },
@@ -1975,7 +1970,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'unsuspend_balance',
-    'section'     => 'billing',
+    'section'     => 'suspension',
     'description' => 'Enables the automatic unsuspension of suspended packages when a customer\'s balance due is at or below the specified amount after a payment or credit',
     'type'        => 'select',
     'select_enum' => [ 
@@ -1985,7 +1980,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'unsuspend-always_adjust_next_bill_date',
-    'section'     => 'billing',
+    'section'     => 'suspension',
     'description' => 'Global override that causes unsuspensions to always adjust the next bill date under any circumstances.  This is now controlled on a per-package bases - probably best not to use this option unless you are a legacy installation that requires this behaviour.',
     'type'        => 'checkbox',
   },
@@ -2085,28 +2080,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'show_ship_company',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Turns on display/collection of a "service company name" field for customers.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'show_ss',
-    'section'     => 'UI',
+    'section'     => 'e-checks',
     'description' => 'Turns on display/collection of social security numbers in the web interface.  Sometimes required by electronic check (ACH) processors.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'unmask_ss',
-    'section'     => 'UI',
+    'section'     => 'e-checks',
     'description' => "Don't mask social security numbers in the web interface.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'show_stateid',
-    'section'     => 'UI',
+    'section'     => 'e-checks',
     'description' => "Turns on display/collection of driver's license/state issued id numbers in the web interface.  Sometimes required by electronic check (ACH) processors.",
     'type'        => 'checkbox',
   },
@@ -2121,14 +2116,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'show_bankstate',
-    'section'     => 'UI',
+    'section'     => 'e-checks',
     'description' => "Turns on display/collection of state for bank accounts in the web interface.  Sometimes required by electronic check (ACH) processors.",
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'agent_defaultpkg',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => 'Setting this option will cause new packages to be available to all agent types by default.',
     'type'        => 'checkbox',
   },
@@ -2149,7 +2144,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'queue_dangerous_controls',
-    'section'     => 'UI',
+    'section'     => 'development',
     'description' => 'Enable queue modification controls on account pages and for new jobs.  Unless you are a developer working on new export code, you should probably leave this off to avoid causing provisioning problems.',
     'type'        => 'checkbox',
   },
@@ -2176,8 +2171,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'signup_server-payby',
-    'section'     => 'self-service',
-    'description' => 'Acceptable payment types for the signup server',
+    'section'     => 'signup',
+    'description' => 'Acceptable payment types for self-signup',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK PREPAY PPAL ) ], # BILL COMP) ],
   },
@@ -2198,22 +2193,22 @@ and customer address. Include units.',
 
   {
     'key'         => 'default_agentnum',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Default agent for the backoffice',
     'type'        => 'select-agent',
   },
 
   {
     'key'         => 'signup_server-default_agentnum',
-    'section'     => 'self-service',
-    'description' => 'Default agent for the signup server',
+    'section'     => 'signup',
+    'description' => 'Default agent for self-signup',
     'type'        => 'select-agent',
   },
 
   {
     'key'         => 'signup_server-default_refnum',
-    'section'     => 'self-service',
-    'description' => 'Default advertising source for the signup server',
+    'section'     => 'signup',
+    'description' => 'Default advertising source for self-signup',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
                            require FS::part_referral;
@@ -2232,28 +2227,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'signup_server-default_pkgpart',
-    'section'     => 'self-service',
-    'description' => 'Default package for the signup server',
+    'section'     => 'signup',
+    'description' => 'Default package for self-signup',
     'type'        => 'select-part_pkg',
   },
 
   {
     'key'         => 'signup_server-default_svcpart',
-    'section'     => 'self-service',
-    'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning or domain selection).',
+    'section'     => 'signup',
+    'description' => 'Default service definition for self-signup - only necessary for services that trigger special provisioning widgets (such as DID provisioning or domain selection).',
     'type'        => 'select-part_svc',
   },
 
   {
     'key'         => 'signup_server-default_domsvc',
-    'section'     => 'self-service',
-    'description' => 'If specified, the default domain svcpart for signup (useful when domain is set to selectable choice).',
+    'section'     => 'signup',
+    'description' => 'If specified, the default domain svcpart for self-signup (useful when domain is set to selectable choice).',
     'type'        => 'text',
   },
 
   {
     'key'         => 'signup_server-mac_addr_svcparts',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Service definitions which can receive mac addresses (current mapped to username for svc_acct).',
     'type'        => 'select-part_svc',
     'multiple'    => 1,
@@ -2261,15 +2256,15 @@ and customer address. Include units.',
 
   {
     'key'         => 'signup_server-nomadix',
-    'section'     => 'self-service',
+    'section'     => 'deprecated',
     'description' => 'Signup page Nomadix integration',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup_server-service',
-    'section'     => 'self-service',
-    'description' => 'Service for the signup server - "Account (svc_acct)" is the default setting, or "Phone number (svc_phone)" for ITSP signup',
+    'section'     => 'signup',
+    'description' => 'Service for the self-signup - "Account (svc_acct)" is the default setting, or "Phone number (svc_phone)" for ITSP signup',
     'type'        => 'select',
     'select_hash' => [
                        'svc_acct'  => 'Account (svc_acct)',
@@ -2281,15 +2276,15 @@ and customer address. Include units.',
   
   {
     'key'         => 'signup_server-prepaid-template-custnum',
-    'section'     => 'self-service',
-    'description' => 'When the signup server is used with prepaid cards and customer info is not required for signup, the contact/address info will be copied from this customer, if specified',
+    'section'     => 'signup',
+    'description' => 'When self-signup is used with prepaid cards and customer info is not required for signup, the contact/address info will be copied from this customer, if specified',
     'type'        => 'text',
   },
 
   {
     'key'         => 'signup_server-terms_of_service',
-    'section'     => 'self-service',
-    'description' => 'Terms of Service for the signup server.  May contain HTML.',
+    'section'     => 'signup',
+    'description' => 'Terms of Service for self-signup.  May contain HTML.',
     'type'        => 'textarea',
     'per_agent'   => 1,
   },
@@ -2303,42 +2298,42 @@ and customer address. Include units.',
 
   {
     'key'         => 'show-msgcat-codes',
-    'section'     => 'UI',
+    'section'     => 'development',
     'description' => 'Show msgcat codes in error messages.  Turn this option on before reporting errors to the mailing list.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup_server-realtime',
-    'section'     => 'self-service',
-    'description' => 'Run billing for signup server signups immediately, and do not provision accounts which subsequently have a balance.',
+    'section'     => 'signup',
+    'description' => 'Run billing for self-signups immediately, and do not provision accounts which subsequently have a balance.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup_server-classnum2',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Package Class for first optional purchase',
     'type'        => 'select-pkg_class',
   },
 
   {
     'key'         => 'signup_server-classnum3',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Package Class for second optional purchase',
     'type'        => 'select-pkg_class',
   },
 
   {
     'key'         => 'signup_server-third_party_as_card',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Allow customer payment type to be set to CARD even when using third-party credit card billing.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'selfservice-xmlrpc',
-    'section'     => 'self-service',
+    'section'     => 'API',
     'description' => 'Run a standalone self-service XML-RPC server on the backend (on port 8080).',
     'type'        => 'checkbox',
   },
@@ -2382,14 +2377,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'cancel_msgnum',
-    'section'     => 'notification',
+    'section'     => 'cancellation',
     'description' => 'Template to use for cancellation emails.',
     %msg_template_options,
   },
 
   {
     'key'         => 'emailcancel',
-    'section'     => 'notification',
+    'section'     => 'cancellation',
     'description' => 'Enable emailing of cancellation notices.  Make sure to select the template in the cancel_msgnum option.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -2397,14 +2392,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'bill_usage_on_cancel',
-    'section'     => 'billing',
+    'section'     => 'cancellation',
     'description' => 'Enable automatic generation of an invoice for usage when a package is cancelled.  Not all packages can do this.  Usage data must already be available.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'require_cardname',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Require an "Exact name on card" to be entered explicitly; don\'t default to using the first and last name.',
     'type'        => 'checkbox',
   },
@@ -2512,7 +2507,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'welcome_letter',
-    'section'     => '',
+    'section'     => 'notification',
     'description' => 'Optional LaTex template file for a printed welcome letter.  A welcome letter is printed the first time a cust_pkg record is created.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation and the billing documentation for details on the template substitution language.  A variable exists for each fieldname in the customer record (<code>$first, $last, etc</code>).  The following additional variables are available<ul><li><code>$payby</code> - a friendler represenation of the field<li><code>$payinfo</code> - the masked payment information<li><code>$expdate</code> - the time at which the payment method expires (a UNIX timestamp)<li><code>$returnaddress</code> - the invoice return address for this customer\'s agent</ul>',
     'type'        => 'textarea',
   },
@@ -2526,7 +2521,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'payby',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK) ], #BILL CASH WEST MCRD MCHK PPAL) ],
@@ -2534,7 +2529,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'banned_pay-pad',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Padding for encrypted storage of banned credit card hashes.  If you already have new-style SHA512 entries in the banned_pay table, do not change as this will invalidate the old entries.',
     'type'        => 'text',
   },
@@ -2549,7 +2544,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'require_cash_deposit_info',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'When recording cash payments, display bank deposit information fields.',
     'type'        => 'checkbox',
   },
@@ -2563,7 +2558,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'radius-password',
-    'section'     => '',
+    'section'     => 'RADIUS',
     'description' => 'RADIUS attribute for plain-text passwords.',
     'type'        => 'select',
     'select_enum' => [ 'Password', 'User-Password', 'Cleartext-Password' ],
@@ -2571,7 +2566,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'radius-ip',
-    'section'     => '',
+    'section'     => 'RADIUS',
     'description' => 'RADIUS attribute for IP addresses.',
     'type'        => 'select',
     'select_enum' => [ 'Framed-IP-Address', 'Framed-Address' ],
@@ -2580,56 +2575,56 @@ and customer address. Include units.',
   #http://dev.coova.org/svn/coova-chilli/doc/dictionary.chillispot
   {
     'key'         => 'radius-chillispot-max',
-    'section'     => '',
+    'section'     => 'RADIUS',
     'description' => 'Enable ChilliSpot (and CoovaChilli) Max attributes, specifically ChilliSpot-Max-{Input,Output,Total}-{Octets,Gigawords}.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'radius-canopy',
-    'section'     => '',
+    'section'     => 'RADIUS',
     'description' => 'Enable RADIUS attributes for Cambium (formerly Motorola) Canopy (Motorola-Canopy-Gateway).',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_broadband-radius',
-    'section'     => '',
+    'section'     => 'RADIUS',
     'description' => 'Enable RADIUS groups for broadband services.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-alldomains',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Allow accounts to select any domain in the database.  Normally accounts can only select from the domain set in the service definition and those purchased by the customer.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'dump-localdest',
-    'section'     => '',
+    'section'     => 'backup',
     'description' => 'Destination for local database dumps (full path)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'dump-scpdest',
-    'section'     => '',
+    'section'     => 'backup',
     'description' => 'Destination for scp database dumps: user@host:/path',
     'type'        => 'text',
   },
 
   {
     'key'         => 'dump-pgpid',
-    'section'     => '',
+    'section'     => 'backup',
     'description' => "Optional PGP public key user or key id for database dumps.  The public key should exist on the freeside user's public keyring, and the gpg binary and GnuPG perl module should be installed.",
     'type'        => 'text',
   },
 
   {
     'key'         => 'credit_card-recurring_billing_flag',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'This controls when the system passes the "recurring_billing" flag on credit card transactions.  If supported by your processor (and the Business::OnlinePayment processor module), passing the flag indicates this is a recurring transaction and may turn off the CVV requirement. ',
     'type'        => 'select',
     'select_hash' => [
@@ -2640,14 +2635,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'credit_card-recurring_billing_acct_code',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'When the "recurring billing" flag is set, also set the "acct_code" to "rebill".  Useful for reporting purposes with supported gateways (PlugNPay, others?)',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cvv-save',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'NOT RECOMMENDED.  Saves CVV2 information after the initial transaction for the selected credit card types.  Enabling this option is almost certainly in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
     'type'        => 'selectmultiple',
     'select_enum' => \@card_types,
@@ -2655,50 +2650,50 @@ and customer address. Include units.',
 
   {
     'key'         => 'signup-require_cvv',
-    'section'     => 'self-service',
+    'section'     => 'credit_cards',
     'description' => 'Require CVV for credit card signup.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'backoffice-require_cvv',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Require CVV for manual credit card entry.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'selfservice-onfile_require_cvv',
-    'section'     => 'self-service',
+    'section'     => 'credit_cards',
     'description' => 'Require CVV for on-file credit card during self-service payments.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'selfservice-require_cvv',
-    'section'     => 'self-service',
+    'section'     => 'credit_cards',
     'description' => 'Require CVV for credit card self-service payments, except for cards on-file.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'manual_process-single_invoice_amount',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'When entering manual credit card and ACH payments, amount will not autofill if the customer has more than one open invoice',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'manual_process-pkgpart',
-    'section'     => 'billing',
-    'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
+    'section'     => 'payments',
+    'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas. Surcharging is also generally prohibited in most countries outside the US, AU and UK.',
     'type'        => 'select-part_pkg',
     'per_agent'   => 1,
   },
 
   {
     'key'         => 'manual_process-display',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'When using manual_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
     'type'        => 'select',
     'select_hash' => [
@@ -2709,7 +2704,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'manual_process-skip_first',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => "When using manual_process-pkgpart, omit the fee if it is the customer's first payment.",
     'type'        => 'checkbox',
   },
@@ -2732,7 +2727,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice_process-pkgpart',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'Package to add to each manual credit card and ACH payment entered by the customer themselves in the self-service interface.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
     'type'        => 'select-part_pkg',
     'per_agent'   => 1,
@@ -2740,7 +2735,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice_process-display',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'When using selfservice_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
     'type'        => 'select',
     'select_hash' => [
@@ -2751,7 +2746,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice_process-skip_first',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => "When using selfservice_process-pkgpart, omit the fee if it is the customer's first payment.",
     'type'        => 'checkbox',
   },
@@ -2783,13 +2778,13 @@ and customer address. Include units.',
 
   {
     'key'         => 'allow_negative_charges',
-    'section'     => 'billing',
+    'section'     => 'deprecated',
     'description' => 'Allow negative charges.  Normally not used unless importing data from a legacy system that requires this.',
     'type'        => 'checkbox',
   },
   {
       'key'         => 'auto_unset_catchall',
-      'section'     => '',
+      'section'     => 'cancellation',
       'description' => 'When canceling a svc_acct that is the email catchall for one or more svc_domains, automatically set their catchall fields to null.  If this option is not set, the attempt will simply fail.',
       'type'        => 'checkbox',
   },
@@ -2803,14 +2798,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_pkg-change_svcpart',
-    'section'     => '',
+    'section'     => 'packages',
     'description' => "When changing packages, move services even if svcparts don't match between old and new pacakge definitions.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_pkg-change_pkgpart-bill_now',
-    'section'     => '',
+    'section'     => 'RADIUS',
     'description' => "When changing packages, bill the new package immediately.  Useful for prepaid situations with RADIUS where an Expiration attribute based on the package must be present at all times.",
     'type'        => 'checkbox',
   },
@@ -2824,14 +2819,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_www-enable_subdomains',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Enable selection of specific subdomains for virtual host creation.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_www-usersvc_svcpart',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Allowable service definition svcparts for virtual hosts, one per line.',
     'type'        => 'select-part_svc',
     'multiple'    => 1,
@@ -2981,14 +2976,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'card_refund-days',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'agent-showpasswords',
-    'section'     => '',
+    'section'     => 'deprecated',
     'description' => 'Display unencrypted user passwords in the agent (reseller) interface',
     'type'        => 'checkbox',
   },
@@ -3003,7 +2998,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'global_unique-phonenum',
-    'section'     => '',
+    'section'     => 'telephony',
     'description' => 'Global phone number uniqueness control: none (usual setting - check countrycode+phonenumun uniqueness per exports), or countrycode+phonenum (all countrycode+phonenum pairs are globally unique, regardless of exports).  disabled turns off duplicate checking completely and is STRONGLY NOT RECOMMENDED unless you REALLY need to turn this off.',
     'type'        => 'select',
     'select_enum' => [ 'none', 'countrycode+phonenum', 'disabled' ],
@@ -3011,7 +3006,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'global_unique-pbx_title',
-    'section'     => '',
+    'section'     => 'telephony',
     'description' => 'Global phone number uniqueness control: none (check uniqueness per exports), enabled (check across all services), or disabled (no duplicate checking).',
     'type'        => 'select',
     'select_enum' => [ 'enabled', 'disabled' ],
@@ -3019,7 +3014,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'global_unique-pbx_id',
-    'section'     => '',
+    'section'     => 'telephony',
     'description' => 'Global PBX id uniqueness control: none (check uniqueness per exports), enabled (check across all services), or disabled (no duplicate checking).',
     'type'        => 'select',
     'select_enum' => [ 'enabled', 'disabled' ],
@@ -3052,7 +3047,7 @@ and customer address. Include units.',
   {
     'key'         => 'network_monitoring_system',
     'section'     => 'network_monitoring',
-    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
+    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus network monitoring system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:3:Documentation:Torrus_Installation">installation instructions</a>).',
     'type'        => 'select',
     'select_enum' => [ '', qw(Torrus_Internal) ],
   },
@@ -3185,7 +3180,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ticket_system-appointment-queueid',
-    'section'     => 'ticketing',
+    'section'     => 'appointments',
     'description' => 'Ticketing queue to use for appointments.',
     #false laziness w/above
     'type'        => 'select-sub',
@@ -3213,7 +3208,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ticket_system-appointment-custom_field',
-    'section'     => 'ticketing',
+    'section'     => 'appointments',
     'description' => 'Ticketing custom field to use as an appointment classification.',
     'type'        => 'text',
   },
@@ -3242,7 +3237,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'company_name',
-    'section'     => 'required',
+    'section'     => 'important',
     'description' => 'Your company name',
     'type'        => 'text',
     'per_agent'   => 1, #XXX just FS/FS/ClientAPI/Signup.pm
@@ -3258,7 +3253,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'company_address',
-    'section'     => 'required',
+    'section'     => 'important',
     'description' => 'Your company address',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -3274,28 +3269,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'address1-search',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Enable the ability to search the address1 field from the quick customer search.  Not recommended in most cases as it tends to bring up too many search results - use explicit address searching from the advanced customer search instead.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'address2-search',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Enable a "Unit" search box which searches the second address field.  Useful for multi-tenant applications.  See also: cust_main-require_address2',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-require_address2',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Second address field is required.  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search', # service address only part not working in the modern world, see #41184  (on service address only, if billing and service addresses differ)
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'agent-ship_address',
-    'section'     => '',
+    'section'     => 'addresses',
     'description' => "Use the agent's master service address as the service address (only ship_address2 can be entered, if blank on the master address).  Useful for multi-tenant applications.",
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -3310,14 +3305,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'hylafax',
-    'section'     => 'billing',
+    'section'     => 'deprecated',
     'description' => 'Options for a HylaFAX server to enable the FAX invoice destination.  They should be in the form of a space separated list of arguments to the Fax::Hylafax::Client::sendfax subroutine.  You probably shouldn\'t override things like \'docfile\'.  *Note* Only supported when using typeset invoices (see the invoice_latex configuration option).',
     'type'        => [qw( checkbox textarea )],
   },
 
   {
     'key'         => 'cust_bill-ftpformat',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
     'options'     => [ spool_formats() ],
@@ -3325,35 +3320,35 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_bill-ftpserver',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftpusername',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftppassword',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftpdir',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-spoolformat',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
     'options'     => [ spool_formats() ],
@@ -3361,14 +3356,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_bill-spoolagent',
-    'section'     => 'invoicing',
+    'section'     => 'print_services',
     'description' => 'Enable per-agent spooling of raw invoice data.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'bridgestone-batch_counter',
-    'section'     => '',
+    'section'     => 'print_services',
     'description' => 'Batch counter for spool files.  Increments every time a spool file is uploaded.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -3376,7 +3371,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'bridgestone-prefix',
-    'section'     => '',
+    'section'     => 'print_services',
     'description' => 'Agent identifier for uploading to BABT printing service.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -3384,7 +3379,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'bridgestone-confirm_template',
-    'section'     => '',
+    'section'     => 'print_services',
     'description' => 'Confirmation email template for uploading to BABT service.  Text::Template format, with variables "$zipfile" (name of the zipped file), "$seq" (sequence number), "$prefix" (user ID string), and "$rows" (number of records in the file).  Should include Subject: and To: headers, separated from the rest of the message by a blank line.',
     # this could use a true message template, but it's hard to see how that
     # would make the world a better place
@@ -3394,7 +3389,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ics-confirm_template',
-    'section'     => '',
+    'section'     => 'print_services',
     'description' => 'Confirmation email template for uploading to ICS invoice printing.  Text::Template format, with variables "%count" and "%sum".',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -3402,28 +3397,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_acct-usage_suspend',
-    'section'     => 'billing',
+    'section'     => 'suspension',
     'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-usage_unsuspend',
-    'section'     => 'billing',
+    'section'     => 'suspension',
     'description' => 'Unuspends the package an account belongs to when svc_acct.seconds or a bytecount is incremented from 0 or below to a positive value (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-usage_threshold',
-    'section'     => 'billing',
+    'section'     => 'notification',
     'description' => 'The threshold (expressed as percentage) of acct.seconds or acct.up|down|totalbytes at which a warning message is sent to a service holder.  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'overlimit_groups',
-    'section'     => '',
+    'section'     => 'suspension',
     'description' => 'RADIUS group(s) to assign to svc_acct which has exceeded its bandwidth or time limit.',
     'type'        => 'select-sub',
     'per_agent'   => 1,
@@ -3444,7 +3439,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust-fields',
-    'section'     => 'UI',
+    'section'     => 'reporting',
     'description' => 'Which customer fields to display on reports by default',
     'type'        => 'select',
     'select_hash' => [ FS::ConfDefaults->cust_fields_avail() ],
@@ -3452,7 +3447,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_location-label_prefix',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Optional "site ID" to show in the location label',
     'type'        => 'select',
     'select_hash' => [ '' => '',
@@ -3463,42 +3458,42 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_pkg-display_times',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => 'Display full timestamps (not just dates) for customer packages.  Useful if you are doing real-time things like hourly prepaid.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_pkg-always_show_location',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => "Always display package locations, even when they're all the default service address.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_pkg-group_by_location',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => "Group packages by location.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_pkg-large_pkg_size',
-    'section'     => 'UI',
+    'section'     => 'scalability',
     'description' => "In customer view, summarize packages with more than this many services.  Set to zero to never summarize packages.",
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_pkg-hide_discontinued-part_svc',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => "In customer view, hide provisioned services which are no longer available in the package definition.  Not normally used except for very specific situations as it hides still-provisioned services.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'part_pkg-show_fcc_options',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => "Show fields on package definitions for FCC Form 477 classification",
     'type'        => 'checkbox',
   },
@@ -3533,7 +3528,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'echeck-country',
-    'section'     => 'billing',
+    'section'     => 'e-checks',
     'description' => 'Format electronic check information for the specified country.',
     'type'        => 'select',
     'select_hash' => [ 'US' => 'United States',
@@ -3590,21 +3585,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'cgp_rule-domain_templates',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Communigate Pro rule templates for domains, one per line, "svcnum Name"',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'svc_forward-no_srcsvc',
-    'section'     => '',
+    'section'     => 'services',
     'description' => "Don't allow forwards from existing accounts, only arbitrary addresses.  Useful when exporting to systems such as Communigate Pro which treat forwards in this fashion.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_forward-arbitrary_dst',
-    'section'     => '',
+    'section'     => 'services',
     'description' => "Allow forwards to point to arbitrary strings that don't necessarily look like email addresses.  Only used when using forwards for weird, non-email things.",
     'type'        => 'checkbox',
   },
@@ -3653,7 +3648,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'postal_invoice-fee_pkgpart',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'This allows selection of a package to insert on invoices for customers with postal invoices selected.',
     'type'        => 'select-part_pkg',
     'per_agent'   => 1,
@@ -3661,7 +3656,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'postal_invoice-recurring_only',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'The postal invoice fee is omitted on invoices without recurring charges when this is set.',
     'type'        => 'checkbox',
   },
@@ -3676,7 +3671,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'batch-enable_payby',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Enable batch processing for the specified payment types.',
     'type'        => 'selectmultiple',
     'select_enum' => [qw( CARD CHEK )],
@@ -3684,7 +3679,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'realtime-disable_payby',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'Disable realtime processing for the specified payment types.',
     'type'        => 'selectmultiple',
     'select_enum' => [qw( CARD CHEK )],
@@ -3692,7 +3687,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'batch-default_format',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Default format for batches.',
     'type'        => 'select',
     'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch',
@@ -3702,34 +3697,34 @@ and customer address. Include units.',
   },
 
   { 'key'         => 'batch-gateway-CARD',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Business::BatchPayment gateway for credit card batches.',
     %batch_gateway_options,
   },
 
   { 'key'         => 'batch-gateway-CHEK',
-    'section'     => 'billing', 
+    'section'     => 'payment_batching', 
     'description' => 'Business::BatchPayment gateway for check batches.',
     %batch_gateway_options,
   },
 
   {
     'key'         => 'batch-reconsider',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Allow imported batch results to change the status of payments from previous imports.  Enable this only if your gateway is known to send both positive and negative results for the same batch.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'batch-auto_resolve_days',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Automatically resolve payment batches this many days after they were first downloaded.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'batch-auto_resolve_status',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'When automatically resolving payment batches, take this action for payments of unknown status.',
     'type'        => 'select',
     'select_enum' => [ 'approve', 'decline' ],
@@ -3738,7 +3733,7 @@ and customer address. Include units.',
   # replaces batch-errors_to (sent email on error)
   {
     'key'         => 'batch-errors_not_fatal',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'If checked, when importing batches from a gateway, item errors will be recorded in the system log without aborting processing.  If unchecked, batch processing will fail on error.',
     'type'        => 'checkbox',
   },
@@ -3746,7 +3741,7 @@ and customer address. Include units.',
   #lists could be auto-generated from pay_batch info
   {
     'key'         => 'batch-fixed_format-CARD',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Fixed (unchangeable) format for credit card batches.',
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ,
@@ -3755,7 +3750,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'batch-fixed_format-CHEK',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
     'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch', 'BoM',
@@ -3766,70 +3761,70 @@ and customer address. Include units.',
 
   {
     'key'         => 'batch-increment_expiration',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Increment expiration date years in batches until cards are current.  Make sure this is acceptable to your batching provider before enabling.',
     'type'        => 'checkbox'
   },
 
   {
     'key'         => 'batchconfig-BoM',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for Bank of Montreal batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
     'type'        => 'textarea',
   },
 
 {
     'key'         => 'batchconfig-CIBC',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for Canadian Imperial Bank of Commerce, six lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Bank, 6. Bank account',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'batchconfig-PAP',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for PAP batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'batchconfig-csv-chase_canada-E-xactBatch',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Gateway ID for Chase Canada E-xact batching',
     'type'        => 'text',
   },
 
   {
     'key'         => 'batchconfig-paymentech',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for Chase Paymentech batching, six lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads), 6. Flag to send recurring indicator.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'batchconfig-RBC',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for Royal Bank of Canada PDS batching, five lines: 1. Client number, 2. Short name, 3. Long name, 4. Transaction code 5. (optional) set to TEST to turn on test mode.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'batchconfig-RBC-login',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'FTPS login for uploading Royal Bank of Canada batches. Two lines: 1. username, 2. password. If not supplied, batches can still be created but not automatically uploaded.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'batchconfig-td_eft1464',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for TD Bank EFT1464 batching, seven lines: 1. Originator ID, 2. Datacenter Code, 3. Short name, 4. Long name, 5. Returned payment branch number, 6. Returned payment account, 7. Transaction code.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'batchconfig-eft_canada',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for EFT Canada batching, five lines: 1. SFTP username, 2. SFTP password, 3. Business transaction code, 4. Personal transaction code, 5. Number of days to delay process date.  If you are using separate per-agent batches (batch-spoolagent), you must set this option separately for each agent, as the global setting will be ignored.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -3837,42 +3832,42 @@ and customer address. Include units.',
 
   {
     'key'         => 'batchconfig-nacha-destination',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for NACHA batching, Destination (9 digit transit routing number).',
     'type'        => 'text',
   },
 
   {
     'key'         => 'batchconfig-nacha-destination_name',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for NACHA batching, Destination (Bank Name, up to 23 characters).',
     'type'        => 'text',
   },
 
   {
     'key'         => 'batchconfig-nacha-origin',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for NACHA batching, Origin (your 10-digit company number, IRS tax ID recommended).',
     'type'        => 'text',
   },
 
   {
     'key'         => 'batchconfig-nacha-origin_name',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Configuration for NACHA batching, Origin name (defaults to company name, but sometimes bank name is needed instead.)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'batch-manual_approval',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised unless needed for specific payment processors that provide a report of rejected rather than approved payments.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'batch-spoolagent',
-    'section'     => 'billing',
+    'section'     => 'payment_batching',
     'description' => 'Store payment batches per-agent.',
     'type'        => 'checkbox',
   },
@@ -3893,35 +3888,35 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-packages-years',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => 'Number of years to show old (cancelled and one-time charge) packages by default.  Currently defaults to 2.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_main-use_comments',
-    'section'     => 'UI',
+    'section'     => 'deprecated',
     'description' => 'Display free form comments on the customer edit screen.  Useful as a scratch pad.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-disable_notes',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Disable new style customer notes - timestamped and user identified customer notes.  Useful in tracking who did what.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main_note-display_times',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Display full timestamps (not just dates) for customer notes.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-ticket_statuses',
-    'section'     => 'UI',
+    'section'     => 'ticketing',
     'description' => 'Show tickets with these statuses on the customer view page.',
     'type'        => 'selectmultiple',
     'select_enum' => [qw( new open stalled resolved rejected deleted )],
@@ -3929,56 +3924,56 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-max_tickets',
-    'section'     => 'UI',
+    'section'     => 'ticketing',
     'description' => 'Maximum number of tickets to show on the customer view page.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_main-enable_birthdate',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Enable tracking of a birth date with each customer record',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-enable_spouse',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Enable tracking of a spouse\'s name and date of birth with each customer record',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-enable_anniversary_date',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Enable tracking of an anniversary date with each customer record',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-edit_calling_list_exempt',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Display the "calling_list_exempt" checkbox on customer edit.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'support-key',
-    'section'     => '',
-    'description' => 'A support key enables access to commercial services delivered over the network, such as address normalization and invoice printing.',
+    'section'     => 'important',
+    'description' => 'A support key enables access to <A HREF="http://freeside.biz/freeside/services.html#support">commercial services</A> delivered over the network, such as address normalization and invoice printing.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'freesideinc-webservice-svcpart',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'Do not set this.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'card-types',
-    'section'     => 'billing',
+    'section'     => 'credit_cards',
     'description' => 'Select one or more card types to enable only those card types.  If no card types are selected, all card types are available.',
     'type'        => 'selectmultiple',
     'select_enum' => \@card_types,
@@ -3986,26 +3981,26 @@ and customer address. Include units.',
 
   {
     'key'         => 'disable-fuzzy',
-    'section'     => 'UI',
+    'section'     => 'scalability',
     'description' => 'Disable fuzzy searching.  Speeds up searching for large sites, but only shows exact matches.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'fuzzy-fuzziness',
-    'section'     => 'UI',
+    'section'     => 'scalability',
     'description' => 'Set the "fuzziness" of fuzzy searching (see the String::Approx manpage for details).  Defaults to 10%',
     'type'        => 'text',
   },
 
   { 'key'         => 'pkg_referral',
-    'section'     => '',
+    'section'     => 'packages',
     'description' => 'Enable package-specific advertising sources.',
     'type'        => 'checkbox',
   },
 
   { 'key'         => 'pkg_referral-multiple',
-    'section'     => '',
+    'section'     => 'packages',
     'description' => 'In addition, allow multiple advertising sources to be associated with a single package.',
     'type'        => 'checkbox',
   },
@@ -4044,8 +4039,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'logo.eps',
-    'section'     => 'invoicing',
-    'description' => 'Company logo for printed and PDF invoices, in EPS format.',
+    'section'     => 'printing',
+    'description' => 'Company logo for printed and PDF invoices and quotations, in EPS format.',
     'type'        => 'image',
     'per_agent'   => 1, #XXX as above, kinda
     'per_locale'  => 1,
@@ -4098,21 +4093,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'disable_void_after',
-    'section'     => 'billing',
+    'section'     => 'payments',
     'description' => 'Number of seconds after which freeside won\'t attempt to VOID a payment first when performing a refund.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'disable_line_item_date_ranges',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Prevent freeside from automatically generating date ranges on invoice line items.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_bill-line_item-date_style',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Display format for line item date ranges on invoice line items.',
     'type'        => 'select',
     'select_hash' => [ ''           => 'STARTDATE-ENDDATE',
@@ -4124,7 +4119,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_bill-line_item-date_style-non_monthly',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'If set, override cust_bill-line_item-date_style for non-monthly charges.',
     'type'        => 'select',
     'select_hash' => [ ''           => 'Default',
@@ -4137,7 +4132,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_bill-line_item-date_description',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Text to display for "DATE_DESC" when using cust_bill-line_item-date_style DATE_DESC MONTHNAME.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4145,7 +4140,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'support_packages',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'A list of packages eligible for RT ticket time transfer, one pkgpart per line.', #this should really be a select multiple, or specified in the packages themselves...
     'type'        => 'select-part_pkg',
     'multiple'    => 1,
@@ -4153,7 +4148,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-require_phone',
-    'section'     => '',
+    'section'     => 'customer_fields',
     'description' => 'Require daytime or night phone for all customer records.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -4161,7 +4156,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-require_invoicing_list_email',
-    'section'     => '',
+    'section'     => 'customer_fields',
     'description' => 'Email address field is required: require at least one invoicing email address for all customer records.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -4169,7 +4164,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-check_unique',
-    'section'     => '',
+    'section'     => 'customer_fields',
     'description' => 'Warn before creating a customer record where these fields duplicate another customer.',
     'type'        => 'select',
     'multiple'    => 1,
@@ -4180,21 +4175,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_acct-display_paid_time_remaining',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Show paid time remaining in addition to time remaining.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cancel_credit_type',
-    'section'     => 'billing',
+    'section'     => 'cancellation',
     'description' => 'The group to use for new, automatically generated credit reasons resulting from cancellation.',
     reason_type_options('R'),
   },
 
   {
     'key'         => 'suspend_credit_type',
-    'section'     => 'billing',
+    'section'     => 'suspension',
     'description' => 'The group to use for new, automatically generated credit reasons resulting from package suspension.',
     reason_type_options('R'),
   },
@@ -4223,7 +4218,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-agent_custid-format',
-    'section'     => '',
+    'section'     => 'customer_number',
     'description' => 'Enables searching of various formatted values in cust_main.agent_custid',
     'type'        => 'select',
     'select_hash' => [
@@ -4235,7 +4230,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'card_masking_method',
-    'section'     => 'UI',
+    'section'     => 'credit_cards',
     'description' => 'Digits to display when masking credit cards.  Note that the first six digits are necessary to canonically identify the credit card type (Visa/MC, Amex, Discover, Maestro, etc.) in all cases.  The first four digits can identify the most common credit card types in most cases (Visa/MC, Amex, and Discover).  The first two digits can distinguish between Visa/MC and Amex.  Note: You should manually remove stored paymasks if you change this value on an existing database, to avoid problems using stored cards.',
     'type'        => 'select',
     'select_hash' => [
@@ -4252,7 +4247,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'disable_previous_balance',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show new charges only; do not list previous invoices, payments, or credits on the invoice.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -4260,63 +4255,63 @@ and customer address. Include units.',
 
   {
     'key'         => 'previous_balance-exclude_from_total',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show separate totals for previous invoice balance and new charges. Only meaningful when invoice_sections is false.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_balance-text',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Text for the label of the total previous balance, when it is shown separately. Defaults to "Previous Balance".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'previous_balance-text-total_new_charges',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Text for the label of the total of new charges, when it is shown separately. If invoice_show_prior_due_date is enabled, the due date of current charges will be appended. Defaults to "Total New Charges".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'previous_balance-section',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show previous invoice balances in a separate invoice section.  Does not require invoice_sections to be enabled.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_balance-summary_only',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Only show a single line summarizing the total previous balance rather than one line per invoice.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_balance-show_credit',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show the customer\'s credit balance on invoices when applicable.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_balance-show_on_statements',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show previous invoices on statements, without itemized charges.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_balance-payments_since',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Instead of showing payments (and credits) applied to the invoice, show those received since the previous invoice date.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_invoice_history',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Show a month-by-month history of the customer\'s '.
                      'billing amounts.  This requires template '.
                      'modification and is currently not supported on the '.
@@ -4326,21 +4321,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'balance_due_below_line',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_balances',
     'description' => 'Place the balance due message below a line.  Only meaningful when when invoice_sections is false.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'always_show_tax',
-    'section'     => 'invoicing',
+    'section'     => 'taxation',
     'description' => 'Show a line for tax on the invoice even when the tax is zero.  Optionally provide text for the tax name to show.',
     'type'        => [ qw(checkbox text) ],
   },
 
   {
     'key'         => 'address_standardize_method',
-    'section'     => 'UI', #???
+    'section'     => 'addresses', #???
     'description' => 'Method for standardizing customer addresses.',
     'type'        => 'select',
     'select_hash' => [ '' => '', 
@@ -4353,56 +4348,56 @@ and customer address. Include units.',
 
   {
     'key'         => 'usps_webtools-userid',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Production UserID for USPS web tools.   Enables USPS address standardization.  See the <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'usps_webtools-password',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Production password for USPS web tools.   Enables USPS address standardization.  See <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'melissa-userid',
-    'section'     => 'UI', # it's really not...
+    'section'     => 'addresses', # it's really not...
     'description' => 'User ID for Melissa WebSmart service.  See <a href="http://www.melissadata.com/">the Melissa website</a> for access and pricing.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'melissa-enable_geocoding',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Use the Melissa service for census tract and coordinate lookups.  Enable this only if your subscription includes geocoding access.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-auto_standardize_address',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'When using USPS web tools, automatically standardize the address without asking.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-require_censustract',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Customer is required to have a census tract.  Useful for FCC form 477 reports. See also: cust_main-auto_standardize_address',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-no_city_in_address',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Turn off City for billing & shipping addresses',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'census_year',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 or 2013 for Year 2010 Census tract codes.  A selection of 2011 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
     'type'        => 'select',
     'select_enum' => [ qw( 2013 2012 2011 ) ],
@@ -4435,66 +4430,67 @@ and customer address. Include units.',
     'type'        => 'text',
   },
 
-  {
-    'key'         => 'geocode_module',
-    'section'     => '',
-    'description' => 'Module to geocode (retrieve a latitude and longitude for) addresses',
-    'type'        => 'select',
-    'select_enum' => [ 'Geo::Coder::Googlev3' ],
-  },
+  #if we can't change it from the default yet, what good is it to the end-user? 
+  #{
+  #  'key'         => 'geocode_module',
+  #  'section'     => 'addresses',
+  #  'description' => 'Module to geocode (retrieve a latitude and longitude for) addresses',
+  #  'type'        => 'select',
+  #  'select_enum' => [ 'Geo::Coder::Googlev3' ],
+  #},
 
   {
     'key'         => 'geocode-require_nw_coordinates',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Require latitude and longitude in the North Western quadrant, e.g. for North American co-ordinates, etc.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'disable_acl_changes',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'Disable all ACL changes, for demos.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'disable_settings_changes',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'Disable all settings changes, for demos, except for the usernames given in the comma-separated list.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'cust_main-edit_agent_custid',
-    'section'     => 'UI',
+    'section'     => 'customer_number',
     'description' => 'Enable editing of the agent_custid field.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-default_agent_custid',
-    'section'     => 'UI',
+    'section'     => 'customer_number',
     'description' => 'Display the agent_custid field when available instead of the custnum field.  Restart Apache after changing.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-title-display_custnum',
-    'section'     => 'UI',
-    'description' => 'Add the display_custom (agent_custid or custnum) to the title on customer view pages.',
+    'section'     => 'customer_number',
+    'description' => 'Add the display_custnum (agent_custid or custnum) to the title on customer view pages.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_bill-default_agent_invid',
-    'section'     => 'UI',
+    'section'     => 'invoicing',
     'description' => 'Display the agent_invid field when available instead of the invnum field.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-auto_agent_custid',
-    'section'     => 'UI',
+    'section'     => 'customer_number',
     'description' => 'Automatically assign an agent_custid - select format',
     'type'        => 'select',
     'select_hash' => [ '' => 'No',
@@ -4504,7 +4500,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-custnum-display_prefix',
-    'section'     => 'UI',
+    'section'     => 'customer_number',
     'description' => 'Prefix the customer number with this string for display purposes.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4512,35 +4508,35 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-custnum-display_length',
-    'section'     => 'UI',
+    'section'     => 'customer_number',
     'description' => 'Zero fill the customer number to this many digits for display purposes.  Restart Apache after changing.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_main-default_areacode',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Default area code for customers.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'order_pkg-no_start_date',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => 'Don\'t set a default start date for new packages.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'part_pkg-delay_start',
-    'section'     => '',
+    'section'     => 'packages',
     'description' => 'Enabled "delayed start" option for packages.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'part_pkg-delay_cancel-days',
-    'section'     => '',
+    'section'     => 'cancellation',
     'description' => 'Number of days to suspend when using automatic suspension period before cancel (default is 1)',
     'type'        => 'text',
     'validate'    => sub { (($_[0] =~ /^\d*$/) && (($_[0] eq '') || $_[0]))
@@ -4550,7 +4546,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'mcp_svcpart',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'Master Control Program svcpart.  Leave this blank.',
     'type'        => 'text', #select-part_svc
   },
@@ -4571,21 +4567,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'suspend_email_admin',
-    'section'     => '',
+    'section'     => 'suspension',
     'description' => 'Destination admin email address to enable suspension notices',
     'type'        => 'text',
   },
 
   {
     'key'         => 'unsuspend_email_admin',
-    'section'     => '',
+    'section'     => 'suspension',
     'description' => 'Destination admin email address to enable unsuspension notices',
     'type'        => 'text',
   },
   
   {
     'key'         => 'selfservice-head',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML for the HEAD section of the self-service interface, typically used for LINK stylesheet tags',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
@@ -4594,7 +4590,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-body_header',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML header for the self-service interface',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
@@ -4602,7 +4598,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-body_footer',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML footer for the self-service interface',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
@@ -4611,7 +4607,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-body_bgcolor',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML background color for the self-service interface, for example, #FFFFFF',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4619,7 +4615,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-box_bgcolor',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4627,7 +4623,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-stripe1_bgcolor',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML color for self-service interface lists (primary stripe), for example, #FFFFFF',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4635,7 +4631,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-stripe2_bgcolor',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML color for self-service interface lists (alternate stripe), for example, #DDDDDD',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4643,7 +4639,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-text_color',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML text color for the self-service interface, for example, #000000',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4651,7 +4647,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-link_color',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML link color for the self-service interface, for example, #0000FF',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4659,7 +4655,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-vlink_color',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML visited link color for the self-service interface, for example, #FF00FF',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4667,7 +4663,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-hlink_color',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML hover link color for the self-service interface, for example, #808080',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4675,7 +4671,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-alink_color',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML active (clicked) link color for the self-service interface, for example, #808080',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4683,7 +4679,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-font',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML font CSS for the self-service interface, for example, 0.9em/1.5em Arial, Helvetica, Geneva, sans-serif',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4691,7 +4687,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-no_logo',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Disable the logo in self-service',
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -4699,7 +4695,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-title_color',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML color for the self-service title, for example, #000000',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4707,14 +4703,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-title_align',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML alignment for the self-service title, for example, center',
     'type'        => 'text',
     'per_agent'   => 1,
   },
   {
     'key'         => 'selfservice-title_size',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML font size for the self-service title, for example, 3',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4722,7 +4718,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-title_left_image',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Image used for the top of the menu in the self-service interface, in PNG format.',
     'type'        => 'image',
     'per_agent'   => 1,
@@ -4730,7 +4726,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-title_right_image',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Image used for the top of the menu in the self-service interface, in PNG format.',
     'type'        => 'image',
     'per_agent'   => 1,
@@ -4779,7 +4775,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-menu_bgcolor',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML color for the self-service menu, for example, #C0C0C0',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -4787,14 +4783,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-menu_fontsize',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'HTML font size for the self-service menu, for example, -1',
     'type'        => 'text',
     'per_agent'   => 1,
   },
   {
     'key'         => 'selfservice-menu_nounderline',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Styles menu links in the self-service without underlining.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
@@ -4803,7 +4799,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-menu_top_image',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Image used for the top of the menu in the self-service interface, in PNG format.',
     'type'        => 'image',
     'per_agent'   => 1,
@@ -4811,7 +4807,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-menu_body_image',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Repeating image used for the body of the menu in the self-service interface, in PNG format.',
     'type'        => 'image',
     'per_agent'   => 1,
@@ -4819,7 +4815,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-menu_bottom_image',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Image used for the bottom of the menu in the self-service interface, in PNG format.',
     'type'        => 'image',
     'per_agent'   => 1,
@@ -4834,14 +4830,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-login_banner_image',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Banner image shown on the login page, in PNG format.',
     'type'        => 'image',
   },
 
   {
     'key'         => 'selfservice-login_banner_url',
-    'section'     => 'self-service',
+    'section'     => 'self-service_skinning',
     'description' => 'Link for the login banner.',
     'type'        => 'text',
   },
@@ -4855,28 +4851,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'signup-no_company',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => "Don't display a field for company name on signup.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup-recommend_email',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Encourage the entry of an invoicing email address on signup.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup-recommend_daytime',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Encourage the entry of a daytime phone number on signup.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup-duplicate_cc-warn_hours',
-    'section'     => 'self-service',
+    'section'     => 'signup',
     'description' => 'Issue a warning if the same credit card is used for multiple signups within this many hours.',
     'type'        => 'text',
   },
@@ -5043,7 +5039,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_pkg-show_autosuspend',
-    'section'     => 'UI',
+    'section'     => 'suspension',
     'description' => 'Show package auto-suspend dates.  Use with caution for now; can slow down customer view for large insallations.',
     'type'        => 'checkbox',
   },
@@ -5056,72 +5052,64 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'mc-outbound_packages',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'select-part_pkg',
-    'multiple'    => 1,
-  },
-
-  {
     'key'         => 'disable-cust-pkg_class',
-    'section'     => 'UI',
+    'section'     => 'packages',
     'description' => 'Disable the two-step dropdown for selecting package class and package, and return to the classic single dropdown.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'queued-max_kids',
-    'section'     => '',
+    'section'     => 'scalability',
     'description' => 'Maximum number of queued processes.  Defaults to 10.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'queued-sleep_time',
-    'section'     => '',
+    'section'     => 'telephony',
     'description' => 'Time to sleep between attempts to find new jobs to process in the queue.  Defaults to 10.  Installations doing real-time CDR processing for prepaid may want to set it lower.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'queue-no_history',
-    'section'     => '',
+    'section'     => 'scalability',
     'description' => "Don't recreate the h_queue and h_queue_arg tables on upgrades.  This can save disk space for large installs, especially when using prepaid or multi-process billing.  After turning this option on, drop the h_queue and h_queue_arg tables, run freeside-dbdef-create and restart Apache and Freeside.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cancelled_cust-noevents',
-    'section'     => 'billing',
+    'section'     => 'cancellation',
     'description' => "Don't run events for cancelled customers",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'agent-invoice_template',
-    'section'     => 'invoicing',
+    'section'     => 'deprecated',
     'description' => 'Enable display/edit of old-style per-agent invoice template selection',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_broadband-manage_link',
-    'section'     => 'UI',
+    'section'     => 'wireless_broadband',
     'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr and $mac_addr.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'svc_broadband-manage_link_text',
-    'section'     => 'UI',
+    'section'     => 'wireless_broadband',
     'description' => 'Label for "Manage Device" link',
     'type'        => 'text',
   },
 
   {
     'key'         => 'svc_broadband-manage_link_loc',
-    'section'     => 'UI',
+    'section'     => 'wireless_broadband',
     'description' => 'Location for "Manage Device" link',
     'type'        => 'select',
     'select_hash' => [
@@ -5132,7 +5120,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_broadband-manage_link-new_window',
-    'section'     => 'UI',
+    'section'     => 'wireless_broadband',
     'description' => 'Open the "Manage Device" link in a new window',
     'type'        => 'checkbox',
   },
@@ -5140,21 +5128,21 @@ and customer address. Include units.',
   #more fine-grained, service def-level control could be useful eventually?
   {
     'key'         => 'svc_broadband-allow_null_ip_addr',
-    'section'     => '',
+    'section'     => 'wireless_broadband',
     'description' => '',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_hardware-check_mac_addr',
-    'section'     => '', #?
+    'section'     => 'services',
     'description' => 'Require the "hardware address" field in hardware services to be a valid MAC address.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'tax-report_groups',
-    'section'     => '',
+    'section'     => 'taxation',
     'description' => 'List of grouping possibilities for tax names on reports, one per line, "label op value" (op can be = or !=).',
     'type'        => 'textarea',
   },
@@ -5186,7 +5174,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax-round_per_line_item',
-    'section'     => 'billing',
+    'section'     => 'taxation',
     'description' => 'Calculate tax and round to the nearest cent for each line item, rather than for the whole invoice.',
     'type'        => 'checkbox',
   },
@@ -5217,28 +5205,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'rt-crontool',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Enable the RT CronTool extension.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'pkg-balances',
-    'section'     => 'billing',
+    'section'     => 'packages',
     'description' => 'Enable per-package balances.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'pkg-addon_classnum',
-    'section'     => 'billing',
+    'section'     => 'packages',
     'description' => 'Enable the ability to restrict additional package orders based on package class.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-edit_signupdate',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Enable manual editing of the signup date.',
     'type'        => 'checkbox',
   },
@@ -5288,21 +5276,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_domain-edit_domain',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Enable domain renaming',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'enable_legacy_prepaid_income',
-    'section'     => '',
+    'section'     => 'reporting',
     'description' => "Enable legacy prepaid income reporting.  Only useful when you have imported pre-Freeside packages with longer-than-monthly duration, and need to do prepaid income reporting on them before they've been invoiced the first time.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-exports',
-    'section'     => '',
+    'section'     => 'API',
     'description' => 'Export(s) to call on cust_main insert, modification and deletion.',
     'type'        => 'select-sub',
     'multiple'    => 1,
@@ -5329,7 +5317,7 @@ and customer address. Include units.',
   #false laziness w/above options_sub and option_sub
   {
     'key'         => 'cust_location-exports',
-    'section'     => '',
+    'section'     => 'API',
     'description' => 'Export(s) to call on cust_location insert or modification',
     'type'        => 'select-sub',
     'multiple'    => 1,
@@ -5384,14 +5372,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'part_pkg-default_suspend_bill',
-    'section'     => 'billing',
+    'section'     => 'suspension',
     'description' => 'Default the "Continue recurring billing while suspended" flag to on for new package definitions.',
     'type'        => 'checkbox',
   },
   
   {
     'key'         => 'qual-alt_address_format',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Enable the alternate address format (location type, number, and kind) for qualifications.',
     'type'        => 'checkbox',
   },
@@ -5412,7 +5400,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'note-classes',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Use customer note classes',
     'type'        => 'select',
     'select_hash' => [
@@ -5424,7 +5412,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_acct-cf_privatekey-message',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'For internal use: HTML displayed when cf_privatekey field is set.',
     'type'        => 'textarea',
   },
@@ -5445,14 +5433,14 @@ and customer address. Include units.',
   
   {
     'key'         => 'svc_phone-did-summary',
-    'section'     => 'invoicing',
+    'section'     => 'telephony',
     'description' => 'Experimental feature to enable DID activity summary on invoices, showing # DIDs activated/deactivated/ported-in/ported-out and total minutes usage, covering period since last invoice.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-usage_seconds',
-    'section'     => 'invoicing',
+    'section'     => 'RADIUS',
     'description' => 'Enable calculation of RADIUS usage time for invoices.  You must modify your template to display this information.',
     'type'        => 'checkbox',
   },
@@ -5486,7 +5474,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_bill-no_recipients-error',
-    'section'     => 'invoicing',
+    'section'     => 'invoice_email',
     'description' => 'For customers with no invoice recipients, throw a job queue error rather than the default behavior of emailing the invoice to the invoice_from address.',
     'type'        => 'checkbox',
   },
@@ -5537,14 +5525,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'disable_payauto_default',
-    'section'     => 'UI',
+    'section'     => 'payments',
     'description' => 'Disable the "Charge future payments to this (card|check) automatically" checkbox from defaulting to checked.',
     'type'        => 'checkbox',
   },
   
   {
     'key'         => 'payment-history-report',
-    'section'     => 'UI',
+    'section'     => 'deprecated',
     'description' => 'Show a link to the raw database payment history report in the Reports menu.  DO NOT ENABLE THIS for modern installations.',
     'type'        => 'checkbox',
   },
@@ -5558,7 +5546,7 @@ and customer address. Include units.',
   
   {
     'key'         => 'cust-edit-alt-field-order',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',
     'type'        => 'checkbox',
   },
@@ -5585,7 +5573,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-require_locale',
-    'section'     => 'UI',
+    'section'     => 'localization',
     'description' => 'Require an explicit locale to be chosen for new customers.',
     'type'        => 'checkbox',
   },
@@ -5601,7 +5589,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'svc_acct-tower_sector',
-    'section'     => '',
+    'section'     => 'services',
     'description' => 'Track tower and sector for svc_acct (account) services.',
     'type'        => 'checkbox',
   },
@@ -5714,7 +5702,7 @@ and customer address. Include units.',
   
   {
     'key'         => 'spreadsheet_format',
-    'section'     => 'UI',
+    'section'     => 'reporting',
     'description' => 'Default format for spreadsheet download.',
     'type'        => 'select',
     'select_hash' => [
@@ -5725,7 +5713,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'report-cust_pay-select_time',
-    'section'     => 'UI',
+    'section'     => 'reporting',
     'description' => 'Enable time selection on payment and refund reports.',
     'type'        => 'checkbox',
   },
@@ -5747,7 +5735,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'allow_invalid_cards',
-    'section'     => '',
+    'section'     => 'development',
     'description' => 'Accept invalid credit card numbers.  Useful for testing with fictitious customers.  There is no good reason to enable this in production.',
     'type'        => 'checkbox',
   },
@@ -5807,22 +5795,22 @@ and customer address. Include units.',
 
   {
     'key'         => 'part_pkg-term_discounts',
-    'section'     => 'billing',
+    'section'     => 'packages',
     'description' => 'Enable the term discounts feature.  Recommended to keep turned off unless actually using - not well optimized for large installations.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'prepaid-never_renew',
-    'section'     => 'billing',
+    'section'     => 'packages',
     'description' => 'Prepaid packages never renew.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'agent-disable_counts',
-    'section'     => 'UI',
-    'description' => 'On the agent browse page, disable the customer and package counts.  Typically used for very large databases when this page takes too long to render.',
+    'section'     => 'scalability',
+    'description' => 'On the agent browse page, disable the customer and package counts.  Typically used for very large installs when this page takes too long to render.',
     'type'        => 'checkbox',
   },
 
@@ -5839,21 +5827,21 @@ and customer address. Include units.',
 
   {
     'key'         => 'old_fcc_report',
-    'section'     => '',
+    'section'     => 'deprecated',
     'description' => 'Use the old (pre-2014) FCC Form 477 report format.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cust_main-default_commercial',
-    'section'     => 'UI',
+    'section'     => 'customer_fields',
     'description' => 'Default for new customers is commercial rather than residential.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'default_appointment_length',
-    'section'     => 'UI',
+    'section'     => 'appointments',
     'description' => 'Default appointment length, in minutes (30 minute granularity).',
     'type'        => 'text',
   },

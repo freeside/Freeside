@@ -412,18 +412,6 @@ SECPHRASE
       $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
     }
 
-    if ( $nomadix ) {
-
-      warn $mac_addr;
-      $mac_addr ||= $MA;
-      warn $mac_addr;
-
-      $OUT .= <<NOMADIX;
-        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="$mac_addr">
-NOMADIX
-
-    }
-
   }
 
   if ( @svc_acct_pop ) {
