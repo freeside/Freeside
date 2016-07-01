@@ -110,13 +110,16 @@ function clearhint_search_cust_svc(obj, str) {
 % } #foreach part_svc
 
 % if ($cust_pkg->get('cancel')) {
-%   foreach my $svc (sort { $a->{'svcpart'} <=> $b->{'svcpart'} } 
-%                      $cust_pkg->uncancel_svc_summary('summarize_size' => $opt{'cust_pkg-large_pkg_size'})
+%   foreach my $svc (
+%     $cust_pkg->uncancel_svc_summary('summarize_size' => $opt{'cust_pkg-large_pkg_size'}, 'no_test_reprovision' => 1)
 %   ) {
-%     next unless $svc->{'reprovisionable'};
       <TR>
         <TD ALIGN="right" VALIGN="top"><% $svc->{'svc'} |h %></TD>
-        <TD STYLE="padding-bottom:0px; font-style: italic"><% $svc->{'label'} |h %></TD>
+        <TD STYLE="padding-bottom:0px; font-style: italic">
+        <% $svc->{'num_cust_svc'} 
+           ? $svc->{'num_cust_svc'} . ' ' . emt('services in history') 
+           : (defined($svc->{'label'}) ? $svc->{'label'} : emt('(cannot load svc label)')) |h %>
+        </TD>
       </TR>
 %   }
 % }
