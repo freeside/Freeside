@@ -53,6 +53,8 @@ FS::Record.  The following fields are currently supported:
 
 =item svc - text name of this service definition
 
+=item comment - text comment of this service definition
+
 =item svcdb - table used for this service.  See L<FS::svc_acct>,
 L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
@@ -419,6 +421,7 @@ sub check {
   $error=
     $self->ut_numbern('svcpart')
     || $self->ut_text('svc')
+    || $self->ut_textn('comment')
     || $self->ut_alpha('svcdb')
     || $self->ut_flag('disabled')
     || $self->ut_flag('preserve')
