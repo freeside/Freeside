@@ -67,10 +67,11 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 
 Field information:
 <ul>
-  <li><i>custnum</i>: Customer number
-  <li><i>amount</i>:
-  <li><i>reasonnum</i>: <A HREF="<%$p%>browse/reason.html?class=R">Credit reason</A>
-  <li><i>invnum</i>: Invoice number
+  <li><i>custnum</i>: This is the freeside customer number. It may be left blank. If specified, agent_custid must be blank.</li></li>
+  <li><i>amount</i>:</li>
+  <li><i>reasonnum</i>: <A HREF="<%$p%>browse/reason.html?class=R">Credit reason</A></li>
+  <li><i>invnum</i>: Invoice number</li>
+  <li><i>agent_custid</i>: This is the reseller's idea of the customer number or identifier. It may be left blank. If specified, custnum must be blank.</li>
 </ul>
 <BR><BR>
 
