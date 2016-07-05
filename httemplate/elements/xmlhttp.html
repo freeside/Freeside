@@ -44,7 +44,7 @@ my %initialized = ();#won't work if component is "preloaded"... so don't do that
             len = args.length - 1;
         }
         for (var i = 0; i < len; i++) 
-            content = content + "&arg=" + escape(args[i]);
+            content = content + "&arg=" + encodeURIComponent(args[i]);
         content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
 
         if ( '<%$method%>' == 'GET' ) {
