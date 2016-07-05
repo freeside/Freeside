@@ -32,6 +32,8 @@ FS::h_svc_forward - Historical mail forwarding alias objects
 
 sub srcsvc_acct {
   my $self = shift;
+
+  $_[0] ||= $self->history_date;
   my $h_svc_acct = qsearchs(
     'h_svc_acct',
     { 'svcnum' => $self->srcsvc },
@@ -52,6 +54,8 @@ sub srcsvc_acct {
 
 sub dstsvc_acct {
   my $self = shift;
+
+  $_[0] ||= $self->history_date;
   my $h_svc_acct = qsearchs(
     'h_svc_acct',
     { 'svcnum' => $self->dstsvc },

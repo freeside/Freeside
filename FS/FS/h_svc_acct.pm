@@ -28,6 +28,7 @@ FS::h_svc_acct - Historical account objects
 
 sub svc_domain {
   my $self = shift;
+  $_[0] ||= $self->history_date;
   qsearchs( 'h_svc_domain',
             { 'svcnum' => $self->domsvc },
             FS::h_svc_domain->sql_h_searchs(@_),
