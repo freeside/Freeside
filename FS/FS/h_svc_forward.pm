@@ -35,6 +35,7 @@ sub srcsvc_acct {
 
   local($FS::Record::qsearch_qualify_columns) = 0;
 
+  $_[0] ||= $self->history_date;
   my $h_svc_acct = qsearchs(
     'h_svc_acct',
     { 'svcnum' => $self->srcsvc },
@@ -58,6 +59,7 @@ sub dstsvc_acct {
 
   local($FS::Record::qsearch_qualify_columns) = 0;
 
+  $_[0] ||= $self->history_date;
   my $h_svc_acct = qsearchs(
     'h_svc_acct',
     { 'svcnum' => $self->dstsvc },

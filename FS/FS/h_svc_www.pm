@@ -34,6 +34,7 @@ sub domain_record {
   carp 'Called FS::h_svc_www->domain_record on svcnum ' . $self->svcnum if $DEBUG;
 
   local($FS::Record::qsearch_qualify_columns) = 0;
+  $_[0] ||= $self->history_date;
   my $domain_record = qsearchs(
     'h_domain_record',
     { 'recnum' => $self->recnum },
