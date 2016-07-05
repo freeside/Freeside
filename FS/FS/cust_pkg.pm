@@ -1272,7 +1272,13 @@ sub uncancel_svc_summary {
           'uncancel_svcnum' => $svc_x->get('_h_svc_x')->svcnum,
         };
         $svc_x->pkgnum($self->pkgnum); # provisioning services on a canceled package, will be rolled back
-        if ($opt{'no_test_reprovision'} or $svc_x->insert) {
+        my $insert_error;
+        unless ($opt{'no_test_reprovision'}) {
+          # avoid possibly fatal errors from missing linked records
+          eval { $insert_error = $svc_x->insert };
+          $insert_error ||= $@;
+        }
+        if ($opt{'no_test_reprovision'} or $insert_error) {
           # avoid possibly fatal errors from missing linked records
           eval { $out->{'label'} = $svc_x->label };
           eval { $out->{'label'} = $svc_x->get('_h_svc_x')->label } unless defined($out->{'label'});
