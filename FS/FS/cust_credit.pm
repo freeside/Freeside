@@ -1087,12 +1087,47 @@ use FS::cust_credit_bill;
 sub process_batch_import {
   my $job = shift;
 
+  # some false laziness with FS::cust_pay::process_batch_import
+  my $hashcb = sub {
+    my %hash = @_;
+    my $custnum = $hash{'custnum'};
+    my $agent_custid = $hash{'agent_custid'};
+    # translate agent_custid into regular custnum
+    if ($custnum && $agent_custid) {
+      die "can't specify both custnum and agent_custid\n";
+    } elsif ($agent_custid) {
+      # here is the agent virtualization
+      my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+      my %search;
+      $search{'agent_custid'} = $agent_custid
+        if $agent_custid;
+      $search{'custnum'} = $custnum
+        if $custnum;
+      my $cust_main = qsearchs({
+        'table'     => 'cust_main',
+        'hashref'   => \%search,
+        'extra_sql' => $extra_sql,
+      });
+      die "can't find customer with" .
+        ($custnum  ? " custnum $custnum" : '') .
+        ($agent_custid ? " agent_custid $agent_custid" : '') . "\n"
+        unless $cust_main;
+      die "mismatched customer number\n"
+        if $custnum && ($custnum ne $cust_main->custnum);
+      $custnum = $cust_main->custnum;
+    }
+    $hash{'custnum'} = $custnum;
+    delete($hash{'agent_custid'});
+    return %hash;
+  };
+
   my $opt = { 'table'   => 'cust_credit',
               'params'  => [ '_date', 'credbatch' ],
               'formats' => { 'simple' =>
-                               [ 'custnum', 'amount', 'reasonnum', 'invnum' ],
+                               [ 'custnum', 'amount', 'reasonnum', 'invnum', 'agent_custid' ],
                            },
               'default_csv' => 1,
+              'format_hash_callbacks' => { 'simple' => $hashcb },
               'postinsert_callback' => sub {
                 my $cust_credit = shift; #my ($cust_credit, $param ) = @_;
 
