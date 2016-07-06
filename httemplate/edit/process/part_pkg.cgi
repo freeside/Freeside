@@ -9,8 +9,8 @@
               'edit_ext'          => 'cgi',
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
+              'process_locale'    => 'pkg',
               'process_m2m'       => \@process_m2m,
-              'process_o2m'       => \@process_o2m,
           )
 %>
 <%init>
@@ -252,12 +252,5 @@ push @process_m2m, {
   'target_table' => 'agent_type',
   'params'       => \@agents,
 };
-
-my @process_o2m = (
-  {
-    'table'  => 'part_pkg_msgcat',
-    'fields' => [qw( locale pkg )],
-  },
-);
 
 </%init>

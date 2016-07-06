@@ -268,8 +268,9 @@ that field.
 <& /elements/progress-init.html,
   $svcdb, #form name
   [ # form fields to send
-    qw(svc svcpart classnum selfservice_access disabled preserve exportnum),
-    @fields
+    'ALL'
+#    qw(svc svcpart classnum selfservice_access disabled preserve exportnum),
+#    @fields
   ],
   'process/part_svc.cgi',   # target
   $p.'browse/part_svc.cgi', # redirect landing

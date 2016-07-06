@@ -98,14 +98,14 @@ function <%$key%>process () {
 
   overlib( 'Submitting job to server...', WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
+  // jQuery .serializeArray() maybe?
+  var copy_fields = <% encode_json(\%copy_fields) %>;
   var Hash = new Array();
   var x = 0;
   var fieldName;
   for (var i = 0; i<document.<%$formname%>.elements.length; i++) {
     field  = document.<%$formname%>.elements[i];
-    if ( <% join(' || ', map { "(field.name.indexOf('$_') > -1)" } @$fields ) %>
-       )
-    {
+    if ( <% $all_fields %> || copy_fields[ field.name ] ) {
         if ( field.type == 'select-multiple' ) {
           //alert('select-multiple ' + field.name);
           for (var j=0; j < field.options.length; j++) {
@@ -167,6 +167,14 @@ $progress_url->query_form(
   'formname'  => $formname,
   %dest_info,
 );
+
+my $all_fields = 0;
+my %copy_fields;
+if (grep '/^ALL$/', @$fields) {
+  $all_fields = 1;
+} else {
+  %copy_fields = map { $_ => 1 } @$fields;
+}
 
 #stupid safari is caching the "location" of popup iframs, and submitting them
 #instead of displaying them.  this should prevent that.

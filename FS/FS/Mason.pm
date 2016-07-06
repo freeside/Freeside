@@ -392,6 +392,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::fiber_olt;
   use FS::olt_site;
   use FS::access_user_page_pref;
+  use FS::part_svc_msgcat;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

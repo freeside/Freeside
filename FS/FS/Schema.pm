@@ -2491,6 +2491,23 @@ sub tables_hashref {
       'index' => [ ['disabled'] ],
     },
 
+    'part_svc_msgcat' => {
+      'columns' => [
+        'svcpartmsgnum',  'serial',     '',        '', '', '',
+        'svcpart',           'int',     '',        '', '', '',
+        'locale',        'varchar',     '',        16, '', '',
+        'svc',           'varchar',     '',   $char_d, '', '',
+      ],
+      'primary_key'  => 'svcpartmsgnum',
+      'unique'       => [ [ 'svcpart', 'locale' ] ],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'svcpart' ],
+                            table      => 'part_svc',
+                          },
+                        ],
+    },
+
     #(this should be renamed to part_pop)
     'svc_acct_pop' => {
       'columns' => [

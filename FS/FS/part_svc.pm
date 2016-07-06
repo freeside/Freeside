@@ -1,5 +1,6 @@
 package FS::part_svc;
 
+use base qw(FS::o2m_Common FS::Record);
 use strict;
 use vars qw( @ISA $DEBUG );
 use Tie::IxHash;
@@ -10,8 +11,7 @@ use FS::part_export;
 use FS::export_svc;
 use FS::cust_svc;
 use FS::part_svc_class;
-
-@ISA = qw(FS::Record);
+use FS::part_svc_msgcat;
 
 $DEBUG = 0;
 
@@ -617,6 +617,24 @@ sub svc_x {
   map { $_->svc_x } $self->cust_svc;
 }
 
+=item svc_locale LOCALE
+
+Returns a customer-viewable service definition label in the chosen LOCALE.
+If there is no entry for that locale or if LOCALE is empty, returns
+part_svc.svc.
+
+=cut
+
+sub svc_locale {
+  my( $self, $locale ) = @_;
+  return $self->svc unless $locale;
+  my $part_svc_msgcat = qsearchs('part_svc_msgcat', {
+    svcpart => $self->svcpart,
+    locale  => $locale
+  }) or return $self->svc;
+  $part_svc_msgcat->svc;
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -873,6 +891,12 @@ sub process {
                          );
     $param->{'svcpart'} = $new->getfield('svcpart');
   }
+
+  $error ||= $new->process_o2m(
+    'table'   => 'part_svc_msgcat',
+    'params'  => $param,
+    'fields'  => [ 'locale', 'svc' ],
+  );
 
   die "$error\n" if $error;
 }
