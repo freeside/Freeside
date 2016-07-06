@@ -561,7 +561,7 @@ if ( -e $addl_handler_use_file ) {
 
 } # end package HTML::Mason::Commands;
 
-=head1 SUBROUTINE
+=head1 SUBROUTINES
 
 =over 4
 
@@ -653,6 +653,35 @@ sub mason_interps {
   );
 
   ( $fs_interp, $rt_interp );
+
+}
+
+=item child_init
+
+Per-process Apache child initialization code.
+
+Calls srand() to re-seed Perl's PRNG so that multiple children do not generate
+the same "random" numbers.
+
+Works around a Net::SSLeay connection error by creating and deleting an SSL
+context, so subsequent connections do not error out with a CTX_new (900 NET OR
+SSL ERROR).
+
+=cut
+
+sub child_init {
+  #my ($pool, $server) = @_; #the child process pool (APR::Pool) and the server object (Apache2::ServerRec).
+
+  srand();
+
+  #{
+    use Net::SSLeay;
+    package Net::SSLeay;
+    initialize();
+    my $bad_ctx = new_x_ctx();
+    while ( ERR_get_error() ) {}; #print_errs('CTX_new');
+    CTX_free($bad_ctx);
+  #}
 
 }
 
