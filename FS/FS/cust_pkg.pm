@@ -3953,23 +3953,27 @@ sub labels {
   map { [ $_->label ] } $self->cust_svc;
 }
 
-=item h_labels END_TIMESTAMP [ START_TIMESTAMP ] [ MODE ]
+=item h_labels END_TIMESTAMP [, START_TIMESTAMP [, MODE [, LOCALE ] ] ]
 
 Like the labels method, but returns historical information on services that
 were active as of END_TIMESTAMP and (optionally) not cancelled before
 START_TIMESTAMP.  If MODE is 'I' (for 'invoice'), services with the 
 I<pkg_svc.hidden> flag will be omitted.
 
-Returns a list of lists, calling the label method for all (historical) services
-(see L<FS::h_cust_svc>) of this billing item.
+If LOCALE is passed, service definition names will be localized.
+
+Returns a list of lists, calling the label method for all (historical)
+services (see L<FS::h_cust_svc>) of this billing item.
 
 =cut
 
 sub h_labels {
   my $self = shift;
-  warn "$me _h_labels called on $self\n"
+  my ($end, $start, $mode, $locale) = @_;
+  warn "$me h_labels\n"
     if $DEBUG;
-  map { [ $_->label(@_) ] } $self->h_cust_svc(@_);
+  map { [ $_->label($end, $start, $locale) ] }
+        $self->h_cust_svc($end, $start, $mode);
 }
 
 =item labels_short
@@ -3982,21 +3986,24 @@ individual services rather than individual items.
 =cut
 
 sub labels_short {
-  shift->_labels_short( 'labels', @_ );
+  shift->_labels_short( 'labels' ); # 'labels' takes no further arguments
 }
 
-=item h_labels_short END_TIMESTAMP [ START_TIMESTAMP ]
+=item h_labels_short END_TIMESTAMP [, START_TIMESTAMP [, MODE [, LOCALE ] ] ]
 
 Like h_labels, except returns a simple flat list, and shortens long
-(currently >5 or the cust_bill-max_same_services configuration value) lists of
-identical services to one line that lists the service label and the number of
-individual services rather than individual items.
+(currently >5 or the cust_bill-max_same_services configuration value) lists
+of identical services to one line that lists the service label and the
+number of individual services rather than individual items.
 
 =cut
 
 sub h_labels_short {
   shift->_labels_short( 'h_labels', @_ );
 }
+
+# takes a method name ('labels' or 'h_labels') and all its arguments;
+# maybe should be "shorten($self->h_labels( ... ) )"
 
 sub _labels_short {
   my( $self, $method ) = ( shift, shift );
