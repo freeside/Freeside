@@ -122,7 +122,7 @@
 	    $OUT .= qq! <img src="cust_bill-barcode.cgi?invnum=$invnum;template=$template"><br> !;
 	}
     %>
-        <%= $terms ? emt('Terms') . ": $terms" : '' %><BR>
+        <%= $terms ? emt('Terms') . ': ' . emt($terms) : '' %><BR>
         <%= $po_line %>
       </td>
     </tr>

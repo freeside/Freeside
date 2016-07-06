@@ -272,7 +272,7 @@
   }
 --@]
 \begin{flushright}
-[@-- $terms ? emt('Terms') .": $terms" : '' --@]\\
+[@-- $terms ? emt('Terms') . ': ' . emt($terms) : '' --@]\\
 [@-- $po_line --@]\\
 \end{flushright}
 \end{minipage}}

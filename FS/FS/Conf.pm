@@ -2,6 +2,9 @@ package FS::Conf;
 
 use vars qw($base_dir @config_items @base_items @card_types $DEBUG);
 use strict;
+use vars qw( $base_dir @config_items @base_items @card_types @invoice_terms
+             $DEBUG
+           );
 use Carp;
 use IO::File;
 use File::Basename;
@@ -687,6 +690,14 @@ invoice_htmlnotes
 invoice_htmlwatermark
 logo.png
 logo.eps
+);
+
+@invoice_terms = (
+  '',
+  'Payable upon receipt',
+  'Net 0', 'Net 3', 'Net 5', 'Net 7', 'Net 9', 'Net 10', 'Net 14', 
+  'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
+  'Net 60', 'Net 90'
 );
 
 my %msg_template_options = (
@@ -1656,11 +1667,8 @@ and customer address. Include units.',
     'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
     'type'        => 'select',
     'per_agent'   => 1,
-    'select_enum' => [ 
-      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 5', 'Net 7', 'Net 9', 'Net 10', 'Net 14', 
-      'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
-      'Net 60', 'Net 90'
-    ], },
+    'select_enum' => \@invoice_terms,
+  },
 
   { 
     'key'         => 'invoice_show_prior_due_date',

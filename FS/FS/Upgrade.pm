@@ -161,6 +161,14 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('unsuspendauto');
   }
 
+  # if translate-auto-insert is enabled for a locale, ensure that invoice
+  # terms are in the msgcat (is there a better place for this?)
+  if (my $auto_locale = $conf->config('translate-auto-insert')) {
+    my $lh = FS::L10N->get_handle($auto_locale);
+    foreach (@FS::Conf::invoice_terms) {
+      $lh->maketext($_) if length($_);
+    }
+  }
 }
 
 sub upgrade_overlimit_groups {
