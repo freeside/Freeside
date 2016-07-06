@@ -1,0 +1,120 @@
+<%doc>
+Usage:
+
+In edit/foo.html:
+
+<& /elements/tr-input-locale-text.html,
+  cgi     => $cgi, # needed to preserve values in error redirect
+  object  => $record,
+  field   => 'myfield',
+  label   => 'My Field',
+&>
+
+And in edit/process/foo.html:
+<& elements/process.html,
+  ...
+  process_locale => 'myfield',
+&>
+
+'object' needs to be an FS::Record subclass instance for a table that has
+a '_msgcat' localization table. For a table "foo" where "foo.myfield"
+contains some customer-visible label (in the default locale),
+"foo_msgcat.myfield" contains the translation of that label for a customer
+locale. The foreign key in foo_msgcat must have the same name as the primary
+key of foo.
+
+Currently only a single field can be localized this way; including this
+element more than once in the form will lead to conflicts. This is how
+it should work; if at some point we need to localize several fields of the
+same record, we should modify this element to show multiple inputs for each
+locale.
+
+</%doc>
+<%init>
+
+my %opt = @_;
+my $object = delete $opt{object};
+my $field = delete $opt{field};
+
+# identify our locales
+my $conf = FS::Conf->new;
+my $default_locale = $conf->config('locale') || 'en_';
+my @locales = grep { ! /^$default_locale/ } $conf->config('available-locales');
+
+my $label = delete $opt{label};
+my %labels = map { $_ => "$label&mdash;".FS::Locales->description($_) }
+              @locales;
+@locales = sort { $labels{$a} cmp $labels{$b} } @locales;
+my %curr_values;
+
+# where are the msgcat records?
+my $msgcat_table = $object->table . '_msgcat';
+my $msgcat_pkey = dbdef->table($msgcat_table)->primary_key;
+my %msgcat_pkeyvals;
+
+# find existing msgcat records, if any, and record their message values
+# and pkeys
+my $pkey = $object->primary_key;
+my $pkeyval = $object->get($pkey);
+if ($pkeyval) { # of course if this is a new record there won't be any
+  my @linked = qsearch($msgcat_table, { $pkey => $pkeyval });
+  foreach (@linked) {
+    $curr_values{ $_->locale } = $_->get( $field );
+    $msgcat_pkeyvals{ $_->locale } = $_->get( $msgcat_pkey );
+  }
+}
+
+# sticky-on-error the locale inputs
+if( my $cgi = $opt{cgi} ) {
+  my $i = 0;
+  # they're named 'foomsgnum0_locale' and 'foomsgnum0_myfield'
+  while ( my $locale = $cgi->param($msgcat_pkey . $i . '_locale') ) {
+    my $value = $cgi->param($msgcat_pkey . $i . '_' . $field);
+    $curr_values{ $locale } = $value;
+    $i++;
+  }
+}
+
+# compat with tr-input-text for styling
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+
+</%init>
+% # pass through %opt on all of these to retain formatting
+% # one tr, td, and input for the default locale
+<& tr-input-text.html,
+  %opt,
+  'label' => $label,
+  'field' => $field
+&>
+% # and one for each of the others 
+% my $i = 0;
+% foreach my $locale (@locales) {
+%   my $basename = $msgcat_pkey . $i;
+%   my $lfield = $basename . '_' . $field;
+<& tr-td-label.html,
+  %opt,
+  'id' => $lfield, # uniqueness
+  'label' => $labels{$locale}
+&>
+  <TD <% $colspan %><% $cell_style %> ID="<% $lfield %>_input0">
+    <& hidden.html,
+      'field' => $basename,
+      'curr_value' => $msgcat_pkeyvals{$locale},
+      # will be empty if this is a new record and/or new locale, that's fine
+    &>
+    <& hidden.html,
+      'field' => $basename . '_locale',
+      'curr_value' => $locale,
+    &>
+    <& input-text.html,
+      %opt,
+      'field' => $lfield,
+      'curr_value' => $curr_values{$locale},
+    &>
+  </TD>
+</TR>
+%   $i++;
+% } # foreach $locale

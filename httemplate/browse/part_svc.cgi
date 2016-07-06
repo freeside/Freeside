@@ -112,8 +112,24 @@ function part_export_areyousure(href) {
     </TD>
 % } 
 
-    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<% $url %>">
-      <% $part_svc->svc %></A></TD>
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <A HREF="<% $url %>">
+        <% $part_svc->svc %>
+      </A>
+%   # any alternate names of the service
+%   my %msgcat = map { $_->locale => $_ } $part_svc->part_svc_msgcat;
+%   my %labels = map { $_ => FS::Locales->description($_) } keys %msgcat;
+%   my @locales = sort { $labels{$a} cmp $labels{$b} } keys %msgcat;
+%   if ( @locales ) {
+      <BR>
+      <FONT SIZE="-1">
+%     foreach my $locale (@locales) {
+        <% $labels{$locale} %>: <% $msgcat{$locale}->get('svc') %>
+        <BR>
+%     }
+      </FONT>
+%   }
+    </TD>
 
     <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $svcdb %></TD>

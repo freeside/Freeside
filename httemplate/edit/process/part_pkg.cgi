@@ -9,6 +9,7 @@
               'edit_ext'          => 'cgi',
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
+              'process_locale'    => 'pkg',
               'process_m2m'       => \@process_m2m,
               'process_o2m'       => \@process_o2m,
           )
@@ -309,10 +310,6 @@ foreach my $amount_param ( grep /^usagepricepart(\d+)_amount$/, $cgi->param ) {
 }
 
 my @process_o2m = (
-  {
-    'table'  => 'part_pkg_msgcat',
-    'fields' => [qw( locale pkg )],
-  },
   {
     'table'  => 'part_pkg_usageprice',
     'fields' => [qw( price currency action target amount )],
