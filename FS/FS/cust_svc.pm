@@ -588,10 +588,10 @@ sub pkg_cancel_date {
   return $cust_pkg->getfield('cancel') || '';
 }
 
-=item label
+=item label [ LOCALE ]
 
 Returns a list consisting of:
-- The name of this service (from part_svc)
+- The name of this service (from part_svc), optionally localized
 - A meaningful identifier (username, domain, or mail alias)
 - The table name (i.e. svc_domain) for this service
 - svcnum
@@ -600,7 +600,7 @@ Usage example:
 
   my($label, $value, $svcdb) = $cust_svc->label;
 
-=item label_long
+=item label_long [ LOCALE ]
 
 Like the B<label> method, except the second item in the list ("meaningful
 identifier") may be longer - typically, a full name is included.
@@ -613,20 +613,25 @@ sub label_long { shift->_label('svc_label_long', @_); }
 sub _label {
   my $self = shift;
   my $method = shift;
+  my $locale = shift;
   my $svc_x = $self->svc_x
     or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
 
-  $self->$method($svc_x);
+  $self->$method($svc_x, undef, undef, $locale);
 }
+
+# svc_label(_long) takes three arguments: end date, start date, locale
+# and FS::svc_*::label methods must accept those also, if they even care
 
 sub svc_label      { shift->_svc_label('label',      @_); }
 sub svc_label_long { shift->_svc_label('label_long', @_); }
 
 sub _svc_label {
   my( $self, $method, $svc_x ) = ( shift, shift, shift );
+  my ($end, $start, $locale) = @_;
 
   (
-    $self->part_svc->svc,
+    $self->part_svc->svc_locale($locale),
     $svc_x->$method(@_),
     $self->part_svc->svcdb,
     $self->svcnum

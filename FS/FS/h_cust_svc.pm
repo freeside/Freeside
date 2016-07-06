@@ -39,14 +39,14 @@ sub date_deleted {
   $self->h_date('delete');
 }
 
-=item label END_TIMESTAMP [ START_TIMESTAMP ] 
+=item label END_TIMESTAMP [ START_TIMESTAMP ] [ LOCALE ]
 
-Returns a label for this historical service, if the service was created before
-END_TIMESTAMP and (optionally) not deleted before START_TIMESTAMP.  Otherwise,
-returns an empty list.
+Returns a label for this historical service, if the service was created
+before END_TIMESTAMP and (optionally) not deleted before START_TIMESTAMP.
+Otherwise, returns an empty list.
 
 If a service is found, returns a list consisting of:
-- The name of this historical service (from part_svc)
+- The name of this historical service (from part_svc), optionally localized
 - A meaningful identifier (username, domain, or mail alias)
 - The table name (i.e. svc_domain) for this historical service
 
@@ -55,13 +55,34 @@ If a service is found, returns a list consisting of:
 sub label      { shift->_label('svc_label',      @_); }
 sub label_long { shift->_label('svc_label_long', @_); }
 
+# Parameters to _label:
+#
+# 1: the cust_svc method we should call to produce the label. (svc_label
+# and svc_label_long are defined in FS::cust_svc, not here, and take a svc_x
+# object as first argument.)
+# 2, 3: date range to use to find the h_svc_x, which will be passed to
+# svc_label(_long) and eventually have ->label called on it.
+# 4: locale, passed to svc_label(_long) also.
+#
+# however, if label is called with a locale only, must DTRT (this is a
+# FS::cust_svc subclass)
+
 sub _label {
   my $self = shift;
   my $method = shift;
+  my ($end, $start, $locale);
+  if (defined($_[0])) {
+    if ( $_[0] =~ /^\d+$/ ) {
+      ($end, $start, $locale) = @_;
+    } else {
+      $locale = shift;
+      $end = $self->history_date;
+    }
+  }
 
   #carp "FS::h_cust_svc::_label called on $self" if $DEBUG;
   warn "FS::h_cust_svc::_label called on $self for $method" if $DEBUG;
-  my $svc_x = $self->h_svc_x(@_);
+  my $svc_x = $self->h_svc_x($end, $start);
   return () unless $svc_x;
   my $part_svc = $self->part_svc;
 
@@ -71,7 +92,7 @@ sub _label {
   }
 
   my @label;
-  eval { @label = $self->$method($svc_x, @_); };
+  eval { @label = $self->$method($svc_x, $end, $start, $locale); };
 
   if ($@) {
     carp 'while resolving history record for svcdb/svcnum ' . 
@@ -85,9 +106,9 @@ sub _label {
 
 =item h_svc_x END_TIMESTAMP [ START_TIMESTAMP ] 
 
-Returns the FS::h_svc_XXX object for this service as of END_TIMESTAMP (i.e. an
-FS::h_svc_acct object or FS::h_svc_domain object, etc.) and (optionally) not
-cancelled before START_TIMESTAMP.
+Returns the FS::h_svc_XXX object for this service as of END_TIMESTAMP (i.e.
+an FS::h_svc_acct object or FS::h_svc_domain object, etc.) and (optionally)
+not cancelled before START_TIMESTAMP.
 
 =cut
 
