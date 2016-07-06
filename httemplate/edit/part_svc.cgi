@@ -36,9 +36,26 @@
 }
 </STYLE>
 <SCRIPT TYPE="text/javascript">
+// copy all fields from the outer form (svc and its localizations, plus
+// preserve, selfservice_access, etc.) into the inner form, creating hidden
+// inputs if needed
 function fixup_submit(layer) {
-  document.forms[layer].submit.disabled = true;
-  fixup(document.forms[layer]);
+  var layer_form = $(document.forms[layer]);
+  var main_form = $(document.forms['SvcEditMain']);
+  var data = main_form.serializeArray();
+  for (var i = 0; i < data.length; i++) {
+    var input = layer_form.children('[name=' + data[i].name + ']');
+    if (input[0]) {
+      input.prop('value', data[i].value);
+    } else {
+      $( '<input type="hidden">' )
+        .attr('name', data[i].name)
+        .prop('value', data[i].value)
+        .appendTo(layer_form);
+    }
+  }
+  layer_form[0]['submit'].disabled = true;
+  //fixup(document.forms[layer]);
   window[layer+'process'].call();
 }
 
@@ -141,19 +158,26 @@ window.onload = function() {
 
 </SCRIPT>
 
-<FORM NAME="dummy">
+<FORM NAME="SvcEditMain">
 
 <FONT CLASS="fsinnerbox-title">Service Part #<% $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %></FONT>
 <TABLE CLASS="fsinnerbox">
-<TR>
-  <TD ALIGN="right">Service</TD>
-  <TD><INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"></TD>
-<TR>
+<& /elements/tr-input-locale-text.html,
+  'object' => $part_svc,
+  'cgi'    => $cgi,
+  'field'  => 'svc',
+  'label'  => 'Service',
+  'curr_value' => $hashref->{svc},
+&>
+%#<TR>
+%#  <TD ALIGN="right">Service</TD>
+%#  <TD><INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"></TD>
+%#<TR>
 
 <& /elements/tr-select-part_svc_class.html, curr_value=>$hashref->{classnum} &>
 
 <TR>
-  <TD ALIGN="right">Self-service access</TD>
+  <TH ALIGN="right">Self-service access</TD>
   <TD>
     <SELECT NAME="selfservice_access">
 % tie my %selfservice_access, 'Tie::IxHash', #false laziness w/browse/part_svc
@@ -172,12 +196,12 @@ window.onload = function() {
 
 
 <TR>
-  <TD ALIGN="right">Disable new orders</TD>
+  <TH ALIGN="right">Disable new orders</TD>
   <TD><INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Preserve this service on package cancellation</TD>
+  <TH ALIGN="right">Preserve this service on package cancellation</TD>
   <TD><INPUT TYPE="checkbox" NAME="preserve" VALUE="Y"<% $hashref->{'preserve'} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;</TD>
 </TR>
 
@@ -240,12 +264,12 @@ my $widget = new HTML::Widgets::SelectLayers(
   #'selected_layer' => $p_svcdb,
   'selected_layer' => $hashref->{svcdb} || 'svc_acct',
   'options'        => \%svcdb,
-  'form_name'      => 'dummy',
+  'form_name'      => 'SvcEditMain',
   #'form_action'    => 'process/part_svc.cgi',
   'form_action'    => 'part_svc.cgi', #self
-  'form_elements'  => [qw( svc svcpart classnum selfservice_access
-                           disabled preserve
-                      )],
+#  'form_elements'  => [qw( svc svcpart classnum selfservice_access
+#                           disabled preserve
+#                      )],
   'html_between'   => $help,
   'layer_callback' => sub {
     include('elements/part_svc_column.html',

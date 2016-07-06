@@ -62,6 +62,8 @@ Example:
                       'fields' => [qw( fieldname fieldname2 )],
                     },
 
+   'process_locale' => 'fieldname', # update entries in the _msgcat table
+
    'process_upload' => {
                          'process'  => 'misc/mytable-import.html',
                           # fields to pass to the back end job, besides the 
@@ -363,12 +365,21 @@ foreach my $value ( @values ) {
 
   }
 
-  if ( !$error && $opt{'process_o2m'} ) {
+  my @process_o2m;
+  if ( $opt{'process_o2m'} ) {
+    @process_o2m = ref($opt{'process_o2m'}) eq 'ARRAY'
+                        ? @{ $opt{'process_o2m'} }
+                        :  ( $opt{'process_o2m'} );
+  }
+  if ( $opt{'process_locale'} ) {
+    push @process_o2m,
+    {
+      'table'  => $table . '_msgcat',
+      'fields' => [ 'locale', $opt{'process_locale'} ],
+    };
+  }
 
-    my @process_o2m = ref($opt{'process_o2m'}) eq 'ARRAY'
-                           ? @{ $opt{'process_o2m'} }
-                           :  ( $opt{'process_o2m'} );
-
+  if ( !$error ) {
 
     foreach my $process_o2m (@process_o2m) {
 
