@@ -3,6 +3,7 @@ use base qw( FS::Record );
 
 use strict;
 use FS::Locales;
+use FS::part_svc;
 
 =head1 NAME
 
@@ -115,6 +116,12 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+# 3.x stub
+sub part_svc {
+  my $self = shift;
+  FS::part_svc->by_key($self->svcpart);
 }
 
 =back

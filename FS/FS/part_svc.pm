@@ -635,6 +635,12 @@ sub svc_locale {
   $part_svc_msgcat->svc;
 }
 
+# 3.x stub
+sub part_svc_msgcat {
+  my $self = shift;
+  qsearch('part_svc_msgcat', { 'svcpart' => $self->svcpart });
+}
+
 =back
 
 =head1 CLASS METHODS
