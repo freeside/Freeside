@@ -76,6 +76,7 @@ use FS::upgrade_journal;
 use FS::sales;
 use FS::cust_payby;
 use FS::contact;
+use FS::reason;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -2159,7 +2160,11 @@ FS::cust_pkg::cancel() methods.
 
 =item quiet - can be set true to supress email cancellation notices.
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a
+reasonnum of an existing reason, or passing a hashref will create a new reason.
+The hashref should have the following keys:
+typenum - Reason type (see L<FS::reason_type>)
+reason - Text of the new reason.
 
 =item cust_pkg_reason - can be an arrayref of L<FS::cust_pkg_reason> objects
 for the individual packages, parallel to the C<cust_pkg> argument. The
@@ -2253,12 +2258,26 @@ sub cancel_pkgs {
   if ($opt{'cust_pkg_reason'}) {
     @cprs = @{ delete $opt{'cust_pkg_reason'} };
   }
+  my $null_reason;
   foreach (@pkgs) {
     my %lopt = %opt;
     if (@cprs) {
       my $cpr = shift @cprs;
-      $lopt{'reason'}        = $cpr->reasonnum;
-      $lopt{'reason_otaker'} = $cpr->otaker;
+      if ( $cpr ) {
+        $lopt{'reason'}        = $cpr->reasonnum;
+        $lopt{'reason_otaker'} = $cpr->otaker;
+      } else {
+        warn "no reason found when canceling package ".$_->pkgnum."\n";
+        # we're not actually required to pass a reason to cust_pkg::cancel,
+        # but if we're getting to this point, something has gone awry.
+        $null_reason ||= FS::reason->new_or_existing(
+          reason  => 'unknown reason',
+          type    => 'Cancel Reason',
+          class   => 'C',
+        );
+        $lopt{'reason'} = $null_reason->reasonnum;
+        $lopt{'reason_otaker'} = $FS::CurrentUser::CurrentUser->username;
+      }
     }
     my $error = $_->cancel(%lopt);
     push @errors, 'pkgnum '.$_->pkgnum.': '.$error if $error;
