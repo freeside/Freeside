@@ -738,7 +738,7 @@ sub insert {
 
     #welcome email
     my @welcome_exclude_svcparts = $conf->config('svc_acct_welcome_exclude');
-    unless ( grep { $_ eq $self->svcpart } @welcome_exclude_svcparts ) {
+    unless ($FS::svc_Common::noexport_hack or ( grep { $_ eq $self->svcpart } @welcome_exclude_svcparts )) {
         my $error = '';
         my $msgnum = $conf->config('welcome_msgnum', $agentnum);
         if ( $msgnum ) {
