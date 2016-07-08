@@ -1090,6 +1090,166 @@ sub cancel_if_expired {
   '';
 }
 
+=item uncancel_svc_x
+
+For cancelled cust_pkg, returns a list of new, uninserted FS::svc_X records 
+for services that would be inserted by L</uncancel>.  Returned objects also
+include the field _h_svc_x, which contains the service history object.
+
+Set pkgnum before inserting.
+
+Accepts the following options:
+
+only_svcnum - arrayref of svcnum, only returns objects for these svcnum 
+(and only if they would otherwise be returned by this)
+
+=cut
+
+sub uncancel_svc_x {
+  my ($self, %opt) = @_;
+
+  die 'uncancel_svc_x called on a non-cancelled cust_pkg' unless $self->get('cancel');
+
+  #find historical services within this timeframe before the package cancel
+  # (incompatible with "time" option to cust_pkg->cancel?)
+  my $fuzz = 2 * 60; #2 minutes?  too much?   (might catch separate unprovision)
+                     #            too little? (unprovisioing export delay?)
+  my($end, $start) = ( $self->get('cancel'), $self->get('cancel') - $fuzz );
+  my @h_cust_svc = $self->h_cust_svc( $end, $start );
+
+  my @svc_x;
+  foreach my $h_cust_svc (@h_cust_svc) {
+    next if $opt{'only_svcnum'} && !(grep { $_ == $h_cust_svc->svcnum } @{$opt{'only_svcnum'}});
+    # filter out services that still exist on this package (ie preserved svcs)
+    # but keep services that have since been provisioned on another package (for informational purposes)
+    next if qsearchs('cust_svc',{ 'svcnum' => $h_cust_svc->svcnum, 'pkgnum' => $self->pkgnum });
+    my $h_svc_x = $h_cust_svc->h_svc_x( $end, $start );
+    next unless $h_svc_x; # this probably doesn't happen, but just in case
+    (my $table = $h_svc_x->table) =~ s/^h_//;
+    require "FS/$table.pm";
+    my $class = "FS::$table";
+    my $svc_x = $class->new( {
+      'svcpart' => $h_cust_svc->svcpart,
+      '_h_svc_x' => $h_svc_x,
+      map { $_ => $h_svc_x->get($_) } fields($table)
+    } );
+
+    # radius_usergroup
+    if ( $h_svc_x->isa('FS::h_svc_Radius_Mixin') ) {
+      $svc_x->usergroup( [ $h_svc_x->h_usergroup($end, $start) ] );
+    }
+
+    #these are pretty rare, but should handle them
+    # - dsl_device (mac addresses)
+    # - phone_device (mac addresses)
+    # - dsl_note (ikano notes)
+    # - domain_record (i.e. restore DNS information w/domains)
+    # - inventory_item(?) (inventory w/un-cancelling service?)
+    # - nas (svc_broaband nas stuff)
+    #this stuff is unused in the wild afaik
+    # - mailinglistmember
+    # - router.svcnum?
+    # - svc_domain.parent_svcnum?
+    # - acct_snarf (ancient mail fetching config)
+    # - cgp_rule (communigate)
+    # - cust_svc_option (used by our Tron stuff)
+    # - acct_rt_transaction (used by our time worked stuff)
+
+    push @svc_x, $svc_x;
+  }
+  return @svc_x;
+}
+
+=item uncancel_svc_summary
+
+Returns an array of hashrefs, one for each service that could 
+potentially be reprovisioned by L</uncancel>, with the following keys:
+
+svcpart
+
+svc
+
+uncancel_svcnum
+
+label - from history table if not currently calculable, undefined if it can't be loaded
+
+reprovisionable - 1 if test reprovision succeeded, otherwise 0
+
+num_cust_svc - number of svcs for this svcpart, only if summarizing (see below)
+
+Cannot be run from within a transaction.  Performs inserts
+to test the results, and then rolls back the transaction.
+Does not perform exports, so does not catch if export would fail.
+
+Also accepts the following options:
+
+no_test_reprovision - skip the test inserts (reprovisionable field will not exist)
+
+summarize_size - if true, returns a single summary record for svcparts with at
+least this many svcs, will have key num_cust_svc but not uncancel_svcnum, label or reprovisionable
+
+=cut
+
+sub uncancel_svc_summary {
+  my ($self, %opt) = @_;
+
+  die 'uncancel_svc_summary called on a non-cancelled cust_pkg' unless $self->get('cancel');
+  die 'uncancel_svc_summary called from within a transaction' unless $FS::UID::AutoCommit;
+
+  local $FS::svc_Common::noexport_hack = 1; # very important not to run exports!!!
+  local $FS::UID::AutoCommit = 0;
+
+  # sort by svcpart, to check summarize_size
+  my $uncancel_svc_x = {};
+  foreach my $svc_x (sort { $a->{'svcpart'} <=> $b->{'svcpart'} } $self->uncancel_svc_x) {
+    $uncancel_svc_x->{$svc_x->svcpart} = [] unless $uncancel_svc_x->{$svc_x->svcpart};
+    push @{$uncancel_svc_x->{$svc_x->svcpart}}, $svc_x;
+  }
+
+  my @out;
+  foreach my $svcpart (keys %$uncancel_svc_x) {
+    my @svcpart_svc_x = @{$uncancel_svc_x->{$svcpart}};
+    if ($opt{'summarize_size'} && (@svcpart_svc_x >= $opt{'summarize_size'})) {
+      my $svc_x = $svcpart_svc_x[0]; #grab first one for access to $part_svc
+      my $part_svc = $svc_x->part_svc;
+      push @out, {
+        'svcpart'      => $part_svc->svcpart,
+        'svc'          => $part_svc->svc,
+        'num_cust_svc' => scalar(@svcpart_svc_x),
+      };
+    } else {
+      foreach my $svc_x (@svcpart_svc_x) {
+        my $part_svc = $svc_x->part_svc;
+        my $out = {
+          'svcpart' => $part_svc->svcpart,
+          'svc'     => $part_svc->svc,
+          'uncancel_svcnum' => $svc_x->get('_h_svc_x')->svcnum,
+        };
+        $svc_x->pkgnum($self->pkgnum); # provisioning services on a canceled package, will be rolled back
+        my $insert_error;
+        unless ($opt{'no_test_reprovision'}) {
+          # avoid possibly fatal errors from missing linked records
+          eval { $insert_error = $svc_x->insert };
+          $insert_error ||= $@;
+        }
+        if ($opt{'no_test_reprovision'} or $insert_error) {
+          # avoid possibly fatal errors from missing linked records
+          eval { $out->{'label'} = $svc_x->label };
+          eval { $out->{'label'} = $svc_x->get('_h_svc_x')->label } unless defined($out->{'label'});
+          $out->{'reprovisionable'} = 0 unless $opt{'no_test_reprovision'};
+        } else {
+          $out->{'label'} = $svc_x->label;
+          $out->{'reprovisionable'} = 1;
+        }
+        push @out, $out;
+      }
+    }
+  }
+
+  dbh->rollback;
+  return @out;
+}
+
 =item uncancel
 
 "Un-cancels" this package: Orders a new package with the same custnum, pkgpart,
@@ -1101,6 +1261,8 @@ cust_pkg: pass a scalar reference, will be filled in with the new cust_pkg objec
 svc_fatal: service provisioning errors are fatal
 
 svc_errors: pass an array reference, will be filled in with any provisioning errors
+
+only_svcnum: arrayref, only attempt to re-provision these cancelled services
 
 main_pkgnum: link the package as a supplemental package of this one.  For 
 internal use only.
@@ -1165,32 +1327,12 @@ sub uncancel {
   # insert services
   ##
 
-  #find historical services within this timeframe before the package cancel
-  # (incompatible with "time" option to cust_pkg->cancel?)
-  my $fuzz = 2 * 60; #2 minutes?  too much?   (might catch separate unprovision)
-                     #            too little? (unprovisioing export delay?)
-  my($end, $start) = ( $self->get('cancel'), $self->get('cancel') - $fuzz );
-  my @h_cust_svc = $self->h_cust_svc( $end, $start );
-
   my @svc_errors;
-  foreach my $h_cust_svc (@h_cust_svc) {
-    my $h_svc_x = $h_cust_svc->h_svc_x( $end, $start );
-    #next unless $h_svc_x; #should this happen?
-    (my $table = $h_svc_x->table) =~ s/^h_//;
-    require "FS/$table.pm";
-    my $class = "FS::$table";
-    my $svc_x = $class->new( {
-      'pkgnum'  => $cust_pkg->pkgnum,
-      'svcpart' => $h_cust_svc->svcpart,
-      map { $_ => $h_svc_x->get($_) } fields($table)
-    } );
+  foreach my $svc_x ($self->uncancel_svc_x('only_svcnum' => $options{'only_svcnum'})) {
 
-    # radius_usergroup
-    if ( $h_svc_x->isa('FS::h_svc_Radius_Mixin') ) {
-      $svc_x->usergroup( [ $h_svc_x->h_usergroup($end, $start) ] );
-    }
-
+    $svc_x->pkgnum($cust_pkg->pkgnum);
     my $svc_error = $svc_x->insert;
+
     if ( $svc_error ) {
       if ( $options{svc_fatal} ) {
         $dbh->rollback if $oldAutoCommit;
@@ -1214,23 +1356,7 @@ sub uncancel {
         }
       } # svc_fatal
     } # svc_error
-  } #foreach $h_cust_svc
-
-  #these are pretty rare, but should handle them
-  # - dsl_device (mac addresses)
-  # - phone_device (mac addresses)
-  # - dsl_note (ikano notes)
-  # - domain_record (i.e. restore DNS information w/domains)
-  # - inventory_item(?) (inventory w/un-cancelling service?)
-  # - nas (svc_broaband nas stuff)
-  #this stuff is unused in the wild afaik
-  # - mailinglistmember
-  # - router.svcnum?
-  # - svc_domain.parent_svcnum?
-  # - acct_snarf (ancient mail fetching config)
-  # - cgp_rule (communigate)
-  # - cust_svc_option (used by our Tron stuff)
-  # - acct_rt_transaction (used by our time worked stuff)
+  } #foreach uncancel_svc_x
 
   ##
   # also move over any services that didn't unprovision at cancellation
