@@ -209,6 +209,54 @@ sub _upgrade_data { # class method
     FS::upgrade_journal->set_done('cust_pkg_reason__missing_reason');
   }
 
+  # Fix misplaced expire/suspend reasons due to package change (RT#71623).
+  # These will look like:
+  # - there is an expire reason linked to pkg1
+  # - pkg1 has been canceled before the reason's date
+  # - pkg2 was changed from pkg1, has an expire date equal to the reason's
+  #   date, and has no expire reason (check this later)
+
+  my $error;
+  foreach my $action ('expire', 'adjourn') {
+    # Iterate this, because a package could be scheduled to expire, then
+    # changed several times, and we need to walk the reason forward to the
+    # last one.
+    while(1) {
+      my @reasons = qsearch(
+        {
+          select    => 'cust_pkg_reason.*',
+          table     => 'cust_pkg_reason',
+          addl_from => ' JOIN cust_pkg pkg1 USING (pkgnum)
+                         JOIN cust_pkg pkg2 ON (pkg1.pkgnum = pkg2.change_pkgnum)',
+          hashref   => { 'action' => uc(substr($action, 0, 1)) },
+          extra_sql => " AND pkg1.cancel IS NOT NULL
+                         AND cust_pkg_reason.date > pkg1.cancel
+                         AND pkg2.$action = cust_pkg_reason.date"
+        });
+      last if !@reasons;
+      warn "Checking ".scalar(@reasons)." possible misplaced $action reasons.\n";
+      foreach my $cust_pkg_reason (@reasons) {
+        my $new_pkg = qsearchs('cust_pkg', { change_pkgnum => $cust_pkg_reason->pkgnum });
+        my $new_reason = $new_pkg->last_cust_pkg_reason($action);
+        if ($new_reason and $new_reason->_date == $new_pkg->get($action)) {
+          # the expiration reason has been recreated on the new package, so
+          # just delete the old one
+          warn "Cleaning $action reason from canceled pkg#" .
+               $cust_pkg_reason->pkgnum . "\n";
+          $error = $cust_pkg_reason->delete;
+        } else {
+          # then the old reason needs to be transferred
+          warn "Moving $action reason from canceled pkg#" .
+               $cust_pkg_reason->pkgnum .
+               " to new pkg#" . $new_pkg->pkgnum ."\n";
+          $cust_pkg_reason->set('pkgnum' => $new_pkg->pkgnum);
+          $error = $cust_pkg_reason->replace;
+        }
+        die $error if $error;
+      }
+    }
+  }
+
   #still can't fill in an action?  don't abort the upgrade
   local($ignore_empty_action) = 1;
 

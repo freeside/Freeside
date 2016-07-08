@@ -2536,6 +2536,21 @@ sub change {
       return "transferring package notes: $error";
     }
   }
+
+  # transfer scheduled expire/adjourn reasons
+  foreach my $action ('expire', 'adjourn') {
+    if ( $cust_pkg->get($action) ) {
+      my $reason = $self->last_cust_pkg_reason($action);
+      if ( $reason ) {
+        $reason->set('pkgnum', $cust_pkg->pkgnum);
+        $error = $reason->replace;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "transferring $action reason: $error";
+        }
+      }
+    }
+  }
   
   my @new_supp_pkgs;
 
