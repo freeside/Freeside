@@ -30,6 +30,9 @@ Example:
     <META HTTP-Equiv="Expires" Content="0"> 
 %   unless ( $no_jquery ) {
       <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+%     if ( $FS::CurrentUser::CurrentUser->option('printtofit') ) {
+      <SCRIPT SRC="<% $fsurl %>elements/printtofit.js"></SCRIPT>
+%     }
 %   }
     <% $head |n %>
   </HEAD>
