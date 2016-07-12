@@ -3602,6 +3602,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'invoice-all_pkg_addresses',
+    'section'     => 'invoicing',
+    'description' => 'Show all package addresses on invoices, even the default.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'invoice-unitprice',
     'section'     => 'invoicing',
     'description' => 'Enable unit pricing on invoices and quantities on packages.',
