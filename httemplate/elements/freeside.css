@@ -313,3 +313,7 @@ td.label {
   color: #ff0000;
 }
 
+/* but see printtofit.js */
+.nosplit, .nosplitrows tr {
+  page-break-inside: avoid;
+}
