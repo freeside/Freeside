@@ -3177,7 +3177,9 @@ sub _items_cust_bill_pkg {
 
   # for location labels: use default location on the invoice date
   my $default_locationnum;
-  if ( $self->custnum ) {
+  if ( $conf->exists('invoice-all_pkg_addresses') ) {
+    $default_locationnum = 0; # treat them all as non-default
+  } elsif ( $self->custnum ) {
     my $h_cust_main;
     my @h_search = FS::h_cust_main->sql_h_search($self->_date);
     $h_cust_main = qsearchs({
@@ -3394,7 +3396,7 @@ sub _items_cust_bill_pkg {
             # location, and we're not grouping items by location already
             if ( $cust_pkg->locationnum != $default_locationnum
                   and !defined($locationnum) ) {
-              my $loc = $cust_pkg->location_label;
+              my $loc = $cust_pkg->location_label(no_prefix => 1);
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
               push @d, &{$escape_function}($loc);
@@ -3504,7 +3506,7 @@ sub _items_cust_bill_pkg {
             # location, and we're not grouping items by location already
             if ( $cust_pkg->locationnum != $default_locationnum
                   and !defined($locationnum) ) {
-              my $loc = $cust_pkg->location_label;
+              my $loc = $cust_pkg->location_label(no_prefix => 1);
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
               push @d, &{$escape_function}($loc);
