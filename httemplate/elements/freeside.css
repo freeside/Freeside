@@ -342,7 +342,4 @@ div.package-marker-change_from {
   display: inline-block;
 }
 
-/* but see printtofit.js */
-.nosplit, .nosplitrows tr {
-  page-break-inside: avoid;
-}
+
