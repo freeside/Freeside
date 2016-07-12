@@ -120,7 +120,7 @@ for (my $i = 0; $i < $group_info->{num}; $i++) {
     border-spacing: 0;
   }
 </STYLE>
-<table class="grid nosplitrows">
+<table class="grid">
   <thead>
   <& /search/elements/search-html.html:header_row,
     'header'      => $opt{'header'},
