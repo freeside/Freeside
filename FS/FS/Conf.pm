@@ -3447,13 +3447,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_pkg-always_show_location',
-    'section'     => 'packages',
-    'description' => "Always display package locations, even when they're all the default service address.",
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'cust_pkg-group_by_location',
     'section'     => 'packages',
     'description' => "Group packages by location.",
