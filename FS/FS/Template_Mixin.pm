@@ -3396,7 +3396,7 @@ sub _items_cust_bill_pkg {
             # location, and we're not grouping items by location already
             if ( $cust_pkg->locationnum != $default_locationnum
                   and !defined($locationnum) ) {
-              my $loc = $cust_pkg->location_label(no_prefix => 1);
+              my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
               push @d, &{$escape_function}($loc);
@@ -3506,7 +3506,7 @@ sub _items_cust_bill_pkg {
             # location, and we're not grouping items by location already
             if ( $cust_pkg->locationnum != $default_locationnum
                   and !defined($locationnum) ) {
-              my $loc = $cust_pkg->location_label(no_prefix => 1);
+              my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
               push @d, &{$escape_function}($loc);
