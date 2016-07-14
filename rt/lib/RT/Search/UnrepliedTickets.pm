@@ -40,18 +40,14 @@ sub Prepare  {
       VALUE => $TicketsObj->CurrentUser->id
     );
   }
-  $TicketsObj->RT::SearchBuilder::Limit(
-    FIELD => 'Status',
-    OPERATOR => '!=',
-    ENTRYAGGREGATOR => 'AND',
-    VALUE => 'resolved'
-  );
-  $TicketsObj->RT::SearchBuilder::Limit(
-    FIELD => 'Status',
-    OPERATOR => '!=',
-    ENTRYAGGREGATOR => 'AND',
-    VALUE => 'rejected',
-  );
+  foreach my $status (qw(resolved rejected deleted)) {
+    $TicketsObj->RT::SearchBuilder::Limit(
+      FIELD => 'Status',
+      OPERATOR => '!=',
+      ENTRYAGGREGATOR => 'AND',
+      VALUE => $status,
+    );
+  }
   my $txn_alias = $TicketsObj->JoinTransactions;
   $TicketsObj->RT::SearchBuilder::Limit(
     ALIAS => $txn_alias,
