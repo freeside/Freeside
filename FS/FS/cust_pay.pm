@@ -96,7 +96,7 @@ Payment Type (See L<FS::payinfo_Mixin> for valid values)
 
 Payment Information (See L<FS::payinfo_Mixin> for data format)
 
-=item cardtype
+=item paycardtype
 
 Credit card type, if appropriate; autodetected.
 
@@ -1248,7 +1248,7 @@ sub _upgrade_data {  #class method
   }
 
   ###
-  # set cardtype
+  # set paycardtype
   ###
   $class->upgrade_set_cardtype;
 

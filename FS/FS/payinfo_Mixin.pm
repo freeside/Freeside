@@ -198,9 +198,12 @@ sub payinfo_check {
     or return "Illegal payby: ". $self->payby;
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
+
     my $payinfo = $self->payinfo;
     my $cardtype = cardtype($payinfo);
-    $self->set('cardtype', $cardtype);
+    $cardtype = 'Tokenized' if $payinfo !~ /^99\d{14}$/;
+    $self->set('paycardtype', $cardtype);
+
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
       # allow it
     } else {
@@ -211,8 +214,7 @@ sub payinfo_check {
           or return "Illegal (mistyped?) credit card number (payinfo)";
         $self->payinfo($1);
         validate($self->payinfo) or return "Illegal credit card number";
-        return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
-                                   && $cardtype eq "Unknown";
+        return "Unknown card type" if $cardtype eq "Unknown";
       } else {
         $self->payinfo('N/A'); #???
       }
@@ -220,9 +222,9 @@ sub payinfo_check {
   } else {
     if ( $self->payby eq 'CARD' and $self->paymask ) {
       # if we can't decrypt the card, at least detect the cardtype
-      $self->set('cardtype', cardtype($self->paymask));
+      $self->set('paycardtype', cardtype($self->paymask));
     } else {
-      $self->set('cardtype', '');
+      $self->set('paycardtype', '');
     }
     if ( $self->is_encrypted($self->payinfo) ) {
       #something better?  all it would cause is a decryption error anyway?
@@ -320,8 +322,8 @@ sub payinfo_used {
 
 =item upgrade_set_cardtype
 
-Find all records with a credit card payment type and no cardtype, and
-replace them in order to set their cardtype.
+Find all records with a credit card payment type and no paycardtype, and
+replace them in order to set their paycardtype.
 
 =cut
 
@@ -332,7 +334,7 @@ sub upgrade_set_cardtype {
   local $ignore_masked_payinfo = 1;
   my $search = FS::Cursor->new({
     table     => $class->table,
-    extra_sql => q[ WHERE payby IN('CARD','DCRD') AND cardtype IS NULL ],
+    extra_sql => q[ WHERE payby IN('CARD','DCRD') AND paycardtype IS NULL ],
   });
   while (my $record = $search->fetch) {
     my $error = $record->replace;
