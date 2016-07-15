@@ -4,6 +4,9 @@ use strict;
 use Business::CreditCard;
 use FS::payby;
 use FS::Record qw(qsearch);
+use FS::UID qw(driver_name);
+use FS::Cursor;
+use Time::Local qw(timelocal);
 
 use vars qw($ignore_masked_payinfo);
 
@@ -196,6 +199,8 @@ sub payinfo_check {
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
     my $payinfo = $self->payinfo;
+    my $cardtype = cardtype($payinfo);
+    $self->set('cardtype', $cardtype);
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
       # allow it
     } else {
@@ -207,12 +212,18 @@ sub payinfo_check {
         $self->payinfo($1);
         validate($self->payinfo) or return "Illegal credit card number";
         return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
-                                   && cardtype($self->payinfo) eq "Unknown";
+                                   && $cardtype eq "Unknown";
       } else {
         $self->payinfo('N/A'); #???
       }
     }
   } else {
+    if ( $self->payby eq 'CARD' and $self->paymask ) {
+      # if we can't decrypt the card, at least detect the cardtype
+      $self->set('cardtype', cardtype($self->paymask));
+    } else {
+      $self->set('cardtype', '');
+    }
     if ( $self->is_encrypted($self->payinfo) ) {
       #something better?  all it would cause is a decryption error anyway?
       my $error = $self->ut_anything('payinfo');
@@ -305,6 +316,28 @@ sub payinfo_used {
   ;
 
   return 0;
+}
+
+=item upgrade_set_cardtype
+
+Find all records with a credit card payment type and no cardtype, and
+replace them in order to set their cardtype.
+
+=cut
+
+sub upgrade_set_cardtype {
+  my $class = shift;
+  # assign cardtypes to CARD/DCRDs that need them; check_payinfo_cardtype
+  # will do this. ignore any problems with the cards.
+  local $ignore_masked_payinfo = 1;
+  my $search = FS::Cursor->new({
+    table     => $class->table,
+    extra_sql => q[ WHERE payby IN('CARD','DCRD') AND cardtype IS NULL ],
+  });
+  while (my $record = $search->fetch) {
+    my $error = $record->replace;
+    die $error if $error;
+  }
 }
 
 =back

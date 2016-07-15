@@ -76,6 +76,10 @@ Payment Type (See L<FS::payinfo_Mixin> for valid values)
 
 card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
 
+=item cardtype
+
+Credit card type, if appropriate.
+
 =item paybatch
 
 text field for tracking card processing

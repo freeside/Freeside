@@ -96,6 +96,10 @@ Payment Type (See L<FS::payinfo_Mixin> for valid values)
 
 Payment Information (See L<FS::payinfo_Mixin> for data format)
 
+=item cardtype
+
+Credit card type, if appropriate; autodetected.
+
 =item paymask
 
 Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
@@ -1242,6 +1246,12 @@ sub _upgrade_data {  #class method
       process_upgrade_paybatch();
     }
   }
+
+  ###
+  # set cardtype
+  ###
+  $class->upgrade_set_cardtype;
+
 }
 
 sub process_upgrade_paybatch {

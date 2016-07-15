@@ -1755,6 +1755,7 @@ sub tables_hashref {
                                                  # index into payby table
                                                  # eventually
         'payinfo',  'varchar',   'NULL', 512, '', '', #see cust_main above
+        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
         'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paydate',  'varchar', 'NULL', 10, '', '', 
         'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
@@ -1793,7 +1794,8 @@ sub tables_hashref {
                                                   # index into payby table
                                                   # eventually
         'payinfo',   'varchar',   'NULL', 512, '', '', #see cust_main above
-	'paymask', 'varchar', 'NULL', $char_d, '', '', 
+        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
+        'paymask', 'varchar', 'NULL', $char_d, '', '', 
         #'paydate' ?
         'paybatch',  'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'closed',    'char', 'NULL', 1, '', '', 
@@ -2144,7 +2146,8 @@ sub tables_hashref {
                                                      # be index into payby
                                                      # table eventually
         'payinfo',      'varchar',   'NULL', 512, '', '', #see cust_main above
-	'paymask', 'varchar', 'NULL', $char_d, '', '', 
+        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
+        'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',     'varchar',   'NULL', $char_d, '', '', 
         'closed',    'char', 'NULL', 1, '', '', 
         'source_paynum', 'int', 'NULL', '', '', '', # link to cust_payby, to prevent unapply of gateway-generated refunds
