@@ -115,7 +115,7 @@ paytype
 
 payip
 
-=item cardtype
+=item paycardtype
 
 The credit card type (deduced from the card number).
 
@@ -354,10 +354,11 @@ sub check {
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
     my $cardtype = cardtype($payinfo);
-    $self->set('cardtype', $cardtype);
-    return gettext('unknown_card_type')
-      if $self->payinfo !~ /^99\d{14}$/ #token
-      && $cardtype eq "Unknown";
+    $cardtype = 'Tokenized' if $self->payinfo !~ /^99\d{14}$/; #token
+    
+    return gettext('unknown_card_type') if $cardtype eq "Unknown";
+    
+    $self->set('paycardtype', $cardtype);
 
     unless ( $ignore_banned_card ) {
       my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
@@ -453,9 +454,9 @@ sub check {
     # either ignoring invalid cards, or we can't decrypt the payinfo, but
     # try to detect the card type anyway. this never returns failure, so
     # the contract of $ignore_invalid_cards is maintained.
-    $self->set('cardtype', cardtype($self->paymask));
+    $self->set('paycardtype', cardtype($self->paymask));
   } else {
-    $self->set('cardtype', '');
+    $self->set('paycardtype', '');
   }
 
 #  } elsif ( $self->payby eq 'PREPAY' ) {
@@ -539,11 +540,14 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
-  return '' if $payinfo =~ /^99\d{14}$/; #token
+  if ( $payinfo =~ /^99\d{14}$/ ) {
+    $self->set('paycardtype', 'Tokenized');
+    return '';
+  }
 
   my %bop_card_types = map { $_=>1 } values %{ card_types() };
   my $cardtype = cardtype($payinfo);
-  $self->set('cardtype', $cardtype);
+  $self->set('paycardtype', $cardtype);
 
   return "$cardtype not accepted" unless $bop_card_types{$cardtype};
 
@@ -619,7 +623,7 @@ sub label {
   my $self = shift;
 
   my $name = $self->payby =~ /^(CARD|DCRD)$/
-              && $self->cardtype || FS::payby->shortname($self->payby);
+              && $self->paycardtype || FS::payby->shortname($self->payby);
 
   ( $self->payby =~ /^(CARD|CHEK)$/  ? $weight{$self->weight}. ' automatic '
                                      : 'Manual '

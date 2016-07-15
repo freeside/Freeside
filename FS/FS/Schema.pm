@@ -1693,7 +1693,7 @@ sub tables_hashref {
         'weight',          'int', 'NULL',        '', '', '', 
         'payby',          'char',     '',         4, '', '', 
         'payinfo',     'varchar', 'NULL',       512, '', '', 
-        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
+        'paycardtype', 'varchar', 'NULL',   $char_d, '', '',
         'paycvv',      'varchar', 'NULL',       512, '', '', 
         'paymask',     'varchar', 'NULL',   $char_d, '', '', 
         #'paydate',   @date_type, '', '', 
@@ -2443,7 +2443,7 @@ sub tables_hashref {
         'usernum',         'int', 'NULL',      '', '', '',
         'payby',          'char',     '',       4, '', '',
         'payinfo',     'varchar', 'NULL',     512, '', '',
-        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
+        'paycardtype', 'varchar', 'NULL',   $char_d, '', '',
         'paymask',     'varchar', 'NULL', $char_d, '', '', 
         'paydate',     'varchar', 'NULL',      10, '', '', 
         'paybatch',    'varchar', 'NULL', $char_d, '', '',#for auditing purposes
@@ -2501,7 +2501,7 @@ sub tables_hashref {
         'usernum',         'int', 'NULL',      '', '', '',
         'payby',          'char',     '',       4, '', '',
         'payinfo',     'varchar', 'NULL',     512, '', '',
-        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
+        'paycardtype', 'varchar', 'NULL',   $char_d, '', '',
         'paymask',     'varchar', 'NULL', $char_d, '', '', 
         #'paydate' ?
         'paybatch',    'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
@@ -3061,7 +3061,7 @@ sub tables_hashref {
                                                      # be index into payby
                                                      # table eventually
         'payinfo',      'varchar',   'NULL', 512, '', '', #see cust_main above
-        'cardtype',    'varchar', 'NULL',   $char_d, '', '',
+        'paycardtype',  'varchar', 'NULL',   $char_d, '', '',
         'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',     'varchar',   'NULL', $char_d, '', '', 
         'closed',    'char', 'NULL', 1, '', '', 

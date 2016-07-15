@@ -82,7 +82,7 @@ Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
 Payment Information (See L<FS::payinfo_Mixin> for data format)
 
-=item cardtype
+=item paycardtype
 
 Detected credit card type, if appropriate; autodetected.
 
