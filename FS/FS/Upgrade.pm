@@ -428,7 +428,7 @@ sub upgrade_data {
     'cust_refund' => [],
     'banned_pay' => [],
 
-    #cardtype
+    #paycardtype
     'cust_payby' => [],
 
     #default namespace
