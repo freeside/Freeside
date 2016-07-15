@@ -422,6 +422,9 @@ sub upgrade_data {
     'cust_refund' => [],
     'banned_pay' => [],
 
+    #cardtype
+    'cust_payby' => [],
+
     #default namespace
     'payment_gateway' => [],
 
