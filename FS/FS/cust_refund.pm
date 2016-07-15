@@ -82,6 +82,10 @@ Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
 Payment Information (See L<FS::payinfo_Mixin> for data format)
 
+=item cardtype
+
+Detected credit card type, if appropriate; autodetected.
+
 =item paymask
 
 Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
@@ -472,6 +476,9 @@ sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
   $class->_upgrade_reasonnum(%opts);
   $class->_upgrade_otaker(%opts);
+
+  local $ignore_empty_reasonnum = 1;
+  $class->upgrade_set_cardtype;
 }
 
 =back
