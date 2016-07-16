@@ -255,7 +255,10 @@ sub _ticket_info {
   }
   $ticket_info{'owner'} = $t->OwnerObj->Name;
   $ticket_info{'queue'} = $t->QueueObj->Name;
+  $ticket_info{'_cf_sort_order'} = {};
+  my $cf_sort = 0;
   foreach my $CF ( @{ $t->CustomFields->ItemsArrayRef } ) {
+    $ticket_info{'_cf_sort_order'}{$CF->Name} = $cf_sort++;
     my $name = 'CF.{'.$CF->Name.'}';
     $ticket_info{$name} = $t->CustomFieldValuesAsString($CF->Id);
   }
@@ -647,6 +650,50 @@ sub selfservice_priority {
     my $conf = FS::Conf->new;
     $conf->config('ticket_system-selfservice_priority_field') || '';
   }
+}
+
+=item custom_fields
+
+Returns a hash of custom field names and descriptions.
+
+Accepts the following options:
+
+lookuptype - limit results to this lookuptype
+
+valuetype - limit results to this valuetype
+
+Fields must be visible to CurrentUser.
+
+=cut
+
+sub custom_fields {
+  my $self = shift;
+  my %opt = @_;
+  my $lookuptype = $opt{lookuptype};
+  my $valuetype = $opt{valuetype};
+
+  my $CurrentUser = RT::CurrentUser->new();
+  $CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
+  die "RT not configured" unless $CurrentUser->id;
+  my $CFs = RT::CustomFields->new($CurrentUser);
+
+  $CFs->UnLimit;
+
+  $CFs->Limit(FIELD => 'LookupType',
+              OPERATOR => 'ENDSWITH',
+              VALUE => $lookuptype)
+      if $lookuptype;
+
+  $CFs->Limit(FIELD => 'Type',
+              VALUE => $valuetype)
+      if $valuetype;
+
+  my @fields;
+  while (my $CF = $CFs->Next) {
+    push @fields, $CF->Name, ($CF->Description || $CF->Name);
+  }
+
+  return @fields;
 }
 
 1;

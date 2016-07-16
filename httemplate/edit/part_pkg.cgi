@@ -867,6 +867,16 @@ my $html_bottom = sub {
                    : ''
                  ). '>';
 
+      } elsif ( $href->{$field}{'type'} eq 'select-rt-customfield' ) {
+
+        $html .= include('/elements/select-rt-customfield.html',
+                           'name'       => $layer.'__'.$field,
+                           'curr_value' => $options{$field},
+                           map { $_ => $href->{$field}{$_} }
+                             grep { $_ !~ /^(name|type|parse)$/ }
+                               keys %{ $href->{$field} }
+                        );
+
       } elsif ( $href->{$field}{'type'} eq 'select-rate' ) {
 
         $html .= include('/elements/select-rate.html',

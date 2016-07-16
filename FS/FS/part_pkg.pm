@@ -672,8 +672,12 @@ sub check {
 =item check_options
 
 For a passed I<$options> hashref, validates any options that
-have 'validate' subroutines defined (I<$options> values might
-be altered.)  Returns error message, or empty string if valid.
+have 'validate' subroutines defined in the info hash, 
+then validates the entire hashref if the price plan has 
+its own 'validate' subroutine defined in the info hash 
+(I<$options> values might be altered.)  
+
+Returns error message, or empty string if valid.
 
 Invoked by L</insert> and L</replace> via the equivalent
 methods in L<FS::option_Common>.
@@ -691,6 +695,10 @@ sub check_options {
         return $error if $error;
       }
     } # else "option does not exist" error?
+  }
+  if (exists($plans{$self->plan}->{'validate'})) {
+    my $error = &{$plans{$self->plan}->{'validate'}}($options);
+    return $error if $error;
   }
   return '';
 }
