@@ -7438,6 +7438,26 @@ sub tables_hashref {
                         ],
     },
 
+    'rt_field_charge' => {
+      'columns' => [
+        'rtfieldchargenum',    'serial',      '',      '', '', '',
+        'pkgnum',                 'int',      '',      '', '', '', 
+        'ticketid',               'int',      '',      '', '', '', 
+        'rate',             @money_type,                   '', '', 
+        'units',              'decimal',      '',  '10,4', '', '',
+        'charge',           @money_type,                   '', '', 
+        '_date',             @date_type,                   '', '',
+      ],
+      'primary_key'  => 'rtfieldchargenum',
+      'unique'       => [],
+      'index'        => [ ['pkgnum', 'ticketid'] ],
+      'foreign_keys' => [
+                          { columns    => [ 'pkgnum' ],
+                            table      => 'cust_pkg',
+                          },
+                        ],
+    },
+
     # name type nullability length default local
 
     #'new_table' => {
