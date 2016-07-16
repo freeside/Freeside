@@ -239,6 +239,10 @@ Name on card or billing name
 
 IP address from which payment information was received
 
+=item paycardtype
+
+The credit card type (deduced from the card number).
+
 =item tax
 
 Tax exempt, empty or `Y'
@@ -1962,9 +1966,12 @@ sub check {
     validate($payinfo)
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
-    return gettext('unknown_card_type')
-      if $self->payinfo !~ /^99\d{14}$/ #token
-      && cardtype($self->payinfo) eq "Unknown";
+    my $cardtype = cardtype($payinfo);
+    $cardtype = 'Tokenized' if $self->payinfo !~ /^99\d{14}$/; # token
+
+    return gettext('unknown_card_type') if $cardtype eq 'Unknown';
+
+    $self->set('paycardtype', $cardtype);
 
     unless ( $ignore_banned_card ) {
       my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
@@ -1986,7 +1993,7 @@ sub check {
     }
 
     if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
-      if ( cardtype($self->payinfo) eq 'American Express card' ) {
+      if ( $cardtype eq 'American Express card' ) {
         $self->paycvv =~ /^(\d{4})$/
           or return "CVV2 (CID) for American Express cards is four digits.";
         $self->paycvv($1);
@@ -1999,7 +2006,6 @@ sub check {
       $self->paycvv('');
     }
 
-    my $cardtype = cardtype($payinfo);
     if ( $cardtype =~ /^(Switch|Solo)$/i ) {
 
       return "Start date or issue number is required for $cardtype cards"
@@ -2096,6 +2102,11 @@ sub check {
       unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
     $self->paycvv('');
 
+  } elsif ( $self->payby =~ /^CARD|DCRD$/ and $self->paymask ) {
+    # either ignoring invalid cards, or we can't decrypt the payinfo, but
+    # try to detect the card type anyway. this never returns failure, so
+    # the contract of $ignore_invalid_cards is maintained.
+    $self->set('paycardtype', cardtype($self->paymask));
   }
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
@@ -2168,10 +2179,14 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
-  return '' if $payinfo =~ /^99\d{14}$/; #token
+  if ( $payinfo =~ /^99\d{14}$/ ) {
+    $self->set('paycardtype', 'Tokenized');
+    return '';
+  }
 
   my %bop_card_types = map { $_=>1 } values %{ card_types() };
   my $cardtype = cardtype($payinfo);
+  $self->set('paycardtype', $cardtype);
 
   return "$cardtype not accepted" unless $bop_card_types{$cardtype};
 

@@ -1178,6 +1178,7 @@ sub tables_hashref {
         'ship_mobile',   'varchar', 'NULL', 12, '', '', 
         'payby',    'char', '',     4, '', '', 
         'payinfo',  'varchar', 'NULL', 512, '', '', 
+        'paycardtype', 'varchar', 'NULL',   $char_d, '', '',
         'paycvv',   'varchar', 'NULL', 512, '', '', 
         'paymask', 'varchar', 'NULL', $char_d, '', '', 
         #'paydate',  @date_type, '', '', 
