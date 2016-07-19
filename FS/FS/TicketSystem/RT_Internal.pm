@@ -3,6 +3,7 @@ package FS::TicketSystem::RT_Internal;
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use Data::Dumper;
+use Date::Format qw( time2str );
 use MIME::Entity;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
@@ -101,17 +102,43 @@ sub init {
   warn "$me init: complete" if $DEBUG;
 }
 
-=item customer_tickets CUSTNUM [ LIMIT ] [ PRIORITYVALUE ]
+=item customer_tickets CUSTNUM [ PARAMS ]
 
 Replacement for the one in RT_External so that we can access custom fields 
-properly.
+properly.  Accepts a hashref with the following parameters:
+
+number - custnum/svcnum
+
+limit 
+
+priority 
+
+status
+
+queueid
+
+resolved - only return tickets resolved after this timestamp
 
 =cut
 
 # create an RT::Tickets object for a specified custnum or svcnum
 
 sub _tickets_search {
-  my( $self, $type, $number, $limit, $priority, $status, $queueid ) = @_;
+  my $self = shift;
+  my $type = shift;
+
+  my( $number, $limit, $priority, $status, $queueid, $opt );
+  if ( ref($_[0]) eq 'HASH' ) {
+    $opt = shift;
+    $number   = $$opt{'number'};
+    $limit    = $$opt{'limit'};
+    $priority = $$opt{'priority'};
+    $status   = $$opt{'status'};
+    $queueid  = $$opt{'queueid'};
+  } else {
+    ( $number, $limit, $priority, $status, $queueid ) = @_;
+    $opt = {};
+  }
 
   $type =~ /^Customer|Service$/ or die "invalid type: $type";
   $number =~ /^\d+$/ or die "invalid custnum/svcnum: $number";
@@ -160,6 +187,10 @@ sub _tickets_search {
                ' ) ';
 
   $rtql .= " AND Queue = $queueid " if $queueid;
+
+  if ($$opt{'resolved'}) {
+    $rtql .= " AND Resolved >= " . dbh->quote(time2str('%Y-%m-%d %H:%M:%S',$$opt{'resolved'}));
+  }
 
   warn "$me _customer_tickets_search:\n$rtql\n" if $DEBUG;
   $Tickets->FromSQL($rtql);

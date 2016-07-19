@@ -1,0 +1,24 @@
+<SELECT NAME="<% $opt{'name'} %>"<% $opt{'multiple'} ? ' MULTIPLE' : '' %>>
+% while ( @fields ) {
+%   my $value = shift @fields;
+%   my $label = shift @fields;
+<OPTION VALUE="<% $value %>"<% $curr_value{$value} ? ' SELECTED' : '' %>><% $label %></OPTION>
+% }
+</SELECT>
+<%init>
+my %opt = @_;
+
+my %curr_value = map { $_ => 1 } split(', ',$opt{'curr_value'});
+
+my @fields;
+push @fields, '', $opt{empty_label} if exists($opt{empty_label});
+
+my $conf = new FS::Conf;
+
+if ($conf->config('ticket_system') eq 'RT_Internal') {
+
+  push @fields, FS::TicketSystem->queues();
+
+}
+
+</%init>
