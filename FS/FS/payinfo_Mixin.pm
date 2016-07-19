@@ -197,7 +197,7 @@ sub payinfo_check {
 
     my $payinfo = $self->payinfo;
     my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $payinfo !~ /^99\d{14}$/;
+    $cardtype = 'Tokenized' if $payinfo =~ /^99\d{14}$/;
     $self->set('paycardtype', $cardtype);
 
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
