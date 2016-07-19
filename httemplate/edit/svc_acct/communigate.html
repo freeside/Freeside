@@ -46,7 +46,7 @@
 % if ( $part_svc->part_svc_column('quota')->columnflag eq 'F' ) { 
   <INPUT TYPE="hidden" NAME="quota" VALUE="<% $svc_acct->quota %>">
 % } else {
-%   my $quota_label = $communigate ? 'Mail storage limit' : 'Quota';
+%   my $quota_label = $communigate ? 'Mail storage limit' : ($part_svc->part_svc_column('quota')->columnlabel || 'Quota');
 <% include('/elements/tr-td-label.html',
      'label'    => $quota_label,
      'required' => $part_svc->part_svc_column('quota')->required ) %>

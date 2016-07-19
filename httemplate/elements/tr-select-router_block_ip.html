@@ -56,7 +56,7 @@ function clearhint_ip_addr (what) {
 ]
 &>
 </td></tr>
-<& /elements/tr-td-label.html, label => 'IP address', required => $opt{'ip_addr_required'} &>
+<& /elements/tr-td-label.html, label => ($opt{'ip_addr_label'} || 'IP address'), required => $opt{'ip_addr_required'} &>
 <td>
 % #warn Dumper \%fixed;
 % if ( exists $fixed{$ip_field} ) {
