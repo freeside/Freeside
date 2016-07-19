@@ -988,9 +988,9 @@ my $html_bottom = sub {
                    : ''
                  ). '>';
 
-      } elsif ( $href->{$field}{'type'} eq 'select-rt-customfield' ) {
+      } elsif ( $href->{$field}{'type'} =~ /^select-rt-/ ) {
 
-        $html .= include('/elements/select-rt-customfield.html',
+        $html .= include('/elements/'.$href->{$field}{'type'}.'.html',
                            'name'       => $layer.'__'.$field,
                            'curr_value' => $options{$field},
                            map { $_ => $href->{$field}{$_} }

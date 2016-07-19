@@ -533,6 +533,7 @@ sub delete {
   # cust_bill_pay.pkgnum (wtf, shouldn't reference pkgnum)
   # cust_pkg_usage.pkgnum
   # cust_pkg.uncancel_pkgnum, change_pkgnum, main_pkgnum, and change_to_pkgnum
+  # rt_field_charge.pkgnum
 
   # cust_svc is handled by canceling the package before deleting it
   # cust_pkg_option is handled via option_Common
@@ -2622,6 +2623,19 @@ sub change {
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return "canceling old package: $error";
+  }
+
+  # transfer rt_field_charge, if we're not changing pkgpart
+  # after billing of old package, before billing of new package
+  if ( $same_pkgpart ) {
+    foreach my $rt_field_charge ($self->rt_field_charge) {
+      $rt_field_charge->set('pkgnum', $cust_pkg->pkgnum);
+      $error = $rt_field_charge->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "transferring rt_field_charge: $error";
+      }
+    }
   }
 
   if ( $conf->exists('cust_pkg-change_pkgpart-bill_now') ) {
