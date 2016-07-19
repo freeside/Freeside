@@ -399,7 +399,7 @@ sub _items_total {
 
 sub enable_previous { 0 }
 
-=item convert_cust_main
+=item convert_cust_main [ PARAMS ]
 
 If this quotation already belongs to a customer, then returns that customer, as
 an FS::cust_main object.
@@ -411,10 +411,13 @@ packages as real packages for the customer.
 If there is an error, returns an error message, otherwise, returns the
 newly-created FS::cust_main object.
 
+Accepts the same params as L</order>.
+
 =cut
 
 sub convert_cust_main {
   my $self = shift;
+  my $params = shift || {};
 
   my $cust_main = $self->cust_main;
   return $cust_main if $cust_main; #already converted, don't again
@@ -431,7 +434,7 @@ sub convert_cust_main {
 
   $self->prospectnum('');
   $self->custnum( $cust_main->custnum );
-  my $error = $self->replace || $self->order;
+  my $error = $self->replace || $self->order(undef,$params);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -443,7 +446,7 @@ sub convert_cust_main {
 
 }
 
-=item order [ HASHREF ]
+=item order [ HASHREF ] [ PARAMS ]
 
 This method is for use with quotations which are already associated with a customer.
 
@@ -455,11 +458,16 @@ If HASHREF is passed, it will be filled with a hash mapping the
 C<quotationpkgnum> of each quoted package to the C<pkgnum> of the package
 as ordered.
 
+If PARAMS hashref is passed, the following params are accepted:
+
+onhold - if true, suspends newly ordered packages
+
 =cut
 
 sub order {
   my $self = shift;
   my $pkgnum_map = shift || {};
+  my $params = shift || {};
   my $details_map = {};
 
   tie my %all_cust_pkg, 'Tie::RefHash';
@@ -510,10 +518,11 @@ sub order {
     }
   }
 
-  foreach my $quotationpkgnum (keys %$pkgnum_map) {
-    # convert the objects to just pkgnums
-    my $cust_pkg = $pkgnum_map->{$quotationpkgnum};
-    $pkgnum_map->{$quotationpkgnum} = $cust_pkg->pkgnum;
+  if ($$params{'onhold'}) {
+    foreach my $quotationpkgnum (keys %$pkgnum_map) {
+      last if $error;
+      $error = $pkgnum_map->{$quotationpkgnum}->suspend();
+    }
   }
 
   if ($error) {
@@ -522,6 +531,13 @@ sub order {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  foreach my $quotationpkgnum (keys %$pkgnum_map) {
+    # convert the objects to just pkgnums
+    my $cust_pkg = $pkgnum_map->{$quotationpkgnum};
+    $pkgnum_map->{$quotationpkgnum} = $cust_pkg->pkgnum;
+  }
+
   ''; #no error
 
 }
