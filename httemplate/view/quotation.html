@@ -67,7 +67,9 @@ function areyousure(href, message) {
     <BR><BR>
 
 %   if ( $curuser->access_right('New customer') && $quotation->quotation_pkg ) {
+%     # if we end up with more than one option, combine these links and add an interstitial screen
       <A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>">Place order</A>
+      | <A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>&onhold=1">Order on hold</A>
       <BR><BR>
 %   }
 
