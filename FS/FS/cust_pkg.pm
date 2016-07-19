@@ -2593,6 +2593,19 @@ sub change {
     return "canceling old package: $error";
   }
 
+  # transfer rt_field_charge, if we're not changing pkgpart
+  # after billing of old package, before billing of new package
+  if ( $same_pkgpart ) {
+    foreach my $rt_field_charge ($self->rt_field_charge) {
+      $rt_field_charge->set('pkgnum', $cust_pkg->pkgnum);
+      $error = $rt_field_charge->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "transferring rt_field_charge: $error";
+      }
+    }
+  }
+
   if ( $conf->exists('cust_pkg-change_pkgpart-bill_now') ) {
     #$self->cust_main
     my $error = $cust_pkg->cust_main->bill( 

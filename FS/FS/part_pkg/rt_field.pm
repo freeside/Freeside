@@ -24,12 +24,21 @@ my %custom_field = (
   'lookuptype'  => 'RT::Queue-RT::Ticket',
 );
 
+my %multiple = (
+  'multiple' => 1,
+  'parse' => sub { @_ }, # because /edit/process/part_pkg.pm doesn't grok select multiple
+);
+
 our %info = (
   'name'      =>  'Bill from custom fields in resolved RT tickets',
   'shortname' =>  'RT custom rate',
   'weight'    => 65,
   'inherit_fields' => [ 'global_Mixin' ],
   'fields'    =>  {
+    'queueids'       => { 'name' => 'Queues',
+                          'type' => 'select-rt-queue',
+                          %multiple,
+                        },
     'unit_field'     => { 'name' => 'Units field',
                           %custom_field,
                           'validate' => sub { return ${$_[1]} ? '' : 'Units field must be specified' },
@@ -42,8 +51,7 @@ our %info = (
                           'validate' => \&FS::part_pkg::global_Mixin::validate_moneyn },
     'display_fields' => { 'name' => 'Display fields',
                           %custom_field,
-                          'multiple' => 1,
-                          'parse' => sub { @_ }, # because /edit/process/part_pkg.pm doesn't grok select multiple
+                          %multiple,
                         },
     # from global_Mixin, but don't get used by this at all
     'unused_credit_cancel'  => {'disabled' => 1},
@@ -58,22 +66,24 @@ our %info = (
       if $options->{'rate_field'} and $options->{'rate_flat'};
     return '';
   },
-  'fieldorder' => [ 'unit_field', 'rate_field', 'rate_flat', 'display_fields' ]
+  'fieldorder' => [ 'queueids', 'unit_field', 'rate_field', 'rate_flat', 'display_fields' ]
 );
 
 sub price_info {
     my $self = shift;
     my $str = $self->SUPER::price_info;
     $str .= ' plus ' if $str;
-    FS::TicketSystem->init();
-    my %custom_fields = FS::TicketSystem->custom_fields();
-    my $rate = $self->option('rate_flat',1);
-    my $rate_field = $self->option('rate_field',1);
-    my $unit_field = $self->option('unit_field');
-    $str .= $rate
-            ? $money_char . sprintf("%.2",$rate)
-            : $custom_fields{$rate_field};
-    $str .= ' x ' . $custom_fields{$unit_field};
+    $str .= 'charge from RT';
+# takes way too long just to get a package label
+#    FS::TicketSystem->init();
+#    my %custom_fields = FS::TicketSystem->custom_fields();
+#    my $rate = $self->option('rate_flat',1);
+#    my $rate_field = $self->option('rate_field',1);
+#    my $unit_field = $self->option('unit_field');
+#    $str .= $rate
+#            ? $money_char . sprintf("%.2",$rate)
+#            : $custom_fields{$rate_field};
+#    $str .= ' x ' . $custom_fields{$unit_field};
     return $str;
 }
 
@@ -103,11 +113,31 @@ sub calc_usage {
 
   FS::TicketSystem->init();
 
-  # not date delimited--load all resolved tickets
-  # will subtract previous charges below
-  # only way to be sure we've caught everything
-  # limit set to be arbitrarily large (10000)
-  my $tickets = FS::TicketSystem->customer_tickets( $cust_pkg->custnum, 10000, undef, 'resolved');
+  my %queues = FS::TicketSystem->queues(undef,'SeeCustomField');
+
+  my @tickets;
+  foreach my $queueid (
+    split(', ',$self->option('queueids',1) || '')
+  ) {
+
+    die "Insufficient permission to invoice package"
+      unless exists $queues{$queueid};
+
+    # load all resolved tickets since pkg was ordered
+    # will subtract previous charges below
+    # only way to be sure we've caught everything
+    my $tickets = FS::TicketSystem->customer_tickets({
+      number   => $cust_pkg->custnum, 
+      limit    => 10000, # arbitrarily large
+      status   => 'resolved',
+      queueid  => $queueid,
+      resolved => $cust_pkg->order_date, # or setup? but this is mainly for installations,
+                                         # and workflow might resolve tickets before first bill...
+                                         # for now, expect pkg to be ordered before tickets get resolved,
+                                         # easy enough to make a pkg option to use setup/sdate instead
+    });
+    push @tickets, @$tickets;
+  };
 
   my $rate = $self->option('rate_flat',1);
   my $rate_field = $self->option('rate_field',1);
@@ -124,7 +154,7 @@ sub calc_usage {
   $unit_field = 'CF.{' . $unit_field . '}';
 
   my $charges = 0;
-  foreach my $ticket ( @$tickets ) {
+  foreach my $ticket ( @tickets ) {
     next unless $ticket->{$unit_field};
     next unless $rate || $ticket->{$rate_field};
     my $trate = $rate || $ticket->{$rate_field};
