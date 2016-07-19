@@ -93,6 +93,7 @@ sub extension_table { ''; } # subclasses don't HAVE to have extensions
 
 sub _rebless {
   my $self = shift;
+  return '' unless $self->msgclass;
   my $class = 'FS::msg_template::' . $self->msgclass;
   eval "use $class;";
   bless($self, $class) unless $@;
