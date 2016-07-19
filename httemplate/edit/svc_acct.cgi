@@ -31,7 +31,7 @@
 </TR>
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Username'),
+     'label'    => $part_svc->part_svc_column('username')->columnlabel || mt('Username'),
      'required' => $part_svc->part_svc_column('username')->required ) %>
 % if ( $svcnum && $conf->exists('svc_acct-no_edit_username') ) {
     <TD BGCOLOR="#eeeeee"><% $svc_acct->username() %></TD>
@@ -46,7 +46,7 @@
 %if ( $part_svc->part_svc_column('_password')->columnflag ne 'F' ) {
 % #XXX eventually should require "Edit Password" ACL
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Password'),
+     'label'    => $part_svc->part_svc_column('_password')->columnlabel || mt('Password'),
      'required' => $part_svc->part_svc_column('_password')->required ) %>
   <TD>
     <INPUT TYPE="text" ID="clear_password" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
@@ -68,7 +68,7 @@
 %  && $part_svc->part_svc_column('sec_phrase')->columnflag ne 'F' ) {
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Security phrase'),
+     'label'    => $part_svc->part_svc_column('sec_phrase')->columnlabel || mt('Security phrase'),
      'required' => $part_svc->part_svc_column('sec_phrase')->required ) %>
     <TD>
       <INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $sec_phrase %>" SIZE=32>
@@ -106,7 +106,7 @@
 %                );
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Domain'),
+     'label'    => $part_svc->part_svc_column('domsvc')->columnlabel || mt('Domain'),
      'required' => $part_svc->part_svc_column('domsvc')->required ) %>
     <TD>
       <SELECT NAME="domsvc" SIZE=1>
@@ -142,6 +142,7 @@
              'curr_value' => $svc_acct->pbxsvc,
              'part_svc'   => $part_svc,
              'cust_pkg'   => $cust_pkg,
+             'label'      => $part_svc->part_svc_column('pbxsvc')->columnlabel || 'PBX',
 &>
 
 %#pop
@@ -153,7 +154,7 @@
 % } else { 
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Access number'),
+     'label'    => $part_svc->part_svc_column('popnum')->columnlabel || mt('Access number'),
      'required' => $part_svc->part_svc_column('popnum')->required ) %>
     <TD><% FS::svc_acct_pop::popselector($popnum) %></TD>
   </TR>
@@ -167,6 +168,7 @@
          #'part_svc'   => $part_svc,
          #'cust_pkg'   => $cust_pkg,
          'required'   => $part_svc->part_svc_column('sectornum')->required,
+         'label'       => $part_svc->part_svc_column('sectornum')->columnlabel || mt('Tower sector'),
     &>
 %} else {
     <INPUT TYPE="hidden" NAME="sectornum" VALUE="<% $svc_acct->sectornum %>">
@@ -188,10 +190,10 @@
 % if ( length($svc_acct->$xid()) ) { 
 
 <% include('/elements/tr-td-label.html',
-     'label'    => uc($xid),
+     'label'    => $part_svc->part_svc_column($xid)->columnlabel || uc($xid),
      'required' => $part_svc->part_svc_column($xid)->required ) %>
-      <TR>
-        <TD ALIGN="right"><% uc($xid) %></TD>
+%#      <TR>
+%#        <TD ALIGN="right"><% uc($xid) %></TD>
           <TD BGCOLOR="#eeeeee"><% $svc_acct->$xid() %></TD>
         <TD>
         </TD>
@@ -202,7 +204,7 @@
 % } else { 
   
 <% include('/elements/tr-td-label.html',
-     'label'    => uc($xid),
+     'label'    => $part_svc->part_svc_column($xid)->columnlabel || uc($xid),
      'required' => $part_svc->part_svc_column($xid)->required ) %>
       <TD>
         <INPUT TYPE="text" NAME="<% $xid %>" SIZE=8 MAXLENGTH=6 VALUE="<% $svc_acct->$xid() %>">
@@ -221,7 +223,7 @@
 
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Real Name'),
+     'label'    => $part_svc->part_svc_column('finger')->columnlabel || mt('Real Name'),
      'required' => $part_svc->part_svc_column('finger')->required ) %>
     <TD>
       <INPUT TYPE="text" NAME="finger" VALUE="<% $svc_acct->finger %>">
@@ -240,7 +242,7 @@
 
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Home directory'),
+     'label'    => $part_svc->part_svc_column('dir')->columnlabel || mt('Home directory'),
      'required' => $part_svc->part_svc_column('dir')->required ) %>
     <TD><INPUT TYPE="text" NAME="dir" VALUE="<% $svc_acct->dir %>"></TD>
   </TR>
@@ -258,7 +260,7 @@
 
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('Shell'),
+     'label'    => $part_svc->part_svc_column('shell')->columnlabel || mt('Shell'),
      'required' => $part_svc->part_svc_column('shell')->required ) %>
     <TD>
       <SELECT NAME="shell" SIZE=1>
@@ -289,7 +291,9 @@
   'object' => $svc_acct,
   'ip_field' => 'slipip',
   'required' => $part_svc->part_svc_column('routernum')->required,
+  'label'    => $part_svc->part_svc_column('routernum')->columnlabel,
   'ip_addr_required' => $part_svc->part_svc_column('slipip')->required,
+  'ip_addr_label' => $part_svc->part_svc_column('slipip')->columnlabel,
 &>
 % } else {
 %   # don't expose these to the user--they're only useful in the other case
@@ -299,7 +303,7 @@
     <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
 %   } else { 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('IP'),
+     'label'    => $part_svc->part_svc_column('slipip')->columnlabel || mt('IP'),
      'required' => $part_svc->part_svc_column('slipip')->required ) %>
       <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
     </TR>
@@ -346,7 +350,7 @@
 
 
 <% include('/elements/tr-td-label.html',
-     'label'    => mt('RADIUS groups'),
+     'label'    => $part_svc->part_svc_column('usergroup')->columnlabel || mt('RADIUS groups'),
      'required' => $part_svc->part_svc_column('usergroup')->required ) %>
 % if ( $part_svc_usergroup->columnflag eq 'F' ) { 
     <TD BGCOLOR="#eeeeee"><% join('<BR>', @groupnames) %></TD>
