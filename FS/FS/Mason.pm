@@ -99,7 +99,7 @@ if ( -e $addl_handler_use_file ) {
   use Excel::Writer::XLSX;
   #use Excel::Writer::XLSX::Utility; #redundant with above
 
-  use Business::CreditCard 0.30; #for mask-aware cardtype()
+  use Business::CreditCard 0.35; #for new mastercard ranges and visa lengths
   use NetAddr::IP;
   use Net::MAC::Vendor;
   use Net::Ping;
@@ -666,7 +666,7 @@ the same "random" numbers.
 
 Works around a Net::SSLeay connection error by creating and deleting an SSL
 context, so subsequent connections do not error out with a CTX_new (900 NET OR
-SSL ERROR).
+SSL ERROR).  See http://bugs.debian.org/830152
 
 =cut
 

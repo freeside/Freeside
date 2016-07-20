@@ -592,7 +592,7 @@ sub make_payment {
 
 sub payment_results {
 
-  use Business::CreditCard 0.30;
+  use Business::CreditCard 0.35;
 
   #we should only do basic checking here for DoS attacks and things
   #that couldn't be constructed by the web form...  let process_payment() do

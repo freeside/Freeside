@@ -11,7 +11,7 @@ use Digest::SHA qw(sha512_hex);
 use Date::Format;
 use Time::Duration;
 use Time::Local qw(timelocal_nocheck);
-use Business::CreditCard;
+use Business::CreditCard 0.35;
 use HTML::Entities;
 use Text::CSV_XS;
 use Spreadsheet::WriteExcel;
