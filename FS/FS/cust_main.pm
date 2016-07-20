@@ -29,6 +29,7 @@ use Date::Format;
 use File::Temp; #qw( tempfile );
 use Business::CreditCard 0.28;
 use List::Util qw(min);
+use Try::Tiny;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Cursor;
@@ -2227,10 +2228,9 @@ sub cancel_pkgs {
   }
   dbh->commit;
 
-  $FS::UID::AutoCommit = 1;
   my @errors;
-  # now cancel all services, the same way we would for individual packages.
-  # if any of them fail, cancel the rest anyway.
+  # try to cancel each service, the same way we would for individual packages,
+  # but in cancel weight order.
   my @cust_svc = map { $_->cust_svc } @pkgs;
   my @sorted_cust_svc =
     map  { $_->[0] }
@@ -2243,8 +2243,15 @@ sub cancel_pkgs {
   foreach my $cust_svc (@sorted_cust_svc) {
     my $part_svc = $cust_svc->part_svc;
     next if ( defined($part_svc) and $part_svc->preserve );
-    my $error = $cust_svc->cancel; # immediate cancel, no date option
-    push @errors, $error if $error;
+    # immediate cancel, no date option
+    # transactionize individually
+    my $error = try { $cust_svc->cancel } catch { $_ };
+    if ( $error ) {
+      dbh->rollback;
+      push @errors, $error;
+    } else {
+      dbh->commit;
+    }
   }
   if (@errors) {
     return @errors;
@@ -2280,7 +2287,12 @@ sub cancel_pkgs {
       }
     }
     my $error = $_->cancel(%lopt);
-    push @errors, 'pkgnum '.$_->pkgnum.': '.$error if $error;
+    if ( $error ) {
+      dbh->rollback;
+      push @errors, 'pkgnum '.$_->pkgnum.': '.$error;
+    } else {
+      dbh->commit;
+    }
   }
 
   return @errors;
