@@ -3,7 +3,7 @@ use base qw( FS::Commission_Mixin FS::m2m_Common FS::m2name_Common FS::Record );
 
 use strict;
 use vars qw( @ISA );
-use Business::CreditCard 0.28;
+use Business::CreditCard 0.35;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
