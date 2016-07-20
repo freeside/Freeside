@@ -91,7 +91,7 @@ if ( -e $addl_handler_use_file ) {
   use Excel::Writer::XLSX;
   #use Excel::Writer::XLSX::Utility; #redundant with above
 
-  use Business::CreditCard 0.35; #for new mastercard ranges and visa lengths
+  use Business::CreditCard 0.36; #for best-effort cardtype() (60xx as Discover)
   use NetAddr::IP;
   use Net::MAC::Vendor;
   use Net::Ping;
