@@ -115,6 +115,9 @@ paytype
 
 payip
 
+=item paycardtype
+
+The credit card type (deduced from the card number).
 
 =back
 
@@ -331,6 +334,13 @@ sub check {
   # Need some kind of global flag to accept invalid cards, for testing
   # on scrubbed data.
   #XXX if ( !$import && $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
+
+  # In this block: detect card type; reject credit card / account numbers that
+  # are impossible or banned; reject other payment features (date, CVV length)
+  # that are inappropriate for the card type.
+  # However, if the payinfo is encrypted then just detect card type and assume
+  # the other checks were already done.
+
   if ( !$ignore_invalid_card && 
     $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
@@ -343,9 +353,12 @@ sub check {
     validate($payinfo)
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
-    return gettext('unknown_card_type')
-      if $self->payinfo !~ /^99\d{14}$/ #token
-      && cardtype($self->payinfo) eq "Unknown";
+    my $cardtype = cardtype($payinfo);
+    $cardtype = 'Tokenized' if $self->payinfo =~ /^99\d{14}$/; #token
+    
+    return gettext('unknown_card_type') if $cardtype eq "Unknown";
+    
+    $self->set('paycardtype', $cardtype);
 
     unless ( $ignore_banned_card ) {
       my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
@@ -367,7 +380,7 @@ sub check {
     }
 
     if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
-      if ( cardtype($self->payinfo) eq 'American Express card' ) {
+      if ( $cardtype eq 'American Express card' ) {
         $self->paycvv =~ /^(\d{4})$/
           or return "CVV2 (CID) for American Express cards is four digits.";
         $self->paycvv($1);
@@ -380,7 +393,6 @@ sub check {
       $self->paycvv('');
     }
 
-    my $cardtype = cardtype($payinfo);
     if ( $cardtype =~ /^(Switch|Solo)$/i ) {
 
       return "Start date or issue number is required for $cardtype cards"
@@ -438,6 +450,15 @@ sub check {
       }
     }
 
+  } elsif ( $self->payby =~ /^CARD|DCRD$/ and $self->paymask ) {
+    # either ignoring invalid cards, or we can't decrypt the payinfo, but
+    # try to detect the card type anyway. this never returns failure, so
+    # the contract of $ignore_invalid_cards is maintained.
+    $self->set('paycardtype', cardtype($self->paymask));
+  } else {
+    $self->set('paycardtype', '');
+  }
+
 #  } elsif ( $self->payby eq 'PREPAY' ) {
 #
 #    my $payinfo = $self->payinfo;
@@ -449,8 +470,6 @@ sub check {
 #      unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
 #    $self->paycvv('');
 
-  }
-
   if ( $self->payby =~ /^(CHEK|DCHK)$/ ) {
 
     $self->paydate('');
@@ -458,6 +477,7 @@ sub check {
   } elsif ( $self->payby =~ /^(CARD|DCRD)$/ ) {
 
     # shouldn't payinfo_check do this?
+    # (except we don't ever call payinfo_check from here)
     return "Expiration date required"
       if $self->paydate eq '' || $self->paydate eq '-';
 
@@ -520,10 +540,14 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
-  return '' if $payinfo =~ /^99\d{14}$/; #token
+  if ( $payinfo =~ /^99\d{14}$/ ) {
+    $self->set('paycardtype', 'Tokenized');
+    return '';
+  }
 
   my %bop_card_types = map { $_=>1 } values %{ card_types() };
   my $cardtype = cardtype($payinfo);
+  $self->set('paycardtype', $cardtype);
 
   return "$cardtype not accepted" unless $bop_card_types{$cardtype};
 
@@ -599,7 +623,7 @@ sub label {
   my $self = shift;
 
   my $name = $self->payby =~ /^(CARD|DCRD)$/
-              && cardtype($self->paymask) || FS::payby->shortname($self->payby);
+              && $self->paycardtype || FS::payby->shortname($self->payby);
 
   ( $self->payby =~ /^(CARD|CHEK)$/  ? $weight{$self->weight}. ' automatic '
                                      : 'Manual '
@@ -871,6 +895,18 @@ sub search_sql {
 }
 
 =back
+
+=cut
+
+sub _upgrade_data {
+
+  my $class = shift;
+  local $ignore_banned_card = 1;
+  local $ignore_expired_card = 1;
+  local $ignore_invalid_card = 1;
+  $class->upgrade_set_cardtype;
+
+}
 
 =head1 BUGS
 

@@ -722,9 +722,12 @@ sub label_prefix {
   } elsif ( $label_prefix eq '_location' && $self->locationname ) {
     $prefix = $self->locationname;
 
-  } elsif (    ( $opt{'cust_main'} || $self->custnum )
-          && $self->locationnum == $cust_or_prospect->ship_locationnum ) {
-    $prefix = 'Default service location';
+  #} elsif (    ( $opt{'cust_main'} || $self->custnum )
+  #        && $self->locationnum == $cust_or_prospect->ship_locationnum ) {
+  #  $prefix = 'Default service location';
+  #}
+  } else {
+    $prefix = '';
   }
 
   $prefix;

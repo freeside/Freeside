@@ -180,6 +180,14 @@ If you need to continue using the old Form 477 report, turn on the
 
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
+  # if translate-auto-insert is enabled for a locale, ensure that invoice
+  # terms are in the msgcat (is there a better place for this?)
+  if (my $auto_locale = $conf->config('translate-auto-insert')) {
+    my $lh = FS::L10N->get_handle($auto_locale);
+    foreach (@FS::Conf::invoice_terms) {
+      $lh->maketext($_) if length($_);
+    }
+  }
 }
 
 sub upgrade_overlimit_groups {
@@ -413,6 +421,9 @@ sub upgrade_data {
     'cust_pkg_discount' => [],
     'cust_refund' => [],
     'banned_pay' => [],
+
+    #paycardtype
+    'cust_payby' => [],
 
     #default namespace
     'payment_gateway' => [],

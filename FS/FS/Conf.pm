@@ -1,7 +1,8 @@
 package FS::Conf;
 
 use strict;
-use vars qw( $base_dir @config_items @base_items @card_types $DEBUG
+use vars qw( $base_dir @config_items @base_items @card_types @invoice_terms
+             $DEBUG
              $conf_cache $conf_cache_enabled
            );
 use Carp;
@@ -614,6 +615,14 @@ invoice_htmlnotes
 invoice_htmlwatermark
 logo.png
 logo.eps
+);
+
+@invoice_terms = (
+  '',
+  'Payable upon receipt',
+  'Net 0', 'Net 3', 'Net 5', 'Net 7', 'Net 9', 'Net 10', 'Net 14', 
+  'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
+  'Net 60', 'Net 90'
 );
 
 my %msg_template_options = (
@@ -1521,11 +1530,8 @@ and customer address. Include units.',
     'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
     'type'        => 'select',
     'per_agent'   => 1,
-    'select_enum' => [ 
-      '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 5', 'Net 7', 'Net 9', 'Net 10', 'Net 14', 
-      'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
-      'Net 60', 'Net 90'
-    ], },
+    'select_enum' => \@invoice_terms,
+  },
 
   { 
     'key'         => 'invoice_show_prior_due_date',
@@ -3441,13 +3447,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_pkg-always_show_location',
-    'section'     => 'packages',
-    'description' => "Always display package locations, even when they're all the default service address.",
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'cust_pkg-group_by_location',
     'section'     => 'packages',
     'description' => "Group packages by location.",
@@ -3592,6 +3591,13 @@ and customer address. Include units.',
     'key'         => 'invoice-ship_address',
     'section'     => 'invoicing',
     'description' => 'Include the shipping address on invoices.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'invoice-all_pkg_addresses',
+    'section'     => 'invoicing',
+    'description' => 'Show all package addresses on invoices, even the default.',
     'type'        => 'checkbox',
   },
 

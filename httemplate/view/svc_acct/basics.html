@@ -1,18 +1,18 @@
 <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
-<& /view/elements/tr.html, label=>mt('Service'),  value=>$part_svc->svc &>
+<& /view/elements/tr.html, label=> $part_svc->part_svc_column('svc')->columnlabel || mt('Service'),  value=>$part_svc->svc &>
 % if ( $opt{cust_svc}->agent_svcid ) {
   <& /view/elements/tr.html, label=>mt('Legacy ID'),  value=>$opt{cust_svc}->agent_svcid &>
 % }
-<& /view/elements/tr.html, label=>mt('Username'), value=>$svc_acct->username &>
-<& /view/elements/tr.html, label=>mt('Domain'),   value=>$domain &>
+<& /view/elements/tr.html, label=> $part_svc->part_svc_column('username')->columnlabel || mt('Username'), value=>$svc_acct->username &>
+<& /view/elements/tr.html, label=> $part_svc->part_svc_column('domsvc')->columnlabel || mt('Domain'),   value=>$domain &>
 
 % if ( $opt{'communigate'} ) {
   <& /view/elements/tr.html, label=>mt('Aliases'), value=>$svc_acct->cgp_aliases &>
 %}
 
 % if ( $svc_acct->pbxsvc ) {
-  <& /view/elements/tr.html, label=>mt('PBX'), value=>$svc_acct->pbx_title &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('pbxsvc')->columnlabel || mt('PBX'), value=>$svc_acct->pbx_title &>
 %}
 
 % my $show_pw = '';
@@ -38,7 +38,7 @@
 %   # show nothing
 % } else {
 <TR>
-  <TD ALIGN="right"><% mt('Password') %></TD>
+  <TD ALIGN="right"><% $psc->columnlabel || mt('Password') %></TD>
   <TD STYLE="background-color: #ffffff; white-space: nowrap">
   <% $show_pw %>
 %   my $curuser = $FS::CurrentUser::CurrentUser;
@@ -58,12 +58,12 @@
 % }
 
 % if ( $conf->exists('security_phrase') ) {
-  <& /view/elements/tr.html, label=>mt('Security phrase'), value=>$svc_acct->sec_phrase &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('sec_phrase')->columnlabel || mt('Security phrase'), value=>$svc_acct->sec_phrase &>
 % } 
 
 % if ( $svc_acct->popnum ) {
 %   my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
-    <& /view/elements/tr.html, label=>mt('Access number'), value=>$svc_acct_pop->text &>
+    <& /view/elements/tr.html, label=> $part_svc->part_svc_column('popnum')->columnlabel || mt('Access number'), value=>$svc_acct_pop->text &>
 % } 
 
 % if ( $svc_acct->sectornum && $conf->exists('svc_acct-tower_sector') ) {
@@ -72,7 +72,7 @@
 %                ? '<A HREF="http://'. $tower_sector->ip_addr. '">'
 %                : '';
     <& /view/elements/tr.html,
-        label => mt('Tower sector'),
+        label =>  $part_svc->part_svc_column('sectornum')->columnlabel || mt('Tower sector'),
         value => $link. $tower_sector->description. ($link ? '</A>' : ''),
     &>
 % }
@@ -83,28 +83,28 @@
 &>
 
 % if ($svc_acct->uid ne '') { 
-  <& /view/elements/tr.html, label=>mt('UID'), value=>$svc_acct->uid &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('uid')->columnlabel || mt('UID'), value=>$svc_acct->uid &>
 % } 
 
 % if ($svc_acct->gid ne '') { 
-  <& /view/elements/tr.html, label=>mt('GID'), value=>$svc_acct->gid &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('gid')->columnlabel || mt('GID'), value=>$svc_acct->gid &>
 % } 
 
 % if ($svc_acct->finger ne '') { 
-  <& /view/elements/tr.html, label=>mt('Real Name'), value=>$svc_acct->finger &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('finger')->columnlabel || mt('Real Name'), value=>$svc_acct->finger &>
 % } 
 
 % if ($svc_acct->dir ne '') { 
-  <& /view/elements/tr.html, label=>mt('Home directory'), value=>$svc_acct->dir &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('dir')->columnlabel || mt('Home directory'), value=>$svc_acct->dir &>
 % } 
 
 % if ($svc_acct->shell ne '') { 
-  <& /view/elements/tr.html, label=>mt('Shell'), value=>$svc_acct->shell &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('shell')->columnlabel || mt('Shell'), value=>$svc_acct->shell &>
 % } 
 
 % if ($svc_acct->quota ne '' && ! $opt{'communigate'} ) { 
 
-  <& /view/elements/tr.html, label=>mt('Quota'), value=>$svc_acct->quota &>
+  <& /view/elements/tr.html, label=> $part_svc->part_svc_column('quota')->columnlabel || mt('Quota'), value=>$svc_acct->quota &>
 
 % } elsif ( $opt{'communigate'} ) {
 
@@ -133,7 +133,7 @@ sub slipip {
 
 % if ($svc_acct->slipip) { 
   <& /view/elements/tr.html,
-       label=>mt('IP address'),
+       label=> $part_svc->part_svc_column('slipip')->columnlabel || mt('IP address'),
        value=> slipip($svc_acct)
   &>
 % } 
@@ -156,7 +156,7 @@ sub slipip {
     &>
 % } 
 
-<& /view/elements/tr.html, label=>mt('RADIUS groups'),
+<& /view/elements/tr.html, label=> $part_svc->part_svc_column('usergroup')->columnlabel || mt('RADIUS groups'),
     value=>join('<BR>', $svc_acct->radius_groups('long_description')) &>
 
 <& router.html, 'svc_acct' => $svc_acct &>

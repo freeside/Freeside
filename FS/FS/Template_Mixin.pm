@@ -3186,7 +3186,9 @@ sub _items_cust_bill_pkg {
 
   # for location labels: use default location on the invoice date
   my $default_locationnum;
-  if ( $self->custnum ) {
+  if ( $conf->exists('invoice-all_pkg_addresses') ) {
+    $default_locationnum = 0; # treat them all as non-default
+  } elsif ( $self->custnum ) {
     my $h_cust_main;
     my @h_search = FS::h_cust_main->sql_h_search($self->_date);
     $h_cust_main = qsearchs({
@@ -3320,6 +3322,7 @@ sub _items_cust_bill_pkg {
 
           # append the word 'Setup' to the setup line if there's going to be
           # a recur line for the same package (i.e. not a one-time charge) 
+          # XXX localization
           my $description = $desc;
           $description .= ' Setup'
             if $cust_bill_pkg->recur != 0
@@ -3340,8 +3343,11 @@ sub _items_cust_bill_pkg {
           # always pass the svc_label through to the template, even if 
           # not displaying it as an ext_description
           my @svc_labels = map &{$escape_function}($_),
-                      $cust_pkg->h_labels_short($self->_date, undef, 'I');
-
+            $cust_pkg->h_labels_short($self->_date,
+                                      undef,
+                                      'I',
+                                      $self->conf->{locale},
+                                     );
           $svc_label = $svc_labels[0];
 
           unless ( $cust_pkg->part_pkg->hide_svc_detail
@@ -3431,7 +3437,9 @@ sub _items_cust_bill_pkg {
           push @dates, undef if !$prev;
 
           my @svc_labels = map &{$escape_function}($_),
-                      $cust_pkg->h_labels_short(@dates, 'I');
+            $cust_pkg->h_labels_short(@dates,
+                                      'I',
+                                      $self->conf->{locale});
           $svc_label = $svc_labels[0];
 
           # show service labels, unless...

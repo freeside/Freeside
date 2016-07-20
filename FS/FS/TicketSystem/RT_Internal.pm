@@ -3,6 +3,7 @@ package FS::TicketSystem::RT_Internal;
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use Data::Dumper;
+use Date::Format qw( time2str );
 use MIME::Entity;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
@@ -101,17 +102,43 @@ sub init {
   warn "$me init: complete" if $DEBUG;
 }
 
-=item customer_tickets CUSTNUM [ LIMIT ] [ PRIORITYVALUE ]
+=item customer_tickets CUSTNUM [ PARAMS ]
 
 Replacement for the one in RT_External so that we can access custom fields 
-properly.
+properly.  Accepts a hashref with the following parameters:
+
+number - custnum/svcnum
+
+limit 
+
+priority 
+
+status
+
+queueid
+
+resolved - only return tickets resolved after this timestamp
 
 =cut
 
 # create an RT::Tickets object for a specified custnum or svcnum
 
 sub _tickets_search {
-  my( $self, $type, $number, $limit, $priority, $status, $queueid ) = @_;
+  my $self = shift;
+  my $type = shift;
+
+  my( $number, $limit, $priority, $status, $queueid, $opt );
+  if ( ref($_[0]) eq 'HASH' ) {
+    $opt = shift;
+    $number   = $$opt{'number'};
+    $limit    = $$opt{'limit'};
+    $priority = $$opt{'priority'};
+    $status   = $$opt{'status'};
+    $queueid  = $$opt{'queueid'};
+  } else {
+    ( $number, $limit, $priority, $status, $queueid ) = @_;
+    $opt = {};
+  }
 
   $type =~ /^Customer|Service$/ or die "invalid type: $type";
   $number =~ /^\d+$/ or die "invalid custnum/svcnum: $number";
@@ -160,6 +187,10 @@ sub _tickets_search {
                ' ) ';
 
   $rtql .= " AND Queue = $queueid " if $queueid;
+
+  if ($$opt{'resolved'}) {
+    $rtql .= " AND Resolved >= " . dbh->quote(time2str('%Y-%m-%d %H:%M:%S',$$opt{'resolved'}));
+  }
 
   warn "$me _customer_tickets_search:\n$rtql\n" if $DEBUG;
   $Tickets->FromSQL($rtql);
@@ -255,7 +286,10 @@ sub _ticket_info {
   }
   $ticket_info{'owner'} = $t->OwnerObj->Name;
   $ticket_info{'queue'} = $t->QueueObj->Name;
+  $ticket_info{'_cf_sort_order'} = {};
+  my $cf_sort = 0;
   foreach my $CF ( @{ $t->CustomFields->ItemsArrayRef } ) {
+    $ticket_info{'_cf_sort_order'}{$CF->Name} = $cf_sort++;
     my $name = 'CF.{'.$CF->Name.'}';
     $ticket_info{$name} = $t->CustomFieldValuesAsString($CF->Id);
   }
@@ -647,6 +681,50 @@ sub selfservice_priority {
     my $conf = FS::Conf->new;
     $conf->config('ticket_system-selfservice_priority_field') || '';
   }
+}
+
+=item custom_fields
+
+Returns a hash of custom field names and descriptions.
+
+Accepts the following options:
+
+lookuptype - limit results to this lookuptype
+
+valuetype - limit results to this valuetype
+
+Fields must be visible to CurrentUser.
+
+=cut
+
+sub custom_fields {
+  my $self = shift;
+  my %opt = @_;
+  my $lookuptype = $opt{lookuptype};
+  my $valuetype = $opt{valuetype};
+
+  my $CurrentUser = RT::CurrentUser->new();
+  $CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
+  die "RT not configured" unless $CurrentUser->id;
+  my $CFs = RT::CustomFields->new($CurrentUser);
+
+  $CFs->UnLimit;
+
+  $CFs->Limit(FIELD => 'LookupType',
+              OPERATOR => 'ENDSWITH',
+              VALUE => $lookuptype)
+      if $lookuptype;
+
+  $CFs->Limit(FIELD => 'Type',
+              VALUE => $valuetype)
+      if $valuetype;
+
+  my @fields;
+  while (my $CF = $CFs->Next) {
+    push @fields, $CF->Name, ($CF->Description || $CF->Name);
+  }
+
+  return @fields;
 }
 
 1;

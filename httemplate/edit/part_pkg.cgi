@@ -92,7 +92,7 @@
                    { type => 'columnstart' },
                    
                      { field     => 'pkg',
-                       type      => 'text',
+                       type      => 'input-locale-text',
                        size      => 40, #32
                        maxlength => 50,
                      },
@@ -495,42 +495,6 @@ my $recur_show_zero_disabled = 1;
 
 my $pkgpart = '';
 
-my $splice_locale_fields = sub {
-  my( $fields, $pkey_value_callback, $pkg_value_callback ) = @_;
-
-  my $n = 0;
-  my @locale_fields = (
-    map { 
-          my $pkey_value= $pkey_value_callback ? &$pkey_value_callback($_) : '';
-          my $pkg_value = $pkg_value_callback
-                            ? $pkg_value_callback eq 'cgiparam'
-                                ? $cgi->param('pkgpartmsgnum'. $n. '_pkg')
-                                : &$pkg_value_callback($_)
-                            : '';
-          (
-            { field     => 'pkgpartmsgnum'. $n,
-              type      => 'hidden',
-              value     => $pkey_value,
-            },
-            { field     => 'pkgpartmsgnum'. $n. '_locale',
-              type      => 'hidden',
-              value     => $_,
-            },
-            { field     => 'pkgpartmsgnum'. $n++. '_pkg',
-              type      => 'text',
-              size      => 40,
-              #maxlength => 50,
-              value     => $pkg_value,
-            },
-          );
-  
-        }
-      @locales
-  );
-  splice(@$fields, 7, 0, @locale_fields); #XXX 7 is arbitrary above
-
-};
-
 my $error_callback = sub {
   my($cgi, $object, $fields, $opt ) = @_;
 
@@ -578,16 +542,6 @@ my $error_callback = sub {
   }
 
   $pkgpart = $object->pkgpart;
-
-  &$splice_locale_fields(
-    $fields,
-    sub {
-          my $locale = shift;
-          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
-          $part_pkg_msgcat ? $part_pkg_msgcat->pkgpartmsgnum : '';
-        },
-    'cgiparam'
-  );
 
   if ( $cgi->param('error') =~ / is suggested with / ) {
     #yeah, detection is a shitty kludge, but we don't have exception objects
@@ -665,20 +619,6 @@ my $edit_callback = sub {
 
   $pkgpart = $object->pkgpart;
 
-  &$splice_locale_fields(
-    $fields,
-    sub {
-          my $locale = shift;
-          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
-          $part_pkg_msgcat ? $part_pkg_msgcat->pkgpartmsgnum : '';
-        },
-    sub {
-          my $locale = shift;
-          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
-          $part_pkg_msgcat ? $part_pkg_msgcat->pkg : '';
-        }
-  );
-
 };
 
 my $new_callback = sub {
@@ -691,8 +631,6 @@ my $new_callback = sub {
   }
 
   $options{'suspend_bill'}=1 if $conf->exists('part_pkg-default_suspend_bill');
-
-  &$splice_locale_fields($fields, '', '');
 
 };
 
@@ -732,17 +670,6 @@ my $clone_callback = sub {
       foreach keys %part_pkg_currency;
   }
 
-  $recur_disabled = $object->freq ? 0 : 1;
-
-  &$splice_locale_fields(
-    $fields,
-    '',
-    sub {
-      my $locale = shift;
-      my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
-      $part_pkg_msgcat ? $part_pkg_msgcat->pkg : '';
-    }
-  );
 };
 
 my $discount_error_callback = sub {
@@ -1060,6 +987,16 @@ my $html_bottom = sub {
                    ? ' CHECKED'
                    : ''
                  ). '>';
+
+      } elsif ( $href->{$field}{'type'} =~ /^select-rt-/ ) {
+
+        $html .= include('/elements/'.$href->{$field}{'type'}.'.html',
+                           'name'       => $layer.'__'.$field,
+                           'curr_value' => $options{$field},
+                           map { $_ => $href->{$field}{$_} }
+                             grep { $_ !~ /^(name|type|parse)$/ }
+                               keys %{ $href->{$field} }
+                        );
 
       } elsif ( $href->{$field}{'type'} eq 'select-rate' ) {
 

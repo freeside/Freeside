@@ -17,10 +17,7 @@ my $conf = new FS::Conf;
 
 if ($conf->config('ticket_system') eq 'RT_Internal') {
 
-  push @fields, FS::TicketSystem->custom_fields(
-    lookuptype => $opt{lookuptype},
-    valuetype  => $opt{valuetype},
-  );
+  push @fields, FS::TicketSystem->queues();
 
 }
 
