@@ -478,8 +478,12 @@ sub upgrade_data {
     #populate tax statuses
     'tax_status' => [],
 
-    #mark certain taxes as system-maintained
+    #mark certain taxes as system-maintained,
+    # and fix whitespace
     'cust_main_county' => [],
+
+    #fix whitespace
+    'cust_location' => [],
   ;
 
   \%hash;
