@@ -3216,6 +3216,22 @@ sub ut_agentnum_acl {
 
 }
 
+=item trim_whitespace FIELD[, FIELD ... ]
+
+Strip leading and trailing spaces from the value in the named FIELD(s).
+
+=cut
+
+sub trim_whitespace {
+  my $self = shift;
+  foreach my $field (@_) {
+    my $value = $self->get($field);
+    $value =~ s/^\s+//;
+    $value =~ s/\s+$//;
+    $self->set($field, $value);
+  }
+}
+
 =item fields [ TABLE ]
 
 This is a wrapper for real_fields.  Code that called
