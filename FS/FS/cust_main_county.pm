@@ -122,6 +122,9 @@ methods.
 sub check {
   my $self = shift;
 
+  $self->trim_whitespace(qw(district city county state country));
+  $self->set('city', uc($self->get('city'))); # also county?
+
   $self->exempt_amount(0) unless $self->exempt_amount;
 
   $self->ut_numbern('taxnum')
@@ -660,6 +663,49 @@ sub _upgrade_data {
     }
     FS::upgrade_journal->set_done($journal);
   }
+  # trim whitespace and convert to uppercase in the 'city' field.
+  foreach my $record (qsearch({
+    table => 'cust_main_county',
+    extra_sql => " WHERE city LIKE ' %' OR city LIKE '% ' OR city != UPPER(city)",
+  })) {
+    # any with-trailing-space records probably duplicate other records
+    # from the same city, and if we just fix the record in place, we'll
+    # create an exact duplicate.
+    # so find the record this one would duplicate, and merge them.
+    $record->check; # trims whitespace
+    my %match = map { $_ => $record->get($_) }
+      qw(city county state country district taxname taxclass);
+    my $other = qsearchs('cust_main_county', \%match);
+    if ($other) {
+      my $new_taxnum = $other->taxnum;
+      my $old_taxnum = $record->taxnum;
+      if ($other->tax != $record->tax or
+          $other->exempt_amount != $record->exempt_amount) {
+        # don't assume these are the same.
+        warn "Found duplicate taxes (#$new_taxnum and #$old_taxnum) but they have different rates and can't be merged.\n";
+      } else {
+        warn "Merging tax #$old_taxnum into #$new_taxnum\n";
+        foreach my $table (qw(
+          cust_bill_pkg_tax_location
+          cust_bill_pkg_tax_location_void
+          cust_tax_exempt_pkg
+          cust_tax_exempt_pkg_void
+        )) {
+          foreach my $row (qsearch($table, { 'taxnum' => $old_taxnum })) {
+            $row->set('taxnum' => $new_taxnum);
+            my $error = $row->replace;
+            die $error if $error;
+          }
+        }
+        my $error = $record->delete;
+        die $error if $error;
+      }
+    } else {
+      # else there is no record this one duplicates, so just fix it
+      my $error = $record->replace;
+      die $error if $error;
+    }
+  } # foreach $record
   '';
 }
 

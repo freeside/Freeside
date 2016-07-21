@@ -2,7 +2,7 @@ package FS::cust_location;
 use base qw( FS::geocode_Mixin FS::Record );
 
 use strict;
-use vars qw( $import $DEBUG $conf $label_prefix );
+use vars qw( $import $DEBUG $conf $label_prefix $allow_location_edit );
 use Data::Dumper;
 use Date::Format qw( time2str );
 use FS::UID qw( dbh driver_name );
@@ -166,6 +166,10 @@ sub find_or_insert {
   delete $nonempty{'locationnum'};
 
   my %hash = map { $_ => $self->get($_) } @essential;
+  foreach (values %hash) {
+    s/^\s+//;
+    s/\s+$//;
+  }
   my @matches = qsearch('cust_location', \%hash);
 
   # we no longer reject matches for having different values in nonessential
@@ -287,7 +291,7 @@ sub replace {
   # it's a prospect location, then there are no active packages, no billing
   # history, no taxes, and in general no reason to keep the old location
   # around.
-  if ( $self->custnum ) {
+  if ( !$allow_location_edit and $self->custnum ) {
     foreach (qw(address1 address2 city state zip country)) {
       if ( $self->$_ ne $old->$_ ) {
         return "can't change cust_location field $_";
@@ -341,6 +345,10 @@ sub check {
   my $self = shift;
 
   return '' if $self->disabled; # so that disabling locations never fails
+
+  # maybe should just do all fields in the table?
+  # or in every table?
+  $self->trim_whitespace(qw(district city county state country));
 
   my $error = 
     $self->ut_numbern('locationnum')
@@ -889,6 +897,35 @@ sub process_standardize {
     dbh->commit; # so that we can resume if interrupted
   }
   close $log;
+}
+
+sub _upgrade_data {
+  my $class = shift;
+
+  # are we going to need to update tax districts?
+  my $use_districts = $conf->config('tax_district_method') ? 1 : 0;
+
+  # trim whitespace on records that need it
+  local $allow_location_edit = 1;
+  foreach my $field (qw(city county state country district)) {
+    foreach my $location (qsearch({
+      table => 'cust_location',
+      extra_sql => " WHERE $field LIKE ' %' OR $field LIKE '% '"
+    })) {
+      my $error = $location->replace;
+      die "$error (fixing whitespace in $field, locationnum ".$location->locationnum.')'
+        if $error;
+
+      if ( $use_districts ) {
+        my $queue = new FS::queue {
+          'job' => 'FS::geocode_Mixin::process_district_update'
+        };
+        $error = $queue->insert( 'FS::cust_location' => $location->locationnum );
+        die $error if $error;
+      }
+    } # foreach $location
+  } # foreach $field
+  '';
 }
 
 =head1 BUGS

@@ -441,8 +441,12 @@ sub upgrade_data {
     #set default locations on quoted packages
     'quotation_pkg' => [],
 
-    #mark certain taxes as system-maintained
+    #mark certain taxes as system-maintained,
+    # and fix whitespace
     'cust_main_county' => [],
+
+    #fix whitespace
+    'cust_location' => [],
   ;
 
   \%hash;

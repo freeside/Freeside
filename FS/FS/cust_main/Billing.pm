@@ -1767,8 +1767,10 @@ sub _handle_taxes {
     # We fetch taxes even if the customer is completely exempt,
     # because we need to record that fact.
 
-    my @loc_keys = qw( district city county state country );
-    my %taxhash = map { $_ => $location->$_ } @loc_keys;
+    my %taxhash = map { $_ => $location->get($_) }
+                  qw( district county state country );
+    # city names in cust_main_county are uppercase
+    $taxhash{'city'} = uc($location->get('city'));
 
     $taxhash{'taxclass'} = $part_item->taxclass;
 
