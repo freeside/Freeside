@@ -28,7 +28,7 @@ Description: Billing and trouble ticketing for service providers
 Package: freeside-lib
 Architecture: all
 Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
- libbusiness-creditcard-perl,libcache-cache-perl,
+ libbusiness-creditcard-perl (>= 0.36),libcache-cache-perl,
  libcache-simple-timedexpiry-perl,libchart-perl,libclass-container-perl,
  libclass-data-inheritable-perl,libclass-returnvalue-perl,libcolor-scheme-perl,
  libcompress-zlib-perl,libconvert-binhex-perl,libcrypt-passwdmd5-perl,
