@@ -74,6 +74,7 @@ my %cardtype_of = (
   'Amex'      => q['American Express card'],
   'Discover'  => q['Discover card'],
   'Maestro'   => q['Switch', 'Solo', 'Laser'],
+  'Tokenized' => q['Tokenized'],
 );  
 </%shared>
 <%init>
@@ -326,18 +327,9 @@ if ( $cgi->param('magic') ) {
 
         if ( $subtype ) {
 
-          if ( $subtype eq 'Tokenized' ) {
-
-            $payby_search .= " AND substring($table.payinfo from 1 for 2 ) = '99' ";
-            # XXX should store the cardtype as 'Tokenized' in this case?
-
-          } else {
-
-            my $in_cardtype = $cardtype_of{$subtype}
-              or die "unknown card type $subtype";
-            $payby_search .= " AND $table.paycardtype IN($in_cardtype)";
-
-          }
+          my $in_cardtype = $cardtype_of{$subtype}
+            or die "unknown card type $subtype";
+          $payby_search .= " AND $table.paycardtype IN($in_cardtype)";
 
         }
 
@@ -498,8 +490,6 @@ if ( $cgi->param('magic') ) {
     'order_by'  => "ORDER BY $orderby",
     'addl_from' => $addl_from,
   };
-
-warn Dumper \$sql_query;
 
 } else {
 
