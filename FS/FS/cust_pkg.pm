@@ -815,9 +815,13 @@ the date.  You are PROBABLY looking to expire the account instead of using
 this.
 
 =item reason - can be set to a cancellation reason (see L<FS:reason>), 
-either a reasonnum of an existing reason, or passing a hashref will create 
-a new reason.  The hashref should have the following keys: typenum - Reason 
-type (see L<FS::reason_type>, reason - Text of the new reason.
+either a reasonnum of an existing reason, or a hashref to create 
+a new reason.  The hashref should have the following keys:
+typenum - Reason type (see L<FS::reason_type>
+reason - Text of the new reason.
+
+If this argument isn't given or is a false value, then the package will be
+canceled with no reason.
 
 =item date - can be set to a unix style timestamp to specify when to 
 cancel (expire)
@@ -1077,6 +1081,10 @@ sub cancel {
 Cancels this package if its expire date has been reached.
 
 =cut
+
+# XXX should look for an expire reason
+# but seems to be unused; this is now handled more holistically in
+# cust_main::Billing
 
 sub cancel_if_expired {
   my $self = shift;

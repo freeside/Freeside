@@ -2501,15 +2501,7 @@ sub cancel_pkgs {
         $lopt{'reason_otaker'} = $cpr->otaker;
       } else {
         warn "no reason found when canceling package ".$_->pkgnum."\n";
-        # we're not actually required to pass a reason to cust_pkg::cancel,
-        # but if we're getting to this point, something has gone awry.
-        $null_reason ||= FS::reason->new_or_existing(
-          reason  => 'unknown reason',
-          type    => 'Cancel Reason',
-          class   => 'C',
-        );
-        $lopt{'reason'} = $null_reason->reasonnum;
-        $lopt{'reason_otaker'} = $FS::CurrentUser::CurrentUser->username;
+        $lopt{'reason'} = '';
       }
     }
     my $error = $_->cancel(%lopt);
