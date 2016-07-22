@@ -420,15 +420,30 @@ sub paydate_epoch_sql {
 Find all records with a credit card payment type and no paycardtype, and
 replace them in order to set their paycardtype.
 
+This method actually just starts a queue job.
+
 =cut
 
 sub upgrade_set_cardtype {
   my $class = shift;
+  my $table = $class->table or die "upgrade_set_cardtype needs a table";
+
+  if ( ! FS::upgrade_journal->is_done("${table}__set_cardtype") ) {
+    my $job = FS::queue->new({ job => 'FS::payinfo_Mixin::process_set_cardtype' });
+    my $error = $job->insert($table);
+    die $error if $error;
+    FS::upgrade_journal->set_done("${table}__set_cardtype");
+  }
+}
+
+sub process_set_cardtype {
+  my $table = shift;
+
   # assign cardtypes to CARD/DCRDs that need them; check_payinfo_cardtype
   # will do this. ignore any problems with the cards.
   local $ignore_masked_payinfo = 1;
   my $search = FS::Cursor->new({
-    table     => $class->table,
+    table     => $table,
     extra_sql => q[ WHERE payby IN('CARD','DCRD') AND paycardtype IS NULL ],
   });
   while (my $record = $search->fetch) {
