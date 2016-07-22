@@ -74,6 +74,7 @@ my %cardtype_of = (
   'Amex'      => q['American Express card'],
   'Discover'  => q['Discover card'],
   'Maestro'   => q['Switch', 'Solo', 'Laser'],
+  'Tokenized' => q['Tokenized'],
 );  
 </%shared>
 <%init>
@@ -196,11 +197,23 @@ push @fields, 'payby_payinfo_pretty',
 push @link_onclicks, $sub_receipt, '';
 push @sort_fields, 'paysort', $amount_field;
 
+# 4.x, to remain functional while the upgrade is running...
+my $sub_guess_cardtype = sub {
+  my $row = shift;
+  $row->paycardtype || (
+    ($row->payby eq 'CARD'  && $row->paymask !~ /N\/A/)
+    ? cardtype($row->paymask)
+    : ''
+  )
+};
+
 if ($opt{'show_card_type'}) {
   push @header, emt('Card Type');
   $align .= 'r';
   push @links, '';
-  push @fields, 'paycardtype';
+  push @fields, $sub_guess_cardtype;
+  # worst case, paycardtype isn't filled in yet and sorting by that column
+  # does nothing.
   push @sort_fields, 'paycardtype';
 }
 
@@ -326,20 +339,153 @@ if ( $cgi->param('magic') ) {
 
         if ( $subtype ) {
 
-          if ( $subtype eq 'Tokenized' ) {
+          my $in_cardtype = $cardtype_of{$subtype}
+            or die "unknown card type $subtype";
+          # will complete this phrase after alt_search
+          $payby_search .= " AND ( $table.paycardtype IN($in_cardtype)";
 
-            $payby_search .= " AND substring($table.payinfo from 1 for 2 ) = '99' ";
-            # XXX should store the cardtype as 'Tokenized' in this case?
+          # 4.x transitional, to avoid breaking things while we upgrade
+          my $similar_to = dbh->{Driver}->{Name} =~ /^mysql/i
+                             ? 'REGEXP' #doesn't behave exactly the same, but
+                                        #should work for our patterns
+                             : 'SIMILAR TO';
 
-          } else {
+          my $alt_search;
+          if ( $subtype eq 'VisaMC' ) {
 
-            my $in_cardtype = $cardtype_of{$subtype}
-              or die "unknown card type $subtype";
-            $payby_search .= " AND $table.paycardtype IN($in_cardtype)";
+            #avoid posix regexes for portability
+            $alt_search =
+              # Visa
+              " ( (     substring($table.payinfo from 1 for 1) = '4'     ".
+              #   is not Switch
+              "     AND substring($table.payinfo from 1 for 4) != '4936' ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT $similar_to '49030[2-9]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT $similar_to '49033[5-9]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT $similar_to '49110[1-2]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT $similar_to '49117[4-9]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT $similar_to '49118[1-2]'                        ".
+              "   )".
+              # MasterCard
+              "   OR substring($table.payinfo from 1 for 2) = '51' ".
+              "   OR substring($table.payinfo from 1 for 2) = '52' ".
+              "   OR substring($table.payinfo from 1 for 2) = '53' ".
+              "   OR substring($table.payinfo from 1 for 2) = '54' ".
+              "   OR substring($table.payinfo from 1 for 2) = '54' ".
+              "   OR substring($table.payinfo from 1 for 2) = '55' ".
+              "   OR substring($table.payinfo from 1 for 4) $similar_to '222[1-9]' ".
+              "   OR substring($table.payinfo from 1 for 3) $similar_to '22[3-9]' ".
+              "   OR substring($table.payinfo from 1 for 2) $similar_to '2[3-6]' ".
+              "   OR substring($table.payinfo from 1 for 3) $similar_to '27[0-1]' ".
+              "   OR substring($table.payinfo from 1 for 4) = '2720' ".
+              "   OR substring($table.payinfo from 1 for 3) = '2[2-7]x' ".
+              " ) ";
 
+          } elsif ( $subtype eq 'Amex' ) {
+
+            $alt_search =
+              " (    substring($table.payinfo from 1 for 2 ) = '34' ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '37' ".
+              " ) ";
+
+          } elsif ( $subtype eq 'Discover' ) {
+
+            my $country = $conf->config('countrydefault') || 'US';
+
+            $alt_search =
+              " (    substring($table.payinfo from 1 for 4 ) = '6011'  ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '60x'   ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '65'    ".
+
+              # diner's 300-305 / 3095
+              "   OR substring($table.payinfo from 1 for 3 ) = '300'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '301'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '302'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '303'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '304'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '305'   ".
+              "   OR substring($table.payinfo from 1 for 4 ) = '3095'  ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '30x'   ".
+
+              # diner's 36, 38, 39
+              "   OR substring($table.payinfo from 1 for 2 ) = '36'    ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '38'    ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '39'    ".
+
+              "   OR substring($table.payinfo from 1 for 3 ) = '644'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '645'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '646'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '647'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '648'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '649'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '64x'   ".
+
+              # JCB cards in the 3528-3589 range identified as Discover inside US & territories (NOT Canada)
+              ( $country =~ /^(US|PR|VI|MP|PW|GU)$/
+               ?" OR substring($table.payinfo from 1 for 4 ) = '3528'  ".
+                " OR substring($table.payinfo from 1 for 4 ) = '3529'  ".
+                " OR substring($table.payinfo from 1 for 3 ) = '353'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '354'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '355'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '356'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '357'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '358'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '35x'   "
+               :""
+              ).
+
+              #China Union Pay processed as Discover in US, Mexico and Caribbean
+              ( $country =~ /^(US|MX|AI|AG|AW|BS|BB|BM|BQ|VG|KY|CW|DM|DO|GD|GP|JM|MQ|MS|BL|KN|LC|VC|MF|SX|TT|TC)$/
+               ?" OR substring($table.payinfo from 1 for 3 ) $similar_to '62[24-68x]'   "
+               :""
+              ).
+
+              " ) ";
+
+          } elsif ( $subtype eq 'Maestro' ) {
+
+            $alt_search =
+              " (    substring($table.payinfo from 1 for 2 ) = '63'     ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '67'     ".
+              "   OR substring($table.payinfo from 1 for 6 ) = '564182' ".
+              "   OR substring($table.payinfo from 1 for 4 ) = '4936'   ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      $similar_to '49030[2-9]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      $similar_to '49033[5-9]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      $similar_to '49110[1-2]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      $similar_to '49117[4-9]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      $similar_to '49118[1-2]'                             ".
+              " ) ";
+
+          } elsif ( $subtype eq 'Tokenized' ) {
+
+              $alt_search = " substring($table.payinfo from 1 for 2 ) = '99' ";
+
+          } else { # shouldn't happen if there's a $subtype
+
+            $alt_search = 'TRUE';
+ 
           }
 
-        }
+          # alt_search is already paren'd if it contains OR.
+          # now make sure it works if they're encrypted.
+          my $masksearch = $alt_search;
+          $masksearch =~ s/$table.payinfo/$table.paymask/g;
+          $alt_search = "( ($table.paymask IS NOT NULL AND $masksearch)
+                          OR $alt_search )";
+
+          # close paren here
+          $payby_search .= " OR ( $table.paycardtype IS NULL AND $alt_search ) )";
+
+        } # if $subtype
 
         push @all_payby_search, $payby_search;
 
@@ -498,8 +644,6 @@ if ( $cgi->param('magic') ) {
     'order_by'  => "ORDER BY $orderby",
     'addl_from' => $addl_from,
   };
-
-warn Dumper \$sql_query;
 
 } else {
 
