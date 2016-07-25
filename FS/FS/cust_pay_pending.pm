@@ -451,6 +451,26 @@ sub decline {
   $self->replace;
 }
 
+=item reverse [ STATUSTEXT ]
+
+Sets the status of this pending payment to "done" (with statustext
+"reversed (manual)" unless otherwise specified).
+
+Currently only used when resolving pending payments manually.
+
+=cut
+
+# almost complete false laziness with decline,
+# but want to avoid confusion, in case any additional steps/defaults are ever added to either
+sub reverse {
+  my $self = shift;
+  my $statustext = shift || "reversed (manual)";
+
+  $self->status('done');
+  $self->statustext($statustext);
+  $self->replace;
+}
+
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.

@@ -1962,6 +1962,7 @@ sub realtime_verify_bop {
     if ( $reverse->is_success ) {
 
       $cust_pay_pending->status('done');
+      $cust_pay_pending->statustext('reversed');
       my $cpp_authorized_err = $cust_pay_pending->replace;
       return $cpp_authorized_err if $cpp_authorized_err;
 
