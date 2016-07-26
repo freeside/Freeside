@@ -81,15 +81,15 @@ a:visited {text-decoration: none}
   <TD>Level
     <& /elements/select.html,
       field => 'min_level',
-      options => [ 0..7 ],
-      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+      options => [ 0..4 ],
+      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..4 },
       curr_value => $cgi->param('min_level'),
     &>
      to
     <& /elements/select.html,
       field => 'max_level',
-      options => [ 0..7 ],
-      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+      options => [ 0..4 ],
+      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..4 },
       curr_value => $cgi->param('max_level'),
     &>
   </TD>
@@ -192,14 +192,11 @@ my $object_link_sub = sub {
 };
 
 my @colors = (
-  '404040', #debug
-  '0000aa', #info
-  '00aa00', #notice
-  'aa0066', #warning
-  '000000', #error
-  'aa0000', #critical
-  'ff0000', #alert
-  'ff0000', #emergency
+  '404040', #debug, gray
+  '000000', #info, black
+  '0000aa', #warning, blue
+  'aa0066', #error, purple
+  'ff0000', #critical, red
 );
 
 my $color_sub = sub { $colors[ $_[0]->level ]; };

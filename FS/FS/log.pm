@@ -6,6 +6,7 @@ use FS::Record qw( qsearch qsearchs dbdef );
 use FS::UID qw( dbh driver_name );
 use FS::log_context;
 use FS::log_email;
+use FS::upgrade_journal;
 
 =head1 NAME
 
@@ -381,6 +382,52 @@ sub search {
     'order_by'      => 'ORDER BY _date ASC',
     #addl_from, not needed
   };
+}
+
+sub _upgrade_data {
+  my ($class, %opts) = @_;
+
+  return if FS::upgrade_journal->is_done('log__remap_levels');
+
+  tie my %levelmap, 'Tie::IxHash', 
+#    0 => 0, #debug
+#    1 => 1, #info
+    2 => 1, #notice -> info
+    3 => 2, #warning
+    4 => 3, #error
+    5 => 4, #critical
+    6 => 4, #alert -> critical
+    7 => 4, #emergency -> critical
+  ;
+
+  # this method should never autocommit
+  # should have been set in upgrade, but just in case...
+  local $FS::UID::AutoCommit = 0;
+
+  # FS::log has no replace method
+  # in practice, only debug/info/warning/error were used,
+  #   so this should only hit warning/error
+  foreach my $old (keys %levelmap) {
+    my $sql = 'UPDATE log SET level=' . dbh->quote($levelmap{$old}) . ' WHERE level=' . dbh->quote($old);
+    warn $sql unless $opts{'quiet'};
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute() or die $sth->errstr;
+    $sth->finish();
+  }
+
+  foreach my $log_email (
+    qsearch('log_email',{ 'min_level' => { 'op' => '>=', 'value' => '2' } })
+  ) {
+    $log_email->min_level($levelmap{$log_email->min_level});
+    my $error = $log_email->replace;
+    if ($error) {
+      dbh->rollback;
+      die $error;
+    }
+  }
+
+  FS::upgrade_journal->set_done('log__remap_levels');
+
 }
 
 =back
