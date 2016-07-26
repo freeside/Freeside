@@ -1,0 +1,71 @@
+<& /elements/header-popup.html, mt($title) &>
+
+<FORM ACTION="sqlradius_usage.html" METHOD="GET" TARGET="_top">
+
+<& /elements/hidden.html,
+  'field' => 'custnum',
+  'value' => $custnum,
+&>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+% if ( scalar(@exports) == 1 ) {
+<tr><td>
+<& /elements/hidden.html,
+  'field'         => 'exportnum',
+  'value'         => $exports[0]->exportnum,
+&>
+</td></tr>
+% } else {
+<& /elements/tr-select-table.html,
+  'label'         => 'Export', # kind of non-indicative...
+  'table'         => 'part_export',
+  'name_col'      => 'label',
+  'value_col'     => 'exportnum',
+  'records'       => \@exports,
+  'disable_empty' => 1,
+&>
+% }
+<& /elements/tr-input-beginning_ending.html &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Usage: RADIUS sessions');
+  # yes?
+
+my $title = 'Data Usage Report';
+my $custnum;
+if ($cgi->keywords) {
+  ($custnum) = $cgi->keywords;
+} else {
+  $custnum = $cgi->param('custnum');
+}
+$custnum =~ /^(\d+)$/
+  or die "illegal custnum $custnum";
+my $cust_main = qsearchs( {
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+# get all exports that apply to this customer's services--should be fast, as
+# everything here is indexed
+my @exports = qsearch({
+  'table'     => 'part_export',
+  'select'    => 'DISTINCT part_export.*',
+  'addl_from' => ' JOIN export_svc USING (exportnum)
+                   JOIN cust_svc USING (svcpart)
+                   JOIN cust_pkg USING (pkgnum) ',
+  'extra_sql' => ' WHERE cust_pkg.custnum = '.$custnum,
+});
+@exports = grep { $_->can('usage_sessions') } @exports;
+
+</%init>
