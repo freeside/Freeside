@@ -15,7 +15,7 @@ Requires 'Apply payment' acl.
 <P STYLE="font-weight: bold;"><% emt($message) %></P>
 <P><% emt('Please wait while the page reloads.') %></P>
 <SCRIPT TYPE="text/javascript">
-window.top.location.reload();
+topreload();
 </SCRIPT>
 
 % }

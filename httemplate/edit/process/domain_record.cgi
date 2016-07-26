@@ -3,7 +3,7 @@
 %} elsif ( $recnum ) { #editing
 <% header('Nameservice record changed') %>
   <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
+    topreload();
   </SCRIPT>
   </BODY></HTML>
 %} else { #adding

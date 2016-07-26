@@ -14,7 +14,7 @@ die "access denied"
 my $action = $1;
 my $header = '';
 my $popup = '';
-my $js = 'window.top.location.reload();';
+my $js = 'topreload();';
 
 $cgi->param('ordernum') =~ /^(\d+)$/ or die 'illegal ordernum';
 my $ordernum = $1;

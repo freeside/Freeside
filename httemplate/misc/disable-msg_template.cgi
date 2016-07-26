@@ -3,7 +3,7 @@
 % } else {
 <& /elements/header-popup.html, "Template ${actioned}" &>
   <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
+    topreload();
   </SCRIPT>
 </BODY>
 </HTML>
