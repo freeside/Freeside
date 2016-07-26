@@ -167,6 +167,17 @@ if ( el ) el.scrollIntoView(true);
         <A HREF="<%$p%>search/report_svc_acct.html?custnum=<% $cust_main->custnum %>"><% mt('accounts') |h %></A><BR>
       <% mt('Usage reports:') |h %> 
         <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>"><% mt('CDRs') |h %></A>
+%      if ( $curuser->access_right('Usage: RADIUS sessions') ) {
+       |
+     <& /elements/popup_link-cust_main.html,
+                 'label'       => emt('Data usage'),
+                 'action'      => "${p}search/report_sqlradius_usage-custnum.html",
+                 'cust_main'   => $cust_main,
+                 'actionlabel' => emt('Data usage report'),
+                 'width'       => 480,
+                 'height'      => 245,
+     &>
+%      }
     </TD>
 
 %   } # unless $opt{no_links}
