@@ -1488,8 +1488,12 @@ sub search {
   }
 
   #svcnum
-  if ( $params->{'svcnum'} =~ /^(\d+)$/ ) {
-    push @where, "svcnum = $1";
+  if ( $params->{'svcnum'} ) {
+    my @svcnum = ref( $params->{'svcnum'} )
+                 ? @{ $params->{'svcnum'} }
+                 : $params->{'svcnum'};
+    @svcnum = grep /^\d+$/, @svcnum;
+    push @where, 'svcnum IN ('. join(',', @svcnum) . ')' if @svcnum;
   }
 
   # svcpart
