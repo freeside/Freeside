@@ -338,7 +338,7 @@ sub upgrade_taxable_billpkgnum {
         } #for $i
       } else {
         # the more complicated case
-        $log->warn("mismatched charges and tax links in pkg#$pkgnum",
+        $log->warning("mismatched charges and tax links in pkg#$pkgnum",
           object => $cust_bill);
         my $tax_amount = sum(map {$_->amount} @tax_links);
         # remove all tax link records and recreate them to be 1:1 with 
