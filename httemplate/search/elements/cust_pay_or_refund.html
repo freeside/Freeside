@@ -226,7 +226,7 @@ push @links, '';
 push @fields, sub { time2str('%b %d %Y', shift->_date ) };
 push @sort_fields, '_date';
 
-if ($opt{'show_order_number'}) {
+if ($cgi->param('show_order_number')) {
   push @header, emt('Order Number');
   $align .= 'r';
   push @links, '';
