@@ -391,8 +391,17 @@ my @menu = (
       url   => "search/report_svc_acct.html?custnum=$custnum",
     },
     {
+      label => 'View data usage',
+      popup => "search/report_sqlradius_usage-custnum.html?$custnum",
+      acl   => 'Usage: RADIUS sessions',
+      actionlabel => 'Data usage report',
+      width   => 480,
+      height  => 245,
+    },
+    {
       label => 'View CDRs',
       url   => "search/report_cdr.html?custnum=$custnum",
+      # XXX should have a condition that the customer has any CDR packages
     },
   ],
   [
