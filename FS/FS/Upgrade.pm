@@ -335,6 +335,9 @@ sub upgrade_data {
     #fix whitespace - before cust_main
     'cust_location' => [],
 
+    #remap log levels
+    'log' => [],
+
     #cust_main (tokenizes cards, remove paycvv from history, locations, cust_payby, etc)
     # (handles payinfo encryption/tokenization across all relevant tables)
     'cust_main' => [],
