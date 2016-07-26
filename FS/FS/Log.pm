@@ -5,13 +5,20 @@ use FS::Record qw(qsearch qsearchs);
 use FS::Conf;
 use FS::Log::Output;
 use FS::log;
-use vars qw(@STACK @LEVELS);
+use vars qw(@STACK %LEVELS);
 
 # override the stringification of @_ with something more sensible.
 BEGIN {
-  @LEVELS = qw(debug info notice warning error critical alert emergency);
+  # subset of Log::Dispatch levels
+  %LEVELS = (
+    0 => 'debug',
+    1 => 'info',
+    3 => 'warning',
+    4 => 'error',
+    5 => 'critical'
+  );
 
-  foreach my $l (@LEVELS) {
+  foreach my $l (values %LEVELS) {
     my $sub = sub {
       my $self = shift;
       $self->log( level => $l, message => @_ );
@@ -98,6 +105,26 @@ Like L<Log::Dispatch::log>, but OPTIONS may include:
 sub DESTROY {
   my $self = shift;
   splice(@STACK, $self->{'index'}, 1); # delete the stack entry
+}
+
+=item levelnums
+
+Subroutine.  Returns ordered list of level nums.
+
+=cut
+
+sub levelnums {
+  sort keys %LEVELS;
+}
+
+=item levelmap
+
+Subroutine.  Returns ordered map of level num => level name.
+
+=cut
+
+sub levelmap {
+  map { $_ => $LEVELS{$_} } levelnums;
 }
 
 1;

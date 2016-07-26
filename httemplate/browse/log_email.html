@@ -21,7 +21,7 @@
                       ],
      'fields'      => [ 'logemailnum',
                         sub { $_[0]->context || '(all)' },
-                        sub { $FS::Log::LEVELS[$_[0]->min_level] },
+                        sub { $FS::Log::LEVELS{$_[0]->min_level} },
                         'msgname',
                         'to_addr',
                         $actions,

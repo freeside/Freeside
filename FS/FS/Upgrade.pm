@@ -352,6 +352,9 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
+    #remap log levels
+	'log' => [],
+
     #payby conditions to new ones
     'part_event_condition' => [],
 
