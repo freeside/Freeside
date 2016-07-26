@@ -9,7 +9,7 @@ use vars qw(@STACK @LEVELS);
 
 # override the stringification of @_ with something more sensible.
 BEGIN {
-  @LEVELS = qw(debug info notice warning error critical alert emergency);
+  @LEVELS = qw(debug info warning error critical);
 
   foreach my $l (@LEVELS) {
     my $sub = sub {
