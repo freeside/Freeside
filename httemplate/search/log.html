@@ -81,15 +81,15 @@ a:visited {text-decoration: none}
   <TD>Level
     <& /elements/select.html,
       field => 'min_level',
-      options => [ 0..7 ],
-      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+      options => [ &FS::Log::levelnums ],
+      labels => { &FS::Log::levelmap },
       curr_value => $cgi->param('min_level'),
     &>
      to
     <& /elements/select.html,
       field => 'max_level',
-      options => [ 0..7 ],
-      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+      options => [ &FS::Log::levelnums ],
+      labels => { &FS::Log::levelmap },
       curr_value => $cgi->param('max_level'),
     &>
   </TD>
@@ -128,7 +128,7 @@ a:visited {text-decoration: none}
 <%once>
 my $date_sub = sub { time2str('%Y-%m-%d %T', $_[0]->_date) };
 
-my $level_sub = sub { $FS::Log::LEVELS[$_[0]->level] };
+my $level_sub = sub { $FS::Log::LEVELS{$_[0]->level} };
 
 my $context_sub = sub {
   my $log = shift;
@@ -191,18 +191,15 @@ my $object_link_sub = sub {
   }
 };
 
-my @colors = (
-  '404040', #debug
-  '0000aa', #info
-  '00aa00', #notice
-  'aa0066', #warning
-  '000000', #error
-  'aa0000', #critical
-  'ff0000', #alert
-  'ff0000', #emergency
+my %colors = (
+  0 => '404040', #debug, gray
+  1 => '000000', #info, black
+  3 => '0000aa', #warning, blue
+  4 => 'aa0066', #error, purple
+  5 => 'ff0000', #critical, red
 );
 
-my $color_sub = sub { $colors[ $_[0]->level ]; };
+my $color_sub = sub { $colors{ $_[0]->level }; };
 
 my @contexts = ('', sort FS::log_context->contexts);
 </%once>
@@ -212,10 +209,10 @@ die "access denied"
   unless $curuser->access_right([ 'View system logs', 'Configuration' ]);
 
 my @menubar = ();
-push @menubar, qq(<A HREF="${fsurl}browse/log_email.html" STYLE="text-decoration: underline;">Configure conditions for sending email when logging</A>),
+push @menubar, qq(<A HREF="${fsurl}browse/log_email.html" STYLE="text-decoration: underline;">Configure conditions for sending email when logging</A>);
 
 $cgi->param('min_level', 0) unless defined($cgi->param('min_level'));
-$cgi->param('max_level', 7) unless defined($cgi->param('max_level'));
+$cgi->param('max_level', 5) unless defined($cgi->param('max_level'));
 
 my %search = ();
 $search{'date'} = [ FS::UI::Web::parse_beginning_ending($cgi) ];

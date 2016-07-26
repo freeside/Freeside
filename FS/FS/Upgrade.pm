@@ -352,6 +352,9 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
+    #remap log levels
+	'log' => [],
+
     #cust_main (remove paycvv from history, locations, cust_payby, etc)
     'cust_main' => [],
 

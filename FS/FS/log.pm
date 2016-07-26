@@ -6,6 +6,8 @@ use FS::Record qw( qsearch qsearchs dbdef );
 use FS::UID qw( dbh driver_name );
 use FS::log_context;
 use FS::log_email;
+use FS::upgrade_journal;
+use Tie::IxHash;
 
 =head1 NAME
 
@@ -115,7 +117,7 @@ sub insert {
       'msgtype'       => 'admin',
       'to'            => $log_email->to_addr,
       'substitutions' => {
-        'loglevel'   => $FS::Log::LEVELS[$self->level], # which has hopefully been loaded...
+        'loglevel'   => $FS::Log::LEVELS{$self->level}, # which has hopefully been loaded...
         'logcontext' => $log_email->context, # use the one that triggered the email
         'logmessage' => $self->message,
       },
@@ -381,6 +383,49 @@ sub search {
     'order_by'      => 'ORDER BY _date ASC',
     #addl_from, not needed
   };
+}
+
+sub _upgrade_data {
+  my ($class, %opts) = @_;
+
+  return if FS::upgrade_journal->is_done('log__remap_levels');
+
+  tie my %levelmap, 'Tie::IxHash', 
+    2 => 1, #notice -> info
+    6 => 5, #alert -> critical
+    7 => 5, #emergency -> critical
+  ;
+
+  # this method should never autocommit
+  # should have been set in upgrade, but just in case...
+  local $FS::UID::AutoCommit = 0;
+
+  # in practice, only debug/info/warning/error appear to have been used,
+  #   so this probably won't do anything, but just in case
+  foreach my $old (keys %levelmap) {
+    # FS::log has no replace method
+    my $sql = 'UPDATE log SET level=' . dbh->quote($levelmap{$old}) . ' WHERE level=' . dbh->quote($old);
+    warn $sql unless $opts{'quiet'};
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute() or die $sth->errstr;
+    $sth->finish();
+  }
+
+  foreach my $log_email (
+    qsearch('log_email',{ 'min_level' => 2 }),
+    qsearch('log_email',{ 'min_level' => 6 }),
+    qsearch('log_email',{ 'min_level' => 7 }),
+  ) {
+    $log_email->min_level($levelmap{$log_email->min_level});
+    my $error = $log_email->replace;
+    if ($error) {
+      dbh->rollback;
+      die $error;
+    }
+  }
+
+  FS::upgrade_journal->set_done('log__remap_levels');
+
 }
 
 =back
