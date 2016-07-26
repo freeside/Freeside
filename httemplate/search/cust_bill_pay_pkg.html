@@ -14,7 +14,7 @@
 
                    #payment
                    'Date',
-                   'Order Number',
+                   @on_header,
                    'By',
 
                    #application
@@ -44,7 +44,7 @@
                            ? cardtype($cust_pay->paymask) : '';
                        },
                    sub { time2str('%b %d %Y', shift->get('cust_pay_date') ) },
-                   sub { shift->cust_bill_pay->cust_pay->order_number },
+                   @on_field,
                    sub { shift->cust_bill_pay->cust_pay->otaker },
 
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
@@ -66,7 +66,7 @@
                    '', #payinfo/paymask
                    '', #cardtype
                    'cust_pay_date',
-                   '', #order_number
+                   @on_null, #order_number
                    '', #'otaker',
                    '', #amount
                    '', #line item description
@@ -83,7 +83,7 @@
                    '',
                    '',
                    '',
-                   '',
+                   @on_null,
                    '',
                    '',
                    '',
@@ -96,10 +96,9 @@
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rcrlrrlrlll',
-#original value before cardtype & package were added
-#why are there 13 cols?
-#'rcrrlrlllrrcl'.
+               'align' => 'rcrlr'.
+                          $on_align.
+                          'lrlll'.
                           $post_desc_align.
                           'rr'.
                           FS::UI::Web::cust_aligns(),
@@ -109,7 +108,7 @@
                               '',
                               '',
                               '',
-                              '',
+                              @on_null,
                               '',
                               '',
                               '',
@@ -126,7 +125,7 @@
                               '',
                               '',
                               '',
-                              '',
+                              @on_null,
                               '',
                               '',
                               '',
@@ -147,6 +146,17 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my @on_header = ();
+my @on_field  = ();
+my @on_null   = ();
+my $on_align  = '';
+if ($cgi->param('show_order_number')) {
+  @on_header = ('Order Number');
+  @on_field = (sub { shift->cust_bill_pay->cust_pay->order_number });
+  @on_null  = ('');
+  $on_align = 'r';
+}
 
 my $conf = new FS::Conf;
 
