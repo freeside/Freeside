@@ -129,6 +129,7 @@ sub ss2clientapi {
   'list_invoices'             => 'MyAccount/list_invoices', #?
   'list_payby'                => 'MyAccount/list_payby',
   'insert_payby'              => 'MyAccount/insert_payby',
+  'update_payby'              => 'MyAccount/update_payby',
   'delete_payby'              => 'MyAccount/delete_payby',
   'cancel'                    => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'              => 'MyAccount/payment_info',
