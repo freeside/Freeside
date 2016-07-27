@@ -104,6 +104,14 @@
       <TR>
         <TD COLSPAN=<%$opt{colspan}%>>
           <FONT SIZE=-1>
+%           if ( !$cust_pkg->change_to_pkgnum # because on a technical level, change won't propagate,
+%                                             # and there's not really a use case worth making that work
+%                 and $part_pkg->freq # technically possible to have contract_end w/o freq, but nonsensical
+%                 and $curuser->access_right('Change package contract end date')
+%           ) {
+                (&nbsp;<% pkg_change_contract_end_link($cust_pkg) %>&nbsp;)
+                <BR>
+%           }
 %           if ( $cust_pkg->change_to_pkgnum ) {
 %               # then you can modify the package change
 %               if ( $curuser->access_right('Change customer package') ) {
@@ -188,21 +196,6 @@
           <% pkg_status_row_if($cust_pkg, emt('Start billing'), 'start_date', %opt) %>
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
-%         if ( !$opt{no_links}
-%               and !$change_from
-%               and !$supplemental # can be changed from its main package
-%               and $curuser->access_right('Change package start date') )
-%         {
-
-        <TR>
-          <TD COLSPAN=<%$opt{colspan}%>>
-            <FONT SIZE=-1>
-            (&nbsp;<% pkg_change_start_link($cust_pkg) %>&nbsp;)
-            </FONT>
-          </TD>
-        </TR>
-%         }
-          
 %       } 
 %
 %     } else { #setup
@@ -286,6 +279,28 @@
         <TR>
           <TD COLSPAN=<%$opt{colspan}%>>
             <FONT SIZE=-1>
+
+% #change date links
+%           if ( !$change_from and !$supplemental ) {
+%             my $has_date_links = 0;
+%             if ( !$cust_pkg->get('setup')
+%                   and $curuser->access_right('Change package start date')
+%             ) {
+            (&nbsp;<% pkg_change_start_link($cust_pkg) %>&nbsp;)
+%               $has_date_links = 1;
+%             }
+%             if ( !$cust_pkg->change_to_pkgnum # because on a technical level, change won't propagate,
+%                                               # and there's not really a use case worth making that work
+%                   and $curuser->access_right('Change package contract end date')
+%             ) {
+            (&nbsp;<% pkg_change_contract_end_link($cust_pkg) %>&nbsp;)
+%               $has_date_links = 1;
+%             }
+%             if ($has_date_links) {
+            <BR>
+%             }
+%           }
+
 % # action links
 %           if ( $change_from ) {
 %               # nothing
@@ -745,9 +760,21 @@ sub pkg_change_later_link {
 sub pkg_change_start_link {
   my $cust_pkg = shift;
   include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p . 'misc/change_pkg_start.html?',
+    'action'      => $p . 'misc/change_pkg_date.html?field=start_date',
     'label'       => emt('Set start date'),
     'actionlabel' => emt('Set start of billing for'),
+    'cust_pkg'    => $cust_pkg,
+    'width'       => 510,
+    'height'      => 310,
+  )
+}
+
+sub pkg_change_contract_end_link {
+  my $cust_pkg = shift;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p . 'misc/change_pkg_date.html?field=contract_end',
+    'label'       => emt('Set contract end'),
+    'actionlabel' => emt('Set contract end for'),
     'cust_pkg'    => $cust_pkg,
     'width'       => 510,
     'height'      => 310,

@@ -255,7 +255,9 @@ sub _upgrade_data { # class method
     'Unvoid credit' => 'Unvoid credit',
     'Add on-the-fly void credit reason' => 'Add on-the-fly void credit reason',
     '_ALL' => 'Employee preference telephony integration',
-    'Edit customer package dates' => 'Change package start date', #4.x
+    'Edit customer package dates' => [ 'Change package start date', #4.x
+                                       'Change package contract end date',
+                                     ],
     'Resend invoices' => 'Print and mail invoices',
   );
 

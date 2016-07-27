@@ -6,9 +6,21 @@
 </HTML>
 <%init>
 
+my $field = $cgi->param('field');
+
+my ($acl, $isstart);
+if ($field eq 'start_date') {
+  $acl = 'Change package start date';
+  $isstart = 1;
+} elsif ($field eq 'contract_end') {
+  $acl = 'Change package contract end date';
+} else {
+  die "Unknown date field";
+}
+
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $curuser->access_right('Change package start date');
+  unless $curuser->access_right($acl);
 
 $cgi->param('pkgnum') =~ /^(\d+)$/
   or die "illegal pkgnum";
@@ -24,23 +36,24 @@ my $cust_pkg = qsearchs({
 my $cust_main = $cust_pkg->cust_main;
 
 my $error;
-my $start_date;
+my $date_value;
 if ( $cgi->param('when') eq 'now' ) {
-  # start it the next time billing runs
-  $start_date = '';
+  # blank start means start it the next time billing runs
+  $date_value = $isstart ? '' : time;
 } elsif ( $cgi->param('when') eq 'next_bill_date' ) {
-  $start_date = $cust_main->next_bill_date;
+  $date_value = $cust_main->next_bill_date;
 } elsif ( $cgi->param('when') eq 'date' ) {
-  $start_date = parse_datetime($cgi->param('start_date'));
+  $date_value = parse_datetime($cgi->param('date_value'));
 }
 
-if ( $cust_pkg->setup ) {
+if ( $isstart && $cust_pkg->setup ) {
   # shouldn't happen
   $error = 'This package has already started billing.';
 } else {
   local $FS::UID::AutoCommit = 0;
   foreach my $pkg ($cust_pkg, $cust_pkg->supplemental_pkgs) {
-    $pkg->set('start_date', $start_date);
+    last if $error;
+    $pkg->set($field, $date_value);
     $error ||= $pkg->replace;
   }
   $error ? dbh->rollback : dbh->commit;
@@ -48,6 +61,6 @@ if ( $cust_pkg->setup ) {
 
 if ( $error ) {
   $cgi->param('error', $error);
-  print $cgi->redirect($fsurl.'misc/change_pkg_start.html?', $cgi->query_string);
+  print $cgi->redirect($fsurl.'misc/change_pkg_date.html?', $cgi->query_string);
 }
 </%init>
