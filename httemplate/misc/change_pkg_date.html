@@ -17,7 +17,7 @@
     value => 'now',
     curr_value => $when,
   &>
-  <label for="when_now"><% emt('Now') %></label>
+  <label for="when_now"><% emt($isstart ? 'Now' : 'Never') %></label>
 </LI>
 % if ( $next_bill_date ) {
 <LI>
