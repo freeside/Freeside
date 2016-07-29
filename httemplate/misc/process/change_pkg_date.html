@@ -38,8 +38,9 @@ my $cust_main = $cust_pkg->cust_main;
 my $error;
 my $date_value;
 if ( $cgi->param('when') eq 'now' ) {
-  # blank start means start it the next time billing runs
-  $date_value = $isstart ? '' : time;
+  # blank start means start it the next time billing runs ("Now")
+  # blank contract end means it never ends ("Never")
+  $date_value = '';
 } elsif ( $cgi->param('when') eq 'next_bill_date' ) {
   $date_value = $cust_main->next_bill_date;
 } elsif ( $cgi->param('when') eq 'date' ) {
