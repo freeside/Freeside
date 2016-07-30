@@ -39,6 +39,7 @@
                      @svc_fields,
                      @svc_usage,
                    ],
+  'order_by_sql' => $order_by_sql,
   'links'       => [ #( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                      #  FS::UI::Web::cust_header() ),
                      $link_cust,
@@ -255,5 +256,25 @@ my @footer = (
 sub bytes_to_gb {
   $_[0] ?  sprintf('%.3f', $_[0] / (1024*1024*1024.0)) : '';
 }
+
+
+my $conf = new FS::Conf;
+my $order_by_sql = {
+  'name'            => "CASE WHEN cust_main.company IS NOT NULL
+                                  AND cust_main.company != ''
+                             THEN CONCAT(cust_main.company,' (',cust_main.last,', ',cust_main.first,')')
+                             ELSE CONCAT(cust_main.last,', ',cust_main.first)
+                        END",
+  'display_custnum' => $conf->exists('cust_main-default_agent_custid')
+                       ? "CASE WHEN cust_main.agent_custid IS NOT NULL
+                                    AND cust_main.agent_custid != ''
+                                    AND cust_main.agent_custid ". regexp_sql. " '^[0-9]+\$'
+                               THEN CAST(cust_main.agent_custid AS BIGINT)
+                               ELSE cust_main.custnum
+                          END"
+                       : "custnum",
+};
+
+#warn Dumper \%usage_by_username;
 
 </%init>
