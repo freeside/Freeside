@@ -1,0 +1,36 @@
+<& elements/process.html,
+  'table'       => 'commission_schedule',
+  'viewall_dir' => 'browse',
+  'process_o2m' => {
+   'table'  => 'commission_rate',
+   'fields' => [qw( cycle amount percent )],
+  },
+  'precheck_callback' => $precheck,
+  'debug' => 1,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $precheck = sub {
+  my $cgi = shift;
+  $cgi->param('reasonnum') =~ /^(-?\d+)$/ or die "Illegal reasonnum";
+
+  my ($reasonnum, $error) = $m->comp('/misc/process/elements/reason');
+  if (!$reasonnum) {
+    $error ||= 'Reason required'
+  }
+  $cgi->param('reasonnum', $reasonnum) unless $error;
+
+  # remove rate entries with no cycle selected
+  foreach my $k (grep /^commissionratenum\d+$/, $cgi->param) {
+    if (! $cgi->param($k.'_cycle') ) {
+      $cgi->delete($k);
+    }
+  }
+
+  $error;
+};
+
+</%init>

@@ -1,0 +1,70 @@
+<& elements/browse.html,
+  'title'       => "Commission schedules",
+  'name'        => "commission schedules",
+  'menubar'     => [ 'Add a new schedule' =>
+                        $p.'edit/commission_schedule.html'
+                   ],
+  'query'       => { 'table'     => 'commission_schedule', },
+  'count_query' => 'SELECT COUNT(*) FROM commission_schedule',
+  'header'      => [ '#',
+                     'Name',
+                     'Rates',
+                   ],
+  'fields'      => [ 'schedulenum',
+                     'schedulename',
+                     $rates_sub,
+                  ],
+  'links'       => [ $link,
+                     $link,
+                     '',
+                   ],
+  'disable_total' => 1,
+&>
+<%init>
+
+my $money_char = FS::Conf->new->config('money_char') || '$';
+
+my $ordinal_sub = sub {
+  # correct from 1 to 12...
+  my $num = shift;
+  $num == 1 ? '1st' :
+  $num == 2 ? '2nd' :
+  $num == 3 ? '3rd' :
+  $num . 'th'
+};
+
+my $rates_sub = sub {
+  my $schedule = shift;
+  my @rates = sort { $a->cycle <=> $b->cycle } $schedule->commission_rate;
+  my @data;
+  my $basis = emt(lc( $FS::commission_schedule::basis_options{$schedule->basis} ));
+  foreach my $rate (@rates) {
+    my $desc = '';
+    if ( $rate->amount > 0 ) {
+      $desc = $money_char . sprintf('%.2f', $rate->amount);
+    }
+    if ( $rate->percent > 0 ) {
+      $desc .= ' + ' if $desc;
+      $desc .= $rate->percent . '% ' . emt('of') . ' ' . $basis;
+    }
+    next if !$desc;
+    $desc = &$ordinal_sub($rate->cycle) . ' ' . emt('invoice') .
+             ':&nbsp;' . $desc;
+
+    push @data,
+    [
+      {
+        'data'  => $desc,
+        'align' => 'right',
+      }
+    ];
+  }
+  \@data;
+};
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ $p.'edit/commission_schedule.html?', 'schedulenum' ];
+
+</%init>

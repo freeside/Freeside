@@ -315,6 +315,7 @@ sub check {
     || $self->ut_foreign_keyn('commission_agentnum',  'agent', 'agentnum')
     || $self->ut_foreign_keyn('commission_salesnum',  'sales', 'salesnum')
     || $self->ut_foreign_keyn('commission_pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_foreign_keyn('commission_invnum', 'cust_bill', 'invnum')
   ;
   return $error if $error;
 

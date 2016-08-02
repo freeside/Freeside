@@ -1,0 +1,68 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+      <& select.html,
+        field         => "${name}_cycle",
+        options       => [ '', 1 .. 12 ],
+        option_labels => {
+          ''  => '',
+          1   => '1st',
+          2   => '2nd',
+          3   => '3rd',
+          map { $_ => $_.'th' } 4 .. 12
+        },
+        onchange      => $onchange,
+        curr_value    => $commission_rate->get("cycle"),
+      &>
+      <B><% $money_char %></B>
+      <& input-text.html,
+        field         => "${name}_amount",
+        size          => 8,
+        curr_value    => $commission_rate->get("amount")
+                         || '0.00',
+        'text-align'  => 'right'
+      &>
+      <B> + </B>
+      <& input-text.html,
+        field         => "${name}_percent",
+        size          => 8,
+        curr_value    => $commission_rate->get("percent")
+                         || '0',
+        'text-align'  => 'right'
+      &><B>%</B>
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $name = $opt{'field'} || 'commissionratenum';
+my $id = $opt{'id'} || 'commissionratenum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $commission_rate;
+if ( $curr_value ) {
+  $commission_rate = qsearchs('commission_rate', { 'commissionratenum' => $curr_value } );
+} else {
+  $commission_rate = new FS::commission_rate {};
+}
+
+foreach my $field (qw( amount percent cycle)) {
+  my $value = $cgi->param("${name}_${field}");
+  $commission_rate->set($field, $value) if $value;
+}
+
+</%init>

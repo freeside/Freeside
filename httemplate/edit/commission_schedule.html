@@ -1,0 +1,53 @@
+<& elements/edit.html,
+     name_singular => 'schedule',
+     table         => 'commission_schedule',
+     viewall_dir   => 'browse',
+     fields        => [ 'schedulename',
+                        { field             => 'reasonnum',
+                          type              => 'select-reason',
+                          reason_class      => 'R',
+                        },
+                        { field             => 'basis',
+                          type              => 'select',
+                          options           => [ keys %FS::commission_schedule::basis_options ],
+                          labels            => { %FS::commission_schedule::basis_options },
+                        },
+                        { type => 'tablebreak-tr-title', value => 'Billing cycles' },
+                        { field             => 'commissionratenum',
+                          type              => 'commission_rate',
+                          o2m_table         => 'commission_rate',
+                          m2_label          => ' ',
+                          m2_error_callback => $m2_error_callback,
+                          colspan => 2,
+                        },
+                      ],
+     labels        => { 'schedulenum'       => '',
+                        'schedulename'      => 'Name',
+                        'basis'             => 'Based on',
+                        'commissionratenum' => '',
+                      },
+&>
+<%init>
+
+my $m2_error_callback = sub {
+  my ($cgi, $object) = @_;
+
+  my @rates;
+  foreach my $k ( grep /^commissionratenum\d+/, $cgi->param ) {
+    my $num = $cgi->param($k);
+    my $cycle = $cgi->param($k.'_cycle');
+    my $amount = $cgi->param($k.'_amount');
+    my $percent = $cgi->param($k.'_percent');
+    if ($cycle > 0) {
+      push @rates, FS::commission_rate->new({
+        'commissionratenum' => $num,
+        'cycle'             => $cycle,
+        'amount'            => $amount,
+        'percent'           => $percent,
+      });
+    }
+  }
+  @rates;
+};
+
+</%init>

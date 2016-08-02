@@ -413,6 +413,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::olt_site;
   use FS::access_user_page_pref;
   use FS::part_svc_msgcat;
+  use FS::commission_schedule;
+  use FS::commission_rate;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
