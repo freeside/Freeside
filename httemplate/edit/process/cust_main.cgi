@@ -59,6 +59,12 @@ if ( $conf->exists('agent-ship_address', $cgi->param('agentnum')) ) {
 my %locations;
 for my $pre (qw(bill ship)) {
 
+  foreach (qw( latitude longitude)) {
+    my $coord = $cgi->param($pre.'_'.$_);
+    $coord =~ s/\N{DEGREE SIGN}\s*$//;
+    $cgi->param($pre.'_'.$_, $coord);
+  }
+
   my %hash;
   foreach ( FS::cust_main->location_fields ) {
     $hash{$_} = scalar($cgi->param($pre.'_'.$_));
