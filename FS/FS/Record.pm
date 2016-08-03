@@ -2,6 +2,7 @@ package FS::Record;
 use base qw( Exporter );
 
 use strict;
+use charnames ':full';
 use vars qw( $AUTOLOAD
              %virtual_fields_cache %fk_method_cache $fk_table_cache
              $money_char $lat_lower $lon_upper
@@ -2912,6 +2913,10 @@ sub ut_coord {
 
   my $coord = $self->getfield($field);
   my $neg = $coord =~ s/^(-)//;
+
+  # ignore degree symbol at the end,
+  #   but not otherwise supporting degree/minutes/seconds symbols
+  $coord =~ s/\N{DEGREE SIGN}\s*$//;
 
   my ($d, $m, $s) = (0, 0, 0);
 
