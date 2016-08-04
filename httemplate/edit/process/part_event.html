@@ -39,8 +39,8 @@
                                                  split(/\0/, $value)
                                            };
                                 } elsif ( $info->{'type'} eq 'freq' ) {
-                                  $value = '0' if !length($value);
-                                  $value .= $params->{$cgi_field.'_units'};
+                                  $value = '0' if !length($value) and !$info->{'allow_blank'};
+                                  $value .= $params->{$cgi_field.'_units'} if length($value);
                                 }
 
                                 #warn "value of $cgi_field is $value\n";
