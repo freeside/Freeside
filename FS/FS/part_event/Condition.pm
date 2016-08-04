@@ -312,7 +312,7 @@ sub option_age_from {
   } elsif ( $age =~ /^(\d+)d$/i ) {
     $mday -= $1;
   } elsif ( $age =~ /^(\d+)h$/i ) {
-    $hour -= $hour;
+    $hour -= $1;
   } else {
     die "unparsable age: $age";
   }
