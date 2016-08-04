@@ -15,7 +15,7 @@
                 <% $freq eq $units ? 'SELECTED' : '' %>
         ><% $freq{$freq} %>
 %     }
-    </SELECT>
+    </SELECT><% $opt{'post_text'} || '' %>
 
   </TD>
 
