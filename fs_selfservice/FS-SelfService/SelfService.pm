@@ -50,6 +50,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'list_invoices'             => 'MyAccount/list_invoices', #?
   'list_payby'                => 'MyAccount/list_payby',
   'insert_payby'              => 'MyAccount/insert_payby',
+  'update_payby'              => 'MyAccount/update_payby',
   'delete_payby'              => 'MyAccount/delete_payby', 
   'cancel'                    => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'              => 'MyAccount/payment_info',
@@ -678,6 +679,16 @@ For electronic checks, account type (i.e. "Personal Savings", "Personal Checking
 Optional IP address from which payment was submitted
 
 =back
+
+If there is an error, returns a hash reference with a single key, B<error>,
+otherwise returns a hash reference with a single key, B<custpaybynum>.
+
+=item update_payby HASHREF
+
+Updates stored payment information.  Takes a hash reference with the same
+keys as insert_payby, as well as B<custpaybynum> to specify which record
+to update.  All keys except B<session_id> and B<custpaybynum> are optional;
+if omitted, the previous values in the record will be preserved.
 
 If there is an error, returns a hash reference with a single key, B<error>,
 otherwise returns a hash reference with a single key, B<custpaybynum>.

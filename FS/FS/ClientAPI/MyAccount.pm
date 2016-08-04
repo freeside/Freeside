@@ -1627,6 +1627,34 @@ sub insert_payby {
   
 }
 
+sub update_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_payby = qsearchs('cust_payby', {
+                              'custnum'      => $custnum,
+                              'custpaybynum' => $p->{'custpaybynum'},
+                           })
+    or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  foreach my $field (
+    qw( weight payby payinfo paycvv paydate payname paystate paytype payip )
+  ) {
+    next unless exists($p->{$field});
+    $cust_payby->set($field,$p->{$field});
+  }
+
+  my $error = $cust_payby->replace;
+  if ( $error ) {
+    return { 'error' => $error };
+  } else {
+    return { 'custpaybynum' => $cust_payby->custpaybynum };
+  }
+  
+}
+
 sub verify_payby {
   my $p = shift;
 

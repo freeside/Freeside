@@ -1,4 +1,13 @@
+% if ( $error ) {
+%   $cgi->param('error', $error );
 <% $cgi->redirect($redirect) %>
+% } else {
+<% header(emt($message)) %>
+  <SCRIPT TYPE="text/javascript">
+    topreload();
+  </SCRIPT>
+  </BODY></HTML>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

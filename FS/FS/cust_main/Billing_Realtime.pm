@@ -355,6 +355,35 @@ sub _bop_content {
   \%content;
 }
 
+sub _tokenize_card {
+  my ($self,$transaction,$payinfo,$log) = @_;
+
+  if ( $transaction->can('card_token') 
+       and $transaction->card_token 
+       and $payinfo !~ /^99\d{14}$/ #not already tokenized
+  ) {
+
+    my @cust_payby = $self->cust_payby('CARD','DCRD');
+    @cust_payby = grep { $payinfo == $_->payinfo } @cust_payby;
+    if (@cust_payby > 1) {
+      $log->error('Multiple matching card numbers for cust '.$self->custnum.', could not tokenize card');
+    } elsif (@cust_payby) {
+      my $cust_payby = $cust_payby[0];
+      $cust_payby->payinfo($transaction->card_token);
+      my $error = $cust_payby->replace;
+      if ( $error ) {
+        $log->error('Error storing token for cust '.$self->custnum.', cust_payby '.$cust_payby->custpaybynum.': '.$error);
+      } else {
+        $log->debug('Tokenized card for cust '.$self->custnum.', cust_payby '.$cust_payby->custpaybynum);
+      }
+    } else {
+      $log->debug('No matching card numbers for cust '.$self->custnum.', could not tokenize card');
+    }
+
+  }
+
+}
+
 my %bop_method2payby = (
   'CC'     => 'CARD',
   'ECHECK' => 'CHEK',
@@ -369,6 +398,8 @@ sub realtime_bop {
     unless $FS::UID::AutoCommit;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+
+  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_bop');
  
   my %options = ();
   if (ref($_[0]) eq 'HASH') {
@@ -774,18 +805,7 @@ sub realtime_bop {
   # Tokenize
   ###
 
-
-  if ( $transaction->can('card_token') && $transaction->card_token ) {
-
-    if ( $options{'payinfo'} eq $self->payinfo ) {
-      $self->payinfo($transaction->card_token);
-      my $error = $self->replace;
-      if ( $error ) {
-        warn "WARNING: error storing token: $error, but proceeding anyway\n";
-      }
-    }
-
-  }
+  $self->_tokenize_card($transaction,$options{'payinfo'},$log);
 
   ###
   # result handling
@@ -1950,6 +1970,7 @@ sub realtime_verify_bop {
     if ( $reverse->is_success ) {
 
       $cust_pay_pending->status('done');
+      $cust_pay_pending->statustext('reversed');
       my $cpp_authorized_err = $cust_pay_pending->replace;
       return $cpp_authorized_err if $cpp_authorized_err;
 
@@ -2083,19 +2104,7 @@ sub realtime_verify_bop {
   # Tokenize
   ###
 
-  if ( $transaction->can('card_token') && $transaction->card_token ) {
-
-    if ( $options{'payinfo'} eq $self->payinfo ) {
-      $self->payinfo($transaction->card_token);
-      my $error = $self->replace;
-      if ( $error ) {
-        my $warning = "WARNING: error storing token: $error, but proceeding anyway\n";
-        $log->warning($warning);
-        warn $warning;
-      }
-    }
-
-  }
+  $self->_tokenize_card($transaction,$options{'payinfo'},$log);
 
   ###
   # result handling

@@ -1361,6 +1361,7 @@ sub tables_hashref {
         'commission_agentnum', 'int', 'NULL', '', '', '', #
         'commission_salesnum', 'int', 'NULL', '', '', '', #
         'commission_pkgnum',   'int', 'NULL', '', '', '', #
+        'commission_invnum',   'int', 'NULL', '', '', '',
         'credbatch',    'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'crednum',
@@ -1396,6 +1397,10 @@ sub tables_hashref {
                             table      => 'cust_pkg',
                             references => [ 'pkgnum' ],
                           },
+                          { columns    => [ 'commission_invnum' ],
+                            table      => 'cust_bill',
+                            references => [ 'invnum' ],
+                          },
                         ],
     },
 
@@ -1417,6 +1422,7 @@ sub tables_hashref {
         'commission_agentnum', 'int', 'NULL', '', '', '',
         'commission_salesnum', 'int', 'NULL', '', '', '',
         'commission_pkgnum',   'int', 'NULL', '', '', '',
+        'commission_invnum',   'int', 'NULL', '', '', '',
         #void fields
         'void_date',  @date_type,                  '', '', 
         'void_reason', 'varchar', 'NULL', $char_d, '', '', 
@@ -1455,6 +1461,10 @@ sub tables_hashref {
                           { columns    => [ 'commission_pkgnum' ],
                             table      => 'cust_pkg',
                             references => [ 'pkgnum' ],
+                          },
+                          { columns    => [ 'commission_invnum' ],
+                            table      => 'cust_bill',
+                            references => [ 'invnum' ],
                           },
                           { columns    => [ 'void_reasonnum' ],
                             table      => 'reason',
@@ -7438,6 +7448,36 @@ sub tables_hashref {
                         ],
     },
 
+    'commission_schedule' => {
+      'columns' => [
+        'schedulenum',    'serial',     '',      '', '', '',
+        'schedulename',  'varchar',     '', $char_d, '', '',
+        'reasonnum',         'int', 'NULL',      '', '', '',
+        'basis',         'varchar', 'NULL',      32, '', '',
+      ],
+      'primary_key'  => 'schedulenum',
+      'unique'       => [],
+      'index'        => [],
+    },
+
+    'commission_rate' => {
+      'columns' => [
+        'commissionratenum', 'serial',     '',      '', '', '',
+        'schedulenum',       'int',     '',      '', '', '',
+        'cycle',             'int',     '',      '', '', '',
+        'amount',            @money_type,          '', '', 
+        'percent',           'decimal','',   '7,4', '', '',
+      ],
+      'primary_key'  => 'commissionratenum',
+      'unique'       => [ [ 'schedulenum', 'cycle', ] ],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns => [ 'schedulenum' ],
+                            table   => 'commission_schedule',
+                          },
+                        ],
+    },
+ 
     # name type nullability length default local
 
     #'new_table' => {

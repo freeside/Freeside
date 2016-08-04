@@ -203,12 +203,19 @@ if ( $cgi->param('error') ) {
   my %locations;
   for my $pre (qw(bill ship)) {
     my %hash;
-    foreach ( FS::cust_main->location_fields ) {
-      $hash{$_} = scalar($cgi->param($pre.'_'.$_));
+    foreach my $locfield ( FS::cust_main->location_fields ) {
+      # don't search on lat/long, string values can cause qsearchs to die
+      next if grep {$_ eq $locfield} qw(latitude longitude);
+      $hash{$locfield} = scalar($cgi->param($pre.'_'.$locfield));
     }
     $hash{'custnum'} = $cgi->param('custnum');
     $locations{$pre} = qsearchs('cust_location', \%hash)
                        || FS::cust_location->new( \%hash );
+    # now set lat/long, for redisplay of entered values
+    foreach my $locfield ( qw(latitude longitude) ) {
+      my $locvalue = scalar($cgi->param($pre.'_'.$locfield));
+      $locations{$pre}->set($locfield,$locvalue);
+    }
   }
   if ( $same ) {
     $locations{ship} = $locations{bill};

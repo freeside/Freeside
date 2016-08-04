@@ -2,6 +2,7 @@ package FS::Record;
 use base qw( Exporter );
 
 use strict;
+use charnames ':full';
 use vars qw( $AUTOLOAD
              %virtual_fields_cache %fk_method_cache $fk_table_cache
              $money_char $lat_lower $lon_upper
@@ -2913,6 +2914,10 @@ sub ut_coord {
   my $coord = $self->getfield($field);
   my $neg = $coord =~ s/^(-)//;
 
+  # ignore degree symbol at the end,
+  #   but not otherwise supporting degree/minutes/seconds symbols
+  $coord =~ s/\N{DEGREE SIGN}\s*$//;
+
   my ($d, $m, $s) = (0, 0, 0);
 
   if (
@@ -3218,6 +3223,22 @@ sub ut_agentnum_acl {
 
   '';
 
+}
+
+=item trim_whitespace FIELD[, FIELD ... ]
+
+Strip leading and trailing spaces from the value in the named FIELD(s).
+
+=cut
+
+sub trim_whitespace {
+  my $self = shift;
+  foreach my $field (@_) {
+    my $value = $self->get($field);
+    $value =~ s/^\s+//;
+    $value =~ s/\s+$//;
+    $self->set($field, $value);
+  }
 }
 
 =item fields [ TABLE ]

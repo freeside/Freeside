@@ -41,6 +41,13 @@
      field   => 'paid',
 &>
 
+  <& /elements/tr-checkbox.html,
+                'label' => emt('Display order number'),
+                'field' => 'show_order_number',
+                'value' => 1,
+                'cell_style' => 'font-weight: normal', #for consistency
+  &>
+
 <!--
 <TR>
   <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="nottax" VALUE="Y" onClick="nottax_changed(this)" onChange="nottax_change(thid)"></TD>

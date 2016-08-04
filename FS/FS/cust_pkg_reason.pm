@@ -3,7 +3,7 @@ use base qw( FS::otaker_Mixin FS::Record );
 
 use strict;
 use vars qw( $ignore_empty_action );
-use FS::Record qw( qsearch ); #qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::upgrade_journal;
 
 $ignore_empty_action = 0;

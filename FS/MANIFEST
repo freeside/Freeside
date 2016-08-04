@@ -870,3 +870,7 @@ FS/webservice_log.pm
 t/webservice_log.t
 FS/access_user_page_pref.pm
 t/access_user_page_pref.t
+FS/commission_schedule.pm
+t/commission_schedule.t
+FS/commission_rate.pm
+t/commission_rate.t

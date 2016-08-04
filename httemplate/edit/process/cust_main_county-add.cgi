@@ -1,7 +1,7 @@
 <% include('/elements/header-popup.html', 'Addition successful' ) %>
 
 <SCRIPT TYPE="text/javascript">
-  window.top.location.reload();
+  topreload();
 </SCRIPT>
 
 </BODY>

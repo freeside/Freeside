@@ -352,6 +352,9 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
+    #remap log levels
+	'log' => [],
+
     #cust_main (remove paycvv from history, locations, cust_payby, etc)
     'cust_main' => [],
 
@@ -478,8 +481,12 @@ sub upgrade_data {
     #populate tax statuses
     'tax_status' => [],
 
-    #mark certain taxes as system-maintained
+    #mark certain taxes as system-maintained,
+    # and fix whitespace
     'cust_main_county' => [],
+
+    #fix whitespace
+    'cust_location' => [],
   ;
 
   \%hash;

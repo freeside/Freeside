@@ -188,9 +188,8 @@ my $class = $opt{'reason_class'};
 my $init_reason;
 if ( $opt{'cgi'} ) {
   $init_reason = $opt{'cgi'}->param($name);
-} else {
-  $init_reason = $opt{'curr_value'};
 }
+$init_reason ||= $opt{'curr_value'};
 
 my $id = $opt{'id'} || $name;
 $id =~ s/\./_/g; # for edit/part_event

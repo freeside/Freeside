@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+use Getopt::Long;
+
+my( $email, $password ) = @ARGV;
+die "Usage: xmlrpc-insert_payby email password
+       [-w weight -b payby -i payinfo -c paycvv -d paydate -n payname -s paystate -t paytype -p payip]\n"
+  unless $email && length($password);
+
+my %opts;
+GetOptions(
+  "by=s"     => \$opts{'payby'},
+  "cvv=s"    => \$opts{'paycvv'},
+  "date=s"   => \$opts{'paydate'},
+  "info=s"   => \$opts{'payinfo'},
+  "name=s"   => \$opts{'payname'},
+  "payip=s"  => \$opts{'payip'},
+  "state=s"  => \$opts{'paystate'},
+  "type=s"   => \$opts{'paytype'},
+  "weight=i" => \$opts{'weight'},
+);
+
+foreach my $key (keys %opts) {
+  delete($opts{$key}) unless defined($opts{$key});
+}
+
+my $uri = new URI 'http://localhost:8080/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $login_result = $server->call(
+  'FS.ClientAPI_XMLRPC.login',
+    'email'    => $email,
+    'password' => $password,
+);
+die $login_result->{'error'}."\n" if $login_result->{'error'};
+
+my $call_result = $server->call(
+  'FS.ClientAPI_XMLRPC.insert_payby',
+    'session_id'   => $login_result->{'session_id'},
+    %opts,
+);
+die $call_result->{'error'}."\n" if $call_result->{'error'};
+
+print Dumper($call_result);
+print "Successfully inserted\n";
+
+1;

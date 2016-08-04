@@ -74,6 +74,7 @@ my %cardtype_of = (
   'Amex'      => q['American Express card'],
   'Discover'  => q['Discover card'],
   'Maestro'   => q['Switch', 'Solo', 'Laser'],
+  'Tokenized' => q['Tokenized'],
 );  
 </%shared>
 <%init>
@@ -100,29 +101,30 @@ my $title = '';
 $title = 'Unapplied ' if $unapplied;
 $title .= "\u$name_singular Search Results";
 
-my $link = '';
-if (    ( $curuser->access_right('View invoices') #remove in 2.5 (2.7?)
-          || ($curuser->access_right('View payments') && $table =~ /^cust_pay/)
-          || ($curuser->access_right('View refunds') && $table eq 'cust_refund')
-        )
-     && ! $opt{'disable_link'}
-   )
-{
-
-  my $key;
-  my $q = '';
-  if ( $table eq 'cust_pay_void' ) {
-    $key = 'paynum';
-    $q .= 'void=1;';
-  } elsif ( $table eq /^cust_(\w+)$/ ) {
-    $key = $1.'num';
-  }
-  
-  if ( $key ) {
-    $q .= "$key=";
-    $link = [ "${p}view/$table.html?$q", $key ]
-  }
-}
+###NOT USED???
+#my $link = '';
+#if (    ( $curuser->access_right('View invoices') #remove in 2.5 (2.7?)
+#          || ($curuser->access_right('View payments') && $table =~ /^cust_pay/)
+#          || ($curuser->access_right('View refunds') && $table eq 'cust_refund')
+#        )
+#     && ! $opt{'disable_link'}
+#   )
+#{
+#
+#  my $key;
+#  my $q = '';
+#  if ( $table eq 'cust_pay_void' ) {
+#    $key = 'paynum';
+#    $q .= 'void=1;';
+#  } elsif ( $table eq /^cust_(\w+)$/ ) {
+#    $key = $1.'num';
+#  }
+#  
+#  if ( $key ) {
+#    $q .= "$key=";
+#    $link = [ "${p}view/$table.html?$q", $key ]
+#  }
+#}
 
 my $cust_link = sub {
   my $cust_thing = shift;
@@ -175,12 +177,18 @@ if ( $opt{'pre_header'} ) {
   push @sort_fields, @{ $opt{'pre_fields'} };
 }
 
-my $sub_receipt = sub {
+my $sub_receipt = $opt{'disable_link'} ? '' : sub {
   my $obj = shift;
   my $objnum = $obj->primary_key . '=' . $obj->get($obj->primary_key);
+  my $table = $obj->table;
+  my $void = '';
+  if ($table eq 'cust_pay_void') {
+    $table = 'cust_pay';
+    $void = ';void=1';
+  }
 
   include('/elements/popup_link_onclick.html',
-    'action'  => $p.'view/cust_pay.html?link=popup;'.$objnum,
+    'action'  => $p.'view/'.$table.'.html?link=popup;'.$objnum.$void,
     'actionlabel' => emt('Payment Receipt'),
   );
 };
@@ -218,7 +226,7 @@ push @links, '';
 push @fields, sub { time2str('%b %d %Y', shift->_date ) };
 push @sort_fields, '_date';
 
-if ($opt{'show_order_number'}) {
+if ($cgi->param('show_order_number')) {
   push @header, emt('Order Number');
   $align .= 'r';
   push @links, '';
@@ -326,18 +334,9 @@ if ( $cgi->param('magic') ) {
 
         if ( $subtype ) {
 
-          if ( $subtype eq 'Tokenized' ) {
-
-            $payby_search .= " AND substring($table.payinfo from 1 for 2 ) = '99' ";
-            # XXX should store the cardtype as 'Tokenized' in this case?
-
-          } else {
-
-            my $in_cardtype = $cardtype_of{$subtype}
-              or die "unknown card type $subtype";
-            $payby_search .= " AND $table.paycardtype IN($in_cardtype)";
-
-          }
+          my $in_cardtype = $cardtype_of{$subtype}
+            or die "unknown card type $subtype";
+          $payby_search .= " AND $table.paycardtype IN($in_cardtype)";
 
         }
 
@@ -498,8 +497,6 @@ if ( $cgi->param('magic') ) {
     'order_by'  => "ORDER BY $orderby",
     'addl_from' => $addl_from,
   };
-
-warn Dumper \$sql_query;
 
 } else {
 

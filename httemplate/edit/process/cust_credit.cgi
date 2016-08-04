@@ -16,7 +16,7 @@
 %  
 <% header(emt('Credit successful')) %>
   <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
+    topreload();
   </SCRIPT>
 
   </BODY></HTML>

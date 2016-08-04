@@ -39,6 +39,7 @@
                      @svc_fields,
                      @svc_usage,
                    ],
+  'order_by_sql' => $order_by_sql,
   'links'       => [ #( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                      #  FS::UI::Web::cust_header() ),
                      $link_cust,
@@ -59,8 +60,8 @@
 
 my %opt = @_;
 
-die "access denied" unless
-  $FS::CurrentUser::CurrentUser->access_right('List services');
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('List services');
 
 my $title = 'Data Usage Report - '; 
 my $agentnum;
@@ -92,6 +93,40 @@ if ( $ending == 4294967295 ) {
   $title .= time2str('%h %o %Y', $ending);
 }
 
+# can also show a specific customer / service. the main query will handle
+# agent restrictions, but we need a list of the services to ask the export
+# for usage data.
+my ($cust_main, @svc_x);
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $cust_main = qsearchs( {
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $1 },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  });
+  die "Customer not found!" unless $cust_main;
+  # then only report on this agent
+  $agentnum = $cust_main->agentnum;
+  @include_agents = ();
+  # and announce that we're doing it
+  $title .= ' - ' . $cust_main->name_short;
+
+  # yes, we'll query the database once for each service the customer has,
+  # even non-radacct'd services. probably less bad than a single query that
+  # pulls records for every service for every customer.
+  foreach my $cust_pkg ($cust_main->all_pkgs) {
+    foreach my $cust_svc ($cust_pkg->cust_svc) {
+      push @svc_x, $cust_svc->svc_x;
+    }
+  }
+}
+foreach ($cgi->param('svcnum')) {
+  if (/^(\d+)$/) {
+    my $cust_svc = FS::cust_svc->by_key($1)
+      or die "service #$1 not found."; # or continue?
+    push @svc_x, $cust_svc->svc_x;
+  }
+}
+
 my $export;
 my %usage_by_username;
 if ( exists($opt{usage_by_username}) ) {
@@ -109,16 +144,28 @@ if ( exists($opt{usage_by_username}) ) {
     or die "exportnum ".$export->exportnum." is type ".$export->exporttype.
            ", not sqlradius";
 
-  my $usage = $export->usage_sessions( {
+  my %usage_param = (
       stoptime_start  => $beginning,
       stoptime_end    => $ending,
       summarize       => 1
-  } );
-  # arrayref of hashrefs of
+  );
+  # usage_sessions() returns an arrayref of hashrefs of
   # (username, acctsessiontime, acctinputoctets, acctoutputoctets)
   # (XXX needs to include 'realm' for sqlradius_withdomain)
-  # rearrange to be indexed by username.
+  my $usage;
+  if ( @svc_x ) {
+    # then query once per service
+    $usage = [];
+    foreach my $svc ( @svc_x ) {
+      $usage_param{'svc'} = $svc;
+      push @$usage, @{ $export->usage_sessions(\%usage_param) };
+    }
+  } else {
+    # one query, get everyone's data
+    my $usage = $export->usage_sessions(\%usage_param);
+  }
 
+  # rearrange to be indexed by username.
   foreach (@$usage) {
     my $username = $_->{'username'};
     my @row = (
@@ -171,9 +218,21 @@ my @svc_fields = @{ $svc_fields{$svcdb} };
 my %search_hash = ( 'agentnum' => $agentnum,
                     'exportnum' => $export->exportnum );
 
+if ($cust_main) {
+  $search_hash{'custnum'} = $cust_main->custnum;
+}
+if (@svc_x) {
+  $search_hash{'svcnum'} = [ map { $_->get('svcnum') } @svc_x ];
+}
+
 my $sql_query = $class->search(\%search_hash);
 $sql_query->{'select'}    .= ', part_pkg.pkg';
 $sql_query->{'addl_from'} .= ' LEFT JOIN part_pkg USING (pkgpart)';
+
+if ( @svc_x ) {
+  my $svcnums = join(',', map { $_->get('svcnum') } @svc_x);
+  $sql_query->{'extra_sql'} .= ' AND svcnum IN('.$svcnums.')';
+}
 
 my $link_svc = [ $p.'view/cust_svc.cgi?', 'svcnum' ];
 
@@ -182,9 +241,10 @@ my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
 # columns between the customer name and the usage fields
 my $skip_cols = 1 + scalar(@svc_header);
 
+my $num_rows = FS::Record->scalar_sql($sql_query->{count_query});
 my @footer = (
   '',
-  FS::Record->scalar_sql($sql_query->{count_query}) . ' services',
+  emt('[quant,_1,service]', $num_rows), 
   ('') x $skip_cols,
   map {
     my $i = $_;
@@ -197,5 +257,24 @@ my @footer = (
 sub bytes_to_gb {
   $_[0] ?  sprintf('%.3f', $_[0] / (1024*1024*1024.0)) : '';
 }
+
+my $conf = new FS::Conf;
+my $order_by_sql = {
+  'name'            => "CASE WHEN cust_main.company IS NOT NULL
+                                  AND cust_main.company != ''
+                             THEN CONCAT(cust_main.company,' (',cust_main.last,', ',cust_main.first,')')
+                             ELSE CONCAT(cust_main.last,', ',cust_main.first)
+                        END",
+  'display_custnum' => $conf->exists('cust_main-default_agent_custid')
+                       ? "CASE WHEN cust_main.agent_custid IS NOT NULL
+                                    AND cust_main.agent_custid != ''
+                                    AND cust_main.agent_custid ". regexp_sql. " '^[0-9]+\$'
+                               THEN CAST(cust_main.agent_custid AS BIGINT)
+                               ELSE cust_main.custnum
+                          END"
+                       : "custnum",
+};
+
+#warn Dumper \%usage_by_username;
 
 </%init>
