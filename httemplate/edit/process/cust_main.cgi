@@ -1,5 +1,15 @@
 % if ( $error ) {
 %   $cgi->param('error', $error);
+%   # workaround for create_uri_query's mangling of unicode characters,
+%   # false laziness with FS::Record::ut_coord
+%   use charnames ':full';
+%   for my $pre (qw(bill ship)) {
+%     foreach (qw( latitude longitude)) {
+%       my $coord = $cgi->param($pre.'_'.$_);
+%       $coord =~ s/\N{DEGREE SIGN}\s*$//;
+%       $cgi->param($pre.'_'.$_, $coord);
+%     }
+%   }
 %   my $query = $m->scomp('/elements/create_uri_query', 'secure'=>1);
 <% $cgi->redirect(popurl(2). "cust_main.cgi?$query" ) %>
 %
@@ -58,12 +68,6 @@ if ( $conf->exists('agent-ship_address', $cgi->param('agentnum')) ) {
 
 my %locations;
 for my $pre (qw(bill ship)) {
-
-  foreach (qw( latitude longitude)) {
-    my $coord = $cgi->param($pre.'_'.$_);
-    $coord =~ s/\N{DEGREE SIGN}\s*$//;
-    $cgi->param($pre.'_'.$_, $coord);
-  }
 
   my %hash;
   foreach ( FS::cust_main->location_fields ) {
