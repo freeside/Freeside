@@ -69,6 +69,6 @@ push @rights, 'Post cash payment'  if $new->payby eq 'CASH';
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right(\@rights);
 
-my $error ||= $new->insert( 'manual' => 1 );
+my $error = $new->insert( 'manual' => 1 );
 
 </%init>
