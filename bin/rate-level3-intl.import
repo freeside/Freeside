@@ -1,0 +1,130 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Spreadsheet::ParseExcel;
+#use DBI; # doesn't work
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::rate;
+use FS::rate_region;
+use FS::rate_prefix;
+use FS::rate_detail;
+use Number::Phone::Country;
+
+my $user = shift or usage();
+my $file = shift or usage();
+adminsuidsetup $user;
+
+sub usage {
+  die "Usage:\n\n  rate-level3-us.import user rates.xls [ multiplier ]\n";
+}
+
+my $multiplier = shift;
+$multiplier ||= 1;
+
+my $parser = Spreadsheet::ParseExcel->new;
+my $book = $parser->parse($file);
+my $sheet = $book->worksheet('International Term')
+  or die "No 'International Term' sheet found.\n";
+
+my $row = 0;
+for (; $row < 256; $row++) {
+  if (lc($sheet->get_cell($row, 0)->value) eq 'terminating country') {
+    last;
+  }
+}
+die "Start of data table not found.\n" if $row == 256;
+
+my $error;
+
+my $granularity = 1;
+# default is to charge per second; edit this if needed
+
+
+my $rate = qsearchs('rate', { 'ratename' => 'International Termination' });
+if (!$rate) {
+  $rate = FS::rate->new({ 'ratename' => 'International Termination' });
+  $error = $rate->insert;
+  die $error if $error;
+}
+
+# monkeypatch to pretend Antarctica is a country
+$Number::Phone::Country::idd_codes{'672'} = 'AQ';
+
+$row++;
+my ($country, $zone, $prefix, $charge);
+while ( $sheet->get_cell($row, 0) ) {
+  ($country, $zone, $prefix, $charge) = map {
+    $country = $sheet->get_cell($row, $_)->value
+  } 0..3;
+
+  last if !$country;
+
+  print join("\t", $country, $zone, $prefix, $charge),"\n";
+
+  my $here = '[line '.($row+1).']';
+  my ($countrycode);
+  if ($zone == 0) {
+    my $country;
+    ($country, $countrycode) =
+      Number::Phone::Country::phone2country_and_idd("+$prefix");
+
+    die "$here can't identify country prefix $prefix\n" unless $countrycode;
+    # trim countrycodes to what will fit in the field
+    $countrycode = substr($countrycode, 0, 3);
+    # and put the rest in rate_prefix.npa
+    $prefix =~ s/^$countrycode//;
+  } elsif ( $zone == 1 ) { #NANPA
+    $countrycode = '1';
+  } else {
+    die "$here unknown zone type $zone\n";
+  }
+  my $region = qsearchs('rate_region', { 'regionname' => $country });
+  if (!$region) {
+    $region = FS::rate_region->new({ 'regionname' => $country });
+    $error = $region->insert;
+    die "$here inserting region: $error\n" if $error;
+  }
+
+  my %prefix = (
+    'regionnum'   => $region->regionnum,
+    'countrycode' => $countrycode,
+    'npa'         => $prefix,
+  );
+  my $rate_prefix = qsearchs('rate_prefix', \%prefix);
+  if (!$rate_prefix) {
+    $rate_prefix = FS::rate_prefix->new(\%prefix);
+    $error = $rate_prefix->insert;
+    die "$here inserting prefix: $error\n" if $error;
+  }
+
+  # enough to identify the detail
+  my %detail = (
+    'ratenum'         => $rate->ratenum,
+    'dest_regionnum'  => $region->regionnum,
+    'cdrtypenum'      => '',
+    'ratetimenum'     => '',
+  );
+  
+  $charge =~ s/^[\s\$]*//;
+  $charge = sprintf('%.05f', $charge * $multiplier);
+
+  my $dest_detail = qsearchs('rate_detail', \%detail);
+  if (!$dest_detail) {
+    $dest_detail = FS::rate_detail->new({
+        %detail,
+        'min_included'    => 0,
+        'min_charge'      => $charge,
+        'sec_granularity' => $granularity,
+    });
+    $error = $dest_detail->insert;
+  } else {
+    local $FS::Record::nowarn_identical = 1;
+    $dest_detail->set('min_charge' => $charge);
+    $error = $dest_detail->replace;
+  }
+  die "$here setting rate detail: $error\n" if $error;
+
+  $row++
+}
+
