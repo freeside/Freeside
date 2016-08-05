@@ -153,14 +153,14 @@ sub assign_ip_addr {
     # don't exit early on assigning a free address--check the rest of 
     # the blocks to see if the current address is in one of them.
     if (!$new_addr) {
-      $new_addr = $block->next_free_addr->addr;
+      $new_addr = $block->next_free_addr;
       $new_block = $block;
     }
   }
  
   return 'No IP address available on this router' unless $new_addr;
 
-  $self->ip_addr($new_addr);
+  $self->ip_addr($new_addr->addr);
   $self->addr_block($new_block);
   '';
 }
