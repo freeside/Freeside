@@ -10,6 +10,7 @@
                                  'Router',
                                  @tower_header,
                                  'IP Address',
+                                 @header_pkg,
                                  emt('Pkg. Status'),
                                  FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                ],
@@ -21,6 +22,7 @@
                                  },
                                  @tower_fields,
                                  'ip_addr',
+                                 @fields_pkg,
                                  sub {
                                    $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
                                    return '' unless $cust_pkg_cache{$_[0]->svcnum};
@@ -32,20 +34,25 @@
                                  $link,
                                  '', #$link_router,
                                  (map '', @tower_fields),
-                                 $link,
+                                 $link, # ip_addr
+                                 @blank_pkg,
                                  '', # pkg status
                                  ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                        FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                  ),
                                ],
-              'align'       => 'rll'.('r' x @tower_fields).'rr'.
+              'align'       => 'rll'.('r' x @tower_fields).
+                                'r'. # ip_addr
+                                $align_pkg.
+                                'r'. # pkg status
                                 FS::UI::Web::cust_aligns(),
               'color'       => [ 
                                  '',
                                  '',
                                  '',
                                  (map '', @tower_fields),
-                                 '',
+                                 '', # ip_addr
+                                 @blank_pkg,
                                  sub {
                                    $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
                                    return '' unless $cust_pkg_cache{$_[0]->svcnum};
@@ -59,8 +66,9 @@
                                  '',
                                  '',
                                  (map '', @tower_fields),
-                                 '',
-                                 'b',
+                                 '',  # ip_addr
+                                 @blank_pkg,
+                                 'b', # pkg status
                                  FS::UI::Web::cust_styles(),
                                ],
           
@@ -128,5 +136,26 @@ $html_init .= ' | ' .
   '<a href="' .
   $fsurl . 'search/svc_broadband-map.html?' . $cgi->query_string .
   '">' . emt('View a map of these services') . '</a>';
+
+my (@header_pkg,@fields_pkg,@blank_pkg);
+my $align_pkg = '';
+#false laziness with search/svc_acct.cgi
+$cgi->param('cust_pkg_fields') =~ /^([\w\,]*)$/ or die "bad cust_pkg_fields";
+my @pkg_fields = split(',', $1);
+foreach my $pkg_field ( @pkg_fields ) {
+  ( my $header = ucfirst($pkg_field) ) =~ s/_/ /; #:/
+  push @header_pkg, $header;
+
+  #not the most efficient to do it every field, but this is of niche use. so far
+  push @fields_pkg, sub { my $svc_x = shift;
+                          my $cust_pkg = $svc_x->cust_svc->cust_pkg or return '';
+                          my $value = $cust_pkg->get($pkg_field);#closures help alot
+                          $value ? time2str('%b %d %Y', $value ) : '';
+                        };
+
+  push @blank_pkg, '';
+  $align_pkg .= 'c';
+}
+
 
 </%init>
