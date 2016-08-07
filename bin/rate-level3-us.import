@@ -1,0 +1,201 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+use FS::UID qw(adminsuidsetup);
+use Spreadsheet::ParseExcel;
+use FS::Record qw(qsearchs);
+use FS::rate;
+use FS::rate_region;
+use FS::rate_prefix;
+use FS::rate_detail;
+use FS::usage_class;
+
+use Text::CSV_XS;
+
+my $user = shift or usage();
+my $file = shift or usage();
+adminsuidsetup $user;
+
+sub usage {
+  die "Usage:\n\n  rate-level3-us.import user rates.xls [ multiplier ]\n";
+}
+
+my %lata_ocn;
+
+my $csvfile = 'npa-nxx-companytype-ocn.csv'; # not distributed here
+#NPA,NXX,COMPANY TYPE,OCN,COMPANY NAME,LATA,RATECENTER,STATE
+open my $fh, '<', $csvfile
+  or die $!;
+
+my $csv = Text::CSV_XS->new;
+while (!$csv->eof) {
+  my $row = $csv->getline($fh);
+  my $lata = $row->[5] or next;
+  my $ocn = $row->[3];
+  my $key = $lata . '-' . $ocn;
+  push @{ $lata_ocn{$key} ||= [] },
+    { npa => $row->[0],
+      nxx => $row->[1],
+      ratecenter => $row->[6],
+      state => $row->[7]
+    }
+  ;
+}
+
+my $multiplier = shift;
+$multiplier ||= 1;
+
+my $parser = Spreadsheet::ParseExcel->new;
+my $book = $parser->parse($file);
+my $sheet = $book->worksheet('VT - US48 OCN Rates')
+  or die "No 'VT - US48 OCN Rates' sheet found.\n";
+
+my $row = 0;
+for (; $row < 256; $row++) {
+  if (lc($sheet->get_cell($row, 0)->value) eq 'lata') {
+    last;
+  }
+}
+die "Start of data table not found.\n" if $row == 256;
+
+my $error;
+
+my $granularity = 1;
+# default is to charge per second; edit this if needed
+
+
+my %rate;
+my %classnum;
+foreach (qw(INTERSTATE INTRASTATE)) {
+  my $rate = qsearchs('rate', { 'ratename' => $_ });
+  if (!$rate) {
+    $rate = FS::rate->new({ 'ratename' => $_ });
+    $error = $rate->insert;
+    die $error if $error;
+  }
+  $rate{$_} = $rate;
+  my $class = qsearchs('usage_class', { 'classname' => ucfirst($_) });
+  $classnum{$_} = $class->classnum if $class;
+}
+
+$row++;
+my ($lata, $ocn, $jurisdiction, $charge) = @_;
+while ( $sheet->get_cell($row, 0) ) {
+  ($lata, $ocn, $jurisdiction, $charge) = map {
+    $sheet->get_cell($row, $_)->value
+  } 0..3;
+
+  last if !$lata;
+
+  print join("\t", $lata, $ocn, $jurisdiction, $charge),"\n";
+
+  my $here = '[line '.($row+1).']';
+
+  my @regionnums; # add the rate to each of these...
+
+  if ( $lata eq '*' ) {
+
+    my $regionname = 'Other US';
+    my $region = qsearchs('rate_region', { 'regionname' => $regionname });
+    if (!$region) {
+      $region = FS::rate_region->new({ 'regionname' => $regionname });
+      $error = $region->insert;
+      die "$here inserting region: $error\n" if $error;
+    }
+    my %prefix = (
+      'regionnum' => $region->regionnum,
+      'countrycode' => '1',
+      'npa' => '',
+      'nxx' => '',
+    );
+    my $rate_prefix = qsearchs('rate_prefix', \%prefix);
+    if (!$rate_prefix) {
+      $rate_prefix = FS::rate_prefix->new(\%prefix);
+      $error = $rate_prefix->insert;
+      die "$here inserting prefix: $error\n" if $error;
+    }
+    push @regionnums, $region->regionnum;
+
+  } else {
+
+    my $data = $lata_ocn{"$lata-$ocn"};
+    if (!$data) {
+      warn "$here no prefixes found for lata $lata / ocn $ocn\n";
+      next;
+    }
+
+    # find prefixes corresponding to this LATA/OCN. there can be MANY.
+
+    foreach my $prefixdata (@$data) {
+      my $npa = $prefixdata->{npa}
+        or die "$here no NPA found.\n";
+      my $nxx = $prefixdata->{nxx}
+        or die "$here no NXX found.\n";
+
+      # show a useful regionname, but include the LATA/OCN in it to
+      # prevent overlap.
+      my $regionname = $prefixdata->{ratecenter} . ', ' .
+                       $prefixdata->{state} .
+                       " $lata-$ocn";
+
+      my $region = qsearchs('rate_region', { 'regionname' => $regionname });
+      if (!$region) {
+        $region = FS::rate_region->new({ 'regionname' => $regionname });
+        $error = $region->insert;
+        die "$here inserting region: $error\n" if $error;
+      }
+
+      my %prefix = (
+        'regionnum'   => $region->regionnum,
+        'countrycode' => '1',
+        'npa'         => $npa . $nxx,
+      );
+      my $rate_prefix = qsearchs('rate_prefix', \%prefix);
+      if (!$rate_prefix) {
+        # don't search on unindexed fields
+        $prefix{'latanum'} = $lata;
+        $prefix{'ocn'}     = $ocn;
+        $prefix{'state'}   = $prefixdata->{state},
+        $rate_prefix = FS::rate_prefix->new(\%prefix);
+        $error = $rate_prefix->insert;
+        die "$here inserting prefix: $error\n" if $error;
+      }
+      push @regionnums, $region->regionnum;
+    } # foreach $prefixdata
+
+  } # $lata ne '*'
+
+  $charge =~ s/^[\s\$]*//;
+  $charge = sprintf('%.05f', $charge * $multiplier);
+
+  foreach my $regionnum (@regionnums) {
+    my $rate = $rate{$jurisdiction}
+      or die "$here unknown jurisdiction $jurisdiction\n";
+    my %detail = (
+      'ratenum'         => $rate->ratenum,
+      'dest_regionnum'  => $regionnum,
+      'cdrtypenum'      => '',
+      'ratetimenum'     => '',
+    );
+    
+    my $dest_detail = qsearchs('rate_detail', \%detail);
+    if (!$dest_detail) {
+      $dest_detail = FS::rate_detail->new({
+          %detail,
+          'min_included'    => 0,
+          'min_charge'      => $charge,
+          'sec_granularity' => $granularity,
+      });
+      $error = $dest_detail->insert;
+    } else {
+      local $FS::Record::nowarn_identical = 1;
+      $dest_detail->set('min_charge' => $charge);
+      $error = $dest_detail->replace;
+    }
+    die "$here setting rate detail: $error\n" if $error;
+  }
+} continue {
+  $row++
+}
+
