@@ -219,6 +219,12 @@ while (1) {
 
     }
 
+    if ( $conf->exists('cdr-userfield_dnis_rewrite') and
+         $cdr->userfield =~ /DNIS=(\d+)/ ) {
+      $cdr->dst($1);
+      push @status, 'userfield_dnis';
+    }
+
     if ( $conf->exists('cdr-intl_to_domestic_rewrite') and
          $cdr->dst =~ /^(011)(\d{0,7})$/ ) {
       $cdr->dst($2);
@@ -261,6 +267,7 @@ sub _shouldrun {
   || $conf->exists('cdr-taqua-accountcode_rewrite')
   || $conf->exists('cdr-taqua-callerid_rewrite')
   || $conf->exists('cdr-intl_to_domestic_rewrite')
+  || $conf->exists('cdr-userfield_dnis_rewrite')
   || $conf->exists('cdr-skip_duplicate_rewrite')
   || 0
   ;
