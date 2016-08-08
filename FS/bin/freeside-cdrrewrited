@@ -4,7 +4,7 @@ use strict;
 use vars qw( $conf );
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup );
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearch qsearchs );
 #use FS::cdr;
 #use FS::cust_pkg;
 #use FS::queue;
@@ -24,12 +24,12 @@ daemonize2();
 
 $conf = new FS::Conf;
 
-die "not running; relevant conf options are all off\n"
+die "not running; cdr-asterisk_forward_rewrite, cdr-charged_party_rewrite ".
+    " and cdr-taqua-accountcode_rewrite conf options are all off\n"
   unless _shouldrun();
 
 #--
 
-#used for taqua
 my %sessionnum_unmatch = ();
 my $sessionnum_retry = 4 * 60 * 60; # 4 hours
 my $sessionnum_giveup = 4 * 24 * 60 * 60; # 4 days
@@ -45,25 +45,20 @@ while (1) {
   # instead of just doing this search like normal CDRs
 
   #hmm :/
-  #used only by taqua, should have no effect otherwise
   my @recent = grep { ($sessionnum_unmatch{$_} + $sessionnum_retry) > time }
                  keys %sessionnum_unmatch;
   my $extra_sql = scalar(@recent)
                     ? ' AND acctid NOT IN ('. join(',', @recent). ') '
                     : '';
 
-  #order matters for removing dupes--only the first is preserved
-  $extra_sql .= ' ORDER BY acctid '
-    if $conf->exists('cdr-skip_duplicate_rewrite');
-
   my $found = 0;
-  my %skip = (); #used only by taqua
+  my %skip = ();
   my %warning = ();
 
   foreach my $cdr ( 
     qsearch( {
       'table'     => 'cdr',
-      'extra_sql' => 'FOR UPDATE', #XXX overwritten by opt below...would fixing this break anything?
+      'extra_sql' => 'FOR UPDATE',
       'hashref'   => {},
       'extra_sql' => 'WHERE freesidestatus IS NULL '.
                      ' AND freesiderewritestatus IS NULL '.
@@ -72,26 +67,10 @@ while (1) {
     } )
   ) {
 
-    next if $skip{$cdr->acctid}; #used only by taqua
+    next if $skip{$cdr->acctid};
 
     $found = 1;
     my @status = ();
-
-    if ($conf->exists('cdr-skip_duplicate_rewrite')) {
-      #qsearch can't handle timestamp type of calldate
-      my $sth = dbh->prepare(
-        'SELECT 1 FROM cdr WHERE src=? AND dst=? AND calldate=? AND acctid < ? LIMIT 1'
-      ) or die dbh->errstr;
-      $sth->execute($cdr->src,$cdr->dst,$cdr->calldate,$cdr->acctid) or die $sth->errstr;
-      my $isdup = $sth->fetchrow_hashref;
-      $sth->finish;
-      if ($isdup) {
-        #we only act on this cdr, not touching previous dupes
-        #if a dupe somehow creeped in previously, too late to fix it
-        $cdr->freesidestatus('done'); #prevent it from being billed
-        push(@status,'duplicate');
-      }
-    }
 
     if ( $conf->exists('cdr-asterisk_forward_rewrite')
          && $cdr->dstchannel =~ /^Local\/(\d+)/i && $1 ne $cdr->dst
@@ -268,7 +247,6 @@ sub _shouldrun {
   || $conf->exists('cdr-taqua-callerid_rewrite')
   || $conf->exists('cdr-intl_to_domestic_rewrite')
   || $conf->exists('cdr-userfield_dnis_rewrite')
-  || $conf->exists('cdr-skip_duplicate_rewrite')
   || 0
   ;
 }
@@ -291,11 +269,6 @@ Runs continuously, searches for CDRs and does forwarded-call rewriting if any
 of the following config options are enabled:
 
 =over 4
-
-=item cdr-skip_duplicate_rewrite
-
-Marks as 'done' (prevents billing for) any CDRs with 
-a src, dst and calldate identical to an existing CDR
 
 =item cdr-asterisk_australia_rewrite
 
