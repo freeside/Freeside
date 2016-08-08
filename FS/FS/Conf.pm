@@ -4992,6 +4992,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-userfield_dnis_rewrite',
+    'section'     => 'telephony',
+    'description' => 'If the CDR userfield contains "DNIS=" followed by a sequence of digits, use that as the destination number for the call.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cdr-intl_to_domestic_rewrite',
     'section'     => 'telephony',
     'description' => 'Strip the "011" international prefix from CDR destination numbers if the rest of the number is 7 digits or shorter, and so probably does not contain a country code.',
