@@ -514,11 +514,9 @@ none or one).
 sub email_search {
   my %options = @_;
 
-  local($DEBUG) = 1;
-
   my $email = delete $options{'email'};
 
-  #we're only being used by RT at the moment... no agent virtualization yet
+  #no agent virtualization yet
   #my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
   my @cust_main = ();
