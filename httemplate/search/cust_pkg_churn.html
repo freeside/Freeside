@@ -18,7 +18,7 @@
                                      emt('Susp.'),
                                      emt('Changed'),
                                      emt('Cancel'),
-                                     #emt('Reason'), # hard to do this right
+                                     @reason_header,
                                      FS::UI::Web::cust_header(
                                        $cgi->param('cust_fields')
                                      ),
@@ -45,6 +45,7 @@
                     ( map { time_or_blank($_) }
                       qw( setup last_bill bill susp change_date cancel ) ),
 
+                    @reason_fields,
                     \&FS::UI::Web::cust_fields,
                   ],
                   'sort_fields' => [
@@ -53,21 +54,25 @@
                     ('') x 3, # can't use at all
                     # use the plain SQL column names
                     qw( setup last_bill bill susp change_date cancel ),
+                    @reason_blank,
                     # cust_fields can take care of themselves
                   ],
                   'color' => [
                     ('') x 15,
+                    @reason_blank,
                     FS::UI::Web::cust_colors(),
                   ],
                   'style' => [ ('') x 15,
+                               @reason_blank,
                                FS::UI::Web::cust_styles() ],
                   'size'  => [ '', '', '', '', '-1' ],
-                  'align' => 'rrlcccrrlrrrrrr'. FS::UI::Web::cust_aligns(). 'r',
+                  'align' => 'rrlcccrrlrrrrrr'.$reason_align. FS::UI::Web::cust_aligns(). 'r',
                   'links' => [
                     $link,
                     $link,
                     $link,
                     ('') x 12,
+                    @reason_blank,
                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
                           FS::UI::Web::cust_header(
                                                     $cgi->param('cust_fields')
@@ -184,4 +189,16 @@ sub time_or_blank {
    };
 }
 
+my (@reason_header,@reason_fields,@reason_blank);
+my $reason_align = '';
+if ($status eq 'cancel') {
+  push @reason_header, emt('Cancel Reason');
+  push @reason_fields, sub {
+    my $c = shift;
+    my $cust_pkg_reason = $c->last_cust_pkg_reason('cancel');
+    $cust_pkg_reason ? $cust_pkg_reason->reason->reason : '';
+  };
+  push @reason_blank, '';
+  $reason_align = 'l';
+}
 </%init>
