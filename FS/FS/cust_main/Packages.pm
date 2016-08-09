@@ -748,6 +748,104 @@ sub num_pkgs {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item display_recurring
+
+Returns an array of hash references, one for each recurring freq
+on billable customer packages, with keys of freq, freq_pretty and amount
+(the amount that this customer will next be charged at the given frequency.)
+
+Results will be numerically sorted by freq.
+
+Only intended for display purposes, not used for actual billing.
+
+=cut
+
+sub display_recurring {
+  my $cust_main = shift;
+
+  my $sth = dbh->prepare("
+    SELECT DISTINCT freq FROM cust_pkg LEFT JOIN part_pkg USING (pkgpart)
+      WHERE freq IS NOT NULL AND freq != '0'
+        AND ( cancel IS NULL OR cancel = 0 )
+        AND custnum = ?
+  ") or die $DBI::errstr;
+
+  $sth->execute($cust_main->custnum) or die $sth->errstr;
+
+  #not really a numeric sort because freqs can actually be all sorts of things
+  # but good enough for the 99% cases of ordering monthly quarterly annually
+  my @freqs = sort { $a <=> $b } map { $_->[0] } @{ $sth->fetchall_arrayref };
+
+  $sth->finish;
+
+  my @out;
+
+  foreach my $freq (@freqs) {
+
+    my @cust_pkg = qsearch({
+      'table'     => 'cust_pkg',
+      'addl_from' => 'LEFT JOIN part_pkg USING (pkgpart)',
+      'hashref'   => { 'custnum' => $cust_main->custnum, },
+      'extra_sql' => 'AND ( cancel IS NULL OR cancel = 0 )
+                      AND freq = '. dbh->quote($freq),
+      'order_by'  => 'ORDER BY COALESCE(start_date,0), pkgnum', # to ensure old pkgs come before change_to_pkg
+    }) or next;
+
+    my $freq_pretty = $cust_pkg[0]->part_pkg->freq_pretty;
+
+    my $amount = 0;
+    my $skip_pkg = {};
+    foreach my $cust_pkg (@cust_pkg) {
+      my $part_pkg = $cust_pkg->part_pkg;
+      next if $cust_pkg->susp
+           && ! $cust_pkg->option('suspend_bill')
+           && ( ! $part_pkg->option('suspend_bill')
+                || $cust_pkg->option('no_suspend_bill')
+              );
+
+      #pkg change handling
+      next if $skip_pkg->{$cust_pkg->pkgnum};
+      if ($cust_pkg->change_to_pkgnum) {
+        #if change is on or before next bill date, use new pkg
+        next if $cust_pkg->expire <= $cust_pkg->bill;
+        #if change is after next bill date, use old (this) pkg
+        $skip_pkg->{$cust_pkg->change_to_pkgnum} = 1;
+      }
+
+      my $pkg_amount = 0;
+
+      #add recurring amounts for this package and its billing add-ons
+      foreach my $l_part_pkg ( $part_pkg->self_and_bill_linked ) {
+        $pkg_amount += $l_part_pkg->base_recur($cust_pkg);
+      }
+
+      #subtract amounts for any active discounts
+      #(there should only be one at the moment, otherwise this makes no sense)
+      foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
+        my $discount = $cust_pkg_discount->discount;
+        #and only one of these for each
+        $pkg_amount -= $discount->amount;
+        $pkg_amount -= $amount * $discount->percent/100;
+      }
+
+      $pkg_amount *= ( $cust_pkg->quantity || 1 );
+
+      $amount += $pkg_amount;
+
+    } #foreach $cust_pkg
+
+    next unless $amount;
+    push @out, {
+      'freq'        => $freq,
+      'freq_pretty' => $freq_pretty,
+      'amount'      => $amount,
+    };
+
+  } #foreach $freq
+
+  return @out;
+}
+
 =back
 
 =head1 BUGS
