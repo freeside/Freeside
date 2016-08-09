@@ -1,15 +1,16 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_a $opt_p $opt_t $opt_k $opt_c );
+use vars qw( $opt_a $opt_p $opt_t $opt_k $opt_c $opt_v $opt_E );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
+use FS::cust_main::Search;
 use FS::cust_tag;
 use FS::cust_pkg;
 
-getopts('a:p:t:k:c:');
+getopts('a:p:t:k:c:vE');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
@@ -21,16 +22,38 @@ $FS::cust_main::import = 1;
 
 while (<STDIN>) {
 
-  unless ( /^\s*(\d+)\s*$/ ) { 
-    warn "unparsable line: $_";
-    next;
+  my ($custnum,$cust_main);
+  if ($opt_E) {
+    # don't really need to validate input here, search will quote safely
+    unless ( /^\s*(.*)\s*$/ ) { 
+      warn "unparsable line: $_";
+      next;
+    }
+    my @cust_main = FS::cust_main::Search::email_search( 'email' => $1 );
+    if (@cust_main > 1) {
+      warn "muliple matching customers for address, skipping: $_";
+      next;
+    } elsif (@cust_main < 1) {
+      warn "could not find matching customer for address, skipping: $_";
+      next;
+    }
+    $cust_main = $cust_main[0];
+    $custnum = $cust_main->custnum;
+  } else {
+    unless ( /^\s*(\d+)\s*$/ ) { 
+      warn "unparsable line: $_";
+      next;
+    }
+    my $custnum = $1;
+    $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+    unless ( $cust_main ) {
+      warn "unknown custnum $custnum\n";
+      next;
+    }
   }
-  my $custnum = $1;
 
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
-  unless ( $cust_main ) {
-    warn "unknown custnum $custnum\n";
-    next;
+  if ( $opt_v ) {
+    print $cust_main->custnum . ": " . $cust_main->name . "\n";
   }
 
   my %cust_tag = ( custnum=>$custnum, tagnum=>$opt_t );
@@ -72,7 +95,7 @@ while (<STDIN>) {
 }
 
 sub usage {
-  die "usage: cust_main-bulk_change [ -a agentnum ] [ -p NEW_PAYBY ] [ -t tagnum ] [ -k old_pkgpart:new_pkgpart,... ] employee_username <custnums.txt\n";
+  die "usage: cust_main-bulk_change [ -a agentnum ] [ -p NEW_PAYBY ] [ -t tagnum ] [ -k old_pkgpart:new_pkgpart,... ] [-v] [-E] employee_username <custnums.txt\n";
 }
 
 =head1 NAME
@@ -96,6 +119,10 @@ Command-line tool to make bulk changes to a group of customers.
 -k: old_pkgpart:new_pkgpart, for example, I<5:4>.  Multiple entries can be comma-separated.
 
 -c: Cancel customer
+
+-v: verbose
+
+-E: input is customer emails, rather than customer numbers
 
 user: Employee username
 
