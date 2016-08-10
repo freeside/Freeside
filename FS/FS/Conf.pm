@@ -5953,6 +5953,13 @@ and customer address. Include units.',
       'rate_low'  => 'Lowest rate first',
     ],
   },
+
+  {
+    'key'         => 'cdr-lrn_lookup',
+    'section'     => 'telephony',
+    'description' => 'Look up LRNs of destination numbers for exact matching to the terminating carrier. This feature requires a Freeside support contract.',
+    'type'        => 'checkbox',
+  },
   
   {
     'key'         => 'brand-agent',

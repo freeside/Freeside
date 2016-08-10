@@ -3,6 +3,7 @@ package FS::cdr;
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $me
              $conf $cdr_prerate %cdr_prerate_cdrtypenums
+             $use_lrn $support_key
            );
 use Exporter;
 use List::Util qw(first min);
@@ -24,6 +25,11 @@ use FS::rate;
 use FS::rate_prefix;
 use FS::rate_detail;
 
+# LRN lookup
+use LWP::UserAgent;
+use HTTP::Request::Common qw(POST);
+use Cpanel::JSON::XS qw(decode_json);
+
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
@@ -39,6 +45,10 @@ FS::UID->install_callback( sub {
   @cdr_prerate_cdrtypenums = $conf->config('cdr-prerate-cdrtypenums')
     if $cdr_prerate;
   %cdr_prerate_cdrtypenums = map { $_=>1 } @cdr_prerate_cdrtypenums;
+
+  $support_key = $conf->config('support-key');
+  $use_lrn = $conf->exists('cdr-lrn_lookup');
+
 });
 
 =head1 NAME
@@ -215,6 +225,8 @@ sub table_info {
         'upstream_price'        => 'Upstream price',
         #'upstream_rateplanid'   => '',
         #'ratedetailnum'         => '',
+        'src_lrn'               => 'Source LRN',
+        'dst_lrn'               => 'Dest. LRN',
         'rated_price'           => 'Rated price',
         'rated_cost'            => 'Rated cost',
         #'distance'              => '',
@@ -687,9 +699,6 @@ sub rate_prefix {
     }
   }
 
-    
-
-
   ###
   # look up rate details based on called station id
   # (or calling station id for toll free calls)
@@ -723,13 +732,32 @@ sub rate_prefix {
     domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
   );
 
+  my $ratename = '';
+  my $intrastate_ratenum = $part_pkg->option_cacheable('intrastate_ratenum');
+
+  if ( $use_lrn and $countrycode eq '1' ) {
+
+    # then ask about the number
+    foreach my $field ('src', 'dst') {
+
+      $self->get_lrn($field);
+      if ( $field eq $column ) {
+        # then we are rating on this number
+        $number = $self->get($field.'_lrn');
+        $number =~ s/^1//;
+        # is this ever meaningful? can the LRN be outside NANP space?
+      }
+
+    } # foreach $field
+
+  }
+
   warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
   my $pretty_dst = "+$countrycode $number";
   #asterisks here causes inserting the detail to barf, so:
   $pretty_dst =~ s/\*//g;
 
-  my $ratename = '';
-  my $intrastate_ratenum = $part_pkg->option_cacheable('intrastate_ratenum');
+  # should check $countrycode eq '1' here?
   if ( $intrastate_ratenum && !$self->is_tollfree ) {
     $ratename = 'Interstate'; #until proven otherwise
     # this is relatively easy only because:
@@ -738,8 +766,10 @@ sub rate_prefix {
     # -disregard private or unknown numbers
     # -there is exactly one record in rate_prefix for a given NPANXX
     # -default to interstate if we can't find one or both of the prefixes
+    my $dst_col = $use_lrn ? 'dst_lrn' : 'dst';
+    my $src_col = $use_lrn ? 'src_lrn' : 'src';
     my (undef, $dstprefix) = $self->parse_number(
-      column => 'dst',
+      column => $dst_col,
       international_prefix => $part_pkg->option_cacheable('international_prefix'),
       domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
     );
@@ -748,7 +778,7 @@ sub rate_prefix {
                                                 'npa' => $1, 
                                          }) || '';
     my (undef, $srcprefix) = $self->parse_number(
-      column => 'src',
+      column => $src_col,
       international_prefix => $part_pkg->option_cacheable('international_prefix'),
       domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
     );
@@ -1464,6 +1494,38 @@ sub downstream_csv {
 
 }
 
+sub get_lrn {
+  my $self = shift;
+  my $field = shift;
+
+  my $ua = LWP::UserAgent->new;
+  my $url = 'https://ws.freeside.biz/get_lrn';
+
+  my %content = ( 'support-key' => $support_key,
+                  'tn' => $self->get($field),
+                );
+  my $response = $ua->request( POST $url, \%content );
+
+  die "LRN service error: ". $response->message. "\n"
+    unless $response->is_success;
+
+  local $@;
+  my $data = eval { decode_json($response->content) };
+  die "LRN service JSON error : $@\n" if $@;
+
+  if ($data->{error}) {
+    die "acctid ".$self->acctid." $field LRN lookup failed:\n$data->{error}";
+    # for testing; later we should respect ignore_unrateable
+  } elsif ($data->{lrn}) {
+    # normal case
+    $self->set($field.'_lrn', $data->{lrn});
+  } else {
+    die "acctid ".$self->acctid." $field LRN lookup returned no number.\n";
+  }
+
+  return $data; # in case it's interesting somehow
+}
+ 
 =back
 
 =head1 CLASS METHODS

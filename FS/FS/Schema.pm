@@ -3874,6 +3874,10 @@ sub tables_hashref {
         'rated_ratename',         'varchar', 'NULL', $char_d, '', '', 
         'rated_cost',            'decimal', 'NULL',  '10,4', '', '',
 
+        # real endpoints of the call
+        'src_lrn',             'varchar', 'NULL',     '15', '', '',
+        'dst_lrn',             'varchar', 'NULL',     '15', '', '',
+
         'carrierid',               'bigint', 'NULL',      '', '', '',
 
         # service it was matched to
