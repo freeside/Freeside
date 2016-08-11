@@ -1,8 +1,12 @@
-freeside (3.91git~20160205-1) UNRELEASED; urgency=low
+freeside (3.91-1) unstable; urgency=low
 
+  [ Jeremy Davis ]
   * Testing version of freeside.
 
- -- Jeremy Davis <jeremyd-debian@freeside.biz>  Fri, 05 Feb 2016 17:01:21 -0500
+  [ Ivan Kohler ]
+  * 3.91
+
+ -- Ivan Kohler <ivan-debian@420.am>  Fri, 05 Aug 2016 22:28:11 -0700
 
 freeside (3.9) UNRELEASED; urgency=low
 
