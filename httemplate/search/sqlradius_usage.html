@@ -176,7 +176,6 @@ if ( exists($opt{usage_by_username}) ) {
   }
 }
 
-#warn Dumper(\%usage_by_username);
 my @total_usage = (0, 0, 0, 0); # session time, input, output, input + output
 my @svc_usage = map {
   my $i = $_;
@@ -256,8 +255,5 @@ my @footer = (
 sub bytes_to_gb {
   $_[0] ?  sprintf('%.3f', $_[0] / (1024*1024*1024.0)) : '';
 }
-
-warn Dumper \%usage_by_username;
-
 
 </%init>
