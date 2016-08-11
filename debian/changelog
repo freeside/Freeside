@@ -1,3 +1,9 @@
+freeside (3.92~git-1) UNRELEASED; urgency=medium
+
+  * 3.91 release happened
+
+ -- Ivan Kohler <ivan-debian@420.am>  Wed, 10 Aug 2016 17:28:10 -0700
+
 freeside (3.91-1) unstable; urgency=low
 
   [ Jeremy Davis ]
