@@ -522,7 +522,9 @@ sub _upgrade_data {  # class method
   $class->_upgrade_otaker(%opts);
 
   local $ignore_empty_reasonnum = 1;
-  $class->upgrade_set_cardtype;
+
+  # don't set paycardtype until 4.x
+  #$class->upgrade_set_cardtype;
 }
 
 =back

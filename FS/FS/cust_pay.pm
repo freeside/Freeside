@@ -1248,9 +1248,9 @@ sub _upgrade_data {  #class method
   }
 
   ###
-  # set paycardtype
+  # don't set paycardtype until 4.x
   ###
-  $class->upgrade_set_cardtype;
+  #$class->upgrade_set_cardtype;
 
 }
 
