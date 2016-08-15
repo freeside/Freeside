@@ -38,6 +38,7 @@ our %info = (
     'queueids'       => { 'name' => 'Queues',
                           'type' => 'select-rt-queue',
                           %multiple,
+                          'validate' => sub { return ${$_[1]} ? '' : 'Queue must be specified' },
                         },
     'unit_field'     => { 'name' => 'Units field',
                           %custom_field,
