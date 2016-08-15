@@ -67,8 +67,10 @@ if ( $group->num_rows > scalar(@rows) ) {
 
 # set up tab bar
 my @menubar;
-for (my $i = 0; $i < $group_info->{num}; $i++) {
-  push @menubar, $group_info->{group_labels}[$i], ";group=$i";
+if ($group_info->{num} > 1) {
+  for (my $i = 0; $i < $group_info->{num}; $i++) {
+    push @menubar, $group_info->{group_labels}[$i], ";group=$i";
+  }
 }
 
 # not enabled yet; if we need this at some point, enable it on a per-report
