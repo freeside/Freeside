@@ -175,7 +175,7 @@ $m->callback( TicketObj => $Ticket, ARGSRef => \%ARGS, skip_update => \$skip_upd
         $skip_update = 1;
     }
 }
- 
+
 # There might be two owners.
 if ( ref ($ARGS{'Owner'} )) {
     my @owners =@{$ARGS{'Owner'}};
@@ -187,7 +187,7 @@ if ( ref ($ARGS{'Owner'} )) {
         elsif (length $owner) {
             $ARGS{'Owner'} = $owner unless ($Ticket->OwnerObj->id == $owner);
         }
-     }
+    }
 }
 
 unless ($skip_update or $OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'AddMoreAttach'} ) {
@@ -197,7 +197,6 @@ unless ($skip_update or $OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'Ad
     push @results, ProcessUpdateMessage( TicketObj => $Ticket, ARGSRef=>\%ARGS );
     push @results, ProcessTicketBasics( TicketObj => $Ticket, ARGSRef => \%ARGS );
     push @results, ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS);
-}
     push @results, ProcessTicketStatus( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
     $Ticket->ApplyTransactionBatch;
@@ -207,7 +206,6 @@ unless ($skip_update or $OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'Ad
         Path      => "/Ticket/ModifyAll.html",
         Arguments => { id => $Ticket->id },
     );
-
 }
 
 # If they've gone and moved the ticket to somewhere they can't see, etc...
