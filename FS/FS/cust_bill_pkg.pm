@@ -823,31 +823,54 @@ quantity.
 
 sub _item_discount {
   my $self = shift;
+
+  my $d; # this will be returned.
+
   my @pkg_discounts = $self->pkg_discount;
-  return if @pkg_discounts == 0;
-  # special case: if there are old "discount details" on this line item, don't
-  # show discount line items
-  if ( FS::cust_bill_pkg_detail->count("detail LIKE 'Includes discount%' AND billpkgnum = ?", $self->billpkgnum || 0) > 0 ) {
-    return;
-  } 
-  
-  my @ext;
-  my $d = {
-    _is_discount    => 1,
-    description     => $self->mt('Discount'),
-    amount          => 0,
-    ext_description => \@ext,
-    pkgpart         => $self->pkgpart,
-    feepart         => $self->feepart,
-    # maybe should show quantity/unit discount?
-  };
-  foreach my $pkg_discount (@pkg_discounts) {
-    push @ext, $pkg_discount->description;
-    $d->{amount} -= $pkg_discount->amount;
-  } 
-  $d->{amount} *= $self->quantity || 1;
-  
-  return $d;
+  if (@pkg_discounts) {
+    # special case: if there are old "discount details" on this line item,
+    # don't show discount line items
+    if ( FS::cust_bill_pkg_detail->count("detail LIKE 'Includes discount%' AND billpkgnum = ?", $self->billpkgnum || 0) > 0 ) {
+      return;
+    } 
+    
+    my @ext;
+    $d = {
+      _is_discount    => 1,
+      description     => $self->mt('Discount'),
+      setup_amount    => 0,
+      recur_amount    => 0,
+      ext_description => \@ext,
+      pkgpart         => $self->pkgpart,
+      feepart         => $self->feepart,
+      # maybe should show quantity/unit discount?
+    };
+    foreach my $pkg_discount (@pkg_discounts) {
+      push @ext, $pkg_discount->description;
+      my $setuprecur = $pkg_discount->cust_pkg_discount->setuprecur;
+      $d->{$setuprecur.'_amount'} -= $pkg_discount->amount;
+    }
+  }
+
+  # show introductory rate as a pseudo-discount
+  if (!$d) { # this will conflict with showing real discounts
+    my $part_pkg = $self->part_pkg;
+    if ( $part_pkg and $part_pkg->option('show_as_discount') ) {
+      my $cust_pkg = $self->cust_pkg;
+      my $intro_end = $part_pkg->intro_end($cust_pkg);
+      my $_date = $self->cust_bill->_date;
+      if ( $intro_end > $_date ) {
+        $d = $part_pkg->item_discount($cust_pkg);
+      }
+    }
+  }
+
+  if ( $d ) {
+    $d->{setup_amount} *= $self->quantity || 1; # ??
+    $d->{recur_amount} *= $self->quantity || 1; # ??
+  }
+    
+  $d;
 }
 
 =item set_display OPTION => VALUE ...

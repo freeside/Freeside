@@ -1717,6 +1717,18 @@ sub recur_margin_permonth {
   $self->base_recur_permonth(@_) - $self->recur_cost_permonth(@_);
 }
 
+=item intro_end PACKAGE
+
+Takes an L<FS::cust_pkg> object.  If this plan has an introductory rate,
+returns the expected date the intro period will end. If there is no intro
+rate, returns zero.
+
+=cut
+
+sub intro_end {
+  0;
+}
+
 =item format OPTION DATA
 
 Returns data formatted according to the function 'format' described

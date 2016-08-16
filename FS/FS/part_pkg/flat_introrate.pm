@@ -46,17 +46,17 @@ sub validate_number {
            'default' => 0,
            'validate' => \&validate_number,
          },
+    'show_as_discount' =>
+         { 'name' => 'Show the introductory rate on the invoice as if it\'s a discount',
+           'type' => 'checkbox',
+         },
   },
-  'fieldorder' => [ qw(intro_duration intro_fee) ],
+  'fieldorder' => [ qw(intro_duration intro_fee show_as_discount) ],
   'weight' => 14,
 );
 
-sub base_recur {
-  my($self, $cust_pkg, $time ) = @_;
-
-  warn "flat_introrate base_recur requires date!" if !$time;
-  my $now = $time ? $$time : time;
-
+sub intro_end {
+  my($self, $cust_pkg) = @_;
   my ($duration) = ($self->option('intro_duration') =~ /^\s*(\d+)\s*$/);
   unless (length($duration)) {
     my $log = FS::Log->new('FS::part_pkg');
@@ -64,9 +64,27 @@ sub base_recur {
                 .", defaulting to 0, check package definition");
     $duration = 0;
   }
-  my $intro_end = $self->add_freq($cust_pkg->setup, $duration);
 
-  if ($now < $intro_end) {
+  # no setup or start_date means "start billing the package ASAP", so assume
+  # it would start billing right now.
+  my $start = $cust_pkg->setup || $cust_pkg->start_date || time;
+
+  $self->add_freq($start, $duration);
+}
+
+sub base_recur {
+  my($self, $cust_pkg, $time ) = @_;
+
+  my $now;
+  if (!$time) { # the "$sdate" from _make_lines
+    my $log = FS::Log->new('FS::part_pkg');
+    $log->warning("flat_introrate base_recur requires date!");
+    $now = time;
+  } else {
+    $now = $$time;
+  }
+
+  if ($now < $self->intro_end($cust_pkg)) {
     return $self->option('intro_fee');
   } else {
     return $self->option('recur_fee');
@@ -74,5 +92,26 @@ sub base_recur {
 
 }
 
+sub item_discount {
+  my ($self, $cust_pkg) = @_;
+  return unless $self->option('show_as_discount');
+  my $intro_end = $self->intro_end($cust_pkg);
+  my $amount = sprintf('%.2f',
+                $self->option('intro_fee') - $self->option('recur_fee')
+               );
+  return unless $amount < 0;
+  # otherwise it's an "introductory surcharge"? not the intended use of
+  # the feature.
+
+  { '_is_discount'    => 1,
+    'description'     => $cust_pkg->mt('Introductory discount until') . ' ' .
+                         $cust_pkg->time2str_local('short', $intro_end),
+    'setup_amount'    => 0,
+    'recur_amount'    => $amount,
+    'ext_description' => [],
+    'pkgpart'         => $self->pkgpart,
+    'feepart'         => '',
+  }
+}
 
 1;
