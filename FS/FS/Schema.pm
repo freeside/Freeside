@@ -5613,6 +5613,7 @@ sub tables_hashref {
         'rated_price',  'decimal', 'NULL',  '10,4', '', '',
         'rated_seconds',    'int', 'NULL',      '', '', '',
         'rated_minutes', 'double precision', 'NULL',   '', '', '',
+        'rated_granularity','int', 'NULL',      '', '', '',
         'status',       'varchar', 'NULL',      32, '', '',
         'svcnum',           'int', 'NULL',      '', '', '',
       ],

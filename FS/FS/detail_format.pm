@@ -186,6 +186,11 @@ rated_regionname  => regionname
 accountcode       => accountcode
 startdate         => startdate
 
+If the formatter is in inbound mode, it will look up a C<cdr_termination>
+record and use rated_price and rated_seconds from that, and acctid will be
+set to null to avoid linking the CDR to the detail record for the inbound
+leg of the call.
+
 'phonenum' is set to the internal C<phonenum> value set on the formatter
 object.
 
@@ -209,10 +214,10 @@ sub single_detail {
   $price = 0 if $cdr->freesidestatus eq 'no-charge';
 
   FS::cust_bill_pkg_detail->new( {
-      'acctid'      => $cdr->acctid,
+      'acctid'      => ($self->{inbound} ? '' : $cdr->acctid),
       'amount'      => $price,
       'classnum'    => $cdr->rated_classnum,
-      'duration'    => $cdr->rated_seconds,
+      'duration'    => $object->rated_seconds,
       'regionname'  => $cdr->rated_regionname,
       'accountcode' => $cdr->accountcode,
       'startdate'   => $cdr->startdate,
@@ -280,13 +285,11 @@ sub duration {
   my $object = $self->{inbound} ? $cdr->cdr_termination(1) : $cdr;
   my $sec = $object->rated_seconds if $object;
   $sec ||= 0;
-  # XXX termination objects don't have rated_granularity so this may 
-  # result in inbound CDRs being displayed as min/sec when they shouldn't.
-  # Should probably fix this.
-  if ( $cdr->rated_granularity eq '0' ) {
+  # termination objects now have rated_granularity.
+  if ( $object->rated_granularity eq '0' ) {
     '1 call';
   }
-  elsif ( $cdr->rated_granularity eq '60' ) {
+  elsif ( $object->rated_granularity eq '60' ) {
     sprintf('%dm', ($sec + 59)/60);
   }
   else {
