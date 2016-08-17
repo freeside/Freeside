@@ -495,8 +495,9 @@ sub set_status_and_rated_price {
         rated_price => $rated_price,
         status      => $status,
     });
-    $term->rated_seconds($opt{rated_seconds}) if exists($opt{rated_seconds});
-    $term->rated_minutes($opt{rated_minutes}) if exists($opt{rated_minutes});
+    foreach (qw(rated_seconds rated_minutes rated_granularity)) {
+      $term->set($_, $opt{$_}) if exists($opt{$_});
+    }
     $term->svcnum($svcnum) if $svcnum;
     return $term->insert;
 

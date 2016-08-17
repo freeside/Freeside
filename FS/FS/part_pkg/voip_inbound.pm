@@ -292,10 +292,7 @@ sub calc_usage {
         my @call_details = (
           $cdr->downstream_csv( 'format'      => $output_format,
                                 'charge'      => $charge,
-                                'seconds'     => ($use_duration
-                                                   ? $cdr->duration
-                                                   : $cdr->billsec
-                                                 ),
+                                'seconds'     => $seconds,
                                 'granularity' => $granularity,
                               )
         );
@@ -317,10 +314,10 @@ sub calc_usage {
         'done',
         $charge,
         $cust_svc->svcnum,
-        'rated_seconds'     => $use_duration ? $cdr->duration : $cdr->billsec,
+        'rated_seconds'     => $seconds,
         'rated_granularity' => $granularity, 
         'rated_classnum'    => $cdr->calltypenum,
-        'inbound'        => 1,
+        'inbound'        => 1, # to update cdr_termination, not cdr
       );
       die $error if $error;
       $formatter->append($cdr);

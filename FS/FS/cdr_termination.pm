@@ -47,6 +47,12 @@ termpart
 
 rated_price
 
+=item rated_seconds
+
+=item rated_minutes
+
+=item rated_granularity
+
 =item status
 
 status
@@ -120,6 +126,9 @@ sub check {
     #|| $self->ut_foreign_key('termpart', 'part_termination', 'termpart')
     || $self->ut_number('termpart')
     || $self->ut_floatn('rated_price')
+    || $self->ut_numbern('rated_seconds')
+    || $self->ut_floatn('rated_minutes')
+    || $self->ut_numbern('rated_granularity')
     || $self->ut_enum('status', [ '', 'processing-tiered', 'done' ] ) # , 'skipped' ] )
   ;
   return $error if $error;
