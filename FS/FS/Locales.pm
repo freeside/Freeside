@@ -32,6 +32,7 @@ tie our %locales, 'Tie::IxHash',
   'en_AU', { name => 'English',        country => 'Australia', },
   'en_CA', { name => 'English',        country => 'Canada', },
   'es_ES', { name => 'Spanish',        country => 'Spain', },
+  'es_AR', { name => 'Spanish',        country => 'Argentina', },
   'es_CU', { name => 'Spanish',        country => 'Cuba', },
   'es_MX', { name => 'Spanish',        country => 'Mexico', },
   'es_PA', { name => 'Spanish',        country => 'Panama', },
@@ -41,7 +42,6 @@ tie our %locales, 'Tie::IxHash',
   'fr_HT', { name => 'French',         country => 'Haiti', },
   'ht_HT', { name => 'Haitian Creole', country => 'Haiti', },
   'iw_IL', { name => 'Hebrew',         country => 'Israel', rtl=>1, },
-  'es_AR', { name => 'Spanish',        country => 'Argentina', },
 ;
 
 $_->{label} = $_->{name} . ' (' . $_->{country} . ')'
