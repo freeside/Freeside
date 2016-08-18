@@ -981,11 +981,11 @@ sub submenu {
           my($subhtml, $submenuname ) = submenu($url_or_submenu, $_); #mmm, recursion
 
           "$subhtml\n".
-          "myMenu$menunum.add(new WebFXMenuItem(\"$_\", null, \"$tooltip\", $submenuname ));";
+          "myMenu$menunum.add(new WebFXMenuItem(\"".mt($_)."\", null, \"".mt($tooltip)."\", $submenuname ));";
 
         } else {
 
-          "myMenu$menunum.add(new WebFXMenuItem(\"$_\", \"$url_or_submenu\", \"$tooltip\" ));";
+          "myMenu$menunum.add(new WebFXMenuItem(\"".mt($_)."\", \"$url_or_submenu\", \"".mt($tooltip)."\" ));";
 
         }
 
