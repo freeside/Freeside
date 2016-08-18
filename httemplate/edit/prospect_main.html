@@ -34,8 +34,10 @@
        { 'field'             => 'contactnum',
          'type'              => 'contact',
          'colspan'           => 7,
-         'o2m_table'      => 'contact',
-         'm2_label'       => 'Contact',
+         'prospectnum'       => $prospectnum,
+         'm2m_method'        => 'prospect_contact',
+         'm2m_dstcol'        => 'contactnum',
+         'm2_label'          => 'Contact',
          'm2_error_callback' => $m2_error_callback,
 
        },
@@ -69,17 +71,24 @@ my $conf = new FS::Conf;
 
 my $prospectnum;
 if ( $cgi->param('error') ) {
-  $prospectnum = scalar($cgi->param('prospectnum'));
+  $cgi->param('prospectnum') =~ /^(\d*)$/ or die 'illegal prospectnum';
+  $prospectnum = $1;
 
   die "access denied"
     unless $curuser->access_right(($prospectnum ? 'Edit' : 'New'). ' prospect');
 
 } elsif ( $cgi->keywords ) { #editing
 
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die 'no prospectnum';
+  $prospectnum = $1;
+
   die "access denied"
     unless $curuser->access_right('Edit prospect');
 
 } else { #new prospect 
+
+  $prospectnum = '';
 
   die "access denied"
     unless $curuser->access_right('New prospect');
