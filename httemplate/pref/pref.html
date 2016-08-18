@@ -36,7 +36,7 @@ Interface
     <TH ALIGN="right">Locale: </TH>
     <TD COLSPAN=2>
       <SELECT NAME="locale">
-%       foreach my $locale ( FS::Locales->locales ) {
+%       foreach my $locale ( @locales ) {
 %         my %info = FS::Locales->locale_info($locale);
 %         my $selected = ($locale eq $curuser->option('locale'))
 %                          ? 'SELECTED' : '';
@@ -286,5 +286,15 @@ my $menu_position = $1;
 ( $curuser->option('email_address') )
   =~ /^([,\w\@.\-]*)$/ or die "illegal email_address";  #too late
 my $email_address = $1;
+
+my $conf = new FS::Conf;
+
+my @locales = $conf->config('available-locales');
+
+if ( ! @locales ) {
+
+	@locales = FS::Locales->locales ;
+
+}
 
 </%init>
