@@ -275,6 +275,7 @@ $report_packages{'Suspension summary'} = [ $fsurl.'search/cust_pkg_susp.html', '
 $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
 $report_packages{'FCC Form 477'} =  [ $fsurl.'search/report_477.html' ]
   if $conf->exists('part_pkg-show_fcc_options');
+$report_packages{'Contract end dates'} = [ $fsurl.'search/cust_pkg-date.html?date=contract_end', 'Show packages by contract end date' ];
 $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
 
 tie my %report_inventory, 'Tie::IxHash',
