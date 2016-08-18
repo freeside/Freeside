@@ -958,7 +958,7 @@ my $validate_email = sub { $_[0] =~
     'section'     => 'credit_cards',
     'description' => 'Currency parameter for Business::OnlinePayment transactions.',
     'type'        => 'select',
-    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD ) ],
+    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD ARS ) ],
   },
 
   {
@@ -973,7 +973,7 @@ my $validate_email = sub { $_[0] =~
     'section'     => 'localization',
     'description' => 'Main accounting currency',
     'type'        => 'select',
-    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ) ],
+    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ARS ) ],
   },
 
   {
