@@ -1,0 +1,90 @@
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die 'access denied' unless $curuser->access_right('List packages');
+
+my %cols = (
+  'contract_end' => 'Contract end',
+  # We could put any of the date fields in cust_pkg in here, but keep in
+  # mind:
+  # - for start_date, setup, and bill, make sure to include rows where
+  #   the field is null, as that's effectively "right now".
+  # - for cancel and susp, and maybe expire, adjourn, and resume, add a
+  #   column for the cancel or suspend reason.
+  # - for expire, also figure out if there's a future change scheduled.
+  # - for change_date, should probably show what it was changed from.
+);
+
+my $col = $cgi->param('date');
+die "invalid date column" unless $cols{$col};
+
+my $title = 'Packages by ' . lc($cols{$col}) . ' date';
+# second option on the cust_fields_avail list, plus email
+my $cust_fields = 'Cust# | Customer | Day phone | Night phone | Mobile phone | Invoicing email(s)';
+my @header = ( $cols{$col},
+               emt('#'),
+               emt('Quan.'),
+               emt('Package'),
+               # anything else? package status, maybe?
+             );
+my @fields = ( sub { time2str('%b %d %Y', $_[0]->$col) },
+               'pkgnum',
+               'quantity',
+               'pkg_label',
+             );
+my @sort_fields = ( map '', @fields ); # should only ever sort by $col
+
+push @header, FS::UI::Web::cust_header($cust_fields);
+push @fields, \&FS::UI::Web::cust_fields;
+
+my $query = {
+  'table'     => 'cust_pkg',
+  'addl_from' => FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
+  'hashref'   => {
+    $col => { op => '!=', value => '' },
+    'cancel' => '',
+  },
+  'order_by' => "ORDER BY $col",
+};
+
+my $count_query =
+  "SELECT COUNT(*) FROM cust_pkg WHERE $col IS NOT NULL AND cancel IS NULL";
+
+my $pkg_link = sub {
+  my $self = shift;
+  my $frag = 'cust_pkg'. $self->pkgnum;
+  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
+                           ";show=packages;fragment=$frag#cust_pkg",
+    'pkgnum'
+  ];
+};
+
+my @links = ( '', ($pkg_link) x 3,
+  FS::UI::Web::cust_links() );
+
+my $date_color_sub = sub {
+  my $self = shift;
+  my $color;
+  my $interval = ($self->$col - time) / 86400;
+  if ( $interval > 30 ) {
+    $color = 'palegreen';
+  } elsif ( $interval > 0 ) {
+    $color = 'yellow';
+  } else {
+    $color = 'tomato';
+  }
+  "background-color: $color";
+};
+
+</%init>
+<& elements/search.html,
+  'title'       => $title,
+  'name'        => 'packages',
+  'query'       => $query,
+  'count_query' => $count_query,
+  'header'      => \@header,
+  'fields'      => \@fields,
+  'align'       => 'rrrl'. FS::UI::Web::cust_aligns(),
+  'links'       => \@links,
+  'cell_style'  => [ $date_color_sub ],
+&>
+
