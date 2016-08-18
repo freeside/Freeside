@@ -270,7 +270,8 @@ sub name {
   my $self = shift;
   return $self->company if $self->company;
 
-  my $contact = ($self->prospect_contact)[0]->contact; #first contact?  good enough for now
+  my $prospect_contact = ($self->prospect_contact)[0];
+  my $contact = ($self->prospect_contact)[0]->contact if $prospect_contact; #first contact?  good enough for now
   return $contact->line if $contact;
 
   'Prospect #'. $self->prospectnum;
