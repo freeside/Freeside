@@ -73,7 +73,15 @@ Example:
         <td align="right" BGCOLOR="#ffffff">
           <& notify-tickets.html &>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1"><% mt('Logged in as') |h %><b><% $FS::CurrentUser::CurrentUser->username |h %>&nbsp;</b> <FONT SIZE="-2"><a href="<%$fsurl%>loginout/logout.html"><% mt('logout' |h %></a></FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000"><% mt('Preferences') |h %></a>
+        <td align=right valign=top BGCOLOR="#ffffff">
+          <FONT SIZE="-1"><% mt('Logged in as') |h %>
+            <b><% $FS::CurrentUser::CurrentUser->username |h %>&nbsp;</b>
+            <FONT SIZE="-2"><a href="<%$fsurl%>loginout/logout.html">
+              <% mt('logout') |h %>
+            </a></FONT>
+          <br>
+          </FONT>
+          <FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000"><% mt('Preferences') |h %></a>
 %         if ( $conf->config("ticket_system")
 %              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
             | <a href="<%$fsurl%>rt/Prefs/Other.html" STYLE="color: #000000"><% mt('Ticketing preferences') |h %></a>
