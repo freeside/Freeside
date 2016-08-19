@@ -838,8 +838,7 @@ sub _item_discount {
     $d = {
       _is_discount    => 1,
       description     => $self->mt('Discount'),
-      setup_amount    => 0,
-      recur_amount    => 0,
+      amount          => 0,
       ext_description => \@ext,
       pkgpart         => $self->pkgpart,
       feepart         => $self->feepart,
@@ -847,8 +846,7 @@ sub _item_discount {
     };
     foreach my $pkg_discount (@pkg_discounts) {
       push @ext, $pkg_discount->description;
-      my $setuprecur = $pkg_discount->cust_pkg_discount->setuprecur;
-      $d->{$setuprecur.'_amount'} -= $pkg_discount->amount;
+      $d->{'amount'} -= $pkg_discount->amount;
     }
   }
 
@@ -866,8 +864,7 @@ sub _item_discount {
   }
 
   if ( $d ) {
-    $d->{setup_amount} *= $self->quantity || 1; # ??
-    $d->{recur_amount} *= $self->quantity || 1; # ??
+    $d->{amount} *= $self->quantity || 1;
   }
     
   $d;

@@ -106,8 +106,7 @@ sub item_discount {
   { '_is_discount'    => 1,
     'description'     => $cust_pkg->mt('Introductory discount until') . ' ' .
                          $cust_pkg->time2str_local('short', $intro_end),
-    'setup_amount'    => 0,
-    'recur_amount'    => $amount,
+    'amount'          => $amount,
     'ext_description' => [],
     'pkgpart'         => $self->pkgpart,
     'feepart'         => '',
