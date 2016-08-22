@@ -28,7 +28,7 @@ use FS::rate_detail;
 # LRN lookup
 use LWP::UserAgent;
 use HTTP::Request::Common qw(POST);
-use Cpanel::JSON::XS qw(decode_json);
+use JSON::XS qw(decode_json);
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
