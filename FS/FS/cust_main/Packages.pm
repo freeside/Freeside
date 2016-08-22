@@ -684,6 +684,28 @@ sub num_pkgs {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item num_usage_pkgs
+
+Returns the number of packages for this customer that have services that
+can have RADIUS usage statistics.
+
+=cut
+
+sub num_usage_pkgs {
+  my $self = shift;
+  # have to enumerate exportnums but it's not bad
+  my @exportnums = map { $_->exportnum }
+                   grep { $_->can('usage_sessions') }
+                   qsearch('part_export');
+  return 0 if !@exportnums;
+  my $in_exportnums = join(',', @exportnums);
+  my $sql = "SELECT COUNT(DISTINCT pkgnum) FROM cust_pkg
+    JOIN cust_svc USING (pkgnum)
+    JOIN export_svc USING (svcpart)
+    WHERE exportnum IN( $in_exportnums ) AND custnum = ?";
+  FS::Record->scalar_sql($sql, $self->custnum);
+}
+
 =back
 
 =head1 BUGS
