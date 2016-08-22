@@ -397,6 +397,7 @@ my @menu = (
       actionlabel => 'Data usage report',
       width   => 480,
       height  => 245,
+      condition => sub { shift->num_usage_pkgs > 0 },
     },
     {
       label => 'View CDRs',
