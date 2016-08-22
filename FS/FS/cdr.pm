@@ -28,6 +28,7 @@ use FS::rate_detail;
 # LRN lookup
 use LWP::UserAgent;
 use HTTP::Request::Common qw(POST);
+use IO::Socket::SSL;
 use Cpanel::JSON::XS qw(decode_json);
 
 @ISA = qw(FS::Record);
@@ -1498,7 +1499,13 @@ sub get_lrn {
   my $self = shift;
   my $field = shift;
 
-  my $ua = LWP::UserAgent->new;
+  my $ua = LWP::UserAgent->new(
+             'ssl_opts' => {
+               verify_hostname => 0,
+               SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+             },
+           );
+
   my $url = 'https://ws.freeside.biz/get_lrn';
 
   my %content = ( 'support-key' => $support_key,
