@@ -69,6 +69,7 @@
 %               'select'    => $opt{'target_table'}. '.*',
 %               'addl_from' => "LEFT JOIN $opt{'link_table'} USING ( $target_pkey )",
 %               'extra_sql' => $extra_sql,
+%               'order_by'  => $opt{'order_by'},
 %            })
 %   ) {
 %
@@ -83,7 +84,11 @@
 %
 %     } elsif ( !$sourcenum ) { # newly created object, has no links yet
 %
-%       $checked = $opt{'default'} ? 'CHECKED' : ''
+%       if ( ref($opt{'default'}) ) {
+%         $checked = $opt{'default'}->{$targetnum} ? 'CHECKED' : '';
+%       } else {
+%         $checked = $opt{'default'}               ? 'CHECKED' : ''
+%       }
 %
 %     } else {
 %
@@ -98,17 +103,12 @@
 %
 %
 
-
-  <INPUT TYPE="checkbox" NAME="<% $target_pkey. $targetnum %>" <% $checked %> VALUE="ON">
+% my $color_col = $opt{'color_col'};
+  <INPUT TYPE="checkbox" NAME="<% $target_pkey. $targetnum %>" <% $checked %> VALUE="ON"><DIV STYLE="display:inline; background-color: #<% $color_col ? $target_obj->$color_col : '' %>">
 % if ( $opt{'target_link'} ) { 
-
-
     <A HREF="<% $opt{'target_link'} %><% $targetnum %>">
-%
-%
 %  }
 %  
-<% $targetnum %>: 
 % if ( $opt{'name_callback'} ) { 
 
 
@@ -118,7 +118,7 @@
 %  
 
 
-    <% $target_obj->$name_col() %><% $opt{'target_link'} ? '</A>' : '' %>
+    <% $target_obj->$name_col() %></DIV><% $opt{'target_link'} ? '</A>' : '' %>
 % } 
 % if ( $opt{'disable-able'} ) { 
 

@@ -123,6 +123,7 @@
 %# tags
 <& /elements/tr-select-cust_tag.html,
              'custnum' => $custnum,
+             'default' => { map { $_=>1 } FS::part_tag->default_tags },
              'cgi'     => $cgi,
 &>
 

@@ -4,8 +4,6 @@
     <TH ALIGN="right"><% $opt{'label'} || 'Tags' %></TD>
     <TD>
       <% include( '/elements/select-cust_tag.html',
-                     'curr_value' => \@curr_tagnum,
-                     'part_tag'   => \@part_tag,
                      %opt,
                  )
       %>
@@ -38,6 +36,8 @@ if ( $cgi && $cgi->param('tagnum') ) {
 my $extra_sql = "WHERE disabled IS NULL OR disabled = '' ";
 $extra_sql .= ' OR tagnum IN ('. join(',', @curr_tagnum). ')' if @curr_tagnum;
 
+#now kind of inefficient (we only want to know if there are any), but since
+# its an edit control its not significant
 my @part_tag = qsearch({
   'table'     => 'part_tag',
   'hashref'   => {},

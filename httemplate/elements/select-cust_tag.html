@@ -1,11 +1,12 @@
-<% include( '/elements/select-table.html',
-                 'table'         => 'part_tag',
+<% include( '/elements/checkboxes-table.html',
+                 'target_table'  => 'part_tag',
+                 'link_table'    => 'cust_tag',
                  'name_col'      => 'tagname', #tagname - tagdesc??
-                 'multiple'      => 1,
-                 #'value'         => $agentnum || '',
-                 #'agent_virt'    => 1,
-                 'hashref'       => { 'disabled' => '' },
+                 'color_col'     => 'tagcolor',
+                 'disable-able'  => 1,
                  'order_by'      => ' ORDER BY tagname',
+                 'source_table'  => 'cust_main',
+                 'sourcenum'     => $opt{'custnum'},
                  %opt,
              )
 %>
