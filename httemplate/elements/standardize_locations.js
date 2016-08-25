@@ -1,7 +1,7 @@
 function status_message(text, caption) {
   text = '<P STYLE="position:absolute; top:50%; margin-top:-1em; width:100%; text-align:center"><B><FONT SIZE="+1">' + text + '</FONT></B></P>';
   caption = caption || 'Please wait...';
-  overlib(text, WIDTH, 444, HEIGHT, 168, CAPTION, caption, STICKY, AUTOSTATUSCAP, CLOSECLICK, MIDX, 0, MIDY, 0);
+  overlib(text, WIDTH, 444, HEIGHT, 168, CAPTION, caption, STICKY, AUTOSTATUSCAP, CLOSECLICK, NOCLOSE, MIDX, 0, MIDY, 0);
 }
 
 function form_address_info() {
