@@ -109,7 +109,12 @@ if ( $cgi->param('no_credit_limit') ) {
   $new->setfield('credit_limit', '');
 }
 
-$new->tagnum( [ $cgi->param('tagnum') ] );
+#$new->tagnum( [ $cgi->param('tagnum') ] );
+my $params = $cgi->Vars;
+$new->tagnum( [
+  map { /^tagnum(\d+)/ && $1 }
+    grep { /^tagnum(\d+)/ && $cgi->param($_) } keys %$params
+] );
 
 $error ||= $new->set_national_id_from_cgi( $cgi );
 
