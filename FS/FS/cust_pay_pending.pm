@@ -215,7 +215,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('paypendingnum')
-    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+    || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('payunique')
@@ -234,6 +234,10 @@ sub check {
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
   ;
   return $error if $error;
+
+  if (!$self->custnum and !$self->get('custnum_pending')) {
+    return 'custnum required';
+  }
 
   $self->_date(time) unless $self->_date;
 

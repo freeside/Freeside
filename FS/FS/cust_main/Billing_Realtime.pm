@@ -6,7 +6,7 @@ use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Carp;
 use Data::Dumper;
 use Business::CreditCard 0.35;
-use FS::UID qw( dbh );
+use FS::UID qw( dbh myconnect );
 use FS::Record qw( qsearch qsearchs );
 use FS::payby;
 use FS::cust_pay;
@@ -1722,6 +1722,7 @@ sub realtime_verify_bop {
   my $self = shift;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_verify_bop');
 
   my %options = ();
   if (ref($_[0]) eq 'HASH') {
@@ -1824,29 +1825,14 @@ sub realtime_verify_bop {
   # run transaction(s)
   ###
 
-  warn "claiming mutex on customer ". $self->custnum. "\n" if $DEBUG > 1;
-  $self->select_for_update; #mutex ... just until we get our pending record in
-  warn "obtained mutex on customer ". $self->custnum. "\n" if $DEBUG > 1;
-
-  #the checks here are intended to catch concurrent payments
-  #double-form-submission prevention is taken care of in cust_pay_pending::check
-
-  #also check and make sure there aren't *other* pending payments for this cust
-
-  my @pending = qsearch('cust_pay_pending', {
-    'custnum' => $self->custnum,
-    'status'  => { op=>'!=', value=>'done' } 
-  });
-
-  return "A payment is already being processed for this customer (".
-         join(', ', map 'paypendingnum '. $_->paypendingnum, @pending ).
-         "); verification transaction aborted."
-    if scalar(@pending);
-
-  #okay, good to go, if we're a duplicate, cust_pay_pending will kick us out
+  my $error;
+  my $transaction; #need this back so we can do _tokenize_card
+  # don't mutex the customer here, because they might be uncommitted. and
+  # this is only verification. it doesn't matter if they have other
+  # unfinished verifications.
 
   my $cust_pay_pending = new FS::cust_pay_pending {
-    'custnum'           => $self->custnum,
+    'custnum_pending'   => 1,
     'paid'              => '1.00',
     '_date'             => '',
     'payby'             => $bop_method2payby{'CC'},
@@ -1863,221 +1849,243 @@ sub realtime_verify_bop {
   $cust_pay_pending->payunique( $options{payunique} )
     if defined($options{payunique}) && length($options{payunique});
 
-  warn "inserting cust_pay_pending record for customer ". $self->custnum. "\n"
-    if $DEBUG > 1;
-  my $cpp_new_err = $cust_pay_pending->insert; #mutex lost when this is inserted
-  return $cpp_new_err if $cpp_new_err;
+  IMMEDIATE: {
+    # open a separate handle for creating/updating the cust_pay_pending record
+    local $FS::UID::dbh = myconnect();
+    local $FS::UID::AutoCommit = 1;
 
-  warn "inserted cust_pay_pending record for customer ". $self->custnum. "\n"
-    if $DEBUG > 1;
-  warn Dumper($cust_pay_pending) if $DEBUG > 2;
+    warn "inserting cust_pay_pending record for customer ". $self->custnum. "\n"
+      if $DEBUG > 1;
 
-  my $transaction = new $namespace( $payment_gateway->gateway_module,
-                                    $self->_bop_options(\%options),
-                                  );
+    # if this fails, just return; everything else will still allow the
+    # cust_pay_pending to have its custnum set later
+    my $cpp_new_err = $cust_pay_pending->insert;
+    return $cpp_new_err if $cpp_new_err;
 
-  $transaction->content(
-    'type'           => 'CC',
-    $self->_bop_auth(\%options),          
-    'action'         => 'Authorization Only',
-    'description'    => $options{'description'},
-    'amount'         => '1.00',
-    #'invoice_number' => $options{'invnum'},
-    'customer_id'    => $self->custnum,
-    %$bop_content,
-    'reference'      => $cust_pay_pending->paypendingnum, #for now
-    'callback_url'   => $payment_gateway->gateway_callback_url,
-    'cancel_url'     => $payment_gateway->gateway_cancel_url,
-    'email'          => $email,
-    %content, #after
-  );
+    warn "inserted cust_pay_pending record for customer ". $self->custnum. "\n"
+      if $DEBUG > 1;
+    warn Dumper($cust_pay_pending) if $DEBUG > 2;
 
-  $cust_pay_pending->status('pending');
-  my $cpp_pending_err = $cust_pay_pending->replace;
-  return $cpp_pending_err if $cpp_pending_err;
+    $transaction = new $namespace( $payment_gateway->gateway_module,
+                                   $self->_bop_options(\%options),
+                                    );
 
-  warn Dumper($transaction) if $DEBUG > 2;
+    $transaction->content(
+      'type'           => 'CC',
+      $self->_bop_auth(\%options),          
+      'action'         => 'Authorization Only',
+      'description'    => $options{'description'},
+      'amount'         => '1.00',
+      #'invoice_number' => $options{'invnum'},
+      'customer_id'    => $self->custnum,
+      %$bop_content,
+      'reference'      => $cust_pay_pending->paypendingnum, #for now
+      'callback_url'   => $payment_gateway->gateway_callback_url,
+      'cancel_url'     => $payment_gateway->gateway_cancel_url,
+      'email'          => $email,
+      %content, #after
+    );
 
-  unless ( $BOP_TESTING ) {
-    $transaction->test_transaction(1)
-      if $conf->exists('business-onlinepayment-test_transaction');
-    $transaction->submit();
-  } else {
-    if ( $BOP_TESTING_SUCCESS ) {
-      $transaction->is_success(1);
-      $transaction->authorization('fake auth');
+    $cust_pay_pending->status('pending');
+    my $cpp_pending_err = $cust_pay_pending->replace;
+    return $cpp_pending_err if $cpp_pending_err;
+
+    warn Dumper($transaction) if $DEBUG > 2;
+
+    unless ( $BOP_TESTING ) {
+      $transaction->test_transaction(1)
+        if $conf->exists('business-onlinepayment-test_transaction');
+      $transaction->submit();
     } else {
-      $transaction->is_success(0);
-      $transaction->error_message('fake failure');
+      if ( $BOP_TESTING_SUCCESS ) {
+        $transaction->is_success(1);
+        $transaction->authorization('fake auth');
+      } else {
+        $transaction->is_success(0);
+        $transaction->error_message('fake failure');
+      }
     }
-  }
 
-  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_verify_bop');
+    if ( $transaction->is_success() ) {
 
-  if ( $transaction->is_success() ) {
-
-    $cust_pay_pending->status('authorized');
-    my $cpp_authorized_err = $cust_pay_pending->replace;
-    return $cpp_authorized_err if $cpp_authorized_err;
-
-    my $auth = $transaction->authorization;
-    my $ordernum = $transaction->can('order_number')
-                   ? $transaction->order_number
-                   : '';
-
-    my $reverse = new $namespace( $payment_gateway->gateway_module,
-                                  $self->_bop_options(\%options),
-                                );
-
-    $reverse->content( 'action'        => 'Reverse Authorization',
-                       $self->_bop_auth(\%options),          
-
-                       # B:OP
-                       'amount'        => '1.00',
-                       'authorization' => $transaction->authorization,
-                       'order_number'  => $ordernum,
-
-                       # vsecure
-                       'result_code'   => $transaction->result_code,
-                       'txn_date'      => $transaction->txn_date,
-
-                       %content,
-                     );
-    $reverse->test_transaction(1)
-      if $conf->exists('business-onlinepayment-test_transaction');
-    $reverse->submit();
-
-    if ( $reverse->is_success ) {
-
-      $cust_pay_pending->status('done');
-      $cust_pay_pending->statustext('reversed');
+      $cust_pay_pending->status('authorized');
       my $cpp_authorized_err = $cust_pay_pending->replace;
       return $cpp_authorized_err if $cpp_authorized_err;
 
-    } else {
+      my $auth = $transaction->authorization;
+      my $ordernum = $transaction->can('order_number')
+                     ? $transaction->order_number
+                     : '';
 
-      my $e = "Authorization successful but reversal failed, custnum #".
-              $self->custnum. ': '.  $reverse->result_code.
-              ": ". $reverse->error_message;
-      $log->warning($e);
-      warn $e;
-      return $e;
+      my $reverse = new $namespace( $payment_gateway->gateway_module,
+                                    $self->_bop_options(\%options),
+                                  );
+
+      $reverse->content( 'action'        => 'Reverse Authorization',
+                         $self->_bop_auth(\%options),          
+
+                         # B:OP
+                         'amount'        => '1.00',
+                         'authorization' => $transaction->authorization,
+                         'order_number'  => $ordernum,
+
+                         # vsecure
+                         'result_code'   => $transaction->result_code,
+                         'txn_date'      => $transaction->txn_date,
+
+                         %content,
+                       );
+      $reverse->test_transaction(1)
+        if $conf->exists('business-onlinepayment-test_transaction');
+      $reverse->submit();
+
+      if ( $reverse->is_success ) {
+
+        $cust_pay_pending->status('done');
+        $cust_pay_pending->statustext('reversed');
+        my $cpp_reversed_err = $cust_pay_pending->replace;
+        return $cpp_reversed_err if $cpp_reversed_err;
+
+      } else {
+
+        my $e = "Authorization successful but reversal failed, custnum #".
+                $self->custnum. ': '.  $reverse->result_code.
+                ": ". $reverse->error_message;
+        $log->warning($e);
+        warn $e;
+        return $e;
+
+      }
+
+      ### Address Verification ###
+      #
+      # Single-letter codes vary by cardtype.
+      #
+      # Erring on the side of accepting cards if avs is not available,
+      # only rejecting if avs occurred and there's been an explicit mismatch
+      #
+      # Charts below taken from vSecure documentation,
+      #    shows codes for Amex/Dscv/MC/Visa
+      #
+      # ACCEPTABLE AVS RESPONSES:
+      # Both Address and 5-digit postal code match Y A Y Y
+      # Both address and 9-digit postal code match Y A X Y
+      # United Kingdom – Address and postal code match _ _ _ F
+      # International transaction – Address and postal code match _ _ _ D/M
+      #
+      # ACCEPTABLE, BUT ISSUE A WARNING:
+      # Ineligible transaction; or message contains a content error _ _ _ E
+      # System unavailable; retry R U R R
+      # Information unavailable U W U U
+      # Issuer does not support AVS S U S S
+      # AVS is not applicable _ _ _ S
+      # Incompatible formats – Not verified _ _ _ C
+      # Incompatible formats – Address not verified; postal code matches _ _ _ P
+      # International transaction – address not verified _ G _ G/I
+      #
+      # UNACCEPTABLE AVS RESPONSES:
+      # Only Address matches A Y A A
+      # Only 5-digit postal code matches Z Z Z Z
+      # Only 9-digit postal code matches Z Z W W
+      # Neither address nor postal code matches N N N N
+
+      if (my $avscode = uc($transaction->avs_code)) {
+
+        # map codes to accept/warn/reject
+        my $avs = {
+          'American Express card' => {
+            'A' => 'r',
+            'N' => 'r',
+            'R' => 'w',
+            'S' => 'w',
+            'U' => 'w',
+            'Y' => 'a',
+            'Z' => 'r',
+          },
+          'Discover card' => {
+            'A' => 'a',
+            'G' => 'w',
+            'N' => 'r',
+            'U' => 'w',
+            'W' => 'w',
+            'Y' => 'r',
+            'Z' => 'r',
+          },
+          'MasterCard' => {
+            'A' => 'r',
+            'N' => 'r',
+            'R' => 'w',
+            'S' => 'w',
+            'U' => 'w',
+            'W' => 'r',
+            'X' => 'a',
+            'Y' => 'a',
+            'Z' => 'r',
+          },
+          'VISA card' => {
+            'A' => 'r',
+            'C' => 'w',
+            'D' => 'a',
+            'E' => 'w',
+            'F' => 'a',
+            'G' => 'w',
+            'I' => 'w',
+            'M' => 'a',
+            'N' => 'r',
+            'P' => 'w',
+            'R' => 'w',
+            'S' => 'w',
+            'U' => 'w',
+            'W' => 'r',
+            'Y' => 'a',
+            'Z' => 'r',
+          },
+        };
+        my $cardtype = cardtype($content{card_number});
+        if ($avs->{$cardtype}) {
+          my $avsact = $avs->{$cardtype}->{$avscode};
+          my $warning = '';
+          if ($avsact eq 'r') {
+            return "AVS code verification failed, cardtype $cardtype, code $avscode";
+          } elsif ($avsact eq 'w') {
+            $warning = "AVS did not occur, cardtype $cardtype, code $avscode";
+          } elsif (!$avsact) {
+            $warning = "AVS code unknown, cardtype $cardtype, code $avscode";
+          } # else $avsact eq 'a'
+          if ($warning) {
+            $log->warning($warning);
+            warn $warning;
+          }
+        } # else $cardtype avs handling not implemented
+      } # else !$transaction->avs_code
+
+    } else { # is not success
+
+      # status is 'done' not 'declined', as in _realtime_bop_result
+      $cust_pay_pending->status('done');
+      $error = $transaction->error_message || 'Unknown error';
+      $cust_pay_pending->statustext($error);
+      # could also record failure_status here,
+      #   but it's not supported by B::OP::vSecureProcessing...
+      #   need a B::OP module with (reverse) auth only to test it with
+      my $cpp_declined_err = $cust_pay_pending->replace;
+      return $cpp_declined_err if $cpp_declined_err;
 
     }
 
-    ### Address Verification ###
-    #
-    # Single-letter codes vary by cardtype.
-    #
-    # Erring on the side of accepting cards if avs is not available,
-    # only rejecting if avs occurred and there's been an explicit mismatch
-    #
-    # Charts below taken from vSecure documentation,
-    #    shows codes for Amex/Dscv/MC/Visa
-    #
-    # ACCEPTABLE AVS RESPONSES:
-    # Both Address and 5-digit postal code match Y A Y Y
-    # Both address and 9-digit postal code match Y A X Y
-    # United Kingdom – Address and postal code match _ _ _ F
-    # International transaction – Address and postal code match _ _ _ D/M
-    #
-    # ACCEPTABLE, BUT ISSUE A WARNING:
-    # Ineligible transaction; or message contains a content error _ _ _ E
-    # System unavailable; retry R U R R
-    # Information unavailable U W U U
-    # Issuer does not support AVS S U S S
-    # AVS is not applicable _ _ _ S
-    # Incompatible formats – Not verified _ _ _ C
-    # Incompatible formats – Address not verified; postal code matches _ _ _ P
-    # International transaction – address not verified _ G _ G/I
-    #
-    # UNACCEPTABLE AVS RESPONSES:
-    # Only Address matches A Y A A
-    # Only 5-digit postal code matches Z Z Z Z
-    # Only 9-digit postal code matches Z Z W W
-    # Neither address nor postal code matches N N N N
+  } # end of IMMEDIATE; we now have our $error and $transaction
 
-    if (my $avscode = uc($transaction->avs_code)) {
+  ###
+  # Save the custnum (as part of the main transaction, so it can reference
+  # the cust_main)
+  ###
 
-      # map codes to accept/warn/reject
-      my $avs = {
-        'American Express card' => {
-          'A' => 'r',
-          'N' => 'r',
-          'R' => 'w',
-          'S' => 'w',
-          'U' => 'w',
-          'Y' => 'a',
-          'Z' => 'r',
-        },
-        'Discover card' => {
-          'A' => 'a',
-          'G' => 'w',
-          'N' => 'r',
-          'U' => 'w',
-          'W' => 'w',
-          'Y' => 'r',
-          'Z' => 'r',
-        },
-        'MasterCard' => {
-          'A' => 'r',
-          'N' => 'r',
-          'R' => 'w',
-          'S' => 'w',
-          'U' => 'w',
-          'W' => 'r',
-          'X' => 'a',
-          'Y' => 'a',
-          'Z' => 'r',
-        },
-        'VISA card' => {
-          'A' => 'r',
-          'C' => 'w',
-          'D' => 'a',
-          'E' => 'w',
-          'F' => 'a',
-          'G' => 'w',
-          'I' => 'w',
-          'M' => 'a',
-          'N' => 'r',
-          'P' => 'w',
-          'R' => 'w',
-          'S' => 'w',
-          'U' => 'w',
-          'W' => 'r',
-          'Y' => 'a',
-          'Z' => 'r',
-        },
-      };
-      my $cardtype = cardtype($content{card_number});
-      if ($avs->{$cardtype}) {
-        my $avsact = $avs->{$cardtype}->{$avscode};
-        my $warning = '';
-        if ($avsact eq 'r') {
-          return "AVS code verification failed, cardtype $cardtype, code $avscode";
-        } elsif ($avsact eq 'w') {
-          $warning = "AVS did not occur, cardtype $cardtype, code $avscode";
-        } elsif (!$avsact) {
-          $warning = "AVS code unknown, cardtype $cardtype, code $avscode";
-        } # else $avsact eq 'a'
-        if ($warning) {
-          $log->warning($warning);
-          warn $warning;
-        }
-      } # else $cardtype avs handling not implemented
-    } # else !$transaction->avs_code
-
-  } else { # is not success
-
-    # status is 'done' not 'declined', as in _realtime_bop_result
-    $cust_pay_pending->status('done');
-    $cust_pay_pending->statustext( $transaction->error_message || 'Unknown error' );
-    # could also record failure_status here,
-    #   but it's not supported by B::OP::vSecureProcessing...
-    #   need a B::OP module with (reverse) auth only to test it with
-    my $cpp_declined_err = $cust_pay_pending->replace;
-    return $cpp_declined_err if $cpp_declined_err;
-
+  $cust_pay_pending->set('custnum', $self->custnum);
+  my $set_custnum_err = $cust_pay_pending->replace;
+  if ($set_custnum_err) {
+    $log->error($set_custnum_err);
+    $error ||= $set_custnum_err;
+    # but if there was a real verification error also, return that one
   }
 
   ###
@@ -2102,7 +2110,9 @@ sub realtime_verify_bop {
   # result handling
   ###
 
-  $transaction->is_success() ? '' : $transaction->error_message();
+  # $error contains the transaction error_message, if is_success was false.
+ 
+  return $error;
 
 }
 

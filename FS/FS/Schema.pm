@@ -2395,7 +2395,7 @@ sub tables_hashref {
     'cust_pay_pending' => {
       'columns' => [
         'paypendingnum',      'serial',     '',      '', '', '',
-        'custnum',               'int',     '',      '', '', '', 
+        'custnum',               'int', 'NULL',      '', '', '', 
         'paid',            @money_type,                  '', '', 
         'currency',             'char', 'NULL',       3, '', '',
         '_date',            @date_type,                  '', '', 
