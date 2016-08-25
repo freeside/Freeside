@@ -1870,9 +1870,18 @@ sub realtime_verify_bop {
     if defined($options{payunique}) && length($options{payunique});
 
   IMMEDIATE: {
-    # open a separate handle for creating/updating the cust_pay_pending record
+    # open a separate handle for creating/updating the cust_pay_pending
+    # record
     local $FS::UID::dbh = myconnect();
     local $FS::UID::AutoCommit = 1;
+
+    # if this is an existing customer (and we can tell now because
+    # this is a fresh transaction), it's safe to assign their custnum
+    # to the cust_pay_pending record, and then the verification attempt
+    # will remain linked to them even if it fails.
+    if ( FS::cust_main->by_key($self->custnum) ) {
+      $cust_pay_pending->set('custnum', $self->custnum);
+    }
 
     warn "inserting cust_pay_pending record for customer ". $self->custnum. "\n"
       if $DEBUG > 1;
@@ -2100,12 +2109,14 @@ sub realtime_verify_bop {
   # the cust_main)
   ###
 
-  $cust_pay_pending->set('custnum', $self->custnum);
-  my $set_custnum_err = $cust_pay_pending->replace;
-  if ($set_custnum_err) {
-    $log->error($set_custnum_err);
-    $error ||= $set_custnum_err;
-    # but if there was a real verification error also, return that one
+  if (!$cust_pay_pending->custnum) {
+    $cust_pay_pending->set('custnum', $self->custnum);
+    my $set_custnum_err = $cust_pay_pending->replace;
+    if ($set_custnum_err) {
+      $log->error($set_custnum_err);
+      $error ||= $set_custnum_err;
+      # but if there was a real verification error also, return that one
+    }
   }
 
   ###
