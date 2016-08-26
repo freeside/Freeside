@@ -117,7 +117,7 @@
   { % First page
   }
   { % ... pages
-    \small{\thepage\ of \pageref{LastPage}}
+    \small{\thepage~[@-- emt('of') --@]~\pageref{LastPage}}
   }
 }
 
