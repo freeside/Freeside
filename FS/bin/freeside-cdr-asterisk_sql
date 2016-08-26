@@ -9,6 +9,8 @@ use FS::cdr;
 use DBI;
 use Getopt::Std;
 
+$DEBUG = 0;
+
 my %opt;
 getopts('e:H:U:P:D:T:', \%opt);
 my $user = shift or die &usage;
@@ -32,21 +34,35 @@ my $table = $opt{T} || 'cdr';
 if ( $engine =~ /^mysql/ ) {
   my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
   if( ! @$status ) {
-    print "Adding freesidestatus column...\n";
+    warn "Adding freesidestatus column...\n" if $DEBUG;
     $dbi->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
       or die $dbi->errstr;
   } else {
-    print "freesidestatus column present\n";
+    warn "freesidestatus column present\n" if $DEBUG;
   }
 }
 
-my @cols = ( qw( 
-calldate clid src dst dcontext channel lastapp lastdata duration 
-    billsec disposition amaflags accountcode uniqueid userfield) );
-my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
+my @cols = (qw( 
+  calldate clid src dst dcontext channel lastapp lastdata duration 
+  billsec disposition amaflags accountcode userfield
+));
+
+# check for existence of uniqueid
+if ( $engine =~ /^mysql/ ) {
+  my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'uniqueid'");
+  if( @$status ) {
+    push @cols, 'uniqueid';
+  }
+} else {
+  #assume there's a uniqueid
+  push @cols, 'uniqueid';
+}
+
+my $sql =
+  'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
 my $sth = $dbi->prepare($sql);
 $sth->execute;
-print "Importing ".$sth->rows." records...\n";
+warn "Importing ".$sth->rows." records...\n" if $DEBUG;
 
 my $cdr_batch = new FS::cdr_batch({ 
     'cdrbatch' => 'sql-import-'. time2str('%Y/%m/%d-%T',time),
@@ -63,8 +79,8 @@ while ( $row = $sth->fetchrow_hashref ) {
   $cdr->startdate(str2time($cdr->calldate));
   $cdr->cdrbatchnum($cdrbatchnum);
   my $error = $cdr->insert;
-  if($error) {
-    print "failed import: $error\n";
+  if ($error) {
+    warn "failed import: $error\n";
   }
   else {
     $imports++;
@@ -77,13 +93,13 @@ while ( $row = $sth->fetchrow_hashref ) {
 
       ) ) {
         $updates++;
-    }
-    else {
-      print "failed to set status: ".$dbi->errstr."\n";
+    } else {
+      warn "failed to set status: ".$dbi->errstr."\n";
     }
   }
 }
-print "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
+
+warn "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
 $dbi->disconnect;
 
 sub usage {
@@ -96,11 +112,23 @@ freeside-cdr-asterisk_sql - Import CDRs from an Asterisk SQL database
 
 =head1 SYNOPSIS
 
-  freeside-cdr-asterisk_sql -e mysql|Pg|... [ -H host ] -D database -U user -P password freesideuser
+  freeside-cdr-asterisk_sql -e mysql|Pg|... [ -H host ] -D database [ -T table ] -U user -P password [ -s ] freesideuser
 
 =head1 DESCRIPTION
 
 Imports CDR records from an Asterisk SQL database.
+
+-H: hostname
+
+-e: Database engine (default mysql)
+
+-D: database name
+
+-T: table name (default cdr)
+
+-U: username
+
+-P: password
 
 =cut
 
