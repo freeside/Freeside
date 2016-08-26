@@ -36,6 +36,8 @@ my @sort_fields = ( map '', @fields ); # should only ever sort by $col
 push @header, FS::UI::Web::cust_header($cust_fields);
 push @fields, \&FS::UI::Web::cust_fields;
 
+my $agentnums_sql = $curuser->agentnums_sql('table' => 'cust_main');
+
 my $query = {
   'table'     => 'cust_pkg',
   'addl_from' => FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
@@ -43,11 +45,13 @@ my $query = {
     $col => { op => '!=', value => '' },
     'cancel' => '',
   },
-  'order_by' => "ORDER BY $col",
+  'extra_sql' => ' AND '.$agentnums_sql,
+  'order_by'  => "ORDER BY $col",
 };
 
 my $count_query =
-  "SELECT COUNT(*) FROM cust_pkg WHERE $col IS NOT NULL AND cancel IS NULL";
+  "SELECT COUNT(*) FROM cust_pkg JOIN cust_main USING (custnum) ".
+  "WHERE $col IS NOT NULL AND cancel IS NULL AND $agentnums_sql";
 
 my $pkg_link = sub {
   my $self = shift;
