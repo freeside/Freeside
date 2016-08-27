@@ -415,6 +415,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_svc_msgcat;
   use FS::commission_schedule;
   use FS::commission_rate;
+  use FS::saved_search;
+  use FS::saved_search_option;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
