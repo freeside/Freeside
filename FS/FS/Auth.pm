@@ -13,7 +13,7 @@ sub auth_class {
   #my($class) = @_;
 
   my $conf = new FS::Conf;
-  my $module = lc($conf->config('authentication_module')) || 'internal';
+  my $module = lc($conf->config('authentication_module') || 'internal');
 
   my $auth_class = 'FS::Auth::'.$module;
   eval "use $auth_class;";
