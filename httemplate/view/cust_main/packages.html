@@ -308,7 +308,7 @@ my $num_pkgs = $cust_main->$method({
   'extra_sql' => $extra_sql,
 });
 
-my $maxrecords = 10;
+my $maxrecords = $conf->config('cust_main-packages-num_per_page') || 10;
 my $offset = $cgi->param('offset') =~ /^(\d+)$/ ? $1 : 0;
 $cgi->delete('offset');
 

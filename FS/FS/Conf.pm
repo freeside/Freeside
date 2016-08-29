@@ -1844,6 +1844,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-packages-num_per_page',
+    'section'     => 'packages',
+    'description' => 'Number of packages to display per page on customer view (default 10).',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'disable_maxselect',
     'section'     => 'reporting',
     'description' => 'Prevent changing the number of records per page.',
