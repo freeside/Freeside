@@ -326,6 +326,7 @@
                      'name_col' => 'name',
                      'hashref'  => { 'disabled' => '' },
                      'multiple' => 1,
+                     'curr_value_callback' => $report_option_value_callback,
                    },
 
                    { 'type'    => 'tablebreak-tr-title',
@@ -563,29 +564,42 @@ my $new_object_callback = sub {
 
 };
 
+my $report_option_value_callback = sub {
+  my ($cgi, $object) = @_;
+  my @report_option;
+  if ( defined $cgi->param('report_option') ) {
+    @report_option = $cgi->param('report_option');
+  } else {
+    foreach ($object->options) {
+      /^report_option_(\d+)$/ && (push @report_option, $1);
+    }
+  }
+  join(',', @report_option);
+};
+
 sub set_report_option {
   my($cgi, $object, $fields ) = @_; #, $opt
 
   my @report_option = ();
   foreach ($object->options) {
     /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
-    /^report_option_(\d+)$/ && (push @report_option, $1);
+#    /^report_option_(\d+)$/ && (push @report_option, $1);
   }
   foreach ($object->part_pkg_taxoverride) {
     $taxproductnums{$_->usage_class} = 1
       if $_->usage_class;
   }
 
-  $cgi->param('report_option', join(',', @report_option));
-  foreach my $field ( @$fields ) {
-    next unless ( 
-      ref($field) eq 'HASH' &&
-      $field->{field} &&
-      $field->{field} eq 'report_option'
-    );
-    #$field->{curr_value} = join(',', @report_option);
-    $field->{value} = join(',', @report_option);
-  }
+#  $cgi->param('report_option', join(',', @report_option));
+#  foreach my $field ( @$fields ) {
+#    next unless ( 
+#      ref($field) eq 'HASH' &&
+#      $field->{field} &&
+#      $field->{field} eq 'report_option'
+#    );
+#    #$field->{curr_value} = join(',', @report_option);
+#    $field->{value} = join(',', @report_option);
+#  }
 
 }
 
