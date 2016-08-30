@@ -2049,9 +2049,12 @@ sub tables_hashref {
         'district',        'varchar', 'NULL',      20, '', '',
         'censustract',     'varchar', 'NULL',      20, '', '',
         'censusyear',         'char', 'NULL',       4, '', '',
+
+        #used only in... DSL qualification?  .CA DSL qualification?
         'location_type',   'varchar', 'NULL',      20, '', '',
         'location_number', 'varchar', 'NULL',      20, '', '',
         'location_kind',      'char', 'NULL',       1, '', '',
+
         'incorporated',       'char', 'NULL',       1, '', '',
         'disabled',           'char', 'NULL',       1, '', '', 
       ],

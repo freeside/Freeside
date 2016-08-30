@@ -44,8 +44,9 @@ FS::cust_location - Object methods for cust_location records
 
 =head1 DESCRIPTION
 
-An FS::cust_location object represents a customer location.  FS::cust_location
-inherits from FS::Record.  The following fields are currently supported:
+An FS::cust_location object represents a customer (or prospect) location.
+FS::cust_location inherits from FS::Record.  The following fields are currently
+supported:
 
 =over 4
 
@@ -55,7 +56,15 @@ primary key
 
 =item custnum
 
-custnum
+Customer (see L<FS::cust_main>).
+
+=item prospectnum
+
+Prospect (see L<FS::prospect_main>).
+
+=item locationname
+
+Optional location name.
 
 =item address1
 
@@ -88,6 +97,23 @@ Country (see L<FS::cust_main_county>)
 =item geocode
 
 Geocode
+
+=item latitude
+
+=item longitude
+
+=item coord_auto
+
+Flag indicating whether coordinates were obtained automatically or manually
+entered
+
+=item addr_clean
+
+Flag indicating whether address has been normalized
+
+=item censustract
+
+=item censusyear
 
 =item district
 
