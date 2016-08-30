@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::Misc::Getopt;
+use FS::part_pkg;
+use FS::Record qw(qsearch dbh);
+
+our %opt;
+getopts('p:'); # pkgpart
+$FS::UID::AutoCommit = 0;
+
+sub usage {
+  die "Usage: part_pkg-clone_fix_options -p pkgpart[,pkgpart...] user\n\n";
+}
+
+my @pkgpart = split(',',$opt{p}) or usage();
+foreach my $base_pkgpart (@pkgpart) {
+  my $base_part_pkg = FS::part_pkg->by_key($base_pkgpart);
+  warn "Base package '".$base_part_pkg->pkg."'\n";
+  my @children = qsearch('part_pkg', { 'family_pkgpart' => $base_pkgpart });
+  next if !@children;
+  my $n_pkg = 0;
+  my $n_upd = 0;
+  my %base_options = $base_part_pkg->options;
+  my %report_classes = map { $_ => $base_options{$_} }
+                       grep /^report_option_/, keys %base_options;
+  if (!keys %report_classes) {
+    warn "No report classes.\n";
+    next;
+  }
+
+  foreach my $part_pkg (@children) {
+    my $pkgpart = $part_pkg->pkgpart;
+    next if $pkgpart == $base_pkgpart;
+    $n_pkg++;
+
+    # don't do this if it has report options already
+    my %options = $part_pkg->options;
+    if (grep /^report_option_/, keys %options) {
+      warn "#$pkgpart has report classes; skipped\n";
+    } else {
+      %options = ( %options, %report_classes );
+      my $error = $part_pkg->replace(options => \%options);
+      die "#$pkgpart: $error\n" if $error;
+      $n_upd++;
+    }
+  }
+  warn "Updated $n_upd / $n_pkg child packages.\n";
+}
+
+warn "Finished.\n";
+dbh->commit;
+
