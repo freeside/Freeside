@@ -597,17 +597,21 @@ sub insert {
       }
     }
 
-    my $contact = FS::contact->new({
-      'custnum'       => $self->get('custnum'),
-      'last'          => $self->get('last'),
-      'first'         => $self->get('first'),
-      'emailaddress'  => $email,
-      'invoice_dest'  => 'Y', # yes, you can set this via the contact
-    });
-    my $error = $contact->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+    if ( $email ) {
+
+      my $contact = FS::contact->new({
+        'custnum'       => $self->get('custnum'),
+        'last'          => $self->get('last'),
+        'first'         => $self->get('first'),
+        'emailaddress'  => $email,
+        'invoice_dest'  => 'Y', # yes, you can set this via the contact
+      });
+      my $error = $contact->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
     }
 
   }
