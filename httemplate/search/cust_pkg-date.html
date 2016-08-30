@@ -1,3 +1,16 @@
+<& elements/search.html,
+  'title'       => $title,
+  'name'        => 'packages',
+  'query'       => $query,
+  'count_query' => $count_query,
+  'header'      => \@header,
+  'fields'      => \@fields,
+  'align'       => 'rrrl'. FS::UI::Web::cust_aligns(),
+  'color'       => \@color,
+  'style'       => \@style,
+  'links'       => \@links,
+  'cell_style'  => [ $date_color_sub ],
+&>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
 die 'access denied' unless $curuser->access_right('List packages');
@@ -18,8 +31,7 @@ my $col = $cgi->param('date');
 die "invalid date column" unless $cols{$col};
 
 my $title = 'Packages by ' . lc($cols{$col}) . ' date';
-# second option on the cust_fields_avail list, plus email
-my $cust_fields = 'Cust# | Customer | Day phone | Night phone | Mobile phone | Invoicing email(s)';
+my $cust_fields = $cgi->param('cust_fields');
 my @header = ( $cols{$col},
                emt('#'),
                emt('Quan.'),
@@ -32,11 +44,18 @@ my @fields = ( sub { time2str('%b %d %Y', $_[0]->$col) },
                'pkg_label',
              );
 my @sort_fields = ( map '', @fields ); # should only ever sort by $col
+my @color = ( map '', @fields );
+my @style = ( map '', @fields );
 
 push @header, FS::UI::Web::cust_header($cust_fields);
 push @fields, \&FS::UI::Web::cust_fields;
+push @color, FS::UI::Web::cust_colors();
+push @style, FS::UI::Web::cust_styles();
 
 my $agentnums_sql = $curuser->agentnums_sql('table' => 'cust_main');
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
+  $agentnums_sql .= " AND agentnum = $1";
+}
 
 my $query = {
   'table'     => 'cust_pkg',
@@ -80,15 +99,4 @@ my $date_color_sub = sub {
 };
 
 </%init>
-<& elements/search.html,
-  'title'       => $title,
-  'name'        => 'packages',
-  'query'       => $query,
-  'count_query' => $count_query,
-  'header'      => \@header,
-  'fields'      => \@fields,
-  'align'       => 'rrrl'. FS::UI::Web::cust_aligns(),
-  'links'       => \@links,
-  'cell_style'  => [ $date_color_sub ],
-&>
 
