@@ -5,6 +5,7 @@
   'count_query' => $count_query,
   'header'      => \@header,
   'fields'      => \@fields,
+  'sort_fields' => [],
   'align'       => 'rrrl'. FS::UI::Web::cust_aligns(),
   'color'       => \@color,
   'style'       => \@style,
@@ -31,7 +32,6 @@ my $col = $cgi->param('date');
 die "invalid date column" unless $cols{$col};
 
 my $title = 'Packages by ' . lc($cols{$col}) . ' date';
-my $cust_fields = $cgi->param('cust_fields');
 my @header = ( $cols{$col},
                emt('#'),
                emt('Quan.'),
@@ -43,14 +43,25 @@ my @fields = ( sub { time2str('%b %d %Y', $_[0]->$col) },
                'quantity',
                'pkg_label',
              );
-my @sort_fields = ( map '', @fields ); # should only ever sort by $col
 my @color = ( map '', @fields );
 my @style = ( map '', @fields );
 
-push @header, FS::UI::Web::cust_header($cust_fields);
+my $pkg_link = sub {
+  my $self = shift;
+  my $frag = 'cust_pkg'. $self->pkgnum;
+  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
+                           ";show=packages;fragment=$frag#cust_pkg",
+    'pkgnum'
+  ];
+};
+
+my @links = ( '', ($pkg_link) x 3 );
+
+push @header, FS::UI::Web::cust_header($cgi->param('cust_fields'));
 push @fields, \&FS::UI::Web::cust_fields;
-push @color, FS::UI::Web::cust_colors();
-push @style, FS::UI::Web::cust_styles();
+push @color,  FS::UI::Web::cust_colors();
+push @style,  FS::UI::Web::cust_styles();
+push @links,  FS::UI::Web::cust_links();
 
 my $agentnums_sql = $curuser->agentnums_sql('table' => 'cust_main');
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
@@ -58,6 +69,7 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
 }
 
 my $query = {
+  'select'    => join(',', 'cust_pkg.*', FS::UI::Web::cust_sql_fields() ),
   'table'     => 'cust_pkg',
   'addl_from' => FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
   'hashref'   => {
@@ -72,17 +84,6 @@ my $count_query =
   "SELECT COUNT(*) FROM cust_pkg JOIN cust_main USING (custnum) ".
   "WHERE $col IS NOT NULL AND cancel IS NULL AND $agentnums_sql";
 
-my $pkg_link = sub {
-  my $self = shift;
-  my $frag = 'cust_pkg'. $self->pkgnum;
-  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
-                           ";show=packages;fragment=$frag#cust_pkg",
-    'pkgnum'
-  ];
-};
-
-my @links = ( '', ($pkg_link) x 3,
-  FS::UI::Web::cust_links() );
 
 my $date_color_sub = sub {
   my $self = shift;
