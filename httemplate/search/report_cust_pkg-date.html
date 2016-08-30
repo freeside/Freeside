@@ -1,0 +1,38 @@
+<& /elements/header.html, mt($title) &>
+
+<FORM ACTION="cust_pkg-date.html" METHOD="GET">
+<INPUT TYPE="hidden" NAME="date" VALUE="<% $col %>">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'disable_empty' => 0,
+  &>
+
+  <& /elements/tr-select-cust-fields.html &>
+  
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+# for the page title
+my %cols = (
+  'contract_end' => 'Contract end'
+);
+
+# or let the column be selected here?
+my $col = $cgi->param('date');
+die "invalid date column" unless $cols{$col};
+my $title = 'Packages by ' . lc($cols{$col}) . ' date';
+
+</%init>
