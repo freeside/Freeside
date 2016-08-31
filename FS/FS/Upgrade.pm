@@ -361,6 +361,9 @@ sub upgrade_data {
     #payby actions to new ones
     'part_event' => [],
 
+    #fix whitespace - before cust_main
+    'cust_location' => [],
+
     #cust_main (remove paycvv from history, locations, cust_payby, etc)
     'cust_main' => [],
 
@@ -490,9 +493,6 @@ sub upgrade_data {
     #mark certain taxes as system-maintained,
     # and fix whitespace
     'cust_main_county' => [],
-
-    #fix whitespace
-    'cust_location' => [],
   ;
 
   \%hash;
