@@ -30,8 +30,8 @@
 % if ( $cust_main->num_ncancelled_pkgs < 54 ) {
 %   foreach my $freq_info ($cust_main->display_recurring) {
       <TR>
-        <TH ALIGN="right"><% emt( ucfirst($freq_info->{'freq_pretty'}). ' recurring' ) %></TH>
-        <TD><% $money_char. sprintf('%.2f', $freq_info->{'amount'}) %></TD>
+        <TD ALIGN="right"><% emt( ucfirst($freq_info->{'freq_pretty'}). ' recurring' ) %></TD>
+        <TD BGCOLOR="#ffffff"><% $money_char. sprintf('%.2f', $freq_info->{'amount'}) %></TD>
       </TR>
 %   }
 % }
