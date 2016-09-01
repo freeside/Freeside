@@ -32,6 +32,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'switch_acct'               => 'MyAccount/switch_acct',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
+  'customer_recurring'        => 'MyAccount/customer_recurring',
 
   'contact_passwd'            => 'MyAccount/contact/contact_passwd',
   'list_contacts'             => 'MyAccount/contact/list_contacts',
@@ -476,6 +477,31 @@ An HTML fragment containing shipping and billing addresses.
 =item The following fields are also returned
 
 first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax payby payinfo payname month year invoicing_list postal_invoicing
+
+=back
+
+=item customer_recurring HASHREF
+
+Takes a hash reference as parameter with a single key B<session_id>
+or keys B<agent_session_id> and B<custnum>.
+
+Returns a hash reference with the keys error, custnum and display_recurring.
+
+display_recurring is an arrayref of hashrefs with the following keys:
+
+=over 4
+
+=item freq
+
+frequency of charge, in months unless units are specified
+
+=item freq_pretty
+
+frequency of charge, suitable for display
+
+=item amount
+
+amount charged at this frequency
 
 =back
 
