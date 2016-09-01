@@ -112,6 +112,7 @@ sub ss2clientapi {
   'switch_cust'               => 'MyAccount/switch_cust',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
+  'customer_recurring'        => 'MyAccount/customer_recurring',
 
   'contact_passwd'            => 'MyAccount/contact/contact_passwd',
   'list_contacts'             => 'MyAccount/contact/list_contacts',
