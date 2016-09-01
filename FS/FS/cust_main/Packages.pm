@@ -882,7 +882,6 @@ sub display_recurring {
   } #foreach $freq
 
   return @out;
->>>>>>> 4b56fbb... RT#71890: SelfService API: Return monthly recurring fee [display_recurring]
 }
 
 =back
