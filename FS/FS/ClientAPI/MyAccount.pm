@@ -672,6 +672,29 @@ sub customer_info_short {
          };
 }
 
+sub customer_recurring {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my %return;
+
+  my $conf = new FS::Conf;
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
+    or return { 'error' => "customer_info_short: unknown custnum $custnum" };
+
+  $return{'display_recurring'} = [ $cust_main->display_recurring ];
+
+  return { 'error'          => '',
+           'custnum'        => $custnum,
+           %return,
+         };
+}
+
 sub billing_history {
   my $p = shift;
 
