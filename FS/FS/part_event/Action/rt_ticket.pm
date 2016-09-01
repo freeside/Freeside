@@ -23,7 +23,7 @@ sub option_fields {
                      'type'     => 'select-table',
                      'table'    => 'msg_template',
                      'name_col' => 'msgname',
-                     'hashref'  => { disabled => '' },
+                     'hashref'  => { disabled => '', msgclass => 'email' },
                      'disable_empty' => 1,
                    },
     'queueid'   => { 'label' => 'Queue',
