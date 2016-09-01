@@ -66,12 +66,12 @@ sub do_action {
   
   FS::TicketSystem->init();
 
-  my $cust_msg = $msg_template->prepare(
+  my %msg = $msg_template->prepare(
     'cust_main' => $cust_main,
     'object'    => $object,
   );
 
-  my $subject = $cust_msg->entity->head->get('Subject');
+  my $subject = $msg{'subject'};
   chomp($subject);
 
   my $requestor = $self->option('requestor')
@@ -87,7 +87,7 @@ sub do_action {
     'queue'     => $queueid,
     'subject'   => $subject,
     'requestor' => $requestor,
-    'message'   => $cust_msg->preview,
+    'message'   => $msg{'html_body'},
     'mime_type' => 'text/html',
     'custnum'   => $cust_main->custnum,
     'svcnum'    => $svcnum,
