@@ -188,13 +188,14 @@ unless ($OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'AddMoreAttach'} ) 
     push @results, ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS);
     push @results, ProcessTicketStatus( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
-$Ticket->ApplyTransactionBatch;
+    $Ticket->ApplyTransactionBatch;
 
-MaybeRedirectForResults(
-    Actions   => \@results,
-    Path      => "/Ticket/ModifyAll.html",
-    Arguments => { id => $Ticket->id },
-);
+    MaybeRedirectForResults(
+        Actions   => \@results,
+        Path      => "/Ticket/ModifyAll.html",
+        Arguments => { id => $Ticket->id },
+    );
+}
 
 # If they've gone and moved the ticket to somewhere they can't see, etc...
 unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
