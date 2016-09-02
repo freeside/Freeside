@@ -1713,7 +1713,7 @@ sub tables_hashref {
     'cust_pay_pending' => {
       'columns' => [
         'paypendingnum','serial',      '',  '', '', '',
-        'custnum',      'int',         '',  '', '', '', 
+        'custnum',      'int',     'NULL',  '', '', '', 
         'paid',         @money_type,            '', '', 
         '_date',        @date_type,             '', '', 
         'payby',        'char',        '',   4, '', '', #CARD/BILL/COMP, should

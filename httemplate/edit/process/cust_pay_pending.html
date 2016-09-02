@@ -59,6 +59,15 @@ if ( $action eq 'delete' ) {
     $title = 'Pending payment completed (decline)';
   }
 
+} elsif ( $action eq 'reverse' ) {
+
+  $error = $cust_pay_pending->reverse;
+  if ( $error ) {
+    $title = 'Error reversing pending payment';
+  } else {
+    $title = 'Pending payment completed (reverse)';
+  }
+
 } else {
 
   die "unknown action $action";

@@ -213,7 +213,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('paypendingnum')
-    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+    || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('payunique')
@@ -231,6 +231,10 @@ sub check {
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
   ;
   return $error if $error;
+
+  if (!$self->custnum and !$self->get('custnum_pending')) {
+    return 'custnum required';
+  }
 
   $self->_date(time) unless $self->_date;
 
@@ -445,6 +449,26 @@ sub decline {
   my $statustext = shift || "declined (manual)";
 
   #could send decline email too?  doesn't seem useful in manual resolution
+
+  $self->status('done');
+  $self->statustext($statustext);
+  $self->replace;
+}
+
+=item reverse [ STATUSTEXT ]
+
+Sets the status of this pending payment to "done" (with statustext
+"reversed (manual)" unless otherwise specified).
+
+Currently only used when resolving pending payments manually.
+
+=cut
+
+# almost complete false laziness with decline,
+# but want to avoid confusion, in case any additional steps/defaults are ever added to either
+sub reverse {
+  my $self = shift;
+  my $statustext = shift || "reversed (manual)";
 
   $self->status('done');
   $self->statustext($statustext);

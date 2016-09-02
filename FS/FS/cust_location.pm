@@ -14,6 +14,12 @@ use FS::cust_main_county;
 use FS::part_export;
 use FS::GeocodeCache;
 
+# Essential fields. Can't be modified in place, will be considered in
+# deciding if a location is "new", and (because of that) can't have
+# leading/trailing whitespace.
+my @essential = (qw(custnum address1 address2 city county state zip country
+  location_number location_type location_kind disabled));
+
 $import = 0;
 
 $DEBUG = 0;
@@ -142,9 +148,6 @@ sub find_or_insert {
   my $self = shift;
 
   warn "find_or_insert:\n".Dumper($self) if $DEBUG;
-
-  my @essential = (qw(custnum address1 address2 city county state zip country
-    location_number location_type location_kind disabled));
 
   if ($conf->exists('cust_main-no_city_in_address')) {
     warn "Warning: passed city to find_or_insert when cust_main-no_city_in_address is configured, ignoring it"
@@ -346,9 +349,9 @@ sub check {
 
   return '' if $self->disabled; # so that disabling locations never fails
 
-  # maybe should just do all fields in the table?
-  # or in every table?
-  $self->trim_whitespace(qw(district city county state country));
+  # whitespace in essential fields leads to problems figuring out if a
+  # record is "new"; get rid of it.
+  $self->trim_whitespace(@essential);
 
   my $error = 
     $self->ut_numbern('locationnum')
@@ -907,7 +910,9 @@ sub _upgrade_data {
 
   # trim whitespace on records that need it
   local $allow_location_edit = 1;
-  foreach my $field (qw(city county state country district)) {
+  foreach my $field (@essential) {
+    next if $field eq 'custnum';
+    next if $field eq 'disabled';
     foreach my $location (qsearch({
       table => 'cust_location',
       extra_sql => " WHERE $field LIKE ' %' OR $field LIKE '% '"

@@ -161,9 +161,14 @@ sub password_equals {
 }
 
 sub _upgrade_schema {
+  my $class = shift;
+  # if the table doesn't exist yet then nothing needs to happen here
+  my $dbdef_table = $class->dbdef_table
+    or return;
+
   # clean up history records where linked_acct has gone away
   my @where;
-  for my $fk ( grep /__/, __PACKAGE__->dbdef_table->columns ) {
+  for my $fk ( grep /__/, $dbdef_table->columns ) {
     my ($table, $key) = split(/__/, $fk);
     push @where, "
       ( $fk IS NOT NULL AND NOT EXISTS(SELECT 1 FROM $table WHERE $table.$key = $fk) )";

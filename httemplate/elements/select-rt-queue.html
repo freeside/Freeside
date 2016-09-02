@@ -1,4 +1,4 @@
-<SELECT NAME="<% $opt{'name'} %>"<% $opt{'multiple'} ? ' MULTIPLE' : '' %>>
+<SELECT NAME="<% $opt{'name'} || $opt{'field'} %>"<% $opt{'multiple'} ? ' MULTIPLE' : '' %>>
 % while ( @fields ) {
 %   my $value = shift @fields;
 %   my $label = shift @fields;

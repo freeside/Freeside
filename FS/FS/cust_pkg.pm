@@ -6108,6 +6108,12 @@ sub _upgrade_data {  # class method
   }
 }
 
+# will autoload in v4+
+sub rt_field_charge {
+  my $self = shift;
+  qsearch('rt_field_charge',{ 'pkgnum' => $self->pkgnum });
+}
+
 =back
 
 =head1 BUGS

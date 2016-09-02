@@ -1,3 +1,17 @@
+<& elements/search.html,
+  'title'       => $title,
+  'name'        => 'packages',
+  'query'       => $query,
+  'count_query' => $count_query,
+  'header'      => \@header,
+  'fields'      => \@fields,
+  'sort_fields' => [],
+  'align'       => 'rrrl'. FS::UI::Web::cust_aligns(),
+  'color'       => \@color,
+  'style'       => \@style,
+  'links'       => \@links,
+  'cell_style'  => [ $date_color_sub ],
+&>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
 die 'access denied' unless $curuser->access_right('List packages');
@@ -18,8 +32,6 @@ my $col = $cgi->param('date');
 die "invalid date column" unless $cols{$col};
 
 my $title = 'Packages by ' . lc($cols{$col}) . ' date';
-# second option on the cust_fields_avail list, plus email
-my $cust_fields = 'Cust# | Customer | Day phone | Night phone | Mobile phone | Invoicing email(s)';
 my @header = ( $cols{$col},
                emt('#'),
                emt('Quan.'),
@@ -31,23 +43,8 @@ my @fields = ( sub { time2str('%b %d %Y', $_[0]->$col) },
                'quantity',
                'pkg_label',
              );
-my @sort_fields = ( map '', @fields ); # should only ever sort by $col
-
-push @header, FS::UI::Web::cust_header($cust_fields);
-push @fields, \&FS::UI::Web::cust_fields;
-
-my $query = {
-  'table'     => 'cust_pkg',
-  'addl_from' => FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
-  'hashref'   => {
-    $col => { op => '!=', value => '' },
-    'cancel' => '',
-  },
-  'order_by' => "ORDER BY $col",
-};
-
-my $count_query =
-  "SELECT COUNT(*) FROM cust_pkg WHERE $col IS NOT NULL AND cancel IS NULL";
+my @color = ( map '', @fields );
+my @style = ( map '', @fields );
 
 my $pkg_link = sub {
   my $self = shift;
@@ -58,8 +55,35 @@ my $pkg_link = sub {
   ];
 };
 
-my @links = ( '', ($pkg_link) x 3,
-  FS::UI::Web::cust_links() );
+my @links = ( '', ($pkg_link) x 3 );
+
+push @header, FS::UI::Web::cust_header($cgi->param('cust_fields'));
+push @fields, \&FS::UI::Web::cust_fields;
+push @color,  FS::UI::Web::cust_colors();
+push @style,  FS::UI::Web::cust_styles();
+push @links,  FS::UI::Web::cust_links();
+
+my $agentnums_sql = $curuser->agentnums_sql('table' => 'cust_main');
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
+  $agentnums_sql .= " AND agentnum = $1";
+}
+
+my $query = {
+  'select'    => join(',', 'cust_pkg.*', FS::UI::Web::cust_sql_fields() ),
+  'table'     => 'cust_pkg',
+  'addl_from' => FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
+  'hashref'   => {
+    $col => { op => '!=', value => '' },
+    'cancel' => '',
+  },
+  'extra_sql' => ' AND '.$agentnums_sql,
+  'order_by'  => "ORDER BY $col",
+};
+
+my $count_query =
+  "SELECT COUNT(*) FROM cust_pkg JOIN cust_main USING (custnum) ".
+  "WHERE $col IS NOT NULL AND cancel IS NULL AND $agentnums_sql";
+
 
 my $date_color_sub = sub {
   my $self = shift;
@@ -76,15 +100,4 @@ my $date_color_sub = sub {
 };
 
 </%init>
-<& elements/search.html,
-  'title'       => $title,
-  'name'        => 'packages',
-  'query'       => $query,
-  'count_query' => $count_query,
-  'header'      => \@header,
-  'fields'      => \@fields,
-  'align'       => 'rrrl'. FS::UI::Web::cust_aligns(),
-  'links'       => \@links,
-  'cell_style'  => [ $date_color_sub ],
-&>
 

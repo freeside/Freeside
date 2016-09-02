@@ -4,6 +4,10 @@
 
     <CENTER><FONT SIZE="+1"><B>Are you sure you want to delete this pending payment?</B></FONT></CENTER>
 
+% } elsif (( $action eq 'complete' ) and $authorized) {
+
+    <CENTER><FONT SIZE="+1"><B>Payment was authorized but not captured.  Contact <% $cust_pay_pending->processor || 'the payment gateway' %> to establish the final disposition of this transaction.</B></FONT></CENTER>
+
 % } elsif ( $action eq 'complete' ) {
 
     <CENTER><FONT SIZE="+1"><B>No response was received from <% $cust_pay_pending->processor || 'the payment gateway' %> for this transaction.  Check <% $cust_pay_pending->processor || 'the payment gateway' %>'s reporting and determine if this transaction completed successfully.</B></FONT></CENTER>
@@ -97,8 +101,6 @@
 
 % } else {
 
-%#   if ( $action eq 'complete' ) {
-
     <INPUT TYPE="hidden" NAME="action" VALUE="">
 
     <TR>
@@ -106,17 +108,24 @@
         <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'insert_cust_pay'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/tick.png" ALT=""-->Yes, transaction completed sucessfully.</BUTTON>
       </TD>
 
-%     if ( $action eq 'complete' ) {
+%   if ( $action eq 'complete' ) {
         <TD>&nbsp;&nbsp;&nbsp;</TD>
+%     if ($authorized) {
+        <TD ALIGN="center">
+          <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'reverse'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was reversed</BUTTON>
+        </TD>
+%     } else {
         <TD ALIGN="center">
           <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'decline'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was declined</BUTTON>
         </TD>
+%     }
         <TD>&nbsp;&nbsp;&nbsp;</TD>
         <TD ALIGN="center">
           <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'delete'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was not received</BUTTON>
         </TD>
-      </TR>
 %   }
+
+    </TR>
 
     <TR><TD COLSPAN=5></TD></TR>
 
@@ -155,6 +164,8 @@ my $cust_pay_pending =
     'extra_sql' => ' AND '. $curuser->agentnums_sql,
   })
   or die 'unknown paypendingnum';
+
+my $authorized = ($cust_pay_pending->status eq 'authorized') ? 1 : 0;
 
 my $conf = new FS::Conf;
 
