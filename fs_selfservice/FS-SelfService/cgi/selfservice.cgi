@@ -599,25 +599,25 @@ sub payment_results {
   #the rest, it gives better error messages
 
   $cgi->param('amount') =~ /^\s*(\d+(\.\d{2})?)\s*$/
-    or die "Illegal amount: ". $cgi->param('amount'); #!!!
+    or return { 'error' => "Illegal amount: ". $cgi->param('amount') }; #!!!
   my $amount = $1;
 
   my $payinfo = $cgi->param('payinfo');
   $payinfo =~ s/[^\dx]//g;
   $payinfo =~ /^([\dx]{13,16}|[\dx]{8,9})$/
     #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
-    or die "illegal card"; #!!!
+    or return { 'error' => "illegal card" }; #!!!
   $payinfo = $1;
   unless ( $payinfo =~ /x/ ) {
     validate($payinfo)
       #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
-      or die "invalid card"; #!!!
+      or return { 'error' => "invalid card" }; #!!!
   }
 
   if ( $cgi->param('card_type') ) {
     cardtype($payinfo) eq $cgi->param('card_type')
       #or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
-      or die "not a ". $cgi->param('card_type');
+      or return { 'error' => "not a ". $cgi->param('card_type') };
   }
 
   $cgi->param('paycvv') =~ /^\s*(.{0,4})\s*$/ or die "illegal CVV2";
