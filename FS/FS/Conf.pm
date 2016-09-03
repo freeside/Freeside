@@ -4440,7 +4440,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main-require_classnum',
-    'section'     => 'customer_fields',
+    'section'     => '',
     'description' => 'Customer class is required: require customer class for all customer records.',
     'type'        => 'checkbox',
   },
