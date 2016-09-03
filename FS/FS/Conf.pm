@@ -4176,6 +4176,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-require_classnum',
+    'section'     => 'customer_fields',
+    'description' => 'Customer class is required: require customer class for all customer records.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-check_unique',
     'section'     => 'customer_fields',
     'description' => 'Warn before creating a customer record where these fields duplicate another customer.',

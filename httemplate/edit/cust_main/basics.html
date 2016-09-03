@@ -169,9 +169,12 @@
 % }
 
 %# class
+% my $rclass = $conf->exists('cust_main-require_classnum') ? $r : '';
 <& /elements/tr-select-cust_class.html,
-             'curr_value'  => $cust_main->classnum,
-             'label'       => emt("Class"),
+             'curr_value'    => $cust_main->classnum,
+             'label'         => $rclass . emt("Class"),
+             'empty_label'   => $rclass ? 'Select class' : '(none)',
+             'disable_empty' => ($rclass && $cust_main->classnum) ? 1 : 0,
 &>
 
 %# tax status
