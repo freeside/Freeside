@@ -2158,6 +2158,10 @@ sub check {
     && ! $self->custnum
     && $conf->exists('cust_main-require_locale');
 
+  return "Please select a customer class"
+    if ! $self->classnum
+    && $conf->exists('cust_main-require_classnum');
+
   foreach my $flag (qw( tax spool_cdr squelch_cdr archived email_csv_cdr )) {
     $self->$flag() =~ /^(Y?)$/ or return "Illegal $flag: ". $self->$flag();
     $self->$flag($1);
