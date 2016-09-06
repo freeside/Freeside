@@ -138,8 +138,7 @@ my $id = $cgi->param('id');
 my $select_onclick = sub {
   my $row = shift;
   my $taxnum = $row->taxproductnum;
-  my $code = $row->taxproduct;
-  my $desc = $row->description;
+  my $desc = $row->taxproduct . ' ' . $row->description;
   "select_taxproduct('$taxnum', '$desc')";
 };
 
