@@ -2,9 +2,8 @@
 
 my $usage = "
 This script is for fixing CDRs that were supposed to receive Taqua
-accountcode/caller ID rewrites but didn't. It will skip records that had
-any rewrites performed, but will operate on CDRs that have already been
-billed. Options:
+accountcode/caller ID rewrites but didn't. It will reprocess records that
+were already rewritten, so use with caution. Options:
 
 -s DATE: find calls on or after DATE (required)
 -e DATE: find calls on or before DATE (optional, defaults to right now)
@@ -25,7 +24,7 @@ die $usage unless $opt{start};
 my $fixed = 0;
 my $notfound = 0;
 my $failed = 0;
-my $extra_sql = 'WHERE lastapp IS NOT NULL AND freesiderewritestatus IS NULL' .
+my $extra_sql = 'WHERE lastapp IS NOT NULL '.
                 ' AND cdrtypenum = 1'.
                 ' AND calldate >= to_timestamp('.$opt{start}.')';
 if ( $opt{end} ) {
