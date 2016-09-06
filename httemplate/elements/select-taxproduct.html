@@ -1,14 +1,79 @@
-<% $opt{'prefix'} %><INPUT NAME    = "<% $name %>"
-                           ID      = "<% $name %>"
-                           TYPE    = "hidden"
-                           VALUE   = "<% $value |h %>"
-                    >
-                    <INPUT NAME    = "<% $name %>_description"
-                           ID      = "<% $name %>_description"
-                           TYPE    = "text"
-                           VALUE   = "<% $description %>"
-                           SIZE    = "12"
-                           onClick = "<% $onclick %>"><% $opt{'postfix'} %>
+% if (!$init) {
+%   $init = 1;
+<STYLE TYPE="text/css">
+.ui-autocomplete-loading {
+  background-color: silver;
+}
+ul.ui-autocomplete li.ui-menu-item {
+  font-size: 0.8em;
+  padding: 2px;
+}
+ul.ui-autocomplete li.ui-state-focus {
+  font-weight: normal;
+  color: #7e0079;
+  background-color: inherit;
+  border: 1px solid #7e0079;
+}
+</STYLE>
+<SCRIPT TYPE="text/javascript">
+$().ready(function() {
+  $('input.taxproduct_desc').autocomplete({
+    source: '<% $fsurl %>misc/taxproduct.cgi',
+    minLength: 3,
+    autoFocus: true,
+    response: function( event, ui ) {
+      // if there's only one choice (user entered an exact taxproduct) then
+      // select it
+      if ( ui.content.length == 1 ) {
+        var input_taxproductnum = $(this).siblings('.taxproductnum')
+        var item = ui.content[0];
+        $(this).val(item.label);
+        input_taxproductnum.val(item.value);
+      }
+    },
+    focus: function( event, ui ) {
+      return false;
+    },
+    select: function( event, ui ) {
+      // find the hidden input for the taxproductnum
+      var input_taxproductnum = $(this).siblings('.taxproductnum')
+      if ( ui.item ) {
+        $(this).val(ui.item.label);
+        input_taxproductnum.val(ui.item.value);
+        return false; // don't store item.value in this input
+      } else {
+        input_taxproductnum.val('');
+      }
+    },
+    change: function( event, ui ) {
+      var input_taxproductnum = $(this).siblings('.taxproductnum')
+      if ( $(this).val() == '' ) {
+        input_taxproductnum.val('');
+      }
+    }
+  });
+});
+</SCRIPT>
+% }
+<% $opt{'prefix'} %>
+<INPUT NAME    = "<% $name %>"
+       ID      = "<% $name %>"
+       TYPE    = "hidden"
+       VALUE   = "<% $value |h %>"
+       CLASS   = "taxproductnum"
+>
+<INPUT NAME    = "<% $name %>_description"
+       ID      = "<% $name %>_description"
+       TYPE    = "text"
+       VALUE   = "<% $description %>"
+       SIZE    = "50"
+       CLASS   = "taxproduct_desc" 
+>
+<BUTTON STYLE="padding: 0" onclick="<% $onclick %>">...</BUTTON>
+<% $opt{'postfix'} %>
+<%shared>
+my $init = 0;
+</%shared>
 <%init>
 
 my %opt = @_;
@@ -19,7 +84,8 @@ my $description = $opt{'taxproduct_description'};
 unless ( $description || ! $value ) {
     my $part_pkg_taxproduct =
       qsearchs( 'part_pkg_taxproduct', { 'taxproductnum'=> $value } );
-    $description = $part_pkg_taxproduct->description
+    $description = $part_pkg_taxproduct->taxproduct . ' ' .
+                   $part_pkg_taxproduct->description
       if $part_pkg_taxproduct;
 }
 

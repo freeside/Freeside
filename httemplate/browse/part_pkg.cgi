@@ -27,6 +27,19 @@
                  'html_foot'             => $html_foot,
              )
 %>
+<%def .style>
+<STYLE TYPE="text/css">
+  .taxproduct_desc {
+    color: blue;
+    text-decoration: underline dotted;
+  }
+</STYLE>
+<SCRIPT TYPE="text/javascript">
+$().ready(function() {
+  $('.taxproduct_desc').tooltip({});
+});
+</SCRIPT>
+</%def>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -45,6 +58,7 @@ die "access denied"
 
 my $conf = new FS::Conf;
 my $taxclasses = $conf->exists('enable_taxclasses');
+my $taxvendor = $conf->config('tax_data_vendor');
 my $money_char = $conf->config('money_char') || '$';
 
 my $select = '*';
@@ -180,6 +194,7 @@ my $html_init = qq!
     </FORM>
     <BR><BR>
   !;
+$html_init .= include('.style');
 
 $cgi->param('dummy', 1);
 
@@ -562,6 +577,43 @@ if ( $taxclasses ) {
   push @header, 'Taxclass';
   push @fields, sub { shift->taxclass() || '&nbsp;'; };
   $align .= 'l';
+} elsif ( $taxvendor ) {
+  push @header, 'Tax product';
+  my @classnums = ( 'setup', 'recur' );
+  my @classnames = ( 'Setup', 'Recur' );
+  foreach ( qsearch('usage_class', { disabled => '' }) ) {
+    push @classnums, $_->classnum;
+    push @classnames, $_->classname;
+  }
+  my $taxproduct_sub = sub {
+    my $ppt = shift;
+    '<SPAN CLASS="taxproduct_desc" TITLE="' .
+      encode_entities($ppt->description) .
+    '">' . encode_entities($ppt->taxproduct) . '</SPAN>'
+  };
+  my $taxproduct_list_sub = sub {
+    my $part_pkg = shift;
+    my $base_ppt = $part_pkg->taxproduct;
+    my $out = [];
+    if ( $base_ppt ) {
+      push @$out, [
+        { 'data'  => '', 'align' => 'left' },
+        { 'data'  => &$taxproduct_sub($base_ppt), 'align' => 'right' },
+      ];
+    }
+    for (my $i = 0; $i < scalar @classnums; $i++) {
+      my $num = $part_pkg->option('usage_taxproductnum_' . $classnums[$i]);
+      next if !$num;
+      my $ppt = FS::part_pkg_taxproduct->by_key($num);
+      push @$out, [
+        { 'data'  => $classnames[$i] . ': ', 'align' => 'left', },
+        { 'data'  => &$taxproduct_sub($ppt), 'align' => 'right' },
+      ];
+    }
+    $out;
+  };
+  push @fields, $taxproduct_list_sub;
+  $align .= 'l';
 }
 
 # make a table of report class optionnames =>  the actual 
@@ -602,7 +654,9 @@ push @fields,
                         sort
                         grep { $options{$_} =~ /\S/ } 
                         grep { $_ !~ /^(setup|recur)_fee$/ 
-                               and $_ !~ /^report_option_\d+$/ }
+                               and $_ !~ /^report_option_\d+$/
+                               and $_ !~ /^usage_taxproductnum_/
+                             }
                         keys %options
                       );
                       if ( @report_options ) {
