@@ -1,0 +1,168 @@
+#!/usr/bin/perl
+
+my $usage = "
+This script is for fixing CDRs that were supposed to receive Taqua
+accountcode/caller ID rewrites but didn't. It will skip records that had
+any rewrites performed, but will operate on CDRs that have already been
+billed. Options:
+
+-s DATE: find calls on or after DATE (required)
+-e DATE: find calls on or before DATE (optional, defaults to right now)
+-v: show records as they're updated
+";
+
+use strict;
+use FS::Misc::Getopt;
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::Cursor;
+our %opt;
+our $DEBUG;
+
+getopts('');
+
+die $usage unless $opt{start};
+
+my $fixed = 0;
+my $notfound = 0;
+my $failed = 0;
+my $extra_sql = 'WHERE lastapp IS NOT NULL AND freesiderewritestatus IS NULL' .
+                ' AND cdrtypenum = 1'.
+                ' AND calldate >= to_timestamp('.$opt{start}.')';
+if ( $opt{end} ) {
+  $extra_sql .= ' AND calldate < to_timestamp('.$opt{end}.')';
+}
+my $cursor = FS::Cursor->new({
+  table     => 'cdr',
+  hashref   => {},
+  extra_sql => $extra_sql,
+});
+
+$FS::UID::AutoCommit = 0;
+
+while (my $cdr = $cursor->fetch) {
+  # copy-paste from cdrrewrited, except:
+  # - move all conditions for this rewrite into the SQL
+  # - don't check for config option to enable rewriting
+  # - don't retry, don't remember not-found acctids
+
+  my @status;
+
+  #find the matching CDR
+  my %search = ( 'sessionnum' => $cdr->sessionnum );
+  if ( $cdr->lastapp eq 'acctcode' ) {
+    $search{'src'} = $cdr->subscriber;
+  } elsif ( $cdr->lastapp eq 'CallerId' ) {
+    $search{'dst'} = $cdr->subscriber;
+  }
+  if ($DEBUG) {
+    my $desc = '#'.$cdr->acctid . ': sessionnum ' . $cdr->sessionnum .  ', '.
+      "subscriber ".$cdr->subscriber;
+    warn $desc."\n";
+  }
+  my $primary = qsearchs('cdr', \%search);
+
+  unless ( $primary ) {
+
+    my $cantfind = "can't find primary CDR with session ". $cdr->sessionnum .
+                   ', ';
+    if ($search{'src'}) {
+      $cantfind .= 'src '.$search{'src'};
+    } else {
+      $cantfind .= 'dst '.$search{'dst'};
+    }
+    warn "ERROR: $cantfind\n";
+    $notfound++;
+    next;
+
+  } else {
+
+    if ( $cdr->lastapp eq 'acctcode' ) {
+      # lastdata contains the dialed account code
+      $primary->accountcode( $cdr->lastdata );
+      push @status, 'taqua-accountcode';
+      warn '#'.$primary->acctid . ': accountcode = '.$cdr->lastdata . "\n"
+        if $DEBUG;
+    } elsif ( $cdr->lastapp eq 'CallerId' ) {
+      # lastdata contains "allowed" or "restricted"
+      # or case variants thereof
+      if ( lc($cdr->lastdata) eq 'restricted' ) {
+        $primary->clid( 'PRIVATE' );
+      }
+      push @status, 'taqua-callerid';
+      warn '#'.$primary->acctid . ': clid = '.$cdr->lastdata . "\n"
+        if $DEBUG;
+    } else {
+      warn "unknown Taqua service name: ".$cdr->lastapp."\n";
+    }
+    #$primary->freesiderewritestatus( 'taqua-accountcode-primary' );
+    my $error = $primary->replace if $primary->modified;
+    if ( $error ) {
+      warn "WARNING: error rewriting primary CDR: $error\n";
+      $failed++;
+      dbh->rollback;
+      next;
+    }
+    if ( $primary->freesidestatus eq 'done' and
+         $cdr->lastapp eq 'acctcode' and
+         $primary->rated_price > 0 ) {
+      # then have to update the billing detail also
+      my $detail;
+      if ( $primary->detailnum ) {
+        # has been on 3.x since January 2016...
+        $detail = qsearchs('cust_bill_pkg_detail', {
+          'detailnum' => $primary->detailnum
+        });
+      } else {
+        # otherwise, try our best: find a detail with the right price,
+        # source number, and start and end dates
+        $detail = qsearchs('cust_bill_pkg_detail', {
+          'amount'     => $primary->rated_price,
+          'classnum'   => $cdr->rated_classnum,
+          'duration'   => $primary->rated_seconds,
+          'startdate'  => $primary->startdate,
+          'format'     => 'C',
+          'phonenum'   => $primary->src, # not perfect
+        });
+      }
+      if ($detail) {
+        warn "detail #".$detail->detailnum."\n" if $DEBUG;
+        $detail->set('accountcode', $primary->accountcode);
+        $error = $detail->replace;
+        if ($error) {
+          warn "WARNING: error rewriting invoice detail: $error\n";
+          $failed++;
+          dbh->rollback;
+          next;
+        }
+      } else {
+        warn "ERROR: can't find invoice detail for cdr#".$primary->acctid."\n";
+        $notfound++;
+        dbh->rollback;
+        next;
+      }
+    } # if this is an acctcode record and the primary was billed
+
+    $cdr->status('done'); #so it doesn't try to rate
+
+  }
+
+  $cdr->freesiderewritestatus(
+    scalar(@status) ? join('/', @status) : 'skipped'
+  );
+
+  my $error = $cdr->replace;
+  if ( $error ) {
+    warn "WARNING: error rewriting CDR: $error\n";
+    dbh->rollback;
+    $failed++;
+  } else {
+    dbh->commit;
+    $fixed++;
+  }
+}
+
+print "Finished.
+Rewrites: $fixed
+Primary record not found: $notfound
+Errors: $failed
+";
