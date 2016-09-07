@@ -13,6 +13,8 @@ my @contexts = ( qw(
   FS::pay_batch::import_from_gateway
   FS::part_pkg
   FS::Misc::Geo::standardize_uscensus
+  FS::saved_search::send
+  FS::saved_search::render
   Cron::bill
   Cron::backup
   Cron::upload
