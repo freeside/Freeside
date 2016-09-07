@@ -116,7 +116,7 @@ while (my $cdr = $cursor->fetch) {
         # source number, and start and end dates
         $detail = qsearchs('cust_bill_pkg_detail', {
           'amount'     => $primary->rated_price,
-          'classnum'   => $cdr->rated_classnum,
+          'classnum'   => $primary->rated_classnum,
           'duration'   => $primary->rated_seconds,
           'startdate'  => $primary->startdate,
           'format'     => 'C',
