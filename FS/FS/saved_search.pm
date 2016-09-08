@@ -219,11 +219,10 @@ sub render {
 
   local $FS::CurrentUser::CurrentUser = $self->access_user;
   local $FS::Mason::Request::QUERY_STRING = $self->query_string;
-  local $FS::Mason::Request::FSURL = ''; #?
-#  local $ENV{SERVER_NAME} = 'localhost'; #?
-#  local $ENV{SCRIPT_NAME} = '/freeside'. $self->path;
+  local $FS::Mason::Request::FSURL = $self->access_user->option('rooturl');
 
   my $mason_request = $fs_interp->make_request(comp => '/' . $self->path);
+  $mason_request->notes('inline_stylesheet', 1);
 
   local $@;
   eval { $mason_request->exec(); };
