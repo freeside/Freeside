@@ -21,18 +21,51 @@
   <TD><B><% $balance %></B></TD>
 </TR>
 
-% #54: just an arbitrary number i pulled out of my goober.  ideally we'd like
-% # to consider e.g. a histogram of num_ncancelled_packages for the entire
-% # customer base, and compare it to a graph of the overhead for generating this
-% # information.  (and optimize it better, we could get it more from SQL)
-% if ( $cust_main->num_ncancelled_pkgs < 54 ) {
-%   foreach my $freq_info ($cust_main->display_recurring) {
-      <TR>
-        <TH ALIGN="right"><% emt( ucfirst($freq_info->{'freq_pretty'}). ' recurring' ) %></TH>
-        <TD><% $money_char. sprintf('%.2f', $freq_info->{'amount'}) %></TD>
-      </TR>
-%   }
-% }
+<TR ID="recurring_row">
+  <TH ID="recurring_label" ALIGN="right"><% emt( 'Recurring' ) %></TH>
+  <TD ID="recurring_value"><IMG SRC="<% $fsurl %>images/wait-orange.gif"></TD>
+</TR>
+
+<& '/elements/xmlhttp.html',
+     'url'  => $fsurl.'misc/xmlhttp-cust_main-display_recurring.html',
+     'subs' => [ 'get_display_recurring'] &>
+
+<SCRIPT>
+<&| /elements/onload.js &>
+get_display_recurring('custnum',<% $cust_main->custnum %>, function (xmlresult) {
+  var recurring = JSON.parse(xmlresult);
+  var rlabel = document.getElementById('recurring_label');
+  var rvalue = document.getElementById('recurring_value');
+  var rrow   = document.getElementById('recurring_row');
+  if (recurring['error']) {
+    rvalue.innerHTML = '<SPAN STYLE="color: red">Error</SPAN>';
+    console.log('display_recurring error: ' + recurring['error']);
+  } else if (recurring['display_recurring'].length) {
+    for (var ri = 0; ri < recurring['display_recurring'].length; ri++) {
+      var robj = recurring['display_recurring'][ri];
+      var freq_pretty = robj['freq_pretty'].charAt(0).toUpperCase()+robj['freq_pretty'].slice(1)+' recurring';
+      var amount = '<% $money_char %>'+parseFloat(robj['amount']).toFixed(2);
+      if (ri + 1 < recurring['display_recurring'].length) {
+        var rr = document.createElement('TR');
+        var rl = document.createElement('TH');
+        rl.style.textAlign = 'right';
+        rl.innerHTML = freq_pretty;
+        rr.appendChild(rl);
+        var rv = document.createElement('TD');
+        rv.innerHTML = amount;
+        rr.appendChild(rv);
+        rrow.parentNode.insertBefore(rr,rrow);
+      } else {
+        rlabel.innerHTML = freq_pretty;
+        rvalue.innerHTML = amount;
+      }
+    }
+  } else {
+    rrow.parentNode.removeChild(rrow);
+  }
+});
+</&>
+</SCRIPT>
 
 % if ( $conf->exists('cust_main-select-prorate_day') ) {
 <TR>
