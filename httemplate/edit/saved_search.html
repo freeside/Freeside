@@ -61,6 +61,28 @@
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+# remember the user's rooturl() when accessing the UI. this will be the
+# base URL for sending email reports to that user so that links work.
+my $rooturl_pref = qsearchs('access_user_pref', {
+  usernum   => $curuser->usernum,
+  prefname  => 'rooturl',
+});
+my $error;
+if ($rooturl_pref) {
+  if ($rooturl_pref->prefvalue ne rooturl()) {
+    $rooturl_pref->set('prefvalue', rooturl());
+    $error = $rooturl_pref->replace;
+  } # else don't update it
+} else {
+  $rooturl_pref = FS::access_user_pref->new({
+    usernum   => $curuser->usernum,
+    prefname  => 'rooturl',
+    prefvalue => rooturl(),
+  });
+  $error = $rooturl_pref->insert;
+}
+
+warn "error updating rooturl pref: $error" if $error;
 
 # prefix to the freeside document root (usually '/freeside/')
 my $root = URI->new($fsurl)->path;

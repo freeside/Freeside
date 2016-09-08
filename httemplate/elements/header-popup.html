@@ -37,7 +37,13 @@ Example:
     <% $head |n %>
   </HEAD>
   <BODY <% $etc |n %>>
+%   if ($m->notes('inline_stylesheet')) { # for email delivery
+    <style type="text/css">
+    <& /elements/freeside.css &>
+    </style>
+%   } else {
     <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+%   }
 % if ( $title || $title_noescape ) {
     <FONT SIZE=6>
       <CENTER><% encode_entities($title) || $title_noescape |n %></CENTER>
