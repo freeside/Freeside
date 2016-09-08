@@ -1,0 +1,25 @@
+% if ( $error ) {
+<& /elements/errorpage-popup.html, $error &>
+% } else {
+<& /elements/header-popup.html, 'Saved search deleted' &>
+  <script type="text/javascript">
+  topreload();
+  </script>
+</body>
+</html>
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal searchnum";
+my $searchnum = $1;
+
+my $search = qsearchs('saved_search', {
+  'searchnum' => $searchnum,
+  'usernum'   => $curuser->usernum,
+});
+my $error = $search->delete;
+
+</%init>
