@@ -197,6 +197,12 @@ my $svc_labelsub = sub {
   $label. ': <b>'. encode_entities($item->label($item->history_date)). '</b>';
 };
 
+my $tag_labelsub = sub {
+  my($item, $label) = @_;
+  my $part_tag = qsearchs('part_tag',{ tagnum => $item->tagnum });
+  $label. ': <SPAN STYLE="background-color: #'.$part_tag->tagcolor.'">'. encode_entities($part_tag->tagname). '</SPAN>';
+};
+
 my %h_table_labelsub = (
   'h_cust_pkg'      => $pkg_labelsub,
   'h_svc_acct'      => $svc_labelsub,
@@ -208,6 +214,7 @@ my %h_table_labelsub = (
   'h_svc_external'  => $svc_labelsub,
   'h_svc_phone'     => $svc_labelsub,
   #'h_phone_device'
+  'h_cust_tag'      => $tag_labelsub,
 );
 
 my $discounts = {};
