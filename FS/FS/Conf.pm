@@ -5508,8 +5508,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_bill-latex_lineitem_maxlength',
-    'section'     => 'invoicing',
-    'description' => 'Truncate long line items to this number of characters on typeset invoices, to avoid losing things off the right margin.  Defaults to 50.  ',
+    'section'     => 'deprecated',
+    'description' => 'With old invoice_latex template, truncate long line items to this number of characters on typeset invoices, to avoid losing things off the right margin.  (With current invoice_latex template, this is handled internally in the template itself instead.)',
     'type'        => 'text',
   },
 
