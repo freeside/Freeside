@@ -22,7 +22,7 @@ http_header('Content-Disposition' => qq!attachment;filename="$filename"! );
  
 #http://support.microsoft.com/kb/812935
 #http://support.microsoft.com/kb/323308
-$HTML::Mason::Commands::r->headers_out->{'Cache-control'} = 'max-age=0';
+http_header('Cache-control' => 'max-age=0');
 
 my $data = '';
 my $XLS = new IO::Scalar \$data;

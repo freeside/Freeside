@@ -242,7 +242,25 @@ sub render {
   <p>' . $_ . '</p>';
   }
 
-  return $outbuf;
+  my %mime = (
+    Data        => $outbuf,
+    Type        => $mason_request->notes('header-content-type')
+                   || 'text/html',
+    Disposition => 'inline',
+  );
+  if (my $disp = $mason_request->notes('header-content-disposition') ) {
+    $disp =~ /^(attachment|inline)\s*;\s*filename=(.*)$/;
+    $mime{Disposition} = $1;
+    my $filename = $2;
+    $filename =~ s/^"(.*)"$/$1/;
+    $mime{Filename} = $filename;
+  }
+  if ($mime{Type} =~ /^text/) {
+    $mime{Encoding} = 'quoted-printable';
+  } else {
+    $mime{Encoding} = 'base64';
+  }
+  return MIME::Entity->build(%mime);
 }
 
 =item send
@@ -265,14 +283,7 @@ sub send {
     return $error;
   }
   $log->debug('Rendering saved search');
-  my $content = $self->render;
-  # XXX come back to this for content-type options
-  my $part = MIME::Entity->build(
-    'Type'        => 'text/html',
-    'Encoding'    => 'quoted-printable', # change this for spreadsheet
-    'Disposition' => 'inline',
-    'Data'        => $content,
-  );
+  my $part = $self->render;
 
   my %email_param = (
     'from'      => $conf->config('invoice_from'),

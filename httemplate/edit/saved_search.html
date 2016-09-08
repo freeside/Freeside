@@ -23,14 +23,13 @@
       type    => 'fixed-date',
     },
     { field   => 'format',
-      type    => 'hidden', # revisit this later
-#      type    => 'select',
-#      options => [ 'html', 'xls', 'csv' ],
-#      labels => {
-#        'html' => 'webpage',
-#        'xls'  => 'spreadsheet',
-#        'csv'  => 'CSV',
-#      },
+      type    => 'select',
+      options => [ 'html', 'xls', 'csv' ],
+      labels => {
+        'html' => 'webpage',
+        'xls'  => 'spreadsheet',
+        'csv'  => 'CSV',
+      },
     },
     { field => 'disabled', # currently unused
       type  => 'hidden',
