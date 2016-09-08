@@ -87,6 +87,21 @@ my $mobile = $opt{'mobile'} || 0;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
+# saved searches
+tie my %report_saved_searches, 'Tie::IxHash';
+if ( my @searches = grep { $_->disabled eq '' } $curuser->saved_search ) {
+  foreach my $search (@searches) {
+    $report_saved_searches{ $search->searchname } = [
+      # don't use query_string here; we don't want to override the format
+      $fsurl . $search->path . '?' . $search->params , ''
+    ];
+  }
+  $report_saved_searches{'separator'} = '';
+  $report_saved_searches{'My saved searches'} =
+    [ $fsurl. 'browse/saved_search.html',
+      'Manage saved searches and subscriptions' ];
+}
+
 #XXX Active tickets not assigned to a customer
 
 tie my %report_prospects, 'Tie::IxHash';
@@ -419,6 +434,8 @@ $report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgo
   || $curuser->access_right('Configuration');
 
 tie my %report_menu, 'Tie::IxHash';
+$report_menu{'Saved searches'} = [ \%report_saved_searches, 'My saved searches' ]
+  if keys(%report_saved_searches);
 $report_menu{'Prospects'}      = [ \%report_prospects, 'Prospect reports' ]
   if $curuser->access_right('List prospects')
   || $curuser->access_right('List contacts');

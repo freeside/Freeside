@@ -1,0 +1,81 @@
+<& elements/browse.html,
+  'title'       => 'My saved searches',
+  'name'        => 'saved searches',
+  'query'       => { 'table'     => 'saved_search',
+                     'hashref'   => { usernum => $curuser->usernum },
+                   },
+  'count_query' => $count_query,
+  'header'      => [ '#',
+                     'Name',
+                     'Subscription',
+                     'Last sent',
+                     'Format',
+                     'Path',
+                     'Parameters',
+                   ],
+  'sort_fields' => [ 'searchnum',
+                     'searchname',
+                     'freq',
+                     'last_sent',
+                     'format',
+                     "path || '?' || 'params'",
+                     '',
+                   ],
+  'fields'      => [ 'searchnum',
+                     'searchname',
+                     'freq',
+                     sub { my $date = shift->get('last_sent');
+                           $date ? time2str('%b %o, %Y', $date) : '';
+                     },
+                     sub { $format_label{ shift->get('format') }
+                     },
+                     'path',
+                     sub { join('<BR>',
+                             sort
+                             map { encode_entities(uri_unescape($_)) }
+                             split(/[;&]/, shift->get('params') )
+                           )
+                     },
+                   ],
+  'size'        => [ '',
+                     '',
+                     '',
+                     '',
+                     '',
+                     '',
+                     '-1',
+                   ],
+  'links'                   => [ '', '' ],
+  'link_onclicks'           => [ '', $edit_popup ],
+#  'disableable'             => 1, # currrently unused
+#  'disabled_statuspos'      => 2,
+  'really_disable_download' => 1
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $query = {
+  'table'   => 'saved_search',
+  'hashref' => { 'usernum' => $curuser->usernum },
+};
+my $count_query = "SELECT COUNT(*) FROM saved_search WHERE usernum = ".
+  $curuser->usernum;
+
+my %format_label = (
+  'html' => 'webpage',
+  'csv'  => 'CSV',
+  'xls'  => 'spreadsheet',
+);
+
+my $edit_popup = sub {
+  my $searchnum = shift->searchnum;
+  include('/elements/popup_link_onclick.html',
+    'action'        => $fsurl.'/edit/saved_search.html?'.$searchnum,
+    'actionlabel'   => 'Save this search',
+    'width'         => 650,
+    'height'        => 500,
+  );
+};
+
+</%init>
