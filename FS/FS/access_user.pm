@@ -831,6 +831,13 @@ sub set_page_pref {
   return $error;
 }
 
+#3.x
+
+sub saved_search {
+  my $self = shift;
+  qsearch('saved_search', { 'usernum' => $self->usernum });
+}
+
 =back
 
 =head1 BUGS

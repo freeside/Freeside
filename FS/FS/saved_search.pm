@@ -237,6 +237,12 @@ sub render {
   return $outbuf;
 }
 
+#3.x
+sub access_user {
+  my $self = shift;
+  qsearchs('access_user', { 'usernum' => $self->usernum });
+}
+
 =back
 
 =head1 SEE ALSO
