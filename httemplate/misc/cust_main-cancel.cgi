@@ -1,6 +1,6 @@
 <& /elements/header-popup.html, mt("Customer cancelled") &>
   <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
+    topreload();
   </SCRIPT>
   </BODY>
 </HTML>
