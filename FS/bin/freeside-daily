@@ -74,6 +74,10 @@ export_batch_submit(%opt);
 use FS::Cron::agent_email qw(agent_email);
 agent_email(%opt);
 
+#does nothing unless there are users with subscribed searches
+use FS::Cron::send_subscribed qw(send_subscribed);
+send_subscribed(%opt);
+
 #clears out cacti imports & deletes select database cache files
 use FS::Cron::cleanup qw( cleanup cleanup_before_backup );
 cleanup_before_backup();

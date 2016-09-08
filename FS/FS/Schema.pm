@@ -5226,6 +5226,7 @@ sub tables_hashref {
         'usernum',      'int',     'NULL',      '', '', '',
         'searchname',   'varchar', '',     $char_d, '', '',
         'path',         'varchar', '',     $char_d, '', '',
+        'params',       'text',    'NULL',      '', '', '',
         'disabled',     'char',    'NULL',       1, '', '',
         'freq',         'varchar', 'NULL',      16, '', '',
         'last_sent',    'int',     'NULL',      '', '', '',
@@ -5241,23 +5242,6 @@ sub tables_hashref {
                          ],
     },
 
-    'saved_search_option' => {
-      'columns' => [
-        'optionnum',  'serial',  '',          '', '', '',
-        'searchnum',  'int',     '',          '', '', '',
-        'optionname', 'varchar', '', $char_d, '', '', 
-        'optionvalue', 'text', 'NULL', '', '', '', 
-      ],
-      'primary_key'   => 'optionnum',
-      'unique'        => [ [ 'searchnum', 'optionname' ] ],
-      'index'         => [],
-      'foreign_keys'  => [
-                           { columns => [ 'searchnum' ],
-                             table   => 'saved_search',
-                           },
-                         ],
-    },
- 
     # name type nullability length default local
 
     #'new_table' => {

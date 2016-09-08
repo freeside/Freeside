@@ -12,6 +12,8 @@ my @contexts = ( qw(
   FS::cust_main::Billing_Realtime::realtime_verify_bop
   FS::part_pkg
   FS::Misc::Geo::standardize_uscensus
+  FS::saved_search::send
+  FS::saved_search::render
   Cron::bill
   Cron::upload
   spool_upload
