@@ -78,21 +78,17 @@ Sets an http header.
 
 sub http_header {
   my ( $header, $value ) = @_;
-  if (exists $ENV{MOD_PERL}) {
-    if ( defined $HTML::Mason::Commands::r  ) { #Mason
-      ## is this the correct pacakge for $r ???  for 1.0x and 1.1x ?
-      if ( $header =~ /^Content-Type$/ ) {
-        $HTML::Mason::Commands::r->content_type($value);
-      } else {
-        $HTML::Mason::Commands::r->header_out( $header => $value );
-      }
+  if ( defined $HTML::Mason::Commands::r  ) { #Mason + apache
+    if ( $header =~ /^Content-Type$/ ) {
+      $HTML::Mason::Commands::r->content_type($value);
     } else {
-      die "http_header called in unknown environment";
+      $HTML::Mason::Commands::r->header_out( $header => $value );
     }
+  } elsif ( defined $HTML::Mason::Commands::m ) {
+    $HTML::Mason::Commands::m->notes(lc("header-$header"), $value);
   } else {
-    die "http_header called not running under mod_perl";
+    warn "http_header($header, $value) called with no way to set headers\n";
   }
-
 }
 
 =item menubar ITEM, URL, ...
