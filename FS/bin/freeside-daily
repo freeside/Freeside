@@ -79,6 +79,10 @@ pay_batch_receive(%opt);
 use FS::Cron::export_batch qw(export_batch_submit);
 export_batch_submit(%opt);
 
+#does nothing unless there are users with subscribed searches
+use FS::Cron::send_subscribed qw(send_subscribed);
+send_subscribed(%opt);
+
 #clears out cacti imports & deletes select database cache files
 use FS::Cron::cleanup qw( cleanup cleanup_before_backup );
 cleanup_before_backup();

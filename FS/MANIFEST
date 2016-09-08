@@ -872,5 +872,3 @@ FS/access_user_page_pref.pm
 t/access_user_page_pref.t
 FS/saved_search.pm
 t/saved_search.t
-FS/saved_search_option.pm
-t/saved_search_option.t

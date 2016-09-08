@@ -1,13 +1,15 @@
 package FS::saved_search;
-use base qw( FS::option_Common FS::Record );
+use base qw( FS::Record );
 
 use strict;
 use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
+use FS::Log;
+use FS::Misc qw(send_email);
+use MIME::Entity;
 use Class::Load 'load_class';
 use URI::Escape;
 use DateTime;
-use Try::Tiny;
 
 =head1 NAME
 
@@ -55,6 +57,10 @@ A descriptive name.
 =item path
 
 The path to the page within the Mason document space.
+
+=item params
+
+The query string for the search.
 
 =item disabled
 
@@ -128,6 +134,7 @@ sub check {
     #|| $self->ut_foreign_keyn('usernum', 'access_user', 'usernum')
     || $self->ut_text('searchname')
     || $self->ut_text('path')
+    || $self->ut_textn('params') # URL-escaped, so ut_textn
     || $self->ut_flag('disabled')
     || $self->ut_enum('freq', [ '', 'daily', 'weekly', 'monthly' ])
     || $self->ut_numbern('last_sent')
@@ -136,6 +143,14 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub replace_check {
+  my ($new, $old) = @_;
+  if ($new->usernum != $old->usernum) {
+    return "can't change owner of a saved search";
+  }
+  '';
 }
 
 =item next_send_date
@@ -168,8 +183,6 @@ Returns the CGI query string for the parameters to this report.
 
 =cut
 
-# multivalued options are newline-separated in the database
-
 sub query_string {
   my $self = shift;
 
@@ -177,12 +190,7 @@ sub query_string {
   $type = 'html-print' if $type eq '' || $type eq 'html';
   $type = '.xls' if $type eq 'xls';
   my $query = "_type=$type";
-  my %options = $self->options;
-  foreach my $k (keys %options) {
-    foreach my $v (split("\n", $options{$k})) {
-      $query .= ';' . uri_escape($k) . '=' . uri_escape($v);
-    }
-  }
+  $query .= ';' . $self->params if $self->params;
   $query;
 }
 
@@ -194,6 +202,7 @@ Returns the report content as an HTML or Excel file.
 
 sub render {
   my $self = shift;
+  my $log = FS::Log->new('FS::saved_search::render');
   my $outbuf;
 
   # delayed loading
@@ -214,7 +223,7 @@ sub render {
 #  local $ENV{SERVER_NAME} = 'localhost'; #?
 #  local $ENV{SCRIPT_NAME} = '/freeside'. $self->path;
 
-  my $mason_request = $fs_interp->make_request(comp => $self->path);
+  my $mason_request = $fs_interp->make_request(comp => '/' . $self->path);
 
   local $@;
   eval { $mason_request->exec(); };
@@ -224,9 +233,9 @@ sub render {
       $error = $error->message;
     }
 
-    warn "Error rendering " . $self->path .
+    $log->error("Error rendering " . $self->path .
          " for " . $self->access_user->username .
-         ":\n$error\n";
+         ":\n$error\n");
     # send it to the user anyway, so there's a way to diagnose the error
     $outbuf = '<h3>Error</h3>
   <p>There was an error generating the report "'.$self->searchname.'".</p>
@@ -235,6 +244,63 @@ sub render {
   }
 
   return $outbuf;
+}
+
+=item send
+
+Sends the search by email. If anything fails, logs and returns an error.
+
+=cut
+
+sub send {
+  my $self = shift;
+  my $log = FS::Log->new('FS::saved_search::send');
+  my $conf = FS::Conf->new;
+  my $user = $self->access_user;
+  my $username = $user->username;
+  my $user_email = $user->option('email_address');
+  my $error;
+  if (!$user_email) {
+    $error = "User '$username' has no email address.";
+    $log->error($error);
+    return $error;
+  }
+  $log->debug('Rendering saved search');
+  my $content = $self->render;
+  # XXX come back to this for content-type options
+  my $part = MIME::Entity->build(
+    'Type'        => 'text/html',
+    'Encoding'    => 'quoted-printable', # change this for spreadsheet
+    'Disposition' => 'inline',
+    'Data'        => $content,
+  );
+
+  my %email_param = (
+    'from'      => $conf->config('invoice_from'),
+    'to'        => $user_email,
+    'subject'   => $self->searchname,
+    'nobody'    => 1,
+    'mimeparts' => [ $part ],
+  );
+
+  $log->debug('Sending to '.$user_email);
+  $error = send_email(%email_param);
+
+  # update the timestamp
+  $self->set('last_sent', time);
+  $error ||= $self->replace;
+  if ($error) {
+    $log->error($error);
+    return $error;
+  }
+
+}
+
+sub queueable_send {
+  my $searchnum = shift;
+  my $self = FS::saved_search->by_key($searchnum)
+    or die "searchnum $searchnum not found\n";
+  $self->send;
 }
 
 =back

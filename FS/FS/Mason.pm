@@ -414,7 +414,6 @@ if ( -e $addl_handler_use_file ) {
   use FS::access_user_page_pref;
   use FS::part_svc_msgcat;
   use FS::saved_search;
-  use FS::saved_search_option;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
