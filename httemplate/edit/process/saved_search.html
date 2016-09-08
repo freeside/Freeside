@@ -1,0 +1,15 @@
+<& elements/process.html,
+  'table'         => 'saved_search',
+  'popup_reload'  => 'Saving',
+  'post_new_object_callback' => $callback,
+&>
+<%init>
+
+my $callback = sub {
+  my ($cgi, $obj) = @_;
+  $obj->usernum( $FS::CurrentUser::CurrentUser->usernum );
+  # if this would change it from its existing owner, replace_check
+  # will refuse
+};
+
+</%init>

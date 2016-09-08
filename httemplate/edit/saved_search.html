@@ -1,0 +1,91 @@
+<& elements/edit.html,
+  'name'   => 'saved search',
+  'table'  => 'saved_search',
+  'popup'  => 1,
+  'fields' => [
+    { field   => 'searchname',
+      type    => 'text',
+      size    => 40,
+    },
+    { field   => 'freq',
+      type    => 'select',
+      options => [ '', 'daily', 'weekly', 'monthly' ],
+      labels  => { '' => 'no' },
+    },
+    { field   => 'emailaddress',
+      type    => 'fixed',
+      curr_value_callback => sub {
+        $curuser->option('email_address')
+        || 'no email address configured'
+      },
+    },
+    { field   => 'last_sent',
+      type    => 'fixed-date',
+    },
+    { field   => 'format',
+      type    => 'hidden', # revisit this later
+#      type    => 'select',
+#      options => [ 'html', 'xls', 'csv' ],
+#      labels => {
+#        'html' => 'webpage',
+#        'xls'  => 'spreadsheet',
+#        'csv'  => 'CSV',
+#      },
+    },
+    { field => 'disabled', # currently unused
+      type  => 'hidden',
+    },
+    { type  => 'tablebreak-tr-title' },
+    { field => 'path',
+      type  => 'fixed',
+      cell_style => 'font-size: small',
+    },
+    { field => 'params',
+      type  => 'fixed',
+      cell_style => 'font-size: small',
+    },
+  ],
+  'labels' => {
+    'searchnum'         => 'Saved search',
+    'searchname'        => 'Name this search',
+    'path'              => 'Search page',
+    'params'            => 'Parameters',
+    'freq'              => 'Subscribe by email',
+    'last_sent'         => 'Last sent on',
+    'emailaddress'      => 'Will be sent to',
+    'format'            => 'Report format',
+  },
+  'new_object_callback' => $new_object,
+  'delete_url'          => $fsurl.'misc/delete-saved_search.html',
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+# prefix to the freeside document root (usually '/freeside/')
+my $root = URI->new($fsurl)->path;
+
+# alternatively, could do all this on the client using window.top.location
+my $new_object = sub {
+  my $cgi = shift;
+  my $hashref = shift;
+  my $fields = shift;
+  for (grep { $_->{field} eq 'last_sent' } @$fields) {
+    $_->{type} = 'hidden';
+  }
+  my $url = $r->header_in('Referer')
+    or die "no referring page found";
+  $url = URI->new($url);
+  my $path = $url->path;
+  $path =~ s/^$root//; # path should not have a leading slash
+  my $title = $cgi->param('title');
+  return FS::saved_search->new({
+    'usernum'     => $curuser->usernum,
+    'path'        => $path,
+    'params'      => $url->query,
+    'format'      => 'html',
+    'searchname'  => $title,
+  });
+};
+
+</%init>

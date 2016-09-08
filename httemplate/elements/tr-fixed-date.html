@@ -14,6 +14,6 @@ my $value = $opt{'curr_value'} || $opt{'value'};
 my $conf = new FS::Conf;
 my $date_format = $opt{'format'} || $conf->config('date_format') || '%m/%d/%Y';
 
-$opt{'formatted_value'} = time2str($date_format, $value);
+$opt{'formatted_value'} = $value > 0 ? time2str($date_format, $value) : '';
 
 </%init>

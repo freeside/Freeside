@@ -136,22 +136,36 @@
 
               <TD ALIGN="right" CLASS="noprint">
 
-                <% $opt{'download_label'} || 'Download full results' %><BR>
+                <% $opt{'download_label'} || 'Download results:' %>
 
 %               $cgi->param('_type', "$xlsname.xls" ); 
-                as <A HREF="<% "$self_url?". $cgi->query_string %>">Excel spreadsheet</A><BR>
+                <A HREF="<% "$self_url?". $cgi->query_string %>">Spreadsheet</A>&nbsp;|&nbsp;
 
 %               $cgi->param('_type', 'csv'); 
-                as <A HREF="<% "$self_url?". $cgi->query_string %>">CSV file</A><BR>
+                <A HREF="<% "$self_url?". $cgi->query_string %>">CSV</A>&nbsp;|&nbsp;
 
 %             if ( defined($opt{xml_elements}) ) {
 %               $cgi->param('_type', 'xml'); 
-                as <A HREF="<% "$self_url?". $cgi->query_string %>">XML file</A><BR>
+                <A HREF="<% "$self_url?". $cgi->query_string %>">XML</A>&nbsp;|&nbsp;
 %             }
 
 %               $cgi->param('_type', 'html-print'); 
-                as <A HREF="<% "$self_url?". $cgi->query_string %>">printable copy</A>
+                <A HREF="<% "$self_url?". $cgi->query_string %>">webpage</A>
 
+%# "save search" -- for now, obey disable_download and the 'Download
+%# report data' ACL, because saving a search allows the user to receive
+%# copies of the data.
+                <BR>
+%# XXX should do a check here on whether the user already has this
+%# search saved...
+                <& /elements/popup_link.html,
+                  'action'        => $fsurl.'/edit/saved_search.html?title='.
+                                       uri_escape($opt{title}),
+                  'label'         => 'Save this search',
+                  'actionlabel'   => 'Save this search',
+                  'width'         => 650,
+                  'height'        => 500,
+                &>
               </TD>
 %             $cgi->param('_type', "html" ); 
 %           } 
