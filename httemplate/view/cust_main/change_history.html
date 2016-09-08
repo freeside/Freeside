@@ -46,6 +46,7 @@ tie my %tables, 'Tie::IxHash',
   'phone_device'      => 'Phone device',
   'cust_pkg_discount' => 'Discount',
   #? it gets provisioned anyway 'phone_avail'         => 'Phone',
+  'cust_tag'          => 'Tag',
 ;
 
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
