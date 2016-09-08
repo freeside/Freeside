@@ -1,0 +1,29 @@
+<% encode_json($return) %>\
+<%init>
+
+my %arg = $cgi->param('arg');
+my $custnum = delete($arg{'custnum'});
+
+my $error;
+my $return;
+
+$error = "No customer specified" unless $custnum =~ /^\d+$/;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+$error = "access denied"
+  unless $error or $curuser->access_right('View customer');
+
+my $cust_main;
+$cust_main = qsearchs( {
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+}) unless $error;
+$error = "Customer not found!" unless $error or $cust_main;
+
+$return = $error
+        ? { 'error' => $error }
+        : { 'display_recurring' => [ $cust_main->display_recurring ] };
+
+</%init>
