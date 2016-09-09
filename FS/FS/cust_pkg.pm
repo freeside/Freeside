@@ -2268,10 +2268,22 @@ sub change {
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
   }
 
+  # figure out if we're changing pkgpart
+  if ( $opt->{'cust_pkg'} ) {
+    $opt->{'pkgpart'} = $opt->{'cust_pkg'}->pkgpart;
+  }
+
+  # whether to override pkgpart checking on the new package
+  my $same_pkgpart = 1;
+  if ( $opt->{'pkgpart'} and ( $opt->{'pkgpart'} != $self->pkgpart ) ) {
+    $same_pkgpart = 0;
+  }
+
   # Before going any further here: if the package is still in the pre-setup
   # state, it's safe to modify it in place. No need to charge/credit for 
-  # partial period, transfer services, transfer usage pools, copy invoice
-  # details, or change any dates.
+  # partial period, transfer usage pools, copy invoice details, or change any
+  # dates. We DO need to "transfer" services (from the package to itself) to
+  # check their validity on the new pkgpart.
   if ( ! $self->setup and ! $opt->{cust_pkg} and ! $opt->{cust_main} ) {
     foreach ( qw( locationnum pkgpart quantity refnum salesnum ) ) {
       if ( length($opt->{$_}) ) {
@@ -2280,20 +2292,50 @@ sub change {
     }
     # almost. if the new pkgpart specifies start/adjourn/expire timers, 
     # apply those.
-    if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
+    if ( !$same_pkgpart ) {
       $self->set_initial_timers;
     }
     # but if contract_end was explicitly specified, that overrides all else
     $self->set('contract_end', $opt->{'contract_end'})
       if $opt->{'contract_end'};
+
     $error = $self->replace;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "modifying package: $error";
-    } else {
-      $dbh->commit if $oldAutoCommit;
-      return $self;
     }
+
+    # check/convert services (only on pkgpart change, to avoid surprises
+    # when editing locations)
+    # (maybe do this if changing quantity?)
+    if ( !$same_pkgpart ) {
+
+      $error = $self->transfer($self);
+
+      if ( $error and $error == 0 ) {
+        $error = "transferring $error";
+      } elsif ( $error > 0 && $conf->exists('cust_pkg-change_svcpart') ) {
+        warn "trying transfer again with change_svcpart option\n" if $DEBUG;
+        $error = $self->transfer($self, 'change_svcpart'=>1 );
+        if ($error and $error == 0) {
+          $error = "converting $error";
+        }
+      }
+
+      if ($error > 0) {
+        $error = "unable to transfer all services";
+      }
+
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    } # done transferring services
+
+    $dbh->commit if $oldAutoCommit;
+    return $self;
+
   }
 
   my %hash = (); 
@@ -2305,18 +2347,6 @@ sub change {
   $hash{'change_date'} = $time;
   $hash{"change_$_"}  = $self->$_()
     foreach qw( pkgnum pkgpart locationnum );
-
-  if ( $opt->{'cust_pkg'} ) {
-    # treat changing to a package with a different pkgpart as a 
-    # pkgpart change (because it is)
-    $opt->{'pkgpart'} = $opt->{'cust_pkg'}->pkgpart;
-  }
-
-  # whether to override pkgpart checking on the new package
-  my $same_pkgpart = 1;
-  if ( $opt->{'pkgpart'} and ( $opt->{'pkgpart'} != $self->pkgpart ) ) {
-    $same_pkgpart = 0;
-  }
 
   my $unused_credit = 0;
   my $keep_dates = $opt->{'keep_dates'};
