@@ -47,8 +47,7 @@ this will be set to that agentnum.
 
 =item tablenum - foreign key to that table.
 
-=item level - log level: 'debug', 'info', 'notice', 'warning', 'error', 
-'critical', 'alert', 'emergency'.
+=item level - log level: 'debug', 'info', 'warning', 'error', 'critical',
 
 =item message - contents of the log entry
 
