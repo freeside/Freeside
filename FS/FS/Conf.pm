@@ -5964,7 +5964,7 @@ and customer address. Include units.',
   {
     'key'         => 'cdr-lrn_lookup',
     'section'     => 'telephony',
-    'description' => 'Look up LRNs of destination numbers for exact matching to the terminating carrier. This feature requires a Freeside support contract.',
+    'description' => 'Look up LRNs of destination numbers for exact matching to the terminating carrier.  This feature requires a Freeside support contract for paid access to the central NPAC database; see <a href ="#support-key">support-key</a>.',
     'type'        => 'checkbox',
   },
   
