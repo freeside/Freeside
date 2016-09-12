@@ -162,7 +162,7 @@ if ( exists($opt{usage_by_username}) ) {
     }
   } else {
     # one query, get everyone's data
-    my $usage = $export->usage_sessions(\%usage_param);
+    $usage = $export->usage_sessions(\%usage_param);
   }
 
   # rearrange to be indexed by username.
