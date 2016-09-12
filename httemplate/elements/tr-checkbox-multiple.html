@@ -33,6 +33,8 @@ my $onchange = $opt{'onchange'}
 
 my $value = $opt{'curr_value'} || $opt{'value'};
 
+$value = $opt{default_value} if $opt{default_value} && !defined($value);
+
 my $labels = $opt{'option_labels'} || $opt{'labels'};
 
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
