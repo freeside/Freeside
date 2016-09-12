@@ -423,7 +423,8 @@ sub calc_usage {
 
   my $formatter = FS::detail_format->new($output_format,
     buffer => $details,
-    locale => $cust_pkg->cust_main->locale
+    locale => $cust_pkg->cust_main->locale,
+    rounding  => ($self->option_cacheable('rounding') || 2),
   );
 
   my $use_duration = $self->option('use_duration');
