@@ -196,7 +196,10 @@ sub calc_usage {
 
   my $output_format = $self->option('output_format', 'Hush!') || 'default';
 
-  my $formatter = FS::detail_format->new($output_format, buffer => $details);
+  my $formatter = FS::detail_format->new($output_format,
+    buffer => $details,
+    rounding => ($self->option_cacheable('rounding') || 2))
+  ;
 
   my $charges = 0;
 

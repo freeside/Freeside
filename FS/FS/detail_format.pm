@@ -35,9 +35,9 @@ a subclass.
 OPTIONS may contain:
 
 - buffer: an arrayref to store details into.  This may avoid the need for a
-large copy operation at the end of processing.  However, since summary formats
-will produce nothing until the end of processing, C<finish> must be called
-after all CDRs have been appended.
+large copy operation at the end of processing.  However, since summary
+formats will produce nothing until the end of processing, C<finish> must be
+called after all CDRs have been appended.
 
 - inbound: a flag telling the formatter to format CDRs for display to the
 receiving party, rather than the originator.  In this case, the
@@ -47,6 +47,9 @@ with the C<inbound> method.
 
 - locale: a locale string to use for static text and date formats.  This is
 optional.
+
+- rounding: the number of decimal places to show in the amount column. This
+is optional, and defaults to whatever's in the schema (which is 4).
 
 =cut
 
@@ -72,6 +75,7 @@ sub new {
   my $self = { conf => FS::Conf->new({ locale => $locale }),
                csv  => Text::CSV_XS->new({ binary => 1 }),
                inbound  => ($opt{'inbound'} ? 1 : 0),
+               rounding => $opt{'rounding'},
                buffer   => ($opt{'buffer'} || []),
                _lh      => FS::L10N->get_handle($locale),
                _dh      => eval { Date::Language->new($language_name) } ||
@@ -212,6 +216,8 @@ sub single_detail {
   my $object = $self->{inbound} ? $cdr->cdr_termination(1) : $cdr;
   my $price = $object->rated_price if $object;
   $price = 0 if $cdr->freesidestatus eq 'no-charge';
+  $price = sprintf('%.*f', $self->{'rounding'}, $price)
+    if $self->{'rounding'} and length($price);
 
   FS::cust_bill_pkg_detail->new( {
       'acctid'      => ($self->{inbound} ? '' : $cdr->acctid),
@@ -303,7 +309,15 @@ sub price {
   my $object = $self->{inbound} ? $cdr->cdr_termination(1) : $cdr;
   my $price = $object->rated_price if $object;
   $price = '0.00' if $object->freesidestatus eq 'no-charge';
-  length($price) ? $self->money_char . $price : '';
+  $price = sprintf('%.*f', $self->{'rounding'}, $price)
+    if $self->{'rounding'};
+  if (length($price)) {
+    $price = sprintf('%.*f', $self->{'rounding'}, $price)
+      if $self->{'rounding'};
+    return $self->money_char . $price;
+  } else {
+    return '';
+  }
 }
 
 1;
