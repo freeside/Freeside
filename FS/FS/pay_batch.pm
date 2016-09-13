@@ -9,7 +9,7 @@ use List::Util qw(sum);
 use Time::Local;
 use Text::CSV_XS;
 use Date::Parse qw(str2time);
-use Business::CreditCard qw(cardtype);
+use Business::CreditCard qw( 0.35 cardtype );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::Conf;
 use FS::cust_pay;
