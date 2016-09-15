@@ -14,7 +14,7 @@
 %
 %  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %  
-<% header(emt('Credit successful')) %>
+<& /elements/header-popup.html, emt('Credit successful') &>
   <SCRIPT TYPE="text/javascript">
     topreload();
   </SCRIPT>

@@ -3,7 +3,7 @@
 %   $cgi->redirect(popurl(3). 'edit/cust_location-censustract.html?'. $cgi->query_string );
 % } else {
 
-    <% header("Census tract changed") %>
+    <& /elements/header-popup.html, "Census tract changed" &>
       <SCRIPT TYPE="text/javascript">
         topreload();
       </SCRIPT>

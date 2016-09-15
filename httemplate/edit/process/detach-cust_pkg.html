@@ -3,7 +3,7 @@
 %   $cgi->redirect(popurl(3). 'misc/detach_pkg.html?'. $cgi->query_string );
 % } else {
 
-    <% header(emt("Package detached")) %>
+    <& /elements/header-popup.html, emt("Package detached") &>
       <SCRIPT TYPE="text/javascript">
         topreload();
       </SCRIPT>

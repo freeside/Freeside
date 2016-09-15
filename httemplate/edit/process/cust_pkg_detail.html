@@ -1,10 +1,10 @@
 % if ( $error ) {
-<% header('Error') %>
+<& /elements/header-popup.html, 'Error' &>
 <FONT COLOR="#ff0000"><B><% $error |h %></B></FONT><BR><BR>
 <CENTER><INPUT TYPE="BUTTON" VALUE="OK" onClick="parent.cClick()"></CENTER>
 </BODY></HTML>
 % } else {
-<% header($action) %>
+<& /elements/header-popup.html, $action &>
   <SCRIPT TYPE="text/javascript">
     topreload();
   </SCRIPT>

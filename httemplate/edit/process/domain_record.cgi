@@ -1,7 +1,7 @@
 %if ( $error ) {
 %  errorpage($error);
 %} elsif ( $recnum ) { #editing
-<% header('Nameservice record changed') %>
+<& /elements/header-popup.html, 'Nameservice record changed' &>
   <SCRIPT TYPE="text/javascript">
     topreload();
   </SCRIPT>

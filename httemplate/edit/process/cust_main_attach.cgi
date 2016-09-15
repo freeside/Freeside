@@ -7,7 +7,7 @@
 % $act = 'purged' if($attachnum and $purge);
 % $act = 'undeleted' if($attachnum and $undelete);
 % $act = 'deleted' if($attachnum and $delete);
-<% header('Attachment ' . $act ) %>
+<& /elements/header-popup.html, 'Attachment ' . $act  &>
     <SCRIPT TYPE="text/javascript">
       topreload();
     </SCRIPT>

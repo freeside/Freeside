@@ -2,7 +2,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). "recharge_svc.html?". $cgi->query_string ) %>
 %} else {
-<% header("Package recharged") %>
+<& /elements/header-popup.html, "Package recharged" &>
   <SCRIPT TYPE="text/javascript">
     topreload();
   </SCRIPT>

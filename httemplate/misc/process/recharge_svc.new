@@ -75,7 +75,7 @@
 %}
 %$dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %
-<% header("Package recharged") %>
+<& /elements/header-popup.html, "Package recharged" &>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>

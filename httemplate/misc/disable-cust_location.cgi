@@ -1,4 +1,4 @@
-<% header("Location disabled") %>
+<& /elements/header-popup.html, "Location disabled" &>
   <SCRIPT TYPE="text/javascript">
     topreload();
   </SCRIPT>

@@ -2,7 +2,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). 'cust_main_note.cgi?'. $cgi->query_string ) %>
 %} else {
-<% header('Note ' . ($notenum ? 'updated' : 'added') ) %>
+<& /elements/header-popup.html, 'Note ' . ($notenum ? 'updated' : 'added')  &>
     <SCRIPT TYPE="text/javascript">
       topreload();
     </SCRIPT>
