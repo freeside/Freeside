@@ -5,7 +5,7 @@
 %
 %  if ( $link eq 'popup' ) {
 %
-<% header('Refund entered') %>
+<& /elements/header-popup.html, 'Refund entered' &>
     <SCRIPT TYPE="text/javascript">
       topreload();
     </SCRIPT>

@@ -2,7 +2,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). 'cust_credit-pkgnum.html?'. $cgi->query_string ) %>
 %} else {
-<% header(emt('Credit package changed')) %>
+<& /elements/header-popup.html, emt('Credit package changed') &>
     <SCRIPT TYPE="text/javascript">
       topreload();
     </SCRIPT>

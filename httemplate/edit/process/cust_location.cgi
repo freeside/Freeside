@@ -3,7 +3,7 @@
 %   $cgi->redirect(popurl(3). 'edit/cust_location.cgi?'. $cgi->query_string );
 % } else {
 
-    <% header("Location changed") %>
+    <& /elements/header-popup.html, emt("Location changed") &>
       <SCRIPT TYPE="text/javascript">
         topreload();
       </SCRIPT>

@@ -2,7 +2,7 @@
 %   $cgi->param('error', $error );
 <% $cgi->redirect($p.'cust_tax_adjustment.html?'. $cgi->query_string) %>
 % } else {
-<% header("Tax adjustment added") %>
+<& /elements/header-popup.html, "Tax adjustment added" &>
   <SCRIPT TYPE="text/javascript">
     //topreload();
     parent.cClick();

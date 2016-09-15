@@ -2,7 +2,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(3). 'misc/qual.html?'. $cgi->query_string ) %>
 %} else {
-<% header('Qualification entered') %>
+<& /elements/header-popup.html, 'Qualification entered' &>
   <SCRIPT TYPE="text/javascript">
     window.top.location = '<% popurl(3).'view/qual.cgi?qualnum='. $qual->qualnum %>';
   </SCRIPT>

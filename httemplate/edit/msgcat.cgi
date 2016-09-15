@@ -1,4 +1,4 @@
-<% header(emt("Edit Message catalog")) %>
+<& /elements/header-popup.html, emt("Edit Message catalog") &>
 <BR>
 
 <& /elements/error.html &>

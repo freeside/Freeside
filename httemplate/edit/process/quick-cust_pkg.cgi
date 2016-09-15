@@ -20,7 +20,7 @@
 %      "view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag";
 %  }
 % 
-<% header('Package ordered') %>
+<& /elements/header-popup.html, 'Package ordered' &>
   <SCRIPT TYPE="text/javascript">
     // XXX fancy ajax rebuild table at some point, but a page reload will do for now
 

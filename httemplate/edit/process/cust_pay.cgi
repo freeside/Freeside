@@ -12,7 +12,7 @@
 %  }
 %  if ( $link eq 'popup' ) {
 %    
-<% header(emt('Payment entered')) %>
+<& /elements/header-popup.html, emt('Payment entered') &>
     <SCRIPT TYPE="text/javascript">
       topreload();
     </SCRIPT>

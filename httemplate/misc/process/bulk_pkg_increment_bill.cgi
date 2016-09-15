@@ -2,7 +2,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). 'bulk_pkg_increment_bill.cgi?'. $cgi->query_string ) %>
 %} else {
-<% header('Packages Adjusted') %>
+<& /elements/header-popup.html, 'Packages Adjusted' &>
     <SCRIPT TYPE="text/javascript">
       topreload();
     </SCRIPT>
