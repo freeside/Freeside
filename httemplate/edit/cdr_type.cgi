@@ -17,7 +17,7 @@ configured in the rate tables.
       <INPUT NAME="cdrtypenum" SIZE=16 MAXLENGTH=16 ALIGN="right">
     </TD>
     <TD>
-      <INPUT NAME="cdrtypename" SIZE=16 MAXLENGTH=16>
+      <INPUT NAME="cdrtypename" SIZE=16 MAXLENGTH=80>
     </TD>
   </TR>
 <&  /elements/auto-table.html,

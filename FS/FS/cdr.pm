@@ -32,7 +32,7 @@ use IO::Socket::SSL;
 use Cpanel::JSON::XS qw(decode_json);
 
 @ISA = qw(FS::Record);
-@EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
+@EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker _cdr_date_parse );
 
 $DEBUG = 0;
 $me = '[FS::cdr]';
