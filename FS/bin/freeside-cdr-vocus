@@ -1,0 +1,232 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format;
+use Net::SFTP::Foreign::Compat;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::cdr;
+
+### So much false laziness with freeside-cdr-sftp_and_import
+###   but vocus needs special handling to choose which files to load
+
+###
+# parse command line
+###
+
+use vars qw( $opt_r $opt_d $opt_v $opt_s );
+getopts('r:d:vs');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+# %%%FREESIDE_CACHE%%%
+my $cachedir = '%%%FREESIDE_CACHE%%%/cache.'. datasrc. '/cdrs';
+mkdir $cachedir unless -d $cachedir;
+
+use vars qw( $servername );
+$servername = shift or die &usage;
+
+###
+# get the file list
+###
+
+warn "Retrieving directory listing\n" if $opt_v;
+
+my $ls;
+
+my $ls_sftp = sftp();
+
+$ls_sftp->setcwd($opt_r) or die "can't chdir to $opt_r\n"
+  if $opt_r;
+
+$ls = $ls_sftp->ls('.', wanted => qr/^VAP.*\.csv\.gz$/i,
+                        names_only => 1 );
+
+
+###
+# vocus-specific part -- only use highest-numbered file for day
+###
+my %dates;
+foreach my $filename ( @$ls ) {
+  my ($filepre,$filedate,$iter) = $filename =~ /^(VAP\d+\-)(\d{4}\-\d{2}\-\d{2})(\.\d+)?.csv.gz$/;
+  unless ($filepre && $filedate) {
+    die "unparsable filename $filename"; #no warn and skip, might process wrong file for date
+  }
+  $iter =~ s/\.// if length($iter);
+  #not clear if same day can have different initial digits after VAP,
+  #  stated rule is "use the highest-numbered file for a given day",
+  #  so using date as key, but die if iter can't resolve conflict
+  if (!$dates{$filedate}) {
+    $dates{$filedate} = {};
+  } elsif ($dates{$filedate}{'iter'} eq $iter) {
+    die "duplicate iterators found for $filedate\n"
+  }
+  $dates{$filedate}{'files'} ||= [];
+  push @{$dates{$filedate}{'files'}}, $filename;
+  # don't actually expect iter of 0, but just in case, 0 trumps undef
+  if (!defined($dates{$filedate}{'iter'}) or (($iter || 0) > $dates{$filedate}{'iter'})) {
+    $dates{$filedate}{'iter'} = $iter;
+    $dates{$filedate}{'pre'}  = $filepre;
+  }
+}
+
+###
+# import each file
+###
+
+foreach my $filedate ( keys %dates ) {
+
+  my $filename = $dates{$filedate}{'pre'} . $filedate;
+  $filename .= '.'.$dates{$filedate}{'iter'}
+    if defined($dates{$filedate}{'iter'});
+  $filename .= '.csv.gz';
+
+  warn "Downloading $filename\n" if $opt_v;
+
+  #get the file
+  my $sftp = sftp();
+  $sftp->get($filename, "$cachedir/$filename")
+    or do {
+      unlink "$cachedir/$filename";
+      my $error = "Can't get $filename: ". $sftp->error . "\n";
+      if ( $opt_s ) {
+        warn $error;
+        next;
+      } else {
+        die $error;
+      }
+    };
+
+  warn "Processing $filename\n" if $opt_v;
+ 
+  my $ungziped = $filename;
+  $ungziped =~ s/\.gz$//;
+  if(system('gunzip', "$cachedir/$filename") != 0) {
+    unlink "$cachedir/$filename";
+    my $error = "gunzip of '$cachedir/$filename' failed\n";
+    if ( $opt_s ) {
+      warn $error;
+      next;
+    } else {
+      die $error;
+    }
+  }
+
+  my $import_options = {
+    'file'            => "$cachedir/$ungziped",
+    'format'          => 'vocus',
+    'batch_namevalue' => 'vocus-'.$filedate, #should further ensure only one file per date
+#    'empty_ok'        => 1,
+  };
+  
+  my $error = FS::cdr::batch_import($import_options);
+
+  if ( $error ) {
+
+    unlink "$cachedir/$filename";
+    unlink "$cachedir/$ungziped";
+    $error = "Error importing $ungziped: $error\n";
+    if ( $opt_s ) {
+      warn $error;
+      next;
+    } else {
+      die $error;
+    }
+
+  } else {
+
+    if ( $opt_d ) {
+      my $timestamp = time2str('%Y-%m-%d', time);
+      my $sftp = sftp();
+      foreach my $mfilename (@{$dates{$filedate}{'files'}}) {
+        warn "Moving $mfilename\n" if $opt_v;
+        $sftp->rename($mfilename, "$opt_d/$mfilename-$timestamp")
+          or do {
+            unlink "$cachedir/$filename";
+            unlink "$cachedir/$ungziped";
+            $error = "$mfilename imported, but can't move to $opt_d: ". $sftp->error . "\n";
+            if ( $opt_s ) {
+              warn $error;
+              next;
+            } else {
+              die $error;
+            }
+          };
+      }
+    }
+
+  }
+
+  unlink "$cachedir/$filename";
+  unlink "$cachedir/$ungziped";
+
+}
+
+###
+# subs
+###
+
+sub usage {
+  "Usage:
+  freeside-cdr-vocus
+    [ -r remotefolder ] [ -d donefolder ] [ -v level ]
+    [ -s ] user [sftpuser@]servername
+  ";
+}
+
+use vars qw( $sftp );
+
+sub sftp {
+
+  #reuse connections
+  return $sftp if $sftp && $sftp->cwd;
+
+  my %sftp = ( host => $servername );
+
+  $sftp = Net::SFTP::Foreign->new(%sftp);
+  $sftp->error and die "SFTP connection failed: ". $sftp->error;
+
+  $sftp;
+}
+
+=head1 NAME
+
+freeside-cdr-sftp_and_import - Download Vocus CDR files
+
+=head1 SYNOPSIS
+
+  freeside-cdr-sftp_and_import
+    [ -r remotefolder ] [ -d donefolder ] [ -v level ]
+    [ -s ] user [sftpuser@]servername
+
+=head1 DESCRIPTION
+
+Command line tool to download Vocus CDR files from a remote server via SFTP 
+and then import them into the database.  CDR tarrif types need to be 
+configured as CDR types in freeside.  If multiple files for a given day are 
+found, the one with the highest iterator will be used (though upon successful
+import, all existing files for the day will be moved by the -d option.)
+
+-r: if specified, changes into this remote folder before starting
+
+-d: if specified, moves files to the specified folder when done
+
+-v: verbose
+
+-s: Warn and skip files which could not be imported rather than abort
+
+user: freeside username
+
+[sftpuser@]servername: remote server
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cdr>
+
+=cut
+
+1;
+
