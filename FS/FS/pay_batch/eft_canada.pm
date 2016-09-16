@@ -26,15 +26,6 @@ my %holiday_yearly = (
   12 => { map {$_=>1} 26 }, #boxing day
 );
 my %holiday = (
-  2015 => {  2 => { map {$_=>1} 16 }, #family day
-             4 => { map {$_=>1}  3 }, #good friday
-             4 => { map {$_=>1}  6 }, #easter monday
-             5 => { map {$_=>1} 18 }, #victoria day
-             7 => { map {$_=>1}  1 }, #canada day
-             8 => { map {$_=>1}  3 }, #First Monday of August Civic Holiday
-             9 => { map {$_=>1}  7 }, #labour day
-            10 => { map {$_=>1} 12 }, #thanksgiving
-          },
   2016 => {  2 => { map {$_=>1} 15 }, #family day
              3 => { map {$_=>1} 25 }, #good friday
              3 => { map {$_=>1} 28 }, #easter monday
@@ -43,6 +34,15 @@ my %holiday = (
              8 => { map {$_=>1}  1 }, #First Monday of August Civic Holiday
              9 => { map {$_=>1}  5 }, #labour day
             10 => { map {$_=>1} 10 }, #thanksgiving
+          },
+  2017 => {  2 => { map {$_=>1} 20 }, #family day
+             4 => { map {$_=>1} 14 }, #good friday
+             4 => { map {$_=>1} 17 }, #easter monday
+             5 => { map {$_=>1} 22 }, #victoria day
+             7 => { map {$_=>1}  1 }, #canada day
+             8 => { map {$_=>1}  7 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  4 }, #labour day
+            10 => { map {$_=>1}  9 }, #thanksgiving
           },
 );
 
