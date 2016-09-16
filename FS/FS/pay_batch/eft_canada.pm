@@ -21,6 +21,7 @@ my $req_date; # requested process date, in %D format
 #ref http://gocanada.about.com/od/canadatravelplanner/a/canada_holidays.htm
 my %holiday_yearly = (
    1 => { map {$_=>1}  1 }, #new year's
+   7 => { map {$_=>1}  1 }, #canada day
   11 => { map {$_=>1} 11 }, #remembrance day
   12 => { map {$_=>1} 25 }, #christmas
   12 => { map {$_=>1} 26 }, #boxing day
@@ -30,7 +31,6 @@ my %holiday = (
              3 => { map {$_=>1} 25 }, #good friday
              3 => { map {$_=>1} 28 }, #easter monday
              5 => { map {$_=>1} 23 }, #victoria day
-             7 => { map {$_=>1}  1 }, #canada day
              8 => { map {$_=>1}  1 }, #First Monday of August Civic Holiday
              9 => { map {$_=>1}  5 }, #labour day
             10 => { map {$_=>1} 10 }, #thanksgiving
@@ -39,10 +39,17 @@ my %holiday = (
              4 => { map {$_=>1} 14 }, #good friday
              4 => { map {$_=>1} 17 }, #easter monday
              5 => { map {$_=>1} 22 }, #victoria day
-             7 => { map {$_=>1}  1 }, #canada day
              8 => { map {$_=>1}  7 }, #First Monday of August Civic Holiday
              9 => { map {$_=>1}  4 }, #labour day
             10 => { map {$_=>1}  9 }, #thanksgiving
+          },
+  2018 => {  2 => { map {$_=>1} 19 }, #family day
+             3 => { map {$_=>1} 30 }, #good friday
+             4 => { map {$_=>1}  2 }, #easter monday
+             5 => { map {$_=>1} 21 }, #victoria day
+             8 => { map {$_=>1}  6 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  3 }, #labour day
+            10 => { map {$_=>1}  8 }, #thanksgiving
           },
 );
 
