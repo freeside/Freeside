@@ -235,6 +235,8 @@ sub calc_remain {
     $time = time;
   }
 
+  my $sources = $options{'cust_credit_source_bill_pkg'};
+
   my $next_bill = $cust_pkg->getfield('bill') || 0;
 
   return 0 if    ! $self->base_recur($cust_pkg, \$time)
@@ -270,17 +272,30 @@ sub calc_remain {
       $amount = $amount * ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
     }
 
+    # calculate tax adjustment. we're not doing full credit_lineitems here
+    # (e.g. not applying the credit to the past billing of this package)
+    # so just include the adjustment in the source record with the rest
+    # of the credit
+    my %tax_adjust = FS::cust_credit->calculate_tax_adjustment(
+      'custnum'     => $cust_pkg->custnum,
+      'billpkgnums' => [ $cust_bill_pkg->billpkgnum ],
+      'setuprecurs' => [ 'recur' ],
+      'amounts'     => [ $amount ],
+    );
+    $amount += $tax_adjust{taxtotal};
+
+    $amount = sprintf('%.2f', $amount); # ensure that amounts add up right
     $credit += $amount;
 
-    push @{ $options{'cust_credit_source_bill_pkg'} },
-      new FS::cust_credit_source_bill_pkg {
-        'billpkgnum' => $cust_bill_pkg->billpkgnum,
-        'amount'     => sprintf('%.2f', $amount),
-        'currency'   => $cust_bill_pkg->cust_bill->currency,
-      }
-        if $options{'cust_credit_source_bill_pkg'};
-
-  } 
+    if ( $sources ) {
+      push @$sources,
+        FS::cust_credit_source_bill_pkg->new( {
+          'billpkgnum' => $cust_bill_pkg->billpkgnum,
+          'amount'     => $amount,
+          'currency'   => $cust_bill_pkg->cust_bill->currency,
+        } );
+    }
+  } # foreach $cust_bill_pkg
 
   sprintf('%.2f', $credit);
 
