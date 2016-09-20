@@ -5094,6 +5094,7 @@ sub tables_hashref {
         'graphnum',       'int',      'NULL', '', '', '', 
         'imported',       @date_type,             '', '',
         'content',        'text',     'NULL', '', '', '',
+        'thumbnail',      'text',     'NULL', '', '', '',
       ],
       'primary_key' => 'cacti_pagenum',
       'unique'  => [ ],
