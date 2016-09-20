@@ -394,26 +394,28 @@ sub process_graphs {
 
   # check for existing pages
   my $now = time;
-  my @oldpages = qsearch({
+  my %oldpages = map { ($_->graphnum || 'MAIN') => $_ } qsearch({
     'table'    => 'cacti_page',
     'hashref'  => { 'svcnum' => $svcnum, 'exportnum' => $self->exportnum },
-    'select'   => 'cacti_pagenum, exportnum, svcnum, graphnum, imported', #no need to load old content
+    'select'   => 'cacti_pagenum, exportnum, svcnum, graphnum, imported, thumbnail', #no need to load old content
     'order_by' => 'ORDER BY graphnum',
   });
-  if (@oldpages) {
-    #if pages are recent enough, do nothing and return
-    if ($oldpages[0]->imported > $self->exptime($now)) {
-      $job->update_statustext(100);
-      return '';
-    }
-    #delete old pages
-    foreach my $oldpage (@oldpages) {
-      my $error = $oldpage->delete;
-      if ($error) {
-        $dbh->rollback if $oldAutoCommit;
-        die $error;
+
+  # if all existing pages are recent enough, do nothing and return
+  # (won't detect newly introduced graphs, but they can wait for next run)
+  my $uptodate = 0;
+  if (keys %oldpages) {
+    $uptodate = 1;
+    foreach my $oldpage (keys %oldpages) {
+      if ($oldpages{$oldpage}->imported <= $self->exptime($now)) {
+        $uptodate = 0;
+        last;
       }
     }
+  }
+  if ($uptodate) {
+    $job->update_statustext(100);
+    return '';
   }
 
   $job->update_statustext(30);
@@ -472,14 +474,18 @@ sub process_graphs {
     if (-e $thumbfile) {
       if ( stat($thumbfile)->size() < $maxgraph ) {
         $nographs = 0;
+        my $thumbnail = img_tag($thumbfile);
         # add graph to main file
         my $graphhead = q(<H3>) . $$graph[1] . q(</H3>);
         $svchtml .= $graphhead;
-        $svchtml .= anchor_tag( $svcnum, $$graph[0], img_tag($thumbfile) );
+        $svchtml .= anchor_tag( $svcnum, $$graph[0], $thumbnail );
         # create graph details file
         my $graphhtml = $svchead . $graphhead;
         my $nodetail = 1;
         my $j = 1;
+        # no easy way to tell what detail graphs should exist,
+        # and don't want detail graphs that are out of sync with thumbnail,
+        # so just use what we can find
         while (-e (my $graphfile = $cachedir.'graphs/graph_'.$$graph[0].'_'.$j.'.png')) {
           if ( stat($graphfile)->size() < $maxgraph ) {
             $nodetail = 0;
@@ -490,12 +496,22 @@ sub process_graphs {
         }
         $graphhtml .= '<P>No detail graphs to display for this graph</P>'
           if $nodetail;
+        #delete old detail page
+        if ($oldpages{$$graph[0]}) {
+          $error = $oldpages{$$graph[0]}->delete;
+          if ($error) {
+            $dbh->rollback if $oldAutoCommit;
+            die $error;
+          }
+        }
+        #insert new detail page
         my $newobj = new FS::cacti_page {
           'exportnum' => $self->exportnum,
           'svcnum'    => $svcnum,
           'graphnum'  => $$graph[0],
           'imported'  => $now,
           'content'   => $graphhtml,
+          'thumbnail' => $thumbnail,
         };
         $error = $newobj->insert;
         if ($error) {
@@ -507,18 +523,41 @@ sub process_graphs {
       }
       unlink($thumbfile);
     } else {
-      $svchtml .= qq(<P STYLE="color: #FF0000">Error loading graph: $$graph[0]</P>);
+      # try to use old page for this graph
+      if ($oldpages{$$graph[0]} && $oldpages{$$graph[0]}->thumbnail) {
+        $nographs = 0;
+        # add old graph to main file
+        my $graphhead = q(<H3>) . $$graph[1] . q(</H3>);
+        $svchtml .= $graphhead;
+        $svchtml .= qq(<P STYLE="color: #FF0000">Current graphs unavailable; using previously imported data.</P>);
+        $svchtml .= anchor_tag( $svcnum, $$graph[0], $oldpages{$$graph[0]}->thumbnail );
+      } else {
+        $svchtml .= qq(<P STYLE="color: #FF0000">Error loading graph: $$graph[0]</P>);
+      }
     }
+    # remove old page from hash even if it is being reused,
+    # remaining entries in hash will be deleted from database below
+    delete $oldpages{$$graph[0]} if $oldpages{$$graph[0]};
     $job->update_statustext(49 + int($i / @graphs) * 50);
   }
   $svchtml .= '<P>No graphs to display for this service</P>'
     if $nographs;
+  # delete remaining old pages, including svc index
+  foreach my $oldpage (keys %oldpages) {
+    $error = $oldpages{$oldpage}->delete;
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      die $error;
+    }
+  }
+  # insert new index page for svc
   my $newobj = new FS::cacti_page {
     'exportnum' => $self->exportnum,
     'svcnum'    => $svcnum,
     'graphnum'  => '',
     'imported'  => $now,
     'content'   => $svchtml,
+    'thumbnail' => '',
   };
   $error  = $newobj->insert;
   if ($error) {
