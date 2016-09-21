@@ -8,7 +8,7 @@ use base qw( FS::cust_pkg::Search FS::cust_pkg::API
 use strict;
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
-use List::Util qw(min max);
+use List::Util qw(min max sum);
 use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
@@ -1774,50 +1774,93 @@ sub credit_remaining {
   my $conf = FS::Conf->new;
   my $reason_type = $conf->config($mode.'_credit_type');
 
-  my $last_bill = $self->getfield('last_bill') || 0;
-  my $next_bill = $self->getfield('bill') || 0;
-  if ( $last_bill > 0         # the package has been billed
-      and $next_bill > 0      # the package has a next bill date
-      and $next_bill >= $time # which is in the future
-  ) {
-    my @cust_credit_source_bill_pkg = ();
-    my $remaining_value = 0;
+  $time ||= time;
 
-    my $remain_pkg = $self;
-    $remaining_value = $remain_pkg->calc_remain(
-      'time' => $time, 
-      'cust_credit_source_bill_pkg' => \@cust_credit_source_bill_pkg,
-    );
+  my $remain_pkg = $self;
+  my (@billpkgnums, @amounts, @setuprecurs);
+  
+  # we may have to walk back past some package changes to get to the 
+  # one that actually has unused time. loop until that happens, or we
+  # reach the first package in the chain.
+  while (1) {
+    my $last_bill = $remain_pkg->get('last_bill') || 0;
+    my $next_bill = $remain_pkg->get('bill') || 0;
+    if ( $last_bill > 0         # the package has been billed
+        and $next_bill > 0      # the package has a next bill date
+        and $next_bill >= $time # which is in the future
+    ) {
 
-    # we may have to walk back past some package changes to get to the 
-    # one that actually has unused time
-    while ( $remaining_value == 0 ) {
-      if ( $remain_pkg->change_pkgnum ) {
-        $remain_pkg = FS::cust_pkg->by_key($remain_pkg->change_pkgnum);
-      } else {
-        # the package has really never been billed
-        return;
+      # Find actual charges for the period ending on or after the cancel
+      # date.
+      my @charges = qsearch('cust_bill_pkg', {
+        pkgnum => $remain_pkg->pkgnum,
+        edate => {op => '>=', value => $time},
+        recur => {op => '>' , value => 0},
+      });
+
+      foreach my $cust_bill_pkg (@charges) {
+        # hack to deal with the weird behavior of edate on package
+        # cancellation
+        my $edate = $cust_bill_pkg->edate;
+        if ( $self->recur_temporality eq 'preceding' ) {
+          $edate = $self->add_freq($cust_bill_pkg->sdate);
+        }
+
+        # this will also get any package charges that are _entirely_ after
+        # the cancellation date (can happen with advance billing). in that
+        # case, use the entire recurring charge:
+        my $amount = $cust_bill_pkg->recur - $cust_bill_pkg->usage;
+
+        # but if the cancellation happens during the interval, prorate it:
+        # (XXX obey prorate_round_day here?)
+        if ( $cust_bill_pkg->sdate < $time ) {
+          $amount = $amount *
+                      ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
+        }
+
+        $amount = sprintf('%.2f', $amount);
+
+        push @billpkgnums, $cust_bill_pkg->billpkgnum;
+        push @amounts,     $amount;
+        push @setuprecurs, 'recur';
+
+        warn "Crediting for $amount on package ".$remain_pkg->pkgnum."\n"
+          if $DEBUG;
+
       }
-      $remaining_value = $remain_pkg->calc_remain(
-        'time' => $time, 
-        'cust_credit_source_bill_pkg' => \@cust_credit_source_bill_pkg,
-      );
+
+      last if @charges;
     }
 
-    if ( $remaining_value > 0 ) {
-      warn "Crediting for $remaining_value on package ".$self->pkgnum."\n"
-        if $DEBUG;
-      my $error = $self->cust_main->credit(
-        $remaining_value,
-        'Credit for unused time on '. $self->part_pkg->pkg,
-        'reason_type' => $reason_type,
-        'cust_credit_source_bill_pkg' => \@cust_credit_source_bill_pkg,
-      );
-      return "Error crediting customer \$$remaining_value for unused time".
-        " on ". $self->part_pkg->pkg. ": $error"
-        if $error;
-    } #if $remaining_value
-  } #if $last_bill, etc.
+    if ( my $changed_from_pkgnum = $remain_pkg->change_pkgnum ) {
+      $remain_pkg = FS::cust_pkg->by_key($changed_from_pkgnum);
+    } else {
+      # the package has really never been billed
+      return;
+    }
+  }
+
+  # keep traditional behavior here. 
+  local $@;
+  my $reason = FS::reason->new_or_existing(
+    reason  => 'Credit for unused time on '. $self->part_pkg->pkg,
+    type    => $reason_type,
+    class   => 'R',
+  );
+  if ( $@ ) {
+    return "failed to set credit reason: $@";
+  }
+
+  my $error = FS::cust_credit->credit_lineitems(
+    'billpkgnums' => \@billpkgnums,
+    'setuprecurs' => \@setuprecurs,
+    'amounts'     => \@amounts,
+    'custnum'     => $self->custnum,
+    'date'        => time,
+    'reasonnum'   => $reason->reasonnum,
+    'apply'       => 1,
+  );
+
   '';
 }
 
