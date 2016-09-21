@@ -1866,6 +1866,7 @@ sub credit_remaining {
     'date'        => time,
     'reasonnum'   => $reason->reasonnum,
     'apply'       => 1,
+    'set_source'  => 1,
   );
 
   '';

@@ -225,6 +225,8 @@ sub calc_cancel {
   }
 }
 
+# no longer used; see credit_remaining in FS::cust_pkg
+
 sub calc_remain {
   my ($self, $cust_pkg, %options) = @_;
 
