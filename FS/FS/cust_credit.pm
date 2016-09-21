@@ -798,7 +798,11 @@ sub calculate_tax_adjustment {
   );
 }
 
-=item credit_lineitems
+=item credit_lineitems OPTIONS
+
+Creates a credit to a group of line items, with a specified amount applied
+to each. This will also calculate the tax adjustments for those amounts and
+credit the appropriate tax line items.
 
 Example:
 
@@ -816,6 +820,16 @@ Example:
       qw( custnum _date amount reasonnum addlinfo ), #pkgnum eventnum
 
   );
+
+C<billpkgnums>, C<setuprecurs>, C<amounts> are required and are parallel
+arrays. Each one indicates an amount of credit to be applied to either the
+setup or recur portion of a (non-tax) line item.
+
+C<custnum>, C<_date>, C<reasonnum>, and C<addlinfo> will be set on the
+credit before it's inserted.
+
+C<amount> is the total amount. If unspecified, the credit will be the sum
+of the per-line-item amounts and their tax adjustments.
 
 =cut
 
@@ -856,10 +870,18 @@ sub credit_lineitems {
 
   my $error = '';
 
+  # first, determine the tax adjustments
+  my %tax_adjust = $class->calculate_tax_adjustment(%arg);
+  # and determine the amount automatically if it wasn't specified
+  if ( !exists( $arg{amount} ) ) {
+    $arg{amount} = sprintf('%.2f', $tax_adjust{subtotal} + $tax_adjust{taxtotal});
+  }
+
+  # create the credit
   my $cust_credit = new FS::cust_credit ( {
     map { $_ => $arg{$_} }
       #fields('cust_credit')
-      qw( custnum _date amount reasonnum addlinfo ), #pkgnum eventnum
+      qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
   } );
   $error = $cust_credit->insert;
   if ( $error ) {
@@ -878,9 +900,6 @@ sub credit_lineitems {
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
   my %unapplied_payments = (); #invoice numbers, and then billpaynums
-
-  # determine the tax adjustments
-  my %tax_adjust = $class->calculate_tax_adjustment(%arg);
 
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
