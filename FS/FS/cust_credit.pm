@@ -798,6 +798,7 @@ Example:
     'setuprecurs'       => \@setuprecurs,
     'amounts'           => \@amounts,
     'apply'             => 1, #0 leaves the credit unapplied
+    'set_source'        => 1, #creates credit source records for the line items
 
     #the credit
     map { $_ => scalar($cgi->param($_)) }
@@ -862,6 +863,8 @@ sub credit_lineitems {
     $arg{amount} = sprintf('%.2f', $tax_adjust{subtotal} + $tax_adjust{taxtotal});
   }
 
+  my $set_source = $arg{set_source};
+
   # create the credit
   my $cust_credit = new FS::cust_credit ( {
     map { $_ => $arg{$_} }
@@ -885,6 +888,7 @@ sub credit_lineitems {
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
   my %unapplied_payments = (); #invoice numbers, and then billpaynums
+  my %currency;
 
   # little private function to unapply payments from a cust_bill_pkg until
   # there's a specified amount of unpaid balance on it.
@@ -957,6 +961,17 @@ sub credit_lineitems {
     # unapply payments if necessary
     $error = &{$unapply_sub}($cust_bill_pkg, $setuprecur, $amount);
 
+    if ( $set_source ) {
+      $currency{$invnum} ||= $cust_bill_pkg->cust_bill->currency;
+      my $source = FS::cust_credit_source_bill_pkg->new({
+        'crednum'     => $cust_credit->crednum,
+        'billpkgnum'  => $billpkgnum,
+        'amount'      => $amount,
+        'currency'    => $currency{invnum},
+      });
+      $error ||= $source->insert;
+    }
+
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error unapplying payment: $error";
@@ -994,6 +1009,19 @@ sub credit_lineitems {
       };
 
     $error = &{$unapply_sub}($cust_bill_pkg, 'setup', $amount);
+
+    # I guess it's correct to do this for taxes also?
+    if ( $set_source ) {
+      $currency{$invnum} ||= $cust_bill_pkg->cust_bill->currency;
+      my $source = FS::cust_credit_source_bill_pkg->new({
+        'crednum'     => $cust_credit->crednum,
+        'billpkgnum'  => $billpkgnum,
+        'amount'      => $amount,
+        'currency'    => $currency{invnum},
+      });
+      $error ||= $source->insert;
+    }
+
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error unapplying payment: $error";
