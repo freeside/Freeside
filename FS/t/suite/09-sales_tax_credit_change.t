@@ -13,7 +13,7 @@ Correct: The credit amount will be $11.00.
 =cut
 
 use strict;
-use Test::More tests => 2;
+use Test::More tests => 3;
 use FS::Test;
 use Date::Parse 'str2time';
 use Date::Format 'time2str';
@@ -78,18 +78,19 @@ ok ( $tax_item && $tax_item->setup == 3.00, "Tax charged = 3.00" );
 # sync
 $pkg = $pkg->replace_old;
 
-# Pay the bill
+# Pay the bill in two parts
 set_fixed_time(str2time('2016-04-02 00:00'));
-my $cust_pay = FS::cust_pay->new({
-  custnum => $cust->custnum,
-  invnum  => $cust_bill->invnum,
-  _date   => time,
-  paid    => $cust_bill->owed,
-  payby   => 'CASH',
-});
-$error = $cust_pay->insert;
-BAIL_OUT("can't record payment: $error") if $error;
-
+foreach my $paid (10.00, 23.00) {
+  my $cust_pay = FS::cust_pay->new({
+    custnum => $cust->custnum,
+    invnum  => $cust_bill->invnum,
+    _date   => time,
+    paid    => $paid,
+    payby   => 'CASH',
+  });
+  $error = $cust_pay->insert;
+  BAIL_OUT("can't record payment: $error") if $error;
+}
 # Now cancel with 1/3 of the period left
 set_fixed_time(str2time('2016-04-21 00:00'));
 $error = $pkg->cancel();
@@ -100,3 +101,8 @@ my ($credit) = $cust->cust_credit
   or BAIL_OUT("no credit was created");
 ok ( $credit->amount == 11.00, "Credited 1/3 of package charge with tax" )
   or diag("is ". $credit->amount );
+
+# the invoice should also be fully paid after that
+ok ( $cust_bill->owed == 0, "Invoice balance is zero" )
+  or diag("is ". $cust_bill->owed);
+
