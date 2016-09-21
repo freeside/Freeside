@@ -886,6 +886,49 @@ sub credit_lineitems {
   my %cust_credit_bill_pkg = ();
   my %unapplied_payments = (); #invoice numbers, and then billpaynums
 
+  # little private function to unapply payments from a cust_bill_pkg until
+  # there's a specified amount of unpaid balance on it.
+  # it's a separate sub because we do it for both tax and nontax items. it's
+  # private because it needs access to some local data structures.
+  my $unapply_sub = sub {
+    my ($cust_bill_pkg, $setuprecur, $need_to_unapply) = @_;
+
+    my $invnum = $cust_bill_pkg->invnum;
+
+    $need_to_unapply -= $cust_bill_pkg->owed($setuprecur);
+    next if $need_to_unapply < 0.005;
+
+    my $error;
+    # then unapply payments one at a time (partially if need be) until the
+    # unpaid balance = the credit amount.
+    foreach my $cust_bill_pay_pkg (
+      $cust_bill_pkg->cust_bill_pay_pkg($setuprecur)
+    ) {
+      my $this_amount = $cust_bill_pay_pkg->amount;
+      if ( $this_amount > $need_to_unapply ) {
+        # unapply the needed amount
+        $cust_bill_pay_pkg->set('amount',
+          sprintf('%.2f', $this_amount - $need_to_unapply));
+        $error = $cust_bill_pay_pkg->replace;
+        $unapplied_payments{$invnum}{$cust_bill_pay_pkg->billpaynum} += $need_to_unapply;
+        last; # and we're done
+
+      } else {
+        # unapply it all
+        $error = $cust_bill_pay_pkg->delete;
+        $unapplied_payments{$invnum}{$cust_bill_pay_pkg->billpaynum} += $this_amount;
+
+        $need_to_unapply -= $this_amount;
+      }
+
+    } # foreach $cust_bill_pay_pkg
+
+    # return an error if we somehow still have leftover $need_to_unapply?
+
+    return $error;
+  };
+
+
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
     my $amount = shift @{$arg{amounts}};
@@ -910,17 +953,13 @@ sub credit_lineitems {
         'sdate'      => $cust_bill_pkg->sdate,
         'edate'      => $cust_bill_pkg->edate,
       };
-    # unapply payments (but not other credits) from this line item
-    foreach my $cust_bill_pay_pkg (
-      $cust_bill_pkg->cust_bill_pay_pkg($setuprecur)
-    ) {
-      $error = $cust_bill_pay_pkg->delete;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error unapplying payment: $error";
-      }
-      $unapplied_payments{$invnum}{$cust_bill_pay_pkg->billpaynum}
-        += $cust_bill_pay_pkg->amount;
+
+    # unapply payments if necessary
+    $error = &{$unapply_sub}($cust_bill_pkg, $setuprecur, $amount);
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error unapplying payment: $error";
     }
   }
 
@@ -953,17 +992,11 @@ sub credit_lineitems {
         'setuprecur' => 'setup',
         $tax_link->primary_key, $tax_credit->{num}
       };
-    # unapply any payments from the tax
-    foreach my $cust_bill_pay_pkg (
-      $cust_bill_pkg->cust_bill_pay_pkg('setup')
-    ) {
-      $error = $cust_bill_pay_pkg->delete;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error unapplying payment: $error";
-      }
-      $unapplied_payments{$invnum}{$cust_bill_pay_pkg->billpaynum}
-        += $cust_bill_pay_pkg->amount;
+
+    $error = &{$unapply_sub}($cust_bill_pkg, 'setup', $amount);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error unapplying payment: $error";
     }
   }
 
