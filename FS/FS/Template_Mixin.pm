@@ -1240,11 +1240,13 @@ sub print_generic {
     if $DEBUG > 1;
 
   # create a tax section if we don't yet have one
+  my @items_tax = $self->_items_tax;
   my $tax_description = 'Taxes, Surcharges, and Fees';
   my $tax_section =
     List::Util::first { $_->{description} eq $tax_description } @sections;
   if (!$tax_section) {
     $tax_section = { 'description' => $tax_description };
+    push @sections, $tax_section if $multisection and @items_tax > 0;
   }
   $tax_section->{tax_section} = 1; # mark this section as containing taxes
   # if this is an existing tax section, we're merging the tax items into it.
@@ -1258,9 +1260,6 @@ sub print_generic {
   #                      : 0;
   #$tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
   #$tax_section->{'sort_weight'} = $tax_weight;
-
-  my @items_tax = $self->_items_tax;
-  push @sections, $tax_section if $multisection and @items_tax > 0;
 
   foreach my $tax ( @items_tax ) {
 
