@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -175,8 +175,14 @@ elsif ( $AddCol ) {
                 $column{Suffix} .= "</i>";
             }
             if ($Size) {
-                $column{Prefix} .= "<" . $m->interp->apply_escapes( $Size,  'h' ) . ">";
-                $column{Suffix} .= "</" . $m->interp->apply_escapes( $Size, 'h' ) . ">";
+                if ( $Size eq 'Large' ) {
+                    $column{Prefix} .= '<span style="font-size:larger">';
+                    $column{Suffix} .= '</span>';
+                }
+                else {
+                    $column{Prefix} .= "<" . $m->interp->apply_escapes( $Size,  'h' ) . ">";
+                    $column{Suffix} .= "</" . $m->interp->apply_escapes( $Size, 'h' ) . ">";
+                }
             }
             if ( $Link eq "Display" ) {
                 $column{Prefix} .= q{<a HREF="__WebPath__/Ticket/Display.html?id=__id__">};

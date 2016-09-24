@@ -1396,6 +1396,21 @@ Set(%FullTextSearch,
     Indexed => 0,
 );
 
+=item C<$MaxFulltextAttachmentSize>
+
+On some systems, very large attachments can cause memory and other
+performance issues for the indexer making it unable to complete
+indexing. Adding resources like memory and CPU will solve this
+issue, but in cases where that isn't possible, this option
+sets a maximum size in bytes on attachments to index. Attachments
+larger than this limit are skipped and will not be available to
+full text searches.
+
+=cut
+
+# Default 0 means no limit
+Set($MaxFulltextAttachmentSize, 0);
+
 =item C<$DontSearchFileAttachments>
 
 If C<$DontSearchFileAttachments> is set to 1, then uploaded files
@@ -2093,6 +2108,23 @@ Simple wildcards, similar to SSL certificates, are allowed.  For example:
 
 Set(@ReferrerWhitelist, qw());
 
+=item C<%ReferrerComponents>
+
+C<%ReferrerComponents> is the hash to customize referrer checking behavior when
+C<$RestrictReferrer> is enabled, where you can whitelist or blacklist the
+components along with their query args. e.g.
+
+    Set( %ReferrerComponents,
+        ( '/Foo.html' => 1, '/Bar.html' => 0, '/Baz.html' => [ 'id', 'results' ] )
+    );
+
+With this, '/Foo.html' will be whitelisted, and '/Bar.html' will be blacklisted.
+'/Baz.html' with id/results query arguments will be whitelisted but blacklisted
+if there are other query arguments.
+
+=cut
+
+Set( %ReferrerComponents );
 
 =item C<$BcryptCost>
 
@@ -2102,7 +2134,7 @@ higher numbers denoting greater effort.
 
 =cut
 
-Set($BcryptCost, 10);
+Set($BcryptCost, 11);
 
 =back
 

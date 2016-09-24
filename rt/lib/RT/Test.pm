@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -886,7 +886,7 @@ sub create_ticket {
         $args{'MIMEObj'} = MIME::Entity->build(
             From    => Encode::encode( "UTF-8", $args{'Requestor'} ),
             Subject => RT::Interface::Email::EncodeToMIME( String => $args{'Subject'} ),
-            Type    => $args{ContentType} // "text/plain",
+            Type    => (defined $args{ContentType} ? $args{ContentType} : "text/plain"),
             Charset => "UTF-8",
             Data    => Encode::encode( "UTF-8", $content ),
         );
@@ -1718,9 +1718,9 @@ sub file_content {
 }
 
 sub find_executable {
-    my $self = shift;
+    my ( $self, $exe ) = @_;
 
-    return File::Which::which( @_ );
+    return File::Which::which( $exe );
 }
 
 sub diag {

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -1717,7 +1717,7 @@ sub _CanonicalizeValue {
     my $self = shift;
     my $args = shift;
 
-    my $type = $self->_Value('Type');
+    my $type = $self->__Value('Type');
     return 1 unless $type;
 
     my $method = '_CanonicalizeValue'. $type;
@@ -2361,6 +2361,11 @@ sub __DependsOn {
 
 # Custom field values
     push( @$list, $self->Values );
+
+# Applications of this CF
+    my $applied = RT::ObjectCustomFields->new( $self->CurrentUser );
+    $applied->LimitToCustomField( $self->Id );
+    push @$list, $applied;
 
 # Ticket custom field values
     my $objs = RT::ObjectCustomFieldValues->new( $self->CurrentUser );

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -64,7 +64,7 @@
 </tr>
 % my $i;
 % while ( my $trans = $transactions->Next ) { 
-% next unless $trans->Content;
+% next unless $trans->HasContent && $trans->Content;
 <tr class="<% ($i++)%2 ? 'oddline' : 'evenline'%>" >                                
 <td valign="top">
 <select name="Transaction-<%$trans->Id%>">

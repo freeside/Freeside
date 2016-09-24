@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -335,7 +335,7 @@ if ($CloneTicket) {
         return if $uri->IsLocal and
                 $uri->Object and
                 $uri->Object->isa('RT::Ticket') and
-                $uri->Object->Type eq 'reminder';
+                $uri->Object->__Value('Type') eq 'reminder';
 
         return $link->$local_method || $uri->URI;
     };
@@ -382,6 +382,8 @@ if ($CloneTicket) {
       push @customers, $custnum if $custnum;
     }
     $clone->{'new-Customer'} = join(' ', @customers);
+
+    $m->callback( CallbackName => 'MassageCloneArgs', ARGSRef => $clone, Queue => $Queue );
 
     for ( keys %$clone ) {
         $ARGS{$_} = $clone->{$_} if not defined $ARGS{$_};

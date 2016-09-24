@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -56,10 +56,14 @@ foreach my $message ( @{ $Attachments->{ $Parent || 0 } || [] } ) {
             );
 
     my $name = defined $message->Filename && length $message->Filename ?  $message->Filename : '';
-    if ( $message->ContentLength or $name ) {
+    my $should_render_download = $message->ContentLength || $name;
+
+    $m->callback(CallbackName => 'BeforeAttachment', ARGSRef => \%ARGS, Object => $Object, Transaction => $Transaction, Attachment => $message, Name => $name, ShouldRenderDownload => \$should_render_download);
+
+    if ($should_render_download) {
 </%PERL>
 <div class="downloadattachment">
-<a href="<% $AttachmentPath %>/<% $Transaction->Id %>/<% $message->Id %>/<% $name | u%>"><&|/l&>Download</&> <% length $name ? $name : loc('(untitled)') %></a>\
+<a href="<% $AttachmentPath %>/<% $Transaction->Id %>/<% $message->Id %>/<% $name | un%>"><&|/l&>Download</&> <% length $name ? $name : loc('(untitled)') %></a>\
 % if ( $DownloadableHeaders && ! length $name && $message->ContentType =~ /text/  ) {
  / <a href="<% $AttachmentPath %>/WithHeaders/<% $message->Id %>"><% loc('with headers') %></a>
 % }

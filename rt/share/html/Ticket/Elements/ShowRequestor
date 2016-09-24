@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -51,7 +51,7 @@
         jQuery(".more-about-requestor-tickets").tabs({
             cache: true,
             collapsible: true,
-            selected: <% $selected %>
+            active: <% $selected %>
         });
     });
 </script>
@@ -167,8 +167,10 @@ $ShowTickets = 0 if $DefaultTicketsTab eq 'None';
 my $TicketTemplate;
 if ($ShowTickets) {
     for (0 .. (@$status_order - 1)) {
-        $selected = $_ && last
-            if $status_order->[$_] eq $DefaultTicketsTab;
+        if ( $status_order->[$_] eq $DefaultTicketsTab ) {
+            $selected = $_;
+            last;
+        }
     }
 
     $TicketTemplate = "ShowRequestorTickets$DefaultTicketsTab";

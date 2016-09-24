@@ -4,7 +4,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -282,6 +282,29 @@ Defaults to F</usr/lib/apache2/modules>.
 =cut
 
 __DATA__
+Listen $PORT
+<IfDefine SSL>
+   Listen $SSL
+</IfDefine>
+
+ServerName localhost
+ServerRoot $RTHOME/var
+PidFile    $RTHOME/var/apache2.pid
+<IfVersion < 2.4>
+    LockFile   $RTHOME/var/apache2.lock
+</IfVersion>
+ServerAdmin root@localhost
+
+<IfVersion >= 2.4>
+    LoadModule mpm_prefork_module $MODULES/mod_mpm_prefork.so
+    LoadModule authz_core_module $MODULES/mod_authz_core.so
+</IfVersion>
+LoadModule authz_host_module  $MODULES/mod_authz_host.so
+LoadModule env_module         $MODULES/mod_env.so
+LoadModule alias_module       $MODULES/mod_alias.so
+LoadModule mime_module        $MODULES/mod_mime.so
+TypesConfig $TOOLS/mime.types
+
 <IfDefine SINGLE>
     <IfModule mpm_prefork_module>
         StartServers          1
@@ -302,23 +325,6 @@ __DATA__
     </IfModule>
 </IfDefine>
 
-Listen $PORT
-<IfDefine SSL>
-   Listen $SSL
-</IfDefine>
-
-ServerName localhost
-ServerRoot $RTHOME/var
-PidFile    $RTHOME/var/apache2.pid
-LockFile   $RTHOME/var/apache2.lock
-ServerAdmin root@localhost
-
-LoadModule authz_host_module  $MODULES/mod_authz_host.so
-LoadModule env_module         $MODULES/mod_env.so
-LoadModule alias_module       $MODULES/mod_alias.so
-LoadModule mime_module        $MODULES/mod_mime.so
-TypesConfig $TOOLS/mime.types
-
 <IfDefine PERL>
     LoadModule perl_module    $MODULES/mod_perl.so
 </IfDefine>
@@ -330,6 +336,9 @@ TypesConfig $TOOLS/mime.types
 </IfDefine>
 <IfDefine SSL>
     LoadModule ssl_module     $MODULES/mod_ssl.so
+    <IfVersion >= 2.4>
+        LoadModule socache_shmcb_module $MODULES/mod_socache_shmcb.so
+    </IfVersion>
 </IfDefine>
 
 <IfModule !log_config_module>
@@ -365,8 +374,6 @@ Alias $PATH/NoAuth/images/ $RTHOME/share/html/NoAuth/images/
 <IfDefine PERL>
     PerlSetEnv RT_SITE_CONFIG $RTHOME/etc/RT_SiteConfig.pm
     <Location $PATH>
-        Order allow,deny
-        Allow from all
         SetHandler modperl
         PerlResponseHandler Plack::Handler::Apache2
         PerlSetVar psgi_app $RTHOME/sbin/rt-server
@@ -383,8 +390,6 @@ Alias $PATH/NoAuth/images/ $RTHOME/share/html/NoAuth/images/
     FastCgiServer $RTHOME/sbin/rt-server.fcgi -processes $PROCESSES -idle-timeout 300
     ScriptAlias $PATH $RTHOME/sbin/rt-server.fcgi/
     <Location $PATH>
-        Order allow,deny
-        Allow from all
         Options +ExecCGI
         AddHandler fastcgi-script fcgi
     </Location>
@@ -397,8 +402,6 @@ Alias $PATH/NoAuth/images/ $RTHOME/share/html/NoAuth/images/
     FcgidMaxRequestLen 1073741824
     ScriptAlias $PATH $RTHOME/sbin/rt-server.fcgi/
     <Location $PATH>
-        Order allow,deny
-        Allow from all
         Options +ExecCGI
         AddHandler fcgid-script fcgi
     </Location>
@@ -426,8 +429,6 @@ Alias $PATH/NoAuth/images/ $RTHOME/share/html/NoAuth/images/
     FastCgiServer $RTHOME/bin/mason_handler.fcgi -processes $PROCESSES -idle-timeout 300
     ScriptAlias $PATH $RTHOME/bin/mason_handler.fcgi/
     <Location $PATH>
-        Order allow,deny
-        Allow from all
         Options +ExecCGI
         AddHandler fastcgi-script fcgi
     </Location>
@@ -440,8 +441,6 @@ Alias $PATH/NoAuth/images/ $RTHOME/share/html/NoAuth/images/
     FcgidMaxRequestLen 1073741824
     ScriptAlias $PATH $RTHOME/bin/mason_handler.fcgi/
     <Location $PATH>
-        Order allow,deny
-        Allow from all
         Options +ExecCGI
         AddHandler fcgid-script fcgi
     </Location>
@@ -454,7 +453,9 @@ Alias $PATH/NoAuth/images/ $RTHOME/share/html/NoAuth/images/
     SSLRandomSeed connect builtin
     SSLRandomSeed connect file:/dev/urandom 512
     SSLSessionCache shmcb:$RTHOME/var/ssl_scache(512000)
-    SSLMutex file:$RTHOME/var/ssl_mutex
+    <IfVersion < 2.4>
+        SSLMutex file:$RTHOME/var/ssl_mutex
+    </IfVersion>
     <VirtualHost *:$SSL>
         SSLEngine on
         SSLCertificateFile    $TOOLS/localhost.crt

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -67,9 +67,9 @@
 % }
 </nobr>
 % }
-% if ( $Object && $Object->Id ) {
+% if ( $Object && $Object->Id && $Object->CurrentUserHasRight('update') ) {
 <input type="submit" class="button" id="SavedSearchSave" name="SavedSearchSave"   value="<%loc('Update')%>" />
-% } else {
+% } elsif ( !$Object ) {
 <input type="submit" class="button" id="SavedSearchSave" name="SavedSearchSave"   value="<%loc('Save')%>" />
 %}
 % }
