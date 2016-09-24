@@ -38,8 +38,9 @@ body { height: 100%; margin: 0px; padding: 0px }
 }
 </style>
 
-<script type="text/javascript" 
-src="https://maps.google.com/maps/api/js?v=3.4&sensor=false">
+% my $conf = new FS::Conf;
+% my $apikey = $conf->config('google_maps_api_key');
+<script type="text/javascript" src="https://maps.google.com/maps/api/js?v=3&key=<% $apikey %>">
 </script>
 
 <script type="text/javascript">
@@ -62,6 +63,8 @@ function show_route() {
   directionsService.route(directionsRequest, function(result, status) {
     if ( status == google.maps.DirectionsStatus.OK ) {
       directionsDisplay.setDirections(result);
+    } else { 
+      document.body.innerHTML = ('<P STYLE="color: red;">Directions lookup failed with the following error: '+status+'</P>');
     }
   });
 }
