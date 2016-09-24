@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -63,14 +63,14 @@
 </&>
 % $m->callback( CallbackName => 'AfterBasics', Ticket => $TicketObj );
 
-<& /Elements/EditCustomFieldCustomGroupings, Object => $TicketObj &>
+<& /Elements/EditCustomFieldCustomGroupings, Object => $TicketObj, AsTable => !!RT->Config->Get('EditCustomFieldsSingleColumn', $session{'CurrentUser'}) &>
 
 <& /Elements/Submit, Name => 'SubmitTicket', Label => loc('Save Changes'), Caption => loc("If you've updated anything above, be sure to"), color => "#993333" &>
 </form>
 
 % $m->callback(CallbackName => 'AfterForm', ARGSRef => \%ARGS, Ticket => $TicketObj);
 <%INIT>
-  
+
 my $TicketObj = LoadTicket($id);
 my $CustomFields = $TicketObj->CustomFields;
 

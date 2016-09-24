@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -545,7 +545,7 @@ sub VerifyDecrypt {
         my $modify = $res{status_on}->head->modify;
         $res{status_on}->head->modify(1);
         $res{status_on}->head->add(
-            "X-RT-" . $protected->{'Protocol'} . "-Status" => $res{'status'}
+            "X-RT-" . $protected->{'Protocol'} . "-Status" => Encode::encode( "UTF-8", $res{'status'} )
         );
         $res{status_on}->head->modify($modify);
 

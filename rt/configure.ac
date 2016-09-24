@@ -34,6 +34,16 @@ if test "$PERL" = 'not found'; then
 	AC_MSG_ERROR([cannot use $PACKAGE_NAME without perl])
 fi
 
+dnl BSD find uses -perm +xxxx, GNU find has deprecated this syntax in favour of
+dnl -perm /xxx.
+AC_MSG_CHECKING([checking version of find])
+AS_IF([find --version 2>&1 | grep 'GNU'],
+      [   FINDPERM="/"
+          AC_MSG_RESULT([configuring for GNU find]) ],
+      [   FINDPERM="+"
+          AC_MSG_RESULT([configuring for BSD find]) ])
+
+AC_SUBST([FINDPERM])
 
 dnl WEB_HANDLER
 AC_ARG_WITH(web-handler,
@@ -461,6 +471,8 @@ AC_CONFIG_FILES([
                  etc/RT_Config.pm
                  lib/RT/Generated.pm
                  t/data/configs/apache2.2+mod_perl.conf
-                 t/data/configs/apache2.2+fastcgi.conf],
+                 t/data/configs/apache2.2+fastcgi.conf
+                 t/data/configs/apache2.4+mod_perl.conf
+                 t/data/configs/apache2.4+fastcgi.conf],
                )
 AC_OUTPUT

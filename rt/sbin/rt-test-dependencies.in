@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -239,6 +239,7 @@ Mail::Mailer 1.57
 MIME::Entity 5.504
 Module::Refresh 0.03
 Module::Versions::Report 1.05
+Encode 2.64
 Net::CIDR
 Plack 1.0002
 Regexp::Common
@@ -312,12 +313,7 @@ FCGI::ProcManager
 .
 
 $deps{'MODPERL1'} = [ text_to_hash( << '.') ];
-Apache::DBI 0.92
 Apache::Request
-.
-
-$deps{'MODPERL2'} = [ text_to_hash( << '.') ];
-Apache::DBI
 .
 
 $deps{'MYSQL'} = [ text_to_hash( << '.') ];
@@ -382,6 +378,7 @@ Pod::Simple 3.24
 my %AVOID = (
     'DBD::Oracle' => [qw(1.23)],
     'Devel::StackTrace' => [qw(1.28 1.29)],
+    'DateTime::Locale' => [qw(1.00 1.01)]
 );
 
 if ($args{'download'}) {
