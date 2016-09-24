@@ -1,7 +1,5 @@
 <& /elements/init_overlib.html &>
 
-% if ( $apikey ) {
-
 <& /elements/popup_link.html,
      'action'      => $p. 'view/map.html?'. $query,
      'label'       => mt('map'),
@@ -20,8 +18,6 @@
       'height'      => 575,
   &>
 % }
-
-% } # end if $apikey
 
 <A HREF="<%$p%>view/kml.cgi?<% $query %>"><% mt('earth') |h %></A>
 
