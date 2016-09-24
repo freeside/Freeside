@@ -1,0 +1,15 @@
+% if ($opt{'autherror'}) {
+<P STYLE="color: red;">
+There was an authentication error when loading google maps.
+Please check validity of existing key.
+</P>
+% }
+
+<P>In order to display google maps, your site administrator will need to set the
+<B>google_maps_api_key</B> setting under Configuration -> Settings.  Please see the Google Maps
+<a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_top">Get
+a Key/Authentication</a> documentation for information on acquiring a key.</P>
+
+<%init>
+my %opt = @_;
+</%init>

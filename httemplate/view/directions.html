@@ -1,3 +1,5 @@
+% if ( $apikey ) {
+
 %# the actual page
 <& /elements/header-popup.html, {
      title => '',#$name,
@@ -9,6 +11,11 @@
 
 <div id="directions_panel"></div>
 <div id="map_canvas"></div>
+
+% } else {
+<& /elements/header-popup.html &>
+<& /elements/google_maps_api_key.html &>
+% }
 
 <%def .head>
 % my $lat = $cgi->param('lat');
@@ -38,8 +45,6 @@ body { height: 100%; margin: 0px; padding: 0px }
 }
 </style>
 
-% my $conf = new FS::Conf;
-% my $apikey = $conf->config('google_maps_api_key');
 <script type="text/javascript" src="https://maps.google.com/maps/api/js?v=3&key=<% $apikey %>">
 </script>
 
@@ -69,6 +74,12 @@ function show_route() {
   });
 }
 
+// function name specified by google maps api, special hook for auth errors
+function gm_authFailure () {
+  document.body.innerHTML = 
+<% include('/elements/google_maps_api_key.html', autherror => 1) |js_string%>;
+}
+
 function initialize() {
   var myOptions = {
     zoom: 14,
@@ -88,6 +99,8 @@ function initialize() {
 </%def>
 <%shared>
 my ($lat, $lon, $name, $origin);
+my $conf = new FS::Conf;
+my $apikey = $conf->config('google_maps_api_key');
 </%shared>
 <%init>
 
