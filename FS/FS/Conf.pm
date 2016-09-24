@@ -2092,6 +2092,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'google_maps_api_key',
+    'section'     => 'addresses',
+    'description' => 'API key for google maps.  This must be set for map and directions links to appear on customer pages.  See <a href="https://developers.google.com/maps/documentation/javascript/get-api-key">Getting a Google Maps API Key</a>',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'show_ship_company',
     'section'     => 'addresses',
     'description' => 'Turns on display/collection of a "service company name" field for customers.',
