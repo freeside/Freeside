@@ -2226,10 +2226,10 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'safe-part_bill_event',
+    'key'         => 'google_maps_api_key',
     'section'     => 'UI',
-    'description' => 'Validates invoice event expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
-    'type'        => 'checkbox',
+    'description' => 'API key for google maps.  This must be set for map and directions links to appear on customer pages.  See <a href="https://developers.google.com/maps/documentation/javascript/get-api-key">Getting a Google Maps API Key</a>',
+    'type'        => 'text',
   },
 
   {
