@@ -204,7 +204,7 @@
                                'nogeocode'=> 'has an implicit tax location',
                                'geocode'  => 'has a hardcoded tax location',
                              },
-                'value'   => { map { $_ => 1 } @location_options },
+                'value'   => { map { $_ => 0 } @location_options },
     &>
 
     <& /elements/tr-title.html, value => mt('Display options') &>
