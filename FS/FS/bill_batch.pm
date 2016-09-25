@@ -58,22 +58,24 @@ sub print_pdf {
   my $self = shift;
   my $job = shift;
   $job->update_statustext(0) if $job;
-  my @invoices = sort { $a->invnum <=> $b->invnum } $self->cust_bill_batch;
-  return "No invoices in batch ".$self->batchnum.'.' if !@invoices;
+  my @cust_bill_batch = sort { $a->invnum <=> $b->invnum }
+                          $self->cust_bill_batch;
+  return "No invoices in batch ".$self->batchnum.'.' if !@cust_bill_batch;
 
   my $conf = FS::Conf->new;
   my $duplex = $conf->exists('invoice_print_pdf-duplex');
 
   my $pdf_out;
   my $num = 0;
-  foreach my $invoice (@invoices) {
-    my $part = $invoice->cust_bill->print_pdf({$invoice->options});
-    die 'Failed creating PDF from invoice '.$invoice->invnum.'\n' if !$part;
+  foreach my $cust_bill_batch (@cust_bill_batch) {
+    my $part =
+      $cust_bill_batch->cust_bill->print_pdf({$cust_bill_batch->options});
+    die 'Failed creating PDF from invoice '.$cust_bill_batch->invnum.'\n'
+      if !$part;
 
     if($pdf_out) {
       $pdf_out->appendPDF(CAM::PDF->new($part));
-    }
-    else {
+    } else {
       $pdf_out = CAM::PDF->new($part);
     }
     if ( $duplex ) {
@@ -83,10 +85,10 @@ sub print_pdf {
         $pdf_out->duplicatePage($n, 1);
       }
     }
-    if($job) {
+    if ($job) {
       # update progressbar
       $num++;
-      my $error = $job->update_statustext(int(100 * $num/scalar(@invoices)));
+      my $error = $job->update_statustext(int(100 * $num/scalar(@cust_bill_batch)));
       die $error if $error;
     }
   }
