@@ -2,7 +2,7 @@
 % my ($field, $value, $label, $extra) = @_;
 <DIV STYLE="display: inline-block" ID="<% $field %>_input">
   <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
-  <BR><FONT SIZE="-1" COLOR="#333333"><% mt($label) %></FONT>
+  <BR><FONT SIZE="-1" COLOR="#333333"><% emt($label) %></FONT>
 </DIV>
 </%def>
 
