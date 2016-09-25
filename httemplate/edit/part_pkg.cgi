@@ -653,7 +653,7 @@ my $clone_callback = sub {
 
   if ( $cgi->param('pkgnum') ) {
 
-    my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cgi->param('pkgnum') } );
+    my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => scalar($cgi->param('pkgnum')) } );
     $object->agentnum( $cust_pkg->cust_main->agentnum );
 
     $opt->{action} = 'Custom';
@@ -710,7 +710,7 @@ my $usageprice_error_callback = sub {
                && $cgi->param("usagepricepart$1_price") )
         {
           new FS::part_pkg_usageprice {
-            'usagepricepart' => $cgi->param("usagepricepart$1"),
+            'usagepricepart' => scalar($cgi->param("usagepricepart$1")),
             'pkgpart'        => $object->pkgpart,
             'price'          => scalar($cgi->param("usagepricepart$1_price")),
             #'currency

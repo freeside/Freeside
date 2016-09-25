@@ -65,14 +65,14 @@ a:visited {text-decoration: none}
 <TR>
   <TD>From 
     <& /elements/input-date-field.html, {
-      name => 'beginning',
-      value => $cgi->param('beginning'),
+      name   => 'beginning',
+      value  => scalar($cgi->param('beginning')),
     } &>
   </TD>
   <TD>To 
     <& /elements/input-date-field.html, {
-      name => 'ending',
-      value => $cgi->param('ending') || '',
+      name   => 'ending',
+      value  => scalar($cgi->param('ending')) || '' ),
       noinit => 1,
     } &>
   </TD>
@@ -80,17 +80,17 @@ a:visited {text-decoration: none}
 <TR>
   <TD>Level
     <& /elements/select.html,
-      field => 'min_level',
-      options => [ &FS::Log::levelnums ],
-      labels => { &FS::Log::levelmap },
-      curr_value => $cgi->param('min_level'),
+      field      => 'min_level',
+      options    => [ &FS::Log::levelnums ],
+      labels     => { &FS::Log::levelmap },
+      curr_value => scalar($cgi->param('min_level')),
     &>
      to
     <& /elements/select.html,
-      field => 'max_level',
-      options => [ &FS::Log::levelnums ],
-      labels => { &FS::Log::levelmap },
-      curr_value => $cgi->param('max_level'),
+      field      => 'max_level',
+      options    => [ &FS::Log::levelnums ],
+      labels     => { &FS::Log::levelmap },
+      curr_value => scalar($cgi->param('max_level')),
     &>
   </TD>
   <TD>

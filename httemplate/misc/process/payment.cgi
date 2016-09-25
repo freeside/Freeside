@@ -170,7 +170,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     my %saveopt;
     if ( $payby eq 'CARD' ) {
       my $bill_location = FS::cust_location->new;
-      $bill_location->set( $_ => $cgi->param($_) )
+      $bill_location->set( $_ => scalar($cgi->param($_)) )
         foreach @{$payby2fields{$payby}};
       $saveopt{'bill_location'} = $bill_location;
       $saveopt{'paycvv'} = $paycvv; # save_cust_payby contains conf logic for when to use this

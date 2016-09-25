@@ -43,7 +43,7 @@
 <label for="when_date"> <% emt('On this date:') %> </label>
 <& /elements/input-date-field.html,
   { name  => 'date_value',
-    value => $cgi->param('date_value') || $cust_pkg->get($field),
+    value => ( scalar($cgi->param('date_value')) || $cust_pkg->get($field) ),
   }
 &>
 </LI>

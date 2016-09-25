@@ -25,9 +25,9 @@ my $alternate_form = sub {
         my $label = ucfirst($_);
         $label =~ s/_/ /;
         include('/elements/tr-input-date-field.html',{
-          'name' => $_,
-          'value' => $cgi->param($_) || '',
-          'label' => $label,
+          'name'   => $_,
+          'value'  => ( scalar($cgi->param($_)) || '' ),
+          'label'  => $label,
           'noinit' => $noinit++
         });
       }

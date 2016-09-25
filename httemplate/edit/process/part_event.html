@@ -81,7 +81,7 @@
     'precheck_callback' => sub {
       my $cgi = shift;
       my $action = $cgi->param('action') or return;
-      my %actionfields = map { $_ =~ /^$action\.(.*)/; $1 => $cgi->param($_) }
+      my %actionfields = map { $_ =~ /^$action\.(.*)/; $1 => scalar($cgi->param($_)) }
                          grep { /^$action\./ } $cgi->param;
       if ( exists($actionfields{'reasonnum'}) and 
            length($actionfields{'reasonnum'}) == 0 ) {
@@ -99,8 +99,10 @@
 	next unless $cgi->param($1) eq 'balance_age';
 
 	my $errstr = FS::part_event::Condition::balance_age->
-	  check_options( { age       => $cgi->param($param),
-			   age_units => $cgi->param("${param}_units") } );
+	  check_options( { age       => scalar($cgi->param($param)),
+			   age_units => scalar($cgi->param("${param}_units")),
+                         }
+                       );
 
 	return $errstr if $errstr;
       }

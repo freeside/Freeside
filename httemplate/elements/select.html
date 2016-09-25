@@ -10,7 +10,7 @@
                      'AR' => 'Arkansas',
                    },
     options     => [ 'AL', 'AK', 'AR' ],
-    curr_value  => $cgi->param('myfield'),
+    curr_value  => scalar( $cgi->param('myfield') ),
 
   # recommended    
     id          => 'myid',    # DOM id

@@ -18,7 +18,7 @@ foreach my $transaction (
   map { /^transactionid(\d+)$/; $1; } grep /^transactionid\d+$/, $cgi->param
 ) {
   my $s = "multiplier${transaction}_";
-  my %multipliers = map { /^$s(\d+)$/; $1 => $cgi->param("$s$1"); }
+  my %multipliers = map { /^$s(\d+)$/; $1 => scalar($cgi->param("$s$1")); }
                       grep /^$s\d+$/, $cgi->param;
   my $msum = 0;
   foreach(values %multipliers) {$msum += $_};
