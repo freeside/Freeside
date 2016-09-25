@@ -42,7 +42,7 @@
 <label for="when_date"> <% emt('On this date:') %> </label>
 <& /elements/input-date-field.html,
   { name  => 'start_date',
-    value => $cgi->param('start_date'),
+    value => scalar($cgi->param('start_date')),
   }
 &>
 </LI>

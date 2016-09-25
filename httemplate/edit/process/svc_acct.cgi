@@ -64,7 +64,7 @@ my $error = '';
 my $part_svc = $svcnum ? 
                 $old->part_svc : 
                 qsearchs( 'part_svc', 
-                  { 'svcpart' => $cgi->param('svcpart') }
+                  { 'svcpart' => scalar($cgi->param('svcpart')) }
                 );
 
 # google captcha auth
@@ -117,7 +117,7 @@ if ( ! $error ) {
 
   if ( $part_svc->has_router ) {
     my $router = FS::router->new({
-      map { $_ => $cgi->param("router_$_") }
+      map { $_ => scalar($cgi->param("router_$_")) }
       qw( routernum routername blocknum )
     });
     if (length($router->routername) == 0) {

@@ -34,13 +34,13 @@ $where{'agentnum'} = $agentnum if $agentnum;
 $where{'usernum'}   = $usernum if $usernum;
 
 my $sdate = DateTime->new(
-    year       => $cgi->param('start_year'),
-    month      => $cgi->param('start_month'),
+    year       => scalar($cgi->param('start_year')),
+    month      => scalar($cgi->param('start_month')),
 )->epoch();
 
 my $edate = DateTime->new(
-    year       => $cgi->param('end_year'),
-    month      => $cgi->param('end_month')
+    year       => scalar($cgi->param('end_year')),
+    month      => scalar($cgi->param('end_month')),
 )->add( months => 1 )->epoch();
 
 my $where = (%where ? ' AND ' : ' WHERE ');

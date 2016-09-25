@@ -2,14 +2,14 @@
      %opt,
      'field'            => $opt{'prefix'}. 'stime',
      'selected_default' => 480, #8am... configure?
-     'curr_value'       => $cgi->param($opt{'prefix'}.'stime'),
+     'curr_value'       => scalar($cgi->param($opt{'prefix'}.'stime')),
 &>
  - 
 <& select-time.html,
      %opt,
      'field'            => $opt{'prefix'}. 'etime',
      'selected_default' => 1080, #6pm.. configure?
-     'curr_value'       => $cgi->param($opt{'prefix'}.'etime'),
+     'curr_value'       => scalar($cgi->param($opt{'prefix'}.'etime')),
 &>
 <%init>
   my %opt = @_;

@@ -21,8 +21,8 @@ foreach my $wday (0..6) {
     push @sched_avail, new FS::sched_avail {
       'itemnum' => $itemnum,
       'wday'    => $wday,
-      'stime'   => $cgi->param("sched_avail$wday".'_stime'),
-      'etime'   => $cgi->param("sched_avail$wday".'_etime'),
+      'stime'   => scalar($cgi->param("sched_avail$wday".'_stime')),
+      'etime'   => scalar($cgi->param("sched_avail$wday".'_etime')),
     };
   }
 }

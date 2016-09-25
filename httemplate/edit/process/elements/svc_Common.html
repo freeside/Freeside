@@ -26,7 +26,7 @@ my $args_callback = sub {
     or die "svcpart required";
   if ( $part_svc->has_router ) {
     my $router = FS::router->new({
-      map { $_ => $cgi->param("router_$_") }
+      map { $_ => scalar($cgi->param("router_$_")) }
       qw( routernum routername blocknum )
     });
    if ($router->blocknum and length($router->routername) == 0) {

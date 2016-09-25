@@ -126,17 +126,17 @@ my $html_init = qq!<FORM ACTION="$p/search/cust_msg.html" METHOD="GET">
 <TABLE cellspacing="10">!.
 '<TR><TD>From '.
 include('/elements/input-date-field.html',
-  { 'name'  => 'beginning', 'value' => $cgi->param('beginning') }
+  { 'name'  => 'beginning', 'value' => scalar($cgi->param('beginning')) }
 ).
 '</TD><TD> To '.
 include('/elements/input-date-field.html',
-  { 'name'  => 'ending', 'value' => ($cgi->param('ending') || ''), 
+  { 'name'  => 'ending', 'value' => (scalar($cgi->param('ending')) || ''), 
     'noinit' => 1, }
 ).
 '</TD><TD> Status '.
 include('/elements/select.html',
   'field' => 'status',
-  'curr_value' => $cgi->param('status') || '',
+  'curr_value' => scalar($cgi->param('status')) || '',
   'options' => [ '', 'failed', 'sent', ],
   'labels' => { ''        => '(any)', 
                 'failed'  => 'failed',
@@ -145,7 +145,7 @@ include('/elements/select.html',
 '</TD><TD> Type '.
 include('/elements/select.html',
   'field' => 'msgtype',
-  'curr_value' => $cgi->param('msgtype') || '',
+  'curr_value' => scalar($cgi->param('msgtype')) || '',
   'options' => [ '', 'invoice', 'receipt', 'admin', 'report' ],
   'labels'  => { ''         => '(any)',
                  'invoice'  => 'Invoices',
