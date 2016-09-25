@@ -1,8 +1,7 @@
 package FS::part_event::Condition::has_pkgpart;
+use base qw( FS::part_event::Condition );
 
 use strict;
-
-use base qw( FS::part_event::Condition );
 
 sub description { 'Customer has uncancelled specific package(s)'; }
 
