@@ -3,7 +3,6 @@ use base qw( FS::part_event::Action );
 
 use strict;
 use vars qw( $me );
-use Data::Dumper;
 use IO::Socket::SSL;
 use LWP::UserAgent;
 use HTTP::Request::Common;
