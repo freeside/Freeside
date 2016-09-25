@@ -1,26 +1,26 @@
-<% include('/elements/header.html', 'Preferences for '. $FS::CurrentUser::CurrentUser->username ) %>
+<& /elements/header.html, mt('Preferences for [_1]', $FS::CurrentUser::CurrentUser->username) &>
 
 <FORM METHOD="POST" NAME="pref_form" ACTION="pref-process.html">
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 % if ( FS::Auth->auth_class->can('change_password') ) {
 
-    <% mt('Change password (leave blank for no change)') |h %>
+    <% emt('Change password (leave blank for no change)') %>
     <% ntable("#cccccc",2) %>
 
       <TR>
-        <TH ALIGN="right">Current password: </TH>
+        <TH ALIGN="right"><% emt("Current password:") %> </TH>
         <TD><INPUT TYPE="password" NAME="_password"></TD>
       </TR>
 
       <TR>
-        <TH ALIGN="right">New password: </TH>
+        <TH ALIGN="right"><% emt("New password:") %> </TH>
         <TD><INPUT TYPE="password" NAME="new_password"></TD>
       </TR>
 
       <TR>
-       <TH ALIGN="right">Re-enter new password: </TH>
+       <TH ALIGN="right"><% emt("Re-enter new password:") %> </TH>
        <TD><INPUT TYPE="password" NAME="new_password2"></TD>
       </TR>
 
@@ -29,11 +29,11 @@
 
 % }
 
-Interface
+<% emt("Interface") %>
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH ALIGN="right">Locale: </TH>
+    <TH ALIGN="right"><% emt("Locale:") %> </TH>
     <TD COLSPAN=2>
       <SELECT NAME="locale">
 %       foreach my $locale ( @locales ) {
@@ -47,16 +47,16 @@ Interface
   </TR>
 
   <TR>
-    <TH ALIGN="right">Menu location: </TH>
+    <TH ALIGN="right"><% emt("Menu location:") %> </TH>
     <TD>
-      <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> Left<BR>
-      <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> Top <BR>
+      <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> <% emt("Left") %><BR>
+      <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> <% emt("Top") %> <BR>
     </TD>
     <TD><IMG NAME="menu_example" SRC="../images/menu-<% $menu_position %>-example.png"></TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">Enable mobile-friendly menu: </TH>
+    <TH ALIGN="right"><% emt("Enable mobile-friendly menu:") %> </TH>
     <TD COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="mobile_menu" VALUE="Y"
 <% $curuser->option('mobile_menu') ? 'CHECKED' : '' %>>
@@ -64,7 +64,7 @@ Interface
   </TR>
  
   <TR>
-    <TH ALIGN="right">Default customer view: </TH>
+    <TH ALIGN="right"><% emt("Default customer view:") %> </TH>
     <TD COLSPAN=2>
       <SELECT NAME="default_customer_view">
 %       foreach my $view ( keys %customer_views ) {
@@ -72,7 +72,7 @@ Interface
 %           $customer_views{$view} eq $curuser->option('default_customer_view')
 %             ? 'SELECTED'
 %             : '';
-          <OPTION VALUE="<%$customer_views{$view}%>" <%$selected%>><%$view%></OPTION>
+          <OPTION VALUE="<%$customer_views{$view}%>" <%$selected%>><% emt($view) %></OPTION>
 %       }
       </SELECT>
     </TD>
@@ -80,21 +80,21 @@ Interface
 
 % my $history_order = $curuser->option('history_order') || 'oldest';
   <TR>
-    <TH ALIGN="right">Customer history sort order: </TH>
+    <TH ALIGN="right"><% emt("Customer history sort order:") %> </TH>
     <TD COLSPAN=2>
       <& /elements/select.html,
         field       => 'history_order',
         curr_value  => $history_order,
         options     => [ 'oldest', 'newest' ],
-        labels      => { 'oldest' => 'Oldest first',
-                         'newest' => 'Newest first',
+        labels      => { 'oldest' => mt('Oldest first'),
+                         'newest' => mt('Newest first'),
                        },
       &>
     </TD>
   </TR>
   
   <TR>
-    <TH ALIGN="right">Spreadsheet download format: </TH>
+    <TH ALIGN="right"><% emt("Spreadsheet download format:") %> </TH>
     <TD COLSPAN=2>
       <SELECT NAME="spreadsheet_format">
 %       my $xls =  $curuser->option('spreadsheet_format') eq 'XLS';
@@ -109,42 +109,42 @@ Interface
   </TR>
 
   <TR>
-    <TH ALIGN="right" COLSPAN=1>Disable HTML editor for customer notes: </TH>
+    <TH ALIGN="right" COLSPAN=1><% emt("Disable HTML editor for customer notes:") %> </TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="disable_html_editor" VALUE="1" <% $curuser->option('disable_html_editor') ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right" COLSPAN=1>Disable submission on [Enter] key - one-time charges: </TH>
+    <TH ALIGN="right" COLSPAN=1><% emt("Disable submission on Enter key - one-time charges:") %> </TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="disable_enter_submit_onetimecharge" VALUE="1" <% $curuser->option('disable_enter_submit_onetimecharge') ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">Don't copy MAC address delimiters to clipboard</TH>
+    <TH ALIGN="right"><% emt("Don't copy MAC address delimiters to clipboard") %></TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="enable_mask_clipboard_hack" VALUE="1" <% $curuser->option('enable_mask_clipboard_hack') ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">Scale documents to fit on a letter-size page</TH>
+    <TH ALIGN="right"><% emt("Scale documents to fit on a letter-size page") %></TH>
     <TD ALIGN="left">
       <INPUT TYPE="checkbox" NAME="printtofit" VALUE="Y" <% $curuser->option('printtofit') ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">How many recently-modified customers displayed on dashboard</TH>
+    <TH ALIGN="right"><% emt("How many recently-modified customers displayed on dashboard") %></TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="text" NAME="dashboard_customers" VALUE="<% $curuser->option('dashboard_customers') %>"></TD>
     </TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">How many recent outbound emails to show in customer view</TH>
+    <TH ALIGN="right"><% emt("How many recent outbound emails to show in customer view") %></TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="text" NAME="customer_view_emails" VALUE="<% $curuser->option('customer_view_emails') %>"></TD>
     </TD>
@@ -154,11 +154,11 @@ Interface
 <BR>
 
 
-Email Address
+<% emt("Email Address") %>
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH>Email Address(es) (comma separated) </TH>
+    <TH><% emt("Email Address(es) (comma separated) ") %></TH>
     <TD>
    <TD><INPUT TYPE="text" NAME="email_address" VALUE="<% $email_address %>">
     </TD>
@@ -168,35 +168,35 @@ Email Address
 <BR>
 
 
-Development
+<% emt("Development") %>
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH>Show customer package timestamps: </TH>
+    <TH><% emt("Show customer package timestamps:") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="cust_pkg-display_times" VALUE="1" <% $curuser->option('cust_pkg-display_times') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
-    <TH>Show internal package numbers: </TH>
+    <TH><% emt("Show internal package numbers:") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="show_pkgnum" VALUE="1" <% $curuser->option('show_pkgnum') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
-    <TH>Show config item counts: </TH>
+    <TH><% emt("Show config item counts:") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="show_confitem_counts" VALUE="1" <% $curuser->option('show_confitem_counts') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
-    <TH>Show export data on service view (when available): </TH>
+    <TH><% emt("Show export data on service view (when available):") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="export_getsettings" VALUE="1" <% $curuser->option('export_getsettings') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
-    <TH>Show database profiling (when available): </TH>
+    <TH><% emt("Show database profiling (when available):") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="show_db_profile" VALUE="1" <% $curuser->option('show_db_profile') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
-    <TH>Save database profiling logs (when available): </TH>
+    <TH><% emt("Save database profiling logs (when available):") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="save_db_profile" VALUE="1" <% $curuser->option('save_db_profile') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
-    <TH>Save temporary invoice typesetting files: </TH>
+    <TH><% emt("Save temporary invoice typesetting files:") %> </TH>
     <TD><INPUT TYPE="checkbox" NAME="save_tmp_typesetting" VALUE="1" <% $curuser->option('save_tmp_typesetting') ? 'CHECKED' : '' %>></TD>
   </TR>
 
@@ -205,44 +205,44 @@ Development
 
 % if ( $curuser->access_right('Employee preference telephony integration') ) {
 
-SNOM integration
+<% emt("SNOM integration") %>
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH ALIGN="right">SNOM IP address</TH>
+    <TH ALIGN="right"><% emt("SNOM IP address") %></TH>
     <TD><INPUT TYPE="text" NAME="snom-ip" VALUE="<% $curuser->option('snom-ip') %>"></TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">SNOM HTTP username (if necessary)</TH>
+    <TH ALIGN="right"><% emt("SNOM HTTP username (if necessary)") %></TH>
     <TD><INPUT TYPE="text" NAME="snom-username" VALUE="<% $curuser->option('snom-username') %>"></TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">SNOM HTTP password (if necessary)</TH>
+    <TH ALIGN="right"><% emt("SNOM HTTP password (if necessary)") %></TH>
     <TD><INPUT TYPE="password" NAME="snom-password" VALUE="<% $curuser->option('snom-password') %>"></TD>
   </TR>
 
 </TABLE>
 <BR>
 
-OR<BR><BR>
+<% emt("OR")%><BR><BR>
 
-Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>)
+<% emt("Vonage integration (see") %> <a href="https://secure.click2callu.com/"><% emt("Click2Call") %></a>)
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH ALIGN="right">Vonage phone number</TH>
+    <TH ALIGN="right"><% emt("Vonage phone number") %></TH>
     <TD><INPUT TYPE="text" NAME="vonage-fromnumber" VALUE="<% $curuser->option('vonage-fromnumber') %>"></TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">Vonage username</TH>
+    <TH ALIGN="right"><% emt("Vonage username") %></TH>
     <TD><INPUT TYPE="text" NAME="vonage-username" VALUE="<% $curuser->option('vonage-username') %>"></TD>
   </TR>
 
   <TR>
-    <TH ALIGN="right">Vonage password</TH>
+    <TH ALIGN="right"><% emt("Vonage password") %></TH>
     <TD><INPUT TYPE="password" NAME="vonage-password" VALUE="<% $curuser->option('vonage-password') %>"></TD>
   </TR>
 
@@ -258,9 +258,9 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
   </script>
 % }
 
-<INPUT TYPE="submit" VALUE="Update preferences">
+<INPUT TYPE="submit" VALUE="<% emt("Update preferences") %>">
 
-<% include('/elements/footer.html') %>
+<&/elements/footer.html &>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
