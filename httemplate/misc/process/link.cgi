@@ -30,7 +30,7 @@ unless ( $svcnum ) {
   my $svcdb = $part_svc->getfield('svcdb');
   $cgi->param('link_field') =~ /^(\w+)$/;
   my $link_field = $1;
-  my %search = ( $link_field => $cgi->param('link_value') );
+  my %search = ( $link_field => scalar($cgi->param('link_value')) );
   if ( $cgi->param('link_field2') =~ /^(\w+)$/ ) {
     $search{$1} = $cgi->param('link_value2');
   }

@@ -559,7 +559,7 @@ my $clone_callback = sub {
 
   if ( $cgi->param('pkgnum') ) {
 
-    my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cgi->param('pkgnum') } );
+    my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => scalar($cgi->param('pkgnum')) } );
     $object->agentnum( $cust_pkg->cust_main->agentnum );
 
     $opt->{action} = 'Custom';

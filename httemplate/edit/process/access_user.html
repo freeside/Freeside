@@ -27,7 +27,7 @@ if ( FS::Conf->new->exists('disable_acl_changes') ) {
 
 sub precheck_callback {
   my $cgi = shift;
-  my $o = FS::access_user->new({username => $cgi->param('username')});
+  my $o = FS::access_user->new({username => scalar($cgi->param('username'))});
   if( $o->is_system_user and !$cgi->param('usernum') ) {
     $cgi->param('username','');
     return "username '".$o->username."' reserved for system account."

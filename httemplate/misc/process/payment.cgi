@@ -175,12 +175,12 @@ if ( $cgi->param('save') ) {
 
   if ( $payby eq 'CARD' ) {
     my $bill_location = FS::cust_location->new;
-    $bill_location->set( $_ => $cgi->param($_) )
+    $bill_location->set( $_ => scalar($cgi->param($_)) )
       foreach @{$payby2fields{$payby}};
     $new->set('bill_location' => $bill_location);
     # will do nothing if the fields are all unchanged
   } else {
-    $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
+    $new->set( $_ => scalar($cgi->param($_)) ) foreach @{$payby2fields{$payby}};
   }
 
   my $error = $new->replace($cust_main);

@@ -306,11 +306,11 @@ function bill_now_changed (what) {
   <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
 </TR>
 
-<& /elements/tr-select-taxclass.html, 'curr_value' => $cgi->param('taxclass')  &>
+<& /elements/tr-select-taxclass.html, 'curr_value' => scalar($cgi->param('taxclass'))  &>
 
-<& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $cgi->param('taxproductnum')  &>
+<& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => scalar($cgi->param('taxproductnum')) &>
 
-<& /elements/tr-select-taxoverride.html, 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override')  &>
+<& /elements/tr-select-taxoverride.html, 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => scalar($cgi->param('tax_override')) &>
 
 % } # if !$cust_pkg
 

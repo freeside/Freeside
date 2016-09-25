@@ -259,7 +259,8 @@ if ( $cgi->param('error') ) {
     unless $curuser->access_right($custnum ? 'Edit customer' : 'New customer');
 
   @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
-  $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
+  $cust_main->setfield( 'paid' => scalar($cgi->param('paid')) )
+    if $cgi->param('paid');
   $ss = $cust_main->ss;           # don't mask an entered value on errors
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
   $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
