@@ -83,7 +83,7 @@ function areyousure(href, message) {
 %   $onclick = '<A HREF="#" onclick="'.$onclick.'">';
 %   if ( $cust_bill->promised_date ) {
 %     my $date_format = $conf->config('date_format') || '%b %o, %Y';
-      <% mt('Payment promised by [_1]', 
+      <% emt('Payment promised by [_1]', 
             time2str($date_format, $cust_bill->promised_date) ) %>
       (&nbsp;<% $onclick %><% mt('change') |h %></A>&nbsp;)
       <BR><BR>
@@ -144,7 +144,7 @@ function areyousure(href, message) {
 %   $cust_bill->cust_main->agent->invoice_modes;
 % if ( @modes || $include_statement_template ) {
 <% $br ? '|' : '' %>
-<% mt('View as:') %>
+<% emt('View as:') %>
 <FORM STYLE="display:inline" ACTION="<% $cgi->url %>" METHOD="GET">
 <INPUT NAME="invnum" VALUE="<% $invnum %>" TYPE="hidden">
 <& /elements/select-table.html,

@@ -288,7 +288,7 @@ function create_application_row(rownum, appnum) {
   td_invnum.setAttribute('colspan', 4);
   td_invnum.style.textAlign = 'right';
   td_invnum.appendChild(
-    document.createTextNode('<% mt('Apply to Invoice ') %>')
+    document.createTextNode(<% mt('Apply to Invoice ') |js_string %>)
   );
   var select_invnum = document.createElement('SELECT');
   select_invnum.setAttribute('rownum', rownum);

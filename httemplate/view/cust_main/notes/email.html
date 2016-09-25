@@ -8,22 +8,22 @@
 .row1 {background-color: #ffffff}
 </STYLE>
 <DIV id="cust_msg">
-<FONT SIZE="+1"> <% mt('Email sent to this customer') %> </FONT><BR>
+<FONT SIZE="+1"> <% emt('Email sent to this customer') %> </FONT><BR>
 %   if ($maxrecords < $total) {
-<% mt('Showing [_1] most recent of [quant,_2,total message]', $maxrecords, $total) %>
+<% emt('Showing [_1] most recent of [quant,_2,total message]', $maxrecords, $total) %>
   <A HREF="<%$p%>search/cust_msg.html?custnum=<%$custnum%>">
-  <i>(<% mt('view all') %>)</i>
+  <i>(<% emt('view all') %>)</i>
   </A>
 %   } else {
-<% mt('[quant,_1,total message]', $total) %>
+<% emt('[quant,_1,total message]', $total) %>
 %   }
 <BR>
 <& /elements/table-grid.html &>
   <TR>
-    <TH CLASS="grid"><% mt('Date') %></TH>
-    <TH CLASS="grid"><% mt('Type') %></TH>
-    <TH CLASS="grid"><% mt('Destination') %></TH>
-    <TH CLASS="grid"><% mt('Subject') %></TH>
+    <TH CLASS="grid"><% emt('Date') %></TH>
+    <TH CLASS="grid"><% emt('Type') %></TH>
+    <TH CLASS="grid"><% emt('Destination') %></TH>
+    <TH CLASS="grid"><% emt('Subject') %></TH>
     <TH CLASS="grid"></TH>
   </TR>
 %   my $i = 0;
