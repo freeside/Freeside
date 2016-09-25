@@ -1,10 +1,7 @@
 package FS::part_event::Condition::has_pkg_class;
+use base qw( FS::part_event::Condition );
 
 use strict;
-
-use base qw( FS::part_event::Condition );
-use FS::Record qw( qsearch );
-use FS::pkg_class;
 
 sub description {
   'Customer has uncancelled package with class';
