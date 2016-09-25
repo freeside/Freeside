@@ -153,13 +153,13 @@ function toggle(obj) {
 %   # if we've already established a draft template, don't let msgnum be changed
     <& /elements/hidden.html,
       field => 'msgnum',
-      curr_value => ($cgi->param('msgnum') || ''),
+      curr_value => ( scalar($cgi->param('msgnum')) || ''),
     &>
 % } else {
 Template: 
     <& /elements/select-msg_template.html,
         onchange   => 'toggle(this)',
-        curr_value => ($cgi->param('msgnum') || ''),
+        curr_value => ( scalar($cgi->param('msgnum')) || ''),
     &>
     <BR>
 % }
@@ -184,14 +184,14 @@ Send to contacts:
               'value' => $conf->config('invoice_from_name', $agent_virt_agentnum) ||
                          $conf->config('company_name', $agent_virt_agentnum), #?
               'size'  => 20,
-              'curr_value' => $cgi->param('from_name'),
+              'curr_value' => scalar($cgi->param('from_name')),
           &>&nbsp;&lt;\
           <& /elements/input-text.html,
               'field' => 'from_addr',
               'type'  => 'email', # HTML5, woot
               'value' => $conf->config('invoice_from', $agent_virt_agentnum),
               'size'  => 20,
-              'curr_value' => $cgi->param('from_addr'),
+              'curr_value' => scalar($cgi->param('from_addr')),
           &>&gt;</TD>
  
     <& /elements/tr-input-text.html,
@@ -361,7 +361,9 @@ if ( !$cgi->param('preview') ) {
   }
 
   # contact_class_X params
-  foreach my $param ( $cgi->multi_param ) {
+  #we can't switch to multi_param until we're done supporting deb 7
+  local($CGI::LIST_CONTEXT_WARN) = 0;
+  foreach my $param ( $cgi->param ) {
     if ( $param =~ /^contact_class_(\w+)$/ ) {
       push @contact_classnum, $1;
       if ( $1 eq 'invoice' ) {
