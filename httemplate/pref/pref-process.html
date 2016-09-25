@@ -2,7 +2,7 @@
 %   $cgi->param('error', $error);
 <% $cgi->redirect(popurl(1). "pref.html?". $cgi->query_string ) %>
 % } else {
-<% include('/elements/header.html', 'Preferences updated') %>
+<% include('/elements/header.html', mt('Preferences updated')) %>
 <% include('/elements/footer.html') %>
 % }
 <%init>
@@ -25,13 +25,13 @@ if ( FS::Auth->auth_class->can('change_password')
   my $newpass = $cgi->param('new_password');
 
   if ( $newpass ne $cgi->param('new_password2') ) {
-    $error = "New passwords don't match";
+    $error = mt("New passwords don't match");
 
   } elsif ( ! length($newpass) ) {
-    $error = 'No new password entered';
+    $error = mt('No new password entered');
 
   } elsif ( ! FS::Auth->authenticate( $access_user, $oldpass ) ) {
-    $error = 'Current password incorrect; password not changed';
+    $error = mt('Current password incorrect; password not changed');
 
   } else {
 
@@ -67,7 +67,7 @@ unless ( $error ) { # if ($access_user) {
 
   foreach (@paramlist) {
     scalar($cgi->param($_)) =~ /^[,.\-\@\w]*$/ && next;
-    $error ||= "Illegal value for parameter $_";
+    $error ||= mt("Illegal value for parameter")." $_";
     last;
   }
 
