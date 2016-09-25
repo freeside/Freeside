@@ -180,11 +180,11 @@
           <& /elements/select-state.html,
                'prefix'  => $name. '_pay',
                'empty'   => emt('(choose)'),
-               'state'   => $cgi->param($name.'_paystate')
-                              || $cust_payby->paystate,
+               'state'   => ( scalar($cgi->param($name.'_paystate'))
+                                || $cust_payby->paystate ),
                #was cust_main->country in 3.x, but this will do until/unlesss
                # someone needs to track foreign bank states
-               'country' => scalar($conf->config('countrydefault')) || 'US',
+               'country' => ( scalar($conf->config('countrydefault')) || 'US' ),
           &>
           <BR><FONT SIZE="-1"><% mt('Bank state') |h %></FONT>
         </TD>
