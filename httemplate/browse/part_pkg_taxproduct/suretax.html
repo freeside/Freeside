@@ -124,7 +124,7 @@ foreach my $row ( qsearch({
 &>
 <& /elements/hidden.html,
   field       => 'id',
-  curr_value  => $cgi->param('id'),
+  curr_value  => scalar($cgi->param('id')),
 &>
 </%def>
 <%init>
