@@ -32,9 +32,9 @@
   <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
   
   <& /elements/tr-select-cust_main-status.html,
-      label => mt('Customer Status') &>
+      label => emt('Customer Status') &>
   <& /elements/tr-select-cust_class.html,
-      label => mt('Customer Class'), field => 'cust_classnum', multiple => 1 &>
+      label => emt('Customer Class'), field => 'cust_classnum', multiple => 1 &>
   <& /elements/tr-select.html,
       label => 'Invoice Status',
       field => 'mode',
@@ -43,7 +43,7 @@
     <TD ALIGN="right">
       <INPUT TYPE="checkbox" NAME="include_monthly" VALUE=1>
     </TD>
-    <TD ALIGN="left"><% mt('Include packages with period &le; 1 month') %>
+    <TD ALIGN="left"><% emt('Include packages with period < 1 month') %>
     </TD>
   </TR>
   <TR>

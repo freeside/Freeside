@@ -30,7 +30,7 @@
     <INPUT TYPE="hidden" NAME="last"  VALUE="<% $cust_contact->get('last')  |h %>">
 
     <TR>
-      <TH ALIGN="right"><% mt('Name') %></TH>
+      <TH ALIGN="right"><% emt('Name') %></TH>
       <TD COLSPAN=7 BGCOLOR="#dddddd">
         <% $cust_pkg->contact_obj->line |h %>
       </TD>
@@ -38,7 +38,7 @@
 % #}
 
   <TR>
-    <TH ALIGN="right" VALIGN="top"><% mt('Address') %></TH>
+    <TH ALIGN="right" VALIGN="top"><% emt('Address') %></TH>
     <TD COLSPAN=7 BGCOLOR="#dddddd">
 
       <% $loc->location_label( 'join_string'     => '<BR>',

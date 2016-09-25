@@ -1,22 +1,22 @@
   <TR>
-    <TD ALIGN="right" VALIGN="top"><% mt('Phones') %></TD>
+    <TD ALIGN="right" VALIGN="top"><% emt('Phones') %></TD>
     <TD COLSPAN=6>
 
       <TABLE CELLSPACING=0 CELLPADDING=0>
         <TR>
           <TD>
             <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-            <BR><FONT SIZE=-1><% $daytime_label %></FONT>
+            <BR><FONT SIZE=-1><% $daytime_label |h %></FONT>
           </TD>
           <TD>&nbsp;</TD>
           <TD>
             <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-            <BR><FONT SIZE=-1><% $night_label %></FONT>
+            <BR><FONT SIZE=-1><% $night_label |h %></FONT>
           </TD>
           <TD>&nbsp;</TD>
           <TD>
             <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-            <BR><FONT SIZE=-1><% $mobile_label %></FONT>
+            <BR><FONT SIZE=-1><% $mobile_label |h %></FONT>
           </TD>
         </TR>
       </TABLE>
