@@ -4,6 +4,7 @@
     field       => 'myfield', # NAME property
     curr_value  => 'foo',
     labels      => { # or 'option_labels'
+                     # note: these will be escaped for you, don't escape them
                      'AL' => 'Alabama',
                      'AK' => 'Alaska',
                      'AR' => 'Arkansas',
@@ -30,7 +31,7 @@
 <SELECT NAME          = "<% $opt{field} %>"
         ID            = "<% $opt{id} %>"
         previousValue = "<% $curr_value %>"
-        previousText  = "<% $labels->{$curr_value} || $curr_value %>"
+        previousText  = "<% $labels->{$curr_value} || $curr_value |h %>"
         <% $multiple %>
         <% $size %>
         <% $style %>
@@ -46,7 +47,7 @@
       <OPTION VALUE="<% $option %>"
               <% $opt{curr_value} eq $option ? 'SELECTED' : '' %>
       >
-        <% $labels->{$option} || $option %>
+        <% $labels->{$option} || $option |h %>
       </OPTION>
 
 %   }
