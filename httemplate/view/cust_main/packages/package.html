@@ -265,7 +265,7 @@
 
 % if ( @cust_pkg_usage ) {
   <TABLE CLASS="usage inv">
-    <TR><TH COLSPAN=4><% mt('Included usage') %></TH></TR>
+    <TR><TH COLSPAN=4><% emt('Included usage') %></TH></TR>
 %   foreach my $usage (@cust_pkg_usage) {
 %     my $part = $usage->part_pkg_usage;
 %     my $ratio = 255 * ($usage->minutes / $part->minutes);
