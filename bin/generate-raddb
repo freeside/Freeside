@@ -10,9 +10,10 @@ use vars qw(%attrib);
 END
 
 while (<>) {
-  next if /^(#|\s*$|\$INCLUDE\s+)/;
-  next if /^(VALUE|VENDOR|BEGIN\-VENDOR|END\-VENDOR)\s+/;
-  /^(ATTRIBUTE|ATTRIB_NMC)\s+([\w\-\/]+)\s+/ or die $_;
+  next if /^\s*$/;
+  next if /^\s*(#|\$INCLUDE\s+)/;
+  next if /^(VALUE|VENDOR|BEGIN\-(VENDOR|TLV)|END\-(VENDOR|TLV))\s+/;
+  /^(ATTRIBUTE|ATTRIB_NMC)\s+([\w\-\/\.]+)\s+/ or die $_;
   $attrib = $2;
   $dbname = lc($2);
   $dbname =~ s/[\-\/]/_/g;
@@ -40,11 +41,11 @@ foreach ( sort keys %hash ) {
 
 print <<END;
 
-  #NETC.NET.AU (RADIATOR?)
-  'authentication_type'      => 'Authentication-Type',
+  #(RADIATOR?)
+  #'authentication_type'      => 'Authentication-Type',
 
-  #wtxs (dunno)
-  #'radius_operator'          => 'Radius-Operator',
+  #Canopy? (Kellin)
+  'motorola_canopy_gateway'   => 'Motorola-Canopy-Gateway',
 
 );
 
