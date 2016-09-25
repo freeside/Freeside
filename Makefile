@@ -195,6 +195,8 @@ install-docs: docs
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
 	rm -rf ${MASONDATA}/*
+	mkdir ${MASONDATA}/cache || true
+	mkdir ${MASONDATA}/obj || true
 	chown -f -R freeside ${MASONDATA} || true
 
 dev-docs:
