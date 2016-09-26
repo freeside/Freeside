@@ -51,7 +51,8 @@ my $apikey = $conf->config('google_maps_api_key');
 #for directions link
 my @origin = $opt{company_address}
                ? @{ $opt{company_address} }
-               : $conf->config('company_address', $agentnum);
+               : ( $conf->config('company_physical_address', $agentnum) ||
+                   $conf->config('company_address', $agentnum) );
 my $origin = uri_escape(join(',', @origin));
 
 </%init>
