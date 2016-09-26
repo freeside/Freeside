@@ -2099,6 +2099,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'company_physical_address',
+    'section'     => 'addresses',
+    'description' => 'Your physical company address, for use in supplying google map directions, defaults to company_address',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'show_ship_company',
     'section'     => 'addresses',
     'description' => 'Turns on display/collection of a "service company name" field for customers.',
