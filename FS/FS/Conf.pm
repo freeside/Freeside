@@ -2234,7 +2234,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'company_physical_address',
-    'section'     => 'addresses',
+    'section'     => 'UI',
     'description' => 'Your physical company address, for use in supplying google map directions, defaults to company_address',
     'type'        => 'textarea',
     'per_agent'   => 1,
