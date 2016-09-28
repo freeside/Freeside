@@ -4247,6 +4247,7 @@ and customer address. Include units.',
     'section'     => 'invoice_balances',
     'description' => 'Text for the label of the total previous balance, when it is shown separately. Defaults to "Previous Balance".',
     'type'        => 'text',
+    'per_locale'  => 1,
   },
 
   {
@@ -4254,6 +4255,7 @@ and customer address. Include units.',
     'section'     => 'invoice_balances',
     'description' => 'Text for the label of the total of new charges, when it is shown separately. If invoice_show_prior_due_date is enabled, the due date of current charges will be appended. Defaults to "Total New Charges".',
     'type'        => 'text',
+    'per_locale'  => 1,
   },
 
   {
