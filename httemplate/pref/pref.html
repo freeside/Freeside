@@ -6,8 +6,8 @@
 
 % if ( FS::Auth->auth_class->can('change_password') ) {
 
-    <% emt('Change password (leave blank for no change)') %>
-    <% ntable("#cccccc",2) %>
+    <FONT CLASS="fsinnerbox-title"><% emt('Change password (leave blank for no change)') %></FONT>
+    <TABLE CLASS="fsinnerbox">
 
       <TR>
         <TH ALIGN="right"><% emt("Current password:") %> </TH>
@@ -29,8 +29,8 @@
 
 % }
 
-<% emt("Interface") %>
-<% ntable("#cccccc",2) %>
+<FONT CLASS="fsinnerbox-title"><% emt("Interface") %></FONT>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
     <TH ALIGN="right"><% emt("Locale:") %> </TH>
@@ -47,7 +47,7 @@
   </TR>
 
   <TR>
-    <TH ALIGN="right"><% emt("Menu location:") %> </TH>
+    <TH ALIGN="right" STYLE="vertical-align:top"><% emt("Menu location:") %> </TH>
     <TD>
       <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> <% emt("Left") %><BR>
       <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> <% emt("Top") %> <BR>
@@ -154,8 +154,8 @@
 <BR>
 
 
-<% emt("Email Address") %>
-<% ntable("#cccccc",2) %>
+<FONT CLASS="fsinnerbox-title"><% emt("Email Address") %></FONT>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
     <TH><% emt("Email Address(es) (comma separated) ") %></TH>
@@ -168,8 +168,8 @@
 <BR>
 
 
-<% emt("Development") %>
-<% ntable("#cccccc",2) %>
+<FONT CLASS="fsinnerbox-title"><% emt("Development") %></FONT>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
     <TH><% emt("Show customer package timestamps:") %> </TH>
