@@ -1,10 +1,5 @@
-<HTML>
-  <HEAD>
-    <TITLE>
-      <% mt('CVV2 information') |h %>
-    </TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#f8f8f8">
+<& /elements/header-popup.html, '' &>
+
   <% mt('The CVV2 number (also called CVC2 or CID) is a three- or four-digit security code used to reduce credit card fraud') |h %>
   <BR><BR>
   <TABLE BORDER=0 CELLSPACING=4>
@@ -20,5 +15,5 @@
         <IMG BORDER=0 ALT="<% mt('American Express') |h %>" SRC="../images/cvv2_amex.png">
       </TD>
   </TABLE>
-  </BODY>
-</HTML>
+
+<& /elements/footer-popup.html &>
