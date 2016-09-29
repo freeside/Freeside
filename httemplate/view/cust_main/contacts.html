@@ -82,7 +82,7 @@
 % } elsif ( $this eq 'ship' ) {
 %   if ( $cust_main->ship_company ) { # mostly obsolete these days...
   <TR>
-    <TD ALIGN="right"><% mt('Company') |h %></TD>
+    <TH ALIGN="right"><% mt('Company') |h %></TH>
     <TD COLSPAN=7><% $cust_main->ship_company |h %></TD>
   </TR>
 %   }
@@ -93,7 +93,7 @@
 
 %   if ( $location->locationname ) {
       <TR>
-        <TD ALIGN="right"><% mt('Location ID') |h %></TD>
+        <TH ALIGN="right"><% mt('Location ID') |h %></TH>
         <TD COLSPAN=7><% $location->locationname |h %></TD>
       </TR>
 %   }
@@ -160,7 +160,7 @@
 %   if ( $cust_main->get('fax') ) {
 
   <TR>
-    <TD ALIGN="right"><% mt('Fax') |h %></TD>
+    <TH ALIGN="right"><% mt('Fax') |h %></TH>
     <TD COLSPAN=3>
       <% $cust_main->get('fax') || '&nbsp;' %>
     </TD>
@@ -171,9 +171,9 @@
 %   if ( $conf->exists('show_stateid') ) { 
 
 <TR>
-    <TD ALIGN="right"><% $stateid_label %></TD>
+    <TH ALIGN="right"><% $stateid_label %></TH>
     <TD><% $cust_main->masked('stateid') || '&nbsp' %></TD>
-    <TD ALIGN="right"><% $stateid_state_label %></TD>
+    <TH ALIGN="right"><% $stateid_state_label %></TH>
     <TD><% $cust_main->stateid_state || '&nbsp' %></TD>
   </TR>
 
