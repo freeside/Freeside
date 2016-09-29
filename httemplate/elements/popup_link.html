@@ -50,8 +50,8 @@ if (ref($_[0]) eq 'HASH') {
 }
 
 my $label = $params->{'label'};
-$label =~ s/ /&nbsp;/g;
 $label = encode_entities($label);
+$label =~ s/ /&nbsp;/g;
 $label = $params->{'html_label'} || $label;
 my $onclick = include('/elements/popup_link_onclick.html', $params);
 
