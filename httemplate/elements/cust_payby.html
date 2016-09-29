@@ -71,7 +71,15 @@
                VALUE     = "<% scalar($cgi->param($name.'_paycvv')) || ('*' x length($cust_payby->paycvv)) %>"
                onChange  = "<% $onchange %>"
         >
-        <BR><FONT SIZE="-1"><% mt('CVV2') |h %>&nbsp;(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%$p%>docs/cvv2.html', 480, 275, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)</FONT>
+        <BR><FONT SIZE="-1"><% mt('CVV2') |h %>&nbsp;<& /elements/popup_link.html,
+           'action'      => $p.'docs/cvv2.html',
+           'label'       => mt('(help)'),
+           'actionlabel' => 'CVV2 Help',
+           'width'       => 480,
+           'height'      => 275,
+           'nocenter'    => 1,
+           #popup_name    => 'cvv2_popup',
+        &></FONT>
       </TD>
 
       <TD ID="<%$id%>_td_payname" <%$card_display%>>

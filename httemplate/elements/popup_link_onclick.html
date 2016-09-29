@@ -21,6 +21,7 @@ Example:
     'height'         => 336,
     'color'          => '#ff0000',
     'closetext'      => 'Go Away',      # the value '' removes the link
+    'nocenter'       => 0, #bool, elminates centering the popup
 
     #uncommon opt
     'frame'          => 0, #bool
@@ -68,8 +69,9 @@ my $popup_name = 'popup-'.random_id();
 
 my $onclick =
   "overlib( OLiframeContent($action, $width, $height, '$popup_name', 0, '$scrolling' ), ".
-    "CAPTION, $actionlabel, STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
-    "DRAGGABLE, CLOSECLICK, ".
+    "CAPTION, $actionlabel, STICKY, AUTOSTATUSCAP, ".
+    ( $params->{'nocenter'} ? "" : "MIDX, 0, MIDY, 0, " ).
+    "DRAGGABLE, CLOSECLICK, TEXTPADDING, 0, BASE, 0, ".
     "BGCOLOR, '$color', CGCOLOR, '$color', FGCOLOR, '#f8f8f8', ".
     "CLOSETEXT, '$closetext'".
     ( $frame ? ", FRAME, $frame" : '' ).
