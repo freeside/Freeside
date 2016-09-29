@@ -4,7 +4,7 @@
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') =~ /^(cust_misc|)$/ && @part_tag ) {
 <TR>
-  <TD ALIGN="right"><% mt('Tags') |h %></TD>
+  <TH ALIGN="right"><% mt('Tags') |h %></TH>
   <TD BGCOLOR="#ffffff">
 %   foreach my $part_tag ( @part_tag ) {
       <FONT <% length($part_tag->tagcolor)
@@ -21,7 +21,7 @@
 %       && ! $conf->exists('cust_main-default_agent_custid') ) {
 
 <TR>
-  <TD ALIGN="right"><% mt('Agent customer ref#') |h %></TD>
+  <TH ALIGN="right"><% mt('Agent customer ref#') |h %></TH>
   <TD BGCOLOR="#ffffff"><% $cust_main->agent_custid %></TD>
 </TR>
 %

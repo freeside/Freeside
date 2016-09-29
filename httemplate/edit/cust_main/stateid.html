@@ -1,6 +1,6 @@
 % if ( $conf->exists('show_stateid') ) {
 <TR>
-  <TD ALIGN="right"><% $stateid_label %></TD>
+  <TH ALIGN="right"><% $stateid_label %></TH>
   <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>" SIZE=12></TD>
   <TD><& /elements/select-state.html,
           state   => $cust_main->stateid_state,

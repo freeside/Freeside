@@ -235,7 +235,8 @@ div.fstabcontainer {
 .fsinnerbox th {
   font-weight:normal;
   font-size:80%;
-  vertical-align: bottom;
+  vertical-align: top;
+  padding-top: 3px;
   color: #666666;
 }
 
