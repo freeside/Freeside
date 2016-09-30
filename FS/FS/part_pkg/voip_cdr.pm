@@ -123,6 +123,10 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'min_included' => { 'name' => 'Minutes included when using the "single price per minute" or "prefix" rating method',
                     },
 
+    'show_min_included' => { 'name' => 'Show included minutes as an invoice detail',
+                             'type' => 'checkbox',
+                    },
+
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
                     },
 
@@ -328,7 +332,8 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        cdr_svc_method
                        rating_method rounding ratenum intrastate_ratenum 
                        calls_included
-                       min_charge min_included sec_granularity
+                       min_charge min_included show_min_included
+                       sec_granularity
                        ignore_unrateable
                        default_prefix
                        disable_src
@@ -404,10 +409,11 @@ sub calc_usage {
 
   my $charges = 0;
 
-  my $included_min = $self->option('min_included', 1) || 0;
+  my $included_min_total = ($self->option('min_included', 1) || 0)
+                           * ($cust_pkg->quantity || 1);
     #single price rating
     #or region group
-  $included_min *= ($cust_pkg->quantity || 1);
+  my $included_min_left = $included_min_total;
 
   my $included_calls = $self->option('calls_included', 1) || 0;
   $included_calls *= ($cust_pkg->quantity || 1);
@@ -503,7 +509,7 @@ sub calc_usage {
         'part_pkg'                          => $self,
         'cust_pkg'                          => $cust_pkg,
         'svcnum'                            => $svc_x->svcnum,
-        'plan_included_min'                 => \$included_min,
+        'plan_included_min'                 => \$included_min_left,
         'detail_included_min_hashref'       => \%detail_included_min,
       );
       die $error if $error; #??
@@ -543,6 +549,16 @@ sub calc_usage {
 
   $formatter->finish; #writes into $details
   unshift @$details, $formatter->header if @$details;
+
+  if ( $self->option_cacheable('show_min_included', 1)
+       and $included_min_total > 0 ) {
+
+    my $min_detail = sprintf('%d / %d ',
+                       $included_min_total - $included_min_left,
+                       $included_min_total
+                     ) .  $cust_pkg->mt('included minutes used');
+    unshift @$details, $min_detail;
+  }
 
   $charges;
 }
