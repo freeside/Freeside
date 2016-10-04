@@ -31,8 +31,7 @@
      'subs' => [ 'get_display_recurring'] &>
 
 <SCRIPT>
-<&| /elements/onload.js &>
-get_display_recurring('custnum',<% $cust_main->custnum %>, function (xmlresult) {
+function set_display_recurring (xmlresult) {
   var recurring = JSON.parse(xmlresult);
   var rlabel = document.getElementById('recurring_label');
   var rvalue = document.getElementById('recurring_value');
@@ -63,9 +62,22 @@ get_display_recurring('custnum',<% $cust_main->custnum %>, function (xmlresult) 
   } else {
     rrow.parentNode.removeChild(rrow);
   }
-});
-</&>
+}
 </SCRIPT>
+
+% # 10 is an arbitrary number, use ajax for customers with many packages
+% if ( $cust_main->num_billing_pkgs > 10 ) {
+<& '/elements/xmlhttp.html',
+     'url'  => $fsurl.'misc/xmlhttp-cust_main-display_recurring.html',
+     'subs' => [ 'get_display_recurring'] &>
+<SCRIPT>
+get_display_recurring('custnum',<% $cust_main->custnum %>,set_display_recurring);
+</SCRIPT>
+% } else {
+<SCRIPT>
+set_display_recurring(<% encode_json({'display_recurring' => [ $cust_main->display_recurring ]}) |js_string %>);
+</SCRIPT>
+% }
 
 % if ( $conf->exists('cust_main-select-prorate_day') ) {
 <TR>
