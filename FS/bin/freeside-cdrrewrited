@@ -88,7 +88,7 @@ while (1) {
       if ($isdup) {
         #we only act on this cdr, not touching previous dupes
         #if a dupe somehow creeped in previously, too late to fix it
-        $cdr->freesidestatus('done'); #prevent it from being billed
+        $cdr->freesidestatus('skipped'); #prevent it from being billed
         push(@status,'duplicate');
       }
     }
@@ -294,7 +294,7 @@ of the following config options are enabled:
 
 =item cdr-skip_duplicate_rewrite
 
-Marks as 'done' (prevents billing for) any CDRs with 
+Marks as 'skipped' (prevents billing for) any CDRs with 
 a src, dst and calldate identical to an existing CDR
 
 =item cdr-asterisk_australia_rewrite
