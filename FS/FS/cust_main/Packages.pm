@@ -659,8 +659,32 @@ sub num_cancelled_pkgs {
   shift->num_pkgs("cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0");
 }
 
+=item num_ncancelled_pkgs
+
+Returns the number of packages that have not been cancelled (see L<FS::cust_pkg>) for this
+customer.
+
+=cut
+
 sub num_ncancelled_pkgs {
   shift->num_pkgs("( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )");
+}
+
+=item num_billing_pkgs
+
+Returns the number of packages that have not been cancelled 
+and have a non-zero billing frequency (see L<FS::cust_pkg>)
+for this customer.
+
+=cut
+
+sub num_billing_pkgs {
+  my $self = shift;
+  my $opt = shift || {};
+  $opt->{addl_from} .= ' LEFT JOIN part_pkg USING (pkgpart)';
+  $opt->{extra_sql} .= ' AND ' if $opt->{extra_sql};
+  $opt->{extra_sql} .= "freq IS NOT NULL AND freq != '0'";
+  $self->num_ncancelled_pkgs($opt);
 }
 
 sub num_suspended_pkgs {
