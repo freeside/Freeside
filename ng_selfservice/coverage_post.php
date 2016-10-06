@@ -10,7 +10,7 @@ $xml = file_get_contents('php://input');
 $doc = new SimpleXMLElement($xml);
 $cd = $doc->CustomerDetails;
 if ($DEBUG) {
-    error_log(var_dump($cd));
+    error_log(print_r($cd),1);
 }
 
 // State and Country are names rather than codes, but we fix that on the other
@@ -35,9 +35,9 @@ $prospect = Array();
 foreach ($map_fields as $k => $v) {
     $prospect[$k] = (string)($cd->$v);
 }
-error_log(var_dump($prospect));
+error_log(print_r($prospect),1);
 $freeside = new FreesideSelfService();
 $result = $freeside->new_prospect($prospect);
-error_log(var_dump($result));
+error_log(print_r($result),1);
 
 ?>

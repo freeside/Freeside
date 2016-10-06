@@ -1295,7 +1295,15 @@ sub new_prospect {
         'title'     => $title,
     });
     if (!$part_referral) {
-      return { error => "Unknown referral type: '$title'" };
+      $part_referral = FS::part_referral->new({
+        'agentnum' => $agentnum,
+        'title'    => $title,
+        'referral' => $title,
+      });
+      $error = $part_referral->insert;
+      if ( $error ) {
+        warn "ERROR: could not create referral type '$title': $error\n";
+      }
     }
     $refnum = $part_referral->refnum;
   } elsif ( $packet->{refnum} ) {
@@ -1344,9 +1352,8 @@ sub new_prospect {
   }
   $location->set('country', $country);
   $location->set('state', $state);
-  $prospect->set('cust_location', $location);
 
-  $error ||= $prospect->insert; # also does location
+  $error ||= $prospect->insert( cust_location => $location );
   return { error => $error } if $error;
 
   my $contact = FS::contact->new({
