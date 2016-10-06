@@ -44,6 +44,9 @@ The following fields are currently supported:
 
 =item agentnum - Optional agentnum (see L<FS::agent>)
 
+=item title - an optional external string that identifies this
+referral source, such as an advertising campaign code.
+
 =back
 
 =head1 NOTE
@@ -101,6 +104,7 @@ sub check {
     || $self->ut_text('referral')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     #|| $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
+    || $self->ut_textn('title')
     || ( $setup_hack
            ? $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum' )
            : $self->ut_agentnum_acl('agentnum', 'Edit global advertising sources')

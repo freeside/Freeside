@@ -2445,11 +2445,12 @@ sub tables_hashref {
         'refnum',   'serial',     '',        '', '', '', 
         'referral', 'varchar',    '',   $char_d, '', '', 
         'disabled', 'char',   'NULL',         1, '', '', 
-        'agentnum', 'int',    'NULL',        '', '', '', 
+        'agentnum', 'int',    'NULL',        '', '', '',
+        'title',   'varchar', 'NULL',   $char_d, '', '', 
       ],
-      'primary_key' => 'refnum',
-      'unique' => [],
-      'index' => [ ['disabled'], ['agentnum'], ],
+      'primary_key'  => 'refnum',
+      'unique'       => [ ['agentnum', 'title'] ],
+      'index'        => [ ['disabled'], ['agentnum'], ],
     },
 
     'part_svc' => {
