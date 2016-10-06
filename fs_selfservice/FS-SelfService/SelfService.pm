@@ -114,6 +114,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'new_customer'              => 'Signup/new_customer',
   'new_customer_minimal'      => 'Signup/new_customer_minimal',
   'capture_payment'           => 'Signup/capture_payment',
+  'new_prospect'              => 'Signup/new_prospect',
   #N/A 'clear_signup_cache'        => 'Signup/clear_cache',
   'new_agent'                 => 'Agent/new_agent',
   'agent_login'               => 'Agent/agent_login',
