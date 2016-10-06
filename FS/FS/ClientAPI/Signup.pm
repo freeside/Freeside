@@ -1247,9 +1247,11 @@ sub get_agentnum {
 
 Creates a new L<FS::prospect_main> entry. PACKET must contain:
 
-- either agentnum or session_id (unless signup_server-default_agentnum exists)
+- either agentnum or session_id; if not, signup_server-default_agentnum will
+be used and must not be empty
 
-- refnum (unless signup_server-default_refnum exists)
+- either refnum or referral_title; if not, signup_server-default_refnum will
+be used and must not be empty
 
 - last and first (names), and optionally company and title
 
@@ -1257,7 +1259,14 @@ Creates a new L<FS::prospect_main> entry. PACKET must contain:
 
 - emailaddress
 
+and can also contain:
+
 - one or more of phone_daytime, phone_night, phone_mobile, and phone_fax
+
+- a 'comment' (will be attached to the contact)
+
+State and country will be normalized to Freeside state/country codes if
+necessary.
 
 =cut
 
@@ -1271,10 +1280,29 @@ sub new_prospect {
   my $dbh = dbh;
   my $conf = FS::Conf->new;
 
+  my $error;
+
   my $agentnum = get_agentnum($packet);
   return $agentnum if ref $agentnum;
-  my $refnum = $packet->{refnum}
-               || $conf->config('signup_server-default_refnum');
+  my $refnum;
+  if ( my $title = $packet->{referral_title} ) {
+    my $part_referral = qsearchs('part_referral', {
+        'agentnum'  => $agentnum,
+        'title'     => $title,
+    });
+    $part_referral ||= qsearchs('part_referral', {
+        'agentnum'  => '',
+        'title'     => $title,
+    });
+    if (!$part_referral) {
+      return { error => "Unknown referral type: '$title'" };
+    }
+    $refnum = $part_referral->refnum;
+  } elsif ( $packet->{refnum} ) {
+    $refnum = $packet->{refnum};
+  }
+  $refnum ||= $conf->config('signup_server-default_refnum');
+  return { error => "Signup referral type is not configured" } if !$refnum;
 
   my $prospect = FS::prospect_main->new({
       'agentnum' => $agentnum,
@@ -1283,12 +1311,42 @@ sub new_prospect {
   });
 
   my $location = FS::cust_location->new;
-  foreach ( qw(address1 address2 city county state zip country ) ) {
+  foreach ( qw(address1 address2 city county zip ) ) {
     $location->set($_, $packet->{$_});
   }
+  # normalize country and state if they're not already ISO codes
+  # easier than doing it on the client side--we already have the tables here
+  my $country = $packet->{country};
+  my $state = $packet->{state};
+  if (length($country) > 2) {
+    # it likes title case
+    $country = join(' ', map ucfirst, split(/\s+/, $country));
+    my $lsc = Locale::SubCountry->new($country);
+    if ($lsc) {
+      $country = uc($lsc->country_code);
+
+      if ($lsc->has_sub_countries) {
+        if ( $lsc->full_name($state) eq 'unknown' ) {
+          # then we were probably given a full name, so resolve it
+          $state = $lsc->code($state);
+          if ( $state eq 'unknown' ) {
+            # doesn't resolve as a full name either, return an error
+            $error = "Unknown state: ".$packet->{state};
+          } else {
+            $state = uc($state);
+          }
+        }
+      } # else state doesn't matter
+    } else {
+      # couldn't find the country in LSC
+      $error = "Unknown country: $country";
+    }
+  }
+  $location->set('country', $country);
+  $location->set('state', $state);
   $prospect->set('cust_location', $location);
-  
-  my $error = $prospect->insert; # also does location
+
+  $error ||= $prospect->insert; # also does location
   return { error => $error } if $error;
 
   my $contact = FS::contact->new({
@@ -1297,7 +1355,7 @@ sub new_prospect {
       invoice_dest  => 'Y',
   });
   # use emailaddress pseudo-field behavior here
-  foreach (qw(last first title emailaddress)) {
+  foreach (qw(last first title emailaddress comment)) {
     $contact->set($_, $packet->{$_});
   }
   $error = $contact->insert;
