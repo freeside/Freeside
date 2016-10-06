@@ -120,10 +120,6 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'min_included' => { 'name' => 'Minutes included when using the "single price per minute" or "prefix" rating method',
                     },
 
-    'show_min_included' => { 'name' => 'Show included minutes as an invoice detail',
-                             'type' => 'checkbox',
-                    },
-
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
                     },
 
@@ -329,7 +325,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        cdr_svc_method
                        rating_method rounding ratenum intrastate_ratenum 
                        calls_included
-                       min_charge min_included show_min_included
+                       min_charge min_included
                        sec_granularity
                        ignore_unrateable
                        default_prefix
@@ -547,8 +543,7 @@ sub calc_usage {
   $formatter->finish; #writes into $details
   unshift @$details, $formatter->header if @$details;
 
-  if ( $self->option_cacheable('show_min_included', 1)
-       and $included_min_total > 0 ) {
+  if ( $included_min_total > 0 ) {
 
     my $min_detail = sprintf('%d / %d ',
                        $included_min_total - $included_min_left,
