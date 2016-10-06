@@ -18,7 +18,7 @@ if ( $cgi->param('format') eq 'tc' ) {
     next if ( !$tower->latitude or !$tower->longitude );
 
     my $name = $tower->towername;
-    my $height = ( ($tower->altitude || 0 ) + ($tower->height || 0) ) / 3.28;
+    my $height = ($tower->height || 0) / 3.28;
     $name =~ s(,)( )g;
     $text .= join(',',
       $name,
