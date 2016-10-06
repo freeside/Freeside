@@ -189,6 +189,7 @@ sub ss2clientapi {
   'new_customer_minimal'      => 'Signup/new_customer_minimal',
   'capture_payment'           => 'Signup/capture_payment',
   'clear_signup_cache'        => 'Signup/clear_cache',
+  'new_prospect'              => 'Signup/new_prospect',
   'new_agent'                 => 'Agent/new_agent',
   'agent_login'               => 'Agent/agent_login',
   'agent_logout'              => 'Agent/agent_logout',

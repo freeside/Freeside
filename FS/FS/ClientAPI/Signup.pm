@@ -7,7 +7,7 @@ use Data::Dumper;
 use Tie::RefHash;
 use Digest::SHA qw(sha512_hex);
 use FS::Conf;
-use FS::Record qw(qsearch qsearchs dbdef);
+use FS::Record qw(qsearch qsearchs dbdef dbh);
 use FS::CGI qw(popurl);
 use FS::Msgcat qw(gettext);
 use FS::Misc qw(card_types);
@@ -29,6 +29,25 @@ use FS::part_tag;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
+
+=head1 NAME
+
+FS::ClientAPI::Signup - Front-end API for signing up customers
+
+=head1 DESCRIPTION
+
+This module provides the ClientAPI functions for talking to a signup
+server. The signup server is open to the public, i.e. does not require a
+login. The back-end Freeside server creates customers, orders packages and
+services, and processes initial payments.
+
+=head1 METHODS
+
+=over 4
+
+=cut
+
+# document the rest of this as we work on it
 
 sub clear_cache {
   warn "$me clear_cache called\n" if $DEBUG;
@@ -498,21 +517,8 @@ sub new_customer {
     #possibly some validation will be needed
   }
 
-  my $agentnum;
-  if ( exists $packet->{'session_id'} ) {
-    my $cache = new FS::ClientAPI_SessionCache( {
-      'namespace' => 'FS::ClientAPI::Agent',
-    } );
-    my $session = $cache->get($packet->{'session_id'});
-    if ( $session ) {
-      $agentnum = $session->{'agentnum'};
-    } else {
-      return { 'error' => "Can't resume session" }; #better error message
-    }
-  } else {
-    $agentnum = $packet->{agentnum}
-                || $conf->config('signup_server-default_agentnum');
-  }
+  my $agentnum = get_agentnum($packet);
+  return $agentnum if ref($agentnum);
 
   my ($bill_hash, $ship_hash);
   foreach my $f (FS::cust_main->location_fields) {
@@ -932,21 +938,8 @@ sub new_customer_minimal {
     #possibly some validation will be needed
   }
 
-  my $agentnum;
-  if ( exists $packet->{'session_id'} ) {
-    my $cache = new FS::ClientAPI_SessionCache( {
-      'namespace' => 'FS::ClientAPI::Agent',
-    } );
-    my $session = $cache->get($packet->{'session_id'});
-    if ( $session ) {
-      $agentnum = $session->{'agentnum'};
-    } else {
-      return { 'error' => "Can't resume session" }; #better error message
-    }
-  } else {
-    $agentnum = $packet->{agentnum}
-                || $conf->config('signup_server-default_agentnum');
-  }
+  my $agentnum = get_agentnum($packet);
+  return $agentnum if ref($agentnum);
 
   #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
   # common that are still here and library them.
@@ -1219,6 +1212,130 @@ sub capture_payment {
            };
   }
 
+}
+
+=item get_agentnum PACKET
+
+Given a PACKET from the signup server, looks up the agentnum to use for signing
+up a customer. This will use 'session_id' if the agent is authenticated,
+otherwise 'agentnum', otherwise the 'signup_server-default_agentnum' config. If
+the agent can't be found, returns an error packet.
+
+=cut
+
+sub get_agentnum {
+  my $packet = shift;
+  my $conf = new FS::Conf;
+  my $agentnum;
+  if ( exists $packet->{'session_id'} ) {
+    my $cache = new FS::ClientAPI_SessionCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    my $session = $cache->get($packet->{'session_id'});
+    if ( $session ) {
+      $agentnum = $session->{'agentnum'};
+    } else {
+      return { 'error' => "Can't resume session" }; #better error message
+    }
+  } else {
+    $agentnum = $packet->{agentnum}
+                || $conf->config('signup_server-default_agentnum');
+  }
+  if ( $agentnum and FS::agent->count('agentnum = ?', $agentnum) ) {
+    return $agentnum;
+  }
+  return { 'error' => 'Signup is not configured' };
+}
+
+=item new_prospect PACKET
+
+Creates a new L<FS::prospect_main> entry. PACKET must contain:
+
+- either agentnum or session_id (unless signup_server-default_agentnum exists)
+
+- refnum (unless signup_server-default_refnum exists)
+
+- last and first (names), and optionally company and title
+
+- address1, city, state, country, zip, and optionally address2
+
+- emailaddress
+
+- one or more of phone_daytime, phone_night, phone_mobile, and phone_fax
+
+=cut
+
+sub new_prospect {
+
+  my $packet = shift;
+  warn "$me new_prospect called\n".Dumper($packet) if $DEBUG;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $conf = FS::Conf->new;
+
+  my $agentnum = get_agentnum($packet);
+  return $agentnum if ref $agentnum;
+  my $refnum = $packet->{refnum}
+               || $conf->config('signup_server-default_refnum');
+
+  my $prospect = FS::prospect_main->new({
+      'agentnum' => $agentnum,
+      'refnum'   => $refnum,
+      'company'  => $packet->{company},
+  });
+
+  my $location = FS::cust_location->new;
+  foreach ( qw(address1 address2 city county state zip country ) ) {
+    $location->set($_, $packet->{$_});
+  }
+  $prospect->set('cust_location', $location);
+  
+  my $error = $prospect->insert; # also does location
+  return { error => $error } if $error;
+
+  my $contact = FS::contact->new({
+      prospectnum   => $prospect->prospectnum,
+      locationnum   => $location->locationnum,
+      invoice_dest  => 'Y',
+  });
+  # use emailaddress pseudo-field behavior here
+  foreach (qw(last first title emailaddress)) {
+    $contact->set($_, $packet->{$_});
+  }
+  $error = $contact->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return { error => $error };
+  }
+
+  foreach my $phone_type (qsearch('phone_type', {})) {
+    my $key = 'phone_' . lc($phone_type->typename);
+    my $phonenum = $packet->{$key};
+    if ( $phonenum ) {
+      # just to not have to supply country code from the other end
+      my $number = Number::Phone->new($location->country, $phonenum);
+      if (!$number) {
+        $error = 'invalid phone number';
+      } else {
+        my $phone = FS::contact_phone->new({
+            contactnum    => $contact->contactnum,
+            phonenum      => $phonenum,
+            countrycode   => $number->country_code,
+            phonetypenum  => $phone_type->phonetypenum,
+        });
+        $error = $phone->insert;
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return { error => $phone_type->typename . ' phone: ' . $error };
+      }
+    }
+  } # foreach $phone_type
+  
+  $dbh->commit if $oldAutoCommit;
+  return { prospectnum => $prospect->prospectnum };
 }
 
 1;
