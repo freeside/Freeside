@@ -36,9 +36,7 @@ if ( $db eq 'PostgreSQL' && $db_ver =~ /^\s*PostgreSQL\s+([\w\.]+)\s+on\s+/ ) {
 my $db_size = 'Unknown';
 if ( $db eq 'PostgreSQL' ) {
   $db_size = FS::Record->scalar_sql(qq(
-    SELECT pg_size_pretty(pg_database_size(datname))
-      FROM pg_catalog.pg_database
-     WHERE datname = 'freeside'
+    SELECT pg_size_pretty(pg_database_size('freeside'))
   ));
 }
 
