@@ -25,12 +25,21 @@ if ( ! $@ && $os =~ /^\s*Description:\s*(.+)$/ ) {
 ( my $perl_ver = $^V ) =~ s/^v//;
 
 my $db = driver_name;
-$db = 'PostgreSQL' if $db =~ /^Pg/;
-$db = 'MySQL'      if $db =~ /^mysql/;
+$db = 'PostgreSQL'    if $db =~ /^Pg/;
+$db = 'MySQL/MariaDB' if $db =~ /^mysql/;
 
 my $db_ver = FS::Record->scalar_sql('SELECT VERSION()');
 if ( $db eq 'PostgreSQL' && $db_ver =~ /^\s*PostgreSQL\s+([\w\.]+)\s+on\s+/ ) {
   $db_ver = $1;
+}
+
+my $db_size = 'Unknown';
+if ( $db eq 'PostgreSQL' ) {
+  $db_size = FS::Record->scalar_sql(qq(
+    SELECT pg_size_pretty(pg_database_size(datname))
+      FROM pg_catalog.pg_database
+     WHERE datname = 'freeside'
+  ));
 }
 
 tie my %status, 'Tie::IxHash',
@@ -49,6 +58,9 @@ tie my %status, 'Tie::IxHash',
     },
     { 'title' => 'Database version',
       'value' => $db_ver,
+    },
+    { 'title' => 'Database size',
+      'value' => $db_size,
     },
   ],
   'Required Daemons' => [
