@@ -203,6 +203,7 @@ sub dbdef_dist {
            && ! /^log(_context)?$/
            && ! /^(legacy_cust_history|cacti_page|template_image|access_user_log)$/
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
+           && ! /^addr_status$/
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -4885,7 +4886,8 @@ sub tables_hashref {
         'sector_range', 'decimal', 'NULL',      '', '', '',  #?
         'downtilt',     'decimal', 'NULL',      '', '', '',
         'v_width',          'int', 'NULL',      '', '', '',
-        'margin',       'decimal', 'NULL',     '', '', '',
+        'db_high',          'int', 'NULL',     '', '', '',
+        'db_low',           'int', 'NULL',     '', '', '',
         'image',           'blob', 'NULL',     '', '', '',
         'west',         'decimal', 'NULL', '10,7', '', '',
         'east',         'decimal', 'NULL', '10,7', '', '',
@@ -4898,6 +4900,23 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'towernum' ],
                             table      => 'tower',
+                          },
+                        ],
+    },
+
+    'sector_coverage' => {
+      'columns' => [
+        'coveragenum', 'serial', '', '', '', '',
+        'sectornum',     'int', '', '', '', '',
+        'db_loss',       'int', '', '', '', '',
+        'geometry',     'text', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'coveragenum',
+      'unique' => [],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns => [ 'sectornum' ],
+                            table   => 'tower_sector'
                           },
                         ],
     },
@@ -7507,6 +7526,20 @@ sub tables_hashref {
                              table   => 'access_user',
                            },
                          ],
+    },
+
+    'addr_status' => {
+      'columns' => [
+        'addrnum',  'serial',      '', '', '', '',
+        'ip_addr',  'varchar', 'NULL', 40, '', '',
+        '_date',    @date_type,            '', '',
+        'up',       'char',    'NULL',  1, '', '',
+        'delay',    'int',     'NULL', '', '', '',
+      ],
+      'primary_key'   => 'addrnum',
+      'unique'        => [ [ 'ip_addr' ] ],
+      'index'         => [ [ '_date' ] ],
+      'foreign_keys'  => [],
     },
 
     # name type nullability length default local

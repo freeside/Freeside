@@ -1,0 +1,35 @@
+<%init>
+die "access denied"
+ unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
+
+my ($svcnum) = $cgi->keywords;
+# cleans svcnum, checks agent access, etc.
+my $svc = qsearchs( FS::svc_broadband->search({ 'svcnum' => $svcnum }) );
+my $addr_status = $svc->addr_status;
+my @label = $svc->cust_svc->label;
+</%init>
+
+<H3>
+  <a target="_blank" href="<% $fsurl %>view/svc_broadband.cgi?<% $svc->svcnum %>">
+    <% $label[0] |h %> #<% $svc->svcnum %> | <% $label[1] %>
+  </a>
+</H3>
+% if ( $addr_status ) {
+<P>
+  <SPAN STYLE="font-weight: bold; color: <% $svc->addr_status_color %>">
+    <% emt( $addr_status->up ? 'UP' : 'DOWN' ) %>
+  </SPAN>
+%   if ( $addr_status->up ) {
+    (<% $addr_status->delay |h %> ms)
+%   }
+  <% emt('as of') . ' ' . time2str('%b %o %H:%M', $addr_status->_date) %>
+</P>
+% }
+% my $cust_main = $svc->cust_main;
+<a target="_blank" href="<% $fsurl %>view/cust_main.cgi?<% $cust_main->custnum %>">
+<& /elements/small_custview.html, {
+  cust_main => $svc->cust_main,
+  #url => $fsurl.'view/cust_main.cgi',
+} &>
+</a>
+

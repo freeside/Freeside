@@ -37,6 +37,9 @@ Generic Google Maps front end.
 
 </%doc>
 <%init>
+
+my $apikey = FS::Conf->new->config('google_maps_api_key');
+
 foreach (@features) {
   $_->{type} = 'Feature';
   # any other per-feature massaging can go here
@@ -57,7 +60,7 @@ body { height: 100%; margin: 0px; padding: 0px }
 #map_canvas { height: 100%; }
 </style>
 
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3">
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&key=<% $apikey %>">
 </script>
 
 <script type="text/javascript">
@@ -86,7 +89,42 @@ var featureStyle = function(feature) {
 
 var map;
 var overlays = [];
-function initMap() {
+var infoWindow; // shared among all users
+
+var clickHandler = function(ev) {
+  var feature = ev.feature;
+  if ( feature.getGeometry().getType() == 'Point' ) {
+    // then pop up an info box with the feature content
+    infoWindow.close();
+    infoWindow.setPosition(feature.getGeometry().get());
+
+    if ( feature.getProperty('content') ) {
+      infoWindow.setContent(feature.getProperty('content'));
+    } else {
+      infoWindow.setContent('');
+    }
+
+    if ( feature.getProperty('url') ) {
+      $.ajax({
+        url: feature.getProperty('url'),
+        success: function(data) {
+          infoWindow.setContent(data);
+        }
+      });
+      infoWindow.open(map);
+    } else {
+      infoWindow.open(map);
+    }
+  }
+
+  // snap to feature ROI if it has one
+  if ( feature.getProperty('bounds') ) {
+    map.fitBounds( feature.getProperty('bounds') );
+  }
+
+};
+
+var initMap = function() {
   var canvas = $('#map_canvas');
   map = new google.maps.Map(canvas[0], { zoom: 6 });
   try {
@@ -110,24 +148,9 @@ function initMap() {
   map.fitBounds(bounds);
   map.data.setStyle(featureStyle);
 
-  var info = new google.maps.InfoWindow;
-  map.data.addListener('click', function(ev) {
-    var feature = ev.feature;
-    if ( feature.getGeometry().getType() == 'Point' ) {
-      // then pop up an info box with the feature content
-      info.close();
-      info.setPosition(feature.getGeometry().get());
-      info.setContent(feature.getProperty('content'));
-      info.open(map);
-    }
-
-    // snap to feature ROI if it has one
-    if ( feature.getProperty('bounds') ) {
-      map.fitBounds( feature.getProperty('bounds') );
-    }
-
-  }); // addListener()
-
+  infoWindow = new google.maps.InfoWindow;
+  map.data.addListener('click', clickHandler);
+  // xxx remove this later
   data_overlays.forEach(function(x) {
     var url = x.url;
     delete x.url;

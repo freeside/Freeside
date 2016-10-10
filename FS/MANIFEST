@@ -876,3 +876,5 @@ FS/commission_rate.pm
 t/commission_rate.t
 FS/saved_search.pm
 t/saved_search.t
+FS/sector_coverage.pm
+t/sector_coverage.t

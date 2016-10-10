@@ -3073,6 +3073,23 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'pingd-interval',
+    'section'     => 'network_monitoring',
+    'description' => 'Run ping scans of broadband services at this interval.',
+    'type'        => 'select',
+    'select_hash' => [ ''     => '',
+                       60     => '1 min',
+                       300    => '5 min',
+                       600    => '10 min',
+                       1800   => '30 min',
+                       3600   => '1 hour',
+                       14400  => '4 hours',
+                       28800  => '8 hours',
+                       86400  => '1 day',
+                     ],
+  },
+
+  {
     'key'         => 'ticket_system-default_queueid',
     'section'     => 'ticketing',
     'description' => 'Default queue used when creating new customer tickets.',

@@ -1,8 +1,7 @@
-<& /elements/header.html, 'Broadband Search Results' &>
-  
-<& elements/gmap.html, features => \@features, overlays => \@overlays &>
-
-<& /elements/footer.html &>
+<% encode_json({
+  type => 'FeatureCollection',
+  features => \@features
+}) %>
 <%init>
 
 die "access denied" unless
@@ -37,7 +36,7 @@ my @rows = qsearch($sql_query);
 my %sectors;
 my %towers;
 my %tower_coord;
-my %tower_bounds;
+
 foreach my $svc_broadband (@rows) {
   # don't try to show it if coords aren't set
   next if !$svc_broadband->latitude || !$svc_broadband->longitude;
@@ -54,6 +53,7 @@ foreach my $svc_broadband (@rows) {
 
   push @features,
   {
+    type      => 'Feature',
     id        => 'svc_broadband/'.$svcnum,
     geometry  => {
       type        => 'Point',
@@ -88,96 +88,21 @@ foreach my $svc_broadband (@rows) {
   if ( $tower->latitude and $tower->longitude ) {
     push @features,
     {
+      type => 'Feature',
+      id   => 'svc_broadband/'.$svcnum.'/line',
       geometry => {
         type        => 'LineString',
         coordinates => [ \@coord, $tower_coord{$towernum} ],
       },
       properties  => {
         style       => {
+          visible      => 0,
           strokeColor  => $color,
-          strokeWeight => 1,
+          strokeWeight => 2,
         },
       },
     };
-
-    # also extend tower's ROI to include this point
-    # (this is experimental; might get better results using the centroid of
-    # all connected services or something)
-    my $bounds = $tower_bounds{$towernum} ||= {
-      east => $tower->longitude,
-      west => $tower->longitude,
-      north => $tower->latitude,
-      south => $tower->latitude,
-    };
-    if ($coord[0] > $bounds->{east}) {
-      $bounds->{east} = $coord[0];
-    } elsif ($coord[0] < $bounds->{west}) {
-      $bounds->{west} = $coord[0];
-    }
-    if ($coord[1] > $bounds->{north}) {
-      $bounds->{north} = $coord[1]
-    } elsif ($coord[1] < $bounds->{south}) {
-      $bounds->{south} = $coord[1]
-    }
 
   } # if tower has coords
 } # foreach $svc_broadband
-
-foreach my $tower (values(%towers)) {
-  my $towernum = $tower->towernum;
-  my $bounds = $tower_bounds{$towernum};
-  # add some padding for easier reading
-  my $dx = 0.1 * ($bounds->{east} - $bounds->{west});
-  my $dy = 0.1 * ($bounds->{north} - $bounds->{south});
-  $bounds->{east} += $dx; 
-  $bounds->{west} -= $dx;
-  $bounds->{north} += $dy;
-  $bounds->{south} -= $dy;
-  push @features,
-  {
-    id        => 'tower/'.$towernum,
-    geometry  => {
-      type        => 'Point',
-      coordinates => $tower_coord{$towernum},
-    },
-    properties => {
-      style     => {
-        icon => {
-          path        => undef,
-          url         => $fsurl.'images/antenna-square-21x51.png',
-          anchor      => { x => 10, y => 4 }
-        },
-      },
-      content   => include('.tower', $tower),
-      bounds    => $tower_bounds{$towernum},
-    },
-  };
-}
-
-my @overlays;
-foreach my $sector (values %sectors) {
-  if ( length($sector->image) > 0 ) {
-    my $o = {
-      url => $fsurl.'view/sector_map-png.cgi?' . $sector->sectornum
-    };
-    foreach (qw(south north west east)) {
-      $o->{$_} = $sector->get($_) + 0;
-    }
-    push @overlays, $o;
-  };
-};
-
 </%init>
-<%def .tower>
-% my $tower = shift;
-% my $can_edit = $FS::CurrentUser::CurrentUser->access_right('Configuration');
-<H3>
-% if ( $can_edit ) {
-  <a target="_blank" href="<% $fsurl %>edit/tower.html?<% $tower->towernum %>">
-% }
-Tower #<% $tower->towernum %> | <% $tower->towername %>
-% if ( $can_edit ) {
-  </a>
-% }
-</H3>
-</%def>

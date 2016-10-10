@@ -4,6 +4,7 @@ use base qw( FS::Record );
 use Class::Load qw(load_class);
 use File::Path qw(make_path);
 use Data::Dumper;
+use Cpanel::JSON::XS;
 
 use strict;
 
@@ -75,10 +76,13 @@ The antenna beam elevation in degrees below horizontal.
 
 The -3dB vertical beamwidth in degrees.
 
-=item margin
+=item db_high
 
-The signal loss margin allowed on the sector, in dB. This is normally
-transmitter EIRP minus receiver sensitivity.
+The signal loss margin to treat as "high quality".
+
+=item db_low
+
+The signal loss margin to treat as "low quality".
 
 =item image 
 
@@ -109,6 +113,38 @@ sub table { 'tower_sector'; }
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
+
+=cut
+
+sub insert {
+  my $self = shift;
+  my $error = $self->SUPER::insert;
+  return $error if $error;
+
+  if (scalar($self->need_fields_for_coverage) == 0) {
+    $self->queue_generate_coverage;
+  }
+}
+
+sub replace {
+  my $self = shift;
+  my $old = shift || $self->replace_old;
+  my $regen_coverage = 0;
+  if ( !$self->get('no_regen') ) {
+    foreach (qw(height freq_mhz direction width downtilt
+                v_width db_high db_low))
+    {
+      $regen_coverage = 1 if ($self->get($_) ne $old->get($_));
+    }
+  }
+
+  my $error = $self->SUPER::replace($old);
+  return $error if $error;
+
+  if ($regen_coverage) {
+    $self->queue_generate_coverage;
+  }
+}
 
 =item delete
 
@@ -149,7 +185,8 @@ sub check {
     || $self->ut_numbern('v_width')
     || $self->ut_numbern('downtilt')
     || $self->ut_floatn('sector_range')
-    || $self->ut_numbern('margin')
+    || $self->ut_numbern('db_high')
+    || $self->ut_numbern('db_low')
     || $self->ut_anything('image')
     || $self->ut_sfloatn('west')
     || $self->ut_sfloatn('east')
@@ -201,7 +238,7 @@ sub need_fields_for_coverage {
     downtilt  => 'Downtilt',
     width     => 'Horiz. width',
     v_width   => 'Vert. width',
-    margin    => 'Signal margin',
+    db_high   => 'High quality',
     latitude  => 'Latitude',
     longitude => 'Longitude',
   );
@@ -222,6 +259,9 @@ Starts a job to recalculate the coverage map.
 
 sub queue_generate_coverage {
   my $self = shift;
+  my $need_fields = join(',', $self->need_fields_for_coverage);
+  return "Sector needs fields $need_fields" if $need_fields;
+  $self->set('no_regen', 1); # avoid recursion
   if ( length($self->image) > 0 ) {
     foreach (qw(image west south east north)) {
       $self->set($_, '');
@@ -258,9 +298,11 @@ sub process_generate_coverage {
   my $sectornum = $param->{sectornum};
   my $sector = FS::tower_sector->by_key($sectornum)
     or die "sector $sectornum does not exist";
+  $sector->set('no_regen', 1); # avoid recursion
   my $tower = $sector->tower;
 
   load_class('Map::Splat');
+
   # since this is still experimental, put it somewhere we can find later
   my $workdir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/" .
                 "generate_coverage/sector$sectornum-". time;
@@ -274,9 +316,9 @@ sub process_generate_coverage {
     h_width     => $sector->width,
     tilt        => $sector->downtilt,
     v_width     => $sector->v_width,
-    max_loss    => $sector->margin,
-    min_loss    => $sector->margin - 80,
+    db_levels   => [ $sector->db_low, $sector->db_high ],
     dir         => $workdir,
+    #simplify    => 0.0004, # remove stairstepping in SRTM3 data?
   );
   $splat->calculate;
 
@@ -284,10 +326,29 @@ sub process_generate_coverage {
   foreach (qw(west east south north)) {
     $sector->set($_, $box->{$_});
   }
-  $sector->set('image', $splat->mask);
-  # mask returns a PNG where everything below max_loss is solid colored,
-  # and everything above it is transparent. More useful for our purposes.
+  $sector->set('image', $splat->png);
   my $error = $sector->replace;
+  die $error if $error;
+
+  foreach ($sector->sector_coverage) {
+    $error = $_->delete;
+    die $error if $error;
+  }
+  # XXX undecided whether Map::Splat should even do this operation
+  # or how to store it
+  # or anything else
+  $DB::single = 1;
+  my $data = decode_json( $splat->polygonize_json );
+  for my $feature (@{ $data->{features} }) {
+    my $db = $feature->{properties}{level};
+    my $coverage = FS::sector_coverage->new({
+      sectornum => $sectornum,
+      db_loss   => $db,
+      geometry  => encode_json($feature->{geometry})
+    });
+    $error = $coverage->insert;
+  }
+
   die $error if $error;
 }
 

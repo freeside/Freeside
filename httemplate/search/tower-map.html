@@ -1,0 +1,303 @@
+<& /elements/header.html, '' &>
+
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&libraries=places&key=<% $apikey %>"></script>
+  
+<style>
+html { height: 100% }
+#map_canvas { margin: 0 auto; height: 100%;  }
+span.is_up { font-weight: bold; color: green }
+span.is_down { font-weight: bold; color: red }
+#search_location { width: 300px }
+</style>
+
+<div id="map_canvas"></div>
+<input type="text" id="search_location" style="width: 180px">
+
+
+<script type="text/javascript">
+
+var baseMarkerStyle = {
+  clickable: true,
+  icon: {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 4,
+    fillColor: 'black',
+    fillOpacity: 1,
+    strokeColor: 'black',
+    strokeWeight: 1,
+  },
+};
+
+var baseCoverageStyle = {
+  clickable: false,
+  strokeWeight: 0.2,
+};
+
+var coverageStyle = function(feature) {
+  var s = $.extend(true, {}, baseCoverageStyle, feature.getProperty('style'));
+  if ( feature.getProperty('low') ) {
+    s.fillOpacity = 0.1;
+  } else if ( feature.getProperty('high') ) {
+    s.fillOpacity = 0.4;
+  }
+  return s;
+}
+
+var markerStyle = function(feature) {
+  return $.extend(true, {}, baseMarkerStyle, feature.getProperty('style'));
+}
+
+var map;
+var infoWindow = new google.maps.InfoWindow; // shared among all users
+
+var clickHandler = function(ev) {
+  var feature = ev.feature;
+  if ( feature.getGeometry().getType() == 'Point' ) {
+    // then pop up an info box with the feature content
+    infoWindow.close();
+    infoWindow.setPosition(feature.getGeometry().get());
+
+    if ( feature.getProperty('content') ) {
+      infoWindow.setContent(feature.getProperty('content'));
+    } else {
+      infoWindow.setContent('');
+    }
+
+    if ( feature.getProperty('url') ) {
+      $.ajax({
+        url: feature.getProperty('url'),
+        success: function(data) {
+          infoWindow.setContent(data);
+        }
+      });
+      infoWindow.open(map);
+    } else {
+      infoWindow.open(map);
+    }
+  }
+};
+
+var dblclickHandler = function(ev) {
+  // do everything as for single click
+  clickHandler(ev);
+  // plus zoom to the feature
+  var feature = ev.feature;
+  if (feature.getGeometry().getType() == 'Point') {
+    map.setCenter(feature.getGeometry().get());
+    map.setZoom(12);
+  }
+};
+
+var zoomLayer = function(layer) {
+  // takes a google.maps.Data object
+  var bounds = new google.maps.LatLngBounds;
+  layer.forEach(function(feature) {
+    var g = feature.getGeometry();
+    if (g.getType() == 'Point') {
+      bounds.extend(g.get());
+    } else if (g.getArray) {
+      g.getArray().forEach(function(point) { bounds.extend(point); });
+    }
+  });
+
+  map.fitBounds(bounds);
+};
+
+// set up the main layer
+var tower_data = new google.maps.Data;
+tower_data.addGeoJson(<% encode_json($tower_data) %>);
+tower_data.setStyle(markerStyle);
+tower_data.addListener('click', clickHandler);
+tower_data.addListener('dblclick', dblclickHandler);
+
+var towernums = <% encode_json(\@towernums) %>;
+var tower_svc_data = {};
+var tower_coverage_data = {};
+
+var revertLayerStyles = function() {
+  // mostly, just to re-hide all connecting lines when something is hidden
+  for (var t in tower_svc_data) {
+    tower_svc_data[t].revertStyle();
+  }
+};
+
+towernums.forEach(function(towernum) {
+  var layer = new google.maps.Data;
+  tower_svc_data[towernum] = layer;
+  layer.loadGeoJson(
+    '<% $fsurl %>search/svc_broadband-json.cgi?towernum=' + towernum
+  );
+  layer.setStyle(markerStyle);
+  layer.addListener('click', clickHandler);
+  layer.addListener('click', function(ev) { // show connecting line
+    var id = ev.feature.getId();
+    var f_line = layer.getFeatureById(id + '/line');
+    layer.overrideStyle(f_line, { visible: true});
+  });
+
+  layer = new google.maps.Data;
+  layer.loadGeoJson(
+    '<% $fsurl %>misc/sector_coverage-json.cgi?towernum=' + towernum
+  );
+  layer.setStyle(coverageStyle);
+  tower_coverage_data[towernum] = layer;
+});
+
+function show_svc_data(towernum, show) {
+  if (show) {
+    tower_svc_data[towernum].setMap(window.map);
+  } else {
+    tower_svc_data[towernum].setMap(null);
+  }
+};
+
+function show_coverage_data(towernum, show) {
+  if (show) {
+    tower_coverage_data[towernum].setMap(window.map);
+  } else {
+    tower_coverage_data[towernum].setMap(null);
+  }
+};
+
+// toggle visibility of the services
+infoWindow.addListener('domready', function(ev) {
+  var show_services_box = $('input[name=show_services]');
+  var towernum = show_services_box.val();
+  var is_shown = tower_svc_data[towernum].getMap() == map;
+  show_services_box.prop('checked', is_shown);
+  show_services_box.on('click', function(clickev) {
+    show_svc_data(towernum, this.checked);
+  });
+
+  var show_coverage_box = $('input[name=show_coverage]');
+  var towernum = show_coverage_box.val();
+  var is_shown = tower_coverage_data[towernum].getMap() == map;
+  show_coverage_box.prop('checked', is_shown);
+  show_coverage_box.on('click', function(clickev) {
+    show_coverage_data(towernum, this.checked);
+  });
+});
+
+infoWindow.addListener('closeclick', revertLayerStyles);
+infoWindow.addListener('position_changed', revertLayerStyles);
+
+var initMap = function() {
+  var canvas = $('#map_canvas');
+
+  // set window height correctly
+  canvas.css('height', window.innerHeight - (canvas.offset().top) - 30);
+  canvas.css('width', window.innerWidth - 30);
+
+  map = new google.maps.Map(canvas[0], { zoom: 6 });
+
+  //set up search box
+  var searchbox_input = $('#search_location')[0];
+  var searchbox = new google.maps.places.SearchBox(searchbox_input);
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(searchbox_input);
+
+  map.addListener('bounds_changed', function() {
+    searchbox.setBounds(map.getBounds());
+  });
+
+  searchbox.addListener('places_changed', function() {
+    var places = searchbox.getPlaces();
+    // xxx fancy mode: find the nearest tower and estimate signal strength
+    if (places[0]) {
+      if (places[0].geometry.viewport) {
+        map.fitBounds(places[0].geometry.viewport);
+      } else {
+        map.setCenter(places[0].geometry.location);
+        map.setZoom(14);
+      }
+    }
+  });
+
+  // put tower locations on map
+  tower_data.setMap(map);
+  zoomLayer(tower_data);
+};
+
+$().ready(initMap);
+
+</script>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied" unless
+  $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my $conf = new FS::Conf;
+
+my $apikey = $conf->config('google_maps_api_key');
+
+my @features; # geoJSON structure
+
+my @towers = qsearch('tower', {
+  'latitude'  => { op=>'!=', value=>''},
+  'longitude' => { op=>'!=', value=>''},
+});
+my %sectors; # towernum => arrayref
+my @towernums;
+
+foreach my $tower (@towers) {
+  my $towernum = $tower->towernum;
+  push @towernums, $towernum;
+  my @coord = (
+    $tower->longitude + 0,
+    $tower->latitude + 0,
+  );
+  push @features,
+  {
+    type      => 'Feature',
+    id        => 'tower/'.$towernum,
+    geometry  => {
+      type        => 'Point',
+      coordinates => \@coord,
+    },
+    properties => {
+      style     => {
+        icon => {
+          path        => undef,
+          url         => $fsurl.'images/antenna-square-21x51.png',
+          anchor      => { x => 10, y => 4 },
+          strokeColor => ($tower->color || 'black'),
+        },
+      },
+      content   => include('.tower', $tower),
+    },
+  };
+
+  $sectors{$towernum} = [ $tower->tower_sector ];
+
+} # foreach $tower
+
+my $tower_data = {
+  type => 'FeatureCollection',
+  features => \@features
+};
+
+</%init>
+<%def .tower>
+% my $tower = shift;
+% my $can_edit = $FS::CurrentUser::CurrentUser->access_right('Configuration');
+<H3>
+% if ( $can_edit ) {
+  <a target="_blank" href="<% $fsurl %>edit/tower.html?<% $tower->towernum %>">
+% }
+Tower #<% $tower->towernum %> | <% $tower->towername %>
+% if ( $can_edit ) {
+  </a>
+% }
+</H3>
+% my $count_query = 'SELECT COUNT(*) FROM svc_broadband LEFT JOIN addr_status using (ip_addr) JOIN tower_sector USING (sectornum) WHERE tower_sector.towernum = '.$tower->towernum;
+% my $num_down = FS::Record->scalar_sql("$count_query AND addr_status.up IS NULL AND addr_status._date IS NOT NULL");
+% my $num_up = FS::Record->scalar_sql("$count_query AND addr_status.up IS NOT NULL");
+<input type="checkbox" name="show_services" value="<% $tower->towernum %>">
+<% emt('Show services') %>
+( <% $num_up %> <SPAN CLASS="is_up"><% emt('UP') %></SPAN>
+<% $num_down %> <SPAN CLASS="is_down"><% emt('DOWN') %></SPAN> )
+<br>
+<input type="checkbox" name="show_coverage" value="<% $tower->towernum %>">
+<% emt('Show coverage') %>
+</%def>

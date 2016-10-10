@@ -1,0 +1,82 @@
+<%init>
+my $conf = new FS::Conf;
+my $apikey = $conf->config('google_maps_api_key');
+
+my %opt = @_;
+
+# Currently requires two fields named 'latitude' and 'longitude'.
+# Those should be in the edit form. This widget should NOT be in the
+# edit form (or it will submit a bunch of spurious fields, plus pressing
+# "enter" in the search box will submit the form).
+
+</%init>
+<script src="https://maps.googleapis.com/maps/api/js?v=3&libraries=places&key=<% $apikey %>"></script>
+<script src="<% $fsurl %>elements/jquery-gmaps-latlon-picker.js"></script>
+<style>
+  .gllpLatlonPicker, .gllpMap { width: 600px; height: 600px }
+  #search_location { width: 300px }
+</style>
+<fieldset id="latlonpicker" class="gllpLatlonPicker" style="float: right">
+  <input type="text" id="search_location">
+  <input type="hidden" class="gllpLatitude" id="map_lat">
+  <input type="hidden" class="gllpLongitude" id="map_lon">
+  <input type="hidden" class="gllpElevation" id="map_alt">
+  <input type="hidden" class="gllpZoom" id="map_zoom">
+  <div class="gllpMap"></div>
+</fieldset>
+<br/>
+
+<script>
+
+$(function() {
+  var container = $('#latlonpicker');
+  var map = gMapsLatLonPickerState['latlonpicker'].vars.map;
+
+  $(document).on('location_changed', function(ev, obj) {
+    lat.val($('#map_lat').val());
+    lon.val($('#map_lon').val());
+  });
+
+  // requires the Elevation API to be enabled
+  $(document).on('elevation_changed', function(ev, obj) {
+    alt.val($('#map_alt').val());
+  });
+
+  // bypass gllp's search mechanism, use the cooler Places search
+  var searchbox_input = $('#search_location')[0];
+  var searchbox = new google.maps.places.SearchBox(searchbox_input);
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(searchbox_input);
+
+  map.addListener('bounds_changed', function() {
+    searchbox.setBounds(map.getBounds());
+  });
+
+  searchbox.addListener('places_changed', function() {
+    var places = searchbox.getPlaces();
+    if (places[0]) {
+      $('#map_lat').val( places[0].geometry.location.lat() );
+      $('#map_lon').val( places[0].geometry.location.lng() );
+      $('#map_zoom').val(12);
+      $(document).trigger('gllp_update_fields');
+    }
+  });
+
+  // load initial values
+  var lat = $('#latitude');
+  var lon = $('#longitude');
+  var alt = $('#altitude');
+  if (lat.val() && lon.val()) {
+    $('#map_lat').val(lat.val());
+    $('#map_lon').val(lon.val());
+    $('#map_alt').val(alt.val());
+    $('#map_zoom').val(12);
+  } else {
+    // uh. North America? that's where Map::Splat works right now.
+    $('#map_lat').val(54.5259614);
+    $('#map_lon').val(-105.25511870000003);
+    $('#map_zoom').val(3);
+  }
+  $(document).trigger('gllp_update_fields');
+
+});
+</script>

@@ -2,6 +2,7 @@
      name_singular => 'tower',
      table         => 'tower',
      viewall_dir   => 'browse',
+     html_init     => include('/elements/mapselect.html'),
      fields        => [ 'towername',
                         { field=>'disabled', type=>'checkbox', value=>'Y', },
                         { field=>'color',    type=>'pickcolor' },
@@ -12,11 +13,15 @@
                         'altitude',
                         'height',
                         'veg_height',
-                        { field             => 'sectornum',
-                          type              => 'tower_sector',
-                          o2m_table         => 'tower_sector',
-                          m2_label          => 'Sector',
-                          m2_error_callback => $m2_error_callback,
+#                        { field             => 'sectornum',
+#                          type              => 'tower_sector',
+#                          o2m_table         => 'tower_sector',
+#                          m2_label          => 'Sector',
+#                          m2_error_callback => $m2_error_callback,
+#                        },
+                        { type              => 'tower_sectors',
+                          field             => 'sectornum',
+                          # does its own o2m-thing
                         },
                       ],
      labels        => { 'towernum'        => 'Tower',
@@ -27,7 +32,7 @@
                         'latitude'        => 'Latitude',
                         'longitude'       => 'Longitude',
                         'altitude'        => 'Altitude (feet)',
-                        'height'          => 'Height (feet)',
+                        'height'          => 'Tower height (feet)',
                         'veg_height'      => 'Vegetation height (feet)',
                         'color'           => 'Color',
                       },
@@ -38,7 +43,7 @@ my $m2_error_callback = sub { # reconstruct the list
   my ($cgi, $object) = @_;
 
   my @fields = qw(
-    sectorname ip_addr height freq_mhz direction width tilt v_width margin sector_range
+    sectorname ip_addr height freq_mhz direction width tilt v_width db_high db_low sector_range
   );
 
   map {
