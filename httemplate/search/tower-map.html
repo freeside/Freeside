@@ -8,6 +8,9 @@ html { height: 100% }
 span.is_up { font-weight: bold; color: green }
 span.is_down { font-weight: bold; color: red }
 #search_location { width: 300px }
+
+.sector_list li { list-style: none }
+.sector_list li a { width: 150px }
 </style>
 
 <div id="map_canvas"></div>
@@ -300,4 +303,16 @@ Tower #<% $tower->towernum %> | <% $tower->towername %>
 <br>
 <input type="checkbox" name="show_coverage" value="<% $tower->towernum %>">
 <% emt('Show coverage') %>
+<ul class="sector_list">
+% foreach my $sector ($tower->tower_sector) {
+%   # could be more descriptive here
+  <li><% emt($sector->sectorname) %>
+%   my @links_array;
+%   foreach my $export ($sector->part_export) {
+%     $export->export_links($sector, \@links_array); # already HTML, do not escape
+%   }
+<% join(' ', @links_array) %>
+  </li>
+% }
+</ul>
 </%def>

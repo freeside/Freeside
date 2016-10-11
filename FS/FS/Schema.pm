@@ -4139,6 +4139,7 @@ sub tables_hashref {
         'classnum',    'int',     '',      '', '', '',
         'model',   'varchar',     '', $char_d, '', '',
         'revision','varchar', 'NULL', $char_d, '', '',
+        'title',   'varchar', 'NULL', $char_d, '', '', # external id
       ],
       'primary_key'  => 'typenum',
       'unique'       => [ [ 'classnum', 'model', 'revision' ] ],
@@ -4886,6 +4887,10 @@ sub tables_hashref {
         'sector_range', 'decimal', 'NULL',      '', '', '',  #?
         'downtilt',     'decimal', 'NULL',      '', '', '',
         'v_width',          'int', 'NULL',      '', '', '',
+        'power',        'decimal', 'NULL',      '', '', '',
+        'line_loss',    'decimal', 'NULL',      '', '', '',
+        'antenna_gain', 'decimal', 'NULL',     '', '', '',
+        'hardware_typenum', 'int', 'NULL',     '', '', '',
         'db_high',          'int', 'NULL',     '', '', '',
         'db_low',           'int', 'NULL',     '', '', '',
         'image',           'blob', 'NULL',     '', '', '',
@@ -4893,6 +4898,8 @@ sub tables_hashref {
         'east',         'decimal', 'NULL', '10,7', '', '',
         'south',        'decimal', 'NULL', '10,7', '', '',
         'north',        'decimal', 'NULL', '10,7', '', '',
+
+        'title',        'varchar', 'NULL', $char_d,'', '',
      ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
@@ -4900,6 +4907,10 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'towernum' ],
                             table      => 'tower',
+                          },
+                          { columns    => [ 'hardware_typenum' ],
+                            table      => 'hardware_type',
+                            references => [ 'typenum' ],
                           },
                         ],
     },

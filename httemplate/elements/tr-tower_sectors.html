@@ -1,3 +1,11 @@
+<%shared>
+# kind of a hack...
+my ($export) = FS::tower_sector->part_export;
+my $antenna_types; # will be an ordered hash
+if ($export and $export->can('get_antenna_types')) {
+  $antenna_types = $export->get_antenna_types;
+}
+</%shared>
 <%init>
 my %opt = @_;
 my $tower = $opt{'object'};
@@ -7,8 +15,9 @@ my $cgi = $opt{'cgi'};
 my $tabcounter = 0;
 
 my @fields = qw(
-  sectorname ip_addr height freq_mhz direction width tilt v_width db_high
-  db_low sector_range
+  sectorname ip_addr height freq_mhz direction width downtilt v_width
+  db_high db_low sector_range
+  power line_loss antenna_gain hardware_typenum
 );
 
 my @sectors;
@@ -74,6 +83,11 @@ my $id = $opt{id} || $opt{field} || 'sectornum';
     border: none;
     text-align: left;
   }
+  .ui-tabs p {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
 </style>
 
 
@@ -216,6 +230,38 @@ $(function() {
   </p>
 
   <p>
+    <label for="<% $id %>_power"><% emt('Transmit power') %></label>
+    <input size="3"
+           id="<% $id %>_power"
+           name="<% $id %>_power"
+           value="<% $sector->power |h %>">
+    <% emt('dBm') %><br>
+    <label for="<% $id %>_antenna_gain">+ </label>
+    <input size="3"
+           id="<% $id %>_antenna_gain"
+           name="<% $id %>_antenna_gain"
+           value="<% $sector->antenna_gain |h %>">
+    <% emt('dB antenna gain') %><br>
+    <label for="<% $id %>_line_loss">&ndash; </label>
+    <input size="3"
+           id="<% $id %>_line_loss"
+           name="<% $id %>_line_loss"
+           value="<% $sector->line_loss |h %>">
+    <% emt('dB line loss') %>
+
+% if ( $antenna_types ) {
+  <p>
+    <label for="<% $id %>_hardware_typenum"><% emt('Antenna type') %></label>
+    <& /elements/select.html,
+      field   => $id.'_hardware_typenum',
+      options => [ '', keys %$antenna_types ],
+      labels  => $antenna_types,
+      curr_value => $sector->hardware_typenum,
+    &>
+  </p>
+% }
+% # this next section might not be necessary if you enter an antenna type
+  <p> 
     <label for="<% $id %>_width"><% emt('Horizontal beam') %></label>
     <input size="3"
            id="<% $id %>_width"
@@ -229,7 +275,7 @@ $(function() {
   </p>
 
   <label><% emt('Signal margin') %></label>
-      <div style="display: inline-block; vertical-align: top">
+  <div style="display: inline-block; vertical-align: top">
       <input class="dbspinner"
              size="4"
              id="<% $id %>_db_high"
@@ -244,7 +290,7 @@ $(function() {
              name="<% $id %>_db_low"
              value="<% $sector->db_low |h %>">
       <% emt('dB (low quality)') %>
-      </div>
+  </div>
 
 </div>
 </%def>
