@@ -250,8 +250,11 @@ sub replace {
 
     if ( $conf->exists('business-onlinepayment-verification') ) {
       $error = $self->verify;
-      return $error if $error;
+    } else {
+      $error = $self->tokenize;
     }
+    return $error if $error;
+
   }
 
   local $SIG{HUP} = 'IGNORE';
@@ -521,9 +524,12 @@ sub check {
 
   }
 
-  if ( ! $self->custpaybynum
-       && $conf->exists('business-onlinepayment-verification') ) {
-    $error = $self->verify;
+  if ( ! $self->custpaybynum ) {
+    if ($conf->exists('business-onlinepayment-verification')) {
+      $error = $self->verify;
+    } else {
+      $error = $self->tokenize;
+    }
     return $error if $error;
   }
 
@@ -638,26 +644,39 @@ sub label {
 
 =item realtime_bop
 
+Runs a L<realtime_bop|FS::cust_main::Billing_Realtime::realtime_bop> transaction on this card
+
 =cut
 
 sub realtime_bop {
   my( $self, %opt ) = @_;
 
-  $opt{$_} = $self->$_() for qw( payinfo payname paydate );
-
-  if ( $self->locationnum ) {
-    my $cust_location = $self->cust_location;
-    $opt{$_} = $cust_location->$_() for qw( address1 address2 city state zip );
-  }
-
   $self->cust_main->realtime_bop({
-    'method' => FS::payby->payby2bop( $self->payby ),
     %opt,
+    'cust_payby' => $self,
+  });
+
+}
+
+=item tokenize
+
+Runs a L<realtime_tokenize|FS::cust_main::Billing_Realtime::realtime_tokenize> transaction on this card
+
+=cut
+
+sub tokenize {
+  my $self = shift;
+  return '' unless $self->payby =~ /^(CARD|DCRD)$/;
+
+  $self->cust_main->realtime_tokenize({
+    'cust_payby' => $self,
   });
 
 }
 
 =item verify 
+
+Runs a L<realtime_verify_bop|FS::cust_main::Billing_Realtime/realtime_verify_bop> transaction on this card
 
 =cut
 
@@ -665,32 +684,8 @@ sub verify {
   my $self = shift;
   return '' unless $self->payby =~ /^(CARD|DCRD)$/;
 
-  my %opt = ();
-
-  # false laziness with check
-  my( $m, $y );
-  if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
-    ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
-  } elsif ( $self->paydate =~ /^19(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
-    ( $m, $y ) = ( $2, "19$1" );
-  } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
-    ( $m, $y ) = ( $3, "20$2" );
-  } else {
-    return "Illegal expiration date: ". $self->paydate;
-  }
-  $m = sprintf('%02d',$m);
-  $opt{paydate} = "$y-$m-01";
-
-  $opt{$_} = $self->$_() for qw( payinfo payname paycvv );
-
-  if ( $self->locationnum ) {
-    my $cust_location = $self->cust_location;
-    $opt{$_} = $cust_location->$_() for qw( address1 address2 city state zip );
-  }
-
   $self->cust_main->realtime_verify_bop({
-    'method' => FS::payby->payby2bop( $self->payby ),
-    %opt,
+    'cust_payby' => $self,
   });
 
 }
