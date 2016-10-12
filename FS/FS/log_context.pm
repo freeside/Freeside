@@ -9,6 +9,7 @@ my @contexts = ( qw(
   FS::cust_main::Billing::bill_and_collect
   FS::cust_main::Billing::bill
   FS::cust_main::Billing_Realtime::realtime_bop
+  FS::cust_main::Billing_Realtime::realtime_tokenize
   FS::cust_main::Billing_Realtime::realtime_verify_bop
   FS::pay_batch::import_from_gateway
   FS::part_pkg

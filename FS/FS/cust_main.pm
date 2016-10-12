@@ -4679,6 +4679,10 @@ CHEK only
 
 CHEK only
 
+=item saved_cust_payby
+
+scalar reference, for returning saved object
+
 =back
 
 =cut
@@ -4874,6 +4878,9 @@ PAYBYLOOP:
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  ${$opt{'saved_cust_payby'}} = $new
+    if $opt{'saved_cust_payby'};
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';

@@ -72,7 +72,7 @@ $cgi->param('discount_term') =~ /^(\d*)$/
   or errorpage("illegal discount_term");
 my $discount_term = $1;
 
-my( $payinfo, $paycvv, $month, $year, $payname );
+my( $cust_payby, $payinfo, $paycvv, $month, $year, $payname );
 my $paymask = '';
 if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
@@ -80,10 +80,11 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   # use stored cust_payby info
   ##
 
-  my $cust_payby = qsearchs('cust_payby', { custnum      => $custnum,
+  $cust_payby = qsearchs('cust_payby', { custnum      => $custnum,
                                             custpaybynum => $custpaybynum, } )
     or die "unknown custpaybynum $custpaybynum";
 
+  # not needed for realtime_bop, but still needed for batch_card
   $payinfo = $cust_payby->payinfo;
   $paymask = $cust_payby->paymask;
   $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
@@ -164,7 +165,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     die "unknown payby $payby";
   }
 
-  # save first, for proper tokenization later
+  # save first, for proper tokenization
   if ( $cgi->param('save') ) {
 
     my %saveopt;
@@ -181,6 +182,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     }
 
     my $error = $cust_main->save_cust_payby(
+      'saved_cust_payby' => \$cust_payby,
       'payment_payby' => $payby,
       'auto'          => scalar($cgi->param('auto')),
       'weight'        => scalar($cgi->param('weight')),
@@ -220,6 +222,7 @@ if ( $cgi->param('batch') ) {
 } else {
 
   $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
+    'cust_payby' => $cust_payby, # if defined, will override passed payinfo, etc 
     'quiet'      => 1,
     'manual'     => 1,
     'balance'    => $balance,

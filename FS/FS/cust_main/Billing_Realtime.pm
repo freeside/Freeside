@@ -111,6 +111,8 @@ I<depend_jobnum> allows payment capture to unlock export jobs
 
 =cut
 
+# Currently only used by ClientAPI
+# NOT 4.x COMPATIBLE (see below)
 sub realtime_collect {
   my( $self, %options ) = @_;
 
@@ -124,6 +126,7 @@ sub realtime_collect {
   $options{amount} = $self->balance unless exists( $options{amount} );
   return '' unless $options{amount} > 0;
 
+  #### NOT 4.x COMPATIBLE
   $options{method} = FS::payby->payby2bop($self->payby)
     unless exists( $options{method} );
 
@@ -137,15 +140,13 @@ Runs a realtime credit card or ACH (electronic check) transaction
 via a Business::OnlinePayment realtime gateway.  See
 L<http://420.am/business-onlinepayment> for supported gateways.
 
-Required arguments in the hashref are I<method>, and I<amount>
+Required arguments in the hashref are I<amount> and either
+I<cust_payby> or I<method>, I<payinfo> and (as applicable for method)
+I<payname>, I<address1>, I<address2>, I<city>, I<state>, I<zip> and I<paydate>.
 
 Available methods are: I<CC>, I<ECHECK>, or I<PAYPAL>
 
 Available optional arguments are: I<description>, I<invnum>, I<apply>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>
-
-The additional options I<payname>, I<address1>, I<address2>, I<city>, I<state>,
-I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
-if set, will override the value from the customer record.
 
 I<description> is a free-text field passed to the gateway.  It defaults to
 the value defined by the business-onlinepayment-description configuration
@@ -279,11 +280,6 @@ sub _bop_defaults {
     }
   }
 
-  unless ( exists( $options->{'payinfo'} ) ) {
-    $options->{'payinfo'} = $self->payinfo;
-    $options->{'paymask'} = $self->paymask;
-  }
-
   # Default invoice number if the customer has exactly one open invoice.
   unless ( $options->{'invnum'} || $options->{'no_invnum'} ) {
     $options->{'invnum'} = '';
@@ -291,14 +287,50 @@ sub _bop_defaults {
     $options->{'invnum'} = $open[0]->invnum if scalar(@open) == 1;
   }
 
-  $options->{payname} = $self->payname unless exists( $options->{payname} );
+}
+
+sub _bop_cust_payby_options {
+  my ($self,$options) = @_;
+  my $cust_payby = $options->{'cust_payby'};
+  if ($cust_payby) {
+
+    $options->{'method'} = FS::payby->payby2bop( $cust_payby->payby );
+
+    if ($cust_payby->payby =~ /^(CARD|DCRD)$/) {
+      # false laziness with cust_payby->check
+      #   which might not have been run yet
+      my( $m, $y );
+      if ( $cust_payby->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
+        ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
+      } elsif ( $cust_payby->paydate =~ /^19(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+        ( $m, $y ) = ( $2, "19$1" );
+      } elsif ( $cust_payby->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
+        ( $m, $y ) = ( $3, "20$2" );
+      } else {
+        return "Illegal expiration date: ". $cust_payby->paydate;
+      }
+      $m = sprintf('%02d',$m);
+      $options->{paydate} = "$y-$m-01";
+    } else {
+      $options->{paydate} = '';
+    }
+
+    $options->{$_} = $cust_payby->$_() 
+      for qw( payinfo paycvv paymask paystart_month paystart_year 
+              payissue payname paystate paytype payip );
+
+    if ( $cust_payby->locationnum ) {
+      my $cust_location = $cust_payby->cust_location;
+      $options->{$_} = $cust_location->$_() for qw( address1 address2 city state zip );
+    }
+  }
 }
 
 sub _bop_content {
   my ($self, $options) = @_;
   my %content = ();
 
-  my $payip = exists($options->{'payip'}) ? $options->{'payip'} : $self->payip;
+  my $payip = $options->{'payip'};
   $content{customer_ip} = $payip if length($payip);
 
   $content{invoice_number} = $options->{'invnum'}
@@ -325,26 +357,14 @@ sub _bop_content {
 
   $content{name} = $payname;
 
-  $content{address} = exists($options->{'address1'})
-                        ? $options->{'address1'}
-                        : $self->address1;
-  my $address2 = exists($options->{'address2'})
-                   ? $options->{'address2'}
-                   : $self->address2;
+  $content{address} = $options->{'address1'};
+  my $address2 = $options->{'address2'};
   $content{address} .= ", ". $address2 if length($address2);
 
-  $content{city} = exists($options->{city})
-                     ? $options->{city}
-                     : $self->city;
-  $content{state} = exists($options->{state})
-                      ? $options->{state}
-                      : $self->state;
-  $content{zip} = exists($options->{zip})
-                    ? $options->{'zip'}
-                    : $self->zip;
-  $content{country} = exists($options->{country})
-                        ? $options->{country}
-                        : $self->country;
+  $content{city} = $options->{'city'};
+  $content{state} = $options->{'state'};
+  $content{zip} = $options->{'zip'};
+  $content{country} = $options->{'country'};
 
   $content{phone} = $self->daytime || $self->night;
 
@@ -356,28 +376,24 @@ sub _bop_content {
 }
 
 sub _tokenize_card {
-  my ($self,$transaction,$payinfo,$log) = @_;
+  my ($self,$transaction,$cust_payby,$log,%opt) = @_;
 
-  if ( $transaction->can('card_token') 
+  if ( $cust_payby
+       and $transaction->can('card_token') 
        and $transaction->card_token 
-       and $payinfo !~ /^99\d{14}$/ #not already tokenized
+       and $cust_payby->payinfo !~ /^99\d{14}$/ #not already tokenized
   ) {
 
-    my @cust_payby = $self->cust_payby('CARD','DCRD');
-    @cust_payby = grep { $payinfo == $_->payinfo } @cust_payby;
-    if (@cust_payby > 1) {
-      $log->error('Multiple matching card numbers for cust '.$self->custnum.', could not tokenize card');
-    } elsif (@cust_payby) {
-      my $cust_payby = $cust_payby[0];
-      $cust_payby->payinfo($transaction->card_token);
-      my $error = $cust_payby->replace;
-      if ( $error ) {
-        $log->error('Error storing token for cust '.$self->custnum.', cust_payby '.$cust_payby->custpaybynum.': '.$error);
-      } else {
-        $log->debug('Tokenized card for cust '.$self->custnum.', cust_payby '.$cust_payby->custpaybynum);
-      }
+    $cust_payby->payinfo($transaction->card_token);
+
+    my $error;
+    $error = $cust_payby->replace if $opt{'replace'};
+    if ( $error ) {
+      $log->error('Error storing token for cust '.$self->custnum.', cust_payby '.$cust_payby->custpaybynum.': '.$error);
+      return $error;
     } else {
-      $log->debug('No matching card numbers for cust '.$self->custnum.', could not tokenize card');
+      $log->debug('Tokenized card for cust '.$self->custnum.', cust_payby '.$cust_payby->custpaybynum);
+      return '';
     }
 
   }
@@ -411,6 +427,8 @@ sub realtime_bop {
     $options{amount} = $amount;
   }
 
+  # set fields from passed cust_payby
+  $self->_bop_cust_payby_options(\%options);
 
   ### 
   # optional credit card surcharge
@@ -449,6 +467,9 @@ sub realtime_bop {
   return $self->fake_bop(\%options) if $options{'fake'};
 
   $self->_bop_defaults(\%options);
+
+  return "Missing payinfo"
+    unless $options{'payinfo'};
 
   ###
   # set trans_is_recur based on invnum if there is one
@@ -535,29 +556,19 @@ sub realtime_bop {
     if ( $options{method} eq 'CC' ) {
 
       $content{card_number} = $options{payinfo};
-      $paydate = exists($options{'paydate'})
-                      ? $options{'paydate'}
-                      : $self->paydate;
+      $paydate = $options{'paydate'};
       $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
 
       $content{cvv2} = $options{'paycvv'}
         if length($options{'paycvv'});
 
-      my $paystart_month = exists($options{'paystart_month'})
-                             ? $options{'paystart_month'}
-                             : $self->paystart_month;
-
-      my $paystart_year  = exists($options{'paystart_year'})
-                             ? $options{'paystart_year'}
-                             : $self->paystart_year;
-
+      my $paystart_month = $options{'paystart_month'};
+      my $paystart_year  = $options{'paystart_year'};
       $content{card_start} = "$paystart_month/$paystart_year"
         if $paystart_month && $paystart_year;
 
-      my $payissue       = exists($options{'payissue'})
-                             ? $options{'payissue'}
-                             : $self->payissue;
+      my $payissue       = $options{'payissue'};
       $content{issue_number} = $payissue if $payissue;
 
       if ( $self->_bop_recurring_billing(
@@ -576,13 +587,8 @@ sub realtime_bop {
       ( $content{account_number}, $content{routing_code} ) =
         split('@', $options{payinfo});
       $content{bank_name} = $options{payname};
-      $content{bank_state} = exists($options{'paystate'})
-                               ? $options{'paystate'}
-                               : $self->getfield('paystate');
-      $content{account_type}=
-        (exists($options{'paytype'}) && $options{'paytype'})
-          ? uc($options{'paytype'})
-          : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
+      $content{bank_state} = $options{'paystate'};
+      $content{account_type}= uc($options{'paytype'}) || 'PERSONAL CHECKING';
 
       $content{company} = $self->company if $self->company;
 
@@ -805,7 +811,8 @@ sub realtime_bop {
   # Tokenize
   ###
 
-  $self->_tokenize_card($transaction,$options{'payinfo'},$log);
+  my $error = $self->_tokenize_card($transaction,$options{'cust_payby'},$log,'replace' => 1);
+  return $error if $error;
 
   ###
   # result handling
@@ -1721,20 +1728,13 @@ successful, immediatly reverses the authorization).
 Returns the empty string if the authorization was sucessful, or an error
 message otherwise.
 
-I<payinfo>
+Option I<cust_payby> should be passed, even if it's not yet been inserted.
+Object will be tokenized if possible, but that change will not be
+updated in database (must be inserted/replaced afterwards.)
 
-I<payname>
-
-I<paydate> specifies the expiration date for a credit card overriding the
-value from the customer record or the payment record. Specified as yyyy-mm-dd
-
-#The additional options I<address1>, I<address2>, I<city>, I<state>,
-#I<zip> are also available.  Any of these options,
-#if set, will override the value from the customer record.
+Currently only succeeds for Business::OnlinePayment CC transactions.
 
 =cut
-
-#Available methods are: I<CC> or I<ECHECK>
 
 #some false laziness w/realtime_bop and realtime_refund_bop, not enough to make
 #it worth merging but some useful small subs should be pulled out
@@ -1755,6 +1755,10 @@ sub realtime_verify_bop {
     warn "$me realtime_verify_bop\n";
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
+
+  # set fields from passed cust_payby
+  return "No cust_payby" unless $options{'cust_payby'};
+  $self->_bop_cust_payby_options(\%options);
 
   ###
   # select a gateway
@@ -1802,43 +1806,33 @@ sub realtime_verify_bop {
     if ( $options{method} eq 'CC' ) {
 
       $content{card_number} = $options{payinfo};
-      $paydate = exists($options{'paydate'})
-                      ? $options{'paydate'}
-                      : $self->paydate;
+      $paydate = $options{'paydate'};
       $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
 
       $content{cvv2} = $options{'paycvv'}
         if length($options{'paycvv'});
 
-      my $paystart_month = exists($options{'paystart_month'})
-                             ? $options{'paystart_month'}
-                             : $self->paystart_month;
-
-      my $paystart_year  = exists($options{'paystart_year'})
-                             ? $options{'paystart_year'}
-                             : $self->paystart_year;
+      my $paystart_month = $options{'paystart_month'};
+      my $paystart_year  = $options{'paystart_year'};
 
       $content{card_start} = "$paystart_month/$paystart_year"
         if $paystart_month && $paystart_year;
 
-      my $payissue       = exists($options{'payissue'})
-                             ? $options{'payissue'}
-                             : $self->payissue;
+      my $payissue       = $options{'payissue'};
       $content{issue_number} = $payissue if $payissue;
 
     } elsif ( $options{method} eq 'ECHECK' ){
-
-      #nop for checks (though it shouldn't be called...)
-
+      #cannot verify, move along (though it shouldn't be called...)
+      return '';
     } else {
-      die "unknown method ". $options{method};
+      return "unknown method ". $options{method};
     }
-
   } elsif ( $namespace eq 'Business::OnlineThirdPartyPayment' ) {
-    #move along
+    #cannot verify, move along
+    return '';
   } else {
-    die "unknown namespace $namespace";
+    return "unknown namespace $namespace";
   }
 
   ###
@@ -1847,6 +1841,7 @@ sub realtime_verify_bop {
 
   my $error;
   my $transaction; #need this back so we can do _tokenize_card
+
   # don't mutex the customer here, because they might be uncommitted. and
   # this is only verification. it doesn't matter if they have other
   # unfinished verifications.
@@ -1859,12 +1854,10 @@ sub realtime_verify_bop {
     'payinfo'           => $options{payinfo},
     'paymask'           => $options{paymask},
     'paydate'           => $paydate,
-    #'recurring_billing' => $content{recurring_billing},
     'pkgnum'            => $options{'pkgnum'},
     'status'            => 'new',
     'gatewaynum'        => $payment_gateway->gatewaynum || '',
     'session_id'        => $options{session_id} || '',
-    #'jobnum'            => $options{depend_jobnum} || '',
   };
   $cust_pay_pending->payunique( $options{payunique} )
     if defined($options{payunique}) && length($options{payunique});
@@ -1905,12 +1898,9 @@ sub realtime_verify_bop {
       'action'         => 'Authorization Only',
       'description'    => $options{'description'},
       'amount'         => '1.00',
-      #'invoice_number' => $options{'invnum'},
       'customer_id'    => $self->custnum,
       %$bop_content,
       'reference'      => $cust_pay_pending->paypendingnum, #for now
-      'callback_url'   => $payment_gateway->gateway_callback_url,
-      'cancel_url'     => $payment_gateway->gateway_cancel_url,
       'email'          => $email,
       %content, #after
     );
@@ -2123,7 +2113,9 @@ sub realtime_verify_bop {
   # Tokenize
   ###
 
-  $self->_tokenize_card($transaction,$options{'payinfo'},$log);
+  #important that we not pass replace option here,
+  #because cust_payby->replace uses realtime_verify_bop!
+  $self->_tokenize_card($transaction,$options{'cust_payby'},$log);
 
   ###
   # result handling
@@ -2131,6 +2123,144 @@ sub realtime_verify_bop {
 
   # $error contains the transaction error_message, if is_success was false.
  
+  return $error;
+
+}
+
+=item realtime_tokenize [ OPTION => VALUE ... ]
+
+If possible, runs a tokenize transaction.
+In order to be possible, a credit card cust_payby record
+must be passed and a Business::OnlinePayment gateway capable
+of Tokenize transactions must be configured for this user.
+
+Returns the empty string if the authorization was sucessful
+or was not possible (thus allowing this to be safely called with
+non-tokenizable records/gateways, without having to perform separate tests),
+or an error message otherwise.
+
+Option I<cust_payby> should be passed, even if it's not yet been inserted.
+Object will be tokenized if possible, but that change will not be
+updated in database (must be inserted/replaced afterwards.)
+
+=cut
+
+sub realtime_tokenize {
+  my $self = shift;
+
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
+  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_tokenize');
+
+  my %options = ();
+  if (ref($_[0]) eq 'HASH') {
+    %options = %{$_[0]};
+  } else {
+    %options = @_;
+  }
+
+  # set fields from passed cust_payby
+  return "No cust_payby" unless $options{'cust_payby'};
+  $self->_bop_cust_payby_options(\%options);
+  return '' unless $options{method} eq 'CC';
+  return '' if $options{payinfo} =~ /^99\d{14}$/; #already tokenized
+
+  ###
+  # select a gateway
+  ###
+
+  $options{'nofatal'} = 1;
+  my $payment_gateway =  $self->_payment_gateway( \%options );
+  return '' unless $payment_gateway;
+  my $namespace = $payment_gateway->gateway_namespace;
+  return '' unless $namespace eq 'Business::OnlinePayment';
+
+  eval "use $namespace";  
+  return $@ if $@;
+
+  ###
+  # check for tokenize ability
+  ###
+
+  # just create transaction now, so it loads gateway_module
+  my $transaction = new $namespace( $payment_gateway->gateway_module,
+                                    $self->_bop_options(\%options),
+                                  );
+
+  my %supported_actions = $transaction->info('supported_actions');
+  return '' unless $supported_actions{'CC'} and grep(/^Tokenize$/,@{$supported_actions{'CC'}});
+
+  ###
+  # check for banned credit card/ACH
+  ###
+
+  my $ban = FS::banned_pay->ban_search(
+    'payby'   => $bop_method2payby{'CC'},
+    'payinfo' => $options{payinfo},
+  );
+  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
+
+  ###
+  # massage data
+  ###
+
+  my $bop_content = $self->_bop_content(\%options);
+  return $bop_content unless ref($bop_content);
+
+  my $paydate = '';
+  my %content = ();
+
+  $content{card_number} = $options{payinfo};
+  $paydate = $options{'paydate'};
+  $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+  $content{expiration} = "$2/$1";
+
+  $content{cvv2} = $options{'paycvv'}
+    if length($options{'paycvv'});
+
+  my $paystart_month = $options{'paystart_month'};
+  my $paystart_year  = $options{'paystart_year'};
+
+  $content{card_start} = "$paystart_month/$paystart_year"
+    if $paystart_month && $paystart_year;
+
+  my $payissue       = $options{'payissue'};
+  $content{issue_number} = $payissue if $payissue;
+
+  ###
+  # run transaction
+  ###
+
+  my $error;
+
+  # no cust_pay_pending---this is not a financial transaction
+
+  $transaction->content(
+    'type'           => 'CC',
+    $self->_bop_auth(\%options),          
+    'action'         => 'Tokenize',
+    'description'    => $options{'description'},
+    'customer_id'    => $self->custnum,
+    %$bop_content,
+    %content, #after
+  );
+
+  # no $BOP_TESTING handling for this
+  $transaction->test_transaction(1)
+    if $conf->exists('business-onlinepayment-test_transaction');
+  $transaction->submit();
+
+  if ( $transaction->card_token() ) { # no is_success flag
+
+    #important that we not pass replace option here, 
+    #because cust_payby->replace uses realtime_tokenize!
+    $self->_tokenize_card($transaction,$options{'cust_payby'},$log);
+
+  } else {
+
+    $error = $transaction->error_message || 'Unknown error';
+
+  }
+
   return $error;
 
 }
