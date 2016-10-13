@@ -124,6 +124,12 @@
         <SELECT NAME="prorate_day">
           <% prorate_day_options($cust_main->prorate_day) %>
         </SELECT>
+        <& /elements/checkbox.html,
+          field       => 'force_prorate_day',
+          value       => 'Y',
+          curr_value  => $cust_main->force_prorate_day
+        &>
+        <label><% emt('Force all packages to this day') %></label>
       </TD>
     </TR>
 

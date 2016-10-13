@@ -232,7 +232,8 @@ div.fstabcontainer {
   border-radius: .25em;
 }
 
-.fsinnerbox th {
+.fsinnerbox th,
+.fsinnerbox label {
   font-weight:normal;
   font-size:80%;
   vertical-align: top;

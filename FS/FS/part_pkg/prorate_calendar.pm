@@ -72,7 +72,11 @@ sub check {
 sub cutoff_day {
   my( $self, $cust_pkg ) = @_;
   my @periods = @{ $freq_cutoff_days{$self->freq} };
-  my @cutoffs = ($self->option('cutoff_day') || 1); # Jan 1 = 1
+  my $prorate_day = $cust_pkg->cust_main->prorate_day
+                    || $self->option('cutoff_day')
+                    || 1;
+
+  my @cutoffs = ($prorate_day);
   pop @periods; # we don't care about the last one
   foreach (@periods) {
     push @cutoffs, $cutoffs[-1] + $_;

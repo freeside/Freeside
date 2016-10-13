@@ -173,6 +173,12 @@ sub calc_recur {
 sub cutoff_day {
   my $self = shift;
   my $cust_pkg = shift;
+  my $cust_main = $cust_pkg->cust_main;
+  # force it to act like a prorate package, is what this means
+  # because we made a distinction once between prorate and flat packages
+  if ( $cust_main->force_prorate_day  and $cust_main->prorate_day ) {
+     return ( $cust_main->prorate_day );
+  }
   if ( $self->option('sync_bill_date',1) ) {
     my $next_bill = $cust_pkg->cust_main->next_bill_date;
     if ( $next_bill ) {

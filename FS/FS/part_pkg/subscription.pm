@@ -88,6 +88,11 @@ use FS::part_pkg::flat;
 sub calc_recur {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
   my $cutoff_day = $self->option('cutoff_day', 1) || 1;
+  my $cust_main = $cust_pkg->cust_main;
+  if ( $cust_main->force_prorate_day  and $cust_main->prorate_day ) {
+     $cutoff_day = $cust_main->prorate_day;
+  }
+
   my $mnow = $$sdate;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($mnow) )[0,1,2,3,4,5];
 
