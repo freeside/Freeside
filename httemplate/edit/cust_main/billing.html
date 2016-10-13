@@ -537,8 +537,14 @@
       <TD ALIGN="right" WIDTH="200"><% mt('Prorate day (1-28)') |h %> </TD>
       <TD>
         <INPUT TYPE="text" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>" SIZE=3 MAXLENGTH=2>
+      <& /elements/checkbox.html,
+        field       => 'force_prorate_day',
+        value       => 'Y',
+        curr_value  => $cust_main->force_prorate_day
+      &>
+      <label><% emt('Force all packages to this day') %></label>
       </TD>
-    </TR>
+   </TR>
 % } else {
     <INPUT TYPE="hidden" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>">
 % }

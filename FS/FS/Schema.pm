@@ -1210,6 +1210,7 @@ sub tables_hashref {
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
         'billday',   'int', 'NULL', '', '', '',
         'prorate_day',   'int', 'NULL', '', '', '',
+        'force_prorate_day', 'char', 'NULL', 1, '', '',
         'edit_subject', 'char', 'NULL', 1, '', '',
         'locale', 'varchar', 'NULL', 16, '', '', 
         'calling_list_exempt', 'char', 'NULL', 1, '', '',
