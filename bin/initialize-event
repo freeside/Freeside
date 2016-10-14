@@ -1,0 +1,68 @@
+#!/usr/bin/perl
+
+use FS::Misc::Getopt;
+use FS::part_event;
+use FS::cust_event;
+use FS::Record 'dbdef';
+use FS::Cursor;
+
+getopts('e:x');
+
+my $eventpart = $opt{e};
+my $part_event = FS::part_event->by_key($opt{e})
+  or die "usage: initialize-event -e <eventpart> <username>\n";
+
+
+my $eventtable = $part_event->eventtable;
+my $pkey = dbdef->table($eventtable)->primary_key;
+my $from = " LEFT JOIN (SELECT DISTINCT tablenum AS $pkey FROM cust_event
+                   WHERE eventpart = $eventpart) AS done USING ($pkey)",
+my $where = " WHERE done.$pkey IS NULL";
+
+my $count = FS::Record->scalar_sql("SELECT COUNT(*) FROM $eventtable $from $where");
+print "Event ".$part_event->event."\n".
+      "Will initialize on $count $eventtable records.\n";
+if (!$opt{x}) {
+  print "Run with -x to make changes.\n";
+  exit;
+}
+
+
+print "Disabling event.\n";
+$part_event->disabled('Y');
+my $error = $part_event->replace;
+die $error if $error;
+my $cursor = FS::Cursor->new({
+  table => $eventtable,
+  addl_from => $from,
+  extra_sql => $where,
+});
+my $user = $FS::CurrentUser::CurrentUser->username;
+my $statustext = "Manually by $user";
+while (my $record = $cursor->fetch) {
+  my $cust_event = FS::cust_event->new({
+    status      => 'initial',
+    eventpart   => $eventpart,
+    tablenum    => $record->get($pkey),
+    _date       => $^T,
+    statustext  => $statustext,
+  });
+  $error = $cust_event->insert;
+  if ($error) {
+    print "$eventtable #".$record->get($pkey).": $error\n" if $error;
+  } else {
+    $count--;
+  }
+}
+print "$count unprocessed records.";
+if ($count == 0) {
+  print "Re-enabling event.\n";
+  $part_event->disabled('');
+  $error = $part_event->replace;
+  die $error if $error;
+} else {
+  print "Event is still disabled.\n";
+}
+
+print "Finished.\n";
+
