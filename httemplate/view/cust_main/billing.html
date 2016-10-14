@@ -83,6 +83,7 @@ set_display_recurring(<% encode_json({'display_recurring' => [ $cust_main->displ
 <TR>
   <TH ALIGN="right"><% mt('Prorate day of month') |h %></TH>
   <TD><% $cust_main->prorate_day %>
+  <% $cust_main->force_prorate_day && ('<i>'.emt('(applies to all packages)').'</i>') %>
   </TD>
 </TR>
 % }
