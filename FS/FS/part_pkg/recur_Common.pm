@@ -41,13 +41,14 @@ sub cutoff_day {
   # prorate/subscription only; we don't support sync_bill_date here
   my( $self, $cust_pkg ) = @_;
   my $recur_method = $self->option('recur_method',1) || 'anniversary';
-  return () unless $recur_method eq 'prorate'
-                || $recur_method eq 'subscription';
+  my $cust_main = $cust_pkg->cust_main;
 
-  #false laziness w/prorate.pm::cutoff_day
-  my $prorate_day = $cust_pkg->cust_main->prorate_day;
-  $prorate_day ? ( $prorate_day )
-               : split(/\s*,\s*/, $self->option('cutoff_day', 1) || '1');
+  if ( $cust_main->force_prorate_day and $cust_main->prorate_day ) {
+     return ( $cust_main->prorate_day );
+  } elsif ($recur_method eq 'prorate' || $recur_method eq 'subscription') {
+
+    return split(/\s*,\s*/, $self->option('cutoff_day', 1) || '1');
+  }
 }
 
 sub calc_recur_Common {
