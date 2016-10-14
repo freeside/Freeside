@@ -6,6 +6,7 @@ use vars qw( $DEBUG );
 use Carp qw(confess);
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::Conf;
+use FS::Cursor;
 use FS::part_event_option;
 use FS::part_event_condition;
 use FS::cust_event;
@@ -266,10 +267,28 @@ but can be useful when configuring events.
 
 =cut
 
-sub targets {
+sub targets { # may want to cursor this also
   my $self = shift;
   my %opt = @_;
-  my $time = $opt{'time'} || time;
+  my $time = $opt{'time'} ||= time;
+  
+  my $query = $self->_target_query(%opt);
+  my @objects = qsearch($query);
+  my @tested_objects;
+  foreach my $object ( @objects ) {
+    my $cust_event = $self->new_cust_event($object, 'time' => $time);
+    next unless $cust_event->test_conditions;
+
+    $object->set('cust_event', $cust_event);
+    push @tested_objects, $object;
+  }
+  @tested_objects;
+}
+
+sub _target_query {
+  my $self = shift;
+  my %opt = @_;
+  my $time = $opt{'time'};
 
   my $eventpart = $self->eventpart;
   $eventpart =~ /^\d+$/ or die "bad eventpart $eventpart";
@@ -300,22 +319,14 @@ sub targets {
   # and don't enforce disabled because we want to be able to see targets 
   # for a disabled event
 
-  my @objects = qsearch({
+  {
       table     => $eventtable,
       hashref   => {},
       addl_from => $join,
       extra_sql => "WHERE $where",
-  });
-  my @tested_objects;
-  foreach my $object ( @objects ) {
-    my $cust_event = $self->new_cust_event($object, 'time' => $time);
-    next unless $cust_event->test_conditions;
-
-    $object->set('cust_event', $cust_event);
-    push @tested_objects, $object;
-  }
-  @tested_objects;
+  };
 }
+
 
 =item initialize PARAMS
 
@@ -338,26 +349,26 @@ sub initialize {
   my $self = shift;
   my $error;
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
+  my $time = time;
 
-  my @objects = $self->targets;
-  foreach my $object ( @objects ) {
-    my $cust_event = $object->get('cust_event');
+  local $FS::UID::AutoCommit = 1;
+  my $cursor = FS::Cursor->new( $self->_target_query('time' => $time) );
+  while (my $object = $cursor->fetch) {
+
+    my $cust_event = $self->new_cust_event($object, 'time' => $time);
+    next unless $cust_event->test_conditions;
+
     $cust_event->status('initial');
     $error = $cust_event->insert;
-    last if $error;
+    die $error if $error;
   }
-  if ( !$error and $self->disabled ) {
+
+  # on successful completion only, re-enable the event
+  if ( $self->disabled ) {
     $self->disabled('');
     $error = $self->replace;
+    die $error if $error;
   }
-  if ( $error ) {
-    $dbh->rollback;
-    return $error;
-  }
-  $dbh->commit if $oldAutoCommit;
   return;
 }
 
