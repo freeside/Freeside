@@ -178,6 +178,14 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->set('cust-fields',$cust_fields);
   }
 
+  #repurposed
+  $conf->set('note-classes','Enabled')
+    if $conf->exists('note-classes')
+      and grep {$_ eq $conf->config('note-classes')} ('1','2');
+  $conf->set('note-classes','')
+    if $conf->exists('note-classes')
+      and '0' eq $conf->config('note-classes');
+
   enable_banned_pay_pad() unless length($conf->config('banned_pay-pad'));
 
   # if translate-auto-insert is enabled for a locale, ensure that invoice

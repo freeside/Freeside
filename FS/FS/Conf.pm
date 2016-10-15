@@ -5419,11 +5419,7 @@ and customer address. Include units.',
     'section'     => 'customer_fields',
     'description' => 'Use customer note classes',
     'type'        => 'select',
-    'select_hash' => [
-                       0 => 'Disabled',
-		       1 => 'Enabled',
-		       2 => 'Enabled, with tabs',
-		     ],
+    'select_enum' => [ '', 'Enabled', 'Required' ],
   },
 
   {
