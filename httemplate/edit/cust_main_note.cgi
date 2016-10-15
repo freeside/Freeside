@@ -6,14 +6,17 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="notenum" VALUE="<% $notenum %>">
 
-% if ($conf->exists('note-classes') && $conf->config('note-classes') > 0) {
+% if ($conf->exists('note-classes') && $conf->config('note-classes')) {
+%   my %includeopts = $conf->config('note-classes') eq 'Enabled'
+%                   ? ('empty_label' => '(unclassified)')
+%                   : ('disable_empty' => 1); # eq 'Required'
     Class &nbsp;
 	<% include( '/elements/select-table.html',
                  'table'       => 'cust_note_class',
                  'name_col'    => 'classname',
                  'curr_value'  => $classnum,
-                 'empty_label' => '(none)',
                  'hashref'     => { 'disabled' => '' },
+                 %includeopts,
          ) %>
     <BR>
 % }
