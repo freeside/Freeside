@@ -1,55 +1,81 @@
 % if ( scalar(@notes) ) {
-
 <SCRIPT TYPE="text/javascript">
 
-    function display_notes_classnum(classnum){
-	document.getElementById('notes_'+classnum).style.display = 'block';
-	document.getElementById('notes_tablink_'+classnum).style.fontWeight = 'bold';
+function display_notes_classnum (classnum) {
 
-	var divs = document.getElementsByTagName("div");
-	var i;
-	for(i=0; i < divs.length; i++){
-	    var d = divs[i];
-	    if(d.id.length > 6 && d.id.substring(0,6) == 'notes_') {
-		if(divs[i].id != 'notes_'+classnum) {
-		    divs[i].style.display = 'none';
-		}
-	    }
-	}
-	
-	var as = document.getElementsByTagName("a");
-	for(i=0; i < as.length; i++){
-	    var a = as[i];
-	    if(a.id.length > 14 && a.id.substring(0,14) == 'notes_tablink_') {
-		if(as[i].id != 'notes_tablink_'+classnum) {
-		    as[i].style.fontWeight = 'normal';
-		}
-	    }
-	}
+  var bgcolor1 = '#eeeeee';
+  var bgcolor2 = '#ffffff';
+  var sticky_color = { '#eeeeee' : '#ffff66',
+                       '#ffffff' : '#ffffb8' };
+  var notes_bgcolor = '';
+
+  var trs = document.getElementsByTagName("TR");
+  for (var i=0; i < trs.length; i++) {
+    if (trs[i].id.length > 6 && trs[i].id.substring(0,6) == 'notes_') {
+      if (( classnum == '-1' ) || ( trs[i].getAttribute('data-classnum') == classnum )) {
+        trs[i].style.display = 'table-row';
+        if ( notes_bgcolor == bgcolor1 ) {
+          notes_bgcolor = bgcolor2;
+        } else {
+          notes_bgcolor = bgcolor1;
+        }
+        trs[i].style.backgroundColor = (trs[i].getAttribute('data-sticky') == '1') ? sticky_color[notes_bgcolor] : notes_bgcolor;
+      } else {
+        trs[i].style.display = 'none';
+      }
     }
+  }
+%   if ($note_classes_conf) {
+
+  var as = document.getElementsByTagName("a");
+  for (var i=0; i < as.length; i++) {
+    if(as[i].id.length > 14 && as[i].id.substring(0,14) == 'notes_tablink_') {
+      if(as[i].id == 'notes_tablink_'+classnum) {
+        as[i].style.fontWeight = 'bold';
+      } else {
+        as[i].style.fontWeight = 'normal';
+      }
+    }
+  }
+%   } # if note_classes_conf
+
+}
 
 </SCRIPT>
 
   <& /elements/init_overlib.html &>
 
-% my $bgcolor1 = '#eeeeee';
-% my $bgcolor2 = '#ffffff';
-% my %sticky_color = ( '#eeeeee' => '#ffff66',
-%                      '#ffffff' => '#ffffb8',
-%                    );
-%
-% my $bgcolor = '';
-% my $last_classnum = -1;
-% my $skipheader = 0;
-% my %classes = ();
-%
-% foreach my $note (@notes) {
-%
-%   if ( $bgcolor eq $bgcolor1 ) {
-%     $bgcolor = $bgcolor2;
-%   } else {
-%     $bgcolor = $bgcolor1;
+% if ( $note_classes_conf ) {
+<% mt('Show notes of class:') |h %> &nbsp; 
+%   # list unclassified last
+% 	foreach my $classnum ( (grep { $_ != 0} sort { $a <=> $b } (keys %classes)), '0' ) {
+	    <A	id="notes_tablink_<% $classnum %>"
+		HREF="javascript:display_notes_classnum(<% $classnum %>)"
+		style="font-weight: <% $classnum == -1 ? 'bold' : 'normal' %>"
+	    ><% $classes{$classnum} %></A>
+% 	}
+    <BR>
+% }
+
+<& /elements/table-grid.html &>
+  <TR>
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Date') |h %></TH>
+%   if ( $conf->exists('cust_main_note-display_times') ) {
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Time') |h %></TH>
 %   }
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Employee') |h %></TH>
+%   if ($note_classes_conf) {
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Class') |h %></TH>
+%   }
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Note') |h %></TH>
+%   if ($curuser->access_right('Edit customer note') ) {
+    <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em">&nbsp;</TH>
+%   }
+  </TR>
+
+% } # end if @notes
+
+% foreach my $note (@notes) {
 %
 %   my $pop = popurl(3);
 %   my $notenum = $note->notenum;
@@ -74,79 +100,32 @@
 %             '('.emt('delete').')</A>';
 %   }
 %
-% if ( $last_classnum != $note->classnum && !$skipheader ) {
-% my $tmp_classnum = $note->classnum ? $note->classnum : 0;
-% $classes{$tmp_classnum} = $note->classname ne '' ? $note->classname 
-%						     : emt('Other');
-% if ( $last_classnum != -1 ) {
-    </TABLE>
-  </DIV>
-% }
-% my $display = ($tmp_classnum == 0 || !$conf->exists('note-classes') 
-%				    || $conf->config('note-classes') < 2) 
-%							    ? 'block' : 'none';
-	<DIV 	id="notes_<% $tmp_classnum %>"
-		style="display:<% $display %>"
-	>
-	<& /elements/table-grid.html &>
-        <THEAD>
-	<TR>
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
-%   if ( $conf->exists('cust_main_note-display_times') ) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Time') |h %></TH>
-%   }
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Employee') |h %></TH>
-%   if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Class') |h %></TH>
-%   }
-	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Note') |h %></TH>
-%   if ($curuser->access_right('Edit customer note') ) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
-%   }
-	</TR>
-        </THEAD>
-% $skipheader = (!$conf->exists('note-classes') || $conf->config('note-classes') < 2);
-% $last_classnum = $note->classnum;
-% }
+    <TR ID="notes_<% $note->notenum %>"
+        data-sticky="<% $note->sticky ? 1 : 0 %>"
+        <% $note_classes_conf ? ' data-classnum="'.($note->classnum || 0).'"' : '' %>>
 
-% my $color = $note->sticky ? $sticky_color{$bgcolor} : $bgcolor;
-
-    <TR>
-      <% note_datestr($note,$conf,$color) %>
-      <TD CLASS="grid" BGCOLOR="<% $color %>">
+      <% note_datestr($note,$conf) %>
+      <TD CLASS="grid">
         &nbsp;<% $note->usernum ? $note->access_user->name : $note->otaker %>
       </TD>
-% if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
-      <TD CLASS="grid" BGCOLOR="<% $color %>">
+%   if ($note_classes_conf) {
+      <TD CLASS="grid">
 	<% $note->classname %>   
       </TD>
-% }
-      <TD CLASS="grid" BGCOLOR="<% $color %>">
+%   }
+      <TD CLASS="grid">
         <% $note->comments | defang %>
       </TD>
-% if($edit) {
-      <TD CLASS="grid" BGCOLOR="<% $color %>"><% $edit %></TD>
-% }
+%   if ($edit) {
+      <TD CLASS="grid"><% $edit %></TD>
+%   }
     </TR>
-
-% } #end display notes
+% } #end foreach note
 
 </TABLE>
-</DIV>
 
-% if ( $conf->exists('note-classes') && $conf->config('note-classes') == 2 ) {
-% 	my($classnum,$classname);
-<% mt('Show notes of class:') |h %> &nbsp; 
-% 	foreach my $classnum ( sort { $b <=> $a } (keys %classes) ) {
-	    <A	id="notes_tablink_<% $classnum %>"
-		HREF="javascript:display_notes_classnum(<% $classnum %>)"
-		style="font-weight: <% $classnum == 0 ? 'bold' : 'normal' %>"
-	    ><% $classes{$classnum} %></A>
-% 	}
-    <BR>
-% }
+<SCRIPT>display_notes_classnum('-1')</SCRIPT>
 
-% }
 <%init>
 
 use HTML::Defang;
@@ -159,13 +138,18 @@ my(%opt) = @_;
 my $cust_main = $opt{'cust_main'};
 my $custnum = $cust_main->custnum;
 
-my (@notes) = $cust_main->notes($conf->exists('note-classes') && $conf->config('note-classes') == 2);
+my $note_classes_conf = $conf->exists('note-classes') ? $conf->config('note-classes') : '';
+
+my (@notes) = $cust_main->notes();
+
+my %classes = map { ($_->classnum || 0) => ( $_->classname ne '' ? $_->classname : '('.emt('unclassified').')' ) } @notes;
+$classes{'-1'} = 'All';
 
 #subroutines
 
 sub note_datestr {
-  my($note, $conf, $bgcolor) = @_ or return '';
-  my $td = qq{<TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">};
+  my($note, $conf) = @_ or return '';
+  my $td = qq{<TD CLASS="grid" ALIGN="right">};
   my $format = "$td%b&nbsp;%o,&nbsp;%Y</TD>";
   $format .= "$td%l:%M%P</TD>"
     if $conf->exists('cust_main_note-display_times');
