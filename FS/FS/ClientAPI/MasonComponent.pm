@@ -62,7 +62,7 @@ my %session_callbacks = (
       'process-display'    => scalar($conf->config('selfservice_process-display')),
       'process-skip_first' => $conf->exists('selfservice_process-skip_first'),
       'num_payments'       => scalar($cust_main->cust_pay), 
-      'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
+      'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage', $cust_main->agentnum)),
     );
     @$argsref = ( %args );
 
