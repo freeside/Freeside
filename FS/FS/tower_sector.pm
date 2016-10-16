@@ -1,11 +1,15 @@
 package FS::tower_sector;
 use base qw( FS::Record );
 
+use FS::Record qw(dbh qsearch);
 use Class::Load qw(load_class);
 use File::Path qw(make_path);
 use Data::Dumper;
+use Cpanel::JSON::XS;
 
 use strict;
+
+our $noexport_hack = 0;
 
 =head1 NAME
 
@@ -75,10 +79,13 @@ The antenna beam elevation in degrees below horizontal.
 
 The -3dB vertical beamwidth in degrees.
 
-=item margin
+=item db_high
 
-The signal loss margin allowed on the sector, in dB. This is normally
-transmitter EIRP minus receiver sensitivity.
+The signal loss margin to treat as "high quality".
+
+=item db_low
+
+The signal loss margin to treat as "low quality".
 
 =item image 
 
@@ -110,6 +117,73 @@ sub table { 'tower_sector'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  return $error if $error;
+
+  unless ($noexport_hack) {
+    foreach my $part_export ($self->part_export) {
+      my $error = $part_export->export_insert($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ".$part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  # XXX exportify
+  if (scalar($self->need_fields_for_coverage) == 0) {
+    $self->queue_generate_coverage;
+  }
+}
+
+sub replace {
+  my $self = shift;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $old = shift || $self->replace_old;
+  my $error = $self->SUPER::replace($old);
+  return $error if $error;
+
+  unless ( $noexport_hack ) {
+    foreach my $part_export ($self->part_export) {
+      my $error = $part_export->export_replace($self, $old);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ".$part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  #XXX exportify
+  my $regen_coverage = 0;
+  if ( !$self->get('no_regen') ) {
+    foreach (qw(height freq_mhz direction width downtilt
+                v_width db_high db_low))
+    {
+      $regen_coverage = 1 if ($self->get($_) ne $old->get($_));
+    }
+  }
+
+
+  if ($regen_coverage) {
+    $self->queue_generate_coverage;
+  }
+}
+
 =item delete
 
 Delete this record from the database.
@@ -119,11 +193,31 @@ Delete this record from the database.
 sub delete {
   my $self = shift;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   #not the most efficient, not not awful, and its not like deleting a sector
   # with customers is a common operation
   return "Can't delete a sector with customers" if $self->svc_broadband;
 
-  $self->SUPER::delete;
+  unless ($noexport_hack) {
+    foreach my $part_export ($self->part_export) {
+      my $error = $part_export->export_delete($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ".$part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
 }
 
 =item check
@@ -149,12 +243,19 @@ sub check {
     || $self->ut_numbern('v_width')
     || $self->ut_numbern('downtilt')
     || $self->ut_floatn('sector_range')
-    || $self->ut_numbern('margin')
+    || $self->ut_decimaln('power')
+    || $self->ut_decimaln('line_loss')
+    || $self->ut_decimaln('antenna_gain')
+    || $self->ut_numbern('hardware_typenum')
+    || $self->ut_textn('title')
+    # all of these might get relocated as part of coverage refactoring
     || $self->ut_anything('image')
     || $self->ut_sfloatn('west')
     || $self->ut_sfloatn('east')
     || $self->ut_sfloatn('south')
     || $self->ut_sfloatn('north')
+    || $self->ut_numbern('db_high')
+    || $self->ut_numbern('db_low')
   ;
   return $error if $error;
 
@@ -192,6 +293,7 @@ Returns a list of required fields for the coverage map that aren't yet filled.
 =cut
 
 sub need_fields_for_coverage {
+  # for now assume exports require all of this
   my $self = shift;
   my $tower = $self->tower;
   my %fields = (
@@ -201,7 +303,8 @@ sub need_fields_for_coverage {
     downtilt  => 'Downtilt',
     width     => 'Horiz. width',
     v_width   => 'Vert. width',
-    margin    => 'Signal margin',
+    db_high   => 'High quality signal margin',
+    db_low    => 'Low quality signal margin',
     latitude  => 'Latitude',
     longitude => 'Longitude',
   );
@@ -220,8 +323,13 @@ Starts a job to recalculate the coverage map.
 
 =cut
 
+# XXX move to an export
+
 sub queue_generate_coverage {
   my $self = shift;
+  my $need_fields = join(',', $self->need_fields_for_coverage);
+  return "$need_fields required" if $need_fields;
+  $self->set('no_regen', 1); # avoid recursion
   if ( length($self->image) > 0 ) {
     foreach (qw(image west south east north)) {
       $self->set($_, '');
@@ -233,6 +341,28 @@ sub queue_generate_coverage {
       job => 'FS::tower_sector::process_generate_coverage',
   });
   $job->insert('_JOB', { sectornum => $self->sectornum});
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item part_export
+
+Returns all sector exports. Eventually this may be refined to the level
+of enabling exports on specific sectors.
+
+=cut
+
+sub part_export {
+  my $info = $FS::part_export::exports{'tower_sector'} or return;
+  my @exporttypes = map { dbh->quote($_) } keys %$info or return;
+  qsearch({
+    'table'     => 'part_export',
+    'extra_sql' => 'WHERE exporttype IN(' . join(',', @exporttypes) . ')'
+  });
 }
 
 =back
@@ -258,9 +388,11 @@ sub process_generate_coverage {
   my $sectornum = $param->{sectornum};
   my $sector = FS::tower_sector->by_key($sectornum)
     or die "sector $sectornum does not exist";
+  $sector->set('no_regen', 1); # avoid recursion
   my $tower = $sector->tower;
 
   load_class('Map::Splat');
+
   # since this is still experimental, put it somewhere we can find later
   my $workdir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/" .
                 "generate_coverage/sector$sectornum-". time;
@@ -274,9 +406,9 @@ sub process_generate_coverage {
     h_width     => $sector->width,
     tilt        => $sector->downtilt,
     v_width     => $sector->v_width,
-    max_loss    => $sector->margin,
-    min_loss    => $sector->margin - 80,
+    db_levels   => [ $sector->db_low, $sector->db_high ],
     dir         => $workdir,
+    #simplify    => 0.0004, # remove stairstepping in SRTM3 data?
   );
   $splat->calculate;
 
@@ -284,10 +416,29 @@ sub process_generate_coverage {
   foreach (qw(west east south north)) {
     $sector->set($_, $box->{$_});
   }
-  $sector->set('image', $splat->mask);
-  # mask returns a PNG where everything below max_loss is solid colored,
-  # and everything above it is transparent. More useful for our purposes.
+  $sector->set('image', $splat->png);
   my $error = $sector->replace;
+  die $error if $error;
+
+  foreach ($sector->sector_coverage) {
+    $error = $_->delete;
+    die $error if $error;
+  }
+  # XXX undecided whether Map::Splat should even do this operation
+  # or how to store it
+  # or anything else
+  $DB::single = 1;
+  my $data = decode_json( $splat->polygonize_json );
+  for my $feature (@{ $data->{features} }) {
+    my $db = $feature->{properties}{level};
+    my $coverage = FS::sector_coverage->new({
+      sectornum => $sectornum,
+      db_loss   => $db,
+      geometry  => encode_json($feature->{geometry})
+    });
+    $error = $coverage->insert;
+  }
+
   die $error if $error;
 }
 

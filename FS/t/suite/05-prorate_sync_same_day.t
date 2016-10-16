@@ -5,10 +5,15 @@
 Tests the effect of ordering and activating two sync_bill_date packages on
 the same day. Ref RT#42108.
 
-Correct: If the packages have prorate_round_day = 1 (round nearest), or 3
-(round down) then the second package should be prorated one day short. If
-they have prorate_round_day = 2 (round up), they should be billed
-for the same amount. In both cases they should have the same next bill date.
+Formerly correct: If the packages have prorate_round_day = 1 (round
+nearest), or 3 (round down) then the second package should be prorated one
+day short. If they have prorate_round_day = 2 (round up), they should be
+billed for the same amount. In both cases they should have the same next
+bill date.
+
+Revised RT#72928: The second package should be prorated one day short only
+if the rounding mode is 1 (round nearest), as the nearest day is different
+for the two packages.
 
 =cut
 
@@ -81,7 +86,7 @@ foreach my $prorate_mode (1, 2, 3) {
   $error = $cust->bill_and_collect;
 
   # Check the amount billed.
-  if ( $prorate_mode == 1 or $prorate_mode == 3 ) {
+  if ( $prorate_mode == 1 ) {
     # it should be one day short, in March
     $recur = sprintf('%.2f', $recur * 30/31);
   }

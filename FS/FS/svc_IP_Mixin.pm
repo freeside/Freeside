@@ -222,4 +222,41 @@ sub replace_check {
   ref($err_or_ref) ? '' : $err_or_ref;
 }
 
+=item addr_status
+
+Returns the ping status record for this service's address, if there
+is one.
+
+=cut
+
+sub addr_status {
+  my $self = shift;
+  my $addr = $self->ip_addr or return;
+  qsearchs('addr_status', { 'ip_addr'  => $addr });
+}
+
+=item addr_status_color
+
+Returns the CSS color for the ping status of this service.
+
+=cut
+
+# subject to change; should also show high/low latency (yellow?) and
+# staleness of data (probably means the daemon is not running) and packet
+# loss (once we measure that)
+
+sub addr_status_color {
+  my $self = shift;
+  if ( my $addr_status = $self->addr_status ) {
+    if ( $addr_status->up ) {
+      return 'green';
+    } else {
+      return 'red';
+    }
+  } else {
+    return 'gray';
+  }
+}
+  
+
 1;

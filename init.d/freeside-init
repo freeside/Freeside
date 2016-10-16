@@ -78,6 +78,10 @@ case "$1" in
         freeside-cdrrated $QUEUED_USER
         echo "done."
 
+        echo -n "Starting freeside-pingd: "
+        freeside-pingd $QUEUED_USER
+        echo "done."
+
         if [ -e /usr/local/bin/torrus ]; then
           echo -n "Starting torrus collector: "
           /usr/local/bin/torrus collector --tree=main
@@ -131,6 +135,12 @@ case "$1" in
         if [ -e /var/run/freeside-cdrrated.pid ]; then
           echo -n "Stopping freeside-cdrrated: "
           kill `cat /var/run/freeside-cdrrated.pid`
+          echo "done."
+        fi
+
+        if [ -e /var/run/freeside-pingd.pid ]; then
+          echo -n "Stopping freeside-pingd: "
+          kill `cat /var/run/freeside-pingd.pid`
           echo "done."
         fi
 

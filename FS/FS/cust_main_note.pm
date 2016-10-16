@@ -4,6 +4,7 @@ use base qw( FS::otaker_Mixin FS::Record );
 use strict;
 use Carp;
 use FS::Record qw( qsearchs ); #qw( qsearch qsearchs );
+use FS::Conf;
 
 =head1 NAME
 
@@ -115,6 +116,13 @@ sub check {
     || $self->ut_numbern('sticky')
   ;
   return $error if $error;
+
+  if (!$self->classnum) {
+    my $conf = new FS::Conf;
+    return 'Note class is required'
+      if $conf->exists('note-classes')
+        and $conf->config('note-classes') eq 'Required';
+  }
 
   $self->SUPER::check;
 }

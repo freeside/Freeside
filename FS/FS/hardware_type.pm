@@ -40,6 +40,8 @@ to which this device type belongs.
 
 =item revision - revision name/number, subordinate to model
 
+=item title - external ID
+
 =back
 
 =head1 METHODS
@@ -104,6 +106,7 @@ sub check {
     || $self->ut_foreign_key('classnum', 'hardware_class', 'classnum')
     || $self->ut_text('model')
     || $self->ut_textn('revision')
+    || $self->ut_textn('title')
   ;
   return $error if $error;
 

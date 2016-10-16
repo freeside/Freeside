@@ -203,6 +203,7 @@ sub dbdef_dist {
            && ! /^log(_context)?$/
            && ! /^(legacy_cust_history|cacti_page|template_image|access_user_log)$/
            && ( ! /^queue(_arg|_depend|_stat)?$/ || ! $opt->{'queue-no_history'} )
+           && ! /^addr_status$/
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -1640,6 +1641,7 @@ sub tables_hashref {
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
         'billday',   'int', 'NULL', '', '', '',
         'prorate_day',   'int', 'NULL', '', '', '',
+        'force_prorate_day', 'char', 'NULL', 1, '', '',
         'edit_subject', 'char', 'NULL', 1, '', '',
         'locale', 'varchar', 'NULL', 16, '', '', 
         'calling_list_exempt', 'char', 'NULL', 1, '', '',
@@ -4138,6 +4140,7 @@ sub tables_hashref {
         'classnum',    'int',     '',      '', '', '',
         'model',   'varchar',     '', $char_d, '', '',
         'revision','varchar', 'NULL', $char_d, '', '',
+        'title',   'varchar', 'NULL', $char_d, '', '', # external id
       ],
       'primary_key'  => 'typenum',
       'unique'       => [ [ 'classnum', 'model', 'revision' ] ],
@@ -4885,12 +4888,19 @@ sub tables_hashref {
         'sector_range', 'decimal', 'NULL',      '', '', '',  #?
         'downtilt',     'decimal', 'NULL',      '', '', '',
         'v_width',          'int', 'NULL',      '', '', '',
-        'margin',       'decimal', 'NULL',     '', '', '',
+        'power',        'decimal', 'NULL',      '', '', '',
+        'line_loss',    'decimal', 'NULL',      '', '', '',
+        'antenna_gain', 'decimal', 'NULL',     '', '', '',
+        'hardware_typenum', 'int', 'NULL',     '', '', '',
+        'db_high',          'int', 'NULL',     '', '', '',
+        'db_low',           'int', 'NULL',     '', '', '',
         'image',           'blob', 'NULL',     '', '', '',
         'west',         'decimal', 'NULL', '10,7', '', '',
         'east',         'decimal', 'NULL', '10,7', '', '',
         'south',        'decimal', 'NULL', '10,7', '', '',
         'north',        'decimal', 'NULL', '10,7', '', '',
+
+        'title',        'varchar', 'NULL', $char_d,'', '',
      ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
@@ -4898,6 +4908,27 @@ sub tables_hashref {
       'foreign_keys' => [
                           { columns    => [ 'towernum' ],
                             table      => 'tower',
+                          },
+                          { columns    => [ 'hardware_typenum' ],
+                            table      => 'hardware_type',
+                            references => [ 'typenum' ],
+                          },
+                        ],
+    },
+
+    'sector_coverage' => {
+      'columns' => [
+        'coveragenum', 'serial', '', '', '', '',
+        'sectornum',     'int', '', '', '', '',
+        'db_loss',       'int', '', '', '', '',
+        'geometry',     'text', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'coveragenum',
+      'unique' => [],
+      'index'  => [],
+      'foreign_keys' => [
+                          { columns => [ 'sectornum' ],
+                            table   => 'tower_sector'
                           },
                         ],
     },
@@ -7507,6 +7538,20 @@ sub tables_hashref {
                              table   => 'access_user',
                            },
                          ],
+    },
+
+    'addr_status' => {
+      'columns' => [
+        'addrnum',  'serial',      '', '', '', '',
+        'ip_addr',  'varchar', 'NULL', 40, '', '',
+        '_date',    @date_type,            '', '',
+        'up',       'char',    'NULL',  1, '', '',
+        'delay',    'int',     'NULL', '', '', '',
+      ],
+      'primary_key'   => 'addrnum',
+      'unique'        => [ [ 'ip_addr' ] ],
+      'index'         => [ [ '_date' ] ],
+      'foreign_keys'  => [],
     },
 
     # name type nullability length default local

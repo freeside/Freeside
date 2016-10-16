@@ -1,0 +1,135 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::Daemon ':all';
+use FS::UID qw(dbh adminsuidsetup);
+use FS::Record qw( dbh qsearch qsearchs );
+use FS::addr_status;
+use FS::Conf;
+use Getopt::Std;
+use Net::Ping;
+
+my @TARGETS = (
+  'tower_sector',
+  'svc_broadband',
+  # could add others here
+);
+
+my $timeout  = 5.0; # seconds
+
+# useful opts: scan interval, timeout, verbose, max forks
+# maybe useful opts: interface, protocol, packet size, no-fork
+
+my $interval;
+
+our %opt;
+getopts('vxi:', \%opt);
+my $user = shift or die usage();
+
+if (!$opt{x}) {
+  daemonize1('freeside-pingd');
+  drop_root();
+  daemonize2();
+}
+
+if ($opt{i}) {
+  $interval = $opt{i};
+}
+
+sub debug {
+  warn(@_, "\n") if $opt{v};
+}
+
+adminsuidsetup($user);
+$FS::UID::AutoCommit = 1;
+
+if ( !$interval ) {
+  my $conf = FS::Conf->new;
+  $interval = $conf->config('pingd-interval');
+  if ( !$interval ) {
+    debug("no pingd-interval configured; exiting");
+    exit(0);
+  }
+}
+
+while(1) {
+  daemon_reconnect();
+  my @addrs_to_scan;
+  foreach my $table (@TARGETS) {
+    # find addresses that need to be scanned (haven't been yet, or are
+    # expired)
+    my $expired = time - $interval;
+    debug("checking addresses from $table");
+
+    my $statement = "SELECT ip_addr FROM $table
+      LEFT JOIN addr_status USING (ip_addr)
+      WHERE $table.ip_addr IS NOT NULL
+        AND (addr_status.ip_addr IS NULL OR addr_status._date <= ?)
+      ORDER BY COALESCE(addr_status._date, 0)";
+    my $addrs = dbh->selectcol_arrayref($statement, {}, $expired);
+    die dbh->errstr if !defined $addrs;
+    debug("found ".scalar(@$addrs));
+    push @addrs_to_scan, @$addrs;
+  }
+
+  # fork to handle this since we're going to spend most of our time
+  # waiting for remote machines to respond
+  foreach my $addr (@addrs_to_scan) {
+    daemon_fork( \&scan, $addr );
+  }
+
+  debug("waiting for scan to complete");
+  # wait until finished
+  daemon_wait();
+
+  # sleep until there's more work to do:
+  # the oldest record that still has an expire time in the future
+  # (as opposed to records for dead addresses, which will not be rescanned)
+  my $next_expire = FS::Record->scalar_sql(
+    'SELECT MIN(_date) FROM addr_status WHERE _date + ? > ?',
+    $interval, time
+  ) || time;
+  my $delay = $next_expire + $interval - time;
+  # but at least scan every $interval seconds, to pick up new addresses
+  $delay = $interval if $delay > $interval;
+
+  if ( $delay > 0 ) {
+    debug("it is now ".time."; sleeping for $delay");
+    sleep($delay);
+  } else {
+    debug("it is now ".time."; continuing");
+  }
+
+} # main loop
+
+sub scan {
+  # currently just sends a single ping; it might be more useful to send
+  # several of them and estimate packet loss.
+
+  my $addr = shift;
+  my $addr_status = qsearchs('addr_status', { 'ip_addr' => $addr })
+                    || FS::addr_status->new({ 'ip_addr' => $addr });
+
+  $addr_status->select_for_update if $addr_status->addrnum;
+  my $ping = Net::Ping->new;
+  $ping->hires;
+  debug "pinging $addr";
+  my ($result, $latency) = $ping->ping($addr, $timeout);
+  debug "status $result, delay $latency";
+  $addr_status->set('up', $result ? 'Y' : '');
+  $addr_status->set('delay', int($latency * 1000));
+  $addr_status->set('_date', time);
+  my $error = $addr_status->addrnum ?
+                $addr_status->replace :
+                $addr_status->insert;
+  if ( $error ) {
+    die "ERROR: could not update status for $addr\n$error\n";
+  }
+}
+
+sub usage {
+  "Usage:
+  freeside-pingd [ -i INTERVAL ] [ -v ] [ -x ] <username>
+";
+}
+

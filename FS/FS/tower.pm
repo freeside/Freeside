@@ -75,6 +75,27 @@ Delete this record from the database.
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+=cut
+
+sub replace {
+  my $self = shift;
+  my $old = shift || $self->replace_old;
+  # editing the tower location needs to regenerate coverage on its sectors
+  my $regen_coverage = 0;
+  foreach (qw(latitude longitude height)) {
+    $regen_coverage = 1 if $self->get($_) != $old->get($_);
+  }
+
+  my $error = $self->SUPER::replace($old);
+  return $error if $error;
+
+  if ($regen_coverage) {
+    foreach my $sector ($self->tower_sector) {
+      $sector->queue_generate_coverage;
+    }
+  }
+}
+
 =item check
 
 Checks all fields to make sure this is a valid tower.  If there is
@@ -143,7 +164,7 @@ default sector.
 sub process_o2m {
   my $self = shift;
   my %opt = @_;
-  my $params = $opt{params};
+  my $params = +{ %{$opt{params}} };
 
   # Adjust to make sure our default sector is in the list.
   my $default_sector = $self->default_sector

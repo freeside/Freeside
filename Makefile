@@ -217,6 +217,7 @@ perl-modules:
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
+	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
 	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
 	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
 	  s'%%%RT_PATH%%%'${RT_PATH}'g; \

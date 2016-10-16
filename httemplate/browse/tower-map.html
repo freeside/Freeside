@@ -1,0 +1,85 @@
+<& /elements/header.html, 'Towers and sectors' &>
+ 
+<script type="text/javascript">
+$(function() {
+  var toggles = $('ul.tower_sector_list input[type=checkbox]');
+  toggles.on('click', function() {
+    
+ 
+<& elements/gmap.html, features => \@features, overlays => \@overlays &>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied" unless
+  $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+
+my @features; # geoJSON structure
+
+my %sectors;
+my %towers;
+my %tower_coord;
+my %tower_bounds;
+
+foreach my $tower (qsearch('towers', {})) {
+  my $towernum = $tower->towernum;
+  $towers{$towernum} = $tower;
+  next if !$tower->latitude or !$tower->longitude;
+
+  $tower_coord{$towernum} =
+  [ $tower->longitude + 0,
+    $tower->latitude + 0,
+    ($tower->altitude || 0) + 0,
+  ];
+
+  # should figure out bounds to include coverage areas
+
+  push @features,
+  {
+    id        => 'tower/'.$towernum,
+    geometry  => {
+      type        => 'Point',
+      coordinates => $tower_coord{$towernum},
+    },
+    properties => {
+      style     => {
+        icon => {
+          path        => undef,
+          url         => $fsurl.'images/jcartier-antenna-square-21x51.png',
+          anchor      => { x => 10, y => 4 }
+        },
+      },
+      content   => include('.tower', $tower),
+      bounds    => $tower_bounds{$towernum},
+    },
+  };
+
+  # XXX show sector coverage zones
+} # foreach $svc_broadband
+
+</%init>
+</%def>
+<%def .tower>
+% my $tower = shift;
+% my $can_edit = $FS::CurrentUser::CurrentUser->access_right('Configuration');
+<H3>
+% if ( $can_edit ) {
+%   # XXX open within the InfoWindow, or at least in a popup
+  <a target="_blank" href="<% $fsurl %>edit/tower.html?<% $tower->towernum %>">
+% }
+Tower #<% $tower->towernum %> | <% $tower->towername %>
+% if ( $can_edit ) {
+  </a>
+% }
+</H3>
+<ul class="tower_sector_list">
+% foreach my $sector ($tower->tower_sector) { # default sector?
+<li>
+<input type="checkbox" value="<% $sector->sectornum %>">
+<% $sector->sectorname %>
+</li>
+% }
+</ul>
+</%def>

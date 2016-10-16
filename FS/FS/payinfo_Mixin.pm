@@ -67,8 +67,9 @@ sub payinfo {
   my($self,$payinfo) = @_;
 
   if ( defined($payinfo) ) {
+    $self->paymask($self->mask_payinfo) unless $self->payinfo =~ /^99\d{14}$/; #make sure old mask is set
     $self->setfield('payinfo', $payinfo);
-    $self->paymask($self->mask_payinfo) unless $payinfo =~ /^99\d{14}$/; #token
+    $self->paymask($self->mask_payinfo) unless $payinfo =~ /^99\d{14}$/; #remask unless tokenizing
   } else {
     $self->getfield('payinfo');
   }

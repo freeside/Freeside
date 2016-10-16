@@ -1775,6 +1775,7 @@ sub check {
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
     || $self->ut_numbern('prorate_day')
+    || $self->ut_flag('force_prorate_day')
     || $self->ut_flag('edit_subject')
     || $self->ut_flag('calling_list_exempt')
     || $self->ut_flag('invoice_noemail')
@@ -4443,6 +4444,10 @@ CHEK only
 
 CHEK only
 
+=item saved_cust_payby
+
+scalar reference, for returning saved object
+
 =back
 
 =cut
@@ -4638,6 +4643,9 @@ PAYBYLOOP:
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  ${$opt{'saved_cust_payby'}} = $new
+    if $opt{'saved_cust_payby'};
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';

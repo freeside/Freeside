@@ -9,6 +9,7 @@ use IO::File;
 use File::Basename;
 use File::Slurp qw(slurp);
 use Date::Format;
+use FS::UID qw( forksuidsetup );
 
 #this is a simple refactoring of the stuff from freeside-queued, just to
 #avoid duplicate code.  eventually this should use something from CPAN.
@@ -16,6 +17,7 @@ use Date::Format;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(
   daemonize1 drop_root daemonize2 myexit logfile sigint sigterm
+  daemon_fork daemon_wait daemon_reconnect
 );
 %EXPORT_TAGS = ( 'all' => [ @EXPORT_OK ] );
 
@@ -23,6 +25,10 @@ $pid_dir = '/var/run';
 
 $NOSIG = 0;
 $PID_NEWSTYLE = 0;
+
+our $MAX_KIDS = 10; # for daemon_fork
+our $kids = 0;
+our %kids;
 
 sub daemonize1 {
   $me = shift;
@@ -56,6 +62,13 @@ sub daemonize1 {
   unless ( $NOSIG ) {
     $SIG{INT}  = sub { warn "SIGINT received; shutting down\n"; $sigint++;  };
     $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
+  }
+
+  # set the logfile sensibly
+  if (!$logfile) {
+    my $logname = $me;
+    $logname =~ s/^freeside-//;
+    logfile("%%%FREESIDE_LOG%%%/$logname-log.$FS::UID::datasrc");
   }
 }
 
@@ -115,6 +128,92 @@ sub _logmsg {
   print $log "[". time2str("%a %b %e %T %Y",time). "] [$$] $msg\n";
   flock($log, LOCK_UN);
   close $log;
+}
+
+=item daemon_fork CODEREF[, ARGS ]
+
+Executes CODEREF in a child process, with its own $FS::UID::dbh handle.  If
+the number of child processes is >= $FS::Daemon::MAX_KIDS then this will
+block until some of the child processes are finished. ARGS will be passed
+to the coderef.
+
+If the fork fails, this will throw an exception containing $!. Otherwise
+it returns the PID of the child, like fork() does.
+
+=cut
+
+sub daemon_fork {
+  $FS::UID::dbh->{AutoInactiveDestroy} = 1;
+  # wait until there's a lane open
+  daemon_wait($MAX_KIDS - 1);
+
+  my ($code, @args) = @_;
+
+  my $user = $FS::CurrentUser::CurrentUser->username;
+
+  my $pid = fork;
+  if (!defined($pid)) {
+
+    warn "WARNING: can't fork: $!\n";
+    die "$!\n";
+
+  } elsif ( $pid > 0 ) {
+
+    $kids{ $pid } = 1;
+    $kids++;
+    return $pid;
+
+  } else { # kid
+    forksuidsetup( $user );
+    &{$code}(@args);
+    exit;
+
+  }
+}
+
+=item daemon_wait [ MAX ]
+
+Waits until there are at most MAX daemon_fork() child processes running,
+reaps the ones that are finished, and continues. MAX defaults to zero, i.e.
+wait for everything to finish.
+
+=cut
+
+sub daemon_wait {
+  my $max = shift || 0;
+  while ($kids > $max) {
+    foreach my $pid (keys %kids) {
+      my $kid = waitpid($pid, WNOHANG);
+      if ( $kid > 0 ) {
+        $kids--;
+        delete $kids{$kid};
+      }
+    }
+    sleep(1);
+  }
+}
+
+=item daemon_reconnect
+
+Checks whether the database connection is live, and reconnects if not.
+
+=cut
+
+sub daemon_reconnect {
+  my $dbh = $FS::UID::dbh;
+  unless ($dbh && $dbh->ping) {
+    warn "WARNING: connection to database lost, reconnecting...\n";
+
+    eval { $FS::UID::dbh = myconnect(); };
+
+    unless ( !$@ && $FS::UID::dbh && $FS::UID::dbh->ping ) {
+      warn "WARNING: still no connection to database, sleeping for retry...\n";
+      sleep 10;
+      next;
+    } else {
+      warn "WARNING: reconnected to database\n";
+    }
+  }
 }
 
 1;
