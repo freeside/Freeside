@@ -14,6 +14,7 @@ use Tie::IxHash;
 use List::Util qw( min );
 use FS::UI::bytecount;
 use FS::Conf;
+use Time::Local 'timelocal';
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub {
@@ -185,14 +186,28 @@ sub cutoff_day {
   }
   if ( $self->option('sync_bill_date',1) ) {
     my $next_bill = $cust_pkg->cust_main->next_bill_date;
-    if ( defined($next_bill) ) {
-      # careful here. if the prorate calculation is going to round to 
-      # the nearest day, this needs to always return the same result
-      if ( $self->option('prorate_round_day', 1) ) {
-        my $hour = (localtime($next_bill))[2];
-        $next_bill += 64800 if $hour >= 12;
-      }
+    if ( $next_bill ) {
       return (localtime($next_bill))[3];
+    } else {
+      # This is the customer's only active package and hasn't been billed
+      # yet, so set the cutoff day to either today or tomorrow, whichever
+      # would result in a full period after rounding.
+      my $setup = $cust_pkg->setup; # because it's "now"
+      my $rounding_mode = $self->option('prorate_round_day',1);
+      return () if !$setup or !$rounding_mode;
+      my ($sec, $min, $hour, $mday, $mon, $year) = localtime($setup);
+
+      if (   ( $rounding_mode == 1 and $hour >= 12 )
+          or ( $rounding_mode == 3 and ( $sec > 0 or $min > 0 or $hour > 0 ))
+      ) {
+        # then the prorate period will be rounded down to start from
+        # midnight tomorrow, so the cutoff day should be the current day +
+        # 1.
+        $setup = timelocal(59,59,23,$mday,$mon,$year) + 1;
+        $mday = (localtime($setup))[3];
+      }
+      # otherwise, it will be rounded up, so leave the cutoff day at today.
+      return $mday;
     }
   }
   return ();
