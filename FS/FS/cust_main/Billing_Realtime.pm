@@ -387,8 +387,8 @@ sub realtime_bop {
 
   my $cc_surcharge = 0;
   my $cc_surcharge_pct = 0;
-  $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage') 
-    if $conf->config('credit-card-surcharge-percentage')
+  $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage', $self->agentnum) 
+    if $conf->config('credit-card-surcharge-percentage', $self->agentnum)
     && $options{method} eq 'CC';
 
   # always add cc surcharge if called from event 
