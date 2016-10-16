@@ -21,7 +21,7 @@
        'num_payments'       => scalar($cust_main->cust_pay), 
        'surcharge_percentage' =>
          ( $payby eq 'CARD'
-             ? scalar($conf->config('credit-card-surcharge-percentage'))
+             ? scalar($conf->config('credit-card-surcharge-percentage', $cust_main->agentnum))
              : 0
          ),
   &>

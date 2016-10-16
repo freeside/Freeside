@@ -848,7 +848,6 @@ sub payment_info {
 
       'save_unchecked' => $conf->exists('selfservice-save_unchecked'),
 
-      'credit_card_surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
     };
 
   }
@@ -913,6 +912,8 @@ sub payment_info {
   my $_date = time;
   $return{payunique} = "webui-MyAccount-$_date-$$-". rand() * 2**32; #new
   $return{paybatch} = $return{payunique};  #back compat
+
+  $return{credit_card_surcharge_percentage} = $conf->config('credit-card-surcharge-percentage', $cust_main->agentnum);
 
   return { 'error' => '',
            %return,
