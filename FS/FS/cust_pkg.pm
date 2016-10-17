@@ -1810,6 +1810,8 @@ sub credit_remaining {
         # the cancellation date (can happen with advance billing). in that
         # case, use the entire recurring charge:
         my $amount = $cust_bill_pkg->recur - $cust_bill_pkg->usage;
+        my $max_credit = $amount
+            - $cust_bill_pkg->credited('', '', setuprecur => 'recur') || 0;
 
         # but if the cancellation happens during the interval, prorate it:
         # (XXX obey prorate_round_day here?)
@@ -1818,14 +1820,23 @@ sub credit_remaining {
                       ($edate - $time) / ($edate - $cust_bill_pkg->sdate);
         }
 
+        # if there are existing credits, don't let the sum of credits exceed
+        # the recurring charge
+        $amount = $max_credit if $amount > $max_credit;
+
         $amount = sprintf('%.2f', $amount);
 
-        push @billpkgnums, $cust_bill_pkg->billpkgnum;
-        push @amounts,     $amount;
-        push @setuprecurs, 'recur';
+        # if no time has been used and/or there are existing line item
+        # credits, we may end up not needing to credit anything.
+        if ( $amount > 0 ) {
 
-        warn "Crediting for $amount on package ".$remain_pkg->pkgnum."\n"
-          if $DEBUG;
+          push @billpkgnums, $cust_bill_pkg->billpkgnum;
+          push @amounts,     $amount;
+          push @setuprecurs, 'recur';
+
+          warn "Crediting for $amount on package ".$remain_pkg->pkgnum."\n"
+            if $DEBUG;
+        }
 
       }
 
