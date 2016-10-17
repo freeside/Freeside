@@ -727,10 +727,12 @@ sub calculate_tax_adjustment {
     if ($recur) {
       $recur -= $cust_bill_pkg->credited('', '', setuprecur => 'recur') || 0;
     }
+    # Skip line items that have been completely credited.
+    next if ($setup + $recur) == 0;
     my $setup_ratio = $setup / ($setup + $recur);
 
-    # Calculate the fraction of tax to credit: it's the fraction of this charge
-    # (either setup or recur) that's being credited.
+    # Calculate the fraction of tax to credit: it's the fraction of this
+    # charge (either setup or recur) that's being credited.
     my $charged = ($setuprecur eq 'setup') ? $setup : $recur;
     next if $charged == 0; # shouldn't happen, but still...
 
@@ -899,7 +901,7 @@ sub credit_lineitems {
     my $invnum = $cust_bill_pkg->invnum;
 
     $need_to_unapply -= $cust_bill_pkg->owed($setuprecur);
-    next if $need_to_unapply < 0.005;
+    return if $need_to_unapply < 0.005;
 
     my $error;
     # then unapply payments one at a time (partially if need be) until the
