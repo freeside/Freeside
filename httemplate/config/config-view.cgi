@@ -133,12 +133,13 @@ invoice language options:
 
     <tr>
 %     unless ( $cgi->param('showagent') ) {
-        <td><% include('/elements/popup_link.html',
+        <td>
+          <% include('/elements/popup_link.html',
                          'action'      => $action,
                          'width'       => $width,
                          'height'      => $height,
                          'actionlabel' => 'Enter configuration value',
-                         'label'       => "<b>$label</b>",
+                         'html_label'  => "<b>$label</b>",
                          'aname'       => $i->key,
                     )
           %>: 
