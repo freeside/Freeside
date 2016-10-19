@@ -348,6 +348,9 @@ sub upgrade_data {
     #customer credits
     'cust_credit' => [],
 
+    # fix some tax allocation records
+    'cust_bill_pkg_void' => [],
+
     #duplicate history records
     'h_cust_svc'  => [],
 
