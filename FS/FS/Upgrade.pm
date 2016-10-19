@@ -386,6 +386,7 @@ sub upgrade_data {
     # reason / void_reason migration to reasonnum / void_reasonnum
     'cust_credit_void' => [],
     'cust_bill_void' => [],
+    # also fix some tax allocation records
     'cust_bill_pkg_void' => [],
 
     #duplicate history records
