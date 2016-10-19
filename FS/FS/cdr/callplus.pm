@@ -51,7 +51,14 @@ use Time::Local 'timelocal';
       $value =~ s/^\$//;
       $cdr->upstream_price($value);
     },
-    skip(4),              # Smartcode, Smartcode Description, Type, SubType
+    skip(2),              # Smartcode, Smartcode Description
+    sub {                 # Type. "I" = international, which matters.
+      my ($cdr, $value) = @_;
+      if ($value eq 'I') {
+        $cdr->set('dst', '+' . $cdr->dst);
+      } # else leave it alone
+    },
+    '',                   # SubType
   ],
 );
 
