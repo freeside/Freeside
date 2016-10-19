@@ -13,6 +13,7 @@ use FS::cust_bill_pkg_fee;
 use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_tax_exempt_pkg;
+use FS::Cursor;
 
 $me = '[ FS::cust_bill_pkg_void ]';
 $DEBUG = 0;
@@ -283,7 +284,6 @@ sub cust_bill_pkg_fee {
   qsearch( 'cust_bill_pkg_fee_void', { 'billpkgnum' => $self->billpkgnum } );
 }
 
-
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
@@ -293,6 +293,33 @@ sub _upgrade_data {  # class method
   warn "$me upgrading $class\n" if $DEBUG;
 
   $class->_upgrade_reasonnum(%opts);
+  my $error;
+  # fix voids with tax from before July 2013, when the taxable_billpkgnum
+  # field was added to the void table
+  my $search = FS::Cursor->new({
+    'table'   => 'cust_bill_pkg_tax_location_void',
+    'hashref' => { 'taxable_billpkgnum' => '' }
+  });
+  while (my $void = $search->fetch) {
+    # the history for the unvoided record should have the correct
+    # taxable_billpkgnum
+    my $num = $void->billpkgtaxlocationnum;
+    my $unvoid = qsearchs({
+      'table'   => 'h_cust_bill_pkg_tax_location',
+      'hashref' => { 'billpkgtaxlocationnum' => $num },
+      'order_by' => ' ORDER BY history_date DESC LIMIT 1'
+    });
+    if (!$unvoid) {
+      # should never happen
+      die "billpkgtaxlocationnum $num: could not find pre-void history record to restore taxable_billpkgnum.";
+    }
+    if ($unvoid) {
+      $void->set('taxable_billpkgnum', $unvoid->taxable_billpkgnum);
+      $error = $void->replace;
+      die "billpkgtaxlocationnum $num: $error\n" if $error;
+    }
+  }
+
 }
 
 =back
