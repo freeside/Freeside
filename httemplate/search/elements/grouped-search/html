@@ -11,8 +11,8 @@ my $redirect;
 
 if ( $group_info->{num} == 0 ) {
   $redirect = $opt{'redirect_empty'};
+  $redirect = &$redirect($cgi) if $redirect && ref($redirect) eq 'CODE';
   if ($redirect) {
-    $redirect = &$redirect($cgi) if ref($redirect) eq 'CODE';
     redirect( $redirect );
   } else { # just print this stuff and exit
     $m->comp('/elements/header.html', $opt{'title'});

@@ -30,7 +30,7 @@ Examples:
   <& /elements/tr-select.html,
     label     => ucfirst(PL($name_singular)) . ' of type:',
     field     => 'payby',
-    options   => [ keys(\%payby) ],
+    options   => [ keys %payby ],
     labels    => \%payby,
     multiple  => 1,
     size      => 18,
