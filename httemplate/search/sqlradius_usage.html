@@ -64,20 +64,32 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied" unless $curuser->access_right('List services');
 
 my $title = 'Data Usage Report - '; 
-my $agentnum;
-my @include_agents;
+my $agentnum = '';
+my @include_agents = ();
 
-if ( $opt{'agentnum'} ) {
+if ( $opt{'agentnum'} =~ /^(\d+)$/ ) {
   $agentnum = $opt{'agentnum'};
-} elsif ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  $agentnum = $1;
+} else {
+
+  my @agentnums = grep /^(\d+)$/, $cgi->param('agentnum');
+
+  if ( ! @agentnums ) {
+    @include_agents = qsearch('agent', {});
+  } elsif ( scalar(@agentnums) == 1 ) {
+    $agentnum = $agentnums[0];
+  } else {
+    @include_agents = qsearch({ 'table'     => 'agent',
+                                'extra_sql' => 'WHERE agentnum IN ('.
+                                                 join(',',@agentnums). ') '.
+                                               ' AND '. $curuser->agentnums_sql,
+                             });
+  }
+
 }
 
 if ( $agentnum ) {
   my $agent = FS::agent->by_key($agentnum);
   $title = $agent->agent." $title";
-} else {
-  @include_agents = qsearch('agent', {});
 }
 
 # usage query params
