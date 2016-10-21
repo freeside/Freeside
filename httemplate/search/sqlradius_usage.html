@@ -74,12 +74,16 @@ if ( $opt{'agentnum'} =~ /^(\d+)$/ ) {
   my @agentnums = grep /^(\d+)$/, $cgi->param('agentnum');
 
   if ( ! @agentnums ) {
-    @include_agents = qsearch('agent', {});
+    @include_agents = qsearch({ 'table'     => 'agent',
+                                'hashref'   => { 'disabled'=>'' },
+                                'extra_sql' => ' AND '. $curuser->agentnums_sql,
+                             });
   } elsif ( scalar(@agentnums) == 1 ) {
     $agentnum = $agentnums[0];
   } else {
     @include_agents = qsearch({ 'table'     => 'agent',
-                                'extra_sql' => 'WHERE agentnum IN ('.
+                                'hashref'   => { 'disabled' => '', },
+                                'extra_sql' => 'AND agentnum IN ('.
                                                  join(',',@agentnums). ') '.
                                                ' AND '. $curuser->agentnums_sql,
                              });
