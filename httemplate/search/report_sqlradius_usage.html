@@ -6,7 +6,9 @@
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
 <& /elements/tr-select-agent.html,
-  'empty_label'   => 'all',
+  'multiple'      => 1,
+  'disable_empty' => 1,
+  #'empty_label'   => 'all',
 &>
 
 %#more future-proof to actually ask all exports if they ->can('usage_sessions')
