@@ -678,6 +678,12 @@ my $clone_callback = sub {
   $object->set($_ => $options{$_})
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
+  $recur_disabled = $object->freq ? 0 : 1;
+  $recur_show_zero_disabled =
+    $object->freq
+      ? $object->option('recur_fee') > 0 ? 1 : 0
+      : 1;
+
   foreach my $currency ( $conf->config('currencies') ) {
     my %part_pkg_currency = $object->part_pkg_currency_options($currency);
     $object->set( $_.'_'.$currency, $part_pkg_currency{$_} )
