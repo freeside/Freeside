@@ -3,11 +3,8 @@
 <FORM ACTION="cust_main.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="bill">
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Basic search options') |h %></FONT></TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Basic search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
     <& /elements/tr-select-agent.html,
                   'curr_value'    => scalar($cgi->param('agentnum')),
@@ -19,6 +16,7 @@
                   'pre_options'   => [ '' => 'all',
                                        0  => '(none)', ],
                   'disable_empty' => 1,
+                  'th' => 1,
     &>
 
     <& /elements/tr-select-cust_main-status.html,
@@ -40,7 +38,7 @@
     &>
 
     <TR>
-        <TD ALIGN="right" VALIGN="center"><% mt('Signup date') |h %></TD>
+        <TH ALIGN="right" VALIGN="center"><% mt('Signup date') |h %></TH>
         <TD>
         <TABLE>
             <& /elements/tr-input-beginning_ending.html,
@@ -53,7 +51,7 @@
 
 %    if ( $conf->exists('cust_main-enable_birthdate') ) {
       <TR>
-          <TD ALIGN="right" VALIGN="center"><% mt('Date of Birth') |h %></TD>
+          <TH ALIGN="right" VALIGN="center"><% mt('Date of Birth') |h %></TH>
           <TD>
           <TABLE>
               <& /elements/tr-input-beginning_ending.html,
@@ -67,7 +65,7 @@
 
 %    if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
       <TR>
-          <TD ALIGN="right" VALIGN="center"><% mt('Spouse Date of Birth') |h %></TD>
+          <TH ALIGN="right" VALIGN="center"><% mt('Spouse Date of Birth') |h %></TH>
           <TD>
           <TABLE>
               <& /elements/tr-input-beginning_ending.html,
@@ -81,7 +79,7 @@
 
 %    if ( $conf->exists('cust_main-enable_anniversary_date') ) {
       <TR>
-          <TD ALIGN="right" VALIGN="center"><% mt('Anniversary Date') |h %></TD>
+          <TH ALIGN="right" VALIGN="center"><% mt('Anniversary Date') |h %></TH>
           <TD>
           <TABLE>
               <& /elements/tr-input-beginning_ending.html,
@@ -94,7 +92,7 @@
 %   }
 
       <TR>
-        <TD ALIGN="right">Tags</TD>
+        <TH ALIGN="right">Tags</TH>
         <TD>
             <& /elements/select-cust_tag.html,
                           'cgi'	        => $cgi,
@@ -110,7 +108,7 @@
       </TR>
 
       <TR>
-        <TD ALIGN="right">With package of class</TD>
+        <TH ALIGN="right">With package of class</TH>
         <TD>
             <& /elements/select-pkg_class.html,
                           'field'       => 'pkg_classnum',
@@ -126,21 +124,19 @@
         </TD>
       </TR>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
-    </TR>
+  </TABLE>
+  <BR>
+
+  <FONT CLASS="fsinnerbox-title"><% emt('Location search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
     <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Location search options') |h %></FONT></TH>
-    </TR>
-
-    <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Address') |h %></TH>
       <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('City') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('City') |h %></TH>
       <TD>
         <& /elements/city.html,
              disable_empty => 0,
@@ -151,7 +147,7 @@
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('County') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('County') |h %></TH>
       <TD>
         <& /elements/select-county.html,
              disable_empty => 0,
@@ -161,7 +157,7 @@
     </TR>
     
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('State') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('State') |h %></TH>
       <TD>
         <& /elements/select-state.html,
              disable_empty => 0,
@@ -171,12 +167,12 @@
     </TR>
     
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TH>
       <TD><INPUT TYPE="text" NAME="zip" SIZE=12></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Country') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Country') |h %></TH>
       <TD>
         <& /elements/select-country.html,
              disable_empty       => 0,
@@ -186,25 +182,23 @@
       </TD>
     </TR>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
-    </TR>
+  </TABLE>
+  <BR>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Billing search options') |h %></FONT></TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Billing search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 % unless ( @exempt_groups ) { 
 
 %   #falze laziness with With/Without postal mail invoices
      <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Tax exempt') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Tax exempt') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="tax" ID="tax" onClick="tax_changed();"></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Not tax exempt') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Not tax exempt') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="no_tax" ID="no_tax" onClick="no_tax_changed();"></TD>
     </TR>
 
@@ -223,7 +217,7 @@
 % }
 
     <TR>
-      <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
+      <TH ALIGN="right"><% mt('Invoice terms') |h %></TH>
       <TD>
 %       my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
 %       my $agentnum = scalar(@agentnums) == 1 ? $agentnums[0] : '';
@@ -241,17 +235,17 @@
     &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('With invoicing email address(es)') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('With invoicing email address(es)') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="with_email"></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('With postal mail invoices') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('With postal mail invoices') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="POST" ID="POST" onClick="POST_changed();"></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Without postal mail invoices') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Without postal mail invoices') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="no_POST" ID="no_POST" onClick="no_POST_changed();"></TD>
     </TR>
 
@@ -268,22 +262,21 @@
       }
     </SCRIPT>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
-    </TR>
+  </TABLE>
+  <BR>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
+
     <& /elements/tr-select-cust-fields.html &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Add package columns') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Add package columns') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="flattened_pkgs"></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TH>
         <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
     </TR>
 

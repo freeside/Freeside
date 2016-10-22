@@ -1,15 +1,11 @@
-%
-%  my( $cust_fields, %opt ) = @_;
-%
-%  use FS::ConfDefaults;
-%  $opt{'avail_fields'} ||= [ FS::ConfDefaults->cust_fields_avail() ];
-%
-%
-
-
 <TR>
-  <TD ALIGN="right"><% $opt{'label'} || 'Customer fields' %></TD>
-  <TD>
-    <% include( '/elements/select-cust-fields.html', $cust_fields, %opt ) %>
-  </TD>
+  <TH ALIGN="right"><% $opt{'label'} || mt('Customer fields') |h %></TH>
+  <TD><& /elements/select-cust-fields.html, $cust_fields, %opt &></TD>
 </TR>
+<%init>
+
+my( $cust_fields, %opt ) = @_;
+
+$opt{'avail_fields'} ||= [ FS::ConfDefaults->cust_fields_avail() ];
+
+</%init>

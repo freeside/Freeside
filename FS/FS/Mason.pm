@@ -129,6 +129,7 @@ if ( -e $addl_handler_use_file ) {
                     midnight_sql regexp_sql
                    );
   use FS::Conf;
+  use FS::ConfDefaults;
   use FS::CGI qw(header menubar table itable ntable idiot
                  eidiot myexit http_header);
   use FS::UI::Web qw(svc_url random_id
