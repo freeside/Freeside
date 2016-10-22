@@ -586,6 +586,11 @@ my $clone_callback = sub {
 
   $recur_disabled = $object->freq ? 0 : 1;
 
+  $recur_show_zero_disabled =
+    $object->freq
+      ? $object->option('recur_fee') > 0 ? 1 : 0
+      : 1;
+
 };
 
 my $discount_error_callback = sub {
