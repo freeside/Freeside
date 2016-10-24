@@ -120,8 +120,7 @@ sub check {
   if (!$self->classnum) {
     my $conf = new FS::Conf;
     return 'Note class is required'
-      if $conf->exists('note-classes')
-        and $conf->config('note-classes') eq 'Required';
+      if $conf->exists('cust_main_note-require_class');
   }
 
   $self->SUPER::check;

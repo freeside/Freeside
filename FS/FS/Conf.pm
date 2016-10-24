@@ -3944,6 +3944,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main_note-require_class',
+    'section'     => 'customer_fields',
+    'description' => 'Require customer note classes for customer notes',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-ticket_statuses',
     'section'     => 'ticketing',
     'description' => 'Show tickets with these statuses on the customer view page.',
@@ -5452,10 +5459,14 @@ and customer address. Include units.',
 
   {
     'key'         => 'note-classes',
-    'section'     => 'customer_fields',
-    'description' => 'Use customer note classes',
+    'section'     => 'deprecated',
+    'description' => 'Use customer note classes (now automatically used if classes are defined)',
     'type'        => 'select',
-    'select_enum' => [ '', 'Enabled', 'Required' ],
+    'select_hash' => [
+                       0 => 'Disabled',
+		       1 => 'Enabled',
+		       2 => 'Enabled, with tabs',
+		     ],
   },
 
   {
