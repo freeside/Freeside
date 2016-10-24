@@ -1,0 +1,119 @@
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('View invoices');
+
+my ($invnum) = $cgi->keywords;
+my $agentnums = $curuser->agentnums_href;
+my $cust_bill = FS::cust_bill->by_key($invnum)
+             || FS::cust_bill_void->by_key($invnum);
+
+if (!$cust_bill or !$agentnums->{ $cust_bill->cust_main->agentnum }) {
+  die "invalid invnum $invnum";
+}
+
+my %column_of; # taxname => @tax_amounts column index
+my @tax_amounts; # array of arrays
+my @sale_amounts; # just an array
+my @taxable_descs; # taxable item row headings
+my @itemdescs; # column headings
+my %taxname_of; # billpkgnum => taxname
+
+my $lineitem_table = 'cust_bill_pkg';
+if ($cust_bill->isa('FS::cust_bill_void')) {
+  $lineitem_table .= '_void';
+}
+
+my (@tax, @nontax);
+foreach (qsearch({
+  'table' => $lineitem_table,
+  'hashref' => { 'invnum' => $invnum },
+  'order_by' => 'ORDER BY itemdesc, billpkgnum', # save on sorting the columns later
+}) ) {
+  if ( $_->pkgnum or $_->feepart ) {
+    push @nontax, $_;
+  } else {
+    push @tax, $_;
+  }
+}
+my $col = 0;
+foreach (@tax) {
+  $taxname_of{$_->billpkgnum} = $_->itemdesc;
+  push @itemdescs, $_->itemdesc;
+  $column_of{$_->itemdesc} = $col++;
+}
+
+foreach my $sale (@nontax) {
+  my $this_row = [];
+  foreach my $link_table (qw(
+    cust_bill_pkg_tax_location cust_bill_pkg_tax_rate_location
+  )) {
+    $link_table .= '_void' if $cust_bill->isa('FS::cust_pkg_void');
+    foreach my $link (qsearch({
+      'table' => $link_table,
+      'hashref' => { 'taxable_billpkgnum' => $sale->billpkgnum }
+    })) {
+      # find the itemdesc on this tax
+      my $taxname = $taxname_of{ $link->billpkgnum };
+      # and accumulate in the column it belongs in
+      ($this_row->[ $column_of{ $taxname } ] ||= 0)
+        += $link->amount;
+    }
+  } # foreach $link_table
+  # create a row if we added any taxes
+  if ( @$this_row ) {
+    push @tax_amounts, $this_row;
+    push @sale_amounts, $sale->setup + $sale->recur;
+    push @taxable_descs, $sale->desc;
+  }
+}
+
+</%init>
+<& /elements/header-popup.html &>
+<style>
+  table.grid {
+    border-spacing: 0px;
+  }
+  table.grid thead {
+    background-color: #cccccc;
+    font-size: 12px;
+  }
+  table.grid tbody tr:nth-child(even) {
+    background-color: #eeeeee;
+  }
+  table.grid tbody tr:nth-child(odd) {
+    background-color: #ffffff;
+  }
+  table.grid tbody th {
+    text-align: left;
+    font-size: 12px;
+  }
+  table.grid tbody td {
+    padding-right: 1em;
+    text-align: right;
+  }
+</style>
+<table class="grid">
+  <thead>
+    <tr>
+      <th></th>
+      <th><% emt('Charge') %></th>
+% for (my $col = 0; $col < scalar(@itemdescs); $col++) {
+      <th><% emt($itemdescs[$col]) %></th>
+% }
+    </tr>
+  </thead>
+  <tbody>
+% for (my $row = 0; $row < scalar(@taxable_descs); $row++) {
+%   my $this_row = $tax_amounts[$row];
+    <tr>
+      <th><% emt($taxable_descs[$row]) %></th>
+      <td><% sprintf('%.2f', $sale_amounts[$row]) %></td>
+%   for (my $col = 0; $col < scalar(@itemdescs); $col++) {
+      <td><% $this_row->[$col] ? sprintf('%.2f', $this_row->[$col]) : '' %></td>
+%   }
+    </tr>
+% }
+  </tbody>
+</table>
+<& /elements/footer.html &>

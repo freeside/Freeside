@@ -132,12 +132,6 @@ function areyousure(href, message) {
   <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
 
 %   $br++;
-% } 
-
-% if ( $cust_bill->num_cust_event ) {
-<% $br ? '|' : '' %>
-<A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>"><% mt('View invoice events') |h %></A> 
-%   $br++;
 % }
 
 % my @modes = grep {! $_->disabled} 
@@ -164,6 +158,25 @@ function change_invoice_mode(obj) {
   obj.form.submit();
 }
 </SCRIPT>
+</FORM>
+% }
+
+% if ( $cust_bill->num_cust_event ) {
+<% $br ? '|' : '' %>
+<A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>"><% mt('View invoice events') |h %></A> 
+%   $br++;
+% }
+% if ( $cust_bill->tax > 0 ) { # inefficient
+<% $br ? '|' : '' %>
+<& /elements/popup_link.html,
+  'action'      => 'cust_bill_tax_matrix.html?' . $cust_bill->invnum,
+  'label'       => mt('View tax details'),
+  'actionlabel' => mt('Tax details'),
+  'width'       => 1050,
+  'height'      => 500,
+  'title'       => emt('Tax details'),
+&>
+%   $br++;
 % }
 
 <BR><BR>
