@@ -14,6 +14,10 @@
 <& /elements/footer.html &>
 <%init>
 
+###
+# Basics and Daemons
+###
+
 my $os;
 -e '/usr/bin/lsb_release' and run( ['lsb_release', '-d'], '>',\$os );
 if ( ! $@ && $os =~ /^\s*Description:\s*(.+)$/ ) {
@@ -97,6 +101,11 @@ tie my %status, 'Tie::IxHash',
   ],
 ;
 
+
+###
+# Replication
+###
+
 if ( $db eq 'PostgreSQL' ) {
 
   my $enabled =    FS::Record->scalar_sql('SHOW wal_level')    eq 'hot_standby'
@@ -140,6 +149,11 @@ if ( $db eq 'PostgreSQL' ) {
   ];
 
 }
+
+
+###
+# CDR Processing
+###
 
 if ( _is_running('cdrd') ) {
 
@@ -199,6 +213,75 @@ if ( _is_running('cdrd') ) {
   ];
 
 }
+
+
+###
+# PCI Compliance
+###
+
+my($store, $tokenize) = (0,0);
+foreach my $agent (
+  qsearch({
+    'table'     => 'agent',
+    'hashref'   => { 'disabled' => '', },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  })
+) {
+  my $gateway = $agent->payment_gateway('method'=>'VISA card');
+  next unless $gateway->gateway_namespace eq 'Business::OnlinePayment';
+  eval "use Business::OnlinePayment";
+  die $@ if $@; #die?
+  my $bop = new Business::OnlinePayment( $gateway->gateway_module,
+                                         $gateway->gatewaynum
+                                           ? $gateway->options
+                                           : @{ $gateway->get('options') }
+                                       );
+  my %actions = $bop->info('supported_actions');
+  if ( $actions{'CC'} && grep /^Tokenize$/, @{$actions{'CC'}} ) {
+    $tokenize++;
+  } else {
+    $store++;
+  }
+  
+}
+warn $tokenize;
+warn $store;
+
+if ( $tokenize && ! $store ) {
+
+  $status{'PCI Compliance'} = [
+    { 'title' => 'Tokenization',
+      'value' => 'Enabled',
+    },
+    { 'title' => 'SAQ type',
+      'value' => 'A / A-EP',
+    },
+  ];
+
+} elsif ( $store ) {
+
+  my $conf = new FS::Conf; #wow, didn't need this before?
+
+  $status{'PCI Compliance'} = [
+    { 'title' => 'Tokenization',
+      'value' => $tokenize ? 'Partialy enabled (some agents)' : 'Disabled'
+    },
+    { 'title' => 'Encryption',
+      'value' =>
+        ( $conf->exists('encryption') && $conf->config('encryptionpublickey')
+            ? 'Enabled' : 'Disabled'
+        ),
+    },
+    { 'title' => 'SAQ type',
+      'value' => 'D (enable tokenization for A / A-EP)',
+    },
+  ];
+
+}
+
+###
+# Subroutines
+###
 
 sub _is_running {
   my $thing = shift;
