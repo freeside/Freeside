@@ -6,17 +6,17 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="notenum" VALUE="<% $notenum %>">
 
-% if ($conf->exists('note-classes') && $conf->config('note-classes')) {
-%   my %includeopts = $conf->config('note-classes') eq 'Enabled'
-%                   ? ('empty_label' => '(unclassified)')
-%                   : ('disable_empty' => 1); # eq 'Required'
+% if (my @noteclasses = qsearch('cust_note_class',{ 'disabled' => '' })) {
+%   my %noteclassopts = $conf->exists('cust_main_note-require_class')
+%                     ? ('disable_empty' => 1)
+%                     : ('empty_label' => '(unclassified)');
     Class &nbsp;
 	<% include( '/elements/select-table.html',
                  'table'       => 'cust_note_class',
+                 'records'     => \@noteclasses,
                  'name_col'    => 'classname',
                  'curr_value'  => $classnum,
-                 'hashref'     => { 'disabled' => '' },
-                 %includeopts,
+                 %noteclassopts,
          ) %>
     <BR>
 % }

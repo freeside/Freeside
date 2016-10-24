@@ -684,8 +684,7 @@ tie my %config_cust, 'Tie::IxHash',
   'Contact types'    =>  [ $fsurl.'browse/contact_class.html', ''], #XXX useful description
 ;
   
-$config_cust{'Note classes'} = [ $fsurl.'browse/cust_note_class.html', 'Note classes define groups of customer notes for reporting.' ]
-    if ($conf->exists('note-classes') && $conf->config('note-classes'));
+$config_cust{'Note classes'} = [ $fsurl.'browse/cust_note_class.html', 'Note classes define groups of customer notes for reporting.' ];
 
 tie my %config_agent, 'Tie::IxHash',
   'Agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],

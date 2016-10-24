@@ -2,60 +2,44 @@
 <SCRIPT TYPE="text/javascript">
 
 function display_notes_classnum (classnum) {
-
-  var bgcolor1 = '#eeeeee';
-  var bgcolor2 = '#ffffff';
-  var sticky_color = { '#eeeeee' : '#ffff66',
-                       '#ffffff' : '#ffffb8' };
-  var notes_bgcolor = '';
-
-  var trs = document.getElementsByTagName("TR");
-  for (var i=0; i < trs.length; i++) {
-    if (trs[i].id.length > 6 && trs[i].id.substring(0,6) == 'notes_') {
-      if (( classnum == '-1' ) || ( trs[i].getAttribute('data-classnum') == classnum )) {
-        trs[i].style.display = 'table-row';
-        if ( notes_bgcolor == bgcolor1 ) {
-          notes_bgcolor = bgcolor2;
-        } else {
-          notes_bgcolor = bgcolor1;
-        }
-        trs[i].style.backgroundColor = (trs[i].getAttribute('data-sticky') == '1') ? sticky_color[notes_bgcolor] : notes_bgcolor;
-      } else {
-        trs[i].style.display = 'none';
-      }
-    }
+  // hide/show
+  var $custnote = $('.custnote');
+  if (classnum >= 0) {
+    $custnote.hide();
+    $('tr[data-classnum=' + classnum + ']').show();
+  } else {
+    $custnote.show();
   }
-%   if ($note_classes_conf) {
-
-  var as = document.getElementsByTagName("a");
-  for (var i=0; i < as.length; i++) {
-    if(as[i].id.length > 14 && as[i].id.substring(0,14) == 'notes_tablink_') {
-      if(as[i].id == 'notes_tablink_'+classnum) {
-        as[i].style.fontWeight = 'bold';
-      } else {
-        as[i].style.fontWeight = 'normal';
-      }
-    }
-  }
-%   } # if note_classes_conf
-
+  // restripe
+  var $shownote = $custnote.filter(':visible');
+  var $shownote_even = $shownote.filter(':even');
+  var $shownote_odd = $shownote.filter(':odd');
+  $shownote_even.css('background-color','#eeeeee');
+  $shownote_even.filter('.stickynote').css('background-color','#ffff66');
+  $shownote_odd.css('background-color','#ffffff');
+  $shownote_odd.filter('.stickynote').css('background-color','#ffffb8');
+%   if ($use_class_tabs) {
+  // update links
+  var $tablink = $('.notes_tablink');
+  $tablink.css('font-weight','normal');
+  $tablink.filter('a[data-classnum=' + classnum + ']').css('font-weight','bold');
+%   }
 }
-
 </SCRIPT>
 
   <& /elements/init_overlib.html &>
 
-% if ( $note_classes_conf ) {
+%   if ( $use_class_tabs ) {
 <% mt('Show notes of class:') |h %> &nbsp; 
 %   # list unclassified last
-% 	foreach my $classnum ( (grep { $_ != 0} sort { $a <=> $b } (keys %classes)), '0' ) {
-	    <A	id="notes_tablink_<% $classnum %>"
+% 	  foreach my $classnum ( (grep { $_ != 0} sort { $a <=> $b } (keys %classes)), '0' ) {
+	    <A CLASS="notes_tablink"
+        data-classnum="<% $classnum %>"
 		HREF="javascript:display_notes_classnum(<% $classnum %>)"
-		style="font-weight: <% $classnum == -1 ? 'bold' : 'normal' %>"
 	    ><% $classes{$classnum} %></A>
-% 	}
+% 	  }
     <BR>
-% }
+%   }
 
 <& /elements/table-grid.html &>
   <TR>
@@ -64,7 +48,7 @@ function display_notes_classnum (classnum) {
     <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Time') |h %></TH>
 %   }
     <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Employee') |h %></TH>
-%   if ($note_classes_conf) {
+%   if ($use_classes) {
     <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Class') |h %></TH>
 %   }
     <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="padding: 0 1em"><% mt('Note') |h %></TH>
@@ -100,15 +84,14 @@ function display_notes_classnum (classnum) {
 %             '('.emt('delete').')</A>';
 %   }
 %
-    <TR ID="notes_<% $note->notenum %>"
-        data-sticky="<% $note->sticky ? 1 : 0 %>"
-        <% $note_classes_conf ? ' data-classnum="'.($note->classnum || 0).'"' : '' %>>
+    <TR CLASS="grid custnote<% $note->sticky ? ' stickynote' : '' %>"
+        <% $use_class_tabs ? ' data-classnum="'.($note->classnum || 0).'"' : '' %>>
 
       <% note_datestr($note,$conf) %>
       <TD CLASS="grid">
         &nbsp;<% $note->usernum ? $note->access_user->name : $note->otaker %>
       </TD>
-%   if ($note_classes_conf) {
+%   if ($use_classes) {
       <TD CLASS="grid">
 	<% $note->classname %>   
       </TD>
@@ -122,9 +105,13 @@ function display_notes_classnum (classnum) {
     </TR>
 % } #end foreach note
 
+% if (@notes) {
 </TABLE>
 
 <SCRIPT>display_notes_classnum('-1')</SCRIPT>
+% } else {
+<P><I><% emt('No notes for this customer') %></I></P>
+% }
 
 <%init>
 
@@ -138,11 +125,11 @@ my(%opt) = @_;
 my $cust_main = $opt{'cust_main'};
 my $custnum = $cust_main->custnum;
 
-my $note_classes_conf = $conf->exists('note-classes') ? $conf->config('note-classes') : '';
-
 my (@notes) = $cust_main->notes();
 
 my %classes = map { ($_->classnum || 0) => ( $_->classname ne '' ? $_->classname : '('.emt('unclassified').')' ) } @notes;
+my $use_classes = grep { $_ > 0 } keys %classes;  # show class column
+my $use_class_tabs = (keys %classes > 1) ? 1 : 0; # use class tabs
 $classes{'-1'} = 'All';
 
 #subroutines
