@@ -1,5 +1,3 @@
-% if ( $apikey ) {
-
 %# the actual page
 <& /elements/header-popup.html, {
      title => '',#$name,
@@ -10,11 +8,6 @@
 &>
 
 <div id="map_canvas"></div>
-
-% } else {
-<& /elements/header-popup.html &>
-<& /elements/google_maps_api_key.html &>
-% }
 
 <%def .head>
 <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
@@ -29,7 +22,7 @@ body { height: 100%; margin: 0px; padding: 0px }
 @media print { #map_canvas { height: 500px; margin: 0; } }
 </style>
 
-<script type="text/javascript" src="https://maps.google.com/maps/api/js?v=3&key=<% $apikey %>">
+<script type="text/javascript" src="https://maps.google.com/maps/api/js?v=3<% $apikey ? '&key='.$apikey : '' %>">
 </script>
 
 <script type="text/javascript">
@@ -39,7 +32,7 @@ var map;
 // function name specified by google maps api, special hook for auth errors
 function gm_authFailure () {
   document.body.innerHTML = 
-<% include('/elements/google_maps_api_key.html', autherror => 1) |js_string%>;
+<% include('/elements/google_maps_api_key.html', autherror => $apikey ) |js_string%>;
 }
 
 
