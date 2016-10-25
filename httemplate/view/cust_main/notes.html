@@ -27,6 +27,7 @@
 %        ! $conf->exists('cust_main-disable_notes')
 %      ) {
 
+<P>
   <& /elements/popup_link-cust_main.html,
                 'label'       => emt('Add customer note'),
                 'action'      => $p. 'edit/cust_main_note.cgi',
@@ -35,9 +36,9 @@
                 'width'       => 616,
                 'height'      => 538, #575
   &>
+</P>
 
 %   }
-<BR>
 
 % # actually display notes
 <& notes/notes.html, 'cust_main' => $cust_main &>

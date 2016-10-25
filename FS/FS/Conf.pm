@@ -4180,7 +4180,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'cust_main_note-require_class',
-    'section'     => 'customer_fields',
+    'section'     => 'UI',
     'description' => 'Require customer note classes for customer notes',
     'type'        => 'checkbox',
   },
