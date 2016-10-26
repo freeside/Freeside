@@ -22,10 +22,20 @@
   'name_col'      => 'label',
   'value_col'     => 'exportnum',
   'records'       => \@exports,
-  'disable_empty' => 1,
+  'multiple'      => 1,
 &>
 % }
+
 <& /elements/tr-input-beginning_ending.html &>
+
+<& /elements/tr-radio.html,
+  'field'         => 'combine_svcs',
+  'options'       => [ 0, 1 ],
+  'curr_value'    => 0,
+  'labels'        => { 0 => 'Per service',
+                       1 => 'Per package',
+                     },
+&>
 
 </TABLE>
 
